@@ -159,6 +159,8 @@ func compareEdits(d *diagnostic, src *source, p *diagSpan) []edit {
 	var operands [][2]int
 	if assertMacros[p.Macro] {
 		operands = macroArgs(src.masked, p.ByteStart, p.ByteEnd)
+	} else if d.code() == "E0277" {
+		operands = operatorOperands(src.masked, p)
 	} else if d.code() == "E0369" {
 		for _, s := range d.Spans {
 			if !s.IsPrimary && s.FileName == p.FileName && s.label() != "" {
@@ -507,7 +509,7 @@ func (r *rewriter) borrowedReturnEdits(src *source, p *diagSpan, expected string
 		return nil
 	}
 	field := expr[loc[2]:loc[3]]
-	optional, retype, err := r.retypeField(m.selfType, field)
+	optional, retype, err := r.retypeField(src.path, m.selfType, field)
 	if err != nil || (retype == nil && optional == fieldUnknown) {
 		return nil
 	}
@@ -544,10 +546,12 @@ const (
 
 var fieldDecl = regexp.MustCompile(`(?m)^\s*(?:pub(?:\([^)]*\))?\s+)?(\w+)\s*:\s*(Option<\s*)?((?:std::path::)?(?:PathBuf|BridgedPath))\s*(>)?\s*,`)
 
-// retypeField finds `field` in the declaration of `selfType` among the crate's files and
-// returns its shape plus the edit retyping it from `PathBuf` to `BridgedPath` (nil when it
-// already is one).
-func (r *rewriter) retypeField(selfType, field string) (fieldShape, *edit, error) {
+// retypeField finds `field` in the declaration of `selfType` and returns its shape plus the
+// edit retyping it from `PathBuf` to `BridgedPath` (nil when it already is one). The
+// declaration in the impl's own file wins; else the crate's only one. A name several other
+// files declare (the app's test doubles: two `WaitsForCancel`s, many a `Fake`) is unknown:
+// the first match would retype a stranger's field.
+func (r *rewriter) retypeField(implFile, selfType, field string) (fieldShape, *edit, error) {
 	base := selfType
 	if i := strings.IndexAny(base, "<"); i >= 0 {
 		base = base[:i]
@@ -556,7 +560,12 @@ func (r *rewriter) retypeField(selfType, field string) (fieldShape, *edit, error
 		base = base[i+2:]
 	}
 	decl := regexp.MustCompile(`\bstruct\s+` + regexp.QuoteMeta(base) + `\b[^{;]*\{`)
-	for _, file := range r.crateRust {
+	var found *source
+	var foundAt []int
+	for i, file := range append([]string{implFile}, r.crateRust...) {
+		if i > 0 && file == implFile {
+			continue
+		}
 		src, err := r.load(file)
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -565,25 +574,39 @@ func (r *rewriter) retypeField(selfType, field string) (fieldShape, *edit, error
 			return fieldUnknown, nil, err
 		}
 		loc := decl.FindIndex(src.masked)
-		if loc == nil {
+		switch {
+		case loc == nil:
+			continue
+		case i == 0:
+			return retypeFieldIn(src, loc, field)
+		case found != nil:
+			return fieldUnknown, nil, nil
+		}
+		found, foundAt = src, loc
+	}
+	if found == nil {
+		return fieldUnknown, nil, nil
+	}
+	return retypeFieldIn(found, foundAt, field)
+}
+
+// retypeFieldIn is retypeField over the one declaration `loc` points at in src.
+func retypeFieldIn(src *source, loc []int, field string) (fieldShape, *edit, error) {
+	open := loc[1] - 1
+	close := matchBrace(src.masked, open)
+	for _, f := range fieldDecl.FindAllSubmatchIndex(src.masked[open:close+1], -1) {
+		if string(src.masked[open+f[2]:open+f[3]]) != field {
 			continue
 		}
-		open := loc[1] - 1
-		close := matchBrace(src.masked, open)
-		for _, f := range fieldDecl.FindAllSubmatchIndex(src.masked[open:close+1], -1) {
-			if string(src.masked[open+f[2]:open+f[3]]) != field {
-				continue
-			}
-			shape := fieldPlain
-			if f[4] >= 0 {
-				shape = fieldOptional
-			}
-			typeStart, typeEnd := open+f[6], open+f[7]
-			if strings.HasSuffix(string(src.text[typeStart:typeEnd]), "BridgedPath") {
-				return shape, nil, nil
-			}
-			return shape, &edit{file: file, start: typeStart, end: typeEnd, text: "BridgedPath", rule: ruleBorrowedRet}, nil
+		shape := fieldPlain
+		if f[4] >= 0 {
+			shape = fieldOptional
 		}
+		typeStart, typeEnd := open+f[6], open+f[7]
+		if strings.HasSuffix(string(src.text[typeStart:typeEnd]), "BridgedPath") {
+			return shape, nil, nil
+		}
+		return shape, &edit{file: src.path, start: typeStart, end: typeEnd, text: "BridgedPath", rule: ruleBorrowedRet}, nil
 	}
 	return fieldUnknown, nil, nil
 }

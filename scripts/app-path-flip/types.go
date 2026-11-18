@@ -31,6 +31,7 @@ const (
 	ruleNestedPrelude  = "prelude nested in a returned async block"
 	ruleEagerHelper    = "eager helper takes the typed path and the prelude"
 	ruleFromRef        = "E0308 from_ref element to legacy_unchecked"
+	ruleBoundArg       = "E0277 generic std bound to as_std_legacy"
 )
 
 var (

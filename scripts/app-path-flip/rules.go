@@ -52,6 +52,9 @@ func (r *rewriter) editsFor(d *diagnostic) ([]edit, error) {
 	if e := compareEdits(d, src, p); len(e) > 0 {
 		return e, nil
 	}
+	if e := boundArgEdits(d, src, p); len(e) > 0 {
+		return e, nil
+	}
 	if e := importEdits(d, src, r.crate); len(e) > 0 {
 		return e, nil
 	}

@@ -110,7 +110,8 @@ Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a sma
 - **Borrowed return** (`root`, `stands_in_for_own_disk`, `local_backing_file`): the field the method returns is retyped
   to `BridgedPath` (`Option<BridgedPath>`) in its struct, and the method returns `self.field.app()`
   (`.as_ref().map(BridgedPath::app)`). A literal root becomes `AppPath::from_normalized("/").expect(…)`. A `self.x()`
-  accessor is no field: residue.
+  accessor is no field: residue. The struct declared in the impl's own file wins, else the crate's only one; a name
+  several other files declare (the app's test doubles) is unknown, so no stranger's field is retyped.
 - **Comparison**: `assert_eq!`/`assert_ne!` (and an in-file `==` that rustc labels) comparing a typed value with a std
   one drops the typed operand to `Path` behind as many `&` as the other side has (read from rustc's
   `required for `&A`to implement`PartialEq<&B>`` note, since its message names the pair with the shared `&`s peeled)
@@ -119,8 +120,15 @@ Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a sma
   same container of owned std paths, an `Option<&AppPath>` against an `Option<&Path>` through
   `.map(AppPath::as_std_legacy).as_deref()`. An operand an earlier pass left as `….as_std_legacy()` gets reshaped the
   same way. When the typed operand comes first, rustc infers the pair from it and reports the EXPECTED argument as an
-  E0308 (`rules_assert_arg.go`); the typed operand drops the same way. The expected value is untouched; any other shape
-  is residue.
+  E0308 (`rules_assert_arg.go`); the typed operand drops the same way. A plain `a == b` outside a macro gets an
+  unlabeled E0277 on its operator, so `rules_operands.go` reads the operands off the source: each a whole postfix chain
+  (`entry.volume.root()`, `r.path`, `Path::new(p)`) bounded by something looser than `==` (a bracket, `,`, `=`, a
+  closure's `|…|`, `&&`, a block's `{`), never a bit-or, cast, or unary operator beside it. The expected value is
+  untouched; any other shape is residue.
+- **Generic std bound** (`rules_operands.go`): a typed value handed to a slot bounded by `AsRef<Path>`, `AsRef<OsStr>`,
+  or `Into<PathBuf>` (`row.starts_with(volume.root())`, `LogPrivate::dir_path(volume.root())`, `Path::new(live.root())`,
+  `MountRoot::new(volume.root())`), an E0277 whose span is the argument, becomes `&*x.as_std_legacy()`: a `&Path` with
+  the same bytes, which meets all three.
 - **Imports**: a name a rule introduced (`AppPath`, `AppPathBuf`, `BridgedPath`, `app_path!`, `Path`, `PathBuf`) is
   imported at rustc's suggested point, or at the head of the innermost module when rustc suggests none (it doesn't for
   another crate's items). Never twice in one module, and ❌ never between an item and its outer attributes or doc
