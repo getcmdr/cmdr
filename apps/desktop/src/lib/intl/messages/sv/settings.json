@@ -1633,7 +1633,7 @@
   },
   "settings.analytics.enabled.description": "{platform, select, windows {Slå på det här så hjälper du oss se vilka funktioner som spelar roll under den öppna betan.\nStatistiken är inte kopplad till ditt namn eller din e-post utan till ett slumpmässigt id.\nCmdr skickar aldrig filnamn, sökvägar, sökord eller prompter.\nNär det är avstängt skickar Cmdr ingen statistik alls.} other {Slå på det här så hjälper du oss se vilka funktioner som spelar roll under den öppna betan.\nStatistiken är inte kopplad till ditt namn eller din e-post utan till ett slumpmässigt id.\nCmdr skickar aldrig filnamn, sökvägar, sökord eller prompter.\nNär det är avstängt skickar Cmdr ingen statistik alls.}}",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
+    "sourceHash": "dbbd8c8"
   },
   "settings.analytics.enabled.keywords": "analys, användning, statistik, användningsstatistik, integritet, telemetri, beta, spårning, avstå",
   "@settings.analytics.enabled.keywords": {
@@ -1657,7 +1657,7 @@
   },
   "settings.updates.crashReports.description": "{platform, select, macos {Skicka automatiskt en rapport när Cmdr avslutas oväntat eller stöter på ett problem i bakgrunden. Innehåller appversion, macOS-version och vilken del av koden som stötte på problemet. Aldrig filnamn eller personuppgifter.} windows {Skicka automatiskt en rapport när Cmdr avslutas oväntat eller stöter på ett problem i bakgrunden. Innehåller appversion, Windows-version och vilken del av koden som stötte på problemet. Aldrig filnamn eller personuppgifter.} other {Skicka automatiskt en rapport när Cmdr avslutas oväntat eller stöter på ett problem i bakgrunden. Innehåller appversion, Linux-distribution och dess version samt vilken del av koden som stötte på problemet. Aldrig filnamn eller personuppgifter.}}",
   "@settings.updates.crashReports.description": {
-    "sourceHash": "abfdc61"
+    "sourceHash": "3042746"
   },
   "settings.updates.crashReports.keywords": "krasch, kraschrapport, rapport, integritet, telemetri, bugg, fel",
   "@settings.updates.crashReports.keywords": {
@@ -1997,7 +1997,7 @@
   },
   "settings.advanced.logLlmCalls.description": "{platform, select, macos {Spara varje AI-förfrågan och -svar i en lokal mapp (llm-logs) för felsökning. De här filerna stannar på din Mac och innehåller filnamnen och sökvägarna som Cmdr skickar till din leverantör.} windows {Spara varje AI-förfrågan och -svar i en lokal mapp (llm-logs) för felsökning. De här filerna stannar på din dator och innehåller filnamnen och sökvägarna som Cmdr skickar till din leverantör.} other {Spara varje AI-förfrågan och -svar i en lokal mapp (llm-logs) för felsökning. De här filerna stannar på din dator och innehåller filnamnen och sökvägarna som Cmdr skickar till din leverantör.}}",
   "@settings.advanced.logLlmCalls.description": {
-    "sourceHash": "0f9361b"
+    "sourceHash": "427e138"
   },
   "settings.advanced.logLlmCalls.keywords": "ai, logg, felsökning, förfrågan, svar, prompt",
   "@settings.advanced.logLlmCalls.keywords": {
@@ -2515,13 +2515,13 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr uses the AI provider and key you set up in Preferences › AI ({provider}).} linuxKde {Cmdr uses the AI provider and key you set up in Configure Cmdr › AI ({provider}).} other {Cmdr använder AI-leverantören och nyckeln du har ställt in i Inställningar › AI ({provider}).}}",
+  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr använder AI-leverantören och nyckeln du har ställt in i Inställningar › AI ({provider}).} linuxKde {Cmdr använder AI-leverantören och nyckeln du har ställt in i ”Anpassa Cmdr” › AI ({provider}).} other {Cmdr använder AI-leverantören och nyckeln du har ställt in i Inställningar › AI ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
-    "sourceHash": "9442b09"
+    "sourceHash": "f4ea2f0"
   },
-  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Turn on an AI provider in Preferences › AI to start chatting.} linuxKde {Turn on an AI provider in Configure Cmdr › AI to start chatting.} other {Aktivera en AI-leverantör i Inställningar › AI för att börja chatta.}}",
+  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Aktivera en AI-leverantör i Inställningar › AI för att börja chatta.} linuxKde {Aktivera en AI-leverantör i ”Anpassa Cmdr” › AI för att börja chatta.} other {Aktivera en AI-leverantör i Inställningar › AI för att börja chatta.}}",
   "@settings.askCmdr.provider.off": {
-    "sourceHash": "5cc1481"
+    "sourceHash": "0196a5c"
   },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr-modell",
   "@settings.askCmdr.interactiveModel.label": {
@@ -2966,9 +2966,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, linuxGnome {Preferences sections} other {Inställningssektioner}}",
+  "settings.sidebar.sections": "{platform, select, linuxGnome {Inställningssektioner} other {Inställningssektioner}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "4fa3c2e"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Inga inställningar matchar} one {{countText} sektion matchar} other {{countText} sektioner matchar}}",
   "@settings.sidebar.matchCount": {
@@ -3222,7 +3222,7 @@
   },
   "settings.securityLog.enabled.description": "{platform, select, macos {Spara en liten fil på den här Macen som noterar säkerhetsrelevanta ändringar och avvisningar, till exempel samtycke till moln-AI, en installerad uppdatering eller en app som MCP-servern har avvisat. Filen innehåller inga filnamn, innehåll eller lösenord och lämnar aldrig din Mac.} windows {Spara en liten fil på den här datorn som noterar säkerhetsrelevanta ändringar och avvisningar, till exempel samtycke till moln-AI, en installerad uppdatering eller en app som MCP-servern har avvisat. Filen innehåller inga filnamn, innehåll eller lösenord och lämnar aldrig din dator.} other {Spara en liten fil på den här datorn som noterar säkerhetsrelevanta ändringar och avvisningar, till exempel samtycke till moln-AI, en installerad uppdatering eller en app som MCP-servern har avvisat. Filen innehåller inga filnamn, innehåll eller lösenord och lämnar aldrig din dator.}}",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
+    "sourceHash": "7086b00"
   },
   "settings.securityLog.enabled.keywords": "säkerhet, logg, granskning, registrera, händelser, åtkomst, integritet",
   "@settings.securityLog.enabled.keywords": {
@@ -3437,9 +3437,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "{platform, select, linuxGnome {Preferences} linuxKde {Configure – Cmdr} other {Inställningar}}",
+  "settings.window.title": "{platform, select, linuxGnome {Inställningar} linuxKde {Anpassa – Cmdr} other {Inställningar}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "80cee55"
   },
   "settings.window.loading": "Läser in inställningar…",
   "@settings.window.loading": {
@@ -3686,13 +3686,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Ett objekt i Nyckelhanterare som heter ”{itemName}”} other {{countText} objekt i Nyckelhanterare som heter ”{itemName}”}}} windows {{count, plural, one {Ett objekt i Autentiseringshanteraren som heter ”{itemName}”} other {{countText} objekt i Autentiseringshanteraren som heter ”{itemName}”}}} linuxKde {{count, plural, one {Ett objekt i KWallet som heter ”{itemName}”} other {{countText} objekt i KWallet som heter ”{itemName}”}}} other {{count, plural, one {Ett objekt i din nyckelring som heter ”{itemName}”} other {{countText} objekt i din nyckelring som heter ”{itemName}”}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Ett objekt i Nyckelhanterare som heter ”{itemName}”} other {{countText} objekt i Nyckelhanterare som heter ”{itemName}”}}} windows {{count, plural, one {Ett objekt i Autentiseringshanteraren som heter ”{itemName}”} other {{countText} objekt i Autentiseringshanteraren som heter ”{itemName}”}}} linuxKde {{count, plural, one {Ett objekt i KDE:s plånbok som heter ”{itemName}”} other {{countText} objekt i KDE:s plånbok som heter ”{itemName}”}}} other {{count, plural, one {Ett objekt i din nyckelring som heter ”{itemName}”} other {{countText} objekt i din nyckelring som heter ”{itemName}”}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Eventuella objekt i Nyckelhanterare som heter ”{itemName}”} windows {Eventuella objekt i Autentiseringshanteraren som heter ”{itemName}”} linuxKde {Eventuella objekt i KWallet som heter ”{itemName}”} other {Eventuella objekt i din nyckelring som heter ”{itemName}”}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Eventuella objekt i Nyckelhanterare som heter ”{itemName}”} windows {Eventuella objekt i Autentiseringshanteraren som heter ”{itemName}”} linuxKde {Eventuella objekt i KDE:s plånbok som heter ”{itemName}”} other {Eventuella objekt i din nyckelring som heter ”{itemName}”}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Avsluta Cmdr} other {Avsluta Cmdr}}",
   "@settings.dataWipe.quit": {

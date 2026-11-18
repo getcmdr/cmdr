@@ -21,7 +21,7 @@
   },
   "crashReporter.dialog.privacyNote": "{platform, select, macos {Den innehåller appversionen, macOS-versionen och vilken del av koden som stötte på problemet. Inga filnamn eller personuppgifter.} windows {Den innehåller appversionen, Windows-versionen och vilken del av koden som stötte på problemet. Inga filnamn eller personuppgifter.} other {Den innehåller appversionen, Linux-distributionen och dess version samt vilken del av koden som stötte på problemet. Inga filnamn eller personuppgifter.}}",
   "@crashReporter.dialog.privacyNote": {
-    "sourceHash": "ebe2d23"
+    "sourceHash": "6f58653"
   },
   "crashReporter.dialog.reportIdLabel": "Rapport-ID:",
   "@crashReporter.dialog.reportIdLabel": {
@@ -71,9 +71,9 @@
   "@crashReporter.sentToast.message.report": {
     "sourceHash": "a676ed5"
   },
-  "crashReporter.sentToast.changeSettings": "{platform, select, linuxGnome {Change in Preferences} linuxKde {Change in Configure Cmdr} other {Ändra i Inställningar}}",
+  "crashReporter.sentToast.changeSettings": "{platform, select, linuxGnome {Ändra i Inställningar} linuxKde {Ändra i ”Anpassa Cmdr”} other {Ändra i Inställningar}}",
   "@crashReporter.sentToast.changeSettings": {
-    "sourceHash": "144d0bd"
+    "sourceHash": "c3fff1a"
   },
   "crashReporter.sentToast.sendLog": "Bifoga logg",
   "@crashReporter.sentToast.sendLog": {

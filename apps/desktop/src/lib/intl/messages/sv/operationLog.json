@@ -15,9 +15,9 @@
   "@operationLog.dialog.empty": {
     "sourceHash": "2dea414"
   },
-  "operationLog.dialog.recordingOff": "{platform, select, linuxGnome {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Preferences to record them again.} linuxKde {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Configure Cmdr to record them again.} other {Åtgärdsloggen är avstängd, så nya kopieringar, flyttar, namnbyten och raderingar visas inte här och går inte att ångra. Slå på den igen i Inställningar för att logga dem igen.}}",
+  "operationLog.dialog.recordingOff": "{platform, select, linuxGnome {Åtgärdsloggen är avstängd, så nya kopieringar, flyttar, namnbyten och raderingar visas inte här och går inte att ångra. Slå på den igen i Inställningar för att logga dem igen.} linuxKde {Åtgärdsloggen är avstängd, så nya kopieringar, flyttar, namnbyten och raderingar visas inte här och går inte att ångra. Slå på den igen i ”Anpassa Cmdr” för att logga dem igen.} other {Åtgärdsloggen är avstängd, så nya kopieringar, flyttar, namnbyten och raderingar visas inte här och går inte att ångra. Slå på den igen i Inställningar för att logga dem igen.}}",
   "@operationLog.dialog.recordingOff": {
-    "sourceHash": "0519736"
+    "sourceHash": "3204ad8"
   },
   "operationLog.dialog.noItems": "Den här åtgärden har inga registrerade objekt.",
   "@operationLog.dialog.noItems": {

@@ -67,9 +67,9 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "{platform, select, linuxGnome {Turn on image indexing for this network drive in Preferences to search the text inside its photos.} linuxKde {Turn on image indexing for this network drive in Configure Cmdr to search the text inside its photos.} other {Aktivera bildindexering för den här nätverksenheten i Inställningar för att söka i texten i dess bilder.}}",
+  "search.imageResults.networkOff": "{platform, select, linuxGnome {Aktivera bildindexering för den här nätverksenheten i Inställningar för att söka i texten i dess bilder.} linuxKde {Aktivera bildindexering för den här nätverksenheten i ”Anpassa Cmdr” för att söka i texten i dess bilder.} other {Aktivera bildindexering för den här nätverksenheten i Inställningar för att söka i texten i dess bilder.}}",
   "@search.imageResults.networkOff": {
-    "sourceHash": "ccf901b"
+    "sourceHash": "30b2455"
   },
   "search.imageResults.paused": "Den här enheten är frånkopplad, så det här är bilderna som indexerats hittills.",
   "@search.imageResults.paused": {
@@ -219,9 +219,9 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so nothing indexes. Turn it on under Indexing > Drive indexing.} linuxKde {Drive indexing is off in Configure Cmdr, so nothing indexes. Turn it on under Indexing > Drive indexing.} other {Enhetsindexering är avstängd i Inställningar, så inget indexeras. Slå på den under Indexering > Enhetsindexering.}}",
+  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Enhetsindexering är avstängd i Inställningar, så inget indexeras. Slå på den under Indexering > Enhetsindexering.} linuxKde {Enhetsindexering är avstängd i ”Anpassa Cmdr”, så inget indexeras. Slå på den under Indexering > Enhetsindexering.} other {Enhetsindexering är avstängd i Inställningar, så inget indexeras. Slå på den under Indexering > Enhetsindexering.}}",
   "@search.coverage.toast.indexingOff": {
-    "sourceHash": "abfe24b"
+    "sourceHash": "7c4ff62"
   },
   "search.coverage.toast.deferredUntilSearchEnds": "Cmdr söker redan igenom {drive}. Indexeringen startar så snart det är klart.",
   "@search.coverage.toast.deferredUntilSearchEnds": {
