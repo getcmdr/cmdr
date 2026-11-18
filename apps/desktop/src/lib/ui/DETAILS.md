@@ -1548,6 +1548,14 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
 - **Dismissal**: a click elsewhere, the window losing focus, a resize (context menus), a scroll of what the context menu
   was opened on (`anchorElement`), and a dialog opening close it without moving focus. The bar goes `inert` under a
   modal surface, as Win32 disables an owner window's bar.
+- **The bar and focus the app moves** (`menu-bar.svelte.ts` `onFocusIn`): it lets go only when focus leaves something it
+  owns for somewhere outside the window's focus home (a text field a ⌘ command opened). Focus that never came from the
+  bar (a click on a title with focus on `<body>`) and focus the app puts back in its home (the explorer's lists) leave
+  it on the keyboard; the second it takes back once per session.
+  - Gotcha/Why: `DualPaneExplorer`'s "focus after initialization" effect re-runs on state its refocus reads, and on a
+    fresh page it re-homed focus to the list right after the first ⌃F2's title took it, so the bar closed itself and the
+    first ⌃F2 did nothing; a click on a title with focus adrift opened and closed in one frame. Pinned by
+    `MenuBar.svelte.test.ts` § "MenuBar and the app moving focus on its own".
 - **Look**: `forced-color-adjust: var(--color-menu-forced-adjust)` on the surfaces and the bar, inside the floor's
   `@supports` guard: `none` on the Windows look under `forced-colors: active`, whose tokens already speak system colors
   (`../../DETAILS.md` § Menu look tokens). A pointer row shows the hover fill; a keyboard row

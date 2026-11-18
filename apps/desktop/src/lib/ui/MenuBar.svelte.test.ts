@@ -12,6 +12,7 @@ import type { BarMenuView } from '#lib/ipc/bindings.js'
 import { withConventions } from '#lib/platform/test-platform.js'
 import { expectNoA11yViolations } from '#lib/test-a11y.js'
 import MenuBar from './MenuBar.svelte'
+import { registerFocusHome } from './focus-restore'
 import { markDialogClosed, markDialogOpen } from './open-dialogs.svelte'
 import type { MenuFlavor } from './command-menu/rows'
 
@@ -497,6 +498,73 @@ describe('MenuBar keyboard cues (Win32)', () => {
     await setup()
     const key = titles()[1].querySelector('.menu-bar-access-key')
     expect(key?.textContent).toBe('V')
+  })
+})
+
+/**
+ * The window's file list inside a registered focus home, as the explorer registers it, with a
+ * refocus that puts focus on it: what the app does when it re-homes focus on its own.
+ */
+function explorerList(): HTMLElement {
+  const root = document.createElement('div')
+  const list = document.createElement('div')
+  list.tabIndex = 0
+  list.textContent = 'List'
+  root.append(list)
+  document.body.append(root)
+  teardowns.push(
+    registerFocusHome({
+      root: () => root,
+      refocus: () => {
+        list.focus()
+      },
+    }),
+  )
+  return list
+}
+
+describe('MenuBar and the app moving focus on its own', () => {
+  it('keeps the bar on the keyboard when the app puts focus back on its list right after ⌃F2', async () => {
+    const list = explorerList()
+    list.focus()
+    await setup({ flavor: 'mac' })
+    await press('F2', { ctrlKey: true })
+    expect(document.activeElement).toBe(titles()[0])
+    // The explorer's own refocus runs after the title took focus (a fresh page's first ⌃F2).
+    list.focus()
+    await settle()
+    expect(document.activeElement).toBe(titles()[0])
+    await press('ArrowRight')
+    expect(document.activeElement).toBe(titles()[1])
+    await press('ArrowDown')
+    expect(surfaces()).toHaveLength(1)
+  })
+
+  it('keeps a menu a click opened while focus was adrift, when the app re-homes focus to its list', async () => {
+    const list = explorerList()
+    await setup({ flavor: 'mac' })
+    ;(document.activeElement as HTMLElement | null)?.blur()
+    expect(document.activeElement).toBe(document.body)
+    titles()[0].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }))
+    // Focus goes from `<body>` to the list, never through the bar.
+    list.focus()
+    await settle()
+    expect(surfaces()).toHaveLength(1)
+    expect(titles()[0].getAttribute('aria-expanded')).toBe('true')
+  })
+
+  it('lets go when focus leaves the bar for somewhere else (a text field a command opened)', async () => {
+    pane()
+    await setup()
+    await tapAlt()
+    expect(document.activeElement).toBe(titles()[0])
+    const field = document.createElement('input')
+    document.body.append(field)
+    field.focus()
+    await settle()
+    expect(titles()[0].getAttribute('tabindex')).toBe('-1')
+    await press('ArrowRight')
+    expect(document.activeElement).toBe(field)
   })
 })
 

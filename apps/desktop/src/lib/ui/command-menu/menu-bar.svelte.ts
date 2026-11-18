@@ -18,7 +18,7 @@
 
 import type { BarMenuView } from '#lib/ipc/bindings.js'
 import { allocateAccessKeys, accessKeyLettersOf } from '../access-keys'
-import { captureFocusOrigin, restoreFocus, type FocusOrigin } from '../focus-restore'
+import { captureFocusOrigin, isInFocusHome, restoreFocus, type FocusOrigin } from '../focus-restore'
 import { createKeyboardCues, cueRule, type KeyboardCues } from '../keyboard-cues'
 import { isAltGraphHeld } from '#lib/shortcuts/key-capture.js'
 import { createMenuStack, type MenuStack } from './menu-stack.svelte'
@@ -91,6 +91,8 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
   let origin: FocusOrigin | null = null
   /** A lone Alt is down and nothing else came since: its release takes or gives back the bar. */
   let altArmed = false
+  /** The bar took focus back from the app once this session (`onFocusIn`), so a second re-home isn't fought. */
+  let reclaimedFocus = false
 
   const hasLetters = (): boolean => deps.flavor() === 'desktop' && deps.accessKeys()
   const rule = () => (hasLetters() ? cueRule() : 'none')
@@ -135,6 +137,7 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
     if (active) return
     origin = captureFocusOrigin()
     active = true
+    reclaimedFocus = false
     sessionCues = createKeyboardCues({ rule: rule(), openedByKeyboard: fromKeyboard })
     stopSession = sessionCues.onChange(syncCues)
     syncCues()
@@ -364,10 +367,40 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
     deactivate(false)
   }
 
+  /**
+   * Focus moved on by other means while the bar has the keyboard. It lets go, as Win32's does,
+   * only when focus leaves something the bar owns for somewhere new (a text field a ⌘ command
+   * opened). Two moves aren't the person's, so they leave it be:
+   * - Focus that never came from the bar: a click on a title with focus on `<body>`, then the
+   *   explorer re-homing it to its list (`DualPaneExplorer`'s refocus effect).
+   * - Focus the app puts back in its home (the explorer's lists): the person's keys are the
+   *   bar's and their clicks close it on `pointerdown`, so that's the app re-homing, which on a
+   *   fresh page lands right after the first ⌃F2's title took focus. The bar takes it back once.
+   */
   function onFocusIn(event: FocusEvent): void {
-    // Focus moved on by other means (a command, a dialog): the bar lets go, as Win32's does.
     const target = event.target as Node | null
-    if (active && target && !owns(target)) deactivate(false)
+    const from = event.relatedTarget as Node | null
+    if (!active || !target || owns(target) || !from || !owns(from)) return
+    if (!isInFocusHome(target)) {
+      deactivate(false)
+      return
+    }
+    if (reclaimedFocus) return
+    reclaimedFocus = true
+    queueMicrotask(reclaimFocus)
+  }
+
+  /** Puts focus back on the keyboard's title, or the open menu's surface, while the bar still has the keyboard. */
+  function reclaimFocus(): void {
+    if (!active) return
+    if (openIndex === null) {
+      deps.titleElement(focusIndex)?.focus({ preventScroll: true })
+      return
+    }
+    // The surface the keyboard is in holds focus: its cursor's row, or itself (`MenuSurface.svelte`).
+    const surface = document.getElementById(stack.surfaces.at(stack.activeDepth)?.id ?? '')
+    const target = surface?.querySelector<HTMLElement>('[tabindex="0"]') ?? surface
+    target?.focus({ preventScroll: true })
   }
 
   return {
