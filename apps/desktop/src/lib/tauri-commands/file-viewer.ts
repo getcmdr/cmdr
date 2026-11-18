@@ -29,6 +29,7 @@ import {
   type ViewerRow,
 } from '#lib/ipc/bindings.js'
 import { throwIpcError } from './ipc-types'
+import { popContextMenu } from './in-page-menus'
 
 export type {
   ChunkEnd,
@@ -285,12 +286,15 @@ export async function viewerSetWordWrap(label: string, checked: boolean): Promis
 }
 
 /**
- * Pops the viewer's native right-click menu (Copy, Select all) at the pointer. Copy is greyed
- * unless `hasSelection`; the pick comes back through `onViewerContextMenuAction`.
+ * Pops the viewer's right-click menu (Copy, Select all) at the pointer, native or in-page by the
+ * platform (`popContextMenu`). Copy is greyed unless `hasSelection`; the pick comes back through
+ * `onViewerContextMenuAction`.
  */
 export async function showViewerContextMenu(hasSelection: boolean): Promise<void> {
-  const res = await commands.showViewerContextMenu(hasSelection)
-  if (res.status === 'error') throwIpcError(res.error)
+  await popContextMenu({ menu: 'viewer', hasSelection }, async () => {
+    const res = await commands.showViewerContextMenu(hasSelection)
+    if (res.status === 'error') throwIpcError(res.error)
+  })
 }
 
 /**

@@ -37,8 +37,8 @@ export interface ContextMenuDeps {
   flavor?: () => MenuFlavor
   /** Whether this platform has access keys (`convention('accessKeys')`). */
   accessKeys?: () => boolean
-  /** Called whenever the menu closes, by a pick or not. */
-  onClose?: () => void
+  /** Called whenever the menu closes: `picked` when a pick closed it, and `onPick` runs right after. */
+  onClose?: (closed: { picked: boolean }) => void
 }
 
 export interface ContextMenuController {
@@ -65,12 +65,12 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
     flavor,
     accessKeys: hasLetters,
     onPick: (row) => {
-      close(true)
+      close(true, true)
       deps.onPick(row.id)
     },
   })
 
-  function close(restore: boolean): void {
+  function close(restore: boolean, picked = false): void {
     if (!stack.isOpen) return
     stack.close()
     window.removeEventListener('keydown', onKey, true)
@@ -88,7 +88,7 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
     const target = origin
     origin = null
     if (restore) restoreFocus(target)
-    deps.onClose?.()
+    deps.onClose?.({ picked })
   }
 
   const keys: Partial<Record<string, () => void>> = {

@@ -1514,7 +1514,8 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
   - `createContextMenu({ onPick, flavor?, accessKeys?, onClose? })` (`command-menu/context-menu.svelte.ts`) and one
     `<ContextMenu {menu}>` per window; `menu.open({ rows, at, fromKeyboard, anchorElement?, label? })` with the rows
     `open_context_menu_in_page` answered, its `anchor` or the pointer as `at`, and `onPick` sending
-    `pickContextMenuItem(token, id)`.
+    `pickContextMenuItem(token, id)`. `onClose({ picked })` fires on every close, before `onPick` when a pick closed it.
+    The desktop's windows don't call this themselves: `#lib/context-menu/` owns the one per window.
 - **Module map** (`command-menu/`): `rows.ts` (pure: labels, the live-row walk, access keys, the Mac shortcut glyphs),
   `menu-stack.svelte.ts` (the open surfaces and their cursors, the submenu delay), `menu-bar.svelte.ts` and
   `context-menu.svelte.ts` (each owner's keys, focus, and dismissal), `MenuSurfaces.svelte` / `MenuSurface.svelte` (the

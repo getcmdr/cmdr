@@ -920,6 +920,7 @@ export {
   openContextMenuInPage,
   pickContextMenuItem,
   pickMenuBarItem,
+  registerContextMenuDrawer,
 } from './in-page-menus'
 
 // Function key bar context menu

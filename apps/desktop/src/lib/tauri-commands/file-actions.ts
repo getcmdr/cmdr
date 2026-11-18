@@ -20,6 +20,7 @@ import {
 import { TypedFailure } from '#lib/ipc/typed-failure.js'
 import type { SameKindTarget } from '#lib/file-explorer/pane/select-same-kind.js'
 import { throwIpcError } from './ipc-types'
+import { popContextMenu } from './in-page-menus'
 import { withoutPicks } from '#lib/utils/display-path.js'
 
 export type {
@@ -189,7 +190,7 @@ function paneFactsForIpc(pane: PaneContextMenuFacts): Required<PaneContextMenuFa
 }
 
 /**
- * Shows a native context menu for a file.
+ * Shows a file's context menu, native or in-page by the platform (`popContextMenu`).
  * @param path - Absolute path to the right-clicked file (the "primary" file).
  * @param filename - Name of the right-clicked file.
  * @param isDirectory - Whether the entry is a directory.
@@ -202,8 +203,8 @@ function paneFactsForIpc(pane: PaneContextMenuFacts): Required<PaneContextMenuFa
  *                    `#lib/shortcuts`. It's what each item's accelerator LABEL is drawn from, so
  *                    the menu tells the truth after a rebind. ❌ Never hand-build it, and ❌ never
  *                    pass display spellings: `boundShortcuts` explains both.
- * @param anchor - Where to open it ({@link MenuAnchor}). Omit for a right-click, so macOS
- *                 uses the pointer.
+ * @param anchor - Where to open it ({@link MenuAnchor}). Omit for a right-click, so the menu
+ *                 opens at the pointer.
  * @param sameKind - What the `Selection >` submenu's "Select all of the same kind" row would
  *                   select from this row, from `sameKindTargetFor(entry)`. ❗ Compute it as you
  *                   call: ❌ never read the menu bar's debounced value, which is a frame behind.
@@ -219,8 +220,7 @@ export async function showFileContextMenu(
   anchor: MenuAnchor | null = null,
   sameKind: SameKindTarget | null = null,
 ): Promise<void> {
-  // eslint-disable-next-line cmdr/no-raw-tauri-invoke -- generic <R: Runtime> command, excluded from specta bindings (see the `ipc.rs` manifest)
-  await invoke('show_file_context_menu', {
+  const args = {
     path,
     filename,
     isDirectory,
@@ -233,6 +233,10 @@ export async function showFileContextMenu(
     shortcuts,
     anchor,
     sameKind,
+  }
+  await popContextMenu({ menu: 'file', ...args }, async () => {
+    // eslint-disable-next-line cmdr/no-raw-tauri-invoke -- generic <R: Runtime> command, excluded from specta bindings (see the `ipc.rs` manifest)
+    await invoke('show_file_context_menu', args)
   })
 }
 
@@ -282,7 +286,7 @@ export async function cloudRemoveDownload(path: string): Promise<void> {
 }
 
 /**
- * Shows a native context menu for the breadcrumb path bar.
+ * Shows the breadcrumb path bar's context menu, native or in-page by the platform (`popContextMenu`).
  *
  * Pass `ejectVolumeId` + `ejectVolumeName` when the breadcrumb represents an
  * ejectable volume — the menu will include an "Eject ({name})" item that emits
@@ -301,12 +305,15 @@ export async function showBreadcrumbContextMenu(
   ejectVolumeName?: string,
   offerEjectAll = false,
 ): Promise<void> {
-  // eslint-disable-next-line cmdr/no-raw-tauri-invoke -- generic <R: Runtime> command, excluded from specta bindings (see the `ipc.rs` manifest)
-  await invoke('show_breadcrumb_context_menu', {
+  const args = {
     shortcuts,
     ejectVolumeId: ejectVolumeId ?? null,
     ejectVolumeName: ejectVolumeName ?? null,
     offerEjectAll,
+  }
+  await popContextMenu({ menu: 'breadcrumb', ...args }, async () => {
+    // eslint-disable-next-line cmdr/no-raw-tauri-invoke -- generic <R: Runtime> command, excluded from specta bindings (see the `ipc.rs` manifest)
+    await invoke('show_breadcrumb_context_menu', args)
   })
 }
 
@@ -319,8 +326,10 @@ export async function showBreadcrumbContextMenu(
  *                 has to land on the row rather than wherever the mouse was left.
  */
 export async function showParentRowContextMenu(parentPath: string, anchor: MenuAnchor | null = null): Promise<void> {
-  // eslint-disable-next-line cmdr/no-raw-tauri-invoke -- generic over <R: Runtime>, not in typed bindings
-  await invoke('show_parent_row_context_menu', { parentPath, anchor })
+  await popContextMenu({ menu: 'parentRow', parentPath, anchor }, async () => {
+    // eslint-disable-next-line cmdr/no-raw-tauri-invoke -- generic over <R: Runtime>, not in typed bindings
+    await invoke('show_parent_row_context_menu', { parentPath, anchor })
+  })
 }
 
 /**

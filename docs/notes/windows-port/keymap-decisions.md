@@ -125,7 +125,8 @@ Registry order, primary key first. W = Windows, L = Linux. Only commands that ex
   (verified, Windows Insider build 22543 notes, 2022-01-27:
   https://blogs.windows.com/windows-insider/2022/01/27/announcing-windows-11-insider-preview-build-22543/ ; not in
   Microsoft's current shortcut list). WebView2's DevTools inspect key until #1115 lands.
-- `file.contextMenu` (Open context menu): macOS `⌃Enter`; W `Shift+F10`, `Ctrl+Enter`; L same. TC, Explorer, GTK, Qt.
+- `file.contextMenu` (Open context menu): macOS `⌃Enter`; W `Shift+F10`, `ContextMenu` (the Menu key), `Ctrl+Enter`; L
+  same. TC, Explorer, GTK, Qt.
 - `multiRename.letterCase` (Open the letter case menu): macOS `⌘⌥U`; W `Alt+U`; L `Alt+U`.
 - `multiRename.removeDiacritics` (Turn Remove diacritics on or off): macOS `⌘⌥N`; W `Alt+N`; L `Alt+N`.
 - `multiRename.greekToLatin` (Turn Greek to Latin on or off): macOS `⌘⌥G`; W `Alt+G`; L `Alt+G`.
@@ -185,9 +186,9 @@ and `bar_parity_test.rs` holds every built accelerator to it.
   inside a field until 2026-11-12.
 - Windows and Linux: `Ctrl+C` with a selection, `Ctrl+Insert`, `Ctrl+←`/`Ctrl+→`, `Ctrl+Shift+←`/`Ctrl+Shift+→`,
   `Home`/`End` with their Shift and Ctrl forms, `Ctrl+Backspace`/`Ctrl+Delete` (word delete), `Shift+Delete` (cut),
-  `Ctrl+Shift+V` (paste as plain text), and `Shift+F10` (the field's own context menu). The bound ones today: `Ctrl+←/→`
-  (copy path between panes), `Shift+Delete` (Delete permanently), `Ctrl+Shift+V` (Move here), `Shift+F10` (Open context
-  menu), `Home`/`End` (first and last file).
+  `Ctrl+Shift+V` (paste as plain text), and `Shift+F10` and `ContextMenu` (the Menu key; both open the field's own
+  context menu). The bound ones today: `Ctrl+←/→` (copy path between panes), `Shift+Delete` (Delete permanently),
+  `Ctrl+Shift+V` (Move here), `Shift+F10` and `ContextMenu` (Open context menu), `Home`/`End` (first and last file).
 - Not native, but worth a bail: `Ctrl+I` (Switch pane) fires from a rename editor and blurs it.
 - Beyond the table, by command: a command that moves or removes files (`FILE_MOVING_COMMAND_IDS` in
   `lib/commands/command-registry.ts`: Move to trash, Delete permanently, Move, Move here, Undo trash, Remove download)

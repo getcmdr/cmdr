@@ -390,7 +390,8 @@ row is decided here or in the frontend.
 
 On Windows the right-click menus move into the page too (D5; the `contextMenus` convention reads `inPage` there, and
 `native` on macOS and every Linux desktop, which keep muda's popups). The frontend asks the convention, ❌ never the
-platform, and calls `open_context_menu_in_page` (`apps/desktop/src-tauri/src/commands/menu_in_page.rs`) instead of the `show_*` command.
+platform, and calls `open_context_menu_in_page` (`apps/desktop/src-tauri/src/commands/menu_in_page.rs`) instead of the `show_*` command:
+each `show_*` wrapper forks in `popContextMenu`, and the window draws and picks (`apps/desktop/src/lib/context-menu/DETAILS.md`).
 
 - **One request, nine menus**: `InPageContextMenuRequest` is tagged by `menu` (`file`, `breadcrumb`, `parentRow`, `tab`,
   `dateSort`, `functionKeyBar`, `viewer`, `queueRow`, `networkHost`), each variant carrying its `show_*` command's own
