@@ -351,6 +351,8 @@ window.addEventListener(
       pageLog('page', `handled ${e.key} (preventDefault, as a Cmdr shortcut would)`)
     }
     if (e.shiftKey && e.key === 'F10') {
+      // Ours, at the cursor row; without `preventDefault` the browser opens a second one.
+      e.preventDefault()
       const cur = document.activeElement.querySelector && document.activeElement.querySelector('.cursor')
       if (cur) {
         const r = cur.getBoundingClientRect()
