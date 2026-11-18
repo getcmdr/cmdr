@@ -91,7 +91,11 @@ Read this before any non-trivial work here: editing, planning, reorganizing, or 
   personal-comment sweep). `scheduled.test.ts` covers the DB-writing jobs, `cron-alarm.test.ts` the handler's alarm
   wiring, and `email-path-probe.test.ts` the daily liveness check, with the D1/env fakes in `cron-test-helpers.ts`.
 - **`user-agent.ts`**: `classifyUaFamily` / `resolveUaFamily`, shared by the download write path and the funnel read
-  path so neither area imports the other.
+  path so neither area imports the other. It judges a UA against the downloaded file's OS.
+- **`client-os.ts`**: `ClientOs` (`macos` / `windows` / `linux`), `parseClientOs` (the lenient read every intake route
+  uses for the app's `os` field), and `osOfRow` (a stored row's OS, falling back to its `os_version` for rows from older
+  clients). `src/telemetry/DETAILS.md` § The OS field. `client-os-migration.test.ts` holds migration `0033` to the
+  schema it meets in production.
 - **`scripts/generate-keys.js`**: Ed25519 key pair generation (run once at setup).
 - **`scripts/setup-cf-infra.sh`**: Cloudflare KV namespace provisioning + the R2 lifecycle rule.
 - **`scripts/mint-license.js`** / **`scripts/revoke-license.js`**: hand out a license, or take one back. They share
@@ -317,21 +321,22 @@ back to the OAuth login).
 
 **D1 for telemetry and fulfillment:** crash reports, downloads, update checks, heartbeats, relayed feature events,
 feedback, and the `license_issuance` record all live in D1 (binding `TELEMETRY_DB`, database `cmdr-telemetry-eu`, in the
-`eu` jurisdiction). Migrations live in `migrations/` (latest: `0032_install_summary_first_beat_country.sql`, the
-install's first-beat country; `0031_install_country_channel_summary.sql`, the heartbeat's `country` / `install_channel`
-and the `install_summary` table, both `src/admin/DETAILS.md` § Install summary; `0026_feedback_error_report_id.sql`, the
-logs a feedback message came with, § The reports repo; `0023_card_ratings.sql`, the triage comments the rating job has
-applied or flagged, § Card ratings; `0022_report_outbox.sql`, the report outbox: `error_reports`,
-`error_report_amendments`, `ops_events`, and `issue_number` on crashes and feedback, § The reports repo;
-`0021_license_adjustments.sql` is the refund and chargeback record `/webhook/paddle` keeps beside the ledger
-(`src/licensing/DETAILS.md` § Refunds); `0020_heartbeat_uptime_and_events.sql` is `heartbeat.uptime_seconds` and the
-`analytics_event` table `/heartbeat` relays feature events into; `0017_manual_licenses.sql` is the `source` /
-`organization_name` / `expires_at` / `revoked_at` / `note` columns that turn `license_issuance` into the ledger for
-hand-issued licenses as well as purchases; `0016_feedback_notified_at.sql` is the `feedback.notified_at` column the
-report digest reads, which also stamps the pre-existing rows so the first tick doesn't mail the backlog;
-`0015_crash_app_fate.sql` adds the nullable `app_fate` column the crash email ranks rows by;
-`0014_downloads_daily_unique.sql` is the distinct-downloader rollup the retention sweep writes;
-`0013_minimize_stored_identifiers.sql` adds `downloads.ua_family` and erases the crash-table IP hashes;
+`eu` jurisdiction). Migrations live in `migrations/` (latest: `0033_client_os.sql`, the OS of a download (`downloads.os`
+/ `kind`, and `os` in the `downloads_daily_unique` key) and of a beat, feedback, crash, or error report
+(`src/telemetry/DETAILS.md` § The OS field); `0032_install_summary_first_beat_country.sql`, the install's first-beat
+country; `0031_install_country_channel_summary.sql`, the heartbeat's `country` / `install_channel` and the
+`install_summary` table, both `src/admin/DETAILS.md` § Install summary; `0026_feedback_error_report_id.sql`, the logs a
+feedback message came with, § The reports repo; `0023_card_ratings.sql`, the triage comments the rating job has applied
+or flagged, § Card ratings; `0022_report_outbox.sql`, the report outbox: `error_reports`, `error_report_amendments`,
+`ops_events`, and `issue_number` on crashes and feedback, § The reports repo; `0021_license_adjustments.sql` is the
+refund and chargeback record `/webhook/paddle` keeps beside the ledger (`src/licensing/DETAILS.md` § Refunds);
+`0020_heartbeat_uptime_and_events.sql` is `heartbeat.uptime_seconds` and the `analytics_event` table `/heartbeat` relays
+feature events into; `0017_manual_licenses.sql` is the `source` / `organization_name` / `expires_at` / `revoked_at` /
+`note` columns that turn `license_issuance` into the ledger for hand-issued licenses as well as purchases;
+`0016_feedback_notified_at.sql` is the `feedback.notified_at` column the report digest reads, which also stamps the
+pre-existing rows so the first tick doesn't mail the backlog; `0015_crash_app_fate.sql` adds the nullable `app_fate`
+column the crash email ranks rows by; `0014_downloads_daily_unique.sql` is the distinct-downloader rollup the retention
+sweep writes; `0013_minimize_stored_identifiers.sql` adds `downloads.ua_family` and erases the crash-table IP hashes;
 `0012_license_issuance.sql` is the fulfillment record; `0011_crash_panic_message.sql` adds the nullable `panic_message`
 column; `0007_feedback.sql` adds the `feedback` table; `0006_crash_diag_email.sql` adds the nullable `diag_id` + `email`
 columns; `0005_heartbeat.sql` adds the `heartbeat` table). Apply with `wrangler d1 migrations apply TELEMETRY_DB` before
@@ -540,9 +545,9 @@ The sweep's default shape is **clear the identifying columns, keep the row**. Co
 triage value live in the other columns, and there's no privacy reason to lose them. Only `heartbeat` and
 `analytics_event` delete rows, because their stable `anal_id` IS the identifying data.
 
-- **`downloads`**: `hashed_ip` and `user_agent` cleared after 90 days; the row (version, arch, country, continent,
-  source, ref, referer, `ua_family`) is kept indefinitely. 90 days is what the two columns are FOR: same-day dedup needs
-  one day, and re-tuning `classifyUaFamily` against real UA strings needs a recent sample.
+- **`downloads`**: `hashed_ip` and `user_agent` cleared after 90 days; the row (version, OS, kind, arch, country,
+  continent, source, ref, referer, `ua_family`) is kept indefinitely. 90 days is what the two columns are FOR: same-day
+  dedup needs one day, and re-tuning `classifyUaFamily` against real UA strings needs a recent sample.
 - **`update_checks`**: raw rows deleted after seven days by `handleDailyAggregation`, after rolling into
   `daily_active_users`.
 - **`crash_reports`**: `email` (the reply-to a beta tester attached) and `diag_id` cleared after 90 days; the technical

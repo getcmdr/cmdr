@@ -997,6 +997,10 @@ that handles release files derives from it, so adding a platform is rows plus th
 - **`release-finish`, `release-mirror`, and `release-evidence`** import the package for what they sign, mirror, and
   expect.
 - **The website** reads `latest.json`'s `downloads` (below).
+- **The api-server's `/download/<version>/<os>/<arch>`** takes every non-DMG filename from the release's own
+  `latest.json` `downloads`, and serves an OS only once `PUBLIC_DOWNLOAD_OSES` in `apps/api-server/wrangler.toml` lists
+  it (`macos` today), so a release can carry Windows files before they're announced.
+  `apps/api-server/src/telemetry/DETAILS.md` § Download tracking.
 
 Not from it: the `compile` and `sign` matrices and `sign`'s upload names (the bundler's output paths), and `bump-tap`.
 Design and the dry run: `scripts/release-assets/DETAILS.md`.
@@ -1086,9 +1090,10 @@ Decided by David on 2026-11-04 in #805: switch directly, no waiting period.
   its "Mirror the downloads to the EU bucket" step runs after the checksums and before "Mark the release Latest". If it
   fails, the release stays un-Latest, so the website keeps the old manifest; "Re-run failed jobs" retries it. Both use
   the repo secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`, which need R2 write on the bucket.
-- **The download redirect** (`api.getcmdr.com/download/<version>/<arch>` and `/checksums`) sends 0.59.0 and later to the
-  mirror and anything older to GitHub (`releaseFileUrl` in `apps/api-server/src/telemetry/telemetry.ts`). The website's
-  direct links (blog download dropdowns, dev builds) go to the mirror.
+- **The download redirect** (`api.getcmdr.com/download/<version>/<os>/<arch>`, its macOS alias
+  `/download/<version>/<arch>`, and `/checksums`) sends 0.59.0 and later to the mirror and anything older to GitHub
+  (`releaseFileUrl` in `apps/api-server/src/telemetry/download.ts`). The website's direct links (blog download
+  dropdowns, dev builds) go to the mirror.
 - **Why shipped versions follow it**: no updater Cmdr ever shipped checks the download host. The custom macOS updater
   fetches whatever HTTPS URL the manifest names, from its first version (`reqwest::get(&url)` in `190a637767`,
   2026-03-13) to today's `fetch_verified_tarball` through `server_request::send`, whose only gate is the managed policy,
