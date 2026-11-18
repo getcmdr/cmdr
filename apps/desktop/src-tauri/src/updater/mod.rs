@@ -136,9 +136,19 @@ pub enum UpdateCheckOutcome {
     /// A newer release this Mac may install. `download_update` fetches exactly this one.
     Available { version: String },
     /// A newer release is out, but `MaxUpdateVersion` holds this Mac at `ceiling` or earlier.
-    HeldByPolicy { available: String, ceiling: String },
+    /// `staged_withdrawn`: see [`UpdateCheckOutcome::UpdatesDisabledByPolicy`].
+    HeldByPolicy {
+        available: String,
+        ceiling: String,
+        staged_withdrawn: bool,
+    },
     /// `DisableUpdates`: no request was made.
-    UpdatesDisabledByPolicy,
+    ///
+    /// `staged_withdrawn` is true when this answer also dropped a staged installer the policy now
+    /// refuses (Windows, Linux: `handoff::withdraw_if_refused`), so Restart no longer installs it
+    /// and the restart prompt must go. Always false on macOS, where install already wrote the
+    /// bundle.
+    UpdatesDisabledByPolicy { staged_withdrawn: bool },
     /// `DisableAutomaticUpdateChecks` refused a background check: no request was made. A check a
     /// person asks for still runs.
     AutomaticChecksDisabledByPolicy,
@@ -253,7 +263,9 @@ where
     match policy.updates() {
         UpdatePolicy::Disabled => {
             log::info!(target: "managed_policy", "Not checking for updates: the organization's policy turns updates off");
-            return Ok(UpdateCheckOutcome::UpdatesDisabledByPolicy);
+            return Ok(UpdateCheckOutcome::UpdatesDisabledByPolicy {
+                staged_withdrawn: handoff::withdraw_if_refused(state, &policy),
+            });
         }
         UpdatePolicy::Enabled {
             automatic_checks: false,
@@ -285,11 +297,14 @@ where
             Ok(UpdateCheckOutcome::HeldByPolicy {
                 available: version,
                 ceiling: ceiling.to_string(),
+                staged_withdrawn: handoff::withdraw_if_refused(state, &policy),
             })
         }
         // The policy said "enabled" a moment ago and it's the same read, so this can't happen;
         // answering it truthfully costs nothing.
-        Err(UpdateRefusal::Disabled) => Ok(UpdateCheckOutcome::UpdatesDisabledByPolicy),
+        Err(UpdateRefusal::Disabled) => Ok(UpdateCheckOutcome::UpdatesDisabledByPolicy {
+            staged_withdrawn: handoff::withdraw_if_refused(state, &policy),
+        }),
     }
 }
 
@@ -453,7 +468,7 @@ pub async fn download_update(state: State<'_, UpdateState>) -> Result<(), Update
     let kind = install_kind::current().map_err(|_| UpdateDownloadError::NothingOffered)?;
     let (offer, bytes, verified) = download_verified(&state, kind).await?;
 
-    let temp_dir = std::env::temp_dir().join("cmdr-update");
+    let temp_dir = download_dir();
     std::fs::create_dir_all(&temp_dir).map_err(|e| UpdateDownloadError::Disk {
         detail: format!("couldn't create temp dir: {e}"),
     })?;
@@ -469,6 +484,12 @@ pub async fn download_update(state: State<'_, UpdateState>) -> Result<(), Update
         pubkey: verified.pubkey,
     });
     Ok(())
+}
+
+/// Where a verified download waits for `install_update`: one folder in the temp dir, each file
+/// named by `InstallKind::download_file_name`.
+fn download_dir() -> PathBuf {
+    std::env::temp_dir().join("cmdr-update")
 }
 
 /// Fetches the offered artifact and verifies it. A signature that doesn't hold reaches the security

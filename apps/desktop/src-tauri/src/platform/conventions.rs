@@ -132,8 +132,8 @@ impl Desktop {
 /// each OS arm only picks its row.
 ///
 /// Every value cites its guideline in `docs/notes/windows-port/platform-conventions.md`. Where the
-/// value is a product decision still open (Windows and GNOME's menu model, task 63 of
-/// `docs/specs/windows-port-plan.md`), it carries today's behavior.
+/// value is a product decision still open (the menu model on Windows and GNOME), it carries
+/// today's behavior.
 pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
     match desktop {
         Desktop::Macos => PlatformConventions {
@@ -150,7 +150,7 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             enter_activates: EnterActivates::FocusedButton,
             cancel_keys: CancelKeys::Escape,
             access_keys: AccessKeys::Alt,
-            // Today's in-window bar (muda's Win32 menu); task 63 decides the model.
+            // Today's in-window bar (muda's Win32 menu); the model is still open.
             menu_model: MenuModel::WindowMenuBar,
             screen_readers: &[ScreenReader::Jaws, ScreenReader::Nvda, ScreenReader::Narrator],
             linux_desktop: None,
@@ -166,7 +166,7 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             cancel_keys: CancelKeys::Escape,
             access_keys: AccessKeys::Alt,
             // Today's in-window bar on every desktop. GNOME's HIG has no menu bar (a primary
-            // menu in the header bar instead); task 63 revisits it per desktop.
+            // menu in the header bar instead); whether to follow it is still open.
             menu_model: MenuModel::WindowMenuBar,
             screen_readers: &[ScreenReader::Orca],
             linux_desktop: Some(desktop),

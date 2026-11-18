@@ -39,8 +39,10 @@ release without them:
 
 Wired so far, ahead of any Windows or Linux row: `release-finish` passes `--app-version` for such a row (`signerArgs`),
 and `latest-json` refuses a `.sig` whose trusted comment lacks `version:<v>` for one (`signatureNamesVersion`), so a
-version-less signature can't reach `latest.json`. Left for Windows port plan task 52: the rows, the flag in the CI
-`sign` job (`ci` mode), and the advisory list.
+version-less signature from either signing mode fails `publish` instead of reaching `latest.json`. Left for Windows port
+plan task 52: the rows, the flag in the CI `sign` job (`ci` mode), and the advisory list. The app's
+`every_field_the_reader_names_is_one_the_writer_writes` (`updater/manifest.rs`) holds that last gap open on purpose: it
+lists `securityAdvisories` as not written yet, against `testdata/v0.61.0/latest.json`, the fixture both sides share.
 
 ## Who reads it
 

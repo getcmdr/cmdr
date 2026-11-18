@@ -3,7 +3,10 @@
 use serde::Deserialize;
 use std::collections::HashMap;
 
-/// The full `latest.json` manifest served by the update server.
+/// The full `latest.json` manifest served by the update server. `camelCase` names every field, and
+/// the writer emits `pub_date` in snake_case, so a new field must match the key the writer really
+/// writes: `every_field_the_reader_names_is_one_the_writer_writes` checks it against the writer's
+/// golden output.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateManifest {
@@ -11,9 +14,28 @@ pub struct UpdateManifest {
     pub platforms: HashMap<String, PlatformEntry>,
     /// The release's advisory list as a signed release asset, for the installs that can't read it
     /// out of the update itself (Windows and Linux, `advisories::fetch_signed_list`). Optional: a
-    /// manifest without it means no security notice, never a failed check.
-    #[serde(default)]
+    /// manifest without it, or with one that doesn't parse, means no security notice, never a
+    /// failed check ([`lenient_advisory_entry`]).
+    #[serde(default, deserialize_with = "lenient_advisory_entry")]
     pub security_advisories: Option<PlatformEntry>,
+}
+
+/// Reads `securityAdvisories` without ever failing the manifest: an entry that isn't a
+/// `{ url, signature }` is dropped with a warn. The list only adds a notice (nothing refuses an
+/// install over it, on any OS), so losing it costs the notice, as an unreadable list in the macOS
+/// bundle does, while a strict parse would stop every install on every OS from updating.
+fn lenient_advisory_entry<'de, D>(deserializer: D) -> Result<Option<PlatformEntry>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let raw = Option::<serde_json::Value>::deserialize(deserializer)?;
+    Ok(raw.and_then(|value| {
+        serde_json::from_value(value)
+            .inspect_err(|e| {
+                log::warn!("The manifest's security advisory entry doesn't parse, so it names no advisory: {e}");
+            })
+            .ok()
+    }))
 }
 
 /// Per-platform entry in the manifest: download URL and minisign signature.
@@ -206,5 +228,112 @@ mod tests {
             with.security_advisories.map(|entry| entry.url).as_deref(),
             Some("https://example.invalid/security-advisories.json")
         );
+    }
+
+    /// The release writer's own output (`scripts/release-assets`, whose `latest_test.go` pins its
+    /// bytes against this file), so this side and the Go side share one fixture.
+    const WRITTEN_LATEST_JSON: &str =
+        include_str!("../../../../../scripts/release-assets/testdata/v0.61.0/latest.json");
+
+    /// Fields this reader names that the writer doesn't emit yet, each with why. Shrink it as the
+    /// writer catches up; ❌ never add a field here to quiet a rename mismatch.
+    const NOT_WRITTEN_YET: &[&str] = &[
+        // The Windows and Linux signed advisory list: no release job produces the asset or the
+        // entry yet (`scripts/release-assets/DETAILS.md`, the release signing job's open work).
+        "securityAdvisories",
+    ];
+
+    /// The JSON names a derived `Deserialize` asks for, after every `rename`: serde hands them to
+    /// `deserialize_struct`, so a deserializer that records them and stops is a field-set probe.
+    fn field_names<'de, T: Deserialize<'de>>() -> &'static [&'static str] {
+        struct Probe(&'static [&'static str]);
+        #[derive(Debug)]
+        struct Stop;
+        impl std::fmt::Display for Stop {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str("probe")
+            }
+        }
+        impl std::error::Error for Stop {}
+        impl serde::de::Error for Stop {
+            fn custom<M: std::fmt::Display>(_: M) -> Self {
+                Stop
+            }
+        }
+        impl<'de> serde::Deserializer<'de> for &mut Probe {
+            type Error = Stop;
+            fn deserialize_any<V: serde::de::Visitor<'de>>(self, _: V) -> Result<V::Value, Stop> {
+                Err(Stop)
+            }
+            fn deserialize_struct<V: serde::de::Visitor<'de>>(
+                self,
+                _: &'static str,
+                fields: &'static [&'static str],
+                _: V,
+            ) -> Result<V::Value, Stop> {
+                self.0 = fields;
+                Err(Stop)
+            }
+            serde::forward_to_deserialize_any! {
+                bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string bytes byte_buf
+                option unit unit_struct newtype_struct seq tuple tuple_struct map enum identifier
+                ignored_any
+            }
+        }
+        let mut probe = Probe(&[]);
+        let _ = T::deserialize(&mut probe);
+        assert!(!probe.0.is_empty(), "not a struct with named fields");
+        probe.0
+    }
+
+    /// `rename_all = "camelCase"` reads a snake_case Rust field under its camelCase name, so a
+    /// field added for a snake_case key (the writer already emits `pub_date`) would silently never
+    /// be read. Every name this reader asks for must be one the release writer writes.
+    #[test]
+    fn every_field_the_reader_names_is_one_the_writer_writes() {
+        let written: serde_json::Value =
+            serde_json::from_str(WRITTEN_LATEST_JSON).expect("the writer's output is JSON");
+        let top = written.as_object().expect("an object");
+        for name in field_names::<UpdateManifest>() {
+            assert!(
+                top.contains_key(*name) || NOT_WRITTEN_YET.contains(name),
+                "`UpdateManifest` reads `{name}`, which the release writer never writes (a camelCase rename of a snake_case key?)"
+            );
+        }
+        let entry = top["platforms"]
+            .as_object()
+            .and_then(|platforms| platforms.values().next())
+            .and_then(serde_json::Value::as_object)
+            .expect("the writer's output has a platform entry");
+        for name in field_names::<PlatformEntry>() {
+            assert!(
+                entry.contains_key(*name),
+                "`PlatformEntry` reads `{name}`, which the writer never writes"
+            );
+        }
+        serde_json::from_str::<UpdateManifest>(WRITTEN_LATEST_JSON).expect("the reader parses the writer's output");
+    }
+
+    /// A broken advisory entry costs the notice, never the update: the list only ever adds a
+    /// notice (no advisory refuses an install, on macOS either), so dropping it is the safe side.
+    /// Before, it failed the whole parse, so every install on every OS stopped updating.
+    #[test]
+    fn a_malformed_advisory_entry_is_dropped_and_the_manifest_still_parses() {
+        for broken in [
+            serde_json::json!({ "url": "https://example.invalid/list.json" }),
+            serde_json::json!({ "url": null, "signature": "s" }),
+            serde_json::json!("https://example.invalid/list.json"),
+            serde_json::json!([]),
+            serde_json::json!(null),
+        ] {
+            let parsed: UpdateManifest = serde_json::from_value(serde_json::json!({
+                "version": "0.41.0",
+                "platforms": { "darwin-aarch64": { "url": "https://example.invalid/a", "signature": "s" } },
+                "securityAdvisories": broken,
+            }))
+            .unwrap_or_else(|e| panic!("a manifest with advisory entry {broken} must still parse: {e}"));
+            assert!(parsed.security_advisories.is_none(), "{broken}");
+            assert!(check_manifest(&parsed, "0.40.0", &keys(&["darwin-aarch64"])).is_some());
+        }
     }
 }

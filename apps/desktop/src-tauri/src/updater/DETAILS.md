@@ -115,8 +115,11 @@ The organization's `DisableUpdates`, `DisableAutomaticUpdateChecks`, and `MaxUpd
 - **Already synced.** A build `install_update` already wrote into the bundle (frontend `ready`) applies at the next
   restart whatever the policy says later: the sync is the install.
 - The ceiling compares the release core only (`UpdateCeiling::allows`), so `0.53.0-rc.1` doesn't pass `"0.52"`.
-- Every OS runs these steps; off macOS `install_update` is the stage (§ Windows and Linux), so the fresh read there is
-  what keeps a Restart from installing a version a later profile refuses. The policy SOURCE is macOS-only today
+- Every OS runs these steps; off macOS `install_update` is the stage (§ Windows and Linux), and nothing is written
+  until Restart, so the policy keeps the last word past the stage too: a check answering `UpdatesDisabledByPolicy` or
+  `HeldByPolicy` drops a staged installer the policy now refuses (`handoff::withdraw_if_refused`, `staged_withdrawn:
+  true`, which takes the frontend's restart prompt down), and the exit re-reads the policy before the hand-off
+  (`handoff::note_handoff`, before the security log flushes, so a refusal is logged as one and never as an install). The policy SOURCE is macOS-only today
   (`managed_policy/`), so off macOS it answers "no policy" until a Windows source exists.
 - **No install, no notice.** Under `DisableUpdates` or a held version nothing is staged, so no bundle can say a fix
   exists. Advisories for managed fleets go out through the channels `docs/security-incident-procedure.md` lists.
@@ -173,8 +176,9 @@ list itself, what gets an entry, and the link allowlist: `../security_advisories
   level), and `advisories::fetch_signed_list` reads it at the stage step. The signature is what the bundle's code
   signature is on macOS; the manifest naming it isn't signed, so it can leave the entry out (hiding a notice, as it
   could withhold the update itself) but can't invent one, and `notice_from` keeps `fixedIn <= staged`, so a later
-  release's list can't speak for fixes this update lacks. Missing, unreachable (15 s bound), or unsigned reads as no
-  notice plus a warn, never a failed update. The What's new popup still covers it after the restart from the new
+  release's list can't speak for fixes this update lacks. Missing, malformed (`manifest::lenient_advisory_entry`: the entry alone drops, never the
+  whole `latest.json`, which would stop every install on every OS updating), unreachable (15 s bound), or unsigned reads
+  as no notice plus a warn, never a failed update or check. The What's new popup still covers it after the restart from the new
   build's embedded copy.
 
 ## Two updater keys
@@ -302,8 +306,9 @@ policy are the macOS code, unchanged. What differs lives in `handoff.rs`, `insta
   newer stage deletes the one it supersedes. The frontend reaches `ready` exactly as on macOS.
 - **Restart hands off.** The toast's Restart calls `relaunch_app` as on macOS. `quit::relaunch` sees `is_staged`, arms
   the hand-off, and exits through the quit gate like ⌘Q, so a transfer in flight still asks, and "Keep working" disarms
-  it (`relaunch::disarm`) so a later plain quit installs nothing. In `RunEvent::Exit`, `before_flush` records
-  `UpdateInstalled` in the security log (the last moment it can still write), and `relaunch::on_exit`, last of all,
+  it (`relaunch::disarm`) so a later plain quit installs nothing. In `RunEvent::Exit`, `before_flush` re-reads the
+  policy (a refusal withdraws the installer and logs `UpdateRefusedByPolicy`, so Restart is a plain restart) and
+  otherwise records `UpdateInstalled` in the security log (the last moment it can still write), and `relaunch::on_exit`, last of all,
   runs `run_at_exit`, which hands a `HandoffPlan` to `platform::hand_off` (`platform/plugin.rs`):
   `updater_builder().target(<the manifest key>).pubkey(<the verifying key>)`, then
   `restore_update` on a one-platform manifest of exactly the verified offer, then `Update::install(bytes)`. The plugin
@@ -317,6 +322,11 @@ policy are the macOS code, unchanged. What differs lives in `handoff.rs`, `insta
 - **A quit without Restart installs nothing.** The staged installer lives for the session; the next launch checks,
   downloads, and prompts again. Installing on every quit would put an installer window in front of a person who only
   closed the app, and Windows can end a session (logoff, shutdown) mid-install.
+- **No installer outlives its use** (about 100 MB each, in `<temp>/cmdr-update/`): the hand-off reads the file and
+  removes it before the plugin runs its own copy (`take_installer_bytes`), a newer stage removes the one it supersedes,
+  a policy withdrawal removes the withdrawn one, and `sweep_at_launch` (from `setup()`, before any check can download)
+  clears whatever an earlier session left. It removes only `Cmdr-*-setup.exe` and `Cmdr-*.AppImage`, since the folder
+  sits in the shared temp dir; macOS keeps its one fixed-name tarball, which each download overwrites.
 - No pre-flight write check: a per-user NSIS install writes `%LOCALAPPDATA%`, and an AppImage the plugin can't replace
   fails the hand-off (logged, Cmdr restarts as it was). `update_write_blocker` answers `None` off macOS.
 - **Not verified on a real Windows or Linux machine yet** (2026-11-18): the plugin's install arms are read from

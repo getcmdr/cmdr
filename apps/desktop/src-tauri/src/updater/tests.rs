@@ -201,7 +201,13 @@ async fn updates_off_never_reaches_the_network() {
     for trigger in EVERY_TRIGGER {
         let state = UpdateState::new();
         let (outcome, fetches) = check(trigger, &state, "0.53.0").await;
-        assert_eq!(outcome, UpdateCheckOutcome::UpdatesDisabledByPolicy, "{trigger:?}");
+        assert_eq!(
+            outcome,
+            UpdateCheckOutcome::UpdatesDisabledByPolicy {
+                staged_withdrawn: false
+            },
+            "{trigger:?}"
+        );
         assert_eq!(fetches, 0, "{trigger:?} must not fetch");
     }
 }
@@ -239,7 +245,8 @@ async fn a_release_past_the_ceiling_is_held_and_not_offered() {
         outcome,
         UpdateCheckOutcome::HeldByPolicy {
             available: "0.53.0".into(),
-            ceiling: "0.52".into()
+            ceiling: "0.52".into(),
+            staged_withdrawn: false,
         }
     );
     assert_eq!(
@@ -320,7 +327,12 @@ async fn a_dev_build_answers_the_policy_and_otherwise_never_fetches() {
     )
     .await
     .expect("no fetch, no failure");
-    assert_eq!(outcome, UpdateCheckOutcome::UpdatesDisabledByPolicy);
+    assert_eq!(
+        outcome,
+        UpdateCheckOutcome::UpdatesDisabledByPolicy {
+            staged_withdrawn: false
+        }
+    );
     assert!(!fetched.get());
 }
 
@@ -621,4 +633,70 @@ async fn a_tampered_installer_is_refused_and_not_fetched_again() {
         offer_to_download(&state).await.expect_err("remembered"),
         UpdateDownloadError::NotGenuineEarlier
     );
+}
+
+/// Off macOS a staged installer waits for Restart, so a policy that arrives meanwhile drops it,
+/// file and all, and the check's answer says so (the frontend then takes the restart prompt down).
+#[tokio::test]
+async fn a_check_under_a_policy_that_refuses_the_staged_installer_withdraws_it() {
+    fn stage_installer(state: &UpdateState, dir: &std::path::Path, version: &str) -> PathBuf {
+        let file = dir.join(format!("Cmdr-{version}-setup.exe"));
+        std::fs::write(&file, b"installer").expect("write the test installer");
+        state.slots().staged_installer = Some(handoff::StagedInstaller {
+            offer: test_offer(version, "https://example.invalid/setup.exe"),
+            file: file.clone(),
+            pubkey: "key",
+        });
+        file
+    }
+    let dir = crate::test_support::TestDir::new("withdraw");
+
+    let state = UpdateState::new();
+    let file = stage_installer(&state, &dir, "0.53.0");
+    {
+        let _policy = override_for_test(forcing(&[DISABLE_UPDATES]));
+        let (outcome, _) = check(UpdateCheckTrigger::Poll, &state, "0.53.0").await;
+        assert_eq!(
+            outcome,
+            UpdateCheckOutcome::UpdatesDisabledByPolicy { staged_withdrawn: true }
+        );
+    }
+    assert!(state.slots().staged_installer.is_none());
+    assert!(!file.exists(), "a withdrawn installer leaves no file behind");
+
+    // A ceiling below the staged version withdraws it; one that still allows it keeps it.
+    let state = UpdateState::new();
+    stage_installer(&state, &dir, "0.53.0");
+    {
+        let _policy = override_for_test(ceiling("0.52"));
+        let (outcome, _) = check(UpdateCheckTrigger::Poll, &state, "0.54.0").await;
+        assert!(
+            matches!(
+                outcome,
+                UpdateCheckOutcome::HeldByPolicy {
+                    staged_withdrawn: true,
+                    ..
+                }
+            ),
+            "{outcome:?}"
+        );
+    }
+    let state = UpdateState::new();
+    let kept = stage_installer(&state, &dir, "0.53.0");
+    {
+        let _policy = override_for_test(ceiling("0.53"));
+        let (outcome, _) = check(UpdateCheckTrigger::Poll, &state, "0.54.0").await;
+        assert!(
+            matches!(
+                outcome,
+                UpdateCheckOutcome::HeldByPolicy {
+                    staged_withdrawn: false,
+                    ..
+                }
+            ),
+            "{outcome:?}"
+        );
+    }
+    assert!(state.slots().staged_installer.is_some());
+    assert!(kept.exists());
 }

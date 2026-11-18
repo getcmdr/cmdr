@@ -60,13 +60,21 @@ function reservedDeviceName(name: string): string | null {
 }
 
 /**
+ * Whether `name` is empty or only whitespace, by the Rust side's rule (`str::trim`, Unicode `White_Space`). ❌ Not
+ * `String.prototype.trim`: it strips a byte-order mark, which Rust keeps, and keeps NEL (U+0085), which Rust strips.
+ */
+function isBlank(name: string): boolean {
+  return /^\p{White_Space}*$/u.test(name)
+}
+
+/**
  * Why a destination following `rules` refuses `name`, or `null` when it takes it: the
  * keystroke mirror of `cmdr_fs::validation::validate_filename`. Both run the cases in
  * `crates/cmdr-fs/src/name_rules_cases.json`, so the two can't drift. `rules` is the
  * folder's (`getNameRules`), ❌ never a guess from the host OS.
  */
 export function nameRefusal(name: string, rules: NameRules): ValidationError | null {
-  if (name.trim().length === 0) return { kind: 'empty' }
+  if (isBlank(name)) return { kind: 'empty' }
   for (const ch of name) {
     const character = disallowedCharacter(ch, rules)
     if (character !== null) return { kind: 'disallowedCharacter', character }
@@ -117,7 +125,7 @@ export function validateName(name: string, isDir: boolean, rules: NameRules): Va
 
 /** Validates that a file or dir name is not empty after trimming. */
 export function validateNotEmpty(name: string, isDir = false): ValidationResult {
-  if (name.trim().length === 0) {
+  if (isBlank(name)) {
     return { severity: 'error', message: tString('fileOperations.validation.empty', { kind: nameKind(isDir) }) }
   }
   return OK_RESULT

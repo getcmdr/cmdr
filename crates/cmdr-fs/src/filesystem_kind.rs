@@ -45,7 +45,8 @@ pub enum FilesystemKind {
     Xfs,
     /// ZFS.
     Zfs,
-    /// NTFS, including the `ntfs3` and `ufsd_ntfs` drivers.
+    /// NTFS, including the `ntfs3`, `ufsd_ntfs`, and ntfs-3g drivers (ntfs-3g only when it
+    /// reports its own type; a bare `fuseblk` mount stays [`FilesystemKind::Other`]).
     Ntfs,
     /// exFAT: the common big-USB format, and NOT size-capped (unlike FAT32).
     ExFat,
@@ -74,12 +75,14 @@ impl FilesystemKind {
             "btrfs" => Self::Btrfs,
             "xfs" => Self::Xfs,
             "zfs" => Self::Zfs,
-            "ntfs" | "ntfs3" | "ufsd_ntfs" => Self::Ntfs,
+            "ntfs" | "ntfs3" | "ufsd_ntfs" | "ntfs-3g" | "fuse.ntfs-3g" | "lowntfs-3g" | "fuse.lowntfs-3g" => {
+                Self::Ntfs
+            }
             "exfat" | "fuse.exfat" => Self::ExFat,
             // macOS reports both FAT16 and FAT32 as "msdos"; Linux as "vfat".
             // Both carry the 4 GiB cap, so the safe number covers either.
             "msdos" | "vfat" | "fat" | "fat32" | "fat16" => Self::Fat32,
-            "smbfs" | "cifs" => Self::Smb,
+            "smbfs" | "cifs" | "smb3" => Self::Smb,
             _ => Self::Other,
         }
     }
@@ -293,6 +296,34 @@ mod tests {
         assert!(crate::volume::MountClass::LocalDisk.has_trash());
         assert!(!crate::volume::MountClass::SmbShare.has_trash());
         assert!(!crate::volume::MountClass::OtherNetwork.has_trash());
+    }
+
+    /// Linux names one format several ways: the kernel's `smb3` is a CIFS share, and ntfs-3g
+    /// reports `ntfs-3g` or `fuse.ntfs-3g` (and `lowntfs-3g`) when mounted with its subtype.
+    /// Each must get its format's name rules, or `a:b.txt` and `CON` slip through.
+    #[test]
+    fn every_linux_spelling_of_ntfs_and_smb_gets_its_name_rules() {
+        for raw in [
+            "ntfs",
+            "ntfs3",
+            "ntfs-3g",
+            "fuse.ntfs-3g",
+            "lowntfs-3g",
+            "fuse.lowntfs-3g",
+        ] {
+            assert_eq!(FilesystemKind::from_raw_type(raw), FilesystemKind::Ntfs, "{raw}");
+        }
+        for raw in ["smbfs", "cifs", "smb3"] {
+            assert_eq!(FilesystemKind::from_raw_type(raw), FilesystemKind::Smb, "{raw}");
+        }
+    }
+
+    /// Bare `fuseblk` is ntfs-3g OR exfat-fuse (or any FUSE block filesystem), and the kind is a
+    /// fact other answers lean on: calling it NTFS would claim stable inodes for exfat-fuse, whose
+    /// inodes are derived. So it stays `Other` (`DETAILS.md` § "Name rules", the known gap).
+    #[test]
+    fn a_bare_fuseblk_mount_stays_unclassified() {
+        assert_eq!(FilesystemKind::from_raw_type("fuseblk"), FilesystemKind::Other);
     }
 
     #[test]

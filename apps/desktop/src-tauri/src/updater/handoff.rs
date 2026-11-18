@@ -59,11 +59,8 @@ where
         pubkey,
     });
     // The installer this one supersedes has nothing left to do; its own name keeps it apart.
-    if let Some(old) = replaced.filter(|old| old.file != file)
-        && let Err(e) = std::fs::remove_file(&old.file)
-        && e.kind() != std::io::ErrorKind::NotFound
-    {
-        log::warn!("Couldn't remove the superseded installer: {e}");
+    if let Some(old) = replaced.filter(|old| old.file != file) {
+        remove_installer(&old.file, "superseded");
     }
     Ok(UpdateInstalled { security_notice })
 }
@@ -99,18 +96,60 @@ fn staged_version(state: &UpdateState) -> Option<semver::Version> {
         .map(|staged| staged.offer.version.clone())
 }
 
-/// Notes the install in the security log while the log can still write it: `RunEvent::Exit` calls
-/// this before `security_log::on_exit` flushes, and [`run_at_exit`] runs last, since on Windows it
-/// never returns.
+/// Drops the staged installer, and its file, when `policy` no longer allows its version: a
+/// profile that arrived after the stage (`DisableUpdates`, or a `MaxUpdateVersion` below it). Off
+/// macOS nothing is written until Restart, so the policy still gets the last word. Returns whether
+/// it dropped one, which a check answers so the restart prompt goes too.
+pub(super) fn withdraw_if_refused(state: &UpdateState, policy: &crate::managed_policy::ManagedPolicy) -> bool {
+    let refused = {
+        let mut slots = state.slots();
+        match slots
+            .staged_installer
+            .as_ref()
+            .map(|staged| policy.update_to(&staged.offer.version))
+        {
+            Some(Err(refusal)) => slots.staged_installer.take().map(|staged| (staged, refusal)),
+            _ => None,
+        }
+    };
+    let Some((staged, refusal)) = refused else {
+        return false;
+    };
+    log::info!(target: "managed_policy", "Withdrawing staged update {}: the organization's policy refuses it ({refusal:?})", staged.offer.version);
+    super::security_events::on_policy_refusal(&staged.offer.version, refusal);
+    remove_installer(&staged.file, "withdrawn");
+    true
+}
+
+/// Asks the policy one last time and notes the outcome in the security log while the log can
+/// still write it: `RunEvent::Exit` calls this before `security_log::on_exit` flushes, and
+/// [`run_at_exit`] runs last, since on Windows it never returns. A refusal withdraws the installer
+/// here, so `run_at_exit` finds nothing and Restart is a plain restart.
 pub(crate) fn note_handoff<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
     if let Some(state) = tauri::Manager::try_state::<UpdateState>(app) {
-        note_handoff_of(&state);
+        // A fresh read: the cache can be minutes old. Only an off-macOS stage gets here, where
+        // the read is local and quick, so blocking the exit on it is fine.
+        crate::managed_policy::refresh();
+        note_handoff_of(&state, &crate::managed_policy::current());
     }
 }
 
-fn note_handoff_of(state: &UpdateState) {
+fn note_handoff_of(state: &UpdateState, policy: &crate::managed_policy::ManagedPolicy) {
+    if withdraw_if_refused(state, policy) {
+        return;
+    }
     if let Some(version) = staged_version(state) {
         super::security_events::on_handoff(&version);
+    }
+}
+
+/// Removes a staged installer Cmdr no longer needs (`why` names the reason in the log). Gone
+/// already is fine.
+fn remove_installer(file: &std::path::Path, why: &str) {
+    if let Err(e) = std::fs::remove_file(file)
+        && e.kind() != std::io::ErrorKind::NotFound
+    {
+        log::warn!("Couldn't remove the {why} installer: {e}");
     }
 }
 
@@ -135,8 +174,7 @@ pub(crate) fn run_at_exit<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
         .and_then(|state| state.slots().staged_installer.take());
     if let Some(staged) = staged {
         log::info!("Handing update {} to the installer", staged.offer.version);
-        let installed = std::fs::read(&staged.file)
-            .map_err(|e| format!("couldn't read the staged installer: {e}"))
+        let installed = take_installer_bytes(&staged.file)
             // Windows: starts the installer and exits this process, so nothing below runs.
             .and_then(|bytes| super::platform::hand_off(app, &plan_for(&staged), bytes));
         if let Err(detail) = installed {
@@ -144,6 +182,49 @@ pub(crate) fn run_at_exit<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
         }
     }
     tauri::process::restart(&app.env());
+}
+
+/// The staged installer's bytes for the plugin, removing the file: the plugin writes its own copy
+/// to run (`write_to_temp` in `tauri-plugin-updater` 2.14.1), and Windows never returns from the
+/// hand-off to clean up after it.
+fn take_installer_bytes(file: &std::path::Path) -> Result<Vec<u8>, String> {
+    let bytes = std::fs::read(file).map_err(|e| format!("couldn't read the staged installer: {e}"))?;
+    remove_installer(file, "handed-off");
+    Ok(bytes)
+}
+
+/// Clears the installers an earlier session left (a quit without Restart, a crash, a hand-off that
+/// failed). Nothing is staged across launches, and it runs in `setup()`, before any check can
+/// download, so it can't race this session's own file. Windows and Linux only: the macOS download
+/// has one fixed name that the next download overwrites.
+pub(crate) fn sweep_at_launch() {
+    if matches!(
+        super::install_kind::current(),
+        Ok(super::InstallKind::WindowsNsis | super::InstallKind::LinuxAppImage)
+    ) {
+        sweep_installers_in(&super::download_dir());
+    }
+}
+
+/// Removes every installer an earlier session left in `dir`: the names `download_file_name` gives
+/// Windows and Linux, nothing else.
+fn sweep_installers_in(dir: &std::path::Path) {
+    let entries = match std::fs::read_dir(dir) {
+        Ok(entries) => entries,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return,
+        Err(e) => {
+            log::warn!("Couldn't list the update download folder to clear old installers: {e}");
+            return;
+        }
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        let is_installer = name.starts_with("Cmdr-") && (name.ends_with("-setup.exe") || name.ends_with(".AppImage"));
+        if is_installer {
+            remove_installer(&entry.path(), "leftover");
+        }
+    }
 }
 
 #[cfg(test)]
@@ -251,11 +332,11 @@ mod tests {
     async fn the_hand_off_reaches_the_security_log() {
         let state = UpdateState::new();
         let capture = crate::security_log::testing::capture_events();
-        note_handoff_of(&state);
+        note_handoff_of(&state, &forcing(&[]));
         assert!(capture.events().is_empty(), "nothing staged, nothing noted");
         downloaded(&state, offer("0.53.0", false));
         stage(&state, "0.52.0", |_| async { None }).await.expect("staged");
-        note_handoff_of(&state);
+        note_handoff_of(&state, &forcing(&[]));
         assert!(
             matches!(
                 capture.events().as_slice(),
@@ -264,6 +345,76 @@ mod tests {
             "{:?}",
             capture.events()
         );
+    }
+
+    /// Hostile: a profile that arrives AFTER the stage (`DisableUpdates` here) must stop Restart
+    /// from installing. Nothing is written until exit off macOS, so the policy can still say no.
+    #[tokio::test]
+    async fn a_policy_that_arrives_after_staging_withdraws_it_before_the_hand_off() {
+        let state = UpdateState::new();
+        let capture = crate::security_log::testing::capture_events();
+        downloaded(&state, offer("0.53.0", false));
+        stage(&state, "0.52.0", |_| async { None }).await.expect("staged");
+        note_handoff_of(&state, &forcing(&[DISABLE_UPDATES]));
+        assert_eq!(staged_version(&state), None, "Restart must not hand it off");
+        assert!(
+            matches!(
+                capture.events().as_slice(),
+                [crate::security_log::SecurityEvent::UpdateRefusedByPolicy { .. }]
+            ),
+            "{:?}",
+            capture.events()
+        );
+    }
+
+    /// Installers are about 100 MB each, so none outlives its use: the hand-off reads it and
+    /// removes it (the plugin runs its own copy), even when the hand-off then fails.
+    #[test]
+    fn the_hand_off_takes_the_installer_and_leaves_no_file() {
+        let dir = crate::test_support::TestDir::new("handoff_bytes");
+        let file = dir.join("Cmdr-0.53.0-setup.exe");
+        std::fs::write(&file, b"installer").expect("write");
+        assert_eq!(take_installer_bytes(&file).expect("read"), b"installer");
+        assert!(!file.exists());
+    }
+
+    /// Nothing is staged across launches, so whatever an earlier session left (a quit without
+    /// Restart, a crash, a failed hand-off) goes at the next launch. Only Cmdr's own installer
+    /// names: the folder sits in the shared temp dir.
+    #[test]
+    fn the_next_launch_sweeps_installers_an_earlier_session_left() {
+        let dir = crate::test_support::TestDir::new("handoff_sweep");
+        let leftovers = ["Cmdr-0.53.0-setup.exe", "Cmdr-0.54.0.AppImage"];
+        for name in leftovers.iter().chain(&["notes.txt", "Cmdr.app.tar.gz"]) {
+            std::fs::write(dir.join(name), b"x").expect("write");
+        }
+        sweep_installers_in(&dir);
+        for name in leftovers {
+            assert!(!dir.join(name).exists(), "{name} should be gone");
+        }
+        assert!(dir.join("notes.txt").exists(), "not ours, so left alone");
+        assert!(
+            dir.join("Cmdr.app.tar.gz").exists(),
+            "the macOS download is macOS's business"
+        );
+    }
+
+    /// A newer stage removes the installer it supersedes.
+    #[tokio::test]
+    async fn a_superseded_installer_leaves_no_file() {
+        let dir = crate::test_support::TestDir::new("handoff_supersede");
+        let state = UpdateState::new();
+        let older = dir.join("Cmdr-0.53.0-setup.exe");
+        std::fs::write(&older, b"x").expect("write");
+        state.slots().downloaded = Some(DownloadedUpdate {
+            offer: offer("0.53.0", false),
+            file: older.clone(),
+            pubkey: "key",
+        });
+        stage(&state, "0.52.0", |_| async { None }).await.expect("staged");
+        downloaded(&state, offer("0.54.0", false));
+        stage(&state, "0.52.0", |_| async { None }).await.expect("staged");
+        assert!(!older.exists());
     }
 
     /// The plugin reads exactly the offer Cmdr verified, under the key it came from.

@@ -1,7 +1,7 @@
 //! The local disk on Windows: a drive (`C:/`) or a UNC share (`//server/share/`), one volume
 //! each (plan D1), over `std::fs` through each path's `\\?\` form (`paths.rs`).
 //!
-//! The sibling of `LocalPosixVolume`, not a Windows arm inside it (task 35). What's real and
+//! The sibling of `LocalPosixVolume`, not a Windows arm inside it. What's real and
 //! what's waiting is listed by name in the windows-port plan, § "Windows build state", and each
 //! capability this volume doesn't answer yet keeps the trait's conservative default: a copy, a
 //! symlink, xattrs, a write-access probe, and a stream are "not supported" rather than a guess.

@@ -14,9 +14,9 @@
 //! a cumulative reading refuted it at 3.4%). A difference of two monotone
 //! readings cannot lie that way.
 //!
-//! Per OS in `platform/`: `CLOCK_THREAD_CPUTIME_ID` on macOS and Linux, none yet on
-//! Windows or in the browser, where callers degrade to "no counter", never to a wrong
-//! number.
+//! Per OS in `platform/`: `CLOCK_THREAD_CPUTIME_ID` on macOS and Linux, `GetThreadTimes`
+//! on Windows, none in the browser, where callers degrade to "no counter", never to a
+//! wrong number.
 
 mod platform;
 

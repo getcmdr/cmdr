@@ -119,7 +119,7 @@ describe('UpdateCheckToastContent', () => {
   })
 
   it('says the organization manages updates when it turned them off, with no report link', async () => {
-    updateState.managed = { kind: 'updatesDisabledByPolicy' }
+    updateState.managed = { kind: 'updatesDisabledByPolicy', stagedWithdrawn: false }
     _setUpdateStatusForTest('idle')
     const target = render()
     await tick()
@@ -133,7 +133,7 @@ describe('UpdateCheckToastContent', () => {
     ['linux', 'this computer'],
   ] as const)('on %s, says a newer release is out but the organization holds %s back', async (platform, machine) => {
     onTestFinished(withPlatform(platform))
-    updateState.managed = { kind: 'heldByPolicy', available: '0.53.0', ceiling: '0.52' }
+    updateState.managed = { kind: 'heldByPolicy', available: '0.53.0', ceiling: '0.52', stagedWithdrawn: false }
     _setUpdateStatusForTest('idle')
     const target = render()
     await tick()
