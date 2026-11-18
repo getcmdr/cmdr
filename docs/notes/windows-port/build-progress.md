@@ -190,7 +190,9 @@ things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX
   builder: `cargo clippy -p cmdr -p cmdr-fs -p cmdr-index -p cmdr-operation-log --all-targets -D warnings` clean (2m 57s
   warm); nextest over the touched modules 107 of 113 before two index cells learned the system-drive root (fixed in
   `693033a8eb`); the other four, in `priority::roots`, fail on their POSIX fixtures (`/Users/…` isn't absolute on
-  Windows), as they did before.
+  Windows), as they did before. A second run after `76c34e657c` (clippy clean again, 12m 25s): the `cmdr-index` paths,
+  walker, `notify`, and phases cells 127 of 147; the 19 `lifecycle::phases` failures are #1232's native-tempdir cluster,
+  and `a_run_of_walks_reuses_its_threads` is a thread count that passed in the first run.
   - **Win32 facts, verified** (PowerShell P/Invoke over SSH, Windows 10 22H2, 2026-11-18; recorded in
     `volumes/platform/windows/drives.rs`): a fixed drive gives its `\\?\Volume{…}\` GUID, and the USB build SSD reports
     `DRIVE_FIXED`; a `subst` drive has no GUID (`ERROR_INVALID_PARAMETER`), `QueryDosDeviceW` names its folder
