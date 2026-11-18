@@ -244,8 +244,9 @@ message goes out.
 
 ### Which refusal Full Disk Access opens
 
-Rust folds `EPERM` and `EACCES` into one `ErrorKind::PermissionDenied`, so `refusal.rs` reads the raw errno, plus the
-folder's own `lstat` when it's `EPERM`:
+Rust folds `EPERM` and `EACCES` into one `ErrorKind::PermissionDenied`, so `refusal.rs` reads the error's `OsErrorClass`
+(`NotPermitted` is `EPERM`, `AccessDenied` is `EACCES`), plus the folder's own `lstat` when it's `EPERM`. Only macOS
+splits the cases; every other OS answers by class alone:
 
 - `EACCES` (13) → `OffLimits`. Plain POSIX permissions (`/private/var/root`, `/private/etc/cups/certs`, root-only
   folders under `/Library/Application Support`). TCC never answers with it. A SIP folder that's ALSO mode 700

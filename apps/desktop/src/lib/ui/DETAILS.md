@@ -148,7 +148,7 @@ and its padded background hangs below the words.
 
 **Layout convention.** Title and body text are LEFT-aligned; action buttons are RIGHT-aligned, written in macOS order
 (primary action last), which Windows and KDE show reversed (§ Platform conventions). Pass buttons via the `footer`
-snippet — `ModalDialog` renders them in a `.modal-footer` that owns the right-alignment, gap, and the dialog's bottom
+snippet: `ModalDialog` renders them in a `.modal-footer` that owns the right-alignment, gap, and the dialog's bottom
 padding, so callers don't hand-roll a button-row. The buttons sit in one `.modal-footer-actions` row that never wraps,
 in any language: neither a label nor a button drops to a second line. Instead the panel's `min-width` rises to the row's
 width (`modal-resize.ts::panelMinWidth` over `footerRowWidth`, re-measured by a `ResizeObserver` on the row, since a
@@ -324,8 +324,8 @@ move focus on mount.
 
 `ModalDialog` follows the platform's dialog habits by asking `convention()` (`#lib/platform`, `../platform/DETAILS.md` §
 Conventions), ❌ never the OS. Each value is read once as the dialog mounts (conventions never change in a session).
-Pinned on all five desktop rows, a11y included, by `ModalDialog.conventions.svelte.test.ts`, whose macOS block holds the
-markup and keys every Mac had before this existed.
+Pinned on all five desktop rows, a11y included, by `ModalDialog.conventions.svelte.test.ts`, whose macOS block snapshots
+the Mac markup and keys, so a convention change can't move them unnoticed.
 
 - **Button order** (`dialogButtonOrder`): consumers write the footer in macOS order (Cancel first, primary last). On
   `affirmativeFirst` (Windows, KDE) `.modal-footer-actions` gets `flex-direction: row-reverse`, so the same buttons read
@@ -333,7 +333,8 @@ markup and keys every Mac had before this existed.
   flip is per direct child of the row, so ❌ don't wrap several buttons in one element (it flips as one, and Tab with
   it). Win32 and Qt order the extra buttons the same way reversed, so no per-dialog branch is needed. Screen readers'
   browse mode still reads DOM order; Chromium's `reading-flow` could align it later (WebView2 only, unverified).
-- **Alignment**: trailing (right) on every desktop: the Win32 guide, Qt's `KdeLayout`, and GNOME all right-align.
+- **Alignment**: trailing (right) on every desktop: the Win32 guide, Qt's `KdeLayout`, and GNOME all right-align
+  (sources and read dates for this and the button order: `docs/notes/windows-port/platform-conventions.md`).
 - **Escape** cancels on every row; **Enter** on a focused button presses that button. macOS's row says `defaultButton`
   and `escapeOrCommandPeriod`, but today's Mac behavior (focused-button Enter, which the "safe answer takes focus"
   dialogs rely on, and no ⌘.) stays until David decides (`docs/specs/windows-port-plan.md` task 61), so neither field is

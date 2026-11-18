@@ -1300,7 +1300,7 @@ models something a real backend genuinely does:
   (`OverwriteOlder`).
 - **`with_sibling_duplicates_allowed()`** — `create_directory_errors_on_existing_dir()` reports `false`, modeling MTP,
   which can't signal a same-name collision at all.
-- **`with_read_range_failing(err)`** — positioned reads fail with `err`: `NotSupported` models a remote backend without
+- **`with_read_range_failing(err)`**: positioned reads fail with `err`: `NotSupported` models a remote backend without
   the primitive, any other error a transient fault mid-read.
 - **`with_read_chunk_delay(d)`** — each read chunk takes `d` to arrive. Not a fault so much as the passage of time: an
   in-memory read otherwise completes without ever yielding, so a whole file lands inside one poll and a test that has to

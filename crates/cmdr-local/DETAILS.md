@@ -361,7 +361,8 @@ nearly every method and hide which answers are real.
   program holds open, or a read-only one, is refused whole (verified on Windows 10 22H2, NTFS, the hostile cells in
   `local_windows_test.rs`, 2026-11-18).
 - **Delete** picks `RemoveDirectoryW` by the entry's own `FILE_ATTRIBUTE_DIRECTORY`, so a directory symlink or junction
-  goes as the link, its target untouched, broken or not.
+  goes as the link, its target untouched, broken or not (verified on Windows 10 22H2, NTFS, for a junction in
+  `local_windows_test.rs`, 2026-11-18; a directory symlink is unverified).
 - **The reader** is `reading.rs` with a Windows arm (`src/reading/platform/windows.rs`): `read_dir`, no added date,
   `FILE_ATTRIBUTE_HIDDEN` as `is_hidden`. `reading/platform/` is the reader's seam on every OS now (the per-entry stat,
   the lister pick, the single-entry finish); the listing loop and the entry's shape stay shared.

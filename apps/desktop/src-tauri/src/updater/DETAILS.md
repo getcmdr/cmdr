@@ -325,7 +325,10 @@ policy are the macOS code, unchanged. What differs lives in `handoff.rs`, `insta
 
 ## Dependencies
 
-- `reqwest`: HTTP client for manifest + tarball download.
+- `reqwest`: HTTP client for manifest + tarball download, through `server_request::send` (`Egress::UpdateCheck`,
+  `Egress::UpdateDownload`).
+- `platform/macos/installer.rs`'s `running_bundle()` is crate-visible: `dock/`, `cli/`, and `install_location` ask it
+  where the running bundle is.
 - `minisign-verify`: signature verification.
 - `tauri-plugin-updater` (off macOS): the installer hand-off only.
 - `cmdr-update-trust`: tarball extraction, the bundle's version, and the Apple code-signature check.

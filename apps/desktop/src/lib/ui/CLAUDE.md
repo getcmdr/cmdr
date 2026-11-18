@@ -32,8 +32,8 @@ Reusable components (Ark UI backs the complex ones).
   `.modal-overlay:focus { outline: none }` (the scrim holds focus, so a UA ring lines the title bar in the SYSTEM
   accent), ❌ keep the MCP close registration in its `$effect`, or `dialog close` lies, ❌ no `overflow-wrap: anywhere`
   (splits words). DETAILS § ModalDialog.
-- **Dialogs follow `convention()`, ❌ never the OS**: footer in macOS order, one button per child (Windows flips it).
-  DETAILS § Platform conventions.
+- **Dialogs follow `convention()`, ❌ never the OS**: footer in macOS order, one button per child (Windows and KDE flip
+  it). DETAILS § Platform conventions.
 - **Dialog scrollers reserve their gutter**, minus `--spacing-scrollbar-width` (#889). DETAILS § Scrollbar gutters.
 - **A button's key is `Button`'s `keyHint`**, ❌ never a chip in its content (`cmdr/key-hint-via-button-prop`).
 - **Don't restyle `.btn-*` colors from a scoped feature component** (`scripts/check-btn-restyle`; one-offs need

@@ -2694,7 +2694,7 @@ unreachable from anything a person clicks.
 
 **Tier 1, cooperative (`state.backend_cancel`).** The cancel travels to the backend through the per-chunk `on_progress`
 callback, and the backend answers by dropping its own handle and deleting its own partial
-(`crates/cmdr-local/src/platform/local_posix.rs`, `crates/cmdr-smb/src/volume/write_stream.rs` — the `writer.abort()` +
+(`crates/cmdr-local/src/platform/local_posix.rs`, `crates/cmdr-smb/src/volume/write_stream.rs`: the `writer.abort()` +
 `delete_partial()` sequence). Writes are ❌ deliberately NOT raced against this token: dropping the write future would
 skip exactly that cleanup, on the healthy path, for every cancel. Every Cancel button, the queue window's stop, a
 Rollback, and the frontend teardown walk are tier 1 and stay tier 1.

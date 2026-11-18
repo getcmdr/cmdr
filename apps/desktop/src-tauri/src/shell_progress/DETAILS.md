@@ -10,8 +10,8 @@
    update, drains the wake-ups that landed meanwhile, reads the summary as it stands then, and calls
    `set_progress_bar` on the main window when it differs from what's shown.
 
-- **Decision: Tauri's `set_progress_bar`, no hand-made AppKit.** Why: Cmdr had no Dock progress before this, tao's macOS
-  bar already draws paused (yellow) and error (red), and one call per OS keeps the arms to a pure mapping. The one gap,
+- **Decision: Tauri's `set_progress_bar`, no hand-made AppKit.** Why: Cmdr owns no Dock tile view to extend (`dock/` only pins the
+  tile and builds its menu), tao's macOS bar already draws paused (yellow) and error (red), and one call per OS keeps the arms to a pure mapping. The one gap,
   no indeterminate look on macOS, is a mapping choice (below), not a reason to own a Dock tile view.
 - **Decision: the main window carries it on every OS.** On macOS and Linux the bar is app-wide, so any window would do;
   on Windows it's per taskbar button, and the main window's is the one people look at. The main window exists hidden

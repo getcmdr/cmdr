@@ -86,7 +86,8 @@ and `~/Library/Caches`; Linux the absolute `XDG_DATA_HOME` / `XDG_CACHE_HOME`, e
 Windows Roaming (`%APPDATA%`) for data and Local (`%LOCALAPPDATA%`) for the cache, so the gigabytes of drive index never
 roam. One case table, `apps/desktop/src-tauri/src/os_app_dirs_cases.json`, holds the wrapper (`instance-id.test.ts`) and
 the backend (`config_os_dirs_test.rs`, which also pins its model of `dirs` to the real `dirs` on the test host) to the
-same answers.
+same answers. The Windows rows come from `dirs` 7's source, unverified: the app crate doesn't compile for Windows yet,
+so no run has held them to the real crate there (the windows-port plan's task 55).
 
 Authoritative files: `apps/desktop/src-tauri/src/config.rs`, `apps/desktop/scripts/instance-id.ts`.
 
