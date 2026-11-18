@@ -18,9 +18,10 @@ type runner func(dir, name string, args ...string) (string, error)
 // install. A macOS archive's bundle passes the check the macOS updater runs before installing:
 // unpacked with the installer's own extraction, code-signed by Cmdr's Developer ID, and naming
 // this release's version. It runs the app's own code (`crates/cmdr-update-trust`, binary
-// `cmdr-vet-update`), so the gate and the updater can't drift. A Windows NSIS installer must carry
-// this release's version in its version resource (`nsis.Vet`), since the updater there trusts the
-// version its signature names. Without this, an archive the updater refuses (or one installing
+// `cmdr-vet-update`), so the gate and the updater can't drift. A Windows NSIS installer must name
+// this release in its own version resource, pack the app of this version and publisher, and write
+// an uninstall entry naming them (`nsis.Vet`), since the updater there trusts the version its
+// signature names. Without this, an archive the updater refuses (or one installing
 // another version) could be signed and published, and every install would be stuck. Files that
 // aren't update payloads (the advisory list) have nothing to vet.
 func vetArchives(run runner, root string, release manifest.Release, dir string, names []string) error {
@@ -38,11 +39,15 @@ func vetArchives(run runner, root string, release manifest.Release, dir string, 
 		case f.OS == manifest.MacOS && f.Update():
 			mac = append(mac, name)
 		case f.Kind == manifest.NSIS:
-			step("Checking %s's version resource", name)
-			if err := nsis.Vet(filepath.Join(dir, name), version); err != nil {
+			step("Checking %s names and packs this release", name)
+			want, err := nsis.ExpectFromRepo(root, version)
+			if err != nil {
+				return fmt.Errorf("refusing to sign %s: reading the app's name and publisher: %w", name, err)
+			}
+			if err := nsis.Vet(filepath.Join(dir, name), want); err != nil {
 				return fmt.Errorf("refusing to sign %s: it %w", name, err)
 			}
-			fmt.Printf("    %s: the NSIS installer of %s\n", name, version)
+			fmt.Printf("    %s: the NSIS installer of %s, packing that build\n", name, version)
 		case f.Update():
 			return fmt.Errorf("refusing to sign %s: nothing here vets a %s %s update payload yet", name, f.OS, f.Kind)
 		}

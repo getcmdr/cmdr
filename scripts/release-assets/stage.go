@@ -53,33 +53,9 @@ func stage(in stageInput) (stageResult, error) {
 	if len(leg) == 0 {
 		return stageResult{}, fmt.Errorf("release %s ships no %s files, so there's nothing to stage", in.release.Version, in.os)
 	}
-	want := manifest.Names(leg)
-	entries, err := os.ReadDir(in.from)
-	if err != nil {
+	if err := checkArtifact(in, manifest.Names(leg)); err != nil {
 		return stageResult{}, err
 	}
-	var problems []string
-	have := map[string]bool{}
-	for _, e := range entries {
-		name := e.Name()
-		switch {
-		case !slices.Contains(want, name):
-			problems = append(problems, fmt.Sprintf("%s isn't a %s file of %s", name, in.os, in.release.Version))
-		case !e.Type().IsRegular():
-			problems = append(problems, fmt.Sprintf("%s isn't a regular file (%s)", name, e.Type()))
-		default:
-			have[name] = true
-		}
-	}
-	for _, name := range want {
-		if !have[name] && !slices.ContainsFunc(entries, func(e os.DirEntry) bool { return e.Name() == name }) {
-			problems = append(problems, fmt.Sprintf("%s is missing", name))
-		}
-	}
-	if len(problems) > 0 {
-		return stageResult{}, fmt.Errorf("the %s artifact must hold exactly %s:\n  - %s", in.os, strings.Join(want, ", "), strings.Join(problems, "\n  - "))
-	}
-
 	if err := os.Mkdir(in.out, 0o755); err != nil {
 		return stageResult{}, fmt.Errorf("the staging directory must be new: %w", err)
 	}
@@ -110,6 +86,36 @@ func stage(in stageInput) (stageResult, error) {
 		}
 	}
 	return res, nil
+}
+
+// checkArtifact requires the artifact to hold exactly want, each a regular file, naming every
+// extra, missing, or irregular entry.
+func checkArtifact(in stageInput, want []string) error {
+	entries, err := os.ReadDir(in.from)
+	if err != nil {
+		return err
+	}
+	var problems []string
+	seen := map[string]bool{}
+	for _, e := range entries {
+		name := e.Name()
+		seen[name] = true
+		switch {
+		case !slices.Contains(want, name):
+			problems = append(problems, fmt.Sprintf("%s isn't a %s file of %s", name, in.os, in.release.Version))
+		case !e.Type().IsRegular():
+			problems = append(problems, fmt.Sprintf("%s isn't a regular file (%s)", name, e.Type()))
+		}
+	}
+	for _, name := range want {
+		if !seen[name] {
+			problems = append(problems, fmt.Sprintf("%s is missing", name))
+		}
+	}
+	if len(problems) > 0 {
+		return fmt.Errorf("the %s artifact must hold exactly %s:\n  - %s", in.os, strings.Join(want, ", "), strings.Join(problems, "\n  - "))
+	}
+	return nil
 }
 
 // copyRegular copies one regular file, refusing a symlink or anything else at src.

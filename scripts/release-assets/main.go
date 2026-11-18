@@ -45,103 +45,128 @@ func main() {
 	}
 }
 
+// options are the parsed flags every command reads its own from.
+type options struct {
+	version, vetted, attested, subjectDir, assets, sigs, notes, baseURL, pubDate, out, file string
+	osName, from, advisories, carriedBy, newerThan                                          string
+	args                                                                                    []string
+}
+
 func run(args []string) error {
 	if len(args) == 0 {
 		return errors.New("name a command: plan, latest-json, validate-latest, vet-nsis, stage, or checksum-files")
 	}
+	var o options
 	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
-	version := fs.String("version", "", "the release's version, without the leading v")
-	vetted := fs.String("vetted", "", "plan: the OSes `vet-update-archives` vets, space-separated")
-	attested := fs.String("attested", "", "plan: the SBOM slugs `attest` attests, space-separated")
-	subjectDir := fs.String("subject-dir", "release-assets", "plan: where `attest` downloads the release")
-	assets := fs.String("assets", "", "the release's assets as JSON (`gh api …/releases/tags/<tag>`)")
-	sigs := fs.String("sigs", "", "latest-json: the directory holding the update payloads' `.sig` files")
-	notes := fs.String("notes", "", "latest-json: the release notes file")
-	baseURL := fs.String("base-url", "", "latest-json: where the update payloads are served")
-	pubDate := fs.String("pub-date", "", "latest-json: the publication time, RFC 3339 UTC")
-	out := fs.String("out", "", "latest-json: where to write the manifest")
-	file := fs.String("file", "", "validate-latest: the manifest to check")
-	osName := fs.String("os", "", "stage: the OS whose build artifact this is")
-	from := fs.String("from", "", "stage: the downloaded build artifact")
-	advisories := fs.String("advisories", "", "stage: the checkout's advisory list")
-	carriedBy := fs.String("carried-by", "", "latest-json, validate-latest, checksum-files: a latest.json of this version whose platforms fix which legs the release carries (without it: the legs whole on the release, signatures included)")
-	newerThan := fs.String("newer-than", "", "latest-json, validate-latest: the live manifest's version, which this one must move past (empty: unknown, or a deliberate republish)")
+	fs.StringVar(&o.version, "version", "", "the release's version, without the leading v")
+	fs.StringVar(&o.vetted, "vetted", "", "plan: the OSes `vet-update-archives` vets, space-separated")
+	fs.StringVar(&o.attested, "attested", "", "plan: the SBOM slugs `attest` attests, space-separated")
+	fs.StringVar(&o.subjectDir, "subject-dir", "release-assets", "plan: where `attest` downloads the release")
+	fs.StringVar(&o.assets, "assets", "", "the release's assets as JSON (`gh api …/releases/tags/<tag>`)")
+	fs.StringVar(&o.sigs, "sigs", "", "latest-json: the directory holding the update payloads' `.sig` files")
+	fs.StringVar(&o.notes, "notes", "", "latest-json: the release notes file")
+	fs.StringVar(&o.baseURL, "base-url", "", "latest-json: where the update payloads are served")
+	fs.StringVar(&o.pubDate, "pub-date", "", "latest-json: the publication time, RFC 3339 UTC")
+	fs.StringVar(&o.out, "out", "", "latest-json: where to write the manifest; stage: the fresh staging directory")
+	fs.StringVar(&o.file, "file", "", "validate-latest: the manifest to check")
+	fs.StringVar(&o.osName, "os", "", "stage: the OS whose build artifact this is")
+	fs.StringVar(&o.from, "from", "", "stage: the downloaded build artifact")
+	fs.StringVar(&o.advisories, "advisories", "", "stage: the checkout's advisory list")
+	fs.StringVar(&o.carriedBy, "carried-by", "", "latest-json, validate-latest, checksum-files: a latest.json of this version whose platforms fix which legs the release carries (without it: the legs whole on the release, signatures included)")
+	fs.StringVar(&o.newerThan, "newer-than", "", "latest-json, validate-latest: the live manifest's version, which this one must move past (empty: unknown, or a deliberate republish)")
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
 	}
-	if !versionPattern.MatchString(*version) {
-		return fmt.Errorf("-version must look like 0.62.0, got %q", *version)
+	if !versionPattern.MatchString(o.version) {
+		return fmt.Errorf("-version must look like 0.62.0, got %q", o.version)
 	}
-	release := manifest.For(*version)
+	o.args = fs.Args()
+	release := manifest.For(o.version)
 
 	switch args[0] {
 	case "plan":
-		if problems := manifest.ShippingProblems(manifest.ShippedOSes); len(problems) > 0 {
-			return fmt.Errorf("`ShippedOSes` is inconsistent: %s", strings.Join(problems, "; "))
-		}
-		// A platform this version leaves out (before its `Since`, or a prerelease) gets a line in the
-		// run's summary, so a skipped Windows leg is never a silent one.
-		for _, line := range manifest.Skipped(*version) {
-			fmt.Fprintf(os.Stderr, "::notice::%s\n", line)
-		}
-		outs, err := plan(planInput{
-			release: release, wiring: manifest.All(*version), subjectDir: *subjectDir,
-			vetted: osList(*vetted), attested: strings.Fields(*attested),
-		})
-		if err != nil {
-			return err
-		}
-		return appendOutputs(formatOutputs(outs))
+		return runPlan(o, release)
 	case "latest-json", "validate-latest":
-		have, err := readReleaseAssets(*assets)
-		if err != nil {
-			return err
-		}
-		if release, err = carriedRelease(release, have, *carriedBy); err != nil {
-			return err
-		}
-		keys, err := trustedKeyIDs(os.Getenv("RELEASE_ASSETS_ROOT"))
-		if err != nil {
-			return fmt.Errorf("reading the updater keys the app trusts (run this through scripts/release-assets.sh): %w", err)
-		}
-		in := latestInput{
-			release: release, assets: have, sigDir: *sigs, pubDate: *pubDate,
-			baseURL: strings.TrimSuffix(*baseURL, "/"), trustedKeyIDs: keys, newerThan: *newerThan,
-		}
-		if args[0] == "validate-latest" {
-			return validateFile(*file, in.rules())
-		}
-		return writeLatest(in, *notes, *out)
+		return runLatest(o, release, args[0] == "validate-latest")
 	case "stage":
-		if *osName == "" {
-			return errNoOS
-		}
-		res, err := stage(stageInput{release: release, os: manifest.OS(*osName), from: *from, advisories: *advisories, out: *out})
-		if err != nil {
-			return err
-		}
-		fmt.Fprintf(os.Stderr, "Staged %s\n", strings.Join(res.files, ", "))
-		return appendOutputs(formatOutputs(res.outputs()))
+		return runStage(o, release)
 	case "vet-nsis":
-		return vetNSISFiles(*version, fs.Args())
+		return vetNSISFiles(o.version, o.args)
 	case "checksum-files":
-		have, err := readReleaseAssets(*assets)
-		if err != nil {
-			return err
-		}
-		if release, err = carriedRelease(release, have, *carriedBy); err != nil {
-			return err
-		}
-		files, err := manifest.Present(release.Downloads(), assetNames(have))
-		if err != nil {
-			return err
-		}
-		for _, name := range manifest.Names(files) {
-			fmt.Println(name)
-		}
-		return nil
+		return runChecksumFiles(o, release)
 	}
 	return fmt.Errorf("unknown command %q: plan, latest-json, validate-latest, vet-nsis, stage, or checksum-files", args[0])
+}
+
+func runPlan(o options, release manifest.Release) error {
+	if problems := manifest.ShippingProblems(manifest.ShippedOSes); len(problems) > 0 {
+		return fmt.Errorf("`ShippedOSes` is inconsistent: %s", strings.Join(problems, "; "))
+	}
+	// A platform this version leaves out (before its `Since`, or a prerelease) gets a line in the
+	// run's summary, so a skipped Windows leg is never a silent one.
+	for _, line := range manifest.Skipped(o.version) {
+		fmt.Fprintf(os.Stderr, "::notice::%s\n", line)
+	}
+	outs, err := plan(planInput{
+		release: release, wiring: manifest.All(o.version), subjectDir: o.subjectDir,
+		vetted: osList(o.vetted), attested: strings.Fields(o.attested),
+	})
+	if err != nil {
+		return err
+	}
+	return appendOutputs(formatOutputs(outs))
+}
+
+func runLatest(o options, release manifest.Release, validate bool) error {
+	have, err := readReleaseAssets(o.assets)
+	if err != nil {
+		return err
+	}
+	if release, err = carriedRelease(release, have, o.carriedBy); err != nil {
+		return err
+	}
+	keys, err := trustedKeyIDs(os.Getenv("RELEASE_ASSETS_ROOT"))
+	if err != nil {
+		return fmt.Errorf("reading the updater keys the app trusts (run this through scripts/release-assets.sh): %w", err)
+	}
+	in := latestInput{
+		release: release, assets: have, sigDir: o.sigs, pubDate: o.pubDate,
+		baseURL: strings.TrimSuffix(o.baseURL, "/"), trustedKeyIDs: keys, newerThan: o.newerThan,
+	}
+	if validate {
+		return validateFile(o.file, in.rules())
+	}
+	return writeLatest(in, o.notes, o.out)
+}
+
+func runStage(o options, release manifest.Release) error {
+	if o.osName == "" {
+		return errNoOS
+	}
+	res, err := stage(stageInput{release: release, os: manifest.OS(o.osName), from: o.from, advisories: o.advisories, out: o.out})
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(os.Stderr, "Staged %s\n", strings.Join(res.files, ", "))
+	return appendOutputs(formatOutputs(res.outputs()))
+}
+
+func runChecksumFiles(o options, release manifest.Release) error {
+	have, err := readReleaseAssets(o.assets)
+	if err != nil {
+		return err
+	}
+	if release, err = carriedRelease(release, have, o.carriedBy); err != nil {
+		return err
+	}
+	files, err := manifest.Present(release.Downloads(), assetNames(have))
+	if err != nil {
+		return err
+	}
+	for _, name := range manifest.Names(files) {
+		fmt.Println(name)
+	}
+	return nil
 }
 
 // carriedRelease is release as it carries its legs (`manifest/legs.go`): the ones the
@@ -171,14 +196,18 @@ func vetNSISFiles(version string, paths []string) error {
 	if len(paths) == 0 {
 		return errors.New("vet-nsis: name the installers to vet")
 	}
+	want, err := nsis.ExpectFromRepo(os.Getenv("RELEASE_ASSETS_ROOT"), version)
+	if err != nil {
+		return fmt.Errorf("vet-nsis: reading the app's name and publisher (run this through scripts/release-assets.sh): %w", err)
+	}
 	refused := 0
 	for _, p := range paths {
-		if err := nsis.Vet(p, version); err != nil {
+		if err := nsis.Vet(p, want); err != nil {
 			fmt.Printf("    %s: REFUSED, it %v\n", filepath.Base(p), err)
 			refused++
 			continue
 		}
-		fmt.Printf("    %s: the NSIS installer of %s, unsigned, as the updater expects today\n", filepath.Base(p), version)
+		fmt.Printf("    %s: the NSIS installer of %s %s by %s, packing that build, unsigned, as the updater expects today\n", filepath.Base(p), want.ProductName, version, want.Publisher)
 	}
 	if refused > 0 {
 		return fmt.Errorf("%d of %d Windows installers would install something other than %s", refused, len(paths), version)

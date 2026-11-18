@@ -26,6 +26,11 @@ func fakeInstaller(t *testing.T, fixed [4]uint16, product string, signed bool) s
 	binary.LittleEndian.PutUint32(info[16:], uint32(fixed[0])<<16|uint32(fixed[1]))
 	binary.LittleEndian.PutUint32(info[20:], uint32(fixed[2])<<16|uint32(fixed[3]))
 	block.Write(info)
+	block.Write(make([]byte, 6))
+	block.Write(utf16Bytes("ProductName"))
+	block.Write(make([]byte, align4(block.Len())-block.Len()))
+	block.Write(utf16Bytes("Cmdr"))
+	block.Write(make([]byte, align4(block.Len())-block.Len()))
 	if product != "" {
 		block.Write(make([]byte, 6))
 		block.Write(utf16Bytes("ProductVersion"))
@@ -72,12 +77,16 @@ func fakeInstaller(t *testing.T, fixed [4]uint16, product string, signed bool) s
 	return path
 }
 
-func TestVetNSISPassesThisReleasesInstaller(t *testing.T) {
-	must(t, Vet(fakeInstaller(t, [4]uint16{0, 70, 0, 0}, "0.70.0", false), "0.70.0"))
+func expect(version string) Expect {
+	return Expect{Version: version, ProductName: "Cmdr", Publisher: "Test Publisher AB"}
 }
 
-// Each way an installer can be some other build than the one its signature names.
-func TestVetNSISRefusesAnotherBuild(t *testing.T) {
+func TestVetNSISPassesThisReleasesStub(t *testing.T) {
+	must(t, vetStub(fakeInstaller(t, [4]uint16{0, 70, 0, 0}, "0.70.0", false), expect("0.70.0")))
+}
+
+// Each way an installer's stub can be some other build than the one its signature names.
+func TestVetNSISRefusesAnotherBuildsStub(t *testing.T) {
 	cases := []struct {
 		name    string
 		path    string
@@ -90,21 +99,59 @@ func TestVetNSISRefusesAnotherBuild(t *testing.T) {
 		{"an Authenticode signature nothing pins", fakeInstaller(t, [4]uint16{0, 70, 0, 0}, "0.70.0", true), "0.70.0", "task 50"},
 	}
 	for _, c := range cases {
-		err := Vet(c.path, c.version)
+		err := Vet(c.path, expect(c.version))
 		if err == nil || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("%s: got %v, want an error saying %q", c.name, err, c.want)
 		}
 	}
 	notPE := filepath.Join(t.TempDir(), "setup.exe")
 	must(t, os.WriteFile(notPE, []byte("not a program"), 0o644))
-	if err := Vet(notPE, "0.70.0"); err == nil || !strings.Contains(err.Error(), "isn't a Windows executable") {
+	if err := Vet(notPE, expect("0.70.0")); err == nil || !strings.Contains(err.Error(), "isn't a Windows executable") {
 		t.Errorf("a non-PE file: %v", err)
+	}
+	other := expect("0.70.0")
+	other.ProductName = "Other"
+	if err := vetStub(fakeInstaller(t, [4]uint16{0, 70, 0, 0}, "0.70.0", false), other); err == nil || !strings.Contains(err.Error(), `ProductName is "Cmdr", not "Other"`) {
+		t.Errorf("another product's installer: %v", err)
 	}
 }
 
 // A prerelease's fixed version is its three numbers; its string is the whole version.
 func TestVetNSISReadsAPrereleaseVersion(t *testing.T) {
-	must(t, Vet(fakeInstaller(t, [4]uint16{0, 70, 0, 0}, "0.70.0-beta.1", false), "0.70.0-beta.1"))
+	must(t, vetStub(fakeInstaller(t, [4]uint16{0, 70, 0, 0}, "0.70.0-beta.1", false), expect("0.70.0-beta.1")))
+}
+
+// Real NSIS installers from `testdata/gen.sh` (makensis, Tauri's layout: solid LZMA, Unicode):
+// the payload's version resource and the uninstall entry are read without running anything.
+func TestVetNSISReadsThePayloadAndTheUninstallEntry(t *testing.T) {
+	must(t, Vet("testdata/good-0.70.0-setup.exe", expect("0.70.0")))
+	cases := []struct {
+		name, file string
+		want       Expect
+		says       string
+	}{
+		{"an app of another version inside", "stale-app-0.70.0-setup.exe", expect("0.70.0"), "packs a Cmdr of version 0.69.0"},
+		{"an uninstall entry naming another publisher", "other-publisher-0.70.0-setup.exe", expect("0.70.0"), `never writes "Test Publisher AB"`},
+		{"an app by another publisher", "good-0.70.0-setup.exe", Expect{Version: "0.70.0", ProductName: "Cmdr", Publisher: "Someone Else"}, `published by "Test Publisher AB", not "Someone Else"`},
+	}
+	for _, c := range cases {
+		err := Vet(filepath.Join("testdata", c.file), c.want)
+		if err == nil || !strings.Contains(err.Error(), c.says) {
+			t.Errorf("%s: got %v, want an error saying %q", c.name, err, c.says)
+		}
+	}
+	// A stub that's right with nothing packed behind it (the fake above) isn't an installer.
+	if err := Vet(fakeInstaller(t, [4]uint16{0, 70, 0, 0}, "0.70.0", false), expect("0.70.0")); err == nil || !strings.Contains(err.Error(), "isn't an NSIS installer") {
+		t.Errorf("a bare stub: %v", err)
+	}
+}
+
+func TestExpectFromRepoReadsTheTauriConfig(t *testing.T) {
+	got, err := ExpectFromRepo("../../..", "0.70.0")
+	must(t, err)
+	if got.ProductName != "Cmdr" || got.Publisher == "" || got.Version != "0.70.0" {
+		t.Fatalf("ExpectFromRepo = %+v", got)
+	}
 }
 
 func must(t *testing.T, err error) {

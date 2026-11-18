@@ -1072,7 +1072,9 @@ jobs:
   # Windows at this version (`release-assets.sh stage`, refusing anything else by name), writes the
   # advisory list from its own checkout, vets the installer, and signs and uploads those names alone,
   # the way `sign` takes exactly one `Cmdr` from each `compiled-*` artifact. It runs the Tauri signer,
-  # `gh`, and our stdlib-only Go, nothing from the build. After macOS's `sign`, which creates the
+  # `gh`, and our Go (memory-safe, no cgo; Go builds run no build hooks), nothing from the build. The
+  # Go's modules from outside the repo: `golang.org/x/crypto` (the signature check) and
+  # `github.com/ulikunitz/xz` (reading the installer's LZMA payload, before the key step). After macOS's `sign`, which creates the
   # release in `ci` mode (`local` mode's `draft` made it already). In `local` mode it uploads no
   # `.sig`: `release-finish.sh` signs the Windows files on the laptop.
   windows-publish:
@@ -1122,8 +1124,10 @@ jobs:
           ./scripts/release-assets.sh stage -version "${TAG#v}" -os windows -from "$RUNNER_TEMP/windows-artifact" \
             -advisories apps/desktop/src-tauri/resources/security-advisories.json -out "$RUNNER_TEMP/windows-x86_64"
 
-      # The installer the updater would run must be this release's (`scripts/release-assets/nsis/nsis.go`),
-      # checked here, on the bytes this job signs and uploads, before any key is in reach.
+      # The installer the updater would run must be this release's (`scripts/release-assets/nsis/nsis.go`):
+      # its own version resource, the app it packs (version and publisher), and its uninstall entry,
+      # read without running it. Checked here, on the bytes this job signs and uploads, before any
+      # key is in reach.
       - name: Vet the Windows installer
         env:
           TAG: ${{ github.ref_name }}
@@ -1433,8 +1437,9 @@ jobs:
           cargo run --quiet --release --locked -p cmdr-update-trust --bin cmdr-vet-update -- \
               --version "$VERSION" "${paths[@]}"
 
-      # The Windows installer the updater would run must be this release's: its version resource
-      # names the version its signature does (`scripts/release-assets/nsis/nsis.go`).
+      # The Windows installer the updater would run must be this release's: its version resource,
+      # the app it packs, and its uninstall entry name the version its signature does
+      # (`scripts/release-assets/nsis/nsis.go`).
       - name: Install Go for the Windows check
         if: needs.guard.outputs.ships-windows == 'true'
         uses: ./.github/actions/install-mise

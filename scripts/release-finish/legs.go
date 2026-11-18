@@ -44,6 +44,27 @@ func legsOnDraft(release manifest.Release, rel releaseInfo) (legs []manifest.OS,
 	return complete, lines
 }
 
+// signWholeLegs puts each leg whole on the draft through the core's checks and signs it, answering
+// the names it signed. One that fails them is left out with a line (`publish` then carries the
+// release without it), never holding the core.
+func signWholeLegs(cfg config, pubkeys []string, dir string, rel releaseInfo, commit string) []string {
+	release := manifest.For(cfg.version)
+	legs, lines := legsOnDraft(release, rel)
+	for _, line := range lines {
+		step("%s", line)
+	}
+	var signed []string
+	for _, leg := range legs {
+		names := legSigned(release, leg)
+		if err := checkAndSign(cfg, pubkeys, dir, names, commit); err != nil {
+			step("%s ships without its %s files, which didn't pass the checks: %v", cfg.tag, leg, err)
+			continue
+		}
+		signed = append(signed, names...)
+	}
+	return signed
+}
+
 // verifyNames are what `-verify-dir` checks in dir: every core signed file (each must be there),
 // plus each other signed file of the release whose `.sig` is in dir (a leg the release carries).
 func verifyNames(release manifest.Release, dir string) []string {
@@ -93,6 +114,27 @@ func jobIs(name, want string) bool { return name == want || strings.HasSuffix(na
 
 func isLegJob(name string) bool {
 	return slices.ContainsFunc(legJobNames, func(want string) bool { return jobIs(name, want) })
+}
+
+// buildSignable reads the build run's state: done and green, done early (the core green while the
+// Windows leg's jobs still go: the leg never holds this, and is signed only if it's whole on the
+// draft by then), still going, or red.
+func buildSignable(cfg config, id int64, v runView) (bool, error) {
+	early, failed := coreDone(v.ciJobs())
+	rerun := fmt.Sprintf("Re-run its failed jobs (`gh run rerun %d --failed`), then run this again", id)
+	switch {
+	case v.Status == "completed" && v.Conclusion != "success":
+		return false, fmt.Errorf("the %s build run ended %s: %s. %s", cfg.tag, v.Conclusion, runURL(id), rerun)
+	case v.Status == "completed":
+		step("The build run is green (%s)", runURL(id))
+		return true, nil
+	case early && len(failed) > 0:
+		return false, fmt.Errorf("the %s build run's %s didn't succeed: %s. %s", cfg.tag, strings.Join(failed, ", "), runURL(id), rerun)
+	case early:
+		step("The build run's macOS jobs are green (%s); its Windows jobs are still going, and this won't wait for them", runURL(id))
+		return true, nil
+	}
+	return false, nil
 }
 
 // coreDone reports whether the build run's core is done before the run is (its leg jobs still

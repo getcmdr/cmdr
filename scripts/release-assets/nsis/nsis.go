@@ -4,24 +4,102 @@ import (
 	"bytes"
 	"debug/pe"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"unicode/utf16"
 )
+
+// Expect is what a release's NSIS installer must say about itself: the release's version, and the
+// app's name and publisher as the repo's Tauri config has them (`ExpectFromRepo`).
+type Expect struct {
+	Version, ProductName, Publisher string
+}
+
+// ExpectFromRepo reads the product name (`tauri.conf.json`) and the Windows publisher
+// (`tauri.windows.conf.json`) the bundler stamps, so the vet and the build share one source.
+func ExpectFromRepo(root, version string) (Expect, error) {
+	dir := filepath.Join(root, "apps", "desktop", "src-tauri")
+	var base struct {
+		ProductName string `json:"productName"`
+	}
+	var win struct {
+		Bundle struct {
+			Publisher string `json:"publisher"`
+		} `json:"bundle"`
+	}
+	for file, into := range map[string]any{"tauri.conf.json": &base, "tauri.windows.conf.json": &win} {
+		raw, err := os.ReadFile(filepath.Join(dir, file))
+		if err != nil {
+			return Expect{}, err
+		}
+		if err := json.Unmarshal(raw, into); err != nil {
+			return Expect{}, fmt.Errorf("%s: %w", file, err)
+		}
+	}
+	if base.ProductName == "" || win.Bundle.Publisher == "" {
+		return Expect{}, errors.New("the Tauri config names no product name or Windows publisher")
+	}
+	return Expect{Version: version, ProductName: base.ProductName, Publisher: win.Bundle.Publisher}, nil
+}
 
 // Vet is the Windows half of `vet-update-archives`: the NSIS installer an install's updater
 // would run must be this release's. Off macOS the updater can't open an installer before it runs
 // (`apps/desktop/src-tauri/src/updater/DETAILS.md` § Windows and Linux), so it trusts the version
 // the signature names (`--app-version`); an installer built from another version but signed as
-// this one would install that other version under this one's name. So the installer's own version
-// resource (what Tauri's NSIS template stamps: `VIProductVersion`, `ProductVersion`) must be the
-// release's.
+// this one would install that other version under this one's name. So, reading the installer
+// without running it:
+//
+//   - the stub's own version resource (Tauri's template: `VIProductVersion`, `ProductVersion`,
+//     `ProductName`) names this release and the app;
+//   - every packed copy of the app (the PE files whose ProductName is the app's) carries this
+//     version and the publisher in its version resource, and there's at least one;
+//   - the script's uninstall entry, as far as its string table shows it: the
+//     `…\CurrentVersion\Uninstall\<product>` key, `DisplayVersion` and the version, and `Publisher`
+//     and the publisher.
+//
+// It names the release's build, not its integrity: a hostile build stamps whatever it likes into
+// all three. What it catches is a stale or mixed-up bundle; what proves where the installer came
+// from is its provenance (`attest`) and the updater key's signature.
 //
 // It also refuses an Authenticode-signed installer: nothing pins a signer yet (Windows port plan
 // task 50, after D3 step 3's Azure Artifact Signing), and a signature nobody checks is one an
 // attacker's build could carry too. Signing the direct download comes with that check.
-func Vet(path, version string) error {
+func Vet(path string, want Expect) error {
+	if err := vetStub(path, want); err != nil {
+		return err
+	}
+	p, err := readPayload(path, want.ProductName)
+	if err != nil {
+		return err
+	}
+	if len(p.apps) == 0 {
+		return fmt.Errorf("packs no %s executable with a version resource", want.ProductName)
+	}
+	numeric := numericVersion(want.Version)
+	for _, app := range p.apps {
+		switch {
+		case app.fixed != numeric || app.product != want.Version:
+			return fmt.Errorf("packs a %s of version %s (%s), not %s", want.ProductName, app.product, app.fixed, want.Version)
+		case app.company != want.Publisher:
+			return fmt.Errorf("packs a %s published by %q, not %q", want.ProductName, app.company, want.Publisher)
+		}
+	}
+	uninstall := `Software\Microsoft\Windows\CurrentVersion\Uninstall\` + want.ProductName
+	for _, s := range []string{uninstall, "DisplayVersion", want.Version, "Publisher", want.Publisher} {
+		if !headerHasString(p.header, s) {
+			return fmt.Errorf("its script never writes %q, so its uninstall entry can't name %s %s by %s", s, want.ProductName, want.Version, want.Publisher)
+		}
+	}
+	return nil
+}
+
+// vetStub checks the installer's own PE: no Authenticode signature, and a version resource naming
+// this release and the app.
+func vetStub(path string, want Expect) error {
 	f, err := pe.Open(path)
 	if err != nil {
 		return fmt.Errorf("isn't a Windows executable: %w", err)
@@ -39,15 +117,18 @@ func Vet(path, version string) error {
 	if err != nil {
 		return err
 	}
-	if want := numericVersion(version); fixed != want {
-		return fmt.Errorf("its version resource says %s, not %s", fixed, want)
+	if numeric := numericVersion(want.Version); fixed != numeric {
+		return fmt.Errorf("its version resource says %s, not %s", fixed, numeric)
 	}
 	product, ok := versionString(block, "ProductVersion")
 	if !ok {
 		return errors.New("its version resource has no ProductVersion string")
 	}
-	if product != version {
-		return fmt.Errorf("its ProductVersion is %q, not %q", product, version)
+	if product != want.Version {
+		return fmt.Errorf("its ProductVersion is %q, not %q", product, want.Version)
+	}
+	if name, _ := versionString(block, "ProductName"); name != want.ProductName {
+		return fmt.Errorf("its ProductName is %q, not %q", name, want.ProductName)
 	}
 	return nil
 }

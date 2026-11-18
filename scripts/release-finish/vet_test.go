@@ -26,7 +26,7 @@ func TestVetSendsEachUpdatePayloadToItsOwnCheck(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "Cmdr_0.70.0_x64-setup.exe"), []byte("not an installer"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	err := vetArchives(run, "/repo", release, dir, names)
+	err := vetArchives(run, "../..", release, dir, names)
 	if err == nil || !strings.Contains(err.Error(), "refusing to sign Cmdr_0.70.0_x64-setup.exe: it isn't a Windows executable") {
 		t.Fatalf("a broken Windows installer passed: %v", err)
 	}
