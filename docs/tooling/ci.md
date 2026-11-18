@@ -624,8 +624,8 @@ on any build script that needs MSVC's `cl.exe`.
   `cmdr-update-trust`. The list only grows: a member joins by dropping its restriction, and leaving needs an allowlist
   entry, which `workspace-member-coverage` enforces (`scripts/check/checks/DETAILS.md` § "The Windows ratchet").
   `cmdr-fs` and 16 members above it joined on 2026-11-18 after `cargo clippy --all-targets -D warnings` passed for them
-  on the Windows 10 22H2 builder (MSVC); the members still pending, their blockers, and the builder's test runs:
-  `docs/notes/windows-port/build-progress.md`.
+  on the Windows 10 22H2 builder (MSVC), and `cmdr-index` and `index-query` the same day; the members still pending,
+  their blockers, and the builder's test runs: `docs/notes/windows-port/build-progress.md`.
 - **The break report (never red)**: `desktop-rust-windows-breaks` runs one `cargo check --keep-going --all-targets` over
   every other member that builds on Linux, and classifies each: compiles (ready to join), fails (its error count and
   first errors), or blocked (the failing crates in its dependency closure, ours or third-party, a failed build script
