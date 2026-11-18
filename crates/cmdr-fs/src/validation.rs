@@ -16,7 +16,8 @@ pub const MAX_NAME_BYTES: usize = 255;
 /// Maximum path length in bytes.
 /// macOS PATH_MAX is 1024; Linux PATH_MAX is 4096. Windows borrows Linux's: its local backend
 /// reaches past `MAX_PATH` through `\\?\` paths (32,767 UTF-16 units), so 4,096 bytes is a
-/// conservative floor until name validity follows the destination (windows-port plan, task 14).
+/// conservative floor. Unlike name validity ([`NameRules`], keyed on the destination's format),
+/// this limit is keyed on the host OS.
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 pub const MAX_PATH_BYTES: usize = 4096;
 /// Maximum path length in bytes (macOS `PATH_MAX`, which the browser build borrows).

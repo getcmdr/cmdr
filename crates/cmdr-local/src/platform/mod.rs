@@ -1,7 +1,7 @@
 //! The local disk's `Volume`, one sibling per OS family: `LocalPosixVolume` on macOS and
 //! Linux, `LocalWindowsVolume` on Windows.
 //!
-//! Siblings, not one type with Windows arms (windows-port plan, task 35): a POSIX volume is
+//! Siblings, not one type with Windows arms: a POSIX volume is
 //! `lstat`, `renamex_np`/`renameat2`, modes, and xattrs through and through, and a Windows one
 //! is `\\?\` paths, `MoveFileExW`, attributes, and reparse points. Each OS's callers name the
 //! one it has; what both answer the same way is pinned here.
