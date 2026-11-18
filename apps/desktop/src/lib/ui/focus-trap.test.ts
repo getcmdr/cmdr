@@ -225,6 +225,28 @@ describe('trapFocus: leak guard', () => {
     expect(document.activeElement).toBe(buttons[1])
   })
 
+  it('leaves focus in a command menu over the dialog (the Mac bar, a context menu)', async () => {
+    const { container, buttons } = buildDialog(2)
+    const bar = document.createElement('div')
+    bar.setAttribute('role', 'menubar')
+    const title = document.createElement('div')
+    title.tabIndex = 0
+    bar.append(title)
+    const menu = document.createElement('div')
+    menu.dataset.commandMenu = 'context'
+    menu.tabIndex = -1
+    document.body.append(bar, menu)
+    trapFocus(container)
+    focusWithEvent(buttons[1])
+
+    focusWithEvent(title)
+    await flushMicrotasks()
+    expect(document.activeElement).toBe(title)
+    focusWithEvent(menu)
+    await flushMicrotasks()
+    expect(document.activeElement).toBe(menu)
+  })
+
   it('falls back to the first tabbable when nothing inside was focused yet', async () => {
     const { container, buttons } = buildDialog(2)
     const outside = document.createElement('button')

@@ -568,7 +568,8 @@ Tab-Tab bug: Esc, ⌘⇧P, and Tab all dead, mouse-only recovery). The action do
 2. **Leak guard**: a document-level capture `focusin` listener pulls focus back if it lands outside the container anyway
    (a programmatic `.focus()` from background code). The pull-back is deferred by one microtask so a closing dialog's
    own focus-restore (`onDestroy` → `restoreFocus(...)`) wins — the action's destroy unregisters the trap before the
-   microtask runs.
+   microtask runs. Focus in a command menu over the dialog (the Mac bar, a context menu: § Command menus) stays: the
+   menu gives it back on a pick or Escape.
 3. **Escape fallback**: if Escape fires while focus is outside the container (the broken state the guard exists for),
    `onEscape` runs. When focus is inside — the healthy state — the action stays out of the way and the dialog's own
    Escape handler works as usual.
@@ -1509,7 +1510,7 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
     answer kept live by the caller (`followMenuBar` from `#lib/tauri-commands` runs the ordering contract), `onPick(id)`
     gets the row's menu id with focus already back where it was (send it through `pickMenuBarItem`). `keyScope` reserves
     the window's own Alt+letter keys (the viewer's `'Viewer window'`). `inert` adds to the dialogs it follows itself
-    (`isAnySoftDialogOpen()`): pass the palette and the explorer overlays.
+    (`isAnySoftDialogOpen()`, the `desktop` flavor only): pass the palette and the explorer overlays.
   - `createContextMenu({ onPick, flavor?, accessKeys?, onClose? })` (`command-menu/context-menu.svelte.ts`) and one
     `<ContextMenu {menu}>` per window; `menu.open({ rows, at, fromKeyboard, anchorElement?, label? })` with the rows
     `open_context_menu_in_page` answered, its `anchor` or the pointer as `at`, and `onPick` sending
@@ -1546,8 +1547,11 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
   context menu at the point flipping on either axis (`placeAtPoint`), a submenu beside its row flipping left
   (`placeBesideRow`); each scrolls on the roomier side when it fits neither. 4 px off the edge.
 - **Dismissal**: a click elsewhere, the window losing focus, a resize (context menus), a scroll of what the context menu
-  was opened on (`anchorElement`), and a dialog opening close it without moving focus. The bar goes `inert` under a
-  modal surface, as Win32 disables an owner window's bar.
+  was opened on (`anchorElement`), and a dialog opening close it without moving focus. Under a dialog the bar follows
+  its flavor: `desktop` goes `inert` (and closes), as Win32 disables an owner window's bar; `mac` stays usable, as
+  macOS's own bar does over a sheet, with the refused rows greyed by the backend (`set_commands_refused_over_dialog`).
+  `focus-trap.ts` leaves focus in a command menu alone (`[role="menubar"], [data-command-menu]`), which gives it back
+  itself on a pick or Escape.
 - **The bar and focus the app moves** (`menu-bar.svelte.ts` `onFocusIn`): it lets go only when focus leaves something it
   owns for somewhere outside the window's focus home (a text field a ⌘ command opened). Focus that never came from the
   bar (a click on a title with focus on `<body>`) and focus the app puts back in its home (the explorer's lists) leave

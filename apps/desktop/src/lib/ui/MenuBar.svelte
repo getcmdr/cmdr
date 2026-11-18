@@ -28,7 +28,7 @@
         flavor?: MenuFlavor
         /** The window's command scope: its own Alt+letter commands keep their letters (the viewer's `Alt+R`). */
         keyScope?: CommandScope
-        /** True while a modal surface is up, beyond the dialogs this already follows (the palette). */
+        /** True while a modal surface is up, beyond the dialogs the desktop flavor already follows (the palette). */
         inert?: boolean
         /**
          * Whether Alt, F10, and Alt+letter (⌃F2 on the Mac) reach this bar from anywhere in the
@@ -55,7 +55,9 @@
     let barElement: HTMLElement | undefined = $state()
     const titleElements: (HTMLElement | undefined)[] = $state([])
 
-    const isInert = $derived(inert || isAnySoftDialogOpen())
+    // Under a dialog the desktop bar goes inert, as Win32 disables an owner window's bar; the Mac
+    // bar stays usable, as macOS's own does over a sheet, its refused rows greyed by the backend.
+    const isInert = $derived(inert || (flavor === 'desktop' && isAnySoftDialogOpen()))
 
     const bar = createMenuBar({
         getMenus: () => menus,
@@ -74,8 +76,7 @@
     // Once per mount: untracked, or a state read inside would tear the listeners down mid-use.
     $effect(() => untrack(() => bar.attach()))
 
-    // A modal surface coming up takes the bar's keyboard and closes its menu, as Win32 disables an
-    // owner window's bar under a modal dialog.
+    // A modal surface coming up takes the bar's keyboard and closes its menu (the desktop flavor).
     $effect(() => {
         if (isInert) untrack(() => {
             bar.close()

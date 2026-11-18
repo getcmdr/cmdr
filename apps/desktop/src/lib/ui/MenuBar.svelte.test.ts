@@ -13,6 +13,7 @@ import { withConventions } from '#lib/platform/test-platform.js'
 import { expectNoA11yViolations } from '#lib/test-a11y.js'
 import MenuBar from './MenuBar.svelte'
 import { registerFocusHome } from './focus-restore'
+import { trapFocus } from './focus-trap'
 import { markDialogClosed, markDialogOpen } from './open-dialogs.svelte'
 import type { MenuFlavor } from './command-menu/rows'
 
@@ -599,6 +600,34 @@ describe('MenuBar on the Mac flavor (the browser demo)', () => {
     expect(surfaces()).toHaveLength(2)
     expect(rows(1)[0].querySelector('circle')).toBeNull()
     expect(rows(1)[0].querySelector('path')).not.toBeNull()
+  })
+
+  it('stays usable while a dialog is up, as macOS keeps its bar over a sheet', async () => {
+    // A trapping dialog, as `ModalDialog` renders one, holding focus.
+    const dialog = document.createElement('div')
+    dialog.setAttribute('role', 'dialog')
+    const field = document.createElement('input')
+    dialog.append(field)
+    document.body.append(dialog)
+    const trap = trapFocus(dialog)
+    field.focus()
+    markDialogOpen('about')
+    teardowns.push(() => {
+      markDialogClosed('about')
+      trap.destroy?.()
+    })
+    await setup({ flavor: 'mac' })
+    expect(document.querySelector('[role="menubar"]')?.hasAttribute('inert')).toBe(false)
+    titles()[1].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }))
+    await settle()
+    await Promise.resolve()
+    await settle()
+    expect(surfaces()).toHaveLength(1)
+    await press('ArrowDown')
+    expect(focusedText()).toContain('Show hidden files')
+    await press('Escape')
+    await press('Escape')
+    expect(document.activeElement).toBe(field)
   })
 
   it('opens ↑ on the first row, as the Mac does', async () => {

@@ -74,6 +74,9 @@ interface TrapEntry {
 }
 
 const stack: TrapEntry[] = []
+
+/** The in-page command menus (`command-menu/`): the bar, its flyouts, and the context menus. */
+const COMMAND_MENU_SELECTOR = '[role="menubar"], [data-command-menu]'
 let listenersInstalled = false
 
 /**
@@ -269,6 +272,9 @@ function handleFocusIn(e: FocusEvent): void {
     top.lastFocusedInside = target
     return
   }
+  // A command menu over the dialog (the Mac bar and its menus, which stay usable over a sheet, or
+  // a context menu) holds focus for its life and gives it back itself on a pick or Escape.
+  if (target.closest(COMMAND_MENU_SELECTOR) !== null) return
   // Focus escaped. Pull it back after a microtask, not synchronously: when a dialog
   // closes, its onDestroy restores focus to the pane while this trap may still be
   // registered for the remainder of the teardown. The microtask runs after the
