@@ -183,6 +183,10 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   `mtp.connectedToast.body`) read as an everyday word where GNOME's term is one (vi `tùy thích`, "as you like"); KDE now
   names the window "Configure Cmdr" there. Proposed rule: a pointer naming the settings window is capitalized as a name
   on GNOME too. Rewords the GNOME branch only. (es, pt, vi, zh, zh-Hant)
+- `onboarding.localDownloadFailed.openSettings` ("Open Settings") is a plain value, while every sibling button naming
+  the settings window (`adb.connect.openSettings`, `stateRecovery.*.openSettings`) now carries `windows`, `linuxGnome`,
+  and `linuxKde` branches. Where Microsoft's word differs (ru `Параметры` beside Apple's `Настройки`) term-consistency
+  warns, and Windows, GNOME, and KDE users read the macOS word there. Give it the same per-OS value. (ru)
 
 ## Process feedback
 
@@ -287,3 +291,9 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   `sameAsSourceJustification` in every locale; an empty source branch could be exempt. (es, pt, vi, zh, zh-Hant)
 - A ruling form scoped to the KDE branch (`linuxKde` beside `windows` / `other`) would replace the KDE `configure` words
   each locale carries as an `accept` (46–56 termbase warnings cleared that way). (de, nl, sv, fr)
+- cs, ru, uk, hu settings-window batch: no catalog or termbase script. Each `values.json` was a `jq` one-liner turning
+  `keys.txt` into `{ "keep": true }` entries, merged with a hand-written file of the branches to change; a
+  `pnpm i18n:apply --keep-rest` (keep every batch key the file doesn't name) would replace it. `i18n:values` has no way
+  to show only the branches still in English, so finding the `linuxKde` gaps took a `grep "= English"` over its output.
+  The worktree guard refused a `for` loop over `i18n:values` per locale and a `while read` over the brief. (cs, ru, uk,
+  hu)
