@@ -197,6 +197,14 @@
       "lines": 930,
       "reason": "the archive's one `Volume` impl, one short method per trait call over the cached index; the stream adapters already live in `volume_streams.rs` and the AppleDouble pairing in `read/sidecars.rs`, so a further split would only scatter the trait impl The trait's flip to app paths added a two-line bridge prelude to most methods, which go once this crate speaks app paths internally."
     },
+    "crates/cmdr-operations/src/rename/bulk.rs": {
+      "lines": 863,
+      "reason": "Bulk rename's planner and executor; it crossed the line only through the `Volume` trait's flip to app paths, whose bridge calls (`AppPath::legacy_unchecked` at each `Volume` call) rustfmt spreads over more lines. Those go once `cmdr-operations` speaks app paths internally, which brings it back under."
+    },
+    "crates/cmdr-operations/src/transfer/volume/faulty_volume_test_support.rs": {
+      "lines": 802,
+      "reason": "`forward_volume_methods!` (one arm per `Volume` method, spelled fully qualified) and `FaultyVolume`; it crossed the line only through the `Volume` trait's flip to app paths, whose longer `::cmdr_fs::app_path::AppPath` signatures and bridge preludes rustfmt spreads over more lines. Those go once `cmdr-operations` speaks app paths internally."
+    },
     "crates/cmdr-fs/src/volume/conformance.rs": {
       "lines": 808,
       "reason": "The cross-backend contract suite's shared cases; it crossed the line only through the `Volume` trait's flip to app paths, whose bridge calls (`AppPath::legacy_unchecked` at each `Volume` call) rustfmt spreads over more lines. Those go once `cmdr-fs` speaks app paths internally, which brings it back under."
