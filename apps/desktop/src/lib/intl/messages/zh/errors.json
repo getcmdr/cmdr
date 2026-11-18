@@ -2644,7 +2644,7 @@
   "@errors.listing.smbEncryptionRequired.explanation": {
     "sourceHash": "5eeef51"
   },
-  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {可以这样试试：\n- 用账户登录：以客人身份连接时无法加密\n- 在服务器上开启 SMB 加密\n- 如果用不着，在“首选项”中关闭“始终要求 SMB 加密”} linuxKde {可以这样试试：\n- 用账户登录：以客人身份连接时无法加密\n- 在服务器上开启 SMB 加密\n- 如果用不着，在“配置 Cmdr”中关闭“始终要求 SMB 加密”} other {可以这样试试：\n- 用账户登录：以客人身份连接时无法加密\n- 在服务器上开启 SMB 加密\n- 如果用不着，在“设置”中关闭“始终要求 SMB 加密”}}",
+  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, windows {可以这样试试：\n- 用账户登录：以客人身份连接时无法加密\n- 在服务器上开启 SMB 加密\n- 如果用不着，在“设置”中关闭“始终要求 SMB 加密”} linuxGnome {可以这样试试：\n- 用账户登录：以客人身份连接时无法加密\n- 在服务器上开启 SMB 加密\n- 如果用不着，在“首选项”中关闭“始终要求 SMB 加密”} linuxKde {可以这样试试：\n- 用账户登录：以客人身份连接时无法加密\n- 在服务器上开启 SMB 加密\n- 如果用不着，在“配置 Cmdr”中关闭“始终要求 SMB 加密”} other {可以这样试试：\n- 用账户登录：以客人身份连接时无法加密\n- 在服务器上开启 SMB 加密\n- 如果用不着，在“设置”中关闭“始终要求 SMB 加密”}}",
   "@errors.listing.smbEncryptionRequired.suggestion": {
     "sourceHash": "5d8e637"
   },
@@ -2668,7 +2668,7 @@
   "@errors.write.smbEncryptionRequired.message": {
     "sourceHash": "ec53744"
   },
-  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {请用账户登录，不要以客人身份连接，或者在服务器上开启 SMB 加密。你也可以在“首选项”中关闭“始终要求 SMB 加密”。} linuxKde {请用账户登录，不要以客人身份连接，或者在服务器上开启 SMB 加密。你也可以在“配置 Cmdr”中关闭“始终要求 SMB 加密”。} other {请用账户登录，不要以客人身份连接，或者在服务器上开启 SMB 加密。你也可以在“设置”中关闭“始终要求 SMB 加密”。}}",
+  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, windows {请用账户登录，不要以客人身份连接，或者在服务器上开启 SMB 加密。你也可以在“设置”中关闭“始终要求 SMB 加密”。} linuxGnome {请用账户登录，不要以客人身份连接，或者在服务器上开启 SMB 加密。你也可以在“首选项”中关闭“始终要求 SMB 加密”。} linuxKde {请用账户登录，不要以客人身份连接，或者在服务器上开启 SMB 加密。你也可以在“配置 Cmdr”中关闭“始终要求 SMB 加密”。} other {请用账户登录，不要以客人身份连接，或者在服务器上开启 SMB 加密。你也可以在“设置”中关闭“始终要求 SMB 加密”。}}",
   "@errors.write.smbEncryptionRequired.suggestion": {
     "sourceHash": "bab81dc"
   },

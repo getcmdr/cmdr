@@ -1227,7 +1227,7 @@
   "@aboutThis.verdict.hint.dismiss": {
     "sourceHash": "f18aa5e"
   },
-  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, linuxGnome {隱藏這則提示。你可以在「偏好設定 > 進階」裡把它找回來。} linuxKde {隱藏這則提示。你可以在「設定 Cmdr > 進階」裡把它找回來。} other {隱藏這則提示。你可以在「設定 > 進階」裡把它找回來。}}",
+  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {隱藏這則提示。你可以在「設定 > 進階」裡把它找回來。} linuxGnome {隱藏這則提示。你可以在「偏好設定 > 進階」裡把它找回來。} linuxKde {隱藏這則提示。你可以在「設定 Cmdr > 進階」裡把它找回來。} other {隱藏這則提示。你可以在「設定 > 進階」裡把它找回來。}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
     "sourceHash": "22d9d84"
   },

@@ -307,7 +307,7 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, linuxGnome {AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Tùy thích > AI.} linuxKde {AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Cấu hình Cmdr > AI.} other {AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Cài đặt > AI.}}",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Cài đặt > AI.} linuxGnome {AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Tùy thích > AI.} linuxKde {AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Cấu hình Cmdr > AI.} other {AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Cài đặt > AI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
     "sourceHash": "6e0eb09"
   },
@@ -315,7 +315,7 @@
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "{platform, select, linuxGnome {Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Tùy thích.} linuxKde {Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Cấu hình Cmdr.} other {Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Cài đặt.}}",
+  "onboarding.stepAi.off.help": "{platform, select, windows {Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Cài đặt.} linuxGnome {Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Tùy thích.} linuxKde {Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Cấu hình Cmdr.} other {Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Cài đặt.}}",
   "@onboarding.stepAi.off.help": {
     "sourceHash": "b20cf1d"
   },
@@ -391,7 +391,7 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "{platform, select, linuxGnome {Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Tùy thích.} linuxKde {Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Cấu hình Cmdr.} other {Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.}}",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.} linuxGnome {Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Tùy thích.} linuxKde {Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Cấu hình Cmdr.} other {Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.}}",
   "@onboarding.stepBeta.analyticsCaption": {
     "sourceHash": "47a7511"
   },
@@ -467,7 +467,7 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "{platform, select, linuxGnome {Bạn có thể thay đổi điều này bất cứ lúc nào trong Tùy thích.} linuxKde {Bạn có thể thay đổi điều này bất cứ lúc nào trong Cấu hình Cmdr.} other {Bạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.}}",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Bạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.} linuxGnome {Bạn có thể thay đổi điều này bất cứ lúc nào trong Tùy thích.} linuxKde {Bạn có thể thay đổi điều này bất cứ lúc nào trong Cấu hình Cmdr.} other {Bạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.}}",
   "@onboarding.stepOptional.changeAnytime": {
     "sourceHash": "320f582"
   },

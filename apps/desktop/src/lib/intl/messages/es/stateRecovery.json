@@ -3,11 +3,11 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "{platform, select, linuxGnome {Las estadísticas de uso y los informes de fallos siguen desactivados hasta que vuelvas a activarlos en Preferencias › Actualizaciones y privacidad.} linuxKde {Las estadísticas de uso y los informes de fallos siguen desactivados hasta que vuelvas a activarlos en Configurar Cmdr › Actualizaciones y privacidad.} other {Las estadísticas de uso y los informes de fallos siguen desactivados hasta que vuelvas a activarlos en Ajustes › Actualizaciones y privacidad.}}",
+  "stateRecovery.settings.body": "{platform, select, windows {Las estadísticas de uso y los informes de fallos siguen desactivados hasta que vuelvas a activarlos en Ajustes › Actualizaciones y privacidad.} linuxGnome {Las estadísticas de uso y los informes de fallos siguen desactivados hasta que vuelvas a activarlos en Preferencias › Actualizaciones y privacidad.} linuxKde {Las estadísticas de uso y los informes de fallos siguen desactivados hasta que vuelvas a activarlos en Configurar Cmdr › Actualizaciones y privacidad.} other {Las estadísticas de uso y los informes de fallos siguen desactivados hasta que vuelvas a activarlos en Ajustes › Actualizaciones y privacidad.}}",
   "@stateRecovery.settings.body": {
     "sourceHash": "8e4debd"
   },
-  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Abrir Preferencias} linuxKde {Configurar Cmdr} other {Abrir Ajustes}}",
+  "stateRecovery.settings.openSettings": "{platform, select, windows {Abrir Ajustes} linuxGnome {Abrir Preferencias} linuxKde {Configurar Cmdr} other {Abrir Ajustes}}",
   "@stateRecovery.settings.openSettings": {
     "sourceHash": "f970930"
   },
@@ -19,11 +19,11 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "{platform, select, linuxGnome {Si ahora Cmdr aparece sin licencia, vuelve a introducir tu clave de licencia en Preferencias › Licencia.} linuxKde {Si ahora Cmdr aparece sin licencia, vuelve a introducir tu clave de licencia en Configurar Cmdr › Licencia.} other {Si ahora Cmdr aparece sin licencia, vuelve a introducir tu clave de licencia en Ajustes › Licencia.}}",
+  "stateRecovery.license.body": "{platform, select, windows {Si ahora Cmdr aparece sin licencia, vuelve a introducir tu clave de licencia en Ajustes › Licencia.} linuxGnome {Si ahora Cmdr aparece sin licencia, vuelve a introducir tu clave de licencia en Preferencias › Licencia.} linuxKde {Si ahora Cmdr aparece sin licencia, vuelve a introducir tu clave de licencia en Configurar Cmdr › Licencia.} other {Si ahora Cmdr aparece sin licencia, vuelve a introducir tu clave de licencia en Ajustes › Licencia.}}",
   "@stateRecovery.license.body": {
     "sourceHash": "158e224"
   },
-  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Abrir Preferencias} linuxKde {Configurar Cmdr} other {Abrir Ajustes}}",
+  "stateRecovery.license.openSettings": "{platform, select, windows {Abrir Ajustes} linuxGnome {Abrir Preferencias} linuxKde {Configurar Cmdr} other {Abrir Ajustes}}",
   "@stateRecovery.license.openSettings": {
     "sourceHash": "f970930"
   },

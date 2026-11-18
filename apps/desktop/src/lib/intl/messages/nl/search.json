@@ -67,7 +67,7 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "{platform, select, linuxGnome {Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via Voorkeuren om de tekst in de foto''s te doorzoeken.} linuxKde {Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via ‘Cmdr configureren’ om de tekst in de foto''s te doorzoeken.} other {Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via Instellingen om de tekst in de foto''s te doorzoeken.}}",
+  "search.imageResults.networkOff": "{platform, select, windows {Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via Instellingen om de tekst in de foto''s te doorzoeken.} linuxGnome {Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via Voorkeuren om de tekst in de foto''s te doorzoeken.} linuxKde {Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via ‘Cmdr configureren’ om de tekst in de foto''s te doorzoeken.} other {Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via Instellingen om de tekst in de foto''s te doorzoeken.}}",
   "@search.imageResults.networkOff": {
     "sourceHash": "30b2455"
   },
@@ -220,7 +220,7 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Het indexeren van schijven staat uit in Voorkeuren, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.} linuxKde {Het indexeren van schijven staat uit in ‘Cmdr configureren’, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.} other {Het indexeren van schijven staat uit in Instellingen, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.}}",
+  "search.coverage.toast.indexingOff": "{platform, select, windows {Het indexeren van schijven staat uit in Instellingen, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.} linuxGnome {Het indexeren van schijven staat uit in Voorkeuren, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.} linuxKde {Het indexeren van schijven staat uit in ‘Cmdr configureren’, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.} other {Het indexeren van schijven staat uit in Instellingen, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.}}",
   "@search.coverage.toast.indexingOff": {
     "sourceHash": "7c4ff62"
   },

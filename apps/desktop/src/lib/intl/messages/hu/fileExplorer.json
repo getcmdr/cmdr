@@ -769,11 +769,11 @@
   "@fileExplorer.edit.notOnThisMacWithoutKey": {
     "sourceHash": "4572115"
   },
-  "fileExplorer.edit.hint": "{platform, select, linuxGnome {A fájl ebben nyílt meg: {app}. Legközelebb másik szerkesztőt szeretnél? Válaszd ki a Beállításokban.} linuxKde {A fájl ebben nyílt meg: {app}. Legközelebb másik szerkesztőt szeretnél? Válaszd ki a Cmdr beállításaiban.} other {A fájl ebben nyílt meg: {app}. Legközelebb másik szerkesztőt szeretnél? Válaszd ki a Beállításokban.}}",
+  "fileExplorer.edit.hint": "{platform, select, windows {A fájl ebben nyílt meg: {app}. Legközelebb másik szerkesztőt szeretnél? Válaszd ki a Beállításokban.} linuxGnome {A fájl ebben nyílt meg: {app}. Legközelebb másik szerkesztőt szeretnél? Válaszd ki a Beállításokban.} linuxKde {A fájl ebben nyílt meg: {app}. Legközelebb másik szerkesztőt szeretnél? Válaszd ki a Cmdr beállításaiban.} other {A fájl ebben nyílt meg: {app}. Legközelebb másik szerkesztőt szeretnél? Válaszd ki a Beállításokban.}}",
   "@fileExplorer.edit.hint": {
     "sourceHash": "1ec59c2"
   },
-  "fileExplorer.edit.hintUnnamed": "{platform, select, linuxGnome {A fájl az alapértelmezett szövegszerkesztődben nyílt meg. Legközelebb másikat szeretnél? Válaszd ki a Beállításokban.} linuxKde {A fájl az alapértelmezett szövegszerkesztődben nyílt meg. Legközelebb másikat szeretnél? Válaszd ki a Cmdr beállításaiban.} other {A fájl az alapértelmezett szövegszerkesztődben nyílt meg. Legközelebb másikat szeretnél? Válaszd ki a Beállításokban.}}",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, windows {A fájl az alapértelmezett szövegszerkesztődben nyílt meg. Legközelebb másikat szeretnél? Válaszd ki a Beállításokban.} linuxGnome {A fájl az alapértelmezett szövegszerkesztődben nyílt meg. Legközelebb másikat szeretnél? Válaszd ki a Beállításokban.} linuxKde {A fájl az alapértelmezett szövegszerkesztődben nyílt meg. Legközelebb másikat szeretnél? Válaszd ki a Cmdr beállításaiban.} other {A fájl az alapértelmezett szövegszerkesztődben nyílt meg. Legközelebb másikat szeretnél? Válaszd ki a Beállításokban.}}",
   "@fileExplorer.edit.hintUnnamed": {
     "sourceHash": "00354cc"
   },
@@ -781,7 +781,7 @@
   "@fileExplorer.edit.dismiss": {
     "sourceHash": "48845bf"
   },
-  "fileExplorer.edit.openSettings": "{platform, select, linuxGnome {Beállítások megnyitása} linuxKde {Cmdr beállítása} other {Beállítások megnyitása}}",
+  "fileExplorer.edit.openSettings": "{platform, select, windows {Beállítások megnyitása} linuxGnome {Beállítások megnyitása} linuxKde {Cmdr beállítása} other {Beállítások megnyitása}}",
   "@fileExplorer.edit.openSettings": {
     "sourceHash": "e535825"
   },
@@ -837,7 +837,7 @@
   "@fileExplorer.clipboard.pastedAsFile": {
     "sourceHash": "d61d4b5"
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, linuxGnome {Beállítások} linuxKde {Cmdr beállítása} other {Beállítások}}",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, windows {Beállítások} linuxGnome {Beállítások} linuxKde {Cmdr beállítása} other {Beállítások}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
     "sourceHash": "02ce4ce"
   },
@@ -1837,11 +1837,11 @@
   "@fileExplorer.navigation.favoriteUnreachable.driveUnplugged": {
     "sourceHash": "4b44a30"
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, linuxGnome {A telefonok és kamerák elérése MTP-n keresztül ki van kapcsolva a Beállításokban.} linuxKde {A telefonok és kamerák elérése MTP-n keresztül ki van kapcsolva a Cmdr beállításaiban.} other {A telefonok és kamerák elérése MTP-n keresztül ki van kapcsolva a Beállításokban.}}",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, windows {A telefonok és kamerák elérése MTP-n keresztül ki van kapcsolva a Beállításokban.} linuxGnome {A telefonok és kamerák elérése MTP-n keresztül ki van kapcsolva a Beállításokban.} linuxKde {A telefonok és kamerák elérése MTP-n keresztül ki van kapcsolva a Cmdr beállításaiban.} other {A telefonok és kamerák elérése MTP-n keresztül ki van kapcsolva a Beállításokban.}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
     "sourceHash": "064a270"
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, linuxGnome {Az Android-telefonok elérése ki van kapcsolva a Beállításokban.} linuxKde {Az Android-telefonok elérése ki van kapcsolva a Cmdr beállításaiban.} other {Az Android-telefonok elérése ki van kapcsolva a Beállításokban.}}",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, windows {Az Android-telefonok elérése ki van kapcsolva a Beállításokban.} linuxGnome {Az Android-telefonok elérése ki van kapcsolva a Beállításokban.} linuxKde {Az Android-telefonok elérése ki van kapcsolva a Cmdr beállításaiban.} other {Az Android-telefonok elérése ki van kapcsolva a Beállításokban.}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
     "sourceHash": "bc261dc"
   },
@@ -1853,7 +1853,7 @@
   "@fileExplorer.navigation.favoriteUnreachable.notFound": {
     "sourceHash": "0fd2e21"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, linuxGnome {Beállítások megnyitása} linuxKde {Cmdr beállítása} other {Beállítások megnyitása}}",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, windows {Beállítások megnyitása} linuxGnome {Beállítások megnyitása} linuxKde {Cmdr beállítása} other {Beállítások megnyitása}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
     "sourceHash": "e535825"
   },
@@ -2213,7 +2213,7 @@
   "@fileExplorer.navigation.driveIndex.refusedNotIndexable": {
     "sourceHash": "4ef8487"
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, linuxGnome {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért {name} továbbra sem lesz indexelve. Kapcsold be itt: „Indexelés > Meghajtó indexelése”.} linuxKde {A meghajtó indexelése ki van kapcsolva a Cmdr beállításaiban, ezért {name} továbbra sem lesz indexelve. Kapcsold be itt: „Indexelés > Meghajtó indexelése”.} other {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért {name} továbbra sem lesz indexelve. Kapcsold be itt: „Indexelés > Meghajtó indexelése”.}}",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, windows {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért {name} továbbra sem lesz indexelve. Kapcsold be itt: „Indexelés > Meghajtó indexelése”.} linuxGnome {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért {name} továbbra sem lesz indexelve. Kapcsold be itt: „Indexelés > Meghajtó indexelése”.} linuxKde {A meghajtó indexelése ki van kapcsolva a Cmdr beállításaiban, ezért {name} továbbra sem lesz indexelve. Kapcsold be itt: „Indexelés > Meghajtó indexelése”.} other {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért {name} továbbra sem lesz indexelve. Kapcsold be itt: „Indexelés > Meghajtó indexelése”.}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
     "sourceHash": "f7b3cad"
   },
@@ -2221,11 +2221,11 @@
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
     "sourceHash": "99f19f9"
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, linuxGnome {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért most egyetlen meghajtó sincs indexelve.} linuxKde {A meghajtó indexelése ki van kapcsolva a Cmdr beállításaiban, ezért most egyetlen meghajtó sincs indexelve.} other {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért most egyetlen meghajtó sincs indexelve.}}",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, windows {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért most egyetlen meghajtó sincs indexelve.} linuxGnome {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért most egyetlen meghajtó sincs indexelve.} linuxKde {A meghajtó indexelése ki van kapcsolva a Cmdr beállításaiban, ezért most egyetlen meghajtó sincs indexelve.} other {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért most egyetlen meghajtó sincs indexelve.}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
     "sourceHash": "4c4d376"
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, linuxGnome {A meghajtó indexelése ki van kapcsolva a Beállításokban. Kapcsold be itt: „Indexelés > Meghajtó indexelése”, és ez a meghajtó ott folytatja, ahol abbahagyta.} linuxKde {A meghajtó indexelése ki van kapcsolva a Cmdr beállításaiban. Kapcsold be itt: „Indexelés > Meghajtó indexelése”, és ez a meghajtó ott folytatja, ahol abbahagyta.} other {A meghajtó indexelése ki van kapcsolva a Beállításokban. Kapcsold be itt: „Indexelés > Meghajtó indexelése”, és ez a meghajtó ott folytatja, ahol abbahagyta.}}",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, windows {A meghajtó indexelése ki van kapcsolva a Beállításokban. Kapcsold be itt: „Indexelés > Meghajtó indexelése”, és ez a meghajtó ott folytatja, ahol abbahagyta.} linuxGnome {A meghajtó indexelése ki van kapcsolva a Beállításokban. Kapcsold be itt: „Indexelés > Meghajtó indexelése”, és ez a meghajtó ott folytatja, ahol abbahagyta.} linuxKde {A meghajtó indexelése ki van kapcsolva a Cmdr beállításaiban. Kapcsold be itt: „Indexelés > Meghajtó indexelése”, és ez a meghajtó ott folytatja, ahol abbahagyta.} other {A meghajtó indexelése ki van kapcsolva a Beállításokban. Kapcsold be itt: „Indexelés > Meghajtó indexelése”, és ez a meghajtó ott folytatja, ahol abbahagyta.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
     "sourceHash": "453d08d"
   },
@@ -2333,7 +2333,7 @@
   "@fileExplorer.quickFilter.intro.escape": {
     "sourceHash": "af749ad"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, linuxGnome {Inkább a kurzort vinnéd egy egyező névre, anélkül hogy bármit elrejtenél? Válts Ugrás módra itt vagy a Beállításokban.} linuxKde {Inkább a kurzort vinnéd egy egyező névre, anélkül hogy bármit elrejtenél? Válts Ugrás módra itt vagy a Cmdr beállításaiban.} other {Inkább a kurzort vinnéd egy egyező névre, anélkül hogy bármit elrejtenél? Válts Ugrás módra itt vagy a Beállításokban.}}",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, windows {Inkább a kurzort vinnéd egy egyező névre, anélkül hogy bármit elrejtenél? Válts Ugrás módra itt vagy a Beállításokban.} linuxGnome {Inkább a kurzort vinnéd egy egyező névre, anélkül hogy bármit elrejtenél? Válts Ugrás módra itt vagy a Beállításokban.} linuxKde {Inkább a kurzort vinnéd egy egyező névre, anélkül hogy bármit elrejtenél? Válts Ugrás módra itt vagy a Cmdr beállításaiban.} other {Inkább a kurzort vinnéd egy egyező névre, anélkül hogy bármit elrejtenél? Válts Ugrás módra itt vagy a Beállításokban.}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
     "sourceHash": "ed0bb5f"
   },
@@ -2401,7 +2401,7 @@
   "@fileExplorer.smbLinkConsent.warning": {
     "sourceHash": "295e81e"
   },
-  "fileExplorer.smbLinkConsent.note": "{platform, select, linuxGnome {A Cmdr megjegyzi a válaszodat erre a két szerverre. A Beállítások Szerverek oldalán elfelejtheted.} linuxKde {A Cmdr megjegyzi a válaszodat erre a két szerverre. A Cmdr beállításainak Szerverek oldalán elfelejtheted.} other {A Cmdr megjegyzi a válaszodat erre a két szerverre. A Beállítások Szerverek oldalán elfelejtheted.}}",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, windows {A Cmdr megjegyzi a válaszodat erre a két szerverre. A Beállítások Szerverek oldalán elfelejtheted.} linuxGnome {A Cmdr megjegyzi a válaszodat erre a két szerverre. A Beállítások Szerverek oldalán elfelejtheted.} linuxKde {A Cmdr megjegyzi a válaszodat erre a két szerverre. A Cmdr beállításainak Szerverek oldalán elfelejtheted.} other {A Cmdr megjegyzi a válaszodat erre a két szerverre. A Beállítások Szerverek oldalán elfelejtheted.}}",
   "@fileExplorer.smbLinkConsent.note": {
     "sourceHash": "d32b664"
   },

@@ -705,11 +705,11 @@
   "@askCmdr.turnStats.stopped": {
     "sourceHash": "0f6ea99"
   },
-  "askCmdr.error.noKey": "{platform, select, linuxGnome {Thêm khóa API của bạn trong Tùy thích để bắt đầu trò chuyện.} other {Thêm khóa API của bạn trong cài đặt để bắt đầu trò chuyện.}}",
+  "askCmdr.error.noKey": "{platform, select, windows {Thêm khóa API của bạn trong cài đặt để bắt đầu trò chuyện.} linuxGnome {Thêm khóa API của bạn trong Tùy thích để bắt đầu trò chuyện.} linuxKde {Add your API key in Configure Cmdr to start chatting.} other {Thêm khóa API của bạn trong cài đặt để bắt đầu trò chuyện.}}",
   "@askCmdr.error.noKey": {
     "sourceHash": "124df6a"
   },
-  "askCmdr.error.notConfigured": "{platform, select, linuxGnome {Trò chuyện cần một nhà cung cấp AI. Hãy bật một cái trong Tùy thích.} other {Trò chuyện cần một nhà cung cấp AI. Hãy bật một cái trong cài đặt.}}",
+  "askCmdr.error.notConfigured": "{platform, select, windows {Trò chuyện cần một nhà cung cấp AI. Hãy bật một cái trong cài đặt.} linuxGnome {Trò chuyện cần một nhà cung cấp AI. Hãy bật một cái trong Tùy thích.} linuxKde {Chatting needs an AI provider. Turn one on in Configure Cmdr.} other {Trò chuyện cần một nhà cung cấp AI. Hãy bật một cái trong cài đặt.}}",
   "@askCmdr.error.notConfigured": {
     "sourceHash": "54fb846"
   },
@@ -717,7 +717,7 @@
   "@askCmdr.error.askCmdrOff": {
     "sourceHash": "6599ee1"
   },
-  "askCmdr.error.noCloudConsent": "{platform, select, linuxGnome {AI đám mây đang tắt. Hãy cho phép trong Tùy thích > AI.} linuxKde {AI đám mây đang tắt. Hãy cho phép trong Cấu hình Cmdr > AI.} other {AI đám mây đang tắt. Hãy cho phép trong Cài đặt > AI.}}",
+  "askCmdr.error.noCloudConsent": "{platform, select, windows {AI đám mây đang tắt. Hãy cho phép trong Cài đặt > AI.} linuxGnome {AI đám mây đang tắt. Hãy cho phép trong Tùy thích > AI.} linuxKde {AI đám mây đang tắt. Hãy cho phép trong Cấu hình Cmdr > AI.} other {AI đám mây đang tắt. Hãy cho phép trong Cài đặt > AI.}}",
   "@askCmdr.error.noCloudConsent": {
     "sourceHash": "6490317"
   },
@@ -737,7 +737,7 @@
   "@askCmdr.error.timeout": {
     "sourceHash": "22cd775"
   },
-  "askCmdr.error.authFailed": "{platform, select, linuxGnome {Nhà cung cấp không chấp nhận khóa API của bạn. Kiểm tra lại trong Tùy thích.} other {Nhà cung cấp không chấp nhận khóa API của bạn. Kiểm tra lại trong cài đặt.}}",
+  "askCmdr.error.authFailed": "{platform, select, windows {Nhà cung cấp không chấp nhận khóa API của bạn. Kiểm tra lại trong cài đặt.} linuxGnome {Nhà cung cấp không chấp nhận khóa API của bạn. Kiểm tra lại trong Tùy thích.} linuxKde {The provider didn’t accept your API key. Check it in Configure Cmdr.} other {Nhà cung cấp không chấp nhận khóa API của bạn. Kiểm tra lại trong cài đặt.}}",
   "@askCmdr.error.authFailed": {
     "sourceHash": "9e02aad"
   },
@@ -745,19 +745,19 @@
   "@askCmdr.error.rateLimited": {
     "sourceHash": "7b441e9"
   },
-  "askCmdr.error.modelNotInPlan.named": "{platform, select, linuxGnome {Gói {provider} của bạn không bao gồm mô hình này. Hãy chọn mô hình khác trong Tùy thích hoặc nâng cấp gói của bạn.} other {Gói {provider} của bạn không bao gồm mô hình này. Hãy chọn mô hình khác trong Cài đặt hoặc nâng cấp gói của bạn.}}",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {Gói {provider} của bạn không bao gồm mô hình này. Hãy chọn mô hình khác trong Cài đặt hoặc nâng cấp gói của bạn.} linuxGnome {Gói {provider} của bạn không bao gồm mô hình này. Hãy chọn mô hình khác trong Tùy thích hoặc nâng cấp gói của bạn.} linuxKde {Your {provider} plan doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {Gói {provider} của bạn không bao gồm mô hình này. Hãy chọn mô hình khác trong Cài đặt hoặc nâng cấp gói của bạn.}}",
   "@askCmdr.error.modelNotInPlan.named": {
     "sourceHash": "efbf38b"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, linuxGnome {Gói của bạn ở nhà cung cấp AI này không bao gồm mô hình này. Hãy chọn mô hình khác trong Tùy thích hoặc nâng cấp gói của bạn.} other {Gói của bạn ở nhà cung cấp AI này không bao gồm mô hình này. Hãy chọn mô hình khác trong Cài đặt hoặc nâng cấp gói của bạn.}}",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {Gói của bạn ở nhà cung cấp AI này không bao gồm mô hình này. Hãy chọn mô hình khác trong Cài đặt hoặc nâng cấp gói của bạn.} linuxGnome {Gói của bạn ở nhà cung cấp AI này không bao gồm mô hình này. Hãy chọn mô hình khác trong Tùy thích hoặc nâng cấp gói của bạn.} linuxKde {Your plan with this AI provider doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {Gói của bạn ở nhà cung cấp AI này không bao gồm mô hình này. Hãy chọn mô hình khác trong Cài đặt hoặc nâng cấp gói của bạn.}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
     "sourceHash": "6808950"
   },
-  "askCmdr.error.requestTooLarge.named": "{platform, select, linuxGnome {{provider} đã từ chối yêu cầu này: giới hạn của gói bạn đang dùng nhỏ hơn một yêu cầu duy nhất từ Cmdr, vì mỗi yêu cầu luôn kèm theo hướng dẫn của Cmdr. Tin nhắn ngắn hơn cũng không giúp được. Hãy thử gói lớn hơn của {provider} hoặc chọn nhà cung cấp khác trong Tùy thích.} other {{provider} đã từ chối yêu cầu này: giới hạn của gói bạn đang dùng nhỏ hơn một yêu cầu duy nhất từ Cmdr, vì mỗi yêu cầu luôn kèm theo hướng dẫn của Cmdr. Tin nhắn ngắn hơn cũng không giúp được. Hãy thử gói lớn hơn của {provider} hoặc chọn nhà cung cấp khác trong Cài đặt.}}",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {{provider} đã từ chối yêu cầu này: giới hạn của gói bạn đang dùng nhỏ hơn một yêu cầu duy nhất từ Cmdr, vì mỗi yêu cầu luôn kèm theo hướng dẫn của Cmdr. Tin nhắn ngắn hơn cũng không giúp được. Hãy thử gói lớn hơn của {provider} hoặc chọn nhà cung cấp khác trong Cài đặt.} linuxGnome {{provider} đã từ chối yêu cầu này: giới hạn của gói bạn đang dùng nhỏ hơn một yêu cầu duy nhất từ Cmdr, vì mỗi yêu cầu luôn kèm theo hướng dẫn của Cmdr. Tin nhắn ngắn hơn cũng không giúp được. Hãy thử gói lớn hơn của {provider} hoặc chọn nhà cung cấp khác trong Tùy thích.} linuxKde {{provider} turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan with {provider}, or pick another provider in Configure Cmdr.} other {{provider} đã từ chối yêu cầu này: giới hạn của gói bạn đang dùng nhỏ hơn một yêu cầu duy nhất từ Cmdr, vì mỗi yêu cầu luôn kèm theo hướng dẫn của Cmdr. Tin nhắn ngắn hơn cũng không giúp được. Hãy thử gói lớn hơn của {provider} hoặc chọn nhà cung cấp khác trong Cài đặt.}}",
   "@askCmdr.error.requestTooLarge.named": {
     "sourceHash": "b1850b3"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, linuxGnome {Nhà cung cấp AI của bạn đã từ chối yêu cầu này: giới hạn của gói bạn đang dùng nhỏ hơn một yêu cầu duy nhất từ Cmdr, vì mỗi yêu cầu luôn kèm theo hướng dẫn của Cmdr. Tin nhắn ngắn hơn cũng không giúp được. Hãy thử gói lớn hơn hoặc chọn nhà cung cấp khác trong Tùy thích.} other {Nhà cung cấp AI của bạn đã từ chối yêu cầu này: giới hạn của gói bạn đang dùng nhỏ hơn một yêu cầu duy nhất từ Cmdr, vì mỗi yêu cầu luôn kèm theo hướng dẫn của Cmdr. Tin nhắn ngắn hơn cũng không giúp được. Hãy thử gói lớn hơn hoặc chọn nhà cung cấp khác trong Cài đặt.}}",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {Nhà cung cấp AI của bạn đã từ chối yêu cầu này: giới hạn của gói bạn đang dùng nhỏ hơn một yêu cầu duy nhất từ Cmdr, vì mỗi yêu cầu luôn kèm theo hướng dẫn của Cmdr. Tin nhắn ngắn hơn cũng không giúp được. Hãy thử gói lớn hơn hoặc chọn nhà cung cấp khác trong Cài đặt.} linuxGnome {Nhà cung cấp AI của bạn đã từ chối yêu cầu này: giới hạn của gói bạn đang dùng nhỏ hơn một yêu cầu duy nhất từ Cmdr, vì mỗi yêu cầu luôn kèm theo hướng dẫn của Cmdr. Tin nhắn ngắn hơn cũng không giúp được. Hãy thử gói lớn hơn hoặc chọn nhà cung cấp khác trong Tùy thích.} linuxKde {Your AI provider turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan, or pick another provider in Configure Cmdr.} other {Nhà cung cấp AI của bạn đã từ chối yêu cầu này: giới hạn của gói bạn đang dùng nhỏ hơn một yêu cầu duy nhất từ Cmdr, vì mỗi yêu cầu luôn kèm theo hướng dẫn của Cmdr. Tin nhắn ngắn hơn cũng không giúp được. Hãy thử gói lớn hơn hoặc chọn nhà cung cấp khác trong Cài đặt.}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
     "sourceHash": "455449e"
   },
@@ -977,15 +977,15 @@
   "@askCmdr.composer.sendNeedsProvider": {
     "sourceHash": "9e6aba3"
   },
-  "askCmdr.providerNotice.off": "{platform, select, linuxGnome {Ask Cmdr cần một nhà cung cấp AI để trò chuyện. Hãy chọn một nhà cung cấp trong Tùy thích.} linuxKde {Ask Cmdr cần một nhà cung cấp AI để trò chuyện. Hãy chọn một nhà cung cấp trong Cấu hình Cmdr.} other {Ask Cmdr cần một nhà cung cấp AI để trò chuyện. Hãy chọn một nhà cung cấp trong Cài đặt.}}",
+  "askCmdr.providerNotice.off": "{platform, select, windows {Ask Cmdr cần một nhà cung cấp AI để trò chuyện. Hãy chọn một nhà cung cấp trong Cài đặt.} linuxGnome {Ask Cmdr cần một nhà cung cấp AI để trò chuyện. Hãy chọn một nhà cung cấp trong Tùy thích.} linuxKde {Ask Cmdr cần một nhà cung cấp AI để trò chuyện. Hãy chọn một nhà cung cấp trong Cấu hình Cmdr.} other {Ask Cmdr cần một nhà cung cấp AI để trò chuyện. Hãy chọn một nhà cung cấp trong Cài đặt.}}",
   "@askCmdr.providerNotice.off": {
     "sourceHash": "6e9f73c"
   },
-  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, linuxGnome {Nhà cung cấp AI đám mây của bạn cần khóa API thì Ask Cmdr mới trò chuyện được. Hãy thêm khóa trong Tùy thích.} linuxKde {Nhà cung cấp AI đám mây của bạn cần khóa API thì Ask Cmdr mới trò chuyện được. Hãy thêm khóa trong Cấu hình Cmdr.} other {Nhà cung cấp AI đám mây của bạn cần khóa API thì Ask Cmdr mới trò chuyện được. Hãy thêm khóa trong Cài đặt.}}",
+  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, windows {Nhà cung cấp AI đám mây của bạn cần khóa API thì Ask Cmdr mới trò chuyện được. Hãy thêm khóa trong Cài đặt.} linuxGnome {Nhà cung cấp AI đám mây của bạn cần khóa API thì Ask Cmdr mới trò chuyện được. Hãy thêm khóa trong Tùy thích.} linuxKde {Nhà cung cấp AI đám mây của bạn cần khóa API thì Ask Cmdr mới trò chuyện được. Hãy thêm khóa trong Cấu hình Cmdr.} other {Nhà cung cấp AI đám mây của bạn cần khóa API thì Ask Cmdr mới trò chuyện được. Hãy thêm khóa trong Cài đặt.}}",
   "@askCmdr.providerNotice.cloudNeedsKey": {
     "sourceHash": "16dc8a0"
   },
-  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, linuxGnome {Nhà cung cấp AI đám mây của bạn cần một địa chỉ thì Ask Cmdr mới trò chuyện được. Hãy thêm địa chỉ trong Tùy thích.} linuxKde {Nhà cung cấp AI đám mây của bạn cần một địa chỉ thì Ask Cmdr mới trò chuyện được. Hãy thêm địa chỉ trong Cấu hình Cmdr.} other {Nhà cung cấp AI đám mây của bạn cần một địa chỉ thì Ask Cmdr mới trò chuyện được. Hãy thêm địa chỉ trong Cài đặt.}}",
+  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, windows {Nhà cung cấp AI đám mây của bạn cần một địa chỉ thì Ask Cmdr mới trò chuyện được. Hãy thêm địa chỉ trong Cài đặt.} linuxGnome {Nhà cung cấp AI đám mây của bạn cần một địa chỉ thì Ask Cmdr mới trò chuyện được. Hãy thêm địa chỉ trong Tùy thích.} linuxKde {Nhà cung cấp AI đám mây của bạn cần một địa chỉ thì Ask Cmdr mới trò chuyện được. Hãy thêm địa chỉ trong Cấu hình Cmdr.} other {Nhà cung cấp AI đám mây của bạn cần một địa chỉ thì Ask Cmdr mới trò chuyện được. Hãy thêm địa chỉ trong Cài đặt.}}",
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "1ae5e35"
   },
@@ -1021,7 +1021,7 @@
   "@askCmdr.gate.cloudOff.title": {
     "sourceHash": "2e56781"
   },
-  "askCmdr.gate.cloudOff.body": "{platform, select, linuxGnome {Ask Cmdr trò chuyện qua dịch vụ AI đám mây mà bạn đã thiết lập. Trước tiên, hãy cho phép AI đám mây trong Tùy thích, rồi bạn có thể trò chuyện ngay.} linuxKde {Ask Cmdr trò chuyện qua dịch vụ AI đám mây mà bạn đã thiết lập. Trước tiên, hãy cho phép AI đám mây trong Cấu hình Cmdr, rồi bạn có thể trò chuyện ngay.} other {Ask Cmdr trò chuyện qua dịch vụ AI đám mây mà bạn đã thiết lập. Trước tiên, hãy cho phép AI đám mây trong Cài đặt, rồi bạn có thể trò chuyện ngay.}}",
+  "askCmdr.gate.cloudOff.body": "{platform, select, windows {Ask Cmdr trò chuyện qua dịch vụ AI đám mây mà bạn đã thiết lập. Trước tiên, hãy cho phép AI đám mây trong Cài đặt, rồi bạn có thể trò chuyện ngay.} linuxGnome {Ask Cmdr trò chuyện qua dịch vụ AI đám mây mà bạn đã thiết lập. Trước tiên, hãy cho phép AI đám mây trong Tùy thích, rồi bạn có thể trò chuyện ngay.} linuxKde {Ask Cmdr trò chuyện qua dịch vụ AI đám mây mà bạn đã thiết lập. Trước tiên, hãy cho phép AI đám mây trong Cấu hình Cmdr, rồi bạn có thể trò chuyện ngay.} other {Ask Cmdr trò chuyện qua dịch vụ AI đám mây mà bạn đã thiết lập. Trước tiên, hãy cho phép AI đám mây trong Cài đặt, rồi bạn có thể trò chuyện ngay.}}",
   "@askCmdr.gate.cloudOff.body": {
     "sourceHash": "076c788"
   },
@@ -1411,7 +1411,7 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "sourceHash": "ae245b9"
   },
-  "askCmdr.wake.needsApiKey": "{platform, select, linuxGnome {Các tính năng AI đang bật, nhưng cần một nhà cung cấp mới hoạt động được. Bấm để thiết lập một cái trong Tùy thích.} other {Các tính năng AI đang bật, nhưng cần một nhà cung cấp mới hoạt động được. Bấm để thiết lập một cái trong cài đặt.}}",
+  "askCmdr.wake.needsApiKey": "{platform, select, windows {Các tính năng AI đang bật, nhưng cần một nhà cung cấp mới hoạt động được. Bấm để thiết lập một cái trong cài đặt.} linuxGnome {Các tính năng AI đang bật, nhưng cần một nhà cung cấp mới hoạt động được. Bấm để thiết lập một cái trong Tùy thích.} linuxKde {AI features are on, but they need a provider to work. Click to set one up in Configure Cmdr.} other {Các tính năng AI đang bật, nhưng cần một nhà cung cấp mới hoạt động được. Bấm để thiết lập một cái trong cài đặt.}}",
   "@askCmdr.wake.needsApiKey": {
     "sourceHash": "2f1b3e9"
   },

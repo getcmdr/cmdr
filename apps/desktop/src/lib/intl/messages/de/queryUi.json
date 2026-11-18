@@ -80,7 +80,7 @@
   "@queryUi.empty.keysTip": {
     "sourceHash": "cbc047b"
   },
-  "queryUi.ai.cloudOff.body": "{platform, select, linuxGnome {Cloud-KI ist ausgeschaltet. Erlaube sie unter Einstellungen > KI, um das hier zu nutzen.} linuxKde {Cloud-KI ist ausgeschaltet. Erlaube sie unter „Cmdr einrichten“ > KI, um das hier zu nutzen.} other {Cloud-KI ist ausgeschaltet. Erlaube sie unter Einstellungen > KI, um das hier zu nutzen.}}",
+  "queryUi.ai.cloudOff.body": "{platform, select, windows {Cloud-KI ist ausgeschaltet. Erlaube sie unter Einstellungen > KI, um das hier zu nutzen.} linuxGnome {Cloud-KI ist ausgeschaltet. Erlaube sie unter Einstellungen > KI, um das hier zu nutzen.} linuxKde {Cloud-KI ist ausgeschaltet. Erlaube sie unter „Cmdr einrichten“ > KI, um das hier zu nutzen.} other {Cloud-KI ist ausgeschaltet. Erlaube sie unter Einstellungen > KI, um das hier zu nutzen.}}",
   "@queryUi.ai.cloudOff.body": {
     "sourceHash": "1f64983"
   },

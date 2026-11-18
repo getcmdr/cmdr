@@ -55,7 +55,7 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "{platform, select, linuxGnome {Kapcsolj be egy szolgáltatót itt: Beállítások > AI, hogy használd az AI-keresést.} linuxKde {Kapcsolj be egy szolgáltatót itt: Cmdr beállítása > AI, hogy használd az AI-keresést.} other {Kapcsolj be egy szolgáltatót itt: Beállítások > AI, hogy használd az AI-keresést.}}",
+  "ai.translateError.off.body": "{platform, select, windows {Kapcsolj be egy szolgáltatót itt: Beállítások > AI, hogy használd az AI-keresést.} linuxGnome {Kapcsolj be egy szolgáltatót itt: Beállítások > AI, hogy használd az AI-keresést.} linuxKde {Kapcsolj be egy szolgáltatót itt: Cmdr beállítása > AI, hogy használd az AI-keresést.} other {Kapcsolj be egy szolgáltatót itt: Beállítások > AI, hogy használd az AI-keresést.}}",
   "@ai.translateError.off.body": {
     "sourceHash": "5e5f8d2"
   },
@@ -247,7 +247,7 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {Fejezd be a szolgáltató beállítását itt: Beállítások > AI, majd próbáld újra.} linuxKde {Fejezd be a szolgáltató beállítását itt: Cmdr beállítása > AI, majd próbáld újra.} other {Fejezd be a szolgáltató beállítását itt: Beállítások > AI, majd próbáld újra.}}",
+  "ai.translateError.notConfigured.body": "{platform, select, windows {Fejezd be a szolgáltató beállítását itt: Beállítások > AI, majd próbáld újra.} linuxGnome {Fejezd be a szolgáltató beállítását itt: Beállítások > AI, majd próbáld újra.} linuxKde {Fejezd be a szolgáltató beállítását itt: Cmdr beállítása > AI, majd próbáld újra.} other {Fejezd be a szolgáltató beállítását itt: Beállítások > AI, majd próbáld újra.}}",
   "@ai.translateError.notConfigured.body": {
     "sourceHash": "bf48aec"
   },
@@ -255,7 +255,7 @@
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {Engedélyezd itt: Beállítások > AI, majd próbáld újra.} linuxKde {Engedélyezd itt: Cmdr beállítása > AI, majd próbáld újra.} other {Engedélyezd itt: Beállítások > AI, majd próbáld újra.}}",
+  "ai.translateError.noCloudConsent.body": "{platform, select, windows {Engedélyezd itt: Beállítások > AI, majd próbáld újra.} linuxGnome {Engedélyezd itt: Beállítások > AI, majd próbáld újra.} linuxKde {Engedélyezd itt: Cmdr beállítása > AI, majd próbáld újra.} other {Engedélyezd itt: Beállítások > AI, majd próbáld újra.}}",
   "@ai.translateError.noCloudConsent.body": {
     "sourceHash": "4485cc1"
   },
@@ -263,7 +263,7 @@
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {Ellenőrizd a kulcsodat itt: Beállítások > AI – lehet, hogy hibás vagy visszavont.} linuxKde {Ellenőrizd a kulcsodat itt: Cmdr beállítása > AI – lehet, hogy hibás vagy visszavont.} other {Ellenőrizd a kulcsodat itt: Beállítások > AI – lehet, hogy hibás vagy visszavont.}}",
+  "ai.translateError.authFailed.body": "{platform, select, windows {Ellenőrizd a kulcsodat itt: Beállítások > AI – lehet, hogy hibás vagy visszavont.} linuxGnome {Ellenőrizd a kulcsodat itt: Beállítások > AI – lehet, hogy hibás vagy visszavont.} linuxKde {Ellenőrizd a kulcsodat itt: Cmdr beállítása > AI – lehet, hogy hibás vagy visszavont.} other {Ellenőrizd a kulcsodat itt: Beállítások > AI – lehet, hogy hibás vagy visszavont.}}",
   "@ai.translateError.authFailed.body": {
     "sourceHash": "4fd6281"
   },
@@ -295,7 +295,7 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {Lehet, hogy a modelled elhasználta a tokenkeretét, mielőtt válaszolt volna. Próbálj egy gyorsabb modellt, például a gpt-4.1-mini-t itt: Beállítások > AI.} linuxKde {Lehet, hogy a modelled elhasználta a tokenkeretét, mielőtt válaszolt volna. Próbálj egy gyorsabb modellt, például a gpt-4.1-mini-t itt: Cmdr beállítása > AI.} other {Lehet, hogy a modelled elhasználta a tokenkeretét, mielőtt válaszolt volna. Próbálj egy gyorsabb modellt, például a gpt-4.1-mini-t itt: Beállítások > AI.}}",
+  "ai.translateError.emptyResponse.body": "{platform, select, windows {Lehet, hogy a modelled elhasználta a tokenkeretét, mielőtt válaszolt volna. Próbálj egy gyorsabb modellt, például a gpt-4.1-mini-t itt: Beállítások > AI.} linuxGnome {Lehet, hogy a modelled elhasználta a tokenkeretét, mielőtt válaszolt volna. Próbálj egy gyorsabb modellt, például a gpt-4.1-mini-t itt: Beállítások > AI.} linuxKde {Lehet, hogy a modelled elhasználta a tokenkeretét, mielőtt válaszolt volna. Próbálj egy gyorsabb modellt, például a gpt-4.1-mini-t itt: Cmdr beállítása > AI.} other {Lehet, hogy a modelled elhasználta a tokenkeretét, mielőtt válaszolt volna. Próbálj egy gyorsabb modellt, például a gpt-4.1-mini-t itt: Beállítások > AI.}}",
   "@ai.translateError.emptyResponse.body": {
     "sourceHash": "b16ff79"
   },
@@ -311,7 +311,7 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "{platform, select, linuxGnome {Próbáld újra, vagy válassz másik modellt itt: Beállítások > AI.} linuxKde {Próbáld újra, vagy válassz másik modellt itt: Cmdr beállítása > AI.} other {Próbáld újra, vagy válassz másik modellt itt: Beállítások > AI.}}",
+  "ai.translateError.parseError.body": "{platform, select, windows {Próbáld újra, vagy válassz másik modellt itt: Beállítások > AI.} linuxGnome {Próbáld újra, vagy válassz másik modellt itt: Beállítások > AI.} linuxKde {Próbáld újra, vagy válassz másik modellt itt: Cmdr beállítása > AI.} other {Próbáld újra, vagy válassz másik modellt itt: Beállítások > AI.}}",
   "@ai.translateError.parseError.body": {
     "sourceHash": "6082b7e"
   },
@@ -319,7 +319,7 @@
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {Válassz egy szolgáltatót itt: Beállítások > AI.} linuxKde {Válassz egy szolgáltatót itt: Cmdr beállítása > AI.} other {Válassz egy szolgáltatót itt: Beállítások > AI.}}",
+  "ai.translateError.unknownProvider.body": "{platform, select, windows {Válassz egy szolgáltatót itt: Beállítások > AI.} linuxGnome {Válassz egy szolgáltatót itt: Beállítások > AI.} linuxKde {Válassz egy szolgáltatót itt: Cmdr beállítása > AI.} other {Válassz egy szolgáltatót itt: Beállítások > AI.}}",
   "@ai.translateError.unknownProvider.body": {
     "sourceHash": "c45eba0"
   },

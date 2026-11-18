@@ -2509,11 +2509,11 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr usa el proveedor de IA y la clave que has configurado en Preferencias › IA ({provider}).} linuxKde {Cmdr usa el proveedor de IA y la clave que has configurado en Configurar Cmdr › IA ({provider}).} other {Cmdr usa el proveedor de IA y la clave que has configurado en Ajustes › IA ({provider}).}}",
+  "settings.askCmdr.provider.shared": "{platform, select, windows {Cmdr usa el proveedor de IA y la clave que has configurado en Ajustes › IA ({provider}).} linuxGnome {Cmdr usa el proveedor de IA y la clave que has configurado en Preferencias › IA ({provider}).} linuxKde {Cmdr usa el proveedor de IA y la clave que has configurado en Configurar Cmdr › IA ({provider}).} other {Cmdr usa el proveedor de IA y la clave que has configurado en Ajustes › IA ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
     "sourceHash": "f4ea2f0"
   },
-  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Activa un proveedor de IA en Preferencias › IA para empezar a chatear.} linuxKde {Activa un proveedor de IA en Configurar Cmdr › IA para empezar a chatear.} other {Activa un proveedor de IA en Ajustes › IA para empezar a chatear.}}",
+  "settings.askCmdr.provider.off": "{platform, select, windows {Activa un proveedor de IA en Ajustes › IA para empezar a chatear.} linuxGnome {Activa un proveedor de IA en Preferencias › IA para empezar a chatear.} linuxKde {Activa un proveedor de IA en Configurar Cmdr › IA para empezar a chatear.} other {Activa un proveedor de IA en Ajustes › IA para empezar a chatear.}}",
   "@settings.askCmdr.provider.off": {
     "sourceHash": "0196a5c"
   },
@@ -2959,7 +2959,7 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, linuxGnome {Secciones de preferencias} other {Secciones de ajustes}}",
+  "settings.sidebar.sections": "{platform, select, windows {Secciones de ajustes} linuxGnome {Secciones de preferencias} linuxKde {Configure Cmdr sections} other {Secciones de ajustes}}",
   "@settings.sidebar.sections": {
     "sourceHash": "4fa3c2e"
   },
@@ -3430,7 +3430,7 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "{platform, select, linuxGnome {Preferencias} linuxKde {Configurar – Cmdr} other {Ajustes}}",
+  "settings.window.title": "{platform, select, windows {Ajustes} linuxGnome {Preferencias} linuxKde {Configurar – Cmdr} other {Ajustes}}",
   "@settings.window.title": {
     "sourceHash": "80cee55"
   },

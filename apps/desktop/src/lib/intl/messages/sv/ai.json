@@ -55,7 +55,7 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "{platform, select, linuxGnome {Aktivera en leverantör i Inställningar > AI för att använda AI-sökning.} linuxKde {Aktivera en leverantör i ”Anpassa Cmdr” > AI för att använda AI-sökning.} other {Aktivera en leverantör i Inställningar > AI för att använda AI-sökning.}}",
+  "ai.translateError.off.body": "{platform, select, windows {Aktivera en leverantör i Inställningar > AI för att använda AI-sökning.} linuxGnome {Aktivera en leverantör i Inställningar > AI för att använda AI-sökning.} linuxKde {Aktivera en leverantör i ”Anpassa Cmdr” > AI för att använda AI-sökning.} other {Aktivera en leverantör i Inställningar > AI för att använda AI-sökning.}}",
   "@ai.translateError.off.body": {
     "sourceHash": "5e5f8d2"
   },
@@ -247,7 +247,7 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {Slutför din leverantörsinställning i Inställningar > AI och försök sedan igen.} linuxKde {Slutför din leverantörsinställning i ”Anpassa Cmdr” > AI och försök sedan igen.} other {Slutför din leverantörsinställning i Inställningar > AI och försök sedan igen.}}",
+  "ai.translateError.notConfigured.body": "{platform, select, windows {Slutför din leverantörsinställning i Inställningar > AI och försök sedan igen.} linuxGnome {Slutför din leverantörsinställning i Inställningar > AI och försök sedan igen.} linuxKde {Slutför din leverantörsinställning i ”Anpassa Cmdr” > AI och försök sedan igen.} other {Slutför din leverantörsinställning i Inställningar > AI och försök sedan igen.}}",
   "@ai.translateError.notConfigured.body": {
     "sourceHash": "bf48aec"
   },
@@ -255,7 +255,7 @@
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {Tillåt det i Inställningar > AI och försök sedan igen.} linuxKde {Tillåt det i ”Anpassa Cmdr” > AI och försök sedan igen.} other {Tillåt det i Inställningar > AI och försök sedan igen.}}",
+  "ai.translateError.noCloudConsent.body": "{platform, select, windows {Tillåt det i Inställningar > AI och försök sedan igen.} linuxGnome {Tillåt det i Inställningar > AI och försök sedan igen.} linuxKde {Tillåt det i ”Anpassa Cmdr” > AI och försök sedan igen.} other {Tillåt det i Inställningar > AI och försök sedan igen.}}",
   "@ai.translateError.noCloudConsent.body": {
     "sourceHash": "4485cc1"
   },
@@ -263,7 +263,7 @@
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {Kontrollera din nyckel i Inställningar > AI – den kan vara fel eller återkallad.} linuxKde {Kontrollera din nyckel i ”Anpassa Cmdr” > AI – den kan vara fel eller återkallad.} other {Kontrollera din nyckel i Inställningar > AI – den kan vara fel eller återkallad.}}",
+  "ai.translateError.authFailed.body": "{platform, select, windows {Kontrollera din nyckel i Inställningar > AI – den kan vara fel eller återkallad.} linuxGnome {Kontrollera din nyckel i Inställningar > AI – den kan vara fel eller återkallad.} linuxKde {Kontrollera din nyckel i ”Anpassa Cmdr” > AI – den kan vara fel eller återkallad.} other {Kontrollera din nyckel i Inställningar > AI – den kan vara fel eller återkallad.}}",
   "@ai.translateError.authFailed.body": {
     "sourceHash": "4fd6281"
   },
@@ -295,7 +295,7 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {Din modell kan ha gjort slut på sin tokenbudget innan den svarade. Prova en snabbare modell som gpt-4.1-mini i Inställningar > AI.} linuxKde {Din modell kan ha gjort slut på sin tokenbudget innan den svarade. Prova en snabbare modell som gpt-4.1-mini i ”Anpassa Cmdr” > AI.} other {Din modell kan ha gjort slut på sin tokenbudget innan den svarade. Prova en snabbare modell som gpt-4.1-mini i Inställningar > AI.}}",
+  "ai.translateError.emptyResponse.body": "{platform, select, windows {Din modell kan ha gjort slut på sin tokenbudget innan den svarade. Prova en snabbare modell som gpt-4.1-mini i Inställningar > AI.} linuxGnome {Din modell kan ha gjort slut på sin tokenbudget innan den svarade. Prova en snabbare modell som gpt-4.1-mini i Inställningar > AI.} linuxKde {Din modell kan ha gjort slut på sin tokenbudget innan den svarade. Prova en snabbare modell som gpt-4.1-mini i ”Anpassa Cmdr” > AI.} other {Din modell kan ha gjort slut på sin tokenbudget innan den svarade. Prova en snabbare modell som gpt-4.1-mini i Inställningar > AI.}}",
   "@ai.translateError.emptyResponse.body": {
     "sourceHash": "b16ff79"
   },
@@ -311,7 +311,7 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "{platform, select, linuxGnome {Försök igen, eller välj en annan modell i Inställningar > AI.} linuxKde {Försök igen, eller välj en annan modell i ”Anpassa Cmdr” > AI.} other {Försök igen, eller välj en annan modell i Inställningar > AI.}}",
+  "ai.translateError.parseError.body": "{platform, select, windows {Försök igen, eller välj en annan modell i Inställningar > AI.} linuxGnome {Försök igen, eller välj en annan modell i Inställningar > AI.} linuxKde {Försök igen, eller välj en annan modell i ”Anpassa Cmdr” > AI.} other {Försök igen, eller välj en annan modell i Inställningar > AI.}}",
   "@ai.translateError.parseError.body": {
     "sourceHash": "6082b7e"
   },
@@ -319,7 +319,7 @@
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {Välj en leverantör i Inställningar > AI.} linuxKde {Välj en leverantör i ”Anpassa Cmdr” > AI.} other {Välj en leverantör i Inställningar > AI.}}",
+  "ai.translateError.unknownProvider.body": "{platform, select, windows {Välj en leverantör i Inställningar > AI.} linuxGnome {Välj en leverantör i Inställningar > AI.} linuxKde {Välj en leverantör i ”Anpassa Cmdr” > AI.} other {Välj en leverantör i Inställningar > AI.}}",
   "@ai.translateError.unknownProvider.body": {
     "sourceHash": "c45eba0"
   },

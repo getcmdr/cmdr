@@ -429,7 +429,7 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {Příště Cmdr začne s touto volbou a v Předvolbách ji můžete změnit. Pokud přepisuje soubory, nejdřív uvidíte upozornění.} linuxKde {Příště Cmdr začne s touto volbou a v okně Nastavit Cmdr ji můžete změnit. Pokud přepisuje soubory, nejdřív uvidíte upozornění.} other {Příště Cmdr začne s touto volbou a v Nastavení ji můžete změnit. Pokud přepisuje soubory, nejdřív uvidíte upozornění.}}",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {Příště Cmdr začne s touto volbou a v Nastavení ji můžete změnit. Pokud přepisuje soubory, nejdřív uvidíte upozornění.} linuxGnome {Příště Cmdr začne s touto volbou a v Předvolbách ji můžete změnit. Pokud přepisuje soubory, nejdřív uvidíte upozornění.} linuxKde {Příště Cmdr začne s touto volbou a v okně Nastavit Cmdr ji můžete změnit. Pokud přepisuje soubory, nejdřív uvidíte upozornění.} other {Příště Cmdr začne s touto volbou a v Nastavení ji můžete změnit. Pokud přepisuje soubory, nejdřív uvidíte upozornění.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
     "sourceHash": "d75e9f6"
   },

@@ -35,7 +35,7 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "{platform, select, linuxGnome {開啟偏好設定} linuxKde {設定 Cmdr} other {開啟設定}}",
+  "commands.appSettings.label": "{platform, select, windows {開啟設定} linuxGnome {開啟偏好設定} linuxKde {設定 Cmdr} other {開啟設定}}",
   "@commands.appSettings.label": {
     "sourceHash": "e535825"
   },
@@ -1264,7 +1264,7 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {已在你的終端機 App 中開啟這個資料夾。想讓 Cmdr 下次開啟別的 App？在「偏好設定」的「導覽與檔案操作」裡選一個。} linuxKde {已在你的終端機 App 中開啟這個資料夾。想讓 Cmdr 下次開啟別的 App？在「設定 Cmdr」的「導覽與檔案操作」裡選一個。} other {已在你的終端機 App 中開啟這個資料夾。想讓 Cmdr 下次開啟別的 App？在「設定」的「導覽與檔案操作」裡選一個。}}",
+  "commands.handler.openTerminalHere.hint": "{platform, select, windows {已在你的終端機 App 中開啟這個資料夾。想讓 Cmdr 下次開啟別的 App？在「設定」的「導覽與檔案操作」裡選一個。} linuxGnome {已在你的終端機 App 中開啟這個資料夾。想讓 Cmdr 下次開啟別的 App？在「偏好設定」的「導覽與檔案操作」裡選一個。} linuxKde {已在你的終端機 App 中開啟這個資料夾。想讓 Cmdr 下次開啟別的 App？在「設定 Cmdr」的「導覽與檔案操作」裡選一個。} other {已在你的終端機 App 中開啟這個資料夾。想讓 Cmdr 下次開啟別的 App？在「設定」的「導覽與檔案操作」裡選一個。}}",
   "@commands.handler.openTerminalHere.hint": {
     "sourceHash": "b73c1db"
   },
@@ -1272,7 +1272,7 @@
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {開啟偏好設定} linuxKde {設定 Cmdr} other {開啟設定}}",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, windows {開啟設定} linuxGnome {開啟偏好設定} linuxKde {設定 Cmdr} other {開啟設定}}",
   "@commands.handler.openTerminalHere.openSettings": {
     "sourceHash": "e535825"
   },
@@ -1344,7 +1344,7 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {記錄檔儲存已停用。在「偏好設定 > 進階」中把磁碟空間上限設為大於 0，然後重新啟動 Cmdr 來檢視除錯記錄檔。} linuxKde {記錄檔儲存已停用。在「設定 Cmdr > 進階」中把磁碟空間上限設為大於 0，然後重新啟動 Cmdr 來檢視除錯記錄檔。} other {記錄檔儲存已停用。在「設定 > 進階」中把磁碟空間上限設為大於 0，然後重新啟動 Cmdr 來檢視除錯記錄檔。}}",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, windows {記錄檔儲存已停用。在「設定 > 進階」中把磁碟空間上限設為大於 0，然後重新啟動 Cmdr 來檢視除錯記錄檔。} linuxGnome {記錄檔儲存已停用。在「偏好設定 > 進階」中把磁碟空間上限設為大於 0，然後重新啟動 Cmdr 來檢視除錯記錄檔。} linuxKde {記錄檔儲存已停用。在「設定 Cmdr > 進階」中把磁碟空間上限設為大於 0，然後重新啟動 Cmdr 來檢視除錯記錄檔。} other {記錄檔儲存已停用。在「設定 > 進階」中把磁碟空間上限設為大於 0，然後重新啟動 Cmdr 來檢視除錯記錄檔。}}",
   "@commands.handler.viewDebugLog.disabled": {
     "sourceHash": "bda730a"
   },

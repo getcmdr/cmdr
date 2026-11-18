@@ -67,7 +67,7 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "{platform, select, linuxGnome {Ative a indexação de imagens para este disco de rede nas Preferências para buscar o texto dentro das fotos dele.} linuxKde {Ative a indexação de imagens para este disco de rede em Configurar Cmdr para buscar o texto dentro das fotos dele.} other {Ative a indexação de imagens para este disco de rede nos Ajustes para buscar o texto dentro das fotos dele.}}",
+  "search.imageResults.networkOff": "{platform, select, windows {Ative a indexação de imagens para este disco de rede nos Ajustes para buscar o texto dentro das fotos dele.} linuxGnome {Ative a indexação de imagens para este disco de rede nas Preferências para buscar o texto dentro das fotos dele.} linuxKde {Ative a indexação de imagens para este disco de rede em Configurar Cmdr para buscar o texto dentro das fotos dele.} other {Ative a indexação de imagens para este disco de rede nos Ajustes para buscar o texto dentro das fotos dele.}}",
   "@search.imageResults.networkOff": {
     "sourceHash": "30b2455"
   },
@@ -219,7 +219,7 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {A indexação de disco está desativada nas Preferências, então nada é indexado. Ative-a em Indexação > Indexação de disco.} linuxKde {A indexação de disco está desativada em Configurar Cmdr, então nada é indexado. Ative-a em Indexação > Indexação de disco.} other {A indexação de disco está desativada nos Ajustes, então nada é indexado. Ative-a em Indexação > Indexação de disco.}}",
+  "search.coverage.toast.indexingOff": "{platform, select, windows {A indexação de disco está desativada nos Ajustes, então nada é indexado. Ative-a em Indexação > Indexação de disco.} linuxGnome {A indexação de disco está desativada nas Preferências, então nada é indexado. Ative-a em Indexação > Indexação de disco.} linuxKde {A indexação de disco está desativada em Configurar Cmdr, então nada é indexado. Ative-a em Indexação > Indexação de disco.} other {A indexação de disco está desativada nos Ajustes, então nada é indexado. Ative-a em Indexação > Indexação de disco.}}",
   "@search.coverage.toast.indexingOff": {
     "sourceHash": "7c4ff62"
   },

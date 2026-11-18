@@ -67,7 +67,7 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "{platform, select, linuxGnome {Pokud chcete hledat text ve fotkách na tomto síťovém disku, zapněte pro něj v Předvolbách indexování obrázků.} linuxKde {Pokud chcete hledat text ve fotkách na tomto síťovém disku, zapněte pro něj v okně Nastavit Cmdr indexování obrázků.} other {Pokud chcete hledat text ve fotkách na tomto síťovém disku, zapněte pro něj v Nastavení indexování obrázků.}}",
+  "search.imageResults.networkOff": "{platform, select, windows {Pokud chcete hledat text ve fotkách na tomto síťovém disku, zapněte pro něj v Nastavení indexování obrázků.} linuxGnome {Pokud chcete hledat text ve fotkách na tomto síťovém disku, zapněte pro něj v Předvolbách indexování obrázků.} linuxKde {Pokud chcete hledat text ve fotkách na tomto síťovém disku, zapněte pro něj v okně Nastavit Cmdr indexování obrázků.} other {Pokud chcete hledat text ve fotkách na tomto síťovém disku, zapněte pro něj v Nastavení indexování obrázků.}}",
   "@search.imageResults.networkOff": {
     "sourceHash": "30b2455"
   },
@@ -219,7 +219,7 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Indexování disků je v Předvolbách vypnuté, takže se nic neindexuje. Zapněte ho v části Indexování > Indexování disků.} linuxKde {Indexování disků je v okně Nastavit Cmdr vypnuté, takže se nic neindexuje. Zapněte ho v části Indexování > Indexování disků.} other {Indexování disků je v Nastavení vypnuté, takže se nic neindexuje. Zapněte ho v části Indexování > Indexování disků.}}",
+  "search.coverage.toast.indexingOff": "{platform, select, windows {Indexování disků je v Nastavení vypnuté, takže se nic neindexuje. Zapněte ho v části Indexování > Indexování disků.} linuxGnome {Indexování disků je v Předvolbách vypnuté, takže se nic neindexuje. Zapněte ho v části Indexování > Indexování disků.} linuxKde {Indexování disků je v okně Nastavit Cmdr vypnuté, takže se nic neindexuje. Zapněte ho v části Indexování > Indexování disků.} other {Indexování disků je v Nastavení vypnuté, takže se nic neindexuje. Zapněte ho v části Indexování > Indexování disků.}}",
   "@search.coverage.toast.indexingOff": {
     "sourceHash": "7c4ff62"
   },

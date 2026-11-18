@@ -16,7 +16,12 @@
  *    relies on it).
  *  - A legal branch set: `other` plus at least one more; in a SOURCE value, no
  *    branch equal to `other` (fold it into `other`, and that system reads it). `macos` and `windows` MAY be equal: that keeps "Windows
- *    says what macOS says" explicit while Linux differs. A locale whose source
+ *    says what macOS says" explicit while Linux differs. A source branch MAY
+ *    equal `other` where the `en` key's `@key.identicalBranches` names it with
+ *    a reason: the English happens to match, but translations split there (the
+ *    settings window's `windows` branch, where Microsoft's word differs from
+ *    Apple's in French or Spanish). The entry shrink-wraps: naming `other`, a
+ *    missing branch, or one that already differs fails. A locale whose source
  *    is a block takes the source's branch set, so its branches may repeat a
  *    text: two OS words often translate alike (German says „Papierkorb“ for the
  *    Trash and the Recycle Bin), and a carried translation can fill two branches.
@@ -77,6 +82,40 @@ interface PlatformSelectInput {
   value: string
   /** the source catalog's value for the key; `undefined` when the source lacks it, or for `en` itself */
   sourceValue?: string
+  /** the `en` key's `@key.identicalBranches` (branch → why it may equal `other`); read for `en` only */
+  identicalBranches?: unknown
+}
+
+/**
+ * The branches `@key.identicalBranches` lets equal `other`, and what's wrong with the entry.
+ * @param branches the value's branches, or `null` for a plain value
+ */
+function identicalBranchesOf(
+  entry: unknown,
+  branches: PlatformSelectBranches | null,
+): { allowed: Set<PlatformSelectBranch>; issues: string[] } {
+  const allowed = new Set<PlatformSelectBranch>()
+  if (entry === undefined) return { allowed, issues: [] }
+  if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
+    return { allowed, issues: ['identicalBranches must be an object: { "<branch>": "<why it equals other>" }'] }
+  }
+  if (branches === null) {
+    return { allowed, issues: ['identicalBranches on a plain value: only a block has branches; drop the entry'] }
+  }
+  const issues: string[] = []
+  for (const [name, why] of Object.entries(entry)) {
+    const branch = BRANCH_ORDER.find((known) => known === name && known !== 'other')
+    if (branch === undefined) {
+      issues.push(`identicalBranches names ${name}: name a branch other than other (${BRANCH_ORDER.join(', ')})`)
+    } else if (branches[branch] === undefined) {
+      issues.push(`identicalBranches names ${name}, which this value has no branch for: drop it`)
+    } else if (branches[branch] !== branches.other) {
+      issues.push(`identicalBranches names ${name}, which already differs from other: drop it`)
+    } else if (typeof why !== 'string' || why.trim() === '') {
+      issues.push(`identicalBranches.${name} needs a reason: why the English matches other but translations split`)
+    } else allowed.add(branch)
+  }
+  return { allowed, issues }
 }
 
 /** Whether `text` uses `platform` as an argument, read in its family's grammar. */
@@ -104,8 +143,15 @@ function canonicalSpelling(branches: PlatformSelectBranches): string {
 /**
  * The issues of a value that is a well-formed block.
  * @param setFromSource whether the value's source is a block too, which dictates its branch set
+ * @param identical the branches the `en` key's `@key.identicalBranches` lets equal `other`
  */
-function blockIssues(key: string, value: string, branches: PlatformSelectBranches, setFromSource: boolean): string[] {
+function blockIssues(
+  key: string,
+  value: string,
+  branches: PlatformSelectBranches,
+  setFromSource: boolean,
+  identical: ReadonlySet<PlatformSelectBranch>,
+): string[] {
   const issues: string[] = []
   const names = branchNames(branches)
   const bodies = names.map((name) => branches[name] ?? '')
@@ -119,8 +165,10 @@ function blockIssues(key: string, value: string, branches: PlatformSelectBranche
   }
   for (const name of BRANCH_ORDER) {
     if (name === 'other') continue
-    if (!setFromSource && branches[name] === branches.other) {
-      issues.push(`${name} branch equals other: drop it, and that system reads other`)
+    if (!setFromSource && !identical.has(name) && branches[name] === branches.other) {
+      issues.push(
+        `${name} branch equals other: drop it, and that system reads other (or, where translations must split there, say why in @key.identicalBranches)`,
+      )
     }
   }
   if (bodies.some((body) => mentionsPlatform(key, body))) {
@@ -167,7 +215,7 @@ function branchSetIssue(branches: PlatformSelectBranches | null, sourceValue: st
  * What's wrong with one value's platform-select shape, or `[]`. Exposed for unit
  * tests.
  */
-export function platformSelectIssues({ key, value, sourceValue }: PlatformSelectInput): string[] {
+export function platformSelectIssues({ key, value, sourceValue, identicalBranches }: PlatformSelectInput): string[] {
   if (value.startsWith(PLATFORM_SELECT_PREFIX) || LEADS_WITH_PLATFORM.test(value)) {
     if (!value.startsWith(PLATFORM_SELECT_PREFIX)) {
       return ['not in canonical spelling: a block starts with exactly `{platform, select, `']
@@ -180,11 +228,12 @@ export function platformSelectIssues({ key, value, sourceValue }: PlatformSelect
       return isRawKey(key) && QUOTE_BEFORE_OPENER.test(value) ? [malformed, APOSTROPHE_ISSUE] : [malformed]
     }
     const setFromSource = sourceValue !== undefined && parsePlatformSelect(sourceValue) !== null
-    const issues = blockIssues(key, value, branches, setFromSource)
+    const identical = identicalBranchesOf(identicalBranches, branches)
+    const issues = [...blockIssues(key, value, branches, setFromSource, identical.allowed), ...identical.issues]
     const setIssue = sourceValue === undefined ? null : branchSetIssue(branches, sourceValue)
     return setIssue === null ? issues : [...issues, setIssue]
   }
-  const issues: string[] = []
+  const issues: string[] = [...identicalBranchesOf(identicalBranches, null).issues]
   if (mentionsPlatform(key, value)) {
     issues.push('uses `platform` outside a whole-value block: the whole value must be the block')
   }
@@ -205,7 +254,11 @@ export function runPlatformSelectCheck(opts: LocaleCheckOptions = {}): number {
     inspectLocale: ({ locale, source, catalog, findings }) => {
       for (const [key, value] of Object.entries(catalog.messages)) {
         const sourceValue = locale === 'en' ? undefined : source.messages[key]
-        for (const issue of platformSelectIssues({ key, value, sourceValue })) findings.add(key, issue)
+        const meta = locale === 'en' && key in catalog.metadata ? catalog.metadata[key] : undefined
+        const identicalBranches = meta?.identicalBranches
+        for (const issue of platformSelectIssues({ key, value, sourceValue, identicalBranches })) {
+          findings.add(key, issue)
+        }
       }
     },
   })

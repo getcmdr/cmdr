@@ -335,7 +335,7 @@
   "@shortcuts.window.hideEmpty": {
     "sourceHash": "d3cb18e"
   },
-  "shortcuts.window.editInSettings": "{platform, select, linuxGnome {Bewerk sneltoetsen in Voorkeuren} linuxKde {Bewerk sneltoetsen in ‘Cmdr configureren’} other {Bewerk sneltoetsen in Instellingen}}",
+  "shortcuts.window.editInSettings": "{platform, select, windows {Bewerk sneltoetsen in Instellingen} linuxGnome {Bewerk sneltoetsen in Voorkeuren} linuxKde {Bewerk sneltoetsen in ‘Cmdr configureren’} other {Bewerk sneltoetsen in Instellingen}}",
   "@shortcuts.window.editInSettings": {
     "sourceHash": "875f6b7"
   }

@@ -330,7 +330,7 @@
   "@shortcuts.window.hideEmpty": {
     "sourceHash": "d3cb18e"
   },
-  "shortcuts.window.editInSettings": "{platform, select, linuxGnome {在「偏好設定」中編輯快速鍵} linuxKde {在「設定 Cmdr」中編輯快速鍵} other {在「設定」中編輯快速鍵}}",
+  "shortcuts.window.editInSettings": "{platform, select, windows {在「設定」中編輯快速鍵} linuxGnome {在「偏好設定」中編輯快速鍵} linuxKde {在「設定 Cmdr」中編輯快速鍵} other {在「設定」中編輯快速鍵}}",
   "@shortcuts.window.editInSettings": {
     "sourceHash": "875f6b7"
   }

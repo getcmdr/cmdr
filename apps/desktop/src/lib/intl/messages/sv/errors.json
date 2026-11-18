@@ -2645,7 +2645,7 @@
   "@errors.listing.smbEncryptionRequired.explanation": {
     "sourceHash": "5eeef51"
   },
-  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Så här kan du prova:\n- Logga in med ett konto: gästanslutningar kan inte krypteras\n- Slå på SMB-kryptering på servern\n- Stäng av ”Kräv alltid SMB-kryptering” i Inställningar, om du inte behöver inställningen} linuxKde {Så här kan du prova:\n- Logga in med ett konto: gästanslutningar kan inte krypteras\n- Slå på SMB-kryptering på servern\n- Stäng av ”Kräv alltid SMB-kryptering” i ”Anpassa Cmdr”, om du inte behöver inställningen} other {Så här kan du prova:\n- Logga in med ett konto: gästanslutningar kan inte krypteras\n- Slå på SMB-kryptering på servern\n- Stäng av ”Kräv alltid SMB-kryptering” i Inställningar, om du inte behöver inställningen}}",
+  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, windows {Så här kan du prova:\n- Logga in med ett konto: gästanslutningar kan inte krypteras\n- Slå på SMB-kryptering på servern\n- Stäng av ”Kräv alltid SMB-kryptering” i Inställningar, om du inte behöver inställningen} linuxGnome {Så här kan du prova:\n- Logga in med ett konto: gästanslutningar kan inte krypteras\n- Slå på SMB-kryptering på servern\n- Stäng av ”Kräv alltid SMB-kryptering” i Inställningar, om du inte behöver inställningen} linuxKde {Så här kan du prova:\n- Logga in med ett konto: gästanslutningar kan inte krypteras\n- Slå på SMB-kryptering på servern\n- Stäng av ”Kräv alltid SMB-kryptering” i ”Anpassa Cmdr”, om du inte behöver inställningen} other {Så här kan du prova:\n- Logga in med ett konto: gästanslutningar kan inte krypteras\n- Slå på SMB-kryptering på servern\n- Stäng av ”Kräv alltid SMB-kryptering” i Inställningar, om du inte behöver inställningen}}",
   "@errors.listing.smbEncryptionRequired.suggestion": {
     "sourceHash": "5d8e637"
   },
@@ -2669,7 +2669,7 @@
   "@errors.write.smbEncryptionRequired.message": {
     "sourceHash": "ec53744"
   },
-  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Logga in med ett konto i stället för som gäst, eller slå på SMB-kryptering på servern. Du kan också stänga av ”Kräv alltid SMB-kryptering” i Inställningar.} linuxKde {Logga in med ett konto i stället för som gäst, eller slå på SMB-kryptering på servern. Du kan också stänga av ”Kräv alltid SMB-kryptering” i ”Anpassa Cmdr”.} other {Logga in med ett konto i stället för som gäst, eller slå på SMB-kryptering på servern. Du kan också stänga av ”Kräv alltid SMB-kryptering” i Inställningar.}}",
+  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, windows {Logga in med ett konto i stället för som gäst, eller slå på SMB-kryptering på servern. Du kan också stänga av ”Kräv alltid SMB-kryptering” i Inställningar.} linuxGnome {Logga in med ett konto i stället för som gäst, eller slå på SMB-kryptering på servern. Du kan också stänga av ”Kräv alltid SMB-kryptering” i Inställningar.} linuxKde {Logga in med ett konto i stället för som gäst, eller slå på SMB-kryptering på servern. Du kan också stänga av ”Kräv alltid SMB-kryptering” i ”Anpassa Cmdr”.} other {Logga in med ett konto i stället för som gäst, eller slå på SMB-kryptering på servern. Du kan också stänga av ”Kräv alltid SMB-kryptering” i Inställningar.}}",
   "@errors.write.smbEncryptionRequired.suggestion": {
     "sourceHash": "bab81dc"
   },

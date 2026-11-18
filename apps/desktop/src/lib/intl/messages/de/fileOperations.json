@@ -429,7 +429,7 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {Cmdr wählt diese Option beim nächsten Mal vor, und du kannst sie in den Einstellungen ändern. Überschreibt die Option Dateien, siehst du vorher eine Warnung.} linuxKde {Cmdr wählt diese Option beim nächsten Mal vor, und du kannst sie unter „Cmdr einrichten“ ändern. Überschreibt die Option Dateien, siehst du vorher eine Warnung.} other {Cmdr wählt diese Option beim nächsten Mal vor, und du kannst sie in den Einstellungen ändern. Überschreibt die Option Dateien, siehst du vorher eine Warnung.}}",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {Cmdr wählt diese Option beim nächsten Mal vor, und du kannst sie in den Einstellungen ändern. Überschreibt die Option Dateien, siehst du vorher eine Warnung.} linuxGnome {Cmdr wählt diese Option beim nächsten Mal vor, und du kannst sie in den Einstellungen ändern. Überschreibt die Option Dateien, siehst du vorher eine Warnung.} linuxKde {Cmdr wählt diese Option beim nächsten Mal vor, und du kannst sie unter „Cmdr einrichten“ ändern. Überschreibt die Option Dateien, siehst du vorher eine Warnung.} other {Cmdr wählt diese Option beim nächsten Mal vor, und du kannst sie in den Einstellungen ändern. Überschreibt die Option Dateien, siehst du vorher eine Warnung.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
     "sourceHash": "d75e9f6"
   },

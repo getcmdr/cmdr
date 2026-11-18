@@ -517,7 +517,7 @@
   },
   "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {Function key bar is now hidden. Turn it back on any time later in <settingsLink>Settings</settingsLink>.} linuxGnome {Function key bar is now hidden. Re-enable it any time later in <settingsLink>Preferences</settingsLink>.} linuxKde {Function key bar is now hidden. Re-enable it any time later in <settingsLink>Configure Cmdr</settingsLink>.} other {Function key bar is now hidden. Re-enable it any time later in <settingsLink>Settings</settingsLink>.}}",
   "@fileExplorer.functionKeyBar.hiddenToast": {
-    "description": "Self-dismissing INFO toast shown after picking \"Hide function key bar\" from the bar's own right-click context menu. The <settingsLink>…</settingsLink> tag wraps the clickable link text, which names the Settings location; deep-links to the \"Show function key bar\" row in Settings > Appearance. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
+    "description": "Self-dismissing INFO toast shown after picking \"Hide function key bar\" from the bar's own right-click context menu. The <settingsLink>…</settingsLink> tag wraps the clickable link text, which names the Settings location; deep-links to the \"Show function key bar\" row in Settings > Appearance. The branches differ only in the verb: the `windows` branch says “Turn it back on” where the others say “Re-enable it”, because Windows instructions say “turn on” for “enable”, so use Windows’ own verb there and your usual one elsewhere.The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
   },
   "fileExplorer.typeToJump.prefix": "Jump: ",
   "@fileExplorer.typeToJump.prefix": {
@@ -1188,24 +1188,33 @@
   "@fileExplorer.edit.notOnThisMacWithoutKey": {
     "description": "The keyless sibling of fileExplorer.edit.notOnThisMacWithKey, shown when no key runs View (the user removed it), so it names the command instead of a key; keep the two worded alike. \"View\" is the name of Cmdr’s viewer command as the command palette and the menu show it (commands.fileView.label); use the same name. \"Cmdr\" is the product name; keep it. Never use the words 'error' or 'failed'."
   },
-  "fileExplorer.edit.hint": "{platform, select, linuxGnome {Opened in {app}. Want a different editor next time? Pick one in Preferences.} linuxKde {Opened in {app}. Want a different editor next time? Pick one in Configure Cmdr.} other {Opened in {app}. Want a different editor next time? Pick one in Settings.}}",
+  "fileExplorer.edit.hint": "{platform, select, windows {Opened in {app}. Want a different editor next time? Pick one in Settings.} linuxGnome {Opened in {app}. Want a different editor next time? Pick one in Preferences.} linuxKde {Opened in {app}. Want a different editor next time? Pick one in Configure Cmdr.} other {Opened in {app}. Want a different editor next time? Pick one in Settings.}}",
   "@fileExplorer.edit.hint": {
-    "description": "One-time toast shown after F4 (edit) opens a file in the system's default text editor, on a computer where other text editors are installed too. Says which app the file opened in, then points at the setting that picks a different one; the toast's \"Open settings\" button goes straight to it. Shown once ever. \"Settings\" is Cmdr's own Settings window. Conversational. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
+    "description": "One-time toast shown after F4 (edit) opens a file in the system's default text editor, on a computer where other text editors are installed too. Says which app the file opened in, then points at the setting that picks a different one; the toast's \"Open settings\" button goes straight to it. Shown once ever. \"Settings\" is Cmdr's own Settings window. Conversational. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "placeholders": {
       "app": "the display name of the app the file opened in, as Finder shows it, like \"TextEdit\" or \"Xcode\". Any installed app's own name, never translated; phrase the sentence so it reads correctly whatever name lands here"
     }
   },
-  "fileExplorer.edit.hintUnnamed": "{platform, select, linuxGnome {Opened in your default text editor. Want a different one next time? Pick one in Preferences.} linuxKde {Opened in your default text editor. Want a different one next time? Pick one in Configure Cmdr.} other {Opened in your default text editor. Want a different one next time? Pick one in Settings.}}",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, windows {Opened in your default text editor. Want a different one next time? Pick one in Settings.} linuxGnome {Opened in your default text editor. Want a different one next time? Pick one in Preferences.} linuxKde {Opened in your default text editor. Want a different one next time? Pick one in Configure Cmdr.} other {Opened in your default text editor. Want a different one next time? Pick one in Settings.}}",
   "@fileExplorer.edit.hintUnnamed": {
-    "description": "The same one-time toast as fileExplorer.edit.hint, for the rare case where Cmdr can't name the default app the file opened in. \"your default text editor\" is the system-wide default app for text files; \"a different one\" = a different text editor. \"Settings\" is Cmdr's own Settings window. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
+    "description": "The same one-time toast as fileExplorer.edit.hint, for the rare case where Cmdr can't name the default app the file opened in. \"your default text editor\" is the system-wide default app for text files; \"a different one\" = a different text editor. \"Settings\" is Cmdr's own Settings window. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    }
   },
   "fileExplorer.edit.dismiss": "Dismiss",
   "@fileExplorer.edit.dismiss": {
     "description": "VERB (imperative). Button on a text editor toast (after F4) that closes it and changes nothing. Same wording as the commands.handler.openTerminalHere.dismiss button on the \"Open terminal here\" toasts; translate it identically."
   },
-  "fileExplorer.edit.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Open settings}}",
+  "fileExplorer.edit.openSettings": "{platform, select, windows {Open settings} linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Open settings}}",
   "@fileExplorer.edit.openSettings": {
-    "description": "VERB phrase (imperative). Button on the text editor toasts (after F4). Opens the Settings window scrolled to the row that picks which app F4 opens files in. Same wording as the commands.handler.openTerminalHere.openSettings button; translate it identically. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
+    "description": "VERB phrase (imperative). Button on the text editor toasts (after F4). Opens the Settings window scrolled to the row that picks which app F4 opens files in. Same wording as the commands.handler.openTerminalHere.openSettings button; translate it identically. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    }
   },
   "fileExplorer.edit.appMissing": "Cmdr can’t find the editor you picked, so this file opened in {app}.",
   "@fileExplorer.edit.appMissing": {
@@ -1278,9 +1287,12 @@
       "filename": "the name of the created file, e.g. \"pasted.txt\" or \"pasted (2).png\""
     }
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, linuxGnome {Preferences} linuxKde {Configure Cmdr} other {Settings}}",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, windows {Settings} linuxGnome {Preferences} linuxKde {Configure Cmdr} other {Settings}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
-    "description": "Button on the paste-as-file info toast that opens Settings (Behavior > Navigation & file ops) so the user can change or turn off this paste behavior. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
+    "description": "Button on the paste-as-file info toast that opens Settings (Behavior > Navigation & file ops) so the user can change or turn off this paste behavior. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    }
   },
   "fileExplorer.clipboard.copiedPath": "Copied the path, it’s now on your clipboard:",
   "@fileExplorer.clipboard.copiedPath": {
@@ -2750,15 +2762,21 @@
     "screenshot": "toast-favorite.png",
     "screenshotNote": "This shows a different toast in the same corner of the window; your string is what picking a favorite says there when its place can’t be reached, with the one button that helps."
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, linuxGnome {Phone and camera access over MTP is turned off in Preferences.} linuxKde {Phone and camera access over MTP is turned off in Configure Cmdr.} other {Phone and camera access over MTP is turned off in Settings.}}",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, windows {Phone and camera access over MTP is turned off in Settings.} linuxGnome {Phone and camera access over MTP is turned off in Preferences.} linuxKde {Phone and camera access over MTP is turned off in Configure Cmdr.} other {Phone and camera access over MTP is turned off in Settings.}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
-    "description": "Info toast after the user picked a favorite folder on a phone or camera, while Cmdr's MTP support (the USB protocol phones and cameras use for file transfer) is switched off in Settings, so the pane stayed where it was. It's that Cmdr feature that's off, not the device. The toast's button opens that setting. Keep \"MTP\" as is. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
+    "description": "Info toast after the user picked a favorite folder on a phone or camera, while Cmdr's MTP support (the USB protocol phones and cameras use for file transfer) is switched off in Settings, so the pane stayed where it was. It's that Cmdr feature that's off, not the device. The toast's button opens that setting. Keep \"MTP\" as is. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "toast-favorite.png",
     "screenshotNote": "This shows a different toast in the same corner of the window; your string is what picking a favorite says there when its place can’t be reached, with the one button that helps."
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, linuxGnome {Android phone access is turned off in Preferences.} linuxKde {Android phone access is turned off in Configure Cmdr.} other {Android phone access is turned off in Settings.}}",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, windows {Android phone access is turned off in Settings.} linuxGnome {Android phone access is turned off in Preferences.} linuxKde {Android phone access is turned off in Configure Cmdr.} other {Android phone access is turned off in Settings.}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
-    "description": "Info toast after the user picked a favorite folder on an Android phone, while Cmdr's Android (ADB) support is switched off in Settings, so the pane stayed where it was. It's that Cmdr feature that's off, not the phone. The toast's button opens that setting. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
+    "description": "Info toast after the user picked a favorite folder on an Android phone, while Cmdr's Android (ADB) support is switched off in Settings, so the pane stayed where it was. It's that Cmdr feature that's off, not the phone. The toast's button opens that setting. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "toast-favorite.png",
     "screenshotNote": "This shows a different toast in the same corner of the window; your string is what picking a favorite says there when its place can’t be reached, with the one button that helps."
   },
@@ -2781,9 +2799,12 @@
     },
     "screenshot": "toast-favorite-unreachable.png"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Open settings}}",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, windows {Open settings} linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Open settings}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
-    "description": "VERB phrase. Button on the toast saying phone access is turned off in Settings: opens Cmdr's Settings at that switch. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
+    "description": "VERB phrase. Button on the toast saying phone access is turned off in Settings: opens Cmdr's Settings at that switch. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "toast-favorite.png",
     "screenshotNote": "This shows a different toast in the same corner of the window; your string is what picking a favorite says there when its place can’t be reached, with the one button that helps."
   },
@@ -3280,9 +3301,12 @@
       "name": "the drive’s display name (e.g. Backups)"
     }
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.} linuxKde {Drive indexing is off in Configure Cmdr, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.} other {Drive indexing is off in Settings, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.}}",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, windows {Drive indexing is off in Settings, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.} linuxGnome {Drive indexing is off in Preferences, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.} linuxKde {Drive indexing is off in Configure Cmdr, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.} other {Drive indexing is off in Settings, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
-    "description": "Toast shown when a per-drive \"turn on indexing\" request is refused because the master drive-indexing switch is off. Points at the settings page that owns the switch; the quoted path is the Settings sidebar's section and page names, so match them exactly. Sentence case; avoid the words “error” and “failed”. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
+    "description": "Toast shown when a per-drive \"turn on indexing\" request is refused because the master drive-indexing switch is off. Points at the settings page that owns the switch; the quoted path is the Settings sidebar's section and page names, so match them exactly. Sentence case; avoid the words “error” and “failed”. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "placeholders": {
       "name": "the drive’s display name (e.g. Backups)"
     }
@@ -3294,13 +3318,19 @@
       "name": "the drive’s display name (e.g. Backups)"
     }
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so no drive is indexed right now.} linuxKde {Drive indexing is off in Configure Cmdr, so no drive is indexed right now.} other {Drive indexing is off in Settings, so no drive is indexed right now.}}",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, windows {Drive indexing is off in Settings, so no drive is indexed right now.} linuxGnome {Drive indexing is off in Preferences, so no drive is indexed right now.} linuxKde {Drive indexing is off in Configure Cmdr, so no drive is indexed right now.} other {Drive indexing is off in Settings, so no drive is indexed right now.}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
-    "description": "Hover tooltip on the gray drive-index dot when the master drive-indexing switch is off. Explains that the gray dot is about the global switch, not this one drive. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
+    "description": "Hover tooltip on the gray drive-index dot when the master drive-indexing switch is off. Explains that the gray dot is about the global switch, not this one drive. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    }
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, linuxGnome {Drive indexing is off in Preferences. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} linuxKde {Drive indexing is off in Configure Cmdr. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} other {Drive indexing is off in Settings. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.}}",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, windows {Drive indexing is off in Settings. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} linuxGnome {Drive indexing is off in Preferences. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} linuxKde {Drive indexing is off in Configure Cmdr. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} other {Drive indexing is off in Settings. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
-    "description": "Note replacing the per-drive index menu’s actions while the master drive-indexing switch is off. Says where to turn the switch back on and reassures that the drive’s own on/off choice is remembered. Sentence case. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
+    "description": "Note replacing the per-drive index menu’s actions while the master drive-indexing switch is off. Says where to turn the switch back on and reassures that the drive’s own on/off choice is remembered. Sentence case. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    }
   },
   "fileExplorer.dragOut.failed": "{count, plural, =1 {Couldn’t copy “{name}”.} one {Couldn’t copy {countText} item.} other {Couldn’t copy {countText} items.}}",
   "@fileExplorer.dragOut.failed": {
@@ -3483,9 +3513,12 @@
     "description": "Emphasized line of the same toast: how to undo the filter. \"Esc\" is the Escape key; use the name keyboards in your language show for that key. Shown once, the first time typing in a pane filters it (Filter is the default typing mode).",
     "screenshot": "quick-filter-intro.png"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, linuxGnome {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Preferences.} linuxKde {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Configure Cmdr.} other {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Settings.}}",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, windows {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Settings.} linuxGnome {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Preferences.} linuxKde {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Configure Cmdr.} other {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Settings.}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
-    "description": "Last line of the same toast, before its buttons. \"Jump\" is the other typing mode's name, the same word as the Jump option in Settings (settings.fileExplorer.typeToJump.mode.opt.jump). Shown once, the first time typing in a pane filters it (Filter is the default typing mode). The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
+    "description": "Last line of the same toast, before its buttons. \"Jump\" is the other typing mode's name, the same word as the Jump option in Settings (settings.fileExplorer.typeToJump.mode.opt.jump). Shown once, the first time typing in a pane filters it (Filter is the default typing mode). The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "quick-filter-intro.png"
   },
   "fileExplorer.quickFilter.intro.switchToJump": "Switch to Jump",
@@ -3601,9 +3634,12 @@
     },
     "screenshot": "smb-link-consent-default.png"
   },
-  "fileExplorer.smbLinkConsent.note": "{platform, select, linuxGnome {Cmdr remembers your answer for these two servers. You can forget it in Preferences, under Servers.} linuxKde {Cmdr remembers your answer for these two servers. You can forget it in Configure Cmdr, under Servers.} other {Cmdr remembers your answer for these two servers. You can forget it in Settings, under Servers.}}",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, windows {Cmdr remembers your answer for these two servers. You can forget it in Settings, under Servers.} linuxGnome {Cmdr remembers your answer for these two servers. You can forget it in Preferences, under Servers.} linuxKde {Cmdr remembers your answer for these two servers. You can forget it in Configure Cmdr, under Servers.} other {Cmdr remembers your answer for these two servers. You can forget it in Settings, under Servers.}}",
   "@fileExplorer.smbLinkConsent.note": {
-    "description": "Small note at the end of that dialog. \"Settings\" is the app’s settings window, \"Servers\" its page; translate them the way the settings window does. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
+    "description": "Small note at the end of that dialog. \"Settings\" is the app’s settings window, \"Servers\" its page; translate them the way the settings window does. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "smb-link-consent-default.png"
   },
   "fileExplorer.smbLinkConsent.allow": "Allow and sign in",

@@ -769,11 +769,11 @@
   "@fileExplorer.edit.notOnThisMacWithoutKey": {
     "sourceHash": "4572115"
   },
-  "fileExplorer.edit.hint": "{platform, select, linuxGnome {Otevřeno v aplikaci {app}. Chcete příště jiný editor? Vyberte ho v Předvolbách.} linuxKde {Otevřeno v aplikaci {app}. Chcete příště jiný editor? Vyberte ho v okně Nastavit Cmdr.} other {Otevřeno v aplikaci {app}. Chcete příště jiný editor? Vyberte ho v Nastavení.}}",
+  "fileExplorer.edit.hint": "{platform, select, windows {Otevřeno v aplikaci {app}. Chcete příště jiný editor? Vyberte ho v Nastavení.} linuxGnome {Otevřeno v aplikaci {app}. Chcete příště jiný editor? Vyberte ho v Předvolbách.} linuxKde {Otevřeno v aplikaci {app}. Chcete příště jiný editor? Vyberte ho v okně Nastavit Cmdr.} other {Otevřeno v aplikaci {app}. Chcete příště jiný editor? Vyberte ho v Nastavení.}}",
   "@fileExplorer.edit.hint": {
     "sourceHash": "1ec59c2"
   },
-  "fileExplorer.edit.hintUnnamed": "{platform, select, linuxGnome {Otevřeno ve vašem výchozím textovém editoru. Chcete příště jiný? Vyberte ho v Předvolbách.} linuxKde {Otevřeno ve vašem výchozím textovém editoru. Chcete příště jiný? Vyberte ho v okně Nastavit Cmdr.} other {Otevřeno ve vašem výchozím textovém editoru. Chcete příště jiný? Vyberte ho v Nastavení.}}",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, windows {Otevřeno ve vašem výchozím textovém editoru. Chcete příště jiný? Vyberte ho v Nastavení.} linuxGnome {Otevřeno ve vašem výchozím textovém editoru. Chcete příště jiný? Vyberte ho v Předvolbách.} linuxKde {Otevřeno ve vašem výchozím textovém editoru. Chcete příště jiný? Vyberte ho v okně Nastavit Cmdr.} other {Otevřeno ve vašem výchozím textovém editoru. Chcete příště jiný? Vyberte ho v Nastavení.}}",
   "@fileExplorer.edit.hintUnnamed": {
     "sourceHash": "00354cc"
   },
@@ -781,7 +781,7 @@
   "@fileExplorer.edit.dismiss": {
     "sourceHash": "48845bf"
   },
-  "fileExplorer.edit.openSettings": "{platform, select, linuxGnome {Otevřít Předvolby} linuxKde {Nastavit Cmdr} other {Otevřít Nastavení}}",
+  "fileExplorer.edit.openSettings": "{platform, select, windows {Otevřít Nastavení} linuxGnome {Otevřít Předvolby} linuxKde {Nastavit Cmdr} other {Otevřít Nastavení}}",
   "@fileExplorer.edit.openSettings": {
     "sourceHash": "e535825"
   },
@@ -837,7 +837,7 @@
   "@fileExplorer.clipboard.pastedAsFile": {
     "sourceHash": "d61d4b5"
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, linuxGnome {Předvolby} linuxKde {Nastavit Cmdr} other {Nastavení}}",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, windows {Nastavení} linuxGnome {Předvolby} linuxKde {Nastavit Cmdr} other {Nastavení}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
     "sourceHash": "02ce4ce"
   },
@@ -1839,11 +1839,11 @@
   "@fileExplorer.navigation.favoriteUnreachable.driveUnplugged": {
     "sourceHash": "4b44a30"
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, linuxGnome {Přístup k telefonům a fotoaparátům přes MTP je v Předvolbách vypnutý.} linuxKde {Přístup k telefonům a fotoaparátům přes MTP je v okně Nastavit Cmdr vypnutý.} other {Přístup k telefonům a fotoaparátům přes MTP je v Nastavení vypnutý.}}",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, windows {Přístup k telefonům a fotoaparátům přes MTP je v Nastavení vypnutý.} linuxGnome {Přístup k telefonům a fotoaparátům přes MTP je v Předvolbách vypnutý.} linuxKde {Přístup k telefonům a fotoaparátům přes MTP je v okně Nastavit Cmdr vypnutý.} other {Přístup k telefonům a fotoaparátům přes MTP je v Nastavení vypnutý.}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
     "sourceHash": "064a270"
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, linuxGnome {Přístup k telefonům s Androidem je v Předvolbách vypnutý.} linuxKde {Přístup k telefonům s Androidem je v okně Nastavit Cmdr vypnutý.} other {Přístup k telefonům s Androidem je v Nastavení vypnutý.}}",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, windows {Přístup k telefonům s Androidem je v Nastavení vypnutý.} linuxGnome {Přístup k telefonům s Androidem je v Předvolbách vypnutý.} linuxKde {Přístup k telefonům s Androidem je v okně Nastavit Cmdr vypnutý.} other {Přístup k telefonům s Androidem je v Nastavení vypnutý.}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
     "sourceHash": "bc261dc"
   },
@@ -1855,7 +1855,7 @@
   "@fileExplorer.navigation.favoriteUnreachable.notFound": {
     "sourceHash": "0fd2e21"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, linuxGnome {Otevřít Předvolby} linuxKde {Nastavit Cmdr} other {Otevřít Nastavení}}",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, windows {Otevřít Nastavení} linuxGnome {Otevřít Předvolby} linuxKde {Nastavit Cmdr} other {Otevřít Nastavení}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
     "sourceHash": "e535825"
   },
@@ -2217,7 +2217,7 @@
   "@fileExplorer.navigation.driveIndex.refusedNotIndexable": {
     "sourceHash": "4ef8487"
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, linuxGnome {Indexování disků je v Předvolbách vypnuté, takže disk {name} zůstává neindexovaný. Zapněte ho v části „Indexování > Indexování disků“.} linuxKde {Indexování disků je v okně Nastavit Cmdr vypnuté, takže disk {name} zůstává neindexovaný. Zapněte ho v části „Indexování > Indexování disků“.} other {Indexování disků je v Nastavení vypnuté, takže disk {name} zůstává neindexovaný. Zapněte ho v části „Indexování > Indexování disků“.}}",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, windows {Indexování disků je v Nastavení vypnuté, takže disk {name} zůstává neindexovaný. Zapněte ho v části „Indexování > Indexování disků“.} linuxGnome {Indexování disků je v Předvolbách vypnuté, takže disk {name} zůstává neindexovaný. Zapněte ho v části „Indexování > Indexování disků“.} linuxKde {Indexování disků je v okně Nastavit Cmdr vypnuté, takže disk {name} zůstává neindexovaný. Zapněte ho v části „Indexování > Indexování disků“.} other {Indexování disků je v Nastavení vypnuté, takže disk {name} zůstává neindexovaný. Zapněte ho v části „Indexování > Indexování disků“.}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
     "sourceHash": "f7b3cad"
   },
@@ -2225,11 +2225,11 @@
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
     "sourceHash": "99f19f9"
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, linuxGnome {Indexování disků je v Předvolbách vypnuté, takže se teď neindexuje žádný disk.} linuxKde {Indexování disků je v okně Nastavit Cmdr vypnuté, takže se teď neindexuje žádný disk.} other {Indexování disků je v Nastavení vypnuté, takže se teď neindexuje žádný disk.}}",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, windows {Indexování disků je v Nastavení vypnuté, takže se teď neindexuje žádný disk.} linuxGnome {Indexování disků je v Předvolbách vypnuté, takže se teď neindexuje žádný disk.} linuxKde {Indexování disků je v okně Nastavit Cmdr vypnuté, takže se teď neindexuje žádný disk.} other {Indexování disků je v Nastavení vypnuté, takže se teď neindexuje žádný disk.}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
     "sourceHash": "4c4d376"
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, linuxGnome {Indexování disků je v Předvolbách vypnuté. Zapněte ho v části „Indexování > Indexování disků“ a tento disk naváže tam, kde skončil.} linuxKde {Indexování disků je v okně Nastavit Cmdr vypnuté. Zapněte ho v části „Indexování > Indexování disků“ a tento disk naváže tam, kde skončil.} other {Indexování disků je v Nastavení vypnuté. Zapněte ho v části „Indexování > Indexování disků“ a tento disk naváže tam, kde skončil.}}",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, windows {Indexování disků je v Nastavení vypnuté. Zapněte ho v části „Indexování > Indexování disků“ a tento disk naváže tam, kde skončil.} linuxGnome {Indexování disků je v Předvolbách vypnuté. Zapněte ho v části „Indexování > Indexování disků“ a tento disk naváže tam, kde skončil.} linuxKde {Indexování disků je v okně Nastavit Cmdr vypnuté. Zapněte ho v části „Indexování > Indexování disků“ a tento disk naváže tam, kde skončil.} other {Indexování disků je v Nastavení vypnuté. Zapněte ho v části „Indexování > Indexování disků“ a tento disk naváže tam, kde skončil.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
     "sourceHash": "453d08d"
   },
@@ -2337,7 +2337,7 @@
   "@fileExplorer.quickFilter.intro.escape": {
     "sourceHash": "af749ad"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, linuxGnome {Chcete raději jen přesunout kurzor na odpovídající název a nic neskrývat? Přepněte na Skok, tady nebo v Předvolbách.} linuxKde {Chcete raději jen přesunout kurzor na odpovídající název a nic neskrývat? Přepněte na Skok, tady nebo v okně Nastavit Cmdr.} other {Chcete raději jen přesunout kurzor na odpovídající název a nic neskrývat? Přepněte na Skok, tady nebo v Nastavení.}}",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, windows {Chcete raději jen přesunout kurzor na odpovídající název a nic neskrývat? Přepněte na Skok, tady nebo v Nastavení.} linuxGnome {Chcete raději jen přesunout kurzor na odpovídající název a nic neskrývat? Přepněte na Skok, tady nebo v Předvolbách.} linuxKde {Chcete raději jen přesunout kurzor na odpovídající název a nic neskrývat? Přepněte na Skok, tady nebo v okně Nastavit Cmdr.} other {Chcete raději jen přesunout kurzor na odpovídající název a nic neskrývat? Přepněte na Skok, tady nebo v Nastavení.}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
     "sourceHash": "ed0bb5f"
   },
@@ -2405,7 +2405,7 @@
   "@fileExplorer.smbLinkConsent.warning": {
     "sourceHash": "295e81e"
   },
-  "fileExplorer.smbLinkConsent.note": "{platform, select, linuxGnome {Cmdr si vaši odpověď pro tyto dva servery zapamatuje. Zapomenout ji můžete v Předvolbách v části Servery.} linuxKde {Cmdr si vaši odpověď pro tyto dva servery zapamatuje. Zapomenout ji můžete v okně Nastavit Cmdr v části Servery.} other {Cmdr si vaši odpověď pro tyto dva servery zapamatuje. Zapomenout ji můžete v Nastavení v části Servery.}}",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, windows {Cmdr si vaši odpověď pro tyto dva servery zapamatuje. Zapomenout ji můžete v Nastavení v části Servery.} linuxGnome {Cmdr si vaši odpověď pro tyto dva servery zapamatuje. Zapomenout ji můžete v Předvolbách v části Servery.} linuxKde {Cmdr si vaši odpověď pro tyto dva servery zapamatuje. Zapomenout ji můžete v okně Nastavit Cmdr v části Servery.} other {Cmdr si vaši odpověď pro tyto dva servery zapamatuje. Zapomenout ji můžete v Nastavení v části Servery.}}",
   "@fileExplorer.smbLinkConsent.note": {
     "sourceHash": "d32b664"
   },

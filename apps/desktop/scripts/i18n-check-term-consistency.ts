@@ -52,6 +52,14 @@
  * locale, with no allowlist entry. A malformed or dangling one fails the run
  * (`agreementProblems`), since it would otherwise drop its key from comparison.
  *
+ * ## Another sense the concept registry names (`notMatch: [{ key }]`)
+ *
+ * When `docs/i18n/concepts.json` takes one key out of a concept by key (the
+ * macOS Library folder "Preferences", kept as on disk, out of GNOME's
+ * `preferences` window concept), that key is another sense of the same English.
+ * It groups only with keys excluded from the same concepts (`conceptSenses`), so
+ * the boundary is written once for every locale instead of one allowlist entry each.
+ *
  * ## Locales that haven't been triaged yet
  *
  * Nine locales predate this check and carry 20-40 divergences each. Listing 300
@@ -92,6 +100,8 @@ import type { Catalog } from './i18n-catalog-lib.ts'
 import { parsePlatformSelect } from '../src/lib/intl/platform-select.ts'
 import type { PlatformSelectBranch } from '../src/lib/intl/platform-select.ts'
 import { EXIT_CLEAN, EXIT_ERROR, EXIT_ISSUES } from './i18n-locale-check-lib.ts'
+import { loadConceptsFor, notMatchKey } from './i18n-termbase-lib.ts'
+import type { Concepts } from './i18n-termbase-lib.ts'
 
 /** Where the accepted splits and the not-yet-triaged baselines live. */
 export const ALLOWLIST_PATH: string = join(import.meta.dirname, 'i18n-term-consistency-allowlist.json')
@@ -198,6 +208,24 @@ export function agreementProblems(source: Catalog): string[] {
 }
 
 /**
+ * Each key a concept's key-scoped `notMatch` (`docs/i18n/concepts.json`) takes out of that concept, mapped to the
+ * concept IDs it's out of. Such an entry says "this key's English reads like the concept's word but is another sense"
+ * (the macOS Library folder "Preferences" beside GNOME's "Preferences" menu row), which is exactly the case where two
+ * keys with the same English legitimately diverge, so the grouping reads it and no locale needs an allowlist entry for
+ * a boundary the registry already draws once for every language.
+ */
+export function conceptSenses(concepts: Concepts): Map<string, string> {
+  const excluded = new Map<string, string[]>()
+  for (const [id, concept] of Object.entries(concepts)) {
+    for (const entry of Array.isArray(concept.notMatch) ? concept.notMatch : []) {
+      const key = notMatchKey(entry)
+      if (key !== undefined) excluded.set(key, [...(excluded.get(key) ?? []), id])
+    }
+  }
+  return new Map([...excluded].map(([key, ids]) => [key, ids.sort().join(',')]))
+}
+
+/**
  * The branch of a value one OS reads, and its text: its own branch, `other` where the block has none for it, or the
  * whole value (branch `null`) when it isn't a block.
  */
@@ -228,9 +256,13 @@ const OWN_BRANCH: Readonly<Record<RenderedPlatform, PlatformSelectBranch | undef
  * for, while each branch still meets every other key that OS shows with the same English. Values shorter than two
  * characters are skipped: a bare `/` or `%` connector collides across unrelated surfaces and says nothing about
  * terminology. A key with `@key.agreesWith` groups only with keys that share both its English AND its label, since
- * agreeing with a different label is a different word.
+ * agreeing with a different label is a different word. A key a concept's `notMatch` excludes groups only with keys
+ * excluded from the same concepts (`conceptSenses`).
  */
-function groupBySourceValue(source: Catalog): Map<string, { text: string; os: RenderedPlatform; members: Member[] }> {
+function groupBySourceValue(
+  source: Catalog,
+  senses: ReadonlyMap<string, string> | undefined,
+): Map<string, { text: string; os: RenderedPlatform; members: Member[] }> {
   const groups = new Map<string, { text: string; os: RenderedPlatform; members: Member[] }>()
   for (const os of RENDERED_PLATFORMS) {
     for (const [key, value] of Object.entries(source.messages)) {
@@ -238,7 +270,8 @@ function groupBySourceValue(source: Catalog): Map<string, { text: string; os: Re
       const normalized = normalizeForComparison(text, key)
       if (normalized.length < 2) continue
       const label = agreesWith(source, key)
-      const groupKey = `${os}\u0000${normalized}${label === undefined ? '' : `\u0000${label}`}`
+      const sense = senses?.get(key)
+      const groupKey = [os, normalized, label ?? '', sense ?? ''].join('\u0000')
       const member = { key, branch }
       const bucket = groups.get(groupKey)
       if (bucket) bucket.members.push(member)
@@ -270,6 +303,7 @@ interface Member {
  * @param english the English a branch may be pending translation against
  *   (`pendingTranslationOf`): a branch rendering exactly its `en` same branch sits
  *   out. Absent for an English overlay, which renders English by design.
+ * @param senses `conceptSenses` of the concept registry: keys it marks as another sense group apart
  * @returns findings sorted by source value, each listing its renderings
  */
 export function findDivergences(
@@ -277,10 +311,11 @@ export function findDivergences(
   catalog: Catalog,
   isOverlay: boolean,
   english?: Record<string, string>,
+  senses?: ReadonlyMap<string, string>,
 ): DivergenceFinding[] {
   // A split every OS shows (two plain keys) is found once per OS; one entry per distinct split is the finding.
   const findings = new Map<string, DivergenceFinding>()
-  for (const { text: normalizedSource, os, members } of groupBySourceValue(source).values()) {
+  for (const { text: normalizedSource, os, members } of groupBySourceValue(source, senses).values()) {
     if (members.length < 2) continue
 
     const byRendering = new Map<string, string[]>()
@@ -353,17 +388,21 @@ export interface LocaleOutcome {
  * @param options.messagesRoot override the `messages/` root (for tests)
  * @param options.allowlist the accepted splits and baselines
  * @param options.only only these locales; every one but a generated locale when absent
+ * @param options.concepts the concept registry whose key-scoped `notMatch` splits senses (`docs/i18n/concepts.json`)
  * @returns one outcome per locale, in locale order
  */
 export function inspectLocales({
   messagesRoot,
   allowlist,
   only,
+  concepts = loadConceptsFor(undefined),
 }: {
   messagesRoot?: string
   allowlist: Allowlist
   only?: readonly string[]
+  concepts?: Concepts
 }): LocaleOutcome[] {
+  const senses = conceptSenses(concepts)
   const available = listLocales(messagesRoot)
   const loaded = new Map<string, Catalog>()
   const load = (tag: string): Catalog => {
@@ -386,7 +425,8 @@ export function inspectLocales({
     const source = isOverlay
       ? { messages: layerCatalogs(base, load(overrides)).messages, metadata: base.metadata }
       : base
-    const divergences = findDivergences(source, load(locale), isOverlay, pendingTranslationOf(locale, base.messages))
+    const english = pendingTranslationOf(locale, base.messages)
+    const divergences = findDivergences(source, load(locale), isOverlay, english, senses)
 
     const entries = locale in allowlist.reviewed ? allowlist.reviewed[locale] : []
     const unallowed = divergences.filter((finding) => !isAllowed(finding.source, entries))

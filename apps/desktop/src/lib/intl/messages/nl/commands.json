@@ -35,7 +35,7 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "{platform, select, linuxGnome {Open voorkeuren} linuxKde {Cmdr configureren} other {Open instellingen}}",
+  "commands.appSettings.label": "{platform, select, windows {Open instellingen} linuxGnome {Open voorkeuren} linuxKde {Cmdr configureren} other {Open instellingen}}",
   "@commands.appSettings.label": {
     "sourceHash": "e535825"
   },
@@ -1267,7 +1267,7 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Deze map is geopend in je terminal-app. Wil je dat Cmdr de volgende keer een andere app opent? Kies er een in Voorkeuren, onder ‘Navigatie en bewerkingen’.} linuxKde {Deze map is geopend in je terminal-app. Wil je dat Cmdr de volgende keer een andere app opent? Kies er een in ‘Cmdr configureren’, onder ‘Navigatie en bewerkingen’.} other {Deze map is geopend in je terminal-app. Wil je dat Cmdr de volgende keer een andere app opent? Kies er een in Instellingen, onder ‘Navigatie en bewerkingen’.}}",
+  "commands.handler.openTerminalHere.hint": "{platform, select, windows {Deze map is geopend in je terminal-app. Wil je dat Cmdr de volgende keer een andere app opent? Kies er een in Instellingen, onder ‘Navigatie en bewerkingen’.} linuxGnome {Deze map is geopend in je terminal-app. Wil je dat Cmdr de volgende keer een andere app opent? Kies er een in Voorkeuren, onder ‘Navigatie en bewerkingen’.} linuxKde {Deze map is geopend in je terminal-app. Wil je dat Cmdr de volgende keer een andere app opent? Kies er een in ‘Cmdr configureren’, onder ‘Navigatie en bewerkingen’.} other {Deze map is geopend in je terminal-app. Wil je dat Cmdr de volgende keer een andere app opent? Kies er een in Instellingen, onder ‘Navigatie en bewerkingen’.}}",
   "@commands.handler.openTerminalHere.hint": {
     "sourceHash": "b73c1db"
   },
@@ -1275,7 +1275,7 @@
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Open voorkeuren} linuxKde {Cmdr configureren} other {Open instellingen}}",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, windows {Open instellingen} linuxGnome {Open voorkeuren} linuxKde {Cmdr configureren} other {Open instellingen}}",
   "@commands.handler.openTerminalHere.openSettings": {
     "sourceHash": "e535825"
   },
@@ -1347,7 +1347,7 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {Logopslag staat uit. Zet de schijfruimtelimiet in Voorkeuren > Geavanceerd op meer dan 0 en herstart daarna Cmdr om het foutopsporingslogbestand te bekijken.} linuxKde {Logopslag staat uit. Zet de schijfruimtelimiet in ‘Cmdr configureren’ > Geavanceerd op meer dan 0 en herstart daarna Cmdr om het foutopsporingslogbestand te bekijken.} other {Logopslag staat uit. Zet de schijfruimtelimiet in Instellingen > Geavanceerd op meer dan 0 en herstart daarna Cmdr om het foutopsporingslogbestand te bekijken.}}",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, windows {Logopslag staat uit. Zet de schijfruimtelimiet in Instellingen > Geavanceerd op meer dan 0 en herstart daarna Cmdr om het foutopsporingslogbestand te bekijken.} linuxGnome {Logopslag staat uit. Zet de schijfruimtelimiet in Voorkeuren > Geavanceerd op meer dan 0 en herstart daarna Cmdr om het foutopsporingslogbestand te bekijken.} linuxKde {Logopslag staat uit. Zet de schijfruimtelimiet in ‘Cmdr configureren’ > Geavanceerd op meer dan 0 en herstart daarna Cmdr om het foutopsporingslogbestand te bekijken.} other {Logopslag staat uit. Zet de schijfruimtelimiet in Instellingen > Geavanceerd op meer dan 0 en herstart daarna Cmdr om het foutopsporingslogbestand te bekijken.}}",
   "@commands.handler.viewDebugLog.disabled": {
     "sourceHash": "bda730a"
   },

@@ -428,7 +428,7 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {Lần sau Cmdr sẽ bắt đầu với lựa chọn này, và bạn có thể thay đổi trong Tùy thích. Nếu lựa chọn này ghi đè tệp, bạn sẽ thấy cảnh báo trước.} linuxKde {Lần sau Cmdr sẽ bắt đầu với lựa chọn này, và bạn có thể thay đổi trong Cấu hình Cmdr. Nếu lựa chọn này ghi đè tệp, bạn sẽ thấy cảnh báo trước.} other {Lần sau Cmdr sẽ bắt đầu với lựa chọn này, và bạn có thể thay đổi trong Cài đặt. Nếu lựa chọn này ghi đè tệp, bạn sẽ thấy cảnh báo trước.}}",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {Lần sau Cmdr sẽ bắt đầu với lựa chọn này, và bạn có thể thay đổi trong Cài đặt. Nếu lựa chọn này ghi đè tệp, bạn sẽ thấy cảnh báo trước.} linuxGnome {Lần sau Cmdr sẽ bắt đầu với lựa chọn này, và bạn có thể thay đổi trong Tùy thích. Nếu lựa chọn này ghi đè tệp, bạn sẽ thấy cảnh báo trước.} linuxKde {Lần sau Cmdr sẽ bắt đầu với lựa chọn này, và bạn có thể thay đổi trong Cấu hình Cmdr. Nếu lựa chọn này ghi đè tệp, bạn sẽ thấy cảnh báo trước.} other {Lần sau Cmdr sẽ bắt đầu với lựa chọn này, và bạn có thể thay đổi trong Cài đặt. Nếu lựa chọn này ghi đè tệp, bạn sẽ thấy cảnh báo trước.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
     "sourceHash": "d75e9f6"
   },

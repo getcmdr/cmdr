@@ -767,11 +767,11 @@
   "@fileExplorer.edit.notOnThisMacWithoutKey": {
     "sourceHash": "4572115"
   },
-  "fileExplorer.edit.hint": "{platform, select, linuxGnome {已在 {app} 裡開啟這個檔案。想下次換個編輯器？在「偏好設定」裡選一個。} linuxKde {已在 {app} 裡開啟這個檔案。想下次換個編輯器？在「設定 Cmdr」裡選一個。} other {已在 {app} 裡開啟這個檔案。想下次換個編輯器？在「設定」裡選一個。}}",
+  "fileExplorer.edit.hint": "{platform, select, windows {已在 {app} 裡開啟這個檔案。想下次換個編輯器？在「設定」裡選一個。} linuxGnome {已在 {app} 裡開啟這個檔案。想下次換個編輯器？在「偏好設定」裡選一個。} linuxKde {已在 {app} 裡開啟這個檔案。想下次換個編輯器？在「設定 Cmdr」裡選一個。} other {已在 {app} 裡開啟這個檔案。想下次換個編輯器？在「設定」裡選一個。}}",
   "@fileExplorer.edit.hint": {
     "sourceHash": "1ec59c2"
   },
-  "fileExplorer.edit.hintUnnamed": "{platform, select, linuxGnome {已在你的預設文字編輯器裡開啟這個檔案。想下次換一個？在「偏好設定」裡選一個。} linuxKde {已在你的預設文字編輯器裡開啟這個檔案。想下次換一個？在「設定 Cmdr」裡選一個。} other {已在你的預設文字編輯器裡開啟這個檔案。想下次換一個？在「設定」裡選一個。}}",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, windows {已在你的預設文字編輯器裡開啟這個檔案。想下次換一個？在「設定」裡選一個。} linuxGnome {已在你的預設文字編輯器裡開啟這個檔案。想下次換一個？在「偏好設定」裡選一個。} linuxKde {已在你的預設文字編輯器裡開啟這個檔案。想下次換一個？在「設定 Cmdr」裡選一個。} other {已在你的預設文字編輯器裡開啟這個檔案。想下次換一個？在「設定」裡選一個。}}",
   "@fileExplorer.edit.hintUnnamed": {
     "sourceHash": "00354cc"
   },
@@ -779,7 +779,7 @@
   "@fileExplorer.edit.dismiss": {
     "sourceHash": "48845bf"
   },
-  "fileExplorer.edit.openSettings": "{platform, select, linuxGnome {開啟偏好設定} linuxKde {設定 Cmdr} other {開啟設定}}",
+  "fileExplorer.edit.openSettings": "{platform, select, windows {開啟設定} linuxGnome {開啟偏好設定} linuxKde {設定 Cmdr} other {開啟設定}}",
   "@fileExplorer.edit.openSettings": {
     "sourceHash": "e535825"
   },
@@ -835,7 +835,7 @@
   "@fileExplorer.clipboard.pastedAsFile": {
     "sourceHash": "d61d4b5"
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, linuxGnome {偏好設定} linuxKde {設定 Cmdr} other {設定}}",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, windows {設定} linuxGnome {偏好設定} linuxKde {設定 Cmdr} other {設定}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
     "sourceHash": "02ce4ce"
   },
@@ -1833,11 +1833,11 @@
   "@fileExplorer.navigation.favoriteUnreachable.driveUnplugged": {
     "sourceHash": "4b44a30"
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, linuxGnome {透過 MTP 存取手機和相機的功能已在「偏好設定」裡關閉。} linuxKde {透過 MTP 存取手機和相機的功能已在「設定 Cmdr」裡關閉。} other {透過 MTP 存取手機和相機的功能已在「設定」裡關閉。}}",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, windows {透過 MTP 存取手機和相機的功能已在「設定」裡關閉。} linuxGnome {透過 MTP 存取手機和相機的功能已在「偏好設定」裡關閉。} linuxKde {透過 MTP 存取手機和相機的功能已在「設定 Cmdr」裡關閉。} other {透過 MTP 存取手機和相機的功能已在「設定」裡關閉。}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
     "sourceHash": "064a270"
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, linuxGnome {存取 Android 手機的功能已在「偏好設定」裡關閉。} linuxKde {存取 Android 手機的功能已在「設定 Cmdr」裡關閉。} other {存取 Android 手機的功能已在「設定」裡關閉。}}",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, windows {存取 Android 手機的功能已在「設定」裡關閉。} linuxGnome {存取 Android 手機的功能已在「偏好設定」裡關閉。} linuxKde {存取 Android 手機的功能已在「設定 Cmdr」裡關閉。} other {存取 Android 手機的功能已在「設定」裡關閉。}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
     "sourceHash": "bc261dc"
   },
@@ -1849,7 +1849,7 @@
   "@fileExplorer.navigation.favoriteUnreachable.notFound": {
     "sourceHash": "0fd2e21"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, linuxGnome {開啟偏好設定} linuxKde {設定 Cmdr} other {開啟設定}}",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, windows {開啟設定} linuxGnome {開啟偏好設定} linuxKde {設定 Cmdr} other {開啟設定}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
     "sourceHash": "e535825"
   },
@@ -2209,7 +2209,7 @@
   "@fileExplorer.navigation.driveIndex.refusedNotIndexable": {
     "sourceHash": "4ef8487"
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, linuxGnome {磁碟機索引已在偏好設定中關閉，所以 {name} 仍然沒有建立索引。可以在「索引 > 磁碟機索引」中開啟。} linuxKde {磁碟機索引已在「設定 Cmdr」中關閉，所以 {name} 仍然沒有建立索引。可以在「索引 > 磁碟機索引」中開啟。} other {磁碟機索引已在設定中關閉，所以 {name} 仍然沒有建立索引。可以在「索引 > 磁碟機索引」中開啟。}}",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, windows {磁碟機索引已在設定中關閉，所以 {name} 仍然沒有建立索引。可以在「索引 > 磁碟機索引」中開啟。} linuxGnome {磁碟機索引已在偏好設定中關閉，所以 {name} 仍然沒有建立索引。可以在「索引 > 磁碟機索引」中開啟。} linuxKde {磁碟機索引已在「設定 Cmdr」中關閉，所以 {name} 仍然沒有建立索引。可以在「索引 > 磁碟機索引」中開啟。} other {磁碟機索引已在設定中關閉，所以 {name} 仍然沒有建立索引。可以在「索引 > 磁碟機索引」中開啟。}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
     "sourceHash": "f7b3cad"
   },
@@ -2217,11 +2217,11 @@
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
     "sourceHash": "99f19f9"
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, linuxGnome {磁碟機索引已在偏好設定中關閉，所以目前沒有任何磁碟機在建立索引。} linuxKde {磁碟機索引已在「設定 Cmdr」中關閉，所以目前沒有任何磁碟機在建立索引。} other {磁碟機索引已在設定中關閉，所以目前沒有任何磁碟機在建立索引。}}",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, windows {磁碟機索引已在設定中關閉，所以目前沒有任何磁碟機在建立索引。} linuxGnome {磁碟機索引已在偏好設定中關閉，所以目前沒有任何磁碟機在建立索引。} linuxKde {磁碟機索引已在「設定 Cmdr」中關閉，所以目前沒有任何磁碟機在建立索引。} other {磁碟機索引已在設定中關閉，所以目前沒有任何磁碟機在建立索引。}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
     "sourceHash": "4c4d376"
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, linuxGnome {磁碟機索引已在偏好設定中關閉。可以在「索引 > 磁碟機索引」中開啟，這個磁碟機會從上次的進度繼續。} linuxKde {磁碟機索引已在「設定 Cmdr」中關閉。可以在「索引 > 磁碟機索引」中開啟，這個磁碟機會從上次的進度繼續。} other {磁碟機索引已在設定中關閉。可以在「索引 > 磁碟機索引」中開啟，這個磁碟機會從上次的進度繼續。}}",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, windows {磁碟機索引已在設定中關閉。可以在「索引 > 磁碟機索引」中開啟，這個磁碟機會從上次的進度繼續。} linuxGnome {磁碟機索引已在偏好設定中關閉。可以在「索引 > 磁碟機索引」中開啟，這個磁碟機會從上次的進度繼續。} linuxKde {磁碟機索引已在「設定 Cmdr」中關閉。可以在「索引 > 磁碟機索引」中開啟，這個磁碟機會從上次的進度繼續。} other {磁碟機索引已在設定中關閉。可以在「索引 > 磁碟機索引」中開啟，這個磁碟機會從上次的進度繼續。}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
     "sourceHash": "453d08d"
   },
@@ -2329,7 +2329,7 @@
   "@fileExplorer.quickFilter.intro.escape": {
     "sourceHash": "af749ad"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, linuxGnome {想把游標移到符合的名稱上，又不隱藏任何東西嗎？可以在這裡或「偏好設定」中切換到「跳至」。} linuxKde {想把游標移到符合的名稱上，又不隱藏任何東西嗎？可以在這裡或「設定 Cmdr」中切換到「跳至」。} other {想把游標移到符合的名稱上，又不隱藏任何東西嗎？可以在這裡或「設定」中切換到「跳至」。}}",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, windows {想把游標移到符合的名稱上，又不隱藏任何東西嗎？可以在這裡或「設定」中切換到「跳至」。} linuxGnome {想把游標移到符合的名稱上，又不隱藏任何東西嗎？可以在這裡或「偏好設定」中切換到「跳至」。} linuxKde {想把游標移到符合的名稱上，又不隱藏任何東西嗎？可以在這裡或「設定 Cmdr」中切換到「跳至」。} other {想把游標移到符合的名稱上，又不隱藏任何東西嗎？可以在這裡或「設定」中切換到「跳至」。}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
     "sourceHash": "ed0bb5f"
   },
@@ -2397,7 +2397,7 @@
   "@fileExplorer.smbLinkConsent.warning": {
     "sourceHash": "295e81e"
   },
-  "fileExplorer.smbLinkConsent.note": "{platform, select, linuxGnome {Cmdr 會記住你對這兩個伺服器的回答。你可以在「偏好設定」的「伺服器」中忘記它。} linuxKde {Cmdr 會記住你對這兩個伺服器的回答。你可以在「設定 Cmdr」的「伺服器」中忘記它。} other {Cmdr 會記住你對這兩個伺服器的回答。你可以在「設定」的「伺服器」中忘記它。}}",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, windows {Cmdr 會記住你對這兩個伺服器的回答。你可以在「設定」的「伺服器」中忘記它。} linuxGnome {Cmdr 會記住你對這兩個伺服器的回答。你可以在「偏好設定」的「伺服器」中忘記它。} linuxKde {Cmdr 會記住你對這兩個伺服器的回答。你可以在「設定 Cmdr」的「伺服器」中忘記它。} other {Cmdr 會記住你對這兩個伺服器的回答。你可以在「設定」的「伺服器」中忘記它。}}",
   "@fileExplorer.smbLinkConsent.note": {
     "sourceHash": "d32b664"
   },

@@ -3,7 +3,7 @@
   "@commands.appLicenseKey.enterKey.label": {
     "sourceHash": "e5dac0a"
   },
-  "commands.appSettings.label": "{platform, select, linuxGnome {Abrir las preferencias} linuxKde {Configurar Cmdr} other {Abrir la configuración}}",
+  "commands.appSettings.label": "{platform, select, windows {Abrir la configuración} linuxGnome {Abrir las preferencias} linuxKde {Configurar Cmdr} other {Abrir la configuración}}",
   "@commands.appSettings.label": {
     "sourceHash": "7fc2223"
   },
@@ -143,11 +143,11 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "c46a8a3"
   },
-  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Preferencias, en “Navegación y operaciones de archivos”.} linuxKde {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Configurar Cmdr, en “Navegación y operaciones de archivos”.} other {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Configuración, en “Navegación y operaciones de archivos”.}}",
+  "commands.handler.openTerminalHere.hint": "{platform, select, windows {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Configuración, en “Navegación y operaciones de archivos”.} linuxGnome {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Preferencias, en “Navegación y operaciones de archivos”.} linuxKde {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Configurar Cmdr, en “Navegación y operaciones de archivos”.} other {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Configuración, en “Navegación y operaciones de archivos”.}}",
   "@commands.handler.openTerminalHere.hint": {
     "sourceHash": "bee23b7"
   },
-  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Abrir las preferencias} linuxKde {Configurar Cmdr} other {Abrir la configuración}}",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, windows {Abrir la configuración} linuxGnome {Abrir las preferencias} linuxKde {Configurar Cmdr} other {Abrir la configuración}}",
   "@commands.handler.openTerminalHere.openSettings": {
     "sourceHash": "7fc2223"
   },
@@ -167,7 +167,7 @@
   "@commands.suggestedOpsShow.description": {
     "sourceHash": "121ceeb"
   },
-  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Preferencias > Avanzado y reinicia Cmdr para ver el registro de depuración.} linuxKde {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Configurar Cmdr > Avanzado y reinicia Cmdr para ver el registro de depuración.} other {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Configuración > Avanzado y reinicia Cmdr para ver el registro de depuración.}}",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, windows {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Configuración > Avanzado y reinicia Cmdr para ver el registro de depuración.} linuxGnome {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Preferencias > Avanzado y reinicia Cmdr para ver el registro de depuración.} linuxKde {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Configurar Cmdr > Avanzado y reinicia Cmdr para ver el registro de depuración.} other {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Configuración > Avanzado y reinicia Cmdr para ver el registro de depuración.}}",
   "@commands.handler.viewDebugLog.disabled": {
     "sourceHash": "28b8a1d"
   },

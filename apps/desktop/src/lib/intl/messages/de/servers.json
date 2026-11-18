@@ -125,7 +125,7 @@
   "@servers.hub.discoveryOff": {
     "sourceHash": "cadcceb"
   },
-  "servers.hub.discoveryOffLink": "{platform, select, linuxGnome {In den Einstellungen einschalten} linuxKde {Unter „Cmdr einrichten“ einschalten} other {In den Einstellungen einschalten}}",
+  "servers.hub.discoveryOffLink": "{platform, select, windows {In den Einstellungen einschalten} linuxGnome {In den Einstellungen einschalten} linuxKde {Unter „Cmdr einrichten“ einschalten} other {In den Einstellungen einschalten}}",
   "@servers.hub.discoveryOffLink": {
     "sourceHash": "65a3d5a"
   },

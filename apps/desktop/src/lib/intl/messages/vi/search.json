@@ -67,7 +67,7 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "{platform, select, linuxGnome {Bật lập chỉ mục hình ảnh cho ổ đĩa mạng này trong Tùy thích để tìm kiếm văn bản bên trong ảnh của nó.} linuxKde {Bật lập chỉ mục hình ảnh cho ổ đĩa mạng này trong Cấu hình Cmdr để tìm kiếm văn bản bên trong ảnh của nó.} other {Bật lập chỉ mục hình ảnh cho ổ đĩa mạng này trong Cài đặt để tìm kiếm văn bản bên trong ảnh của nó.}}",
+  "search.imageResults.networkOff": "{platform, select, windows {Bật lập chỉ mục hình ảnh cho ổ đĩa mạng này trong Cài đặt để tìm kiếm văn bản bên trong ảnh của nó.} linuxGnome {Bật lập chỉ mục hình ảnh cho ổ đĩa mạng này trong Tùy thích để tìm kiếm văn bản bên trong ảnh của nó.} linuxKde {Bật lập chỉ mục hình ảnh cho ổ đĩa mạng này trong Cấu hình Cmdr để tìm kiếm văn bản bên trong ảnh của nó.} other {Bật lập chỉ mục hình ảnh cho ổ đĩa mạng này trong Cài đặt để tìm kiếm văn bản bên trong ảnh của nó.}}",
   "@search.imageResults.networkOff": {
     "sourceHash": "30b2455"
   },
@@ -219,7 +219,7 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Lập chỉ mục ổ đĩa đang tắt trong Tùy thích, nên không có gì được lập chỉ mục. Hãy bật trong Lập chỉ mục > Lập chỉ mục ổ đĩa.} linuxKde {Lập chỉ mục ổ đĩa đang tắt trong Cấu hình Cmdr, nên không có gì được lập chỉ mục. Hãy bật trong Lập chỉ mục > Lập chỉ mục ổ đĩa.} other {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên không có gì được lập chỉ mục. Hãy bật trong Lập chỉ mục > Lập chỉ mục ổ đĩa.}}",
+  "search.coverage.toast.indexingOff": "{platform, select, windows {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên không có gì được lập chỉ mục. Hãy bật trong Lập chỉ mục > Lập chỉ mục ổ đĩa.} linuxGnome {Lập chỉ mục ổ đĩa đang tắt trong Tùy thích, nên không có gì được lập chỉ mục. Hãy bật trong Lập chỉ mục > Lập chỉ mục ổ đĩa.} linuxKde {Lập chỉ mục ổ đĩa đang tắt trong Cấu hình Cmdr, nên không có gì được lập chỉ mục. Hãy bật trong Lập chỉ mục > Lập chỉ mục ổ đĩa.} other {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên không có gì được lập chỉ mục. Hãy bật trong Lập chỉ mục > Lập chỉ mục ổ đĩa.}}",
   "@search.coverage.toast.indexingOff": {
     "sourceHash": "7c4ff62"
   },

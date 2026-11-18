@@ -81,7 +81,7 @@
   "@queryUi.empty.keysTip": {
     "sourceHash": "cbc047b"
   },
-  "queryUi.ai.cloudOff.body": "{platform, select, linuxGnome {A felhő-AI ki van kapcsolva. A használatához engedélyezd itt: Beállítások > AI.} linuxKde {A felhő-AI ki van kapcsolva. A használatához engedélyezd itt: Cmdr beállítása > AI.} other {A felhő-AI ki van kapcsolva. A használatához engedélyezd itt: Beállítások > AI.}}",
+  "queryUi.ai.cloudOff.body": "{platform, select, windows {A felhő-AI ki van kapcsolva. A használatához engedélyezd itt: Beállítások > AI.} linuxGnome {A felhő-AI ki van kapcsolva. A használatához engedélyezd itt: Beállítások > AI.} linuxKde {A felhő-AI ki van kapcsolva. A használatához engedélyezd itt: Cmdr beállítása > AI.} other {A felhő-AI ki van kapcsolva. A használatához engedélyezd itt: Beállítások > AI.}}",
   "@queryUi.ai.cloudOff.body": {
     "sourceHash": "1f64983"
   },

@@ -458,8 +458,12 @@ in the same queue: the lead reads it after each wave, since two translators writ
 
 **The tools a translator runs** (in `apps/desktop`; flags in `docs/i18n/termbase.md` § Tooling): `pnpm i18n:brief`
 (read), `pnpm i18n:apply` (write values, stamped and validated), `pnpm i18n:apply-terms` (write the termbase),
-`pnpm i18n:term` (a word's senses and rulings), `pnpm i18n:pile` (the reference pile), and `pnpm i18n:check-locale`
-(check). The instructions forbid homemade catalog- or termbase-writing scripts.
+`pnpm i18n:term` (a word's senses and rulings), `pnpm i18n:pile` (the reference pile),
+`pnpm i18n:values --lang <tag> --keys <keys>` (read-only: those keys' current values, branch by branch beside the
+English, stale ones marked; `--stale` picks every stale key; the small view to read before or instead of a big per-OS
+brief), and `pnpm i18n:check-locale` (check). The instructions forbid homemade catalog- or termbase-writing scripts. The
+lead runs `pnpm i18n:pile-fetch` once per pile refresh: it puts the GNOME and KDE desktop catalogs (Seahorse, GNOME
+Settings, KDE Wallet, KStandardAction, System Settings and its KCMs) into the pile for all 13 languages.
 
 **Translators run on Opus** (`model: 'opus'` on each translator agent), whatever model the lead runs on: a fan-out is
 dozens of runs reading 100k-token briefs, and the top-tier model costs far more there for no better translation (David,

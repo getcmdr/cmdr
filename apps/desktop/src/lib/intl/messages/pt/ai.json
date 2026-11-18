@@ -55,7 +55,7 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "{platform, select, linuxGnome {Ative um provedor em Preferências > IA para usar a busca com IA.} linuxKde {Ative um provedor em Configurar Cmdr > IA para usar a busca com IA.} other {Ative um provedor em Ajustes > IA para usar a busca com IA.}}",
+  "ai.translateError.off.body": "{platform, select, windows {Ative um provedor em Ajustes > IA para usar a busca com IA.} linuxGnome {Ative um provedor em Preferências > IA para usar a busca com IA.} linuxKde {Ative um provedor em Configurar Cmdr > IA para usar a busca com IA.} other {Ative um provedor em Ajustes > IA para usar a busca com IA.}}",
   "@ai.translateError.off.body": {
     "sourceHash": "5e5f8d2"
   },
@@ -247,7 +247,7 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {Conclua a configuração do provedor em Preferências > IA e tente novamente.} linuxKde {Conclua a configuração do provedor em Configurar Cmdr > IA e tente novamente.} other {Conclua a configuração do provedor em Ajustes > IA e tente novamente.}}",
+  "ai.translateError.notConfigured.body": "{platform, select, windows {Conclua a configuração do provedor em Ajustes > IA e tente novamente.} linuxGnome {Conclua a configuração do provedor em Preferências > IA e tente novamente.} linuxKde {Conclua a configuração do provedor em Configurar Cmdr > IA e tente novamente.} other {Conclua a configuração do provedor em Ajustes > IA e tente novamente.}}",
   "@ai.translateError.notConfigured.body": {
     "sourceHash": "bf48aec"
   },
@@ -255,7 +255,7 @@
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {Permita-a em Preferências > IA e tente novamente.} linuxKde {Permita-a em Configurar Cmdr > IA e tente novamente.} other {Permita-a em Ajustes > IA e tente novamente.}}",
+  "ai.translateError.noCloudConsent.body": "{platform, select, windows {Permita-a em Ajustes > IA e tente novamente.} linuxGnome {Permita-a em Preferências > IA e tente novamente.} linuxKde {Permita-a em Configurar Cmdr > IA e tente novamente.} other {Permita-a em Ajustes > IA e tente novamente.}}",
   "@ai.translateError.noCloudConsent.body": {
     "sourceHash": "4485cc1"
   },
@@ -263,7 +263,7 @@
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {Verifique sua chave em Preferências > IA - ela pode estar incorreta ou revogada.} linuxKde {Verifique sua chave em Configurar Cmdr > IA - ela pode estar incorreta ou revogada.} other {Verifique sua chave em Ajustes > IA - ela pode estar incorreta ou revogada.}}",
+  "ai.translateError.authFailed.body": "{platform, select, windows {Verifique sua chave em Ajustes > IA - ela pode estar incorreta ou revogada.} linuxGnome {Verifique sua chave em Preferências > IA - ela pode estar incorreta ou revogada.} linuxKde {Verifique sua chave em Configurar Cmdr > IA - ela pode estar incorreta ou revogada.} other {Verifique sua chave em Ajustes > IA - ela pode estar incorreta ou revogada.}}",
   "@ai.translateError.authFailed.body": {
     "sourceHash": "4fd6281"
   },
@@ -295,7 +295,7 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {Seu modelo pode ter gastado todo o orçamento de tokens antes de responder. Experimente um modelo mais rápido como gpt-4.1-mini em Preferências > IA.} linuxKde {Seu modelo pode ter gastado todo o orçamento de tokens antes de responder. Experimente um modelo mais rápido como gpt-4.1-mini em Configurar Cmdr > IA.} other {Seu modelo pode ter gastado todo o orçamento de tokens antes de responder. Experimente um modelo mais rápido como gpt-4.1-mini em Ajustes > IA.}}",
+  "ai.translateError.emptyResponse.body": "{platform, select, windows {Seu modelo pode ter gastado todo o orçamento de tokens antes de responder. Experimente um modelo mais rápido como gpt-4.1-mini em Ajustes > IA.} linuxGnome {Seu modelo pode ter gastado todo o orçamento de tokens antes de responder. Experimente um modelo mais rápido como gpt-4.1-mini em Preferências > IA.} linuxKde {Seu modelo pode ter gastado todo o orçamento de tokens antes de responder. Experimente um modelo mais rápido como gpt-4.1-mini em Configurar Cmdr > IA.} other {Seu modelo pode ter gastado todo o orçamento de tokens antes de responder. Experimente um modelo mais rápido como gpt-4.1-mini em Ajustes > IA.}}",
   "@ai.translateError.emptyResponse.body": {
     "sourceHash": "b16ff79"
   },
@@ -311,7 +311,7 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "{platform, select, linuxGnome {Tente novamente ou escolha um modelo diferente em Preferências > IA.} linuxKde {Tente novamente ou escolha um modelo diferente em Configurar Cmdr > IA.} other {Tente novamente ou escolha um modelo diferente em Ajustes > IA.}}",
+  "ai.translateError.parseError.body": "{platform, select, windows {Tente novamente ou escolha um modelo diferente em Ajustes > IA.} linuxGnome {Tente novamente ou escolha um modelo diferente em Preferências > IA.} linuxKde {Tente novamente ou escolha um modelo diferente em Configurar Cmdr > IA.} other {Tente novamente ou escolha um modelo diferente em Ajustes > IA.}}",
   "@ai.translateError.parseError.body": {
     "sourceHash": "6082b7e"
   },
@@ -319,7 +319,7 @@
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {Escolha um provedor em Preferências > IA.} linuxKde {Escolha um provedor em Configurar Cmdr > IA.} other {Escolha um provedor em Ajustes > IA.}}",
+  "ai.translateError.unknownProvider.body": "{platform, select, windows {Escolha um provedor em Ajustes > IA.} linuxGnome {Escolha um provedor em Preferências > IA.} linuxKde {Escolha um provedor em Configurar Cmdr > IA.} other {Escolha um provedor em Ajustes > IA.}}",
   "@ai.translateError.unknownProvider.body": {
     "sourceHash": "c45eba0"
   },

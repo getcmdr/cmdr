@@ -1228,7 +1228,7 @@
   "@aboutThis.verdict.hint.dismiss": {
     "sourceHash": "f18aa5e"
   },
-  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, linuxGnome {Oculta este aviso. Puedes recuperarlo en Preferencias > Avanzado.} linuxKde {Oculta este aviso. Puedes recuperarlo en Configurar Cmdr > Avanzado.} other {Oculta este aviso. Puedes recuperarlo en Ajustes > Avanzado.}}",
+  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {Oculta este aviso. Puedes recuperarlo en Ajustes > Avanzado.} linuxGnome {Oculta este aviso. Puedes recuperarlo en Preferencias > Avanzado.} linuxKde {Oculta este aviso. Puedes recuperarlo en Configurar Cmdr > Avanzado.} other {Oculta este aviso. Puedes recuperarlo en Ajustes > Avanzado.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
     "sourceHash": "22d9d84"
   },

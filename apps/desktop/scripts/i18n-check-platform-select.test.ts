@@ -88,6 +88,46 @@ describe('platformSelectIssues: shape', () => {
   })
 })
 
+describe('platformSelectIssues: deliberately identical branches (`@key.identicalBranches`)', () => {
+  const settings = '{platform, select, windows {Settings} linuxGnome {Preferences} other {Settings}}'
+  const why = { windows: 'Microsoft’s word can differ from Apple’s in a translation' }
+  const withWhy = (value: string, identicalBranches: unknown) =>
+    platformSelectIssues({ key: 'a.b', value, identicalBranches })
+
+  it('lets a named branch equal other in the source, so a translation can split there', () => {
+    expect(withWhy(settings, why)).toEqual([])
+  })
+
+  it('still flags an equal branch the entry doesn’t name', () => {
+    const both = '{platform, select, macos {Settings} windows {Settings} linuxGnome {Preferences} other {Settings}}'
+    expect(withWhy(both, why)).toEqual([expect.stringMatching(/macos branch equals other/)])
+  })
+
+  it('flags an entry without a reason, naming other or an unknown branch, or not an object', () => {
+    // Without a reason the branch isn't allowed either, so the equal-branch finding stays.
+    expect(withWhy(settings, { windows: '' })).toEqual([
+      expect.stringMatching(/windows branch equals other/),
+      expect.stringMatching(/identicalBranches\.windows needs a reason/),
+    ])
+    expect(withWhy(settings, { ...why, other: 'x' })).toEqual([expect.stringMatching(/identicalBranches names other/)])
+    expect(withWhy(settings, { ...why, linux: 'x' })).toEqual([expect.stringMatching(/identicalBranches names linux/)])
+    expect(withWhy(settings, ['windows'])).toEqual([
+      expect.stringMatching(/windows branch equals other/),
+      expect.stringMatching(/identicalBranches must be an object/),
+    ])
+  })
+
+  it('flags an entry whose branch is missing or differs from other, so the field shrink-wraps', () => {
+    expect(withWhy(settings, { ...why, linuxKde: 'x' })).toEqual([
+      expect.stringMatching(/identicalBranches names linuxKde, which this value has no branch for/),
+    ])
+    expect(withWhy(settings, { linuxGnome: 'x', ...why })).toEqual([
+      expect.stringMatching(/identicalBranches names linuxGnome, which already differs from other/),
+    ])
+    expect(withWhy('Settings', why)).toEqual([expect.stringMatching(/identicalBranches on a plain value/)])
+  })
+})
+
 describe('platformSelectIssues: raw bodies', () => {
   it('is clean for a raw block with literal tokens, markdown, and <…>', () => {
     expect(

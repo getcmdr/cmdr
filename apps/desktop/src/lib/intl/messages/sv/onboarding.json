@@ -307,7 +307,7 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, linuxGnome {Moln-AI förblir avstängt tills du tillåter det. Du kan göra det senare i Inställningar > AI.} linuxKde {Moln-AI förblir avstängt tills du tillåter det. Du kan göra det senare i ”Anpassa Cmdr” > AI.} other {Moln-AI förblir avstängt tills du tillåter det. Du kan göra det senare i Inställningar > AI.}}",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {Moln-AI förblir avstängt tills du tillåter det. Du kan göra det senare i Inställningar > AI.} linuxGnome {Moln-AI förblir avstängt tills du tillåter det. Du kan göra det senare i Inställningar > AI.} linuxKde {Moln-AI förblir avstängt tills du tillåter det. Du kan göra det senare i ”Anpassa Cmdr” > AI.} other {Moln-AI förblir avstängt tills du tillåter det. Du kan göra det senare i Inställningar > AI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
     "sourceHash": "6e0eb09"
   },
@@ -315,7 +315,7 @@
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "{platform, select, linuxGnome {Cmdr fungerar fullt ut utan AI. Du kan slå på det senare i Inställningar.} linuxKde {Cmdr fungerar fullt ut utan AI. Du kan slå på det senare i ”Anpassa Cmdr”.} other {Cmdr fungerar fullt ut utan AI. Du kan slå på det senare i Inställningar.}}",
+  "onboarding.stepAi.off.help": "{platform, select, windows {Cmdr fungerar fullt ut utan AI. Du kan slå på det senare i Inställningar.} linuxGnome {Cmdr fungerar fullt ut utan AI. Du kan slå på det senare i Inställningar.} linuxKde {Cmdr fungerar fullt ut utan AI. Du kan slå på det senare i ”Anpassa Cmdr”.} other {Cmdr fungerar fullt ut utan AI. Du kan slå på det senare i Inställningar.}}",
   "@onboarding.stepAi.off.help": {
     "sourceHash": "b20cf1d"
   },
@@ -391,7 +391,7 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "{platform, select, linuxGnome {Observera att det är PÅ som standard för att uppmuntra folk att skicka mig data under betan.\nDu kan ändra det här när som helst i Inställningar.} linuxKde {Observera att det är PÅ som standard för att uppmuntra folk att skicka mig data under betan.\nDu kan ändra det här när som helst i ”Anpassa Cmdr”.} other {Observera att det är PÅ som standard för att uppmuntra folk att skicka mig data under betan.\nDu kan ändra det här när som helst i Inställningar.}}",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Observera att det är PÅ som standard för att uppmuntra folk att skicka mig data under betan.\nDu kan ändra det här när som helst i Inställningar.} linuxGnome {Observera att det är PÅ som standard för att uppmuntra folk att skicka mig data under betan.\nDu kan ändra det här när som helst i Inställningar.} linuxKde {Observera att det är PÅ som standard för att uppmuntra folk att skicka mig data under betan.\nDu kan ändra det här när som helst i ”Anpassa Cmdr”.} other {Observera att det är PÅ som standard för att uppmuntra folk att skicka mig data under betan.\nDu kan ändra det här när som helst i Inställningar.}}",
   "@onboarding.stepBeta.analyticsCaption": {
     "sourceHash": "47a7511"
   },
@@ -467,7 +467,7 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "{platform, select, linuxGnome {Du kan ändra det här när som helst i Inställningar.} linuxKde {Du kan ändra det här när som helst i ”Anpassa Cmdr”.} other {Du kan ändra det här när som helst i Inställningar.}}",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Du kan ändra det här när som helst i Inställningar.} linuxGnome {Du kan ändra det här när som helst i Inställningar.} linuxKde {Du kan ändra det här när som helst i ”Anpassa Cmdr”.} other {Du kan ändra det här när som helst i Inställningar.}}",
   "@onboarding.stepOptional.changeAnytime": {
     "sourceHash": "320f582"
   },

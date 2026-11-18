@@ -4016,9 +4016,6 @@
     "other": {
       "chosen": "Tùy thích",
       "note": "GNOME's name for an app's preferences window: Nautilus vi _Preferences → Tù_y thích, Show Preferences → Hiển thị Tùy thích; Thunar Tùy thích. linuxGnome branches: window title (`settings.window.title`) and menu row (`menu.app.settings`) Tùy thích, the command and buttons Mở Tùy thích, pointers trong Tùy thích > AI. Always capitalized as the window's name, since lowercase tùy thích reads as the adverb (as you like). KDE's row is Cấu hình Cmdr… (see configure)"
-    },
-    "exceptions": {
-      "settings.fileOperations.mtpEnabled.description": "Quotes the Android path Settings > USB Preferences in English, as this description already does for the phone labels it names; a vi Android may show either, and the sentence hedges with đại loại như."
     }
   }
 }

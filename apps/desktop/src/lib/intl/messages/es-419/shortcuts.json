@@ -43,7 +43,7 @@
   "@shortcuts.section.resetAll": {
     "sourceHash": "6580e10"
   },
-  "shortcuts.window.editInSettings": "{platform, select, linuxGnome {Editar atajos en Preferencias} linuxKde {Editar atajos en Configurar Cmdr} other {Editar atajos en Configuración}}",
+  "shortcuts.window.editInSettings": "{platform, select, windows {Editar atajos en Configuración} linuxGnome {Editar atajos en Preferencias} linuxKde {Editar atajos en Configurar Cmdr} other {Editar atajos en Configuración}}",
   "@shortcuts.window.editInSettings": {
     "sourceHash": "ec131e0"
   },

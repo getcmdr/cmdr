@@ -35,7 +35,7 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "{platform, select, linuxGnome {Öppna inställningar} linuxKde {Anpassa Cmdr} other {Öppna inställningar}}",
+  "commands.appSettings.label": "{platform, select, windows {Öppna inställningar} linuxGnome {Öppna inställningar} linuxKde {Anpassa Cmdr} other {Öppna inställningar}}",
   "@commands.appSettings.label": {
     "sourceHash": "e535825"
   },
@@ -1264,7 +1264,7 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Mappen öppnades i din terminalapp. Vill du att Cmdr öppnar en annan app nästa gång? Välj den i Inställningar, under ”Navigering och filåtgärder”.} linuxKde {Mappen öppnades i din terminalapp. Vill du att Cmdr öppnar en annan app nästa gång? Välj den i ”Anpassa Cmdr”, under ”Navigering och filåtgärder”.} other {Mappen öppnades i din terminalapp. Vill du att Cmdr öppnar en annan app nästa gång? Välj den i Inställningar, under ”Navigering och filåtgärder”.}}",
+  "commands.handler.openTerminalHere.hint": "{platform, select, windows {Mappen öppnades i din terminalapp. Vill du att Cmdr öppnar en annan app nästa gång? Välj den i Inställningar, under ”Navigering och filåtgärder”.} linuxGnome {Mappen öppnades i din terminalapp. Vill du att Cmdr öppnar en annan app nästa gång? Välj den i Inställningar, under ”Navigering och filåtgärder”.} linuxKde {Mappen öppnades i din terminalapp. Vill du att Cmdr öppnar en annan app nästa gång? Välj den i ”Anpassa Cmdr”, under ”Navigering och filåtgärder”.} other {Mappen öppnades i din terminalapp. Vill du att Cmdr öppnar en annan app nästa gång? Välj den i Inställningar, under ”Navigering och filåtgärder”.}}",
   "@commands.handler.openTerminalHere.hint": {
     "sourceHash": "b73c1db"
   },
@@ -1272,7 +1272,7 @@
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Öppna inställningar} linuxKde {Anpassa Cmdr} other {Öppna inställningar}}",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, windows {Öppna inställningar} linuxGnome {Öppna inställningar} linuxKde {Anpassa Cmdr} other {Öppna inställningar}}",
   "@commands.handler.openTerminalHere.openSettings": {
     "sourceHash": "e535825"
   },
@@ -1344,7 +1344,7 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {Logglagringen är avstängd. Ställ in en diskutrymmesgräns över 0 i Inställningar > Avancerat och starta sedan om Cmdr för att visa felsökningsloggen.} linuxKde {Logglagringen är avstängd. Ställ in en diskutrymmesgräns över 0 i ”Anpassa Cmdr” > Avancerat och starta sedan om Cmdr för att visa felsökningsloggen.} other {Logglagringen är avstängd. Ställ in en diskutrymmesgräns över 0 i Inställningar > Avancerat och starta sedan om Cmdr för att visa felsökningsloggen.}}",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, windows {Logglagringen är avstängd. Ställ in en diskutrymmesgräns över 0 i Inställningar > Avancerat och starta sedan om Cmdr för att visa felsökningsloggen.} linuxGnome {Logglagringen är avstängd. Ställ in en diskutrymmesgräns över 0 i Inställningar > Avancerat och starta sedan om Cmdr för att visa felsökningsloggen.} linuxKde {Logglagringen är avstängd. Ställ in en diskutrymmesgräns över 0 i ”Anpassa Cmdr” > Avancerat och starta sedan om Cmdr för att visa felsökningsloggen.} other {Logglagringen är avstängd. Ställ in en diskutrymmesgräns över 0 i Inställningar > Avancerat och starta sedan om Cmdr för att visa felsökningsloggen.}}",
   "@commands.handler.viewDebugLog.disabled": {
     "sourceHash": "bda730a"
   },

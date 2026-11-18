@@ -1227,7 +1227,7 @@
   "@aboutThis.verdict.hint.dismiss": {
     "sourceHash": "f18aa5e"
   },
-  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, linuxGnome {Скрыть эту подсказку. Ее можно вернуть в разделе «Параметры > Дополнения».} linuxKde {Скрыть эту подсказку. Ее можно вернуть в разделе «Настроить Cmdr > Дополнения».} other {Скрыть эту подсказку. Ее можно вернуть в разделе «Настройки > Дополнения».}}",
+  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {Скрыть эту подсказку. Ее можно вернуть в разделе «Настройки > Дополнения».} linuxGnome {Скрыть эту подсказку. Ее можно вернуть в разделе «Параметры > Дополнения».} linuxKde {Скрыть эту подсказку. Ее можно вернуть в разделе «Настроить Cmdr > Дополнения».} other {Скрыть эту подсказку. Ее можно вернуть в разделе «Настройки > Дополнения».}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
     "sourceHash": "22d9d84"
   },

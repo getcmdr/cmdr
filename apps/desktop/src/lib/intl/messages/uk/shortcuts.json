@@ -332,7 +332,7 @@
   "@shortcuts.window.hideEmpty": {
     "sourceHash": "d3cb18e"
   },
-  "shortcuts.window.editInSettings": "{platform, select, linuxGnome {Редагувати скорочення в Налаштуваннях} linuxKde {Редагувати скорочення у вікні «Налаштувати Cmdr»} other {Редагувати скорочення в Параметрах}}",
+  "shortcuts.window.editInSettings": "{platform, select, windows {Редагувати скорочення в Параметрах} linuxGnome {Редагувати скорочення в Налаштуваннях} linuxKde {Редагувати скорочення у вікні «Налаштувати Cmdr»} other {Редагувати скорочення в Параметрах}}",
   "@shortcuts.window.editInSettings": {
     "sourceHash": "875f6b7"
   }

@@ -81,7 +81,7 @@
   "@queryUi.empty.keysTip": {
     "sourceHash": "cbc047b"
   },
-  "queryUi.ai.cloudOff.body": "{platform, select, linuxGnome {AI đám mây đang tắt. Hãy cho phép trong Tùy thích > AI để dùng chế độ này.} linuxKde {AI đám mây đang tắt. Hãy cho phép trong Cấu hình Cmdr > AI để dùng chế độ này.} other {AI đám mây đang tắt. Hãy cho phép trong Cài đặt > AI để dùng chế độ này.}}",
+  "queryUi.ai.cloudOff.body": "{platform, select, windows {AI đám mây đang tắt. Hãy cho phép trong Cài đặt > AI để dùng chế độ này.} linuxGnome {AI đám mây đang tắt. Hãy cho phép trong Tùy thích > AI để dùng chế độ này.} linuxKde {AI đám mây đang tắt. Hãy cho phép trong Cấu hình Cmdr > AI để dùng chế độ này.} other {AI đám mây đang tắt. Hãy cho phép trong Cài đặt > AI để dùng chế độ này.}}",
   "@queryUi.ai.cloudOff.body": {
     "sourceHash": "1f64983"
   },

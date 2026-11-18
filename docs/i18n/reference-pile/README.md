@@ -11,13 +11,16 @@ provenance, layout rules, and open items: `inventory.md`. Process and confidence
 - **Language-first: one folder per locale gathers every source.** To research a language, point a translator at
   `_ignored/i18n/<tag>/` (e.g. `i18n/fr/`); inside are up to nine sources: `macOS/`, `microsoft-terminology/`,
   `microsoft-style-guides/`, `gnome-nautilus/`, `xfce-thunar/`, `total-commander/`, `double-commander/`, `kde-dolphin/`,
-  `git/`, present only where that source has the language. The first five cover most languages; the three file managers
-  vary (`kde-dolphin/` 92 languages, `total-commander/` 48, `double-commander/` 30 — so e.g. `sv` has TC + Dolphin but
-  no DC, `hu` and `fr` have all three). Check with `ls <tag>/`.
+  `git/`, present only where that source has the language. Cmdr's 13 full translations also get `gnome-desktop/` and
+  `kde-desktop/` (Seahorse, GNOME Settings, KDE Wallet, KStandardAction, System Settings), from `pnpm i18n:pile-fetch`.
+  The first five cover most languages; the three file managers vary (`kde-dolphin/` 92 languages, `total-commander/` 48,
+  `double-commander/` 30 — so e.g. `sv` has TC + Dolphin but no DC, `hu` and `fr` have all three). Check with
+  `ls <tag>/`.
 - **Each OS's own word lives in its own sources.** A per-OS catalog value's `macos` branch mines `macOS/`, its `windows`
-  branch `microsoft-terminology/` and `microsoft-style-guides/`, and its `other` (Linux) branch `gnome-nautilus/`,
-  `kde-dolphin/`, and `xfce-thunar/` (the rule: `docs/i18n/translator-instructions.md`, Per-OS values). No source here
-  carries Windows shell labels such as "This PC".
+  branch `microsoft-terminology/` and `microsoft-style-guides/`, and its `linuxGnome` branch `gnome-nautilus/` and
+  `gnome-desktop/`, its `linuxKde` branch `kde-dolphin/` and `kde-desktop/`, and its `other` (Linux) branch
+  `gnome-nautilus/`, `kde-dolphin/`, and `xfce-thunar/` (the rule: `docs/i18n/translator-instructions.md`, Per-OS
+  values). No source here carries Windows shell labels such as "This PC".
 - **Mining recipes per source** (tested greps, jq, `msggrep`, `pdftotext`): `how-to-mine.md`. Use them; don't reinvent
   the search per term.
 - **Reference for picking terms, never strings to copy.** Apple's and Microsoft's strings are copyrighted; the

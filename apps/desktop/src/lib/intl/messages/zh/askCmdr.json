@@ -704,11 +704,11 @@
   "@askCmdr.turnStats.stopped": {
     "sourceHash": "0f6ea99"
   },
-  "askCmdr.error.noKey": "{platform, select, linuxGnome {在首选项中添加你的 API 密钥，即可开始聊天。} other {在设置中添加你的 API 密钥，即可开始聊天。}}",
+  "askCmdr.error.noKey": "{platform, select, windows {在设置中添加你的 API 密钥，即可开始聊天。} linuxGnome {在首选项中添加你的 API 密钥，即可开始聊天。} linuxKde {Add your API key in Configure Cmdr to start chatting.} other {在设置中添加你的 API 密钥，即可开始聊天。}}",
   "@askCmdr.error.noKey": {
     "sourceHash": "124df6a"
   },
-  "askCmdr.error.notConfigured": "{platform, select, linuxGnome {聊天需要一个 AI 提供方。请在首选项中开启一个。} other {聊天需要一个 AI 提供方。请在设置中开启一个。}}",
+  "askCmdr.error.notConfigured": "{platform, select, windows {聊天需要一个 AI 提供方。请在设置中开启一个。} linuxGnome {聊天需要一个 AI 提供方。请在首选项中开启一个。} linuxKde {Chatting needs an AI provider. Turn one on in Configure Cmdr.} other {聊天需要一个 AI 提供方。请在设置中开启一个。}}",
   "@askCmdr.error.notConfigured": {
     "sourceHash": "54fb846"
   },
@@ -716,7 +716,7 @@
   "@askCmdr.error.askCmdrOff": {
     "sourceHash": "6599ee1"
   },
-  "askCmdr.error.noCloudConsent": "{platform, select, linuxGnome {云端 AI 已关闭。请到“首选项 > AI”中允许使用。} linuxKde {云端 AI 已关闭。请到“配置 Cmdr > AI”中允许使用。} other {云端 AI 已关闭。请到“设置 > AI”中允许使用。}}",
+  "askCmdr.error.noCloudConsent": "{platform, select, windows {云端 AI 已关闭。请到“设置 > AI”中允许使用。} linuxGnome {云端 AI 已关闭。请到“首选项 > AI”中允许使用。} linuxKde {云端 AI 已关闭。请到“配置 Cmdr > AI”中允许使用。} other {云端 AI 已关闭。请到“设置 > AI”中允许使用。}}",
   "@askCmdr.error.noCloudConsent": {
     "sourceHash": "6490317"
   },
@@ -736,7 +736,7 @@
   "@askCmdr.error.timeout": {
     "sourceHash": "22cd775"
   },
-  "askCmdr.error.authFailed": "{platform, select, linuxGnome {提供方没有接受你的 API 密钥，请在首选项中检查。} other {提供方没有接受你的 API 密钥，请在设置中检查。}}",
+  "askCmdr.error.authFailed": "{platform, select, windows {提供方没有接受你的 API 密钥，请在设置中检查。} linuxGnome {提供方没有接受你的 API 密钥，请在首选项中检查。} linuxKde {The provider didn’t accept your API key. Check it in Configure Cmdr.} other {提供方没有接受你的 API 密钥，请在设置中检查。}}",
   "@askCmdr.error.authFailed": {
     "sourceHash": "9e02aad"
   },
@@ -744,19 +744,19 @@
   "@askCmdr.error.rateLimited": {
     "sourceHash": "7b441e9"
   },
-  "askCmdr.error.modelNotInPlan.named": "{platform, select, linuxGnome {你的 {provider} 套餐不包含这个模型。请在“首选项”中换一个模型，或者升级你的套餐。} other {你的 {provider} 套餐不包含这个模型。请在“设置”中换一个模型，或者升级你的套餐。}}",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {你的 {provider} 套餐不包含这个模型。请在“设置”中换一个模型，或者升级你的套餐。} linuxGnome {你的 {provider} 套餐不包含这个模型。请在“首选项”中换一个模型，或者升级你的套餐。} linuxKde {Your {provider} plan doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {你的 {provider} 套餐不包含这个模型。请在“设置”中换一个模型，或者升级你的套餐。}}",
   "@askCmdr.error.modelNotInPlan.named": {
     "sourceHash": "efbf38b"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, linuxGnome {你在这个 AI 提供方的套餐不包含这个模型。请在“首选项”中换一个模型，或者升级你的套餐。} other {你在这个 AI 提供方的套餐不包含这个模型。请在“设置”中换一个模型，或者升级你的套餐。}}",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {你在这个 AI 提供方的套餐不包含这个模型。请在“设置”中换一个模型，或者升级你的套餐。} linuxGnome {你在这个 AI 提供方的套餐不包含这个模型。请在“首选项”中换一个模型，或者升级你的套餐。} linuxKde {Your plan with this AI provider doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {你在这个 AI 提供方的套餐不包含这个模型。请在“设置”中换一个模型，或者升级你的套餐。}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
     "sourceHash": "6808950"
   },
-  "askCmdr.error.requestTooLarge.named": "{platform, select, linuxGnome {{provider} 拒绝了这个请求：你的套餐上限比 Cmdr 的一个请求还小，因为每个请求都会带上 Cmdr 的指令。把消息写短也没用。可以在 {provider} 换一个更大的套餐，或者在“首选项”中换一个提供方。} other {{provider} 拒绝了这个请求：你的套餐上限比 Cmdr 的一个请求还小，因为每个请求都会带上 Cmdr 的指令。把消息写短也没用。可以在 {provider} 换一个更大的套餐，或者在“设置”中换一个提供方。}}",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {{provider} 拒绝了这个请求：你的套餐上限比 Cmdr 的一个请求还小，因为每个请求都会带上 Cmdr 的指令。把消息写短也没用。可以在 {provider} 换一个更大的套餐，或者在“设置”中换一个提供方。} linuxGnome {{provider} 拒绝了这个请求：你的套餐上限比 Cmdr 的一个请求还小，因为每个请求都会带上 Cmdr 的指令。把消息写短也没用。可以在 {provider} 换一个更大的套餐，或者在“首选项”中换一个提供方。} linuxKde {{provider} turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan with {provider}, or pick another provider in Configure Cmdr.} other {{provider} 拒绝了这个请求：你的套餐上限比 Cmdr 的一个请求还小，因为每个请求都会带上 Cmdr 的指令。把消息写短也没用。可以在 {provider} 换一个更大的套餐，或者在“设置”中换一个提供方。}}",
   "@askCmdr.error.requestTooLarge.named": {
     "sourceHash": "b1850b3"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, linuxGnome {你的 AI 提供方拒绝了这个请求：你的套餐上限比 Cmdr 的一个请求还小，因为每个请求都会带上 Cmdr 的指令。把消息写短也没用。可以换一个更大的套餐，或者在“首选项”中换一个提供方。} other {你的 AI 提供方拒绝了这个请求：你的套餐上限比 Cmdr 的一个请求还小，因为每个请求都会带上 Cmdr 的指令。把消息写短也没用。可以换一个更大的套餐，或者在“设置”中换一个提供方。}}",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {你的 AI 提供方拒绝了这个请求：你的套餐上限比 Cmdr 的一个请求还小，因为每个请求都会带上 Cmdr 的指令。把消息写短也没用。可以换一个更大的套餐，或者在“设置”中换一个提供方。} linuxGnome {你的 AI 提供方拒绝了这个请求：你的套餐上限比 Cmdr 的一个请求还小，因为每个请求都会带上 Cmdr 的指令。把消息写短也没用。可以换一个更大的套餐，或者在“首选项”中换一个提供方。} linuxKde {Your AI provider turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan, or pick another provider in Configure Cmdr.} other {你的 AI 提供方拒绝了这个请求：你的套餐上限比 Cmdr 的一个请求还小，因为每个请求都会带上 Cmdr 的指令。把消息写短也没用。可以换一个更大的套餐，或者在“设置”中换一个提供方。}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
     "sourceHash": "455449e"
   },
@@ -976,15 +976,15 @@
   "@askCmdr.composer.sendNeedsProvider": {
     "sourceHash": "9e6aba3"
   },
-  "askCmdr.providerNotice.off": "{platform, select, linuxGnome {Ask Cmdr 需要一个 AI 提供方才能聊天。请在“首选项”中选择一个。} linuxKde {Ask Cmdr 需要一个 AI 提供方才能聊天。请在“配置 Cmdr”中选择一个。} other {Ask Cmdr 需要一个 AI 提供方才能聊天。请在“设置”中选择一个。}}",
+  "askCmdr.providerNotice.off": "{platform, select, windows {Ask Cmdr 需要一个 AI 提供方才能聊天。请在“设置”中选择一个。} linuxGnome {Ask Cmdr 需要一个 AI 提供方才能聊天。请在“首选项”中选择一个。} linuxKde {Ask Cmdr 需要一个 AI 提供方才能聊天。请在“配置 Cmdr”中选择一个。} other {Ask Cmdr 需要一个 AI 提供方才能聊天。请在“设置”中选择一个。}}",
   "@askCmdr.providerNotice.off": {
     "sourceHash": "6e9f73c"
   },
-  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, linuxGnome {你的云端 AI 提供方需要 API 密钥，Ask Cmdr 才能聊天。请在“首选项”中添加。} linuxKde {你的云端 AI 提供方需要 API 密钥，Ask Cmdr 才能聊天。请在“配置 Cmdr”中添加。} other {你的云端 AI 提供方需要 API 密钥，Ask Cmdr 才能聊天。请在“设置”中添加。}}",
+  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, windows {你的云端 AI 提供方需要 API 密钥，Ask Cmdr 才能聊天。请在“设置”中添加。} linuxGnome {你的云端 AI 提供方需要 API 密钥，Ask Cmdr 才能聊天。请在“首选项”中添加。} linuxKde {你的云端 AI 提供方需要 API 密钥，Ask Cmdr 才能聊天。请在“配置 Cmdr”中添加。} other {你的云端 AI 提供方需要 API 密钥，Ask Cmdr 才能聊天。请在“设置”中添加。}}",
   "@askCmdr.providerNotice.cloudNeedsKey": {
     "sourceHash": "16dc8a0"
   },
-  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, linuxGnome {你的云端 AI 提供方需要一个地址，Ask Cmdr 才能聊天。请在“首选项”中添加。} linuxKde {你的云端 AI 提供方需要一个地址，Ask Cmdr 才能聊天。请在“配置 Cmdr”中添加。} other {你的云端 AI 提供方需要一个地址，Ask Cmdr 才能聊天。请在“设置”中添加。}}",
+  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, windows {你的云端 AI 提供方需要一个地址，Ask Cmdr 才能聊天。请在“设置”中添加。} linuxGnome {你的云端 AI 提供方需要一个地址，Ask Cmdr 才能聊天。请在“首选项”中添加。} linuxKde {你的云端 AI 提供方需要一个地址，Ask Cmdr 才能聊天。请在“配置 Cmdr”中添加。} other {你的云端 AI 提供方需要一个地址，Ask Cmdr 才能聊天。请在“设置”中添加。}}",
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "1ae5e35"
   },
@@ -1020,7 +1020,7 @@
   "@askCmdr.gate.cloudOff.title": {
     "sourceHash": "2e56781"
   },
-  "askCmdr.gate.cloudOff.body": "{platform, select, linuxGnome {Ask Cmdr 通过你设置的云端 AI 服务来对话。先在“首选项”中允许使用云端 AI，就可以开始聊天了。} linuxKde {Ask Cmdr 通过你设置的云端 AI 服务来对话。先在“配置 Cmdr”中允许使用云端 AI，就可以开始聊天了。} other {Ask Cmdr 通过你设置的云端 AI 服务来对话。先在“设置”中允许使用云端 AI，就可以开始聊天了。}}",
+  "askCmdr.gate.cloudOff.body": "{platform, select, windows {Ask Cmdr 通过你设置的云端 AI 服务来对话。先在“设置”中允许使用云端 AI，就可以开始聊天了。} linuxGnome {Ask Cmdr 通过你设置的云端 AI 服务来对话。先在“首选项”中允许使用云端 AI，就可以开始聊天了。} linuxKde {Ask Cmdr 通过你设置的云端 AI 服务来对话。先在“配置 Cmdr”中允许使用云端 AI，就可以开始聊天了。} other {Ask Cmdr 通过你设置的云端 AI 服务来对话。先在“设置”中允许使用云端 AI，就可以开始聊天了。}}",
   "@askCmdr.gate.cloudOff.body": {
     "sourceHash": "076c788"
   },
@@ -1409,7 +1409,7 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "sourceHash": "ae245b9"
   },
-  "askCmdr.wake.needsApiKey": "{platform, select, linuxGnome {AI 功能已开启，但还需要一个提供方才能工作。点按即可在首选项中选一个。} other {AI 功能已开启，但还需要一个提供方才能工作。点按即可在设置中选一个。}}",
+  "askCmdr.wake.needsApiKey": "{platform, select, windows {AI 功能已开启，但还需要一个提供方才能工作。点按即可在设置中选一个。} linuxGnome {AI 功能已开启，但还需要一个提供方才能工作。点按即可在首选项中选一个。} linuxKde {AI features are on, but they need a provider to work. Click to set one up in Configure Cmdr.} other {AI 功能已开启，但还需要一个提供方才能工作。点按即可在设置中选一个。}}",
   "@askCmdr.wake.needsApiKey": {
     "sourceHash": "2f1b3e9"
   },

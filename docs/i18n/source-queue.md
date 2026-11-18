@@ -56,9 +56,6 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   renders as "just closed" (`vừa đóng`), as its `commands.handler.noRecentlyClosedTabs` already does under an exception.
   Only vi deviates, and the concept's sense names recently closed tabs, so it stays a vi exception unless another locale
   does the same. (vi)
-- The pile lacks the KDE Frameworks catalogs (`kxmlgui`, `kconfigwidgets`), where KStandardAction labels like "Full
-  Screen Mode" live, so `i18n:pile` finds nothing for them and a Linux branch falls back to the base ruling. Add them to
-  the pile beside Dolphin. (de, es, cs, hu, nl, vi, zh, zh-Hant)
 - The pile has no Windows shell label "This PC" (the Microsoft TBX lacks it), so the `windows` branches naming it rest
   on judgment and stay `tentative`. Source it from a localized Windows, or a Microsoft support page per language. (es,
   hu, vi)
@@ -163,28 +160,9 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
 - `updates.toast.readyDetail`'s `other` branch serves Windows and Linux, but most locales' `app-closes` ruling is
   Windows-only (Linux says "quit"), so Linux reads the Windows verb. Split a `windows` branch if Linux should differ.
   (all)
-- The `preferences` concept hits the new `linuxGnome` branch of `menu.app.settings` and
-  `fileExplorer.quickFilter.intro.openSettings`, whose GNOME word (ru Параметры, cs Předvolby, uk Налаштування, hu
-  Beállítások) differs from both the ruling (an Android label) and the macOS folder name
-  `aboutThis.ownerPlace.preferences`, so `i18n-terms` and `i18n-termbase` flag it in every locale. Consider a `notMatch`
-  for the GNOME app-menu sense, or a per-desktop form in the termbase schema. (cs, ru, uk, hu)
 - `askCmdr.renameReview.notPortableBadge` is "(Windows)", identical in every locale, so each one needs a
   `sameAsSourceJustification`; the brand-only check could treat a parenthesized brand as identical by design. (cs, ru,
   uk, hu)
-- `aboutThis.ownerPlace.preferences` ("Preferences", the macOS Library folder name kept verbatim) shares its English
-  with the new `linuxGnome` branch of `menu.app.settings` / `fileExplorer.quickFilter.intro.openSettings`, so
-  `i18n-terms` flags every locale that translates GNOME's row; de, nl, sv, and fr each carry an allowlist entry. A
-  `notMatch` on the `preferences` concept, or a term-consistency rule that skips a key carrying a
-  `sameAsSourceJustification`, would fix it once. (de, nl, sv, fr)
-- The `linuxGnome` / `linuxKde` branches name apps and paths the pile doesn't carry: GNOME's Passwords and Keys
-  (Seahorse), GNOME Settings > Keyboard > View and Customize Shortcuts, KDE System Settings > Keyboard > Shortcuts,
-  KDE's standard `Configure %1…` (kxmlgui), and KDE's word for a wallet. de, nl, sv, and fr record them `tentative`,
-  from memory; adding `seahorse.po`, `gnome-control-center.po`, `kxmlgui6.po`, `kwalletmanager.po`, and
-  `systemsettings.po` to the pile would let a translator cite them. (de, nl, sv, fr)
-- `i18n-terms` pairs the literal macOS folder name `aboutThis.ownerPlace.preferences` ("Preferences", kept as on disk)
-  with GNOME's translated row in `menu.app.settings` / `fileExplorer.quickFilter.intro.openSettings` (`linuxGnome`), so
-  every locale needs an allowlist entry; the `preferences` concept already `notMatch`es that key. Exclude it in the term
-  check too. (es, pt, vi, zh, zh-Hant)
 - KDE branches: the descriptions say KDE keeps "KWallet" / "KWalletManager" as names in every language, but KDE zh-CN
   ships `KWalletManager 密码库管理器` and zh-TW `KDE 錢包管理員` as the launcher name; we kept the Latin names. Check
   whether the descriptions should allow the localized launcher name. (zh, zh-Hant)
@@ -192,23 +170,6 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   now that GNOME has its own branch; the `other` branch could name the keyring desktop-neutrally. (all)
 - GNOME vi's own catalog misspells Keyboard as `Bàm phím` (gnome-control-center vi.po); vi's
   `shortcuts.conflict.takenByLinuxDesktops` writes `Bàn phím`. Worth an upstream GNOME fix. (vi)
-- Settings window pointers with a `linuxGnome` branch but no `linuxKde` one: `askCmdr.error.noKey`, `.notConfigured`,
-  `.authFailed`, `.modelNotInPlan.named` / `.unnamed`, `.requestTooLarge.named` / `.unnamed`,
-  `askCmdr.wake.needsApiKey`, `settings.sidebar.sections`, and `mtp.connectedToast.body`. KDE reads `other`'s "settings"
-  there while its window is titled "Configure – Cmdr", yet each description says both Linux branches name the window per
-  desktop. Add `linuxKde` branches or narrow the descriptions. The same keys write "in preferences" / "in settings"
-  lowercase; where the GNOME word is also an everyday word (vi `tùy thích`, "as you like"), the lowercase reading
-  misleads, so vi capitalizes it. Proposed cross-language rule: a pointer that names the settings window is capitalized
-  as a name. (es, pt, vi, zh, zh-Hant)
-- Windows shares the `other` branch with macOS in `settings.window.title` and most pointers, so a language whose Windows
-  word differs from its macOS one (Microsoft: es `Configuración`, pt `Configurações`; Apple: `Ajustes`) can't give
-  Windows its own word, and Windows reads the macOS one. It's consistent everywhere, which is fine for Cmdr's own
-  window; if Windows should read Microsoft's word, the English needs a `windows` branch in those keys. Needs David. (es,
-  pt)
-- `fileExplorer.functionKeyBar.hiddenToast`: the `windows` branch says "Turn it back on", every other branch
-  "Re-enable"; `whatsNew.optOutToast` splits the same way. Align the English or say why. (zh)
-- KDE's "Configure Cmdr" in `commands.appSettings.label` and the "Open settings" buttons has no ellipsis, while
-  `menu.app.settings` says "Configure Cmdr…". Confirm the command and the menu row differ on purpose. (zh-Hant)
 - zh and zh-Hant now quote KDE's localized wallet manager launcher name (zh `KWalletManager 密码库管理器`, zh-Hant
   `KDE 錢包管理員`, from `kwalletmanager._desktop_.po`) in `fileExplorer.restic.forgetPassword.keychainKeptIt`, which
   answers the older KWalletManager entry above for those two; the descriptions still say "KWalletManager (an app name,
@@ -218,22 +179,10 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   `.crashReportsNoteAlone`, `.signup.unreachable`, and `mtp.connectedToast.body` (fixed now). Coverage didn't flag them
   (stale only said the fork was stale); a check that flags an overlay fork with a non-empty branch byte-identical to
   English would. (es-419)
-- `settings.window.title` and most "Settings" pointers have no `windows` branch, so Windows reads the `other` branch,
-  which macOS also reads. French Windows names its own Settings app `Paramètres` and macOS says `Réglages`, so French
-  Windows users see Apple's word for Cmdr's window (`menu.app.settings`'s `windows` branch says `Réglages` to match the
-  title). If Cmdr's window should follow each OS's word, the title and every pointer need a `windows` branch; German,
-  Dutch, and Swedish don't split there, French does (and likely others). (fr)
-- The `preferences` concept (an OS or device label, like Android's USB Preferences) now matches every `linuxGnome`
-  branch that names Cmdr's own window "Preferences" (`settings.window.title`, `onboarding.stepOptional.changeAnytime`,
-  and about 60 more), so `i18n-termbase` judges GNOME's name for Cmdr's window against the Android ruling. ru and hu
-  needed `other` forms to pass. Proposal: a `notMatch` for the GNOME window sense, or fold it into the `settings`
-  concept's Linux forms. (cs, ru, uk, hu)
-- `settings-window-name.test.ts` pins the KDE title and menu item to the same first word, which holds in English
-  ("Configure – Cmdr" / "Configure Cmdr…") and cs, but KDE's own catalogs split them in other languages: ru title
-  `Настройка – Cmdr` vs menu `Настроить Cmdr…`, uk `Налаштовування – Cmdr` vs `Налаштувати Cmdr…` (dolphin.po
-  `Configure` `@title:window` vs `Configure…` `@action:inmenu`), and hu `Beállítások – Cmdr` vs `Cmdr beállítása…` (word
-  order). We followed KDE; they share a root. If the test ever runs per locale, it needs a root match, not a first-word
-  match. (ru, uk, hu)
+- GNOME's lowercase pointers ("in preferences" in `askCmdr.error.*`, `askCmdr.wake.needsApiKey`,
+  `mtp.connectedToast.body`) read as an everyday word where GNOME's term is one (vi `tùy thích`, "as you like"); KDE now
+  names the window "Configure Cmdr" there. Proposed rule: a pointer naming the settings window is capitalized as a name
+  on GNOME too. Rewords the GNOME branch only. (es, pt, vi, zh, zh-Hant)
 
 ## Process feedback
 
@@ -328,30 +277,6 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
 - A `windows` / `other` form on a ruling (`quit` in nl) also judges every PLAIN value, so a Linux-only verb made 20
   plain `quit` keys drift; a single key's exception was the only way out. Scoping per-OS forms to block branches would
   let them carry Linux words. (nl)
-- The GNOME and KDE branches need catalogs the pile lacks: Seahorse ("Passwords and Keys", keyring),
-  gnome-control-center (Settings > Keyboard > View and Customize Shortcuts), and KDE's systemsettings, kcm_keyboard,
-  kxmlgui, kwalletmanager. Fetched them read-only into a scratch dir with two small `curl` scripts (l10n.gnome.org,
-  websvn.kde.org `?view=co`); the pile should carry them. Also built the batch's `keys.txt` by hand from the stale +
-  coverage output: a brief selector for "everything stale or missing for this locale" would save that. One read-only
-  `node` lookup listed per-OS branches still in English. The guard refused `for` loops and any command whose text
-  contained a URL or `$?`. (es, pt, vi, zh, zh-Hant)
-- Second translator to write the same catalog-fetch `curl` script (seahorse, gnome-control-center, kconfigwidgets,
-  kwalletmanager, systemsettings, kcm_keys/kcm_keyboard metadata), and it found two wrong GNOME paths and two wrong
-  wallet/keyring words that the pile couldn't have caught: the pile should carry these catalogs, or `i18n:pile` should
-  fetch them. Working URLs: `l10n.gnome.org/POT/<module>.main/<module>.main.<tag>.po` and
-  `websvn.kde.org/trunk/l10n-kf6/<tag>/messages/<repo>/<catalog>.po?view=co`; KCM names live in the `kcm_*.json`
-  metadata on invent.kde.org, not in a `.po`. KDE's `Configure %1…` lives in `kconfigwidgets6.po`, not `kxmlgui6.po`
-  (obsolete there). A `--lang` list on `i18n:brief` (one brief per language in one call) would have avoided 13 separate
-  commands, since the guard refuses a loop. (de, nl, sv, fr)
-- Third wave fetching KDE's wallet catalogs by hand (`kwalletd6.po`, `kwalletmanager.po`, `kwallet._desktop_.po`,
-  `kwalletmanager._desktop_.po`, `kconfigwidgets6.po`): `i18n:pile --term "KDE Wallet"` has no hit in any language. The
-  worktree guard refuses a websvn `*checkout*` URL (it reads "checkout" as git) and a `curl -o` into a path containing
-  "git"; `?view=co` works, and zh / zh-Hant fell back to a Firecrawl scrape. Put these in the pile. (es, pt, vi, zh,
-  zh-Hant)
-- An 89-key brief is 290–325 KB (~83k tokens), mostly per-key notes repeated across the batch; zh wrote a read-only
-  `dump.ts` printing each key's en and zh values, and es-419 needed a read-only `node` one-liner to dump the overlay's
-  current values, because `i18n:brief` refuses an overlay. A compact values-only brief mode, and an overlay brief (base
-  value, fork value, English), would cover both. (es-419, zh)
 - `decisions.md` budgets sit at the files' current size, so a parallel translator can't record a decision without
   editing the shared `i18n-termbase-baseline.json`; vi and zh-Hant reverted theirs and kept the evidence in `terms.json`
   notes. (vi, zh-Hant)
@@ -360,15 +285,5 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   inherit. (vi)
 - A deliberately empty English branch (`mtp.connectedToast.body`'s `windows {}`) counts as "still English" and needs a
   `sameAsSourceJustification` in every locale; an empty source branch could be exempt. (es, pt, vi, zh, zh-Hant)
-- Third pass needing KDE's `kwallet/kwalletd6.po` (the "KDE Wallet" product name lives there, not in
-  `kwalletmanager.po`): fetched it read-only with `curl` for de, nl, sv, and fr. Wrote one read-only `node` script that
-  prints a key list's current values for one locale, because the brief's 76k-token key section was too big to read
-  whole; a compact `i18n:brief --values-only` view (key, English, current value) would replace it. The worktree guard
-  refused process substitution and a `for` loop over `jq`. Each locale's `configure` ruling needed the KDE word
-  (`configureren`, `anpassa`) as an `accept` to clear 46–56 termbase warnings at once; an `other`/`linuxKde` form on a
-  ruling scoped to the KDE branch would be more precise. (de, nl, sv, fr)
-- Third translator to fetch `kwalletd6.po` by hand for the KDE Wallet name: KDE calls it `úschovna KDE`, `бумажник KDE`,
-  `торбинка KDE`, and `KDE jelszókezelő`. `?view=co` works; the `*checkout*` URL 404s. The guard also refused
-  `cd … && git commit`, so the run needed a read-only `node` dump of each key's English and current value per locale
-  (the brief's keys section is 38k tokens for 89 one-word per-OS edits) and a one-off rewrite of my own `values.json`. A
-  compact "current values only" brief mode would have saved most of the reading. (cs, ru, uk, hu)
+- A ruling form scoped to the KDE branch (`linuxKde` beside `windows` / `other`) would replace the KDE `configure` words
+  each locale carries as an `accept` (46–56 termbase warnings cleared that way). (de, nl, sv, fr)

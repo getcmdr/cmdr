@@ -57,6 +57,6 @@
   },
   "whatsNew.optOutToast": "{platform, select, windows {Got it, no more update notes. Turn them back on anytime in Settings > Updates & privacy.} linuxGnome {Got it, no more update notes. Re-enable them anytime in Preferences > Updates & privacy.} linuxKde {Got it, no more update notes. Re-enable them anytime in Configure Cmdr > Updates & privacy.} other {Got it, no more update notes. Re-enable them anytime in Settings > Updates & privacy.}}",
   "@whatsNew.optOutToast": {
-    "description": "Confirmation toast after the user opts out of the post-update changelog popup, noting where to turn it back on. Settings > Updates & privacy is a navigation path; keep the menu/section names as shown. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
+    "description": "Confirmation toast after the user opts out of the post-update changelog popup, noting where to turn it back on. Settings > Updates & privacy is a navigation path; keep the menu/section names as shown. The branches differ only in the verb: the `windows` branch says “Turn them back on” where the others say “Re-enable them”, because Windows instructions say “turn on” for “enable”, so use Windows’ own verb there and your usual one elsewhere.The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
   }
 }

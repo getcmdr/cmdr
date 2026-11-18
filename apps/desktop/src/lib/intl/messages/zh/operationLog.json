@@ -15,7 +15,7 @@
   "@operationLog.dialog.empty": {
     "sourceHash": "2dea414"
   },
-  "operationLog.dialog.recordingOff": "{platform, select, linuxGnome {操作日志目前没有在记录，因此新的拷贝、移动、重命名和删除不会显示在这里，也无法撤销。在“首选项”中重新开启，就能再次记录。} linuxKde {操作日志目前没有在记录，因此新的拷贝、移动、重命名和删除不会显示在这里，也无法撤销。在“配置 Cmdr”中重新开启，就能再次记录。} other {操作日志目前没有在记录，因此新的拷贝、移动、重命名和删除不会显示在这里，也无法撤销。在“设置”中重新开启，就能再次记录。}}",
+  "operationLog.dialog.recordingOff": "{platform, select, windows {操作日志目前没有在记录，因此新的拷贝、移动、重命名和删除不会显示在这里，也无法撤销。在“设置”中重新开启，就能再次记录。} linuxGnome {操作日志目前没有在记录，因此新的拷贝、移动、重命名和删除不会显示在这里，也无法撤销。在“首选项”中重新开启，就能再次记录。} linuxKde {操作日志目前没有在记录，因此新的拷贝、移动、重命名和删除不会显示在这里，也无法撤销。在“配置 Cmdr”中重新开启，就能再次记录。} other {操作日志目前没有在记录，因此新的拷贝、移动、重命名和删除不会显示在这里，也无法撤销。在“设置”中重新开启，就能再次记录。}}",
   "@operationLog.dialog.recordingOff": {
     "sourceHash": "3204ad8"
   },

@@ -430,7 +430,7 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {Cmdr présélectionne ce choix la prochaine fois, et vous pouvez le modifier dans les Préférences. S’il écrase des fichiers, vous verrez d’abord un avertissement.} linuxKde {Cmdr présélectionne ce choix la prochaine fois, et vous pouvez le modifier dans « Configurer Cmdr ». S’il écrase des fichiers, vous verrez d’abord un avertissement.} other {Cmdr présélectionne ce choix la prochaine fois, et vous pouvez le modifier dans les Réglages. S’il écrase des fichiers, vous verrez d’abord un avertissement.}}",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {Cmdr présélectionne ce choix la prochaine fois, et vous pouvez le modifier dans les Réglages. S’il écrase des fichiers, vous verrez d’abord un avertissement.} linuxGnome {Cmdr présélectionne ce choix la prochaine fois, et vous pouvez le modifier dans les Préférences. S’il écrase des fichiers, vous verrez d’abord un avertissement.} linuxKde {Cmdr présélectionne ce choix la prochaine fois, et vous pouvez le modifier dans « Configurer Cmdr ». S’il écrase des fichiers, vous verrez d’abord un avertissement.} other {Cmdr présélectionne ce choix la prochaine fois, et vous pouvez le modifier dans les Réglages. S’il écrase des fichiers, vous verrez d’abord un avertissement.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
     "sourceHash": "d75e9f6"
   },

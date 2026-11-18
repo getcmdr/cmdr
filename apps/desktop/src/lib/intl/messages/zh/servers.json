@@ -123,7 +123,7 @@
   "@servers.hub.discoveryOff": {
     "sourceHash": "cadcceb"
   },
-  "servers.hub.discoveryOffLink": "{platform, select, linuxGnome {在首选项中开启} linuxKde {在“配置 Cmdr”中开启} other {在设置中开启}}",
+  "servers.hub.discoveryOffLink": "{platform, select, windows {在设置中开启} linuxGnome {在首选项中开启} linuxKde {在“配置 Cmdr”中开启} other {在设置中开启}}",
   "@servers.hub.discoveryOffLink": {
     "sourceHash": "65a3d5a"
   },

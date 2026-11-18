@@ -80,7 +80,7 @@
   "@queryUi.empty.keysTip": {
     "sourceHash": "cbc047b"
   },
-  "queryUi.ai.cloudOff.body": "{platform, select, linuxGnome {L’IA dans le cloud est désactivée. Autorisez-la dans Préférences > IA pour utiliser cette fonction.} linuxKde {L’IA dans le cloud est désactivée. Autorisez-la dans « Configurer Cmdr » > IA pour utiliser cette fonction.} other {L’IA dans le cloud est désactivée. Autorisez-la dans Réglages > IA pour utiliser cette fonction.}}",
+  "queryUi.ai.cloudOff.body": "{platform, select, windows {L’IA dans le cloud est désactivée. Autorisez-la dans Réglages > IA pour utiliser cette fonction.} linuxGnome {L’IA dans le cloud est désactivée. Autorisez-la dans Préférences > IA pour utiliser cette fonction.} linuxKde {L’IA dans le cloud est désactivée. Autorisez-la dans « Configurer Cmdr » > IA pour utiliser cette fonction.} other {L’IA dans le cloud est désactivée. Autorisez-la dans Réglages > IA pour utiliser cette fonction.}}",
   "@queryUi.ai.cloudOff.body": {
     "sourceHash": "1f64983"
   },

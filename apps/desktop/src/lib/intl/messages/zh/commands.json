@@ -35,7 +35,7 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "{platform, select, linuxGnome {打开首选项} linuxKde {配置 Cmdr} other {打开设置}}",
+  "commands.appSettings.label": "{platform, select, windows {打开设置} linuxGnome {打开首选项} linuxKde {配置 Cmdr} other {打开设置}}",
   "@commands.appSettings.label": {
     "sourceHash": "e535825"
   },
@@ -1264,7 +1264,7 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {已在你的终端 App 中打开这个文件夹。想让 Cmdr 下次打开别的 App？在“首选项”的“导航与文件操作”里选一个。} linuxKde {已在你的终端 App 中打开这个文件夹。想让 Cmdr 下次打开别的 App？在“配置 Cmdr”的“导航与文件操作”里选一个。} other {已在你的终端 App 中打开这个文件夹。想让 Cmdr 下次打开别的 App？在“设置”的“导航与文件操作”里选一个。}}",
+  "commands.handler.openTerminalHere.hint": "{platform, select, windows {已在你的终端 App 中打开这个文件夹。想让 Cmdr 下次打开别的 App？在“设置”的“导航与文件操作”里选一个。} linuxGnome {已在你的终端 App 中打开这个文件夹。想让 Cmdr 下次打开别的 App？在“首选项”的“导航与文件操作”里选一个。} linuxKde {已在你的终端 App 中打开这个文件夹。想让 Cmdr 下次打开别的 App？在“配置 Cmdr”的“导航与文件操作”里选一个。} other {已在你的终端 App 中打开这个文件夹。想让 Cmdr 下次打开别的 App？在“设置”的“导航与文件操作”里选一个。}}",
   "@commands.handler.openTerminalHere.hint": {
     "sourceHash": "b73c1db"
   },
@@ -1272,7 +1272,7 @@
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {打开首选项} linuxKde {配置 Cmdr} other {打开设置}}",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, windows {打开设置} linuxGnome {打开首选项} linuxKde {配置 Cmdr} other {打开设置}}",
   "@commands.handler.openTerminalHere.openSettings": {
     "sourceHash": "e535825"
   },
@@ -1344,7 +1344,7 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {日志存储已关闭。在“首选项 > 高级”中把磁盘空间上限设为大于 0，然后重启 Cmdr 来查看调试日志。} linuxKde {日志存储已关闭。在“配置 Cmdr > 高级”中把磁盘空间上限设为大于 0，然后重启 Cmdr 来查看调试日志。} other {日志存储已关闭。在“设置 > 高级”中把磁盘空间上限设为大于 0，然后重启 Cmdr 来查看调试日志。}}",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, windows {日志存储已关闭。在“设置 > 高级”中把磁盘空间上限设为大于 0，然后重启 Cmdr 来查看调试日志。} linuxGnome {日志存储已关闭。在“首选项 > 高级”中把磁盘空间上限设为大于 0，然后重启 Cmdr 来查看调试日志。} linuxKde {日志存储已关闭。在“配置 Cmdr > 高级”中把磁盘空间上限设为大于 0，然后重启 Cmdr 来查看调试日志。} other {日志存储已关闭。在“设置 > 高级”中把磁盘空间上限设为大于 0，然后重启 Cmdr 来查看调试日志。}}",
   "@commands.handler.viewDebugLog.disabled": {
     "sourceHash": "bda730a"
   },

@@ -16,6 +16,11 @@ Writing, code, and design styles.
     takes a destination; `Delete` only asks whether to go ahead. Use the U+2026 character, never three periods. The
     verdict per item, and why this beats Apple's own "requires further input" phrasing, live in
     `apps/desktop/src-tauri/src/menu/DETAILS.md`.
+  - **The settings window's menu row is the one exception: it keeps its system's own ellipsis** ("Settings…" on macOS
+    and other Linux, KDE's standard `Configure %1…` from KStandardAction; none on Windows or GNOME), because it's a
+    standard item users look for by its exact OS spelling. The command and every button that opens the window follow the
+    rule above and take none ("Open settings", "Configure Cmdr"). A label quoting the menu row (the quick filter toast's
+    button) copies the row.
 - Ellipsis
   - **Cmdr writes every ellipsis as `…` (U+2026), never three periods**: progress text ("Loading…"), placeholders
     ("Example: sk-ant-abc123…"), and truncation (leading or trailing) all use the same character.
@@ -77,8 +82,9 @@ itself; `other` stays desktop-neutral for every other desktop. Today's desktop w
 - **KDE Plasma**: the file manager is **Dolphin** ("Show in Dolphin"); the password store is **KDE Wallet** ("Remember
   in KDE Wallet"; KDE's own user-facing name, so never "KWallet"), managed in **KWalletManager**; an app's settings row
   is **Configure Cmdr…**, its window is titled "Configure – Cmdr", and copy points there as **Configure Cmdr** ("in
-  Configure Cmdr", "Configure Cmdr > AI", and a button that only opens it reads "Configure Cmdr"); a lowercase generic
-  "settings" stays, since KDE's own menu is "Settings"; shortcuts live in **System Settings > Keyboard > Shortcuts**.
+  Configure Cmdr", "Configure Cmdr > AI", and a button that only opens it reads "Configure Cmdr"), also where the other
+  systems write a lowercase "in settings" ("Add your API key in Configure Cmdr"), since KDE has no generic word that
+  names the window; shortcuts live in **System Settings > Keyboard > Shortcuts**.
 
 - The machine
   - **This Mac, your Mac** / **this PC, your PC** / **this computer, your computer**. On Windows, never "PC" and
@@ -130,9 +136,12 @@ itself; `other` stays desktop-neutral for every other desktop. Today's desktop w
     Cmdr…"). **The window's title, and every string that sends the user there, starts with the menu row's word**:
     "Settings" on macOS, Windows, and other Linux; "Preferences" on GNOME; "Configure" on KDE. A path inside it follows
     too ("Preferences > File operations"). Windows keeps "Settings" because Microsoft's app-settings guidance and its
-    own apps say so, and one word is easier in docs. Evidence: `copy-glossary-evidence.md` § The settings window's
-    title; `apps/desktop/src/lib/settings/settings-window-name.test.ts` pins the title against the menu row on all five
-    systems.
+    own apps say so, and one word is easier in docs. Every key naming the window still carries a `windows` branch with
+    the same English (`@key.identicalBranches` says why), so a translation can use Microsoft's word where it differs
+    from Apple's (French `Paramètres` beside `Réglages`). Evidence: `copy-glossary-evidence.md` § The settings window's
+    title; `apps/desktop/src/lib/settings/settings-window-name.test.ts` pins the English title against the menu row on
+    all five systems; translations follow each desktop's own catalog there (`docs/i18n/translator-instructions.md`,
+    Per-OS values).
   - **Keychain**, **Keychain Access** / **Credential Manager**, named only where the user has to go there (a checkbox
     says "Remember password") / **your keyring** ("Remember in keyring").
   - **Terminal** ("In Terminal, run…") / **PowerShell** ("In PowerShell, run…", with a command that works there) / **a

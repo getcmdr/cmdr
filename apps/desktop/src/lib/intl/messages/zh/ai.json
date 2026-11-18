@@ -55,7 +55,7 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "{platform, select, linuxGnome {在“首选项 > AI”中开启一个提供方，即可使用 AI 搜索。} linuxKde {在“配置 Cmdr > AI”中开启一个提供方，即可使用 AI 搜索。} other {在“设置 > AI”中开启一个提供方，即可使用 AI 搜索。}}",
+  "ai.translateError.off.body": "{platform, select, windows {在“设置 > AI”中开启一个提供方，即可使用 AI 搜索。} linuxGnome {在“首选项 > AI”中开启一个提供方，即可使用 AI 搜索。} linuxKde {在“配置 Cmdr > AI”中开启一个提供方，即可使用 AI 搜索。} other {在“设置 > AI”中开启一个提供方，即可使用 AI 搜索。}}",
   "@ai.translateError.off.body": {
     "sourceHash": "5e5f8d2"
   },
@@ -247,7 +247,7 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {在“首选项 > AI”中完成提供方设置，然后重试。} linuxKde {在“配置 Cmdr > AI”中完成提供方设置，然后重试。} other {在“设置 > AI”中完成提供方设置，然后重试。}}",
+  "ai.translateError.notConfigured.body": "{platform, select, windows {在“设置 > AI”中完成提供方设置，然后重试。} linuxGnome {在“首选项 > AI”中完成提供方设置，然后重试。} linuxKde {在“配置 Cmdr > AI”中完成提供方设置，然后重试。} other {在“设置 > AI”中完成提供方设置，然后重试。}}",
   "@ai.translateError.notConfigured.body": {
     "sourceHash": "bf48aec"
   },
@@ -255,7 +255,7 @@
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {请到“首选项 > AI”中允许使用，然后重试。} linuxKde {请到“配置 Cmdr > AI”中允许使用，然后重试。} other {请到“设置 > AI”中允许使用，然后重试。}}",
+  "ai.translateError.noCloudConsent.body": "{platform, select, windows {请到“设置 > AI”中允许使用，然后重试。} linuxGnome {请到“首选项 > AI”中允许使用，然后重试。} linuxKde {请到“配置 Cmdr > AI”中允许使用，然后重试。} other {请到“设置 > AI”中允许使用，然后重试。}}",
   "@ai.translateError.noCloudConsent.body": {
     "sourceHash": "4485cc1"
   },
@@ -263,7 +263,7 @@
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {在“首选项 > AI”中检查你的密钥，它可能不对或已被吊销。} linuxKde {在“配置 Cmdr > AI”中检查你的密钥，它可能不对或已被吊销。} other {在“设置 > AI”中检查你的密钥，它可能不对或已被吊销。}}",
+  "ai.translateError.authFailed.body": "{platform, select, windows {在“设置 > AI”中检查你的密钥，它可能不对或已被吊销。} linuxGnome {在“首选项 > AI”中检查你的密钥，它可能不对或已被吊销。} linuxKde {在“配置 Cmdr > AI”中检查你的密钥，它可能不对或已被吊销。} other {在“设置 > AI”中检查你的密钥，它可能不对或已被吊销。}}",
   "@ai.translateError.authFailed.body": {
     "sourceHash": "4fd6281"
   },
@@ -295,7 +295,7 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {你的模型可能还没回答就用完了 token 预算。试试在“首选项 > AI”中换一个更快的模型，比如 gpt-4.1-mini。} linuxKde {你的模型可能还没回答就用完了 token 预算。试试在“配置 Cmdr > AI”中换一个更快的模型，比如 gpt-4.1-mini。} other {你的模型可能还没回答就用完了 token 预算。试试在“设置 > AI”中换一个更快的模型，比如 gpt-4.1-mini。}}",
+  "ai.translateError.emptyResponse.body": "{platform, select, windows {你的模型可能还没回答就用完了 token 预算。试试在“设置 > AI”中换一个更快的模型，比如 gpt-4.1-mini。} linuxGnome {你的模型可能还没回答就用完了 token 预算。试试在“首选项 > AI”中换一个更快的模型，比如 gpt-4.1-mini。} linuxKde {你的模型可能还没回答就用完了 token 预算。试试在“配置 Cmdr > AI”中换一个更快的模型，比如 gpt-4.1-mini。} other {你的模型可能还没回答就用完了 token 预算。试试在“设置 > AI”中换一个更快的模型，比如 gpt-4.1-mini。}}",
   "@ai.translateError.emptyResponse.body": {
     "sourceHash": "b16ff79"
   },
@@ -311,7 +311,7 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "{platform, select, linuxGnome {请重试，或者在“首选项 > AI”中选择另一个模型。} linuxKde {请重试，或者在“配置 Cmdr > AI”中选择另一个模型。} other {请重试，或者在“设置 > AI”中选择另一个模型。}}",
+  "ai.translateError.parseError.body": "{platform, select, windows {请重试，或者在“设置 > AI”中选择另一个模型。} linuxGnome {请重试，或者在“首选项 > AI”中选择另一个模型。} linuxKde {请重试，或者在“配置 Cmdr > AI”中选择另一个模型。} other {请重试，或者在“设置 > AI”中选择另一个模型。}}",
   "@ai.translateError.parseError.body": {
     "sourceHash": "6082b7e"
   },
@@ -319,7 +319,7 @@
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {请在“首选项 > AI”中选择一个提供方。} linuxKde {请在“配置 Cmdr > AI”中选择一个提供方。} other {请在“设置 > AI”中选择一个提供方。}}",
+  "ai.translateError.unknownProvider.body": "{platform, select, windows {请在“设置 > AI”中选择一个提供方。} linuxGnome {请在“首选项 > AI”中选择一个提供方。} linuxKde {请在“配置 Cmdr > AI”中选择一个提供方。} other {请在“设置 > AI”中选择一个提供方。}}",
   "@ai.translateError.unknownProvider.body": {
     "sourceHash": "c45eba0"
   },

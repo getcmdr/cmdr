@@ -705,11 +705,11 @@
   "@askCmdr.turnStats.stopped": {
     "sourceHash": "0f6ea99"
   },
-  "askCmdr.error.noKey": "{platform, select, linuxGnome {Adicione sua chave de API nas preferências para começar a conversar.} other {Adicione sua chave de API nos ajustes para começar a conversar.}}",
+  "askCmdr.error.noKey": "{platform, select, windows {Adicione sua chave de API nos ajustes para começar a conversar.} linuxGnome {Adicione sua chave de API nas preferências para começar a conversar.} linuxKde {Add your API key in Configure Cmdr to start chatting.} other {Adicione sua chave de API nos ajustes para começar a conversar.}}",
   "@askCmdr.error.noKey": {
     "sourceHash": "124df6a"
   },
-  "askCmdr.error.notConfigured": "{platform, select, linuxGnome {O chat precisa de um provedor de IA. Ative um nas preferências.} other {O chat precisa de um provedor de IA. Ative um nos ajustes.}}",
+  "askCmdr.error.notConfigured": "{platform, select, windows {O chat precisa de um provedor de IA. Ative um nos ajustes.} linuxGnome {O chat precisa de um provedor de IA. Ative um nas preferências.} linuxKde {Chatting needs an AI provider. Turn one on in Configure Cmdr.} other {O chat precisa de um provedor de IA. Ative um nos ajustes.}}",
   "@askCmdr.error.notConfigured": {
     "sourceHash": "54fb846"
   },
@@ -717,7 +717,7 @@
   "@askCmdr.error.askCmdrOff": {
     "sourceHash": "6599ee1"
   },
-  "askCmdr.error.noCloudConsent": "{platform, select, linuxGnome {A IA na nuvem está desativada. Permita-a em Preferências > IA.} linuxKde {A IA na nuvem está desativada. Permita-a em Configurar Cmdr > IA.} other {A IA na nuvem está desativada. Permita-a em Ajustes > IA.}}",
+  "askCmdr.error.noCloudConsent": "{platform, select, windows {A IA na nuvem está desativada. Permita-a em Ajustes > IA.} linuxGnome {A IA na nuvem está desativada. Permita-a em Preferências > IA.} linuxKde {A IA na nuvem está desativada. Permita-a em Configurar Cmdr > IA.} other {A IA na nuvem está desativada. Permita-a em Ajustes > IA.}}",
   "@askCmdr.error.noCloudConsent": {
     "sourceHash": "6490317"
   },
@@ -737,7 +737,7 @@
   "@askCmdr.error.timeout": {
     "sourceHash": "22cd775"
   },
-  "askCmdr.error.authFailed": "{platform, select, linuxGnome {O provedor não aceitou sua chave de API. Verifique-a nas preferências.} other {O provedor não aceitou sua chave de API. Verifique-a nos ajustes.}}",
+  "askCmdr.error.authFailed": "{platform, select, windows {O provedor não aceitou sua chave de API. Verifique-a nos ajustes.} linuxGnome {O provedor não aceitou sua chave de API. Verifique-a nas preferências.} linuxKde {The provider didn’t accept your API key. Check it in Configure Cmdr.} other {O provedor não aceitou sua chave de API. Verifique-a nos ajustes.}}",
   "@askCmdr.error.authFailed": {
     "sourceHash": "9e02aad"
   },
@@ -745,19 +745,19 @@
   "@askCmdr.error.rateLimited": {
     "sourceHash": "7b441e9"
   },
-  "askCmdr.error.modelNotInPlan.named": "{platform, select, linuxGnome {Seu plano em {provider} não inclui este modelo. Escolha outro modelo nas preferências ou faça upgrade do seu plano.} other {Seu plano em {provider} não inclui este modelo. Escolha outro modelo nos Ajustes ou faça upgrade do seu plano.}}",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {Seu plano em {provider} não inclui este modelo. Escolha outro modelo nos Ajustes ou faça upgrade do seu plano.} linuxGnome {Seu plano em {provider} não inclui este modelo. Escolha outro modelo nas preferências ou faça upgrade do seu plano.} linuxKde {Your {provider} plan doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {Seu plano em {provider} não inclui este modelo. Escolha outro modelo nos Ajustes ou faça upgrade do seu plano.}}",
   "@askCmdr.error.modelNotInPlan.named": {
     "sourceHash": "efbf38b"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, linuxGnome {Seu plano com este provedor de IA não inclui este modelo. Escolha outro modelo nas preferências ou faça upgrade do seu plano.} other {Seu plano com este provedor de IA não inclui este modelo. Escolha outro modelo nos Ajustes ou faça upgrade do seu plano.}}",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {Seu plano com este provedor de IA não inclui este modelo. Escolha outro modelo nos Ajustes ou faça upgrade do seu plano.} linuxGnome {Seu plano com este provedor de IA não inclui este modelo. Escolha outro modelo nas preferências ou faça upgrade do seu plano.} linuxKde {Your plan with this AI provider doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {Seu plano com este provedor de IA não inclui este modelo. Escolha outro modelo nos Ajustes ou faça upgrade do seu plano.}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
     "sourceHash": "6808950"
   },
-  "askCmdr.error.requestTooLarge.named": "{platform, select, linuxGnome {O provedor {provider} recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior em {provider} ou escolha outro provedor nas preferências.} other {O provedor {provider} recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior em {provider} ou escolha outro provedor nos Ajustes.}}",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {O provedor {provider} recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior em {provider} ou escolha outro provedor nos Ajustes.} linuxGnome {O provedor {provider} recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior em {provider} ou escolha outro provedor nas preferências.} linuxKde {{provider} turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan with {provider}, or pick another provider in Configure Cmdr.} other {O provedor {provider} recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior em {provider} ou escolha outro provedor nos Ajustes.}}",
   "@askCmdr.error.requestTooLarge.named": {
     "sourceHash": "b1850b3"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, linuxGnome {Seu provedor de IA recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior ou escolha outro provedor nas preferências.} other {Seu provedor de IA recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior ou escolha outro provedor nos Ajustes.}}",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {Seu provedor de IA recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior ou escolha outro provedor nos Ajustes.} linuxGnome {Seu provedor de IA recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior ou escolha outro provedor nas preferências.} linuxKde {Your AI provider turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan, or pick another provider in Configure Cmdr.} other {Seu provedor de IA recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior ou escolha outro provedor nos Ajustes.}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
     "sourceHash": "455449e"
   },
@@ -980,15 +980,15 @@
   "@askCmdr.composer.sendNeedsProvider": {
     "sourceHash": "9e6aba3"
   },
-  "askCmdr.providerNotice.off": "{platform, select, linuxGnome {O Ask Cmdr precisa de um provedor de IA para conversar. Escolha um nas Preferências.} linuxKde {O Ask Cmdr precisa de um provedor de IA para conversar. Escolha um em Configurar Cmdr.} other {O Ask Cmdr precisa de um provedor de IA para conversar. Escolha um nos Ajustes.}}",
+  "askCmdr.providerNotice.off": "{platform, select, windows {O Ask Cmdr precisa de um provedor de IA para conversar. Escolha um nos Ajustes.} linuxGnome {O Ask Cmdr precisa de um provedor de IA para conversar. Escolha um nas Preferências.} linuxKde {O Ask Cmdr precisa de um provedor de IA para conversar. Escolha um em Configurar Cmdr.} other {O Ask Cmdr precisa de um provedor de IA para conversar. Escolha um nos Ajustes.}}",
   "@askCmdr.providerNotice.off": {
     "sourceHash": "6e9f73c"
   },
-  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, linuxGnome {Seu provedor de IA na nuvem precisa de uma chave de API para o Ask Cmdr poder conversar. Adicione-a nas Preferências.} linuxKde {Seu provedor de IA na nuvem precisa de uma chave de API para o Ask Cmdr poder conversar. Adicione-a em Configurar Cmdr.} other {Seu provedor de IA na nuvem precisa de uma chave de API para o Ask Cmdr poder conversar. Adicione-a nos Ajustes.}}",
+  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, windows {Seu provedor de IA na nuvem precisa de uma chave de API para o Ask Cmdr poder conversar. Adicione-a nos Ajustes.} linuxGnome {Seu provedor de IA na nuvem precisa de uma chave de API para o Ask Cmdr poder conversar. Adicione-a nas Preferências.} linuxKde {Seu provedor de IA na nuvem precisa de uma chave de API para o Ask Cmdr poder conversar. Adicione-a em Configurar Cmdr.} other {Seu provedor de IA na nuvem precisa de uma chave de API para o Ask Cmdr poder conversar. Adicione-a nos Ajustes.}}",
   "@askCmdr.providerNotice.cloudNeedsKey": {
     "sourceHash": "16dc8a0"
   },
-  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, linuxGnome {Seu provedor de IA na nuvem precisa de um endereço para o Ask Cmdr poder conversar. Adicione-o nas Preferências.} linuxKde {Seu provedor de IA na nuvem precisa de um endereço para o Ask Cmdr poder conversar. Adicione-o em Configurar Cmdr.} other {Seu provedor de IA na nuvem precisa de um endereço para o Ask Cmdr poder conversar. Adicione-o nos Ajustes.}}",
+  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, windows {Seu provedor de IA na nuvem precisa de um endereço para o Ask Cmdr poder conversar. Adicione-o nos Ajustes.} linuxGnome {Seu provedor de IA na nuvem precisa de um endereço para o Ask Cmdr poder conversar. Adicione-o nas Preferências.} linuxKde {Seu provedor de IA na nuvem precisa de um endereço para o Ask Cmdr poder conversar. Adicione-o em Configurar Cmdr.} other {Seu provedor de IA na nuvem precisa de um endereço para o Ask Cmdr poder conversar. Adicione-o nos Ajustes.}}",
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "1ae5e35"
   },
@@ -1024,7 +1024,7 @@
   "@askCmdr.gate.cloudOff.title": {
     "sourceHash": "2e56781"
   },
-  "askCmdr.gate.cloudOff.body": "{platform, select, linuxGnome {O Ask Cmdr conversa com o serviço de IA na nuvem que você configurou. Ative “Permitir IA na nuvem” nas Preferências primeiro, e o chat fica pronto para usar.} linuxKde {O Ask Cmdr conversa com o serviço de IA na nuvem que você configurou. Ative “Permitir IA na nuvem” em Configurar Cmdr primeiro, e o chat fica pronto para usar.} other {O Ask Cmdr conversa com o serviço de IA na nuvem que você configurou. Ative “Permitir IA na nuvem” nos Ajustes primeiro, e o chat fica pronto para usar.}}",
+  "askCmdr.gate.cloudOff.body": "{platform, select, windows {O Ask Cmdr conversa com o serviço de IA na nuvem que você configurou. Ative “Permitir IA na nuvem” nos Ajustes primeiro, e o chat fica pronto para usar.} linuxGnome {O Ask Cmdr conversa com o serviço de IA na nuvem que você configurou. Ative “Permitir IA na nuvem” nas Preferências primeiro, e o chat fica pronto para usar.} linuxKde {O Ask Cmdr conversa com o serviço de IA na nuvem que você configurou. Ative “Permitir IA na nuvem” em Configurar Cmdr primeiro, e o chat fica pronto para usar.} other {O Ask Cmdr conversa com o serviço de IA na nuvem que você configurou. Ative “Permitir IA na nuvem” nos Ajustes primeiro, e o chat fica pronto para usar.}}",
   "@askCmdr.gate.cloudOff.body": {
     "sourceHash": "076c788"
   },
@@ -1414,7 +1414,7 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "sourceHash": "ae245b9"
   },
-  "askCmdr.wake.needsApiKey": "{platform, select, linuxGnome {Os recursos de IA estão ativados, mas precisam de um provedor para funcionar. Clique para configurar um nas preferências.} other {Os recursos de IA estão ativados, mas precisam de um provedor para funcionar. Clique para configurar um nos ajustes.}}",
+  "askCmdr.wake.needsApiKey": "{platform, select, windows {Os recursos de IA estão ativados, mas precisam de um provedor para funcionar. Clique para configurar um nos ajustes.} linuxGnome {Os recursos de IA estão ativados, mas precisam de um provedor para funcionar. Clique para configurar um nas preferências.} linuxKde {AI features are on, but they need a provider to work. Click to set one up in Configure Cmdr.} other {Os recursos de IA estão ativados, mas precisam de um provedor para funcionar. Clique para configurar um nos ajustes.}}",
   "@askCmdr.wake.needsApiKey": {
     "sourceHash": "2f1b3e9"
   },
