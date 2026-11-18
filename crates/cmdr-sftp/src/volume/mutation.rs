@@ -22,6 +22,7 @@
 //! `DETAILS.md` § "The error policy" carries the table, and § "Renaming without
 //! clobbering" the reasoning behind the claim.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -435,8 +436,12 @@ impl PatchSource for SftpVolume {
         self.inner.host.listings()
     }
 
-    fn patch_stat<'a>(&'a self, path: &'a Path) -> Walking<'a, FileEntry> {
-        Box::pin(self.get_metadata_impl(path))
+    fn patch_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.get_metadata_impl(path).await
+        })
     }
 
     fn patch_display_path(&self, path: &Path) -> Option<PathBuf> {
