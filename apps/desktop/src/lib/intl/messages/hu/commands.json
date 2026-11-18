@@ -35,9 +35,9 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Beállítások megnyitása}}",
+  "commands.appSettings.label": "{platform, select, linuxGnome {Beállítások megnyitása} linuxKde {Cmdr beállítása} other {Beállítások megnyitása}}",
   "@commands.appSettings.label": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "e535825"
   },
   "commands.appCheckForUpdates.label": "Frissítések keresése…",
   "@commands.appCheckForUpdates.label": {
@@ -940,9 +940,9 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Eltávolítja a kulcskarikából annak a restic biztonsági mentésnek a mentett jelszavát, amelyben éppen vagy, és újra lezárja a biztonsági mentést} windows {Eltávolítja a Hitelesítőadat-kezelőből annak a restic biztonsági mentésnek a mentett jelszavát, amelyben éppen vagy, és újra lezárja a biztonsági mentést} linuxKde {Eltávolítja a KWalletből annak a restic biztonsági mentésnek a mentett jelszavát, amelyben éppen vagy, és újra lezárja a biztonsági mentést} other {Eltávolítja a kulcstartódból annak a restic biztonsági mentésnek a mentett jelszavát, amelyben éppen vagy, és újra lezárja a biztonsági mentést}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Eltávolítja a kulcskarikából annak a restic biztonsági mentésnek a mentett jelszavát, amelyben éppen vagy, és újra lezárja a biztonsági mentést} windows {Eltávolítja a Hitelesítőadat-kezelőből annak a restic biztonsági mentésnek a mentett jelszavát, amelyben éppen vagy, és újra lezárja a biztonsági mentést} linuxKde {Eltávolítja a KDE jelszókezelőből annak a restic biztonsági mentésnek a mentett jelszavát, amelyben éppen vagy, és újra lezárja a biztonsági mentést} other {Eltávolítja a kulcstartódból annak a restic biztonsági mentésnek a mentett jelszavát, amelyben éppen vagy, és újra lezárja a biztonsági mentést}}",
   "@commands.resticForgetPassword.description": {
-    "sourceHash": "5b48a77"
+    "sourceHash": "e7106da"
   },
   "commands.fileCopyShareLink.label": "Megosztási link másolása (hét nap)",
   "@commands.fileCopyShareLink.label": {
@@ -1264,17 +1264,17 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Preferences, under Navigation & file ops.} linuxKde {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Configure Cmdr, under Navigation & file ops.} other {Ez a mappa megnyílt a terminálappodban. Szeretnéd, hogy a Cmdr legközelebb másik appot nyisson? Válaszd ki a Beállításokban, a „Navigáció és fájlműveletek” alatt.}}",
+  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Ez a mappa megnyílt a terminálappodban. Szeretnéd, hogy a Cmdr legközelebb másik appot nyisson? Válaszd ki a Beállításokban, a „Navigáció és fájlműveletek” alatt.} linuxKde {Ez a mappa megnyílt a terminálappodban. Szeretnéd, hogy a Cmdr legközelebb másik appot nyisson? Válaszd ki a Cmdr beállításaiban, a „Navigáció és fájlműveletek” alatt.} other {Ez a mappa megnyílt a terminálappodban. Szeretnéd, hogy a Cmdr legközelebb másik appot nyisson? Válaszd ki a Beállításokban, a „Navigáció és fájlműveletek” alatt.}}",
   "@commands.handler.openTerminalHere.hint": {
-    "sourceHash": "b29b744"
+    "sourceHash": "b73c1db"
   },
   "commands.handler.openTerminalHere.dismiss": "Elvetés",
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Beállítások megnyitása}}",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Beállítások megnyitása} linuxKde {Cmdr beállítása} other {Beállítások megnyitása}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "e535825"
   },
   "commands.handler.openTerminalHere.appMissing": "{app} már nincs telepítve, ezért ez a Terminalban nyílt meg.",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -1344,9 +1344,9 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {Log storage is off. Set a disk space limit above 0 in Preferences > Advanced, then restart Cmdr to view the debug log.} linuxKde {Log storage is off. Set a disk space limit above 0 in Configure Cmdr > Advanced, then restart Cmdr to view the debug log.} other {A naplótárolás ki van kapcsolva. Állíts be 0-nál nagyobb lemezterület-korlátot itt: Beállítások > Speciális, majd indítsd újra a Cmdrt a hibakeresési napló megtekintéséhez.}}",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {A naplótárolás ki van kapcsolva. Állíts be 0-nál nagyobb lemezterület-korlátot itt: Beállítások > Speciális, majd indítsd újra a Cmdrt a hibakeresési napló megtekintéséhez.} linuxKde {A naplótárolás ki van kapcsolva. Állíts be 0-nál nagyobb lemezterület-korlátot itt: Cmdr beállítása > Speciális, majd indítsd újra a Cmdrt a hibakeresési napló megtekintéséhez.} other {A naplótárolás ki van kapcsolva. Állíts be 0-nál nagyobb lemezterület-korlátot itt: Beállítások > Speciális, majd indítsd újra a Cmdrt a hibakeresési napló megtekintéséhez.}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "sourceHash": "96f16fc"
+    "sourceHash": "bda730a"
   },
   "commands.handler.viewDebugLog.unavailable": "Nem sikerült megnyitni a hibakeresési naplót. Próbáld újra.",
   "@commands.handler.viewDebugLog.unavailable": {

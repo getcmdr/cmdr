@@ -2262,7 +2262,7 @@
     ],
     "confidence": "high",
     "sources": "macOS 26.6.2 Keychain Access.app InfoPlist.loctable (CFBundleDisplayName Kulcskarika-elérés); Apple's Hungarian Mac User Guide (iCloud-kulcskarika)",
-    "note": "KDE's KWallet stays a name and takes front-vowel suffixes with no hyphen, by its written and spoken last vowel (a KWalletben, a KWalletből, a KWalletet); KWalletManager takes the base word app (a KWalletManager appban). GNOME's store is kulcstartó in the Jelszavak és kulcsok app. Tentative, no pile hit."
+    "note": "KDE Wallet → KDE jelszókezelő, as KDE's own Hungarian catalog names it (kwalletd6.po: The KDE Wallet System → A KDE jelszókezelő rendszer; KDE Wallet Service → KDE jelszókezelő szolgáltatás; read-only from websvn.kde.org trunk/l10n-kf6 hu, 2026-11-18); it takes the article and suffixes of jelszókezelő: a KDE jelszókezelő megtagadta, a KDE jelszókezelőben, a KDE jelszókezelőből, a KDE jelszókezelőbe. KWalletManager stays a name and takes the base word app (a KWalletManager appban). GNOME's store is kulcstartó in the Jelszavak és kulcsok app."
   },
   "kind": {
     "chosen": "Fajta",
@@ -3593,6 +3593,11 @@
       "chosen": "Gépház",
       "accept": ["beállítás", "állít"],
       "note": "the Windows Settings app is Gépház (ms TBX: Settings, “The app where people can find Windows and device settings” → Gépház), so a Windows Settings path reads itt: **Gépház > Hálózat és internet**; Cmdr's own Settings stay Beállítások"
+    },
+    "other": {
+      "chosen": "Beállítások",
+      "accept": ["beállítás", "állít", "Cmdr beállítása"],
+      "note": "Linux desktop branches: GNOME's Preferences is Beállítások (nautilus.po), so the linuxGnome branch reads like the other branch. KDE titles the window Beállítások – Cmdr (dolphin.po Configure @title:window → Beállítások) and the menu item is Cmdr beállítása… (KDE's Configure %1… pattern), so the linuxKde branch names Cmdr: buttons and links Cmdr beállítása, paths itt: Cmdr beállítása > AI, prose a Cmdr beállításaiban (the don't-translate check requires the Cmdr the English KDE branch carries). Title and menu share beállít but not their first word: Hungarian word order puts Cmdr first in the menu item."
     }
   },
   "share-menu": {
@@ -4559,6 +4564,8 @@
   "preferences": {
     "chosen": "Beállítások",
     "confidence": "high",
-    "sources": "macOS AppKit MenuCommands (Preferences → Beállítások); GNOME and Thunar (Beállítások)"
+    "sources": "macOS AppKit MenuCommands (Preferences → Beállítások); GNOME and Thunar (Beállítások)",
+    "accept": ["beállítás", "Beállítás"],
+    "note": "Hungarian has one word for Preferences and Settings: GNOME's Preferences is Beállítások too (nautilus.po _Preferences → _Beállítások), so a linuxGnome branch naming Cmdr's window reads like the other branch (Beállítási szakaszok included)."
   }
 }
