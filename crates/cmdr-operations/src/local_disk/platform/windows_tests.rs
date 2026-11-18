@@ -29,6 +29,10 @@ fn a_read_only_file_is_refused_and_left_as_it_was() {
     );
     assert_eq!(std::fs::read(&file).unwrap(), b"keep me");
 
+    #[allow(
+        clippy::permissions_set_readonly_false,
+        reason = "on Windows this only clears the read-only attribute, so the scratch folder can go"
+    )]
     permissions.set_readonly(false);
     std::fs::set_permissions(&file, permissions).unwrap();
 }

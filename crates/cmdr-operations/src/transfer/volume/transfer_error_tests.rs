@@ -555,9 +555,9 @@ fn where_the_new_data_is_outranks_a_lost_connection() {
         volume_name: "Testnas".to_string(),
         gave_up_after: None,
     }));
-    error.aftermath = Some(LandingAftermath::NewDataKeptAt(PathBuf::from(
+    error.aftermath = Some(Box::new(LandingAftermath::NewDataKeptAt(PathBuf::from(
         "/smb/share/a (recovered).jpg",
-    )));
+    ))));
 
     assert!(
         matches!(&WriteFailure::from(error).error, WriteOperationError::NewDataKeptAt { kept_at, .. } if kept_at == "/smb/share/a (recovered).jpg"),

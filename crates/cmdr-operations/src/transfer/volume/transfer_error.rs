@@ -133,11 +133,13 @@ pub(crate) struct PathedVolumeError {
     /// (`WriteOperationError::NewDataKeptAt`), and one that refused before
     /// clearing anything says the file was left alone
     /// (`WriteOperationError::LandingNotRecorded`). It travels with the error
-    /// rather than being reconstructed anywhere.
-    pub aftermath: Option<LandingAftermath>,
+    /// rather than being reconstructed anywhere. Boxed like `cause`, for the
+    /// same reason: a `PathBuf` is 32 bytes on Windows, which took this type
+    /// past 128 bytes there.
+    pub aftermath: Option<Box<LandingAftermath>>,
     /// What the failure learned beyond its errno that the user needs instead.
     /// Boxed: it's rare, and every transfer `Result` carries this type by value
-    /// (`clippy::result_large_err` holds it under 128 bytes).
+    /// (`clippy::result_large_err` holds it under 128 bytes on every OS).
     pub cause: Option<Box<FailureCause>>,
 }
 
@@ -183,7 +185,7 @@ impl From<PathedVolumeError> for WriteFailure {
             None => (None, false),
         };
         let path = e.path.display().to_string();
-        let error = match (e.aftermath, lost) {
+        let error = match (e.aftermath.map(|aftermath| *aftermath), lost) {
             (None, None) if too_long => WriteOperationError::NameTooLong { path },
             (Some(LandingAftermath::NewDataKeptAt(kept_at)), _) => WriteOperationError::NewDataKeptAt {
                 path,
@@ -265,7 +267,7 @@ impl PathedVolumeError {
             path: dest_path.to_path_buf(),
             role: PathRole::Destination,
             error: failure.error,
-            aftermath: failure.aftermath,
+            aftermath: failure.aftermath.map(Box::new),
             cause: too_long.then(|| Box::new(FailureCause::NameTooLong)),
         }
     }
