@@ -1,7 +1,7 @@
 /**
  * A newer release whose `latest.json` carries no build for this install's platform. The check used to answer
  * "up to date", which told a stranded install it was current; the backend now says `noBuildForThisPlatform`, and the
- * app says this build can't check for updates right now: no failure, no error report, no version it can't install.
+ * app says there's a newer Cmdr, but not for this system yet: no failure, no error report, no version it can't install.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -50,14 +50,14 @@ describe('a newer release with no build for this platform', () => {
     _resetUpdaterStateForTest()
   })
 
-  it('says this build can’t check for updates right now, never that it’s up to date', async () => {
+  it('says there’s a newer Cmdr but not for this system yet, never that it’s up to date', async () => {
     await checkForUpdates('command')
 
     expect(updateState.status).toBe('idle')
     expect(updateState.failure).toBeNull()
     expect(updateState.noBuild).toBe(true)
     expect(formatUpdateStatus(updateState)).toBe(
-      'This build of Cmdr can’t check for updates right now. Try again later.',
+      'There’s a newer Cmdr, but not for this system yet. Check again later.',
     )
   })
 

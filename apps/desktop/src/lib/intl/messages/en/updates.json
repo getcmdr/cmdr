@@ -190,9 +190,9 @@
     "screenshot": "settings-updates.png",
     "screenshotNote": "App-update messaging. The status line renders in the Settings > Updates & privacy panel pictured here, and the update toasts appear while that check runs. Version numbers are substituted, not translated."
   },
-  "updates.status.noBuildForThisPlatform": "This build of Cmdr can’t check for updates right now. Try again later.",
+  "updates.status.noBuildForThisPlatform": "There’s a newer Cmdr, but not for this system yet. Check again later.",
   "@updates.status.noBuildForThisPlatform": {
-    "description": "Status line after an update check that found a newer release which isn't available for this person's operating system or processor yet, so this copy of Cmdr can't update for now. Shown in Settings > Updates and in the toast after the person picks \"Check for updates\" from the menu. Not an error and not \"up to date\": a calm, honest note that there's nothing this build can install at the moment. \"Build\" means this installed copy of the app (for this OS and processor); use your language's everyday word for it. \"Cmdr\" is the product name; do not translate it.",
+    "description": "Status line after an update check that WORKED and found a newer release of Cmdr, which has no build for this person's operating system or processor yet, so there's nothing this copy can install for now. Shown in Settings > Updates and in the toast after the person picks \"Check for updates\" from the menu. Not an error and not \"up to date\": a calm, honest note that a newer version exists but not for this system yet, and that a later check may find it. \"System\" means this computer's operating system and processor; use your language's everyday word. \"Cmdr\" is the product name; do not translate it.",
     "screenshot": "settings-updates.png",
     "screenshotNote": "App-update messaging. The status line renders in the Settings > Updates & privacy panel pictured here, and the update toasts appear while that check runs. Version numbers are substituted, not translated."
   },
