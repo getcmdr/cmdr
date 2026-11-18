@@ -1,4 +1,5 @@
 import { Hono, type Context } from 'hono'
+import { parseClientOs, type ClientOs } from '../client-os'
 import { enforceIpRateLimit, readCappedBody, type Bindings } from '../types'
 import { versionPattern } from './telemetry'
 
@@ -44,12 +45,15 @@ interface Heartbeat {
   events?: unknown[] | null
   /** Optional. `"homebrew"` or `"direct"`, how the app was installed. Anything else is stored as NULL. */
   installChannel?: unknown
+  /** Optional. `"macos"`, `"windows"`, or `"linux"` (`parseClientOs`). Anything else is stored as NULL. */
+  os?: unknown
 }
 
 /** The per-install facts one beat contributes, each NULL when this beat doesn't know it. */
 export interface BeatInstallFacts {
   country: string | null
   installChannel: 'homebrew' | 'direct' | null
+  os: ClientOs | null
 }
 
 /** One feature event that passed validation, with its timestamp normalized to UTC. */
@@ -67,8 +71,8 @@ interface RelayedEvent {
  * `created_at` is bound, never left to the column default: the same value lands in
  * `install_summary.first_beat_at` on an install's first beat, so the two can't straddle a midnight.
  */
-const insertHeartbeatSql = `INSERT INTO heartbeat (anal_id, app_version, os_version, arch, build_mode, config_json, uptime_seconds, country, install_channel, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+const insertHeartbeatSql = `INSERT INTO heartbeat (anal_id, app_version, os_version, arch, build_mode, config_json, uptime_seconds, country, install_channel, created_at, os)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 /**
  * Keeps `install_summary` in step with the beat, in the beat's own batch. The first beat inserts the
@@ -305,6 +309,7 @@ heartbeat.post('/heartbeat', async (c) => {
   const facts: BeatInstallFacts = {
     country: parseCountry((c.req.raw.cf as { country?: unknown } | undefined)?.country),
     installChannel: parseInstallChannel(beat.installChannel),
+    os: parseClientOs(beat.os),
   }
 
   const db = c.env.TELEMETRY_DB
@@ -322,6 +327,7 @@ heartbeat.post('/heartbeat', async (c) => {
         facts.country,
         facts.installChannel,
         createdAt,
+        facts.os,
       ),
     db.prepare(upsertInstallSummarySql).bind(beat.analId, createdAt, facts.country, facts.installChannel),
   ]

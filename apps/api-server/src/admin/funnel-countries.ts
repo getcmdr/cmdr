@@ -36,6 +36,8 @@ interface DownloadCountryRow {
   country: string | null
   uaFamily: string | null
   userAgent: string | null
+  /** The OS of the file fetched, which a NULL family's fallback classification is judged against. */
+  os: string
   count: number
 }
 
@@ -84,10 +86,10 @@ export async function queryCountryRows(
   const [downloads, installs, retained] = await Promise.all([
     db
       .prepare(
-        `SELECT country, ua_family AS uaFamily, user_agent AS userAgent, COUNT(*) AS count
+        `SELECT country, ua_family AS uaFamily, user_agent AS userAgent, os, COUNT(*) AS count
            FROM downloads
            WHERE date(created_at) >= ?1 AND date(created_at) < ?2
-           GROUP BY country, ua_family, user_agent`,
+           GROUP BY country, ua_family, user_agent, os`,
       )
       .bind(sinceDate, until)
       .all<DownloadCountryRow>(),

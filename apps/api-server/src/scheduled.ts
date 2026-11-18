@@ -195,11 +195,11 @@ async function handleRetentionSweep(env: Bindings): Promise<void> {
   // count, and there'd be no way back.
   await db
     .prepare(
-      `INSERT OR IGNORE INTO downloads_daily_unique (date, app_version, arch, country, source, unique_downloaders)
-           SELECT date(created_at), app_version, arch, country, COALESCE(source, 'other'), COUNT(DISTINCT hashed_ip)
+      `INSERT OR IGNORE INTO downloads_daily_unique (date, app_version, os, arch, country, source, unique_downloaders)
+           SELECT date(created_at), app_version, os, arch, country, COALESCE(source, 'other'), COUNT(DISTINCT hashed_ip)
            FROM downloads
            WHERE created_at < ?1 AND hashed_ip IS NOT NULL
-           GROUP BY date(created_at), app_version, arch, country, COALESCE(source, 'other')`,
+           GROUP BY date(created_at), app_version, os, arch, country, COALESCE(source, 'other')`,
     )
     .bind(cutoff(downloadIdentifierRetentionDays))
     .run()

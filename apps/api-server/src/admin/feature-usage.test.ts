@@ -21,7 +21,7 @@ import {
 type DatabaseSync = SqliteD1['sqlite']
 
 function beat(db: DatabaseSync, id: string, at: string): void {
-  db.prepare(insertHeartbeatSql).run(id, '1.2.3', '26.0', 'aarch64', 'release', null, null, null, null, at)
+  db.prepare(insertHeartbeatSql).run(id, '1.2.3', '26.0', 'aarch64', 'release', null, null, null, null, at, 'macos')
   db.prepare(upsertInstallSummarySql).run(id, at, null, null)
 }
 

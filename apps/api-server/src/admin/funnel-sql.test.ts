@@ -20,7 +20,19 @@ interface Beat {
 
 function beat(db: DatabaseSync, b: Beat): void {
   const { id, at, country = null, channel = null } = b
-  db.prepare(insertHeartbeatSql).run(id, '1.2.3', '26.0', 'aarch64', 'release', null, null, country, channel, at)
+  db.prepare(insertHeartbeatSql).run(
+    id,
+    '1.2.3',
+    '26.0',
+    'aarch64',
+    'release',
+    null,
+    null,
+    country,
+    channel,
+    at,
+    'macos',
+  )
   db.prepare(upsertInstallSummarySql).run(id, at, country, channel)
 }
 
@@ -211,6 +223,7 @@ describe('the per-day funnel assembled from real SQLite', () => {
         downloadsBySource: { website: 1, homebrew: 0, other: 0 },
         downloadsByRef: { '(none)': 1 },
         downloadsByReferer: { '(none)': 1 },
+        downloadsByOs: { macos: 1 },
         downloadsByUaFamily: { bot: 1 },
         newInstalls: 1,
         newInstallsByChannel: { homebrew: 1, direct: 0, unknown: 0 },
@@ -225,6 +238,7 @@ describe('the per-day funnel assembled from real SQLite', () => {
         downloadsBySource: { website: 1, homebrew: 0, other: 0 },
         downloadsByRef: { '(none)': 1 },
         downloadsByReferer: { '(none)': 1 },
+        downloadsByOs: { macos: 1 },
         downloadsByUaFamily: { human: 1 },
         newInstalls: 1,
         newInstallsByChannel: { homebrew: 0, direct: 1, unknown: 0 },

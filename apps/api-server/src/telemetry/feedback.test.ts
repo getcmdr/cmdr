@@ -78,7 +78,15 @@ describe('POST /feedback', () => {
     expect(res.status).toBe(204)
     expect(calls).toHaveLength(1)
     expect(calls[0].sql).toContain('INSERT INTO feedback')
-    expect(calls[0].args).toEqual([validBody.feedback, null, validBody.appVersion, validBody.osVersion, null, null])
+    expect(calls[0].args).toEqual([
+      validBody.feedback,
+      null,
+      validBody.appVersion,
+      validBody.osVersion,
+      null,
+      null,
+      null,
+    ])
   })
 
   it('stores the optional reply-to email and buildMode', async () => {
@@ -95,6 +103,7 @@ describe('POST /feedback', () => {
       validBody.osVersion,
       'debug',
       null,
+      null,
     ])
   })
 
@@ -106,7 +115,20 @@ describe('POST /feedback', () => {
 
     expect(res.status).toBe(204)
     expect(calls[0].sql).toContain('error_report_id')
-    expect(calls[0].args.at(-1)).toBe('ERR-AB23X')
+    expect(calls[0].args.at(-2)).toBe('ERR-AB23X')
+  })
+
+  it('stores the OS the app names, and NULL for an unknown one rather than a 400', async () => {
+    for (const [os, stored] of [
+      ['windows', 'windows'],
+      ['freebsd', null],
+      [null, null],
+    ] as const) {
+      const { db, calls } = createRecordingD1()
+      const res = await postFeedback({ ...validBody, os }, createBindings({ TELEMETRY_DB: db }))
+      expect(res.status).toBe(204)
+      expect(calls[0].args.at(-1)).toBe(stored)
+    }
   })
 
   it('returns 400 for an error report id that is not an ERR-XXXXX', async () => {

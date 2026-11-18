@@ -105,6 +105,19 @@ describe('POST /crash-report', () => {
     expect(bindArgs[8]).toBeNull() // shortId (not supplied by validCrashReport)
   })
 
+  it.each([
+    ['windows', 'windows'],
+    ['freebsd', null],
+    [null, null],
+    [undefined, null],
+  ])('stores os %j as %j, never refusing the report over it', async (os, stored) => {
+    const { db, bindMock } = createMockD1()
+    const res = await postCrashReport({ ...validCrashReport, os }, createBindings({ TELEMETRY_DB: db }))
+
+    expect(res.status).toBe(204)
+    expect(bindMock.mock.calls[0].at(-1)).toBe(stored)
+  })
+
   it('stores buildMode and shortId when supplied', async () => {
     const { db, bindMock } = createMockD1()
     const bindings = createBindings({ TELEMETRY_DB: db })
