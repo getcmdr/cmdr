@@ -1863,19 +1863,27 @@
   },
   "askCmdr.renameReview.nameNotAllowedBadge": "(not allowed here)",
   "@askCmdr.renameReview.nameNotAllowedBadge": {
-    "description": "Compact red warning badge beside a bulk rename row whose proposed name the folder’s drive can’t store: too long for it, or a character or ending that drive refuses. The row is blocked. Keep the parentheses."
+    "description": "Compact red warning badge beside a bulk rename row whose proposed name the folder’s drive can’t store: too long for it, or a character or ending that drive refuses. The row is blocked. Keep the parentheses.",
+    "screenshot": "bulk-rename-review-all-allowed.png",
+    "screenshotNote": "The rename review, pictured here. Your string is one of its states: checking the names, a check that didn’t finish, or a note about a name it couldn’t keep."
   },
   "askCmdr.renameReview.nameNotAllowedTooltip": "This drive can’t store this name. Edit the name to rename this file.",
   "@askCmdr.renameReview.nameNotAllowedTooltip": {
-    "description": "Accessible tooltip for the not-allowed badge in the bulk rename review. Explains that the folder’s drive refuses the proposed name (too long, or a character it can’t store), and that editing the name in the row unblocks it."
+    "description": "Accessible tooltip for the not-allowed badge in the bulk rename review. Explains that the folder’s drive refuses the proposed name (too long, or a character it can’t store), and that editing the name in the row unblocks it.",
+    "screenshot": "bulk-rename-review-all-allowed.png",
+    "screenshotNote": "The rename review, pictured here. Your string is one of its states: checking the names, a check that didn’t finish, or a note about a name it couldn’t keep."
   },
   "askCmdr.renameReview.notPortableBadge": "(Windows)",
   "@askCmdr.renameReview.notPortableBadge": {
-    "description": "Compact yellow warning badge beside a proposed filename that the folder’s network share or Windows-formatted drive stores fine, but Windows won’t read as typed (a \":\" in it, a name ending in a period, or a name Windows keeps for devices like CON). The row still renames. Keep the parentheses and keep \"Windows\" as is."
+    "description": "Compact yellow warning badge beside a proposed filename that the folder’s network share or Windows-formatted drive stores fine, but Windows won’t read as typed (a \":\" in it, a name ending in a period, or a name Windows keeps for devices like CON). The row still renames. Keep the parentheses and keep \"Windows\" as is.",
+    "screenshot": "bulk-rename-review-all-allowed.png",
+    "screenshotNote": "The rename review, pictured here. Your string is one of its states: checking the names, a check that didn’t finish, or a note about a name it couldn’t keep."
   },
   "askCmdr.renameReview.notPortableTooltip": "This name won’t work on Windows. Cmdr still renames the file.",
   "@askCmdr.renameReview.notPortableTooltip": {
-    "description": "Accessible tooltip for the Windows warning badge in the bulk rename review. Explains that the drive takes the name but Windows can’t read it as typed, and that the rename still goes ahead. Keep \"Windows\" as is."
+    "description": "Accessible tooltip for the Windows warning badge in the bulk rename review. Explains that the drive takes the name but Windows can’t read it as typed, and that the rename still goes ahead. Keep \"Windows\" as is.",
+    "screenshot": "bulk-rename-review-all-allowed.png",
+    "screenshotNote": "The rename review, pictured here. Your string is one of its states: checking the names, a check that didn’t finish, or a note about a name it couldn’t keep."
   },
   "askCmdr.renameReview.extensionBadge": "(extension)",
   "@askCmdr.renameReview.extensionBadge": {
