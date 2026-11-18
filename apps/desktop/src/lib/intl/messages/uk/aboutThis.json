@@ -1227,9 +1227,9 @@
   "@aboutThis.verdict.hint.dismiss": {
     "sourceHash": "f18aa5e"
   },
-  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, linuxGnome {Hide this hint. You can bring it back in Preferences > Advanced.} linuxKde {Hide this hint. You can bring it back in Configure Cmdr > Advanced.} other {Сховати цю підказку. Повернути її можна в Параметрах > Експертні.}}",
+  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, linuxGnome {Сховати цю підказку. Повернути її можна в Налаштуваннях > Експертні.} linuxKde {Сховати цю підказку. Повернути її можна в розділі «Налаштувати Cmdr > Експертні».} other {Сховати цю підказку. Повернути її можна в Параметрах > Експертні.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "sourceHash": "6a3a4b3"
+    "sourceHash": "22d9d84"
   },
   "aboutThis.action.continueInAskCmdr": "Продовжити в Ask Cmdr",
   "@aboutThis.action.continueInAskCmdr": {

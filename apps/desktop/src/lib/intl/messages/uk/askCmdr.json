@@ -705,21 +705,21 @@
   "@askCmdr.turnStats.stopped": {
     "sourceHash": "0f6ea99"
   },
-  "askCmdr.error.noKey": "{platform, select, linuxGnome {Add your API key in preferences to start chatting.} other {Додайте свій ключ API в Параметрах, щоб почати чат.}}",
+  "askCmdr.error.noKey": "{platform, select, linuxGnome {Додайте свій ключ API в Налаштуваннях, щоб почати чат.} other {Додайте свій ключ API в Параметрах, щоб почати чат.}}",
   "@askCmdr.error.noKey": {
-    "sourceHash": "0a78f37"
+    "sourceHash": "124df6a"
   },
-  "askCmdr.error.notConfigured": "{platform, select, linuxGnome {Chatting needs an AI provider. Turn one on in preferences.} other {Для чату потрібен постачальник ШІ. Увімкніть його в Параметрах.}}",
+  "askCmdr.error.notConfigured": "{platform, select, linuxGnome {Для чату потрібен постачальник ШІ. Увімкніть його в Налаштуваннях.} other {Для чату потрібен постачальник ШІ. Увімкніть його в Параметрах.}}",
   "@askCmdr.error.notConfigured": {
-    "sourceHash": "2d55d2c"
+    "sourceHash": "54fb846"
   },
   "askCmdr.error.askCmdrOff": "Ask Cmdr вимкнено.",
   "@askCmdr.error.askCmdrOff": {
     "sourceHash": "6599ee1"
   },
-  "askCmdr.error.noCloudConsent": "{platform, select, linuxGnome {Cloud AI is off. Allow it in Preferences > AI.} linuxKde {Cloud AI is off. Allow it in Configure Cmdr > AI.} other {Хмарний ШІ вимкнено. Дозвольте його в Параметрах > ШІ.}}",
+  "askCmdr.error.noCloudConsent": "{platform, select, linuxGnome {Хмарний ШІ вимкнено. Дозвольте його в Налаштуваннях > ШІ.} linuxKde {Хмарний ШІ вимкнено. Дозвольте його в розділі «Налаштувати Cmdr > ШІ».} other {Хмарний ШІ вимкнено. Дозвольте його в Параметрах > ШІ.}}",
   "@askCmdr.error.noCloudConsent": {
-    "sourceHash": "cd2af1d"
+    "sourceHash": "6490317"
   },
   "askCmdr.error.managedByOrganization": "Ваша установа не дозволяє цей сервіс ШІ. Ваш ІТ-відділ підкаже, якими сервісами можна користуватися.",
   "@askCmdr.error.managedByOrganization": {
@@ -737,29 +737,29 @@
   "@askCmdr.error.timeout": {
     "sourceHash": "22cd775"
   },
-  "askCmdr.error.authFailed": "{platform, select, linuxGnome {The provider didn’t accept your API key. Check it in preferences.} other {Постачальник не прийняв ваш ключ API. Перевірте його в Параметрах.}}",
+  "askCmdr.error.authFailed": "{platform, select, linuxGnome {Постачальник не прийняв ваш ключ API. Перевірте його в Налаштуваннях.} other {Постачальник не прийняв ваш ключ API. Перевірте його в Параметрах.}}",
   "@askCmdr.error.authFailed": {
-    "sourceHash": "a2302ca"
+    "sourceHash": "9e02aad"
   },
   "askCmdr.error.rateLimited": "Постачальник зайнятий або у вас вичерпано квоту. Спробуйте ще раз трохи згодом.",
   "@askCmdr.error.rateLimited": {
     "sourceHash": "7b441e9"
   },
-  "askCmdr.error.modelNotInPlan.named": "{platform, select, linuxGnome {Your {provider} plan doesn’t include this model. Pick another model in preferences, or upgrade your plan.} other {Ваш тариф у постачальника {provider} не включає цю модель. Виберіть іншу модель у Параметрах або перейдіть на вищий тариф.}}",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, linuxGnome {Ваш тариф у постачальника {provider} не включає цю модель. Виберіть іншу модель у Налаштуваннях або перейдіть на вищий тариф.} other {Ваш тариф у постачальника {provider} не включає цю модель. Виберіть іншу модель у Параметрах або перейдіть на вищий тариф.}}",
   "@askCmdr.error.modelNotInPlan.named": {
-    "sourceHash": "9f2c237"
+    "sourceHash": "efbf38b"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, linuxGnome {Your plan with this AI provider doesn’t include this model. Pick another model in preferences, or upgrade your plan.} other {Ваш тариф у цього постачальника ШІ не включає цю модель. Виберіть іншу модель у Параметрах або перейдіть на вищий тариф.}}",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, linuxGnome {Ваш тариф у цього постачальника ШІ не включає цю модель. Виберіть іншу модель у Налаштуваннях або перейдіть на вищий тариф.} other {Ваш тариф у цього постачальника ШІ не включає цю модель. Виберіть іншу модель у Параметрах або перейдіть на вищий тариф.}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
-    "sourceHash": "b90bf30"
+    "sourceHash": "6808950"
   },
-  "askCmdr.error.requestTooLarge.named": "{platform, select, linuxGnome {{provider} turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan with {provider}, or pick another provider in preferences.} other {Постачальник {provider} відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф у постачальника {provider} або виберіть іншого постачальника в Параметрах.}}",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, linuxGnome {Постачальник {provider} відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф у постачальника {provider} або виберіть іншого постачальника в Налаштуваннях.} other {Постачальник {provider} відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф у постачальника {provider} або виберіть іншого постачальника в Параметрах.}}",
   "@askCmdr.error.requestTooLarge.named": {
-    "sourceHash": "f878555"
+    "sourceHash": "b1850b3"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, linuxGnome {Your AI provider turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan, or pick another provider in preferences.} other {Ваш постачальник ШІ відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф або виберіть іншого постачальника в Параметрах.}}",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, linuxGnome {Ваш постачальник ШІ відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф або виберіть іншого постачальника в Налаштуваннях.} other {Ваш постачальник ШІ відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф або виберіть іншого постачальника в Параметрах.}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
-    "sourceHash": "b81536f"
+    "sourceHash": "455449e"
   },
   "askCmdr.error.providerBusy.named": "Постачальник {provider} зараз надто зайнятий, щоб відповісти, навіть після кількох спроб. Зачекайте кілька хвилин, а потім надішліть повідомлення ще раз.",
   "@askCmdr.error.providerBusy.named": {
@@ -977,17 +977,17 @@
   "@askCmdr.composer.sendNeedsProvider": {
     "sourceHash": "9e6aba3"
   },
-  "askCmdr.providerNotice.off": "{platform, select, linuxGnome {Ask Cmdr needs an AI provider to chat. Pick one in Preferences.} linuxKde {Ask Cmdr needs an AI provider to chat. Pick one in Configure Cmdr.} other {Для чату Ask Cmdr потрібен постачальник ШІ. Виберіть його в Параметрах.}}",
+  "askCmdr.providerNotice.off": "{platform, select, linuxGnome {Для чату Ask Cmdr потрібен постачальник ШІ. Виберіть його в Налаштуваннях.} linuxKde {Для чату Ask Cmdr потрібен постачальник ШІ. Виберіть його у вікні «Налаштувати Cmdr».} other {Для чату Ask Cmdr потрібен постачальник ШІ. Виберіть його в Параметрах.}}",
   "@askCmdr.providerNotice.off": {
-    "sourceHash": "8696c99"
+    "sourceHash": "6e9f73c"
   },
-  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, linuxGnome {Your cloud AI provider needs an API key before Ask Cmdr can chat. Add it in Preferences.} linuxKde {Your cloud AI provider needs an API key before Ask Cmdr can chat. Add it in Configure Cmdr.} other {Для чату Ask Cmdr вашому постачальнику хмарного ШІ потрібен ключ API. Додайте його в Параметрах.}}",
+  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, linuxGnome {Для чату Ask Cmdr вашому постачальнику хмарного ШІ потрібен ключ API. Додайте його в Налаштуваннях.} linuxKde {Для чату Ask Cmdr вашому постачальнику хмарного ШІ потрібен ключ API. Додайте його у вікні «Налаштувати Cmdr».} other {Для чату Ask Cmdr вашому постачальнику хмарного ШІ потрібен ключ API. Додайте його в Параметрах.}}",
   "@askCmdr.providerNotice.cloudNeedsKey": {
-    "sourceHash": "dccf257"
+    "sourceHash": "16dc8a0"
   },
-  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, linuxGnome {Your cloud AI provider needs an address before Ask Cmdr can chat. Add it in Preferences.} linuxKde {Your cloud AI provider needs an address before Ask Cmdr can chat. Add it in Configure Cmdr.} other {Для чату Ask Cmdr вашому постачальнику хмарного ШІ потрібна адреса сервера. Додайте її в Параметрах.}}",
+  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, linuxGnome {Для чату Ask Cmdr вашому постачальнику хмарного ШІ потрібна адреса сервера. Додайте її в Налаштуваннях.} linuxKde {Для чату Ask Cmdr вашому постачальнику хмарного ШІ потрібна адреса сервера. Додайте її у вікні «Налаштувати Cmdr».} other {Для чату Ask Cmdr вашому постачальнику хмарного ШІ потрібна адреса сервера. Додайте її в Параметрах.}}",
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
-    "sourceHash": "1b1682b"
+    "sourceHash": "1ae5e35"
   },
   "askCmdr.providerNotice.localNotSetUp": "Локальний ШІ ще не викачано, тож чат Ask Cmdr не працює. Налаштуйте його в Параметрах.",
   "@askCmdr.providerNotice.localNotSetUp": {
@@ -1021,9 +1021,9 @@
   "@askCmdr.gate.cloudOff.title": {
     "sourceHash": "2e56781"
   },
-  "askCmdr.gate.cloudOff.body": "{platform, select, linuxGnome {Ask Cmdr talks to the cloud AI service you set up. Allow cloud AI in Preferences first, and you’re ready to chat.} linuxKde {Ask Cmdr talks to the cloud AI service you set up. Allow cloud AI in Configure Cmdr first, and you’re ready to chat.} other {Ask Cmdr спілкується із сервісом хмарного ШІ, який ви налаштували. Спершу ввімкніть «Дозволити хмарний ШІ» в Параметрах, і можна починати чат.}}",
+  "askCmdr.gate.cloudOff.body": "{platform, select, linuxGnome {Ask Cmdr спілкується із сервісом хмарного ШІ, який ви налаштували. Спершу ввімкніть «Дозволити хмарний ШІ» в Налаштуваннях, і можна починати чат.} linuxKde {Ask Cmdr спілкується із сервісом хмарного ШІ, який ви налаштували. Спершу ввімкніть «Дозволити хмарний ШІ» у вікні «Налаштувати Cmdr», і можна починати чат.} other {Ask Cmdr спілкується із сервісом хмарного ШІ, який ви налаштували. Спершу ввімкніть «Дозволити хмарний ШІ» в Параметрах, і можна починати чат.}}",
   "@askCmdr.gate.cloudOff.body": {
-    "sourceHash": "d3d3252"
+    "sourceHash": "076c788"
   },
   "askCmdr.gate.cloudOff.openSettings": "Перейти до параметрів ШІ",
   "@askCmdr.gate.cloudOff.openSettings": {
@@ -1410,9 +1410,9 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "sourceHash": "ae245b9"
   },
-  "askCmdr.wake.needsApiKey": "{platform, select, linuxGnome {AI features are on, but they need a provider to work. Click to set one up in preferences.} other {Функції ШІ увімкнено, але для роботи їм потрібен постачальник. Клацніть, щоб налаштувати його в Параметрах.}}",
+  "askCmdr.wake.needsApiKey": "{platform, select, linuxGnome {Функції ШІ увімкнено, але для роботи їм потрібен постачальник. Клацніть, щоб вибрати його в Налаштуваннях.} other {Функції ШІ увімкнено, але для роботи їм потрібен постачальник. Клацніть, щоб налаштувати його в Параметрах.}}",
   "@askCmdr.wake.needsApiKey": {
-    "sourceHash": "0f71f75"
+    "sourceHash": "2f1b3e9"
   },
   "askCmdr.wakeDigest.summary": "Що змінилося в {foldersText} {folders, plural, one {папці} few {папках} many {папках} other {папки}}",
   "@askCmdr.wakeDigest.summary": {

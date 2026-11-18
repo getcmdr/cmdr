@@ -1628,7 +1628,7 @@
   },
   "settings.analytics.enabled.description": "{platform, select, windows {Будь ласка, увімкніть це, щоб допомогти нам побачити, які функції важливі під час відкритого бета-тестування.\nСтатистика привʼязана не до вашого імені чи е‑адреси, а до випадкового ідентифікатора.\nCmdr ніколи не надсилає назви файлів, шляхи, пошукові запити чи запити до ШІ.\nКоли вимкнено, Cmdr не надсилає жодної статистики.} other {Будь ласка, увімкніть це, щоб допомогти нам побачити, які функції важливі під час відкритого бета-тестування.\nСтатистика привʼязана не до вашого імені чи е‑адреси, а до випадкового ідентифікатора.\nCmdr ніколи не надсилає назви файлів, шляхи, пошукові запити чи запити до ШІ.\nКоли вимкнено, Cmdr не надсилає жодної статистики.}}",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
+    "sourceHash": "dbbd8c8"
   },
   "settings.analytics.enabled.keywords": "аналітика, статистика, приватність, конфіденційність, телеметрія, бета, відстеження",
   "@settings.analytics.enabled.keywords": {
@@ -1652,7 +1652,7 @@
   },
   "settings.updates.crashReports.description": "{platform, select, macos {Автоматично надсилати звіт, коли Cmdr аварійно завершує роботу або стикається з проблемою у фоновому режимі. Звіт містить версію програми, версію macOS і місце в коді, де виникла проблема. Жодних назв файлів чи особистих даних.} windows {Автоматично надсилати звіт, коли Cmdr аварійно завершує роботу або стикається з проблемою у фоновому режимі. Звіт містить версію програми, версію Windows і місце в коді, де виникла проблема. Жодних назв файлів чи особистих даних.} other {Автоматично надсилати звіт, коли Cmdr аварійно завершує роботу або стикається з проблемою у фоновому режимі. Звіт містить версію програми, дистрибутив Linux і його версію та місце в коді, де виникла проблема. Жодних назв файлів чи особистих даних.}}",
   "@settings.updates.crashReports.description": {
-    "sourceHash": "abfdc61"
+    "sourceHash": "3042746"
   },
   "settings.updates.crashReports.keywords": "аварія, збій, вилітає, звіт, приватність, телеметрія, вада, помилка",
   "@settings.updates.crashReports.keywords": {
@@ -1992,7 +1992,7 @@
   },
   "settings.advanced.logLlmCalls.description": "{platform, select, macos {Зберігає кожен запит до ШІ та відповідь на нього в локальну папку (llm-logs) для налагодження. Ці файли залишаються на вашому Mac і містять назви файлів і шляхи, які Cmdr надсилає вашому постачальнику.} windows {Зберігає кожен запит до ШІ та відповідь на нього в локальну папку (llm-logs) для налагодження. Ці файли залишаються на вашому ПК і містять назви файлів і шляхи, які Cmdr надсилає вашому постачальнику.} other {Зберігає кожен запит до ШІ та відповідь на нього в локальну папку (llm-logs) для налагодження. Ці файли залишаються на вашому компʼютері і містять назви файлів і шляхи, які Cmdr надсилає вашому постачальнику.}}",
   "@settings.advanced.logLlmCalls.description": {
-    "sourceHash": "0f9361b"
+    "sourceHash": "427e138"
   },
   "settings.advanced.logLlmCalls.keywords": "ШІ, журнал, налагодження, запит, відповідь, промпт, модель",
   "@settings.advanced.logLlmCalls.keywords": {
@@ -2504,13 +2504,13 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr uses the AI provider and key you set up in Preferences › AI ({provider}).} linuxKde {Cmdr uses the AI provider and key you set up in Configure Cmdr › AI ({provider}).} other {Cmdr використовує постачальника ШІ та ключ, які ви налаштували в Параметрах › ШІ ({provider}).}}",
+  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr використовує постачальника ШІ та ключ, які ви налаштували в Налаштуваннях › ШІ ({provider}).} linuxKde {Cmdr використовує постачальника ШІ та ключ, які ви налаштували в розділі «Налаштувати Cmdr › ШІ» ({provider}).} other {Cmdr використовує постачальника ШІ та ключ, які ви налаштували в Параметрах › ШІ ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
-    "sourceHash": "9442b09"
+    "sourceHash": "f4ea2f0"
   },
-  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Turn on an AI provider in Preferences › AI to start chatting.} linuxKde {Turn on an AI provider in Configure Cmdr › AI to start chatting.} other {Увімкніть постачальника ШІ в Параметрах › ШІ, щоб почати чат.}}",
+  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Увімкніть постачальника ШІ в Налаштуваннях › ШІ, щоб почати чат.} linuxKde {Увімкніть постачальника ШІ в розділі «Налаштувати Cmdr › ШІ», щоб почати чат.} other {Увімкніть постачальника ШІ в Параметрах › ШІ, щоб почати чат.}}",
   "@settings.askCmdr.provider.off": {
-    "sourceHash": "5cc1481"
+    "sourceHash": "0196a5c"
   },
   "settings.askCmdr.interactiveModel.label": "Модель для Ask Cmdr",
   "@settings.askCmdr.interactiveModel.label": {
@@ -2954,9 +2954,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, linuxGnome {Preferences sections} other {Розділи параметрів}}",
+  "settings.sidebar.sections": "{platform, select, linuxGnome {Розділи налаштувань} other {Розділи параметрів}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "4fa3c2e"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Немає параметрів, що збігаються} one {{countText} розділ має збіги} few {{countText} розділи мають збіги} many {{countText} розділів мають збіги} other {{countText} розділу мають збіги}}",
   "@settings.sidebar.matchCount": {
@@ -3210,7 +3210,7 @@
   },
   "settings.securityLog.enabled.description": "{platform, select, macos {Зберігати на цьому Mac невеликий файл, де записано важливі для безпеки зміни й відмови, як-от згоду на хмарний ШІ, інстальоване оновлення чи програму, якій сервер MCP відмовив у доступі. У ньому немає назв файлів, їхнього вмісту чи паролів, і він ніколи не залишає ваш Mac.} windows {Зберігати на цьому ПК невеликий файл, де записано важливі для безпеки зміни й відмови, як-от згоду на хмарний ШІ, інстальоване оновлення чи програму, якій сервер MCP відмовив у доступі. У ньому немає назв файлів, їхнього вмісту чи паролів, і він ніколи не залишає ваш ПК.} other {Зберігати на цьому компʼютері невеликий файл, де записано важливі для безпеки зміни й відмови, як-от згоду на хмарний ШІ, інстальоване оновлення чи програму, якій сервер MCP відмовив у доступі. У ньому немає назв файлів, їхнього вмісту чи паролів, і він ніколи не залишає ваш компʼютер.}}",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
+    "sourceHash": "7086b00"
   },
   "settings.securityLog.enabled.keywords": "безпека, аудит, журнал, лог, події, доступ, приватність, конфіденційність",
   "@settings.securityLog.enabled.keywords": {
@@ -3425,9 +3425,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "{platform, select, linuxGnome {Preferences} linuxKde {Configure – Cmdr} other {Параметри}}",
+  "settings.window.title": "{platform, select, linuxGnome {Налаштування} linuxKde {Налаштовування – Cmdr} other {Параметри}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "80cee55"
   },
   "settings.window.loading": "Завантаження параметрів…",
   "@settings.window.loading": {
@@ -3673,13 +3673,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, =1 {Один елемент вʼязки з назвою «{itemName}» у програмі «Ключар»} one {{countText} елемент вʼязки з назвою «{itemName}» у програмі «Ключар»} few {{countText} елементи вʼязки з назвою «{itemName}» у програмі «Ключар»} many {{countText} елементів вʼязки з назвою «{itemName}» у програмі «Ключар»} other {{countText} елемента вʼязки з назвою «{itemName}» у програмі «Ключар»}}} windows {{count, plural, =1 {Один елемент з назвою «{itemName}» у Диспетчері облікових даних} one {{countText} елемент з назвою «{itemName}» у Диспетчері облікових даних} few {{countText} елементи з назвою «{itemName}» у Диспетчері облікових даних} many {{countText} елементів з назвою «{itemName}» у Диспетчері облікових даних} other {{countText} елемента з назвою «{itemName}» у Диспетчері облікових даних}}} linuxKde {{count, plural, =1 {Один елемент з назвою «{itemName}» у KWallet} one {{countText} елемент з назвою «{itemName}» у KWallet} few {{countText} елементи з назвою «{itemName}» у KWallet} many {{countText} елементів з назвою «{itemName}» у KWallet} other {{countText} елемента з назвою «{itemName}» у KWallet}}} other {{count, plural, =1 {Один елемент з назвою «{itemName}» у вашій вʼязці ключів} one {{countText} елемент з назвою «{itemName}» у вашій вʼязці ключів} few {{countText} елементи з назвою «{itemName}» у вашій вʼязці ключів} many {{countText} елементів з назвою «{itemName}» у вашій вʼязці ключів} other {{countText} елемента з назвою «{itemName}» у вашій вʼязці ключів}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, =1 {Один елемент вʼязки з назвою «{itemName}» у програмі «Ключар»} one {{countText} елемент вʼязки з назвою «{itemName}» у програмі «Ключар»} few {{countText} елементи вʼязки з назвою «{itemName}» у програмі «Ключар»} many {{countText} елементів вʼязки з назвою «{itemName}» у програмі «Ключар»} other {{countText} елемента вʼязки з назвою «{itemName}» у програмі «Ключар»}}} windows {{count, plural, =1 {Один елемент з назвою «{itemName}» у Диспетчері облікових даних} one {{countText} елемент з назвою «{itemName}» у Диспетчері облікових даних} few {{countText} елементи з назвою «{itemName}» у Диспетчері облікових даних} many {{countText} елементів з назвою «{itemName}» у Диспетчері облікових даних} other {{countText} елемента з назвою «{itemName}» у Диспетчері облікових даних}}} linuxKde {{count, plural, =1 {Один елемент з назвою «{itemName}» у торбинці KDE} one {{countText} елемент з назвою «{itemName}» у торбинці KDE} few {{countText} елементи з назвою «{itemName}» у торбинці KDE} many {{countText} елементів з назвою «{itemName}» у торбинці KDE} other {{countText} елемента з назвою «{itemName}» у торбинці KDE}}} other {{count, plural, =1 {Один елемент з назвою «{itemName}» у вашій вʼязці ключів} one {{countText} елемент з назвою «{itemName}» у вашій вʼязці ключів} few {{countText} елементи з назвою «{itemName}» у вашій вʼязці ключів} many {{countText} елементів з назвою «{itemName}» у вашій вʼязці ключів} other {{countText} елемента з назвою «{itemName}» у вашій вʼязці ключів}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Будь-які елементи вʼязки з назвою «{itemName}» у програмі «Ключар»} windows {Будь-які елементи з назвою «{itemName}» у Диспетчері облікових даних} linuxKde {Будь-які елементи з назвою «{itemName}» у KWallet} other {Будь-які елементи з назвою «{itemName}» у вашій вʼязці ключів}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Будь-які елементи вʼязки з назвою «{itemName}» у програмі «Ключар»} windows {Будь-які елементи з назвою «{itemName}» у Диспетчері облікових даних} linuxKde {Будь-які елементи з назвою «{itemName}» у торбинці KDE} other {Будь-які елементи з назвою «{itemName}» у вашій вʼязці ключів}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Вийти з Cmdr} other {Завершити Cmdr}}",
   "@settings.dataWipe.quit": {

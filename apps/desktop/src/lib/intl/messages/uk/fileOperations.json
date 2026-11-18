@@ -428,9 +428,9 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {Cmdr starts on this choice next time, and you can change it in Preferences. If it overwrites files, you’ll see a warning first.} linuxKde {Cmdr starts on this choice next time, and you can change it in Configure Cmdr. If it overwrites files, you’ll see a warning first.} other {Наступного разу Cmdr почне з цього вибору, а змінити його можна в Параметрах. Якщо він перезаписує файли, ви спершу побачите застереження.}}",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {Наступного разу Cmdr почне з цього вибору, а змінити його можна в Налаштуваннях. Якщо він перезаписує файли, ви спершу побачите застереження.} linuxKde {Наступного разу Cmdr почне з цього вибору, а змінити його можна у вікні «Налаштувати Cmdr». Якщо він перезаписує файли, ви спершу побачите застереження.} other {Наступного разу Cmdr почне з цього вибору, а змінити його можна в Параметрах. Якщо він перезаписує файли, ви спершу побачите застереження.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
-    "sourceHash": "c26d762"
+    "sourceHash": "d75e9f6"
   },
   "fileOperations.transferDialog.typeMismatchWarning": "У деяких конфліктах збігаються назви файлу й папки. Перезапис замінить елементи іншого типу, зокрема весь вміст папки.",
   "@fileOperations.transferDialog.typeMismatchWarning": {
@@ -1304,9 +1304,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Зберегти пароль у Вʼязці ключів} windows {Запамʼятати пароль} linuxKde {Зберегти пароль у KWallet} other {Зберегти пароль у вʼязці ключів}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Зберегти пароль у Вʼязці ключів} windows {Запамʼятати пароль} linuxKde {Зберегти пароль у торбинці KDE} other {Зберегти пароль у вʼязці ключів}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "8f125e3"
+    "sourceHash": "62783bd"
   },
   "fileOperations.resticPassword.checking": "Перевірка пароля…",
   "@fileOperations.resticPassword.checking": {
