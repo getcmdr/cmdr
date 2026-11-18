@@ -642,6 +642,9 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     `latest.json` (`latest.go`); without it Windows and Linux show no security notice (the update still installs). Once
     it's written, drop `securityAdvisories` from `NOT_WRITTEN_YET` in `crates/cmdr-update-manifest/src/tests.rs`
     (`scripts/release-assets/DETAILS.md` § Update payloads off macOS). Needs 6, 30.
+    - **Ship no `Policies` keys inside the MSIX**: a packaged app reads the real policy hive through a merged view with
+      the package's own keys, so a shipped key would mix into what admins set (Microsoft Learn's MSIX registry
+      virtualization page, read 2026-11-18). Task 57 holds the read-only half.
 53. [S] Windows. Release vetting and distribution: `deny.toml` triple, third-party notices and SBOM, checksums for both
     packages, and a winget manifest for the NSIS installer. Needs 52.
     - **The Group Policy template**: attach `apps/desktop/packaging/group-policy/` to each release as one zip
@@ -743,6 +746,9 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     opens the account and reviews the listing copy), Store submission automated from the release pipeline, the Store
     build's own updater off, and a check of where MSIX redirects Cmdr's data and cache folders so the data dir, the
     drive index, and "Delete all Cmdr data" all find them. Needs 52.
+    - **The Store build only reads policy keys, never writes them**: policies are the admin's, and a packaged app's
+      registry view is merged and virtualized (Microsoft Learn's MSIX registry virtualization page, read 2026-11-18).
+      Task 52 keeps `Policies` keys out of the package.
 58. [XS] Windows. The website's "Run anyway" download (D3 step 2): the unsigned NSIS installer on the download page with
     a short explainer of SmartScreen's "More info → Run anyway" step, next to the Store link. David reviews the copy.
     Needs 32, 52.
