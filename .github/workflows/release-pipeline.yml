@@ -1026,14 +1026,14 @@ jobs:
           version: v0.8.0
           sha256: 67a8e1d39421a5ef5309c7017327c6a70ea6215a0e56e47ec22a7e9ec3b914e6
 
-      # Every file this job hands on, under its published name (`guard`'s `uploads-windows`, plus
-      # the advisory list). The MSIX takes Partner Center's identity from
+      # Every file this job hands on, under its published name (`guard`'s `uploads-windows`). The
+      # advisory list isn't one: `windows-publish` takes it from its own checkout, so the updater key
+      # never signs bytes this job chose. The MSIX takes Partner Center's identity from
       # `apps/desktop/packaging/msix/identity.json`, and fails here while that's a placeholder.
-      - name: Make the Store package, the policy template, and the advisory list
+      - name: Make the Store package and the policy template
         env:
           TAG: ${{ github.ref_name }}
           UPLOADS: ${{ needs.guard.outputs.uploads-windows }}
-          ADVISORY_LIST: ${{ needs.guard.outputs.advisory-list }}
         run: |
           set -euo pipefail
           VERSION="${TAG#v}"
@@ -1043,12 +1043,14 @@ jobs:
           ./scripts/windows-package.sh msix -version "$VERSION" -exe "$RUNNER_TEMP/unbundled/Cmdr.exe" \
             -out "$OUT/Cmdr_${VERSION}_x64.msix"
           ./scripts/windows-package.sh group-policy -version "$VERSION" -out "$OUT/cmdr-group-policy-${VERSION}.zip"
-          cp apps/desktop/src-tauri/resources/security-advisories.json "$OUT/$ADVISORY_LIST"
           ./scripts/release-assets.sh vet-nsis -version "$VERSION" "$OUT/Cmdr_${VERSION}_x64-setup.exe"
-          # Exactly the planned files, so a renamed bundler output fails here, not at `publish`.
-          WANT=$(printf '%s\n' $UPLOADS "$ADVISORY_LIST" | sort)
-          GOT=$(ls "$OUT" | sort)
-          [ "$WANT" = "$GOT" ] || { echo "::error::Made $(echo $GOT), planned $(echo $WANT)."; exit 1; }
+          # Exactly the planned files, so a renamed bundler output fails here, early. This is only a
+          # convenience: `windows-publish` holds the artifact to the manifest itself (`stage`).
+          # shellcheck disable=SC2086 # the plan's space-separated names
+          WANT=$(printf '%s\n' $UPLOADS | sort)
+          GOT=$(find "$OUT" -mindepth 1 -maxdepth 1 -exec basename {} \; | sort)
+          # shellcheck disable=SC2086 # one line per name, joined for the message
+          [ "$WANT" = "$GOT" ] || { echo "::error::Made $(printf '%s ' $GOT), planned $(printf '%s ' $WANT)."; exit 1; }
           ls -l "$OUT"
 
       - name: Hand the Windows packages to the publish job
@@ -1059,11 +1061,15 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  # Signs the Windows updater payload and the advisory list (in `ci` mode) and puts the Windows
-  # files on the release, in the `release` environment for the updater key. It runs the Tauri
-  # signer and `gh`, nothing from the build. After macOS's `sign`, which creates the release in
-  # `ci` mode (`local` mode's `draft` made it already). In `local` mode it uploads no `.sig`:
-  # `release-finish.sh` signs `guard`'s `signed-files`, these included, on the laptop.
+  # Puts the Windows files on the release, and in `ci` mode signs the updater payload and the
+  # advisory list first, in the `release` environment for the updater key. The build job's artifact
+  # is its word only: this job takes from it exactly the files the release asset manifest names for
+  # Windows at this version (`release-assets.sh stage`, refusing anything else by name), writes the
+  # advisory list from its own checkout, vets the installer, and signs and uploads those names alone,
+  # the way `sign` takes exactly one `Cmdr` from each `compiled-*` artifact. It runs the Tauri signer,
+  # `gh`, and our stdlib-only Go, nothing from the build. After macOS's `sign`, which creates the
+  # release in `ci` mode (`local` mode's `draft` made it already). In `local` mode it uploads no
+  # `.sig`: `release-finish.sh` signs the Windows files on the laptop.
   windows-publish:
     name: Sign and upload the Windows packages
     needs: [guard, windows-build, sign]
@@ -1085,7 +1091,7 @@ jobs:
       - name: Install mise
         uses: ./.github/actions/install-mise
         with:
-          install_args: node pnpm
+          install_args: go node pnpm
 
       - name: Install the Tauri CLI
         # As in `sign`: the desktop app's packages with no install scripts; only the Tauri CLI runs.
@@ -1095,10 +1101,32 @@ jobs:
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: windows-x86_64
-          path: ${{ runner.temp }}/windows-x86_64
+          path: ${{ runner.temp }}/windows-artifact
 
-      # In `ci` mode, each signed file with the updater key; the installer with `--app-version`,
-      # since off macOS the updater binds the version to the signature (`guard`'s `signs-version`).
+      # Everything below reads the staged copy and the names this step outputs, never the artifact.
+      - name: Take exactly the planned Windows files
+        id: stage
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          ./scripts/release-assets.sh stage -version "${TAG#v}" -os windows -from "$RUNNER_TEMP/windows-artifact" \
+            -advisories apps/desktop/src-tauri/resources/security-advisories.json -out "$RUNNER_TEMP/windows-x86_64"
+
+      # The installer the updater would run must be this release's (`scripts/release-assets/nsis/nsis.go`),
+      # checked here, on the bytes this job signs and uploads, before any key is in reach.
+      - name: Vet the Windows installer
+        env:
+          TAG: ${{ github.ref_name }}
+          INSTALLERS: ${{ needs.guard.outputs.update-archives-windows }}
+        run: |
+          set -euo pipefail
+          paths=()
+          for name in $INSTALLERS; do paths+=("$RUNNER_TEMP/windows-x86_64/$name"); done
+          ./scripts/release-assets.sh vet-nsis -version "${TAG#v}" "${paths[@]}"
+
+      # In `ci` mode, each signed file `stage` named, with the updater key; the installer with
+      # `--app-version`, since off macOS the updater binds the version to the signature.
       - name: Sign the updater payload and the advisory list
         if: needs.guard.outputs.update-signing == 'ci'
         working-directory: ./apps/desktop
@@ -1106,25 +1134,29 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           TAG: ${{ github.ref_name }}
-          SIGNED: ${{ needs.guard.outputs.signed-files }}
-          SIGNS_VERSION: ${{ needs.guard.outputs.signs-version }}
+          SIGNED: ${{ steps.stage.outputs.signed }}
+          SIGNS_VERSION: ${{ steps.stage.outputs.signs-version }}
         run: |
           set -euo pipefail
           VERSION="${TAG#v}"
           DIR="$RUNNER_TEMP/windows-x86_64"
+          [ -n "$SIGNED" ] || { echo "::error::stage named no file to sign."; exit 1; }
           for name in $SIGNED; do
-            [ -f "$DIR/$name" ] || continue # a macOS archive, signed by `sign`
             args=()
             case " $SIGNS_VERSION " in *" $name "*) args=(--app-version "$VERSION") ;; esac
             pnpm exec tauri signer sign "${args[@]}" "$DIR/$name"
             [ -s "$DIR/$name.sig" ] || { echo "::error::No signature for $name."; exit 1; }
           done
 
+      # The staged names and, in `ci` mode, their signatures: nothing else, so `--clobber` (which
+      # replaces a half-saved asset on a retry) only ever touches this job's own files.
       - name: Upload the Windows packages to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
           MODE: ${{ needs.guard.outputs.update-signing }}
+          FILES: ${{ steps.stage.outputs.files }}
+          SIGNED: ${{ steps.stage.outputs.signed }}
         run: |
           set -euo pipefail
           FOUND=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
@@ -1135,7 +1167,13 @@ jobs:
             echo "::error::$TAG's release is published, but local signing builds into a draft."
             exit 1
           fi
-          ./scripts/release-upload.sh "$TAG" "$RELEASE_ID" "$RUNNER_TEMP"/windows-x86_64/*
+          DIR="$RUNNER_TEMP/windows-x86_64"
+          paths=()
+          for name in $FILES; do paths+=("$DIR/$name"); done
+          if [ "$MODE" = ci ]; then
+            for name in $SIGNED; do paths+=("$DIR/$name.sig"); done
+          fi
+          ./scripts/release-upload.sh "$TAG" "$RELEASE_ID" "${paths[@]}"
 
   # CycloneDX SBOMs for what ships inside the app: the Rust crate graph (one per arch, since
   # the two target triples resolve slightly different crates) and the frontend's npm packages.

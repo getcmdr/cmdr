@@ -8,9 +8,12 @@
 //	./scripts/release-assets.sh validate-latest -version X.Y.Z -assets release.json -sigs DIR -base-url URL [-newer-than X.Y.Z] -file latest.json
 //	./scripts/release-assets.sh checksum-files -version X.Y.Z -assets release.json
 //	./scripts/release-assets.sh vet-nsis -version X.Y.Z Cmdr_X.Y.Z_x64-setup.exe
+//	./scripts/release-assets.sh stage -version X.Y.Z -os windows -from ARTIFACT -advisories LIST.json -out DIR
 //
 // `vet-nsis` refuses a Windows installer whose version resource isn't the release's, or that
 // carries an Authenticode signature nothing checks yet (`nsis/nsis.go`).
+// `stage` is the trusted side's intake of a build artifact: exactly the files the manifest names
+// for that OS and version, plus the advisory list from the checkout (`stage.go`).
 // `plan` appends the pipeline's step outputs to `$GITHUB_OUTPUT` (or prints them when it's unset);
 // `latest-json` writes the update manifest, only once `validateLatest` passes it;
 // `validate-latest` runs the same validator on a manifest as published (the read-back);
@@ -44,7 +47,7 @@ func main() {
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return errors.New("name a command: plan, latest-json, validate-latest, or checksum-files")
+		return errors.New("name a command: plan, latest-json, validate-latest, vet-nsis, stage, or checksum-files")
 	}
 	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	version := fs.String("version", "", "the release's version, without the leading v")
@@ -58,6 +61,9 @@ func run(args []string) error {
 	pubDate := fs.String("pub-date", "", "latest-json: the publication time, RFC 3339 UTC")
 	out := fs.String("out", "", "latest-json: where to write the manifest")
 	file := fs.String("file", "", "validate-latest: the manifest to check")
+	osName := fs.String("os", "", "stage: the OS whose build artifact this is")
+	from := fs.String("from", "", "stage: the downloaded build artifact")
+	advisories := fs.String("advisories", "", "stage: the checkout's advisory list")
 	newerThan := fs.String("newer-than", "", "latest-json, validate-latest: the live manifest's version, which this one must move past (empty: unknown, or a deliberate republish)")
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
@@ -102,6 +108,16 @@ func run(args []string) error {
 			return validateFile(*file, in.rules())
 		}
 		return writeLatest(in, *notes, *out)
+	case "stage":
+		if *osName == "" {
+			return errNoOS
+		}
+		res, err := stage(stageInput{release: release, os: manifest.OS(*osName), from: *from, advisories: *advisories, out: *out})
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(os.Stderr, "Staged %s\n", strings.Join(res.files, ", "))
+		return appendOutputs(formatOutputs(res.outputs()))
 	case "vet-nsis":
 		return vetNSISFiles(*version, fs.Args())
 	case "checksum-files":
@@ -118,7 +134,7 @@ func run(args []string) error {
 		}
 		return nil
 	}
-	return fmt.Errorf("unknown command %q: plan, latest-json, validate-latest, vet-nsis, or checksum-files", args[0])
+	return fmt.Errorf("unknown command %q: plan, latest-json, validate-latest, vet-nsis, stage, or checksum-files", args[0])
 }
 
 // vetNSISFiles runs `nsis.Vet` on each installer, printing a verdict per file, and fails if any

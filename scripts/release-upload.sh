@@ -3,7 +3,9 @@
 # (GitHub's asset API fails often enough to cost a release; `--clobber` replaces a half-saved
 # asset), then GitHub's SHA-256 of the asset must equal the local file's. The release pipeline's
 # Windows publish job runs it (`release-pipeline.yml`, `windows-publish`); the macOS `sign` job
-# carries the same loop inline, from before this script.
+# carries the same loop inline, from before this script. Callers pass only files they own: the
+# Windows publish job passes the names `release-assets.sh stage` derived from the manifest, so
+# `--clobber` never replaces another job's asset.
 #
 # Usage: ./scripts/release-upload.sh <tag> <release id> <file>...
 # Needs GH_TOKEN and GITHUB_REPOSITORY.
@@ -29,8 +31,10 @@ upload() {
   want="sha256:$(shasum -a 256 "$file" | cut -d' ' -f1)"
   # A fresh asset may not show its digest yet, so an empty one gets two more looks.
   for attempt in 1 2 3; do
-    got=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
-      --jq ".assets[] | select(.name == \"$name\") | .digest // empty") || got=""
+    # The name goes in through the environment, never into the jq program's text, so no file
+    # name can rewrite the query.
+    got=$(NAME="$name" gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
+      --jq '.assets[] | select(.name == env.NAME) | .digest // empty') || got=""
     [ -n "$got" ] && break
     sleep 5
   done
