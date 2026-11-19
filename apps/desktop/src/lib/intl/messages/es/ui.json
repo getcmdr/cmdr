@@ -37,9 +37,10 @@
   },
   "ui.demoQuestion.no": "No",
   "@ui.demoQuestion.no": {
-    "sourceHash": "1ea442a"
+    "sourceHash": "1ea442a",
+    "sameAsSourceJustification": "Spanish 'No' is spelled like the English; macOS es Finder (U33), Microsoft TBX, Thunar, and Double Commander all write the button as 'No'."
   },
-  "ui.demoQuestion.yes": "Yes",
+  "ui.demoQuestion.yes": "Sí",
   "@ui.demoQuestion.yes": {
     "sourceHash": "85a39ab"
   },

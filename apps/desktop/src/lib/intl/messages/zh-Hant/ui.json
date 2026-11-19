@@ -35,11 +35,11 @@
   "@ui.demoDesktopOnly.quit": {
     "sourceHash": "c971af5"
   },
-  "ui.demoQuestion.no": "No",
+  "ui.demoQuestion.no": "否",
   "@ui.demoQuestion.no": {
     "sourceHash": "1ea442a"
   },
-  "ui.demoQuestion.yes": "Yes",
+  "ui.demoQuestion.yes": "是",
   "@ui.demoQuestion.yes": {
     "sourceHash": "85a39ab"
   },
