@@ -53,43 +53,52 @@ impl InMemoryVolume {
     /// link followed on, `.` and `..` taken as they come. `None` when a part of
     /// it doesn't exist or the links loop (more than [`MAX_LINK_HOPS`]), where
     /// `realpath` fails too. Names match exactly: the volume has no case rules.
+    ///
+    /// The volume's paths are `/`-separated app text, so the walk splits and joins on `/`
+    /// alone, the same on every OS (a `Path` on Windows split the root into `\` and joined
+    /// with it).
     pub fn canonicalize(&self, path: &Path) -> Option<PathBuf> {
         let entries = self.entries.read_ignore_poison();
-        let mut pending: Vec<std::ffi::OsString> = Vec::new();
-        let push_reversed = |pending: &mut Vec<std::ffi::OsString>, path: &Path| {
-            let parts: Vec<_> = path.components().map(|c| c.as_os_str().to_os_string()).collect();
-            pending.extend(parts.into_iter().rev());
+        let mut pending: Vec<String> = Vec::new();
+        let push_reversed = |pending: &mut Vec<String>, text: &str| {
+            pending.extend(text.split('/').rev().map(str::to_string));
         };
-        push_reversed(&mut pending, &self.normalize(path));
-        let mut resolved = PathBuf::from("/");
+        push_reversed(&mut pending, &self.normalize(path).to_string_lossy());
+        let mut resolved = String::from("/");
         let mut hops = 0;
         while let Some(part) = pending.pop() {
-            match part.to_str() {
-                Some("/" | ".") => continue,
-                Some("..") => {
-                    resolved.pop();
+            match part.as_str() {
+                "" | "." => continue,
+                ".." => {
+                    let cut = resolved.rfind('/').unwrap_or(0);
+                    resolved.truncate(cut.max(1));
                     continue;
                 }
                 _ => {}
             }
-            let next = resolved.join(&part);
-            let entry = entries.get(&next)?;
+            let next_text = if resolved == "/" {
+                format!("/{part}")
+            } else {
+                format!("{resolved}/{part}")
+            };
+            let entry = entries.get(Path::new(&next_text))?;
             match &entry.link_target {
                 Some(target) => {
                     hops += 1;
                     if hops > MAX_LINK_HOPS {
                         return None;
                     }
-                    if target.has_root() {
-                        resolved = PathBuf::from("/");
+                    let target = target.to_string_lossy();
+                    if target.starts_with('/') {
+                        resolved = String::from("/");
                     }
-                    push_reversed(&mut pending, target);
+                    push_reversed(&mut pending, &target);
                 }
-                None => resolved = next,
+                None => resolved = next_text,
             }
         }
         // The root itself is always there; anything else was found on the way.
-        Some(resolved)
+        Some(PathBuf::from(resolved))
     }
 
     /// A symlink row holding `target`, stored as given: a leaf with no bytes,
