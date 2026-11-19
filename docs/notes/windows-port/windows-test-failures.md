@@ -90,7 +90,15 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
 - **7, device backends**: 66 (`cmdr-adb` 51, `cmdr-smb` 13, `cmdr-mtp` 2).
 - **8, virtual volumes and leaf crates**: 72 (`cmdr-restic` 45 with its 5 hub timeouts, `cmdr-viewer` 13, `cmdr-archive`
   9, `cmdr-operation-log` 3, `cmdr-listing` 2).
-- **9, `cmdr-local`**: none of its own; it's the native crossing 10a–10d wait on.
+- **9, `cmdr-local`**: none of its own; it's the native crossing 10a–10d wait on. Done (2026-11-19, in `D:\src\cmdr-m9`,
+  `cargo nextest run -p cmdr-local`): 30 of 30 before on `main` (`a4449b5cb7`), 40 of 40 after on the branch
+  (`d0490c0c11`), 8 skipped both times (the `#[ignore]`d task-35 conformance cells). The 10 new cells are the NTFS names
+  (`local_windows_names_test.rs`: `dup`/`dup.`, device names and a trailing space, `a:b` with no stream, unpaired
+  surrogates, native entry points), the relative bridge input, and the anchoring table. Its `&Path` entry points now
+  take a native `C:\…` path (`list_directory_core`, `get_single_entry`, `rename_local_exclusive`), which is what the N
+  cells through `list_directory_core` and the F cells (the finalize handing `rename_local_exclusive` a native path)
+  failed on, so some of 10a's and 10c/10d's clusters may turn green before their crate converts: unverified, no
+  dependent ran on the builder this round.
 - **10a, `cmdr-operations`**: 229.
 - **10b, `cmdr-index`**: 133, the 48 cold-drive timeouts among them.
 - **10e, `cmdr-listing-wasm`**: 7.
@@ -127,7 +135,9 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
   `cmdr-operations delete::already_gone_tests::a_local_delete_carries_on_past_a_file_that_vanished_after_the_scan`,
   `cmdr-operations golden_trace_tests::golden_local_delete`. Every local delete or same-volume move under a temp folder
   refuses with `MountedVolumeInside { mount_point: "C:\\Users\\…\\Temp\\…" }`: the mount-inside guard reads an ordinary
-  folder as a mount point. A product bug (a user's delete would refuse the same way), task 35's.
+  folder as a mount point. A product bug (a user's delete would refuse the same way), task 35's. Not app paths, so
+  milestone 9 leaves it: the guard asks `cmdr_local::mounts::is_mount_point`, whose Windows arm answers "can't say" (no
+  mount table yet), and "can't say" is a boundary by design.
 - **#1226, a file another handle holds open (24)**:
   `cmdr-index importance::store::legacy_split::tests::a_background_split_is_waited_for`,
   `cmdr search::execute::tests::source_equivalence::memory_holds_the_same_arena_the_index_loads` (`os error 32`).
