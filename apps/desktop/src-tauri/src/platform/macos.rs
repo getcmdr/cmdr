@@ -34,6 +34,8 @@ pub(crate) fn capabilities() -> PlatformCapabilities {
         safe_save_files: true,
         app_bundles: true,
         full_screen: true,
+        // The bar is the system's, so there's nothing of Cmdr's to hide.
+        hideable_menu_bar: false,
         homebrew_cask: true,
         global_shortcuts: true,
         // The Mach queries behind the memory map (`task_info`, `mach_vm_region`).

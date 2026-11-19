@@ -151,6 +151,13 @@ fn restricted_window_settings_carry_the_pinned_ui_language() {
 }
 
 #[test]
+fn restricted_window_settings_carry_the_menu_bar_choice() {
+    // The viewer draws its own menu bar off macOS, or a main-menu button where the user hid it.
+    let parsed = parse_restricted_window_settings(r#"{ "appearance.menuBar": "hidden" }"#);
+    assert_eq!(parsed.appearance_menu_bar.as_deref(), Some("hidden"));
+}
+
+#[test]
 fn operation_log_recording_defaults_on_and_reads_an_explicit_off() {
     // The store is sparse: an untouched switch is absent and means on, and so does a file we can't read.
     assert!(parse_operation_log_enabled("{}"));
@@ -229,6 +236,7 @@ fn restricted_window_settings_missing_keys_are_none() {
     assert_eq!(parsed.appearance_file_size_format, None);
     // `None` here means `'system'`: follow the OS, which is the registry default.
     assert_eq!(parsed.appearance_language, None);
+    assert_eq!(parsed.appearance_menu_bar, None);
 }
 
 #[test]

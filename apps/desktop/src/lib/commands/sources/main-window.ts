@@ -204,6 +204,19 @@ export const mainWindowCommands: CommandSource[] = [
     whileDialogOpen: runsOverDialogs('Changes the window, not anything in it, so the dialog stays up and untouched.'),
     needsCapability: 'fullScreen',
   },
+  {
+    id: 'view.toggleMenuBar',
+    nameKey: 'commands.viewToggleMenuBar.label',
+    scope: 'App',
+    showInPalette: true,
+    // No default key: KDE's toggle, `Ctrl+M`, is Multi-rename here, and Windows reaches a hidden bar
+    // with Alt or F10 anyway (`docs/notes/windows-port/menu-model.md`). Bindable in Settings.
+    shortcuts: { macos: [], windows: [], linux: [] },
+    whileDialogOpen: runsOverDialogs(
+      "Shows or hides the window's menu bar, nothing in the window, so the dialog stays up and untouched.",
+    ),
+    needsCapability: 'hideableMenuBar',
+  },
 
   // ============================================================================
   // Main window - Sort commands (also accessible via menu)

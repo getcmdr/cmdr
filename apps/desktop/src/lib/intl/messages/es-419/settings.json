@@ -31,6 +31,10 @@
   "@settings.appearance.useAppIconsForDocuments.description": {
     "sourceHash": "9353728"
   },
+  "settings.appearance.menuBar.opt.desktopDefault": "Predeterminado del escritorio",
+  "@settings.appearance.menuBar.opt.desktopDefault": {
+    "sourceHash": "940d4a8"
+  },
   "settings.listing.directorySortMode.disabledReason": "Desactivada por ahora, porque las carpetas se mezclan con los archivos. Activa “Mostrar carpetas primero” para usar esta opción.",
   "@settings.listing.directorySortMode.disabledReason": {
     "sourceHash": "2d38158"

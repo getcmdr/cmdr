@@ -324,6 +324,30 @@
   "@settings.appearance.showFunctionKeyBar.keywords": {
     "sourceHash": "c42e176"
   },
+  "settings.appearance.menuBar.label": "显示菜单栏",
+  "@settings.appearance.menuBar.label": {
+    "sourceHash": "63809e3"
+  },
+  "settings.appearance.menuBar.description": "在每个窗口顶部的一栏中显示菜单（文件、编辑、显示等）。隐藏后，这些菜单会移到标签页那一行末尾的“主菜单”按钮里。",
+  "@settings.appearance.menuBar.description": {
+    "sourceHash": "af69e91"
+  },
+  "settings.appearance.menuBar.opt.desktopDefault": "桌面环境默认",
+  "@settings.appearance.menuBar.opt.desktopDefault": {
+    "sourceHash": "f3db16c"
+  },
+  "settings.appearance.menuBar.opt.shown": "显示",
+  "@settings.appearance.menuBar.opt.shown": {
+    "sourceHash": "6ba2a0e"
+  },
+  "settings.appearance.menuBar.opt.hidden": "隐藏",
+  "@settings.appearance.menuBar.opt.hidden": {
+    "sourceHash": "7e6feff"
+  },
+  "settings.appearance.menuBar.keywords": "菜单、菜单栏、汉堡、三条线、隐藏、文件、编辑、显示",
+  "@settings.appearance.menuBar.keywords": {
+    "sourceHash": "7598526"
+  },
   "settings.listing.showHiddenFiles.label": "显示隐藏文件",
   "@settings.listing.showHiddenFiles.label": {
     "sourceHash": "b5ede7f"

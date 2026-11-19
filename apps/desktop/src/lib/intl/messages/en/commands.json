@@ -294,6 +294,11 @@
     "description": "Command name that puts the main window into full screen (filling the whole display, no title bar or taskbar), or takes it back out. Appears in the command palette and the keyboard-shortcuts list. Each OS has its own branch, so use that OS's own term for full screen in your language: the macOS branch takes macOS's (its View menu's \"Enter Full Screen\"), the windows branch Windows' and the browsers' (Edge and Chrome: \"Full screen\", the same term as menu.view.fullScreen), and the other branch (Linux) the term the Linux desktops use (KDE's \"Full Screen Mode\", GNOME's \"Fullscreen\"), which in many languages matches Windows'. \"Toggle\" matches the other on/off commands such as commands.viewShowHidden.label.",
     "screenshot": "settings-keyboard-shortcuts.png"
   },
+  "commands.viewToggleMenuBar.label": "Toggle menu bar",
+  "@commands.viewToggleMenuBar.label": {
+    "description": "Command name that shows or hides the menu bar (File, Edit, View, …) at the top of the window, on Windows and Linux. Hidden, a \"Main menu\" button (ui.mainMenu.label) holds the same menus. Appears in the command palette and the keyboard-shortcuts list. \"Toggle\" matches the other on/off commands such as commands.viewShowHidden.label.",
+    "screenshot": "settings-keyboard-shortcuts.png"
+  },
   "commands.sortByName.label": "Sort by name",
   "@commands.sortByName.label": {
     "description": "Command name that sorts the file list by filename. Appears in the command palette.",

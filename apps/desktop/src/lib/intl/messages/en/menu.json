@@ -316,6 +316,10 @@
   "@menu.view.fullScreen": {
     "description": "View menu item on Windows and Linux (F11) that puts the main window into full screen, filling the whole display, or takes it back out. macOS has no such row: AppKit adds its own. Use the term Windows' File Explorer and the browsers use in this language (Edge and Chrome: \"Full screen\")."
   },
+  "menu.view.showMenuBar": "Show menu bar",
+  "@menu.view.showMenuBar": {
+    "description": "View menu item on Windows and Linux with a checkmark: ticked, the menu bar (File, Edit, View, …) shows at the top of the window; unticked, it hides and a \"Main menu\" button (ui.mainMenu.label) holds the same menus. Reached from that button while the bar is hidden. Use the term the OS's own apps use for this item (Windows apps: \"Menu bar\"; KDE: \"Show Menubar\")."
+  },
   "menu.view.commandPalette": "Command palette…",
   "@menu.view.commandPalette": {
     "description": "NOUN phrase. Opens a Spotlight-style popup that finds and runs any Cmdr command by typing part of its name (⇧⌘P). \"palette\" here is the code-editor sense of a searchable command list, nothing to do with colors; VS Code's translation in this language is the best reference. The trailing … is U+2026 and must stay."

@@ -95,6 +95,7 @@ windows	view.zoom.set150
 windows	view.zoom.in	Ctrl++
 windows	view.zoom.out	Ctrl+-
 windows	view.toggleFullScreen	F11
+windows	view.toggleMenuBar	
 windows	app.quit	
 windows	app.commandPalette	Ctrl+Shift+P
 windows	app.settings	Ctrl+,
@@ -173,6 +174,7 @@ linux	view.zoom.set150
 linux	view.zoom.in	Ctrl++
 linux	view.zoom.out	Ctrl+-
 linux	view.toggleFullScreen	F11
+linux	view.toggleMenuBar	
 linux	app.quit	
 linux	app.commandPalette	Ctrl+Shift+P
 linux	app.settings	Ctrl+,

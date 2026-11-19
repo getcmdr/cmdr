@@ -44,6 +44,7 @@ const snapshot: RestrictedWindowSettings = {
   appearanceAppColor: 'cmdr-gold',
   appearanceFileSizeFormat: 'si',
   appearanceLanguage: 'hu',
+  appearanceMenuBar: 'hidden',
 }
 
 beforeEach(() => {
@@ -85,6 +86,7 @@ describe('initializeSettings({ restrictedWindow: true })', () => {
     // to reach a restricted window too; the registry default `'system'` would give a
     // Hungarian user an English viewer on an English Mac.
     expect(store.getSetting('appearance.language')).toBe('hu')
+    expect(store.getSetting('appearance.menuBar')).toBe('hidden')
     // null snapshot fields fall back to the registry default
     expect(store.getSetting('fileViewer.suppressBinaryWarning')).toBe(false)
     // The whole point: no store-plugin call ever leaves this window.

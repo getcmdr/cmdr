@@ -254,6 +254,8 @@ const RUNS_OVER_DIALOGS: readonly CommandId[] = [
   'view.zoom.out',
   // Changes the window, not anything in it.
   'view.toggleFullScreen',
+  // Shows or hides the window's menu bar, nothing in the window.
+  'view.toggleMenuBar',
   // The quit gate asks about work in flight, so no dialog blocks quitting (AppKit's item on macOS).
   'app.quit',
   // macOS runs these from the menu bar, and they never reach the dispatch core.

@@ -237,6 +237,17 @@ export async function syncMenuShowHidden(checked: boolean): Promise<void> {
 }
 
 /**
+ * Mirrors the `appearance.menuBar` setting onto View > Show menu bar's check, which only a
+ * page draws (Windows and Linux). Called from `settings-applier.ts` at startup and on every
+ * change, whoever made it. A pick of the row runs `view.toggleMenuBar`, whose setting write lands
+ * back here; nothing comes back from Rust.
+ */
+export async function syncMenuShowMenuBar(checked: boolean): Promise<void> {
+  // eslint-disable-next-line cmdr/no-raw-tauri-invoke -- generic <R: Runtime> command, excluded from specta bindings (see the `ipc.rs` manifest)
+  await invoke('sync_menu_show_menu_bar', { checked })
+}
+
+/**
  * Pushes the full View menu state to the backend: which pane is active and the
  * current view mode of each pane. The backend updates check states on all four
  * per-pane items, and migrates the keyboard accelerator (⌘1/⌘2 by default) to

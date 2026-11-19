@@ -325,6 +325,30 @@
   "@settings.appearance.showFunctionKeyBar.keywords": {
     "sourceHash": "c42e176"
   },
+  "settings.appearance.menuBar.label": "Afficher la barre des menus",
+  "@settings.appearance.menuBar.label": {
+    "sourceHash": "63809e3"
+  },
+  "settings.appearance.menuBar.description": "Affiche les menus (Fichier, Édition, Présentation, etc.) dans une barre en haut de chaque fenêtre. Quand la barre est masquée, les menus se trouvent dans le bouton « Menu principal », au bout de la rangée d’onglets.",
+  "@settings.appearance.menuBar.description": {
+    "sourceHash": "af69e91"
+  },
+  "settings.appearance.menuBar.opt.desktopDefault": "Par défaut de l’environnement de bureau",
+  "@settings.appearance.menuBar.opt.desktopDefault": {
+    "sourceHash": "f3db16c"
+  },
+  "settings.appearance.menuBar.opt.shown": "Affichée",
+  "@settings.appearance.menuBar.opt.shown": {
+    "sourceHash": "6ba2a0e"
+  },
+  "settings.appearance.menuBar.opt.hidden": "Masquée",
+  "@settings.appearance.menuBar.opt.hidden": {
+    "sourceHash": "7e6feff"
+  },
+  "settings.appearance.menuBar.keywords": "menu, barre, hamburger, masquer, cacher, Fichier, Édition, Présentation",
+  "@settings.appearance.menuBar.keywords": {
+    "sourceHash": "7598526"
+  },
   "settings.listing.showHiddenFiles.label": "Afficher les fichiers cachés",
   "@settings.listing.showHiddenFiles.label": {
     "sourceHash": "b5ede7f"

@@ -109,6 +109,7 @@ async function setup(
     keyScope?: 'Viewer window'
     menus?: BarMenuView[]
     onFocusOrigin?: (origin: Element | null) => void
+    revealOnly?: boolean
   } = {},
 ) {
   withConventions(props.flavor === 'mac' ? 'macos' : 'windows')
@@ -124,6 +125,7 @@ async function setup(
       flavor: props.flavor ?? 'desktop',
       keyScope: props.keyScope,
       onFocusOrigin: props.onFocusOrigin,
+      revealOnly: props.revealOnly ?? false,
     },
   })
   teardowns.push(() => {
@@ -536,6 +538,45 @@ describe('MenuBar keys on Windows', () => {
     await settle()
     expect(titles()[2].getAttribute('aria-expanded')).toBe('true')
     expect(rows().map((r) => r.textContent.trim())).toEqual(['Now'])
+  })
+})
+
+describe('MenuBar hidden until Alt (Windows, "Show menu bar" off)', () => {
+  const collapsed = () => document.querySelector('[role="menubar"]')?.classList.contains('collapsed')
+
+  it('stays hidden at rest, shows on an Alt tap, and hides again as it gives the keyboard back', async () => {
+    const origin = pane()
+    await setup({ revealOnly: true })
+    expect(collapsed()).toBe(true)
+    await tapAlt()
+    expect(collapsed()).toBe(false)
+    expect(document.activeElement).toBe(titles()[0])
+    await press('Escape')
+    expect(collapsed()).toBe(true)
+    expect(document.activeElement).toBe(origin)
+  })
+
+  it('shows on F10, and opens a menu on Alt plus its letter with the bar laid out', async () => {
+    pane()
+    await setup({ revealOnly: true })
+    await press('F10')
+    expect(collapsed()).toBe(false)
+    await press('Escape')
+    expect(collapsed()).toBe(true)
+    down('f', { code: 'KeyF', altKey: true })
+    await settle()
+    expect(collapsed()).toBe(false)
+    expect(titles()[0].getAttribute('aria-expanded')).toBe('true')
+    expect(focusedText()).toContain('Rename')
+  })
+
+  it('hides again when a click elsewhere takes the keyboard away', async () => {
+    pane()
+    await setup({ revealOnly: true })
+    await tapAlt()
+    document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }))
+    await settle()
+    expect(collapsed()).toBe(true)
   })
 })
 

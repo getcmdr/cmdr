@@ -1,6 +1,6 @@
 <script lang="ts">
     /**
-     * The command menus (`MenuBar`, `ContextMenu`) in this window's look: the house look, or
+     * The command menus (`MenuBar`, `MainMenuButton`, `ContextMenu`) in this window's look: the house look, or
      * Windows 11's under `CMDR_MOCK_CONVENTIONS=windows pnpm dev`, for comparing side by side with
      * Notepad and File Explorer. Three sources: fixed rows (picks only logged), the app's own bar
      * as the backend answers it (`get_menu_bar`, live, picks RUN in the main window), and the
@@ -10,6 +10,7 @@
     import SectionCard from '#lib/ui/SectionCard.svelte'
     import MenuBar from '#lib/ui/MenuBar.svelte'
     import ContextMenu from '#lib/ui/ContextMenu.svelte'
+    import MainMenuButton from '#lib/ui/MainMenuButton.svelte'
     import { createContextMenu } from '#lib/ui/command-menu/context-menu.svelte.js'
     import Checkbox from '#lib/ui/Checkbox.svelte'
     import type { BarMenuView, Row } from '#lib/ipc/bindings.js'
@@ -172,7 +173,7 @@
                 menus={liveMenus}
                 ariaLabel="Live menu bar"
                 takesWindowKeys={false}
-                onPick={(id: string) => void pickMenuBarItem(id)}
+                onPick={(id: string) => void pickMenuBarItem(id, 'pick')}
             />
         </div>
     </div>
@@ -200,6 +201,22 @@
                 takesWindowKeys={false}
                 onPick={(id: string) => {
                     lastPick = `Viewer bar: ${id}`
+                }}
+            />
+        </div>
+    </div>
+
+    <div class="cell">
+        <p class="caption">
+            The main-menu button: every menu of the fixture bar as a submenu (picks are only logged), plus GNOME's
+            standard group under `CMDR_MOCK_CONVENTIONS=gnome`.
+        </p>
+        <div class="bar-frame button-frame">
+            <MainMenuButton
+                menus={FIXTURE}
+                label="Main menu"
+                onPick={(id: string) => {
+                    lastPick = `Main menu: ${id}`
                 }}
             />
         </div>
@@ -242,6 +259,12 @@
         border: 1px solid var(--color-border);
         border-radius: var(--radius-sm);
         background: var(--color-bg-primary);
+    }
+
+    .button-frame {
+        display: flex;
+        justify-content: flex-end;
+        padding: var(--spacing-xxs);
     }
 
     .toggles,

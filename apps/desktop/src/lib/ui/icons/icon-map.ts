@@ -46,6 +46,7 @@ import IconLink from '~icons/lucide/link'
 import IconList from '~icons/lucide/list'
 import IconListChecks from '~icons/lucide/list-checks'
 import IconLock from '~icons/lucide/lock'
+import IconMenu from '~icons/lucide/menu'
 import IconMail from '~icons/lucide/mail'
 import IconMessagesSquare from '~icons/lucide/messages-square'
 import IconMonitor from '~icons/lucide/monitor'
@@ -140,6 +141,7 @@ export const ICON_COMPONENTS = {
   list: IconList,
   'list-checks': IconListChecks,
   lock: IconLock,
+  menu: IconMenu,
   mail: IconMail,
   'messages-square': IconMessagesSquare,
   monitor: IconMonitor,

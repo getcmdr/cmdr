@@ -5,6 +5,7 @@
     "cancelKeys": "escapeOrCommandPeriod",
     "accessKeys": "none",
     "menuModel": "systemMenuBar",
+    "hiddenMenuBar": "none",
     "contextMenus": "native",
     "screenReaders": ["voiceOver"],
     "linuxDesktop": null
@@ -15,6 +16,7 @@
     "cancelKeys": "escape",
     "accessKeys": "underlinesAfterKeyboardUse",
     "menuModel": "windowMenuBar",
+    "hiddenMenuBar": "showsOnAltOrF10",
     "contextMenus": "inPage",
     "screenReaders": ["jaws", "nvda", "narrator"],
     "linuxDesktop": null
@@ -25,6 +27,7 @@
     "cancelKeys": "escape",
     "accessKeys": "underlinesWhileAltHeld",
     "menuModel": "primaryMenu",
+    "hiddenMenuBar": "f10OpensMainMenu",
     "contextMenus": "native",
     "screenReaders": ["orca"],
     "linuxDesktop": "gnome"
@@ -35,6 +38,7 @@
     "cancelKeys": "escape",
     "accessKeys": "underlinesWhileAltHeld",
     "menuModel": "windowMenuBar",
+    "hiddenMenuBar": "f10OpensMainMenu",
     "contextMenus": "native",
     "screenReaders": ["orca"],
     "linuxDesktop": "kde"
@@ -45,6 +49,7 @@
     "cancelKeys": "escape",
     "accessKeys": "underlinesWhileAltHeld",
     "menuModel": "windowMenuBar",
+    "hiddenMenuBar": "f10OpensMainMenu",
     "contextMenus": "native",
     "screenReaders": ["orca"],
     "linuxDesktop": "other"

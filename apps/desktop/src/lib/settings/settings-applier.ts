@@ -41,6 +41,7 @@ import {
   setShowVirtualGitPortal,
   setNetworkEnabled,
   syncMenuShowHidden,
+  syncMenuShowMenuBar,
   applyRecentSearchesMaxCount,
   applyRecentSelectionsMaxCount,
 } from '#lib/tauri-commands/index.js'
@@ -54,6 +55,8 @@ import { noteSlotSettingChanged } from '#lib/ask-cmdr/ask-cmdr-trigger.svelte.js
 import { pushLowDiskSpaceConfigToBackend } from '#lib/low-disk-space/notifications-mode.js'
 import { cancelScheduledAdbConfigPush, pushAdbConfigToBackend, scheduleAdbConfigPush } from '#lib/adb/adb-settings.js'
 import { applyAutoCheckEnabled } from '#lib/updates/updater.svelte.js'
+import { hasCapability, platformConventions } from '#lib/platform/index.js'
+import { menuBarShown, type MenuBarChoice } from '#lib/ui/command-menu/menu-layout.js'
 
 const log = getAppLogger('settings-applier')
 
@@ -204,6 +207,11 @@ function applyAllSettings(): void {
   // before the user touches Settings will flash the wrong theme.
   void applyTheme(getSetting('theme.mode'))
 
+  // View > Show menu bar's check, where a page draws the bar: the backend starts it checked.
+  if (hasCapability('hideableMenuBar')) {
+    void syncMenuShowMenuBar(menuBarShown(getSetting('appearance.menuBar'), platformConventions()))
+  }
+
   // Backend settings (async, fire-and-forget for startup)
   void applyBackendSettings()
 
@@ -248,6 +256,10 @@ const passthroughBackendHandlers: Partial<Record<string, (value: unknown) => voi
   // is idempotent and emits nothing back, so the menu-click round trip ends here.
   // No startup push: Rust builds that item checked from the same persisted key.
   'listing.showHiddenFiles': (v) => void syncMenuShowHidden(v as boolean),
+  // View > Show menu bar's check follows this setting, whoever changed it (the row's own pick runs
+  // `view.toggleMenuBar`, which writes the setting). Pushed at startup too (`applyAllSettings`):
+  // the backend starts checked, and GNOME's default is off.
+  'appearance.menuBar': (v) => void syncMenuShowMenuBar(menuBarShown(v as MenuBarChoice, platformConventions())),
   'network.directSmbConnection': (v) => void setDirectSmbConnection(v as boolean),
   'advanced.showSafeSaveFiles': (v) => void setShowSafeSaveFiles(v as boolean),
   'advanced.showStagingTempFiles': (v) => void setShowStagingTempFiles(v as boolean),

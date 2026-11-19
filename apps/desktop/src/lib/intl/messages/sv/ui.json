@@ -16,6 +16,10 @@
   "@ui.menuBar.label": {
     "sourceHash": "2d9de7e"
   },
+  "ui.mainMenu.label": "Huvudmeny",
+  "@ui.mainMenu.label": {
+    "sourceHash": "45c892d"
+  },
   "ui.demoDrop.overBudget": "Demoversionen tar emot upp till {budgetText} av dina filer per besök, så {countText} {count, plural, one {objekt} other {objekt}} kom inte med.",
   "@ui.demoDrop.overBudget": {
     "sourceHash": "9a11992"

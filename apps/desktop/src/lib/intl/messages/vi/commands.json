@@ -248,6 +248,10 @@
   "@commands.viewToggleFullScreen.label": {
     "sourceHash": "76055d3"
   },
+  "commands.viewToggleMenuBar.label": "Bật/tắt thanh menu",
+  "@commands.viewToggleMenuBar.label": {
+    "sourceHash": "aad33a7"
+  },
   "commands.sortByName.label": "Sắp xếp theo tên",
   "@commands.sortByName.label": {
     "sourceHash": "588a082"

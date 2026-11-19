@@ -325,6 +325,30 @@
   "@settings.appearance.showFunctionKeyBar.keywords": {
     "sourceHash": "c42e176"
   },
+  "settings.appearance.menuBar.label": "Mostrar barra de menus",
+  "@settings.appearance.menuBar.label": {
+    "sourceHash": "63809e3"
+  },
+  "settings.appearance.menuBar.description": "Mostra os menus (Arquivo, Editar, Visualizar e assim por diante) em uma barra no topo de cada janela. Com a barra oculta, os menus ficam no botão “Menu principal”, no fim da linha de abas.",
+  "@settings.appearance.menuBar.description": {
+    "sourceHash": "af69e91"
+  },
+  "settings.appearance.menuBar.opt.desktopDefault": "Padrão do ambiente de trabalho",
+  "@settings.appearance.menuBar.opt.desktopDefault": {
+    "sourceHash": "f3db16c"
+  },
+  "settings.appearance.menuBar.opt.shown": "Mostrada",
+  "@settings.appearance.menuBar.opt.shown": {
+    "sourceHash": "6ba2a0e"
+  },
+  "settings.appearance.menuBar.opt.hidden": "Oculta",
+  "@settings.appearance.menuBar.opt.hidden": {
+    "sourceHash": "7e6feff"
+  },
+  "settings.appearance.menuBar.keywords": "menu, barra, hambúrguer, ocultar, esconder, Arquivo, Editar, Visualizar",
+  "@settings.appearance.menuBar.keywords": {
+    "sourceHash": "7598526"
+  },
   "settings.listing.showHiddenFiles.label": "Mostrar arquivos ocultos",
   "@settings.listing.showHiddenFiles.label": {
     "sourceHash": "b5ede7f"

@@ -7,6 +7,7 @@ import type { IconName } from '#lib/ui/icons/icon-map.js'
 import type { EnterAction } from '#lib/file-explorer/pane/archive-enter-policy.js'
 import type { Capability } from '#lib/platform/index.js'
 import type { CommandId } from '#lib/commands/command-ids.js'
+import type { MenuBarChoice } from '#lib/ui/command-menu/menu-layout.js'
 
 // ============================================================================
 // Core Types
@@ -460,6 +461,7 @@ export interface SettingsValues {
   'appearance.textSize': number
   'appearance.uiDensity': UiDensity
   'appearance.useAppIconsForDocuments': boolean
+  'appearance.menuBar': MenuBarChoice
   'appearance.showFunctionKeyBar': boolean
   'appearance.fileSizeFormat': FileSizeFormat
   'appearance.sizeColors': SizeColorsPalette

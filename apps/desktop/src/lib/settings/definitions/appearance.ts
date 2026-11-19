@@ -343,6 +343,29 @@ export const appearanceSettings: SettingDefinitionSource[] = [
     },
   },
   {
+    // Off macOS the page draws the menu bar (D5), so it can be hidden. `desktopDefault` starts each
+    // desktop the way its own apps do (`#lib/ui/command-menu/menu-layout.ts`'s `menuBarShown`):
+    // Windows, KDE, and the rest with the bar, GNOME without. Settings draws it as one switch, the
+    // bar shown or not; the main window and the viewer follow it live.
+    id: 'appearance.menuBar',
+    section: ['Appearance', 'Zoom and density'],
+    labelKey: 'settings.appearance.menuBar.label',
+    descriptionKey: 'settings.appearance.menuBar.description',
+    descriptionInTip: true,
+    keywordsKey: 'settings.appearance.menuBar.keywords',
+    needsCapability: 'hideableMenuBar',
+    type: 'enum',
+    default: 'desktopDefault',
+    component: 'switch',
+    constraints: {
+      options: [
+        { value: 'desktopDefault', labelKey: 'settings.appearance.menuBar.opt.desktopDefault' },
+        { value: 'shown', labelKey: 'settings.appearance.menuBar.opt.shown' },
+        { value: 'hidden', labelKey: 'settings.appearance.menuBar.opt.hidden' },
+      ],
+    },
+  },
+  {
     id: 'appearance.showFunctionKeyBar',
     mcpAskFree: true,
     section: ['Appearance', 'Zoom and density'],

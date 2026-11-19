@@ -85,10 +85,11 @@ describe('visitorConventions', () => {
 })
 
 describe('visitorCapabilities', () => {
+  // All but `hideableMenuBar`, which the desktop's macOS arm answers `false` too: the bar is the system's.
   it('shows a Mac visitor the Mac app, overlay title bar and Full Disk Access included', () => {
     const mac = visitorCapabilities('macos')
     for (const capability of Object.keys(NO_CAPABILITIES) as Capability[])
-      expect(mac[capability], capability).toBe(true)
+      expect(mac[capability], capability).toBe(capability !== 'hideableMenuBar')
   })
 
   // No `appMenu`: their bar is their own OS's, with Quit at the end of File (task 63 step 11). No

@@ -95,6 +95,8 @@ export function focusWindowAtCorner(windowId: string): void {
  * `pressRealKey('F10')` arrives as Alt+F10. A keycode goes through as is. Evdev's numbering.
  */
 export const F10_KEYCODE = '76'
+/** F6's X keycode (Move), for the same reason as `F10_KEYCODE`. */
+export const F6_KEYCODE = '72'
 
 /** Presses one chord as a real keyboard would, in xdotool's spelling (`alt+f`, `Escape`). */
 export function pressRealKey(chord: string): void {

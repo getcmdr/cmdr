@@ -50,9 +50,9 @@ use crate::ids::{
     OPEN_ONBOARDING_ID, OPEN_TERMINAL_HERE_ID, OPERATION_LOG_ID, PIN_TAB_MENU_ID, PREV_TAB_ID, QUEUE_SHOW_ID,
     QUICK_LOOK_ID, QUIT_ID, RENAME_ID, REOPEN_CLOSED_TAB_ID, SEARCH_FILES_ID, SELECT_ALL_ID, SELECT_FILES_ID,
     SELECT_MENU_ID, SELECT_SAME_KIND_ID, SERVERS_CONNECT_ID, SERVERS_SHOW_ID, SETTINGS_ID, SHOW_HIDDEN_FILES_ID,
-    SHOW_IN_FINDER_ID, SORT_ASCENDING_ID, SORT_BY_ADDED_ID, SORT_BY_CREATED_ID, SORT_BY_EXTENSION_ID, SORT_BY_MENU_ID,
-    SORT_BY_MODIFIED_ID, SORT_BY_NAME_ID, SORT_BY_SIZE_ID, SORT_DESCENDING_ID, SUGGESTED_OPS_ID, SWAP_PANES_ID,
-    SWITCH_PANE_ID, TAB_MENU_ID, TELL_ME_ABOUT_ID, UNDO_TRASH_ID, VIEW_FULL_SCREEN_ID, VIEW_MENU_ID,
+    SHOW_IN_FINDER_ID, SHOW_MENU_BAR_ID, SORT_ASCENDING_ID, SORT_BY_ADDED_ID, SORT_BY_CREATED_ID, SORT_BY_EXTENSION_ID,
+    SORT_BY_MENU_ID, SORT_BY_MODIFIED_ID, SORT_BY_NAME_ID, SORT_BY_SIZE_ID, SORT_DESCENDING_ID, SUGGESTED_OPS_ID,
+    SWAP_PANES_ID, SWITCH_PANE_ID, TAB_MENU_ID, TELL_ME_ABOUT_ID, UNDO_TRASH_ID, VIEW_FULL_SCREEN_ID, VIEW_MENU_ID,
     VIEW_MODE_BRIEF_LEFT_ID, VIEW_MODE_BRIEF_RIGHT_ID, VIEW_MODE_FULL_LEFT_ID, VIEW_MODE_FULL_RIGHT_ID,
     VIEW_ZOOM_75_ID, VIEW_ZOOM_100_ID, VIEW_ZOOM_125_ID, VIEW_ZOOM_150_ID, VIEW_ZOOM_IN_ID, VIEW_ZOOM_OUT_ID,
     WINDOW_MENU_ID,
@@ -553,6 +553,14 @@ pub const MENU_BAR: &[BarMenu] = &[
                 VIEW_FULL_SCREEN_ID,
                 "menu.view.fullScreen",
                 shown_on_all("F11"),
+            )),
+            // Win32 guide: hide the bar rather than remove it, and bring it back from a View check
+            // (`docs/notes/windows-port/menu-model.md`). Only a page draws it, so macOS has none.
+            windows_and_linux(check(
+                SHOW_MENU_BAR_ID,
+                "menu.view.showMenuBar",
+                NONE,
+                CheckRole::ShowMenuBar,
             )),
             SEPARATOR,
             // Tab conflicts with GTK's own keyboard navigation, so Windows and Linux show it and
