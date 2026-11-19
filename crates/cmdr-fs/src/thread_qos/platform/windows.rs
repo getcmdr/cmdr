@@ -47,10 +47,23 @@ fn throttling_state(eco_qos: bool) -> THREAD_POWER_THROTTLING_STATE {
 }
 
 pub(crate) fn apply(class: QosClass) {
+    // allowed-discarded-outcome: a refusal is already logged, and a scheduling hint never fails a worker
+    let _ = apply_tier(class);
+}
+
+/// What Windows accepted of a tier: the priority, and the power throttle.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Applied {
+    priority: bool,
+    eco_qos: bool,
+}
+
+fn apply_tier(class: QosClass) -> Applied {
     let tier = tier(class);
     // SAFETY: `GetCurrentThread` is a pseudo-handle for the calling thread that needs no
     // closing, and `tier.priority` is one of the documented `THREAD_PRIORITY_*` levels.
-    if unsafe { SetThreadPriority(GetCurrentThread(), tier.priority) } == 0 {
+    let priority = unsafe { SetThreadPriority(GetCurrentThread(), tier.priority) } != 0;
+    if !priority {
         log::debug!(
             target: "thread_qos",
             "SetThreadPriority(class={class:?}) refused: {}",
@@ -76,10 +89,15 @@ pub(crate) fn apply(class: QosClass) {
             std::io::Error::last_os_error()
         );
     }
+    Applied {
+        priority,
+        eco_qos: set != 0,
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use windows_sys::Win32::Foundation::ERROR_INVALID_PARAMETER;
     use windows_sys::Win32::System::Threading::{GetThreadInformation, GetThreadPriority, THREAD_PRIORITY_NORMAL};
 
     use super::*;
@@ -139,20 +157,35 @@ mod tests {
         );
     }
 
-    /// The real calls, read back from Windows: the thread runs below normal under EcoQoS. On
-    /// its own thread, so the harness thread keeps its priority for other tests.
+    /// The real calls: Windows accepts both halves, and the thread reads back below normal and,
+    /// where Windows can read the throttle back, under EcoQoS. On its own thread, so the harness
+    /// thread keeps its priority for other tests.
     #[test]
     fn a_utility_thread_runs_below_normal_under_eco_qos() {
         let handle = std::thread::spawn(|| {
             let before = current_priority();
-            apply(QosClass::Utility);
-            (before, current_priority(), current_throttling())
+            let applied = apply_tier(QosClass::Utility);
+            (before, applied, current_priority(), current_throttling())
         });
-        let (before, after, throttling) = handle.join().expect("qos test thread panicked");
+        let (before, applied, after, throttling) = handle.join().expect("qos test thread panicked");
         assert_eq!(before, THREAD_PRIORITY_NORMAL);
+        assert_eq!(
+            applied,
+            Applied {
+                priority: true,
+                eco_qos: true
+            }
+        );
         assert_eq!(after, THREAD_PRIORITY_BELOW_NORMAL);
-        let throttling = throttling.expect("Windows reads back the thread's power throttling");
-        assert_eq!(throttling.ControlMask, THREAD_POWER_THROTTLING_EXECUTION_SPEED);
-        assert_eq!(throttling.StateMask, THREAD_POWER_THROTTLING_EXECUTION_SPEED);
+        match throttling {
+            Ok(state) => {
+                assert_eq!(state.ControlMask, THREAD_POWER_THROTTLING_EXECUTION_SPEED);
+                assert_eq!(state.StateMask, THREAD_POWER_THROTTLING_EXECUTION_SPEED);
+            }
+            // Windows 10 sets the throttle but can't read it back: `GetThreadInformation` refuses
+            // the class with `ERROR_INVALID_PARAMETER` (verified on Windows 10 22H2, build 19045,
+            // mami, 2026-11-19). Windows 11 reads it back.
+            Err(error) => assert_eq!(error.raw_os_error(), Some(ERROR_INVALID_PARAMETER as i32), "{error}"),
+        }
     }
 }

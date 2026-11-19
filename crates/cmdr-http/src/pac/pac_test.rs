@@ -8,16 +8,20 @@ use std::sync::atomic::Ordering;
 use super::test_server::{SCRIPT, pac_server, pac_server_after, url};
 use super::*;
 
-/// What the OS makes of [`SCRIPT`]'s `PROXY proxy.test:3128; DIRECT`.
+/// What the OS makes of [`SCRIPT`]'s `PROXY proxy.test:3128; DIRECT`. CFNetwork keeps the
+/// trailing `DIRECT`; WinHTTP drops it and answers `proxy.test:3128` alone (verified on Windows
+/// 10 22H2, build 19045, mami, 2026-11-19). Either walks to the same first route.
 fn via_proxy() -> Vec<Entry> {
-    vec![
-        Entry::Http {
-            host: "proxy.test".into(),
-            port: 3128,
-            credentials: None,
-        },
-        Entry::Direct,
-    ]
+    let proxy = Entry::Http {
+        host: "proxy.test".into(),
+        port: 3128,
+        credentials: None,
+    };
+    if cfg!(target_os = "windows") {
+        vec![proxy]
+    } else {
+        vec![proxy, Entry::Direct]
+    }
 }
 
 #[test]

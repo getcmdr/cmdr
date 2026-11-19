@@ -155,6 +155,24 @@ pub(crate) unsafe fn take_global_string(ptr: PWSTR) -> Option<String> {
 mod tests {
     use super::*;
 
+    /// WPAD for real, through the shared evaluator: however long discovery takes on this
+    /// network (no WPAD server is the usual case), the asking thread waits at most its budget.
+    #[test]
+    fn auto_detect_answers_within_the_askers_budget() {
+        use crate::entries::Pac;
+        let evaluator = crate::pac::OsPac::new(crate::pac::TIMEOUT);
+        let started = std::time::Instant::now();
+        let answer = evaluator.evaluate(
+            &PacSource::AutoDetect,
+            &crate::pac::test_server::url("https://example.com"),
+        );
+        let took = started.elapsed();
+        assert!(
+            took < crate::pac::TIMEOUT + Duration::from_secs(2),
+            "took {took:?}, answered {answer:?}"
+        );
+    }
+
     /// Windows' settings never name an inline script, so it has no runner.
     #[test]
     fn an_inline_script_has_no_runner() {
