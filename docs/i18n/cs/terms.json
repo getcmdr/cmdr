@@ -4837,5 +4837,10 @@
     "confidence": "tentative",
     "sources": "no Android source in the pile; follows the preferences ruling (Předvolby) as settings.fileOperations.mtpEnabled.description quotes it",
     "note": "Quote the label the user's phone shows; Czech Android may say Předvolby USB or Nastavení USB."
+  },
+  "mac-os-extended": {
+    "chosen": "Mac OS rozšířený",
+    "confidence": "high",
+    "sources": "Disk Utility format menu: StorageKit Localizable.loctable, key HFS Not Journaled (verified on macOS 27.0.1 (26A434), plutil, 2026-11-19)"
   }
 }

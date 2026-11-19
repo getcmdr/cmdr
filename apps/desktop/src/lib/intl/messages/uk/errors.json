@@ -2073,15 +2073,15 @@
   "@errors.write.landingNotRecorded.suggestion": {
     "sourceHash": "98864f9"
   },
-  "errors.write.linksNotSupported.title": "This drive can’t hold links",
+  "errors.write.linksNotSupported.title": "Цей диск не може зберігати посилання",
   "@errors.write.linksNotSupported.title": {
     "sourceHash": "d084f5e"
   },
-  "errors.write.linksNotSupported.message": "The destination’s file system can’t hold symbolic links, so Cmdr didn’t copy the link to {path}. Nothing there changed.",
+  "errors.write.linksNotSupported.message": "Файлова система місця призначення не може зберігати символічні посилання, тож Cmdr не скопіював посилання за шляхом {path}. Там нічого не змінилося.",
   "@errors.write.linksNotSupported.message": {
     "sourceHash": "bb2d53a"
   },
-  "errors.write.linksNotSupported.suggestion": "{platform, select, macos {Copy to a drive formatted as APFS or Mac OS Extended, or leave the link out of what you copy.} windows {Cmdr can’t make links on Windows yet. Leave the link out of what you copy, or copy the item it points to.} other {Copy to a drive with a Linux file system like ext4, or leave the link out of what you copy.}}",
+  "errors.write.linksNotSupported.suggestion": "{platform, select, macos {Скопіюйте на диск у форматі APFS чи Mac OS Extended або приберіть посилання з того, що копіюєте.} windows {У Windows Cmdr поки не вміє створювати посилання. Приберіть посилання з того, що копіюєте, або скопіюйте елемент, на який воно вказує.} other {Скопіюйте на диск із файловою системою Linux, як-от ext4, або приберіть посилання з того, що копіюєте.}}",
   "@errors.write.linksNotSupported.suggestion": {
     "sourceHash": "8e0a0f7"
   },

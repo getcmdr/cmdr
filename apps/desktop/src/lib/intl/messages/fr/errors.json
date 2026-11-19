@@ -2073,15 +2073,15 @@
   "@errors.write.landingNotRecorded.suggestion": {
     "sourceHash": "98864f9"
   },
-  "errors.write.linksNotSupported.title": "This drive can’t hold links",
+  "errors.write.linksNotSupported.title": "Ce disque ne peut pas contenir de liens",
   "@errors.write.linksNotSupported.title": {
     "sourceHash": "d084f5e"
   },
-  "errors.write.linksNotSupported.message": "The destination’s file system can’t hold symbolic links, so Cmdr didn’t copy the link to {path}. Nothing there changed.",
+  "errors.write.linksNotSupported.message": "Le système de fichiers de la destination ne peut pas contenir de liens symboliques, donc Cmdr n’a pas copié le lien à l’emplacement {path}. Rien n’y a changé.",
   "@errors.write.linksNotSupported.message": {
     "sourceHash": "bb2d53a"
   },
-  "errors.write.linksNotSupported.suggestion": "{platform, select, macos {Copy to a drive formatted as APFS or Mac OS Extended, or leave the link out of what you copy.} windows {Cmdr can’t make links on Windows yet. Leave the link out of what you copy, or copy the item it points to.} other {Copy to a drive with a Linux file system like ext4, or leave the link out of what you copy.}}",
+  "errors.write.linksNotSupported.suggestion": "{platform, select, macos {Copiez vers un disque formaté en APFS ou Mac OS étendu, ou retirez le lien de ce que vous copiez.} windows {Cmdr ne peut pas encore créer de liens sous Windows. Retirez le lien de ce que vous copiez, ou copiez l’élément ciblé par le lien.} other {Copiez vers un disque doté d’un système de fichiers Linux comme ext4, ou retirez le lien de ce que vous copiez.}}",
   "@errors.write.linksNotSupported.suggestion": {
     "sourceHash": "8e0a0f7"
   },

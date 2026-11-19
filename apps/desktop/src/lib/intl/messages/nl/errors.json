@@ -2073,15 +2073,15 @@
   "@errors.write.landingNotRecorded.suggestion": {
     "sourceHash": "98864f9"
   },
-  "errors.write.linksNotSupported.title": "This drive can’t hold links",
+  "errors.write.linksNotSupported.title": "Deze schijf kan geen koppelingen bewaren",
   "@errors.write.linksNotSupported.title": {
     "sourceHash": "d084f5e"
   },
-  "errors.write.linksNotSupported.message": "The destination’s file system can’t hold symbolic links, so Cmdr didn’t copy the link to {path}. Nothing there changed.",
+  "errors.write.linksNotSupported.message": "Het bestandssysteem van de bestemming kan geen symbolische koppelingen bewaren, dus Cmdr heeft de koppeling niet naar {path} gekopieerd. Daar is niets veranderd.",
   "@errors.write.linksNotSupported.message": {
     "sourceHash": "bb2d53a"
   },
-  "errors.write.linksNotSupported.suggestion": "{platform, select, macos {Copy to a drive formatted as APFS or Mac OS Extended, or leave the link out of what you copy.} windows {Cmdr can’t make links on Windows yet. Leave the link out of what you copy, or copy the item it points to.} other {Copy to a drive with a Linux file system like ext4, or leave the link out of what you copy.}}",
+  "errors.write.linksNotSupported.suggestion": "{platform, select, macos {Kopieer naar een schijf die geformatteerd is als APFS of Mac OS Uitgebreid, of laat de koppeling weg uit wat je kopieert.} windows {Cmdr kan op Windows nog geen symbolische koppelingen maken. Laat de koppeling weg uit wat je kopieert, of kopieer het onderdeel waar de koppeling naar wijst.} other {Kopieer naar een schijf met een Linux-bestandssysteem zoals ext4, of laat de koppeling weg uit wat je kopieert.}}",
   "@errors.write.linksNotSupported.suggestion": {
     "sourceHash": "8e0a0f7"
   },

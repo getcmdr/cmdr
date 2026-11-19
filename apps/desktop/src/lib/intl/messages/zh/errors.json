@@ -2072,15 +2072,15 @@
   "@errors.write.landingNotRecorded.suggestion": {
     "sourceHash": "98864f9"
   },
-  "errors.write.linksNotSupported.title": "This drive can’t hold links",
+  "errors.write.linksNotSupported.title": "这个驱动器无法存放链接",
   "@errors.write.linksNotSupported.title": {
     "sourceHash": "d084f5e"
   },
-  "errors.write.linksNotSupported.message": "The destination’s file system can’t hold symbolic links, so Cmdr didn’t copy the link to {path}. Nothing there changed.",
+  "errors.write.linksNotSupported.message": "目标位置的文件系统无法存放符号链接，所以 Cmdr 没有把链接拷贝到 {path}。那里没有任何变化。",
   "@errors.write.linksNotSupported.message": {
     "sourceHash": "bb2d53a"
   },
-  "errors.write.linksNotSupported.suggestion": "{platform, select, macos {Copy to a drive formatted as APFS or Mac OS Extended, or leave the link out of what you copy.} windows {Cmdr can’t make links on Windows yet. Leave the link out of what you copy, or copy the item it points to.} other {Copy to a drive with a Linux file system like ext4, or leave the link out of what you copy.}}",
+  "errors.write.linksNotSupported.suggestion": "{platform, select, macos {请拷贝到采用 APFS 或 Mac OS 扩展格式的驱动器，或者不拷贝这个链接。} windows {Cmdr 暂时还不能在 Windows 上创建链接。你可以不拷贝这个链接，或者拷贝它指向的项目。} other {请拷贝到采用 Linux 文件系统（比如 ext4）的驱动器，或者不拷贝这个链接。}}",
   "@errors.write.linksNotSupported.suggestion": {
     "sourceHash": "8e0a0f7"
   },
