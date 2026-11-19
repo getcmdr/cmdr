@@ -7,6 +7,18 @@ import { collectPageErrors, skipWithoutDemo, visitorOf } from './demo-support.js
 // Where each suite runs: `demo-support.ts`. Boot, indexing, and the first listing: `demo-smoke.spec.ts`.
 skipWithoutDemo()
 
+// Every command the app called got an answer or a decided refusal: a gap nobody decided on lands in
+// `__cmdrDemo.unanswered` (`apps/desktop/src/lib/demo/unanswered.ts`), and fails the test that hit it.
+test.afterEach(async ({ page }) => {
+  const gaps = await page
+    .evaluate(() => {
+      const demo = (window as unknown as { __cmdrDemo?: { unanswered: Map<string, number> } }).__cmdrDemo
+      return demo ? [...demo.unanswered.keys()] : []
+    })
+    .catch(() => [])
+  expect(gaps, 'commands the demo has no answer for').toEqual([])
+})
+
 test.describe('Browser demo', () => {
   // ⌘F runs the real search core in the WASM module (crates/cmdr-listing-wasm, `search.rs`) over the
   // volume the panes list. Enter (Go to file) lands the pane's cursor on the found file.
@@ -33,24 +45,44 @@ test.describe('Browser demo', () => {
     expect(errors.map((error) => error.message)).toEqual([])
   })
 
-  // Every visitor gets the macOS bar and its look until the demo follows the visitor's OS (task 63
-  // step 11 of `docs/specs/windows-port-plan.md`): a Windows visitor's menus once wore Windows 11's
-  // tokens under it, a 40 px bar the window's 30 px offset didn't know about (`lib/demo/DETAILS.md` § Platform).
-  test('draws the macOS menu bar and menus, with the status corner under the bar', async ({ page }) => {
-    await page.goto('/demo/')
-    await expect(page.locator('.file-pane').first().locator('.file-entry').nth(1)).toBeVisible({ timeout: 30_000 })
-    await expect(page.locator('html')).toHaveAttribute('data-look', 'macos')
-    const bar = page.getByRole('menubar')
-    const barBox = await bar.boundingBox()
-    expect(barBox?.height).toBe(30)
-    const corner = await page.locator('.status-corner').boundingBox()
-    if (corner && barBox) expect(corner.y).toBeGreaterThanOrEqual(barBox.y + barBox.height)
+  // Each visitor gets their own OS's bar and look (task 63 step 11 of `docs/specs/windows-port-plan.md`):
+  // the macOS bar for a Mac visitor, Windows 11's in-window bar for a Windows one, and the window under
+  // whichever bar is there, so the status corner never sits under it (`lib/demo/DETAILS.md` § Platform).
+  for (const colorScheme of ['light', 'dark'] as const) {
+    test.describe(`in ${colorScheme} mode`, () => {
+      test.use({ colorScheme })
 
-    await bar.getByRole('menuitem').nth(1).click()
-    const menu = page.getByRole('menu')
-    await expect(menu).toBeVisible()
-    expect(await menu.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe('12px')
-  })
+      test('draws the visitor’s own menu bar and menus, with the status corner under the bar', async ({ page }) => {
+        const errors = collectPageErrors(page)
+        await page.goto('/demo/')
+        await expect(page.locator('.file-pane').first().locator('.file-entry').nth(1)).toBeVisible({ timeout: 30_000 })
+        const isMac = (await visitorOf(page)).mod === 'Meta'
+        await expect(page.locator('html')).toHaveAttribute('data-look', isMac ? 'macos' : 'windows')
+        const bar = page.getByRole('menubar')
+        const titles = bar.getByRole('menuitem')
+        // A Mac's bar starts with the app menu; Windows' starts with File, which ends with Quit.
+        await expect(titles.first()).toHaveText(isMac ? 'Cmdr' : 'File')
+        const barBox = await bar.boundingBox()
+        expect(barBox?.height).toBe(isMac ? 30 : 40)
+        const corner = await page.locator('.status-corner').boundingBox()
+        if (corner && barBox) expect(corner.y).toBeGreaterThanOrEqual(barBox.y + barBox.height)
+
+        await titles.nth(isMac ? 1 : 0).click()
+        const menu = page.getByRole('menu')
+        await expect(menu).toBeVisible()
+        // macOS 27's 12 px menu corners; WinUI's `OverlayCornerRadius`, 8 px.
+        expect(await menu.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe(isMac ? '12px' : '8px')
+        if (!isMac) await expect(menu.getByRole('menuitem').last()).toHaveText(/Exit|Quit/)
+        await page.keyboard.press('Escape')
+
+        // Windows' bar answers a lone Alt, as Notepad's does; the Mac's answers ⌃F2.
+        await page.locator('.file-pane').first().click()
+        await page.keyboard.press(isMac ? 'Control+F2' : 'Alt')
+        await expect(titles.first()).toBeFocused()
+        expect(errors.map((error) => error.message)).toEqual([])
+      })
+    })
+  }
 
   // File operations run through the real write engine in the WASM module (crates/cmdr-listing-wasm,
   // `operations_host/`), on the in-memory volume both panes list, so each lands in the other pane.
@@ -315,7 +347,12 @@ test.describe('Browser demo', () => {
       const errors = collectPageErrors(page)
       await openDemo(page)
       await dropFromComputer(page, right(page), [{ name: 'huge.bin', bytes: 11_000_000 }])
-      await expect(page.getByText(/holds up to 10 MB of your files per visit, so it left out 1 item/)).toBeVisible()
+      // The toast itself: the screen reader announcer repeats its words a moment later, off screen.
+      await expect(
+        page
+          .locator('[data-toast-frame]')
+          .filter({ hasText: /holds up to 10 MB of your files per visit, so it left out 1 item/ }),
+      ).toBeVisible()
       await expect(row(right(page), 'huge')).toHaveCount(0)
       expect(errors.map((error) => error.message)).toEqual([])
     })
@@ -331,7 +368,7 @@ test.describe('Browser demo', () => {
 
       await dropFromComputer(page, right(page), whole)
       await expect(page.getByText(/^Move 1 file$/)).toBeVisible()
-      await expect(page.getByText(/holds up to 10 MB/)).toHaveCount(0)
+      await expect(page.locator('[data-toast-frame]').filter({ hasText: /holds up to 10 MB/ })).toHaveCount(0)
       await page.keyboard.press('Enter')
       await expect(row(right(page), 'whole')).toBeVisible()
       expect(errors.map((error) => error.message)).toEqual([])

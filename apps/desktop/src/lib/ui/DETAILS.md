@@ -1567,8 +1567,8 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
   on Windows no fill, from `MenuFlyoutItem_Partial.cpp`'s `Focused` state
   (`docs/notes/windows-port/menu-look-tokens.md`). ❗ Unchecked against Notepad: David's look check decides it. No
   motion: WinUI switches states instantly.
-- **The demo** puts `DEMO_MENU_CLASS` on its bar and menus and sets the tokens to macOS 27's there
-  (`../demo/menu-bar-style.ts`), so the shared surfaces draw the Mac menus the demo always had.
+- **The demo** draws its visitor's own OS's menus: for a Mac visitor it puts `DEMO_MENU_CLASS` on its bar and menus and
+  sets the tokens to macOS 27's there (`../demo/menu-bar-style.ts`); a Windows visitor's wear these Windows tokens.
 - Decision/Why: a component of its own, ❌ not `Menu.svelte` extended. The house `Menu` is a picker over SECTIONS (rich
   rows, reorder, rename, disclosure) whose focus is `aria-activedescendant` on the surface, tuned for VoiceOver; D5 asks
   the command menus for roving focus, nested submenus, a bar, access keys, and a platform's own look. The two share the

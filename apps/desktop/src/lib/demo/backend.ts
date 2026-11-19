@@ -12,6 +12,7 @@ import { createContextMenuHost, type ContextMenuHost } from './context-menu.js'
 import { startMenuEngine, type ContextPopup, type MenuEngineHandle } from './menu-engine.js'
 import { pluginHandler } from './plugins.js'
 import { openInBrowserTab } from './opener.js'
+import { visitorPlatform } from './platform.js'
 import { noteUnanswered } from './unanswered.js'
 import type { TimedOut } from '#lib/ipc/bindings.js'
 import { demoPath, volumeAnswers } from './volumes.js'
@@ -164,7 +165,8 @@ export function createDemoBackend(): DemoBackend {
       )
     },
   )
-  const menu = startMenuEngine()
+  // The visitor's own OS's bar and menus. Read here, since this frame's platform global lands after the backend.
+  const menu = startMenuEngine(visitorPlatform(navigator.userAgent))
 
   /**
    * The demo doesn't browse archives, and says so. Under the "Opening…" toast's id, so it takes

@@ -140,7 +140,12 @@ try {
   }
 
   // The menu bar: a push lands, the bar draws it, and a click names its event.
-  const menu = new glue.DemoMenuBar()
+  // A Windows visitor's bar is Windows' own: no app menu, File first.
+  const windowsBar = new glue.DemoMenuBar('windows').bar()
+  if (windowsBar[0]?.id !== 'menu_file' || windowsBar.some((m) => m.id === 'menu_app')) {
+    fail(`a Windows visitor's bar came back as ${JSON.stringify(windowsBar.map((m) => m.id))}`)
+  }
+  const menu = new glue.DemoMenuBar('macos')
   menu.invoke('update_menu_accelerator', { commandId: 'tab.new', shortcut: '⌃T' })
   const tab = menu.bar().find((m) => m.id === 'menu_tab')
   const newTab = tab?.rows.find((row) => row.id === 'new_tab')

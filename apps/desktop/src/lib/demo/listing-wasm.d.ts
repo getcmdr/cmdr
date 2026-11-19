@@ -54,7 +54,8 @@ declare module 'virtual:cmdr-listing-wasm' {
 
   /** The menus (`crates/cmdr-listing-wasm/src/menu.rs`, `context_menu.rs`): the menu-state pushes, the bar, the right-click popups, a click. */
   export class DemoMenuBar {
-    constructor()
+    /** Throws on a platform other than `macos`, `windows`, or `linux`. */
+    constructor(platform: string)
     static handles(command: string): boolean
     invoke(command: string, args: unknown): unknown
     bar(): unknown

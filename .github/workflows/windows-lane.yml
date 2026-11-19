@@ -34,6 +34,7 @@ on:
       - 'CHANGELOG.md'
       - 'apps/desktop/src/lib/ask-cmdr/ask-cmdr-tool-label-keys.ts'
       - 'apps/desktop/src/lib/commands/command-ids.ts'
+      - 'apps/desktop/src/lib/demo/engine-command-names.ts'
       - 'apps/desktop/src/lib/intl/messages/**'
       - 'apps/desktop/src/lib/intl/platform-select-cases.json'
       - 'apps/desktop/src/lib/ipc/bindings.ts'

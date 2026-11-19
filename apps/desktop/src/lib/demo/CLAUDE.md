@@ -1,24 +1,20 @@
 # Browser demo (`lib/demo/`)
 
-The real Cmdr frontend running in a plain browser on a fake backend, for getcmdr.com/demo (issue #302). Every `invoke`
-lands in a typed answer here; the listing commands go to the real listing engine, built to WASM
+The real Cmdr frontend in a plain browser on a fake backend, for getcmdr.com/demo (issue #302). Every `invoke` lands in
+a typed answer here; listing commands go to the real listing engine, built to WASM
 (`crates/cmdr-listing-wasm/CLAUDE.md`).
 
-- `boot.ts`: picks the frame's role. `backend.ts`: the page's one backend (answers, stores, engine, event fan-out).
-  `webview.ts`: one frame's `__TAURI_INTERNALS__`, forwarding to the backend and holding its listeners. `windows.ts`:
-  secondary windows as in-page panels (Settings, Keyboard shortcuts, the operation queue, and `viewer-*`; the rest
-  refused). `menu-bar.svelte.ts`: the macOS menu bar, drawn from `menu-engine.ts` (the desktop's own bar and fold,
-  through WASM). `context-menu.ts`: right-click menus, same engine; both mount `#lib/ui`'s menus in
-  `menu-bar-style.ts`'s look and use `menu-click.ts`. `traffic-lights.ts`: the window buttons, at the app's
-  `trafficLightPosition`. `drag-regions.ts`: Tauri's `drag.js`, ported. `drag-session.ts`: the OS file drag, answering
-  `start_drag_paths` with Tauri's drag-drop events (DETAILS § Drag and drop). `os-drop.ts`: files dropped in from the
-  computer. `color-scheme.ts`: `setTheme` per frame (DETAILS § Light and dark).
-- `answers.ts` (app commands), `volumes.ts`, `plugins.ts` (in-memory `plugin:store`, path, app), `opener.ts` (every
-  external link opens in a new tab), `listing.ts` (routes to the WASM engine, loaded once by `engine-module.ts`, which
-  answers the viewer too), `unanswered.ts` (`window.__cmdrDemo.unanswered`; an unanswered void resolves, any other
-  rejects, DETAILS § Answering a command).
-- `demo-tree.ts`, `demo-contents.ts` (real bytes for some files), and `browser-shortcuts.ts`: PLACEHOLDER content David
-  still decides.
+- `boot.ts`: the frame's role. `backend.ts`: the page's one backend. `webview.ts`: one frame's `__TAURI_INTERNALS__`.
+  `windows.ts`: secondary windows as in-page panels (Settings, Keyboard shortcuts, the queue, `viewer-*`).
+  `menu-bar.svelte.ts` and `context-menu.ts`: the menu bar and right-click menus, from `menu-engine.ts` (the desktop's
+  bar through WASM), on `#lib/ui`'s menus, clicks through `menu-click.ts`. `traffic-lights.ts`: the window buttons.
+  `drag-regions.ts`: Tauri's `drag.js`. `drag-session.ts` / `os-drop.ts`: drags out and drops in. `color-scheme.ts`:
+  `setTheme` per frame.
+- `answers.ts`, `volumes.ts`, `plugins.ts` (in-memory `plugin:store`, path, app), `opener.ts` (links open in a new tab),
+  `listing.ts` (routes to the WASM engine, loaded by `engine-module.ts`), `coverage.ts` (every command answered or left
+  out with a reason), `unanswered.ts` (a void resolves, any other rejects; an undecided gap logs an error into
+  `window.__cmdrDemo.unanswered`).
+- `demo-tree.ts`, `demo-contents.ts`, and `browser-shortcuts.ts`: PLACEHOLDER content David still decides.
 
 Run: `pnpm dev:demo` or `pnpm build:demo` (into `apps/desktop/build-demo/`, base `/demo`) in `apps/desktop`. Both build
 the WASM engine first.
@@ -38,15 +34,15 @@ the WASM engine first.
   guarded backend lookup.
 - **Answers are typed against `bindings.ts`** (`AnswerTable`, `VoidCommand`), so a drifted answer fails `svelte-check`.
   An error branch is `refuse(command, typedError)`, never a thrown `Error`.
+- **A new command needs an answer or a `notInDemo` reason** (`coverage.ts`), or `svelte-check` and `coverage.test.ts`
+  fail. An engine command goes in `engine-command-names.ts` too (a Rust test pins it to the crate).
 - **No menu logic in TS.** Rows, words, shortcuts, enabled and checked state, and what a click sends all come from
-  `cmdr-menu` through `DemoMenuBar`, the right-click menus' too; the app's menu pushes reach it because no TS table
-  answers them. A click sends the native item's own event, so the app's handlers are the ones that run.
-- **No listing or write logic in TS.** The backend tries its TS tables first, then whatever `DemoListing.handles()`
-  claims, so a TS answer for an engine command would silently shadow the real engine. `engine-commands.test.ts` pins the
-  write, queue, path, and undo commands as engine-only.
-- **Writes go through the real write engine, in memory, gone on reload** (`crates/cmdr-listing-wasm`'s
-  `operations_host/`): copy, move, rename, new folder, delete, the queue, and the operation log's roll back. No Trash on
-  the volume, so F8 takes the app's permanent-delete confirm. ❌ Never a TS success for a write.
+  `cmdr-menu` through `DemoMenuBar`, the right-click menus' too. A click sends the native item's own event, so the app's
+  handlers are the ones that run.
+- **No listing or write logic in TS.** The backend tries its TS tables before the engines, so a TS answer for an engine
+  command silently shadows it. `engine-commands.test.ts` pins every engine command as engine-only.
+- **Writes go through the real write engine, in memory, gone on reload** (`operations_host/`). No Trash on the volume,
+  so F8 takes the app's permanent-delete confirm. ❌ Never a TS success for a write.
 - **No top-level `await`** in the boot path: WebKit can run an importer early, and Safari visitors run the demo.
 
 Adding an answer, the frame model, the seam, the placeholders, and decisions: `DETAILS.md`.

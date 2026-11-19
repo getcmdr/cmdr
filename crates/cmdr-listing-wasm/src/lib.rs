@@ -40,6 +40,8 @@ mod commands_test;
 #[cfg(all(test, not(target_family = "wasm")))]
 mod context_menu_test;
 #[cfg(all(test, not(target_family = "wasm")))]
+mod engine_command_names_test;
+#[cfg(all(test, not(target_family = "wasm")))]
 mod events_test;
 #[cfg(all(test, not(target_family = "wasm")))]
 mod folder_sizes_test;

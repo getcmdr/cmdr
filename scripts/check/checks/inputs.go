@@ -191,7 +191,8 @@ var rustWorkspaceConfigInputs = []string{
 // advisory module embeds the committed advisory list (`security_advisories/mod.rs`).
 // The frontend-bridge redaction test reads the marker vocabulary and the shared
 // case table the TS logger is tested against (`redact/fe_bridge_tests.rs`). The browser
-// demo's event drift guard reads the generated bindings (`cmdr-listing-wasm/src/events_test.rs`).
+// demo's event drift guard reads the generated bindings (`cmdr-listing-wasm/src/events_test.rs`), and its
+// engine-command guard the demo's copy of the engines' command lists (`engine_command_names_test.rs`).
 // The app's menu tests read the menu bar's definition and ids from `cmdr-menu`
 // (`menu/menu_items_test.rs`, `menu/context_menu_icons_test.rs`, `menu/macos_appkit.rs`).
 // The space poller's band tests read the free-percent case list the TS formatter shares
@@ -212,6 +213,7 @@ var rustEmbeddedInputs = []string{
 	"CHANGELOG.md",
 	"apps/desktop/src/lib/ask-cmdr/ask-cmdr-tool-label-keys.ts",
 	"apps/desktop/src/lib/commands/command-ids.ts",
+	"apps/desktop/src/lib/demo/engine-command-names.ts",
 	"apps/desktop/src/lib/intl/messages/**",
 	"apps/desktop/src/lib/intl/platform-select-cases.json",
 	"apps/desktop/src/lib/ipc/bindings.ts",

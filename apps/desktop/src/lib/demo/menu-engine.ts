@@ -2,11 +2,12 @@
  * The demo's menu bar state: `DemoMenuBar` from the WASM engine (`crates/cmdr-listing-wasm/src/menu.rs`
  * over `crates/cmdr-menu`). It answers the menu-state pushes the app sends the native menu
  * (`activate_window_menu`, `update_menu_accelerator`, `set_commands_refused_over_dialog`, …) and
- * draws the macOS bar from them, so this file holds no menu logic: it loads, routes, and types the
+ * draws the visitor's own OS's bar from them, so this file holds no menu logic: it loads, routes, and types the
  * answers. See `DETAILS.md` § The menu bar.
  */
 import type { BarMenuView, Row } from '#lib/ipc/bindings.js'
 import type { Payload } from './answer-types.js'
+import type { Platform } from '#lib/platform/index.js'
 import { loadEngineModule } from './engine-module.js'
 
 /**
@@ -56,13 +57,14 @@ export interface MenuEngineHandle {
   onChange(listener: () => void): () => void
 }
 
-export function startMenuEngine(): MenuEngineHandle {
+/** Starts the bar and menus of `platform` (the visitor's OS: `platform.ts`). */
+export function startMenuEngine(platform: Platform): MenuEngineHandle {
   let menu: InstanceType<typeof import('virtual:cmdr-listing-wasm').DemoMenuBar> | null = null
   let DemoMenuBar: typeof import('virtual:cmdr-listing-wasm').DemoMenuBar | null = null
   const ready = loadEngineModule().then((wasm) => {
     if (!wasm) return false
     DemoMenuBar = wasm.DemoMenuBar
-    menu = new wasm.DemoMenuBar()
+    menu = new wasm.DemoMenuBar(platform)
     return true
   })
 

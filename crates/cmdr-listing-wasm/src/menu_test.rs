@@ -5,6 +5,8 @@ use std::collections::BTreeSet;
 use serde_json::{Value, json};
 
 use crate::events_test::{ts_keys, ts_type_of_event};
+use cmdr_menu::spec::Platform;
+
 use crate::menu::{BarMenuView, Click, DemoMenu, MENU_COMMANDS, Row, RowLabel};
 
 fn find<'a>(rows: &'a [Row], id: &str) -> Option<&'a Row> {
@@ -296,6 +298,40 @@ fn every_command_answers_and_a_stranger_is_refused() {
             .invoke("activate_window_menu", json!({ "kind": "?" }))
             .is_err()
     );
+}
+
+/// A Windows or Linux visitor gets their own OS's bar (D5's in-window bar), with no app menu:
+/// File ends with Quit, and the shortcuts read the way that OS spells them.
+#[test]
+fn a_windows_or_linux_visitor_gets_their_own_bar() {
+    for platform in [Platform::Windows, Platform::Linux] {
+        let menu = DemoMenu::for_platform(platform);
+        let bar = menu.bar();
+        let ids: Vec<&str> = bar.iter().map(|menu| menu.id.as_str()).collect();
+        assert!(!ids.contains(&"menu_app"), "{platform:?} has no app menu: {ids:?}");
+        assert_eq!(ids.first(), Some(&"menu_file"), "{platform:?}");
+        let last_item = bar[0].rows.iter().rev().find_map(|row| match row {
+            Row::Item { id, .. } => Some(id.as_str()),
+            _ => None,
+        });
+        assert_eq!(last_item, Some("quit"), "{platform:?}'s File menu ends with Quit");
+        assert_eq!(shortcut(&menu, "new_tab").as_deref(), Some("Ctrl+T"), "{platform:?}");
+    }
+}
+
+/// A click and a rebind read the visitor's own bar, not the Mac's.
+#[test]
+fn a_windows_bar_clicks_and_rebinds_its_own_rows() {
+    let menu = DemoMenu::for_platform(Platform::Windows);
+    push(
+        &menu,
+        "update_menu_accelerator",
+        json!({ "commandId": "tab.new", "shortcut": "Ctrl+Alt+T" }),
+    );
+    assert_eq!(shortcut(&menu, "new_tab").as_deref(), Some("Ctrl+Alt+T"));
+    let (event, payload) = emitted(menu.click("quit"));
+    assert_eq!(event, "execute-command");
+    assert_eq!(payload["commandId"], "app.quit");
 }
 
 /// The four events a click sends carry exactly the keys `bindings.ts` declares for them.

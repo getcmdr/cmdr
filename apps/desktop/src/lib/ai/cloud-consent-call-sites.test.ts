@@ -50,6 +50,8 @@ describe('only the Allow cloud AI switch grants cloud consent', () => {
   it('the raw IPC wrapper is reached only through that state module', () => {
     expect(filesMentioning('acceptCloudAiConsent')).toEqual([
       'lib/ai/cloud-consent.svelte.ts',
+      // Names it only as a key of the demo's "left out" list (no AI in a page), never calls it.
+      'lib/demo/coverage.ts',
       'lib/ipc/bindings.ts',
       'lib/tauri-commands/ai.ts',
       'lib/tauri-commands/index.ts',

@@ -4,12 +4,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 // it with the same surface (`listing-wasm.d.ts`).
 const engine = vi.hoisted(() => ({
   invoked: [] as [string, unknown][],
+  platforms: [] as string[],
   failInit: false,
 }))
 
 vi.mock('virtual:cmdr-listing-wasm', () => ({
   default: () => (engine.failInit ? Promise.reject(new Error('no wasm')) : Promise.resolve()),
   DemoMenuBar: class {
+    constructor(platform: string) {
+      engine.platforms.push(platform)
+    }
     static handles(command: string): boolean {
       return command === 'activate_window_menu'
     }
@@ -32,13 +36,14 @@ import { startMenuEngine } from './menu-engine.js'
 afterEach(() => {
   _resetEngineModuleForTests()
   engine.invoked = []
+  engine.platforms = []
   engine.failInit = false
   vi.restoreAllMocks()
 })
 
 describe('menu engine', () => {
   it('routes the pushes the engine claims and answers the bar and a click from it', async () => {
-    const handle = startMenuEngine()
+    const handle = startMenuEngine('macos')
     expect(await handle.ready).toBe(true)
     expect(await handle.handles('activate_window_menu')).toBe(true)
     expect(await handle.handles('get_volume_space')).toBe(false)
@@ -53,11 +58,18 @@ describe('menu engine', () => {
     })
   })
 
+  // Step 11 of task 63: the visitor's own OS's bar and menus, not the Mac's for everyone.
+  it('builds the bar for the visitor’s own OS', async () => {
+    const handle = startMenuEngine('windows')
+    expect(await handle.ready).toBe(true)
+    expect(engine.platforms).toEqual(['windows'])
+  })
+
   it('draws nothing, claims nothing, and refuses a push when the engine fails to load', async () => {
     engine.failInit = true
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
     vi.spyOn(console, 'warn').mockImplementation(() => undefined)
-    const handle = startMenuEngine()
+    const handle = startMenuEngine('macos')
     expect(await handle.ready).toBe(false)
     expect(await handle.handles('activate_window_menu')).toBe(false)
     expect(handle.bar()).toBeNull()

@@ -68,15 +68,17 @@ out), so answers are exactly what Tauri's `invoke` resolves with.
   dropped in from the computer). Both reject with an `ImportError`
   (`{ kind: "badPath" | "unknownItem" | "sizeChanged" | "volume", ... }`).
 - `DemoListing.setLogLevel(level)`: the engine's `log` lines on the console, `"warn"` by default.
-- `new DemoMenuBar()`: the menu bar (`menu.rs`). `DemoMenuBar.handles(command)` and `menu.invoke(command, args)` take
-  the desktop's menu-state pushes by their Tauri names (`activate_window_menu`, `set_commands_refused_over_dialog`,
-  `update_menu_accelerator`, `update_sort_menu`, `update_view_mode_menu`, and the rest of `MENU_COMMANDS`) and store
-  them, as `commands/menu_state.rs` stores them in `MenuState`. `menu.bar()` answers the macOS bar as it stands:
-  `[{ id, title, rows }]`, each row `item` / `check` / `submenu` / `system` / `separator` with its label (a catalog key
-  plus tokens, or the app menu's literal `Cmdr`), its shortcut in a Mac's glyphs (plus `ariaKeyshortcuts`), and its
-  enabled and checked state (plus `checkKind`), all drawn by `cmdr_menu::page` (`crates/cmdr-menu/DETAILS.md` § "The
-  menus as a page draws them"), the same function the desktop's in-page bar draws through. `menu.click(id)` answers what
-  the click sends: `{ kind: "emit", event, payload, to }` (`execute-command`, `settings-changed`, `view-mode-changed`,
+- `new DemoMenuBar(platform)`: the menu bar (`menu.rs`) and right-click menus of `platform` (`"macos"`, `"windows"`, or
+  `"linux"`: the visitor's own OS, which the page reads off the user agent; any other name throws).
+  `DemoMenuBar.handles(command)` and `menu.invoke(command, args)` take the desktop's menu-state pushes by their Tauri
+  names (`activate_window_menu`, `set_commands_refused_over_dialog`, `update_menu_accelerator`, `update_sort_menu`,
+  `update_view_mode_menu`, and the rest of `MENU_COMMANDS`) and store them, as `commands/menu_state.rs` stores them in
+  `MenuState`. `menu.bar()` answers that OS's bar as it stands: `[{ id, title, rows }]`, each row `item` / `check` /
+  `submenu` / `system` / `separator` with its label (a catalog key plus tokens, or the Mac app menu's literal `Cmdr`),
+  its shortcut in that OS's spelling (a Mac's glyphs, `Ctrl+T` elsewhere) (plus `ariaKeyshortcuts`), and its enabled and
+  checked state (plus `checkKind`), all drawn by `cmdr_menu::page` (`crates/cmdr-menu/DETAILS.md` § "The menus as a page
+  draws them"), the same function the desktop's in-page bar draws through. `menu.click(id)` answers what the click
+  sends: `{ kind: "emit", event, payload, to }` (`execute-command`, `settings-changed`, `view-mode-changed`,
   `menu-sort`, the payloads `handle_menu_event` emits, `to` the target window's label), `nativeEdit`,
   `closeFocusedWindow`, or `nothing` for a greyed or OS row.
 - The right-click menus are the same object (`context_menu.rs`). `DemoMenuBar.opensPopup(command)` claims the
@@ -369,8 +371,9 @@ from the computer. Nothing leaves the page.
   guards a write-locked cache, which a page's one thread can't be waiting on.
 - **Owners show as empty, permissions are fixed**, and nothing reads tags, packages, or git status. Folder sizes come
   from a fold, never an index (§ Folder sizes).
-- **The menu bar is the macOS one** whatever the visitor's OS, and its OS rows (Services, Hide, Quit, Undo, Minimize)
-  are drawn greyed: a page has no OS to hand them to.
+- **The menu bar is the visitor's own OS's** (D5: the macOS bar for a Mac visitor, the in-window bar elsewhere), and a
+  Mac bar's OS rows (Services, Hide, Quit, Undo, Minimize) are drawn greyed: a page has no OS to hand them to. Windows'
+  and Linux's File > Quit sends `app.quit`, which the page refuses (it can't quit its tab).
 - **No local disk**: `move_files` (the desktop's same-`root` move) runs as a volume move on `root`, the dialog's
   `previewId` carried in its config; `trash_files` and `move_to_trash` refuse typed (`trash_not_supported`), as a volume
   without a Trash does, and F8 takes the app's permanent-delete confirm. `trash_routing_for_paths` answers the plain

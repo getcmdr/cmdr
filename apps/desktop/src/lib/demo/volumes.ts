@@ -62,7 +62,7 @@ export function demoPath(raw: string): string {
   return expanded.length > 1 && expanded.endsWith('/') ? expanded.slice(0, -1) : expanded
 }
 
-export const volumeAnswers: AnswerTable = {
+export const volumeAnswers = {
   listVolumes: () => ({ data: demoLocations, timedOut: false }),
   getDefaultVolumeId: () => DEMO_VOLUME_ID,
   getE2eStartPath: () => null,
@@ -81,4 +81,4 @@ export const volumeAnswers: AnswerTable = {
   // Nothing on the demo volume syncs, and it stores every path as given.
   getSyncStatus: () => ({ data: {}, timedOut: false }),
   storedSpellings: (p) => ({ data: p.paths as string[], timedOut: false }),
-}
+} satisfies AnswerTable

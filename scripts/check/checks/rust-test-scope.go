@@ -292,6 +292,8 @@ var rustTestScopeRules = []rustScopeRule{
 		Why: "`whats_new` embeds it and a test parses it"},
 	{Glob: "apps/desktop/src/lib/commands/command-ids.ts", Effect: scopeReaders, Readers: []string{"cmdr"},
 		Why: "the app's `build.rs` generates the breadcrumb vocabulary from it, and a drift test embeds it"},
+	{Glob: "apps/desktop/src/lib/demo/engine-command-names.ts", Effect: scopeReaders, Readers: []string{"cmdr-listing-wasm"},
+		Why: "the browser engines' command drift guard reads the demo's copy of their lists (`cmdr-listing-wasm/src/engine_command_names_test.rs`)"},
 	{Glob: "apps/desktop/src/lib/ipc/bindings.ts", Effect: scopeReaders, Readers: []string{"cmdr", "cmdr-listing-wasm"},
 		Why: "the app's IPC tests compare against the generated bindings (`ipc.rs`), and the browser listing engine's event drift guard embeds them (`cmdr-listing-wasm/src/events_test.rs`)"},
 	{Glob: "apps/desktop/src/lib/logging/bridge-redaction-cases.json", Effect: scopeReaders, Readers: []string{"cmdr"},

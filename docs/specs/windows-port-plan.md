@@ -1054,6 +1054,12 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
         (task 55's entry). Landmines: the demo has no backend, so it keeps `DemoMenuBar`'s wasm answer, which step 2's
         tests hold equal to the desktop's. Tests: the demo's menu tests and `smoke.mjs`. Done when: a Windows visitor
         sees the Windows bar.
+        - Status: the bar, the right-click menus, and the look follow the visitor (`new DemoMenuBar(platform)`, the
+          visitor's own conventions row, no look pin; `lib/demo/DETAILS.md` § Platform). Still open: the new-query key
+          (a fixed-key command can't be seeded, so picking one needs a seam in the shortcut store, David's call), and
+          the macOS traffic lights every visitor still gets (with `overlayTitleBar`). Once step 6 draws the bar in the
+          main window, the demo answers `get_menu_bar` and the pick commands from `DemoMenuBar` and drops its own strip
+          for a Windows or Linux visitor (`coverage.ts`'s `IN_PAGE_MENUS`).
     12. [XS] **Delete `tools/menu-spike/`** once steps 6 and 7 and task 67 have taken what they need (list above): the
         folder, its line in `AGENTS.md`'s `tools/` list, and the README pointer in `menu-spike.md` (the note stays as
         the decision's record). Done when: no doc links the folder.
