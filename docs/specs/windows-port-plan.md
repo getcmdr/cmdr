@@ -858,8 +858,8 @@ its start number):
     - Scope: a new `on_webview_ready` hook on the `cmdr-platform` plugin (`platform_plugin` in
       `apps/desktop/src-tauri/src/tauri_builder.rs`, which reaches every webview, the JS-created ones too) runs a
       `#[cfg(windows)]` `with_webview` that casts the core's settings to `ICoreWebView2Settings3` and calls
-      `SetAreBrowserAcceleratorKeysEnabled(false)`, as `tools/menu-spike/src/win.rs`'s `set_browser_keys` does. Use
-      #16397's config field instead if it has shipped.
+      `SetAreBrowserAcceleratorKeysEnabled(false)`, as the menu spike's `set_browser_keys` did
+      (`git show c15f567151:tools/menu-spike/src/win.rs`). Use #16397's config field instead if it has shipped.
     - Landmines: the setting applies from the next navigation, so the first page of each window must be covered (set it
       before the first load, or check that it holds on the first page); `F6`, `Shift+F6`, `Ctrl+M`, and `Ctrl+Shift+M`
       may sit outside the global switch (#1115's comment), which then needs the per-key
@@ -976,14 +976,15 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
       step 1 lands). Wave 3 runs steps 6, 7's frontend half, and 11 in parallel. Wave 4 runs steps 8, 9, and 10 in
       parallel. Step 12 goes last. Reference shots for the look: Notepad's menu bar and a File Explorer context menu on
       Windows 11, light and dark, taken on David's laptop.
-    - **Worth keeping from `tools/menu-spike/` before step 12 deletes it**: `src/win.rs` `subclass` (the window subclass
-      that swallows a `SC_KEYMENU` and lets Alt+Space's `lParam` 0x20 through: step 6's guard); `set_browser_keys` and
-      `install`'s `AcceleratorKeyPressed` wiring (task 67's global switch and its per-key fallback); the `--selftest`
-      harness (`SendInput` key script plus a BMP screen capture per step, which runs in mami's console session with the
-      lid closed: the cheapest way for an agent to see step 6 and 7 on real Windows before David does). From
-      `ui/app.js`: the lone-Alt tracking (`altAlone`, AltGr excluded) and `rememberFocus` / `restoreFocus`, as a
-      cross-check for step 4. Not worth keeping: mode A's key bridge (`on_webview_key`), mode B's `popup_with_arrows`
-      and its `WH_MSGFILTER` hook, `src/model.rs` (step 2's command replaces it), and `ui/style.css`.
+    - **Kept from the menu spike** (deleted by step 12; its source stays in git history at `c15f567151`, for example
+      `git show c15f567151:tools/menu-spike/src/win.rs`): `src/win.rs` `subclass` (the window subclass that swallows a
+      `SC_KEYMENU` and lets Alt+Space's `lParam` 0x20 through: step 6's guard); `set_browser_keys` and `install`'s
+      `AcceleratorKeyPressed` wiring (task 67's global switch and its per-key fallback); the `--selftest` harness
+      (`SendInput` key script plus a BMP screen capture per step, which runs in mami's console session with the lid
+      closed: the cheapest way for an agent to see step 6 and 7 on real Windows before David does). From `ui/app.js`:
+      the lone-Alt tracking (`altAlone`, AltGr excluded) and `rememberFocus` / `restoreFocus`, as a cross-check for
+      step 4. Not worth keeping: mode A's key bridge (`on_webview_key`), mode B's `popup_with_arrows` and its
+      `WH_MSGFILTER` hook, `src/model.rs` (step 2's command replaces it), and `ui/style.css`.
     1. [XS] **Conventions data.**
        - Scope: `MenuModel::PrimaryMenu` and the GNOME row; Windows' `accessKeys` row flips from `keytips` to
          `underlines` (`apps/desktop/src-tauri/src/platform/conventions.rs`, its test, `bindings.ts`,
@@ -1143,6 +1144,15 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
         - Landmines: knip and the IPC binding checks catch leftovers.
         - Tests: the Linux E2E lane (step 6's spec replaces the deleted one).
         - Done when: nothing in the tree references the mask.
+        - **Built** (2026-11-19): `menu/mnemonic_mask/`, `set_menu_mnemonics_suspended` and its wrapper,
+          `menu-mnemonics-capture.svelte.ts` and its two Settings callers, and the gate's mnemonic push are gone, and so
+          are `menu/mnemonics.rs` (the GTK bar's letter allocator, which only the native bar builder called: an identity
+          on macOS) and the Linux `gtk` dependency only the mask used. `menu-bar.spec.ts` held no mask leftovers. Kept
+          on purpose: `menu_structure.rs` (the macOS viewer bar; its rows mirror `cmdr_menu::page::viewer`'s, and
+          merging the two would touch the macOS bar, out of a deletion step's scope) and the AppKit title lookups in
+          `display_accelerators.rs` and `context_menu_header.rs` (macOS only: AppKit has no Tauri id, documented in
+          `menu/DETAILS.md`). macOS unchanged: the bar builder's labels are byte-identical, and `cmdr-menu`'s bar tests
+          pass with no test or data change.
     11. [S] **The demo** draws the visitor's own model with the shared component (macOS bar, Windows bar, or the Linux
         bar, and on Windows the in-page context menus) and picks the demo-only key for the search dialog's new query
         (task 55's entry). Landmines: the demo has no backend, so it keeps `DemoMenuBar`'s wasm answer, which step 2's
@@ -1166,11 +1176,22 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
           the desktop's Windows volume refuses, (5) Copy path's text in Windows spelling (`\`), as the desktop's
           clipboard command writes it, and (6) the volume answers (`volumes.ts`: `path`, `volumeRoot`, favorites) and
           the website suite's path assertions per visitor. Not started: David's call.
-        - Once step 6 draws the bar in the main window, the demo answers `get_menu_bar` and the pick commands from
-          `DemoMenuBar` and drops its own strip for a Windows or Linux visitor (`coverage.ts`'s `IN_PAGE_MENUS`).
+        - **Open, the demo side's one remaining item**: the desktop now draws the bar in the page (step 6), so the demo
+          should answer that bar's commands from the WASM engine and drop its own strip for a Windows or Linux visitor.
+          It takes: (1) `get_menu_bar`, `get_viewer_menu_bar`, and `pick_menu_bar_item` answered from `DemoMenuBar` in
+          `lib/demo/answers.ts` (today `getMenuBar` answers an empty bar so the app's bar draws nothing) and taken off
+          `coverage.ts`'s `IN_PAGE_MENUS`, plus a `menu-bar-changed` emit when a row's state moves; (2) the demo's own
+          strip (`lib/demo/menu-bar.svelte.ts`) kept for a macOS visitor only; (3) the demo's menu tests and `smoke.mjs`
+          moved onto the app's bar, and View > Show menu bar live there (today greyed). The macOS demo stays as is.
     12. [XS] **Delete `tools/menu-spike/`** once steps 6 and 7 and task 67 have taken what they need (list above): the
         folder, its line in `AGENTS.md`'s `tools/` list, and the README pointer in `menu-spike.md` (the note stays as
         the decision's record). Done when: no doc links the folder.
+        - **Built** (2026-11-19): the folder (its own `Cargo.lock` and `osv-scanner.toml` with it) and its `AGENTS.md`
+          line are gone; `menu-spike.md`, `keymenu.rs`, and `src-tauri/DETAILS.md` point at the source in git history.
+    - **Task 63's open items**: (1) the real-Windows check of steps 3–9 (the bar, Alt and F10, `SC_KEYMENU`, the in-page
+      context menus, the hidden bar; task 55's menu entry, on mami or a laptop); (2) David's design review of the Fluent
+      look against Notepad and File Explorer (step 3's done-when); (3) the demo remainder (step 11, above); (4) per-OS
+      menu titles (`docs/notes/windows-port/menu-titles-per-os.md`).
     - Reused unchanged: the bar data, ids, labels, enabled fold, sort checks, every context menu's rows, and the
       snapshots. QA: task 55 (keys), task 64 and David (Narrator, NVDA, JAWS, and Orca read the bar and the menus as
       menus; high contrast).

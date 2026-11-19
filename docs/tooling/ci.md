@@ -182,6 +182,9 @@ itself still reruns all.
   the Svelte lane's four Vitest slices pass blob reports to `coverage`, the E2E lane's `build` passes the binary to
   three Playwright slices, and the website lane's `demo` passes the released demo bundle to `site`. § Critical path says
   what each split buys.
+- **The website's Lighthouse run serves on a fixed port, 4322** (`apps/website/lighthouserc.cjs`), against the house
+  rule of a random high port per dev service. Accepted: it runs alone inside the lane's container, where nothing else
+  binds that port; a local `lhci` run collides only with another preview on 4322.
 
 ## The light lane
 

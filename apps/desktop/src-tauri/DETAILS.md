@@ -145,8 +145,8 @@ one the frontend opens later, so it carries both the init script and an `on_webv
   `Ctrl+plus`, `F7`, `F12`, `Ctrl+P`, `Ctrl+Shift+P`, and `Ctrl+J` did nothing of WebView2's (verified on Windows 10
   22H2, WebView2 157.0.4341.60, with OS key input, 2026-11-19, `docs/notes/windows-port/real-windows-check-2026-11-19.md`).
   Still unverified: whether `F6` / `Shift+F6` / `Ctrl+M` sit outside it and need the per-key
-  `IsBrowserAcceleratorKeyEnabled(FALSE)` in an `AcceleratorKeyPressed` handler (`tools/menu-spike/src/win.rs` shows
-  the wiring).
+  `IsBrowserAcceleratorKeyEnabled(FALSE)` in an `AcceleratorKeyPressed` handler (the menu spike's `install` shows the
+  wiring: `git show c15f567151:tools/menu-spike/src/win.rs`, deleted with task 63 step 12).
 
 ## Tauri config per platform
 

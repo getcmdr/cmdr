@@ -6,7 +6,7 @@
 //! `DefWindowProc` as `WM_SYSCOMMAND` `SC_KEYMENU` with `lParam` 0, and an Alt+letter no title took
 //! as `SC_KEYMENU` with the letter. With no menu bar, Windows then starts its menu loop on the
 //! invisible system menu (the next arrow or letter goes to it, not the page) or beeps for the
-//! letter (measured on Windows 10 22H2 with `tools/menu-spike/`, 2026-11-18,
+//! letter (measured on Windows 10 22H2 with the menu spike, 2026-11-18,
 //! `docs/notes/windows-port/menu-spike.md`). The page has already acted on the key (the bar's
 //! keyup handler takes a lone Alt), so the window answers every `SC_KEYMENU` itself, except
 //! Alt+Space (`lParam` 0x20), which opens the window's system menu (Restore, Move, Size, Close).
