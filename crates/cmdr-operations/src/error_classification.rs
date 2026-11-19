@@ -80,6 +80,34 @@ pub(super) fn classify_io_error(e: &std::io::Error, path: String) -> WriteOperat
     }
 }
 
+/// Classifies a refusal to create the symlink at `link`.
+///
+/// A file system that holds no links answers `symlink(2)` with `EPERM` (exFAT and
+/// FAT on Linux), `ENOTSUP`/`EOPNOTSUPP` (some SMB shares), or `ENOSYS`, and
+/// Windows' link creation answers `ErrorKind::Unsupported`; each is
+/// [`LinksNotSupported`](WriteOperationError::LinksNotSupported). ❗ `EPERM` here
+/// is the file system, ❌ never a permission refusal: a person sent to fix
+/// permissions would change nothing. Anything else classifies as any write does.
+pub(super) fn classify_link_creation_error(e: &std::io::Error, link: &Path) -> WriteOperationError {
+    let holds_no_links = e.kind() == std::io::ErrorKind::Unsupported
+        || matches!(
+            OsErrorClass::of_io(e),
+            Some(
+                OsErrorClass::NotPermitted
+                    | OsErrorClass::Unsupported
+                    | OsErrorClass::OperationNotSupported
+                    | OsErrorClass::NotImplemented
+            )
+        );
+    if holds_no_links {
+        WriteOperationError::LinksNotSupported {
+            path: link.display().to_string(),
+        }
+    } else {
+        classify_io_error(e, link.display().to_string())
+    }
+}
+
 /// Classifies a failure from a native copy call (`copyfile`, `copy_file_range`),
 /// which touches both ends, so the errno also decides which path the error names.
 ///
@@ -235,6 +263,7 @@ impl WriteOperationError {
             | Self::ArchiveNeedsPassword { .. }
             | Self::NewDataKeptAt { .. }
             | Self::LandingNotRecorded { .. }
+            | Self::LinksNotSupported { .. }
             | Self::TrashRefused { .. } => true,
         }
     }
@@ -351,6 +380,32 @@ mod tests {
             cause: Box::new(in_use()),
         };
         assert!(not_removed.is_expected_refusal());
+    }
+
+    /// A file system that holds no links answers `symlink(2)` with `EPERM` (exFAT,
+    /// FAT), `ENOTSUP` (some SMB shares), or Windows' `Unsupported`: the typed
+    /// refusal, ❌ never a permission one. `EACCES` stays a permission refusal.
+    #[test]
+    fn a_link_the_file_system_cant_hold_is_links_not_supported() {
+        let link = Path::new("/Volumes/USB/note.txt");
+        let mut refusals = vec![std::io::Error::from(std::io::ErrorKind::Unsupported)];
+        #[cfg(unix)]
+        refusals.extend(
+            [libc::EPERM, libc::ENOTSUP, libc::EOPNOTSUPP, libc::ENOSYS].map(std::io::Error::from_raw_os_error),
+        );
+        for e in refusals {
+            let err = classify_link_creation_error(&e, link);
+            assert!(
+                matches!(&err, WriteOperationError::LinksNotSupported { path } if path == "/Volumes/USB/note.txt"),
+                "{e:?}: got {err:?}"
+            );
+            assert!(err.is_expected_refusal(), "a drive's limit is the world's refusal");
+        }
+        #[cfg(unix)]
+        assert!(matches!(
+            classify_link_creation_error(&std::io::Error::from_raw_os_error(libc::EACCES), link),
+            WriteOperationError::PermissionDenied { .. }
+        ));
     }
 
     /// A local file another app holds open (Windows' `ERROR_SHARING_VIOLATION` and

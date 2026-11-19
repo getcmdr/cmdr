@@ -209,7 +209,7 @@ mod tests {
     #[test]
     fn resolves_a_symlink_into_its_target() {
         // A link needs Developer Mode or elevation on Windows.
-        if !cmdr_fs::testing::can_create_symlinks() {
+        if cmdr_fs::testing::skip_without_symlinks() {
             return;
         }
         let dir = tempfile::tempdir().unwrap();

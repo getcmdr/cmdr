@@ -56,7 +56,7 @@ fn read_test_tree() -> tempfile::TempDir {
 #[test]
 fn the_reconcile_read_matches_a_per_entry_stat() {
     // A link needs Developer Mode or elevation on Windows.
-    if !cmdr_fs::testing::can_create_symlinks() {
+    if cmdr_fs::testing::skip_without_symlinks() {
         return;
     }
     let dir = read_test_tree();

@@ -141,3 +141,48 @@ func TestARenderedBaselineReadsBackAndDiffsByName(t *testing.T) {
 		t.Fatalf("diff:\n%s", diff.String())
 	}
 }
+
+const skippingJUnit = `<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="nextest-run" tests="3" failures="0" errors="0">
+  <testsuite name="cmdr-operations::lib" tests="3" failures="0">
+    <testcase name="unique_name::tests::a_dangling_symlink_counts_as_taken" classname="cmdr-operations::lib"><system-out>running 1 test</system-out><system-err>skipped: this cell creates symlinks, which needs Developer Mode or an elevated shell on Windows
+</system-err></testcase>
+    <testcase name="ledger::tests::plain" classname="cmdr-operations::lib"><system-err>the word skipped: mid-line is no marker</system-err></testcase>
+    <testcase name="ledger::tests::ignored" classname="cmdr-operations::lib"><skipped/></testcase>
+  </testsuite>
+</testsuites>`
+
+func TestAPassThatSkippedItselfIsCountedAndListed(t *testing.T) {
+	dir := t.TempDir()
+	junit := filepath.Join(dir, "junit.xml")
+	if err := os.WriteFile(junit, []byte(skippingJUnit), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	r, err := readReport(junit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := testID{"cmdr-operations", "unique_name::tests::a_dangling_symlink_counts_as_taken"}
+	if len(r.SelfSkipped) != 1 || r.SelfSkipped[0] != want {
+		t.Fatalf("self-skipped %v", r.SelfSkipped)
+	}
+	var md bytes.Buffer
+	if err := render(&md, r, "abc123", ""); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(md.String(), "# Skipped themselves (1)") || !strings.Contains(md.String(), "- cmdr-operations `unique_name::tests::a_dangling_symlink_counts_as_taken`") {
+		t.Fatalf("render:\n%s", md.String())
+	}
+	listed, err := parseBaseline(&md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listed) != 0 {
+		t.Fatalf("a skipped pass read back as a failure: %v", listed)
+	}
+	var diff bytes.Buffer
+	writeDiff(&diff, listed, r)
+	if !strings.Contains(diff.String(), "Passed by skipping themselves (no symlink privilege, or another missing capability) (1)") {
+		t.Fatalf("diff:\n%s", diff.String())
+	}
+}

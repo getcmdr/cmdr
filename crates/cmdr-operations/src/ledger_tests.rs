@@ -77,7 +77,7 @@ fn a_local_directory_records_its_node_and_no_size() {
 #[test]
 fn a_symlink_records_the_link_not_its_target() {
     // A link needs Developer Mode or elevation on Windows.
-    if !cmdr_fs::testing::can_create_symlinks() {
+    if cmdr_fs::testing::skip_without_symlinks() {
         return;
     }
     let tmp = tempfile::tempdir().unwrap();

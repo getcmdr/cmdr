@@ -827,5 +827,9 @@ mod named_copy_tests;
 mod copy_dest_link_tests;
 
 #[cfg(test)]
+#[path = "link_landing_tests.rs"]
+mod link_landing_tests;
+
+#[cfg(test)]
 #[path = "folder_dates_tests.rs"]
 mod folder_dates_tests;

@@ -326,7 +326,7 @@ fn a_source_dir_that_kept_a_skipped_child_never_reports_removal() {
 #[test]
 fn a_symlinked_source_file_is_removed_as_a_link_and_its_target_is_untouched() {
     // A link needs Developer Mode or elevation on Windows.
-    if !cmdr_fs::testing::can_create_symlinks() {
+    if cmdr_fs::testing::skip_without_symlinks() {
         return;
     }
     use cmdr_fs::testing::symlink;

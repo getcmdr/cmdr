@@ -348,6 +348,46 @@ where
     }
 }
 
+/// Lands a symlink at `dest` over the file or link standing there: `make_link`
+/// creates it under a `.cmdr-tmp-*` sibling, and one same-directory rename puts it
+/// over `dest`. A folder in the way goes through [`safe_overwrite_dir`] instead.
+///
+/// ❗ The point is the refusal: a drive that holds no links (exFAT, FAT, some SMB
+/// shares, Windows without the privilege) refuses at `make_link`, before anything
+/// touched `dest`, so the person's file stays as it was. Deleting `dest` first and
+/// then making the link lost it. No aside and no flush: the rename replaces `dest`
+/// in one step, and a link has no bytes to reach the drive.
+pub(super) fn stage_and_land_link<F>(
+    state: &Arc<WriteOperationState>,
+    dest: Announced<'_>,
+    make_link: F,
+) -> Result<(), WriteOperationError>
+where
+    F: FnOnce(&Path) -> Result<(), WriteOperationError>,
+{
+    let dest = dest.path();
+    let temp = StagingTemp::mint_with_uuid(dest, Uuid::new_v4(), state.liveness_token());
+    let temp_path = temp.path();
+    state.scope().host().announce(temp_path);
+    state.scope().host().announce(dest);
+    // A crash between the link and its rename leaves a recognizable temp, which
+    // the next launch's sweep removes.
+    let temp_record = in_flight_temps::track(state, ItemKind::Temp, temp_path);
+    if let Err(e) = make_link(temp_path) {
+        discard_temp(state, &temp_record);
+        return Err(e.on_item_instead(temp_path, dest));
+    }
+    if let Err(e) = fs::rename(temp_path, dest) {
+        discard_temp(state, &temp_record);
+        return Err(WriteOperationError::IoError {
+            path: dest.display().to_string(),
+            message: format!("Failed to finalize the copy: {e}").into(),
+        });
+    }
+    in_flight_temps::retire(state, &temp_record);
+    Ok(())
+}
+
 /// [`land_temp`], and when the TEMP refuses it (`uchg`, a `deny delete` ACL):
 /// clear those, retry once, and fold what was cleared into `landed` so it goes
 /// back on the landed file. The landing rename is the probe, so an ordinary

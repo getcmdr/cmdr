@@ -88,11 +88,11 @@ var (
 	// ERROR_INVALID_NAME: a fixture creating `a?b.txt` or `12:00`.
 	windowsNamesRE = regexp.MustCompile(`code: 123\b|os error 123\b`)
 	homeEnvRE      = regexp.MustCompile(`HOME is set: NotPresent`)
-	// The home folder spelled natively (`Debug` doubles the `\`) where an app path was expected.
 	// A fixture's POSIX absolute path, which a Windows host reads as relative or foreign.
 	posixFixtureRE = regexp.MustCompile(`"/(?:Users|Volumes|srv|tmp|home|sdcard|mnt)/`)
-	nativeHomeRE   = regexp.MustCompile(`[A-Za-z]:\\\\Users\\\\`)
-	timeoutRE      = regexp.MustCompile(`(?i)timed out|test timeout|TIMEOUT`)
+	// The home folder spelled natively (`Debug` doubles the `\`) where an app path was expected.
+	nativeHomeRE = regexp.MustCompile(`[A-Za-z]:\\\\Users\\\\`)
+	timeoutRE    = regexp.MustCompile(`(?i)timed out|test timeout|TIMEOUT`)
 )
 
 // classifyText reads a cause from a failure's output, or `clusterUnread`.

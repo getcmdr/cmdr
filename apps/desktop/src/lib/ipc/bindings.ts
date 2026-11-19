@@ -1127,6 +1127,17 @@ export const commands = {
        */
       | { type: 'archive_entry_under_file'; path: string; entry: string; file: string }
       | { type: 'symlink_loop'; path: string }
+      /**
+       *  The destination's file system refused to hold a symlink the copy carries
+       *  (exFAT, FAT, some SMB shares, Windows without the privilege to make one).
+       *  The link is made under a temp name first, so whatever held `path` is still
+       *  there, untouched; `path` is the name the link was meant to take.
+       *
+       *  ❗ Built from the errno at the link's creation
+       *  (`error_classification::classify_link_creation_error`), ❌ never from a
+       *  message.
+       */
+      | { type: 'links_not_supported'; path: string }
       | { type: 'cancelled'; message: string }
       /**
        *  Device was disconnected during the operation (USB, MTP, etc.).
@@ -26194,6 +26205,17 @@ export type WriteOperationError =
    */
   | { type: 'archive_entry_under_file'; path: string; entry: string; file: string }
   | { type: 'symlink_loop'; path: string }
+  /**
+   *  The destination's file system refused to hold a symlink the copy carries
+   *  (exFAT, FAT, some SMB shares, Windows without the privilege to make one).
+   *  The link is made under a temp name first, so whatever held `path` is still
+   *  there, untouched; `path` is the name the link was meant to take.
+   *
+   *  ❗ Built from the errno at the link's creation
+   *  (`error_classification::classify_link_creation_error`), ❌ never from a
+   *  message.
+   */
+  | { type: 'links_not_supported'; path: string }
   | { type: 'cancelled'; message: string }
   /**
    *  Device was disconnected during the operation (USB, MTP, etc.).

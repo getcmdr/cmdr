@@ -421,7 +421,7 @@ async fn a_file_streams_its_bytes_date_and_mode() {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn a_folder_or_a_link_has_no_bytes_to_stream() {
-    if !cmdr_fs::testing::can_create_symlinks() {
+    if cmdr_fs::testing::skip_without_symlinks() {
         return;
     }
     let browse = Browse::new().await;
@@ -444,7 +444,7 @@ async fn a_folder_or_a_link_has_no_bytes_to_stream() {
 /// in the view is a link, the view's own folders included.
 #[tokio::test(flavor = "multi_thread")]
 async fn a_link_reports_the_target_the_backup_recorded() {
-    if !cmdr_fs::testing::can_create_symlinks() {
+    if cmdr_fs::testing::skip_without_symlinks() {
         return;
     }
     let browse = Browse::new().await;

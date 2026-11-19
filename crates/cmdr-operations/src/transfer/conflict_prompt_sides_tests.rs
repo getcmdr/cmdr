@@ -260,7 +260,7 @@ fn link_over_folder_fixture(dir: &TestDir) -> (std::path::PathBuf, std::path::Pa
 #[test]
 fn a_copied_link_to_a_folder_meeting_a_folder_is_described_as_a_leaf() {
     // A link needs Developer Mode or elevation on Windows.
-    if !cmdr_fs::testing::can_create_symlinks() {
+    if cmdr_fs::testing::skip_without_symlinks() {
         return;
     }
     let engine = TestOperations::new();
@@ -276,7 +276,7 @@ fn a_copied_link_to_a_folder_meeting_a_folder_is_described_as_a_leaf() {
 #[test]
 fn a_moved_link_to_a_folder_meeting_a_folder_is_described_as_a_leaf() {
     // A link needs Developer Mode or elevation on Windows.
-    if !cmdr_fs::testing::can_create_symlinks() {
+    if cmdr_fs::testing::skip_without_symlinks() {
         return;
     }
     let engine = TestOperations::new();
@@ -294,7 +294,7 @@ fn a_moved_link_to_a_folder_meeting_a_folder_is_described_as_a_leaf() {
 #[test]
 fn a_moved_folder_meeting_a_link_to_a_folder_is_described_as_folder_over_leaf() {
     // A link needs Developer Mode or elevation on Windows.
-    if !cmdr_fs::testing::can_create_symlinks() {
+    if cmdr_fs::testing::skip_without_symlinks() {
         return;
     }
     let engine = TestOperations::new();

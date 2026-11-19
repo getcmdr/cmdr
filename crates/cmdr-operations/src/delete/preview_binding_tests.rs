@@ -287,7 +287,7 @@ async fn a_volume_delete_stays_bound_to_its_own_sources() {
 #[test]
 fn a_local_delete_never_acts_on_a_preview_walked_for_a_copy() {
     // A link needs Developer Mode or elevation on Windows.
-    if !cmdr_fs::testing::can_create_symlinks() {
+    if cmdr_fs::testing::skip_without_symlinks() {
         return;
     }
     let root = TestDir::new(&unique("local-delete-purpose"));

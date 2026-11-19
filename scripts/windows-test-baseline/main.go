@@ -230,10 +230,27 @@ type failure struct {
 	Text string
 }
 
-// report is one run: every test that ran, and the ones that failed.
+// report is one run: every test that ran, the ones that failed, and the passes that skipped themselves.
 type report struct {
 	Ran      map[testID]bool
 	Failures []failure
+	// SelfSkipped is every test that passed by returning early, read from the skip marker it printed
+	// (`cmdr_fs::testing::SKIP_MARKER`). nextest has no runtime skip, so only the marker tells such a pass from a
+	// real one, and the report holds a pass's output only under the `windows-baseline` profile.
+	SelfSkipped []testID
+}
+
+// skipMarker is `cmdr_fs::testing::SKIP_MARKER`: a line a cell prints when it skips itself.
+const skipMarker = "skipped: "
+
+// skippedItself reports whether a passing test's output holds the skip marker at a line start.
+func skippedItself(output string) bool {
+	for _, line := range strings.Split(output, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), skipMarker) {
+			return true
+		}
+	}
+	return false
 }
 
 func readReport(path string) (report, error) {
@@ -256,6 +273,9 @@ func readReport(path string) (report, error) {
 			r.Ran[id] = true
 			problems := append(append([]junitProblem{}, c.Failures...), c.Errors...)
 			if len(problems) == 0 {
+				if skippedItself(c.SystemOut + "\n" + c.SystemErr) {
+					r.SelfSkipped = append(r.SelfSkipped, id)
+				}
 				continue
 			}
 			var text strings.Builder
@@ -329,7 +349,34 @@ func render(out io.Writer, r report, commit, date string) error {
 			}
 		}
 	}
+	writeSelfSkipped(w, r.SelfSkipped)
 	return w.Flush()
+}
+
+// writeSelfSkipped lists the passes that skipped themselves, so a run without a capability (Windows' symlink
+// privilege) can't quietly drop those cells from coverage. Listed under a `#` heading of its own, which
+// `parseBaseline` never reads as a crate.
+func writeSelfSkipped(w io.Writer, skipped []testID) {
+	sortIDs(skipped)
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "# Skipped themselves (%d)\n", len(skipped))
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Passes that returned early and printed the skip marker (`cmdr_fs::testing::SKIP_MARKER`), counted only when the run used `--profile windows-baseline`, which keeps a pass's output in the report. A full run has none: give the builder the symlink privilege (Developer Mode or an elevated shell).")
+	if len(skipped) > 0 {
+		fmt.Fprintln(w)
+	}
+	for _, id := range skipped {
+		fmt.Fprintf(w, "- %s `%s`\n", id.Crate, id.Test)
+	}
+}
+
+func sortIDs(ids []testID) {
+	sort.Slice(ids, func(i, j int) bool {
+		if ids[i].Crate != ids[j].Crate {
+			return ids[i].Crate < ids[j].Crate
+		}
+		return ids[i].Test < ids[j].Test
+	})
 }
 
 // thousands spells n with `,` between each group of three digits.
@@ -355,6 +402,11 @@ func parseBaseline(r io.Reader) (map[testID]bool, error) {
 		line := scanner.Text()
 		if rest, ok := strings.CutPrefix(line, "## "); ok {
 			crate, _, _ = strings.Cut(rest, " ")
+			continue
+		}
+		// A top-level heading (the self-skipped list) ends the failures.
+		if strings.HasPrefix(line, "# ") {
+			crate = ""
 			continue
 		}
 		if rest, ok := strings.CutPrefix(line, "- `"); ok && crate != "" {
@@ -385,12 +437,7 @@ func writeDiff(out io.Writer, before map[testID]bool, after report) {
 		}
 	}
 	section := func(title string, ids []testID) {
-		sort.Slice(ids, func(i, j int) bool {
-			if ids[i].Crate != ids[j].Crate {
-				return ids[i].Crate < ids[j].Crate
-			}
-			return ids[i].Test < ids[j].Test
-		})
+		sortIDs(ids)
 		fmt.Fprintf(out, "%s (%d)\n", title, len(ids))
 		for _, id := range ids {
 			fmt.Fprintf(out, "- %s `%s`\n", id.Crate, id.Test)
@@ -399,4 +446,5 @@ func writeDiff(out io.Writer, before map[testID]bool, after report) {
 	section("Turned green", green)
 	section("Newly red", red)
 	section("Listed but didn't run (renamed, removed, or gated off)", gone)
+	section("Passed by skipping themselves (no symlink privilege, or another missing capability)", append([]testID{}, after.SelfSkipped...))
 }

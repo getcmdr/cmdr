@@ -30,6 +30,28 @@ pub use imp::is_root;
 /// Developer Mode or an elevated process, so a link test skips itself without them.
 pub use imp::can_create_symlinks;
 
+/// The line a cell that skipped itself prints, which the Windows test baseline tool
+/// (`scripts/windows-test-baseline`) counts: nextest has no runtime skip, so a cell
+/// that returns early reads as a pass, and only this line tells the two apart.
+pub const SKIP_MARKER: &str = "skipped: ";
+
+/// `true`, after printing [`SKIP_MARKER`] and why, when this process can't create
+/// symlinks, so a link cell returns at once: `if skip_without_symlinks() { return; }`.
+///
+/// ❗ Use it over a bare `can_create_symlinks()` check, so a box without the right
+/// (Windows without Developer Mode or elevation) shows which cells it didn't run.
+#[allow(
+    clippy::print_stderr,
+    reason = "a skip notice belongs in the test runner's captured output, which is where nextest attributes it to the cell; this module is `testing`-feature-gated and never in a shipped build"
+)]
+pub fn skip_without_symlinks() -> bool {
+    if can_create_symlinks() {
+        return false;
+    }
+    eprintln!("{SKIP_MARKER}this cell creates symlinks, which needs Developer Mode or an elevated shell on Windows");
+    true
+}
+
 /// `path` with every 8.3 short name spelled long, the spelling a listing shows. Windows
 /// only has short names (`GetLongPathNameW`); elsewhere it's `path` as is.
 pub use imp::long_path;

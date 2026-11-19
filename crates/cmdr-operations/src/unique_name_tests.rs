@@ -291,7 +291,7 @@ fn a_directory_continues_its_sequence_past_the_dot() {
 #[test]
 fn a_dangling_symlink_counts_as_taken() {
     // A link needs Developer Mode or elevation on Windows.
-    if !cmdr_fs::testing::can_create_symlinks() {
+    if cmdr_fs::testing::skip_without_symlinks() {
         return;
     }
     // `Path::exists()` follows symlinks and reports `false` for a broken

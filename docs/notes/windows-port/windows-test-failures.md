@@ -1,9 +1,9 @@
 # Windows test failures, by cause
 
-Every failure of one whole-workspace run on the Windows builder, sorted into causes: which ones the typed app path flip
-(#1225) takes with it, which ones are a test's own Windows problem, and which are product bugs. It picks up where
-`app-path-baseline.md` stopped: that list left 407 failures "cause unread" (their output names no cause), and this note
-reads them.
+Every failure of one whole-workspace run on the Windows builder, sorted into causes: which ones the app path effort's
+per-crate conversions (#1225, `docs/specs/app-path-plan.md` milestones 5–10) take with them, which ones are a test's own
+Windows problem, and which are product bugs. It picks up where `app-path-baseline.md` stopped: that list left 407
+failures "cause unread" (their output names no cause), and this note reads them.
 
 - **The run**: `main` at `8db5b83ac4`, 2026-11-19, in `D:\src\cmdr-triage` with `CARGO_TARGET_DIR=D:\targets\triage`,
   `cargo nextest run --workspace --exclude cmdr-fsevent-stream --no-fail-fast`: 13,978 tests, 13,037 passed, 875 failed,
@@ -15,6 +15,13 @@ reads them.
 - **How the causes were read**: the tool's classifier reads each failure's output (its rules now cover every cluster
   below); a failure whose output names nothing takes its nearest classified sibling's cluster and is marked `unread`.
   For the unread ones, one or two per module were read by hand against the test's source (§ "Read by hand").
+- **Running it so nothing hides**:
+  `cargo nextest run --workspace --exclude cmdr-fsevent-stream --no-fail-fast --profile windows-baseline`
+  (`.config/nextest.toml`), from a shell that holds the symlink privilege (Developer Mode, or elevated). A link cell
+  without it skips itself (`cmdr_fs::testing::skip_without_symlinks`), which nextest counts as a pass; that profile
+  keeps each pass's output in the JUnit report, so the tool's `render` and `diff` list every self-skipped cell by name.
+  A full run lists none. Safety cells live there, like `unique_name::tests::a_dangling_symlink_counts_as_taken` (a write
+  must never follow a dangling link), so a non-empty list means the run didn't cover them.
 - **Gotcha, the builder ran out of memory**: the first build died with `os error 1455` ("the paging file is too small")
   mmapping an rlib while linking test binaries; `CARGO_BUILD_JOBS=2` got through (8 GB of RAM, 2 cores).
 
@@ -22,7 +29,10 @@ reads them.
 
 941 failures (the 66 timeouts plus six more tests whose text says they timed out), by cluster, read + inherited:
 
-- **Going with #1225: 794.** S 344 (113 inherited), N 293 (139), P 63 (37), H 22 (8), and the 72 timeouts.
+- **Going with the app path conversions (#1225, milestones 5–10): 794.** S 344 (113 inherited), N 293 (139), P 63 (37),
+  H 22 (8), and the 72 timeouts. ❗ Not the trait flip: milestone 4 bridges every body through `legacy_unchecked` /
+  `as_std_legacy` and keeps today's handling by design, so it turns none of these green. Each crate's cells go green in
+  the milestone that converts that crate (§ "By milestone").
 - **Fixed on this branch: 64.** symlink 34, append-truncate 25, zip-creator 3, windows-names 1, home-env 1. 41 of them
   pass now; the 22 `cmdr-restic` link-fixture cells and one ledger cell move on to S and task 35.
 - **Owned elsewhere: 83.** task 35 33 (6 inherited), #1226 24 (4), Windows-only expectations 13, task 34 6, Linux errno
@@ -38,42 +48,66 @@ On the builder, this branch (`253f57d74f`) ran the 169 cells those fixes touch: 
 
 Each: count, two examples, the cause, and whether it's a test or a product problem.
 
-### Going with #1225 (the typed app path flip)
+### Going with the app path conversions (#1225, milestones 5–10)
+
+The four clusters are causes, but they turn green by CRATE, since each milestone converts its crates' bodies off the
+bridge. The flip (milestone 4) changes signatures only.
 
 - **S, `std::path` arithmetic on an app path (344)**:
   `cmdr about::history::tests::a_copy_off_another_volume_names_where_it_came_from`,
   `cmdr-s3 volume::batch_retry_test::a_throttled_batch_delete_goes_again_and_lands`. `Path::join` and friends put a `\`
   into a `/`-separated app path (`/srv/data\photos`, `sftp://h:22\srv`), or `std::path` re-roots a POSIX path
-  (`NotFound("\\sdcard")`). Both product and test code; the flip replaces the arithmetic, so the asserts follow.
+  (`NotFound("\\sdcard")`). Both product and test code; each crate's conversion replaces the arithmetic, so the asserts
+  follow.
 - **N, a native tempdir where an app path belongs (293)**:
   `cmdr file_system::watcher_incremental_test::a_batch_publishes_removes_then_adds_then_modifies`,
   `cmdr-index indexing::reconcile::reconciler::tests::subtree::reconcile_subtree_deep_nested_dirs`. A fixture hands
   `C:\Users\Admin\AppData\Local\Temp\…` to code that wants `C:/…`; the app path fence refuses it, or a `/root`-rooted
   test engine never owns it (`Source volume 'Test root' does not support export` in the golden copy trace). Test
-  fixtures; the flip gives them an app-path tempdir.
+  fixtures; each crate's conversion gives them an app-path tempdir.
 - **P, a POSIX fixture path read in the host's flavor (63)**:
   `cmdr agent::suggested_ops::tests::the_drive_index_resolves_a_selector_over_a_real_index`
   (`NotOnVolume { path: "/Users/someone/Downloads" }`),
   `cmdr favorites::target::tests::a_local_folder_is_stat_and_reads_yes_or_no`. A literal `/Users/…` or `/Volumes/…` is
   no local path on Windows, so the code under test answers "not here". Test fixtures. Whether each cell becomes
-  flavor-aware or Unix-only is the flip's call per crate.
+  flavor-aware or Unix-only is that crate's milestone's call.
 - **H, a native home path where an app path belongs (22)**: `cmdr go_to_path::tests::tilde_expands_to_home`
   (`C:/Users/Admin` against `C:\\Users\\Admin`), `cmdr tools::actions::tests::test_user_path_param_expands_tilde`
   (`C:\\Users\\Admin/Downloads`). The expectation builds from `dirs::home_dir()` while the code answers an app path; in
-  the tools case the code itself glues a native home to `/Downloads`, which the flip fixes in product code.
+  the tools case the code itself glues a native home to `/Downloads`, which milestone 10d fixes in product code.
 - **Timed out (72)**: 48 are `cmdr-index`'s `indexing::lifecycle::cover::cold_drive_tests`, which wait on an event a
   native-path walk never sends, plus `cmdr-restic` hub lifecycle (5), `cmdr-s3` pause cells (5), and the app's two crash
-  reporter cells (new tonight, 8 s each, output empty). Read as the app path conversion's in `app-path-baseline.md`; the
-  crash reporter pair belongs to #1232's Windows-only crash handling instead, and should be re-read after the flip.
+  reporter cells (new tonight, 8 s each, output empty). Credited to the app path conversion by assumption, as in
+  `app-path-baseline.md`: unverified, since 48 of them (the cold-drive cells) printed nothing. The crash reporter pair
+  belongs to #1232's Windows-only crash handling instead. Re-read all 72 after milestones 10b and 10d.
+
+### By milestone
+
+The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.md` § Milestones), counts from the TSV:
+
+- **5, `cmdr-fs`**: none in this run; its 24 cells are `#[ignore]`d for #1225 and lose the ignore there.
+- **6, network backends**: 123 (`cmdr-s3` 47 with its 5 pause timeouts, `cmdr-nfs` 46, `cmdr-webdav` 23, `cmdr-sftp` 7).
+- **7, device backends**: 66 (`cmdr-adb` 51, `cmdr-smb` 13, `cmdr-mtp` 2).
+- **8, virtual volumes and leaf crates**: 72 (`cmdr-restic` 45 with its 5 hub timeouts, `cmdr-viewer` 13, `cmdr-archive`
+  9, `cmdr-operation-log` 3, `cmdr-listing` 2).
+- **9, `cmdr-local`**: none of its own; it's the native crossing 10a–10d wait on.
+- **10a, `cmdr-operations`**: 229.
+- **10b, `cmdr-index`**: 133, the 48 cold-drive timeouts among them.
+- **10e, `cmdr-listing-wasm`**: 7.
+- **10c and 10d, the app**: 164 (10c the file system and listings half, 10d the rest; the 2 crash reporter timeouts go
+  to #1232 instead).
+- **Misfiled**: `cmdr-index retry::a_machine_that_stops_short_asks_for_another_go` inherited P, but its fixture is a
+  native tempdir with a timing precondition, so it's N or unknown (still 10b).
 
 ### Fixed on this branch
 
 - **symlink, a link test without the right to make links (34)**:
   `cmdr-restic volume::tests::a_snapshot_tree_lists_files_folders_links_and_odd_names`,
   `cmdr-operations unique_name::tests::a_dangling_symlink_counts_as_taken`. `ERROR_PRIVILEGE_NOT_HELD` (1314): Windows
-  creates a link only with Developer Mode or elevation. Test problem. The cells now skip themselves without
-  `cmdr_fs::testing::can_create_symlinks()` (the documented pattern); `cmdr-restic`'s shared backup fixture makes its
-  link only when it can, so 19 of its 22 cells now run on Windows (they still meet S).
+  creates a link only with Developer Mode or elevation. Test problem. The cells now skip themselves through
+  `cmdr_fs::testing::skip_without_symlinks()`, which prints a skip marker the baseline tool counts (§ the run, above);
+  `cmdr-restic`'s shared backup fixture makes its link only when it can, so 19 of its 22 cells now run on Windows (they
+  still meet S).
 - **append-truncate, a truncate on an append-only handle (25)**:
   `cmdr-operations in_flight_temps::tests::a_landed_temp_is_retired_from_the_log`,
   `cmdr-operations transfer::staged_write::tests::ledger::a_claimed_name_landing_is_on_disk_as_a_landing_before_it_clears_the_way`.
@@ -154,3 +188,7 @@ the right cluster is named; the TSV keeps the tool's inherited answer.
    `apps/desktop/src-tauri/src/tools/resources/DETAILS.md`. Fixing it is an agent-facing change on a platform the
    builder can't run, so it waits for a Linux build to verify on.
 5. **`platform_backends()` had no arm on Windows with `playwright-e2e`** (fixed here): a compile error in that build.
+6. **A link copied over an existing file deleted the file before making the link** (fixed here, older than this run).
+   Where the link was refused (always on Windows today, exFAT and FAT, some SMB shares on any OS), the person's file was
+   gone and nothing replaced it. The link is now made under a temp name and renamed over the file, and a refusal is the
+   typed `LinksNotSupported` (`crates/cmdr-operations/src/transfer/copy/link_landing_tests.rs`).

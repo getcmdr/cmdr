@@ -904,6 +904,15 @@ hands the aside to the `CopyTransaction` and lets commit, a reversal, or a failu
 a ` (recovered)` sibling, since the half-filled folder keeps the name). `src/transfer/DETAILS.md` § "Cross-type
 overwrites" holds the why.
 
+A copied LINK over a file or a link lands through `overwrite::stage_and_land_link`: the link is made at a tracked
+`.cmdr-tmp-*` sibling, then one rename puts it over the destination. Gotcha/Why: the branch used to delete the
+destination and then make the link, and a drive that holds no links (exFAT, FAT, some SMB shares, Windows today) refused
+the link after the person's file was gone. The refusal is typed at the link's creation
+(`error_classification::classify_link_creation_error`: `Unsupported`, `EPERM`, `ENOTSUP`/`EOPNOTSUPP`, `ENOSYS` become
+`LinksNotSupported`), so the dialog says the drive can't hold links and that the file there stays. Undo is unchanged:
+the item settles as the same overwrite it always did. Pinned by `src/transfer/copy/link_landing_tests.rs`, which arms
+the scope's `refuse_links` test seam.
+
 The four copy mechanisms (`copy_strategy::LocalCopyStrategy`) each hand `stage_and_land_file` a closure that puts bytes
 at a path, so the landing is written once rather than once per branch. ❌ Don't add a mechanism that writes straight to
 `dest`. Details and the no-clobber rule: `src/transfer/DETAILS.md` § "Local copies stage".

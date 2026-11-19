@@ -38,6 +38,11 @@ pub(crate) struct OpScope {
     /// once its test arms it.
     #[cfg(test)]
     aside_park: super::overwrite::aside_park::AsideParkSlot,
+    /// Makes this operation's local link creation refuse the way a drive that
+    /// can't hold links does (exFAT, FAT, some SMB shares, Windows without the
+    /// privilege), once its test arms it.
+    #[cfg(test)]
+    refuses_links: std::sync::atomic::AtomicBool,
 }
 
 impl OpScope {
@@ -56,6 +61,8 @@ impl OpScope {
             landed_nodes: OnceLock::new(),
             #[cfg(test)]
             aside_park: Default::default(),
+            #[cfg(test)]
+            refuses_links: Default::default(),
         }
     }
 
@@ -111,5 +118,18 @@ impl OpScope {
     #[cfg(test)]
     pub(crate) fn aside_park(&self) -> &super::overwrite::aside_park::AsideParkSlot {
         &self.aside_park
+    }
+
+    /// The test seam that makes every local link this operation creates refuse
+    /// as a link-less destination does.
+    #[cfg(test)]
+    pub(crate) fn refuse_links(&self) {
+        self.refuses_links.store(true, std::sync::atomic::Ordering::SeqCst);
+    }
+
+    /// Whether [`Self::refuse_links`] armed this operation.
+    #[cfg(test)]
+    pub(crate) fn refuses_links(&self) -> bool {
+        self.refuses_links.load(std::sync::atomic::Ordering::SeqCst)
     }
 }

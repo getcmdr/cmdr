@@ -228,6 +228,13 @@
     {
       "level": "warn",
       "error": {
+        "type": "links_not_supported",
+        "path": "/Volumes/USB/projects/current"
+      }
+    },
+    {
+      "level": "warn",
+      "error": {
         "type": "landing_not_recorded",
         "path": "/Volumes/archive/documents/reports/2026-annual-report.pdf"
       }

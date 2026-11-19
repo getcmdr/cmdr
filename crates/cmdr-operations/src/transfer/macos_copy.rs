@@ -421,10 +421,8 @@ pub(crate) fn copy_symlink(source: &Path, destination: &Path) -> Result<(), Writ
         message: format!("Failed to read symlink: {}", e).into(),
     })?;
 
-    std::os::unix::fs::symlink(&target, destination).map_err(|e| WriteOperationError::IoError {
-        path: destination.display().to_string(),
-        message: format!("Failed to create symlink: {}", e).into(),
-    })?;
+    std::os::unix::fs::symlink(&target, destination)
+        .map_err(|e| crate::error_classification::classify_link_creation_error(&e, destination))?;
 
     match std::fs::symlink_metadata(source) {
         Ok(meta) => {

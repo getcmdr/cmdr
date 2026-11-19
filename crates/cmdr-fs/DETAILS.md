@@ -127,13 +127,13 @@ the next section.
 - `testing/`: behind the `testing` feature. `TestDir`, the two waits, and `unique_test_id` (a pid-and-counter key for a
   test-owned entry in a global map) in `mod.rs`; `alloc_count.rs` (a counting global allocator a test binary installs,
   for the allocation-ceiling cells); `platform/` (the OS half of the fixtures: `symlink`, `is_root`,
-  `can_create_symlinks`, and Unix's `make_fifo`, so a test asks a capability rather than an OS and no test calls
-  `std::os::unix::fs::symlink` or `geteuid` itself); `tcp_proxy.rs` (`TcpProxy`, a loopback proxy a network backend's
-  test puts in front of a shared Docker fixture to cut the connection, refused or silent, without touching a container
-  other runs lease; its header has the usage); on macOS, `disk_images/` (the synthetic APFS/HFS+ image harness and its
-  guarded runner, § "`testing::disk_images`") and `metadata_fixture.rs` (files and folders carrying birth, flags, an
-  ACL, xattrs, and mode, for the copy-keeps-metadata cells; its `Drop` unlocks and strips ACLs so a Locked leftover
-  can't fail the cleanup).
+  `can_create_symlinks`, `skip_without_symlinks` (the skip that prints `SKIP_MARKER`), and Unix's `make_fifo`, so a test
+  asks a capability rather than an OS and no test calls `std::os::unix::fs::symlink` or `geteuid` itself);
+  `tcp_proxy.rs` (`TcpProxy`, a loopback proxy a network backend's test puts in front of a shared Docker fixture to cut
+  the connection, refused or silent, without touching a container other runs lease; its header has the usage); on macOS,
+  `disk_images/` (the synthetic APFS/HFS+ image harness and its guarded runner, § "`testing::disk_images`") and
+  `metadata_fixture.rs` (files and folders carrying birth, flags, an ACL, xattrs, and mode, for the copy-keeps-metadata
+  cells; its `Drop` unlocks and strips ACLs so a Locked leftover can't fail the cleanup).
 
 ## App paths
 
