@@ -1,8 +1,8 @@
 import { test, expect, type Locator, type Page } from '@playwright/test'
 import { collectPageErrors, skipWithoutDemo, visitorOf } from './demo-support.js'
 
-// The full demo suite: the `demo` and `demo-mac` Playwright projects (a Windows visitor and a Mac
-// one; `visitorOf` says which keys and words each gets), run against a demo built from the same sources
+// The full demo suite: the `demo`, `demo-mac`, and `demo-linux` Playwright projects (a Windows, a Mac,
+// and a Linux visitor; `visitorOf` says which keys and words each gets), run against a demo built from the same sources
 // (the release pipeline's `demo` job, the nightly CI run), never the website lane's released image.
 // Where each suite runs: `demo-support.ts`. Boot, indexing, and the first listing: `demo-smoke.spec.ts`.
 skipWithoutDemo()
@@ -45,6 +45,108 @@ test.describe('Browser demo', () => {
     expect(errors.map((error) => error.message)).toEqual([])
   })
 
+  // The browser keeps the new query's own key (Ctrl+N / ⌘N opens a window), so the demo gives the
+  // search dialog another one through the shortcut store's host defaults, and the dialog's own hint
+  // names it (`apps/desktop/src/lib/demo/browser-shortcuts.ts`).
+  test('starts a new search query on the demo’s stand-in key, which its hint names', async ({ page }) => {
+    await page.goto('/demo/')
+    const pane = page.locator('.file-pane').first()
+    await expect(pane.locator('.file-entry').nth(1)).toBeVisible({ timeout: 30_000 })
+    const dialog = page.getByRole('dialog')
+    const { mod, newQuery } = await visitorOf(page)
+    await expect(async () => {
+      if (!(await dialog.isVisible())) await page.keyboard.press(`${mod}+f`)
+      await expect(dialog).toBeVisible({ timeout: 1_000 })
+    }).toPass({ timeout: 10_000 })
+    const emptyState = dialog.locator('.empty-state')
+    await expect(emptyState.locator('kbd.shortcut-chip').first()).toHaveText(newQuery.shown)
+
+    await page.keyboard.type('annual report')
+    await expect(dialog.getByText('Annual report.pdf')).toBeVisible()
+    await page.keyboard.press(newQuery.press)
+
+    await expect(dialog.getByText('Annual report.pdf')).toHaveCount(0)
+    await expect(emptyState).toBeVisible()
+    await expect(page.locator(':focus')).toHaveValue('')
+  })
+
+  // Go to folder (⌘G, Ctrl+G) runs the desktop's own resolution in the WASM module (`go_to.rs` over
+  // `cmdr_fs::go_to_path`): a typed folder navigates, a missing one lands on its nearest folder with
+  // the app's toast, and the jump lands in the dialog's recents.
+  test('goes to a typed folder, and to the nearest one for a path that isn’t there', async ({ page }) => {
+    const errors = collectPageErrors(page)
+    await page.goto('/demo/')
+    const pane = page.locator('.file-pane').first()
+    await expect(pane.locator('.file-entry').nth(1)).toBeVisible({ timeout: 30_000 })
+    const { mod } = await visitorOf(page)
+    const dialog = page.getByRole('dialog')
+    const openGoTo = async () => {
+      await expect(async () => {
+        if (!(await dialog.isVisible())) await page.keyboard.press(`${mod}+g`)
+        await expect(dialog).toBeVisible({ timeout: 1_000 })
+      }).toPass({ timeout: 10_000 })
+    }
+
+    await openGoTo()
+    await page.keyboard.type('~/Downloads')
+    await page.keyboard.press('Enter')
+    await expect(dialog).toHaveCount(0)
+    await expect(pane.locator('.file-entry[data-filename="Cmdr.dmg"]')).toBeVisible()
+
+    await openGoTo()
+    // The first jump is a recent now.
+    await expect(dialog.getByText('/Users/you/Downloads')).toBeVisible()
+    await page.keyboard.type('~/Documents/not-here/deeper')
+    await page.keyboard.press('Enter')
+    await expect(dialog).toHaveCount(0)
+    await expect(page.locator('.toast').getByText(/doesn’t exist, so we took you to/)).toBeVisible()
+    await expect(pane.locator('.file-entry[data-filename="Annual report.pdf"]')).toBeVisible()
+    expect(errors.map((error) => error.message)).toEqual([])
+  })
+
+  // "Calculate folder sizes": every folder's size is already the engine's exact fold, so the count
+  // ends at once with nothing to walk, as a Mac with a full index does, and nothing goes unanswered.
+  test('calculates folder sizes quietly, as over a fully indexed disk', async ({ page }) => {
+    const errors = collectPageErrors(page)
+    await page.goto('/demo/')
+    const pane = page.locator('.file-pane').first()
+    await expect(pane.locator('.file-entry').nth(1)).toBeVisible({ timeout: 30_000 })
+    await pane.click()
+    await page.keyboard.press('Alt+Shift+Enter')
+    // The afterEach fails on any command left unanswered; give the count its round trip first.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const demo = (window as unknown as { __cmdrDemo?: { unanswered: Map<string, number> } }).__cmdrDemo
+          return demo ? demo.unanswered.size : -1
+        }),
+      )
+      .toBe(0)
+    expect(errors.map((error) => error.message)).toEqual([])
+  })
+
+  /**
+   * The window's OS buttons: a Mac's traffic lights over the window, or Windows' and Linux's title
+   * bar above the menu bar (whose top is `barTop`), as their OS draws a decorated window
+   * (`lib/demo/title-bar.ts`).
+   */
+  async function expectWindowButtons(page: Page, os: string, barTop: number | undefined) {
+    const titleBar = page.locator('.cmdr-demo-titlebar-main')
+    if (os === 'macos') {
+      await expect(page.locator('.cmdr-demo-lights-main')).toBeVisible()
+      await expect(titleBar).toHaveCount(0)
+      return
+    }
+    await expect(page.locator('.cmdr-demo-lights')).toHaveCount(0)
+    await expect(titleBar).toHaveAttribute('data-look', os)
+    await expect(titleBar).toContainText('Cmdr')
+    await expect(titleBar.getByRole('button')).toHaveCount(3)
+    const titleBox = await titleBar.boundingBox()
+    expect(titleBox?.y).toBe(0)
+    expect(titleBox?.height).toBe(os === 'windows' ? 32 : 37)
+    if (titleBox) expect(barTop).toBe(titleBox.height)
+  }
+
   // Each visitor gets their own OS's bar and look (task 63 step 11 of `docs/specs/windows-port-plan.md`):
   // the macOS bar for a Mac visitor, Windows 11's in-window bar for a Windows one, and the window under
   // whichever bar is there, so the status corner never sits under it (`lib/demo/DETAILS.md` § Platform).
@@ -56,23 +158,29 @@ test.describe('Browser demo', () => {
         const errors = collectPageErrors(page)
         await page.goto('/demo/')
         await expect(page.locator('.file-pane').first().locator('.file-entry').nth(1)).toBeVisible({ timeout: 30_000 })
-        const isMac = (await visitorOf(page)).mod === 'Meta'
-        await expect(page.locator('html')).toHaveAttribute('data-look', isMac ? 'macos' : 'windows')
+        const visitor = await visitorOf(page)
+        const isMac = visitor.os === 'macos'
+        await expect(page.locator('html')).toHaveAttribute('data-look', visitor.os)
         const bar = page.getByRole('menubar')
         const titles = bar.getByRole('menuitem')
-        // A Mac's bar starts with the app menu; Windows' starts with File, which ends with Quit.
+        // A Mac's bar starts with the app menu; Windows' and Linux's start with File, which ends with Quit.
         await expect(titles.first()).toHaveText(isMac ? 'Cmdr' : 'File')
         const barBox = await bar.boundingBox()
-        expect(barBox?.height).toBe(isMac ? 30 : 40)
+        expect(barBox?.height).toBe(visitor.menuBarHeight)
+        await expectWindowButtons(page, visitor.os, barBox?.y)
+        await expect(page.locator('.file-pane').first().locator('.volume-name')).toContainText(visitor.mainVolume)
         const corner = await page.locator('.status-corner').boundingBox()
         if (corner && barBox) expect(corner.y).toBeGreaterThanOrEqual(barBox.y + barBox.height)
 
         await titles.nth(isMac ? 1 : 0).click()
         const menu = page.getByRole('menu')
         await expect(menu).toBeVisible()
-        // macOS 27's 12 px menu corners; WinUI's `OverlayCornerRadius`, 8 px.
-        expect(await menu.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe(isMac ? '12px' : '8px')
+        // macOS 27's 12 px menu corners; WinUI's `OverlayCornerRadius`, 8 px; the neutral Linux look's 12 px.
+        const menuRadius = visitor.os === 'windows' ? '8px' : '12px'
+        expect(await menu.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe(menuRadius)
+        // A page can't quit its tab, so every visitor's Quit (Exit) is greyed, as macOS's own is.
         if (!isMac) await expect(menu.getByRole('menuitem').last()).toHaveText(/Exit|Quit/)
+        if (!isMac) await expect(menu.getByRole('menuitem').last()).toHaveAttribute('aria-disabled', 'true')
         await page.keyboard.press('Escape')
 
         // Windows' bar answers a lone Alt, as Notepad's does; the Mac's answers ⌃F2.
@@ -165,6 +273,48 @@ test.describe('Browser demo', () => {
       await page.keyboard.press('Enter')
       await expect(row(left(page), 'Work')).toHaveCount(0)
 
+      expect(errors.map((error) => error.message)).toEqual([])
+    })
+
+    // "Tell me about this" runs `cmdr-about` in the WASM module (`crates/cmdr-listing-wasm/src/about.rs`) over
+    // the demo's volume, streamed over a Tauri `Channel` (`lib/demo/channels.ts`): the card fills, never sits loading.
+    test('Tell me about this fills the card from the file’s own bytes', async ({ page }) => {
+      const errors = collectPageErrors(page)
+      await openDemo(page)
+      await row(left(page), 'notes').click({ button: 'right' })
+      await page.getByRole('menuitem', { name: 'Tell me about this' }).click()
+
+      const dialog = page.getByRole('dialog')
+      await expect(dialog.getByText('notes.md').first()).toBeVisible()
+      // The Kind row sniffed the bytes; the note says a page sees only part of the card.
+      await expect(dialog.getByText('Text, checked against its contents')).toBeVisible()
+      await expect(dialog.getByText(/Cmdr can see only some of this/)).toBeVisible()
+      await page.keyboard.press('Escape')
+      await expect(dialog).toHaveCount(0)
+      expect(errors.map((error) => error.message)).toEqual([])
+    })
+
+    // Copy path writes the browser's clipboard, and Add to favorites lands in the demo's in-memory
+    // favorites (`lib/demo/DETAILS.md` § Dialogs, the clipboard, and favorites): neither is a dead end.
+    test('copies a path to the clipboard and adds a folder to the favorites', async ({ page, context }) => {
+      const errors = collectPageErrors(page)
+      await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+      await openDemo(page)
+      await row(left(page), 'notes').click({ button: 'right' })
+      await page.getByRole('menuitem', { name: 'Copy path' }).click()
+      await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('/Users/you/notes.md')
+
+      await row(left(page), 'Projects').click({ button: 'right' })
+      await page.getByRole('menuitem', { name: 'Add to favorites' }).click()
+      const favorites = () =>
+        page.evaluate(async () => {
+          const internals = (
+            window as unknown as { __TAURI_INTERNALS__: { invoke: (cmd: string) => Promise<unknown> } }
+          ).__TAURI_INTERNALS__
+          const answer = (await internals.invoke('list_volumes')) as { data: { name: string; category: string }[] }
+          return answer.data.filter((volume) => volume.category === 'favorite').map((volume) => volume.name)
+        })
+      await expect.poll(favorites).toContain('Projects')
       expect(errors.map((error) => error.message)).toEqual([])
     })
 

@@ -66,6 +66,12 @@ describe('in-memory store plugin', () => {
     }
   })
 
+  it("keeps the fixed-key commands' keys out of the file (`boot.ts` sets them as host defaults)", () => {
+    const rid = load('shortcuts.json')
+    const keys = call('plugin:store|keys', { rid }) as string[]
+    expect(keys.filter((key) => !key.startsWith('shortcut:'))).toEqual([])
+  })
+
   it('reads the custom shortcuts back the way the viewer window asks for them', () => {
     // Regression: `get_restricted_window_shortcuts` (the viewer's one shortcut read) went unanswered.
     const rid = load('shortcuts.json')
@@ -161,7 +167,7 @@ describe('path and app plugins', () => {
   })
 
   it('knows no other plugin command', () => {
-    expect(pluginHandler('plugin:dialog|open')).toBeUndefined()
+    expect(pluginHandler('plugin:shell|open')).toBeUndefined()
   })
 })
 

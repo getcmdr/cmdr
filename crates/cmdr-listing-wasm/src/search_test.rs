@@ -255,6 +255,27 @@ async fn an_invalid_pattern_fails_the_run_as_a_query_error() {
     assert_eq!(error["error"], "query");
 }
 
+/// "Open in pane" asks before it waits on a run's ending: the demo's run sends that
+/// ending inside its own command, so by the time anyone asks, it's no longer live.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_streaming_run_has_reported_its_ending_by_the_time_anyone_asks() {
+    let (demo, _events) = demo();
+    assert_eq!(
+        call(&demo, "is_search_run_live", json!({ "runId": "never" })).await,
+        json!(false)
+    );
+    call(
+        &demo,
+        "search_files_streaming",
+        json!({ "query": query(json!({ "namePattern": "*.pdf" })), "runId": "r1", "order": 1 }),
+    )
+    .await;
+    assert_eq!(
+        call(&demo, "is_search_run_live", json!({ "runId": "r1" })).await,
+        json!(false)
+    );
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn the_run_events_carry_exactly_the_keys_bindings_declare() {
     let (demo, events) = demo();

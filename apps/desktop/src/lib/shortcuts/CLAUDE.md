@@ -1,18 +1,18 @@
 # Keyboard shortcuts system
 
-Customizable keyboard shortcuts for all Cmdr commands (edited in Settings). Defaults live in the sibling
-`../commands/command-registry.ts`; only customizations persist to `shortcuts.json`.
+Customizable keyboard shortcuts (edited in Settings). Defaults: `../commands/command-registry.ts`; only customizations
+persist (`shortcuts.json`).
 
 Background on default sort-order shortcuts: `docs/notes/sort-order-shortcut-research.md`.
 
 ## Module map
 
-- `shortcuts-store.ts` (delta-only persistence, cross-window emit, the native/fixed boundary),
-  `reactive-shortcuts.svelte.ts` (reactive reads), `scope-hierarchy.ts` + `conflict-detector.ts` (overlap → conflict),
-  `key-capture.ts`, `shortcut-dispatch.ts` (Tier 1 reverse lookup), `binding-priority.ts`.
+- `shortcuts-store.ts` (persistence, cross-window emit, the native/fixed boundary), `host-defaults.ts`,
+  `menu-commands.ts`, `reactive-shortcuts.svelte.ts` (reactive reads), `scope-hierarchy.ts` + `conflict-detector.ts`
+  (overlap → conflict), `key-capture.ts`, `shortcut-dispatch.ts` (Tier 1 reverse lookup), `binding-priority.ts`.
 - Read-only help window (Help > Keyboard shortcuts): `shortcuts-window.ts` (opener), `ShortcutsList.svelte` (grouped
-  list), `shortcut-diff.ts` (pure default-vs-effective diff). Route at `routes/shortcuts/`. See DETAILS.md § "Keyboard
-  shortcuts help window".
+  list), `shortcut-diff.ts` (default-vs-effective diff), route `routes/shortcuts/`. DETAILS.md § "Keyboard shortcuts
+  help window".
 
 ## Must-knows
 
@@ -21,22 +21,24 @@ Background on default sort-order shortcuts: `docs/notes/sort-order-shortcut-rese
   never `⇧8`), so `*` is "the `*` key" on every layout. Render via `toDisplayShortcut` (`⌘Backspace` → `⌘⌫`); never
   store or compare that form. A default spelled `↩`, `⌥⌘A`, or `⇧8` is dead on some keyboard, and
   `shortcut-vocabulary.test.ts` fails on it. DETAILS § Key capture.
-- **Delta-only persistence; empty array vs missing key differ.** `"nav.parent": []` means "user removed all shortcuts";
-  a missing key means "use registry defaults". `initializeShortcuts` loads `[]`, so it survives a reload.
+- **Delta-only persistence; empty array vs missing key differ.** `"nav.parent": []` means "user removed all"; a missing
+  key means "use the defaults". `initializeShortcuts` loads `[]`, so it survives a reload.
 - **A window saves only the commands IT changed** (`changedHere`), ❌ never the whole map: windows share one store, so
-  it would delete or roll back a rebind it never heard of. DETAILS § Shortcuts store.
-- **macOS-native (`app.quit`/`hide`/`hideOthers`/`showAll`, on macOS) and fixed-key (`FIXED_KEY_COMMAND_IDS`) commands
-  are not customizable, enforced at the store boundary.** Load drops persisted entries, the mutators no-op with
-  `log.warn`, `resetShortcut` stays permissive.
-- **Every mutation emits `shortcuts:changed` after saving; the per-window `SENDER_ID` is the loop guard.** The listener
-  updates the local map and calls `notifyListeners`, never saving or re-emitting.
+  it'd undo rebinds it never heard of. DETAILS § Shortcuts store.
+- **macOS-native (`app.quit`/`hide`/`hideOthers`/`showAll`) and fixed-key (`FIXED_KEY_COMMAND_IDS`) commands aren't
+  customizable, at the store boundary.** Load drops their entries, the mutators no-op with `log.warn`, `resetShortcut`
+  stays permissive.
+- **Read defaults via `getDefaultShortcuts`, ❌ never the registry's `defaultShortcuts`**: it sees host defaults
+  (`host-defaults.ts`: demo boot, ❌ never the file). DETAILS § Host defaults.
+- **Every mutation emits `shortcuts:changed` after saving; `SENDER_ID` is the loop guard.** The listener updates the
+  local map and calls `notifyListeners`, never saving or re-emitting.
 - **`initializeShortcuts` heals leaked `''` entries on load:** `[]` kept; `['']` dropped (❌ never collapsed to `[]`,
   which suppresses the defaults); `['⌘X','']` → `['⌘X']`.
 - **A captured combo conflicts only when scopes overlap** (one ancestry chain contains the other), via the static
   `scopeHierarchy` — hand-edit it to add a scope. One winner per combo: a user's own binding beats a default
   (`binding-priority.ts`, for every reader: map, matchers, menus, hints), then deepest scope, then registry order.
   DETAILS § Conflict warnings are not errors.
-- **`menuCommands` (in `shortcuts-store.ts`) must stay in sync with the Rust menu items.** The set-equality test in
+- **`menuCommands` (`menu-commands.ts`) must stay in sync with the Rust menu items.** The set-equality test in
   `commands/rust-command-id-drift.test.ts` fails on a missing item (stale accelerator after a rebind) or an undocumented
   excuse.
 - **`downloads.goToLatest` binds `⌘J` deliberately** (not Finder's "View Options").

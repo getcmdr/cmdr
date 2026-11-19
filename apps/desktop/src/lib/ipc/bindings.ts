@@ -11687,30 +11687,50 @@ export type GoToLatestError =
   | { kind: 'downloadsDirUnresolved' }
 
 /**
- *  The outcome of resolving a typed "go to path" input against the local
- *  filesystem. The variant is the contract the frontend branches on; never
- *  classify by string-matching a message (AGENTS.md § no-error-string-match).
+ *  The outcome of resolving a typed "go to path" input. The variant is the contract the
+ *  frontend branches on; ❌ never classify by string-matching `reason`.
  *
- *  `rename_all_fields = "camelCase"` is REQUIRED: without it, struct-variant
- *  fields ship snake_case through tauri-specta and read `undefined` on the TS
- *  side. Enforced by the `ipc-enum-camelcase` check.
+ *  `rename_all_fields = "camelCase"` is REQUIRED: without it, struct-variant fields ship
+ *  snake_case through tauri-specta and read `undefined` on the TS side (`ipc-enum-camelcase`).
  */
 export type GoToPathResolution =
   // The resolved path is an existing directory. Navigate into it.
-  | { kind: 'directory'; path: string }
+  | {
+      kind: 'directory'
+      // The folder, as an app path.
+      path: string
+    }
   /**
    *  The resolved path is an existing file. `path` is the canonical normalized
    *  full path (recorded into recents); `parent_dir` / `file_name` drive the
    *  navigate-to-parent + select.
    */
-  | { kind: 'file'; path: string; parentDir: string; fileName: string }
+  | {
+      kind: 'file'
+      // The file, as an app path.
+      path: string
+      // Its folder, as an app path.
+      parentDir: string
+      // Its name.
+      fileName: string
+    }
   /**
    *  The resolved path doesn't exist. `ancestor_dir` is the nearest existing
    *  ancestor (worst case `/`). Navigate there and fire an INFO toast.
    */
-  | { kind: 'nearestAncestor'; requested: string; ancestorDir: string }
+  | {
+      kind: 'nearestAncestor'
+      // What the input named, as an app path.
+      requested: string
+      // The closest folder above it that exists.
+      ancestorDir: string
+    }
   // Defensive: the input was empty or couldn't be turned into a path.
-  | { kind: 'invalid'; reason: string }
+  | {
+      kind: 'invalid'
+      // Why, for the log only.
+      reason: string
+    }
 
 // The ids the add form fills "User ID", "Group ID", and "Other group IDs" with.
 export type GuessedNfsIdentity = {

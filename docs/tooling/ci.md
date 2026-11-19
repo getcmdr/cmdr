@@ -459,11 +459,12 @@ scope, which seeds every PR. It's also the one CI run that builds the browser de
 `wasm` job, `build-wasm`), which no land does: a host-only dep reaching the engine shows the next morning, not in the
 release's `demo` job (`apps/website/DETAILS.md` § Browser demo); it saves the `website-demo` Rust cache and the wasm
 toolchain cache that job restores. Likewise the website lane's `demo-suite` job (`demo-suite` input) builds the demo
-from `main` and runs the full demo suite (`website-demo-e2e`), which land runs never do: they smoke-test the released
-demo image only, since its tests can't know features `main` added after that release. It doesn't deploy: the deploy jobs
-run on pushes and dispatches only. A red one reaches David the way a red `main` push does: through the digest (§ How a
-red `main` reaches David). A schedule rather than a dispatch from another workflow: dispatching needs `actions: write`,
-which Scorecard's Token-Permissions flags.
+from `main` and runs the full demo suite (`website-demo-e2e`), which other runs do only when their change touches the
+demo's own sources (`ci.yml`'s `website-demo` filter: `lib/demo/`, `crates/cmdr-listing-wasm`, the demo specs and build
+scripts). The rest smoke-test the released demo image only, since its tests can't know features `main` added after that
+release. It doesn't deploy: the deploy jobs run on pushes and dispatches only. A red one reaches David the way a red
+`main` push does: through the digest (§ How a red `main` reaches David). A schedule rather than a dispatch from another
+workflow: dispatching needs `actions: write`, which Scorecard's Token-Permissions flags.
 
 ### How a red `main` reaches David
 

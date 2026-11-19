@@ -17,6 +17,10 @@
 //! `resolve` is a pure function (no `AppHandle`) so it's unit-testable over a
 //! `tempfile::tempdir()`. The async command wraps it in `blocking_with_timeout`.
 //!
+//! The steps themselves are `cmdr_fs::go_to_path::resolve_with`, which the browser
+//! demo's engine runs over its in-memory volume too; this module is the local disk
+//! as that function asks it (`LocalDisk`).
+//!
 //! ## Decision: backend owns resolution
 //!
 //! A single resolution path serves three callers (live as-you-type warning, the
@@ -48,153 +52,59 @@
 
 pub mod history;
 
-use std::path::{Component, Path, PathBuf};
+use std::path::Path;
 
+use cmdr_fs::go_to_path::{FoundKind, GoToHost, resolve_with};
 use cmdr_fs::volume::path_grammar::{self, PathFlavor};
-use serde::{Deserialize, Serialize};
 
 use crate::commands::file_system::expand_tilde;
 
-/// The outcome of resolving a typed "go to path" input against the local
-/// filesystem. The variant is the contract the frontend branches on; never
-/// classify by string-matching a message (AGENTS.md § no-error-string-match).
-///
-/// `rename_all_fields = "camelCase"` is REQUIRED: without it, struct-variant
-/// fields ship snake_case through tauri-specta and read `undefined` on the TS
-/// side. Enforced by the `ipc-enum-camelcase` check.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
-#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
-pub enum GoToPathResolution {
-    /// The resolved path is an existing directory. Navigate into it.
-    Directory { path: String },
-    /// The resolved path is an existing file. `path` is the canonical normalized
-    /// full path (recorded into recents); `parent_dir` / `file_name` drive the
-    /// navigate-to-parent + select.
-    File {
-        path: String,
-        parent_dir: String,
-        file_name: String,
-    },
-    /// The resolved path doesn't exist. `ancestor_dir` is the nearest existing
-    /// ancestor (worst case `/`). Navigate there and fire an INFO toast.
-    NearestAncestor { requested: String, ancestor_dir: String },
-    /// Defensive: the input was empty or couldn't be turned into a path.
-    Invalid { reason: String },
-}
+/// The contract the dialog branches on, shared with the browser demo's engine:
+/// `cmdr_fs::go_to_path`, where the classification lives.
+pub use cmdr_fs::go_to_path::GoToPathResolution;
 
-/// Lexically normalizes `.` and `..` components without touching the disk.
-///
-/// `.` is dropped; `..` pops the previous normal component, or is kept verbatim
-/// when there's nothing to pop (a leading `..` on a relative path, or a `..`
-/// right after the root). The root prefix (`/`) is preserved.
-fn lexical_normalize(path: &Path) -> PathBuf {
-    let mut out = PathBuf::new();
-    for component in path.components() {
-        match component {
-            Component::CurDir => {}
-            Component::ParentDir => {
-                // Pop only if the last pushed component is a normal name. A
-                // leading `..`, or `..` after the root, has nothing to pop and
-                // is kept so the path stays faithful to the input.
-                let popped = matches!(out.components().next_back(), Some(Component::Normal(_)));
-                if popped {
-                    out.pop();
-                } else {
-                    out.push("..");
-                }
-            }
-            other => out.push(other.as_os_str()),
-        }
+/// The local disk, as `resolve_with` asks it.
+struct LocalDisk;
+
+impl GoToHost for LocalDisk {
+    fn expand_tilde(&self, input: &str) -> String {
+        expand_tilde(input)
     }
-    out
-}
 
-/// The app-path spelling of a path the local OS reads (`C:/Users/test_user_1` on Windows; the path
-/// itself on macOS and Linux), the one form a pane holds. A path the grammar can't read keeps its
-/// native spelling.
-fn app_spelling(path: &Path) -> String {
-    path_grammar::app_spelling(&path.to_string_lossy(), PathFlavor::HOST)
-}
+    /// `metadata` follows symlinks, so a symlinked dir/file classifies as its target.
+    fn found(&self, path: &Path) -> Option<FoundKind> {
+        std::fs::metadata(path).ok().map(|meta| {
+            if meta.is_dir() {
+                FoundKind::Directory
+            } else {
+                FoundKind::File
+            }
+        })
+    }
 
-/// Walks up from `path` to the closest existing ancestor. Worst case returns
-/// `/` (which always exists on the platforms we target). Returns `path` itself
-/// when it exists.
-fn nearest_existing_ancestor(path: &Path) -> PathBuf {
-    let mut current = path;
-    loop {
-        if current.exists() {
-            return current.to_path_buf();
-        }
-        match current.parent() {
-            Some(parent) => current = parent,
-            None => return current.to_path_buf(),
-        }
+    /// The app-path spelling of a path the local OS reads (`C:/Users/test_user_1` on Windows; the path
+    /// itself on macOS and Linux), the one form a pane holds. A path the grammar can't read keeps its
+    /// native spelling.
+    fn app_spelling(&self, path: &Path) -> String {
+        path_grammar::app_spelling(&path.to_string_lossy(), PathFlavor::HOST)
+    }
+
+    /// A path that crosses into a supported archive is browsed as a folder, even though the inner
+    /// path (or the `.zip` file itself) isn't a real directory on disk, so typing it in the path
+    /// bar enters the archive. The boundary check confirms a real archive FILE + zip magic, so a
+    /// directory named `foo.zip` or a mislabeled file still classifies normally.
+    fn enters_archive(&self, path: &Path) -> bool {
+        cmdr_archive::path_crosses_archive_boundary(path)
     }
 }
 
 /// Resolves a typed input against `base_dir` into a [`GoToPathResolution`].
 ///
-/// Pure: no `AppHandle`, no IPC. The disk is only read via `exists` / `metadata`
-/// for classification; the async command wraps this in `blocking_with_timeout`
+/// Pure: no `AppHandle`, no IPC. The disk is only read via `metadata` for
+/// classification; the async command wraps this in `blocking_with_timeout`
 /// so a hung mount can't freeze IPC.
 pub fn resolve(input: &str, base_dir: &str) -> GoToPathResolution {
-    let trimmed = input.trim();
-    if trimmed.is_empty() {
-        return GoToPathResolution::Invalid {
-            reason: "Type a path to go to.".to_string(),
-        };
-    }
-
-    // Expand `~` first, then join relative inputs against the focused pane's dir.
-    let expanded = expand_tilde(trimmed);
-    let expanded_path = Path::new(&expanded);
-    let joined = if expanded_path.is_absolute() {
-        expanded_path.to_path_buf()
-    } else {
-        Path::new(base_dir).join(expanded_path)
-    };
-
-    let normalized = lexical_normalize(&joined);
-    // Every path the dialog hands back is an app path: the disk is read through the OS's own
-    // spelling (`normalized`), the pane gets the grammar's (`C:/Users/test_user_1` on Windows).
-    let normalized_str = app_spelling(&normalized);
-
-    // A path that crosses into a supported archive is browsed as a folder, even
-    // though the inner path (or the `.zip` file itself) isn't a real directory on
-    // disk — so typing it in the path bar enters the archive. Confirm the boundary
-    // (a real archive FILE + zip magic) so a directory named `foo.zip` or a
-    // mislabeled file still classifies normally below.
-    if cmdr_archive::path_crosses_archive_boundary(&normalized) {
-        return GoToPathResolution::Directory { path: normalized_str };
-    }
-
-    // `metadata` follows symlinks, so a symlinked dir/file classifies as its target.
-    match std::fs::metadata(&normalized) {
-        Ok(meta) if meta.is_dir() => GoToPathResolution::Directory { path: normalized_str },
-        Ok(_) => {
-            // Existing non-directory (file, symlink-to-file, etc.). Navigate to
-            // the parent and select the entry. A path that exists always has a
-            // parent except for the root, which `is_dir()` already caught above.
-            let parent_dir = normalized.parent().map_or_else(|| "/".to_string(), app_spelling);
-            let file_name = normalized
-                .file_name()
-                .map(|n| n.to_string_lossy().to_string())
-                .unwrap_or_else(|| normalized_str.clone());
-            GoToPathResolution::File {
-                path: normalized_str,
-                parent_dir,
-                file_name,
-            }
-        }
-        Err(_) => {
-            // Doesn't exist (or unreadable): fall back to the nearest ancestor.
-            let ancestor = nearest_existing_ancestor(&normalized);
-            GoToPathResolution::NearestAncestor {
-                requested: normalized_str,
-                ancestor_dir: app_spelling(&ancestor),
-            }
-        }
-    }
+    resolve_with(input, Path::new(base_dir), &LocalDisk)
 }
 
 #[cfg(test)]
