@@ -15,8 +15,7 @@
  *   (Remove-from-other / Keep-both / Cancel).
  */
 import { ownedByAppMenu } from '#lib/commands/command-registry.js'
-import type { Command, CommandScope } from '#lib/commands/types.js'
-import { getPlatform } from '#lib/platform/index.js'
+import type { Command } from '#lib/commands/types.js'
 import { formatConjunctionList } from '#lib/intl/list-format.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 import { systemReservation, type SystemReservation } from './system-reserved-keys'

@@ -79,7 +79,7 @@
         ariaLabel={tString('ui.menuBar.label')}
         keyScope="Viewer window"
         onPick={pick}
-        onFocusOrigin={(origin) => {
+        onFocusOrigin={(origin: Element | null) => {
             focusOrigin = origin
         }}
     />

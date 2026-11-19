@@ -6,14 +6,14 @@ const ipc = vi.hoisted(() => ({
   listener: null as ((event: { payload: MenuBarChanged }) => void) | null,
   asked: 0,
   /** What `pick_menu_bar_item` answers. */
-  pickOutcome: { kind: 'ran' } as BarPickOutcome,
+  pickOutcome: null as BarPickOutcome | null,
   /** Lets a test land events while `get_menu_bar` is in flight. */
   beforeAnswer: null as (() => void) | null,
 }))
 
 vi.mock('#lib/ipc/bindings.js', () => ({
   commands: {
-    pickMenuBarItem: () => Promise.resolve(ipc.pickOutcome),
+    pickMenuBarItem: () => Promise.resolve(ipc.pickOutcome ?? { kind: 'ran' }),
     getMenuBar: () => {
       ipc.asked++
       ipc.beforeAnswer?.()
@@ -181,7 +181,7 @@ describe('followMenuBar', () => {
 
 describe('pickMenuBarItem', () => {
   afterEach(() => {
-    ipc.pickOutcome = { kind: 'ran' }
+    ipc.pickOutcome = null
     document.body.replaceChildren()
   })
 

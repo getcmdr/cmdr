@@ -21,7 +21,7 @@
  * classification in `keyboard-shortcuts-banner`.
  */
 import { commands, listedCommands } from '#lib/commands/command-registry.js'
-import { getPlatform, hasCapability, isMacOS } from '#lib/platform/index.js'
+import { hasCapability, isMacOS } from '#lib/platform/index.js'
 import { searchAllCommands } from '#lib/commands/fuzzy-search.js'
 import {
   getEffectiveShortcuts,
@@ -46,9 +46,6 @@ import { tString } from '#lib/intl/messages.svelte.js'
 import { dependOn } from '#lib/utils/reactivity.js'
 import { groupCommandsByScope } from './keyboard-shortcuts-grouping'
 import { classifyConflict, classifySystemShortcut, type ConflictKind } from './keyboard-shortcuts-banner'
-import { getAppLogger } from '#lib/logging/logger.js'
-
-const log = getAppLogger('shortcuts')
 
 /** The combo being captured plus its classification (drives the conflict banner). */
 export interface ConflictWarning {
