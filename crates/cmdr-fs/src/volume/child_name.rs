@@ -37,9 +37,28 @@ use std::ffi::OsStr;
 use std::fmt;
 use std::path::{Path, PathBuf};
 
-use crate::app_path::PathFlavor;
 use crate::log_error::{ErrorLogText, ErrorText, write_plain};
 use crate::log_private::LogPrivate;
+
+/// Whose native `join` a name must survive: POSIX's (`/` separates) or Windows' (`\` too,
+/// and `:` opens a stream). Its own small type, ❌ not `app_path::PathFlavor`: the app path
+/// names `NotAChildName`, so importing it here would tie the two modules in a cycle.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum NameFlavor {
+    /// macOS, Linux, the browser build.
+    Posix,
+    /// Windows.
+    Windows,
+}
+
+impl NameFlavor {
+    /// This host's: read off `std`'s own separator, so no platform `cfg` is needed.
+    pub(crate) const HOST: NameFlavor = if std::path::MAIN_SEPARATOR == '\\' {
+        NameFlavor::Windows
+    } else {
+        NameFlavor::Posix
+    };
+}
 
 /// One plain path component: never empty, `.`, or `..`, and never holding a
 /// `/` or a NUL. Built only by [`ChildName::new`].
@@ -55,7 +74,7 @@ impl<'a> ChildName<'a> {
     /// `name`, if it's one plain path component.
     pub fn new(name: &'a (impl AsRef<OsStr> + ?Sized)) -> Result<Self, NotAChildName> {
         let name = name.as_ref();
-        if is_plain_name(name.as_encoded_bytes(), PathFlavor::HOST) {
+        if is_plain_name(name.as_encoded_bytes(), NameFlavor::HOST) {
             Ok(Self(name))
         } else {
             Err(NotAChildName(name.to_string_lossy().into_owned()))
@@ -86,8 +105,8 @@ impl<'a> ChildName<'a> {
 /// a drive letter a drive-relative path). Reserved names and trailing dots and spaces pass:
 /// they're names an NTFS folder can hold, and only the plain-path form refuses them
 /// (`app_path::NotPlainSafe`). Pure, so every OS tests both flavors.
-pub(crate) fn is_plain_name(bytes: &[u8], flavor: PathFlavor) -> bool {
-    let separator = |b: u8| b == b'/' || b == 0 || (flavor == PathFlavor::Windows && (b == b'\\' || b == b':'));
+pub(crate) fn is_plain_name(bytes: &[u8], flavor: NameFlavor) -> bool {
+    let separator = |b: u8| b == b'/' || b == 0 || (flavor == NameFlavor::Windows && (b == b'\\' || b == b':'));
     !matches!(bytes, b"" | b"." | b"..") && !bytes.iter().any(|&b| separator(b))
 }
 
@@ -127,22 +146,22 @@ mod tests {
             "nul.txt",
         ];
         for good in both {
-            for flavor in [PathFlavor::Posix, PathFlavor::Windows] {
+            for flavor in [NameFlavor::Posix, NameFlavor::Windows] {
                 assert!(is_plain_name(good.as_bytes(), flavor), "{good:?} under {flavor:?}");
             }
         }
         for posix_only in ["a:b", "back\\slash", "C:", "x:$DATA", "\\\\server"] {
             assert!(
-                is_plain_name(posix_only.as_bytes(), PathFlavor::Posix),
+                is_plain_name(posix_only.as_bytes(), NameFlavor::Posix),
                 "{posix_only:?}"
             );
             assert!(
-                !is_plain_name(posix_only.as_bytes(), PathFlavor::Windows),
+                !is_plain_name(posix_only.as_bytes(), NameFlavor::Windows),
                 "{posix_only:?}"
             );
         }
         for neither in ["", ".", "..", "a/b", "/x", "x\0y"] {
-            for flavor in [PathFlavor::Posix, PathFlavor::Windows] {
+            for flavor in [NameFlavor::Posix, NameFlavor::Windows] {
                 assert!(
                     !is_plain_name(neither.as_bytes(), flavor),
                     "{neither:?} under {flavor:?}"
@@ -150,12 +169,12 @@ mod tests {
             }
         }
         // Not valid UTF-8 (a Linux name): plain under POSIX.
-        assert!(is_plain_name(b"caf\xe9", PathFlavor::Posix));
+        assert!(is_plain_name(b"caf\xe9", NameFlavor::Posix));
     }
 
     #[test]
     fn a_plain_name_passes_and_joins_as_a_direct_child() {
-        let host_only: &[&str] = if PathFlavor::HOST == PathFlavor::Posix {
+        let host_only: &[&str] = if NameFlavor::HOST == NameFlavor::Posix {
             &["a:b", "back\\slash"]
         } else {
             &[]
