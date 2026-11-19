@@ -47,7 +47,6 @@ fn a_volume_at_the_server_root_still_carries_the_prefix() {
 }
 
 #[test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn the_three_spellings_of_the_root_all_mean_the_root() {
     let root = rooted_at("/srv/data");
     assert_eq!(root.to_remote_path(Path::new("")).as_deref(), Some("/srv/data"));
@@ -58,7 +57,6 @@ fn the_three_spellings_of_the_root_all_mean_the_root() {
 /// The two spellings the app actually uses land on one server path, and the
 /// prefixed one is what comes back out.
 #[test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn a_prefixed_and_a_relative_path_land_on_the_same_server_path() {
     let root = rooted_at("/srv/data");
     let from_prefix = root
@@ -111,7 +109,6 @@ fn a_server_path_outside_the_root_has_no_app_path() {
 /// real server path, and never refuse. With the prefix in place the app never
 /// spells a remote path bare, so leniency here buys nothing but that hole.
 #[test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn a_bare_server_absolute_path_is_refused() {
     let root = rooted_at("/srv/data");
     assert_eq!(root.to_remote_path(Path::new("/srv/data/photos")), None);
@@ -194,7 +191,6 @@ fn a_relative_path_cannot_climb_out_of_the_root() {
 /// A volume at the server root reaches everything under it, still through the
 /// prefix.
 #[test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn a_volume_at_the_server_root_reaches_everything_through_the_prefix() {
     let root = rooted_at("/");
     assert_eq!(
@@ -219,7 +215,6 @@ fn a_volume_at_the_server_root_reaches_everything_through_the_prefix() {
 /// already holds passes through untouched, and a relative one lands under the
 /// root.
 #[test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn a_path_anchored_by_the_app_still_lands_where_the_pane_says() {
     let root = rooted_at("/srv/data");
     let anchored = crate::volume::root_anchored(root.app_root(), Path::new("photos/trip.jpg"));
@@ -297,7 +292,6 @@ fn an_s3_path_names_the_place_of_its_bucket() {
 }
 
 #[test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn an_nfs_app_root_carries_the_export_as_one_segment() {
     // ❗ No account in the authority (the uid is a setting, not identity), and the
     // export rides as ONE segment, so `server_of_path` can tell where it ends.
@@ -347,7 +341,6 @@ fn an_nfs_path_without_an_export_or_a_port_names_nothing() {
 }
 
 #[test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn an_nfs_app_root_and_its_volume_id_agree_through_server_of_path() {
     // Invariant 11: the path a volume mints and the id it registers under come
     // from one tuple, so routing a path finds the volume that minted it.
@@ -425,4 +418,133 @@ fn a_refusal_names_the_backend_the_path_is_on() {
     ] {
         assert_eq!(refuser_of_path(path), None, "{path}");
     }
+}
+
+// ── The typed twins ─────────────────────────────────────────────────
+
+fn app(text: &str) -> &AppPath {
+    AppPath::from_normalized(text).unwrap_or_else(|why| panic!("{text:?}: {why}"))
+}
+
+/// The typed root is the bridged root's place, canonical: a server-rooted volume ends in
+/// the scheme root's `/`, and an NFS export's trailing `/` goes.
+#[test]
+fn the_typed_root_names_the_same_place_as_the_bridged_one() {
+    assert_eq!(
+        rooted_at("/srv/data").app().map(AppPath::as_str),
+        Ok("sftp://test_user_1@testnas.local:22/srv/data")
+    );
+    assert_eq!(
+        rooted_at("/").app().map(AppPath::as_str),
+        Ok("sftp://test_user_1@testnas.local:22/")
+    );
+    let export = RemoteRoot::new(nfs_app_root("testnas.local", 2049, "/Public"), Path::new("/"));
+    assert_eq!(export.app().map(AppPath::as_str), Ok("nfs://testnas.local:2049/Public"));
+    let phone = RemoteRoot::new(adb_app_root("192.168.1.5:5555"), Path::new("/sdcard"));
+    assert_eq!(phone.app().map(AppPath::as_str), Ok("adb://192.168.1.5:5555/sdcard"));
+}
+
+/// `to_remote` answers what `to_remote_path` answers for the same text, every refusal
+/// included: one set of rules, two input types.
+#[test]
+fn the_typed_translation_agrees_with_the_path_one() {
+    let root = rooted_at("/srv/data");
+    for text in [
+        "sftp://test_user_1@testnas.local:22/srv/data",
+        "sftp://test_user_1@testnas.local:22/srv/data/photos",
+        "sftp://test_user_1@testnas.local:22/srv",
+        "sftp://test_user_1@testnas.local:22/srv/data-1/photos",
+        "sftp://test_user_1@testnas.local:2222/srv/data/photos",
+        "sftp://test_user_2@testnas.local:22/srv/data/photos",
+        "webdav://test_user_1@testnas.local:22/srv/data/photos",
+        "/srv/data/photos",
+        "/",
+    ] {
+        assert_eq!(
+            root.to_remote(app(text)),
+            root.to_remote_path(Path::new(text)),
+            "{text}"
+        );
+    }
+    assert_eq!(
+        root.to_app("/srv/data/photos").map(AppPathBuf::into_string),
+        Ok("sftp://test_user_1@testnas.local:22/srv/data/photos".to_string())
+    );
+    assert_eq!(
+        root.to_app("/srv/data/photos/../..").map(AppPathBuf::into_string),
+        Err(RemoteAppRefusal::OffRoot)
+    );
+}
+
+/// ❗ A server path is POSIX on every host: `\` and `:` are name characters, a drive-shaped
+/// name is a name, and only `/` separates, so a Windows host never reads `a\b` as a
+/// subfolder or `C:` as a drive. Pure, so it runs on every OS.
+#[test]
+fn only_a_slash_separates_a_server_path_on_every_host() {
+    let root = rooted_at("/srv/data");
+    let prefixed = |tail: &str| format!("{PREFIX}/srv/data/{tail}");
+    for (tail, remote) in [
+        ("a\\b", "/srv/data/a\\b"),
+        ("C:", "/srv/data/C:"),
+        ("C:\\x", "/srv/data/C:\\x"),
+        ("a:b.txt", "/srv/data/a:b.txt"),
+        ("..\\..\\etc", "/srv/data/..\\..\\etc"),
+        ("CON", "/srv/data/CON"),
+        ("trailing.", "/srv/data/trailing."),
+        ("trailing ", "/srv/data/trailing "),
+        ("Ünï", "/srv/data/Ünï"),
+    ] {
+        assert_eq!(
+            root.to_remote(app(&prefixed(tail))).as_deref(),
+            Some(remote),
+            "{tail:?}"
+        );
+        assert_eq!(
+            root.to_remote_path(Path::new(&prefixed(tail))).as_deref(),
+            Some(remote),
+            "{tail:?}"
+        );
+        assert_eq!(
+            root.to_app(remote).map(AppPathBuf::into_string),
+            Ok(prefixed(tail)),
+            "{tail:?} round-trips"
+        );
+    }
+    assert_eq!(normalize_remote_text("\\srv\\data"), "/\\srv\\data");
+    assert_eq!(normalize_remote_text("C:/x/../y"), "/C:/y");
+    assert_eq!(normalize_remote_path(Path::new("srv\\x")), Path::new("/srv\\x"));
+}
+
+/// A non-UTF-8 server name the app spells with a byte escape goes to the server as its
+/// lossy text, today's answer for SFTP and NFS until their backends carry bytes. A unit
+/// escape names no POSIX server's file, so it's refused.
+#[test]
+fn an_escaped_name_reaches_the_server_as_today() {
+    let root = rooted_at("/srv/data");
+    let byte_escaped = format!("{PREFIX}/srv/data/{}", crate::app_path::escape_bytes(b"caf\xe9.txt"));
+    assert_eq!(
+        root.to_remote(app(&byte_escaped)).as_deref(),
+        Some("/srv/data/caf\u{FFFD}.txt")
+    );
+    let unit_escaped = format!("{PREFIX}/srv/data/{}", crate::app_path::escape_units(&[0xD800]));
+    assert_eq!(root.to_remote(app(&unit_escaped)), None);
+}
+
+/// A server answer the app path can't hold as it stands is a typed refusal the caller
+/// keeps the old spelling for, ❌ never an entry it drops.
+#[test]
+fn a_server_answer_needing_an_escape_is_a_typed_refusal() {
+    let root = rooted_at("/srv/data");
+    assert_eq!(
+        root.to_app("/srv/data/x\u{10FEE9}"),
+        Err(RemoteAppRefusal::NotAppText(NotAnAppPath::NotUnicode))
+    );
+    assert_eq!(
+        root.to_app("/srv/data/a\0b"),
+        Err(RemoteAppRefusal::NotAppText(NotAnAppPath::Nul))
+    );
+    assert!(
+        root.to_app_path("/srv/data/x\u{10FEE9}").is_some(),
+        "the old spelling stays"
+    );
 }

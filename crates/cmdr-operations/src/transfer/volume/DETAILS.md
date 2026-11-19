@@ -815,6 +815,12 @@ item the way any unusable name does.
   pre-check all validate before joining; the same-volume rename-merge and the native drag-out fulfillment
   (`apps/desktop/src-tauri/src/native_drag/fulfillment.rs`) do too. One check under every backend, so a new backend
   can't forget it.
+- On Windows `ChildName` also refuses `\` and `:`, which a POSIX server's name can hold (`12:00 notes`): the native join
+  would split it into a subfolder or a stream. Such a name isn't hostile, so it's the destination refusing it on this
+  host, asked per item like any refused name (`crate::name_rules::DestinationNames::native_join_refuses`, checked in
+  `merge_level` BEFORE `ChildName`, and through `refuses` at the top level), ❌ never the whole transfer ending. Always
+  `false` on macOS and Linux. Pinned on every OS by `refused_class_tests.rs`' `*_native_join_refuses` cells, which
+  preset Windows' join. `docs/specs/app-path-plan.md`'s milestone 10a replaces it with the app-path join.
 - `InMemoryVolume::set_reported_name` models a source that lists a hostile name. Pinned by `hostile_names_tests.rs` (a
   bad filename, a folder listed as `..`, and the symlink-then-folder trick: a copy never merges a source folder through
   a link already at the destination, under every policy) and a drag-out cell in
