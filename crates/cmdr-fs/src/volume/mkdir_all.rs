@@ -45,8 +45,8 @@
 //! `conformance::assert_create_directory_all_goes_through_a_link_to_a_folder`
 //! holds every backend that has links to it.
 
-use crate::app_path::{AppPath, AppPathBuf};
-use std::path::{Path, PathBuf};
+use crate::app_path::{AppPath, AppPathBuf, PathArithmetic};
+use std::path::Path;
 
 use crate::volume::scan_walk::Walking;
 use crate::volume::{DirectoryCreation, Volume, VolumeError};
@@ -68,6 +68,13 @@ pub trait MakesDirectories: Sync {
     /// `path` in the backend's own spelling, or `NotFound` when it isn't on this
     /// volume.
     fn remote_path_of(&self, path: &Path) -> Result<String, VolumeError>;
+
+    /// [`Self::remote_path_of`] for an app path, what [`create_directory_all_at`] asks. A
+    /// backend that speaks app paths answers it itself; the default crosses through the
+    /// transition bridge to the `std::path` form, byte for byte.
+    fn remote_path_of_app(&self, path: &AppPath) -> Result<String, VolumeError> {
+        self.remote_path_of(&path.as_std_legacy())
+    }
 
     /// Makes exactly one directory, no parents.
     ///
@@ -102,11 +109,23 @@ pub struct MadeDirectories {
     pub shallowest_created: Option<AppPathBuf>,
 }
 
-/// Creates `path` and any missing ancestors under the volume root.
+/// Creates `path` and any missing ancestors under the volume root. The `std::path` form of
+/// [`create_directory_all_at`]; the bridge keeps `path`'s exact bytes, and the walk's
+/// ancestors are the ones `Path::ancestors` gave.
 pub async fn create_directory_all(maker: &dyn MakesDirectories, path: &Path) -> Result<MadeDirectories, VolumeError> {
-    let remote = maker.remote_path_of(path)?;
-    // The volume root always exists, and so does every spelling of it.
-    let root = maker.remote_path_of(Path::new("/"))?;
+    create_directory_all_at(maker, &AppPath::legacy_unchecked(path)).await
+}
+
+/// Creates `path` and any missing ancestors under the volume root.
+pub async fn create_directory_all_at(
+    maker: &dyn MakesDirectories,
+    path: &AppPath,
+) -> Result<MadeDirectories, VolumeError> {
+    let remote = maker.remote_path_of_app(path)?;
+    // The volume root always exists, and so does every spelling of it. `/` is the
+    // volume-relative spelling every backend reads as its root (`root_anchored`), where
+    // `path.root()` would be the server's own `/`, off a volume rooted deeper.
+    let root = maker.remote_path_of_app(volume_root_alias())?;
     if remote == root {
         return Ok(MadeDirectories {
             leaf: DirectoryCreation::AlreadyExisted,
@@ -116,22 +135,24 @@ pub async fn create_directory_all(maker: &dyn MakesDirectories, path: &Path) -> 
 
     // Leaf → root, stopping at the volume root. Each level keeps both spellings:
     // the remote one to create, the caller's to patch a pane with.
-    let mut levels: Vec<(&Path, String)> = Vec::new();
-    for ancestor in path.ancestors() {
-        let Ok(remote_ancestor) = maker.remote_path_of(ancestor) else {
+    let mut levels: Vec<(&AppPath, String)> = Vec::new();
+    let mut ancestor = Some(path);
+    while let Some(at) = ancestor {
+        let Ok(remote_ancestor) = maker.remote_path_of_app(at) else {
             break;
         };
         if remote_ancestor == root {
             break;
         }
-        levels.push((ancestor, remote_ancestor));
+        levels.push((at, remote_ancestor));
+        ancestor = at.parent();
     }
 
     match maker.make_one_directory(&remote).await {
         Ok(()) => {
             return Ok(MadeDirectories {
                 leaf: DirectoryCreation::Created,
-                shallowest_created: Some(AppPath::legacy_unchecked(path).into_owned()),
+                shallowest_created: Some(path.to_owned()),
             });
         }
         Err(VolumeError::AlreadyExists(_)) => {
@@ -148,11 +169,11 @@ pub async fn create_directory_all(maker: &dyn MakesDirectories, path: &Path) -> 
 
     // Created shallowest first, so no child is asked for before its parent.
     let mut leaf = DirectoryCreation::AlreadyExisted;
-    let mut shallowest_created: Option<PathBuf> = None;
+    let mut shallowest_created: Option<AppPathBuf> = None;
     for (index, (as_addressed, dir)) in levels.iter().enumerate().rev() {
         match maker.make_one_directory(dir).await {
             Ok(()) => {
-                shallowest_created.get_or_insert_with(|| as_addressed.to_path_buf());
+                shallowest_created.get_or_insert_with(|| (*as_addressed).to_owned());
                 if index == 0 {
                     leaf = DirectoryCreation::Created;
                 }
@@ -169,8 +190,13 @@ pub async fn create_directory_all(maker: &dyn MakesDirectories, path: &Path) -> 
     }
     Ok(MadeDirectories {
         leaf,
-        shallowest_created: shallowest_created.map(|created| AppPath::legacy_unchecked(&created).into_owned()),
+        shallowest_created,
     })
+}
+
+/// `/`, the volume-relative spelling of a volume's root (a canonical value on every host).
+fn volume_root_alias() -> &'static AppPath {
+    AppPath::from_normalized("/").expect("`/` is a canonical app path on every host")
 }
 
 /// The leaf answered `AlreadyExists`: fine when the name leads to a folder,
@@ -191,7 +217,7 @@ async fn refuse_unless_a_directory(maker: &dyn MakesDirectories, remote: &str) -
 /// level that exists, or a question nobody could answer, leaves `e` standing.
 async fn blamed_on_what_is_in_the_way(
     maker: &dyn MakesDirectories,
-    levels: &[(&Path, String)],
+    levels: &[(&AppPath, String)],
     e: VolumeError,
 ) -> VolumeError {
     // A refusal the backend classified (no permission, read-only, full, gone)

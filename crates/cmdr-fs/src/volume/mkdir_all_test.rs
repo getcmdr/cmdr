@@ -5,6 +5,7 @@
 //! silent overwrite of every file in a copy.
 
 use std::collections::HashSet;
+use std::path::PathBuf;
 use std::sync::Mutex;
 
 use super::*;
