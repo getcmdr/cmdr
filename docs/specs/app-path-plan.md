@@ -1254,6 +1254,32 @@ included; the hidden couplings it found are why waves B and C differ from round 
   `volume::remote_paths` (7), `volume::scan_walk` (9), `volume::patching` (3), `in_memory` canonicalize (1),
   `child_name` (1), `ids` (1), `twin_path` (2). macOS/Linux: pins unchanged.
 - **DONE**: `rg '#1225' crates/cmdr-fs` is empty; `cmdr-fs`'s bridge count is zero.
+- **Partly done** (2026-11-19, branch `worktrees-agent-a43a5ade9424ef97a`): every `#1225` ignore is gone (24 cells run
+  on every OS), the shared arithmetic is typed, and the typed twins sit beside the `std::path` forms the backends still
+  call (`crates/cmdr-fs/DETAILS.md` § "App paths" lists them). What converted: `RemoteRoot` and `normalize_remote_path`
+  (POSIX bytes split on `/` alone, plus `app`/`to_remote`/`to_app`, the last a typed `RemoteAppRefusal` for a server
+  name that needs an escape), `anchor_at_root` beside `root_anchored`, the scan walk and the listing patcher
+  (`AppPath::join` of each listed name), `twin_path`'s typed twins, `InMemoryVolume::canonicalize` (text split on `/`),
+  and `ChildName` (host flavor: on Windows `\` and `:` refused). Intended changes: a walk under a top spelled `/dot/.`
+  lists `/dot/sub` (the milestone-1 pin flipped in its own commit); a listed name that isn't one plain name fails a walk
+  as `InvalidName`; `anchor_at_root` refuses `..`; Windows-only, `ChildName` refuses `\` and `:`. Where the code
+  differed from this plan:
+  - **The bridge count isn't zero** (217 → 211). What stays is not arithmetic: the old forms' one crossing each (wave B
+    keeps them), the `ScanRecorder`/`ScanOutages` callbacks (they take `std::path` and live in the engines, so typing
+    them is 10a's), `InMemoryVolume`'s `PathBuf`-keyed store and its builders (`with_root(impl Into<PathBuf>)`, used by
+    every crate's tests), the `conformance` suites (113, driving other crates' volumes through their fixtures), and
+    `tally_by_listing`, `mkdir_all`, `root_echo`, `routed` (they read `FileEntry.path` text, typed at 10f). Each goes
+    with its last caller; converting them here would raise other crates' budgets.
+  - `app_paths.rs` didn't fold: its callers are all outside the crate (the app, `cmdr-operation-log`), its string
+    helpers are already right on Windows, and `AppPath` has the typed answers (`strip_prefix`, `rebase`,
+    `is_on_volume`). It goes when 8 and 10c/10d move those callers.
+  - `scripts/app-path-flip/` stays: three open PRs still need the codemod to merge `main` (the lead's call).
+  - The three pin files' `#1225` comments stay: they pin `std::path`'s own answers, Unix-only by design.
+  - Verified: nextest `cmdr-fs` plus every crate calling the changed helpers (`cmdr-sftp`, `-webdav`, `-nfs`, `-s3`,
+    `-adb`, `-git`, `-mtp`, `-smb`, `-archive`, `-local`, `-restic`, `-listing`, `-operation-log`, `-operations`,
+    `-index`, `-listing-wasm`, `-multi-rename`, `-viewer`, `-search`, and the app): 16,176 passed; workspace clippy;
+    Windows (zig) check of `cmdr-fs` and the four `RemoteRoot` backends, Windows and Linux (zig) clippy `-D warnings` of
+    `cmdr-fs`, wasm32 `--lib`.
 
 ### 6. Network backends: SFTP, WebDAV, S3, NFS
 

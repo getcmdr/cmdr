@@ -85,7 +85,7 @@ impl RemoteRoot {
     /// `remote_root` is normalized and made absolute, so a backend handed a
     /// relative or `..`-carrying root still ends up with one spelling of it.
     pub fn new(prefix: String, remote_root: &Path) -> Self {
-        let remote = normalized_bytes(&posix_names(&os_bytes(remote_root)));
+        let remote = normalized_bytes(&posix_names(os_bytes(remote_root)));
         let app_text = format!("{prefix}{}", String::from_utf8_lossy(&remote));
         let typed = scheme_app_path(&app_text);
         Self {
@@ -135,7 +135,7 @@ impl RemoteRoot {
     ///   `photos/../../etc` is the same escape spelled relatively, and the
     ///   server would resolve it happily.
     pub fn to_remote_path(&self, path: &Path) -> Option<String> {
-        self.remote_of(&os_bytes(path))
+        self.remote_of(os_bytes(path))
     }
 
     /// [`Self::to_remote_path`] for an app path: the same aliases, matching, and refusals,
@@ -211,7 +211,7 @@ impl RemoteRoot {
 /// against a root (a start folder, say) has to come through here too: two
 /// normalizations would let one directory compare unequal to itself.
 pub fn normalize_remote_path(path: &Path) -> PathBuf {
-    path_of_bytes(normalized_bytes(&posix_names(&os_bytes(path))))
+    path_of_bytes(normalized_bytes(&posix_names(os_bytes(path))))
 }
 
 /// [`normalize_remote_path`] for server path text.
@@ -229,35 +229,19 @@ fn scheme_app_path(text: &str) -> Result<AppPathBuf, NotAnAppPath> {
     AppPathBuf::parse(text, PathFlavor::Posix)
 }
 
-/// A path's bytes as `Path` reads them on this host's POSIX side: the raw bytes on Unix,
-/// the lossy text elsewhere (Windows and the browser build, where a server path held as a
-/// `Path` came from text anyway).
-fn os_bytes(path: &Path) -> Cow<'_, [u8]> {
-    #[cfg(unix)]
-    {
-        use std::os::unix::ffi::OsStrExt;
-        Cow::Borrowed(path.as_os_str().as_bytes())
-    }
-    #[cfg(not(unix))]
-    {
-        match path.to_string_lossy() {
-            Cow::Borrowed(text) => Cow::Borrowed(text.as_bytes()),
-            Cow::Owned(text) => Cow::Owned(text.into_bytes()),
-        }
-    }
+/// A path's encoded bytes: the raw bytes on Unix, WTF-8 on Windows (UTF-8 for every name
+/// that is valid text), so a split on the ASCII `/` reads it the way POSIX `Path` does.
+fn os_bytes(path: &Path) -> &[u8] {
+    path.as_os_str().as_encoded_bytes()
 }
 
-/// `bytes` back as a `Path`: raw on Unix, lossy text elsewhere (the inverse of [`os_bytes`]).
+/// Bytes [`normalized_bytes`] made from a [`os_bytes`] answer, back as a `Path`.
 fn path_of_bytes(bytes: Vec<u8>) -> PathBuf {
-    #[cfg(unix)]
-    {
-        use std::os::unix::ffi::OsStringExt;
-        PathBuf::from(OsString::from_vec(bytes))
-    }
-    #[cfg(not(unix))]
-    {
-        PathBuf::from(OsString::from(String::from_utf8_lossy(&bytes).into_owned()))
-    }
+    // SAFETY: every caller hands `normalized_bytes` of a `posix_names` split of
+    // `os_bytes(path)`: whole pieces of one `OsStr`'s encoding cut only at an ASCII `/`,
+    // rejoined with `/`. `from_encoded_bytes_unchecked` allows exactly that (a split
+    // before or after valid non-empty UTF-8, here the `/`).
+    PathBuf::from(unsafe { OsString::from_encoded_bytes_unchecked(bytes) })
 }
 
 /// A POSIX path's components as `Path::components` reads them: a root, a leading `.`, and
