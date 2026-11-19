@@ -24,6 +24,26 @@
   "@ui.demoArchive.notBrowsable": {
     "sourceHash": "760091f"
   },
+  "ui.demoDesktopOnly.filePicker": "Bản demo này không thể mở bộ chọn tệp trên máy tính của bạn. Trong ứng dụng thật, bộ chọn sẽ mở ra để bạn chọn tệp hoặc thư mục.",
+  "@ui.demoDesktopOnly.filePicker": {
+    "sourceHash": "8a28292"
+  },
+  "ui.demoDesktopOnly.revealFolder": "Bản demo này không thể mở thư mục trên máy tính của bạn. Trong ứng dụng thật, thao tác này sẽ hiển thị thư mục trong trình quản lý tệp của bạn.",
+  "@ui.demoDesktopOnly.revealFolder": {
+    "sourceHash": "27ef83e"
+  },
+  "ui.demoDesktopOnly.quit": "Bản demo này chạy trong một tab trình duyệt nên không thể thoát. Hãy đóng tab khi bạn dùng xong.",
+  "@ui.demoDesktopOnly.quit": {
+    "sourceHash": "c971af5"
+  },
+  "ui.demoWindow.maximize": "Phóng to",
+  "@ui.demoWindow.maximize": {
+    "sourceHash": "fba6c2c"
+  },
+  "ui.demoWindow.restore": "Khôi phục",
+  "@ui.demoWindow.restore": {
+    "sourceHash": "a76e13b"
+  },
   "ui.popover.defaultAriaLabel": "Tùy chọn",
   "@ui.popover.defaultAriaLabel": {
     "sourceHash": "d0db8b5"

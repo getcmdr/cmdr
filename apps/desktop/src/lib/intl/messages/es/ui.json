@@ -23,6 +23,26 @@
   "@ui.demoArchive.notBrowsable": {
     "sourceHash": "760091f"
   },
+  "ui.demoDesktopOnly.filePicker": "Esta demo no puede abrir el selector de archivos de tu ordenador. En la app real, se abre uno para que elijas un archivo o una carpeta.",
+  "@ui.demoDesktopOnly.filePicker": {
+    "sourceHash": "8a28292"
+  },
+  "ui.demoDesktopOnly.revealFolder": "Esta demo no puede abrir carpetas de tu ordenador. En la app real, esto muestra la carpeta en tu gestor de archivos.",
+  "@ui.demoDesktopOnly.revealFolder": {
+    "sourceHash": "27ef83e"
+  },
+  "ui.demoDesktopOnly.quit": "Esta demo se ejecuta en una pestaña del navegador, así que no se puede salir de ella. Cierra la pestaña cuando termines.",
+  "@ui.demoDesktopOnly.quit": {
+    "sourceHash": "c971af5"
+  },
+  "ui.demoWindow.maximize": "Maximizar",
+  "@ui.demoWindow.maximize": {
+    "sourceHash": "fba6c2c"
+  },
+  "ui.demoWindow.restore": "Restaurar",
+  "@ui.demoWindow.restore": {
+    "sourceHash": "a76e13b"
+  },
   "ui.popover.defaultAriaLabel": "Opciones",
   "@ui.popover.defaultAriaLabel": {
     "sourceHash": "d0db8b5"

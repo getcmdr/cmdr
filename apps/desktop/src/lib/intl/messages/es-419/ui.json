@@ -3,6 +3,14 @@
   "@ui.alertDialog.defaultButton": {
     "sourceHash": "640d676"
   },
+  "ui.demoDesktopOnly.filePicker": "Esta demo no puede abrir el selector de archivos de tu computadora. En la app real, se abre uno para que elijas un archivo o una carpeta.",
+  "@ui.demoDesktopOnly.filePicker": {
+    "sourceHash": "97991d9"
+  },
+  "ui.demoDesktopOnly.revealFolder": "Esta demo no puede abrir carpetas de tu computadora. En la app real, esto muestra la carpeta en tu administrador de archivos.",
+  "@ui.demoDesktopOnly.revealFolder": {
+    "sourceHash": "8095749"
+  },
   "ui.loadingIcon.finalizing": "{count, plural, one {Se cargó {countText} archivo} many {Se cargaron {countText} archivos} other {Se cargaron {countText} archivos}}. Ordenando tus archivos, preparando la vista…",
   "@ui.loadingIcon.finalizing": {
     "sourceHash": "e11f66e"

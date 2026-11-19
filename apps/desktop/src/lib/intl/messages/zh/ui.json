@@ -23,6 +23,26 @@
   "@ui.demoArchive.notBrowsable": {
     "sourceHash": "760091f"
   },
+  "ui.demoDesktopOnly.filePicker": "这个在线演示无法打开你电脑上的文件选择器。在真正的 App 里，这里会打开一个，让你选择文件或文件夹。",
+  "@ui.demoDesktopOnly.filePicker": {
+    "sourceHash": "8a28292"
+  },
+  "ui.demoDesktopOnly.revealFolder": "这个在线演示无法打开你电脑上的文件夹。在真正的 App 里，这会在你的文件管理器中显示该文件夹。",
+  "@ui.demoDesktopOnly.revealFolder": {
+    "sourceHash": "27ef83e"
+  },
+  "ui.demoDesktopOnly.quit": "这个在线演示运行在浏览器标签页中，所以无法退出。完成后关闭这个标签页即可。",
+  "@ui.demoDesktopOnly.quit": {
+    "sourceHash": "c971af5"
+  },
+  "ui.demoWindow.maximize": "最大化",
+  "@ui.demoWindow.maximize": {
+    "sourceHash": "fba6c2c"
+  },
+  "ui.demoWindow.restore": "向下还原",
+  "@ui.demoWindow.restore": {
+    "sourceHash": "a76e13b"
+  },
   "ui.popover.defaultAriaLabel": "选项",
   "@ui.popover.defaultAriaLabel": {
     "sourceHash": "d0db8b5"

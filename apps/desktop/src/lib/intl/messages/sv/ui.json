@@ -24,6 +24,26 @@
   "@ui.demoArchive.notBrowsable": {
     "sourceHash": "760091f"
   },
+  "ui.demoDesktopOnly.filePicker": "Den här demoversionen kan inte öppna datorns filväljare. I den riktiga appen öppnas en, så att du kan välja en fil eller mapp.",
+  "@ui.demoDesktopOnly.filePicker": {
+    "sourceHash": "8a28292"
+  },
+  "ui.demoDesktopOnly.revealFolder": "Den här demoversionen kan inte öppna mappar på din dator. I den riktiga appen visas mappen i din filhanterare.",
+  "@ui.demoDesktopOnly.revealFolder": {
+    "sourceHash": "27ef83e"
+  },
+  "ui.demoDesktopOnly.quit": "Den här demoversionen körs i en webbläsarflik, så den kan inte avslutas. Stäng fliken när du är klar.",
+  "@ui.demoDesktopOnly.quit": {
+    "sourceHash": "c971af5"
+  },
+  "ui.demoWindow.maximize": "Maximera",
+  "@ui.demoWindow.maximize": {
+    "sourceHash": "fba6c2c"
+  },
+  "ui.demoWindow.restore": "Återställ",
+  "@ui.demoWindow.restore": {
+    "sourceHash": "a76e13b"
+  },
   "ui.popover.defaultAriaLabel": "Alternativ",
   "@ui.popover.defaultAriaLabel": {
     "sourceHash": "d0db8b5"

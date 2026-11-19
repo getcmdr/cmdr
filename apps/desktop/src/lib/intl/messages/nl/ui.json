@@ -24,6 +24,26 @@
   "@ui.demoArchive.notBrowsable": {
     "sourceHash": "760091f"
   },
+  "ui.demoDesktopOnly.filePicker": "Deze demo kan de bestandskiezer van je computer niet openen. In de echte app opent er hier een, zodat je een bestand of map kunt kiezen.",
+  "@ui.demoDesktopOnly.filePicker": {
+    "sourceHash": "8a28292"
+  },
+  "ui.demoDesktopOnly.revealFolder": "Deze demo kan geen mappen op je computer openen. In de echte app toont dit de map in je bestandsbeheerder.",
+  "@ui.demoDesktopOnly.revealFolder": {
+    "sourceHash": "27ef83e"
+  },
+  "ui.demoDesktopOnly.quit": "Deze demo draait in een browsertabblad en kan dus niet stoppen. Sluit het tabblad als je klaar bent.",
+  "@ui.demoDesktopOnly.quit": {
+    "sourceHash": "c971af5"
+  },
+  "ui.demoWindow.maximize": "Maximaliseren",
+  "@ui.demoWindow.maximize": {
+    "sourceHash": "fba6c2c"
+  },
+  "ui.demoWindow.restore": "Vorige grootte",
+  "@ui.demoWindow.restore": {
+    "sourceHash": "a76e13b"
+  },
   "ui.popover.defaultAriaLabel": "Opties",
   "@ui.popover.defaultAriaLabel": {
     "sourceHash": "d0db8b5"
