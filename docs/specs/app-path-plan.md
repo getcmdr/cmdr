@@ -29,7 +29,9 @@ takes, so a native path can't go where an app path belongs.
    name that isn't UTF-8 gets a lossless path AND name (§ "Names that aren't UTF-8", milestone 9; Linux and remote
    servers only), an input with a trailing `/` or a `.`/`..` name is normalized, resolved through its volume, or refused
    at the boundary (§ "Normalization" and § "Typed and pasted `..`", milestones 10c/10d), and the operation log roots
-   drive and UNC paths correctly (milestone 8, Windows only).
+   drive and UNC paths correctly (milestone 8, Windows only). Milestone 5 adds two, signed off by the lead (2026-11-19):
+   the scan walk's canonical child spelling and its typed refusal of a listed name that isn't one plain name (milestone
+   5's "Intended behavior changes").
 2. **❌ Never lossy past the OS boundary.** A native name or path that the type can't hold losslessly is a typed refusal
    (`NotAnAppPath`, a counted skip in a walk), never a `to_string_lossy` spelling: a lossy path can name a DIFFERENT
    file (a sibling literally called `caf\u{FFFD}.txt`). That includes `FileEntry.name`: it carries the same escaped
@@ -1253,33 +1255,40 @@ included; the hidden couplings it found are why waves B and C differ from round 
 - **Test plan**: Windows builder, the 24 `cmdr-fs` tests ignored for #1225 lose their `cfg_attr` and pass:
   `volume::remote_paths` (7), `volume::scan_walk` (9), `volume::patching` (3), `in_memory` canonicalize (1),
   `child_name` (1), `ids` (1), `twin_path` (2). macOS/Linux: pins unchanged.
-- **DONE**: `rg '#1225' crates/cmdr-fs` is empty; `cmdr-fs`'s bridge count is zero.
-- **Partly done** (2026-11-19, branch `worktree-agent-a43a5ade9424ef97a`): every `#1225` ignore is gone (24 cells run on
-  every OS), the shared arithmetic is typed, and the typed twins sit beside the `std::path` forms the backends still
-  call (`crates/cmdr-fs/DETAILS.md` § "App paths" lists them). What converted: `RemoteRoot` and `normalize_remote_path`
-  (POSIX bytes split on `/` alone, plus `app`/`to_remote`/`to_app`, the last a typed `RemoteAppRefusal` for a server
-  name that needs an escape), `anchor_at_root` beside `root_anchored`, the scan walk and the listing patcher
-  (`AppPath::join` of each listed name), `twin_path`'s typed twins, `InMemoryVolume::canonicalize` (text split on `/`),
-  and `ChildName` (host flavor: on Windows `\` and `:` refused). Intended changes: a walk under a top spelled `/dot/.`
-  lists `/dot/sub` (the milestone-1 pin flipped in its own commit); a listed name that isn't one plain name fails a walk
-  as `InvalidName`; `anchor_at_root` refuses `..`; Windows-only, `ChildName` refuses `\` and `:`. Where the code
-  differed from this plan:
-  - **The bridge count isn't zero** (217 → 211). What stays is not arithmetic: the old forms' one crossing each (wave B
-    keeps them), the `ScanRecorder`/`ScanOutages` callbacks (they take `std::path` and live in the engines, so typing
-    them is 10a's), `InMemoryVolume`'s `PathBuf`-keyed store and its builders (`with_root(impl Into<PathBuf>)`, used by
-    every crate's tests), the `conformance` suites (113, driving other crates' volumes through their fixtures), and
-    `tally_by_listing`, `mkdir_all`, `root_echo`, `routed` (they read `FileEntry.path` text, typed at 10f). Each goes
-    with its last caller; converting them here would raise other crates' budgets.
-  - `app_paths.rs` didn't fold: its callers are all outside the crate (the app, `cmdr-operation-log`), its string
-    helpers are already right on Windows, and `AppPath` has the typed answers (`strip_prefix`, `rebase`,
-    `is_on_volume`). It goes when 8 and 10c/10d move those callers.
-  - `scripts/app-path-flip/` stays: three open PRs still need the codemod to merge `main` (the lead's call).
-  - The three pin files' `#1225` comments stay: they pin `std::path`'s own answers, Unix-only by design.
-  - Verified: nextest `cmdr-fs` plus every crate calling the changed helpers (`cmdr-sftp`, `-webdav`, `-nfs`, `-s3`,
-    `-adb`, `-git`, `-mtp`, `-smb`, `-archive`, `-local`, `-restic`, `-listing`, `-operation-log`, `-operations`,
-    `-index`, `-listing-wasm`, `-multi-rename`, `-viewer`, `-search`, and the app): 16,176 passed; workspace clippy;
-    Windows (zig) check of `cmdr-fs` and the four `RemoteRoot` backends, Windows and Linux (zig) clippy `-D warnings` of
-    `cmdr-fs`, wasm32 `--lib`.
+- **DONE** (the lead's sign-off, 2026-11-19): every `#1225` ignore in `cmdr-fs` is gone (24 cells run on every OS); the
+  shared arithmetic is typed, with typed twins beside the `std::path` forms other crates still call
+  (`crates/cmdr-fs/DETAILS.md` § "App paths" lists them); the bridge count fell 217 → 211 and what's left leaves with
+  the milestones below. What converted: `RemoteRoot` and `normalize_remote_path` (POSIX bytes split on `/` alone, plus
+  `app`/`to_remote`/`to_app`, the last a typed `RemoteAppRefusal` for a server name that needs an escape),
+  `anchor_at_root` beside `root_anchored` (a typed `AnchorRefusal`: a `..`, or another volume's path), the scan walk,
+  the listing patcher, and `unpicked_app` (one `ListedFolder` join rule, the folder checked once per level),
+  `twin_path`'s typed twins, `InMemoryVolume::canonicalize` (encoded bytes split on `/`), and `ChildName` (host flavor:
+  on Windows `\` and `:` refused).
+- **Intended behavior changes, on every OS** (each its own commit, beside loud rule 1's three exceptions):
+  - A walk under a top spelled `/dot/.` asks for `/dot/sub` where it asked for `/dot/./sub`: the same folder, by its
+    canonical spelling (the milestone-1 pin flipped).
+  - A listed name that isn't one plain name (`""`, `.`, `..`, `a/b`, a NUL) fails a walk as `InvalidName`, naming the
+    name and the folder that listed it. Safer than before: `Path::join` of `""` or `.` re-listed the same folder
+    forever, `..` walked the parent (which holds the folder again), and `a/b` counted a different subtree. No real
+    server lists one: S3, NFS, and ADB drop them at the listing; SFTP, WebDAV, git, and restic only from a hostile or
+    broken source, whose copy `ChildName` already refused. A skip would let a delete or a copy call a partial folder
+    whole, so it fails.
+- **What still bridges, and the milestone that takes it** (each goes with its last caller; converting it here would
+  raise the callers' budgets):
+  - The old `std::path` forms' one crossing each: `RemoteRoot`'s `app_root`/`to_remote_path`/`to_app_path` (6: SFTP,
+    WebDAV, NFS, S3; 7: ADB; 10c/10d: the app), `root_anchored` (6, 7: SMB and ADB, 9: `cmdr-local`, 10a, 10c/10d), and
+    the scan walk's `std::path` entry points (6, 7: ADB, SMB, MTP, 8: git, restic, archive, 9, 10a).
+  - The `ScanRecorder`/`ScanOutages` callbacks: they take `std::path` and live in the engines (10a).
+  - `InMemoryVolume`'s `PathBuf`-keyed store and builders (`with_root(impl Into<PathBuf>)`), used by every crate's tests
+    (11, after the last crate's tests move).
+  - The `conformance` suites (113), driving other crates' volumes through their fixtures (6, 7, 8, 9, each with its
+    backend).
+  - `tally_by_listing`, `mkdir_all`, `root_echo`, `routed`: they read `FileEntry.path` text (10f).
+  - `app_paths.rs`: its string helpers are right on Windows already and `AppPath` has the typed answers (`strip_prefix`,
+    `rebase`, `is_on_volume`); it goes when its callers move (8: `cmdr-operation-log`, 10a, 10c/10d: the app).
+- **`scripts/app-path-flip/`** is removed once the open PRs that still merge `main` through its codemod have landed; the
+  lead triggers that.
+- The three pin files' `#1225` comments stay: they pin `std::path`'s own answers, Unix-only by design.
 
 ### 6. Network backends: SFTP, WebDAV, S3, NFS
 
@@ -1436,6 +1445,16 @@ included; the hidden couplings it found are why waves B and C differ from round 
     source named `LONGFI~1.TXT` meets `Long File Name.txt` as a conflict on that name (§ "The native boundary", 8.3).
   - The Recycle Bin, once Windows has one (today `move_to_trash_sync` refuses `TrashNotSupported` there), goes through
     `to_native_plain`, so a name that can't survive the plain form is refused per item, never recycled as its neighbor.
+  - **A remote name holding `:` or `\` copies to Windows.** The engines join listed names with `std::path` through
+    `ChildName` (`merge.rs`, `rename_merge.rs`, `landing.rs`, `copy_concurrent_source.rs`), and on Windows that join
+    splits `a\b` into a subfolder and reads `12:00 notes` as a stream, so today such a name is the destination refusing
+    it, asked per item (Skip / Skip all / Stop), through `DestinationNames::native_join_refuses`
+    (`cmdr_fs::volume::only_native_join_refuses`), ❌ never the whole transfer ending. This milestone switches those
+    joins to `AppPath::join` with a typed `AppName`, so the name lands per the escape rules (§ "The native boundary": a
+    remote or in-memory destination keeps it as named; a local NTFS one refuses it typed, per item, through
+    `to_native`), then deletes `native_join_refuses`, its `DestinationNames` arm, and their cells
+    (`refused_class_tests.rs`' `*_native_join_refuses`), keeping the per-item outcome for NTFS. `rename_merge.rs` (a
+    same-volume move) still ends the move on such a name today; it switches here too.
 - **Test plan**: Windows: the 289 failures' path clusters (review round 4, from the builder's log: 68 name the
   finalize's native `C:\…` refusal, 16 more a native tempdir handed to `LocalVolume`, about 45 local-engine flows whose
   panic carries no cause but whose siblings show the finalize, 37 a `\` joined into an in-memory or remote app path,
