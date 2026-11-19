@@ -37,7 +37,9 @@ use std::borrow::Cow;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
-use crate::app_path::{AppPath, AppPathBuf, BridgedPath, NotAnAppPath, PathFlavor, is_escape, unescape_bytes};
+use crate::app_path::{
+    AppPath, AppPathBuf, BridgedPath, ESCAPES_LIVE, NotAnAppPath, PathFlavor, is_escape, unescape_bytes,
+};
 
 use super::{canonical_nfs_export, nfs_volume_id, sftp_volume_id, webdav_volume_id};
 
@@ -138,10 +140,19 @@ impl RemoteRoot {
         self.remote_of(os_bytes(path))
     }
 
-    /// [`Self::to_remote_path`] for an app path: the same aliases, matching, and refusals,
-    /// with each escape decoded back to the byte the server names (a unit escape, which no
-    /// POSIX server holds, is `None`).
+    /// [`Self::to_remote_path`] for an app path: the same aliases, matching, and refusals.
+    ///
+    /// ❗ Until escapes go live ([`ESCAPES_LIVE`]), an escape-range code point is LITERAL
+    /// text (the spelling every listed row carries), so it goes to the server as its own
+    /// UTF-8 bytes, what the `std::path` door sends. Decoding it would address another name
+    /// (`caf\u{10FEC3}\u{10FEA9}` would reach `café`). Once escapes are live, each decodes
+    /// back to the byte the server names, and a unit escape (no POSIX server holds one) is
+    /// `None`; WebDAV and S3, which can't hold a non-UTF-8 name, then refuse an escaped one
+    /// before they get here (the plan's 10f).
     pub fn to_remote(&self, path: &AppPath) -> Option<String> {
+        if !ESCAPES_LIVE {
+            return self.remote_of(path.as_str().as_bytes());
+        }
         self.remote_of(&unescape_bytes(path.as_str()).ok()?)
     }
 

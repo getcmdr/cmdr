@@ -515,19 +515,31 @@ fn only_a_slash_separates_a_server_path_on_every_host() {
     assert_eq!(normalize_remote_path(Path::new("srv\\x")), Path::new("/srv\\x"));
 }
 
-/// A non-UTF-8 server name the app spells with a byte escape goes to the server as its
-/// lossy text, today's answer for SFTP and NFS until their backends carry bytes. A unit
-/// escape names no POSIX server's file, so it's refused.
+/// ❗ Until escapes go live (`app_path::ESCAPES_LIVE`), an escape-range code point in an
+/// app path is LITERAL text, the way every row a backend listed spells it: it reaches the
+/// server as those same UTF-8 bytes, the bytes the `std::path` door sends. Decoding it
+/// would send a different name: `caf\u{10FEC3}\u{10FEA9}` would reach `café`, a sibling.
 #[test]
-fn an_escaped_name_reaches_the_server_as_today() {
+fn until_escapes_go_live_an_escape_range_name_reaches_the_server_as_its_literal_text() {
     let root = rooted_at("/srv/data");
-    let byte_escaped = format!("{PREFIX}/srv/data/{}", crate::app_path::escape_bytes(b"caf\xe9.txt"));
-    assert_eq!(
-        root.to_remote(app(&byte_escaped)).as_deref(),
-        Some("/srv/data/caf\u{FFFD}.txt")
-    );
-    let unit_escaped = format!("{PREFIX}/srv/data/{}", crate::app_path::escape_units(&[0xD800]));
-    assert_eq!(root.to_remote(app(&unit_escaped)), None);
+    for name in [
+        crate::app_path::escape_bytes(b"caf\xe9.txt").into_owned(),
+        crate::app_path::escape_units(&[0xD800]),
+        "x\u{10FEFF}".to_string(),
+    ] {
+        let text = format!("{PREFIX}/srv/data/{name}");
+        let literal = format!("/srv/data/{name}");
+        assert_eq!(
+            root.to_remote(app(&text)).as_deref(),
+            Some(literal.as_str()),
+            "{name:?}"
+        );
+        assert_eq!(
+            root.to_remote(app(&text)),
+            root.to_remote_path(Path::new(&text)),
+            "{name:?}: the typed door sends what the `std::path` one sends"
+        );
+    }
 }
 
 /// A server answer the app path can't hold as it stands is a typed refusal the caller
