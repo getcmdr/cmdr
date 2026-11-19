@@ -233,9 +233,6 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
 - `errors.write.linksNotSupported.message`: "didn't copy the link to {path}" also reads as "the link that points to
   {path}". "didn't put the link at {path}" would be unambiguous. Its "links" in the title and suggestion are symlinks,
   which the `link` concept caught; now key-scoped `notMatch` entries. (all)
-- `settings.appearance.menuBar.description` shows only on Windows and Linux, yet as a plain value it must keep the macOS
-  `button` ruling (de `Taste`, where Windows says `Schaltfläche`). Rule for Windows/Linux-only plain keys: take the
-  Windows form, or make the key per-OS. (de)
 - `menu.view.showMenuBar` and `settings.appearance.menuBar.label` share English, so `term-consistency` forces one form,
   against the house split `menu.view.showHiddenFiles` has (nl `Toon` vs `tonen`, ru `Показать` vs `Показывать`). Both
   now use the settings form, which KDE's own `Show Menubar` item matches; split them with a reasoned allowlist entry if

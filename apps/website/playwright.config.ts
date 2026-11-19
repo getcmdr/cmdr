@@ -1,5 +1,12 @@
 import { defineConfig, devices } from '@playwright/test'
 
+// One port per run, so two worktrees running the suites at once never share one. The
+// `website-e2e` and `website-demo-e2e` checks pass a free port they probed in 10000–29999
+// (`scripts/check/checks/website-e2e.go`); a direct `playwright test` picks one in the same range.
+// Set on `process.env` so the workers, which re-read this file, inherit the same port.
+const port = (process.env.CMDR_WEBSITE_E2E_PORT ??= String(10000 + Math.floor(Math.random() * 20000)))
+const baseURL = `http://127.0.0.1:${port}`
+
 export default defineConfig({
   testDir: './e2e',
   // VISUAL_FULL=1 (see e2e/visual.spec.ts) captures throwaway full-page shots for diffing an Astro
@@ -15,7 +22,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? 'github' : 'html',
   use: {
-    baseURL: 'http://localhost:18473',
+    baseURL,
     trace: 'on-first-retry',
   },
   // Two suites (the `website-e2e` and `website-demo-e2e` checks each pick theirs): `chromium` is
@@ -58,8 +65,9 @@ export default defineConfig({
     // group, so Playwright's stop signal misses `serve`, which keeps the output pipe open and hangs
     // the run after the last test until CI's timeout (verified on pnpm 11.27.1, macOS and the CI
     // container, 2026-09-24). The shim `exec`s node, so `serve` stays the process Playwright started.
-    command: './node_modules/.bin/serve dist -l 18473',
-    url: 'http://localhost:18473',
+    // Bound to 127.0.0.1 only, never every interface.
+    command: `./node_modules/.bin/serve dist -l tcp://127.0.0.1:${port}`,
+    url: baseURL,
     // ❗ Never reuse a server already on the port: anything listening there (a stray `astro dev`, a
     // desktop E2E app) would get tested in place of `dist`, and the run fails on a dozen unrelated
     // assertions. With this off, a taken port stops the run at startup and names the port. `serve`
