@@ -30,12 +30,15 @@ use cmdr_fs::volume::host::VolumeHost;
 
 use crate::backend_listings::BackendListings;
 use crate::events::{DemoEvents, EventSink, ListingPathEvent};
+use crate::folder_count::{self, FOLDER_COUNT_COMMANDS};
 use crate::folder_sizes::FolderSizes;
+use crate::go_to::{DemoGoTo, GO_TO_COMMANDS};
 use crate::imports::{DemoImports, IMPORT_BUDGET_BYTES, ImportWatch};
 use crate::invoke::{answer, ok, page_runtime, parse};
 use crate::multi_rename::{DemoMultiRename, MULTI_RENAME_COMMANDS};
 use crate::operations_host::DemoOperations;
 use crate::search::{DemoSearch, SEARCH_COMMANDS};
+use crate::selection_recents::{SELECTION_RECENTS_COMMANDS, SelectionRecents};
 use crate::tree::{DemoTree, TreeError};
 use crate::viewer::{DemoViewer, VIEWER_COMMANDS};
 
@@ -114,6 +117,10 @@ pub struct Demo {
     imports: Arc<DemoImports>,
     /// ⌃M over the same panes, renaming through the same write engine (`multi_rename.rs`).
     multi_rename: Arc<DemoMultiRename>,
+    /// The go-to dialog (⌘G) over the same volume, and its recent paths (`go_to.rs`).
+    go_to: Arc<DemoGoTo>,
+    /// The Selection dialog's recent selections, for the visit (`selection_recents.rs`).
+    selection_recents: Arc<SelectionRecents>,
 }
 
 impl Demo {
@@ -134,6 +141,7 @@ impl Demo {
         // The drive index's stand-in, for the panes, the dialogs, the status bar, and ⌘F.
         let sizes = Arc::new(FolderSizes::new(Arc::clone(&store)));
         let searched = Arc::clone(&store);
+        let go_to = Arc::new(DemoGoTo::new(Arc::clone(&store), home.clone()));
         let imports = Arc::new(DemoImports::new(Arc::clone(&store), IMPORT_BUDGET_BYTES));
         let volume: Arc<dyn Volume> = store;
         let viewer = DemoViewer::new(
@@ -197,6 +205,8 @@ impl Demo {
             search,
             imports,
             multi_rename,
+            go_to,
+            selection_recents: Arc::default(),
         })
     }
 
@@ -213,6 +223,9 @@ impl Demo {
             || DemoViewer::handles(command)
             || DemoSearch::handles(command)
             || DemoMultiRename::handles(command)
+            || DemoGoTo::handles(command)
+            || FOLDER_COUNT_COMMANDS.contains(&command)
+            || SelectionRecents::handles(command)
     }
 
     /// Every command [`Demo::invoke`] answers, by its Tauri name.
@@ -222,6 +235,9 @@ impl Demo {
             .chain(VIEWER_COMMANDS)
             .chain(SEARCH_COMMANDS)
             .chain(MULTI_RENAME_COMMANDS)
+            .chain(GO_TO_COMMANDS)
+            .chain(FOLDER_COUNT_COMMANDS)
+            .chain(SELECTION_RECENTS_COMMANDS)
             .copied()
             .chain(DemoOperations::commands())
     }
@@ -459,6 +475,9 @@ impl Demo {
             _ if DemoViewer::handles(command) => self.viewer.invoke(command, args),
             _ if DemoSearch::handles(command) => self.search.invoke(command, args),
             _ if DemoMultiRename::handles(command) => self.multi_rename.invoke(command, args).await,
+            _ if DemoGoTo::handles(command) => self.go_to.invoke(command, args).await,
+            _ if FOLDER_COUNT_COMMANDS.contains(&command) => folder_count::invoke(l, command, args),
+            _ if SelectionRecents::handles(command) => self.selection_recents.invoke(command, args),
             _ => Err(Value::String(format!("the browser demo doesn't answer `{command}`"))),
         }
     }

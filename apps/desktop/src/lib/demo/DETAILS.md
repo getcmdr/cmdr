@@ -395,6 +395,11 @@ demo can't ask it, so `getIcons` answers every id with the app's bundled generic
 - Search: ⌘F is the WASM engine's (`crates/cmdr-listing-wasm/DETAILS.md` § Search), so no TS table answers a search
   command (`engine-commands.test.ts` pins it). TS answers only `cloudAiConsentStatus` (no consent), which with
   `getAiStatus` unavailable keeps the dialog's AI mode off.
+- Go to folder (⌘G / Ctrl+G) and its recent paths are the engine's too, by the desktop's own rules
+  (`cmdr_fs::go_to_path`; `crates/cmdr-listing-wasm/DETAILS.md` § Go to path), so a typed path navigates, a missing one
+  lands on its nearest folder with the app's toast, and recents last the visit, the Selection dialog's too. So are
+  "Calculate folder sizes" (every size is already the fold's exact one, so it answers at once with nothing to count, as
+  a Mac with a full index does) and Settings' operation-log toggle (live on the engine's log).
 
 ## Writes
 

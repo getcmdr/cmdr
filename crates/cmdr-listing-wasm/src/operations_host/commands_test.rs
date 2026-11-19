@@ -260,6 +260,33 @@ async fn move_delete_rename_and_new_folder_reach_the_pane() {
     );
 }
 
+/// Settings' operation-log toggle, live: a copy made while it's off leaves no row,
+/// and one made after it's back on does.
+#[tokio::test(flavor = "multi_thread")]
+async fn the_log_records_nothing_while_its_setting_is_off_and_records_again_once_on() {
+    let (demo, events) = demo();
+    let logged = |demo: &Demo| {
+        let demo = demo.clone();
+        async move {
+            let rows = call(
+                &demo,
+                "get_recent_operation_log_entries",
+                json!({ "limit": 10, "offset": 0 }),
+            )
+            .await;
+            rows.as_array().expect("rows").len()
+        }
+    };
+    call(&demo, "set_operation_log_enabled", json!({ "enabled": false })).await;
+    let off = copy(&demo, &["/Users/you/a.txt"], "/Users/you/Documents", "stop").await;
+    assert_eq!(events.settled(&off).await, "write-complete");
+    assert_eq!(logged(&demo).await, 0, "nothing journaled while off");
+    call(&demo, "set_operation_log_enabled", json!({ "enabled": true })).await;
+    let on = copy(&demo, &["/Users/you/c.txt"], "/Users/you/Documents", "stop").await;
+    assert_eq!(events.settled(&on).await, "write-complete");
+    assert_eq!(logged(&demo).await, 1, "journaled again once on");
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn undo_reverses_a_copy() {
     let (demo, events) = demo();
