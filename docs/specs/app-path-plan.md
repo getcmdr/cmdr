@@ -656,7 +656,9 @@ caller turns into "not found"):
   compares as the POSIX path with its text. Within a name, bytes compare as `OsStr` bytes do. The one known divergence:
   an escaped non-UTF-8 name (§ "Names that aren't UTF-8") sorts by its escape code point, above every raw byte, where
   `PathBuf` sorted the raw byte; it's a consistent total order, and no path order is persisted (the `BTree*`s are
-  in-memory), so it's accepted.
+  in-memory), so it's accepted. The bridge escapes already, so it holds for bridge values since the trait flip
+  (`properties_test.rs` § `bridge_unix` states it). ❗ Nothing sorts typed paths at the flip; the first milestone that
+  does (a `sort()` or a `BTree*` keyed on app paths, likely 9 or 10a) moves escaped names in that order and pins it.
 
 **Construction**, each named and greppable, ❌ no `From` impls:
 

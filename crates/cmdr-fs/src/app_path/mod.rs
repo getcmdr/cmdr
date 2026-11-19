@@ -21,9 +21,11 @@
 //!   bridge ([`AppPath::legacy_unchecked`], [`AppPath::as_std_legacy`]) is counted by the
 //!   `app-path-std-bridge` check and goes away once every crate speaks this type.
 //! - `Eq`, `Hash`, and `Ord` are component-wise: text the host's OS opens reads as its
-//!   `PathBuf` does, everything else with the app's own grammar, so a sorted or hashed
-//!   collection keyed on app paths behaves as one keyed on `PathBuf` for every value the
-//!   host's `std` meets (`shape::components` says where they differ, and why).
+//!   `PathBuf` does, everything else with the app's own grammar, so a hashed collection keyed
+//!   on app paths behaves as one keyed on `PathBuf` for every value the host's `std` meets
+//!   (`shape::components` says where they differ, and why). A sorted one does too, except
+//!   that an escaped name sorts by its escape code point, above every raw byte, where
+//!   `PathBuf` sorted the raw byte (`crates/cmdr-fs/DETAILS.md` § "App paths").
 //!
 //! Pure: builds for the browser too, and every conversion runs on every OS as data.
 //! `crates/cmdr-fs/DETAILS.md` § "App paths" holds the design and its decisions.

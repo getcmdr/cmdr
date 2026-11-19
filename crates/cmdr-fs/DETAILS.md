@@ -220,11 +220,15 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   exactly the "`\` joined into an in-memory path" bugs). Still one function of the text, so the three stay mutually
   consistent and total (`properties_test.rs` § `hybrid_comparison`, both hosts' rules on every OS). Two more deliberate
   differences: a scheme root is ONE component (else `sftp:///x` would equal `sftp://x/`), and an escaped name sorts at
-  its escape code point, above every raw byte. A UNC value on a POSIX host (only `parse(_, Windows)` makes one,
-  test-only there) compares as the POSIX path with its text, the price of `//Users == /Users` for the bridge values the
-  OS does open. Rejected: bytewise, which reorders the in-memory sorted maps and splits `/a` from `/a/` while bridge
-  values are unnormalized; one flavor-free reading, which made `//Users` and `/Users` unequal on macOS and `C:\x` and
-  `C:/x` unequal on Windows; and the host's rules for everything (N4).
+  its escape code point, above every raw byte, where `PathBuf` sorted the raw byte (a raw `0x80` below `é` there, above
+  it here). The bridge escapes already, so this holds for bridge values today (`properties_test.rs` § `bridge_unix`:
+  `Eq` and `Hash` match `PathBuf` on any bytes, `Ord` only while neither side holds an escape). Nothing sorts typed
+  paths yet; ❗ the first milestone that does (a `sort()` or `BTree*` over app paths) changes that order for escaped
+  names and must pin it (`docs/specs/app-path-plan.md` § "The native boundary"). A UNC value on a POSIX host (only
+  `parse(_, Windows)` makes one, test-only there) compares as the POSIX path with its text, the price of
+  `//Users == /Users` for the bridge values the OS does open. Rejected: bytewise, which reorders the in-memory sorted
+  maps and splits `/a` from `/a/` while bridge values are unnormalized; one flavor-free reading, which made `//Users`
+  and `/Users` unequal on macOS and `C:\x` and `C:/x` unequal on Windows; and the host's rules for everything (N4).
 - **Volume-root matches fold a UNC root**: `same_root`, `strip_volume_prefix`, and `is_on_volume` compare the UNC server
   with ASCII case (DNS, NetBIOS) and the share with Unicode simple case folding (the Kelvin sign is `k`; `İ` isn't `i`),
   the names below the root exactly, and a scheme root exactly. `Eq` and `starts_with` stay exact.
