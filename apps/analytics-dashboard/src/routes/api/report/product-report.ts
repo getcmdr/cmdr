@@ -572,7 +572,9 @@ function writeFeedbackSection(w: ReportWriter, data: DashboardData, ctx: Product
   }
   const fe = feedbackAndErrors.data
   w.line(`- Feedback messages: ${num(fe.feedback.length)}`)
-  w.line(`- Awaiting reply (a reply-to email, not marked answered, however old): ${num(fe.awaitingReply.length)}`)
+  w.line(
+    `- Awaiting reply (a reply-to email, card still open with needs-reply, however old; follows the board up to 3h behind): ${num(fe.awaitingReply.length)}`,
+  )
   w.line(`- Error reports: ${num(fe.errorReports.length)}`)
   const sinceRelease = sinceReleaseLine(fe.allErrorReports, ctx.release)
   if (sinceRelease !== null) w.line(sinceRelease)

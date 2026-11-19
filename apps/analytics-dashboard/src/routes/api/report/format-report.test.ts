@@ -242,7 +242,7 @@ Settings people change (most-moved first; the other 1 setting sits at its defaul
 ## Feedback & errors: what are users telling us?
 
 - Feedback messages: 3
-- Awaiting reply (a reply-to email, not marked answered, however old): 2
+- Awaiting reply (a reply-to email, card still open with needs-reply, however old; follows the board up to 3h behind): 2
 - Error reports: 3
 - Error reports since v1.10.0 came out: 2
 
@@ -420,7 +420,7 @@ Counted from:
 ## Feedback & errors: what are users telling us?
 
 - Feedback messages: 0
-- Awaiting reply (a reply-to email, not marked answered, however old): 0
+- Awaiting reply (a reply-to email, card still open with needs-reply, however old; follows the board up to 3h behind): 0
 - Error reports: 0`
 
 // The doubled blank line under Interest and Download is the current shape: the section heading already
@@ -496,7 +496,7 @@ Couldn't load: Settings adoption: offline
 ## Feedback & errors: what are users telling us?
 
 - Feedback messages: 0
-- Awaiting reply (a reply-to email, not marked answered, however old): 0
+- Awaiting reply (a reply-to email, card still open with needs-reply, however old; follows the board up to 3h behind): 0
 - Error reports: 3
 - Error reports since v1.10.0 came out: 2
 

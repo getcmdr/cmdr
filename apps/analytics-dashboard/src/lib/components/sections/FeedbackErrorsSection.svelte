@@ -1,15 +1,15 @@
 <!--
   Product § Feedback & errors (the page's `#inbox`): in-app feedback messages and error-report bundle
   metadata. Shows the counts, error reports per day, by kind, and per 100 installs by version; the feedback
-  inbox and the recent-error-reports table sit behind closed-by-default `<details>`. Each feedback message with a reply-to email has a mark-answered toggle
-  (the `setAnswered` action on `/product`). A message sent with logs names their `ERR-XXXXX`: a link to that
+  inbox and the recent-error-reports table sit behind closed-by-default `<details>`. A message with a reply-to email
+  shows when it was answered, which the api-server copies from its board card (read-only here). A message sent with
+  logs names their `ERR-XXXXX`: a link to that
   row of the recent-error-reports table when it's listed there, else the id as selectable text.
 -->
 <script lang="ts">
     import type { SourceResult, DashboardSelection } from '#lib/server/types.js'
     import type { FeedbackAndErrorsData } from '#lib/server/sources/feedback-and-errors.js'
     import type { VersionWindow } from '#lib/server/sources/active-installs.js'
-    import { enhance } from '$app/forms'
     import { errorReportsByDay, errorsPer100, inboxFeedback, tallyErrorReportsByField } from '#lib/feedback-and-errors.js'
     import { formatAverage, formatNumber } from '#lib/format.js'
     import { COLOR_GOLD } from '#lib/colors.js'
@@ -25,7 +25,6 @@
         feedbackAndErrors,
         versionWindow,
         selection,
-        answerError = null,
     }: {
         feedbackAndErrors: SourceResult<FeedbackAndErrorsData>
         /**
@@ -34,8 +33,6 @@
          */
         versionWindow: VersionWindow | null
         selection: DashboardSelection
-        /** The mark-answered action's failure message, if the last toggle didn't save. */
-        answerError?: string | null
     } = $props()
 
     /**
@@ -53,7 +50,10 @@
         <InfoPopover topic="feedback and errors">
             <p>What people sent through in-app feedback, and the error-report bundles rolling in.</p>
             <ul>
-                <li>"Awaiting reply" counts every message with a reply-to address not yet marked answered, however old.</li>
+                <li>
+                    "Awaiting reply" counts every message with a reply-to address whose board card is still open with
+                    <code>needs-reply</code>, however old. It follows the board, up to three hours behind.
+                </li>
                 <li>Feedback carries no install id, so it can't be joined to analytics. Error reports use a separate diagnostics id.</li>
                 <li>Both are low-volume, so a short window can look empty even when things are fine.</li>
             </ul>
@@ -152,9 +152,6 @@
             </div>
         {/if}
 
-        {#if answerError}
-            <p class="mt-4 text-sm text-danger">{answerError}</p>
-        {/if}
         {#if inbox.length > 0}
             <details class="mt-4">
                 <summary class={summaryClass}>
@@ -194,23 +191,6 @@
                                             Answered <span class="tabular-nums">{msg.answeredAt.split(' ')[0]}</span>
                                         </span>
                                     {/if}
-                                    <form
-                                        method="POST"
-                                        action="?/setAnswered"
-                                        use:enhance={() =>
-                                            ({ update }) =>
-                                                update({ reset: false })}
-                                    >
-                                        <input type="hidden" name="id" value={msg.id} />
-                                        <input type="hidden" name="answered" value={msg.answeredAt ? 'false' : 'true'} />
-                                        <button
-                                            type="submit"
-                                            class="rounded-md border border-border px-2 py-0.5 text-xs text-text-secondary
-                                                transition-colors hover:text-text-primary"
-                                        >
-                                            {msg.answeredAt ? 'Mark as awaiting reply' : 'Mark answered'}
-                                        </button>
-                                    </form>
                                 {/if}
                             </div>
                         </div>

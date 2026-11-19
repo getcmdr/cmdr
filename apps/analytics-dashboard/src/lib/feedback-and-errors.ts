@@ -8,8 +8,8 @@ import { compareVersions } from './rollout.js'
 
 /**
  * One in-app "Send feedback" submission. `email` is the optional reply-to the sender attached.
- * `answeredAt` is when David marked it answered by hand (replies go out from his mailbox, which the
- * api-server never sees), or null while it still needs one. `errorReportId` is the `ERR-XXXXX` of the
+ * `answeredAt` is when its board card stopped owing a reply (closed, or `needs-reply` taken off), which
+ * the api-server's cron copies from the card; null while it still needs one, or when it has no card. `errorReportId` is the `ERR-XXXXX` of the
  * logs the sender chose to include, or null when they sent none.
  */
 export interface FeedbackRow {
@@ -35,7 +35,7 @@ export interface ErrorReportRow {
   generatedAt: string
 }
 
-/** Whether a message still owes its sender a reply: it carries a reply-to email and isn't marked answered. */
+/** Whether a message still owes its sender a reply: it carries a reply-to email and has no `answeredAt` (its card still owes one). */
 export function isAwaitingReply(row: FeedbackRow): boolean {
   return row.email != null && row.email !== '' && row.answeredAt == null
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { fetchFeedbackAndErrorsData, setFeedbackAnswered } from './feedback-and-errors.js'
+import { fetchFeedbackAndErrorsData } from './feedback-and-errors.js'
 import {
   isAwaitingReply,
   tallyErrorReportsByField,
@@ -200,40 +200,5 @@ describe('fetchFeedbackAndErrorsData', () => {
     expect(result.ok).toBe(false)
     if (result.ok) return
     expect(result.error).toContain('DNS resolution failed')
-  })
-})
-
-describe('setFeedbackAnswered', () => {
-  beforeEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  it('PUTs the flag with the admin token and returns the stored timestamp', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      text: () => Promise.resolve(JSON.stringify({ id: 7, answeredAt: '2026-10-14 21:12:00' })),
-    })
-    vi.stubGlobal('fetch', fetchMock)
-
-    const result = await setFeedbackAnswered(mockEnv, { id: 7, answered: true })
-    expect(result).toEqual({ ok: true, data: '2026-10-14 21:12:00' })
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
-    expect(url).toBe('https://api.getcmdr.com/admin/feedback/7/answered')
-    expect(init.method).toBe('PUT')
-    expect(init.body).toBe(JSON.stringify({ answered: true }))
-    expect(init.headers).toMatchObject({ Authorization: 'Bearer test-admin-token' })
-  })
-
-  it("surfaces the worker's error message", async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 404,
-        text: () => Promise.resolve(JSON.stringify({ error: 'No feedback has that id' })),
-      }),
-    )
-    const result = await setFeedbackAnswered(mockEnv, { id: 99, answered: true })
-    expect(result).toEqual({ ok: false, error: 'No feedback has that id' })
   })
 })

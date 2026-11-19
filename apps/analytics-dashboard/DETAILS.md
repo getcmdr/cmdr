@@ -97,8 +97,8 @@ the fact that it's excluded from the "which sources does this page load" contrac
 The 20s cap is load-bearing, not belt-and-braces: Workers `fetch` has no built-in timeout, so without it a single hung
 upstream stalls the whole `Promise.all` until Cloudflare gives up with a 524 at 100 seconds, taking the entire page down
 over one slow third party. Results cache via `cache.ts`: 5 minutes for 7d (and the funnel), 1 hour for 30d and 90d. One
-exception: in "Feedback & errors", only the error-report listing caches. Feedback is read live so a message marked
-answered leaves "Awaiting reply" on the very next load (see the "Awaiting reply" bullet under Key decisions).
+exception: in "Feedback & errors", only the error-report listing caches. Feedback is read live so "Awaiting reply"
+trails the board by the cron's lag alone, with no cache on top (see the "Awaiting reply" bullet under Key decisions).
 
 Two cache rules, both because the dashboard and the Worker deploy in parallel and an entry outlives a deploy by its TTL:
 
@@ -878,13 +878,14 @@ have a happy-path test carrying the real `type: 'app'` stamp, so the discriminat
   `#lib/feedback-and-errors.ts` (client-safe) so the page, the report endpoint, and tests share one copy. The
   agent-facing local digest (`/feedback-and-error-digest-from-app`) reads the same stores; see
   `docs/tooling/feedback-and-error-digest.md`.
-- **"Awaiting reply" means a reply-to email AND not marked answered, however old** (`isAwaitingReply`, over the
-  `range=all` feedback, so the picker never hides an unanswered message). David replies from his own mailbox, which
-  nothing here can see, so the only signal is the manual toggle: each feedback card with a reply-to has a "Mark
-  answered" / "Mark as awaiting reply" button, the `setAnswered` form action in `routes/product/+page.server.ts`, which
-  proxies to the api-server's `PUT /admin/feedback/:id/answered` (stores `feedback.answered_at`). The `/api/report` text
-  shows the same count and tags answered rows `answered YYYY-MM-DD`. Feedback skips the cache for this reason; the
-  error-report half still caches.
+- **"Awaiting reply" means a reply-to email AND no `answeredAt`, however old** (`isAwaitingReply`, over the `range=all`
+  feedback, so the picker never hides an unanswered message). David replies from his own mailbox and then closes the
+  feedback's board card or takes `needs-reply` off; the api-server's three-hour cron copies that onto
+  `feedback.answered_at` (`apps/api-server/DETAILS.md` § Feedback replies), so the count follows the board, up to three
+  hours behind, and the page is read-only. ❌ No "Mark answered" button: one existed, went unused, and the count read 14
+  while the truth was zero. The (i) says it follows the board. The `/api/report` text shows the same count and tags
+  answered rows `answered YYYY-MM-DD`. Feedback skips the cache so no cache lag stacks on the cron's; the error-report
+  half still caches.
 - **A feedback message sent with logs shows their `ERR-XXXXX`** (`errorReportId`, from `feedback.error_report_id`). On
   the page it links to that row of "Recent error reports" (`#ERR-XXXXX`, highlighted via `:target`) when the row is
   among the 15 shown; otherwise it's selectable text, since the dashboard has no per-report view (the bundle's contents

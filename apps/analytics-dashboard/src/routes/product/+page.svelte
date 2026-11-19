@@ -19,7 +19,7 @@
     import SettingsAdoptionSection from '#lib/components/sections/SettingsAdoptionSection.svelte'
     import FeedbackErrorsSection from '#lib/components/sections/FeedbackErrorsSection.svelte'
 
-    const { data, form }: PageProps = $props()
+    const { data }: PageProps = $props()
 
     /** Today's UTC day: partial, so the charts fade it and no stat reads it. */
     const todayIso = new Date().toISOString().slice(0, 10)
@@ -86,7 +86,6 @@
                 feedbackAndErrors={data.feedbackAndErrors}
                 {versionWindow}
                 selection={data.selection}
-                answerError={form && 'error' in form ? form.error : null}
             />
         </div>
         <div class="col-span-full">
