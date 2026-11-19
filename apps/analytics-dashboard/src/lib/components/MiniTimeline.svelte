@@ -9,17 +9,13 @@
         height?: number
         /** Fixed Y-axis max for consistent scale across charts. */
         maxY?: number
-        /** Shared zoom X-axis min (unix seconds). null = auto. */
-        xMin?: number | null
-        /** Shared zoom X-axis max (unix seconds). null = auto. */
-        xMax?: number | null
         /** Cursor sync key: charts with the same key sync crosshairs. */
         syncKey?: string
         /** Fires when the cursor hovers a data point (index into data[0]) or leaves (null). */
         onhover?: (idx: number | null) => void
     }
 
-    const { data, height = 48, maxY, xMin = null, xMax = null, syncKey, onhover }: Props = $props()
+    const { data, height = 48, maxY, syncKey, onhover }: Props = $props()
 
     let container: HTMLDivElement
     let chart: uPlot | null = null
@@ -82,9 +78,6 @@
         if (data[0].length === 0) return
         chart?.destroy()
         chart = new uPlot(buildOpts(container.clientWidth), data, container)
-        if (xMin != null && xMax != null) {
-            chart.setScale('x', { min: xMin, max: xMax })
-        }
     }
 
     onMount(() => {
@@ -109,17 +102,6 @@
         // eslint-disable-next-line @typescript-eslint/no-meaningless-void-operator
         void maxY
         createChart()
-    })
-
-    $effect(() => {
-        if (chart && xMin != null && xMax != null) {
-            chart.setScale('x', { min: xMin, max: xMax })
-        } else if (chart && xMin == null && xMax == null && data[0].length > 0) {
-            chart.setScale('x', {
-                min: data[0][0],
-                max: data[0][data[0].length - 1],
-            })
-        }
     })
 </script>
 

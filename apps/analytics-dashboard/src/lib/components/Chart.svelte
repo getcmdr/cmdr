@@ -12,28 +12,15 @@
         colors?: string[]
         /** Chart height in pixels. */
         height?: number
-        /** Default X-axis min (unix seconds). Scroll to zoom overrides this. */
+        /** X-axis min (unix seconds); with `xMax`, fixes the window. null = the data's span. */
         xMin?: number | null
-        /** Default X-axis max (unix seconds). Scroll to zoom overrides this. */
+        /** X-axis max (unix seconds). */
         xMax?: number | null
     }
 
+    // The chart never reacts to the mouse wheel: scroll-to-zoom hijacked page scrolling (David's call
+    // 2026-11-19). Hover tooltips stay.
     const { data, labels = [], colors = [], height = 200, xMin = null, xMax = null }: Props = $props()
-
-    let zoomedXMin: number | null = $state(null)
-    let zoomedXMax: number | null = $state(null)
-
-    // Reset zoom when external xMin/xMax change (e.g. range switch). The bare reads are what
-    // register xMin/xMax as this effect's reactive dependencies; `no-meaningless-void-operator`
-    // doesn't know Svelte gives `void` a second job here.
-    $effect(() => {
-        // eslint-disable-next-line @typescript-eslint/no-meaningless-void-operator
-        void xMin
-        // eslint-disable-next-line @typescript-eslint/no-meaningless-void-operator
-        void xMax
-        zoomedXMin = null
-        zoomedXMax = null
-    })
 
     let container: HTMLDivElement
     let chart: uPlot | null = null
@@ -43,30 +30,6 @@
     function colorAt(i: number): string {
         // `.at()` rather than `[i]`: the index can run past either array, and only `.at()` says so in the type.
         return colors.at(i) ?? defaultColors.at(i) ?? '#a1a1aa'
-    }
-
-    function handleWheel(e: WheelEvent) {
-        e.preventDefault()
-        if (data[0].length < 2) return
-        const dataXMin = data[0][0]
-        const dataXMax = data[0][data[0].length - 1]
-        const zoomFactor = e.deltaY > 0 ? 1.3 : 1 / 1.3
-        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-        const fraction = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
-
-        const curMin = zoomedXMin ?? xMin ?? dataXMin
-        const curMax = zoomedXMax ?? xMax ?? dataXMax
-        const range = curMax - curMin
-        const center = curMin + range * fraction
-        const newRange = Math.min(range * zoomFactor, dataXMax - dataXMin)
-
-        if (newRange >= dataXMax - dataXMin) {
-            zoomedXMin = null
-            zoomedXMax = null
-        } else {
-            zoomedXMin = Math.max(dataXMin, center - newRange * fraction)
-            zoomedXMax = Math.min(dataXMax, zoomedXMin + newRange)
-        }
     }
 
     function buildOpts(width: number): uPlot.Options {
@@ -123,10 +86,8 @@
 
     function applyXScale() {
         if (!chart) return
-        const effMin = zoomedXMin ?? xMin
-        const effMax = zoomedXMax ?? xMax
-        if (effMin != null && effMax != null) {
-            chart.setScale('x', { min: effMin, max: effMax })
+        if (xMin != null && xMax != null) {
+            chart.setScale('x', { min: xMin, max: xMax })
         } else if (data[0].length > 0) {
             chart.setScale('x', { min: data[0][0], max: data[0][data[0].length - 1] })
         }
@@ -166,14 +127,14 @@
         createChart()
     })
 
-    // Apply zoom when it changes. Same reactive-dependency reasoning as above.
+    // Re-apply the window when the caller moves it. Same reactive-dependency reasoning as above.
     $effect(() => {
         // eslint-disable-next-line @typescript-eslint/no-meaningless-void-operator
-        void zoomedXMin
+        void xMin
         // eslint-disable-next-line @typescript-eslint/no-meaningless-void-operator
-        void zoomedXMax
+        void xMax
         applyXScale()
     })
 </script>
 
-<div bind:this={container} class="w-full" onwheel={handleWheel}></div>
+<div bind:this={container} class="w-full"></div>

@@ -1,8 +1,7 @@
 <!--
   The "By country" downloads table with a hover/focus tooltip that breaks the hovered country down by
   architecture and version as mini timelines. Used inside the Download section. Owns its own hover
-  state; shares the timeline zoom window (`zoomXMin`/`zoomXMax`) with its parent so all the Download
-  mini-charts zoom together.
+  state.
 -->
 <script lang="ts">
     import type { DownloadRow } from '#lib/server/sources/cloudflare.js'
@@ -14,14 +13,10 @@
         downloads,
         allDays,
         allTimestamps,
-        zoomXMin = null,
-        zoomXMax = null,
     }: {
         downloads: DownloadRow[]
         allDays: string[]
         allTimestamps: number[]
-        zoomXMin?: number | null
-        zoomXMax?: number | null
     } = $props()
 
     let hoveredCountry: string | null = $state(null)
@@ -81,7 +76,7 @@
                         <span class="text-text-secondary">{arch.x}</span>
                         <span class="text-text-tertiary tabular-nums">{formatNumber(arch.y)}</span>
                     </div>
-                    <MiniTimeline data={td} height={48} maxY={archMaxY} xMin={zoomXMin} xMax={zoomXMax} />
+                    <MiniTimeline data={td} height={48} maxY={archMaxY} />
                 </div>
             {/each}
         {/if}
@@ -95,7 +90,7 @@
                         <span class="text-text-secondary">{ver.x}</span>
                         <span class="text-text-tertiary tabular-nums">{formatNumber(ver.y)}</span>
                     </div>
-                    <MiniTimeline data={td} height={48} maxY={verMaxY} xMin={zoomXMin} xMax={zoomXMax} />
+                    <MiniTimeline data={td} height={48} maxY={verMaxY} />
                 </div>
             {/each}
         {/if}

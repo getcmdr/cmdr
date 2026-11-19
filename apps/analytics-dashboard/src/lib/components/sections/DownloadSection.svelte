@@ -1,8 +1,8 @@
 <!--
   Acquisition § Download: real new installs by source (stacked bars), per-version mini-timelines,
   by-OS, by-architecture, and by-country tables, a per-day pie-chart hover tooltip (architecture + country),
-  and GitHub release download counts. Owns the timeline zoom window (scroll to zoom) and the day-hover
-  tooltip state; the country breakdown lives in CountryTable and shares the zoom window.
+  and GitHub release download counts. Owns the day-hover tooltip state; the country breakdown lives in
+  CountryTable.
 -->
 <script lang="ts">
     import type { SourceResult, DashboardSelection } from '#lib/server/types.js'
@@ -46,9 +46,6 @@
         return aggregateBy(rows, 'os', 'downloads').map((o) => ({ ...o, x: formatOs(o.x) }))
     }
 
-    let zoomXMin: number | null = $state(null)
-    let zoomXMax: number | null = $state(null)
-
     // Data-point hover state (the per-day pie tooltip).
     let hoveredDayIdx: number | null = $state(null)
     let dayTooltipVisible = $state(false)
@@ -58,27 +55,6 @@
     function handleDayHover(idx: number | null) {
         hoveredDayIdx = idx
         dayTooltipVisible = idx != null
-    }
-
-    function handleDownloadWheel(e: WheelEvent, dataXMin: number, dataXMax: number) {
-        e.preventDefault()
-        const zoomFactor = e.deltaY > 0 ? 1.3 : 1 / 1.3
-        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-        const fraction = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
-
-        const curMin = zoomXMin ?? dataXMin
-        const curMax = zoomXMax ?? dataXMax
-        const range = curMax - curMin
-        const center = curMin + range * fraction
-        const newRange = Math.min(range * zoomFactor, dataXMax - dataXMin)
-
-        if (newRange >= dataXMax - dataXMin) {
-            zoomXMin = null
-            zoomXMax = null
-        } else {
-            zoomXMin = Math.max(dataXMin, center - newRange * fraction)
-            zoomXMax = Math.min(dataXMax, zoomXMin + newRange)
-        }
     }
 </script>
 
@@ -138,7 +114,6 @@
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
                     <div
                         class="grid gap-4 md:grid-cols-3"
-                        onwheel={(e) => { handleDownloadWheel(e, allTimestamps[0], allTimestamps[allTimestamps.length - 1]); }}
                         onmousemove={(e: MouseEvent) => {
                             dayTooltipX = e.clientX
                             dayTooltipY = e.clientY
@@ -161,14 +136,11 @@
                                         data={timelineData}
                                         height={48}
                                         maxY={versionMaxY}
-                                        xMin={zoomXMin}
-                                        xMax={zoomXMax}
                                         syncKey={downloadSyncKey}
                                         onhover={handleDayHover}
                                     />
                                 </div>
                             {/each}
-                            <p class="text-xs text-text-tertiary">Scroll to zoom timeline</p>
                         </div>
                         <div>
                             <h3 class="mb-2 text-sm font-medium text-text-secondary">By operating system</h3>
@@ -182,7 +154,7 @@
                         </div>
                         <div class="relative">
                             <h3 class="mb-2 text-sm font-medium text-text-secondary">By country</h3>
-                            <CountryTable downloads={cf.downloads} {allDays} {allTimestamps} {zoomXMin} {zoomXMax} />
+                            <CountryTable downloads={cf.downloads} {allDays} {allTimestamps} />
                         </div>
                     </div>
 
