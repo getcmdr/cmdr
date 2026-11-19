@@ -9,6 +9,14 @@ import (
 // takes it generically or compares it with `==`. Neither is an E0308, so the type-pair table
 // never sees them.
 
+// stdReadEdits is this file's two rules: a plain comparison, else a generic std bound.
+func stdReadEdits(d *diagnostic, src *source, p *diagSpan) []edit {
+	if e := operatorCompareEdits(d, src, p); len(e) > 0 {
+		return e
+	}
+	return boundArgEdits(d, src, p)
+}
+
 // ---- A typed value into a generic std bound ----
 
 // stdBound matches the E0277 rustc gives a typed value handed to a generic slot bounded by
@@ -95,39 +103,50 @@ func chainEnd(masked []byte, k int) int {
 	end := k
 	j := k
 	for {
-		start := j
-		for j < len(masked) && isIdentByte(masked[j]) {
-			j++
-		}
-		if j == start {
+		next, ok := linkEnd(masked, j)
+		if !ok {
 			return end
 		}
-		for j+1 < len(masked) && masked[j] == ':' && masked[j+1] == ':' {
-			j += 2
-			s := j
-			for j < len(masked) && isIdentByte(masked[j]) {
-				j++
-			}
-			if j == s {
-				return end
-			}
-		}
-		for j < len(masked) && (masked[j] == '(' || masked[j] == '[') {
-			close := matchForward(masked, j)
-			if close < 0 {
-				return end
-			}
-			j = close + 1
-		}
-		for j < len(masked) && masked[j] == '?' {
-			j++
-		}
-		end = j
-		if j >= len(masked) || masked[j] != '.' {
+		end = next
+		if next >= len(masked) || masked[next] != '.' {
 			return end
 		}
+		j = next + 1
+	}
+}
+
+// linkEnd reads one link of a chain from j (`a::b(x)[i]?`): where it ends, or false when
+// none starts at j.
+func linkEnd(masked []byte, j int) (int, bool) {
+	j, ok := identEnd(masked, j)
+	if !ok {
+		return 0, false
+	}
+	for j+1 < len(masked) && masked[j] == ':' && masked[j+1] == ':' {
+		if j, ok = identEnd(masked, j+2); !ok {
+			return 0, false
+		}
+	}
+	for j < len(masked) && (masked[j] == '(' || masked[j] == '[') {
+		close := matchForward(masked, j)
+		if close < 0 {
+			return 0, false
+		}
+		j = close + 1
+	}
+	for j < len(masked) && masked[j] == '?' {
 		j++
 	}
+	return j, true
+}
+
+// identEnd is the end of the identifier starting at j, or false when none does.
+func identEnd(masked []byte, j int) (int, bool) {
+	start := j
+	for j < len(masked) && isIdentByte(masked[j]) {
+		j++
+	}
+	return j, j > start
 }
 
 // matchForward is the offset of the bracket closing the `(` or `[` at open, or -1.
@@ -180,24 +199,37 @@ func looseBefore(masked []byte, offset int) bool {
 	if k == 0 {
 		return false
 	}
-	c := masked[k-1]
-	switch {
-	case strings.IndexByte("({[,;", c) >= 0:
-		return true
-	case c == '=':
-		return k < 2 || strings.IndexByte("=!<>", masked[k-2]) < 0
-	case c == '|':
-		return (k >= 2 && masked[k-2] == '|') || closesClosureParams(masked, k-1)
-	case c == '&':
-		return k >= 2 && masked[k-2] == '&'
-	case c == '>':
-		return k >= 2 && masked[k-2] == '=' // a match arm's `=>`
+	if loose, decided := looseOperatorBefore(masked, k); decided {
+		return loose
 	}
 	w := k
 	for w > 0 && isIdentByte(masked[w-1]) {
 		w--
 	}
 	return looseKeywords[string(masked[w:k])]
+}
+
+// looseOperatorBefore reads the punctuation ending at k (exclusive): whether it binds looser
+// than `==`, and whether it decided at all (a word is the caller's to read).
+func looseOperatorBefore(masked []byte, k int) (bool, bool) {
+	c := masked[k-1]
+	prev := byte(0)
+	if k >= 2 {
+		prev = masked[k-2]
+	}
+	switch {
+	case strings.IndexByte("({[,;", c) >= 0:
+		return true, true
+	case c == '=':
+		return prev == 0 || strings.IndexByte("=!<>", prev) < 0, true
+	case c == '|':
+		return prev == '|' || closesClosureParams(masked, k-1), true
+	case c == '&':
+		return prev == '&', true
+	case c == '>':
+		return prev == '=', true // a match arm's `=>`
+	}
+	return false, !isIdentByte(c)
 }
 
 // looseAfter answers whether what follows offset binds looser than `==`.
