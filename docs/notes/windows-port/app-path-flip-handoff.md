@@ -171,6 +171,11 @@ From the plan; each agent owns whole crates, on its own branch off the tier befo
     work) merged clean. List the Rust files it brought (`git diff --stat HEAD^1 HEAD -- '*.rs'`), and re-run the codemod
     on each crate they're in, under every feature set and target as above. This time: only `cmdr-listing-wasm`, a no-op
     (default, `--all-features`), wasm32 `--lib`/`--tests` and Windows checks clean, Linux clippy clean; no new residue.
+  - **CI rehearsal** (PR #1272, `land` label, plus `gh workflow run windows-lane.yml --ref <branch>`): the first run
+    failed two lanes the local loop doesn't run, both fixed in the codemod's and the checks' terms: nilaway on
+    `scripts/app-path-flip/` (five nil flows, `4fcd2231d0`), and `jscpd-rust` (19 pairs of backend trait boilerplate the
+    bridge preludes made token-identical, bumped with reasons, `359f3e091b`). The second run: every lane green (Rust on
+    Linux and macOS, fixtures, Shuttle, Kani, E2E, Svelte, website), and the Windows lane green.
   - **Fixed beside it**: Windows with `playwright-e2e` had no `platform_backends` arm in `cmdr-index`
     (`media_index/scheduler/lifecycle.rs`); the fix is text-identical to PR #1270's. The fuzz target
     `app_path_native.rs` imports `PathArithmetic` (the exception above), so `pnpm check fuzz-compile` passes.
