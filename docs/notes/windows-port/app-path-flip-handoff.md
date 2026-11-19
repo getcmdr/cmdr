@@ -179,6 +179,31 @@ From the plan; each agent owns whole crates, on its own branch off the tier befo
   - **Fixed beside it**: Windows with `playwright-e2e` had no `platform_backends` arm in `cmdr-index`
     (`media_index/scheduler/lifecycle.rs`); the fix is text-identical to PR #1270's. The fuzz target
     `app_path_native.rs` imports `PathArithmetic` (the exception above), so `pnpm check fuzz-compile` passes.
+- **The final landing** (2026-11-19, a review agent, on `worktree-agent-a1f52ec5c392f0628`, the flip branch plus two
+  merges of `origin/main`):
+  - **What the merges brought**: PR #1270's staged link landing (27 Rust files, mostly `cmdr-operations`, plus
+    `cmdr-fs::testing`'s Windows test-skip helper, `cmdr-restic`, `cmdr-index`, `cmdr-listing`, `cmdr-archive`, and the
+    app), then PR #1273's demo work (`cmdr-fs::go_to_path` moved from the app, and `cmdr-listing-wasm`'s `about.rs`,
+    `go_to.rs`, `folder_count.rs`, `selection_recents.rs`).
+  - **Codemod**: one pass, `cmdr-listing-wasm` (`cf26cdace2`: 4 bridged args and 2 imports in `about.rs` and
+    `go_to.rs`), plus their bridge counts (`af42c1a6e1`). Every other touched crate re-ran as a no-op: `cmdr-fs`,
+    `cmdr-archive`, `cmdr-listing`, `cmdr-index`, `cmdr-restic` (default, `--all-features`), `cmdr-operations` (default,
+    `testing`, `golden`, `--all-features`), the app (default, `--all-features`, `virtual-mtp`, `playwright-e2e`);
+    Windows (zig, `--all-features`; the app default and `virtual-mtp,smb-e2e,mimalloc`), Linux (zig, `--all-features`;
+    the app in Docker, default and `--all-features`), and wasm32 for `cmdr-listing-wasm`. No residue, and the three
+    recorded app sites didn't reappear. The wasm32 run's one clippy fix (a redundant closure in `rt_self_test.rs`, older
+    than the flip) was left out as unrelated.
+  - **Beside it**: `d012eb3520` cherry-picked from the Windows-port branch: `main`'s Windows lane has been red since PR
+    #1270 (`unused_mut` in `error_classification.rs`'s links-not-supported test, Unix-only pushes onto a `mut` vec), and
+    the identical commit keeps that branch's later merge clean.
+  - **The review's two gaps, closed**: `cmdr-operations`' Linux pass (`5536b09042`) reproduces byte for byte (the tip
+    codemod, `--features testing --target x86_64-unknown-linux-gnu`, zig); and `properties_test.rs` § `bridge_unix`
+    states the ordering truth on non-UTF-8 names (`6fc45c860d`, docs in `crates/cmdr-fs/DETAILS.md` § "App paths").
+  - **Verified**: Mac clippy (`pnpm check clippy`), nextest `cmdr-fs`, `cmdr-listing-wasm`, `cmdr-restic`,
+    `cmdr-archive` 1,649, `cmdr-operations` 2,601, `cmdr-listing` and `cmdr-index` 2,383, the app 6,805, all passed;
+    Windows workspace check (zig, `--exclude cmdr-fsevent-stream`); Linux workspace clippy `-D warnings` in Docker;
+    `-audit-imports` (nine hits, none the flip's: pre-existing `cfg`-gated imports and `cmdr-listing`'s deliberate
+    `#[cfg(test)]` one); `pnpm check --fast`, `app-path-std-bridge`, `file-length`, `fuzz-compile`.
 
 ## The worked example, in numbers
 
