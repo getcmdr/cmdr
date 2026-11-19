@@ -5938,6 +5938,8 @@ export type MessageKey =
   | 'ui.demoDesktopOnly.quit'
   | 'ui.demoDesktopOnly.revealFolder'
   | 'ui.demoDrop.overBudget'
+  | 'ui.demoQuestion.no'
+  | 'ui.demoQuestion.yes'
   | 'ui.demoWindow.maximize'
   | 'ui.demoWindow.restore'
   | 'ui.dialogBoundary.closedToast'

@@ -176,7 +176,7 @@ export const appAnswers = {
   defaultAppName: none,
   openPath: () => refuse('openPath', { type: 'unsupported' }),
   // A page has no native alert with a checkbox: the app's own answer where none exists (Linux),
-  // so it asks the plain question through `plugin:dialog|message` (`browser-dialogs.ts`) and
+  // so it asks the plain question through `plugin:dialog|message` (`question-dialog.ts`) and
   // leaves the option unchecked.
   confirmWithCheckbox: () => ({ kind: 'unsupported' }),
   // A page can't quit its tab. The bar greys Quit (`menu.rs`); the palette's Quit (Windows and

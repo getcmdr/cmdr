@@ -1,9 +1,11 @@
 /**
  * What a webview answers itself (`webview.ts`): its own window's facts, which the frame's viewport
- * stands in for, and the event plugin's commands, whose listeners live in that frame.
+ * stands in for, a question over its window, and the event plugin's commands, whose listeners
+ * live in that frame.
  */
 import type { Payload } from './answer-types.js'
 import { isBrowserFullScreen, setBrowserFullScreen } from './browser-full-screen.js'
+import { askQuestion } from './question-dialog.js'
 
 const physical = () => ({
   width: Math.round(window.innerWidth * window.devicePixelRatio),
@@ -33,6 +35,8 @@ const windowAnswers: Partial<Record<string, (payload: Payload) => unknown>> = {
   'plugin:window|set_title': () => null,
   'plugin:window|set_min_size': () => null,
   'plugin:window|set_max_size': () => null,
+  // A question sits over the window that asked, as the native alert does (`question-dialog.ts`).
+  'plugin:dialog|message': askQuestion,
 }
 
 /** The event plugin's commands, which each webview keeps (`webview.ts`'s `invoke`). */
