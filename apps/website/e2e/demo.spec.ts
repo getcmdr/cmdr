@@ -1,8 +1,8 @@
 import { test, expect, type Locator, type Page } from '@playwright/test'
 import { collectPageErrors, skipWithoutDemo, visitorOf } from './demo-support.js'
 
-// The full demo suite: the `demo` and `demo-mac` Playwright projects (a Windows visitor and a Mac
-// one; `visitorOf` says which keys and words each gets), run against a demo built from the same sources
+// The full demo suite: the `demo`, `demo-mac`, and `demo-linux` Playwright projects (a Windows, a Mac,
+// and a Linux visitor; `visitorOf` says which keys and words each gets), run against a demo built from the same sources
 // (the release pipeline's `demo` job, the nightly CI run), never the website lane's released image.
 // Where each suite runs: `demo-support.ts`. Boot, indexing, and the first listing: `demo-smoke.spec.ts`.
 skipWithoutDemo()
@@ -56,22 +56,41 @@ test.describe('Browser demo', () => {
         const errors = collectPageErrors(page)
         await page.goto('/demo/')
         await expect(page.locator('.file-pane').first().locator('.file-entry').nth(1)).toBeVisible({ timeout: 30_000 })
-        const isMac = (await visitorOf(page)).mod === 'Meta'
-        await expect(page.locator('html')).toHaveAttribute('data-look', isMac ? 'macos' : 'windows')
+        const visitor = await visitorOf(page)
+        const isMac = visitor.os === 'macos'
+        await expect(page.locator('html')).toHaveAttribute('data-look', visitor.os)
         const bar = page.getByRole('menubar')
         const titles = bar.getByRole('menuitem')
-        // A Mac's bar starts with the app menu; Windows' starts with File, which ends with Quit.
+        // A Mac's bar starts with the app menu; Windows' and Linux's start with File, which ends with Quit.
         await expect(titles.first()).toHaveText(isMac ? 'Cmdr' : 'File')
         const barBox = await bar.boundingBox()
-        expect(barBox?.height).toBe(isMac ? 30 : 40)
+        expect(barBox?.height).toBe(visitor.menuBarHeight)
+        // The window's OS buttons: a Mac's traffic lights over the window, or Windows' and Linux's title
+        // bar above the menu bar, as their OS draws a decorated window (`lib/demo/title-bar.ts`).
+        const titleBar = page.locator('.cmdr-demo-titlebar-main')
+        if (isMac) {
+          await expect(page.locator('.cmdr-demo-lights-main')).toBeVisible()
+          await expect(titleBar).toHaveCount(0)
+        } else {
+          await expect(page.locator('.cmdr-demo-lights')).toHaveCount(0)
+          await expect(titleBar).toHaveAttribute('data-look', visitor.os)
+          await expect(titleBar).toContainText('Cmdr')
+          await expect(titleBar.getByRole('button')).toHaveCount(3)
+          const titleBox = await titleBar.boundingBox()
+          expect(titleBox?.y).toBe(0)
+          expect(titleBox?.height).toBe(visitor.os === 'windows' ? 32 : 37)
+          if (titleBox) expect(barBox?.y).toBe(titleBox.height)
+        }
+        await expect(page.locator('.file-pane').first().locator('.volume-name')).toContainText(visitor.mainVolume)
         const corner = await page.locator('.status-corner').boundingBox()
         if (corner && barBox) expect(corner.y).toBeGreaterThanOrEqual(barBox.y + barBox.height)
 
         await titles.nth(isMac ? 1 : 0).click()
         const menu = page.getByRole('menu')
         await expect(menu).toBeVisible()
-        // macOS 27's 12 px menu corners; WinUI's `OverlayCornerRadius`, 8 px.
-        expect(await menu.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe(isMac ? '12px' : '8px')
+        // macOS 27's 12 px menu corners; WinUI's `OverlayCornerRadius`, 8 px; the neutral Linux look's 12 px.
+        const menuRadius = visitor.os === 'windows' ? '8px' : '12px'
+        expect(await menu.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe(menuRadius)
         if (!isMac) await expect(menu.getByRole('menuitem').last()).toHaveText(/Exit|Quit/)
         await page.keyboard.press('Escape')
 

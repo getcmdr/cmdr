@@ -7,8 +7,9 @@ import { existsSync } from 'node:fs'
 // - `demo-smoke.spec.ts`, in the `chromium` project with every other spec: does the demo boot and
 //   list a folder. The website lane runs it against the RELEASED demo image, which can predate
 //   `main`'s frontend, so it asks only what every release's demo answers.
-// - `demo.spec.ts`, the `demo` and `demo-mac` projects (with the smoke; a Windows visitor and a Mac
-//   one, since the demo answers each with their own OS's keys and copy): the whole demo, against a demo built from
+// - `demo.spec.ts`, the `demo`, `demo-mac`, and `demo-linux` projects (with the smoke; a Windows, a
+//   Mac, and a Linux visitor, since the demo answers each with their own OS's keys, copy, and window
+//   chrome): the whole demo, against a demo built from
 //   the same sources (the release pipeline's `demo` job, before it publishes, and the nightly CI
 //   run). `apps/website/DETAILS.md` § Browser demo.
 // CI always builds the site with a demo, so there a missing one fails the run; a plain local
@@ -26,24 +27,40 @@ export function skipWithoutDemo(): void {
  * `apps/desktop/src/lib/demo/platform.ts`): the keys under their hands and their OS's words.
  */
 export interface Visitor {
+  /** The visitor's OS, which the demo's `data-look` names too. */
+  os: 'macos' | 'windows' | 'linux'
   /** The main shortcut modifier as Playwright spells it: ⌘ on a Mac, Ctrl elsewhere. */
   mod: 'Meta' | 'Control'
   /** Opens the operation log (`log.operationLog`). */
   operationLogKey: string
   /** The delete dialog's warning on a volume with nowhere to put deleted files. */
   noTrashWarning: string
+  /** The menu bar's height in its OS's look (`app-menu.css`'s `--spacing-menu-bar-height`). */
+  menuBarHeight: number
+  /** The main volume's name, as the desktop names it on that OS (`lib/demo/volumes.ts`). */
+  mainVolume: string
 }
 
 export async function visitorOf(page: Page): Promise<Visitor> {
   const userAgent = await page.evaluate(() => navigator.userAgent)
   if (/Macintosh|Mac OS X/.test(userAgent)) {
-    return { mod: 'Meta', operationLogKey: 'Meta+Alt+l', noTrashWarning: 'This volume doesn’t support trash.' }
+    return {
+      os: 'macos',
+      mod: 'Meta',
+      operationLogKey: 'Meta+Alt+l',
+      noTrashWarning: 'This volume doesn’t support trash.',
+      menuBarHeight: 30,
+      mainVolume: 'Macintosh HD',
+    }
   }
   const isWindows = userAgent.includes('Windows')
   return {
+    os: isWindows ? 'windows' : 'linux',
     mod: 'Control',
     operationLogKey: 'Control+Shift+L',
     noTrashWarning: isWindows ? 'This volume doesn’t have a Recycle Bin.' : 'This volume doesn’t support trash.',
+    menuBarHeight: isWindows ? 40 : 30,
+    mainVolume: isWindows ? 'C:' : 'Root',
   }
 }
 
