@@ -36,6 +36,7 @@ import { EVERY_TICK_ALERT_AFTER, clearCronStreak, recordCronFailure } from './cr
 import { fileCrashCards, fileErrorReportCards, fileFeedbackCards, postAmendmentsToBoard } from './report-outbox'
 import { handleReportDigest } from './report-digest'
 import { applyCardRatings } from './report-ratings'
+import { syncFeedbackReplies } from './report-replies'
 import { MORNING_CRON, handleMorningBrief, isMorningBriefTick } from './morning-brief'
 import { handleCiHealth } from './ci-health'
 
@@ -145,6 +146,8 @@ export default {
     await runEveryTick('Amendments on the board', () => postAmendmentsToBoard(env))
     // Before the digest, so a rating that failed on this tick is in it.
     await runEveryTick('Card ratings', () => applyCardRatings(env))
+    // After the amendments, which can put `needs-reply` back on a feedback card.
+    await runEveryTick('Feedback replies', () => syncFeedbackReplies(env))
     // Also before the digest, so a CI change seen on this tick is in it. Never throws on GitHub.
     await runEveryTick('CI health', () => handleCiHealth(env))
     await runEveryTick('Report digest', () => handleReportDigest(env, new Date(event.scheduledTime)))

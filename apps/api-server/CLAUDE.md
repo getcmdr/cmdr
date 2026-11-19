@@ -35,7 +35,7 @@ Root holds the assembly and the shared leaves (`index.ts`, `types.ts`, `admin-au
 - **Every report becomes a card in a PRIVATE repo**, filed by the cron from a D1 outbox (`report-outbox.ts`), never at
   intake. Privacy is re-checked per write, failing closed. ❌ No note, reply-to, or bundle link in an issue title or
   body: personal data goes only in the `expires=`-stamped comment. ❌ Never widen `GITHUB_PROJECT_TOKEN` past `project`.
-  DETAILS §§ The reports repo, The backlog board, Card ratings.
+  DETAILS §§ The reports repo, The backlog board, Card ratings, Feedback replies.
 - **Rate limits are per data center** (`enforceIpRateLimit`): they bound one abusive client, never a distributed flood.
   `/error-report` adds a global ceiling.
 - **A heartbeat install id is not proof of a person.** A fresh data dir mints a fresh `anal_` id, which left the table

@@ -80,14 +80,16 @@ Read this before any non-trivial work here: editing, planning, reorganizing, or 
   the pause; keep it off any path a person waits on.
 - **`report-ratings.ts`**: the cron job that copies the triage agent's `Rating:` line onto a report card's Severity,
   Impact, and Size fields on the backlog board. § Card ratings.
+- **`report-replies.ts`**: the cron job that copies a feedback card's "owes a reply" (open with `needs-reply`) onto
+  `feedback.answered_at`, which the dashboard's "Awaiting reply" reads. § Feedback replies.
 - **`report-digest.ts`**: the cron job that mails the three-hour digest and stamps what it sent. § Cron handler.
 - **`morning-brief.ts`**: the 06:30 Stockholm brief: who's waiting on a reply, unprocessed cards, the last day's
   arrivals, the CI line, and the tripwires. § Cron handler job 10.
 - **`ci-health.ts`**, **`ci-brief.ts`**, **`ci-github.ts`**: GitHub Actions health for the public repo, into the digest
   and the brief. § CI health.
-- The five are tested against a REAL SQLite built from the migrations (`sqlite-d1-test-helper.ts`), because the risk of
+- The six are tested against a REAL SQLite built from the migrations (`sqlite-d1-test-helper.ts`), because the risk of
   an outbox is a row a WHERE clause quietly skips: `report-outbox.test.ts`, `report-digest.test.ts`,
-  `report-retention.test.ts`, `morning-brief.test.ts`, `report-ratings.test.ts`.
+  `report-retention.test.ts`, `morning-brief.test.ts`, `report-ratings.test.ts`, `report-replies.test.ts`.
 - **`scheduled.ts`**: the other cron jobs (license backup, daily aggregation, DB size, retention sweep, eviction sweep,
   personal-comment sweep). `scheduled.test.ts` covers the DB-writing jobs, `cron-alarm.test.ts` the handler's alarm
   wiring, and `email-path-probe.test.ts` the daily liveness check, with the D1/env fakes in `cron-test-helpers.ts`.
@@ -125,7 +127,6 @@ Read this before any non-trivial work here: editing, planning, reorganizing, or 
 | GET     | `/admin/funnel/countries`      | Bearer token  | The funnel window summed per country (downloads, installs, D7 cohort and retained)                 |
 | GET     | `/admin/feature-usage`         | Bearer token  | Per-feature installs + events over 7d/30d/90d vs active installs (`src/admin/` § Feature usage)    |
 | GET     | `/admin/feedback`              | Bearer token  | In-app feedback rows from D1 (full text, reply-to email, `answeredAt`), newest first               |
-| PUT     | `/admin/feedback/:id/answered` | Bearer token  | Mark one feedback row answered (`{ answered: true }`) or back to awaiting a reply (`false`)        |
 | GET     | `/admin/error-reports`         | Bearer token  | Per-bundle error-report metadata from the R2 prod prefix (`list` + custom metadata), newest first  |
 | GET     | `/download/:version/:arch`     | none          | Log to D1 (bots skipped, source + `ref`), 302 → EU mirror (GitHub below 0.59.0); takes `latest`    |
 | POST    | `/crash-report`                | IP rate-limit | Ingest crash report to D1                                                                          |
@@ -327,10 +328,11 @@ feedback, and the `license_issuance` record all live in D1 (binding `TELEMETRY_D
 (`src/telemetry/DETAILS.md` § The OS field); `0032_install_summary_first_beat_country.sql`, the install's first-beat
 country; `0031_install_country_channel_summary.sql`, the heartbeat's `country` / `install_channel` and the
 `install_summary` table, both `src/admin/DETAILS.md` § Install summary; `0026_feedback_error_report_id.sql`, the logs a
-feedback message came with, § The reports repo; `0023_card_ratings.sql`, the triage comments the rating job has applied
-or flagged, § Card ratings; `0022_report_outbox.sql`, the report outbox: `error_reports`, `error_report_amendments`,
-`ops_events`, and `issue_number` on crashes and feedback, § The reports repo; `0021_license_adjustments.sql` is the
-refund and chargeback record `/webhook/paddle` keeps beside the ledger (`src/licensing/DETAILS.md` § Refunds);
+feedback message came with, § The reports repo; `0025_feedback_answered_at.sql`, when a feedback message stopped owing a
+reply, § Feedback replies; `0023_card_ratings.sql`, the triage comments the rating job has applied or flagged, § Card
+ratings; `0022_report_outbox.sql`, the report outbox: `error_reports`, `error_report_amendments`, `ops_events`, and
+`issue_number` on crashes and feedback, § The reports repo; `0021_license_adjustments.sql` is the refund and chargeback
+record `/webhook/paddle` keeps beside the ledger (`src/licensing/DETAILS.md` § Refunds);
 `0020_heartbeat_uptime_and_events.sql` is `heartbeat.uptime_seconds` and the `analytics_event` table `/heartbeat` relays
 feature events into; `0017_manual_licenses.sql` is the `source` / `organization_name` / `expires_at` / `revoked_at` /
 `note` columns that turn `license_issuance` into the ledger for hand-issued licenses as well as purchases;
@@ -386,9 +388,10 @@ failure from the rest and raises the alarm for it (§ Cron alarms):
 
 1. **The board** (every invocation, first): `fileCrashCards`, `fileErrorReportCards`, `fileFeedbackCards`, then
    `postAmendmentsToBoard` file every pending report as a card. § The reports repo. Then `applyCardRatings` sets the
-   Severity, Impact, and Size the triage agent wrote on each card it triaged (§ Card ratings). Then `handleCiHealth`
-   reads GitHub Actions and records a `ci-health` ops event on any change (§ CI health), before the digest so it's in
-   this tick's email.
+   Severity, Impact, and Size the triage agent wrote on each card it triaged (§ Card ratings), and `syncFeedbackReplies`
+   copies each feedback card's "owes a reply" onto `answered_at` (§ Feedback replies). Then `handleCiHealth` reads
+   GitHub Actions and records a `ci-health` ops event on any change (§ CI health), before the digest so it's in this
+   tick's email.
 2. **Report digest** (every invocation, right after the board, so it can link the cards just filed):
    `handleReportDigest` (`report-digest.ts`) sends ZERO OR ONE email covering every release-build crash, error report
    (hand-written and auto-sent), amendment, and feedback message whose `notified_at` is NULL, then stamps exactly those
@@ -768,6 +771,28 @@ comment with a line, and `applyCardRatings` (`report-ratings.ts`) copies that on
 - **Bounded**: five comment pages and 25 ratings per tick, 20 pages of board items; the rest wait a tick.
 - **Cadence**: every three-hour tick, after the amendments and before the digest (so a failure from this tick is in it).
   The agent runs at 05:30 Stockholm, so a rating lands on the next tick, 06:00 UTC: about 1.5–2.5 hours later.
+
+## Feedback replies
+
+David replies to feedback from his own mailbox, which the Worker never sees; what he does touch is the card (a closing
+note, `needs-reply` off: `docs/tooling/feedback-and-error-digest.md` § Replying to a reporter). So `syncFeedbackReplies`
+(`report-replies.ts`, the module comment is canonical) mirrors the board onto `feedback.answered_at` (migration `0025`),
+which `/admin/feedback` returns and the dashboard's "Awaiting reply" count reads. There's no hand toggle.
+
+- **The rule**: a row with a reply-to and a card (`issue_number > 0`) awaits a reply exactly while its card is OPEN and
+  carries `needs-reply`. Otherwise `answered_at` gets the earlier of the card's standing close and its standing
+  `needs-reply` removal (from the issue events; a reopen or a re-add cancels the earlier one), or the tick's time when
+  the events name neither (a deleted card).
+- **Back to awaiting**: a card that's open with `needs-reply` again (the person wrote back, an amendment brought an
+  address) clears `answered_at`. Clearing is cheap and right here: it's the board's own definition of "owes a reply". A
+  reopen without the label leaves the row answered.
+- **No card, no sync**: rows from before the outbox (`issue_number = 0`) and debug rows (never carded) are left alone.
+  The pre-outbox cards do exist (filed at intake, the body's `Feedback row` names the row), but D1 never recorded their
+  numbers; the one-off backfill on 2026-11-19 stamped those seven from their cards, so none of them is awaiting.
+- **Budget**: one listing of open `needs-reply` cards per tick (up to five pages; a full last page throws rather than
+  read a cut-off list as labels removed), plus one events read per row that just turned answered, at most 25 a tick. A
+  failed read throws, so `runCronJob` raises the alarm and the next tick retries.
+- **Lag**: up to one tick (three hours) behind the board. It runs after the amendments, which can re-add the label.
 
 ## CI health
 

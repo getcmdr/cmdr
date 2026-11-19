@@ -2,12 +2,12 @@
 
 Aggregations the private analytics dashboard calls, all behind `ADMIN_API_TOKEN`. `admin.ts` holds the per-metric
 endpoints (`/admin/stats`, `/admin/downloads`, `/admin/active-users`, `/admin/update-activity`, `/admin/crashes`,
-`/admin/heartbeat-dau`, `/admin/config-shape`, `/admin/feedback`, `/admin/error-reports`) plus the one write,
-`PUT /admin/feedback/:id/answered`; `funnel.ts` holds `/admin/funnel`, the one-call per-UTC-day acquisition funnel (its
-contract and pure assembly in `funnel-assemble.ts`), and `funnel-countries.ts` its per-country totals,
-`/admin/funnel/countries`. `feature-usage.ts` holds `/admin/feature-usage` and `featureUsageDefinitions`, the one
-feature → event mapping (a new event is one line there). `active-installs.ts` holds `/admin/active-installs`: per-day
-DAU, WAU, MAU, app hours, and versions, plus installs per version over the last 7, 30, and 90 complete days.
+`/admin/heartbeat-dau`, `/admin/config-shape`, `/admin/feedback`, `/admin/error-reports`), all reads; `funnel.ts` holds
+`/admin/funnel`, the one-call per-UTC-day acquisition funnel (its contract and pure assembly in `funnel-assemble.ts`),
+and `funnel-countries.ts` its per-country totals, `/admin/funnel/countries`. `feature-usage.ts` holds
+`/admin/feature-usage` and `featureUsageDefinitions`, the one feature → event mapping (a new event is one line there).
+`active-installs.ts` holds `/admin/active-installs`: per-day DAU, WAU, MAU, app hours, and versions, plus installs per
+version over the last 7, 30, and 90 complete days.
 
 ## Must-knows
 

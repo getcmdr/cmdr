@@ -37,6 +37,11 @@ then four cards closed in one command with no note, and three questions plus a f
   note has an answer the person actually received; an open ask keeps the card open or moves to a linked issue named in
   the note.
 
+Closing the card or taking `needs-reply` off is also what marks the feedback answered: the three-hour cron copies it
+onto `feedback.answered_at`, and the analytics dashboard's "Awaiting reply" follows (`apps/api-server/DETAILS.md` §
+Feedback replies). Putting `needs-reply` back on an open card makes it awaiting again. There's nothing to click on the
+dashboard.
+
 The `/feedback-and-error-digest-from-app` command (`.claude/commands/`) drives the whole flow; this doc is the access
 recipe it points to. Read-only: never write or delete here without explicit approval (`no-external-actions`).
 

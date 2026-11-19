@@ -12,10 +12,10 @@ Read this before any non-trivial work here: editing, planning, reorganizing, or 
   raw `count` plus deduped `uniqueCount`), `/admin/active-users`, `/admin/update-activity` (per-day distinct
   update-enabled installs, the retained aggregate ∪ today's raw), `/admin/crashes` (by day/crash site/signal),
   `/admin/heartbeat-dau` (§ below), `/admin/config-shape` (settings values per app version, § below), `/admin/feedback`
-  (full text, reply-to email, `answeredAt`, and the linked logs' `errorReportId`, newest first),
-  `PUT /admin/feedback/:id/answered` (§ below), `/admin/error-reports` (per-bundle R2 metadata via `list` + custom
-  metadata, newest first; `.amend.json` sidecars share the prefix and are skipped, since an amendment is part of its
-  report rather than a second one).
+  (full text, reply-to email, `answeredAt`, and the linked logs' `errorReportId`, newest first; `answeredAt` is the
+  cron's copy of the board card, `../../DETAILS.md` § Feedback replies), `/admin/error-reports` (per-bundle R2 metadata
+  via `list` + custom metadata, newest first; `.amend.json` sidecars share the prefix and are skipped, since an
+  amendment is part of its report rather than a second one).
 - **`funnel.ts`**: `/admin/funnel`, its queries (`queryFunnelRows`), and the pure `buildDateList` / `shiftDate` /
   `parseDays` helpers. **`funnel-assemble.ts`**: the contract (`FunnelDay`, `CountryDay`), the row sets the queries
   return (`FunnelRows`), `normalizeCountry`, and the pure `assembleFunnel` (`funnel.ts` re-exports the public names).
@@ -29,8 +29,8 @@ Read this before any non-trivial work here: editing, planning, reorganizing, or 
 - Tests: `admin-stats.test.ts`, `admin-endpoints.test.ts`, `funnel.test.ts` (route auth/validation plus the pure date
   math, zero-fill, channel, D7/D28-knowability, retention-so-far, and `byCountry` rules), `funnel-sql.test.ts` (both
   funnels' SQL on real SQLite, seeded through the `/heartbeat` INSERTs, including the country slices summing to the
-  day), `heartbeat-dau-sql.test.ts` (the DAU and app-hours query on real SQLite), `feedback-answered.test.ts` (the
-  feedback list and the mark-answered toggle through the app on real SQLite).
+  day), `heartbeat-dau-sql.test.ts` (the DAU and app-hours query on real SQLite), `feedback-list.test.ts` (the feedback
+  list through the app on real SQLite).
 
 Consumer: the private SvelteKit dashboard in `apps/analytics-dashboard/`.
 
@@ -50,21 +50,12 @@ those against.
 The whole beat counts on the day it ARRIVED, so runtime that spans midnight lands on the later day. At a three-hour
 cadence that shifts a little runtime across a day boundary and changes no weekly or monthly total.
 
-## Marking feedback answered (`PUT /admin/feedback/:id/answered`)
+## Feedback's `answeredAt`
 
-David replies to feedback from his own mailbox, which this Worker never sees, so a reply leaves no trace here. This
-toggle is the only signal, and the dashboard's "Awaiting reply" count (reply-to email AND `answered_at IS NULL`) reads
-it. Body `{ "answered": true }` stamps `feedback.answered_at` (migration `0025`), `false` clears it. Marking an
-already-answered row keeps its first timestamp (`COALESCE`), so a double click doesn't move the date. Returns
-`{ id, answeredAt }`, 404 for an unknown id, 400 for a bad id or a non-boolean flag.
-
-By hand, with the admin token:
-
-```sh
-curl -X PUT https://api.getcmdr.com/admin/feedback/<id>/answered \
-  -H "Authorization: Bearer $(secret CMDR_ADMIN_API_TOKEN)" -H 'Content-Type: application/json' \
-  -d '{"answered": true}'
-```
+The dashboard's "Awaiting reply" count is reply-to email AND `answeredAt` null. Nothing here writes it: the cron copies
+it from the feedback's board card, up to three hours behind (`../../DETAILS.md` § Feedback replies). A hand toggle
+(`PUT /admin/feedback/:id/answered`) existed and went unused, because David closes the card instead, so the count read
+14 while the real number was zero; ❌ don't bring a second writer back, it would fight the sync.
 
 ## Auth
 

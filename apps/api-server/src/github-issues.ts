@@ -529,3 +529,79 @@ export async function listCommentsUpdatedSince(
 
   return { comments, truncated: true }
 }
+
+/**
+ * The numbers of every open card carrying `label`, across up to `maxPages` pages of 100. Throws on a
+ * failed page AND when the last page allowed is full: a caller treats a card missing from this set
+ * as "no longer carries the label", so a silently cut-off listing would read as dozens of labels
+ * removed. A read, so no privacy probe: nothing is written.
+ */
+export async function listOpenCardNumbers(target: IssueTarget, label: string, maxPages: number): Promise<Set<number>> {
+  const numbers = new Set<number>()
+  const perPage = 100
+  for (let page = 1; page <= maxPages; page++) {
+    const url = `${GITHUB_API}/repos/${target.owner}/${target.repo}/issues?state=open&labels=${encodeURIComponent(label)}&per_page=${String(perPage)}&page=${String(page)}`
+    const response = await githubFetch(url, { headers: githubHeaders(target.token) })
+    if (!response.ok) {
+      throw new Error(`GitHub issues: listing open ${label} cards returned ${String(response.status)}`)
+    }
+    const payload: unknown = await response.json()
+    const items: unknown[] = Array.isArray(payload) ? payload : []
+    for (const item of items) {
+      if (!isRecord(item) || 'pull_request' in item) continue
+      if (typeof item['number'] === 'number') numbers.add(item['number'])
+    }
+    if (items.length < perPage) return numbers
+  }
+  throw new Error(
+    `GitHub issues: more than ${String(maxPages * perPage)} open ${label} cards; refusing to read a partial list`,
+  )
+}
+
+/** Pages of 100 events read per card. A feedback card has a handful; past this, the times may be a little off. */
+const EVENT_PAGES = 3
+
+/**
+ * When a card was closed and when it lost `label`, from its issue events: the closing that still
+ * stands (null when reopened since, or never closed) and the label removal that still stands (null
+ * when added back, or never removed). Null for a card GitHub no longer has (404, or 410 for a
+ * deleted issue). Throws on any other failure, so the caller retries next tick.
+ */
+export async function readCardCloseAndUnlabelTimes(
+  target: IssueTarget,
+  issueNumber: number,
+  label: string,
+): Promise<{ closedAt: string | null; labelRemovedAt: string | null } | null> {
+  const times: CloseAndUnlabelTimes = { closedAt: null, labelRemovedAt: null }
+  const perPage = 100
+  for (let page = 1; page <= EVENT_PAGES; page++) {
+    const url = `${GITHUB_API}/repos/${target.owner}/${target.repo}/issues/${String(issueNumber)}/events?per_page=${String(perPage)}&page=${String(page)}`
+    const response = await githubFetch(url, { headers: githubHeaders(target.token) })
+    if (response.status === 404 || response.status === 410) return null
+    if (!response.ok) {
+      throw new Error(`GitHub issues: reading #${String(issueNumber)}'s events returned ${String(response.status)}`)
+    }
+    const payload: unknown = await response.json()
+    const events: unknown[] = Array.isArray(payload) ? payload : []
+    // Oldest first, so the last event of each pair decides.
+    for (const event of events) foldCloseAndUnlabel(times, event, label)
+    if (events.length < perPage) break
+  }
+  return times
+}
+
+interface CloseAndUnlabelTimes {
+  closedAt: string | null
+  labelRemovedAt: string | null
+}
+
+/** Apply one issue event: a close or a label removal sets its time, a reopen or a re-add cancels it. */
+function foldCloseAndUnlabel(times: CloseAndUnlabelTimes, event: unknown, label: string): void {
+  if (!isRecord(event) || typeof event['created_at'] !== 'string') return
+  const at = event['created_at']
+  const ofLabel = isRecord(event['label']) && event['label']['name'] === label
+  if (event['event'] === 'closed') times.closedAt = at
+  else if (event['event'] === 'reopened') times.closedAt = null
+  else if (event['event'] === 'unlabeled' && ofLabel) times.labelRemovedAt = at
+  else if (event['event'] === 'labeled' && ofLabel) times.labelRemovedAt = null
+}
