@@ -59,7 +59,8 @@ pub use paths::{resolve_path, resolve_scan_root};
 pub use schema::ROOT_ID;
 pub(crate) use schema::{
     CURRENT_EPOCH_KEY, EXCLUSION_POLICY_KEY, INDEX_NEEDS_REBUILD_KEY, LEDGER_HEAL_KEY, MAX_TREE_DEPTH,
-    REPLAY_DEFERRED_RESCANS_KEY, SYSTEM_DIR_EXCLUSIONS_KEY, USER_DISABLED_KEY, USER_ENABLED_KEY, subtree_cte,
+    REPLAY_DEFERRED_RESCANS_KEY, RESCAN_IN_PLACE_KEY, SYSTEM_DIR_EXCLUSIONS_KEY, USER_DISABLED_KEY, USER_ENABLED_KEY,
+    subtree_cte,
 };
 // Store-internal, reached by the submodules above through their `use super::*`.
 #[cfg(test)]

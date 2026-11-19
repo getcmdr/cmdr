@@ -97,8 +97,8 @@ pub(super) fn role(msg: &WriteMessage) -> BatchRole {
         #[cfg(test)]
         WriteMessage::GetEntryCount(_) => BatchRole::Barrier,
 
-        // Maintenance that cannot run inside a transaction at all, and the truncate
-        // that ends with an inline `incremental_vacuum`.
+        // Maintenance that cannot run inside a transaction at all, and the truncate,
+        // a bulk DELETE that stands as its own unit.
         WriteMessage::TruncateData | WriteMessage::IncrementalVacuum | WriteMessage::WalCheckpoint => {
             BatchRole::Barrier
         }

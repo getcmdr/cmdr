@@ -180,8 +180,8 @@ impl EventReconciler {
             });
             return;
         }
-        // Stamp the TRIGGER time, not only the completion: `start_scan` deletes
-        // `scan_completed_at` before walking, so without this an interrupted sweep
+        // Stamp the TRIGGER time, not only the completion: `scan_completed_at`
+        // moves only when a walk finishes, so without this an interrupted sweep
         // would leave the window looking permanently expired and we'd sweep on every
         // launch. See `route::SweepRecord::last_sweep_unix`.
         if let Some(at) = record.last_sweep_unix {

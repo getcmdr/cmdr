@@ -443,6 +443,8 @@ impl IndexManager {
         // replay's cost budget.
         let entry_count = IndexStore::get_entry_count(read_conn).ok();
         let has_rows = entry_count.is_some_and(|count| count > 1);
+        let rescan_in_place_interrupted =
+            status.scan_completed_at.is_some() && IndexStore::rescan_in_place_noted(read_conn).is_ok_and(|noted| noted);
         let route = launch_route::launch_route(&launch_route::IndexOnDisk {
             scan_completed: status.scan_completed_at.is_some(),
             has_rows,
@@ -456,6 +458,7 @@ impl IndexManager {
             needs_rebuild: deletes::marker_reads_as_set(IndexStore::index_needs_rebuild(read_conn), &self.volume_id),
             predates_exclusion_policy: has_rows
                 && scanner::index_predates_exclusion_policy(read_conn, self.path_space().exclusion_scope().tier()),
+            rescan_in_place_interrupted,
         });
 
         match route {
@@ -480,6 +483,10 @@ impl IndexManager {
                         ),
                     );
                     "journal runs behind the stored event id"
+                } else if rescan_in_place_interrupted {
+                    // Ahead of the journal: a replay would roll past rows the cut-short
+                    // rescan never re-listed (`launch_route.rs`).
+                    "a rescan in place was cut short"
                 } else if status.scan_completed_at.is_some() {
                     // A COMPLETED index with no journal to replay: the walk brings
                     // it current in place (and (re)starts the `DriveWatcher`). This

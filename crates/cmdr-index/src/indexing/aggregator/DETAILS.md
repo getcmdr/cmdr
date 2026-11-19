@@ -116,3 +116,11 @@ only against real network-volume timings, never on a hunch. When a pane's parent
 DEEPEST is scoped (the ancestor is dropped via a component-aware string prefix check). The reporter that drives sending,
 and `resolve_path_under`'s role in resolving mount-relative hot paths on network volumes, live in `../events/` and
 `../paths/DETAILS.md`.
+
+**Both variants write only the rows that moved** (`write_changed_rows`): the write set is compared against the stored
+`dir_stats` in one batched read, and an equal row is skipped, so `rows_written` counts real changes. Why: a pane's
+folder usually sits still while the walk works elsewhere, and every pass then recomputed and rewrote the same rows (a
+phased first index plus reconcile on a 7.2M-entry boot volume logged `1597 dirs computed, 46 rows written` every 5 s for
+36 minutes, #1296). The COMPUTE still runs every pass: skipping it would need per-subtree dirty tracking across every
+mutation message, a much wider surface. A `0` is what lets the writer skip the pane refresh (`../writer/DETAILS.md` §
+"Partial aggregation (writer side)").

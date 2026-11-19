@@ -401,6 +401,58 @@ fn upsert_and_flush(
     writer.flush_blocking().unwrap();
 }
 
+/// A pass that moves no row refreshes no pane. While a walk works elsewhere the
+/// pane's folder sits still, and each 5 s pass used to rewrite the same rows and
+/// tell both panes to re-read every size (#1296). The first pass, which does
+/// write, still refreshes; a repeat over unchanged ground stays quiet.
+#[test]
+fn sql_partial_over_unchanged_ground_refreshes_no_pane() {
+    use crate::indexing::events::{IndexEvent, RecordingSink};
+    use std::sync::Arc;
+
+    let (db_path, _dir) = setup_db();
+    let events = Arc::new(RecordingSink::new());
+    let writer = IndexWriter::spawn(&db_path, Arc::clone(&events) as Arc<dyn crate::EventSink>).unwrap();
+    writer.send(WriteMessage::SetDeltaPropagation(false)).unwrap();
+    upsert_and_flush(&writer, &db_path, "/", "a", true, None);
+    upsert_and_flush(&writer, &db_path, "/a", "c", true, None);
+    upsert_and_flush(&writer, &db_path, "/a/c", "f1.dat", false, Some(100));
+
+    let full_refreshes = || {
+        events
+            .events()
+            .iter()
+            .filter(|e| matches!(e, IndexEvent::DirsUpdated { paths } if paths == &["/".to_string()]))
+            .count()
+    };
+    let pass = || {
+        writer
+            .send(WriteMessage::ComputePartialAggregates {
+                hot_paths: vec!["/a".into()],
+                source: AggSource::Sql,
+            })
+            .unwrap();
+        writer.flush_blocking().unwrap();
+    };
+
+    let before = full_refreshes();
+    pass();
+    let after_first = full_refreshes();
+    assert_eq!(
+        after_first,
+        before + 1,
+        "the first pass wrote rows, so it refreshes the panes"
+    );
+    pass();
+    assert_eq!(
+        full_refreshes(),
+        after_first,
+        "a pass that moved nothing refreshes nothing"
+    );
+
+    writer.shutdown();
+}
+
 /// The unified `Sql` source works when the accumulator maps are EMPTY (the
 /// reconcile / network reality). The tree is built entirely with
 /// `UpsertEntryV2` under `SetDeltaPropagation(false)` — so the maps stay

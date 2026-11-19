@@ -1604,7 +1604,7 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
   its flavor: `desktop` goes `inert` (and closes), as Win32 disables an owner window's bar; `mac` stays usable, as
   macOS's own bar does over a sheet, with the refused rows greyed by the backend (`set_commands_refused_over_dialog`).
   `focus-trap.ts` leaves focus in a command menu alone (`[role="menubar"], [data-command-menu]`), which gives it back
-  itself on a pick or Escape.
+  itself on a pick or Escape, and `#lib/focus-watchdog.ts` counts the same pair as a keyboard home.
 - **The bar and focus the app moves** (`menu-bar.svelte.ts` `onFocusIn`): it lets go only when focus leaves something it
   owns for somewhere outside the window's focus home (a text field a ⌘ command opened). Focus that never came from the
   bar (a click on a title with focus on `<body>`) and focus the app puts back in its home (the explorer's lists) leave

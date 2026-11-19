@@ -23,7 +23,7 @@ use core_foundation::runloop::{CFRunLoop, kCFRunLoopBeforeWaiting, kCFRunLoopDef
 use core_foundation::string::CFString;
 use futures_core::Stream;
 use futures_util::stream::{StreamExt, iter};
-use log::{error, trace};
+use log::{debug, error, trace};
 use tokio_stream::wrappers::ReceiverStream;
 
 use crate::ffi::{
@@ -349,15 +349,20 @@ macro_rules! define_callback {
                     .collect();
 
                 if let Err(e) = event_handler.try_send(events) {
+                    // Log once on first failure; subsequent drops are silent. The two
+                    // causes differ: `Full` is a slow consumer losing events (the
+                    // overflow flag drives its rescan), so it's an error; `Closed` is a
+                    // consumer that dropped its receiver, which is how a watcher is
+                    // stopped on purpose, so nobody is left to miss the events (#1296).
                     if !overflow.swap(true, Ordering::Relaxed) {
-                        // Log once on first failure; subsequent drops are silent.
-                        // `try_send` fails for two reasons that need different responses
-                        // upstream: `Full` (consumer is slow → overflow flag drives a
-                        // rescan) and `Closed` (consumer dropped → events lost
-                        // permanently until the stream is restarted). The error's
-                        // Display impl distinguishes them ("no available capacity" vs
-                        // "channel closed"), so the message below carries both signals.
-                        error!("FSEvents try_send failed (events dropped): {}", e);
+                        match e {
+                            tokio::sync::mpsc::error::TrySendError::Full(_) => {
+                                error!("FSEvents channel full (events dropped, overflow flagged)");
+                            }
+                            tokio::sync::mpsc::error::TrySendError::Closed(_) => {
+                                debug!("FSEvents receiver gone (stream stopping), dropping its remaining events");
+                            }
+                        }
                     }
                 }
             }

@@ -122,6 +122,54 @@ describe('focus watchdog', () => {
     expect(warnSpy).not.toHaveBeenCalled()
   })
 
+  /**
+   * A command menu (`command-menu/MenuSurface.svelte`: the in-window menu bar's flyout, the main-menu
+   * button's menu, an in-page context menu) holds focus on its surface and rows while it's up, so
+   * every open warned under the Windows conventions (#1296).
+   */
+  it('does not warn when focus is on an open command menu or one of its rows', () => {
+    const surface = document.createElement('div')
+    surface.id = 'command-menu-0'
+    surface.className = 'command-menu-surface'
+    surface.setAttribute('data-command-menu', 'bar')
+    surface.setAttribute('role', 'menu')
+    surface.tabIndex = -1
+    const row = document.createElement('div')
+    row.id = 'command-menu-0-row-3'
+    row.className = 'command-menu-row'
+    row.setAttribute('role', 'menuitem')
+    row.tabIndex = 0
+    surface.appendChild(row)
+    document.body.appendChild(surface)
+    surface.focus()
+
+    initFocusWatchdog()
+    vi.advanceTimersByTime(2000)
+    row.focus()
+    vi.advanceTimersByTime(2000)
+
+    expect(warnSpy).not.toHaveBeenCalled()
+  })
+
+  /** Alt or F10 hands the in-window menu bar the keyboard: its title holds focus with no menu open. */
+  it('does not warn when focus is on a menu-bar title', () => {
+    const menuBar = document.createElement('div')
+    menuBar.setAttribute('role', 'menubar')
+    const title = document.createElement('div')
+    title.id = 'menu-bar-c1-title-4'
+    title.className = 'menu-bar-title'
+    title.setAttribute('role', 'menuitem')
+    title.tabIndex = 0
+    menuBar.appendChild(title)
+    document.body.appendChild(menuBar)
+    title.focus()
+
+    initFocusWatchdog()
+    vi.advanceTimersByTime(2000)
+
+    expect(warnSpy).not.toHaveBeenCalled()
+  })
+
   /** "Move focus to the notifications" puts focus on a toast, on purpose. */
   it('does not warn when focus is on a toast', () => {
     const stack = document.createElement('div')

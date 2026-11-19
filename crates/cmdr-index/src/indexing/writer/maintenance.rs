@@ -368,7 +368,7 @@ mod tests {
     /// `sqlite3_step()`, so a single `execute_batch` step drains one page
     /// regardless of the cap — which stranded the freelist, draining it one page
     /// per 30 s tick. Build a multi-thousand-page freelist with a subtree delete
-    /// (which, unlike `TruncateData`, does not self-vacuum), then assert one
+    /// (nothing drains it inline), then assert one
     /// `IncrementalVacuum` reclaims far more than a single page.
     #[test]
     fn handle_incremental_vacuum_reclaims_capped_batch() {
@@ -436,43 +436,49 @@ mod tests {
         writer.shutdown();
     }
 
-    /// After a full `TruncateData`, the uncapped post-truncate vacuum must drain
-    /// the whole freelist (not one page), so the file returns its space instead
-    /// of stranding thousands of dead pages.
+    /// Regression (#1296): `TruncateData` leaves its freed pages on the freelist for
+    /// the rebuild to refill, ❌ never drains them inline (an uncapped drain held the
+    /// writer ~63 s on a 7M-row index, only to grow the file straight back). The
+    /// rebuild reuses them, so the file doesn't grow past its pre-truncate size.
     #[test]
-    fn truncate_drains_freelist() {
+    fn truncate_leaves_its_pages_for_the_rebuild_to_reuse() {
         let (db_path, _dir) = setup_db();
         let writer = IndexWriter::spawn(&db_path, crate::NoopEventSink::shared()).unwrap();
 
-        // Long names so each row touches its own page; 5000 rows ≥ several
-        // thousand pages freed by the truncate's DELETE.
-        let entries: Vec<EntryRow> = (0..5000)
-            .map(|i| EntryRow {
-                id: 100 + i,
-                parent_id: ROOT_ID,
-                name: format!("test-entry-with-a-reasonably-long-name-{i:08}"),
-                is_directory: false,
-                is_symlink: false,
-                logical_size: Some(4096),
-                physical_size: Some(4096),
-                modified_at: None,
-                inode: None,
-            })
-            .collect();
-        writer.send(WriteMessage::InsertEntriesV2(entries)).unwrap();
+        // Long names so 5000 rows span thousands of pages.
+        let entries = || -> Vec<EntryRow> {
+            (0..5000)
+                .map(|i| EntryRow {
+                    id: 100 + i,
+                    parent_id: ROOT_ID,
+                    name: format!("test-entry-with-a-reasonably-long-name-{i:08}"),
+                    is_directory: false,
+                    is_symlink: false,
+                    logical_size: Some(4096),
+                    physical_size: Some(4096),
+                    modified_at: None,
+                    inode: None,
+                })
+                .collect()
+        };
+        let probe = IndexStore::open_read_connection(&db_path).unwrap();
+        let pragma = |name: &str| -> i64 { probe.pragma_query_value(None, name, |row| row.get(0)).unwrap() };
+
+        writer.send(WriteMessage::InsertEntriesV2(entries())).unwrap();
+        writer.flush_blocking().unwrap();
+        let pages_before = pragma("page_count");
+
         writer.send(WriteMessage::TruncateData).unwrap();
         writer.flush_blocking().unwrap();
+        let freed = pragma("freelist_count");
+        assert!(freed >= 100, "the truncate must leave its pages free; freelist={freed}");
 
-        // No reader pinned a snapshot during the truncate, so the uncapped drain
-        // reclaims every freed page. A residual near zero is expected; thousands
-        // would mean the vacuum only stepped once.
-        let probe = IndexStore::open_read_connection(&db_path).unwrap();
-        let free_after: i64 = probe
-            .pragma_query_value(None, "freelist_count", |row| row.get(0))
-            .unwrap();
+        writer.send(WriteMessage::InsertEntriesV2(entries())).unwrap();
+        writer.flush_blocking().unwrap();
+        let pages_after = pragma("page_count");
         assert!(
-            free_after < 100,
-            "TruncateData's uncapped vacuum must drain the freelist; residual={free_after}"
+            pages_after <= pages_before + 10,
+            "the rebuild must reuse the freed pages; before={pages_before}, after={pages_after}"
         );
 
         writer.shutdown();

@@ -416,11 +416,7 @@ pub fn compute_partial_aggregates(
     // Collect the rows to write (value columns only; partial passes overwrite
     // whatever the final pass will fully recompute).
     let rows: Vec<DirStatsById> = write_set.iter().filter_map(|id| computed.get(id).cloned()).collect();
-    let rows_written = rows.len() as u64;
-
-    for chunk in rows.chunks(1000) {
-        IndexStore::upsert_dir_stats_by_id(conn, chunk)?;
-    }
+    let rows_written = write_changed_rows(conn, &rows)?;
 
     Ok(PartialAggStats {
         dirs_computed,
@@ -650,16 +646,41 @@ pub fn compute_partial_aggregates_sql(
         }
     }
 
-    let rows_written = rows.len() as u64;
-    for chunk in rows.chunks(1000) {
-        IndexStore::upsert_dir_stats_by_id(conn, chunk)?;
-    }
+    let rows_written = write_changed_rows(conn, &rows)?;
 
     Ok(PartialAggStats {
         dirs_computed,
         rows_written,
         hot_paths_resolved,
     })
+}
+
+/// Write the partial-pass rows whose totals differ from what `dir_stats` holds,
+/// and return how many that was.
+///
+/// A pane's folder usually sits still while the walk works elsewhere, so most
+/// passes compute exactly the totals the last one stored (#1296: the same 46
+/// rows every 5 s for 36 minutes). Skipping those spares the write, and a `0`
+/// here is what tells the writer there's nothing for the panes to re-read.
+/// Comparing the whole row is safe: an equal row rewritten changes nothing a
+/// reader could see.
+fn write_changed_rows(conn: &Connection, rows: &[DirStatsById]) -> Result<u64, IndexStoreError> {
+    let mut changed: Vec<DirStatsById> = Vec::new();
+    for chunk in rows.chunks(1000) {
+        let ids: Vec<i64> = chunk.iter().map(|row| row.entry_id).collect();
+        let stored = IndexStore::get_dir_stats_batch_by_ids(conn, &ids)?;
+        changed.extend(
+            chunk
+                .iter()
+                .zip(stored)
+                .filter(|(row, stored)| stored.as_ref() != Some(*row))
+                .map(|(row, _)| row.clone()),
+        );
+    }
+    for chunk in changed.chunks(1000) {
+        IndexStore::upsert_dir_stats_by_id(conn, chunk)?;
+    }
+    Ok(changed.len() as u64)
 }
 
 /// Component-aware proper-ancestor test for two index-relative paths.

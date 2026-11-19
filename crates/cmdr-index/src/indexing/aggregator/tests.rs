@@ -606,6 +606,67 @@ fn sql_partial_writes_hot_dir_and_direct_children_only() {
     assert_eq!(get_stats(&conn, 11).unwrap().recursive_logical_size, 300);
 }
 
+/// A pass over an unchanged subtree rewrites nothing. The pane's folder sits
+/// still while the walk works elsewhere, so every 5 s pass computes the same
+/// totals the last one stored (#1296: 46 identical rows every 5 s for 36
+/// minutes). Only rows whose totals moved are written, and `rows_written` counts
+/// exactly those, which is what lets the writer skip the pane refresh.
+#[test]
+fn sql_partial_rewrites_nothing_when_the_subtree_is_unchanged() {
+    let (conn, _dir) = open_temp_conn();
+    insert_entries(
+        &conn,
+        &[
+            make_dir(10, ROOT_ID, "a"),
+            make_dir(11, 10, "b"),
+            make_dir(12, 11, "c"),
+            make_file(13, 12, "f1.dat", 100),
+            make_dir(14, 11, "deep"),
+        ],
+    );
+    let hot = ["/a/b".to_string()];
+
+    let first = compute_partial_aggregates_sql(&conn, &hot, 100_000).unwrap();
+    assert_eq!(first.rows_written, 3, "the first pass writes /a/b, /c, and /deep");
+
+    let second = compute_partial_aggregates_sql(&conn, &hot, 100_000).unwrap();
+    assert_eq!(second.dirs_computed, first.dirs_computed, "the compute still runs");
+    assert_eq!(second.rows_written, 0, "nothing moved, so nothing is rewritten");
+
+    // A new file under /c moves /a/b and /c, not /deep.
+    insert_entries(&conn, &[make_file(15, 12, "f2.dat", 50)]);
+    let third = compute_partial_aggregates_sql(&conn, &hot, 100_000).unwrap();
+    assert_eq!(third.rows_written, 2, "only the two rows whose totals moved");
+    assert_eq!(get_stats(&conn, 11).unwrap().recursive_logical_size, 150);
+    assert_eq!(get_stats(&conn, 12).unwrap().recursive_logical_size, 150);
+}
+
+/// The `Maps` pass skips unchanged rows the same way: a second pass over maps
+/// that didn't grow writes nothing.
+#[test]
+fn maps_partial_rewrites_nothing_when_the_maps_are_unchanged() {
+    let (conn, _dir) = open_temp_conn();
+    let rows = [
+        make_dir(10, ROOT_ID, "a"),
+        make_dir(11, 10, "b"),
+        make_file(12, 11, "f1.dat", 100),
+    ];
+    insert_entries(&conn, &rows);
+    let mut direct_stats: ChildrenStatsMap = HashMap::new();
+    let mut child_dirs: HashMap<i64, Vec<i64>> = HashMap::new();
+    direct_stats.insert(ROOT_ID, (0, 0, 0, 1, false));
+    direct_stats.insert(10, (0, 0, 0, 1, false));
+    direct_stats.insert(11, (100, 100, 1, 0, false));
+    child_dirs.insert(ROOT_ID, vec![10]);
+    child_dirs.insert(10, vec![11]);
+
+    let first = compute_partial_aggregates(&conn, &direct_stats, &child_dirs, &[], 3).unwrap();
+    assert_eq!(first.rows_written, 3, "root, /a, and /a/b");
+
+    let second = compute_partial_aggregates(&conn, &direct_stats, &child_dirs, &[], 3).unwrap();
+    assert_eq!(second.rows_written, 0, "the maps didn't grow, so nothing is rewritten");
+}
+
 /// The conservative cap skips a hot dir whose CURRENT `dir_stats` subtree counts
 /// exceed `cap` (the final aggregate fills it later); a small subtree is scoped
 /// normally. Pins the writer-thread stability guard.

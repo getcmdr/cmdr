@@ -183,6 +183,7 @@ impl IndexManager {
             "scan_completed_at",
             phases::HOME_COVERED_AT_KEY,
             crate::indexing::store::INDEX_NEEDS_REBUILD_KEY,
+            crate::indexing::store::RESCAN_IN_PLACE_KEY,
         ] {
             let _ = self.writer.send(WriteMessage::DeleteMeta(key.to_string()));
         }

@@ -597,6 +597,33 @@ fn update_last_event_id_via_writer() {
     writer.shutdown();
 }
 
+/// Regression (#1296): a rebuild kept `last_event_id`, so the next branch watch on the
+/// boot disk (which replays any distance, #751) replayed months of FSEvents history
+/// into the empty index the walk was filling anyway. A truncate takes the replay point
+/// with the rows it described, so the next watch starts from now.
+#[test]
+fn truncate_drops_the_replay_point_with_the_rows() {
+    let (db_path, _dir) = setup_db();
+    let writer = IndexWriter::spawn(&db_path, crate::NoopEventSink::shared()).unwrap();
+
+    writer.send(WriteMessage::UpdateLastEventId(229_356_236)).unwrap();
+    writer.send(WriteMessage::TruncateData).unwrap();
+    writer.flush_blocking().unwrap();
+
+    let store = open_read(&db_path);
+    assert_eq!(store.get_index_status().unwrap().last_event_id, None);
+
+    // A position stored after the truncate (the rebuild's own) stands.
+    writer.send(WriteMessage::UpdateLastEventId(958_880_953)).unwrap();
+    writer.flush_blocking().unwrap();
+    assert_eq!(
+        store.get_index_status().unwrap().last_event_id.as_deref(),
+        Some("958880953")
+    );
+
+    writer.shutdown();
+}
+
 #[test]
 fn db_path_is_available() {
     let (db_path, _dir) = setup_db();

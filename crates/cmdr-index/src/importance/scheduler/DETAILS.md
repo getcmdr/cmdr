@@ -215,10 +215,10 @@ naming an older scan than the index holds:
 **The launch cost.** The stamp owes a pass only beside a COMPLETED index scan, so a cold start (no index, or one still
 mid-scan) never gets a probe pass on top of its scan. A launch that rescans a completed index (a `LocalExternal` at
 every mount, a journal replay that falls back, an exclusion-policy rebuild) can overlap the two, because registration
-publishes before `start_scan` clears `scan_completed_at`: only when the previous scan's pass never landed, and the
-scan's own `ScanCompleted` then coalesces into one re-run (`PassCoordinator`). Accepted: a rare extra pass, never a lost
-one. A store written before the stamp existed owes one pass per volume on the first launch that has it, the same call
-the policy stamp makes.
+publishes while `scan_completed_at` still stands (a rescan in place keeps it until it finishes): only when the previous
+scan's pass never landed, and the scan's own `ScanCompleted` then coalesces into one re-run (`PassCoordinator`).
+Accepted: a rare extra pass, never a lost one. A store written before the stamp existed owes one pass per volume on the
+first launch that has it, the same call the policy stamp makes.
 
 ## The measurement entry point
 

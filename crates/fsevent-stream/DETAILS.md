@@ -39,6 +39,10 @@ without `UseCFTypes`. The full contract is the doc comment on `define_callback!`
 are `CFSTR` macros in the SDK, not symbols, so `extended_data_path_key()` builds them with
 `CFString::from_static_string`.
 
+A batch the channel won't take raises the overflow flag either way, logged once per stream, by its `TrySendError`
+variant: `Full` is a slow consumer losing events, so `error!`; `Closed` is a receiver dropped by a watcher stopped on
+purpose (the drive watcher's hard-cap fallback, for one), so `debug!`, since nobody is left to miss the events (#1296).
+
 ## Verified FSEvents behaviors
 
 All verified on macOS 27.0.1 with throwaway probe tests, 2026-11-03:

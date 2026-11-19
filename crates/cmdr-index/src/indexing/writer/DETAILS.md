@@ -617,9 +617,12 @@ judges the headline feature. Instead, on `ComputePartialAggregates { hot_paths, 
 reporter), `handle_compute_partial_aggregates` **borrows** the accumulator maps READ-ONLY (no clear, no mutation, no
 generation bump), no-ops on empty maps with NO SQL fallback, delegates the math to
 `aggregator::compute_partial_aggregates` (full bottom-up over every scanned dir — cheap, pure in-memory), writes a
-depth-capped (`PARTIAL_AGG_MAX_DEPTH = 3`) subset plus each resolvable hot-path dir + its direct children, and reports
-`IndexEvent::DirsUpdated { paths: ["/"] }`. Real-volume cost (release, 5.94M entries / 558K dirs): p95 377 ms/pass,
-151–716 rows/pass, indistinguishable from the feature-off baseline.
+depth-capped (`PARTIAL_AGG_MAX_DEPTH = 3`) subset plus each resolvable hot-path dir + its direct children (only the rows
+whose totals moved), and reports `IndexEvent::DirsUpdated { paths: ["/"] }` only when a row moved. A pass that moved
+nothing logs at DEBUG and refreshes no pane: its rows are what the panes already read, and every other flow that changes
+`dir_stats` sends its own refresh (#1296: a still pane folder used to cost a both-pane re-read every 5 s for a whole
+rescan). Real-volume cost (release, 5.94M entries / 558K dirs): p95 377 ms/pass, 151–716 rows/pass, indistinguishable
+from the feature-off baseline.
 
 The don'ts (all load-bearing):
 
@@ -718,10 +721,19 @@ depends on: (1) a test must NEVER `INDEX_REGISTRY.clear()` (it wipes every concu
 
 ## Maintenance: vacuum and WAL checkpoint (`maintenance.rs`)
 
-Free pages are reclaimed both inline after `TruncateData` and on a 30 s background timer that sends `IncrementalVacuum`
-plus `WalCheckpoint`. The vacuum handler uses a tiered cap (`pick_vacuum_cap`): skip when freelist < 1,000, a 2,000-page
-cap up to 20,000, a 20,000-page cap above — tiny steady-state lock holds while draining real backlog in tens of minutes.
-The WAL checkpoint handler runs `PRAGMA wal_checkpoint(TRUNCATE)`; the scanner fires an explicit `WalCheckpoint` after
+Free pages are reclaimed on a 30 s background timer that sends `IncrementalVacuum` plus `WalCheckpoint`.
+
+**Decision: `TruncateData` doesn't vacuum.** Every truncate is followed by a rebuild, and SQLite refills freelist pages
+before it grows the file, so an inline drain only handed back space the walk grew straight into again. Uncapped, it held
+the writer ~63 s after a 3.6 s DELETE on a 7.2M-row root index (dev log, 2026-11-19, #1296). What the rebuild doesn't
+reuse, the tick drains at its capped rate. Pinned by
+`maintenance.rs::tests::truncate_leaves_its_pages_for_the_rebuild_to_reuse`.
+
+`TruncateData` also drops `meta.last_event_id`; why is in `../watch/DETAILS.md` ("A rebuild watches from now").
+
+The vacuum handler uses a tiered cap (`pick_vacuum_cap`): skip when freelist < 1,000, a 2,000-page cap up to 20,000, a
+20,000-page cap above — tiny steady-state lock holds while draining real backlog in tens of minutes. The WAL checkpoint
+handler runs `PRAGMA wal_checkpoint(TRUNCATE)`; the scanner fires an explicit `WalCheckpoint` after
 `ComputeAllAggregates` so the GB-scale post-scan WAL spike trims immediately. The schema/pragma side (WAL mode, page
 cache, `wal_autocheckpoint`, `journal_size_limit`) lives in `../store/DETAILS.md`.
 
