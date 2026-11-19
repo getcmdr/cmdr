@@ -238,10 +238,12 @@ Xfce and MATE have no current HIG covering it).
   and checked state) plus a change event; an in-page answer for each right-click menu on Windows; the Windows 11 menu
   tokens; the main-menu button; the `primaryMenu` and `contextMenus` convention values; a show-menu-bar setting; the
   "Underline access keys" setting read; a Windows `SC_KEYMENU` guard.
-- **Removed**: muda's bar on Windows and Linux (`menu_bar_builder.rs` builds it on macOS only), `menu/mnemonic_mask/`
-  and its IPC command, `menu-mnemonics-capture.svelte.ts`, `get_menu_bar_title_mnemonics` and Settings' title-mnemonic
-  warning (replaced by the bar's own letters reserving around a scope's Alt keys, as `keyScope` does for dialogs), and
-  `menu-mnemonic-mask.spec.ts` (step 6 renamed it `menu-bar.spec.ts`, which now drives the in-page bar).
+- **Removed**: muda's bar on Windows and Linux (`menu_bar_builder.rs` builds it on macOS only),
+  `get_menu_bar_title_mnemonics` and Settings' title-mnemonic warning (replaced by the bar's own letters reserving
+  around a scope's Alt keys, as `keyScope` does for dialogs), and `menu-mnemonic-mask.spec.ts` (step 6 renamed it
+  `menu-bar.spec.ts`, which now drives the in-page bar).
+- **To remove** (task 63 step 10): `menu/mnemonic_mask/` and its IPC command, `menu-mnemonics-capture.svelte.ts`, and
+  the mask's leftovers in `menu-bar.spec.ts`.
 - Steps and sizes: the plan's task 63 entry.
 
 ## Left open (QA, not decisions)
