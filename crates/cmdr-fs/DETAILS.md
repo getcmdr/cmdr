@@ -164,10 +164,10 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
 - **Two name worlds, one door each** (Decision/Why): `AppName::from_app_spelling(&str)` takes a BACKEND-spelled name (a
   `FileEntry.name`, its escapes live); `AppNameBuf::from_native_os(&OsStr)` (and `from_native_bytes` /
   `from_native_units`) takes a name a native API holds, escaping what isn't valid text and a literal escape code point
-  as literal; `from_typed(text, namer)` takes typed text. `volume::ChildName` (over `&OsStr`) is the `std::path` world's
-  name and has NO app-path join: reading its text as app spelling respells nothing today but would, once escapes exist,
-  turn a live escape into a literal one and land a copy of `caf\xE9.txt` under a different name. The wrong combination
-  has no API.
+  as literal; `from_typed(text, namer)` takes typed text; `into_string` hands a listing its row name with no copy.
+  `volume::ChildName` (over `&OsStr`) is the `std::path` world's name and has NO app-path join: reading its text as app
+  spelling respells nothing today but would, once escapes exist, turn a live escape into a literal one and land a copy
+  of `caf\xE9.txt` under a different name. The wrong combination has no API.
 - **Canonical form**: no empty, `.`, or `..` name, no trailing `/` except the root's own; every root ends in `/` (`/`,
   `C:/`, `//server/share/`, `scheme://authority/`). The drive letter is uppercased; nothing else is folded, and the
   Unicode form is never touched (NFC and NFD `café` are two values). `parse` normalizes into it, `from_normalized` takes
