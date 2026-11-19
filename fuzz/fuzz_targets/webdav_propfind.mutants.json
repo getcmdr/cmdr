@@ -4,8 +4,8 @@
       "property": "fuzz:webdav_propfind",
       "why": "an href isn't percent-decoded, so `a%20b` lists as a different file than `a b`",
       "file": "crates/cmdr-webdav/src/propfind.rs",
-      "find": "percent_decode_str(&path).decode_utf8_lossy().into_owned()",
-      "replace": "{ let _ = percent_decode_str; path }",
+      "find": "percent_decode_str(href_path(href)).decode_utf8_lossy().into_owned()",
+      "replace": "{ let _ = percent_decode_str; href_path(href).to_owned() }",
       "input": "fuzz/seeds/webdav_propfind/round-trip.bin",
       "expect": "the href read back as another path"
     },
