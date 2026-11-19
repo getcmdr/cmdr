@@ -330,7 +330,7 @@
   "@settings.appearance.menuBar.label": {
     "sourceHash": "63809e3"
   },
-  "settings.appearance.menuBar.description": "Zeigt die Menüs (Ablage, Bearbeiten, Darstellung usw.) in einer Leiste oben in jedem Fenster an. Ist die Leiste ausgeblendet, findest du die Menüs stattdessen unter der Taste „Hauptmenü“ am Ende der Tab-Leiste.",
+  "settings.appearance.menuBar.description": "Zeigt die Menüs (Ablage, Bearbeiten, Darstellung usw.) in einer Leiste oben in jedem Fenster an. Ist die Leiste ausgeblendet, findest du die Menüs stattdessen unter der Schaltfläche „Hauptmenü“ am Ende der Tab-Leiste.",
   "@settings.appearance.menuBar.description": {
     "sourceHash": "af69e91"
   },

@@ -3770,7 +3770,8 @@
       "note": "German Windows names an on-screen button Schaltfläche (MS TBX button → Schaltfläche), with Windows' select verb: Wähle … die Schaltfläche … aus."
     },
     "exceptions": {
-      "fileOperations.delete.cloudOnlineOnlyHandedBack": "TODO: windows branch should say Schaltfläche and wähle … aus; outside this batch, flagged for the next de per-OS pass."
+      "fileOperations.delete.cloudOnlineOnlyHandedBack": "TODO: windows branch should say Schaltfläche and wähle … aus; outside this batch, flagged for the next de per-OS pass.",
+      "settings.appearance.menuBar.description": "Shows only on Windows and Linux (needs the hideableMenuBar capability), so this plain value takes the Windows form Schaltfläche."
     }
   },
   "undo": {
