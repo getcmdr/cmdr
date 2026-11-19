@@ -6521,5 +6521,10 @@
     "confidence": "tentative",
     "sources": "no Android source in the pile; settings.fileOperations.mtpEnabled.description quotes «Параметры USB»",
     "note": "Quote the label the user's phone shows; Russian Android may say «Настройки USB»."
+  },
+  "mac-os-extended": {
+    "chosen": "Mac OS Extended",
+    "confidence": "high",
+    "sources": "Disk Utility format menu: StorageKit Localizable.loctable, key HFS Not Journaled (verified on macOS 27.0.1 (26A434), plutil, 2026-11-19)"
   }
 }
