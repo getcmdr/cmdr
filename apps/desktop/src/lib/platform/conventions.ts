@@ -106,3 +106,12 @@ export function linuxDesktop(): LinuxDesktop | null {
 export function convention<K extends keyof PlatformConventions>(key: K): PlatformConventions[K] {
   return platformConventions()[key]
 }
+
+/**
+ * Whether the page draws the app's menu bar: everywhere but macOS, whose bar is the system's
+ * (D5, task 63 of `docs/specs/windows-port-plan.md`). GNOME's `primaryMenu` draws the bar too until
+ * its "Main menu" button stands in (that task's step 8), so no desktop is left without menus.
+ */
+export function pageDrawsMenuBar(): boolean {
+  return convention('menuModel') !== 'systemMenuBar'
+}

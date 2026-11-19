@@ -55,6 +55,12 @@ export interface MenuBarController {
   readonly active: boolean
   /** Whether access-key underlines show now (`keyboard-cues.ts`). */
   readonly cuesShown: boolean
+  /**
+   * The element that held focus when the bar took the keyboard, while it has it; `null` otherwise.
+   * The bar moves focus into itself, so a page whose rows follow a field's focus (the viewer's Cut
+   * and Paste follow its search box) reads this to keep them live while its menu is open.
+   */
+  readonly focusOrigin: Element | null
   /** Each title's access key, or null. */
   readonly titleLetters: readonly (string | null)[]
   pointerDownTitle(index: number, event: PointerEvent): void
@@ -89,6 +95,7 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
   let active = $state(false)
   let cuesShown = $state(false)
   let origin: FocusOrigin | null = null
+  let focusOrigin = $state<Element | null>(null)
   /** A lone Alt is down and nothing else came since: its release takes or gives back the bar. */
   let altArmed = false
   /** The bar took focus back from the app once this session (`onFocusIn`), so a second re-home isn't fought. */
@@ -136,6 +143,7 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
   function activate(fromKeyboard: boolean): void {
     if (active) return
     origin = captureFocusOrigin()
+    focusOrigin = document.activeElement
     active = true
     reclaimedFocus = false
     sessionCues = createKeyboardCues({ rule: rule(), openedByKeyboard: fromKeyboard })
@@ -157,6 +165,7 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
     const leaving = deps.barElement()
     const target = origin
     origin = null
+    focusOrigin = null
     if (restore) {
       restoreFocus(target, { leaving })
     } else if (leaving?.contains(document.activeElement)) {
@@ -413,6 +422,9 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
     },
     get active() {
       return active
+    },
+    get focusOrigin() {
+      return focusOrigin
     },
     get cuesShown() {
       return cuesShown

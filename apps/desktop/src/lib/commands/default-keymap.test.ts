@@ -70,10 +70,10 @@ describe('the default keys the menu bar mirrors', () => {
 })
 
 /**
- * The windows other than the main one that wear the main bar on Windows and Linux (Tauri hands the
- * app-wide menu to every window built without one: `src-tauri/src/menu/DETAILS.md` § "A modal
- * surface"), by the scope their own commands live in. A bar accelerator fires before the page, so a
- * row registering one of their keys would take it from them.
+ * The windows other than the main one that wore the main bar on Windows and Linux while it was
+ * native, by the scope their own commands live in. No bar registers a key off macOS now (they fire
+ * the bar's keys only after their own keydown: `#lib/ui/command-menu/window-bar-keys.ts`), so this
+ * only keeps those rows display-only in `cmdr-menu`, which costs nothing.
  */
 const BAR_WEARING_WINDOW_SCOPES: readonly CommandScope[] = ['Operation queue window', 'About window']
 

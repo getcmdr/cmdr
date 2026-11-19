@@ -2412,20 +2412,11 @@ export const commands = {
       __TAURI_INVOKE('viewer_write_range_to_file', { sessionId, readId, anchor, focus, destPath }),
     ),
   /**
-   *  Sets up a viewer-specific menu on the given window (adds "Word wrap" to View submenu).
-   *
-   *  macOS has no per-window menus (one app-level menu bar, tauri-apps/tauri#5768): `window.set_menu`
-   *  is a no-op there. Instead the viewer menu is built once at startup and swapped app-level via
-   *  `activate_window_menu("viewer")` on the viewer's focus-gain, so this command is a no-op on macOS.
-   *  Linux keeps its working per-window menu.
-   */
-  viewerSetupMenu: (label: string) => typedError<null, string>(__TAURI_INVOKE('viewer_setup_menu', { label })),
-  /**
    *  Syncs the viewer menu "Word wrap" check state (called when toggled via keyboard).
    *
    *  On macOS the viewer menu is shared app-level (one menu bar), so we flip the single stored
-   *  `CheckMenuItem` ref in `MenuState` directly (O(1), no tree walk). On Linux the menu is per-window,
-   *  so we walk that window's menu to find the item.
+   *  `CheckMenuItem` ref in `MenuState` directly (O(1), no tree walk). Elsewhere the page's bar reads
+   *  the viewer's own state, so this is a no-op.
    */
   viewerSetWordWrap: (label: string, checked: boolean) =>
     typedError<null, string>(__TAURI_INVOKE('viewer_set_word_wrap', { label, checked })),
@@ -4811,12 +4802,6 @@ export const commands = {
    */
   setMenuMnemonicsSuspended: (suspended: boolean) =>
     __TAURI_INVOKE<void>('set_menu_mnemonics_suspended', { suspended }),
-  /**
-   *  The menu bar titles' mnemonics in the active language (`Alt+F` opens File in English), for
-   *  Settings' warning when a user records one for a command outside a modal surface: there GTK
-   *  takes the key before the page. Empty where the bar has none (macOS).
-   */
-  getMenuBarTitleMnemonics: () => __TAURI_INVOKE<BarTitleMnemonic[]>('get_menu_bar_title_mnemonics'),
   /**
    *  The main menu bar for a page that draws it (off macOS, the in-window bar): every menu and row,
    *  at its revision. From the first call on, every move of the bar emits `menu-bar-changed` with
@@ -7948,20 +7933,17 @@ export type BarMenuView = {
 // What a page's pick of a bar row did.
 export type BarPickOutcome =
   // The row's handler ran.
-  | 'ran'
+  | { kind: 'ran' }
   /**
    *  The row is greyed out right now, or isn't on the bar: nothing ran, as a greyed native row
    *  can't be clicked.
    */
-  | 'notLive'
-
-// A bar title's mnemonic: GTK opens the `menu` menu on `Alt+<letter>`.
-export type BarTitleMnemonic = {
-  // Lowercased, as GTK matches it.
-  letter: string
-  // The menu's title in the active language, without its marker.
-  menu: string
-}
+  | { kind: 'notLive' }
+  /**
+   *  The row edits the focused text field, which only the page can reach: the page runs `edit`
+   *  on it (the viewer's Cut and Paste, and the main bar's Edit rows outside the main window).
+   */
+  | { kind: 'textEdit'; edit: PageTextEdit }
 
 /**
  *  The prefix's estimated size against the budget the next send resolves. Both are `chars/4`
@@ -16991,6 +16973,12 @@ export type OwnerPlace =
   | 'webData'
   // `~/.var/app` or `~/snap`: a sandboxed Linux app's home.
   | 'sandboxHome'
+
+/**
+ *  A text edit a page runs on its focused field. The wire words are the frontend's `TextFieldEdit`
+ *  (`#lib/context-menu/text-field-menu.ts`).
+ */
+export type PageTextEdit = 'cut' | 'copy' | 'paste' | 'selectAll'
 
 /**
  *  What the PANE contributes to a file context menu, as opposed to the file that

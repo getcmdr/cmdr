@@ -23,6 +23,9 @@ use tauri_specta::Event as _;
 
 use crate::ignore_poison::IgnorePoison;
 
+use super::menu_handlers::{
+    EditRoad, FocusedWindows, NativeEditSelector, edit_road, focused_windows, native_edit_selector_for,
+};
 use super::{MenuState, cloned_handle};
 
 /// The page bar's last answer and its revision. Lives in `MenuState.page_bar`.
@@ -61,13 +64,51 @@ pub struct MenuBarChanged {
 
 /// What a page's pick of a bar row did.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
-#[serde(rename_all = "camelCase")]
+#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
 pub enum BarPickOutcome {
     /// The row's handler ran.
     Ran,
     /// The row is greyed out right now, or isn't on the bar: nothing ran, as a greyed native row
     /// can't be clicked.
     NotLive,
+    /// The row edits the focused text field, which only the page can reach: the page runs `edit`
+    /// on it (the viewer's Cut and Paste, and the main bar's Edit rows outside the main window).
+    TextEdit { edit: PageTextEdit },
+}
+
+/// A text edit a page runs on its focused field. The wire words are the frontend's `TextFieldEdit`
+/// (`#lib/context-menu/text-field-menu.ts`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub enum PageTextEdit {
+    Cut,
+    Copy,
+    Paste,
+    SelectAll,
+}
+
+impl From<NativeEditSelector> for PageTextEdit {
+    fn from(selector: NativeEditSelector) -> Self {
+        match selector {
+            NativeEditSelector::Cut => Self::Cut,
+            NativeEditSelector::Copy => Self::Copy,
+            NativeEditSelector::Paste => Self::Paste,
+            NativeEditSelector::SelectAll => Self::SelectAll,
+        }
+    }
+}
+
+/// The text edit a page's pick of `menu_id` hands back to the page, or `None` when the backend runs
+/// it: off macOS, an Edit row whose road is the focused field (`edit_road`). macOS's native bar
+/// runs those through the responder chain itself.
+fn page_text_edit(menu_id: &str, focus: FocusedWindows, native_bar: bool) -> Option<PageTextEdit> {
+    if native_bar {
+        return None;
+    }
+    match edit_road(menu_id, focus)? {
+        EditRoad::FieldEdit(selector) => Some(selector.into()),
+        EditRoad::MainCommand(_) | EditRoad::QueueSelectAll => None,
+    }
 }
 
 /// The bar's inputs, read from `MenuState` the way `apply_menu_item_states` and the native
@@ -189,6 +230,11 @@ pub fn pick(app: &AppHandle<tauri::Wry>, menu_id: &str) -> BarPickOutcome {
     let menu_state = app.state::<MenuState<tauri::Wry>>();
     if !is_live(&menu_state, menu_id) {
         return BarPickOutcome::NotLive;
+    }
+    if native_edit_selector_for(menu_id).is_some()
+        && let Some(edit) = page_text_edit(menu_id, focused_windows(app), super::builds_native_bar())
+    {
+        return BarPickOutcome::TextEdit { edit };
     }
     if matches!(bar_click(menu_id, Platform::current()), Some(BarClick::ShowHiddenFiles)) {
         let flipped = !menu_state.show_hidden_checked.load(Ordering::Relaxed);
@@ -334,6 +380,49 @@ mod tests {
             .find(|row| row.id == cmdr_menu::ids::FILE_COPY_ID)
             .expect("Copy greys with file operations blocked");
         assert!(!blocked_copy.enabled);
+    }
+
+    /// Regression anchor (review of #1265): off macOS the viewer bar's Cut and Paste reached a host
+    /// lane that did nothing on Windows. The page runs a field's edit; macOS's native bar keeps it.
+    #[test]
+    fn a_fields_edit_goes_back_to_the_page_off_macos() {
+        use cmdr_menu::ids::{EDIT_COPY_ID, SELECT_ALL_ID, VIEWER_EDIT_CUT_ID, VIEWER_EDIT_PASTE_ID};
+        let elsewhere = FocusedWindows::default();
+        let main = FocusedWindows {
+            main: true,
+            queue: false,
+        };
+        let queue = FocusedWindows {
+            main: false,
+            queue: true,
+        };
+        assert_eq!(
+            page_text_edit(VIEWER_EDIT_CUT_ID, elsewhere, false),
+            Some(PageTextEdit::Cut)
+        );
+        assert_eq!(
+            page_text_edit(VIEWER_EDIT_PASTE_ID, elsewhere, false),
+            Some(PageTextEdit::Paste)
+        );
+        assert_eq!(page_text_edit(EDIT_COPY_ID, elsewhere, false), Some(PageTextEdit::Copy));
+        // The main window decides file or text itself; the queue selects its rows.
+        assert_eq!(page_text_edit(EDIT_COPY_ID, main, false), None);
+        assert_eq!(page_text_edit(SELECT_ALL_ID, queue, false), None);
+        // macOS's responder chain runs it.
+        assert_eq!(page_text_edit(VIEWER_EDIT_CUT_ID, elsewhere, true), None);
+        assert_eq!(page_text_edit(cmdr_menu::ids::FILE_COPY_ID, elsewhere, false), None);
+    }
+
+    /// The wire the page reads: `{ kind, edit }`.
+    #[test]
+    fn a_text_edit_outcome_names_its_edit() {
+        let wire = serde_json::to_value(BarPickOutcome::TextEdit {
+            edit: PageTextEdit::SelectAll,
+        })
+        .expect("serializes");
+        assert_eq!(wire, serde_json::json!({ "kind": "textEdit", "edit": "selectAll" }));
+        let ran = serde_json::to_value(BarPickOutcome::Ran).expect("serializes");
+        assert_eq!(ran, serde_json::json!({ "kind": "ran" }));
     }
 
     /// A greyed row, or one the bar doesn't build, isn't a page's to pick.

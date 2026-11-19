@@ -1,18 +1,16 @@
 /**
- * Linux: a dialog gets the `Alt+<letter>` keys the menu bar's mnemonics would take.
+ * Linux: the main window's in-page menu bar (D5, task 63 of `docs/specs/windows-port-plan.md`),
+ * driven the way a person drives it, and the keys it must leave alone.
  *
- * GTK takes a bar title's `Alt+<letter>` (English: F, E, S, V, G, T, H) before WebKit sees the
- * keydown, so `preventDefault` can't help. While a dialog, an overlay, or the palette is up, the main
- * window's mnemonic modifier is a mask nobody presses (`src-tauri/src/menu/mnemonic_mask/`), and
- * Alt again once the last one closes.
+ * Off macOS the page draws the bar (`routes/(main)/MainMenuBar.svelte` over `#lib/ui/MenuBar.svelte`)
+ * and no GTK bar exists. Real X events only (`helpers/x11-keys.ts`): a synthetic DOM event would
+ * reach the page whether or not GTK took the key first, so it can't prove GTK left a lone Alt or
+ * F10 to the page. One language proves it: nothing here reads a label, the access letter comes off
+ * the title's own `aria-keyshortcuts`.
  *
- * Real X key events only (`helpers/x11-keys.ts`): `pressKey`'s synthetic DOM event never reaches
- * GTK, so it would pass with or without the mask. An open GTK menu is a new visible top-level X
- * window, which is how the spec sees it, and a key GTK took never shows in the page's own keydown
- * record. One language proves it: the mask doesn't read labels. The search dialog's `Alt+F` and
- * every Multi-rename option key (`Alt+<letter>` off macOS, read from the registry's keymap) are
- * covered, the second from a text field and from an option control, and so are the operation
- * queue window's `Alt+↑` / `Alt+↓`, which no row of the bar it wears may register.
+ * Also covered: while a dialog is up, a real `Alt+<letter>` (the search dialog's `Alt+F`, every
+ * Multi-rename option key) reaches the dialog and opens no menu; the operation queue's
+ * `Alt+↑` / `Alt+↓` and Settings' `Ctrl+A` / `X` / `V` / `C` reach their windows.
  */
 import os from 'node:os'
 import { test, expect } from './fixtures.js'
@@ -20,15 +18,20 @@ import {
   dispatchMenuCommand,
   ensureAppReady,
   escapeOverlayUntilGone,
+  fileExistsInFocusedPane,
+  focusPane,
   moveCursorToFile,
   pressKey,
   type PageLike,
 } from './helpers.js'
 import { ensureMcpClient } from '../e2e-shared/mcp-client.js'
 import {
+  clickRealAt,
+  F10_KEYCODE,
   focusMainWindow,
   focusWindow,
   focusWindowAtCorner,
+  mainWindowId,
   pressRealKey,
   visibleTopLevelWindows,
 } from './helpers/x11-keys.js'
@@ -38,18 +41,186 @@ import { defaultKey } from './helpers/registry-keys.js'
 import { closeSearchDialog, getActiveMode, openSearchDialog, pollActiveMode, SEARCH_INPUT } from './search-helpers.js'
 import { waitBudget } from './wait-budget.js'
 
-/** The X windows that appeared since `before`: an open menu is one. */
-function newWindowsSince(before: readonly string[]): string[] {
-  return visibleTopLevelWindows().filter((id) => !before.includes(id))
+const TITLES = '[role="menubar"] > [role="menuitem"]'
+/** An open flyout of the bar (its submenus carry the same marker). */
+const BAR_MENU = '[role="menu"][data-command-menu="bar"]'
+
+/** What the bar shows right now, in one read: which title holds focus, which is open, and where focus is. */
+interface BarState {
+  /** The index of the title with DOM focus, or -1. */
+  focusedTitle: number
+  /** The index of the title whose menu is open, or -1. */
+  openTitle: number
+  /** How many bar flyouts are on screen. */
+  menus: number
+  /** Whether focus sits in the focused file pane. */
+  focusInPane: boolean
 }
 
-test.describe('Menu bar mnemonics while a dialog is up (Linux)', () => {
-  test.skip(os.platform() !== 'linux', 'Only the Linux bar has mnemonics')
+function barState(page: PageLike): Promise<BarState> {
+  return page.evaluate<BarState>(`(function(){
+      var titles = Array.prototype.slice.call(document.querySelectorAll(${JSON.stringify(TITLES)}));
+      var pane = document.querySelector('.file-pane.is-focused');
+      return {
+        focusedTitle: titles.indexOf(document.activeElement),
+        openTitle: titles.findIndex(function(t){ return t.getAttribute('aria-expanded') === 'true'; }),
+        menus: document.querySelectorAll(${JSON.stringify(BAR_MENU)}).length,
+        focusInPane: !!(pane && pane.contains(document.activeElement)),
+      };
+  })()`)
+}
 
-  test('a real Alt+F reaches the search dialog, and opens the File menu once it closes', async ({ tauriPage }) => {
+/** Polls until the bar reads `expected` (the fields given). */
+async function expectBar(page: PageLike, expected: Partial<BarState>): Promise<void> {
+  await expect
+    .poll(
+      async () => {
+        const state = await barState(page)
+        return Object.fromEntries(Object.keys(expected).map((key) => [key, state[key as keyof BarState]]))
+      },
+      { timeout: waitBudget(3000) },
+    )
+    .toEqual(expected)
+}
+
+/** A title's center in page coordinates, which are the main window's on this lane. */
+function titleCenter(page: PageLike, index: number): Promise<{ x: number; y: number }> {
+  return page.evaluate<{ x: number; y: number }>(`(function(){
+      var title = document.querySelectorAll(${JSON.stringify(TITLES)})[${String(index)}];
+      var r = title.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  })()`)
+}
+
+/** A row's center by its menu id, in an open bar flyout. */
+function rowCenter(page: PageLike, menuId: string): Promise<{ x: number; y: number } | null> {
+  return page.evaluate<{ x: number; y: number } | null>(`(function(){
+      var row = document.querySelector(${JSON.stringify(`${BAR_MENU} [data-menu-id="${menuId}"]`)});
+      if (!row) return null;
+      var r = row.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  })()`)
+}
+
+/** The index of the title whose menu holds `menuId`, opening each in turn by click to look. */
+async function titleHolding(page: PageLike, menuId: string): Promise<number> {
+  const count = await page.evaluate<number>(`document.querySelectorAll(${JSON.stringify(TITLES)}).length`)
+  for (let index = 0; index < count; index++) {
+    const at = await titleCenter(page, index)
+    clickRealAt(mainWindowId(), at.x, at.y)
+    await expectBar(page, { openTitle: index })
+    if ((await rowCenter(page, menuId)) !== null) return index
+    clickRealAt(mainWindowId(), at.x, at.y)
+    await expectBar(page, { menus: 0 })
+  }
+  throw new Error(`no bar menu holds \`${menuId}\``)
+}
+
+/** Lets go of the bar, whatever it holds: a failed run can leave it with the keyboard. */
+async function releaseBar(page: PageLike): Promise<void> {
+  for (let tries = 0; tries < 4; tries++) {
+    const state = await barState(page)
+    if (state.focusedTitle < 0 && state.menus === 0) return
+    focusMainWindow()
+    pressRealKey('Escape')
+  }
+}
+
+test.describe('The in-page menu bar (Linux)', () => {
+  test.skip(os.platform() !== 'linux', 'The page draws the bar off macOS; the Linux lane drives it with real X keys')
+
+  test.afterEach(async ({ tauriPage }) => {
+    await releaseBar(tauriPage)
+  })
+
+  test('a lone Alt takes the bar, the arrows walk its menus, and Escape gives focus back to the pane', async ({
+    tauriPage,
+  }) => {
+    await ensureAppReady(tauriPage)
+    await focusPane(tauriPage, 0)
+    await expectBar(tauriPage, { focusInPane: true, focusedTitle: -1, menus: 0 })
+
+    focusMainWindow()
+    pressRealKey('alt')
+    await expectBar(tauriPage, { focusedTitle: 0, menus: 0 })
+
+    pressRealKey('Right')
+    await expectBar(tauriPage, { focusedTitle: 1, menus: 0 })
+    pressRealKey('Left')
+    await expectBar(tauriPage, { focusedTitle: 0 })
+
+    pressRealKey('Down')
+    await expectBar(tauriPage, { openTitle: 0, menus: 1 })
+    pressRealKey('Right')
+    await expectBar(tauriPage, { openTitle: 1, menus: 1 })
+    pressRealKey('Left')
+    await expectBar(tauriPage, { openTitle: 0, menus: 1 })
+
+    // The two-Escape walk: the menu closes onto its title, then the bar lets go.
+    pressRealKey('Escape')
+    await expectBar(tauriPage, { openTitle: -1, menus: 0, focusedTitle: 0 })
+    pressRealKey('Escape')
+    await expectBar(tauriPage, { focusedTitle: -1, menus: 0, focusInPane: true })
+  })
+
+  test('F10 takes the bar and gives it back, and Alt plus a title’s letter opens that menu', async ({ tauriPage }) => {
+    await ensureAppReady(tauriPage)
+    await focusPane(tauriPage, 0)
+
+    focusMainWindow()
+    pressRealKey(F10_KEYCODE)
+    await expectBar(tauriPage, { focusedTitle: 0, menus: 0 })
+    pressRealKey(F10_KEYCODE)
+    await expectBar(tauriPage, { focusedTitle: -1, focusInPane: true })
+
+    // The second title's letter, as the bar announces it (`Alt+V`), so no label is read.
+    const shortcut = await tauriPage.evaluate<string | null>(
+      `document.querySelectorAll(${JSON.stringify(TITLES)})[1]?.getAttribute('aria-keyshortcuts') ?? null`,
+    )
+    expect(shortcut).toMatch(/^Alt\+.$/u)
+    focusMainWindow()
+    pressRealKey(`alt+${(shortcut ?? '').slice(-1).toLowerCase()}`)
+    await expectBar(tauriPage, { openTitle: 1, menus: 1 })
+
+    pressRealKey('Escape')
+    pressRealKey('Escape')
+    await expectBar(tauriPage, { focusedTitle: -1, menus: 0, focusInPane: true })
+  })
+
+  test('a click opens a menu, and a click on a row runs it', async ({ tauriPage }) => {
+    await ensureAppReady(tauriPage)
+    await focusPane(tauriPage, 0)
+    const hiddenAtStart = await fileExistsInFocusedPane(tauriPage, '.hidden-file')
+    const pickShowHidden = async () => {
+      await titleHolding(tauriPage, 'show_hidden_files')
+      const row = await rowCenter(tauriPage, 'show_hidden_files')
+      expect(row).not.toBeNull()
+      // A greyed row ignores a click: the page bar's rows stay live whatever window had focus last.
+      expect(
+        await tauriPage.evaluate<string | null>(
+          `document.querySelector('${BAR_MENU} [data-menu-id="show_hidden_files"]')?.getAttribute('aria-disabled') ?? null`,
+        ),
+      ).toBeNull()
+      if (row) clickRealAt(mainWindowId(), row.x, row.y)
+      await expectBar(tauriPage, { menus: 0, focusedTitle: -1 })
+    }
+    try {
+      await pickShowHidden()
+      await expect
+        .poll(() => fileExistsInFocusedPane(tauriPage, '.hidden-file'), { timeout: waitBudget(3000) })
+        .toBe(!hiddenAtStart)
+    } finally {
+      // One app serves the shard, so the setting goes back as found.
+      if ((await fileExistsInFocusedPane(tauriPage, '.hidden-file')) !== hiddenAtStart) await pickShowHidden()
+    }
+    await expect
+      .poll(() => fileExistsInFocusedPane(tauriPage, '.hidden-file'), { timeout: waitBudget(3000) })
+      .toBe(hiddenAtStart)
+  })
+
+  test('a real Alt+F reaches the search dialog and opens no menu', async ({ tauriPage }) => {
     await ensureAppReady(tauriPage)
     await ensureMcpClient(tauriPage)
-    const atStart = visibleTopLevelWindows()
     try {
       await openSearchDialog(tauriPage)
       await tauriPage.evaluate(`(function(){
@@ -67,20 +238,11 @@ test.describe('Menu bar mnemonics while a dialog is up (Linux)', () => {
       focusMainWindow()
       pressRealKey('alt+f')
       const switched = await pollActiveMode(tauriPage, 'filename', waitBudget(3000))
-      expect({ switched, menusOpened: newWindowsSince(atStart) }).toEqual({ switched: true, menusOpened: [] })
-
-      await closeSearchDialog(tauriPage)
-      expect(await getActiveMode(tauriPage)).toBeNull()
-
-      focusMainWindow()
-      pressRealKey('alt+f')
-      await expect.poll(() => newWindowsSince(atStart).length, { timeout: waitBudget(3000) }).toBeGreaterThan(0)
-
-      pressRealKey('Escape')
-      await expect.poll(() => newWindowsSince(atStart), { timeout: waitBudget(3000) }).toEqual([])
+      expect({ switched, bar: await barState(tauriPage) }).toMatchObject({
+        switched: true,
+        bar: { menus: 0, focusedTitle: -1 },
+      })
     } finally {
-      // A failed run can leave the File menu open (it grabs the keyboard) or the dialog up.
-      if (newWindowsSince(atStart).length > 0) pressRealKey('Escape')
       if ((await getActiveMode(tauriPage)) !== null) await closeSearchDialog(tauriPage)
     }
   })
@@ -91,7 +253,6 @@ test.describe('Menu bar mnemonics while a dialog is up (Linux)', () => {
     await ensureAppReady(tauriPage)
     await ensureMcpClient(tauriPage)
     expect(await moveCursorToFile(tauriPage, 'file-a.txt')).toBe(true)
-    const atStart = visibleTopLevelWindows()
     try {
       for (const target of [SHEET_SEARCH_FIELD, SHEET_FIRST_OPTION]) {
         await dispatchMenuCommand(tauriPage, 'file.multiRename')
@@ -113,22 +274,22 @@ test.describe('Menu bar mnemonics while a dialog is up (Linux)', () => {
               .poll(() => keydownsSeen(tauriPage), { timeout: waitBudget(3000) })
               .toContain(defaultKey(commandId))
             const after = {
-              menusOpened: newWindowsSince(atStart),
+              barMenus: (await barState(tauriPage)).menus,
               fieldText: await searchFieldText(tauriPage),
               toggled: (await optionStates(tauriPage)) !== before,
             }
             expect({ commandId, target, ...after }).toEqual({
               commandId,
               target,
-              menusOpened: [],
+              barMenus: 0,
               fieldText: '',
               toggled: SHEET_TOGGLES.includes(commandId),
             })
           }
         }
 
-        // Go to parent's `Alt+↑` and Go back's `Alt+←` are bar accelerators, greyed while the sheet
-        // is up, and the sheet's rows and fields use them: a greyed item's accelerator must not eat them.
+        // Go to parent's `Alt+↑` and Go back's `Alt+←` are the bar's rows' keys, and the sheet's rows
+        // and fields use them: they must reach the sheet.
         for (const [chord, seen] of [
           ['alt+Up', 'Alt+ArrowUp'],
           ['alt+Left', 'Alt+ArrowLeft'],
@@ -138,21 +299,18 @@ test.describe('Menu bar mnemonics while a dialog is up (Linux)', () => {
           focusMainWindow()
           pressRealKey(chord)
           await expect.poll(() => keydownsSeen(tauriPage), { timeout: waitBudget(3000) }).toContain(seen)
-          expect(newWindowsSince(atStart)).toEqual([])
+          expect((await barState(tauriPage)).menus).toBe(0)
         }
         await escapeOverlayUntilGone(tauriPage, SHEET)
       }
     } finally {
-      // A failed run can leave a menu open (it grabs the keyboard) or the sheet up.
-      if (newWindowsSince(atStart).length > 0) pressRealKey('Escape')
       if ((await tauriPage.count(SHEET)) > 0) await escapeOverlayUntilGone(tauriPage, SHEET)
       await removeKeyRecorder(tauriPage)
     }
   })
 
-  // The queue window wears the main bar on Linux, and its Move earlier is `Alt+↑`: no row of that
-  // bar may register a key the queue's own commands use, or GTK takes it before the page.
-  test('a real Alt+Up reaches the operation queue window, past the bar it wears', async ({ tauriPage }) => {
+  // The queue's Move earlier is `Alt+↑`, which no bar may take from it.
+  test('a real Alt+Up reaches the operation queue window', async ({ tauriPage }) => {
     await ensureAppReady(tauriPage)
     const main = tauriPage as TauriPage
     const atStart = visibleTopLevelWindows()
@@ -177,11 +335,8 @@ test.describe('Menu bar mnemonics while a dialog is up (Linux)', () => {
     }
   })
 
-  // Settings wears the main bar on Linux, whose Edit rows register Ctrl+X / C / V / A. Those keys
-  // must still edit the focused field there, whichever road carries them.
-  test('real Ctrl+A, X, V, and C edit a text field in the Settings window, past the bar it wears', async ({
-    tauriPage,
-  }) => {
+  // Settings has no bar of its own: Ctrl+X / C / V / A must still edit the focused field there.
+  test('real Ctrl+A, X, V, and C edit a text field in the Settings window', async ({ tauriPage }) => {
     await ensureAppReady(tauriPage)
     const main = tauriPage as TauriPage
     const atStart = visibleTopLevelWindows()
@@ -227,9 +382,7 @@ test.describe('Menu bar mnemonics while a dialog is up (Linux)', () => {
       pressRealKey('End')
       pressRealKey('ctrl+v')
       await expect.poll(value, { timeout: waitBudget(3000) }).toBe('xyzxyz')
-      expect(newWindowsSince(atStart)).toEqual([settingsWindow])
     } finally {
-      if (newWindowsSince(atStart).length > 1) pressRealKey('Escape')
       await settings.evaluate(`(function(){
           var el = document.querySelector(${JSON.stringify(field)});
           if (el) { el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); }
@@ -238,6 +391,11 @@ test.describe('Menu bar mnemonics while a dialog is up (Linux)', () => {
     }
   })
 })
+
+/** The X windows that appeared since `before`: a new Cmdr window is one. */
+function newWindowsSince(before: readonly string[]): string[] {
+  return visibleTopLevelWindows().filter((id) => !before.includes(id))
+}
 
 const SHEET = '[data-dialog-id="multi-rename"]'
 /** The Search field: the first plain field in the grid (the two masks sit in `.masks`). */
@@ -268,7 +426,7 @@ function toXdotoolChord(chord: string): string {
     .join('+')
 }
 
-/** Records every keydown the page sees, as `defaultKey` spells it, so a key GTK took shows as missing. */
+/** Records every keydown the page sees, as `defaultKey` spells it, so a key something else took shows as missing. */
 async function installKeyRecorder(tauriPage: PageLike): Promise<void> {
   await tauriPage.evaluate(`(function(){
       window.__keydownsSeen = [];

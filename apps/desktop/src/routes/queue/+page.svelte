@@ -378,6 +378,17 @@
         return target === document.body || target.classList.contains('queue-window')
     }
 
+    /**
+     * Select all checks the rows from anywhere in the window but a dialog or a text field (which
+     * selects its own text), as the bar's Edit > Select all always did. Off macOS no bar takes the
+     * key first, so this keydown is its only road there.
+     */
+    function selectAllHears(target: EventTarget | null): boolean {
+        if (!(target instanceof Element)) return true
+        if (target.closest('[role="dialog"], [role="alertdialog"]')) return false
+        return !(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLElement && target.isContentEditable)
+    }
+
     /** Enter and Space press a focused BUTTON natively; ⌫ and the letters belong
      *  to the row wherever focus is in it. */
     function isRowOnlyKey(action: QueueKeyAction, event: KeyboardEvent): boolean {
@@ -456,7 +467,8 @@
             if (!drag.cancel()) closeWindow()
             return
         }
-        if (!gridHears(event.target) || isRowOnlyKey(action, event)) return
+        const heard = action.kind === 'selectAll' ? selectAllHears(event.target) : gridHears(event.target)
+        if (!heard || isRowOnlyKey(action, event)) return
         if (runGridAction(action)) event.preventDefault()
     }
 
@@ -492,9 +504,9 @@
             // Remember position/size within the session so a reopen lands in place.
             unlistenRectTracking = await trackOwnRect('queue')
 
-            // ⌘A reaches this window as a menu event, never as a keydown (the
-            // accelerator fires first). The keydown road above stays for a menu
-            // that doesn't claim it (the dev browser).
+            // On macOS ⌘A reaches this window as a menu event, never as a keydown
+            // (the native bar's accelerator fires first). Off macOS no bar wears
+            // the key, so the keydown road above is its one road there.
             unlistenSelectAll = await onQueueSelectAll(() => {
                 cursor.selectAll()
             })

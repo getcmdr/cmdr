@@ -1,6 +1,6 @@
 # Menu system
 
-Native menu bars for macOS, Windows, and Linux, built from scratch in the user's language.
+macOS's native bar, the native popups, and the menus a page draws (the bar off macOS, Windows' popups).
 
 ## Module map
 
@@ -31,22 +31,22 @@ viewer bar. `macos_appkit.rs`: the objc2 boundary. One line per file: DETAILS §
   label moves through `MenuState::set_item_label`, ❌ never a bare `set_text`.
 - **Four families skip `"execute-command"`**: CheckMenuItems auto-toggle (they send `"settings-changed"` /
   `"view-mode-changed"`); sort resets its checks, then sends `"menu-sort"`; the edit items are Custom (❌ not
-  Predefined), running the text edit via `send_native_edit_action()` outside the main window, or ⌘A and the
-  clipboard die there; the VIEWER bar's four are Custom on their own `VIEWER_*` ids (Copy / Select all emit
-  `ViewerEditAction`; Cut / Paste forward to its search box, ❗ Predefined off macOS or ⌘X / ⌘V die there).
+  Predefined), their road one `edit_road` (outside the main window the focused field edits: macOS's responder chain,
+  or a page bar's `TextEdit` outcome), or ⌘A and the clipboard die there; the VIEWER bar's four are Custom on their
+  own `VIEWER_*` ids (Copy / Select all emit `ViewerEditAction`; Cut / Paste edit its search box).
 - **Enabled state has ONE writer, `apply_menu_item_states`**: store a new input in the crate's `MenuItemInputs` /
   `menu_item_enabled`, ❌ never a direct `set_enabled` (the viewer's Cut / Paste too). Greying is chrome: the guard is
   `main_window.is_focused()` in `on_menu_event`, and accelerators fire on greyed items.
-- **macOS swaps ONE app-level bar on focus-gain (`activate_window_menu`)**; Linux uses per-window menus, and
-  `window.set_menu()` is a macOS no-op. ❗ `cleanup_macos_menus`, `set_macos_menu_icons`, and `set_display_accelerators`
-  survive nothing: re-apply all three after every swap, rebuild, and recreate.
-- **Linux GTK takes a bar title's `Alt+<letter>` before the page**: a modal surface turns mnemonics off
-  (`mnemonic_mask/`); ❌ a dialog outside the gate loses those keys. DETAILS § A modal surface.
+- **Only macOS builds a native bar** (`builds_native_bar`): elsewhere a push stores its fact and stops
+  (`has_native_bar`), ❌ never fails for a missing item.
+- **macOS swaps ONE app-level bar on focus-gain (`activate_window_menu`)**. ❗ `cleanup_macos_menus`,
+  `set_macos_menu_icons`, and `set_display_accelerators` survive nothing: re-apply all three after every swap, rebuild,
+  and recreate.
 - **Every label comes from `menu_t("menu.…")`, ❌ never a literal** (muda's Predefined text is English), **and
   everything is keyed by ID, never title**. A language change rebuilds the bar (`menu-bar-rebuilt`); the frontend
   re-pushes everything.
-- **A page draws the bar off macOS** (`page_bar.rs`): every push stores its fact in `MenuState` and ends in
-  `notify_bar_changed`, ❌ or the page bar goes stale. Windows' right-click menus too (`page_context.rs`): a pick names
+- **A page draws the bar off macOS** (`page_bar.rs`; the main window's and the viewer's own): every push stores its
+  fact in `MenuState` and ends in `notify_bar_changed`, ❌ or the page bar goes stale. Windows' right-click menus too (`page_context.rs`): a pick names
   its menu's token. DETAILS § The bar a page draws.
 
 Architecture, flows, and decisions: `DETAILS.md`. Read it before any non-trivial work here: editing, planning,

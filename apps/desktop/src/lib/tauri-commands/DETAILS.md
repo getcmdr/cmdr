@@ -138,6 +138,9 @@ commands, and notable non-obvious placements.
   `menu-bar-changed`, then asks `get_menu_bar`, and keeps the revision contract of `src-tauri/src/menu/DETAILS.md` §
   "The bar a page draws"; applies a change through `lib/ui/command-menu/bar-change.ts`), `pickMenuBarItem`,
   `getViewerMenuBar`, `openContextMenuInPage`, `pickContextMenuItem`. `lib/ui/DETAILS.md` § Command menus draws them.
+  `popContextMenu(request, native)` is the one fork every `show_*` wrapper takes (the native command, or the in-page
+  rows drawn by the window's `registerContextMenuDrawer`), resolving once the menu is gone and its pick ran:
+  `lib/context-menu/DETAILS.md`.
 - **`function-key-bar.ts`**: the function key bar's one-item context menu: `showFunctionKeyBarContextMenu`,
   `onFunctionKeyBarHideRequested` (payload-less; the frontend owns the setting write and the toast).
 - **`clipboard-files.ts`**: clipboard file operations: copy/cut files to system clipboard, read/paste, clear cut state.

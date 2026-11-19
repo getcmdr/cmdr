@@ -241,7 +241,7 @@ Xfce and MATE have no current HIG covering it).
 - **Removed**: muda's bar on Windows and Linux (`menu_bar_builder.rs` builds it on macOS only), `menu/mnemonic_mask/`
   and its IPC command, `menu-mnemonics-capture.svelte.ts`, `get_menu_bar_title_mnemonics` and Settings' title-mnemonic
   warning (replaced by the bar's own letters reserving around a scope's Alt keys, as `keyScope` does for dialogs), and
-  `menu-mnemonic-mask.spec.ts`.
+  `menu-mnemonic-mask.spec.ts` (step 6 renamed it `menu-bar.spec.ts`, which now drives the in-page bar).
 - Steps and sizes: the plan's task 63 entry.
 
 ## Left open (QA, not decisions)

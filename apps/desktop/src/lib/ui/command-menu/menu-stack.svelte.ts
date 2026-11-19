@@ -41,6 +41,12 @@ export interface OpenOptions {
   fromEnd?: boolean
   label?: string
   labelledBy?: string
+  /**
+   * The element that keeps DOM focus while the menu is up (a text field's edit menu): the rows
+   * never take it, the cursor reaches a screen reader as its `aria-activedescendant`, so the
+   * field never blurs.
+   */
+  focusHolder?: HTMLElement
 }
 
 export interface MenuStackDeps {
@@ -62,6 +68,8 @@ export const DESKTOP_SUBMENU_DELAY_MS = 400
 export interface MenuStack {
   readonly surfaces: readonly StackSurface[]
   readonly isOpen: boolean
+  /** `OpenOptions.focusHolder` of the open menu, or null where the rows hold focus themselves. */
+  readonly focusHolder: HTMLElement | null
   /**
    * The surface the keyboard is in: the deepest one with a cursor. A submenu the pointer only
    * hovered open has none, so the keys still walk its parent (and close it), as on Windows.
@@ -95,6 +103,7 @@ let nextSurfaceId = 0
 
 export function createMenuStack(deps: MenuStackDeps): MenuStack {
   let surfaces = $state<StackSurface[]>([])
+  let focusHolder = $state<HTMLElement | null>(null)
   let pending: ReturnType<typeof setTimeout> | null = null
 
   const delay = (): number => (deps.flavor() === 'desktop' ? DESKTOP_SUBMENU_DELAY_MS : 0)
@@ -189,6 +198,9 @@ export function createMenuStack(deps: MenuStackDeps): MenuStack {
     get isOpen() {
       return surfaces.length > 0
     },
+    get focusHolder() {
+      return focusHolder
+    },
     get activeDepth() {
       return activeDepth()
     },
@@ -196,6 +208,7 @@ export function createMenuStack(deps: MenuStackDeps): MenuStack {
       cancelPending()
       const surface = build(rows, null, anchor, options)
       if (options.fromKeyboard) setHighlight(surface, edgeLive(rows, !options.fromEnd), 'keyboard')
+      focusHolder = options.focusHolder ?? null
       surfaces = [surface]
       // The proxy, so later writes to its cursor are seen.
       return surfaces[0]
@@ -203,6 +216,7 @@ export function createMenuStack(deps: MenuStackDeps): MenuStack {
     close() {
       cancelPending()
       surfaces = []
+      focusHolder = null
     },
     walk(step) {
       const depth = activeDepth()

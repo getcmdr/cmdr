@@ -16,7 +16,8 @@
 //!   macOS `FileContextInfo` is `context_menu_facts.rs`'s.
 //! - `menu_items.rs`: the crate's labels resolved in the native language (`pin_tab_label`,
 //!   `same_kind_menu_label`, `undo_trash_menu_label`), and `detach_word_for_volume_id`.
-//! - `menu_structure.rs`: the viewer window's menu bar.
+//! - `menu_structure.rs` (macOS): the viewer window's native menu bar. Elsewhere the viewer page
+//!   draws its own (`get_viewer_menu_bar`).
 //! - `date_sort_menu.rs`: the header Sort by popup's pick event (`DateSortMenuPick`).
 //! - `item_states.rs`: `apply_menu_item_states` (the single writer of every main-menu item's
 //!   enabled state, over `cmdr_menu::enabled`), `set_menu_context`, and the macOS app-menu-bar swap
@@ -78,6 +79,7 @@ pub(crate) mod macos_appkit;
 mod menu_bar_builder;
 mod menu_handlers;
 mod menu_items;
+// The viewer's native bar: macOS only (the file says so itself); elsewhere the viewer page draws it.
 mod menu_structure;
 mod mnemonic_mask;
 mod mnemonics;
@@ -144,7 +146,7 @@ pub use file_context_menu::build_context_menu;
 pub(crate) use item_states::{apply_menu_item_states, set_menu_context};
 #[cfg(target_os = "macos")]
 pub(crate) use item_states::{note_viewer_search_focus, swap_to_main_menu, swap_to_viewer_menu};
-pub use menu_bar_builder::{BarTitleMnemonic, bar_title_mnemonics, build_menu};
+pub use menu_bar_builder::build_menu;
 pub use menu_handlers::handle_menu_event;
 pub(crate) use menu_handlers::native_edit_selector_for_viewer_page;
 #[cfg(target_os = "macos")]
@@ -156,7 +158,6 @@ pub use menu_handlers::{
 };
 pub(crate) use menu_items::{DetachWord, detach_word_for_volume_id};
 pub use menu_items::{SameKindTarget, TrashUndoTarget, pin_tab_label, same_kind_menu_label, undo_trash_menu_label};
-pub use menu_structure::build_viewer_menu;
 pub(crate) use mnemonic_mask::set_window_mnemonics_suspended;
 pub use rebuild::rebuild_menu_bar;
 #[cfg(target_os = "macos")]
@@ -238,50 +239,6 @@ pub enum ActiveMenuKind {
     #[default]
     Main,
     Viewer,
-}
-
-/// The viewer menu plus the item refs captured at build time.
-///
-/// On macOS the viewer menu is built once at startup and shared across all viewer windows. Holding
-/// the refs lets `viewer_set_word_wrap` update the checkbox, and `apply_menu_item_states` grey the
-/// two Edit items, in O(1) instead of walking the menu tree.
-pub struct ViewerMenuItems<R: Runtime> {
-    pub menu: Menu<R>,
-    /// Only read on macOS: the viewer app-menu swap is macOS-only, and `lib.rs` captures this ref
-    /// under `#[cfg(target_os = "macos")]` for `viewer_set_word_wrap`. On Linux the field is built
-    /// but never read, so allow dead_code off macOS to keep the `deny(dead_code)` Linux build green.
-    #[cfg_attr(
-        not(target_os = "macos"),
-        allow(
-            dead_code,
-            reason = "viewer word-wrap menu swap is macOS-only; the field is built but never read on Linux"
-        )
-    )]
-    pub word_wrap: CheckMenuItem<R>,
-    /// Go > Back and Go > Forward, greyed with the front viewer's history. Read on macOS only,
-    /// like `word_wrap`: on Linux each window builds its own menu and the items stay as built.
-    #[cfg_attr(
-        not(target_os = "macos"),
-        allow(
-            dead_code,
-            reason = "the viewer bar's enabled state is macOS-only; built but never read on Linux"
-        )
-    )]
-    pub go_back: MenuItem<R>,
-    #[cfg_attr(
-        not(target_os = "macos"),
-        allow(
-            dead_code,
-            reason = "the viewer bar's enabled state is macOS-only; built but never read on Linux"
-        )
-    )]
-    pub go_forward: MenuItem<R>,
-    /// The Edit submenu's Cut and Paste, which are Custom items on macOS alone (elsewhere they
-    /// stay Predefined, because forwarding the native selector needs the responder chain).
-    #[cfg(target_os = "macos")]
-    pub edit_cut: MenuItem<R>,
-    #[cfg(target_os = "macos")]
-    pub edit_paste: MenuItem<R>,
 }
 
 /// Context for the current menu selection.
@@ -442,7 +399,7 @@ pub struct MenuState<R: Runtime> {
     pub view_mode_right: Mutex<ViewMode>,
     /// Cached view-mode shortcuts. Frontend pushes updates via `update_menu_accelerator`.
     /// Defaults are the left pane's accelerators in `cmdr_menu::bar` on this platform
-    /// (`menu_bar::spec_accelerator`): Cmd+1 / Cmd+2 on macOS, Ctrl+1 / Ctrl+2 on Linux.
+    /// (`menu_bar::spec_accelerator`): Cmd+1 / Cmd+2 on macOS, Ctrl+F2 / Ctrl+F1 on Windows (TC's), Ctrl+1 / Ctrl+2 on Linux.
     pub view_mode_full_accel: Mutex<Option<String>>,
     pub view_mode_brief_accel: Mutex<Option<String>>,
     /// Pin/unpin tab menu item (label toggles based on active tab state)
@@ -653,6 +610,9 @@ impl<R: Runtime> MenuState<R> {
     /// ❗ On macOS the caller must follow with `set_display_accelerators`: `set_text` replaces the
     /// `NSMenuItem`'s attributed title with a plain one, and the dimmed glyph goes with it.
     pub fn set_item_label(&self, menu_id: &str, label: String) -> Result<(), String> {
+        if !self.has_native_bar() {
+            return Ok(());
+        }
         let shortcut = match self.display_accelerators.lock_ignore_poison().get(menu_id) {
             Some(rebound) => rebound.clone(),
             None => menu_bar::spec_display_accelerator(menu_id, Platform::current()).map(str::to_string),
@@ -699,6 +659,22 @@ impl<R: Runtime> MenuState<R> {
         self.display_accelerators.lock_ignore_poison().clear();
         *self.sort_submenu.lock_ignore_poison() = Some(items.sort_submenu);
         items.menu
+    }
+}
+
+/// Whether this desktop's menus live in a native bar (`MenuModel::SystemMenuBar`: macOS). Everywhere
+/// else the page draws the bar (`page_bar.rs`), so no native bar is built and every push only stores
+/// its fact for the page. Asked of the convention, ❌ never the platform, as the frontend does.
+pub fn builds_native_bar() -> bool {
+    crate::platform::conventions().menu_model == crate::platform::MenuModel::SystemMenuBar
+}
+
+impl<R: Runtime> MenuState<R> {
+    /// Whether a native bar was built and its handles stored (`store_item_refs` stores them all at
+    /// once, so one stands for every one). False where the page draws the bar ([`builds_native_bar`]):
+    /// the pushes that write native items then stop after storing their fact.
+    pub fn has_native_bar(&self) -> bool {
+        self.show_hidden_files.lock_ignore_poison().is_some()
     }
 }
 

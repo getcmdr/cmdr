@@ -12,6 +12,10 @@ orchestration, and background search. Reusable FE primitives live at `apps/deskt
 Per-file inventory for the route. Locate symbols via `codegraph_search`; this is the orientation layer.
 
 - **`+page.svelte`**: top-level component (lifecycle, window management, UI).
+- **`ViewerMenuBar.svelte`**: the window's in-page menu bar off macOS (`pageDrawsMenuBar()`), asked of
+  `get_viewer_menu_bar` again whenever word wrap, the history steps (`viewer-navigation.svelte.ts`'s `canGoBack` /
+  `canGoForward`), or the search box's focus move; a pick goes through `pick_menu_bar_item` to this viewer's lanes.
+  macOS's shared native bar follows the same state through the `viewer_set_*` pushes.
 - **`ViewerRow.svelte`**: one rendered ROW: the gutter number (only where a line starts), the text split into
   search-highlight and selection spans, and the continuation marker. See § "Rows, not lines".
 - **`RawByteView.svelte` / `raw-byte-view.ts`**: bounded raw-byte window, fixed-width binary and hex formatting, and a

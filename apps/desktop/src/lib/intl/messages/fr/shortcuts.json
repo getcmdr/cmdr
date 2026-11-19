@@ -120,10 +120,6 @@
   "@shortcuts.conflict.takenByLinuxDesktops": {
     "sourceHash": "8aefc0b"
   },
-  "shortcuts.conflict.opensMenuBarMenu": "{combo} ouvre le menu {menu} de la barre des menus de Cmdr, donc ce raccourci n’atteindra cette commande que si une boîte de dialogue est ouverte.",
-  "@shortcuts.conflict.opensMenuBarMenu": {
-    "sourceHash": "f4b330a"
-  },
   "shortcuts.system.spotlight": "Spotlight",
   "@shortcuts.system.spotlight": {
     "sourceHash": "fca7aa8",

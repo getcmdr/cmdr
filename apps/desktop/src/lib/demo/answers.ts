@@ -114,7 +114,6 @@ export const appAnswers = {
   getIsolatedStorePath: none,
   whatsNewDevOverride: none,
   // The viewer window's native-menu plumbing: a panel has no native menu to sync.
-  viewerSetupMenu: none,
   viewerSetWordWrap: none,
   viewerSetSearchInputFocused: none,
   viewerSetHistoryState: none,
@@ -256,4 +255,8 @@ export const appAnswers = {
     coveredQualifyingCount: null,
     keptCount: null,
   }),
+  // The demo draws its own bar (`menu-bar.svelte.ts`), the page's one, so the app's in-page bars
+  // get no rows: they draw nothing, and their windows fire no bar keys.
+  getMenuBar: () => ({ revision: 1, menus: [] }),
+  getViewerMenuBar: () => [],
 } satisfies AnswerTable

@@ -29,11 +29,6 @@ impl Mnemonics {
         Self::default()
     }
 
-    /// The lowercased letters handed out so far, in the order they were.
-    pub(crate) fn taken(&self) -> &[char] {
-        &self.taken
-    }
-
     /// `label` with a mnemonic marker if this platform uses them, unchanged
     /// otherwise.
     pub(crate) fn assign(&mut self, label: &str) -> String {

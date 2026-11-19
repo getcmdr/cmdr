@@ -36,15 +36,13 @@ use tauri_specta::Event as _;
 #[specta::specta]
 pub fn toggle_hidden_files<R: Runtime>(app: AppHandle<R>) -> Result<bool, String> {
     let menu_state = app.state::<MenuState<R>>();
-    // A handle, ❌ not the guard: the MCP tool calls this off the main thread (`cloned_handle`).
-    let Some(check_item) = cloned_handle(&menu_state.show_hidden_files) else {
-        return Err("Menu not initialized".to_string());
-    };
-
-    // Get current state and toggle it
-    let current = check_item.is_checked().unwrap_or(false);
-    let new_state = !current;
-    check_item.set_checked(new_state).map_err(|e| e.to_string())?;
+    // The stored check is the truth on every platform; the native item, where one is built,
+    // follows it. A handle, ❌ not the guard: the MCP tool calls this off the main thread
+    // (`cloned_handle`).
+    let new_state = !menu_state.show_hidden_checked.load(Ordering::Relaxed);
+    if let Some(check_item) = cloned_handle(&menu_state.show_hidden_files) {
+        check_item.set_checked(new_state).map_err(|e| e.to_string())?;
+    }
     menu_state.show_hidden_checked.store(new_state, Ordering::Relaxed);
     notify_bar_changed(&app);
 
@@ -143,8 +141,9 @@ pub fn update_pin_tab_menu<R: Runtime>(app: AppHandle<R>, is_pinned: bool) -> Re
     let menu_state = app.state::<MenuState<R>>();
     menu_state.pin_tab_pinned.store(is_pinned, Ordering::Relaxed);
     notify_bar_changed(&app);
+    // No native bar (the page draws it): the stored fact is all there is to write.
     let Some(item) = cloned_handle(&menu_state.pin_tab) else {
-        return Err("Menu not initialized".to_string());
+        return Ok(());
     };
     item.set_text(crate::menu::pin_tab_label(is_pinned))
         .map_err(|e| e.to_string())
@@ -250,8 +249,9 @@ pub fn set_reopen_closed_tab_enabled<R: Runtime>(app: AppHandle<R>, enabled: boo
 ///   the main menu (if a different menu is installed), then enable all explorer items.
 /// - `"viewer"`: a viewer window gained focus. On macOS, swap to the shared viewer menu. No-op on
 ///   Linux (viewer windows carry their own per-window menu).
-/// - `"other"`: Settings or Debug gained focus. On macOS, swap to the main menu, then disable
-///   explorer items (Settings / Debug reuse the main menu with items greyed out).
+/// - `"other"`: Settings or Debug gained focus, or the main window lost it. On macOS, swap to the
+///   main menu, then disable explorer items (Settings / Debug reuse the main menu with items greyed
+///   out). Where the page draws the bar it's the main window's own, so nothing greys.
 ///
 /// On macOS the menu bar is app-level (one bar, tauri-apps/tauri#5768), so we swap it via
 /// `app.set_menu()` on focus-gain. `active_menu_kind` tracks the installed menu so we skip redundant
@@ -281,6 +281,12 @@ pub fn activate_window_menu<R: Runtime>(app: AppHandle<R>, kind: String) -> Resu
         "other" => {
             #[cfg(target_os = "macos")]
             swap_to_main_menu(&app);
+            // Only a native bar is the window in front's: a page bar is the main window's own, so
+            // its file-scoped rows stay live while another window has focus (a click on it focuses
+            // the main window first), as a Win32 or GTK window's own bar does.
+            if !crate::menu::builds_native_bar() {
+                return Ok(());
+            }
             set_menu_context(app, "other".to_string())
         }
         other => Err(format!("Unknown window menu kind: {other}")),
@@ -347,15 +353,6 @@ pub fn set_commands_refused_over_dialog<R: Runtime>(app: AppHandle<R>, command_i
 #[specta::specta]
 pub fn set_menu_mnemonics_suspended(window: tauri::Window, suspended: bool) {
     crate::menu::set_window_mnemonics_suspended(&window, suspended);
-}
-
-/// The menu bar titles' mnemonics in the active language (`Alt+F` opens File in English), for
-/// Settings' warning when a user records one for a command outside a modal surface: there GTK
-/// takes the key before the page. Empty where the bar has none (macOS).
-#[tauri::command]
-#[specta::specta]
-pub fn get_menu_bar_title_mnemonics() -> Vec<crate::menu::BarTitleMnemonic> {
-    crate::menu::bar_title_mnemonics(cmdr_menu::spec::Platform::current())
 }
 
 /// The main menu bar for a page that draws it (off macOS, the in-window bar): every menu and row,

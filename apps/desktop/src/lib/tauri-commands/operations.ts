@@ -31,6 +31,7 @@ import type {
   WriteProgressEvent,
   WriteSourcesGoneEvent,
 } from '#lib/ipc/bindings.js'
+import { popContextMenu } from './in-page-menus'
 
 export type {
   LockedSourcesAnswer,
@@ -212,15 +213,18 @@ export async function onQueueSelectAll(callback: () => void): Promise<UnlistenFn
   })
 }
 
-/** Pops a queue row's native right-click menu at the pointer. `entries` is the
- *  window's own list (`queue-row-menu.ts`); `shortcuts` labels each item with its
- *  key, from `boundShortcuts()`. The pick arrives through `onQueueRowContextAction`. */
+/** Pops a queue row's right-click menu at the pointer, native or in-page by the platform
+ *  (`popContextMenu`). `entries` is the window's own list (`queue-row-menu.ts`); `shortcuts`
+ *  labels each item with its key, from `boundShortcuts()`. The pick arrives through
+ *  `onQueueRowContextAction`. */
 export async function showQueueRowContextMenu(
   entries: QueueRowMenuEntry[],
   shortcuts: Record<string, string>,
 ): Promise<void> {
-  const res = await commands.showQueueRowContextMenu(entries, shortcuts)
-  if (res.status === 'error') throwIpcError(res.error)
+  await popContextMenu({ menu: 'queueRow', entries, shortcuts }, async () => {
+    const res = await commands.showQueueRowContextMenu(entries, shortcuts)
+    if (res.status === 'error') throwIpcError(res.error)
+  })
 }
 
 /** An item picked from a queue row's right-click menu. Returns an `UnlistenFn`. */

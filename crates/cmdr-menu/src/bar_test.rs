@@ -342,8 +342,8 @@ menu menu.bar.select
   8 item compare_directories menu.select.compareDirectories (Shift+F2) tracked
 menu menu.bar.view
   0 submenu menu.view.leftPane pane:left
-      0 check view_mode_full_left menu.view.fullView [Ctrl+1] view-mode:left:full
-      1 check view_mode_brief_left menu.view.briefView [Ctrl+2] view-mode:left:brief
+      0 check view_mode_full_left menu.view.fullView [Ctrl+F2] view-mode:left:full
+      1 check view_mode_brief_left menu.view.briefView [Ctrl+F1] view-mode:left:brief
   1 submenu menu.view.rightPane pane:right
       0 check view_mode_full_right menu.view.fullView view-mode:right:full
       1 check view_mode_brief_right menu.view.briefView view-mode:right:brief

@@ -83,7 +83,6 @@ export {
   viewerSearchCancel,
   viewerGetStatus,
   viewerClose,
-  viewerSetupMenu,
   viewerSetWordWrap,
   viewerSetSearchInputFocused,
   viewerSetHistoryState,
@@ -223,7 +222,6 @@ export {
   showChildWindow,
   updateMenuAccelerator,
   setUiLanguage,
-  getMenuBarTitleMnemonics,
 } from './app-state'
 export type { PaneFileEntry, PaneState, McpTabInfo, RequestedSort, SelectedRows, ServicesSelection } from './app-state'
 
@@ -920,6 +918,7 @@ export {
   openContextMenuInPage,
   pickContextMenuItem,
   pickMenuBarItem,
+  registerContextMenuDrawer,
 } from './in-page-menus'
 
 // Function key bar context menu

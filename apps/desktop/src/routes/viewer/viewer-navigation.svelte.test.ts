@@ -143,4 +143,16 @@ describe('createViewerNavigation', () => {
     navigation.pushHistoryState({ force: true })
     expect(setHistoryStateMock).toHaveBeenCalledWith(true, false)
   })
+
+  it('tells this window’s own page bar every step, focused or not', async () => {
+    const { navigation } = setup()
+    expect({ back: navigation.canGoBack, forward: navigation.canGoForward }).toEqual({ back: false, forward: false })
+    vi.spyOn(document, 'hasFocus').mockReturnValue(false)
+    link({ kind: 'file', path: '/docs/setup.md', elementId: null })
+    await navigation.followLink('setup.md')
+    expect({ back: navigation.canGoBack, forward: navigation.canGoForward }).toEqual({ back: true, forward: false })
+
+    await navigation.step('back')
+    expect({ back: navigation.canGoBack, forward: navigation.canGoForward }).toEqual({ back: false, forward: true })
+  })
 })

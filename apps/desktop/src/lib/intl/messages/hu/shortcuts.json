@@ -121,10 +121,6 @@
   "@shortcuts.conflict.takenByLinuxDesktops": {
     "sourceHash": "8aefc0b"
   },
-  "shortcuts.conflict.opensMenuBarMenu": "{combo}: ez megnyit egy menüt a Cmdr menüsorában ({menu}), ezért csak akkor jut el ehhez a parancshoz, ha egy párbeszédablak nyitva van.",
-  "@shortcuts.conflict.opensMenuBarMenu": {
-    "sourceHash": "f4b330a"
-  },
   "shortcuts.system.spotlight": "Spotlight",
   "@shortcuts.system.spotlight": {
     "sourceHash": "fca7aa8",
