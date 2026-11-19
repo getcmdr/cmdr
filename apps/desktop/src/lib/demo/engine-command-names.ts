@@ -60,6 +60,7 @@ export const LISTING_ENGINE_COMMANDS = [
   'search_files',
   'search_files_streaming',
   'cancel_search',
+  'is_search_run_live',
   'release_search_index',
   'parse_search_scope',
   'get_system_dir_excludes',
@@ -98,6 +99,21 @@ export const LISTING_ENGINE_COMMANDS = [
   'rename_multi_rename_preset',
   'update_multi_rename_preset',
   'move_multi_rename_preset',
+  // `go_to.rs`'s `GO_TO_COMMANDS`
+  'resolve_go_to_path',
+  'get_recent_paths',
+  'add_recent_path',
+  'remove_recent_path',
+  'clear_recent_paths',
+  // `folder_count.rs`'s `FOLDER_COUNT_COMMANDS`
+  'count_folder_sizes',
+  'cancel_folder_size_count',
+  // `selection_recents.rs`'s `SELECTION_RECENTS_COMMANDS`
+  'get_recent_selections',
+  'add_recent_selection',
+  'remove_recent_selection',
+  'clear_recent_selections',
+  'apply_recent_selections_max_count',
   // `operations_host/commands/transfers.rs`'s `NAMES`
   'copy_between_volumes',
   'move_between_volumes',
@@ -152,6 +168,7 @@ export const LISTING_ENGINE_COMMANDS = [
   'start_operation_log_tree_backfill',
   'cancel_operation_log_tree_backfill',
   'get_operation_log_tree',
+  'set_operation_log_enabled',
 ] as const
 
 /** What the menu bar's engine answers: the menu-state pushes (`menu.rs`), then the `show_*` popups (`context_menu.rs`). */

@@ -66,7 +66,6 @@ const SERVICES = 'no license server, updater, report upload, or newsletter from 
 const LIFECYCLE = "a page can't quit, relaunch, or wipe its tab"
 const DEV = 'developer and diagnostics tooling (MCP, logs, debug fixtures) the demo has no backend for'
 const SUBSYSTEM_SETTING = "a setting pushed to a backend subsystem the demo doesn't run"
-const UNANSWERED_GAP = 'a visitor reaches it and the demo has no answer yet: a known dead end'
 const IN_PAGE_MENUS =
   "the demo draws its bar and menus itself (`menu-bar.svelte.ts`, `context-menu.ts`); answer these from `DemoMenuBar` once the app's own in-page bar asks them (task 63 steps 6 and 7)"
 
@@ -356,21 +355,6 @@ export const notInDemo = {
   setLowDiskSpaceConfig: SUBSYSTEM_SETTING,
   setShowSafeSaveFilesCmd: SUBSYSTEM_SETTING,
   setShowStagingTempFilesCmd: SUBSYSTEM_SETTING,
-  // Reachable in the demo and not answered yet: each is a dead end today.
-  setOperationLogEnabled: UNANSWERED_GAP,
-  isSearchRunLive: UNANSWERED_GAP,
-  resolveGoToPath: UNANSWERED_GAP,
-  getRecentPaths: UNANSWERED_GAP,
-  addRecentPath: UNANSWERED_GAP,
-  removeRecentPath: UNANSWERED_GAP,
-  clearRecentPaths: UNANSWERED_GAP,
-  getRecentSelections: UNANSWERED_GAP,
-  addRecentSelection: UNANSWERED_GAP,
-  removeRecentSelection: UNANSWERED_GAP,
-  clearRecentSelections: UNANSWERED_GAP,
-  applyRecentSelectionsMaxCount: UNANSWERED_GAP,
-  countFolderSizes: UNANSWERED_GAP,
-  cancelFolderSizeCount: UNANSWERED_GAP,
   // The in-page menus' commands (D5)
   getMenuBar: IN_PAGE_MENUS,
   getViewerMenuBar: IN_PAGE_MENUS,

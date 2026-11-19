@@ -68,6 +68,59 @@ test.describe('Browser demo', () => {
     await expect(dialog.getByText('Annual report.pdf')).toHaveCount(0)
     await expect(emptyState).toBeVisible()
     await expect(page.locator(':focus')).toHaveValue('')
+  // Go to folder (⌘G, Ctrl+G) runs the desktop's own resolution in the WASM module (`go_to.rs` over
+  // `cmdr_fs::go_to_path`): a typed folder navigates, a missing one lands on its nearest folder with
+  // the app's toast, and the jump lands in the dialog's recents.
+  test('goes to a typed folder, and to the nearest one for a path that isn’t there', async ({ page }) => {
+    const errors = collectPageErrors(page)
+    await page.goto('/demo/')
+    const pane = page.locator('.file-pane').first()
+    await expect(pane.locator('.file-entry').nth(1)).toBeVisible({ timeout: 30_000 })
+    const { mod } = await visitorOf(page)
+    const dialog = page.getByRole('dialog')
+    const openGoTo = async () => {
+      await expect(async () => {
+        if (!(await dialog.isVisible())) await page.keyboard.press(`${mod}+g`)
+        await expect(dialog).toBeVisible({ timeout: 1_000 })
+      }).toPass({ timeout: 10_000 })
+    }
+
+    await openGoTo()
+    await page.keyboard.type('~/Downloads')
+    await page.keyboard.press('Enter')
+    await expect(dialog).toHaveCount(0)
+    await expect(pane.locator('.file-entry[data-filename="Cmdr.dmg"]')).toBeVisible()
+
+    await openGoTo()
+    // The first jump is a recent now.
+    await expect(dialog.getByText('/Users/you/Downloads')).toBeVisible()
+    await page.keyboard.type('~/Documents/not-here/deeper')
+    await page.keyboard.press('Enter')
+    await expect(dialog).toHaveCount(0)
+    await expect(page.locator('.toast').getByText(/doesn’t exist, so we took you to/)).toBeVisible()
+    await expect(pane.locator('.file-entry[data-filename="Annual report.pdf"]')).toBeVisible()
+    expect(errors.map((error) => error.message)).toEqual([])
+  })
+
+  // "Calculate folder sizes": every folder's size is already the engine's exact fold, so the count
+  // ends at once with nothing to walk, as a Mac with a full index does, and nothing goes unanswered.
+  test('calculates folder sizes quietly, as over a fully indexed disk', async ({ page }) => {
+    const errors = collectPageErrors(page)
+    await page.goto('/demo/')
+    const pane = page.locator('.file-pane').first()
+    await expect(pane.locator('.file-entry').nth(1)).toBeVisible({ timeout: 30_000 })
+    await pane.click()
+    await page.keyboard.press('Alt+Shift+Enter')
+    // The afterEach fails on any command left unanswered; give the count its round trip first.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const demo = (window as unknown as { __cmdrDemo?: { unanswered: Map<string, number> } }).__cmdrDemo
+          return demo ? demo.unanswered.size : -1
+        }),
+      )
+      .toBe(0)
+    expect(errors.map((error) => error.message)).toEqual([])
   })
 
   // Each visitor gets their own OS's bar and look (task 63 step 11 of `docs/specs/windows-port-plan.md`):

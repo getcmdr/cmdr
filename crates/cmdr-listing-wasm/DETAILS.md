@@ -267,6 +267,27 @@ store (`InMemoryVolume::subtree_totals`, counting the way `cmdr-index`'s aggrega
     fix is the demo's alone. A test waiting on a pane's row after a write waits for the event, not the settle
     (`folder_sizes_test.rs`'s `heard_size`).
 - **Physical size** is each file's `physical_size`, or its logical size where the store models none.
+- **"Calculate folder sizes"** (`folder_count.rs`, `count_folder_sizes`): the fold stands in for an enabled index, so
+  the desktop's plan over an index-covered volume (`listing_index_sizes::count::plan`: folder rows, no links, with no
+  size yet) picks nothing, and the count answers `counted: 0` at once, as a Mac with a full index does. A row the fold
+  had missed would get its size through the listing's `refresh_index_sizes`. No walk runs past the call, so
+  `cancel_folder_size_count` answers `false`.
+
+## Go to path
+
+`go_to.rs`'s `DemoGoTo` answers the go-to dialog (⌘G / Ctrl+G) by the desktop's rules, shared: `cmdr_fs::go_to_path`
+(`resolve_with`, the classification both hosts call; the desktop's `go_to_path::resolve` runs it over the local disk).
+
+- **Two passes**: the classifier asks what's at a path synchronously and the volume answers asynchronously, so a first
+  pass with nothing found collects every path it could ask (the target and each ancestor), those are read (links
+  followed, as `metadata` follows them: `InMemoryVolume::canonicalize`, then `get_metadata`), and the second pass
+  classifies over the answers.
+- `~` is the tree's `home`; spelling is POSIX. No archive branch: the demo browses no archives.
+- **Recent paths** (`get_recent_paths`, `add_recent_path`, `remove_recent_path`, `clear_recent_paths`) last the session,
+  by `cmdr-recents`' rules over the resolved path, capped at 10 (the desktop's `MAX_RECENTS`).
+- **The Selection dialog's recent selections** (`selection_recents.rs`) likewise: in memory for the visit, by
+  `cmdr-recents`' rules over the desktop's four-segment key, built from the same `cmdr_search::history` parts. The entry
+  is a wire mirror of the app's `SelectionHistoryEntry` (its keys pinned against `bindings.ts`).
 
 ## Search
 
@@ -411,7 +432,10 @@ from the computer. Nothing leaves the page.
   `InMemoryVolume::canonicalize` (the tree's `symlinkTarget`s, stored by `tree.rs`) where the desktop calls `realpath`,
   with exact-case names, so a scope spelled in another case through a link stays the literal (still matched
   case-insensitively, but as the link, a leaf); no AI (`getAiStatus` answers unavailable, so the dialog's AI mode stays
-  off as on a Mac with AI off); no importance weights, so ties rank by name and id alone.
+  off as on a Mac with AI off); no importance weights, so ties rank by name and id alone. A live run ends inside
+  `search_files_streaming`, so `is_search_run_live` answers `false` by the time anyone asks (`cmdr_search`'s registry).
+- **Settings' operation-log toggle** (`set_operation_log_enabled`) is live on the engine's log (`set_recording`), as on
+  the desktop.
 - **Multi-Rename** (`multi_rename.rs`, § Multi-Rename): no media reads (every media field reads as couldn't-read), no
   Results, presets and history in memory, and every call runs inline with none of the desktop's IPC deadlines or preview
   budget.

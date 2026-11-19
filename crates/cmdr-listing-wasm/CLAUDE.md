@@ -15,8 +15,10 @@ The engine's second host, beside `apps/desktop/src-tauri/src/listing_host/`. Not
   § Multi-Rename). `about.rs`: "Tell me about this" (`cmdr-about`, identity and real type, streamed on the page's
   `Channel`; DETAILS § Tell me about this). `search.rs`: ⌘F (`cmdr-search` over the same volume, sized by the fold;
   DETAILS § Search). `imports.rs`: files dropped in from the computer, staged under `/.drops/` within a 10 MB per-visit
-  budget (DETAILS § Files dropped in from the computer). `invoke.rs`: the args/answer JSON helpers every command family
-  shares, a leaf so no family imports `commands.rs`. `bindings.rs` (wasm only): the `wasm-bindgen` API.
+  budget (DETAILS § Files dropped in from the computer). `go_to.rs`: ⌘G by `cmdr_fs::go_to_path`, recents in memory;
+  `selection_recents.rs`: the Selection dialog's recents; `folder_count.rs`: "Calculate folder sizes" over the fold
+  (DETAILS § Go to path, § Folder sizes). `invoke.rs`: the args/answer JSON helpers every command family shares, a leaf
+  so no family imports `commands.rs`. `bindings.rs` (wasm only): the `wasm-bindgen` API.
 - `operations_host/`: the write engine's host (seams, sinks, `wire.rs` event names, `commands/` by domain), on the same
   volume and `Listings` the listing engine uses. DETAILS § Writes.
 - `smoke.mjs` (+ `smoke-writes.mjs`, `smoke-multi-rename.mjs`, `smoke-viewer.mjs`): loads the built module in Node and

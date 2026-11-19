@@ -24,7 +24,9 @@ mod bindings;
 pub mod commands;
 pub mod context_menu;
 pub mod events;
+pub mod folder_count;
 pub mod folder_sizes;
+pub mod go_to;
 pub mod imports;
 mod invoke;
 pub mod menu;
@@ -33,6 +35,7 @@ pub mod operations_host;
 #[cfg(target_family = "wasm")]
 mod rt_self_test;
 pub mod search;
+pub mod selection_recents;
 pub mod tree;
 pub mod viewer;
 
@@ -47,7 +50,11 @@ mod engine_command_names_test;
 #[cfg(all(test, not(target_family = "wasm")))]
 mod events_test;
 #[cfg(all(test, not(target_family = "wasm")))]
+mod folder_count_test;
+#[cfg(all(test, not(target_family = "wasm")))]
 mod folder_sizes_test;
+#[cfg(all(test, not(target_family = "wasm")))]
+mod go_to_test;
 #[cfg(all(test, not(target_family = "wasm")))]
 mod imports_test;
 #[cfg(all(test, not(target_family = "wasm")))]
@@ -56,6 +63,8 @@ mod menu_test;
 mod multi_rename_test;
 #[cfg(all(test, not(target_family = "wasm")))]
 mod search_test;
+#[cfg(all(test, not(target_family = "wasm")))]
+mod selection_recents_test;
 #[cfg(all(test, not(target_family = "wasm")))]
 mod tree_test;
 #[cfg(all(test, not(target_family = "wasm")))]
