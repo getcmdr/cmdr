@@ -12,14 +12,26 @@ use std::io;
 use std::os::windows::ffi::OsStrExt as _;
 use std::path::Path;
 
+use cmdr_fs::app_path::AppPath;
 use windows_sys::Win32::Storage::FileSystem::MoveFileExW;
 
-use super::paths::native;
+use super::paths::{app_of, native_of};
 
-/// The Windows arm of `crate::rename_local_exclusive`. Takes app paths.
+/// The Windows arm of `crate::rename_local_exclusive`: native paths in either spelling
+/// (`C:\x`, `C:/x`, `\\?\C:\x`), crossing up and back down so the OS sees the verbatim form.
 pub fn rename_local_exclusive(source: &Path, destination: &Path) -> io::Result<()> {
-    let source = wide(&native(source)?);
-    let destination = wide(&native(destination)?);
+    rename_local_exclusive_at(&app_of(source)?, &app_of(destination)?)
+}
+
+/// The Windows arm of `crate::rename_local_exclusive_at`.
+pub fn rename_local_exclusive_at(source: &AppPath, destination: &AppPath) -> io::Result<()> {
+    rename_native_exclusive(&native_of(source)?, &native_of(destination)?)
+}
+
+/// `MoveFileExW` with no flags, over the paths the OS opens.
+pub(crate) fn rename_native_exclusive(source: &Path, destination: &Path) -> io::Result<()> {
+    let source = wide(source);
+    let destination = wide(destination);
     // SAFETY: both buffers are NUL-terminated UTF-16 that outlive the call, which only reads them.
     let ok = unsafe { MoveFileExW(source.as_ptr(), destination.as_ptr(), 0) };
     if ok != 0 {

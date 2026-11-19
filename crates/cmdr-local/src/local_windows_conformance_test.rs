@@ -8,7 +8,7 @@
 
 #![cfg(target_os = "windows")]
 
-use cmdr_fs::app_path::AppPath;
+use crate::test_support::at;
 use std::path::{Path, PathBuf};
 
 use cmdr_fs::testing::TestDir;
@@ -29,19 +29,17 @@ pub(crate) fn app_root(dir: &Path) -> PathBuf {
 
 /// A volume over the test folder, the way the app registers one: rooted at an app path.
 pub(crate) fn volume_at(dir: &TestDir) -> LocalWindowsVolume {
-    LocalWindowsVolume::local_folder("Test", app_root(dir), VolumeHost::detached())
+    let root = cmdr_fs::app_path::AppPathBuf::from_native_unicode(dir).expect("the test folder is an app path");
+    LocalWindowsVolume::local_folder_at("Test", root, VolumeHost::detached())
 }
 
 #[tokio::test]
 async fn delete_honors_the_shared_non_recursion_contract() {
     let test_dir = TestDir::new("win_delete_non_recursion");
     let volume = volume_at(&test_dir);
+    volume.create_directory(&at(&volume, "album")).await.expect("mkdir");
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("album")))
-        .await
-        .expect("mkdir");
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("album/keep.txt")), b"content")
+        .create_file(&at(&volume, "album/keep.txt"), b"content")
         .await
         .expect("create");
 
@@ -52,13 +50,10 @@ async fn delete_honors_the_shared_non_recursion_contract() {
 async fn delete_files_honors_the_shared_batch_contract() {
     let test_dir = TestDir::new("win_delete_files_batch");
     let volume = volume_at(&test_dir);
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("level")))
-        .await
-        .expect("mkdir");
+    volume.create_directory(&at(&volume, "level")).await.expect("mkdir");
     for name in ["a.txt", "b.txt", "kept.txt"] {
         volume
-            .create_file(&AppPath::legacy_unchecked(&Path::new("level").join(name)), b"bytes")
+            .create_file(&at(&volume, &format!("level/{name}")), b"bytes")
             .await
             .expect("create");
     }
@@ -78,14 +73,11 @@ async fn rename_honors_the_shared_no_clobber_contract() {
     let test_dir = TestDir::new("win_rename_no_clobber");
     let volume = volume_at(&test_dir);
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("source.txt")), b"source")
+        .create_file(&at(&volume, "source.txt"), b"source")
         .await
         .expect("create");
     volume
-        .create_file(
-            &AppPath::legacy_unchecked(Path::new("target.txt")),
-            b"the user's target file",
-        )
+        .create_file(&at(&volume, "target.txt"), b"the user's target file")
         .await
         .expect("create");
 
@@ -102,22 +94,16 @@ async fn forced_rename_honors_the_shared_non_empty_folder_contract() {
     let test_dir = TestDir::new("win_forced_rename_non_empty");
     let volume = volume_at(&test_dir);
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("source.txt")), b"source")
+        .create_file(&at(&volume, "source.txt"), b"source")
         .await
         .expect("create");
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("source-dir")))
+        .create_directory(&at(&volume, "source-dir"))
         .await
         .expect("mkdir");
+    volume.create_directory(&at(&volume, "album")).await.expect("mkdir");
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("album")))
-        .await
-        .expect("mkdir");
-    volume
-        .create_file(
-            &AppPath::legacy_unchecked(Path::new("album/source.txt")),
-            b"the user's photo",
-        )
+        .create_file(&at(&volume, "album/source.txt"), b"the user's photo")
         .await
         .expect("create");
 
@@ -131,7 +117,7 @@ async fn create_file_honors_the_shared_no_clobber_contract() {
     let test_dir = TestDir::new("win_create_file_no_clobber");
     let volume = volume_at(&test_dir);
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("notes.txt")), b"the user's notes")
+        .create_file(&at(&volume, "notes.txt"), b"the user's notes")
         .await
         .expect("create");
 
@@ -142,23 +128,18 @@ async fn create_file_honors_the_shared_no_clobber_contract() {
 async fn listing_dates_honor_the_shared_claim_contract() {
     let test_dir = TestDir::new("win_listed_dates");
     let volume = volume_at(&test_dir);
+    volume.create_directory(&at(&volume, "dated")).await.expect("mkdir");
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("dated")))
+        .create_directory(&at(&volume, "dated/folder"))
         .await
         .expect("mkdir");
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("dated/folder")))
-        .await
-        .expect("mkdir");
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("dated/file.txt")), b"bytes")
+        .create_file(&at(&volume, "dated/file.txt"), b"bytes")
         .await
         .expect("create");
 
     conformance::assert_listing_dates_are_claimed(&volume, Path::new("dated")).await;
-    let claimed = volume
-        .supported_dates(&AppPath::legacy_unchecked(Path::new("dated")))
-        .await;
+    let claimed = volume.supported_dates(&at(&volume, "dated")).await;
     assert!(claimed.created, "NTFS records a birth time");
     assert!(!claimed.added, "Windows records no added date");
 }
@@ -167,10 +148,7 @@ async fn listing_dates_honor_the_shared_claim_contract() {
 async fn create_directory_all_honors_the_shared_honesty_contract() {
     let test_dir = TestDir::new("win_mkdir_all_honesty");
     let volume = volume_at(&test_dir);
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("album")))
-        .await
-        .expect("mkdir");
+    volume.create_directory(&at(&volume, "album")).await.expect("mkdir");
 
     conformance::assert_create_directory_all_reports_an_existing_dir_honestly(&volume, Path::new("album")).await;
 }
@@ -180,7 +158,7 @@ async fn create_directory_all_honors_the_shared_file_in_the_way_contract() {
     let test_dir = TestDir::new("win_mkdir_all_file_in_the_way");
     let volume = volume_at(&test_dir);
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("notes")), b"the user's notes")
+        .create_file(&at(&volume, "notes"), b"the user's notes")
         .await
         .expect("create");
 
@@ -200,7 +178,7 @@ async fn copy_within_honors_the_shared_handshake_contract() {
     let test_dir = TestDir::new("win_copy_within");
     let volume = volume_at(&test_dir);
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("original.txt")), b"bytes")
+        .create_file(&at(&volume, "original.txt"), b"bytes")
         .await
         .expect("create");
 
@@ -236,7 +214,7 @@ async fn write_from_stream_create_new_honors_the_shared_no_clobber_contract() {
     let test_dir = TestDir::new("win_write_create_new");
     let volume = volume_at(&test_dir);
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("notes.txt")), b"the user's notes")
+        .create_file(&at(&volume, "notes.txt"), b"the user's notes")
         .await
         .expect("create");
 
@@ -292,7 +270,7 @@ async fn export_honors_the_shared_handshake_contract() {
     let volume = volume_at(&test_dir);
     let content = b"the bytes a copy would move";
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("exported.txt")), content)
+        .create_file(&at(&volume, "exported.txt"), content)
         .await
         .expect("create");
 
@@ -317,10 +295,7 @@ pub(crate) fn junction(dir: &Path, link: &str, target: &str) {
 async fn create_directory_all_honors_the_shared_through_a_link_contract() {
     let test_dir = TestDir::new("win_mkdir_all_through_a_link");
     let volume = volume_at(&test_dir);
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("real")))
-        .await
-        .expect("mkdir");
+    volume.create_directory(&at(&volume, "real")).await.expect("mkdir");
     junction(&test_dir, "link", "real");
 
     conformance::assert_create_directory_all_goes_through_a_link_to_a_folder(
@@ -335,12 +310,9 @@ async fn create_directory_all_honors_the_shared_through_a_link_contract() {
 async fn delete_of_a_link_to_a_folder_honors_the_shared_contract() {
     let test_dir = TestDir::new("win_delete_of_a_link");
     let volume = volume_at(&test_dir);
+    volume.create_directory(&at(&volume, "real")).await.expect("mkdir");
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("real")))
-        .await
-        .expect("mkdir");
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("real/keep.txt")), b"keep")
+        .create_file(&at(&volume, "real/keep.txt"), b"keep")
         .await
         .expect("create");
     junction(&test_dir, "link", "real");
@@ -358,18 +330,12 @@ async fn delete_of_a_link_to_a_folder_honors_the_shared_contract() {
 async fn a_link_to_a_folder_moves_as_the_link_per_the_shared_contract() {
     let test_dir = TestDir::new("win_link_move");
     let volume = volume_at(&test_dir);
+    volume.create_directory(&at(&volume, "real")).await.expect("mkdir");
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("real")))
-        .await
-        .expect("mkdir");
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("real/keep.txt")), b"keep")
+        .create_file(&at(&volume, "real/keep.txt"), b"keep")
         .await
         .expect("create");
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("moved")))
-        .await
-        .expect("mkdir");
+    volume.create_directory(&at(&volume, "moved")).await.expect("mkdir");
     junction(&test_dir, "link", "real");
 
     conformance::assert_a_link_to_a_folder_moves_as_the_link(
@@ -396,7 +362,7 @@ async fn xattrs_keep_the_shared_contract() {
     let test_dir = TestDir::new("win_xattrs_contract");
     let volume = volume_at(&test_dir);
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("plain.txt")), b"x")
+        .create_file(&at(&volume, "plain.txt"), b"x")
         .await
         .expect("create");
     conformance::assert_xattrs_keep_their_promises(&volume, Path::new("plain.txt"), Path::new("gone.txt")).await;

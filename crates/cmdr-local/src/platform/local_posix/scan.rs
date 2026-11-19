@@ -9,17 +9,18 @@
 //! lives here.
 
 use super::LocalPosixVolume;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, shown_name};
 use cmdr_fs::apple_double::SidecarRule;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::file_identity::{device_of, first_sighting};
+use cmdr_fs::log_error::LogError;
 use cmdr_fs::mac_only_files::MacOnlyFiles;
 use cmdr_fs::volume::ScanRecorder;
 use cmdr_fs::volume::Volume;
 use cmdr_fs::volume::{CopyScanResult, ScanConflict, SourceItemInfo, VolumeError};
 use std::ffi::OsStr;
 use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 use tokio::task::spawn_blocking;
@@ -52,11 +53,11 @@ impl LocalPosixVolume {
         recorder: Option<Arc<dyn ScanRecorder>>,
         mac_only: MacOnlyFiles,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let abs_path = self.os_path(path);
         let sidecars = SidecarRule::with_probe(self.sidecar_probe);
-        let as_called = path.to_path_buf();
+        // `ScanRecorder` still takes `std::path` (it lives in the write engine, typed with it,
+        // plan milestone 10a), so the caller's spelling crosses back once per scan.
+        let as_called = path.as_std_legacy().into_owned();
         Box::pin(async move {
             spawn_blocking(move || {
                 // The entry as the caller spells it, for the recorder.
@@ -168,13 +169,10 @@ impl LocalPosixVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        let path_app = path;
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_dir = self.resolve(path);
+        let abs_dir = self.os_path(path);
         let sidecars = SidecarRule::with_probe(self.sidecar_probe);
         Box::pin(async move {
-            let entries = self.list_directory(path_app, None).await?;
+            let entries = self.list_directory(path, None).await?;
             if !entries.iter().any(|entry| entry.name.starts_with("._")) {
                 return Ok(entries);
             }
@@ -199,7 +197,7 @@ impl LocalPosixVolume {
     /// `scan_subtree` the stop so it also asks inside one.
     pub(super) fn scan_for_copy_batch_with_boundary_impl<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a cmdr_fs::volume::ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::volume::BatchScanResult, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -207,17 +205,12 @@ impl LocalPosixVolume {
             for path in paths {
                 boundary.check().await?;
                 let scan = self
-                    .scan_subtree(
-                        &AppPath::legacy_unchecked(path),
-                        boundary.stop(),
-                        boundary.recorder().cloned(),
-                        boundary.mac_only(),
-                    )
+                    .scan_subtree(path, boundary.stop(), boundary.recorder().cloned(), boundary.mac_only())
                     .await?;
                 boundary.counted(&scan).await?;
                 per_path.push((path.clone(), scan));
             }
-            Ok(cmdr_fs::volume::fold_batch(per_path))
+            Ok(cmdr_fs::volume::scan_walk::fold_batch_at(per_path))
         })
     }
 
@@ -228,16 +221,28 @@ impl LocalPosixVolume {
         source_items: &'a [SourceItemInfo],
         dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
-        let dest_path_std = dest_path.as_std_legacy();
-        let dest_path: &Path = &dest_path_std;
-        let dest_abs = self.resolve(dest_path);
+        let dest = self.listing_dir(dest_path);
         let source_items: Vec<SourceItemInfo> = source_items.to_vec();
         Box::pin(async move {
             spawn_blocking(move || {
                 let mut conflicts = Vec::new();
 
                 for item in &source_items {
-                    let dest_file_path = dest_abs.join(&item.name);
+                    // ❗ One plain name, the item refused typed otherwise: `Path::join` of `..`
+                    // asked about the destination's PARENT, and of `/x` about `/x` itself.
+                    // The refusal is the item's alone (it names no destination, so nothing
+                    // collides with it): a conflict carries no per-item error, so it's
+                    // logged, and the batch's other items are still checked. Read by its shown
+                    // form, so only the name's shape decides: escape code points (a real
+                    // file's literal plane-16 name) are one plain name, checked as before.
+                    if let Err(refused) = AppName::from_app_spelling(&shown_name(&item.name)) {
+                        let refused = VolumeError::from(refused);
+                        log::warn!("scan_for_conflicts: skipping a source name: {}", LogError(&refused));
+                        continue;
+                    }
+                    let Some((dest_file_path, row)) = dest.named_child(&item.name) else {
+                        continue;
+                    };
                     if dest_file_path.exists()
                         && let Ok(meta) = std::fs::metadata(&dest_file_path)
                     {
@@ -248,7 +253,7 @@ impl LocalPosixVolume {
 
                         conflicts.push(ScanConflict {
                             source_path: item.name.clone(),
-                            dest_path: dest_file_path.to_string_lossy().to_string(),
+                            dest_path: row.path,
                             source_size: item.size,
                             dest_size: meta.len(),
                             source_modified: item.modified,

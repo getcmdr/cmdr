@@ -26,6 +26,20 @@ const _: fn(&std::path::Path) -> Result<super::AppPathBuf, super::NotAnAppPath> 
 const _: fn(&std::path::Path, PathFlavor) -> Result<super::AppPathBuf, super::NotAnAppPath> =
     super::AppPathBuf::from_native_as;
 
+#[cfg(cmdr_host)]
+const _: fn(&std::path::Path) -> std::io::Result<std::path::PathBuf> = expand_short_names;
+
+/// `path` (a native path the OS reported) with every 8.3 short name spelled long
+/// (`GetLongPathNameW`), the spelling a listing shows: `TEMP` under an account name past
+/// eight characters is `C:\Users\LONGNA~1\…`. Windows only has short names; elsewhere it's
+/// `path` as is. An inbound crossing that isn't a listing's own child goes through it first.
+///
+/// # Errors
+///
+/// What `GetLongPathNameW` answers, a missing path included.
+#[cfg(cmdr_host)]
+pub use imp::expand_short_names;
+
 /// This OS's flavor: drives and UNC shares on Windows, `/` elsewhere (the browser build's
 /// demo tree is POSIX).
 pub(super) use imp::HOST_FLAVOR;

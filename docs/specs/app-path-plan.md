@@ -1282,7 +1282,7 @@ included; the hidden couplings it found are why waves B and C differ from round 
   - `InMemoryVolume`'s `PathBuf`-keyed store and builders (`with_root(impl Into<PathBuf>)`), used by every crate's tests
     (11, after the last crate's tests move).
   - The `conformance` suites (113), driving other crates' volumes through their fixtures: `cmdr_fs::volume::conformance`
-    flips to app paths in 9 (its last `std::path` caller, `cmdr-local`, converts there), and each backend's
+    flips to app paths in 11's first commit (9 converted `cmdr-local` without it), and each backend's
     `conformance_test.rs` crossings go in that commit.
   - `tally_by_listing`, `mkdir_all`, `root_echo`, `routed`: they read `FileEntry.path` text (10f).
   - `app_paths.rs`: its string helpers are right on Windows already and `AppPath` has the typed answers (`strip_prefix`,
@@ -1373,9 +1373,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
     (`paths_test::a_place_the_app_path_cant_hold_refuses_the_connect`).
 - **What still bridges, and who takes it**: `testing::scratch_dir` in WebDAV and NFS, the `std::path` twin the app's
   backend suites call (10d switches its callers and deletes both); the `conformance` crossings in WebDAV's and S3's
-  `conformance_test.rs` (9, which flips `cmdr_fs::volume::conformance` to app paths); S3's `live_hostile_test.rs`
-  `dotted`, two live cells that hand the volume a `..`, which only a bridge value can spell (11, which turns them into
-  pins that a typed path refuses `..` before any request).
+  `conformance_test.rs` (11, whose first commit flips `cmdr_fs::volume::conformance` to app paths); S3's
+  `live_hostile_test.rs` `dotted`, two live cells that hand the volume a `..`, which only a bridge value can spell (11,
+  which turns them into pins that a typed path refuses `..` before any request).
 - **Windows results** (2026-11-19, the builder, `--profile windows-baseline`, the four crates only, 0 self-skipped):
   `main` at `450e3ab9f2` 56 red (milestone 5 had already taken 71 of the 127 the triage counted here), this conversion
   at `31f8887eca` 5 red, none path-shaped: NFS's three `errors_test` cells and
@@ -1480,8 +1480,48 @@ included; the hidden couplings it found are why waves B and C differ from round 
   code point in the DOM's text, `caf\u{FFFD}.txt` shown, delete of that row removes `caf\xe9.txt` and leaves the
   sibling). That E2E is the first end-to-end proof for #1236; close #1236 when 10a also lands.
 - **DONE**: `cmdr-local` has no bridges, `rename_local_exclusive` accepts an app path on Windows, and no
-  `to_string_lossy` builds a path in `cmdr-local` (names for display only). `cmdr_fs::volume::conformance` takes app
-  paths, so no backend's `conformance_test.rs` crosses a bridge (WebDAV's and S3's included).
+  `to_string_lossy` builds a path in `cmdr-local` (names for display only).
+- **Done** (2026-11-19, branch `worktree-agent-ad3a188e5a54f70b7`; the durable design is `crates/cmdr-local/DETAILS.md`
+  § "App paths in and out"):
+  - What converted: both volumes' bodies take `&AppPath` and cross once per call at `AppPath::to_native`
+    (`LocalPosixVolume::os_path`, `LocalWindowsVolume::locate`); the reader builds rows by `AppPath::join`
+    (`reading/row.rs`) and stats through the raw OS name; `resolve_under`, `child_app_path`, and the Windows
+    `path_grammar` crossing are gone; the Windows anchoring rule is `platform/anchor.rs`, table-tested on every OS.
+    Typed forms beside the old: `local_folder_at`, `on_mount_at`, `rename_local_exclusive_at`. The `&Path` entry points
+    (`list_directory_core`, `get_single_entry`, `rename_local_exclusive`, the mutation patch, space, the old
+    constructors) take a native path, on Windows in either spelling through `from_native_unicode` (8.3 names expanded at
+    an old constructor's root). No escape is produced: a name that isn't Unicode text keeps today's lossy row, counted
+    in a debug line (10f).
+  - Where the code differed from this plan: no typed twin of `list_directory_core` (the crate's surface cap has no
+    headroom, and taking a native `C:\…` path at the old entry point is what turns its callers' native-tempdir panics
+    green); the frontend name sinks, `nativeNameLength`, the Linux DOM catch-all, and every "escaped" cell above ride
+    10f, as this section's head says; the alloc ceiling holds at 9 on macOS (`getattrlistbulk`: the typed join's one
+    `String` replaces the lossy path's, the name's stays) and Linux's `read_dir` row drops one allocation (ceiling
+    pinned at 13, not lowered here); `index_benchmarks` and `transfer_benchmarks` were not run (no M1 run this round).
+  - Intended behavior change, on every OS, its own cell seen red first: the conflict scan refuses a source name that
+    isn't one plain name (`..`, `/x`, `a/b`) as `InvalidName`, where `Path::join` asked about the destination's parent
+    or another path. The refusal is that item's alone (logged; the batch's other items are still checked), and a name
+    holding escape code points stays one plain name, checked by today's text join (review fix, 2026-11-19: one such name
+    used to fail the whole batch). Review fixes, no expectation changed: every row built from an app path passes
+    `rows_can_carry`, so `get_metadata` and a mutation patch answer the listing's lossy text for a name that needs an
+    escape (they had put the escape on the wire, a second row beside the listing's), and an old Windows constructor
+    reads the disk for 8.3 names only for a root holding a `~`. On Windows only (no install has data): a relative path
+    is anchored by app-path names (a `..` refused, where `resolve_under` resolved it lexically), a name holding `:` is
+    `InvalidName` before any OS call, and the `&Path` entry points take native `C:\…` paths they refused before.
+  - What still bridges (24 calls, from 214), each with its milestone: the POSIX fallback for bridge values (`os_path`,
+    the root's `os_of`; 11), the old constructors' root (10a–10d), `notify_mutation`'s bridged parent (10a), the
+    `ScanRecorder`'s caller spelling (10a), the listing host's `&Path` (Windows `notify_mutation`; 10c), and the test
+    cells that hand in bridge shapes on purpose (`wire_path_shape_test.rs` 6, 10c; the relative and alias cells in
+    `local_posix_test.rs` 8 and `local_windows_test.rs` 3, 11). The text budgets: `appTextToPath` keeps 3 (the sidecar
+    filter's `OsStr::new(&entry.name)`, a bulk-test and a parity-test row read, 10f), `pathFromBareText` 4 (native mount
+    probes and space, outside the conversion).
+  - Verified: macOS `cargo nextest run` for `cmdr-local` (154), `cmdr-operations` and `cmdr-restic` (2,752), and the app
+    (6,807), all green; clippy `--all-targets -D warnings` on macOS (the four crates) and, through the zig cross-check,
+    for Windows and Linux (`cmdr-local`); `pnpm check --fast`, `fuzz-compile`, `module-cycles`, `clippy`. Windows
+    builder: `cmdr-local` 30 of 30 on `main` before, 40 of 40 after (8 skipped both times, the task-35 ignores);
+    `cmdr-operations` 190 failing of 1,763, from the triage run's 299, none newly red by this branch
+    (`docs/notes/windows-port/windows-test-failures.md` § "By milestone"). The 33 task-35 `MountedVolumeInside` cells
+    stay task 35's: the guard reads the mount table, which answers "can't say" on Windows.
 
 ### 10a. `cmdr-operations`
 
@@ -1649,12 +1689,14 @@ included; the hidden couplings it found are why waves B and C differ from round 
 ### 11. Close
 
 - **Size**: S.
-- **Scope**: delete `legacy_unchecked` and `as_std_legacy` (S3's `live_hostile_test.rs` `dotted` cells, the last to hand
-  a volume `..` through one, become pins that a typed path refuses `..` before any request); turn `app-path-std-bridge`
-  into the permanent ban; add `app-path-native-crossing` with its allowlist; remove every remaining `#1225` ignore;
-  update D1 and tasks 34–36 in the Windows plan, `crates/cmdr-fs/DETAILS.md` § "App paths" (the durable home),
-  `apps/desktop/src/lib/path/DETAILS.md` (a pointer to the Rust twin), and `docs/notes/windows-port/build-progress.md`
-  with the builder's full run. Then wipe this spec per `docs/specs/DETAILS.md`.
+- **Scope**: first flip `cmdr_fs::volume::conformance` to app paths, taking every backend's `conformance_test.rs`
+  crossing with it; then delete `legacy_unchecked` and `as_std_legacy` (S3's `live_hostile_test.rs` `dotted` cells, the
+  last to hand a volume `..` through one, become pins that a typed path refuses `..` before any request); turn
+  `app-path-std-bridge` into the permanent ban; add `app-path-native-crossing` with its allowlist; remove every
+  remaining `#1225` ignore; update D1 and tasks 34–36 in the Windows plan, `crates/cmdr-fs/DETAILS.md` § "App paths"
+  (the durable home), `apps/desktop/src/lib/path/DETAILS.md` (a pointer to the Rust twin), and
+  `docs/notes/windows-port/build-progress.md` with the builder's full run. Then wipe this spec per
+  `docs/specs/DETAILS.md`.
 - **Test plan**: the builder's full `cargo nextest run` over the workspace, totals logged; macOS/Linux full CI.
 - **DONE**: `rg 'legacy_unchecked|as_std_legacy|#1225'` is empty; #1225 closes; #1232 holds only what's not paths.
 

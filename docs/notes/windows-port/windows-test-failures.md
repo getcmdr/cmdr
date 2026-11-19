@@ -97,7 +97,32 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
 - **7, device backends**: 66 (`cmdr-adb` 51, `cmdr-smb` 13, `cmdr-mtp` 2).
 - **8, virtual volumes and leaf crates**: 72 (`cmdr-restic` 45 with its 5 hub timeouts, `cmdr-viewer` 13, `cmdr-archive`
   9, `cmdr-operation-log` 3, `cmdr-listing` 2).
-- **9, `cmdr-local`**: none of its own; it's the native crossing 10a–10d wait on.
+- **9, `cmdr-local`**: none of its own; it's the native crossing 10a–10d wait on. Done (2026-11-19, in `D:\src\cmdr-m9`,
+  `cargo nextest run -p cmdr-local`): 30 of 30 before on `main` (`a4449b5cb7`), 40 of 40 after on the branch
+  (`d0490c0c11`), 8 skipped both times (the `#[ignore]`d task-35 conformance cells). The 10 new cells are the NTFS names
+  (`local_windows_names_test.rs`: `dup`/`dup.`, device names and a trailing space, `a:b` with no stream, unpaired
+  surrogates, native entry points), the relative bridge input, and the anchoring table. Its `&Path` entry points now
+  take a native `C:\…` path (`list_directory_core`, `get_single_entry`, `rename_local_exclusive`), which is what the N
+  cells through `list_directory_core` and the F cells (the finalize handing `rename_local_exclusive` a native path)
+  failed on, so part of 10a's clusters turned green before their crate converts: `cmdr-operations` on the branch ran
+  1,763 tests, 190 failed, against this note's 299 (115 of those now pass). The six failures not in the TSV are `main`'s
+  own (all six fail on `a4449b5cb7` too, run alone): the three `refused_class_tests::*_native_join_refuses` cells and
+  the two `link_landing_tests` overwrite cells (both added after this note's run), and
+  `source_binding::tests::a_source_replaced_by_a_different_file_of_the_same_size_is_dropped` (node identity, task 35).
+  What each needs (by reading, in the PR #1287 review, 2026-11-19; not rerun on the builder):
+  - The three `refused_class_tests::*_native_join_refuses` cells (serial copy, concurrent copy, cross-volume move): they
+    preset Windows' native join on an in-memory POSIX tree, and the volume engines still join with `std::path`, so they
+    wait on 10a's typed join (`app-path-plan.md` milestone 10a).
+  - `link_landing_tests::an_overwrite_with_a_link_lands_the_link_and_leaves_no_temp`: can't pass on Windows until task
+    35 makes links real. The engine's Windows `symlink` (`crates/cmdr-operations/src/local_disk/platform/windows.rs`) is
+    a stub that always answers `Unsupported`, so no link lands, and the cell gates only on whether the OS can make links
+    (`skip_without_symlinks`). The destination is safe meanwhile: `overwrite::stage_and_land_link` makes the link under
+    a temp first, so a refusal never touches the file that was there.
+  - The second `link_landing_tests` overwrite cell: its failure text wasn't captured; rerun
+    `cargo nextest run -p cmdr-operations link_landing_tests` on the builder before guessing.
+  - The `source_binding` cell, and the product bug the same missing identity causes: #1291 (Windows `file_id` is `None`,
+    so `may_be_same_file` is true for every existing destination and an Overwrite copy is silently skipped). The app's
+    suites didn't run on the builder this round.
 - **10a, `cmdr-operations`**: 229.
 - **10b, `cmdr-index`**: 133, the 48 cold-drive timeouts among them.
 - **10e, `cmdr-listing-wasm`**: 7.
@@ -134,7 +159,9 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
   `cmdr-operations delete::already_gone_tests::a_local_delete_carries_on_past_a_file_that_vanished_after_the_scan`,
   `cmdr-operations golden_trace_tests::golden_local_delete`. Every local delete or same-volume move under a temp folder
   refuses with `MountedVolumeInside { mount_point: "C:\\Users\\…\\Temp\\…" }`: the mount-inside guard reads an ordinary
-  folder as a mount point. A product bug (a user's delete would refuse the same way), task 35's.
+  folder as a mount point. A product bug (a user's delete would refuse the same way), task 35's. Not app paths, so
+  milestone 9 leaves it: the guard asks `cmdr_local::mounts::is_mount_point`, whose Windows arm answers "can't say" (no
+  mount table yet), and "can't say" is a boundary by design.
 - **#1226, a file another handle holds open (24)**:
   `cmdr-index importance::store::legacy_split::tests::a_background_split_is_waited_for`,
   `cmdr search::execute::tests::source_equivalence::memory_holds_the_same_arena_the_index_loads` (`os error 32`).

@@ -9,16 +9,16 @@
 pub(crate) mod paths;
 pub(crate) mod rename;
 
-use cmdr_fs::app_path::AppPath;
-use cmdr_fs::app_path::AppPathBuf;
-use cmdr_fs::app_path::BridgedPath;
+use std::borrow::Cow;
 use std::future::Future;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
 
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, NotAnAppPath, PathArithmetic, is_escape};
 use cmdr_fs::entry::FileEntry;
+use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{
@@ -27,18 +27,19 @@ use cmdr_fs::volume::{
 };
 use tokio::task::spawn_blocking;
 
-use crate::reading::{ListingTally, get_single_entry, list_reporting_progress, supported_dates_of};
-use crate::rename_volume_error;
+use super::anchor::anchor_under;
+use crate::reading::{ListingDir, ListingTally, Named, Row, list_reporting_progress, single_entry, supported_dates_of};
 use crate::space::{get_space_info_for_path, live_space_info_for_path};
-use paths::native;
-pub use rename::rename_local_exclusive;
+use paths::{app_of, native_of, not_an_app_path};
+use rename::rename_native_exclusive;
+pub use rename::{rename_local_exclusive, rename_local_exclusive_at};
 
 /// A volume backed by a local Windows filesystem (NTFS, ReFS, FAT, exFAT), rooted at a drive
 /// or a UNC share. It takes and hands back app paths (`C:/Users/test_user_1`), never `\`.
 pub struct LocalWindowsVolume {
     name: String,
     /// The app path of the root: `C:/`, `//server/share/`, or a folder under one.
-    root: BridgedPath,
+    root: AppPathBuf,
     /// The mount this volume sits on, which decides whether a drive index can serve it.
     mount: MountClass,
     /// The app around this volume: the pane listings a mutation patches and the name order
@@ -50,17 +51,45 @@ pub struct LocalWindowsVolume {
     listing_hook: Option<crate::reading::ListingHook>,
 }
 
+/// A path this volume answers for: its app path, and the verbatim path the OS opens.
+struct Located {
+    app: AppPathBuf,
+    os: PathBuf,
+}
+
+impl Located {
+    fn error(&self, err: &io::Error) -> VolumeError {
+        Named::new(self.app.as_str().to_owned()).error(err)
+    }
+}
+
 impl LocalWindowsVolume {
-    /// A volume for a folder on a local disk. `root` is an app path (`C:/`, `C:/Users/x`).
+    /// A volume for a folder on a local disk. `root` is a native path, spelled either way
+    /// (`C:\x` or the app path's `C:/x`), with its 8.3 short names expanded (a listing never
+    /// shows one, so a row would never sit under a short root).
     pub fn local_folder(name: impl Into<String>, root: impl Into<PathBuf>, host: VolumeHost) -> Self {
         Self::on_mount(name, root, MountClass::LocalDisk, host)
     }
 
-    /// A volume rooted at a mount, with the [`MountClass`] its registration found.
+    /// A volume rooted at a mount, with the [`MountClass`] its registration found. A root
+    /// holding an 8.3 short name is spelled long, since a listing never shows one; only such
+    /// a root reads the disk here (`super::short_names`).
     pub fn on_mount(name: impl Into<String>, root: impl Into<PathBuf>, mount: MountClass, host: VolumeHost) -> Self {
+        let root = super::short_names::long_root(root.into(), cmdr_fs::app_path::expand_short_names);
+        Self::on_mount_at(name, root_app(&root), mount, host)
+    }
+
+    /// [`Self::local_folder`] at an app path.
+    pub fn local_folder_at(name: impl Into<String>, root: AppPathBuf, host: VolumeHost) -> Self {
+        Self::on_mount_at(name, root, MountClass::LocalDisk, host)
+    }
+
+    /// [`Self::on_mount`] at an app path. A root no OS call can open (a POSIX `/`) makes every
+    /// call refuse typed, ❌ never a guess at a drive.
+    pub fn on_mount_at(name: impl Into<String>, root: AppPathBuf, mount: MountClass, host: VolumeHost) -> Self {
         Self {
             name: name.into(),
-            root: BridgedPath::new(root.into()),
+            root,
             mount,
             host,
             #[cfg(any(test, feature = "testing"))]
@@ -76,11 +105,33 @@ impl LocalWindowsVolume {
         self
     }
 
-    /// Resolves a caller's path to an absolute app path under this volume's root
-    /// (`paths::resolve_under`, the slash-only twin of `cmdr_fs::volume::root_anchored`).
-    pub(crate) fn resolve(&self, path: &Path) -> PathBuf {
-        paths::resolve_under(&self.root, path)
+    /// A caller's path as this volume's absolute app path and the OS's path for it
+    /// (`super::anchor::anchor_under`).
+    ///
+    /// # Errors
+    ///
+    /// The typed refusal as an `io::Error` (`paths.rs`): a `..`, a path no OS call opens, a
+    /// name holding `:`, and a name that isn't Unicode text (its escape goes live in 10f).
+    fn locate(&self, path: &AppPath) -> io::Result<Located> {
+        let app = anchor_under(&self.root, path).map_err(not_an_app_path)?;
+        if app.as_str().chars().any(is_escape) {
+            return Err(not_an_app_path(NotAnAppPath::NotUnicode));
+        }
+        let os = native_of(&app)?;
+        Ok(Located { app, os })
     }
+
+    /// [`Self::locate`], with a refusal named after the path as the caller spelled it.
+    fn located(&self, path: &AppPath) -> Result<Located, VolumeError> {
+        self.locate(path)
+            .map_err(|e| Named::new(path.as_str().to_owned()).error(&e))
+    }
+}
+
+/// The app path of an old-form constructor's native root; a root that isn't one keeps its
+/// text through the bridge, so every call refuses it typed, as before.
+fn root_app(root: &Path) -> AppPathBuf {
+    app_of(root).unwrap_or_else(|_| AppPath::legacy_unchecked(root).into_owned())
 }
 
 /// Runs `body` on the blocking pool; a `Volume` method runs on its caller's runtime.
@@ -96,13 +147,14 @@ impl Volume for LocalWindowsVolume {
     }
 
     fn root(&self) -> &AppPath {
-        self.root.app()
+        &self.root
     }
 
     fn rerooted(&self, new_root: &AppPath) -> Option<Arc<dyn Volume>> {
-        let new_root_std = new_root.as_std_legacy();
-        let new_root: &Path = &new_root_std;
-        Some(Arc::new(LocalWindowsVolume::on_mount(
+        let new_root = new_root
+            .to_canonical()
+            .map_or_else(|_| new_root.to_owned(), Cow::into_owned);
+        Some(Arc::new(LocalWindowsVolume::on_mount_at(
             self.name.clone(),
             new_root,
             self.mount,
@@ -119,16 +171,20 @@ impl Volume for LocalWindowsVolume {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
-        let is_volume_root = abs_path == *self.root;
+        let at = match self.located(path) {
+            Ok(at) => at,
+            Err(e) => return Box::pin(async move { Err(e) }),
+        };
+        let is_volume_root = at.app == self.root;
         #[cfg(any(test, feature = "testing"))]
         let tally = Arc::new(ListingTally::with_hook(self.listing_hook.clone()));
         #[cfg(not(any(test, feature = "testing")))]
         let tally = Arc::new(ListingTally::default());
+        let named = Named::new(at.app.as_str().to_owned());
+        let dir = ListingDir::new(Cow::Owned(at.os), Some(Cow::Owned(at.app)));
         Box::pin(list_reporting_progress(
-            abs_path,
+            dir,
+            named,
             is_volume_root,
             self.host.clone(),
             tally,
@@ -140,22 +196,19 @@ impl Volume for LocalWindowsVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let at = self.located(path);
         Box::pin(blocking("metadata", move || {
-            get_single_entry(&abs_path).map_err(|e| VolumeError::from_io_at(&e, &abs_path))
+            let at = at?;
+            single_entry(&at.os, Row::of(&at.os, Some(&at.app))).map_err(|e| at.error(&e))
         }))
     }
 
     fn presence<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        // Only "not found" is a definite miss: a sharing violation, an access refusal, or a
-        // dead share say nothing about the path.
-        let abs_path = self.resolve(path);
+        // Only "not found" is a definite miss: a sharing violation, an access refusal, a dead
+        // share, or a path the OS can't be handed say nothing about the path.
+        let at = self.locate(path);
         Box::pin(blocking("presence", move || {
-            match native(&abs_path).and_then(std::fs::symlink_metadata) {
+            match at.and_then(|at| std::fs::symlink_metadata(at.os)) {
                 Ok(_) => Presence::Present,
                 Err(e) if matches!(e.kind(), io::ErrorKind::NotFound | io::ErrorKind::NotADirectory) => {
                     Presence::Absent
@@ -169,14 +222,12 @@ impl Volume for LocalWindowsVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let at = self.located(path);
         Box::pin(blocking("is_directory", move || {
-            native(&abs_path)
-                .and_then(std::fs::symlink_metadata)
+            let at = at?;
+            std::fs::symlink_metadata(&at.os)
                 .map(|metadata| metadata.is_dir())
-                .map_err(|e| VolumeError::from_io_at(&e, &abs_path))
+                .map_err(|e| at.error(&e))
         }))
     }
 
@@ -184,14 +235,10 @@ impl Volume for LocalWindowsVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<EntryKind, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let at = self.located(path);
         Box::pin(blocking("entry_kind", move || {
-            let file_type = native(&abs_path)
-                .and_then(std::fs::symlink_metadata)
-                .map_err(|e| VolumeError::from_io_at(&e, &abs_path))?
-                .file_type();
+            let at = at?;
+            let file_type = std::fs::symlink_metadata(&at.os).map_err(|e| at.error(&e))?.file_type();
             Ok(if file_type.is_symlink() {
                 EntryKind::Symlink
             } else if file_type.is_dir() {
@@ -209,14 +256,29 @@ impl Volume for LocalWindowsVolume {
         mutation: MutationEvent,
     ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
         Box::pin(async move {
-            let parent_path_std = parent_path.as_std_legacy();
-            let parent_path: &Path = &parent_path_std;
-            crate::mutation::patch_listing_after_local_mutation(self.host.listings(), volume_id, parent_path, mutation);
+            match self.locate(parent_path) {
+                Ok(at) => {
+                    // The listing host hears of the folder by its app path; it still takes
+                    // `std::path` for one, until the app's listing host goes typed (10c).
+                    let host_path = at.app.as_std_legacy().into_owned();
+                    crate::mutation::patch_after_local_mutation(
+                        self.host.listings(),
+                        volume_id,
+                        &host_path,
+                        &ListingDir::new(Cow::Owned(at.os), Some(Cow::Owned(at.app))),
+                        mutation,
+                    );
+                }
+                Err(e) => log::warn!(
+                    "notify_mutation: no local path for {}: {e}",
+                    LogPrivate::path(parent_path.as_str())
+                ),
+            }
         })
     }
 
     fn local_path(&self) -> Option<AppPathBuf> {
-        Some(AppPath::legacy_unchecked(&self.root.clone()).into_owned())
+        Some(self.root.clone())
     }
 
     fn create_file<'a>(
@@ -224,19 +286,19 @@ impl Volume for LocalWindowsVolume {
         path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let at = self.located(path);
         let content = content.to_vec();
         Box::pin(blocking("create_file", move || -> Result<(), VolumeError> {
             use std::io::Write;
+            let at = at?;
             // `create_new` is the no-clobber contract (`CREATE_NEW`): an existing name is
             // `AlreadyExists`, never a truncated file.
-            let mut file = native(&abs_path)
-                .and_then(|native| std::fs::OpenOptions::new().write(true).create_new(true).open(native))
-                .map_err(|e| VolumeError::from_io_at(&e, &abs_path))?;
-            file.write_all(&content)
-                .map_err(|e| VolumeError::from_io_at(&e, &abs_path))
+            let mut file = std::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&at.os)
+                .map_err(|e| at.error(&e))?;
+            file.write_all(&content).map_err(|e| at.error(&e))
         }))
     }
 
@@ -244,42 +306,37 @@ impl Volume for LocalWindowsVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let at = self.located(path);
         Box::pin(blocking("create_dir", move || {
-            native(&abs_path)
-                .and_then(std::fs::create_dir)
-                .map_err(|e| VolumeError::from_io_at(&e, &abs_path))
+            let at = at?;
+            std::fs::create_dir(&at.os).map_err(|e| at.error(&e))
         }))
     }
 
     fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let at = self.located(path);
         Box::pin(blocking("delete", move || {
-            let native = native(&abs_path).map_err(|e| VolumeError::from_io_at(&e, &abs_path))?;
-            let metadata = std::fs::symlink_metadata(&native).map_err(|e| VolumeError::from_io_at(&e, &abs_path))?;
+            let at = at?;
+            let metadata = std::fs::symlink_metadata(&at.os).map_err(|e| at.error(&e))?;
             // A directory symlink or junction carries `FILE_ATTRIBUTE_DIRECTORY` on the link
             // itself, and only `RemoveDirectoryW` removes it: that takes the link, never its
             // target's contents, and works for a broken one too.
             use std::os::windows::fs::MetadataExt as _;
             const FILE_ATTRIBUTE_DIRECTORY: u32 = 0x10;
             let result = if metadata.file_attributes() & FILE_ATTRIBUTE_DIRECTORY != 0 {
-                std::fs::remove_dir(&native)
+                std::fs::remove_dir(&at.os)
             } else {
-                std::fs::remove_file(&native)
+                std::fs::remove_file(&at.os)
             };
             result.map_err(|e| {
                 log::warn!(
                     target: "local_windows",
                     "delete: {} failed: {e} (kind={:?}, os error={:?})",
-                    LogPrivate::path(&abs_path),
+                    LogPrivate::path(at.app.as_str()),
                     e.kind(),
                     e.raw_os_error()
                 );
-                VolumeError::from_io_at(&e, &abs_path)
+                at.error(&e)
             })
         }))
     }
@@ -292,19 +349,19 @@ impl Volume for LocalWindowsVolume {
         to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        let from_std = from.as_std_legacy();
-        let from: &Path = &from_std;
-        let to_std = to.as_std_legacy();
-        let to: &Path = &to_std;
-        let from_abs = self.resolve(from);
-        let to_abs = self.resolve(to);
+        let ends = self.located(from).and_then(|from| Ok((from, self.located(to)?)));
         Box::pin(blocking("rename", move || {
-            if !force && from_abs != to_abs {
-                rename_local_exclusive(&from_abs, &to_abs)
+            let (from, to) = ends?;
+            if !force && from.app != to.app {
+                rename_native_exclusive(&from.os, &to.os)
             } else {
-                native(&from_abs).and_then(|from| std::fs::rename(from, native(&to_abs)?))
+                std::fs::rename(&from.os, &to.os)
             }
-            .map_err(|e| rename_volume_error(&e, &from_abs, &to_abs))
+            .map_err(|e| match e.kind() {
+                // `crate::rename_volume_error`'s rule: the destination is what's taken.
+                io::ErrorKind::AlreadyExists | io::ErrorKind::DirectoryNotEmpty => to.error(&e),
+                _ => from.error(&e),
+            })
         }))
     }
 
@@ -315,15 +372,30 @@ impl Volume for LocalWindowsVolume {
         source_items: &'a [SourceItemInfo],
         dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
-        let dest_path_std = dest_path.as_std_legacy();
-        let dest_path: &Path = &dest_path_std;
-        let dest_abs = self.resolve(dest_path);
+        let dest = self.located(dest_path);
         let source_items = source_items.to_vec();
         Box::pin(blocking("scan_for_conflicts", move || {
+            let dest = dest?;
             let mut conflicts = Vec::new();
             for item in &source_items {
-                let dest_file_path = paths::child_app_path(&dest_abs, &item.name);
-                let Ok(meta) = native(&dest_file_path).and_then(std::fs::metadata) else {
+                // An item whose name names no child of the destination can't collide: it's
+                // refused typed, alone, and logged (a conflict carries no per-item error),
+                // and the batch's other items are still checked, as on POSIX.
+                let dest_file = match AppName::from_app_spelling(&item.name) {
+                    Ok(name) => dest
+                        .app
+                        .join(name)
+                        .map_err(|why| VolumeError::InvalidName(why.to_string().into())),
+                    Err(refused) => Err(VolumeError::from(refused)),
+                };
+                let dest_file = match dest_file {
+                    Ok(dest_file) => dest_file,
+                    Err(refused) => {
+                        log::warn!("scan_for_conflicts: skipping a source name: {}", LogError(&refused));
+                        continue;
+                    }
+                };
+                let Ok(meta) = native_of(&dest_file).and_then(std::fs::metadata) else {
                     continue;
                 };
                 let dest_modified = meta
@@ -333,7 +405,7 @@ impl Volume for LocalWindowsVolume {
                     .and_then(|d| i64::try_from(d.as_secs()).ok());
                 conflicts.push(ScanConflict {
                     source_path: item.name.clone(),
-                    dest_path: dest_file_path.to_string_lossy().into_owned(),
+                    dest_path: dest_file.into_string(),
                     source_size: item.size,
                     dest_size: meta.len(),
                     source_modified: item.modified,
@@ -364,23 +436,28 @@ impl Volume for LocalWindowsVolume {
     }
 
     fn supported_dates<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = SupportedDates> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
-        Box::pin(blocking("supported_dates", move || supported_dates_of(&abs_path)))
+        let at = self.locate(path);
+        Box::pin(blocking("supported_dates", move || match at {
+            Ok(at) => supported_dates_of(&at.os),
+            Err(_) => SupportedDates::default(),
+        }))
     }
 
     fn operations_are_local(&self) -> bool {
         true
     }
 
+    /// The root's space; a refusal or an OS error names the root's app path (`space.rs`'s
+    /// Windows arm crosses the `\\?\` path back up).
     fn get_space_info<'a>(&'a self) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
-        let root = self.root.clone();
-        Box::pin(blocking("get_space_info", move || get_space_info_for_path(&root)))
+        let root = self.located(&self.root);
+        Box::pin(blocking("get_space_info", move || get_space_info_for_path(&root?.os)))
     }
 
     fn get_live_space_info<'a>(&'a self) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
-        let root = self.root.clone();
-        Box::pin(blocking("get_live_space_info", move || live_space_info_for_path(&root)))
+        let root = self.located(&self.root);
+        Box::pin(blocking("get_live_space_info", move || {
+            live_space_info_for_path(&root?.os)
+        }))
     }
 }

@@ -65,6 +65,11 @@ impl AppPathBuf {
     }
 }
 
+/// No short names on a POSIX filesystem: `path` as is.
+pub fn expand_short_names(path: &Path) -> std::io::Result<PathBuf> {
+    Ok(path.to_path_buf())
+}
+
 /// The bytes the transition bridge hands back for `text`: each byte escape as its byte,
 /// everything else (a unit escape included, which no byte can spell) as its UTF-8.
 fn bridge_bytes(text: &str) -> Vec<u8> {

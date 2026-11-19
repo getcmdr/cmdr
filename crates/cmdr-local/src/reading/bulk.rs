@@ -31,7 +31,9 @@ use cmdr_fs::attr_buf::{self, Attr, BadRecord, Record, Request, Timespec, VDIR, 
 use cmdr_fs::entry::{FileEntry, get_group_name, get_owner_name, is_hidden_by_name};
 use cmdr_fs::log_private::LogPrivate;
 
-use super::{AddedAt, ListingTally, Pick, entry_from_lstat, get_single_entry, minimal_row, read_dir_entries};
+use super::{
+    AddedAt, ListingDir, ListingTally, Pick, Row, entry_from_lstat, minimal_row, read_dir_entries, single_entry,
+};
 use crate::statfs::statfs_string;
 
 /// `SF_FIRMLINK` from `<sys/stat.h>`: the `st_flags` bit a firmlink carries.
@@ -96,23 +98,24 @@ enum Failure {
 /// the folder is bulk-eligible), through `read_dir` otherwise or when the bulk
 /// stream turns out doubtful.
 pub(super) fn read_entries(
-    path: &Path,
+    listing: &ListingDir<'_>,
     dot_hidden: &HashSet<String>,
     tally: Option<&ListingTally>,
     pick: Pick,
 ) -> io::Result<Vec<FileEntry>> {
-    read_entries_with(path, dot_hidden, tally, pick, &mut kernel_batch)
+    read_entries_with(listing, dot_hidden, tally, pick, &mut kernel_batch)
 }
 
 /// [`read_entries`] with the batch source as a parameter, so a test can break
 /// the stream partway through.
 fn read_entries_with(
-    path: &Path,
+    listing: &ListingDir<'_>,
     dot_hidden: &HashSet<String>,
     tally: Option<&ListingTally>,
     pick: Pick,
     batches: &mut dyn FnMut(&File, &mut [u64]) -> io::Result<usize>,
 ) -> io::Result<Vec<FileEntry>> {
+    let path = listing.os();
     // The same open `opendir` does, so access and TCC errors are today's.
     let dir = OpenOptions::new()
         .read(true)
@@ -126,7 +129,7 @@ fn read_entries_with(
         Pick::Forced(lister) => lister == super::Lister::Bulk,
     };
     if use_bulk {
-        match list(&dir, path, dot_hidden, tally, added, batches) {
+        match list(&dir, listing, dot_hidden, tally, added, batches) {
             Ok(entries) => return Ok(entries),
             Err(Failure::Io(err)) => return Err(err),
             Err(Failure::Restart(why)) => {
@@ -141,13 +144,13 @@ fn read_entries_with(
         }
     }
     drop(dir);
-    read_dir_entries(path, dot_hidden, tally, added)
+    read_dir_entries(listing, dot_hidden, tally, added)
 }
 
 /// The whole bulk stream of `dir`, or why it can't be trusted.
 fn list(
     dir: &File,
-    path: &Path,
+    path: &ListingDir<'_>,
     dot_hidden: &HashSet<String>,
     tally: Option<&ListingTally>,
     added: AddedAt,
@@ -252,23 +255,22 @@ impl Trusted {
 /// The entry one record describes, in `dir`.
 fn entry_from_record(
     record: &Record<'_>,
-    dir: &Path,
+    dir: &ListingDir<'_>,
     dot_hidden: &HashSet<String>,
     added: AddedAt,
 ) -> Result<FileEntry, Restart> {
     let raw_name = OsStr::from_bytes(record.name.ok_or(Restart::NoName)?);
-    let path = dir.join(raw_name);
-    let name = raw_name.to_string_lossy().into_owned();
+    let (path, row) = dir.child(raw_name);
 
     let Some(attrs) = Trusted::of(record) else {
         // In doubt: the entry's own `lstat` is today's answer. When that fails,
         // today's minimal row needs to know whether it's a link, which only an
         // unerrored record's valid type can say.
         let hint = if record.error == 0 { record.obj_type } else { None };
-        return match entry_from_lstat(&path, name.clone(), dot_hidden, added) {
-            Some(entry) => Ok(entry),
-            None => hint
-                .map(|obj_type| minimal_row(&path, name, obj_type == VLNK, dot_hidden))
+        return match entry_from_lstat(&path, row, dot_hidden, added) {
+            Ok(entry) => Ok(entry),
+            Err(row) => hint
+                .map(|obj_type| minimal_row(row, obj_type == VLNK, dot_hidden))
                 .ok_or(Restart::Untyped),
         };
     };
@@ -276,14 +278,19 @@ fn entry_from_record(
     if attrs.covers_another_folder() {
         // Wholly the re-stat, added date included, as `read_dir` would list it;
         // the minimal row if that fails, ❌ never the stub.
-        return Ok(match get_single_entry(&path) {
+        let fallback = Row {
+            name: row.name.clone(),
+            path: row.path.clone(),
+        };
+        return Ok(match single_entry(&path, row) {
             Ok(entry) => FileEntry {
                 is_hidden: entry.is_hidden || dot_hidden.contains(&entry.name),
                 ..entry
             },
-            Err(_) => minimal_row(&path, name, false, dot_hidden),
+            Err(_) => minimal_row(fallback, false, dot_hidden),
         });
     }
+    let Row { name, path: row_path } = row;
 
     // `getattrlistbulk` never follows a link: a link's folderness is its
     // target's, one `stat` away, while everything else stays the link's own.
@@ -306,7 +313,7 @@ fn entry_from_record(
         owner: get_owner_name(attrs.owner_id),
         group: get_group_name(attrs.group_id),
         is_hidden: is_hidden_by_name(&name) || attrs.flags & libc::UF_HIDDEN != 0 || dot_hidden.contains(&name),
-        ..FileEntry::new(name, path.to_string_lossy().into_owned(), is_dir, is_symlink)
+        ..FileEntry::new(name, row_path, is_dir, is_symlink)
     })
 }
 

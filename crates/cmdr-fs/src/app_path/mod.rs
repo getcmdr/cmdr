@@ -49,6 +49,8 @@ pub use escape::{
 };
 pub use native::{NativeRefusal, NotPlainSafe};
 pub use parse::NotAnAppPath;
+#[cfg(cmdr_host)]
+pub use platform::expand_short_names;
 pub use shape::is_scheme_url;
 
 use crate::volume::NotAChildName;
@@ -494,6 +496,11 @@ impl AppNameBuf {
     /// The borrowed name.
     pub fn as_app_name(&self) -> &AppName {
         AppName::new_unchecked(&self.0)
+    }
+
+    /// The text, owned: a listing's row name, with no copy beside the name it joined.
+    pub fn into_string(self) -> String {
+        self.0
     }
 }
 
