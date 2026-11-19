@@ -134,9 +134,10 @@ one the frontend opens later, so it carries both the init script and an `on_webv
   doesn't expose the switch; tauri-apps/tauri#16397 (`browserAcceleratorKeys`, open on 2026-11-18) would replace this
   with a config field.
 - **macOS and Linux**: nothing; a bare WKWebView or WebKitGTK webview has no browser keys of its own.
-- Unverified on a signed-in Windows desktop (task 55's keyboard list holds the checks): whether the switch covers the
-  first page of each window (it's set as the webview becomes ready, and WebView2 may read some settings per
-  navigation), and whether `F6` / `Shift+F6` / `Ctrl+M` sit outside it and need the per-key
+- The switch holds on each window's first page: in a freshly opened Settings and viewer, `F5`, `Ctrl+R`, `Alt+←`,
+  `Ctrl+plus`, `F7`, `F12`, `Ctrl+P`, `Ctrl+Shift+P`, and `Ctrl+J` did nothing of WebView2's (verified on Windows 10
+  22H2, WebView2 157.0.4341.60, with OS key input, 2026-11-19, `docs/notes/windows-port/real-windows-check-2026-11-19.md`).
+  Still unverified: whether `F6` / `Shift+F6` / `Ctrl+M` sit outside it and need the per-key
   `IsBrowserAcceleratorKeyEnabled(FALSE)` in an `AcceleratorKeyPressed` handler (`tools/menu-spike/src/win.rs` shows
   the wiring).
 

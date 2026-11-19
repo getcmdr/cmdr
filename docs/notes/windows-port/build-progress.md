@@ -316,3 +316,9 @@ things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX
   in-flight ledger never emptying on Windows, Windows-made zips dropping their modes, both fixed):
   `docs/notes/windows-port/windows-test-failures.md`, with the machine-readable record beside it. The cold build died
   once on `os error 1455` (the page file too small to mmap an rlib); `CARGO_BUILD_JOBS=2` got through.
+- **2026-11-19, the first real-desktop check of the menus, browser keys, and look** (`main` at `4314b3cf1f`, a debug
+  `pnpm tauri build --no-bundle` in `D:\src\cmdr-verify`, 17m 58s seeded from `D:\targets\triage`): the in-page bar,
+  right-click and text-field menus, the `SC_KEYMENU` guard, and the browser-key switch pass in every window; three
+  failures were fixed and re-run on `968733ae7f` (see-through Settings and queue, no ring after a lone Alt, focus
+  stranded on a title). Per-check evidence and the open problems (a Copy dialog that refuses every local copy first):
+  `docs/notes/windows-port/real-windows-check-2026-11-19.md`.
