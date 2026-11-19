@@ -14,14 +14,17 @@
 //! own message loop, ❌ not a message-only window (`HWND_MESSAGE`): those never receive
 //! broadcasts. Its own thread keeps it apart from tao's windows and their loop.
 //!
-//! Every signal re-reads all of it and compares with the last answer, rather than filtering on
-//! `wParam` / `lParam`: a sender may pass 0, the signals overlap (one accent change brings
-//! `ColorValuesChanged` and a broadcast), and one cheap read per signal is nothing. An unchanged
-//! answer emits nothing. Other modules hear `WM_SETTINGCHANGE` through [`on_setting_change`]
-//! (`intl/live_locale.rs` follows the Regional format with it).
+//! A signal re-reads all of it and compares with the last answer, rather than filtering on
+//! `wParam` / `lParam`: a sender may pass 0, and the signals overlap (one accent change brings
+//! `ColorValuesChanged` and a broadcast). A burst becomes ONE re-read: the first signal arms a
+//! one-shot timer ([`SETTLE_MS`]), the rest ride on it, and the timer is killed when it fires, so
+//! nothing ticks between bursts. That also lets a broadcaster's `SendMessage` return at once
+//! instead of waiting on the read. An unchanged answer emits nothing. Other modules hear
+//! `WM_SETTINGCHANGE` through [`on_setting_change`] (`intl/live_locale.rs` follows the Regional
+//! format with it).
 
-use std::sync::atomic::{AtomicIsize, Ordering};
-use std::sync::{Mutex, OnceLock};
+use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use log::{debug, warn};
 use tauri::AppHandle;
@@ -29,8 +32,8 @@ use tauri_specta::Event as _;
 use windows_sys::Win32::Foundation::{GetLastError, HWND, LPARAM, LRESULT, WPARAM};
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, MSG, PostMessageW, RegisterClassW, WM_APP,
-    WM_SETTINGCHANGE, WM_SYSCOLORCHANGE, WM_THEMECHANGED, WNDCLASSW,
+    CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, KillTimer, MSG, PostMessageW, RegisterClassW,
+    SetTimer, WM_APP, WM_SETTINGCHANGE, WM_SYSCOLORCHANGE, WM_THEMECHANGED, WM_TIMER, WNDCLASSW,
 };
 
 use crate::ignore_poison::IgnorePoison;
@@ -38,6 +41,13 @@ use crate::system_events::{AccentColorChanged, DisplayAccessibility, DisplayAcce
 
 /// Posted to the settings window by the `UISettings` event handlers.
 const WM_UI_SETTINGS_CHANGED: u32 = WM_APP + 1;
+
+/// How long a burst of signals gets to settle before its one re-read. Settings sends a change as
+/// several broadcasts plus a `UISettings` event, milliseconds apart; this swallows them while the
+/// UI still follows the user's click.
+const SETTLE_MS: u32 = 100;
+/// The settle timer's id, the settings window's only timer.
+const SETTLE_TIMER: usize = 1;
 
 /// The app the window procedure emits to, set once by [`observe`].
 static APP: OnceLock<AppHandle> = OnceLock::new();
@@ -47,7 +57,34 @@ static LAST: Mutex<Option<Look>> = Mutex::new(None);
 /// thread. 0 until it exists.
 static WINDOW: AtomicIsize = AtomicIsize::new(0);
 /// Who else hears `WM_SETTINGCHANGE`, called on the settings window's thread.
-static LISTENERS: Mutex<Vec<Box<dyn Fn() + Send>>> = Mutex::new(Vec::new());
+static LISTENERS: Mutex<Vec<Arc<dyn Fn() + Send + Sync>>> = Mutex::new(Vec::new());
+/// Whether the settle timer is armed for the current burst.
+static SETTLING: Burst = Burst::new();
+
+/// Collapses a burst of signals into one re-read: only the signal that opens a burst arms the
+/// timer.
+struct Burst {
+    armed: AtomicBool,
+}
+
+impl Burst {
+    const fn new() -> Self {
+        Self {
+            armed: AtomicBool::new(false),
+        }
+    }
+
+    /// `true` for the signal that opens a burst (arm the timer), `false` for one it already covers.
+    fn open(&self) -> bool {
+        !self.armed.swap(true, Ordering::SeqCst)
+    }
+
+    /// The timer fired. Disarmed BEFORE the re-read, so a signal landing during it opens a fresh
+    /// burst instead of being swallowed by this one.
+    fn close(&self) {
+        self.armed.store(false, Ordering::SeqCst);
+    }
+}
 
 /// Everything this arm sends the frontend, compared as a whole on every signal.
 #[derive(Debug, Clone, PartialEq)]
@@ -58,29 +95,38 @@ struct Look {
 
 impl Look {
     fn read() -> Self {
-        Self {
-            accent: super::read_accent(),
-            display: super::read_display_accessibility(),
-        }
+        let (accent, display) = super::read_look();
+        Self { accent, display }
     }
 }
 
 /// Runs `listener` on every `WM_SETTINGCHANGE` broadcast, on the settings window's thread. Keep it
 /// quick (hand real work to another thread) and ❌ never panic: it runs inside the window
-/// procedure. Works before or after [`observe`] starts the window.
-pub(crate) fn on_setting_change(listener: Box<dyn Fn() + Send>) {
-    LISTENERS.lock_ignore_poison().push(listener);
+/// procedure. Works before or after [`observe`] starts the window, and from inside a listener.
+pub(crate) fn on_setting_change(listener: Box<dyn Fn() + Send + Sync>) {
+    LISTENERS.lock_ignore_poison().push(Arc::from(listener));
 }
 
-/// Starts the settings window's thread. Call once, from the setup hook.
+/// Calls every listener from a snapshot taken under the lock and run outside it, so a listener
+/// that registers another (or takes any path back into [`on_setting_change`]) can't deadlock the
+/// settings thread. One registered mid-call hears the next broadcast.
+fn notify_listeners() {
+    let listeners = LISTENERS.lock_ignore_poison().clone();
+    for listener in &listeners {
+        listener();
+    }
+}
+
+/// Starts the settings window's thread. Call once, from the setup hook. Returns at once: the
+/// baseline read happens on that thread, so its WinRT activation never holds up startup. The
+/// frontend asks for its first look itself (`get_accent_color`, `get_display_accessibility`);
+/// the baseline is only what later signals compare against, and it's read before the window
+/// exists, so no signal can beat it.
 pub(super) fn observe(app: AppHandle) {
     if APP.set(app).is_err() {
         warn!(target: "system_look", "Already following Windows setting changes, not starting a second watcher");
         return;
     }
-    let initial = Look::read();
-    debug!(target: "system_look", "Windows look: {initial:?}");
-    *LAST.lock_ignore_poison() = Some(initial);
     if let Err(error) = std::thread::Builder::new()
         .name("system-look-settings".to_owned())
         .spawn(run_settings_window)
@@ -94,9 +140,13 @@ fn wide(text: &str) -> Vec<u16> {
     text.encode_utf16().chain(std::iter::once(0)).collect()
 }
 
-/// Creates the hidden window, subscribes to `UISettings`, and pumps messages until the process
-/// ends.
+/// Reads the baseline look, creates the hidden window, subscribes to `UISettings`, and pumps
+/// messages until the process ends.
 fn run_settings_window() {
+    let started = std::time::Instant::now();
+    let initial = Look::read();
+    debug!(target: "system_look", "Windows look, read in {:?}: {initial:?}", started.elapsed());
+    *LAST.lock_ignore_poison() = Some(initial);
     let class_name = wide("CmdrSystemLookSettings");
     // SAFETY: a null name asks for the module that started this process (cmdr.exe), loaded for
     // the process's whole life; the handle needs no release.
@@ -186,19 +236,42 @@ fn post_ui_settings_changed() {
 unsafe extern "system" fn window_proc(window: HWND, message: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     match message {
         WM_SETTINGCHANGE => {
-            on_look_signal();
-            for listener in LISTENERS.lock_ignore_poison().iter() {
-                listener();
-            }
+            on_look_signal(window);
+            notify_listeners();
         }
-        WM_THEMECHANGED | WM_SYSCOLORCHANGE | WM_UI_SETTINGS_CHANGED => on_look_signal(),
+        WM_THEMECHANGED | WM_SYSCOLORCHANGE | WM_UI_SETTINGS_CHANGED => on_look_signal(window),
+        WM_TIMER if wparam == SETTLE_TIMER => {
+            // SAFETY: `window` is this procedure's own window, on the thread that owns it, and
+            // `SETTLE_TIMER` is the timer `on_look_signal` armed on it.
+            unsafe { KillTimer(window, SETTLE_TIMER) };
+            SETTLING.close();
+            reread_look();
+            return 0;
+        }
         _ => {}
     }
     // SAFETY: hands this window's own message, unchanged, to the default handler.
     unsafe { DefWindowProcW(window, message, wparam, lparam) }
 }
 
-fn on_look_signal() {
+/// One look signal: opens a burst (arms the settle timer) or joins the open one.
+fn on_look_signal(window: HWND) {
+    if !SETTLING.open() {
+        return;
+    }
+    // SAFETY: `window` is the settings window, on the thread that created it, and no timer
+    // procedure is passed, so the timer arrives as `WM_TIMER` in `window_proc`.
+    if unsafe { SetTimer(window, SETTLE_TIMER, SETTLE_MS, None) } == 0 {
+        // SAFETY: reads this thread's last-error value, right after the call that set it.
+        let code = unsafe { GetLastError() };
+        warn!(target: "system_look", "Couldn't arm the settle timer (error {code}), re-reading now");
+        SETTLING.close();
+        reread_look();
+    }
+}
+
+/// Re-reads the look and emits each part that moved.
+fn reread_look() {
     let next = Look::read();
     let previous = LAST.lock_ignore_poison().replace(next.clone());
     let changes = changes(previous.as_ref(), &next);
@@ -289,6 +362,40 @@ mod tests {
             fill.dark = "#76b9ed".to_owned();
         }
         assert!(changes(Some(&blue), &reshaded).accent.is_some());
+    }
+
+    #[test]
+    fn a_burst_arms_the_timer_once_and_a_fired_timer_opens_the_next() {
+        let burst = Burst::new();
+        assert!(burst.open(), "the first signal arms the timer");
+        assert!(!burst.open(), "the rest of the burst rides on it");
+        assert!(!burst.open());
+        burst.close();
+        assert!(burst.open(), "a signal after the re-read starts a new burst");
+    }
+
+    /// Regression: the window procedure once held the lock while calling listeners, so a
+    /// listener that registered another deadlocked the settings thread.
+    #[test]
+    fn a_listener_may_register_another_listener() {
+        use std::sync::atomic::AtomicUsize;
+
+        static CALLS: AtomicUsize = AtomicUsize::new(0);
+        on_setting_change(Box::new(|| {
+            if CALLS.fetch_add(1, Ordering::SeqCst) == 0 {
+                on_setting_change(Box::new(|| {
+                    CALLS.fetch_add(1, Ordering::SeqCst);
+                }));
+            }
+        }));
+        notify_listeners();
+        assert_eq!(
+            CALLS.load(Ordering::SeqCst),
+            1,
+            "the new listener waits for the next broadcast"
+        );
+        notify_listeners();
+        assert_eq!(CALLS.load(Ordering::SeqCst), 3);
     }
 
     #[test]

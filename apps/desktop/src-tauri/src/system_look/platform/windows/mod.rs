@@ -14,6 +14,7 @@ mod ui_settings;
 
 use log::warn;
 use tauri::AppHandle;
+use windows::UI::ViewManagement::UISettings;
 
 use crate::system_events::{DisplayAccessibility, SystemAccent};
 
@@ -34,7 +35,24 @@ pub(crate) async fn display_accessibility(_app: AppHandle) -> DisplayAccessibili
 
 /// The accent, read fresh: a few COM calls, callable from any thread.
 fn read_accent() -> SystemAccent {
-    match ui_settings::settings().and_then(|settings| ui_settings::accent(&settings)) {
+    accent_from(&ui_settings::settings())
+}
+
+/// Every display option this arm reads, fresh. Cheap, and callable from any thread.
+fn read_display_accessibility() -> DisplayAccessibility {
+    display_accessibility_with(&ui_settings::settings())
+}
+
+/// Both answers from ONE `UISettings`, for the settings window's re-read, which wants them
+/// together.
+fn read_look() -> (SystemAccent, DisplayAccessibility) {
+    let settings = ui_settings::settings();
+    (accent_from(&settings), display_accessibility_with(&settings))
+}
+
+/// The accent from `settings`, or the brand fallback when it (or the read) failed.
+fn accent_from(settings: &windows_core::Result<UISettings>) -> SystemAccent {
+    match settings.as_ref().map_err(Clone::clone).and_then(ui_settings::accent) {
         Ok(accent) => accent,
         Err(error) => {
             warn!(target: "system_look", "Couldn't read the accent color ({error}), using the brand gold");
@@ -43,10 +61,12 @@ fn read_accent() -> SystemAccent {
     }
 }
 
-/// Every display option this arm reads, fresh. Cheap, and callable from any thread.
-fn read_display_accessibility() -> DisplayAccessibility {
-    let transparency_effects = ui_settings::settings()
-        .and_then(|settings| ui_settings::transparency_effects(&settings))
+/// The display options, with Transparency effects read from `settings`.
+fn display_accessibility_with(settings: &windows_core::Result<UISettings>) -> DisplayAccessibility {
+    let transparency_effects = settings
+        .as_ref()
+        .map_err(Clone::clone)
+        .and_then(ui_settings::transparency_effects)
         .unwrap_or_else(|error| {
             warn!(target: "system_look", "Couldn't read Transparency effects ({error}), treating it as on");
             true
