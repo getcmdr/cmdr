@@ -449,7 +449,10 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str) {
 
     // === The Edit rows: file semantics in the main window, the focused field's text elsewhere ===
     // One decision for both bars and every window (`edit_road`), which a page's pick asks too.
-    if let Some(road) = edit_road(id, focused_windows(app)) {
+    // Focus is read only for an Edit row: two window lookups per pick otherwise.
+    if native_edit_selector_for(id).is_some()
+        && let Some(road) = edit_road(id, focused_windows(app))
+    {
         run_edit_road(app, road);
         return;
     }

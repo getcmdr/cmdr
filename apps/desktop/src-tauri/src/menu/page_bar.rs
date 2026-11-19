@@ -23,7 +23,9 @@ use tauri_specta::Event as _;
 
 use crate::ignore_poison::IgnorePoison;
 
-use super::menu_handlers::{EditRoad, FocusedWindows, NativeEditSelector, edit_road, focused_windows};
+use super::menu_handlers::{
+    EditRoad, FocusedWindows, NativeEditSelector, edit_road, focused_windows, native_edit_selector_for,
+};
 use super::{MenuState, cloned_handle};
 
 /// The page bar's last answer and its revision. Lives in `MenuState.page_bar`.
@@ -229,7 +231,9 @@ pub fn pick(app: &AppHandle<tauri::Wry>, menu_id: &str) -> BarPickOutcome {
     if !is_live(&menu_state, menu_id) {
         return BarPickOutcome::NotLive;
     }
-    if let Some(edit) = page_text_edit(menu_id, focused_windows(app), super::builds_native_bar()) {
+    if native_edit_selector_for(menu_id).is_some()
+        && let Some(edit) = page_text_edit(menu_id, focused_windows(app), super::builds_native_bar())
+    {
         return BarPickOutcome::TextEdit { edit };
     }
     if matches!(bar_click(menu_id, Platform::current()), Some(BarClick::ShowHiddenFiles)) {
