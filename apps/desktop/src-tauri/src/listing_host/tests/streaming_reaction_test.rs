@@ -9,6 +9,8 @@
 //! `start` read's task does (`read_as_task`). These cells are the proof that the
 //! policy behind the `ListingEvents` seam kept every reaction.
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::BridgedPath;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -254,7 +256,7 @@ async fn a_cancel_before_the_read_ends_the_listing_unread() {
 /// A volume whose read waits until the listing is cancelled, and says when it
 /// started.
 struct WaitsForCancel {
-    root: PathBuf,
+    root: BridgedPath,
     started: Arc<AtomicBool>,
 }
 
@@ -263,8 +265,8 @@ impl Volume for WaitsForCancel {
         "Waits for cancel"
     }
 
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -273,7 +275,7 @@ impl Volume for WaitsForCancel {
 
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
@@ -281,7 +283,7 @@ impl Volume for WaitsForCancel {
 
     fn list_directory_with_cancel<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
@@ -297,18 +299,22 @@ impl Volume for WaitsForCancel {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        Box::pin(async move { Err(VolumeError::NotFound(path.display().to_string())) })
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            Err(VolumeError::NotFound(path.display().to_string()))
+        })
     }
 
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { true })
     }
 
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(true) })
     }
@@ -320,7 +326,7 @@ async fn a_cancel_during_the_read_ends_the_listing_without_waiting_for_it() {
     let volume = Registered::new(
         "reaction-cancel-during",
         Arc::new(WaitsForCancel {
-            root: PathBuf::from("/"),
+            root: BridgedPath::new(PathBuf::from("/")),
             started: Arc::clone(&started),
         }),
     );

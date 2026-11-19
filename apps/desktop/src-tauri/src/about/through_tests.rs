@@ -2,6 +2,10 @@
 //! table, a volume that stopped answering (scripted, on millisecond budgets), a
 //! healthy share, an archive's entry, and a snapshot from a repo's history.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
+use cmdr_fs::app_path::BridgedPath;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
@@ -30,14 +34,14 @@ use crate::test_support::{TestDir, wait_until};
 /// A volume whose every call waits until the test opens the gate: a share whose
 /// server went silent.
 struct Silent {
-    root: PathBuf,
+    root: BridgedPath,
     gate: Semaphore,
 }
 
 impl Silent {
     fn new() -> Arc<Self> {
         Arc::new(Self {
-            root: PathBuf::from("/Volumes/naspi"),
+            root: BridgedPath::new(PathBuf::from("/Volumes/naspi")),
             gate: Semaphore::new(0),
         })
     }
@@ -53,8 +57,8 @@ impl Volume for Silent {
         "naspi"
     }
 
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -63,10 +67,12 @@ impl Volume for Silent {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let _ = self.gate.acquire().await;
             Err(VolumeError::NotFound(path.display().to_string()))
         })
@@ -74,9 +80,11 @@ impl Volume for Silent {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let _ = self.gate.acquire().await;
             Err(VolumeError::NotFound(path.display().to_string()))
         })
@@ -88,7 +96,7 @@ impl Volume for Silent {
 
     fn read_xattr_many<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         _name: &'a str,
         _mode: cmdr_fs::volume::XattrReadMode,
     ) -> Pin<Box<dyn Future<Output = Vec<cmdr_fs::volume::XattrAnswer>> + Send + 'a>> {
@@ -381,7 +389,7 @@ async fn a_healthy_share_answers_identity_and_its_download_record_through_its_ow
         ("user.xdg.origin.url", b"https://example.com/report.pdf".as_slice()),
     ] {
         share
-            .write_xattr(Path::new("/report.pdf"), name, value)
+            .write_xattr(app_path!("/report.pdf"), name, value)
             .await
             .expect("the double stores xattrs");
     }
@@ -602,7 +610,7 @@ async fn a_file_in_a_branch_snapshot_names_the_branch_and_when_it_last_changed()
 
 /// A volume that answers nothing but whether it takes writes and keeps a Trash.
 struct Shelf {
-    root: PathBuf,
+    root: BridgedPath,
     writable: bool,
     trash: bool,
 }
@@ -612,8 +620,8 @@ impl Volume for Shelf {
         "shelf"
     }
 
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -622,17 +630,25 @@ impl Volume for Shelf {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move { Err(VolumeError::NotFound(path.display().to_string())) })
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            Err(VolumeError::NotFound(path.display().to_string()))
+        })
     }
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        Box::pin(async move { Err(VolumeError::NotFound(path.display().to_string())) })
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            Err(VolumeError::NotFound(path.display().to_string()))
+        })
     }
 
     fn is_writable(&self) -> bool {
@@ -646,7 +662,7 @@ impl Volume for Shelf {
 
 fn shelf(writable: bool, trash: bool) -> Shelf {
     Shelf {
-        root: PathBuf::from("/"),
+        root: BridgedPath::new(PathBuf::from("/")),
         writable,
         trash,
     }

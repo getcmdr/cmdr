@@ -11,6 +11,7 @@
 //! The tree, cancel, conflict, and awkward-name scenarios are the shared ones in
 //! `network_transfer_test_support.rs`, with the phone as the remote end.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -90,7 +91,7 @@ pub(super) async fn dialed_phone_with(serial: &'static str, what: &str, tree: Fa
     let device_dir = format!("/sdcard/{what}");
     let dir = PathBuf::from(format!("{}{device_dir}", cmdr_fs::volume::adb_app_root(serial)));
     volume
-        .create_directory(&dir)
+        .create_directory(&AppPath::legacy_unchecked(&dir))
         .await
         .expect("making the scratch folder on the phone");
     DialedPhone {
@@ -211,7 +212,7 @@ async fn a_file_copied_off_a_phone_lands_whole() {
     let on_phone = phone.dir.join("downloaded.bin");
     phone
         .volume
-        .create_file(&on_phone, &content)
+        .create_file(&AppPath::legacy_unchecked(&on_phone), &content)
         .await
         .expect("seeding the file on the phone");
     let local = registered_local("adb_copy_off_phone");

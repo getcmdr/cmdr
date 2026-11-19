@@ -34,8 +34,8 @@
 //! 0 for everything and every memory guard passes while measuring nothing. That's why
 //! `crates/cmdr-search/src/ranking/memory_tests.rs` asserts a non-zero measurement before it asserts a budget.
 
+use cmdr_fs::app_path::AppPath;
 use std::cell::Cell;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicI64, AtomicU64, AtomicUsize, Ordering};
 
@@ -201,7 +201,7 @@ impl Volume for SlowVolume {
         self.inner.name()
     }
 
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
 
@@ -215,7 +215,7 @@ impl Volume for SlowVolume {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -227,7 +227,7 @@ impl Volume for SlowVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             // allowed-test-sleep: the fake latency IS the fixture
@@ -236,7 +236,7 @@ impl Volume for SlowVolume {
         })
     }
 
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async move {
             // allowed-test-sleep: the fake latency IS the fixture
             tokio::time::sleep(self.read_delay).await;
@@ -246,7 +246,7 @@ impl Volume for SlowVolume {
 
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             // allowed-test-sleep: the fake latency IS the fixture
@@ -257,8 +257,8 @@ impl Volume for SlowVolume {
 
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -270,7 +270,7 @@ impl Volume for SlowVolume {
 
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             // allowed-test-sleep: the fake latency IS the fixture
@@ -281,7 +281,7 @@ impl Volume for SlowVolume {
 
     fn create_file<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -316,8 +316,8 @@ impl Volume for CapabilityStub {
         "stub"
     }
 
-    fn root(&self) -> &Path {
-        Path::new("/Volumes/stub")
+    fn root(&self) -> &AppPath {
+        AppPath::from_normalized("/Volumes/stub").expect("a canonical literal")
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -326,7 +326,7 @@ impl Volume for CapabilityStub {
 
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         never_asked!()
@@ -334,18 +334,18 @@ impl Volume for CapabilityStub {
 
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         never_asked!()
     }
 
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         never_asked!()
     }
 
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         never_asked!()
     }

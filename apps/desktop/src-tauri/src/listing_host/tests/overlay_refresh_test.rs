@@ -13,6 +13,7 @@
 
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -53,7 +54,10 @@ async fn a_full_refresh_of_dot_git_tracks_what_the_overlay_contributes() {
     get_volume_manager().register(&volume_id, Arc::clone(&volume));
 
     // A pane's listing as the first read left it: real entries plus the six.
-    let mut entries = volume.list_directory(&dot_git, None).await.expect("listing .git");
+    let mut entries = volume
+        .list_directory(&AppPath::legacy_unchecked(&dot_git), None)
+        .await
+        .expect("listing .git");
     let added = decorate(listings(), "root", &volume, &dot_git, &mut entries).await;
     assert_eq!(added, 6);
     let listing = TestListing::new()
@@ -118,7 +122,10 @@ async fn a_listing_refresh_of_dot_git_keeps_the_portal_rows() {
     let volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder("Repo", &dir, crate::volume_host::host()));
     get_volume_manager().register(&volume_id, Arc::clone(&volume));
 
-    let mut entries = volume.list_directory(&dot_git, None).await.expect("listing .git");
+    let mut entries = volume
+        .list_directory(&AppPath::legacy_unchecked(&dot_git), None)
+        .await
+        .expect("listing .git");
     let added = decorate(listings(), "root", &volume, &dot_git, &mut entries).await;
     assert_eq!(added, 6);
     let listing = TestListing::new()

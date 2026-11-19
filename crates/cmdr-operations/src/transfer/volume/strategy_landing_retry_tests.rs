@@ -15,6 +15,7 @@ use crate::testing::TestOperations;
 use crate::transfer::recovered_name::LandingAftermath;
 use crate::transfer::retry;
 use crate::transfer::transfer_driver::LeafProgressLedger;
+use cmdr_fs::app_path;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeError};
 use std::future::Future;
@@ -61,7 +62,7 @@ impl LandingBlips {
     async fn names(&self) -> Vec<String> {
         let mut names: Vec<String> = self
             .inner
-            .list_directory(Path::new("/"), None)
+            .list_directory(app_path!("/"), None)
             .await
             .unwrap_or_default()
             .into_iter()
@@ -72,7 +73,11 @@ impl LandingBlips {
     }
 
     async fn read(&self, path: &str) -> Option<Vec<u8>> {
-        let mut stream = self.inner.open_read_stream(Path::new(path)).await.ok()?;
+        let mut stream = self
+            .inner
+            .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+            .await
+            .ok()?;
         let mut buf = Vec::new();
         while let Some(Ok(chunk)) = stream.next_chunk().await {
             buf.extend_from_slice(&chunk);
@@ -106,22 +111,25 @@ impl Volume for LandingBlips {
 
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let to_app = to;
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
             // Elsewhere, or onto a name that's taken (which answers as it
             // would), the rename goes through untouched and uncounted.
-            if to != Path::new("/a.txt") || self.inner.exists(to).await {
-                return self.inner.rename(from, to, force).await;
+            if to != Path::new("/a.txt") || self.inner.exists(to_app).await {
+                return self.inner.rename(from, to_app, force).await;
             }
             let call = self.renames_onto_the_name.fetch_add(1, Ordering::SeqCst);
             if call >= self.blips {
-                return self.inner.rename(from, to, force).await;
+                return self.inner.rename(from, to_app, force).await;
             }
             if matches!(self.blip, Blip::Performed) {
-                self.inner.rename(from, to, force).await?;
+                self.inner.rename(from, to_app, force).await?;
             }
             Err(VolumeError::ConnectionTimeout("the rename's reply never came".into()))
         })
@@ -130,7 +138,7 @@ impl Volume for LandingBlips {
 
 async fn source_with_payload() -> Arc<dyn Volume> {
     let inner = Arc::new(InMemoryVolume::new("source").with_space_info(10_000_000, 10_000_000));
-    inner.create_file(Path::new("/a.txt"), PAYLOAD).await.unwrap();
+    inner.create_file(app_path!("/a.txt"), PAYLOAD).await.unwrap();
     inner as Arc<dyn Volume>
 }
 
@@ -187,7 +195,7 @@ async fn a_rename_onto_a_cleared_name_that_blips_lands_instead_of_being_rescued(
     let guard = engine.register_state("landing-blip-cleared", make_state(&engine));
     let dest = LandingBlips::new(Blip::Unperformed, 1);
     // A `Rename` pick's placeholder: the name this write claimed.
-    dest.inner.create_file(Path::new("/a.txt"), b"").await.unwrap();
+    dest.inner.create_file(app_path!("/a.txt"), b"").await.unwrap();
 
     copy_one(&dest, guard.state(), WriteStaging::StageOntoClaimedName)
         .await
@@ -212,7 +220,7 @@ async fn a_rename_whose_reply_was_lost_counts_as_landed_and_names_no_missing_tem
     let guard = engine.register_state("landing-blip-performed", make_state(&engine));
     let dest = LandingBlips::new(Blip::Performed, 1);
     // A `Rename` pick's placeholder: the name this write claimed.
-    dest.inner.create_file(Path::new("/a.txt"), b"").await.unwrap();
+    dest.inner.create_file(app_path!("/a.txt"), b"").await.unwrap();
 
     let bytes = copy_one(&dest, guard.state(), WriteStaging::StageOntoClaimedName)
         .await
@@ -253,7 +261,7 @@ async fn a_cleared_name_that_never_takes_the_rename_rescues_the_bytes_after_the_
     let guard = engine.register_state("landing-blip-cap-cleared", make_state(&engine));
     let dest = LandingBlips::new(Blip::Unperformed, usize::MAX);
     // A `Rename` pick's placeholder: the name this write claimed.
-    dest.inner.create_file(Path::new("/a.txt"), b"").await.unwrap();
+    dest.inner.create_file(app_path!("/a.txt"), b"").await.unwrap();
 
     let failed = copy_one(&dest, guard.state(), WriteStaging::StageOntoClaimedName)
         .await

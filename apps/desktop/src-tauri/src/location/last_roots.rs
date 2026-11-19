@@ -247,7 +247,12 @@ fn write_now() {
 /// before; `None` keeps every recorded path as it is.
 pub(crate) fn root_move(volume_id: &str) -> Option<RootMove> {
     let manager = get_volume_manager();
-    let live = manager.get(volume_id)?.root().to_string_lossy().into_owned();
+    let live = manager
+        .get(volume_id)?
+        .root()
+        .as_std_legacy()
+        .to_string_lossy()
+        .into_owned();
     let shared = manager.has_shared_identity(volume_id) || with_saved(|roots| roots.is_shared(volume_id));
     let earlier = super::facts::earlier_roots_of(volume_id, &live);
     eligible_move(live, earlier, shared)

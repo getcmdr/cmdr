@@ -72,6 +72,8 @@
 //!   corpus, so a gap between them is the cost of having selected a folder.
 //!   `CMDR_BENCH_SHAPES=folder-ab` runs exactly that pair.
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -157,7 +159,7 @@ impl Volume for FixedConcurrencySource {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -171,42 +173,42 @@ impl Volume for FixedConcurrencySource {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> StdPin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> StdPin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> StdPin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_copy(path)
     }
     fn scan_for_copy_batch<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
     ) -> StdPin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_copy_batch(paths)
     }
     fn get_space_info<'a>(&'a self) -> StdPin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
         self.inner.get_space_info()
     }
-    fn local_path(&self) -> Option<PathBuf> {
+    fn local_path(&self) -> Option<AppPathBuf> {
         self.inner.local_path()
     }
     fn supports_export(&self) -> bool {
@@ -217,20 +219,20 @@ impl Volume for FixedConcurrencySource {
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         self.inner.open_read_stream(path)
     }
     fn open_read_stream_with_hint<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         size_hint: Option<u64>,
     ) -> StdPin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         self.inner.open_read_stream_with_hint(path, size_hint)
     }
     fn open_read_stream_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         size_hint: Option<u64>,
         ask: cmdr_fs::metadata::MetadataAsk,
     ) -> StdPin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
@@ -238,7 +240,7 @@ impl Volume for FixedConcurrencySource {
     }
     fn read_range<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         offset: u64,
         len: usize,
     ) -> StdPin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
@@ -444,7 +446,7 @@ async fn timed_copy(corpus: &Corpus, dest: &Arc<dyn Volume>, dir: &str, window: 
     );
 
     if dest_mode == DestMode::Existing {
-        dest.create_directory(Path::new(dir))
+        dest.create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
             .await
             .expect("create the destination directory");
     }
@@ -517,7 +519,7 @@ async fn timed_copy(corpus: &Corpus, dest: &Arc<dyn Volume>, dir: &str, window: 
         None => dir.to_owned(),
     };
     let landed = dest
-        .list_directory(Path::new(&landing), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new(&landing)), None)
         .await
         .expect("list the destination");
     let leftovers: Vec<&str> = landed
@@ -565,17 +567,20 @@ async fn empty_directory(vol: &Arc<dyn Volume>, dir: &str) {
         !dir.starts_with('/') && (dir.starts_with(NAS_BENCH_ROOT) || dir.starts_with("cmdr-bench-")),
         "refusing to clean {dir:?}: outside the bench scratch root"
     );
-    if let Ok(entries) = vol.list_directory(Path::new(dir), None).await {
+    if let Ok(entries) = vol
+        .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
+        .await
+    {
         for entry in entries {
             let child = format!("{dir}/{}", entry.name);
             if entry.is_directory {
                 Box::pin(empty_directory(vol, &child)).await;
             } else {
-                let _ = vol.delete(Path::new(&child)).await;
+                let _ = vol.delete(&AppPath::legacy_unchecked(Path::new(&child))).await;
             }
         }
     }
-    let _ = vol.delete(Path::new(dir)).await;
+    let _ = vol.delete(&AppPath::legacy_unchecked(Path::new(dir))).await;
 }
 
 /// Which server the sweep runs against, and where on it the scratch lives.
@@ -639,7 +644,9 @@ async fn connect_target() -> Target {
             let volume: Arc<dyn Volume> = Arc::new(volume);
             // The scratch root is created once and left in place; only the
             // per-rep directories under it come and go.
-            let _ = volume.create_directory_all(Path::new(NAS_BENCH_ROOT)).await;
+            let _ = volume
+                .create_directory_all(&AppPath::legacy_unchecked(Path::new(NAS_BENCH_ROOT)))
+                .await;
             Target {
                 label: format!("QNAP TS-464 (\"Testnas\", {host}/{share}, direct smb2)"),
                 volume,
@@ -678,7 +685,7 @@ async fn serial_precheck_floor(dest: &Arc<dyn Volume>, dir: &str, files: usize) 
         // aren't there, and a miss is the cheap answer. If anything, this
         // UNDERSTATES the floor.
         let probe = format!("{dir}/precheck-probe-{index:05}.missing");
-        let _ = dest.get_metadata(Path::new(&probe)).await;
+        let _ = dest.get_metadata(&AppPath::legacy_unchecked(Path::new(&probe))).await;
     }
     started.elapsed()
 }
@@ -827,7 +834,7 @@ async fn concurrency_bench_sweep_window_against_wall_clock() {
         };
         target
             .volume
-            .create_directory(Path::new(&probe_dir))
+            .create_directory(&AppPath::legacy_unchecked(Path::new(&probe_dir)))
             .await
             .expect("create the pre-check probe directory");
         let floor = serial_precheck_floor(&target.volume, &probe_dir, corpus.file_names.len()).await;

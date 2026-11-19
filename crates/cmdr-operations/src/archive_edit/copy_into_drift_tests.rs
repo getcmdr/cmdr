@@ -12,6 +12,8 @@
 //! originals go after it.
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::sync::Mutex;
 
 use futures_util::FutureExt;
@@ -132,21 +134,25 @@ async fn a_remote_source_keeps_what_changed_or_appeared_during_a_move_into_a_zip
     let events = EditOnFirstProgress::new(move || {
         let draft = Path::new("/d/draft.txt");
         let modified = edited
-            .get_metadata(draft)
+            .get_metadata(&AppPath::legacy_unchecked(draft))
             .now_or_never()
             .unwrap()
             .unwrap()
             .modified_at
             .unwrap();
-        edited.delete(draft).now_or_never().unwrap().unwrap();
         edited
-            .create_file(draft, b"final draft")
+            .delete(&AppPath::legacy_unchecked(draft))
+            .now_or_never()
+            .unwrap()
+            .unwrap();
+        edited
+            .create_file(&AppPath::legacy_unchecked(draft), b"final draft")
             .now_or_never()
             .unwrap()
             .unwrap();
         edited.set_modified_at(draft, Some(modified + 5));
         edited
-            .create_file(Path::new("/d/download.zip"), b"arrived mid-move")
+            .create_file(app_path!("/d/download.zip"), b"arrived mid-move")
             .now_or_never()
             .unwrap()
             .unwrap();
@@ -159,12 +165,12 @@ async fn a_remote_source_keeps_what_changed_or_appeared_during_a_move_into_a_zip
         Some(b"first draft".as_slice())
     );
     assert!(
-        source.exists(Path::new("/d/draft.txt")).await,
+        source.exists(app_path!("/d/draft.txt")).await,
         "the saved-over original stays"
     );
-    assert!(source.exists(Path::new("/d/download.zip")).await, "the newcomer stays");
+    assert!(source.exists(app_path!("/d/download.zip")).await, "the newcomer stays");
     assert!(
-        !source.exists(Path::new("/d/report.txt")).await,
+        !source.exists(app_path!("/d/report.txt")).await,
         "an untouched original still goes"
     );
     let left = complete.appeared_during_move.expect("what stayed is news");

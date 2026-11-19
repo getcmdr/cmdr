@@ -5,6 +5,8 @@
 //! and fails these cells: the stamp has to come after the last child (post-order).
 //! The contract: `DETAILS.md` § "Copies keep the source's metadata".
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -34,10 +36,22 @@ fn make_state(engine: &TestOperations) -> Arc<WriteOperationState> {
 async fn seed_dated_folder(source: &InMemoryVolume, name: &str) -> PathBuf {
     let root = PathBuf::from(format!("/{name}"));
     let inner = root.join("inner");
-    source.create_directory(&root).await.unwrap();
-    source.create_directory(&inner).await.unwrap();
-    source.create_file(&root.join("photo.bin"), b"photo").await.unwrap();
-    source.create_file(&inner.join("deep.bin"), b"deep").await.unwrap();
+    source
+        .create_directory(&AppPath::legacy_unchecked(&root))
+        .await
+        .unwrap();
+    source
+        .create_directory(&AppPath::legacy_unchecked(&inner))
+        .await
+        .unwrap();
+    source
+        .create_file(&AppPath::legacy_unchecked(&root.join("photo.bin")), b"photo")
+        .await
+        .unwrap();
+    source
+        .create_file(&AppPath::legacy_unchecked(&inner.join("deep.bin")), b"deep")
+        .await
+        .unwrap();
     source.set_modified_at(&inner, Some(INNER_FOLDER_DATE));
     source.set_modified_at(&root, Some(FOLDER_DATE));
     root
@@ -52,7 +66,7 @@ fn volumes() -> (Arc<InMemoryVolume>, Arc<InMemoryVolume>) {
 
 async fn listed_date(volume: &InMemoryVolume, path: &str) -> Option<u64> {
     volume
-        .get_metadata(Path::new(path))
+        .get_metadata(&AppPath::legacy_unchecked(Path::new(path)))
         .await
         .unwrap_or_else(|e| panic!("{path} must exist, got {e:?}"))
         .modified_at
@@ -85,7 +99,7 @@ async fn copy(
 async fn a_copied_folder_keeps_its_date_and_so_does_the_folder_inside_it() {
     let engine = TestOperations::new();
     let (source, dest) = volumes();
-    dest.create_directory(Path::new("/inbox")).await.unwrap();
+    dest.create_directory(app_path!("/inbox")).await.unwrap();
     let album = seed_dated_folder(&source, "album").await;
 
     copy(
@@ -107,7 +121,7 @@ async fn a_copied_folder_keeps_its_date_and_so_does_the_folder_inside_it() {
 async fn copied_folders_keep_their_dates_through_the_concurrent_driver() {
     let engine = TestOperations::new();
     let (source, dest) = volumes();
-    dest.create_directory(Path::new("/inbox")).await.unwrap();
+    dest.create_directory(app_path!("/inbox")).await.unwrap();
     let mut sources = Vec::new();
     for name in ["one", "two", "three"] {
         sources.push(seed_dated_folder(&source, name).await);
@@ -139,8 +153,8 @@ async fn copied_folders_keep_their_dates_through_the_concurrent_driver() {
 async fn a_merge_leaves_the_existing_folders_date_alone() {
     let engine = TestOperations::new();
     let (source, dest) = volumes();
-    dest.create_directory(Path::new("/inbox")).await.unwrap();
-    dest.create_directory(Path::new("/inbox/album")).await.unwrap();
+    dest.create_directory(app_path!("/inbox")).await.unwrap();
+    dest.create_directory(app_path!("/inbox/album")).await.unwrap();
     let album = seed_dated_folder(&source, "album").await;
 
     copy(
@@ -165,7 +179,7 @@ async fn a_merge_leaves_the_existing_folders_date_alone() {
 async fn a_copy_that_fails_partway_dates_no_folder() {
     let engine = TestOperations::new();
     let (source, dest_inner) = volumes();
-    dest_inner.create_directory(Path::new("/inbox")).await.unwrap();
+    dest_inner.create_directory(app_path!("/inbox")).await.unwrap();
     let album = seed_dated_folder(&source, "album").await;
     let dest = FaultyVolume::wrapping(Arc::clone(&dest_inner))
         .failing_call(
@@ -193,7 +207,7 @@ async fn a_copy_that_fails_partway_dates_no_folder() {
     );
     assert!(result.is_err(), "the second file's write failing fails the copy");
     for folder in ["/inbox/album", "/inbox/album/inner"] {
-        if dest_inner.exists(Path::new(folder)).await {
+        if dest_inner.exists(&AppPath::legacy_unchecked(Path::new(folder))).await {
             let listed = listed_date(&dest_inner, folder).await;
             assert!(
                 listed != Some(FOLDER_DATE) && listed != Some(INNER_FOLDER_DATE),
@@ -220,7 +234,7 @@ async fn copied_folders_keep_their_creation_dates_through_both_drivers() {
         ("op-folder-birth-concurrent", vec!["one", "two", "three"]),
     ] {
         let (source, dest) = volumes();
-        dest.create_directory(Path::new("/inbox")).await.unwrap();
+        dest.create_directory(app_path!("/inbox")).await.unwrap();
         let mut sources = Vec::new();
         for name in &names {
             let root = seed_dated_folder(&source, name).await;
@@ -236,7 +250,12 @@ async fn copied_folders_keep_their_creation_dates_through_both_drivers() {
         for name in &names {
             let created = |path: String| {
                 let dest = Arc::clone(&dest);
-                async move { dest.get_metadata(Path::new(&path)).await.unwrap().created_at }
+                async move {
+                    dest.get_metadata(&AppPath::legacy_unchecked(Path::new(&path)))
+                        .await
+                        .unwrap()
+                        .created_at
+                }
             };
             assert_eq!(
                 created(format!("/inbox/{name}")).await,
@@ -267,7 +286,7 @@ async fn copy_onto_a_share(
     Result<(), crate::types::WriteOperationError>,
 ) {
     let (source, dest_inner) = volumes();
-    dest_inner.create_directory(Path::new("/inbox")).await.unwrap();
+    dest_inner.create_directory(app_path!("/inbox")).await.unwrap();
     let album = seed_dated_folder(&source, "album").await;
     let share = OutageVolume::wrap(Arc::clone(&dest_inner), op);
     arm(&share);

@@ -18,6 +18,7 @@
 //! the other. The cells stay here because the integration lane selects them by
 //! the `sftp_integration_` name prefix.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -54,7 +55,7 @@ async fn sftp_integration_copying_off_a_server_lands_every_byte() {
     let content = self_describing_bytes(PAYLOAD_BYTES, "downloaded.bin");
     let remote_file = dir.join("downloaded.bin");
     remote
-        .create_file(&remote_file, &content)
+        .create_file(&AppPath::legacy_unchecked(&remote_file), &content)
         .await
         .expect("seed the file on the server");
 
@@ -120,7 +121,7 @@ async fn sftp_integration_copying_onto_a_server_lands_every_byte() {
         crate::volume_host::host(),
     ));
     local
-        .create_file(Path::new("uploaded.bin"), &content)
+        .create_file(&AppPath::legacy_unchecked(Path::new("uploaded.bin")), &content)
         .await
         .expect("seed the local file");
 

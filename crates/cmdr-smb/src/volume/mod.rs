@@ -11,6 +11,7 @@
 //! keeps on the share-scoped inner state. `CLAUDE.md` has the must-knows,
 //! `DETAILS.md` the lifecycles and the decisions.
 
+use cmdr_fs::app_path::BridgedPath;
 use cmdr_fs::ignore_poison::RwLockIgnorePoison;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::Retirement;
@@ -203,7 +204,7 @@ pub struct SmbVolume {
     /// The OS mount point THIS instance addresses (for example,
     /// "/Volumes/Documents"). Immutable: a different root means a different
     /// instance, so `root()` stays a plain `&Path` borrow.
-    mount_path: PathBuf,
+    mount_path: BridgedPath,
     /// Where [`mount_path`](Self::mount_path) sits INSIDE the share: `/`-separated,
     /// no leading or trailing separator, and empty for the ordinary mount at the
     /// share root.
@@ -400,7 +401,7 @@ impl SmbVolume {
         let transfer = transfer_session::TransferSession::new(Arc::clone(&params), volume_id.clone(), host.runtime());
         Self {
             name: name.into(),
-            mount_path: mount_path.clone(),
+            mount_path: BridgedPath::new(mount_path.clone()),
             share_root: share_root.clone(),
             mount_root_gone: AtomicBool::new(false),
             inner: Arc::new_cyclic(|me| SmbVolumeInner {
@@ -456,7 +457,7 @@ impl SmbVolumeInner {
         let share_root = self.share_root_for(&mount_path).unwrap_or_default();
         SmbVolume {
             name: self.share_name.clone(),
-            mount_path,
+            mount_path: BridgedPath::new(mount_path),
             share_root,
             mount_root_gone: AtomicBool::new(false),
             inner: self,
@@ -513,7 +514,7 @@ impl SmbVolume {
         *self.inner.active_mount_path.write_ignore_poison() = new_root.to_path_buf();
         Some(Self {
             name: self.name.clone(),
-            mount_path: new_root.to_path_buf(),
+            mount_path: BridgedPath::new(new_root.to_path_buf()),
             share_root,
             mount_root_gone: AtomicBool::new(false),
             inner: Arc::clone(&self.inner),
@@ -554,7 +555,7 @@ impl SmbVolume {
             }
         }
         other.note_mount_root(MountAnchor {
-            mount_path: self.mount_path.clone(),
+            mount_path: self.mount_path.clone().into_path_buf(),
             share_root: self.share_root.clone(),
         });
     }

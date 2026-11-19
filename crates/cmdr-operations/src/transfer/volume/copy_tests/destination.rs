@@ -4,6 +4,7 @@
 
 use super::*;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path;
 
 // ========================================================================
 // Volume-aware destination auto-create (recursive `create_directory_all`).
@@ -17,11 +18,11 @@ use crate::testing::TestOperations;
 async fn cross_volume_copy_creates_missing_nested_dest() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_file(Path::new("/a.txt"), b"alpha").await.unwrap();
-    source.create_file(Path::new("/b.txt"), b"bravo").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"alpha").await.unwrap();
+    source.create_file(app_path!("/b.txt"), b"bravo").await.unwrap();
 
     // `/incoming/2026/trip` does not exist on the dest volume yet.
-    assert!(!dest.exists(Path::new("/incoming")).await);
+    assert!(!dest.exists(app_path!("/incoming")).await);
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
@@ -48,19 +49,21 @@ async fn cross_volume_copy_creates_missing_nested_dest() {
     // Every ancestor was created as a directory.
     for dir in ["/incoming", "/incoming/2026", "/incoming/2026/trip"] {
         assert!(
-            dest.is_directory(Path::new(dir)).await.expect("ancestor statable"),
+            dest.is_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+                .await
+                .expect("ancestor statable"),
             "{dir} should be a directory"
         );
     }
 
     // Both files landed in the freshly-created dest.
     let mut stream_a = dest
-        .open_read_stream(Path::new("/incoming/2026/trip/a.txt"))
+        .open_read_stream(app_path!("/incoming/2026/trip/a.txt"))
         .await
         .unwrap();
     assert_eq!(stream_a.next_chunk().await.unwrap().unwrap(), b"alpha");
     let mut stream_b = dest
-        .open_read_stream(Path::new("/incoming/2026/trip/b.txt"))
+        .open_read_stream(app_path!("/incoming/2026/trip/b.txt"))
         .await
         .unwrap();
     assert_eq!(stream_b.next_chunk().await.unwrap().unwrap(), b"bravo");
@@ -76,9 +79,9 @@ async fn cross_volume_copy_into_existing_dest_is_a_no_op_create() {
     // Re-running into an already-existing dest must not fail the create gate
     // (a merge into an existing folder is a no-op create).
     let (source, dest) = make_volumes();
-    source.create_file(Path::new("/a.txt"), b"alpha").await.unwrap();
-    dest.create_directory(Path::new("/existing")).await.unwrap();
-    dest.create_file(Path::new("/existing/keep.txt"), b"keep")
+    source.create_file(app_path!("/a.txt"), b"alpha").await.unwrap();
+    dest.create_directory(app_path!("/existing")).await.unwrap();
+    dest.create_file(app_path!("/existing/keep.txt"), b"keep")
         .await
         .unwrap();
 
@@ -104,8 +107,8 @@ async fn cross_volume_copy_into_existing_dest_is_a_no_op_create() {
         result
     );
     // The pre-existing dest file survived (no wholesale recreate).
-    assert!(dest.exists(Path::new("/existing/keep.txt")).await);
-    assert!(dest.exists(Path::new("/existing/a.txt")).await);
+    assert!(dest.exists(app_path!("/existing/keep.txt")).await);
+    assert!(dest.exists(app_path!("/existing/a.txt")).await);
 }
 
 // ========================================================================
@@ -129,7 +132,7 @@ async fn a_destination_that_cannot_be_addressed_is_never_reported_as_a_missing_s
             .with_create_directory_not_found(),
     ) as Arc<dyn Volume>;
 
-    source.create_file(Path::new("/report.pdf"), b"payload").await.unwrap();
+    source.create_file(app_path!("/report.pdf"), b"payload").await.unwrap();
 
     let failure = copy_volumes_with_progress(
         Arc::new(CollectorEventSink::new()),
@@ -159,10 +162,10 @@ async fn an_explicit_volume_copy_name_uses_the_requested_leaf_and_conflict_polic
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
     source
-        .create_file(Path::new("/original.txt"), b"new bytes")
+        .create_file(app_path!("/original.txt"), b"new bytes")
         .await
         .unwrap();
-    dest.create_file(Path::new("/renamed.txt"), b"old bytes").await.unwrap();
+    dest.create_file(app_path!("/renamed.txt"), b"old bytes").await.unwrap();
     for policy in [ConflictResolution::Skip, ConflictResolution::Overwrite] {
         let config = VolumeCopyConfig {
             leaves: crate::types::TransferLeaves::single("renamed.txt"),
@@ -181,15 +184,15 @@ async fn an_explicit_volume_copy_name_uses_the_requested_leaf_and_conflict_polic
         )
         .await;
         assert!(result.is_ok(), "{result:?}");
-        assert!(!dest.exists(Path::new("/original.txt")).await);
-        let mut reader = dest.open_read_stream(Path::new("/renamed.txt")).await.unwrap();
+        assert!(!dest.exists(app_path!("/original.txt")).await);
+        let mut reader = dest.open_read_stream(app_path!("/renamed.txt")).await.unwrap();
         let expected = if policy == ConflictResolution::Skip {
             b"old bytes"
         } else {
             b"new bytes"
         };
         assert_eq!(reader.next_chunk().await.unwrap().unwrap(), expected);
-        assert!(source.exists(Path::new("/original.txt")).await);
+        assert!(source.exists(app_path!("/original.txt")).await);
     }
 }
 
@@ -197,9 +200,9 @@ async fn an_explicit_volume_copy_name_uses_the_requested_leaf_and_conflict_polic
 async fn an_explicit_volume_copy_folder_name_preserves_children_and_empty_folders() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_directory_all(Path::new("/original/empty")).await.unwrap();
+    source.create_directory_all(app_path!("/original/empty")).await.unwrap();
     source
-        .create_file(Path::new("/original/file.txt"), b"payload")
+        .create_file(app_path!("/original/file.txt"), b"payload")
         .await
         .unwrap();
     let config = VolumeCopyConfig {
@@ -218,9 +221,9 @@ async fn an_explicit_volume_copy_folder_name_preserves_children_and_empty_folder
     )
     .await;
     assert!(result.is_ok(), "{result:?}");
-    assert!(dest.exists(Path::new("/nested/renamed/file.txt")).await);
-    assert!(dest.is_directory(Path::new("/nested/renamed/empty")).await.unwrap());
-    assert!(!dest.exists(Path::new("/nested/original")).await);
+    assert!(dest.exists(app_path!("/nested/renamed/file.txt")).await);
+    assert!(dest.is_directory(app_path!("/nested/renamed/empty")).await.unwrap());
+    assert!(!dest.exists(app_path!("/nested/original")).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -232,9 +235,9 @@ async fn a_file_where_the_destination_folder_should_be_is_named_and_nothing_is_w
     // second reported the folder it was asked to CREATE as missing.
     for destination in ["/photos/2026", "/photos/2026/trip"] {
         let (source, dest) = make_volumes();
-        source.create_file(Path::new("/report.pdf"), b"payload").await.unwrap();
-        dest.create_directory(Path::new("/photos")).await.unwrap();
-        dest.create_file(Path::new("/photos/2026"), b"the user's file")
+        source.create_file(app_path!("/report.pdf"), b"payload").await.unwrap();
+        dest.create_directory(app_path!("/photos")).await.unwrap();
+        dest.create_file(app_path!("/photos/2026"), b"the user's file")
             .await
             .unwrap();
 
@@ -256,7 +259,7 @@ async fn a_file_where_the_destination_folder_should_be_is_named_and_nothing_is_w
             "copy into {destination}: expected DestinationNotAFolder naming the file, got: {:?}",
             failure.error
         );
-        let in_the_way = dest.get_metadata(Path::new("/photos/2026")).await.unwrap();
+        let in_the_way = dest.get_metadata(app_path!("/photos/2026")).await.unwrap();
         assert!(
             !in_the_way.is_directory && in_the_way.size == Some(15),
             "the file in the way must be left exactly as it was"

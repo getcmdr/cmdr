@@ -36,7 +36,11 @@ fn a_renamed_volume_keeps_its_id_at_its_new_root(spec: ImageSpec) {
     handle_volume_renamed(&before, &after);
 
     let serving = get_volume_manager().get(&id).expect("still registered under its id");
-    assert_eq!(serving.root().to_string_lossy(), after, "it serves from the new root");
+    assert_eq!(
+        serving.root().as_std_legacy().to_string_lossy(),
+        after,
+        "it serves from the new root"
+    );
     assert!(
         get_volume_manager()
             .find_by_root(std::path::Path::new(&before))

@@ -1,5 +1,6 @@
 //! The look-alike finder: form-only matches, exact names, and when it lists.
 
+use cmdr_fs::app_path;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -50,8 +51,11 @@ fn two_look_alikes_and_no_exact_name_is_several() {
 #[tokio::test]
 async fn a_byte_exact_volume_lists_to_find_the_look_alike() {
     let volume = InMemoryVolume::new("v");
-    volume.create_directory(Path::new("/dir")).await.unwrap();
-    volume.create_file(Path::new("/dir/caf\u{e9}.txt"), b"x").await.unwrap();
+    volume.create_directory(app_path!("/dir")).await.unwrap();
+    volume
+        .create_file(&AppPath::legacy_unchecked(Path::new("/dir/caf\u{e9}.txt")), b"x")
+        .await
+        .unwrap();
     match look_alike_in(&volume, Path::new("/dir"), "cafe\u{301}.txt").await {
         Ok(LookAlike::One(found)) => assert_eq!(found.path, "/dir/caf\u{e9}.txt"),
         other => panic!("expected the composed entry, got {other:?}"),
@@ -79,7 +83,7 @@ async fn share_with_pane_listing(
     let id = unique_test_id(&format!("look-alike-{tag}"));
     let volume = Arc::new(WatchCoverageVolume::new(&id, coverage));
     volume
-        .create_directory(Path::new("/dir"))
+        .create_directory(app_path!("/dir"))
         .await
         .expect("the fixture folder");
     panes.show_volume(&id, Arc::clone(&volume) as Arc<dyn Volume>);

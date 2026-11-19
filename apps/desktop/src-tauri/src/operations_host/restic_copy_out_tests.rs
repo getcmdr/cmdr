@@ -7,6 +7,8 @@
 
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
@@ -277,7 +279,7 @@ async fn a_special_file_in_a_snapshot_is_skipped_and_its_siblings_land() {
         .await
         .expect("the source volume");
     let names: Vec<String> = source
-        .list_directory(&sources[0], None)
+        .list_directory(&AppPath::legacy_unchecked(&sources[0]), None)
         .await
         .expect("the folder lists")
         .into_iter()
@@ -374,7 +376,7 @@ async fn a_restore_onto_a_destination_with_no_links_counts_each_as_a_skip() {
     .await;
     drive.unlock().await;
     let dest = Arc::new(cmdr_fs::volume::InMemoryVolume::new("No links").with_space_info(10_000_000, 10_000_000));
-    dest.create_directory(Path::new("/inbox")).await.expect("inbox");
+    dest.create_directory(app_path!("/inbox")).await.expect("inbox");
 
     for (tag, source_path, skips, lands) in [
         ("selected", drive.backed_up.join("alone"), 1, None),
@@ -400,11 +402,14 @@ async fn a_restore_onto_a_destination_with_no_links_counts_each_as_a_skip() {
         assert!(result.is_ok(), "{tag}: {result:?}");
         assert_eq!(events.complete.lock().expect("events")[0].files_skipped, skips, "{tag}");
         if let Some(landed) = lands {
-            assert!(dest.exists(Path::new(landed)).await, "{tag}");
+            assert!(
+                dest.exists(&AppPath::legacy_unchecked(Path::new(landed))).await,
+                "{tag}"
+            );
         }
     }
-    assert!(!dest.exists(Path::new("/inbox/alone")).await);
-    assert!(!dest.exists(Path::new("/inbox/docs/near")).await);
+    assert!(!dest.exists(app_path!("/inbox/alone")).await);
+    assert!(!dest.exists(app_path!("/inbox/docs/near")).await);
 }
 
 /// A Mac's backup is full of symlinks, and the view never follows one. A folder

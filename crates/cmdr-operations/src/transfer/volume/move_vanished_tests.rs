@@ -7,6 +7,7 @@
 //! sweeps ask then comes from the test's own thread.
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path;
 use std::cell::Cell;
 use std::rc::Rc;
 
@@ -93,8 +94,8 @@ fn mount_answers(
 }
 
 async fn two_phone_files(source: &InMemoryVolume) -> Vec<PathBuf> {
-    source.create_file(Path::new("/a.jpg"), b"one").await.unwrap();
-    source.create_file(Path::new("/b.jpg"), b"two").await.unwrap();
+    source.create_file(app_path!("/a.jpg"), b"one").await.unwrap();
+    source.create_file(app_path!("/b.jpg"), b"two").await.unwrap();
     vec![PathBuf::from("/a.jpg"), PathBuf::from("/b.jpg")]
 }
 
@@ -130,7 +131,11 @@ async fn a_destination_that_left_before_the_sweep_keeps_every_source() {
         other => panic!("expected the stick named as disconnected, got {other:?}"),
     }
     for path in &sources {
-        assert!(source.exists(path).await, "{} stays on the phone", path.display());
+        assert!(
+            source.exists(&AppPath::legacy_unchecked(path)).await,
+            "{} stays on the phone",
+            path.display()
+        );
         assert_ne!(last_removed(&events, &path.display().to_string()), Some(true));
     }
 }
@@ -157,7 +162,11 @@ async fn a_mounted_destination_still_completes() {
     .expect("the move completes");
 
     for path in &sources {
-        assert!(!source.exists(path).await, "{} moved", path.display());
+        assert!(
+            !source.exists(&AppPath::legacy_unchecked(path)).await,
+            "{} moved",
+            path.display()
+        );
         assert_eq!(last_removed(&events, &path.display().to_string()), Some(true));
     }
 }
@@ -182,7 +191,11 @@ async fn an_unreadable_mount_table_lets_the_sweep_run() {
     .expect("the move completes");
 
     for path in &sources {
-        assert!(!source.exists(path).await, "{} moved", path.display());
+        assert!(
+            !source.exists(&AppPath::legacy_unchecked(path)).await,
+            "{} moved",
+            path.display()
+        );
     }
 }
 
@@ -207,7 +220,11 @@ async fn a_destination_that_was_never_a_mount_point_is_not_watched() {
     .expect("the move completes");
 
     for path in &sources {
-        assert!(!source.exists(path).await, "{} moved", path.display());
+        assert!(
+            !source.exists(&AppPath::legacy_unchecked(path)).await,
+            "{} moved",
+            path.display()
+        );
     }
 }
 
@@ -249,7 +266,7 @@ async fn a_source_drive_that_left_is_not_reported_as_removed() {
         }
         other => panic!("expected the source drive named as disconnected, got {other:?}"),
     }
-    assert!(dest.exists(Path::new("/photos/a.jpg")).await, "the copy landed");
+    assert!(dest.exists(app_path!("/photos/a.jpg")).await, "the copy landed");
     assert_ne!(
         last_removed(&events, &usb.path().join("photos").display().to_string()),
         Some(true),

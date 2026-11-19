@@ -8,6 +8,7 @@
 
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock};
 use std::time::Duration;
@@ -116,7 +117,7 @@ async fn a_pane_enters_the_zip_and_lists_its_insides() {
     assert_eq!(entered.routed, Some(RoutedKind::ArchiveInSnapshot));
     let archive = entered.volume.expect("the archive");
     let mut names: Vec<String> = archive
-        .list_directory(&zip, None)
+        .list_directory(&AppPath::legacy_unchecked(&zip), None)
         .await
         .expect("the archive's root lists")
         .into_iter()
@@ -129,7 +130,7 @@ async fn a_pane_enters_the_zip_and_lists_its_insides() {
     let docs = inside
         .volume
         .expect("the archive")
-        .list_directory(&zip.join("docs"), None)
+        .list_directory(&AppPath::legacy_unchecked(&zip.join("docs")), None)
         .await
         .expect("a folder inside lists");
     assert_eq!(docs.iter().map(|e| e.name.as_str()).collect::<Vec<_>>(), ["notes.txt"]);
@@ -157,7 +158,11 @@ async fn a_locked_7z_in_a_snapshot_asks_for_the_archive_password() {
         .resolve(&drive.volume_id, &sevenz)
         .await;
     assert_eq!(entered.routed, Some(RoutedKind::ArchiveInSnapshot));
-    let listed = entered.volume.expect("the archive").list_directory(&sevenz, None).await;
+    let listed = entered
+        .volume
+        .expect("the archive")
+        .list_directory(&AppPath::legacy_unchecked(&sevenz), None)
+        .await;
     assert!(
         matches!(
             listed,
@@ -286,7 +291,7 @@ async fn writes_into_the_zip_and_a_move_out_refuse_before_anything_moves() {
         .volume
         .expect("the archive");
     let names: Vec<String> = archive
-        .list_directory(&zip, None)
+        .list_directory(&AppPath::legacy_unchecked(&zip), None)
         .await
         .expect("lists")
         .into_iter()

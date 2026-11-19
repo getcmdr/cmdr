@@ -4,6 +4,7 @@
 //! the op — against the real archive for a LOCAL parent, or the pulled-local
 //! working copy for a REMOTE one.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashSet;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -116,7 +117,7 @@ impl crate::Operations {
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
         // A LOCAL source volume's root — `Some` skips the pull (the changeset walks
         // real paths); `None` (a remote source) triggers the in-op pull-to-scratch.
-        let src_local_root = source_volume.local_path();
+        let src_local_root = source_volume.local_path().map(|root| root.as_std_legacy().into_owned());
 
         // Confirmation already happened at the routing site (`dest_resolved.is_archive`
         // from the async, parent-aware `resolve`), so a pure string split is enough
@@ -304,12 +305,15 @@ async fn pull_one_source(
     dest_path: &Path,
     state: &Arc<WriteOperationState>,
 ) -> Result<(), EditError> {
-    let is_directory = source_volume.is_directory(source_path).await.map_err(|e| {
-        EditError::Op(WriteOperationError::ReadError {
-            path: source_path.display().to_string(),
-            message: cmdr_fs::error_detail::ErrorDetail::of(e),
-        })
-    })?;
+    let is_directory = source_volume
+        .is_directory(&AppPath::legacy_unchecked(source_path))
+        .await
+        .map_err(|e| {
+            EditError::Op(WriteOperationError::ReadError {
+                path: source_path.display().to_string(),
+                message: cmdr_fs::error_detail::ErrorDetail::of(e),
+            })
+        })?;
 
     pull_path_to_local(source_volume, source_path, is_directory, dest_volume, dest_path, state)
         .await

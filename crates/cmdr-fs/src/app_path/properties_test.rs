@@ -1,7 +1,8 @@
 //! The properties the app path's safety rests on, over generated input: the escape is
 //! lossless and injective both ways, the canonical form is a fixed point, normalization is
 //! idempotent, the arithmetic is self-consistent, `Eq`/`Hash`/`Ord` agree with `PathBuf` on
-//! POSIX text, and the transition bridge never changes a byte.
+//! POSIX text (`Ord` except on escaped names, `bridge_unix`), and the transition bridge never
+//! changes a byte.
 
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -413,6 +414,68 @@ mod bridge_unix {
         }
         let raw = Path::new(OsStr::from_bytes(b"/d/caf\xe9"));
         assert_eq!(AppPath::legacy_unchecked(raw).as_str(), "/d/caf\u{10FEE9}");
+    }
+
+    /// Bytes for a rooted path's tail: separators, dots, plain names, the two bytes of `é`
+    /// (so valid UTF-8 shows up beside the invalid kind), and any byte at all.
+    fn tail_byte() -> impl Strategy<Value = u8> {
+        prop_oneof![
+            Just(b'/'),
+            Just(b'.'),
+            Just(b'a'),
+            Just(b'-'),
+            Just(0xC3),
+            Just(0xA9),
+            any::<u8>()
+        ]
+    }
+
+    fn rooted(tail: &[u8]) -> Vec<u8> {
+        [b"/".as_slice(), tail].concat()
+    }
+
+    fn has_escape(path: &AppPath) -> bool {
+        path.as_str().chars().any(super::super::super::escape::is_escape)
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(4_000))]
+
+        /// On ANY bytes, escaped names included, `Eq` and `Hash` answer what `PathBuf`
+        /// answered, so a set or map keyed on a bridged path dedups as before. `Ord` agrees
+        /// only while neither side holds an escape: an escaped name (a non-UTF-8 byte, or a
+        /// literal escape-alphabet code point) sorts by its escape code point, above every raw
+        /// byte, where `PathBuf` sorted the raw byte (`crates/cmdr-fs/DETAILS.md` § "App paths").
+        #[test]
+        fn comparison_matches_pathbuf_on_any_bytes_but_orders_escapes_apart(
+            a in prop::collection::vec(tail_byte(), 0..12),
+            b in prop::collection::vec(tail_byte(), 0..12),
+        ) {
+            let (a, b) = (rooted(&a), rooted(&b));
+            let (std_a, std_b) = (Path::new(OsStr::from_bytes(&a)), Path::new(OsStr::from_bytes(&b)));
+            let (typed_a, typed_b) = (AppPath::legacy_unchecked(std_a), AppPath::legacy_unchecked(std_b));
+            prop_assert_eq!(typed_a == typed_b, std_a == std_b, "{:?} {:?}", std_a, std_b);
+            if typed_a == typed_b {
+                prop_assert_eq!(super::hash_of(&typed_a), super::hash_of(&typed_b));
+            }
+            if !has_escape(&typed_a) && !has_escape(&typed_b) {
+                prop_assert_eq!(typed_a.cmp(&typed_b), std_a.cmp(std_b), "{:?} {:?}", std_a, std_b);
+            }
+        }
+    }
+
+    /// The divergence, stated: a raw `0x80` byte sorts BELOW `é` (`C3 A9`) as `PathBuf`, and
+    /// its escape (U+10FE80, `F4 8F BA 80` in UTF-8) sorts ABOVE it as an app path. Accepted,
+    /// not fixed (no path order is persisted); the first milestone that sorts typed paths
+    /// meets it (`crates/cmdr-fs/DETAILS.md` § "App paths").
+    #[test]
+    fn an_escaped_name_sorts_at_its_escape_code_point() {
+        let (raw, accented) = (Path::new(OsStr::from_bytes(b"/\x80")), Path::new("/\u{e9}"));
+        assert!(raw < accented, "PathBuf sorts the raw byte");
+        assert!(
+            AppPath::legacy_unchecked(raw) > AppPath::legacy_unchecked(accented),
+            "an app path sorts the escape"
+        );
     }
 }
 

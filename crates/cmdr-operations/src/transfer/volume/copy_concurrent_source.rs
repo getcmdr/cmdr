@@ -13,6 +13,7 @@
 //! borrowed context already holds every input they need — the volumes, the
 //! policy, the destination index, the preflight hints, and the shared counters.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
@@ -256,7 +257,11 @@ impl ConcurrentCopy<'_> {
             if matches!(folder, DestFolder::CreatedByUs) {
                 return Ok(Landing::Free(dest_item_path.to_path_buf()));
             }
-            return match self.dest_volume.get_metadata(dest_item_path).await {
+            return match self
+                .dest_volume
+                .get_metadata(&AppPath::legacy_unchecked(dest_item_path))
+                .await
+            {
                 Ok(entry) => Ok(Landing::Taken {
                     path: dest_item_path.to_path_buf(),
                     entry: Box::new(entry),

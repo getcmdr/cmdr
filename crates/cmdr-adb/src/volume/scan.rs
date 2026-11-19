@@ -14,19 +14,27 @@
 //! to `/storage/emulated/0` on every modern Android, so following links would
 //! count the same bytes twice.
 
-use std::path::Path;
-
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::scan_walk::{ScanSource, Walking};
+use std::path::Path;
 
 use super::AdbVolume;
 
 impl ScanSource for AdbVolume {
-    fn scan_stat<'a>(&'a self, path: &'a Path) -> Walking<'a, FileEntry> {
-        Box::pin(self.get_metadata_impl(path))
+    fn scan_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.get_metadata_impl(path).await
+        })
     }
 
-    fn scan_list<'a>(&'a self, path: &'a Path) -> Walking<'a, Vec<FileEntry>> {
-        Box::pin(self.list_directory_impl(path, None, None))
+    fn scan_list<'a>(&'a self, path: &'a AppPath) -> Walking<'a, Vec<FileEntry>> {
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.list_directory_impl(path, None, None).await
+        })
     }
 }

@@ -10,6 +10,7 @@
 //!
 //! [`BackendKind::listings_mark_links`]: cmdr_fs::volume::BackendKind::listings_mark_links
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 
 use cmdr_fs::entry::FileEntry;
@@ -28,10 +29,13 @@ pub(crate) fn listed_folder_may_be_a_link(volume: &dyn Volume, entry: &FileEntry
 /// folder, so the entries read exactly as a link-marking backend lists them.
 /// One `entry_kind` per listed folder there, none anywhere else.
 pub(crate) async fn list_marking_hidden_links(volume: &dyn Volume, dir: &Path) -> Result<Vec<FileEntry>, VolumeError> {
-    let mut entries = volume.list_directory(dir, None).await?;
+    let mut entries = volume.list_directory(&AppPath::legacy_unchecked(dir), None).await?;
     for entry in entries.iter_mut() {
         if listed_folder_may_be_a_link(volume, entry)
-            && volume.entry_kind(Path::new(&entry.path)).await? == EntryKind::Symlink
+            && volume
+                .entry_kind(&AppPath::legacy_unchecked(Path::new(&entry.path)))
+                .await?
+                == EntryKind::Symlink
         {
             entry.is_symlink = true;
         }

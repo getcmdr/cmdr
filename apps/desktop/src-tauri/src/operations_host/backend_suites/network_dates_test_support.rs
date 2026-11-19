@@ -9,6 +9,7 @@
 //! `../transfer/volume/DETAILS.md` § "Copies keep the source's metadata". Cells stay
 //! per backend, named for their lane, like `network_transfer_test_support.rs`'s.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -23,7 +24,7 @@ use cmdr_local::LocalVolume;
 /// What `path` lists as its modification date, which the scenarios insist on.
 async fn listed_date(volume: &dyn Volume, path: &Path, what: &str) -> u64 {
     volume
-        .get_metadata(path)
+        .get_metadata(&AppPath::legacy_unchecked(path))
         .await
         .unwrap_or_else(|e| panic!("{what}: {} must be stattable, got {e:?}", path.display()))
         .modified_at
@@ -194,7 +195,11 @@ pub(super) async fn copied_folders_off_the_server_keep_their_dates(remote: Arc<d
         (album.clone(), FOLDER_DATE_SECS),
     ] {
         let report = remote
-            .apply_metadata(&folder, &cmdr_fs::metadata::CarriedMetadata::default(), Some(at(secs)))
+            .apply_metadata(
+                &AppPath::legacy_unchecked(&folder),
+                &cmdr_fs::metadata::CarriedMetadata::default(),
+                Some(at(secs)),
+            )
             .await;
         assert_eq!(
             report.modified,
@@ -292,7 +297,7 @@ pub(super) async fn a_copy_off_the_server_keeps_the_date_it_lists(remote: Arc<dy
 #[cfg(target_os = "macos")]
 async fn listed_creation_date(volume: &dyn Volume, path: &Path, what: &str) -> u64 {
     volume
-        .get_metadata(path)
+        .get_metadata(&AppPath::legacy_unchecked(path))
         .await
         .unwrap_or_else(|e| panic!("{what}: {} must be stattable, got {e:?}", path.display()))
         .created_at
@@ -388,22 +393,29 @@ pub(super) async fn a_copy_off_the_server_keeps_the_creation_dates(remote: Arc<d
     assert_write_from_stream_keeps_the_source_date(remote.as_ref(), &small, Duration::ZERO).await;
     let big = dir.join("big.bin");
     remote
-        .create_file(&big, &self_describing_bytes(STREAMED_BYTES, "big.bin"))
+        .create_file(
+            &AppPath::legacy_unchecked(&big),
+            &self_describing_bytes(STREAMED_BYTES, "big.bin"),
+        )
         .await
         .expect("seed the big file on the server");
     let album = dir.join("album");
     remote
-        .create_directory(&album)
+        .create_directory(&AppPath::legacy_unchecked(&album))
         .await
         .expect("seed the folder on the server");
     remote
-        .create_file(&album.join("inside.txt"), b"inside")
+        .create_file(&AppPath::legacy_unchecked(&album.join("inside.txt")), b"inside")
         .await
         .expect("seed the folder's file");
     let aged = std::time::UNIX_EPOCH + Duration::from_secs(SOURCE_DATE_SECS);
     for seeded in [&big, &album] {
         let report = remote
-            .apply_metadata(seeded, &CarriedMetadata::default(), Some(aged))
+            .apply_metadata(
+                &AppPath::legacy_unchecked(seeded),
+                &CarriedMetadata::default(),
+                Some(aged),
+            )
             .await;
         assert_eq!(
             report.modified,
@@ -459,11 +471,17 @@ pub(super) async fn a_copy_within_the_server_keeps_the_creation_dates(remote: Ar
     use cmdr_fs::volume::conformance::BIRTH_SECS;
 
     let file = dir.join("born.txt");
-    remote.create_file(&file, b"born in 2015").await.expect("seed the file");
-    let album = dir.join("album");
-    remote.create_directory(&album).await.expect("seed the folder");
     remote
-        .create_file(&album.join("inside.txt"), b"inside")
+        .create_file(&AppPath::legacy_unchecked(&file), b"born in 2015")
+        .await
+        .expect("seed the file");
+    let album = dir.join("album");
+    remote
+        .create_directory(&AppPath::legacy_unchecked(&album))
+        .await
+        .expect("seed the folder");
+    remote
+        .create_file(&AppPath::legacy_unchecked(&album.join("inside.txt")), b"inside")
         .await
         .expect("seed the folder's file");
     let born = CarriedMetadata {
@@ -472,7 +490,9 @@ pub(super) async fn a_copy_within_the_server_keeps_the_creation_dates(remote: Ar
     };
     let aged = Some(std::time::UNIX_EPOCH + Duration::from_secs(SOURCE_DATE_SECS));
     for seeded in [&file, &album] {
-        let report = remote.apply_metadata(seeded, &born, aged).await;
+        let report = remote
+            .apply_metadata(&AppPath::legacy_unchecked(seeded), &born, aged)
+            .await;
         assert_eq!(
             report.created,
             ClassOutcome::Kept,
@@ -482,7 +502,7 @@ pub(super) async fn a_copy_within_the_server_keeps_the_creation_dates(remote: Ar
     }
     let copies = dir.join("copies");
     remote
-        .create_directory(&copies)
+        .create_directory(&AppPath::legacy_unchecked(&copies))
         .await
         .expect("make the destination folder");
 

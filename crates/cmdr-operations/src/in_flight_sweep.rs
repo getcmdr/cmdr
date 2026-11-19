@@ -285,7 +285,10 @@ async fn settle_legacy(host: &EngineHost, temp: &RecordedTemp) -> Outcome {
             let Some(volume) = resolved.volume.filter(|_| !is_routed) else {
                 return Outcome::Deferred;
             };
-            Surface::Volume(volume).remove_temp(&resolved.path).await.into_outcome()
+            Surface::Volume(volume)
+                .remove_temp(&resolved.path.as_std_legacy())
+                .await
+                .into_outcome()
         }
     }
 }
@@ -366,7 +369,7 @@ async fn locate(host: &EngineHost, item: &TrackedItem) -> Located {
             let Some(volume) = host.volumes().get(volume_id) else {
                 return Located::Unreachable;
             };
-            let root = volume.root().to_path_buf();
+            let root = volume.root().as_std_legacy().to_path_buf();
             // The registry can be a step ahead of the mount table on a drive
             // that is leaving again. An unreadable table is not evidence of
             // leaving, so only a definite "gone" holds the record back.
@@ -392,7 +395,7 @@ async fn locate(host: &EngineHost, item: &TrackedItem) -> Located {
             let drive_name = Some(volume.name().to_string());
             Located::At {
                 surface: Surface::Volume(volume),
-                path: resolved.path,
+                path: resolved.path.as_std_legacy().into_owned(),
                 destination,
                 drive_name,
             }

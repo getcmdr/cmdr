@@ -17,6 +17,8 @@
 //! The source lives at `/tN/...` and the destination at `/inbox/tN/...`, so the
 //! reported path alone tells the two sides apart.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -60,10 +62,19 @@ async fn seeded_source(count: usize) -> (Arc<InMemoryVolume>, Vec<PathBuf>) {
     let mut paths = Vec::new();
     for n in 0..count {
         let root = PathBuf::from(format!("/t{n}"));
-        source.create_directory(&root).await.unwrap();
-        source.create_directory(&root.join("nested")).await.unwrap();
         source
-            .create_file(&root.join("nested/deep.txt"), b"the user's bytes")
+            .create_directory(&AppPath::legacy_unchecked(&root))
+            .await
+            .unwrap();
+        source
+            .create_directory(&AppPath::legacy_unchecked(&root.join("nested")))
+            .await
+            .unwrap();
+        source
+            .create_file(
+                &AppPath::legacy_unchecked(&root.join("nested/deep.txt")),
+                b"the user's bytes",
+            )
             .await
             .unwrap();
         paths.push(root);
@@ -73,7 +84,7 @@ async fn seeded_source(count: usize) -> (Arc<InMemoryVolume>, Vec<PathBuf>) {
 
 async fn empty_dest() -> Arc<InMemoryVolume> {
     let dest = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest.create_directory(Path::new("/inbox")).await.unwrap();
+    dest.create_directory(app_path!("/inbox")).await.unwrap();
     dest
 }
 
@@ -161,7 +172,11 @@ async fn assert_destination_refusal(
     );
     // A move that failed in its copy phase never touches the source.
     for path in &paths {
-        assert!(source.exists(&path.join("nested/deep.txt")).await);
+        assert!(
+            source
+                .exists(&AppPath::legacy_unchecked(&path.join("nested/deep.txt")))
+                .await
+        );
     }
 }
 

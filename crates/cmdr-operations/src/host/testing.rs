@@ -12,6 +12,7 @@
 //! - [`PaneListings`]: panes a test opens, over a listing engine of its own,
 //!   for the cells that seed the fresh-listing oracle.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -192,7 +193,7 @@ impl OperationVolumes for FakeVolumes {
         let resolved = match self.route_for(path) {
             Some((kind, volume)) => ResolvedVolume {
                 volume: Some(volume),
-                path: path.to_path_buf(),
+                path: AppPath::legacy_unchecked(path).into_owned(),
                 routed: Some(kind),
                 unconfirmed: None,
             },
@@ -213,7 +214,7 @@ impl OperationVolumes for FakeVolumes {
         self.volumes
             .lock_ignore_poison()
             .iter()
-            .find(|(_, volume)| volume.root() == root)
+            .find(|(_, volume)| *volume.root().as_std_legacy() == *root)
             .map(|(id, volume)| (id.clone(), Arc::clone(volume)))
     }
     fn forget_archive_index(&self, _archive_path: &Path) {}

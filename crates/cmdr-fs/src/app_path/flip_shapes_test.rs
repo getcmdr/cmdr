@@ -1,5 +1,6 @@
-//! Milestone 4's two codemod rules, proven here before the flip exists
-//! (`docs/specs/app-path-plan.md` § "4. Flip the trait", review 3's 3a and 3b).
+//! The trait flip's two codemod rules (`scripts/app-path-flip/README.md`), proven on shapes of
+//! the real implementors (`docs/specs/app-path-plan.md` § "4. Flip the trait", review 3's 3a
+//! and 3b).
 //!
 //! - **3a, a borrowed return**: `fn root(&self) -> &AppPath` can't return
 //!   `&AppPath::legacy_unchecked(&self.root)` (a temporary `Cow`, E0515). The rule retypes the

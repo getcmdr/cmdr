@@ -14,6 +14,7 @@
 
 use super::test_support::*;
 use super::*;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::{StreamLength, StreamWriteProgress, StreamWritten, WriteMode};
 use std::ops::ControlFlow;
 use std::pin::Pin;
@@ -93,7 +94,9 @@ async fn setup() -> (SmbVolume, String, PathBuf, Vec<u8>) {
     set_checkpoint_every(&vol, EVERY as u64);
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
     let temp = PathBuf::from(format!("{dir}/.cmdr-tmp-carry-on"));
     (vol, dir, temp, payload(SIZE))
 }
@@ -108,7 +111,7 @@ async fn fail_part_way(vol: &SmbVolume, temp: &Path, data: &[u8]) -> u64 {
     };
     let result = vol
         .write_from_stream(
-            temp,
+            &AppPath::legacy_unchecked(temp),
             WriteMode::CreateNew,
             StreamLength::Known(data.len() as u64),
             FailingSource::boxed(data, Some(FAIL_AT)),
@@ -138,7 +141,7 @@ async fn fail_part_way(vol: &SmbVolume, temp: &Path, data: &[u8]) -> u64 {
         "nothing past what the source yielded is proven"
     );
     assert!(
-        vol.exists(temp).await,
+        vol.exists(&AppPath::legacy_unchecked(temp)).await,
         "a transport fault past a checkpoint keeps the temp"
     );
     let smb_path = vol.to_smb_path(temp).unwrap();
@@ -149,7 +152,7 @@ async fn fail_part_way(vol: &SmbVolume, temp: &Path, data: &[u8]) -> u64 {
 async fn carry_on(vol: &SmbVolume, temp: &Path, data: &[u8], at: u64) -> Result<StreamWritten, VolumeError> {
     let no_progress = &|_: StreamWriteProgress| ControlFlow::Continue(());
     vol.continue_write_from_stream(
-        temp,
+        &AppPath::legacy_unchecked(temp),
         at,
         StreamLength::Known(data.len() as u64),
         FailingSource::boxed(&data[at as usize..], None),
@@ -159,7 +162,7 @@ async fn carry_on(vol: &SmbVolume, temp: &Path, data: &[u8], at: u64) -> Result<
 }
 
 async fn read_all(vol: &SmbVolume, path: &Path) -> Vec<u8> {
-    let mut stream = vol.open_read_stream(path).await.unwrap();
+    let mut stream = vol.open_read_stream(&AppPath::legacy_unchecked(path)).await.unwrap();
     let mut bytes = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         bytes.extend_from_slice(&chunk.unwrap());
@@ -195,7 +198,7 @@ async fn smb_integration_an_upload_cut_on_the_transport_carries_on_from_its_chec
     let whole = PathBuf::from(format!("{dir}/.cmdr-tmp-whole"));
     let no_progress = &|_: StreamWriteProgress| ControlFlow::Continue(());
     vol.write_from_stream(
-        &whole,
+        &AppPath::legacy_unchecked(&whole),
         WriteMode::CreateNew,
         StreamLength::Known(SIZE as u64),
         FailingSource::boxed(&data, None),
@@ -319,7 +322,10 @@ async fn smb_integration_a_carry_on_refuses_a_temp_it_cant_prove() {
     tree.delete_file(&mut conn, &smb_path).await.unwrap();
     let gone = carry_on(&vol, &gone_temp, &data, at).await;
     assert!(matches!(gone, Err(VolumeError::NotSupported)), "gone: {gone:?}");
-    assert!(!vol.exists(&gone_temp).await, "a refusal creates nothing");
+    assert!(
+        !vol.exists(&AppPath::legacy_unchecked(&gone_temp)).await,
+        "a refusal creates nothing"
+    );
 
     // Nothing kept: a temp this volume never checkpointed.
     let never = carry_on(&vol, &temp("never"), &data, MIB as u64).await;
@@ -360,7 +366,7 @@ async fn smb_integration_a_failure_that_isnt_the_transport_keeps_nothing() {
     let no_progress = &|_: StreamWriteProgress| ControlFlow::Continue(());
     let result = vol
         .write_from_stream(
-            &temp,
+            &AppPath::legacy_unchecked(&temp),
             WriteMode::CreateNew,
             StreamLength::Known(SIZE as u64),
             source,
@@ -368,7 +374,7 @@ async fn smb_integration_a_failure_that_isnt_the_transport_keeps_nothing() {
         )
         .await;
     assert!(matches!(result, Err(VolumeError::SourceChanged(_))), "{result:?}");
-    assert!(!vol.exists(&temp).await, "the partial goes");
+    assert!(!vol.exists(&AppPath::legacy_unchecked(&temp)).await, "the partial goes");
     let smb_path = vol.to_smb_path(&temp).unwrap();
     assert!(!vol.inner.write_checkpoints.holds(&smb_path), "and keeps no checkpoint");
     ensure_clean(&vol, &dir).await;
@@ -398,7 +404,9 @@ async fn smb_integration_checkpoint_cost() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
     let size = env("CHECKPOINT_COST_MIB", 256) * MIB;
     let rounds = env("CHECKPOINT_COST_ROUNDS", 5);
     let data = payload(size);
@@ -416,7 +424,7 @@ async fn smb_integration_checkpoint_cost() {
             let started = std::time::Instant::now();
             let no_progress = &|_: StreamWriteProgress| ControlFlow::Continue(());
             vol.write_from_stream(
-                Path::new(&name),
+                &AppPath::legacy_unchecked(Path::new(&name)),
                 WriteMode::CreateNew,
                 StreamLength::Known(size as u64),
                 FailingSource::boxed(&data, None),
@@ -425,7 +433,7 @@ async fn smb_integration_checkpoint_cost() {
             .await
             .unwrap();
             secs[i].push(started.elapsed().as_secs_f64());
-            let _ = vol.delete(Path::new(&name)).await;
+            let _ = vol.delete(&AppPath::legacy_unchecked(Path::new(&name))).await;
         }
     }
     let median = |mut v: Vec<f64>| {

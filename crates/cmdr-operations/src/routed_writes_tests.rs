@@ -2,6 +2,8 @@
 //! serves (inside a `.zip`, or inside a repo's `.git/<category>/` trees), and
 //! leaves the drive untouched (#463).
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -25,14 +27,17 @@ async fn drive_with_routes(label: &str) -> (TestOperations, String, Arc<InMemory
     let volume_id = format!("{label}-{}", std::process::id());
     let drive = Arc::new(InMemoryVolume::new(&volume_id));
     for dir in ["/repo", "/repo/.git", BRANCHES, "/repo/.git/branches/main", ZIP] {
-        drive.create_directory(Path::new(dir)).await.unwrap();
+        drive
+            .create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            .await
+            .unwrap();
     }
     drive
-        .create_file(Path::new("/repo/.git/branches/main/a.txt"), b"a")
+        .create_file(app_path!("/repo/.git/branches/main/a.txt"), b"a")
         .await
         .unwrap();
     drive
-        .create_file(Path::new("/repo/bundle.zip/in.txt"), b"i")
+        .create_file(app_path!("/repo/bundle.zip/in.txt"), b"i")
         .await
         .unwrap();
     engine
@@ -74,7 +79,7 @@ async fn a_bulk_rename_under_dot_git_refuses() {
         matches!(&result, Err(RenameStartError::Engine { error }) if is_read_only(error, ReadOnlySide::Source)),
         "{result:?}"
     );
-    assert!(drive.exists(Path::new(from)).await);
+    assert!(drive.exists(&AppPath::legacy_unchecked(Path::new(from))).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -87,7 +92,7 @@ async fn a_bulk_rename_inside_an_archive_refuses() {
         .await;
 
     assert!(matches!(&result, Err(RenameStartError::Engine { .. })), "{result:?}");
-    assert!(drive.exists(Path::new("/repo/bundle.zip/in.txt")).await);
+    assert!(drive.exists(app_path!("/repo/bundle.zip/in.txt")).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -111,13 +116,13 @@ async fn a_rename_as_move_out_of_dot_git_refuses() {
         matches!(&result, Err(error) if is_read_only(error, ReadOnlySide::Source)),
         "{result:?}"
     );
-    assert!(drive.exists(&from).await);
+    assert!(drive.exists(&AppPath::legacy_unchecked(&from)).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_rename_as_move_into_an_archive_refuses() {
     let (engine, volume_id, drive) = drive_with_routes("by-move-zip").await;
-    drive.create_file(Path::new("/repo/top.txt"), b"t").await.unwrap();
+    drive.create_file(app_path!("/repo/top.txt"), b"t").await.unwrap();
 
     let result = engine
         .start_rename_by_move(
@@ -135,7 +140,7 @@ async fn a_rename_as_move_into_an_archive_refuses() {
         matches!(&result, Err(error) if is_read_only(error, ReadOnlySide::Destination)),
         "{result:?}"
     );
-    assert!(drive.exists(Path::new("/repo/top.txt")).await);
+    assert!(drive.exists(app_path!("/repo/top.txt")).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -162,7 +167,7 @@ async fn an_instant_rename_under_dot_git_refuses() {
         ),
         "{result:?}"
     );
-    assert!(drive.exists(&from).await);
+    assert!(drive.exists(&AppPath::legacy_unchecked(&from)).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -187,7 +192,7 @@ async fn a_new_folder_under_dot_git_refuses() {
         ),
         "{result:?}"
     );
-    assert!(!drive.exists(Path::new("/repo/.git/branches/main/new")).await);
+    assert!(!drive.exists(app_path!("/repo/.git/branches/main/new")).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -212,7 +217,7 @@ async fn a_new_file_under_dot_git_refuses() {
         ),
         "{result:?}"
     );
-    assert!(!drive.exists(Path::new("/repo/.git/branches/main/new.txt")).await);
+    assert!(!drive.exists(app_path!("/repo/.git/branches/main/new.txt")).await);
 }
 
 #[cfg(target_os = "macos")]
@@ -241,7 +246,12 @@ async fn a_numbered_create_inside_an_archive_or_dot_git_refuses() {
             ),
             "{dir}: {result:?}"
         );
-        assert!(!drive.exists(&Path::new(dir).join("pasted.txt")).await, "{dir}");
+        assert!(
+            !drive
+                .exists(&AppPath::legacy_unchecked(&Path::new(dir).join("pasted.txt")))
+                .await,
+            "{dir}"
+        );
     }
 }
 
@@ -265,5 +275,5 @@ async fn a_delete_under_dot_git_refuses() {
         matches!(&result, Err(error) if is_read_only(error, ReadOnlySide::Source)),
         "{result:?}"
     );
-    assert!(drive.exists(&doomed).await);
+    assert!(drive.exists(&AppPath::legacy_unchecked(&doomed)).await);
 }

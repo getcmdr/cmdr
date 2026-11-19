@@ -7,6 +7,7 @@ use super::ResticVolume;
 use crate::hub::{ResticRepos, Tuning};
 use crate::path::VIRTUAL_ENTRY_NAME;
 use crate::test_fixtures::{self, FixtureRepo};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::host::VolumeHost;
@@ -114,7 +115,11 @@ impl Browse {
     async fn source_in(&self, snapshot: &str) -> PathBuf {
         let mut dir = view().join(snapshot);
         loop {
-            let entries = self.volume.list_directory(&dir, None).await.expect("lists");
+            let entries = self
+                .volume
+                .list_directory(&AppPath::legacy_unchecked(&dir), None)
+                .await
+                .expect("lists");
             if entries.iter().any(|e| e.name == "a.txt") {
                 return dir;
             }
@@ -139,7 +144,10 @@ fn named<'e>(entries: &'e [FileEntry], name: &str) -> &'e FileEntry {
 }
 
 async fn read_all(volume: &ResticVolume, path: &Path) -> Vec<u8> {
-    let mut stream = volume.open_read_stream(path).await.expect("opens");
+    let mut stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(path))
+        .await
+        .expect("opens");
     let mut out = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         out.extend_from_slice(&chunk.expect("a chunk"));
@@ -158,7 +166,7 @@ async fn without_a_password_the_view_asks_for_one() {
     let hub = Arc::new(ResticRepos::new(VolumeHost::detached()));
     let volume = view_over(&hub, &parent);
 
-    let listing = volume.list_directory(&view(), None).await;
+    let listing = volume.list_directory(&AppPath::legacy_unchecked(&view()), None).await;
     assert!(
         matches!(
             listing,
@@ -181,7 +189,7 @@ async fn a_wrong_password_unlocks_nothing_and_keeps_nothing() {
     let volume = view_over(&hub, &parent);
 
     assert!(!test_fixtures::unlock(&volume, "incorrect horse").await);
-    let listing = volume.list_directory(&view(), None).await;
+    let listing = volume.list_directory(&AppPath::legacy_unchecked(&view()), None).await;
     assert!(
         matches!(
             listing,
@@ -193,7 +201,14 @@ async fn a_wrong_password_unlocks_nothing_and_keeps_nothing() {
         "a refused password isn't kept: got {listing:?}"
     );
     assert!(test_fixtures::unlock(&volume, PASSWORD).await);
-    assert_eq!(volume.list_directory(&view(), None).await.expect("lists").len(), 2);
+    assert_eq!(
+        volume
+            .list_directory(&AppPath::legacy_unchecked(&view()), None)
+            .await
+            .expect("lists")
+            .len(),
+        2
+    );
 }
 
 // ── The snapshot list ──────────────────────────────────────────────────────
@@ -204,7 +219,11 @@ async fn the_view_lists_one_folder_per_snapshot_plus_latest() {
     std::fs::write(browse.source.join("a.txt"), b"second").expect("change the source");
     browse.backup_again(1_792_000_000).await;
 
-    let entries = browse.volume.list_directory(&view(), None).await.expect("lists");
+    let entries = browse
+        .volume
+        .list_directory(&AppPath::legacy_unchecked(&view()), None)
+        .await
+        .expect("lists");
 
     let names: Vec<&str> = entries.iter().map(|e| e.name.as_str()).collect();
     assert_eq!(names.len(), 3, "two snapshots and latest: {names:?}");
@@ -239,7 +258,10 @@ async fn a_snapshot_without_a_summary_lists_without_a_size() {
     let volume = view_over(&hub, &parent);
     assert!(test_fixtures::unlock(&volume, PASSWORD).await);
 
-    let entries = volume.list_directory(&view(), None).await.expect("lists");
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(&view()), None)
+        .await
+        .expect("lists");
     assert!(entries.iter().all(|e| e.size.is_none()), "{entries:?}");
 }
 
@@ -261,7 +283,10 @@ async fn a_snapshot_row_carries_its_host_tags_and_paths() {
     let volume = view_over(&hub, &parent);
     assert!(test_fixtures::unlock(&volume, PASSWORD).await);
 
-    let entries = volume.list_directory(&view(), None).await.expect("lists");
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(&view()), None)
+        .await
+        .expect("lists");
 
     let older = entries[0]
         .restic_meta
@@ -281,7 +306,7 @@ async fn a_snapshot_row_carries_its_host_tags_and_paths() {
     );
 
     let stat = volume
-        .get_metadata(&view().join(&entries[0].name))
+        .get_metadata(&AppPath::legacy_unchecked(&view().join(&entries[0].name)))
         .await
         .expect("stats");
     assert_eq!(
@@ -289,7 +314,10 @@ async fn a_snapshot_row_carries_its_host_tags_and_paths() {
         Some(older),
         "a stat says what the listing says"
     );
-    let root = volume.get_metadata(&view()).await.expect("stats the view");
+    let root = volume
+        .get_metadata(&AppPath::legacy_unchecked(&view()))
+        .await
+        .expect("stats the view");
     assert_eq!(root.restic_meta, None, "the view itself is no snapshot");
 }
 
@@ -299,15 +327,23 @@ async fn a_snapshot_row_carries_its_host_tags_and_paths() {
 #[tokio::test(flavor = "multi_thread")]
 async fn a_stale_time_prefix_still_finds_its_snapshot() {
     let browse = Browse::new().await;
-    let entries = browse.volume.list_directory(&view(), None).await.expect("lists");
+    let entries = browse
+        .volume
+        .list_directory(&AppPath::legacy_unchecked(&view()), None)
+        .await
+        .expect("lists");
     let dated = &entries[0].name;
     let suffix = &dated[dated.rfind('(').expect("an id suffix")..];
 
     let stale = view().join(format!("1999-01-01 00.00.00 {suffix}"));
-    let listed = browse.volume.list_directory(&stale, None).await.expect("lists by id");
+    let listed = browse
+        .volume
+        .list_directory(&AppPath::legacy_unchecked(&stale), None)
+        .await
+        .expect("lists by id");
     let current = browse
         .volume
-        .list_directory(&view().join(dated), None)
+        .list_directory(&AppPath::legacy_unchecked(&view().join(dated)), None)
         .await
         .expect("lists");
     assert_eq!(
@@ -320,7 +356,10 @@ async fn a_stale_time_prefix_still_finds_its_snapshot() {
 async fn a_name_that_names_no_snapshot_is_not_found() {
     let browse = Browse::new().await;
     for name in ["nope", "2026-10-12 21.00.03 (ffffffff)"] {
-        let result = browse.volume.list_directory(&view().join(name), None).await;
+        let result = browse
+            .volume
+            .list_directory(&AppPath::legacy_unchecked(&view().join(name)), None)
+            .await;
         assert!(
             matches!(result, Err(VolumeError::NotFound(_))),
             "{name}: got {result:?}"
@@ -335,7 +374,11 @@ async fn a_snapshot_tree_lists_files_folders_links_and_odd_names() {
     let browse = Browse::new().await;
     let dir = browse.source_in("latest").await;
 
-    let entries = browse.volume.list_directory(&dir, None).await.expect("lists");
+    let entries = browse
+        .volume
+        .list_directory(&AppPath::legacy_unchecked(&dir), None)
+        .await
+        .expect("lists");
 
     assert_eq!(named(&entries, "a.txt").size, Some(5));
     assert_eq!(named(&entries, "a.txt").modified_at, Some(OLD_DATE));
@@ -361,14 +404,14 @@ async fn a_snapshot_tree_lists_files_folders_links_and_odd_names() {
     assert!(
         browse
             .volume
-            .list_directory(&dir.join("empty"), None)
+            .list_directory(&AppPath::legacy_unchecked(&dir.join("empty")), None)
             .await
             .expect("lists")
             .is_empty()
     );
     let nested = browse
         .volume
-        .list_directory(&dir.join("nested"), None)
+        .list_directory(&AppPath::legacy_unchecked(&dir.join("nested")), None)
         .await
         .expect("lists");
     assert_eq!(named(&nested, "b.bin").size, Some(300_000));
@@ -379,17 +422,25 @@ async fn metadata_answers_for_the_view_a_snapshot_and_a_file() {
     let browse = Browse::new().await;
     let dir = browse.source_in("latest").await;
 
-    let top = browse.volume.get_metadata(&view()).await.expect("the view");
+    let top = browse
+        .volume
+        .get_metadata(&AppPath::legacy_unchecked(&view()))
+        .await
+        .expect("the view");
     assert!(top.is_directory);
     assert_eq!(top.name, VIRTUAL_ENTRY_NAME);
     let latest = browse
         .volume
-        .get_metadata(&view().join("latest"))
+        .get_metadata(&AppPath::legacy_unchecked(&view().join("latest")))
         .await
         .expect("latest");
     assert!(latest.is_directory);
     assert_eq!(latest.modified_at, Some(1_791_000_000));
-    let file = browse.volume.get_metadata(&dir.join("a.txt")).await.expect("a file");
+    let file = browse
+        .volume
+        .get_metadata(&AppPath::legacy_unchecked(&dir.join("a.txt")))
+        .await
+        .expect("a file");
     assert_eq!(file.size, Some(5));
     assert!(!file.is_directory);
 }
@@ -401,7 +452,7 @@ async fn a_cancelled_listing_answers_cancelled() {
     token.cancel();
     let result = browse
         .volume
-        .list_directory_with_cancel(&view().join("latest"), None, Some(&token))
+        .list_directory_with_cancel(&AppPath::legacy_unchecked(&view().join("latest")), None, Some(&token))
         .await;
     assert!(matches!(result, Err(VolumeError::Cancelled(_))), "got {result:?}");
 }
@@ -428,14 +479,22 @@ async fn a_folder_or_a_link_has_no_bytes_to_stream() {
     let dir = browse.source_in("latest").await;
     for path in [view(), view().join("latest"), dir.join("nested"), dir.join("link")] {
         assert!(
-            browse.volume.open_read_stream(&path).await.is_err(),
+            browse
+                .volume
+                .open_read_stream(&AppPath::legacy_unchecked(&path))
+                .await
+                .is_err(),
             "{} has no bytes",
             path.display()
         );
     }
     // Typed, so a copy of the folder skips the link and carries on.
     assert!(matches!(
-        browse.volume.open_read_stream(&dir.join("link")).await.err(),
+        browse
+            .volume
+            .open_read_stream(&AppPath::legacy_unchecked(&dir.join("link")))
+            .await
+            .err(),
         Some(VolumeError::NoContent(_))
     ));
 }
@@ -452,17 +511,27 @@ async fn a_link_reports_the_target_the_backup_recorded() {
     assert_eq!(
         browse
             .volume
-            .read_link_target(&dir.join("link"))
+            .read_link_target(&AppPath::legacy_unchecked(&dir.join("link")))
             .await
             .unwrap()
             .as_deref(),
         Some(Path::new("a.txt"))
     );
     for not_a_link in [view(), view().join("latest"), dir.join("nested"), dir.join("a.txt")] {
-        assert_eq!(browse.volume.read_link_target(&not_a_link).await.unwrap(), None);
+        assert_eq!(
+            browse
+                .volume
+                .read_link_target(&AppPath::legacy_unchecked(&not_a_link))
+                .await
+                .unwrap(),
+            None
+        );
     }
     assert!(matches!(
-        browse.volume.read_link_target(&dir.join("nope")).await,
+        browse
+            .volume
+            .read_link_target(&AppPath::legacy_unchecked(&dir.join("nope")))
+            .await,
         Err(VolumeError::NotFound(_))
     ));
 }
@@ -482,13 +551,13 @@ async fn ranged_reads_fetch_windows_of_the_pack_never_the_whole_pack() {
 
     let window = browse
         .volume
-        .read_range(&dir.join("nested/b.bin"), 1_000, 10)
+        .read_range(&AppPath::legacy_unchecked(&dir.join("nested/b.bin")), 1_000, 10)
         .await
         .expect("a ranged read");
     assert_eq!(window, big_bytes()[1_000..1_010]);
     let past_the_end = browse
         .volume
-        .read_range(&dir.join("a.txt"), 10, 10)
+        .read_range(&AppPath::legacy_unchecked(&dir.join("a.txt")), 10, 10)
         .await
         .expect("reads");
     assert!(past_the_end.is_empty(), "a read past the end is empty");
@@ -513,10 +582,14 @@ async fn browsing_and_reading_never_write_to_the_repo() {
 
     let dir = browse.source_in("latest").await;
     read_all(&browse.volume, &dir.join("nested/b.bin")).await;
-    browse.volume.read_range(&dir.join("a.txt"), 0, 5).await.expect("reads");
     browse
         .volume
-        .scan_for_copy(&view().join("latest"))
+        .read_range(&AppPath::legacy_unchecked(&dir.join("a.txt")), 0, 5)
+        .await
+        .expect("reads");
+    browse
+        .volume
+        .scan_for_copy(&AppPath::legacy_unchecked(&view().join("latest")))
         .await
         .expect("scans");
 
@@ -525,12 +598,18 @@ async fn browsing_and_reading_never_write_to_the_repo() {
         let on_parent = read_parent(&browse.parent, &Path::new(ROOT).join(&path)).await;
         assert_eq!(on_parent, bytes, "{} is untouched", path.display());
     }
-    let locks = browse.parent.list_directory(&Path::new(ROOT).join("locks"), None).await;
+    let locks = browse
+        .parent
+        .list_directory(&AppPath::legacy_unchecked(&Path::new(ROOT).join("locks")), None)
+        .await;
     assert!(locks.expect("locks/").is_empty(), "no restic lock either");
 }
 
 async fn read_parent(parent: &InMemoryVolume, path: &Path) -> Vec<u8> {
-    let mut stream = parent.open_read_stream(path).await.expect("parent file");
+    let mut stream = parent
+        .open_read_stream(&AppPath::legacy_unchecked(path))
+        .await
+        .expect("parent file");
     let mut out = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         out.extend_from_slice(&chunk.expect("chunk"));
@@ -545,11 +624,19 @@ async fn read_parent(parent: &InMemoryVolume, path: &Path) -> Vec<u8> {
 #[tokio::test(flavor = "multi_thread")]
 async fn refreshing_the_root_alone_never_holds_latest_back() {
     let browse = Browse::new().await;
-    browse.volume.list_directory(&view(), None).await.expect("lists");
+    browse
+        .volume
+        .list_directory(&AppPath::legacy_unchecked(&view()), None)
+        .await
+        .expect("lists");
 
     std::fs::write(browse.source.join("a.txt"), b"second").expect("change the source");
     browse.backup_again(1_792_000_000).await;
-    let entries = browse.volume.list_directory(&view(), None).await.expect("refreshes");
+    let entries = browse
+        .volume
+        .list_directory(&AppPath::legacy_unchecked(&view()), None)
+        .await
+        .expect("refreshes");
 
     assert_eq!(named(&entries, "latest").modified_at, Some(1_792_000_000));
 }
@@ -571,7 +658,7 @@ async fn latest_doesnt_switch_under_a_running_copy() {
     browse.backup_again(1_792_000_000).await;
     browse
         .volume
-        .list_directory(&view(), None)
+        .list_directory(&AppPath::legacy_unchecked(&view()), None)
         .await
         .expect("another pane refreshes the root");
 
@@ -580,7 +667,11 @@ async fn latest_doesnt_switch_under_a_running_copy() {
         b"hello",
         "the rest of the copy still reads the first snapshot"
     );
-    let entries = browse.volume.list_directory(&view(), None).await.expect("lists");
+    let entries = browse
+        .volume
+        .list_directory(&AppPath::legacy_unchecked(&view()), None)
+        .await
+        .expect("lists");
     assert_eq!(named(&entries, "latest").modified_at, Some(1_791_000_000));
 }
 
@@ -600,7 +691,7 @@ async fn latest_moves_on_once_nothing_reads_under_it() {
     browse.backup_again(1_792_000_000).await;
     browse
         .volume
-        .list_directory(&view(), None)
+        .list_directory(&AppPath::legacy_unchecked(&view()), None)
         .await
         .expect("refreshes the root");
 
@@ -627,7 +718,7 @@ async fn a_paused_copy_out_of_latest_keeps_it_until_the_copy_settles() {
     browse.backup_again(1_792_000_000).await;
     browse
         .volume
-        .list_directory(&view(), None)
+        .list_directory(&AppPath::legacy_unchecked(&view()), None)
         .await
         .expect("refreshes the root");
     assert_eq!(
@@ -639,7 +730,7 @@ async fn a_paused_copy_out_of_latest_keeps_it_until_the_copy_settles() {
     drop(hold);
     browse
         .volume
-        .list_directory(&view(), None)
+        .list_directory(&AppPath::legacy_unchecked(&view()), None)
         .await
         .expect("refreshes the root");
     assert_eq!(read_all(&browse.volume, &dir.join("a.txt")).await, b"second");
@@ -661,10 +752,21 @@ async fn a_replaced_parent_is_read_through_from_then_on() {
     // The retired parent loses its copy of the repo: anything still reading
     // through it fails from here on.
     for (path, _) in browse.fixture.files() {
-        browse.parent.delete(&Path::new(ROOT).join(path)).await.expect("rm");
+        browse
+            .parent
+            .delete(&AppPath::legacy_unchecked(&Path::new(ROOT).join(path)))
+            .await
+            .expect("rm");
     }
 
-    assert_eq!(reconnected.list_directory(&view(), None).await.expect("lists").len(), 2);
+    assert_eq!(
+        reconnected
+            .list_directory(&AppPath::legacy_unchecked(&view()), None)
+            .await
+            .expect("lists")
+            .len(),
+        2
+    );
     assert_eq!(read_all(&reconnected, &dir.join("a.txt")).await, b"hello");
 }
 
@@ -674,7 +776,7 @@ async fn a_replaced_parent_is_read_through_from_then_on() {
 async fn it_answers_as_a_read_only_view_routed_over_its_parent() {
     let browse = Browse::new().await;
     let volume = &browse.volume;
-    assert_eq!(volume.root(), view());
+    assert_eq!(*volume.root().as_std_legacy(), view());
     assert!(volume.routes_over_a_parent());
     assert!(!volume.is_writable());
     assert!(!volume.can_watch_listings());
@@ -689,7 +791,9 @@ async fn it_answers_as_a_read_only_view_routed_over_its_parent() {
         BackendKind::Restic,
         "never the `Local` default: favorites, the error report, and the index read it"
     );
-    let mkdir = volume.create_directory_all(&view().join("latest/new")).await;
+    let mkdir = volume
+        .create_directory_all(&AppPath::legacy_unchecked(&view().join("latest/new")))
+        .await;
     assert!(matches!(mkdir, Err(VolumeError::NotSupported)), "got {mkdir:?}");
 }
 

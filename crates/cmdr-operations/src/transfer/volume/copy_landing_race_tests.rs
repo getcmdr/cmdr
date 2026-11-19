@@ -19,6 +19,7 @@
 //! replaced. That file is ours and must count as landed once, never as a clash.
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
@@ -81,15 +82,18 @@ impl Volume for TakenAtLanding {
 
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            if to.file_name().is_some_and(|n| n == self.taken) && !self.inner.exists(to).await {
-                self.inner.create_file(to, THEIRS).await?;
+            let to_app = to;
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
+            if to.file_name().is_some_and(|n| n == self.taken) && !self.inner.exists(to_app).await {
+                self.inner.create_file(to_app, THEIRS).await?;
             }
-            self.inner.rename(from, to, force).await
+            self.inner.rename(from, to_app, force).await
         })
     }
 }
@@ -106,7 +110,10 @@ async fn copy_with_a_name_taken_at_landing(
     let source = Arc::new(InMemoryVolume::new("Source"));
     for name in names {
         source
-            .create_file(&Path::new("/").join(name), format!("SRC-{name}").as_bytes())
+            .create_file(
+                &AppPath::legacy_unchecked(&Path::new("/").join(name)),
+                format!("SRC-{name}").as_bytes(),
+            )
             .await
             .expect("seeding the source");
     }
@@ -114,7 +121,7 @@ async fn copy_with_a_name_taken_at_landing(
         inner: InMemoryVolume::new("Dest"),
         taken,
     });
-    dest.create_directory(Path::new("/dest"))
+    dest.create_directory(app_path!("/dest"))
         .await
         .expect("the destination folder");
 
@@ -145,7 +152,7 @@ async fn assert_theirs_survives(dest: &TakenAtLanding, error: &WriteOperationErr
         "the copy fails naming the clash, got {error:?}"
     );
     let path = Path::new("/dest").join(taken);
-    let meta = dest.inner.get_metadata(&path).await;
+    let meta = dest.inner.get_metadata(&AppPath::legacy_unchecked(&path)).await;
     assert!(
         meta.is_ok(),
         "❗ the other writer's {taken} must survive the failed copy; it was deleted"
@@ -160,7 +167,7 @@ async fn assert_theirs_survives(dest: &TakenAtLanding, error: &WriteOperationErr
     // folder would otherwise wait an hour for the stale-temp reap.
     let leftovers: Vec<String> = dest
         .inner
-        .list_directory(Path::new("/dest"), None)
+        .list_directory(app_path!("/dest"), None)
         .await
         .expect("listing the destination")
         .into_iter()
@@ -216,13 +223,16 @@ async fn copy_through_a_late_error_at_landing(
     let source = Arc::new(InMemoryVolume::new("Source"));
     for name in names {
         source
-            .create_file(&Path::new("/").join(name), format!("SRC-{name}").as_bytes())
+            .create_file(
+                &AppPath::legacy_unchecked(&Path::new("/").join(name)),
+                format!("SRC-{name}").as_bytes(),
+            )
             .await
             .expect("seeding the source");
     }
     let inner = Arc::new(InMemoryVolume::new("Testnas"));
     inner
-        .create_directory(Path::new("/dest"))
+        .create_directory(app_path!("/dest"))
         .await
         .expect("the destination folder");
     let nas = OutageVolume::wrap(Arc::clone(&inner), lane);
@@ -248,7 +258,7 @@ async fn copy_through_a_late_error_at_landing(
 async fn assert_each_landed_once(inner: &InMemoryVolume, nas: &OutageVolume, names: &[&str]) {
     assert_eq!(nas.generation(), 1, "the session really was replaced mid-landing");
     let mut listed: Vec<String> = inner
-        .list_directory(Path::new("/dest"), None)
+        .list_directory(app_path!("/dest"), None)
         .await
         .expect("listing the destination")
         .into_iter()
@@ -260,7 +270,7 @@ async fn assert_each_landed_once(inner: &InMemoryVolume, nas: &OutageVolume, nam
     assert_eq!(listed, expected, "each file exactly once, no staging left behind");
     for name in names {
         let entry = inner
-            .get_metadata(&Path::new("/dest").join(name))
+            .get_metadata(&AppPath::legacy_unchecked(&Path::new("/dest").join(name)))
             .await
             .expect("it landed");
         assert_eq!(entry.size, Some(format!("SRC-{name}").len() as u64), "{name} is whole");
@@ -343,11 +353,14 @@ impl Volume for SavedOverOurClearedName {
         self
     }
 
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            self.inner.delete(path).await?;
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.inner.delete(path_app).await?;
             if path == self.taken && !self.saved.swap(true, Ordering::SeqCst) {
-                self.inner.create_file(path, THEIRS).await?;
+                self.inner.create_file(path_app, THEIRS).await?;
             }
             Ok(())
         })
@@ -364,7 +377,10 @@ async fn copy_onto_a_claimed_name_someone_saves_over(
     let source = Arc::new(InMemoryVolume::new("Source"));
     for name in names {
         source
-            .create_file(&Path::new("/").join(name), format!("SRC-{name}").as_bytes())
+            .create_file(
+                &AppPath::legacy_unchecked(&Path::new("/").join(name)),
+                format!("SRC-{name}").as_bytes(),
+            )
             .await
             .expect("seeding the source");
     }
@@ -455,9 +471,15 @@ async fn rename_pick_whose_name_is_taken_at_landing(
     for (path, bytes) in seed {
         let path = Path::new(path);
         if let Some(parent) = path.parent().filter(|p| *p != Path::new("/")) {
-            source.create_directory_all(parent).await.expect("seeding the source");
+            source
+                .create_directory_all(&AppPath::legacy_unchecked(parent))
+                .await
+                .expect("seeding the source");
         }
-        source.create_file(path, bytes).await.expect("seeding the source");
+        source
+            .create_file(&AppPath::legacy_unchecked(path), bytes)
+            .await
+            .expect("seeding the source");
     }
     let dest = Arc::new(TakenAtLanding {
         inner: InMemoryVolume::new("Dest"),
@@ -466,10 +488,13 @@ async fn rename_pick_whose_name_is_taken_at_landing(
     for path in existing {
         let path = Path::new(path);
         dest.inner
-            .create_directory_all(path.parent().unwrap())
+            .create_directory_all(&AppPath::legacy_unchecked(path.parent().unwrap()))
             .await
             .expect("the destination folder");
-        dest.inner.create_file(path, b"the user's own file").await.unwrap();
+        dest.inner
+            .create_file(&AppPath::legacy_unchecked(path), b"the user's own file")
+            .await
+            .unwrap();
     }
 
     let sources: Vec<PathBuf> = sources.iter().map(PathBuf::from).collect();
@@ -548,7 +573,7 @@ async fn a_merge_childs_rename_pick_taken_at_landing_is_never_deleted() {
     );
     assert_eq!(
         dest.inner
-            .get_metadata(Path::new("/dest/album/photo (1).jpg"))
+            .get_metadata(app_path!("/dest/album/photo (1).jpg"))
             .await
             .ok()
             .and_then(|m| m.size),
@@ -601,15 +626,18 @@ impl Volume for WrittenIntoOurPlaceholder {
 
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let to_app = to;
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
             if to.file_name().is_some_and(|n| n == self.taken) {
                 std::fs::write(self.root.join(self.taken), THEIRS).unwrap();
             }
-            self.inner.rename(from, to, force).await
+            self.inner.rename(from, to_app, force).await
         })
     }
 }
@@ -622,7 +650,7 @@ async fn a_rename_placeholder_someone_wrote_into_is_never_cleared() {
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("Source"));
     source
-        .create_file(Path::new("/photo.jpg"), b"SRC-photo.jpg")
+        .create_file(app_path!("/photo.jpg"), b"SRC-photo.jpg")
         .await
         .unwrap();
     let dest_dir = tempfile::tempdir().expect("tempdir");

@@ -17,6 +17,8 @@
 
 #![cfg(feature = "virtual-mtp")]
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -120,12 +122,12 @@ async fn mtp_scan_uses_oracle_on_hit_skips_list_directory() {
     // Sanity-check the oracle gate. Without this, an unrelated regression in
     // `listing_watch_coverage` would make the test claim the wrong cause.
     assert_eq!(
-        vol.listing_watch_coverage(Path::new("/DCIM")),
+        vol.listing_watch_coverage(app_path!("/DCIM")),
         WatchCoverage::EveryWriter,
         "virtual device must report connected (listing covered)"
     );
 
-    let paths = vec![
+    let paths = [
         PathBuf::from("/DCIM/a.jpg"),
         PathBuf::from("/DCIM/b.jpg"),
         PathBuf::from("/DCIM/c.jpg"),
@@ -133,7 +135,13 @@ async fn mtp_scan_uses_oracle_on_hit_skips_list_directory() {
 
     testing::reset_list_directory_call_count();
     let result = vol
-        .scan_for_copy_batch_with_boundary(&paths, &ScanBoundary::silent())
+        .scan_for_copy_batch_with_boundary(
+            &paths
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+            &ScanBoundary::silent(),
+        )
         .await
         .expect("oracle-served batch scan");
 
@@ -163,7 +171,7 @@ async fn mtp_scan_cold_cache_still_uses_parent_grouping() {
     // Walk root first so `/Documents` and `/DCIM` are in the path-handle cache
     // before the scan, keeping a heal listing out of what the cell measures.
     // We don't care about the entries here, just the side effect on the cache.
-    let root = vol.list_directory(Path::new("/"), None).await.expect("listing /");
+    let root = vol.list_directory(app_path!("/"), None).await.expect("listing /");
     assert!(
         root.iter().any(|e| e.name == "Documents") && root.iter().any(|e| e.name == "DCIM"),
         "expected Documents/ and DCIM/ at root of virtual device fixture"
@@ -174,11 +182,11 @@ async fn mtp_scan_cold_cache_still_uses_parent_grouping() {
     // and `/DCIM`, so we clear that cache below before the actual scan to
     // ensure the cold path runs.
     let documents = vol
-        .list_directory(Path::new("/Documents"), None)
+        .list_directory(app_path!("/Documents"), None)
         .await
         .expect("listing /Documents");
     let dcim = vol
-        .list_directory(Path::new("/DCIM"), None)
+        .list_directory(app_path!("/DCIM"), None)
         .await
         .expect("listing /DCIM");
     assert!(
@@ -201,7 +209,7 @@ async fn mtp_scan_cold_cache_still_uses_parent_grouping() {
     // 4 children under /Documents (duplicates are intentional: even a
     // 100-photo-pick should produce one parent listing, not 100), 2 under
     // /DCIM. Total: 6 input paths, 2 unique parents.
-    let paths = vec![
+    let paths = [
         PathBuf::from("/Documents/report.txt"),
         PathBuf::from("/Documents/notes.txt"),
         PathBuf::from("/Documents/report.txt"),
@@ -211,7 +219,13 @@ async fn mtp_scan_cold_cache_still_uses_parent_grouping() {
     ];
 
     let result = vol
-        .scan_for_copy_batch_with_boundary(&paths, &ScanBoundary::silent())
+        .scan_for_copy_batch_with_boundary(
+            &paths
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+            &ScanBoundary::silent(),
+        )
         .await
         .expect("cold batch scan");
 
@@ -249,7 +263,7 @@ async fn mtp_batch_scan_stops_when_it_is_told_to() {
     get_volume_manager().register(&vid, vol.clone() as Arc<dyn Volume>);
     // MTP resolves a path through a cache that browsing populates, so walk root
     // first or `/DCIM` isn't addressable yet.
-    vol.list_directory(Path::new("/"), None).await.expect("listing /");
+    vol.list_directory(app_path!("/"), None).await.expect("listing /");
 
     cmdr_fs::volume::conformance::assert_batch_scan_stops_when_told(vol.as_ref(), Path::new("/DCIM")).await;
 
@@ -265,7 +279,7 @@ async fn mtp_batch_scan_asks_its_boundary_inside_the_walk() {
     let fixture = connect_virtual_device().await;
     let (vol, vid) = (Arc::clone(&fixture.volume), fixture.volume_id.clone());
     get_volume_manager().register(&vid, vol.clone() as Arc<dyn Volume>);
-    vol.list_directory(Path::new("/"), None).await.expect("listing /");
+    vol.list_directory(app_path!("/"), None).await.expect("listing /");
 
     cmdr_fs::volume::conformance::assert_batch_scan_asks_inside_the_walk(vol.as_ref(), Path::new("/DCIM"), 3).await;
 

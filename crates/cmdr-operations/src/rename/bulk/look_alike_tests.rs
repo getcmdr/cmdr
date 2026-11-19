@@ -9,6 +9,8 @@
 //! the SAME batch moves away is vacated, not taken. Docker twins:
 //! `operations_host/backend_suites/smb_look_alike_test.rs`.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -43,14 +45,14 @@ async fn volume(engine: &TestOperations, label: &str, composes: bool) -> (String
         volume = volume.with_composed_new_names();
     }
     let volume = Arc::new(volume);
-    volume.create_directory(Path::new("/dir")).await.unwrap();
+    volume.create_directory(app_path!("/dir")).await.unwrap();
     engine.volumes().register(&id, Arc::clone(&volume) as Arc<dyn Volume>);
     (id, volume)
 }
 
 async fn file(volume: &InMemoryVolume, name: &str, bytes: &[u8]) {
     volume
-        .create_file(Path::new(&format!("/dir/{name}")), bytes)
+        .create_file(&AppPath::legacy_unchecked(Path::new(&format!("/dir/{name}"))), bytes)
         .await
         .unwrap();
 }
@@ -90,7 +92,7 @@ async fn run(engine: &TestOperations, id: &str, rows: Vec<BulkRenameRow>) -> usi
 
 async fn names_in(volume: &InMemoryVolume) -> Vec<String> {
     let mut names: Vec<String> = volume
-        .list_directory(Path::new("/dir"), None)
+        .list_directory(app_path!("/dir"), None)
         .await
         .unwrap()
         .into_iter()
@@ -102,7 +104,7 @@ async fn names_in(volume: &InMemoryVolume) -> Vec<String> {
 
 async fn read(volume: &InMemoryVolume, name: &str) -> Vec<u8> {
     let mut stream = volume
-        .open_read_stream(Path::new(&format!("/dir/{name}")))
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&format!("/dir/{name}"))))
         .await
         .unwrap();
     let mut out = Vec::new();

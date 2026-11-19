@@ -5,6 +5,7 @@
 //! cover which sources survive at all, driven through the same
 //! `retain_bound_sources*` entry points the four starters call.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 
 use super::{
@@ -63,10 +64,16 @@ fn skipped_paths(sink: &CollectorEventSink) -> Vec<String> {
 }
 
 async fn seed_remote(volume: &dyn Volume, path: &Path, contents: &[u8]) {
-    if volume.exists(path).await {
-        volume.delete(path).await.expect("clear the previous entry");
+    if volume.exists(&AppPath::legacy_unchecked(path)).await {
+        volume
+            .delete(&AppPath::legacy_unchecked(path))
+            .await
+            .expect("clear the previous entry");
     }
-    volume.create_file(path, contents).await.expect("seed remote entry");
+    volume
+        .create_file(&AppPath::legacy_unchecked(path), contents)
+        .await
+        .expect("seed remote entry");
 }
 
 #[test]
@@ -358,7 +365,10 @@ async fn a_remote_source_that_vanished_is_reported_as_removed() {
             .await
             .expect("capture remote"),
     )]);
-    volume.delete(&path).await.expect("delete remote file");
+    volume
+        .delete(&AppPath::legacy_unchecked(&path))
+        .await
+        .expect("delete remote file");
 
     let sink = CollectorEventSink::new();
     let kept = retain_bound_sources_on(

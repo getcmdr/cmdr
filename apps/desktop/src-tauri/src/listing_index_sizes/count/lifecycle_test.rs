@@ -1,7 +1,8 @@
 //! Publication ownership ends before an owned backend operation necessarily does.
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use std::future::Future;
-use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -40,13 +41,13 @@ impl Volume for GatedScan {
         self.inner.name()
     }
 
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, progress)
@@ -54,7 +55,7 @@ impl Volume for GatedScan {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
@@ -65,7 +66,7 @@ impl Volume for GatedScan {
 
     fn scan_for_copy_batch_with_boundary<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
         Box::pin(async move {

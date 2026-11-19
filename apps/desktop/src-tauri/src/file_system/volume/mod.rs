@@ -58,7 +58,7 @@ pub fn note_root_failure(volume_id: &str, error: &VolumeError) {
     let Some(volume) = registry.get(volume_id) else {
         return;
     };
-    let failed_root = volume.root().to_path_buf();
+    let failed_root = volume.root().as_std_legacy().to_path_buf();
 
     if let manager::StaleRootOutcome::Promoted { new_root } = registry.mark_root_stale(volume_id, &failed_root) {
         log::info!(

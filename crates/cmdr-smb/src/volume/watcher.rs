@@ -16,6 +16,7 @@
 
 use super::state::SessionGeneration;
 use super::{MountAnchor, SmbVolumeInner};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::archive_format::has_supported_archive_extension;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
@@ -106,7 +107,12 @@ fn forget_spellings_in(share: &SelfHandle<SmbVolumeInner>, parent: &str) {
 /// through a share the app no longer routes to would feed the listing cache for
 /// an id that belongs to somebody else.
 async fn stat_via_share(share: &SelfHandle<SmbVolumeInner>, path: &Path) -> Option<FileEntry> {
-    share.live()?.at_active_root().get_metadata(path).await.ok()
+    share
+        .live()?
+        .at_active_root()
+        .get_metadata(&AppPath::legacy_unchecked(path))
+        .await
+        .ok()
 }
 
 /// When a changed SMB path is a supported archive, refreshes any open listing

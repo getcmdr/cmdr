@@ -5,6 +5,7 @@
 //! named fixture server plus a scratch directory nothing else in the run will
 //! pick, since every cell shares one export and `nextest` runs them in parallel.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -46,7 +47,10 @@ pub(super) async fn connect(server: SftpFixture) -> SftpVolume {
 pub(super) async fn fixture_on(server: SftpFixture, what: &str) -> (Arc<dyn Volume>, PathBuf) {
     let volume = connect(server).await;
     let dir = PathBuf::from(scratch_dir(what));
-    volume.create_directory(&dir).await.expect("scratch dir");
+    volume
+        .create_directory(&AppPath::legacy_unchecked(&dir))
+        .await
+        .expect("scratch dir");
     (Arc::new(volume), dir)
 }
 

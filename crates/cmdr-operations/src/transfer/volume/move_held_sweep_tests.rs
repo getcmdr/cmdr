@@ -7,6 +7,7 @@
 //! final barrier, `Duration::ZERO` closes a batch after every source.
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path;
 use std::time::Duration;
 
 use super::super::faulty_volume::{FaultyOp, FaultyVolume};
@@ -30,7 +31,10 @@ async fn loose_files(source: &InMemoryVolume, count: usize) -> Vec<PathBuf> {
     let mut paths = Vec::new();
     for i in 0..count {
         let path = PathBuf::from(format!("/f{i:02}.txt"));
-        source.create_file(&path, b"loose").await.unwrap();
+        source
+            .create_file(&AppPath::legacy_unchecked(&path), b"loose")
+            .await
+            .unwrap();
         paths.push(path);
     }
     paths
@@ -105,8 +109,16 @@ async fn n_loose_files_share_one_barrier_within_an_interval() {
 
     assert_eq!(dest.calls_to(FaultyOp::FlushWrites), 1, "one barrier, not one per file");
     for path in &sources {
-        assert!(dest_inner.exists(path).await, "{} landed", path.display());
-        assert!(!source.exists(path).await, "{} moved", path.display());
+        assert!(
+            dest_inner.exists(&AppPath::legacy_unchecked(path)).await,
+            "{} landed",
+            path.display()
+        );
+        assert!(
+            !source.exists(&AppPath::legacy_unchecked(path)).await,
+            "{} moved",
+            path.display()
+        );
         assert_eq!(last_removed(&events, &path.display().to_string()), Some(true));
     }
 }
@@ -173,21 +185,23 @@ async fn a_barrier_refused_mid_move_keeps_its_batch() {
     }
     for moved in ["/f00.txt", "/f01.txt"] {
         assert!(
-            !source.exists(Path::new(moved)).await,
+            !source.exists(&AppPath::legacy_unchecked(Path::new(moved))).await,
             "{moved}: a held barrier proved it"
         );
-        assert!(dest_inner.exists(Path::new(moved)).await);
+        assert!(dest_inner.exists(&AppPath::legacy_unchecked(Path::new(moved))).await);
     }
     assert!(
-        source.exists(Path::new("/f02.txt")).await,
+        source.exists(app_path!("/f02.txt")).await,
         "the unproven original stays"
     );
-    assert!(dest_inner.exists(Path::new("/f02.txt")).await, "beside its landed copy");
+    assert!(dest_inner.exists(app_path!("/f02.txt")).await, "beside its landed copy");
     assert_eq!(last_removed(&events, "/f02.txt"), Some(false));
     for untouched in ["/f03.txt", "/f04.txt"] {
-        assert!(source.exists(Path::new(untouched)).await);
+        assert!(source.exists(&AppPath::legacy_unchecked(Path::new(untouched))).await);
         assert!(
-            !dest_inner.exists(Path::new(untouched)).await,
+            !dest_inner
+                .exists(&AppPath::legacy_unchecked(Path::new(untouched)))
+                .await,
             "{untouched}: never started"
         );
     }
@@ -223,8 +237,16 @@ async fn a_refused_closing_barrier_keeps_the_whole_batch() {
         failure.error
     );
     for path in &sources {
-        assert!(source.exists(path).await, "{}: unproven, so kept", path.display());
-        assert!(dest_inner.exists(path).await, "{}: its copy landed", path.display());
+        assert!(
+            source.exists(&AppPath::legacy_unchecked(path)).await,
+            "{}: unproven, so kept",
+            path.display()
+        );
+        assert!(
+            dest_inner.exists(&AppPath::legacy_unchecked(path)).await,
+            "{}: its copy landed",
+            path.display()
+        );
         assert_eq!(last_removed(&events, &path.display().to_string()), Some(false));
     }
 }
@@ -272,7 +294,11 @@ async fn a_sync_the_drive_refuses_keeps_the_whole_batch() {
         failure.error
     );
     for path in &sources {
-        assert!(source.exists(path).await, "{}: unproven, so kept", path.display());
+        assert!(
+            source.exists(&AppPath::legacy_unchecked(path)).await,
+            "{}: unproven, so kept",
+            path.display()
+        );
         assert!(
             dest_dir.join(path.strip_prefix("/").unwrap()).is_file(),
             "{}: landed",
@@ -312,15 +338,18 @@ async fn a_refused_sweep_keeps_the_rest_of_its_batch() {
         failure.error
     );
     assert!(
-        !source_inner.exists(Path::new("/f00.txt")).await,
+        !source_inner.exists(app_path!("/f00.txt")).await,
         "swept before the refusal"
     );
     for kept in ["/f01.txt", "/f02.txt"] {
         assert!(
-            source_inner.exists(Path::new(kept)).await,
+            source_inner.exists(&AppPath::legacy_unchecked(Path::new(kept))).await,
             "{kept}: still at the source"
         );
-        assert!(dest.exists(Path::new(kept)).await, "{kept} landed");
+        assert!(
+            dest.exists(&AppPath::legacy_unchecked(Path::new(kept))).await,
+            "{kept} landed"
+        );
         assert_eq!(last_removed(&events, kept), Some(false));
     }
 }
@@ -371,13 +400,16 @@ async fn a_failed_copy_still_sweeps_the_sources_held_before_it() {
     assert_eq!(dest.calls_to(FaultyOp::FlushWrites), 1, "one closing barrier");
     for moved in ["/f00.txt", "/f01.txt"] {
         assert!(
-            !source_inner.exists(Path::new(moved)).await,
+            !source_inner.exists(&AppPath::legacy_unchecked(Path::new(moved))).await,
             "{moved}: proven, so moved"
         );
-        assert!(dest.exists(Path::new(moved)).await, "{moved} landed");
+        assert!(
+            dest.exists(&AppPath::legacy_unchecked(Path::new(moved))).await,
+            "{moved} landed"
+        );
     }
     assert!(
-        source_inner.exists(Path::new("/f02.txt")).await,
+        source_inner.exists(app_path!("/f02.txt")).await,
         "the unreadable one stays"
     );
 }
@@ -398,9 +430,12 @@ async fn a_failed_copy_whose_closing_barrier_refuses_keeps_the_held_sources() {
     assert!(dest.fault_fired(FaultyOp::FlushWrites));
     for kept in ["/f00.txt", "/f01.txt"] {
         assert!(
-            source_inner.exists(Path::new(kept)).await,
+            source_inner.exists(&AppPath::legacy_unchecked(Path::new(kept))).await,
             "{kept}: still at the source, no barrier proved it"
         );
-        assert!(dest.exists(Path::new(kept)).await, "{kept} landed");
+        assert!(
+            dest.exists(&AppPath::legacy_unchecked(Path::new(kept))).await,
+            "{kept} landed"
+        );
     }
 }

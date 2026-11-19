@@ -2,7 +2,7 @@
 //! problem row, the bounded existence check, and the evidence guardrail that refuses a WHOLE
 //! plan rather than staging part of one.
 
-use std::path::Path;
+use cmdr_fs::app_path;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -338,7 +338,7 @@ fn a_folder_off_every_connected_volume_refuses_in_the_miss_shape() {
 async fn a_missing_file_on_a_remote_volume_stays_in_the_plan() {
     let share = InMemoryVolume::new("testshare");
     share
-        .create_file(Path::new("/scans/real.pdf"), b"seven!!")
+        .create_file(app_path!("/scans/real.pdf"), b"seven!!")
         .await
         .expect("seed file");
     let mut rows = vec![
@@ -366,11 +366,11 @@ async fn a_missing_file_on_a_remote_volume_stays_in_the_plan() {
 async fn every_source_missing_or_a_folder_refuses_by_row_in_one_answer() {
     let share = InMemoryVolume::new("testshare");
     share
-        .create_directory_all(Path::new("/scans/2026"))
+        .create_directory_all(app_path!("/scans/2026"))
         .await
         .expect("seed folder");
     share
-        .create_file(Path::new("/scans/real.pdf"), b"x")
+        .create_file(app_path!("/scans/real.pdf"), b"x")
         .await
         .expect("seed file");
     let share: Arc<dyn Volume> = Arc::new(share);
@@ -477,7 +477,7 @@ async fn a_dead_share_never_starves_a_plan_on_another_volume() {
     let _ = check_sources("attic", dead, &mut stuck, &Deadline::new(Duration::from_millis(200))).await;
 
     let disk = InMemoryVolume::new("Macintosh HD");
-    disk.create_file(Path::new("/Users/test_user_3/a.pdf"), b"here")
+    disk.create_file(app_path!("/Users/test_user_3/a.pdf"), b"here")
         .await
         .expect("seed file");
     let mut rows = vec![draft_row(
@@ -504,11 +504,11 @@ async fn a_dead_share_never_starves_a_plan_on_another_volume() {
 async fn the_whole_check_stages_a_good_plan_and_refuses_a_bad_one_in_one_answer() {
     let share = InMemoryVolume::new("testshare");
     share
-        .create_file(Path::new("/Volumes/testshare/scans/real.pdf"), b"x")
+        .create_file(app_path!("/Volumes/testshare/scans/real.pdf"), b"x")
         .await
         .expect("seed file");
     share
-        .create_directory_all(Path::new("/Volumes/testshare/scans/2026"))
+        .create_directory_all(app_path!("/Volumes/testshare/scans/2026"))
         .await
         .expect("seed folder");
     let share: Arc<dyn Volume> = Arc::new(share);

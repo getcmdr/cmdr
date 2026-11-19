@@ -5,6 +5,8 @@
 use super::{Deadline, SourceItemInput, VolumeScanError, merge_source_types_from_stats};
 use crate::host::testing::PaneListings;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::WedgedVolume;
 use cmdr_fs::volume::Volume;
@@ -251,9 +253,9 @@ async fn a_source_reached_through_a_symlinked_parent_finds_no_conflicts() {
 async fn a_same_folder_copy_on_a_remote_volume_finds_no_conflicts() {
     let engine = TestOperations::new();
     let volume = Arc::new(InMemoryVolume::new("Device")) as Arc<dyn Volume>;
-    volume.create_directory(Path::new("/photos")).await.expect("create dir");
+    volume.create_directory(app_path!("/photos")).await.expect("create dir");
     volume
-        .create_file(Path::new("/photos/photo.jpg"), b"pixels")
+        .create_file(app_path!("/photos/photo.jpg"), b"pixels")
         .await
         .expect("create file");
     engine
@@ -287,9 +289,12 @@ async fn a_source_from_a_case_differing_folder_is_still_a_conflict() {
     let engine = TestOperations::new();
     let volume = Arc::new(InMemoryVolume::new("Device")) as Arc<dyn Volume>;
     for dir in ["/photos", "/PHOTOS"] {
-        volume.create_directory(Path::new(dir)).await.expect("create dir");
         volume
-            .create_file(&Path::new(dir).join("photo.jpg"), b"pixels")
+            .create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            .await
+            .expect("create dir");
+        volume
+            .create_file(&AppPath::legacy_unchecked(&Path::new(dir).join("photo.jpg")), b"pixels")
             .await
             .expect("create file");
     }
@@ -324,9 +329,9 @@ async fn the_same_path_on_two_volumes_is_still_a_conflict() {
     let source = Arc::new(InMemoryVolume::new("Source")) as Arc<dyn Volume>;
     let dest = Arc::new(InMemoryVolume::new("Dest")) as Arc<dyn Volume>;
     for volume in [&source, &dest] {
-        volume.create_directory(Path::new("/photos")).await.expect("create dir");
+        volume.create_directory(app_path!("/photos")).await.expect("create dir");
         volume
-            .create_file(Path::new("/photos/photo.jpg"), b"pixels")
+            .create_file(app_path!("/photos/photo.jpg"), b"pixels")
             .await
             .expect("create file");
     }
@@ -367,7 +372,7 @@ async fn source_stats_come_from_the_watched_pane_they_were_picked_in() {
         .register("pane-stat-source", Arc::clone(&source) as Arc<dyn Volume>);
     panes.show_volume("pane-stat-source", Arc::clone(&source) as Arc<dyn Volume>);
     let dest = Arc::new(InMemoryVolume::new("Dest")) as Arc<dyn Volume>;
-    dest.create_directory(Path::new("/Burst"))
+    dest.create_directory(app_path!("/Burst"))
         .await
         .expect("seeding the destination folder");
     engine.volumes().register("pane-stat-dest", Arc::clone(&dest));

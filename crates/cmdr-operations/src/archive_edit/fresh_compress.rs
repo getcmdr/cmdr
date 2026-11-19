@@ -1,6 +1,7 @@
 //! Managed fresh-archive creation: plan source entries, stream one seedless ZIP
 //! producer into a tracked destination stage, validate it, then publish it.
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -123,7 +124,7 @@ pub(super) async fn start(
     let registered_source = engine
         .host()
         .volumes()
-        .find_by_root(source_volume.root())
+        .find_by_root(&source_volume.root().as_std_legacy())
         .filter(|(_, registered)| {
             registered.root() == source_volume.root() && registered.lane_key() == source_volume.lane_key()
         });
@@ -251,7 +252,7 @@ pub(super) async fn start(
                     dest_volume
                         .notify_mutation(
                             &parent_volume_id,
-                            parent,
+                            &AppPath::legacy_unchecked(parent),
                             if net_new {
                                 MutationEvent::Created(name.to_string_lossy().into_owned())
                             } else {
@@ -260,7 +261,10 @@ pub(super) async fn start(
                         )
                         .await;
                 }
-                let meta = dest_volume.get_metadata(&archive_path).await.ok();
+                let meta = dest_volume
+                    .get_metadata(&AppPath::legacy_unchecked(&archive_path))
+                    .await
+                    .ok();
                 super::super::journal::record_compress_archive(
                     state.scope(),
                     &parent_volume_id,
@@ -585,7 +589,7 @@ async fn upload_spool(
     runs: &ProducerRuns,
 ) -> Result<u64, StepError> {
     let stream = spool_volume
-        .open_read_stream(spool_path)
+        .open_read_stream(&AppPath::legacy_unchecked(spool_path))
         .await
         .map_err(|error| StepError::Ended(volume_read_error(spool_full, error)))?;
     let stream: Box<dyn VolumeReadStream> = Box::new(PausableSpoolStream {
@@ -612,7 +616,7 @@ async fn upload_spool(
     let stage_path = stage.target();
     let written = match dest_volume
         .write_from_stream(
-            stage_path,
+            &AppPath::legacy_unchecked(stage_path),
             WriteMode::CreateNew,
             StreamLength::Known(produced),
             stream,

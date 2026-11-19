@@ -540,6 +540,6 @@ impl IndexDoor for AppIndexDoor {
         if !cmdr_fs::volume::VolumeScheme::of(volume_id).is_mount_backed() {
             return true;
         }
-        super::eject::is_still_mounted(&volume.root().to_string_lossy())
+        super::eject::is_still_mounted(&volume.root().as_std_legacy().to_string_lossy())
     }
 }

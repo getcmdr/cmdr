@@ -405,7 +405,7 @@ pub(super) fn wire_volume(
         if !excluded.is_empty()
             && let Some(mount_root) = crate::indexing::host::volumes::current()
                 .get(&volume_id)
-                .map(|v| v.root().to_string_lossy().into_owned())
+                .map(|v| v.root().as_std_legacy().to_string_lossy().into_owned())
         {
             let re_scheduler = Arc::clone(&scheduler);
             let re_volume = volume_id.clone();

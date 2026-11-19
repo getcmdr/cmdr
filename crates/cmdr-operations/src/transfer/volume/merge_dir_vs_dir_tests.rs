@@ -18,6 +18,7 @@ use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::transfer::conflict_responder_test_support::ConflictResponderSink;
 use crate::types::ConflictResolution;
+use cmdr_fs::app_path;
 use cmdr_fs::volume::Volume;
 
 // ============================================================================
@@ -25,7 +26,10 @@ use cmdr_fs::volume::Volume;
 // ============================================================================
 /// Reads a whole file from a volume into a `Vec<u8>`.
 async fn read_all(vol: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
-    let mut stream = vol.open_read_stream(Path::new(path)).await.unwrap();
+    let mut stream = vol
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .unwrap();
     let mut out = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         out.extend_from_slice(&chunk);
@@ -51,12 +55,12 @@ async fn dir_vs_dir_never_prompts_top_level_or_deep_under_every_policy() {
     ] {
         let (source, dest) = make_volumes();
         // Nested dir-vs-dir with NO clashing files anywhere — only folders clash.
-        source.create_directory(Path::new("/a")).await.unwrap();
-        source.create_directory(Path::new("/a/b")).await.unwrap();
-        source.create_file(Path::new("/a/b/only-src.txt"), b"S").await.unwrap();
-        dest.create_directory(Path::new("/a")).await.unwrap();
-        dest.create_directory(Path::new("/a/b")).await.unwrap();
-        dest.create_file(Path::new("/a/b/only-dest.txt"), b"D").await.unwrap();
+        source.create_directory(app_path!("/a")).await.unwrap();
+        source.create_directory(app_path!("/a/b")).await.unwrap();
+        source.create_file(app_path!("/a/b/only-src.txt"), b"S").await.unwrap();
+        dest.create_directory(app_path!("/a")).await.unwrap();
+        dest.create_directory(app_path!("/a/b")).await.unwrap();
+        dest.create_file(app_path!("/a/b/only-dest.txt"), b"D").await.unwrap();
 
         let state = make_state(&engine);
         let events = Arc::new(CollectorEventSink::new());
@@ -90,11 +94,11 @@ async fn dir_vs_dir_never_prompts_top_level_or_deep_under_every_policy() {
         );
         // Both the source-only and dest-only file coexist in the merged tree.
         assert!(
-            dest.exists(Path::new("/a/b/only-src.txt")).await,
+            dest.exists(app_path!("/a/b/only-src.txt")).await,
             "policy {policy:?}: src file missing"
         );
         assert!(
-            dest.exists(Path::new("/a/b/only-dest.txt")).await,
+            dest.exists(app_path!("/a/b/only-dest.txt")).await,
             "policy {policy:?}: dest-only file destroyed"
         );
     }
@@ -118,17 +122,17 @@ async fn dir_vs_dir_never_prompts_top_level_or_deep_under_every_policy() {
 async fn source_dir_over_dest_file_overwrite_replaces_file_with_dir() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_directory(Path::new("/album")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
     // source `D` is a DIRECTORY holding a file.
-    source.create_directory(Path::new("/album/D")).await.unwrap();
+    source.create_directory(app_path!("/album/D")).await.unwrap();
     source
-        .create_file(Path::new("/album/D/inner.txt"), b"SRC-inner")
+        .create_file(app_path!("/album/D/inner.txt"), b"SRC-inner")
         .await
         .unwrap();
-    dest.create_directory(Path::new("/album")).await.unwrap();
+    dest.create_directory(app_path!("/album")).await.unwrap();
     // dest `D` is a FILE (the type mismatch), plus a dest-only sibling.
-    dest.create_file(Path::new("/album/D"), b"DEST-file").await.unwrap();
-    dest.create_file(Path::new("/album/keep.txt"), b"DEST-keep")
+    dest.create_file(app_path!("/album/D"), b"DEST-file").await.unwrap();
+    dest.create_file(app_path!("/album/keep.txt"), b"DEST-keep")
         .await
         .unwrap();
 
@@ -156,7 +160,7 @@ async fn source_dir_over_dest_file_overwrite_replaces_file_with_dir() {
     // The dest FILE was replaced by the incoming DIRECTORY (type-mismatch
     // Overwrite), and the directory's content landed.
     assert!(
-        dest.is_directory(Path::new("/album/D")).await.unwrap_or(false),
+        dest.is_directory(app_path!("/album/D")).await.unwrap_or(false),
         "dest `D` should now be a directory"
     );
     assert_eq!(read_all(&dest, "/album/D/inner.txt").await, b"SRC-inner");
@@ -187,14 +191,14 @@ async fn source_dir_over_dest_file_overwrite_replaces_file_with_dir() {
 async fn source_dir_over_dest_file_skip_keeps_dest_file() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_directory(Path::new("/album")).await.unwrap();
-    source.create_directory(Path::new("/album/D")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
+    source.create_directory(app_path!("/album/D")).await.unwrap();
     source
-        .create_file(Path::new("/album/D/inner.txt"), b"SRC-inner")
+        .create_file(app_path!("/album/D/inner.txt"), b"SRC-inner")
         .await
         .unwrap();
-    dest.create_directory(Path::new("/album")).await.unwrap();
-    dest.create_file(Path::new("/album/D"), b"DEST-file").await.unwrap();
+    dest.create_directory(app_path!("/album")).await.unwrap();
+    dest.create_file(app_path!("/album/D"), b"DEST-file").await.unwrap();
 
     let state = make_state(&engine);
     let events = Arc::new(CollectorEventSink::new());
@@ -219,7 +223,7 @@ async fn source_dir_over_dest_file_skip_keeps_dest_file() {
 
     // Skip honored: dest `D` is still the original FILE, unchanged.
     assert!(
-        !dest.is_directory(Path::new("/album/D")).await.unwrap_or(false),
+        !dest.is_directory(app_path!("/album/D")).await.unwrap_or(false),
         "dest `D` must remain a file under Skip"
     );
     assert_eq!(read_all(&dest, "/album/D").await, b"DEST-file");
@@ -235,13 +239,13 @@ async fn source_dir_over_dest_file_skip_keeps_dest_file() {
 async fn type_mismatch_inside_merge_routes_through_resolver_and_skip_keeps_dest() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_directory(Path::new("/album")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
     // source `swap` is a FILE.
-    source.create_file(Path::new("/album/swap"), b"SRC-file").await.unwrap();
-    dest.create_directory(Path::new("/album")).await.unwrap();
+    source.create_file(app_path!("/album/swap"), b"SRC-file").await.unwrap();
+    dest.create_directory(app_path!("/album")).await.unwrap();
     // dest `swap` is a DIR holding a file.
-    dest.create_directory(Path::new("/album/swap")).await.unwrap();
-    dest.create_file(Path::new("/album/swap/inner.txt"), b"DEST-inner")
+    dest.create_directory(app_path!("/album/swap")).await.unwrap();
+    dest.create_file(app_path!("/album/swap/inner.txt"), b"DEST-inner")
         .await
         .unwrap();
 
@@ -267,7 +271,7 @@ async fn type_mismatch_inside_merge_routes_through_resolver_and_skip_keeps_dest(
     assert!(result.is_ok(), "expected Ok, got {result:?}");
 
     // Skip honored: the dest DIR and its inner file survive untouched.
-    assert!(dest.is_directory(Path::new("/album/swap")).await.unwrap_or(false));
+    assert!(dest.is_directory(app_path!("/album/swap")).await.unwrap_or(false));
     assert_eq!(read_all(&dest, "/album/swap/inner.txt").await, b"DEST-inner");
 }
 
@@ -284,11 +288,11 @@ async fn type_mismatch_inside_merge_routes_through_resolver_and_skip_keeps_dest(
 async fn fresh_dest_level_streams_without_listing_or_prompting() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_directory(Path::new("/brand-new")).await.unwrap();
-    source.create_file(Path::new("/brand-new/a.txt"), b"A").await.unwrap();
-    source.create_directory(Path::new("/brand-new/sub")).await.unwrap();
+    source.create_directory(app_path!("/brand-new")).await.unwrap();
+    source.create_file(app_path!("/brand-new/a.txt"), b"A").await.unwrap();
+    source.create_directory(app_path!("/brand-new/sub")).await.unwrap();
     source
-        .create_file(Path::new("/brand-new/sub/b.txt"), b"B")
+        .create_file(app_path!("/brand-new/sub/b.txt"), b"B")
         .await
         .unwrap();
     // dest has NO `/brand-new`.

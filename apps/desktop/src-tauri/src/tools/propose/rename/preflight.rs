@@ -13,6 +13,7 @@
 //!
 //! A check has no time limit: it reports its count and stops when told ([`super::check`]).
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -420,7 +421,7 @@ async fn preflight_remote(
             continue;
         }
         let source = Path::new(&row.source_path);
-        let source_meta = match volume.get_metadata(source).await {
+        let source_meta = match volume.get_metadata(&AppPath::legacy_unchecked(source)).await {
             Ok(metadata) if !metadata.is_directory => metadata,
             _ => {
                 block(status, BulkRenameBlockReason::SourceMissing);
@@ -429,7 +430,10 @@ async fn preflight_remote(
         };
         let destination = source.parent().unwrap_or(Path::new("")).join(&row.destination_name);
         if !allowed_sources.contains(destination.to_string_lossy().as_ref())
-            && volume.get_metadata(&destination).await.is_ok()
+            && volume
+                .get_metadata(&AppPath::legacy_unchecked(&destination))
+                .await
+                .is_ok()
         {
             block(status, BulkRenameBlockReason::TargetExists);
             continue;

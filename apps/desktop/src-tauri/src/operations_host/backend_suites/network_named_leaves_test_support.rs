@@ -8,6 +8,7 @@
 //! destination, so a landing or an undo that read the original name instead of
 //! the chosen one would touch the wrong file.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -131,7 +132,7 @@ impl Rig {
 
 async fn names_on(volume: &dyn Volume, dir: &Path) -> Vec<String> {
     let mut names: Vec<String> = volume
-        .list_directory(dir, None)
+        .list_directory(&AppPath::legacy_unchecked(dir), None)
         .await
         .unwrap_or_else(|e| panic!("list {}: {e:?}", dir.display()))
         .into_iter()
@@ -170,7 +171,7 @@ async fn names_settle_to(volume: &dyn Volume, dir: &Path, expected: &[&str], lab
 /// sends, so the scenario takes the app's).
 fn anchored(remote: &dyn Volume, dir: PathBuf) -> PathBuf {
     if dir.is_relative() {
-        remote.root().join(dir)
+        remote.root().as_std_legacy().join(dir)
     } else {
         dir
     }
@@ -180,19 +181,19 @@ fn anchored(remote: &dyn Volume, dir: PathBuf) -> PathBuf {
 /// backend takes (a phone has no `create_file`).
 async fn put(volume: &dyn Volume, path: &Path, bytes: &[u8]) {
     volume
-        .create_directory_all(path.parent().expect("a parent"))
+        .create_directory_all(&AppPath::legacy_unchecked(path.parent().expect("a parent")))
         .await
         .expect("the fixture's folder");
     let staged = TestDir::new("named_leaves_put");
     std::fs::write(staged.join("bytes"), bytes).expect("the fixture's bytes");
     let local = LocalVolume::local_folder("Staged", &*staged, crate::volume_host::host());
     let stream = local
-        .open_read_stream(Path::new("bytes"))
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new("bytes")))
         .await
         .expect("the fixture's stream");
     volume
         .write_from_stream(
-            path,
+            &AppPath::legacy_unchecked(path),
             WriteMode::CreateNew,
             StreamLength::Known(bytes.len() as u64),
             stream,

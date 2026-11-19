@@ -173,7 +173,7 @@ fn classify_external(volume_id: &str) -> Result<WalkableVolume, NoCoverContext> 
 
     let volumes = crate::indexing::host::volumes::current();
     let volume = volumes.get(volume_id).ok_or(NoCoverContext::NotMounted)?;
-    let root = volume.root().to_path_buf();
+    let root = volume.root().as_std_legacy().to_path_buf();
     // Trait-scanned volumes store trait-provided values in the `inode` column (MTP
     // puts PTP object handles there) and never run the local inode-keyed rename
     // pre-pass, so their inode identity counts as trustworthy.

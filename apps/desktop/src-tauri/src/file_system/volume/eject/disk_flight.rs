@@ -73,7 +73,7 @@ pub(super) async fn eject_on_disk(
         let siblings = match reach {
             DiskReach::WholeDisk => capture(volume_id, Path::new(mount_path), &mounted, |path| {
                 let (id, volume) = crate::file_system::volume::manager::get_volume_manager().find_by_root(path)?;
-                (volume.root() == path).then_some(id)
+                (&*volume.root().as_std_legacy() == path).then_some(id)
             }),
             // Only the volume asked about lets go: its siblings stay mounted and keep working.
             DiskReach::ThisVolume => vec![Sibling {

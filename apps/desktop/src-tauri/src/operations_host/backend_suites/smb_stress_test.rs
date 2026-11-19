@@ -11,6 +11,7 @@
 
 use super::smb_test_support::*;
 use crate::operations_host::app_engine;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::smb_volume_id;
 use cmdr_fs::volume::{StreamLength, WriteMode};
 use cmdr_operations::testing::new_operation_state;
@@ -67,7 +68,10 @@ async fn smb_integration_copy_100_unique_files_no_cross_contamination() {
     let smb_vol = Arc::new(make_docker_volume().await);
     let src_dir = test_dir_name();
     ensure_clean(&smb_vol, &src_dir).await;
-    smb_vol.create_directory(Path::new(&src_dir)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&src_dir)))
+        .await
+        .unwrap();
     let vol: Arc<dyn Volume> = smb_vol.clone();
 
     // Fixture: create 100 files on the SMB source, serially. Parallel
@@ -80,7 +84,7 @@ async fn smb_integration_copy_100_unique_files_no_cross_contamination() {
     for i in 0..FILE_COUNT {
         let name = format!("f_{:03}.bin", i);
         let smb_path = format!("{}/{}", src_dir, name);
-        vol.create_file(Path::new(&smb_path), &expected_content(i))
+        vol.create_file(&AppPath::legacy_unchecked(Path::new(&smb_path)), &expected_content(i))
             .await
             .unwrap();
         source_paths.push(PathBuf::from(smb_path));
@@ -337,8 +341,10 @@ async fn run_concurrent_write_pass(
     let unique_prefix = format!("{TEST_PREFIX_ROOT}{pid}-{ts}-n{n_files}");
 
     let dest_dir_abs = mount_path.join(unique_prefix.trim_start_matches('/'));
-    let _ = vol.create_directory(&mount_path.join("_test")).await;
-    vol.create_directory(&dest_dir_abs)
+    let _ = vol
+        .create_directory(&AppPath::legacy_unchecked(&mount_path.join("_test")))
+        .await;
+    vol.create_directory(&AppPath::legacy_unchecked(&dest_dir_abs))
         .await
         .expect("create unique dest dir");
 
@@ -370,7 +376,7 @@ async fn run_concurrent_write_pass(
         let progress = |_| -> std::ops::ControlFlow<()> { std::ops::ControlFlow::Continue(()) };
         let bytes = vol
             .write_from_stream(
-                &dest_abs,
+                &AppPath::legacy_unchecked(&dest_abs),
                 WriteMode::CreateOrReplace,
                 StreamLength::Known(size),
                 stream,
@@ -502,7 +508,7 @@ async fn smb_integration_concurrent_streaming_writes_no_deadlock() {
     crate::file_system::set_smb_concurrency(8);
 
     let vol = Arc::new(connect_docker_smb_volume(port, "cmdr-regression-maxreadsize").await);
-    let mount_path = vol.root().to_path_buf();
+    let mount_path = vol.root().as_std_legacy().to_path_buf();
 
     let result = std::panic::AssertUnwindSafe(run_concurrent_write_pass(
         Arc::clone(&vol),

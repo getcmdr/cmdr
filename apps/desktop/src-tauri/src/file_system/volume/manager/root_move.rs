@@ -6,6 +6,7 @@
 //! remount would be the wrong model: the unmount half stops the drive's index and
 //! sends every pane on it home. Rationale: `../DETAILS.md` § "A renamed drive".
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 
 use super::VolumeManager;
@@ -44,12 +45,12 @@ impl VolumeManager {
         };
         let id = id.clone();
 
-        if entry.volume.root() != from {
+        if &*entry.volume.root().as_std_legacy() != from {
             entry.roots.retain(|root| root.path != from);
             entry.record_root(to);
             return RootMove::SiblingMoved { id };
         }
-        match entry.volume.rerooted(to) {
+        match entry.volume.rerooted(&AppPath::legacy_unchecked(to)) {
             Some(rerooted) => {
                 // The instance it replaced is the same mount's previous handle, and
                 // nothing about that mount ended, so it goes without retiring.

@@ -4,6 +4,7 @@
 //! `VolumeManager::resolve`, so the route, the parked hub, and the view are the
 //! app's own.
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -213,23 +214,29 @@ impl Volume for GatedDrive {
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             self.gate.pass(path).await;
-            self.inner.open_read_stream(path).await
+            self.inner.open_read_stream(path_app).await
         })
     }
 
     fn read_range<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             self.gate.pass(path).await;
-            self.inner.read_range(path, offset, len).await
+            self.inner.read_range(path_app, offset, len).await
         })
     }
 }

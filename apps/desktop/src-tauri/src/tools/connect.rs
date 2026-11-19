@@ -437,7 +437,7 @@ impl<R: Runtime> ConnectPorts for AppPorts<'_, R> {
 
     fn root(&self, volume_id: &str) -> Option<String> {
         let volume = get_volume_manager().get(volume_id)?;
-        let live = volume.root().to_string_lossy().into_owned();
+        let live = volume.root().as_std_legacy().to_string_lossy().into_owned();
         volume_root(RootSources {
             live: Some(&live),
             ..RootSources::default()

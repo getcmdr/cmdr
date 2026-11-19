@@ -5,6 +5,8 @@
 //! `InMemoryVolume` matches names byte for byte, like an SMB share. Real Samba:
 //! `operations_host/backend_suites/smb_look_alike_test.rs`.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -21,9 +23,12 @@ const CAFE_NFD: &str = "cafe\u{301}.zip";
 async fn share_holding(names: &[&str]) -> String {
     let id = format!("destination-exists-{}", uuid::Uuid::new_v4());
     let volume = InMemoryVolume::new("Share");
-    volume.create_directory(Path::new("/share")).await.unwrap();
+    volume.create_directory(app_path!("/share")).await.unwrap();
     for name in names {
-        volume.create_file(&Path::new("/share").join(name), b"x").await.unwrap();
+        volume
+            .create_file(&AppPath::legacy_unchecked(&Path::new("/share").join(name)), b"x")
+            .await
+            .unwrap();
     }
     get_volume_manager().register(&id, Arc::new(volume) as Arc<dyn Volume>);
     id
@@ -52,7 +57,10 @@ async fn a_name_the_volume_holds_in_another_spelling_is_there() {
 async fn a_folder_the_volume_holds_in_another_spelling_is_there() {
     let id = share_holding(&[]).await;
     let volume = get_volume_manager().get(&id).unwrap();
-    volume.create_directory(Path::new("/share/fot\u{f3}k")).await.unwrap();
+    volume
+        .create_directory(&AppPath::legacy_unchecked(Path::new("/share/fot\u{f3}k")))
+        .await
+        .unwrap();
     let answer = destination_exists(Some(id.clone()), "/share/foto\u{301}k".to_string()).await;
     get_volume_manager().unregister(&id);
     assert!(answer.data && !answer.timed_out, "{answer:?}");

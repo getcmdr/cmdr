@@ -7,6 +7,7 @@
 //! queue is `diff_emitter.rs`, and the orphan reaper is `orphan_reaper.rs`.
 
 use crate::rt::Instant;
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -89,7 +90,15 @@ impl ListingPath {
     /// ❗ Call it before taking the cache: it asks the host's volume seam.
     pub(crate) fn on_volume(volumes: &dyn ListingVolumes, volume_id: &str, path: &Path) -> Self {
         let volume = volumes.get(volume_id);
-        Self(volume.map_or_else(|| path.to_path_buf(), |volume| volume.listing_path(path)))
+        Self(volume.map_or_else(
+            || path.to_path_buf(),
+            |volume| {
+                volume
+                    .listing_path(&AppPath::legacy_unchecked(path))
+                    .as_std_legacy()
+                    .into_owned()
+            },
+        ))
     }
 
     /// The canonical spelling, for a re-read or a log line.

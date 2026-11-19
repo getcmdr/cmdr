@@ -9,6 +9,8 @@
 
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -52,10 +54,13 @@ async fn remote_zip(archive_path: &Path, entries: &[(&str, &[u8])]) -> (String, 
     let id = format!("remote-test-{}", uuid::Uuid::new_v4());
     let parent = InMemoryVolume::new("Remote").with_lane_key(id.clone());
     if let Some(dir) = archive_path.parent() {
-        parent.create_directory(dir).await.expect("seed parent dir");
+        parent
+            .create_directory(&AppPath::legacy_unchecked(dir))
+            .await
+            .expect("seed parent dir");
     }
     parent
-        .create_file(archive_path, &zip_bytes(entries))
+        .create_file(&AppPath::legacy_unchecked(archive_path), &zip_bytes(entries))
         .await
         .expect("seed remote zip");
     (id, Arc::new(parent))
@@ -108,7 +113,11 @@ async fn resolve_source_treats_the_zip_file_itself_as_a_plain_file() {
         .await
         .expect("inner volume");
     assert_eq!(inner_route, Some(RoutedKind::Archive), "an inner path is archive-inner");
-    assert_eq!(inner_vol.root(), zip, "the archive volume's root is the .zip");
+    assert_eq!(
+        *inner_vol.root().as_std_legacy(),
+        zip,
+        "the archive volume's root is the .zip"
+    );
 }
 
 /// A snapshot path is the portal's, so the copy engine reads it with
@@ -177,7 +186,7 @@ async fn a_copy_onto_an_id_nothing_knows_still_reads_as_a_missing_volume() {
     let source_id = format!("routing-source-{}", uuid::Uuid::new_v4());
     let source = InMemoryVolume::new("Source");
     source
-        .create_file(Path::new("/a.txt"), b"a")
+        .create_file(app_path!("/a.txt"), b"a")
         .await
         .expect("the source file");
     get_volume_manager().register(&source_id, Arc::new(source));

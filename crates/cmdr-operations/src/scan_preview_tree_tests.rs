@@ -4,8 +4,9 @@
 use crate::Operations;
 use crate::testing::TestOperations;
 use crate::transfer_tree::TreeOrder;
+use cmdr_fs::app_path;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
@@ -156,16 +157,16 @@ async fn an_operation_without_a_preview_tree_builds_one_from_the_walk() {
 async fn a_transfer_preview_of_a_volume_records_its_tree() {
     let engine = TestOperations::new();
     let volume = InMemoryVolume::new("Source");
-    volume.create_directory(Path::new("/src/photos/2024")).await.unwrap();
+    volume.create_directory(app_path!("/src/photos/2024")).await.unwrap();
     volume
-        .create_file(Path::new("/src/photos/a.jpg"), b"aaa")
+        .create_file(app_path!("/src/photos/a.jpg"), b"aaa")
         .await
         .unwrap();
     volume
-        .create_file(Path::new("/src/photos/2024/b.jpg"), b"bbbbb")
+        .create_file(app_path!("/src/photos/2024/b.jpg"), b"bbbbb")
         .await
         .unwrap();
-    volume.create_file(Path::new("/src/notes.txt"), b"nn").await.unwrap();
+    volume.create_file(app_path!("/src/notes.txt"), b"nn").await.unwrap();
     let sources = vec![PathBuf::from("/src/photos"), PathBuf::from("/src/notes.txt")];
     let preview_id = format!("tree-volume-{}", std::process::id());
 

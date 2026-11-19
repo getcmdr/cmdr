@@ -28,6 +28,7 @@ use super::tests::make_state;
 use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path;
 use cmdr_fs::volume::{InMemoryVolume, UnwritableReason, WriteAccess};
 
 // ========================================
@@ -46,8 +47,8 @@ async fn a_destination_that_cant_report_free_space_is_still_copyable_into() {
     // ❗ No `with_space_info`, so `get_space_info` answers `NotSupported` — the
     // same answer `SftpVolume` gives.
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest"));
-    source.create_file(Path::new("/a.txt"), b"alpha").await.unwrap();
-    source.create_file(Path::new("/b.txt"), b"bravo").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"alpha").await.unwrap();
+    source.create_file(app_path!("/b.txt"), b"bravo").await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let result = copy_volumes_with_progress(
@@ -76,7 +77,10 @@ async fn a_destination_that_cant_report_free_space_is_still_copyable_into() {
 
     // The bytes, not just the absence of an error.
     for (name, content) in [("/a.txt", &b"alpha"[..]), ("/b.txt", &b"bravo"[..])] {
-        let landed = dest.read_range(Path::new(name), 0, 64).await.expect("the copy landed");
+        let landed = dest
+            .read_range(&AppPath::legacy_unchecked(Path::new(name)), 0, 64)
+            .await
+            .expect("the copy landed");
         assert_eq!(landed, content, "{name} must arrive byte for byte");
     }
 }
@@ -94,7 +98,7 @@ async fn a_destination_that_does_report_free_space_still_refuses_what_it_cant_ho
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest").with_space_info(1_000, 4));
     source
-        .create_file(Path::new("/big.bin"), b"more than four bytes")
+        .create_file(app_path!("/big.bin"), b"more than four bytes")
         .await
         .unwrap();
 
@@ -127,7 +131,7 @@ async fn copy_anyway_goes_past_a_destination_that_says_it_is_too_small() {
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest").with_space_info(1_000, 4));
     source
-        .create_file(Path::new("/big.bin"), b"more than four bytes")
+        .create_file(app_path!("/big.bin"), b"more than four bytes")
         .await
         .unwrap();
 
@@ -147,7 +151,7 @@ async fn copy_anyway_goes_past_a_destination_that_says_it_is_too_small() {
     .await
     .expect("a copy the person chose to run anyway is not refused for space");
 
-    assert!(dest.exists(Path::new("/big.bin")).await, "the file landed");
+    assert!(dest.exists(app_path!("/big.bin")).await, "the file landed");
 }
 
 // ========================================
@@ -160,8 +164,8 @@ async fn phone_with_room_under_sdcard() -> Arc<dyn Volume> {
     let dest = InMemoryVolume::new("Phone")
         .with_space_info(1_000, 0)
         .with_space_info_under("/sdcard", 10_000_000, 9_000_000);
-    dest.create_directory(Path::new("/sdcard")).await.unwrap();
-    dest.create_directory(Path::new("/sdcard/Download")).await.unwrap();
+    dest.create_directory(app_path!("/sdcard")).await.unwrap();
+    dest.create_directory(app_path!("/sdcard/Download")).await.unwrap();
     Arc::new(dest)
 }
 
@@ -174,7 +178,7 @@ async fn a_copy_is_judged_by_the_filesystem_its_destination_folder_is_on() {
     // about the destination folder.
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     source
-        .create_file(Path::new("/photo.jpg"), b"a photo's worth of bytes")
+        .create_file(app_path!("/photo.jpg"), b"a photo's worth of bytes")
         .await
         .unwrap();
     let dest = phone_with_room_under_sdcard().await;
@@ -195,7 +199,7 @@ async fn a_copy_is_judged_by_the_filesystem_its_destination_folder_is_on() {
         "the destination folder's filesystem has room, got {:?}",
         result.err().map(|f| format!("{:?}", f.error)),
     );
-    assert!(dest.exists(Path::new("/sdcard/Download/photo.jpg")).await);
+    assert!(dest.exists(app_path!("/sdcard/Download/photo.jpg")).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -204,14 +208,14 @@ async fn a_full_destination_folder_refuses_even_when_the_volume_has_room() {
     // The other half: the folder's filesystem is what decides, in both directions.
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     source
-        .create_file(Path::new("/big.bin"), b"more than four bytes")
+        .create_file(app_path!("/big.bin"), b"more than four bytes")
         .await
         .unwrap();
     let dest = InMemoryVolume::new("Phone")
         .with_space_info(10_000_000, 9_000_000)
         .with_space_info_under("/storage/card", 1_000, 4);
-    dest.create_directory(Path::new("/storage")).await.unwrap();
-    dest.create_directory(Path::new("/storage/card")).await.unwrap();
+    dest.create_directory(app_path!("/storage")).await.unwrap();
+    dest.create_directory(app_path!("/storage/card")).await.unwrap();
     let dest: Arc<dyn Volume> = Arc::new(dest);
 
     let failure = copy_volumes_with_progress(
@@ -252,7 +256,7 @@ async fn a_destination_with_no_ceiling_accepts_a_copy_bigger_than_anything_it_ho
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest").with_unbounded_space_info(64 * 1024 * 1024));
     source
-        .create_file(Path::new("/big.bin"), b"more than four bytes")
+        .create_file(app_path!("/big.bin"), b"more than four bytes")
         .await
         .unwrap();
 
@@ -274,7 +278,7 @@ async fn a_destination_with_no_ceiling_accepts_a_copy_bigger_than_anything_it_ho
         "storage with no ceiling is the one destination a copy always fits into, got {:?}",
         result.err().map(|f| format!("{:?}", f.error)),
     );
-    assert!(dest.exists(Path::new("/big.bin")).await, "the file has to be there");
+    assert!(dest.exists(app_path!("/big.bin")).await, "the file has to be there");
 }
 
 // ========================================
@@ -294,7 +298,7 @@ async fn phone_with_a_read_only_root() -> Arc<dyn Volume> {
             },
         )
         .with_write_access_under("/sdcard", WriteAccess::Writable);
-    dest.create_directory(Path::new("/sdcard")).await.unwrap();
+    dest.create_directory(app_path!("/sdcard")).await.unwrap();
     Arc::new(dest)
 }
 
@@ -308,7 +312,7 @@ async fn a_copy_into_a_folder_that_takes_no_writes_is_refused_as_such_before_any
     // the space check.
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     source
-        .create_file(Path::new("/photo.jpg"), b"a photo's worth of bytes")
+        .create_file(app_path!("/photo.jpg"), b"a photo's worth of bytes")
         .await
         .unwrap();
     let dest = phone_with_a_read_only_root().await;
@@ -338,7 +342,7 @@ async fn a_copy_into_a_folder_that_takes_no_writes_is_refused_as_such_before_any
         failure.error,
     );
     assert!(
-        !dest.exists(Path::new("/system/New")).await,
+        !dest.exists(app_path!("/system/New")).await,
         "the refusal comes before Phase 0.5 creates the destination folder"
     );
 }
@@ -350,7 +354,7 @@ async fn a_folder_that_takes_writes_beside_a_read_only_root_still_copies() {
     // the FOLDER. The shared storage beside the read-only root takes the copy.
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     source
-        .create_file(Path::new("/photo.jpg"), b"a photo's worth of bytes")
+        .create_file(app_path!("/photo.jpg"), b"a photo's worth of bytes")
         .await
         .unwrap();
     let dest = phone_with_a_read_only_root().await;
@@ -372,5 +376,5 @@ async fn a_folder_that_takes_writes_beside_a_read_only_root_still_copies() {
         "the shared storage takes writes, got {:?}",
         result.err().map(|f| format!("{:?}", f.error)),
     );
-    assert!(dest.exists(Path::new("/sdcard/New/photo.jpg")).await);
+    assert!(dest.exists(app_path!("/sdcard/New/photo.jpg")).await);
 }

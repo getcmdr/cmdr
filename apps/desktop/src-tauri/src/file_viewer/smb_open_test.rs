@@ -2,6 +2,7 @@
 //! the Docker SMB containers). The share-double version of the same paths is the crate's
 //! `volume_source_test.rs`.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
@@ -43,12 +44,16 @@ fn smb_integration_viewer_jumps_in_a_big_file_on_a_share() {
     let dir = test_dir_name();
     tauri::async_runtime::block_on(async {
         ensure_clean(&volume, &dir).await;
-        volume.create_directory(Path::new(&dir)).await.unwrap();
+        volume
+            .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+            .await
+            .unwrap();
     });
     let size = 40 * 1024 * 1024;
     let bytes: Vec<u8> = (0..size).map(synthetic_byte).collect();
     let relative = format!("{dir}/big.log");
-    tauri::async_runtime::block_on(volume.create_file(Path::new(&relative), &bytes)).unwrap();
+    tauri::async_runtime::block_on(volume.create_file(&AppPath::legacy_unchecked(Path::new(&relative)), &bytes))
+        .unwrap();
     let volume = Arc::new(volume);
     let id = format!("viewer-vsrc-smb-{dir}");
     get_volume_manager().register(&id, Arc::clone(&volume) as Arc<dyn Volume>);

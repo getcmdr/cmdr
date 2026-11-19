@@ -9,6 +9,7 @@
 //! `apps/desktop/test/webdav-servers/start.sh`. Everything else runs without
 //! one.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::time::Duration;
 
@@ -95,7 +96,9 @@ async fn webdav_integration_connecting_registers_the_volume_and_remembers_the_se
     let manager = crate::file_system::volume::manager::get_volume_manager();
     let volume = manager.get(&volume_id).expect("a connect registers the volume it made");
     assert!(
-        volume.exists(Path::new(&app_path(&params, "/hello.txt"))).await,
+        volume
+            .exists(&AppPath::legacy_unchecked(Path::new(&app_path(&params, "/hello.txt"))))
+            .await,
         "the registered volume is the live one, not a placeholder"
     );
 
@@ -174,7 +177,9 @@ async fn webdav_integration_disconnecting_drops_the_client_and_unregisters_the_v
     );
     assert!(
         matches!(
-            volume.list_directory(Path::new(&app_path(&params, "/")), None).await,
+            volume
+                .list_directory(&AppPath::legacy_unchecked(Path::new(&app_path(&params, "/"))), None)
+                .await,
             Err(cmdr_fs::volume::VolumeError::DeviceDisconnected(_))
         ),
         "whoever still holds the volume fails fast rather than dialing again"
@@ -516,9 +521,14 @@ async fn webdav_integration_widening_a_connected_root_applies_live_over_the_same
     assert_eq!(outcome, SavedServerOutcome::Saved);
     let wide = manager.get(&volume_id).expect("still registered");
     let wide_root = format!("{prefix}/");
-    assert_eq!(wide.root(), Path::new(&wide_root), "the registry serves the wider root");
+    assert_eq!(
+        &*wide.root().as_std_legacy(),
+        Path::new(&wide_root),
+        "the registry serves the wider root"
+    );
     assert!(
-        wide.exists(Path::new(&format!("{prefix}/hello.txt"))).await,
+        wide.exists(&AppPath::legacy_unchecked(Path::new(&format!("{prefix}/hello.txt"))))
+            .await,
         "a file only the wider root covers lists through the live client"
     );
     let webdav = wide.as_any().downcast_ref::<WebdavVolume>().expect("a WebDAV volume");
@@ -534,7 +544,9 @@ async fn webdav_integration_widening_a_connected_root_applies_live_over_the_same
 
     webdav.simulate_session_loss().await;
     assert!(
-        wide.list_directory(Path::new(&wide_root), None).await.is_err(),
+        wide.list_directory(&AppPath::legacy_unchecked(Path::new(&wide_root)), None)
+            .await
+            .is_err(),
         "an operation is what notices the loss and starts the loop"
     );
     cmdr_fs::testing::wait_until_async(
@@ -544,7 +556,9 @@ async fn webdav_integration_widening_a_connected_root_applies_live_over_the_same
     )
     .await;
     assert!(
-        wide.list_directory(Path::new(&wide_root), None).await.is_ok(),
+        wide.list_directory(&AppPath::legacy_unchecked(Path::new(&wide_root)), None)
+            .await
+            .is_ok(),
         "the rebuilt client serves the wider root"
     );
 
@@ -571,7 +585,11 @@ async fn webdav_integration_a_connected_root_the_server_lacks_is_refused_and_wri
     );
     let manager = crate::file_system::volume::manager::get_volume_manager();
     assert_eq!(
-        manager.get(&volume_id).expect("still registered").root(),
+        &*manager
+            .get(&volume_id)
+            .expect("still registered")
+            .root()
+            .as_std_legacy(),
         Path::new(&app_path(&params, &target.root))
     );
 

@@ -14,6 +14,7 @@
 //! settle when it ends. The local-FS twin is
 //! `crates/cmdr-operations/src/overwrite.rs::DisplacedEntry`.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -137,7 +138,14 @@ pub(crate) async fn displace_destination(
     let mut outages = 0;
     loop {
         let started_on = StartedOn::now(&volumes);
-        let mut error = match volume.rename(original, displaced.aside.path(), false).await {
+        let mut error = match volume
+            .rename(
+                &AppPath::legacy_unchecked(original),
+                &AppPath::legacy_unchecked(displaced.aside.path()),
+                false,
+            )
+            .await
+        {
             Ok(()) => return Ok(Some(displaced)),
             Err(VolumeError::NotFound(_)) => {
                 displaced.forget();
@@ -157,7 +165,10 @@ pub(crate) async fn displace_destination(
                 ended => break ended,
             }
             started_on = StartedOn::now(&volumes);
-            match volume.get_metadata(displaced.aside.path()).await {
+            match volume
+                .get_metadata(&AppPath::legacy_unchecked(displaced.aside.path()))
+                .await
+            {
                 Ok(_) => return Ok(Some(displaced)),
                 Err(VolumeError::NotFound(_)) => break OutageEnd::Back,
                 Err(stat) if stat.transport_fault().is_some() => error = stat,
@@ -191,7 +202,10 @@ pub(crate) async fn displace_destination(
 /// so it goes back home now. Can't tell (the share is still out): the record
 /// waits for the share's next arrival, whose sweep does the same.
 async fn settle_unfinished_aside(displaced: DisplacedDestination, volume: &Arc<dyn Volume>) {
-    match volume.get_metadata(displaced.aside.path()).await {
+    match volume
+        .get_metadata(&AppPath::legacy_unchecked(displaced.aside.path()))
+        .await
+    {
         Err(VolumeError::NotFound(_)) => displaced.forget(),
         Ok(_) => {
             if let Some(kept_at) = displaced.restore(volume).await {
@@ -274,7 +288,7 @@ impl DisplacedDestination {
                 .await
                 .map_err(|e| e.error)
         } else {
-            volume.delete(self.aside.path()).await
+            volume.delete(&AppPath::legacy_unchecked(self.aside.path())).await
         };
         match removed {
             Ok(()) => retire(&self.state, self.record.as_ref()),
@@ -301,10 +315,17 @@ impl DisplacedDestination {
     /// original, still recognizable as the aside, goes home later on its own.
     #[must_use = "an original that couldn't go back must be kept for the volume's next sweep"]
     pub(crate) async fn put_back(self, volume: &Arc<dyn Volume>) -> Option<Self> {
-        let back = match volume.rename(self.aside.path(), &self.original, false).await {
+        let back = match volume
+            .rename(
+                &AppPath::legacy_unchecked(self.aside.path()),
+                &AppPath::legacy_unchecked(&self.original),
+                false,
+            )
+            .await
+        {
             Ok(()) => true,
             Err(cut_off) if cut_off.transport_fault().is_some() => matches!(
-                volume.get_metadata(self.aside.path()).await,
+                volume.get_metadata(&AppPath::legacy_unchecked(self.aside.path())).await,
                 Err(VolumeError::NotFound(_))
             ),
             Err(e) => {
@@ -340,13 +361,27 @@ impl DisplacedDestination {
     /// and the bytes are where the aside is. A rescue on the raw error would
     /// report a file that was already home as kept under its scratch name.
     pub(crate) async fn restore(self, volume: &Arc<dyn Volume>) -> Option<PathBuf> {
-        let mut result = volume.rename(self.aside.path(), &self.original, false).await;
+        let mut result = volume
+            .rename(
+                &AppPath::legacy_unchecked(self.aside.path()),
+                &AppPath::legacy_unchecked(&self.original),
+                false,
+            )
+            .await;
         if let Err(cut_off) = &result
             && cut_off.transport_fault().is_some()
         {
-            match volume.get_metadata(self.aside.path()).await {
+            match volume.get_metadata(&AppPath::legacy_unchecked(self.aside.path())).await {
                 Err(VolumeError::NotFound(_)) => result = Ok(()),
-                Ok(_) => result = volume.rename(self.aside.path(), &self.original, false).await,
+                Ok(_) => {
+                    result = volume
+                        .rename(
+                            &AppPath::legacy_unchecked(self.aside.path()),
+                            &AppPath::legacy_unchecked(&self.original),
+                            false,
+                        )
+                        .await
+                }
                 Err(_) => {
                     let kept_at = self.aside.path().to_path_buf();
                     self.keep_for_arrival();

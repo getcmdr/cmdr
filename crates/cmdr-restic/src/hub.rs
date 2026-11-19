@@ -10,6 +10,7 @@ use crate::index_load::{Load, LoadSpec, WINDOW, Waiter};
 use crate::path::VIRTUAL_ENTRY_NAME;
 use crate::repo::{IndexedRepo, ResticError, ResticRepo};
 use crate::snapshots::{Snapshot, SnapshotList, snapshot_list_of};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{ListingProgress, LockedContainer, Volume, VolumeError};
@@ -177,7 +178,7 @@ impl ResticRepos {
             let (parent, root) = (Arc::clone(parent), repo_root.to_path_buf());
             self.host
                 .runtime()
-                .spawn(async move { parent.list_directory(&root, None).await })
+                .spawn(async move { parent.list_directory(&AppPath::legacy_unchecked(&root), None).await })
         };
         let answer = match tokio::time::timeout(self.tuning.confirm_deadline, listing).await {
             Ok(Ok(Ok(entries))) => Some(is_restic_repo(&entries)),
@@ -549,7 +550,10 @@ impl ResticRepos {
 
 /// Whether the repo at `root` on `parent` still has its `config`.
 async fn config_exists(parent: &dyn Volume, root: &Path) -> Result<bool, VolumeError> {
-    match parent.get_metadata(&root.join("config")).await {
+    match parent
+        .get_metadata(&AppPath::legacy_unchecked(&root.join("config")))
+        .await
+    {
         Ok(_) => Ok(true),
         Err(VolumeError::NotFound(_)) => Ok(false),
         Err(err) => Err(err),

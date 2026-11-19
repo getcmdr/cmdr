@@ -9,6 +9,7 @@
 
 use super::volume::Volume;
 use super::watcher::{event_targets_watch_root, rebase_event_path};
+use cmdr_fs::app_path;
 use cmdr_fs::entry::FileEntry;
 use std::path::{Path, PathBuf};
 
@@ -233,7 +234,7 @@ async fn test_handle_directory_change_detects_new_entries() {
 
     // Add a new file to the volume (simulating external change).
     volume
-        .create_file(Path::new("/testdir/b.txt"), b"new content")
+        .create_file(app_path!("/testdir/b.txt"), b"new content")
         .await
         .unwrap();
 

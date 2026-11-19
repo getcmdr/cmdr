@@ -15,6 +15,7 @@
 //! (`S3Target::clean_run`), and fails at the end if any pair failed. Not named
 //! for a lane prefix: these are by hand only.
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::panic::AssertUnwindSafe;
 use std::path::PathBuf;
@@ -295,9 +296,12 @@ async fn a_copy_between_providers_streams_every_byte(from: &S3Target, to: &S3Tar
     seeds.extend(small.iter().map(|(key, bytes)| object(key, bytes)));
     from.seed(from.bucket(), &seeds).await;
 
-    let source_dir = source.root().join(prefix.trim_end_matches('/'));
+    let source_dir = source.root().as_std_legacy().join(prefix.trim_end_matches('/'));
     let dest_prefix = to.prefix("cross-provider");
-    let dest_dir = destination.root().join(dest_prefix.trim_end_matches('/'));
+    let dest_dir = destination
+        .root()
+        .as_std_legacy()
+        .join(dest_prefix.trim_end_matches('/'));
     let expected = tree_fingerprint(source.as_ref(), &source_dir.join("tree")).await;
     run_copy(
         "cross-provider",
@@ -353,7 +357,7 @@ async fn s3_live_engine_copies_between_providers() {
 async fn an_archived_object_refuses_reads_by_name(target: &S3Target) {
     let volume = Arc::new(target.connect(Some(target.bucket())).await);
     let prefix = target.prefix("cold");
-    let dir = volume.root().join(prefix.trim_end_matches('/'));
+    let dir = volume.root().as_std_legacy().join(prefix.trim_end_matches('/'));
     for class in ["GLACIER", "DEEP_ARCHIVE"] {
         let key = format!("{prefix}{class}.txt");
         target
@@ -369,14 +373,17 @@ async fn an_archived_object_refuses_reads_by_name(target: &S3Target) {
             .await;
         let path = dir.join(format!("{class}.txt"));
 
-        let listed = volume.list_directory(&dir, None).await.expect("the folder lists");
+        let listed = volume
+            .list_directory(&AppPath::legacy_unchecked(&dir), None)
+            .await
+            .expect("the folder lists");
         let row = listed
             .iter()
             .find(|entry| entry.name == format!("{class}.txt"))
             .unwrap_or_else(|| panic!("{class}: the archived object lists"));
         assert!(row.in_cold_storage, "{class}: the listing marks it archived");
 
-        match volume.open_read_stream(&path).await {
+        match volume.open_read_stream(&AppPath::legacy_unchecked(&path)).await {
             Err(VolumeError::ColdStorage(_)) => {}
             Err(other) => panic!("{class}: a read answered {other:?}, not ColdStorage"),
             Ok(mut stream) => match stream.next_chunk().await {

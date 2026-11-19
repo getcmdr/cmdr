@@ -8,6 +8,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::{LockedKept, LockedSourcesAnswer};
+use cmdr_fs::app_path;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::testing::metadata_fixture::{LOCKED_FLAG, MetadataFixture, flags};
 use cmdr_fs::volume::InMemoryVolume;
@@ -78,7 +79,10 @@ async fn move_anyway_deletes_each_locked_original_once_its_copy_landed() {
     .await;
 
     for landed in ["/album/locked.txt", "/album/acl.txt", "/top.txt"] {
-        assert!(dest.exists(Path::new(landed)).await, "{landed} landed");
+        assert!(
+            dest.exists(&AppPath::legacy_unchecked(Path::new(landed))).await,
+            "{landed} landed"
+        );
     }
     assert!(!folder.exists() && !top.exists(), "every original is gone");
     let asked = events.locked_sources.lock_ignore_poison().clone();
@@ -108,13 +112,13 @@ async fn skip_leaves_each_locked_item_out_and_moves_the_rest() {
     )
     .await;
 
-    assert!(dest.exists(Path::new("/album/plain.txt")).await, "the rest moved");
+    assert!(dest.exists(app_path!("/album/plain.txt")).await, "the rest moved");
     assert!(!folder.join("plain.txt").exists());
     assert!(
-        !dest.exists(Path::new("/album/locked.txt")).await,
+        !dest.exists(app_path!("/album/locked.txt")).await,
         "the Locked file stayed out"
     );
-    assert!(!dest.exists(Path::new("/top.txt")).await);
+    assert!(!dest.exists(app_path!("/top.txt")).await);
     assert_eq!(flags(&inner) & LOCKED_FLAG, LOCKED_FLAG, "it stays, still Locked");
     assert_eq!(flags(&top) & LOCKED_FLAG, LOCKED_FLAG);
     let complete = events.complete.lock_ignore_poison().clone();
@@ -134,7 +138,7 @@ async fn skip_leaves_each_locked_item_out_and_moves_the_rest() {
 async fn a_source_that_isnt_local_asks_nothing() {
     let engine = TestOperations::new();
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_file(Path::new("/a.txt"), b"alpha").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"alpha").await.unwrap();
     let dest = dest();
     let state = make_state(&engine);
     let events = Arc::new(CollectorEventSink::new());
@@ -142,5 +146,5 @@ async fn a_source_that_isnt_local_asks_nothing() {
     run(&state, &events, source, &[PathBuf::from("/a.txt")], &dest).await;
 
     assert!(events.locked_sources.lock_ignore_poison().is_empty());
-    assert!(dest.exists(Path::new("/a.txt")).await);
+    assert!(dest.exists(app_path!("/a.txt")).await);
 }

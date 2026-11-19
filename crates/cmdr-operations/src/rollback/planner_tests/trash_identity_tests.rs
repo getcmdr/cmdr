@@ -3,6 +3,7 @@
 //! next item trashed under it, so once the trashed folder leaves the Trash, a different
 //! folder can sit at its recorded in-Trash path (#535).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -27,7 +28,7 @@ fn trashed(entry_type: EntryType, size: i64, identity: Option<NodeIdentity>) -> 
 }
 
 async fn identity_at(vol: &InMemoryVolume, path: &str) -> NodeIdentity {
-    vol.node_identity(Path::new(path))
+    vol.node_identity(&AppPath::legacy_unchecked(Path::new(path)))
         .await
         .expect("stat")
         .expect("the double reports an identity")
@@ -39,7 +40,9 @@ async fn identity_at(vol: &InMemoryVolume, path: &str) -> NodeIdentity {
 async fn stranger_took_the_name(v: &InMemoryVolume) -> NodeIdentity {
     mkdir(v, IN_TRASH).await;
     let trashed_folder = identity_at(v, IN_TRASH).await;
-    v.delete(Path::new(IN_TRASH)).await.expect("gone from the Trash");
+    v.delete(&AppPath::legacy_unchecked(Path::new(IN_TRASH)))
+        .await
+        .expect("gone from the Trash");
     mkdir(v, IN_TRASH).await;
     put(v, "/.Trash/Invoices/someone-elses.pdf", b"stranger").await;
     trashed_folder
@@ -89,7 +92,9 @@ async fn undoing_a_trash_leaves_a_stranger_file_of_the_same_size_and_date() {
     let v = Arc::new(InMemoryVolume::new("V"));
     put(&v, IN_TRASH, b"mine").await;
     let recorded = identity_at(&v, IN_TRASH).await;
-    v.delete(Path::new(IN_TRASH)).await.expect("gone from the Trash");
+    v.delete(&AppPath::legacy_unchecked(Path::new(IN_TRASH)))
+        .await
+        .expect("gone from the Trash");
     put(&v, IN_TRASH, b"them").await;
     rig.register("v", v.clone());
     rig.seed(

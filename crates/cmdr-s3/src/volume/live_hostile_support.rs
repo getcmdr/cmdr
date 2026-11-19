@@ -3,6 +3,7 @@
 //! object whole, a byte-for-byte read-back, cancelling write and copy hooks,
 //! and the per-provider miss collector that fails a cell once, at the end.
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::ops::ControlFlow;
 use std::path::{Path, PathBuf};
@@ -17,7 +18,7 @@ use super::live_support::{Live, MIB, report};
 use super::testing::{BytesSource, distant_mtime};
 
 pub(super) fn at(volume: &S3Volume, key: &str) -> PathBuf {
-    volume.root().join(key)
+    volume.root().as_std_legacy().join(key)
 }
 
 /// The byte at `index` of [`pattern`]`(_, tag)`, so a big object is checked
@@ -83,7 +84,7 @@ impl VolumeReadStream for PatternSource {
 /// Streams `path` back and compares it with [`pattern`]`(len, tag)` byte by
 /// byte: `None` when intact, else what differed.
 pub(super) async fn pattern_mismatch(volume: &S3Volume, path: &Path, len: u64, tag: u8) -> Option<String> {
-    let mut stream = match volume.open_read_stream(path).await {
+    let mut stream = match volume.open_read_stream(&AppPath::legacy_unchecked(path)).await {
         Ok(stream) => stream,
         Err(e) => return Some(format!("open: {e:?}")),
     };
@@ -110,7 +111,13 @@ pub(super) async fn write(volume: &S3Volume, path: &Path, mode: WriteMode, bytes
     let source = BytesSource::new(bytes).modified_at(distant_mtime());
     let length = source.total_size();
     volume
-        .write_from_stream(path, mode, length, Box::new(source), &|_| ControlFlow::Continue(()))
+        .write_from_stream(
+            &AppPath::legacy_unchecked(path),
+            mode,
+            length,
+            Box::new(source),
+            &|_| ControlFlow::Continue(()),
+        )
         .await
         .map(|written| written.bytes)
 }
@@ -125,7 +132,7 @@ pub(super) async fn write_cancelled_when(
 ) -> Result<u64, VolumeError> {
     let length = source.total_size();
     volume
-        .write_from_stream(path, mode, length, source, &|progress| {
+        .write_from_stream(&AppPath::legacy_unchecked(path), mode, length, source, &|progress| {
             if stop(progress.bytes_written) {
                 ControlFlow::Break(())
             } else {

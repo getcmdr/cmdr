@@ -3,6 +3,7 @@
 
 use super::*;
 use crate::file_viewer::RangeEnd;
+use cmdr_fs::app_path::AppPath;
 use std::io::Write as _;
 
 /// Writes a minimal real zip (one stored entry) so the boundary magic check passes.
@@ -32,7 +33,10 @@ async fn a_phone_sending_slowly(id: &str, len: usize, delay: Duration) -> String
         .with_read_chunk_delay(delay);
     let path = format!("{root}/big.log");
     volume
-        .create_file(std::path::Path::new(&path), &vec![b'x'; len])
+        .create_file(
+            &AppPath::legacy_unchecked(std::path::Path::new(&path)),
+            &vec![b'x'; len],
+        )
         .await
         .expect("seed the file");
     get_volume_manager().register(id, Arc::new(volume));

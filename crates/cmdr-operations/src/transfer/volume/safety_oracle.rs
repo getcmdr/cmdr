@@ -34,13 +34,17 @@
 //! side, so this module extracts the ASSERTION only. `DETAILS.md` § "The safety
 //! oracle".
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::Volume;
 use std::path::Path;
 use std::sync::Arc;
 
 /// Reads a whole file off a volume, or `None` when it isn't there.
 pub(super) async fn try_read_all(vol: &Arc<dyn Volume>, path: &str) -> Option<Vec<u8>> {
-    let mut stream = vol.open_read_stream(Path::new(path)).await.ok()?;
+    let mut stream = vol
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .ok()?;
     let mut out = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         out.extend_from_slice(&chunk);
@@ -55,7 +59,10 @@ pub(super) async fn collect_paths(vol: &Arc<dyn Volume>, root: &str) -> Vec<Stri
     let mut out = Vec::new();
     let mut stack = vec![root.to_string()];
     while let Some(dir) = stack.pop() {
-        let Ok(entries) = vol.list_directory(Path::new(&dir), None).await else {
+        let Ok(entries) = vol
+            .list_directory(&AppPath::legacy_unchecked(Path::new(&dir)), None)
+            .await
+        else {
             continue;
         };
         for entry in entries {
@@ -79,7 +86,10 @@ pub(super) async fn collect_contents(vol: &Arc<dyn Volume>, root: &str) -> Vec<V
     let mut out = Vec::new();
     let mut stack = vec![root.to_string()];
     while let Some(dir) = stack.pop() {
-        let Ok(entries) = vol.list_directory(Path::new(&dir), None).await else {
+        let Ok(entries) = vol
+            .list_directory(&AppPath::legacy_unchecked(Path::new(&dir)), None)
+            .await
+        else {
             continue;
         };
         for entry in entries {

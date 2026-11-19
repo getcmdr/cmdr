@@ -6,10 +6,10 @@ use super::*;
 use crate::volume::SmbVolume;
 use crate::volume::session::refresh_remembered_credentials;
 use crate::volume::test_support::*;
+use cmdr_fs::app_path;
 use cmdr_fs::volume::host::credentials::{CredentialStore, InMemoryCredentials};
 use cmdr_fs::volume::host::events::{RecordingVolumeEvents, VolumeConnection};
 use cmdr_fs::volume::{Volume, WatchCoverage};
-use std::path::Path;
 
 /// The volume id every recorded case reports under.
 const RECORDED_ID: &str = "volumestestshare";
@@ -137,14 +137,14 @@ async fn a_retired_share_announces_nothing_under_an_id_it_no_longer_owns() {
 fn listing_watch_coverage_is_none_when_disconnected() {
     // No watcher_cancel set and state Disconnected: no coverage.
     let vol = make_test_volume();
-    assert_eq!(vol.listing_watch_coverage(Path::new("/")), WatchCoverage::None);
+    assert_eq!(vol.listing_watch_coverage(app_path!("/")), WatchCoverage::None);
 }
 
 #[test]
 fn listing_watch_coverage_is_none_when_direct_but_no_watcher() {
     // State Direct but `watcher_cancel` empty: still `None` (we need both).
     let vol = make_test_volume_direct();
-    assert_eq!(vol.listing_watch_coverage(Path::new("/")), WatchCoverage::None);
+    assert_eq!(vol.listing_watch_coverage(app_path!("/")), WatchCoverage::None);
 }
 
 #[test]
@@ -153,7 +153,7 @@ fn listing_watch_coverage_is_none_when_watcher_set_but_disconnected() {
     let vol = make_test_volume();
     let (tx, _rx) = tokio::sync::oneshot::channel::<()>();
     *vol.inner.watcher_cancel.lock().unwrap() = Some(tx);
-    assert_eq!(vol.listing_watch_coverage(Path::new("/")), WatchCoverage::None);
+    assert_eq!(vol.listing_watch_coverage(app_path!("/")), WatchCoverage::None);
 }
 
 #[test]
@@ -163,7 +163,7 @@ fn listing_watch_coverage_is_every_writer_when_direct_and_watcher_set() {
     let vol = make_test_volume_direct();
     let (tx, _rx) = tokio::sync::oneshot::channel::<()>();
     *vol.inner.watcher_cancel.lock().unwrap() = Some(tx);
-    assert_eq!(vol.listing_watch_coverage(Path::new("/")), WatchCoverage::EveryWriter);
+    assert_eq!(vol.listing_watch_coverage(app_path!("/")), WatchCoverage::EveryWriter);
 }
 
 #[test]

@@ -3,6 +3,7 @@
 //! progress hook that answers Cancel and parks on Pause. `DETAILS.md` §
 //! "Server-side copy".
 
+use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
 use std::path::Path;
 use std::pin::Pin;
@@ -95,6 +96,8 @@ pub(super) async fn try_server_side_copy(
         state,
         on_file_progress,
     };
+    let source_path_app = AppPath::legacy_unchecked(source_path);
+    let target_app = AppPath::legacy_unchecked(staged.target());
 
     // The quit deadline rides the same `select!` it rides for a streamed write.
     // Nothing is cleaned up on that arm: the delete would go back through a
@@ -105,8 +108,8 @@ pub(super) async fn try_server_side_copy(
         () = state.backend_abort.cancelled() => return Err(hard_abort_error(dest_path).into()),
         result = dest_volume.copy_on_server(
             source_volume.as_ref(),
-            source_path,
-            staged.target(),
+            &source_path_app,
+            &target_app,
             staged.write_mode(),
             &progress,
         ) => result,

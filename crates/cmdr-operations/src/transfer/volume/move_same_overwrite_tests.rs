@@ -19,6 +19,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::ConflictResolution;
+use cmdr_fs::app_path;
 use cmdr_fs::volume::{InMemoryVolume, VolumeError};
 
 const THE_USERS_BYTES: &[u8] = b"the user's own copy";
@@ -31,7 +32,10 @@ fn refused() -> VolumeError {
 }
 
 async fn bytes_at(volume: &Arc<InMemoryVolume>, path: &str) -> Option<Vec<u8>> {
-    let mut stream = volume.open_read_stream(&PathBuf::from(path)).await.ok()?;
+    let mut stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(&PathBuf::from(path)))
+        .await
+        .ok()?;
     let mut out = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         out.extend_from_slice(&chunk);
@@ -53,13 +57,13 @@ fn overwrite_config() -> VolumeCopyConfig {
 async fn a_refused_rename_leaves_the_destination_the_overwrite_was_replacing() {
     let engine = TestOperations::new();
     let inner = Arc::new(InMemoryVolume::new("V").with_space_info(10_000_000, 10_000_000));
-    inner.create_directory(Path::new("/inbox")).await.unwrap();
+    inner.create_directory(app_path!("/inbox")).await.unwrap();
     inner
-        .create_file(Path::new("/doc.txt"), b"the incoming bytes")
+        .create_file(app_path!("/doc.txt"), b"the incoming bytes")
         .await
         .unwrap();
     inner
-        .create_file(Path::new("/inbox/doc.txt"), THE_USERS_BYTES)
+        .create_file(app_path!("/inbox/doc.txt"), THE_USERS_BYTES)
         .await
         .unwrap();
     let volume = FaultyVolume::wrapping(Arc::clone(&inner))
@@ -100,15 +104,15 @@ async fn a_refused_rename_leaves_the_destination_the_overwrite_was_replacing() {
 async fn a_refused_child_rename_leaves_the_merged_destination_child() {
     let engine = TestOperations::new();
     let inner = Arc::new(InMemoryVolume::new("V").with_space_info(10_000_000, 10_000_000));
-    inner.create_directory(Path::new("/album")).await.unwrap();
+    inner.create_directory(app_path!("/album")).await.unwrap();
     inner
-        .create_file(Path::new("/album/photo.jpg"), b"the incoming bytes")
+        .create_file(app_path!("/album/photo.jpg"), b"the incoming bytes")
         .await
         .unwrap();
-    inner.create_directory(Path::new("/inbox")).await.unwrap();
-    inner.create_directory(Path::new("/inbox/album")).await.unwrap();
+    inner.create_directory(app_path!("/inbox")).await.unwrap();
+    inner.create_directory(app_path!("/inbox/album")).await.unwrap();
     inner
-        .create_file(Path::new("/inbox/album/photo.jpg"), THE_USERS_BYTES)
+        .create_file(app_path!("/inbox/album/photo.jpg"), THE_USERS_BYTES)
         .await
         .unwrap();
     let volume = FaultyVolume::wrapping(Arc::clone(&inner))
@@ -152,14 +156,14 @@ async fn a_refused_child_rename_leaves_the_merged_destination_child() {
 async fn a_refused_rename_puts_back_the_folder_a_file_was_replacing() {
     let engine = TestOperations::new();
     let inner = Arc::new(InMemoryVolume::new("V").with_space_info(10_000_000, 10_000_000));
-    inner.create_directory(Path::new("/inbox")).await.unwrap();
+    inner.create_directory(app_path!("/inbox")).await.unwrap();
     inner
-        .create_file(Path::new("/clash"), b"the incoming bytes")
+        .create_file(app_path!("/clash"), b"the incoming bytes")
         .await
         .unwrap();
-    inner.create_directory(Path::new("/inbox/clash")).await.unwrap();
+    inner.create_directory(app_path!("/inbox/clash")).await.unwrap();
     inner
-        .create_file(Path::new("/inbox/clash/precious.txt"), THE_USERS_BYTES)
+        .create_file(app_path!("/inbox/clash/precious.txt"), THE_USERS_BYTES)
         .await
         .unwrap();
     let volume = FaultyVolume::wrapping(Arc::clone(&inner))

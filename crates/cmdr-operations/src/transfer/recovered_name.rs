@@ -23,6 +23,7 @@
 //! cross-type aside's put-back (`volume/displaced_destination.rs`), and a
 //! remote zip edit's swap (`archive_edit::remote::swap_into_place`).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 
 use super::super::state::WriteOperationState;
@@ -94,7 +95,14 @@ impl From<VolumeError> for FinalizeFailure {
 /// TAKEN is the one answer a different name fixes.
 pub(crate) async fn rescue_out_of_temp_space(dest_volume: &dyn Volume, temp: &Path, orig: &Path) -> PathBuf {
     let recovered = recovered_sibling(orig);
-    match dest_volume.rename(temp, &recovered, false).await {
+    match dest_volume
+        .rename(
+            &AppPath::legacy_unchecked(temp),
+            &AppPath::legacy_unchecked(&recovered),
+            false,
+        )
+        .await
+    {
         Ok(()) => return recovered,
         Err(VolumeError::AlreadyExists(_)) => {}
         Err(_) => return keeps_its_temp_name(temp),
@@ -104,7 +112,14 @@ pub(crate) async fn rescue_out_of_temp_space(dest_volume: &dyn Volume, temp: &Pa
     let mut candidates = NameCandidates::for_file(&recovered);
     while candidates.attempts() < RESCUE_NAME_ATTEMPTS {
         let candidate = candidates.current();
-        match dest_volume.rename(temp, &candidate, false).await {
+        match dest_volume
+            .rename(
+                &AppPath::legacy_unchecked(temp),
+                &AppPath::legacy_unchecked(&candidate),
+                false,
+            )
+            .await
+        {
             Ok(()) => return candidate,
             Err(VolumeError::AlreadyExists(_)) => candidates.advance(),
             Err(_) => return keeps_its_temp_name(temp),
@@ -135,7 +150,7 @@ pub(crate) enum AfterARefusedDelete {
 }
 
 pub(crate) async fn what_a_refused_delete_left(dest_volume: &dyn Volume, path: &Path) -> AfterARefusedDelete {
-    match dest_volume.get_metadata(path).await {
+    match dest_volume.get_metadata(&AppPath::legacy_unchecked(path)).await {
         Ok(_) => AfterARefusedDelete::StillThere,
         Err(VolumeError::NotFound(_)) => AfterARefusedDelete::Gone,
         Err(e) => {
@@ -164,7 +179,7 @@ pub(crate) async fn what_a_refused_delete_left(dest_volume: &dyn Volume, path: &
 /// registered, and `cleanup.rs::reap_stale_transfer_temps` on the next transfer
 /// into that folder once it is an hour old.
 pub(crate) async fn discard_unplaced_temp(dest_volume: &dyn Volume, temp: &Path) -> bool {
-    match dest_volume.delete(temp).await {
+    match dest_volume.delete(&AppPath::legacy_unchecked(temp)).await {
         Ok(()) | Err(VolumeError::NotFound(_)) => true,
         Err(e) => {
             log::warn!(

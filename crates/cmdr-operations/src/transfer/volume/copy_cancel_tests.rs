@@ -18,6 +18,7 @@ use super::wedge_test_support::*;
 use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path;
 
 use crate::types::CancelRollbackOutcome;
 use cmdr_fs::testing::wait_until_async;
@@ -40,14 +41,14 @@ async fn wedged_fixture(with_a_landed_file: bool) -> (Fixture, Vec<PathBuf>) {
         // Empty ⇒ the gated stream yields nothing, so this one copy completes
         // without a permit and gives Rollback something to undo.
         fx.source_inner
-            .create_file(Path::new("/landed.txt"), b"")
+            .create_file(app_path!("/landed.txt"), b"")
             .await
             .unwrap();
         sources.push(PathBuf::from("/landed.txt"));
     }
     for name in ["/wedge-a.bin", "/wedge-b.bin", "/wedge-c.bin"] {
         fx.source_inner
-            .create_file(Path::new(name), &vec![0xAB; CHUNK * 4])
+            .create_file(&AppPath::legacy_unchecked(Path::new(name)), &vec![0xAB; CHUNK * 4])
             .await
             .unwrap();
         sources.push(PathBuf::from(name));
@@ -168,7 +169,7 @@ async fn rollback_reaches_a_parked_driver_and_undoes_what_landed() {
         );
     }
     assert!(
-        !fx.dest_inner.exists(Path::new("/landed.txt")).await,
+        !fx.dest_inner.exists(app_path!("/landed.txt")).await,
         "rollback must delete the file that already landed; dest holds {:?}",
         dest_names(&fx.dest_inner).await
     );
@@ -253,7 +254,7 @@ async fn an_abort_shortens_the_drain_window_a_cancel_already_armed() {
     let mut sources = Vec::new();
     for name in ["/wedge-a.bin", "/wedge-b.bin", "/wedge-c.bin"] {
         fx.source_inner
-            .create_file(Path::new(name), &vec![0xAB; CHUNK])
+            .create_file(&AppPath::legacy_unchecked(Path::new(name)), &vec![0xAB; CHUNK])
             .await
             .unwrap();
         sources.push(PathBuf::from(name));
@@ -332,24 +333,24 @@ async fn refusing_a_conflict_prompt_mid_copy_sweeps_the_partials_and_reports_can
     for n in 0..7 {
         let name = format!("/a-wedge-{n}.bin");
         fx.source_inner
-            .create_file(Path::new(&name), &vec![0xAB; CHUNK * 16])
+            .create_file(&AppPath::legacy_unchecked(Path::new(&name)), &vec![0xAB; CHUNK * 16])
             .await
             .unwrap();
         sources.push(PathBuf::from(name));
     }
     // Empty ⇒ lands without a permit, freeing the eighth slot for the clash.
     fx.source_inner
-        .create_file(Path::new("/b-landed.txt"), b"")
+        .create_file(app_path!("/b-landed.txt"), b"")
         .await
         .unwrap();
     sources.push(PathBuf::from("/b-landed.txt"));
     fx.source_inner
-        .create_file(Path::new("/c-clash.bin"), &vec![0xAB; CHUNK * 16])
+        .create_file(app_path!("/c-clash.bin"), &vec![0xAB; CHUNK * 16])
         .await
         .unwrap();
     sources.push(PathBuf::from("/c-clash.bin"));
     fx.dest_inner
-        .create_file(Path::new("/c-clash.bin"), b"the user's own file")
+        .create_file(app_path!("/c-clash.bin"), b"the user's own file")
         .await
         .unwrap();
     // A few chunks' worth, so some partial holds real bytes rather than only the
@@ -364,7 +365,7 @@ async fn refusing_a_conflict_prompt_mid_copy_sweeps_the_partials_and_reports_can
         ConflictResponderSink::cancelling(&engine, op.state(), op.id().as_str()).on_prompt(move || {
             // The in-memory volume answers without awaiting anything.
             let names = dest_inner
-                .list_directory(Path::new("/"), None)
+                .list_directory(app_path!("/"), None)
                 .now_or_never()
                 .expect("an in-memory listing never waits")
                 .expect("list the destination");
@@ -440,15 +441,15 @@ async fn rollback_undoes_what_an_abandoned_folder_task_already_landed() {
     let engine = TestOperations::new();
     let _drain = CancelDrainGuard::set(TEST_DRAIN);
     let fx = fixture(CHUNK as u64 * 4);
-    fx.source_inner.create_directory(Path::new("/folder")).await.unwrap();
+    fx.source_inner.create_directory(app_path!("/folder")).await.unwrap();
     // Empty ⇒ lands without a permit.
     fx.source_inner
-        .create_file(Path::new("/folder/landed.txt"), b"")
+        .create_file(app_path!("/folder/landed.txt"), b"")
         .await
         .unwrap();
     for name in ["/folder/wedge.bin", "/wedge-b.bin", "/wedge-c.bin"] {
         fx.source_inner
-            .create_file(Path::new(name), &vec![0xAB; CHUNK * 4])
+            .create_file(&AppPath::legacy_unchecked(Path::new(name)), &vec![0xAB; CHUNK * 4])
             .await
             .unwrap();
     }
@@ -480,7 +481,7 @@ async fn rollback_undoes_what_an_abandoned_folder_task_already_landed() {
             // The in-memory volume answers without awaiting anything.
             use futures_util::FutureExt;
             fx.opened.load(Ordering::SeqCst) >= 4
-                && dest_inner.exists(Path::new("/folder/landed.txt")).now_or_never() == Some(true)
+                && dest_inner.exists(app_path!("/folder/landed.txt")).now_or_never() == Some(true)
         }) => {}
     }
     engine.cancel_write_operation(op.id(), true);
@@ -490,7 +491,7 @@ async fn rollback_undoes_what_an_abandoned_folder_task_already_landed() {
         .expect_err("a rollback ends the operation as cancelled");
 
     assert!(
-        !fx.dest_inner.exists(Path::new("/folder/landed.txt")).await,
+        !fx.dest_inner.exists(app_path!("/folder/landed.txt")).await,
         "rollback must remove what the abandoned folder task landed; dest holds {:?}",
         dest_names(&fx.dest_inner).await
     );

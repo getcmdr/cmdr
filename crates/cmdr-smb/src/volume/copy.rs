@@ -24,6 +24,7 @@
 //!   from an open on the same tree; the engine asks only when both sides are the
 //!   very same volume (the trait's default `may_copy_on_server_from`).
 
+use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
 use std::path::Path;
 use std::pin::Pin;
@@ -129,7 +130,7 @@ impl SmbVolume {
         {
             self.notify_mutation(
                 &self.inner.volume_id,
-                &parent_display,
+                &AppPath::legacy_unchecked(&parent_display),
                 MutationEvent::Created(name.to_string_lossy().to_string()),
             )
             .await;

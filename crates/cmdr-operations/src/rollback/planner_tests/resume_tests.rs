@@ -2,7 +2,7 @@
 //! re-attempts what the first run held back, with a fresh recheck, and never claims
 //! the whole op came back on a pass that proved nothing.
 
-use std::path::Path;
+use cmdr_fs::app_path;
 use std::sync::Arc;
 
 use super::test_support::*;
@@ -53,7 +53,7 @@ async fn partially_rolled_back_rename() -> (Rig, Arc<InMemoryVolume>) {
 #[tokio::test]
 async fn finishing_a_partial_rollback_reverses_the_item_a_cleared_blocker_held_back() {
     let (rig, v) = partially_rolled_back_rename().await;
-    v.delete(Path::new("/old.txt")).await.expect("clear the blocker");
+    v.delete(app_path!("/old.txt")).await.expect("clear the blocker");
 
     let second = rig.rollback_as("op", "inv-2").await;
 

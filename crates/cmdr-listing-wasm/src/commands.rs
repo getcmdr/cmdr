@@ -6,6 +6,7 @@
 //! answer, `Err` what the promise rejects with (the command's serialized error,
 //! or a string for arguments that don't parse, as Tauri does).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -263,7 +264,8 @@ impl Demo {
         let Some((archive, _inner)) = archive_boundary_candidate(path) else {
             return;
         };
-        if matches!(self.volume.get_metadata(&archive).await, Ok(entry) if !entry.is_directory) {
+        if matches!(self.volume.get_metadata(&AppPath::legacy_unchecked(&archive)).await, Ok(entry) if !entry.is_directory)
+        {
             self.events
                 .send(ARCHIVE_REFUSED, ArchiveRefusedEvent { path: &archive });
         }

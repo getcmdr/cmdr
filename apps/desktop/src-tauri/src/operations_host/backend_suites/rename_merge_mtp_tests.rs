@@ -13,6 +13,8 @@
 //! hints, the driver's conflict detection, `rename_merge_directory`, and
 //! `MtpVolume`'s own `rename` / `delete`) runs against a device-shaped backend.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -60,7 +62,7 @@ async fn connect_seeded_device(
 async fn prime_path_handles(volume: &Arc<dyn Volume>, dirs: &[&str]) {
     for dir in dirs {
         volume
-            .list_directory(Path::new(dir), None)
+            .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
             .await
             .unwrap_or_else(|e| panic!("priming listing for {dir}: {e:?}"));
     }
@@ -118,7 +120,7 @@ async fn same_volume_merge_move_keeps_a_skipped_child_on_mtp() {
 
     // The destination keeps its own copy (that's what Skip means there)…
     let dest_album = volume
-        .list_directory(Path::new("/dst/album"), None)
+        .list_directory(app_path!("/dst/album"), None)
         .await
         .expect("listing the merged destination");
     assert!(
@@ -140,7 +142,7 @@ async fn same_volume_merge_move_keeps_a_skipped_child_on_mtp() {
         "the skipped child's ONLY copy must still be on the device's storage"
     );
     let source_album = volume
-        .list_directory(Path::new("/src/album"), None)
+        .list_directory(app_path!("/src/album"), None)
         .await
         .expect("the source dir holding a skipped child must survive");
     assert!(

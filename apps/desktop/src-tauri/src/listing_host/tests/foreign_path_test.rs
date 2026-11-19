@@ -4,6 +4,7 @@
 //! respell) is `crates/cmdr-listing/src/foreign_path_test.rs`, against a fake
 //! registry.
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::path::Path;
 
@@ -19,11 +20,14 @@ const FOREIGN: &str = "/foto\u{301}k";
 async fn album() -> InMemoryVolume {
     let volume = InMemoryVolume::new("Share");
     volume
-        .create_directory(Path::new(STORED))
+        .create_directory(&AppPath::legacy_unchecked(Path::new(STORED)))
         .await
         .expect("seed the album");
     volume
-        .create_file(&Path::new(STORED).join("photo.jpg"), b"jpeg")
+        .create_file(
+            &AppPath::legacy_unchecked(&Path::new(STORED).join("photo.jpg")),
+            b"jpeg",
+        )
         .await
         .expect("seed a photo");
     volume
@@ -44,7 +48,7 @@ impl Volume for SwappedMidListing {
         self.kernel.name()
     }
 
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.kernel.root()
     }
 
@@ -54,7 +58,7 @@ impl Volume for SwappedMidListing {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -68,18 +72,18 @@ impl Volume for SwappedMidListing {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.kernel.get_metadata(path)
     }
 
-    fn exists<'a>(&'a self, path: &'a Path) -> std::pin::Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> std::pin::Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.kernel.exists(path)
     }
 
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.kernel.is_directory(path)
     }
@@ -98,9 +102,15 @@ async fn a_listing_read_while_the_backend_is_replaced_lands_on_the_stored_spelli
 
     let volume_id = format!("respell-mid-listing-{}", uuid::Uuid::new_v4());
     let kernel = InMemoryVolume::new("Share");
-    kernel.create_directory(Path::new(FOREIGN)).await.expect("seed");
     kernel
-        .create_file(&Path::new(FOREIGN).join("photo.jpg"), b"jpeg")
+        .create_directory(&AppPath::legacy_unchecked(Path::new(FOREIGN)))
+        .await
+        .expect("seed");
+    kernel
+        .create_file(
+            &AppPath::legacy_unchecked(&Path::new(FOREIGN).join("photo.jpg")),
+            b"jpeg",
+        )
         .await
         .expect("seed");
     let direct = SpelledVolume::new(album().await).resolving(FOREIGN, Ok(Some(STORED)));

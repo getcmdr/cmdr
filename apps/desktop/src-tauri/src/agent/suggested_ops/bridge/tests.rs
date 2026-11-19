@@ -6,6 +6,7 @@
 
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 
+use cmdr_fs::app_path;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -517,12 +518,9 @@ async fn a_trash_group_approved_as_a_permanent_delete_on_a_drive_with_no_trash_d
     use crate::file_system::volume::{InMemoryVolume, Volume};
     let volume_id = "bridge-no-trash-delete-test";
     let volume = Arc::new(InMemoryVolume::new("testshare"));
+    volume.create_directory(app_path!("/public")).await.expect("seed dir");
     volume
-        .create_directory(std::path::Path::new("/public"))
-        .await
-        .expect("seed dir");
-    volume
-        .create_file(std::path::Path::new("/public/old.iso"), b"an old image")
+        .create_file(app_path!("/public/old.iso"), b"an old image")
         .await
         .expect("seed file");
     let _registration = TestVolumeRegistration::install(volume_id, volume.clone() as Arc<dyn Volume>);
@@ -535,7 +533,7 @@ async fn a_trash_group_approved_as_a_permanent_delete_on_a_drive_with_no_trash_d
     let gone = || {
         tokio::task::block_in_place(|| {
             tokio::runtime::Handle::current()
-                .block_on(volume.get_metadata(std::path::Path::new("/public/old.iso")))
+                .block_on(volume.get_metadata(app_path!("/public/old.iso")))
                 .is_err()
         })
     };

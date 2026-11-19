@@ -4,6 +4,8 @@
 //! The transfer engines' twin is `transfer/volume/look_alike_tests.rs`; the rule
 //! both follow is `look_alike.rs`.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -24,14 +26,14 @@ const FOTOK_NFD: &str = "foto\u{301}k";
 async fn share(engine: &TestOperations, label: &str) -> (String, Arc<InMemoryVolume>) {
     let id = format!("look-alike-{label}");
     let volume = Arc::new(InMemoryVolume::new(&id).with_composed_new_names());
-    volume.create_directory(Path::new("/dir")).await.unwrap();
+    volume.create_directory(app_path!("/dir")).await.unwrap();
     engine.volumes().register(&id, Arc::clone(&volume) as Arc<dyn Volume>);
     (id, volume)
 }
 
 async fn names_in(volume: &InMemoryVolume, dir: &str) -> Vec<String> {
     let mut names: Vec<String> = volume
-        .list_directory(Path::new(dir), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
         .await
         .unwrap()
         .into_iter()
@@ -63,11 +65,11 @@ async fn a_new_folder_or_file_is_refused_beside_its_look_alike() {
     let engine = TestOperations::new();
     let (id, volume) = share(&engine, "taken").await;
     volume
-        .create_file(Path::new(&format!("/dir/{CAFE_NFD}")), b"x")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&format!("/dir/{CAFE_NFD}"))), b"x")
         .await
         .unwrap();
     volume
-        .create_directory(Path::new(&format!("/dir/{FOTOK_NFD}")))
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&format!("/dir/{FOTOK_NFD}"))))
         .await
         .unwrap();
 
@@ -85,7 +87,7 @@ async fn a_new_folder_or_file_is_refused_beside_its_look_alike() {
 async fn a_rename_target_goes_out_composed() {
     let engine = TestOperations::new();
     let (id, volume) = share(&engine, "rename-new").await;
-    volume.create_file(Path::new("/dir/a.txt"), b"x").await.unwrap();
+    volume.create_file(app_path!("/dir/a.txt"), b"x").await.unwrap();
 
     engine
         .rename_managed(
@@ -105,9 +107,12 @@ async fn a_rename_target_goes_out_composed() {
 async fn a_rename_onto_a_look_alike_is_refused_unless_forced_and_then_replaces_it() {
     let engine = TestOperations::new();
     let (id, volume) = share(&engine, "rename-taken").await;
-    volume.create_file(Path::new("/dir/a.txt"), b"NEW").await.unwrap();
+    volume.create_file(app_path!("/dir/a.txt"), b"NEW").await.unwrap();
     volume
-        .create_file(Path::new(&format!("/dir/{CAFE_NFD}")), b"OLD")
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("/dir/{CAFE_NFD}"))),
+            b"OLD",
+        )
         .await
         .unwrap();
 
@@ -152,7 +157,7 @@ async fn respelling_a_name_is_not_a_clash_with_itself() {
     let engine = TestOperations::new();
     let (id, volume) = share(&engine, "respell").await;
     volume
-        .create_file(Path::new(&format!("/dir/{CAFE_NFD}")), b"x")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&format!("/dir/{CAFE_NFD}"))), b"x")
         .await
         .unwrap();
 
@@ -181,9 +186,9 @@ async fn respelling_a_name_is_not_a_clash_with_itself() {
 async fn the_live_rename_check_reports_a_look_alike() {
     let engine = TestOperations::new();
     let (id, volume) = share(&engine, "validity").await;
-    volume.create_file(Path::new("/dir/a.txt"), b"x").await.unwrap();
+    volume.create_file(app_path!("/dir/a.txt"), b"x").await.unwrap();
     volume
-        .create_file(Path::new(&format!("/dir/{CAFE_NFD}")), b"x")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&format!("/dir/{CAFE_NFD}"))), b"x")
         .await
         .unwrap();
 
@@ -203,9 +208,9 @@ async fn the_live_rename_check_reports_a_look_alike() {
 async fn the_live_rename_check_reports_the_name_a_typed_one_composes_onto() {
     let engine = TestOperations::new();
     let (id, volume) = share(&engine, "validity-composed").await;
-    volume.create_file(Path::new("/dir/a.txt"), b"x").await.unwrap();
+    volume.create_file(app_path!("/dir/a.txt"), b"x").await.unwrap();
     volume
-        .create_file(Path::new(&format!("/dir/{CAFE_NFC}")), b"x")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&format!("/dir/{CAFE_NFC}"))), b"x")
         .await
         .unwrap();
 

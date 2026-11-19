@@ -134,7 +134,7 @@ fn a_relative_path_cannot_climb_out_of_the_root() {
 #[test]
 fn the_volume_root_is_the_app_spelling() {
     let vol = make_test_volume();
-    assert_eq!(vol.root(), Path::new(&format!("{PREFIX}{TEST_ROOT}")));
+    assert_eq!(vol.root().as_std_legacy(), Path::new(&format!("{PREFIX}{TEST_ROOT}")));
 }
 
 /// ❗ **A name Cmdr creates goes out composed (NFC).** macOS hands out many local

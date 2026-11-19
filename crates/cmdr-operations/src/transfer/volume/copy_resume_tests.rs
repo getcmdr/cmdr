@@ -9,6 +9,7 @@ use crate::outage_slot::OutagePolicy;
 use crate::testing::TestOperations;
 use crate::transfer::outage_volume_test_support::OutageVolume;
 use crate::types::{ConflictResolution, WriteOperationError};
+use cmdr_fs::app_path;
 use cmdr_fs::testing::wait_until_async;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
 
@@ -51,7 +52,7 @@ struct Download {
 async fn download(lane: &str, local: InMemoryVolume) -> Download {
     let nas_store = Arc::new(InMemoryVolume::new("Testnas").with_space_info(10_000_000, 10_000_000));
     nas_store
-        .create_file(Path::new("/big.bin"), &patterned())
+        .create_file(app_path!("/big.bin"), &patterned())
         .await
         .unwrap();
     let nas = OutageVolume::wrap(Arc::clone(&nas_store), lane);
@@ -115,7 +116,10 @@ async fn run(
 }
 
 async fn content_of(volume: &Arc<InMemoryVolume>, path: &str) -> Vec<u8> {
-    let mut stream = volume.open_read_stream(Path::new(path)).await.expect("the file opens");
+    let mut stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .expect("the file opens");
     let mut bytes = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         bytes.extend_from_slice(&chunk.expect("a chunk"));
@@ -172,9 +176,9 @@ async fn a_download_refuses_a_file_rewritten_while_the_share_was_away() {
     // Another client saves over the file meanwhile.
     let store = Arc::clone(&d.nas_store);
     while_waiting(&state, &d.nas, async move {
-        store.delete(Path::new("/big.bin")).await.unwrap();
+        store.delete(app_path!("/big.bin")).await.unwrap();
         store
-            .create_file(Path::new("/big.bin"), b"a different file")
+            .create_file(app_path!("/big.bin"), b"a different file")
             .await
             .unwrap();
     });
@@ -187,10 +191,10 @@ async fn a_download_refuses_a_file_rewritten_while_the_share_was_away() {
         "the source changed, and says so: {:?}",
         failure.error
     );
-    assert!(!d.local.exists(Path::new("/big.bin")).await, "nothing lands");
+    assert!(!d.local.exists(app_path!("/big.bin")).await, "nothing lands");
     let leftovers: Vec<String> = d
         .local
-        .list_directory(Path::new("/"), None)
+        .list_directory(app_path!("/"), None)
         .await
         .unwrap()
         .into_iter()

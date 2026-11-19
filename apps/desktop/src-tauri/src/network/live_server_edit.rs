@@ -7,6 +7,7 @@
 //! SFTP and WebDAV, so a fix to them lands once. The whole flow:
 //! `DETAILS.md` § "Editing a connected place".
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -79,8 +80,8 @@ pub async fn check(
 ) -> Result<AcceptedEdit, SavedServerOutcome> {
     let deadline = tokio::time::Instant::now() + budget;
     let new_root = RemoteRoot::new(place.app_prefix.clone(), Path::new(edit.remote_root));
-    let old_root = place.live.root().to_path_buf();
-    let root_moved = new_root.app_root() != old_root;
+    let old_root = place.live.root().as_std_legacy().to_path_buf();
+    let root_moved = *new_root.app_root().as_path() != old_root;
     let successor =
         (root_moved || edit.label != place.live.name()).then(|| successor_for(edit.label, new_root.remote_root()));
 
@@ -141,7 +142,7 @@ async fn confirm_folder(
 ) -> Result<(), SavedServerOutcome> {
     let volume = Arc::clone(volume);
     let path: PathBuf = path.to_path_buf();
-    let stat = tokio::spawn(async move { volume.is_directory(&path).await });
+    let stat = tokio::spawn(async move { volume.is_directory(&AppPath::legacy_unchecked(&path)).await });
     match tokio::time::timeout_at(deadline, stat).await {
         Ok(Ok(Ok(true))) => Ok(()),
         Ok(Ok(Ok(false) | Err(VolumeError::NotFound(_) | VolumeError::PermissionDenied { .. }))) => Err(missing),

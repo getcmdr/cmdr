@@ -2,6 +2,7 @@
 //! reading the volume again.
 
 use crate::rt::Instant;
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::atomic::Ordering;
 
@@ -121,7 +122,7 @@ impl Inner {
         // watch that can't see other writers (an OS-mounted share), so the cache may
         // be missing entries nobody told us about — exactly the case where handing
         // these to a delete walker or a copy scan does damage. Pay the re-read.
-        match volume.listing_watch_coverage(path) {
+        match volume.listing_watch_coverage(&AppPath::legacy_unchecked(path)) {
             WatchCoverage::EveryWriter => Some(entries),
             WatchCoverage::ThisMachineOnly | WatchCoverage::None => None,
         }

@@ -2,6 +2,7 @@
 
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 
+use cmdr_fs::app_path::AppPath;
 use std::io::Write as _;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -263,7 +264,8 @@ fn a_volume_the_os_cant_open(id: &str, content: &[u8]) -> String {
     let root = format!("mtp://{id}/1");
     let volume = InMemoryVolume::new("Phone").with_root(&root);
     let path = format!("{root}/notes.txt");
-    tauri::async_runtime::block_on(volume.create_file(Path::new(&path), content)).expect("seed the file");
+    tauri::async_runtime::block_on(volume.create_file(&AppPath::legacy_unchecked(Path::new(&path)), content))
+        .expect("seed the file");
     assert!(
         !volume.paths_are_os_visible(),
         "the fixture must model a volume the OS can't open"
@@ -395,7 +397,7 @@ impl crate::file_system::volume::Volume for SlowPhone {
         self.inner.name()
     }
 
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
 
@@ -405,7 +407,7 @@ impl crate::file_system::volume::Volume for SlowPhone {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(crate::file_system::volume::ListingProgress) + Sync)>,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
@@ -413,7 +415,7 @@ impl crate::file_system::volume::Volume for SlowPhone {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
@@ -424,7 +426,7 @@ impl crate::file_system::volume::Volume for SlowPhone {
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> std::pin::Pin<
         Box<
             dyn Future<Output = Result<Box<dyn crate::file_system::volume::VolumeReadStream>, VolumeError>> + Send + 'a,
@@ -452,8 +454,11 @@ fn a_slow_phone(id: &str) -> (String, Arc<AtomicUsize>, Arc<AtomicBool>) {
         .with_root(&root)
         .with_read_chunk_delay(CHUNK_DELAY);
     let path = format!("{root}/big.log");
-    tauri::async_runtime::block_on(inner.create_file(Path::new(&path), &vec![b'x'; PHONE_FILE_LEN]))
-        .expect("seed the file");
+    tauri::async_runtime::block_on(inner.create_file(
+        &AppPath::legacy_unchecked(Path::new(&path)),
+        &vec![b'x'; PHONE_FILE_LEN],
+    ))
+    .expect("seed the file");
     let chunks_served = Arc::new(AtomicUsize::new(0));
     let stream_dropped = Arc::new(AtomicBool::new(false));
     get_volume_manager().register(

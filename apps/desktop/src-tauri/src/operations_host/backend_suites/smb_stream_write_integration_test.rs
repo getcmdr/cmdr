@@ -9,6 +9,7 @@
 //! the containers with `./apps/desktop/test/smb-servers/start.sh` and run
 //! `cargo nextest run smb_integration --run-ignored all`.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::atomic::Ordering;
 
@@ -29,7 +30,9 @@ async fn smb_integration_write_from_stream_local_source_large_file() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     let size = 4 * 1024 * 1024; // 4 MB, spans multiple import chunks
     let data: Vec<u8> = (0..size).map(|i| ((i * 13) % 251) as u8).collect();
@@ -44,12 +47,15 @@ async fn smb_integration_write_from_stream_local_source_large_file() {
     let progress_calls = AtomicUsize::new(0);
     let last_bytes = AtomicU64::new(0);
 
-    let stream = local_vol.open_read_stream(Path::new("import-large.bin")).await.unwrap();
+    let stream = local_vol
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new("import-large.bin")))
+        .await
+        .unwrap();
     assert_eq!(stream.total_size(), StreamLength::Known(size as u64));
 
     let bytes = vol
         .write_from_stream(
-            Path::new(&smb_path),
+            &AppPath::legacy_unchecked(Path::new(&smb_path)),
             WriteMode::CreateOrReplace,
             StreamLength::Known(size as u64),
             stream,
@@ -99,7 +105,9 @@ async fn smb_integration_staged_write_of_a_name_at_the_byte_limit_lands() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     let data = b"a book, at last".to_vec();
     let local_tmp = TestDir::new("smb-long-name");
@@ -115,9 +123,12 @@ async fn smb_integration_staged_write_of_a_name_at_the_byte_limit_lands() {
         let final_path = format!("{dir}/{name}");
         let temp = StagingTemp::mint(Path::new(&final_path), None);
 
-        let stream = local_vol.open_read_stream(Path::new("book.epub")).await.unwrap();
+        let stream = local_vol
+            .open_read_stream(&AppPath::legacy_unchecked(Path::new("book.epub")))
+            .await
+            .unwrap();
         vol.write_from_stream(
-            temp.path(),
+            &AppPath::legacy_unchecked(temp.path()),
             WriteMode::CreateNew,
             StreamLength::Known(data.len() as u64),
             stream,
@@ -125,9 +136,13 @@ async fn smb_integration_staged_write_of_a_name_at_the_byte_limit_lands() {
         )
         .await
         .unwrap_or_else(|e| panic!("the share refused the temp {}: {e:?}", temp.path().display()));
-        vol.rename(temp.path(), Path::new(&final_path), false)
-            .await
-            .unwrap_or_else(|e| panic!("the share refused the landing onto {final_path}: {e:?}"));
+        vol.rename(
+            &AppPath::legacy_unchecked(temp.path()),
+            &AppPath::legacy_unchecked(Path::new(&final_path)),
+            false,
+        )
+        .await
+        .unwrap_or_else(|e| panic!("the share refused the landing onto {final_path}: {e:?}"));
 
         assert_eq!(
             hash_volume_file(&vol as &dyn Volume, Path::new(&final_path)).await,
@@ -136,7 +151,7 @@ async fn smb_integration_staged_write_of_a_name_at_the_byte_limit_lands() {
     }
 
     let names: Vec<String> = vol
-        .list_directory(Path::new(&dir), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new(&dir)), None)
         .await
         .unwrap()
         .into_iter()
@@ -163,7 +178,9 @@ async fn smb_integration_staged_write_of_a_name_past_the_byte_limit_is_an_invali
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     let data = b"too long a name".to_vec();
     let local_tmp = TestDir::new("smb-too-long-name");
@@ -175,9 +192,12 @@ async fn smb_integration_staged_write_of_a_name_past_the_byte_limit_is_an_invali
     // UTF-16 units) but a Linux one can't.
     let final_path = format!("{dir}/{}.epub", "αβγδε".repeat(30));
     let temp = StagingTemp::mint(Path::new(&final_path), None);
-    let stream = local_vol.open_read_stream(Path::new("book.epub")).await.unwrap();
+    let stream = local_vol
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new("book.epub")))
+        .await
+        .unwrap();
     vol.write_from_stream(
-        temp.path(),
+        &AppPath::legacy_unchecked(temp.path()),
         WriteMode::CreateNew,
         StreamLength::Known(data.len() as u64),
         stream,
@@ -187,11 +207,15 @@ async fn smb_integration_staged_write_of_a_name_past_the_byte_limit_is_an_invali
     .expect("the shortened temp fits");
 
     let refused = vol
-        .rename(temp.path(), Path::new(&final_path), false)
+        .rename(
+            &AppPath::legacy_unchecked(temp.path()),
+            &AppPath::legacy_unchecked(Path::new(&final_path)),
+            false,
+        )
         .await
         .expect_err("a 300-byte name can't land on a Linux share");
     assert!(matches!(refused, VolumeError::InvalidName(_)), "got {refused:?}");
 
-    vol.delete(temp.path()).await.unwrap();
+    vol.delete(&AppPath::legacy_unchecked(temp.path())).await.unwrap();
     ensure_clean(&vol, &dir).await;
 }

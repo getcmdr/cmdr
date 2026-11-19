@@ -3,6 +3,7 @@
 use super::*;
 use crate::file_system::volume::{InMemoryVolume, ListingProgress};
 use crate::operations_host::app_engine;
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -23,11 +24,15 @@ fn populated_volume() -> Arc<InMemoryVolume> {
 }
 
 async fn add_file(v: &InMemoryVolume, path: &str, content: &[u8]) {
-    v.create_file(Path::new(path), content).await.unwrap();
+    v.create_file(&AppPath::legacy_unchecked(Path::new(path)), content)
+        .await
+        .unwrap();
 }
 
 async fn add_dir(v: &InMemoryVolume, path: &str) {
-    v.create_directory(Path::new(path)).await.unwrap();
+    v.create_directory(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .unwrap();
 }
 
 // ---- Happy path: landed filename equals the Finder-chosen leaf EXACTLY ----
@@ -96,46 +101,51 @@ impl Volume for MidStreamFailVolume {
     fn name(&self) -> &str {
         "Failing"
     }
-    fn root(&self) -> &Path {
-        Path::new("/")
+    fn root(&self) -> &AppPath {
+        AppPath::from_normalized("/").expect("a canonical literal")
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(vec![]) })
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let name = path
             .file_name()
             .map(|n| n.to_string_lossy().to_string())
             .unwrap_or_default();
         Box::pin(async move {
+            let path_std = path_app.as_std_legacy();
+            let path: &Path = &path_std;
             Ok(cmdr_fs::entry::FileEntry {
                 size: Some(4096),
                 ..cmdr_fs::entry::FileEntry::new(name, path.display().to_string(), false, false)
             })
         })
     }
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { true })
     }
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(false) })
     }
     fn open_read_stream<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async {
             Ok(Box::new(FailingReadStream {
@@ -242,37 +252,37 @@ impl Volume for BlockingVolume {
     fn name(&self) -> &str {
         "Blocking"
     }
-    fn root(&self) -> &Path {
-        Path::new("/")
+    fn root(&self) -> &AppPath {
+        AppPath::from_normalized("/").expect("a canonical literal")
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         let gate = Arc::clone(&self.gate);
         let reached = Arc::clone(&self.reached);
@@ -341,38 +351,41 @@ impl Volume for PartialFailFolderVolume {
     fn name(&self) -> &str {
         "PartialFail"
     }
-    fn root(&self) -> &Path {
-        Path::new("/")
+    fn root(&self) -> &AppPath {
+        AppPath::from_normalized("/").expect("a canonical literal")
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         // The "bad.jpg" file fails mid-stream; everything else streams fine.
         if path.file_name().map(|n| n == "bad.jpg").unwrap_or(false) {
             Box::pin(async {
@@ -382,7 +395,7 @@ impl Volume for PartialFailFolderVolume {
                 }) as Box<dyn VolumeReadStream>)
             })
         } else {
-            self.inner.open_read_stream(path)
+            self.inner.open_read_stream(path_app)
         }
     }
 }

@@ -10,6 +10,8 @@
 //! A spy over `InMemoryVolume` records every plain `delete` that lands on a
 //! folder, and every `delete_directory`.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -41,10 +43,10 @@ impl FolderDeleteSpy {
     /// `/d/a.txt` and `/d/sub/b.txt`.
     async fn seeded() -> Arc<Self> {
         let inner = InMemoryVolume::new("spy");
-        inner.create_directory(Path::new("/d")).await.unwrap();
-        inner.create_directory(Path::new("/d/sub")).await.unwrap();
-        inner.create_file(Path::new("/d/a.txt"), b"a").await.unwrap();
-        inner.create_file(Path::new("/d/sub/b.txt"), b"bb").await.unwrap();
+        inner.create_directory(app_path!("/d")).await.unwrap();
+        inner.create_directory(app_path!("/d/sub")).await.unwrap();
+        inner.create_file(app_path!("/d/a.txt"), b"a").await.unwrap();
+        inner.create_file(app_path!("/d/sub/b.txt"), b"bb").await.unwrap();
         Arc::new(Self {
             inner,
             blind: Mutex::new(Vec::new()),
@@ -70,7 +72,7 @@ impl FolderDeleteSpy {
             "a folder deleted by a plain `delete`"
         );
         assert_eq!(self.as_folders(), [PathBuf::from("/d"), PathBuf::from("/d/sub")]);
-        assert!(!self.inner.exists(Path::new("/d")).await, "the folder went");
+        assert!(!self.inner.exists(app_path!("/d")).await, "the folder went");
     }
 }
 
@@ -90,22 +92,28 @@ impl Volume for FolderDeleteSpy {
         self
     }
 
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            if self.inner.is_directory(path).await.unwrap_or(false) {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            if self.inner.is_directory(path_app).await.unwrap_or(false) {
                 self.blind.lock().unwrap().push(path.to_path_buf());
             }
-            self.inner.delete(path).await
+            self.inner.delete(path_app).await
         })
     }
 
     fn delete_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         _cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         self.as_folders.lock().unwrap().push(path.to_path_buf());
-        self.inner.delete(path)
+        self.inner.delete(path_app)
     }
 }
 
@@ -202,7 +210,7 @@ async fn a_copys_rollback_prunes_its_created_folders_as_folders() {
 async fn an_unblocking_removal_of_a_folder_deletes_it_as_a_folder() {
     let spy = FolderDeleteSpy::seeded().await;
     let volume: Arc<dyn Volume> = spy.clone();
-    volume.delete(Path::new("/d/sub/b.txt")).await.unwrap();
+    volume.delete(app_path!("/d/sub/b.txt")).await.unwrap();
 
     delete_clearing_blockers(
         &tokio::runtime::Handle::current(),

@@ -155,7 +155,7 @@ fn resolve_enabled_volumes(volume_ids: &[String]) -> (Vec<(String, String)>, boo
     let mounts: std::collections::HashMap<String, String> = crate::file_system::volume::manager::get_volume_manager()
         .list_volumes_with_handles()
         .into_iter()
-        .map(|(id, vol)| (id, vol.root().to_string_lossy().into_owned()))
+        .map(|(id, vol)| (id, vol.root().as_std_legacy().to_string_lossy().into_owned()))
         .collect();
     let mut enabled = Vec::new();
     let mut pending = false;

@@ -5,6 +5,9 @@
 use super::carry_on::InMemoryVersion;
 use super::device::{Bandwidth, ContentSink, Yielder};
 use super::{InMemoryContent, InMemoryEntry, InMemoryVolume};
+use crate::app_path::AppPath;
+use crate::app_path::AppPathBuf;
+use crate::app_path::BridgedPath;
 use crate::entry::FileEntry;
 use crate::ignore_poison::IgnorePoison;
 use crate::ignore_poison::RwLockIgnorePoison;
@@ -88,8 +91,8 @@ impl Volume for InMemoryVolume {
         &self.name
     }
 
-    fn stands_in_for_own_disk(&self) -> Option<&Path> {
-        self.own_disk_home()
+    fn stands_in_for_own_disk(&self) -> Option<&AppPath> {
+        self.own_disk_home.as_ref().map(BridgedPath::app)
     }
 
     fn connection_state(&self) -> Option<ConnectionState> {
@@ -100,15 +103,17 @@ impl Volume for InMemoryVolume {
         self.backend_kind
     }
 
-    fn index_walk(&self, dir: &Path, is_symlink: bool) -> IndexWalk {
+    fn index_walk(&self, dir: &AppPath, is_symlink: bool) -> IndexWalk {
+        let dir_std = dir.as_std_legacy();
+        let dir: &Path = &dir_std;
         if let Some((_, walk)) = self.index_walk_overrides.iter().find(|(path, _)| path == dir) {
             return *walk;
         }
         IndexWalk::unless_link(is_symlink)
     }
 
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -124,10 +129,12 @@ impl Volume for InMemoryVolume {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(crate::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             // A device breathes at every call (`with_yielding`; a no-op otherwise).
             self.breathe().await;
             // Check for injected error (E2E testing). Cleared after one use to enable retry testing.
@@ -148,7 +155,7 @@ impl Volume for InMemoryVolume {
             })?;
 
             let target_dir = self.normalize(path);
-            if self.held_folders_only && target_dir != self.root && target_dir != Path::new("/") {
+            if self.held_folders_only && target_dir != *self.root && target_dir != Path::new("/") {
                 match entries.get(&target_dir) {
                     None => return Err(VolumeError::NotFound(target_dir.display().to_string())),
                     Some(entry) if !entry.metadata.is_directory => {
@@ -189,23 +196,27 @@ impl Volume for InMemoryVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             // A device breathes at every call (`with_yielding`; a no-op otherwise).
             self.breathe().await;
             self.stat_with(path, |entry| self.as_listed(entry.clone()))
         })
     }
 
-    fn presence<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
+    fn presence<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             // A device breathes at every call (`with_yielding`; a no-op otherwise).
             self.breathe().await;
             let normalized = self.normalize(path);
             // The root has no stored entry, but it's there as long as the volume is: a
             // "no" here once walked the demo's pane off `/` and home (the deleted-folder poll).
-            if normalized == self.root || self.entries.read_ignore_poison().contains_key(&normalized) {
+            if normalized == *self.root || self.entries.read_ignore_poison().contains_key(&normalized) {
                 Presence::Present
             } else {
                 Presence::Absent
@@ -215,23 +226,35 @@ impl Volume for InMemoryVolume {
 
     fn node_identity<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Option<NodeIdentity>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move { self.stat_entry_with(path, |entry| Some(entry.identity())) })
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.stat_entry_with(path, |entry| Some(entry.identity()))
+        })
     }
 
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
-        Box::pin(async move { self.stat_with(path, |metadata| metadata.is_directory) })
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.stat_with(path, |metadata| metadata.is_directory)
+        })
     }
 
     fn read_link_target<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Option<PathBuf>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move { self.stat_entry_with(path, |entry| entry.link_target.clone()) })
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.stat_entry_with(path, |entry| entry.link_target.clone())
+        })
     }
 
     fn can_hold_links(&self) -> bool {
@@ -240,10 +263,12 @@ impl Volume for InMemoryVolume {
 
     fn create_symlink<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         target: &'a Path,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             if !self.holds_links || self.refuses_links {
                 return Err(VolumeError::NotSupported);
             }
@@ -259,10 +284,12 @@ impl Volume for InMemoryVolume {
 
     fn create_file<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let result: Result<(), VolumeError> = async {
                 // A device breathes at every call (`with_yielding`; a no-op otherwise).
                 self.breathe().await;
@@ -290,9 +317,11 @@ impl Volume for InMemoryVolume {
 
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let result: Result<(), VolumeError> = async {
                 // A device breathes at every call (`with_yielding`; a no-op otherwise).
                 self.breathe().await;
@@ -352,37 +381,51 @@ impl Volume for InMemoryVolume {
 
     fn read_xattr_many<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         name: &'a str,
         mode: XattrReadMode,
     ) -> Pin<Box<dyn Future<Output = Vec<XattrAnswer>> + Send + 'a>> {
-        Box::pin(async move { self.read_xattr_many_impl(paths, name, mode) })
+        Box::pin(async move {
+            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
+            let paths: &[PathBuf] = &paths_std;
+            self.read_xattr_many_impl(paths, name, mode)
+        })
     }
 
     fn write_xattr<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         name: &'a str,
         value: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move { self.write_xattr_impl(path, name, value) })
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.write_xattr_impl(path, name, value)
+        })
     }
 
     fn remove_xattr<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         name: &'a str,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move { self.remove_xattr_impl(path, name) })
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.remove_xattr_impl(path, name)
+        })
     }
 
     fn apply_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         carried: &'a CarriedMetadata,
         modified: Option<std::time::SystemTime>,
     ) -> Pin<Box<dyn Future<Output = MetadataReport> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let normalized = self.normalize(path);
             let mut entries = self.entries.write_ignore_poison();
             let Some(entry) = entries.get_mut(&normalized) else {
@@ -421,10 +464,12 @@ impl Volume for InMemoryVolume {
     /// file or a missing path.
     fn folder_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         wanted: MetadataClasses,
     ) -> Pin<Box<dyn Future<Output = CarriedMetadata> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let normalized = self.normalize(path);
             let entries = self.entries.read_ignore_poison();
             let Some(entry) = entries.get(&normalized).filter(|entry| entry.metadata.is_directory) else {
@@ -439,8 +484,10 @@ impl Volume for InMemoryVolume {
         })
     }
 
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let result: Result<(), VolumeError> = async {
                 // A device breathes at every call (`with_yielding`; a no-op otherwise).
                 self.breathe().await;
@@ -485,7 +532,7 @@ impl Volume for InMemoryVolume {
 
     fn rename_work<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<RenameWork, VolumeError>> + Send + 'a>> {
         let _ = path;
         let work = if self.renames_by_copy {
@@ -506,7 +553,7 @@ impl Volume for InMemoryVolume {
     )]
     fn delete_files<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
     ) -> Pin<Box<dyn Future<Output = Vec<Result<(), VolumeError>>> + Send + 'a>> {
         self.delete_batches.lock_ignore_poison().push(paths.len());
         Box::pin(async move {
@@ -523,11 +570,15 @@ impl Volume for InMemoryVolume {
 
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let from_std = from.as_std_legacy();
+            let from: &Path = &from_std;
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
             let result: Result<(), VolumeError> = async {
                 // A device breathes at every call (`with_yielding`; a no-op otherwise).
                 self.breathe().await;
@@ -628,15 +679,17 @@ impl Volume for InMemoryVolume {
         self.metadata_caps
     }
 
-    fn supported_dates<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = SupportedDates> + Send + 'a>> {
+    fn supported_dates<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = SupportedDates> + Send + 'a>> {
         Box::pin(async move { self.claimed_dates })
     }
 
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             // A device breathes at every call (`with_yielding`; a no-op otherwise).
             self.breathe().await;
             self.scan_subtree(path, crate::mac_only_files::MacOnlyFiles::Include)
@@ -650,7 +703,7 @@ impl Volume for InMemoryVolume {
     /// neither counted nor recorded.
     fn scan_for_copy_batch_with_boundary<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a crate::volume::ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<crate::volume::BatchScanResult, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -659,12 +712,12 @@ impl Volume for InMemoryVolume {
             let mut per_path = Vec::with_capacity(paths.len());
             for path in paths {
                 boundary.check().await?;
-                let scan = self.scan_subtree(path, boundary.mac_only())?;
+                let scan = self.scan_subtree(&path.as_std_legacy(), boundary.mac_only())?;
                 if let Some(recorder) = boundary.recorder() {
-                    self.record_subtree(path, recorder.as_ref(), boundary.mac_only());
+                    self.record_subtree(&path.as_std_legacy(), recorder.as_ref(), boundary.mac_only());
                 }
                 boundary.counted(&scan).await?;
-                per_path.push((path.clone(), scan));
+                per_path.push((path.as_std_legacy().into_owned(), scan));
             }
             let mut batch = crate::volume::fold_batch(per_path);
             // The default's aggregate, which never claims a type for the batch.
@@ -692,9 +745,11 @@ impl Volume for InMemoryVolume {
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             // A device breathes at every call (`with_yielding`; a no-op otherwise).
             self.breathe().await;
             let normalized = self.normalize(path);
@@ -739,11 +794,13 @@ impl Volume for InMemoryVolume {
     /// and date `version` saw; `SourceChanged` after any rewrite.
     fn resume_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         version: &'a crate::volume::SourceVersion,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             self.breathe().await;
             let Some(version) = version.downcast_ref::<InMemoryVersion>() else {
                 return Err(VolumeError::NotSupported);
@@ -773,11 +830,13 @@ impl Volume for InMemoryVolume {
 
     fn read_range<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             if let Some(failure) = &self.read_range_failure {
                 return Err(failure.clone());
             }
@@ -807,7 +866,7 @@ impl Volume for InMemoryVolume {
     /// write land on a name it should have staged away from.
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,
@@ -817,6 +876,8 @@ impl Volume for InMemoryVolume {
             return Box::pin(async { Err(VolumeError::NotSupported) });
         };
         Box::pin(async move {
+            let dest_std = dest.as_std_legacy();
+            let dest: &Path = &dest_std;
             let result: Result<StreamWritten, VolumeError> = async {
                 // What it keeps: of the flags only `staged_flags`, the ones a real
                 // destination puts on the staged temp; the copy puts the rest on
@@ -889,7 +950,7 @@ impl Volume for InMemoryVolume {
     /// (`carry_on.rs`).
     fn continue_write_from_stream<'a>(
         &'a self,
-        target: &'a Path,
+        target: &'a AppPath,
         at: u64,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
@@ -915,9 +976,11 @@ impl Volume for InMemoryVolume {
     /// holding `path`, else the volume's own figure.
     fn get_space_info_at<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let normalized = self.normalize(path);
             self.space_info_under
                 .iter()
@@ -931,8 +994,10 @@ impl Volume for InMemoryVolume {
 
     /// The deepest [`with_write_access_under`](Self::with_write_access_under)
     /// subtree holding `path`, else `Unknown`.
-    fn write_access_at<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = WriteAccess> + Send + 'a>> {
+    fn write_access_at<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = WriteAccess> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let normalized = self.normalize(path);
             self.write_access_under
                 .iter()
@@ -953,10 +1018,14 @@ impl Volume for InMemoryVolume {
     fn notify_mutation<'a>(
         &'a self,
         _volume_id: &'a str,
-        parent_path: &'a Path,
+        parent_path: &'a AppPath,
         mutation: crate::volume::MutationEvent,
     ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
-        Box::pin(async move { self.patch_reported(parent_path, mutation).await })
+        Box::pin(async move {
+            let parent_path_std = parent_path.as_std_legacy();
+            let parent_path: &Path = &parent_path_std;
+            self.patch_reported(parent_path, mutation).await
+        })
     }
 
     fn supports_local_fs_access(&self) -> bool {
@@ -986,7 +1055,7 @@ impl Volume for InMemoryVolume {
     fn scan_for_conflicts<'a>(
         &'a self,
         source_items: &'a [SourceItemInfo],
-        dest_path: &'a Path,
+        dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             let dest_entries = self.list_directory(dest_path, None).await?;

@@ -9,6 +9,7 @@
 // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 #![cfg(test)]
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -203,7 +204,7 @@ async fn a_new_backup_during_a_read_under_latest_leaves_latest_alone() {
 
     let view = repo.view().await;
     let mut reading = view
-        .open_read_stream(&repo.latest_file)
+        .open_read_stream(&AppPath::legacy_unchecked(&repo.latest_file))
         .await
         .expect("the copy opens the file under `latest`");
     let first = reading.next_chunk().await;

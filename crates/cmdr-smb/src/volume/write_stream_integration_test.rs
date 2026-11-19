@@ -19,6 +19,8 @@
 
 use super::test_support::*;
 use super::*;
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::InMemoryVolume;
 use cmdr_fs::volume::WriteMode;
 use cmdr_fs::volume::{StreamLength, StreamWriteProgress};
@@ -30,18 +32,20 @@ async fn smb_integration_write_from_stream() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     // Create a source via InMemoryVolume
     let source = InMemoryVolume::new("Source");
     let data: Vec<u8> = (0..=255).cycle().take(50_000).collect();
-    source.create_file(Path::new("/payload.bin"), &data).await.unwrap();
+    source.create_file(app_path!("/payload.bin"), &data).await.unwrap();
 
-    let stream = source.open_read_stream(Path::new("/payload.bin")).await.unwrap();
+    let stream = source.open_read_stream(app_path!("/payload.bin")).await.unwrap();
     let no_progress = &|_: StreamWriteProgress| std::ops::ControlFlow::Continue(());
     let bytes = vol
         .write_from_stream(
-            Path::new(&format!("{}/payload.bin", dir)),
+            &AppPath::legacy_unchecked(Path::new(&format!("{}/payload.bin", dir))),
             WriteMode::CreateOrReplace,
             StreamLength::Known(50_000),
             stream,
@@ -53,7 +57,7 @@ async fn smb_integration_write_from_stream() {
 
     // Read back and verify content integrity
     let mut verify = vol
-        .open_read_stream(Path::new(&format!("{}/payload.bin", dir)))
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&format!("{}/payload.bin", dir))))
         .await
         .unwrap();
     let mut readback = Vec::new();
@@ -71,21 +75,23 @@ async fn smb_integration_write_from_stream_with_progress() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     let source = InMemoryVolume::new("Source");
     let data = vec![0xCD; 200_000]; // ~200 KB
-    source.create_file(Path::new("/big.bin"), &data).await.unwrap();
+    source.create_file(app_path!("/big.bin"), &data).await.unwrap();
 
     use std::sync::atomic::{AtomicU64, AtomicUsize};
 
     let progress_calls = AtomicUsize::new(0);
     let last_bytes = AtomicU64::new(0);
 
-    let stream = source.open_read_stream(Path::new("/big.bin")).await.unwrap();
+    let stream = source.open_read_stream(app_path!("/big.bin")).await.unwrap();
     let bytes = vol
         .write_from_stream(
-            Path::new(&format!("{}/big.bin", dir)),
+            &AppPath::legacy_unchecked(Path::new(&format!("{}/big.bin", dir))),
             WriteMode::CreateOrReplace,
             StreamLength::Known(200_000),
             stream,
@@ -111,7 +117,7 @@ async fn smb_integration_write_from_stream_with_progress() {
     // and final bytes_done == 200_000" assertions; hash the destination
     // against the source to catch that.
     let mut verify = vol
-        .open_read_stream(Path::new(&format!("{}/big.bin", dir)))
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&format!("{}/big.bin", dir))))
         .await
         .unwrap();
     let mut readback = Vec::with_capacity(200_000);
@@ -129,17 +135,19 @@ async fn smb_integration_write_from_stream_cancel() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     let source = InMemoryVolume::new("Source");
     let data = vec![0xEF; 500_000]; // ~500 KB, several chunks
-    source.create_file(Path::new("/big.bin"), &data).await.unwrap();
+    source.create_file(app_path!("/big.bin"), &data).await.unwrap();
 
     let call_count = AtomicUsize::new(0);
-    let stream = source.open_read_stream(Path::new("/big.bin")).await.unwrap();
+    let stream = source.open_read_stream(app_path!("/big.bin")).await.unwrap();
     let result = vol
         .write_from_stream(
-            Path::new(&format!("{}/big.bin", dir)),
+            &AppPath::legacy_unchecked(Path::new(&format!("{}/big.bin", dir))),
             WriteMode::CreateOrReplace,
             StreamLength::Known(500_000),
             stream,
@@ -169,19 +177,22 @@ async fn smb_integration_cross_volume_streaming_copy() {
     let smb_vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&smb_vol, &dir).await;
-    smb_vol.create_directory(Path::new(&dir)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     let source = InMemoryVolume::new("Source");
     let data: Vec<u8> = (0..=255).cycle().take(100_000).collect();
-    source.create_file(Path::new("/photo.bin"), &data).await.unwrap();
+    source.create_file(app_path!("/photo.bin"), &data).await.unwrap();
 
     let progress_calls = AtomicUsize::new(0);
 
     // Read from InMemory, write to SMB (the same path copy_single_path takes)
-    let stream = source.open_read_stream(Path::new("/photo.bin")).await.unwrap();
+    let stream = source.open_read_stream(app_path!("/photo.bin")).await.unwrap();
     let bytes = smb_vol
         .write_from_stream(
-            Path::new(&format!("{}/photo.bin", dir)),
+            &AppPath::legacy_unchecked(Path::new(&format!("{}/photo.bin", dir))),
             WriteMode::CreateOrReplace,
             StreamLength::Known(100_000),
             stream,
@@ -198,7 +209,7 @@ async fn smb_integration_cross_volume_streaming_copy() {
 
     // Verify content via read back
     let mut verify = smb_vol
-        .open_read_stream(Path::new(&format!("{}/photo.bin", dir)))
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&format!("{}/photo.bin", dir))))
         .await
         .unwrap();
     let mut readback = Vec::new();
@@ -221,22 +232,24 @@ async fn smb_integration_write_from_stream_streams_large_file() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     let size: usize = 4 * 1024 * 1024; // 4 MB
     let data: Vec<u8> = (0..size).map(|i| ((i * 11) % 251) as u8).collect();
 
     let source = InMemoryVolume::new("Source");
-    source.create_file(Path::new("/big-stream.bin"), &data).await.unwrap();
+    source.create_file(app_path!("/big-stream.bin"), &data).await.unwrap();
 
     let smb_path = format!("{}/big-stream.bin", dir);
     let progress_calls = AtomicUsize::new(0);
     let last_bytes = AtomicU64::new(0);
 
-    let stream = source.open_read_stream(Path::new("/big-stream.bin")).await.unwrap();
+    let stream = source.open_read_stream(app_path!("/big-stream.bin")).await.unwrap();
     let bytes = vol
         .write_from_stream(
-            Path::new(&smb_path),
+            &AppPath::legacy_unchecked(Path::new(&smb_path)),
             WriteMode::CreateOrReplace,
             StreamLength::Known(size as u64),
             stream,
@@ -282,21 +295,23 @@ async fn smb_integration_write_from_stream_cancel_mid_write() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     let size = 4 * 1024 * 1024; // 4 MB, several write chunks
     let data = vec![0xC3u8; size];
 
     let source = InMemoryVolume::new("Source");
-    source.create_file(Path::new("/cancel-me.bin"), &data).await.unwrap();
+    source.create_file(app_path!("/cancel-me.bin"), &data).await.unwrap();
 
     let smb_path = format!("{}/cancel-me.bin", dir);
     let call_count = AtomicUsize::new(0);
 
-    let stream = source.open_read_stream(Path::new("/cancel-me.bin")).await.unwrap();
+    let stream = source.open_read_stream(app_path!("/cancel-me.bin")).await.unwrap();
     let result = vol
         .write_from_stream(
-            Path::new(&smb_path),
+            &AppPath::legacy_unchecked(Path::new(&smb_path)),
             WriteMode::CreateOrReplace,
             StreamLength::Known(size as u64),
             stream,
@@ -317,7 +332,10 @@ async fn smb_integration_write_from_stream_cancel_mid_write() {
     );
 
     // The session must still work after cancel.
-    let _ = vol.list_directory(Path::new(&dir), None).await.unwrap();
+    let _ = vol
+        .list_directory(&AppPath::legacy_unchecked(Path::new(&dir)), None)
+        .await
+        .unwrap();
 
     ensure_clean(&vol, &dir).await;
 }
@@ -375,7 +393,9 @@ async fn smb_integration_write_from_stream_source_error_deletes_partial() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     // `size` larger than any plausible max_write_size forces the streaming
     // writer path (not the compound fast-path), so the writer is genuinely
@@ -393,7 +413,7 @@ async fn smb_integration_write_from_stream_source_error_deletes_partial() {
     let smb_path = format!("{}/partial-on-error.bin", dir);
     let result = vol
         .write_from_stream(
-            Path::new(&smb_path),
+            &AppPath::legacy_unchecked(Path::new(&smb_path)),
             WriteMode::CreateOrReplace,
             StreamLength::Known(size),
             Box::new(stream),
@@ -409,12 +429,15 @@ async fn smb_integration_write_from_stream_source_error_deletes_partial() {
 
     // The partial must be gone: cleanup deleted it on a fresh session.
     assert!(
-        !vol.exists(Path::new(&smb_path)).await,
+        !vol.exists(&AppPath::legacy_unchecked(Path::new(&smb_path))).await,
         "partial file was left at the destination after a source-read error"
     );
 
     // The session must still be usable for subsequent ops.
-    let _ = vol.list_directory(Path::new(&dir), None).await.unwrap();
+    let _ = vol
+        .list_directory(&AppPath::legacy_unchecked(Path::new(&dir)), None)
+        .await
+        .unwrap();
 
     ensure_clean(&vol, &dir).await;
 }
@@ -466,7 +489,9 @@ async fn smb_integration_a_single_shot_source_that_breaks_its_length_creates_not
     let max_write = vol.negotiated_max_write().await.expect("negotiated params");
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     let declared = 1_000u64;
     assert!(
@@ -478,7 +503,7 @@ async fn smb_integration_a_single_shot_source_that_breaks_its_length_creates_not
         let path = format!("{dir}/{label}.log");
         let result = vol
             .write_from_stream(
-                Path::new(&path),
+                &AppPath::legacy_unchecked(Path::new(&path)),
                 WriteMode::CreateNew,
                 StreamLength::Known(declared),
                 Box::new(MisdeclaredStream {
@@ -495,7 +520,7 @@ async fn smb_integration_a_single_shot_source_that_breaks_its_length_creates_not
             "{label}: a source that broke its declared length fails the write; got {result:?}"
         );
         assert!(
-            !vol.exists(Path::new(&path)).await,
+            !vol.exists(&AppPath::legacy_unchecked(Path::new(&path))).await,
             "{label}: nothing may be created at the real name"
         );
     }
@@ -524,7 +549,9 @@ async fn smb_integration_write_progress_reports_confirmed_bytes_not_queued_ones(
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     // MUST exceed the negotiated `max_write`, or the write is single-shot and
     // takes the compound fast-path, which buffers the source in memory and never
@@ -543,14 +570,14 @@ async fn smb_integration_write_progress_reports_confirmed_bytes_not_queued_ones(
 
     let source = InMemoryVolume::new("Source");
     let data = vec![0x5A; size as usize];
-    source.create_file(Path::new("/pipelined.bin"), &data).await.unwrap();
+    source.create_file(app_path!("/pipelined.bin"), &data).await.unwrap();
 
     let reported = std::sync::Mutex::new(Vec::<u64>::new());
 
-    let stream = source.open_read_stream(Path::new("/pipelined.bin")).await.unwrap();
+    let stream = source.open_read_stream(app_path!("/pipelined.bin")).await.unwrap();
     let bytes = vol
         .write_from_stream(
-            Path::new(&format!("{}/pipelined.bin", dir)),
+            &AppPath::legacy_unchecked(Path::new(&format!("{}/pipelined.bin", dir))),
             WriteMode::CreateOrReplace,
             StreamLength::Known(size),
             stream,

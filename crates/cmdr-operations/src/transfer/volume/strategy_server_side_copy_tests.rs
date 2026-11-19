@@ -21,6 +21,7 @@
 //!   at the final name.
 //! - A pause lands at the backend's checkpoint.
 
+use cmdr_fs::app_path;
 use std::ops::ControlFlow;
 use std::path::Path;
 use std::pin::Pin;
@@ -114,7 +115,7 @@ impl Volume for ServerCopyVolume {
 
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
@@ -130,12 +131,15 @@ impl Volume for ServerCopyVolume {
 
     fn copy_within<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         on_progress: &'a (dyn Fn(u64, u64) -> ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<u64, VolumeError>> + Send + 'a>> {
         self.copies.fetch_add(1, Ordering::SeqCst);
         Box::pin(async move {
+            let to_app = to;
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
             if !self.can_copy_itself {
                 return Err(VolumeError::NotSupported);
             }
@@ -148,7 +152,7 @@ impl Volume for ServerCopyVolume {
             }
             self.inner
                 .write_from_stream(
-                    to,
+                    to_app,
                     WriteMode::CreateOrReplace,
                     StreamLength::Known(size),
                     stream,
@@ -190,7 +194,10 @@ async fn a_copy_inside_one_volume_lets_the_server_do_it() {
     let volume = ServerCopyVolume::new("nas", true);
     volume
         .inner
-        .create_file(Path::new("holiday.mov"), b"a whole lot of bytes")
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new("holiday.mov")),
+            b"a whole lot of bytes",
+        )
         .await
         .unwrap();
     let as_volume: Arc<dyn Volume> = volume.clone();
@@ -207,7 +214,12 @@ async fn a_copy_inside_one_volume_lets_the_server_do_it() {
         0,
         "❗ and nothing was streamed through Cmdr: that IS the whole win"
     );
-    assert!(volume.inner.exists(Path::new("holiday copy.mov")).await);
+    assert!(
+        volume
+            .inner
+            .exists(&AppPath::legacy_unchecked(Path::new("holiday copy.mov")))
+            .await
+    );
 }
 
 /// ❗ Two different volumes are never eligible, whatever either can do alone.
@@ -222,7 +234,7 @@ async fn a_copy_between_two_volumes_never_asks_for_a_server_side_one() {
     let dest = ServerCopyVolume::new("nas-b", true);
     source
         .inner
-        .create_file(Path::new("report.pdf"), b"pages")
+        .create_file(&AppPath::legacy_unchecked(Path::new("report.pdf")), b"pages")
         .await
         .unwrap();
     let source_volume: Arc<dyn Volume> = source.clone();
@@ -236,7 +248,11 @@ async fn a_copy_between_two_volumes_never_asks_for_a_server_side_one() {
     assert_eq!(bytes, 5);
     assert_eq!(source.copies() + dest.copies(), 0, "neither side was asked");
     assert_eq!(dest.streamed(), 1, "the bytes went the ordinary way");
-    assert!(dest.inner.exists(Path::new("report.pdf")).await);
+    assert!(
+        dest.inner
+            .exists(&AppPath::legacy_unchecked(Path::new("report.pdf")))
+            .await
+    );
 }
 
 /// A server that lacks the extension still copies, the ordinary way.
@@ -248,7 +264,11 @@ async fn a_copy_between_two_volumes_never_asks_for_a_server_side_one() {
 async fn a_server_that_cannot_copy_for_itself_falls_back_to_streaming() {
     let engine = TestOperations::new();
     let volume = ServerCopyVolume::new("old-nas", false);
-    volume.inner.create_file(Path::new("notes.txt"), b"kept").await.unwrap();
+    volume
+        .inner
+        .create_file(&AppPath::legacy_unchecked(Path::new("notes.txt")), b"kept")
+        .await
+        .unwrap();
     let as_volume: Arc<dyn Volume> = volume.clone();
     let state = make_state(&engine);
 
@@ -259,7 +279,12 @@ async fn a_server_that_cannot_copy_for_itself_falls_back_to_streaming() {
     assert_eq!(bytes, 4);
     assert_eq!(volume.copies(), 1, "it was asked");
     assert_eq!(volume.streamed(), 1, "said no, and the bytes went the ordinary way");
-    assert!(volume.inner.exists(Path::new("notes copy.txt")).await);
+    assert!(
+        volume
+            .inner
+            .exists(&AppPath::legacy_unchecked(Path::new("notes copy.txt")))
+            .await
+    );
 }
 
 /// ❗ A copy onto a name that already holds a file stages, exactly as a streamed
@@ -272,13 +297,21 @@ async fn a_server_that_cannot_copy_for_itself_falls_back_to_streaming() {
 async fn a_server_side_copy_lands_on_a_temp_and_leaves_none_behind() {
     let engine = TestOperations::new();
     let volume = ServerCopyVolume::new("nas", true);
-    volume.inner.create_file(Path::new("a.txt"), b"fresh").await.unwrap();
+    volume
+        .inner
+        .create_file(&AppPath::legacy_unchecked(Path::new("a.txt")), b"fresh")
+        .await
+        .unwrap();
     let as_volume: Arc<dyn Volume> = volume.clone();
     let state = make_state(&engine);
 
     pipe(&as_volume, &as_volume, &state, "a.txt", "b.txt").await.unwrap();
 
-    let entries = volume.inner.list_directory(Path::new(""), None).await.unwrap();
+    let entries = volume
+        .inner
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
     let leftovers: Vec<&FileEntry> = entries.iter().filter(|e| e.name.contains(".cmdr-tmp-")).collect();
     assert!(
         leftovers.is_empty(),
@@ -295,7 +328,7 @@ async fn a_cancelled_server_side_copy_leaves_no_destination_behind() {
     let volume = ServerCopyVolume::new("nas", true);
     volume
         .inner
-        .create_file(Path::new("big.bin"), b"0123456789")
+        .create_file(&AppPath::legacy_unchecked(Path::new("big.bin")), b"0123456789")
         .await
         .unwrap();
     let as_volume: Arc<dyn Volume> = volume.clone();
@@ -325,7 +358,10 @@ async fn a_cancelled_server_side_copy_leaves_no_destination_behind() {
         "a cancel is a cancel, not a fallback to the slow path: {outcome:?}"
     );
     assert!(
-        !volume.inner.exists(Path::new("big copy.bin")).await,
+        !volume
+            .inner
+            .exists(&AppPath::legacy_unchecked(Path::new("big copy.bin")))
+            .await,
         "and nothing wearing the user's chosen name survives it"
     );
 }
@@ -406,7 +442,7 @@ impl Volume for StorePlace {
 
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
@@ -423,12 +459,15 @@ impl Volume for StorePlace {
     fn copy_on_server<'a>(
         &'a self,
         source: &'a dyn Volume,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         mode: WriteMode,
         progress: &'a dyn ServerCopyProgress,
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let to_app = to;
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
             let Some(peer) = self.same_account_peer(source) else {
                 return Err(VolumeError::NotSupported);
             };
@@ -440,7 +479,7 @@ impl Volume for StorePlace {
             let stream = peer.inner.open_read_stream(from).await?;
             let size = stream.total_size().known().expect("stored files have a known length");
             self.inner
-                .write_from_stream(to, mode, StreamLength::Known(size), stream, &|written| {
+                .write_from_stream(to_app, mode, StreamLength::Known(size), stream, &|written| {
                     progress.advanced(written.bytes_written, size)
                 })
                 .await
@@ -458,7 +497,7 @@ async fn a_copy_between_two_places_of_one_account_lets_the_server_do_it() {
     let dest = StorePlace::new("archive", "acct-1");
     source
         .inner
-        .create_file(Path::new("a.jpg"), b"jpeg bytes")
+        .create_file(&AppPath::legacy_unchecked(Path::new("a.jpg")), b"jpeg bytes")
         .await
         .unwrap();
     let source_volume: Arc<dyn Volume> = source.clone();
@@ -472,7 +511,7 @@ async fn a_copy_between_two_places_of_one_account_lets_the_server_do_it() {
     assert_eq!(bytes, 10);
     assert_eq!(dest.copies().len(), 1, "the server was asked");
     assert_eq!(dest.streamed.load(Ordering::SeqCst), 0, "and nothing streamed");
-    assert!(dest.inner.exists(Path::new("a.jpg")).await);
+    assert!(dest.inner.exists(&AppPath::legacy_unchecked(Path::new("a.jpg"))).await);
 }
 
 /// Another account's place is another server's namespace: streamed.
@@ -481,7 +520,11 @@ async fn a_copy_from_another_account_streams() {
     let engine = TestOperations::new();
     let source = StorePlace::new("theirs", "acct-1");
     let dest = StorePlace::new("ours", "acct-2");
-    source.inner.create_file(Path::new("a.jpg"), b"jpeg").await.unwrap();
+    source
+        .inner
+        .create_file(&AppPath::legacy_unchecked(Path::new("a.jpg")), b"jpeg")
+        .await
+        .unwrap();
     let source_volume: Arc<dyn Volume> = source.clone();
     let dest_volume: Arc<dyn Volume> = dest.clone();
     let state = make_state(&engine);
@@ -501,7 +544,11 @@ async fn a_copy_from_another_account_streams() {
 async fn a_whole_publishing_destination_copies_straight_to_the_final_name() {
     let engine = TestOperations::new();
     let place = StorePlace::new("bucket", "acct-1");
-    place.inner.create_file(Path::new("a.txt"), b"fresh").await.unwrap();
+    place
+        .inner
+        .create_file(&AppPath::legacy_unchecked(Path::new("a.txt")), b"fresh")
+        .await
+        .unwrap();
     let as_volume: Arc<dyn Volume> = place.clone();
     let state = make_state(&engine);
 
@@ -520,7 +567,11 @@ async fn a_whole_publishing_destination_copies_straight_to_the_final_name() {
 async fn a_paused_server_side_copy_parks_at_its_checkpoint() {
     let engine = TestOperations::new();
     let place = StorePlace::new("bucket", "acct-1");
-    place.inner.create_file(Path::new("a.bin"), b"0123").await.unwrap();
+    place
+        .inner
+        .create_file(&AppPath::legacy_unchecked(Path::new("a.bin")), b"0123")
+        .await
+        .unwrap();
     let as_volume: Arc<dyn Volume> = place.clone();
     let state = make_state(&engine);
     state.pause_gate.pause();
@@ -541,7 +592,7 @@ async fn a_paused_server_side_copy_parks_at_its_checkpoint() {
 
     state.pause_gate.resume();
     task.await.unwrap().unwrap();
-    assert!(place.inner.exists(Path::new("b.bin")).await);
+    assert!(place.inner.exists(&AppPath::legacy_unchecked(Path::new("b.bin"))).await);
 }
 
 /// An ordinary destination (a local disk, an SMB share) that counts every
@@ -601,7 +652,7 @@ impl Volume for PlainDest {
         true
     }
 
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.deletes.fetch_add(1, Ordering::SeqCst);
         self.inner.delete(path)
     }
@@ -609,8 +660,8 @@ impl Volume for PlainDest {
     fn copy_on_server<'a>(
         &'a self,
         source: &'a dyn Volume,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         mode: WriteMode,
         progress: &'a dyn ServerCopyProgress,
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
@@ -629,7 +680,10 @@ impl Volume for PlainDest {
 async fn a_destination_that_cannot_copy_from_the_source_stages_nothing_for_it() {
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("nas"));
-    source.create_file(Path::new("scan.pdf"), b"pages").await.unwrap();
+    source
+        .create_file(&AppPath::legacy_unchecked(Path::new("scan.pdf")), b"pages")
+        .await
+        .unwrap();
     let dest = PlainDest::new("mac");
     let source_volume: Arc<dyn Volume> = source;
     let dest_volume: Arc<dyn Volume> = dest.clone();
@@ -646,7 +700,11 @@ async fn a_destination_that_cannot_copy_from_the_source_stages_nothing_for_it() 
         0,
         "and no temp was staged for it, so none was deleted"
     );
-    assert!(dest.inner.exists(Path::new("scan.pdf")).await);
+    assert!(
+        dest.inner
+            .exists(&AppPath::legacy_unchecked(Path::new("scan.pdf")))
+            .await
+    );
 }
 
 /// A server-side copy reads as itself in the transfer probe, never as
@@ -658,7 +716,11 @@ async fn a_server_side_copy_names_its_own_phase_in_the_probe() {
     let engine = TestOperations::new();
 
     let place = StorePlace::new("bucket", "acct-1");
-    place.inner.create_file(Path::new("a.bin"), b"0123").await.unwrap();
+    place
+        .inner
+        .create_file(&AppPath::legacy_unchecked(Path::new("a.bin")), b"0123")
+        .await
+        .unwrap();
     let as_volume: Arc<dyn Volume> = place.clone();
     let guard = engine.register_state("server-copy-phase", make_state(&engine));
     let state = Arc::clone(guard.state());
@@ -708,7 +770,7 @@ async fn a_server_side_copy_whose_landing_reply_was_lost_lands_once() {
     let engine = TestOperations::new();
     let inner = Arc::new(InMemoryVolume::new("nas"));
     inner
-        .create_file(Path::new("/holiday.mov"), b"a whole lot of bytes")
+        .create_file(app_path!("/holiday.mov"), b"a whole lot of bytes")
         .await
         .unwrap();
     let nas = OutageVolume::wrap(Arc::clone(&inner), "server-copy-landing-lost");
@@ -744,7 +806,7 @@ async fn a_server_side_copy_whose_landing_reply_was_lost_lands_once() {
     assert_eq!(nas.server_copies(), 1, "the server copied it once");
     assert_eq!(nas.writes(), 0, "and nothing streamed it");
     let names: Vec<String> = inner
-        .list_directory(Path::new("/"), None)
+        .list_directory(app_path!("/"), None)
         .await
         .unwrap()
         .into_iter()
@@ -755,7 +817,7 @@ async fn a_server_side_copy_whose_landing_reply_was_lost_lands_once() {
         "no temp left: {names:?}"
     );
     assert_eq!(
-        inner.get_metadata(Path::new("/holiday copy.mov")).await.unwrap().size,
+        inner.get_metadata(app_path!("/holiday copy.mov")).await.unwrap().size,
         Some(20)
     );
 }
@@ -775,17 +837,20 @@ async fn a_folder_copied_on_the_server_counts_and_shows_every_file() {
     let volume = ServerCopyVolume::new("nas", true);
     volume
         .inner
-        .create_directory_all(Path::new("/Photos/Lisbon trip"))
+        .create_directory_all(app_path!("/Photos/Lisbon trip"))
         .await
         .unwrap();
     for n in 1..=5 {
         volume
             .inner
-            .create_file(Path::new(&format!("/Photos/Lisbon trip/{n}.jpg")), &[0xAB; 100])
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/Photos/Lisbon trip/{n}.jpg"))),
+                &[0xAB; 100],
+            )
             .await
             .unwrap();
     }
-    volume.inner.create_directory_all(Path::new("/Backup")).await.unwrap();
+    volume.inner.create_directory_all(app_path!("/Backup")).await.unwrap();
     let as_volume: Arc<dyn Volume> = volume.clone();
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);

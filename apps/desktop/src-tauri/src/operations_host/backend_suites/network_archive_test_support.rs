@@ -12,6 +12,7 @@
 //! scratch directory in, the directory gone afterwards, and the `#[tokio::test]`
 //! cells in the backend files the lane selects by name prefix.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::io::{Read as _, Write as _};
 use std::path::{Path, PathBuf};
@@ -82,7 +83,7 @@ async fn read_server_zip(remote: &dyn Volume, path: &Path) -> HashMap<String, Ve
 async fn seed_zip(remote: &dyn Volume, dir: &Path) -> PathBuf {
     let zip_path = dir.join("archive.zip");
     remote
-        .create_file(&zip_path, &two_entry_zip())
+        .create_file(&AppPath::legacy_unchecked(&zip_path), &two_entry_zip())
         .await
         .expect("seeding the zip on the server");
     zip_path
@@ -115,7 +116,7 @@ pub(super) async fn a_zip_on_the_server_browses_and_extracts(remote: Arc<dyn Vol
     ));
 
     let root: Vec<String> = archive
-        .list_directory(Path::new(""), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
         .await
         .expect("listing the zip's root")
         .into_iter()

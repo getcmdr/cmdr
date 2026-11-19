@@ -4,6 +4,7 @@
 //! the write must report the file it finished, ❌ never `Cancelled` over an
 //! object that's already replaced, and ❌ never remove it as a "cut-off" PUT.
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::ops::ControlFlow;
 use std::pin::Pin;
@@ -28,13 +29,19 @@ async fn write_cancelled_at_the_end(
     let length = source.total_size();
     let total = len as u64;
     volume
-        .write_from_stream(&volume.root().join(key), mode, length, Box::new(source), &|progress| {
-            if progress.bytes_written >= total {
-                ControlFlow::Break(())
-            } else {
-                ControlFlow::Continue(())
-            }
-        })
+        .write_from_stream(
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join(key)),
+            mode,
+            length,
+            Box::new(source),
+            &|progress| {
+                if progress.bytes_written >= total {
+                    ControlFlow::Break(())
+                } else {
+                    ControlFlow::Continue(())
+                }
+            },
+        )
         .await
         .map(|written| written.bytes)
 }
@@ -78,7 +85,7 @@ async fn a_cancel_before_the_last_piece_still_publishes_nothing() {
     let length = source.total_size();
     let outcome = volume
         .write_from_stream(
-            &volume.root().join("kept.bin"),
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("kept.bin")),
             WriteMode::CreateOrReplace,
             length,
             Box::new(source),
@@ -100,9 +107,13 @@ async fn a_cancel_before_the_last_piece_still_publishes_nothing() {
 async fn write_through(volume: &S3Volume, key: &str, mode: WriteMode, source: BytesSource) -> Result<u64, VolumeError> {
     let length = source.total_size();
     volume
-        .write_from_stream(&volume.root().join(key), mode, length, Box::new(source), &|_| {
-            ControlFlow::Continue(())
-        })
+        .write_from_stream(
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join(key)),
+            mode,
+            length,
+            Box::new(source),
+            &|_| ControlFlow::Continue(()),
+        )
         .await
         .map(|written| written.bytes)
 }
@@ -186,7 +197,7 @@ async fn a_truncated_body_a_server_kept_is_still_removed() {
     let length = source.total_size();
     let outcome = volume
         .write_from_stream(
-            &volume.root().join("cut.bin"),
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("cut.bin")),
             WriteMode::CreateNew,
             length,
             Box::new(source),
@@ -222,8 +233,8 @@ async fn copy_in_parts(s3: &FakeS3) -> Result<u64, VolumeError> {
     volume
         .copy_on_server(
             &volume,
-            &volume.root().join("source.bin"),
-            &volume.root().join("copy.bin"),
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("source.bin")),
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("copy.bin")),
             WriteMode::CreateNew,
             &Straight,
         )
