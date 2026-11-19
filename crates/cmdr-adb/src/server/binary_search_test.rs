@@ -12,6 +12,7 @@ fn env() -> SearchEnv {
         android_sdk_root: Some(PathBuf::from("/asr")),
         home: Some(PathBuf::from("/home/test_user_1")),
         local_app_data: Some(PathBuf::from("/lad")),
+        program_data: Some(PathBuf::from("/pd")),
     }
 }
 
@@ -55,9 +56,10 @@ fn linux_searches_android_studios_default_sdk_under_home() {
 }
 
 /// Windows names the binary `adb.exe` everywhere, and Android Studio puts its SDK under
-/// `%LOCALAPPDATA%`, not the home folder (#1108).
+/// `%LOCALAPPDATA%`, not the home folder (#1108). The package managers' folders come last, for an
+/// `adb` installed after Cmdr started.
 #[test]
-fn windows_searches_adb_exe_and_the_sdk_under_local_app_data() {
+fn windows_searches_adb_exe_the_sdk_under_local_app_data_and_the_package_managers() {
     assert_eq!(
         shown(candidates(&AdbSearch::WINDOWS, &env())),
         [
@@ -66,6 +68,9 @@ fn windows_searches_adb_exe_and_the_sdk_under_local_app_data() {
             "/ah/platform-tools/adb.exe",
             "/asr/platform-tools/adb.exe",
             "/lad/Android/Sdk/platform-tools/adb.exe",
+            "/lad/Microsoft/WinGet/Links/adb.exe",
+            "/home/test_user_1/scoop/shims/adb.exe",
+            "/pd/chocolatey/bin/adb.exe",
         ]
     );
 }
@@ -78,6 +83,7 @@ fn a_missing_variable_drops_only_its_own_candidates() {
         android_sdk_root: None,
         home: None,
         local_app_data: None,
+        program_data: None,
     };
     assert_eq!(shown(candidates(&AdbSearch::LINUX, &bare)), ["/usr/local/bin/adb"]);
     assert!(candidates(&AdbSearch::WINDOWS, &bare).is_empty());

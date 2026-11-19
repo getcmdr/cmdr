@@ -188,15 +188,17 @@ async fn start_server(binary: PathBuf, port: u16) -> bool {
         "adb server not running; starting it via {}",
         LogPrivate::file_path(&binary)
     );
-    let run = tokio::process::Command::new(&binary)
+    let mut command = tokio::process::Command::new(&binary);
+    command
         .arg("-P")
         .arg(port.to_string())
         .arg("start-server")
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::piped())
-        .kill_on_drop(true)
-        .output();
+        .kill_on_drop(true);
+    platform::start_quietly(&mut command);
+    let run = command.output();
     match tokio::time::timeout(START_SERVER_TIMEOUT, run).await {
         Ok(Ok(output)) if output.status.success() => {
             debug!("adb start-server succeeded");
