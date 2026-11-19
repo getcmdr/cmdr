@@ -1,6 +1,7 @@
 //! The operating system's proxy verdict for one URL, behind a per-OS seam (`platform/`). On
-//! macOS that's CFNetwork's answer; on Linux and Windows there's no system layer yet, and the
-//! environment variables are the whole configuration.
+//! macOS that's CFNetwork's answer; on Windows, the user's Internet settings walked the way
+//! WinINet walks them; on Linux there's no system layer, and the environment variables are the
+//! whole configuration.
 
 pub(crate) mod platform;
 

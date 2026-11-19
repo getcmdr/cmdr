@@ -59,6 +59,14 @@ pub(crate) fn warm_up(url: Url, env: Arc<crate::env::EnvProxies>) {
     pac::warm_up(url, env, route_with);
 }
 
+/// Never moves: CFNetwork's settings carry each network's own answer (WPAD's discovered PAC URL
+/// arrives as the PAC entry, part of every cached answer's key), so a network with another PAC
+/// stops matching the old answers on its own. One PAC URL every network serves keeps its answers
+/// up to `pac::ANSWER_TTL` (`DETAILS.md` § "Known limits").
+pub(crate) fn network_generation() -> u64 {
+    0
+}
+
 #[cfg(test)]
 #[path = "macos_test.rs"]
 mod tests;

@@ -59,21 +59,47 @@ proxy string, and its bypass list. Edge, Chrome, and WinINet read these. ❌ Not
 everything else on the desktop. `system/platform/ie_settings.rs` turns them into the same `Entry` list macOS's answer
 is, in WinINet's (and Chromium's) order, each the fallback for the one before:
 
-1. Auto-detect on → `Entry::AutoDetect`: WPAD, by DHCP then DNS (`WINHTTP_AUTOPROXY_AUTO_DETECT`).
+1. Auto-detect on (Windows' default) → `Entry::AutoDetect`: WPAD. The arm swaps it for the PAC URL discovery found on
+   this network, or drops it, before the walk (§ "WPAD on Windows").
 2. A setup script → `Entry::AutoConfigUrl`.
 3. A manual proxy → for the URL's scheme: its own `scheme=` entry (`ws`/`wss` read as `http`/`https`), else an entry
    with no `scheme=` (one proxy for every scheme), else the `socks=` one, else direct. An entry whose value carries
-   `socks…://` is a SOCKS proxy wherever it sits; ports default to 80 and 1080; `[v6]:port` keeps its host whole. A host
-   the bypass list matches goes direct: `;`- or space-separated patterns with `*` wildcards (`*.corp.test`, `10.*`),
-   optionally scoped to a `scheme://` or a `:port`, case-insensitive, and `<local>` for any dotless host name (never an
-   IP literal). `<-loopback>` and the rest of the `<…>` forms are skipped: loopback goes direct before the system is
-   asked.
+   `socks…://` is a SOCKS proxy and one carrying `https://` a TLS proxy (`Entry::Https`), wherever it sits, as Chromium
+   reads the same setting; ports default to 80, 443, and 1080; `[v6]:port` keeps its host whole. A host the bypass list
+   matches goes direct: `;`- or space-separated patterns with `*` wildcards (`*.corp.test`, `10.*`), optionally scoped
+   to a `scheme://` or a `:port`, case-insensitive, and `<local>` for any dotless host name (never an IP literal). An
+   IPv6 literal matches bare or bracketed, in any spelling of the same address (`[fd00::1]:8080` for a port).
+   `<-loopback>` and the rest of the `<…>` forms are skipped: loopback goes direct before the system is asked.
 
-No credentials ever come from Windows' settings: a proxy that answers 407 wants Windows' sign-in (NTLM or Negotiate),
-which reqwest doesn't speak, so Cmdr's requests fail there as they would through any non-Windows client. The read costs
+No credentials ever come from Windows' settings (§ "Known limits" for a proxy that wants a sign-in). The read costs
 under 2 ms (101 reads in 0.19 s on the 2-core builder, Windows 10 22H2, `windows_test.rs`, 2026-11-19), small beside a
-new connection's TCP and TLS, so it has no cache and a settings change applies to the next connection. With no WPAD
-server on the network, WinHTTP's discovery fails in about 70 ms there (same run).
+new connection's TCP and TLS, so it has no cache and a settings change applies to the next connection.
+
+### WPAD on Windows
+
+"Automatically detect settings" is on by default, so nearly every Windows user has WPAD in their list, unlike macOS,
+where discovery is off by default. Discovery (DHCP, then DNS for `wpad`, then fetching the script) can take seconds, or
+hang on a server that accepts and never answers, so it never runs on a request's thread (`system/platform/wpad.rs`, the
+Windows arm in `windows.rs`):
+
+- **Once per network, in the background.** The first ask on a network starts a `cmdr-http-wpad` thread:
+  `WinHttpDetectAutoProxyConfigUrl` finds the PAC URL, then one evaluation with the warm-up's budget fetches the script.
+  After that, WinHTTP's service holds the script, so each host's own evaluation is a cache-speed call. A URL that can't
+  be fetched or run counts as no WPAD. The launch warm-up (`warm_up_pac`) is the usual first ask.
+- **A bounded wait, no shared lock.** An ask waits for a discovery in flight at most `pac::TIMEOUT` (3 s), on a condvar
+  that holds nothing another host needs; past it, that request skips WPAD and walks on (setup script, manual proxy,
+  direct). Asks arriving together share the one discovery.
+- **"No WPAD" stands for `RETRY_AFTER` (60 s)**, then the next ask reruns discovery in the background without waiting
+  for it, so a WPAD server that came up late is found.
+- **A network change starts over.** `windows_network.rs` subscribes once to `NotifyUnicastIpAddressChange` (Windows
+  calls back on every address added or removed; nothing polls) and bumps `network_generation()`. WPAD's state and the
+  whole PAC answer cache (`OsPac`, keyed on that number) are dropped, and an answer worked out across a change is handed
+  to its asker but never cached. Before this, WPAD's cache key was the same on every network, so a laptop leaving the
+  office could keep dialing the office proxy for up to `ANSWER_TTL`. On macOS the number never moves (§ "Known limits").
+
+Measured on the 2-core builder (Windows 10 22H2, its real settings, no WPAD server on its network,
+`windows_test.rs::measure_launch_routing`, 2026-11-19): the before and after are in
+`docs/notes/windows-port/build-progress.md`, its task 46 review entry.
 
 ## SOCKS
 
@@ -83,9 +109,17 @@ answer with a `socks…://` URL. Sources:
 - **Env var**: any of the four SOCKS schemes, as typed (above).
 - **macOS "SOCKS proxy" setting**: CFNetwork lists it after an HTTP(S) proxy for the same scheme, so with both set,
   `https` goes to the HTTPS proxy and plain `http` (with no HTTP proxy) to SOCKS (`system_test.rs`).
-- **PAC**: CFNetwork's PAC parser knows `SOCKS host:port` (any case) and drops `SOCKS5` and `SOCKS4` from the list
-  entirely, as it does `HTTPS` (verified on macOS 27.0, `pac_test.rs::cfnetwork_drops_the_versioned_socks_keywords`,
-  2026-10-08). Cmdr only sees the parsed list, so it ignores those words exactly as Safari does.
+- **PAC on macOS**: CFNetwork's PAC parser knows `SOCKS host:port` (any case) and drops `SOCKS5` and `SOCKS4` from the
+  list entirely, as it does `HTTPS` (verified on macOS 27.0,
+  `pac_test.rs::cfnetwork_drops_the_versioned_socks_keywords`, 2026-10-08). Cmdr only sees the parsed list, so it
+  ignores those words exactly as Safari does.
+- **PAC on Windows**: WinHTTP's resolver reports every SOCKS keyword as its SOCKS scheme, a versioned one with the
+  version left in front of the host (`SOCKS5 s.test:1080` → host `"5 s.test"`), and `HTTPS host:port` as its HTTPS
+  scheme (verified on Windows 10 22H2, mami, `pac/platform/windows_test.rs`, 2026-11-19). `ie_settings::pac_proxy_entry`
+  reads them back: `SOCKS` and `SOCKS5` → `socks5h://`, `SOCKS4` → `socks4a://` (the proxy resolving names, for the
+  reason below), `HTTPS` → an `https://` proxy, spoken to over TLS
+  (`lib_test.rs::a_system_https_proxy_is_spoken_to_over_tls`). ❌ Never direct, never plain HTTP to a TLS port; anything
+  unreadable is `Entry::Unsupported`, skipped like FTP.
 
 **Decision: SOCKS5 with remote DNS (`socks5h`) for anything macOS hands over.** CFNetwork's SOCKS entry names no
 version, and macOS's own stack speaks SOCKS5 to it. Remote resolution because a network that forces traffic through
@@ -116,19 +150,24 @@ no cache.
 
 `pac/` is shared by macOS and Windows; only `pac/platform/`'s `execute` differs. On macOS,
 `CFNetworkExecuteProxyAutoConfigurationURL` (or `…Script` for an inline one) fetches the file itself and answers through
-a callback on a run loop. On Windows, `WinHttpGetProxyForUrl` runs a PAC URL or WPAD (in the WinHTTP Web Proxy
-Auto-Discovery service, which caches the script and discovery too), synchronously, first without the Windows sign-in and
-again with it only on `ERROR_WINHTTP_LOGIN_FAILURE`, as Microsoft advises; its `lpszProxy` answer is a `;`-separated
-`host:port` list, read by `ie_settings::proxy_list_entries`. reqwest's closure is synchronous, so `OsPac::evaluate`:
+a callback on a run loop. On Windows, WinHTTP's asynchronous resolver (`WinHttpGetProxyForUrlEx`) runs a PAC URL (in the
+WinHTTP Web Proxy Auto-Discovery service, which caches the script too), first without the Windows sign-in and again with
+it only on `ERROR_WINHTTP_LOGIN_FAILURE`, as Microsoft advises. It answers typed entries through a status callback
+(`pac/platform/windows.rs` routes each to its waiting thread by resolver handle), and closing the resolver cancels the
+evaluation at once. ❌ Not the older synchronous `WinHttpGetProxyForUrl`: it reported a PAC's `SOCKS` answer as "no
+proxy" (Cmdr would have gone direct) and dropped the trailing `DIRECT` (both verified on Windows 10 22H2, mami, a
+loopback PAC server, 2026-11-19). reqwest's closure is synchronous, so `OsPac::evaluate`:
 
 1. Checks the cache, keyed by the PAC source and `scheme://host[:port]` (reqwest never passes a path, so a rule on the
-   path sees `/`).
+   path sees `/`), and by the network (`system::platform::network_generation`, which only Windows moves: § "WPAD on
+   Windows").
 2. Takes the one evaluation turn, then checks again: a burst of first connections to one host (an S3 upload's parts)
    waits for one answer instead of running the PAC N times.
 3. Spawns `cmdr-http-pac`, a short-lived thread that runs the OS's `execute`. On macOS that adds the source to the
    thread's own run loop in a private mode and runs that mode until the callback fills a stack slot or `TIMEOUT` (3 s)
-   passes, then invalidates the source so the callback can't fire into a dead frame; on Windows it's one blocking call
-   on a session whose timeouts are `TIMEOUT`. The asking thread waits on a channel for at most `TIMEOUT` + 1 s.
+   passes, then invalidates the source so the callback can't fire into a dead frame; on Windows it waits for the
+   resolver's callback at most `TIMEOUT`, then closes the resolver, which cancels it (a PAC server that accepts and
+   stalls costs that budget and no more). The asking thread waits on a channel for at most `TIMEOUT` + 1 s.
 4. Caches the answer for 5 minutes, or a failure for 30 seconds (a dead PAC host costs one timeout per host per half
    minute), capped at 256 entries.
 
@@ -175,6 +214,22 @@ then, the worst case after such an event is one host going direct for `FAILURE_T
 ❗ The two `Execute…` functions are declared in `pac/platform/macos.rs` with raw pointers rather than taken from
 `objc2-cf-network` 0.3.2: its `CFProxyAutoConfigurationResultCallback` types the proxy list as `NonNull`, and CFNetwork
 passes null when the PAC fails, which would be undefined behavior in a `NonNull` parameter.
+
+## Known limits
+
+Decided, not missed:
+
+- **No failover when the chosen proxy is down.** `first_route` hands reqwest the first usable entry only, on every OS,
+  so with a PAC's `PROXY a; PROXY b; DIRECT` and `a` unreachable, the request fails where a browser would try `b`, then
+  direct. reqwest's `Proxy::custom` answers one proxy per connection, and retrying a request on another route belongs to
+  the caller, which can't tell a dead proxy from a dead origin.
+- **No proxy sign-in beyond Basic credentials in a URL.** A proxy that answers 407 wanting Windows' sign-in (NTLM or
+  Negotiate, common on corporate networks) refuses the tunnel: reqwest doesn't speak either, so the request fails at
+  once with reqwest's proxy error (no hang), as it would from any non-Windows client. Cmdr's license, update, telemetry,
+  and crash-report requests report that like any other unreachable server.
+- **macOS keeps a PAC answer up to `ANSWER_TTL` across a network change when every network serves the same PAC URL.**
+  Windows follows changes (§ "WPAD on Windows"); macOS's arm doesn't subscribe, since a network whose PAC differs
+  (CFNetwork's discovered URL is part of the key) already misses the old answers.
 
 ## Testing
 

@@ -31,13 +31,28 @@ pub(crate) enum Entry {
         port: u16,
         credentials: Option<(String, String)>,
     },
+    /// A proxy spoken to over TLS: a PAC's `HTTPS host:port`, which WinHTTP reports as such.
+    /// CFNetwork drops that answer, so only Windows' runner makes one.
+    #[allow(dead_code, reason = "only WinHTTP's PAC runner reports one; CFNetwork drops it")]
+    Https {
+        host: String,
+        port: u16,
+    },
+    /// A PAC's `SOCKS4 host:port`, which WinHTTP reports with its version.
+    #[allow(dead_code, reason = "only WinHTTP's PAC runner reports one; CFNetwork drops it")]
+    Socks4 {
+        host: String,
+        port: u16,
+    },
     /// A PAC file to evaluate for this URL.
     AutoConfigUrl(String),
     /// A PAC script given inline (`ProxyAutoConfigJavaScript`).
     #[allow(dead_code, reason = "only CFNetwork lists one; Windows' settings never do")]
     AutoConfigScript(String),
-    /// Auto proxy discovery (WPAD), which the OS runs itself: Windows' "Automatically detect
-    /// settings". macOS never lists one; it hands discovery's answer over as a PAC URL.
+    /// Auto proxy discovery (WPAD): Windows' "Automatically detect settings". The Windows arm
+    /// swaps it for the PAC URL discovery found (or drops it) before the walk, so the walk never
+    /// runs discovery on a request's thread. macOS never lists one; it hands discovery's answer
+    /// over as a PAC URL.
     #[allow(dead_code, reason = "only Windows' settings list one; CFNetwork never does")]
     AutoDetect,
     /// A proxy type Cmdr can't speak (FTP), named for the log.
@@ -50,8 +65,6 @@ pub(crate) enum Entry {
 pub(crate) enum PacSource {
     Url(String),
     Script(String),
-    /// Whatever PAC auto proxy discovery (WPAD, by DHCP then DNS) finds.
-    AutoDetect,
 }
 
 /// Runs a PAC script for one URL. `None` when it couldn't (unreachable, broken, too slow): the
@@ -68,7 +81,6 @@ pub(crate) fn first_route(entries: &[Entry], url: &Url, pac: &dyn Pac) -> Route 
         let source = match entry {
             Entry::AutoConfigUrl(pac_url) => PacSource::Url(pac_url.clone()),
             Entry::AutoConfigScript(script) => PacSource::Script(script.clone()),
-            Entry::AutoDetect => PacSource::AutoDetect,
             other => match usable(other) {
                 Some(route) => return route,
                 None => continue,
@@ -103,6 +115,11 @@ fn usable(entry: &Entry) -> Option<Route> {
             port,
             credentials,
         } => Some(Route::Proxy(proxy_url("socks5h", host, *port, credentials.as_ref()))),
+        // ❗ `https`: TLS to the proxy itself, ❌ never `http` to its TLS port, which would hand
+        // the request over in the clear (reqwest's `rustls` speaks it, `lib_test.rs`).
+        Entry::Https { host, port } => Some(Route::Proxy(proxy_url("https", host, *port, None))),
+        // `socks4a`: SOCKS4 with the proxy resolving the name, for the reason `socks5h` has.
+        Entry::Socks4 { host, port } => Some(Route::Proxy(proxy_url("socks4a", host, *port, None))),
         Entry::AutoConfigUrl(_) | Entry::AutoConfigScript(_) | Entry::AutoDetect => None,
         Entry::Unsupported(kind) => {
             log::debug!(target: "cmdr_http", "skipping a {kind} proxy: Cmdr speaks HTTP and SOCKS proxies only");

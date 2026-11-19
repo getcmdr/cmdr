@@ -35,8 +35,12 @@ The one door every Cmdr HTTP client is built through: `client_builder()` is `req
   callback type says the proxy list is non-null, and CFNetwork passes null on failure.
 - **Windows reads `WinHttpGetIEProxyConfigForCurrentUser`** (what Edge and Chrome read), ❌ never the machine-wide
   `netsh winhttp` proxy. WPAD, then the setup script, then the manual proxy, each the fallback for the one before.
+- ❗ **Windows WPAD (on by default) runs once per network in the background**, ❌ never on a request's thread; a request
+  waits at most 3 s, holding no shared lock. A network change drops it and every cached PAC answer.
+- ❗ **❌ Never the synchronous `WinHttpGetProxyForUrl`**: it reports a PAC's SOCKS as "no proxy" (direct). The async
+  resolver keeps SOCKS and `HTTPS` typed.
 - ❗ **A SOCKS proxy from macOS (the manual setting or a PAC) becomes `socks5h://`**: the proxy resolves names, as
   macOS's own stack does. An env var's `socks5://` (local DNS) vs `socks5h://` is kept as typed. FTP entries are
-  skipped. CFNetwork drops a PAC's `SOCKS5` / `SOCKS4` answers; only `SOCKS` reaches Cmdr.
+  skipped. CFNetwork drops a PAC's `SOCKS5` / `SOCKS4` answers; Windows keeps them, and `HTTPS` as a TLS proxy.
 
 Decision order, the CFNetwork answer's shape, PAC mechanics, and measurements: `DETAILS.md`.

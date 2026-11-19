@@ -52,10 +52,34 @@ type Key = (PacSource, String);
 /// An answer (`None` for a failure) and when it was had.
 type Cached = (Option<Vec<Entry>>, Instant);
 
-/// The OS's PAC evaluator with a per-host answer cache.
+/// The cached answers, all from one network.
+#[derive(Default)]
+struct Answers {
+    /// The network ([`OsPac::network`]) every entry was had on.
+    network: u64,
+    entries: HashMap<Key, Cached>,
+}
+
+impl Answers {
+    /// These answers, emptied first when the network moved on since they were had.
+    fn on(&mut self, network: u64) -> &mut HashMap<Key, Cached> {
+        if self.network != network {
+            self.network = network;
+            self.entries.clear();
+        }
+        &mut self.entries
+    }
+}
+
+/// The OS's PAC evaluator with a per-host answer cache, dropped whenever the network changes.
 pub(crate) struct OsPac {
     timeout: Duration,
-    cache: Mutex<HashMap<Key, Cached>>,
+    /// Which network this is: a number that moves on each change (Windows' change notification,
+    /// `system::platform`), so an answer from the network a laptop left is never reused. On macOS
+    /// it never moves: there a new network changes the settings themselves (the discovered PAC
+    /// URL, part of the key), so the old answers stop matching on their own.
+    network: fn() -> u64,
+    cache: Mutex<Answers>,
     /// One evaluation at a time: a burst of first connections to one host (an S3 upload's parts)
     /// waits for the first answer instead of running the same PAC N times.
     turn: Mutex<()>,
@@ -68,9 +92,15 @@ pub(crate) struct OsPac {
 
 impl OsPac {
     pub(crate) fn new(timeout: Duration) -> Self {
+        Self::on_network(timeout, crate::system::platform::network_generation)
+    }
+
+    /// [`OsPac::new`], telling networks apart by `network` (a test moves its own).
+    pub(crate) fn on_network(timeout: Duration, network: fn() -> u64) -> Self {
         Self {
             timeout,
-            cache: Mutex::new(HashMap::new()),
+            network,
+            cache: Mutex::new(Answers::default()),
             turn: Mutex::new(()),
             #[cfg(test)]
             evaluations: std::sync::atomic::AtomicUsize::new(0),
@@ -78,18 +108,25 @@ impl OsPac {
     }
 
     fn cached(&self, key: &Key) -> Option<Option<Vec<Entry>>> {
-        let cache = self.cache.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-        let (answer, at) = cache.get(key)?;
+        let network = (self.network)();
+        let mut cache = self.cache.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let (answer, at) = cache.on(network).get(key)?;
         let ttl = if answer.is_some() { ANSWER_TTL } else { FAILURE_TTL };
         (at.elapsed() < ttl).then(|| answer.clone())
     }
 
-    fn store(&self, key: Key, answer: Option<Vec<Entry>>) {
-        let mut cache = self.cache.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-        if cache.len() >= CACHE_CAP {
-            cache.clear();
+    /// Keeps `answer`, had on `network`, unless the network has moved on since it was asked.
+    fn store(&self, key: Key, answer: Option<Vec<Entry>>, network: u64) {
+        let now = (self.network)();
+        if now != network {
+            return;
         }
-        cache.insert(key, (answer, Instant::now()));
+        let mut cache = self.cache.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let entries = cache.on(now);
+        if entries.len() >= CACHE_CAP {
+            entries.clear();
+        }
+        entries.insert(key, (answer, Instant::now()));
     }
 
     /// This evaluator with its own cache and turn, but `budget` in place of its timeout for a
@@ -107,6 +144,7 @@ impl OsPac {
         if let Some(answer) = self.cached(&key) {
             return answer;
         }
+        let network = (self.network)();
         #[cfg(test)]
         self.evaluations.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         let answer = evaluate_on_own_thread(source.clone(), url.as_str().to_string(), timeout);
@@ -114,7 +152,7 @@ impl OsPac {
             // allowed-log-private: cmdr-http can't depend on cmdr-fs, and a keyed `host="…"` is redacted exactly
             log::warn!(target: "cmdr_http", "couldn't run the PAC file for host={:?}, so it goes direct", url.host_str().unwrap_or_default());
         }
-        self.store(key, answer.clone());
+        self.store(key, answer.clone(), network);
         answer
     }
 }

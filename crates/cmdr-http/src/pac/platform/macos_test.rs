@@ -68,13 +68,3 @@ fn a_broken_script_is_a_failure() {
     );
     assert_eq!(answer, None);
 }
-
-/// Nothing on a Mac produces a WPAD source (macOS hands discovery's answer over as a PAC URL),
-/// so its runner refuses one rather than guessing.
-#[test]
-fn auto_detect_has_no_runner_on_macos() {
-    assert_eq!(
-        super::execute(&PacSource::AutoDetect, "https://example.com", TIMEOUT),
-        None
-    );
-}

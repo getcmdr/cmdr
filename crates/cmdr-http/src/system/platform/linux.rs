@@ -13,3 +13,8 @@ pub(crate) fn route(_url: &Url) -> Route {
 }
 
 pub(crate) fn warm_up(_url: Url, _env: Arc<EnvProxies>) {}
+
+/// Nothing here is worked out per network, so there's nothing to tell apart.
+pub(crate) fn network_generation() -> u64 {
+    0
+}

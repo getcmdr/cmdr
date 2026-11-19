@@ -3,25 +3,23 @@
 
 use std::net::TcpListener;
 use std::sync::Arc;
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use super::test_server::{SCRIPT, pac_server, pac_server_after, url};
 use super::*;
 
-/// What the OS makes of [`SCRIPT`]'s `PROXY proxy.test:3128; DIRECT`. CFNetwork keeps the
-/// trailing `DIRECT`; WinHTTP drops it and answers `proxy.test:3128` alone (verified on Windows
-/// 10 22H2, build 19045, mami, 2026-11-19). Either walks to the same first route.
+/// What the OS makes of [`SCRIPT`]'s `PROXY proxy.test:3128; DIRECT`: the proxy, then direct.
+/// Both runners keep the trailing `DIRECT` (WinHTTP's `WinHttpGetProxyForUrlEx` does; its older
+/// `WinHttpGetProxyForUrl` dropped it: Windows 10 22H2, build 19045, mami, 2026-11-19).
 fn via_proxy() -> Vec<Entry> {
-    let proxy = Entry::Http {
-        host: "proxy.test".into(),
-        port: 3128,
-        credentials: None,
-    };
-    if cfg!(target_os = "windows") {
-        vec![proxy]
-    } else {
-        vec![proxy, Entry::Direct]
-    }
+    vec![
+        Entry::Http {
+            host: "proxy.test".into(),
+            port: 3128,
+            credentials: None,
+        },
+        Entry::Direct,
+    ]
 }
 
 #[test]
@@ -58,6 +56,62 @@ fn an_answer_is_cached_per_host() {
     assert_eq!(
         evaluator.evaluate(&source, &url("https://other.test")),
         Some(vec![Entry::Direct])
+    );
+    assert_eq!(evaluator.evaluations.load(Ordering::SeqCst), 2);
+}
+
+/// The network this test's evaluator lives on, moved by hand where Windows' change
+/// notification moves the real one.
+static TEST_NETWORK: AtomicU64 = AtomicU64::new(0);
+
+fn test_network() -> u64 {
+    TEST_NETWORK.load(Ordering::SeqCst)
+}
+
+/// A network change drops every cached answer, so a proxy the old network's PAC (or WPAD) named
+/// isn't dialed from the new one for the rest of [`ANSWER_TTL`].
+#[test]
+fn a_network_change_drops_the_cached_answers() {
+    let pac = pac_server(Some(SCRIPT));
+    let evaluator = OsPac::on_network(ANSWER_BUDGET, test_network);
+    let source = PacSource::Url(pac);
+    let ask = || evaluator.evaluate(&source, &url("https://example.com"));
+    assert_eq!(ask(), Some(via_proxy()));
+    assert_eq!(ask(), Some(via_proxy()));
+    assert_eq!(
+        evaluator.evaluations.load(Ordering::SeqCst),
+        1,
+        "the second ask is a cache hit"
+    );
+    TEST_NETWORK.fetch_add(1, Ordering::SeqCst);
+    assert_eq!(ask(), Some(via_proxy()));
+    assert_eq!(
+        evaluator.evaluations.load(Ordering::SeqCst),
+        2,
+        "the new network asks again"
+    );
+}
+
+/// An answer that was being worked out when the network changed belongs to the old network, so
+/// it's handed to its asker but never cached for the new one.
+#[test]
+fn an_answer_from_before_a_network_change_isnt_cached_for_the_new_one() {
+    static NETWORK: AtomicU64 = AtomicU64::new(0);
+    let pac = pac_server_after(Some(SCRIPT), SLOW_PAC);
+    let evaluator = Arc::new(OsPac::on_network(ANSWER_BUDGET, || NETWORK.load(Ordering::SeqCst)));
+    let source = PacSource::Url(pac);
+    let asking = {
+        let (evaluator, source) = (evaluator.clone(), source.clone());
+        std::thread::spawn(move || evaluator.evaluate(&source, &url("https://example.com")))
+    };
+    while evaluator.evaluations.load(Ordering::SeqCst) == 0 {
+        std::thread::yield_now();
+    }
+    NETWORK.fetch_add(1, Ordering::SeqCst);
+    assert_eq!(asking.join().expect("the asking thread"), Some(via_proxy()));
+    assert_eq!(
+        evaluator.evaluate(&source, &url("https://example.com")),
+        Some(via_proxy())
     );
     assert_eq!(evaluator.evaluations.load(Ordering::SeqCst), 2);
 }

@@ -14,8 +14,12 @@ const _: fn(&PacSource, &str, Duration) -> Option<Vec<Entry>> = execute;
 /// Runs the PAC `source` names for `url` on THIS thread, giving up after about `timeout`: the
 /// ordered list it answers, or `None` when it couldn't run (unreachable, broken, too slow, or a
 /// source this OS has no runner for).
-pub(super) use imp::execute;
+pub(crate) use imp::execute;
 
 /// Reads and frees a WinHTTP-allocated string, for the Windows system arm's settings read too.
 #[cfg(target_os = "windows")]
 pub(crate) use imp::take_global_string;
+
+/// WPAD's PAC URL on this network, for the Windows system arm's background discovery.
+#[cfg(target_os = "windows")]
+pub(crate) use imp::detect_pac_url;

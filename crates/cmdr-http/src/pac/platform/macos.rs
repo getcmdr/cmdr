@@ -19,8 +19,7 @@ use crate::entries::{Entry, PacSource};
 type Slot = RefCell<Option<Option<Vec<Entry>>>>;
 
 /// Runs the PAC on THIS thread's run loop, in a private mode so nothing else on it runs, until
-/// the callback fires or `timeout` passes. `AutoDetect` has no runner here: macOS hands WPAD's
-/// answer over as a PAC URL, so that source never comes from a Mac's settings.
+/// the callback fires or `timeout` passes.
 pub(crate) fn execute(source: &PacSource, url: &str, timeout: Duration) -> Option<Vec<Entry>> {
     let target = cf_url(url)?;
     let slot: Slot = RefCell::new(None);
@@ -44,7 +43,6 @@ pub(crate) fn execute(source: &PacSource, url: &str, timeout: Duration) -> Optio
             // SAFETY: as for the URL variant above, with a valid CFString script.
             unsafe { CFNetworkExecuteProxyAutoConfigurationScript(&*script, &*target, on_result, &mut context) }
         }
-        PacSource::AutoDetect => return None,
     };
     // SAFETY: `raw` comes from a CFNetwork `Execute…` call, which returns a +1 reference the
     // caller owns ("Create rule"), or null.

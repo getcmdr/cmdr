@@ -31,6 +31,7 @@ fn reading_the_settings_is_cheap_enough_to_do_per_connection() {
 /// measurement, not a check: run it by hand with `--ignored --nocapture` and compare commits.
 #[test]
 #[ignore = "a measurement for the builder, run by hand"]
+#[allow(clippy::print_stdout, reason = "a by-hand measurement prints its numbers")]
 fn measure_launch_routing() {
     let started = Instant::now();
     crate::warm_up_pac("https://api.getcmdr.com");

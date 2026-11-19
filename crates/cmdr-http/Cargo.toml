@@ -41,9 +41,17 @@ objc2-cf-network = { version = "0.3.2", default-features = false, features = ["s
 
 [target.'cfg(windows)'.dependencies]
 # What Windows itself decides for a URL: the current user's Internet settings and WinHTTP's
-# PAC and WPAD runner (`system/platform/windows.rs`, `pac/platform/windows.rs`). Already in
-# the graph through `tokio`, `mio`, and friends, at this version.
-windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Networking_WinHttp"] }
+# PAC and WPAD runner (`system/platform/windows.rs`, `pac/platform/windows.rs`), and the
+# network-change notification that keys their caches (`IpHelper`, whose address row needs
+# `Ndis` and `WinSock`: `system/platform/windows_network.rs`). Already in the graph through
+# `tokio`, `mio`, and friends, at this version.
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_Networking_WinHttp",
+  "Win32_NetworkManagement_IpHelper",
+  "Win32_NetworkManagement_Ndis",
+  "Win32_Networking_WinSock",
+] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "io-util"] }
