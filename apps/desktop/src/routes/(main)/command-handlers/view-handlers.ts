@@ -9,6 +9,8 @@ import { getSetting, setSetting } from '#lib/settings/index.js'
 import { TEXT_SIZE_RANGE } from '#lib/settings/definitions/appearance.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 import type { CommandArgs } from '#lib/commands/index.js'
+import { platformConventions } from '#lib/platform/index.js'
+import { menuBarShown } from '#lib/ui/command-menu/menu-layout.js'
 import { toggleFullScreen } from '../full-screen'
 import type { CommandHandlerRecord } from './types'
 
@@ -62,6 +64,13 @@ export const viewHandlers = {
 
   'view.toggleFullScreen': async () => {
     await toggleFullScreen()
+  },
+
+  // View > Show menu bar, the palette, or a key the user bound. Every window that draws the bar
+  // follows the setting live; the row's check follows through `settings-applier.ts`.
+  'view.toggleMenuBar': () => {
+    const shown = menuBarShown(getSetting('appearance.menuBar'), platformConventions())
+    setSetting('appearance.menuBar', shown ? 'hidden' : 'shown')
   },
 
   'view.briefMode': ({ explorerRef }) => {

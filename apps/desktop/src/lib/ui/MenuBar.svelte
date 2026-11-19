@@ -9,7 +9,7 @@
      */
     import { untrack } from 'svelte'
     import { dependOn } from '#lib/utils/reactivity.js'
-    import type { BarMenuView } from '#lib/ipc/bindings.js'
+    import type { BarMenuView, BarPickVia } from '#lib/ipc/bindings.js'
     import type { CommandScope } from '#lib/commands/types.js'
     import { convention } from '#lib/platform/conventions.js'
     import { reservedAccessKeys } from './access-keys'
@@ -21,8 +21,11 @@
     interface Props {
         /** The bar's menus, as the backend answers them (`get_menu_bar`), kept live by the caller. */
         menus: readonly BarMenuView[]
-        /** A row was picked, by menu id. Focus is already back where it was. */
-        onPick: (menuId: string) => void
+        /**
+         * A row was picked, by menu id, and `via` a pointer click or a key (the bar's Enter, Space,
+         * or a row's letter). Focus is already back where it was.
+         */
+        onPick: (menuId: string, via: BarPickVia) => void
         ariaLabel: string
         /** How it behaves. Defaults to this platform's: `mac` where the OS owns the bar, else `desktop`. */
         flavor?: MenuFlavor
@@ -35,6 +38,12 @@
          * window. Leave it on for a window's one bar; a second bar on the same page turns it off.
          */
         takesWindowKeys?: boolean
+        /**
+         * The bar is hidden and shows only while it has the keyboard: a tap of Alt or F10 shows it,
+         * Alt plus a title's letter opens that menu, and it hides again as focus leaves (Windows,
+         * with "Show menu bar" off; `command-menu/menu-layout.ts`'s `barOnAlt`).
+         */
+        revealOnly?: boolean
         /** Extra classes on the bar and its menus: a look of its own (the demo's macOS bar). */
         class?: string
         /**
@@ -52,6 +61,7 @@
         keyScope,
         inert = false,
         takesWindowKeys = true,
+        revealOnly = false,
         class: lookClass = '',
         onFocusOrigin,
     }: Props = $props()
@@ -70,14 +80,15 @@
 
     const bar = createMenuBar({
         getMenus: () => menus,
-        onPick: (menuId) => {
-            onPick(menuId)
+        onPick: (menuId, via) => {
+            onPick(menuId, via)
         },
         flavor: () => flavor,
         accessKeys: () => convention('accessKeys') !== 'none',
         reservedLetters: () => reservedAccessKeys(keyScope),
         isInert: () => isInert,
         takesWindowKeys: () => takesWindowKeys,
+        revealOnly: () => revealOnly,
         barElement: () => barElement,
         titleElement: (index) => titleElements[index],
     })
@@ -147,6 +158,7 @@
     class="menu-bar {lookClass}"
     class:mac={flavor === 'mac'}
     class:cues-shown={bar.cuesShown}
+    class:collapsed={revealOnly && !bar.active}
     role="menubar"
     aria-label={ariaLabel}
     inert={isInert}
@@ -200,6 +212,11 @@
         user-select: none;
         -webkit-user-select: none;
         cursor: default;
+    }
+
+    /* A hidden bar waiting for Alt or F10: out of the layout and the accessibility tree. */
+    .menu-bar.collapsed {
+        display: none;
     }
 
     /* Contrast themes: on the Windows look the tokens already speak system colors, so the browser

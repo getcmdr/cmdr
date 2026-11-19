@@ -184,8 +184,9 @@ pub fn open_context_menu_in_page(window: Window<tauri::Wry>, request: InPageCont
 #[specta::specta]
 pub fn pick_context_menu_item(
     app: AppHandle,
+    window: tauri::WebviewWindow,
     token: u32,
     menu_id: String,
 ) -> crate::menu::page_context::ContextPickOutcome {
-    crate::menu::page_context::pick(&app, token, &menu_id)
+    crate::menu::page_context::pick(&app, token, &menu_id, window.label())
 }

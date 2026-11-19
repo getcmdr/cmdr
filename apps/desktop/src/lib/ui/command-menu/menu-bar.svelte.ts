@@ -16,7 +16,8 @@
  * has the keyboard, never the panes behind it. Mechanics: `../DETAILS.md` § Command menus.
  */
 
-import type { BarMenuView } from '#lib/ipc/bindings.js'
+import { flushSync } from 'svelte'
+import type { BarMenuView, BarPickVia } from '#lib/ipc/bindings.js'
 import { allocateAccessKeys, accessKeyLettersOf } from '../access-keys'
 import { captureFocusOrigin, focusHome, isInFocusHome, restoreFocus, type FocusOrigin } from '../focus-restore'
 import { createKeyboardCues, cueRule, type KeyboardCues } from '../keyboard-cues'
@@ -27,8 +28,11 @@ import { rowLabelText, type MenuFlavor } from './rows'
 
 export interface MenuBarDeps {
   getMenus: () => readonly BarMenuView[]
-  /** A row was picked: its menu id. Focus is already back where it was. */
-  onPick: (menuId: string) => void
+  /**
+   * A row was picked: its menu id, and whether a pointer click (`click`) or a key (`key`: the
+   * bar's own Enter, Space, or letter) picked it. Focus is already back where it was.
+   */
+  onPick: (menuId: string, via: BarPickVia) => void
   flavor: () => MenuFlavor
   /** Whether this platform has access keys (`convention('accessKeys')`). */
   accessKeys: () => boolean
@@ -42,6 +46,12 @@ export interface MenuBarDeps {
    * its own keys once a click hands it the keyboard.
    */
   takesWindowKeys: () => boolean
+  /**
+   * Whether the bar is drawn only while it has the keyboard (a hidden bar Alt or F10 shows, on
+   * Windows): its titles appear as it takes the keyboard, so a menu placed right then needs them
+   * laid out first.
+   */
+  revealOnly?: () => boolean
   /** The bar's element, and a title's, for containment and placement. */
   barElement: () => HTMLElement | undefined
   titleElement: (index: number) => HTMLElement | undefined
@@ -128,9 +138,9 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
   const stack = createMenuStack({
     flavor: deps.flavor,
     accessKeys: hasLetters,
-    onPick: (row) => {
+    onPick: (row, via) => {
       deactivate(true)
-      deps.onPick(row.id)
+      deps.onPick(row.id, via)
     },
   })
 
@@ -200,6 +210,8 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
   }
 
   function openMenu(index: number, fromKeyboard: boolean, fromEnd = false): void {
+    // A bar that only now appears (`revealOnly`) has no layout until Svelte draws it.
+    if (deps.revealOnly?.()) flushSync()
     const menu = deps.getMenus().at(wrap(index))
     const title = deps.titleElement(wrap(index))
     const bar = deps.barElement()

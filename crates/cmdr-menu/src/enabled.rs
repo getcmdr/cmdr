@@ -103,6 +103,7 @@ pub fn entry_enabled(entry: &EntryKind, inputs: &MenuItemInputs) -> Option<bool>
             CheckRole::ShowHiddenFiles => field_item_enabled(FieldItem::ShowHiddenFiles, inputs),
             CheckRole::ViewMode(..) => field_item_enabled(FieldItem::ViewMode, inputs),
             CheckRole::Sort(_) if check.tracked => menu_item_enabled(check.id, inputs),
+            CheckRole::ShowMenuBar => menu_item_enabled(check.id, inputs),
             // Never written: the submenu around it greys instead.
             CheckRole::Sort(_) => true,
         }),

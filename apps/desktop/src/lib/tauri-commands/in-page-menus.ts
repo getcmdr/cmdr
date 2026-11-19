@@ -11,6 +11,7 @@ import {
   events,
   type BarMenuView,
   type BarPickOutcome,
+  type BarPickVia,
   type ContextPickOutcome,
   type InPageContextMenu,
   type InPageContextMenuRequest,
@@ -30,9 +31,11 @@ const log = getAppLogger('inPageMenus')
  * reaches. A row that edits the focused text field comes back as `textEdit`, since only the page
  * can reach its field: the edit runs here, on the field that holds focus (the bar has handed it
  * back by the time a pick is sent), as the text-field menu runs its own (`#lib/context-menu`).
+ * `via`: `pick` for the person's own pick of a row, `key` for a chord a window fires (a file-moving
+ * row's key stays refused in a text field, its pick doesn't: `routes/(main)/text-field-gate.ts`).
  */
-export async function pickMenuBarItem(menuId: string): Promise<BarPickOutcome> {
-  const outcome = await commands.pickMenuBarItem(menuId)
+export async function pickMenuBarItem(menuId: string, via: BarPickVia): Promise<BarPickOutcome> {
+  const outcome = await commands.pickMenuBarItem(menuId, via)
   if (outcome.kind === 'textEdit') {
     const target = textTargetOf(document.activeElement)
     if (target.kind === 'field') await runTextFieldEdit(target.field, outcome.edit, { readClipboardText })

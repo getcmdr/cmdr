@@ -3104,6 +3104,7 @@
     "appearance.dateTimeFormat": "iso",
     "appearance.fileSizeFormat": "si",
     "appearance.language": "system",
+    "appearance.menuBar": "desktopDefault",
     "appearance.showFunctionKeyBar": true,
     "appearance.sizeColors": "none",
     "appearance.textSize": 100,

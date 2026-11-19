@@ -37,6 +37,9 @@ pub struct BarInputs {
     /// What View > Sort by checks.
     pub requested_sort: Option<RequestedSort>,
     pub show_hidden_files: bool,
+    /// Whether the page draws the bar now (View > Show menu bar, the `appearance.menuBar`
+    /// setting the frontend pushes).
+    pub show_menu_bar: bool,
     pub active_pane: Pane,
     pub view_mode_left: ViewMode,
     pub view_mode_right: ViewMode,
@@ -67,6 +70,7 @@ impl BarInputs {
             refused: HashSet::new(),
             requested_sort: None,
             show_hidden_files: false,
+            show_menu_bar: true,
             active_pane: Pane::Left,
             view_mode_left: ViewMode::Brief,
             view_mode_right: ViewMode::Brief,
@@ -178,6 +182,11 @@ fn rows(spec: &'static SubmenuSpec, inputs: &BarInputs, platform: Platform) -> V
                         CheckRole::Sort(role) => (
                             role.is_on(inputs.requested_sort),
                             CheckKind::Radio,
+                            key_hint(check.id, check.accelerator.on(platform), None, inputs, platform),
+                        ),
+                        CheckRole::ShowMenuBar => (
+                            inputs.show_menu_bar,
+                            CheckKind::Checkbox,
                             key_hint(check.id, check.accelerator.on(platform), None, inputs, platform),
                         ),
                     };

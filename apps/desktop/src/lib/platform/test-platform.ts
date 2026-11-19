@@ -106,9 +106,9 @@ export const CAPABILITIES_POSSIBLE_ON: Readonly<Record<Platform, readonly Capabi
     'cpuDiagnostics',
     'globalShortcuts',
   ],
-  windows: ['fullScreen', 'globalShortcuts'],
+  windows: ['fullScreen', 'hideableMenuBar', 'globalShortcuts'],
   // `imageIndexing` follows the `playwright-e2e` feature, `globalShortcuts` an X11 session.
-  linux: ['imageIndexing', 'fullScreen', 'globalShortcuts', 'cpuDiagnostics'],
+  linux: ['imageIndexing', 'fullScreen', 'hideableMenuBar', 'globalShortcuts', 'cpuDiagnostics'],
 }
 
 /**

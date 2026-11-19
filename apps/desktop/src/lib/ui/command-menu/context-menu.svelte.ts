@@ -11,7 +11,7 @@
  * was. Mechanics: `../DETAILS.md` § Command menus.
  */
 
-import type { Row } from '#lib/ipc/bindings.js'
+import type { BarPickVia, Row } from '#lib/ipc/bindings.js'
 import { captureFocusOrigin, restoreFocus, type FocusOrigin } from '../focus-restore'
 import { createKeyboardCues, cueRule, type KeyboardCues } from '../keyboard-cues'
 import { createMenuStack, type MenuStack } from './menu-stack.svelte'
@@ -34,11 +34,19 @@ export interface ContextMenuOpen {
    * cursor reaches a screen reader as the field's `aria-activedescendant`.
    */
   focusHolder?: HTMLElement
+  /**
+   * The control that opened it (the main-menu button): a press on it is the control's own, which
+   * toggles the menu, so the menu doesn't close itself on it only to be opened again.
+   */
+  opener?: HTMLElement
 }
 
 export interface ContextMenuDeps {
-  /** A row was picked: its menu id. The menu is closed and focus is back where it was. */
-  onPick: (menuId: string) => void
+  /**
+   * A row was picked: its menu id, and whether a pointer click (`click`) or a key (`key`) picked
+   * it. The menu is closed and focus is back where it was.
+   */
+  onPick: (menuId: string, via: BarPickVia) => void
   /** Defaults to `desktop`: only Windows draws its context menus in the page. The demo passes `mac`. */
   flavor?: () => MenuFlavor
   /** Whether this platform has access keys (`convention('accessKeys')`). */
@@ -79,13 +87,15 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
    * detached row has no ancestors left.
    */
   let anchorHolders: readonly Node[] | null = null
+  /** The control that opened the menu, whose presses are its own (`ContextMenuOpen.opener`). */
+  let opener: HTMLElement | null = null
 
   const stack = createMenuStack({
     flavor,
     accessKeys: hasLetters,
-    onPick: (row) => {
+    onPick: (row, via) => {
       close(true, true)
-      deps.onPick(row.id)
+      deps.onPick(row.id, via)
     },
   })
 
@@ -109,6 +119,7 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
     stopCues = null
     cuesShown = false
     anchorHolders = null
+    opener = null
     const target = origin
     origin = null
     if (restore && !focusStayed) restoreFocus(target)
@@ -186,6 +197,7 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
     cues?.pointerdown()
     const target = event.target as Element | null
     if (target?.closest('[data-command-menu="context"]')) return
+    if (target && opener?.contains(target)) return
     // A click elsewhere closes the menu and goes where it went.
     close(false)
   }
@@ -214,6 +226,7 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
       close(false)
       origin = captureFocusOrigin()
       anchorHolders = holdersOf(request.anchorElement)
+      opener = request.opener ?? null
       stack.open(
         request.rows,
         { kind: 'point', x: request.at.x, y: request.at.y },

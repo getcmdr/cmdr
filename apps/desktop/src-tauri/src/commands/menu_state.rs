@@ -75,6 +75,17 @@ pub fn sync_menu_show_hidden<R: Runtime>(app: AppHandle<R>, checked: bool) -> Re
     Ok(())
 }
 
+/// One-way push of the `appearance.menuBar` setting onto View > Show menu bar's check, which
+/// only a page draws (Windows and Linux). Called by the settings applier on every change, whoever
+/// made it; a pick of the row runs `view.toggleMenuBar`, whose setting write lands back here.
+#[tauri::command]
+#[specta::specta]
+pub fn sync_menu_show_menu_bar<R: Runtime>(app: AppHandle<R>, checked: bool) {
+    let menu_state = app.state::<MenuState<R>>();
+    menu_state.show_menu_bar_checked.store(checked, Ordering::Relaxed);
+    notify_bar_changed(&app);
+}
+
 /// Pushes the full View menu state from the frontend: which pane is active and
 /// the per-pane view modes. The menu's check states are updated for both pane
 /// pairs, and if the active pane changed since the last call the keyboard
@@ -374,9 +385,16 @@ pub fn get_viewer_menu_bar(inputs: cmdr_menu::page::viewer::ViewerBarInputs) -> 
 }
 
 /// A page's click on a bar row (the main bar's or the viewer's), by menu id: runs the handler a
-/// native click reaches, or nothing for a row that's greyed out right now.
+/// native click reaches, or nothing for a row that's greyed out right now. `via` says whether the
+/// person picked the row or a window fired its chord (`BarPickVia`); `window` is the page that asked,
+/// which a file-scoped command checks instead of focus (`menu_handlers::PickSource`).
 #[tauri::command]
 #[specta::specta]
-pub fn pick_menu_bar_item(app: AppHandle, menu_id: String) -> BarPickOutcome {
-    page_bar::pick(&app, &menu_id)
+pub fn pick_menu_bar_item(
+    app: AppHandle,
+    window: tauri::WebviewWindow,
+    menu_id: String,
+    via: page_bar::BarPickVia,
+) -> BarPickOutcome {
+    page_bar::pick(&app, &menu_id, via, window.label())
 }

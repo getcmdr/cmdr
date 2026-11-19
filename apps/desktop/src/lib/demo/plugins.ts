@@ -167,6 +167,7 @@ export function restrictedWindowSettings(): RestrictedWindowSettings {
     appearanceAppColor: text('appearance.appColor'),
     appearanceFileSizeFormat: text('appearance.fileSizeFormat'),
     appearanceLanguage: text('appearance.language'),
+    appearanceMenuBar: text('appearance.menuBar'),
   }
 }
 

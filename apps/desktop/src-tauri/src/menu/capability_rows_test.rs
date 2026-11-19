@@ -4,7 +4,7 @@
 //! shortcuts editor, and the settings hide. Each OS's test run checks its own arm.
 
 use cmdr_menu::bar::spec_entry;
-use cmdr_menu::ids::{GET_INFO_ID, OPEN_TERMINAL_HERE_ID, QUICK_LOOK_ID, QUIT_ID};
+use cmdr_menu::ids::{GET_INFO_ID, OPEN_TERMINAL_HERE_ID, QUICK_LOOK_ID, QUIT_ID, SHOW_MENU_BAR_ID};
 use cmdr_menu::spec::Platform;
 
 use crate::platform::{PlatformCapabilities, capabilities};
@@ -19,6 +19,8 @@ const CAPABILITY_ROWS: &[(&str, CapabilityOf)] = &[
     (OPEN_TERMINAL_HERE_ID, |c| c.open_terminal_here),
     // Cmdr's own Quit row exists exactly where no app menu owns Quit.
     (QUIT_ID, |c| !c.app_menu),
+    // View > Show menu bar exists exactly where the page draws a bar it can hide.
+    (SHOW_MENU_BAR_ID, |c| c.hideable_menu_bar),
 ];
 
 #[test]

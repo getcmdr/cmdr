@@ -4457,5 +4457,10 @@
     "chosen": "Mac OS étendu",
     "confidence": "high",
     "sources": "Disk Utility format menu: StorageKit Localizable.loctable, key HFS Not Journaled (verified on macOS 27.0.1 (26A434), plutil, 2026-11-19)"
+  },
+  "main-menu": {
+    "chosen": "Menu principal",
+    "confidence": "high",
+    "sources": "GNOME Nautilus and gnome-control-center (Main Menu)"
   }
 }

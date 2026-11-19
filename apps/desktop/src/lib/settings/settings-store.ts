@@ -230,6 +230,8 @@ async function initializeSettingsRestricted(): Promise<void> {
       // this setting. Without it a restricted window sees the `'system'` default, so a
       // user who pinned Hungarian on an English Mac would get an English viewer.
       'appearance.language': snapshot.appearanceLanguage,
+      // The viewer draws its menu bar, or a main-menu button where the user hid it (off macOS).
+      'appearance.menuBar': snapshot.appearanceMenuBar,
     }
     for (const [id, value] of Object.entries(mapped)) {
       if (value == null) continue // not persisted: registry default applies

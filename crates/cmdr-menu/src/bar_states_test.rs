@@ -282,6 +282,7 @@ view_zoom_150 view.zoom.set150@app 1 1 1 1
 view_zoom_in view.zoom.in@app 1 1 1 1
 view_zoom_out view.zoom.out@app 1 1 1 1
 view_full_screen view.toggleFullScreen@file 1 0 1 1
+show_menu_bar view.toggleMenuBar@app 1 1 1 1
 switch_pane pane.switch@file 1 0 1 1
 swap_panes pane.swap@file 1 0 1 1
 clone_pane pane.clone@file 1 0 1 1
@@ -380,6 +381,7 @@ view_zoom_150 view.zoom.set150@app 1 1 1 1
 view_zoom_in view.zoom.in@app 1 1 1 1
 view_zoom_out view.zoom.out@app 1 1 1 1
 view_full_screen view.toggleFullScreen@file 1 0 1 1
+show_menu_bar view.toggleMenuBar@app 1 1 1 1
 switch_pane pane.switch@file 1 0 1 1
 swap_panes pane.swap@file 1 0 1 1
 clone_pane pane.clone@file 1 0 1 1

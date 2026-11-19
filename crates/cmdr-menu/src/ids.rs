@@ -184,6 +184,10 @@ pub const QUIT_ID: &str = "quit";
 /// Menu item ID for View > Full screen, on Windows and Linux. macOS has no Cmdr row: AppKit adds
 /// its own full-screen item to the View menu.
 pub const VIEW_FULL_SCREEN_ID: &str = "view_full_screen";
+/// View > Show menu bar, the check that hides the bar a page draws (Windows and Linux; macOS's
+/// bar is the system's). Its pick runs `view.toggleMenuBar`, which flips the
+/// `appearance.menuBar` setting; the setting's push moves the check.
+pub const SHOW_MENU_BAR_ID: &str = "show_menu_bar";
 
 /// Menu item ID for Search files.
 pub const SEARCH_FILES_ID: &str = "search_files";
@@ -423,6 +427,7 @@ pub fn menu_id_to_command(menu_id: &str) -> Option<(&'static str, CommandScope)>
         SWAP_PANES_ID => Some(("pane.swap", CommandScope::FileScoped)),
         CLONE_PANE_ID => Some(("pane.clone", CommandScope::FileScoped)),
         VIEW_FULL_SCREEN_ID => Some(("view.toggleFullScreen", CommandScope::FileScoped)),
+        SHOW_MENU_BAR_ID => Some(("view.toggleMenuBar", CommandScope::App)),
         CALCULATE_FOLDER_SIZES_ID => Some(("view.calculateFolderSizes", CommandScope::FileScoped)),
 
         // Navigation commands (file-scoped)
@@ -552,6 +557,7 @@ pub fn command_id_to_menu_id(command_id: &str) -> Option<&'static str> {
         "app.toggleCliCommand" => Some(CLI_INSTALL_ID),
         "app.quit" => Some(QUIT_ID),
         "view.toggleFullScreen" => Some(VIEW_FULL_SCREEN_ID),
+        "view.toggleMenuBar" => Some(SHOW_MENU_BAR_ID),
         "pane.switch" => Some(SWITCH_PANE_ID),
         "pane.swap" => Some(SWAP_PANES_ID),
         "pane.clone" => Some(CLONE_PANE_ID),

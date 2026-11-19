@@ -104,6 +104,7 @@ const EXPECTED_NAMES: Record<string, string> = {
   'view.zoom.in': 'Zoom in',
   'view.zoom.out': 'Zoom out',
   'view.toggleFullScreen': 'Toggle full screen',
+  'view.toggleMenuBar': 'Toggle menu bar',
   'sort.byName': 'Sort by name',
   'sort.byExtension': 'Sort by extension',
   'sort.byModified': 'Sort by date modified',

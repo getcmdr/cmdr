@@ -309,6 +309,10 @@
   "@menu.view.fullScreen": {
     "sourceHash": "674fe2a"
   },
+  "menu.view.showMenuBar": "Afficher la barre des menus",
+  "@menu.view.showMenuBar": {
+    "sourceHash": "63809e3"
+  },
   "menu.view.commandPalette": "Palette de commandes…",
   "@menu.view.commandPalette": {
     "sourceHash": "6b1c93d"

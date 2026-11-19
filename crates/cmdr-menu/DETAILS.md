@@ -172,6 +172,12 @@ rows in the desktop would drift from the demo's on the first new row, and a TS o
   names rows by id.
 - **The diff** (`changed_rows`): the rows whose state moved between two answers of the same shape, or `None` when the
   shape moved (only a full answer describes that). The desktop's change event carries it.
+- **View > Show menu bar** (`SHOW_MENU_BAR_ID`, `windows_and_linux`): a check only a page draws, so its role
+  (`CheckRole::ShowMenuBar`) clicks as a plain command (`view.toggleMenuBar`, which flips `appearance.menuBar`) instead
+  of toggling itself, and its state is `BarInputs::show_menu_bar`, which the setting's push moves. The main-menu button
+  draws the same answer, arranged by the frontend's `primaryMenuRows`
+  (`apps/desktop/src/lib/ui/command-menu/menu-layout.ts`), which adds no row: GNOME's standard group is copies of the
+  bar's own Settings, Keyboard shortcuts, and About rows.
 - **The viewer bar** (`src/page/viewer.rs`) mirrors `menu_structure.rs` with no OS items: File > Close is its own id
   (`VIEWER_CLOSE_ID`), Cut and Paste are ours on every platform. Its inputs are the viewer page's own state, so it has
   no store and no event.

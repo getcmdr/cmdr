@@ -46,6 +46,8 @@ pub(crate) fn capabilities() -> PlatformCapabilities {
         app_bundles: false,
         // `view.toggleFullScreen` (F11, View > Full screen).
         full_screen: true,
+        // The bar is drawn in the page (D5), so View > Show menu bar can hide it.
+        hideable_menu_bar: true,
         // The cask is the macOS distribution.
         homebrew_cask: false,
         global_shortcuts: x11_session(),

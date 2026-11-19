@@ -135,6 +135,7 @@ export const COMMAND_IDS = [
 
   // Full screen
   'view.toggleFullScreen',
+  'view.toggleMenuBar',
 
   // Sort commands
   'sort.byName',

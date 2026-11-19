@@ -50,6 +50,8 @@ const MAC_VISITOR_CAPABILITIES: Readonly<PlatformCapabilities> = Object.freeze({
   safeSaveFiles: true,
   appBundles: true,
   fullScreen: true,
+  // A Mac visitor's bar is the macOS one, the system's, so there's nothing to hide.
+  hideableMenuBar: false,
   homebrewCask: true,
   globalShortcuts: true,
   // No surface asks it; `true` keeps this table the desktop's macOS answer.

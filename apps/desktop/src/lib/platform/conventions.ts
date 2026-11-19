@@ -10,6 +10,7 @@ import type {
   ContextMenus,
   DialogButtonOrder,
   EnterActivates,
+  HiddenMenuBar,
   LinuxDesktop,
   MenuModel,
   PlatformConventions,
@@ -49,6 +50,7 @@ const ENTER_ACTIVATES = every<EnterActivates>()('defaultButton', 'focusedButton'
 const CANCEL_KEYS = every<CancelKeys>()('escape', 'escapeOrCommandPeriod')
 const ACCESS_KEYS = every<AccessKeys>()('none', 'underlinesAfterKeyboardUse', 'underlinesWhileAltHeld')
 const MENU_MODELS = every<MenuModel>()('systemMenuBar', 'windowMenuBar', 'primaryMenu')
+const HIDDEN_MENU_BARS = every<HiddenMenuBar>()('none', 'showsOnAltOrF10', 'f10OpensMainMenu')
 const CONTEXT_MENUS = every<ContextMenus>()('native', 'inPage')
 const SCREEN_READERS = every<ScreenReader>()('voiceOver', 'jaws', 'nvda', 'narrator', 'orca')
 const LINUX_DESKTOPS = every<LinuxDesktop>()('gnome', 'kde', 'other')
@@ -75,6 +77,7 @@ export function platformConventions(): PlatformConventions {
     cancelKeys: oneOf(CANCEL_KEYS, answered.cancelKeys, fallback.cancelKeys),
     accessKeys: oneOf(ACCESS_KEYS, answered.accessKeys, fallback.accessKeys),
     menuModel: oneOf(MENU_MODELS, answered.menuModel, fallback.menuModel),
+    hiddenMenuBar: oneOf(HIDDEN_MENU_BARS, answered.hiddenMenuBar, fallback.hiddenMenuBar),
     contextMenus: oneOf(CONTEXT_MENUS, answered.contextMenus, fallback.contextMenus),
     screenReaders:
       Array.isArray(readers) &&
@@ -109,8 +112,8 @@ export function convention<K extends keyof PlatformConventions>(key: K): Platfor
 
 /**
  * Whether the page draws the app's menu bar: everywhere but macOS, whose bar is the system's
- * (D5, task 63 of `docs/specs/windows-port-plan.md`). GNOME's `primaryMenu` draws the bar too until
- * its "Main menu" button stands in (that task's step 8), so no desktop is left without menus.
+ * (D5, task 63 of `docs/specs/windows-port-plan.md`): as a bar, or in a main-menu button where the
+ * desktop or the "Show menu bar" setting hides it (`#lib/ui/command-menu/menu-layout.ts`).
  */
 export function pageDrawsMenuBar(): boolean {
   return convention('menuModel') !== 'systemMenuBar'

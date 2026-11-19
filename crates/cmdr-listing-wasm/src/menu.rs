@@ -31,6 +31,7 @@ pub const MENU_COMMANDS: &[&str] = &[
     "update_sort_menu",
     "update_view_mode_menu",
     "sync_menu_show_hidden",
+    "sync_menu_show_menu_bar",
     "update_pin_tab_menu",
     "update_select_same_kind_menu",
     "update_undo_trash_menu",
@@ -148,6 +149,7 @@ impl DemoMenu {
                 m.view_mode_right = mode(&a.right_mode)?;
             }
             "sync_menu_show_hidden" => m.show_hidden_files = parse::<CheckedArgs>(command, args)?.checked,
+            "sync_menu_show_menu_bar" => m.show_menu_bar = parse::<CheckedArgs>(command, args)?.checked,
             "update_pin_tab_menu" => m.is_pinned = parse::<PinnedArgs>(command, args)?.is_pinned,
             "update_select_same_kind_menu" => {
                 m.same_kind = parse::<TargetArgs<cmdr_menu::labels::SameKindTarget>>(command, args)?.target
@@ -225,9 +227,14 @@ impl DemoMenu {
     }
 }
 
-/// Rows a page has nothing behind: File > Quit (Exit on Windows), since a page can't quit its tab.
-/// They draw as an OS row, greyed, the way a Mac visitor's app-menu Quit does (`Row::System`).
-const PAGE_CANT_DO: [&str; 1] = [cmdr_menu::ids::QUIT_ID];
+/// Rows a page has nothing behind, drawn greyed and picking nothing:
+/// - File > Quit (Exit on Windows), since a page can't quit its tab. It draws as an OS row, the way
+///   a Mac visitor's app-menu Quit does (`Row::System`).
+/// - View > Show menu bar (Windows and Linux visitors), since the demo's strip draws its own bar and
+///   doesn't follow the setting: a live row would only flip its check (review of #1281). It stays a
+///   greyed check, its state still following the push. Live once the demo draws the app's own bar
+///   (task 63 step 11's remainder in `docs/specs/windows-port-plan.md`).
+const PAGE_CANT_DO: [&str; 2] = [cmdr_menu::ids::QUIT_ID, cmdr_menu::ids::SHOW_MENU_BAR_ID];
 
 fn grey_what_a_page_cant_do(rows: &mut [Row]) {
     for row in rows {
@@ -235,6 +242,7 @@ fn grey_what_a_page_cant_do(rows: &mut [Row]) {
             Row::Item { id, label, .. } if PAGE_CANT_DO.contains(&id.as_str()) => {
                 *row = Row::System { label: label.clone() };
             }
+            Row::Check { id, enabled, .. } if PAGE_CANT_DO.contains(&id.as_str()) => *enabled = false,
             Row::Submenu { rows, .. } => grey_what_a_page_cant_do(rows),
             _ => {}
         }

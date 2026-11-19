@@ -16,6 +16,8 @@ import { getDefaultShortcuts } from '#lib/shortcuts/shortcuts-store.js'
 import type { DialogsOnScreen, DispatchSource } from './command-dispatch-context'
 import { resolveGlobalKeyAction } from './global-keydown'
 import { isRefusedInTextField } from './text-field-gate'
+import { dispatcherForRoad } from './listener-setup'
+import type { CommandRoad } from '#lib/ipc/bindings.js'
 
 const NOTHING_OPEN: DialogsOnScreen = { dialogOpen: false, paletteOpen: false }
 
@@ -133,5 +135,43 @@ describe.each(['macos', 'windows', 'linux'] as const)('on %s, with a text field 
       expect(isRefusedInTextField(commandId, 'keyboard', false)).toBe(false)
     }
     expect(isRefusedInTextField('file.copy', 'keyboard', true)).toBe(false)
+  })
+})
+
+// Task 63 step 9: off macOS the page draws the bar, so it knows a click from a key, which a native
+// bar's menu event can't say. The person's own click on File > Delete runs with a field focused; any
+// key never does, the menu's own keys included.
+describe('a bar the page draws, with a text field focused', () => {
+  /** The road each `execute-command` takes, by the dispatcher `listener-setup.ts` hands it to. */
+  function sourceFor(road: CommandRoad | undefined): DispatchSource {
+    const taken: DispatchSource[] = []
+    const recorder = (source: DispatchSource) => () => {
+      taken.push(source)
+      return Promise.resolve()
+    }
+    const dispatchers = { menu: recorder('menu'), barClick: recorder('barClick'), contextMenu: recorder('contextMenu') }
+    void dispatcherForRoad(road, dispatchers)('file.delete')
+    expect(taken, `the ${String(road)} road`).toHaveLength(1)
+    return taken[0]
+  }
+
+  it('runs a file-moving row the person clicked', () => {
+    for (const commandId of FILE_MOVING_COMMAND_IDS) {
+      expect(isRefusedInTextField(commandId, sourceFor('barClick'), true), commandId).toBe(false)
+    }
+  })
+
+  // Regression anchor: an emit with no road (another window's, the E2E harness's) found no dispatcher.
+  it('takes an emit that names no road down the menu road', () => {
+    expect(sourceFor(undefined)).toBe('menu')
+  })
+
+  it('still refuses the same command’s key: in the main window, and fired from another window', () => {
+    for (const commandId of FILE_MOVING_COMMAND_IDS) {
+      // The main window runs a row's chord through its own keydown resolver.
+      expect(isRefusedInTextField(commandId, 'keyboard', true), `${commandId} by its key`).toBe(true)
+      // Another window fires it through `pick_menu_bar_item(…, 'key')`, which relays it.
+      expect(isRefusedInTextField(commandId, sourceFor('relay'), true), `${commandId} from a window's key`).toBe(true)
+    }
   })
 })

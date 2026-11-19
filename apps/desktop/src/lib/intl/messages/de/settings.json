@@ -326,6 +326,30 @@
   "@settings.appearance.showFunctionKeyBar.keywords": {
     "sourceHash": "c42e176"
   },
+  "settings.appearance.menuBar.label": "Menüleiste anzeigen",
+  "@settings.appearance.menuBar.label": {
+    "sourceHash": "63809e3"
+  },
+  "settings.appearance.menuBar.description": "Zeigt die Menüs (Ablage, Bearbeiten, Darstellung usw.) in einer Leiste oben in jedem Fenster an. Ist die Leiste ausgeblendet, findest du die Menüs stattdessen unter der Schaltfläche „Hauptmenü“ am Ende der Tab-Leiste.",
+  "@settings.appearance.menuBar.description": {
+    "sourceHash": "af69e91"
+  },
+  "settings.appearance.menuBar.opt.desktopDefault": "Standard der Arbeitsumgebung",
+  "@settings.appearance.menuBar.opt.desktopDefault": {
+    "sourceHash": "f3db16c"
+  },
+  "settings.appearance.menuBar.opt.shown": "Eingeblendet",
+  "@settings.appearance.menuBar.opt.shown": {
+    "sourceHash": "6ba2a0e"
+  },
+  "settings.appearance.menuBar.opt.hidden": "Ausgeblendet",
+  "@settings.appearance.menuBar.opt.hidden": {
+    "sourceHash": "7e6feff"
+  },
+  "settings.appearance.menuBar.keywords": "Menü, Leiste, Menüzeile, Hamburger, Hamburgermenü, verstecken, ausblenden, einblenden, Ablage, Bearbeiten, Darstellung",
+  "@settings.appearance.menuBar.keywords": {
+    "sourceHash": "7598526"
+  },
   "settings.listing.showHiddenFiles.label": "Verborgene Dateien einblenden",
   "@settings.listing.showHiddenFiles.label": {
     "sourceHash": "b5ede7f"
