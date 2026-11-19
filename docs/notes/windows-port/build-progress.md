@@ -333,3 +333,23 @@ things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX
     PAC's trailing `DIRECT` (`PROXY proxy.test:3128; DIRECT` answers `proxy.test:3128`), reading the user's settings
     takes under 2 ms, and WPAD with no WPAD server fails in about 70 ms. The builder's own settings stayed untouched, so
     a real manual proxy, setup script, or WPAD network is unverified.
+- **2026-11-19, task 46's review fixes** (in `D:\src\cmdr-t46`, default target dir, over ssh; the builder's settings
+  read-only: auto-detect on, no setup script, no manual proxy, no WPAD server on its network):
+  - **WinHTTP's two PAC calls, side by side** (a PowerShell P/Invoke probe and a loopback PAC server): the synchronous
+    `WinHttpGetProxyForUrl` answers "no proxy" for `SOCKS s:1080`, `SOCKS5 …`, and even `SOCKS s:1080; PROXY p:3128`,
+    turns `HTTPS h:443` into the text `https://h.test:443`, and drops a trailing `DIRECT`. The async resolver
+    (`WinHttpGetProxyForUrlEx`) reports each entry typed (SOCKS scheme 4, HTTPS 2, `DIRECT` kept; a versioned SOCKS
+    keyword arrives as host `"5 s.test"`), and closing the resolver cancels a stalled evaluation at once (`12017`, then
+    `HANDLE_CLOSING`). With session timeouts of 3 s, the synchronous call gave up on a stalling server after 3.58 s.
+  - **`C:\ProgramData`'s ACL** (`icacls`): `BUILTIN\Users:(CI)(WD,AD,WEA,WA)` plus `CREATOR OWNER:(OI)(CI)(IO)(F)`, so
+    any standard user can create `C:\ProgramData\chocolatey\bin` where Chocolatey isn't installed (it isn't here).
+  - **Launch routing** (`windows_test.rs::measure_launch_routing`, three runs each; the warm-up call, then five hosts'
+    first routing at once, then a warm route): before, `warm_up_pac` returned in 0.35–0.56 ms, the burst took 21–26 ms
+    (each host 12–25 ms, every one running WinHTTP's WPAD call), and a warm route 2.5–2.8 ms. After (WPAD discovered
+    once in the background): the warm-up call 0.37–0.88 ms, the burst 12.9–13.3 ms (all five hosts sharing the one
+    discovery, 12.3–12.9 ms each), a warm route 2.6–2.7 ms. Launch isn't slowed: nothing synchronous grew, and the burst
+    shrank.
+  - **Cells**: 72 of 72 `cmdr-http` (the async resolver's typed SOCKS, SOCKS4/5, HTTPS, and ordered list with its
+    trailing `DIRECT`; a stalling PAC server given up on within its budget; the address-change subscription's callback
+    reaching the network number; the WPAD state machine; the per-network PAC cache), and 5 of 5 `cmdr-adb`
+    `binary_search` (the Windows search pinned to user- or admin-controlled folders).
