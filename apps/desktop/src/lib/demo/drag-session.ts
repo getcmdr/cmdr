@@ -36,10 +36,10 @@ export interface DragSessions {
   dispose(): void
 }
 
-/** What an OS drag loop keeps from the page while it runs: the page sees no mouse until the drop. */
 /** The commands `handler` answers. */
 export const DRAG_COMMANDS = ['start_drag_paths'] as const
 
+/** What an OS drag loop keeps from the page while it runs: the page sees no mouse until the drop. */
 const SWALLOWED_MOUSE = ['mousedown', 'mousemove', 'mouseup', 'click', 'dblclick', 'contextmenu'] as const
 
 function modifiersOf(event: MouseEvent | KeyboardEvent): Modifiers {
