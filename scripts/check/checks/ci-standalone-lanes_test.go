@@ -53,19 +53,36 @@ func TestAReusableLaneIsNotStandalone(t *testing.T) {
 	}
 }
 
-// The real Windows lane passes, and dropping a path its checks read is caught with the
-// reader named, the same contract a ci.yml caller's filter answers to.
+// Rule 9 against a real lane's checks: `push.paths` naming everything the Windows lane reads
+// passes, and dropping a path its checks read is caught with the reader named, the same
+// contract a ci.yml caller's filter answers to. The Windows lane itself is called by `ci.yml`
+// now, so the test builds the full list from what the rule asks for instead of reading one.
 func TestStandaloneLaneFlagsAMissingPushPath(t *testing.T) {
 	root := repoRootForTest(t)
 	raw, err := os.ReadFile(filepath.Join(root, ".github", "workflows", "windows-lane.yml"))
 	if err != nil {
 		t.Fatal(err)
 	}
+	if isStandaloneWorkflow(string(raw)) {
+		t.Fatal("windows-lane.yml gates landing through ci.yml, so it must declare workflow_call")
+	}
 	sources := LoadRunnerSources(root)
 	rel := ".github/workflows/windows-lane.yml"
-	_, paths := workflowTriggers(string(raw))
+	missing, err := laneInputsMissingFrom(root, "windows-lane.yml", nil, sources)
+	if err != nil {
+		t.Fatal(err)
+	}
+	paths := []string{rel, ".mise.toml"}
+	actions, err := localActionsUsed(root, rel)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, a := range actions {
+		paths = append(paths, ".github/actions/"+a+"/**")
+	}
+	paths = append(paths, sortedKeys(missing)...)
 	if got := standaloneLaneMisses(root, "windows-lane.yml", rel, paths, sources); len(got) != 0 {
-		t.Fatalf("the real windows-lane.yml should pass, got:\n%s", strings.Join(got, "\n"))
+		t.Fatalf("push paths naming every input should pass, got:\n%s", strings.Join(got, "\n"))
 	}
 
 	var narrowed []string

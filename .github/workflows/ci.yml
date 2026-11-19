@@ -100,7 +100,7 @@ jobs:
       # run runs the heavy lanes and names its gate `CI OK`; a light run's gate is `CI light`,
       # which `main`'s ruleset doesn't accept (`mode` step).
       land: ${{ steps.mode.outputs.land }}
-      # The heavy lanes (the three Rust lanes and Linux E2E) run on a land run only.
+      # The heavy lanes (the four Rust lanes and Linux E2E) run on a land run only.
       rust:
         ${{ steps.verified.outputs.verified != 'true' && steps.mode.outputs.land == 'true' && steps.filter.outputs.rust
         || 'false' }}
@@ -110,6 +110,9 @@ jobs:
       rust-macos:
         ${{ steps.verified.outputs.verified != 'true' && steps.mode.outputs.land == 'true' &&
         steps.filter.outputs.rust-macos || 'false' }}
+      rust-windows:
+        ${{ steps.verified.outputs.verified != 'true' && steps.mode.outputs.land == 'true' &&
+        steps.filter.outputs.rust-windows || 'false' }}
       svelte: ${{ steps.verified.outputs.verified != 'true' && steps.filter.outputs.svelte || 'false' }}
       desktop:
         ${{ steps.verified.outputs.verified != 'true' && steps.mode.outputs.land == 'true' &&
@@ -424,6 +427,9 @@ jobs:
               - *rust-inputs
               - '.github/workflows/macos-lane.yml'
               - '.github/actions/pinned-rust-toolchain/**'
+            rust-windows:
+              - *rust-inputs
+              - '.github/workflows/windows-lane.yml'
             # Gates the macOS lane's Finder extension compile, about a minute on a cold runner,
             # so it runs only when something it builds or runs changed (and on `run_all`).
             finder-extension:
@@ -986,6 +992,22 @@ jobs:
       runs-on: ${{ needs.changes.outputs.macos-runs-on }}
       self-hosted: ${{ needs.changes.outputs.macos-self-hosted == 'true' }}
 
+  # Windows: the whole workspace's clippy on native `windows-latest` (MSVC), so code under
+  # `cfg(windows)` can't land uncompiled. Every other lane builds for Linux or macOS, so a
+  # Windows-only `unused_mut` in a test landed in PR #1270 and left `main`'s Windows build red
+  # (2026-11-19). Cold every run (no Rust cache), ~10 min, so it sits under the Rust and E2E
+  # lanes on the critical path. `pnpm check clippy-windows` asks the same before pushing.
+  # `docs/tooling/ci.md` § Windows lane.
+  desktop-rust-windows:
+    name: Desktop (Rust, Windows)
+    needs: changes
+    if: >-
+      needs.changes.outputs.full == 'true' || (needs.changes.outputs.rust-windows == 'true' &&
+      !fromJSON(needs.changes.outputs.lanes)['desktop-rust-windows'].verified)
+    uses: ./.github/workflows/windows-lane.yml
+    with:
+      marker-key: ${{ fromJSON(needs.changes.outputs.lanes)['desktop-rust-windows'].key }}
+
   # The desktop frontend: the Svelte checks, i18n, and Vitest, plus the type-aware ESLint passes
   # in a parallel job.
   desktop-svelte:
@@ -1213,6 +1235,7 @@ jobs:
         desktop-rust,
         desktop-rust-fixtures,
         desktop-rust-macos,
+        desktop-rust-windows,
         desktop-svelte,
         e2e-base-image,
         desktop-e2e-linux,

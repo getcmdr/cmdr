@@ -426,8 +426,8 @@ if $VNC_MODE; then
         -v "$DESKTOP_NODE_MODULES_VOLUME:/app/apps/desktop/node_modules" \
         -v "$DESKTOP_SVELTEKIT_VOLUME:/app/apps/desktop/.svelte-kit" \
         -w /app \
-        -p 5990:5990 \
-        -p 6090:6090 \
+        -p 127.0.0.1:5990:5990 \
+        -p 127.0.0.1:6090:6090 \
         -e VNC=1 \
         -e CARGO_TARGET_DIR=/target \
         -e TAURI_DEV_HOST=0.0.0.0 \
@@ -573,7 +573,7 @@ if $INTERACTIVE; then
         -v "$DESKTOP_NODE_MODULES_VOLUME:/app/apps/desktop/node_modules" \
         -v "$DESKTOP_SVELTEKIT_VOLUME:/app/apps/desktop/.svelte-kit" \
         -w /app/apps/desktop \
-        -p 5900:5900 \
+        -p 127.0.0.1:5900:5900 \
         -e TAURI_BINARY="$DOCKER_TAURI_BINARY" \
         -e CI=true \
         -e "E2E_GREP=${GREP_FILTER:-}" \
