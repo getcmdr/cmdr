@@ -121,9 +121,10 @@ the next section.
   its pick, and `shown`, the one rule that takes a pick out of anything a person reads;
   `crates/cmdr-mtp/src/connection/DETAILS.md` § "Same-named siblings"), `byte_size` (`format_size`, the IEC byte count
   log lines and model-facing answers read), `thread_qos/` (macOS's `QOS_CLASS_UTILITY`, Windows' below-normal priority
-  under EcoQoS, nothing on Linux; why each in its module docs), `thread_cpu/`, `process_cpu/`, `process_memory`,
-  `utility_pool.rs` (`UtilityPool`, a keep-alive pool of `Utility`-QoS threads, so background work that comes in
-  streams, like index walks, reuses threads instead of creating one per job).
+  under EcoQoS, nothing on Linux; why each, and the rule that no thread a UI-facing thread waits on is lowered (Windows
+  has no priority inheritance for user-mode locks), in its module docs), `thread_cpu/`, `process_cpu/`,
+  `process_memory`, `utility_pool.rs` (`UtilityPool`, a keep-alive pool of `Utility`-QoS threads, so background work
+  that comes in streams, like index walks, reuses threads instead of creating one per job).
 - `attr_buf.rs` (macOS): the packed record decoder every `getattrlist` / `getattrlistbulk` caller shares. § "`attr_buf`:
   the packed attribute layout".
 - `mapped_file_faults/`: the SIGBUS recovery that turns a read of a mapped file whose disk went away into zeros, and the

@@ -41,6 +41,31 @@
 //! unrelated ever lands on it: [`crate::utility_pool::UtilityPool`] lowers each of its
 //! threads once, at the top, the same way a dedicated thread does.
 //!
+//! ## ❌ Never lower a thread a UI-facing thread waits on
+//!
+//! A lowered thread holding a lock (or owing a reply) that the UI, an IPC handler, or anything
+//! else a person is waiting on needs, turns "yield to the UI" into "the UI waits for the
+//! background". macOS softens this: a waiter on a pthread mutex or `os_unfair_lock` lends the
+//! holder its QoS. Windows doesn't for user-mode locks (SRW locks, which `std` uses, and channels
+//! carry no priority at all): a below-normal holder that normal-priority work keeps off the CPU
+//! runs again only when the balance-set manager's anti-starvation boost reaches it, after about 4 s.
+//! So a thread is lowered only when every lock it shares is shared with other background threads,
+//! and every wait on it is a background wait.
+//!
+//! The lowered threads today, all in `cmdr-index` (checked 2026-11-19): the index writer, the
+//! scanner, the walker and rescan [`crate::utility_pool::UtilityPool`]s, the local reconcile, the
+//! phase and cover walks. None qualifies as waited on:
+//!
+//! - **The index writer** owns its write connection; the UI reads through its own WAL read
+//!   connections, which never wait on a writer. What waits on the writer (`flush`, its one reply
+//!   message) is scan bookkeeping on background tasks, ❌ never an IPC handler.
+//! - **The walker's locks** (its queue, slots, worker count, watchdog) are its own pool's; the
+//!   rescan reconciler's `pending_rescans` is shared with the watcher's event loop, a background
+//!   task. No app path takes either.
+//!
+//! A new lowered thread, or a new lock or reply a lowered thread shares with the UI's side, needs
+//! this check again.
+//!
 //! ## No-op in test builds
 //!
 //! In any test build this is a no-op. Unit tests run massively parallel under nextest
@@ -68,8 +93,8 @@ pub enum QosClass {
 
 /// Lowers the calling thread's scheduling priority to `class`.
 ///
-/// See the module docs for the call-site discipline (dedicated threads only) and the
-/// test-build no-op.
+/// See the module docs for the call-site discipline (dedicated threads only, ❌ never one a
+/// UI-facing thread waits on) and the test-build no-op.
 pub fn set_current_thread_qos(class: QosClass) {
     // Real work only in non-test builds. See the module docs for why tests skip it, and why
     // the `testing` feature has to be in the condition alongside `test`.
