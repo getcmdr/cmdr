@@ -14,7 +14,9 @@ use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::TestDir;
 
 use super::{Restart, SF_FIRMLINK, bulk_eligible, entry_from_record, kernel_batch, read_entries_with};
-use crate::reading::{AddedAt, Lister, ListingTally, Pick, get_single_entry, minimal_row};
+use crate::reading::{AddedAt, Lister, ListingDir, ListingTally, Pick, Row, get_single_entry, minimal_row};
+use cmdr_fs::app_path::AppPathBuf;
+use std::borrow::Cow;
 
 // ============================================================================
 // Which filesystems take the bulk lister
@@ -94,8 +96,14 @@ fn scratch(label: &str) -> TestDir {
     dir
 }
 
+/// The folder `dir` as the reader lists it, its rows joined under its app path.
+fn listing(dir: &Path) -> ListingDir<'_> {
+    let app = AppPathBuf::from_native_unicode(dir).expect("a scratch folder is an app path");
+    ListingDir::new(Cow::Borrowed(dir), Some(Cow::Owned(app)))
+}
+
 fn decode(rec: &Record<'_>, dir: &Path) -> Result<FileEntry, Restart> {
-    entry_from_record(rec, dir, &HashSet::new(), AddedAt::Fetch)
+    entry_from_record(rec, &listing(dir), &HashSet::new(), AddedAt::Fetch)
 }
 
 fn assert_same(entry: &FileEntry, expected: &FileEntry, what: &str) {
@@ -278,7 +286,7 @@ fn a_doubtful_record_that_cant_be_lstated_is_the_minimal_row_when_its_type_is_kn
             ..file_record(b"gone")
         };
         let entry = decode(&rec, &dir).expect("a typed record yields a row");
-        let expected = minimal_row(&dir.join("gone"), "gone".to_string(), is_link, &HashSet::new());
+        let expected = minimal_row(Row::of(&dir.join("gone"), None), is_link, &HashSet::new());
         assert_same(&entry, &expected, &format!("type {obj_type}"));
     }
 }
@@ -329,7 +337,7 @@ fn a_mount_point_or_firmlink_record_is_its_restat() {
         ..dir_record(b"gone")
     };
     let entry = decode(&vanished, &dir).expect("still a row");
-    let expected = minimal_row(&dir.join("gone"), "gone".to_string(), false, &HashSet::new());
+    let expected = minimal_row(Row::of(&dir.join("gone"), None), false, &HashSet::new());
     assert_same(
         &entry,
         &expected,
@@ -342,14 +350,19 @@ fn a_mount_point_or_firmlink_record_is_its_restat() {
 fn dot_hidden_reaches_bulk_entries() {
     let dir = scratch("bulk_dot_hidden");
     let dot_hidden: HashSet<String> = ["not_on_disk.txt", "folder"].map(str::to_string).into();
-    let entry =
-        entry_from_record(&file_record(b"not_on_disk.txt"), &dir, &dot_hidden, AddedAt::Fetch).expect("decodes");
+    let entry = entry_from_record(
+        &file_record(b"not_on_disk.txt"),
+        &listing(&dir),
+        &dot_hidden,
+        AddedAt::Fetch,
+    )
+    .expect("decodes");
     assert!(entry.is_hidden, "a record's entry");
     let mount = Record {
         mount_status: Some(libc::DIR_MNTSTATUS_MNTPOINT),
         ..dir_record(b"folder")
     };
-    let entry = entry_from_record(&mount, &dir, &dot_hidden, AddedAt::Fetch).expect("decodes");
+    let entry = entry_from_record(&mount, &listing(&dir), &dot_hidden, AddedAt::Fetch).expect("decodes");
     assert!(entry.is_hidden, "a re-stat'ed entry");
 }
 
@@ -370,7 +383,7 @@ fn stream_fixture(label: &str) -> (TestDir, Vec<String>) {
     symlink("sub", dir.join("link")).expect("a link");
     let reference = sorted_debug(
         read_entries_with(
-            &dir,
+            &listing(&dir),
             &HashSet::new(),
             None,
             Pick::Forced(Lister::ReadDir),
@@ -401,7 +414,7 @@ fn assert_restarts_from_scratch(label: &str, second: &dyn Fn(&mut [u64]) -> io::
     let tally = ListingTally::default();
     let mut calls = 0;
     let listed = read_entries_with(
-        &dir,
+        &listing(&dir),
         &HashSet::new(),
         Some(&tally),
         Pick::Forced(Lister::Bulk),
@@ -468,9 +481,13 @@ fn a_refused_stream_relists_through_read_dir() {
 #[test]
 fn another_errno_reaches_the_caller() {
     let (dir, _) = stream_fixture("bulk_eio");
-    let result = read_entries_with(&dir, &HashSet::new(), None, Pick::Forced(Lister::Bulk), &mut |_, _| {
-        Err(io::Error::from_raw_os_error(libc::EIO))
-    });
+    let result = read_entries_with(
+        &listing(&dir),
+        &HashSet::new(),
+        None,
+        Pick::Forced(Lister::Bulk),
+        &mut |_, _| Err(io::Error::from_raw_os_error(libc::EIO)),
+    );
     assert_eq!(result.err().and_then(|e| e.raw_os_error()), Some(libc::EIO));
 }
 
@@ -480,10 +497,16 @@ fn another_errno_reaches_the_caller() {
 fn production_lists_apfs_in_bulk() {
     let (dir, reference) = stream_fixture("bulk_production");
     let mut calls = 0;
-    let listed = read_entries_with(&dir, &HashSet::new(), None, Pick::ByFilesystem, &mut |fd, buf| {
-        calls += 1;
-        kernel_batch(fd, buf)
-    })
+    let listed = read_entries_with(
+        &listing(&dir),
+        &HashSet::new(),
+        None,
+        Pick::ByFilesystem,
+        &mut |fd, buf| {
+            calls += 1;
+            kernel_batch(fd, buf)
+        },
+    )
     .expect("lists");
     assert!(calls >= 2, "the bulk stream ran to its end (calls: {calls})");
     assert_eq!(sorted_debug(listed), reference, "bulk lists what read_dir does");

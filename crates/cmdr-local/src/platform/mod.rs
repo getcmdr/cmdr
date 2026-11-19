@@ -16,9 +16,11 @@
 use std::io;
 use std::path::{Path, PathBuf};
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::volume::MountClass;
 use cmdr_fs::volume::host::VolumeHost;
 
+mod anchor;
 #[cfg(unix)]
 pub(crate) mod local_posix;
 #[cfg(target_os = "windows")]
@@ -44,13 +46,19 @@ use local_posix as imp;
 use local_windows as imp;
 
 const _: fn(&Path, &Path) -> io::Result<()> = rename_local_exclusive;
+const _: fn(&AppPath, &AppPath) -> io::Result<()> = rename_local_exclusive_at;
 
 // The constructors every `LocalVolume` caller uses, with one signature on every OS, so a
-// site written on one OS builds on the other.
+// site written on one OS builds on the other. The `_at` forms take the root as an app path;
+// the native ones go once their callers move (plan milestones 10a–10d).
 const _: fn(String, PathBuf, VolumeHost) -> LocalVolume =
     |name, root, host| LocalVolume::local_folder(name, root, host);
 const _: fn(String, PathBuf, MountClass, VolumeHost) -> LocalVolume =
     |name, root, mount, host| LocalVolume::on_mount(name, root, mount, host);
+const _: fn(String, AppPathBuf, VolumeHost) -> LocalVolume =
+    |name, root, host| LocalVolume::local_folder_at(name, root, host);
+const _: fn(String, AppPathBuf, MountClass, VolumeHost) -> LocalVolume =
+    |name, root, mount, host| LocalVolume::on_mount_at(name, root, mount, host);
 #[cfg(any(test, feature = "testing"))]
 const _: fn(LocalVolume, crate::reading::ListingHook) -> LocalVolume = |volume, hook| volume.with_listing_hook(hook);
 
@@ -63,4 +71,15 @@ const _: fn(LocalVolume, crate::reading::ListingHook) -> LocalVolume = |volume, 
 /// for `MOVEFILE_REPLACE_EXISTING`), and both callers have a window between the
 /// check and the rename in which a file can appear, so destroying it would be
 /// silent and unrecoverable.
+///
+/// Takes native paths (on Windows either spelling, `C:\x` or the app path's `C:/x`); its
+/// callers move to [`rename_local_exclusive_at`] with their crate (plan milestone 10a).
 pub use imp::rename_local_exclusive;
+
+/// [`rename_local_exclusive`] of two app paths, crossing to the OS at `AppPath::to_native`.
+///
+/// # Errors
+///
+/// `InvalidInput` (or `InvalidFilename` for a name Windows can't store) carrying the typed
+/// refusal of a path no OS call opens, else what the rename answers.
+pub use imp::rename_local_exclusive_at;

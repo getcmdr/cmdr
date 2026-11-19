@@ -358,11 +358,7 @@ paths, `MoveFileExW`, attributes, reparse points, and alternate data streams. Ar
 nearly every method and hide which answers are real.
 
 - **App paths in, app paths out** (plan D1): the volume's root and every path it takes and hands back is
-  `C:/Users/test_user_1` or `//server/share/x`. `platform/local_windows/paths.rs` is its one crossing to Win32
-  (`native`, through `cmdr_fs::volume::path_grammar`'s `to_native`), so every call reaches the OS as `\\?\C:\…` and a
-  path past `MAX_PATH` works like any other. `resolve_under` is the volume's slash-only twin of
-  `cmdr_fs::volume::root_anchored`, whose `Path::join` writes a `\` into an app path on Windows (#1225); it reads a
-  relative path by `Path::components`, so a caller's `level\a.txt` lands where `level/a.txt` does.
+  `C:/Users/test_user_1` or `//server/share/x`, crossing to Win32 at `AppPath::to_native` (§ "App paths in and out").
 - **The no-replace rename** is `MoveFileExW` with no flags: the filesystem refuses a taken name in the same step that
   renames, so Windows needs no degraded check-then-rename path. ❗ `std::fs::rename` REPLACES on Windows, so it's the
   forced path only, and it's one replacement step (`supports_atomic_replace_rename` is true). A destination another
@@ -372,8 +368,9 @@ nearly every method and hide which answers are real.
   goes as the link, its target untouched, broken or not (verified on Windows 10 22H2, NTFS, for a junction in
   `local_windows_test.rs`, 2026-11-18; a directory symlink is unverified).
 - **The reader** is `reading.rs` with a Windows arm (`src/reading/platform/windows.rs`): `read_dir`, no added date,
-  `FILE_ATTRIBUTE_HIDDEN` as `is_hidden`. `reading/platform/` is the reader's seam on every OS now (the per-entry stat,
-  the lister pick, the single-entry finish); the listing loop and the entry's shape stay shared.
+  `FILE_ATTRIBUTE_HIDDEN` as `is_hidden`. `reading/platform/` is the reader's seam on every OS now (how a caller's
+  native path is located, the per-entry stat, the lister pick, the single-entry finish); the listing loop and the
+  entry's shape stay shared.
 - **Space** is `GetDiskFreeSpaceExW` (`src/space/platform/windows.rs`), beside `statvfs` for macOS and Linux.
 - **The filesystem kind** is `GetVolumePathNameW` plus `GetVolumeInformationW` (`filesystem_kind.rs`,
   `probe_mount_for_path`'s Windows arm), for a fixed or removable drive only (`GetDriveTypeW`): a mapped network drive
@@ -386,6 +383,42 @@ capability not yet real keeps the trait's conservative default (streams, copy sc
 the write-access probe), so nothing answers by guessing. `local_windows_conformance_test.rs` runs the shared conformance
 cells on the builder, each not-yet-kept one `#[ignore]`d with the piece of task 35 that owns it; its link cells build
 junctions with `mklink /J`, which needs no privilege.
+
+## App paths in and out
+
+Both volumes take and hand back app paths (`/Users/x`, `C:/Users/x`; `crates/cmdr-fs/DETAILS.md` § "App paths") and
+cross to the OS once per call. The design: `docs/specs/app-path-plan.md` milestone 9 (#1225), until that spec is wiped.
+
+- **The crossing down**: `LocalPosixVolume::os_path` (`located`, which also hands back the app path when it took the
+  typed way) and `LocalWindowsVolume::locate`. Both end at `AppPath::to_native`: the bytes on POSIX, the verbatim `\\?\`
+  form on Windows, so a trailing dot or space, a device name (`dup.`, `con.txt`), and a path past `MAX_PATH` name
+  exactly their file. Windows' refusals arrive as an `io::Error` whose kind carries the class (`paths.rs`: a `:` or a
+  path past the ceiling is `InvalidFilename`, so `VolumeError::InvalidName`; the rest `InvalidInput`), the typed
+  `NativeRefusal` as its source.
+- **Decision**: on POSIX a transition-bridge value (relative, a trailing `/`, a `..`, a path off the volume's root)
+  still reaches the OS as its own unnormalized text through `root_anchored`. **Why**: the OS reads that text differently
+  from its canonical twin (`lstat("link/")` follows the link, `link/..` is the target's parent), and
+  `wire_path_shape_test.rs` pins today's answers until the wire normalizes them deliberately (plan milestones 10c/10d).
+  The fallback, the old constructors' root, and the bridged parent `notify_mutation` reports are the crate's last bridge
+  calls; each goes with its callers' crate (10a–10d) or the bridge itself (11).
+- **Where a Windows caller's path lands** (`platform/anchor.rs`, table-tested on every OS): a drive or UNC path names
+  its own place, a POSIX `/a` and a relative `a/b` (or `a\b` from `Path::join`) hang under the root, a scheme path is
+  kept so the crossing refuses it, and a `..` is refused typed, ❌ never resolved by text. A path holding an escape is
+  refused `NotUnicode` until escapes go live (10f).
+- **Rows** (`reading/row.rs`): a `ListingDir` holds the OS path the reader lists and, when it's canonical and holds no
+  escape, the app path its rows join under (`AppPath::join`, so no row ever gains a Windows `\`). The stat goes through
+  the raw OS name. A name that isn't plain Unicode text keeps today's lossy row (U+FFFD) and is counted in a debug line,
+  and a bridge folder keeps the OS path's text; both go at 10f, when the escape gives each its lossless spelling.
+  `FileEntry.name == file_name(FileEntry.path)` either way.
+- **The `&Path` entry points** (`list_directory_core`, `get_single_entry`, `rename_local_exclusive`,
+  `patch_listing_after_local_mutation`, space, the old constructors) take a NATIVE path. On Windows either spelling
+  crosses up through `from_native_unicode` (`C:\x`, `C:/x`, `\\?\C:\x`), and the old constructors expand 8.3 short names
+  first (`cmdr_fs::app_path::expand_short_names`), since a listing never shows a short name. Typed forms beside them
+  (`local_folder_at`, `on_mount_at`, `rename_local_exclusive_at`) are what 10a–10d switch their callers to; the native
+  forms go then. `platform/mod.rs` pins each pair to one signature on both OSes.
+- **Decision**: the conflict scan refuses a source name that isn't one plain name as `InvalidName`. **Why**:
+  `Path::join` of `..` asked about the destination's parent (and reported it as a conflict), and of `/x` about `/x`
+  itself; no listing yields such a name, so only a broken or hostile caller sends one.
 
 ## Landing a link
 
@@ -401,8 +434,11 @@ with the preview and `scan_walk`.
 
 - `local_posix_test.rs`: real-FS cells (write ops, symlinks, copy, space info, the rename's degradation) on scratch
   dirs, against a detached or recording host.
-- `local_windows_conformance_test.rs` and `local_windows_test.rs` (Windows only, the builder): the shared conformance
-  cells and the Windows volume's hostile cells (§ "The Windows sibling").
+- `local_windows_conformance_test.rs`, `local_windows_test.rs`, and `local_windows_names_test.rs` (Windows only, the
+  builder): the shared conformance cells, the Windows volume's hostile cells (§ "The Windows sibling"), and the names
+  Win32's plain paths misread (`dup.`, `con.txt`, `a:b`, unpaired surrogates; § "App paths in and out").
+- `test_support::at(volume, "a/b")`: a cell's typed path under its volume's root, the same on every OS. A cell that
+  hands in a bridge value on purpose (a relative path, a root alias) pins a caller's shape that goes with the bridge.
 - `local_posix_conformance_test.rs`: the shared `cmdr_fs::volume::conformance` assertions this backend can run, the way
   every crate backend keeps its own. The roster and what each defends: `crates/cmdr-fs/DETAILS.md` § "The shared
   assertions in `volume::conformance`".
@@ -429,8 +465,9 @@ with the preview and `scan_walk`.
 handle), with no headroom. A backend's API is the `Volume` trait, `cmdr-fs`'s promise, so everything counted serves an
 app read of a local disk that doesn't go through a volume:
 
-- **The root**: `LocalPosixVolume`, `rename_local_exclusive` (the engine's landings and the in-flight sweep), and
-  `rename_volume_error` (the app's single rename, which names the right path in its error).
+- **The root**: `LocalPosixVolume`, `rename_local_exclusive` (the engine's landings and the in-flight sweep) and its
+  typed twin `rename_local_exclusive_at` (both reach the root through `platform`'s one glob), and `rename_volume_error`
+  (the app's single rename, which names the right path in its error).
 - **`reading`** (`list_directory_core`, `get_single_entry`; `list_directory_with`, `Lister`, and `added_at_by_path` are
   `testing`-gated, for the parity cells and `examples/listing_bench`) and **`mutation`**
   (`patch_listing_after_local_mutation`): the watcher, `tags.rs`, and `create.rs`'s instant row.

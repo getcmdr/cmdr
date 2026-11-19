@@ -172,9 +172,7 @@ impl LocalPosixVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let abs_path = self.os_path(path);
         Box::pin(async move {
             spawn_blocking(move || {
                 let metadata = std::fs::metadata(&abs_path).map_err(|e| VolumeError::from_io_at(&e, &abs_path))?;
@@ -212,9 +210,7 @@ impl LocalPosixVolume {
         version: &'a cmdr_fs::volume::SourceVersion,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let abs_path = self.os_path(path);
         let expected = version.downcast_ref::<LocalVersion>().copied();
         Box::pin(async move {
             let Some(expected) = expected else {
@@ -248,9 +244,7 @@ impl LocalPosixVolume {
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let abs_path = self.os_path(path);
         Box::pin(async move {
             spawn_blocking(move || {
                 use std::os::unix::fs::FileExt;
@@ -342,9 +336,7 @@ impl LocalPosixVolume {
         mut stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
-        let dest_std = dest.as_std_legacy();
-        let dest: &Path = &dest_std;
-        let dest_abs = self.resolve(dest);
+        let dest_abs = self.os_path(dest);
         Box::pin(async move {
             // Ensure parent directory exists
             if let Some(parent) = dest_abs.parent() {

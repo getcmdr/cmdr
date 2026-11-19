@@ -9,21 +9,13 @@
     "scripts/check/checks/registry.go": "append-only check registry (one CheckDefinition entry per check); line count tracks the number of checks, not splittable logic"
   },
   "files": {
-    "apps/desktop/src-tauri/src/file_system/volume/manager/roots.rs": {
-      "lines": 810,
-      "reason": "The mount roots one volume ID owns and the rules for picking its active one; it crossed the line only through the `Volume` trait's flip to app paths: each `volume.root()` read in its `std::path` root bookkeeping goes through the bridge (`&*volume.root().as_std_legacy()`), which rustfmt spreads over more lines. Those go once the app speaks app paths here (milestone 10c), which brings it back under."
-    },
-    "scripts/check/checks/index-crate-isolation-ceilings.go": {
-      "lines": 806,
-      "reason": "data, one entry per isolated crate with its ceilings and the dated reason behind each raise (the audit trail the check asks for); length tracks how often a surface grew, not logic. Splitting by crate would only scatter one table"
-    },
-    "apps/desktop/src/lib/settings/definitions/advanced.ts": {
-      "lines": 820,
-      "reason": "flat registry data, one object literal per Advanced setting in page order (no logic); length tracks how many settings the Advanced page holds, and splitting it would only scatter one page's rows across files"
-    },
     "apps/desktop/scripts/e2e-linux.sh": {
       "lines": 830,
       "reason": "TODO: move the in-container test run (the ~170-line `bash -c` string from the node_modules install to `exit \"$playwright_status\"`) into `e2e-linux-in-container.sh`, run inside the container by path, like the sourced `e2e-linux-fixtures.sh` on the host side. That also lifts the apostrophe-free-comment rule the single-quoted string imposes."
+    },
+    "apps/desktop/src-tauri/src/file_system/volume/manager/roots.rs": {
+      "lines": 810,
+      "reason": "The mount roots one volume ID owns and the rules for picking its active one; it crossed the line only through the `Volume` trait's flip to app paths: each `volume.root()` read in its `std::path` root bookkeeping goes through the bridge (`\u0026*volume.root().as_std_legacy()`), which rustfmt spreads over more lines. Those go once the app speaks app paths here (milestone 10c), which brings it back under."
     },
     "apps/desktop/src-tauri/src/lib.rs": {
       "lines": 886,
@@ -201,14 +193,6 @@
       "lines": 930,
       "reason": "the archive's one `Volume` impl, one short method per trait call over the cached index; the stream adapters already live in `volume_streams.rs` and the AppleDouble pairing in `read/sidecars.rs`, so a further split would only scatter the trait impl The trait's flip to app paths added a two-line bridge prelude to most methods, which go once this crate speaks app paths internally."
     },
-    "crates/cmdr-operations/src/rename/bulk.rs": {
-      "lines": 863,
-      "reason": "Bulk rename's planner and executor; it crossed the line only through the `Volume` trait's flip to app paths, whose bridge calls (`AppPath::legacy_unchecked` at each `Volume` call) rustfmt spreads over more lines. Those go once `cmdr-operations` speaks app paths internally, which brings it back under."
-    },
-    "crates/cmdr-operations/src/transfer/volume/faulty_volume_test_support.rs": {
-      "lines": 802,
-      "reason": "`forward_volume_methods!` (one arm per `Volume` method, spelled fully qualified) and `FaultyVolume`; it crossed the line only through the `Volume` trait's flip to app paths, whose longer `::cmdr_fs::app_path::AppPath` signatures and bridge preludes rustfmt spreads over more lines. Those go once `cmdr-operations` speaks app paths internally."
-    },
     "crates/cmdr-fs/src/volume/conformance.rs": {
       "lines": 808,
       "reason": "The cross-backend contract suite's shared cases; it crossed the line only through the `Volume` trait's flip to app paths, whose bridge calls (`AppPath::legacy_unchecked` at each `Volume` call) rustfmt spreads over more lines. Those go once `cmdr-fs` speaks app paths internally, which brings it back under."
@@ -269,10 +253,6 @@
       "lines": 1262,
       "reason": "TODO: split along the section banners the file already draws, into the per-concern `*_tests.rs` siblings this directory keeps (`kick_tests.rs`, `live_tests.rs`, `reclaim_tests.rs`, `coalescing_tests.rs`). The CLIP two-part-staleness group (`clip_state`, `clip_pass`, `model_absent_is_vision_only_no_clip_embedding`, `installing_clip_embeds_without_re_running_vision`, `a_clip_model_bump_re_embeds_without_touching_vision`, `delete_clip_model_removes_the_model_and_every_volumes_embeddings`) is roughly 210 lines over a different pass, and the live scoped-walk group (`seed_media`, `touched`, the two `walk_in_dirs_*`, `scoped_gc_spares_rows_in_untouched_dirs`, `whole_store_gc_over_a_scoped_walk_would_wipe_untouched_dirs`, `a_scoped_tick_promotes_a_lone_raw_and_gcs_the_deleted_jpg`) another roughly 205. Move them to `enrich_clip_tests.rs` and `enrich_scoped_tests.rs`, importing `build_index` / `media_writer` / `no_op_hooks` from here the way `live_tests.rs` already imports from `kick_tests.rs`, leaving roughly 850 lines of core-pass, GC, throttle, and progress tests."
     },
-    "crates/cmdr-local/src/local_posix_test.rs": {
-      "lines": 1276,
-      "reason": "Pushed past the test budget (1,148 lines before) by the trait's flip to app paths: rustfmt breaks most `Volume` calls whose argument became `&AppPath::legacy_unchecked(…)` over several lines. The bridge goes as `cmdr-local` speaks app paths in its own conversion milestone, which brings the file back under 1,200."
-    },
     "crates/cmdr-local/src/platform/local_posix.rs": {
       "lines": 972,
       "reason": "TODO: the `impl Volume for LocalPosixVolume` block plus the query and mutation bodies it can't spread across files. `scan` and `streams` already moved to `local_posix/`; the mutation bodies (create, delete, rename, `apply_metadata`) should follow into `local_posix/mutations.rs` as `pub(crate)` inherent methods with one-line delegators here, the shape `cmdr-sftp` and `cmdr-smb` use. (The crate-root `mutation.rs` is the listing patch, a different concern.) Moved here from the crate root when `LocalWindowsVolume` became its sibling under `platform/`."
@@ -297,6 +277,10 @@
       "lines": 1108,
       "reason": "TODO: the admission state machine is still buried under code that never touches its lock (the wire types already live in `manager/wire.rs`, and reordering in `manager/reorder.rs`). Move the two RAII guards (`ManagedTaskGuard`, `InstantTaskGuard`, about 85 lines), the retained-failure block (`FAILURE_CAPACITY`, `record_failure`, `dismiss_failure`, `dismiss_all_failures`, about 110 lines, whose out-of-band lifetime is the one piece of manager state that outlives a record), and the thin free-function facade at the bottom (`list_operations` through `dismiss_all_failed_operations`, about 95 lines) into children of the existing `manager/` directory. That leaves roughly 750 lines: `ManagerInner`, `OpRecord`, and the `spawn_managed` / `run_admission_pass` / `on_settled` / `free_and_remove` / `cancel_if_queued` machinery that genuinely has to share one `Mutex`."
     },
+    "crates/cmdr-operations/src/rename/bulk.rs": {
+      "lines": 863,
+      "reason": "Bulk rename's planner and executor; it crossed the line only through the `Volume` trait's flip to app paths, whose bridge calls (`AppPath::legacy_unchecked` at each `Volume` call) rustfmt spreads over more lines. Those go once `cmdr-operations` speaks app paths internally, which brings it back under."
+    },
     "crates/cmdr-operations/src/state.rs": {
       "lines": 804,
       "reason": "Just over: `WriteOperationState` is one struct of per-operation state (each field documented where it's declared) plus the one constructor that lists them all, and the device-barrier tracker (#1145) tipped it past 800. Its behavior already lives in `state/` children (`activity.rs`); what's left is the field list and its initializer, which read worse split."
@@ -312,6 +296,10 @@
     "crates/cmdr-operations/src/transfer/volume/copy.rs": {
       "lines": 1316,
       "reason": "TODO: the managed entry point and the engine are two jobs. Move `copy_between_volumes` (volume-capability validation, the both-local shortcut that converts a `VolumeCopyConfig` and delegates to the local pipeline, and the `spawn_managed` wiring, about 285 lines) and `scan_for_volume_copy` (the dialog's preview scan, about 95 lines) into a `copy_start.rs` sibling, mirroring `delete/volume_start.rs`, which exists for exactly this reason. What remains is about 930 lines including roughly 80 lines of `#[cfg(test)] #[path]` declarations for 24 suites, and it holds together: `copy_volumes_with_progress` is one phase runner from the dest-inside-source guard through Phase 0.5 create, temp reaping, `DestNameIndex` build, preflight scan, space check, bulk skip, driver call, and the rollback-or-cancel tail, threading about 25 locals end to end. Its two drivers already left for `copy_concurrent.rs` and `copy_serial.rs` behind 25-field and 20-field context structs, so carving out the terminal tail as well would mean a third such struct and read worse than what is there."
+    },
+    "crates/cmdr-operations/src/transfer/volume/faulty_volume_test_support.rs": {
+      "lines": 802,
+      "reason": "`forward_volume_methods!` (one arm per `Volume` method, spelled fully qualified) and `FaultyVolume`; it crossed the line only through the `Volume` trait's flip to app paths, whose longer `::cmdr_fs::app_path::AppPath` signatures and bridge preludes rustfmt spreads over more lines. Those go once `cmdr-operations` speaks app paths internally."
     },
     "crates/cmdr-operations/src/transfer/volume/merge.rs": {
       "lines": 1271,
@@ -360,6 +348,10 @@
     "crates/cmdr-viewer/src/session_test.rs": {
       "lines": 1542,
       "reason": "TODO: split it, because 62 tests in five barely-overlapping groups sit 760 lines over the test budget (1,933 lines on `main` before #264 against a stale 1,777 entry; #264 added 30 when every `session::get_lines` call gained an explicit cancel flag; the viewer becoming a value added ~170 more as rustfmt wrapped each `viewer().` call). Move the search tests (`search_start_and_poll` through `test_regex_search_returns_matches`, including the watchdog and invalid-query ones) to `session_search_test.rs` (~400 lines), the tail-mode and watcher tests (`tail_mode_toggle_persists_on_session` through `test_session_close_stops_watcher`) to `session_tail_test.rs` (~440 lines), and the encoding tests (`get_encoding_options_returns_detected_and_all`, both `set_encoding_*`, `test_append_during_encoding_rebuild_not_dropped`, `test_set_encoding_during_rebuild_serialization`, `test_set_encoding_ascii_compatible_is_instant`) to `session_encoding_test.rs` (~290 lines). The ~70 lines of shared helpers (`create_test_dir`, `write_test_file`, `append_test_file`, `wait_for_watcher_subscribed`, `upgraded_to_line_index`, `literal_mode`) go to a `session_test_support.rs`, the convention the sibling `search_cancel_test_support.rs` already sets, so no fixture scatters."
+    },
+    "scripts/check/checks/index-crate-isolation-ceilings.go": {
+      "lines": 806,
+      "reason": "data, one entry per isolated crate with its ceilings and the dated reason behind each raise (the audit trail the check asks for); length tracks how often a surface grew, not logic. Splitting by crate would only scatter one table"
     },
     "scripts/check/checks/lock-poison.go": {
       "lines": 890,

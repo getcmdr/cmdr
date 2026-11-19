@@ -96,12 +96,14 @@ fn test_get_single_entry_nonexistent() {
 
 /// The entry at `dir/name` through `entry_from_lstat`, outside any volume root.
 fn entry_at(dir: &std::path::Path, name: &str) -> Option<FileEntry> {
+    let path = dir.join(name);
     entry_from_lstat(
-        &dir.join(name),
-        name.to_string(),
+        &path,
+        crate::reading::Row::of(&path, None),
         &std::collections::HashSet::new(),
         AddedAt::Skip,
     )
+    .ok()
 }
 
 #[test]

@@ -94,10 +94,14 @@ mod local_posix_test;
 #[cfg(test)]
 mod local_windows_conformance_test;
 #[cfg(test)]
+mod local_windows_names_test;
+#[cfg(test)]
 mod local_windows_test;
 #[cfg(test)]
 mod reading_parity_test;
 #[cfg(test)]
 mod reading_test;
+#[cfg(test)]
+mod test_support;
 #[cfg(test)]
 mod wire_path_shape_test;

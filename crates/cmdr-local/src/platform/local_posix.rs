@@ -12,12 +12,12 @@ mod scan;
 mod streams;
 mod xattrs;
 
-use crate::reading::{ListingTally, get_single_entry, list_reporting_progress, supported_dates_of};
+use crate::reading::{ListingDir, ListingTally, Named, Row, list_reporting_progress, single_entry, supported_dates_of};
 use crate::rename_volume_error;
 use crate::space::{get_space_info_for_path, live_space_info_for_path};
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::app_path::AppPathBuf;
-use cmdr_fs::app_path::BridgedPath;
+use cmdr_fs::app_path::PathArithmetic;
 use cmdr_fs::entry::FileEntry;
 #[cfg(feature = "playwright-e2e")]
 use cmdr_fs::ignore_poison::IgnorePoison;
@@ -33,6 +33,7 @@ use cmdr_fs::volume::{
     EntryKind, ListingProgress, NodeIdentity, StreamLength, StreamWriteProgress, StreamWritten, SupportedDates,
     WriteMode, XattrAnswer, XattrReadMode,
 };
+use std::borrow::Cow;
 use std::future::Future;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -46,6 +47,16 @@ use tokio::task::spawn_blocking;
 /// filesystem has none.
 pub fn rename_local_exclusive(source: &Path, destination: &Path) -> io::Result<()> {
     rename_exclusive_with(source, destination, rename_exclusive_syscall)
+}
+
+/// The POSIX arm of `crate::rename_local_exclusive_at`: each app path's bytes, each escape
+/// decoded.
+pub fn rename_local_exclusive_at(source: &AppPath, destination: &AppPath) -> io::Result<()> {
+    let native = |path: &AppPath| {
+        path.to_native()
+            .map_err(|why| io::Error::new(io::ErrorKind::InvalidInput, why))
+    };
+    rename_local_exclusive(&native(source)?, &native(destination)?)
 }
 
 /// The kernel's atomic no-replace rename: `RENAME_EXCL` on macOS,
@@ -167,7 +178,10 @@ pub(crate) fn rename_if_free(source: &Path, destination: &Path, state: NameState
 /// - Root "/Users/you/Dropbox" represents "Dropbox" as a volume
 pub struct LocalPosixVolume {
     name: String,
-    root: BridgedPath,
+    /// The root as an app path, what `Volume::root` answers.
+    root: AppPathBuf,
+    /// The root as the OS opens it: the same bytes on macOS and Linux.
+    root_os: PathBuf,
     /// The mount this volume sits on, which decides whether a drive index can
     /// serve it (`capabilities`).
     mount: MountClass,
@@ -213,9 +227,29 @@ impl LocalPosixVolume {
     /// A volume rooted at a mount, with the [`MountClass`] its registration found
     /// (`index_provider::mount_class_at`).
     pub fn on_mount(name: impl Into<String>, root: impl Into<PathBuf>, mount: MountClass, host: VolumeHost) -> Self {
+        let root_os = root.into();
+        // The root's own text, unnormalized, as `Volume::root` answered before app paths: its
+        // callers move to `on_mount_at` with their crates (plan milestones 10a–10d).
+        let root = AppPath::legacy_unchecked(&root_os).into_owned();
+        Self::with_roots(name.into(), root, root_os, mount, host)
+    }
+
+    /// [`Self::local_folder`] at an app path.
+    pub fn local_folder_at(name: impl Into<String>, root: AppPathBuf, host: VolumeHost) -> Self {
+        Self::on_mount_at(name, root, MountClass::LocalDisk, host)
+    }
+
+    /// [`Self::on_mount`] at an app path.
+    pub fn on_mount_at(name: impl Into<String>, root: AppPathBuf, mount: MountClass, host: VolumeHost) -> Self {
+        let root_os = os_of(&root);
+        Self::with_roots(name.into(), root, root_os, mount, host)
+    }
+
+    fn with_roots(name: String, root: AppPathBuf, root_os: PathBuf, mount: MountClass, host: VolumeHost) -> Self {
         Self {
-            name: name.into(),
-            root: BridgedPath::new(root.into()),
+            name,
+            root,
+            root_os,
             mount,
             sidecar_probe: cmdr_fs::apple_double::volume_keeps_sidecars,
             host,
@@ -269,24 +303,46 @@ impl LocalPosixVolume {
         self
     }
 
-    /// Resolves a caller's path to an absolute one under this volume's root.
+    /// A caller's path as the absolute path the OS opens under this volume's root. The one
+    /// crossing down: `AppPath::to_native` for a canonical path on this volume (the bytes,
+    /// each escape decoded), which is every path a pane or a listing hands in.
     ///
-    /// The rule (root itself, already-under-root as-is, otherwise anchored) is
-    /// `cmdr_fs::volume::root_anchored`, shared with the IPC boundary so a
-    /// destination resolves the same way here and on a remote backend.
-    #[cfg(test)]
-    pub(crate) fn resolve(&self, path: &Path) -> PathBuf {
-        self.resolve_internal(path)
+    /// ❗ Anything else is a transition-bridge value a caller's crate still sends (a relative
+    /// path, a trailing `/`, a `..`, a path on another root), and it reaches the OS exactly as
+    /// before app paths: `cmdr_fs::volume::root_anchored` over its unnormalized text, so
+    /// `lstat("link/")` still follows the link until the wire normalizes (plan milestones
+    /// 10c/10d, the pins in `wire_path_shape_test.rs`). It goes with the bridge (milestone 11).
+    pub(crate) fn os_path(&self, path: &AppPath) -> PathBuf {
+        self.located(path).0
     }
 
-    #[cfg(not(test))]
-    fn resolve(&self, path: &Path) -> PathBuf {
-        self.resolve_internal(path)
+    /// [`Self::os_path`], plus the app path itself when it's the canonical one the fast way
+    /// took: the spelling rows and entries built under it carry.
+    pub(crate) fn located<'p>(&self, path: &'p AppPath) -> (PathBuf, Option<&'p AppPath>) {
+        if self.root.is_canonical()
+            && path.is_canonical()
+            && path.starts_with(&self.root)
+            && let Ok(os) = path.to_native()
+        {
+            return (os, Some(path));
+        }
+        (
+            cmdr_fs::volume::root_anchored(&self.root_os, &path.as_std_legacy()),
+            None,
+        )
     }
 
-    fn resolve_internal(&self, path: &Path) -> PathBuf {
-        cmdr_fs::volume::root_anchored(&self.root, path)
+    /// The listing folder at `path`, owned for a blocking thread.
+    fn listing_dir(&self, path: &AppPath) -> ListingDir<'static> {
+        let (os, app) = self.located(path);
+        ListingDir::new(Cow::Owned(os), app.map(|app| Cow::Owned(app.to_owned())))
     }
+}
+
+/// The path the OS opens for `path`, the volume's root: its bytes, each escape decoded, or a
+/// bridge value's own text (an unnormalized root a caller's crate still hands in).
+fn os_of(path: &AppPath) -> PathBuf {
+    path.to_native().unwrap_or_else(|_| path.as_std_legacy().into_owned())
 }
 
 impl LocalPosixVolume {
@@ -301,20 +357,18 @@ impl Volume for LocalPosixVolume {
     }
 
     fn root(&self) -> &AppPath {
-        self.root.app()
+        &self.root
     }
 
-    /// The root is pure addressing here (every method `resolve`s against it and
+    /// The root is pure addressing here (every method resolves against it and
     /// calls `std::fs`), so a re-root is a new instance at the new prefix. That
     /// is what lets the registry hand a doubly-mounted share's ID to the mount
     /// that's still live when the active one goes away. The new instance keeps
     /// this one's host.
     fn rerooted(&self, new_root: &AppPath) -> Option<Arc<dyn Volume>> {
-        let new_root_std = new_root.as_std_legacy();
-        let new_root: &Path = &new_root_std;
-        Some(Arc::new(LocalPosixVolume::on_mount(
+        Some(Arc::new(LocalPosixVolume::on_mount_at(
             self.name.clone(),
-            new_root,
+            new_root.to_owned(),
             self.mount,
             self.host.clone(),
         )))
@@ -329,8 +383,6 @@ impl Volume for LocalPosixVolume {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         #[cfg(feature = "playwright-e2e")]
         {
             let mut injected = self.injected_error.lock_ignore_poison();
@@ -343,17 +395,19 @@ impl Volume for LocalPosixVolume {
                 });
             }
         }
-        let abs_path = self.resolve(path);
+        let dir = self.listing_dir(path);
         // The one place Cmdr knows a directory IS a volume root, not merely
         // somewhere under one: `/.hidden` (`read_dot_hidden_names`) means nothing
         // anywhere else, so this is threaded through rather than re-derived below.
-        let is_volume_root = abs_path == *self.root;
+        let is_volume_root = dir.os() == self.root_os;
         #[cfg(any(test, feature = "testing"))]
         let tally = Arc::new(ListingTally::with_hook(self.listing_hook.clone()));
         #[cfg(not(any(test, feature = "testing")))]
         let tally = Arc::new(ListingTally::default());
+        let named = Named::new(dir.os().to_string_lossy().into_owned());
         Box::pin(list_reporting_progress(
-            abs_path,
+            dir,
+            named,
             is_volume_root,
             self.host.clone(),
             tally,
@@ -387,7 +441,7 @@ impl Volume for LocalPosixVolume {
         mode: XattrReadMode,
     ) -> Pin<Box<dyn Future<Output = Vec<XattrAnswer>> + Send + 'a>> {
         Box::pin(xattrs::read_many(
-            paths.iter().map(|path| self.resolve(&path.as_std_legacy())).collect(),
+            paths.iter().map(|path| self.os_path(path)).collect(),
             name.to_string(),
             mode,
         ))
@@ -399,9 +453,7 @@ impl Volume for LocalPosixVolume {
         name: &'a str,
         value: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        Box::pin(xattrs::write(self.resolve(path), name.to_string(), value.to_vec()))
+        Box::pin(xattrs::write(self.os_path(path), name.to_string(), value.to_vec()))
     }
 
     fn remove_xattr<'a>(
@@ -409,32 +461,30 @@ impl Volume for LocalPosixVolume {
         path: &'a AppPath,
         name: &'a str,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        Box::pin(xattrs::remove(self.resolve(path), name.to_string()))
+        Box::pin(xattrs::remove(self.os_path(path), name.to_string()))
     }
 
     fn get_metadata<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let (abs_path, app) = self.located(path);
+        let app = app.map(AppPath::to_owned);
         Box::pin(async move {
-            spawn_blocking(move || get_single_entry(&abs_path).map_err(|e| VolumeError::from_io_at(&e, &abs_path)))
-                .await
-                .expect("spawn_blocking metadata closure doesn't panic and the task is uncancelable")
+            spawn_blocking(move || {
+                single_entry(&abs_path, Row::of(&abs_path, app.as_deref()))
+                    .map_err(|e| VolumeError::from_io_at(&e, &abs_path))
+            })
+            .await
+            .expect("spawn_blocking metadata closure doesn't panic and the task is uncancelable")
         })
     }
 
     fn presence<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         // `symlink_metadata`, ❌ not `Path::exists()`, which follows a link and
         // answers false for a broken one. Only ENOENT / ENOTDIR are a definite
         // miss: EACCES, EIO, or a stalled FUSE daemon say nothing about the path.
-        let abs_path = self.resolve(path);
+        let abs_path = self.os_path(path);
         Box::pin(async move {
             spawn_blocking(move || match std::fs::symlink_metadata(abs_path) {
                 Ok(_) => Presence::Present,
@@ -452,9 +502,7 @@ impl Volume for LocalPosixVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let abs_path = self.os_path(path);
         Box::pin(async move {
             spawn_blocking(move || {
                 let metadata =
@@ -470,11 +518,9 @@ impl Volume for LocalPosixVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<EntryKind, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         // One bare `lstat`: `get_metadata` also stats a link's target and looks
         // up owner names, none of which answers this.
-        let abs_path = self.resolve(path);
+        let abs_path = self.os_path(path);
         Box::pin(async move {
             spawn_blocking(move || {
                 let file_type = std::fs::symlink_metadata(&abs_path)
@@ -497,10 +543,8 @@ impl Volume for LocalPosixVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Option<NodeIdentity>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         // One bare `lstat`, the same read the trash journals the identity from.
-        let abs_path = self.resolve(path);
+        let abs_path = self.os_path(path);
         Box::pin(async move {
             spawn_blocking(move || {
                 std::fs::symlink_metadata(&abs_path)
@@ -519,9 +563,20 @@ impl Volume for LocalPosixVolume {
         mutation: cmdr_fs::volume::MutationEvent,
     ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
         Box::pin(async move {
-            let parent_path_std = parent_path.as_std_legacy();
-            let parent_path: &Path = &parent_path_std;
-            crate::mutation::patch_listing_after_local_mutation(self.host.listings(), volume_id, parent_path, mutation);
+            // The listing host is told the folder as the caller named it, as before app
+            // paths: a bridge value's own text, unresolved, until its crate sends typed ones.
+            let listings = self.host.listings();
+            match self.located(parent_path) {
+                (os, Some(app)) => {
+                    let parent = ListingDir::new(Cow::Borrowed(os.as_path()), Some(Cow::Borrowed(app)));
+                    crate::mutation::patch_after_local_mutation(listings, volume_id, &os, &parent, mutation);
+                }
+                (_, None) => {
+                    let given = parent_path.as_std_legacy();
+                    let parent = ListingDir::new(Cow::Borrowed(&*given), None);
+                    crate::mutation::patch_after_local_mutation(listings, volume_id, &given, &parent, mutation);
+                }
+            }
         })
     }
 
@@ -530,28 +585,22 @@ impl Volume for LocalPosixVolume {
     }
 
     fn listing_watch_coverage(&self, path: &AppPath) -> WatchCoverage {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         // Resolve relative-to-volume paths to their absolute form so the comparison
         // against the listing cache (which stores absolute paths) lines up.
-        let abs_path = self.resolve(path);
+        let abs_path = self.os_path(path);
         // By path: this volume doesn't know its own id (the registry assigns it).
         self.host.listings().local_watch_coverage(&abs_path)
     }
 
     fn local_path(&self) -> Option<AppPathBuf> {
-        Some(AppPath::legacy_unchecked(&self.root.clone()).into_owned())
+        Some(self.root.clone())
     }
 
     fn read_link_target<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Option<PathBuf>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.read_link_target_impl(path).await
-        })
+        Box::pin(self.read_link_target_impl(path))
     }
 
     fn can_hold_links(&self) -> bool {
@@ -563,11 +612,7 @@ impl Volume for LocalPosixVolume {
         path: &'a AppPath,
         target: &'a Path,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.create_symlink_impl(path, target).await
-        })
+        Box::pin(self.create_symlink_impl(path, target))
     }
 
     fn create_file<'a>(
@@ -575,9 +620,7 @@ impl Volume for LocalPosixVolume {
         path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let abs_path = self.os_path(path);
         let content = content.to_vec();
         Box::pin(async move {
             spawn_blocking(move || -> Result<(), VolumeError> {
@@ -605,9 +648,7 @@ impl Volume for LocalPosixVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let abs_path = self.os_path(path);
         Box::pin(async move {
             spawn_blocking(move || {
                 std::fs::create_dir(&abs_path).map_err(|e| VolumeError::from_io_at(&e, &abs_path))?;
@@ -627,9 +668,7 @@ impl Volume for LocalPosixVolume {
         path: &'a AppPath,
         wanted: MetadataClasses,
     ) -> Pin<Box<dyn Future<Output = CarriedMetadata> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let abs_path = self.os_path(path);
         Box::pin(async move {
             let wanted = wanted.intersection(MetadataClasses::XATTRS | MetadataClasses::FLAGS);
             if wanted.is_empty() {
@@ -656,9 +695,7 @@ impl Volume for LocalPosixVolume {
         carried: &'a CarriedMetadata,
         modified: Option<std::time::SystemTime>,
     ) -> Pin<Box<dyn Future<Output = MetadataReport> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let abs_path = self.os_path(path);
         let carried = carried.clone();
         Box::pin(async move {
             spawn_blocking(move || streams::apply_metadata_at(&abs_path, &carried, modified))
@@ -672,9 +709,7 @@ impl Volume for LocalPosixVolume {
     /// Locked FOLDER refusing its child's removal is the caller's to open
     /// (`open_parent_folder`), since only it knows when to close it again.
     fn clear_blockers<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Unblock> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let abs_path = self.os_path(path);
         Box::pin(async move {
             spawn_blocking(move || cmdr_fs::metadata::clear_blockers(&abs_path))
                 .await
@@ -683,9 +718,7 @@ impl Volume for LocalPosixVolume {
     }
 
     fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let abs_path = self.os_path(path);
         Box::pin(async move {
             spawn_blocking(move || {
                 let metadata = std::fs::symlink_metadata(&abs_path).map_err(|e| {
@@ -729,12 +762,8 @@ impl Volume for LocalPosixVolume {
         to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        let from_std = from.as_std_legacy();
-        let from: &Path = &from_std;
-        let to_std = to.as_std_legacy();
-        let to: &Path = &to_std;
-        let from_abs = self.resolve(from);
-        let to_abs = self.resolve(to);
+        let from_abs = self.os_path(from);
+        let to_abs = self.os_path(to);
         let barriers = Arc::clone(&self.barriers);
         Box::pin(async move {
             spawn_blocking(move || {
@@ -780,9 +809,7 @@ impl Volume for LocalPosixVolume {
     /// Per folder, from what the listers fill there (`supported_dates_of`): an
     /// APFS folder carries both dates, an smbfs or exFAT one only Created.
     fn supported_dates<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = SupportedDates> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let abs_path = self.resolve(path);
+        let abs_path = self.os_path(path);
         Box::pin(async move {
             spawn_blocking(move || supported_dates_of(&abs_path))
                 .await
@@ -812,11 +839,7 @@ impl Volume for LocalPosixVolume {
         paths: &'a [AppPathBuf],
         boundary: &'a cmdr_fs::volume::ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::volume::BatchScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
-            let paths: &[PathBuf] = &paths_std;
-            self.scan_for_copy_batch_with_boundary_impl(paths, boundary).await
-        })
+        Box::pin(async move { self.scan_for_copy_batch_with_boundary_impl(paths, boundary).await })
     }
 
     fn supports_streaming(&self) -> bool {
@@ -927,7 +950,7 @@ impl Volume for LocalPosixVolume {
     }
 
     fn get_space_info<'a>(&'a self) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
-        let root = self.root.clone();
+        let root = self.root_os.clone();
         Box::pin(async move {
             spawn_blocking(move || get_space_info_for_path(&root))
                 .await
@@ -936,7 +959,7 @@ impl Volume for LocalPosixVolume {
     }
 
     fn get_live_space_info<'a>(&'a self) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
-        let root = self.root.clone();
+        let root = self.root_os.clone();
         Box::pin(async move {
             spawn_blocking(move || live_space_info_for_path(&root))
                 .await
@@ -950,9 +973,7 @@ impl Volume for LocalPosixVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = cmdr_fs::volume::WriteAccess> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let target = self.resolve(path);
+        let target = self.os_path(path);
         Box::pin(async move {
             spawn_blocking(move || write_access_for_path(&target))
                 .await

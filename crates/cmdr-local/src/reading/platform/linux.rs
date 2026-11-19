@@ -8,10 +8,12 @@ use std::path::Path;
 
 use cmdr_fs::entry::FileEntry;
 
-use super::super::{AddedAt, ListingTally, Pick, read_dir_entries, supported_dates_of, withhold_unclaimed_dates};
+use super::super::{
+    AddedAt, ListingDir, ListingTally, Pick, read_dir_entries, supported_dates_of, withhold_unclaimed_dates,
+};
 use super::OsFields;
 
-pub(crate) use super::unix::{child_path, lstat, mode_of, read_dir, stat};
+pub(crate) use super::unix::{located, lstat, mode_of, read_dir, stat};
 
 pub(crate) fn os_fields(metadata: &Metadata) -> OsFields {
     super::unix::posix_fields(metadata, false)
@@ -20,14 +22,14 @@ pub(crate) fn os_fields(metadata: &Metadata) -> OsFields {
 /// Each entry keeps only the dates `path`'s listing claims (`withhold_unclaimed_dates`): one
 /// more `stat`, of `path`.
 pub(crate) fn read_entries(
-    path: &Path,
+    dir: &ListingDir<'_>,
     dot_hidden: &HashSet<String>,
     tally: Option<&ListingTally>,
     pick: Pick,
 ) -> io::Result<Vec<FileEntry>> {
     let _ = pick;
-    let entries = read_dir_entries(path, dot_hidden, tally, AddedAt::Skip)?;
-    let dates = supported_dates_of(path);
+    let entries = read_dir_entries(dir, dot_hidden, tally, AddedAt::Skip)?;
+    let dates = supported_dates_of(dir.os());
     Ok(entries
         .into_iter()
         .map(|entry| withhold_unclaimed_dates(entry, dates))

@@ -2,15 +2,16 @@
 //! entry's stat says beyond std's portable fields. The listing loop, the tally, and the
 //! entry's shape stay in `reading.rs`, the same on every OS.
 
+use std::borrow::Cow;
 use std::collections::HashSet;
-use std::ffi::OsStr;
 use std::fs::{Metadata, ReadDir};
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::entry::FileEntry;
 
-use super::{ListingTally, Pick};
+use super::{ListingDir, ListingTally, Pick};
 
 #[cfg(unix)]
 mod unix;
@@ -40,19 +41,26 @@ pub(crate) struct OsFields {
 const _: fn(&Path) -> io::Result<Metadata> = lstat;
 const _: fn(&Path) -> io::Result<Metadata> = stat;
 const _: fn(&Path) -> io::Result<ReadDir> = read_dir;
-const _: fn(&Path, &OsStr) -> PathBuf = child_path;
+/// `located`'s answer: the path the OS opens, and the app path rows carry where it differs.
+pub(crate) type Located<'a> = (Cow<'a, Path>, Option<AppPathBuf>);
+const _: fn(&Path) -> io::Result<Located<'_>> = located;
 const _: fn(&Metadata) -> OsFields = os_fields;
 const _: fn(&Metadata) -> u32 = mode_of;
 /// `read_entries`' shape: the folder, its `/.hidden` names, the tally, and who picks the lister.
-type ReadEntries = fn(&Path, &HashSet<String>, Option<&ListingTally>, Pick) -> io::Result<Vec<FileEntry>>;
+type ReadEntries = fn(&ListingDir<'_>, &HashSet<String>, Option<&ListingTally>, Pick) -> io::Result<Vec<FileEntry>>;
 const _: ReadEntries = read_entries;
 const _: fn(&Path, FileEntry) -> FileEntry = finish_single_entry;
 const _: fn(&Path) -> bool = added_is_supported;
 #[cfg(any(test, feature = "testing"))]
 const _: fn(&Path) -> Option<u64> = added_at_by_path;
 
-/// The entry at `path` itself, a link not followed. `path` is the reader's path (an app path
-/// on Windows, which this turns into the OS's own form).
+/// A native path a caller outside the volumes hands the reader (`get_single_entry`,
+/// `list_directory_core`): the path the OS opens, and the app path its rows carry where that
+/// differs from today's text of the OS path (`None` on macOS and Linux, where it doesn't).
+/// On Windows either spelling (`C:\x`, `C:/x`) crosses through `from_native_unicode`.
+pub(crate) use imp::located;
+
+/// The entry at the OS path `path` itself, a link not followed.
 pub(crate) use imp::lstat;
 
 /// The entry at `path`, a link followed to its target.
@@ -60,10 +68,6 @@ pub(crate) use imp::stat;
 
 /// The names in the folder at `path`, as the OS lists them.
 pub(crate) use imp::read_dir;
-
-/// The reader's path for the entry `name` inside the folder at `dir`, the spelling a
-/// `FileEntry` carries.
-pub(crate) use imp::child_path;
 
 /// [`OsFields`] from an entry's stat. Resolves owner names, so call it once per entry.
 pub(crate) use imp::os_fields;
