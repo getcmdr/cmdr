@@ -336,16 +336,21 @@ fn quit_is_greyed_for_every_visitor() {
     }
 }
 
-/// View > Show menu bar (a page-drawn bar's own check) runs `view.toggleMenuBar`, and the setting's
-/// push moves its check; a Mac visitor's bar has no such row.
+/// View > Show menu bar is greyed for a Windows or Linux visitor, as Quit is: the demo's own bar
+/// doesn't follow the setting (it isn't the app's bar yet), so a live row would only flip its check,
+/// a dead end (review of #1281). A pick does nothing, and the setting's push still moves the check;
+/// a Mac visitor's bar has no such row.
 #[test]
-fn show_menu_bar_runs_its_command_and_follows_the_push() {
+fn show_menu_bar_is_greyed_where_the_demos_bar_ignores_it() {
     for platform in [Platform::Windows, Platform::Linux] {
         let menu = DemoMenu::for_platform(platform);
-        assert!(checked(&menu, "show_menu_bar"), "{platform:?}");
-        let (event, payload) = emitted(menu.click("show_menu_bar"));
-        assert_eq!(event, "execute-command");
-        assert_eq!(payload["commandId"], "view.toggleMenuBar");
+        let bar = menu.bar();
+        let row = bar.iter().find_map(|menu| find(&menu.rows, "show_menu_bar"));
+        assert!(
+            matches!(row, Some(Row::Check { enabled: false, .. })),
+            "{platform:?} greys it: {row:?}"
+        );
+        assert!(matches!(menu.click("show_menu_bar"), Click::Nothing), "{platform:?}");
         push(&menu, "sync_menu_show_menu_bar", json!({ "checked": false }));
         assert!(!checked(&menu, "show_menu_bar"), "{platform:?}");
     }

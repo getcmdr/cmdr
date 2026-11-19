@@ -227,9 +227,14 @@ impl DemoMenu {
     }
 }
 
-/// Rows a page has nothing behind: File > Quit (Exit on Windows), since a page can't quit its tab.
-/// They draw as an OS row, greyed, the way a Mac visitor's app-menu Quit does (`Row::System`).
-const PAGE_CANT_DO: [&str; 1] = [cmdr_menu::ids::QUIT_ID];
+/// Rows a page has nothing behind, drawn greyed and picking nothing:
+/// - File > Quit (Exit on Windows), since a page can't quit its tab. It draws as an OS row, the way
+///   a Mac visitor's app-menu Quit does (`Row::System`).
+/// - View > Show menu bar (Windows and Linux visitors), since the demo's strip draws its own bar and
+///   doesn't follow the setting: a live row would only flip its check (review of #1281). It stays a
+///   greyed check, its state still following the push. Live once the demo draws the app's own bar
+///   (task 63 step 11's remainder in `docs/specs/windows-port-plan.md`).
+const PAGE_CANT_DO: [&str; 2] = [cmdr_menu::ids::QUIT_ID, cmdr_menu::ids::SHOW_MENU_BAR_ID];
 
 fn grey_what_a_page_cant_do(rows: &mut [Row]) {
     for row in rows {
@@ -237,6 +242,7 @@ fn grey_what_a_page_cant_do(rows: &mut [Row]) {
             Row::Item { id, label, .. } if PAGE_CANT_DO.contains(&id.as_str()) => {
                 *row = Row::System { label: label.clone() };
             }
+            Row::Check { id, enabled, .. } if PAGE_CANT_DO.contains(&id.as_str()) => *enabled = false,
             Row::Submenu { rows, .. } => grey_what_a_page_cant_do(rows),
             _ => {}
         }
