@@ -128,7 +128,8 @@ Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a sma
 - **Generic std bound** (`rules_operands.go`): a typed value handed to a slot bounded by `AsRef<Path>`, `AsRef<OsStr>`,
   or `Into<PathBuf>` (`row.starts_with(volume.root())`, `LogPrivate::dir_path(volume.root())`, `Path::new(live.root())`,
   `MountRoot::new(volume.root())`), an E0277 whose span is the argument, becomes `&*x.as_std_legacy()`: a `&Path` with
-  the same bytes, which meets all three.
+  the same bytes, which meets all three. Both of `rules_operands.go`'s rules run after the body prelude: in a flipped
+  body, a std read of its own typed param (`if path != self.file`) is stale and wants the prelude.
 - **Imports**: a name a rule introduced (`AppPath`, `AppPathBuf`, `BridgedPath`, `app_path!`, `Path`, `PathBuf`) is
   imported at rustc's suggested point, or at the head of the innermost module when rustc suggests none (it doesn't for
   another crate's items). Never twice in one module, and ❌ never between an item and its outer attributes or doc
