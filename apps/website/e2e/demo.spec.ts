@@ -125,6 +125,28 @@ test.describe('Browser demo', () => {
     expect(errors.map((error) => error.message)).toEqual([])
   })
 
+  /**
+   * The window's OS buttons: a Mac's traffic lights over the window, or Windows' and Linux's title
+   * bar above the menu bar (whose top is `barTop`), as their OS draws a decorated window
+   * (`lib/demo/title-bar.ts`).
+   */
+  async function expectWindowButtons(page: Page, os: string, barTop: number | undefined) {
+    const titleBar = page.locator('.cmdr-demo-titlebar-main')
+    if (os === 'macos') {
+      await expect(page.locator('.cmdr-demo-lights-main')).toBeVisible()
+      await expect(titleBar).toHaveCount(0)
+      return
+    }
+    await expect(page.locator('.cmdr-demo-lights')).toHaveCount(0)
+    await expect(titleBar).toHaveAttribute('data-look', os)
+    await expect(titleBar).toContainText('Cmdr')
+    await expect(titleBar.getByRole('button')).toHaveCount(3)
+    const titleBox = await titleBar.boundingBox()
+    expect(titleBox?.y).toBe(0)
+    expect(titleBox?.height).toBe(os === 'windows' ? 32 : 37)
+    if (titleBox) expect(barTop).toBe(titleBox.height)
+  }
+
   // Each visitor gets their own OS's bar and look (task 63 step 11 of `docs/specs/windows-port-plan.md`):
   // the macOS bar for a Mac visitor, Windows 11's in-window bar for a Windows one, and the window under
   // whichever bar is there, so the status corner never sits under it (`lib/demo/DETAILS.md` § Platform).
@@ -145,22 +167,7 @@ test.describe('Browser demo', () => {
         await expect(titles.first()).toHaveText(isMac ? 'Cmdr' : 'File')
         const barBox = await bar.boundingBox()
         expect(barBox?.height).toBe(visitor.menuBarHeight)
-        // The window's OS buttons: a Mac's traffic lights over the window, or Windows' and Linux's title
-        // bar above the menu bar, as their OS draws a decorated window (`lib/demo/title-bar.ts`).
-        const titleBar = page.locator('.cmdr-demo-titlebar-main')
-        if (isMac) {
-          await expect(page.locator('.cmdr-demo-lights-main')).toBeVisible()
-          await expect(titleBar).toHaveCount(0)
-        } else {
-          await expect(page.locator('.cmdr-demo-lights')).toHaveCount(0)
-          await expect(titleBar).toHaveAttribute('data-look', visitor.os)
-          await expect(titleBar).toContainText('Cmdr')
-          await expect(titleBar.getByRole('button')).toHaveCount(3)
-          const titleBox = await titleBar.boundingBox()
-          expect(titleBox?.y).toBe(0)
-          expect(titleBox?.height).toBe(visitor.os === 'windows' ? 32 : 37)
-          if (titleBox) expect(barBox?.y).toBe(titleBox.height)
-        }
+        await expectWindowButtons(page, visitor.os, barBox?.y)
         await expect(page.locator('.file-pane').first().locator('.volume-name')).toContainText(visitor.mainVolume)
         const corner = await page.locator('.status-corner').boundingBox()
         if (corner && barBox) expect(corner.y).toBeGreaterThanOrEqual(barBox.y + barBox.height)
