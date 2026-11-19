@@ -5,12 +5,12 @@
 //!
 //! [`client_builder`] is `reqwest::Client::builder()` plus Cmdr's proxy decision, made per
 //! destination: loopback and link-local hosts always go direct, then the `*_PROXY` environment
-//! variables decide, then macOS's own answer for that URL (the proxy settings, their bypass list,
-//! and a PAC file). `DETAILS.md` has the order and the why.
+//! variables decide, then the OS's own answer for that URL (the proxy settings, their bypass list,
+//! and a PAC file; macOS's and Windows'). `DETAILS.md` has the order and the why.
 
 mod entries;
 mod env;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 mod pac;
 mod route;
 mod system;
@@ -49,11 +49,12 @@ fn process_env() -> Arc<EnvProxies> {
     ENV.get_or_init(|| Arc::new(EnvProxies::from_process())).clone()
 }
 
-/// Runs the PAC file macOS would use for `url`, once, on a background thread, so the process's
-/// slow first evaluation happens before a request waits on it. Call it at launch with the host
-/// the first requests go to. A request to that host arriving meanwhile waits for this answer
-/// rather than running the PAC again. Does nothing when no PAC applies (no PAC configured, a
-/// local host, or an environment variable decides first), and nothing off macOS.
+/// Runs the PAC file the OS would use for `url` (macOS and Windows; on Windows, WPAD's too),
+/// once, on a background thread, so the process's slow first evaluation happens before a request
+/// waits on it. Call it at launch with the host the first requests go to. A request to that host
+/// arriving meanwhile waits for this answer rather than running the PAC again. Does nothing when
+/// no PAC applies (no PAC configured, a local host, or an environment variable decides first),
+/// and nothing on Linux.
 pub fn warm_up_pac(url: &str) {
     let Some(url) = as_asked(url) else { return };
     system::warm_up(url, process_env());

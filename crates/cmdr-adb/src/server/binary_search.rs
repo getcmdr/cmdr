@@ -1,13 +1,20 @@
 //! Where each OS keeps `adb`, as data: the binary's filename, Android Studio's default SDK, and
-//! the package-manager folders worth a look. Pure and compiled on every OS, so each OS's list is
-//! tested on every OS; `platform/` picks this OS's [`AdbSearch`] (`HOST_SEARCH`).
+//! the package-manager folders worth a look, each under a base folder the process names. Pure and
+//! compiled on every OS, so each OS's list is tested on every OS; `platform/` picks this OS's
+//! [`AdbSearch`] (`HOST_SEARCH`).
 
 use std::path::PathBuf;
 
-/// The folder an OS's default SDK sits under.
+/// The folder a search entry sits under.
+///
+/// ❗ Cmdr runs the `adb` it finds with nothing verified, so every base names a folder only the
+/// current user or an administrator controls (`docs/security.md` § "Helper tools"). ❌ Never
+/// `%ProgramData%`: on a default Windows install any standard user can create folders there.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum SdkBase {
-    /// The user's home folder (`~`).
+pub(crate) enum DirBase {
+    /// None: the entry is an absolute path.
+    Root,
+    /// The user's home folder (`~`, `%USERPROFILE%` on Windows).
     Home,
     /// `%LOCALAPPDATA%` on Windows.
     LocalAppData,
@@ -20,9 +27,10 @@ pub(crate) struct AdbSearch {
     /// The binary's filename.
     pub(crate) exe: &'static str,
     /// Android Studio's default SDK, as its base folder and the path under it.
-    pub(crate) default_sdk: (SdkBase, &'static str),
-    /// Folders package managers install into that may not be on `$PATH` for a GUI app.
-    pub(crate) fixed_dirs: &'static [&'static str],
+    pub(crate) default_sdk: (DirBase, &'static str),
+    /// Folders package managers install into that may not be on `$PATH` for a GUI app, each as
+    /// its base folder and the path under it.
+    pub(crate) fixed_dirs: &'static [(DirBase, &'static str)],
 }
 
 #[allow(
@@ -34,24 +42,31 @@ impl AdbSearch {
     /// app gets launchd's short `PATH`, without either).
     pub(crate) const MACOS: AdbSearch = AdbSearch {
         exe: "adb",
-        default_sdk: (SdkBase::Home, "Library/Android/sdk"),
-        fixed_dirs: &["/opt/homebrew/bin", "/usr/local/bin"],
+        default_sdk: (DirBase::Home, "Library/Android/sdk"),
+        fixed_dirs: &[(DirBase::Root, "/opt/homebrew/bin"), (DirBase::Root, "/usr/local/bin")],
     };
 
     /// Android Studio's `~/Android/Sdk`, then `/usr/local/bin`. A distro's own `adb` lives in
     /// `/usr/bin`, which every `PATH` carries.
     pub(crate) const LINUX: AdbSearch = AdbSearch {
         exe: "adb",
-        default_sdk: (SdkBase::Home, "Android/Sdk"),
-        fixed_dirs: &["/usr/local/bin"],
+        default_sdk: (DirBase::Home, "Android/Sdk"),
+        fixed_dirs: &[(DirBase::Root, "/usr/local/bin")],
     };
 
-    /// `adb.exe`, and Android Studio's `%LOCALAPPDATA%\Android\Sdk`. Scoop and Chocolatey put
-    /// their shims on `PATH`, so no fixed folder is needed.
+    /// `adb.exe`, Android Studio's `%LOCALAPPDATA%\Android\Sdk`, then the per-user command
+    /// folders of WinGet (`Google.PlatformTools`) and Scoop (`adb`). Each installer puts its folder
+    /// on `PATH`, but a running Cmdr keeps the `PATH` it started with, so an `adb` installed while
+    /// it runs would otherwise stay invisible until a restart. ❌ Not Chocolatey's
+    /// `C:\ProgramData\chocolatey\bin`: on a machine without Chocolatey any standard user can
+    /// create that folder ([`DirBase`]); a real Chocolatey install puts it on the machine `PATH`.
     pub(crate) const WINDOWS: AdbSearch = AdbSearch {
         exe: "adb.exe",
-        default_sdk: (SdkBase::LocalAppData, "Android/Sdk"),
-        fixed_dirs: &[],
+        default_sdk: (DirBase::LocalAppData, "Android/Sdk"),
+        fixed_dirs: &[
+            (DirBase::LocalAppData, "Microsoft/WinGet/Links"),
+            (DirBase::Home, "scoop/shims"),
+        ],
     };
 }
 
@@ -73,12 +88,17 @@ impl SearchEnv {
             path_dirs: std::env::var_os("PATH")
                 .map(|path| std::env::split_paths(&path).collect())
                 .unwrap_or_default(),
-            android_home: std::env::var_os("ANDROID_HOME").map(PathBuf::from),
-            android_sdk_root: std::env::var_os("ANDROID_SDK_ROOT").map(PathBuf::from),
+            android_home: env_dir("ANDROID_HOME"),
+            android_sdk_root: env_dir("ANDROID_SDK_ROOT"),
             home: std::env::home_dir(),
-            local_app_data: std::env::var_os("LOCALAPPDATA").map(PathBuf::from),
+            local_app_data: env_dir("LOCALAPPDATA"),
         }
     }
+}
+
+/// A folder the environment names: native text, as the OS handed it over.
+fn env_dir(name: &str) -> Option<PathBuf> {
+    std::env::var_os(name).map(PathBuf::from)
 }
 
 /// Every place `search` says `adb` might be, in the order they're tried: `$PATH`,
@@ -91,17 +111,28 @@ pub(crate) fn candidates(search: &AdbSearch, env: &SearchEnv) -> Vec<PathBuf> {
         out.push(root.join("platform-tools").join(exe));
     }
     let (base, sdk) = search.default_sdk;
-    let base_dir = match base {
-        SdkBase::Home => &env.home,
-        SdkBase::LocalAppData => &env.local_app_data,
-    };
-    if let Some(base_dir) = base_dir {
-        // One component at a time, so a Windows path gets Windows separators throughout.
-        let sdk_dir = sdk.split('/').fold(base_dir.clone(), |dir, name| dir.join(name));
+    if let Some(sdk_dir) = resolve(env, base, sdk) {
         out.push(sdk_dir.join("platform-tools").join(exe));
     }
-    out.extend(search.fixed_dirs.iter().map(|dir| PathBuf::from(dir).join(exe)));
+    out.extend(
+        search
+            .fixed_dirs
+            .iter()
+            .filter_map(|&(base, dir)| resolve(env, base, dir))
+            .map(|dir| dir.join(exe)),
+    );
     out
+}
+
+/// `path` under `base`, or `None` when the process doesn't name that base.
+fn resolve(env: &SearchEnv, base: DirBase, path: &str) -> Option<PathBuf> {
+    let base_dir = match base {
+        DirBase::Root => return Some(PathBuf::from(path)),
+        DirBase::Home => env.home.as_ref(),
+        DirBase::LocalAppData => env.local_app_data.as_ref(),
+    }?;
+    // One component at a time, so a Windows path gets Windows separators throughout.
+    Some(path.split('/').fold(base_dir.clone(), |dir, name| dir.join(name)))
 }
 
 #[cfg(test)]

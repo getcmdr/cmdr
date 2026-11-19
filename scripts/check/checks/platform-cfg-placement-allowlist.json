@@ -391,9 +391,6 @@
     "crates/cmdr-fs/src/testing/mod.rs": {
       "outsideSeam": 2
     },
-    "crates/cmdr-fs/src/thread_qos.rs": {
-      "outsideSeam": 3
-    },
     "crates/cmdr-fs/src/volume/friendly_error/errno.rs": {
       "outsideSeam": 4
     },

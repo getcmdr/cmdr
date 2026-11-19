@@ -1,10 +1,12 @@
-//! CFNetwork's ordered proxy list, as Cmdr reads and walks it. The list comes from the system
-//! settings (`system/platform/macos.rs`) or from a PAC file (`pac.rs`), in the same shape either way.
+//! The system's ordered proxy list, as Cmdr reads and walks it: CFNetwork's on macOS, the one
+//! Windows' Internet settings spell out on Windows (`system/platform/ie_settings.rs`). The list
+//! comes from the system settings (`system/platform/`) or from a PAC file (`pac/`), in the same
+//! shape either way.
 #![cfg_attr(
-    any(target_os = "linux", target_os = "windows"),
+    target_os = "linux",
     allow(
         dead_code,
-        reason = "the list walk serves macOS's answer; elsewhere only its tests use it"
+        reason = "the list walk serves macOS's and Windows' answers; on Linux only its tests use it"
     )
 )]
 
@@ -29,11 +31,32 @@ pub(crate) enum Entry {
         port: u16,
         credentials: Option<(String, String)>,
     },
+    /// A proxy spoken to over TLS: a PAC's `HTTPS host:port`, which WinHTTP reports as such.
+    /// CFNetwork drops that answer, so only Windows' runner makes one.
+    #[allow(dead_code, reason = "only WinHTTP's PAC runner reports one; CFNetwork drops it")]
+    Https {
+        host: String,
+        port: u16,
+    },
+    /// A PAC's `SOCKS4 host:port`, which WinHTTP reports with its version.
+    #[allow(dead_code, reason = "only WinHTTP's PAC runner reports one; CFNetwork drops it")]
+    Socks4 {
+        host: String,
+        port: u16,
+    },
     /// A PAC file to evaluate for this URL.
     AutoConfigUrl(String),
     /// A PAC script given inline (`ProxyAutoConfigJavaScript`).
+    #[allow(dead_code, reason = "only CFNetwork lists one; Windows' settings never do")]
     AutoConfigScript(String),
+    /// Auto proxy discovery (WPAD): Windows' "Automatically detect settings". The Windows arm
+    /// swaps it for the PAC URL discovery found (or drops it) before the walk, so the walk never
+    /// runs discovery on a request's thread. macOS never lists one; it hands discovery's answer
+    /// over as a PAC URL.
+    #[allow(dead_code, reason = "only Windows' settings list one; CFNetwork never does")]
+    AutoDetect,
     /// A proxy type Cmdr can't speak (FTP), named for the log.
+    #[allow(dead_code, reason = "only CFNetwork's reader meets one; Windows' skips FTP")]
     Unsupported(String),
 }
 
@@ -92,7 +115,12 @@ fn usable(entry: &Entry) -> Option<Route> {
             port,
             credentials,
         } => Some(Route::Proxy(proxy_url("socks5h", host, *port, credentials.as_ref()))),
-        Entry::AutoConfigUrl(_) | Entry::AutoConfigScript(_) => None,
+        // ❗ `https`: TLS to the proxy itself, ❌ never `http` to its TLS port, which would hand
+        // the request over in the clear (reqwest's `rustls` speaks it, `lib_test.rs`).
+        Entry::Https { host, port } => Some(Route::Proxy(proxy_url("https", host, *port, None))),
+        // `socks4a`: SOCKS4 with the proxy resolving the name, for the reason `socks5h` has.
+        Entry::Socks4 { host, port } => Some(Route::Proxy(proxy_url("socks4a", host, *port, None))),
+        Entry::AutoConfigUrl(_) | Entry::AutoConfigScript(_) | Entry::AutoDetect => None,
         Entry::Unsupported(kind) => {
             log::debug!(target: "cmdr_http", "skipping a {kind} proxy: Cmdr speaks HTTP and SOCKS proxies only");
             None

@@ -1566,6 +1566,7 @@ dependencies = [
  "twox-hash",
  "unicase",
  "unicode-normalization",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1690,6 +1691,7 @@ dependencies = [
  "reqwest",
  "tokio",
  "url",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
