@@ -19,12 +19,12 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   // Two suites (the `website-e2e` and `website-demo-e2e` checks each pick theirs): `chromium` is
-  // every spec but the full browser demo suite, so it passes against an older released demo; `demo`
-  // and `demo-mac` are that suite plus its smoke, for a demo built from the same sources. The demo
-  // answers for the visitor's own OS, read off the user agent, so its keys and copy differ per
-  // visitor: `demo` is a Windows visitor (Desktop Chrome's user agent), `demo-mac` a Mac one.
-  // Running with no `--project` runs all three, the smoke three times. `e2e/demo-support.ts` says
-  // where each runs.
+  // every spec but the full browser demo suite, so it passes against an older released demo; `demo`,
+  // `demo-mac`, and `demo-linux` are that suite plus its smoke, for a demo built from the same
+  // sources. The demo answers for the visitor's own OS, read off the user agent, so its keys, copy,
+  // and window chrome differ per visitor: `demo` is a Windows visitor (Desktop Chrome's user agent),
+  // `demo-mac` a Mac one, `demo-linux` a Linux one. Running with no `--project` runs all four, the
+  // smoke four times. `e2e/demo-support.ts` says where each runs.
   projects: [
     {
       name: 'chromium',
@@ -42,6 +42,14 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         userAgent: devices['Desktop Chrome'].userAgent.replace(/\([^)]*\)/, '(Macintosh; Intel Mac OS X 10_15_7)'),
+      },
+    },
+    {
+      name: 'demo-linux',
+      testMatch: ['**/demo-smoke.spec.ts', '**/demo.spec.ts'],
+      use: {
+        ...devices['Desktop Chrome'],
+        userAgent: devices['Desktop Chrome'].userAgent.replace(/\([^)]*\)/, '(X11; Linux x86_64)'),
       },
     },
   ],

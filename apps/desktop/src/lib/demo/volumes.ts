@@ -1,12 +1,34 @@
 /**
- * The demo's volume list: one main disk plus the usual favorites, all on the in-memory volume.
+ * The demo's volume list: one main disk plus the usual favorites, all on the in-memory volume. The
+ * disk wears the name the desktop gives its main volume on the visitor's OS.
  */
 import type { LocationCategory, LocationInfo } from '#lib/ipc/bindings.js'
+import type { Platform } from '#lib/platform/index.js'
 import type { AnswerTable } from './answer-types.js'
 import { DEMO_HOME, DEMO_VOLUME_ID } from './demo-tree.js'
 import { demoFavorites } from './favorites.js'
+import { visitorPlatform } from './platform.js'
+
+/**
+ * The main volume as the desktop names it on each OS: the Mac's startup disk; the system drive as
+ * `WindowsDrive::display_name` reads an unlabeled one (`crates/cmdr-fs/src/volume/windows_volume_ids.rs`,
+ * `C:`); Linux's root row (`get_main_volume` in `src-tauri/src/volumes/platform/linux/mod.rs`,
+ * `Root`). Its file system too, which Settings and the volume's tooltip name. The demo's paths
+ * stay POSIX for every visitor (`docs/specs/windows-port-plan.md`, task 63 step 11).
+ */
+const MAIN_VOLUME: Readonly<Record<Platform, { name: string; fsType: string }>> = {
+  macos: { name: 'Macintosh HD', fsType: 'apfs' },
+  windows: { name: 'C:', fsType: 'ntfs' },
+  linux: { name: 'Root', fsType: 'ext4' },
+}
+
+/** The main volume's name for a visitor on `platform` (the visitor's own by default). */
+export function mainVolumeName(platform: Platform = visitorPlatform(navigator.userAgent)): string {
+  return MAIN_VOLUME[platform].name
+}
 
 function location(
+  platform: Platform,
   id: string,
   name: string,
   path: string,
@@ -20,7 +42,7 @@ function location(
     category,
     icon: null,
     isEjectable: false,
-    fsType: 'apfs',
+    fsType: MAIN_VOLUME[platform].fsType,
     // The in-memory volume has no Trash (`Volume::has_trash`), so F8 deletes for good after the
     // app's own confirm, as on a network share.
     supportsTrash: false,
@@ -40,20 +62,33 @@ function location(
     favoriteShortcut,
     favoriteTarget:
       category === 'favorite'
-        ? { volumeId: DEMO_VOLUME_ID, volumeName: 'Macintosh HD', volumeRoot: '/', reach: { kind: 'ready' } }
+        ? {
+            volumeId: DEMO_VOLUME_ID,
+            volumeName: MAIN_VOLUME[platform].name,
+            volumeRoot: '/',
+            reach: { kind: 'ready' },
+          }
         : null,
     rootLabel: null,
     mountAccount: null,
   }
 }
 
-const mainVolume = location(DEMO_VOLUME_ID, 'Macintosh HD', '/', 'main_volume')
+/** The main volume's row for a visitor on `platform`. */
+function mainVolumeOf(platform: Platform): LocationInfo {
+  return location(platform, DEMO_VOLUME_ID, MAIN_VOLUME[platform].name, '/', 'main_volume')
+}
 
-/** The volume list as it stands: the favorites (`favorites.ts`, which the visitor can edit), then the disk. */
-export function demoLocations(): LocationInfo[] {
+const visitor = (): Platform => visitorPlatform(navigator.userAgent)
+
+/**
+ * The volume list as it stands for a visitor on `platform`: the favorites (`favorites.ts`, which
+ * the visitor can edit), then the disk.
+ */
+export function demoLocations(platform: Platform = visitor()): LocationInfo[] {
   return [
-    ...demoFavorites().map(({ id, name, path, shortcut }) => location(id, name, path, 'favorite', shortcut)),
-    mainVolume,
+    ...demoFavorites().map(({ id, name, path, shortcut }) => location(platform, id, name, path, 'favorite', shortcut)),
+    mainVolumeOf(platform),
   ]
 }
 
@@ -67,7 +102,7 @@ export const volumeAnswers = {
   listVolumes: () => ({ data: demoLocations(), timedOut: false }),
   getDefaultVolumeId: () => DEMO_VOLUME_ID,
   getE2eStartPath: () => null,
-  resolvePathVolume: () => ({ volume: mainVolume, timedOut: false }),
+  resolvePathVolume: () => ({ volume: mainVolumeOf(visitor()), timedOut: false }),
   // The pane boot asks this for every restored tab. The one demo volume never moves and its
   // "registry" is complete from the start, so the tab stays put. Unanswered, the call rejects, the
   // app reads that as the startup sweep still running, and every tab opens unreachable.

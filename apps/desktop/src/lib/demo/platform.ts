@@ -57,19 +57,14 @@ const MAC_VISITOR_CAPABILITIES: Readonly<PlatformCapabilities> = Object.freeze({
 })
 
 /**
- * What every other visitor gets: no OS-backed surface but one. `appMenu` stays off, since their bar
- * is their own OS's (`crates/cmdr-listing-wasm/src/menu.rs`), which ends File with Quit, so Quit is
- * a palette command too, as on their desktop. A page can't quit its tab: the bar greys Quit and the
- * palette's says so (`answers.ts`'s `quitApp`).
- * - `overlayTitleBar`: the demo still draws the macOS traffic lights over each window's top left
- *   corner for every visitor (`traffic-lights.ts`), so every page keeps its title line under them.
- *   Without it the queue's toolbar started under the lights, which took the clicks meant for "Pause
- *   all". It goes once the demo draws each OS's own window buttons.
+ * What every other visitor gets: no OS-backed surface, as the desktop answers for Windows and
+ * Linux. `appMenu` stays off, since their bar is their own OS's (`crates/cmdr-listing-wasm/src/menu.rs`),
+ * which ends File with Quit, so Quit is a palette command too, as on their desktop. A page can't
+ * quit its tab: the bar greys Quit and the palette's says so (`answers.ts`'s `quitApp`). No
+ * `overlayTitleBar` either: their windows keep the OS's title bar above the page, which the demo
+ * draws (`title-bar.ts`), so no page leaves room for buttons over it.
  */
-const OTHER_VISITOR_CAPABILITIES: Readonly<PlatformCapabilities> = Object.freeze({
-  ...NO_CAPABILITIES,
-  overlayTitleBar: true,
-})
+const OTHER_VISITOR_CAPABILITIES: Readonly<PlatformCapabilities> = NO_CAPABILITIES
 
 /** The demo's capabilities for a visitor on `platform`. Exported for its test. */
 export function visitorCapabilities(platform: Platform): Readonly<PlatformCapabilities> {

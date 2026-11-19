@@ -7,9 +7,9 @@ a typed answer here; listing commands go to the real listing engine, built to WA
 - `boot.ts`: the frame's role. `backend.ts`: the page's one backend. `webview.ts`: one frame's `__TAURI_INTERNALS__`.
   `windows.ts`: secondary windows as in-page panels (Settings, Keyboard shortcuts, the queue, `viewer-*`).
   `menu-bar.svelte.ts` and `context-menu.ts`: the menu bar and right-click menus, from `menu-engine.ts` (the desktop's
-  bar through WASM), on `#lib/ui`'s menus, clicks through `menu-click.ts`. `traffic-lights.ts`: the window buttons.
-  `drag-regions.ts`: Tauri's `drag.js`. `drag-session.ts` / `os-drop.ts`: drags out and drops in. `color-scheme.ts`:
-  `setTheme` per frame.
+  bar through WASM), on `#lib/ui`'s menus, clicks through `menu-click.ts`. `traffic-lights.ts` (Mac) / `title-bar.ts`
+  (Windows, Linux): the window buttons. `drag-regions.ts`: Tauri's `drag.js`. `drag-session.ts` / `os-drop.ts`: drags
+  out and drops in. `color-scheme.ts`: `setTheme` per frame.
 - `answers.ts`, `volumes.ts`, `favorites.ts` (in memory), `relayed.ts` (answers that emit), `plugins.ts` (in-memory
   `plugin:store`, path, app), `browser-dialogs.ts` (questions, pickers), `opener.ts` (links open in a new tab),
   `listing.ts` (routes to the WASM engine, loaded by `engine-module.ts`), `coverage.ts` (every command answered or left

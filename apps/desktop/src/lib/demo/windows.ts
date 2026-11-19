@@ -6,16 +6,25 @@
  * (`tauri://error` on the opener's handle). See `DETAILS.md` § Secondary windows.
  */
 import { resolve } from '$app/paths'
+import type { Platform } from '#lib/platform/index.js'
 import { refuseWith, type Payload } from './answer-types.js'
 import type { EventTarget } from './backend.js'
+import { createMainWindowTitleBar, createTitleBar, type TitleBarLook } from './title-bar.js'
 import {
   createMainWindowLights,
   createTrafficLights,
   lightsInset,
   MAIN_LIGHTS_INSET,
   type TrafficLightPosition,
-  type TrafficLights,
+  type ZoomGlyph,
 } from './traffic-lights.js'
+
+/** A window's OS buttons: a Mac visitor's traffic lights, or a Windows or Linux visitor's title bar. */
+interface WindowButtons {
+  root: HTMLElement
+  setActive(active: boolean): void
+  setZoomGlyph(glyph: ZoomGlyph): void
+}
 
 /**
  * The windows that open. Settings and Keyboard shortcuts run on the stores and answers the demo
@@ -59,7 +68,7 @@ interface Panel {
   label: string
   root: HTMLElement
   iframe: HTMLIFrameElement
-  lights: TrafficLights
+  lights: WindowButtons
   /** The panel's own size and place before a zoom filled the viewport, for the next zoom to restore. */
   unzoomed: { left: string; top: string; width: string; height: string } | null
   maxWidth: number
@@ -76,9 +85,20 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(value, max))
 }
 
-/** Where windows may start: under the demo's menu bar (`--cmdr-demo-window-top`), as macOS keeps them under its own. */
+/**
+ * Where windows may start: under the demo's menu bar (`--cmdr-demo-window-top`), as macOS keeps
+ * them under its own, and under the main window's title bar and menu bar for a Windows or Linux
+ * visitor. A plain length reads as is; a `calc()` (the title bar plus the bar) is measured.
+ */
 function desktopTop(): number {
-  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cmdr-demo-window-top')) || 0
+  const value = getComputedStyle(document.documentElement).getPropertyValue('--cmdr-demo-window-top').trim()
+  if (!value.includes('(')) return parseFloat(value) || 0
+  const probe = document.createElement('div')
+  probe.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;height:var(--cmdr-demo-window-top)'
+  document.body.append(probe)
+  const height = probe.getBoundingClientRect().height
+  probe.remove()
+  return height
 }
 
 /** The panel's look, from the app's own tokens. Injected once, scoped to the demo's class names. */
@@ -106,6 +126,9 @@ const STYLE = `
 }
 /* Over the page's overlay title bar, as the OS draws them over a Tauri overlay window. */
 .cmdr-demo-window .cmdr-demo-lights { position: absolute; z-index: 1; }
+/* The main window's Windows or Linux title bar sits over an in-page modal's backdrop, as the OS's
+   caption sits outside the client area a dialog dims. */
+.cmdr-demo-titlebar-main { z-index: calc(var(--z-modal-top) + 1); }
 .cmdr-demo-window iframe { flex: 1; width: 100%; border: 0; background: transparent; }
 .cmdr-demo-window.dragging iframe { pointer-events: none; }
 `
@@ -119,21 +142,40 @@ export interface WindowHost {
   frame(label: string): HTMLIFrameElement | undefined
   /** Closes the panel labeled `label`, as its close button does. */
   close(label: string): void
-  /** Draws the main window's traffic lights at its top-left (`traffic-lights.ts`). Call once, in the top frame. */
-  mountMainWindowLights(): void
+  /**
+   * Draws the main window's OS buttons: a Mac visitor's traffic lights at its top-left
+   * (`traffic-lights.ts`), anyone else's title bar above the menu bar (`title-bar.ts`). Call once,
+   * in the top frame.
+   */
+  mountMainWindowButtons(): void
 }
 
-/** `onClosed` hears every panel that closes, after its `tauri://destroyed`, as the app's window-destroyed hook does. */
-export function createWindowHost(emit: Emit, onClosed: (label: string) => void = () => {}): WindowHost {
+/**
+ * `onClosed` hears every panel that closes, after its `tauri://destroyed`, as the app's
+ * window-destroyed hook does. `platform` is the visitor's, which picks every window's OS buttons.
+ */
+export function createWindowHost(
+  emit: Emit,
+  onClosed: (label: string) => void = () => {},
+  platform: Platform = 'macos',
+): WindowHost {
+  const titleBarLook: TitleBarLook | null = platform === 'macos' ? null : platform
   const panels = new Map<string, Panel>()
   let styled = false
+  function ensureStyle(): void {
+    if (styled) return
+    const style = document.createElement('style')
+    style.textContent = STYLE
+    document.head.append(style)
+    styled = true
+  }
   // What had focus in the main window when a panel took it. A native window keeps its focused
   // element while another window is key; the page has one focus, so the main window's is kept here.
   let mainFocus: HTMLElement | null = null
   // The key window's label, whose lights are lit. Every window's go grey when the page loses
   // focus, as all of an app's windows do when another app comes forward.
   let key = 'main'
-  let mainLights: TrafficLights | null = null
+  let mainLights: WindowButtons | null = null
 
   function refreshLights(): void {
     const pageFocused = document.hasFocus()
@@ -146,9 +188,10 @@ export function createWindowHost(emit: Emit, onClosed: (label: string) => void =
     refreshLights()
   }
 
-  function mountMainWindowLights(): void {
+  function mountMainWindowButtons(): void {
     if (mainLights) return
-    const lights = createMainWindowLights()
+    if (titleBarLook) ensureStyle()
+    const lights = titleBarLook ? createMainWindowTitleBar(titleBarLook) : createMainWindowLights()
     mainLights = lights
     // The app's start script runs in `<body>`, so it exists by the time the backend is created.
     document.body.append(lights.root)
@@ -249,12 +292,7 @@ export function createWindowHost(emit: Emit, onClosed: (label: string) => void =
 
   function open(options: Payload): void {
     const label = options.label as string
-    if (!styled) {
-      const style = document.createElement('style')
-      style.textContent = STYLE
-      document.head.append(style)
-      styled = true
-    }
+    ensureStyle()
     const title = typeof options.title === 'string' ? options.title : ''
     const width = Math.min(Number(options.width) || 800, window.innerWidth - 2 * MARGIN)
     const top = desktopTop()
@@ -269,27 +307,39 @@ export function createWindowHost(emit: Emit, onClosed: (label: string) => void =
     root.style.left = `${String(Math.round((window.innerWidth - width) / 2))}px`
     root.style.top = `${String(top + Math.round((window.innerHeight - top - height) / 2))}px`
 
-    // Close closes; zoom fills the viewport and back, the nearest a panel gets to full screen;
-    // minimize stays inert, since a page has no Dock to bring a minimized panel back from. The
-    // glyph is the full-screen arrows a resizable window's green light shows on macOS 27.
-    const lights = createTrafficLights(
-      {
-        close: () => {
-          close(label)
+    // Close closes; zoom (maximize) fills the viewport and back, the nearest a panel gets to full
+    // screen; minimize stays inert, since a page has no Dock or taskbar to bring a minimized panel
+    // back from.
+    const closeThis = () => {
+      close(label)
+    }
+    const zoomThis = () => {
+      zoom(panel)
+    }
+    let lights: WindowButtons
+    if (titleBarLook) {
+      // A Windows or Linux window keeps the OS's own title bar above the page (the app sets no
+      // overlay title bar there), so the page starts under it and the bar moves the window.
+      lights = createTitleBar(titleBarLook, title, {
+        close: closeThis,
+        maximize: zoomThis,
+        drag: (event) => {
+          focusPanel(panel)
+          startDrag(panel, event.screenX, event.screenY)
         },
-        zoom: () => {
-          zoom(panel)
-        },
-      },
-      'enterFullScreen',
-    )
-    // Every Cmdr window is an overlay window with a hidden title: no title bar of its own, the
-    // lights over the page at its `trafficLightPosition`, and the page's drag strip under them.
-    const inset = options.trafficLightPosition
-      ? lightsInset(options.trafficLightPosition as TrafficLightPosition)
-      : MAIN_LIGHTS_INSET
-    lights.root.style.left = `${String(inset.left)}px`
-    lights.root.style.top = `${String(inset.top)}px`
+      })
+    } else {
+      // The glyph is the full-screen arrows a resizable window's green light shows on macOS 27.
+      const macLights = createTrafficLights({ close: closeThis, zoom: zoomThis }, 'enterFullScreen')
+      // Every Cmdr window is an overlay window with a hidden title: no title bar of its own, the
+      // lights over the page at its `trafficLightPosition`, and the page's drag strip under them.
+      const inset = options.trafficLightPosition
+        ? lightsInset(options.trafficLightPosition as TrafficLightPosition)
+        : MAIN_LIGHTS_INSET
+      macLights.root.style.left = `${String(inset.left)}px`
+      macLights.root.style.top = `${String(inset.top)}px`
+      lights = macLights
+    }
 
     const iframe = document.createElement('iframe')
     iframe.name = label
@@ -379,6 +429,6 @@ export function createWindowHost(emit: Emit, onClosed: (label: string) => void =
     front: () => (front ? { label: front.label, frame: front.iframe } : undefined),
     frame: (label) => panels.get(label)?.iframe,
     close,
-    mountMainWindowLights,
+    mountMainWindowButtons,
   }
 }

@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import type { Platform } from '#lib/platform/index.js'
 import type { EventTarget } from './backend.js'
+import { TITLE_BAR_HEIGHT_PROPERTY } from './title-bar.js'
 import { createWindowHost, WINDOW_HOST_COMMANDS, WINDOW_PLUGIN_COMMANDS } from './windows.js'
 
-function setup() {
+function setup(platform: Platform = 'macos') {
   const emitted: [string, EventTarget][] = []
-  const host = createWindowHost((event, _payload, target) => emitted.push([event, target]))
+  const host = createWindowHost((event, _payload, target) => emitted.push([event, target]), undefined, platform)
   const call = (cmd: string, payload: Record<string, unknown> = {}): unknown => {
     const handler = host.handler(cmd)
     if (!handler) throw new Error(`no handler for ${cmd}`)
@@ -129,7 +131,7 @@ describe('demo windows', () => {
 
   it('lights only the key window, and the main one again once the last panel closes', () => {
     const { host, open, call } = setup()
-    host.mountMainWindowLights()
+    host.mountMainWindowButtons()
     const mainLights = document.querySelector<HTMLElement>('.cmdr-demo-lights-main')
     expect(mainLights?.dataset.active).toBe(String(document.hasFocus()))
     open('settings')
@@ -240,5 +242,63 @@ describe('demo windows', () => {
     expect(call('raise_child_window', { label: 'nothing-open' })).toBeNull()
     expect(call('plugin:window|available_monitors')).toEqual([])
     expect(call('plugin:window|set_effects', { label: 'settings' })).toBeNull()
+  })
+})
+
+describe('demo windows for a Windows or Linux visitor', () => {
+  afterEach(() => {
+    for (const bar of document.querySelectorAll('.cmdr-demo-titlebar-main')) bar.remove()
+    document.documentElement.style.removeProperty(TITLE_BAR_HEIGHT_PROPERTY)
+  })
+
+  it('gives every window its OS’s title bar, never the macOS traffic lights', () => {
+    for (const platform of ['windows', 'linux'] as const) {
+      const { host, open } = setup(platform)
+      host.mountMainWindowButtons()
+      open('settings', { trafficLightPosition: { x: 20, y: 29 } })
+      const [panel] = panels()
+      const bar = panel.querySelector<HTMLElement>('.cmdr-demo-titlebar')
+      expect(bar?.dataset.look, platform).toBe(platform)
+      expect(bar?.textContent).toBe('Settings')
+      // Above the page, as the OS's title bar is: the bar comes first, the page's frame under it.
+      expect(panel.firstElementChild).toBe(bar)
+      expect(panel.querySelector('.cmdr-demo-lights')).toBeNull()
+      expect(document.querySelector('.cmdr-demo-lights-main')).toBeNull()
+      expect(document.querySelector<HTMLElement>('.cmdr-demo-titlebar-main')?.dataset.look).toBe(platform)
+      panel.remove()
+      document.querySelector('.cmdr-demo-titlebar-main')?.remove()
+    }
+  })
+
+  it('closes and maximizes a panel from its title bar, and moves it from a press on the bar', () => {
+    const { open } = setup('windows')
+    open('settings', { width: 400, height: 300 })
+    const [panel] = panels()
+    const button = (kind: string) => panel.querySelector<HTMLButtonElement>(`[data-button="${kind}"]`)
+    button('maximize')?.click()
+    expect(panel.style.width).toBe(`${String(window.innerWidth - 32)}px`)
+    expect(button('maximize')?.getAttribute('aria-label')).toBe('Restore')
+    button('maximize')?.click()
+    expect(panel.style.width).toBe('400px')
+    expect(button('minimize')?.getAttribute('aria-disabled')).toBe('true')
+
+    const bar = panel.querySelector<HTMLElement>('.cmdr-demo-titlebar')
+    bar?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0, screenX: 500, screenY: 500 }))
+    expect(panel.classList.contains('dragging')).toBe(true)
+    window.dispatchEvent(new MouseEvent('mouseup', { button: 0 }))
+
+    button('close')?.click()
+    expect(panels()).toHaveLength(0)
+  })
+
+  it('dims every window’s bar but the active one’s', () => {
+    const { host, open, call } = setup('linux')
+    host.mountMainWindowButtons()
+    const main = document.querySelector<HTMLElement>('.cmdr-demo-titlebar-main')
+    open('settings')
+    call('plugin:window|set_focus', { label: 'settings' })
+    expect(main?.dataset.active).toBe('false')
+    call('plugin:window|close', { label: 'settings' })
+    expect(main?.dataset.active).toBe(String(document.hasFocus()))
   })
 })
