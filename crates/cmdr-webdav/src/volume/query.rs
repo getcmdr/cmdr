@@ -5,10 +5,11 @@ use cmdr_fs::volume::Presence;
 
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{ListingProgress, SpaceInfo, VolumeError};
+use log::debug;
 use tokio_util::sync::CancellationToken;
 
 use super::WebdavVolume;
-use super::mapping::{href_name, propfind_to_file_entry, self_entry_index};
+use super::mapping::{href_name, members, propfind_to_file_entry};
 use super::paths::child_of;
 use crate::errors::{Attempted, map_status, map_transport_error};
 use crate::propfind::PropfindEntry;
@@ -65,21 +66,18 @@ impl WebdavVolume {
             client.base_path().trim_end_matches('/'),
             remote.trim_end_matches('/')
         );
-        let hrefs: Vec<&str> = props.iter().map(|prop| prop.href.as_str()).collect();
-        let own_index = self_entry_index(&own, &hrefs);
-        let mut entries = Vec::with_capacity(props.len());
+        let found = members(&own, &props);
+        if found.unaddressable > 0 {
+            debug!(
+                target: "volume",
+                "webdav: left {} member(s) out of a listing whose name isn't one plain name (`.`, `..`, or an encoded `/`)",
+                found.unaddressable
+            );
+        }
+        let mut entries = Vec::with_capacity(found.listed.len());
         let mut tally = ListingProgress::default();
-        for (index, prop) in props.iter().enumerate() {
-            if Some(index) == own_index || prop.href.trim_end_matches('/').is_empty() {
-                continue;
-            }
-            let name = href_name(&prop.href);
-            // ❗ A member named `.` or `..` (a misbehaving server's `%2E%2E`) would list as
-            // the folder itself or its parent, where a delete or a move of that row acts on
-            // a folder nobody picked: no row, ❌ never one at the normalized path.
-            if matches!(name, "" | "." | "..") {
-                continue;
-            }
+        for (index, name) in found.listed {
+            let prop = &props[index];
             // A delete's empty leftover aside goes the moment a listing sees it.
             if prop.is_collection && self.tidied_leftover(&client, &child_of(&remote, name), name).await {
                 continue;

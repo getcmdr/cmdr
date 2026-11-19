@@ -57,6 +57,46 @@ pub(super) fn self_entry_index(own: &str, hrefs: &[&str]) -> Option<usize> {
     if candidates.next().is_some() { None } else { found }
 }
 
+/// What a `Depth: 1` answer lists under `own` (the path Cmdr asked for, base path
+/// included).
+#[derive(Debug, Default)]
+pub(super) struct Members<'a> {
+    /// Each member a row can show: its index in the answer and its name.
+    pub listed: Vec<(usize, &'a str)>,
+    /// Members left out because their name isn't one plain name: `.` or `..` (a
+    /// misbehaving server's `%2E%2E`), or one holding an encoded `/` (`a%2Fb`).
+    pub unaddressable: usize,
+}
+
+/// The members `props` lists under `own`: the self entry ([`self_entry_index`]) left
+/// out, and each member whose name isn't one plain name left out and counted.
+///
+/// ❗ A `.` or `..` member would list as the folder itself or its PARENT, so a delete
+/// or a move of that row acts on a folder nobody picked; an `a%2Fb` member would list
+/// as `b`, a row naming a file that isn't there, or a sibling that is. ❌ Neither is
+/// ever a row.
+pub(super) fn members<'a>(own: &str, props: &'a [PropfindEntry]) -> Members<'a> {
+    let hrefs: Vec<&str> = props.iter().map(|prop| prop.href.as_str()).collect();
+    let own_index = self_entry_index(own, &hrefs);
+    let mut found = Members::default();
+    for (index, prop) in props.iter().enumerate() {
+        if Some(index) == own_index || prop.href.trim_end_matches('/').is_empty() {
+            continue;
+        }
+        let name = href_name(&prop.href);
+        if prop.name_holds_slash || matches!(name, "" | "." | "..") {
+            found.unaddressable += 1;
+            continue;
+        }
+        found.listed.push((index, name));
+    }
+    found
+}
+
+#[cfg(test)]
+#[path = "members_test.rs"]
+mod members_test;
+
 #[cfg(test)]
 mod tests {
     use super::self_entry_index;

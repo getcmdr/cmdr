@@ -36,8 +36,12 @@ const NC_PREFIX: &str = "nc:";
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct PropfindEntry {
     /// The response's `href`, percent-DECODED and reduced to its path when the
-    /// server answered with an absolute URL.
+    /// server answered with an absolute URL. Dot segments stay as sent (a member a
+    /// server names `..` must still read as `..`, ❌ never resolved to its parent).
     pub href: String,
+    /// Whether the `href`'s last segment decoded to text holding a `/` (an encoded
+    /// `%2F`): the decoded path splits there, so its last name isn't the member's.
+    pub name_holds_slash: bool,
     /// Whether `resourcetype` carried a `collection`.
     pub is_collection: bool,
     /// `getcontentlength`, absent on collections and on servers that omit it.
@@ -135,6 +139,7 @@ pub(crate) fn parse_multistatus(body: &str) -> Result<Vec<PropfindEntry>, NotMul
                     "href" if stack.last().is_some_and(|parent| parent == "response") => {
                         if let Some(entry) = current.as_mut() {
                             entry.href = decode_href(&value);
+                            entry.name_holds_slash = href_name_holds_slash(&value);
                         }
                     }
                     "status" if stack.last().is_some_and(|parent| parent == "propstat") => {
@@ -248,13 +253,44 @@ fn status_is_success(line: &str) -> bool {
 
 /// The path half of an `href`, percent-decoded. Servers may answer with an
 /// absolute URL (RFC 4918 § 8.3 allows either).
+///
+/// ❗ Dot segments stay as the server sent them, absolute URL or not: a URL parser
+/// resolves `box/%2e%2e` to `box`'s parent, which would list a member a server
+/// named `..` under the parent's name. The listing drops a `.` or `..` member by
+/// its own name (`volume::mapping::members`).
 pub(crate) fn decode_href(href: &str) -> String {
-    let path = url::Url::parse(href)
-        .ok()
-        .filter(|u| u.has_host())
-        .map(|u| u.path().to_string())
-        .unwrap_or_else(|| href.to_string());
-    percent_decode_str(&path).decode_utf8_lossy().into_owned()
+    percent_decode_str(href_path(href)).decode_utf8_lossy().into_owned()
+}
+
+/// Whether `href`'s last segment, decoded, holds a `/` (an encoded `%2F`), so the
+/// decoded path's last name isn't the member's own.
+pub(crate) fn href_name_holds_slash(href: &str) -> bool {
+    let path = href_path(href).trim_end_matches('/');
+    let last = path.rsplit('/').next().unwrap_or_default();
+    percent_decode_str(last).any(|byte| byte == b'/')
+}
+
+/// An `href`'s path as the server spelled it, still encoded: an absolute URL's
+/// path after its authority (its query and fragment off), a path as it is.
+fn href_path(href: &str) -> &str {
+    let Some(scheme_end) = href.find("://") else {
+        return href;
+    };
+    let scheme = &href[..scheme_end];
+    let is_scheme = scheme.starts_with(|c: char| c.is_ascii_alphabetic())
+        && scheme
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'));
+    if !is_scheme {
+        return href;
+    }
+    let after_authority = &href[scheme_end + 3..];
+    let Some(path_at) = after_authority.find(['/', '?', '#']) else {
+        return "/";
+    };
+    let path = &after_authority[path_at..];
+    let path = path.split(['?', '#']).next().unwrap_or_default();
+    if path.is_empty() { "/" } else { path }
 }
 
 fn unix_secs(time: std::time::SystemTime) -> Option<u64> {

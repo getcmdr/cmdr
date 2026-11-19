@@ -89,6 +89,7 @@ fn a_nextcloud_listing_yields_decoded_hrefs_and_typed_props() {
         entries[2],
         PropfindEntry {
             href: "/remote.php/dav/files/test_user_1/notes.txt".into(),
+            name_holds_slash: false,
             is_collection: false,
             size: Some(42),
             modified_at: Some(STAMP),

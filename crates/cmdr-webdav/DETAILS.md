@@ -170,9 +170,13 @@ its row. `Volume::root` answers `app_root().app()` for the same reason. The type
 `AppPathBuf` is the answer: `PatchSource::patch_app_path` (`app_path_for`). The scan, the patcher, and `mkdir -p` run
 through `cmdr-fs`'s typed twins (`scan_*_at`, `patch_*_at`, `create_directory_all_at`); `patch_display_path` stays,
 written over `RemoteRoot`'s `std::path` form, for the backends that still call the patcher's `std::path` forms. ❗ A
-listed member named `.` or `..` (a `%2E%2E` href) is no row: `child_of` plus `to_app_path` would resolve it to the
-folder itself or its parent, where a delete of that row acts on a folder nobody picked
-(`paths_test::a_member_named_dot_or_dot_dot_is_no_row`). Tests name files through `volume::testing::{at, child}` (a
+listed member whose name isn't one plain name is no row, left out and counted (`mapping::members`, a `debug` line per
+listing): `.` or `..` (a `%2E%2E` href), where `child_of` plus `to_app_path` would resolve it to the folder itself or
+its parent and a delete of that row acts on a folder nobody picked, and a name holding an encoded `/` (`a%2Fb`), which
+decoded would list as `b`. `decode_href` keeps dot segments as sent, ❌ never a URL parser's resolution: an absolute-URL
+href (IIS) `…/box/%2e%2e` resolved to `box`'s parent and listed under its name. Pinned per server spelling (Nextcloud,
+Apache, nginx, IIS, and each hostile one) with crafted `multistatus` bodies in `members_test.rs`, and end to end by
+`paths_test::a_member_named_dot_or_dot_dot_is_no_row`. Tests name files through `volume::testing::{at, child}` (a
 relative spelling never reaches a volume) and `test_support::typed` for `format!`-built text;
 `conformance_test::conformance_path` is one of the crate's two bridges (the other, `testing::scratch_dir`, serves the
 app's suites), until `cmdr_fs::volume::conformance` takes app paths.
@@ -184,13 +188,14 @@ hands what a listing gave it straight back — as does `display_path_for`, the l
 Listings are one `PROPFIND Depth: 1` with a body naming
 `resourcetype, getcontentlength, getlastmodified, creationdate, getetag, quota-available-bytes, quota-used-bytes`.
 `propfind.rs` reads the `DAV:` namespace under any prefix, takes properties only from 2xx `propstat`s, percent-decodes
-`href`s, and reduces absolute-URL hrefs to their path. The self entry is dropped by comparing decoded, slash-normalized
-paths, never by position (`mapping::self_entry_index`). When no href matches, a reverse proxy has rewritten the links (a
-Nextcloud served under a path prefix it doesn't know about answers without the prefix), so the self entry is the one
-that carries the collection's name and that every other entry sits directly inside; a lone entry counts, so a rewritten
-empty folder doesn't list itself. Two such candidates, or none, drop nothing. Unit-tested only: no fixture puts a
-rewriting proxy in front of a server (getcmdr/cmdr#176). With redirects off, a PROPFIND on a slash-less collection that
-answers 3xx (nginx and some NAS firmware) is retried once WITH the slash.
+`href`s, and reduces absolute-URL hrefs to their path text after the authority (dot segments kept). The self entry is
+dropped by comparing decoded, slash-normalized paths, never by position (`mapping::self_entry_index`). When no href
+matches, a reverse proxy has rewritten the links (a Nextcloud served under a path prefix it doesn't know about answers
+without the prefix), so the self entry is the one that carries the collection's name and that every other entry sits
+directly inside; a lone entry counts, so a rewritten empty folder doesn't list itself. Two such candidates, or none,
+drop nothing. Unit-tested only: no fixture puts a rewriting proxy in front of a server (getcmdr/cmdr#176). With
+redirects off, a PROPFIND on a slash-less collection that answers 3xx (nginx and some NAS firmware) is retried once WITH
+the slash.
 
 ## New names go out composed
 
