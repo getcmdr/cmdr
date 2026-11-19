@@ -353,6 +353,7 @@ export const DIALOG_GALLERY_ENTRIES: DialogGalleryEntry[] = [
       { id: 'delete_pending', label: 'Delete pending' },
       { id: 'file_in_use', label: 'File open somewhere else (SMB)' },
       { id: 'source_in_cold_storage', label: 'Archived source (S3 Glacier)' },
+      { id: 'folder_holds_unlisted_items', label: 'Folder keeps unlistable keys (S3)' },
       { id: 'source_changed', label: 'Source changed mid-copy (S3)' },
       { id: 'mounted_volume_inside', label: 'Delete reaches a mounted drive' },
       { id: 'mounted_volume_inside-copy', label: 'Overwrite reaches a mounted drive' },

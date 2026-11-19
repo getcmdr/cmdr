@@ -28,6 +28,7 @@ const pathOnlyTypes = new Set<WriteOperationError['type']>([
   'destination_full',
   'landing_not_recorded',
   'source_in_cold_storage',
+  'folder_holds_unlisted_items',
   'source_changed',
   'sources_span_volumes',
 ])

@@ -301,6 +301,8 @@ export type WriteOperationError =
   // Open somewhere else (an SMB sharing violation or lock conflict).
   | { type: 'file_in_use'; path: string }
   | { type: 'source_in_cold_storage'; path: string }
+  // An S3 folder that lists empty but keeps keys no path can address (`p//x`).
+  | { type: 'folder_holds_unlisted_items'; path: string }
   | { type: 'source_changed'; path: string }
   | {
       type: 'files_too_large_for_filesystem'

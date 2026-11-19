@@ -340,6 +340,14 @@ const perVariant: Record<WriteOperationError['type'], TransferErrorFixture> = {
     operationType: 'copy',
     error: { type: 'file_in_use', path: '/Volumes/archive/documents/reports/2026-annual-report.pdf' },
   },
+  // A delete of an S3 folder that lists empty but keeps keys like `exports//a.jpg`.
+  folder_holds_unlisted_items: {
+    operationType: 'delete',
+    error: {
+      type: 'folder_holds_unlisted_items',
+      path: 's3://AKIAIOSFODNN7EXAMPLE@s3.eu-west-1.amazonaws.com:443/family-photos/2019/exports',
+    },
+  },
   // A copy off an S3 bucket meeting an object in Glacier.
   source_in_cold_storage: {
     operationType: 'copy',
