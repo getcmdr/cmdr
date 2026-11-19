@@ -289,7 +289,7 @@ pub(super) fn cover_to_completion(index: &Index, root: &str) {
 
 /// A volume with `a` already covered, ready for a second walk to move its token.
 /// Returns the index, its guards, and the mount root.
-pub(super) fn drive_with_a_covered(data: &std::path::Path) -> (Index, impl Sized, String) {
+pub(super) fn drive_with_a_covered(data: &Path) -> (Index, impl Sized, String) {
     let root = format!("{MOUNT_PREFIX}/{VOLUME_ID}");
     let provider = FakeVolumeProvider::shared();
     provider.register(VOLUME_ID, drive(&root)).mark_network(&root);
