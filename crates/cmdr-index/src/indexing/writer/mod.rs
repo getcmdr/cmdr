@@ -415,7 +415,8 @@ pub enum WriteMessage {
     /// Flush: confirms all prior messages have been committed.
     /// The writer responds through the channel after processing this message.
     Flush(FlushReply),
-    /// Truncate `entries` and `dir_stats` tables, preserving `meta`.
+    /// Truncate `entries` and `dir_stats` tables and drop `meta.last_event_id` (the
+    /// position those rows were current to), keeping the rest of `meta`.
     /// Used before a full rescan so the scan starts from a clean slate.
     TruncateData,
     /// Toggle per-entry ancestor `dir_stats` propagation on the writer thread.

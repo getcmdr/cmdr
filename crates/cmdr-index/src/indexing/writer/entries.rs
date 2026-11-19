@@ -773,6 +773,19 @@ pub(super) fn handle_delete_subtree_by_id(
     mutation_tracker.bump();
 }
 
+/// Blank `entries` + `dir_stats` (back to the root sentinel) for a rebuild, and drop
+/// the journal position the rows were current to.
+///
+/// - **`last_event_id` goes with the rows.** It says "these rows are current up to
+///   here", a claim about an index that no longer exists. Kept, the next branch watch on the boot disk (which replays any distance, #751) replayed
+///   months of FSEvents history into the empty index the walk was filling anyway
+///   (#1296). Absent, every watch start reads "from now" and records it. The other meta
+///   keys (epoch, calibration, journal UUID) stay: they describe the volume.
+/// - **No vacuum here.** The rebuild that follows refills the database, and SQLite
+///   reuses freelist pages before growing the file, so draining them first only gives
+///   the space back to grow into it again; uncapped, it held the writer ~63 s on a
+///   7M-row index (#1296). The 30 s `IncrementalVacuum` tick reclaims what the rebuild
+///   doesn't reuse, at its capped rate.
 pub(super) fn handle_truncate_data(
     conn: &rusqlite::Connection,
     accumulator: &mut AccumulatorMaps,
@@ -785,19 +798,21 @@ pub(super) fn handle_truncate_data(
     expected_total_entries.store(0, Ordering::Relaxed);
     let t = Instant::now();
     match conn.execute_batch(
-        "DELETE FROM dir_stats; DELETE FROM entries; INSERT OR IGNORE INTO entries (id, parent_id, name, is_directory, is_symlink) VALUES (1, 0, '', 1, 0);",
+        // The replay point goes FIRST: a death part-way then leaves rows with no replay
+        // point (the next watch starts from now), ❌ never an empty index with one. No
+        // `BEGIN` here: a truncate can land inside a sender's explicit transaction, and
+        // only `transaction.rs` opens those.
+        "DELETE FROM meta WHERE key = 'last_event_id'; \
+         DELETE FROM dir_stats; DELETE FROM entries; \
+         INSERT OR IGNORE INTO entries (id, parent_id, name, is_directory, is_symlink) VALUES (1, 0, '', 1, 0);",
     ) {
         Ok(()) => {
             // Root sentinel is id=1, so next assignable ID is 2
             next_id.store(2, Ordering::Relaxed);
             log::info!(
-                "Writer: truncated entries + dir_stats ({}ms)",
+                "Writer: truncated entries + dir_stats, dropped the replay point ({}ms)",
                 t.elapsed().as_millis(),
             );
-            // Reclaim free pages from the truncation
-            if let Err(e) = cmdr_fs::sqlite_util::run_incremental_vacuum(conn, None) {
-                signal.note_maintenance(&IndexStoreError::from(e), "incremental_vacuum after truncate");
-            }
         }
         Err(e) => {
             signal.note(&IndexStoreError::from(e), "truncate");

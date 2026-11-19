@@ -320,8 +320,8 @@ impl IndexManager {
         // Step 0: Capture this scan's calibration BEFORE truncating.
         //
         // The prior completed scans' totals are read straight off the live read
-        // connection: the calibration keys survive `TruncateData` (it preserves
-        // `meta`), but reading first keeps the data flow obviously correct — we
+        // connection: the calibration keys survive `TruncateData` (it keeps all of
+        // `meta` but `last_event_id`), but reading first keeps the data flow obviously correct — we
         // snapshot the previous scans' numbers before the truncate touches anything.
         //
         // PER KIND: the two walks differ ~5x in wall clock, so a change check's

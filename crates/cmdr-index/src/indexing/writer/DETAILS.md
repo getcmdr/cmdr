@@ -718,10 +718,19 @@ depends on: (1) a test must NEVER `INDEX_REGISTRY.clear()` (it wipes every concu
 
 ## Maintenance: vacuum and WAL checkpoint (`maintenance.rs`)
 
-Free pages are reclaimed both inline after `TruncateData` and on a 30 s background timer that sends `IncrementalVacuum`
-plus `WalCheckpoint`. The vacuum handler uses a tiered cap (`pick_vacuum_cap`): skip when freelist < 1,000, a 2,000-page
-cap up to 20,000, a 20,000-page cap above — tiny steady-state lock holds while draining real backlog in tens of minutes.
-The WAL checkpoint handler runs `PRAGMA wal_checkpoint(TRUNCATE)`; the scanner fires an explicit `WalCheckpoint` after
+Free pages are reclaimed on a 30 s background timer that sends `IncrementalVacuum` plus `WalCheckpoint`.
+
+**Decision: `TruncateData` doesn't vacuum.** Every truncate is followed by a rebuild, and SQLite refills freelist pages
+before it grows the file, so an inline drain only handed back space the walk grew straight into again. Uncapped, it held
+the writer ~63 s after a 3.6 s DELETE on a 7.2M-row root index (dev log, 2026-11-19, #1296). What the rebuild doesn't
+reuse, the tick drains at its capped rate. Pinned by
+`maintenance.rs::tests::truncate_leaves_its_pages_for_the_rebuild_to_reuse`.
+
+`TruncateData` also drops `meta.last_event_id`; why is in `../watch/DETAILS.md` ("A rebuild watches from now").
+
+The vacuum handler uses a tiered cap (`pick_vacuum_cap`): skip when freelist < 1,000, a 2,000-page cap up to 20,000, a
+20,000-page cap above — tiny steady-state lock holds while draining real backlog in tens of minutes. The WAL checkpoint
+handler runs `PRAGMA wal_checkpoint(TRUNCATE)`; the scanner fires an explicit `WalCheckpoint` after
 `ComputeAllAggregates` so the GB-scale post-scan WAL spike trims immediately. The schema/pragma side (WAL mode, page
 cache, `wal_autocheckpoint`, `journal_size_limit`) lives in `../store/DETAILS.md`.
 

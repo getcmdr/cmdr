@@ -183,6 +183,15 @@ history the loop finds purged) the resume bumps `current_epoch`: the rows stay c
 read side renders them stale rather than current. ❌ Never on the walk path — a bump right after a walk would mark rows
 stale that were written a second ago.
 
+**A rebuild watches from now.** `TruncateData` drops `meta.last_event_id` with the rows (`writer/entries.rs`
+`handle_truncate_data`), first, so a death part-way leaves rows without a replay point, ❌ never an empty index with
+one. The position says "these rows are current up to here". Kept, the first branch watch after a phased rebuild on the
+boot disk (which replays any distance, below) replayed 730M ids of FSEvents history into the empty index the walk was
+filling anyway: 7.35M events, the 5M backlog cap, and a forced 675 s full reconcile (dev log, 2026-11-19, #1296). All
+three truncating paths (full scan, network scan, phased rebuild) go through that one handler, so none can carry a stale
+point over, and `replay_point` reads its absence as "from now" and records it. Pinned by
+`writer/tests.rs::truncate_drops_the_replay_point_with_the_rows`.
+
 **How a resume tells purged history apart depends on what the stream sees** (`branch_watch.rs::replay_from`). On the
 boot disk the stream sees every write, so it replays across any id distance and the loop judges the FIRST event
 (`LiveConfig::history_check` → `history_was_purged`, the same test the cold-start replay runs), bumping the epoch before
