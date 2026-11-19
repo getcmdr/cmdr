@@ -114,10 +114,11 @@ the next section.
   `LoggedText` for our own; `log_error`, the `LogError` a path-carrying error logs through, `error_detail`, the message
   field that keeps its cause typed for it, and `log_json`, a value's JSON with its fields marked; § "Marked log
   values"), `tcc_paths`, `ignore_poison`, `pluralize`, `go_to_path` (the "Go to path" dialog's classification over a
-  host's stat, `resolve_with`, shared by the desktop's local disk and the browser demo's engine), `tilde`
-  (`expand_tilde`, for a path a person typed on THIS machine; on Windows it answers an app path through the path grammar
-  and takes `~\` too, `expand_tilde_with` tests each flavor everywhere), `twin_path` (a same-named twin's row path:
-  `folder_of` past its pick, and `shown`, the one rule that takes a pick out of anything a person reads;
+  host's stat, `resolve_with`, shared by the desktop's local disk and the browser demo's engine; its `..` step is
+  lexical and crate-private until #1225's volume-aware step replaces it through `GoToHost`), `tilde` (`expand_tilde`,
+  for a path a person typed on THIS machine; on Windows it answers an app path through the path grammar and takes `~\`
+  too, `expand_tilde_with` tests each flavor everywhere), `twin_path` (a same-named twin's row path: `folder_of` past
+  its pick, and `shown`, the one rule that takes a pick out of anything a person reads;
   `crates/cmdr-mtp/src/connection/DETAILS.md` § "Same-named siblings"), `byte_size` (`format_size`, the IEC byte count
   log lines and model-facing answers read), `thread_qos`, `thread_cpu/`, `process_cpu/`, `process_memory`,
   `utility_pool.rs` (`UtilityPool`, a keep-alive pool of `Utility`-QoS threads, so background work that comes in

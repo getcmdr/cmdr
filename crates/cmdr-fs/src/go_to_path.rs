@@ -80,7 +80,14 @@ pub trait GoToHost {
 /// `.` is dropped; `..` pops the previous normal component, or is kept verbatim when
 /// there's nothing to pop (a leading `..` on a relative path, or a `..` right after the
 /// root). The root prefix (`/`) is preserved.
-pub fn lexical_normalize(path: &Path) -> PathBuf {
+///
+/// ❌ Not a general-purpose normalizer, so it stays in the crate: across a symlink on POSIX,
+/// `/a/link/..` means the link TARGET's parent, which text alone can't know. The typed-path plan
+/// (`docs/specs/app-path-plan.md` § "Typed and pasted `..`", #1225) replaces this step for every
+/// `..` but a relative input's leading ones with a volume-aware one, asked through [`GoToHost`]
+/// (a `parent_for_dot_dot`-style method whose default is today's lexical parent), so both hosts
+/// keep answering alike.
+pub(crate) fn lexical_normalize(path: &Path) -> PathBuf {
     let mut out = PathBuf::new();
     for component in path.components() {
         match component {
