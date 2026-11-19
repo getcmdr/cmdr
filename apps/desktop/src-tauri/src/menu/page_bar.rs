@@ -62,7 +62,7 @@ pub struct MenuBarChanged {
 
 /// What a page's pick of a bar row did.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
-#[serde(tag = "kind", rename_all = "camelCase")]
+#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
 pub enum BarPickOutcome {
     /// The row's handler ran.
     Ran,

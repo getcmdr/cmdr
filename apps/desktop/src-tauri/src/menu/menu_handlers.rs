@@ -197,8 +197,8 @@ pub(crate) fn edit_road(menu_id: &str, focus: FocusedWindows) -> Option<EditRoad
     native_edit_selector_for(menu_id).map(EditRoad::FieldEdit)
 }
 
-/// Runs `road` for Edit row `menu_id`.
-fn run_edit_road(app: &AppHandle<tauri::Wry>, menu_id: &str, road: EditRoad) {
+/// Runs an Edit row's `road`.
+fn run_edit_road(app: &AppHandle<tauri::Wry>, road: EditRoad) {
     use tauri_specta::Event as _;
     match road {
         EditRoad::MainCommand(command_id) => {
@@ -212,23 +212,11 @@ fn run_edit_road(app: &AppHandle<tauri::Wry>, menu_id: &str, road: EditRoad) {
                 log::warn!(target: "menu", "failed to emit queue-select-all: {e}");
             }
         }
-        EditRoad::FieldEdit(selector) => run_field_edit(app, menu_id, selector),
+        // macOS sends the selector down the responder chain, as a Predefined item would. Elsewhere
+        // only a page's pick reaches an Edit row, and `page_bar::pick` hands the edit back to the page
+        // before it gets here; the seam's Windows and Linux arms run nothing.
+        EditRoad::FieldEdit(selector) => super::focused_field_edit::run_in_focused_window(app, selector),
     }
-}
-
-/// The focused field's text edit, from a native Edit item: macOS sends the selector down the
-/// responder chain, as a Predefined item would.
-#[cfg(target_os = "macos")]
-fn run_field_edit(app: &AppHandle<tauri::Wry>, _menu_id: &str, selector: NativeEditSelector) {
-    super::focused_field_edit::run_in_focused_window(app, selector);
-}
-
-/// Off macOS only a page's pick reaches an Edit row, and `page_bar::pick` hands the edit back to
-/// the page before it gets here, since only the page can reach its field (WebView2 has no editing
-/// command a host can send).
-#[cfg(not(target_os = "macos"))]
-fn run_field_edit(_app: &AppHandle<tauri::Wry>, menu_id: &str, _selector: NativeEditSelector) {
-    log::debug!(target: "menu", "`{menu_id}` is the page's own text edit; nothing to run here");
 }
 
 /// The native selector the viewer page asks for when the view on screen keeps its selection
@@ -462,7 +450,7 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str) {
     // === The Edit rows: file semantics in the main window, the focused field's text elsewhere ===
     // One decision for both bars and every window (`edit_road`), which a page's pick asks too.
     if let Some(road) = edit_road(id, focused_windows(app)) {
-        run_edit_road(app, id, road);
+        run_edit_road(app, road);
         return;
     }
 
