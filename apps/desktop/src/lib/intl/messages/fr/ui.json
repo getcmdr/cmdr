@@ -24,6 +24,34 @@
   "@ui.demoArchive.notBrowsable": {
     "sourceHash": "760091f"
   },
+  "ui.demoDesktopOnly.filePicker": "Cette démo ne peut pas ouvrir le sélecteur de fichiers de votre ordinateur. Dans la vraie app, il s’ouvre pour vous permettre de choisir un fichier ou un dossier.",
+  "@ui.demoDesktopOnly.filePicker": {
+    "sourceHash": "8a28292"
+  },
+  "ui.demoDesktopOnly.revealFolder": "Cette démo ne peut pas ouvrir les dossiers de votre ordinateur. Dans la vraie app, cette action affiche le dossier dans votre gestionnaire de fichiers.",
+  "@ui.demoDesktopOnly.revealFolder": {
+    "sourceHash": "27ef83e"
+  },
+  "ui.demoDesktopOnly.quit": "Cette démo tourne dans un onglet du navigateur, on ne peut donc pas la quitter. Fermez l’onglet quand vous avez terminé.",
+  "@ui.demoDesktopOnly.quit": {
+    "sourceHash": "c971af5"
+  },
+  "ui.demoQuestion.no": "Non",
+  "@ui.demoQuestion.no": {
+    "sourceHash": "1ea442a"
+  },
+  "ui.demoQuestion.yes": "Oui",
+  "@ui.demoQuestion.yes": {
+    "sourceHash": "85a39ab"
+  },
+  "ui.demoWindow.maximize": "Agrandir",
+  "@ui.demoWindow.maximize": {
+    "sourceHash": "fba6c2c"
+  },
+  "ui.demoWindow.restore": "Restaurer",
+  "@ui.demoWindow.restore": {
+    "sourceHash": "a76e13b"
+  },
   "ui.popover.defaultAriaLabel": "Options",
   "@ui.popover.defaultAriaLabel": {
     "sourceHash": "d0db8b5",

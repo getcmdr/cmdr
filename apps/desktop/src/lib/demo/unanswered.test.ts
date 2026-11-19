@@ -27,10 +27,10 @@ describe('unanswered commands', () => {
     exposeUnanswered()
 
     // `coverage.ts`'s `notInDemo`: a value command and a void one.
-    expect(() => noteUnanswered('get_recent_paths', {})).toThrow(/get_recent_paths/)
+    expect(() => noteUnanswered('get_license_info', {})).toThrow(/get_license_info/)
     expect(noteUnanswered('show_notification', {})).toBeNull()
 
-    expect(seen().has('get_recent_paths')).toBe(false)
+    expect(seen().has('get_license_info')).toBe(false)
     expect(seen().has('show_notification')).toBe(false)
     expect(error).not.toHaveBeenCalled()
   })

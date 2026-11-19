@@ -24,6 +24,34 @@
   "@ui.demoArchive.notBrowsable": {
     "sourceHash": "760091f"
   },
+  "ui.demoDesktopOnly.filePicker": "Це демо не може відкрити вікно вибору файлів на вашому компʼютері. У справжній програмі воно відкриється, і ви зможете вибрати файл або папку.",
+  "@ui.demoDesktopOnly.filePicker": {
+    "sourceHash": "8a28292"
+  },
+  "ui.demoDesktopOnly.revealFolder": "Це демо не може відкривати папки на вашому компʼютері. У справжній програмі це покаже папку у вашому файловому менеджері.",
+  "@ui.demoDesktopOnly.revealFolder": {
+    "sourceHash": "27ef83e"
+  },
+  "ui.demoDesktopOnly.quit": "Це демо працює у вкладці браузера, тому завершити його не можна. Закрийте вкладку, коли закінчите.",
+  "@ui.demoDesktopOnly.quit": {
+    "sourceHash": "c971af5"
+  },
+  "ui.demoQuestion.no": "Ні",
+  "@ui.demoQuestion.no": {
+    "sourceHash": "1ea442a"
+  },
+  "ui.demoQuestion.yes": "Так",
+  "@ui.demoQuestion.yes": {
+    "sourceHash": "85a39ab"
+  },
+  "ui.demoWindow.maximize": "Розгорнути",
+  "@ui.demoWindow.maximize": {
+    "sourceHash": "fba6c2c"
+  },
+  "ui.demoWindow.restore": "Відновити",
+  "@ui.demoWindow.restore": {
+    "sourceHash": "a76e13b"
+  },
   "ui.popover.defaultAriaLabel": "Параметри",
   "@ui.popover.defaultAriaLabel": {
     "sourceHash": "d0db8b5"

@@ -319,6 +319,18 @@ describe('demo menu bar for a Windows visitor', () => {
     )
   })
 
+  it('starts the window under the main window’s title bar too, where one is drawn above the bar', () => {
+    document.documentElement.style.setProperty('--cmdr-demo-title-bar-height', '32px')
+    try {
+      setup()
+      expect(document.documentElement.style.getPropertyValue('--cmdr-demo-window-top')).toBe(
+        'calc(var(--cmdr-demo-title-bar-height) + var(--spacing-menu-bar-height))',
+      )
+    } finally {
+      document.documentElement.style.removeProperty('--cmdr-demo-title-bar-height')
+    }
+  })
+
   it('opens on a lone Alt, as a Windows bar does', async () => {
     setup()
     await settle()

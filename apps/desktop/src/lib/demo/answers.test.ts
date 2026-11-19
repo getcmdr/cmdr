@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { refuse, refuseWith } from './answer-types.js'
 import { appAnswers, rawAnswers, silentCommands } from './answers.js'
 
@@ -63,12 +63,39 @@ describe('app answers', () => {
   })
 })
 
+/** The page's `navigator`, with a clipboard that writes through `writeText`. */
+function navigatorWithClipboard(writeText: (text: string) => Promise<void>): Navigator {
+  const stand = Object.create(navigator) as Navigator
+  Object.defineProperty(stand, 'clipboard', { value: { writeText } })
+  return stand
+}
+
 describe('raw and silent answers', () => {
-  it('answer the raw commands, configure_ai with no secret-store failure', () => {
+  it('answer the raw commands, configure_ai with no secret-store failure', async () => {
+    const writeText = vi.fn(() => Promise.resolve())
+    vi.stubGlobal('navigator', navigatorWithClipboard(writeText))
     for (const [name, answer] of Object.entries(rawAnswers)) {
-      expect(() => answer?.({}), name).not.toThrow()
+      await expect(
+        Promise.resolve().then(() => answer?.({})),
+        name,
+      ).resolves.not.toThrow()
     }
     expect(rawAnswers.configure_ai?.({})).toEqual({ secretStoreError: null })
+    vi.unstubAllGlobals()
+  })
+
+  it('copy text to the browser’s clipboard, and pass a refusal on as a string, as Tauri rejects', async () => {
+    const writeText = vi.fn(() => Promise.resolve())
+    vi.stubGlobal('navigator', navigatorWithClipboard(writeText))
+    await expect(rawAnswers.copy_to_clipboard?.({ text: '/Users/you/notes.md' })).resolves.toBeNull()
+    expect(writeText).toHaveBeenCalledWith('/Users/you/notes.md')
+    writeText.mockImplementationOnce(() => Promise.reject(new Error('Document is not focused.')))
+    await expect(rawAnswers.copy_to_clipboard?.({ text: 'x' })).rejects.toBeTypeOf('string')
+    vi.unstubAllGlobals()
+  })
+
+  it('answer a checkbox question as a platform without that alert, so the app asks the plain question', () => {
+    expect(ask('confirmWithCheckbox', {})).toEqual({ kind: 'unsupported' })
   })
 
   it('list each silent command once', () => {

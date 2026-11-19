@@ -56,6 +56,7 @@ pub mod file_provider;
 pub mod filesystem_kind;
 pub mod firmlinks;
 pub mod git_meta;
+pub mod go_to_path;
 pub mod icons;
 pub mod ignore_poison;
 pub mod log_detail;

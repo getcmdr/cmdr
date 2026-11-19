@@ -5,12 +5,14 @@
  * the one Rust process. See `DETAILS.md` § Backend and webviews.
  */
 import type { AnswerTable, Payload } from './answer-types.js'
-import type { AppTheme } from './color-scheme.js'
+import { SET_APP_THEME, type AppTheme } from './color-scheme.js'
 import { appAnswers, rawAnswers, silentCommands } from './answers.js'
 import { startListingEngine, type ListingEngineHandle } from './listing.js'
 import { createContextMenuHost, type ContextMenuHost } from './context-menu.js'
 import { startMenuEngine, type ContextPopup, type MenuEngineHandle } from './menu-engine.js'
 import { pluginHandler } from './plugins.js'
+import { relayedAnswers } from './relayed.js'
+import { channelTarget, type ChannelDelivery, type ChannelNotice } from './channels.js'
 import { openInBrowserTab } from './opener.js'
 import { visitorPlatform } from './platform.js'
 import { noteUnanswered } from './unanswered.js'
@@ -49,6 +51,8 @@ export interface InvokeOrigin {
 export interface DemoWebview {
   label: string
   deliver(event: string, payload: unknown, target: EventTarget): void
+  /** Hands one message (or the end) to this frame's `Channel` with callback `id` (`channels.ts`). */
+  deliverChannel(id: number, delivery: ChannelDelivery): void
   /** Pins this window's appearance: `setTheme` is app-wide, as on desktop. */
   setTheme(theme: AppTheme): void
 }
@@ -94,12 +98,22 @@ export function createDemoBackend(): DemoBackend {
     } else if (event === 'demo://archive-refused') {
       // A listing asked to enter an archive (Browse picked in Settings, or a typed path).
       sayArchivesStayClosed()
+    } else if (event === 'demo://channel') {
+      deliverToChannel(payload as ChannelNotice)
     } else if (event === 'demo://media-token-dropped') {
       const { token } = payload as { token: string }
       const url = mediaUrls.get(token)
       if (url !== undefined) URL.revokeObjectURL(url)
       mediaUrls.delete(token)
     }
+  }
+
+  /** An engine's message on a `Channel`, to the frame that made it. A frame gone since hears nothing, as in Tauri. */
+  function deliverToChannel(notice: ChannelNotice): void {
+    const target = channelTarget(notice.channel)
+    if (!target) return
+    const delivery: ChannelDelivery = 'end' in notice ? { end: true } : { message: notice.message }
+    for (const webview of webviews) if (webview.label === target.label) webview.deliverChannel(target.id, delivery)
   }
 
   function mediaUrl(token: string, label: string): string {
@@ -126,7 +140,10 @@ export function createDemoBackend(): DemoBackend {
   }
 
   const silent: AnswerTable = Object.fromEntries(silentCommands.map((name) => [name, () => undefined]))
-  const answers = { ...silent, ...appAnswers, ...volumeAnswers } as Record<string, Handler | undefined>
+  const answers = { ...silent, ...appAnswers, ...volumeAnswers, ...relayedAnswers(emit) } as Record<
+    string,
+    Handler | undefined
+  >
   const engine: ListingEngineHandle = startListingEngine(({ name, payload, target }) => {
     if (name.startsWith(DEMO_EVENT_PREFIX)) {
       onEngineNotice(name, payload)
@@ -135,12 +152,18 @@ export function createDemoBackend(): DemoBackend {
     emit(name, payload, target === undefined ? { kind: 'everyone' } : { kind: 'label', label: target })
   })
 
+  // The visitor's own OS, which picks the bar, the menus, and every window's buttons.
+  const platform = visitorPlatform(navigator.userAgent)
   // A closed viewer panel frees its sessions, as the app's window-destroyed hook does.
-  const windows = createWindowHost(emit, (label) => {
-    engine.closeViewerWindow(label)
-  })
+  const windows = createWindowHost(
+    emit,
+    (label) => {
+      engine.closeViewerWindow(label)
+    },
+    platform,
+  )
   // The backend lives in the top frame, which is the main window.
-  windows.mountMainWindowLights()
+  windows.mountMainWindowButtons()
   // Drags happen in the main window, the only one with file panes; its events go there, as wry's do.
   const drags = createDragSessions(window, (event, payload) => {
     emit(event, payload, { kind: 'label', label: 'main' })
@@ -165,8 +188,8 @@ export function createDemoBackend(): DemoBackend {
       )
     },
   )
-  // The visitor's own OS's bar and menus. Read here, since this frame's platform global lands after the backend.
-  const menu = startMenuEngine(visitorPlatform(navigator.userAgent))
+  // The visitor's own OS's bar and menus. Read off the user agent, since this frame's platform global lands after the backend.
+  const menu = startMenuEngine(platform)
 
   /**
    * The demo doesn't browse archives, and says so. Under the "Opening…" toast's id, so it takes
@@ -224,14 +247,21 @@ export function createDemoBackend(): DemoBackend {
     return null
   }
 
+  /** The TS table that answers `cmd`, first match wins; the engines come after every table. */
+  function tableHandler(cmd: string) {
+    return (
+      drags.handler(cmd) ?? windows.handler(cmd) ?? pluginHandler(cmd) ?? rawAnswers[cmd] ?? answers[camelCase(cmd)]
+    )
+  }
+
   async function invoke(cmd: string, payload: Payload, origin?: InvokeOrigin): Promise<unknown> {
     // The app says no dialog holds file operations any more: a drop no transfer took by now never
     // will be, so the engine sweeps its staging (`os-drop.ts`). A fact passed on; the menu answers it.
     if (cmd === 'set_file_operations_blocked' && payload.blocked === false) void engine.importer.releaseOffered()
     if (cmd === 'open_path' && (await openInViewer(payload))) return null
-    if (cmd === 'plugin:app|set_app_theme') return setAppTheme(payload)
-    const handler =
-      drags.handler(cmd) ?? windows.handler(cmd) ?? pluginHandler(cmd) ?? rawAnswers[cmd] ?? answers[camelCase(cmd)]
+    if (cmd === SET_APP_THEME) return setAppTheme(payload)
+    if (cmd === 'get_menu_bar_title_mnemonics') return menu.titleMnemonics()
+    const handler = tableHandler(cmd)
     if (handler) return handler(payload)
     if (await menu.opensPopup(cmd)) return openPopup(cmd, payload, origin ?? { label: 'main', pointer: null })
     if (await menu.handles(cmd)) return menu.invoke(cmd, payload)

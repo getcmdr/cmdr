@@ -19,6 +19,7 @@ import { getMessage } from '#lib/intl/messages.svelte.js'
 import type { BarMenu, MenuEngineHandle } from './menu-engine.js'
 import { demoMenuClass, ensureMenuStyle } from './menu-bar-style.js'
 import { type MenuClickDeps, performMenuClick } from './menu-click.js'
+import { TITLE_BAR_HEIGHT_PROPERTY } from './title-bar.js'
 
 export interface MenuBarDeps extends MenuClickDeps {
   menu: Pick<MenuEngineHandle, 'bar' | 'click' | 'ready' | 'onChange'>
@@ -31,15 +32,23 @@ export interface MenuBarHandle {
   destroy(): void
 }
 
+/** The main window's content top: the bar's height, plus a title bar's above it where one is drawn. */
+function windowTop(): string {
+  const bar = 'var(--spacing-menu-bar-height)'
+  const titleBar = document.documentElement.style.getPropertyValue(TITLE_BAR_HEIGHT_PROPERTY)
+  return titleBar ? `calc(var(${TITLE_BAR_HEIGHT_PROPERTY}) + ${bar})` : bar
+}
+
 export function installMenuBar(deps: MenuBarDeps): MenuBarHandle {
   const dropStyle = ensureMenuStyle()
   const host = document.createElement('div')
   host.className = 'cmdr-demo-menubar-host'
   host.style.display = 'contents'
   document.body.prepend(host)
-  // Where the main window starts under the bar, for the demo's other chrome that sits on the window:
-  // the look's own bar height (30 px on a Mac, 40 on Windows), so the two never disagree.
-  document.documentElement.style.setProperty('--cmdr-demo-window-top', 'var(--spacing-menu-bar-height)')
+  // Where the main window's content starts under the bar, for the demo's other chrome that sits on
+  // it: the look's own bar height (30 px on a Mac, 40 on Windows), so the two never disagree, plus
+  // the main window's title bar above it for a Windows or Linux visitor (`title-bar.ts`).
+  document.documentElement.style.setProperty('--cmdr-demo-window-top', windowTop())
 
   // The engine's bar as it stands: redrawn after every push and click, the demo's `menu-bar-changed`.
   const state = $state<{ menus: BarMenu[] }>({ menus: [] })

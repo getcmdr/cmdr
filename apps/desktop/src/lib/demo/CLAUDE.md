@@ -7,12 +7,14 @@ a typed answer here; listing commands go to the real listing engine, built to WA
 - `boot.ts`: the frame's role. `backend.ts`: the page's one backend. `webview.ts`: one frame's `__TAURI_INTERNALS__`.
   `windows.ts`: secondary windows as in-page panels (Settings, Keyboard shortcuts, the queue, `viewer-*`).
   `menu-bar.svelte.ts` and `context-menu.ts`: the menu bar and right-click menus, from `menu-engine.ts` (the desktop's
-  bar through WASM), on `#lib/ui`'s menus, clicks through `menu-click.ts`. `traffic-lights.ts`: the window buttons.
-  `drag-regions.ts`: Tauri's `drag.js`. `drag-session.ts` / `os-drop.ts`: drags out and drops in. `color-scheme.ts`:
-  `setTheme` per frame.
-- `answers.ts`, `volumes.ts`, `plugins.ts` (in-memory `plugin:store`, path, app), `opener.ts` (links open in a new tab),
-  `listing.ts` (routes to the WASM engine, loaded by `engine-module.ts`), `coverage.ts` (every command answered or left
-  out with a reason), `unanswered.ts` (a void resolves, any other rejects; an undecided gap logs an error into
+  bar through WASM), on `#lib/ui`'s menus, clicks through `menu-click.ts`. `traffic-lights.ts` (Mac) / `title-bar.ts`
+  (Windows, Linux): the window buttons. `drag-regions.ts`: Tauri's `drag.js`. `drag-session.ts` / `os-drop.ts`: drags
+  out and drops in. `color-scheme.ts`: `setTheme` per frame.
+- `answers.ts`, `volumes.ts`, `favorites.ts` (in memory), `relayed.ts` (answers that emit), `plugins.ts` (in-memory
+  `plugin:store`, path, app), `browser-dialogs.ts` (pickers), `question-dialog.ts` (questions), `opener.ts` (links open
+  in a new tab), `listing.ts` (routes to the WASM engine, loaded by `engine-module.ts`), `coverage.ts` (every command
+  answered or left out with a reason; `ipc-calls.ts` reads the raw ones off the app's sources), `own-window.ts` (what a
+  webview answers itself), `unanswered.ts` (a void resolves, any other rejects; an undecided gap logs an error into
   `window.__cmdrDemo.unanswered`).
 - `demo-tree.ts`, `demo-contents.ts`, and `browser-shortcuts.ts`: PLACEHOLDER content David still decides.
 
@@ -34,8 +36,10 @@ the WASM engine first.
   guarded backend lookup.
 - **Answers are typed against `bindings.ts`** (`AnswerTable`, `VoidCommand`), so a drifted answer fails `svelte-check`.
   An error branch is `refuse(command, typedError)`, never a thrown `Error`.
-- **A new command needs an answer or a `notInDemo` reason** (`coverage.ts`), or `svelte-check` and `coverage.test.ts`
-  fail. An engine command goes in `engine-command-names.ts` too (a Rust test pins it to the crate).
+- **A new backend call needs an answer or a reason it's left out** (`coverage.ts`): a bindings command fails
+  `svelte-check` and `coverage.test.ts`; a raw `invoke` or a Tauri JS API import fails `ipc-calls.test.ts`. Only a
+  window or webview handle's methods are left to the runtime net (`unanswered`). An engine command goes in
+  `engine-command-names.ts` too (a Rust test pins it to the crate).
 - **No menu logic in TS.** Rows, words, shortcuts, enabled and checked state, and what a click sends all come from
   `cmdr-menu` through `DemoMenuBar`, the right-click menus' too. A click sends the native item's own event, so the app's
   handlers are the ones that run.

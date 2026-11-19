@@ -9,8 +9,11 @@
  * installs only a webview. The demo itself may be framed by another page (the landing page's
  * embed): a parent without a backend, or a cross-origin one, makes this frame the top.
  */
+import { setHostDefaults } from '#lib/shortcuts/host-defaults.js'
 import { createDemoBackend, type DemoBackend } from './backend.js'
+import { browserHostDefaults } from './browser-shortcuts.js'
 import { installMenuBar } from './menu-bar.svelte.js'
+import { visitorPlatform } from './platform.js'
 import { exposeUnanswered } from './unanswered.js'
 import { installWebview } from './webview.js'
 
@@ -31,6 +34,9 @@ function parentBackend(): DemoBackend | undefined {
 
 /** Installs this frame's role. Exported for its test; the app runs it only through the guard below. */
 export function installDemoBackend(): void {
+  // Every frame's own module graph: the fixed-key commands' browser-safe keys, before the app's
+  // shortcuts store first reads a default (`lib/shortcuts/host-defaults.ts`).
+  setHostDefaults(browserHostDefaults(visitorPlatform(navigator.userAgent)))
   const shared = parentBackend()
   if (shared) {
     installWebview(shared, window.name || 'secondary')
@@ -40,8 +46,9 @@ export function installDemoBackend(): void {
   ;(window as unknown as DemoHost).__cmdrDemoBackend = backend
   exposeUnanswered()
   installWebview(backend, 'main')
-  // The visitor's menu bar, over the top frame's main window only: a secondary window shares the
-  // one bar, as on a Mac (a Windows viewer's own bar comes with task 63 step 6).
+  // The visitor's menu bar (the macOS bar or the in-window one, by their OS), over the top frame's
+  // main window only: every secondary window shares it. On a Mac that's the desktop's shape; a
+  // Windows or Linux viewer has its own bar on the desktop, which the demo doesn't draw yet.
   installMenuBar({
     menu: backend.menu,
     emit: (event, payload, target) => {

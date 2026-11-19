@@ -28,6 +28,7 @@ pub(super) const NAMES: &[&str] = &[
     "start_operation_log_tree_backfill",
     "cancel_operation_log_tree_backfill",
     "get_operation_log_tree",
+    "set_operation_log_enabled",
 ];
 
 impl DemoOperations {
@@ -75,6 +76,12 @@ impl DemoOperations {
                     // The log's own registry, so an op its backfill is building answers `building`.
                     query::operation_tree(conn, &a.operation_id, &a.request, e.operation_log().tree_backfills())
                 }))
+            }
+            // Settings' "Keep a log of file operations" toggle, live, as the app's `set_recording`.
+            "set_operation_log_enabled" => {
+                let a: EnabledArgs = parse(command, args)?;
+                e.operation_log().set_recording(a.enabled);
+                Ok(Value::Null)
             }
             other => Err(Value::String(format!("the demo doesn't answer `{other}`"))),
         }
@@ -156,6 +163,11 @@ struct TreeBackfillArgs {
 
 /// `deny_unknown_fields`, as the request inside it: a field the demo hasn't learned
 /// fails loudly instead of being dropped.
+#[derive(Deserialize)]
+struct EnabledArgs {
+    enabled: bool,
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct TreeArgs {

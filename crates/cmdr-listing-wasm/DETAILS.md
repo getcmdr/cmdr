@@ -267,6 +267,27 @@ store (`InMemoryVolume::subtree_totals`, counting the way `cmdr-index`'s aggrega
     fix is the demo's alone. A test waiting on a pane's row after a write waits for the event, not the settle
     (`folder_sizes_test.rs`'s `heard_size`).
 - **Physical size** is each file's `physical_size`, or its logical size where the store models none.
+- **"Calculate folder sizes"** (`folder_count.rs`, `count_folder_sizes`): the fold stands in for an enabled index, so
+  the desktop's plan over an index-covered volume (`listing_index_sizes::count::plan`: folder rows, no links, with no
+  size yet) picks nothing, and the count answers `counted: 0` at once, as a Mac with a full index does. A row the fold
+  had missed would get its size through the listing's `refresh_index_sizes`. No walk runs past the call, so
+  `cancel_folder_size_count` answers `false`.
+
+## Go to path
+
+`go_to.rs`'s `DemoGoTo` answers the go-to dialog (⌘G / Ctrl+G) by the desktop's rules, shared: `cmdr_fs::go_to_path`
+(`resolve_with`, the classification both hosts call; the desktop's `go_to_path::resolve` runs it over the local disk).
+
+- **Two passes**: the classifier asks what's at a path synchronously and the volume answers asynchronously, so a first
+  pass with nothing found collects every path it could ask (the target and each ancestor), those are read (links
+  followed, as `metadata` follows them: `InMemoryVolume::canonicalize`, then `get_metadata`), and the second pass
+  classifies over the answers.
+- `~` is the tree's `home`; spelling is POSIX. No archive branch: the demo browses no archives.
+- **Recent paths** (`get_recent_paths`, `add_recent_path`, `remove_recent_path`, `clear_recent_paths`) last the session,
+  by `cmdr-recents`' rules over the resolved path, capped at 10 (the desktop's `MAX_RECENTS`).
+- **The Selection dialog's recent selections** (`selection_recents.rs`) likewise: in memory for the visit, by
+  `cmdr-recents`' rules over the desktop's four-segment key, built from the same `cmdr_search::history` parts. The entry
+  is a wire mirror of the app's `SelectionHistoryEntry` (its keys pinned against `bindings.ts`).
 
 ## Search
 
@@ -314,6 +335,32 @@ pinned against `bindings.ts` by `multi_rename_test.rs`): `cmdr-multi-rename`'s `
 - Tests: `multi_rename_test.rs` (open, a counter preview, a moved row retiring the preview, apply and its
   `directory-diff`, roll back, history, a media mask ending `unreadable` with one final `done` event, Results' refusal,
   presets, last settings); `smoke-multi-rename.mjs` runs the same on the real `.wasm`, plus the 1,200-photo probe.
+
+## Tell me about this
+
+`about.rs`'s `DemoAbout` answers `about_start`, `about_cancel`, and `about_stop_verdict` (`ABOUT_COMMANDS`) the way the
+desktop's host does (`apps/desktop/src-tauri/src/about/CLAUDE.md`): `cmdr_about::card::plan`, then the facts through
+`AboutCard`, with `headline`, `consequences`, and `actions` recomputed on every landing.
+
+- **What it answers**: identity (the volume's metadata, the desktop's `through::identity_of`) and, for a file, the real
+  type (`sniff::real_type` over the first 64 KB and, past those, the last 512 bytes, read with `read_range`).
+  `VolumeCaps` is `identity_only` plus `content`, `OsCaps` all off, and `retain_kinds` keeps those two rows, so the card
+  notes "Cmdr can see only some of this". The demo's generated filler bytes match no format, so their Kind row says
+  "can't tell", never a mismatch. Actions: removal only (`Delete`: the volume has no Trash), no file manager, no Ask
+  Cmdr.
+- **Order**: `unavailable` alone (a path the volume doesn't hold), or `planned`, `verdictUnavailable` with `aiOff` (no
+  AI, as on a desktop with AI off), one `fact` per row, and `factsSettled`; then the channel's end. Everything runs
+  inside the `about_start` call (in-memory reads), which answers `null` as the desktop's does.
+- **The channel**: the request's `onEvent` arrives as the webview's tagged `__CHANNEL__:<label>:<id>` string, and each
+  message goes out as a `demo://channel` notice (`CHANNEL_EVENT`: `{ channel, message }`, then
+  `{ channel, end: true }`), which the page hands to that frame's `Channel` (`apps/desktop/src/lib/demo/DETAILS.md` §
+  Channels).
+- **Cancel**: `about_cancel` marks the id; every send checks it, so a card closed mid-gather sends nothing more, and a
+  cancel that lands before its start (a tombstone, as the desktop's registry keeps) leaves that start silent but for the
+  end. A card's end clears its id.
+- The wire structs mirror `about/event.rs` (the app crate can't build for the browser); `about_test.rs` pins the
+  message, update, and `Derived` keys and the tags against `bindings.ts`, plus the order for a file, a folder, a missing
+  path, and an early cancel.
 
 ## Files dropped in from the computer
 
@@ -373,7 +420,8 @@ from the computer. Nothing leaves the page.
   from a fold, never an index (§ Folder sizes).
 - **The menu bar is the visitor's own OS's** (D5: the macOS bar for a Mac visitor, the in-window bar elsewhere), and a
   Mac bar's OS rows (Services, Hide, Quit, Undo, Minimize) are drawn greyed: a page has no OS to hand them to. Windows'
-  and Linux's File > Quit sends `app.quit`, which the page refuses (it can't quit its tab).
+  and Linux's File > Quit (Exit) draws greyed the same way (`menu.rs`'s `PAGE_CANT_DO`, a `System` row, and its click
+  does nothing): a page can't quit its tab, so every visitor's Quit reads the same.
 - **No local disk**: `move_files` (the desktop's same-`root` move) runs as a volume move on `root`, the dialog's
   `previewId` carried in its config; `trash_files` and `move_to_trash` refuse typed (`trash_not_supported`), as a volume
   without a Trash does, and F8 takes the app's permanent-delete confirm. `trash_routing_for_paths` answers the plain
@@ -384,10 +432,15 @@ from the computer. Nothing leaves the page.
   `InMemoryVolume::canonicalize` (the tree's `symlinkTarget`s, stored by `tree.rs`) where the desktop calls `realpath`,
   with exact-case names, so a scope spelled in another case through a link stays the literal (still matched
   case-insensitively, but as the link, a leaf); no AI (`getAiStatus` answers unavailable, so the dialog's AI mode stays
-  off as on a Mac with AI off); no importance weights, so ties rank by name and id alone.
+  off as on a Mac with AI off); no importance weights, so ties rank by name and id alone. A live run ends inside
+  `search_files_streaming`, so `is_search_run_live` answers `false` by the time anyone asks (`cmdr_search`'s registry).
+- **Settings' operation-log toggle** (`set_operation_log_enabled`) is live on the engine's log (`set_recording`), as on
+  the desktop.
 - **Multi-Rename** (`multi_rename.rs`, § Multi-Rename): no media reads (every media field reads as couldn't-read), no
   Results, presets and history in memory, and every call runs inline with none of the desktop's IPC deadlines or preview
   budget.
+- **Tell me about this** (`about.rs`, § Tell me about this): identity and real type only (no OS records, index, repo, or
+  Cmdr history row), no verdict, and the whole card inside the `about_start` call.
 - **The viewer** (`viewer.rs`): every call runs inline, with none of the app's 2 s timeouts or stall watches (an
   in-memory read can't hang). No LineIndex upgrade, so a big file keeps its estimated row count; a search scans in 8 ms
   slices on the page's event loop instead of a thread; no watcher, so tail mode never sees a change.

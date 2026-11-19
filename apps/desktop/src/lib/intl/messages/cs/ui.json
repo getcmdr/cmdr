@@ -24,6 +24,34 @@
   "@ui.demoArchive.notBrowsable": {
     "sourceHash": "760091f"
   },
+  "ui.demoDesktopOnly.filePicker": "Toto demo nemůže otevřít okno pro výběr souborů ve vašem počítači. Ve skutečné aplikaci se otevře a můžete v něm vybrat soubor nebo složku.",
+  "@ui.demoDesktopOnly.filePicker": {
+    "sourceHash": "8a28292"
+  },
+  "ui.demoDesktopOnly.revealFolder": "Toto demo nemůže otevírat složky ve vašem počítači. Ve skutečné aplikaci se tím složka zobrazí ve správci souborů.",
+  "@ui.demoDesktopOnly.revealFolder": {
+    "sourceHash": "27ef83e"
+  },
+  "ui.demoDesktopOnly.quit": "Toto demo běží v záložce prohlížeče, takže ho nelze ukončit. Až budete hotovi, záložku zavřete.",
+  "@ui.demoDesktopOnly.quit": {
+    "sourceHash": "c971af5"
+  },
+  "ui.demoQuestion.no": "Ne",
+  "@ui.demoQuestion.no": {
+    "sourceHash": "1ea442a"
+  },
+  "ui.demoQuestion.yes": "Ano",
+  "@ui.demoQuestion.yes": {
+    "sourceHash": "85a39ab"
+  },
+  "ui.demoWindow.maximize": "Maximalizovat",
+  "@ui.demoWindow.maximize": {
+    "sourceHash": "fba6c2c"
+  },
+  "ui.demoWindow.restore": "Obnovit",
+  "@ui.demoWindow.restore": {
+    "sourceHash": "a76e13b"
+  },
   "ui.popover.defaultAriaLabel": "Možnosti",
   "@ui.popover.defaultAriaLabel": {
     "sourceHash": "d0db8b5"
