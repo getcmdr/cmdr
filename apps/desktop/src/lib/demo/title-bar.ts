@@ -13,6 +13,7 @@ import tauriConfig from '../../../src-tauri/tauri.conf.json'
 import { getMessage } from '#lib/intl/messages.svelte.js'
 import type { Platform } from '#lib/platform/index.js'
 import { canFullScreen, isBrowserFullScreen, setBrowserFullScreen } from './browser-full-screen.js'
+import { followLanguage } from './follow-language.svelte.js'
 import type { ZoomGlyph } from './traffic-lights.js'
 
 /** The two OSes whose windows carry an OS title bar above the page. */
@@ -33,6 +34,8 @@ export interface TitleBar {
   setActive(active: boolean): void
   /** Maximize's glyph: maximize for a window that isn't (`zoom`, `enterFullScreen`), restore for one that is. */
   setZoomGlyph(glyph: ZoomGlyph): void
+  /** Stops following the UI language, for a window that closed. */
+  destroy(): void
 }
 
 /** Each look's bar height, in CSS pixels: Windows 11's caption at 100%, and a GTK title bar's. */
@@ -206,7 +209,6 @@ export function createTitleBar(look: TitleBarLook, title: string, actions: Title
     button.type = 'button'
     button.className = 'cmdr-demo-titlebar-button'
     button.dataset.button = kind
-    button.setAttribute('aria-label', getMessage(LABEL_KEYS[kind]))
     // The caption buttons aren't Tab stops on either OS: the keyboard has Alt+F4, Esc, and the menu.
     button.tabIndex = -1
     const action = actions[kind]
@@ -216,6 +218,14 @@ export function createTitleBar(look: TitleBarLook, title: string, actions: Title
     group.append(button)
   }
   root.append(text, group)
+  // Each button's name, in the UI language now and after every switch; maximize's by the zoom state.
+  const relabel = () => {
+    buttons.minimize?.setAttribute('aria-label', getMessage(LABEL_KEYS.minimize))
+    buttons.close?.setAttribute('aria-label', getMessage(LABEL_KEYS.close))
+    const zoomed = root.dataset.zoom === 'exitFullScreen'
+    buttons.maximize?.setAttribute('aria-label', getMessage(zoomed ? LABEL_KEYS.restore : LABEL_KEYS.maximize))
+  }
+  const stopFollowing = followLanguage(relabel)
   // A press on the bar (not a button) moves the window; a double click maximizes it, as both OSes do.
   root.addEventListener('mousedown', (event) => {
     if (event.button !== 0 || (event.target as Element).closest('button')) {
@@ -235,11 +245,9 @@ export function createTitleBar(look: TitleBarLook, title: string, actions: Title
     },
     setZoomGlyph: (zoom) => {
       root.dataset.zoom = zoom
-      buttons.maximize?.setAttribute(
-        'aria-label',
-        getMessage(zoom === 'exitFullScreen' ? LABEL_KEYS.restore : LABEL_KEYS.maximize),
-      )
+      relabel()
     },
+    destroy: stopFollowing,
   }
 }
 

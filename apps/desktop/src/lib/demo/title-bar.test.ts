@@ -1,4 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { flushSync } from 'svelte'
+import { getMessage, setLocale } from '#lib/intl/messages.svelte.js'
+import { createTrafficLights } from './traffic-lights.js'
 import {
   createMainWindowTitleBar,
   createTitleBar,
@@ -79,5 +82,36 @@ describe('the Windows and Linux title bars', () => {
     const bar = createMainWindowTitleBar('linux')
     button(bar.root, 'maximize')?.click()
     expect(request).toHaveBeenCalledOnce()
+  })
+})
+
+describe('the window buttons’ names', () => {
+  it('follow a language switch, maximize and restore included, until the window closes', async () => {
+    const bar = createTitleBar('windows', 'Cmdr', { close: () => {}, maximize: () => {} })
+    const lights = createTrafficLights({ close: () => {} }, 'enterFullScreen')
+    const light = (kind: string) => lights.root.querySelector(`[data-light="${kind}"]`)?.getAttribute('aria-label')
+    try {
+      expect(button(bar.root, 'close')?.getAttribute('aria-label')).toBe('Close')
+      await setLocale('hu')
+      flushSync()
+      expect(button(bar.root, 'close')?.getAttribute('aria-label')).toBe(getMessage('ui.modalDialog.close'))
+      expect(button(bar.root, 'close')?.getAttribute('aria-label')).not.toBe('Close')
+      expect(button(bar.root, 'maximize')?.getAttribute('aria-label')).toBe(getMessage('ui.demoWindow.maximize'))
+      bar.setZoomGlyph('exitFullScreen')
+      expect(button(bar.root, 'maximize')?.getAttribute('aria-label')).toBe(getMessage('ui.demoWindow.restore'))
+      expect(light('zoom')).toBe(getMessage('menu.window.zoom'))
+      expect(light('zoom')).not.toBe('Zoom')
+
+      bar.destroy()
+      lights.destroy()
+      await setLocale(null)
+      flushSync()
+      // A closed window's buttons keep their last words: nothing follows the language for them any more.
+      expect(button(bar.root, 'close')?.getAttribute('aria-label')).not.toBe('Close')
+    } finally {
+      bar.destroy()
+      lights.destroy()
+      await setLocale(null)
+    }
   })
 })

@@ -24,6 +24,7 @@ interface WindowButtons {
   root: HTMLElement
   setActive(active: boolean): void
   setZoomGlyph(glyph: ZoomGlyph): void
+  destroy(): void
 }
 
 /**
@@ -245,6 +246,7 @@ export function createWindowHost(
     if (front === panel) front = undefined
     emit('tauri://destroyed', null, { kind: 'label', label })
     onClosed(label)
+    panel.lights.destroy()
     panel.root.remove()
     // The window under it gets focus back, as macOS hands it to the next window.
     const next = [...panels.values()].pop()
