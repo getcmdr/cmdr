@@ -609,6 +609,11 @@ else
     LINUX_E2E_JSON_REPORT="${CMDR_E2E_HOST_JSON_REPORT:-/tmp/cmdr-e2e-report-linux.json}"
     CONTAINER_E2E_JSON_REPORT="/e2e-report/cmdr-e2e-report-linux.json"
     : > "$LINUX_E2E_JSON_REPORT"
+    # The in-page menu group's own report (its second launch, below), beside the suite's under the
+    # name the container derives (`${CMDR_E2E_JSON_REPORT%.json}-in-page-menus.json`), so its results
+    # reach the host and the Go checker's per-test records too (`desktop-svelte-e2e-linux.go`).
+    LINUX_E2E_IN_PAGE_JSON_REPORT="${LINUX_E2E_JSON_REPORT%.json}-in-page-menus.json"
+    : > "$LINUX_E2E_IN_PAGE_JSON_REPORT"
 
     # Where the in-container `dump_app_stacks` writes every app thread's stack when
     # the run fails or runs long. CI uploads it as an artifact on failure. An
@@ -649,6 +654,7 @@ else
         -v "$DESKTOP_NODE_MODULES_VOLUME:/app/apps/desktop/node_modules" \
         -v "$DESKTOP_SVELTEKIT_VOLUME:/app/apps/desktop/.svelte-kit" \
         -v "$LINUX_E2E_JSON_REPORT:$CONTAINER_E2E_JSON_REPORT" \
+        -v "$LINUX_E2E_IN_PAGE_JSON_REPORT:${CONTAINER_E2E_JSON_REPORT%.json}-in-page-menus.json" \
         -w /app/apps/desktop \
         -e TAURI_BINARY="$DOCKER_TAURI_BINARY" \
         -e CI=true \

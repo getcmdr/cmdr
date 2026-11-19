@@ -1001,10 +1001,10 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
        - Done when: flipping the Windows setting shows or hides underlines without a restart.
     6. [S] **The bar in the windows, and the hosts.**
        - Scope: the main window and the viewer draw the bar (step 4) from step 2's answer on Windows, KDE, and other
-         Linux; `menu_bar_builder.rs` builds the native bar on macOS only; Windows answers a zero-`lParam` `SC_KEYMENU`
-         itself (ported from the spike's `subclass`) so a lone Alt or F10 doesn't start the system menu loop, letting
-         Alt+Space through; `bar_parity_test.rs` narrows its registered-key checks to macOS and keeps the shown-key
-         ones.
+         Linux; `menu_bar_builder.rs` builds the native bar on macOS only; Windows answers every `SC_KEYMENU` itself
+         (ported from the spike's `subclass`: a lone Alt or F10's zero `lParam`, and an Alt+letter no title took, which
+         would otherwise beep) so the system menu loop never starts, letting Alt+Space through; `bar_parity_test.rs`
+         narrows its registered-key checks to macOS and keeps the shown-key ones.
        - Landmines: a lone Alt release that WebView2 leaves unhandled reaches `DefWindowProc` as `SC_KEYMENU` 0, which
          the guard swallows: the page must still see the keyup and focus the bar; F10 must be `preventDefault`ed by the
          page or Windows sees it too; the bar takes vertical space, so the pane height math and the E2E screenshots

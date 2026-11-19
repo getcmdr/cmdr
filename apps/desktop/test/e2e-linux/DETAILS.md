@@ -18,8 +18,9 @@ After the suite, shard 1's container stops the app and launches it again with `C
 `--grep @in-page-menus` against it (`in-page-context-menus.spec.ts`, which skips itself on the first launch). It's how
 Windows' in-page right-click menus run on a lane whose OS keeps native ones: the override moves `contextMenus` alone,
 and only a `playwright-e2e` build reads it (`src/lib/context-menu/DETAILS.md` § Running them off Windows). A grep that
-doesn't name `in-page` skips it. Its JSON report goes beside the suite's as `<report>-in-page-menus.json`, so the
-suite's report keeps every result; a failure there still fails the run.
+doesn't name `in-page` skips it. Its JSON report goes beside the suite's as `<report>-in-page-menus.json`, bind-mounted
+to the host like the suite's, so the suite's report keeps every result and the Go checker records both
+(`scripts/check/checks/desktop-svelte-e2e-linux.go` `linuxE2EReportPaths`); a failure there still fails the run.
 
 ## CI: build once, test in three slices
 
