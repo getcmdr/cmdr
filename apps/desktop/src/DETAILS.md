@@ -144,6 +144,17 @@ tooltips, `ModalDialog`'s chrome, focus rings, and scrollbars. Same shape as the
 Each Windows token's WinUI resource key and file, the elevation shadows, the computed-style proof that the house look
 didn't move, and what CSS can't express: `docs/notes/windows-port/control-look-tokens.md`.
 
+### Typography and motion
+
+`app-type-motion-windows.css` (task 62, also imported by `app.css`) redefines `app.css`'s own `--font-system`,
+`--font-size-lg`, and `--transition-*` under `:root[data-look='windows']`: Segoe UI Variable (its `Text` instance, then
+Segoe UI for Windows 10), the WinUI type ramp's BodyLarge 18 for the house's 16px heading step, and WinUI's 83 ms
+`BrushTransition` and 250 ms fast-out-slow-in curve. `html, body` read `--font-system`, so inherited text follows the
+look too; `app.html` keeps the house stack as a literal for the boot screen. The menus' `--font-menu-family` reads the
+same token. Windows' Animation effects setting arrives as `prefers-reduced-motion` through Chromium, so no backend
+reader exists for it. `app-controls.test.ts` pins the house values and the Windows ones. Sources, the optical-size gap,
+and the before/after proof: `docs/notes/windows-port/type-and-motion.md`.
+
 ## Display accessibility classes
 
 `#lib/display-accessibility` (inited per window) mirrors four macOS Accessibility > Display options onto `<html>` as

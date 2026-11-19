@@ -78,7 +78,7 @@ Row:
   `MenuFlyoutItemThemePadding` 11,8,11,9 for touch. Cmdr's menus open by mouse or keyboard, so the narrow one.
 - `--radius-menu-row`: `ControlCornerRadius` 4.
 - `--font-menu-family`: `ContentControlThemeFontFamily` → `XamlAutoFontFamily`, Segoe UI Variable on Windows 11 (Segoe
-  UI on Windows 10).
+  UI on Windows 10), through the app's `--font-system`.
 - `--font-menu-size`: `ControlContentThemeFontSize` 14 (`--font-size-md`, so it follows Cmdr's text size).
 - `--font-menu-line-height`: `normal`, the font's own metrics, as a XAML `TextBlock` without a `LineHeight` uses.
 - `--color-menu-row-fg` / `-fg-hover`: `MenuFlyoutItemForeground` and `…PointerOver` / `…Pressed` →
@@ -184,13 +184,12 @@ Added with the component (task 63 step 4), from the same sources:
 - **What's blurred.** WinUI's flyout is its own window, so `DesktopAcrylicBackdrop` blurs the desktop behind the app;
   ours blurs the app beneath the menu (accepted in the spec's landmines).
 - **The shadow.** `ThemeShadow` isn't CSS; Fluent's web `shadow28` stands in (§ The sources).
-- **The font.** `XamlAutoFontFamily` picks Segoe UI Variable and sets its optical size from the font size. The stack
-  names `'Segoe UI Variable'` first and `'Segoe UI Variable Text'` second, since how WebView2 enumerates the variable
-  font's names is unverified, then `'Segoe UI'` for Windows 10. Unverified on a real machine; task 62 owns the app-wide
-  stack.
+- **The font.** `XamlAutoFontFamily` picks Segoe UI Variable and sets its optical size from the font size. The menus
+  read the app's `--font-system`, which the Windows look sets to Segoe UI Variable's Text instance; the stack and the
+  optical-size gap: `docs/notes/windows-port/type-and-motion.md` § The font.
 - **Motion.** None in these tokens: WinUI switches row and title states instantly (`VisualState.Setters`, no
-  transitions). The flyout's open animation (`MenuPopupThemeTransition`) lives in WinUI's C++ animation code and is task
-  62's (motion), which also owns `prefers-reduced-motion`.
+  transitions). The flyout's open animation (`MenuPopupThemeTransition`) lives in WinUI's C++ animation code, so the
+  menus open without it (`docs/notes/windows-port/type-and-motion.md` § Motion).
 - **The contrast theme's colors.** WinUI maps each brush to a `SystemColor…Color`; CSS has the same set as system colors
   under `forced-colors: active`. Chromium forces colors on its own in that mode, so the bar and the menu surface set
   `forced-color-adjust` from the controls' `--color-forced-adjust` (`none` on the Windows look there) and paint these
