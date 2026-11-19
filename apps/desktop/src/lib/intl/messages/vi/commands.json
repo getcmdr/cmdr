@@ -248,7 +248,7 @@
   "@commands.viewToggleFullScreen.label": {
     "sourceHash": "76055d3"
   },
-  "commands.viewToggleMenuBar.label": "Toggle menu bar",
+  "commands.viewToggleMenuBar.label": "Bật/tắt thanh menu",
   "@commands.viewToggleMenuBar.label": {
     "sourceHash": "aad33a7"
   },

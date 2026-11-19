@@ -250,7 +250,7 @@
   "@commands.viewToggleFullScreen.label": {
     "sourceHash": "76055d3"
   },
-  "commands.viewToggleMenuBar.label": "Toggle menu bar",
+  "commands.viewToggleMenuBar.label": "Menubalk aan/uit",
   "@commands.viewToggleMenuBar.label": {
     "sourceHash": "aad33a7"
   },

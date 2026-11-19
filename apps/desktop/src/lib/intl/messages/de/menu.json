@@ -309,7 +309,7 @@
   "@menu.view.fullScreen": {
     "sourceHash": "674fe2a"
   },
-  "menu.view.showMenuBar": "Show menu bar",
+  "menu.view.showMenuBar": "Menüleiste anzeigen",
   "@menu.view.showMenuBar": {
     "sourceHash": "63809e3"
   },

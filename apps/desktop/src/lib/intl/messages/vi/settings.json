@@ -322,27 +322,27 @@
   "@settings.appearance.showFunctionKeyBar.keywords": {
     "sourceHash": "c42e176"
   },
-  "settings.appearance.menuBar.label": "Show menu bar",
+  "settings.appearance.menuBar.label": "Hiển thị thanh menu",
   "@settings.appearance.menuBar.label": {
     "sourceHash": "63809e3"
   },
-  "settings.appearance.menuBar.description": "Show the menus (File, Edit, View, and so on) in a bar at the top of each window. Hidden, they’re in the Main menu button at the end of the tab row instead.",
+  "settings.appearance.menuBar.description": "Hiển thị các menu (Tệp, Sửa, Xem, v.v.) trên một thanh ở đầu mỗi cửa sổ. Khi thanh này ẩn, các menu nằm trong nút “Menu chính” ở cuối hàng tab.",
   "@settings.appearance.menuBar.description": {
     "sourceHash": "af69e91"
   },
-  "settings.appearance.menuBar.opt.desktopDefault": "Desktop default",
+  "settings.appearance.menuBar.opt.desktopDefault": "Mặc định của môi trường máy tính để bàn",
   "@settings.appearance.menuBar.opt.desktopDefault": {
     "sourceHash": "f3db16c"
   },
-  "settings.appearance.menuBar.opt.shown": "Shown",
+  "settings.appearance.menuBar.opt.shown": "Hiển thị",
   "@settings.appearance.menuBar.opt.shown": {
     "sourceHash": "6ba2a0e"
   },
-  "settings.appearance.menuBar.opt.hidden": "Hidden",
+  "settings.appearance.menuBar.opt.hidden": "Ẩn",
   "@settings.appearance.menuBar.opt.hidden": {
     "sourceHash": "7e6feff"
   },
-  "settings.appearance.menuBar.keywords": "menu, bar, menubar, hamburger, hide, File, Edit, View",
+  "settings.appearance.menuBar.keywords": "menu, thanh, trình đơn, hamburger, ẩn, giấu, Tệp, Sửa, Xem",
   "@settings.appearance.menuBar.keywords": {
     "sourceHash": "7598526"
   },

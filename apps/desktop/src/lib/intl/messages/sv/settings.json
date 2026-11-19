@@ -326,27 +326,27 @@
   "@settings.appearance.showFunctionKeyBar.keywords": {
     "sourceHash": "c42e176"
   },
-  "settings.appearance.menuBar.label": "Show menu bar",
+  "settings.appearance.menuBar.label": "Visa menyraden",
   "@settings.appearance.menuBar.label": {
     "sourceHash": "63809e3"
   },
-  "settings.appearance.menuBar.description": "Show the menus (File, Edit, View, and so on) in a bar at the top of each window. Hidden, they’re in the Main menu button at the end of the tab row instead.",
+  "settings.appearance.menuBar.description": "Visa menyerna (Arkiv, Redigera, Innehåll och så vidare) i en rad överst i varje fönster. När raden är dold finns menyerna i stället under knappen ”Huvudmeny” i slutet av flikraden.",
   "@settings.appearance.menuBar.description": {
     "sourceHash": "af69e91"
   },
-  "settings.appearance.menuBar.opt.desktopDefault": "Desktop default",
+  "settings.appearance.menuBar.opt.desktopDefault": "Skrivbordsmiljöns standard",
   "@settings.appearance.menuBar.opt.desktopDefault": {
     "sourceHash": "f3db16c"
   },
-  "settings.appearance.menuBar.opt.shown": "Shown",
+  "settings.appearance.menuBar.opt.shown": "Visad",
   "@settings.appearance.menuBar.opt.shown": {
     "sourceHash": "6ba2a0e"
   },
-  "settings.appearance.menuBar.opt.hidden": "Hidden",
+  "settings.appearance.menuBar.opt.hidden": "Dold",
   "@settings.appearance.menuBar.opt.hidden": {
     "sourceHash": "7e6feff"
   },
-  "settings.appearance.menuBar.keywords": "menu, bar, menubar, hamburger, hide, File, Edit, View",
+  "settings.appearance.menuBar.keywords": "meny, menyfält, list, hamburgare, hamburgermeny, göm, dölj, Arkiv, Redigera, Innehåll",
   "@settings.appearance.menuBar.keywords": {
     "sourceHash": "7598526"
   },

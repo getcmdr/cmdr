@@ -322,27 +322,27 @@
   "@settings.appearance.showFunctionKeyBar.keywords": {
     "sourceHash": "c42e176"
   },
-  "settings.appearance.menuBar.label": "Show menu bar",
+  "settings.appearance.menuBar.label": "Показывать строку меню",
   "@settings.appearance.menuBar.label": {
     "sourceHash": "63809e3"
   },
-  "settings.appearance.menuBar.description": "Show the menus (File, Edit, View, and so on) in a bar at the top of each window. Hidden, they’re in the Main menu button at the end of the tab row instead.",
+  "settings.appearance.menuBar.description": "Показывать меню («Файл», «Правка», «Вид» и другие) в строке вверху каждого окна. Когда строка скрыта, меню находятся под кнопкой «Главное меню» в конце строки вкладок.",
   "@settings.appearance.menuBar.description": {
     "sourceHash": "af69e91"
   },
-  "settings.appearance.menuBar.opt.desktopDefault": "Desktop default",
+  "settings.appearance.menuBar.opt.desktopDefault": "По умолчанию в среде рабочего стола",
   "@settings.appearance.menuBar.opt.desktopDefault": {
     "sourceHash": "f3db16c"
   },
-  "settings.appearance.menuBar.opt.shown": "Shown",
+  "settings.appearance.menuBar.opt.shown": "Показана",
   "@settings.appearance.menuBar.opt.shown": {
     "sourceHash": "6ba2a0e"
   },
-  "settings.appearance.menuBar.opt.hidden": "Hidden",
+  "settings.appearance.menuBar.opt.hidden": "Скрыта",
   "@settings.appearance.menuBar.opt.hidden": {
     "sourceHash": "7e6feff"
   },
-  "settings.appearance.menuBar.keywords": "menu, bar, menubar, hamburger, hide, File, Edit, View",
+  "settings.appearance.menuBar.keywords": "меню, панель, полоса, гамбургер, скрыть, спрятать, Файл, Правка, Вид",
   "@settings.appearance.menuBar.keywords": {
     "sourceHash": "7598526"
   },

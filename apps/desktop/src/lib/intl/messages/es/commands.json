@@ -248,7 +248,7 @@
   "@commands.viewToggleFullScreen.label": {
     "sourceHash": "76055d3"
   },
-  "commands.viewToggleMenuBar.label": "Toggle menu bar",
+  "commands.viewToggleMenuBar.label": "Mostrar u ocultar la barra de menús",
   "@commands.viewToggleMenuBar.label": {
     "sourceHash": "aad33a7"
   },

@@ -3143,7 +3143,10 @@
     "chosen": "Zeile",
     "confidence": "high",
     "forms": "file row → Dateizeile",
-    "sources": "MS terminology (row → Zeile); Double Commander (eins pro Zeile)"
+    "sources": "MS terminology (row → Zeile); Double Commander (eins pro Zeile)",
+    "exceptions": {
+      "settings.appearance.menuBar.description": "the strip of tabs is the Tab-Leiste, like the Menüleiste it sits beside; Zeile would read as a line of text"
+    }
   },
   "running": {
     "accept": ["läuft", "laufen", "aktiv"],
@@ -4664,5 +4667,10 @@
     "chosen": "Mac OS Extended",
     "confidence": "high",
     "sources": "Disk Utility format menu: StorageKit Localizable.loctable, key HFS Not Journaled (verified on macOS 27.0.1 (26A434), plutil, 2026-11-19)"
+  },
+  "main-menu": {
+    "chosen": "Hauptmenü",
+    "confidence": "high",
+    "sources": "GNOME Nautilus and gnome-control-center (Main Menu)"
   }
 }
