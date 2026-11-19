@@ -27,7 +27,8 @@ function tokens(css: string, selector: string, media: string[] = []): Map<string
     let prelude = ''
     for (let i = 0; i < body.length; i++) {
       if (body[i] === '{') {
-        if (depth === 0) prelude = body.slice(start, i).trim()
+        // After the last `;`, so a statement before the rule (`app.css`'s `@import`s) isn't its prelude
+        if (depth === 0) prelude = (body.slice(start, i).split(';').pop() ?? '').trim()
         if (depth === 0) start = i + 1
         depth++
       } else if (body[i] === '}') {
@@ -213,4 +214,48 @@ describe('Windows control contrast', () => {
       })
     }
   }
+})
+
+/** A `rem` or `px` size token in CSS pixels, at the default text size (1rem = 16px). */
+const px = (value: string): number => (value.endsWith('rem') ? parseFloat(value) * 16 : parseFloat(value))
+
+describe('Windows typography and motion (`app-type-motion-windows.css`)', () => {
+  const appCss = read('app.css')
+  const houseRoot = tokens(appCss, ':root')
+  const windowsType = tokens(read('app-type-motion-windows.css'), WINDOWS)
+
+  it('keeps the house font, sizes, and motion (macOS and Linux paint exactly these)', () => {
+    const names = [...houseRoot.keys()].filter((name) => /^--(font-system|font-size-|transition-)/.test(name))
+    expect(Object.fromEntries(names.map((name) => [name, houseRoot.get(name)]))).toMatchSnapshot()
+  })
+
+  it('uses only CSS that Safari 15.4 reads', () => {
+    expect(findCssBeyondSafari15(read('app-type-motion-windows.css'))).toEqual([])
+  })
+
+  it('names Segoe UI Variable by the family Chromium resolves, then Segoe UI for Windows 10, then the system font', () => {
+    expect(windowsType.get('--font-system')).toBe("'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif")
+  })
+
+  it('puts every size step on the WinUI type ramp, except the 10px badge step', () => {
+    // TextBlock_themeresources.xaml: Caption 12, Body 14, BodyLarge 18, Subtitle 20, Title 28, TitleLarge 40, Display 68
+    const ramp = new Set([12, 14, 18, 20, 28, 40, 68])
+    const steps = ['--font-size-sm', '--font-size-md', '--font-size-lg', '--font-size-xl']
+    const off = steps
+      .map((name) => [name, px(windowsType.get(name) ?? houseRoot.get(name) ?? '')] as const)
+      .filter(([, size]) => !ramp.has(size))
+    expect(off).toEqual([])
+  })
+
+  it('moves on WinUI’s durations and curve', () => {
+    // BrushTransition 83 ms (a state's color change); ControlNormalAnimationDuration 250 ms on
+    // ControlFastOutSlowInKeySpline 0,0,0,1 (fades and size changes)
+    expect(windowsType.get('--transition-fast')).toBe('83ms linear')
+    expect(windowsType.get('--transition-base')).toBe('83ms linear')
+    expect(windowsType.get('--transition-slow')).toBe('250ms cubic-bezier(0, 0, 0, 1)')
+  })
+
+  it('sets the base font from the token, so text that inherits it follows the look', () => {
+    expect(appCss).toMatch(/\nhtml,\s*body\s*\{[^}]*font-family:\s*var\(--font-system\);/)
+  })
 })

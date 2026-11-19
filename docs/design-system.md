@@ -224,8 +224,11 @@ anchor the file list below them. Kept as a separate token rather than reusing `-
 
 ```css
 --font-system: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
---font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+--font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, 'Cascadia Mono', Consolas, monospace;
 ```
+
+The Windows look swaps the font, the 16px step, and the transitions for WinUI's (`apps/desktop/src/DETAILS.md` §
+Typography and motion).
 
 **Type scale.** Fixed `px`, not `rem`: the app scales with macOS display settings, not browser font preferences.
 `html { font-size: 16px }` is hardcoded to establish `1rem = 16px`. The body inherits this. The tokens below are for
