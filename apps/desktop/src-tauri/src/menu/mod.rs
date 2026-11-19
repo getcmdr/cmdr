@@ -424,6 +424,9 @@ pub struct MenuState<R: Runtime> {
     /// without asking muda (which waits on the main thread). Every writer of the item's check
     /// writes this too: `toggle_hidden_files`, `sync_menu_show_hidden`, and a click.
     pub show_hidden_checked: AtomicBool,
+    /// View > Show menu bar's check (Windows and Linux, which a page draws), as `sync_menu_show_menu_bar`
+    /// last pushed the `appearance.menuBar` setting. No native item: only a page bar draws it.
+    pub show_menu_bar_checked: AtomicBool,
     /// Every shortcut `update_menu_accelerator` pushed onto a bar row, by menu id, as pushed (the
     /// frontend's spelling, `""` for unbound): what the page bar reads its rebinds from, through
     /// the same `rebound_row_key` door the native rebind takes.
@@ -553,6 +556,7 @@ impl<R: Runtime> Default for MenuState<R> {
             same_kind_target: Mutex::new(None),
             pin_tab_pinned: AtomicBool::new(false),
             show_hidden_checked: AtomicBool::new(false),
+            show_menu_bar_checked: AtomicBool::new(true),
             pushed_shortcuts: Mutex::new(HashMap::new()),
             page_bar: Mutex::new(page_bar::BarFeed::default()),
             page_context: Mutex::new(page_context::OpenPageMenu::default()),

@@ -18,6 +18,10 @@
   "@ui.menuBar.label": {
     "description": "Screen-reader name of the strip of menus (Cmdr, File, Edit, View, …) at the top of the browser demo on getcmdr.com, which stands in for the macOS menu bar a web page doesn't have. Use the term macOS uses for its own menu bar in this language."
   },
+  "ui.mainMenu.label": "Main menu",
+  "@ui.mainMenu.label": {
+    "description": "Tooltip and screen-reader name of the button with three stacked lines at the end of the tab row on Windows and Linux. It opens one menu holding every menu of the menu bar (File, Edit, View, …) as submenus. On GNOME it’s the app’s only menu, which GNOME's guidelines call the \"Main Menu\"; on Windows and KDE it stands in for the menu bar once the user hides it. Use the term GNOME and KDE use for this button in this language."
+  },
   "ui.demoDrop.overBudget": "The demo holds up to {budgetText} of your files per visit, so it left out {countText} {count, plural, one {item} other {items}}.",
   "@ui.demoDrop.overBudget": {
     "description": "Notification in the browser demo on getcmdr.com, shown when a visitor drags files from their own computer into the demo and some of them don't fit the demo's per-visit size limit. The files that fit came in; the rest stayed out. The visitor's own files are never changed, so keep the tone light and reassuring, with no sense of something going wrong.",

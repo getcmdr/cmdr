@@ -336,6 +336,23 @@ fn quit_is_greyed_for_every_visitor() {
     }
 }
 
+/// View > Show menu bar (a page-drawn bar's own check) runs `view.toggleMenuBar`, and the setting's
+/// push moves its check; a Mac visitor's bar has no such row.
+#[test]
+fn show_menu_bar_runs_its_command_and_follows_the_push() {
+    for platform in [Platform::Windows, Platform::Linux] {
+        let menu = DemoMenu::for_platform(platform);
+        assert!(checked(&menu, "show_menu_bar"), "{platform:?}");
+        let (event, payload) = emitted(menu.click("show_menu_bar"));
+        assert_eq!(event, "execute-command");
+        assert_eq!(payload["commandId"], "view.toggleMenuBar");
+        push(&menu, "sync_menu_show_menu_bar", json!({ "checked": false }));
+        assert!(!checked(&menu, "show_menu_bar"), "{platform:?}");
+    }
+    let mac = DemoMenu::new().bar();
+    assert!(mac.iter().all(|menu| find(&menu.rows, "show_menu_bar").is_none()));
+}
+
 /// A click and a rebind read the visitor's own bar, not the Mac's.
 #[test]
 fn a_windows_bar_clicks_and_rebinds_its_own_rows() {

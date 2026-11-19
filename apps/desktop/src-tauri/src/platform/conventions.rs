@@ -20,6 +20,8 @@ pub struct PlatformConventions {
     pub access_keys: AccessKeys,
     /// Where the app's menus live.
     pub menu_model: MenuModel,
+    /// What stands in for a window menu bar the user hid (View > Show menu bar).
+    pub hidden_menu_bar: HiddenMenuBar,
     /// Who draws the right-click menus.
     pub context_menus: ContextMenus,
     /// The screen readers this platform's users run, most used first: the ones a screen reader
@@ -87,6 +89,20 @@ pub enum MenuModel {
     /// No menu bar: a "Main menu" button in the window's header holds the menus, the "primary
     /// menu" GNOME's HIG asks for.
     PrimaryMenu,
+}
+
+/// What stands in for an in-window menu bar the user hid (the "Show menu bar" setting off), beside
+/// the main-menu button every desktop off macOS then shows.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub enum HiddenMenuBar {
+    /// No bar to hide: the OS owns it (macOS's system menu bar).
+    None,
+    /// A tap of Alt or F10 shows the hidden bar until focus leaves it, as Win32's guide asks and
+    /// VS Code's `toggle` does.
+    ShowsOnAltOrF10,
+    /// F10 opens the main-menu button's menu, GNOME's HIG key; KDE's hamburger answers it too.
+    F10OpensMainMenu,
 }
 
 /// Who draws the right-click (context) menus.
@@ -162,6 +178,7 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             cancel_keys: CancelKeys::EscapeOrCommandPeriod,
             access_keys: AccessKeys::None,
             menu_model: MenuModel::SystemMenuBar,
+            hidden_menu_bar: HiddenMenuBar::None,
             context_menus: ContextMenus::Native,
             screen_readers: &[ScreenReader::VoiceOver],
             linux_desktop: None,
@@ -172,6 +189,7 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             cancel_keys: CancelKeys::Escape,
             access_keys: AccessKeys::UnderlinesAfterKeyboardUse,
             menu_model: MenuModel::WindowMenuBar,
+            hidden_menu_bar: HiddenMenuBar::ShowsOnAltOrF10,
             // In the page, so the bar's flyouts and the right-click menus share one look (D5).
             context_menus: ContextMenus::InPage,
             screen_readers: &[ScreenReader::Jaws, ScreenReader::Nvda, ScreenReader::Narrator],
@@ -194,6 +212,7 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
                 LinuxDesktop::Gnome => MenuModel::PrimaryMenu,
                 LinuxDesktop::Kde | LinuxDesktop::Other => MenuModel::WindowMenuBar,
             },
+            hidden_menu_bar: HiddenMenuBar::F10OpensMainMenu,
             // muda's GTK popups are the desktop's own menus.
             context_menus: ContextMenus::Native,
             screen_readers: &[ScreenReader::Orca],
@@ -322,6 +341,18 @@ mod tests {
         assert_eq!(model(Desktop::Linux(LinuxDesktop::Gnome)), MenuModel::PrimaryMenu);
         assert_eq!(model(Desktop::Linux(LinuxDesktop::Kde)), MenuModel::WindowMenuBar);
         assert_eq!(model(Desktop::Linux(LinuxDesktop::Other)), MenuModel::WindowMenuBar);
+    }
+
+    #[test]
+    fn a_hidden_bar_shows_on_alt_on_windows_and_hands_f10_to_the_main_menu_on_linux() {
+        for desktop in Desktop::ALL {
+            let expected = match desktop {
+                Desktop::Macos => HiddenMenuBar::None,
+                Desktop::Windows => HiddenMenuBar::ShowsOnAltOrF10,
+                Desktop::Linux(_) => HiddenMenuBar::F10OpensMainMenu,
+            };
+            assert_eq!(conventions_on(desktop).hidden_menu_bar, expected, "{desktop:?}");
+        }
     }
 
     #[test]

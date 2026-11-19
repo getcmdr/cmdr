@@ -33,6 +33,7 @@ function context(): WindowServicesContext {
     dispatchers: {
       keyboard: dispatch,
       menu: dispatch,
+      barPick: dispatch,
       contextMenu: dispatch,
       mouse: dispatch,
       palette: dispatch,

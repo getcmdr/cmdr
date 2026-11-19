@@ -9,8 +9,8 @@ Reusable components (Ark UI backs the complex ones).
   `started-elsewhere-guard.ts` (what opened by itself arms first: DETAILS § The started-elsewhere guard),
   `boundary/DialogBoundary.svelte`.
 - Pickers: `Menu.svelte` + `createMenu`. ❗ No `.svelte.ts` may case-collide with a component. DETAILS § Menu.
-- In-page `cmdr-menu` menus: `MenuBar.svelte`, `ContextMenu.svelte` over `command-menu/`; `keyboard-cues.ts` (when
-  underlines show). DETAILS § Command menus.
+- `cmdr-menu` menus: `MenuBar`, `ContextMenu`, `MainMenuButton` over `command-menu/` (`menu-layout.ts` picks which);
+  `keyboard-cues.ts`. DETAILS § Command menus.
 - The primitives (`Icon`, `Spinner`, `Button`, `ColumnList`, form controls, `Select`, `Combobox`, text fields,
   `ShortcutChip`, `InfoTip`, `CloseButton`, `CopyButton`, `StatusGlyph` (❌ never focusable), `toast/`) are catalogued
   in DETAILS § Key files. `ToggleGroup` is segmented, ≠ `RadioGroup`; Tooltip is the sibling `../tooltip/tooltip.ts`.

@@ -248,6 +248,10 @@
   "@commands.viewToggleFullScreen.label": {
     "sourceHash": "76055d3"
   },
+  "commands.viewToggleMenuBar.label": "Zobrazit nebo skrýt řádek nabídek",
+  "@commands.viewToggleMenuBar.label": {
+    "sourceHash": "aad33a7"
+  },
   "commands.sortByName.label": "Seřadit podle názvu",
   "@commands.sortByName.label": {
     "sourceHash": "588a082"

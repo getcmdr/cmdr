@@ -45,6 +45,7 @@ import {
 } from '#lib/tauri-commands/index.js'
 import { getAppLogger } from '#lib/logging/logger.js'
 import type { CommandDispatchers } from './command-dispatch-context'
+import type { CommandRoad } from '#lib/ipc/bindings.js'
 import { navCommandForDirection } from './mouse-nav'
 import { menuSortToCommand } from './menu-sort-command'
 import { setFolderExcluded } from '#lib/media-index/excluded-folders.js'
@@ -94,7 +95,7 @@ export interface ListenerSetupContext {
    * with its own id takes `contextMenu`) and the mouse's side buttons. Each is bound to its road in
    * `+page.svelte`, so the dispatch core knows where a command came from.
    */
-  dispatchers: Pick<CommandDispatchers, 'menu' | 'contextMenu' | 'mouse'>
+  dispatchers: Pick<CommandDispatchers, 'menu' | 'barPick' | 'contextMenu' | 'mouse'>
   /** The page's mount scope; every registered unlisten goes here. */
   scope: MountScope
   /** Write-only dialog setters (the component owns the `$state`). */
@@ -106,6 +107,23 @@ export interface ListenerSetupContext {
    * reads reactive startup-modal `$state`; the E2E rerun listener calls it.
    */
   maybeRunWhatsNew: (force: boolean) => Promise<void>
+}
+
+/**
+ * The dispatcher an `execute-command` takes by the road it says it came in on: a right-click
+ * row's own (`contextMenu`), a page bar's pick (`barPick`, which the text-field gate lets through),
+ * or the menu's for everything else (a native bar's click or accelerator, the Dock, other windows).
+ */
+export function dispatcherForRoad(
+  road: CommandRoad | undefined,
+  dispatchers: Pick<CommandDispatchers, 'menu' | 'barPick' | 'contextMenu'>,
+): CommandDispatchers['menu'] {
+  // An emit that names no road (another window's, an E2E harness's) is the menu's, as before roads.
+  // Regression anchor: an exhaustive switch returned nothing for it, so File > Tell me about this
+  // from the harness threw "not a function" (Linux E2E lane, 2026-11-19).
+  if (road === 'contextMenu') return dispatchers.contextMenu
+  if (road === 'barPick') return dispatchers.barPick
+  return dispatchers.menu
 }
 
 /** Safe wrapper for Tauri event listeners - handles non-Tauri environment. */
@@ -261,8 +279,9 @@ export async function setupMenuListeners(ctx: ListenerSetupContext): Promise<voi
   const { dispatchers, getExplorer, scope } = ctx
 
   // Single unified listener for all menu commands routed through "execute-command": the
-  // native menu bar, the Dock menu, and other windows' emits take the menu's road, and a
-  // right-click menu's own row (`road: contextMenu`) takes its own.
+  // native menu bar, the Dock menu, and other windows' emits take the menu's road; a
+  // right-click menu's own row (`road: contextMenu`) and a page bar's pick (`road: barPick`)
+  // take their own.
   try {
     scope.add(
       await onExecuteCommand((payload) => {
@@ -272,7 +291,7 @@ export async function setupMenuListeners(ctx: ListenerSetupContext): Promise<voi
         // at the edge so a stale Rust id is dropped here rather than no-oping in the switch
         // `default`. The Rust↔registry drift test pins the two id sets together.
         if (isCommandId(commandId)) {
-          void (road === 'contextMenu' ? dispatchers.contextMenu : dispatchers.menu)(commandId)
+          void dispatcherForRoad(road, dispatchers)(commandId)
         }
       }),
     )

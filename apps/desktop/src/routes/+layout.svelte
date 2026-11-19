@@ -52,7 +52,7 @@
         return fireWindowBarKeys({
             follow: followMenuBar,
             pick: (menuId) => {
-                pickMenuBarItem(menuId).catch((error: unknown) => {
+                pickMenuBarItem(menuId, 'key').catch((error: unknown) => {
                     log.warn("Couldn't run a menu bar key: {error}", { error })
                 })
             },

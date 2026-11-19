@@ -240,17 +240,18 @@ menu menu.bar.view
       5 item view_zoom_in menu.zoom.in (Ctrl++) untracked
       6 item view_zoom_out menu.zoom.out (Ctrl+-) untracked
   6 item view_full_screen menu.view.fullScreen (F11) tracked
-  7 separator
-  8 item switch_pane menu.view.switchPane (Tab) tracked
-  9 item swap_panes menu.view.swapPanes [Ctrl+U] tracked
-  10 item clone_pane menu.view.clonePane [Ctrl+Shift+M] tracked
-  11 item calculate_folder_sizes menu.view.calculateFolderSizes [Alt+Shift+Enter] tracked
-  12 separator
-  13 item command_palette menu.view.commandPalette [Ctrl+Shift+P] tracked
-  14 item queue_show menu.view.operationQueue [Ctrl+Shift+Q] tracked
-  15 item operation_log menu.view.operationLog [Ctrl+Shift+L] tracked
-  16 item suggested_ops menu.view.suggestedOps tracked
-  17 item ask_cmdr menu.view.askCmdr [Ctrl+Shift+K] tracked
+  7 check show_menu_bar menu.view.showMenuBar show-menu-bar
+  8 separator
+  9 item switch_pane menu.view.switchPane (Tab) tracked
+  10 item swap_panes menu.view.swapPanes [Ctrl+U] tracked
+  11 item clone_pane menu.view.clonePane [Ctrl+Shift+M] tracked
+  12 item calculate_folder_sizes menu.view.calculateFolderSizes [Alt+Shift+Enter] tracked
+  13 separator
+  14 item command_palette menu.view.commandPalette [Ctrl+Shift+P] tracked
+  15 item queue_show menu.view.operationQueue [Ctrl+Shift+Q] tracked
+  16 item operation_log menu.view.operationLog [Ctrl+Shift+L] tracked
+  17 item suggested_ops menu.view.suggestedOps tracked
+  18 item ask_cmdr menu.view.askCmdr [Ctrl+Shift+K] tracked
 menu menu.bar.go
   0 item go_back menu.go.back [Alt+Left] tracked
   1 item go_forward menu.go.forward [Alt+Right] tracked
@@ -368,17 +369,18 @@ menu menu.bar.view
       5 item view_zoom_in menu.zoom.in (Ctrl++) untracked
       6 item view_zoom_out menu.zoom.out (Ctrl+-) untracked
   6 item view_full_screen menu.view.fullScreen (F11) tracked
-  7 separator
-  8 item switch_pane menu.view.switchPane (Tab) tracked
-  9 item swap_panes menu.view.swapPanes [Ctrl+U] tracked
-  10 item clone_pane menu.view.clonePane [Ctrl+Shift+M] tracked
-  11 item calculate_folder_sizes menu.view.calculateFolderSizes [Alt+Shift+Enter] tracked
-  12 separator
-  13 item command_palette menu.view.commandPalette [Ctrl+Shift+P] tracked
-  14 item queue_show menu.view.operationQueue [Ctrl+Shift+Q] tracked
-  15 item operation_log menu.view.operationLog [Ctrl+Shift+L] tracked
-  16 item suggested_ops menu.view.suggestedOps tracked
-  17 item ask_cmdr menu.view.askCmdr [Ctrl+Shift+K] tracked
+  7 check show_menu_bar menu.view.showMenuBar show-menu-bar
+  8 separator
+  9 item switch_pane menu.view.switchPane (Tab) tracked
+  10 item swap_panes menu.view.swapPanes [Ctrl+U] tracked
+  11 item clone_pane menu.view.clonePane [Ctrl+Shift+M] tracked
+  12 item calculate_folder_sizes menu.view.calculateFolderSizes [Alt+Shift+Enter] tracked
+  13 separator
+  14 item command_palette menu.view.commandPalette [Ctrl+Shift+P] tracked
+  15 item queue_show menu.view.operationQueue [Ctrl+Shift+Q] tracked
+  16 item operation_log menu.view.operationLog [Ctrl+Shift+L] tracked
+  17 item suggested_ops menu.view.suggestedOps tracked
+  18 item ask_cmdr menu.view.askCmdr [Ctrl+Shift+K] tracked
 menu menu.bar.go
   0 item go_back menu.go.back [Alt+Left] tracked
   1 item go_forward menu.go.forward [Alt+Right] tracked
@@ -442,7 +444,10 @@ fn every_handle_menu_state_keeps_is_built_exactly_once() {
             .filter_map(|entry| match entry {
                 EntryKind::Item(item) if item.tracking == Tracking::PinTab => Some("pin-tab".to_string()),
                 // Sort by's checks are kept in no field: `sort_checks.rs` finds them by id.
-                EntryKind::Check(check) if !matches!(check.role, CheckRole::Sort(_)) => Some(check_role(check.role)),
+                // Show menu bar has no native item: only a page draws it.
+                EntryKind::Check(check) if !matches!(check.role, CheckRole::Sort(_) | CheckRole::ShowMenuBar) => {
+                    Some(check_role(check.role))
+                }
                 EntryKind::Submenu(nested) if nested.role != SubmenuRole::Plain => Some(submenu_role(nested.role)),
                 _ => None,
             })
@@ -701,6 +706,7 @@ fn item_accelerator(item: &ItemSpec, platform: Platform) -> String {
 fn check_role(role: CheckRole) -> String {
     match role {
         CheckRole::ShowHiddenFiles => "show-hidden-files".to_string(),
+        CheckRole::ShowMenuBar => "show-menu-bar".to_string(),
         CheckRole::ViewMode(pane, mode) => {
             let mode = match mode {
                 ViewMode::Full => "full",

@@ -288,7 +288,7 @@ macro_rules! ipc_command_manifest {
                     // `menu_state::{update_pin_tab_menu, update_select_same_kind_menu, update_undo_trash_menu,
                     // set_reopen_closed_tab_enabled, set_file_operations_blocked,
                     // set_commands_refused_over_dialog, set_open_terminal_here_enabled,
-                    // activate_window_menu, toggle_hidden_files, sync_menu_show_hidden,
+                    // activate_window_menu, toggle_hidden_files, sync_menu_show_hidden, sync_menu_show_menu_bar,
                     // update_view_mode_menu, set_ui_language}`,
                     // `window_ordering::{show_main_window, order_window_to_back}`, and
                     // `file_actions::copy_to_clipboard`.
@@ -573,6 +573,7 @@ macro_rules! ipc_command_manifest {
                     crate::commands::menu_state::activate_window_menu,
                     crate::commands::menu_state::toggle_hidden_files,
                     crate::commands::menu_state::sync_menu_show_hidden,
+                    crate::commands::menu_state::sync_menu_show_menu_bar,
                     crate::commands::menu_state::update_view_mode_menu,
                     crate::commands::menu_state::set_ui_language,
                     crate::commands::window_ordering::show_main_window,

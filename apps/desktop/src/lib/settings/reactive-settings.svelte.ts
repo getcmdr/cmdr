@@ -24,6 +24,8 @@ import { formatDateForDisplay, type FormattedDate } from './format-utils'
 import { getAppLogger } from '#lib/logging/logger.js'
 import { clearExtensionIconCache } from '#lib/icon-cache.js'
 import { getEffectiveScale } from '#lib/text-size.svelte.js'
+import { platformConventions } from '#lib/platform/conventions.js'
+import { menuBarShown, type MenuBarChoice } from '#lib/ui/command-menu/menu-layout.js'
 
 const log = getAppLogger('reactive-settings')
 
@@ -34,6 +36,7 @@ let customDateTimeFormat = $state<string>('YYYY-MM-DD HH:mm')
 let fileSizeFormat = $state<FileSizeFormat>('si')
 let useAppIconsForDocuments = $state<boolean>(true)
 let showFunctionKeyBar = $state<boolean>(true)
+let menuBarChoice = $state<MenuBarChoice>('desktopDefault')
 let showHiddenFiles = $state<boolean>(false)
 let directorySortMode = $state<DirectorySortMode>('likeFiles')
 let foldersFirst = $state<boolean>(true)
@@ -99,6 +102,7 @@ async function runInit(options?: { restrictedWindow?: boolean }): Promise<void> 
     fileSizeFormat = getSetting('appearance.fileSizeFormat')
     useAppIconsForDocuments = getSetting('appearance.useAppIconsForDocuments')
     showFunctionKeyBar = getSetting('appearance.showFunctionKeyBar')
+    menuBarChoice = getSetting('appearance.menuBar')
     showHiddenFiles = getSetting('listing.showHiddenFiles')
     directorySortMode = getSetting('listing.directorySortMode')
     foldersFirst = getSetting('listing.foldersFirst')
@@ -166,6 +170,9 @@ function applySettingChange(id: string, value: unknown): void {
       useAppIconsForDocuments = value as boolean
       // Clear the icon cache so icons are re-fetched with the new setting
       void clearExtensionIconCache()
+      break
+    case 'appearance.menuBar':
+      menuBarChoice = value as MenuBarChoice
       break
     case 'appearance.showFunctionKeyBar':
       showFunctionKeyBar = value as boolean
@@ -299,6 +306,14 @@ export function getIsCompactDensity(): boolean {
 /** Get current "use app icons for documents" setting */
 export function getUseAppIconsForDocuments(): boolean {
   return useAppIconsForDocuments
+}
+
+/**
+ * Whether the page draws the menu bar (`appearance.menuBar`; off macOS only, where the bar is
+ * the page's): hidden, a main-menu button holds the menus (`#lib/ui/command-menu/menu-layout.ts`).
+ */
+export function getShowMenuBar(): boolean {
+  return menuBarShown(menuBarChoice, platformConventions())
 }
 
 /** Get whether the bottom function key bar (F-key command buttons) is shown. */

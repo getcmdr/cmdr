@@ -248,6 +248,10 @@
   "@commands.viewToggleFullScreen.label": {
     "sourceHash": "76055d3"
   },
+  "commands.viewToggleMenuBar.label": "Menüsor ki-be",
+  "@commands.viewToggleMenuBar.label": {
+    "sourceHash": "aad33a7"
+  },
   "commands.sortByName.label": "Rendezés név szerint",
   "@commands.sortByName.label": {
     "sourceHash": "588a082"

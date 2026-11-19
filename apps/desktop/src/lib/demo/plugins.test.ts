@@ -54,6 +54,7 @@ describe('in-memory store plugin', () => {
       appearanceAppColor: 'cmdr-gold',
       appearanceFileSizeFormat: null,
       appearanceLanguage: 'hu',
+      appearanceMenuBar: null,
     })
     call('plugin:store|delete', { rid, key: 'viewer.wordWrap' })
     call('plugin:store|delete', { rid, key: 'appearance.language' })

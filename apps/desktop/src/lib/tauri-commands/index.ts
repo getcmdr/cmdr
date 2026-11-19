@@ -205,6 +205,7 @@ export {
   updateServicesSelection,
   activateWindowMenu,
   syncMenuShowHidden,
+  syncMenuShowMenuBar,
   updateViewModeMenu,
   updateSortMenu,
   showMainWindow,

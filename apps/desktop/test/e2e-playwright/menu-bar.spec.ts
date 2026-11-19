@@ -22,12 +22,14 @@ import {
   focusPane,
   moveCursorToFile,
   pressKey,
+  TRANSFER_DIALOG,
   type PageLike,
 } from './helpers.js'
 import { ensureMcpClient } from '../e2e-shared/mcp-client.js'
 import {
   clickRealAt,
   F10_KEYCODE,
+  F6_KEYCODE,
   focusMainWindow,
   focusWindow,
   focusWindowAtCorner,
@@ -114,6 +116,34 @@ async function titleHolding(page: PageLike, menuId: string): Promise<number> {
     await expectBar(page, { menus: 0 })
   }
   throw new Error(`no bar menu holds \`${menuId}\``)
+}
+
+/** The main-menu button at the end of the tab row, where no bar shows. */
+const MAIN_MENU_BUTTON = '.main-menu-button'
+/** The main-menu button's open menu (it rides the context-menu surfaces). */
+const MAIN_MENU = '[role="menu"][data-command-menu="context"]'
+
+/** Whether the main menu is open, and whether focus sits in the focused file pane. */
+function mainMenuState(page: PageLike): Promise<{ open: boolean; focusInPane: boolean }> {
+  return page.evaluate<{ open: boolean; focusInPane: boolean }>(`(function(){
+      var pane = document.querySelector('.file-pane.is-focused');
+      return {
+        open: document.querySelector(${JSON.stringify(MAIN_MENU)}) !== null,
+        focusInPane: !!(pane && pane.contains(document.activeElement)),
+      };
+  })()`)
+}
+
+/** An element's center in page coordinates, which are the main window's on this lane. */
+async function centerOf(page: PageLike, selector: string): Promise<{ x: number; y: number }> {
+  const at = await page.evaluate<{ x: number; y: number } | null>(`(function(){
+      var el = document.querySelector(${JSON.stringify(selector)});
+      if (!el) return null;
+      var r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  })()`)
+  if (!at) throw new Error(`nothing matches \`${selector}\``)
+  return at
 }
 
 /** Lets go of the bar, whatever it holds: a failed run can leave it with the keyboard. */
@@ -216,6 +246,106 @@ test.describe('The in-page menu bar (Linux)', () => {
     await expect
       .poll(() => fileExistsInFocusedPane(tauriPage, '.hidden-file'), { timeout: waitBudget(3000) })
       .toBe(hiddenAtStart)
+  })
+
+  // Task 63 step 8: with "Show menu bar" off, Linux (this lane is the desktop-neutral row) shows the
+  // main-menu button at the end of the tab row, F10 opens it, and its View submenu brings the bar back.
+  test('View > Show menu bar hides the bar behind the main-menu button, and the button brings it back', async ({
+    tauriPage,
+  }) => {
+    await ensureAppReady(tauriPage)
+    await focusPane(tauriPage, 0)
+    const barShown = () => tauriPage.evaluate<boolean>(`document.querySelector('[role="menubar"]') !== null`)
+    try {
+      await titleHolding(tauriPage, 'show_menu_bar')
+      const row = await rowCenter(tauriPage, 'show_menu_bar')
+      expect(row).not.toBeNull()
+      if (row) clickRealAt(mainWindowId(), row.x, row.y)
+      await expect.poll(barShown, { timeout: waitBudget(3000) }).toBe(false)
+      await tauriPage.waitForSelector(MAIN_MENU_BUTTON, waitBudget(3000))
+
+      // F10 opens the main menu where no bar takes it, and Escape gives focus back to the pane.
+      await focusPane(tauriPage, 0)
+      focusMainWindow()
+      pressRealKey(F10_KEYCODE)
+      await expect.poll(() => mainMenuState(tauriPage), { timeout: waitBudget(3000) }).toMatchObject({ open: true })
+      pressRealKey('Escape')
+      await expect
+        .poll(() => mainMenuState(tauriPage), { timeout: waitBudget(3000) })
+        .toEqual({ open: false, focusInPane: true })
+
+      // A real click on the button, then View, then Show menu bar: the bar is back.
+      const button = await centerOf(tauriPage, MAIN_MENU_BUTTON)
+      clickRealAt(mainWindowId(), button.x, button.y)
+      await expect.poll(() => mainMenuState(tauriPage), { timeout: waitBudget(3000) }).toMatchObject({ open: true })
+      const view = await centerOf(tauriPage, `${MAIN_MENU} [data-menu-id="menu_view"]`)
+      clickRealAt(mainWindowId(), view.x, view.y)
+      await tauriPage.waitForSelector(`${MAIN_MENU} [data-menu-id="show_menu_bar"]`, waitBudget(3000))
+      const showBar = await centerOf(tauriPage, `${MAIN_MENU} [data-menu-id="show_menu_bar"]`)
+      clickRealAt(mainWindowId(), showBar.x, showBar.y)
+      await expect.poll(barShown, { timeout: waitBudget(3000) }).toBe(true)
+      expect(
+        await tauriPage.evaluate<boolean>(`document.querySelector(${JSON.stringify(MAIN_MENU_BUTTON)}) === null`),
+      ).toBe(true)
+    } finally {
+      // One app serves the shard, so the bar goes back as found.
+      if (!(await barShown())) await dispatchMenuCommand(tauriPage, 'view.toggleMenuBar')
+      await expect.poll(barShown, { timeout: waitBudget(3000) }).toBe(true)
+    }
+  })
+
+  // Task 63 step 9: with a text field focused, the person's own click on File > Move runs it (the
+  // page's bar knows a pick from a key), and the same command's key, F6, still doesn't.
+  test('with a text field focused, a click on File > Move runs it, and its key still does not', async ({
+    tauriPage,
+  }) => {
+    await ensureAppReady(tauriPage)
+    expect(await moveCursorToFile(tauriPage, 'file-a.txt')).toBe(true)
+    const fieldFocused = () =>
+      tauriPage.evaluate<boolean>(`document.activeElement === document.getElementById('e2e-text-field-gate')`)
+    try {
+      // The control: with focus on the pane, the same click opens the Move dialog. Regression anchor:
+      // a file-scoped pick asked whether the main window had focus, which an X session with no
+      // window manager never reports, so no file row on the bar ran here at all.
+      await focusPane(tauriPage, 0)
+      await titleHolding(tauriPage, 'file_move')
+      const control = await rowCenter(tauriPage, 'file_move')
+      if (control) clickRealAt(mainWindowId(), control.x, control.y)
+      await tauriPage.waitForSelector(TRANSFER_DIALOG, waitBudget(5000))
+      await escapeOverlayUntilGone(tauriPage, TRANSFER_DIALOG)
+
+      // A text field the person is typing in, in the main window: the gate asks only that one has focus.
+      await tauriPage.evaluate(`(function(){
+          var field = document.createElement('input');
+          field.id = 'e2e-text-field-gate';
+          field.value = 'typing';
+          document.body.append(field);
+          field.focus();
+      })()`)
+      await expect.poll(fieldFocused, { timeout: waitBudget(3000) }).toBe(true)
+
+      // The key: F6 reaches the page (the recorder sees it) and opens nothing.
+      await installKeyRecorder(tauriPage)
+      focusMainWindow()
+      pressRealKey(F6_KEYCODE)
+      await expect.poll(() => keydownsSeen(tauriPage), { timeout: waitBudget(3000) }).toContain('F6')
+      expect(
+        await tauriPage.evaluate<boolean>(`document.querySelector(${JSON.stringify(TRANSFER_DIALOG)}) !== null`),
+      ).toBe(false)
+      expect(await fieldFocused()).toBe(true)
+
+      // The pick: a real click on File, then on Move. The field keeps focus throughout.
+      await titleHolding(tauriPage, 'file_move')
+      expect(await fieldFocused()).toBe(true)
+      const row = await rowCenter(tauriPage, 'file_move')
+      expect(row).not.toBeNull()
+      if (row) clickRealAt(mainWindowId(), row.x, row.y)
+      await tauriPage.waitForSelector(TRANSFER_DIALOG, waitBudget(5000))
+    } finally {
+      await removeKeyRecorder(tauriPage)
+      await escapeOverlayUntilGone(tauriPage, TRANSFER_DIALOG)
+      await tauriPage.evaluate(`document.getElementById('e2e-text-field-gate')?.remove()`)
+    }
   })
 
   test('a real Alt+F reaches the search dialog and opens no menu', async ({ tauriPage }) => {
