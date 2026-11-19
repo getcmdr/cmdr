@@ -33,13 +33,18 @@
 //! `boundary.through_outages`, so a dropped share is waited out by the scan's
 //! owner and the walk carries on from the directory it was listing.
 
+use std::borrow::Cow;
+use std::fmt;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 
-use crate::app_path::AppPath;
+use crate::app_path::{AppNameBuf, AppPath, AppPathBuf, ListedFolder, Namer};
 use crate::entry::FileEntry;
-use crate::volume::VolumeError;
+use crate::error_detail::ErrorDetail;
+use crate::log_error::{ErrorLogText, ErrorText, write_plain};
+use crate::log_private::LogPrivate;
 use crate::volume::{BatchScanResult, CopyScanResult, ScanBoundary, ScanConflict, ScannedFile, SourceItemInfo};
+use crate::volume::{NotAChildName, VolumeError};
 
 /// A future the walk can recurse through. `async fn` can't call itself, so every
 /// step of the walk hands back a boxed one, and so does every [`ScanSource`]
@@ -53,10 +58,10 @@ pub type Walking<'a, T> = Pin<Box<dyn Future<Output = Result<T, VolumeError>> + 
 /// `scan_for_*` bodies come with it.
 ///
 /// Both take an app path, as the `Volume` reads they forward to do, so an impl
-/// hands its path straight on (`self.get_metadata(path)`) with no bridge
-/// temporary for the returned future to borrow. The walk itself still does its
-/// arithmetic in `std::path` and bridges where it calls back, inside its own
-/// futures.
+/// hands its path straight on (`self.get_metadata(path)`). The walk joins each
+/// listed name with the app path's own `join`, the same on every OS; only the
+/// boundary's progress and recorder, which still take a `std::path`, get the
+/// bridged spelling.
 pub trait ScanSource: Sync {
     /// One entry's type and size. The top of a walk is the only place a scan
     /// stats anything.
@@ -113,28 +118,90 @@ pub fn scan_tree<'a>(
     path: &'a Path,
     boundary: &'a ScanBoundary<'a>,
 ) -> Walking<'a, CopyScanResult> {
+    Box::pin(async move { scan_tree_at(source, &bridged(path), boundary).await })
+}
+
+/// [`scan_tree`] for an app path.
+pub fn scan_tree_at<'a>(
+    source: &'a dyn ScanSource,
+    path: &'a AppPath,
+    boundary: &'a ScanBoundary<'a>,
+) -> Walking<'a, CopyScanResult> {
     Box::pin(async move {
         let mut files = None;
         scan_tree_keeping(source, path, boundary, &mut files).await
     })
 }
 
+/// A `std::path` caller's path, as the app path the walk speaks.
+fn bridged(path: &Path) -> Cow<'_, AppPath> {
+    AppPath::legacy_unchecked(path)
+}
+
+/// The spelling the boundary's progress, recorder, and outage judge take: they still speak
+/// `std::path`, and the bridge hands back the exact native bytes.
+fn for_boundary(path: &AppPath) -> Cow<'_, Path> {
+    path.as_std_legacy()
+}
+
+/// `name`, listed in `folder` (`dir`, its join decided once per level), as its child:
+/// [`ListedFolder`]'s join, so a remote or in-memory path never gains a Windows `\`, and a
+/// top with no canonical twin (a relative `src/album` a local engine hands its backend, a
+/// `..`) joins as the `std::path` walk joined it. A listed name is text the backend handed
+/// over, so an escape-range code point in it is literal, as the bridge reads it.
+///
+/// ❗ A name that isn't one plain name (`..`, a `/`, a `\` under a drive or UNC folder)
+/// fails the walk as the typed `InvalidName`, naming the folder that listed it, ❌ never a
+/// join that lands somewhere else. Failing beats skipping: a skip would let a delete or a
+/// copy count a folder as whole that isn't.
+fn child_of(folder: &ListedFolder<'_>, dir: &AppPath, name: &str) -> Result<AppPathBuf, VolumeError> {
+    let refused = || {
+        VolumeError::InvalidName(ErrorDetail::of(RefusedListedName {
+            name: NotAChildName(name.to_string()),
+            folder: dir.shown().into_owned(),
+        }))
+    };
+    let typed = AppNameBuf::from_typed(name, Namer::HOST).map_err(|_| refused())?;
+    folder.join(&typed).map_err(|_| refused())
+}
+
+/// A listed name the walk refused, and the folder that listed it: the technical details a
+/// person needs to find it deep in a tree.
+struct RefusedListedName {
+    name: NotAChildName,
+    folder: String,
+}
+
+impl fmt::Display for RefusedListedName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write_plain(self, f)
+    }
+}
+
+impl ErrorLogText for RefusedListedName {
+    fn write_log_text(&self, out: &mut ErrorText<'_>) -> fmt::Result {
+        out.error(&self.name)?;
+        fmt::Write::write_str(out, ", listed in ")?;
+        out.quoted_value(LogPrivate::dir_path(&self.folder))
+    }
+}
+
 /// [`scan_tree`], pushing every file onto `files` when it's `Some`.
 fn scan_tree_keeping<'a>(
     source: &'a dyn ScanSource,
-    path: &'a Path,
+    path: &'a AppPath,
     boundary: &'a ScanBoundary<'a>,
     files: &'a mut Option<Vec<ScannedFile>>,
 ) -> Walking<'a, CopyScanResult> {
     Box::pin(async move {
-        let app = AppPath::legacy_unchecked(path);
+        let native = for_boundary(path);
         let top = boundary
-            .through_outages(path, || unless_stopped(source, boundary, source.scan_stat(&app)))
+            .through_outages(&native, || unless_stopped(source, boundary, source.scan_stat(path)))
             .await?;
         if !top.is_directory {
             let size = top.size.unwrap_or(0);
             keep(files, &top);
-            boundary.file(path, size).await?;
+            boundary.file(&native, size).await?;
             return Ok(CopyScanResult {
                 file_count: 1,
                 dir_count: 0,
@@ -176,9 +243,14 @@ fn keep(files: &mut Option<Vec<ScannedFile>>, entry: &FileEntry) {
 /// [`scan_trees`] is the one a scan preview drives, and the one a person can
 /// cancel.
 pub fn scan_one<'a>(source: &'a dyn ScanSource, path: &'a Path) -> Walking<'a, CopyScanResult> {
+    Box::pin(async move { scan_one_at(source, &bridged(path)).await })
+}
+
+/// [`scan_one`] for an app path.
+pub fn scan_one_at<'a>(source: &'a dyn ScanSource, path: &'a AppPath) -> Walking<'a, CopyScanResult> {
     Box::pin(async move {
         let boundary = ScanBoundary::silent();
-        scan_tree(source, path, &boundary).await
+        scan_tree_at(source, path, &boundary).await
     })
 }
 
@@ -194,6 +266,18 @@ pub fn scan_trees<'a>(
     boundary: &'a ScanBoundary<'a>,
 ) -> Walking<'a, BatchScanResult> {
     Box::pin(async move {
+        let paths: Vec<AppPathBuf> = paths.iter().map(|path| bridged(path).into_owned()).collect();
+        scan_trees_at(source, &paths, boundary).await
+    })
+}
+
+/// [`scan_trees`] for app paths.
+pub fn scan_trees_at<'a>(
+    source: &'a dyn ScanSource,
+    paths: &'a [AppPathBuf],
+    boundary: &'a ScanBoundary<'a>,
+) -> Walking<'a, BatchScanResult> {
+    Box::pin(async move {
         let mut per_path = Vec::with_capacity(paths.len());
         let mut files = source.keeps_files().then(Vec::new);
         for path in paths {
@@ -202,7 +286,7 @@ pub fn scan_trees<'a>(
         }
         Ok(BatchScanResult {
             files,
-            ..fold_batch(per_path)
+            ..fold_batch_at(per_path)
         })
     })
 }
@@ -215,6 +299,16 @@ pub fn scan_trees<'a>(
 /// batch strategy (SMB's oracle short-circuit, MTP's parent grouping) still owes
 /// the same fold.
 pub fn fold_batch(per_path: Vec<(PathBuf, CopyScanResult)>) -> BatchScanResult {
+    fold_batch_at(
+        per_path
+            .into_iter()
+            .map(|(path, scan)| (bridged(&path).into_owned(), scan))
+            .collect(),
+    )
+}
+
+/// [`fold_batch`] for app paths.
+pub fn fold_batch_at(per_path: Vec<(AppPathBuf, CopyScanResult)>) -> BatchScanResult {
     let mut aggregate = CopyScanResult {
         file_count: 0,
         dir_count: 0,
@@ -237,10 +331,7 @@ pub fn fold_batch(per_path: Vec<(PathBuf, CopyScanResult)>) -> BatchScanResult {
     }
     BatchScanResult {
         aggregate,
-        per_path: per_path
-            .into_iter()
-            .map(|(path, scan)| (AppPath::legacy_unchecked(&path).into_owned(), scan))
-            .collect(),
+        per_path,
         files: None,
     }
 }
@@ -293,8 +384,17 @@ pub fn scan_conflicts<'a>(
     source_items: &'a [SourceItemInfo],
     dest_path: &'a Path,
 ) -> Walking<'a, Vec<ScanConflict>> {
+    Box::pin(async move { scan_conflicts_at(source, source_items, &bridged(dest_path)).await })
+}
+
+/// [`scan_conflicts`] for an app path.
+pub fn scan_conflicts_at<'a>(
+    source: &'a dyn ScanSource,
+    source_items: &'a [SourceItemInfo],
+    dest_path: &'a AppPath,
+) -> Walking<'a, Vec<ScanConflict>> {
     Box::pin(async move {
-        let entries = match source.scan_list(&AppPath::legacy_unchecked(dest_path)).await {
+        let entries = match source.scan_list(dest_path).await {
             Ok(entries) => entries,
             Err(VolumeError::NotFound(_)) => return Ok(Vec::new()),
             Err(e) => return Err(e),
@@ -309,26 +409,28 @@ pub fn scan_conflicts<'a>(
 /// per level: a child's type and size are already in its parent's listing.
 fn walk_directory<'a>(
     source: &'a dyn ScanSource,
-    dir: &'a Path,
+    dir: &'a AppPath,
     boundary: &'a ScanBoundary<'a>,
     into: &'a mut CopyScanResult,
     files: &'a mut Option<Vec<ScannedFile>>,
 ) -> Walking<'a, ()> {
     Box::pin(async move {
         into.dir_count += 1;
-        boundary.dir(dir).await?;
-        let app_dir = AppPath::legacy_unchecked(dir);
+        let native = for_boundary(dir);
+        boundary.dir(&native).await?;
+        // How this level's names join, decided once for all of them.
+        let folder = ListedFolder::new(dir);
         // A listing a dropped session cut off runs again once the owner has
         // waited it out; its entries are counted only after it answers.
         for entry in boundary
-            .through_outages(dir, || unless_stopped(source, boundary, source.scan_list(&app_dir)))
+            .through_outages(&native, || unless_stopped(source, boundary, source.scan_list(dir)))
             .await?
         {
             // A Mac-only file the transfer leaves out is no part of it (#314).
             if boundary.leaves_out(&entry.name, entry.is_directory && !entry.is_symlink) {
                 continue;
             }
-            let child = dir.join(&entry.name);
+            let child = child_of(&folder, dir, &entry.name)?;
             // ❗ A symlinked directory is ONE entry, never a subtree. Following
             // one double-counts its target (Android's `/sdcard` and
             // `/storage/emulated/0` are the same bytes) and a link pointing at
@@ -343,7 +445,7 @@ fn walk_directory<'a>(
                 into.file_count += 1;
                 into.total_bytes += size;
                 into.dedup_bytes += size;
-                boundary.file(&child, size).await?;
+                boundary.file(&for_boundary(&child), size).await?;
             }
         }
         Ok(())

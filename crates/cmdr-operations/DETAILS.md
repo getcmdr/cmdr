@@ -2454,14 +2454,17 @@ the batch still has a good name. So the transfer parks on the person, per item: 
   `copy_files_with_progress`, the cross-FS move, `copy_volumes_with_progress`, `move_volumes_with_progress`). A Windows
   class the destination's tier REFUSES (a character, a device name, a trailing space or period) never reaches the
   landing, because a driver may take it with no error: Linux's vfat strips `dup.` to `dup`, so it would land on a
-  sibling, merge a folder `dir.` into `dir`, and under "Overwrite all" replace the sibling. The local engine checks
-  every segment of a file's destination below the root (`single_item.rs::refuse_a_refused_segment`: the file asks as a
-  file, a folder as a folder, whose Skip leaves it out whole through `skipped_subtrees`); the volume walk checks each
-  child before anything is made for it (`merge.rs`), and a top-level name skips the probe and the resolver
-  (`landing.rs::destination_refuses`) and is refused at the top of `copy_single_path`, where every driver asks. Length
-  stays the destination's to answer. macOS needs none of it: its drivers warn (they store a stand-in, so `dup.` and
-  `dup` stay two names), and a case-only twin is a look-alike `landing.rs` already settles. Pinned by
-  `src/transfer/copy/refused_class_tests.rs` and `src/transfer/volume/refused_class_tests.rs`.
+  sibling, merge a folder `dir.` into `dir`, and under "Overwrite all" replace the sibling. It also refuses, on any
+  destination, a name only this host's native join can't keep whole (`native_join_refuses`: on Windows a POSIX server's
+  `12:00 notes` or `a\b`), so that item is asked about rather than ending the transfer; `transfer/volume/DETAILS.md` §
+  "Listed names are untrusted" has the order it's checked in. The local engine checks every segment of a file's
+  destination below the root (`single_item.rs::refuse_a_refused_segment`: the file asks as a file, a folder as a folder,
+  whose Skip leaves it out whole through `skipped_subtrees`); the volume walk checks each child before anything is made
+  for it (`merge.rs`), and a top-level name skips the probe and the resolver (`landing.rs::destination_refuses`) and is
+  refused at the top of `copy_single_path`, where every driver asks. Length stays the destination's to answer. macOS
+  needs none of it: its drivers warn (they store a stand-in, so `dup.` and `dup` stay two names), and a case-only twin
+  is a look-alike `landing.rs` already settles. Pinned by `src/transfer/copy/refused_class_tests.rs` and
+  `src/transfer/volume/refused_class_tests.rs`.
 - **Not covered**: on the LOCAL engine, a folder the destination refuses at its `create_dir` (with no rule saying so)
   still ends the copy (a refused file asks).
 

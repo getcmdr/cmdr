@@ -24,7 +24,7 @@ use std::borrow::Cow;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
-use super::{AppPath, AppPathBuf, platform};
+use super::{AppName, AppPath, AppPathBuf, NotAnAppPath, platform};
 
 /// A native path held beside its app spelling, both made once at construction, so a `Volume`
 /// can hand out `&AppPath` for a field (`fn root(&self) -> &AppPath { self.root.app() }`) while
@@ -95,6 +95,51 @@ impl AppPath {
         match platform::app_to_os(self.as_str()) {
             Cow::Borrowed(os) => Cow::Borrowed(Path::new(os)),
             Cow::Owned(os) => Cow::Owned(os.into()),
+        }
+    }
+}
+
+/// A folder its listed names join under (a walk's level, a patched listing's parent), its
+/// join decided ONCE for every name it takes:
+///
+/// - A folder with a canonical twin joins as that canonical place, by the app path's own
+///   join, so a remote or in-memory child never gains a Windows `\` and `/dot/.` or `/top/`
+///   lose their spelling.
+/// - A bridge value with none (a relative `src/album` a local engine hands its backend, a
+///   `..` spelling) joins as `Path::join` joined it, through the bridge: the typed join has
+///   no place to answer, and refusing would drop a walk's children or a pane's patch.
+///
+/// Goes with the bridge, once no caller hands a walk or a patch a folder with no canonical
+/// twin.
+pub struct ListedFolder<'a>(Joins<'a>);
+
+enum Joins<'a> {
+    Typed(Cow<'a, AppPath>),
+    Native(Cow<'a, Path>),
+}
+
+impl<'a> ListedFolder<'a> {
+    /// `dir`, its canonical twin looked up now.
+    pub fn new(dir: &'a AppPath) -> Self {
+        match dir.to_canonical() {
+            Ok(canonical) => Self(Joins::Typed(canonical)),
+            Err(_) => Self(Joins::Native(dir.as_std_legacy())),
+        }
+    }
+
+    /// `name` in this folder.
+    ///
+    /// # Errors
+    ///
+    /// What [`PathArithmetic::join`](super::PathArithmetic::join) refuses under a canonical folder (a drive or UNC folder takes
+    /// no name holding `\`). A bridge folder's join refuses nothing, as `Path::join` didn't.
+    pub fn join(&self, name: &AppName) -> Result<AppPathBuf, NotAnAppPath> {
+        match &self.0 {
+            Joins::Typed(dir) => dir.join_canonical_text(name.as_str()),
+            Joins::Native(dir) => {
+                let child = dir.join(platform::app_to_os(name.as_str()));
+                Ok(AppPath::legacy_unchecked(&child).into_owned())
+            }
         }
     }
 }

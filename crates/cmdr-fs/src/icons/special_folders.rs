@@ -247,6 +247,22 @@ mod tests {
         assert_eq!(real_path_for_icon_id("special:nonexistent"), None);
     }
 
+    /// On Windows `dirs` names each folder through `SHGetKnownFolderPath`, natively spelled
+    /// (`C:\Users\…\Downloads`), while a listing's entries carry the app spelling
+    /// (`C:/Users/…/Downloads`). Both classify, since the lookup compares components.
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn a_known_folder_classifies_in_both_spellings_on_windows() {
+        use crate::volume::path_grammar::{PathFlavor, app_spelling};
+        let downloads = dirs::download_dir().expect("FOLDERID_Downloads resolves");
+        assert_eq!(classify(&downloads), Some("downloads"));
+        let app = app_spelling(&downloads.to_string_lossy(), PathFlavor::HOST);
+        assert!(app.contains('/') && !app.contains('\\'), "{app}");
+        assert_eq!(classify(Path::new(&app)), Some("downloads"));
+        assert_eq!(icon_id_for_path(Path::new(&app)).as_deref(), Some("special:downloads"));
+        assert_eq!(real_path_for_icon_id("special:downloads"), Some(downloads));
+    }
+
     #[cfg(target_os = "macos")]
     #[test]
     fn applications_and_trash_classify_on_macos() {

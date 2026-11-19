@@ -1,77 +1,41 @@
 name: Windows lane
 
-# The Windows lane. Cmdr doesn't build for Windows yet, so this lane is NOT part of `ci.yml`:
-# its result never reaches `CI OK` or `CI light`, `pnpm land` never waits for it, and it saves
-# no lane marker. It answers two questions on native `windows-latest`:
+# The Windows lane, called by `ci.yml` (`desktop-rust-windows`) on every land run whose change
+# reaches what the Rust lanes compile, and in `CI OK`'s `needs`, so a Windows-only compile error
+# or lint can't land. It answers two questions on native `windows-latest` (MSVC, the target
+# Cmdr will ship):
 #
-#   1. Do the members declared for Windows still compile there? `desktop-rust-clippy` selects
-#      every member whose `platforms` allows Windows (all but the `windowsPending` list in
-#      `scripts/check/checks/member-coverage-allowlist.json`). A red clippy is the lane's red.
-#   2. Where does every other member stop? `desktop-rust-windows-breaks` checks them all in one
-#      `cargo check --keep-going` and publishes a per-member break report to the job summary
-#      and as the `windows-break-report` artifact. It never fails on a break.
+#   1. Does the workspace compile and pass clippy there? `desktop-rust-clippy` selects every
+#      member whose `platforms` allows Windows, which is all of them but the macOS-only
+#      `cmdr-fsevent-stream`. A red clippy is the lane's red.
+#   2. Where does every member not yet declared for Windows stop? `desktop-rust-windows-breaks`
+#      checks them in one `cargo check --keep-going` and publishes a per-member break report to
+#      the job summary and as the `windows-break-report` artifact. It never fails on a break,
+#      and with every member declared it has nothing to report.
 #
-# It runs after a land touches what the Rust lanes compile, and on demand on any branch
-# (`gh workflow run windows-lane.yml --ref <branch>`). Why then, what it costs, and how it gets
-# promoted into `ci.yml` once green: `docs/tooling/ci.md` § Windows lane.
+# Before pushing, `pnpm check clippy-windows` asks question 1 from a Mac (a mingw cross-lint in
+# the Linux container). A branch can also run this lane by hand:
+# `gh workflow run windows-lane.yml --ref <branch>`. Why native, what it costs, and why no Rust
+# cache: `docs/tooling/ci.md` § Windows lane.
 on:
-  push:
-    branches: [main]
-    # What the two checks read (`ci-coverage` holds this list to their fingerprints), the lane
-    # file, the action it uses, and the toolchain pins.
-    paths:
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'rust-toolchain.toml'
-      - 'clippy.toml'
-      - '.cargo/**'
-      - '.config/nextest.toml'
-      - 'crates/**'
-      - 'vendor/**'
-      - 'apps/desktop/src-tauri/**'
-      - 'apps/desktop/scripts/download-llama-server.go'
-      # Files outside the crates that Rust code embeds or tests against.
-      - 'CHANGELOG.md'
-      - 'apps/desktop/src/lib/ask-cmdr/ask-cmdr-tool-label-keys.ts'
-      - 'apps/desktop/src/lib/commands/command-ids.ts'
-      - 'apps/desktop/src/lib/demo/engine-command-names.ts'
-      - 'apps/desktop/src/lib/intl/messages/**'
-      - 'apps/desktop/src/lib/intl/platform-select-cases.json'
-      - 'apps/desktop/src/lib/ipc/bindings.ts'
-      - 'apps/desktop/src/lib/logging/bridge-redaction-cases.json'
-      - 'apps/desktop/src/lib/logging/log-markers.json'
-      - 'apps/desktop/src/lib/platform/conventions-on.json'
-      - 'scripts/release-assets/testdata/v0.61.0/latest.json'
-      - 'scripts/release-assets/testdata/v0.61.0/latest.built.json'
-      - 'apps/desktop/src/lib/settings/types.ts'
-      - 'apps/desktop/src/lib/units/drive-figure-cases.json'
-      - 'apps/desktop/src/lib/units/free-percent-cases.json'
-      - 'apps/desktop/test/fixtures/encodings/**'
-      - 'apps/website/public/mdm/**'
-      - 'apps/website/src/lib/trust-mdm.ts'
-      - 'scripts/check.sh'
-      - 'scripts/check/**'
-      - '.mise.toml'
-      - '.github/workflows/windows-lane.yml'
-      - '.github/actions/install-mise/**'
+  workflow_call:
+    inputs:
+      marker-key:
+        description: The lane's marker key from `ci.yml`'s lane plan, saved once the lane passed
+        type: string
+        required: true
   workflow_dispatch:
 
 permissions:
   contents: read
 
-# One run per ref: a newer push replaces the one in flight. Each `main` commit checks a superset
-# of the one before it, and nothing waits on this run.
-concurrency:
-  group: windows-lane-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   lane:
     name: Clippy and the break report
     runs-on: windows-latest
-    # Cold every time (no Rust cache, § Windows lane says why): clippy over the small
-    # must-compile set, then a `cargo check` of the whole remaining tree.
-    timeout-minutes: 75
+    # Cold every time (no Rust cache, § Windows lane says why): a whole-workspace clippy took
+    # 8.7 min of a ~10.5-min job (run 44462048164, 2026-11-19), so 30 is about 3x healthy.
+    timeout-minutes: 30
     # Git Bash, on purpose: every step is the same POSIX shell the other lanes use, and the
     # check runner is called directly rather than through `pnpm check` (no Node here).
     defaults:
@@ -144,3 +108,21 @@ jobs:
           name: windows-break-report
           path: ${{ runner.temp }}/windows-breaks/
           if-no-files-found: warn
+
+  # The lane's marker, once `lane` passed (`scripts/lane-markers/DETAILS.md`). A hand-run
+  # dispatch has no key, so it saves none.
+  marker:
+    name: Lane marker
+    needs: [lane]
+    if: ${{ !cancelled() && needs.lane.result == 'success' && inputs.marker-key != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Save the lane marker
+        uses: ./.github/actions/lane-marker
+        with:
+          key: ${{ inputs.marker-key }}

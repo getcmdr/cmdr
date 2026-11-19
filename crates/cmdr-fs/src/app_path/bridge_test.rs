@@ -193,3 +193,55 @@ fn no_app_path_type_converts_to_std_path_or_its_text() {
     assert!(implements!(PathBuf: AsRef<Path>));
     assert!(implements!(String: Into<PathBuf>));
 }
+
+// ---- A folder its listed names join under ----
+
+/// A folder with a canonical twin joins each name as that canonical place (`/dot/.` and
+/// `/top/` lose their spelling); one with none (relative, a `..`) joins as `Path::join`
+/// joined, its text kept, so a walk or a patch under it still reaches the child.
+#[test]
+fn a_listed_folder_joins_typed_where_it_can_and_as_the_path_form_where_it_cannot() {
+    let cases = [
+        ("/top", "/top/x"),
+        ("/top/", "/top/x"),
+        ("/dot/.", "/dot/x"),
+        ("sftp://u@h:22", "sftp://u@h:22/x"),
+        ("sftp://u@h:22/srv", "sftp://u@h:22/srv/x"),
+        ("rel/dir", "rel/dir/x"),
+        ("", "x"),
+        ("/a/../b", "/a/../b/x"),
+    ];
+    for (folder, child) in cases {
+        let dir = bridge(folder);
+        let listed = ListedFolder::new(&dir);
+        assert_eq!(
+            listed.join(name("x")).map(AppPathBuf::into_string).as_deref(),
+            Ok(child),
+            "{folder:?}"
+        );
+    }
+}
+
+/// The bridge join keeps a name's escapes round-tripping: an escape-range code point a
+/// backend listed as text comes back out as that same text.
+#[test]
+#[cfg(unix)]
+fn a_listed_folder_with_no_canonical_twin_keeps_an_escaped_name() {
+    let dir = bridge("rel/dir");
+    let typed = AppNameBuf::from_typed("caf\u{10FEE9}", Namer::Bytes).expect("a name");
+    let joined = ListedFolder::new(&dir).join(&typed).expect("joins");
+    assert_eq!(joined.as_std_legacy(), Path::new("rel/dir/caf\u{10FEE9}"));
+}
+
+/// The third caller of the rule: a twin row under a folder with no canonical twin unpicks as
+/// the `Path` form does, ❌ never keeping its pick.
+#[test]
+fn a_twin_row_under_a_bridge_folder_unpicks_as_the_path_form_does() {
+    use crate::twin_path::{own_pick_app, pick_segment, unpicked_app};
+    for folder in ["rel/DCIM", "/a/../DCIM"] {
+        let text = format!("{folder}/{}/IMG_1.JPG", pick_segment(5));
+        let twin = bridge(&text);
+        assert_eq!(own_pick_app(&twin), Some(5), "{folder}");
+        assert_eq!(unpicked_app(&twin).as_str(), format!("{folder}/IMG_1.JPG"), "{folder}");
+    }
+}

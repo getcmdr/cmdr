@@ -482,6 +482,48 @@ async fn copy_link_leaf<'a>(
     Ok(LeafEnd::Landed(bytes))
 }
 
+/// A listed child whose name the destination refuses, before anything is written for it.
+struct RefusedChild<'e> {
+    entry: &'e FileEntry,
+    source: PathBuf,
+    dest: PathBuf,
+    node: Option<NodeId>,
+}
+
+/// Refuses `child` the way a landing's refusal is: a file waits for its walker to ask
+/// (`LeafPool::settle_refused`), a folder is asked about now and skipped whole on a Skip.
+async fn refuse_child(
+    pool: &mut LeafPool<'_>,
+    merge: Option<&MergeCtx<'_>>,
+    created: &CreatedPaths,
+    progress: &Arc<SourceProgress>,
+    source_volume: &Arc<dyn Volume>,
+    child: RefusedChild<'_>,
+) -> Result<(), PathedVolumeError> {
+    let error = PathedVolumeError::new(
+        PathRole::Destination,
+        &child.dest,
+        VolumeError::InvalidName("The destination's filesystem doesn't take this name".into()),
+    );
+    if merges_as_a_directory(child.entry) {
+        let folder = RefusedFolder {
+            source: &child.source,
+            dest: &child.dest,
+            node: child.node,
+        };
+        skip_if_folder_refused(pool, merge, created, progress, source_volume, &folder, error).await
+    } else {
+        pool.refused.push_back(RefusedLeaf {
+            source: child.source,
+            dest: child.dest,
+            size: child.entry.size,
+            node: child.node,
+            error,
+        });
+        Ok(())
+    }
+}
+
 /// A child folder of the walk, as its refused-name question names it.
 struct RefusedFolder<'p> {
     source: &'p Path,
@@ -887,6 +929,23 @@ async fn merge_level<'a>(
             Some(index) => DestFolder::Listed(index),
             None => DestFolder::CreatedByUs,
         };
+        // A name a POSIX server holds whole but this host's native join can't
+        // keep one name (Windows: `12:00 notes`, `a\b`) is the destination
+        // refusing it here, asked per item, ❌ never a hostile listing that ends
+        // the transfer. Checked before `ChildName`, which refuses it on Windows.
+        // `DestinationNames` says why; false on macOS and Linux.
+        if state.destination_names.native_join_refuses(entry.name.as_str()) {
+            let child_row = tree_level.child(&entry.name, merges_as_a_directory(entry), entry.size.unwrap_or(0));
+            let refused = RefusedChild {
+                entry,
+                source: child_source,
+                // The name as the question shows it; nothing is written there.
+                dest: dest_path.join(entry.name.as_str()),
+                node: child_row,
+            };
+            refuse_child(pool, merge, created, progress, source_volume, refused).await?;
+            continue;
+        }
         // ❗ The source's listing named this child, and a hostile server or
         // device can name it `../x` or `/x`: ❌ never join it raw.
         let name = ChildName::new(&entry.name)
@@ -914,28 +973,13 @@ async fn merge_level<'a>(
         // on a sibling, or merge a folder into one
         // (`crate::name_rules::DestinationNames`). Asked like a landing's refusal.
         if state.destination_names.refuses(name.as_os_str()) {
-            let refused_dest = name.under(dest_path);
-            let error = PathedVolumeError::new(
-                PathRole::Destination,
-                &refused_dest,
-                VolumeError::InvalidName("The destination's filesystem doesn't take this name".into()),
-            );
-            if merges_as_a_directory(entry) {
-                let folder = RefusedFolder {
-                    source: &child_source,
-                    dest: &refused_dest,
-                    node: child_row,
-                };
-                skip_if_folder_refused(pool, merge, created, progress, source_volume, &folder, error).await?;
-            } else {
-                pool.refused.push_back(RefusedLeaf {
-                    source: child_source,
-                    dest: refused_dest,
-                    size: entry.size,
-                    node: child_row,
-                    error,
-                });
-            }
+            let refused = RefusedChild {
+                entry,
+                source: child_source,
+                dest: name.under(dest_path),
+                node: child_row,
+            };
+            refuse_child(pool, merge, created, progress, source_volume, refused).await?;
             continue;
         }
 

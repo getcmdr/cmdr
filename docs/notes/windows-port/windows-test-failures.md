@@ -85,7 +85,7 @@ bridge. The flip (milestone 4) changes signatures only.
 
 The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.md` § Milestones), counts from the TSV:
 
-- **5, `cmdr-fs`**: none in this run; its 24 cells are `#[ignore]`d for #1225 and lose the ignore there.
+- **5, `cmdr-fs`**: none in this run; its 24 cells were `#[ignore]`d for #1225 and run since milestone 5 (2026-11-19).
 - **6, network backends**: 123 (`cmdr-s3` 47 with its 5 pause timeouts, `cmdr-nfs` 46, `cmdr-webdav` 23, `cmdr-sftp` 7).
 - **7, device backends**: 66 (`cmdr-adb` 51, `cmdr-smb` 13, `cmdr-mtp` 2).
 - **8, virtual volumes and leaf crates**: 72 (`cmdr-restic` 45 with its 5 hub timeouts, `cmdr-viewer` 13, `cmdr-archive`
