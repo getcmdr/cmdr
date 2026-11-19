@@ -236,11 +236,6 @@ that made it, so two frames can hold the same id. `channels.ts` makes it page-wi
 - **Clicks**: `execute-command`, `settings-changed`, `view-mode-changed`, and `menu-sort` go to the main window, as
   `handle_menu_event`'s `emit_to("main")`. With a panel in front, Close tab closes it and an edit goes to its frame
   (`document.execCommand`, best effort: browsers refuse a scripted paste).
-- **Title mnemonics**: `get_menu_bar_title_mnemonics` (the Linux shortcut recorder's warning about a combo the bar's
-  Alt+letter takes) is answered from the drawn bar, not the engine (`MENU_PAGE_COMMANDS`): the titles in the bar's words
-  through the app's own `allocateAccessKeys`, exactly the letters `MenuBar.svelte` binds; none for a Mac visitor, as the
-  desktop answers on macOS. Why not the engine: the words are the page's (`getMessage`), and the desktop's Rust
-  allocator reads its own catalog.
 - **Keys**: the component's, in the visitor's flavor. On a Mac, ⌃F2 focuses the bar (macOS's own shortcut for it), the
   bar stays usable while a dialog is up, as macOS's does, and OS rows (Services, Hide, Quit, Undo, Minimize) draw
   greyed. Elsewhere a lone Alt or F10 focuses it, Alt plus a title's underlined letter opens a menu, and a modal surface

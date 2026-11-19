@@ -260,7 +260,6 @@ export function createDemoBackend(): DemoBackend {
     if (cmd === 'set_file_operations_blocked' && payload.blocked === false) void engine.importer.releaseOffered()
     if (cmd === 'open_path' && (await openInViewer(payload))) return null
     if (cmd === SET_APP_THEME) return setAppTheme(payload)
-    if (cmd === 'get_menu_bar_title_mnemonics') return menu.titleMnemonics()
     const handler = tableHandler(cmd)
     if (handler) return handler(payload)
     if (await menu.opensPopup(cmd)) return openPopup(cmd, payload, origin ?? { label: 'main', pointer: null })

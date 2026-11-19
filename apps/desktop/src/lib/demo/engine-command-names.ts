@@ -196,10 +196,3 @@ export const MENU_ENGINE_COMMANDS = [
   'show_queue_row_context_menu',
   'show_network_host_context_menu',
 ] as const
-
-/**
- * What the page answers from the drawn bar rather than an engine (`menu-engine.ts`'s
- * `titleMnemonics`, through `backend.ts`): the bar titles' Alt+letter keys, in the words the bar
- * draws. Not the crate's, so no Rust test pins it.
- */
-export const MENU_PAGE_COMMANDS = ['get_menu_bar_title_mnemonics'] as const
