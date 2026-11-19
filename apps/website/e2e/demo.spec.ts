@@ -84,6 +84,23 @@ test.describe('Browser demo', () => {
     })
   }
 
+  // Every visitor gets the demo's own right-click menus, a Windows one included: the desktop's
+  // Windows row draws them in-page through a command the demo doesn't answer, so the demo pins the
+  // macOS row until task 63 step 11 (`lib/demo/platform.ts`; regression anchor: review of #1264).
+  test("opens a file's right-click menu, and Escape closes it", async ({ page }) => {
+    const errors = collectPageErrors(page)
+    await page.goto('/demo/')
+    const file = page.locator('.file-pane').first().locator('.file-entry').nth(1)
+    await expect(file).toBeVisible({ timeout: 30_000 })
+    await file.click({ button: 'right' })
+    const menu = page.locator('[data-command-menu="context"]')
+    await expect(menu).toBeVisible()
+    await expect(menu.getByRole('menuitem').first()).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(menu).toHaveCount(0)
+    expect(errors.map((error) => error.message)).toEqual([])
+  })
+
   // File operations run through the real write engine in the WASM module (crates/cmdr-listing-wasm,
   // `operations_host/`), on the in-memory volume both panes list, so each lands in the other pane.
   test.describe('file operations', () => {

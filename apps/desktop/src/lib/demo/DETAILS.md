@@ -164,8 +164,11 @@ every window. The demo keeps that shape, so secondary windows share its state, a
 - Conventions follow the platform too (`visitorConventions`): the desktop's own row for the visitor's OS, menu model
   included (task 63 step 11 of `docs/specs/windows-port-plan.md`), and the desktop-neutral Linux row for a Linux visitor
   (a page can't tell GNOME from KDE). So a Mac visitor gets `systemMenuBar` (the macOS bar), a Windows or Linux one
-  `windowMenuBar` (D5's in-window bar), and a Windows one `contextMenus: 'inPage'`, which the demo's right-click menus
-  are for everyone anyway.
+  `windowMenuBar` (D5's in-window bar).
+  - Decision: `contextMenus: 'native'` is pinned for everyone. Why: the demo answers each `show_*` popup itself
+    (`context-menu.ts`) and has no `open_context_menu_in_page`, so Windows' `inPage` row opened no right-click menu at
+    all for a Windows visitor (caught in review of #1264; `platform.test.ts` and the website suite's right-click spec
+    pin it). It follows the visitor once the demo answers the in-page lane.
 - The look follows the platform with no pin: `getLook()` is the copy platform, the visitor's OS, so `data-look` keys the
   menu tokens (`app-menu.css`) and the control tokens (`app-controls*.css`) to it. A Windows visitor's bar, menus,
   buttons, fields, and dialogs wear Windows 11's (the 40 px bar included: `--cmdr-demo-window-top` reads the look's own

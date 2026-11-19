@@ -78,17 +78,24 @@ export function visitorCapabilities(platform: Platform): Readonly<PlatformCapabi
 /**
  * The demo's conventions for a visitor on `platform`: the desktop app's own row for their OS
  * (desktop-neutral on Linux: a page can't tell GNOME from KDE), menu model included, so a Mac
- * visitor gets the macOS bar and everyone else their OS's in-window bar (D5). Exported for its test.
+ * visitor gets the macOS bar and everyone else their OS's in-window bar (D5). Right-click menus stay
+ * on the macOS value for everyone: the demo answers each `show_*` popup itself (`context-menu.ts`)
+ * and has no `open_context_menu_in_page`, so a Windows visitor's `inPage` row would open no menu at
+ * all. Exported for its test.
  */
 export function visitorConventions(platform: Platform): Readonly<PlatformConventions> {
   return VISITOR_CONVENTIONS[platform]
 }
 
+function demoConventions(row: Readonly<PlatformConventions>): Readonly<PlatformConventions> {
+  return Object.freeze({ ...row, contextMenus: CONVENTIONS_ON.macos.contextMenus })
+}
+
 /** One frozen object per platform, so every frame of the page reads the same one. */
 const VISITOR_CONVENTIONS: Readonly<Record<Platform, Readonly<PlatformConventions>>> = {
-  macos: Object.freeze({ ...CONVENTIONS_ON.macos }),
-  windows: Object.freeze({ ...CONVENTIONS_ON.windows }),
-  linux: Object.freeze({ ...CONVENTIONS_ON.otherLinux }),
+  macos: demoConventions(CONVENTIONS_ON.macos),
+  windows: demoConventions(CONVENTIONS_ON.windows),
+  linux: demoConventions(CONVENTIONS_ON.otherLinux),
 }
 
 /**

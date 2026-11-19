@@ -91,11 +91,21 @@
     })
 
     // The roving focus: the cursor's row, or the surface itself while it has none (a menu a click
-    // opened), so its keys and its name reach a screen reader.
+    // opened), so its keys and its name reach a screen reader. Where an element keeps focus (a text
+    // field's edit menu), the cursor is its `aria-activedescendant` instead, and focus never moves.
     $effect(() => {
         const el = element
         const index = surface.highlighted
         if (!el || !position || !isActive) return
+        const holder = stack.focusHolder
+        if (holder) {
+            if (index < 0) return
+            holder.setAttribute('aria-activedescendant', rowId(index))
+            el.querySelector(`#${CSS.escape(rowId(index))}`)?.scrollIntoView({ block: 'nearest' })
+            return () => {
+                holder.removeAttribute('aria-activedescendant')
+            }
+        }
         const target = index >= 0 ? el.querySelector<HTMLElement>(`#${CSS.escape(rowId(index))}`) : el
         if (!target || document.activeElement === target) return
         target.focus({ preventScroll: true })
@@ -127,6 +137,11 @@
     data-command-menu={owner}
     data-depth={depth}
     data-has-glyphs={hasGlyphs ? '' : undefined}
+    onpointerdown={(event: PointerEvent) => {
+        // Nothing on a surface takes focus or reads as a press outside a field it sits over (a
+        // separator, the padding): a `preventDefault`ed press sends the page no `mousedown`.
+        event.preventDefault()
+    }}
     style:left="{position?.left ?? 0}px"
     style:top="{position?.top ?? 0}px"
     style:max-height={position ? `${String(position.maxHeight)}px` : undefined}

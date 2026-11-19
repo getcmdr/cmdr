@@ -21,6 +21,8 @@
     import { installContextMenuOwnership } from '#lib/context-menu-ownership.js'
     import WindowBoundary from '#lib/error-reporter/WindowBoundary.svelte'
     import { trackScrollbarWidth } from '#lib/ui/scrollbar-width.js'
+    import { convention } from '#lib/platform/index.js'
+    import InPageContextMenus from '#lib/context-menu/InPageContextMenus.svelte'
 
     const { children }: { children?: Snippet } = $props()
 
@@ -58,4 +60,8 @@
      window impossible in all of them. `apps/desktop/src/DETAILS.md` § "Error boundaries". -->
 <WindowBoundary>
     {@render children?.()}
+    <!-- Where the page draws its right-click menus (Windows), every window's one menu. `#lib/context-menu/`. -->
+    {#if convention('contextMenus') === 'inPage'}
+        <InPageContextMenus />
+    {/if}
 </WindowBoundary>

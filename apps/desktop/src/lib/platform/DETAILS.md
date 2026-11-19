@@ -118,6 +118,10 @@ dialog buttons like macOS, KDE like Windows.
   (`../ui/DETAILS.md` § Platform conventions, through `../ui/dialog-keys.ts`), and so do the dialogs whose safe answer
   takes focus only where Return presses the focused button. The Windows theme (task 60), the menu model (63), and the
   screen reader pass (64) will read the rest.
+- **An E2E run's right-click menus**: a `playwright-e2e` build reads `CMDR_E2E_CONTEXT_MENUS=inPage` (or `native`) and
+  moves `contextMenus` alone, so the Linux lane drives Windows' in-page menus (`with_e2e_context_menus` in
+  `src-tauri/src/platform/frontend.rs`; `../context-menu/DETAILS.md` § Running them off Windows). Every other build,
+  release included, compiles it out.
 - **Seeing another desktop's row**: `CMDR_MOCK_CONVENTIONS=windows pnpm dev` (or `gnome`, `kde`, `otherLinux`, `macos`;
   debug builds only, `mock_conventions` in `conventions.rs`) hands every webview that row instead, which moves neither
   the platform nor the capabilities. It also defines `__CMDR_COPY_PLATFORM__` (the mocked desktop's OS), which only

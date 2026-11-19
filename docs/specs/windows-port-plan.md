@@ -1030,6 +1030,11 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
          dismissal; the demo's context-menu tests keep passing.
        - Done when: every right-click and Shift+F10 menu on the Windows build is in-page, Fluent-styled, and runs the
          same commands as before.
+       - **Frontend built** (2026-11-18), unchecked on a Windows machine: each `show_*` wrapper forks in
+         `popContextMenu`, the root layout mounts one in-page menu per window, and the Menu key joins Shift+F10. David
+         reversed the text-field landmine the same day: on Windows a text field gets the in-page edit menu too (Undo,
+         Redo, Cut, Copy, Paste, Select all), so every menu looks the same.
+         `apps/desktop/src/lib/context-menu/DETAILS.md` has it and what's unverified on WebView2.
     8. [S] **The main-menu button and "Show menu bar".**
        - Scope: the main-menu button (GNOME's default, and the KDE and Windows stand-in when the bar is hidden), the
          "Show menu bar" setting and its View row; on Windows a hidden bar shows on Alt or F10 until focus leaves.

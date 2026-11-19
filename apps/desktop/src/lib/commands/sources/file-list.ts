@@ -512,8 +512,15 @@ export const fileListCommands: CommandSource[] = [
     showInPalette: true,
     // Finder's own combo for the same thing. `⌃` is nearly unused here (only
     // `⌃Tab` / `⌃⇧Tab`), and `#lib/context-menu-ownership.ts` listens for the DOM
-    // `contextmenu` event rather than a keydown, so nothing else wants it.
-    shortcuts: { macos: ['⌃Enter'], windows: ['Shift+F10', 'Ctrl+Enter'], linux: ['Shift+F10', 'Ctrl+Enter'] },
+    // `contextmenu` event rather than a keydown, so nothing else wants it. Off macOS,
+    // Windows' and the Linux desktops' own two keys come first: Shift+F10 and the Menu key
+    // (`ContextMenu`). Its keydown, claimed here, opens the cursor row's menu at the row; left
+    // alone, the engine would raise a `contextmenu` on the focused list, which no row hears.
+    shortcuts: {
+      macos: ['⌃Enter'],
+      windows: ['Shift+F10', 'ContextMenu', 'Ctrl+Enter'],
+      linux: ['Shift+F10', 'ContextMenu', 'Ctrl+Enter'],
+    },
     whileDialogOpen: BLOCKED_BY_DIALOGS,
     descriptionKey: 'commands.fileContextMenu.description',
   },

@@ -1,11 +1,14 @@
 import { type UnlistenFn } from '@tauri-apps/api/event'
 import { commands, events } from '#lib/ipc/bindings.js'
 import { throwIpcError } from './ipc-types'
+import { popContextMenu } from './in-page-menus'
 
-/** Shows the function key bar's context menu (fire-and-forget). */
+/** Shows the function key bar's context menu, native or in-page by the platform (`popContextMenu`). */
 export async function showFunctionKeyBarContextMenu(): Promise<void> {
-  const res = await commands.showFunctionKeyBarContextMenu()
-  if (res.status === 'error') throwIpcError(res.error)
+  await popContextMenu({ menu: 'functionKeyBar' }, async () => {
+    const res = await commands.showFunctionKeyBarContextMenu()
+    if (res.status === 'error') throwIpcError(res.error)
+  })
 }
 
 /**

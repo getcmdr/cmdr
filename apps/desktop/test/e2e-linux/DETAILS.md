@@ -12,6 +12,15 @@ scope. `e2e-linux.sh` calls `createFixtures()` without an instance ID, falling b
 startup; the bookkeeping for one app isn't worth it. CI's three slices (§ CI: build once, test in three slices) each run
 in a container of their own on a runner of their own, so they share nothing either (the MTP fixture root included).
 
+## A second launch: Windows' in-page right-click menus
+
+After the suite, shard 1's container stops the app and launches it again with `CMDR_E2E_CONTEXT_MENUS=inPage`, then runs
+`--grep @in-page-menus` against it (`in-page-context-menus.spec.ts`, which skips itself on the first launch). It's how
+Windows' in-page right-click menus run on a lane whose OS keeps native ones: the override moves `contextMenus` alone,
+and only a `playwright-e2e` build reads it (`src/lib/context-menu/DETAILS.md` § Running them off Windows). A grep that
+doesn't name `in-page` skips it. Its JSON report goes beside the suite's as `<report>-in-page-menus.json`, so the
+suite's report keeps every result; a failure there still fails the run.
+
 ## CI: build once, test in three slices
 
 `e2e-linux-lane.yml` splits the script's two phases across jobs. `build` runs `--build-app-only` (images plus the

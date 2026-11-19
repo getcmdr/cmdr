@@ -173,11 +173,11 @@
   },
   "menu.edit.undo": "Undo",
   "@menu.edit.undo": {
-    "description": "VERB (imperative). Standard macOS text-editing Undo (⌘Z), applying to whatever text field has focus. It does NOT undo file operations. Use the exact word macOS uses for Undo in this language."
+    "description": "VERB (imperative). The standard text-editing Undo (⌘Z on macOS, Ctrl+Z on Windows and Linux) for the text field being edited, in the Edit menu and in a text field's right-click menu. It does NOT undo file operations. Use the word your language's OS Edit menus use for Undo."
   },
   "menu.edit.redo": "Redo",
   "@menu.edit.redo": {
-    "description": "VERB (imperative). Standard macOS text-editing Redo (⇧⌘Z), the counterpart of menu.edit.undo. Use the exact word macOS uses for Redo in this language."
+    "description": "VERB (imperative). The standard text-editing Redo (⇧⌘Z on macOS, Ctrl+Y on Windows, Ctrl+Shift+Z on Linux), the counterpart of menu.edit.undo, in the Edit menu and in a text field's right-click menu. Use the word your language's OS Edit menus use for Redo."
   },
   "menu.edit.undoTrash": "{platform, select, windows {Undo delete} other {Undo move to trash}}",
   "@menu.edit.undoTrash": {
@@ -199,15 +199,15 @@
   },
   "menu.edit.cut": "Cut",
   "@menu.edit.cut": {
-    "description": "VERB (imperative). Cuts to the clipboard (⌘X). Does double duty: with a text field focused it cuts text, otherwise it marks the selected FILES to be moved on the next paste. Use your language's standard word for Cut, the one the OS's own Edit menus show, since the text meaning is the one people recognize."
+    "description": "VERB (imperative). Cuts to the clipboard (⌘X on macOS, Ctrl+X elsewhere). Does double duty: in a text field, its right-click menu included, it cuts text, otherwise it marks the selected FILES to be moved on the next paste. Use your language's standard word for Cut, the one the OS's own Edit menus show, since the text meaning is the one people recognize."
   },
   "menu.edit.copy": "Copy",
   "@menu.edit.copy": {
-    "description": "VERB (imperative). Copies to the clipboard (⌘C): text when a text field has focus, otherwise the selected FILES. ❗ Different command from menu.file.copy, which is the two-pane copy-to-the-other-pane. Use your language's standard word for the Edit menu's Copy, the one the OS's own Edit menus show."
+    "description": "VERB (imperative). Copies to the clipboard (⌘C on macOS, Ctrl+C elsewhere): text in a text field, its right-click menu included, otherwise the selected FILES. ❗ Different command from menu.file.copy, which is the two-pane copy-to-the-other-pane. Use your language's standard word for the Edit menu's Copy, the one the OS's own Edit menus show."
   },
   "menu.edit.paste": "Paste",
   "@menu.edit.paste": {
-    "description": "VERB (imperative). Pastes the clipboard into the active folder or text field (⌘V). Use your language's standard word for Paste, the one the OS's own Edit menus show."
+    "description": "VERB (imperative). Pastes the clipboard into the active folder or text field (⌘V on macOS, Ctrl+V elsewhere), and from a text field's right-click menu into that field. Use your language's standard word for Paste, the one the OS's own Edit menus show."
   },
   "menu.edit.moveHere": "Move here",
   "@menu.edit.moveHere": {
@@ -227,7 +227,7 @@
   },
   "menu.select.all": "Select all",
   "@menu.select.all": {
-    "description": "VERB phrase (imperative). Selects every file and folder in the active pane (⌘A). ❗ In a focused text field the same key selects the text instead, so the wording should work for both. Use your language's standard phrasing for \"Select all\", the one the OS's own Edit menus show."
+    "description": "VERB phrase (imperative). Selects every file and folder in the active pane (⌘A on macOS, Ctrl+A elsewhere). ❗ In a focused text field, and in a text field's right-click menu, it selects all the text instead, so the wording must work for both. Use your language's standard phrasing for \"Select all\", the one the OS's own Edit menus show."
   },
   "menu.select.deselectAll": "Deselect all",
   "@menu.select.deselectAll": {

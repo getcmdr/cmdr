@@ -27,6 +27,7 @@ const WINDOWS_AND_LINUX = {
     'Shift+Delete',
     'Ctrl+Shift+V',
     'Shift+F10',
+    'ContextMenu',
   ],
   bailInField: ['Ctrl+I'],
 }

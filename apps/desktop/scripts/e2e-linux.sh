@@ -731,30 +731,34 @@ else
             # macOS harness sets the same, in e2e-playwright-app.go.
             export CMDR_ABOUT_FIXTURE_HOME="$CMDR_E2E_START_PATH/about-this-qa/home"
 
-            # Remove stale socket from a previous run
-            rm -f "$SOCKET_PATH"
+            # Launch the Tauri app in the background and wait for its socket. Runs
+            # twice: once for the suite, once more for the in-page menu group below.
+            launch_app() {
+                # Remove the stale socket from the run before
+                rm -f "$SOCKET_PATH"
+                echo "Starting Tauri app..."
+                "$TAURI_BINARY" &
+                APP_PID=$!
 
-            # Launch the Tauri app in the background
-            echo "Starting Tauri app..."
-            "$TAURI_BINARY" &
-            APP_PID=$!
-            trap "kill $APP_PID 2>/dev/null; wait $APP_PID 2>/dev/null || true" EXIT
-
-            # Wait for the Unix socket to appear (timeout 30s)
-            echo "Waiting for playwright socket at $SOCKET_PATH..."
-            for i in $(seq 1 60); do
-                [ -S "$SOCKET_PATH" ] && break
-                if ! kill -0 $APP_PID 2>/dev/null; then
-                    echo "ERROR: Tauri app exited prematurely"
+                # Wait for the Unix socket to appear (timeout 30s)
+                echo "Waiting for playwright socket at $SOCKET_PATH..."
+                for i in $(seq 1 60); do
+                    [ -S "$SOCKET_PATH" ] && break
+                    if ! kill -0 $APP_PID 2>/dev/null; then
+                        echo "ERROR: Tauri app exited prematurely"
+                        exit 1
+                    fi
+                    sleep 0.5
+                done
+                if [ ! -S "$SOCKET_PATH" ]; then
+                    echo "ERROR: Socket did not appear within 30s"
                     exit 1
                 fi
-                sleep 0.5
-            done
-            if [ ! -S "$SOCKET_PATH" ]; then
-                echo "ERROR: Socket did not appear within 30s"
-                exit 1
-            fi
-            echo "Socket ready."
+                echo "Socket ready."
+            }
+            launch_app
+            # Escaped, so the trap reads APP_PID when it fires: the relaunch below moves it.
+            trap "kill \$APP_PID 2>/dev/null; wait \$APP_PID 2>/dev/null || true" EXIT
 
             # Every app thread stack, into the host-mounted /e2e-stacks. Never fails
             # the run: a dump is evidence, not a verdict. The argument names why it
@@ -816,7 +820,41 @@ else
             if [ "$playwright_status" -ne 0 ]; then
                 dump_app_stacks after-failure
             fi
-            exit "$playwright_status"
+
+            # The in-page right-click menus (Windows draws them, Linux keeps native
+            # ones): one more launch with CMDR_E2E_CONTEXT_MENUS=inPage, which only a
+            # playwright-e2e build reads (src-tauri/src/platform/frontend.rs), and
+            # the @in-page-menus group against it. Their tests skip themselves on the
+            # first launch. On shard 1 only, and only when a grep asks for them.
+            in_page_status=0
+            run_in_page=1
+            case "${E2E_SHARD:-1/1}" in 1/*) ;; *) run_in_page=0 ;; esac
+            if [ -n "${E2E_GREP:-}" ] && ! printf "%s" "$E2E_GREP" | grep -q "in-page"; then run_in_page=0; fi
+            if [ "$run_in_page" = 1 ]; then
+                echo "Relaunching the app with in-page right-click menus..."
+                kill $APP_PID 2>/dev/null || true
+                wait $APP_PID 2>/dev/null || true
+                CMDR_E2E_CONTEXT_MENUS=inPage launch_app
+                # Its own JSON report, so the first run report keeps every result it holds.
+                if [ -n "${CMDR_E2E_JSON_REPORT:-}" ]; then
+                    export CMDR_E2E_JSON_REPORT="${CMDR_E2E_JSON_REPORT%.json}-in-page-menus.json"
+                fi
+                set +e
+                npx playwright test \
+                    --config test/e2e-playwright/playwright.config.ts \
+                    --project tauri \
+                    --grep "@in-page-menus" \
+                    2>&1 | tee -a "$PLAYWRIGHT_PROGRESS"
+                in_page_status=${PIPESTATUS[0]}
+                set -e
+                if [ "$in_page_status" -ne 0 ]; then
+                    dump_app_stacks after-in-page-menus-failure
+                fi
+            fi
+            if [ "$playwright_status" -ne 0 ]; then
+                exit "$playwright_status"
+            fi
+            exit "$in_page_status"
         '
     docker_test_status=$?
     set -e
