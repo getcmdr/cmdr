@@ -291,16 +291,15 @@ Every new or moved Linux key against those five plus IBus and GTK:
   `Alt+F5` (GNOME, Cinnamon), `Alt+F7` (GNOME, Xfce, Cinnamon; `Ctrl+F` first), `Ctrl+F1`/`F2` (KDE, Xfce),
   `Ctrl+F3`–`F6` sorts (KDE for F3 and F4, Xfce for all; `Ctrl+3`–`Ctrl+6` first), `Ctrl+Alt+→/←` (GNOME, Xfce,
   Cinnamon; Linux drops it).
-- Menu bar: Linux HAS access keys. `src-tauri/src/menu/mnemonics.rs` gives every GTK bar title and item a mnemonic from
-  the translated label at build time, and GTK takes a title's `Alt+<letter>` before WebKit sees it, so `preventDefault`
-  can't help; English titles take F, E, S, V, G, T, H, other languages differ. Item mnemonics are inert while the menu
-  is closed. So without help the search dialog's `Alt+F`, `Alt+S`, and `Alt+V` and the 11 Multi-rename keys would open a
-  menu. What shipped: while a main-window dialog, overlay, or the palette is up, the main window's `GtkWindow` mnemonic
-  modifier is an unreachable mask, and Alt comes back after the last one closes, like a native modal
-  (`apps/desktop/src-tauri/src/menu/DETAILS.md` § "A modal surface takes the mnemonics away"). Since task 63 step 6 no
-  window wears a GTK bar (the page draws one in the main window and the viewer), so the mask is moot until step 10
-  deletes it; `menu-bar.spec.ts` drives the in-page bar with real X key events through `xdotool`. The viewer's bar has
-  no mnemonics, so its `Alt+R` / `Alt+C` are safe.
+- Menu bar: Linux HAD access keys in its GTK bar: an allocator gave every title and item a mnemonic from the translated
+  label at build time, and GTK takes a title's `Alt+<letter>` before WebKit sees it, so `preventDefault` can't help;
+  English titles take F, E, S, V, G, T, H, other languages differ. Item mnemonics are inert while the menu is closed. So
+  without help the search dialog's `Alt+F`, `Alt+S`, and `Alt+V` and the 11 Multi-rename keys would open a menu. What
+  shipped first: while a main-window dialog, overlay, or the palette was up, the main window's `GtkWindow` mnemonic
+  modifier became an unreachable mask. Since task 63 no window wears a GTK bar (the page draws one in the main window
+  and the viewer, inert under a dialog), so the mask and its allocator are gone (step 10); `menu-bar.spec.ts` drives the
+  in-page bar with real X key events through `xdotool`. The in-page bar reserves a window's own Alt keys, so the
+  viewer's `Alt+R` / `Alt+C` stay safe.
 
 ## Windows checks
 
@@ -333,8 +332,8 @@ Every new or moved Linux key against those five plus IBus and GTK:
   Win+Ctrl+Alt combos; `Win+Alt+J` is a simpler candidate to try there.
 - The search dialog's mode chips `⌥A`/`⌥F`/`⌥R` are `Alt+A`/`Alt+F`/`Alt+R` off macOS, and its popover and scope keys
   (`⌥S`/`⌥M`/`⌥I`, `⌥C`/`⌥V`) likewise: one per-OS table, `lib/query-ui/query-keys.ts`, which the chips render and the
-  routers match. On Linux the mnemonic mask keeps them (§ Reservations behind the Linux keys, "Menu bar"); on Windows
-  `Alt+F` is the File menu access key if task 63 adds them.
+  routers match. Off macOS the in-page bar is inert under the dialog, so it never takes them (§ Reservations behind the
+  Linux keys, "Menu bar").
 - The viewer's search toggles: § Settled with David, item 1.
 - What each OS takes before Cmdr sees it, which Settings warns about when a user records one: one table per OS in
   `apps/desktop/src/lib/settings/sections/system-reserved-keys.ts`, built from § Windows checks and § Reservations

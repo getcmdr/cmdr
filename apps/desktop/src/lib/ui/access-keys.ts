@@ -6,9 +6,8 @@
  * parentheses ("保存 (A)"). Where the Highlight API is missing (WebKitGTK), a keytip badge by each
  * control stands in. macOS has none, and `ModalDialog` builds no controller there.
  *
- * The letters are allocated from the labels as rendered, in the user's language, by the same rule
- * the Linux menu bar uses (`src-tauri/src/menu/mnemonics.rs`): word initials first, then any other
- * letter, unique per dialog. A translator never places a marker. A dialog's own Alt+letter
+ * The letters are allocated from the labels as rendered, in the user's language: word initials
+ * first, then any other letter, unique per dialog. A translator never places a marker. A dialog's own Alt+letter
  * commands (multi-rename's options, About this's Stop) keep their letters: they're the dialog's
  * access keys already, so the allocator hands those letters to nobody else.
  *

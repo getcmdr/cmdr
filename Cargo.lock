@@ -1458,7 +1458,6 @@ dependencies = [
  "futures-util",
  "genai",
  "getrandom 0.4.3",
- "gtk",
  "icns",
  "image",
  "jiff",

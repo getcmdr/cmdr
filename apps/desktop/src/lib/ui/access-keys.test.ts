@@ -8,7 +8,6 @@ import {
 } from './access-keys'
 
 describe('allocateAccessKeys', () => {
-  // The same rule as the Linux menu bar (`src-tauri/src/menu/mnemonics.rs`), case for case.
   it('lands on the first free word initial', () => {
     expect(allocateAccessKeys(['New folder…', 'Delete'])).toEqual(['n', 'd'])
   })

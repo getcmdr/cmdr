@@ -21,8 +21,8 @@
 //! - `split(…)` accelerators, spelled per platform. Labels never are: a label that reads
 //!   differently per OS is one catalog key whose value carries a branch per OS.
 //! - Top-level menu IDs, which reach macOS alone (`spec::menu`).
-//! - GTK `&` mnemonics on Linux, allocated per submenu from the translated labels (the desktop's
-//!   `menu/mnemonics.rs`), so no row names one.
+//! - Access keys off macOS: the in-page bar allocates them from the rendered labels
+//!   (`apps/desktop/src/lib/ui/access-keys.ts`), so no row names one.
 //!
 //! ❗ Every accelerator here is a string muda parses, and a token it doesn't know is DISCARDED
 //! rather than reported (`tauri::menu::MenuItem::new` is `.parse().ok()`), so the item comes up

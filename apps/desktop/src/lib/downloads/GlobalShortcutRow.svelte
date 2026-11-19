@@ -43,7 +43,6 @@
     import { tString } from '#lib/intl/messages.svelte.js'
     import Trans from '#lib/intl/Trans.svelte'
     import ShortcutPill from '#lib/settings/sections/ShortcutPill.svelte'
-    import { suspendMenuMnemonicsWhile } from '#lib/shortcuts/menu-mnemonics-capture.svelte.js'
 
     let binding = $state(getGlobalGoToLatestBinding())
     let editing = $state(false)
@@ -58,9 +57,6 @@
     let statusIsWarn = $state(false)
 
     const isModified = $derived(binding !== getDefaultGlobalGoToLatestBinding())
-
-    // On Linux the window's menu bar would take an `Alt+<letter>` combo before this sees it.
-    suspendMenuMnemonicsWhile(() => editing)
 
     async function applyBinding(next: string): Promise<void> {
         // Live-apply first: re-register with the backend right away. We pass the
