@@ -14,7 +14,7 @@ use tauri::{AppHandle, Runtime};
 use tauri_specta::Event as _;
 use zbus::zvariant::{OwnedValue, Value};
 
-use crate::system_events::AccentColorChanged;
+use crate::system_events::{AccentColorChanged, SystemAccent};
 
 /// Brand fallback accent (mustard gold from getcmdr.com).
 const FALLBACK_ACCENT_HEX: &str = "#d4a006";
@@ -144,9 +144,10 @@ async fn read_accent_color() -> String {
     FALLBACK_ACCENT_HEX.to_owned()
 }
 
-/// The accent color: the XDG portal, then `gsettings`, then the brand fallback.
-pub(crate) async fn accent_color(_app: AppHandle) -> String {
-    read_accent_color().await
+/// The accent color: the XDG portal, then `gsettings`, then the brand fallback. The desktop
+/// names no fill shades.
+pub(crate) async fn accent_color(_app: AppHandle) -> SystemAccent {
+    SystemAccent::plain(read_accent_color().await)
 }
 
 /// Starts observing XDG Portal `SettingChanged` signal for live accent color updates.
@@ -181,7 +182,8 @@ async fn watch_portal_signal<R: Runtime>(app_handle: AppHandle<R>) -> zbus::Resu
         {
             let hex = rgb_floats_to_hex(r, g, b);
             info!("Accent color changed: {hex}");
-            if let Err(e) = (AccentColorChanged { hex }).emit(&app_handle) {
+            let accent = SystemAccent::plain(hex);
+            if let Err(e) = (AccentColorChanged { accent }).emit(&app_handle) {
                 warn!("Failed to emit accent-color-changed: {e}");
             }
         }

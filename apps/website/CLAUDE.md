@@ -35,11 +35,10 @@ Full narrative: [DETAILS.md](DETAILS.md) § Analytics.
   `website-analytics-injection` check.
 - **Charset is the cross-repo attribution contract:** the client `?r=` sanitizer must normalize identically to the
   api-server's (`docs/architecture.md` § Acquisition analytics).
-- **Never need a cookie consent banner.** Preference flags in localStorage are fine; anything that identifies, follows,
-  or attributes a visitor must not use cookies/storage (track anonymously). Test: [DETAILS.md](DETAILS.md) § Client-side
-  storage policy.
-- A new download link needs `data-download-link` (main) or `data-arch` inside `[data-download-dropdown]` so the ref
-  script finds it.
+- **Never need a cookie consent banner.** localStorage preference flags are fine; nothing that identifies, follows, or
+  attributes a visitor may use cookies or storage. Test: [DETAILS.md](DETAILS.md) § Client-side storage policy.
+- A new download link needs `data-download-link` (main) or `data-arch` in `[data-download-dropdown]` for the ref script,
+  for an OS `src/lib/download-platforms.ts` offers. DETAILS § Download platforms.
 
 API access: `docs/tooling/umami.md`, `docs/tooling/posthog.md`.
 
@@ -62,9 +61,9 @@ Color scheme.
   to the bare runner or install browsers in it. [DETAILS.md](DETAILS.md) § Visual baselines.
 - **Edited `src/plugins/`? Delete `.astro/data-store.json`.** [DETAILS.md](DETAILS.md) § Content cache.
 - **Keep TS generic calls single-line in `.astro` `<script>` blocks** (multi-line breaks astro-eslint).
-- **Typed lint needs `astro sync` first**; the `.astro` block omits the `no-unsafe-*` rules (only false positives
-  there). [DETAILS.md](DETAILS.md) § Typed linting.
-- `site` must be set in `astro.config.ts` for RSS and OG image URLs.
+- **Typed lint needs `astro sync` first**; `.astro` files skip the `no-unsafe-*` rules. [DETAILS.md](DETAILS.md) § Typed
+  linting.
+- `astro.config.ts` needs `site` for RSS and OG URLs.
 - Keep `compressHTML: true` (Astro 7's `'jsx'` breaks home + pricing).
 - **A new fetch origin goes in `connect-src`** (`nginx-security-headers.conf`), or prod silently blocks it.
   [DETAILS.md](DETAILS.md) § Security headers.- Remark42 comments are off in dev: `docs/guides/deploying-remark42.md`.

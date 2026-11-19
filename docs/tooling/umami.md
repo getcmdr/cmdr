@@ -36,6 +36,11 @@ ssh hetzner "docker exec umami-db psql -U umami -d umami -c \
   from everything else, so `'self'` in `apps/website/nginx-security-headers.conf` covers both. Don't add
   `anal.veszelovszki.com` back. Verify with `curl -s -o /dev/null -w '%{http_code}\n' https://getcmdr.com/u/mami`
   (expect 200; verified 2026-11-04 alongside the live CSP header).
+- **A `download` event's `arch` of `auto` means the main button's default**: the universal DMG for a Mac whose arch is
+  unknown (Safari, no WebGL), and for any visitor offered another OS's build (a Windows visitor while only macOS is
+  out). Before 2026-11-19 a Windows or Linux visitor's GPU-derived arch was recorded instead, which was wrong, so older
+  events over-count `x86_64`. The download's real OS and file are in D1's `downloads` (`os`, `kind`), never in Umami.
+  `apps/website/DETAILS.md` § Download platforms.
 - **`TRACKER_SCRIPT_NAME` does nothing here**: it's a build-time variable, so the prebuilt image ignores it (and some
   values blank the UI in v3). The obscured `/mami` name comes from the Caddy rewrite above.
 

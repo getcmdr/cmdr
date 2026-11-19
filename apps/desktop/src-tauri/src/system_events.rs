@@ -10,12 +10,41 @@
 use serde::{Deserialize, Serialize};
 use tauri_specta::Event;
 
+/// The OS accent color, as `get_accent_color` answers it and `accent-color-changed` carries it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct SystemAccent {
+    /// The accent itself as `#rrggbb`, or the brand gold when the OS doesn't say.
+    pub hex: String,
+    /// The shades the OS fills its own controls with, where it names them (Windows), else
+    /// `None` and controls fill with `hex`.
+    pub fill: Option<AccentFill>,
+}
+
+impl SystemAccent {
+    /// An accent with no shades of its own: controls fill with `hex` (macOS, Linux).
+    pub fn plain(hex: String) -> Self {
+        Self { hex, fill: None }
+    }
+}
+
+/// The accent shade a control fills with, per theme: WinUI's `AccentFillColorDefault`, which
+/// is `SystemAccentColorDark1` in the light theme and `SystemAccentColorLight2` in the dark one,
+/// each as `#rrggbb`. Both travel, so the frontend picks per `prefers-color-scheme` and a
+/// light/dark switch needs no round-trip.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct AccentFill {
+    pub light: String,
+    pub dark: String,
+}
+
 /// `accent-color-changed`: the OS accent color (or light/dark appearance)
-/// changed. `hex` is the new accent color as a `#rrggbb` string.
+/// changed. `accent` is the fresh answer, exactly what `get_accent_color` returns now.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type, Event)]
 #[serde(rename_all = "camelCase")]
 pub struct AccentColorChanged {
-    pub hex: String,
+    pub accent: SystemAccent,
 }
 
 /// The OS display options the UI mirrors as classes on `<html>`: macOS's

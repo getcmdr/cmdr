@@ -137,6 +137,10 @@ Still needed:
 
 ## Part 3: Website
 
+Built once for all three OSes as the Windows port plan's task 32 (`apps/website/DETAILS.md` § Download platforms): Linux
+goes live by adding `linux` to `PUBLIC_DOWNLOAD_OSES` once a release carries its AppImages and `.deb`s. The sketch below
+is the original design, kept for the record.
+
 ### 3a. `release.ts`: add Linux URLs and sizes
 
 ```ts

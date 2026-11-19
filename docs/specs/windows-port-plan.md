@@ -506,8 +506,25 @@ its prerequisites; tasks without any can start any time. Order within a phase is
       deploy, then task 32 links `/download/latest/windows/x86_64`. Not in this task: the website's
       `getcmdr.com/download/latest/<os>/<arch>` nginx redirect (task 32), an OS on `install_summary` (new installs and
       retention by OS), and per-OS wording in the privacy policy (it still says "macOS version"). Needs 30.
-32. [S] Win. Website download page for three OSes (the Linux plan's Part 3, built once). David reviews copy and design.
-    Needs 30.
+32. [S] Win. Website download page for three OSes (the Linux plan's Part 3, built once). **Done** (not landed or
+    deployed at writing; David reviews copy and design later, screenshots of every state from the build). One gate,
+    `offeredPlatforms` in `apps/website/src/lib/download-platforms.ts`: an OS is offered when `PUBLIC_DOWNLOAD_OSES`
+    (`apps/api-server/wrangler.toml`, read at build time, macOS always) lists it AND the published `latest.json` carries
+    its website file (NSIS, AppImage, `.deb`; the MSIX is the Store's). So adding `windows` to that var is the one
+    switch for the API and the site together, and today's site offers macOS only. Every button, the blog's inline
+    dropdown, the download section's per-OS cards ("Also for …" switches), pricing's platform line, the home schema, the
+    llms files, and `/trust#windows` read it. An inline picker detects the visitor's OS and arch on the device (nothing
+    sent), points the buttons at their OS when it's offered, and tells a Windows or Linux visitor whose build isn't out
+    that it's on its way (Linux: build from source), pointing at the existing newsletter signup. The Windows card
+    carries a one-line SmartScreen "More info, then Run anyway" hint; task 58 adds the Store link and the fuller
+    explainer. nginx passes `/download/latest/<os>/<arch>` through (the API gates it). Fixed on the way: a non-Mac
+    visitor's arch picked a Mac build (a Windows PC's x64 offered the Intel DMG and marked it ✓), and Safari's masked
+    "Apple GPU" renderer offered Intel Macs the arm64 DMG. After review: the build fails without the universal DMG or on
+    a misread toml, `deploy-website` waits until the API serves each newly public OS (15 minutes, else the old site
+    stays), nginx 404s `/download-fixture`, touch-screen Linux user agents (Android tablets in desktop mode) get a
+    neutral note, and the copy promises only the monthly newsletter. Tests:
+    `apps/website/e2e/download-platforms.spec.ts` (unit and built-site, plus `/download-fixture` for the shipped
+    states); no visual baseline changed. `apps/website/DETAILS.md` § Download platforms. Needs 30.
 33. [S] Win (Linux too). Updater trust parity off macOS: the Rust-side check, advisory list, and managed-install logic
     run everywhere; the plugin only hands off the installer; the UI handles "the app quits to install". **Done**.
     `mod updater` builds on every OS and the frontend runs one flow (no OS branch, no `@tauri-apps/plugin-updater`, no
@@ -635,6 +652,19 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     Restart Manager for holders, and `WNetCancelConnection2W` once 45 makes OS SMB mounts.
 40. [S] Windows. System look: accent color, text scale, high contrast and transparency, UI language and formats, all
     live-updating (`UISettings`, `WM_SETTINGCHANGE`). Light/dark already arrives through WebView2. Needs 19, 23.
+    - **Built** (2026-11-19), all through the existing channels, live from one settings window
+      (`system_look/platform/windows/`: `WM_SETTINGCHANGE`, `WM_THEMECHANGED`, `WM_SYSCOLORCHANGE`, and `UISettings`'
+      change events posted onto its thread), never polled. Accent: `UISettings` with WinUI's fill shades
+      (`SystemAccent.fill`, `AccentDark1` / `AccentLight2`), which the Windows control tokens fill with
+      (`--color-accent-fill`). Contrast themes: `SPI_GETHIGHCONTRAST` into `increase_contrast` and `reduce_transparency`
+      (the colors stay WebView2's `forced-colors`). Transparency effects: `AdvancedEffectsEnabled` into
+      `reduce_transparency`. Language and formats: `GetUserPreferredUILanguages` and `GetUserDefaultLocaleName` into
+      `get_os_locales`, live through `intl`'s watcher on the same window (`apps/desktop/src-tauri/src/intl/DETAILS.md` §
+      Windows). Text size: reports `1.0`, because WebView2 already zooms the page with it, live (Chromium's
+      `UwpTextScaleFactor`); the trade (the whole page zooms, where WinUI grows text alone) is David's call
+      (`docs/notes/windows-port/type-and-motion.md`). Unverified until someone changes the settings on a real Windows:
+      that each Settings page broadcasts or fires its `UISettings` event, the shades on screen, a contrast theme's look,
+      and the Text size zoom.
 41. [S] Windows. File icons via `SHGetFileInfoW` / `IShellItemImageFactory`. Needs 23.
 42. [S] Windows. Clipboard (`CF_HDROP`, `Preferred DropEffect` for cut) and drag-out of plain paths (OLE). Needs 18.
     **Plain text read done** (2026-11-19): `clipboard/platform/arboard_text.rs` answers `read_text` on Windows and Linux
@@ -892,7 +922,7 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
       catalog-wide computed-style diff. Sources, the gaps CSS can't close (the accent shade ramp, the select's chevron,
       WinUI's control animations, overlay scrollbars), and what stays house-styled:
       `docs/notes/windows-port/control-look-tokens.md`. Left for later: Linux's neutral theme (Linux keeps the house
-      look until then), and the accent's `Dark1` / `Light2` shades once task 40 reads `UISettings`.
+      look until then). The accent's `Dark1` / `Light2` shades arrived with task 40 (`--color-accent-fill`).
 61. [S] Windows. **Done**. Dialog conventions, read from task 59's conventions inside `ModalDialog`, ❌ never the OS
     (`apps/desktop/src/lib/ui/DETAILS.md` § Platform conventions, with the per-dialog Return table). Button order: the
     footer is written in macOS order and Windows and KDE show it reversed, with Tab following through the focus trap's
@@ -927,7 +957,7 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
       page as `prefers-reduced-motion` with no backend reader; Linux keeps the house stack's `system-ui`. macOS and
       Linux unchanged: 0 differing pixels across the demo's Mac shots. Unverified until a real Windows run: that
       WebView2 resolves the font name, and the reduced-motion mapping. Gaps: optical size (every size draws the Text
-      cut), WinUI's theme animations, and Windows text scale (task 40). Evidence:
+      cut) and WinUI's theme animations; Windows text scale is WebView2's own zoom (task 40). Evidence:
       `docs/notes/windows-port/type-and-motion.md`.
 63. [L] Windows and Linux. The menu model (D5, final). Off macOS, Cmdr draws its menus in the page from `cmdr-menu`'s
     data. Windows, KDE, and other Linux show an in-window menu bar (`menuModel: 'windowMenuBar'`): Windows 11's Fluent

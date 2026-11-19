@@ -6,12 +6,11 @@ Rust draws.
 
 ## Module map
 
-- `mod.rs`: `OsLocales`, `get_os_locales`. `platform/`: OS reads. `resolve.rs`: the pure
-  rules (`resolve_ui_locale`, `inheritance_chain`).
+- `mod.rs`: `OsLocales`, `get_os_locales`. `platform/`: OS reads and change signals. `resolve.rs`: the pure rules.
 - `macos_fallback_test.rs`: pins our English answers against CFBundle's. macOS-only.
-- `format_locale.rs`: `resolved_format_locale()`, composing `<language>[-Script]-REGION` from `NSLocale`.
-- `live_locale.rs`: `observe_os_locale_changes`, following both answers and emitting `os-locales-changed`. macOS only.
-- `native_strings.rs`: `menu_t` / `menu_t_with` and the active-locale cache the native surfaces read.- `shipped_locales.gen.rs` / `native_strings.gen.rs`: the tables. Generated, never hand-edited.
+- `format_locale.rs`: composes `<language>[-Script]-REGION`. `live_locale.rs`: the `LocaleWatcher`, emitting
+  `os-locales-changed`.
+- `native_strings.rs`: `menu_t` and the native surfaces' active-locale cache. `*.gen.rs`: generated tables.
 
 ## Must-knows
 
@@ -37,14 +36,15 @@ Rust draws.
 - **The formatting tag is COMPOSED here, ❌ never read off the webview**, which drops the `-u-rg-` region override. It
   follows the OS, never `appearance.language`. An unrecognized part composes `None`, never a half-built tag.
   `DETAILS.md`.
-- **`'system'` means the language and region the user has set NOW, not at launch.** Two macOS notifications feed one
-  `LocaleWatcher`, which collapses a burst into ONE re-read and emits `os-locales-changed` only when the PAIR moved.
-  The emit site also rebuilds the native menu bar. Linux has no equivalent signal; the no-op says so.
+- **`'system'` means the language and region the user has set NOW, not at launch.** Two macOS notifications (Windows:
+  every `WM_SETTINGCHANGE`) feed one `LocaleWatcher`, which collapses a burst into ONE re-read and emits
+  `os-locales-changed` only when the PAIR moved. The emit site also rebuilds the native menu bar. Linux has no
+  equivalent signal; its no-op arm says so.
 - **`defaults write -g AppleLanguages` posts NO notification**, so it can't test the observer alone: write it, then post
   `AppleLanguagePreferencesChangedNotification` on the distributed centre. `DETAILS.md`.
-- **`get_os_locales` returns two `None`s off macOS**: "no OS answer, the webview default stands". On macOS the language
-  half always answers, falling back to `en`. The NATIVE surfaces have no webview to defer to, so `os_ui_locale()` reads
-  `LC_ALL` / `LC_MESSAGES` / `LANG` on Linux. That split leaves the parent chain out of the Linux webview:
-  `DETAILS.md` § Known gap.
+- **`get_os_locales` returns two `None`s on Linux**: "no OS answer, the webview default stands". On macOS and Windows
+  the language half always answers, falling back to `en`. The NATIVE surfaces have no webview to defer to, so
+  `os_ui_locale()` reads `LC_ALL` / `LC_MESSAGES` / `LANG` on Linux. That split leaves the parent chain out of the Linux
+  webview: `DETAILS.md` § Known gap.
 
 Everything deeper: `DETAILS.md`. Frontend: `apps/desktop/src/lib/intl/`.

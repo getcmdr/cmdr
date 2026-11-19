@@ -6025,9 +6025,10 @@ export const commands = {
     __TAURI_INVOKE<CheckboxConfirm>('confirm_with_checkbox', { request }),
   /**
    *  Tauri command: returns the system accent color as a hex string (for example, `#007aff`), or the
-   *  brand gold when the OS doesn't say.
+   *  brand gold when the OS doesn't say, plus the shades the OS fills controls with, where it names
+   *  them.
    */
-  getAccentColor: () => __TAURI_INVOKE<string>('get_accent_color'),
+  getAccentColor: () => __TAURI_INVOKE<SystemAccent>('get_accent_color'),
   /**
    *  The terminal apps installed on this machine, plus which one `app_choice` names.
    *
@@ -6847,10 +6848,21 @@ export type AboutUpdate =
 
 /**
  *  `accent-color-changed`: the OS accent color (or light/dark appearance)
- *  changed. `hex` is the new accent color as a `#rrggbb` string.
+ *  changed. `accent` is the fresh answer, exactly what `get_accent_color` returns now.
  */
 export type AccentColorChanged = {
-  hex: string
+  accent: SystemAccent
+}
+
+/**
+ *  The accent shade a control fills with, per theme: WinUI's `AccentFillColorDefault`, which
+ *  is `SystemAccentColorDark1` in the light theme and `SystemAccentColorLight2` in the dark one,
+ *  each as `#rrggbb`. Both travel, so the frontend picks per `prefers-color-scheme` and a
+ *  light/dark switch needs no round-trip.
+ */
+export type AccentFill = {
+  light: string
+  dark: string
 }
 
 // Whether labeled controls carry access keys (a letter pressed with Alt), and how they show.
@@ -22614,6 +22626,17 @@ export type SyncStatus =
   | 'downloading'
   // Not a cloud file or status cannot be determined.
   | 'unknown'
+
+// The OS accent color, as `get_accent_color` answers it and `accent-color-changed` carries it.
+export type SystemAccent = {
+  // The accent itself as `#rrggbb`, or the brand gold when the OS doesn't say.
+  hex: string
+  /**
+   *  The shades the OS fills its own controls with, where it names them (Windows), else
+   *  `None` and controls fill with `hex`.
+   */
+  fill: AccentFill | null
+}
 
 /**
  *  System memory breakdown returned to frontend for the RAM gauge.

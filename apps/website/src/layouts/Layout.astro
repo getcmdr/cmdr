@@ -1,6 +1,10 @@
 ---
 import { ClientRouter } from 'astro:transitions'
 import DownloadStartedPopup from '../components/DownloadStartedPopup.astro'
+import { chooseDownload, detectVisitorArch, detectVisitorOs, macArchFromRenderer } from '../lib/download-platforms'
+
+// The picker's pure helpers, inlined from their source so the page runs the exact code the unit tests cover.
+const downloadPickerHelpers = `;window.__cmdrDownloadPicker = { detectVisitorOs: ${String(detectVisitorOs)}, detectVisitorArch: ${String(detectVisitorArch)}, macArchFromRenderer: ${String(macArchFromRenderer)}, chooseDownload: ${String(chooseDownload)} }`
 
 interface Props {
     title: string
@@ -336,24 +340,73 @@ const {
             })()
         </script>
 
+        {/* The download picker: points every download button at the visitor's OS and arch, among the OSes the
+           site offers (`src/lib/download-platforms.ts`), and shows the download section's matching card and
+           notice. Detection runs on the device and sends nothing anywhere. This first script defines the
+           unit-tested pure helpers from their source; the second runs them against the page. Both are inline
+           and at the end of <body> so the buttons are right before first paint. */}
+        <script is:inline set:html={downloadPickerHelpers} />
         <script is:inline>
             ;(function () {
+                var picker = window.__cmdrDownloadPicker
+                if (!picker) return
+                var visitorOs = picker.detectVisitorOs(navigator)
+                document.documentElement.dataset.visitorOs = visitorOs || 'other'
+
+                function readPlatforms(el) {
+                    try {
+                        return JSON.parse(el.dataset.downloads || 'null')
+                    } catch {
+                        return null
+                    }
+                }
+
                 function applyArch(arch) {
-                    document.querySelectorAll('a[data-download-link]').forEach(function (el) {
-                        var url = arch === 'aarch64' ? el.dataset.dmgArm : el.dataset.dmgIntel
-                        if (url) el.href = url
-                        el.dataset.umamiEventArch = arch
-                        var size = arch === 'aarch64' ? el.dataset.sizeArm : el.dataset.sizeIntel
-                        if (size) {
-                            el.querySelectorAll('[data-download-size]').forEach(function (s) {
-                                s.textContent = s.textContent.replace(/\d+ MB/, size)
+                    document.querySelectorAll('[data-download-split-btn]').forEach(function (btn) {
+                        var platforms = readPlatforms(btn)
+                        if (!platforms) return
+                        var choice = picker.chooseDownload(platforms, {
+                            visitorOs: visitorOs,
+                            arch: arch,
+                            pinnedOs: btn.dataset.downloadPinnedOs || null,
+                        })
+                        if (!choice) return
+                        var link = btn.querySelector('a[data-download-link]')
+                        if (link) {
+                            link.href = choice.option.url
+                            if (arch && choice.os === visitorOs) link.dataset.umamiEventArch = choice.option.arch
+                            var size = choice.option.size
+                            if (size) {
+                                link.querySelectorAll('[data-download-size]').forEach(function (s) {
+                                    s.textContent = s.textContent.replace(/\d+ MB/, size)
+                                })
+                            }
+                            link.querySelectorAll('[data-download-label]').forEach(function (l) {
+                                l.textContent = 'Download for ' + platforms[choice.os].name
+                            })
+                            link.querySelectorAll('[data-os-icon]').forEach(function (icon) {
+                                icon.hidden = icon.dataset.osIcon !== choice.os
                             })
                         }
+                        // The ✓ marks the visitor's own build, so only once their OS and arch are both known.
+                        var recommends = arch && choice.os === visitorOs
+                        btn.querySelectorAll('[data-download-dropdown] [data-arch]').forEach(function (el) {
+                            var mine =
+                                recommends &&
+                                (el.dataset.os || 'macos') === choice.os &&
+                                el.dataset.arch === choice.option.arch &&
+                                (el.dataset.kind || 'dmg') === choice.option.kind
+                            if (mine) el.dataset.recommended = 'true'
+                            else delete el.dataset.recommended
+                        })
                     })
-                    document.querySelectorAll('[data-download-dropdown] [data-arch]').forEach(function (el) {
-                        if (el.dataset.arch === arch) {
-                            el.dataset.recommended = 'true'
+                    // The download section shows the card of the OS the buttons offer.
+                    document.querySelectorAll('[data-platform-picker]').forEach(function (section) {
+                        var offered = (section.dataset.platformPicker || '').split(',')
+                        if (!section.dataset.shownOs || !section.dataset.pickedByVisitor) {
+                            section.dataset.shownOs = offered.indexOf(visitorOs) >= 0 ? visitorOs : 'macos'
                         }
+                        window.__cmdrShowPlatform(section, section.dataset.shownOs)
                     })
                     // applyArch overwrites the main download link's href (dropping any ref we appended),
                     // so re-apply the ref afterward. Safe to call with an empty ref (no-op).
@@ -362,24 +415,43 @@ const {
                     }
                 }
 
-                // Detect arch synchronously to avoid flash of universal binary on first paint.
-                // WebGL renderer reports "Apple M1/M2/GPU" on Apple Silicon, "Intel/AMD" on Intel Macs.
-                // Falls back to localStorage cache from a previous async detection.
-                function detectArchSync() {
+                // One OS's card in the download section, plus a switch to each other offered OS.
+                window.__cmdrShowPlatform = function showPlatform(section, os) {
+                    section.dataset.shownOs = os
+                    section.querySelectorAll('[data-platform-card]').forEach(function (card) {
+                        card.hidden = card.dataset.platformCard !== os
+                    })
+                    section.querySelectorAll('[data-show-platform]').forEach(function (button) {
+                        button.hidden = button.dataset.showPlatform === os
+                        if (button.dataset.bound) return
+                        button.dataset.bound = 'true'
+                        button.addEventListener('click', function () {
+                            section.dataset.pickedByVisitor = 'true'
+                            showPlatform(section, button.dataset.showPlatform)
+                        })
+                    })
+                    section.querySelectorAll('[data-visitor-notice]').forEach(function (notice) {
+                        notice.hidden = notice.dataset.visitorNotice !== (visitorOs || 'other')
+                    })
+                }
+
+                // Detect a Mac's arch synchronously to avoid a flash of the universal build on first paint.
+                // The WebGL renderer names the GPU (`macArchFromRenderer`; Safari's "Apple GPU" names
+                // nothing). Windows and Linux read it off the user agent. Falls back to the localStorage
+                // cache from a previous async detection.
+                function detectMacArch() {
                     try {
                         var canvas = document.createElement('canvas')
                         var gl = canvas.getContext('webgl')
                         if (!gl) return null
                         var ext = gl.getExtension('WEBGL_debug_renderer_info')
                         if (!ext) return null
-                        var renderer = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)
-                        if (/Apple M|Apple GPU/.test(renderer)) return 'aarch64'
-                        if (/Intel|AMD/.test(renderer)) return 'x86_64'
+                        return picker.macArchFromRenderer(String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)))
                     } catch { /* WebGL unavailable */ }
                     return null
                 }
 
-                var syncArch = detectArchSync()
+                var syncArch = visitorOs === 'macos' ? detectMacArch() : picker.detectVisitorArch(navigator)
                 if (!syncArch) {
                     try {
                         syncArch = localStorage.getItem('cmdr-arch')
@@ -387,10 +459,11 @@ const {
                         /* localStorage unavailable */
                     }
                 }
-                if (syncArch) applyArch(syncArch)
+                // Runs even with no arch: the OS alone already picks the visitor's buttons and card.
+                applyArch(syncArch)
 
                 // Detect arch async and update cache for next visit
-                if (!navigator.userAgentData) return
+                if (!navigator.userAgentData || !navigator.userAgentData.getHighEntropyValues) return
                 navigator.userAgentData
                     .getHighEntropyValues(['architecture'])
                     .then(function (ua) {

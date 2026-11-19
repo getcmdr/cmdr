@@ -88,8 +88,8 @@ component stays one implementation and reads only these.
   `getLook()` (`getCopyPlatform()`; the browser demo's is its visitor's OS), written by `applyPlatformAttributes()`
   beside `data-platform`, so `CMDR_MOCK_CONVENTIONS=windows pnpm dev` shows it on a Mac (without Segoe UI, which a Mac
   lacks).
-- **Reduced transparency** (the `reduce-transparency` class, which task 40 fills from Windows' transparency effects):
-  acrylic's own opaque fallback color and no blur.
+- **Reduced transparency** (the `reduce-transparency` class, on under Windows' Transparency effects off or a contrast
+  theme, § Display accessibility classes): acrylic's own opaque fallback color and no blur.
 - **`forced-colors: active`** (Windows contrast themes): WinUI's `HighContrast` mapping as CSS system colors, no
   backdrop or shadow. Its selector list names the reduced-transparency selector too and comes later, so it wins over
   that block at equal weight. The bar and the surfaces read the controls' `--color-forced-adjust` (§ Control look
@@ -133,6 +133,11 @@ tooltips, `ModalDialog`'s chrome, focus rings, and scrollbars. Same shape as the
   `@supports (forced-color-adjust: none)`, as the block itself is: the Safari 15.4 floor's guard (§ Menu look tokens).
 - The select, the combobox list, and the tooltip read `app-menu.css`'s flyout surface on Windows (WinUI uses the same
   in-app acrylic for all three).
+- **The accent fill**: every accent-filled Windows token reads `--color-accent-fill` / `--color-accent-fill-fg`
+  (`app.css`: the accent and its contrast-picked text). Under the system accent, `#lib/accent-color` overrides both on
+  `:root` with the shade the OS names for the current scheme (Windows' `AccentDark1` light, `AccentLight2` dark, from
+  `SystemAccent.fill`) and WinUI's fixed white / black text, re-picked on a scheme flip with no IPC. macOS and Linux
+  name no shades, so neither override is ever set there.
 - **Decision/Why: disabled states re-point tokens.** A disabled control redeclares its state tokens as their `-disabled`
   twins on itself (`Checkbox`, `Switch`, `RadioGroup`, `Slider`), so the hover and press rules paint the disabled look
   with no specificity contest. The house twins equal the live values, because the house look dims with `opacity`
@@ -178,8 +183,12 @@ The same value carries Invert colors, which gets no class: it only changes the i
   top-level window on its own thread hears every `WM_SETTINGCHANGE` broadcast, re-reads, and emits
   `display-accessibility-changed` only when a value moved
   (`apps/desktop/src-tauri/src/system_look/platform/windows/setting_changes.rs`; ❌ never a message-only window, which
-  gets no broadcasts). Task 40's Windows readers hang off the same re-read. That Settings' toggle broadcasts is
-  unverified on a real machine (2026-11-18).
+  gets no broadcasts). That Settings' toggle broadcasts is unverified on a real machine (2026-11-18).
+- **Windows' other two**: a contrast theme (`SPI_GETHIGHCONTRAST`) turns on `increase-contrast` AND
+  `reduce-transparency` (WinUI drops acrylic under one), and Transparency effects off (`UISettings`'
+  `AdvancedEffectsEnabled`) turns on `reduce-transparency`. The contrast theme's COLORS need no reader: WebView2 maps it
+  to `forced-colors: active`, which the contrast token files style from. The same window re-reads both on
+  `WM_SETTINGCHANGE`, `WM_THEMECHANGED`, `WM_SYSCOLORCHANGE`, and `UISettings`' change events.
 
 - **Why classes**: WKWebView ignores `prefers-reduced-transparency` (verified, see the module doc), and CSS has no query
   for Differentiate without color or Show borders at all. `increase-contrast` is ALSO on when `prefers-contrast: more`
