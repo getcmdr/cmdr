@@ -75,7 +75,9 @@ Platform defaults (`platform::default_seed`, one arm per OS, platform-native per
 - macOS: `/Applications`, `~/Desktop`, `~/Documents`, `~/Downloads` (the previous hardcoded four).
 - Linux: Home, `~/Desktop`, `~/Documents`, `~/Downloads` (matching the old Linux discovery
   favorites).
-- Windows: User folder, then Desktop, Documents, and Downloads under it. ❌ Never "Home" for the
+- Windows: User folder, then the Desktop, Documents, and Downloads known folders wherever Windows keeps them
+  (`dirs`, which asks `SHGetKnownFolderPath`), so a moved folder or OneDrive's folder backup
+  (`%USERPROFILE%\OneDrive\Documents`) seeds right; `home\<name>` only when Windows names none. ❌ Never "Home" for the
   first row: on Windows 11 that's File Explorer's landing page, a different place
   (`docs/notes/windows-port/copy-decisions.md` § Glossary).
 

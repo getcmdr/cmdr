@@ -58,3 +58,36 @@ fn a_configured_path_that_isnt_runnable_falls_back_to_the_search() {
 
     set_adb_binary_override(None);
 }
+
+/// The real `adb start-server` on this machine: a refused connect starts the server through the
+/// named binary (on Windows, with its quiet start and stderr piped, which must not hang on the
+/// daemon it forks), and the second dial answers `host:version`. Needs a real `adb`, named by
+/// `CMDR_TEST_ADB`; run it with `--run-ignored only`.
+#[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs a real adb binary, named by CMDR_TEST_ADB"]
+async fn a_refused_connect_starts_the_real_adb_server() {
+    let binary: PathBuf = std::env::var_os("CMDR_TEST_ADB")
+        .expect("set CMDR_TEST_ADB to a real adb binary")
+        .into();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr: SocketAddr = listener.local_addr().unwrap();
+    drop(listener);
+    let endpoint = AdbEndpoint {
+        addr,
+        binary: Some(binary.clone()),
+        may_start_server: true,
+        may_locate_binary: false,
+    };
+    let started = std::time::Instant::now();
+    let mut conn = endpoint.connect().await.expect("the server starts and answers");
+    conn.request("host:version").await.expect("host:version is OKAY");
+    let version = conn.read_hex_message().await.expect("a version answer");
+    let elapsed = started.elapsed();
+    let stopped = tokio::process::Command::new(&binary)
+        .args(["-P", &addr.port().to_string(), "kill-server"])
+        .status()
+        .await;
+    assert!(!version.is_empty(), "an empty version answer");
+    assert!(elapsed < START_SERVER_TIMEOUT, "took {elapsed:?}");
+    assert!(stopped.is_ok_and(|s| s.success()), "kill-server");
+}

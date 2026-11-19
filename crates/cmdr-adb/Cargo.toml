@@ -76,3 +76,13 @@ cmdr-fs = { path = "../cmdr-fs", features = ["testing"] }
 # `test-util` gives the timeout cells a `start_paused` clock so asserting on a
 # budget costs no wall time.
 tokio = { version = "1", features = ["rt-multi-thread", "test-util"] }
+
+[target.'cfg(windows)'.dependencies]
+# `CREATE_NO_WINDOW` for `adb start-server`, so a GUI process starting the console
+# tool flashes no console window (`server/platform/windows.rs`). Already in the graph
+# through `tokio`, `mio`, and friends, at this version.
+windows-sys = { version = "0.61", features = ["Win32_System_Threading"] }
+
+[target.'cfg(windows)'.dev-dependencies]
+# `GetConsoleWindow`, which the quiet-start test's child reads to prove it got no window.
+windows-sys = { version = "0.61", features = ["Win32_System_Console"] }

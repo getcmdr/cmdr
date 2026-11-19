@@ -54,28 +54,17 @@ pub(crate) fn settings(
     unsafe { CFRetained::cast_unchecked(typed) }
 }
 
-/// The system layer [`warm_up`] decides with: this arm's [`route`], but a PAC miss gets
-/// [`pac::WARM_UP_TIMEOUT`], since nothing waits on it but the
-/// requests that would otherwise have run the cold first evaluation themselves.
-struct WarmingSystem;
-
-impl crate::SystemProxies for WarmingSystem {
-    fn route(&self, url: &Url) -> Route {
-        route_with(url, &pac::shared().with_budget(pac::WARM_UP_TIMEOUT))
-    }
-}
-
 /// Runs the PAC evaluation for `url` once, on a background thread.
 pub(crate) fn warm_up(url: Url, env: Arc<crate::env::EnvProxies>) {
-    let spawned = std::thread::Builder::new()
-        .name(String::from("cmdr-http-pac-warm-up"))
-        .spawn(move || {
-            // The answer lands in the PAC cache; the route itself is nobody's to act on.
-            let _ = crate::route::decide(&url, &env, &WarmingSystem);
-        });
-    if spawned.is_err() {
-        log::debug!(target: "cmdr_http", "couldn't start the PAC warm-up; the first request runs it instead");
-    }
+    pac::warm_up(url, env, route_with);
+}
+
+/// Never moves: CFNetwork's settings carry each network's own answer (WPAD's discovered PAC URL
+/// arrives as the PAC entry, part of every cached answer's key), so a network with another PAC
+/// stops matching the old answers on its own. One PAC URL every network serves keeps its answers
+/// up to `pac::ANSWER_TTL` (`DETAILS.md` § "Known limits").
+pub(crate) fn network_generation() -> u64 {
+    0
 }
 
 #[cfg(test)]

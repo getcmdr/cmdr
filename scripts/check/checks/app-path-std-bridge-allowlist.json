@@ -806,7 +806,7 @@
     "apps/desktop/src-tauri/src/volumes/platform/macos/nsurl.rs": 1,
     "apps/desktop/src-tauri/src/volumes/platform/windows/mod.rs": 1,
     "crates/cmdr-adb/src/server.rs": 1,
-    "crates/cmdr-adb/src/server/binary_search.rs": 4,
+    "crates/cmdr-adb/src/server/binary_search.rs": 2,
     "crates/cmdr-archive/src/apple_double.rs": 1,
     "crates/cmdr-archive/src/apple_double_test.rs": 1,
     "crates/cmdr-archive/src/read/apple_double_index_test.rs": 1,

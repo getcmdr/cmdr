@@ -326,7 +326,8 @@ spun a failing-retry loop at ~190% CPU and froze the webview through CPU plus sy
 deferred, because three cheaper in-process fixes closed the actual levers:
 
 - **Thread QoS**: the heavy indexing threads (writer, scanner, walker workers and watchdog, local reconcile) run at
-  `QOS_CLASS_UTILITY` (`crates/cmdr-fs/src/thread_qos.rs`), so macOS lets the UI's threads preempt them.
+  `QOS_CLASS_UTILITY` on macOS and below-normal priority with EcoQoS on Windows (`crates/cmdr-fs/src/thread_qos/`), so
+  the UI's threads preempt them.
 - **Bounded logging**: the file-log writer coalesces identical-line floods
   (`apps/desktop/src-tauri/src/logging/coalesce.rs`), so a runaway loop can't peg a core on `write` or stall other
   threads on the log mutex.
