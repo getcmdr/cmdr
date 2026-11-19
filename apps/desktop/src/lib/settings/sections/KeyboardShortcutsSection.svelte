@@ -48,7 +48,6 @@
 
     // Purely-UI DOM ref for the key-filter input.
     let keyFilterInput: HTMLInputElement | undefined = $state()
-    let keyFilterFocused = $state(false)
 
     // Subscribe to shortcut changes; bumping the controller's counter re-runs its
     // derivations and re-keys the rows in the `{#each}` below.
@@ -144,8 +143,6 @@
                     bind:inputElement={keyFilterInput}
                     onkeydown={controller.handleKeyFilterKeyDown}
                     onkeyup={controller.handleKeyFilterKeyUp}
-                    onfocus={() => (keyFilterFocused = true)}
-                    onblur={() => (keyFilterFocused = false)}
                     autocomplete="off"
                     autocapitalize="off"
                     spellcheck={false}
