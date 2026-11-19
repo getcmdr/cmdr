@@ -316,3 +316,20 @@ things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX
   in-flight ledger never emptying on Windows, Windows-made zips dropping their modes, both fixed):
   `docs/notes/windows-port/windows-test-failures.md`, with the machine-readable record beside it. The cold build died
   once on `os error 1455` (the page file too small to mmap an rlib); `CARGO_BUILD_JOBS=2` got through.
+- **2026-11-19, task 46's small arms** (`85c8ddb0d4`, in `D:\src\cmdr-t46` with `CARGO_TARGET_DIR=D:\targets\triage`,
+  run on the desktop through `run-on-desktop.sh`; plan task 46 has what each arm is):
+  - `cargo clippy -p cmdr-fs -p cmdr-adb -p cmdr-http --all-targets --features cmdr-fs/testing -D warnings` clean;
+    `cargo clippy -p cmdr --all-targets -D warnings` clean (10m 03s warm-ish; vendored `rustic_core`'s known warning).
+  - **Thread QoS**: Windows accepts both `SetThreadPriority(BELOW_NORMAL)` and the EcoQoS throttle, and the priority
+    reads back; Windows 10 can't read the throttle back (`GetThreadInformation(ThreadPowerThrottling)` answers
+    `ERROR_INVALID_PARAMETER`, 87), so that half is checked on Windows 11 only.
+  - **`adb.exe`**: with Google's platform-tools 37.0.1 in `D:\tools\t46` (`CMDR_TEST_ADB`), a refused connect started a
+    real server through `start_quietly` (stderr piped, no hang) and `host:version` answered, in 4.9 s; a child started
+    quietly reads `GetConsoleWindow` null. 13 of 13 `server` cells.
+  - **Special folders**: `FOLDERID_Downloads` classifies in both spellings (`C:\Users\…` and `C:/Users/…`); the
+    favorites seed's known folders resolve and exist (3 of 3 `favorites::platform` cells; this builder keeps them under
+    the profile, so the OneDrive case is a unit cell only).
+  - **Proxy**: 50 of 50 `cmdr-http` cells, the shared PAC ones against WinHTTP and a loopback PAC file. WinHTTP drops a
+    PAC's trailing `DIRECT` (`PROXY proxy.test:3128; DIRECT` answers `proxy.test:3128`), reading the user's settings
+    takes under 2 ms, and WPAD with no WPAD server fails in about 70 ms. The builder's own settings stayed untouched, so
+    a real manual proxy, setup script, or WPAD network is unverified.

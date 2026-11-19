@@ -25,8 +25,9 @@ request, once per request (to decide on proxy auth). `route::decide` answers:
    `Proxy-Authorization` header, or for a SOCKS URL into the SOCKS5 username/password sign-in (RFC 1929). A `socks4` /
    `socks4a` / `socks5` / `socks5h` value is passed through as typed, so `socks5://` resolves names on this Mac and
    `socks5h://` at the proxy (curl's convention, and what someone writing the variable expects).
-5. **The OS** (`system::OsSystem`, per OS under `system/platform/`) → on macOS CFNetwork's verdict. Linux and Windows
-   read no system layer yet, so this step is direct there.
+5. **The OS** (`system::OsSystem`, per OS under `system/platform/`) → on macOS CFNetwork's verdict, on Windows the
+   user's Internet settings walked as WinINet walks them (§ "The Windows answer"). Linux reads no system layer (no GNOME
+   or KDE settings), so this step is direct there.
 
 The environment is snapshotted on the first `client_builder()` call (`OnceLock`): a running process's environment
 doesn't change.
@@ -48,6 +49,31 @@ doesn't change.
 
 Credentials are percent-encoded byte by byte, never `form_urlencoded`: hyper-util percent-decodes a proxy URL's
 userinfo, so a `+` standing for a space would reach the proxy as a literal `+` (`entries_test.rs`).
+
+## The Windows answer
+
+`WinHttpGetIEProxyConfigForCurrentUser` hands over the current user's Internet settings (Settings > Network & Internet >
+Proxy, or `inetcpl.cpl`'s LAN settings): the "Automatically detect settings" flag, the setup script's URL, the manual
+proxy string, and its bypass list. Edge, Chrome, and WinINet read these. ❌ Not the machine-wide WinHTTP proxy
+(`netsh winhttp set proxy`): that's a service-facing setting browsers ignore, so honoring it would route Cmdr unlike
+everything else on the desktop. `system/platform/ie_settings.rs` turns them into the same `Entry` list macOS's answer
+is, in WinINet's (and Chromium's) order, each the fallback for the one before:
+
+1. Auto-detect on → `Entry::AutoDetect`: WPAD, by DHCP then DNS (`WINHTTP_AUTOPROXY_AUTO_DETECT`).
+2. A setup script → `Entry::AutoConfigUrl`.
+3. A manual proxy → for the URL's scheme: its own `scheme=` entry (`ws`/`wss` read as `http`/`https`), else an entry
+   with no `scheme=` (one proxy for every scheme), else the `socks=` one, else direct. An entry whose value carries
+   `socks…://` is a SOCKS proxy wherever it sits; ports default to 80 and 1080; `[v6]:port` keeps its host whole. A host
+   the bypass list matches goes direct: `;`- or space-separated patterns with `*` wildcards (`*.corp.test`, `10.*`),
+   optionally scoped to a `scheme://` or a `:port`, case-insensitive, and `<local>` for any dotless host name (never an
+   IP literal). `<-loopback>` and the rest of the `<…>` forms are skipped: loopback goes direct before the system is
+   asked.
+
+No credentials ever come from Windows' settings: a proxy that answers 407 wants Windows' sign-in (NTLM or Negotiate),
+which reqwest doesn't speak, so Cmdr's requests fail there as they would through any non-Windows client. The read costs
+under 2 ms (101 reads in 0.19 s on the 2-core builder, Windows 10 22H2, `windows_test.rs`, 2026-11-19), small beside a
+new connection's TCP and TLS, so it has no cache and a settings change applies to the next connection. With no WPAD
+server on the network, WinHTTP's discovery fails in about 70 ms there (same run).
 
 ## SOCKS
 
@@ -88,16 +114,21 @@ no cache.
 
 ## PAC evaluation
 
+`pac/` is shared by macOS and Windows; only `pac/platform/`'s `execute` differs. On macOS,
 `CFNetworkExecuteProxyAutoConfigurationURL` (or `…Script` for an inline one) fetches the file itself and answers through
-a callback on a run loop. reqwest's closure is synchronous, so `MacPac::evaluate`:
+a callback on a run loop. On Windows, `WinHttpGetProxyForUrl` runs a PAC URL or WPAD (in the WinHTTP Web Proxy
+Auto-Discovery service, which caches the script and discovery too), synchronously, first without the Windows sign-in and
+again with it only on `ERROR_WINHTTP_LOGIN_FAILURE`, as Microsoft advises; its `lpszProxy` answer is a `;`-separated
+`host:port` list, read by `ie_settings::proxy_list_entries`. reqwest's closure is synchronous, so `OsPac::evaluate`:
 
 1. Checks the cache, keyed by the PAC source and `scheme://host[:port]` (reqwest never passes a path, so a rule on the
    path sees `/`).
 2. Takes the one evaluation turn, then checks again: a burst of first connections to one host (an S3 upload's parts)
    waits for one answer instead of running the PAC N times.
-3. Spawns `cmdr-http-pac`, a short-lived thread that adds the source to its own run loop in a private mode and runs that
-   mode until the callback fills a stack slot or `TIMEOUT` (3 s) passes, then invalidates the source so the callback
-   can't fire into a dead frame. The asking thread waits on a channel for at most `TIMEOUT` + 1 s.
+3. Spawns `cmdr-http-pac`, a short-lived thread that runs the OS's `execute`. On macOS that adds the source to the
+   thread's own run loop in a private mode and runs that mode until the callback fills a stack slot or `TIMEOUT` (3 s)
+   passes, then invalidates the source so the callback can't fire into a dead frame; on Windows it's one blocking call
+   on a session whose timeouts are `TIMEOUT`. The asking thread waits on a channel for at most `TIMEOUT` + 1 s.
 4. Caches the answer for 5 minutes, or a failure for 30 seconds (a dead PAC host costs one timeout per host per half
    minute), capped at 256 entries.
 
@@ -107,7 +138,7 @@ needs no cross-thread wakeup source and holds nothing while idle.
 One evaluation can make CFNetwork fetch the PAC more than once (three connections per evaluation on macOS 27.0), a late
 one can land after the answer is back, and CFNetwork keeps the fetched file, so a changed PAC doesn't show in its next
 answer either (verified on macOS 27.0, by switching the served script mid-test, 2026-10-25). So neither the server's
-hits nor the answers tell a cache hit from a miss: `pac_test.rs::an_answer_is_cached_per_host` reads `MacPac`'s
+hits nor the answers tell a cache hit from a miss: `pac/pac_test.rs::an_answer_is_cached_per_host` reads `OsPac`'s
 test-only `evaluations` count.
 
 Two of those connections are TLS: for an `http://` PAC URL, CFNetwork sends a TLS ClientHello on two connections first,
@@ -122,13 +153,13 @@ Left alone, a PAC on a loaded Mac could miss `TIMEOUT` on that cold first evalua
 requests direct for `FAILURE_TTL`, past a proxy that should have covered them (#810). So the app calls
 `warm_up_pac("https://api.getcmdr.com")` right after the logger starts:
 
-- A `cmdr-http-pac-warm-up` thread runs `route::decide` for that URL with `WarmingSystem` (macOS's arm), which is the
-  macOS route with the PAC miss given `WARM_UP_TIMEOUT` (10 s) through `MacPac::with_budget`. Same cache, same turn:
-  only the budget differs. No PAC, a local host, or an env var deciding first → nothing runs, at the cost of one 15 µs
-  lookup.
+- A `cmdr-http-pac-warm-up` thread runs `route::decide` for that URL with `pac::WarmingSystem` over the OS arm's
+  `route_with`, which is the OS route with the PAC miss given `WARM_UP_TIMEOUT` (10 s) through `OsPac::with_budget`.
+  Same cache, same turn: only the budget differs. No PAC, a local host, or an env var deciding first → nothing runs, at
+  the cost of one 15 µs lookup.
 - **A request arriving meanwhile joins it**: it blocks on the turn, then reads the cached answer, so it can wait up to
   `WARM_UP_TIMEOUT` + 1 s instead of `TIMEOUT` + 1 s, once, and only while the PAC is genuinely slow
-  (`pac_test.rs::a_request_during_the_warm_up_joins_it`).
+  (`pac/pac_test.rs::a_request_during_the_warm_up_joins_it`).
 - **The URL is reduced to `scheme://host[:port]`** (`as_asked`), the exact form reqwest's `Proxy::custom` asks with
   (reqwest 0.13.5 `Custom::call`), or the warm-up would fill a cache key no request reads
   (`lib_test.rs::the_pac_warm_up_asks_about_a_url_exactly_as_reqwest_does`).
@@ -141,9 +172,9 @@ it needs a real Wi-Fi switch or sleep cycle with the loopback probe above, timin
 turns out cold, warm up again on `NSWorkspaceDidWakeNotification` and on a `SCDynamicStore` network-change key. Until
 then, the worst case after such an event is one host going direct for `FAILURE_TTL`.
 
-❗ The two `Execute…` functions are declared in `pac.rs` with raw pointers rather than taken from `objc2-cf-network`
-0.3.2: its `CFProxyAutoConfigurationResultCallback` types the proxy list as `NonNull`, and CFNetwork passes null when
-the PAC fails, which would be undefined behavior in a `NonNull` parameter.
+❗ The two `Execute…` functions are declared in `pac/platform/macos.rs` with raw pointers rather than taken from
+`objc2-cf-network` 0.3.2: its `CFProxyAutoConfigurationResultCallback` types the proxy list as `NonNull`, and CFNetwork
+passes null when the PAC fails, which would be undefined behavior in a `NonNull` parameter.
 
 ## Testing
 
@@ -151,8 +182,11 @@ the PAC fails, which would be undefined behavior in a `NonNull` parameter.
   system layer. ❌ Never `std::env::set_var` in a test: the runner is parallel.
 - `system/platform/macos_test.rs`: the real CFNetwork call on macOS against a settings dictionary the test builds
   (`settings`), so it never reads or changes this Mac's own settings.
-- `pac_test.rs`: real PAC evaluation against a PAC file served from loopback, an inline script, the cache, an
-  unreachable PAC host, one that never answers, and a broken script.
+- `pac/pac_test.rs`: real PAC evaluation by the OS's runner (macOS and Windows) against a PAC file served from loopback
+  (`pac/test_server.rs`): the cache, the budgets and the warm-up, an unreachable PAC host, and one that never answers.
+  `pac/platform/macos_test.rs`: CFNetwork's own cells (inline scripts, its SOCKS keywords, a broken script).
+- `system/platform/ie_settings_test.rs`: Windows' settings rules on every OS. `system/platform/windows_test.rs`: the
+  real settings read on Windows, which reads and never changes the machine's settings.
 - `lib_test.rs`: the built client end to end, with a fake proxy and origin on loopback, and a fake SOCKS5 server that
   records the sign-in and whether it got a name or an IP.
 - Against the real system settings: `docs/notes/proxy-and-tls-inspection-2026-10.md` § "After the fixes" (a probe on

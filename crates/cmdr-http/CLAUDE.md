@@ -9,8 +9,9 @@ The one door every Cmdr HTTP client is built through: `client_builder()` is `req
 - `route.rs`: the decision order (`decide`) and the loopback / link-local test.
 - `env.rs`: the `*_PROXY` / `NO_PROXY` variables, read once.
 - `system/`: `OsSystem`, this OS's verdict per URL, behind `platform/`: macOS asks CFNetwork (`entries_for`, then
-  `first_route`); Linux and Windows read no system layer yet and answer direct.
-- `pac.rs`: PAC files (and so WPAD), run by macOS, with a per-host answer cache.
+  `first_route`); Windows reads the user's Internet settings into the same list (`ie_settings.rs`, pure); Linux reads no
+  system layer and answers direct.
+- `pac/`: PAC files (and so WPAD) with a per-host answer cache; `platform/` runs them (CFNetwork, WinHTTP).
 
 ## Must-knows
 
@@ -30,8 +31,10 @@ The one door every Cmdr HTTP client is built through: `client_builder()` is `req
   with its own run loop; a failure or timeout goes direct, as macOS does, and is cached 30 s, an answer 5 min.
 - **The app calls `warm_up_pac()` at launch** for `api.getcmdr.com`: the process's cold first evaluation runs in the
   background with a 10 s budget, and a request arriving meanwhile waits on the one-evaluation turn for its answer.
-- ❗ **The PAC `Execute…` functions are declared in `pac.rs`, not taken from `objc2-cf-network`**: its callback type
-  says the proxy list is non-null, and CFNetwork passes null on failure.
+- ❗ **The PAC `Execute…` functions are declared in `pac/platform/macos.rs`, not taken from `objc2-cf-network`**: its
+  callback type says the proxy list is non-null, and CFNetwork passes null on failure.
+- **Windows reads `WinHttpGetIEProxyConfigForCurrentUser`** (what Edge and Chrome read), ❌ never the machine-wide
+  `netsh winhttp` proxy. WPAD, then the setup script, then the manual proxy, each the fallback for the one before.
 - ❗ **A SOCKS proxy from macOS (the manual setting or a PAC) becomes `socks5h://`**: the proxy resolves names, as
   macOS's own stack does. An env var's `socks5://` (local DNS) vs `socks5h://` is kept as typed. FTP entries are
   skipped. CFNetwork drops a PAC's `SOCKS5` / `SOCKS4` answers; only `SOCKS` reaches Cmdr.

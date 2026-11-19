@@ -640,10 +640,25 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
 45. [S] Windows. SMB OS mounts via `WNetAddConnection2W` and Credential Manager SMB credentials. Needs 22.
 46. [S] Windows. Small backend arms: `cmdr-nfs` identity (`GetComputerNameExW`, configurable uid/gid), `cmdr-adb`
     `adb.exe` discovery, special folders (`SHGetKnownFolderPath`), thread QoS (EcoQoS, not background mode), WinHTTP
-    system proxy. Needs 8, 16. **NFS identity done** (2026-11-18): `cmdr-nfs`' `dial/platform/windows.rs` asks as
-    `nobody` with no groups, the machine name from `GetComputerNameExW(ComputerNameDnsHostname)`, and the app's
-    `this_mac_identity` reads it through `NfsIdentity::of_this_process`; a place sets its own uid and gid in the add
-    form, as on every OS.
+    system proxy. Needs 8, 16. **Done** (2026-11-19), each arm behind its seam:
+    - NFS identity (2026-11-18): `cmdr-nfs`' `dial/platform/windows.rs` asks as `nobody` with no groups, the machine
+      name from `GetComputerNameExW(ComputerNameDnsHostname)`, and the app's `this_mac_identity` reads it through
+      `NfsIdentity::of_this_process`; a place sets its own uid and gid in the add form, as on every OS.
+    - `adb.exe`: the search (already `adb.exe` and `%LOCALAPPDATA%\Android\Sdk`) adds WinGet's, Scoop's, and
+      Chocolatey's command folders, and `adb start-server` runs with `CREATE_NO_WINDOW`
+      (`cmdr-adb/src/server/platform/`), so a GUI Cmdr flashes no console window.
+    - Special folders: the favorites seed reads the Desktop, Documents, and Downloads known folders (`dirs`, which calls
+      `SHGetKnownFolderPath`), so OneDrive's folder backup and a moved folder seed right; the special-folder icon keys
+      already classify both spellings.
+    - Thread QoS: `cmdr_fs::thread_qos/platform/windows.rs`, `THREAD_PRIORITY_BELOW_NORMAL` plus EcoQoS (the
+      execution-speed power throttle), ❌ never background mode.
+    - System proxy: `cmdr-http` reads the user's Internet settings (`WinHttpGetIEProxyConfigForCurrentUser`) and walks
+      WPAD, the setup script, then the manual proxy and bypass list; PAC and WPAD run in WinHTTP
+      (`WinHttpGetProxyForUrl`) behind the shared PAC cache (`crates/cmdr-http/DETAILS.md` § "The Windows answer").
+    - Verified on the builder: `docs/notes/windows-port/build-progress.md` (2026-11-19, task 46). Not verified: a real
+      proxy, PAC server, or WPAD network configured in Windows' settings (the builder's stay untouched), Windows 11's
+      EcoQoS read-back, and a WinGet / Scoop / Chocolatey `adb` install. Left: the `cmdr-sftp` agent's Pageant support
+      (§ "Windows build state").
 47. [S] Windows. Crash minidumps (`crash-handler` + `minidumper`) and Windows-shaped crash cards in the api-server.
     Needs 23.
 48. [XS] Windows. **Done**. WebView2 specifics: every `cmdr-media` URL comes from `mediaUrl` via `convertFileSrc`
