@@ -145,14 +145,14 @@ Writing them:
 ## Checker script
 
 Always use **`pnpm check`** at the repo root (never raw `cargo` or `vitest`); it's cache-aware. **Before each commit:
-`pnpm check --fast && pnpm check svelte-tests-related`**, plus, if you touched Rust, `pnpm check clippy` and the Rust
-tests you touched (`cargo nextest run <name>`, `docs/tooling/testing.md`). `--fast` (~9 s) is scanners plus knip, no
-compilers, typecheckers, test suites, or formatters; `svelte-tests-related` runs the vitest files that reach your
-branch's changes; clippy (~25 s warm) catches in seconds what CI finds later. Scope by name (`pnpm check clippy`), tech
-(`rust`), or app (`desktop`). Docs: `scripts/check/CLAUDE.md`. Run only the checks your change touches, ❌ never a local
-full `pnpm check`: it takes 8–10 min and slows every session on the Mac, and `pnpm land`'s CI is the full run. Add
-`pnpm check --only-slow`, also backgrounded, only after the last milestone of a large effort (5+ non-translator
-subagents). ❌ Never `--include-slow`.
+`pnpm check --fast && pnpm check svelte-tests-related`**, plus, if you touched Rust, `pnpm check clippy` (plus
+`clippy-windows` for `cfg(windows)`) and the Rust tests you touched (`cargo nextest run <name>`,
+`docs/tooling/testing.md`). `--fast` (~9 s) is scanners plus knip, no compilers, typecheckers, test suites, or
+formatters; `svelte-tests-related` runs the vitest files that reach your branch's changes; clippy (~25 s) catches what
+CI would. Scope by name (`pnpm check clippy`), tech (`rust`), or app (`desktop`). Docs: `scripts/check/CLAUDE.md`. Run
+only the checks your change touches, ❌ never a local full `pnpm check`: it takes 8–10 min and slows every session on
+the Mac, and `pnpm land`'s CI is the full run. Add `pnpm check --only-slow`, also backgrounded, only after the last
+milestone of a large effort (5+ non-translator subagents). ❌ Never `--include-slow`.
 
 ## Testing
 

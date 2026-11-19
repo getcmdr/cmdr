@@ -5,22 +5,22 @@ How the GitHub workflows fit together, and the invariants that keep them honest.
 
 ## Workflow inventory
 
-| Workflow                      | Trigger                                 | What it does                                                                                        |
-| ----------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `ci.yml`                      | PRs, pushes to main, nightly, manual    | Main suite: change detection, one `uses:` job per lane (§ Lane files), the deploy, and `CI OK`      |
-| `<lane>-lane.yml`             | Called by `ci.yml`                      | One lane's steps each: `rust`, `rust-fixtures`, `macos`, `svelte`, `e2e-linux`, `website`, `light`  |
-| `windows-lane.yml`            | `main` pushes touching Rust, manual     | Non-blocking, outside `CI OK`: Windows clippy, plus a break report for the rest. § Windows lane     |
-| `ci-upkeep.yml`               | CI finished on a `main` push            | Warms `main`'s build caches, then drops superseded ones. § CI upkeep                                |
-| `slow-checks.yml`             | Nightly (3 AM UTC), manual              | osv-scanner, cargo-deny/udeps, govulncheck, website Docker build, 30-min SMB soak                   |
-| `advisories.yml`              | Daily (4:17 AM UTC), manual             | osv-scanner (every lockfile) and cargo-deny (no compile): new advisories surface in a day           |
-| `deploy-api-server.yml`       | Push to main touching `apps/api-server` | Deploys the Cloudflare Worker.                                                                      |
-| `deploy-dashboard.yml`        | Push to main touching the dashboard     | Builds and deploys the analytics dashboard to Cloudflare Pages.                                     |
-| `release.yml`                 | `v*` tags                               | Only calls `release-pipeline.yml` (so attestations name the reusable workflow as signer).           |
-| `release-pipeline.yml`        | Called by `release.yml`                 | Builds, signs, and publishes the app, and the site's browser demo. `docs/guides/releasing.md`       |
-| `scorecard.yml`               | Push to main, weekly, rule edits        | OpenSSF Scorecard: publishes the score (README badge) and SARIF to code scanning. § below           |
-| `codeql.yml`                  | PRs, push to main, weekly, manual       | CodeQL (Actions, JS/TS, Rust); a high or critical finding fails it and blocks releases. § below     |
-| `gradle-wrapper.yml`          | Push to main, wrapper PRs, weekly       | Checks the IntelliJ plugin's `gradle-wrapper.jar` against Gradle's published checksums. § Scorecard |
-| `sensitive-path-approval.yml` | David approves a PR                     | Reruns `CI OK` where the sensitive-path gate waited for that approval. § Branch protection          |
+| Workflow                      | Trigger                                 | What it does                                                                                         |
+| ----------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `ci.yml`                      | PRs, pushes to main, nightly, manual    | Main suite: change detection, one `uses:` job per lane (§ Lane files), the deploy, and `CI OK`       |
+| `<lane>-lane.yml`             | Called by `ci.yml`                      | One lane's steps each: `rust`, `rust-fixtures`, `macos`, `windows`, `svelte`, `e2e-linux`, and so on |
+| `windows-lane.yml`            | Called by `ci.yml`, manual              | Required on land runs that touch Rust: Windows clippy (native MSVC), plus a break report. § Windows  |
+| `ci-upkeep.yml`               | CI finished on a `main` push            | Warms `main`'s build caches, then drops superseded ones. § CI upkeep                                 |
+| `slow-checks.yml`             | Nightly (3 AM UTC), manual              | osv-scanner, cargo-deny/udeps, govulncheck, website Docker build, 30-min SMB soak                    |
+| `advisories.yml`              | Daily (4:17 AM UTC), manual             | osv-scanner (every lockfile) and cargo-deny (no compile): new advisories surface in a day            |
+| `deploy-api-server.yml`       | Push to main touching `apps/api-server` | Deploys the Cloudflare Worker.                                                                       |
+| `deploy-dashboard.yml`        | Push to main touching the dashboard     | Builds and deploys the analytics dashboard to Cloudflare Pages.                                      |
+| `release.yml`                 | `v*` tags                               | Only calls `release-pipeline.yml` (so attestations name the reusable workflow as signer).            |
+| `release-pipeline.yml`        | Called by `release.yml`                 | Builds, signs, and publishes the app, and the site's browser demo. `docs/guides/releasing.md`        |
+| `scorecard.yml`               | Push to main, weekly, rule edits        | OpenSSF Scorecard: publishes the score (README badge) and SARIF to code scanning. § below            |
+| `codeql.yml`                  | PRs, push to main, weekly, manual       | CodeQL (Actions, JS/TS, Rust); a high or critical finding fails it and blocks releases. § below      |
+| `gradle-wrapper.yml`          | Push to main, wrapper PRs, weekly       | Checks the IntelliJ plugin's `gradle-wrapper.jar` against Gradle's published checksums. § Scorecard  |
+| `sensitive-path-approval.yml` | David approves a PR                     | Reruns `CI OK` where the sensitive-path gate waited for that approval. § Branch protection           |
 
 `slow-checks.yml` also runs the long fuzz job (20 minutes per target, findings uploaded as `fuzz-artifacts`;
 `fuzz/DETAILS.md` § "Running and reproducing"), Miri, property mutants, and the pre-release gates. Kani and Shuttle run
@@ -81,13 +81,14 @@ them; the land run does, and a later land run on the same inputs skips them (§ 
 argument, store choice, the one risk (a filter missing an input) and its guards, and the per-lane wiring:
 `scripts/lane-markers/DETAILS.md`.
 
-The six path-filtered lanes are wired (`desktop-rust`, `desktop-rust-fixtures`, `desktop-rust-macos`, `desktop-svelte`,
-`desktop-e2e-linux`, `website`); the light lane isn't, since it gates on no filter. In `ci.yml`: `changes` plans
-(`lanes` output), each lane's `if:` adds `!fromJSON(needs.changes.outputs.lanes)['<id>'].verified` and passes its `.key`
-as `marker-key`, `e2e-base-image` follows the E2E lane's verdict, and `CI OK` runs `lane-markers verify` after its jq
-gate. In each lane file, the `lane-marker` action saves the key in a `marker` job that `needs` every other job of the
-lane, so one green job can't vouch for another. macOS's `finder-extension`, the Rust lane's `wasm`, and the website
-lane's `demo-suite` run only on demand, so their `marker` takes a skip only when the job wasn't asked for.
+The seven path-filtered lanes are wired (`desktop-rust`, `desktop-rust-fixtures`, `desktop-rust-macos`,
+`desktop-rust-windows`, `desktop-svelte`, `desktop-e2e-linux`, `website`); the light lane isn't, since it gates on no
+filter. In `ci.yml`: `changes` plans (`lanes` output), each lane's `if:` adds
+`!fromJSON(needs.changes.outputs.lanes)['<id>'].verified` and passes its `.key` as `marker-key`, `e2e-base-image`
+follows the E2E lane's verdict, and `CI OK` runs `lane-markers verify` after its jq gate. In each lane file, the
+`lane-marker` action saves the key in a `marker` job that `needs` every other job of the lane, so one green job can't
+vouch for another. macOS's `finder-extension`, the Rust lane's `wasm`, and the website lane's `demo-suite` run only on
+demand, so their `marker` takes a skip only when the job wasn't asked for.
 
 A PR run hashes `refs/pull/N/merge`, the PR merged with the current `main`. So a follow-up push skips a lane only while
 `main` hasn't moved any of that lane's inputs since the run that passed; a land that touched them makes a new tree and
@@ -152,9 +153,9 @@ server).
    `knip.json` it never saw (the CI gate review of 2026-11-05, F1). Narrowings would go in `laneCheckNarrowedInputs`,
    which is empty: each one is a place a marker vouches for a tree it didn't see.
 
-9. A lane file that triggers itself instead of being called (`windows-lane.yml`) holds its `push.paths` to rule 6 and
-   8's contract: the lane file, its local actions, `.mise.toml`, and every input of every check it runs
-   (`scripts/check/checks/ci-standalone-lanes.go`). Its paths are its only filter.
+9. A lane file that triggers itself instead of being called (none today; `windows-lane.yml` was one until it joined the
+   gate) holds its `push.paths` to rule 6 and 8's contract: the lane file, its local actions, `.mise.toml`, and every
+   input of every check it runs (`scripts/check/checks/ci-standalone-lanes.go`). Its paths are its only filter.
 
 Practical consequence: **when you add a check, CI fails until you either add a workflow step for it or set `NotInCI`
 with a reason.** When you rename one, CI fails until every workflow catches up. That's the point.
@@ -162,11 +163,11 @@ with a reason.** When you rename one, CI fails until every workflow catches up. 
 ## Lane files
 
 Each lane's steps live in a reusable workflow of its own (`rust-lane.yml`, `rust-fixtures-lane.yml`, `macos-lane.yml`,
-`svelte-lane.yml`, `e2e-linux-lane.yml`, `website-lane.yml`, `light-lane.yml`; `windows-lane.yml` is the one that
-triggers itself, § Windows lane), and `ci.yml` keeps the triggers, `changes`, one `uses:` job per lane, the base-image,
-publish, and deploy jobs, and `CI OK`. About a third of PR runs touched `ci.yml` (40 runs to 2026-11-04), and with every
-lane's steps in it, each such edit ran every lane: ~2 runner-hours, the macOS lane's 34 min among them. Now an edit to
-one lane file reruns that lane, and editing `ci.yml` itself still reruns all.
+`windows-lane.yml`, `svelte-lane.yml`, `e2e-linux-lane.yml`, `website-lane.yml`, `light-lane.yml`), and `ci.yml` keeps
+the triggers, `changes`, one `uses:` job per lane, the base-image, publish, and deploy jobs, and `CI OK`. About a third
+of PR runs touched `ci.yml` (40 runs to 2026-11-04), and with every lane's steps in it, each such edit ran every lane:
+~2 runner-hours, the macOS lane's 34 min among them. Now an edit to one lane file reruns that lane, and editing `ci.yml`
+itself still reruns all.
 
 - **The calling job keeps the lane's ID and `name:`**, so `CI OK`'s `needs`, the release gate, and `pnpm land`'s
   early-red matching (which reads a reusable workflow's jobs as `<caller name> / <job name>`) see the same lanes. A
@@ -413,9 +414,10 @@ These estimates are from the old jobs' step times; the first land runs on the sp
 job over the cap queues. The splits made a land run wider: at its peak (the first few minutes) one runs about 18 Linux
 jobs (the light lane and `go-tools`; Rust `lane`, `nextest-filters`, `kani`, `shuttle`; fixtures `lane` and `nextcloud`;
 Svelte `checks`, `eslint-typecheck`, and four Vitest slices; the E2E build; the website's `demo`; plus `changes` and the
-gate) and one macOS job, and the three E2E slices start as the Vitest slices finish. Two land runs at once, or a land
-run beside a light run, queue some jobs; a light run alone is far narrower (no Rust, fixtures, macOS, or E2E). If
-queueing eats the gain, shard Vitest three ways before anything else, since its slices are the shortest.
+gate), one Windows job (which counts toward the 20), and one macOS job, and the three E2E slices start as the Vitest
+slices finish. Two land runs at once, or a land run beside a light run, queue some jobs; a light run alone is far
+narrower (no Rust, fixtures, macOS, or E2E). If queueing eats the gain, shard Vitest three ways before anything else,
+since its slices are the shortest.
 
 ## CI upkeep
 
@@ -622,9 +624,15 @@ The CI failure history that motivated it: `docs/notes/ci-health-2026-10.md`.
 
 ## Windows lane
 
-`windows-lane.yml`, one job on `windows-latest`. Cmdr doesn't build for Windows yet (`docs/specs/windows-port-plan.md`),
-and this lane turns the audits' static guesses into a real break list, natively, since a cross-check from Linux stalls
-on any build script that needs MSVC's `cl.exe`.
+`windows-lane.yml`, one job on `windows-latest` plus a marker job, called by `ci.yml`'s `desktop-rust-windows` and in
+`CI OK`'s `needs`: no land that touches Rust merges unless the workspace compiles and passes clippy for Windows. Cmdr
+doesn't ship for Windows yet (`docs/specs/windows-port-plan.md`), but the port lands on `main` daily, and every other
+lane builds for Linux or macOS, so `cfg(windows)` code is compiled nowhere else. Native (MSVC, the target Cmdr will
+ship), since a cross-check from Linux stalls on any build script that needs MSVC's `cl.exe`.
+
+Why it gates (2026-11-19): while the lane ran only after a land, PR #1270 landed a Windows-only `unused_mut` in a
+`cmdr-operations` test (an error under `-D warnings` on Windows alone), and `main`'s Windows lane stayed red until a
+later PR happened to fix it.
 
 - **Must compile (the lane's red)**: `desktop-rust-clippy`, which on a Windows host selects every member whose
   `platforms` allows Windows. That's every member except the `windowsPending` ones in
@@ -646,17 +654,21 @@ on any build script that needs MSVC's `cl.exe`.
   host, `CMDR_WINDOWS_BREAKS_TARGET=x86_64-pc-windows-gnu pnpm check windows-breaks` gives the same report from a mingw
   cross-check (`apt-get install mingw-w64`, `rustup target add x86_64-pc-windows-gnu`). On a Mac, zig stands in for
   mingw's C compiler and `AWS_LC_SYS_PREBUILT_NASM=1` for NASM; that recipe's in the progress log above.
-- **When it runs**: after a push to `main` that touches what its checks read (its `push.paths`, held to their
-  fingerprints by `ci-coverage` rule 9), and on demand on any branch: `gh workflow run windows-lane.yml --ref <branch>`,
-  which is how a Windows task checks its branch before landing. Never on a PR run: it would add a Windows job, about as
-  long as the Rust lane, to every land run's concurrent-job budget (§ Build caching, Critical path) while gating
-  nothing. A newer push cancels the run in flight (`cancel-in-progress`): each `main` commit checks a superset of the
-  one before it.
-- **Outside every gate, by construction**: it's its own workflow, not a `ci.yml` job, so `CI OK` and `CI light` never
-  see it (a job inside `ci.yml` would turn the run's conclusion red even outside `CI OK`'s `needs`, as `ci-upkeep.yml`'s
-  history shows, § CI upkeep), and `pnpm land` never waits for it (it runs after the land). It reads no lane marker and
-  saves none (`scripts/lane-markers/` finds lanes in `ci.yml` only), and `apps/api-server/src/ci-health.ts` doesn't
-  watch it, so a red run reaches nobody's digest. Read it from the Actions tab.
+- **When it runs**: a land run (§ Light runs and land runs) whose change matches the `rust-windows` filter (the Rust
+  lanes' shared `rust-inputs` plus the lane file), and every full run (the nightly, the release gate's `run_all`). A
+  light run skips it like the other heavy lanes, and a lane marker skips it when its exact inputs already passed. By
+  hand on any branch: `gh workflow run windows-lane.yml --ref <branch>` (no marker saved).
+- **Cost, and why native over a Linux cross-compile**: measured on the runs of 2026-11-19, the lane takes 7–11 min cold
+  (run 44462048164: 10.3 min, clippy over the whole workspace 8.7 of it), while a land run's wall clock was 17–22 min,
+  set by Svelte, E2E, and the Rust lanes, so it starts at t=0 and finishes well inside the critical path: about zero
+  added landing time. A `cargo clippy --target x86_64-pc-windows-gnu` job on ubuntu would also be a cold whole-workspace
+  build (no cache budget, § Build caching), so no faster, and it would lint mingw instead of the MSVC target we ship. It
+  costs one more job in the account's 20-job budget (§ Critical path); Windows minutes are free on a public repo.
+- **Before pushing: `pnpm check clippy-windows`** (`desktop-rust-clippy-windows`), the same clippy question for
+  `x86_64-pc-windows-gnu` from a Mac, in the Linux lanes' Docker container (its image carries mingw-w64; ~2 min warm on
+  the laptop). Run it when a change touches Rust that a `cfg(windows)`, `cfg(not(unix))`, or `target_os` gate hides from
+  the host; it caught the PR #1270 shape locally (2026-11-19). What only differs between mingw and MSVC
+  (`cfg(target_env = "msvc")` code, `build.rs`'s MSVC manifest path) stays this lane's.
 - **Setup, and what differs from the other lanes**:
   - Git Bash for every step (`defaults.run.shell: bash`), and the check runner called directly as `check.exe`, since
     there's no Node: `pnpm check` and `scripts/check.sh` aren't used. The runner builds for Windows, which
@@ -669,28 +681,16 @@ on any build script that needs MSVC's `cl.exe`.
     keys stable, and this lane has no Rust cache.
   - `core.autocrlf false` and `core.longpaths true` before the checkout, so the tree's bytes match every other OS's.
   - No Rust cache, on purpose: the repo sits near its 10 GB budget (§ Build caching), a Windows `target/` would be one
-    more multi-GB entry, and a non-blocking lane can afford a cold build. Revisit at promotion.
-- **Promotion to blocking**: the first condition holds (2026-11-18: `windowsPending` is empty, the whole workspace is on
-  the must-compile list). What's left, in order:
-  1. A few green runs of this lane on `main` with the app in it. The app is the heaviest member: its clippy alone took
-     12 min cold on the 2-core builder, so measure the lane's new wall time against the 75-min cap and the critical path
-     (§ Critical path) before it gates anything.
-  2. Decide the Rust cache (above): a cold whole-workspace build on every land run is likely too slow to gate on.
-  3. The wiring: replace the `push`/`workflow_dispatch` triggers with `workflow_call` (plus a `marker-key` input and a
-     `marker` job, like `macos-lane.yml`), add a `desktop-rust-windows` caller in `ci.yml` gated on a filter of its own
-     and in `CI OK`'s `needs`, and retire the break report, which now has nothing left to report.
-  4. Then `desktop-rust-tests` on Windows, which isn't green yet: the app's suite there and the crates' failure clusters
-     (#1225 app paths, #1226, #1232) are in the build log, and `docs/notes/windows-port/frontend-build-audit.md` § 3
-     covers the frontend half.
+    more multi-GB entry, and the cold build already fits under the critical path. Revisit if the lane outgrows it.
+- **What's next**: retire the break report (`windowsPending` is empty, so it has nothing left to report), then
+  `desktop-rust-tests` on Windows, which isn't green yet: the app's suite there and the crates' failure clusters (#1225
+  app paths, #1226, #1232) are in the build log, and the frontend half is in
+  `docs/notes/windows-port/frontend-build-audit.md` § "3. CI, check runner, release".
 - **Windows 10 on real hardware: `ssh mami`**, a 2-core laptop on Windows 10 22H2 with MSVC. Read
   `~/projects-git/vdavid/infra/mami-laptop/CLAUDE.md` first: the `D:` build drive needs unlocking, and the toolchain and
   the checkout (`D:\src\cmdr`) live on it. To run Cmdr's GUI on its desktop from the Mac, use
   `~/projects-git/vdavid/infra/mami-laptop/run-on-desktop.sh --unlock-d -- 'D:\src\cmdr\target\debug\cmdr.exe'`: it
   returns the program's logs and a screenshot (`--help` lists the options, like `--wait`, `--keys`, and `--close`).
-- **Only a real run can prove**: that `jdx/mise-action` installs Go on `windows-latest` through the action's retry
-  wrapper; that `aws-lc-sys` (under `cmdr-http`) builds with the image's MSVC and NASM setup; that the runner's process
-  groups and `taskkill` behave; that `D:` has room for a cold whole-tree `cargo check`; and how long that takes (the
-  75-min cap is a guess). The mingw cross-check stands in for none of these.
 
 ## OpenSSF Scorecard
 
@@ -774,9 +774,10 @@ through `CODEQL_EXTRACTOR_RUST_OPTION_*` env vars.
 
 An agent pushes each milestone with `pnpm land -no-wait`, and most of those pushes are never landed as they are. So a PR
 run is **light** until someone asks to land its head: `desktop-rust`, `desktop-rust-fixtures`, `desktop-rust-macos`,
-`desktop-e2e-linux`, and `e2e-base-image` skip, and every other lane runs as usual. `pnpm land` asks by adding the PR's
-`land` label; that `labeled` run, any re-run of it, and every later push while the label stays are **land runs**, where
-every lane the change needs runs or skips as a verified marker (§ Lane markers), the same gate as before.
+`desktop-rust-windows`, `desktop-e2e-linux`, and `e2e-base-image` skip, and every other lane runs as usual. `pnpm land`
+asks by adding the PR's `land` label; that `labeled` run, any re-run of it, and every later push while the label stays
+are **land runs**, where every lane the change needs runs or skips as a verified marker (§ Lane markers), the same gate
+as before.
 
 - **The gate's name is the line `main` holds.** `ci-ok`'s `name:` is `CI OK` on a land run and `CI light` on a light
   one, so a light run's green gate is a check the ruleset doesn't accept. GitHub creates a job's check run only when the
