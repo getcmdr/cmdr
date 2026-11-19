@@ -9,6 +9,7 @@
 
 use crate::index_feed::{IndexFeed, Taken};
 use bytes::Bytes;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::{Volume, VolumeError, VolumeRandomReader};
 use rustic_core::repofile::KeyFile;
 use rustic_core::{BytesList, ErrorKind, FileType, Id, ReadBackend, RusticError, RusticResult, WriteBackend};
@@ -108,7 +109,10 @@ impl VolumeBackend {
     /// The files in `dir` whose names are restic ids, with their sizes. A missing
     /// folder lists as empty (`index/` can be empty, and some copies drop it).
     fn list_ids_in(&self, dir: &Path) -> RusticResult<Vec<(Id, u32)>> {
-        let entries = match self.handle.block_on(self.parent.list_directory(dir, None)) {
+        let entries = match self
+            .handle
+            .block_on(self.parent.list_directory(&AppPath::legacy_unchecked(dir), None))
+        {
             Ok(entries) => entries,
             Err(VolumeError::NotFound(_)) => return Ok(Vec::new()),
             Err(err) => return Err(backend_error(err)),
@@ -127,7 +131,7 @@ impl VolumeBackend {
     /// index) and as the fallback for a parent without ranged reads.
     fn read_stream(&self, path: &Path, stop_after: Option<usize>) -> Result<Vec<u8>, VolumeError> {
         self.handle.block_on(async {
-            let mut stream = self.parent.open_read_stream(path).await?;
+            let mut stream = self.parent.open_read_stream(&AppPath::legacy_unchecked(path)).await?;
             let mut out = Vec::new();
             while let Some(chunk) = stream.next_chunk().await {
                 out.extend_from_slice(&chunk?);
@@ -195,7 +199,8 @@ impl VolumeBackend {
         {
             return self.handle.block_on(reader.read_at(offset, length));
         }
-        self.handle.block_on(self.parent.read_range(path, offset, length))
+        self.handle
+            .block_on(self.parent.read_range(&AppPath::legacy_unchecked(path), offset, length))
     }
 
     /// The reader held open for the pack at `path`, opened on first use. `None`
@@ -217,7 +222,10 @@ impl VolumeBackend {
                 return Ok(Some(reader));
             }
         }
-        let opened = match self.handle.block_on(self.parent.open_random_reader(path)) {
+        let opened = match self
+            .handle
+            .block_on(self.parent.open_random_reader(&AppPath::legacy_unchecked(path)))
+        {
             Ok(reader) => Arc::new(HeldReader {
                 reader: Some(reader),
                 handle: self.handle.clone(),
@@ -483,10 +491,10 @@ impl ReadBackend for VolumeBackend {
     fn list_with_size(&self, tpe: FileType) -> RusticResult<Vec<(Id, u32)>> {
         match tpe {
             // rustic lists the config as one file with the default id.
-            FileType::Config => match self
-                .handle
-                .block_on(self.parent.get_metadata(&self.path_of(tpe, &Id::default())))
-            {
+            FileType::Config => match self.handle.block_on(
+                self.parent
+                    .get_metadata(&AppPath::legacy_unchecked(&self.path_of(tpe, &Id::default()))),
+            ) {
                 Ok(entry) if !entry.is_directory => Ok(vec![(Id::default(), size_u32(entry.size.unwrap_or(0)))]),
                 Ok(_) | Err(VolumeError::NotFound(_)) => Ok(Vec::new()),
                 Err(err) => Err(backend_error(err)),
@@ -495,7 +503,10 @@ impl ReadBackend for VolumeBackend {
             // than asking for all 256 names.
             FileType::Pack => {
                 let data = self.root.join(tpe.dirname());
-                let subdirs = match self.handle.block_on(self.parent.list_directory(&data, None)) {
+                let subdirs = match self
+                    .handle
+                    .block_on(self.parent.list_directory(&AppPath::legacy_unchecked(&data), None))
+                {
                     Ok(entries) => entries,
                     Err(VolumeError::NotFound(_)) => return Ok(Vec::new()),
                     Err(err) => return Err(backend_error(err)),

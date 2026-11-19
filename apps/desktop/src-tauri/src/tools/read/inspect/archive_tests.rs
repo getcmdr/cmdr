@@ -3,6 +3,8 @@
 
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::BridgedPath;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -434,8 +436,11 @@ fn a_file_on_a_connected_remote_volume_is_inspected_through_its_stream() {
     let root = "mtp://inspect-file-remote/1";
     let path = format!("{root}/notes.txt");
     let volume = InMemoryVolume::new("Remote device").with_root(root);
-    tauri::async_runtime::block_on(volume.create_file(Path::new(&path), b"from the phone\nsecond line\n"))
-        .expect("seed remote file");
+    tauri::async_runtime::block_on(volume.create_file(
+        &AppPath::legacy_unchecked(Path::new(&path)),
+        b"from the phone\nsecond line\n",
+    ))
+    .expect("seed remote file");
     let _registration = TestVolumeRegistration::install("inspect-file-remote", Arc::new(volume));
 
     let row = inspect(Path::new(&path));
@@ -451,7 +456,7 @@ fn a_file_on_a_connected_remote_volume_is_inspected_through_its_stream() {
 }
 
 struct OsVisibleRemote {
-    root: PathBuf,
+    root: BridgedPath,
 }
 
 impl Volume for OsVisibleRemote {
@@ -459,8 +464,8 @@ impl Volume for OsVisibleRemote {
         "Mounted SMB"
     }
 
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -469,7 +474,7 @@ impl Volume for OsVisibleRemote {
 
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         unreachable!("an OS-visible path must be read directly, not through its volume")
@@ -477,7 +482,7 @@ impl Volume for OsVisibleRemote {
 
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         unreachable!("an OS-visible path must be read directly, not through its volume")
     }
@@ -496,7 +501,7 @@ fn an_os_visible_remote_path_reads_directly_even_without_local_fs_access() {
     let dir = TestDir::new("inspect_mounted_smb");
     let path = write_bytes(&dir, "notes.txt", b"through the mount\n");
     let volume = OsVisibleRemote {
-        root: dir.to_path_buf(),
+        root: BridgedPath::new(dir.to_path_buf()),
     };
     let _registration = TestVolumeRegistration::install("inspect-mounted-smb", Arc::new(volume));
 

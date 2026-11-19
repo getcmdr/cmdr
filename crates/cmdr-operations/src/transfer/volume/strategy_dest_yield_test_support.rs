@@ -9,9 +9,9 @@
 //! Sources, gates, tuning guards, and every other double live in the general
 //! `strategy_test_support.rs`.
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::ops::ControlFlow;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex as StdMutex};
@@ -103,31 +103,31 @@ impl Volume for ForegroundBusyDest {
     fn name(&self) -> &str {
         "foreground-busy-dest"
     }
-    fn root(&self) -> &Path {
-        Path::new("/")
+    fn root(&self) -> &AppPath {
+        AppPath::from_normalized("/").expect("a canonical literal")
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(Vec::new()) })
     }
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { false })
     }
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(false) })
     }
@@ -140,8 +140,8 @@ impl Volume for ForegroundBusyDest {
     /// file twice, which is not what any of these suites are measuring.
     fn rename<'a>(
         &'a self,
-        _from: &'a Path,
-        _to: &'a Path,
+        _from: &'a AppPath,
+        _to: &'a AppPath,
         _force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(()) })
@@ -173,7 +173,7 @@ impl Volume for ForegroundBusyDest {
     }
     fn write_from_stream<'a>(
         &'a self,
-        _dest: &'a Path,
+        _dest: &'a AppPath,
         _mode: WriteMode,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,
@@ -228,31 +228,31 @@ impl Volume for PanicIfProbedDest {
     fn name(&self) -> &str {
         "panic-if-probed-dest"
     }
-    fn root(&self) -> &Path {
-        Path::new("/")
+    fn root(&self) -> &AppPath {
+        AppPath::from_normalized("/").expect("a canonical literal")
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(Vec::new()) })
     }
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { false })
     }
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(false) })
     }
@@ -265,8 +265,8 @@ impl Volume for PanicIfProbedDest {
     /// file twice, which is not what any of these suites are measuring.
     fn rename<'a>(
         &'a self,
-        _from: &'a Path,
-        _to: &'a Path,
+        _from: &'a AppPath,
+        _to: &'a AppPath,
         _force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(()) })
@@ -279,7 +279,7 @@ impl Volume for PanicIfProbedDest {
     }
     fn write_from_stream<'a>(
         &'a self,
-        _dest: &'a Path,
+        _dest: &'a AppPath,
         _mode: WriteMode,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,

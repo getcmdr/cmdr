@@ -13,6 +13,7 @@
 //!   most — a secret is tried once and never again unattended — needs a server
 //!   that says no.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -508,7 +509,11 @@ async fn sftp_integration_signing_in_with_the_right_password_comes_back_and_is_r
         .await
         .expect(FIXTURE);
 
-    assert!(volume.exists(std::path::Path::new("hello.txt")).await);
+    assert!(
+        volume
+            .exists(&AppPath::legacy_unchecked(std::path::Path::new("hello.txt")))
+            .await
+    );
     assert_eq!(
         credentials
             .stored(&params.credential_service(), FIXTURE_USER)
@@ -548,7 +553,9 @@ async fn sftp_integration_an_encrypted_key_comes_back_when_its_passphrase_is_rem
     volume.attempt_reconnect().await.expect(FIXTURE);
 
     assert!(
-        volume.exists(std::path::Path::new("hello.txt")).await,
+        volume
+            .exists(&AppPath::legacy_unchecked(std::path::Path::new("hello.txt")))
+            .await,
         "the stored passphrase unlocked the key again, with nobody watching"
     );
     assert!(
@@ -584,14 +591,20 @@ async fn sftp_integration_the_toggle_off_leaves_a_reachable_server_alone() {
         "❌ no dial, however easy one would have been: {refusal:?}"
     );
     assert!(
-        !volume.exists(std::path::Path::new("hello.txt")).await,
+        !volume
+            .exists(&AppPath::legacy_unchecked(std::path::Path::new("hello.txt")))
+            .await,
         "and the volume is genuinely still down"
     );
 
     let first = Volume::connection_generation(&volume).expect("an SFTP volume reports its generation");
     volume.set_auto_reconnect(true);
     volume.attempt_reconnect().await.expect(FIXTURE);
-    assert!(volume.exists(std::path::Path::new("hello.txt")).await);
+    assert!(
+        volume
+            .exists(&AppPath::legacy_unchecked(std::path::Path::new("hello.txt")))
+            .await
+    );
     assert_eq!(
         Volume::connection_generation(&volume),
         Some(first + 1),
@@ -629,7 +642,11 @@ async fn sftp_integration_switching_the_toggle_on_revives_a_volume_that_is_alrea
     // `Disconnected` state the switch acts on. With the switch off, no loop was
     // started and nothing redials.
     volume.simulate_session_loss().await;
-    assert!(!volume.exists(std::path::Path::new("hello.txt")).await);
+    assert!(
+        !volume
+            .exists(&AppPath::legacy_unchecked(std::path::Path::new("hello.txt")))
+            .await
+    );
     assert!(matches!(
         volume.attempt_reconnect().await,
         Err(cmdr_fs::volume::VolumeError::NotSupported)
@@ -640,7 +657,10 @@ async fn sftp_integration_switching_the_toggle_on_revives_a_volume_that_is_alrea
     // ❗ Under nextest's own per-test timeout, so a regression fails with the
     // message below rather than as an opaque "timed out".
     let came_back = tokio::time::timeout(std::time::Duration::from_secs(20), async {
-        while !volume.exists(std::path::Path::new("hello.txt")).await {
+        while !volume
+            .exists(&AppPath::legacy_unchecked(std::path::Path::new("hello.txt")))
+            .await
+        {
             // allowed-test-sleep: the poll interval of a wait-on-a-condition loop, not a fixed wait — the deadline
             // above is what fails the cell, and this crate has no `wait_until_async` of its own.
             tokio::time::sleep(std::time::Duration::from_millis(250)).await;
@@ -694,7 +714,9 @@ async fn sftp_integration_an_encrypted_key_with_nothing_remembered_asks_and_stay
         .expect(FIXTURE);
 
     assert!(
-        volume.exists(std::path::Path::new("hello.txt")).await,
+        volume
+            .exists(&AppPath::legacy_unchecked(std::path::Path::new("hello.txt")))
+            .await,
         "the typed passphrase unlocked the key for this session"
     );
     assert_eq!(

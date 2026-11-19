@@ -9,6 +9,8 @@
 //! keep their bytes (`staged_write_tests.rs`); these cells pin what the
 //! terminal event says, at the three drivers.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::ops::ControlFlow;
 use std::path::{Path, PathBuf};
@@ -81,7 +83,10 @@ async fn run(
     let mut paths = Vec::new();
     for n in 0..count {
         let path = PathBuf::from(format!("/f{n}.txt"));
-        source.create_file(&path, b"the user's bytes").await.unwrap();
+        source
+            .create_file(&AppPath::legacy_unchecked(&path), b"the user's bytes")
+            .await
+            .unwrap();
         paths.push(path);
     }
     let source = source as Arc<dyn Volume>;
@@ -120,7 +125,7 @@ async fn run(
 
 async fn dest() -> Arc<InMemoryVolume> {
     let dest = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest.create_directory(Path::new("/inbox")).await.unwrap();
+    dest.create_directory(app_path!("/inbox")).await.unwrap();
     dest
 }
 
@@ -167,7 +172,7 @@ async fn a_failure_that_names_its_own_rescue_lists_only_the_others() {
     let events = Arc::new(CollectorEventSink::new());
     let inner = dest().await;
     // The copy's own rescue: the name takes no rename once the way is cleared.
-    inner.create_file(Path::new("/inbox/f0.txt"), b"OLD").await.unwrap();
+    inner.create_file(app_path!("/inbox/f0.txt"), b"OLD").await.unwrap();
     inner.set_rename_to_failing(Path::new("/inbox/f0.txt"));
     landings_kept_earlier(&state);
     let config = VolumeCopyConfig {
@@ -175,7 +180,7 @@ async fn a_failure_that_names_its_own_rescue_lists_only_the_others() {
         ..VolumeCopyConfig::default()
     };
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_file(Path::new("/f0.txt"), b"NEW").await.unwrap();
+    source.create_file(app_path!("/f0.txt"), b"NEW").await.unwrap();
 
     let error = copy_volumes_with_progress(
         events,
@@ -234,7 +239,7 @@ impl Volume for CancelsAtTheFirstWrite {
 
     fn write_from_stream<'a>(
         &'a self,
-        _dest: &'a Path,
+        _dest: &'a AppPath,
         _mode: WriteMode,
         _length: StreamLength,
         _stream: Box<dyn VolumeReadStream>,

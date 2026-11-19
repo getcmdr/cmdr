@@ -11,6 +11,7 @@
 //! scan the transfer dialog uses, through `ScanBoundary`, which bumps the totals
 //! as it goes.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -77,7 +78,7 @@ pub(super) fn start(
 ) -> tokio::task::JoinHandle<Result<Measured, MeasureError>> {
     match volume.local_path() {
         Some(root) => {
-            let path = cmdr_fs::volume::root_anchored(&root, Path::new(&folder));
+            let path = cmdr_fs::volume::root_anchored(&root.as_std_legacy(), Path::new(&folder));
             // No async task retained waiting for an uninterruptible syscall.
             tokio::task::spawn_blocking(move || walk_local(&path, &job, &live))
         }
@@ -97,7 +98,10 @@ async fn measure_through_volume(
     let on_progress = |progress: ListingProgress| live.set(progress);
     let boundary = ScanBoundary::new(Some(&on_progress)).stopping_at(ScanStop::new(Arc::clone(job) as _));
     match volume
-        .scan_for_copy_batch_with_boundary(&[PathBuf::from(folder)], &boundary)
+        .scan_for_copy_batch_with_boundary(
+            &[AppPath::legacy_unchecked(&PathBuf::from(folder)).into_owned()],
+            &boundary,
+        )
         .await
     {
         Ok(_) if job.is_cancelled() => Err(MeasureError::Stopped),

@@ -4,6 +4,7 @@
 use super::{ResticRepos, Tuning};
 use crate::path::VIRTUAL_ENTRY_NAME;
 use crate::test_fixtures::FixtureRepo;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::{WedgedVolume, wait_until_async};
 use cmdr_fs::volume::host::VolumeHost;
@@ -36,7 +37,10 @@ impl CountingParent {
     async fn slow(delay: Duration) -> Arc<Self> {
         let inner = InMemoryVolume::new("testshare");
         FixtureRepo::init("pw").write_into(&inner, Path::new(REPO)).await;
-        inner.create_directory(Path::new(PLAIN)).await.expect("plain folder");
+        inner
+            .create_directory(&AppPath::legacy_unchecked(Path::new(PLAIN)))
+            .await
+            .expect("plain folder");
         Arc::new(Self {
             inner,
             delay,
@@ -63,7 +67,7 @@ impl Volume for CountingParent {
         self.inner.name()
     }
 
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
 
@@ -73,7 +77,7 @@ impl Volume for CountingParent {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.listings.fetch_add(1, Ordering::SeqCst);
@@ -88,7 +92,7 @@ impl Volume for CountingParent {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }

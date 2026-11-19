@@ -13,6 +13,7 @@
 //! is mostly trait signatures, and folding them in put that file over the
 //! `file-length` warn threshold.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -124,7 +125,7 @@ impl Volume for GatedUploadSource {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -141,36 +142,39 @@ impl Volume for GatedUploadSource {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_copy(path)
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let bytes = self.files.get(path).map(Arc::clone);
         let gate = Arc::clone(&self.gate);
         let handed_out = Arc::clone(&self.handed_out);
@@ -180,6 +184,8 @@ impl Volume for GatedUploadSource {
             .filter(|(failing, _)| failing == path)
             .map(|(_, cue)| Arc::clone(cue));
         Box::pin(async move {
+            let path_std = path_app.as_std_legacy();
+            let path: &Path = &path_std;
             let bytes = bytes.ok_or_else(|| VolumeError::NotFound(path.display().to_string()))?;
             let stream: Box<dyn VolumeReadStream> = match cue {
                 Some(cue) => Box::new(FailsOnCue {
@@ -244,12 +250,12 @@ async fn gated_files_failing(
         let path = PathBuf::from(path);
         if let Some(parent) = path.parent().filter(|parent| *parent != Path::new("/")) {
             inner
-                .create_directory_all(parent)
+                .create_directory_all(&AppPath::legacy_unchecked(parent))
                 .await
                 .expect("making the gated source's folders");
         }
         inner
-            .create_file(&path, &bytes)
+            .create_file(&AppPath::legacy_unchecked(&path), &bytes)
             .await
             .expect("seeding the gated source");
         served.insert(path, Arc::new(bytes));
@@ -358,7 +364,7 @@ impl Volume for GatedReads {
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             let inner = self.inner.open_read_stream(path).await?;

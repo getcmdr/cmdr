@@ -9,8 +9,7 @@
 //! last cell walks a file across several windows to prove the reassembly and the
 //! cancel-keeps-the-partial promise the copy engine leans on.
 
-use std::path::Path;
-
+use cmdr_fs::app_path;
 use cmdr_fs::volume::{StreamLength, Volume};
 
 use crate::testing::{
@@ -53,7 +52,7 @@ async fn read_range_resolves_storage_info_once_per_device() {
     for i in 0..5u64 {
         let offset = i * 4096;
         let window = volume
-            .read_range(Path::new("/blob.bin"), offset, 4096)
+            .read_range(app_path!("/blob.bin"), offset, 4096)
             .await
             .expect("ranged read should succeed");
         assert_eq!(
@@ -82,7 +81,7 @@ async fn storage_info_invalidation_forces_a_fresh_storage_lookup() {
     let volume = volume_for(connection_manager(), &device, None).await;
 
     volume
-        .read_range(Path::new("/blob.bin"), 0, 1024)
+        .read_range(app_path!("/blob.bin"), 0, 1024)
         .await
         .expect("first read");
     assert_eq!(connection_manager().storage_lookup_count(&device.id).await, 1);
@@ -92,7 +91,7 @@ async fn storage_info_invalidation_forces_a_fresh_storage_lookup() {
         .await;
 
     volume
-        .read_range(Path::new("/blob.bin"), 1024, 1024)
+        .read_range(app_path!("/blob.bin"), 1024, 1024)
         .await
         .expect("read after invalidation");
     assert_eq!(
@@ -115,13 +114,13 @@ async fn read_range_clamps_at_end_of_file() {
     let volume = volume_for(connection_manager(), &device, None).await;
 
     let tail = volume
-        .read_range(Path::new("/blob.bin"), 4000, 4096)
+        .read_range(app_path!("/blob.bin"), 4000, 4096)
         .await
         .expect("a read overrunning EOF should succeed");
     assert_eq!(tail, &bytes[4000..], "the overrunning read returns the tail only");
 
     let past_eof = volume
-        .read_range(Path::new("/blob.bin"), 5000, 1024)
+        .read_range(app_path!("/blob.bin"), 5000, 1024)
         .await
         .expect("a read starting at EOF should succeed");
     assert!(
@@ -153,7 +152,7 @@ async fn bounded_window_read_assembles_byte_exact() {
 
     let vol = volume_for(connection_manager(), &device, None).await;
     let mut stream = vol
-        .open_read_stream(Path::new("/bigfile.bin"))
+        .open_read_stream(app_path!("/bigfile.bin"))
         .await
         .expect("open_read_stream should succeed");
 
@@ -187,7 +186,7 @@ async fn bounded_window_read_assembles_byte_exact() {
     // window bookkeeping is mtp-rs's, but "a cancel mid-read keeps the
     // partial" is what the copy engine relies on.
     let mut partial = vol
-        .open_read_stream(Path::new("/bigfile.bin"))
+        .open_read_stream(app_path!("/bigfile.bin"))
         .await
         .expect("open_read_stream should succeed");
     let first = partial.next_chunk().await.expect("a window").expect("ok");

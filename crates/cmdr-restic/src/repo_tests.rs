@@ -1,6 +1,7 @@
 use super::{IndexedRepo, ResticError, ResticRepo};
 use crate::snapshots::snapshot_list_of;
 use crate::test_fixtures::FixtureRepo;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeError};
@@ -87,7 +88,7 @@ async fn opening_and_listing_never_write_to_the_repo() {
     // No lock file either: rustic's read path doesn't take restic locks.
     assert!(
         parent
-            .list_directory(&Path::new(ROOT).join("locks"), None)
+            .list_directory(&AppPath::legacy_unchecked(&Path::new(ROOT).join("locks")), None)
             .await
             .expect("locks/")
             .is_empty()
@@ -98,7 +99,10 @@ async fn opening_and_listing_never_write_to_the_repo() {
 async fn a_folder_without_a_config_is_not_a_repository() {
     let fixture = FixtureRepo::init(PASSWORD);
     let parent = parent_with(&fixture, InMemoryVolume::new("nas")).await;
-    parent.delete(&Path::new(ROOT).join("config")).await.expect("rm config");
+    parent
+        .delete(&AppPath::legacy_unchecked(&Path::new(ROOT).join("config")))
+        .await
+        .expect("rm config");
 
     let result = open(&parent, PASSWORD).await;
     assert!(matches!(result, Err(ResticError::NotARepository)), "got {result:?}");

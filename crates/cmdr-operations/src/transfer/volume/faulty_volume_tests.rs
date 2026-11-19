@@ -3,6 +3,7 @@
 //! asserting against a scenario that never happened.
 
 use super::*;
+use cmdr_fs::app_path;
 use cmdr_fs::volume::InMemoryVolume;
 
 fn io(message: &str) -> VolumeError {
@@ -14,9 +15,9 @@ fn io(message: &str) -> VolumeError {
 
 async fn seeded() -> Arc<InMemoryVolume> {
     let vol = Arc::new(InMemoryVolume::new("Faulty"));
-    vol.create_directory(Path::new("/dir")).await.unwrap();
-    vol.create_file(Path::new("/dir/a.txt"), b"AAA").await.unwrap();
-    vol.create_file(Path::new("/dir/b.txt"), b"BBB").await.unwrap();
+    vol.create_directory(app_path!("/dir")).await.unwrap();
+    vol.create_file(app_path!("/dir/a.txt"), b"AAA").await.unwrap();
+    vol.create_file(app_path!("/dir/b.txt"), b"BBB").await.unwrap();
     vol
 }
 
@@ -29,11 +30,11 @@ async fn an_unarmed_wrapper_forwards_everything() {
 
     assert_eq!(faulty.name(), inner.name());
     assert_eq!(faulty.root(), inner.root());
-    assert!(faulty.is_directory(Path::new("/dir")).await.unwrap());
-    assert!(faulty.exists(Path::new("/dir/a.txt")).await);
-    assert_eq!(faulty.list_directory(Path::new("/dir"), None).await.unwrap().len(), 2);
+    assert!(faulty.is_directory(app_path!("/dir")).await.unwrap());
+    assert!(faulty.exists(app_path!("/dir/a.txt")).await);
+    assert_eq!(faulty.list_directory(app_path!("/dir"), None).await.unwrap().len(), 2);
     assert_eq!(
-        faulty.get_metadata(Path::new("/dir/a.txt")).await.unwrap().size,
+        faulty.get_metadata(app_path!("/dir/a.txt")).await.unwrap().size,
         Some(3)
     );
 }
@@ -48,18 +49,18 @@ async fn the_armed_call_fails_and_the_one_before_it_does_not() {
         .arc();
 
     assert!(
-        faulty.is_directory(Path::new("/dir")).await.is_ok(),
+        faulty.is_directory(app_path!("/dir")).await.is_ok(),
         "the first call must forward"
     );
     assert!(
         matches!(
-            faulty.is_directory(Path::new("/dir")).await,
+            faulty.is_directory(app_path!("/dir")).await,
             Err(VolumeError::IoError { .. })
         ),
         "the second call is the armed one"
     );
     assert!(
-        faulty.is_directory(Path::new("/dir")).await.is_ok(),
+        faulty.is_directory(app_path!("/dir")).await.is_ok(),
         "the third call forwards again — one armed fault means one failure"
     );
 }
@@ -75,19 +76,19 @@ async fn each_operation_counts_its_own_calls() {
         .arc();
 
     // Three unrelated calls first.
-    let _ = faulty.list_directory(Path::new("/dir"), None).await;
-    let _ = faulty.get_metadata(Path::new("/dir/a.txt")).await;
-    let _ = faulty.is_directory(Path::new("/dir")).await;
+    let _ = faulty.list_directory(app_path!("/dir"), None).await;
+    let _ = faulty.get_metadata(app_path!("/dir/a.txt")).await;
+    let _ = faulty.is_directory(app_path!("/dir")).await;
 
     assert!(
         matches!(
-            faulty.delete(Path::new("/dir/a.txt")).await,
+            faulty.delete(app_path!("/dir/a.txt")).await,
             Err(VolumeError::IoError { .. })
         ),
         "the FIRST delete is the armed one, whatever else ran before it"
     );
     assert!(
-        inner.exists(Path::new("/dir/a.txt")).await,
+        inner.exists(app_path!("/dir/a.txt")).await,
         "a failed delete removes nothing"
     );
 }
@@ -102,9 +103,9 @@ async fn the_cancel_flavored_spelling_shares_the_plain_ones_counter() {
         .failing_call(FaultyOp::Delete, 2, io("delete refused"))
         .arc();
 
-    assert!(faulty.delete(Path::new("/dir/a.txt")).await.is_ok());
+    assert!(faulty.delete(app_path!("/dir/a.txt")).await.is_ok());
     assert!(matches!(
-        faulty.delete_with_cancel(Path::new("/dir/b.txt"), None).await,
+        faulty.delete_with_cancel(app_path!("/dir/b.txt"), None).await,
         Err(VolumeError::IoError { .. })
     ));
 }
@@ -117,22 +118,22 @@ async fn the_cancel_flavored_spelling_shares_the_plain_ones_counter() {
 async fn a_lied_about_type_is_what_the_stat_reports() {
     let wrapper = FaultyVolume::wrapping(seeded().await);
     let vol = Arc::clone(wrapper.inner());
-    assert!(vol.is_directory(Path::new("/dir")).await.unwrap());
+    assert!(vol.is_directory(app_path!("/dir")).await.unwrap());
 
     // Reached through the wrapper, so a grid cell can arm a fault AND lie about
     // a type on the same volume.
     wrapper.inner().set_reported_type(Path::new("/dir"), false);
 
     assert!(
-        !vol.is_directory(Path::new("/dir")).await.unwrap(),
+        !vol.is_directory(app_path!("/dir")).await.unwrap(),
         "the stat must report the lie"
     );
     assert!(
-        !vol.get_metadata(Path::new("/dir")).await.unwrap().is_directory,
+        !vol.get_metadata(app_path!("/dir")).await.unwrap().is_directory,
         "and so must the metadata"
     );
     assert_eq!(
-        vol.list_directory(Path::new("/dir"), None).await.unwrap().len(),
+        vol.list_directory(app_path!("/dir"), None).await.unwrap().len(),
         2,
         "while the children are still really there — the lie is the metadata, not the store"
     );
@@ -150,14 +151,14 @@ async fn a_fault_armed_at_a_path_counts_only_the_calls_there() {
         .arc();
 
     faulty
-        .delete(Path::new("/dir/a.txt"))
+        .delete(app_path!("/dir/a.txt"))
         .await
         .expect("a delete elsewhere forwards");
     assert!(!faulty.fault_fired(FaultyOp::Delete), "and doesn't count");
-    assert!(faulty.delete(Path::new("/dir/b.txt")).await.is_err());
+    assert!(faulty.delete(app_path!("/dir/b.txt")).await.is_err());
     assert!(faulty.fault_fired(FaultyOp::Delete));
     assert!(
-        inner.exists(Path::new("/dir/b.txt")).await,
+        inner.exists(app_path!("/dir/b.txt")).await,
         "the refused delete never ran"
     );
 
@@ -166,7 +167,7 @@ async fn a_fault_armed_at_a_path_counts_only_the_calls_there() {
         .arc();
     assert!(
         renaming
-            .rename(Path::new("/dir/b.txt"), Path::new("/dir/c.txt"), false)
+            .rename(app_path!("/dir/b.txt"), app_path!("/dir/c.txt"), false)
             .await
             .is_err(),
         "matched by the rename's destination"

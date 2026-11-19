@@ -237,6 +237,7 @@ pub(crate) async fn rename_file_replying(
 mod tests {
     use super::*;
     use crate::test_support::TestDir;
+    use cmdr_fs::app_path;
     use std::fs;
 
     fn create_test_dir(name: &str) -> TestDir {
@@ -397,16 +398,16 @@ mod tests {
         use crate::file_system::volume::manager::get_volume_manager;
         use crate::file_system::volume::{InMemoryVolume, Volume};
         use crate::test_support::SlowVolume;
-        use std::path::Path;
+
         use std::sync::Arc;
 
         let mut inner = InMemoryVolume::new("Slow NAS");
         if let Some(state) = state {
             inner = inner.with_connection_state(state);
         }
-        inner.create_directory(Path::new("/docs")).await.unwrap();
-        inner.create_file(Path::new("/docs/old.txt"), b"old").await.unwrap();
-        inner.create_file(Path::new("/docs/taken.txt"), b"taken").await.unwrap();
+        inner.create_directory(app_path!("/docs")).await.unwrap();
+        inner.create_file(app_path!("/docs/old.txt"), b"old").await.unwrap();
+        inner.create_file(app_path!("/docs/taken.txt"), b"taken").await.unwrap();
         get_volume_manager().register_if_absent(volume_id, Arc::new(SlowVolume::new(inner, delay)));
     }
 
@@ -441,13 +442,13 @@ mod tests {
         use crate::file_system::volume::{ConnectionState, InMemoryVolume, Volume};
         use crate::test_support::SlowVolume;
         use cmdr_operations::testing::MutationSettledOutcome;
-        use std::path::Path;
+
         use std::sync::Arc;
 
         let volume_id = "smb-slow-rename-live-test";
         let inner = InMemoryVolume::new("Slow NAS").with_connection_state(ConnectionState::Direct);
-        inner.create_directory(Path::new("/docs")).await.unwrap();
-        inner.create_file(Path::new("/docs/old.txt"), b"old").await.unwrap();
+        inner.create_directory(app_path!("/docs")).await.unwrap();
+        inner.create_file(app_path!("/docs/old.txt"), b"old").await.unwrap();
         let volume = Arc::new(SlowVolume::renaming_slowly(inner, Duration::from_secs(6)));
         get_volume_manager().register_if_absent(volume_id, volume.clone());
 
@@ -470,7 +471,7 @@ mod tests {
         let settled = rx.await.expect("the rename settles");
         assert_eq!(settled.pending_id, pending_id);
         assert!(matches!(settled.outcome, MutationSettledOutcome::Landed), "{settled:?}");
-        assert!(volume.exists(Path::new("/docs/new.txt")).await);
+        assert!(volume.exists(app_path!("/docs/new.txt")).await);
     }
 
     /// The other side of the bound: a volume with no session of its own (a

@@ -36,6 +36,8 @@
 use std::borrow::Cow;
 use std::path::{Component, Path, PathBuf};
 
+use crate::app_path::BridgedPath;
+
 use super::{canonical_nfs_export, nfs_volume_id, sftp_volume_id, webdav_volume_id};
 
 /// A remote volume's root, in both the spellings it has.
@@ -52,7 +54,7 @@ pub struct RemoteRoot {
     /// compare would let `…testnas.local:2222` borrow `…testnas.local:22`'s volume.
     prefix_path: PathBuf,
     /// What the app addresses the root by: `<prefix><remote>`.
-    app: PathBuf,
+    app: BridgedPath,
     /// The server-side directory this volume is rooted at, normalized and
     /// absolute.
     remote: PathBuf,
@@ -69,14 +71,14 @@ impl RemoteRoot {
         Self {
             prefix_path: PathBuf::from(&prefix),
             prefix,
-            app,
+            app: BridgedPath::new(app),
             remote,
         }
     }
 
     /// What the app addresses this volume's root by, and what `Volume::root`
     /// answers.
-    pub fn app_root(&self) -> &Path {
+    pub fn app_root(&self) -> &BridgedPath {
         &self.app
     }
 

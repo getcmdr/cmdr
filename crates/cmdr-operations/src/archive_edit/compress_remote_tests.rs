@@ -6,6 +6,8 @@
 
 use super::test_support::*;
 use crate::WriteOperationPhase;
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::InMemoryVolume;
 use cmdr_operation_log::types::OperationId;
 use uuid::Uuid;
@@ -21,7 +23,9 @@ async fn register_remote_parent(engine: &TestOperations, dir: &Path, mtp_style: 
     if mtp_style {
         vol = vol.with_sibling_duplicates_allowed();
     }
-    vol.create_directory(dir).await.expect("seed parent dir");
+    vol.create_directory(&AppPath::legacy_unchecked(dir))
+        .await
+        .expect("seed parent dir");
     let vol = Arc::new(vol);
     engine.volumes().register(&id, Arc::clone(&vol) as Arc<dyn Volume>);
     (id, vol)
@@ -48,7 +52,7 @@ fn local_source_with(files: &[(&str, &[u8])]) -> (tempfile::TempDir, Arc<dyn Vol
 async fn sibling_names(parent: &dyn Volume, archive_path: &Path) -> Vec<String> {
     let dir = archive_path.parent().expect("archive has a parent dir");
     parent
-        .list_directory(dir, None)
+        .list_directory(&AppPath::legacy_unchecked(dir), None)
         .await
         .expect("list parent dir")
         .into_iter()
@@ -441,9 +445,9 @@ async fn same_device_mtp_source_finishes_spooling_before_the_upload_path() {
             .with_sibling_duplicates_allowed()
             .with_lane_key(id.clone()),
     );
-    volume.create_directory(Path::new("/DCIM")).await.expect("create DCIM");
+    volume.create_directory(app_path!("/DCIM")).await.expect("create DCIM");
     volume
-        .create_file(Path::new("/DCIM/photo.raw"), &[b'p'; 192 * 1024])
+        .create_file(app_path!("/DCIM/photo.raw"), &[b'p'; 192 * 1024])
         .await
         .expect("create source");
     engine.volumes().register(&id, Arc::clone(&volume) as Arc<dyn Volume>);
@@ -492,13 +496,16 @@ async fn register_share(engine: &TestOperations, existing: Option<&str>) -> (Str
     let vol = InMemoryVolume::new("Share")
         .with_lane_key(id.clone())
         .with_composed_new_names();
-    vol.create_directory(Path::new("/share"))
+    vol.create_directory(app_path!("/share"))
         .await
         .expect("seed parent dir");
     if let Some(name) = existing {
-        vol.create_file(&Path::new("/share").join(name), &zip_bytes(&[("stale.txt", b"old")]))
-            .await
-            .expect("seed existing zip");
+        vol.create_file(
+            &AppPath::legacy_unchecked(&Path::new("/share").join(name)),
+            &zip_bytes(&[("stale.txt", b"old")]),
+        )
+        .await
+        .expect("seed existing zip");
     }
     let vol = Arc::new(vol);
     engine.volumes().register(&id, Arc::clone(&vol) as Arc<dyn Volume>);
@@ -613,7 +620,7 @@ async fn a_compress_two_stored_archives_fit_is_refused_and_leaves_both_alone() {
     let (parent_id, parent) = register_share(&engine, Some(composed)).await;
     parent
         .create_file(
-            &Path::new("/share").join(decomposed),
+            &AppPath::legacy_unchecked(&Path::new("/share").join(decomposed)),
             &zip_bytes(&[("stale.txt", b"old")]),
         )
         .await

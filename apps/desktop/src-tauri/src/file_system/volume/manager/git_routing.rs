@@ -12,6 +12,7 @@ use crate::file_system::git;
 use crate::file_system::volume::Volume;
 use crate::file_system::volume::{ResolvedVolume, RoutedKind};
 use crate::ignore_poison::IgnorePoison;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -74,7 +75,7 @@ impl VolumeManager {
         match self.get(&portal_id) {
             Some(volume) => ResolvedVolume {
                 volume: Some(volume),
-                path: path.to_path_buf(),
+                path: AppPath::legacy_unchecked(path).into_owned(),
                 routed: Some(RoutedKind::GitPortal),
                 unconfirmed: None,
             },
@@ -115,6 +116,7 @@ fn git_portal_volume_id(repo_root: &Path) -> String {
 #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, `libc`, or `std::os::unix` (windows-port plan).
 mod tests {
     use super::*;
+    use cmdr_fs::app_path::AppPath;
     use cmdr_git::test_fixtures::{Fixture, cleanup, temp_dir};
     use cmdr_local::LocalVolume;
 
@@ -155,8 +157,11 @@ mod tests {
                 "{category} must reach the portal"
             );
             // The path travels through untouched; the volume maps it itself.
-            assert_eq!(resolved.path, path);
-            assert_eq!(resolved.volume.expect("portal volume").root(), portal_root(&dir));
+            assert_eq!(*resolved.path.as_std_legacy(), path);
+            assert_eq!(
+                *resolved.volume.expect("portal volume").root().as_std_legacy(),
+                portal_root(&dir)
+            );
         }
 
         // And so does a path deep inside a snapshot.
@@ -205,7 +210,10 @@ mod tests {
         let parent = resolved.volume.expect("parent volume");
         assert_eq!(parent.name(), "Root");
         assert!(
-            matches!(parent.list_directory(&path, None).await, Err(VolumeError::NotFound(_))),
+            matches!(
+                parent.list_directory(&AppPath::legacy_unchecked(&path), None).await,
+                Err(VolumeError::NotFound(_))
+            ),
             "the pane's recovery runs on a NotFound, ❌ never on a silent empty listing"
         );
 
@@ -252,7 +260,7 @@ mod tests {
         let resolved = manager.resolve("root", &inner.join(".git/branches/main")).await;
         assert_eq!(resolved.routed, Some(RoutedKind::GitPortal));
         assert_eq!(
-            resolved.volume.expect("portal volume").root(),
+            *resolved.volume.expect("portal volume").root().as_std_legacy(),
             portal_root(&inner),
             "the inner repo's portal serves it"
         );

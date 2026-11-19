@@ -5,6 +5,9 @@
 //! `Volume{`, `GLOBALROOT`, drive, and plain-path prefix logic is what this reaches.
 #![no_main]
 
+// `PathArithmetic` on purpose: this target checks the app path module's own properties (the
+// typed `file_name` among them), as that module's own tests do.
+use cmdr_fs::app_path::PathArithmetic;
 use cmdr_fs::app_path::{
     AppPath, AppPathBuf, PathFlavor, escape_bytes, escape_units, unescape_bytes, unescape_units,
 };

@@ -5,6 +5,7 @@
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::*;
+use cmdr_fs::app_path;
 use cmdr_fs::volume::InMemoryVolume;
 
 // ======================================================================
@@ -80,7 +81,7 @@ async fn non_local_dest_does_not_reserve_a_placeholder() {
     // real local FS. It returns the next free name based on `exists()`,
     // accepting the documented narrow residual window.
     let dst = Arc::new(InMemoryVolume::new("dst"));
-    dst.create_file(Path::new("/notes.txt"), b"old").await.unwrap();
+    dst.create_file(app_path!("/notes.txt"), b"old").await.unwrap();
     let dst_dyn: Arc<dyn Volume> = dst.clone();
 
     let claimed = find_unique_volume_name(&dst_dyn, Path::new("/notes.txt"), false, &ClaimedNames::default()).await;
@@ -88,7 +89,7 @@ async fn non_local_dest_does_not_reserve_a_placeholder() {
     assert_eq!(unique.file_name().unwrap().to_string_lossy(), "notes (1).txt");
     // No placeholder was created on the in-memory volume.
     assert!(
-        !dst.exists(&unique).await,
+        !dst.exists(&AppPath::legacy_unchecked(&unique)).await,
         "non-local dest must not pre-create the renamed name"
     );
     // So nothing owes a cleanup, and a caller that deleted this name would be
@@ -123,7 +124,7 @@ async fn non_local_dest_continues_a_trailing_sequence_too() {
     // The `exists()`-probe branch takes the same route through the shared
     // convention, so MTP / SMB dests number identically to local ones.
     let dst = Arc::new(InMemoryVolume::new("dst"));
-    dst.create_file(Path::new("/notes (1).txt"), b"old").await.unwrap();
+    dst.create_file(app_path!("/notes (1).txt"), b"old").await.unwrap();
     let dst_dyn: Arc<dyn Volume> = dst.clone();
 
     let unique = find_unique_volume_name(&dst_dyn, Path::new("/notes (1).txt"), false, &ClaimedNames::default())
@@ -165,7 +166,7 @@ async fn a_directory_name_is_never_reserved_with_a_file_placeholder() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_dot_in_a_directory_name_is_part_of_the_name_on_a_volume() {
     let dst = Arc::new(InMemoryVolume::new("dst"));
-    dst.create_directory(Path::new("/backup.2024")).await.unwrap();
+    dst.create_directory(app_path!("/backup.2024")).await.unwrap();
     let dst_dyn: Arc<dyn Volume> = dst.clone();
 
     let unique = find_unique_volume_name(&dst_dyn, Path::new("/backup.2024"), true, &ClaimedNames::default())
@@ -177,7 +178,7 @@ async fn a_dot_in_a_directory_name_is_part_of_the_name_on_a_volume() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_non_numeric_parenthetical_is_not_a_sequence_on_a_volume() {
     let dst = Arc::new(InMemoryVolume::new("dst"));
-    dst.create_file(Path::new("/Report (final).pdf"), b"old").await.unwrap();
+    dst.create_file(app_path!("/Report (final).pdf"), b"old").await.unwrap();
     let dst_dyn: Arc<dyn Volume> = dst.clone();
 
     let unique = find_unique_volume_name(

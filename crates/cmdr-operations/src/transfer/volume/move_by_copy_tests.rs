@@ -19,6 +19,7 @@ use crate::state::{OperationIntent, WriteOperationState};
 use crate::target_names::TargetNames;
 use crate::testing::TestOperations;
 use crate::types::WriteOperationError;
+use cmdr_fs::app_path;
 use cmdr_fs::volume::InMemoryVolume;
 
 fn store() -> Arc<InMemoryVolume> {
@@ -31,7 +32,10 @@ fn store() -> Arc<InMemoryVolume> {
 }
 
 async fn read(volume: &Arc<InMemoryVolume>, path: &str) -> Vec<u8> {
-    let mut stream = volume.open_read_stream(Path::new(path)).await.unwrap();
+    let mut stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .unwrap();
     let mut bytes = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         bytes.extend(chunk.unwrap());
@@ -40,18 +44,27 @@ async fn read(volume: &Arc<InMemoryVolume>, path: &str) -> Vec<u8> {
 }
 
 async fn seed_tree(volume: &Arc<InMemoryVolume>, root: &str) {
-    volume.create_directory(Path::new(root)).await.unwrap();
-    volume.create_directory(&Path::new(root).join("sub")).await.unwrap();
     volume
-        .create_file(&Path::new(root).join("a.txt"), b"alpha")
+        .create_directory(&AppPath::legacy_unchecked(Path::new(root)))
         .await
         .unwrap();
     volume
-        .create_file(&Path::new(root).join("b.txt"), b"bravo")
+        .create_directory(&AppPath::legacy_unchecked(&Path::new(root).join("sub")))
         .await
         .unwrap();
     volume
-        .create_file(&Path::new(root).join("sub/c.txt"), b"charlie")
+        .create_file(&AppPath::legacy_unchecked(&Path::new(root).join("a.txt")), b"alpha")
+        .await
+        .unwrap();
+    volume
+        .create_file(&AppPath::legacy_unchecked(&Path::new(root).join("b.txt")), b"bravo")
+        .await
+        .unwrap();
+    volume
+        .create_file(
+            &AppPath::legacy_unchecked(&Path::new(root).join("sub/c.txt")),
+            b"charlie",
+        )
         .await
         .unwrap();
 }
@@ -97,7 +110,7 @@ async fn a_folder_that_renames_by_copy_moves_by_copy_then_delete() {
     let engine = TestOperations::new();
     let volume = store();
     seed_tree(&volume, "/src/tree").await;
-    volume.create_directory(Path::new("/dst")).await.unwrap();
+    volume.create_directory(app_path!("/dst")).await.unwrap();
     let state = state_with(&engine, TargetNames::default());
 
     let (result, events) = run_move(&volume, &state, &["/src/tree"], "/dst").await;
@@ -106,7 +119,7 @@ async fn a_folder_that_renames_by_copy_moves_by_copy_then_delete() {
     assert_eq!(read(&volume, "/dst/tree/a.txt").await, b"alpha");
     assert_eq!(read(&volume, "/dst/tree/b.txt").await, b"bravo");
     assert_eq!(read(&volume, "/dst/tree/sub/c.txt").await, b"charlie");
-    assert!(!volume.exists(Path::new("/src/tree")).await, "the source is gone");
+    assert!(!volume.exists(app_path!("/src/tree")).await, "the source is gone");
     assert!(!events.complete.lock().unwrap().is_empty(), "the move completed");
 }
 
@@ -116,10 +129,13 @@ async fn a_folder_that_renames_by_copy_moves_by_copy_then_delete() {
 async fn the_source_sweep_deletes_files_in_batches() {
     let engine = TestOperations::new();
     let volume = store();
-    volume.create_directory(Path::new("/src/many")).await.unwrap();
+    volume.create_directory(app_path!("/src/many")).await.unwrap();
     for n in 0..30 {
         volume
-            .create_file(&PathBuf::from(format!("/src/many/f{n:02}.txt")), b"x")
+            .create_file(
+                &AppPath::legacy_unchecked(&PathBuf::from(format!("/src/many/f{n:02}.txt"))),
+                b"x",
+            )
             .await
             .unwrap();
     }
@@ -129,7 +145,7 @@ async fn the_source_sweep_deletes_files_in_batches() {
 
     assert!(result.is_ok(), "got {result:?}");
     assert_eq!(volume.delete_batches(), vec![30], "one batch for the level's 30 files");
-    assert!(!volume.exists(Path::new("/src/many")).await);
+    assert!(!volume.exists(app_path!("/src/many")).await);
 }
 
 /// F2 on such a folder: a move into its own parent under the new name.
@@ -148,7 +164,7 @@ async fn a_rename_that_copies_moves_the_folder_to_its_new_name() {
     assert!(result.is_ok(), "got {result:?}");
     assert_eq!(read(&volume, "/a/bar/a.txt").await, b"alpha");
     assert_eq!(read(&volume, "/a/bar/sub/c.txt").await, b"charlie");
-    assert!(!volume.exists(Path::new("/a/foo")).await, "the old name is gone");
+    assert!(!volume.exists(app_path!("/a/foo")).await, "the old name is gone");
 }
 
 /// The same target names work on a volume whose renames are one call: the
@@ -167,7 +183,7 @@ async fn a_target_name_renames_in_one_call_where_the_volume_can() {
 
     assert!(result.is_ok(), "got {result:?}");
     assert_eq!(read(&volume, "/a/bar/b.txt").await, b"bravo");
-    assert!(!volume.exists(Path::new("/a/foo")).await);
+    assert!(!volume.exists(app_path!("/a/foo")).await);
 }
 
 /// ❗ A stopped move leaves every source where it was: nothing is deleted

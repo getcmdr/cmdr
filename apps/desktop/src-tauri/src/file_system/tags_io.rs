@@ -9,6 +9,7 @@
 //! macOS only; `tags_io_off_macos.rs` stands in under this name elsewhere.
 
 pub use super::tags_journal::TagWrites;
+use cmdr_fs::app_path::AppPath;
 use cmdr_operation_log::types::Initiator;
 
 use super::tags::{
@@ -69,8 +70,8 @@ async fn tag_store_for(volume_id: Option<&str>, row: &Path) -> Option<TagStore> 
     manager
         .list_volumes_with_handles()
         .into_iter()
-        .filter(|(_, volume)| row.starts_with(volume.root()))
-        .max_by_key(|(_, volume)| volume.root().components().count())
+        .filter(|(_, volume)| row.starts_with(&*volume.root().as_std_legacy()))
+        .max_by_key(|(_, volume)| volume.root().as_std_legacy().components().count())
         .filter(|(_, volume)| volume.supports_xattrs())
 }
 
@@ -140,7 +141,17 @@ fn wait_on(volume_id: Option<&str>, local: Duration) -> Duration {
 /// A value that doesn't decode does show as none: there's nothing to display.
 async fn read_on_group(group: &VolumeGroup, mode: XattrReadMode) -> Vec<(String, Vec<TagRef>)> {
     let wire: Vec<PathBuf> = group.paths.iter().map(PathBuf::from).collect();
-    let answers = group.volume.read_xattr_many(&wire, TAGS_XATTR, mode).await;
+    let answers = group
+        .volume
+        .read_xattr_many(
+            &wire
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+            TAGS_XATTR,
+            mode,
+        )
+        .await;
     group
         .paths
         .iter()
@@ -296,7 +307,14 @@ pub(crate) async fn read_for_merge(volume_id: Option<&str>, paths: Vec<String>) 
         let wire: Vec<PathBuf> = group.paths.iter().map(PathBuf::from).collect();
         let answers = group
             .volume
-            .read_xattr_many(&wire, TAGS_XATTR, XattrReadMode::Verified)
+            .read_xattr_many(
+                &wire
+                    .iter()
+                    .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                    .collect::<Vec<_>>(),
+                TAGS_XATTR,
+                XattrReadMode::Verified,
+            )
             .await;
         for (path, answer) in group.paths.iter().cloned().zip(answers) {
             let (tags, raw) = match answer {
@@ -343,7 +361,7 @@ async fn write_tags(
     };
     let bytes = encode_tags_plist(tags).map_err(|e| refused(VolumeError::from_io_at(&e, file.path)))?;
     file.volume
-        .write_xattr(Path::new(file.path), TAGS_XATTR, &bytes)
+        .write_xattr(&AppPath::legacy_unchecked(Path::new(file.path)), TAGS_XATTR, &bytes)
         .await
         .map_err(refused)?;
     written.record(file.volume_id, file.path, before, bytes);
@@ -415,7 +433,14 @@ pub(crate) async fn clear_tags(
         let wire: Vec<PathBuf> = group.paths.iter().map(PathBuf::from).collect();
         let answers = group
             .volume
-            .read_xattr_many(&wire, TAGS_XATTR, XattrReadMode::Verified)
+            .read_xattr_many(
+                &wire
+                    .iter()
+                    .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                    .collect::<Vec<_>>(),
+                TAGS_XATTR,
+                XattrReadMode::Verified,
+            )
             .await;
         for (path, answer) in group.paths.iter().zip(answers) {
             let before = match answer {

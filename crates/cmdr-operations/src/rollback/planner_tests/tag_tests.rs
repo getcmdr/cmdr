@@ -5,6 +5,8 @@
 //! The planner treats the value as opaque bytes, so these cells use made-up blobs: the
 //! codec lives in the app (`file_system/tags.rs`).
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -45,14 +47,18 @@ fn tagged(seq: i64, path: &str) -> JournalItem {
 }
 
 async fn tags_on(vol: &InMemoryVolume, path: &str) -> Option<Vec<u8>> {
-    vol.read_xattr_many(&[PathBuf::from(path)], FINDER_TAGS_XATTR, XattrReadMode::Verified)
-        .await
-        .remove(0)
-        .expect("readable")
+    vol.read_xattr_many(
+        &[AppPath::legacy_unchecked(&PathBuf::from(path)).into_owned()],
+        FINDER_TAGS_XATTR,
+        XattrReadMode::Verified,
+    )
+    .await
+    .remove(0)
+    .expect("readable")
 }
 
 async fn set_tags(vol: &InMemoryVolume, path: &str, value: &[u8]) {
-    vol.write_xattr(Path::new(path), FINDER_TAGS_XATTR, value)
+    vol.write_xattr(&AppPath::legacy_unchecked(Path::new(path)), FINDER_TAGS_XATTR, value)
         .await
         .expect("write the tags");
 }
@@ -112,7 +118,7 @@ async fn a_file_retagged_since_keeps_its_new_tags() {
 async fn a_file_gone_since_is_a_skip_never_a_restore() {
     let rig = Rig::new();
     let v = tagged_pair(&rig).await;
-    v.delete(Path::new("/b.txt")).await.expect("delete");
+    v.delete(app_path!("/b.txt")).await.expect("delete");
 
     let report = rig.rollback("op").await;
 

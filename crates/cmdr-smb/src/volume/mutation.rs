@@ -12,6 +12,7 @@ use super::SmbVolume;
 use super::dfs_links::{link_bare_stat, link_delete};
 use super::session::SessionLease;
 use super::state::SessionGeneration;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::{MutationEvent, Volume, VolumeError};
@@ -126,7 +127,7 @@ impl SmbVolume {
         {
             self.notify_mutation(
                 &self.inner.volume_id,
-                &parent_display,
+                &AppPath::legacy_unchecked(&parent_display),
                 MutationEvent::Modified(name.to_string_lossy().to_string()),
             )
             .await;
@@ -185,7 +186,7 @@ impl SmbVolume {
         {
             self.notify_mutation(
                 &self.inner.volume_id,
-                &parent_display,
+                &AppPath::legacy_unchecked(&parent_display),
                 MutationEvent::Deleted(name.to_string_lossy().to_string()),
             )
             .await;
@@ -366,7 +367,7 @@ impl SmbVolume {
         {
             self.notify_mutation(
                 &self.inner.volume_id,
-                &parent_display,
+                &AppPath::legacy_unchecked(&parent_display),
                 MutationEvent::Created(name.to_string_lossy().to_string()),
             )
             .await;
@@ -392,7 +393,7 @@ impl SmbVolume {
             // Same-directory rename
             self.notify_mutation(
                 &self.inner.volume_id,
-                &from_parent_display,
+                &AppPath::legacy_unchecked(&from_parent_display),
                 MutationEvent::Renamed {
                     from: from_name.to_string_lossy().to_string(),
                     to: to_name,
@@ -403,14 +404,14 @@ impl SmbVolume {
             // Cross-directory move: remove from source, add in dest
             self.notify_mutation(
                 &self.inner.volume_id,
-                &from_parent_display,
+                &AppPath::legacy_unchecked(&from_parent_display),
                 MutationEvent::Deleted(from_name.to_string_lossy().to_string()),
             )
             .await;
             if let Some(to_parent_display) = to.parent().and_then(|p| self.display_path_for(p)) {
                 self.notify_mutation(
                     &self.inner.volume_id,
-                    &to_parent_display,
+                    &AppPath::legacy_unchecked(&to_parent_display),
                     MutationEvent::Created(to_name),
                 )
                 .await;

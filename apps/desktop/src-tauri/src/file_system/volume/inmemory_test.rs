@@ -4,6 +4,8 @@
 //! without touching the real file system.
 
 use super::{InMemoryVolume, Volume};
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use std::path::Path;
 
@@ -33,10 +35,13 @@ async fn test_inmemory_volume_full_workflow() {
 
     // Verify volume properties
     assert_eq!(volume.name(), "Test Volume");
-    assert_eq!(volume.root(), Path::new("/"));
+    assert_eq!(&*volume.root().as_std_legacy(), Path::new("/"));
 
     // List directory
-    let listed = volume.list_directory(Path::new(""), None).await.unwrap();
+    let listed = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
     assert_eq!(listed.len(), 3);
 
     // Verify sorting (directories first)
@@ -45,21 +50,21 @@ async fn test_inmemory_volume_full_workflow() {
 
     // Create a new file
     volume
-        .create_file(Path::new("/new_file.txt"), b"Hello World")
+        .create_file(app_path!("/new_file.txt"), b"Hello World")
         .await
         .unwrap();
 
     // Verify it exists
-    assert!(volume.exists(Path::new("/new_file.txt")).await);
+    assert!(volume.exists(app_path!("/new_file.txt")).await);
 
     // Get metadata
-    let metadata = volume.get_metadata(Path::new("/new_file.txt")).await.unwrap();
+    let metadata = volume.get_metadata(app_path!("/new_file.txt")).await.unwrap();
     assert_eq!(metadata.name, "new_file.txt");
     assert_eq!(metadata.size, Some(11)); // "Hello World" is 11 bytes
 
     // Delete the file
-    volume.delete(Path::new("/new_file.txt")).await.unwrap();
-    assert!(!volume.exists(Path::new("/new_file.txt")).await);
+    volume.delete(app_path!("/new_file.txt")).await.unwrap();
+    assert!(!volume.exists(app_path!("/new_file.txt")).await);
 }
 
 #[tokio::test]
@@ -69,7 +74,10 @@ async fn test_inmemory_volume_stress_test_50k_entries() {
 
     // List directory
     let start = std::time::Instant::now();
-    let entries = volume.list_directory(Path::new(""), None).await.unwrap();
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
     let duration = start.elapsed();
 
     // Verify count
@@ -99,17 +107,20 @@ async fn test_inmemory_volume_nested_directories() {
     let volume = InMemoryVolume::with_entries("Nested", entries);
 
     // List root - should only show level1
-    let root_entries = volume.list_directory(Path::new(""), None).await.unwrap();
+    let root_entries = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
     assert_eq!(root_entries.len(), 1);
     assert_eq!(root_entries[0].name, "level1");
 
     // List level1 - should only show level2
-    let level1_entries = volume.list_directory(Path::new("/level1"), None).await.unwrap();
+    let level1_entries = volume.list_directory(app_path!("/level1"), None).await.unwrap();
     assert_eq!(level1_entries.len(), 1);
     assert_eq!(level1_entries[0].name, "level2");
 
     // List level2 - should only show file.txt
-    let level2_entries = volume.list_directory(Path::new("/level1/level2"), None).await.unwrap();
+    let level2_entries = volume.list_directory(app_path!("/level1/level2"), None).await.unwrap();
     assert_eq!(level2_entries.len(), 1);
     assert_eq!(level2_entries[0].name, "file.txt");
 }
@@ -119,21 +130,27 @@ async fn test_volume_create_and_list_sequence() {
     let volume = InMemoryVolume::new("Empty Volume");
 
     // Start empty
-    let entries = volume.list_directory(Path::new(""), None).await.unwrap();
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
     assert_eq!(entries.len(), 0);
 
     // Create a directory
-    volume.create_directory(Path::new("/docs")).await.unwrap();
+    volume.create_directory(app_path!("/docs")).await.unwrap();
 
     // Create some files
-    volume.create_file(Path::new("/readme.md"), b"# README").await.unwrap();
+    volume.create_file(app_path!("/readme.md"), b"# README").await.unwrap();
     volume
-        .create_file(Path::new("/docs/guide.txt"), b"Guide content")
+        .create_file(app_path!("/docs/guide.txt"), b"Guide content")
         .await
         .unwrap();
 
     // List root
-    let root_entries = volume.list_directory(Path::new(""), None).await.unwrap();
+    let root_entries = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
     assert_eq!(root_entries.len(), 2); // docs/ and readme.md
 
     // Directories should be first
@@ -143,15 +160,18 @@ async fn test_volume_create_and_list_sequence() {
     assert!(!root_entries[1].is_directory);
 
     // List docs
-    let docs_entries = volume.list_directory(Path::new("/docs"), None).await.unwrap();
+    let docs_entries = volume.list_directory(app_path!("/docs"), None).await.unwrap();
     assert_eq!(docs_entries.len(), 1);
     assert_eq!(docs_entries[0].name, "guide.txt");
 
     // Delete readme.md
-    volume.delete(Path::new("/readme.md")).await.unwrap();
+    volume.delete(app_path!("/readme.md")).await.unwrap();
 
     // List root again
-    let root_entries = volume.list_directory(Path::new(""), None).await.unwrap();
+    let root_entries = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
     assert_eq!(root_entries.len(), 1);
     assert_eq!(root_entries[0].name, "docs");
 }
@@ -188,10 +208,16 @@ async fn test_volume_manager_with_inmemory() {
     assert_eq!(default.name(), "Home");
 
     // List from both volumes
-    let home_files = retrieved_home.list_directory(Path::new(""), None).await.unwrap();
+    let home_files = retrieved_home
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
     assert_eq!(home_files.len(), 2);
 
-    let dropbox_files = retrieved_dropbox.list_directory(Path::new(""), None).await.unwrap();
+    let dropbox_files = retrieved_dropbox
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
     assert_eq!(dropbox_files.len(), 2);
     assert_eq!(dropbox_files[0].name, "Personal"); // Alphabetical order
     assert_eq!(dropbox_files[1].name, "Work");
@@ -264,17 +290,20 @@ async fn create_directory_all_creates_deeply_nested_missing_dest() {
     let volume = InMemoryVolume::new("Dest");
 
     let creation = volume
-        .create_directory_all(Path::new("/a/b/c/d"))
+        .create_directory_all(app_path!("/a/b/c/d"))
         .await
         .expect("recursive create should land a deeply-nested missing dest");
     assert_eq!(creation, DirectoryCreation::Created);
 
     // Every ancestor now exists as a real directory.
     for dir in ["/a", "/a/b", "/a/b/c", "/a/b/c/d"] {
-        assert!(volume.exists(Path::new(dir)).await, "{dir} should exist");
+        assert!(
+            volume.exists(&AppPath::legacy_unchecked(Path::new(dir))).await,
+            "{dir} should exist"
+        );
         assert!(
             volume
-                .is_directory(Path::new(dir))
+                .is_directory(&AppPath::legacy_unchecked(Path::new(dir)))
                 .await
                 .expect("ancestor should be statable"),
             "{dir} should be a directory"
@@ -283,10 +312,10 @@ async fn create_directory_all_creates_deeply_nested_missing_dest() {
 
     // A file can be written into the freshly-created leaf.
     volume
-        .create_file(Path::new("/a/b/c/d/file.txt"), b"hi")
+        .create_file(app_path!("/a/b/c/d/file.txt"), b"hi")
         .await
         .expect("file should land in the created dest");
-    assert!(volume.exists(Path::new("/a/b/c/d/file.txt")).await);
+    assert!(volume.exists(app_path!("/a/b/c/d/file.txt")).await);
 }
 
 #[tokio::test]
@@ -294,7 +323,7 @@ async fn create_directory_all_is_idempotent_on_existing_dest() {
     let volume = InMemoryVolume::new("Dest");
 
     let first = volume
-        .create_directory_all(Path::new("/x/y"))
+        .create_directory_all(app_path!("/x/y"))
         .await
         .expect("first create");
     assert_eq!(first, DirectoryCreation::Created);
@@ -304,14 +333,14 @@ async fn create_directory_all_is_idempotent_on_existing_dest() {
     // say so, because the transfer driver skips its per-file conflict probe on
     // a `Created` answer.
     let second = volume
-        .create_directory_all(Path::new("/x/y"))
+        .create_directory_all(app_path!("/x/y"))
         .await
         .expect("re-running against an existing dest is a no-op");
     assert_eq!(second, DirectoryCreation::AlreadyExisted);
 
     assert!(
         volume
-            .is_directory(Path::new("/x/y"))
+            .is_directory(app_path!("/x/y"))
             .await
             .expect("dest should be statable")
     );
@@ -321,14 +350,14 @@ async fn create_directory_all_is_idempotent_on_existing_dest() {
 async fn create_directory_all_only_creates_the_missing_tail() {
     let volume = InMemoryVolume::new("Dest");
     // Pre-existing ancestors (a merge target).
-    volume.create_directory(Path::new("/a")).await.unwrap();
-    volume.create_directory(Path::new("/a/b")).await.unwrap();
+    volume.create_directory(app_path!("/a")).await.unwrap();
+    volume.create_directory(app_path!("/a/b")).await.unwrap();
 
     // Only `/a/b/c` and `/a/b/c/d` are missing; the existing levels are left
     // alone (InMemory's `create_directory` would have errored `AlreadyExists`
     // had the helper blindly re-created them).
     let creation = volume
-        .create_directory_all(Path::new("/a/b/c/d"))
+        .create_directory_all(app_path!("/a/b/c/d"))
         .await
         .expect("should create only the missing tail");
     // Ancestors pre-existed, but the LEAF is ours.
@@ -336,13 +365,13 @@ async fn create_directory_all_only_creates_the_missing_tail() {
 
     assert!(
         volume
-            .is_directory(Path::new("/a/b/c"))
+            .is_directory(app_path!("/a/b/c"))
             .await
             .expect("created level should be statable")
     );
     assert!(
         volume
-            .is_directory(Path::new("/a/b/c/d"))
+            .is_directory(app_path!("/a/b/c/d"))
             .await
             .expect("created level should be statable")
     );
@@ -356,7 +385,7 @@ async fn create_directory_all_surfaces_create_failure_as_typed_error() {
     volume.fail_create_at(Path::new("/a/b"));
 
     let err = volume
-        .create_directory_all(Path::new("/a/b/c"))
+        .create_directory_all(app_path!("/a/b/c"))
         .await
         .expect_err("a create failure mid-walk must surface");
     assert!(matches!(err, VolumeError::IoError { .. }), "got {err:?}");
@@ -374,7 +403,7 @@ async fn create_directory_all_pre_checks_existence_on_mtp_like_backend() {
     volume.seed_existing(Path::new("/photos"));
 
     let creation = volume
-        .create_directory_all(Path::new("/photos/2026/trip"))
+        .create_directory_all(app_path!("/photos/2026/trip"))
         .await
         .expect("recursive create over a partially-existing MTP tree");
     assert_eq!(creation, DirectoryCreation::Created);
@@ -439,33 +468,39 @@ impl Volume for MockDirVolume {
     fn name(&self) -> &str {
         "mock-dir"
     }
-    fn root(&self) -> &Path {
-        Path::new("/")
+    fn root(&self) -> &AppPath {
+        AppPath::from_normalized("/").expect("a canonical literal")
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(Vec::new()) })
     }
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
-        Box::pin(async move { self.existing.read_ignore_poison().contains(path) })
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.existing.read_ignore_poison().contains(path)
+        })
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             if self.existing.read_ignore_poison().contains(path) {
                 Ok(true)
             } else {
@@ -475,9 +510,11 @@ impl Volume for MockDirVolume {
     }
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             self.create_calls.lock_ignore_poison().push(path.to_path_buf());
             if self.raced.lock_ignore_poison().contains(path) {
                 return Err(VolumeError::AlreadyExists(path.display().to_string()));
@@ -516,7 +553,7 @@ async fn a_leaf_that_appeared_mid_walk_is_not_reported_as_ours() {
     volume.claim_created_by_someone_else(Path::new("/shared/inbox"));
 
     let creation = volume
-        .create_directory_all(Path::new("/shared/inbox"))
+        .create_directory_all(app_path!("/shared/inbox"))
         .await
         .expect("losing the race is still a successful create");
 

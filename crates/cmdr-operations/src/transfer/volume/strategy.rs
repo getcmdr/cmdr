@@ -7,6 +7,7 @@
 //! Directories are walked (recursively, in `merge.rs`) so the user can cancel
 //! between files. Per-file transfers go through `stream_pipe.rs`.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -44,7 +45,11 @@ pub(super) async fn resolve_source_is_directory(
 ) -> Result<bool, VolumeError> {
     match hint {
         Some(known) => Ok(known),
-        None => source_volume.is_directory(source_path).await,
+        None => {
+            source_volume
+                .is_directory(&AppPath::legacy_unchecked(source_path))
+                .await
+        }
     }
 }
 
@@ -139,7 +144,7 @@ pub(super) async fn copy_single_path(
         // extract O(n²). Route it to the one-pass extractor instead, which decodes
         // the stream once. Random-access sources (a folder on any real FS, a plain
         // `.tar`, a zip) keep the per-entry walk below — zero regression.
-        if source_volume.extraction_is_sequential(source_path) {
+        if source_volume.extraction_is_sequential(&AppPath::legacy_unchecked(source_path)) {
             return Box::pin(super::sequential_extract::extract_sequential_subtree(
                 source_volume,
                 source_path,

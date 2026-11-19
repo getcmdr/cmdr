@@ -3,6 +3,7 @@
 
 use super::*;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path;
 
 /// Two rules govern which frames go out, and both matter: the throttle keeps a
 /// million-item reversal from emitting an event per item, and the "landed on
@@ -51,9 +52,9 @@ async fn a_same_volume_restore_that_renames_by_copy_goes_back_by_copy() {
             .with_renames_by_copy()
             .with_space_info(1_000_000, 1_000_000),
     );
-    volume.create_directory(Path::new("/moved")).await.unwrap();
+    volume.create_directory(app_path!("/moved")).await.unwrap();
     volume
-        .create_file(Path::new("/moved/big.mov"), b"frames")
+        .create_file(app_path!("/moved/big.mov"), b"frames")
         .await
         .unwrap();
     let engine = TestOperations::new();
@@ -72,9 +73,9 @@ async fn a_same_volume_restore_that_renames_by_copy_goes_back_by_copy() {
         .await
         .expect("the restore lands");
 
-    assert!(volume.exists(Path::new("/home/big.mov")).await, "back where it started");
+    assert!(volume.exists(app_path!("/home/big.mov")).await, "back where it started");
     assert!(
-        !volume.exists(Path::new("/moved/big.mov")).await,
+        !volume.exists(app_path!("/moved/big.mov")).await,
         "and gone from where it was"
     );
 }

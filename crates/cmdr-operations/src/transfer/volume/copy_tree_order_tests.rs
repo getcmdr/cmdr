@@ -54,7 +54,7 @@ impl Volume for ReversedListingSource {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -66,12 +66,15 @@ impl Volume for ReversedListingSource {
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn cmdr_fs::volume::VolumeReadStream>, VolumeError>> + Send + 'a>>
     {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             self.opened.lock_ignore_poison().push(path.display().to_string());
-            self.inner.open_read_stream(path).await
+            self.inner.open_read_stream(path_app).await
         })
     }
 }
@@ -81,7 +84,10 @@ impl Volume for ReversedListingSource {
 async fn tree_source(width: usize) -> Arc<ReversedListingSource> {
     let inner = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for dir in ["/src", "/src/a", "/src/a/sub", "/src/b"] {
-        inner.create_directory(Path::new(dir)).await.unwrap();
+        inner
+            .create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            .await
+            .unwrap();
     }
     for file in [
         "/src/a/zzz.txt",
@@ -90,7 +96,10 @@ async fn tree_source(width: usize) -> Arc<ReversedListingSource> {
         "/src/Y.txt",
         "/src/z.txt",
     ] {
-        inner.create_file(Path::new(file), b"bytes").await.unwrap();
+        inner
+            .create_file(&AppPath::legacy_unchecked(Path::new(file)), b"bytes")
+            .await
+            .unwrap();
     }
     Arc::new(ReversedListingSource {
         inner,

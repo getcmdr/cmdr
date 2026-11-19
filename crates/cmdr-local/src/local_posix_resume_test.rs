@@ -6,6 +6,8 @@
 #![cfg(unix)]
 
 use super::*;
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::WriteMode;
 use cmdr_fs::volume::host::VolumeHost;
@@ -57,16 +59,16 @@ async fn a_write_a_dropped_source_cut_short_carries_on_from_its_last_reported_by
     let dir = TestDir::new("continue_write");
     let data: Vec<u8> = (0..300_000u32).map(|i| (i % 251) as u8).collect();
     let source = InMemoryVolume::new("Source");
-    source.create_file(Path::new("/big.bin"), &data).await.unwrap();
+    source.create_file(app_path!("/big.bin"), &data).await.unwrap();
     let volume = LocalPosixVolume::local_folder("Test", dir.to_str().unwrap(), VolumeHost::detached());
     assert!(volume.continues_writes());
 
-    let first = source.open_read_stream(Path::new("/big.bin")).await.unwrap();
+    let first = source.open_read_stream(app_path!("/big.bin")).await.unwrap();
     let version = first.source_version().expect("an in-memory file names its version");
     let reported = AtomicU64::new(0);
     let failed = volume
         .write_from_stream(
-            Path::new("big.bin.tmp"),
+            &AppPath::legacy_unchecked(Path::new("big.bin.tmp")),
             WriteMode::CreateOrReplace,
             StreamLength::Known(data.len() as u64),
             Box::new(BreaksAfter {
@@ -85,12 +87,12 @@ async fn a_write_a_dropped_source_cut_short_carries_on_from_its_last_reported_by
     assert!(at > 0, "the write reported bytes before the source broke");
 
     let rest = source
-        .resume_read_stream(Path::new("/big.bin"), &version, at)
+        .resume_read_stream(app_path!("/big.bin"), &version, at)
         .await
         .unwrap();
     let written = volume
         .continue_write_from_stream(
-            Path::new("big.bin.tmp"),
+            &AppPath::legacy_unchecked(Path::new("big.bin.tmp")),
             at,
             StreamLength::Known(data.len() as u64),
             rest,
@@ -116,16 +118,20 @@ async fn a_write_is_not_carried_on_into_a_target_that_is_gone_or_short() {
 
     let dir = TestDir::new("continue_write_refused");
     let source = InMemoryVolume::new("Source");
-    source.create_file(Path::new("/f"), b"0123456789").await.unwrap();
+    source.create_file(app_path!("/f"), b"0123456789").await.unwrap();
     let volume = LocalPosixVolume::local_folder("Test", dir.to_str().unwrap(), VolumeHost::detached());
     std::fs::write(dir.join("short.tmp"), b"0123").unwrap();
 
     for (target, at) in [("gone.tmp", 4), ("short.tmp", 6)] {
-        let rest = source.open_read_stream(Path::new("/f")).await.unwrap();
+        let rest = source.open_read_stream(app_path!("/f")).await.unwrap();
         let refused = volume
-            .continue_write_from_stream(Path::new(target), at, StreamLength::Known(10), rest, &|_| {
-                std::ops::ControlFlow::Continue(())
-            })
+            .continue_write_from_stream(
+                &AppPath::legacy_unchecked(Path::new(target)),
+                at,
+                StreamLength::Known(10),
+                rest,
+                &|_| std::ops::ControlFlow::Continue(()),
+            )
             .await;
         assert!(
             matches!(refused, Err(VolumeError::NotSupported)),
@@ -145,11 +151,14 @@ async fn a_local_read_resumes_on_its_named_file_and_refuses_a_rewritten_one() {
     std::fs::write(dir.join("f.bin"), &data).unwrap();
     let volume = LocalPosixVolume::local_folder("Test", dir.to_str().unwrap(), VolumeHost::detached());
 
-    let first = volume.open_read_stream(Path::new("f.bin")).await.unwrap();
+    let first = volume
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new("f.bin")))
+        .await
+        .unwrap();
     let version = first.source_version().expect("a local file names its version");
     drop(first);
     let mut rest = volume
-        .resume_read_stream(Path::new("f.bin"), &version, 70_000)
+        .resume_read_stream(&AppPath::legacy_unchecked(Path::new("f.bin")), &version, 70_000)
         .await
         .expect("the same file resumes");
     let mut read = Vec::new();
@@ -161,7 +170,9 @@ async fn a_local_read_resumes_on_its_named_file_and_refuses_a_rewritten_one() {
     std::fs::remove_file(dir.join("f.bin")).unwrap();
     std::fs::write(dir.join("f.bin"), &data).unwrap();
     assert!(matches!(
-        volume.resume_read_stream(Path::new("f.bin"), &version, 70_000).await,
+        volume
+            .resume_read_stream(&AppPath::legacy_unchecked(Path::new("f.bin")), &version, 70_000)
+            .await,
         Err(VolumeError::SourceChanged(_))
     ));
 }

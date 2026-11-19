@@ -26,23 +26,23 @@ macro_rules! no_reads {
     () => {
         fn list_directory<'a>(
             &'a self,
-            _path: &'a Path,
+            _path: &'a AppPath,
             _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
         ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
             Box::pin(async { Err(VolumeError::NotSupported) })
         }
         fn get_metadata<'a>(
             &'a self,
-            _path: &'a Path,
+            _path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
             Box::pin(async { Err(VolumeError::NotSupported) })
         }
-        fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+        fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
             Box::pin(async { false })
         }
         fn is_directory<'a>(
             &'a self,
-            _path: &'a Path,
+            _path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
             Box::pin(async { Err(VolumeError::NotSupported) })
         }
@@ -83,8 +83,8 @@ impl Volume for CapVolume {
     fn name(&self) -> &str {
         &self.name
     }
-    fn root(&self) -> &Path {
-        Path::new("/")
+    fn root(&self) -> &AppPath {
+        AppPath::from_normalized("/").expect("a canonical literal")
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
@@ -178,8 +178,8 @@ fn a_backend_that_declares_nothing_still_bounds_its_peer() {
         fn name(&self) -> &str {
             "undeclared"
         }
-        fn root(&self) -> &Path {
-            Path::new("/")
+        fn root(&self) -> &AppPath {
+            AppPath::from_normalized("/").expect("a canonical literal")
         }
         fn as_any(&self) -> &dyn std::any::Any {
             self

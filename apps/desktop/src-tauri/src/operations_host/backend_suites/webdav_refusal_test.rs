@@ -18,6 +18,7 @@
 //! unread (a quota checked against `Content-Length`, which is what Nextcloud
 //! does).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -52,7 +53,7 @@ async fn refusing(refusal: Refusal) -> (RefusingProxy, Arc<dyn Volume>, PathBuf)
 async fn clean_up_past_the_proxy(dir: &Path) {
     let direct = connect(WebdavFixture::Stock).await;
     let name = dir.file_name().expect("a scratch dir has a name");
-    clean_deep(&direct, &direct.root().join(name)).await;
+    clean_deep(&direct, &direct.root().as_std_legacy().join(name)).await;
 }
 
 fn config(policy: ConflictResolution) -> VolumeCopyConfig {
@@ -123,7 +124,7 @@ async fn assert_the_album_is_whole(remote: &Arc<dyn Volume>, dir: &Path, files: 
         "❗ the user's file in the folder the copy merged into must survive the refusal"
     );
     assert!(
-        !remote.exists(&album.join(refused)).await,
+        !remote.exists(&AppPath::legacy_unchecked(&album.join(refused))).await,
         "❗ the file the server had no room for must not appear at its name"
     );
     for (name, bytes) in files.iter().filter(|(name, _)| *name != refused) {

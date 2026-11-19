@@ -9,6 +9,7 @@
 //! runs the same bodies against real accounts. Multipart cells cut 5 MiB parts
 //! (`S3Volume::set_part_floor`), so a few megabytes make several parts.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -53,7 +54,7 @@ async fn small_parts(target: &S3Target, label: &str) -> (Arc<S3Volume>, String, 
     let volume = target.connect(Some(target.bucket())).await;
     volume.set_part_floor(SMALL_PART);
     let prefix = target.prefix(label);
-    let dir = volume.root().join(prefix.trim_end_matches('/'));
+    let dir = volume.root().as_std_legacy().join(prefix.trim_end_matches('/'));
     (Arc::new(volume), prefix, dir)
 }
 
@@ -116,7 +117,7 @@ pub(super) async fn a_cancel_mid_multipart_leaves_no_object_and_no_upload(target
     );
     assert!(!running.events.cancelled.lock_ignore_poison().is_empty());
     assert!(
-        !volume.exists(&dir.join("big.bin")).await,
+        !volume.exists(&AppPath::legacy_unchecked(&dir.join("big.bin"))).await,
         "a cancelled multipart upload publishes nothing"
     );
     // The cancel answers once its first abort is sent; the confirming rounds run after it,
@@ -442,7 +443,9 @@ pub(super) async fn a_folder_of_1005_objects_deletes(target: &S3Target) {
     assert!(count("ListObjectsV2") <= 5, "{sent:?}");
 
     assert!(matches!(
-        volume.list_directory(&dir.join("folder"), None).await,
+        volume
+            .list_directory(&AppPath::legacy_unchecked(&dir.join("folder")), None)
+            .await,
         Err(VolumeError::NotFound(_))
     ));
     assert_eq!(leftovers(target, &prefix).await, Vec::<String>::new());
@@ -531,7 +534,7 @@ async fn settled(events: &CollectorEventSink, what: &str) {
 pub(super) async fn requests_sent_against_the_estimate(target: &S3Target) -> Vec<RequestComparison> {
     let volume = Arc::new(target.connect(Some(target.bucket())).await);
     let prefix = target.prefix("cost");
-    let dir = volume.root().join(prefix.trim_end_matches('/'));
+    let dir = volume.root().as_std_legacy().join(prefix.trim_end_matches('/'));
     let remote = Arc::clone(&volume) as Arc<dyn Volume>;
     let volume_id = register(&volume, &format!("cost-{}-{}", target.name(), std::process::id()));
     let local_dir = TestDir::new("s3_cost_compare");
@@ -558,7 +561,7 @@ pub(super) async fn requests_sent_against_the_estimate(target: &S3Target) -> Vec
     // Destinations the person already has, as the dialogs' are.
     for folder in ["", "copied", "moved", "files"] {
         volume
-            .create_directory_all(&dir.join(folder))
+            .create_directory_all(&AppPath::legacy_unchecked(&dir.join(folder)))
             .await
             .expect("making a destination folder");
     }

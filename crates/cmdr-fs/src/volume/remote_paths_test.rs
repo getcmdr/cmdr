@@ -28,7 +28,7 @@ fn a_remote_path_normalizes_to_one_absolute_spelling() {
 fn the_app_root_is_the_prefix_plus_the_remote_root() {
     let root = rooted_at("/srv/data");
     assert_eq!(
-        root.app_root(),
+        root.app_root().as_path(),
         Path::new("sftp://test_user_1@testnas.local:22/srv/data")
     );
     assert_eq!(root.remote_root(), Path::new("/srv/data"));
@@ -39,7 +39,10 @@ fn the_app_root_is_the_prefix_plus_the_remote_root() {
 #[test]
 fn a_volume_at_the_server_root_still_carries_the_prefix() {
     let root = rooted_at("/");
-    assert_eq!(root.app_root(), Path::new("sftp://test_user_1@testnas.local:22/"));
+    assert_eq!(
+        root.app_root().as_path(),
+        Path::new("sftp://test_user_1@testnas.local:22/")
+    );
     assert_eq!(root.remote_root(), Path::new("/"));
 }
 

@@ -3,6 +3,7 @@
 //! touches. The Docker twin against VersityGW, with the real outage, is
 //! `connection_drop_test.rs::a_put_cut_off_by_an_outage_leaves_nothing_for_the_retry_to_trip_over`.
 
+use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
 use std::time::Duration;
 
@@ -48,7 +49,7 @@ async fn write_new(volume: &S3Volume, key: &str) -> Result<u64, cmdr_fs::volume:
     let source = BytesSource::new(vec![7u8; LEN]);
     volume
         .write_from_stream(
-            &volume.root().join(key),
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join(key)),
             WriteMode::CreateNew,
             source.total_size(),
             Box::new(source),

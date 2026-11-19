@@ -8,6 +8,7 @@
 //! it: the same staged, retrying, mid-file-cancelable streaming every cross-volume
 //! copy uses, plus the source-side removal that makes it a move.
 
+use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
 use std::path::Path;
 use std::sync::Arc;
@@ -67,6 +68,6 @@ pub(crate) async fn move_file_across_volumes(
     // either: `new_data_at` is `None` on every failure this call can produce.
     .map_err(|f| f.error)?
     .bytes;
-    source_volume.delete(source_path).await?;
+    source_volume.delete(&AppPath::legacy_unchecked(source_path)).await?;
     Ok(bytes)
 }

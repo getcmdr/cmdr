@@ -9,6 +9,9 @@
 pub(crate) mod paths;
 pub(crate) mod rename;
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
+use cmdr_fs::app_path::BridgedPath;
 use std::future::Future;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -35,7 +38,7 @@ pub use rename::rename_local_exclusive;
 pub struct LocalWindowsVolume {
     name: String,
     /// The app path of the root: `C:/`, `//server/share/`, or a folder under one.
-    root: PathBuf,
+    root: BridgedPath,
     /// The mount this volume sits on, which decides whether a drive index can serve it.
     mount: MountClass,
     /// The app around this volume: the pane listings a mutation patches and the name order
@@ -57,7 +60,7 @@ impl LocalWindowsVolume {
     pub fn on_mount(name: impl Into<String>, root: impl Into<PathBuf>, mount: MountClass, host: VolumeHost) -> Self {
         Self {
             name: name.into(),
-            root: root.into(),
+            root: BridgedPath::new(root.into()),
             mount,
             host,
             #[cfg(any(test, feature = "testing"))]
@@ -92,11 +95,13 @@ impl Volume for LocalWindowsVolume {
         &self.name
     }
 
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
 
-    fn rerooted(&self, new_root: &Path) -> Option<Arc<dyn Volume>> {
+    fn rerooted(&self, new_root: &AppPath) -> Option<Arc<dyn Volume>> {
+        let new_root_std = new_root.as_std_legacy();
+        let new_root: &Path = &new_root_std;
         Some(Arc::new(LocalWindowsVolume::on_mount(
             self.name.clone(),
             new_root,
@@ -111,11 +116,13 @@ impl Volume for LocalWindowsVolume {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let abs_path = self.resolve(path);
-        let is_volume_root = abs_path == self.root;
+        let is_volume_root = abs_path == *self.root;
         #[cfg(any(test, feature = "testing"))]
         let tally = Arc::new(ListingTally::with_hook(self.listing_hook.clone()));
         #[cfg(not(any(test, feature = "testing")))]
@@ -131,15 +138,19 @@ impl Volume for LocalWindowsVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let abs_path = self.resolve(path);
         Box::pin(blocking("metadata", move || {
             get_single_entry(&abs_path).map_err(|e| VolumeError::from_io_at(&e, &abs_path))
         }))
     }
 
-    fn presence<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
+    fn presence<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         // Only "not found" is a definite miss: a sharing violation, an access refusal, or a
         // dead share say nothing about the path.
         let abs_path = self.resolve(path);
@@ -156,8 +167,10 @@ impl Volume for LocalWindowsVolume {
 
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let abs_path = self.resolve(path);
         Box::pin(blocking("is_directory", move || {
             native(&abs_path)
@@ -169,8 +182,10 @@ impl Volume for LocalWindowsVolume {
 
     fn entry_kind<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<EntryKind, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let abs_path = self.resolve(path);
         Box::pin(blocking("entry_kind", move || {
             let file_type = native(&abs_path)
@@ -190,23 +205,27 @@ impl Volume for LocalWindowsVolume {
     fn notify_mutation<'a>(
         &'a self,
         volume_id: &'a str,
-        parent_path: &'a Path,
+        parent_path: &'a AppPath,
         mutation: MutationEvent,
     ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
         Box::pin(async move {
+            let parent_path_std = parent_path.as_std_legacy();
+            let parent_path: &Path = &parent_path_std;
             crate::mutation::patch_listing_after_local_mutation(self.host.listings(), volume_id, parent_path, mutation);
         })
     }
 
-    fn local_path(&self) -> Option<PathBuf> {
-        Some(self.root.clone())
+    fn local_path(&self) -> Option<AppPathBuf> {
+        Some(AppPath::legacy_unchecked(&self.root.clone()).into_owned())
     }
 
     fn create_file<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let abs_path = self.resolve(path);
         let content = content.to_vec();
         Box::pin(blocking("create_file", move || -> Result<(), VolumeError> {
@@ -223,8 +242,10 @@ impl Volume for LocalWindowsVolume {
 
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let abs_path = self.resolve(path);
         Box::pin(blocking("create_dir", move || {
             native(&abs_path)
@@ -233,7 +254,9 @@ impl Volume for LocalWindowsVolume {
         }))
     }
 
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let abs_path = self.resolve(path);
         Box::pin(blocking("delete", move || {
             let native = native(&abs_path).map_err(|e| VolumeError::from_io_at(&e, &abs_path))?;
@@ -265,10 +288,14 @@ impl Volume for LocalWindowsVolume {
     /// `rename_local_exclusive` (`rename.rs`).
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let from_std = from.as_std_legacy();
+        let from: &Path = &from_std;
+        let to_std = to.as_std_legacy();
+        let to: &Path = &to_std;
         let from_abs = self.resolve(from);
         let to_abs = self.resolve(to);
         Box::pin(blocking("rename", move || {
@@ -286,8 +313,10 @@ impl Volume for LocalWindowsVolume {
     fn scan_for_conflicts<'a>(
         &'a self,
         source_items: &'a [SourceItemInfo],
-        dest_path: &'a Path,
+        dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
+        let dest_path_std = dest_path.as_std_legacy();
+        let dest_path: &Path = &dest_path_std;
         let dest_abs = self.resolve(dest_path);
         let source_items = source_items.to_vec();
         Box::pin(blocking("scan_for_conflicts", move || {
@@ -334,7 +363,9 @@ impl Volume for LocalWindowsVolume {
         Some(self.mount)
     }
 
-    fn supported_dates<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = SupportedDates> + Send + 'a>> {
+    fn supported_dates<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = SupportedDates> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let abs_path = self.resolve(path);
         Box::pin(blocking("supported_dates", move || supported_dates_of(&abs_path)))
     }

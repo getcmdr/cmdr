@@ -10,6 +10,7 @@
 //! The host hands its observers to the engine's builder, in order
 //! (`ListingsBuilder::observer`).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 
 use cmdr_fs::ignore_poison::IgnorePoison;
@@ -92,7 +93,7 @@ impl Inner {
     /// the listing's life. A close racing this open may already have run, so
     /// the hold is kept only while the listing is still in the cache.
     fn keep_volume_watch(&self, opened: &OpenedListing<'_>) {
-        let Some(hold) = opened.volume.watch_listing(opened.path) else {
+        let Some(hold) = opened.volume.watch_listing(&AppPath::legacy_unchecked(opened.path)) else {
             return;
         };
         let replaced = self

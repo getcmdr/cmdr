@@ -1,7 +1,7 @@
 //! How long `path_exists` waits: a live session's slow answer is still an answer,
 //! and a volume with nothing under it that can tell keeps the 2 s read tier.
 
-use std::path::Path;
+use cmdr_fs::app_path;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -19,8 +19,8 @@ async fn slow_share(state: Option<ConnectionState>, delay: Duration) -> String {
     if let Some(state) = state {
         volume = volume.with_connection_state(state);
     }
-    volume.create_directory(Path::new("/share")).await.unwrap();
-    volume.create_directory(Path::new("/share/photos")).await.unwrap();
+    volume.create_directory(app_path!("/share")).await.unwrap();
+    volume.create_directory(app_path!("/share/photos")).await.unwrap();
     get_volume_manager().register(&id, Arc::new(SlowVolume::new(volume, delay)) as Arc<dyn Volume>);
     id
 }

@@ -7,6 +7,7 @@
 //! the listing cache, the index, and the activity tracker see what the share
 //! reports.
 
+use cmdr_fs::app_path::AppPath;
 pub(crate) use cmdr_smb::volume::testing::*;
 
 // The vocabulary every SMB suite speaks, re-exported so one glob covers it
@@ -36,7 +37,7 @@ pub(crate) async fn fixture() -> (Arc<dyn Volume>, PathBuf) {
     let base = test_dir_name();
     ensure_clean(&volume, &base).await;
     volume
-        .create_directory(Path::new(&base))
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
         .await
         .expect("the scratch dir on the share");
     (Arc::new(volume), PathBuf::from(base))

@@ -17,6 +17,8 @@ use super::rename_merge_test_support::{make_state, write_file};
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::{VolumeCopyConfig, WriteOperationError};
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{InMemoryVolume, ListingProgress, Volume, VolumeError};
 use cmdr_local::LocalPosixVolume;
@@ -76,8 +78,8 @@ async fn a_copy_refuses_a_listed_name_that_isnt_one_plain_component() {
     let engine = TestOperations::new();
     for &name in HOSTILE_NAMES {
         let source = InMemoryVolume::new("Phone").with_space_info(10_000_000, 10_000_000);
-        source.create_directory(Path::new("/album")).await.unwrap();
-        source.create_file(Path::new("/album/evil.txt"), b"EVIL").await.unwrap();
+        source.create_directory(app_path!("/album")).await.unwrap();
+        source.create_file(app_path!("/album/evil.txt"), b"EVIL").await.unwrap();
         source.set_reported_name(Path::new("/album/evil.txt"), name);
         let source: Arc<dyn Volume> = Arc::new(source);
 
@@ -120,10 +122,10 @@ async fn a_copy_refuses_a_listed_name_that_isnt_one_plain_component() {
 async fn a_copy_refuses_a_folder_listed_under_a_parent_name() {
     let engine = TestOperations::new();
     let source = InMemoryVolume::new("Phone").with_space_info(10_000_000, 10_000_000);
-    source.create_directory(Path::new("/album")).await.unwrap();
-    source.create_directory(Path::new("/album/sub")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
+    source.create_directory(app_path!("/album/sub")).await.unwrap();
     source
-        .create_file(Path::new("/album/sub/payload.txt"), b"EVIL")
+        .create_file(app_path!("/album/sub/payload.txt"), b"EVIL")
         .await
         .unwrap();
     source.set_reported_name(Path::new("/album/sub"), "..");
@@ -173,9 +175,9 @@ async fn a_copy_never_merges_through_a_destination_link() {
         ConflictResolution::OverwriteSmaller,
     ] {
         let source = InMemoryVolume::new("Phone").with_space_info(10_000_000, 10_000_000);
-        source.create_directory(Path::new("/album")).await.unwrap();
-        source.create_directory(Path::new("/album/a")).await.unwrap();
-        source.create_file(Path::new("/album/a/x"), b"EVIL").await.unwrap();
+        source.create_directory(app_path!("/album")).await.unwrap();
+        source.create_directory(app_path!("/album/a")).await.unwrap();
+        source.create_file(app_path!("/album/a/x"), b"EVIL").await.unwrap();
         let source: Arc<dyn Volume> = Arc::new(source);
 
         let dest_dir = TempDir::new().unwrap();
@@ -227,11 +229,11 @@ async fn a_copy_with_a_file_and_folder_listed_under_one_name_stays_inside() {
         ConflictResolution::OverwriteSmaller,
     ] {
         let source = InMemoryVolume::new("Phone").with_space_info(10_000_000, 10_000_000);
-        source.create_directory(Path::new("/album")).await.unwrap();
-        source.create_file(Path::new("/album/link"), b"LINK").await.unwrap();
+        source.create_directory(app_path!("/album")).await.unwrap();
+        source.create_file(app_path!("/album/link"), b"LINK").await.unwrap();
         source.set_reported_name(Path::new("/album/link"), "a");
-        source.create_directory(Path::new("/album/a")).await.unwrap();
-        source.create_file(Path::new("/album/a/x"), b"EVIL").await.unwrap();
+        source.create_directory(app_path!("/album/a")).await.unwrap();
+        source.create_file(app_path!("/album/a/x"), b"EVIL").await.unwrap();
         let source: Arc<dyn Volume> = Arc::new(source);
 
         let dest_dir = TempDir::new().unwrap();
@@ -283,7 +285,7 @@ impl Volume for RenamingListings {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {

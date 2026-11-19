@@ -4,6 +4,7 @@
 //! look-alike) dropped, and the rest ordered into direct steps, case-only steps,
 //! and cycles. The hops themselves live in `bulk.rs`.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::{HashMap, HashSet};
 
 use super::super::super::look_alike::{ListedFolders, NewEntry, spelled_new_path};
@@ -145,7 +146,7 @@ pub(super) async fn settle_remote_conflicts(
         let mut changed = false;
         for index in rows_with_unclaimed_destination(rows, active) {
             let row = &rows[index];
-            let clash = match volume.get_metadata(&row.destination).await {
+            let clash = match volume.get_metadata(&AppPath::legacy_unchecked(&row.destination)).await {
                 Ok(_) => Some(BulkRenameOutcome::Skipped),
                 Err(VolumeError::NotFound(_)) => {
                     match folders.place_new_entry(&row.destination, Some(&row.source)).await {

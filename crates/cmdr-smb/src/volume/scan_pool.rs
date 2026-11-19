@@ -42,6 +42,7 @@
 //! error (permission, not-found) is the same on any connection, so it's surfaced
 //! immediately, never retried.
 
+use cmdr_fs::app_path::AppPath;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::Duration;
 
@@ -652,7 +653,7 @@ impl SmbVolume {
                 }
             }
         }
-        Volume::open_read_stream_with_hint(self, path, size_hint).await
+        Volume::open_read_stream_with_hint(self, &AppPath::legacy_unchecked(path), size_hint).await
     }
 }
 

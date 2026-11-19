@@ -3,6 +3,7 @@
 //! through, and a Cancel during the settle's byte compare.
 
 use super::*;
+use cmdr_fs::app_path;
 
 /// A destination whose rename onto `/notes.txt` goes through and then loses
 /// its reply on the transport.
@@ -19,12 +20,15 @@ impl Volume for RenamesThenLosesTheReply {
 
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            self.inner.rename(from, to, force).await?;
+            let to_app = to;
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
+            self.inner.rename(from, to_app, force).await?;
             if to == Path::new("/notes.txt") {
                 return Err(VolumeError::ConnectionTimeout("the rename's reply never came".into()));
             }
@@ -43,9 +47,9 @@ async fn a_given_up_rename_onto_a_cleared_name_that_went_through_counts_as_lande
         inner: Arc::clone(&inner),
     });
     // A `Rename` pick's placeholder: the name this write claimed.
-    inner.create_file(Path::new("/notes.txt"), b"").await.unwrap();
+    inner.create_file(app_path!("/notes.txt"), b"").await.unwrap();
     inner
-        .create_file(Path::new("/notes.txt.cmdr-tmp-abc"), b"THE NEW BYTES")
+        .create_file(app_path!("/notes.txt.cmdr-tmp-abc"), b"THE NEW BYTES")
         .await
         .unwrap();
 
@@ -59,7 +63,7 @@ async fn a_given_up_rename_onto_a_cleared_name_that_went_through_counts_as_lande
     .expect("the rename went through, so the file landed");
 
     assert_eq!(size_of(&inner, "/notes.txt").await, Some(13));
-    assert!(!inner.exists(Path::new("/notes (recovered).txt")).await);
+    assert!(!inner.exists(app_path!("/notes (recovered).txt")).await);
 }
 
 /// A source whose file opens and then never answers a read: what comparing a
@@ -97,7 +101,7 @@ impl Volume for ReadsForever {
     }
     fn open_read_stream<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> std::pin::Pin<
         Box<dyn Future<Output = Result<Box<dyn cmdr_fs::volume::VolumeReadStream>, VolumeError>> + Send + 'a>,
     > {
@@ -122,13 +126,16 @@ async fn a_cancel_during_a_cut_off_landings_byte_compare_stops_it_and_keeps_the_
     let inner = Arc::new(InMemoryVolume::new("dest"));
     // A `Rename` pick's placeholder, so the landing clears the way and its
     // settle must compare bytes.
-    inner.create_file(Path::new("/notes.txt"), b"").await.unwrap();
+    inner.create_file(app_path!("/notes.txt"), b"").await.unwrap();
     let dest: Arc<dyn Volume> = Arc::new(RenamesThenLosesTheReply {
         inner: Arc::clone(&inner),
     });
     let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::StageOntoClaimedName);
     let temp = staged.target().to_path_buf();
-    inner.create_file(&temp, b"THE NEW BYTES").await.unwrap();
+    inner
+        .create_file(&AppPath::legacy_unchecked(&temp), b"THE NEW BYTES")
+        .await
+        .unwrap();
     let Err(LandingError::CutOff(cut_off)) = staged.commit(&dest, 13).await else {
         panic!("the rename onto the cleared name lost its reply, so the landing is cut off");
     };

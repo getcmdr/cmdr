@@ -183,7 +183,7 @@ pub(crate) fn server_places() -> Vec<ServerPlace> {
         places.push(ServerPlace {
             id,
             name: volume.name().to_string(),
-            app_root: volume.root().to_string_lossy().into_owned(),
+            app_root: volume.root().as_std_legacy().to_string_lossy().into_owned(),
             // No saved entry, so no start folder: it lands at its root.
             landing_path: None,
             fs_type,

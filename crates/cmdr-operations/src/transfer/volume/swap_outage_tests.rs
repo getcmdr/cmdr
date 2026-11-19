@@ -18,6 +18,8 @@
 //! The landing alone, without a wait, is `swap_landing_tests.rs`; the same
 //! sites without an outage are `safe_replace_grid_tests.rs`.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use cmdr_operation_log::types::OperationId;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -167,15 +169,24 @@ async fn run_on(site: Site, cut: Cut, meanwhile: Meanwhile, replace: Replace) ->
     let engine = TestOperations::new();
 
     let dest_inner = Arc::new(InMemoryVolume::new("Testnas").with_space_info(10_000_000, 10_000_000));
-    dest_inner.create_directory(Path::new("/dest")).await.unwrap();
+    dest_inner.create_directory(app_path!("/dest")).await.unwrap();
     if site.folder() != "/dest" {
-        dest_inner.create_directory(Path::new(site.folder())).await.unwrap();
+        dest_inner
+            .create_directory(&AppPath::legacy_unchecked(Path::new(site.folder())))
+            .await
+            .unwrap();
     }
     dest_inner
-        .create_file(&Path::new(site.folder()).join("keep.txt"), KEEP)
+        .create_file(
+            &AppPath::legacy_unchecked(&Path::new(site.folder()).join("keep.txt")),
+            KEEP,
+        )
         .await
         .unwrap();
-    dest_inner.create_file(Path::new(site.orig()), OLD).await.unwrap();
+    dest_inner
+        .create_file(&AppPath::legacy_unchecked(Path::new(site.orig())), OLD)
+        .await
+        .unwrap();
     let nas = OutageVolume::wrap(Arc::clone(&dest_inner), &op_id);
     if replace == Replace::InOneStep {
         nas.replace_atomically();
@@ -199,8 +210,8 @@ async fn run_on(site: Site, cut: Cut, meanwhile: Meanwhile, replace: Replace) ->
         let sources = match site {
             Site::Serial | Site::Move => vec![PathBuf::from("/notes.txt")],
             Site::Concurrent => {
-                inner.create_file(Path::new("/a.txt"), SIBLING_A).await.unwrap();
-                inner.create_file(Path::new("/z.txt"), SIBLING_Z).await.unwrap();
+                inner.create_file(app_path!("/a.txt"), SIBLING_A).await.unwrap();
+                inner.create_file(app_path!("/z.txt"), SIBLING_Z).await.unwrap();
                 vec![
                     PathBuf::from("/a.txt"),
                     PathBuf::from("/notes.txt"),
@@ -208,13 +219,16 @@ async fn run_on(site: Site, cut: Cut, meanwhile: Meanwhile, replace: Replace) ->
                 ]
             }
             Site::MergeChild => {
-                inner.create_directory(Path::new("/album")).await.unwrap();
-                inner.create_file(Path::new("/album/fresh.txt"), FRESH).await.unwrap();
+                inner.create_directory(app_path!("/album")).await.unwrap();
+                inner.create_file(app_path!("/album/fresh.txt"), FRESH).await.unwrap();
                 vec![PathBuf::from("/album")]
             }
             Site::Extract => unreachable!("handled above"),
         };
-        inner.create_file(Path::new(site.source_notes()), NEW).await.unwrap();
+        inner
+            .create_file(&AppPath::legacy_unchecked(Path::new(site.source_notes())), NEW)
+            .await
+            .unwrap();
         (Arc::clone(&inner) as Arc<dyn Volume>, Some(inner), sources, None)
     };
 
@@ -320,7 +334,10 @@ fn act_once_it_waits(
             Meanwhile::ComesBack => nas.become_reachable(),
             Meanwhile::TempRemovedThenBack => {
                 for temp in temps_in(&dest_inner, site.folder()).await {
-                    dest_inner.delete(&temp).await.expect("the temp goes");
+                    dest_inner
+                        .delete(&AppPath::legacy_unchecked(&temp))
+                        .await
+                        .expect("the temp goes");
                 }
                 nas.become_reachable();
             }
@@ -333,7 +350,7 @@ fn act_once_it_waits(
 /// Every `.cmdr-temp-*` aside in `folder`.
 async fn asides_in(volume: &InMemoryVolume, folder: &str) -> Vec<PathBuf> {
     volume
-        .list_directory(Path::new(folder), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new(folder)), None)
         .await
         .unwrap()
         .into_iter()
@@ -345,7 +362,7 @@ async fn asides_in(volume: &InMemoryVolume, folder: &str) -> Vec<PathBuf> {
 /// Every `.cmdr-tmp-*` in `folder`.
 async fn temps_in(volume: &InMemoryVolume, folder: &str) -> Vec<PathBuf> {
     volume
-        .list_directory(Path::new(folder), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new(folder)), None)
         .await
         .unwrap()
         .into_iter()
@@ -355,7 +372,7 @@ async fn temps_in(volume: &InMemoryVolume, folder: &str) -> Vec<PathBuf> {
 }
 
 async fn read_all(volume: &dyn Volume, path: &Path) -> Option<Vec<u8>> {
-    let mut stream = volume.open_read_stream(path).await.ok()?;
+    let mut stream = volume.open_read_stream(&AppPath::legacy_unchecked(path)).await.ok()?;
     let mut buf = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         buf.extend_from_slice(&chunk.ok()?);
@@ -379,7 +396,7 @@ impl Ran {
     async fn names(&self) -> Vec<String> {
         let mut names: Vec<String> = self
             .dest_inner
-            .list_directory(Path::new(self.site.folder()), None)
+            .list_directory(&AppPath::legacy_unchecked(Path::new(self.site.folder())), None)
             .await
             .unwrap()
             .into_iter()
@@ -481,7 +498,10 @@ impl Ran {
             !self.ledger.live_paths().iter().any(|path| path == aside)
         })
         .await;
-        assert!(!self.dest_inner.exists(aside).await, "{label}: and the aside is gone");
+        assert!(
+            !self.dest_inner.exists(&AppPath::legacy_unchecked(aside)).await,
+            "{label}: and the aside is gone"
+        );
         assert_eq!(
             self.orig().await.as_deref(),
             Some(OLD),
@@ -678,7 +698,7 @@ async fn a_stale_error_on_the_move_aside_re_runs_the_swap_at_every_site() {
 async fn a_stale_error_on_a_claimed_names_delete_keeps_the_temp_and_its_resume_lands() {
     let engine = TestOperations::new();
     let inner = Arc::new(InMemoryVolume::new("Testnas"));
-    inner.create_file(Path::new("/notes.txt"), b"").await.unwrap();
+    inner.create_file(app_path!("/notes.txt"), b"").await.unwrap();
     let nas = OutageVolume::wrap(Arc::clone(&inner), "swap-outage-claimed-name");
     nas.stale_error_at_delete_of(Path::new("/notes.txt"), RenameDrop::BeforeTheServerSeesIt);
     let dest = Arc::clone(&nas) as Arc<dyn Volume>;
@@ -691,7 +711,7 @@ async fn a_stale_error_on_a_claimed_names_delete_keeps_the_temp_and_its_resume_l
     let claimed = state.scope().host().announce_on(&*dest, Path::new("/notes.txt"));
     let staged = StagedWrite::begin(&state, &*dest, claimed, WriteStaging::StageOntoClaimedName);
     let temp = staged.target().to_path_buf();
-    inner.create_file(&temp, NEW).await.unwrap();
+    inner.create_file(&AppPath::legacy_unchecked(&temp), NEW).await.unwrap();
 
     let landed = staged.commit(&dest, NEW.len() as u64).await;
 
@@ -726,7 +746,7 @@ async fn resume_after_someone_saved_at_the_cleared_name(
 ) -> (Arc<InMemoryVolume>, Resumed) {
     let engine = TestOperations::new();
     let inner = Arc::new(InMemoryVolume::new("Testnas"));
-    inner.create_file(Path::new("/notes.txt"), b"").await.unwrap();
+    inner.create_file(app_path!("/notes.txt"), b"").await.unwrap();
     inner.set_modified_at(Path::new("/notes.txt"), Some(1_700_000_000));
     let nas = OutageVolume::wrap(Arc::clone(&inner), lane);
     nas.drop_at_delete_of(Path::new("/notes.txt"), RenameDrop::AfterTheServerPerformsIt);
@@ -740,12 +760,12 @@ async fn resume_after_someone_saved_at_the_cleared_name(
     let claimed = state.scope().host().announce_on(&*dest, Path::new("/notes.txt"));
     let staged = StagedWrite::begin(&state, &*dest, claimed, WriteStaging::StageOntoClaimedName);
     let temp = staged.target().to_path_buf();
-    inner.create_file(&temp, NEW).await.unwrap();
+    inner.create_file(&AppPath::legacy_unchecked(&temp), NEW).await.unwrap();
 
     let Err(LandingError::CutOff(cut_off)) = staged.commit(&dest, NEW.len() as u64).await else {
         panic!("a drop at the clearing delete cuts the landing off");
     };
-    inner.create_file(Path::new("/notes.txt"), theirs).await.unwrap();
+    inner.create_file(app_path!("/notes.txt"), theirs).await.unwrap();
     if let Some(dated) = dated {
         inner.set_modified_at(Path::new("/notes.txt"), Some(dated));
     }
@@ -795,7 +815,7 @@ async fn an_empty_file_saved_at_a_claimed_name_is_told_apart_from_the_placeholde
     .await;
 
     let theirs = inner
-        .get_metadata(Path::new("/notes.txt"))
+        .get_metadata(app_path!("/notes.txt"))
         .await
         .expect("❗ their file stays");
     assert_eq!(theirs.size, Some(0));

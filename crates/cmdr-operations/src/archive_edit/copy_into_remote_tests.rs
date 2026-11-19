@@ -7,6 +7,7 @@
 //! the zip intact, and a cancel before the pull leaves the zip untouched.
 
 use super::test_support::*;
+use cmdr_fs::app_path;
 use cmdr_operation_log::types::OperationId;
 
 #[tokio::test]
@@ -193,7 +194,7 @@ async fn move_into_from_a_remote_source_deletes_the_remote_originals_after_commi
     );
     // ...and the REMOTE originals were deleted (a clean move), not the scratch copies.
     assert!(
-        !source.exists(Path::new("/d")).await,
+        !source.exists(app_path!("/d")).await,
         "a clean move-into must delete the remote source tree after a durable commit"
     );
 }
@@ -241,7 +242,7 @@ async fn move_into_from_a_remote_source_keeps_originals_when_a_collision_is_skip
     assert_eq!(read_entry(&archive, "d/b.txt").as_deref(), Some(b"bbb".as_slice()));
     assert_eq!(read_entry(&archive, "d/a.txt").as_deref(), Some(b"OLD".as_slice()));
     assert!(
-        source.exists(Path::new("/d/a.txt")).await && source.exists(Path::new("/d/b.txt")).await,
+        source.exists(app_path!("/d/a.txt")).await && source.exists(app_path!("/d/b.txt")).await,
         "a partial (skipped) remote move must NOT delete the remote source"
     );
 }

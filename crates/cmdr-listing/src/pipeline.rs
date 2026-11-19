@@ -8,6 +8,7 @@
 //! `Prepared` to store. Without that, a refresh that forgot them would strip a
 //! repo's six portal rows out of an open `.git/` pane.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -125,7 +126,7 @@ impl Inner {
                     self.index.enrich(volume_id, &mut entries);
                 }
                 let overlay_rows = OverlayRows::Recounted(self.decorate(volume_id, volume, path, &mut entries).await);
-                let dates = ListedDates::Claimed(volume.supported_dates(path).await);
+                let dates = ListedDates::Claimed(volume.supported_dates(&AppPath::legacy_unchecked(path)).await);
                 Prepared {
                     entries,
                     overlay_rows,

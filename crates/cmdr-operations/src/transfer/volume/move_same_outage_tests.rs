@@ -6,6 +6,7 @@
 //! pin that it does, and that a share that never comes back reads as the lost
 //! connection it is, not a device error.
 
+use cmdr_fs::app_path;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -38,9 +39,9 @@ fn outage_state(engine: &TestOperations, budget: Duration) -> Arc<WriteOperation
 /// A share holding `/batch/f0.txt` and an empty `/dest`.
 async fn share(lane: &str) -> (Arc<InMemoryVolume>, Arc<OutageVolume>) {
     let inner = Arc::new(InMemoryVolume::new("Testnas").with_space_info(10_000_000, 10_000_000));
-    inner.create_directory(Path::new("/batch")).await.unwrap();
-    inner.create_directory(Path::new("/dest")).await.unwrap();
-    inner.create_file(Path::new("/batch/f0.txt"), b"file 0").await.unwrap();
+    inner.create_directory(app_path!("/batch")).await.unwrap();
+    inner.create_directory(app_path!("/dest")).await.unwrap();
+    inner.create_file(app_path!("/batch/f0.txt"), b"file 0").await.unwrap();
     let share = OutageVolume::wrap(Arc::clone(&inner), lane);
     (inner, share)
 }
@@ -97,8 +98,8 @@ async fn a_parent_listing_the_share_drops_under_waits_and_the_move_completes() {
         2,
         "the dropped listing ran again"
     );
-    assert!(!inner.exists(Path::new("/batch/f0.txt")).await, "the source moved away");
-    assert!(inner.exists(Path::new("/dest/f0.txt")).await, "and arrived");
+    assert!(!inner.exists(app_path!("/batch/f0.txt")).await, "the source moved away");
+    assert!(inner.exists(app_path!("/dest/f0.txt")).await, "and arrived");
 }
 
 /// The share never comes back: after the budget, the move stops with "Lost the
@@ -124,5 +125,5 @@ async fn a_parent_listing_whose_share_stays_gone_says_it_lost_the_connection() {
         "the connection is the cause, named with the wait: {error:?}"
     );
     assert!(share.reconnect_attempts() > 1, "after really trying");
-    assert!(inner.exists(Path::new("/batch/f0.txt")).await, "nothing moved");
+    assert!(inner.exists(app_path!("/batch/f0.txt")).await, "nothing moved");
 }

@@ -8,6 +8,7 @@
 use crate::file_system::ScanConflict;
 use crate::operations_host::TauriEventSink;
 use crate::operations_host::{NotInstalled, operations, refuse_not_installed};
+use cmdr_fs::app_path::AppPath;
 use cmdr_operations::{
     CONFLICT_CHECK_BUDGET, OperationEventSink, Operations, SourceItemInput, VolumeCopyConfig, VolumeScanError,
     WriteOperationError, WriteOperationStartResult, resolve_dest_path,
@@ -210,7 +211,13 @@ pub async fn destination_write_access(dest_volume_id: String, dest_path: String)
         Duration::from_secs(2),
         || WriteAccess::Unknown,
         |_| WriteAccess::Unknown,
-        async move { Ok::<_, WriteAccess>(dest_volume.write_access_at(&dest_path).await) },
+        async move {
+            Ok::<_, WriteAccess>(
+                dest_volume
+                    .write_access_at(&AppPath::legacy_unchecked(&dest_path))
+                    .await,
+            )
+        },
     )
     .await
     .unwrap_or_else(|unknown| unknown)
@@ -242,11 +249,11 @@ pub async fn destination_root_echo(dest_volume_id: String, dest_path: String) ->
         .resolve(&dest_volume_id, Path::new(&dest_path))
         .await
         .volume?;
-    let echo = cmdr_fs::volume::root_echo(dest_volume.root(), Path::new(&dest_path))?;
+    let echo = cmdr_fs::volume::root_echo(&dest_volume.root().as_std_legacy(), Path::new(&dest_path))?;
     Some(DestinationRootEcho {
-        root_folder: echo.root_folder.to_string_lossy().into_owned(),
-        resolved: echo.resolved.to_string_lossy().into_owned(),
-        stripped: echo.stripped.to_string_lossy().into_owned(),
+        root_folder: echo.root_folder.as_std_legacy().to_string_lossy().into_owned(),
+        resolved: echo.resolved.as_std_legacy().to_string_lossy().into_owned(),
+        stripped: echo.stripped.as_std_legacy().to_string_lossy().into_owned(),
     })
 }
 

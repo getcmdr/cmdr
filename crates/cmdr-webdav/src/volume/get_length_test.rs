@@ -7,6 +7,7 @@
 //! server did name (a `206`'s `Content-Range`) fails instead of ending
 //! cleanly, so nothing short is ever handed on as the whole file.
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::{StreamLength, Volume, VolumeError, VolumeReadStream};
 
 use super::fake_dav::{FILE_LEN, FakeDav};
@@ -24,10 +25,10 @@ async fn drain(stream: &mut Box<dyn VolumeReadStream>) -> Result<usize, VolumeEr
 async fn a_read_without_a_length_declares_the_callers_hint() {
     let server = FakeDav::start().await;
     let (volume, _) = server.connected().await;
-    let path = volume.root().join("nolength.txt");
+    let path = volume.root().as_std_legacy().join("nolength.txt");
 
     let mut stream = volume
-        .open_read_stream_with_hint(&path, Some(FILE_LEN as u64))
+        .open_read_stream_with_hint(&AppPath::legacy_unchecked(&path), Some(FILE_LEN as u64))
         .await
         .unwrap();
 
@@ -41,7 +42,9 @@ async fn a_read_without_a_length_or_a_hint_says_it_doesnt_know() {
     let (volume, _) = server.connected().await;
 
     let stream = volume
-        .open_read_stream(&volume.root().join("nolength.txt"))
+        .open_read_stream(&AppPath::legacy_unchecked(
+            &volume.root().as_std_legacy().join("nolength.txt"),
+        ))
         .await
         .unwrap();
 
@@ -58,7 +61,10 @@ async fn a_ranged_read_that_ends_before_its_named_length_fails() {
     let (volume, _) = server.connected().await;
 
     let mut stream = volume
-        .open_read_stream_at_offset(&volume.root().join("cut.txt"), 2)
+        .open_read_stream_at_offset(
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("cut.txt")),
+            2,
+        )
         .await
         .unwrap();
     let drained = drain(&mut stream).await;
@@ -75,7 +81,10 @@ async fn a_ranged_read_that_arrives_whole_ends_cleanly() {
     let (volume, _) = server.connected().await;
 
     let mut stream = volume
-        .open_read_stream_at_offset(&volume.root().join("nolength.txt"), 2)
+        .open_read_stream_at_offset(
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("nolength.txt")),
+            2,
+        )
         .await
         .unwrap();
 

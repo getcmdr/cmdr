@@ -2,14 +2,15 @@
 
 use super::*;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_multi_file_copy_cancel_before_start() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
 
-    source.create_file(Path::new("/a.txt"), b"alpha").await.unwrap();
-    source.create_file(Path::new("/b.txt"), b"bravo").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"alpha").await.unwrap();
+    source.create_file(app_path!("/b.txt"), b"bravo").await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
@@ -37,8 +38,8 @@ async fn test_multi_file_copy_cancel_before_start() {
         })
     ));
     // No files should have been copied
-    assert!(!dest.exists(Path::new("/a.txt")).await);
-    assert!(!dest.exists(Path::new("/b.txt")).await);
+    assert!(!dest.exists(app_path!("/a.txt")).await);
+    assert!(!dest.exists(app_path!("/b.txt")).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -97,7 +98,10 @@ async fn test_multi_file_copy_cancel_mid_flight() {
     // scheduler turn, making "not all 5 land" a coin flip.
     for i in 1..=5 {
         source
-            .create_file(Path::new(&format!("/{}.bin", i)), &vec![0; 2_000_000])
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/{}.bin", i))),
+                &vec![0; 2_000_000],
+            )
             .await
             .unwrap();
     }
@@ -142,7 +146,10 @@ async fn test_multi_file_copy_cancel_mid_flight() {
     // assert on the COUNT, not on specific names.
     let mut total = 0;
     for i in 1..=5 {
-        if dest.exists(Path::new(&format!("/{}.bin", i))).await {
+        if dest
+            .exists(&AppPath::legacy_unchecked(Path::new(&format!("/{}.bin", i))))
+            .await
+        {
             total += 1;
         }
     }

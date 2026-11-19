@@ -16,6 +16,7 @@
 //! the active one just aren't necessarily next. `volume/DETAILS.md` §
 //! "Processing order".
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -139,7 +140,7 @@ pub(super) async fn extract_sequential_subtree(
 
     // Phase 2: one decode pass over the subtree's files.
     let mut extractor = source_volume
-        .open_sequential_extract(source_path)
+        .open_sequential_extract(&AppPath::legacy_unchecked(source_path))
         .await
         .at_source(source_path)?;
     let mut total_bytes = 0u64;
@@ -153,7 +154,7 @@ pub(super) async fn extract_sequential_subtree(
         }
         // Not in the plan ⇒ the file was skipped by conflict resolution (or isn't
         // wanted). Drop it; the next `next_file` drains its bytes.
-        let Some(planned) = plan.take(&file.source_path) else {
+        let Some(planned) = plan.take(&file.source_path.as_std_legacy()) else {
             continue;
         };
 
@@ -174,7 +175,8 @@ pub(super) async fn extract_sequential_subtree(
         // adds the archive's quarantine to its xattrs (`extract_quarantine.rs`).
         // A member that fails to decode comes back as the WRITE's error; the
         // watch is what still names the archive for it.
-        let (stream, source_reads) = super::source_reads::watch(extractor.current_stream(), &file.source_path, length);
+        let (stream, source_reads) =
+            super::source_reads::watch(extractor.current_stream(), &file.source_path.as_std_legacy(), length);
         let stream = super::extract_quarantine::quarantine_stream(state, source_volume, stream);
         let lost = super::super::super::metadata_losses::file_losses(&**source_volume, &**dest_volume, &*stream);
         // One decode pass means one member at a time, but this member still
@@ -183,13 +185,19 @@ pub(super) async fn extract_sequential_subtree(
         let leaf = progress.begin_leaf(planned.row);
         let on_chunk = |progress: cmdr_fs::volume::StreamWriteProgress| leaf.on_chunk(progress.bytes_written);
         let written = dest_volume
-            .write_from_stream(staged.target(), staged.write_mode(), length, stream, &on_chunk)
+            .write_from_stream(
+                &AppPath::legacy_unchecked(staged.target()),
+                staged.write_mode(),
+                length,
+                stream,
+                &on_chunk,
+            )
             .await;
         let written = match written {
             Ok(written) => written,
             Err(e) => {
                 staged.abandon(dest_volume).await;
-                return Err(source_reads.label(e, &file.source_path, &planned.dest_path));
+                return Err(source_reads.label(e, &file.source_path.as_std_legacy(), &planned.dest_path));
             }
         };
         let landed = landed_at_final_name(&written, staged.target(), &planned.dest_path);

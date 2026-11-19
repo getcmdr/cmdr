@@ -7,6 +7,8 @@
 //! The engine's mount table puts `/` on a local disk, so a stall there names a
 //! drive; the app's real table is its own cell (`listing_host/mounts.rs`).
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::BridgedPath;
 use std::collections::VecDeque;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -57,7 +59,7 @@ struct Step {
 
 /// A volume whose reads block like a hung kernel mount until `server_back` flips.
 struct SilentServerVolume {
-    root: PathBuf,
+    root: BridgedPath,
     server_back: watch::Receiver<bool>,
     /// What each read does, in call order; the last step repeats.
     script: Mutex<VecDeque<Step>>,
@@ -69,7 +71,7 @@ struct SilentServerVolume {
 impl SilentServerVolume {
     fn new(server_back: watch::Receiver<bool>, script: Vec<Step>) -> Self {
         Self {
-            root: PathBuf::from("/"),
+            root: BridgedPath::new(PathBuf::from("/")),
             server_back,
             script: Mutex::new(script.into()),
             calls: AtomicUsize::new(0),
@@ -110,8 +112,8 @@ impl Volume for SilentServerVolume {
         "Silent server"
     }
 
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -120,7 +122,7 @@ impl Volume for SilentServerVolume {
 
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -153,18 +155,18 @@ impl Volume for SilentServerVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotFound("not scripted".to_string())) })
     }
 
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { true })
     }
 
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(true) })
     }
@@ -430,7 +432,7 @@ async fn reads_on_a_hung_volume_stay_bounded_however_many_listings_start() {
 /// A slow read that ticks every third of the stall deadline, with whatever
 /// `tick` reports for step `n`, and then lists `STEPS` entries.
 struct SlowButSteady {
-    root: PathBuf,
+    root: BridgedPath,
     tick: fn(usize) -> ListingProgress,
 }
 
@@ -442,15 +444,15 @@ impl Volume for SlowButSteady {
     fn name(&self) -> &str {
         "Slow but steady"
     }
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -467,16 +469,16 @@ impl Volume for SlowButSteady {
     }
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotFound("not scripted".to_string())) })
     }
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { true })
     }
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(true) })
     }
@@ -490,7 +492,7 @@ async fn list_slow_but_steady(tick: fn(usize) -> ListingProgress, name: &str) ->
     engine.volumes.register(
         &volume_id,
         Arc::new(SlowButSteady {
-            root: PathBuf::from("/"),
+            root: BridgedPath::new(PathBuf::from("/")),
             tick,
         }) as Arc<dyn Volume>,
     );

@@ -7,6 +7,7 @@
 //! `MtpConnectionManager` (`MtpDeleteScope`), and this file pins both halves of
 //! the split plus the shared cross-backend assertion.
 
+use cmdr_fs::app_path;
 use std::path::Path;
 
 use cmdr_fs::volume::{Volume, VolumeError};
@@ -35,7 +36,7 @@ async fn delete_refuses_a_non_empty_folder_with_a_typed_error() {
     let _guard = device_lock().await;
     let (device, vol) = connect_virtual_volume(None).await;
 
-    let outcome = vol.delete(Path::new("/Documents")).await;
+    let outcome = vol.delete(app_path!("/Documents")).await;
     assert!(
         matches!(
             outcome,
@@ -49,7 +50,7 @@ async fn delete_refuses_a_non_empty_folder_with_a_typed_error() {
 
     // Nothing went, on the device or in the path cache.
     let listing = vol
-        .list_directory(Path::new("/Documents"), None)
+        .list_directory(app_path!("/Documents"), None)
         .await
         .expect("the refused folder must still be listable");
     assert!(
@@ -79,14 +80,14 @@ async fn delete_still_removes_an_empty_folder() {
     let _guard = device_lock().await;
     let (device, vol) = connect_virtual_volume(None).await;
 
-    vol.create_directory(Path::new("/empty-one"))
+    vol.create_directory(app_path!("/empty-one"))
         .await
         .expect("creating an empty folder");
-    vol.delete(Path::new("/empty-one"))
+    vol.delete(app_path!("/empty-one"))
         .await
         .expect("an EMPTY folder must still delete");
 
-    let root = vol.list_directory(Path::new("/"), None).await.expect("listing root");
+    let root = vol.list_directory(app_path!("/"), None).await.expect("listing root");
     assert!(
         !root.iter().any(|e| e.name == "empty-one"),
         "the empty folder must be gone"
@@ -123,7 +124,7 @@ async fn tree_scope_still_removes_a_whole_subtree() {
     let backing = device.root().join("internal");
     // `/DCIM` holds a file AND a `Burst/` subfolder with its own file, so this
     // covers the recursive branch, not just a one-level directory.
-    vol.list_directory(Path::new("/DCIM"), None)
+    vol.list_directory(app_path!("/DCIM"), None)
         .await
         .expect("priming the DCIM listing");
 

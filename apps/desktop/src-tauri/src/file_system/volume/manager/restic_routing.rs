@@ -13,6 +13,7 @@ use crate::file_system::restic::wiring;
 use crate::file_system::volume::Volume;
 use crate::file_system::volume::{ResolvedVolume, RoutedKind};
 use crate::ignore_poison::IgnorePoison;
+use cmdr_fs::app_path::AppPath;
 use std::collections::{HashMap, VecDeque};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Weak};
@@ -131,7 +132,7 @@ impl VolumeManager {
         match self.get(&view_id) {
             Some(volume) => ResolvedVolume {
                 volume: Some(volume),
-                path: path.to_path_buf(),
+                path: AppPath::legacy_unchecked(path).into_owned(),
                 routed: Some(RoutedKind::Restic),
                 unconfirmed: None,
             },

@@ -153,7 +153,7 @@ pub async fn media_index_set_excluded_folder(app: AppHandle, folder: String, exc
     let mounts: Vec<(String, String)> = crate::file_system::volume::manager::get_volume_manager()
         .list_volumes_with_handles()
         .into_iter()
-        .map(|(id, vol)| (id, vol.root().to_string_lossy().into_owned()))
+        .map(|(id, vol)| (id, vol.root().as_std_legacy().to_string_lossy().into_owned()))
         .collect();
     // The prune blocks on the writer thread, so run it off the IPC thread.
     let logged_folder = folder.clone();

@@ -10,6 +10,8 @@
 //! the app's: `cmdr-mtp` knows nothing about zips. The whole module requires the
 //! `virtual-mtp` feature, gated on it in `operations_host/backend_suites/mod.rs`.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 
 use cmdr_fs::volume::Volume;
@@ -53,7 +55,10 @@ async fn connect_virtual_device_with_zip(zip_bytes: &[u8]) -> ConnectedDevice {
 /// `name -> contents` map (re-verifies edits THROUGH the device, not a local copy).
 async fn read_device_zip(vol: &MtpVolume, path: &Path) -> std::collections::HashMap<String, Vec<u8>> {
     use std::io::Read as _;
-    let mut stream = vol.open_read_stream(path).await.expect("open device archive");
+    let mut stream = vol
+        .open_read_stream(&AppPath::legacy_unchecked(path))
+        .await
+        .expect("open device archive");
     let mut bytes = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         bytes.extend_from_slice(&chunk.expect("read archive chunk"));
@@ -80,7 +85,7 @@ async fn virtual_mtp_archive_browses_and_extracts_via_read_range() {
 
     async fn drain(archive: &ArchiveVolume, inner: &str) -> Vec<u8> {
         let mut stream = archive
-            .open_read_stream(Path::new(inner))
+            .open_read_stream(&AppPath::legacy_unchecked(Path::new(inner)))
             .await
             .expect("open inner entry");
         let mut out = Vec::new();
@@ -104,7 +109,7 @@ async fn virtual_mtp_archive_browses_and_extracts_via_read_range() {
 
     // Browse: synthetic `dir` first, then the root file.
     let root_listing = archive
-        .list_directory(Path::new(""), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
         .await
         .expect("browse archive root");
     let names: Vec<String> = root_listing.iter().map(|e| e.name.clone()).collect();
@@ -171,7 +176,7 @@ async fn virtual_mtp_remote_zip_edit_deletes_an_entry_through_the_device() {
     );
 
     // Exactly one bundle.zip remains (no sibling duplicate from the swap), no temp.
-    let entries = vol.list_directory(Path::new("/"), None).await.expect("list root");
+    let entries = vol.list_directory(app_path!("/"), None).await.expect("list root");
     assert_eq!(
         entries.iter().filter(|e| e.name == "bundle.zip").count(),
         1,

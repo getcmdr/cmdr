@@ -27,6 +27,7 @@ use super::tests::{make_state, make_volumes};
 use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path;
 use std::time::Instant;
 
 use crate::outage_slot::OutagePolicy;
@@ -107,7 +108,7 @@ impl Volume for WindowWatchingDest {
 
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             if self.live.load(Ordering::Relaxed) > 0 {
@@ -119,7 +120,7 @@ impl Volume for WindowWatchingDest {
 
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn cmdr_fs::volume::VolumeReadStream>,
@@ -165,17 +166,20 @@ impl Volume for PoisonedLeafSource {
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn cmdr_fs::volume::VolumeReadStream>, VolumeError>> + Send + 'a>>
     {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             if path.to_string_lossy() == self.poisoned {
                 return Err(VolumeError::IoError {
                     message: "Injected read failure".into(),
                     raw_os_error: Some(5),
                 });
             }
-            self.inner.open_read_stream(path).await
+            self.inner.open_read_stream(path_app).await
         })
     }
 }
@@ -183,11 +187,11 @@ impl Volume for PoisonedLeafSource {
 /// Builds `/album` with `count` files on a fresh in-memory source.
 async fn folder_of(count: usize) -> Arc<dyn Volume> {
     let (source, _) = make_volumes();
-    source.create_directory(Path::new("/album")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
     for index in 0..count {
         let name = format!("/album/f-{index:02}.bin");
         source
-            .create_file(Path::new(&name), &vec![index as u8; 4_096])
+            .create_file(&AppPath::legacy_unchecked(Path::new(&name)), &vec![index as u8; 4_096])
             .await
             .unwrap();
     }
@@ -239,7 +243,7 @@ async fn one_folders_subtree_fills_the_operation_window() {
     for index in 0..12 {
         let landed = format!("/out/album/f-{index:02}.bin");
         assert!(
-            dest_volume.exists(Path::new(&landed)).await,
+            dest_volume.exists(&AppPath::legacy_unchecked(Path::new(&landed))).await,
             "{landed} must be at the destination"
         );
     }
@@ -256,11 +260,14 @@ async fn four_folder_sources_share_one_window_rather_than_taking_one_each() {
     let mut sources = Vec::new();
     for folder in 0..4 {
         let dir = format!("/album-{folder}");
-        source.create_directory(Path::new(&dir)).await.unwrap();
+        source
+            .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+            .await
+            .unwrap();
         for index in 0..6 {
             let name = format!("{dir}/f-{index:02}.bin");
             source
-                .create_file(Path::new(&name), &vec![index as u8; 4_096])
+                .create_file(&AppPath::legacy_unchecked(Path::new(&name)), &vec![index as u8; 4_096])
                 .await
                 .unwrap();
         }
@@ -296,7 +303,7 @@ async fn four_folder_sources_share_one_window_rather_than_taking_one_each() {
         for index in 0..6 {
             let landed = format!("/out/album-{folder}/f-{index:02}.bin");
             assert!(
-                dest_volume.exists(Path::new(&landed)).await,
+                dest_volume.exists(&AppPath::legacy_unchecked(Path::new(&landed))).await,
                 "{landed} must be at the destination"
             );
         }
@@ -311,15 +318,21 @@ async fn four_folder_sources_share_one_window_rather_than_taking_one_each() {
 async fn a_cap_of_one_keeps_a_subtree_strictly_one_operation_at_a_time() {
     let engine = TestOperations::new();
     let (source, _) = make_volumes();
-    source.create_directory(Path::new("/album")).await.unwrap();
-    source.create_directory(Path::new("/album/sub")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
+    source.create_directory(app_path!("/album/sub")).await.unwrap();
     for index in 0..3 {
         source
-            .create_file(Path::new(&format!("/album/f-{index}.bin")), b"top")
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/album/f-{index}.bin"))),
+                b"top",
+            )
             .await
             .unwrap();
         source
-            .create_file(Path::new(&format!("/album/sub/g-{index}.bin")), b"deep")
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/album/sub/g-{index}.bin"))),
+                b"deep",
+            )
             .await
             .unwrap();
     }
@@ -362,11 +375,14 @@ async fn deep_prompts_keep_listing_order_while_the_copies_overlap() {
     let dest = WindowWatchingDest::new(8, 8);
     let dest_volume: Arc<dyn Volume> = Arc::clone(&dest) as Arc<dyn Volume>;
     // Every source file clashes, so every one prompts.
-    dest_volume.create_directory(Path::new("/out")).await.unwrap();
-    dest_volume.create_directory(Path::new("/out/album")).await.unwrap();
+    dest_volume.create_directory(app_path!("/out")).await.unwrap();
+    dest_volume.create_directory(app_path!("/out/album")).await.unwrap();
     for index in 0..8 {
         dest_volume
-            .create_file(Path::new(&format!("/out/album/f-{index:02}.bin")), b"old")
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/out/album/f-{index:02}.bin"))),
+                b"old",
+            )
             .await
             .unwrap();
     }
@@ -514,13 +530,19 @@ async fn a_rolled_back_wide_window_copy_leaves_no_directory_it_created() {
     }
 
     let (source, _) = make_volumes();
-    source.create_directory(Path::new("/album")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
     for sub in 0..3 {
         let dir = format!("/album/sub-{sub}");
-        source.create_directory(Path::new(&dir)).await.unwrap();
+        source
+            .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+            .await
+            .unwrap();
         for index in 0..8 {
             source
-                .create_file(Path::new(&format!("{dir}/f-{index:02}.bin")), &vec![index as u8; 8_192])
+                .create_file(
+                    &AppPath::legacy_unchecked(Path::new(&format!("{dir}/f-{index:02}.bin"))),
+                    &vec![index as u8; 8_192],
+                )
                 .await
                 .unwrap();
         }
@@ -560,12 +582,12 @@ async fn a_rolled_back_wide_window_copy_leaves_no_directory_it_created() {
     for sub in 0..3 {
         let dir = format!("/out/album/sub-{sub}");
         assert!(
-            !dest_volume.exists(Path::new(&dir)).await,
+            !dest_volume.exists(&AppPath::legacy_unchecked(Path::new(&dir))).await,
             "{dir} survived the rollback, so something it holds was never recorded"
         );
     }
     assert!(
-        !dest_volume.exists(Path::new("/out/album")).await,
+        !dest_volume.exists(app_path!("/out/album")).await,
         "/out/album survived the rollback"
     );
 }
@@ -577,10 +599,13 @@ async fn a_rolled_back_wide_window_copy_leaves_no_directory_it_created() {
 async fn a_failing_leaf_names_itself_and_its_landed_siblings_stay_recorded() {
     let engine = TestOperations::new();
     let inner_source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    inner_source.create_directory(Path::new("/album")).await.unwrap();
+    inner_source.create_directory(app_path!("/album")).await.unwrap();
     for index in 0..8 {
         inner_source
-            .create_file(Path::new(&format!("/album/f-{index:02}.bin")), &vec![7u8; 4_096])
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/album/f-{index:02}.bin"))),
+                &vec![7u8; 4_096],
+            )
             .await
             .unwrap();
     }
@@ -616,7 +641,7 @@ async fn a_failing_leaf_names_itself_and_its_landed_siblings_stay_recorded() {
     );
 
     assert!(
-        !dest_volume.exists(Path::new("/out/album/f-05.bin")).await,
+        !dest_volume.exists(app_path!("/out/album/f-05.bin")).await,
         "the poisoned file must not be at the destination"
     );
     assert_eq!(
@@ -711,7 +736,7 @@ impl Volume for SingleFlightShare {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             self.reachable()?;
@@ -721,7 +746,7 @@ impl Volume for SingleFlightShare {
 
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn cmdr_fs::volume::VolumeReadStream>,
@@ -753,12 +778,12 @@ async fn a_walker_waiting_out_an_outage_keeps_its_leaves_moving() {
     let engine = TestOperations::new();
     let source = folder_of(3).await;
     let share = SingleFlightShare::new();
-    share.inner.create_directory(Path::new("/out")).await.unwrap();
-    share.inner.create_directory(Path::new("/out/album")).await.unwrap();
+    share.inner.create_directory(app_path!("/out")).await.unwrap();
+    share.inner.create_directory(app_path!("/out/album")).await.unwrap();
     // The clash whose Overwrite probe meets the dropped share.
     share
         .inner
-        .create_file(Path::new("/out/album/f-02.bin"), b"the original")
+        .create_file(app_path!("/out/album/f-02.bin"), b"the original")
         .await
         .unwrap();
     let dest_volume: Arc<dyn Volume> = Arc::clone(&share) as Arc<dyn Volume>;
@@ -799,7 +824,12 @@ async fn a_walker_waiting_out_an_outage_keeps_its_leaves_moving() {
     for index in 0..3 {
         let landed = format!("/out/album/f-{index:02}.bin");
         assert_eq!(
-            share.inner.get_metadata(Path::new(&landed)).await.unwrap().size,
+            share
+                .inner
+                .get_metadata(&AppPath::legacy_unchecked(Path::new(&landed)))
+                .await
+                .unwrap()
+                .size,
             Some(4_096),
             "{landed} must land, the clash replaced"
         );

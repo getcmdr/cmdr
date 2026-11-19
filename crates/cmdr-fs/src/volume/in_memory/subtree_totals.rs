@@ -49,7 +49,7 @@ impl InMemoryVolume {
         let entries = self.entries.read_ignore_poison();
         entries
             .iter()
-            .filter(|(path, _)| **path != self.root && path.as_path() != Path::new("/"))
+            .filter(|(path, _)| **path != *self.root && path.as_path() != Path::new("/"))
             .map(|(path, held)| FileEntry {
                 path: path.to_string_lossy().into_owned(),
                 ..held.metadata.clone()
@@ -66,7 +66,7 @@ impl InMemoryVolume {
             .iter()
             .map(|path| {
                 let path = self.normalize(path);
-                let is_root = path == self.root || path == Path::new("/");
+                let is_root = path == *self.root || path == Path::new("/");
                 match entries.get(&path) {
                     Some(held) if !held.metadata.is_directory || held.metadata.is_symlink => Some(HeldAt::Leaf {
                         size: held.metadata.size.unwrap_or(0),

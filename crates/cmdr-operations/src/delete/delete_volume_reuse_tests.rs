@@ -7,6 +7,9 @@
 //! wiring, listing cache seeding) and `volume/copy_tests/` (state + sink +
 //! preview-result seeding).
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -72,7 +75,7 @@ impl Volume for CountingVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -81,7 +84,7 @@ impl Volume for CountingVolume {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.list_dir_calls.fetch_add(1, Ordering::Relaxed);
@@ -90,18 +93,18 @@ impl Volume for CountingVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
 
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
 
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.type_probe_calls.fetch_add(1, Ordering::Relaxed);
         self.inner.is_directory(path)
@@ -109,18 +112,18 @@ impl Volume for CountingVolume {
 
     fn entry_kind<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::volume::EntryKind, VolumeError>> + Send + 'a>> {
         self.type_probe_calls.fetch_add(1, Ordering::Relaxed);
         self.inner.entry_kind(path)
     }
 
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.delete_calls.fetch_add(1, Ordering::Relaxed);
         self.inner.delete(path)
     }
 
-    fn listing_watch_coverage(&self, _path: &Path) -> WatchCoverage {
+    fn listing_watch_coverage(&self, _path: &AppPath) -> WatchCoverage {
         if self.watched.load(Ordering::Relaxed) {
             WatchCoverage::EveryWriter
         } else {
@@ -130,14 +133,14 @@ impl Volume for CountingVolume {
 
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_copy(path)
     }
 
     fn scan_for_copy_batch_with_boundary<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a cmdr_fs::volume::ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_copy_batch_with_boundary(paths, boundary)
@@ -212,8 +215,8 @@ async fn delete_consumes_preview_id_skips_rescan() {
 
     // Keep a typed Arc so we can read the counters after the trait call.
     let vol = Arc::new(CountingVolume::new("preview-vol", false));
-    vol.inner.create_file(Path::new("/a.jpg"), b"alpha").await.unwrap();
-    vol.inner.create_file(Path::new("/b.jpg"), b"betabb").await.unwrap();
+    vol.inner.create_file(app_path!("/a.jpg"), b"alpha").await.unwrap();
+    vol.inner.create_file(app_path!("/b.jpg"), b"betabb").await.unwrap();
     let engine = TestOperations::new();
     engine.volumes().register(&vid, vol.clone() as Arc<dyn Volume>);
 
@@ -296,8 +299,8 @@ async fn delete_without_preview_id_still_walks() {
     let vid = unique("no_preview");
 
     let vol = Arc::new(CountingVolume::new("no-preview-vol", false));
-    vol.inner.create_file(Path::new("/x.txt"), b"x").await.unwrap();
-    vol.inner.create_file(Path::new("/y.txt"), b"yy").await.unwrap();
+    vol.inner.create_file(app_path!("/x.txt"), b"x").await.unwrap();
+    vol.inner.create_file(app_path!("/y.txt"), b"yy").await.unwrap();
     let engine = TestOperations::new();
     engine.volumes().register(&vid, vol.clone() as Arc<dyn Volume>);
 
@@ -337,9 +340,9 @@ async fn delete_top_level_files_no_is_directory_probes() {
     let vid = unique("oracle_top_level");
 
     let vol = Arc::new(CountingVolume::new("oracle-top-level-vol", true));
-    vol.inner.create_file(Path::new("/dcim/a.jpg"), b"alpha").await.unwrap();
+    vol.inner.create_file(app_path!("/dcim/a.jpg"), b"alpha").await.unwrap();
     vol.inner
-        .create_file(Path::new("/dcim/b.jpg"), b"betabb")
+        .create_file(app_path!("/dcim/b.jpg"), b"betabb")
         .await
         .unwrap();
     let engine = TestOperations::seeing(&panes);
@@ -399,10 +402,13 @@ async fn delete_mid_scan_listing_close() {
     // real backend: a folder delete that answers `NotFound` costs one more
     // probe, the already-gone check (`outage::Removed::AlreadyGone`).
     for folder in ["/root", "/root/sub"] {
-        vol.inner.create_directory(Path::new(folder)).await.unwrap();
+        vol.inner
+            .create_directory(&AppPath::legacy_unchecked(Path::new(folder)))
+            .await
+            .unwrap();
     }
     vol.inner
-        .create_file(Path::new("/root/sub/real.bin"), b"abcdef")
+        .create_file(app_path!("/root/sub/real.bin"), b"abcdef")
         .await
         .unwrap();
     let engine = TestOperations::seeing(&panes);
@@ -470,8 +476,8 @@ async fn delete_cancel_during_scan_emits_write_cancelled() {
     let vid = unique("cancel_scan_emits");
 
     let vol = Arc::new(CountingVolume::new("cancel-scan-vol", false));
-    vol.inner.create_file(Path::new("/dir/a.jpg"), b"alpha").await.unwrap();
-    vol.inner.create_file(Path::new("/dir/b.jpg"), b"betabb").await.unwrap();
+    vol.inner.create_file(app_path!("/dir/a.jpg"), b"alpha").await.unwrap();
+    vol.inner.create_file(app_path!("/dir/b.jpg"), b"betabb").await.unwrap();
     let engine = TestOperations::new();
     engine.volumes().register(&vid, vol.clone() as Arc<dyn Volume>);
 
@@ -533,11 +539,11 @@ async fn a_source_whose_stat_fails_surfaces_that_failure_instead_of_being_guesse
 
     let vol = Arc::new(CountingVolume::new("stat-fail-vol", false));
     vol.inner
-        .create_directory(Path::new("/album"))
+        .create_directory(app_path!("/album"))
         .await
         .expect("seed album dir");
     vol.inner
-        .create_file(Path::new("/album/photo.jpg"), b"photo")
+        .create_file(app_path!("/album/photo.jpg"), b"photo")
         .await
         .expect("seed album child");
     vol.inner.set_stat_failing(Path::new("/album"));
@@ -583,15 +589,15 @@ async fn a_cache_hit_with_no_per_source_results_still_deletes_the_right_tree() {
 
     let vol = Arc::new(CountingVolume::new("empty-per-path-vol", false));
     vol.inner
-        .create_directory(Path::new("/album"))
+        .create_directory(app_path!("/album"))
         .await
         .expect("seed album dir");
     vol.inner
-        .create_file(Path::new("/album/one.jpg"), b"one")
+        .create_file(app_path!("/album/one.jpg"), b"one")
         .await
         .expect("seed child one");
     vol.inner
-        .create_file(Path::new("/album/two.jpg"), b"two")
+        .create_file(app_path!("/album/two.jpg"), b"two")
         .await
         .expect("seed child two");
     let engine = TestOperations::new();
@@ -627,15 +633,15 @@ async fn a_cache_hit_with_no_per_source_results_still_deletes_the_right_tree() {
 
     assert!(result.is_ok(), "the delete must succeed: {result:?}");
     assert!(
-        !vol.inner.exists(Path::new("/album/one.jpg")).await,
+        !vol.inner.exists(app_path!("/album/one.jpg")).await,
         "the tree's children must be deleted"
     );
     assert!(
-        !vol.inner.exists(Path::new("/album/two.jpg")).await,
+        !vol.inner.exists(app_path!("/album/two.jpg")).await,
         "the tree's children must be deleted"
     );
     assert!(
-        !vol.inner.exists(Path::new("/album")).await,
+        !vol.inner.exists(app_path!("/album")).await,
         "the directory itself must be deleted"
     );
 }

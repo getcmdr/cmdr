@@ -1,6 +1,7 @@
 //! The path questions a write's dialogs ask (`commands/file_system/{path_checks,stat}.rs` in the
 //! app), answered by the volume itself, so they see every write the engine made.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 
 use cmdr_fs::deadline::TimedOut;
@@ -25,7 +26,7 @@ impl DemoOperations {
             "path_exists" | "destination_exists" => {
                 let a: PathExistsArgs = parse(command, args)?;
                 let here = a.volume_id.as_deref().is_none_or(|id| id == self.volume_id);
-                let exists = here && self.volume.exists(Path::new(&a.path)).await;
+                let exists = here && self.volume.exists(&AppPath::legacy_unchecked(Path::new(&a.path))).await;
                 ok(TimedOut {
                     data: exists,
                     timed_out: false,
@@ -34,12 +35,12 @@ impl DemoOperations {
             "destination_root_echo" => {
                 let a: RootEchoArgs = parse(command, args)?;
                 let echo = (a.dest_volume_id == self.volume_id)
-                    .then(|| cmdr_fs::volume::root_echo(self.volume.root(), Path::new(&a.dest_path)))
+                    .then(|| cmdr_fs::volume::root_echo(&self.volume.root().as_std_legacy(), Path::new(&a.dest_path)))
                     .flatten()
                     .map(|echo| RootEchoAnswer {
-                        root_folder: echo.root_folder.to_string_lossy().into_owned(),
-                        resolved: echo.resolved.to_string_lossy().into_owned(),
-                        stripped: echo.stripped.to_string_lossy().into_owned(),
+                        root_folder: echo.root_folder.as_std_legacy().to_string_lossy().into_owned(),
+                        resolved: echo.resolved.as_std_legacy().to_string_lossy().into_owned(),
+                        stripped: echo.stripped.as_std_legacy().to_string_lossy().into_owned(),
                     });
                 ok(echo)
             }
@@ -51,7 +52,7 @@ impl DemoOperations {
                 for path in &a.paths {
                     kinds.push(
                         self.volume
-                            .get_metadata(Path::new(path))
+                            .get_metadata(&AppPath::legacy_unchecked(Path::new(path)))
                             .await
                             .ok()
                             .map(|e| e.is_directory),

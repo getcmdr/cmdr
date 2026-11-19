@@ -2,6 +2,7 @@
 //! (ERR-962JD). Each case queues a real local move behind a lane holder on an
 //! engine of its own, changes the sources while it waits, and lets it in.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -297,7 +298,10 @@ async fn on_a_volume_only_a_source_that_is_really_missing_counts_as_gone() {
     let engine = TestOperations::new();
     let volume = InMemoryVolume::new("queued-sources-vol");
     for name in ["/kept.txt", "/unreadable.txt"] {
-        volume.create_file(Path::new(name), b"x").await.expect("seed");
+        volume
+            .create_file(&AppPath::legacy_unchecked(Path::new(name)), b"x")
+            .await
+            .expect("seed");
     }
     volume.set_stat_failing(Path::new("/unreadable.txt"));
     let sources = vec![

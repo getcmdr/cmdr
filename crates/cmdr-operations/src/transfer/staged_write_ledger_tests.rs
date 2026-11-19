@@ -6,6 +6,7 @@
 
 use super::*;
 use crate::types::WriteOperationError;
+use cmdr_fs::app_path;
 
 /// A destination that notes what the ledger's log held when the landing's
 /// clearing `delete` went out, and can hold the landing rename that follows it.
@@ -28,7 +29,7 @@ impl Volume for WatchedLanding {
     }
     fn delete<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         *self.on_disk_at_delete.lock_ignore_poison() = Some(Ledger::replay_log(&self.data_dir));
         self.deleted.store(true, std::sync::atomic::Ordering::SeqCst);
@@ -36,8 +37,8 @@ impl Volume for WatchedLanding {
     }
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         if self.hold_rename_after_delete && self.deleted.load(std::sync::atomic::Ordering::SeqCst) {
@@ -68,7 +69,7 @@ async fn claimed_landing(name: &str, hold_rename_after_delete: bool) -> ClaimedL
     let engine = TestOperations::new();
     let state = state_recording_into(&engine, &ledger);
     let inner = Arc::new(InMemoryVolume::new("dest"));
-    inner.create_file(Path::new("/notes.txt"), b"").await.unwrap();
+    inner.create_file(app_path!("/notes.txt"), b"").await.unwrap();
     let dest = Arc::new(WatchedLanding {
         inner: Arc::clone(&inner),
         data_dir,
@@ -78,7 +79,10 @@ async fn claimed_landing(name: &str, hold_rename_after_delete: bool) -> ClaimedL
     });
     let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::StageOntoClaimedName);
     let temp = staged.target().to_path_buf();
-    inner.create_file(&temp, b"THE NEW BYTES").await.unwrap();
+    inner
+        .create_file(&AppPath::legacy_unchecked(&temp), b"THE NEW BYTES")
+        .await
+        .unwrap();
     ClaimedLanding {
         dir,
         engine,
@@ -147,7 +151,7 @@ async fn a_landing_cut_off_after_clearing_the_way_is_finished_by_the_next_launch
         "the rename after the delete is rigged never to answer"
     );
     assert!(
-        !fixture.inner.exists(Path::new("/notes.txt")).await,
+        !fixture.inner.exists(app_path!("/notes.txt")).await,
         "the way was cleared"
     );
     assert!(
@@ -168,7 +172,7 @@ async fn a_landing_cut_off_after_clearing_the_way_is_finished_by_the_next_launch
         Some(13),
         "the next launch lands the new bytes at their name: {tally:?}"
     );
-    assert!(!fixture.inner.exists(&fixture.temp).await);
+    assert!(!fixture.inner.exists(&AppPath::legacy_unchecked(&fixture.temp)).await);
     drop(fixture.engine);
 }
 
@@ -176,9 +180,12 @@ async fn a_landing_cut_off_after_clearing_the_way_is_finished_by_the_next_launch
 /// `state`, landing on a plain in-memory destination.
 async fn swap_over(state: &Arc<WriteOperationState>) -> (Arc<InMemoryVolume>, Arc<dyn Volume>, StagedWrite) {
     let inner = Arc::new(InMemoryVolume::new("dest"));
-    inner.create_file(Path::new("/notes.txt"), b"OLD").await.unwrap();
+    inner.create_file(app_path!("/notes.txt"), b"OLD").await.unwrap();
     let staged = StagedWrite::begin_unannounced(state, Path::new("/notes.txt"), WriteStaging::StageOverOriginal);
-    inner.create_file(staged.target(), b"THE NEW BYTES").await.unwrap();
+    inner
+        .create_file(&AppPath::legacy_unchecked(staged.target()), b"THE NEW BYTES")
+        .await
+        .unwrap();
     let dest: Arc<dyn Volume> = Arc::clone(&inner) as Arc<dyn Volume>;
     (inner, dest, staged)
 }
@@ -186,7 +193,7 @@ async fn swap_over(state: &Arc<WriteOperationState>) -> (Arc<InMemoryVolume>, Ar
 /// Every aside (`.cmdr-temp-*`) in `folder`.
 async fn asides_in(volume: &InMemoryVolume, folder: &str) -> Vec<PathBuf> {
     volume
-        .list_directory(Path::new(folder), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new(folder)), None)
         .await
         .unwrap()
         .into_iter()

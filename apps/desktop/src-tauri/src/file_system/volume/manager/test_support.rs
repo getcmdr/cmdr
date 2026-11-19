@@ -1,8 +1,11 @@
 //! Test isolation for the process-global `VolumeManager`.
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::BridgedPath;
 use cmdr_fs::volume::Retirement;
 use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 
@@ -71,7 +74,7 @@ impl Drop for TestVolumeRegistration {
 /// re-rooted onto a surviving mount is the same share, the same session, and the
 /// same watcher, so retiring one instance would stand the live one down.
 pub(crate) struct RetiringVolume {
-    root: PathBuf,
+    root: BridgedPath,
     retirement: Arc<Retirement>,
 }
 
@@ -81,7 +84,7 @@ impl RetiringVolume {
         let retirement = Arc::new(Retirement::new());
         let reader = Arc::clone(&retirement);
         let volume = Arc::new(Self {
-            root: PathBuf::from(root),
+            root: BridgedPath::new(PathBuf::from(root)),
             retirement,
         });
         (volume, move || reader.is_retired())
@@ -93,8 +96,8 @@ impl Volume for RetiringVolume {
         "retiring"
     }
 
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -105,16 +108,18 @@ impl Volume for RetiringVolume {
         Some(&self.retirement)
     }
 
-    fn rerooted(&self, new_root: &Path) -> Option<Arc<dyn Volume>> {
+    fn rerooted(&self, new_root: &AppPath) -> Option<Arc<dyn Volume>> {
+        let new_root_std = new_root.as_std_legacy();
+        let new_root: &Path = &new_root_std;
         Some(Arc::new(Self {
-            root: new_root.to_path_buf(),
+            root: BridgedPath::new(new_root.to_path_buf()),
             retirement: Arc::clone(&self.retirement),
         }))
     }
 
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(crate::file_system::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(Vec::new()) })
@@ -122,18 +127,18 @@ impl Volume for RetiringVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
 
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { false })
     }
 
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }

@@ -35,6 +35,7 @@ mod inner {
             dfs_enabled: false,
             dfs_target_overrides: Default::default(),
             connect_options: None,
+            ..Default::default()
         };
 
         // Step 1: Connect

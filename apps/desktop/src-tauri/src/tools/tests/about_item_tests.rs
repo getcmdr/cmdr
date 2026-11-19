@@ -1,6 +1,8 @@
 //! `about_item` through the real gate (`execute_tool`): who may call it, what a
 //! turn Cmdr started may touch, and what a protected path lets out.
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::BridgedPath;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
@@ -119,7 +121,7 @@ async fn a_direct_client_gets_it_and_the_read_is_logged_by_tool() {
 
 /// A share Cmdr dials, counting every call made to it.
 struct CountingShare {
-    root: PathBuf,
+    root: BridgedPath,
     calls: AtomicUsize,
 }
 
@@ -128,8 +130,8 @@ impl Volume for CountingShare {
         "counting share"
     }
 
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -142,25 +144,33 @@ impl Volume for CountingShare {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.calls.fetch_add(1, Ordering::SeqCst);
-        Box::pin(async move { Err(VolumeError::NotFound(path.display().to_string())) })
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            Err(VolumeError::NotFound(path.display().to_string()))
+        })
     }
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.calls.fetch_add(1, Ordering::SeqCst);
-        Box::pin(async move { Err(VolumeError::NotFound(path.display().to_string())) })
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            Err(VolumeError::NotFound(path.display().to_string()))
+        })
     }
 }
 
 fn counting_share(id: &str) -> Arc<CountingShare> {
     let share = Arc::new(CountingShare {
-        root: PathBuf::from(format!("/{id}")),
+        root: BridgedPath::new(PathBuf::from(format!("/{id}"))),
         calls: AtomicUsize::new(0),
     });
     get_volume_manager().register(id, Arc::clone(&share) as Arc<dyn Volume>);

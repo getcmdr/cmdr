@@ -23,6 +23,7 @@
 
 use super::test_support::{SlowSource, TierOneWitnessDest, WedgedOpenSource, WedgedThenWorkingDest, make_state};
 use super::*;
+use cmdr_fs::app_path;
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -48,7 +49,7 @@ const ABORT_WITHIN: Duration = Duration::from_secs(2);
 /// An in-memory source holding one file at `/a.txt`.
 async fn source_with_payload() -> Arc<dyn Volume> {
     let inner = Arc::new(InMemoryVolume::new("source").with_space_info(10_000_000, 10_000_000));
-    inner.create_file(Path::new("/a.txt"), PAYLOAD).await.unwrap();
+    inner.create_file(app_path!("/a.txt"), PAYLOAD).await.unwrap();
     inner as Arc<dyn Volume>
 }
 

@@ -11,6 +11,8 @@
 //! the view, which is the file the drive underneath would touch if a guard let
 //! the write through.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -37,24 +39,27 @@ const LOOKALIKE: &str = "/share/photos/Browse snapshots";
 async fn drive(tag: &str) -> (String, Arc<InMemoryVolume>) {
     let drive = Arc::new(InMemoryVolume::new("Share"));
     drive
-        .create_file(&Path::new(REPO).join("config"), b"encrypted")
+        .create_file(
+            &AppPath::legacy_unchecked(&Path::new(REPO).join("config")),
+            b"encrypted",
+        )
         .await
         .expect("config");
     for dir in ["data", "index", "keys", "snapshots"] {
         drive
-            .create_directory(&Path::new(REPO).join(dir))
+            .create_directory(&AppPath::legacy_unchecked(&Path::new(REPO).join(dir)))
             .await
             .expect("repo folder");
     }
     drive
-        .create_file(Path::new(IN_VIEW_FILE), b"a")
+        .create_file(&AppPath::legacy_unchecked(Path::new(IN_VIEW_FILE)), b"a")
         .await
         .expect("a file the drive would touch");
     drive
-        .create_file(&Path::new(LOOKALIKE).join("x.txt"), b"x")
+        .create_file(&AppPath::legacy_unchecked(&Path::new(LOOKALIKE).join("x.txt")), b"x")
         .await
         .expect("a real folder named like the row");
-    drive.create_file(Path::new("/share/top.txt"), b"t").await.expect("top");
+    drive.create_file(app_path!("/share/top.txt"), b"t").await.expect("top");
     let id = cmdr_fs::testing::unique_test_id(tag);
     get_volume_manager().register(&id, Arc::clone(&drive) as Arc<dyn Volume>);
     (id, drive)
@@ -89,7 +94,7 @@ async fn a_delete_in_the_view_refuses_and_one_in_a_lookalike_folder_runs() {
         )
         .await;
     assert!(refused_as(&refused, ReadOnlySide::Source), "{refused:?}");
-    assert!(drive.exists(Path::new(IN_VIEW_FILE)).await);
+    assert!(drive.exists(&AppPath::legacy_unchecked(Path::new(IN_VIEW_FILE))).await);
 
     let allowed = engine
         .delete_files_start(
@@ -124,7 +129,12 @@ async fn a_delete_that_selects_the_row_refuses_whole() {
         )
         .await;
     assert!(refused_as(&refused, ReadOnlySide::Source), "{refused:?}");
-    assert!(drive.exists(&Path::new(REPO).join("config")).await, "nothing deleted");
+    assert!(
+        drive
+            .exists(&AppPath::legacy_unchecked(&Path::new(REPO).join("config")))
+            .await,
+        "nothing deleted"
+    );
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -178,9 +188,17 @@ async fn renames_and_new_entries_in_the_view_refuse() {
         assert!(refused_read_only(&numbered), "{numbered:?}");
     }
 
-    assert!(drive.exists(Path::new(IN_VIEW_FILE)).await);
-    assert!(!drive.exists(&Path::new(IN_VIEW).join("new")).await);
-    assert!(!drive.exists(&Path::new(IN_VIEW).join("new.txt")).await);
+    assert!(drive.exists(&AppPath::legacy_unchecked(Path::new(IN_VIEW_FILE))).await);
+    assert!(
+        !drive
+            .exists(&AppPath::legacy_unchecked(&Path::new(IN_VIEW).join("new")))
+            .await
+    );
+    assert!(
+        !drive
+            .exists(&AppPath::legacy_unchecked(&Path::new(IN_VIEW).join("new.txt")))
+            .await
+    );
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -243,8 +261,8 @@ async fn a_bulk_rename_and_a_rename_as_move_in_the_view_refuse() {
         .await;
     assert!(refused_as(&into, ReadOnlySide::Destination), "{into:?}");
 
-    assert!(drive.exists(Path::new(IN_VIEW_FILE)).await);
-    assert!(drive.exists(Path::new("/share/top.txt")).await);
+    assert!(drive.exists(&AppPath::legacy_unchecked(Path::new(IN_VIEW_FILE))).await);
+    assert!(drive.exists(app_path!("/share/top.txt")).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -294,10 +312,10 @@ async fn a_copy_or_move_into_the_view_and_a_move_out_refuse() {
         .await;
     assert!(refused_as(&move_out, ReadOnlySide::Source), "{move_out:?}");
 
-    assert!(drive.exists(Path::new("/share/top.txt")).await);
-    assert!(drive.exists(Path::new(IN_VIEW_FILE)).await);
+    assert!(drive.exists(app_path!("/share/top.txt")).await);
+    assert!(drive.exists(&AppPath::legacy_unchecked(Path::new(IN_VIEW_FILE))).await);
     assert!(
-        !drive.exists(Path::new("/share/a.txt")).await,
+        !drive.exists(app_path!("/share/a.txt")).await,
         "nothing was copied out by the move"
     );
 }
@@ -353,8 +371,8 @@ async fn a_transfer_whose_sources_span_the_drive_and_the_view_refuses_whole() {
         );
     }
 
-    assert!(drive.exists(&real).await, "nothing moved");
-    assert!(!dest.exists(Path::new("/share/out/config")).await, "nothing copied");
+    assert!(drive.exists(&AppPath::legacy_unchecked(&real)).await, "nothing moved");
+    assert!(!dest.exists(app_path!("/share/out/config")).await, "nothing copied");
 }
 
 /// A copy OUT reads through the view: the source resolves to the restic route,
@@ -369,7 +387,7 @@ async fn a_copy_out_resolves_its_source_to_the_view() {
         .await
         .expect("a source volume");
     assert_eq!(route, Some(RoutedKind::Restic));
-    assert_eq!(volume.root(), Path::new(REPO).join("Browse snapshots"));
+    assert_eq!(*volume.root().as_std_legacy(), Path::new(REPO).join("Browse snapshots"));
 
     let (parent, real) = engine
         .resolve_source_volume(&id, Some(&Path::new(REPO).join("config")))
@@ -391,7 +409,7 @@ impl Volume for UndecidedDrive {
         self.inner.name()
     }
 
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
 
@@ -405,9 +423,12 @@ impl Volume for UndecidedDrive {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         if path == Path::new(REPO) {
             return Box::pin(async {
                 Err(VolumeError::IoError {
@@ -416,19 +437,19 @@ impl Volume for UndecidedDrive {
                 })
             });
         }
-        self.inner.list_directory(path, on_progress)
+        self.inner.list_directory(path_app, on_progress)
     }
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
 
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.create_directory(path)
     }
@@ -459,5 +480,9 @@ async fn a_write_refuses_when_the_route_cant_decide() {
         .create_directory_managed(Some(id), IN_VIEW.to_string(), "new".to_string(), Initiator::User)
         .await;
     assert!(refused_read_only(&folder), "{folder:?}");
-    assert!(!inner.exists(&Path::new(IN_VIEW).join("new")).await);
+    assert!(
+        !inner
+            .exists(&AppPath::legacy_unchecked(&Path::new(IN_VIEW).join("new")))
+            .await
+    );
 }

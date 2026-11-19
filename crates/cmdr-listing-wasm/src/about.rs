@@ -16,6 +16,7 @@
 //! (`apps/desktop/src/lib/demo/webview.ts`). A card's last message is the
 //! channel's end, as Tauri sends one when the Rust side drops it.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -124,7 +125,7 @@ impl DemoAbout {
     /// `aiOff`, one `fact` per row, and `factsSettled`.
     async fn gather(&self, card: &Card<'_>, request: &AboutRequest) {
         let path = request.path.as_path();
-        let entry = match self.volume.get_metadata(path).await {
+        let entry = match self.volume.get_metadata(&AppPath::legacy_unchecked(path)).await {
             Ok(entry) => entry,
             Err(error) => {
                 card.send(&AboutUpdate::Unavailable {
@@ -204,12 +205,20 @@ impl DemoAbout {
     /// [`TAIL_BYTES`], sniffed against its extension, as the desktop's local job reads them.
     async fn real_type_of(&self, path: &Path, entry: &FileEntry, extension: Option<&str>) -> Fact<RealType> {
         let len = entry.size.unwrap_or(0);
-        let head = match self.volume.read_range(path, 0, HEAD_BYTES).await {
+        let head = match self
+            .volume
+            .read_range(&AppPath::legacy_unchecked(path), 0, HEAD_BYTES)
+            .await
+        {
             Ok(head) => head,
             Err(error) => return RealType::by_name(extension, fact_why(&error)),
         };
         let tail = if len > HEAD_BYTES as u64 {
-            match self.volume.read_range(path, len - TAIL_BYTES as u64, TAIL_BYTES).await {
+            match self
+                .volume
+                .read_range(&AppPath::legacy_unchecked(path), len - TAIL_BYTES as u64, TAIL_BYTES)
+                .await
+            {
                 Ok(tail) => Some(tail),
                 Err(error) => return RealType::by_name(extension, fact_why(&error)),
             }

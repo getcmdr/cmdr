@@ -2,6 +2,8 @@
 
 use super::*;
 use crate::agent::store::proposals::ProposalGroup;
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 
 /// Every refusal sends the user somewhere different, so the mapping is the thing worth
 /// pinning: "somebody already answered" closes the group, "the list changed" sends them back
@@ -158,7 +160,7 @@ impl Volume for TrashKeeping {
     fn name(&self) -> &str {
         self.0.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.0.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -166,14 +168,14 @@ impl Volume for TrashKeeping {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>> {
         self.0.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
         self.0.get_metadata(path)
     }
@@ -446,7 +448,7 @@ async fn a_connected_destination_answers_whether_the_folder_is_there() {
     let volume_id = "suggested-ops-destination-test";
     let volume = InMemoryVolume::new("Share").with_root("/Volumes/share-test");
     volume
-        .create_directory(Path::new("/Volumes/share-test/Invoices"))
+        .create_directory(app_path!("/Volumes/share-test/Invoices"))
         .await
         .expect("seed folder");
     let _registration = TestVolumeRegistration::install(volume_id, std::sync::Arc::new(volume));
@@ -470,7 +472,7 @@ async fn a_destination_whose_volume_refuses_the_check_is_unknown() {
     let volume_id = "suggested-ops-destination-refusing-test";
     let volume = InMemoryVolume::new("Share").with_root("/Volumes/refusing-test");
     volume
-        .create_directory(Path::new("/Volumes/refusing-test/Invoices"))
+        .create_directory(app_path!("/Volumes/refusing-test/Invoices"))
         .await
         .expect("seed folder");
     volume.set_stat_failing(Path::new("/Volumes/refusing-test/Invoices"));

@@ -10,6 +10,8 @@
 
 use super::test_support::*;
 use super::*;
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 
 #[tokio::test]
 #[ignore = "Requires Docker SMB containers (./apps/desktop/test/smb-servers/start.sh)"]
@@ -24,14 +26,14 @@ async fn smb_integration_listing_watch_coverage_flips_with_connection() {
     let vol = make_docker_volume().await;
     assert_eq!(vol.session_state(), ConnectionState::Direct);
     assert_eq!(
-        vol.listing_watch_coverage(Path::new("/")),
+        vol.listing_watch_coverage(app_path!("/")),
         WatchCoverage::EveryWriter,
         "expected full coverage on a freshly-connected Docker volume"
     );
 
     vol.inner.transition_to_disconnected(vol.inner.state.generation());
     assert_eq!(
-        vol.listing_watch_coverage(Path::new("/")),
+        vol.listing_watch_coverage(app_path!("/")),
         WatchCoverage::None,
         "expected no coverage after transitioning to Disconnected"
     );
@@ -255,11 +257,13 @@ async fn smb_integration_scan_pool_opens_lists_and_closes() {
     // Seed a private directory with two known files, isolated from parallel tests.
     let dir = share_path(&test_dir_name());
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.expect("create test dir");
-    vol.create_file(Path::new(&format!("{dir}/a.txt")), b"hello")
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .expect("create test dir");
+    vol.create_file(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/a.txt"))), b"hello")
         .await
         .expect("create a.txt");
-    vol.create_file(Path::new(&format!("{dir}/b.txt")), b"hi")
+    vol.create_file(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/b.txt"))), b"hi")
         .await
         .expect("create b.txt");
 
@@ -408,7 +412,7 @@ async fn smb_integration_superseded_volume_still_serves_its_holders() {
     // session, and two watchers on one volume id double-feed the index and let
     // the retired one's death path reach the successor.
     assert_eq!(
-        held.listing_watch_coverage(Path::new("/")),
+        held.listing_watch_coverage(app_path!("/")),
         WatchCoverage::None,
         "the superseded volume's watcher must be cancelled"
     );

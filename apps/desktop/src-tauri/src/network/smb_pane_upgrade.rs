@@ -128,10 +128,11 @@ pub(crate) fn upgrade_on_pane_open(volume_id: &str) {
         return;
     }
     let volume = crate::file_system::volume::manager::get_volume_manager().get(volume_id);
+    let root_std = volume.as_ref().map(|v| v.root().as_std_legacy());
     let upgrade = plan(
         volume_id,
         volume.as_ref().map(|v| v.backend_kind()),
-        volume.as_ref().map(|v| v.root()),
+        root_std.as_deref(),
         smb_mount_at,
         |info| crate::network::known_shares::direct_connection_enabled(&[&info.server], &info.share),
         &mut COOLDOWNS.lock_ignore_poison(),

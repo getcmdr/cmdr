@@ -14,6 +14,7 @@
 //! A move never builds one (`MergeCtx::links` stays `None`): it follows a link
 //! on purpose (`../DETAILS.md` § "Symlinks are opaque to a move").
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -71,7 +72,11 @@ impl LinkCarry {
             .map(|path| {
                 let source_volume = Arc::clone(source_volume);
                 async move {
-                    let target = source_volume.read_link_target(&path).await.ok().flatten();
+                    let target = source_volume
+                        .read_link_target(&AppPath::legacy_unchecked(&path))
+                        .await
+                        .ok()
+                        .flatten();
                     target.map(|target| (path, target))
                 }
             })
@@ -110,7 +115,7 @@ impl LinkCarry {
         }
         // The source first, so a backend with no answer costs the destination
         // no probe.
-        let target = match source_volume.read_link_target(link).await {
+        let target = match source_volume.read_link_target(&AppPath::legacy_unchecked(link)).await {
             Ok(target) => target,
             Err(VolumeError::NotSupported) => None,
             Err(e) => return Err(e),
@@ -156,7 +161,9 @@ async fn prove_it_holds_links(state: &Arc<WriteOperationState>, dest_volume: &Ar
     let final_name = folder.join("link-probe");
     let announced = state.scope().host().announce_on(&**dest_volume, &final_name);
     let staged = StagedWrite::begin(state, &**dest_volume, announced, WriteStaging::Stage);
-    let made = dest_volume.create_symlink(staged.target(), Path::new(".")).await;
+    let made = dest_volume
+        .create_symlink(&AppPath::legacy_unchecked(staged.target()), Path::new("."))
+        .await;
     staged.abandon(dest_volume).await;
     if let Err(e) = &made {
         log::debug!(

@@ -1,8 +1,11 @@
 //! Volumes whose answers a test scripts: a pinned watch coverage, a foreign
 //! spelling table, and a read script that makes an early read finish late.
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU8, Ordering};
 
@@ -26,7 +29,7 @@ macro_rules! forward_to_inner {
         }
     };
     (@ root) => {
-        fn root(&self) -> &Path {
+        fn root(&self) -> &AppPath {
             self.inner.root()
         }
     };
@@ -38,20 +41,20 @@ macro_rules! forward_to_inner {
     (@ get_metadata) => {
         fn get_metadata<'a>(
             &'a self,
-            path: &'a Path,
+            path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
             self.inner.get_metadata(path)
         }
     };
     (@ exists) => {
-        fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+        fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
             self.inner.exists(path)
         }
     };
     (@ is_directory) => {
         fn is_directory<'a>(
             &'a self,
-            path: &'a Path,
+            path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
             self.inner.is_directory(path)
         }
@@ -59,7 +62,7 @@ macro_rules! forward_to_inner {
     (@ create_directory) => {
         fn create_directory<'a>(
             &'a self,
-            path: &'a Path,
+            path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
             self.inner.create_directory(path)
         }
@@ -72,7 +75,7 @@ macro_rules! forward_to_inner {
     (@ scan_for_copy) => {
         fn scan_for_copy<'a>(
             &'a self,
-            path: &'a Path,
+            path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
             self.inner.scan_for_copy(path)
         }
@@ -80,7 +83,7 @@ macro_rules! forward_to_inner {
     (@ scan_for_copy_batch) => {
         fn scan_for_copy_batch<'a>(
             &'a self,
-            paths: &'a [PathBuf],
+            paths: &'a [AppPathBuf],
         ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
             self.inner.scan_for_copy_batch(paths)
         }
@@ -89,7 +92,7 @@ macro_rules! forward_to_inner {
         fn scan_for_conflicts<'a>(
             &'a self,
             source_items: &'a [SourceItemInfo],
-            dest_path: &'a Path,
+            dest_path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
             self.inner.scan_for_conflicts(source_items, dest_path)
         }
@@ -97,7 +100,7 @@ macro_rules! forward_to_inner {
     (@ open_read_stream) => {
         fn open_read_stream<'a>(
             &'a self,
-            path: &'a Path,
+            path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
             self.inner.open_read_stream(path)
         }
@@ -184,7 +187,7 @@ impl Volume for WatchCoverageVolume {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.list_calls.fetch_add(1, Ordering::Relaxed);
@@ -193,13 +196,13 @@ impl Volume for WatchCoverageVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.metadata_calls.fetch_add(1, Ordering::Relaxed);
         self.inner.get_metadata(path)
     }
 
-    fn listing_watch_coverage(&self, _path: &Path) -> WatchCoverage {
+    fn listing_watch_coverage(&self, _path: &AppPath) -> WatchCoverage {
         decode_coverage(self.coverage.load(Ordering::Relaxed))
     }
 }
@@ -252,7 +255,7 @@ impl Volume for SpelledVolume {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         match &self.listing_refusal {
@@ -263,21 +266,27 @@ impl Volume for SpelledVolume {
             // `InMemoryVolume` lists a directory it doesn't hold as empty; a share
             // answers a name it doesn't store with a miss, which is the whole point.
             None => Box::pin(async move {
-                if path != self.inner.root() && !self.inner.exists(path).await {
+                let path_app = path;
+                let path_std = path.as_std_legacy();
+                let path: &Path = &path_std;
+                if path != self.inner.root().as_std_legacy() && !self.inner.exists(path_app).await {
                     return Err(VolumeError::NotFound(path.display().to_string()));
                 }
-                self.inner.list_directory(path, on_progress).await
+                self.inner.list_directory(path_app, on_progress).await
             }),
         }
     }
 
     fn find_stored_spelling<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         _cancel: Option<&'a tokio_util::sync::CancellationToken>,
-    ) -> Pin<Box<dyn Future<Output = Result<Option<PathBuf>, VolumeError>> + Send + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = Result<Option<AppPathBuf>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         self.resolves.fetch_add(1, Ordering::Relaxed);
         let answer = self.answers.get(path).cloned().unwrap_or(Ok(None));
+        let answer = answer.map(|stored| stored.map(|p| AppPath::legacy_unchecked(&p).into_owned()));
         Box::pin(async move { answer })
     }
 }
@@ -330,7 +339,7 @@ impl Volume for ScriptedListVolume {
 
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         let next = self.script.lock_ignore_poison().pop_front();

@@ -10,6 +10,7 @@
 use super::MtpVolume;
 use super::mapping::map_mtp_error;
 use crate::connection::twins;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::scan_walk::conflicts_against;
 use cmdr_fs::volume::{
     BatchScanResult, CopyScanResult, ScanBoundary, ScanConflict, SourceItemInfo, Volume, VolumeError,
@@ -184,7 +185,10 @@ impl MtpVolume {
                         );
                         entries
                     }
-                    None => self.list_directory(Path::new(&group.mtp_parent), None).await?,
+                    None => {
+                        self.list_directory(&AppPath::legacy_unchecked(Path::new(&group.mtp_parent)), None)
+                            .await?
+                    }
                 };
 
                 // Index entries by path so each child lookup is O(1). A naive
@@ -237,7 +241,11 @@ impl MtpVolume {
 
             let per_path = paths
                 .iter()
-                .filter_map(|p| per_path_results.remove(p).map(|r| (p.clone(), r)))
+                .filter_map(|p| {
+                    per_path_results
+                        .remove(p)
+                        .map(|r| (AppPath::legacy_unchecked(p).into_owned(), r))
+                })
                 .collect();
 
             Ok(BatchScanResult {
@@ -257,7 +265,7 @@ impl MtpVolume {
             // The listing is this backend's own (it goes through the listing
             // cache); the matching is the shared one, so every backend hands a
             // conflict dialog the same shape.
-            let entries = match self.list_directory(dest_path, None).await {
+            let entries = match self.list_directory(&AppPath::legacy_unchecked(dest_path), None).await {
                 Ok(entries) => entries,
                 // ❗ The trait's contract: a destination the paste is about to
                 // create holds nothing, so nothing clashes. The listing's own
@@ -267,7 +275,7 @@ impl MtpVolume {
                 // failed for its own reason, or the parent can't be read either)
                 // stays the caller's to see.
                 Err(e) => {
-                    return match self.get_metadata(dest_path).await {
+                    return match self.get_metadata(&AppPath::legacy_unchecked(dest_path)).await {
                         Err(VolumeError::NotFound(_)) => Ok(Vec::new()),
                         _ => Err(e),
                     };

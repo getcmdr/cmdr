@@ -10,6 +10,7 @@
 //! moment the first file takes its final name: that copy is done, and the sweep
 //! hasn't started.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};
@@ -66,8 +67,8 @@ impl Volume for EditSourceAtFirstLanding {
 
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -128,9 +129,12 @@ pub(super) async fn a_file_saved_over_mid_move_off_the_server_stays(remote: Arc<
     // second of the server's mtime clock.
     let edit: Edit = Box::new(move || {
         Box::pin(async move {
-            server.delete(&path).await.expect("removing the old save");
             server
-                .create_file(&path, b"bravo, saved again")
+                .delete(&AppPath::legacy_unchecked(&path))
+                .await
+                .expect("removing the old save");
+            server
+                .create_file(&AppPath::legacy_unchecked(&path), b"bravo, saved again")
                 .await
                 .expect("the new save");
         })
@@ -143,11 +147,11 @@ pub(super) async fn a_file_saved_over_mid_move_off_the_server_stays(remote: Arc<
         Some(&b"bravo, saved again"[..])
     );
     assert!(
-        !remote.exists(&dir.join("Work/a.txt")).await,
+        !remote.exists(&AppPath::legacy_unchecked(&dir.join("Work/a.txt"))).await,
         "an untouched original goes"
     );
     assert!(
-        !remote.exists(&dir.join("Work/c.txt")).await,
+        !remote.exists(&AppPath::legacy_unchecked(&dir.join("Work/c.txt"))).await,
         "an untouched original goes"
     );
     assert_eq!((left.changed_count, left.item_count), (1, 0));
@@ -164,7 +168,7 @@ pub(super) async fn a_file_added_mid_move_off_the_server_stays(remote: Arc<dyn V
     let edit: Edit = Box::new(move || {
         Box::pin(async move {
             server
-                .create_file(&path, b"arrived mid-move")
+                .create_file(&AppPath::legacy_unchecked(&path), b"arrived mid-move")
                 .await
                 .expect("the newcomer");
         })
@@ -178,7 +182,9 @@ pub(super) async fn a_file_added_mid_move_off_the_server_stays(remote: Arc<dyn V
     );
     for (name, _) in WORK {
         assert!(
-            !remote.exists(&dir.join("Work").join(name)).await,
+            !remote
+                .exists(&AppPath::legacy_unchecked(&dir.join("Work").join(name)))
+                .await,
             "{name} was carried, so it goes"
         );
     }

@@ -3,6 +3,8 @@
 //! end of the folder it sits in. A restic backup of a Mac is full of symlinks,
 //! so without this no folder of one would ever copy out.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -20,11 +22,20 @@ async fn seeded_source(count: usize) -> (Arc<InMemoryVolume>, Vec<PathBuf>) {
     let mut paths = Vec::new();
     for n in 0..count {
         let root = PathBuf::from(format!("/t{n}"));
-        source.create_directory(&root).await.unwrap();
-        source.create_file(&root.join("keep.txt"), b"kept").await.unwrap();
+        source
+            .create_directory(&AppPath::legacy_unchecked(&root))
+            .await
+            .unwrap();
+        source
+            .create_file(&AppPath::legacy_unchecked(&root.join("keep.txt")), b"kept")
+            .await
+            .unwrap();
         paths.push(root);
     }
-    source.create_file(Path::new(LINK), b"").await.unwrap();
+    source
+        .create_file(&AppPath::legacy_unchecked(Path::new(LINK)), b"")
+        .await
+        .unwrap();
     (source, paths)
 }
 
@@ -44,7 +55,7 @@ fn without_bytes_at_link(source: Arc<InMemoryVolume>) -> Arc<FaultyVolume<InMemo
 
 async fn empty_dest() -> Arc<InMemoryVolume> {
     let dest = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest.create_directory(Path::new("/inbox")).await.unwrap();
+    dest.create_directory(app_path!("/inbox")).await.unwrap();
     dest
 }
 
@@ -73,9 +84,12 @@ async fn copy_skips_and_carries_on(sources: usize) {
     );
     assert!(result.is_ok(), "a link doesn't stop the copy: {result:?}");
     for n in 0..sources {
-        assert!(dest.exists(Path::new(&format!("/inbox/t{n}/keep.txt"))).await);
+        assert!(
+            dest.exists(&AppPath::legacy_unchecked(Path::new(&format!("/inbox/t{n}/keep.txt"))))
+                .await
+        );
     }
-    assert!(!dest.exists(Path::new("/inbox/t0/link")).await);
+    assert!(!dest.exists(app_path!("/inbox/t0/link")).await);
     let complete = events.complete.lock().unwrap();
     assert_eq!(complete[0].files_skipped, 1, "the link is one skipped item");
 }
@@ -112,6 +126,6 @@ async fn a_move_leaves_a_child_with_no_bytes_at_the_source() {
     .await;
 
     assert!(result.is_ok(), "{result:?}");
-    assert!(dest.exists(Path::new("/inbox/t0/keep.txt")).await);
-    assert!(inner.exists(Path::new("/t0/link")).await, "the skipped link stays");
+    assert!(dest.exists(app_path!("/inbox/t0/keep.txt")).await);
+    assert!(inner.exists(app_path!("/t0/link")).await, "the skipped link stays");
 }

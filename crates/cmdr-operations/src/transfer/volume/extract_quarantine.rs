@@ -33,6 +33,7 @@
 //! when the archive had a quarantine. Every non-archive source answers `None`
 //! from `Volume::local_backing_file` with no syscall.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -83,7 +84,9 @@ pub(super) async fn quarantine_created_folder(
         }],
         ..CarriedMetadata::default()
     };
-    let report = dest_volume.apply_metadata(created, &carried, None).await;
+    let report = dest_volume
+        .apply_metadata(&AppPath::legacy_unchecked(created), &carried, None)
+        .await;
     if report.any_refused() {
         log::debug!(
             target: "copy",
@@ -177,13 +180,16 @@ const QUARANTINE_XATTR: &str = "com.apple.quarantine";
 #[cfg(target_os = "macos")]
 fn archive_quarantine(state: &WriteOperationState, source_volume: &Arc<dyn Volume>) -> Option<Vec<u8>> {
     let archive = source_volume.local_backing_file()?;
-    let (read_for, value) = state
-        .extract_quarantine
-        .get_or_init(|| (archive.to_path_buf(), read_quarantine(archive)));
-    if read_for == archive {
+    let (read_for, value) = state.extract_quarantine.get_or_init(|| {
+        (
+            archive.as_std_legacy().to_path_buf(),
+            read_quarantine(&archive.as_std_legacy()),
+        )
+    });
+    if *read_for == *archive.as_std_legacy() {
         value.clone()
     } else {
-        read_quarantine(archive)
+        read_quarantine(&archive.as_std_legacy())
     }
 }
 

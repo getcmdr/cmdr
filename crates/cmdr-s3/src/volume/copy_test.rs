@@ -6,9 +6,10 @@
 //! Multipart cells cut 5 MiB parts (`S3Volume::set_part_floor`), so a copy of
 //! a few tens of megabytes runs in several parts.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::ops::ControlFlow;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -62,7 +63,7 @@ impl ServerCopyProgress for Watch {
 }
 
 fn at(volume: &S3Volume, key: &str) -> std::path::PathBuf {
-    volume.root().join(key)
+    volume.root().as_std_legacy().join(key)
 }
 
 async fn copy(
@@ -74,7 +75,13 @@ async fn copy(
     watch: &Watch,
 ) -> Result<u64, VolumeError> {
     volume
-        .copy_on_server(source, &at(source, from), &at(volume, to), mode, watch)
+        .copy_on_server(
+            source,
+            &AppPath::legacy_unchecked(&at(source, from)),
+            &AppPath::legacy_unchecked(&at(volume, to)),
+            mode,
+            watch,
+        )
         .await
         .map(|written| written.bytes)
 }
@@ -165,12 +172,12 @@ async fn a_source_without_an_mtime_keeps_its_date(service: FixtureService) {
     )
     .await;
     let small_date = volume
-        .get_metadata(&at(&volume, &small_key))
+        .get_metadata(&AppPath::legacy_unchecked(&at(&volume, &small_key)))
         .await
         .expect("a stat")
         .modified_at;
     let big_date = volume
-        .get_metadata(&at(&volume, &big_key))
+        .get_metadata(&AppPath::legacy_unchecked(&at(&volume, &big_key)))
         .await
         .expect("a stat")
         .modified_at;
@@ -188,7 +195,10 @@ async fn a_source_without_an_mtime_keeps_its_date(service: FixtureService) {
             Some(date.to_string()),
             "{from}: the source's date survives the copy"
         );
-        let copied = volume.get_metadata(&at(&volume, &to)).await.expect("a stat");
+        let copied = volume
+            .get_metadata(&AppPath::legacy_unchecked(&at(&volume, &to)))
+            .await
+            .expect("a stat");
         assert_eq!(copied.modified_at, Some(date));
     }
 }
@@ -220,7 +230,10 @@ async fn a_copy_keeps_the_creation_date_and_mode(service: FixtureService) {
         copy(&volume, &volume, from, &to, WriteMode::CreateNew, &Watch::default())
             .await
             .expect("the copy lands");
-        let copied = volume.get_metadata(&at(&volume, &to)).await.expect("a stat");
+        let copied = volume
+            .get_metadata(&AppPath::legacy_unchecked(&at(&volume, &to)))
+            .await
+            .expect("a stat");
         assert_eq!(copied.created_at, Some(1_425_168_000), "{from}: the creation date");
         assert_eq!(copied.permissions, 0o750, "{from}: the mode");
     }
@@ -273,7 +286,12 @@ async fn a_bucket_bound_provider_refuses_a_cross_bucket_copy(service: FixtureSer
     )
     .await;
     assert!(matches!(refused, Err(VolumeError::NotSupported)), "got {refused:?}");
-    assert!(!destination.exists(&at(&destination, &key)).await, "nothing was copied");
+    assert!(
+        !destination
+            .exists(&AppPath::legacy_unchecked(&at(&destination, &key)))
+            .await,
+        "nothing was copied"
+    );
 
     source.forbid_cross_bucket_copy().await;
     let within = format!("{prefix}b.bin");
@@ -305,7 +323,10 @@ async fn a_cancel_mid_copy_leaves_no_upload_and_the_source_intact(service: Fixtu
         unfinished_uploads(service, FIXTURE_BUCKET, &prefix).await.is_empty(),
         "a cancelled copy must be aborted on the server"
     );
-    assert!(!volume.exists(&at(&volume, &to)).await, "nothing was published");
+    assert!(
+        !volume.exists(&AppPath::legacy_unchecked(&at(&volume, &to))).await,
+        "nothing was published"
+    );
     assert!(
         read_back(&volume, &at(&volume, &from)).await == bytes,
         "the source stays whole"
@@ -367,15 +388,18 @@ async fn a_source_replaced_mid_copy_fails_as_changed_and_publishes_nothing(servi
     let outcome = volume
         .copy_on_server(
             &volume,
-            &at(&volume, &from),
-            &at(&volume, &to),
+            &AppPath::legacy_unchecked(&at(&volume, &from)),
+            &AppPath::legacy_unchecked(&at(&volume, &to)),
             WriteMode::CreateNew,
             &progress,
         )
         .await;
 
     assert!(matches!(outcome, Err(VolumeError::SourceChanged(_))), "got {outcome:?}");
-    assert!(!volume.exists(&at(&volume, &to)).await, "nothing was published");
+    assert!(
+        !volume.exists(&AppPath::legacy_unchecked(&at(&volume, &to))).await,
+        "nothing was published"
+    );
     wait_for_the_ledger_to_settle(&volume, &prefix).await;
     assert!(unfinished_uploads(service, FIXTURE_BUCKET, &prefix).await.is_empty());
     assert!(
@@ -443,15 +467,18 @@ async fn a_source_replaced_after_its_last_part_fails_as_changed(service: Fixture
     let outcome = volume
         .copy_on_server(
             &volume,
-            &at(&volume, &from),
-            &at(&volume, &to),
+            &AppPath::legacy_unchecked(&at(&volume, &from)),
+            &AppPath::legacy_unchecked(&at(&volume, &to)),
             WriteMode::CreateNew,
             &progress,
         )
         .await;
 
     assert!(matches!(outcome, Err(VolumeError::SourceChanged(_))), "got {outcome:?}");
-    assert!(!volume.exists(&at(&volume, &to)).await, "nothing was published");
+    assert!(
+        !volume.exists(&AppPath::legacy_unchecked(&at(&volume, &to))).await,
+        "nothing was published"
+    );
     wait_for_the_ledger_to_settle(&volume, &prefix).await;
     assert!(unfinished_uploads(service, FIXTURE_BUCKET, &prefix).await.is_empty());
     assert!(
@@ -573,8 +600,8 @@ async fn a_copy_from_another_backend_is_not_this_servers_to_make() {
     let outcome = volume
         .copy_on_server(
             &other,
-            Path::new("/a.bin"),
-            Path::new("/photos/a.bin"),
+            app_path!("/a.bin"),
+            app_path!("/photos/a.bin"),
             WriteMode::CreateNew,
             &Watch::default(),
         )

@@ -7,6 +7,7 @@
 //! `make_twins` has `report.txt` answer to `notes.txt` too (the virtual device's
 //! real folder can't hold twins), so each twin's bytes tell which one landed.
 
+use cmdr_fs::app_path;
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -88,7 +89,7 @@ async fn copying_both_selected_twin_rows_off_a_device_keeps_both() {
     let mtp_volume = volume_for(&device, None).await;
     make_twins(&device, "/Documents", "notes.txt", "report.txt").await;
     let rows: Vec<PathBuf> = mtp_volume
-        .list_directory(Path::new("/Documents"), None)
+        .list_directory(app_path!("/Documents"), None)
         .await
         .expect("listing Documents should succeed")
         .into_iter()
@@ -153,7 +154,7 @@ async fn bulk_rename(volume: Arc<dyn Volume>, rows: Vec<(PathBuf, PathBuf)>) -> 
 /// The rows `/Documents` lists under `notes.txt`: `(the real notes.txt's, report.txt's)`.
 async fn twin_rows(volume: &dyn Volume, handles: (u64, u64)) -> (PathBuf, PathBuf) {
     let entries = volume
-        .list_directory(Path::new("/Documents"), None)
+        .list_directory(app_path!("/Documents"), None)
         .await
         .expect("listing Documents should succeed");
     let row = |handle| {
@@ -206,7 +207,7 @@ async fn a_bulk_rename_onto_a_taken_name_under_a_twins_pick_is_skipped() {
     let volume: Arc<dyn Volume> = Arc::new(volume_for(&device, None).await);
     let handles = make_twins(&device, "/Documents", "notes.txt", "report.txt").await;
     volume
-        .create_directory(Path::new("/Documents/taken"))
+        .create_directory(app_path!("/Documents/taken"))
         .await
         .expect("making the clashing folder");
     let (_notes, report) = twin_rows(volume.as_ref(), handles).await;

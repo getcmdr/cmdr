@@ -10,11 +10,12 @@
 use super::*;
 use crate::file_system::volume::manager::get_volume_manager;
 use crate::file_system::volume::{InMemoryVolume, Volume, VolumeError, WatchCoverage};
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::unique_test_id;
 use cmdr_listing::testing::{TestListing, TestListingGuard};
 use std::future::Future;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -68,7 +69,7 @@ impl Volume for CountingVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -77,7 +78,7 @@ impl Volume for CountingVolume {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(crate::file_system::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.list_dir_calls.fetch_add(1, Ordering::Relaxed);
@@ -93,23 +94,23 @@ impl Volume for CountingVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
 
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
 
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
 
-    fn listing_watch_coverage(&self, _path: &Path) -> WatchCoverage {
+    fn listing_watch_coverage(&self, _path: &AppPath) -> WatchCoverage {
         if self.watched.load(Ordering::Relaxed) {
             WatchCoverage::EveryWriter
         } else {
@@ -159,7 +160,7 @@ async fn forced_refresh_listing_rereads_watched_volume() {
 
     let vol = Arc::new(CountingVolume::new("watched-vol", true));
     // Populate one file so `list_directory` succeeds.
-    vol.inner.create_file(Path::new("/dcim/a.jpg"), b"alpha").await.unwrap();
+    vol.inner.create_file(app_path!("/dcim/a.jpg"), b"alpha").await.unwrap();
     get_volume_manager().register(&vid, vol.clone() as Arc<dyn Volume>);
     let listing = insert_listing("refresh-listing-forced", &vid, path);
 
@@ -185,7 +186,7 @@ async fn refresh_listing_falls_through_on_unwatched() {
 
     let vol = Arc::new(CountingVolume::new("unwatched-vol", false));
     // Populate one file so `list_directory` succeeds.
-    vol.inner.create_file(Path::new("/dcim/a.jpg"), b"alpha").await.unwrap();
+    vol.inner.create_file(app_path!("/dcim/a.jpg"), b"alpha").await.unwrap();
     get_volume_manager().register(&vid, vol.clone() as Arc<dyn Volume>);
     let listing = insert_listing("refresh-listing-fallthrough", &vid, path);
 
@@ -212,7 +213,7 @@ async fn a_read_slower_than_the_wait_still_finishes() {
     let path = "/dcim";
 
     let vol = Arc::new(CountingVolume::new("slow-vol", false));
-    vol.inner.create_file(Path::new("/dcim/a.jpg"), b"alpha").await.unwrap();
+    vol.inner.create_file(app_path!("/dcim/a.jpg"), b"alpha").await.unwrap();
     vol.close_gate();
     get_volume_manager().register(&vid, vol.clone() as Arc<dyn Volume>);
     let listing = insert_listing("refresh-listing-slow-read", &vid, path);

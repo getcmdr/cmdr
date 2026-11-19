@@ -4,6 +4,7 @@
 
 use super::*;
 use crate::test_support::TestDir;
+use cmdr_fs::app_path::AppPath;
 
 /// `smbutil statshares -m` on a share mounted from the `auth` fixture as is (Samba
 /// offers a cipher and asks for none, so macOS doesn't encrypt), trimmed to its
@@ -86,19 +87,21 @@ async fn an_unproven_mount_is_refused_while_encryption_is_required() {
     let gate = gate_over(&dir);
 
     assert!(matches!(
-        gate.list_directory(&dir, None).await,
+        gate.list_directory(&AppPath::legacy_unchecked(&dir), None).await,
         Err(VolumeError::EncryptionRequired(_))
     ));
     assert!(matches!(
-        gate.get_metadata(&dir.join("a.txt")).await,
+        gate.get_metadata(&AppPath::legacy_unchecked(&dir.join("a.txt"))).await,
         Err(VolumeError::EncryptionRequired(_))
     ));
     assert!(matches!(
-        gate.open_read_stream(&dir.join("a.txt")).await,
+        gate.open_read_stream(&AppPath::legacy_unchecked(&dir.join("a.txt")))
+            .await,
         Err(VolumeError::EncryptionRequired(_))
     ));
     assert!(matches!(
-        gate.create_directory(&dir.join("new")).await,
+        gate.create_directory(&AppPath::legacy_unchecked(&dir.join("new")))
+            .await,
         Err(VolumeError::EncryptionRequired(_))
     ));
     assert!(!dir.join("new").exists(), "nothing went through the mount");
@@ -114,7 +117,10 @@ async fn a_lifted_requirement_lets_the_listing_through() {
     cmdr_smb::SmbEncryption::set_required(false);
     let gate = gate_over(&dir);
 
-    let entries = gate.list_directory(&dir, None).await.expect("lists through the mount");
+    let entries = gate
+        .list_directory(&AppPath::legacy_unchecked(&dir), None)
+        .await
+        .expect("lists through the mount");
     assert_eq!(entries.len(), 1);
 }
 

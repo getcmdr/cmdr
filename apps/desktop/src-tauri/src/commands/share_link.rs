@@ -9,6 +9,7 @@
 //! reach an IPC log, a frontend logger, or an uncaught-rejection report, and ❌
 //! nothing here logs it.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -52,7 +53,9 @@ async fn mint(
     let Some(volume) = volume else {
         return Err(VolumeError::NotConnected(path.to_string()));
     };
-    volume.share_link(Path::new(path), expires_in).await
+    volume
+        .share_link(&AppPath::legacy_unchecked(Path::new(path)), expires_in)
+        .await
 }
 
 #[cfg(test)]

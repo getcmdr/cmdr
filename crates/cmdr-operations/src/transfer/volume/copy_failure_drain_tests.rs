@@ -13,6 +13,7 @@ use super::wedge_test_support::*;
 use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path;
 
 use crate::types::CancelRollbackOutcome;
 use cmdr_fs::staging::STAGING_TEMP_MARKER;
@@ -36,13 +37,13 @@ const SIBLINGS: [&str; 3] = ["/a.bin", "/b.bin", "/c.bin"];
 async fn drain_fixture() -> (Fixture, Arc<tokio::sync::Semaphore>, Vec<PathBuf>) {
     let (fx, trigger) = fixture_with_failing_read(CHUNK as u64 * 4, Path::new(FAILING));
     fx.source_inner
-        .create_file(Path::new("/landed.txt"), b"")
+        .create_file(app_path!("/landed.txt"), b"")
         .await
         .unwrap();
     let mut sources = vec![PathBuf::from("/landed.txt"), PathBuf::from(FAILING)];
     for name in std::iter::once(FAILING).chain(SIBLINGS) {
         fx.source_inner
-            .create_file(Path::new(name), &vec![0xAB; CHUNK * 4])
+            .create_file(&AppPath::legacy_unchecked(Path::new(name)), &vec![0xAB; CHUNK * 4])
             .await
             .unwrap();
     }
@@ -299,7 +300,7 @@ async fn a_rollback_during_the_drain_ends_as_one_rollback() {
         assert_eq!(cancelled[0].rollback.outcome, CancelRollbackOutcome::RolledBack);
     }
     assert!(
-        !fx.dest_inner.exists(Path::new("/landed.txt")).await,
+        !fx.dest_inner.exists(app_path!("/landed.txt")).await,
         "the rollback undid the file that landed: {:?}",
         dest_names(&fx.dest_inner).await
     );

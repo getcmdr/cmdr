@@ -5,6 +5,8 @@
 //! `undo_tests.rs`) share ONE rig instead of growing parallel ones — and so neither
 //! file has to carry 200 lines of scaffolding.
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::BridgedPath;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -198,13 +200,13 @@ impl Rig {
                 .expect("the source volume is registered");
             if let Some(parent) = unit.source_path.parent() {
                 volume
-                    .create_directory_all(parent)
+                    .create_directory_all(&AppPath::legacy_unchecked(parent))
                     .await
                     .expect("the original's folder");
             }
             let size = unit.size.expect("a copy row records its size") as usize;
             volume
-                .create_file(&unit.source_path, &vec![b'o'; size])
+                .create_file(&AppPath::legacy_unchecked(&unit.source_path), &vec![b'o'; size])
                 .await
                 .expect("the original");
         }
@@ -433,20 +435,27 @@ pub(super) fn dir_unit(seq: i64, vol: &str, path: &str) -> JournalItem {
 }
 
 pub(super) async fn put(vol: &InMemoryVolume, path: &str, content: &[u8]) {
-    vol.create_file(Path::new(path), content).await.expect("create_file");
+    vol.create_file(&AppPath::legacy_unchecked(Path::new(path)), content)
+        .await
+        .expect("create_file");
     vol.set_modified_at(Path::new(path), Some(MT));
 }
 
 pub(super) async fn mkdir(vol: &InMemoryVolume, path: &str) {
-    vol.create_directory(Path::new(path)).await.expect("create_directory");
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .expect("create_directory");
 }
 
 pub(super) async fn exists(vol: &InMemoryVolume, path: &str) -> bool {
-    vol.exists(Path::new(path)).await
+    vol.exists(&AppPath::legacy_unchecked(Path::new(path))).await
 }
 
 pub(super) async fn read(vol: &InMemoryVolume, path: &str) -> Vec<u8> {
-    let mut s = vol.open_read_stream(Path::new(path)).await.expect("open stream");
+    let mut s = vol
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .expect("open stream");
     let mut out = Vec::new();
     while let Some(chunk) = s.next_chunk().await {
         out.extend_from_slice(&chunk.expect("chunk"));
@@ -469,7 +478,7 @@ use cmdr_fs::volume::ListingProgress;
 /// holds, so on its own it can't stand in for that.
 pub(super) struct RootFenced {
     inner: Arc<InMemoryVolume>,
-    root: PathBuf,
+    root: BridgedPath,
 }
 
 impl RootFenced {
@@ -477,7 +486,7 @@ impl RootFenced {
     pub(super) fn over(inner: &Arc<InMemoryVolume>, root: &str) -> Arc<dyn Volume> {
         Arc::new(Self {
             inner: Arc::clone(inner),
-            root: PathBuf::from(root),
+            root: BridgedPath::new(PathBuf::from(root)),
         })
     }
 
@@ -495,8 +504,8 @@ impl Volume for RootFenced {
         self.inner.name()
     }
 
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -505,52 +514,70 @@ impl Volume for RootFenced {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             self.fence(path)?;
-            self.inner.list_directory(path, on_progress).await
+            self.inner.list_directory(path_app, on_progress).await
         })
     }
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             self.fence(path)?;
-            self.inner.get_metadata(path).await
+            self.inner.get_metadata(path_app).await
         })
     }
 
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             self.fence(path)?;
-            self.inner.create_directory(path).await
+            self.inner.create_directory(path_app).await
         })
     }
 
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             self.fence(path)?;
-            self.inner.delete(path).await
+            self.inner.delete(path_app).await
         })
     }
 
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let to_app = to;
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
+            let from_app = from;
+            let from_std = from.as_std_legacy();
+            let from: &Path = &from_std;
             self.fence(from)?;
             self.fence(to)?;
-            self.inner.rename(from, to, force).await
+            self.inner.rename(from_app, to_app, force).await
         })
     }
 }

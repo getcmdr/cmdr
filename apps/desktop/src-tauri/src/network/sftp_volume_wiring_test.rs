@@ -9,6 +9,7 @@
 //! ❗ Every `sftp_integration_` cell here needs the Docker stack:
 //! `apps/desktop/test/sftp-servers/start.sh`.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -79,7 +80,7 @@ async fn sftp_integration_connecting_registers_the_volume_and_remembers_the_serv
     let manager = crate::file_system::volume::manager::get_volume_manager();
     let volume = manager.get(&volume_id).expect("a connect registers the volume it made");
     assert!(
-        volume.exists(Path::new("hello.txt")).await,
+        volume.exists(&AppPath::legacy_unchecked(Path::new("hello.txt"))).await,
         "the registered volume is the live one, not a placeholder"
     );
 
@@ -169,7 +170,9 @@ async fn sftp_integration_disconnecting_drops_the_session_and_unregisters_the_vo
     );
     assert!(
         matches!(
-            volume.list_directory(Path::new("."), None).await,
+            volume
+                .list_directory(&AppPath::legacy_unchecked(Path::new(".")), None)
+                .await,
             Err(cmdr_fs::volume::VolumeError::DeviceDisconnected(_))
         ),
         "whoever still holds the volume fails fast rather than hanging on a dead session"
@@ -537,10 +540,17 @@ async fn sftp_integration_widening_a_connected_root_applies_live_over_the_same_s
     assert_eq!(outcome, SavedServerOutcome::Saved);
     let wide = manager.get(&volume_id).expect("still registered");
     let wide_root = app_path(&params, FIXTURE_ROOT);
-    assert_eq!(wide.root(), Path::new(&wide_root), "the registry serves the wider root");
+    assert_eq!(
+        &*wide.root().as_std_legacy(),
+        Path::new(&wide_root),
+        "the registry serves the wider root"
+    );
     assert!(
-        wide.exists(Path::new(&app_path(&params, &format!("{FIXTURE_ROOT}/hello.txt"))))
-            .await,
+        wide.exists(&AppPath::legacy_unchecked(Path::new(&app_path(
+            &params,
+            &format!("{FIXTURE_ROOT}/hello.txt")
+        ))))
+        .await,
         "a file only the wider root covers lists through the live session"
     );
     let sftp = wide.as_any().downcast_ref::<SftpVolume>().expect("an SFTP volume");
@@ -562,7 +572,9 @@ async fn sftp_integration_widening_a_connected_root_applies_live_over_the_same_s
 
     sftp.simulate_session_loss().await;
     assert!(
-        wide.list_directory(Path::new(&wide_root), None).await.is_err(),
+        wide.list_directory(&AppPath::legacy_unchecked(Path::new(&wide_root)), None)
+            .await
+            .is_err(),
         "an operation is what notices the loss and starts the loop"
     );
     cmdr_fs::testing::wait_until_async(
@@ -572,7 +584,9 @@ async fn sftp_integration_widening_a_connected_root_applies_live_over_the_same_s
     )
     .await;
     assert!(
-        wide.list_directory(Path::new(&wide_root), None).await.is_ok(),
+        wide.list_directory(&AppPath::legacy_unchecked(Path::new(&wide_root)), None)
+            .await
+            .is_ok(),
         "the redialed session serves the wider root"
     );
 
@@ -605,7 +619,11 @@ async fn sftp_integration_a_connected_root_the_server_lacks_is_refused_and_write
     );
     let manager = crate::file_system::volume::manager::get_volume_manager();
     assert_eq!(
-        manager.get(&volume_id).expect("still registered").root(),
+        &*manager
+            .get(&volume_id)
+            .expect("still registered")
+            .root()
+            .as_std_legacy(),
         Path::new(&app_path(&params, FIXTURE_ROOT))
     );
 

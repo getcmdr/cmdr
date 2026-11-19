@@ -7,6 +7,7 @@
 //! so a file someone saved over while the share was out stays, and a delete
 //! the drop swallowed (the server performed it) reads as done.
 
+use cmdr_fs::app_path;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -40,14 +41,17 @@ fn outage_state(engine: &TestOperations) -> Arc<WriteOperationState> {
 /// A source share holding `/batch/f0.txt`…`/batch/f3.txt` and `/single.txt`.
 async fn source_share(lane: &str) -> (Arc<InMemoryVolume>, Arc<OutageVolume>) {
     let inner = Arc::new(InMemoryVolume::new("Testnas").with_space_info(10_000_000, 10_000_000));
-    inner.create_directory(Path::new("/batch")).await.unwrap();
+    inner.create_directory(app_path!("/batch")).await.unwrap();
     for n in 0..4 {
         inner
-            .create_file(Path::new(&format!("/batch/f{n}.txt")), format!("file {n}").as_bytes())
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/batch/f{n}.txt"))),
+                format!("file {n}").as_bytes(),
+            )
             .await
             .unwrap();
     }
-    inner.create_file(Path::new("/single.txt"), b"single").await.unwrap();
+    inner.create_file(app_path!("/single.txt"), b"single").await.unwrap();
     let share = OutageVolume::wrap(Arc::clone(&inner), lane);
     (inner, share)
 }
@@ -77,9 +81,12 @@ where
 
 /// Someone saves over `path` on the share: new bytes, a new size.
 async fn save_over(inner: &InMemoryVolume, path: &str) {
-    inner.delete(Path::new(path)).await.unwrap();
+    inner.delete(&AppPath::legacy_unchecked(Path::new(path))).await.unwrap();
     inner
-        .create_file(Path::new(path), b"saved while the share was out")
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(path)),
+            b"saved while the share was out",
+        )
         .await
         .unwrap();
 }
@@ -139,12 +146,18 @@ async fn a_folder_sweep_waits_out_a_dropped_share_and_keeps_what_changed_meanwhi
     );
     for n in [0, 1, 3] {
         let path = format!("/batch/f{n}.txt");
-        assert!(!inner.exists(Path::new(&path)).await, "{path} was carried, so it goes");
-        assert!(dest.exists(Path::new(&path)).await, "{path} arrived");
+        assert!(
+            !inner.exists(&AppPath::legacy_unchecked(Path::new(&path))).await,
+            "{path} was carried, so it goes"
+        );
+        assert!(
+            dest.exists(&AppPath::legacy_unchecked(Path::new(&path))).await,
+            "{path} arrived"
+        );
     }
     let mut kept = Vec::new();
     let mut stream = inner
-        .open_read_stream(Path::new("/batch/f2.txt"))
+        .open_read_stream(app_path!("/batch/f2.txt"))
         .await
         .expect("f2 stays");
     while let Some(chunk) = stream.next_chunk().await {
@@ -183,8 +196,8 @@ async fn a_delete_the_drop_swallowed_counts_as_done() {
         share.reconnect_attempts() >= 1,
         "the share really dropped at the delete"
     );
-    assert!(!inner.exists(Path::new("/single.txt")).await);
-    assert!(dest.exists(Path::new("/single.txt")).await);
+    assert!(!inner.exists(app_path!("/single.txt")).await);
+    assert!(dest.exists(app_path!("/single.txt")).await);
 }
 
 /// The drop comes before the server sees the delete, and someone saves over
@@ -218,10 +231,10 @@ async fn a_file_saved_over_during_the_outage_stays_in_the_source() {
         "the share really dropped at the delete"
     );
     assert!(
-        inner.exists(Path::new("/single.txt")).await,
+        inner.exists(app_path!("/single.txt")).await,
         "the saved-over file is the only copy of its new bytes"
     );
-    assert!(dest.exists(Path::new("/single.txt")).await);
+    assert!(dest.exists(app_path!("/single.txt")).await);
 }
 
 /// A share that's up and refuses the delete is a refusal, not an outage: the
@@ -265,5 +278,5 @@ async fn a_refused_delete_on_a_live_share_fails_at_once() {
         0,
         "a live share's refusal is never waited for"
     );
-    assert!(inner.exists(Path::new("/single.txt")).await);
+    assert!(inner.exists(app_path!("/single.txt")).await);
 }

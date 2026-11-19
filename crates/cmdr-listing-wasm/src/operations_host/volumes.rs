@@ -76,7 +76,7 @@ impl OperationVolumes for DemoVolumes {
         self.volumes
             .lock_ignore_poison()
             .iter()
-            .find(|(_, volume)| volume.root() == root)
+            .find(|(_, volume)| *volume.root().as_std_legacy() == *root)
             .map(|(id, volume)| (id.clone(), Arc::clone(volume)))
     }
 

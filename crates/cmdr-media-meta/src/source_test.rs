@@ -1,3 +1,4 @@
+use cmdr_fs::app_path::AppPath;
 use std::io::{self, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
@@ -275,7 +276,10 @@ const FILE: &str = "/photo.jpg";
 
 async fn volume_with(data: &[u8]) -> Arc<InMemoryVolume> {
     let volume = Arc::new(InMemoryVolume::new("test"));
-    volume.create_file(Path::new(FILE), data).await.unwrap();
+    volume
+        .create_file(&AppPath::legacy_unchecked(Path::new(FILE)), data)
+        .await
+        .unwrap();
     volume
 }
 
@@ -346,7 +350,10 @@ async fn a_volume_that_never_answers_times_out() {
 #[tokio::test(flavor = "multi_thread")]
 async fn a_volume_without_ranged_reads_is_not_supported() {
     let volume = Arc::new(InMemoryVolume::new("test").with_read_range_failing(VolumeError::NotSupported));
-    volume.create_file(Path::new(FILE), b"bytes").await.unwrap();
+    volume
+        .create_file(&AppPath::legacy_unchecked(Path::new(FILE)), b"bytes")
+        .await
+        .unwrap();
 
     let out = read_through(volume, 5, roomy(), Arc::default()).await;
 

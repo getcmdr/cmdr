@@ -12,6 +12,7 @@
 //! `#[tauri::command]` wrapper that calls `Operations::scan_volume_for_conflicts_within`
 //! with the production budget.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -242,7 +243,7 @@ impl crate::Operations {
             |detail| VolumeScanError::Unexpected { detail },
             async move {
                 volume
-                    .scan_for_conflicts(&source_items, &dest_path)
+                    .scan_for_conflicts(&source_items, &AppPath::legacy_unchecked(&dest_path))
                     .await
                     .map_err(|error| VolumeScanError::Volume { error })
             },
@@ -346,7 +347,10 @@ async fn stat_source_paths(
     let (mut stats, unanswered) = stats_from_watched_panes(listings, source_volume_id, paths);
     let stated: Vec<(PathBuf, FileEntry)> = stream::iter(unanswered)
         .map(|path| async move {
-            let entry = source_volume.get_metadata(&path).await.ok()?;
+            let entry = source_volume
+                .get_metadata(&AppPath::legacy_unchecked(&path))
+                .await
+                .ok()?;
             Some((path, entry))
         })
         .buffer_unordered(SOURCE_STAT_CONCURRENCY)

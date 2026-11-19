@@ -17,6 +17,7 @@ use super::rename_merge_test_support::make_state;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::{ConflictResolution, VolumeCopyConfig};
+use cmdr_fs::app_path;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
 use cmdr_local::LocalVolume;
 use std::collections::BTreeSet;
@@ -32,13 +33,13 @@ const SECOND: &str = "SECOND";
 async fn copy_twins_under(policy: ConflictResolution) -> BTreeSet<String> {
     let engine = TestOperations::new();
     let source = InMemoryVolume::new("Phone").with_space_info(10_000_000, 10_000_000);
-    source.create_directory(Path::new("/album")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
     source
-        .create_file(Path::new("/album/a.jpg"), FIRST.as_bytes())
+        .create_file(app_path!("/album/a.jpg"), FIRST.as_bytes())
         .await
         .unwrap();
     source
-        .create_file(Path::new("/album/b.jpg"), SECOND.as_bytes())
+        .create_file(app_path!("/album/b.jpg"), SECOND.as_bytes())
         .await
         .unwrap();
     source.set_reported_name(Path::new("/album/b.jpg"), "a.jpg");

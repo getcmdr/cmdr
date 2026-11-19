@@ -19,6 +19,7 @@
 //! Ops are read a PAGE at a time and counted with `COUNT(*)`: a group of 60 000 is legitimate,
 //! so nothing here loads a group to describe it.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::time::Duration;
 
@@ -526,7 +527,11 @@ async fn destination_state(group: &ProposalGroup) -> DestinationState {
         budget,
         || DestinationGap::TimedOut,
         DestinationGap::Panicked,
-        async move { Ok(volume.get_metadata(Path::new(&destination)).await) },
+        async move {
+            Ok(volume
+                .get_metadata(&AppPath::legacy_unchecked(Path::new(&destination)))
+                .await)
+        },
     )
     .await;
     match answer {

@@ -242,7 +242,7 @@ impl Host for AppHost {
 
     fn volume_at_active_root(&self, path: &Path) -> Option<String> {
         let (volume_id, volume) = crate::file_system::volume::manager::get_volume_manager().find_by_root(path)?;
-        (volume.root() == path).then_some(volume_id)
+        (&*volume.root().as_std_legacy() == path).then_some(volume_id)
     }
 
     fn is_mounted_at(&self, bsd_name: &str, path: &Path) -> bool {
