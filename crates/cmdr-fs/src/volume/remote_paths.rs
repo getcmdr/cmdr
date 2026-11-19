@@ -34,30 +34,49 @@
 //! `get_space_info_impl`).
 
 use std::borrow::Cow;
-use std::path::{Component, Path, PathBuf};
+use std::ffi::OsString;
+use std::path::{Path, PathBuf};
 
-use crate::app_path::BridgedPath;
+use crate::app_path::{AppPath, AppPathBuf, BridgedPath, NotAnAppPath, PathFlavor, is_escape, unescape_bytes};
 
 use super::{canonical_nfs_export, nfs_volume_id, sftp_volume_id, webdav_volume_id};
 
 /// A remote volume's root, in both the spellings it has.
 ///
-/// Built once per volume and held by it, so the translation costs no allocation
-/// per call beyond the answer itself.
+/// Built once per volume and held by it; a translation splits its input into names (a
+/// small `Vec` of slices) and allocates the answer, nothing more.
+///
+/// ❗ Server paths are POSIX on every host: the matching and the `..` handling here split
+/// on `/` alone, over bytes, so a `\` is a name character and Windows' own path rules
+/// never apply (a `std::path` join there wrote `sftp://h:22\srv`).
 #[derive(Clone)]
 pub struct RemoteRoot {
     /// `sftp://<user>@<host>:<port>`: what every app path on this volume starts
     /// with. From [`sftp_app_root`] or one of its twins, ❌ never
     /// hand-built, so a path and the id it resolves to can't disagree.
     prefix: String,
-    /// The same, as a `Path`, so the match is by whole COMPONENTS. A string
-    /// compare would let `…testnas.local:2222` borrow `…testnas.local:22`'s volume.
-    prefix_path: PathBuf,
-    /// What the app addresses the root by: `<prefix><remote>`.
+    /// What the app addresses the root by, `<prefix><remote>`, in the `std::path` form the
+    /// backends' `Volume::root` still answers through ([`Self::app_root`]).
     app: BridgedPath,
+    /// The same as a typed app path ([`Self::app`]), or why the server's root text has none.
+    typed: Result<AppPathBuf, NotAnAppPath>,
     /// The server-side directory this volume is rooted at, normalized and
-    /// absolute.
-    remote: PathBuf,
+    /// absolute, as the bytes the server was named.
+    remote: Vec<u8>,
+    /// The same, as `remote_root` hands it out.
+    remote_path: PathBuf,
+}
+
+/// Why [`RemoteRoot::to_app`] has no app path for a server's answer.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RemoteAppRefusal {
+    /// The server path isn't under this volume's root (after `..`): a misbehaving server's
+    /// `href` above the collection, or a `..` for a name. The caller drops that entry.
+    OffRoot,
+    /// The server path's text is no app path as it stands: a NUL, or an escape-range code
+    /// point, which needs an escape until escapes go live (`app_path::ESCAPES_LIVE`). The
+    /// caller keeps today's spelling for it ([`RemoteRoot::to_app_path`]), ❌ never drops it.
+    NotAppText(NotAnAppPath),
 }
 
 impl RemoteRoot {
@@ -66,25 +85,38 @@ impl RemoteRoot {
     /// `remote_root` is normalized and made absolute, so a backend handed a
     /// relative or `..`-carrying root still ends up with one spelling of it.
     pub fn new(prefix: String, remote_root: &Path) -> Self {
-        let remote = normalize_remote_path(remote_root);
-        let app = PathBuf::from(format!("{prefix}{}", remote.to_string_lossy()));
+        let remote = normalized_bytes(&posix_names(&os_bytes(remote_root)));
+        let app_text = format!("{prefix}{}", String::from_utf8_lossy(&remote));
+        let typed = scheme_app_path(&app_text);
         Self {
-            prefix_path: PathBuf::from(&prefix),
             prefix,
-            app: BridgedPath::new(app),
+            app: BridgedPath::new(PathBuf::from(app_text)),
+            typed,
+            remote_path: path_of_bytes(remote.clone()),
             remote,
         }
     }
 
     /// What the app addresses this volume's root by, and what `Volume::root`
-    /// answers.
+    /// answers. The typed twin is [`Self::app`].
     pub fn app_root(&self) -> &BridgedPath {
         &self.app
     }
 
+    /// The root as a typed app path (`sftp://u@h:22/srv/data`, `sftp://u@h:22/` at the
+    /// server's root), or why the root's text has none ([`RemoteAppRefusal::NotAppText`]'s
+    /// cases).
+    ///
+    /// # Errors
+    ///
+    /// The refusal [`AppPathBuf::parse`] gave the root's text.
+    pub fn app(&self) -> Result<&AppPath, NotAnAppPath> {
+        self.typed.as_deref().map_err(|why| *why)
+    }
+
     /// The server-side directory this volume is rooted at.
     pub fn remote_root(&self) -> &Path {
-        &self.remote
+        &self.remote_path
     }
 
     /// The absolute server-side path for `path`, or `None` when `path` isn't on
@@ -103,23 +135,37 @@ impl RemoteRoot {
     ///   `photos/../../etc` is the same escape spelled relatively, and the
     ///   server would resolve it happily.
     pub fn to_remote_path(&self, path: &Path) -> Option<String> {
+        self.remote_of(&os_bytes(path))
+    }
+
+    /// [`Self::to_remote_path`] for an app path: the same aliases, matching, and refusals,
+    /// with each escape decoded back to the byte the server names (a unit escape, which no
+    /// POSIX server holds, is `None`).
+    pub fn to_remote(&self, path: &AppPath) -> Option<String> {
+        self.remote_of(&unescape_bytes(path.as_str()).ok()?)
+    }
+
+    /// The server path for `path`'s bytes: [`Self::to_remote_path`]'s rules, read the way
+    /// `Path` reads a POSIX path (whole names, `.` dropped, `..` kept until normalized).
+    fn remote_of(&self, path: &[u8]) -> Option<String> {
+        let names = posix_names(path);
         // `.`, `/`, and the empty path are how the app (and a backend's own
         // code) spell "this volume's root".
-        if path.as_os_str().is_empty() || path == Path::new(".") || path == Path::new("/") {
-            return Some(self.remote.to_string_lossy().into_owned());
+        if names.names.is_empty() {
+            return Some(String::from_utf8_lossy(&self.remote).into_owned());
         }
-        let joined = if let Ok(under_prefix) = path.strip_prefix(&self.prefix_path) {
-            normalize(&Path::new("/").join(under_prefix))
-        } else if path.is_absolute() || carries_a_scheme(path) {
+        let joined = if let Some(under_prefix) = names.strip_prefix(&posix_names(self.prefix.as_bytes())) {
+            normalized_bytes(&under_prefix)
+        } else if names.rooted || carries_a_scheme(path) {
             // A bare server path, or another server's, or another backend's.
             // None of the three is on this volume.
             return None;
         } else {
-            normalize(&self.remote.join(path))
+            let mut under_root = posix_names(&self.remote);
+            under_root.names.extend(names.names);
+            normalized_bytes(&under_root)
         };
-        joined
-            .starts_with(&self.remote)
-            .then(|| joined.to_string_lossy().into_owned())
+        is_under(&joined, &self.remote).then(|| String::from_utf8_lossy(&joined).into_owned())
     }
 
     /// The app-facing spelling of a server-side path: the exact inverse of
@@ -134,60 +180,168 @@ impl RemoteRoot {
     /// collection, `..` for a name) would otherwise mint an app path off this
     /// volume. A caller drops that entry.
     pub fn to_app_path(&self, remote: &str) -> Option<PathBuf> {
-        let normalized = normalize_remote_path(Path::new(remote));
-        normalized
-            .starts_with(&self.remote)
-            .then(|| PathBuf::from(format!("{}{}", self.prefix, normalized.to_string_lossy())))
+        self.app_text_of(remote).map(PathBuf::from)
+    }
+
+    /// [`Self::to_app_path`] as a typed app path: the same containment check, and the same
+    /// text, parsed.
+    ///
+    /// # Errors
+    ///
+    /// [`RemoteAppRefusal::OffRoot`] where [`Self::to_app_path`] answers `None`, and
+    /// [`RemoteAppRefusal::NotAppText`] for an answer whose text the app path can't hold
+    /// without an escape (that type's doc says what the caller does then).
+    pub fn to_app(&self, remote: &str) -> Result<AppPathBuf, RemoteAppRefusal> {
+        let text = self.app_text_of(remote).ok_or(RemoteAppRefusal::OffRoot)?;
+        scheme_app_path(&text).map_err(RemoteAppRefusal::NotAppText)
+    }
+
+    /// `<prefix><normalized server path>`, or `None` off the root.
+    fn app_text_of(&self, remote: &str) -> Option<String> {
+        let normalized = normalized_bytes(&posix_names(remote.as_bytes()));
+        is_under(&normalized, &self.remote).then(|| format!("{}{}", self.prefix, String::from_utf8_lossy(&normalized)))
     }
 }
 
 /// A server-side directory, normalized and made absolute: `.` and `..` resolved
-/// lexically, and a relative path read from `/`.
+/// lexically, and a relative path read from `/`. `/` is the only separator: a server path
+/// is POSIX whatever OS Cmdr runs on.
 ///
 /// ❗ The one spelling [`RemoteRoot::new`] gives its root, so anything compared
 /// against a root (a start folder, say) has to come through here too: two
 /// normalizations would let one directory compare unequal to itself.
 pub fn normalize_remote_path(path: &Path) -> PathBuf {
-    normalize(&Path::new("/").join(path))
+    path_of_bytes(normalized_bytes(&posix_names(&os_bytes(path))))
 }
 
-/// Whether `path` opens with a `<scheme>://` that isn't this volume's.
-///
-/// Checked separately from `is_absolute` because a scheme path is RELATIVE in
-/// `Path`'s terms (`sftp://…` starts with a `sftp:` component), so without this
-/// another server's path would be joined onto our root and sent to ours.
-fn carries_a_scheme(path: &Path) -> bool {
-    path.to_string_lossy()
-        .split_once("://")
-        .is_some_and(|(scheme, _)| !scheme.is_empty() && !scheme.contains('/'))
+/// [`normalize_remote_path`] for server path text.
+pub fn normalize_remote_text(path: &str) -> String {
+    String::from_utf8_lossy(&normalized_bytes(&posix_names(path.as_bytes()))).into_owned()
 }
 
-/// Resolves `.` and `..` lexically, with no round trip and no symlink following.
+/// The typed app path `text` names: a scheme path, parsed. Text holding an escape-range
+/// code point is refused here rather than read as an escape: until escapes go live it's
+/// literal text, and the parse would read it as a different name.
+fn scheme_app_path(text: &str) -> Result<AppPathBuf, NotAnAppPath> {
+    if text.chars().any(is_escape) {
+        return Err(NotAnAppPath::NotUnicode);
+    }
+    AppPathBuf::parse(text, PathFlavor::Posix)
+}
+
+/// A path's bytes as `Path` reads them on this host's POSIX side: the raw bytes on Unix,
+/// the lossy text elsewhere (Windows and the browser build, where a server path held as a
+/// `Path` came from text anyway).
+fn os_bytes(path: &Path) -> Cow<'_, [u8]> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::ffi::OsStrExt;
+        Cow::Borrowed(path.as_os_str().as_bytes())
+    }
+    #[cfg(not(unix))]
+    {
+        match path.to_string_lossy() {
+            Cow::Borrowed(text) => Cow::Borrowed(text.as_bytes()),
+            Cow::Owned(text) => Cow::Owned(text.into_bytes()),
+        }
+    }
+}
+
+/// `bytes` back as a `Path`: raw on Unix, lossy text elsewhere (the inverse of [`os_bytes`]).
+fn path_of_bytes(bytes: Vec<u8>) -> PathBuf {
+    #[cfg(unix)]
+    {
+        use std::os::unix::ffi::OsStringExt;
+        PathBuf::from(OsString::from_vec(bytes))
+    }
+    #[cfg(not(unix))]
+    {
+        PathBuf::from(OsString::from(String::from_utf8_lossy(&bytes).into_owned()))
+    }
+}
+
+/// A POSIX path's components as `Path::components` reads them: a root, a leading `.`, and
+/// every other name (`..` included), the empty and `.` names gone.
+struct PosixNames<'a> {
+    rooted: bool,
+    leading_dot: bool,
+    names: Vec<&'a [u8]>,
+}
+
+fn posix_names(path: &[u8]) -> PosixNames<'_> {
+    let rooted = path.first() == Some(&b'/');
+    PosixNames {
+        rooted,
+        leading_dot: !rooted && (path == b"." || path.starts_with(b"./")),
+        names: path
+            .split(|&b| b == b'/')
+            .filter(|name| !name.is_empty() && *name != b".")
+            .collect(),
+    }
+}
+
+impl<'a> PosixNames<'a> {
+    /// The names left after `prefix`'s, matched component by component as
+    /// `Path::strip_prefix` matches them, or `None` when `prefix` isn't a prefix.
+    fn strip_prefix(&self, prefix: &PosixNames<'_>) -> Option<PosixNames<'a>> {
+        let matches = self.rooted == prefix.rooted
+            && self.leading_dot == prefix.leading_dot
+            && self.names.len() >= prefix.names.len()
+            && self
+                .names
+                .iter()
+                .zip(&prefix.names)
+                .all(|(mine, theirs)| mine == theirs);
+        matches.then(|| PosixNames {
+            rooted: true,
+            leading_dot: false,
+            names: self.names[prefix.names.len()..].to_vec(),
+        })
+    }
+}
+
+/// `names` read from `/`, with `.` and `..` resolved lexically: no round trip and no
+/// symlink following.
 ///
 /// Lexical on purpose: asking the server would be a round trip per path AND a
 /// TOCTOU window, and the question here is "did the caller address something
 /// outside this volume", which is about the path they wrote rather than about
 /// what it resolves to. `..` at the root is absorbed, matching what a POSIX
 /// server does with `/..`.
-fn normalize(path: &Path) -> PathBuf {
-    let mut out = PathBuf::new();
-    for component in path.components() {
-        match component {
-            Component::RootDir => out.push(Component::RootDir),
-            Component::CurDir => {}
-            Component::ParentDir => {
-                out.pop();
-            }
-            Component::Normal(part) => out.push(part),
-            // Windows-only, and every backend here is reached over a network
-            // from wherever Cmdr runs, so there is no drive letter to carry.
-            Component::Prefix(_) => {}
+fn normalized_bytes(names: &PosixNames<'_>) -> Vec<u8> {
+    let mut kept: Vec<&[u8]> = Vec::with_capacity(names.names.len());
+    for name in &names.names {
+        if *name == b".." {
+            kept.pop();
+        } else {
+            kept.push(name);
         }
     }
-    if out.as_os_str().is_empty() {
-        out.push(Component::RootDir);
+    let mut out = Vec::with_capacity(kept.iter().map(|name| name.len() + 1).sum::<usize>().max(1));
+    for name in kept {
+        out.push(b'/');
+        out.extend_from_slice(name);
+    }
+    if out.is_empty() {
+        out.push(b'/');
     }
     out
+}
+
+/// Whether the normalized server path `path` is `root` or under it, by whole names.
+fn is_under(path: &[u8], root: &[u8]) -> bool {
+    root == b"/" || path == root || (path.starts_with(root) && path.get(root.len()) == Some(&b'/'))
+}
+
+/// Whether `path` opens with a `<scheme>://` that isn't this volume's.
+///
+/// Checked separately from the root check because a scheme path is RELATIVE in
+/// POSIX terms (`sftp://…` starts with a `sftp:` name), so without this
+/// another server's path would be joined onto our root and sent to ours.
+fn carries_a_scheme(path: &[u8]) -> bool {
+    path.windows(3)
+        .position(|window| window == b"://")
+        .is_some_and(|at| at > 0 && !path[..at].contains(&b'/'))
 }
 
 // ── The app-path schemes: the prefixes a remote volume's paths carry ──────

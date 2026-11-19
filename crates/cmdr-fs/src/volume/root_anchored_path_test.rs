@@ -97,3 +97,93 @@ fn a_scheme_shaped_root_anchors_the_same_way() {
         Path::new("mtp://mtp-0-1/65537/DCIM")
     );
 }
+
+// ── `anchor_at_root`, the typed twin ─────────────────────────────────
+
+mod typed {
+    use crate::app_path::{AppPath, NotAnAppPath, PathFlavor};
+    use crate::volume::anchor_at_root;
+
+    fn root(text: &str, flavor: PathFlavor) -> &'static AppPath {
+        let text: &'static str = Box::leak(text.to_string().into_boxed_str());
+        AppPath::from_normalized_as(text, flavor).unwrap_or_else(|why| panic!("{text:?}: {why}"))
+    }
+
+    fn anchored(root: &AppPath, wire: &str) -> Result<String, NotAnAppPath> {
+        anchor_at_root(root, wire).map(crate::app_path::AppPathBuf::into_string)
+    }
+
+    /// The `std::path` form's answers wherever it was right, on every host: the dialog's
+    /// volume-relative text hangs off the root, a pane's own path stays, and every
+    /// spelling of the root is the root.
+    #[test]
+    fn a_scheme_root_anchors_as_the_path_form_does() {
+        let mtp = root("mtp://mtp-0-1/65537", PathFlavor::Posix);
+        assert_eq!(
+            anchored(mtp, "/DCIM/Camera").as_deref(),
+            Ok("mtp://mtp-0-1/65537/DCIM/Camera")
+        );
+        assert_eq!(anchored(mtp, "DCIM").as_deref(), Ok("mtp://mtp-0-1/65537/DCIM"));
+        assert_eq!(
+            anchored(mtp, "mtp://mtp-0-1/65537/DCIM").as_deref(),
+            Ok("mtp://mtp-0-1/65537/DCIM")
+        );
+        for root_ish in ["", ".", "/", "//", "/./"] {
+            assert_eq!(
+                anchored(mtp, root_ish).as_deref(),
+                Ok("mtp://mtp-0-1/65537"),
+                "{root_ish:?}"
+            );
+        }
+        let sftp = root("sftp://test_user_1@testnas.local:22/srv/data", PathFlavor::Posix);
+        assert_eq!(
+            anchored(sftp, "sftp://test_user_1@testnas.local:22/srv/data-1/x").as_deref(),
+            Ok("sftp://test_user_1@testnas.local:22/srv/data/sftp:/test_user_1@testnas.local:22/srv/data-1/x"),
+            "a sibling sharing the root's text is no path under it, as in the path form"
+        );
+    }
+
+    /// ❗ What the path form got wrong: a trailing `/` is normalized away, and a `..` is
+    /// refused rather than passed on to climb off the volume.
+    #[test]
+    fn a_trailing_slash_goes_and_a_dot_dot_is_refused() {
+        let share = root("/Volumes/testshare", PathFlavor::Posix);
+        assert_eq!(anchored(share, "photos/").as_deref(), Ok("/Volumes/testshare/photos"));
+        assert_eq!(anchored(share, "./x").as_deref(), Ok("/Volumes/testshare/x"));
+        assert_eq!(anchored(share, "../etc"), Err(NotAnAppPath::DotName));
+        assert_eq!(anchored(share, "/Volumes/testshare/../etc"), Err(NotAnAppPath::DotName));
+    }
+
+    /// Windows shapes, pure, so every OS runs them: a drive root takes the dialog's `/x`
+    /// as relative, a UNC root matches its server and share without case, and a name
+    /// holding `\` can't hang off a drive (Windows would read a subfolder) while a remote
+    /// root keeps it as a name character.
+    #[test]
+    fn drive_and_unc_roots_anchor_by_their_own_rules() {
+        let drive = root("C:/Users/test_user_1", PathFlavor::Windows);
+        assert_eq!(
+            anchored(drive, "/Documents").as_deref(),
+            Ok("C:/Users/test_user_1/Documents")
+        );
+        assert_eq!(anchored(drive, "a\\b"), Err(NotAnAppPath::Backslash));
+        assert_eq!(anchored(drive, "CON").as_deref(), Ok("C:/Users/test_user_1/CON"));
+        assert_eq!(anchored(drive, "dup. ").as_deref(), Ok("C:/Users/test_user_1/dup. "));
+        let sftp = root("sftp://test_user_1@testnas.local:22/srv", PathFlavor::Windows);
+        assert_eq!(
+            anchored(sftp, "a\\b").as_deref(),
+            Ok("sftp://test_user_1@testnas.local:22/srv/a\\b")
+        );
+        if PathFlavor::HOST == PathFlavor::Windows {
+            assert_eq!(
+                anchored(drive, "c:/Users/test_user_1/x").as_deref(),
+                Ok("C:/Users/test_user_1/x")
+            );
+            let unc = root("//testnas.local/Share", PathFlavor::Windows);
+            assert_eq!(
+                anchored(unc, "//TESTNAS.local/share/x").as_deref(),
+                Ok("//TESTNAS.local/share/x"),
+                "the pane's own spelling of the share stays"
+            );
+        }
+    }
+}

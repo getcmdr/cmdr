@@ -11,7 +11,7 @@
 //! implementation here is [`InMemoryVolume`], which needs no host at all and is
 //! what a test reaches for.
 
-use crate::app_path::{AppPath, AppPathBuf};
+use crate::app_path::{AppPath, AppPathBuf, NotAnAppPath, PathFlavor, RelativeAppPath};
 use crate::entry::FileEntry;
 use crate::metadata::{CarriedMetadata, MetadataClasses, MetadataReport, Unblock};
 use std::future::Future;
@@ -2452,6 +2452,49 @@ pub fn root_anchored(root: &Path, path: &Path) -> PathBuf {
         return path.to_path_buf();
     }
     root.join(path.strip_prefix("/").unwrap_or(path))
+}
+
+/// [`root_anchored`] for wire text and a typed root: the same three rules, answering a
+/// canonical app path. The text is app spelling (a pane's path, the transfer dialog's
+/// destination box), so its escapes are live.
+///
+/// - Every spelling of "the volume root" (empty, `.`, `/`, `//`) is `root` itself.
+/// - Text that parses as a path on `root`'s volume ([`AppPath::is_on_volume`]: whole
+///   names, a UNC server and share without case) is that path, normalized.
+/// - Anything else is volume-relative: its `/` and `.` names go, and the rest hangs off
+///   `root`. `/` is the only separator, so a Windows host never reads a remote name's `\`
+///   as one.
+///
+/// Where the `std::path` form passes a `..` through for the OS to resolve (off the volume,
+/// past a symlink), this one refuses it, typed: a `..` is the volume's to answer
+/// (`docs/specs/app-path-plan.md` § "Typed and pasted `..`").
+///
+/// # Errors
+///
+/// [`NotAnAppPath::DotName`] for a `..` name, and what [`AppPath::join_relative`] refuses
+/// (a drive or UNC root takes no name holding `\`).
+pub fn anchor_at_root(root: &AppPath, wire: &str) -> Result<AppPathBuf, NotAnAppPath> {
+    let root = root.to_canonical()?;
+    // A POSIX `/x` is also tried where the host reads only drives (the in-memory volume's
+    // `/` root on Windows); against a drive root it's no path on that volume, so relative.
+    if let Ok(path) = AppPathBuf::from_wire(wire).or_else(|_| AppPathBuf::parse(wire, PathFlavor::Posix))
+        && path.is_on_volume(&root)
+    {
+        return Ok(path);
+    }
+    let mut tail = String::with_capacity(wire.len());
+    for name in wire.split('/') {
+        match name {
+            "" | "." => continue,
+            ".." => return Err(NotAnAppPath::DotName),
+            _ => {}
+        }
+        if !tail.is_empty() {
+            tail.push('/');
+        }
+        tail.push_str(name);
+    }
+    root.join_relative(RelativeAppPath::new(&tail)?)
 }
 
 // Shared data types (`VolumeError`, `SpaceInfo`, `CopyScanResult`, `MutationEvent`,
