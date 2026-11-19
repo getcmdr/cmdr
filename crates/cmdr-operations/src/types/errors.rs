@@ -421,6 +421,13 @@ pub enum WriteOperationError {
     SourceInColdStorage {
         path: String,
     },
+    /// A folder Cmdr was asked to delete still holds items under names no path
+    /// can address (S3 keys like `p//x`), so it lists as empty yet can't go.
+    /// Cmdr leaves those items alone: they're real, and only another tool can
+    /// name them. Not transient: a retry meets the same keys.
+    FolderHoldsUnlistedItems {
+        path: String,
+    },
     /// The source changed while the copy read it (an S3 server-side copy saw
     /// it replaced, or its stream delivered more or fewer bytes than its
     /// declared length), so the copy landed nothing that could mix two
@@ -597,6 +604,7 @@ macro_rules! item_path_of {
             | WriteOperationError::DeletePending { path }
             | WriteOperationError::FileInUse { path }
             | WriteOperationError::SourceInColdStorage { path }
+            | WriteOperationError::FolderHoldsUnlistedItems { path }
             | WriteOperationError::SourceChanged { path }
             | WriteOperationError::LandingNotRecorded { path }
             | WriteOperationError::LinksNotSupported { path }

@@ -101,8 +101,12 @@ keys and the rights. `integration_test.rs` pins both servers' answers.
 - ❗ **Keys aren't paths**: `a/b`, `a//b`, `a/./b`, and `a/../b` are four objects, but an app path has one spelling for
   them all (`…/a/b`), and an operation on it maps to the key `a/b` alone (`RemoteRoot` normalizes on the way down). So
   the other three never list: their segment under `a/` is empty, `.`, or `..`. They stay unreachable from the app (a
-  copy of `a` leaves them behind, as before), and a folder holding only such keys lists empty and refuses its delete as
-  `NotEmpty`. Pinned by `key_collision_test.rs` over `fake_s3.rs`.
+  copy of `a` leaves them behind, as before), and a folder holding only such keys lists empty and refuses its delete
+  with `VolumeError::HoldsUnlistedItems` (`listing::FolderContents::OnlyUnaddressable`, read off the delete's one capped
+  listing; a page that stops short stays a plain `NotEmpty`), which the dialog words as "looks empty, but the storage
+  keeps items in it under names Cmdr can't show". ❗ Those keys are real objects: ❌ never deleted for the person. The
+  listing itself says nothing yet: telling the pane "N items can't be shown" needs a count on the listing result, which
+  no backend carries (`docs/specs/app-path-plan.md` milestone 6). Pinned by `key_collision_test.rs` over `fake_s3.rs`.
 - **A file beside a folder of its name lists as `<name> (file)`.** S3 allows `notes` beside `notes/…`, but a pane row is
   one path: the frontend keys rows, selection, the listing cache, and every operation by `path`, and Svelte throws on a
   duplicate key. Showing both under one name would need a row whose name isn't its path's last segment, which the app

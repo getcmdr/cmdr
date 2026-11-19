@@ -370,6 +370,19 @@ fn test_map_volume_error_cold_storage() {
 }
 
 #[test]
+fn a_folder_holding_only_unlisted_items_stays_typed_to_the_dialog() {
+    // An S3 folder whose only keys can't list (`p//x`) shows empty: as a generic
+    // `IoError` or a "not empty" the dialog would contradict the pane, and a
+    // Retry can only meet the same keys.
+    let err = map_volume_error(
+        "/ctx",
+        PathRole::Source,
+        VolumeError::HoldsUnlistedItems("/bucket/p".to_string()),
+    );
+    assert!(matches!(err, WriteOperationError::FolderHoldsUnlistedItems { path } if path == "/ctx"));
+}
+
+#[test]
 fn test_map_volume_error_source_changed() {
     // A server-side copy whose source was replaced mid-copy published nothing.
     // Typed to the dialog, so the user hears what happened rather than a

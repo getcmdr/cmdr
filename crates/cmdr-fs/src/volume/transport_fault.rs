@@ -82,6 +82,7 @@ impl VolumeError {
             | Self::ColdStorage(_) // archived until someone restores it
             | Self::SourceChanged(_) // a new version is there; copying it is the person's call
             | Self::NoContent(_) // a link or a special file has no bytes, however often asked
+            | Self::HoldsUnlistedItems(_) // those keys stay until another tool removes them
             | Self::AmbiguousName(_) // two stored names fit; asking again asks the same question
             | Self::DuplicateName(_) // two siblings share the name until someone renames one
             | Self::SignatureInvalid(_) // a refused reply, and a possible sign of tampering

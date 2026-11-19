@@ -215,6 +215,7 @@ const errorDisplayMetaMap: Record<WriteOperationError['type'], ErrorDisplayMeta>
   // No Retry: the file stays archived until someone restores it, which Cmdr
   // can't do yet, so the identical request can only meet it again.
   source_in_cold_storage: { category: 'needs_action', retryHint: false },
+  folder_holds_unlisted_items: { category: 'needs_action', retryHint: false },
   // Retry: nothing was saved and the source is whole, so the same copy again
   // takes the version that's there now.
   source_changed: { category: 'transient', retryHint: true },
@@ -617,6 +618,9 @@ const NAMED_ITEM_FAMILY: Partial<Record<WriteOperationError['type'], string>> = 
   // An S3 object in Glacier: one archived file deep in a selected folder is the
   // whole problem, and only a restore gets it back.
   source_in_cold_storage: 'sourceInColdStorage',
+  // An S3 folder that lists empty but keeps keys no path can address (`p//x`):
+  // named, so the dialog explains the empty pane instead of saying "not empty".
+  folder_holds_unlisted_items: 'folderHoldsUnlistedItems',
   // A selection straddling a view (a backup's snapshots, an archive's inside, a
   // repository's history) and its drive. The item to leave out is the user's to find.
   sources_span_volumes: 'sourcesSpanVolumes',

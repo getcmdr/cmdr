@@ -225,6 +225,10 @@ impl S3Volume {
                     OsErrorClass::NotEmpty,
                 ));
             }
+            // ❗ It lists empty, so "still holds something" would contradict the
+            // pane: the refusal says its keys are out of reach. Never deleted here:
+            // those objects are real, and only another tool can name them.
+            FolderContents::OnlyUnaddressable => return Err(VolumeError::HoldsUnlistedItems(remote)),
             FolderContents::MarkerOnly => prefix,
             FolderContents::Nothing if holder == Holder::Folder => return Err(VolumeError::NotFound(remote)),
             FolderContents::Nothing => {

@@ -9,7 +9,6 @@
 
 use std::time::Duration;
 
-use cmdr_fs::os_error::OsErrorClass;
 use cmdr_fs::volume::{Volume, VolumeError};
 
 use super::fake_s3::FakeS3;
@@ -91,9 +90,11 @@ async fn a_folder_holding_only_an_unlisted_key_refuses_its_delete() {
     let s3 = seeded().await;
     let volume = s3.volume();
 
+    // It lists empty, so "not empty" would contradict the pane: the refusal says
+    // what it holds is out of reach.
     let deleted = volume.delete_directory(&at(&volume, "a/c"), None).await;
     assert!(
-        matches!(&deleted, Err(error) if error.os_class() == Some(OsErrorClass::NotEmpty)),
+        matches!(&deleted, Err(VolumeError::HoldsUnlistedItems(path)) if path.ends_with("/a/c")),
         "`a/c//d` still sits under it: {deleted:?}"
     );
     assert!(s3.object("a/c//d").is_some());

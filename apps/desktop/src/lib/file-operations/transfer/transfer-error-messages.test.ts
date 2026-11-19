@@ -1024,6 +1024,7 @@ describe('getErrorDisplayMeta', () => {
     { error: { type: 'delete_pending', path: '/p' }, category: 'transient', retryHint: true },
     { error: { type: 'file_in_use', path: '/p' }, category: 'needs_action', retryHint: true },
     { error: { type: 'source_in_cold_storage', path: '/p' }, category: 'needs_action', retryHint: false },
+    { error: { type: 'folder_holds_unlisted_items', path: '/p' }, category: 'needs_action', retryHint: false },
     { error: { type: 'source_changed', path: '/p' }, category: 'transient', retryHint: true },
     {
       error: { type: 'mounted_volume_inside', mountPoint: '/p', action: 'delete' },

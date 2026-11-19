@@ -258,6 +258,7 @@ impl WriteOperationError {
             | Self::DeletePending { .. }
             | Self::FileInUse { .. }
             | Self::SourceInColdStorage { .. }
+            | Self::FolderHoldsUnlistedItems { .. }
             | Self::SourceChanged { .. }
             | Self::FilesTooLargeForFilesystem { .. }
             | Self::ArchiveNeedsPassword { .. }

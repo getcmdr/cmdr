@@ -1295,6 +1295,13 @@ export const commands = {
        */
       | { type: 'source_in_cold_storage'; path: string }
       /**
+       *  A folder Cmdr was asked to delete still holds items under names no path
+       *  can address (S3 keys like `p//x`), so it lists as empty yet can't go.
+       *  Cmdr leaves those items alone: they're real, and only another tool can
+       *  name them. Not transient: a retry meets the same keys.
+       */
+      | { type: 'folder_holds_unlisted_items'; path: string }
+      /**
        *  The source changed while the copy read it (an S3 server-side copy saw
        *  it replaced, or its stream delivered more or fewer bytes than its
        *  declared length), so the copy landed nothing that could mix two
@@ -25187,6 +25194,17 @@ export type VolumeError =
    */
   | { type: 'noContent'; data: string }
   /**
+   *  A folder refused its delete because all it still holds sits under names no
+   *  path can address, so it lists as empty. Carries the folder's path.
+   *
+   *  S3 raises it for a folder whose only keys spell another key's path (`p//x`,
+   *  `p/./x`): those never list (`cmdr-s3` `DETAILS.md` § "Keys aren't paths"), so a
+   *  plain "this folder isn't empty" would contradict the empty pane. ❌ Never
+   *  deleted for the person: those objects are real, and only another tool can
+   *  name them.
+   */
+  | { type: 'holdsUnlistedItems'; data: string }
+  /**
    *  A reply on a signed session carried a bad or missing signature, so the backend refused
    *  it rather than trust what it said. Carries what the backend reported, for the
    *  technical-details panel.
@@ -26460,6 +26478,13 @@ export type WriteOperationError =
    *  Not transient: a retry meets the same archived object.
    */
   | { type: 'source_in_cold_storage'; path: string }
+  /**
+   *  A folder Cmdr was asked to delete still holds items under names no path
+   *  can address (S3 keys like `p//x`), so it lists as empty yet can't go.
+   *  Cmdr leaves those items alone: they're real, and only another tool can
+   *  name them. Not transient: a retry meets the same keys.
+   */
+  | { type: 'folder_holds_unlisted_items'; path: string }
   /**
    *  The source changed while the copy read it (an S3 server-side copy saw
    *  it replaced, or its stream delivered more or fewer bytes than its

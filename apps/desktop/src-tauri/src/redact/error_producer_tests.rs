@@ -33,6 +33,7 @@ fn pathed_errors(path: &str) -> Vec<VolumeError> {
         VolumeError::StaleDestinationHandle(p()),
         VolumeError::ColdStorage(p()),
         VolumeError::SourceChanged(p()),
+        VolumeError::HoldsUnlistedItems(p()),
         VolumeError::FriendlyGit(FriendlyGitError::new(FriendlyGitErrorKind::IndexLocked, p())),
     ]
 }

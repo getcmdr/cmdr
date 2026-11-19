@@ -886,6 +886,20 @@ const cases: Case[] = [
   },
 
   {
+    // An S3 folder that lists empty yet keeps keys no path can address (`p//x`):
+    // the words explain the empty pane, ❌ never "not empty".
+    name: 'folder_holds_unlisted_items',
+    error: { type: 'folder_holds_unlisted_items', path: 's3://AKIA@s3.eu-west-1.amazonaws.com:443/photos/exports' },
+    op: 'delete',
+    expected: {
+      title: 'This folder still holds hidden items',
+      message:
+        's3://AKIA@s3.eu-west-1.amazonaws.com:443/photos/exports looks empty, but the storage keeps items in it under names Cmdr can’t show, so the folder stays.',
+      suggestion: 'Remove those items in your storage provider’s console or another S3 tool, then try again.',
+    },
+  },
+
+  {
     // The person's own home folder: refused whoever asked.
     name: 'home_folder (is home)',
     error: { type: 'home_folder', path: '/Users/test_user_11', relation: 'isHome', action: 'delete' },

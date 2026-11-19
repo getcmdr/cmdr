@@ -216,6 +216,29 @@ fn a_folder_holding_anything_but_its_marker_is_not_empty() {
     );
 }
 
+/// ❗ A folder whose every key past its marker sits under a name no path can
+/// address (`a//x`, `a/./y`) lists empty, so its delete must say why it refuses
+/// rather than "not empty". A page that stops short (`is_truncated`) can't
+/// tell, and stays `Holds`; so does any page holding one plain child.
+#[test]
+fn a_folder_holding_only_unaddressable_keys_says_so() {
+    assert_eq!(
+        folder_contents(&page(&["a//"], vec![object("a/", 0)]), "a/"),
+        FolderContents::OnlyUnaddressable
+    );
+    assert_eq!(
+        folder_contents(&page(&["a/./"], vec![object("a/..", 1)]), "a/"),
+        FolderContents::OnlyUnaddressable
+    );
+    assert_eq!(
+        folder_contents(&page(&["a//"], vec![object("a/x.txt", 1)]), "a/"),
+        FolderContents::Holds
+    );
+    let mut cut_short = page(&["a//"], vec![object("a/", 0)]);
+    cut_short.is_truncated = true;
+    assert_eq!(folder_contents(&cut_short, "a/"), FolderContents::Holds);
+}
+
 #[test]
 fn a_folder_with_only_its_marker_is_empty_and_marked() {
     assert_eq!(

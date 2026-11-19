@@ -606,6 +606,12 @@ pub(crate) fn map_volume_error(context_path: &str, role: PathRole, e: VolumeErro
         // A merge walk skips such a child and carries on (`merge.rs::copy_leaf`),
         // so this reaches the dialog only for a link or special file selected on
         // its own.
+        // A folder that lists empty but keeps keys no path can address (S3's
+        // `p//x`): named, so the dialog explains the empty pane instead of
+        // calling it "not empty".
+        VolumeError::HoldsUnlistedItems(_) => WriteOperationError::FolderHoldsUnlistedItems {
+            path: context_path.to_string(),
+        },
         VolumeError::NoContent(path) => WriteOperationError::IoError {
             path,
             message: "Has no bytes to copy (a link or a special file)".into(),

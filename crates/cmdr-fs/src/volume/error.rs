@@ -238,6 +238,15 @@ pub enum VolumeError {
     /// whole folder over it. Raised by a restic snapshot's read stream today
     /// (`cmdr-restic`), where a backup of a Mac is full of symlinks.
     NoContent(String),
+    /// A folder refused its delete because all it still holds sits under names no
+    /// path can address, so it lists as empty. Carries the folder's path.
+    ///
+    /// S3 raises it for a folder whose only keys spell another key's path (`p//x`,
+    /// `p/./x`): those never list (`cmdr-s3` `DETAILS.md` § "Keys aren't paths"), so a
+    /// plain "this folder isn't empty" would contradict the empty pane. ❌ Never
+    /// deleted for the person: those objects are real, and only another tool can
+    /// name them.
+    HoldsUnlistedItems(String),
     /// A reply on a signed session carried a bad or missing signature, so the backend refused
     /// it rather than trust what it said. Carries what the backend reported, for the
     /// technical-details panel.
@@ -347,6 +356,10 @@ impl ErrorLogText for VolumeError {
             ),
             Self::SourceChanged(path) => ("The source changed during the copy: ", LogPrivate::file_path(path)),
             Self::NoContent(path) => ("No bytes to copy (a link or a special file): ", LogPrivate::path(path)),
+            Self::HoldsUnlistedItems(path) => (
+                "Holds only items under names no path can address: ",
+                LogPrivate::dir_path(path),
+            ),
             Self::EncryptionRequired(path) => (
                 "SMB encryption is required and this connection can't encrypt: ",
                 LogPrivate::path(path),

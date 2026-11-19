@@ -209,6 +209,10 @@ pub(super) enum FolderContents {
     MarkerOnly,
     /// Something besides the marker: a file, or a folder below.
     Holds,
+    /// Something besides the marker, all of it under names no path can address
+    /// (`a//x`, `a/./y`): the folder lists empty, yet holds keys. Only a whole
+    /// page says so; one that stops short is `Holds`.
+    OnlyUnaddressable,
 }
 
 /// Judges a page listing `prefix` with `delimiter=/` and `max-keys` of at
@@ -216,6 +220,10 @@ pub(super) enum FolderContents {
 pub(super) fn folder_contents(page: &ObjectPage, prefix: &str) -> FolderContents {
     let others = page.objects.iter().filter(|object| object.key != prefix).count() + page.prefixes.len();
     if others > 0 {
+        let read = read_page(page, prefix);
+        if !page.is_truncated && read.children.is_empty() && read.unaddressable > 0 {
+            return FolderContents::OnlyUnaddressable;
+        }
         FolderContents::Holds
     } else if page.objects.is_empty() {
         FolderContents::Nothing

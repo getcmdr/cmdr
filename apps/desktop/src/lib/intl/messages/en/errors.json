@@ -2909,6 +2909,23 @@
     "description": "Recovery suggestion for an archived source file. Plain text. \"Storage provider’s console\" means the provider's website or admin tool (for example the AWS console), where a restore is started. A restore takes minutes to about two days depending on the tier.",
     "screenshot": "transfer-error-source_in_cold_storage.png"
   },
+  "errors.write.folderHoldsUnlistedItems.title": "This folder still holds hidden items",
+  "errors.write.folderHoldsUnlistedItems.message": "{path} looks empty, but the storage keeps items in it under names Cmdr can’t show, so the folder stays.",
+  "errors.write.folderHoldsUnlistedItems.suggestion": "Remove those items in your storage provider’s console or another S3 tool, then try again.",
+  "@errors.write.folderHoldsUnlistedItems.title": {
+    "description": "Title of the error dialog when Cmdr was asked to delete (or move away) a folder in cloud object storage (S3) that shows as empty in Cmdr, yet still holds items. Plain text. \"Hidden\" means Cmdr can't show them, NOT that they carry a hidden-file flag: their names are spelled in a way no file path can address (for example with a doubled slash, `photos//a.jpg`), so Cmdr leaves them out of every listing."
+  },
+  "@errors.write.folderHoldsUnlistedItems.message": {
+    "description": "Body of the same dialog. Plain text. Explains why a folder that looks empty can't be deleted: the cloud storage still keeps items in it whose names Cmdr can't show (names with a doubled slash or a lone dot as one part, which no file path can address). Cmdr leaves those items alone, so the folder stays. \"The storage\" means the cloud storage service (for example Amazon S3).",
+    "placeholders": {
+      "path": {
+        "description": "The full path of the folder, inserted verbatim. Do not translate or reformat it."
+      }
+    }
+  },
+  "@errors.write.folderHoldsUnlistedItems.suggestion": {
+    "description": "Recovery suggestion for the same dialog. Plain text. \"Storage provider’s console\" means the provider's website or admin tool (for example the AWS console). \"Another S3 tool\" means any other program that talks to S3-compatible storage (for example the AWS command-line tool), which can name those items where Cmdr can't. Keep \"S3\" as is."
+  },
   "errors.write.mountedVolumeInside.title": "A mounted drive is in the way",
   "errors.write.mountedVolumeInside.message.delete": "A drive or server is mounted at {mountPoint}, and deleting there would erase everything on it. Cmdr stopped before deleting anything.",
   "errors.write.mountedVolumeInside.message.replace": "A drive or server is mounted at {mountPoint}, so replacing the folder that holds it would erase everything on the drive. Cmdr left that folder and the drive as they were.",
@@ -3537,6 +3554,10 @@
     "description": "Shown when an action needs to read a file that sits in cloud cold storage (for example S3 Glacier) and hasn't been restored. The literal `{path}` is a do-not-translate placeholder replaced at runtime with the path. Inline one-line message in a brief toast or under a name field. Plain text, no markdown. Cmdr never uses the words \"error\" or \"failed\" in messages people read. \"Archived\" here means the file's bytes sit in a cloud provider's cold storage tier (for example S3 Glacier) and must be restored before they can be read. It does NOT mean a zip or other archive file.",
     "screenshot": "mkdir-confirmation-too-long.png",
     "screenshotNote": "This one is NOT the error panel. Your string is the single red line under the name field in the Rename / New folder / New file box, exactly where the validation message sits in this screenshot (which shows a DIFFERENT message). One sentence, plain text, no markdown, and it has to fit a narrow dialog."
+  },
+  "errors.volume.holdsUnlistedItems": "“{path}” looks empty, but the storage keeps items in it under names Cmdr can’t show. Remove them with another S3 tool first.",
+  "@errors.volume.holdsUnlistedItems": {
+    "description": "Shown when Cmdr was asked to delete a folder in cloud object storage (S3) that shows as empty in Cmdr, yet the storage still keeps items in it under names no file path can address (for example with a doubled slash, `photos//a.jpg`), so Cmdr can't show or remove them. The literal `{path}` is a do-not-translate placeholder replaced at runtime with the path. Inline one-line message in a brief toast. Plain text, no markdown. Cmdr never uses the words \"error\" or \"failed\" in messages people read. \"Another S3 tool\" means any other program that talks to S3-compatible storage (for example the AWS console or command-line tool); keep \"S3\" as is."
   },
   "errors.volume.sourceChanged": "“{path}” changed while Cmdr was copying it, so Cmdr saved nothing. Try again to copy the new version.",
   "@errors.volume.sourceChanged": {

@@ -42,6 +42,7 @@ const VOLUME_CASES: VolumeError[] = [
   { type: 'linkNeedsConsent', data: { path: '/smb/nas/data/holiday.raw', server: 'nas', target: 'fs01' } },
   { type: 'sourceChanged', data: '/docs/report.pdf' },
   { type: 'noContent', data: '/backup/Users/me/link' },
+  { type: 'holdsUnlistedItems', data: '/photos/exports' },
   { type: 'ambiguousName', data: '/Volumes/share/café.txt' },
   { type: 'duplicateName', data: '/DCIM/IMG_0001.JPG' },
   { type: 'staleDestinationHandle', data: '/DCIM/Camera' },
