@@ -16,6 +16,8 @@
 !apps/desktop/src-tauri/src/intl/shipped_locales.gen.rs
 # The policy definition `/trust` lists its managed keys from (`apps/website/src/lib/trust-mdm.ts`)
 !apps/desktop/src-tauri/src/managed_policy/policies.json
+# `PUBLIC_DOWNLOAD_OSES`, the OSes the download buttons offer (`apps/website/src/lib/download-platforms.ts`)
+!apps/api-server/wrangler.toml
 
 # Allow website app
 !apps/website/

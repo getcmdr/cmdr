@@ -190,8 +190,9 @@ D1 table `downloads`. One row per download event with `app_version`, `os`, `kind
   macOS only). macOS is always public whatever the var says (`publicDownloadOses`): its DMG was public before the gate,
   so an emptied or mistyped var must never 404 every published Mac link. Any other OS off the list answers 404 before
   any lookup or row, so a release can carry Windows files before anyone announces them. Adding `windows` there (and
-  deploying) is the one switch that makes the Windows download public; the website's download page (Windows port plan
-  task 32) links it only after that.
+  deploying) is the one switch that makes the Windows download public. The website reads the same line at build time and
+  offers an OS's download only once it's listed (`apps/website/DETAILS.md` § Download platforms), so the parser there
+  mirrors `publicDownloadOses`: keep the var a one-line `KEY = "a,b"` string.
 
 * **`latest` is a valid `:version`,** for links we can't edit per release (app directories, the README, blog posts, a
   chat message from last year). `resolveLatestRelease` reads `getcmdr.com/latest.json` (the same manifest the in-app

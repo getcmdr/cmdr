@@ -4,6 +4,11 @@ import Header from '../components/Header.astro'
 import Footer from '../components/Footer.astro'
 import DownloadButton from '../components/DownloadButton.astro'
 import PageHeader from '../components/PageHeader.astro'
+import { offeredOses } from '../lib/release'
+import { formatOsList } from '../lib/download-platforms'
+
+// "macOS only" while macOS is the one OS offered, then "macOS and Windows" and so on.
+const platformLine = offeredOses.length === 1 ? `${formatOsList(offeredOses)} only` : formatOsList(offeredOses)
 
 // Paddle config - passed to client-side script
 const paddleToken = import.meta.env.PUBLIC_PADDLE_CLIENT_TOKEN ?? ''
@@ -105,7 +110,7 @@ const faq = [
         <!-- Download Button -->
         <div class="mb-16">
             <DownloadButton variant="pricing" />
-            <p class="mt-3 text-sm text-text-tertiary">macOS only · Source-available (BSL 1.1)</p>
+            <p class="mt-3 text-sm text-text-tertiary">{platformLine} · Source-available (BSL 1.1)</p>
         </div>
 
         <!-- Pricing Cards -->

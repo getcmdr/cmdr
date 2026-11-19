@@ -539,6 +539,16 @@ jobs:
               - 'feature-status.json'
               # Counted for the "translated into N languages" copy (`src/lib/shipped-languages.ts`).
               - 'apps/desktop/src-tauri/src/intl/shipped_locales.gen.rs'
+              # The policy names and kinds `/trust` lists (`src/lib/trust-mdm.ts`).
+              - 'apps/desktop/src-tauri/src/managed_policy/policies.json'
+              # `PUBLIC_DOWNLOAD_OSES`, the OSes the download buttons offer, so turning one on redeploys the
+              # site (`apps/website/src/lib/download-platforms.ts`).
+              - 'apps/api-server/wrangler.toml'
+              - 'scripts/check.sh'
+              - 'scripts/check/**'
+              - '!scripts/check/**/*_test.go'
+              - '!**/CLAUDE.md'
+              - '!**/DETAILS.md'
             # The browser demo's own sources and its full suite: a change here builds the demo from
             # this commit and runs the whole suite on it (the website lane's `demo-suite` job), so a
             # demo change is tested before it lands, not first by the nightly or the release.
@@ -565,13 +575,6 @@ jobs:
               - '.github/actions/pnpm-store/**'
               - '.github/actions/pinned-rust-toolchain/**'
               - '.github/actions/wasm-toolchain/**'
-              - '!**/CLAUDE.md'
-              - '!**/DETAILS.md'
-              # The policy names and kinds `/trust` lists (`src/lib/trust-mdm.ts`).
-              - 'apps/desktop/src-tauri/src/managed_policy/policies.json'
-              - 'scripts/check.sh'
-              - 'scripts/check/**'
-              - '!scripts/check/**/*_test.go'
               - '!**/CLAUDE.md'
               - '!**/DETAILS.md'
             api-server:
@@ -1126,7 +1129,8 @@ jobs:
   deploy-website:
     name: Deploy website
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # 15 minutes of waiting for the API (the first step) plus the deploy itself.
+    timeout-minutes: 25
     # Deploys when the website lane passed in this run, or when it skipped because the landed
     # commit was already verified on its PR and the push touched the website.
     needs: [changes, website]
@@ -1139,6 +1143,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # The site and the API read one switch (`PUBLIC_DOWNLOAD_OSES`) but deploy separately, so the new site goes
+      # live only once the API serves every OS download it will offer. A timeout fails this job and the old site
+      # stays up (`apps/website/scripts/wait-for-public-downloads.sh`).
+      - name: Wait for the API to serve every public OS
+        run: ./apps/website/scripts/wait-for-public-downloads.sh
 
       - name: Find the released demo image
         id: demo

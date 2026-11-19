@@ -135,14 +135,15 @@ was deleted.)
 - **Download dropdown**: the split-button + arch menu. `DownloadButton.astro` holds only markup (variants
   `hero`/`card`/`header`/`mobile`/`pricing`); its styling is global in `src/styles/download-button.css` and its
   open/close + keyboard JS is a global `astro:page-load` script in `Layout.astro`, both keyed off
-  `[data-download-split-btn]`/`[data-download-chevron]`/`[data-download-dropdown]`. Arch auto-detection (the recommended
-  ✓) is a separate inline script in `Layout.astro`. Because all three are global and attribute-driven, the dropdown also
-  works when the `rehypeDownloadDropdown` plugin (`src/plugins/download-dropdown.ts`) emits an inline copy into a blog
-  post from the `[download](cmdr:download)` marker. That plugin must run after `rehype-external-links` (so its mirror
-  links don't get `target="_blank"`) and reads `public/latest.json` directly, building `src/lib/release.ts`'s
-  no-download-base links (direct to `download.getcmdr.com`). Both take filenames and sizes from
-  `src/lib/release-downloads.ts`, which reads the manifest's `downloads` list (written from the release asset manifest,
-  `docs/guides/releasing.md` § The release asset manifest) and falls back to `dmgSizes` for a manifest from before it.
+  `[data-download-split-btn]`/`[data-download-chevron]`/`[data-download-dropdown]`. OS and arch detection (the main
+  link's target and the recommended ✓) is the download picker, § Download platforms. Because all three are global and
+  attribute-driven, the dropdown also works when the `rehypeDownloadDropdown` plugin
+  (`src/plugins/download-dropdown.ts`) emits an inline copy into a blog post from the `[download](cmdr:download)`
+  marker. That plugin must run after `rehype-external-links` (so its mirror links don't get `target="_blank"`) and reads
+  `public/latest.json` directly, building `src/lib/release.ts`'s no-download-base links (direct to
+  `download.getcmdr.com`). Both take filenames and sizes from `src/lib/release-downloads.ts`, which reads the manifest's
+  `downloads` list (written from the release asset manifest, `docs/guides/releasing.md` § The release asset manifest)
+  and falls back to `dmgSizes` for a manifest from before it.
 - **`public/latest.json` is live only in production.** The committed copy is frozen (dev and the check lanes build with
   it, so they never touch the network for it). The Docker build overwrites it with the live update manifest, the
   `latest.json` of the GitHub release marked "Latest" (`scripts/fetch-live-manifest.ts`), and a failed fetch fails the
@@ -193,13 +194,15 @@ was deleted.)
   (`cloudflare/getcmdr.com-cache.tf`).
 - **Always-latest download links**: `getcmdr.com/download/latest/<arch>` (and bare `/download/latest`, which hands out
   the universal build) is an nginx `return 302` to the API server's `/download/latest/<arch>`, query string preserved so
-  `?ref=` and `?src=` survive. It lives in `nginx.conf`, not Astro, because a static build can only emit a meta-refresh
-  page, which a directory's link checker may not follow, and because the target has to stay correct between deploys. The
-  API server resolves `latest` to the current version and logs the download (`apps/api-server/src/telemetry/DETAILS.md`
-  § Download tracking). Only the production container serves it: `pnpm dev` and the Playwright E2E run against Astro's
-  dev server, which knows nothing about `nginx.conf`. Use it for links published where we can't edit the URL per release
-  (app directories, the README, blog posts); the site's own download button keeps its version-pinned URL, which carries
-  the `?src=website` tag and the file size.
+  `?ref=` and `?src=` survive. `/download/latest/<os>/<arch>` (`?kind=` for an OS's other file) passes through the same
+  way; the API answers 404 for an OS it doesn't serve yet, so the route can't expose an unannounced build. It lives in
+  `nginx.conf`, not Astro, because a static build can only emit a meta-refresh page, which a directory's link checker
+  may not follow, and because the target has to stay correct between deploys. The API server resolves `latest` to the
+  current version and logs the download (`apps/api-server/src/telemetry/DETAILS.md` § Download tracking). Only the
+  production container serves it: `pnpm dev` and the Playwright E2E run against Astro's dev server, which knows nothing
+  about `nginx.conf`. Use it for links published where we can't edit the URL per release (app directories, the README,
+  blog posts); the site's own download button keeps its version-pinned URL, which carries the `?src=website` tag and the
+  file size.
 - **Page content as data**: pages whose bulk is content, not logic, keep that content in a typed module under `src/lib/`
   and map over it. `src/lib/roadmap.ts` holds every roadmap milestone (sections → optional month groups → milestones,
   each with a `date`, `title`, `description`, optional `icon`, and `done`); `src/pages/roadmap.astro` is layout and
@@ -234,11 +237,75 @@ was deleted.)
   A Rust test guards all three key sets against the app's (`apps/desktop/src-tauri/src/managed_policy/DETAILS.md` § The
   public mirror), so a key edit here needs the app's key list to match.
 - **Copy for an OS that hasn't shipped**: `/trust#windows` (body in `src/components/TrustWindows.astro`) renders in
-  `pnpm dev` and, in the built site, only once the published release's `latest.json` lists a Windows download
-  (`releaseShipsWindows` in `src/lib/release.ts`, from `releaseShipsOs` in `release-downloads.ts`). So it goes live with
-  the deploy of the first Windows release, whose trust review checks it. The Windows registry policy path is
-  `windowsPolicyKey` in `src/lib/trust-mdm.ts`, the one place the page names it; it mirrors `POLICY_KEY` in the app's
-  `managed_policy/platform/windows/mod.rs` by hand.
+  `pnpm dev` and, in the built site, only once the site offers a Windows download (`offersWindows` in
+  `src/lib/release.ts`, the gate in § Download platforms). So it goes live with the download, whose trust review checks
+  it. The Windows registry policy path is `windowsPolicyKey` in `src/lib/trust-mdm.ts`, the one place the page names it;
+  it mirrors `POLICY_KEY` in the app's `managed_policy/platform/windows/mod.rs` by hand.
+
+## Download platforms
+
+Every download button, the blog's inline dropdown, the download section (`src/components/Download.astro`), the pricing
+page's platform line, the home page's schema, the llms files, and `/trust#windows` read one gate: `offeredPlatforms` in
+`src/lib/download-platforms.ts`, fed by `src/lib/release.ts`.
+
+- **The gate**: an OS is offered when the API server serves its downloads AND the published release carries a website
+  file of it. The first is `PUBLIC_DOWNLOAD_OSES` in `apps/api-server/wrangler.toml` (the switch that makes an OS's
+  download public, `apps/api-server/src/telemetry/DETAILS.md` § Download tracking), read at build time with the API's
+  own rule (macOS always). The second is `latest.json`'s `downloads`, which the release pipeline writes from
+  `ShippedOSes`. So a release can carry Windows files with the site still offering macOS only, and adding `windows` to
+  the var turns the Windows download on here and on the API in one commit.
+  - Why the var and not `ShippedOSes`: the release builds an OS's files before anyone announces them, and the API
+    answers 404 for an OS off the var, so linking on `ShippedOSes` alone would put dead buttons up.
+  - Wiring: the Dockerfile copies `wrangler.toml` in (and `.dockerignore` lets it through), and ci.yml's `website`
+    filter lists it, so the flip's commit redeploys the site.
+  - The switch race: the API deploys from its own workflow on the same push, so `deploy-website` first runs
+    `scripts/wait-for-public-downloads.sh`. For each public OS but macOS that the live `latest.json` carries a website
+    file of, it polls that file's API route (as `cmdr-deploy-check-bot`, which the API's bot filter keeps out of D1)
+    until it redirects; after 15 minutes it fails the job and the old site stays up. Turning an OS off needs no wait:
+    the API refuses at once, and the site's buttons 404 until it redeploys (the rollback order is in
+    `docs/guides/releasing.md` § Windows releases).
+  - Fail loud: `parsePublicDownloadOses` throws unless the toml has one `PUBLIC_DOWNLOAD_OSES = "…"` line (a
+    single-quoted value would have the API serve an OS the site never offers), and `offeredPlatforms` throws on a
+    malformed `downloads` list or one without the universal macOS DMG. That DMG is every button's link with JS off and
+    for a Mac of unknown arch, so without it a build would ship buttons with no link, or the Apple silicon DMG for Intel
+    Macs. The Docker build refuses the same live manifests before building (`scripts/live-manifest-check.ts`), so the
+    deploy keeps the old site.
+- **Website kinds**: macOS DMGs, the Windows NSIS installer, Linux AppImages and `.deb`s. The MSIX is the Store's
+  package (task 57 links the Store) and the Group Policy zip is for admins, so neither is a button.
+- **The picker** (two inline scripts at the end of `Layout.astro`'s `<body>`): the first inlines `detectVisitorOs`,
+  `detectVisitorArch`, `macArchFromRenderer`, and `chooseDownload` from their TS source with `String(fn)`, so the page
+  runs the exact code the unit tests cover (which is why they must stay self-contained); the second applies them. Each
+  `[data-download-split-btn]` carries its own offer as `data-downloads` JSON, so the fixture page can render a different
+  release than the site.
+  - The visitor's OS (Client Hints, then the user agent, then `navigator.platform`; phones, tablets, and Chromebooks
+    count as none, and so does a Mac or Linux user agent on a touch screen without Client Hints, which is how iPads and
+    Android tablets ask for the desktop site) lands on `html[data-visitor-os]` (`other` for none). A button follows it
+    when that OS is offered, else shows macOS; a card button is pinned to its OS (`data-download-pinned-os`).
+  - The arch counts only within the visitor's own OS: a Windows visitor shown macOS gets the universal DMG, never Intel.
+    Macs read it from WebGL (`macArchFromRenderer`), others from the user agent, then the `cmdr-arch` localStorage cache
+    (a preference flag), and Client Hints refine it asynchronously.
+  - Gotcha: Safari reports the WebGL renderer as "Apple GPU" on every Mac, Intel ones included (ua-parser-js#732, read
+    2026-11-19), so that string means unknown and Safari gets the universal DMG. Reading it as Apple silicon offered
+    Intel-Mac Safari the arm64 DMG with a ✓.
+  - The download section shows the card of the buttons' OS, with "Also for …" switches to the other offered OSes. A
+    visitor whose build isn't offered keeps the macOS card plus a note (`data-visitor-notice`): Windows isn't out yet,
+    Linux builds from source, and anything else (a phone, a tablet, an unknown device) gets a neutral line
+    (`otherDeviceNote`). The newsletter label below carries the "on its way" news and says what's true: it's the
+    newsletter, about once a month, which will announce the release (`newsletterLabel`), never a mail on release day.
+  - Privacy: detection runs on the device, and nothing new leaves the page (no new Umami prop, no fetch).
+  - With JS off, every button offers the macOS universal DMG, as before.
+- **Tests**: `e2e/download-platforms.spec.ts` holds the pure rules' unit tests (no page, the live-manifest check
+  included) and the built site's states:
+  - The home page per visitor, against what the committed toml and `public/latest.json` offer (so it keeps testing once
+    Windows is public). Each visitor's OS and arch are written out by hand (`truth`), not derived with the code under
+    test, so the check fails on the old bugs (a Windows PC offered the Intel DMG, Safari the arm64 one).
+  - With JS off: every main link is the universal DMG.
+  - `/download-fixture` (`src/pages/download-fixture.astro`, a frozen every-OS release in
+    `src/fixtures/download-fixture.ts`; unlinked, `noindex`, out of the sitemap) for the shipped states. nginx answers
+    it 404 in production, since it would offer Windows and Linux buttons; `website-docker-build` probes that.
+  - `e2e/visitor.ts` fakes the visitor's `navigator` and WebGL renderer: Playwright's `userAgent` option leaves
+    `platform`, Client Hints, and the GPU on the host's values. The visual baselines emulate an Intel Mac for the same
+    reason, so the dropdown shot keeps its ✓ on every runner.
 
 ## Icons
 
