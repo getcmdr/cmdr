@@ -24,6 +24,15 @@ const sources = import.meta.glob<string>(
 
 const files = Object.entries(sources)
 
+/**
+ * The one `invoke` the scan can't read and may skip, per file: a forwarder whose own callers name
+ * their commands with a literal, which the scan reads at THEIR call sites.
+ */
+const FORWARDERS: Readonly<Record<string, string>> = {
+  // The boot guard's `send(command, args)`; its callers are read as `send('…')`.
+  '/src/app.html': 'invoke(command, args)',
+}
+
 describe('the scanners', () => {
   it('find a raw invoke in each shape the app writes one', () => {
     const text = `
@@ -32,12 +41,36 @@ describe('the scanners', () => {
       void invoke( "record_breadcrumb" , { event })
       send('plugin:process|exit', { code: 0 })
     `
-    expect(findRawInvokes(text)).toEqual([
-      'show_main_window',
-      'prepare_error_report_preview',
-      'record_breadcrumb',
-      'plugin:process|exit',
-    ])
+    expect(findRawInvokes(text)).toEqual({
+      names: ['show_main_window', 'prepare_error_report_preview', 'record_breadcrumb', 'plugin:process|exit'],
+      unparsed: [],
+    })
+  })
+
+  it('read a member invoke, as the internals or a namespace send one', () => {
+    const text = `
+      await core.invoke('read_file', { path })
+      window.__TAURI_INTERNALS__.invoke<string>("plugin:fs|stat", {})
+    `
+    expect(findRawInvokes(text)).toEqual({ names: ['read_file', 'plugin:fs|stat'], unparsed: [] })
+  })
+
+  it('report an invoke whose command is not a literal, so it fails instead of slipping past', () => {
+    const text = `
+      await invoke(command, args)
+      core.invoke(\`get_\${kind}\`)
+    `
+    expect(findRawInvokes(text).unparsed).toEqual(['invoke(command, args)', 'invoke(`get_${kind}`)'])
+  })
+
+  it('skip a call quoted in a comment line, a declaration, and a member send', () => {
+    const text = `
+      /** Calls \`invoke('quoted_in_docs')\` under the hood. */
+      // invoke(somethingInAComment)
+      function invoke(cmd: string) {}
+      socket.send('not_a_command')
+    `
+    expect(findRawInvokes(text)).toEqual({ names: [], unparsed: [] })
   })
 
   it('find each value a module imports from a Tauri package, static or dynamic, and skip types', () => {
@@ -65,6 +98,34 @@ describe('the scanners', () => {
       "import('@tauri-apps/api/window')",
     ])
   })
+
+  it('read the names an import().then callback destructures', () => {
+    const text = `
+      void import('@tauri-apps/api/event').then(({ emit }) => emit('x'))
+      void import('@tauri-apps/plugin-fs').then(async ({ writeFile, mkdir: makeDir }) => {})
+    `
+    expect(findTauriApiImports(text)).toEqual({
+      names: ['api/event#emit', 'plugin-fs#writeFile', 'plugin-fs#mkdir'],
+      unparsed: [],
+    })
+  })
+
+  it('report an import().then that takes the module whole, and a namespace import', () => {
+    const text = `
+      void import('@tauri-apps/plugin-fs').then((fs) => fs.writeFile(p, b))
+      import('@tauri-apps/api/app').then(app => app.getVersion())
+      import * as event from '@tauri-apps/api/event'
+    `
+    expect(findTauriApiImports(text).unparsed).toEqual([
+      "import * from '@tauri-apps/api/event'",
+      "import('@tauri-apps/plugin-fs').then(…)",
+      "import('@tauri-apps/api/app').then(…)",
+    ])
+  })
+
+  it('skip a dynamic import in a type position', () => {
+    expect(findTauriApiImports(`let w: import('@tauri-apps/api/window').Window`)).toEqual({ names: [], unparsed: [] })
+  })
 })
 
 describe("the demo's coverage of every way the app calls the backend", () => {
@@ -74,13 +135,18 @@ describe("the demo's coverage of every way the app calls the backend", () => {
 
   it('answers every raw invoke the app sends, or says why the demo leaves it out', () => {
     const gaps: string[] = []
+    const unparsed: string[] = []
     for (const [file, text] of files) {
-      for (const command of findRawInvokes(text)) {
+      const found = findRawInvokes(text)
+      for (const command of found.names) {
         if (!isWireAnswered(command) && whyNotInDemo(command) === undefined) gaps.push(`${command} (${file})`)
       }
+      for (const shape of found.unparsed) if (FORWARDERS[file] !== shape) unparsed.push(`${shape} (${file})`)
     }
     // Answer it (`DETAILS.md` § Answering a command, step 6) or add it to `wireNotInDemo`.
     expect(gaps).toEqual([])
+    // Name the command with a literal, so the demo can be checked against it.
+    expect(unparsed).toEqual([])
   })
 
   it('knows what each Tauri API the app imports sends', () => {
@@ -117,7 +183,7 @@ describe("the demo's coverage of every way the app calls the backend", () => {
 
   it('leaves out only wire commands the app sends and nothing answers, each with a reason', () => {
     const sent = new Set([
-      ...files.flatMap(([, text]) => findRawInvokes(text)),
+      ...files.flatMap(([, text]) => findRawInvokes(text).names),
       ...Object.values(TAURI_API_CALLS).flat(),
     ])
     for (const [command, reason] of Object.entries(wireNotInDemo)) {
