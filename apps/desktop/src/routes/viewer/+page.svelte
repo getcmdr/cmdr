@@ -103,7 +103,7 @@
     let viewerMenus = $state<BarMenuView[]>([])
 
     function pickViewerMenuRow(menuId: string): void {
-        pickMenuBarItem(menuId).catch((error: unknown) => {
+        pickMenuBarItem(menuId, 'pick').catch((error: unknown) => {
             log.warn("Couldn't run a menu bar pick: {error}", { error })
         })
     }

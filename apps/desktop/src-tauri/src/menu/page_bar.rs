@@ -62,6 +62,29 @@ pub struct MenuBarChanged {
     pub menus: Option<Vec<BarMenuView>>,
 }
 
+/// How a page reached a bar row, which the main window's dispatch tells apart where a native bar
+/// can't: its text-field gate refuses a file-moving command's KEY while a field has focus, never
+/// the person's own pick of the row (`routes/(main)/text-field-gate.ts`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub enum BarPickVia {
+    /// A click on the row, or the open menu's own keyboard walk (Enter, Space, its letter).
+    Pick,
+    /// A chord the row shows, fired from a window that draws no bar of its own
+    /// (`#lib/ui/command-menu/window-bar-keys.ts`, the viewer's): an accelerator, as a native bar's.
+    Key,
+}
+
+impl BarPickVia {
+    /// The road a command this pick runs takes into the main window.
+    pub fn road(self) -> crate::window_events::CommandRoad {
+        match self {
+            Self::Pick => crate::window_events::CommandRoad::BarPick,
+            Self::Key => crate::window_events::CommandRoad::Relay,
+        }
+    }
+}
+
 /// What a page's pick of a bar row did.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
 #[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
@@ -227,7 +250,9 @@ fn wire_revision(revision: u64) -> u32 {
 /// the new state off it, so a pick flips Show hidden files first (both the stored check and the
 /// item, where one is built). The view-mode and sort rows need nothing: their handlers write every
 /// check from the stored state anyway.
-pub fn pick(app: &AppHandle<tauri::Wry>, menu_id: &str) -> BarPickOutcome {
+///
+/// `via` names the road a command it runs takes into the main window (`BarPickVia::road`).
+pub fn pick(app: &AppHandle<tauri::Wry>, menu_id: &str, via: BarPickVia) -> BarPickOutcome {
     let menu_state = app.state::<MenuState<tauri::Wry>>();
     if !is_live(&menu_state, menu_id) {
         return BarPickOutcome::NotLive;
@@ -246,7 +271,7 @@ pub fn pick(app: &AppHandle<tauri::Wry>, menu_id: &str) -> BarPickOutcome {
             log::warn!(target: "menu", "couldn't flip the native Show hidden files check: {e}");
         }
     }
-    super::menu_handlers::handle_menu_pick(app, menu_id);
+    super::menu_handlers::handle_menu_pick(app, menu_id, via.road());
     BarPickOutcome::Ran
 }
 
@@ -269,6 +294,15 @@ mod tests {
     use cmdr_menu::sort::RequestedSort;
     use cmdr_menu::spec::ViewMode;
     use tauri::test::MockRuntime;
+
+    /// The person's pick takes its own road, which the main window's text-field gate lets through;
+    /// a window firing a row's chord takes the menu's, which the gate refuses for a file-moving row.
+    #[test]
+    fn a_pick_and_a_key_take_different_roads() {
+        use crate::window_events::CommandRoad;
+        assert_eq!(BarPickVia::Pick.road(), CommandRoad::BarPick);
+        assert_eq!(BarPickVia::Key.road(), CommandRoad::Relay);
+    }
 
     /// A fresh `MenuState` reads as the bar a fresh app builds, the one the demo starts from too.
     #[test]

@@ -1056,9 +1056,24 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
          submenu drops Quit.
        - Tests: Vitest for the setting's three layouts; the Linux E2E bar spec gains the hidden case.
        - Done when: each desktop's default matches `menu-model.md` and the setting flips it live.
+       - **Built** (2026-11-19), unchecked on real Windows and real GNOME: `appearance.menuBar` (`desktopDefault` |
+         `shown` | `hidden`: a literal default, since the analytics defaults manifest has no desktop axis) drawn as one
+         switch in Settings > Appearance > Zoom and density, View > Show menu bar (`windows_and_linux`, running
+         `view.toggleMenuBar`), the `hiddenMenuBar` convention and `hideableMenuBar` capability, and
+         `lib/ui/command-menu/menu-layout.ts` picking bar, hidden bar (Windows: `<MenuBar revealOnly>`), or the
+         main-menu button (`MainMenuButton.svelte`, at the end of the right pane's tab row and the viewer's toolbar; F10
+         opens it where no bar takes it). `apps/desktop/src/lib/ui/DETAILS.md` § Command menus has it. Gaps: the
+         viewer's own bar has no Show menu bar row (the main window's, Settings, and the palette flip it); the browser
+         demo's strip ignores the setting (a Windows or Linux visitor's View > Show menu bar flips the check only),
+         until step 11's remainder moves the demo onto the app's own bar.
     9. [XS] **The text-field gate** lets a bar CLICK on a file-moving command run, and the same command's key still
        doesn't (task 55's entry; `routes/(main)/text-field-gate.ts`). Tests: a Vitest case per road. Done when: both
        cases are pinned.
+       - **Built** (2026-11-19): `pick_menu_bar_item(menuId, via)` (`BarPickVia::{Pick, Key}`) sends a picked row's
+         command down a new `BarPick` road (`barPick` dispatch source), which the gate lets through; a key stays
+         `keyboard` in the main window, or `Relay` from another window's chord. Pinned by `text-field-gate.test.ts` § "a
+         bar the page draws", `page_bar.rs`'s road test, and the Linux E2E bar spec (a real click on File > Move with a
+         field focused opens the dialog; a real F6 doesn't). macOS keeps today's refusal (a native bar can't tell).
     10. [S] **Linux cleanup.**
         - Scope: delete `menu/mnemonic_mask/` and its IPC, `menu-mnemonics-capture.svelte.ts`, and the mask's own
           leftovers in `menu-bar.spec.ts` (step 6 renamed `menu-mnemonic-mask.spec.ts` to it; Settings' title-mnemonic

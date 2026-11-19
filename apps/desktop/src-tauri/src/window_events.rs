@@ -53,6 +53,9 @@ pub enum CommandRoad {
     Relay,
     /// A right-click menu's own row.
     ContextMenu,
+    /// A row the person picked on a bar the page draws (a click, or the open menu's keyboard walk):
+    /// never an accelerator, which is what lets a file-moving row run with a text field focused.
+    BarPick,
 }
 
 /// `queue-select-all`: Edit > Select all (⌘A) while the operation queue window

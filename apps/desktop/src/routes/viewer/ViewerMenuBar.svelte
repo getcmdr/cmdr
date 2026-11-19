@@ -10,7 +10,7 @@
     import MenuBar from '#lib/ui/MenuBar.svelte'
     import { drawsBar, type MenuLayout } from '#lib/ui/command-menu/menu-layout.js'
     import { barRowForKey } from '#lib/ui/command-menu/bar-keys.js'
-    import type { BarMenuView, ViewerBarInputs } from '#lib/ipc/bindings.js'
+    import type { BarMenuView, BarPickVia, ViewerBarInputs } from '#lib/ipc/bindings.js'
     import { getViewerMenuBar, pickMenuBarItem } from '#lib/tauri-commands/index.js'
     import { tString } from '#lib/intl/messages.svelte.js'
     import { getAppLogger } from '#lib/logging/logger.js'
@@ -55,8 +55,8 @@
             })
     })
 
-    function pick(menuId: string): void {
-        pickMenuBarItem(menuId).catch((error: unknown) => {
+    function pick(menuId: string, via: BarPickVia = 'pick'): void {
+        pickMenuBarItem(menuId, via).catch((error: unknown) => {
             log.warn("Couldn't run a menu bar pick: {error}", { error })
         })
     }
@@ -70,7 +70,7 @@
         const id = barRowForKey(event, menus)
         if (id === null) return
         event.preventDefault()
-        pick(id)
+        pick(id, 'key')
     }
 </script>
 
@@ -83,7 +83,9 @@
         revealOnly={layout === 'barOnAlt'}
         ariaLabel={tString('ui.menuBar.label')}
         keyScope="Viewer window"
-        onPick={pick}
+        onPick={(menuId: string) => {
+            pick(menuId)
+        }}
         onFocusOrigin={(origin: Element | null) => {
             focusOrigin = origin
         }}

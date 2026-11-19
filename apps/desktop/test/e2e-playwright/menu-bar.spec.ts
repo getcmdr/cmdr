@@ -22,6 +22,7 @@ import {
   focusPane,
   moveCursorToFile,
   pressKey,
+  TRANSFER_DIALOG,
   type PageLike,
 } from './helpers.js'
 import { ensureMcpClient } from '../e2e-shared/mcp-client.js'
@@ -289,6 +290,50 @@ test.describe('The in-page menu bar (Linux)', () => {
       // One app serves the shard, so the bar goes back as found.
       if (!(await barShown())) await dispatchMenuCommand(tauriPage, 'view.toggleMenuBar')
       await expect.poll(barShown, { timeout: waitBudget(3000) }).toBe(true)
+    }
+  })
+
+  // Task 63 step 9: with a text field focused, the person's own click on File > Move runs it (the
+  // page's bar knows a pick from a key), and the same command's key, F6, still doesn't.
+  test('with a text field focused, a click on File > Move runs it, and its key still does not', async ({
+    tauriPage,
+  }) => {
+    await ensureAppReady(tauriPage)
+    expect(await moveCursorToFile(tauriPage, 'file-a.txt')).toBe(true)
+    const fieldFocused = () =>
+      tauriPage.evaluate<boolean>(`document.activeElement === document.getElementById('e2e-text-field-gate')`)
+    try {
+      // A text field the person is typing in, in the main window: the gate asks only that one has focus.
+      await tauriPage.evaluate(`(function(){
+          var field = document.createElement('input');
+          field.id = 'e2e-text-field-gate';
+          field.value = 'typing';
+          document.body.append(field);
+          field.focus();
+      })()`)
+      await expect.poll(fieldFocused, { timeout: waitBudget(3000) }).toBe(true)
+
+      // The key: F6 reaches the page (the recorder sees it) and opens nothing.
+      await installKeyRecorder(tauriPage)
+      focusMainWindow()
+      pressRealKey('F6')
+      await expect.poll(() => keydownsSeen(tauriPage), { timeout: waitBudget(3000) }).toContain('F6')
+      expect(
+        await tauriPage.evaluate<boolean>(`document.querySelector(${JSON.stringify(TRANSFER_DIALOG)}) !== null`),
+      ).toBe(false)
+      expect(await fieldFocused()).toBe(true)
+
+      // The pick: a real click on File, then on Move. The field keeps focus throughout.
+      await titleHolding(tauriPage, 'file_move')
+      expect(await fieldFocused()).toBe(true)
+      const row = await rowCenter(tauriPage, 'file_move')
+      expect(row).not.toBeNull()
+      if (row) clickRealAt(mainWindowId(), row.x, row.y)
+      await tauriPage.waitForSelector(TRANSFER_DIALOG, waitBudget(5000))
+    } finally {
+      await removeKeyRecorder(tauriPage)
+      await escapeOverlayUntilGone(tauriPage, TRANSFER_DIALOG)
+      await tauriPage.evaluate(`document.getElementById('e2e-text-field-gate')?.remove()`)
     }
   })
 

@@ -43,7 +43,7 @@ export function createMainMenus(): MainMenus {
 
 /** Runs a row the bar or the main-menu button picked, as a native click would. */
 export function pickMainMenuRow(menuId: string): void {
-  pickMenuBarItem(menuId).catch((error: unknown) => {
+  pickMenuBarItem(menuId, 'pick').catch((error: unknown) => {
     log.warn("Couldn't run a menu bar pick: {error}", { error })
   })
 }

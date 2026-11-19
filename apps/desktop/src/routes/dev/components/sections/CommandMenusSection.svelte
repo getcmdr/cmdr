@@ -173,7 +173,7 @@
                 menus={liveMenus}
                 ariaLabel="Live menu bar"
                 takesWindowKeys={false}
-                onPick={(id: string) => void pickMenuBarItem(id)}
+                onPick={(id: string) => void pickMenuBarItem(id, 'pick')}
             />
         </div>
     </div>

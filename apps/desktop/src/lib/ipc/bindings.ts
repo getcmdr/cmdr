@@ -4816,9 +4816,11 @@ export const commands = {
   getViewerMenuBar: (inputs: ViewerBarInputs) => __TAURI_INVOKE<BarMenuView[]>('get_viewer_menu_bar', { inputs }),
   /**
    *  A page's click on a bar row (the main bar's or the viewer's), by menu id: runs the handler a
-   *  native click reaches, or nothing for a row that's greyed out right now.
+   *  native click reaches, or nothing for a row that's greyed out right now. `via` says whether the
+   *  person picked the row or a window fired its chord (`BarPickVia`).
    */
-  pickMenuBarItem: (menuId: string) => __TAURI_INVOKE<BarPickOutcome>('pick_menu_bar_item', { menuId }),
+  pickMenuBarItem: (menuId: string, via: BarPickVia) =>
+    __TAURI_INVOKE<BarPickOutcome>('pick_menu_bar_item', { menuId, via }),
   /**
    *  The in-page twin of every `show_*` popup command, where the platform's `contextMenus`
    *  convention is `inPage` (Windows): stashes the same `MenuState` facts the native command does,
@@ -7946,6 +7948,20 @@ export type BarPickOutcome =
   | { kind: 'textEdit'; edit: PageTextEdit }
 
 /**
+ *  How a page reached a bar row, which the main window's dispatch tells apart where a native bar
+ *  can't: its text-field gate refuses a file-moving command's KEY while a field has focus, never
+ *  the person's own pick of the row (`routes/(main)/text-field-gate.ts`).
+ */
+export type BarPickVia =
+  // A click on the row, or the open menu's own keyboard walk (Enter, Space, its letter).
+  | 'pick'
+  /**
+   *  A chord the row shows, fired from a window that draws no bar of its own
+   *  (`#lib/ui/command-menu/window-bar-keys.ts`, the viewer's): an accelerator, as a native bar's.
+   */
+  | 'key'
+
+/**
  *  The prefix's estimated size against the budget the next send resolves. Both are `chars/4`
  *  estimates, like every other gauge figure.
  */
@@ -8706,6 +8722,11 @@ export type CommandRoad =
   | 'relay'
   // A right-click menu's own row.
   | 'contextMenu'
+  /**
+   *  A row the person picked on a bar the page draws (a click, or the open menu's keyboard walk):
+   *  never an accelerator, which is what lets a file-moving row run with a text field focused.
+   */
+  | 'barPick'
 
 // What [`count_all`] decided for a listing.
 export type CommitCountPass =

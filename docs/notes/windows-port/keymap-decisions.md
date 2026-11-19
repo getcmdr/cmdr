@@ -193,9 +193,10 @@ and `bar_parity_test.rs` holds every built accelerator to it.
 - Beyond the table, by command: a command that moves or removes files (`FILE_MOVING_COMMAND_IDS` in
   `lib/commands/command-registry.ts`: Move to trash, Delete permanently, Move, Move here, Undo trash, Remove download)
   never runs from a key or the menu bar while a text field has focus, whatever key it's on, F-keys included
-  (`routes/(main)/text-field-gate.ts`). The menu event can't say whether a key or a click sent it, so a click on File >
-  Delete with a field focused does nothing too; the palette and the F-key bar still run them. `text-field-gate.test.ts`
-  walks every default key of those commands on all three OSes.
+  (`routes/(main)/text-field-gate.ts`). On macOS the menu event can't say whether a key or a click sent it, so a click
+  on File > Delete with a field focused does nothing too; off macOS the page's bar knows, so a picked row runs (task 63
+  step 9). The palette and the F-key bar still run them. `text-field-gate.test.ts` walks every default key of those
+  commands on all three OSes.
 
 ## Commands on one OS only
 

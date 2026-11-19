@@ -200,7 +200,7 @@ describe('pickMenuBarItem', () => {
     const field = focusedField()
     ipc.pickOutcome = { kind: 'textEdit', edit: 'selectAll' }
 
-    await pickMenuBarItem('select_all_files')
+    await pickMenuBarItem('select_all_files', 'pick')
 
     expect([field.selectionStart, field.selectionEnd]).toEqual([0, 'test_file_1'.length])
   })
@@ -208,7 +208,7 @@ describe('pickMenuBarItem', () => {
   it('leaves the page alone for a row the backend ran', async () => {
     const field = focusedField()
 
-    expect(await pickMenuBarItem('file_copy')).toEqual({ kind: 'ran' })
+    expect(await pickMenuBarItem('file_copy', 'pick')).toEqual({ kind: 'ran' })
     expect([field.selectionStart, field.selectionEnd]).toEqual([0, 0])
   })
 })

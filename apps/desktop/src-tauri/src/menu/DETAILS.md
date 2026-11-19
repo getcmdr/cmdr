@@ -404,11 +404,14 @@ row is decided here or in the frontend.
 - **Live labels** come from the same pushes the native items get (`update_select_same_kind_menu`,
   `update_undo_trash_menu`, `update_pin_tab_menu`). ❗ The right-click Selection submenu's "same kind" label stays the
   caller's live value (`show_file_context_menu`'s `same_kind`), never this one, which the frontend debounces.
-- **`pick_menu_bar_item(menuId)`** answers `BarPickOutcome::{Ran, NotLive}`: a greyed row, or an id the bar doesn't
+- **`pick_menu_bar_item(menuId, via)`** answers `BarPickOutcome::{Ran, NotLive, TextEdit}`: a greyed row, or an id the bar doesn't
   build, runs nothing. A live one runs `menu_handlers::handle_menu_pick`, the handler a native click reaches
   (`handle_menu_event` is a thin wrapper over it), after doing what a native check item does by itself: Show hidden
   files flips its stored check (and the native item, where one is built) first, since the handler reads the new state
   off it. The view-mode and sort lanes need no flip: they write every check from the stored state.
+  `via` (`BarPickVia`) says how the page reached the row: `pick` (a click, or the open menu's keyboard walk) sends a
+  plain command down the `BarPick` road, which the main window's text-field gate lets through; `key` (a chord a window
+  without a bar fires) sends it down `Relay`, as a native accelerator, which the gate refuses for a file-moving row.
 - **The viewer's bar** is `get_viewer_menu_bar(inputs)`, a pure answer from the viewer page's own state
   (`cmdr_menu::page::viewer`): no store, no event. Its picks go through `pick_menu_bar_item` too, to the focused viewer's
   lanes; File > Close is `VIEWER_CLOSE_ID`, a lane only a page reaches (the native Close is the OS's own item).

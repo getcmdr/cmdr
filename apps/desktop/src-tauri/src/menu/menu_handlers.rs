@@ -297,14 +297,17 @@ fn viewer_history_direction_for(menu_id: &str) -> Option<ViewerHistoryDirection>
 /// the main window; the blocks above it are the exceptions that need direct emits, per-pane
 /// state syncing, focus-routed clipboard handling, or native macOS panels.
 pub fn handle_menu_event(app: &AppHandle<tauri::Wry>, event: tauri::menu::MenuEvent) {
-    handle_menu_pick(app, event.id().as_ref());
+    handle_menu_pick(app, event.id().as_ref(), crate::window_events::CommandRoad::Relay);
 }
 
 /// What a pick of menu item `id` does, from a native menu (`handle_menu_event`) or from a page
 /// that draws its menus itself (`page_bar::pick`, `page_context::pick`): one handler, so the two
 /// roads can't drift. A page's pick has already done what a native click does by itself (a check
 /// item's own flip).
-pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str) {
+///
+/// `road` is the one a plain command (the unified dispatch at the bottom) takes into the main window:
+/// `Relay` for a native menu and a key, `BarPick` for a page bar row the person picked.
+pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, road: crate::window_events::CommandRoad) {
     // === A context-menu row's own lane: what it asks for comes off its id (`cmdr_menu::context::click`),
     // the same answer the browser demo's context menu gets. A plain command falls through to the
     // unified dispatch at the bottom, with the bar's.
@@ -613,7 +616,7 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str) {
 
     // === Unified dispatch: look up command ID from the mapping ===
     if let Some((command_id, scope)) = menu_id_to_command(id) {
-        emit_command(app, command_id, scope, crate::window_events::CommandRoad::Relay);
+        emit_command(app, command_id, scope, road);
     }
 
     // Unknown menu ID: no-op (all known IDs are handled above)

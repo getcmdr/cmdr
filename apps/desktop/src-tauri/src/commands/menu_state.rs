@@ -385,9 +385,10 @@ pub fn get_viewer_menu_bar(inputs: cmdr_menu::page::viewer::ViewerBarInputs) -> 
 }
 
 /// A page's click on a bar row (the main bar's or the viewer's), by menu id: runs the handler a
-/// native click reaches, or nothing for a row that's greyed out right now.
+/// native click reaches, or nothing for a row that's greyed out right now. `via` says whether the
+/// person picked the row or a window fired its chord (`BarPickVia`).
 #[tauri::command]
 #[specta::specta]
-pub fn pick_menu_bar_item(app: AppHandle, menu_id: String) -> BarPickOutcome {
-    page_bar::pick(&app, &menu_id)
+pub fn pick_menu_bar_item(app: AppHandle, menu_id: String, via: page_bar::BarPickVia) -> BarPickOutcome {
+    page_bar::pick(&app, &menu_id, via)
 }

@@ -216,7 +216,8 @@ the answer is the same whichever road a command came in by.
   windows' `execute-command` emits, `view-mode-changed`, and `menu-sort`. An `execute-command` whose `road` is
   `contextMenu` (a right-click row with an id the bar doesn't share, today "Tell me about this") takes the `contextMenu`
   road: a single gesture, so it skips the keyboard+menu dedup and the menu claims, and the text-field gate lets it
-  through like the palette.
+  through like the palette. One whose `road` is `barPick` (a row picked on a bar the page draws, off macOS) takes the
+  `barPick` road the same way: a pick, never an accelerator (`listener-setup.ts`'s `dispatcherForRoad`).
 - **MCP is exempt**, so every MCP pane command (`select_volume`, `select`, `move_cursor`, `sort`, and the rest) runs
   behind an open dialog. Only the tools that start a file operation refuse, in Rust before they dispatch, with a typed
   `data.blockingDialog` (`#lib/file-explorer/pane/DETAILS.md` § "The operation-start gate"), and `dialog.confirm` acts
@@ -544,7 +545,9 @@ dispatch path can't rely on the keydown bail.
   leaves the key unclaimed so the field gets it; the dispatch core refuses the menu road, because a bar accelerator
   (macOS's `F8`, `⇧F8`, `F6`, `⌥⌘V`) fires before the field sees the key: ⌥⌘V in the path bar or a rename editor once
   moved the clipboard's files, and `⌘⌫` trashed the selection. The menu event can't tell a click from a key, so a click
-  on File > Delete with a field focused does nothing too; the palette, the F-key bar, and MCP run them.
+  on File > Delete with a field focused does nothing too on macOS; the palette, the F-key bar, and MCP run them. Off
+  macOS the page draws the bar and knows a pick from a key, so a row picked there (the `barPick` road) runs, while the
+  same command's key (`keyboard`, or `menu` from another window's `pick_menu_bar_item(…, 'key')`) stays refused.
   `text-field-gate.test.ts` walks every default key of every such command on all three OSes. Off macOS Move here's
   `Ctrl+Shift+V` is also the field's paste as plain text, which the bar only shows.
 - **The text-editing family while a dialog is open.** `edit.cut` / `edit.copy` / `edit.paste` / `selection.selectAll`
