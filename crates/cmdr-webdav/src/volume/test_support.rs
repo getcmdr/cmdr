@@ -20,12 +20,6 @@ pub(super) fn typed(text: &str) -> &AppPath {
     AppPath::from_normalized(text).unwrap_or_else(|why| panic!("{text:?} is no canonical app path: {why}"))
 }
 
-/// `path` as the `std::path` value `cmdr_fs::volume::conformance`'s assertions still take.
-/// The crate's one bridge: it goes when `cmdr_fs::volume::conformance` takes app paths.
-pub(super) fn conformance_path(path: &AppPath) -> std::path::PathBuf {
-    path.as_std_legacy().into_owned()
-}
-
 pub(super) fn make_test_volume(root: &str) -> WebdavVolume {
     make_test_volume_with(root, VolumeHost::detached())
 }

@@ -17,8 +17,14 @@ use cmdr_fs::volume::Volume;
 use cmdr_fs::volume::conformance;
 
 use super::WebdavVolume;
-use super::test_support::conformance_path;
 use super::testing::*;
+
+/// `path` as the `std::path` value `cmdr_fs::volume::conformance`'s assertions still take
+/// (also `nextcloud_test.rs`'s). The crate's one bridge: it goes when
+/// `cmdr_fs::volume::conformance` takes app paths.
+pub(super) fn conformance_path(path: &AppPath) -> std::path::PathBuf {
+    path.as_std_legacy().into_owned()
+}
 
 const FIXTURE: &str = "webdav-servers/start.sh (webdav-fixture)";
 

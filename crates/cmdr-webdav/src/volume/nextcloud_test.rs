@@ -31,7 +31,7 @@ use reqwest::header::{CONTENT_TYPE, RANGE};
 use reqwest::{Body, Method, StatusCode};
 
 use super::WebdavVolume;
-use super::test_support::conformance_path;
+use super::conformance_test::conformance_path;
 use super::testing::*;
 use cmdr_fs::volume::WriteMode;
 

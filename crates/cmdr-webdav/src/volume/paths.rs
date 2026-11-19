@@ -39,14 +39,6 @@ impl WebdavVolume {
         self.root.remote_root().to_string_lossy().into_owned()
     }
 
-    /// [`Self::to_remote_path`] for the `std::path` value the shared `mkdir -p` walk still
-    /// hands its backends: the same rules, through `RemoteRoot`'s `std::path` form.
-    pub(super) fn to_remote_path_std(&self, path: &Path) -> Result<String, VolumeError> {
-        self.root
-            .to_remote_path(path)
-            .ok_or_else(|| VolumeError::NotFound(path.to_string_lossy().into_owned()))
-    }
-
     /// The app spelling a row's `FileEntry.path` carries for the server path `remote`, or
     /// `None` when a misbehaving server names it off the root (the caller drops it).
     ///

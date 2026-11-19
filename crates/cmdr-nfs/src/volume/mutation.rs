@@ -325,15 +325,7 @@ fn claim_left_behind(remote: &str, failed: &VolumeError) -> VolumeError {
 }
 
 impl MakesDirectories for NfsVolume {
-    /// The `std::path` form, for a caller that still speaks it: the same answer
-    /// as [`Self::remote_path_of_app`], with no bridge.
-    fn remote_path_of(&self, path: &Path) -> Result<String, VolumeError> {
-        self.root
-            .to_remote_path(path)
-            .ok_or_else(|| VolumeError::NotFound(path.to_string_lossy().into_owned()))
-    }
-
-    fn remote_path_of_app(&self, path: &AppPath) -> Result<String, VolumeError> {
+    fn remote_path_of(&self, path: &AppPath) -> Result<String, VolumeError> {
         self.to_remote_path(path)
     }
 

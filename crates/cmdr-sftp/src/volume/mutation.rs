@@ -391,13 +391,7 @@ impl SftpVolume {
 /// spent by the transfer driver, so the refusals matter:
 /// `cmdr_fs::volume::mkdir_all`.
 impl MakesDirectories for SftpVolume {
-    fn remote_path_of(&self, path: &Path) -> Result<String, VolumeError> {
-        self.root
-            .to_remote_path(path)
-            .ok_or_else(|| VolumeError::NotFound(path.to_string_lossy().into_owned()))
-    }
-
-    fn remote_path_of_app(&self, path: &AppPath) -> Result<String, VolumeError> {
+    fn remote_path_of(&self, path: &AppPath) -> Result<String, VolumeError> {
         self.to_remote_path(path)
     }
 

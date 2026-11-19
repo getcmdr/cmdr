@@ -5,7 +5,6 @@
 //! silent overwrite of every file in a copy.
 
 use std::collections::HashSet;
-use std::path::PathBuf;
 use std::sync::Mutex;
 
 use super::*;
@@ -77,8 +76,8 @@ impl FakeServer {
 }
 
 impl MakesDirectories for FakeServer {
-    fn remote_path_of(&self, path: &Path) -> Result<String, VolumeError> {
-        Ok(path.to_string_lossy().into_owned())
+    fn remote_path_of(&self, path: &AppPath) -> Result<String, VolumeError> {
+        Ok(path.as_str().to_owned())
     }
 
     fn make_one_directory<'a>(&'a self, remote: &'a str) -> Walking<'a, ()> {
@@ -139,14 +138,14 @@ async fn a_new_folder_under_an_existing_parent_costs_exactly_one_request() {
     // ❗ The common case, and the whole reason the leaf is tried first.
     let server = FakeServer::new(&["/parent"]);
 
-    let made = create_directory_all(&server, Path::new("/parent/new"))
+    let made = create_directory_all_at(&server, crate::app_path!("/parent/new"))
         .await
         .expect("the walk");
 
     assert!(matches!(made.leaf, DirectoryCreation::Created));
     assert_eq!(
         made.shallowest_created,
-        Some(PathBuf::from("/parent/new")).map(|p| AppPath::legacy_unchecked(&p).into_owned())
+        Some(crate::app_path!("/parent/new").to_owned())
     );
     assert_eq!(server.requests(), vec!["/parent/new"]);
     assert!(server.questions().is_empty(), "a folder it made needs no second look");
@@ -158,7 +157,7 @@ async fn a_directory_that_was_already_there_is_never_reported_as_created() {
     // every destination conflict probe inside.
     let server = FakeServer::new(&["/parent", "/parent/album"]);
 
-    let made = create_directory_all(&server, Path::new("/parent/album"))
+    let made = create_directory_all_at(&server, crate::app_path!("/parent/album"))
         .await
         .expect("the walk");
 
@@ -170,7 +169,7 @@ async fn a_directory_that_was_already_there_is_never_reported_as_created() {
 async fn a_taken_leaf_costs_one_look_at_what_took_it() {
     let server = FakeServer::new(&["/parent", "/parent/album"]);
 
-    create_directory_all(&server, Path::new("/parent/album"))
+    create_directory_all_at(&server, crate::app_path!("/parent/album"))
         .await
         .expect("the walk");
 
@@ -184,7 +183,7 @@ async fn a_file_where_the_folder_should_be_is_refused_and_named() {
     // would send the transfer driver on to write into a folder that isn't one.
     let server = FakeServer::new(&["/parent"]).with_file("/parent/notes");
 
-    let outcome = create_directory_all(&server, Path::new("/parent/notes"))
+    let outcome = create_directory_all_at(&server, crate::app_path!("/parent/notes"))
         .await
         .map(|made| made.leaf);
 
@@ -202,7 +201,7 @@ async fn a_file_where_an_ancestor_should_be_is_named_and_the_folder_below_it_is_
     for asked in ["/a/b/c", "/a/b/c/d"] {
         let server = FakeServer::new(&["/a"]).with_file("/a/b");
 
-        let outcome = create_directory_all(&server, Path::new(asked))
+        let outcome = create_directory_all_at(&server, AppPath::from_normalized(asked).expect("a canonical literal"))
             .await
             .map(|made| made.leaf);
 
@@ -223,7 +222,7 @@ async fn a_server_that_cannot_address_anything_under_a_file_still_has_the_file_n
             .with_file("/a/b")
             .answering_bad_request_under_a_file();
 
-        let outcome = create_directory_all(&server, Path::new(asked))
+        let outcome = create_directory_all_at(&server, AppPath::from_normalized(asked).expect("a canonical literal"))
             .await
             .map(|made| made.leaf);
 
@@ -240,7 +239,7 @@ async fn an_unclassified_refusal_with_only_folders_above_it_keeps_its_own_answer
     // here, so whatever the server meant by its refusal is what gets reported.
     let server = FakeServer::new(&["/a"]).refusing("/a/new", |_| bad_request());
 
-    let outcome = create_directory_all(&server, Path::new("/a/new"))
+    let outcome = create_directory_all_at(&server, crate::app_path!("/a/new"))
         .await
         .map(|made| made.leaf);
 
@@ -255,15 +254,12 @@ async fn a_walk_that_works_never_asks_what_the_ancestors_it_found_are() {
     // creates alone.
     let server = FakeServer::new(&["/a", "/a/b"]);
 
-    let made = create_directory_all(&server, Path::new("/a/b/c/d"))
+    let made = create_directory_all_at(&server, crate::app_path!("/a/b/c/d"))
         .await
         .expect("the walk");
 
     assert!(matches!(made.leaf, DirectoryCreation::Created));
-    assert_eq!(
-        made.shallowest_created,
-        Some(PathBuf::from("/a/b/c")).map(|p| AppPath::legacy_unchecked(&p).into_owned())
-    );
+    assert_eq!(made.shallowest_created, Some(crate::app_path!("/a/b/c").to_owned()));
     assert!(server.questions().is_empty(), "asked about {:?}", server.questions());
 }
 
@@ -276,7 +272,7 @@ async fn a_refusal_below_a_real_folder_keeps_its_own_answer() {
         raw_os_error: None,
     });
 
-    let outcome = create_directory_all(&server, Path::new("/a/b/c"))
+    let outcome = create_directory_all_at(&server, crate::app_path!("/a/b/c"))
         .await
         .map(|made| made.leaf);
 
@@ -290,14 +286,14 @@ async fn a_refusal_below_a_real_folder_keeps_its_own_answer() {
 async fn a_missing_ancestor_earns_the_walk_and_the_leaf_still_reports_created() {
     let server = FakeServer::new(&[]);
 
-    let made = create_directory_all(&server, Path::new("/a/b/c"))
+    let made = create_directory_all_at(&server, crate::app_path!("/a/b/c"))
         .await
         .expect("the walk");
 
     assert!(matches!(made.leaf, DirectoryCreation::Created));
     assert_eq!(
         made.shallowest_created,
-        Some(PathBuf::from("/a")).map(|p| AppPath::legacy_unchecked(&p).into_owned()),
+        Some(crate::app_path!("/a").to_owned()),
         "one patch, for the shallowest level: its parent is the only listing a pane could hold"
     );
     assert_eq!(
@@ -311,7 +307,9 @@ async fn a_missing_ancestor_earns_the_walk_and_the_leaf_still_reports_created() 
 async fn the_volume_root_always_exists_and_costs_no_request() {
     let server = FakeServer::new(&[]);
 
-    let made = create_directory_all(&server, Path::new("/")).await.expect("the walk");
+    let made = create_directory_all_at(&server, crate::app_path!("/"))
+        .await
+        .expect("the walk");
 
     assert!(matches!(made.leaf, DirectoryCreation::AlreadyExisted));
     assert!(server.requests().is_empty());
@@ -323,15 +321,12 @@ async fn a_level_someone_else_created_mid_walk_does_not_stop_it() {
     // own answer is what the caller acts on.
     let server = FakeServer::new(&["/a"]);
 
-    let made = create_directory_all(&server, Path::new("/a/b/c"))
+    let made = create_directory_all_at(&server, crate::app_path!("/a/b/c"))
         .await
         .expect("the walk");
 
     assert!(matches!(made.leaf, DirectoryCreation::Created));
-    assert_eq!(
-        made.shallowest_created,
-        Some(PathBuf::from("/a/b")).map(|p| AppPath::legacy_unchecked(&p).into_owned())
-    );
+    assert_eq!(made.shallowest_created, Some(crate::app_path!("/a/b").to_owned()));
 }
 
 #[tokio::test]
@@ -343,7 +338,7 @@ async fn a_refusal_that_is_not_about_a_missing_ancestor_stops_the_walk() {
         raw_os_error: None,
     });
 
-    let outcome = create_directory_all(&server, Path::new("/parent/new")).await;
+    let outcome = create_directory_all_at(&server, crate::app_path!("/parent/new")).await;
 
     assert!(matches!(outcome, Err(VolumeError::PermissionDenied { .. })));
     assert_eq!(server.requests(), vec!["/parent/new"], "it never walked");

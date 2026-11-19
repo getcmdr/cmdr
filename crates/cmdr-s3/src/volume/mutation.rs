@@ -412,13 +412,7 @@ impl S3VolumeInner {
 }
 
 impl MakesDirectories for S3Volume {
-    /// The `std::path` form, kept until the shared walk stops asking it.
-    fn remote_path_of(&self, path: &Path) -> Result<String, VolumeError> {
-        self.resolve_shown(self.root.to_remote_path(path), || path.to_string_lossy().into_owned())
-            .map(|resolved| resolved.remote)
-    }
-
-    fn remote_path_of_app(&self, path: &AppPath) -> Result<String, VolumeError> {
+    fn remote_path_of(&self, path: &AppPath) -> Result<String, VolumeError> {
         self.to_remote_path(path)
     }
 

@@ -108,15 +108,12 @@ fn a_dot_dot_escape_is_refused_however_it_is_spelled() {
             "{escape} is no app path"
         );
         assert!(
-            matches!(
-                volume.to_remote_path_std(Path::new(&escape)),
-                Err(VolumeError::NotFound(_))
-            ),
+            volume.root.to_remote_path(Path::new(&escape)).is_none(),
             "{escape} must not resolve"
         );
     }
     assert_eq!(
-        volume.to_remote_path_std(Path::new("photos/../docs")).expect("inside"),
+        volume.root.to_remote_path(Path::new("photos/../docs")).expect("inside"),
         "/srv/data/docs"
     );
 }

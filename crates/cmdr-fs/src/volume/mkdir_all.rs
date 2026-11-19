@@ -67,14 +67,7 @@ pub enum LeadsTo {
 pub trait MakesDirectories: Sync {
     /// `path` in the backend's own spelling, or `NotFound` when it isn't on this
     /// volume.
-    fn remote_path_of(&self, path: &Path) -> Result<String, VolumeError>;
-
-    /// [`Self::remote_path_of`] for an app path, what [`create_directory_all_at`] asks. A
-    /// backend that speaks app paths answers it itself; the default crosses through the
-    /// transition bridge to the `std::path` form, byte for byte.
-    fn remote_path_of_app(&self, path: &AppPath) -> Result<String, VolumeError> {
-        self.remote_path_of(&path.as_std_legacy())
-    }
+    fn remote_path_of(&self, path: &AppPath) -> Result<String, VolumeError>;
 
     /// Makes exactly one directory, no parents.
     ///
@@ -109,23 +102,17 @@ pub struct MadeDirectories {
     pub shallowest_created: Option<AppPathBuf>,
 }
 
-/// Creates `path` and any missing ancestors under the volume root. The `std::path` form of
-/// [`create_directory_all_at`]; the bridge keeps `path`'s exact bytes, and the walk's
-/// ancestors are the ones `Path::ancestors` gave.
-pub async fn create_directory_all(maker: &dyn MakesDirectories, path: &Path) -> Result<MadeDirectories, VolumeError> {
-    create_directory_all_at(maker, &AppPath::legacy_unchecked(path)).await
-}
-
-/// Creates `path` and any missing ancestors under the volume root.
+/// Creates `path` and any missing ancestors under the volume root. The walk's levels are
+/// `path` and its typed `parent` chain, up to the first that spells the volume's root.
 pub async fn create_directory_all_at(
     maker: &dyn MakesDirectories,
     path: &AppPath,
 ) -> Result<MadeDirectories, VolumeError> {
-    let remote = maker.remote_path_of_app(path)?;
+    let remote = maker.remote_path_of(path)?;
     // The volume root always exists, and so does every spelling of it. `/` is the
     // volume-relative spelling every backend reads as its root (`root_anchored`), where
     // `path.root()` would be the server's own `/`, off a volume rooted deeper.
-    let root = maker.remote_path_of_app(volume_root_alias())?;
+    let root = maker.remote_path_of(volume_root_alias())?;
     if remote == root {
         return Ok(MadeDirectories {
             leaf: DirectoryCreation::AlreadyExisted,
@@ -138,7 +125,7 @@ pub async fn create_directory_all_at(
     let mut levels: Vec<(&AppPath, String)> = Vec::new();
     let mut ancestor = Some(path);
     while let Some(at) = ancestor {
-        let Ok(remote_ancestor) = maker.remote_path_of_app(at) else {
+        let Ok(remote_ancestor) = maker.remote_path_of(at) else {
             break;
         };
         if remote_ancestor == root {

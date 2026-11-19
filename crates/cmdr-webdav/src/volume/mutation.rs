@@ -216,11 +216,7 @@ pub(super) fn still_holds(remote: &str, held: usize) -> VolumeError {
 /// volume's own path spelling. The `Created` promise it answers with is spent by
 /// the transfer driver, so the refusals matter: `cmdr_fs::volume::mkdir_all`.
 impl MakesDirectories for WebdavVolume {
-    fn remote_path_of(&self, path: &Path) -> Result<String, VolumeError> {
-        self.to_remote_path_std(path)
-    }
-
-    fn remote_path_of_app(&self, path: &AppPath) -> Result<String, VolumeError> {
+    fn remote_path_of(&self, path: &AppPath) -> Result<String, VolumeError> {
         self.to_remote_path(path)
     }
 
