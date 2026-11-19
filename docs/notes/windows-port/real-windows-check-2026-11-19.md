@@ -78,12 +78,21 @@ Tasks 60 and 62 (look):
   `81`). Their openers opened `transparent` with a clear fill whenever macOS's Reduce transparency was off, and the
   Sidebar material they asked for exists only on macOS. Keyboard shortcuts was opaque (`84`). Re-run on `968733ae7f`:
   both open opaque (`210`, `212`).
-- Pass with a gap: the Fluent radio, switch, and select read as WinUI's (`c-70` crop of `70`). "System theme color"
-  draws Cmdr's gold, not the system's blue `#0078D7`: the system accent isn't read on Windows yet (task 40, in flight).
+- Pass: the Fluent radio, switch, and select read as WinUI's (`70`). On `main` before task 40 the accent was Cmdr's gold
+  under "System theme color"; on `a394bbdcfc` (task 40 merged) the radio, the swatch, and the selected segment draw
+  exactly the system accent, `#0078D7` by pixel sample (`220`).
 - Pass: text renders in Segoe UI. Segoe UI Variable isn't on this Windows 10, so the stack's `'Segoe UI Variable Text'`
   falls through to `'Segoe UI'`, as designed; the Variable cut needs a Windows 11 check. Not confirmed by a computed
   style read (the bridge failed), only by the glyphs.
 - Untested: dark mode (the system is light, and switching it was off limits).
+
+Task 40 (system look, merged mid-run as PR #1286, re-run on `a394bbdcfc`):
+
+- Pass: `cargo nextest run -p cmdr --no-fail-fast system_look intl::` on the builder, 81 of 81 (13 `system_look`, 68
+  `intl`), the first Windows run of those tests.
+- Pass: the first system-look read at startup took 12.6 ms (`Windows look, read in 12.622ms` in the file log, accent
+  `#0078d7`), with another agent's build running; recorded in `apps/desktop/src-tauri/DETAILS.md`.
+- Pass: the controls' accent matches the system accent (above).
 
 Task 34 leftovers:
 
@@ -100,7 +109,9 @@ Task 34 leftovers:
    dialog words as an empty name: `~/` expands through `joinPath` onto the home path, and `splitNormalizedPath`'s
    `parsePath` may not read the result (a native home, or a mixed `C:/…` spelling). Not chased; local copy doesn't land
    on Windows yet anyway (#1225), but the message is also wrong for a `null` answer.
-2. **Medium: the system accent isn't read**: "System theme color" shows gold on a blue Windows (task 40).
+2. **Low: Settings is slow to appear under load**: on `a394bbdcfc`, with another agent's build on both cores, Ctrl+,
+   took more than 3.5 s to show Settings, and the main window went "Not responding" (a ghost window) for a few seconds
+   the first time; Alt+F4 then took over 5 s to exit. Not seen on `4314b3cf1f` under a similar load; not attributed.
 3. **Low: path bar spelling**: the drive root shows no segment, and `~`-paths keep `/` (task 34 leftovers).
 4. **Low: the Copy dialog offers "Skip Mac-only hidden files (.DS_Store, .\_\*)" on a Windows-to-Windows copy** (`77`).
 5. **Low: the Tauri MCP bridge connects but runs nothing on Windows** ("WebView execution failed" for `execute_js` and
