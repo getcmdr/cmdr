@@ -118,10 +118,18 @@ func TestAnEagerHelperInAnotherFileOfTheCrateIsEdited(t *testing.T) {
 	for _, e := range chooseEdits(edits) {
 		byFile[e.file] = append(byFile[e.file], e)
 	}
-	if got := squash(string(applyToText([]byte(files[other]), byFile[other]))); !strings.Contains(got, "path: &'a AppPath, ) -> "+fut+" { let path_std = path.as_std_legacy();") {
+	helperEdits, ok := byFile[other]
+	if !ok {
+		t.Fatalf("no edit in the helper's file")
+	}
+	callerEdits, ok := byFile[fixtureFile]
+	if !ok {
+		t.Fatalf("no edit in the caller's file")
+	}
+	if got := squash(string(applyToText([]byte(files[other]), helperEdits))); !strings.Contains(got, "path: &'a AppPath, ) -> "+fut+" { let path_std = path.as_std_legacy();") {
 		t.Fatalf("helper file not edited:\n%s", got)
 	}
-	if got := squash(string(applyToText([]byte(text), byFile[fixtureFile]))); !strings.Contains(got, "{ self.open_read_stream_impl(path) }") {
+	if got := squash(string(applyToText([]byte(text), callerEdits))); !strings.Contains(got, "{ self.open_read_stream_impl(path) }") {
 		t.Fatalf("caller not edited:\n%s", got)
 	}
 }

@@ -266,7 +266,10 @@ func (r *rewriter) soleDefinition(name string) (*source, *implMethod, bool) {
 			}
 		}
 	}
-	return foundSrc, found, found != nil
+	if found == nil || foundSrc == nil {
+		return nil, nil, false
+	}
+	return foundSrc, found, true
 }
 
 // paramParts splits a fn's param list (masked) at its top-level commas, a trailing comma's

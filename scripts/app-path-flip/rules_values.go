@@ -587,7 +587,7 @@ func (r *rewriter) retypeField(implFile, selfType, field string) (fieldShape, *e
 		}
 		found, foundAt = src, loc
 	}
-	if found == nil {
+	if found == nil || foundAt == nil {
 		return fieldUnknown, nil, nil
 	}
 	return retypeFieldIn(found, foundAt, field)
