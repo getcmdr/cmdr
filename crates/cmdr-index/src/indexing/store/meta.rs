@@ -2,8 +2,8 @@
 //! `clear_all`. Pure code movement from the former monolithic `store.rs`.
 
 use super::{
-    CURRENT_EPOCH_KEY, INDEX_NEEDS_REBUILD_KEY, IndexStore, IndexStoreError, LEDGER_HEAL_KEY, UnreadableCause,
-    with_savepoint,
+    CURRENT_EPOCH_KEY, INDEX_NEEDS_REBUILD_KEY, IndexStore, IndexStoreError, LEDGER_HEAL_KEY, RESCAN_IN_PLACE_KEY,
+    UnreadableCause, with_savepoint,
 };
 use rusqlite::{Connection, OptionalExtension, params};
 
@@ -78,6 +78,13 @@ impl IndexStore {
     /// healthy, complete marker and all, and that is exactly the case it exists for.
     pub fn index_needs_rebuild(conn: &Connection) -> Result<bool, IndexStoreError> {
         Ok(Self::read_meta_value(conn, INDEX_NEEDS_REBUILD_KEY)?.is_some())
+    }
+
+    /// Whether a rescan in place noted itself on this index and hasn't finished
+    /// (`RESCAN_IN_PLACE_KEY`). Means "cut short" only beside `scan_completed_at`,
+    /// which is how the launch reads it (`lifecycle/manager/launch_route.rs`).
+    pub(crate) fn rescan_in_place_noted(conn: &Connection) -> Result<bool, IndexStoreError> {
+        Ok(Self::read_meta_value(conn, RESCAN_IN_PLACE_KEY)?.is_some())
     }
 
     /// Read the volume's `current_epoch` from `meta`.

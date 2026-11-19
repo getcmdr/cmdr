@@ -59,6 +59,9 @@ pub(super) struct IndexOnDisk {
     /// longer applies (`scanner::index_predates_exclusion_policy`). Nothing in it
     /// counts as covered, and rows the current policy cuts may still sit in it.
     pub predates_exclusion_policy: bool,
+    /// A rescan in place started on this completed index and never finished
+    /// (`store::RESCAN_IN_PLACE_KEY` is set beside `scan_completed_at`).
+    pub rescan_in_place_interrupted: bool,
 }
 
 /// Route one launch. The table, top to bottom:
@@ -73,6 +76,10 @@ pub(super) struct IndexOnDisk {
 ///   for the same reason: it can look finished while holding rows the current
 ///   policy cuts, and only a truncating walk re-stamps the policy, so replaying
 ///   or reconciling would leave its coverage distrusted for good;
+/// - a rescan in place a quit or crash cut short ⇒ walk it whole again, which
+///   reconciles in place. The index is still the completed one, so ❌ never
+///   rebuild it, and ❌ never replay past the rescan: rows it hadn't re-listed sit
+///   behind the epoch it bumped, and only a finished walk brings them level;
 /// - a replayable journal that runs behind the stored id ⇒ walk it whole
 ///   (reachable only on a volume that already completed a scan). ❌ A wide gap
 ///   alone is NOT this row: the id counter is machine-wide, and the replay
@@ -96,6 +103,9 @@ pub(super) fn launch_route(index: &IndexOnDisk) -> LaunchRoute {
         } else {
             LaunchRoute::ScanTheVolume
         };
+    }
+    if index.rescan_in_place_interrupted {
+        return LaunchRoute::ScanTheVolume;
     }
     if index.journal_replayable {
         return if index.journal_runs_behind {
@@ -144,6 +154,7 @@ mod tests {
         phased_first_index: true,
         needs_rebuild: false,
         predates_exclusion_policy: false,
+        rescan_in_place_interrupted: false,
     };
 
     /// A volume the phase machine covered part of and never finished: rows, no
@@ -357,6 +368,45 @@ mod tests {
                 ..FRESH
             }),
             LaunchRoute::CoverInPhases
+        );
+    }
+
+    /// ❗ #1296: a rescan in place that the user quit (or a crash, or an update's
+    /// relaunch) cut short. A replay overflow, a journal behind the stored id, a
+    /// coalesced `MustScanSubDirs`, or "Rescan now" starts one on a completed index,
+    /// and on a 7 M-entry boot disk it runs for 10+ minutes, so the window is wide.
+    /// The index is still the completed one, partly re-listed, so the launch walks it
+    /// again IN PLACE, ❌ never truncates it and rebuilds from nothing (that cost a
+    /// 7.2 M-entry index ~30 minutes of heavy CPU on 2026-11-19), and ❌ never
+    /// replays past it, which would leave the unvisited rows behind the epoch the
+    /// rescan bumped.
+    #[test]
+    fn an_interrupted_rescan_in_place_walks_again_in_place() {
+        for (completed, what) in [
+            (
+                COMPLETED_JOURNALED,
+                "the boot disk walks, it doesn't replay past the rescan",
+            ),
+            (COMPLETED_UNJOURNALED, "an external drive walks as it always does"),
+        ] {
+            assert_eq!(
+                launch_route(&IndexOnDisk {
+                    rescan_in_place_interrupted: true,
+                    has_covered_branches: false,
+                    ..completed
+                }),
+                LaunchRoute::ScanTheVolume,
+                "{what}"
+            );
+        }
+        assert_eq!(
+            launch_route(&IndexOnDisk {
+                rescan_in_place_interrupted: true,
+                needs_rebuild: true,
+                ..COMPLETED_JOURNALED
+            }),
+            LaunchRoute::RebuildThenCoverInPhases,
+            "the rebuild marker still outranks it"
         );
     }
 

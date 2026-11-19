@@ -390,9 +390,9 @@ word changing.
 - **It survives relaunch, and an INTERRUPTED sweep can't reopen it.** The ledger is a process-global keyed by volume id
   (NOT a per-reconciler field, so it survives the reconciler recreation on every scan cycle). `resume_or_scan` reseeds
   it from `max(meta.shallow_sweep_at, meta.scan_completed_at)` plus `meta.shallow_coalesced_since_sweep`. Reading BOTH
-  timestamps is the fix for a real hazard: `start_scan` DELETES `scan_completed_at` before walking, so keying the window
-  off completion alone would make a never-finished sweep look permanently expired and put us back to sweeping every
-  launch. A TRIGGERED sweep therefore stamps `shallow_sweep_at` immediately. Pinned by
+  timestamps is the fix for a real hazard: `scan_completed_at` moves only when a walk finishes, so keying the window off
+  completion alone would make a never-finished sweep look permanently expired and put us back to sweeping every launch.
+  A TRIGGERED sweep therefore stamps `shallow_sweep_at` immediately. Pinned by
   `an_interrupted_sweep_does_not_reopen_the_window_on_relaunch`.
 - **Every completed full walk restarts the window and clears the count**, not only a shallow-triggered one
   (`scan_completion`): the window means "a full walk happened recently", so the user's own "Rescan now" counts too.

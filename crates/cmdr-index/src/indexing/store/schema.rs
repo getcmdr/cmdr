@@ -96,6 +96,17 @@ pub(crate) const EXCLUSION_POLICY_KEY: &str = "exclusion_policy_built_for";
 /// per-drive intent markers live in it.
 pub(crate) const INDEX_NEEDS_REBUILD_KEY: &str = "index_needs_rebuild";
 
+/// Meta key marking a rescan in place in flight on a completed index: when it
+/// started (unix secs; only presence routes anything).
+///
+/// A rescan in place keeps `scan_completed_at`, since the index it walks stays the
+/// completed one, so without this a launch after a quit mid-rescan couldn't tell it
+/// from a finished index and would replay past the rescan. Set where `start_scan`
+/// picks the reconcile, cleared by the completed walk's stamps (and by a truncating
+/// walk or a rebuild, which throw away the rows it describes). A launch that finds it
+/// beside `scan_completed_at` walks in place again (`manager/launch_route.rs`).
+pub(crate) const RESCAN_IN_PLACE_KEY: &str = "rescan_in_place_started_at";
+
 /// Meta key holding the rescans a cold-start journal replay deferred but hasn't
 /// handed to the live drain yet: a JSON array of index-relative paths.
 ///

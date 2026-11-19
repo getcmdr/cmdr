@@ -22,9 +22,9 @@ where the parallel fresh scan of the same tree took 68.1 s, and 92.3% of that ti
 (`docs/notes/reconcile-latency-spike.md`). The `lstat` share of that read is now gone — `read_fs_children` batches via
 `getattrlistbulk` on macOS (see "The shared local read" below), which on a boot disk was 69% of read time — but the walk
 is still serial against a parallel fresh scan. Replacing the local rescan with a fast parallel build that swaps in
-atomically is under evaluation, including the traps that shape it (SQLite has no `ALTER INDEX ... RENAME`, `start_scan`
-clears `scan_completed_at` before the scan runs, and `MutationTracker::bump` can't tell which table changed):
-`docs/notes/swap-scan-feasibility.md`.
+atomically is under evaluation, including the traps that shape it (SQLite has no `ALTER INDEX ... RENAME`, a truncating
+`start_scan` clears `scan_completed_at` before the scan runs, and `MutationTracker::bump` can't tell which table
+changed): `docs/notes/swap-scan-feasibility.md`.
 
 **Before trusting that speed comparison, read `docs/notes/indexing-benchmarks-2026-07-21.md`.** Measured on an idle
 machine, the fresh parallel scan takes 52.7 s and the reconcile 476.9 s — but that scan left the index ~10% short

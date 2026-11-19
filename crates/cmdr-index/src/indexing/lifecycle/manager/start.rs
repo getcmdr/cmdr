@@ -362,27 +362,26 @@ impl IndexManager {
         };
         self.scan_calibration = Some(calibration);
 
-        // Step 0a: Clear the previous scan's completion marker BEFORE truncating.
-        // Without this, a rescan killed mid-way (power loss, `kill -9`) leaves the
-        // PREVIOUS scan's `scan_completed_at` in meta on top of a truncated/partial
-        // `entries` table, so the next startup takes the journal-replay path over a
-        // gutted index instead of the `IncompletePreviousScan` fresh rescan. The
-        // calibration keys (`total_entries`, `total_physical_bytes`, `scan_duration_ms`,
-        // and their per-walk-kind twins) are intentionally left intact so they keep
-        // describing the last COMPLETED scan throughout this one. The same flush below
-        // covers both sends.
-        if let Err(e) = self
-            .writer
-            .send(WriteMessage::DeleteMeta("scan_completed_at".to_string()))
-        {
-            log::warn!("Failed to send DeleteMeta(scan_completed_at): {e}");
+        // Step 0a: A truncating walk clears the previous scan's completion marker;
+        // a rescan in place keeps it and notes itself instead
+        // (`completion_marker_writes_at_scan_start` says why each). The calibration
+        // keys (`total_entries`, `total_physical_bytes`, `scan_duration_ms`, and
+        // their per-walk-kind twins) are left intact either way, so they keep
+        // describing the last COMPLETED scan throughout this one. The same flush
+        // below covers these sends.
+        for write in completion_marker_writes_at_scan_start(reconcile, crate::indexing::store::now_unix()) {
+            if let Err(e) = self.writer.send(write) {
+                log::warn!("Failed to send the scan start's completion-marker write: {e}");
+            }
         }
 
         // And the rebuild marker, if a vanished drive left one: walking this volume
         // whole IS the rebuild it asked for, whether this run truncates or
         // reconciles in place (a reconcile re-lists every directory, so rows a
-        // leaving drive took come back). Cleared where `scan_completed_at` is, so a
-        // run that dies leaves BOTH absent and the next launch walks again.
+        // leaving drive took come back). Cleared in the same flush as the writes
+        // above, so a run that dies still makes the next launch walk again: a
+        // truncating one leaves no completion marker, a rescan in place leaves its
+        // note.
         if let Err(e) = self.writer.send(WriteMessage::DeleteMeta(
             crate::indexing::store::INDEX_NEEDS_REBUILD_KEY.to_string(),
         )) {
@@ -623,5 +622,35 @@ impl IndexManager {
 
         self.scan_handle = Some(scan_handle);
         Ok(())
+    }
+}
+
+/// What a local whole-volume walk writes about the completion marker before it
+/// starts, by whether it `reconcile`s in place or truncates.
+///
+/// - **A truncating walk drops `scan_completed_at`**, so one killed mid-way (power
+///   loss, `kill -9`) can't leave the previous scan's marker on top of a gutted
+///   `entries` table, where the next launch would replay over it.
+/// - **A rescan in place KEEPS it**: the index it walks stays the completed one,
+///   partly re-listed, never gutted. Dropping it there (with the branch set
+///   `start_scan` retires right after) left an index with rows and nothing
+///   vouching for them, so a quit mid-rescan made the next launch truncate the
+///   whole thing and rebuild from nothing (#1296). It notes itself in
+///   `store::RESCAN_IN_PLACE_KEY` instead, which the launch reads to walk in place
+///   again.
+///
+/// Pure, so both arms are testable without a manager.
+pub(super) fn completion_marker_writes_at_scan_start(reconcile: bool, now_unix: u64) -> Vec<WriteMessage> {
+    let note = crate::indexing::store::RESCAN_IN_PLACE_KEY.to_string();
+    if reconcile {
+        vec![WriteMessage::UpdateMeta {
+            key: note,
+            value: now_unix.to_string(),
+        }]
+    } else {
+        vec![
+            WriteMessage::DeleteMeta("scan_completed_at".to_string()),
+            WriteMessage::DeleteMeta(note),
+        ]
     }
 }

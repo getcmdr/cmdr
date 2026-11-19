@@ -6,6 +6,7 @@
 //! it delegates to; pinning that here exercises every field `get_status`
 //! surfaces — live bytes from the scan snapshot and the tier-2 used-bytes
 //! denominator from the stashed calibration — without an `AppHandle`.
+use super::start::completion_marker_writes_at_scan_start;
 use super::*;
 use crate::indexing::scanner::ScanProgressSnapshot;
 
@@ -119,6 +120,49 @@ fn live_counters_omit_used_bytes_when_space_info_failed() {
 /// absent) also takes the fast guarded-walker rebuild, because reconciling its
 /// add-everything delta wedges the serial walk (the ~15-min "looks hung" bug on a
 /// real `/`). The sentinel-makes-it-1 fact is verified against a fresh store below.
+/// #1296: a rescan in place keeps the completed index it walks, so it keeps the
+/// marker that says so. Dropping `scan_completed_at` here (and the branch set right
+/// after) left a quit-mid-rescan index with rows and nothing vouching for them, and
+/// the next launch truncated all 7.2 M of them. It notes the rescan instead, which
+/// routes that launch to walk in place again. A truncating walk is what still drops
+/// the marker: the rows it describes are about to go.
+#[test]
+fn a_rescan_in_place_keeps_the_completion_marker_and_notes_itself() {
+    let deletes = |writes: &[WriteMessage], wanted: &str| {
+        writes
+            .iter()
+            .any(|write| matches!(write, WriteMessage::DeleteMeta(key) if key == wanted))
+    };
+    let notes = |writes: &[WriteMessage], wanted: &str| {
+        writes
+            .iter()
+            .any(|write| matches!(write, WriteMessage::UpdateMeta { key, .. } if key == wanted))
+    };
+    let completed = "scan_completed_at";
+    let rescan = crate::indexing::store::RESCAN_IN_PLACE_KEY;
+
+    let in_place = completion_marker_writes_at_scan_start(true, 1_700_000_000);
+    assert!(
+        !deletes(&in_place, completed),
+        "a rescan in place keeps the completed index's marker"
+    );
+    assert!(
+        notes(&in_place, rescan),
+        "and records that it's running, for a launch that finds it cut short"
+    );
+
+    let truncating = completion_marker_writes_at_scan_start(false, 1_700_000_000);
+    assert!(
+        deletes(&truncating, completed),
+        "a truncating walk drops the marker with the rows"
+    );
+    assert!(
+        deletes(&truncating, rescan),
+        "and any rescan note, which described those rows too"
+    );
+    assert!(!notes(&truncating, rescan));
+}
+
 #[test]
 fn local_rescan_reconciles_only_beyond_the_root_sentinel() {
     // Completeness gate: even a populated DB does NOT reconcile if the prior scan

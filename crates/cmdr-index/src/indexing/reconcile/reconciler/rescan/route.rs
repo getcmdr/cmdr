@@ -148,9 +148,9 @@ pub(in crate::indexing) struct SweepRecord {
     /// When the last full walk was TRIGGERED or completed (unix secs).
     ///
     /// Trigger time counts, not only completion, and that is load-bearing:
-    /// `start_scan` DELETES `meta.scan_completed_at` before walking (`lifecycle/manager.rs`,
-    /// so a killed scan heals to a fresh one). If the window read only
-    /// `scan_completed_at`, an interrupted sweep would leave it absent, the window
+    /// `scan_completed_at` moves only when a walk FINISHES, so an interrupted sweep
+    /// leaves the previous walk's time there (or nothing, after a truncating walk,
+    /// which `start_scan` makes drop it). If the window read only that, the window
     /// would look permanently expired, and we would sweep on every launch — the
     /// exact bug this policy fixes, inverted. So a triggered sweep stamps
     /// [`SHALLOW_SWEEP_AT_KEY`] immediately.
@@ -468,9 +468,9 @@ mod tests {
         );
     }
 
-    /// The interrupted-sweep hazard, pinned. `start_scan` DELETES
-    /// `meta.scan_completed_at` before walking, so a sweep that never finishes
-    /// leaves that key absent. If the window were derived from `scan_completed_at`
+    /// The interrupted-sweep hazard, pinned. `meta.scan_completed_at` moves only
+    /// when a walk finishes, so a sweep that never finishes leaves the previous
+    /// walk's time there, or nothing after a truncating walk. If the window were derived from `scan_completed_at`
     /// alone, it would read as "never swept" forever and we'd sweep on every single
     /// launch — the bug this policy fixes, inverted. The separately-stamped
     /// trigger time is what prevents that.
@@ -482,8 +482,8 @@ mod tests {
         assert_eq!(action, ShallowAnchorAction::Sweep);
         let stamped_at_trigger = record.last_sweep_unix.expect("a triggered sweep stamps its time");
 
-        // The sweep is killed mid-walk: `scan_completed_at` was deleted at start and
-        // never rewritten, so the ONLY surviving fact is the trigger stamp.
+        // The sweep is killed mid-walk: `scan_completed_at` was never rewritten, so
+        // the ONLY fresh fact is the trigger stamp.
         let mut after_relaunch = new_ledger();
         seed_from_meta_in(&mut after_relaunch, vol, Some(stamped_at_trigger), 0);
 

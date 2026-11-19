@@ -48,6 +48,11 @@ pub(super) fn stamp_a_completed_walk(
         key: reconciler::SHALLOW_COALESCED_KEY.to_string(),
         value: "0".to_string(),
     });
+    // A rescan in place that got here is done, so the next launch has nothing to
+    // resume. A crash before this lands costs one more walk in place, nothing worse.
+    let _ = writer.send(WriteMessage::DeleteMeta(
+        crate::indexing::store::RESCAN_IN_PLACE_KEY.to_string(),
+    ));
 }
 
 /// Record how long the steps after a completed walk took, in this walk kind's own

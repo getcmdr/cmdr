@@ -130,6 +130,15 @@ first. For everything the local guarded walker reads, in the order the function 
 - **`index_needs_rebuild` set** ⇒ `RebuildThenCoverInPhases`, or `ScanTheVolume` with the phased first index switched
   off. Asked FIRST, ahead of every other cell: an index that may have lost rows to a leaving drive looks healthy to all
   of them, so anything else here would replay or reconcile in place over holes. § "The rebuild marker".
+- **a rescan in place cut short** (`store::RESCAN_IN_PLACE_KEY` beside `scan_completed_at`) ⇒
+  `start_scan("a rescan in place was cut short")`, which reconciles in place again. A rescan in place KEEPS the
+  completion marker (the index stays the completed one) and notes itself instead
+  (`completion_marker_writes_at_scan_start`); the completed walk's stamps drop the note. Ahead of the journal because a
+  replay would roll past rows the rescan never re-listed, which sit behind the epoch it bumped. Regression anchor
+  (#1296): the rescan used to drop `scan_completed_at` and, with the branch set, left a quit-mid-rescan index looking
+  like an interrupted first bulk scan, so the next launch truncated it (a 7.2 M-entry boot index on 2026-11-19, after a
+  replay overflow's reconcile was quit 85 s in). Any reconcile trigger opens that window in production: a replay
+  overflow, a journal behind the stored id, a coalesced `MustScanSubDirs`, or "Rescan now".
 - **journal replayable, but running BEHIND the stored id** ⇒ `start_scan("journal runs behind the stored event id")`. ❌
   A wide id gap alone is not this cell: the replay bounds its own cost (`../watch/DETAILS.md` § "Replay cost, not event
   count"). Reachable ONLY on a volume that completed a scan, since replaying at all requires one, so NO volume being
@@ -145,9 +154,9 @@ first. For everything the local guarded walker reads, in the order the function 
   of everything already indexed. Shape and who flips it: `phases/DETAILS.md` § "The escape hatch".
 - **rows, and no record of which ground they cover** ⇒ truncate, then the phase machine. This is the discriminator, and
   it is **the persisted branch set** (`branches::any_persisted`): `start_scan` clears the set before a whole-volume
-  walk, so a first BULK scan somebody interrupted has none while a phased (or search-walked) volume does. Resuming into
-  rows nothing accounts for would leave that ground unwatched and un-epoch-bumped, rendering last session's sizes as
-  CURRENT with nothing having verified them.
+  walk, and a truncating one drops `scan_completed_at`, so a first BULK scan somebody interrupted has none while a
+  phased (or search-walked) volume does. Resuming into rows nothing accounts for would leave that ground unwatched and
+  un-epoch-bumped, rendering last session's sizes as CURRENT with nothing having verified them.
 - **anything else** ⇒ the phase machine, adding to what is there. A fresh install, a phased partial, a volume a search
   walked.
 
