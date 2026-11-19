@@ -1,5 +1,5 @@
 <!--
-  Product § headline: six tiles read on yesterday (today is partial), each against the picker's N days.
+  Product § headline: seven tiles read on yesterday (today is partial), each against the picker's N days.
   Every number comes from `#lib/product-stats.ts`; this only picks inputs and formats. A source that failed
   reads "Couldn't load", an older Worker without the data reads "Not available yet".
 -->
@@ -8,7 +8,9 @@
     import type { ActiveInstallsData } from '#lib/server/sources/active-installs.js'
     import type { FunnelData } from '#lib/server/sources/funnel.js'
     import type { PaddleData } from '#lib/server/sources/paddle.js'
+    import type { CloudflareData } from '#lib/server/sources/cloudflare.js'
     import {
+        analyticsOnTile,
         d7Tile,
         hoursPerActiveDayTile,
         mauTile,
@@ -26,12 +28,14 @@
         activeInstalls: SourceResult<ActiveInstallsData | null>
         funnel: SourceResult<FunnelData>
         paddle: SourceResult<PaddleData>
+        /** The update-check reach, the "Analytics on" tile's denominator. */
+        cloudflare: SourceResult<CloudflareData>
         /** The picker's range in days: every tile's comparison. */
         n: number
         todayIso: string
     }
 
-    const { activeInstalls, funnel, paddle, n, todayIso }: Props = $props()
+    const { activeInstalls, funnel, paddle, cloudflare, n, todayIso }: Props = $props()
 
     const couldntLoad = "Couldn't load"
     const notYet = 'Not available yet'
@@ -48,6 +52,7 @@
         hours: days ? hoursPerActiveDayTile(days, n, todayIso) : null,
         d7: d7Tile(funnelRows, n, todayIso),
         paying: days && paddle.ok ? payingShareTile(paddle.data.allTransactions, days, n, todayIso) : null,
+        analyticsOn: days && cloudflare.ok ? analyticsOnTile(days, cloudflare.data.updateActivity, n, todayIso) : null,
     })
 
     function show(tile: Tile | null, format: (v: number) => string, formatChange: ChangeFormat) {
@@ -64,7 +69,7 @@
 
 <section class="rounded-xl border border-border bg-surface p-4 sm:p-6">
     <p class="mb-3 text-xs text-text-tertiary">Yesterday, {shiftDay(todayIso, -1)} (UTC), the last complete day</p>
-    <div class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+    <div class="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
         <StatTile label="Weekly active" {...show(tiles.wau, formatNumber, formatRelativeChange)} comparison={earlier} unavailable={activesReason}>
             {#snippet info()}
                 <p>Installs that sent a heartbeat in the seven days ending yesterday.</p>
@@ -140,6 +145,24 @@
                     <li>Compared with {n} days earlier, in percentage points.</li>
                 </ul>
                 <p><span class="info-label">Source:</span> Paddle and the app's heartbeat.</p>
+            {/snippet}
+        </StatTile>
+        <StatTile
+            label="Analytics on"
+            {...show(tiles.analyticsOn, formatPercent, formatPointChange)}
+            comparison={previous}
+            unavailable={!cloudflare.ok ? couldntLoad : activesReason}
+        >
+            {#snippet info()}
+                <p>Roughly what share of the fleet sends usage stats: daily active installs ÷ distinct addresses that checked for updates.</p>
+                <ul>
+                    <li>Pooled over the last {n} complete days (Σ daily active ÷ Σ addresses), against the {n} days before, in percentage points.</li>
+                    <li>Addresses aren't installs. A shared office or household connection counts once, which pushes this up.</li>
+                    <li>A laptop on several networks in a day, or an install that updated mid-day, counts more than once, which pushes it down.</li>
+                    <li>Installs with automatic update checks off never show up, but they're too few to matter (about 3 of 541 in 2026-11).</li>
+                    <li>So read it as a rough share, give or take about 10 percentage points.</li>
+                </ul>
+                <p><span class="info-label">Source:</span> the app's heartbeat and update checks, via the api-server.</p>
             {/snippet}
         </StatTile>
     </div>

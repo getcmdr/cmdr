@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { fetchCloudflareData, sinceDay, parseDownloadRows, parseUpdateActivityRows } from './cloudflare.js'
+import {
+  fetchCloudflareData,
+  sinceDay,
+  parseDownloadRows,
+  parseUpdateActivityRows,
+  updateActivitySince,
+} from './cloudflare.js'
 import { clearMemoryCache } from '../cache.js'
 
 const mockEnv = {
@@ -104,8 +110,11 @@ describe('fetchCloudflareData', () => {
       return Promise.resolve({ ok: false, status: 404, text: () => Promise.resolve('Not found') })
     })
     vi.stubGlobal('fetch', fetchMock)
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2025-03-22T12:00:00Z'))
 
     const result = await fetchCloudflareData(mockEnv, { range: '7d', end: null })
+    vi.useRealTimers()
     expect(result.ok).toBe(true)
     if (!result.ok) return
 
@@ -126,14 +135,45 @@ describe('fetchCloudflareData', () => {
     const downloadUrl = fetchMock.mock.calls[0][0] as string
     const updateUrl = fetchMock.mock.calls[1][0] as string
     expect(downloadUrl).toContain('range=7d')
-    expect(updateUrl).toContain('range=7d')
+    // Update checks reach back two ranges, for the "Analytics on" tile's previous window.
+    expect(updateUrl).toContain('range=30d')
 
     fetchMock.mockClear()
     await fetchCloudflareData(mockEnv, { range: '30d', end: null })
     const downloadUrl30 = fetchMock.mock.calls[0][0] as string
     const updateUrl30 = fetchMock.mock.calls[1][0] as string
     expect(downloadUrl30).toContain('range=30d')
-    expect(updateUrl30).toContain('range=30d')
+    expect(updateUrl30).toContain('range=all')
+  })
+
+  it('keeps two ranges of complete days of update checks (plus today), for the previous window', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-12T12:00:00Z'))
+    const fetchMock = vi.fn((url: string) =>
+      Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve(
+            url.includes('/admin/update-activity')
+              ? [
+                  { date: '2026-05-28', version: '1', count: 1 },
+                  { date: '2026-05-29', version: '1', count: 1 },
+                  { date: '2026-06-12', version: '1', count: 1 },
+                ]
+              : [],
+          ),
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await fetchCloudflareData(mockEnv, { range: '7d', end: null })
+    vi.useRealTimers()
+    expect(result.ok && result.data.updateActivity.map((r) => r.day)).toEqual(['2026-05-29', '2026-06-12'])
+  })
+
+  it('updateActivitySince is two ranges of complete days before today', () => {
+    expect(updateActivitySince('7d', new Date('2026-06-12T23:00:00Z'))).toBe('2026-05-29')
+    expect(updateActivitySince('90d', new Date('2026-06-12T00:00:00Z'))).toBe('2025-12-14')
   })
 
   it('asks the downloads endpoints for `all` on 90d (they take no 90d) and trims to the window', async () => {
@@ -156,7 +196,7 @@ describe('fetchCloudflareData', () => {
             url.includes('/admin/downloads')
               ? [download('2026-03-14'), download('2026-03-15')]
               : url.includes('/admin/update-activity')
-                ? [{ date: '2026-03-14', version: '1', count: 1 }]
+                ? [{ date: '2025-12-13', version: '1', count: 1 }]
                 : [],
           ),
       }),

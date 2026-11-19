@@ -40,7 +40,7 @@
     }
 </script>
 
-<section class="rounded-xl border border-border bg-surface p-4 sm:p-6">
+<section class="@container rounded-xl border border-border bg-surface p-4 sm:p-6">
     <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold text-text-primary">
         Money
         <InfoPopover topic="money">
@@ -63,7 +63,7 @@
         {@const paying = days ? payingShareTile(txns, days, n, todayIso) : null}
         {@const purchases = recentPurchases(txns, n, todayIso)}
 
-        <div class="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3 xl:grid-cols-5">
+        <div class="grid grid-cols-2 gap-x-6 gap-y-4 @xl:grid-cols-3 @5xl:grid-cols-5">
             <div>
                 <p class="text-xs text-text-tertiary">Revenue, last {n} days</p>
                 {#each period as line (line.currencyCode)}

@@ -28,17 +28,18 @@ sections and pass their loaded data down.
   - Interest (`components/sections/InterestSection.svelte`) and Download (`components/sections/DownloadSection.svelte`,
     with `CountryTable.svelte` and the per-day pie tooltip), side by side from `md`.
 - `/product` — Product (`routes/product/+page.svelte`):
-  - One column of full-width sections, top to bottom: `NeedsYouStrip` (messages awaiting a reply, error reports since
-    the latest release, each linking to `#inbox`; renders nothing when both are zero), `ProductHeadline` (six
-    `StatTile`s on yesterday: WAU, MAU, stickiness, hours per active day, D7, paying share; math in
-    `#lib/product-stats.ts`), `UsageTrendsSection` (daily actives stacked new/returning with the update-check reach as
-    `DailyChart`'s dotted `overlay`, and hours per active install), `ReleaseRolloutSection` (yesterday's share on the
-    latest release, over a daily stack by version; `#lib/rollout.ts`, § Color coding), `RetentionCohortsSection` (the
-    D7/D28 cohort rows; `/` keeps only its per-country D7/D28), `MoneySection` (`#lib/money.ts`),
-    `OnboardingFunnelSection` (the state flags' reach over the installs whose build has each flag;
-    `#lib/onboarding-funnel.ts`), `FeatureUsageSection`, `SettingsAdoptionSection` (preferences only, 15 most-moved, the
-    rest behind "Show all"), and `FeedbackErrorsSection` (`id="inbox"`, errors per 100 installs by version). What the
-    numbers mean: § "Product page".
+  - Full width first: `NeedsYouStrip` (messages awaiting a reply, error reports since the latest release, each linking
+    to `#inbox`; renders nothing when both are zero) and `ProductHeadline` (seven `StatTile`s on yesterday: WAU, MAU,
+    stickiness, hours per active day, D7, paying share, analytics on; math in `#lib/product-stats.ts`).
+  - Then a grid, in this order: `UsageTrendsSection` (daily actives stacked new/returning with the update-check reach as
+    `DailyChart`'s dotted `overlay`, and hours per active install), `RetentionCohortsSection` (the D7/D28 cohort rows;
+    `/` keeps only its per-country D7/D28), `MoneySection` (`#lib/money.ts`), `OnboardingFunnelSection` (the state
+    flags' reach over the installs whose build has each flag; `#lib/onboarding-funnel.ts`), `ReleaseRolloutSection`
+    (yesterday's share on the latest release, over a daily stack by version; `#lib/rollout.ts`, § Color coding),
+    `FeatureUsageSection`, `FeedbackErrorsSection` (`id="inbox"`, errors per 100 installs by version; the feedback list
+    and the recent error reports sit behind closed-by-default `<details>`), and `SettingsAdoptionSection` (preferences
+    only, 15 most-moved, the rest behind "Show all"). Layout: § "Product page layout". What the numbers mean: § "Product
+    page".
   - No `SectionDescription`/`Methodology` blurbs on `/product`: the caveats live in (i) popovers.
   - `TrendRow` glue both pages share (stats per window, daily and rolling rates, `viewRange`, `cell`):
     `#lib/trend-row.ts`.
@@ -202,8 +203,9 @@ it.
   source (Awareness, Interest, Download, all of `/product`): they read APIs that answer windows ending now (Umami stats,
   PostHog intervals, the worker's range names), so `/` says so in a line above them, and `/product` shows today's dates
   with no ‹ ›. Each source maps the range to its own API's window; the one gap is the worker's `/admin/downloads` and
-  `/admin/update-activity`, which take no `90d`, so `cloudflare.ts` asks for `all` and trims to the window (`sinceDay`).
-  On `/`, `?country=` is separate client state (§ "Acquisition trends").
+  `/admin/update-activity`, which take no `90d`, so `cloudflare.ts` asks for `all` and trims to the window (`sinceDay`;
+  update activity keeps two ranges, `updateActivitySince`, § "Product page"). On `/`, `?country=` is separate client
+  state (§ "Acquisition trends").
 
 ## Componentization
 
@@ -409,12 +411,15 @@ event count, and a breakdown.
   lower bound for a prop-filtered match, which is acceptable.
 - **An older Worker ignores `end`**: no `until`, so `previous` is null and `current` is its rolling window, today
   included. The window line then says exactly that, ❌ never "ending yesterday".
+- **"vs. previous" is a dash for every feature until the previous window starts after the first stored feature event
+  (2026-09-24)**, so the 30d column fills in from 2026-11-24 and 90d later. That's the `firstSeenAt` rule above working
+  as designed, not a bug.
 
 ## Product page
 
-`/product` answers "do people use Cmdr, and does it get better?" in one column (render order: § "Routes and sections").
-The same rules as § "Acquisition trends" hold everywhere on it, and the report's Product half (`product-report.ts`)
-calls the same helpers, so the two can't disagree.
+`/product` answers "do people use Cmdr, and does it get better?" (render order: § "Routes and sections"; columns: §
+"Product page layout"). The same rules as § "Acquisition trends" hold everywhere on it, and the report's Product half
+(`product-report.ts`) calls the same helpers, so the two can't disagree.
 
 - **Complete days only.** Today (UTC) is partial: faded on every chart, in no tile, stat, or headline. Every stat takes
   an exclusive `end` day; every rate is a ratio of sums.
@@ -426,6 +431,12 @@ calls the same helpers, so the two can't disagree.
   - Paying share: paid licenses (first purchases through yesterday) ÷ MAU, against N days earlier, in points. A trend
     signal, not a conversion rate: refunded purchases still count, one license can cover several Macs, and a licensed
     install with analytics off is paid but not in MAU.
+  - Analytics on (`analyticsOnTile`, also in the report's Active use): Σ DAU ÷ Σ update-checking addresses over the last
+    N complete days against the N before, in points; any window day without update-check data makes it a dash. Addresses
+    aren't installs: a shared connection counts once (pushes it up), a laptop on several networks or an install that
+    updated mid-day and checked from two versions counts more than once (pushes it down), and auto-check off is
+    negligible (about 3 of 541, 2026-11). Read it as roughly ±10 pp. The Cloudflare source keeps two ranges of update
+    activity for the previous window (`updateActivitySince`; 7d asks the Worker for `30d`, the rest for `all`).
 - **Null is unknown.** An api-server without `/admin/active-installs` (the dashboard and the Worker deploy in parallel)
   reads "Not available yet", never zeros.
 - **Release rollout** (`#lib/rollout.ts`): "X% of active installs ran vLatest yesterday, N days after its release", from
@@ -447,6 +458,22 @@ calls the same helpers, so the two can't disagree.
 - **Inbox**: errors per 100 installs by version over the range's complete days (reports ÷ `windows[N].byVersion[v]`, an
   install that upgraded counts under both versions; under five installs, no rate). "N new error reports since vX" counts
   from the release's publish time, whatever the range.
+
+## Product page layout
+
+- **One column, two from 1280px (`xl`), three from 1920px (`3xl`, a named breakpoint in `app.css`).** ❌ Not
+  `min-[1920px]:`: Tailwind sorts that arbitrary variant before `xl`, so `xl:grid-cols-2` wins and the third column
+  never shows (verified 2026-11-19, Tailwind v4, screenshot). `/product` gets a 2560px content cap (`pathsWide` in the
+  layout), the other pages keep 1800px.
+- **The order and spans fill every row in both layouts, so there's no hole and reading order = DOM order.** Usage,
+  Retention, Money, and Onboarding take one column each; Release rollout and Feature usage span two; Feedback & errors
+  spans two in the 2-column layout and one in the 3-column one (beside Feature usage); Settings spans all. Usage sits
+  beside Retention because both are two stacked trend rows, so the row heights match.
+- **Inside a card, width comes from container queries, not the viewport**: `TrendRow` puts its stats beside the chart
+  only when the row is 48rem+ (`@3xl`), and Money's figures and Feedback's two tables do the same with `@container`. On
+  `/`, the sections are full width, so `TrendRow` reads as before.
+- **No chart reacts to the mouse wheel** (David's call 2026-11-19: scroll-to-zoom hijacked page scrolling). Hover
+  tooltips stay. `Chart.svelte`'s `xMin`/`xMax` fix a window; there's no zoom state anywhere.
 
 ## Local QA against a local worker
 

@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 
 @theme {
+  /* `/product`'s third column (3 × 640px). A named breakpoint, so it sorts after `xl` and wins. */
+  --breakpoint-3xl: 120rem;
   --color-background: #14130f;
   --color-surface: #1a1917;
   --color-surface-elevated: #222120;

@@ -1,7 +1,7 @@
 <!--
   Product § Feedback & errors (the page's `#inbox`): in-app feedback messages and error-report bundle
-  metadata. Shows error reports per day, by kind, and per 100 installs by version, plus the feedback inbox
-  and a recent-error-reports table. Each feedback message with a reply-to email has a mark-answered toggle
+  metadata. Shows the counts, error reports per day, by kind, and per 100 installs by version; the feedback
+  inbox and the recent-error-reports table sit behind closed-by-default `<details>`. Each feedback message with a reply-to email has a mark-answered toggle
   (the `setAnswered` action on `/product`). A message sent with logs names their `ERR-XXXXX`: a link to that
   row of the recent-error-reports table when it's listed there, else the id as selectable text.
 -->
@@ -37,9 +37,17 @@
         /** The mark-answered action's failure message, if the last toggle didn't save. */
         answerError?: string | null
     } = $props()
+
+    /**
+     * The recent-error-reports disclosure, opened by a feedback message's "Logs ERR-…" link so its row is
+     * there to scroll to (not every browser opens a closed `<details>` for a fragment).
+     */
+    let reportsOpen = $state(false)
+
+    const summaryClass = 'cursor-pointer text-sm font-medium text-text-secondary hover:text-text-primary'
 </script>
 
-<section id="inbox" class="scroll-mt-32 rounded-xl border border-border bg-surface p-4 sm:p-6">
+<section id="inbox" class="@container scroll-mt-32 rounded-xl border border-border bg-surface p-4 sm:p-6">
     <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold text-text-primary">
         Feedback &amp; errors
         <InfoPopover topic="feedback and errors">
@@ -83,7 +91,7 @@
         {/if}
 
         {#if fe.errorReports.length > 0}
-            <div class="mt-4 grid gap-4 md:grid-cols-2">
+            <div class="mt-4 grid gap-4 @2xl:grid-cols-2">
                 <div>
                     <h3 class="mb-2 text-sm font-medium text-text-secondary">By kind</h3>
                     <MetricTable
@@ -144,13 +152,16 @@
             </div>
         {/if}
 
+        {#if answerError}
+            <p class="mt-4 text-sm text-danger">{answerError}</p>
+        {/if}
         {#if inbox.length > 0}
-            <div class="mt-4">
-                <h3 class="mb-2 text-sm font-medium text-text-secondary">Recent feedback, and every message awaiting a reply</h3>
-                {#if answerError}
-                    <p class="mb-2 text-sm text-danger">{answerError}</p>
-                {/if}
-                <div class="space-y-2">
+            <details class="mt-4">
+                <summary class={summaryClass}>
+                    Recent feedback, and every message awaiting a reply
+                    <span class="text-text-tertiary tabular-nums">({formatNumber(inbox.length)})</span>
+                </summary>
+                <div class="mt-2 space-y-2">
                     {#each inbox as msg (msg.id)}
                         <div class="rounded-lg border border-border-subtle bg-surface-elevated px-3 py-2">
                             <p class="text-sm whitespace-pre-wrap text-text-primary">{msg.feedback}</p>
@@ -160,7 +171,11 @@
                                 <span>{msg.osVersion}</span>
                                 {#if msg.errorReportId}
                                     {#if recentReports.some((report) => report.id === msg.errorReportId)}
-                                        <a class="text-accent hover:text-accent-hover" href="#{msg.errorReportId}">
+                                        <a
+                                            class="text-accent hover:text-accent-hover"
+                                            href="#{msg.errorReportId}"
+                                            onclick={() => (reportsOpen = true)}
+                                        >
                                             Logs <span class="font-mono">{msg.errorReportId}</span>
                                         </a>
                                     {:else}
@@ -201,15 +216,18 @@
                         </div>
                     {/each}
                 </div>
-            </div>
+            </details>
         {:else}
             <EmptyState />
         {/if}
 
         {#if fe.errorReports.length > 0}
-            <div class="mt-4">
-                <h3 class="mb-2 text-sm font-medium text-text-secondary">Recent error reports</h3>
-                <div class="overflow-x-auto">
+            <details class="mt-4" bind:open={reportsOpen}>
+                <summary class={summaryClass}>
+                    Recent error reports
+                    <span class="text-text-tertiary tabular-nums">({formatNumber(recentReports.length)})</span>
+                </summary>
+                <div class="mt-2 overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead>
                             <tr class="border-b border-border-subtle text-text-tertiary">
@@ -231,7 +249,7 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </details>
         {/if}
 
         <ExternalLinks links={[{ label: 'View bundles in Cloudflare R2', href: 'https://dash.cloudflare.com' }]} />

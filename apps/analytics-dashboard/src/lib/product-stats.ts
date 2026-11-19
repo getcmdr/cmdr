@@ -15,7 +15,9 @@
  */
 import type { ActiveInstallsDay } from './server/sources/active-installs.js'
 import type { FunnelRow } from './server/sources/funnel.js'
+import type { UpdateActivityRow } from './server/sources/cloudflare.js'
 import { addDays, ratioStats, type RatioPoint } from './acquisition-stats.js'
+import { reachByDay } from './active-installs.js'
 import { buildTrendInputs, d7End } from './acquisition-series.js'
 import { paidLicensesThrough, type PaddleTransaction } from './money.js'
 
@@ -89,6 +91,32 @@ export function hoursPerActiveDayTile(days: ActiveInstallsDay[], n: number, toda
 export function d7Tile(rows: FunnelRow[] | null, n: number, today: string): Tile {
   if (rows === null) return unknownTile
   const stats = ratioStats(buildTrendInputs(rows, today).d7, n, d7End(today))
+  return { value: stats.average, change: stats.change }
+}
+
+/**
+ * "Analytics on": Σ DAU ÷ Σ update-checking addresses over the last N complete days, change in percentage
+ * points against the N before. Every day of a window needs update-check data, or it's unknown (a partly
+ * covered window would silently read as a different one). Rough by nature: addresses aren't installs (a
+ * shared connection counts once and pushes it up; a laptop on several networks, or an install that updated
+ * mid-day and checked from two versions, counts more than once and pushes it down), so read it as about
+ * ±10 points.
+ */
+export function analyticsOnTile(
+  days: ActiveInstallsDay[],
+  updateActivity: UpdateActivityRow[],
+  n: number,
+  today: string,
+): Tile {
+  const reach = reachByDay(
+    updateActivity,
+    days.map((d) => d.date),
+  )
+  const points = days.flatMap((d, i): RatioPoint[] => {
+    const den = reach[i]
+    return den === null ? [] : [{ date: d.date, num: d.dau, den }]
+  })
+  const stats = ratioStats(points, n, today)
   return { value: stats.average, change: stats.change }
 }
 

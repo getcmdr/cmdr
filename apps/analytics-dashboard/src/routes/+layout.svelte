@@ -48,6 +48,13 @@
     const pathsWithSteps = ['/']
     const canStep = $derived(pathsWithSteps.includes(pathname))
 
+    /**
+     * Pages laid out in columns that grow with the window (`/product`'s grid goes to three at 1920px), so
+     * they get a wider cap than the rest's 1800px.
+     */
+    const pathsWide = ['/product']
+    const contentWidth = $derived(pathsWide.includes(pathname) ? 'max-w-[2560px]' : 'max-w-[1800px]')
+
     /** Today's UTC day. A load re-renders the layout, so a page open across midnight catches up on the next step. */
     const today = new Date().toISOString().slice(0, 10)
 
@@ -148,6 +155,6 @@
         {/if}
 </header>
 
-<div class="mx-auto max-w-[1800px] px-6 pt-4 pb-8">
+<div class="mx-auto {contentWidth} px-6 pt-4 pb-8">
     {@render children()}
 </div>

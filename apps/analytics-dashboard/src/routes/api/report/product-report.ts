@@ -46,6 +46,7 @@ import {
   unchangedNote,
 } from '../../../lib/settings-adoption.js'
 import {
+  analyticsOnTile,
   d7Tile,
   hoursPerActiveDayTile,
   mauTile,
@@ -150,7 +151,22 @@ function formatReach(reach: FlagReach): string {
 
 // ── 4. Active use ────────────────────────────────────────────────────────────────────────────────
 
-function writeActiveUseTiles(w: ReportWriter, days: ActiveInstallsDay[], ctx: ProductContext): void {
+function analyticsOnLine(
+  days: ActiveInstallsDay[],
+  cloudflare: SourceResult<CloudflareData>,
+  ctx: ProductContext,
+): string {
+  if (!cloudflare.ok) return `- Analytics on: couldn't load the update checks (${cloudflare.error})`
+  const tile = analyticsOnTile(days, cloudflare.data.updateActivity, ctx.n, ctx.today)
+  return tileLine('Analytics on', tile, formatPercent, formatPointChange, `vs. previous ${String(ctx.n)} days`)
+}
+
+function writeActiveUseTiles(
+  w: ReportWriter,
+  days: ActiveInstallsDay[],
+  cloudflare: SourceResult<CloudflareData>,
+  ctx: ProductContext,
+): void {
   const earlier = `vs. ${String(ctx.n)} days earlier`
   const previous = `vs. previous ${String(ctx.n)} days`
   w.line(tileLine('Weekly active', wauTile(days, ctx.n, ctx.today), num, formatRelativeChange, earlier))
@@ -165,6 +181,7 @@ function writeActiveUseTiles(w: ReportWriter, days: ActiveInstallsDay[], ctx: Pr
       previous,
     ),
   )
+  w.line(analyticsOnLine(days, cloudflare, ctx))
 }
 
 /** One line per day of the range, newest first, with the update-check reach as context. */
@@ -209,7 +226,7 @@ function writeActiveUseSection(w: ReportWriter, data: DashboardData, ctx: Produc
   w.line(`Yesterday, ${shiftDay(ctx.today, -1)} (UTC), the last complete day. Today is partial and in no number here.`)
   if (!data.activeInstalls.ok) w.line(`- Couldn't load the heartbeat: ${data.activeInstalls.error}`)
   else if (ctx.days === null) w.line(`- ${notAvailableYet}`)
-  else writeActiveUseTiles(w, ctx.days, ctx)
+  else writeActiveUseTiles(w, ctx.days, data.cloudflare, ctx)
   w.line(d7Line(data.funnel, ctx))
   if (ctx.days === null) return
 
@@ -223,6 +240,9 @@ function writeActiveUseSection(w: ReportWriter, data: DashboardData, ctx: Produc
   w.line('"Checked for updates" is context, not a ceiling: distinct addresses that checked for updates, a separate')
   w.line('consent installs with analytics off still ride. A shared connection counts once, a changing address')
   w.line('counts more than once, and anyone with automatic update checks off never appears.')
+  w.line(`"Analytics on" is daily active over those addresses, pooled over the last ${n} complete days against the`)
+  w.line(`${n} before. Shared connections push it up, a laptop on several networks or an install updating mid-day`)
+  w.line('pushes it down, and auto-check off is negligible: read it as a rough share, about ±10 points.')
   writeDailyActives(w, ctx.days, data.cloudflare, ctx)
 }
 

@@ -30,8 +30,9 @@ export default {
     'plugin/declaration-block-no-ignored-properties': true,
     'declaration-block-no-duplicate-custom-properties': true,
     // Tailwind's theme tokens are hex by design and live in `@theme`; the rest of the app uses
-    // `var(--color-*)`, so hex outside `app.css` would be the smell, not hex inside it.
-    'custom-property-pattern': '^color-.+',
+    // `var(--color-*)`, so hex outside `app.css` would be the smell, not hex inside it. `breakpoint-*` is
+    // Tailwind's breakpoint namespace (`/product`'s `3xl`).
+    'custom-property-pattern': '^(color|breakpoint)-.+',
     // `@import 'tailwindcss'` is Tailwind v4's documented entry form; the standard config wants `url()`.
     'import-notation': 'string',
     // Blank lines group the `@theme` tokens (surfaces, text, accent, status); the standard config forbids them.

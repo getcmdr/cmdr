@@ -1,8 +1,7 @@
 <!--
-  Product page (`/product`): one column of full-width sections, top to bottom: what needs a reply, the
-  headline tiles, usage, release rollout, retention, money, onboarding, feature usage, settings adoption,
-  and the feedback inbox. Every
-  stat reads complete days only (today is partial: faded on the charts, in no number). The shared range
+  Product page (`/product`): what needs a reply and the headline tiles, full width, then a one-to-three
+  column grid of usage, retention, release rollout, money, onboarding, feature usage, the feedback inbox,
+  and settings adoption. Every stat reads complete days only (today is partial: faded on the charts, in no number). The shared range
   picker and nav live in the layout; this page renders the sections from its own loaded subset.
 -->
 <script lang="ts">
@@ -37,32 +36,61 @@
 
 <div class="flex flex-col gap-6">
     <NeedsYouStrip feedbackAndErrors={data.feedbackAndErrors} {release} />
-    <ProductHeadline activeInstalls={data.activeInstalls} funnel={data.funnel} paddle={data.paddle} {n} {todayIso} />
-    <UsageTrendsSection
+    <ProductHeadline
         activeInstalls={data.activeInstalls}
-        cloudflare={data.cloudflare}
-        window={shown}
-        selection={data.selection}
-        {todayIso}
-    />
-    <ReleaseRolloutSection activeInstalls={data.activeInstalls} {release} window={shown} selection={data.selection} {todayIso} />
-    <RetentionCohortsSection funnel={data.funnel} window={shown} selection={data.selection} {todayIso} />
-    <MoneySection
+        funnel={data.funnel}
         paddle={data.paddle}
-        license={data.license}
-        activeInstalls={data.activeInstalls}
-        settingsAdoption={data.settingsAdoption}
+        cloudflare={data.cloudflare}
         {n}
-        selection={data.selection}
         {todayIso}
     />
-    <OnboardingFunnelSection settingsAdoption={data.settingsAdoption} selection={data.selection} />
-    <FeatureUsageSection featureUsage={data.featureUsage} selection={data.selection} />
-    <SettingsAdoptionSection settingsAdoption={data.settingsAdoption} selection={data.selection} />
-    <FeedbackErrorsSection
-        feedbackAndErrors={data.feedbackAndErrors}
-        {versionWindow}
-        selection={data.selection}
-        answerError={form && 'error' in form ? form.error : null}
-    />
+    <!--
+      One column, two from 1280px (`xl`), three from 1920px (`3xl`). The order and spans fill every row in
+      both layouts with no hole, so the reading order is the DOM order: DETAILS.md § "Product page".
+    -->
+    <div class="grid grid-cols-1 gap-6 *:*:h-full *:min-w-0 xl:grid-cols-2 3xl:grid-cols-3">
+        <div>
+            <UsageTrendsSection
+                activeInstalls={data.activeInstalls}
+                cloudflare={data.cloudflare}
+                window={shown}
+                selection={data.selection}
+                {todayIso}
+            />
+        </div>
+        <div>
+            <RetentionCohortsSection funnel={data.funnel} window={shown} selection={data.selection} {todayIso} />
+        </div>
+        <div>
+            <MoneySection
+                paddle={data.paddle}
+                license={data.license}
+                activeInstalls={data.activeInstalls}
+                settingsAdoption={data.settingsAdoption}
+                {n}
+                selection={data.selection}
+                {todayIso}
+            />
+        </div>
+        <div>
+            <OnboardingFunnelSection settingsAdoption={data.settingsAdoption} selection={data.selection} />
+        </div>
+        <div class="xl:col-span-2">
+            <ReleaseRolloutSection activeInstalls={data.activeInstalls} {release} window={shown} selection={data.selection} {todayIso} />
+        </div>
+        <div class="xl:col-span-2">
+            <FeatureUsageSection featureUsage={data.featureUsage} selection={data.selection} />
+        </div>
+        <div class="xl:col-span-2 3xl:col-span-1">
+            <FeedbackErrorsSection
+                feedbackAndErrors={data.feedbackAndErrors}
+                {versionWindow}
+                selection={data.selection}
+                answerError={form && 'error' in form ? form.error : null}
+            />
+        </div>
+        <div class="col-span-full">
+            <SettingsAdoptionSection settingsAdoption={data.settingsAdoption} selection={data.selection} />
+        </div>
+    </div>
 </div>

@@ -3,7 +3,16 @@ import type { ActiveInstallsDay } from './server/sources/active-installs.js'
 import type { FunnelRow } from './server/sources/funnel.js'
 import type { PaddleTransaction } from './money.js'
 import { addDays } from './acquisition-stats.js'
-import { d7Tile, hoursPerActiveDayTile, mauTile, payingShareTile, stickinessTile, wauTile } from './product-stats.js'
+import type { UpdateActivityRow } from './server/sources/cloudflare.js'
+import {
+  analyticsOnTile,
+  d7Tile,
+  hoursPerActiveDayTile,
+  mauTile,
+  payingShareTile,
+  stickinessTile,
+  wauTile,
+} from './product-stats.js'
 
 const today = '2026-08-10'
 
@@ -129,5 +138,54 @@ describe('payingShareTile', () => {
 
   it('is unknown without MAU', () => {
     expect(payingShareTile([], [], 7, today)).toEqual({ value: null, change: null })
+  })
+})
+
+describe('analyticsOnTile', () => {
+  /** One update-check row per day of `days`, split over two versions so the tile has to sum them. */
+  function reach(days: ActiveInstallsDay[], count: (i: number) => number | null): UpdateActivityRow[] {
+    return days.flatMap((d, i) => {
+      const c = count(i)
+      if (c === null) return []
+      return [
+        { day: d.date, version: '0.1.0', updaters: c / 2 },
+        { day: d.date, version: '0.2.0', updaters: c / 2 },
+      ]
+    })
+  }
+
+  it('pools Σ DAU ÷ Σ update-checking addresses over complete days, today left out, change in points', () => {
+    // Previous 7 days: 10 of 20 each. Last 7 complete: 10 of 40 on one day, 10 of 16 on the rest. Today: ignored.
+    const days = series(15, () => ({}))
+    const updates = reach(days, (i) => (i === 14 ? 10 : i === 13 ? 40 : i >= 7 ? 16 : 20))
+    const tile = analyticsOnTile(days, updates, 7, today)
+    // A ratio of sums, not a mean of ratios: 70 ÷ (40 + 6 × 16).
+    expect(tile.value).toBeCloseTo(70 / 136)
+    expect(tile.change).toBeCloseTo(70 / 136 - 0.5)
+  })
+
+  it('is unknown when a day in the window has no update-check data', () => {
+    const days = series(15, () => ({}))
+    const updates = reach(days, (i) => (i === 10 ? null : 20))
+    expect(analyticsOnTile(days, updates, 7, today)).toEqual({ value: null, change: null })
+  })
+
+  it('has no change when the update-check data only covers the current window', () => {
+    const days = series(15, () => ({}))
+    const updates = reach(days, (i) => (i >= 7 ? 20 : null))
+    const tile = analyticsOnTile(days, updates, 7, today)
+    expect(tile.value).toBeCloseTo(0.5)
+    expect(tile.change).toBeNull()
+  })
+
+  it('is unknown without any update checks', () => {
+    expect(
+      analyticsOnTile(
+        series(15, () => ({})),
+        [],
+        7,
+        today,
+      ),
+    ).toEqual({ value: null, change: null })
   })
 })

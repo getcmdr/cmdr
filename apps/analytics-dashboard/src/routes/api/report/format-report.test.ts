@@ -136,6 +136,7 @@ Yesterday, 2026-08-01 (UTC), the last complete day. Today is partial and in no n
 - Monthly active: 90 (+80% vs. 90 days earlier)
 - Stickiness: – (– vs. previous 90 days)
 - Hours per active day: – (– vs. previous 90 days)
+- Analytics on: – (– vs. previous 90 days)
 - D7 retention: – (– vs. previous 90 cohorts)
 
 Counts installs with usage stats on; an install that opted out sends nothing. Weekly and monthly
@@ -147,6 +148,9 @@ The last week can still hold a few synthetic installs the weekly sweep removes l
 "Checked for updates" is context, not a ceiling: distinct addresses that checked for updates, a separate
 consent installs with analytics off still ride. A shared connection counts once, a changing address
 counts more than once, and anyone with automatic update checks off never appears.
+"Analytics on" is daily active over those addresses, pooled over the last 90 complete days against the
+90 before. Shared connections push it up, a laptop on several networks or an install updating mid-day
+pushes it down, and auto-check off is negligible: read it as a rough share, about ±10 points.
 
 Daily active installs (newest first):
   2026-08-02 (today, partial): 12 active, 1 new, 30 app hours, no update-check data
@@ -351,6 +355,7 @@ Yesterday, 2026-08-01 (UTC), the last complete day. Today is partial and in no n
 - Monthly active: – (– vs. 30 days earlier)
 - Stickiness: – (– vs. previous 30 days)
 - Hours per active day: – (– vs. previous 30 days)
+- Analytics on: – (– vs. previous 30 days)
 - D7 retention: – (– vs. previous 30 cohorts)
 
 Counts installs with usage stats on; an install that opted out sends nothing. Weekly and monthly
@@ -362,6 +367,9 @@ The last week can still hold a few synthetic installs the weekly sweep removes l
 "Checked for updates" is context, not a ceiling: distinct addresses that checked for updates, a separate
 consent installs with analytics off still ride. A shared connection counts once, a changing address
 counts more than once, and anyone with automatic update checks off never appears.
+"Analytics on" is daily active over those addresses, pooled over the last 30 complete days against the
+30 before. Shared connections push it up, a laptop on several networks or an install updating mid-day
+pushes it down, and auto-check off is negligible: read it as a rough share, about ±10 points.
 
 ## Release rollout: how far does the newest release spread?
 
