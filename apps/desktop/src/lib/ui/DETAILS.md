@@ -1520,7 +1520,8 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
   shortcuts, About) with File's Quit dropped. It runs on the context-menu controller (`opener` keeps a press on the
   button its own, so a second press closes); like the bar, it leaves focus in a text field being edited (`focusHolder`),
   goes inert under a dialog but not over the inline rename, and stops its click from reaching the tab row (which would
-  focus a pane or open a tab).
+  focus a pane or open a tab). The viewer's View menu carries Show menu bar too, so a viewer whose bar is hidden gets it
+  back from its own button.
   - Gotcha/Why: a hidden bar's titles have no layout until Svelte draws them, so Alt+letter opening a menu in the same
     keydown placed it at 0,0; `openMenu` flushes first when `revealOnly`.
 - **A shown chord fires** (`command-menu/bar-keys.ts`): no native bar registers anything off macOS, so the page runs
@@ -1540,10 +1541,13 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
 - **Public API**:
   - `<MenuBar menus onPick ariaLabel flavor? keyScope? inert? takesWindowKeys? revealOnly? class?>`: `menus` is
     `get_menu_bar`'s answer kept live by the caller (`followMenuBar` from `#lib/tauri-commands` runs the ordering
-    contract), `onPick(id)` gets the row's menu id with focus already back where it was (send it through
-    `pickMenuBarItem`). `keyScope` reserves the window's own Alt+letter keys (the viewer's `'Viewer window'`). `inert`
-    adds to the dialogs it follows itself (`isAnySoftDialogOpen()`, the `desktop` flavor only): pass the palette and the
-    explorer overlays.
+    contract), `onPick(id, via)` gets the row's menu id with focus already back where it was, and `via`: `click` for a
+    pointer click, `key` for Enter, Space, or a row's letter (send both through `pickMenuBarItem`). The main window's
+    text-field gate runs a file-moving row only when it was clicked, so ❌ never collapse `via`: the menu's own keys
+    typed from a field (a stray Alt, then `f`, then `l`) once opened File > Delete (review of #1281). The context menu's
+    `onPick(id, via)` and `MainMenuButton`'s say the same. `keyScope` reserves the window's own Alt+letter keys (the
+    viewer's `'Viewer window'`). `inert` adds to the dialogs it follows itself (`isAnySoftDialogOpen()`, the `desktop`
+    flavor only): pass the palette and the explorer overlays.
   - `createContextMenu({ onPick, flavor?, accessKeys?, onClose? })` (`command-menu/context-menu.svelte.ts`) and one
     `<ContextMenu {menu}>` per window; `menu.open({ rows, at, fromKeyboard, anchorElement?, label? })` with the rows
     `open_context_menu_in_page` answered, its `anchor` or the pointer as `at`, and `onPick` sending
