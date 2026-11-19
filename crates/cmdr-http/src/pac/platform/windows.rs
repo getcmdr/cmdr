@@ -112,13 +112,14 @@ unsafe extern "system" fn on_status(handle: *mut c_void, _context: usize, status
         WINHTTP_CALLBACK_STATUS_GETPROXYFORURL_COMPLETE => Outcome::Complete,
         WINHTTP_CALLBACK_STATUS_REQUEST_ERROR => {
             let result = info.cast::<WINHTTP_ASYNC_RESULT>();
-            // SAFETY: for `REQUEST_ERROR`, WinHTTP passes a `WINHTTP_ASYNC_RESULT` it keeps alive
-            // for the callback's duration, or null.
-            Outcome::Failed(if result.is_null() {
-                0
+            if result.is_null() {
+                Outcome::Failed(0)
             } else {
-                unsafe { (*result).dwError }
-            })
+                // SAFETY: for `REQUEST_ERROR`, WinHTTP passes a `WINHTTP_ASYNC_RESULT` it keeps
+                // alive for the callback's duration; null was handled above.
+                let error = unsafe { (*result).dwError };
+                Outcome::Failed(error)
+            }
         }
         _ => return,
     };
