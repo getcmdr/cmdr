@@ -115,6 +115,25 @@ impl Child {
     }
 }
 
+/// What one page names under its prefix: the children a pane can show, and
+/// how many entries it left out because no path addresses them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) struct PageChildren {
+    pub children: Vec<Child>,
+    /// Prefixes and keys whose name under the folder is empty, `.`, or `..`
+    /// (`a//b`, `a/./b`, `a/../b`). ❗ Keys aren't paths: each of those would
+    /// spell the same app path as `a/b` (or its parent's), so listing it would
+    /// let an operation on that path reach a different object. Skipped,
+    /// counted, and logged once per listing; never shown.
+    pub unaddressable: usize,
+}
+
+/// [`read_page`]'s children alone.
+#[cfg(test)]
+pub(super) fn children_of(page: &ObjectPage, prefix: &str) -> Vec<Child> {
+    read_page(page, prefix).children
+}
+
 /// The children `page` names under `prefix` (`""` for a bucket's top, else
 /// ending in `/`), folders first, each in the page's order.
 ///
@@ -122,20 +141,24 @@ impl Child {
 /// - **A key with a `/` past the prefix** names the folder it sits under: a
 ///   child's marker (`photos/empty/`), or a deeper key from a server that
 ///   ignored the delimiter. Each folder appears once.
-/// - **A name nothing can address** is left out: empty (from `a//b`), `.`, and
-///   `..`, which every URL parser resolves away (`encoding::KeyError`).
+/// - **A name nothing can address** is left out and counted
+///   ([`PageChildren::unaddressable`]): empty (from `a//b`), `.`, and `..`,
+///   which every URL parser resolves away (`encoding::KeyError`).
 /// - An object and a folder of one name both come back; [`settle`] tells them
 ///   apart once every page is in.
-pub(super) fn children_of(page: &ObjectPage, prefix: &str) -> Vec<Child> {
+pub(super) fn read_page(page: &ObjectPage, prefix: &str) -> PageChildren {
     let mut folders: Vec<String> = Vec::new();
-    let mut add_folder = |name: &str| {
-        if addressable(name) && !folders.iter().any(|known| known == name) {
+    let mut unaddressable = 0;
+    let mut add_folder = |name: &str, unaddressable: &mut usize| {
+        if !addressable(name) {
+            *unaddressable += 1;
+        } else if !folders.iter().any(|known| known == name) {
             folders.push(name.to_string());
         }
     };
     for common in &page.prefixes {
         if let Some(rest) = common.strip_prefix(prefix) {
-            add_folder(rest.split('/').next().unwrap_or_default());
+            add_folder(rest.split('/').next().unwrap_or_default(), &mut unaddressable);
         }
     }
     let mut objects = Vec::new();
@@ -147,7 +170,7 @@ pub(super) fn children_of(page: &ObjectPage, prefix: &str) -> Vec<Child> {
             continue;
         }
         if let Some((folder, _)) = rest.split_once('/') {
-            add_folder(folder);
+            add_folder(folder, &mut unaddressable);
             continue;
         }
         if addressable(rest) {
@@ -158,13 +181,18 @@ pub(super) fn children_of(page: &ObjectPage, prefix: &str) -> Vec<Child> {
                 archived: object.storage_class.is_archived(),
                 beside_folder: false,
             });
+        } else {
+            unaddressable += 1;
         }
     }
-    folders
-        .into_iter()
-        .map(|name| Child::Folder { name })
-        .chain(objects)
-        .collect()
+    PageChildren {
+        children: folders
+            .into_iter()
+            .map(|name| Child::Folder { name })
+            .chain(objects)
+            .collect(),
+        unaddressable,
+    }
 }
 
 /// Whether a name can be a path segment Cmdr sends.

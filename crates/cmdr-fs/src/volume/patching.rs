@@ -39,12 +39,29 @@ pub trait PatchSource: Sync {
     /// The path the APP addresses `path` by, or `None` when `path` isn't on this
     /// volume. A refusal here is "no patch to make", never an error.
     fn patch_display_path(&self, path: &Path) -> Option<PathBuf>;
+
+    /// [`Self::patch_display_path`] for an app path, what the typed `patch_*_at` functions
+    /// ask. A backend that speaks app paths answers it itself; the default crosses through
+    /// the transition bridge to the `std::path` form, byte for byte, for the backends that
+    /// don't yet.
+    fn patch_app_path(&self, path: &AppPath) -> Option<AppPathBuf> {
+        self.patch_display_path(&std_of(path))
+            .map(|shown| bridged(&shown).into_owned())
+    }
 }
 
-/// Patches the listing that held `path`'s parent, for one change.
+/// Patches the listing that held `path`'s parent, for one change. The `std::path` form of
+/// [`patch_mutation_at`], for the backends that still hold `std::path` values.
 pub async fn patch_mutation(source: &dyn PatchSource, parent_path: &Path, mutation: MutationEvent) {
+    patch_mutation_at(source, &bridged(parent_path), mutation).await;
+}
+
+/// Patches the listing that held `parent_path`, for one change to a child of it.
+pub async fn patch_mutation_at(source: &dyn PatchSource, parent_path: &AppPath, mutation: MutationEvent) {
     let listings = source.patch_listings();
     let volume_id = source.patch_volume_id();
+    // The listing host still files listings by `std::path`: its one crossing.
+    let parent_std = std_of(parent_path);
     match mutation {
         MutationEvent::Created(ref name) | MutationEvent::Modified(ref name) => {
             // One stat, and a failure is simply no patch: the pane re-lists
@@ -60,10 +77,10 @@ pub async fn patch_mutation(source: &dyn PatchSource, parent_path: &Path, mutati
             } else {
                 DirectoryChange::Modified(entry)
             };
-            listings.directory_changed(volume_id, parent_path, change);
+            listings.directory_changed(volume_id, &parent_std, change);
         }
         MutationEvent::Deleted(name) => {
-            listings.directory_changed(volume_id, parent_path, DirectoryChange::Removed(name));
+            listings.directory_changed(volume_id, &parent_std, DirectoryChange::Removed(name));
         }
         MutationEvent::Renamed { from, to } => {
             let Some(child) = child_path(parent_path, &to) else {
@@ -74,7 +91,7 @@ pub async fn patch_mutation(source: &dyn PatchSource, parent_path: &Path, mutati
             };
             listings.directory_changed(
                 volume_id,
-                parent_path,
+                &parent_std,
                 DirectoryChange::Renamed {
                     old_name: from,
                     new_entry: entry,
@@ -86,26 +103,40 @@ pub async fn patch_mutation(source: &dyn PatchSource, parent_path: &Path, mutati
 
 /// Patches for a `path` that has just appeared.
 pub async fn patch_created(source: &dyn PatchSource, path: &Path) {
-    let Some((parent, name)) = parent_and_name(source, path) else {
-        return;
-    };
-    patch_mutation(source, &parent, MutationEvent::Created(name)).await;
+    patch_created_at(source, &bridged(path)).await;
+}
+
+/// [`patch_created`] for an app path.
+pub async fn patch_created_at(source: &dyn PatchSource, path: &AppPath) {
+    patch_one(source, path, MutationEvent::Created).await;
 }
 
 /// Patches for a `path` whose metadata just changed (a date set on it).
 pub async fn patch_modified(source: &dyn PatchSource, path: &Path) {
-    let Some((parent, name)) = parent_and_name(source, path) else {
-        return;
-    };
-    patch_mutation(source, &parent, MutationEvent::Modified(name)).await;
+    patch_modified_at(source, &bridged(path)).await;
+}
+
+/// [`patch_modified`] for an app path.
+pub async fn patch_modified_at(source: &dyn PatchSource, path: &AppPath) {
+    patch_one(source, path, MutationEvent::Modified).await;
 }
 
 /// Patches for a `path` that has just gone.
 pub async fn patch_deleted(source: &dyn PatchSource, path: &Path) {
+    patch_deleted_at(source, &bridged(path)).await;
+}
+
+/// [`patch_deleted`] for an app path.
+pub async fn patch_deleted_at(source: &dyn PatchSource, path: &AppPath) {
+    patch_one(source, path, MutationEvent::Deleted).await;
+}
+
+/// Patches `path`'s parent with the change `event` makes of `path`'s name.
+async fn patch_one(source: &dyn PatchSource, path: &AppPath, event: fn(String) -> MutationEvent) {
     let Some((parent, name)) = parent_and_name(source, path) else {
         return;
     };
-    patch_mutation(source, &parent, MutationEvent::Deleted(name)).await;
+    patch_mutation_at(source, &parent, event(name)).await;
 }
 
 /// Patches for a rename, which is ❗ two changes when it crosses directories: a
@@ -113,13 +144,18 @@ pub async fn patch_deleted(source: &dyn PatchSource, path: &Path) {
 /// gained one, and a single `Renamed` would leave whichever it wasn't sent to
 /// stale.
 pub async fn patch_renamed(source: &dyn PatchSource, from: &Path, to: &Path) {
+    patch_renamed_at(source, &bridged(from), &bridged(to)).await;
+}
+
+/// [`patch_renamed`] for app paths.
+pub async fn patch_renamed_at(source: &dyn PatchSource, from: &AppPath, to: &AppPath) {
     let (Some((from_parent, from_name)), Some((to_parent, to_name))) =
         (parent_and_name(source, from), parent_and_name(source, to))
     else {
         return;
     };
     if from_parent == to_parent {
-        patch_mutation(
+        patch_mutation_at(
             source,
             &from_parent,
             MutationEvent::Renamed {
@@ -129,8 +165,8 @@ pub async fn patch_renamed(source: &dyn PatchSource, from: &Path, to: &Path) {
         )
         .await;
     } else {
-        patch_mutation(source, &from_parent, MutationEvent::Deleted(from_name)).await;
-        patch_mutation(source, &to_parent, MutationEvent::Created(to_name)).await;
+        patch_mutation_at(source, &from_parent, MutationEvent::Deleted(from_name)).await;
+        patch_mutation_at(source, &to_parent, MutationEvent::Created(to_name)).await;
     }
 }
 
@@ -140,10 +176,9 @@ pub async fn patch_renamed(source: &dyn PatchSource, from: &Path, to: &Path) {
 /// Split by the app path's own arithmetic, so a remote name holding `\` stays one name on
 /// Windows. The name comes back as the native name's lossy text, the spelling the
 /// backends' listings carry.
-fn parent_and_name(source: &dyn PatchSource, path: &Path) -> Option<(PathBuf, String)> {
-    let app = bridged(path);
-    let parent = source.patch_display_path(&app.parent()?.as_std_legacy())?;
-    let name = app.file_name()?;
+fn parent_and_name(source: &dyn PatchSource, path: &AppPath) -> Option<(AppPathBuf, String)> {
+    let parent = source.patch_app_path(path.parent()?)?;
+    let name = path.file_name()?;
     let name = match unescape_bytes(name) {
         Ok(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
         // A unit escape (an unpaired surrogate on Windows): what a person reads.
@@ -156,15 +191,23 @@ fn parent_and_name(source: &dyn PatchSource, path: &Path) -> Option<(PathBuf, St
 /// `parent_path`, joined by [`ListedFolder`]'s rule (a parent with no canonical twin joins as
 /// `Path::join` did, ❌ never dropping the patch); `None`, so no patch, for a name that isn't
 /// one plain name.
-fn child_path(parent_path: &Path, name: &str) -> Option<AppPathBuf> {
+fn child_path(parent_path: &AppPath, name: &str) -> Option<AppPathBuf> {
     let name = AppNameBuf::from_typed(name, Namer::HOST).ok()?;
-    ListedFolder::new(&bridged(parent_path)).join(&name).ok()
+    ListedFolder::new(parent_path).join(&name).ok()
 }
 
-/// A backend's `std::path` path as the app path it spells. The backends still call these
-/// functions with `std::path` values, and the bridge keeps their exact bytes.
+/// The way in from `std::path`: a backend's path as the app path it spells, for the
+/// `std::path` forms and a `std::path` [`PatchSource::patch_display_path`] answer. The bridge
+/// keeps the exact bytes. ❗ The one `legacy_unchecked` here, so the meter counts it once.
 fn bridged(path: &Path) -> Cow<'_, AppPath> {
     AppPath::legacy_unchecked(path)
+}
+
+/// The way out: the `std::path` value the listing host and
+/// [`PatchSource::patch_display_path`] still take, the exact bytes. ❗ The one
+/// `as_std_legacy` here.
+fn std_of(path: &AppPath) -> Cow<'_, Path> {
+    path.as_std_legacy()
 }
 
 #[cfg(test)]

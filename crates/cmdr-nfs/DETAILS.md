@@ -28,6 +28,17 @@ nested exports (`/share` and `/share/Public`) an unescaped path can't say which 
 accepted: a file under nested exports has two spellings, one per place. A volume's `RemoteRoot` is rooted at that prefix
 with `/` under it, so the paths the volume speaks are export-relative. No account rides in the authority.
 
+- **The bodies speak `AppPath`**: every one takes the typed path and gets its server path from `RemoteRoot::to_remote`;
+  ❌ never `Path::file_name`/`parent`/`join` on an app or server path (on Windows they split `a\b`). A stat's name is
+  the server path's last `/`-name. Server paths stay `String` (`paths::child_of`, `components`), POSIX on every host.
+- ❗ **The wire text keeps `RemoteRoot::to_app_path`'s spelling**: `Volume::root` (`app_root().app()`) and every row's
+  `FileEntry.path` (`app_path_of`). Why: the export root's text is `nfs://h:2049/export/`, WITH its trailing `/`, and a
+  canonical app path (`RemoteRoot::app`, `to_app`) drops it; the frontend compares root text (`path === root`). Pinned
+  by `the_export_root_keeps_its_trailing_slash_on_the_wire`. The typed `to_app` serves only where an `AppPathBuf` is
+  needed and `Eq` is component-wise (`patch_app_path`).
+- A server name the app path can't hold yet (a NUL, an escape-range code point) keeps today's row text; the patcher
+  makes no patch for it.
+
 ## Connecting
 
 `connect_nfs_volume(name, params, host, cancel)` takes what the person picked or typed and resolves the real export
@@ -258,6 +269,9 @@ a change that comes and goes inside a tick is missed, so a poll can't vouch for 
 - **What's shown** is `ListingHost::open_listing_paths(volume_id)`, an in-memory read of the listing store. With nothing
   shown, nothing is sent, and the poller stops after one quiet tick; a pane's listing (`list_for_pane`, ❌ never a
   scan's) starts it again, and so does a connect, since panes may already show an id a redial replaced.
+- **What it saw is keyed by SERVER path** (`/photos`): the listing names a folder by its app path, the store by its own
+  `std::path` key (read through `RemoteRoot::to_remote_path` until the listing host speaks app paths), and both come
+  down to one key. Two store spellings of one folder share one stamp, and both hear its change.
 - **The baseline is the listing's own stamp**: `Nfs3Client::list_dir` answers the folder's attributes from its FIRST
   page, so a change between the listing and the next tick is a change, and one during a later page re-lists.
 - ❗ **Only while `Connected`**, ❌ never a `GETATTR` on top of the backoff. The round runs through `noting`, so a poll
@@ -298,8 +312,11 @@ folder edited on a connected place moves the live params (`NfsVolume::set_start_
   offers rewrites the source port; the accepting half runs on Linux CI against the container's IP (the measurement: §
   "Reaching /secure" there).
 - `volume::testing` (`testing` feature, also re-exported at the root): the fixture's server, params, `connect_insecure`,
-  `scratch_dir`, and `clean_deep`, for the app's suites (`nfs_transfer_*` in
-  `apps/desktop/src-tauri/src/operations_host/backend_suites/`).
+  `app_path` (a typed path under the root, joined by the app path's own arithmetic), `scratch_dir_at`, and `clean_deep`,
+  for this crate's cells and the app's suites (`nfs_transfer_*` in
+  `apps/desktop/src-tauri/src/operations_host/backend_suites/`). `scratch_dir` is the `std::path` form those suites
+  still hold; it and `cmdr_fs::volume::conformance`'s `std::path` assertions cross through `std_path_of`, the crate's
+  one transition bridge, gone once both take app paths.
 - **Scratch folders share the export root with the seeded tree**, and every worktree on the machine shares the stack, so
   a cell that lists the root skips `SCRATCH_PREFIX` names: another run's cell can be mid-flight there, and a cell that
   fails or hits the nextest cap never reaches its `clean_deep`. `scratch_dir` sweeps scratch folders older than an hour

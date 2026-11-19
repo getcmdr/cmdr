@@ -1,7 +1,7 @@
 //! Reading what's on the server without changing it: PROPFIND, at depth 1 for
 //! a listing and depth 0 for one resource.
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::Presence;
-use std::path::Path;
 
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{ListingProgress, SpaceInfo, VolumeError};
@@ -50,7 +50,7 @@ impl WebdavVolume {
     /// promises no order.
     pub(super) async fn list_directory_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&CancellationToken>,
     ) -> Result<Vec<FileEntry>, VolumeError> {
@@ -74,7 +74,10 @@ impl WebdavVolume {
                 continue;
             }
             let name = href_name(&prop.href);
-            if name.is_empty() {
+            // ❗ A member named `.` or `..` (a misbehaving server's `%2E%2E`) would list as
+            // the folder itself or its parent, where a delete or a move of that row acts on
+            // a folder nobody picked: no row, ❌ never one at the normalized path.
+            if matches!(name, "" | "." | "..") {
                 continue;
             }
             // A delete's empty leftover aside goes the moment a listing sees it.
@@ -83,10 +86,10 @@ impl WebdavVolume {
             }
             // An entry a misbehaving server names off the root (`..`, say) is
             // dropped, ❌ never listed under a path this volume would refuse.
-            let Some(app_path) = self.root.to_app_path(&child_of(&remote, name)) else {
+            let Some(app_path) = self.row_path_of(&child_of(&remote, name)) else {
                 continue;
             };
-            let built = propfind_to_file_entry(name, &app_path.to_string_lossy(), prop);
+            let built = propfind_to_file_entry(name, &app_path, prop);
             if built.is_directory {
                 tally.dirs += 1;
             } else {
@@ -103,24 +106,25 @@ impl WebdavVolume {
     }
 
     /// One `Depth: 0` PROPFIND, as a `FileEntry`.
-    pub(super) async fn get_metadata_impl(&self, path: &Path) -> Result<FileEntry, VolumeError> {
+    pub(super) async fn get_metadata_impl(&self, path: &AppPath) -> Result<FileEntry, VolumeError> {
         let remote = self.to_remote_path(path)?;
         let client = self.clone_client().await?;
         let prop = self.stat(&client, &remote).await?;
-        let name = Path::new(&remote)
-            .file_name()
-            .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_else(|| self.name.clone());
+        // The server path's last name, split on `/` alone (a server path is POSIX on every
+        // host); the server's root has none and reads as the volume's own name.
+        let name = match href_name(&remote) {
+            "" => self.name.clone(),
+            name => name.to_owned(),
+        };
         let app_path = self
-            .root
-            .to_app_path(&remote)
-            .ok_or_else(|| VolumeError::NotFound(path.to_string_lossy().into_owned()))?;
-        Ok(propfind_to_file_entry(&name, &app_path.to_string_lossy(), &prop))
+            .row_path_of(&remote)
+            .ok_or_else(|| VolumeError::NotFound(path.as_str().to_owned()))?;
+        Ok(propfind_to_file_entry(&name, &app_path, &prop))
     }
 
     /// The one entry a `Depth: 0` PROPFIND answers with.
     pub(super) async fn stat(&self, client: &WebdavClient, remote: &str) -> Result<PropfindEntry, VolumeError> {
-        let is_root = remote == self.to_remote_path(Path::new("/"))?;
+        let is_root = remote == self.root_remote();
         self.propfind(client, remote, is_root, Depth::Zero)
             .await?
             .into_iter()
@@ -129,7 +133,7 @@ impl WebdavVolume {
     }
 
     /// Whether `path` is there. A refusal (a 403 for this account) is `Unknown`.
-    pub(super) async fn presence_impl(&self, path: &Path) -> Presence {
+    pub(super) async fn presence_impl(&self, path: &AppPath) -> Presence {
         Presence::of(&self.get_metadata_impl(path).await)
     }
 
@@ -162,7 +166,7 @@ impl WebdavVolume {
     /// Trusting the standard alone there renders "0 bytes used" for an account
     /// full of files.
     pub(super) async fn get_space_info_impl(&self) -> Result<SpaceInfo, VolumeError> {
-        let root = self.to_remote_path(Path::new("/"))?;
+        let root = self.root_remote();
         let client = self.clone_client().await?;
         let prop = self.stat(&client, &root).await?;
         let quota_used = prop.quota_used.filter(|used| *used >= 0).map(i64::unsigned_abs);

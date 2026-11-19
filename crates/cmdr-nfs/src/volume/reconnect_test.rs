@@ -5,8 +5,6 @@
 //! `cmdr_fs::testing::tcp_proxy::TcpProxy` in front of the fixture are
 //! `connection_drop_test.rs`.
 
-use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
@@ -54,8 +52,8 @@ fn reported(events: &RecordingVolumeEvents) -> Vec<VolumeConnection> {
 }
 
 /// `remote` as a pane addresses it on `volume`.
-fn at(volume: &NfsVolume, remote: &str) -> PathBuf {
-    PathBuf::from(format!("{}{remote}", volume.root().as_std_legacy().display()))
+fn at(volume: &NfsVolume, remote: &str) -> cmdr_fs::app_path::AppPathBuf {
+    crate::volume::testing::app_path(volume, remote)
 }
 
 /// Every 16-byte line holds its own number, so any offset says where it
@@ -76,9 +74,7 @@ fn numbered(len: usize) -> Vec<u8> {
 /// that rides it is the detector.
 async fn cut_under(fake: &FakeNfs, volume: &NfsVolume) {
     fake.reset_mid_reply(proc::LOOKUP);
-    let failed = volume
-        .get_metadata(&AppPath::legacy_unchecked(&at(volume, "/big.bin")))
-        .await;
+    let failed = volume.get_metadata(&at(volume, "/big.bin")).await;
     assert!(
         matches!(failed, Err(VolumeError::DeviceDisconnected(_))),
         "a cut connection is a lost server: {failed:?}"
@@ -178,7 +174,7 @@ async fn a_refused_redial_keeps_backing_off_and_comes_back_on_its_own() {
         vec![VolumeConnection::Disconnected, VolumeConnection::Connected]
     );
     volume
-        .list_directory(&AppPath::legacy_unchecked(&at(&volume, "/photos")), None)
+        .list_directory(&at(&volume, "/photos"), None)
         .await
         .expect("the same volume lists again");
 }
@@ -192,7 +188,7 @@ async fn a_read_in_flight_finishes_on_its_own_connection_across_a_reconnect() {
     let fake = seeded();
     let Watched { volume, .. } = watched(&fake).await;
     let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(&at(&volume, "/big.bin")))
+        .open_read_stream(&at(&volume, "/big.bin"))
         .await
         .expect("the file opens");
     let first = stream.next_chunk().await.expect("a first chunk").expect("read");
@@ -222,10 +218,7 @@ async fn a_read_cut_mid_file_resumes_on_the_next_generation_at_its_offset() {
     let fake = seeded();
     let Watched { volume, .. } = watched(&fake).await;
     let big = at(&volume, "/big.bin");
-    let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(&big))
-        .await
-        .expect("the file opens");
+    let mut stream = volume.open_read_stream(&big).await.expect("the file opens");
     let mut read = stream
         .next_chunk()
         .await
@@ -244,10 +237,7 @@ async fn a_read_cut_mid_file_resumes_on_the_next_generation_at_its_offset() {
     drop(stream);
 
     // The engine's per-file retry is the detector: it reopens through `noting`.
-    let reopened = volume
-        .open_read_stream_at_offset(&AppPath::legacy_unchecked(&big), read.len() as u64)
-        .await
-        .err();
+    let reopened = volume.open_read_stream_at_offset(&big, read.len() as u64).await.err();
     assert!(
         matches!(reopened, Some(VolumeError::DeviceDisconnected(_))),
         "{reopened:?}"
@@ -257,7 +247,7 @@ async fn a_read_cut_mid_file_resumes_on_the_next_generation_at_its_offset() {
     assert_eq!(volume.connection_generation(), Some(generation + 1));
 
     let mut rest = volume
-        .open_read_stream_at_offset(&AppPath::legacy_unchecked(&big), read.len() as u64)
+        .open_read_stream_at_offset(&big, read.len() as u64)
         .await
         .expect("the file opens at its offset");
     read.extend(read_rest(&mut *rest).await.expect("the new connection answers"));
@@ -284,9 +274,5 @@ async fn a_start_folder_edit_moves_the_params_every_instance_and_the_next_redial
     volume.simulate_session_loss().await;
     volume.attempt_reconnect().await.expect("no secret needed to redial");
     assert_eq!(volume.params().start_folder.as_deref(), Some("/photos"));
-    assert!(
-        volume
-            .exists(&AppPath::legacy_unchecked(Path::new(&at(&volume, "/photos"))))
-            .await
-    );
+    assert!(volume.exists(&at(&volume, "/photos")).await);
 }

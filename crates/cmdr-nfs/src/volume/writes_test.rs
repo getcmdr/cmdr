@@ -2,10 +2,8 @@
 //! rolling COMMIT and its verifier, short WRITEs, `wtmax`, cancel, a source
 //! that lies about its length, and the order SETATTR rides in.
 
-use cmdr_fs::app_path::AppPath;
 use std::collections::VecDeque;
 use std::ops::ControlFlow;
-use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -93,8 +91,8 @@ async fn over_pipe(fake: &FakeNfs) -> NfsVolume {
     .expect("the fake mounts")
 }
 
-fn at(volume: &NfsVolume, remote: &str) -> PathBuf {
-    PathBuf::from(format!("{}{remote}", volume.root().as_std_legacy().display()))
+fn at(volume: &NfsVolume, remote: &str) -> cmdr_fs::app_path::AppPathBuf {
+    crate::volume::testing::app_path(volume, remote)
 }
 
 fn keep_going(_: StreamWriteProgress) -> ControlFlow<()> {
@@ -104,13 +102,7 @@ fn keep_going(_: StreamWriteProgress) -> ControlFlow<()> {
 async fn write(volume: &NfsVolume, remote: &str, mode: WriteMode, source: Source) -> Result<u64, VolumeError> {
     let length = source.declared;
     volume
-        .write_from_stream(
-            &AppPath::legacy_unchecked(&at(volume, remote)),
-            mode,
-            length,
-            Box::new(source),
-            &keep_going,
-        )
+        .write_from_stream(&at(volume, remote), mode, length, Box::new(source), &keep_going)
         .await
         .map(|written| written.bytes)
 }
@@ -290,7 +282,7 @@ async fn a_cancel_from_the_progress_callback_stops_and_removes_the_partial() {
 
     let written = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(&at(&volume, "/cancelled.bin")),
+            &at(&volume, "/cancelled.bin"),
             WriteMode::CreateNew,
             StreamLength::Known(bytes.len() as u64),
             Box::new(Source::of(&bytes)),
@@ -326,13 +318,8 @@ async fn create_file_lands_its_content_and_refuses_to_clobber() {
     let volume = over_pipe(&fake).await;
     let content = patterned(150 * 1024);
 
-    volume
-        .create_file(&AppPath::legacy_unchecked(&at(&volume, "/new.txt")), &content)
-        .await
-        .unwrap();
-    let again = volume
-        .create_file(&AppPath::legacy_unchecked(&at(&volume, "/new.txt")), b"other")
-        .await;
+    volume.create_file(&at(&volume, "/new.txt"), &content).await.unwrap();
+    let again = volume.create_file(&at(&volume, "/new.txt"), b"other").await;
 
     assert_eq!(fake.contents("/new.txt").unwrap(), content);
     assert!(matches!(again, Err(VolumeError::AlreadyExists(_))), "{again:?}");

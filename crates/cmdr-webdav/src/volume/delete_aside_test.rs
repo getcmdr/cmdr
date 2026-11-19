@@ -5,14 +5,14 @@
 //! [`assert_delete_moves_aside_on_a_real_server`], run from
 //! `integration_test.rs` (Apache) and `nextcloud_test.rs`.
 
-use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 
 use cmdr_fs::volume::{Volume, VolumeError};
 
 use super::WebdavVolume;
 use super::fake_dav::FakeDav;
 use super::mutation::still_holds;
+use super::testing::child;
 use cmdr_fs::os_error::OsErrorClass;
 
 /// Each branch a real server's answers decide, in a scratch `dir` the caller
@@ -24,104 +24,66 @@ use cmdr_fs::os_error::OsErrorClass;
 /// The race itself can't be timed on a real server, so the held and taken
 /// branches start from where the race would leave them: `delete_collection`
 /// and `replace_collection` skip the first count, and `put_back` starts from a folder already aside.
-pub(super) async fn assert_delete_moves_aside_on_a_real_server(volume: &WebdavVolume, dir: &Path) {
+pub(super) async fn assert_delete_moves_aside_on_a_real_server(volume: &WebdavVolume, dir: &AppPath) {
     let client = volume.clone_client().await.expect("a live client");
-    let remote = |path: &Path| volume.to_remote_path(path).expect("a path on this volume");
+    let remote = |path: &AppPath| volume.to_remote_path(path).expect("a path on this volume");
     let names = || async {
-        let listed = volume
-            .list_directory(&AppPath::legacy_unchecked(dir), None)
-            .await
-            .expect("the scratch listing");
+        let listed = volume.list_directory(dir, None).await.expect("the scratch listing");
         let mut names = listed.into_iter().map(|entry| entry.name).collect::<Vec<_>>();
         // RFC 4918 promises no order.
         names.sort();
         names
     };
 
-    let gone = dir.join("gone");
-    volume
-        .create_directory(&AppPath::legacy_unchecked(&gone))
-        .await
-        .expect("mkcol gone");
-    volume
-        .delete(&AppPath::legacy_unchecked(&gone))
-        .await
-        .expect("an empty folder deletes");
-    assert!(!volume.exists(&AppPath::legacy_unchecked(&gone)).await);
+    let gone = child(dir, "gone");
+    volume.create_directory(&gone).await.expect("mkcol gone");
+    volume.delete(&gone).await.expect("an empty folder deletes");
+    assert!(!volume.exists(&gone).await);
     assert_eq!(names().await, Vec::<String>::new(), "and nothing is left beside it");
 
-    let held = dir.join("held");
+    let held = child(dir, "held");
+    volume.create_directory(&held).await.expect("mkcol held");
     volume
-        .create_directory(&AppPath::legacy_unchecked(&held))
-        .await
-        .expect("mkcol held");
-    volume
-        .create_file(&AppPath::legacy_unchecked(&held.join("keep.txt")), b"keep")
+        .create_file(&child(&held, "keep.txt"), b"keep")
         .await
         .expect("put keep.txt");
     let refused = volume
         .delete_collection(std::sync::Arc::clone(&client), &remote(&held))
         .await;
     assert!(is_not_empty(&refused), "a held folder is refused, got {refused:?}");
-    assert!(
-        volume.exists(&AppPath::legacy_unchecked(&held.join("keep.txt"))).await,
-        "and moved back whole"
-    );
+    assert!(volume.exists(&child(&held, "keep.txt")).await, "and moved back whole");
     assert_eq!(names().await, vec!["held"]);
 
     // The forced rename's half: onto a held folder (count skipped) it refuses
     // and moves nothing; onto an empty one it replaces it with nothing beside.
-    let source = dir.join("source");
+    let source = child(dir, "source");
+    volume.create_directory(&source).await.expect("mkcol source");
     volume
-        .create_directory(&AppPath::legacy_unchecked(&source))
-        .await
-        .expect("mkcol source");
-    volume
-        .create_file(&AppPath::legacy_unchecked(&source.join("s.txt")), b"s")
+        .create_file(&child(&source, "s.txt"), b"s")
         .await
         .expect("put s.txt");
     let refused = volume
         .replace_collection(std::sync::Arc::clone(&client), &remote(&source), &remote(&held), true)
         .await;
     assert!(is_not_empty(&refused), "a held destination is refused, got {refused:?}");
-    assert!(
-        volume.exists(&AppPath::legacy_unchecked(&held.join("keep.txt"))).await
-            && volume.exists(&AppPath::legacy_unchecked(&source.join("s.txt"))).await
-    );
-    let empty_target = dir.join("target");
+    assert!(volume.exists(&child(&held, "keep.txt")).await && volume.exists(&child(&source, "s.txt")).await);
+    let empty_target = child(dir, "target");
+    volume.create_directory(&empty_target).await.expect("mkcol target");
     volume
-        .create_directory(&AppPath::legacy_unchecked(&empty_target))
-        .await
-        .expect("mkcol target");
-    volume
-        .rename(
-            &AppPath::legacy_unchecked(&source),
-            &AppPath::legacy_unchecked(&empty_target),
-            true,
-        )
+        .rename(&source, &empty_target, true)
         .await
         .expect("an empty folder is replaced");
-    assert!(
-        volume
-            .exists(&AppPath::legacy_unchecked(&empty_target.join("s.txt")))
-            .await
-    );
+    assert!(volume.exists(&child(&empty_target, "s.txt")).await);
     assert_eq!(names().await, vec!["held", "target"], "and nothing is left beside it");
 
-    let taken = dir.join("taken");
-    let aside = dir.join(cmdr_fs::staging::deleting_sibling_name("taken"));
+    let taken = child(dir, "taken");
+    let aside = child(dir, &cmdr_fs::staging::deleting_sibling_name("taken"));
+    volume.create_directory(&aside).await.expect("mkcol the aside");
     volume
-        .create_directory(&AppPath::legacy_unchecked(&aside))
-        .await
-        .expect("mkcol the aside");
-    volume
-        .create_file(&AppPath::legacy_unchecked(&aside.join("inside.txt")), b"in")
+        .create_file(&child(&aside, "inside.txt"), b"in")
         .await
         .expect("put inside.txt");
-    volume
-        .create_directory(&AppPath::legacy_unchecked(&taken))
-        .await
-        .expect("mkcol taken");
+    volume.create_directory(&taken).await.expect("mkcol taken");
     let why = volume
         .put_back(&client, &remote(&aside), &remote(&taken), still_holds("taken", 1))
         .await;
@@ -129,45 +91,28 @@ pub(super) async fn assert_delete_moves_aside_on_a_real_server(volume: &WebdavVo
         is_not_empty(&Err(why.clone())),
         "the errno survives the note, got {why:?}"
     );
-    assert!(
-        volume
-            .exists(&AppPath::legacy_unchecked(
-                &dir.join("taken (kept by Cmdr)").join("inside.txt")
-            ))
-            .await
-    );
-    assert!(
-        !volume.exists(&AppPath::legacy_unchecked(&aside)).await,
-        "and the aside is gone"
-    );
+    assert!(volume.exists(&child(dir, "taken (kept by Cmdr)/inside.txt")).await);
+    assert!(!volume.exists(&aside).await, "and the aside is gone");
 
-    let empty = dir.join(cmdr_fs::staging::deleting_sibling_name("old"));
-    let full = dir.join(cmdr_fs::staging::deleting_sibling_name("full"));
+    let empty = child(dir, &cmdr_fs::staging::deleting_sibling_name("old"));
+    let full = child(dir, &cmdr_fs::staging::deleting_sibling_name("full"));
+    volume.create_directory(&empty).await.expect("mkcol an empty leftover");
+    volume.create_directory(&full).await.expect("mkcol a held leftover");
     volume
-        .create_directory(&AppPath::legacy_unchecked(&empty))
-        .await
-        .expect("mkcol an empty leftover");
-    volume
-        .create_directory(&AppPath::legacy_unchecked(&full))
-        .await
-        .expect("mkcol a held leftover");
-    volume
-        .create_file(&AppPath::legacy_unchecked(&full.join("f.txt")), b"f")
+        .create_file(&child(&full, "f.txt"), b"f")
         .await
         .expect("put f.txt");
     let listed = names().await;
     assert!(
-        !volume.exists(&AppPath::legacy_unchecked(&empty)).await,
+        !volume.exists(&empty).await,
         "the empty leftover is tidied, listed {listed:?}"
     );
-    assert!(
-        volume.exists(&AppPath::legacy_unchecked(&full.join("f.txt"))).await,
-        "the held one stays"
-    );
+    assert!(volume.exists(&child(&full, "f.txt")).await, "the held one stays");
 }
 
-fn at(volume: &WebdavVolume, rel: &str) -> PathBuf {
-    volume.root().as_std_legacy().join("tree").join(rel)
+/// `rel` under the fake server's `tree` collection, where `FakeDav` roots its volume.
+fn at(volume: &WebdavVolume, rel: &str) -> AppPathBuf {
+    child(&child(volume.root(), "tree"), rel)
 }
 
 fn is_not_empty(result: &Result<(), VolumeError>) -> bool {
@@ -183,7 +128,7 @@ async fn a_file_landing_after_the_check_is_kept_and_the_delete_refused() {
     server.put_node("box", true);
     server.after("PROPFIND", "box", &[("box/late.txt", false)]);
 
-    let deleted = volume.delete(&AppPath::legacy_unchecked(&at(&volume, "box"))).await;
+    let deleted = volume.delete(&at(&volume, "box")).await;
 
     assert!(
         server.nodes().contains(&"box/late.txt".to_string()),
@@ -209,7 +154,7 @@ async fn an_empty_folder_is_deleted_and_leaves_nothing_behind() {
     server.put_node("neighbor.txt", false);
 
     volume
-        .delete(&AppPath::legacy_unchecked(&at(&volume, "box")))
+        .delete(&at(&volume, "box"))
         .await
         .expect("an empty folder deletes");
 
@@ -226,7 +171,7 @@ async fn a_folder_whose_name_was_taken_meanwhile_is_kept_beside_it() {
     server.after("PROPFIND", "box", &[("box/late.txt", false)]);
     server.after("MOVE", "box", &[("box", true)]);
 
-    let deleted = volume.delete(&AppPath::legacy_unchecked(&at(&volume, "box"))).await;
+    let deleted = volume.delete(&at(&volume, "box")).await;
 
     assert!(is_not_empty(&deleted), "got {deleted:?}");
     assert_eq!(
@@ -244,7 +189,7 @@ async fn a_kept_name_already_taken_gets_a_number() {
     server.after("PROPFIND", "box", &[("box/late.txt", false)]);
     server.after("MOVE", "box", &[("box", true)]);
 
-    let deleted = volume.delete(&AppPath::legacy_unchecked(&at(&volume, "box"))).await;
+    let deleted = volume.delete(&at(&volume, "box")).await;
 
     assert!(is_not_empty(&deleted), "got {deleted:?}");
     assert_eq!(
@@ -269,11 +214,11 @@ async fn a_server_that_refuses_the_move_falls_back_to_a_plain_delete() {
         server.refuse_moves_onto(".cmdr-deleting-", status);
 
         volume
-            .delete(&AppPath::legacy_unchecked(&at(&volume, "box")))
+            .delete(&at(&volume, "box"))
             .await
             .unwrap_or_else(|e| panic!("a {status} on the MOVE falls back, got {e:?}"));
         volume
-            .delete(&AppPath::legacy_unchecked(&at(&volume, "note.txt")))
+            .delete(&at(&volume, "note.txt"))
             .await
             .expect("a file never moves");
 
@@ -292,13 +237,7 @@ async fn a_forced_rename_keeps_a_file_landing_in_the_folder_it_replaces() {
     server.put_node("old", true);
     server.after("PROPFIND", "old", &[("old/late.txt", false)]);
 
-    let renamed = volume
-        .rename(
-            &AppPath::legacy_unchecked(&at(&volume, "new")),
-            &AppPath::legacy_unchecked(&at(&volume, "old")),
-            true,
-        )
-        .await;
+    let renamed = volume.rename(&at(&volume, "new"), &at(&volume, "old"), true).await;
 
     assert!(
         server.nodes().contains(&"old/late.txt".to_string()),
@@ -321,11 +260,7 @@ async fn a_forced_rename_replaces_an_empty_folder_and_leaves_nothing_behind() {
     server.put_node("old", true);
 
     volume
-        .rename(
-            &AppPath::legacy_unchecked(&at(&volume, "new")),
-            &AppPath::legacy_unchecked(&at(&volume, "old")),
-            true,
-        )
+        .rename(&at(&volume, "new"), &at(&volume, "old"), true)
         .await
         .expect("an empty folder is replaced");
 
@@ -343,13 +278,7 @@ async fn a_forced_rename_whose_destination_is_retaken_keeps_everything() {
     server.put_node("old", true);
     server.after("MOVE", "old", &[("old", true), ("old/theirs.txt", false)]);
 
-    let renamed = volume
-        .rename(
-            &AppPath::legacy_unchecked(&at(&volume, "new")),
-            &AppPath::legacy_unchecked(&at(&volume, "old")),
-            true,
-        )
-        .await;
+    let renamed = volume.rename(&at(&volume, "new"), &at(&volume, "old"), true).await;
 
     assert!(renamed.is_err(), "got {renamed:?}");
     assert_eq!(
@@ -370,11 +299,7 @@ async fn a_forced_rename_falls_back_when_the_aside_move_is_refused() {
     server.refuse_moves_onto(".cmdr-deleting-", "405 Method Not Allowed");
 
     volume
-        .rename(
-            &AppPath::legacy_unchecked(&at(&volume, "new")),
-            &AppPath::legacy_unchecked(&at(&volume, "old")),
-            true,
-        )
+        .rename(&at(&volume, "new"), &at(&volume, "old"), true)
         .await
         .expect("the plain forced MOVE");
 
@@ -396,7 +321,7 @@ async fn a_listing_tidies_an_empty_leftover_aside_and_nothing_else() {
     server.put_node("mine.cmdr-deleting-notes", true);
 
     let listed: Vec<String> = volume
-        .list_directory(&AppPath::legacy_unchecked(&at(&volume, "")), None)
+        .list_directory(&at(&volume, ""), None)
         .await
         .expect("the listing")
         .into_iter()

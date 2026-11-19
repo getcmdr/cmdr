@@ -9,9 +9,9 @@
 //! that costs and which cells opt out: the fixture README's "Against a server
 //! of your own".
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf, RelativeAppPath};
 use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::{Arc, OnceLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -353,22 +353,50 @@ fn run_token() -> &'static str {
 
 /// Creates a uniquely named directory under the root and returns its volume
 /// path. The run token keeps two suites apart, the counter two cells.
-pub async fn scratch_dir(volume: &WebdavVolume) -> PathBuf {
+pub async fn scratch_dir_at(volume: &WebdavVolume) -> AppPathBuf {
     use std::sync::atomic::{AtomicU64, Ordering};
     static NEXT: AtomicU64 = AtomicU64::new(0);
     // ❗ Under the volume's APP root, prefix and all, because that is what a pane
     // holds and what every app site hands the volume. A bare `/cmdr-test-…` is
     // refused now, on purpose (`cmdr_fs::volume::remote_paths`).
-    let path = volume.root().as_std_legacy().join(format!(
-        "{SCRATCH_PREFIX}{}-{}",
-        run_token(),
-        NEXT.fetch_add(1, Ordering::Relaxed)
-    ));
+    let path = at(
+        volume,
+        &format!(
+            "{SCRATCH_PREFIX}{}-{}",
+            run_token(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ),
+    );
     volume
-        .create_directory(&AppPath::legacy_unchecked(&path))
+        .create_directory(&path)
         .await
-        .unwrap_or_else(|e| panic!("creating the scratch dir {}: {e:?}", path.display()));
+        .unwrap_or_else(|e| panic!("creating the scratch dir {path}: {e:?}"));
     path
+}
+
+/// [`scratch_dir_at`] as the `std::path` value the app's WebDAV suites still hold. Goes
+/// once they take the typed form.
+pub async fn scratch_dir(volume: &WebdavVolume) -> PathBuf {
+    scratch_dir_at(volume).await.as_std_legacy().into_owned()
+}
+
+/// `rel` (names joined by `/`, or `""` / `"."` for `dir` itself) under `dir`.
+///
+/// A cell's relative spelling never reaches a volume: every method takes an absolute app
+/// path, so a cell names its file through this. Panics on a `rel` that isn't a plain
+/// relative tail, so a cell can't silently address something else.
+pub fn child(dir: &AppPath, rel: &str) -> AppPathBuf {
+    if rel.is_empty() || rel == "." {
+        return dir.to_owned();
+    }
+    let tail = RelativeAppPath::new(rel).unwrap_or_else(|why| panic!("{rel:?} is no relative app path: {why}"));
+    dir.join_relative(tail)
+        .unwrap_or_else(|why| panic!("{rel:?} doesn't join under {dir}: {why}"))
+}
+
+/// `rel` under `volume`'s root ([`child`]'s rules).
+pub fn at(volume: &impl Volume, rel: &str) -> AppPathBuf {
+    child(volume.root(), rel)
 }
 
 /// How long a scratch directory has to sit untouched before a later run may
@@ -415,7 +443,7 @@ pub async fn sweep_stale_scratch_dirs(volume: &WebdavVolume) {
             Some(modified) if modified < cutoff => {}
             _ => continue,
         }
-        remove_recursively(volume, &volume.root().as_std_legacy().join(&entry.name)).await;
+        remove_recursively(volume, &at(volume, &entry.name)).await;
     }
 }
 
@@ -428,14 +456,14 @@ pub async fn sweep_stale_scratch_dirs(volume: &WebdavVolume) {
 /// should report its own reason, not a cleanup error on top.
 pub fn remove_recursively<'a>(
     volume: &'a WebdavVolume,
-    path: &'a Path,
+    path: &'a AppPath,
 ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
     Box::pin(async move {
-        if let Ok(entries) = volume.list_directory(&AppPath::legacy_unchecked(path), None).await {
+        if let Ok(entries) = volume.list_directory(path, None).await {
             for entry in entries {
-                remove_recursively(volume, &path.join(&entry.name)).await;
+                remove_recursively(volume, &child(path, &entry.name)).await;
             }
         }
-        let _ = volume.delete(&AppPath::legacy_unchecked(path)).await;
+        let _ = volume.delete(path).await;
     })
 }

@@ -1,11 +1,11 @@
 //! Work over many keys against both fixtures: the batch delete past one
 //! request's thousand keys, the capped subtree tally, and what a rename costs.
 
-use cmdr_fs::app_path::AppPath;
-use std::path::PathBuf;
+use cmdr_fs::app_path::AppPathBuf;
 
 use cmdr_fs::volume::{RenameWork, Volume, VolumeError};
 
+use super::test_support::at;
 use super::testing::*;
 
 const MIB: usize = 1024 * 1024;
@@ -19,26 +19,19 @@ async fn a_batch_delete_of_1005_files_clears_them_all(service: FixtureService) {
     let seeds: Vec<Seed<'_>> = keys.iter().map(|key| object(key, b"x")).collect();
     seed(service, FIXTURE_BUCKET, &seeds).await;
 
-    let mut paths: Vec<PathBuf> = keys.iter().map(|key| volume.root().as_std_legacy().join(key)).collect();
-    paths.push(volume.root().as_std_legacy().join(format!("{prefix}never-there.txt")));
-    let results = volume
-        .delete_files(
-            &paths
-                .iter()
-                .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                .collect::<Vec<_>>(),
-        )
-        .await;
+    let mut paths: Vec<AppPathBuf> = keys.iter().map(|key| at(&volume, key)).collect();
+    paths.push(at(&volume, &format!("{prefix}never-there.txt")));
+    let results = volume.delete_files(&paths).await;
     assert_eq!(results.len(), paths.len());
     assert!(
         results.iter().all(Result::is_ok),
         "{:?}",
         results.iter().find(|result| result.is_err())
     );
-    let folder = volume.root().as_std_legacy().join(prefix.trim_end_matches('/'));
+    let folder = at(&volume, prefix.trim_end_matches('/'));
     assert!(
         matches!(
-            volume.list_directory(&AppPath::legacy_unchecked(&folder), None).await,
+            volume.list_directory(&folder, None).await,
             Err(VolumeError::NotFound(_))
         ),
         "every key under the folder is gone"
@@ -65,12 +58,9 @@ async fn a_tally_counts_objects_but_not_markers_and_stops_past_its_cap(service: 
         ],
     )
     .await;
-    let folder = volume.root().as_std_legacy().join(prefix.trim_end_matches('/'));
+    let folder = at(&volume, prefix.trim_end_matches('/'));
 
-    let all = volume
-        .tally_subtree(&AppPath::legacy_unchecked(&folder), 100)
-        .await
-        .expect("a tally");
+    let all = volume.tally_subtree(&folder, 100).await.expect("a tally");
     assert_eq!((all.files, all.bytes, all.complete), (3, 7, true));
     assert_eq!(all.folders, 4, "the folder itself, `sub`, `sub/deeper`, and `empty`");
     let mut sizes: Vec<u64> = all.per_file.iter().map(|file| file.size).collect();
@@ -80,24 +70,13 @@ async fn a_tally_counts_objects_but_not_markers_and_stops_past_its_cap(service: 
         all.per_file.iter().all(|file| file.modified_at.is_some()),
         "each object's upload time, which early deletion bills by"
     );
-    let capped = volume
-        .tally_subtree(&AppPath::legacy_unchecked(&folder), 2)
-        .await
-        .expect("a tally");
+    let capped = volume.tally_subtree(&folder, 2).await.expect("a tally");
     assert_eq!((capped.files, capped.complete), (2, false));
-    let one = volume
-        .tally_subtree(&AppPath::legacy_unchecked(&volume.root().as_std_legacy().join(&a)), 100)
-        .await
-        .expect("a tally");
+    let one = volume.tally_subtree(&at(&volume, &a), 100).await.expect("a tally");
     assert_eq!((one.files, one.bytes, one.folders, one.complete), (1, 4, 0, true));
     assert!(one.per_file[0].modified_at.is_some(), "an object's upload time");
     assert!(matches!(
-        volume
-            .tally_subtree(
-                &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join(format!("{prefix}nope"))),
-                10
-            )
-            .await,
+        volume.tally_subtree(&at(&volume, &format!("{prefix}nope")), 10).await,
         Err(VolumeError::NotFound(_))
     ));
 }
@@ -124,9 +103,9 @@ async fn rename_work_tells_a_folder_and_a_big_file_from_a_small_file(service: Fi
     .await;
 
     let work = |key: String| {
-        let path = volume.root().as_std_legacy().join(key);
+        let path = at(&volume, &key);
         let volume = &volume;
-        async move { volume.rename_work(&AppPath::legacy_unchecked(&path)).await }
+        async move { volume.rename_work(&path).await }
     };
     assert_eq!(work(small).await.expect("an answer"), RenameWork::OneCall);
     assert_eq!(work(big).await.expect("an answer"), RenameWork::CopyThenDelete);

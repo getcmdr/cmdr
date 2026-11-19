@@ -13,7 +13,7 @@
 //!   are dropped with the copy's loss note saying so (no AppleDouble `._`
 //!   sidecars). `crates/cmdr-nfs/DETAILS.md` § "Mutations".
 
-use std::path::Path;
+use cmdr_fs::app_path::AppPath;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use cmdr_fs::log_error::LogError;
@@ -24,7 +24,7 @@ use cmdr_fs::metadata::{
 };
 use cmdr_fs::volume::VolumeError;
 use cmdr_fs::volume::http_session::HttpBackend;
-use cmdr_fs::volume::patching::patch_modified;
+use cmdr_fs::volume::patching::patch_modified_at;
 use log::warn;
 
 use super::NfsVolume;
@@ -126,7 +126,7 @@ impl NfsVolume {
     /// its proven folder.
     pub(super) async fn apply_metadata_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         carried: &CarriedMetadata,
         modified: Option<SystemTime>,
     ) -> MetadataReport {
@@ -138,7 +138,7 @@ impl NfsVolume {
                 warn!(
                     target: "nfs",
                     "couldn't reach {} to put its metadata on: {}",
-                    LogPrivate::path(path),
+                    LogPrivate::path(path.as_str()),
                     LogError(&err)
                 );
                 if carried.mode.is_some() {
@@ -168,7 +168,7 @@ impl NfsVolume {
             report.modified = set.modified;
         }
         if set.modified == ClassOutcome::Kept || set.mode == ClassOutcome::Kept {
-            patch_modified(self, path).await;
+            patch_modified_at(self, path).await;
         }
         report
     }
@@ -177,7 +177,7 @@ impl NfsVolume {
     /// it's a folder.
     async fn handle_for_metadata(
         &self,
-        path: &Path,
+        path: &AppPath,
     ) -> Result<(std::sync::Arc<NfsClient>, FileHandle, String, bool), VolumeError> {
         let remote = self.to_remote_path(path)?;
         let client = self.client().await?;

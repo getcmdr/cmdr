@@ -4,6 +4,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64};
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::remote_paths::RemoteRoot;
 use url::Url;
@@ -11,6 +12,13 @@ use url::Url;
 use super::{WebdavVolume, WebdavVolumeInner};
 use crate::params::WebdavConnectionParams;
 use cmdr_fs::volume::http_session::HttpSession;
+
+/// `text` as the app path it already is, for a cell that builds one with `format!`
+/// (`app_path!` takes literals only). Panics on text that isn't canonical, so a cell can't
+/// silently address a different path.
+pub(super) fn typed(text: &str) -> &AppPath {
+    AppPath::from_normalized(text).unwrap_or_else(|why| panic!("{text:?} is no canonical app path: {why}"))
+}
 
 pub(super) fn make_test_volume(root: &str) -> WebdavVolume {
     make_test_volume_with(root, VolumeHost::detached())

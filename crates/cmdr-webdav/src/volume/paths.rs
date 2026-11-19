@@ -8,6 +8,7 @@
 
 use std::path::{Path, PathBuf};
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::volume::VolumeError;
 use cmdr_fs::volume::remote_paths::normalize_remote_path;
 
@@ -27,10 +28,29 @@ pub(super) fn root_remote_path(remote_root: &Path) -> String {
 impl WebdavVolume {
     /// The remote path for `path`, or `NotFound` when `path` isn't on this
     /// volume.
-    pub(super) fn to_remote_path(&self, path: &Path) -> Result<String, VolumeError> {
+    pub(super) fn to_remote_path(&self, path: &AppPath) -> Result<String, VolumeError> {
         self.root
-            .to_remote_path(path)
-            .ok_or_else(|| VolumeError::NotFound(path.to_string_lossy().into_owned()))
+            .to_remote(path)
+            .ok_or_else(|| VolumeError::NotFound(path.as_str().to_owned()))
+    }
+
+    /// The server path this volume is rooted at (`/`, or `/Photos`), as text.
+    pub(super) fn root_remote(&self) -> String {
+        self.root.remote_root().to_string_lossy().into_owned()
+    }
+
+    /// The app spelling a row's `FileEntry.path` carries for the server path `remote`, or
+    /// `None` when a misbehaving server names it off the root (the caller drops it).
+    ///
+    /// ❗ `RemoteRoot::to_app_path`'s text, ❌ never the typed `to_app`'s canonical one: a
+    /// pane, a saved tab, and the listing cache hold this exact text, and a row's spelling
+    /// must not move under them. It's the formatted `<prefix><server path>` string, so the
+    /// `to_string_lossy` is lossless. A name the app path can't hold yet (a NUL, an
+    /// escape-range code point) keeps its row the same way.
+    pub(super) fn row_path_of(&self, remote: &str) -> Option<String> {
+        self.root
+            .to_app_path(remote)
+            .map(|path| path.to_string_lossy().into_owned())
     }
 
     /// The path the APP addresses `path` by: the prefixed spelling the panes
@@ -43,6 +63,15 @@ impl WebdavVolume {
         self.root
             .to_remote_path(path)
             .and_then(|remote| self.root.to_app_path(&remote))
+    }
+
+    /// [`Self::display_path_for`] for an app path: its canonical spelling on this volume,
+    /// the one a listing gave the pane. A server path the app path can't hold yet (a NUL, an
+    /// escape-range code point) is no patch, like any other refusal here.
+    pub(super) fn app_path_for(&self, path: &AppPath) -> Option<AppPathBuf> {
+        self.root
+            .to_remote(path)
+            .and_then(|remote| self.root.to_app(&remote).ok())
     }
 }
 

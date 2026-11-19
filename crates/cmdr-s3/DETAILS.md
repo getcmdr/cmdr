@@ -26,6 +26,15 @@ switcher row each key on a place.
 - **App paths are the account's**, `s3://<key id>@<host>:<port>/<bucket>/<key>`, and a place's root hangs under that
   prefix (`/` or `/<bucket>`). So one object has one app spelling whichever place reached it, and a bucket place refuses
   another bucket's path (`RemoteRoot`'s containment check).
+- **Every body speaks typed app paths** (`cmdr_fs::app_path`, `crates/cmdr-fs/DETAILS.md` § "App paths"); the key layer
+  stays text, and the two meet only in `paths.rs`: `resolve` (`RemoteRoot::to_remote`, then the beside-folder map) going
+  down, `row_path` (`RemoteRoot::to_app`) coming back. `paths::Place` builds the typed root once, at connect. ❗ A row's
+  `FileEntry.path` and `root()` keep the exact text they always had (pinned as strings in `paths_test.rs`): `to_app`'s
+  canonical text equals `<prefix><server path>` for every name S3 lists, and a name the typed path can't hold yet (an
+  escape-range code point, `RemoteAppRefusal::NotAppText`) keeps that text, ❌ never a dropped row. Such a row gets no
+  listing patch after a write (`patch_app_path` has no typed answer for it). A bucket or key id holding such text
+  refuses the connect (`NoSuchBucket` / `KeysRejected`) before the probe: no provider allows one, and `root()` needs a
+  typed answer.
 - **Two places of one account each hold their own client.** Sharing one is an optimisation for later; nothing depends on
   it.
 - **The account root needs `ListBuckets`.** A bucket-scoped key (R2 non-admin tokens, B2 keys without
@@ -85,7 +94,13 @@ keys and the rights. `integration_test.rs` pins both servers' answers.
   the running tally (never per entry), cancel checked between pages. `listing.rs` turns a page into children:
   `CommonPrefixes` are folders; the folder's own marker (the key `<key>/` itself) is left out; a key with a `/` past the
   prefix (a child's marker, or a server that ignored the delimiter) names a folder, once; an empty, `.`, or `..` name is
-  left out (unaddressable). `settle` then works on every page at once (a file and its folder can straddle a page break).
+  left out and counted (`PageChildren::unaddressable`, one `debug` line per listing). `settle` then works on every page
+  at once (a file and its folder can straddle a page break).
+- ❗ **Keys aren't paths**: `a/b`, `a//b`, `a/./b`, and `a/../b` are four objects, but an app path has one spelling for
+  them all (`…/a/b`), and an operation on it maps to the key `a/b` alone (`RemoteRoot` normalizes on the way down). So
+  the other three never list: their segment under `a/` is empty, `.`, or `..`. They stay unreachable from the app (a
+  copy of `a` leaves them behind, as before), and a folder holding only such keys lists empty and refuses its delete as
+  `NotEmpty`. Pinned by `key_collision_test.rs` over `fake_s3.rs`.
 - **A file beside a folder of its name lists as `<name> (file)`.** S3 allows `notes` beside `notes/…`, but a pane row is
   one path: the frontend keys rows, selection, the listing cache, and every operation by `path`, and Svelte throws on a
   duplicate key. Showing both under one name would need a row whose name isn't its path's last segment, which the app

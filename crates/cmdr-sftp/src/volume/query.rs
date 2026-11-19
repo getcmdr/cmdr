@@ -1,6 +1,7 @@
 //! Reading what's on the server without changing it.
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::Presence;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{EntryKind, ListingProgress, SpaceInfo, VolumeError};
@@ -8,6 +9,7 @@ use openssh_sftp_client::fs::DirEntry;
 use tokio_util::sync::CancellationToken;
 
 use super::SftpVolume;
+use super::paths::{join_remote, remote_file_name};
 use cmdr_fs::volume::remote_paths::RemoteRoot;
 
 use super::mapping::{metadata_to_file_entry, statvfs_to_space_info};
@@ -34,7 +36,7 @@ impl SftpVolume {
     /// lets a pane the user navigated away from stop paying for them.
     pub(super) async fn list_directory_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&CancellationToken>,
     ) -> Result<Vec<FileEntry>, VolumeError> {
@@ -84,7 +86,7 @@ impl SftpVolume {
     }
 
     /// One `stat` round trip, as a `FileEntry`.
-    pub(super) async fn get_metadata_impl(&self, path: &Path) -> Result<FileEntry, VolumeError> {
+    pub(super) async fn get_metadata_impl(&self, path: &AppPath) -> Result<FileEntry, VolumeError> {
         let remote = self.to_remote_path(path)?;
         let session = self.clone_session().await?;
         let meta = session
@@ -93,22 +95,18 @@ impl SftpVolume {
             .metadata(&remote)
             .await
             .map_err(|e| map_sftp_error(&e, &remote))?;
-        let name = Path::new(&remote)
-            .file_name()
-            .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_else(|| self.name.clone());
+        let name = remote_file_name(&remote).map_or_else(|| self.name.clone(), str::to_owned);
         let app_path = self
-            .root
-            .to_app_path(&remote)
-            .ok_or_else(|| VolumeError::NotFound(path.to_string_lossy().into_owned()))?;
-        Ok(metadata_to_file_entry(&name, &app_path.to_string_lossy(), &meta))
+            .app_text_of(&remote)
+            .ok_or_else(|| VolumeError::NotFound(path.to_string()))?;
+        Ok(metadata_to_file_entry(&name, &app_path, &meta))
     }
 
     /// What is AT `path`, with a link reported as the link: one `lstat`.
     ///
     /// `get_metadata_impl` asks `stat`, which follows a link, so the trait
     /// default would report a link to a folder as the folder.
-    pub(super) async fn entry_kind_impl(&self, path: &Path) -> Result<EntryKind, VolumeError> {
+    pub(super) async fn entry_kind_impl(&self, path: &AppPath) -> Result<EntryKind, VolumeError> {
         let remote = self.to_remote_path(path)?;
         let session = self.clone_session().await?;
         let meta = session
@@ -127,7 +125,7 @@ impl SftpVolume {
     /// The target of the link at `path`, as the server stores it. `lstat` first:
     /// `SSH_FXP_READLINK` on anything else answers a generic failure, which
     /// reads the same as a real one.
-    pub(super) async fn read_link_target_impl(&self, path: &Path) -> Result<Option<PathBuf>, VolumeError> {
+    pub(super) async fn read_link_target_impl(&self, path: &AppPath) -> Result<Option<PathBuf>, VolumeError> {
         if self.entry_kind_impl(path).await? != EntryKind::Symlink {
             return Ok(None);
         }
@@ -149,7 +147,7 @@ impl SftpVolume {
     /// the wire, which callers read as "can't tell", ❌ never "no room".
     /// Asked per path because one server can hold several filesystems, and a
     /// copy is judged against the one it lands on.
-    pub(super) async fn space_info_impl(&self, path: &Path) -> Result<SpaceInfo, VolumeError> {
+    pub(super) async fn space_info_impl(&self, path: &AppPath) -> Result<SpaceInfo, VolumeError> {
         let remote = self.to_remote_path(path)?;
         let session = self.clone_session().await?;
         if !session.extensions().statvfs {
@@ -166,7 +164,7 @@ impl SftpVolume {
 
     /// Whether `path` is there. A path off this volume is `Absent` (nothing is
     /// there ON THIS VOLUME, the question asked); a refusal is `Unknown`.
-    pub(super) async fn presence_impl(&self, path: &Path) -> Presence {
+    pub(super) async fn presence_impl(&self, path: &AppPath) -> Presence {
         Presence::of(&self.get_metadata_impl(path).await)
     }
 }
@@ -178,11 +176,7 @@ fn file_entry(root: &RemoteRoot, entry: &DirEntry, parent: &str) -> Option<FileE
     if name == "." || name == ".." {
         return None;
     }
-    let remote_path = if parent.ends_with('/') {
-        format!("{parent}{name}")
-    } else {
-        format!("{parent}/{name}")
-    };
+    let remote_path = join_remote(parent, &name);
     let app_path = root.to_app_path(&remote_path)?;
     Some(metadata_to_file_entry(
         &name,

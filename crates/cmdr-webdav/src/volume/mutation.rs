@@ -4,7 +4,7 @@
 //! and `Overwrite: F` are preconditions the server evaluates atomically, where
 //! a stat-then-write would be a TOCTOU window.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -15,7 +15,7 @@ use cmdr_fs::os_error::OsErrorClass;
 use cmdr_fs::pluralize::pluralize_with;
 use cmdr_fs::volume::host::listings::ListingHost;
 use cmdr_fs::volume::mkdir_all::{self, LeadsTo, MakesDirectories};
-use cmdr_fs::volume::patching::{PatchSource, patch_created, patch_deleted, patch_modified, patch_renamed};
+use cmdr_fs::volume::patching::{PatchSource, patch_created_at, patch_deleted_at, patch_modified_at, patch_renamed_at};
 use cmdr_fs::volume::scan_walk::Walking;
 use cmdr_fs::volume::{DirectoryCreation, VolumeError};
 use log::debug;
@@ -29,7 +29,7 @@ use crate::transport::{Depth, MUTATION_BUDGET, ProppatchOutcome, WebdavClient, m
 
 impl WebdavVolume {
     /// A PUT that only lands on a name nothing holds.
-    pub(super) async fn create_file_impl(&self, path: &Path, content: &[u8]) -> Result<(), VolumeError> {
+    pub(super) async fn create_file_impl(&self, path: &AppPath, content: &[u8]) -> Result<(), VolumeError> {
         let remote = self.to_remote_path(path)?;
         let client = self.clone_client().await?;
         let request = client
@@ -38,16 +38,16 @@ impl WebdavVolume {
             .body(content.to_vec())
             .timeout(MUTATION_BUDGET);
         self.send(&client, request, &remote, Attempted::TakingAName).await?;
-        patch_created(self, path).await;
+        patch_created_at(self, path).await;
         Ok(())
     }
 
     /// One MKCOL.
-    pub(super) async fn create_directory_impl(&self, path: &Path) -> Result<(), VolumeError> {
+    pub(super) async fn create_directory_impl(&self, path: &AppPath) -> Result<(), VolumeError> {
         let remote = self.to_remote_path(path)?;
         let client = self.clone_client().await?;
         self.mkcol(&client, &remote).await?;
-        patch_created(self, path).await;
+        patch_created_at(self, path).await;
         Ok(())
     }
 
@@ -57,7 +57,7 @@ impl WebdavVolume {
     /// that keeps dates: `mod_dav` answers 207 and stores them as dead properties.
     pub(super) async fn set_dates_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         modified: Option<SystemTime>,
         created: Option<SystemTime>,
     ) -> Result<bool, VolumeError> {
@@ -87,7 +87,7 @@ impl WebdavVolume {
             ProppatchOutcome::Status(status) => return Err(map_status(status, &remote, Attempted::Reaching)),
         };
         if applied {
-            patch_modified(self, path).await;
+            patch_modified_at(self, path).await;
         }
         Ok(applied)
     }
@@ -104,10 +104,10 @@ impl WebdavVolume {
     /// `mkdir -p`, through the shared walk: leaf first, ancestors only when the
     /// leaf's parent was missing. The honesty contract on the answer:
     /// `cmdr_fs::volume::mkdir_all`.
-    pub(super) async fn create_directory_all_impl(&self, path: &Path) -> Result<DirectoryCreation, VolumeError> {
-        let made = mkdir_all::create_directory_all(self, path).await?;
+    pub(super) async fn create_directory_all_impl(&self, path: &AppPath) -> Result<DirectoryCreation, VolumeError> {
+        let made = mkdir_all::create_directory_all_at(self, path).await?;
         if let Some(created) = made.shallowest_created {
-            patch_created(self, &created.as_std_legacy()).await;
+            patch_created_at(self, &created).await;
         }
         Ok(made.leaf)
     }
@@ -117,7 +117,7 @@ impl WebdavVolume {
     /// DELETE is recursive and the trait's is not, and an empty one is moved
     /// aside before its DELETE so nothing can land in it on the way
     /// (`delete_aside.rs`).
-    pub(super) async fn delete_impl(&self, path: &Path) -> Result<(), VolumeError> {
+    pub(super) async fn delete_impl(&self, path: &AppPath) -> Result<(), VolumeError> {
         let remote = self.to_remote_path(path)?;
         let client = self.clone_client().await?;
         let listing = self.propfind(&client, &remote, false, Depth::One).await?;
@@ -130,7 +130,7 @@ impl WebdavVolume {
                 .timeout(MUTATION_BUDGET);
             self.send(&client, request, &remote, Attempted::Reaching).await?;
         }
-        patch_deleted(self, path).await;
+        patch_deleted_at(self, path).await;
         Ok(())
     }
 
@@ -143,7 +143,7 @@ impl WebdavVolume {
     /// count as `delete`'s. An empty destination folder is then moved aside
     /// the same way, so a child landing after the count is never taken
     /// (`delete_aside.rs`).
-    pub(super) async fn rename_impl(&self, from: &Path, to: &Path, force: bool) -> Result<(), VolumeError> {
+    pub(super) async fn rename_impl(&self, from: &AppPath, to: &AppPath, force: bool) -> Result<(), VolumeError> {
         let remote_from = self.to_remote_path(from)?;
         let remote_to = self.to_remote_path(to)?;
         let client = self.clone_client().await?;
@@ -167,7 +167,7 @@ impl WebdavVolume {
         if onto_a_folder {
             self.replace_collection(Arc::clone(&client), &remote_from, &remote_to, is_collection)
                 .await?;
-            patch_renamed(self, from, to).await;
+            patch_renamed_at(self, from, to).await;
             return Ok(());
         }
         let request = client
@@ -181,7 +181,7 @@ impl WebdavVolume {
             Attempted::TakingAName
         };
         self.send(&client, request, &remote_to, attempted).await?;
-        patch_renamed(self, from, to).await;
+        patch_renamed_at(self, from, to).await;
         Ok(())
     }
 }
@@ -216,7 +216,7 @@ pub(super) fn still_holds(remote: &str, held: usize) -> VolumeError {
 /// volume's own path spelling. The `Created` promise it answers with is spent by
 /// the transfer driver, so the refusals matter: `cmdr_fs::volume::mkdir_all`.
 impl MakesDirectories for WebdavVolume {
-    fn remote_path_of(&self, path: &Path) -> Result<String, VolumeError> {
+    fn remote_path_of(&self, path: &AppPath) -> Result<String, VolumeError> {
         self.to_remote_path(path)
     }
 
@@ -257,14 +257,14 @@ impl PatchSource for WebdavVolume {
     }
 
     fn patch_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.get_metadata_impl(path).await
-        })
+        Box::pin(async move { self.get_metadata_impl(path).await })
     }
 
     fn patch_display_path(&self, path: &Path) -> Option<PathBuf> {
         self.display_path_for(path)
+    }
+
+    fn patch_app_path(&self, path: &AppPath) -> Option<AppPathBuf> {
+        self.app_path_for(path)
     }
 }

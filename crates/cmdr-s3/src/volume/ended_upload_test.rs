@@ -8,13 +8,13 @@
 //! come out as the name being taken, with the other writer's object kept and
 //! no upload left.
 
-use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
 use std::time::Duration;
 
 use cmdr_fs::volume::{Volume, VolumeError, VolumeReadStream, WriteMode};
 
 use super::fake_s3::FakeS3;
+use super::test_support::at;
 use super::testing::BytesSource;
 
 const MIB: usize = 1024 * 1024;
@@ -29,7 +29,7 @@ async fn a_create_new_whose_upload_another_writer_ended_is_refused_as_taken() {
     let length = source.total_size();
     let outcome = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("raced.bin")),
+            &at(&volume, "raced.bin"),
             WriteMode::CreateNew,
             length,
             Box::new(source),

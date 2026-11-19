@@ -68,6 +68,13 @@ struct Remembered {
     noted: Instant,
 }
 
+/// One folder the store shows, with its server path (`None` off this volume).
+struct Shown {
+    /// The store's own spelling, what a change is reported under.
+    path: PathBuf,
+    remote: Option<String>,
+}
+
 /// The poller's state, behind one lock: whether it runs, and what it saw.
 #[derive(Default)]
 pub(super) struct Poller {
@@ -79,29 +86,31 @@ struct PollState {
     /// Cancels the running poller. `None` when none runs: the next listing
     /// starts one.
     running: Option<CancellationToken>,
-    /// What each shown directory looked like, by the path the pane shows it
-    /// at (the store's spelling).
-    seen: HashMap<PathBuf, Remembered>,
+    /// What each shown directory looked like, by its server path (`/photos`):
+    /// the listing names it by its app path, the store by its own spelling,
+    /// and both come down to this one.
+    seen: HashMap<String, Remembered>,
     /// When a listing last succeeded, so the poller doesn't stop in the gap
     /// between a listing and the store filing it.
     last_noted: Option<Instant>,
 }
 
 impl NfsVolume {
-    /// A pane's listing of `path` just succeeded, its folder stamped `stamp`
-    /// as the listing's first page saw it: the baseline the next tick compares
-    /// against, and the poller's cue to start if it isn't running.
-    pub(super) fn listing_opened(&self, path: &Path, stamp: Option<Stamp>) {
-        self.inner.note_listing(path, stamp);
+    /// A pane's listing of the folder at server path `remote` just succeeded,
+    /// its folder stamped `stamp` as the listing's first page saw it: the
+    /// baseline the next tick compares against, and the poller's cue to start
+    /// if it isn't running.
+    pub(super) fn listing_opened(&self, remote: String, stamp: Option<Stamp>) {
+        self.inner.note_listing(remote, stamp);
     }
 }
 
 impl NfsVolumeInner {
-    fn note_listing(self: &Arc<Self>, path: &Path, stamp: Option<Stamp>) {
+    fn note_listing(self: &Arc<Self>, remote: String, stamp: Option<Stamp>) {
         let now = Instant::now();
         let mut state = self.poller.state.lock_ignore_poison();
         state.seen.insert(
-            path.to_path_buf(),
+            remote,
             Remembered {
                 seen: stamp.map(Seen::At),
                 noted: now,
@@ -147,13 +156,25 @@ impl NfsVolumeInner {
             self.poller.state.lock_ignore_poison().running = None;
             return false;
         }
-        let shown = self.host.listings().open_listing_paths(&self.volume_id);
+        let volume = NfsVolume::polling(Arc::clone(self));
+        // Each shown folder beside its server path; `None` for one off this
+        // volume, which has nothing to ask.
+        let shown: Vec<Shown> = self
+            .host
+            .listings()
+            .open_listing_paths(&self.volume_id)
+            .into_iter()
+            .map(|path| Shown {
+                remote: volume.root.to_remote_path(&path),
+                path,
+            })
+            .collect();
         {
             let now = Instant::now();
             let mut state = self.poller.state.lock_ignore_poison();
-            state
-                .seen
-                .retain(|path, remembered| shown.contains(path) || now - remembered.noted < POLL_EVERY);
+            state.seen.retain(|remote, remembered| {
+                shown.iter().any(|one| one.remote.as_ref() == Some(remote)) || now - remembered.noted < POLL_EVERY
+            });
             if shown.is_empty() {
                 let quiet = state.last_noted.is_none_or(|noted| now - noted >= POLL_EVERY);
                 if quiet {
@@ -170,9 +191,8 @@ impl NfsVolumeInner {
         let Some(client) = self.session.installed_client().await else {
             return true;
         };
-        let volume = NfsVolume::polling(Arc::clone(self));
         let round = async {
-            let looks = join_all(shown.iter().map(|path| volume.look(&client, path))).await;
+            let looks = join_all(shown.iter().map(|one| volume.look(&client, one.remote.as_deref()))).await;
             // The first lost-server answer is the round's, so `noting` sees it.
             if let Some(lost) = looks
                 .iter()
@@ -192,26 +212,45 @@ impl NfsVolumeInner {
     /// Compares each look with what was remembered, and reports a
     /// [`DirectoryChange::FullRefresh`] for each directory that moved and a
     /// pane STILL shows.
-    fn report_moved(&self, shown: &[PathBuf], looks: Vec<Result<Seen, VolumeError>>) {
+    ///
+    /// Two store spellings of one folder share its server path, so its stamp
+    /// is compared once and both hear the change.
+    fn report_moved(&self, shown: &[Shown], looks: Vec<Result<Seen, VolumeError>>) {
         let still_shown = self.host.listings().open_listing_paths(&self.volume_id);
         let now = Instant::now();
-        let mut moved = Vec::new();
+        let mut moved_remotes: Vec<&str> = Vec::new();
         {
             let mut state = self.poller.state.lock_ignore_poison();
-            for (path, look) in shown.iter().zip(looks) {
+            let mut compared: Vec<&str> = Vec::new();
+            for (one, look) in shown.iter().zip(looks) {
                 // Anything but an answer (a refusal, a path off this volume)
                 // says nothing about whether the folder changed.
-                let Ok(look) = look else { continue };
+                let (Some(remote), Ok(look)) = (one.remote.as_deref(), look) else {
+                    continue;
+                };
+                if compared.contains(&remote) {
+                    continue;
+                }
+                compared.push(remote);
                 let remembered = state
                     .seen
-                    .entry(path.clone())
+                    .entry(remote.to_owned())
                     .or_insert(Remembered { seen: None, noted: now });
-                match remembered.seen.replace(look) {
-                    Some(before) if before != look && still_shown.contains(path) => moved.push(path.clone()),
-                    _ => {}
+                if remembered.seen.replace(look).is_some_and(|before| before != look) {
+                    moved_remotes.push(remote);
                 }
             }
         }
+        let moved: Vec<PathBuf> = shown
+            .iter()
+            .filter(|one| {
+                one.remote
+                    .as_deref()
+                    .is_some_and(|remote| moved_remotes.contains(&remote))
+            })
+            .filter(|one| still_shown.contains(&one.path))
+            .map(|one| one.path.clone())
+            .collect();
         for path in moved {
             self.host
                 .listings()
@@ -233,10 +272,14 @@ impl NfsVolume {
 
     /// One shown directory's stamp now: one `GETATTR` on the handle the cache
     /// holds for it (a `STALE` one is looked up once more, fresh).
-    async fn look(&self, client: &NfsClient, path: &Path) -> Result<Seen, VolumeError> {
-        let remote = self.to_remote_path(path)?;
+    /// `remote` is `None` for a shown folder off this volume, which answers
+    /// `NotFound` without asking.
+    async fn look(&self, client: &NfsClient, remote: Option<&str>) -> Result<Seen, VolumeError> {
+        let Some(remote) = remote else {
+            return Err(VolumeError::NotFound(String::new()));
+        };
         let attrs = self
-            .on_resolved(client, &remote, Follow::Always, false, |found| {
+            .on_resolved(client, remote, Follow::Always, false, |found| {
                 let nfs = client.nfs.clone();
                 async move { nfs.getattr(&found.handle).await }
             })

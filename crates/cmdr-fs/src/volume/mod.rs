@@ -2613,7 +2613,10 @@ pub use locked_container::LockedContainer;
 pub use mkdir_all::{LeadsTo, MadeDirectories, MakesDirectories};
 pub use node_identity::NodeIdentity;
 pub use password_locked::{PasswordForgotten, PasswordLocked, UnlockOutcome};
-pub use patching::{PatchSource, patch_created, patch_deleted, patch_mutation, patch_renamed};
+pub use patching::{
+    PatchSource, patch_created, patch_created_at, patch_deleted, patch_deleted_at, patch_modified_at, patch_mutation,
+    patch_mutation_at, patch_renamed, patch_renamed_at,
+};
 pub use read_stream::{SequentialExtract, VolumeRandomReader, VolumeReadStream};
 pub use remote_paths::{
     RemoteRefuser, ServerPath, adb_app_root, adb_serial_of_path, nfs_app_root, refuser_of_path, s3_app_root,

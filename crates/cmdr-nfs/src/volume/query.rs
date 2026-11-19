@@ -2,8 +2,8 @@
 //! with READDIR + LOOKUP where the server has none), one entry's attributes,
 //! the room left, and whether a folder takes writes.
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::Presence;
-use std::path::Path;
 
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::error_detail::ErrorDetail;
@@ -14,7 +14,7 @@ use tokio_util::sync::CancellationToken;
 use super::NfsVolume;
 use super::handles::{Follow, Stamp};
 use super::mapping::{attrs_to_file_entry, entry_kind, fsstat_to_space_info};
-use super::paths::child_of;
+use super::paths::{child_of, components};
 use super::reconnect::NfsClient;
 use crate::errors::map_nfs_error;
 use crate::proto::nfs3::{FileHandle, FileType, ListedEntry, ListingEvent, NfsError, NfsStat3, access};
@@ -44,7 +44,7 @@ impl NfsVolume {
     /// `on_progress`.
     pub(super) async fn list_directory_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&CancellationToken>,
     ) -> Result<Vec<FileEntry>, VolumeError> {
@@ -52,13 +52,13 @@ impl NfsVolume {
     }
 
     /// [`list_directory_impl`](Self::list_directory_impl), plus the folder's
-    /// stamp as the listing's first page saw it.
+    /// server path (`/photos`) and its stamp as the listing's first page saw it.
     async fn list_stamped(
         &self,
-        path: &Path,
+        path: &AppPath,
         on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&CancellationToken>,
-    ) -> Result<(Vec<FileEntry>, Option<Stamp>), VolumeError> {
+    ) -> Result<(Vec<FileEntry>, String, Option<Stamp>), VolumeError> {
         let remote = self.to_remote_path(path)?;
         let client = self.client().await?;
         let found = self.resolve(&client, &remote, Follow::Always, false).await?;
@@ -85,7 +85,7 @@ impl NfsVolume {
         if gathered.skipped > 0 {
             debug!(target: "nfs", "left {} name(s) that aren't UTF-8 out of a listing", gathered.skipped);
         }
-        Ok((gathered.entries, gathered.stamp))
+        Ok((gathered.entries, remote, gathered.stamp))
     }
 
     /// A listing a PANE asked for: the poller's cue that something on this
@@ -93,12 +93,12 @@ impl NfsVolume {
     /// directly, so a copy's walk never starts polling.
     pub(super) async fn list_for_pane(
         &self,
-        path: &Path,
+        path: &AppPath,
         on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&CancellationToken>,
     ) -> Result<Vec<FileEntry>, VolumeError> {
-        let (entries, stamp) = self.list_stamped(path, on_progress, cancel).await?;
-        self.listing_opened(path, stamp);
+        let (entries, remote, stamp) = self.list_stamped(path, on_progress, cancel).await?;
+        self.listing_opened(remote, stamp);
         Ok(entries)
     }
 
@@ -169,24 +169,24 @@ impl NfsVolume {
 
     /// What `path` is, a link followed where it can be (the `stat` shape; a
     /// link that leaves the export answers as the link).
-    pub(super) async fn get_metadata_impl(&self, path: &Path) -> Result<FileEntry, VolumeError> {
+    pub(super) async fn get_metadata_impl(&self, path: &AppPath) -> Result<FileEntry, VolumeError> {
         let remote = self.to_remote_path(path)?;
         let client = self.client().await?;
         let found = self.resolve(&client, &remote, Follow::IfInside, true).await?;
         let attrs = found.attributes.ok_or_else(|| VolumeError::NotFound(remote.clone()))?;
-        let name = Path::new(&remote)
-            .file_name()
-            .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_else(|| self.name.clone());
+        // The server path's own last name: a `\` or `:` in it is part of the name.
+        let name = components(&remote)
+            .last()
+            .map_or_else(|| self.name.clone(), str::to_owned);
         let app_path = self
             .app_path_of(&remote)
-            .ok_or_else(|| VolumeError::NotFound(path.to_string_lossy().into_owned()))?;
+            .ok_or_else(|| VolumeError::NotFound(path.as_str().to_owned()))?;
         Ok(attrs_to_file_entry(&name, &app_path, &attrs))
     }
 
     /// What is AT `path`, a link reported as the link: one fresh LOOKUP, whose
     /// attributes don't follow it.
-    pub(super) async fn entry_kind_impl(&self, path: &Path) -> Result<EntryKind, VolumeError> {
+    pub(super) async fn entry_kind_impl(&self, path: &AppPath) -> Result<EntryKind, VolumeError> {
         let remote = self.to_remote_path(path)?;
         let client = self.client().await?;
         let found = self.resolve(&client, &remote, Follow::Never, true).await?;
@@ -195,7 +195,7 @@ impl NfsVolume {
 
     /// Whether anything is at `path`, a dangling link included. A path off
     /// this export is `Absent`; no client, or a refusal, is `Unknown`.
-    pub(super) async fn presence_impl(&self, path: &Path) -> Presence {
+    pub(super) async fn presence_impl(&self, path: &AppPath) -> Presence {
         let Ok(remote) = self.to_remote_path(path) else {
             return Presence::Absent;
         };
@@ -222,7 +222,7 @@ impl NfsVolume {
     /// ❗ A read-only export and a refused permission both come back as "not
     /// granted", so a refusal is `Unexplained`, ❌ never a guess at which.
     /// Anything that kept the question from being asked is `Unknown`.
-    pub(super) async fn write_access_impl(&self, path: &Path) -> WriteAccess {
+    pub(super) async fn write_access_impl(&self, path: &AppPath) -> WriteAccess {
         let Ok(remote) = self.to_remote_path(path) else {
             return WriteAccess::Unknown;
         };

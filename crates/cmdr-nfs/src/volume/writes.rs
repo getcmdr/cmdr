@@ -29,8 +29,8 @@
 //!   not every server applies them, and SETATTR after the last WRITE is the
 //!   portable path anyway.
 
+use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
-use std::path::Path;
 use std::pin::Pin;
 
 use cmdr_fs::error_detail::ErrorDetail;
@@ -38,7 +38,7 @@ use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::metadata::{CarriedMetadata, MetadataClasses, MetadataReport, default_file_mode, routed_mode};
 use cmdr_fs::os_error::OsErrorClass;
 use cmdr_fs::pluralize::pluralize_grouped;
-use cmdr_fs::volume::patching::patch_created;
+use cmdr_fs::volume::patching::patch_created_at;
 use cmdr_fs::volume::{StreamLength, StreamWriteProgress, StreamWritten, VolumeError, VolumeReadStream, WriteMode};
 use futures_util::StreamExt;
 use futures_util::stream::FuturesUnordered;
@@ -396,7 +396,7 @@ impl NfsVolume {
     /// chunk through `on_progress`, whose `Break` cancels.
     pub(super) async fn write_from_stream_impl(
         &self,
-        dest: &Path,
+        dest: &AppPath,
         mode: WriteMode,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,
@@ -443,7 +443,7 @@ impl NfsVolume {
                 modified,
             )
             .await;
-        patch_created(self, dest).await;
+        patch_created_at(self, dest).await;
         let carried = CarriedMetadata {
             mode: landed_mode,
             ..CarriedMetadata::default()
@@ -458,7 +458,7 @@ impl NfsVolume {
 
     /// Creates `path` with `content`, refusing a taken name (`CREATE GUARDED`):
     /// ❌ never truncates.
-    pub(super) async fn create_file_impl(&self, path: &Path, content: &[u8]) -> Result<(), VolumeError> {
+    pub(super) async fn create_file_impl(&self, path: &AppPath, content: &[u8]) -> Result<(), VolumeError> {
         let remote = self.to_remote_path(path)?;
         let client = self.client().await?;
         let created = self
@@ -487,7 +487,7 @@ impl NfsVolume {
                 return Err(err);
             }
         }
-        patch_created(self, path).await;
+        patch_created_at(self, path).await;
         Ok(())
     }
 }

@@ -12,11 +12,11 @@
 //!   A throttled, faulted, or cut-off batch goes again after 1 s and 2 s: the
 //!   request is idempotent.
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use cmdr_fs::volume::patching::patch_deleted;
+use cmdr_fs::volume::patching::patch_deleted_at;
 use cmdr_fs::volume::{ScannedFile, SubtreeTally, VolumeError};
 
 use super::S3Volume;
@@ -56,7 +56,7 @@ struct Doomed {
 impl S3Volume {
     /// Counts the objects under `path` (one, for an object), stopping once
     /// more than `cap` are found.
-    pub(super) async fn tally_subtree_impl(&self, path: &Path, cap: u64) -> Result<SubtreeTally, VolumeError> {
+    pub(super) async fn tally_subtree_impl(&self, path: &AppPath, cap: u64) -> Result<SubtreeTally, VolumeError> {
         let remote = self.to_remote_path(path)?;
         let Target::Key { bucket, key } = target_of(&remote) else {
             // A bucket or the account isn't something a rename moves.
@@ -144,7 +144,7 @@ impl S3Volume {
     /// `DeleteObjects` for `paths`, a thousand keys per request, answering one
     /// result per path in order. A key that was already gone counts as
     /// deleted (S3's rule).
-    pub(super) async fn delete_files_impl(&self, paths: &[PathBuf]) -> Vec<Result<(), VolumeError>> {
+    pub(super) async fn delete_files_impl(&self, paths: &[AppPathBuf]) -> Vec<Result<(), VolumeError>> {
         let mut results: Vec<Result<(), VolumeError>> = Vec::with_capacity(paths.len());
         // Per bucket, in first-seen order: an account-root place reaches more
         // than one.
@@ -188,7 +188,7 @@ impl S3Volume {
         }
         for (path, result) in paths.iter().zip(&results) {
             if result.is_ok() {
-                patch_deleted(self, path).await;
+                patch_deleted_at(self, path).await;
             }
         }
         results

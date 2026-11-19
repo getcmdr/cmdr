@@ -21,7 +21,7 @@
 //!   source itself); a folder replaces only an EMPTY folder, which is what makes
 //!   the `MKDIR` claim work.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::path::{Path, PathBuf};
 
 use cmdr_fs::entry::FileEntry;
@@ -32,7 +32,7 @@ use cmdr_fs::metadata::default_folder_mode;
 use cmdr_fs::os_error::OsErrorClass;
 use cmdr_fs::volume::host::listings::ListingHost;
 use cmdr_fs::volume::mkdir_all::{self, LeadsTo, MakesDirectories};
-use cmdr_fs::volume::patching::{PatchSource, patch_created, patch_deleted, patch_renamed};
+use cmdr_fs::volume::patching::{PatchSource, patch_created_at, patch_deleted_at, patch_renamed_at};
 use cmdr_fs::volume::scan_walk::Walking;
 use cmdr_fs::volume::{DirectoryCreation, VolumeError};
 use log::debug;
@@ -170,19 +170,19 @@ impl NfsVolume {
     }
 
     /// Makes exactly one folder (`MKDIR`), refusing a taken name.
-    pub(super) async fn create_directory_impl(&self, path: &Path) -> Result<(), VolumeError> {
+    pub(super) async fn create_directory_impl(&self, path: &AppPath) -> Result<(), VolumeError> {
         let remote = self.to_remote_path(path)?;
         self.mkdir(&remote).await?;
-        patch_created(self, path).await;
+        patch_created_at(self, path).await;
         Ok(())
     }
 
     /// `mkdir -p`, through the shared walk (`cmdr_fs::volume::mkdir_all`): leaf
     /// first, ancestors only when the leaf's folder was missing.
-    pub(super) async fn create_directory_all_impl(&self, path: &Path) -> Result<DirectoryCreation, VolumeError> {
-        let made = mkdir_all::create_directory_all(self, path).await?;
+    pub(super) async fn create_directory_all_impl(&self, path: &AppPath) -> Result<DirectoryCreation, VolumeError> {
+        let made = mkdir_all::create_directory_all_at(self, path).await?;
         if let Some(created) = made.shallowest_created {
-            patch_created(self, &created.as_std_legacy()).await;
+            patch_created_at(self, &created).await;
         }
         Ok(made.leaf)
     }
@@ -191,7 +191,7 @@ impl NfsVolume {
     /// attributes a fresh LOOKUP gives (a link is removed as the link). ❌
     /// Never recursive: a folder that holds anything is the server's
     /// `NOTEMPTY`.
-    pub(super) async fn delete_impl(&self, path: &Path) -> Result<(), VolumeError> {
+    pub(super) async fn delete_impl(&self, path: &AppPath) -> Result<(), VolumeError> {
         let remote = self.to_remote_path(path)?;
         let client = self.client().await?;
         let (dir, name) = self.parent_for_mutation(&client, &remote).await?;
@@ -204,14 +204,14 @@ impl NfsVolume {
         let wcc = removed.map_err(|err| map_nfs_error(&err, &remote))?;
         self.inner.handles.note_dir_changed(&dir.real, &wcc);
         self.inner.handles.forget_subtree(&child_of(&dir.real, name));
-        patch_deleted(self, path).await;
+        patch_deleted_at(self, path).await;
         Ok(())
     }
 
     /// Renames `from` to `to`; `force` false never replaces what's at `to`
     /// (the claim, in the module docs), `force` true is one `RENAME`, which
     /// replaces atomically.
-    pub(super) async fn rename_impl(&self, from: &Path, to: &Path, force: bool) -> Result<(), VolumeError> {
+    pub(super) async fn rename_impl(&self, from: &AppPath, to: &AppPath, force: bool) -> Result<(), VolumeError> {
         let remote_from = self.to_remote_path(from)?;
         let remote_to = self.to_remote_path(to)?;
         if remote_from == remote_to {
@@ -260,7 +260,7 @@ impl NfsVolume {
                 // its NEW place: both spellings go.
                 self.inner.handles.forget_subtree(&child_of(&from_dir.real, from_name));
                 self.inner.handles.forget_subtree(&child_of(&to_dir.real, to_name));
-                patch_renamed(self, from, to).await;
+                patch_renamed_at(self, from, to).await;
                 Ok(())
             }
             Err(err) => {
@@ -325,7 +325,7 @@ fn claim_left_behind(remote: &str, failed: &VolumeError) -> VolumeError {
 }
 
 impl MakesDirectories for NfsVolume {
-    fn remote_path_of(&self, path: &Path) -> Result<String, VolumeError> {
+    fn remote_path_of(&self, path: &AppPath) -> Result<String, VolumeError> {
         self.to_remote_path(path)
     }
 
@@ -364,15 +364,15 @@ impl PatchSource for NfsVolume {
     }
 
     fn patch_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.get_metadata_impl(path).await
-        })
+        Box::pin(self.get_metadata_impl(path))
     }
 
     fn patch_display_path(&self, path: &Path) -> Option<PathBuf> {
         self.display_path_for(path)
+    }
+
+    fn patch_app_path(&self, path: &AppPath) -> Option<AppPathBuf> {
+        self.app_path_for(path)
     }
 }
 

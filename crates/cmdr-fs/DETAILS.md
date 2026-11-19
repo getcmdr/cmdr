@@ -254,10 +254,15 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   them, so each backend's own conversion switches over and the old form goes with its last caller):
   `RemoteRoot::{app, to_remote, to_app}` beside `app_root`/`to_remote_path`/`to_app_path`; `volume::anchor_at_root`
   beside `root_anchored`; `scan_walk::{scan_tree_at, scan_one_at, scan_trees_at, scan_conflicts_at, fold_batch_at}`;
-  `twin_path::{folder_of_app, own_pick_app, unpicked_app}`. The `std::path` forms already run the same arithmetic
-  inside, so they're right on Windows too: `RemoteRoot` and `normalize_remote_path` read a server path as POSIX bytes
-  split on `/` alone (a `\` is a name character, `C:` a name), and `InMemoryVolume::canonicalize` splits the encoded
-  bytes on `/` (a name that isn't UTF-8 resolves by its bytes, never lossily).
+  `twin_path::{folder_of_app, own_pick_app, unpicked_app}`; `patching::patch_*_at` with `PatchSource::patch_app_path` (a
+  typed core; the `std::path` forms, for ADB and the in-memory panes, and the trait's default cross once each through a
+  named helper, and the listing host, which files listings by `std::path` until the app's host converts, is
+  `patch_mutation_at`'s one crossing). `mkdir_all` is typed only (`create_directory_all_at`,
+  `MakesDirectories::remote_path_of(&AppPath)`): its four implementors, SFTP, WebDAV, S3, and NFS, speak app paths. The
+  `std::path` forms already run the same arithmetic inside, so they're right on Windows too: `RemoteRoot` and
+  `normalize_remote_path` read a server path as POSIX bytes split on `/` alone (a `\` is a name character, `C:` a name),
+  and `InMemoryVolume::canonicalize` splits the encoded bytes on `/` (a name that isn't UTF-8 resolves by its bytes,
+  never lossily).
 - **A listed name joins its folder through `app_path::ListedFolder`**, the one rule the scan walk, the listing patcher,
   and `unpicked_app` share: the folder's canonical twin is looked up ONCE (a walk level, not per entry), a folder with
   one joins by the app path's own join, and a bridge folder with none (a relative `src/album` a local engine hands its

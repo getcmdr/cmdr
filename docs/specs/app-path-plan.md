@@ -1315,6 +1315,51 @@ included; the hidden couplings it found are why waves B and C differ from round 
   `apply_metadata_dates_and_modes_a_folder` (modes) unless the baseline shows it path-shaped. macOS/Linux: each crate's
   suite plus its Docker fixture lane where CI runs one.
 - **DONE**: the four crates' bridge counts are zero and their Windows suites green.
+- **Done** (2026-11-19, branch `worktree-agent-ac797eccf4593af1f`; the lead on SFTP, one helper each on WebDAV, S3, and
+  NFS): every body and crate helper takes `&AppPath`, server paths come from `RemoteRoot::to_remote`, and the server
+  side is POSIX text split on `/` alone (a stat's name came from `Path::file_name`, which splits on `\` on Windows).
+  Bridge calls 911 → 5 (SFTP 232 → 0, WebDAV 194 → 2, S3 339 → 2, NFS 146 → 1), `appTextToPath` 5 → 0,
+  `pathFromBareText` 53 → 7 (the `conformance` suites' `std::path` arguments and two fixture key or temp paths).
+  Decisions:
+  - **`root()` and every row's `FileEntry.path` keep `RemoteRoot`'s own text** (`app_root`, `to_app_path`), ❌ never the
+    typed `to_app`'s canonical one: NFS's export root is `nfs://h:2049/Public/` with its trailing `/` on the wire
+    (`server-path-utils.ts` compares the root by string), and a canonical root drops it. Pinned
+    (`the_export_root_keeps_its_trailing_slash_on_the_wire`). The typed `to_app` answers only the listing patcher
+    (`patch_app_path`), whose matches are `PathBuf`'s component-wise ones; a server path whose text needs an escape
+    keeps its row and only loses its patch (the pane re-lists).
+  - **`cmdr-fs` gained typed cores for the shared bodies**: `patching::patch_*_at` with `PatchSource::patch_app_path`
+    (the `std::path` forms stay for ADB and the in-memory panes, 7 and 11), and `mkdir_all` typed only
+    (`MakesDirectories::remote_path_of(&AppPath)`, `create_directory_all_at`), since its four implementors are these
+    crates. Each crossing goes through one named helper, so neither file's budget rose; the listing host, which files
+    listings by `std::path`, is `patch_mutation_at`'s one crossing until the app's host converts (10c).
+  - **Tests name files through the root** (`testing::app_at`/`at`/`child` per crate), since a typed path is absolute;
+    what a volume does with relative or `..` TEXT a `std::path` caller still sends is pinned through `RemoteRoot`'s
+    `std::path` form, the same rules, and a bare server path as a typed POSIX value.
+  - **NFS's poller keys what it saw by server path** (the store's spelling and the listing's typed path both come down
+    to it), so two spellings of one shown folder share one `GETATTR` and both hear its change.
+  - **Non-UTF-8 names keep today's answer** (no escapes, `ESCAPES_LIVE` stays `false`): SFTP's crate still fails the
+    session on one, NFS skips it counted. ❗ For 10f: `RemoteRoot::to_remote` decodes through `from_utf8_lossy`, so an
+    escaped name must be refused there (`NotRepresentable`) before escapes go live, or an S3 or WebDAV key could map to
+    a U+FFFD sibling.
+- **Intended behavior changes** (each red first):
+  - WebDAV: a member a server names `.` or `..` (a `%2E%2E` href) is no row. It listed as the folder itself or its
+    PARENT, so deleting that row acted on a folder nobody picked; this section said "dropped as today", but it wasn't
+    (`paths_test::a_member_named_dot_or_dot_dot_is_no_row`).
+  - S3: a listed name that can't be addressed (empty, `.`, `..`, the collisions `a//b`, `a/./b`, `a/../b`) was already
+    skipped, and now the skip is counted (`PageChildren::unaddressable`, a debug line per listing;
+    `listing_test::names_that_cant_be_addressed_are_counted`). Today's answer is pinned first (`key_collision_test.rs`:
+    only `a/b` lists, and an op on it reaches only `a/b`). What lists doesn't change.
+  - Edge cases with no real-world source: an S3 bucket or key id holding a NUL or an escape-range code point refuses the
+    connect (`NoSuchBucket` / `KeysRejected`), since `root()` needs a typed value; no provider allows one.
+- **What still bridges, and who takes it**: `testing::scratch_dir` in WebDAV and NFS, the `std::path` twin the app's
+  backend suites call (10d switches them); the `conformance` crossings in WebDAV's and S3's `conformance_test.rs` (the
+  milestone that flips `cmdr_fs::volume::conformance` to app paths, after 7–9); S3's `live_hostile_test.rs` `dotted`,
+  two live cells that hand the volume a `..`, which only a bridge value can spell (11).
+- **Verified**: clippy `-D warnings` (default and `--all-features`), nextest `cmdr-fs` + the four crates 1,963 passed
+  (328 Docker or live cells skipped), `cmdr` checks against them, the zig cross-checks for Windows and Linux,
+  `pnpm check --fast`, `app-path-std-bridge`, `file-length`, and the Docker fixture lane for the four crates. ❗ Not
+  run: the Windows builder (no `ssh mami` handed over), so the 123 cells in
+  `docs/notes/windows-port/windows-test-failures.md` § "By milestone" are expected green, not seen green.
 
 ### 7. Device backends: SMB, MTP, ADB
 

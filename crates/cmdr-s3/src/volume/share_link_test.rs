@@ -2,7 +2,6 @@
 //! place with no live client has no credentials to sign with.
 
 use cmdr_fs::app_path::AppPath;
-use std::path::Path;
 
 use cmdr_fs::volume::{ShareLinkExpiry, Volume, VolumeError};
 
@@ -13,14 +12,14 @@ async fn a_bucket_or_the_account_root_gets_no_link() {
     let account = make_test_volume(None);
     let outcome = account
         .share_link(
-            &AppPath::legacy_unchecked(Path::new(&format!("{PREFIX}/"))),
+            AppPath::from_normalized(&format!("{PREFIX}/")).expect("a canonical app path"),
             ShareLinkExpiry::SevenDays,
         )
         .await;
     assert!(matches!(outcome, Err(VolumeError::IsADirectory(_))), "{outcome:?}");
     let outcome = account
         .share_link(
-            &AppPath::legacy_unchecked(Path::new(&format!("{PREFIX}/photos"))),
+            AppPath::from_normalized(&format!("{PREFIX}/photos")).expect("a canonical app path"),
             ShareLinkExpiry::OneDay,
         )
         .await;
@@ -32,7 +31,7 @@ async fn a_place_with_no_live_client_says_it_is_disconnected() {
     let volume = make_test_volume(Some("photos"));
     let outcome = volume
         .share_link(
-            &AppPath::legacy_unchecked(Path::new(&format!("{PREFIX}/photos/a.jpg"))),
+            AppPath::from_normalized(&format!("{PREFIX}/photos/a.jpg")).expect("a canonical app path"),
             ShareLinkExpiry::OneHour,
         )
         .await;

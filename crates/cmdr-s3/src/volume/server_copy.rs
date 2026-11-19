@@ -20,9 +20,9 @@
 //! - **Cancel aborts the multipart upload**, recorded in the ledger before its
 //!   first part and confirmed gone by listing (`multipart_upload.rs`).
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::VecDeque;
 use std::ops::ControlFlow;
-use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, SystemTime};
@@ -301,8 +301,8 @@ impl S3Volume {
     pub(super) async fn copy_on_server_impl(
         &self,
         source: &dyn Volume,
-        from: &Path,
-        to: &Path,
+        from: &AppPath,
+        to: &AppPath,
         mode: WriteMode,
         progress: &dyn ServerCopyProgress,
     ) -> Result<StreamWritten, VolumeError> {

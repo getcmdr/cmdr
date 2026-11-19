@@ -8,12 +8,12 @@
 //! Over `fake_s3.rs`: the bug needs a real `notes (file)` key shadowing the
 //! file's row, which the fake seeds in one line.
 
-use cmdr_fs::app_path::AppPath;
 use std::time::Duration;
 
 use cmdr_fs::volume::{Volume, VolumeError};
 
 use super::fake_s3::FakeS3;
+use super::test_support::at;
 
 const FILE: &str = "p/notes";
 const CHILD: &str = "p/notes/a.txt";
@@ -32,14 +32,8 @@ async fn seeded() -> FakeS3 {
 
 /// The engine's order for a folder: its child, then the folder itself.
 async fn delete_folder_like_the_engine(volume: &dyn Volume) {
-    let root = volume.root().as_std_legacy().to_path_buf();
-    volume
-        .delete(&AppPath::legacy_unchecked(&root.join(CHILD)))
-        .await
-        .expect("the child deletes");
-    let folder = volume
-        .delete_directory(&AppPath::legacy_unchecked(&root.join(FILE)), None)
-        .await;
+    volume.delete(&at(volume, CHILD)).await.expect("the child deletes");
+    let folder = volume.delete_directory(&at(volume, FILE), None).await;
     assert!(
         matches!(folder, Ok(()) | Err(VolumeError::NotFound(_))),
         "a folder that left with its last child is fine either way: {folder:?}"
@@ -50,13 +44,7 @@ async fn delete_folder_like_the_engine(volume: &dyn Volume) {
 async fn a_listed_markerless_folder_deletes_without_the_hidden_file_of_its_name() {
     let s3 = seeded().await;
     let volume = s3.volume();
-    let listed = volume
-        .list_directory(
-            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("p")),
-            None,
-        )
-        .await
-        .expect("p lists");
+    let listed = volume.list_directory(&at(&volume, "p"), None).await.expect("p lists");
     assert!(
         listed.iter().any(|entry| entry.name == "notes" && entry.is_directory),
         "the folder row: {listed:?}"
@@ -88,38 +76,28 @@ async fn a_fresh_volume_deletes_a_markerless_folder_without_the_file_of_its_name
 async fn the_folder_row_beside_a_hidden_file_is_only_the_folder() {
     let s3 = seeded().await;
     let volume = s3.volume();
-    let root = volume.root().as_std_legacy().to_path_buf();
-    volume
-        .list_directory(&AppPath::legacy_unchecked(&root.join("p")), None)
-        .await
-        .expect("p lists");
+    volume.list_directory(&at(&volume, "p"), None).await.expect("p lists");
 
     let folder = volume
-        .get_metadata(&AppPath::legacy_unchecked(&root.join(FILE)))
+        .get_metadata(&at(&volume, FILE))
         .await
         .expect("the folder row stats");
     assert!(folder.is_directory, "the folder row stats as the folder: {folder:?}");
-    let read = volume
-        .open_read_stream(&AppPath::legacy_unchecked(&root.join(FILE)))
-        .await
-        .map(|_| ());
+    let read = volume.open_read_stream(&at(&volume, FILE)).await.map(|_| ());
     assert!(
         matches!(read, Err(VolumeError::IsADirectory(_))),
         "the folder row never reads as the file: {read:?}"
     );
     let shadow = volume
-        .get_metadata(&AppPath::legacy_unchecked(&root.join(SHADOW)))
+        .get_metadata(&at(&volume, SHADOW))
         .await
         .expect("the real key stats");
     assert_eq!(shadow.size, Some(3), "`notes (file)` is still its own key");
 
     // A plain delete of the emptied folder row, as a backend-agnostic caller
     // would send it, still never reaches the file.
-    volume
-        .delete(&AppPath::legacy_unchecked(&root.join(CHILD)))
-        .await
-        .expect("the child deletes");
-    let deleted = volume.delete(&AppPath::legacy_unchecked(&root.join(FILE))).await;
+    volume.delete(&at(&volume, CHILD)).await.expect("the child deletes");
+    let deleted = volume.delete(&at(&volume, FILE)).await;
     assert!(matches!(deleted, Err(VolumeError::NotFound(_))), "{deleted:?}");
     assert!(s3.object(FILE).is_some(), "the file survives");
 }
@@ -130,12 +108,7 @@ async fn a_folder_delete_takes_an_empty_folders_marker() {
     s3.seed("p/empty/", 0);
     let volume = s3.volume();
 
-    let deleted = volume
-        .delete_directory(
-            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("p/empty")),
-            None,
-        )
-        .await;
+    let deleted = volume.delete_directory(&at(&volume, "p/empty"), None).await;
 
     assert!(deleted.is_ok(), "{deleted:?}");
     assert!(s3.object("p/empty/").is_none(), "the marker went");
@@ -147,12 +120,7 @@ async fn a_folder_delete_never_takes_a_file() {
     s3.seed("p/plain.txt", 4);
     let volume = s3.volume();
 
-    let deleted = volume
-        .delete_directory(
-            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("p/plain.txt")),
-            None,
-        )
-        .await;
+    let deleted = volume.delete_directory(&at(&volume, "p/plain.txt"), None).await;
 
     assert!(matches!(deleted, Err(VolumeError::NotFound(_))), "{deleted:?}");
     assert!(s3.object("p/plain.txt").is_some(), "the file stays");

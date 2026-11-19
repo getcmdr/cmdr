@@ -7,7 +7,6 @@
 //! taken, so the operation stopped with `DestinationExists` on a fresh key
 //! (live, Hetzner, one 1,005-object rename in six, 2026-10-02).
 
-use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::ops::ControlFlow;
 use std::pin::Pin;
@@ -16,6 +15,7 @@ use std::time::Duration;
 use cmdr_fs::volume::{LandedModified, ServerCopyProgress, StreamWritten, Volume, VolumeError, WriteMode};
 
 use super::fake_s3::FakeS3;
+use super::test_support::at;
 use crate::metadata::{MTIME_HEADER, WRITE_TOKEN_HEADER};
 
 struct Straight;
@@ -44,8 +44,8 @@ async fn a_one_request_copy_whose_answer_never_comes_reports_the_copy_it_publish
     let outcome = volume
         .copy_on_server(
             &volume,
-            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("src.txt")),
-            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("dst.txt")),
+            &at(&volume, "src.txt"),
+            &at(&volume, "dst.txt"),
             WriteMode::CreateNew,
             &Straight,
         )
@@ -67,8 +67,8 @@ async fn a_one_request_copy_keeps_the_sources_date_beside_its_own_token() {
     let outcome = volume
         .copy_on_server(
             &volume,
-            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("src.txt")),
-            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("dst.txt")),
+            &at(&volume, "src.txt"),
+            &at(&volume, "dst.txt"),
             WriteMode::CreateNew,
             &Straight,
         )
@@ -78,9 +78,7 @@ async fn a_one_request_copy_keeps_the_sources_date_beside_its_own_token() {
     // And reports that date as the landed one, the date a HEAD of the copy
     // answers (#651).
     let headed = volume
-        .get_metadata(&AppPath::legacy_unchecked(
-            &volume.root().as_std_legacy().join("dst.txt"),
-        ))
+        .get_metadata(&at(&volume, "dst.txt"))
         .await
         .expect("the copy is there")
         .modified_at;
@@ -117,8 +115,8 @@ async fn a_source_replaced_after_its_head_is_source_changed_and_copies_nothing()
     let outcome = volume
         .copy_on_server(
             &volume,
-            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("src.txt")),
-            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("dst.txt")),
+            &at(&volume, "src.txt"),
+            &at(&volume, "dst.txt"),
             WriteMode::CreateNew,
             &Straight,
         )
@@ -140,8 +138,8 @@ async fn an_r2_copy_onto_a_taken_name_is_already_exists() {
     let outcome = volume
         .copy_on_server(
             &volume,
-            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("src.txt")),
-            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("dst.txt")),
+            &at(&volume, "src.txt"),
+            &at(&volume, "dst.txt"),
             WriteMode::CreateNew,
             &Straight,
         )

@@ -5,7 +5,6 @@
 //! the same request; a fault that still published is the write, ❌ never a
 //! name taken by someone else.
 
-use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
 use std::time::Duration;
 
@@ -13,6 +12,7 @@ use cmdr_fs::volume::{Volume, VolumeError, VolumeReadStream, WriteMode};
 
 use super::S3Volume;
 use super::fake_s3::FakeS3;
+use super::test_support::at;
 use super::testing::BytesSource;
 
 async fn write(volume: &S3Volume, key: &str, len: usize) -> Result<u64, VolumeError> {
@@ -20,7 +20,7 @@ async fn write(volume: &S3Volume, key: &str, len: usize) -> Result<u64, VolumeEr
     let length = source.total_size();
     volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join(key)),
+            &at(volume, key),
             WriteMode::CreateNew,
             length,
             Box::new(source),
