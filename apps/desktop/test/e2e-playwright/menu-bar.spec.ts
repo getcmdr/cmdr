@@ -28,8 +28,6 @@ import {
 import { ensureMcpClient } from '../e2e-shared/mcp-client.js'
 import {
   clickRealAt,
-  F10_KEYCODE,
-  F6_KEYCODE,
   focusMainWindow,
   focusWindow,
   focusWindowAtCorner,
@@ -198,9 +196,9 @@ test.describe('The in-page menu bar (Linux)', () => {
     await focusPane(tauriPage, 0)
 
     focusMainWindow()
-    pressRealKey(F10_KEYCODE)
+    pressRealKey('F10')
     await expectBar(tauriPage, { focusedTitle: 0, menus: 0 })
-    pressRealKey(F10_KEYCODE)
+    pressRealKey('F10')
     await expectBar(tauriPage, { focusedTitle: -1, focusInPane: true })
 
     // The second title's letter, as the bar announces it (`Alt+V`), so no label is read.
@@ -267,7 +265,7 @@ test.describe('The in-page menu bar (Linux)', () => {
       // F10 opens the main menu where no bar takes it, and Escape gives focus back to the pane.
       await focusPane(tauriPage, 0)
       focusMainWindow()
-      pressRealKey(F10_KEYCODE)
+      pressRealKey('F10')
       await expect.poll(() => mainMenuState(tauriPage), { timeout: waitBudget(3000) }).toMatchObject({ open: true })
       pressRealKey('Escape')
       await expect
@@ -327,7 +325,7 @@ test.describe('The in-page menu bar (Linux)', () => {
       // The key: F6 reaches the page (the recorder sees it) and opens nothing.
       await installKeyRecorder(tauriPage)
       focusMainWindow()
-      pressRealKey(F6_KEYCODE)
+      pressRealKey('F6')
       await expect.poll(() => keydownsSeen(tauriPage), { timeout: waitBudget(3000) }).toContain('F6')
       expect(
         await tauriPage.evaluate<boolean>(`document.querySelector(${JSON.stringify(TRANSFER_DIALOG)}) !== null`),

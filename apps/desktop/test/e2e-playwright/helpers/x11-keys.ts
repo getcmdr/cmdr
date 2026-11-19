@@ -90,15 +90,40 @@ export function focusWindowAtCorner(windowId: string): void {
 }
 
 /**
- * F10's X keycode, to press it bare: by its keysym, the image's xdotool (3.20160805) adds Alt to
- * every F-key, since the keymap types them `CTRL+ALT` (`xev` in the lane's image, 2026-11-19), so
- * `pressRealKey('F10')` arrives as Alt+F10. A keycode goes through as is. Evdev's numbering.
+ * The F-keys' X keycodes (evdev's numbering), which `pressRealKey` sends in place of their names:
+ * by its keysym, the image's xdotool (3.20160805) adds Alt to every F-key, since the keymap types
+ * them `CTRL+ALT` (`xev` in the lane's image, 2026-11-19), so a bare `F8` arrived as Alt+F8. A
+ * keycode goes through as is, and a modifier beside it stays its own (`shift+74` is Shift+F8).
+ * Regression anchor (review of #1281): the step 6 and 7 reviews' "F8 in Settings touched nothing"
+ * had pressed Alt+F8.
  */
-export const F10_KEYCODE = '76'
-/** F6's X keycode (Move), for the same reason as `F10_KEYCODE`. */
-export const F6_KEYCODE = '72'
+const F_KEY_CODES: Readonly<Record<string, string>> = {
+  F1: '67',
+  F2: '68',
+  F3: '69',
+  F4: '70',
+  F5: '71',
+  F6: '72',
+  F7: '73',
+  F8: '74',
+  F9: '75',
+  F10: '76',
+  F11: '95',
+  F12: '96',
+}
 
-/** Presses one chord as a real keyboard would, in xdotool's spelling (`alt+f`, `Escape`). */
+/** `chord` with each F-key named by its keycode (`F_KEY_CODES`), so it arrives bare. Exported for its test. */
+export function xdotoolChord(chord: string): string {
+  return chord
+    .split('+')
+    .map((part) => F_KEY_CODES[part] ?? part)
+    .join('+')
+}
+
+/**
+ * Presses one chord as a real keyboard would, in xdotool's spelling (`alt+f`, `Escape`, `F8`,
+ * `shift+F8`). An F-key arrives bare, with only the modifiers the chord names (`xdotoolChord`).
+ */
 export function pressRealKey(chord: string): void {
-  xdotool('key', '--clearmodifiers', chord)
+  xdotool('key', '--clearmodifiers', xdotoolChord(chord))
 }

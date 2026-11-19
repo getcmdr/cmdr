@@ -593,6 +593,11 @@ the X focus first, a new window (Settings, the queue) shows up as a new visible 
 (`visibleTopLevelWindows`), and `clickRealAt` clicks a page point (the windows have no decorations, so a DOM rect is the
 window's own coordinates). `menu-bar.spec.ts` is its user. Not in the `helpers.js` barrel: it's Linux-only.
 
+`pressRealKey('F8')` sends a bare F8: the image's xdotool adds Alt to an F-key named by its keysym (the keymap types
+them `CTRL+ALT`), so the helper swaps each F-key for its keycode and keeps the chord's own modifiers (`shift+F8` is
+`shift+74`; `x11-keys.test.ts`). Before it did, a "bare F8" was Alt+F8, and three reviews' child-window F-key checks
+pressed the wrong key (verified on the lane's `xev`, 2026-11-19; review of #1281).
+
 `tauriPage.keyboard.press('Tab')` looks like Playwright's, but `@srsholmes/tauri-playwright` implements it as
 `document.activeElement.dispatchEvent(new KeyboardEvent(...))` inside the webview (read its `TauriKeyboard` class,
 verified on 0.4.1). Two consequences, and both have burned a test into looking right while measuring nothing:
