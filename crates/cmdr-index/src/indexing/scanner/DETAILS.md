@@ -92,7 +92,10 @@ same epochs, same frontier query, same descent rule. The one place the two walks
 there an indexed query is free next to the network round trip that produced the listing, while here it would sit in the
 hot path of eight worker threads reading a `readdir` that costs microseconds.
 
-Each root also picks the walk's `WalkPolicy` — what it refuses to descend into — described below.
+Each root also picks the walk's `WalkPolicy` — what it refuses to descend into — described below, and the writer message
+its rows travel in (`ScanRoot::insert_message`): only `Volume` sends `InsertEntriesV2`, which feeds the writer's
+accumulator maps for the `Maps` aggregate it ends in; `Rebuild` and `Virgin` send `InsertSubtreeEntries`
+(`../writer/DETAILS.md` § "Only a fresh full scan feeds the maps").
 
 ## `WalkPolicy`: what a walk refuses to descend into
 

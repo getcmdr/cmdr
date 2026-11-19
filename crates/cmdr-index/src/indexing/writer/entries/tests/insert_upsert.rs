@@ -95,7 +95,7 @@ fn handle_insert_entries_v2_only_accumulates_rows_that_landed() {
     handle_insert_entries_v2(
         &conn,
         entries_dup,
-        &mut accumulator,
+        Some(&mut accumulator),
         &crate::NoopEventSink,
         "root",
         &expected,

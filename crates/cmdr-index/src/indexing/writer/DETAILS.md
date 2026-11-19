@@ -553,12 +553,13 @@ carry an `AggSource`, declared by the SENDER — never sniffed from map-emptines
 writer's in-memory accumulator, populated only by `InsertEntriesV2`) comes ONLY from fresh full-scan completions; an
 empty-`Maps` full aggregate falls back to SQL (a consumed-maps sender must not treat "empty" as "all zero"). `Sql`
 (recompute from committed rows, ignores the accumulator) comes from the reconcile finish and the one-shot heal. This
-closes Leak D: a verification subtree scan's `InsertEntriesV2` batches can leave the maps holding SUBTREE-ONLY data, and
-a full aggregate that trusted the maps would roll every out-of-subtree dir up from zero. **The subtree handler must NOT
-clear the accumulator** — a clear there opens its own window: a `force_scan` over a never-completed partial takes the
-truncate + `Maps` path, and an uncancelled in-flight verification's `ComputeSubtreeAggregates` landing mid-scan would
-wipe maps that then partially repopulate. `TruncateData` already clears the maps at the start of every legitimate `Maps`
-flow. The interleaved-aggregate test pins this.
+closes Leak D: a full aggregate that trusted subtree-only maps would roll every out-of-subtree dir up from zero. A
+subtree walk no longer feeds the maps at all (§ "Only a fresh full scan feeds the maps"), and the `Sql` contract stays
+as the second wall. **The subtree handler must NOT clear the accumulator** — a clear there opens its own window: a
+`force_scan` over a never-completed partial takes the truncate + `Maps` path, and an uncancelled in-flight
+verification's `ComputeSubtreeAggregates` landing mid-scan would wipe maps that then partially repopulate.
+`TruncateData` already clears the maps at the start of every legitimate `Maps` flow. The interleaved-aggregate test pins
+this.
 
 **A full aggregate times itself.** A successful `ComputeAllAggregates` stores its wall clock in the writer's
 `last_full_aggregate_ms` (a failed one clears it), and `IndexWriter::take_last_full_aggregate_ms` reads and clears it. A
@@ -608,6 +609,23 @@ on `TruncateData` and after aggregation. Only a fresh full-scan completion sends
 DEBUG (3-row sample) and tallies into `entries_skipped`; `handle_compute_all_aggregates` summarizes the scan-wide tally
 once via `classify_skip_severity` (none → silent, sparse dedup → DEBUG, racing-writer ratio ≥50 skips and >1% of rows →
 WARN), so normal scans log nothing and only the actionable double-write case warns.
+
+### Only a fresh full scan feeds the maps
+
+- **Two insert messages, one insert.** `InsertEntriesV2` feeds the maps; `InsertSubtreeEntries` runs the same
+  `handle_insert_entries_v2` with `None` for the accumulator (no maps, no skip tally, no `SavingEntries` progress).
+- **Who sends which:** the whole-volume walks send `InsertEntriesV2` (local `scan_volume` via
+  `ScanRoot::insert_message`, network `full_scan`). Every walk that ends in `ComputeSubtreeAggregates` sends
+  `InsertSubtreeEntries`: the local `Rebuild` (`scan_subtree`: the verifier and background verification) and `Virgin`
+  (`cover_subtree`: the phase machine and search) walks, and the network `cover_scan`.
+- **Why:** the maps have exactly two readers, `ComputeAllAggregates { Maps }` and `ComputePartialAggregates { Maps }`,
+  and only a fresh full scan sends either (the phase machine's reporter and every reconcile send `Sql`). Fed from a
+  subtree walk, they held rows nothing read until the next full aggregate or truncate. Measured: 81.0 MB held (requested
+  bytes, a floor) for the 7,218,780 rows of a boot-volume index (690,190 `direct_stats` parents, 270,808 `child_dirs`
+  parents), which is what a phased first index left behind (verified on macOS 27, `maps_footprint_bench.rs` over the dev
+  `index-root.db`, 2026-11-19, #1296). Steady-state verifier rebuilds leaked the same way, a little at a time.
+- **Regression tests:** `../scanner/maps_feed_tests.rs` (a cover walk and a rebuild each leave the maps empty, seen
+  through a `Maps` aggregate's SQL fallback).
 
 ## Partial aggregation (writer side)
 

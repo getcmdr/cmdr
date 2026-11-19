@@ -184,7 +184,7 @@ impl InsertVisitor {
         let discovered = pending.take_discovered();
 
         if !rows.is_empty()
-            && let Err(e) = self.writer.send(WriteMessage::InsertEntriesV2(rows))
+            && let Err(e) = self.writer.send(self.policy.root.insert_message(rows))
         {
             // A send failure means the writer is gone — abort the walk and keep the
             // first error to return from the scan.

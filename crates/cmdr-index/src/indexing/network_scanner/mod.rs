@@ -87,13 +87,22 @@ const SCAN_COMMIT_INTERVAL: Duration = Duration::from_secs(2);
 
 /// Hand the accumulated rows to the writer, leaving the batch empty. A no-op on
 /// an empty batch, so every exit path can call it unconditionally.
-fn flush_batch(batch: &mut Vec<crate::indexing::store::EntryRow>, writer: &IndexWriter) -> Result<(), VolumeScanError> {
+///
+/// `insert` is the message the walk's rows travel in: `WriteMessage::InsertEntriesV2`
+/// for the fresh full scan, whose `Maps` aggregate reads the accumulator maps it
+/// feeds, and `WriteMessage::InsertSubtreeEntries` for the cover walk, which ends in
+/// `ComputeSubtreeAggregates` and must not feed them.
+fn flush_batch(
+    batch: &mut Vec<crate::indexing::store::EntryRow>,
+    writer: &IndexWriter,
+    insert: fn(Vec<crate::indexing::store::EntryRow>) -> crate::indexing::writer::WriteMessage,
+) -> Result<(), VolumeScanError> {
     if batch.is_empty() {
         return Ok(());
     }
     let entries = std::mem::take(batch);
     writer
-        .send(crate::indexing::writer::WriteMessage::InsertEntriesV2(entries))
+        .send(insert(entries))
         .map_err(|e| VolumeScanError::WriterSend(e.to_string()))
 }
 

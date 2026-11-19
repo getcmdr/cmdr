@@ -26,7 +26,10 @@ use super::{AccumulatorMaps, MutationTracker};
 pub(super) fn handle_insert_entries_v2(
     conn: &rusqlite::Connection,
     entries: Vec<EntryRow>,
-    accumulator: &mut AccumulatorMaps,
+    // `Some` only for a fresh full scan's `InsertEntriesV2`: a subtree or cover
+    // walk's `InsertSubtreeEntries` passes `None`, since nothing it ends in reads
+    // the maps (`WriteMessage::InsertSubtreeEntries`).
+    mut accumulator: Option<&mut AccumulatorMaps>,
     events: &dyn EventSink,
     volume_id: &str,
     expected_total_entries: &AtomicU64,
@@ -53,16 +56,20 @@ pub(super) fn handle_insert_entries_v2(
     match IndexStore::insert_entries_v2_batch(conn, &entries) {
         Ok(inserted) => {
             let skipped_count = inserted.iter().filter(|landed| !**landed).count();
-            if skipped_count == 0 {
-                accumulator.accumulate(&entries);
-            } else {
-                accumulator.entries_skipped += skipped_count as u64;
-                accumulator.accumulate(
-                    entries
-                        .iter()
-                        .zip(inserted.iter())
-                        .filter_map(|(e, landed)| if *landed { Some(e) } else { None }),
-                );
+            if let Some(accumulator) = accumulator.as_deref_mut() {
+                if skipped_count == 0 {
+                    accumulator.accumulate(&entries);
+                } else {
+                    accumulator.entries_skipped += skipped_count as u64;
+                    accumulator.accumulate(
+                        entries
+                            .iter()
+                            .zip(inserted.iter())
+                            .filter_map(|(e, landed)| if *landed { Some(e) } else { None }),
+                    );
+                }
+            }
+            if skipped_count > 0 {
                 let samples: Vec<(i64, &str)> = entries
                     .iter()
                     .zip(inserted.iter())
@@ -93,9 +100,12 @@ pub(super) fn handle_insert_entries_v2(
         );
     }
     mutation_tracker.bump();
-    // Emit flushing progress when we know the expected total
+    // Emit flushing progress when we know the expected total. Only a full scan's
+    // rows count toward it, and only a full scan sets it.
     let expected = expected_total_entries.load(Ordering::Relaxed);
-    if expected > 0 {
+    if let Some(accumulator) = accumulator
+        && expected > 0
+    {
         events.emit(IndexEvent::AggregationProgress {
             volume_id: volume_id.to_string(),
             phase: AggregationPhase::SavingEntries,

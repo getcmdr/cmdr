@@ -331,6 +331,9 @@ discipline above (cancel per round trip, `LIST_TIMEOUT` racing the JOIN handle, 
 consecutive-failure backstops, `ScanPacer`, the NAS system-dir skip) and diverges from the two whole-volume walks in the
 places below, all of them consequences of a person having asked:
 
+- **Rows travel in `InsertSubtreeEntries`**, never the full scan's `InsertEntriesV2` (`flush_batch` takes the message):
+  the walk ends in `ComputeSubtreeAggregates`, so feeding the writer's accumulator maps would only hold memory
+  (`../writer/DETAILS.md` § "Only a fresh full scan feeds the maps").
 - **Scoped root.** The root resolves through `space.index_relative` + `resolve_scan_root(.., false)` to its own entry
   id, never `ROOT_ID`, and the BFS carries `(path, id)` pairs the way the reconcile walk does.
   `lifecycle/cover/bootstrap.rs` has already materialized the ancestor chain when the index had no row for it, using

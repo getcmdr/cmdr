@@ -55,7 +55,7 @@ fn finish_partial_scan(
 ) -> Result<(), VolumeScanError> {
     // (a) Flush the last batch so every entry row is committed-in-order before
     // the marks' PK-keyed UPDATE and the aggregate run.
-    flush_batch(batch, writer)?;
+    flush_batch(batch, writer, WriteMessage::InsertEntriesV2)?;
     // (b) Stamp every successfully-listed dir (ordering invariant: marks precede
     // the final aggregate; the single in-order writer guarantees it). Shared with
     // the reconcile finish so both paths stamp identically.
@@ -144,7 +144,7 @@ pub async fn scan_volume_via_trait(
         if cancel.is_cancelled() {
             // In-flight listings are dropped here; the smb2/MTP backends tolerate a
             // dropped request waiter. Flush what we batched and report the cancel.
-            flush_batch(&mut batch, &writer)?;
+            flush_batch(&mut batch, &writer, WriteMessage::InsertEntriesV2)?;
             commit_scan_tx(&mut transaction)?;
             return Err(VolumeScanError::Cancelled(summary(
                 total_entries,
@@ -334,7 +334,7 @@ pub async fn scan_volume_via_trait(
             });
 
             if batch.len() >= BATCH_SIZE {
-                flush_batch(&mut batch, &writer)?;
+                flush_batch(&mut batch, &writer, WriteMessage::InsertEntriesV2)?;
             }
         }
     }

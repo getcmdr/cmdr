@@ -237,8 +237,17 @@ pub type Resolver = Box<dyn FnOnce(&rusqlite::Connection) -> Vec<WriteMessage> +
 
 /// Messages sent to the writer thread via a bounded mpsc channel.
 pub enum WriteMessage {
-    /// Full scan: batch of entries with pre-assigned integer IDs.
+    /// A fresh FULL scan's batch of entries with pre-assigned integer IDs. Also
+    /// feeds the accumulator maps that scan's `ComputeAllAggregates { source: Maps }`
+    /// reads. ❌ Only a whole-volume walk sends it; every other walk sends
+    /// [`WriteMessage::InsertSubtreeEntries`].
     InsertEntriesV2(Vec<EntryRow>),
+    /// A subtree or cover walk's batch: the same insert as `InsertEntriesV2`, minus
+    /// the accumulator maps. Those walks end in `ComputeSubtreeAggregates`, which
+    /// never reads the maps, so feeding them only held memory nothing used until
+    /// the next full aggregate (81 MB after a phased first index of a 7.2M-entry
+    /// boot volume, #1296).
+    InsertSubtreeEntries(Vec<EntryRow>),
     /// Watcher/reconciler: upsert a single entry by parent_id + name.
     /// The writer resolves or inserts using integer keys.
     UpsertEntryV2 {
@@ -504,6 +513,7 @@ impl WriteMessage {
     fn kind(&self) -> &'static str {
         match self {
             WriteMessage::InsertEntriesV2(_) => "InsertEntriesV2",
+            WriteMessage::InsertSubtreeEntries(_) => "InsertSubtreeEntries",
             WriteMessage::UpsertEntryV2 { .. } => "UpsertEntryV2",
             WriteMessage::MoveEntryV2 { .. } => "MoveEntryV2",
             WriteMessage::ResolveThenWrite(_) => "ResolveThenWrite",
@@ -1037,7 +1047,9 @@ impl WriterStats {
     fn record(&mut self, msg: &WriteMessage) {
         self.current.total += 1;
         match msg {
-            WriteMessage::InsertEntriesV2(_) => self.current.insert_entries += 1,
+            WriteMessage::InsertEntriesV2(_) | WriteMessage::InsertSubtreeEntries(_) => {
+                self.current.insert_entries += 1;
+            }
             WriteMessage::UpsertEntryV2 { .. } => self.current.upsert_entry += 1,
             WriteMessage::MoveEntryV2 { .. } => self.current.move_entry += 1,
             WriteMessage::DeleteEntryById(_) => self.current.delete_entry += 1,
@@ -1516,7 +1528,19 @@ fn process_message(
             handle_insert_entries_v2(
                 conn,
                 entries,
-                accumulator,
+                Some(accumulator),
+                events,
+                volume_id,
+                expected_total_entries,
+                mutation_tracker,
+                signal,
+            );
+        }
+        WriteMessage::InsertSubtreeEntries(entries) => {
+            handle_insert_entries_v2(
+                conn,
+                entries,
+                None,
                 events,
                 volume_id,
                 expected_total_entries,
@@ -1841,5 +1865,7 @@ fn process_message(
 
 #[cfg(test)]
 mod entry_fixtures;
+#[cfg(test)]
+mod maps_footprint_bench;
 #[cfg(test)]
 pub(super) mod tests;
