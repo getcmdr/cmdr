@@ -12,7 +12,7 @@ enables/disables items based on window focus context.
 main window and the viewer draw the bar in the page ("The bar a page draws"), so `MenuState` holds the facts and no muda
 handle: every native-item write (`set_item_label`, `update_menu_item_accelerator`, `rebuild_view_mode_items`, the pin
 label, the Show hidden check) stops after storing its fact (`MenuState::has_native_bar`), and a language change rebuilds
-nothing, since a page resolves its labels itself. The rest of this doc's bar mechanics (accelerators, mnemonics,
+nothing, since a page resolves its labels itself. The rest of this doc's bar mechanics (accelerators,
 display-only keys, swaps) are the native bar's, so macOS's; the rows themselves are every platform's
 (`crates/cmdr-menu/DETAILS.md`).
 
@@ -29,7 +29,7 @@ display-only keys, swaps) are the native bar's, so macOS's; the rows themselves 
   keys (`labels.rs`), and the accelerator conversion (`accelerators.rs`). Why a crate: the browser demo draws the same
   bar (`apps/desktop/src/lib/demo/DETAILS.md`). Why it's data: the menu-bar Decision under "Key
   decisions".
-- `menu_bar_builder.rs`: `build_menu`, which builds `MENU_BAR` for `Platform::current()`, allocates the mnemonics,
+- `menu_bar_builder.rs`: `build_menu`, which builds `MENU_BAR` for `Platform::current()`,
   registers the tracked items, and hands back `MenuItems`. Called only where the bar is native (`builds_native_bar`).
 - `display_accelerators.rs` (macOS): `set_display_accelerators`, the pass that draws a shortcut the bar can't register
   as a right-aligned, dimmed run on an item's attributed title. See "Display-only accelerators" below.
@@ -119,10 +119,6 @@ display-only keys, swaps) are the native bar's, so macOS's; the rows themselves 
   `bar_inputs` reads `MenuState` into `cmdr_menu::page::BarInputs`. See "The bar a page draws".
 - `page_context.rs`: the right-click menus for a page that draws them (`open_context_menu_in_page`,
   `pick_context_menu_item`): the token a pick names, and `note_native_popup`. See "Right-click menus a page draws".
-- `mnemonics.rs`: `Mnemonics`, the per-submenu allocator for the Linux underline letter.
-- `mnemonic_mask/`: `set_window_mnemonics_suspended` (the IPC command `set_menu_mnemonics_suspended` calls it), which
-  turns a window's mnemonics off while a modal surface owns its keyboard; `mnemonic_modifier` is the pure decision and
-  `platform/` the GTK call (Linux) or a no-op. See "A modal surface takes the mnemonics away".
 
 ## Labels come from the message catalog
 
@@ -153,8 +149,7 @@ Three shapes are worth knowing here:
 
 ### Rebuilding on a language change
 
-`rebuild_menu_bar` builds the whole bar again rather than retitling it in place. Every label moves at once, the Linux
-mnemonics have to be reallocated from the new words (below), and `PredefinedMenuItem`s carry text of their own, so a
+`rebuild_menu_bar` builds the whole bar again rather than retitling it in place. Every label moves at once, and `PredefinedMenuItem`s carry text of their own, so a
 walk that retitled each item would be the build, minus the guarantee that it covered everything. Two callers: the `set_ui_language`
 command (the user picked a language in Settings) and `intl/live_locale.rs`'s emit site (the OS moved under a `'system'`
 setting). Both first ask `refresh_active_locale` whether the answer actually MOVED, because a rebuild is a visible
@@ -174,49 +169,6 @@ five. Re-pushing everything beats tracking what
 moved: the event is rare, and a missed re-push is invisible until a user reaches for a shortcut. "Open terminal here"
 needs no re-push of its own: its verdict is stored in `MenuState` and re-applied by the `activate_window_menu('main')`
 that handler already makes.
-
-### Linux mnemonics are allocated, not authored
-
-With no GTK bar (task 63 step 6), Linux builds no bar for these to label; the allocator still runs for the native
-right-click popups' rows. The in-page bar allocates its own letters (`apps/desktop/src/lib/ui/access-keys.ts`).
-
-A GTK mnemonic has to be unique within its submenu, and which letters are free depends on the words in the menu — so it
-depends on the LANGUAGE. A hand-picked English set couldn't survive nine translations, and a translator can't be handed
-a per-submenu uniqueness puzzle on top of translating. So `mnemonics::Mnemonics` allocates them at build time from the
-translated labels, in menu order: word-initial letters first (what people scan for), then any other letter or digit,
-then no marker at all if everything is taken (which costs one keystroke and nothing else). The menu bar's own titles get
-one allocator; each submenu gets its own. The builder runs every label through it on every platform (a no-op on macOS),
-so no row in `cmdr_menu::bar` names a mnemonic, and a new item can't get one on one platform and not the other.
-
-### A modal surface takes the mnemonics away (`mnemonic_mask/`)
-
-⚠️ Moot since task 63 step 6: Linux has no GTK bar, so there's no title mnemonic to mask, and the windows below wear no
-bar. The in-page bar goes inert under a modal surface itself (`apps/desktop/src/lib/ui/DETAILS.md` § Command menus).
-Step 10 of that task deletes the module, its IPC, and this section; what follows is how it worked with a GTK bar.
-
-GTK takes a bar TITLE's `Alt+<letter>` (English: F, E, S, V, G, T, H; other languages differ) before WebKit sees the
-keydown, so `preventDefault` can't help: the search dialog's `Alt+F`, `Alt+S`, and `Alt+V` would open menus. Item
-mnemonics are inert while their menu is closed. A native modal blocks its parent's bar; Cmdr's dialogs are web content,
-so the window does it by hand: `set_menu_mnemonics_suspended` sets the CALLING window's `GtkWindow` mnemonic modifier to
-every GDK modifier at once (nobody presses that), and back to Alt. The modifier is a property of the window, so a bar
-rebuild keeps it. A click on the bar still opens a menu. Verified with real X key events in the Linux E2E lane
-(`apps/desktop/test/e2e-playwright/menu-bar.spec.ts`, through `xdotool`). macOS has no mnemonics and Windows has none yet,
-so both answer without touching anything.
-
-- **Main window**: `routes/(main)/menu-dialog-gate.svelte.ts` sends the gate's own "something is open" bit (a dialog, an
-  explorer overlay, or the palette), as its own call beside the refused list: the list only mirrors the bit while
-  `REFUSED_OVER_DIALOGS` is non-empty. Stacked surfaces hold the mask until the last one closes, and a reload or HMR
-  pushes the real state first. Inline rename and the palette count as modal input here, so `Alt+F` can't open the File
-  menu mid-rename; intended.
-- **No window wears a GTK bar any more**: with a GTK bar, Tauri handed the app-wide menu to every window built
-  without one (`AppHandle::set_menu`), so Settings, the operation queue, the Keyboard shortcuts window, and Debug wore
-  it; off macOS today none is built, and those windows keep its keys through the page (§ "The bar a page draws"). The viewer sets its own bar, which has no mnemonics. Settings is the one that captures combos, so its shortcut
-  recorder, its key filter, and the global go-to-latest recorder hold the mask while they listen
-  (`apps/desktop/src/lib/shortcuts/menu-mnemonics-capture.svelte.ts`, claims counted per window; a fresh load there pushes
-  the mnemonics back on once, since a reload mid-capture resets the count but not the window's mask).
-- **A key the user records stays the user's**: the in-page bar reserves every `Alt+<letter>` bound in its window's live
-  scopes (`apps/desktop/src/lib/ui/access-keys.ts` `reservedAccessKeys`), so its titles take other letters and Settings
-  has no title-mnemonic warning left to give.
 
 ## Key concepts
 
@@ -534,8 +486,7 @@ nothing on that platform: the F-key rows, `Tab`, the zoom pair, Go to parent's `
 `Ctrl+Shift+V` off macOS), so a row can't register and display a shortcut at once (`cmdr-menu`'s `bar_test.rs` pins
 that too). `display_accelerator_label` is where they part:
 
-- **Linux** spells it into the label (`Invert selection (⇧8)`). GTK offers no other hook. The mnemonic is allocated on
-  the bare label first, so no underline lands inside the parens.
+- **Linux** (a GTK popup) spells it into the label (`Invert selection (⇧8)`). GTK offers no other hook.
 - **macOS** leaves the label alone and `display_accelerators.rs` sets an attributed title shaped `"{label}\t{glyph}"`:
   a right `NSTextTab` puts the glyph in the key-equivalent column, and `secondaryLabelColor` on that run alone dims it
   while the label keeps its own color. The font attribute is load-bearing — an attributed title with no
@@ -1249,7 +1200,7 @@ freed when `show_file_context_menu` returned (0.20 holds an `Rc` to it).
 
 Every difference is marked on its row in `cmdr_menu::bar`, and `cmdr-menu`'s `bar_test.rs` spells out each bar in full.
 Off macOS the page draws the rows (no muda bar), so below, "registered" there means a key the row SHOWS and the page's
-keydown runs, and the GTK items (mnemonics, the label-spelled display key) describe the Linux popups only.
+keydown runs, and the GTK item (the label-spelled display key) describes the Linux popups only.
 The Windows bar has the Linux bar's rows and keys until the Windows menu model is decided (`crates/cmdr-menu/DETAILS.md`
 § "Three platforms"), so "Linux" below reads "Windows and Linux" for the bar's data; the GTK specifics are Linux's.
 
@@ -1268,8 +1219,8 @@ The Windows bar has the Linux bar's rows and keys until the Windows menu model i
   platform's own spelling (`Ctrl+Shift+P`), which `frontend_shortcut_to_accelerator` registers as typed; it converts
   nothing between platforms (`crates/cmdr-menu/DETAILS.md` § "Accelerators"). `bar_parity_test.rs` keeps every row's
   default equal to the registry's first key, or excused with its reason.
-- **Mnemonics**: macOS doesn't use them. Linux gives `&` prefixes for GTK keyboard navigation, unique per submenu, and
-  turns them off while a dialog or a shortcut recorder owns the keyboard.
+- **Access keys**: macOS has none. Off macOS the in-page bar allocates its letters from the rendered labels
+  (`apps/desktop/src/lib/ui/access-keys.ts`), so no row names one.
 - **Help search**: macOS has the native NSMenu search field via `setHelpMenu:`. Linux has none.
 - **System cleanup**: on macOS, objc2 strips the injected Edit items. Linux needs none.
 - **Menu icons**: macOS sets every image via objc2 through `set_menu_item_image` (SF Symbols on the bar and context
@@ -1288,7 +1239,7 @@ carries no ellipsis because it picks nothing: it copies the selection into the f
 backend resolves the self-collision per item. The context menu (`file_context_menu.rs`) offers it only when
 `restrict_destination_actions` is false, so it is absent on the search-results virtual pane alongside `Rename`: each
 selected item would have to land in its own real folder, which one transfer can't express. Its macOS SF Symbol is
-`plus.square.on.square`, the Linux mnemonic is `D&uplicate`. What the command does once dispatched:
+`plus.square.on.square`. What the command does once dispatched:
 `apps/desktop/src/lib/file-explorer/pane/DETAILS.md`. The file context menu runs the same group in the same order, with
 `Rename` after `Compress…`; `Compress…` stays on the search-results pane because, like Copy and Move, it writes into
 the other pane. Its ⌥F5 label comes from the registry through its row's `Shortcut`, like every other row.
@@ -1350,9 +1301,7 @@ separator, `Go to path…` (⌘G), `Go to latest download` (⌘J), separator, `A
 `nav.goToPath` and `GO_LATEST_DOWNLOAD_ID` (`"go_latest_download"`) → `downloads.goToLatest`, both `FileScoped` so they
 grey out in the viewer/settings windows. `Go to path…` carries the macOS ellipsis (it opens the Go-to-path dialog);
 `Go to latest download` has none (direct action). On macOS the SF Symbols are `arrow.right.to.line` (Go to path…) and
-`arrow.down.circle` (Go to latest download), keyed by item ID in `MENU_BAR_ICONS`. On Linux the mnemonics are
-`Go &to path…` and
-`Go to &latest download` (B/F/P are claimed by Back/Forward/Parent).
+`arrow.down.circle` (Go to latest download), keyed by item ID in `MENU_BAR_ICONS`.
 
 **Double-dispatch (⌘G / ⌘J).** A key combo matching a menu accelerator fires BOTH the native menu (`execute-command`)
 AND the JS keydown dispatch on macOS (see `shortcuts/DETAILS.md` § "Modifier-key accelerators may fire twice"). This is
@@ -1374,8 +1323,7 @@ no separator after `Keyboard shortcuts`). `What's new`
 (`HELP_WHATS_NEW_ID` (`"help_whats_new"`) → `help.whatsNew`, `App`-scoped) opens the post-update changelog popup (see
 `apps/desktop/src/lib/whats-new/CLAUDE.md`); it has no default shortcut but is registered in `MenuState.items` so a
 future custom binding still flows into the menu. Its macOS SF Symbol is `sparkles` (the symbol map matches by exact
-title, so `What's new` must stay byte-identical); the Linux mnemonic is `&What's new` (`W` is free; `A`/`K`/`f`/`S` are
-claimed by the other Help items).
+title, so `What's new` must stay byte-identical).
 
 A **second** entry point opens the same popup: `Changelog…` (`CHANGELOG_ID` (`"changelog"`)), placed directly below
 `Check for updates…` (macOS cmdr menu; Linux: bottom of the Edit menu). It maps to the same `help.whatsNew` command, so

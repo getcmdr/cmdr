@@ -200,7 +200,6 @@ export {
   registerKnownDialogs,
   setFileOperationsBlocked,
   setCommandsRefusedOverDialog,
-  setMenuMnemonicsSuspended,
   updateMenuContext,
   updateServicesSelection,
   activateWindowMenu,

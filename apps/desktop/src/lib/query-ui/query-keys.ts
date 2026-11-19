@@ -5,9 +5,8 @@
  * dialog's three registry keys (new query, recent items, the numbered modes) are
  * `sources/search-dialog.ts`'s.
  *
- * ⌥ / Alt with a letter on every platform: the dialog owns the keyboard while it's up, and on
- * Linux the main window's menu mnemonics are masked meanwhile, so Alt+F reaches it
- * (`src-tauri/src/menu/DETAILS.md`). ⌥← / ⌥→ are deliberately absent: they're macOS's native
+ * ⌥ / Alt with a letter on every platform: the dialog owns the keyboard while it's up, and the
+ * in-page menu bar is inert under a dialog, so Alt+F reaches it. ⌥← / ⌥→ are deliberately absent: they're macOS's native
  * move-by-word in the focused query input.
  */
 

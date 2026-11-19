@@ -18,7 +18,6 @@ use tauri::{
 use crate::ignore_poison::IgnorePoison;
 use crate::intl::menu_t;
 
-use super::mnemonics::Mnemonics;
 use super::{
     MenuState, VIEW_MODE_BRIEF_LEFT_ID, VIEW_MODE_BRIEF_RIGHT_ID, VIEW_MODE_FULL_LEFT_ID, VIEW_MODE_FULL_RIGHT_ID,
     ViewMode, cloned_handle,
@@ -56,11 +55,8 @@ pub fn rebuild_view_mode_items<R: Runtime>(app: &AppHandle<R>, menu_state: &Menu
     let brief_accel = menu_state.view_mode_brief_accel.lock_ignore_poison().clone();
 
     let left_active = active_pane == "left";
-    // Each pane submenu holds only these two items, so one allocation serves
-    // both panes and reproduces exactly what the menu-bar build assigned.
-    let mut mnemonics = Mnemonics::new();
-    let full_label = mnemonics.assign(&menu_t("menu.view.fullView"));
-    let brief_label = mnemonics.assign(&menu_t("menu.view.briefView"));
+    let full_label = menu_t("menu.view.fullView");
+    let brief_label = menu_t("menu.view.briefView");
 
     // Helper: replace one CheckMenuItem inside its pane submenu, preserving its position.
     let swap = |slot: &Mutex<Option<CheckMenuItem<R>>>,

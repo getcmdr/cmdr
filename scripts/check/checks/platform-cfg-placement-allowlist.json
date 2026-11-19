@@ -231,9 +231,6 @@
     "apps/desktop/src-tauri/src/menu/menu_structure.rs": {
       "outsideSeam": 1
     },
-    "apps/desktop/src-tauri/src/menu/mnemonics.rs": {
-      "outsideSeam": 1
-    },
     "apps/desktop/src-tauri/src/menu/mod.rs": {
       "negated": 1,
       "outsideSeam": 46

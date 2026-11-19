@@ -16,7 +16,6 @@ use super::menu_spec::{
     CheckRole, EntryKind, Label, Pane, Platform, Predefined, SubmenuRole, SubmenuSpec, Tracking,
     display_accelerator_label,
 };
-use super::mnemonics::Mnemonics;
 use super::{MenuItemEntry, MenuItems, RequestedSort, TrackedItem, ViewMode};
 
 /// Builds the application menu bar for the current platform, in the active UI language.
@@ -56,14 +55,12 @@ pub fn build_menu<R: Runtime>(
     Ok(builder.into_menu_items(menu))
 }
 
-/// The bar's top-level titles on `platform` in the active language, each with its mnemonic marker
-/// where the platform uses them. One allocator for the whole bar (each submenu gets its own).
+/// The bar's top-level titles on `platform` in the active language.
 fn bar_titles(platform: Platform) -> Vec<String> {
-    let mut mnemonics = Mnemonics::new();
     MENU_BAR
         .iter()
         .filter(|bar_menu| bar_menu.is_on(platform))
-        .map(|bar_menu| mnemonics.assign_for(&title_text(bar_menu.submenu.title), platform))
+        .map(|bar_menu| title_text(bar_menu.submenu.title))
         .collect()
 }
 
@@ -111,22 +108,16 @@ impl<R: Runtime> PaneHandles<R> {
 
 impl<R: Runtime> Builder<'_, R> {
     /// Builds `spec` titled `title`, registering each tracked item at its position in it.
-    ///
-    /// Labels get their mnemonics in display order, which is what makes a given translation always
-    /// underline the same letters.
     fn submenu(&mut self, spec: &SubmenuSpec, title: &str) -> tauri::Result<Submenu<R>> {
         let app = self.app;
         let platform = self.platform;
-        let mut mnemonics = Mnemonics::new();
         let mut children = Vec::new();
         // `(id, position, built item, the label WITHOUT a display accelerator on it)`.
         let mut tracked: Vec<(&str, usize, TrackedItem<R>, String)> = Vec::new();
         for (position, entry) in spec.entries_on(platform).enumerate() {
             let child = match entry {
                 EntryKind::Item(item) => {
-                    // The mnemonic is assigned on the bare label, then the display shortcut goes
-                    // on the end: GTK would otherwise happily underline a letter inside `(⇧8)`.
-                    let label = self.label(item.label, &mut mnemonics);
+                    let label = self.label(item.label);
                     let built_label = match item.display_accelerator.on(platform) {
                         Some(shortcut) => display_accelerator_label(&label, shortcut, platform),
                         None => label.clone(),
@@ -143,7 +134,7 @@ impl<R: Runtime> Builder<'_, R> {
                     MenuItemKind::MenuItem(built)
                 }
                 EntryKind::Check(check) => {
-                    let label = self.label(check.label, &mut mnemonics);
+                    let label = self.label(check.label);
                     let checked = match check.role {
                         CheckRole::ShowHiddenFiles => self.show_hidden_files,
                         CheckRole::ViewMode(pane, mode) => self.initial_view_mode(pane) == mode,
@@ -168,11 +159,11 @@ impl<R: Runtime> Builder<'_, R> {
                 }
                 EntryKind::Separator => MenuItemKind::Predefined(PredefinedMenuItem::separator(app)?),
                 EntryKind::Predefined(kind, label) => {
-                    let label = self.label(*label, &mut mnemonics);
+                    let label = self.label(*label);
                     MenuItemKind::Predefined(predefined(app, *kind, &label)?)
                 }
                 EntryKind::Submenu(nested) => {
-                    let nested_title = self.label(nested.title, &mut mnemonics);
+                    let nested_title = self.label(nested.title);
                     let built = self.submenu(nested, &nested_title)?;
                     match nested.role {
                         SubmenuRole::Plain => {}
@@ -204,12 +195,11 @@ impl<R: Runtime> Builder<'_, R> {
         Ok(submenu)
     }
 
-    /// `label` in the active language, with a mnemonic from `mnemonics` where the platform uses them.
-    fn label(&self, label: Label, mnemonics: &mut Mnemonics) -> String {
-        let text = label
+    /// `label` in the active language.
+    fn label(&self, label: Label) -> String {
+        label
             .catalog_key(self.has_existing_license)
-            .map_or_else(|| APP_MENU_TITLE.to_string(), menu_t);
-        mnemonics.assign(&text)
+            .map_or_else(|| APP_MENU_TITLE.to_string(), menu_t)
     }
 
     /// The mode a pane's items start checked on: the caller's for the left pane, the default for the

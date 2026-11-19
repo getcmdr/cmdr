@@ -1,17 +1,9 @@
 {
   "$comment": "Files under `files` are exempt from the claude-md-length check up to their recorded word count (plus a 10% growth buffer). Each entry is {\"words\": N, \"reason\": \"…\"}: the reason is mandatory and says why this doc gets to be long, or starts with `TODO: ` when it should be trimmed and the reason says what moves to the sibling DETAILS.md. The push-tier CLAUDE.md is auto-injected into agent context, so it has a ~600-word budget; the pull-tier DETAILS.md is unlimited and not checked. The check shrink-wraps the numbers on local runs, so a reason is the only part written by hand. See `scripts/check/checks/DETAILS.md § Allowlist consent`.",
   "files": {
-    "apps/desktop/src-tauri/src/menu/CLAUDE.md": {
-      "words": 640,
-      "reason": "TODO: back under 600 once task 63 step 10 (docs/specs/windows-port-plan.md) deletes `mnemonic_mask/`: its Linux GTK bullet (about 25 words) goes with it. The page-bar guardrail that tipped it over names a silent break (a push that skips `notify_bar_changed` leaves the in-window bar stale), so it stays."
-    },
     "apps/desktop/src-tauri/src/network/CLAUDE.md": {
       "words": 615,
       "reason": "TODO: trim to roughly 400 words; `DETAILS.md` has a section per bullet. Fold the keychain, NetFS, and subprocess rules into one line each pointing at their sections, and move the saved-share and re-register bullets' detail there."
-    },
-    "crates/cmdr-smb/CLAUDE.md": {
-      "words": 632,
-      "reason": "TODO: trim to roughly 400 words; the write-path rules (`write_from_stream`, date stamping, unknown lengths, the forced rename, the one-frame limits) are one concern, and `DETAILS.md` already explains each. Fold them into one line pointing there, saving roughly 120 words."
     },
     "apps/desktop/src/lib/file-explorer/drag/CLAUDE.md": {
       "words": 608,
@@ -20,6 +12,10 @@
     "apps/desktop/src/routes/viewer/CLAUDE.md": {
       "words": 649,
       "reason": "TODO: this one wants a SPLIT, not a trim. `routes/viewer/` is ~40 modules behind one doc pair, and its 18 must-knows are each a genuine break-if-ignored rule with its `DETAILS.md` section already written; a condensing pass took it from 707 to 649 and has nothing left to give without deleting a guardrail. Separate the selection and caret cluster (`selection.svelte.ts`, `viewer-pointer*`, `viewer-caret-*`, `viewer-word.ts`, `viewer-multi-click.ts`, `viewer-selection-granularity.ts`) and the media cluster (`viewer-media.svelte.ts`, `Media*View.svelte`, `media-view.ts`) into subdirectories with C+D pairs of their own, which takes roughly 6 bullets (about 220 words) each out of this file and leaves the page, scroll, search, and window rules here at roughly 350. Until then keep every bullet: each names something that fails silently."
+    },
+    "crates/cmdr-smb/CLAUDE.md": {
+      "words": 632,
+      "reason": "TODO: trim to roughly 400 words; the write-path rules (`write_from_stream`, date stamping, unknown lengths, the forced rename, the one-frame limits) are one concern, and `DETAILS.md` already explains each. Fold them into one line pointing there, saving roughly 120 words."
     }
   }
 }

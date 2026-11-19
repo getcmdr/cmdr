@@ -134,16 +134,15 @@ keytips), and Windows' "Underline access keys" setting is honored. GNOME and KDE
   MenuBar, Menu, and MenuItem (unverified on a Microsoft page; standard Chromium behavior). `lib/ui/Menu.svelte` already
   carries these roles for VoiceOver. WebKitGTK maps them to AT-SPI for Orca (unverified). A native bar is exposed for
   free, which is the in-page bar's main cost.
-- **Linux today**: muda builds a GTK menu bar per window. GTK takes a bar title's `Alt+<letter>` before WebKit, so
-  `menu/mnemonic_mask/` switches the window's mnemonic modifier off while a modal surface is open, and Settings warns
-  about recorded `Alt+<letter>` keys that collide with title mnemonics (`apps/desktop/src-tauri/src/menu/DETAILS.md` §
-  "A modal surface takes the mnemonics away"). An in-page bar makes both unnecessary: the page sees every key, and a
-  dialog owns Alt by construction.
+- **Linux before D5**: muda built a GTK menu bar per window. GTK takes a bar title's `Alt+<letter>` before WebKit, so a
+  mnemonic mask switched the window's mnemonic modifier off while a modal surface was open, and Settings warned about
+  recorded `Alt+<letter>` keys that collided with title mnemonics. An in-page bar makes both unnecessary: the page sees
+  every key, and a dialog owns Alt by construction.
 - **Reuse already in the tree**: the browser demo draws the macOS bar in HTML from `cmdr-menu` through
   `cmdr-listing-wasm`'s `DemoMenuBar` (`apps/desktop/src/lib/demo/menu-bar.svelte.ts`, ~290 lines, plus its style), with
   keyboard walking and click lanes identical to the native events. `lib/ui/Menu.svelte` is the in-app menu primitive
-  (submenus, check items, ARIA roles). `lib/ui/access-keys.ts` allocates letters from rendered labels by the Linux menu
-  bar's rule (`menu/mnemonics.rs`) and draws underlines (on Windows by Win32's keyboard-cue rule since task 63).
+  (submenus, check items, ARIA roles). `lib/ui/access-keys.ts` allocates letters from rendered labels by the GTK bar's
+  rule (word initials first) and draws underlines (on Windows by Win32's keyboard-cue rule since task 63).
   `cmdr-listing-wasm/src/context_menu.rs` already answers every right-click menu's rows for the demo, the shape the
   in-page context menus on Windows follow.
 
@@ -241,9 +240,9 @@ Xfce and MATE have no current HIG covering it).
 - **Removed**: muda's bar on Windows and Linux (`menu_bar_builder.rs` builds it on macOS only),
   `get_menu_bar_title_mnemonics` and Settings' title-mnemonic warning (replaced by the bar's own letters reserving
   around a scope's Alt keys, as `keyScope` does for dialogs), and `menu-mnemonic-mask.spec.ts` (step 6 renamed it
-  `menu-bar.spec.ts`, which now drives the in-page bar).
-- **To remove** (task 63 step 10): `menu/mnemonic_mask/` and its IPC command, `menu-mnemonics-capture.svelte.ts`, and
-  the mask's leftovers in `menu-bar.spec.ts`.
+  `menu-bar.spec.ts`, which now drives the in-page bar); with task 63 step 10, the GTK mnemonic mask
+  (`menu/mnemonic_mask/`, its `set_menu_mnemonics_suspended` command, `menu-mnemonics-capture.svelte.ts`) and the bar's
+  mnemonic allocator (`menu/mnemonics.rs`), which only the native bar builder called.
 - Steps and sizes: the plan's task 63 entry.
 
 ## Left open (QA, not decisions)

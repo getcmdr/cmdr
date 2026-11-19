@@ -30,7 +30,6 @@
         unregisterShortcutFilterReset,
     } from '#lib/settings/pending-shortcut-highlight.svelte.js'
     import { createKeyboardShortcutsController } from './KeyboardShortcutsSection.controller.svelte'
-    import { suspendMenuMnemonicsWhile } from '#lib/shortcuts/menu-mnemonics-capture.svelte.js'
     import { tString } from '#lib/intl/messages.svelte.js'
     import Trans from '#lib/intl/Trans.svelte'
 
@@ -50,10 +49,6 @@
     // Purely-UI DOM ref for the key-filter input.
     let keyFilterInput: HTMLInputElement | undefined = $state()
     let keyFilterFocused = $state(false)
-
-    // The recorder and the key filter both read whole combos, `Alt+F` included, which the menu bar
-    // Settings wears on Linux would otherwise take first.
-    suspendMenuMnemonicsWhile(() => controller.editingShortcut !== null || keyFilterFocused)
 
     // Subscribe to shortcut changes; bumping the controller's counter re-runs its
     // derivations and re-keys the rows in the `{#each}` below.
