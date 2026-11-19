@@ -25,4 +25,4 @@ and Linux keep native popups.
 - **The text-field rows are the page's, not `cmdr-menu`'s**: their edit acts on a field only the page can reach.
 - **Disabled fields, checkboxes, sliders, and `<select>` get no menu** where menus are in-page, as on Windows.
 
-Mechanics, decisions, and what's unverified on Windows: `DETAILS.md`.
+Mechanics, decisions, and what a WebView2 run checked: `DETAILS.md`.

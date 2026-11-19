@@ -21,13 +21,14 @@ import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { LogicalPosition } from '@tauri-apps/api/dpi'
 import { emitTo } from '@tauri-apps/api/event'
 import { Effect, EffectState } from '@tauri-apps/api/window'
-import { getShouldReduceTransparency, raiseChildWindow, trackEvent } from '#lib/tauri-commands/index.js'
+import { raiseChildWindow, trackEvent } from '#lib/tauri-commands/index.js'
 import { getAppLogger } from '#lib/logging/logger.js'
 import { getEffectiveScale } from '#lib/text-size.svelte.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 import { decorateChildWindowTitle, isE2eRun, orderChildWindowToBackInE2e } from '#lib/app-mode.js'
 import { readMainRect, readMonitors, readSavedRect, resolveChildPosition } from '#lib/window-positioning.js'
 import { scheduleShowFallback } from '#lib/child-window-show.js'
+import { childWindowMaterial } from '#lib/child-window-material.js'
 import type { SettingId } from './types'
 
 const log = getAppLogger('settings')
@@ -196,23 +197,11 @@ export async function openSettingsWindow(surface: SettingsSurface, section?: str
       }`
     : '/settings'
 
-  // Honor macOS "Reduce transparency": open an opaque window and skip the
-  // vibrancy material (the settings tokens flip to opaque in `app.css` to
-  // match). The opaque `backgroundColor` mirrors `--color-bg-primary` so the
-  // pre-paint frame and the CSS line up, and the body's rounded corners sit
-  // seamlessly on a same-colored window. Read the value from the backend
-  // (`NSWorkspace`), NOT a media query: WKWebView doesn't reflect
-  // `prefers-reduced-transparency`. The window's opacity is fixed at creation
-  // for the current setting; the page content still re-themes live via the
-  // `reduce-transparency` class (see `#lib/glass-material`).
-  // `prefers-color-scheme` IS reflected, so dark detection stays a media query.
-  const reduceTransparency = await getShouldReduceTransparency()
-  const darkAppearance = window.matchMedia('(prefers-color-scheme: dark)').matches
-  const backgroundColor: [number, number, number, number] = reduceTransparency
-    ? darkAppearance
-      ? [30, 30, 30, 255]
-      : [255, 255, 255, 255]
-    : [0, 0, 0, 0]
+  // See-through over the macOS material, or opaque where there is none or Reduce transparency
+  // is on (`#lib/child-window-material`). Read from the backend (`NSWorkspace`): WKWebView
+  // doesn't reflect `prefers-reduced-transparency`. Fixed at creation; the page re-themes live
+  // through the `reduce-transparency` class (`#lib/glass-material`).
+  const { glass, backgroundColor } = await childWindowMaterial()
 
   const win = new WebviewWindow('settings', {
     url: settingsUrl,
@@ -232,11 +221,11 @@ export async function openSettingsWindow(surface: SettingsSurface, section?: str
     // (`#lib/child-window-show`). E2E keeps the immediate show, since
     // `orderChildWindowToBackInE2e` below owns that window's ordering.
     visible: isE2e,
-    // Translucent glass backdrop via the macOS `NSVisualEffectView` material,
-    // UNLESS the user reduces transparency (then open opaque). The settings
+    // Translucent glass backdrop via the macOS `NSVisualEffectView` material
+    // where `glass` says so (else opaque). The settings
     // window is the only one that opts into vibrancy; the main window is plain
     // opaque. Requires `tauri/macos-private-api` (enabled in `Cargo.toml`).
-    transparent: !reduceTransparency,
+    transparent: glass,
     backgroundColor,
     // Overlay title bar so the traffic lights can sit inside the sidebar
     // (see `routes/settings/+page.svelte` for the matching layout). The
@@ -256,7 +245,7 @@ export async function openSettingsWindow(surface: SettingsSurface, section?: str
   // permission is granted in `capabilities/settings.json`. Radius matches
   // `--radius-window` in `app.css` (the file viewer's stock corner) so the
   // NSWindow corner curve and the webview's CSS clip line up exactly.
-  if (!reduceTransparency) {
+  if (glass) {
     void win.once('tauri://created', () => {
       void win
         .setEffects({

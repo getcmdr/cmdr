@@ -368,3 +368,9 @@ things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX
   (the settings belong to the box): that each Settings page broadcasts or fires its `UISettings` event, a contrast
   theme's and another accent's look, the Text size zoom, and a non-English language all wait for a human on a real
   Windows.
+- **2026-11-19, the first real-desktop check of the menus, browser keys, and look** (`main` at `4314b3cf1f`, a debug
+  `pnpm tauri build --no-bundle` in `D:\src\cmdr-verify`, 17m 58s seeded from `D:\targets\triage`): the in-page bar,
+  right-click and text-field menus, the `SC_KEYMENU` guard, and the browser-key switch pass in every window; three
+  failures were fixed and re-run on `968733ae7f` (see-through Settings and queue, no ring after a lone Alt, focus
+  stranded on a title). Per-check evidence and the open problems (a Copy dialog that refuses every local copy first):
+  `docs/notes/windows-port/real-windows-check-2026-11-19.md`.

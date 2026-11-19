@@ -17,11 +17,12 @@
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { LogicalPosition } from '@tauri-apps/api/dpi'
 import { Effect, EffectState } from '@tauri-apps/api/window'
-import { getShouldReduceTransparency, raiseChildWindow } from '#lib/tauri-commands/index.js'
+import { raiseChildWindow } from '#lib/tauri-commands/index.js'
 import { getAppLogger } from '#lib/logging/logger.js'
 import { decorateChildWindowTitle } from '#lib/app-mode.js'
 import { readMainRect, readMonitors, readSavedRect, resolveChildPosition } from '#lib/window-positioning.js'
 import { scheduleShowFallback } from '#lib/child-window-show.js'
+import { childWindowMaterial } from '#lib/child-window-material.js'
 
 const log = getAppLogger('debug')
 
@@ -52,18 +53,8 @@ export async function openDebugWindow(): Promise<void> {
     ? resolveChildPosition({ size: { width: DEBUG_WIDTH, height: DEBUG_HEIGHT }, main, monitors, saved })
     : null
 
-  // Honor macOS "Reduce transparency": open opaque and skip vibrancy, mirroring
-  // `settings-window.ts`. The opaque `backgroundColor` matches `--color-bg-primary`
-  // (the settings tokens flip opaque in `app.css`). Read from the backend
-  // (`NSWorkspace`), not a media query — WKWebView doesn't reflect
-  // `prefers-reduced-transparency`. `prefers-color-scheme` IS reflected.
-  const reduceTransparency = await getShouldReduceTransparency()
-  const darkAppearance = window.matchMedia('(prefers-color-scheme: dark)').matches
-  const backgroundColor: [number, number, number, number] = reduceTransparency
-    ? darkAppearance
-      ? [30, 30, 30, 255]
-      : [255, 255, 255, 255]
-    : [0, 0, 0, 0]
+  // See-through over the macOS material, or opaque, as Settings opens (`#lib/child-window-material`).
+  const { glass, backgroundColor } = await childWindowMaterial()
 
   const win = new WebviewWindow('debug', {
     url: '/debug',
@@ -79,10 +70,9 @@ export async function openDebugWindow(): Promise<void> {
     // Created hidden; the debug page shows it, sliding in, once it's ready
     // (`#lib/child-window-show`).
     visible: false,
-    // Translucent glass backdrop, mirroring Settings — unless the user reduces
-    // transparency (then opaque). Requires `tauri/macos-private-api` (already
+    // Translucent glass backdrop, mirroring Settings, where `glass` says so. Requires `tauri/macos-private-api` (already
     // enabled for Settings).
-    transparent: !reduceTransparency,
+    transparent: glass,
     backgroundColor,
     // Overlay title bar so traffic lights can sit inside the sidebar.
     titleBarStyle: 'overlay',
@@ -96,7 +86,7 @@ export async function openDebugWindow(): Promise<void> {
   // `windowEffects` in the options dict was dropped on the way to the Rust
   // runtime in this Tauri version, so the explicit IPC path is the reliable
   // one. Radius matches `--radius-window` in `app.css`.
-  if (!reduceTransparency) {
+  if (glass) {
     void win.once('tauri://created', () => {
       void win
         .setEffects({

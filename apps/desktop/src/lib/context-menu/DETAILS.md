@@ -86,14 +86,20 @@ engine's own edit menu.
   Menu key's keydown, claimed by the dispatcher, opens the cursor row's menu at the row. Left alone, the engine raises a
   `contextmenu` on the focused list, which no row hears.
 
-## Unverified on Windows
+## Checked on WebView2
 
-- How WebView2 marks a keyboard-raised `contextmenu` (`isKeyboardContextMenu`: an empty `pointerType`, Chromium's
-  documented behavior) and where it places one inside a field.
-- Whether WebView2 still raises a `contextmenu` after the Menu key's keydown is `preventDefault`ed. If it does, it lands
-  on the focused list (or the open menu) and the ownership handler suppresses it.
-- `execCommand('cut')` / `'copy'` under WebView2 from a pick: Chromium allows both with user activation.
-- Whether `queryCommandEnabled('undo')` reads a field's undo stack in WebView2; a throw reads as enabled.
+Verified on Windows 10 22H2 build 19045.6466, WebView2 157.0.4341.60, with real OS input (`keybd_event`) and
+screenshots, 2026-11-19 (`docs/notes/windows-port/real-windows-check-2026-11-19.md`):
+
+- A keyboard-raised menu in a field: Shift+F10 and the Menu key in the rename editor open the edit menu once, just under
+  the field's start, with its first live row highlighted. Not read directly: whether `isKeyboardContextMenu` saw an
+  empty `pointerType` (no DOM access on that run), only that the menu behaved as keyboard-opened.
+- The Menu key on a pane row opens exactly one in-page menu at the row, and no WebView2 menu follows, so either no
+  second `contextmenu` comes or the ownership handler eats it; which one is unread.
+- `execCommand('cut')` / `'copy'` from a pick work: Copy and Cut put the field's text on the system clipboard (read back
+  with `Clipboard.GetText`), and Cut emptied the field.
+- `queryCommandEnabled('undo')` reads the field's own stack: Undo and Redo are greyed on a fresh rename field, and Undo
+  turns live after a Paste (and after typing in Settings' search), then restores the text.
 
 ## Running them off Windows
 
@@ -106,4 +112,5 @@ engine's own edit menu.
 - The override moves `contextMenus` alone, and only a `playwright-e2e` build reads it
   (`src-tauri/src/platform/frontend.rs`). Release builds compile default features, which don't hold that feature, so a
   shipped app ignores the variable; `the_e2e_context_menus_override_is_absent_here` pins that.
-- That lane is WebKitGTK, not WebView2, so the unverified list above stays open until a Windows lane runs (task 55).
+- That lane is WebKitGTK, not WebView2; the WebView2 behavior above came from a run on mami, which no lane repeats yet
+  (task 55).

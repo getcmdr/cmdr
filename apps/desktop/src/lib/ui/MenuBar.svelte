@@ -137,8 +137,11 @@
     })
 
     /** The title the keyboard is on while a text field keeps focus, drawn as a focused one. */
+    // The bar is active with no menu open only on the keyboard's say (a click opens a menu, and a
+    // click on the open title lets go), so the class marks it; `:focus-visible` alone misses two
+    // cases: a field holding focus, and a lone Alt, which Chromium doesn't count as keyboard use.
     function isKeyboardTitle(index: number): boolean {
-        return bar.fieldHolder !== null && bar.active && bar.openIndex === null && index === bar.focusIndex
+        return bar.active && bar.openIndex === null && index === bar.focusIndex
     }
 
     function tabIndexOf(index: number): 0 | -1 {
