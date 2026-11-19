@@ -1836,6 +1836,15 @@ only on ubuntu: 27 CI runs went red that way in three months (`docs/notes/ci-hea
 image and build into one per-worktree volume (`desktop-rust-linux-container.go`), so a warm run compiles only what
 changed. Order: `clippy` → `clippy-linux` → `rust-tests-linux`.
 
+`desktop-rust-clippy-windows` (`clippy-windows`) rides the same image and volume to ask the Windows lane's question
+(clippy, `--all-targets`, `-D warnings`, every member declared for Windows) for `x86_64-pc-windows-gnu`, cross-compiled
+with mingw-w64, which the image carries (plus NASM, the Rust target, and a `Windows.h` link for `usearch`'s capitalized
+include, since Linux's disk is case-sensitive). The Windows units land under `x86_64-pc-windows-gnu/`, which the sweep
+never touches; the lane records no stream, so a sweep drops its host-side units (build scripts, proc macros), which only
+costs their rebuild. A cold run took ~2 min on a warm volume on the laptop, image build included (2026-11-19). It runs
+after `clippy-linux` (same build-directory lock). When to run it and why CI gates on the native lane:
+`docs/tooling/ci.md` § Windows lane.
+
 - **The image is the provisioning**: `cmdr-rust-linux:<sha256[0..12]>` of the rendered Dockerfile plus
   `rust-toolchain.toml`, built on a miss and the older tags pruned (the E2E lane's `cmdr-e2e-base:<hash>` pattern). It
   carries the GTK/WebKit dev libraries, the `.mise.toml` Go, the pinned nextest, and the pinned toolchain's components
@@ -2530,8 +2539,9 @@ Checks by app and tech:
   the sole caller of the crate extraction's one sanctioned public-surface widening — see § "Fixture lane coverage"),
   tests, integration-tests (Docker network fixtures), disk-images (slow, macOS only, not in CI; the real-image tests on
   synthetic APFS and HFS+ disk images, see § "The disk-image lane"), clippy-linux (slow, not in CI; CI's clippy and
-  rustdoc commands against the Linux target, run from a Mac in Docker), tests-linux (slow; both in § "The Linux Docker
-  lanes share an image and a build cache")
+  rustdoc commands against the Linux target, run from a Mac in Docker), tests-linux (slow), clippy-windows (slow, not in
+  CI; the Windows lane's clippy for the mingw target, run from a Mac in Docker; all three in § "The Linux Docker lanes
+  share an image and a build cache")
 
 Four of those scanners share one region tracker, `rustTestModState` / `advanceTestModRegion`
 (`desktop-rust-test-sleep.go`), in opposite polarities: test-sleep and fixed-temp-dir scan ONLY inside an inline test

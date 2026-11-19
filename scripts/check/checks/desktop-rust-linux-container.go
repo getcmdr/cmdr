@@ -15,8 +15,9 @@ import (
 	"time"
 )
 
-// The Linux Docker lanes (`desktop-rust-clippy-linux`, `desktop-rust-tests-linux`) share
-// everything in this file: one image, one pair of cache volumes, one container lifecycle.
+// The Linux Docker lanes (`desktop-rust-clippy-linux`, `desktop-rust-tests-linux`, and the
+// Windows cross-lint `desktop-rust-clippy-windows`) share everything in this file: one image,
+// one pair of cache volumes, one container lifecycle.
 // Both run cargo from a Mac against the same Linux target, so they share a warm build
 // directory; `DependsOn` keeps them from overlapping within a run, and cargo's own
 // build-directory lock serializes two runs in the same worktree (the volume lives in one
@@ -70,6 +71,11 @@ const linuxTargetVolumePrefix = "cmdr-rust-linux-target-"
 // nextest binary caused a silent OrbStack crash on Apple Silicon (`Dynamic loader not
 // found: /lib64/ld-linux-x86-64.so.2`).
 //
+// mingw-w64 (with NASM, for `aws-lc-sys`) and the `x86_64-pc-windows-gnu` target are for
+// `desktop-rust-clippy-windows`, which cross-lints from this image. The `Windows.h` link is
+// because `usearch` includes it capitalized and mingw ships `windows.h`: on Windows' and
+// macOS's case-insensitive disks that's one file, on Linux it's a missing header.
+//
 // nextest (vs raw `cargo test`) is required: a handful of tests (e.g.
 // `ai::api_keys::tests::*`) rely on per-test process isolation because the secret-store
 // backend caches `CMDR_DATA_DIR` in a `LazyLock` on first access; `cargo test` runs
@@ -81,7 +87,9 @@ RUN apt-get update -qq \
  && apt-get install -y -qq --no-install-recommends \
     libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libacl1-dev \
     curl ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+    gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 binutils-mingw-w64-x86-64 nasm \
+ && rm -rf /var/lib/apt/lists/* \
+ && ln -s windows.h /usr/x86_64-w64-mingw32/include/Windows.h
 RUN ARCH=$(dpkg --print-architecture) \
  && case "$ARCH" in \
       amd64) NEXTEST_PLATFORM=linux ;; \
@@ -91,7 +99,7 @@ RUN ARCH=$(dpkg --print-architecture) \
  && curl -fsSL https://go.dev/dl/go%[2]s.linux-${ARCH}.tar.gz | tar -xz -C /usr/local \
  && curl -LsSf "https://get.nexte.st/%[3]s/${NEXTEST_PLATFORM}" | tar zxf - -C /usr/local/bin
 COPY rust-toolchain.toml /toolchain/rust-toolchain.toml
-RUN cd /toolchain && rustup toolchain install
+RUN cd /toolchain && rustup toolchain install && rustup target add x86_64-pc-windows-gnu
 ENV PATH=/usr/local/go/bin:$PATH
 `
 

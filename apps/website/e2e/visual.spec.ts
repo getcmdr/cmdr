@@ -35,7 +35,7 @@ import { test, expect, type Page, type Locator } from '@playwright/test'
  * - The theme is forced deterministically by seeding `localStorage.theme` + `data-theme` on
  *   `<html>` before any page script runs (the same mechanism `ThemeToggle.astro` /
  *   `Layout.astro` use), so we don't depend on the OS/browser color scheme.
- * - Every non-`localhost` request is aborted. Nothing visible on these pages is cross-origin
+ * - Every request to anything but the run's own server is aborted. Nothing visible on these pages is cross-origin
  *   (system fonts, local `_astro`/`blog` images), but analytics (PostHog, Umami), Remark42
  *   comments, and the `api.getcmdr.com/r-codes.json` acquisition fetch are. Blocking them
  *   guarantees `networkidle` fires and keeps the render offline-stable.
@@ -45,7 +45,8 @@ import { test, expect, type Page, type Locator } from '@playwright/test'
  */
 
 const VIEWPORT = { width: 1280, height: 800 }
-const VIEWPORT_PORT = 18473 // matches playwright.config.ts baseURL / webServer
+// The run's server, as `playwright.config.ts` sets it (it fills the env var before workers start).
+const SITE_HOST = `127.0.0.1:${process.env.CMDR_WEBSITE_E2E_PORT}`
 
 const FULL_PAGE_MODE = !!process.env.VISUAL_FULL
 
@@ -66,7 +67,7 @@ type Theme = 'light' | 'dark'
 async function preparePage(page: Page, theme: Theme): Promise<void> {
   await page.route('**/*', (route) => {
     const host = new URL(route.request().url()).host
-    if (host === `localhost:${VIEWPORT_PORT}`) return route.continue()
+    if (host === SITE_HOST) return route.continue()
     return route.abort()
   })
   await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' })

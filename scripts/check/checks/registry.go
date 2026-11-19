@@ -1072,6 +1072,21 @@ var AllChecks = []CheckDefinition{
 		Run:       RunClippyLinux,
 	},
 	{
+		ID:          "desktop-rust-clippy-windows",
+		CpuWeight:   8,
+		Nickname:    "clippy-windows",
+		DisplayName: "clippy (Windows)",
+		App:         AppDesktop,
+		Tech:        "🦀 Rust",
+		IsSlow:      true,
+		NotInCI:     "CI's Windows lane (windows-lane.yml, gating every land that touches Rust) runs desktop-rust-clippy natively on windows-latest; this check exists to lint the Windows target from a Mac before pushing",
+		// After the host clippy, whose `--fix` may still be rewriting shared sources, and after
+		// the Linux clippy, whose target volume it shares (cargo's build-directory lock).
+		DependsOn: []string{"desktop-rust-clippy", "desktop-rust-clippy-linux"},
+		Inputs:    inputs(rustCompileInputs, []string{"clippy.toml"}),
+		Run:       RunClippyWindows,
+	},
+	{
 		ID:          "desktop-rust-tests-linux",
 		CpuWeight:   6,
 		Nickname:    "rust-tests-linux",
