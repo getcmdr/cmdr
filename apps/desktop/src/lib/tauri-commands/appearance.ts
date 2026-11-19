@@ -15,10 +15,11 @@ import {
   type SystemTextSizeChanged,
   type OsLocales,
   type OsLocalesChanged,
+  type SystemAccent,
 } from '#lib/ipc/bindings.js'
 
-/** Reads the current OS accent color as `#rrggbb`. */
-export function getAccentColor(): Promise<string> {
+/** Reads the current OS accent color as `#rrggbb`, plus the shades the OS fills controls with, where it names them. */
+export function getAccentColor(): Promise<SystemAccent> {
   return commands.getAccentColor()
 }
 
@@ -69,7 +70,7 @@ export function getOsLocales(): Promise<OsLocales> {
 
 /**
  * Subscribes to OS accent-color (or light/dark appearance) changes. The
- * payload's `hex` is the new accent color as `#rrggbb`.
+ * payload's `accent` is the fresh answer, as `getAccentColor` returns it.
  */
 export function onAccentColorChanged(handler: (payload: AccentColorChanged) => void): Promise<UnlistenFn> {
   return events.accentColorChanged.listen((event) => {

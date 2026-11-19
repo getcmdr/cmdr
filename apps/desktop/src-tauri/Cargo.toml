@@ -359,11 +359,14 @@ webkit2gtk = "2.0"
 [target.'cfg(target_os = "windows")'.dependencies]
 # Win32 calls behind the app's `platform/` seams: the registry (device id, OS names, managed
 # policy and its change watch), `RtlGetVersion`, the memory counters, the instance lock's
-# message box, the drive table (volume GUIDs, drive types, mapped shares), and the system look's
-# settings window (`WM_SETTINGCHANGE`; `WNDCLASSW` needs Gdi's brush type). Already in the lockfile through the workspace crates.
+# message box, the drive table (volume GUIDs, drive types, mapped shares), the system look's
+# settings window (`WM_SETTINGCHANGE`; `WNDCLASSW` needs Gdi's brush type) and its contrast-theme
+# read (`SPI_GETHIGHCONTRAST`), and the user's languages and format locale (`intl/platform/`).
+# Already in the lockfile through the workspace crates.
 windows-sys = { version = "0.61", features = [
     "Wdk_System_SystemServices",
     "Win32_Foundation",
+    "Win32_Globalization",
     "Win32_Graphics_Gdi",
     "Win32_NetworkManagement_WNet",
     "Win32_Security",
@@ -373,8 +376,13 @@ windows-sys = { version = "0.61", features = [
     "Win32_System_Registry",
     "Win32_System_SystemInformation",
     "Win32_System_Threading",
+    "Win32_UI_Accessibility",
     "Win32_UI_WindowsAndMessaging",
 ] }
+# The system look's WinRT half (`system_look/platform/windows/ui_settings.rs`): `UISettings` for
+# the accent color and its shades, the transparency-effects switch, and their change events. The
+# version tao, wry, and tauri already link, so nothing new enters the lockfile.
+windows = { version = "0.62", features = ["UI_ViewManagement"] }
 # Secrets in Windows Credential Manager (`secrets/platform/windows/`): the `keyring-core` backend
 # from the same maintainers as the Linux Secret Service one, so both arms share one API.
 keyring-core = "1"

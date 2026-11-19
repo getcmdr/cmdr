@@ -5,11 +5,11 @@
 //! can read US English and live in Sweden, and System Settings keeps those apart
 //! on purpose.
 //!
-//! The language half is this file: macOS hands us an ORDERED list of languages
-//! the user reads (`system_strings::apple_languages`, macOS-only), and given the
-//! catalogs we actually ship, one of them is the answer. The region half is
-//! `format_locale.rs`, which composes the tag the webview can't work out for
-//! itself. [`get_os_locales`] hands both over at once.
+//! The language half is this file: macOS and Windows hand us an ORDERED list of
+//! languages the user reads (`platform/`), and given the catalogs we actually
+//! ship, one of them is the answer. The region half is `format_locale.rs`, which
+//! composes the tag the webview can't work out for itself from what `platform/`
+//! reads. [`get_os_locales`] hands both over at once.
 //!
 //! The answers live in Rust rather than in the frontend because two of the
 //! language half's three consumers run before the webview exists: the native
@@ -137,12 +137,9 @@ pub fn get_os_locales() -> OsLocales {
 /// visible. Where the OS has no preference list and no region override (Linux), both are `None`,
 /// so the webview's own default stands: WebKit reads the same session environment the desktop
 /// does.
-///
-/// The format half goes through `format_locale` rather than being answered here, so that module
-/// keeps ONE answer per platform.
 pub(crate) fn resolved_os_locales() -> OsLocales {
     OsLocales {
         ui: platform::webview_ui_locale(),
-        format: format_locale::resolved_format_locale(),
+        format: platform::format_locale(),
     }
 }

@@ -11,6 +11,12 @@
    Sizes are theme-independent (WinUI defines them outside the theme dictionaries), so they
    live here once and the dark block below only swaps colors. */
 :root[data-look='windows'] {
+  /* Every accent-filled control below fills with `--color-accent-fill`: AccentFillColorDefault →
+     SystemAccentColorDark1 (light) / SystemAccentColorLight2 (dark), which `#lib/accent-color`
+     writes for the current scheme from `UISettings`, with TextOnAccentFillColorPrimary (#FFFFFF
+     light, #000000 dark) as `--color-accent-fill-fg`. Without an OS shade (Cmdr gold, a mocked
+     look on a Mac) both are the accent and its contrast-picked text (`app.css`). */
+
   /* UseSystemFocusVisuals: FocusStrokeColorOuter #E4000000 at FocusVisualPrimaryThickness 2,
      FocusStrokeColorInner #B3FFFFFF at FocusVisualSecondaryThickness 1. Button's
      FocusVisualMargin -3 puts the outer ring 1–3px outside the control and the inner one
@@ -28,15 +34,15 @@
   /* AccentButtonBackground → AccentFillColorDefaultBrush; …PointerOver → AccentFillColorSecondaryBrush
      (Opacity 0.9); …Pressed → AccentFillColorTertiaryBrush (Opacity 0.8); …Disabled →
      AccentFillColorDisabled #37000000 */
-  --color-button-primary-bg: var(--color-accent);
-  --color-button-primary-bg-hover: color-mix(in srgb, var(--color-accent) 90%, transparent);
-  --color-button-primary-bg-pressed: color-mix(in srgb, var(--color-accent) 80%, transparent);
+  --color-button-primary-bg: var(--color-accent-fill);
+  --color-button-primary-bg-hover: color-mix(in srgb, var(--color-accent-fill) 90%, transparent);
+  --color-button-primary-bg-pressed: color-mix(in srgb, var(--color-accent-fill) 80%, transparent);
   --color-button-primary-bg-disabled: #00000037;
   /* AccentButtonForeground → TextOnAccentFillColorPrimary; …Pressed → TextOnAccentFillColorSecondary
      (#B3FFFFFF: the on-accent color at 70%); …Disabled → TextOnAccentFillColorDisabled #FFFFFF */
-  --color-button-primary-fg: var(--color-accent-fg);
-  --color-button-primary-fg-hover: var(--color-accent-fg);
-  --color-button-primary-fg-pressed: color-mix(in srgb, var(--color-accent-fg) 70%, transparent);
+  --color-button-primary-fg: var(--color-accent-fill-fg);
+  --color-button-primary-fg-hover: var(--color-accent-fill-fg);
+  --color-button-primary-fg-pressed: color-mix(in srgb, var(--color-accent-fill-fg) 70%, transparent);
   --color-button-primary-fg-disabled: #ffffff;
   /* AccentButtonBorderBrush → AccentControlElevationBorderBrush: a 3px gradient, flipped
      (ScaleY -1), so the bottom edge is ControlStrokeColorOnAccentSecondary #66000000 and the
@@ -98,8 +104,8 @@
      SystemAccentColorDark1, at TextControlBorderThemeThicknessFocused 1,1,1,2 (the second
      bottom pixel is the inset shadow) */
   --color-field-border-focus: #0000000f;
-  --color-field-border-bottom-focus: var(--color-accent);
-  --shadow-field-focus: inset 0 -1px 0 var(--color-accent);
+  --color-field-border-bottom-focus: var(--color-accent-fill);
+  --shadow-field-focus: inset 0 -1px 0 var(--color-accent-fill);
   /* TextControlThemePadding 10,5,6,6 (Common_themeresources.xaml); TextControlThemeMinHeight 32
      (generic.xaml) */
   --spacing-field-padding: 5px 6px 6px 10px;
@@ -139,14 +145,14 @@
   --color-checkbox-border-disabled-hover: #00000037;
   /* CheckBoxCheckBackgroundFillChecked → AccentFillColorDefault; …PointerOver → Secondary (0.9);
      …Pressed → Tertiary (0.8); …Disabled → AccentFillColorDisabled #37000000 */
-  --color-checkbox-checked-bg: var(--color-accent);
-  --color-checkbox-checked-bg-hover: color-mix(in srgb, var(--color-accent) 90%, transparent);
-  --color-checkbox-checked-bg-pressed: color-mix(in srgb, var(--color-accent) 80%, transparent);
+  --color-checkbox-checked-bg: var(--color-accent-fill);
+  --color-checkbox-checked-bg-hover: color-mix(in srgb, var(--color-accent-fill) 90%, transparent);
+  --color-checkbox-checked-bg-pressed: color-mix(in srgb, var(--color-accent-fill) 80%, transparent);
   --color-checkbox-checked-bg-disabled: #00000037;
   --color-checkbox-checked-bg-disabled-hover: #00000037;
   /* CheckBoxCheckGlyphForegroundChecked → TextOnAccentFillColorPrimary; …Disabled →
      TextOnAccentFillColorDisabled #FFFFFF */
-  --color-checkbox-glyph: var(--color-accent-fg);
+  --color-checkbox-glyph: var(--color-accent-fill-fg);
   --color-checkbox-glyph-disabled: #ffffff;
   /* CheckBoxForegroundUncheckedDisabled (and ToggleSwitch's, RadioButton's) → TextFillColorDisabled */
   --color-control-label-disabled: #0000005c;
@@ -170,12 +176,12 @@
   --color-switch-border-disabled: 1px solid #00000037;
   /* ToggleSwitchFillOn / ToggleSwitchStrokeOn → AccentFillColorDefault; …PointerOver →
      Secondary; …Disabled → AccentFillColorDisabled */
-  --color-switch-track-on: var(--color-accent);
-  --color-switch-track-on-hover: color-mix(in srgb, var(--color-accent) 90%, transparent);
+  --color-switch-track-on: var(--color-accent-fill);
+  --color-switch-track-on-hover: color-mix(in srgb, var(--color-accent-fill) 90%, transparent);
   --color-switch-track-on-disabled: #00000037;
   --color-switch-track-on-disabled-hover: #00000037;
-  --color-switch-border-on: 1px solid var(--color-accent);
-  --color-switch-border-on-hover: 1px solid color-mix(in srgb, var(--color-accent) 90%, transparent);
+  --color-switch-border-on: 1px solid var(--color-accent-fill);
+  --color-switch-border-on-hover: 1px solid color-mix(in srgb, var(--color-accent-fill) 90%, transparent);
   --color-switch-border-on-disabled: 1px solid #00000037;
   /* ToggleSwitchKnobFillOff / …PointerOver → TextFillColorSecondary #9E000000; …Disabled →
      TextFillColorDisabled; ToggleSwitchKnobFillOn → TextOnAccentFillColorPrimary; …Disabled →
@@ -183,8 +189,8 @@
   --color-switch-thumb: #0000009e;
   --color-switch-thumb-hover: #0000009e;
   --color-switch-thumb-disabled: #0000005c;
-  --color-switch-thumb-on: var(--color-accent-fg);
-  --color-switch-thumb-on-hover: var(--color-accent-fg);
+  --color-switch-thumb-on: var(--color-accent-fill-fg);
+  --color-switch-thumb-on-hover: var(--color-accent-fill-fg);
   --color-switch-thumb-on-disabled: #ffffff;
   --shadow-switch-thumb: none;
 
@@ -211,16 +217,16 @@
   /* RadioButtonOuterEllipseCheckedStroke / …Fill → AccentFillColorDefault; …PointerOver →
      Secondary; …Disabled → AccentFillColorDisabled; RadioButtonCheckGlyphFill →
      TextOnAccentFillColorPrimary (also when disabled) */
-  --color-radio-checked-border: var(--color-accent);
-  --color-radio-checked-border-hover: color-mix(in srgb, var(--color-accent) 90%, transparent);
+  --color-radio-checked-border: var(--color-accent-fill);
+  --color-radio-checked-border-hover: color-mix(in srgb, var(--color-accent-fill) 90%, transparent);
   --color-radio-checked-border-disabled: #00000037;
   --color-radio-checked-border-disabled-hover: #00000037;
-  --color-radio-checked-bg: var(--color-accent-fg);
-  --color-radio-checked-bg-hover: var(--color-accent-fg);
+  --color-radio-checked-bg: var(--color-accent-fill-fg);
+  --color-radio-checked-bg-hover: var(--color-accent-fill-fg);
   --color-radio-checked-bg-disabled: #ffffff;
   --color-radio-checked-bg-disabled-hover: #ffffff;
-  --shadow-radio-checked: inset 0 0 0 3px var(--color-accent);
-  --shadow-radio-checked-hover: inset 0 0 0 2px color-mix(in srgb, var(--color-accent) 90%, transparent);
+  --shadow-radio-checked: inset 0 0 0 3px var(--color-accent-fill);
+  --shadow-radio-checked-hover: inset 0 0 0 2px color-mix(in srgb, var(--color-accent-fill) 90%, transparent);
   --shadow-radio-checked-disabled: inset 0 0 0 3px #00000037;
 
   /* Slider: SliderTrackFill → ControlStrongFillColorDefault #72000000; …Disabled →
@@ -229,7 +235,7 @@
      match the house track. */
   --color-slider-track: #00000072;
   --color-slider-track-disabled: #00000051;
-  --color-slider-range: var(--color-accent);
+  --color-slider-range: var(--color-accent-fill);
   --color-slider-range-disabled: #00000037;
   /* SliderHorizontalThumbWidth/Height 18, SliderThumbCornerRadius 10; its fill is
      SliderOuterThumbBackground → ControlSolidFillColorDefault #FFFFFF with SliderThumbBorderBrush →
@@ -238,8 +244,8 @@
      accent and an inset ring of the solid fill leaves a 10.3px dot (14px, 8.5px). */
   --spacing-slider-thumb-size: 18px;
   --spacing-slider-thumb-border: 1px;
-  --color-slider-thumb-bg: var(--color-accent);
-  --color-slider-thumb-bg-hover: color-mix(in srgb, var(--color-accent) 90%, #ffffff);
+  --color-slider-thumb-bg: var(--color-accent-fill);
+  --color-slider-thumb-bg-hover: color-mix(in srgb, var(--color-accent-fill) 90%, #ffffff);
   --color-slider-thumb-bg-disabled: #00000037;
   --color-slider-thumb-border: #0000000f;
   --color-slider-thumb-border-bottom: #00000029;
@@ -256,7 +262,7 @@
      #72000000. WinUI has one size, so both of ours take it. */
   --color-progress-track: linear-gradient(#00000072 0 0) center / 100% 1px no-repeat;
   /* ProgressBarForeground → AccentFillColorDefault */
-  --color-progress-fill: var(--color-accent);
+  --color-progress-fill: var(--color-accent-fill);
   --spacing-progress-height-sm: 3px;
   --spacing-progress-height-md: 3px;
   --radius-progress-sm: 1.5px;
@@ -302,7 +308,7 @@
   --color-select-item-bg-checked: #00000009;
   /* The selected item's Pill: ComboBoxItemPillWidth 3 × ComboBoxItemPillHeight 16, Margin
      1,0,0,0, vertically centered, ComboBoxItemPillFillBrush → AccentFillColorDefault */
-  --color-select-item-checked-mark: linear-gradient(var(--color-accent) 0 0);
+  --color-select-item-checked-mark: linear-gradient(var(--color-accent-fill) 0 0);
   --spacing-select-item-checked-mark-position: 1px 50%;
   --spacing-select-item-checked-mark-size: 3px 16px;
   --spacing-select-item-checked-mark-repeat: no-repeat;
@@ -383,7 +389,7 @@
 
     /* AccentFillColorDisabled #28FFFFFF; TextOnAccentFillColorDisabled #87FFFFFF */
     --color-button-primary-bg-disabled: #ffffff28;
-    --color-button-primary-fg-pressed: color-mix(in srgb, var(--color-accent-fg) 50%, transparent);
+    --color-button-primary-fg-pressed: color-mix(in srgb, var(--color-accent-fill-fg) 50%, transparent);
     --color-button-primary-fg-disabled: #ffffff87;
     /* AccentControlElevationBorderBrush, flipped: bottom ControlStrokeColorOnAccentSecondary
        #23000000, the rest ControlStrokeColorOnAccentDefault #14FFFFFF */
@@ -482,7 +488,7 @@
     --color-slider-track: #ffffff8b;
     --color-slider-track-disabled: #ffffff3f;
     --color-slider-range-disabled: #ffffff28;
-    --color-slider-thumb-bg-hover: color-mix(in srgb, var(--color-accent) 90%, #454545);
+    --color-slider-thumb-bg-hover: color-mix(in srgb, var(--color-accent-fill) 90%, #454545);
     --color-slider-thumb-bg-disabled: #ffffff28;
     --color-slider-thumb-border: #ffffff12;
     --color-slider-thumb-border-bottom: #ffffff12;
