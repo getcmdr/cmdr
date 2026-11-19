@@ -86,6 +86,31 @@ load drops persisted entries, the mutators no-op with a `log.warn`, `resetShortc
 If a fixed command's handler is ever rewired to read effective shortcuts, remove it from `FIXED_KEY_COMMAND_IDS` and it
 becomes rebindable everywhere at once.
 
+Some fixed commands are fixed by product choice, not because their handler ignores the store: the search dialog's
+(`search.*`), Ask Cmdr's and the viewer's find chords, all matched through `eventMatchesCommand`, which reads effective
+shortcuts. Those follow a host default (next section); a hardcoded one (`nav.up`, `palette.close`) wouldn't.
+
+### Host defaults (`default:<commandId>`)
+
+A `default:<commandId>` entry in `shortcuts.json` is a host's own default for a command: the keys it gives in place of
+the registry's, for a host that can't deliver some of them. Today that's the browser demo, whose browser keeps `Ctrl+N`
+and `⌘N` (new window) before the page sees them, so the search dialog's new query takes `Alt+N` / `⌃N` there
+(`lib/demo/browser-shortcuts.ts`, seeded by `lib/demo/plugins.ts`). Nothing in the app writes one.
+
+- `getDefaultShortcuts` answers the host default where there is one, else the registry's, and `getEffectiveShortcuts`
+  falls back to it. So every reader (chips, tooltips, the palette, the help window's default-vs-effective diff, the
+  user-binding rule, the MCP listing) treats it as THE default: Settings shows no change, a reset returns to it.
+- Why a separate layer and not a `shortcut:` seed: a fixed-key command's customization is dropped on load, by design,
+  and a host default isn't the user's choice anyway.
+- A fixed-key command takes one too (the host replaces the default itself); a command the app menu owns (macOS Quit,
+  Hide) doesn't, as the OS owns its key. Loading heals it like a customization: canonical combos, `[]` kept as "no key
+  here", junk skipped.
+- Never saved, deleted, or reset: `performSave` and reset-all touch `shortcut:*` keys only.
+- The menu bar is built with the REGISTRY's keys, so `menuShortcutNow` compares against those: a menu item with a host
+  default gets pushed at load and on every `resyncMenuAccelerators`.
+- A restricted window (the viewer) reads only the customizations snapshot (`get_restricted_window_shortcuts`), so it
+  sees no host default. No viewer command needs one today.
+
 ### Cross-window propagation (`shortcuts:changed`)
 
 The store is per-webview module state, so a rebind in the Settings window must reach the main window's `customShortcuts`
@@ -627,7 +652,7 @@ There's no dynamic registration.
 ### Menu accelerator sync
 
 When shortcuts change, `updateMenuAccelerator()` calls `invoke('update_menu_accelerator')` to update the native menu
-label. The `menuCommands` array in `shortcuts-store.ts` lists all ~40 commands that have menu items. At startup,
+label. The `menuCommands` array in `menu-commands.ts` lists all ~40 commands that have menu items. At startup,
 `initializeShortcuts` pushes any persisted customizations into the menu via the `notifyListeners` path. On the Rust
 side, `MenuState.items` is a `HashMap<String, MenuItemEntry>` that tracks regular `MenuItem`s by ID;
 `update_menu_item_accelerator()` handles the remove/recreate/reinsert cycle. View mode CheckMenuItems still use the

@@ -206,7 +206,8 @@ every window. The demo keeps that shape, so secondary windows share its state, a
   draw the old words.
 - **Shortcuts**: the spec's accelerators in the visitor's OS's spelling (a Mac's glyphs, `Ctrl+T` elsewhere), or the
   pushed rebind, so the browser-safe map (`browser-shortcuts.ts`) shows: a Mac visitor's Tab > New tab reads ⌃T, and a
-  Windows visitor's New tab shows no key, since Chromium keeps `Ctrl+T`.
+  Windows visitor's New tab shows no key, since Chromium keeps `Ctrl+T`. A menu item with a host default (a fixed-key
+  command's seed) reaches the bar the same way: the store pushes it at load.
 - **Clicks**: `execute-command`, `settings-changed`, `view-mode-changed`, and `menu-sort` go to the main window, as
   `handle_menu_event`'s `emit_to("main")`. With a panel in front, Close tab closes it and an edit goes to its frame
   (`document.execCommand`, best effort: browsers refuse a scripted paste).
@@ -582,15 +583,23 @@ tells the visitor with one notice, `ui.demoArchive.notBrowsable`, whichever way 
   `node -e "const {chromium}=require('@playwright/test'),path=require('path'),fs=require('fs'),s=path.resolve('../desktop/scripts/demo-sample-docs'),o=path.resolve('../desktop/src/lib/demo/assets');(async()=>{const b=await chromium.launch(),p=await b.newPage();for(const f of fs.readdirSync(s).filter(f=>/^sample-.*\.html$/.test(f))){await p.goto('file://'+path.join(s,f));await p.pdf({path:path.join(o,f.replace(/\.html$/,'.pdf')),format:'A4',printBackground:true})}await b.close()})()"`.
   The viewer shows each as a `blob:` `<embed>`, which the demo's CSP allows in both `object-src` and `frame-src`
   (`apps/website/nginx-demo-security-headers.conf` says why).
-- `browser-shortcuts.ts`: the browser-safe shortcut map, one arm per visitor OS (§ Platform picks it). On macOS the
-  browser takes ⌘T, ⌘W, ⌘⇧T, ⌘N, and ⌘1–⌘9 before the page sees them, so those commands move to ⌃ (a placeholder map).
-  On Windows and Linux the arm is computed: the registry's defaults for that OS minus `BROWSER_WITHHELD`, the keys of
-  Chromium's reserved commands (close tab or window, new tab or window, reopen tab, next and previous tab; cited in the
-  module). A command whose every key is withheld is seeded with none, so the demo invents no key: today that's New tab,
-  Close tab, Reopen closed tab, and Ask Cmdr's New chat on both, plus Next tab on Linux. A key the browser merely has a
-  meaning for but lets the page cancel (`Alt+←`, `F5`, `Ctrl+1`) stays. Seeded into `shortcuts.json` as
-  `shortcut:<commandId>` keys, the same delta the Settings editor writes, so every hint in menus, the palette, and the
-  function bar shows the remapped combo with no demo awareness in the shortcut system.
+- `browser-shortcuts.ts`: the browser-safe shortcut maps, one arm per visitor OS (§ Platform picks it). On macOS the
+  browser takes ⌘T, ⌘W, ⌘⇧T, ⌘N, and ⌘1–⌘9 before the page sees them, so those commands move to ⌃ (a placeholder map),
+  the search dialog's new query (⌃N) and numbered modes (⌃1–⌃3) too. On Windows and Linux the arm is computed: the
+  registry's defaults for that OS minus `BROWSER_WITHHELD`, the keys Chromium (its reserved commands) and Firefox (its
+  `reserved="true"` keys: new private window `Ctrl+Shift+P`, quit) never hand a page, both cited in the module. A
+  command left with no key takes its `STAND_INS` key where one fits (placeholders): the search dialog's new query
+  `Alt+N`, the command palette `F1`, the queue `Ctrl+Shift+O`. The rest get none: New tab, Close tab, Reopen closed tab,
+  and Ask Cmdr's New chat on both, plus Next and Previous tab on Linux (the bar's `Alt+T` / `Alt+W` mnemonics and
+  Linux's terminal key leave no safe stand-in; the Tab menu and palette still reach them). A key the browser merely has
+  a meaning for but lets the page cancel (`Alt+←`, `F1`, `F5`, `Ctrl+1`) stays.
+  - Two seeds in `shortcuts.json`, so the shortcut system needs no demo awareness and every hint (menus, the palette,
+    the function bar, the dialog's own chips) shows the remapped combo: a rebindable command's as `shortcut:<id>`, the
+    delta the Settings editor writes (so Settings shows its reset arrow), and a fixed-key command's as `default:<id>`,
+    the store's host defaults (`lib/shortcuts/DETAILS.md` § Host defaults), since the store drops a fixed-key command's
+    customization. `browser-shortcuts.test.ts` fails on any command, fixed-key or not, left on a withheld key.
+  - Safari's reserved keys don't matter off macOS (no Safari there). Firefox's are read off its source, not tried in a
+    browser; Chromium's quit on Linux is inferred from `IsReservedCommandOrKey` (the module says how).
 - `plugins.ts` seeds `settings.json` as a user who just finished the current wizard (`onboarding.completed` and
   `onboarding.upgradeNudgeShown`, the two flags `startup-gates.ts::completeOnboardingWizard` writes): a visitor came to
   try the panes. The full wizard is no first impression here: step 1 is Full Disk Access, which a browser can't grant,

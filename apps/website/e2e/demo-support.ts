@@ -32,18 +32,29 @@ export interface Visitor {
   operationLogKey: string
   /** The delete dialog's warning on a volume with nowhere to put deleted files. */
   noTrashWarning: string
+  /**
+   * The search dialog's new query (`search.newQuery`), off the browser's new-window key, as Playwright
+   * presses it and as its chip shows it (`apps/desktop/src/lib/demo/browser-shortcuts.ts`).
+   */
+  newQuery: { press: string; shown: string }
 }
 
 export async function visitorOf(page: Page): Promise<Visitor> {
   const userAgent = await page.evaluate(() => navigator.userAgent)
   if (/Macintosh|Mac OS X/.test(userAgent)) {
-    return { mod: 'Meta', operationLogKey: 'Meta+Alt+l', noTrashWarning: 'This volume doesn’t support trash.' }
+    return {
+      mod: 'Meta',
+      operationLogKey: 'Meta+Alt+l',
+      noTrashWarning: 'This volume doesn’t support trash.',
+      newQuery: { press: 'Control+n', shown: '⌃N' },
+    }
   }
   const isWindows = userAgent.includes('Windows')
   return {
     mod: 'Control',
     operationLogKey: 'Control+Shift+L',
     noTrashWarning: isWindows ? 'This volume doesn’t have a Recycle Bin.' : 'This volume doesn’t support trash.',
+    newQuery: { press: 'Alt+n', shown: 'Alt+N' },
   }
 }
 

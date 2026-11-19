@@ -45,6 +45,31 @@ test.describe('Browser demo', () => {
     expect(errors.map((error) => error.message)).toEqual([])
   })
 
+  // The browser keeps the new query's own key (Ctrl+N / ⌘N opens a window), so the demo gives the
+  // search dialog another one through the shortcut store's host defaults, and the dialog's own hint
+  // names it (`apps/desktop/src/lib/demo/browser-shortcuts.ts`).
+  test('starts a new search query on the demo’s stand-in key, which its hint names', async ({ page }) => {
+    await page.goto('/demo/')
+    const pane = page.locator('.file-pane').first()
+    await expect(pane.locator('.file-entry').nth(1)).toBeVisible({ timeout: 30_000 })
+    const dialog = page.getByRole('dialog')
+    const { mod, newQuery } = await visitorOf(page)
+    await expect(async () => {
+      if (!(await dialog.isVisible())) await page.keyboard.press(`${mod}+f`)
+      await expect(dialog).toBeVisible({ timeout: 1_000 })
+    }).toPass({ timeout: 10_000 })
+    const emptyState = dialog.locator('.empty-state')
+    await expect(emptyState.locator('kbd.shortcut-chip').first()).toHaveText(newQuery.shown)
+
+    await page.keyboard.type('annual report')
+    await expect(dialog.getByText('Annual report.pdf')).toBeVisible()
+    await page.keyboard.press(newQuery.press)
+
+    await expect(dialog.getByText('Annual report.pdf')).toHaveCount(0)
+    await expect(emptyState).toBeVisible()
+    await expect(page.locator(':focus')).toHaveValue('')
+  })
+
   // Each visitor gets their own OS's bar and look (task 63 step 11 of `docs/specs/windows-port-plan.md`):
   // the macOS bar for a Mac visitor, Windows 11's in-window bar for a Windows one, and the window under
   // whichever bar is there, so the status corner never sits under it (`lib/demo/DETAILS.md` § Platform).
