@@ -7,6 +7,7 @@ import { asset } from '$app/paths'
 import { refuse, refuseWith, type AnswerTable, type Payload, type VoidCommand } from './answer-types.js'
 import type { ConfigureAiOutcome } from '#lib/tauri-commands/settings.js'
 import { customShortcuts, restrictedWindowSettings } from './plugins.js'
+import { sayDesktopOnly } from './browser-dialogs.js'
 
 /** The bundled generic icon for an icon id: a folder for folder-ish ids (as `FileIcon.svelte` reads them), else a document. */
 function genericIcon(iconId: string): string {
@@ -178,6 +179,11 @@ export const appAnswers = {
   // so it asks the plain question through `plugin:dialog|message` (`browser-dialogs.ts`) and
   // leaves the option unchecked.
   confirmWithCheckbox: () => ({ kind: 'unsupported' }),
+  // A page can't quit its tab. The bar greys Quit (`menu.rs`); the palette's Quit (Windows and
+  // Linux, where no app menu owns it) says so instead of doing nothing.
+  quitApp: () => {
+    sayDesktopOnly('ui.demoDesktopOnly.quit')
+  },
   // No visit history to feed: the demo has no frecency store.
   recordVisit: none,
   // A demo panel opens centered every time (`windows.ts`): no remembered rect.

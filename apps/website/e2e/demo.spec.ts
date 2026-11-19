@@ -72,7 +72,9 @@ test.describe('Browser demo', () => {
         await expect(menu).toBeVisible()
         // macOS 27's 12 px menu corners; WinUI's `OverlayCornerRadius`, 8 px.
         expect(await menu.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe(isMac ? '12px' : '8px')
+        // A page can't quit its tab, so every visitor's Quit (Exit) is greyed, as macOS's own is.
         if (!isMac) await expect(menu.getByRole('menuitem').last()).toHaveText(/Exit|Quit/)
+        if (!isMac) await expect(menu.getByRole('menuitem').last()).toHaveAttribute('aria-disabled', 'true')
         await page.keyboard.press('Escape')
 
         // Windows' bar answers a lone Alt, as Notepad's does; the Mac's answers ⌃F2.

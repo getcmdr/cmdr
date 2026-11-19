@@ -50,7 +50,9 @@ export function answerMessage(payload: Record<string, unknown>): string {
 }
 
 /** Tells the visitor the installed app does this, and answers as a cancelled picker: `null`. */
-function sayDesktopOnly(key: 'ui.demoDesktopOnly.filePicker' | 'ui.demoDesktopOnly.revealFolder'): null {
+export function sayDesktopOnly(
+  key: 'ui.demoDesktopOnly.filePicker' | 'ui.demoDesktopOnly.revealFolder' | 'ui.demoDesktopOnly.quit',
+): null {
   addToast(tString(key), { level: 'info', timeoutMs: NOTICE_MS })
   return null
 }

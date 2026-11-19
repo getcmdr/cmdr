@@ -39,6 +39,10 @@
   "@ui.demoDesktopOnly.revealFolder": {
     "description": "Notification in the browser demo on getcmdr.com, shown when a visitor clicks something that, in the installed app, opens a folder on their computer in the operating system's own file manager (Finder on a Mac, File Explorer on Windows), for example the logs folder in Settings. A web page can't do that. \"File manager\" is the generic name for that app. It's information, not a problem report: nothing went wrong."
   },
+  "ui.demoDesktopOnly.quit": "This demo runs in a browser tab, so it can’t quit. Close the tab when you’re done.",
+  "@ui.demoDesktopOnly.quit": {
+    "description": "Notification in the browser demo on getcmdr.com, shown when a visitor picks Quit Cmdr (Exit Cmdr on Windows) from the command palette. A web page can't close its own browser tab, so the demo stays open and tells them how to leave. Friendly and brief; nothing went wrong."
+  },
   "ui.popover.defaultAriaLabel": "Options",
   "@ui.popover.defaultAriaLabel": {
     "description": "Default aria-label naming a popover region when the caller passes none. Generic fallback meaning a small floating panel of choices."

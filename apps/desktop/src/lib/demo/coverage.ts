@@ -329,7 +329,6 @@ export const notInDemo = {
   // Quitting, relaunching, and wiping the app's data
   quitConfirm: LIFECYCLE,
   quitCancel: LIFECYCLE,
-  quitApp: LIFECYCLE,
   relaunchApp: LIFECYCLE,
   dataWipeSummary: LIFECYCLE,
   deleteAllAppData: LIFECYCLE,

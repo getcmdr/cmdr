@@ -373,7 +373,8 @@ from the computer. Nothing leaves the page.
   from a fold, never an index (§ Folder sizes).
 - **The menu bar is the visitor's own OS's** (D5: the macOS bar for a Mac visitor, the in-window bar elsewhere), and a
   Mac bar's OS rows (Services, Hide, Quit, Undo, Minimize) are drawn greyed: a page has no OS to hand them to. Windows'
-  and Linux's File > Quit sends `app.quit`, which the page refuses (it can't quit its tab).
+  and Linux's File > Quit (Exit) draws greyed the same way (`menu.rs`'s `PAGE_CANT_DO`, a `System` row, and its click
+  does nothing): a page can't quit its tab, so every visitor's Quit reads the same.
 - **No local disk**: `move_files` (the desktop's same-`root` move) runs as a volume move on `root`, the dialog's
   `previewId` carried in its config; `trash_files` and `move_to_trash` refuse typed (`trash_not_supported`), as a volume
   without a Trash does, and F8 takes the app's permanent-delete confirm. `trash_routing_for_paths` answers the plain

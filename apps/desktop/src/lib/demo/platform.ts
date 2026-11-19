@@ -59,7 +59,8 @@ const MAC_VISITOR_CAPABILITIES: Readonly<PlatformCapabilities> = Object.freeze({
 /**
  * What every other visitor gets: no OS-backed surface but one. `appMenu` stays off, since their bar
  * is their own OS's (`crates/cmdr-listing-wasm/src/menu.rs`), which ends File with Quit, so Quit is
- * a palette command too, as on their desktop (a page can't quit its tab, so it does nothing).
+ * a palette command too, as on their desktop. A page can't quit its tab: the bar greys Quit and the
+ * palette's says so (`answers.ts`'s `quitApp`).
  * - `overlayTitleBar`: the demo still draws the macOS traffic lights over each window's top left
  *   corner for every visitor (`traffic-lights.ts`), so every page keeps its title line under them.
  *   Without it the queue's toolbar started under the lights, which took the clicks meant for "Pause

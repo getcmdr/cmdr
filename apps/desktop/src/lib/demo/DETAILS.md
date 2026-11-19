@@ -156,7 +156,8 @@ every window. The demo keeps that shape, so secondary windows share its state, a
   that reads the user agent for this: a page has no other signal, and app code never does.
 - Capabilities follow the platform (`visitorCapabilities`): a Mac visitor gets the Mac app's, everyone else none, except
   `overlayTitleBar`. No `appMenu` off macOS: their bar is their own OS's, whose File menu ends with Quit, so Quit is a
-  palette command too, as on their desktop (`quit_app` is in `notInDemo`: a page can't quit its tab).
+  palette command too, as on their desktop. A page can't quit its tab, so the bar's Quit (Exit) draws greyed, as a Mac
+  visitor's does, and the palette's answers `quit_app` with the `ui.demoDesktopOnly.quit` toast (close the tab).
   - Decision: every visitor gets `overlayTitleBar: true`. Why: the demo draws the macOS traffic lights over each
     window's top left corner for every visitor (§ Traffic lights), and a page keeps its title line under them only with
     this capability. Without it, a Windows or Linux visitor's queue started its toolbar under the lights, which took the

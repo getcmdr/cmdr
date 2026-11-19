@@ -310,12 +310,29 @@ fn a_windows_or_linux_visitor_gets_their_own_bar() {
         let ids: Vec<&str> = bar.iter().map(|menu| menu.id.as_str()).collect();
         assert!(!ids.contains(&"menu_app"), "{platform:?} has no app menu: {ids:?}");
         assert_eq!(ids.first(), Some(&"menu_file"), "{platform:?}");
-        let last_item = bar[0].rows.iter().rev().find_map(|row| match row {
-            Row::Item { id, .. } => Some(id.as_str()),
-            _ => None,
-        });
-        assert_eq!(last_item, Some("quit"), "{platform:?}'s File menu ends with Quit");
+        let last_row = bar[0].rows.iter().rev().find(|row| !matches!(row, Row::Separator));
+        assert!(
+            matches!(last_row, Some(Row::System { label: RowLabel::Key { key, .. } }) if key == "menu.file.quit"),
+            "{platform:?}'s File menu ends with Quit, greyed: {last_row:?}"
+        );
         assert_eq!(shortcut(&menu, "new_tab").as_deref(), Some("Ctrl+T"), "{platform:?}");
+    }
+}
+
+/// A page can't quit its tab, so a Windows or Linux visitor's File > Quit (Exit on Windows) draws
+/// greyed and a pick does nothing, as a Mac visitor's app-menu Quit (an OS row) does.
+#[test]
+fn quit_is_greyed_for_every_visitor() {
+    for platform in [Platform::Windows, Platform::Linux, Platform::MacOs] {
+        let menu = DemoMenu::for_platform(platform);
+        let quit_items = menu
+            .bar()
+            .iter()
+            .flat_map(|menu| menu.rows.iter())
+            .filter(|row| row.id() == Some("quit"))
+            .count();
+        assert_eq!(quit_items, 0, "{platform:?} offers no live Quit row");
+        assert!(matches!(menu.click("quit"), Click::Nothing), "{platform:?}");
     }
 }
 
@@ -329,9 +346,9 @@ fn a_windows_bar_clicks_and_rebinds_its_own_rows() {
         json!({ "commandId": "tab.new", "shortcut": "Ctrl+Alt+T" }),
     );
     assert_eq!(shortcut(&menu, "new_tab").as_deref(), Some("Ctrl+Alt+T"));
-    let (event, payload) = emitted(menu.click("quit"));
+    let (event, payload) = emitted(menu.click("new_tab"));
     assert_eq!(event, "execute-command");
-    assert_eq!(payload["commandId"], "app.quit");
+    assert_eq!(payload["commandId"], "tab.new");
 }
 
 /// The four events a click sends carry exactly the keys `bindings.ts` declares for them.
