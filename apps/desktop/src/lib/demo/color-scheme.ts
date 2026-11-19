@@ -16,6 +16,9 @@
 /** What `setTheme` sends: an explicit appearance, or `null` to follow the OS. */
 export type AppTheme = 'light' | 'dark' | null
 
+/** The app's `setTheme` (`@tauri-apps/api/app`), which the backend answers for every webview at once. */
+export const SET_APP_THEME = 'plugin:app|set_app_theme'
+
 const SCHEME_FEATURE = /\(\s*prefers-color-scheme\s*:\s*(light|dark)\s*\)/gi
 /** A media condition that always holds, and one that never does, each valid inside an `and` chain. */
 const ALWAYS = '(min-width: 0px)'

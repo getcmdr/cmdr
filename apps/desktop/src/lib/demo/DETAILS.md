@@ -328,10 +328,11 @@ origin) from framing `localhost`; serve the parent page from a real loopback ser
 - One colocated `*.test.ts` per module. They pin what breaks the demo silently: the tree's parents and its 1,200 photos
   (the engine refuses a bad tree at boot), the browser-safe map (real command ids, the canonical combo vocabulary, no
   clash in an overlapping scope, no browser-reserved combo left), every bindings command answered or left out with a
-  reason (`coverage.test.ts`), no TS answer for an engine command (`engine-commands.test.ts`), the backend's routing
-  order (TS tables, then `handles()`, then `unanswered`), the webview's JSON wire and event targets, the window panels'
-  open/close/raise/refuse/zoom, the traffic lights' actions and key-window state, the Cmdr gold seed, and the boot role
-  pick. The lights' look is QA'd against AppKit's renders in a real browser (§ Traffic lights).
+  reason (`coverage.test.ts`), every raw `invoke` and Tauri API the app sources use the same (`ipc-calls.test.ts`), no
+  TS answer for an engine command (`engine-commands.test.ts`), the backend's routing order (TS tables, then `handles()`,
+  then `unanswered`), the webview's JSON wire and event targets, the window panels' open/close/raise/refuse/zoom, the
+  traffic lights' actions and key-window state, the Cmdr gold seed, and the boot role pick. The lights' look is QA'd
+  against AppKit's renders in a real browser (§ Traffic lights).
 - vitest aliases `#lib/demo/boot.js` to `boot-absent.ts`, `$app/paths` to `apps/desktop/src/test-app-paths-shim.ts`, and
   `virtual:cmdr-listing-wasm` to `apps/desktop/src/test-listing-wasm-shim.ts`; `listing.test.ts` mocks the last with a
   fake engine. `test-setup.ts` stubs `@tauri-apps/api/event` app-wide, so `webview.test.ts` unmocks it to test the real
@@ -351,9 +352,24 @@ reaches it). Why: a pane-boot command (`live_volume_path`) once shipped unanswer
 ready", and every pane said "didn't respond in time"; only the nightly demo suite would have caught it. A `notInDemo`
 command takes the unanswered path quietly.
 
-1. Find what's unanswered at runtime: a command no table, engine, or `notInDemo` knows (a raw `invoke`, a plugin
-   command) logs `[demo] no answer for …` as a console error and lands in `window.__cmdrDemo.unanswered` (command → call
-   count). `demo.spec.ts`'s `afterEach` fails any test that left one there.
+**Every call outside the bindings is accounted for too** (`ipc-calls.test.ts`), so the same holds for them:
+
+- It globs every app source as text (a runtime `import.meta.glob`, so `svelte-tests-related` reaches it from any app
+  file) minus tests, `lib/demo/`, `lib/ipc/`, and the debug window (the demo refuses to open it).
+- **Raw `invoke('…')`** (and `app.html`'s boot-guard `send('…')`): `ipc-calls.ts`'s `findRawInvokes` reads each wire
+  name, which must be answered (`isWireAnswered`: the engines, the page hosts, a webview, `plugins.ts`, `rawAnswers`, or
+  a bindings answer) or left out in `wireNotInDemo` with its reason.
+- **Tauri JS APIs**: `findTauriApiImports` reads every value imported from a `@tauri-apps/*` package, static or a
+  destructured `await import(…)` (any other dynamic import shape fails, unread). Each must be in `TAURI_API_CALLS`, with
+  the wire commands calling it sends, each answered or left out the same way.
+- **The one gap**: an API that hands back a window or webview handle (`getCurrentWindow`, `getCurrentWebview`,
+  `WebviewWindow`, in `TAURI_API_HANDLES`) sends a command per METHOD, which no import names. Those stay with the
+  runtime net below. Each list's entries must still be used (the test fails on a stale one).
+
+1. Find what's unanswered at runtime: a command no table, engine, or `notInDemo` knows (a handle's method, or a call the
+   tests above missed) logs `[demo] no answer for …` as a console error and lands in `window.__cmdrDemo.unanswered`
+   (command → call count). `demo.spec.ts`'s `afterEach` fails any test that left one there, but only for what a spec
+   reaches.
 2. A listing command belongs to the engine (`crates/cmdr-listing-wasm`): ask there, don't answer it in TS.
 3. Look up its return type in `bindings.ts` (the `__TAURI_INVOKE<...>` or `typedError<Ok, Err>`).
 4. Void command (returns `()`): add its bindings name to `silentCommands` in `answers.ts`. `VoidCommand` rejects a
@@ -373,9 +389,10 @@ command takes the unanswered path quietly.
    and rename the visitor made (the viewer itself already read them, through the volume the write engine wrote to;
    `viewer_test.rs`'s copied-renamed-moved cell pins that half).
 6. Commands outside the bindings (generic `<R: Runtime>` ones called through raw `invoke`, see `lib/ipc/DETAILS.md`) go
-   in `rawAnswers`, keyed by their snake_case wire name, typed by hand against the wrapper's return type.
-7. Plugin commands (`plugin:<name>|<command>`) go in `plugins.ts`, or in `webview.ts`'s `windowAnswer` when they're
-   about the calling window.
+   in `rawAnswers`, keyed by their snake_case wire name, typed by hand against the wrapper's return type, or in
+   `wireNotInDemo`.
+7. Plugin commands (`plugin:<name>|<command>`) go in `plugins.ts`, or in `own-window.ts` when they're about the calling
+   window; a new Tauri API import goes in `TAURI_API_CALLS`.
 
 Gotcha: a new value command on the pane's boot path breaks the demo QUIETLY when the app's wrapper turns a rejection
 into a fallback. `liveVolumePath` maps any failure to `notReady`, so before the demo answered `live_volume_path`, every

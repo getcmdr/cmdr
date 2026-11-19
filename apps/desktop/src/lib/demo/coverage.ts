@@ -7,11 +7,14 @@
  * `DETAILS.md` § Answering a command.
  */
 import type { CommandName } from './answer-types.js'
-import { appAnswers, silentCommands } from './answers.js'
+import { appAnswers, rawAnswers, silentCommands } from './answers.js'
+import { SET_APP_THEME } from './color-scheme.js'
 import { DRAG_COMMANDS } from './drag-session.js'
 import { LISTING_ENGINE_COMMANDS, MENU_ENGINE_COMMANDS } from './engine-command-names.js'
+import { pluginHandler } from './plugins.js'
 import { volumeAnswers } from './volumes.js'
-import { WINDOW_HOST_COMMANDS } from './windows.js'
+import { WEBVIEW_COMMANDS } from './own-window.js'
+import { WINDOW_HOST_COMMANDS, WINDOW_PLUGIN_COMMANDS } from './windows.js'
 
 /** A wire name as the bindings spell it: `live_volume_path` → `liveVolumePath`. */
 type CamelCase<S extends string> = S extends `${infer Head}_${infer Tail}` ? `${Head}${Capitalize<CamelCase<Tail>>}` : S
@@ -53,6 +56,7 @@ const LIFECYCLE = "a page can't quit, relaunch, or wipe its tab"
 const DEV = 'developer and diagnostics tooling (MCP, logs, debug fixtures) the demo has no backend for'
 const SUBSYSTEM_SETTING = "a setting pushed to a backend subsystem the demo doesn't run"
 const NOT_YET = 'not built for the demo yet: no store behind it, so the app gets its "unavailable" path'
+const UNANSWERED_GAP = 'a visitor reaches it and the demo has no answer yet: a known dead end'
 const IN_PAGE_MENUS =
   "the demo draws its bar and menus itself (`menu-bar.svelte.ts`, `context-menu.ts`); answer these from `DemoMenuBar` once the app's own in-page bar asks them (task 63 steps 6 and 7)"
 
@@ -375,7 +379,105 @@ export const notInDemo = {
   pickContextMenuItem: IN_PAGE_MENUS,
 } satisfies Record<Unanswered, string>
 
+/**
+ * Commands outside the bindings (a raw `invoke`, a Tauri plugin's own) left out on purpose, by
+ * wire name, each with its reason. `ipc-calls.test.ts` finds every one the app sends.
+ */
+export const wireNotInDemo: Readonly<Record<string, string>> = {
+  // The new folder dialog's AI name suggestions and the local model's setup: `getAiStatus` says
+  // unavailable, so the app offers neither.
+  stream_folder_suggestions: AI,
+  cancel_folder_suggestions: AI,
+  start_ai_download: AI,
+  start_ai_server: AI,
+  set_mcp_enabled: DEV,
+  set_mcp_port: DEV,
+  prepare_error_report_preview: SERVICES,
+  get_auto_sent_report_preview: SERVICES,
+  // `app.html`'s boot guard quits an app whose webview is too old to run it.
+  'plugin:process|exit': LIFECYCLE,
+  // Reachable in the demo and not answered yet: each is a dead end today.
+  about_start: UNANSWERED_GAP,
+  copy_to_clipboard: UNANSWERED_GAP,
+  'plugin:dialog|message': UNANSWERED_GAP,
+  'plugin:dialog|open': UNANSWERED_GAP,
+  'plugin:dialog|save': UNANSWERED_GAP,
+  'plugin:opener|reveal_item_in_dir': UNANSWERED_GAP,
+}
+
 /** The reason the demo leaves `command` (a wire name) out, or `undefined` for one it doesn't know. */
 export function whyNotInDemo(command: string): string | undefined {
-  return (notInDemo as Partial<Record<string, string>>)[camelCase(command)]
+  return (notInDemo as Partial<Record<string, string>>)[camelCase(command)] ?? wireNotInDemo[command]
+}
+
+/** Every wire name an engine or a page host answers (the backend's routing, `backend.ts`'s `invoke`). */
+const wireAnswered: ReadonlySet<string> = new Set<string>([
+  ...WIRE_ANSWERED,
+  ...WEBVIEW_COMMANDS,
+  ...WINDOW_PLUGIN_COMMANDS,
+  SET_APP_THEME,
+])
+
+/** Whether the demo answers `command` (a wire name: a bindings command, a raw `invoke`, or a plugin's). */
+export function isWireAnswered(command: string): boolean {
+  return (
+    wireAnswered.has(command) ||
+    pluginHandler(command) !== undefined ||
+    rawAnswers[command] !== undefined ||
+    answeredCommands.has(camelCase(command))
+  )
+}
+
+const STORE = ['load', 'get', 'set', 'has', 'delete', 'clear', 'reset', 'keys', 'values', 'entries', 'length', 'save']
+
+/**
+ * Every value the app imports from a Tauri JS package (`module#name`, as `ipc-calls.ts` reads
+ * them), with the commands calling it sends: `[]` for one that sends none (a type-like value, a
+ * transport). `ipc-calls.test.ts` fails on an import this doesn't name, and on a command here the
+ * demo neither answers nor leaves out with a reason.
+ */
+export const TAURI_API_CALLS: Readonly<Record<string, readonly string[]>> = {
+  // `invoke` is scanned call by call (`findRawInvokes`); a `Channel` rides along in an invoke's args.
+  'api/core#invoke': [],
+  'api/core#Channel': [],
+  // Builds a URL, no IPC: `webview.ts` stands in for it.
+  'api/core#convertFileSrc': [],
+  'api/dpi#LogicalPosition': [],
+  'api/dpi#LogicalSize': [],
+  'api/window#Effect': [],
+  'api/window#EffectState': [],
+  'api/window#LogicalSize': [],
+  'api/window#availableMonitors': ['plugin:window|available_monitors'],
+  'api/window#getAllWindows': ['plugin:window|get_all_windows'],
+  'api/event#listen': ['plugin:event|listen', 'plugin:event|unlisten'],
+  'api/event#emit': ['plugin:event|emit'],
+  'api/event#emitTo': ['plugin:event|emit_to'],
+  'api/app#getVersion': ['plugin:app|version'],
+  'api/app#setTheme': [SET_APP_THEME],
+  'api/path#homeDir': ['plugin:path|resolve_directory'],
+  'api/path#tempDir': ['plugin:path|resolve_directory'],
+  'api/path#appLogDir': ['plugin:path|resolve_directory'],
+  'api/path#join': ['plugin:path|join'],
+  // `load` hands back a `Store`, whose methods send the rest.
+  'plugin-store#load': STORE.map((command) => `plugin:store|${command}`),
+  'plugin-fs#writeFile': ['plugin:fs|write_file'],
+  'plugin-fs#remove': ['plugin:fs|remove'],
+  'plugin-opener#openUrl': ['plugin:opener|open_url'],
+  'plugin-opener#revealItemInDir': ['plugin:opener|reveal_item_in_dir'],
+  // `ask` is a `message` with two buttons.
+  'plugin-dialog#ask': ['plugin:dialog|message'],
+  'plugin-dialog#open': ['plugin:dialog|open'],
+  'plugin-dialog#save': ['plugin:dialog|save'],
+}
+
+/**
+ * Tauri APIs that hand back a window or webview handle, whose methods send `plugin:window|*` and
+ * `plugin:webview|*` commands. Which methods a caller uses can't be read off an import, so these
+ * stay with the runtime net: an unanswered one lands in `window.__cmdrDemo.unanswered`, which the
+ * website's demo suite fails on (`DETAILS.md` § Answering a command).
+ */
+export const TAURI_API_HANDLES: Readonly<Record<string, string>> = {
+  'api/window#getCurrentWindow': 'the main window and each panel: `webview.ts` and `windows.ts` answer its methods',
+  'api/webview#getCurrentWebview': "the page's own webview: `webview.ts` answers its methods",
+  'api/webviewWindow#WebviewWindow': 'opens and finds panels: `windows.ts` answers its methods',
 }

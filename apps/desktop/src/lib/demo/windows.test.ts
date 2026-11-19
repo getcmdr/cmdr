@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import type { EventTarget } from './backend.js'
-import { createWindowHost, WINDOW_HOST_COMMANDS } from './windows.js'
+import { createWindowHost, WINDOW_HOST_COMMANDS, WINDOW_PLUGIN_COMMANDS } from './windows.js'
 
 function setup() {
   const emitted: [string, EventTarget][] = []
@@ -30,7 +30,8 @@ describe('demo windows', () => {
   // `coverage.ts` counts these as answered, so each needs a real handler.
   it('answers every command it claims', () => {
     const { host } = setup()
-    for (const command of WINDOW_HOST_COMMANDS) expect(host.handler(command), command).toBeTypeOf('function')
+    for (const command of [...WINDOW_HOST_COMMANDS, ...WINDOW_PLUGIN_COMMANDS])
+      expect(host.handler(command), command).toBeTypeOf('function')
   })
 
   it('opens Settings as a panel holding an iframe of its route, named after its label', () => {

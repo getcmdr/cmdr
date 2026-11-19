@@ -5,7 +5,7 @@
  * the one Rust process. See `DETAILS.md` § Backend and webviews.
  */
 import type { AnswerTable, Payload } from './answer-types.js'
-import type { AppTheme } from './color-scheme.js'
+import { SET_APP_THEME, type AppTheme } from './color-scheme.js'
 import { appAnswers, rawAnswers, silentCommands } from './answers.js'
 import { startListingEngine, type ListingEngineHandle } from './listing.js'
 import { createContextMenuHost, type ContextMenuHost } from './context-menu.js'
@@ -229,7 +229,7 @@ export function createDemoBackend(): DemoBackend {
     // will be, so the engine sweeps its staging (`os-drop.ts`). A fact passed on; the menu answers it.
     if (cmd === 'set_file_operations_blocked' && payload.blocked === false) void engine.importer.releaseOffered()
     if (cmd === 'open_path' && (await openInViewer(payload))) return null
-    if (cmd === 'plugin:app|set_app_theme') return setAppTheme(payload)
+    if (cmd === SET_APP_THEME) return setAppTheme(payload)
     const handler =
       drags.handler(cmd) ?? windows.handler(cmd) ?? pluginHandler(cmd) ?? rawAnswers[cmd] ?? answers[camelCase(cmd)]
     if (handler) return handler(payload)

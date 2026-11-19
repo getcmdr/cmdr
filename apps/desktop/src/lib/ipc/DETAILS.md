@@ -253,6 +253,9 @@ more commands are generic over `<R: Runtime>` like `store_font_metrics` (the men
 `start_ai_server`, `start_ai_download`, …). A generic command that rejects with a typed error still crosses as
 `unknown`, so its caller restores the type (`#lib/ai/local-ai-error.ts` for the two local-AI ones).
 
+A new raw `invoke` also needs a browser-demo answer or a reason it's left out, or
+`apps/desktop/src/lib/demo/ipc-calls.test.ts` fails (`apps/desktop/src/lib/demo/DETAILS.md` § Answering a command).
+
 When specta gets a fix that closes one of these, drop the opt-out comment, add the command to `collect_*_types()`,
 regenerate, migrate the call site to `commands.foo(...)`.
 

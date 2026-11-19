@@ -38,6 +38,20 @@ const TITLE_STRIP = 28
 /** Cmdr's own commands (the bindings') this host answers; the rest of its table is Tauri's window plugin. */
 export const WINDOW_HOST_COMMANDS = ['close_child_window', 'raise_child_window', 'show_child_window'] as const
 
+/** The window and webview plugin commands the host answers about any window (`handler`). */
+export const WINDOW_PLUGIN_COMMANDS = [
+  'plugin:webview|create_webview_window',
+  'plugin:window|get_all_windows',
+  'plugin:webview|get_all_webviews',
+  'plugin:window|available_monitors',
+  'plugin:window|set_effects',
+  'plugin:window|close',
+  'plugin:window|destroy',
+  'plugin:window|set_focus',
+  'plugin:window|start_dragging',
+  'plugin:window|internal_toggle_maximize',
+] as const
+
 type Emit = (event: string, payload: unknown, target: EventTarget) => void
 type Handler = (payload: Payload) => unknown
 
