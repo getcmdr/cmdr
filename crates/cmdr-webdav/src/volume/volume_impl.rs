@@ -6,8 +6,6 @@ use cmdr_fs::app_path::AppPath;
 use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::volume::Presence;
 use std::ops::ControlFlow;
-use std::path::Path;
-use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
@@ -68,6 +66,8 @@ impl Volume for WebdavVolume {
         &self.name
     }
 
+    /// The root in the exact text every row and saved tab already carries, which is
+    /// `RemoteRoot::app_root`'s (its typed twin `app` is canonical and could differ).
     fn root(&self) -> &AppPath {
         self.root.app_root().app()
     }
@@ -97,11 +97,7 @@ impl Volume for WebdavVolume {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.list_directory_impl(path, on_progress, None)).await
-        })
+        Box::pin(async move { self.noting(self.list_directory_impl(path, on_progress, None)).await })
     }
 
     fn list_directory_with_cancel<'a>(
@@ -110,22 +106,14 @@ impl Volume for WebdavVolume {
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.list_directory_impl(path, on_progress, cancel)).await
-        })
+        Box::pin(async move { self.noting(self.list_directory_impl(path, on_progress, cancel)).await })
     }
 
     fn get_metadata<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.get_metadata_impl(path)).await
-        })
+        Box::pin(async move { self.noting(self.get_metadata_impl(path)).await })
     }
 
     /// Kept rather than taken from the trait default: the default routes through
@@ -133,11 +121,7 @@ impl Volume for WebdavVolume {
     /// probe on a dropped link would report a connection transition and drive a
     /// reconnect. An existence question stays a question.
     fn presence<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.presence_impl(path).await
-        })
+        Box::pin(async move { self.presence_impl(path).await })
     }
 
     // ── The byte path ────────────────────────────────────────────────
@@ -191,8 +175,6 @@ impl Volume for WebdavVolume {
         modified: Option<std::time::SystemTime>,
     ) -> Pin<Box<dyn Future<Output = MetadataReport> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let mut report = MetadataReport::none_applicable(carried, modified);
             if !self.keeps_dates() || (modified.is_none() && carried.created.is_none()) {
                 return report;
@@ -202,14 +184,14 @@ impl Volume for WebdavVolume {
                 Ok(false) => {
                     log::warn!(
                         "WebdavVolume::apply_metadata: the server refused the dates of {}",
-                        LogPrivate::path(path)
+                        LogPrivate::path(path.as_str())
                     );
                     ClassOutcome::Refused
                 }
                 Err(e) => {
                     log::warn!(
                         "WebdavVolume::apply_metadata: {} keeps the server's dates, not the source's: {e}",
-                        LogPrivate::path(path),
+                        LogPrivate::path(path.as_str()),
                         e = LogError(&e)
                     );
                     ClassOutcome::Refused
@@ -234,8 +216,6 @@ impl Volume for WebdavVolume {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(self.noting(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let stream = self.open_read_stream_impl(path, 0).await?;
             Ok(Box::new(stream) as Box<dyn VolumeReadStream>)
         }))
@@ -254,8 +234,6 @@ impl Volume for WebdavVolume {
         size_hint: Option<u64>,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(self.noting(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let stream = self.open_read_stream_impl(path, 0).await?.hinted(size_hint);
             Ok(Box::new(stream) as Box<dyn VolumeReadStream>)
         }))
@@ -271,8 +249,6 @@ impl Volume for WebdavVolume {
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(self.noting(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let stream = self.open_read_stream_impl(path, offset).await?;
             Ok(Box::new(stream) as Box<dyn VolumeReadStream>)
         }))
@@ -288,11 +264,7 @@ impl Volume for WebdavVolume {
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.read_range_impl(path, offset, len)).await
-        })
+        Box::pin(async move { self.noting(self.read_range_impl(path, offset, len)).await })
     }
 
     // ── The write path ───────────────────────────────────────────────
@@ -307,22 +279,14 @@ impl Volume for WebdavVolume {
         path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.create_file_impl(path, content)).await
-        })
+        Box::pin(async move { self.noting(self.create_file_impl(path, content)).await })
     }
 
     fn create_directory<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.create_directory_impl(path)).await
-        })
+        Box::pin(async move { self.noting(self.create_directory_impl(path)).await })
     }
 
     /// ❗ Overridden: the trait default spends one `exists()` per ancestor.
@@ -330,11 +294,7 @@ impl Volume for WebdavVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<DirectoryCreation, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.create_directory_all_impl(path)).await
-        })
+        Box::pin(async move { self.noting(self.create_directory_all_impl(path)).await })
     }
 
     /// MKCOL refuses an occupied name with 405 (RFC 4918 § 9.3.1), so the
@@ -351,11 +311,7 @@ impl Volume for WebdavVolume {
     }
 
     fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.delete_impl(path)).await
-        })
+        Box::pin(async move { self.noting(self.delete_impl(path)).await })
     }
 
     fn rename<'a>(
@@ -364,13 +320,7 @@ impl Volume for WebdavVolume {
         to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let to_std = to.as_std_legacy();
-            let to: &Path = &to_std;
-            let from_std = from.as_std_legacy();
-            let from: &Path = &from_std;
-            self.noting(self.rename_impl(from, to, force)).await
-        })
+        Box::pin(async move { self.noting(self.rename_impl(from, to, force)).await })
     }
 
     /// ❗ `write_is_single_shot` keeps its `false` default, so the transfer
@@ -389,8 +339,6 @@ impl Volume for WebdavVolume {
             return Box::pin(async { Err(VolumeError::NotSupported) });
         };
         Box::pin(async move {
-            let dest_std = dest.as_std_legacy();
-            let dest: &Path = &dest_std;
             self.noting(
                 self.write_from_stream_impl(dest, mode, size, stream, &|bytes_written, _| {
                     on_progress(StreamWriteProgress::new(bytes_written, StreamLength::Known(size)))
@@ -406,11 +354,7 @@ impl Volume for WebdavVolume {
         parent_path: &'a AppPath,
         mutation: MutationEvent,
     ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
-        Box::pin(async move {
-            let parent_path_std = parent_path.as_std_legacy();
-            let parent_path: &Path = &parent_path_std;
-            patching::patch_mutation(self, parent_path, mutation).await
-        })
+        Box::pin(async move { patching::patch_mutation_at(self, parent_path, mutation).await })
     }
 
     // ── Scanning, before a copy runs ─────────────────────────────────
@@ -419,11 +363,7 @@ impl Volume for WebdavVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(scan_walk::scan_one(self, path)).await
-        })
+        Box::pin(async move { self.noting(scan_walk::scan_one_at(self, path)).await })
     }
 
     fn scan_for_copy_batch_with_boundary<'a>(
@@ -431,11 +371,7 @@ impl Volume for WebdavVolume {
         paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
-            let paths: &[PathBuf] = &paths_std;
-            self.noting(scan_walk::scan_trees(self, paths, boundary)).await
-        })
+        Box::pin(async move { self.noting(scan_walk::scan_trees_at(self, paths, boundary)).await })
     }
 
     fn scan_for_conflicts<'a>(
@@ -444,9 +380,7 @@ impl Volume for WebdavVolume {
         dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let dest_path_std = dest_path.as_std_legacy();
-            let dest_path: &Path = &dest_path_std;
-            self.noting(scan_walk::scan_conflicts(self, source_items, dest_path))
+            self.noting(scan_walk::scan_conflicts_at(self, source_items, dest_path))
                 .await
         })
     }
@@ -459,13 +393,7 @@ impl Volume for WebdavVolume {
         to: &'a AppPath,
         on_progress: &'a (dyn Fn(u64, u64) -> ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<u64, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let to_std = to.as_std_legacy();
-            let to: &Path = &to_std;
-            let from_std = from.as_std_legacy();
-            let from: &Path = &from_std;
-            self.noting(self.copy_within_impl(from, to, on_progress)).await
-        })
+        Box::pin(async move { self.noting(self.copy_within_impl(from, to, on_progress)).await })
     }
 
     fn supports_copy_within(&self) -> bool {

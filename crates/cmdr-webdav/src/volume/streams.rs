@@ -8,7 +8,7 @@
 //! one that does, `webdav-fixture-norange`, and both the resumed stream and
 //! `read_range` are pinned against it.
 
-use std::path::Path;
+use cmdr_fs::app_path::AppPath;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -172,7 +172,7 @@ impl WebdavVolume {
     /// A GET, from `offset`, in whatever chunks the body arrives in.
     pub(super) async fn open_read_stream_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         offset: u64,
     ) -> Result<WebdavReadStream, VolumeError> {
         let remote = self.to_remote_path(path)?;
@@ -207,7 +207,12 @@ impl WebdavVolume {
     /// A GET with `Range`, collected up to `len` bytes and no further: the
     /// response is dropped as soon as the window is full, so a server that
     /// ignored the header doesn't send the whole file.
-    pub(super) async fn read_range_impl(&self, path: &Path, offset: u64, len: usize) -> Result<Vec<u8>, VolumeError> {
+    pub(super) async fn read_range_impl(
+        &self,
+        path: &AppPath,
+        offset: u64,
+        len: usize,
+    ) -> Result<Vec<u8>, VolumeError> {
         let remote = self.to_remote_path(path)?;
         if len == 0 {
             return Ok(Vec::new());

@@ -12,24 +12,15 @@
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::scan_walk::{ScanSource, Walking};
-use std::path::Path;
 
 use super::WebdavVolume;
 
 impl ScanSource for WebdavVolume {
     fn scan_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.get_metadata_impl(path).await
-        })
+        Box::pin(async move { self.get_metadata_impl(path).await })
     }
 
     fn scan_list<'a>(&'a self, path: &'a AppPath) -> Walking<'a, Vec<FileEntry>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.list_directory_impl(path, None, None).await
-        })
+        Box::pin(async move { self.list_directory_impl(path, None, None).await })
     }
 }

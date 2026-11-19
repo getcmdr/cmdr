@@ -6,7 +6,6 @@
 //! `#[ignore]`d ones are Docker cells against the stock Apache fixture
 //! (`apps/desktop/test/webdav-servers/start.sh`).
 
-use cmdr_fs::app_path::AppPath;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -302,7 +301,7 @@ async fn the_switch_off_leaves_a_reachable_server_alone() {
         return;
     }
     let volume = connect_fixture("APACHE", 13480).await;
-    let hello = volume.root().as_std_legacy().join("hello.txt");
+    let hello = at(&volume, "hello.txt");
     volume.set_auto_reconnect(false);
     assert_eq!(volume.unattended_reconnect().await, UnattendedReconnect::SwitchOff);
 
@@ -313,17 +312,14 @@ async fn the_switch_off_leaves_a_reachable_server_alone() {
         matches!(refusal, Err(VolumeError::NotSupported)),
         "❌ no probe, however easy one would have been: {refusal:?}"
     );
-    assert!(
-        !volume.exists(&AppPath::legacy_unchecked(&hello)).await,
-        "and the volume is genuinely still down"
-    );
+    assert!(!volume.exists(&hello).await, "and the volume is genuinely still down");
 
     let first = volume
         .connection_generation()
         .expect("a WebDAV volume reports its generation");
     volume.set_auto_reconnect(true);
     volume.attempt_reconnect().await.expect(FIXTURE);
-    assert!(volume.exists(&AppPath::legacy_unchecked(&hello)).await);
+    assert!(volume.exists(&hello).await);
     assert_eq!(
         volume.connection_generation(),
         Some(first + 1),
@@ -353,13 +349,13 @@ async fn switching_the_switch_on_revives_a_volume_that_is_already_down() {
         return;
     }
     let volume = connect_fixture("APACHE", 13480).await;
-    let hello = volume.root().as_std_legacy().join("hello.txt");
+    let hello = at(&volume, "hello.txt");
     volume.set_auto_reconnect(false);
 
     // The client drops and an operation NOTICES, which is what leaves the volume
     // `Disconnected`. With the switch off, no loop starts.
     volume.simulate_session_loss().await;
-    assert!(!volume.exists(&AppPath::legacy_unchecked(&hello)).await);
+    assert!(!volume.exists(&hello).await);
     assert!(matches!(
         volume.attempt_reconnect().await,
         Err(VolumeError::NotSupported)
@@ -374,10 +370,7 @@ async fn switching_the_switch_on_revives_a_volume_that_is_already_down() {
         || volume.connection_state().is_some_and(ConnectionState::is_live),
     )
     .await;
-    assert!(
-        volume.exists(&AppPath::legacy_unchecked(&hello)).await,
-        "the rebuilt client serves the root"
-    );
+    assert!(volume.exists(&hello).await, "the rebuilt client serves the root");
 }
 
 // ── Which client a failure belongs to ────────────────────────────────

@@ -29,11 +29,11 @@ The WebDAV backend: a `Volume` over one `reqwest` client with one account's cred
 - ❗ **Every request goes out through `WebdavClient::send` or `propfind`**, and a body read counts its chunks as
   `heard`, or the silence watch never hears it.
 - ❗ **A buffered body goes through `read_body` with a cap**, ❌ never `.text()` / `.bytes()`.
-- ❌ **No `read_timeout`, no `.timeout()` on the streaming PUT or GET, and never a timeout read as a lost server.**
-  `transport.rs` has why.
-- ❌ **One unattended auth attempt, never a loop.** A 401 on the re-probe moves to `NeedsCredentials` and stops.
-- ❗ **A cookie jar AND Basic on every request**: sessionless, Nextcloud hashes the password per request (~150 ms vs
-  ~20). `DETAILS.md` § "Session cookies".
+- ❌ **No `read_timeout`, no `.timeout()` on the streaming PUT or GET, no timeout read as a lost server**
+  (`transport.rs`).
+- ❌ **One unattended auth attempt**: a 401 on the re-probe moves to `NeedsCredentials` and stops.
+- ❗ **A cookie jar AND Basic on every request**, or Nextcloud hashes the password per request. DETAILS § "Session
+  cookies".
 - ❗ **Redirects are off**: a followed MOVE or COPY would resend `Destination` elsewhere.
 - ❗ **The engine owns staging**: `CreateOrReplace` is one plain PUT onto its temp; ❌ don't stage it again. Only
   `CreateNew` stages here (MOVE `Overwrite: F`). `DETAILS.md` § "Write staging".
@@ -44,12 +44,14 @@ The WebDAV backend: a `Volume` over one `reqwest` client with one account's cred
 - ❗ **On a Nextcloud (the probe's `X-User-Id`), a file past 64 MiB goes up in chunks**; the target sees nothing until
   the assembling MOVE. `DETAILS.md` § "Chunked uploads (Nextcloud)".
 - ❗ **`Range` may be ignored**: a 200 to a ranged GET is skipped locally (fixture `webdav-fixture-norange`).
-- ❗ **Unbounded space reads `oc:size`, ❌ never `quota-used-bytes`** (an unlimited Nextcloud answers `0`). The bar for
-  a third vendor property: `DETAILS.md` § "What a real server answers".
-- ❗ **Dates beyond the mtime only where the connect probe saw `nc:creation_time`**; ❌ never a PROPPATCH of dates on
-  `mod_dav`, which keeps them as dead properties. `DETAILS.md` § "Dates".
+- ❗ **Unbounded space reads `oc:size`, ❌ never `quota-used-bytes`** (an unlimited Nextcloud answers `0`). DETAILS §
+  "What a real server answers".
+- ❗ **Dates beyond the mtime only where the connect probe saw `nc:creation_time`**; ❌ no date PROPPATCH on `mod_dav`.
+  DETAILS § "Dates".
 - ❗ **DELETE and a forced MOVE are recursive; the trait's verbs aren't.** Both refuse a held collection, then move it
   aside, ❌ no ETag (`DETAILS.md` § "A folder's DELETE").
 - ❌ Never `root_anchored`, never a stat per child in a scan, never `authoritative_listing` (coverage is `None`).
+- ❗ **A row's path text stays `RemoteRoot::to_app_path`'s**, ❌ not `to_app`'s canonical one. DETAILS § "Path
+  handling".
 
 Decisions and full tables: `DETAILS.md`; read it before non-trivial work here.

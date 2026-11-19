@@ -5,8 +5,8 @@
 //! A COPY is one request with no progress inside it, so progress is reported
 //! once, at the end, with the size a PROPFIND on the source gave.
 
+use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
-use std::path::Path;
 
 use cmdr_fs::volume::VolumeError;
 
@@ -18,8 +18,8 @@ impl WebdavVolume {
     /// Copies one resource inside this server.
     pub(super) async fn copy_within_impl(
         &self,
-        from: &Path,
-        to: &Path,
+        from: &AppPath,
+        to: &AppPath,
         on_progress: &(dyn Fn(u64, u64) -> ControlFlow<()> + Sync),
     ) -> Result<u64, VolumeError> {
         let remote_from = self.to_remote_path(from)?;
