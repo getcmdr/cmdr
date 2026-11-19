@@ -424,13 +424,15 @@ pub const MENU_BAR: &[BarMenu] = &[
                     check(
                         VIEW_MODE_FULL_LEFT_ID,
                         "menu.view.fullView",
-                        cmd_or_ctrl!("1"),
+                        // Windows shows TC's Ctrl+F2 first, its registry's first key; Linux keeps Ctrl+1,
+                        // since KDE and Xfce take Ctrl+F1 / Ctrl+F2.
+                        split("Cmd+1", "Ctrl+F2", "Ctrl+1"),
                         CheckRole::ViewMode(Pane::Left, ViewMode::Full),
                     ),
                     check(
                         VIEW_MODE_BRIEF_LEFT_ID,
                         "menu.view.briefView",
-                        cmd_or_ctrl!("2"),
+                        split("Cmd+2", "Ctrl+F1", "Ctrl+2"),
                         CheckRole::ViewMode(Pane::Left, ViewMode::Brief),
                     ),
                 ],

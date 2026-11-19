@@ -27,8 +27,8 @@ windows	main	invert_selection	*	selection.invert
 windows	main	select_files	Plus	selection.selectFiles
 windows	main	deselect_files	-	selection.deselectFiles
 windows	main	compare_directories	Shift+F2	selection.compareDirectories
-windows	main	view_mode_full_left	Control+1	view.fullMode
-windows	main	view_mode_brief_left	Control+2	view.briefMode
+windows	main	view_mode_full_left	Control+F2	view.fullMode
+windows	main	view_mode_brief_left	Control+F1	view.briefMode
 windows	main	show_hidden_files	Control+Shift+.	view.showHidden
 windows	main	sort_by_name	Control+3	sort.byName
 windows	main	sort_by_extension	Control+4	sort.byExtension

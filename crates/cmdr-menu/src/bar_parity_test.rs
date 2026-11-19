@@ -34,12 +34,7 @@ struct Exception {
 }
 
 const MACOS: &[Platform] = &[Platform::MacOs];
-const WINDOWS: &[Platform] = &[Platform::Windows];
 const EVERY_PLATFORM: &[Platform] = &Platform::ALL;
-
-/// The Windows bar shows the Linux bar's key where the two keymaps differ only in order.
-const WINDOWS_FOLLOWS_LINUX: &str = "the first key there is TC's F-key chord; the Windows bar shows Linux's first key (a default on \
-                                     Windows too), as it did while the bar was native and left F-key chords to keydown dispatch";
 
 /// The registry's first key can't be registered (bare, or a key muda has no `Code` for), so the
 /// bar registers the command's second default.
@@ -58,18 +53,6 @@ const EXCEPTIONS: &[Exception] = &[
         platforms: EVERY_PLATFORM,
         menu_id: GO_PARENT_ID,
         reason: SECOND_KEY,
-    },
-    // Windows's first view-mode keys are TC's `Ctrl+F2` / `Ctrl+F1`; Linux puts `Ctrl+1` / `Ctrl+2`
-    // first, because KDE and Xfce take `Ctrl+F1` / `Ctrl+F2`.
-    Exception {
-        platforms: WINDOWS,
-        menu_id: VIEW_MODE_FULL_LEFT_ID,
-        reason: WINDOWS_FOLLOWS_LINUX,
-    },
-    Exception {
-        platforms: WINDOWS,
-        menu_id: VIEW_MODE_BRIEF_LEFT_ID,
-        reason: WINDOWS_FOLLOWS_LINUX,
     },
 ];
 

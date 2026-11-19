@@ -399,7 +399,7 @@ pub struct MenuState<R: Runtime> {
     pub view_mode_right: Mutex<ViewMode>,
     /// Cached view-mode shortcuts. Frontend pushes updates via `update_menu_accelerator`.
     /// Defaults are the left pane's accelerators in `cmdr_menu::bar` on this platform
-    /// (`menu_bar::spec_accelerator`): Cmd+1 / Cmd+2 on macOS, Ctrl+1 / Ctrl+2 on Linux.
+    /// (`menu_bar::spec_accelerator`): Cmd+1 / Cmd+2 on macOS, Ctrl+F2 / Ctrl+F1 on Windows (TC's), Ctrl+1 / Ctrl+2 on Linux.
     pub view_mode_full_accel: Mutex<Option<String>>,
     pub view_mode_brief_accel: Mutex<Option<String>>,
     /// Pin/unpin tab menu item (label toggles based on active tab state)
