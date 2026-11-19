@@ -5935,6 +5935,8 @@ export type MessageKey =
   | 'ui.copyButton.copied'
   | 'ui.demoArchive.notBrowsable'
   | 'ui.demoDrop.overBudget'
+  | 'ui.demoWindow.maximize'
+  | 'ui.demoWindow.restore'
   | 'ui.dialogBoundary.closedToast'
   | 'ui.findBar.close'
   | 'ui.findBar.matchPosition'

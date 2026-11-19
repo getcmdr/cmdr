@@ -1055,10 +1055,24 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
         sees the Windows bar.
         - Status: the bar, the right-click menus, and the look follow the visitor (`new DemoMenuBar(platform)`, the
           visitor's own conventions row, no look pin; `lib/demo/DETAILS.md` § Platform). Still open: the new-query key
-          (a fixed-key command can't be seeded, so picking one needs a seam in the shortcut store, David's call), and
-          the macOS traffic lights every visitor still gets (with `overlayTitleBar`). Once step 6 draws the bar in the
-          main window, the demo answers `get_menu_bar` and the pick commands from `DemoMenuBar` and drops its own strip
-          for a Windows or Linux visitor (`coverage.ts`'s `IN_PAGE_MENUS`).
+          (a fixed-key command can't be seeded, so picking one needs a seam in the shortcut store, David's call).
+          Windows and Linux visitors get their OS's title bar above each window (`lib/demo/title-bar.ts`, no
+          `overlayTitleBar`, as the desktop keeps the OS's decorations there) and the main volume named as the desktop
+          names it (`C:`, `Root`).
+        - Paths stay POSIX for every visitor (`/Users/you`, `~/Downloads`, Copy path's `/Users/you/…`). Windows paths
+          for a Windows visitor would take: (1) the engine's demo volume rooted at an app path `C:/` with the tree under
+          `C:/Users/you` (`cmdr-listing-wasm`'s `tree.rs` takes the root and home from `lib/demo/demo-tree.ts`, whose
+          entries are POSIX strings today), (2) nothing in the frontend: its grammar already follows the platform
+          (`hostPathFlavor` in `#lib/path/grammar.ts`), so breadcrumbs and Go to folder would follow. Landmine: that
+          means a Windows visitor's frontend reads today's POSIX paths in Windows flavor (`/Users/you` has no drive root
+          there); the panes work, but no test pins which grammar helper a POSIX path survives, (3) `demoPath`'s `~`
+          expansion and every `~`-expanded argument in `listing.ts` against the new home, (4) `getNameRules` answering
+          Windows' format (reserved names, forbidden characters) for that visitor, with the write engine refusing what
+          the desktop's Windows volume refuses, (5) Copy path's text in Windows spelling (`\`), as the desktop's
+          clipboard command writes it, and (6) the volume answers (`volumes.ts`: `path`, `volumeRoot`, favorites) and
+          the website suite's path assertions per visitor. Not started: David's call.
+        - Once step 6 draws the bar in the main window, the demo answers `get_menu_bar` and the pick commands from
+          `DemoMenuBar` and drops its own strip for a Windows or Linux visitor (`coverage.ts`'s `IN_PAGE_MENUS`).
     12. [XS] **Delete `tools/menu-spike/`** once steps 6 and 7 and task 67 have taken what they need (list above): the
         folder, its line in `AGENTS.md`'s `tools/` list, and the README pointer in `menu-spike.md` (the note stays as
         the decision's record). Done when: no doc links the folder.

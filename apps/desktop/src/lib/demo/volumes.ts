@@ -1,11 +1,33 @@
 /**
- * The demo's volume list: one main disk plus the usual favorites, all on the in-memory volume.
+ * The demo's volume list: one main disk plus the usual favorites, all on the in-memory volume. The
+ * disk wears the name the desktop gives its main volume on the visitor's OS.
  */
 import type { LocationCategory, LocationInfo } from '#lib/ipc/bindings.js'
+import type { Platform } from '#lib/platform/index.js'
 import type { AnswerTable } from './answer-types.js'
 import { DEMO_HOME, DEMO_VOLUME_ID } from './demo-tree.js'
+import { visitorPlatform } from './platform.js'
+
+/**
+ * The main volume as the desktop names it on each OS: the Mac's startup disk; the system drive as
+ * `WindowsDrive::display_name` reads an unlabeled one (`crates/cmdr-fs/src/volume/windows_volume_ids.rs`,
+ * `C:`); Linux's root row (`get_main_volume` in `src-tauri/src/volumes/platform/linux/mod.rs`,
+ * `Root`). Its file system too, which Settings and the volume's tooltip name. The demo's paths
+ * stay POSIX for every visitor (`docs/specs/windows-port-plan.md`, task 63 step 11).
+ */
+const MAIN_VOLUME: Readonly<Record<Platform, { name: string; fsType: string }>> = {
+  macos: { name: 'Macintosh HD', fsType: 'apfs' },
+  windows: { name: 'C:', fsType: 'ntfs' },
+  linux: { name: 'Root', fsType: 'ext4' },
+}
+
+/** The main volume's name for a visitor on `platform` (the visitor's own by default). */
+export function mainVolumeName(platform: Platform = visitorPlatform(navigator.userAgent)): string {
+  return MAIN_VOLUME[platform].name
+}
 
 function location(
+  platform: Platform,
   id: string,
   name: string,
   path: string,
@@ -19,7 +41,7 @@ function location(
     category,
     icon: null,
     isEjectable: false,
-    fsType: 'apfs',
+    fsType: MAIN_VOLUME[platform].fsType,
     // The in-memory volume has no Trash (`Volume::has_trash`), so F8 deletes for good after the
     // app's own confirm, as on a network share.
     supportsTrash: false,
@@ -39,22 +61,35 @@ function location(
     favoriteShortcut,
     favoriteTarget:
       category === 'favorite'
-        ? { volumeId: DEMO_VOLUME_ID, volumeName: 'Macintosh HD', volumeRoot: '/', reach: { kind: 'ready' } }
+        ? {
+            volumeId: DEMO_VOLUME_ID,
+            volumeName: MAIN_VOLUME[platform].name,
+            volumeRoot: '/',
+            reach: { kind: 'ready' },
+          }
         : null,
     rootLabel: null,
     mountAccount: null,
   }
 }
 
-const mainVolume = location(DEMO_VOLUME_ID, 'Macintosh HD', '/', 'main_volume')
+/** The main volume's row for a visitor on `platform`. */
+function mainVolumeOf(platform: Platform): LocationInfo {
+  return location(platform, DEMO_VOLUME_ID, MAIN_VOLUME[platform].name, '/', 'main_volume')
+}
 
-const demoLocations: LocationInfo[] = [
-  location('fav-home', 'you', DEMO_HOME, 'favorite', 'h'),
-  location('fav-desktop', 'Desktop', `${DEMO_HOME}/Desktop`, 'favorite', 'd'),
-  location('fav-documents', 'Documents', `${DEMO_HOME}/Documents`, 'favorite', 'o'),
-  location('fav-downloads', 'Downloads', `${DEMO_HOME}/Downloads`, 'favorite', 'w'),
-  mainVolume,
-]
+/** The volume list for a visitor on `platform`. Exported for its test. */
+export function demoLocations(platform: Platform): LocationInfo[] {
+  return [
+    location(platform, 'fav-home', 'you', DEMO_HOME, 'favorite', 'h'),
+    location(platform, 'fav-desktop', 'Desktop', `${DEMO_HOME}/Desktop`, 'favorite', 'd'),
+    location(platform, 'fav-documents', 'Documents', `${DEMO_HOME}/Documents`, 'favorite', 'o'),
+    location(platform, 'fav-downloads', 'Downloads', `${DEMO_HOME}/Downloads`, 'favorite', 'w'),
+    mainVolumeOf(platform),
+  ]
+}
+
+const visitor = (): Platform => visitorPlatform(navigator.userAgent)
 
 /** A path as the demo volume spells it: `~` expanded, no trailing slash. */
 export function demoPath(raw: string): string {
@@ -63,10 +98,10 @@ export function demoPath(raw: string): string {
 }
 
 export const volumeAnswers = {
-  listVolumes: () => ({ data: demoLocations, timedOut: false }),
+  listVolumes: () => ({ data: demoLocations(visitor()), timedOut: false }),
   getDefaultVolumeId: () => DEMO_VOLUME_ID,
   getE2eStartPath: () => null,
-  resolvePathVolume: () => ({ volume: mainVolume, timedOut: false }),
+  resolvePathVolume: () => ({ volume: mainVolumeOf(visitor()), timedOut: false }),
   // The pane boot asks this for every restored tab. The one demo volume never moves and its
   // "registry" is complete from the start, so the tab stays put. Unanswered, the call rejects, the
   // app reads that as the startup sweep still running, and every tab opens unreachable.

@@ -135,12 +135,18 @@ export function createDemoBackend(): DemoBackend {
     emit(name, payload, target === undefined ? { kind: 'everyone' } : { kind: 'label', label: target })
   })
 
+  // The visitor's own OS, which picks the bar, the menus, and every window's buttons.
+  const platform = visitorPlatform(navigator.userAgent)
   // A closed viewer panel frees its sessions, as the app's window-destroyed hook does.
-  const windows = createWindowHost(emit, (label) => {
-    engine.closeViewerWindow(label)
-  })
+  const windows = createWindowHost(
+    emit,
+    (label) => {
+      engine.closeViewerWindow(label)
+    },
+    platform,
+  )
   // The backend lives in the top frame, which is the main window.
-  windows.mountMainWindowLights()
+  windows.mountMainWindowButtons()
   // Drags happen in the main window, the only one with file panes; its events go there, as wry's do.
   const drags = createDragSessions(window, (event, payload) => {
     emit(event, payload, { kind: 'label', label: 'main' })
@@ -165,8 +171,8 @@ export function createDemoBackend(): DemoBackend {
       )
     },
   )
-  // The visitor's own OS's bar and menus. Read here, since this frame's platform global lands after the backend.
-  const menu = startMenuEngine(visitorPlatform(navigator.userAgent))
+  // The visitor's own OS's bar and menus. Read off the user agent, since this frame's platform global lands after the backend.
+  const menu = startMenuEngine(platform)
 
   /**
    * The demo doesn't browse archives, and says so. Under the "Opening…" toast's id, so it takes

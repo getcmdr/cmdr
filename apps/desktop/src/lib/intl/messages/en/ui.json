@@ -31,6 +31,14 @@
   "@ui.demoArchive.notBrowsable": {
     "description": "Notification in the browser demo on getcmdr.com, shown when a visitor tries to open or step into an archive file (a .zip, .tar.gz, .7z, and so on). The demo can't show what's inside archives; the installed app can. The second sentence lists what the real app does with archives: browse them like folders, change their contents, unpack (extract) them, and compress files into new ones. It's information, not a problem report: nothing went wrong."
   },
+  "ui.demoWindow.maximize": "Maximize",
+  "@ui.demoWindow.maximize": {
+    "description": "VERB (imperative). Screen-reader name of the middle of the three window buttons (minimize, maximize, close) at the right end of a window's title bar, which makes the window fill the screen, as the browser demo on getcmdr.com draws it for a visitor on Windows or Linux. Use the exact word Windows uses for this caption button's tooltip in this language."
+  },
+  "ui.demoWindow.restore": "Restore",
+  "@ui.demoWindow.restore": {
+    "description": "VERB (imperative). The same middle window button while the window fills the screen: it brings the window back to its earlier size. Browser demo on getcmdr.com, Windows or Linux visitor. Use the exact word Windows uses for this caption button's tooltip in this language (in English, Windows says \"Restore\" or \"Restore Down\")."
+  },
   "ui.popover.defaultAriaLabel": "Options",
   "@ui.popover.defaultAriaLabel": {
     "description": "Default aria-label naming a popover region when the caller passes none. Generic fallback meaning a small floating panel of choices."
