@@ -1,0 +1,27 @@
+/* Typography and motion, Windows 11 (WinUI 3), on Windows 10 and 11 alike. The house values are
+   `app.css`'s § Typography and § Transitions; this file only redefines them under the Windows look.
+   Imported by app.css; not loaded on its own.
+
+   Values come from microsoft/microsoft-ui-xaml at commit 8c4a489bac3da36224ba325453146217619fe919
+   (main, 2026-11-18): `TextBlock_themeresources.xaml` (the type ramp), `Common_themeresources_any.xaml`
+   (the animation durations and curve), and `Button_themeresources.xaml` (the 83 ms BrushTransition).
+   Why each choice, and what CSS can't match: `docs/notes/windows-port/type-and-motion.md`. */
+
+:root[data-look='windows'] {
+  /* XamlAutoFontFamily → Segoe UI Variable on Windows 11. Chromium doesn't resolve the variable
+     font's family name ('Segoe UI Variable'), only its named instances, so the Text instance;
+     Windows 10 has only Segoe UI. `system-ui` (the user's message font) and the generic close it. */
+  --font-system: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+
+  /* The type ramp: sm 12 is Caption, md 14 is Body, xl 20 is Subtitle, all as in the house look.
+     The house's 16px heading step isn't on the ramp, so it takes BodyLarge 18. xs (10px badges)
+     has no ramp step and stays. */
+  --font-size-lg: 1.125rem; /* 18px */
+
+  /* Motion. A control's state change (hover, press, focus) is WinUI's BrushTransition, 83 ms with
+     no easing; fades and size changes take ControlNormalAnimationDuration 250 ms on
+     ControlFastOutSlowInKeySpline 0,0,0,1. */
+  --transition-fast: 83ms linear;
+  --transition-base: 83ms linear;
+  --transition-slow: 250ms cubic-bezier(0, 0, 0, 1);
+}
