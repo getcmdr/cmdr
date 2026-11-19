@@ -633,6 +633,19 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     Restart Manager for holders, and `WNetCancelConnection2W` once 45 makes OS SMB mounts.
 40. [S] Windows. System look: accent color, text scale, high contrast and transparency, UI language and formats, all
     live-updating (`UISettings`, `WM_SETTINGCHANGE`). Light/dark already arrives through WebView2. Needs 19, 23.
+    - **Built** (2026-11-19), all through the existing channels, live from one settings window
+      (`system_look/platform/windows/`: `WM_SETTINGCHANGE`, `WM_THEMECHANGED`, `WM_SYSCOLORCHANGE`, and `UISettings`'
+      change events posted onto its thread), never polled. Accent: `UISettings` with WinUI's fill shades
+      (`SystemAccent.fill`, `AccentDark1` / `AccentLight2`), which the Windows control tokens fill with
+      (`--color-accent-fill`). Contrast themes: `SPI_GETHIGHCONTRAST` into `increase_contrast` and `reduce_transparency`
+      (the colors stay WebView2's `forced-colors`). Transparency effects: `AdvancedEffectsEnabled` into
+      `reduce_transparency`. Language and formats: `GetUserPreferredUILanguages` and `GetUserDefaultLocaleName` into
+      `get_os_locales`, live through `intl`'s watcher on the same window (`apps/desktop/src-tauri/src/intl/DETAILS.md` §
+      Windows). Text size: reports `1.0`, because WebView2 already zooms the page with it, live (Chromium's
+      `UwpTextScaleFactor`); the trade (the whole page zooms, where WinUI grows text alone) is David's call
+      (`docs/notes/windows-port/type-and-motion.md`). Unverified until someone changes the settings on a real Windows:
+      that each Settings page broadcasts or fires its `UISettings` event, the shades on screen, a contrast theme's look,
+      and the Text size zoom.
 41. [S] Windows. File icons via `SHGetFileInfoW` / `IShellItemImageFactory`. Needs 23.
 42. [S] Windows. Clipboard (`CF_HDROP`, `Preferred DropEffect` for cut) and drag-out of plain paths (OLE). Needs 18.
 43. [M] Windows. Drag-out of virtual files (MTP, SMB, archives) via `CFSTR_FILEDESCRIPTORW` / `FILECONTENTS`. Needs 42.
@@ -870,7 +883,7 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
       catalog-wide computed-style diff. Sources, the gaps CSS can't close (the accent shade ramp, the select's chevron,
       WinUI's control animations, overlay scrollbars), and what stays house-styled:
       `docs/notes/windows-port/control-look-tokens.md`. Left for later: Linux's neutral theme (Linux keeps the house
-      look until then), and the accent's `Dark1` / `Light2` shades once task 40 reads `UISettings`.
+      look until then). The accent's `Dark1` / `Light2` shades arrived with task 40 (`--color-accent-fill`).
 61. [S] Windows. **Done**. Dialog conventions, read from task 59's conventions inside `ModalDialog`, ❌ never the OS
     (`apps/desktop/src/lib/ui/DETAILS.md` § Platform conventions, with the per-dialog Return table). Button order: the
     footer is written in macOS order and Windows and KDE show it reversed, with Tab following through the focus trap's
@@ -905,7 +918,7 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
       page as `prefers-reduced-motion` with no backend reader; Linux keeps the house stack's `system-ui`. macOS and
       Linux unchanged: 0 differing pixels across the demo's Mac shots. Unverified until a real Windows run: that
       WebView2 resolves the font name, and the reduced-motion mapping. Gaps: optical size (every size draws the Text
-      cut), WinUI's theme animations, and Windows text scale (task 40). Evidence:
+      cut) and WinUI's theme animations; Windows text scale is WebView2's own zoom (task 40). Evidence:
       `docs/notes/windows-port/type-and-motion.md`.
 63. [L] Windows and Linux. The menu model (D5, final). Off macOS, Cmdr draws its menus in the page from `cmdr-menu`'s
     data. Windows, KDE, and other Linux show an in-window menu bar (`menuModel: 'windowMenuBar'`): Windows 11's Fluent

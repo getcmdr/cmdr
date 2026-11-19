@@ -6,13 +6,11 @@ Rust draws.
 
 ## Module map
 
-- `mod.rs`: `OsLocales`, `get_os_locales`. `platform/`: OS reads and change signals (the language list, the format
-  locale, `observe_locale_signals`). `resolve.rs`: the pure rules (`resolve_ui_locale`, `inheritance_chain`).
+- `mod.rs`: `OsLocales`, `get_os_locales`. `platform/`: OS reads and change signals. `resolve.rs`: the pure rules.
 - `macos_fallback_test.rs`: pins our English answers against CFBundle's. macOS-only.
-- `format_locale.rs`: composing `<language>[-Script]-REGION` from `NSLocale`'s parts or a Windows locale name.
-- `live_locale.rs`: `observe_os_locale_changes`, a `LocaleWatcher` over the arm's signals, emitting
+- `format_locale.rs`: composes `<language>[-Script]-REGION`. `live_locale.rs`: the `LocaleWatcher`, emitting
   `os-locales-changed`.
-- `native_strings.rs`: `menu_t` / `menu_t_with` and the active-locale cache the native surfaces read.- `shipped_locales.gen.rs` / `native_strings.gen.rs`: the tables. Generated, never hand-edited.
+- `native_strings.rs`: `menu_t` and the native surfaces' active-locale cache. `*.gen.rs`: generated tables.
 
 ## Must-knows
 
