@@ -11,7 +11,7 @@ use std::collections::HashSet;
 use std::fs::{self, Metadata, ReadDir};
 use std::io;
 use std::os::windows::fs::MetadataExt as _;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use cmdr_fs::entry::FileEntry;
 
@@ -28,6 +28,10 @@ pub(crate) fn located(path: &Path) -> io::Result<super::Located<'_>> {
     let app = app_of(path)?;
     let os = native_of(&app)?;
     Ok((Cow::Owned(os), Some(app)))
+}
+
+pub(crate) fn text_child(_dir: &Path, _name: &str) -> Option<PathBuf> {
+    None
 }
 
 pub(crate) fn lstat(path: &Path) -> io::Result<Metadata> {

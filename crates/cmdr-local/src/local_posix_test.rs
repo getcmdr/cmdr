@@ -6,7 +6,6 @@ use super::*;
 use crate::test_support::at;
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
-use cmdr_fs::app_path::PathArithmetic;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::MountClass;
@@ -778,34 +777,6 @@ async fn test_scan_for_conflicts_with_conflicts() {
     assert_eq!(existing_conflict.source_size, 100);
     assert_eq!(existing_conflict.dest_size, 11); // "Old content" is 11 bytes
     assert_eq!(existing_conflict.source_modified, Some(1_700_000_000));
-}
-
-/// ❗ A source name that isn't one plain name is refused typed, ❌ never joined: `Path::join`
-/// of `..` asked about the destination's PARENT (and reported it as a conflict), and of `/x`
-/// about `/x` itself. An intended change (plan milestone 9): no listing yields such a name,
-/// so only a broken or hostile caller ever sent one.
-#[tokio::test]
-async fn a_conflict_scan_refuses_a_source_name_that_is_not_one_plain_name() {
-    let test_dir = cmdr_fs::testing::AppTestDir::new("conflicts_dot_dot");
-    std::fs::create_dir(test_dir.native().join("dest")).unwrap();
-    let volume = LocalVolume::local_folder_at("Test", test_dir.app_path().to_owned(), VolumeHost::detached());
-    let dest = test_dir
-        .app_path()
-        .join(app_path::AppName::from_app_spelling("dest").unwrap())
-        .unwrap();
-    for name in ["..", "/etc", "a/b"] {
-        let source_items = [SourceItemInfo {
-            name: name.to_string(),
-            size: 1,
-            modified: None,
-            is_directory: true,
-        }];
-        let answer = volume.scan_for_conflicts(&source_items, &dest).await;
-        assert!(
-            matches!(answer, Err(VolumeError::InvalidName(_))),
-            "{name:?}: {answer:?}"
-        );
-    }
 }
 
 #[tokio::test]

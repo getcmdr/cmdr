@@ -25,6 +25,7 @@ mod anchor;
 pub(crate) mod local_posix;
 #[cfg(target_os = "windows")]
 pub(crate) mod local_windows;
+mod short_names;
 
 #[cfg(unix)]
 pub use local_posix::LocalPosixVolume;

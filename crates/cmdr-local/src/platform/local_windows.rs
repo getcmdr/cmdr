@@ -18,6 +18,7 @@ use std::sync::Arc;
 
 use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, NotAnAppPath, PathArithmetic, is_escape};
 use cmdr_fs::entry::FileEntry;
+use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{
@@ -70,10 +71,11 @@ impl LocalWindowsVolume {
         Self::on_mount(name, root, MountClass::LocalDisk, host)
     }
 
-    /// A volume rooted at a mount, with the [`MountClass`] its registration found.
+    /// A volume rooted at a mount, with the [`MountClass`] its registration found. A root
+    /// holding an 8.3 short name is spelled long, since a listing never shows one; only such
+    /// a root reads the disk here (`super::short_names`).
     pub fn on_mount(name: impl Into<String>, root: impl Into<PathBuf>, mount: MountClass, host: VolumeHost) -> Self {
-        let root = root.into();
-        let root = cmdr_fs::app_path::expand_short_names(&root).unwrap_or(root);
+        let root = super::short_names::long_root(root.into(), cmdr_fs::app_path::expand_short_names);
         Self::on_mount_at(name, root_app(&root), mount, host)
     }
 
@@ -376,12 +378,23 @@ impl Volume for LocalWindowsVolume {
             let dest = dest?;
             let mut conflicts = Vec::new();
             for item in &source_items {
-                let name = AppName::from_app_spelling(&item.name)
-                    .map_err(|refused| VolumeError::InvalidName(refused.0.into()))?;
-                let dest_file = dest
-                    .app
-                    .join(name)
-                    .map_err(|why| VolumeError::InvalidName(why.to_string().into()))?;
+                // An item whose name names no child of the destination can't collide: it's
+                // refused typed, alone, and logged (a conflict carries no per-item error),
+                // and the batch's other items are still checked, as on POSIX.
+                let dest_file = match AppName::from_app_spelling(&item.name) {
+                    Ok(name) => dest
+                        .app
+                        .join(name)
+                        .map_err(|why| VolumeError::InvalidName(why.to_string().into())),
+                    Err(refused) => Err(VolumeError::from(refused)),
+                };
+                let dest_file = match dest_file {
+                    Ok(dest_file) => dest_file,
+                    Err(refused) => {
+                        log::warn!("scan_for_conflicts: skipping a source name: {}", LogError(&refused));
+                        continue;
+                    }
+                };
                 let Ok(meta) = native_of(&dest_file).and_then(std::fs::metadata) else {
                     continue;
                 };

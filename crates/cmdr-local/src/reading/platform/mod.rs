@@ -6,7 +6,7 @@ use std::borrow::Cow;
 use std::collections::HashSet;
 use std::fs::{Metadata, ReadDir};
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::entry::FileEntry;
@@ -44,6 +44,7 @@ const _: fn(&Path) -> io::Result<ReadDir> = read_dir;
 /// `located`'s answer: the path the OS opens, and the app path rows carry where it differs.
 pub(crate) type Located<'a> = (Cow<'a, Path>, Option<AppPathBuf>);
 const _: fn(&Path) -> io::Result<Located<'_>> = located;
+const _: fn(&Path, &str) -> Option<PathBuf> = text_child;
 const _: fn(&Metadata) -> OsFields = os_fields;
 const _: fn(&Metadata) -> u32 = mode_of;
 /// `read_entries`' shape: the folder, its `/.hidden` names, the tally, and who picks the lister.
@@ -59,6 +60,11 @@ const _: fn(&Path) -> Option<u64> = added_at_by_path;
 /// differs from today's text of the OS path (`None` on macOS and Linux, where it doesn't).
 /// On Windows either spelling (`C:\x`, `C:/x`) crosses through `from_native_unicode`.
 pub(crate) use imp::located;
+
+/// The child `name` of the OS folder `dir` by the name's TEXT, the join every row took before
+/// app paths: on macOS and Linux `dir.join(name)`, its escapes undecoded. Windows has none (its
+/// `\\?\` folder joins no `/`), so a name the typed join can't carry names nothing there.
+pub(crate) use imp::text_child;
 
 /// The entry at the OS path `path` itself, a link not followed.
 pub(crate) use imp::lstat;

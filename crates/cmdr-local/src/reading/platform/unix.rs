@@ -5,7 +5,7 @@ use std::borrow::Cow;
 use std::fs::{self, Metadata, ReadDir};
 use std::io;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use cmdr_fs::entry::{get_group_name, get_owner_name};
 
@@ -27,6 +27,10 @@ pub(crate) fn read_dir(path: &Path) -> io::Result<ReadDir> {
 /// app path's own bytes.
 pub(crate) fn located(path: &Path) -> io::Result<super::Located<'_>> {
     Ok((Cow::Borrowed(path), None))
+}
+
+pub(crate) fn text_child(dir: &Path, name: &str) -> Option<PathBuf> {
+    Some(dir.join(name))
 }
 
 pub(crate) fn mode_of(metadata: &Metadata) -> u32 {

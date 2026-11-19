@@ -88,6 +88,8 @@ mod local_posix_durability_test;
 #[cfg(test)]
 mod local_posix_link_test;
 #[cfg(test)]
+mod local_posix_names_test;
+#[cfg(test)]
 mod local_posix_resume_test;
 #[cfg(test)]
 mod local_posix_test;

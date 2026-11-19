@@ -155,3 +155,29 @@ fn the_native_entry_points_take_a_native_windows_path() {
     crate::rename_local_exclusive(&test_dir.join("a.txt"), &test_dir.join("b.txt")).expect("renames");
     assert_eq!(on_disk(&test_dir), names(&[("b.txt", 1), ("taken.txt", 10)]));
 }
+
+/// A source name that names no child of the destination (`..`, `a/b`, `a\b`, empty) is
+/// refused alone: it can't collide, and the batch's other items are still checked.
+#[tokio::test]
+async fn a_conflict_scan_refuses_only_the_source_name_that_names_no_child() {
+    use cmdr_fs::volume::SourceItemInfo;
+
+    let test_dir = TestDir::new("win_conflict_names");
+    std::fs::write(test_dir.join("kept.txt"), b"x").expect("the file is created");
+    let volume = volume_at(&test_dir);
+    let item = |name: &str| SourceItemInfo {
+        name: name.to_string(),
+        size: 1,
+        modified: None,
+        is_directory: false,
+    };
+    let source_items = ["..", "a/b", r"a\b", "", "kept.txt"].map(item);
+
+    let conflicts = volume
+        .scan_for_conflicts(&source_items, volume.root())
+        .await
+        .expect("an odd name doesn't fail the batch");
+
+    let names: Vec<&str> = conflicts.iter().map(|c| c.source_path.as_str()).collect();
+    assert_eq!(names, ["kept.txt"], "{conflicts:?}");
+}

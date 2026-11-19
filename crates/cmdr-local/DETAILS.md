@@ -410,15 +410,31 @@ cross to the OS once per call. The design: `docs/specs/app-path-plan.md` milesto
   the raw OS name. A name that isn't plain Unicode text keeps today's lossy row (U+FFFD) and is counted in a debug line,
   and a bridge folder keeps the OS path's text; both go at 10f, when the escape gives each its lossless spelling.
   `FileEntry.name == file_name(FileEntry.path)` either way.
+- **Decision**: every row built from an app path passes `rows_can_carry` inside `Row::of`, and a named child (a
+  mutation's re-stat, a conflict probe) whose joined path holds an escape takes today's text join, ❌ never the escape
+  decoded. **Why**: a path made from a native `caf\xe9` holds an escape, and `get_metadata` or a mutation patch that
+  spelled its row with it put the escape on the wire before 10f, a second row beside the listing's lossy one for the
+  same file (pinned by `local_posix_names_test.rs`, which uses a literal plane-16 name on macOS, where APFS refuses
+  non-UTF-8).
 - **The `&Path` entry points** (`list_directory_core`, `get_single_entry`, `rename_local_exclusive`,
   `patch_listing_after_local_mutation`, space, the old constructors) take a NATIVE path. On Windows either spelling
   crosses up through `from_native_unicode` (`C:\x`, `C:/x`, `\\?\C:\x`), and the old constructors expand 8.3 short names
-  first (`cmdr_fs::app_path::expand_short_names`), since a listing never shows a short name. Typed forms beside them
-  (`local_folder_at`, `on_mount_at`, `rename_local_exclusive_at`) are what 10a–10d switch their callers to; the native
-  forms go then. `platform/mod.rs` pins each pair to one signature on both OSes.
-- **Decision**: the conflict scan refuses a source name that isn't one plain name as `InvalidName`. **Why**:
+  first (`cmdr_fs::app_path::expand_short_names`), since a listing never shows a short name, but only for a root holding
+  a `~` (`src/platform/short_names.rs`). Typed forms beside them (`local_folder_at`, `on_mount_at`,
+  `rename_local_exclusive_at`) are what 10a–10d switch their callers to; the native forms go then. `platform/mod.rs`
+  pins each pair to one signature on both OSes.
+- **Decision**: an old Windows constructor reads the disk for 8.3 names only when its root holds a `~`, ❌ not lazily at
+  the first disk call. **Why**: a constructor runs on the registering thread, and `GetLongPathNameW` reads every folder
+  on the path, so on an offline share it waits out the SMB timeout there. `Volume::root` is synchronous and must answer
+  the long spelling from the start, so putting the expansion off would change what it answers. Every short name Windows
+  generates holds a `~` (`LONGNA~1`); the drive, share, and profile roots Cmdr registers hold none.
+- **Decision**: the conflict scan refuses a source name that isn't one plain name (empty, `.`, `..`, a `/`, a NUL; on
+  Windows also `\`) as `InvalidName`, for that ITEM alone: it names no destination, so it can't collide, the refusal is
+  logged (a `ScanConflict` carries no per-item error), and the batch's other items are still checked. **Why**:
   `Path::join` of `..` asked about the destination's parent (and reported it as a conflict), and of `/x` about `/x`
-  itself; no listing yields such a name, so only a broken or hostile caller sends one.
+  itself; no listing yields such a name, so only a broken or hostile caller sends one, and one such name must not cost
+  the dialog every other answer. A name holding escape code points (a literal plane-16 name) is one plain name, checked
+  by today's text join.
 
 ## Landing a link
 
@@ -437,6 +453,10 @@ with the preview and `scan_walk`.
 - `local_windows_conformance_test.rs`, `local_windows_test.rs`, and `local_windows_names_test.rs` (Windows only, the
   builder): the shared conformance cells, the Windows volume's hostile cells (§ "The Windows sibling"), and the names
   Win32's plain paths misread (`dup.`, `con.txt`, `a:b`, unpaired surrogates; § "App paths in and out").
+- `local_posix_names_test.rs` (macOS, Linux): a name whose app spelling holds an escape answers one row text whichever
+  reader built it (listing, `get_metadata`, a mutation patch), and the conflict scan's per-item refusal.
+- `src/platform/anchor_test.rs` and `src/platform/short_names_test.rs` (every OS): the Windows anchoring table and the
+  short-name gate, as pure logic.
 - `test_support::at(volume, "a/b")`: a cell's typed path under its volume's root, the same on every OS. A cell that
   hands in a bridge value on purpose (a relative path, a root alias) pins a caller's shape that goes with the bridge.
 - `local_posix_conformance_test.rs`: the shared `cmdr_fs::volume::conformance` assertions this backend can run, the way

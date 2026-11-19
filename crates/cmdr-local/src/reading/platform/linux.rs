@@ -13,7 +13,7 @@ use super::super::{
 };
 use super::OsFields;
 
-pub(crate) use super::unix::{located, lstat, mode_of, read_dir, stat};
+pub(crate) use super::unix::{located, lstat, mode_of, read_dir, stat, text_child};
 
 pub(crate) fn os_fields(metadata: &Metadata) -> OsFields {
     super::unix::posix_fields(metadata, false)

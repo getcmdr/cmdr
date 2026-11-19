@@ -9,10 +9,11 @@
 //! lives here.
 
 use super::LocalPosixVolume;
-use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf};
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, shown_name};
 use cmdr_fs::apple_double::SidecarRule;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::file_identity::{device_of, first_sighting};
+use cmdr_fs::log_error::LogError;
 use cmdr_fs::mac_only_files::MacOnlyFiles;
 use cmdr_fs::volume::ScanRecorder;
 use cmdr_fs::volume::Volume;
@@ -227,10 +228,18 @@ impl LocalPosixVolume {
                 let mut conflicts = Vec::new();
 
                 for item in &source_items {
-                    // ❗ One plain name, refused typed otherwise: `Path::join` of `..` asked
-                    // about the destination's PARENT, and of `/x` about `/x` itself.
-                    AppName::from_app_spelling(&item.name)
-                        .map_err(|refused| VolumeError::InvalidName(refused.0.into()))?;
+                    // ❗ One plain name, the item refused typed otherwise: `Path::join` of `..`
+                    // asked about the destination's PARENT, and of `/x` about `/x` itself.
+                    // The refusal is the item's alone (it names no destination, so nothing
+                    // collides with it): a conflict carries no per-item error, so it's
+                    // logged, and the batch's other items are still checked. Read by its shown
+                    // form, so only the name's shape decides: escape code points (a real
+                    // file's literal plane-16 name) are one plain name, checked as before.
+                    if let Err(refused) = AppName::from_app_spelling(&shown_name(&item.name)) {
+                        let refused = VolumeError::from(refused);
+                        log::warn!("scan_for_conflicts: skipping a source name: {}", LogError(&refused));
+                        continue;
+                    }
                     let Some((dest_file_path, row)) = dest.named_child(&item.name) else {
                         continue;
                     };

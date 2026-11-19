@@ -31,9 +31,11 @@ pub(crate) struct Row {
 
 impl Row {
     /// The row of the entry at `os`, spelled `app` where the caller has one that rows can
-    /// carry ([`rows_can_carry`]), else today's text of the OS path.
+    /// carry ([`rows_can_carry`]), else today's text of the OS path. ❗ The filter is here, ❌
+    /// not at each caller: a path holding an escape (one made from a native `caf\xe9`) would
+    /// otherwise put the escape on the wire before 10f, a second row beside the listing's.
     pub(crate) fn of(os: &Path, app: Option<&AppPath>) -> Row {
-        match app {
+        match app.filter(|app| rows_can_carry(app)) {
             Some(app) => Row {
                 name: app.file_name().unwrap_or(app.as_str()).to_owned(),
                 path: app.as_str().to_owned(),
@@ -123,18 +125,25 @@ impl<'a> ListingDir<'a> {
         (os, Row { name, path })
     }
 
-    /// The entry named `name` in APP spelling (a mutation's created or renamed name), or
-    /// `None` when it's no plain name or names nothing the OS can open.
+    /// The entry named `name` (a mutation's created or renamed name, a conflict scan's source
+    /// name): by the typed join when the joined path is one rows carry ([`rows_can_carry`]),
+    /// else today's spelling, the folder's OS path joined with the name's TEXT. ❗ A name
+    /// holding an escape takes today's spelling too, so its escape isn't decoded into a file
+    /// the row doesn't name (until 10f; a decoded re-stat made a second, escaped row beside
+    /// the listing's). `None` only on Windows, whose `\\?\` path has no text join
+    /// (`platform::text_child`).
     pub(crate) fn named_child(&self, name: &str) -> Option<(PathBuf, Row)> {
-        let Some(dir) = &self.app else {
-            // Today's: the folder's OS path plus the name, its row that path's text.
-            let os = self.os.join(name);
-            let row = Row::of(&os, None);
+        if let Some(dir) = &self.app
+            && let Ok(name) = AppName::from_app_spelling(name)
+            && let Ok(path) = dir.join(name)
+            && rows_can_carry(&path)
+            && let Ok(os) = path.to_native()
+        {
+            let row = Row::of(&os, Some(&path));
             return Some((os, row));
-        };
-        let path = dir.join(AppName::from_app_spelling(name).ok()?).ok()?;
-        let os = path.to_native().ok()?;
-        let row = Row::of(&os, Some(&path));
+        }
+        let os = super::platform::text_child(&self.os, name)?;
+        let row = Row::of(&os, None);
         Some((os, row))
     }
 
