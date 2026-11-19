@@ -168,6 +168,24 @@ test.describe('Browser demo', () => {
       expect(errors.map((error) => error.message)).toEqual([])
     })
 
+    // "Tell me about this" runs `cmdr-about` in the WASM module (`crates/cmdr-listing-wasm/src/about.rs`) over
+    // the demo's volume, streamed over a Tauri `Channel` (`lib/demo/channels.ts`): the card fills, never sits loading.
+    test('Tell me about this fills the card from the file’s own bytes', async ({ page }) => {
+      const errors = collectPageErrors(page)
+      await openDemo(page)
+      await row(left(page), 'notes').click({ button: 'right' })
+      await page.getByRole('menuitem', { name: 'Tell me about this' }).click()
+
+      const dialog = page.getByRole('dialog')
+      await expect(dialog.getByText('notes.md').first()).toBeVisible()
+      // The Kind row sniffed the bytes; the note says a page sees only part of the card.
+      await expect(dialog.getByText('Text, checked against its contents')).toBeVisible()
+      await expect(dialog.getByText(/Cmdr can see only some of this/)).toBeVisible()
+      await page.keyboard.press('Escape')
+      await expect(dialog).toHaveCount(0)
+      expect(errors.map((error) => error.message)).toEqual([])
+    })
+
     test('the operation queue pauses a running copy', async ({ page }) => {
       const errors = collectPageErrors(page)
       await openDemo(page)

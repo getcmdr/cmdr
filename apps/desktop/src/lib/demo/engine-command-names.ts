@@ -69,6 +69,10 @@ export const LISTING_ENGINE_COMMANDS = [
   'remove_recent_search',
   'clear_recent_searches',
   'apply_recent_searches_max_count',
+  // `about.rs`'s `ABOUT_COMMANDS` ("Tell me about this")
+  'about_start',
+  'about_cancel',
+  'about_stop_verdict',
   // `multi_rename.rs`'s `MULTI_RENAME_COMMANDS`
   'open_multi_rename',
   'preview_multi_rename',
@@ -175,3 +179,10 @@ export const MENU_ENGINE_COMMANDS = [
   'show_queue_row_context_menu',
   'show_network_host_context_menu',
 ] as const
+
+/**
+ * What the page answers from the drawn bar rather than an engine (`menu-engine.ts`'s
+ * `titleMnemonics`, through `backend.ts`): the bar titles' Alt+letter keys, in the words the bar
+ * draws. Not the crate's, so no Rust test pins it.
+ */
+export const MENU_PAGE_COMMANDS = ['get_menu_bar_title_mnemonics'] as const

@@ -40,6 +40,9 @@ cmdr-viewer = { path = "../cmdr-viewer" }
 # recents-list rules its session list of recent searches follows.
 cmdr-search = { path = "../cmdr-search" }
 cmdr-recents = { path = "../cmdr-recents" }
+# "Tell me about this" (`src/about.rs`): the card's plan, the real-type sniff, and the
+# headline, removal row, and actions, the same rules the desktop's host hands its facts to.
+cmdr-about = { path = "../cmdr-about" }
 # The Multi-Rename Tool's engine (⌃M, `src/multi_rename.rs`), over the same panes and write
 # engine, and the media vocabulary its demo reader answers with (`ReadError::NotSupported`).
 cmdr-multi-rename = { path = "../cmdr-multi-rename" }

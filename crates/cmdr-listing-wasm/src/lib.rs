@@ -6,7 +6,7 @@
 //! [`tree`] builds the volume, [`events`] turns engine facts into Tauri-shaped
 //! events, [`commands`] answers the commands (handing the write, queue, and
 //! undo ones to [`operations_host`], the write engine's host), [`menu`] hosts
-//! the menu bar (`cmdr-menu`), [`search`] answers ⌘F (`cmdr-search`), [`multi_rename`] answers ⌃M (`cmdr-multi-rename`), and `bindings` (browser only) is the
+//! the menu bar (`cmdr-menu`), [`search`] answers ⌘F (`cmdr-search`), [`multi_rename`] answers ⌃M (`cmdr-multi-rename`), [`about`] answers "Tell me about this" (`cmdr-about`), and `bindings` (browser only) is the
 //! `wasm-bindgen` surface. Everything but `bindings` builds natively too, so
 //! the tests run on the host. `CLAUDE.md` has the must-knows, `DETAILS.md` the JS
 //! API and the build.
@@ -17,6 +17,7 @@
 #[cfg(target_family = "wasm")]
 use jiff as _;
 
+pub mod about;
 pub mod backend_listings;
 #[cfg(target_family = "wasm")]
 mod bindings;
@@ -35,6 +36,8 @@ pub mod search;
 pub mod tree;
 pub mod viewer;
 
+#[cfg(all(test, not(target_family = "wasm")))]
+mod about_test;
 #[cfg(all(test, not(target_family = "wasm")))]
 mod commands_test;
 #[cfg(all(test, not(target_family = "wasm")))]

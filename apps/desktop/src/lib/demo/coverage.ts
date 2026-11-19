@@ -9,7 +9,7 @@
 import type { CommandName } from './answer-types.js'
 import { appAnswers, silentCommands } from './answers.js'
 import { DRAG_COMMANDS } from './drag-session.js'
-import { LISTING_ENGINE_COMMANDS, MENU_ENGINE_COMMANDS } from './engine-command-names.js'
+import { LISTING_ENGINE_COMMANDS, MENU_ENGINE_COMMANDS, MENU_PAGE_COMMANDS } from './engine-command-names.js'
 import { volumeAnswers } from './volumes.js'
 import { WINDOW_HOST_COMMANDS } from './windows.js'
 
@@ -17,7 +17,13 @@ import { WINDOW_HOST_COMMANDS } from './windows.js'
 type CamelCase<S extends string> = S extends `${infer Head}_${infer Tail}` ? `${Head}${Capitalize<CamelCase<Tail>>}` : S
 
 /** The wire (snake_case) names something other than a TS table answers. */
-const WIRE_ANSWERED = [...LISTING_ENGINE_COMMANDS, ...MENU_ENGINE_COMMANDS, ...WINDOW_HOST_COMMANDS, ...DRAG_COMMANDS]
+const WIRE_ANSWERED = [
+  ...LISTING_ENGINE_COMMANDS,
+  ...MENU_ENGINE_COMMANDS,
+  ...MENU_PAGE_COMMANDS,
+  ...WINDOW_HOST_COMMANDS,
+  ...DRAG_COMMANDS,
+]
 
 type Answered =
   | keyof typeof appAnswers
@@ -264,8 +270,6 @@ export const notInDemo = {
   deleteAiApiKey: AI,
   setLogLlmCalls: AI,
   answerToolAsk: AI,
-  aboutCancel: AI,
-  aboutStopVerdict: AI,
   translateSearchQuery: AI,
   translateSelectionQuery: AI,
   askCmdrSendMessage: AI,
@@ -367,7 +371,6 @@ export const notInDemo = {
   clearRecentSelections: NOT_YET,
   applyRecentSelectionsMaxCount: NOT_YET,
   // The in-page menus' commands (D5)
-  getMenuBarTitleMnemonics: IN_PAGE_MENUS,
   getMenuBar: IN_PAGE_MENUS,
   getViewerMenuBar: IN_PAGE_MENUS,
   pickMenuBarItem: IN_PAGE_MENUS,

@@ -315,6 +315,32 @@ pinned against `bindings.ts` by `multi_rename_test.rs`): `cmdr-multi-rename`'s `
   `directory-diff`, roll back, history, a media mask ending `unreadable` with one final `done` event, Results' refusal,
   presets, last settings); `smoke-multi-rename.mjs` runs the same on the real `.wasm`, plus the 1,200-photo probe.
 
+## Tell me about this
+
+`about.rs`'s `DemoAbout` answers `about_start`, `about_cancel`, and `about_stop_verdict` (`ABOUT_COMMANDS`) the way the
+desktop's host does (`apps/desktop/src-tauri/src/about/CLAUDE.md`): `cmdr_about::card::plan`, then the facts through
+`AboutCard`, with `headline`, `consequences`, and `actions` recomputed on every landing.
+
+- **What it answers**: identity (the volume's metadata, the desktop's `through::identity_of`) and, for a file, the real
+  type (`sniff::real_type` over the first 64 KB and, past those, the last 512 bytes, read with `read_range`).
+  `VolumeCaps` is `identity_only` plus `content`, `OsCaps` all off, and `retain_kinds` keeps those two rows, so the card
+  notes "Cmdr can see only some of this". The demo's generated filler bytes match no format, so their Kind row says
+  "can't tell", never a mismatch. Actions: removal only (`Delete`: the volume has no Trash), no file manager, no Ask
+  Cmdr.
+- **Order**: `unavailable` alone (a path the volume doesn't hold), or `planned`, `verdictUnavailable` with `aiOff` (no
+  AI, as on a desktop with AI off), one `fact` per row, and `factsSettled`; then the channel's end. Everything runs
+  inside the `about_start` call (in-memory reads), which answers `null` as the desktop's does.
+- **The channel**: the request's `onEvent` arrives as the webview's tagged `__CHANNEL__:<label>:<id>` string, and each
+  message goes out as a `demo://channel` notice (`CHANNEL_EVENT`: `{ channel, message }`, then
+  `{ channel, end: true }`), which the page hands to that frame's `Channel` (`apps/desktop/src/lib/demo/DETAILS.md` §
+  Channels).
+- **Cancel**: `about_cancel` marks the id; every send checks it, so a card closed mid-gather sends nothing more, and a
+  cancel that lands before its start (a tombstone, as the desktop's registry keeps) leaves that start silent but for the
+  end. A card's end clears its id.
+- The wire structs mirror `about/event.rs` (the app crate can't build for the browser); `about_test.rs` pins the
+  message, update, and `Derived` keys and the tags against `bindings.ts`, plus the order for a file, a folder, a missing
+  path, and an early cancel.
+
 ## Files dropped in from the computer
 
 `imports.rs`'s `DemoImports` lands a visitor's dropped files on the page's volume through `InMemoryVolume`'s import door
@@ -388,6 +414,8 @@ from the computer. Nothing leaves the page.
 - **Multi-Rename** (`multi_rename.rs`, § Multi-Rename): no media reads (every media field reads as couldn't-read), no
   Results, presets and history in memory, and every call runs inline with none of the desktop's IPC deadlines or preview
   budget.
+- **Tell me about this** (`about.rs`, § Tell me about this): identity and real type only (no OS records, index, repo, or
+  Cmdr history row), no verdict, and the whole card inside the `about_start` call.
 - **The viewer** (`viewer.rs`): every call runs inline, with none of the app's 2 s timeouts or stall watches (an
   in-memory read can't hang). No LineIndex upgrade, so a big file keeps its estimated row count; a search scans in 8 ms
   slices on the page's event loop instead of a thread; no watcher, so tail mode never sees a change.
