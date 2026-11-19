@@ -38,13 +38,17 @@ let lastPointerDown: { target: Element; at: number } | null = null
  * (composer, sessions list, and its other focusable chrome), and an open in-app
  * menu (`ui/Menu.svelte`'s `[data-menu]` surface, which takes focus while it's up:
  * a Servers row menu), plus its `[data-menu-submenu]`, which takes focus while it
- * holds the cursor and is the surface's sibling, not its child. The rail and a menu
- * only mount while open, so a closed one matches nothing here without any extra guard.
+ * holds the cursor and is the surface's sibling, not its child. The in-page command menus
+ * (`ui/command-menu/`, off macOS only) hold focus the same way: the in-window menu bar's
+ * `[role="menubar"]`, whose title keeps focus while Alt or F10 has the bar, and each open
+ * `[data-command-menu]` surface (a bar flyout, the main-menu button's menu, an in-page context
+ * menu); the same pair `ui/focus-trap.ts` leaves alone. The rail and a menu only mount while
+ * open, so a closed one matches nothing here without any extra guard.
  * The toast stack is always mounted but holds focus only when "Move focus to the
  * notifications" (or a click on a toast button) put it there.
  */
 const KEYBOARD_HOME_SELECTOR =
-  '.dual-pane-explorer, .ask-cmdr-rail, .status-corner, [data-menu], [data-menu-submenu], [data-toast-stack]'
+  '.dual-pane-explorer, .ask-cmdr-rail, .status-corner, [data-menu], [data-menu-submenu], [role="menubar"], [data-command-menu], [data-toast-stack]'
 
 /**
  * Returns true when `document.activeElement` lives inside a keyboard home. This
