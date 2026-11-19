@@ -76,7 +76,9 @@ Flip your crates in dependency order (a crate after every crate it depends on, d
   codemod drops its receiver to `as_std_legacy()`. ❌ Never import `PathArithmetic` during the flip: importing it is
   adopting the typed answers, which is each crate's own conversion milestone, where it flips its pins on purpose.
   `cmdr-archive`'s `a_typed_root_has_no_path_shaped_arithmetic_in_reach` fails to compile if the trait is imported or
-  the methods go back on the inherent impl.
+  the methods go back on the inherent impl. The one exception (the lead's call, tier 4):
+  `fuzz/fuzz_targets/app_path_native.rs` imports it, since it checks the app path module's own properties (a typed
+  `file_name`), as that module's tests do.
 - **Line numbers in the residue list** are from before the final `cargo fmt`; `cargo check` gives the current ones.
 - **Helpers a trait method tail-calls**: a lazy one (an `async fn`, or a body that is only
   `Box::pin(async move { … })`), nested or in another crate, gets the call moved into the future (README § "Lazy
@@ -165,13 +167,9 @@ From the plan; each agent owns whole crates, on its own branch off the tier befo
     Linux in Docker), the Windows workspace checks (zig, `--exclude cmdr-fsevent-stream`, the macOS-only member),
     nextest 6,805 of 6,805 (481 skipped), `-audit-imports` (five hits, all hand-written `cfg`-gated imports from before
     the flip), `pnpm check --fast`, `app-path-std-bridge`, `file-length`.
-  - **Known, not the flip's**: Windows with `--features playwright-e2e` doesn't compile `cmdr-index`
-    (`media_index/scheduler/lifecycle.rs` `platform_backends` has no arm for Windows plus that feature); no CI builds
-    that pair.
-  - **Open, for the lead**: `pnpm check fuzz-compile` fails: `fuzz/fuzz_targets/app_path_native.rs:42` asserts on a
-    typed `path.file_name()`, which moved onto `PathArithmetic` in tier 0. It's the app path module's own property (a
-    pin, in effect), and the fix is an assert line or a `PathArithmetic` import, so tier 4 left it: importing the trait
-    there, as the module's pins do, keeps the property as written.
+  - **Fixed beside it**: Windows with `playwright-e2e` had no `platform_backends` arm in `cmdr-index`
+    (`media_index/scheduler/lifecycle.rs`); the fix is text-identical to PR #1270's. The fuzz target
+    `app_path_native.rs` imports `PathArithmetic` (the exception above), so `pnpm check fuzz-compile` passes.
 
 ## The worked example, in numbers
 
