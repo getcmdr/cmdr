@@ -91,6 +91,8 @@ mod heartbeat_tests;
 #[cfg(test)]
 mod live_emit_tests;
 #[cfg(test)]
+mod maps_feed_tests;
+#[cfg(test)]
 mod non_utf8_names_tests;
 #[cfg(test)]
 mod policy_tests;
@@ -161,6 +163,18 @@ impl ScanRoot {
     /// the seeded epoch.
     fn is_volume(self) -> bool {
         self == ScanRoot::Volume
+    }
+
+    /// The writer message that carries this walk's rows. Only the volume walk feeds
+    /// the writer's accumulator maps: it alone ends in the `Maps` aggregate that
+    /// reads them, while a `Rebuild` or `Virgin` walk ends in
+    /// `ComputeSubtreeAggregates` (`WriteMessage::InsertSubtreeEntries`).
+    fn insert_message(self, rows: Vec<crate::indexing::store::EntryRow>) -> WriteMessage {
+        if self.is_volume() {
+            WriteMessage::InsertEntriesV2(rows)
+        } else {
+            WriteMessage::InsertSubtreeEntries(rows)
+        }
     }
 
     /// Whether this walk must stay on the device it started on.

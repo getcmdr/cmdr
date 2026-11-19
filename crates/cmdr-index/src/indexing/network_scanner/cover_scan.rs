@@ -517,7 +517,7 @@ impl<'a> CoverWrites<'a> {
     }
 
     fn flush(&mut self) -> Result<(), VolumeScanError> {
-        flush_batch(&mut self.batch, self.writer)?;
+        flush_batch(&mut self.batch, self.writer, WriteMessage::InsertSubtreeEntries)?;
         self.hand_over();
         Ok(())
     }

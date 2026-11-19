@@ -29,8 +29,9 @@ each.
   Marks (`MarkDirsListed`) land BEFORE the aggregate. ❌ Never write `listed_epoch = 0` for a dir we listed but skipped.
 - **`Abandoned` is the one `unreadable_cause` Cmdr RETRIES** (`abandoned_retry.rs`, a persisted per-volume backoff armed
   by the mark). ❌ Never a flat retry, ❌ never clear `Denied`/`Declined`.
-- **Full-aggregate source is sender-declared (`source: Maps|Sql`), ❌ never sniffed.** `Maps` comes ONLY from a fresh
-  full scan; every other flow sends `Sql`. ❌ The subtree handler must not clear the accumulator.
+- **Full-aggregate source is sender-declared (`source: Maps|Sql`), ❌ never sniffed.** ONLY a fresh full scan sends
+  `Maps` or feeds the maps (`InsertEntriesV2`); other walks send `InsertSubtreeEntries` and `Sql`. ❌ The subtree
+  handler must not clear the accumulator.
 - **Partial aggregation borrows the maps READ-ONLY** and no-ops on empty maps with NO SQL fallback (load-bearing: a late
   pass must no-op); ❌ it never bumps the generation.
 - **`WRITER_GENERATION` bumps only for the search-feeding (root) writer** (`MutationTracker`), so an SMB/MTP write never
@@ -47,5 +48,4 @@ each.
   repairing per message made a wide directory `O(width²)`. Safe: a repair recomputes from committed children. A quit
   drains it; a crash mid-burst is a rescan we accept.
 
-Everything above in depth, plus the caught-up point, the heal, and maintenance: `DETAILS.md`. Read it before any
-non-trivial work here.
+Depth, the caught-up point, the heal, and maintenance: `DETAILS.md`; read it before non-trivial work here.

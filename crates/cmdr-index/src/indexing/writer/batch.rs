@@ -126,7 +126,7 @@ pub(super) fn role(msg: &WriteMessage) -> BatchRole {
         // ~nothing and would let a full scan's stream balloon one transaction to
         // hundreds of thousands of rows (and the WAL with it). It still JOINS an open
         // batch so a mixed live stream doesn't thrash.
-        WriteMessage::InsertEntriesV2(_) => BatchRole::Neutral,
+        WriteMessage::InsertEntriesV2(_) | WriteMessage::InsertSubtreeEntries(_) => BatchRole::Neutral,
 
         // Pure control messages: no DB write to batch either way.
         WriteMessage::SetDeltaPropagation(_) | WriteMessage::ArmLedgerHealLatch => BatchRole::Neutral,
