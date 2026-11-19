@@ -421,8 +421,9 @@ the Mac markup and keys, so a convention change can't move them unnoticed.
   as its key once its letters are taken. Without the guard, typing é in a dialog field could press it.
 - Decision/Why: Windows moves to underlines (D5 in `docs/specs/windows-port-plan.md`, David, 2026-11-18, reversing the
   earlier keytips): they match the in-page menu bar's, and Windows' "Underline access keys" setting governs them.
-- Gotcha: Windows' native menu bar takes a lone Alt press (Alt, release, focuses the bar) until task 63 replaces it with
-  the in-page bar (unverified on Windows for dialogs).
+- Gotcha: a lone Alt in a dialog is the in-page bar's to ignore (it's inert under a dialog), and on Windows the window's
+  `SC_KEYMENU` guard keeps it from Windows' own menu loop (`apps/desktop/src-tauri/src/platform/windows/keymenu.rs`;
+  unverified on Windows for dialogs).
 
 ### Scrim clicks
 
@@ -1505,6 +1506,9 @@ the page: the in-window bar and its flyouts (D5's `windowMenuBar`, task 63 of `d
 Windows' right-click menus (`contextMenus: 'inPage'`), and the browser demo's macOS bar and menus. One implementation
 for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu look tokens).
 
+- **Where**: the main window (`apps/desktop/src/routes/(main)/MainMenuBar.svelte`) and the viewer
+  (`apps/desktop/src/routes/viewer/ViewerMenuBar.svelte`) mount the bar under `pageDrawsMenuBar()` (every menu model but
+  macOS's system bar); the Debug > Components catalog shows it on any platform.
 - **Public API**:
   - `<MenuBar menus onPick ariaLabel flavor? keyScope? inert? takesWindowKeys? class?>`: `menus` is `get_menu_bar`'s
     answer kept live by the caller (`followMenuBar` from `#lib/tauri-commands` runs the ordering contract), `onPick(id)`
@@ -1530,10 +1534,10 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
   Home/End, Enter / Space pick, Esc backs out one level then hands focus back (`focus-restore.ts`, so a pane's list goes
   through the explorer's own refocus), Tab leaves. The keyboard walks the deepest surface with a cursor: a submenu the
   pointer only hovered open has none, so ↓ walks its parent and closes it, as on Windows.
-- Gotcha: a lone Alt keydown is never `preventDefault`ed or stopped: the page must still see its keyup, and task 63 step
-  6's `SC_KEYMENU` guard relies on the page acting on that release. A lone Alt doesn't count once another key came
-  between press and release, AltGr (Ctrl+Alt) never does, and window blur resets it (WebView2 sends no keyup then).
-  Alt+Space, Alt+F4, and Shift+F10 pass through untouched.
+- Gotcha: a lone Alt keydown is never `preventDefault`ed or stopped: the page must still see its keyup, and Windows'
+  `SC_KEYMENU` guard (`apps/desktop/src-tauri/src/platform/windows/keymenu.rs`) relies on the page acting on that
+  release. A lone Alt doesn't count once another key came between press and release, AltGr (Ctrl+Alt) never does, and
+  window blur resets it (WebView2 sends no keyup then). Alt+Space, Alt+F4, and Shift+F10 pass through untouched.
 - **Keyboard cues** (`keyboard-cues.ts`, for dialogs too): `afterKeyboardUse` (Windows): a surface opened from the
   keyboard shows them, one a click opened shows them after the first key, then for its life; `whileAltHeld` (Linux):
   while Alt is held alone; the `underline-access-keys` class shows them always, followed live. The bar at rest

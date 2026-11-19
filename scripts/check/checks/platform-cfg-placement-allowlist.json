@@ -35,8 +35,8 @@
       "outsideSeam": 12
     },
     "apps/desktop/src-tauri/src/commands/file_viewer.rs": {
-      "negated": 5,
-      "outsideSeam": 9
+      "negated": 3,
+      "outsideSeam": 6
     },
     "apps/desktop/src-tauri/src/commands/menu.rs": {
       "negated": 4,
@@ -234,15 +234,14 @@
       "outsideSeam": 14
     },
     "apps/desktop/src-tauri/src/menu/menu_structure.rs": {
-      "negated": 2,
-      "outsideSeam": 13
+      "outsideSeam": 1
     },
     "apps/desktop/src-tauri/src/menu/mnemonics.rs": {
       "outsideSeam": 1
     },
     "apps/desktop/src-tauri/src/menu/mod.rs": {
-      "negated": 4,
-      "outsideSeam": 51
+      "negated": 1,
+      "outsideSeam": 46
     },
     "apps/desktop/src-tauri/src/menu/open_with.rs": {
       "outsideSeam": 5

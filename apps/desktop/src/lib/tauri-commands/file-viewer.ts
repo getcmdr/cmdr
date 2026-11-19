@@ -272,12 +272,6 @@ export async function viewerClose(sessionId: string): Promise<void> {
   if (res.status === 'error') throwIpcError(res.error)
 }
 
-/** Sets up a viewer-specific menu on the given window (adds "Word wrap" to View submenu). */
-export async function viewerSetupMenu(label: string): Promise<void> {
-  const res = await commands.viewerSetupMenu(label)
-  if (res.status === 'error') throwIpcError(res.error)
-}
-
 /** Syncs the viewer menu "Word wrap" check state (called when toggled via keyboard). */
 export async function viewerSetWordWrap(label: string, checked: boolean): Promise<void> {
   const res = await commands.viewerSetWordWrap(label, checked)

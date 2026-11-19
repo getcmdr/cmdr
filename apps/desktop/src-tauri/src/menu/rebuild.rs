@@ -32,6 +32,10 @@ use super::MenuState;
 /// The two callers that aren't already there hop via `run_on_main_thread`.
 pub fn rebuild_menu_bar<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     let menu_state = app.state::<MenuState<R>>();
+    // A page bar resolves its labels in the webview, which follows the language by itself.
+    if !menu_state.has_native_bar() {
+        return Ok(());
+    }
 
     // Carry the state the new bar has to come up in. The show-hidden tick is read
     // off the live item (the menu itself is the authority for it, see
@@ -90,7 +94,7 @@ fn install<R: Runtime>(
 ) -> tauri::Result<()> {
     use super::ActiveMenuKind;
 
-    let viewer_menu_items = super::build_viewer_menu(app)?;
+    let viewer_menu_items = super::menu_structure::build_viewer_menu(app)?;
     let viewer_menu = viewer_menu_items.menu.clone();
     *menu_state.viewer_word_wrap.lock_ignore_poison() = Some(viewer_menu_items.word_wrap);
     *menu_state.viewer_edit_cut.lock_ignore_poison() = Some(viewer_menu_items.edit_cut);
@@ -121,13 +125,9 @@ fn install<R: Runtime>(
     Ok(())
 }
 
-/// Installs the freshly built bar on the main window.
-///
-/// Linux menus are per-window, so viewer windows keep whatever
-/// `viewer_setup_menu` gave them; a viewer open across a language change keeps
-/// its old labels until it's reopened. Acceptable: Linux has no live OS-language
-/// signal at all (`intl/live_locale.rs`), so the only way to get here is the
-/// user changing the setting in Cmdr's own Settings window.
+/// Installs the freshly built bar on the main window, for a desktop with a per-window native bar.
+/// None does today (`builds_native_bar`: Windows and Linux draw the bar in the page), so this arm
+/// only keeps the build whole.
 #[cfg(not(target_os = "macos"))]
 fn install<R: Runtime>(
     app: &AppHandle<R>,

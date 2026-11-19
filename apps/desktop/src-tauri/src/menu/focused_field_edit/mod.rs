@@ -5,7 +5,7 @@
 //! nothing does the text edit for them: the bar takes the accelerator before the page sees the
 //! key, and the item's handler is the key's only road. macOS sends the selector down the responder
 //! chain; Linux asks the focused window's WebKitGTK view to run the editing command (verified with
-//! real X keys in the Linux lane, `menu-mnemonic-mask.spec.ts`: without it, `Ctrl+X` in a Settings
+//! real X keys in the Linux lane, `menu-bar.spec.ts`: without it, `Ctrl+X` in a Settings
 //! field reached no keydown and cut nothing, 2026-11-12). Windows has no bar yet (task 63).
 
 mod platform;

@@ -81,12 +81,11 @@ every window. The demo keeps that shape, so secondary windows share its state, a
   refusal: the creation promise rejects with a string, which reaches the opener as `tauri://error`, so the app's own
   failure handling runs and no panel appears.
 - The viewer runs on the WASM engine's viewer (`crates/cmdr-listing-wasm/src/viewer.rs`), so the route is unmodified:
-  its commands route to the engine like the listing's, its native-menu plumbing (`viewer_setup_menu`,
-  `viewer_set_word_wrap`, `viewer_set_search_input_focused`, `viewer_set_history_state`) is silent, and a closing panel
-  calls the engine's `closeViewerWindow` (the app's window-destroyed hook), freeing its sessions and media tokens. An
-  engine event with a target (`viewer-media-load`) reaches that window only. The engine's `demo://open-url` notice goes
-  through the same `openInBrowserTab` as every other link (§ Links); `demo://media-token-dropped` never reaches a
-  listener.
+  its commands route to the engine like the listing's, its native-menu plumbing (`viewer_set_word_wrap`,
+  `viewer_set_search_input_focused`, `viewer_set_history_state`) is silent, and a closing panel calls the engine's
+  `closeViewerWindow` (the app's window-destroyed hook), freeing its sessions and media tokens. An engine event with a
+  target (`viewer-media-load`) reaches that window only. The engine's `demo://open-url` notice goes through the same
+  `openInBrowserTab` as every other link (§ Links); `demo://media-token-dropped` never reaches a listener.
 - Verified in headless Chromium (2026-11-04, local `build:demo`): F3 on `notes.md` renders its Markdown; text mode, ⌘F
   search with its match count, hex, and a 38 MB generated `Cmdr.dmg` in streaming text all work, and Esc closes the
   panel, with `__cmdrDemo.unanswered` empty throughout.

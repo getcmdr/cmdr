@@ -36,6 +36,10 @@ use super::{
 ///
 /// Frontend pushes a rebuild on pane focus change and on shortcut customization.
 pub fn rebuild_view_mode_items<R: Runtime>(app: &AppHandle<R>, menu_state: &MenuState<R>) -> tauri::Result<()> {
+    // Where the page draws the bar, the cached state above is all it reads.
+    if !menu_state.has_native_bar() {
+        return Ok(());
+    }
     let left_submenu_guard = menu_state.view_left_pane_submenu.lock_ignore_poison();
     let right_submenu_guard = menu_state.view_right_pane_submenu.lock_ignore_poison();
     let left_submenu = left_submenu_guard

@@ -10,7 +10,6 @@
         viewerOpenAsText,
         viewerGetLines,
         viewerClose,
-        viewerSetupMenu,
         viewerSetWordWrap,
         viewerSetSearchInputFocused,
         onViewerPullProgress,
@@ -47,6 +46,8 @@
     import { handleOpenFailure } from './viewer-open-failure'
     import { createViewerKeyboard, isSearchInputFocused } from './viewer-keyboard'
     import { editSurfaceFor, runViewerContextMenuAction, runViewerEditAction } from './viewer-menu-actions'
+    import ViewerMenuBar from './ViewerMenuBar.svelte'
+    import { pageDrawsMenuBar } from '#lib/platform/index.js'
     import { createViewerTail } from './viewer-tail.svelte'
     import { logSessionOpFailure, sessionOpFailureKey, type SessionOp } from './viewer-session-op-failure'
     import type { ViewerError } from '#lib/tauri-commands/index.js'
@@ -672,8 +673,12 @@
      * window. Chrome only — ⌘X / ⌘V reach the box whatever the items look like.
      */
     function pushSearchInputFocused(focused: boolean) {
+        searchInputFocused = focused
         viewerSetSearchInputFocused(getCurrentWindow().label, focused).catch(() => {})
     }
+
+    /** Whether the search box holds focus, for the bar this page draws (its Edit > Cut / Paste). */
+    let searchInputFocused = $state(false)
 
     /**
      * The search bar closing has to push too: removing a focused input from the DOM fires no
@@ -879,11 +884,7 @@
         await setupMcpListeners(path)
 
         const windowLabel = getCurrentWindow().label
-        viewerSetupMenu(windowLabel)
-            .then(() => {
-                if (scroll.wordWrap) viewerSetWordWrap(windowLabel, true).catch(() => {})
-            })
-            .catch(() => {})
+        if (scroll.wordWrap) viewerSetWordWrap(windowLabel, true).catch(() => {})
 
         unlistenWordWrap = await onViewerWordWrapToggled(() => {
             toggleWordWrap(true)
@@ -1197,6 +1198,16 @@
         void copyFlow.handleCopy()
     }}
 >
+    {#if pageDrawsMenuBar()}
+        <ViewerMenuBar
+            inputs={{
+                wordWrap: scroll.wordWrap,
+                canGoBack: navigation.canGoBack,
+                canGoForward: navigation.canGoForward,
+                searchFocused: searchInputFocused,
+            }}
+        />
+    {/if}
     <h1 class="sr-only">{tString('viewer.srHeading')}</h1>
     <ViewerToolbar
         {fileName}

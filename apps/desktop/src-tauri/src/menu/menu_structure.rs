@@ -1,5 +1,9 @@
-//! The viewer-window menu bar (`build_viewer_menu`). Every context menu is data in
-//! `cmdr_menu::context`, built by `context_rows.rs`; the main menu bar is `cmdr_menu::bar`.
+//! The viewer window's native menu bar (`build_viewer_menu`), macOS only: everywhere else the
+//! viewer page draws its bar from its own state (`get_viewer_menu_bar`, `cmdr_menu::page::viewer`).
+//! Every context menu is data in `cmdr_menu::context`, built by `context_rows.rs`; the main menu
+//! bar is `cmdr_menu::bar`.
+
+#![cfg(target_os = "macos")]
 
 use cmdr_menu::context::popups::{viewer_copy_accelerator, viewer_select_all_accelerator};
 use cmdr_menu::spec::Platform;
@@ -10,36 +14,41 @@ use tauri::{
 
 use crate::intl::menu_t;
 
-#[cfg(target_os = "macos")]
 use super::HELP_MENU_ID;
-#[cfg(target_os = "macos")]
 use super::menu_items::APP_MENU_TITLE;
 use super::{
-    EDIT_MENU_ID, VIEWER_EDIT_COPY_ID, VIEWER_GO_BACK_ID, VIEWER_GO_FORWARD_ID, VIEWER_SELECT_ALL_ID,
-    VIEWER_WORD_WRAP_ID, ViewerMenuItems,
+    EDIT_MENU_ID, VIEWER_EDIT_COPY_ID, VIEWER_EDIT_CUT_ID, VIEWER_EDIT_PASTE_ID, VIEWER_GO_BACK_ID,
+    VIEWER_GO_FORWARD_ID, VIEWER_SELECT_ALL_ID, VIEWER_WORD_WRAP_ID,
 };
-#[cfg(target_os = "macos")]
-use super::{VIEWER_EDIT_CUT_ID, VIEWER_EDIT_PASTE_ID};
 
-/// The viewer Edit menu's Cut and Paste accelerators (macOS, where they're Custom items), in
-/// Tauri's syntax. Copy and Select all share theirs with the viewer's text menu
-/// (`cmdr_menu::context::popups`).
-#[cfg(target_os = "macos")]
+/// The viewer Edit menu's Cut and Paste accelerators (Custom items here), in Tauri's syntax. Copy
+/// and Select all share theirs with the viewer's text menu (`cmdr_menu::context::popups`).
 const VIEWER_CUT_ACCELERATOR: &str = "Cmd+X";
-#[cfg(target_os = "macos")]
 const VIEWER_PASTE_ACCELERATOR: &str = "Cmd+V";
 
-/// Builds a menu for viewer windows (built from scratch on all platforms).
+/// The viewer menu plus the item refs captured at build time.
 ///
-/// Returns the menu plus the item refs the caller stores in `MenuState`: the `Word wrap`
-/// CheckMenuItem, whose checked state then flips in O(1), and on macOS the Edit > Cut / Paste
-/// items, which `apply_menu_item_states` greys with the viewer's search box (see
-/// `ViewerMenuItems`). On macOS the menu is installed app-level via `app.set_menu()`; on Linux it's
-/// a per-window menu (`window.set_menu()`).
+/// The viewer menu is built once at startup and shared across all viewer windows. Holding the refs
+/// lets `viewer_set_word_wrap` update the checkbox, and `apply_menu_item_states` grey the Edit and
+/// Go items, in O(1) instead of walking the menu tree.
+pub struct ViewerMenuItems<R: Runtime> {
+    pub menu: Menu<R>,
+    pub word_wrap: CheckMenuItem<R>,
+    /// Go > Back and Go > Forward, greyed with the front viewer's history.
+    pub go_back: MenuItem<R>,
+    pub go_forward: MenuItem<R>,
+    /// The Edit submenu's Cut and Paste: Custom items, forwarding the native selector themselves.
+    pub edit_cut: MenuItem<R>,
+    pub edit_paste: MenuItem<R>,
+}
+
+/// Builds the viewer windows' menu from scratch, plus the item refs the caller stores in
+/// `MenuState`: the `Word wrap` CheckMenuItem, whose checked state then flips in O(1), and the
+/// Edit > Cut / Paste items, which `apply_menu_item_states` greys with the viewer's search box. It's
+/// installed app-level via `app.set_menu()` on the viewer's focus-gain.
 pub fn build_viewer_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<ViewerMenuItems<R>> {
     let menu = Menu::new(app)?;
 
-    #[cfg(target_os = "macos")]
     {
         // --- cmdr app menu (minimal for viewer) ---
         let viewer_app_menu = Submenu::with_items(
@@ -94,7 +103,6 @@ pub fn build_viewer_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Viewer
     // the shared ID never collides.
     //
     // Cut and Paste come up disabled, matching a fresh `MenuState`: no search box has focus yet.
-    #[cfg(target_os = "macos")]
     let edit_cut = MenuItem::with_id(
         app,
         VIEWER_EDIT_CUT_ID,
@@ -102,9 +110,6 @@ pub fn build_viewer_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Viewer
         false,
         Some(VIEWER_CUT_ACCELERATOR),
     )?;
-    #[cfg(not(target_os = "macos"))]
-    let edit_cut = PredefinedMenuItem::cut(app, Some(&menu_t("menu.edit.cut")))?;
-    #[cfg(target_os = "macos")]
     let edit_paste = MenuItem::with_id(
         app,
         VIEWER_EDIT_PASTE_ID,
@@ -112,8 +117,6 @@ pub fn build_viewer_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Viewer
         false,
         Some(VIEWER_PASTE_ACCELERATOR),
     )?;
-    #[cfg(not(target_os = "macos"))]
-    let edit_paste = PredefinedMenuItem::paste(app, Some(&menu_t("menu.edit.paste")))?;
 
     let edit_menu = Submenu::with_id_and_items(
         app,
@@ -173,7 +176,6 @@ pub fn build_viewer_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Viewer
     let go_submenu = Submenu::with_items(app, menu_t("menu.bar.go"), true, &[&go_back, &go_forward])?;
     menu.append(&go_submenu)?;
 
-    #[cfg(target_os = "macos")]
     {
         // --- Window menu ---
         let window_menu = Submenu::with_items(
@@ -199,9 +201,7 @@ pub fn build_viewer_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Viewer
         word_wrap,
         go_back,
         go_forward,
-        #[cfg(target_os = "macos")]
         edit_cut,
-        #[cfg(target_os = "macos")]
         edit_paste,
     })
 }

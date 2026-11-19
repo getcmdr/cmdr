@@ -50,9 +50,9 @@ via a typed API. Up: `apps/desktop/CLAUDE.md`, sibling: `../viewer/CLAUDE.md`.
   SYNCHRONOUS at the top of `onMount`. `#lib/quit/CLAUDE.md`.
 - **Don't remove the `{#if settingsReady}` wrapper** in `+layout.svelte`, and don't read settings ahead of the flag: a
   pre-init `getSetting()` returns registry defaults that can get hot-applied to the backend as if chosen.
-- **Native-menu accelerators fire before the webview keydown**, so a focused text input owns `edit.cut` / `edit.copy` /
-  `edit.paste` / `selection.selectAll`. ❌ Don't refuse `execute-command` wholesale. DETAILS § Native-menu and
-  input-focus interactions.
+- **macOS's native-menu accelerators fire before the webview keydown**, so a focused text input owns `edit.cut` /
+  `edit.copy` / `edit.paste` / `selection.selectAll`. ❌ Don't refuse `execute-command` wholesale. DETAILS § Native-menu
+  and input-focus interactions.
 - **Right-click is Cmdr's except in text fields**, in every window, keyed on the event TARGET, ❌ never focus. DETAILS §
   Right-click ownership.
 
