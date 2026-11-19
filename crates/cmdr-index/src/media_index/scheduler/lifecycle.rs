@@ -230,7 +230,9 @@ fn platform_backends() -> Option<(Arc<dyn VisionBackend>, BackendFactory)> {
             Arc::new(|| Arc::new(FakeVisionBackend::new()) as Arc<dyn VisionBackend>),
         ))
     }
-    #[cfg(all(any(target_os = "linux", target_os = "windows"), not(feature = "playwright-e2e")))]
+    // Windows has no engine with or without `playwright-e2e`: the fake stays the
+    // Linux E2E build's alone.
+    #[cfg(any(target_os = "windows", all(target_os = "linux", not(feature = "playwright-e2e"))))]
     {
         None
     }
