@@ -7,8 +7,8 @@
 //! ❗ The portmap port comes from `NFS_FIXTURE_PORTMAP_PORT` HERE, in test
 //! code, ❌ never in the crate proper: a real server's portmapper is on 111.
 
-use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic, RelativeAppPath};
+use std::path::PathBuf;
 
 use cmdr_fs::volume::Volume;
 use cmdr_fs::volume::host::VolumeHost;
@@ -83,13 +83,20 @@ pub async fn connect_insecure() -> NfsVolume {
         .unwrap_or_else(|err| panic!("the NFS fixture must be up (nfs-servers/start.sh): {err:?}"))
 }
 
-/// `remote` (`/photos`) as the app addresses it on `volume`.
-pub fn app_path(volume: &NfsVolume, remote: &str) -> PathBuf {
+/// `remote` (`/photos`) as the app addresses it on `volume`, by the app path's
+/// own join (a `\` in a name stays in the name on every OS). `/` is the
+/// volume's root, as `Volume::root` answers it.
+///
+/// # Panics
+///
+/// On a `remote` with an empty, `.`, or `..` name: a cell names a real place.
+pub fn app_path(volume: &NfsVolume, remote: &str) -> AppPathBuf {
     let remote = remote.trim_start_matches('/');
-    if remote.is_empty() {
-        return volume.root().as_std_legacy().to_path_buf();
-    }
-    volume.root().as_std_legacy().join(remote)
+    let tail = RelativeAppPath::new(remote).unwrap_or_else(|why| panic!("{remote:?} is no plain tail: {why}"));
+    volume
+        .root()
+        .join_relative(tail)
+        .unwrap_or_else(|why| panic!("{remote:?} joins no root: {why}"))
 }
 
 /// What every scratch folder's name starts with, so a cell that reads the
@@ -115,7 +122,7 @@ const STALE_SCRATCH_AFTER: std::time::Duration = std::time::Duration::from_secs(
 /// Also sweeps scratch folders older than [`STALE_SCRATCH_AFTER`] first: a cell
 /// cleans up only when it passes, so a failed or killed one leaves its folder
 /// forever otherwise.
-pub async fn scratch_dir(volume: &NfsVolume, what: &str) -> PathBuf {
+pub async fn scratch_dir_at(volume: &NfsVolume, what: &str) -> AppPathBuf {
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default();
@@ -126,10 +133,27 @@ pub async fn scratch_dir(volume: &NfsVolume, what: &str) -> PathBuf {
         &format!("/{SCRATCH_PREFIX}{what}-{}-{nanos}", std::process::id()),
     );
     volume
-        .create_directory(&AppPath::legacy_unchecked(&dir))
+        .create_directory(&dir)
         .await
         .unwrap_or_else(|err| panic!("the scratch folder for {what} must be creatable: {err:?}"));
     dir
+}
+
+/// [`scratch_dir_at`] as the `std::path` value the app's suites still hold.
+/// Its bridge goes once they take [`scratch_dir_at`].
+#[cfg_attr(
+    not(feature = "testing"),
+    allow(dead_code, reason = "only the app's suites call it, through the `testing` feature")
+)]
+pub async fn scratch_dir(volume: &NfsVolume, what: &str) -> PathBuf {
+    std_path_of(&scratch_dir_at(volume, what).await)
+}
+
+/// `path` as the `std::path` value a caller still on `std::path` takes ([`scratch_dir`]'s
+/// callers, `cmdr_fs::volume::conformance`'s assertions): the crate's one bridge, gone once
+/// both take app paths.
+pub(crate) fn std_path_of(path: &AppPath) -> PathBuf {
+    path.as_std_legacy().into_owned()
 }
 
 /// Removes every scratch folder at the export's root that was created more than
@@ -138,15 +162,18 @@ pub async fn scratch_dir(volume: &NfsVolume, what: &str) -> PathBuf {
 /// enter into it.
 async fn sweep_stale_scratch(volume: &NfsVolume, now: std::time::Duration) {
     let root = app_path(volume, "/");
-    let Ok(entries) = volume.list_directory(&AppPath::legacy_unchecked(&root), None).await else {
+    let Ok(entries) = volume.list_directory(&root, None).await else {
         return;
     };
     for entry in entries {
         let Some(created) = scratch_created_at(&entry.name) else {
             continue;
         };
-        if entry.is_directory && now.saturating_sub(created) > STALE_SCRATCH_AFTER {
-            clean_deep(volume, &root.join(&entry.name)).await;
+        if entry.is_directory
+            && now.saturating_sub(created) > STALE_SCRATCH_AFTER
+            && let Some(dir) = child(&root, &entry.name)
+        {
+            clean_deep(volume, &dir).await;
         }
     }
 }
@@ -162,21 +189,28 @@ fn scratch_created_at(name: &str) -> Option<std::time::Duration> {
 /// Removes `path` and everything under it, deepest first, best effort.
 pub fn clean_deep<'a>(
     volume: &'a NfsVolume,
-    path: &'a Path,
+    path: &'a AppPath,
 ) -> std::pin::Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
     Box::pin(async move {
-        if let Ok(entries) = volume.list_directory(&AppPath::legacy_unchecked(path), None).await {
+        if let Ok(entries) = volume.list_directory(path, None).await {
             for entry in entries {
-                let child = path.join(&entry.name);
+                let Some(child) = child(path, &entry.name) else {
+                    continue;
+                };
                 if entry.is_directory && !entry.is_symlink {
                     clean_deep(volume, &child).await;
                 } else {
-                    let _ = volume.delete(&AppPath::legacy_unchecked(&child)).await;
+                    let _ = volume.delete(&child).await;
                 }
             }
         }
-        let _ = volume.delete(&AppPath::legacy_unchecked(path)).await;
+        let _ = volume.delete(path).await;
     })
+}
+
+/// A listed `name` in `dir`, or `None` for a name that isn't one plain name.
+fn child(dir: &AppPath, name: &str) -> Option<AppPathBuf> {
+    dir.join(AppName::from_app_spelling(name).ok()?).ok()
 }
 
 /// What `large.bin` holds at `[offset, offset + len)`: every 16-byte line its

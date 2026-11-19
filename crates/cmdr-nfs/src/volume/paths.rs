@@ -8,6 +8,7 @@
 
 use std::path::{Path, PathBuf};
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::volume::VolumeError;
 
 use super::NfsVolume;
@@ -15,14 +16,18 @@ use super::NfsVolume;
 impl NfsVolume {
     /// The export-relative path for `path` (`/Photos/a.jpg`), or `NotFound`
     /// when `path` isn't on this volume.
-    pub(super) fn to_remote_path(&self, path: &Path) -> Result<String, VolumeError> {
+    pub(super) fn to_remote_path(&self, path: &AppPath) -> Result<String, VolumeError> {
         self.root
-            .to_remote_path(path)
-            .ok_or_else(|| VolumeError::NotFound(path.to_string_lossy().into_owned()))
+            .to_remote(path)
+            .ok_or_else(|| VolumeError::NotFound(path.as_str().to_owned()))
     }
 
     /// The path the APP addresses `remote` by, prefix and all: what a listing
-    /// hands a pane and what the pane hands back.
+    /// hands a pane and what the pane hands back. `None` off the export.
+    ///
+    /// ❗ Text, ❌ not a parsed app path: a row's `FileEntry.path` is the wire,
+    /// and the export root's own row keeps its trailing `/`
+    /// (`nfs://h:2049/Public/`), which a canonical app path drops.
     pub(super) fn app_path_of(&self, remote: &str) -> Option<String> {
         self.root
             .to_app_path(remote)
@@ -36,6 +41,15 @@ impl NfsVolume {
         self.root
             .to_remote_path(path)
             .and_then(|remote| self.root.to_app_path(&remote))
+    }
+
+    /// [`display_path_for`](Self::display_path_for) for an app path, by the app
+    /// path's own arithmetic. A server name the app path can't hold yet is no
+    /// patch either.
+    pub(super) fn app_path_for(&self, path: &AppPath) -> Option<AppPathBuf> {
+        self.root
+            .to_remote(path)
+            .and_then(|remote| self.root.to_app(&remote).ok())
     }
 }
 

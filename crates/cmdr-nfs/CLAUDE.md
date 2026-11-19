@@ -21,7 +21,9 @@ export opens from an unprivileged process with no OS mount. WebDAV's lifecycle (
   The port is the one the address named, else 2049, ❌ never portmap's answer. The uid and groups are a SETTING, ❌
   never in an id or a path.
 - ❗ **The app path carries the export as ONE escaped segment** (`nfs://nas:2049/volume1%2Fdata/photos`).
-  `cmdr_fs::volume::remote_paths` owns the grammar; `server-path-utils.ts` mirrors it.
+  `cmdr_fs::volume::remote_paths` owns the grammar; `server-path-utils.ts` mirrors it. Bodies do `AppPath` arithmetic,
+  but `root()` and a row's `FileEntry.path` keep `to_app_path`'s text: the root's trailing `/` is wire (DETAILS § "App
+  paths").
 - ❗ **`connect_nfs_volume` resolves the export/folder split.** Register under the returned volume's `volume_id()` and
   save its `params()`, ❌ never the id of what was passed in.
 - ❗ **Cancel a call by dropping it**: the XID is forgotten, ❌ never the connection. Only `transport.rs` and `rpc.rs`

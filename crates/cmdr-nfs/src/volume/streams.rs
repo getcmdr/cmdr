@@ -15,7 +15,7 @@
 //! running read isn't chased; one that shrank reports what exists, since `eof`
 //! ends the window wherever it lands.
 
-use std::path::Path;
+use cmdr_fs::app_path::AppPath;
 
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::metadata::CarriedMetadata;
@@ -130,7 +130,7 @@ struct Opened {
 impl NfsVolume {
     /// Looks the file up FRESH (its attributes are the length) and refuses a
     /// folder.
-    async fn open_file(&self, path: &Path) -> Result<Opened, VolumeError> {
+    async fn open_file(&self, path: &AppPath) -> Result<Opened, VolumeError> {
         let remote = self.to_remote_path(path)?;
         let client = self.client().await?;
         let found = self.resolve(&client, &remote, Follow::Always, true).await?;
@@ -160,7 +160,7 @@ impl NfsVolume {
     /// this returns, so a caller's first progress tick is honest.
     pub(super) async fn open_read_stream_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         offset: u64,
     ) -> Result<ChannelReadStream, VolumeError> {
         let opened = self.open_file(path).await?;
@@ -193,7 +193,12 @@ impl NfsVolume {
 
     /// Exactly `[offset, offset + len)`, short only at end of file, so a caller
     /// never loops for a network short read.
-    pub(super) async fn read_range_impl(&self, path: &Path, offset: u64, len: usize) -> Result<Vec<u8>, VolumeError> {
+    pub(super) async fn read_range_impl(
+        &self,
+        path: &AppPath,
+        offset: u64,
+        len: usize,
+    ) -> Result<Vec<u8>, VolumeError> {
         let opened = self.open_file(path).await?;
         let end = offset.saturating_add(len as u64).min(opened.attrs.size.max(offset));
         let mut window = chunk_window(opened.file, offset, end, READ_WINDOW_DEPTH, opened.chunk);
