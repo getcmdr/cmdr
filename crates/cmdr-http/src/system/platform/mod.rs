@@ -12,6 +12,10 @@ use crate::env::EnvProxies;
 #[cfg_attr(target_os = "windows", path = "windows.rs")]
 mod imp;
 
+/// Windows' Internet settings and WinHTTP's proxy-list text as entry lists: pure, so every OS's
+/// tests run its rules. The Windows arm and Windows' PAC runner (`crate::pac`) read through it.
+pub(crate) mod ie_settings;
+
 const _: fn(&Url) -> Route = route;
 const _: fn(Url, Arc<EnvProxies>) = warm_up;
 

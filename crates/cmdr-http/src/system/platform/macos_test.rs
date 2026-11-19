@@ -16,7 +16,7 @@ use reqwest::Url;
 use super::{entries_for, settings};
 use crate::Route;
 use crate::entries::{Entry, Pac, PacSource, first_route};
-use crate::pac::{ANSWER_BUDGET, MacPac};
+use crate::pac::{ANSWER_BUDGET, OsPac};
 
 /// A PAC evaluator for the tests whose settings name no PAC.
 struct NoPac;
@@ -212,7 +212,7 @@ fn a_pac_setting_routes_through_the_pacs_proxy() {
     });
     let settings = pac_settings(&format!("http://{address}/proxy.pac"));
     // The PAC's answer is the subject here, ❌ not `TIMEOUT`: see `ANSWER_BUDGET`.
-    let pac = MacPac::new(ANSWER_BUDGET);
+    let pac = OsPac::new(ANSWER_BUDGET);
     let walk = |url: &str| {
         let url = parse(url);
         first_route(&entries_for(&settings, &url), &url, &pac)

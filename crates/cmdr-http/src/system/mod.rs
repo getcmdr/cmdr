@@ -2,7 +2,7 @@
 //! macOS that's CFNetwork's answer; on Linux and Windows there's no system layer yet, and the
 //! environment variables are the whole configuration.
 
-mod platform;
+pub(crate) mod platform;
 
 use std::sync::Arc;
 

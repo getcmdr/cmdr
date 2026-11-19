@@ -1,10 +1,12 @@
-//! CFNetwork's ordered proxy list, as Cmdr reads and walks it. The list comes from the system
-//! settings (`system/platform/macos.rs`) or from a PAC file (`pac.rs`), in the same shape either way.
+//! The system's ordered proxy list, as Cmdr reads and walks it: CFNetwork's on macOS, the one
+//! Windows' Internet settings spell out on Windows (`system/platform/ie_settings.rs`). The list
+//! comes from the system settings (`system/platform/`) or from a PAC file (`pac/`), in the same
+//! shape either way.
 #![cfg_attr(
-    any(target_os = "linux", target_os = "windows"),
+    target_os = "linux",
     allow(
         dead_code,
-        reason = "the list walk serves macOS's answer; elsewhere only its tests use it"
+        reason = "the list walk serves macOS's and Windows' answers; on Linux only its tests use it"
     )
 )]
 
@@ -32,8 +34,14 @@ pub(crate) enum Entry {
     /// A PAC file to evaluate for this URL.
     AutoConfigUrl(String),
     /// A PAC script given inline (`ProxyAutoConfigJavaScript`).
+    #[allow(dead_code, reason = "only CFNetwork lists one; Windows' settings never do")]
     AutoConfigScript(String),
+    /// Auto proxy discovery (WPAD), which the OS runs itself: Windows' "Automatically detect
+    /// settings". macOS never lists one; it hands discovery's answer over as a PAC URL.
+    #[allow(dead_code, reason = "only Windows' settings list one; CFNetwork never does")]
+    AutoDetect,
     /// A proxy type Cmdr can't speak (FTP), named for the log.
+    #[allow(dead_code, reason = "only CFNetwork's reader meets one; Windows' skips FTP")]
     Unsupported(String),
 }
 
@@ -42,6 +50,8 @@ pub(crate) enum Entry {
 pub(crate) enum PacSource {
     Url(String),
     Script(String),
+    /// Whatever PAC auto proxy discovery (WPAD, by DHCP then DNS) finds.
+    AutoDetect,
 }
 
 /// Runs a PAC script for one URL. `None` when it couldn't (unreachable, broken, too slow): the
@@ -58,6 +68,7 @@ pub(crate) fn first_route(entries: &[Entry], url: &Url, pac: &dyn Pac) -> Route 
         let source = match entry {
             Entry::AutoConfigUrl(pac_url) => PacSource::Url(pac_url.clone()),
             Entry::AutoConfigScript(script) => PacSource::Script(script.clone()),
+            Entry::AutoDetect => PacSource::AutoDetect,
             other => match usable(other) {
                 Some(route) => return route,
                 None => continue,
@@ -92,7 +103,7 @@ fn usable(entry: &Entry) -> Option<Route> {
             port,
             credentials,
         } => Some(Route::Proxy(proxy_url("socks5h", host, *port, credentials.as_ref()))),
-        Entry::AutoConfigUrl(_) | Entry::AutoConfigScript(_) => None,
+        Entry::AutoConfigUrl(_) | Entry::AutoConfigScript(_) | Entry::AutoDetect => None,
         Entry::Unsupported(kind) => {
             log::debug!(target: "cmdr_http", "skipping a {kind} proxy: Cmdr speaks HTTP and SOCKS proxies only");
             None
