@@ -148,8 +148,13 @@ fn for_boundary(path: &AppPath) -> Cow<'_, Path> {
 /// fails the walk as the typed `InvalidName`, ❌ never a join that lands somewhere else.
 fn child_of(dir: &AppPath, name: &str) -> Result<AppPathBuf, VolumeError> {
     let refused = || VolumeError::from(NotAChildName(name.to_string()));
-    let name = AppNameBuf::from_typed(name, Namer::HOST).map_err(|_| refused())?;
-    dir.join(&name).map_err(|_| refused())
+    let typed = AppNameBuf::from_typed(name, Namer::HOST).map_err(|_| refused())?;
+    if dir.to_canonical().is_err() {
+        // A top with no canonical twin (a relative `src/album` a local engine hands its
+        // backend, a `..`): joined as the `std::path` walk joined it, by the bridge.
+        return Ok(bridged(&for_boundary(dir).join(name)).into_owned());
+    }
+    dir.join(&typed).map_err(|_| refused())
 }
 
 /// [`scan_tree`], pushing every file onto `files` when it's `Some`.

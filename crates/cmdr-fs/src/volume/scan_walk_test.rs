@@ -865,6 +865,23 @@ async fn a_listed_name_that_is_no_plain_name_fails_the_walk_typed() {
     assert_eq!(local.map(|scan| scan.total_bytes).ok(), Some(5));
 }
 
+/// A relative top (a local engine hands its backend `src/album`) has no app-path twin to
+/// join under, so its children join as `Path::join` joined them, ❌ never a refusal.
+#[tokio::test]
+#[cfg(unix)]
+async fn a_relative_top_walks_its_children_as_before() {
+    let tree = FakeTree::new()
+        .with_dir("src/album", &[("inner", true, 0), ("a.txt", false, 3)])
+        .with_dir("src/album/inner", &[]);
+
+    let scan = scan_tree(&tree, Path::new("src/album"), &ScanBoundary::silent())
+        .await
+        .expect("the walk");
+
+    assert_eq!((scan.file_count, scan.dir_count, scan.total_bytes), (1, 2, 3));
+    assert_eq!(tree.listings_of("src/album/inner"), 1);
+}
+
 /// The walk asks for the top folder as the caller spelled it, and for each child folder
 /// at the app path's own `join`: a trailing `/` doesn't double, a `.` name in the top is
 /// gone from every path below it (the `Path::join` the walk used to do carried
