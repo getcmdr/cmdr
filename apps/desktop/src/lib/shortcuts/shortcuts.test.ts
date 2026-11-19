@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest'
 import { getActiveScopes, scopesOverlap, getAllScopes } from './scope-hierarchy'
 import { formatKeyCombo, normalizeKeyName, isModifierKey, matchesShortcut, isCompleteCombo } from './key-capture'
-import { menuCommands } from './shortcuts-store'
+import { menuCommands } from './menu-commands'
 
 // ============================================================================
 // Scope hierarchy tests

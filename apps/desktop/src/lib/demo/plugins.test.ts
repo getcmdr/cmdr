@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
-import { browserSafeShortcuts } from './browser-shortcuts.js'
+import { browserHostDefaults, browserSafeShortcuts } from './browser-shortcuts.js'
 import { visitorPlatform } from './platform.js'
 import { DEMO_HOME } from './demo-tree.js'
 import { customShortcuts, pluginHandler, restrictedWindowSettings } from './plugins.js'
@@ -63,6 +63,15 @@ describe('in-memory store plugin', () => {
     const rid = load('shortcuts.json')
     for (const [id, combos] of Object.entries(browserSafeShortcuts(visitorPlatform(navigator.userAgent)))) {
       expect(call('plugin:store|get', { rid, key: `shortcut:${id}` })).toEqual([combos, true])
+    }
+  })
+
+  it("seeds the fixed-key commands' browser-safe keys as default:<id> keys, the store's host defaults", () => {
+    const rid = load('shortcuts.json')
+    const hostDefaults = Object.entries(browserHostDefaults(visitorPlatform(navigator.userAgent)))
+    expect(hostDefaults.length).toBeGreaterThan(0)
+    for (const [id, combos] of hostDefaults) {
+      expect(call('plugin:store|get', { rid, key: `default:${id}` })).toEqual([combos, true])
     }
   })
 
