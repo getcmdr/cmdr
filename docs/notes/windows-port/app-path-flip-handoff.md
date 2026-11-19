@@ -167,6 +167,10 @@ From the plan; each agent owns whole crates, on its own branch off the tier befo
     Linux in Docker), the Windows workspace checks (zig, `--exclude cmdr-fsevent-stream`, the macOS-only member),
     nextest 6,805 of 6,805 (481 skipped), `-audit-imports` (five hits, all hand-written `cfg`-gated imports from before
     the flip), `pnpm check --fast`, `app-path-std-bridge`, `file-length`.
+  - **Merge-and-rerun** (the final landing repeats it): `git merge origin/main` (2026-11-19, menu step 11 and the demo
+    work) merged clean. List the Rust files it brought (`git diff --stat HEAD^1 HEAD -- '*.rs'`), and re-run the codemod
+    on each crate they're in, under every feature set and target as above. This time: only `cmdr-listing-wasm`, a no-op
+    (default, `--all-features`), wasm32 `--lib`/`--tests` and Windows checks clean, Linux clippy clean; no new residue.
   - **Fixed beside it**: Windows with `playwright-e2e` had no `platform_backends` arm in `cmdr-index`
     (`media_index/scheduler/lifecycle.rs`); the fix is text-identical to PR #1270's. The fuzz target
     `app_path_native.rs` imports `PathArithmetic` (the exception above), so `pnpm check fuzz-compile` passes.
