@@ -208,9 +208,9 @@ so both answer without touching anything.
   `REFUSED_OVER_DIALOGS` is non-empty. Stacked surfaces hold the mask until the last one closes, and a reload or HMR
   pushes the real state first. Inline rename and the palette count as modal input here, so `Alt+F` can't open the File
   menu mid-rename; intended.
-- **Every other window without a menu of its own wears the main bar on Linux** (Tauri hands the app-wide menu to every
-  window built without one, `AppHandle::set_menu`): Settings, the operation queue, the Keyboard shortcuts window, and
-  Debug. The viewer sets its own bar, which has no mnemonics. Settings is the one that captures combos, so its shortcut
+- **No window wears a GTK bar any more**: with a GTK bar, Tauri handed the app-wide menu to every window built
+  without one (`AppHandle::set_menu`), so Settings, the operation queue, the Keyboard shortcuts window, and Debug wore
+  it; off macOS today none is built, and those windows keep its keys through the page (§ "The bar a page draws"). The viewer sets its own bar, which has no mnemonics. Settings is the one that captures combos, so its shortcut
   recorder, its key filter, and the global go-to-latest recorder hold the mask while they listen
   (`apps/desktop/src/lib/shortcuts/menu-mnemonics-capture.svelte.ts`, claims counted per window; a fresh load there pushes
   the mnemonics back on once, since a reload mid-capture resets the count but not the window's mask).

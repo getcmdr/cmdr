@@ -125,17 +125,14 @@ fn install<R: Runtime>(
     Ok(())
 }
 
-/// Installs the freshly built bar on the main window, for a desktop with a per-window native bar.
-/// None does today (`builds_native_bar`: Windows and Linux draw the bar in the page), so this arm
-/// only keeps the build whole.
+/// Installs nothing: off macOS no native bar is built (`builds_native_bar`; the page draws it), so
+/// `rebuild_menu_bar` returns before it gets here. A bar that somehow got this far stays off the
+/// window rather than reappearing beside the page's.
 #[cfg(not(target_os = "macos"))]
 fn install<R: Runtime>(
-    app: &AppHandle<R>,
+    _app: &AppHandle<R>,
     _menu_state: &MenuState<R>,
-    main_menu: tauri::menu::Menu<R>,
+    _main_menu: tauri::menu::Menu<R>,
 ) -> tauri::Result<()> {
-    if let Some(window) = app.get_webview_window("main") {
-        window.set_menu(main_menu)?;
-    }
     Ok(())
 }
