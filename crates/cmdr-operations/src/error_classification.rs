@@ -389,9 +389,12 @@ mod tests {
     #[test]
     fn a_link_the_file_system_cant_hold_is_links_not_supported() {
         let link = Path::new("/Volumes/USB/note.txt");
-        let mut refusals = vec![std::io::Error::from(std::io::ErrorKind::Unsupported)];
         #[cfg(unix)]
-        refusals.extend([libc::ENOTSUP, libc::EOPNOTSUPP, libc::ENOSYS].map(std::io::Error::from_raw_os_error));
+        let errnos = vec![libc::ENOTSUP, libc::EOPNOTSUPP, libc::ENOSYS];
+        #[cfg(windows)]
+        let errnos: Vec<i32> = Vec::new();
+        let refusals = std::iter::once(std::io::Error::from(std::io::ErrorKind::Unsupported))
+            .chain(errnos.into_iter().map(std::io::Error::from_raw_os_error));
         for e in refusals {
             let err = classify_link_creation_error(&e, link);
             assert!(
