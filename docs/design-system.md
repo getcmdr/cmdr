@@ -936,6 +936,11 @@ its own fill. Disabled rows and their shortcuts take the disabled text color. No
 **Access keys:** underlined letters (Windows and Linux), shown by the platform's keyboard-cue rule; a label without its
 letter carries "(B)" after it.
 
+**Main-menu button:** `MainMenuButton.svelte`, the three-line `menu` glyph at 16px in a borderless button (4px corners,
+the new-tab button's hover fill), last in the right pane's tab row and the viewer's toolbar. It holds the bar's menus as
+submenus where no bar shows: GNOME's main menu, or the stand-in for a bar the user hid. Its menu hangs under it, flipped
+to end at its trailing edge, on the context-menu surfaces.
+
 Behavior, the keys, and the API: `apps/desktop/src/lib/ui/DETAILS.md` § Command menus.
 
 ### Info glyph (app)

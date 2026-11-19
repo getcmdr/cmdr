@@ -58,6 +58,7 @@
         'list-checks': 'The "Select" row of the with-AI / without-AI comparison table on the onboarding AI step.',
         lock: 'Pinned-tab marker in the tab bar, the read-only-volume indicator in the breadcrumb, and the SMB login-form lock.',
         mail: 'The email row of the onboarding open-beta checklist.',
+        menu: "The main-menu button off macOS: GNOME's main menu, and the stand-in for a menu bar the user hid.",
         'messages-square': 'Opens the Ask Cmdr sessions panel (past chats) from the rail header.',
         monitor: 'System theme-mode toggle option, and the host marker in the network browser.',
         moon: 'Dark theme-mode toggle option.',

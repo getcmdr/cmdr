@@ -389,12 +389,13 @@ row is decided here or in the frontend.
   that rule; `followMenuBar` retries a failed ask with backoff.
 - **The subscription is sticky**: once any page asks, every push for the rest of the session redraws the whole bar,
   diffs it, and emits to every window (`update_select_same_kind_menu` runs per cursor move). Off macOS the main window
-  asks at mount (`apps/desktop/src/routes/(main)/MainMenuBar.svelte`), where that cost is the design point; on macOS only the dev Debug >
+  asks at mount (`apps/desktop/src/routes/(main)/main-menus.svelte.ts`), where that cost is the design point; on macOS only the dev Debug >
   Components page does. No unsubscribe: a window's bar follows for the window's life.
 - **Who draws it**: the main window (`MainMenuBar.svelte`, inert under a dialog, an explorer overlay, or the palette) and
   the viewer (`apps/desktop/src/routes/viewer/ViewerMenuBar.svelte`, from its own state), wherever `pageDrawsMenuBar()` says so
-  (`apps/desktop/src/lib/platform/conventions.ts`: every menu model but macOS's, GNOME's `primaryMenu` included until
-  its main-menu button lands in step 8). Settings, the queue, the Keyboard shortcuts window, and Debug wear no bar, yet
+  (`apps/desktop/src/lib/platform/conventions.ts`: every menu model but macOS's), as a bar or in a main-menu button
+  (`apps/desktop/src/lib/ui/command-menu/menu-layout.ts`; both draw the same answer, and both pick through
+  `pick_menu_bar_item`). Settings, the queue, the Keyboard shortcuts window, and Debug wear no bar, yet
   keep every Ctrl or Alt chord the main bar shows (never a bare key like Tab or F5): each follows the bar and picks a row by its key
   (`apps/desktop/src/lib/ui/DETAILS.md` § Command menus), so `CLOSE_TAB_ID`'s "close the focused non-main window" lane
   and the other app-wide rows still run there.

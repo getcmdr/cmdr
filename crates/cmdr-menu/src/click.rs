@@ -44,6 +44,12 @@ pub fn bar_click(menu_id: &str, platform: Platform) -> Option<BarClick> {
             CheckRole::ShowHiddenFiles => BarClick::ShowHiddenFiles,
             CheckRole::ViewMode(pane, mode) => BarClick::ViewMode { pane, mode },
             CheckRole::Sort(role) => BarClick::Sort(role),
+            // Only a page draws it, so no native item toggles itself: the command flips the
+            // setting, whose push moves the check.
+            CheckRole::ShowMenuBar => {
+                let (command_id, scope) = menu_id_to_command(check.id)?;
+                BarClick::Command { command_id, scope }
+            }
         }),
         EntryKind::Item(item) => {
             let (command_id, scope) = menu_id_to_command(item.id)?;

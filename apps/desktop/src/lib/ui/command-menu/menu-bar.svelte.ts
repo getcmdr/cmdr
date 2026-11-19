@@ -16,6 +16,7 @@
  * has the keyboard, never the panes behind it. Mechanics: `../DETAILS.md` § Command menus.
  */
 
+import { flushSync } from 'svelte'
 import type { BarMenuView } from '#lib/ipc/bindings.js'
 import { allocateAccessKeys, accessKeyLettersOf } from '../access-keys'
 import { captureFocusOrigin, isInFocusHome, restoreFocus, type FocusOrigin } from '../focus-restore'
@@ -42,6 +43,12 @@ export interface MenuBarDeps {
    * its own keys once a click hands it the keyboard.
    */
   takesWindowKeys: () => boolean
+  /**
+   * Whether the bar is drawn only while it has the keyboard (a hidden bar Alt or F10 shows, on
+   * Windows): its titles appear as it takes the keyboard, so a menu placed right then needs them
+   * laid out first.
+   */
+  revealOnly?: () => boolean
   /** The bar's element, and a title's, for containment and placement. */
   barElement: () => HTMLElement | undefined
   titleElement: (index: number) => HTMLElement | undefined
@@ -198,6 +205,8 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
   }
 
   function openMenu(index: number, fromKeyboard: boolean, fromEnd = false): void {
+    // A bar that only now appears (`revealOnly`) has no layout until Svelte draws it.
+    if (deps.revealOnly?.()) flushSync()
     const menu = deps.getMenus().at(wrap(index))
     const title = deps.titleElement(wrap(index))
     const bar = deps.barElement()

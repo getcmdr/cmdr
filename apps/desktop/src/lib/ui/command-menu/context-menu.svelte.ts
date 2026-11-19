@@ -34,6 +34,11 @@ export interface ContextMenuOpen {
    * cursor reaches a screen reader as the field's `aria-activedescendant`.
    */
   focusHolder?: HTMLElement
+  /**
+   * The control that opened it (the main-menu button): a press on it is the control's own, which
+   * toggles the menu, so the menu doesn't close itself on it only to be opened again.
+   */
+  opener?: HTMLElement
 }
 
 export interface ContextMenuDeps {
@@ -79,6 +84,8 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
    * detached row has no ancestors left.
    */
   let anchorHolders: readonly Node[] | null = null
+  /** The control that opened the menu, whose presses are its own (`ContextMenuOpen.opener`). */
+  let opener: HTMLElement | null = null
 
   const stack = createMenuStack({
     flavor,
@@ -109,6 +116,7 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
     stopCues = null
     cuesShown = false
     anchorHolders = null
+    opener = null
     const target = origin
     origin = null
     if (restore && !focusStayed) restoreFocus(target)
@@ -186,6 +194,7 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
     cues?.pointerdown()
     const target = event.target as Element | null
     if (target?.closest('[data-command-menu="context"]')) return
+    if (target && opener?.contains(target)) return
     // A click elsewhere closes the menu and goes where it went.
     close(false)
   }
@@ -214,6 +223,7 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
       close(false)
       origin = captureFocusOrigin()
       anchorHolders = holdersOf(request.anchorElement)
+      opener = request.opener ?? null
       stack.open(
         request.rows,
         { kind: 'point', x: request.at.x, y: request.at.y },

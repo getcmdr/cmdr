@@ -85,6 +85,7 @@ menu menu_view menu.bar.view
     item view_zoom_in menu.zoom.in [Ctrl++|Control+Plus]
     item view_zoom_out menu.zoom.out [Ctrl+-|Control+-]
   item view_full_screen menu.view.fullScreen [F11|F11]
+  checkbox show_menu_bar menu.view.showMenuBar checked
   separator
   item switch_pane menu.view.switchPane [Tab|Tab]
   item swap_panes menu.view.swapPanes [Ctrl+U|Control+U]

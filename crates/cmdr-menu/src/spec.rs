@@ -317,6 +317,10 @@ pub enum CheckRole {
     /// A View > Sort by column or order, checked while the focused pane asks for it. Kept in no
     /// field: `sort_checks::sync_sort_check_states` finds each one by id in `MenuState.sort_submenu`.
     Sort(SortCheck),
+    /// View > Show menu bar (Windows and Linux), checked while the page draws the bar. Kept in
+    /// `MenuState.show_menu_bar_checked`; its pick is a plain command (`view.toggleMenuBar`), since
+    /// no native item exists to toggle itself.
+    ShowMenuBar,
 }
 
 /// What one View > Sort by check item stands for. Its predicate, [`SortCheck::is_on`], lives with

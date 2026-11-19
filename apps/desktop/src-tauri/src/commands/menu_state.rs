@@ -75,6 +75,17 @@ pub fn sync_menu_show_hidden<R: Runtime>(app: AppHandle<R>, checked: bool) -> Re
     Ok(())
 }
 
+/// One-way push of the `appearance.menuBar` setting onto View > Show menu bar's check, which
+/// only a page draws (Windows and Linux). Called by the settings applier on every change, whoever
+/// made it; a pick of the row runs `view.toggleMenuBar`, whose setting write lands back here.
+#[tauri::command]
+#[specta::specta]
+pub fn sync_menu_show_menu_bar<R: Runtime>(app: AppHandle<R>, checked: bool) {
+    let menu_state = app.state::<MenuState<R>>();
+    menu_state.show_menu_bar_checked.store(checked, Ordering::Relaxed);
+    notify_bar_changed(&app);
+}
+
 /// Pushes the full View menu state from the frontend: which pane is active and
 /// the per-pane view modes. The menu's check states are updated for both pane
 /// pairs, and if the active pane changed since the last call the keyboard

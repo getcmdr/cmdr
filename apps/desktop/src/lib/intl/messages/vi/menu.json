@@ -308,6 +308,10 @@
   "@menu.view.fullScreen": {
     "sourceHash": "674fe2a"
   },
+  "menu.view.showMenuBar": "Show menu bar",
+  "@menu.view.showMenuBar": {
+    "sourceHash": "63809e3"
+  },
   "menu.view.commandPalette": "Bảng lệnh…",
   "@menu.view.commandPalette": {
     "sourceHash": "6b1c93d"

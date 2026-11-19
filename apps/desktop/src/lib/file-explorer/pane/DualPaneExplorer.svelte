@@ -2,7 +2,7 @@
     import { compareDirectories as runCompareDirectories } from './compare-directories'
     import type { CompareDirectoriesMode, MenuAnchor } from '#lib/tauri-commands/index.js'
     import { countFoldersInPane } from './folder-size-count'
-    import { onMount, onDestroy, untrack } from 'svelte'
+    import { onMount, onDestroy, untrack, type Snippet } from 'svelte'
     import FilePane from './FilePane.svelte'
     import PaneBoundary from './PaneBoundary.svelte'
     import type {
@@ -166,9 +166,14 @@
          * Used by the Selection dialog's bare `+` / `-` shortcuts.
          */
         onCommand?: (commandId: CommandId) => void
+        /**
+         * Drawn at the end of the tab row (the right pane's tab bar): the main-menu button where
+         * the window has no menu bar showing (`#lib/ui/command-menu/menu-layout.ts`).
+         */
+        tabRowEnd?: Snippet
     }
 
-    const { onCommand }: Props = $props()
+    const { onCommand, tabRowEnd }: Props = $props()
 
     // Focus and the layout split live in the explorer store. These `$derived`
     // aliases read them reactively; writes go through the store's named mutators
@@ -1466,6 +1471,7 @@
             onPaneFocus={() => {
                 handleFocus(paneId)
             }}
+            trailing={paneId === 'right' ? tabRowEnd : undefined}
         />
         <!-- Above the `{#key}`, so a pane that throws while tearing down still finds it alive. -->
         <PaneBoundary {paneId} resetKey={getActiveTab(tabMgr).id}>

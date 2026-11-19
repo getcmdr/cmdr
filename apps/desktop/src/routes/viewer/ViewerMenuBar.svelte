@@ -8,6 +8,7 @@
      * Alt+letter commands keep their letters (`keyScope`).
      */
     import MenuBar from '#lib/ui/MenuBar.svelte'
+    import { drawsBar, type MenuLayout } from '#lib/ui/command-menu/menu-layout.js'
     import { barRowForKey } from '#lib/ui/command-menu/bar-keys.js'
     import type { BarMenuView, ViewerBarInputs } from '#lib/ipc/bindings.js'
     import { getViewerMenuBar, pickMenuBarItem } from '#lib/tauri-commands/index.js'
@@ -17,13 +18,16 @@
     interface Props {
         /** The viewer's state the bar's checks and greying follow. */
         inputs: ViewerBarInputs
+        /** Where its menus live (`#lib/ui/command-menu/menu-layout.ts`): the bar, the bar hidden until Alt, or none. */
+        layout: MenuLayout
+        /** The bar's rows as last answered, bound out for the main-menu button the toolbar draws. */
+        menus?: BarMenuView[]
     }
 
-    const { inputs }: Props = $props()
+    let { inputs, layout, menus = $bindable([]) }: Props = $props()
 
     const log = getAppLogger('inPageMenus')
 
-    let menus = $state<BarMenuView[]>([])
     /** Each ask's number: an answer to an older ask than the newest is dropped. */
     let asked = 0
 
@@ -73,9 +77,10 @@
 <svelte:window onkeydown={onKeyDown} />
 
 <!-- No rows, no bar: a host that draws its own (the browser demo) answers none. -->
-{#if menus.length > 0}
+{#if menus.length > 0 && drawsBar(layout)}
     <MenuBar
         {menus}
+        revealOnly={layout === 'barOnAlt'}
         ariaLabel={tString('ui.menuBar.label')}
         keyScope="Viewer window"
         onPick={pick}

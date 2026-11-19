@@ -122,6 +122,7 @@ pub fn bar_inputs<R: Runtime>(menu_state: &MenuState<R>) -> BarInputs {
         refused: menu_state.commands_refused_over_dialog.lock_ignore_poison().clone(),
         requested_sort: *menu_state.requested_sort.lock_ignore_poison(),
         show_hidden_files: menu_state.show_hidden_checked.load(Ordering::Relaxed),
+        show_menu_bar: menu_state.show_menu_bar_checked.load(Ordering::Relaxed),
         active_pane: match menu_state.view_mode_active_pane.lock_ignore_poison().as_str() {
             "right" => Pane::Right,
             _ => Pane::Left,
@@ -295,6 +296,7 @@ mod tests {
         };
         *menu_state.requested_sort.lock_ignore_poison() = Some(sort);
         menu_state.show_hidden_checked.store(true, Ordering::Relaxed);
+        menu_state.show_menu_bar_checked.store(false, Ordering::Relaxed);
         *menu_state.view_mode_active_pane.lock_ignore_poison() = "right".to_string();
         *menu_state.view_mode_left.lock_ignore_poison() = ViewMode::Full;
         *menu_state.view_mode_full_accel.lock_ignore_poison() = Some("Ctrl+F2".to_string());
@@ -317,6 +319,7 @@ mod tests {
         expected.refused.insert("file.copy".to_string());
         expected.requested_sort = Some(sort);
         expected.show_hidden_files = true;
+        expected.show_menu_bar = false;
         expected.active_pane = Pane::Right;
         expected.view_mode_left = ViewMode::Full;
         expected.view_mode_full_accel = Some("Ctrl+F2".to_string());

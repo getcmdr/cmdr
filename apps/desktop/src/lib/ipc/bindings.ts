@@ -1129,7 +1129,7 @@ export const commands = {
       | { type: 'symlink_loop'; path: string }
       /**
        *  The destination's file system refused to hold a symlink the copy carries
-       *  (exFAT, FAT, some SMB shares, Windows without the privilege to make one).
+       *  (a share or file system with no link operation: `ENOTSUP`, `ENOSYS`; Windows, which makes none yet).
        *  The link is made under a temp name first, so whatever held `path` is still
        *  there, untouched; `path` is the name the link was meant to take.
        *
@@ -11910,6 +11910,21 @@ export type HiddenInName =
    */
   | 'invisible'
 
+/**
+ *  What stands in for an in-window menu bar the user hid (the "Show menu bar" setting off), beside
+ *  the main-menu button every desktop off macOS then shows.
+ */
+export type HiddenMenuBar =
+  // No bar to hide: the OS owns it (macOS's system menu bar).
+  | 'none'
+  /**
+   *  A tap of Alt or F10 shows the hidden bar until focus leaves it, as Win32's guide asks and
+   *  VS Code's `toggle` does.
+   */
+  | 'showsOnAltOrF10'
+  // F10 opens the main-menu button's menu, GNOME's HIG key; KDE's hamburger answers it too.
+  | 'f10OpensMainMenu'
+
 // A single recent-search entry, persisted verbatim.
 export type HistoryEntry = {
   id: string
@@ -17510,6 +17525,11 @@ export type PlatformCapabilities = {
    *  exist.
    */
   fullScreen: boolean
+  /**
+   *  The page draws the window's menu bar, so the user can hide it: View > Show menu bar, the
+   *  `appearance.menuBar` setting, and `view.toggleMenuBar` exist (D5, `menu-model.md`).
+   */
+  hideableMenuBar: boolean
   // Cmdr ships as a Homebrew cask (the onboarding note asking for a star on the cask).
   homebrewCask: boolean
   // A system-wide shortcut works from any app (the global "go to latest download" shortcut).
@@ -17542,6 +17562,8 @@ export type PlatformConventions = {
   accessKeys: AccessKeys
   // Where the app's menus live.
   menuModel: MenuModel
+  // What stands in for a window menu bar the user hid (View > Show menu bar).
+  hiddenMenuBar: HiddenMenuBar
   // Who draws the right-click menus.
   contextMenus: ContextMenus
   /**
@@ -18840,6 +18862,11 @@ export type RestrictedWindowSettings = {
    *  pinned Hungarian on an English Mac would get an English viewer.
    */
   appearanceLanguage: string | null
+  /**
+   *  Whether the viewer draws its menu bar or a main-menu button in its place (off macOS):
+   *  `desktopDefault`, `shown`, or `hidden`.
+   */
+  appearanceMenuBar: string | null
 }
 
 // What the queue window's Retry on a failed row did (`retry_failed_operation`).
@@ -26215,7 +26242,7 @@ export type WriteOperationError =
   | { type: 'symlink_loop'; path: string }
   /**
    *  The destination's file system refused to hold a symlink the copy carries
-   *  (exFAT, FAT, some SMB shares, Windows without the privilege to make one).
+   *  (a share or file system with no link operation: `ENOTSUP`, `ENOSYS`; Windows, which makes none yet).
    *  The link is made under a temp name first, so whatever held `path` is still
    *  there, untouched; `path` is the name the link was meant to take.
    *

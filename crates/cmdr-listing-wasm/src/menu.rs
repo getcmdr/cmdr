@@ -31,6 +31,7 @@ pub const MENU_COMMANDS: &[&str] = &[
     "update_sort_menu",
     "update_view_mode_menu",
     "sync_menu_show_hidden",
+    "sync_menu_show_menu_bar",
     "update_pin_tab_menu",
     "update_select_same_kind_menu",
     "update_undo_trash_menu",
@@ -148,6 +149,7 @@ impl DemoMenu {
                 m.view_mode_right = mode(&a.right_mode)?;
             }
             "sync_menu_show_hidden" => m.show_hidden_files = parse::<CheckedArgs>(command, args)?.checked,
+            "sync_menu_show_menu_bar" => m.show_menu_bar = parse::<CheckedArgs>(command, args)?.checked,
             "update_pin_tab_menu" => m.is_pinned = parse::<PinnedArgs>(command, args)?.is_pinned,
             "update_select_same_kind_menu" => {
                 m.same_kind = parse::<TargetArgs<cmdr_menu::labels::SameKindTarget>>(command, args)?.target

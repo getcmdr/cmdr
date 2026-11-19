@@ -47,7 +47,11 @@
     import { createViewerKeyboard, isSearchInputFocused } from './viewer-keyboard'
     import { editSurfaceFor, runViewerContextMenuAction, runViewerEditAction } from './viewer-menu-actions'
     import ViewerMenuBar from './ViewerMenuBar.svelte'
-    import { pageDrawsMenuBar } from '#lib/platform/index.js'
+    import { pageDrawsMenuBar, platformConventions } from '#lib/platform/index.js'
+    import MainMenuButton from '#lib/ui/MainMenuButton.svelte'
+    import { menuLayout, showsMainMenuButton } from '#lib/ui/command-menu/menu-layout.js'
+    import type { BarMenuView } from '#lib/ipc/bindings.js'
+    import { pickMenuBarItem } from '#lib/tauri-commands/index.js'
     import { createViewerTail } from './viewer-tail.svelte'
     import { logSessionOpFailure, sessionOpFailureKey, type SessionOp } from './viewer-session-op-failure'
     import type { ViewerError } from '#lib/tauri-commands/index.js'
@@ -65,7 +69,7 @@
     import { createViewerPointerDrag } from './viewer-pointer-drag.svelte'
     import { createViewerTextCursor } from './viewer-text-cursor.svelte'
     import ViewerTextCursor from './ViewerTextCursor.svelte'
-    import { getViewerShowTextCursor } from '#lib/settings/reactive-settings.svelte.js'
+    import { getShowMenuBar, getViewerShowTextCursor } from '#lib/settings/reactive-settings.svelte.js'
     import ViewerToolbar from './ViewerToolbar.svelte'
     import ViewerStatusBar from './ViewerStatusBar.svelte'
     import ViewerSearchBar from './ViewerSearchBar.svelte'
@@ -92,6 +96,17 @@
     import { lastName } from '#lib/path/grammar.js'
 
     const log = getAppLogger('viewer')
+
+    /** Where the viewer's menus live off macOS: its bar, the bar hidden until Alt, or the main-menu button. */
+    const menuChrome = $derived(menuLayout(platformConventions(), getShowMenuBar()))
+    /** The viewer bar's rows, bound out of `ViewerMenuBar` for the main-menu button. */
+    let viewerMenus = $state<BarMenuView[]>([])
+
+    function pickViewerMenuRow(menuId: string): void {
+        pickMenuBarItem(menuId).catch((error: unknown) => {
+            log.warn("Couldn't run a menu bar pick: {error}", { error })
+        })
+    }
 
     let fileName = $state('')
     /**
@@ -1206,8 +1221,20 @@
                 canGoForward: navigation.canGoForward,
                 searchFocused: searchInputFocused,
             }}
+            layout={menuChrome}
+            bind:menus={viewerMenus}
         />
     {/if}
+    {#snippet viewerMainMenuButton()}
+        {#if viewerMenus.length > 0}
+            <MainMenuButton
+                menus={viewerMenus}
+                onPick={pickViewerMenuRow}
+                label={tString('ui.mainMenu.label')}
+                opensOnF10={menuChrome === 'mainMenu'}
+            />
+        {/if}
+    {/snippet}
     <h1 class="sr-only">{tString('viewer.srHeading')}</h1>
     <ViewerToolbar
         {fileName}
@@ -1225,6 +1252,7 @@
         onToggleTail={() => {
             void setTailMode(!tailMode)
         }}
+        trailing={pageDrawsMenuBar() && showsMainMenuButton(menuChrome) ? viewerMainMenuButton : undefined}
     />
     <!--
         ARIA live region: announces selection state to assistive tech. Updates whenever

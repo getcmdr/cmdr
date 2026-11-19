@@ -182,6 +182,7 @@ export const MENU_ENGINE_COMMANDS = [
   'update_sort_menu',
   'update_view_mode_menu',
   'sync_menu_show_hidden',
+  'sync_menu_show_menu_bar',
   'update_pin_tab_menu',
   'update_select_same_kind_menu',
   'update_undo_trash_menu',

@@ -35,6 +35,12 @@
          * window. Leave it on for a window's one bar; a second bar on the same page turns it off.
          */
         takesWindowKeys?: boolean
+        /**
+         * The bar is hidden and shows only while it has the keyboard: a tap of Alt or F10 shows it,
+         * Alt plus a title's letter opens that menu, and it hides again as focus leaves (Windows,
+         * with "Show menu bar" off; `command-menu/menu-layout.ts`'s `barOnAlt`).
+         */
+        revealOnly?: boolean
         /** Extra classes on the bar and its menus: a look of its own (the demo's macOS bar). */
         class?: string
         /**
@@ -52,6 +58,7 @@
         keyScope,
         inert = false,
         takesWindowKeys = true,
+        revealOnly = false,
         class: lookClass = '',
         onFocusOrigin,
     }: Props = $props()
@@ -78,6 +85,7 @@
         reservedLetters: () => reservedAccessKeys(keyScope),
         isInert: () => isInert,
         takesWindowKeys: () => takesWindowKeys,
+        revealOnly: () => revealOnly,
         barElement: () => barElement,
         titleElement: (index) => titleElements[index],
     })
@@ -144,6 +152,7 @@
     class="menu-bar {lookClass}"
     class:mac={flavor === 'mac'}
     class:cues-shown={bar.cuesShown}
+    class:collapsed={revealOnly && !bar.active}
     role="menubar"
     aria-label={ariaLabel}
     inert={isInert}
@@ -197,6 +206,11 @@
         user-select: none;
         -webkit-user-select: none;
         cursor: default;
+    }
+
+    /* A hidden bar waiting for Alt or F10: out of the layout and the accessibility tree. */
+    .menu-bar.collapsed {
+        display: none;
     }
 
     /* Contrast themes: on the Windows look the tokens already speak system colors, so the browser

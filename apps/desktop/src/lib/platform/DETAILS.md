@@ -47,10 +47,12 @@ backend says what exists, and a surface asks for exactly the thing it needs.
   (an OS app menu that owns Quit, Hide, Hide others, and Show all: off macOS the Hide trio doesn't exist and Quit is
   Cmdr's own command, `lib/commands/DETAILS.md`), and `homebrewCask` (the macOS distribution). `fullScreen` is `true` on
   all three (`view.toggleFullScreen`, F11 off macOS), which brings the Escape-exits-full-screen setting and its hint
-  everywhere. `globalShortcuts` is `true` on macOS and Windows (`RegisterHotKey`) and, on Linux, only on an X11 session,
-  read once at startup (`XDG_SESSION_TYPE`, else `WAYLAND_DISPLAY` unset): `global-hotkey` grabs keys through X11 only,
-  so on Wayland the grab fires only inside XWayland windows. The backend asks it too before registering the hotkey
-  (`downloads/runtime.rs`).
+  everywhere. `hideableMenuBar` is `true` off macOS, where the page draws the bar (D5): View > Show menu bar, the
+  `appearance.menuBar` setting, and `view.toggleMenuBar` exist there
+  (`apps/desktop/src/lib/ui/command-menu/menu-layout.ts`). `globalShortcuts` is `true` on macOS and Windows)
+  (`RegisterHotKey`) and, on Linux, only on an X11 session, read once at startup (`XDG_SESSION_TYPE`, else
+  `WAYLAND_DISPLAY` unset): `global-hotkey` grabs keys through X11 only, so on Wayland the grab fires only inside
+  XWayland windows. The backend asks it too before registering the hotkey (`downloads/runtime.rs`).
 - **Decision/Why: `homebrewCask` is a capability, though it's a distribution fact.** It fits "named after the UI that
   asks" poorly and will want siblings (winget, Flathub) once those channels exist; the alternative was one
   `distribution_note` line shown everywhere, with a branch per OS. Kept as a capability because only macOS has a channel
@@ -89,14 +91,15 @@ dialog buttons like macOS, KDE like Windows.
   `focusedButton`), `cancelKeys` (`escape` | `escapeOrCommandPeriod`), `accessKeys` (`none` |
   `underlinesAfterKeyboardUse` | `underlinesWhileAltHeld`: when the underlines show, Win32's keyboard-cue rule or GTK's
   and Qt's held Alt, `lib/ui/keyboard-cues.ts`), `menuModel` (`systemMenuBar` | `windowMenuBar` | `primaryMenu`),
-  `contextMenus` (`native` | `inPage`), `screenReaders` (most used first), and `linuxDesktop` (`gnome` | `kde` |
-  `other`, `null` off Linux). Each value and its guideline, with dates and what stayed unverified:
+  `hiddenMenuBar` (`none` | `showsOnAltOrF10` | `f10OpensMainMenu`: what stands in for a bar the user hid, beside the
+  main-menu button), `contextMenus` (`native` | `inPage`), `screenReaders` (most used first), and `linuxDesktop`
+  (`gnome` | `kde` | `other`, `null` off Linux). Each value and its guideline, with dates and what stayed unverified:
   `docs/notes/windows-port/platform-conventions.md`.
 - **`pageDrawsMenuBar()`** is the one reading of `menuModel` the windows mount their bar on: true for every model but
-  `systemMenuBar`, GNOME's `primaryMenu` included until its main-menu button (task 63 step 8). The backend asks the same
-  question of its own row (`menu::builds_native_bar`), so the page and the native bar never both draw, past a
-  `CMDR_MOCK_CONVENTIONS` dev run (which moves the webview alone: macOS keeps its bar and the page shows another
-  desktop's beside it).
+  `systemMenuBar`. Whether that's a bar or a main-menu button is `#lib/ui/command-menu/menu-layout.ts`'s `menuLayout`
+  (the menu model, `hiddenMenuBar`, and the "Show menu bar" setting). The backend asks the same question of its own row
+  (`menu::builds_native_bar`), so the page and the native bar never both draw, past a `CMDR_MOCK_CONVENTIONS` dev run
+  (which moves the webview alone: macOS keeps its bar and the page shows another desktop's beside it).
 - **One table, five rows**: `conventions_on(Desktop)` answers macOS, Windows, and each Linux desktop in one `match`,
   compiled on every target; each OS arm (`macos.rs`, `windows.rs`, `linux/mod.rs`) only picks its row, Linux by the
   session's desktop (`apps/desktop/src-tauri/src/platform/linux/desktop.rs`, `XDG_CURRENT_DESKTOP` read once).
@@ -106,9 +109,9 @@ dialog buttons like macOS, KDE like Windows.
   to it on any machine (it prints the JSON to write when they differ), where capabilities need a text-parsing test per
   arm file. Each target constructs only its own `Desktop`, hence the `dead_code` allows there.
 - **The menu rows are D5's** (`docs/notes/windows-port/menu-model.md`): GNOME `primaryMenu`, Windows, KDE, and other
-  Linux `windowMenuBar`; only Windows says `contextMenus: 'inPage'`. Until task 63 of `docs/specs/windows-port-plan.md`
-  builds the in-page bar and menus, nothing reads either, so every desktop still shows today's native bar and popups. A
-  surface that draws a right-click menu asks `contextMenus`, ❌ never the platform.
+  Linux `windowMenuBar`; only Windows says `contextMenus: 'inPage'`, and only Windows
+  `hiddenMenuBar: 'showsOnAltOrF10'`. A surface that draws a right-click menu asks `contextMenus`, ❌ never the
+  platform.
 - **Reading it**: `convention('dialogButtonOrder')` or `platformConventions()`. Each field reads the injected value only
   where it names a known member (the `every<…>()` lists in `conventions.ts` fail to compile when a Rust variant is added
   and not listed), else the fallback's, so a primitive never meets a value it has no branch for.

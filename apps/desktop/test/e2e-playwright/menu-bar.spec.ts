@@ -116,6 +116,34 @@ async function titleHolding(page: PageLike, menuId: string): Promise<number> {
   throw new Error(`no bar menu holds \`${menuId}\``)
 }
 
+/** The main-menu button at the end of the tab row, where no bar shows. */
+const MAIN_MENU_BUTTON = '.main-menu-button'
+/** The main-menu button's open menu (it rides the context-menu surfaces). */
+const MAIN_MENU = '[role="menu"][data-command-menu="context"]'
+
+/** Whether the main menu is open, and whether focus sits in the focused file pane. */
+function mainMenuState(page: PageLike): Promise<{ open: boolean; focusInPane: boolean }> {
+  return page.evaluate<{ open: boolean; focusInPane: boolean }>(`(function(){
+      var pane = document.querySelector('.file-pane.is-focused');
+      return {
+        open: document.querySelector(${JSON.stringify(MAIN_MENU)}) !== null,
+        focusInPane: !!(pane && pane.contains(document.activeElement)),
+      };
+  })()`)
+}
+
+/** An element's center in page coordinates, which are the main window's on this lane. */
+async function centerOf(page: PageLike, selector: string): Promise<{ x: number; y: number }> {
+  const at = await page.evaluate<{ x: number; y: number } | null>(`(function(){
+      var el = document.querySelector(${JSON.stringify(selector)});
+      if (!el) return null;
+      var r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  })()`)
+  if (!at) throw new Error(`nothing matches \`${selector}\``)
+  return at
+}
+
 /** Lets go of the bar, whatever it holds: a failed run can leave it with the keyboard. */
 async function releaseBar(page: PageLike): Promise<void> {
   for (let tries = 0; tries < 4; tries++) {
@@ -216,6 +244,52 @@ test.describe('The in-page menu bar (Linux)', () => {
     await expect
       .poll(() => fileExistsInFocusedPane(tauriPage, '.hidden-file'), { timeout: waitBudget(3000) })
       .toBe(hiddenAtStart)
+  })
+
+  // Task 63 step 8: with "Show menu bar" off, Linux (this lane is the desktop-neutral row) shows the
+  // main-menu button at the end of the tab row, F10 opens it, and its View submenu brings the bar back.
+  test('View > Show menu bar hides the bar behind the main-menu button, and the button brings it back', async ({
+    tauriPage,
+  }) => {
+    await ensureAppReady(tauriPage)
+    await focusPane(tauriPage, 0)
+    const barShown = () => tauriPage.evaluate<boolean>(`document.querySelector('[role="menubar"]') !== null`)
+    try {
+      await titleHolding(tauriPage, 'show_menu_bar')
+      const row = await rowCenter(tauriPage, 'show_menu_bar')
+      expect(row).not.toBeNull()
+      if (row) clickRealAt(mainWindowId(), row.x, row.y)
+      await expect.poll(barShown, { timeout: waitBudget(3000) }).toBe(false)
+      await tauriPage.waitForSelector(MAIN_MENU_BUTTON, waitBudget(3000))
+
+      // F10 opens the main menu where no bar takes it, and Escape gives focus back to the pane.
+      await focusPane(tauriPage, 0)
+      focusMainWindow()
+      pressRealKey(F10_KEYCODE)
+      await expect.poll(() => mainMenuState(tauriPage), { timeout: waitBudget(3000) }).toMatchObject({ open: true })
+      pressRealKey('Escape')
+      await expect
+        .poll(() => mainMenuState(tauriPage), { timeout: waitBudget(3000) })
+        .toEqual({ open: false, focusInPane: true })
+
+      // A real click on the button, then View, then Show menu bar: the bar is back.
+      const button = await centerOf(tauriPage, MAIN_MENU_BUTTON)
+      clickRealAt(mainWindowId(), button.x, button.y)
+      await expect.poll(() => mainMenuState(tauriPage), { timeout: waitBudget(3000) }).toMatchObject({ open: true })
+      const view = await centerOf(tauriPage, `${MAIN_MENU} [data-menu-id="menu_view"]`)
+      clickRealAt(mainWindowId(), view.x, view.y)
+      await tauriPage.waitForSelector(`${MAIN_MENU} [data-menu-id="show_menu_bar"]`, waitBudget(3000))
+      const showBar = await centerOf(tauriPage, `${MAIN_MENU} [data-menu-id="show_menu_bar"]`)
+      clickRealAt(mainWindowId(), showBar.x, showBar.y)
+      await expect.poll(barShown, { timeout: waitBudget(3000) }).toBe(true)
+      expect(
+        await tauriPage.evaluate<boolean>(`document.querySelector(${JSON.stringify(MAIN_MENU_BUTTON)}) === null`),
+      ).toBe(true)
+    } finally {
+      // One app serves the shard, so the bar goes back as found.
+      if (!(await barShown())) await dispatchMenuCommand(tauriPage, 'view.toggleMenuBar')
+      await expect.poll(barShown, { timeout: waitBudget(3000) }).toBe(true)
+    }
   })
 
   test('a real Alt+F reaches the search dialog and opens no menu', async ({ tauriPage }) => {

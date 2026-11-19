@@ -13,6 +13,7 @@
 -->
 
 <script lang="ts">
+    import type { Snippet } from 'svelte'
     import { tooltip } from '#lib/tooltip/tooltip.js'
     import EncodingPicker from './EncodingPicker.svelte'
     import ViewModePicker from './ViewModePicker.svelte'
@@ -51,6 +52,8 @@
         onEncodingChange: (encoding: FileEncoding) => void
         /** Called when the user toggles tail mode. */
         onToggleTail: () => void
+        /** Drawn at the toolbar's trailing end: the viewer's main-menu button where its menu bar is hidden. */
+        trailing?: Snippet
     }
 
     const {
@@ -67,6 +70,7 @@
         onModeChange,
         onEncodingChange,
         onToggleTail,
+        trailing,
     }: Props = $props()
 
     const isText = $derived(mode === 'text')
@@ -108,6 +112,7 @@
             <span class="viewer-toolbar-indexing" role="status" aria-live="polite">{tString('viewer.toolbar.reindexing')}</span>
         {/if}
     </div>
+    {#if trailing}{@render trailing()}{/if}
 </header>
 
 <style>
