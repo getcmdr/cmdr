@@ -68,6 +68,8 @@ test.describe('Browser demo', () => {
     await expect(dialog.getByText('Annual report.pdf')).toHaveCount(0)
     await expect(emptyState).toBeVisible()
     await expect(page.locator(':focus')).toHaveValue('')
+  })
+
   // Go to folder (⌘G, Ctrl+G) runs the desktop's own resolution in the WASM module (`go_to.rs` over
   // `cmdr_fs::go_to_path`): a typed folder navigates, a missing one lands on its nearest folder with
   // the app's toast, and the jump lands in the dialog's recents.
