@@ -310,3 +310,9 @@ things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX
     `%LOCALAPPDATA%\com.veszelovszki.cmdr\logs\cmdr.log` and logged no update check within three minutes (task 57).
   - **Group Policy zip**: `cmdr-group-policy-0.61.0.zip` (4.7 kB) holds `cmdr.admx`, `rymd.admx`, and `en-US/` only.
   - `go test` for `scripts/windows-package` and `scripts/release-assets/{nsis,manifest}` passed on the builder too.
+- **2026-11-19, the failures sorted by cause** (`main` at `8db5b83ac4`, then the fix branch `253f57d74f`): a fresh
+  whole-workspace run in `D:\src\cmdr-triage` (`CARGO_TARGET_DIR=D:\targets\triage`): 13,978 tests, 13,037 passed, 875
+  failed, 66 timed out. Every failure's cause, by cluster, with what #1225 takes and the product bugs it found (the
+  in-flight ledger never emptying on Windows, Windows-made zips dropping their modes, both fixed):
+  `docs/notes/windows-port/windows-test-failures.md`, with the machine-readable record beside it. The cold build died
+  once on `os error 1455` (the page file too small to mmap an rlib); `CARGO_BUILD_JOBS=2` got through.

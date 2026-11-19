@@ -196,7 +196,8 @@ Open, waiting on David (each task entry has the detail):
 ## Windows build state
 
 Which members compile for Windows is `windowsPending` in `scripts/check/checks/member-coverage-allowlist.json` (the
-check shrinks it). Milestones and what the builder ran: `docs/notes/windows-port/build-progress.md`.
+check shrinks it). Milestones and what the builder ran: `docs/notes/windows-port/build-progress.md`. Every test failure
+there by cause: `docs/notes/windows-port/windows-test-failures.md`.
 
 Honest stubs: Windows arms that compile and answer "unsupported", "unknown", or nothing, each waiting for the task that
 owns its real body. Remove a line when its body lands.
