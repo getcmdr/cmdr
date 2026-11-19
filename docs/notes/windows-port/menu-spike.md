@@ -1,7 +1,8 @@
 # The Windows menu spike
 
-What decided D5 (`docs/specs/windows-port-plan.md`): David ran `tools/menu-spike/` on a Windows 11 laptop on 2026-11-18
-and filled the results table below; the outcome is in "Decision". The research recommendation it tested is in
+What decided D5 (`docs/specs/windows-port-plan.md`): David ran the menu spike (a throwaway Tauri app; its source is in
+git history (`git show c15f567151:tools/menu-spike/README.md`, deleted with task 63 step 12)) on a Windows 11 laptop on
+2026-11-18 and filled the results table below; the outcome is in "Decision". The research recommendation it tested is in
 `docs/notes/windows-port/menu-model.md`; this note rechecks that note's Windows facts against upstream first.
 
 ## The three modes
@@ -116,7 +117,8 @@ afterwards): light, light after the fixes below, and with the window forced dark
 - **WebView2**: it needs the Evergreen WebView2 runtime, which Windows 11 ships and Windows 10 gets through Windows
   Update and with Edge (mami has 157.0.4341.60). Nothing else: the WebView2 loader is linked in, and it installs
   nothing. WebView2 keeps its cache in `%LOCALAPPDATA%\com.getcmdr.menuspike`; delete that folder afterwards.
-- **Rebuild**: `tools/menu-spike/README.md`.
+- **Rebuild**: from git history, `git show c15f567151:tools/menu-spike/README.md` (the folder went with task 63 step
+  12).
 
 ## Test script (about 15 minutes per laptop)
 

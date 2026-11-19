@@ -7,9 +7,8 @@
 //! - The bar as data lives in `cmdr-menu` (`crates/cmdr-menu/CLAUDE.md`): the item ids and the
 //!   command map (glob-re-exported here), `MENU_BAR` and its vocabulary (reachable here as
 //!   `menu_bar` / `menu_spec`), the enabled-state fold, and what a click asks for.
-//!   `menu_bar_builder.rs` builds it for the running platform (`build_menu`), `mnemonics.rs`
-//!   allocates the Linux underline letters, and `mnemonic_mask/` turns them off while a modal
-//!   surface owns a window's keyboard.
+//!   `menu_bar_builder.rs` builds it on macOS (`build_menu`); elsewhere the page draws it
+//!   (`page_bar.rs`).
 //! - Every context menu is data too, in `cmdr_menu::context` (rows, ids, labels, enabled state,
 //!   accelerator sources, and what a pick asks for). `context_rows.rs` builds any of them
 //!   (`build_popup`); `file_context_menu.rs` builds the file one, filling its macOS slots. Its
@@ -81,8 +80,6 @@ mod menu_handlers;
 mod menu_items;
 // The viewer's native bar: macOS only (the file says so itself); elsewhere the viewer page draws it.
 mod menu_structure;
-mod mnemonic_mask;
-mod mnemonics;
 #[cfg(target_os = "macos")]
 pub mod open_with;
 pub(crate) mod page_bar;
@@ -158,7 +155,6 @@ pub use menu_handlers::{
 };
 pub(crate) use menu_items::{DetachWord, detach_word_for_volume_id};
 pub use menu_items::{SameKindTarget, TrashUndoTarget, pin_tab_label, same_kind_menu_label, undo_trash_menu_label};
-pub(crate) use mnemonic_mask::set_window_mnemonics_suspended;
 pub use rebuild::rebuild_menu_bar;
 #[cfg(target_os = "macos")]
 pub use services_context::lend_services_menu;
@@ -344,8 +340,7 @@ pub struct MenuItemEntry<R: Runtime> {
     pub item: TrackedItem<R>,
     pub submenu: Submenu<R>,
     pub position: usize,
-    /// The item's label WITHOUT any display-only accelerator spelled into it, mnemonic and
-    /// all. ❗ Kept separately because `item.text()` is the built label, which on Linux ends
+    /// The item's label WITHOUT any display-only accelerator spelled into it. ❗ Kept separately because `item.text()` is the built label, which on Linux ends
     /// in ` (⇧8)`: recreating the item from that would stack a second shortcut on the end
     /// every time the user rebinds. `update_menu_item_accelerator` composes from here.
     pub label: String,

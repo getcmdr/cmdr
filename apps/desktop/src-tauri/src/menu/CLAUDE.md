@@ -29,25 +29,23 @@ viewer bar. `macos_appkit.rs`: the objc2 boundary. One line per file: DETAILS §
   thread, so a tokio task deadlocks the app. Clone the handle out (`cloned_handle`). DETAILS § Gotchas.
 - **Accelerator changes go remove/recreate/reinsert**, so `MenuState` tracks each item's submenu and index; a live
   label moves through `MenuState::set_item_label`, ❌ never a bare `set_text`.
-- **Four families skip `"execute-command"`**: CheckMenuItems auto-toggle (they send `"settings-changed"` /
+- **Four families skip `"execute-command"`**: CheckMenuItems auto-toggle (`"settings-changed"` /
   `"view-mode-changed"`); sort resets its checks, then sends `"menu-sort"`; the edit items are Custom (❌ not
-  Predefined), their road one `edit_road` (outside the main window the focused field edits: macOS's responder chain,
-  or a page bar's `TextEdit` outcome), or ⌘A and the clipboard die there; the VIEWER bar's four are Custom on their
-  own `VIEWER_*` ids (Copy / Select all emit `ViewerEditAction`; Cut / Paste edit its search box).
+  Predefined) on one road, `edit_road`, or ⌘A and the clipboard die outside the main window; the VIEWER bar's four are
+  Custom on their own `VIEWER_*` ids. DETAILS § Gotchas.
 - **Enabled state has ONE writer, `apply_menu_item_states`**: store a new input in the crate's `MenuItemInputs` /
   `menu_item_enabled`, ❌ never a direct `set_enabled` (the viewer's Cut / Paste too). Greying is chrome: the guard is
   the main window's focus for a native pick (a page's pick names its window, `PickWindow`), and accelerators fire on
   greyed items.
-- **Only macOS builds a native bar** (`builds_native_bar`): elsewhere a push stores its fact and stops
-  (`has_native_bar`), ❌ never fails for a missing item.
 - **macOS swaps ONE app-level bar on focus-gain (`activate_window_menu`)**. ❗ `cleanup_macos_menus`,
   `set_macos_menu_icons`, and `set_display_accelerators` survive nothing: re-apply all three after every swap, rebuild,
   and recreate.
 - **Every label comes from `menu_t("menu.…")`, ❌ never a literal** (muda's Predefined text is English), **and
   everything is keyed by ID, never title**. A language change rebuilds the bar (`menu-bar-rebuilt`); the frontend
   re-pushes everything.
-- **A page draws the bar off macOS** (`page_bar.rs`; the main window's and the viewer's own): every push stores its
-  fact in `MenuState` and ends in `notify_bar_changed`, ❌ or the page bar goes stale. Windows' right-click menus too (`page_context.rs`): a pick names
+- **Only macOS builds a native bar** (`builds_native_bar`); elsewhere a page draws it (`page_bar.rs`). Every push stores
+  its fact in `MenuState`, stops where no item exists (`has_native_bar`, ❌ never an error), and ends in
+  `notify_bar_changed`, ❌ or the page bar goes stale. Windows' right-click menus too (`page_context.rs`): a pick names
   its menu's token. DETAILS § The bar a page draws.
 
 Architecture, flows, and decisions: `DETAILS.md`. Read it before any non-trivial work here: editing, planning,

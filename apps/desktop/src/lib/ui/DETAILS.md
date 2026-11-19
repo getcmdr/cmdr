@@ -393,15 +393,14 @@ the Mac markup and keys, so a convention change can't move them unnoticed.
     wizard is no `ModalDialog` and keeps its own keys.
 - **Access keys** (`accessKeys` is `underlinesAfterKeyboardUse` on Windows, `underlinesWhileAltHeld` on every Linux
   desktop, `none` on the Mac; `access-keys.ts`): Alt plus a control's letter presses it (a button, a checkbox) or
-  focuses it (a text field, via its `<label>`). Letters come from the labels as rendered, by the Linux menu bar's rule
-  (`mnemonics.rs`: word initials first, unique per dialog, case-insensitive), so every language gets its own and no
-  translator places a marker; a label with no Latin, Greek, or Cyrillic letter (Chinese, Japanese) takes a free `a`–`z`,
-  as Windows does. Each control also gets `Alt+X` in its `aria-keyshortcuts`, after any key the dialog named itself
-  (`F2 Alt+B`), unless that's already an Alt key. The key goes to the dialog's `onkeydown` FIRST: one it claims
-  (`defaultPrevented`) never presses a control. `keyScope` reserves the dialog's own Alt+letter commands' letters (the
-  multi-rename sheet's options, About this's Stop), which are its access keys already, so nothing else is given them. A
-  `letterKeysAnswer` dialog (bare letters answer it, shown on its buttons) gets none: one key scheme per dialog, and its
-  report offer stays keyless on purpose.
+  focuses it (a text field, via its `<label>`). Letters come from the labels as rendered (word initials first, unique
+  per dialog, case-insensitive), so every language gets its own and no translator places a marker; a label with no
+  Latin, Greek, or Cyrillic letter (Chinese, Japanese) takes a free `a`–`z`, as Windows does. Each control also gets
+  `Alt+X` in its `aria-keyshortcuts`, after any key the dialog named itself (`F2 Alt+B`), unless that's already an Alt
+  key. The key goes to the dialog's `onkeydown` FIRST: one it claims (`defaultPrevented`) never presses a control.
+  `keyScope` reserves the dialog's own Alt+letter commands' letters (the multi-rename sheet's options, About this's
+  Stop), which are its access keys already, so nothing else is given them. A `letterKeysAnswer` dialog (bare letters
+  answer it, shown on its buttons) gets none: one key scheme per dialog, and its report offer stays keyless on purpose.
 - **When they show** is the platform's cue rule (`keyboard-cues.ts`, § Command menus has the rule): on Windows once the
   keyboard is in use in the dialog (from the start in one a key opened; after Alt, F10, Tab, an arrow, or an Alt chord
   in one a click opened) and then for the dialog's life; on Linux while Alt is held; always under Windows' "Underline
