@@ -26,6 +26,15 @@ switcher row each key on a place.
 - **App paths are the account's**, `s3://<key id>@<host>:<port>/<bucket>/<key>`, and a place's root hangs under that
   prefix (`/` or `/<bucket>`). So one object has one app spelling whichever place reached it, and a bucket place refuses
   another bucket's path (`RemoteRoot`'s containment check).
+- **Every body speaks typed app paths** (`cmdr_fs::app_path`, `crates/cmdr-fs/DETAILS.md` § "App paths"); the key layer
+  stays text, and the two meet only in `paths.rs`: `resolve` (`RemoteRoot::to_remote`, then the beside-folder map) going
+  down, `row_path` (`RemoteRoot::to_app`) coming back. `paths::Place` builds the typed root once, at connect. ❗ A row's
+  `FileEntry.path` and `root()` keep the exact text they always had (pinned as strings in `paths_test.rs`): `to_app`'s
+  canonical text equals `<prefix><server path>` for every name S3 lists, and a name the typed path can't hold yet (an
+  escape-range code point, `RemoteAppRefusal::NotAppText`) keeps that text, ❌ never a dropped row. Such a row gets no
+  listing patch after a write (`patch_app_path` has no typed answer for it). A bucket or key id holding such text
+  refuses the connect (`NoSuchBucket` / `KeysRejected`) before the probe: no provider allows one, and `root()` needs a
+  typed answer.
 - **Two places of one account each hold their own client.** Sharing one is an optimisation for later; nothing depends on
   it.
 - **The account root needs `ListBuckets`.** A bucket-scoped key (R2 non-admin tokens, B2 keys without
