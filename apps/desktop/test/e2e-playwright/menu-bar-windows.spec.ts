@@ -10,12 +10,15 @@
  * - The viewer draws its own bar: Ctrl+W (File > Close) closes it, Edit > Cut and Paste stay live
  *   while the menu is open over a focused search box, and View > Word wrap's check follows a pick.
  * - The main bar's View > Show hidden files check follows a pick.
+ * - The viewer's View > Show menu bar hides its bar, and its main-menu button brings it back.
+ * - A real Ctrl+V in Settings, the queue, or the viewer never sends a paste to the main window: a
+ *   page's pick names its window (`menu_handlers::PickWindow`).
  */
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { test, expect } from './fixtures.js'
-import { ensureAppReady, moveCursorToFile, type PageLike } from './helpers.js'
+import { dispatchMenuCommand, ensureAppReady, moveCursorToFile, type PageLike } from './helpers.js'
 import {
   clickRealAt,
   focusMainWindow,
@@ -449,4 +452,126 @@ test.describe('The bar in the other windows (Linux)', () => {
       await closeScopedWindow(main, viewer.page, viewer.label)
     }
   })
+
+  // Review of #1281: the viewer's bar had no Show menu bar row, so a viewer could neither hide its
+  // bar nor get it back; the main window had to.
+  test('the viewer bar’s View > Show menu bar hides its bar, and its main-menu button brings it back', async ({
+    tauriPage,
+  }) => {
+    await ensureAppReady(tauriPage)
+    const main = tauriPage as TauriPage
+    const viewer = await openChild(main, () => openViewerWindow(main, viewerFile()))
+    const shows = (page: PageLike) =>
+      page.evaluate<{ bar: boolean; button: boolean }>(`({
+          bar: document.querySelector('[role="menubar"]') !== null,
+          button: document.querySelector(${JSON.stringify(MAIN_MENU_BUTTON)}) !== null,
+      })`)
+    try {
+      await viewer.page.waitForSelector('[role="menubar"]', waitBudget(8000))
+      await focusChild(viewer.page, viewer.windowId)
+      await pickRow(viewer.page, viewer.windowId, 'show_menu_bar')
+      await expect.poll(() => shows(viewer.page), { timeout: waitBudget(5000) }).toEqual({ bar: false, button: true })
+      // The setting is the app's, so the main window follows too.
+      await expect.poll(() => shows(main), { timeout: waitBudget(5000) }).toEqual({ bar: false, button: true })
+
+      // Back from the viewer's own button: its View submenu carries the same row.
+      for (const selector of [
+        MAIN_MENU_BUTTON,
+        `${MAIN_MENU} [data-menu-id="menu_view"]`,
+        `${MAIN_MENU} [data-menu-id="show_menu_bar"]`,
+      ]) {
+        await viewer.page.waitForSelector(selector, waitBudget(3000))
+        const at = await centerOf(viewer.page, selector)
+        clickRealAt(viewer.windowId, at.x, at.y)
+      }
+      await expect.poll(() => shows(viewer.page), { timeout: waitBudget(5000) }).toEqual({ bar: true, button: false })
+    } finally {
+      if (!(await shows(main)).bar) await dispatchMenuCommand(main, 'view.toggleMenuBar')
+      await expect.poll(async () => (await shows(main)).bar, { timeout: waitBudget(3000) }).toBe(true)
+      await closeScopedWindow(main, viewer.page, viewer.label)
+    }
+  })
+
+  // Review of #1281: a Ctrl+V in the queue, read against a stale "main is focused", ran the main
+  // window's file paste. A page's pick names its window now, so another window's Edit rows edit
+  // that window's own field and never reach the main window's files.
+  test('a real Ctrl+V in Settings, the queue, or the viewer never sends a paste to the main window', async ({
+    tauriPage,
+  }) => {
+    // Three child windows, each opened, focused, and closed.
+    test.setTimeout(waitBudget(90_000))
+    await ensureAppReady(tauriPage)
+    const main = tauriPage as TauriPage
+    expect(await moveCursorToFile(main, 'file-a.txt')).toBe(true)
+    const probe = await installCommandProbe(main)
+    try {
+      for (const open of [
+        () => openSettingsWindowViaProd(main),
+        () => openQueueWindow(main),
+        () => openViewerWindow(main, viewerFile()),
+      ]) {
+        const child = await openChild(main, open)
+        try {
+          await focusChild(child.page, child.windowId)
+          // The child sees the key, so the press really landed there.
+          await child.page.evaluate(`(function(){
+              window.__ctrlVSeen = 0;
+              window.addEventListener('keydown', function(e){ if (e.ctrlKey && e.key === 'v') window.__ctrlVSeen++; }, true);
+          })()`)
+          pressRealKey('ctrl+v')
+          await expect
+            .poll(() => child.page.evaluate<number>('window.__ctrlVSeen'), { timeout: waitBudget(3000) })
+            .toBeGreaterThan(0)
+          // The relay, were there one, arrives within the same round trip as the pick.
+          await expect.poll(() => commandsSeen(main), { timeout: waitBudget(1500) }).not.toContain('edit.paste')
+        } finally {
+          await closeScopedWindow(main, child.page, child.label)
+        }
+      }
+      expect(await commandsSeen(main)).not.toContain('edit.paste')
+    } finally {
+      await removeCommandProbe(main, probe)
+    }
+  })
 })
+
+/** The main-menu button and its open menu (it rides the context-menu surfaces). */
+const MAIN_MENU_BUTTON = '.main-menu-button'
+const MAIN_MENU = '[role="menu"][data-command-menu="context"]'
+
+/** An element's center in its window's page coordinates. */
+async function centerOf(page: PageLike, selector: string): Promise<{ x: number; y: number }> {
+  const at = await page.evaluate<{ x: number; y: number } | null>(`(function(){
+      var el = document.querySelector(${JSON.stringify(selector)});
+      if (!el) return null;
+      var r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  })()`)
+  if (!at) throw new Error(`nothing matches \`${selector}\``)
+  return at
+}
+
+/** Records every `execute-command` the main window hears, by command id; returns the listener's event id. */
+async function installCommandProbe(main: TauriPage): Promise<number> {
+  return main.evaluate<number>(`(async function() {
+    window.__commandsSeen = [];
+    var handler = window.__TAURI_INTERNALS__.transformCallback(function(e) {
+      window.__commandsSeen.push(e && e.payload ? e.payload.commandId : '?');
+    });
+    return await window.__TAURI_INTERNALS__.invoke('plugin:event|listen', {
+      event: 'execute-command', target: { kind: 'Any' }, handler: handler
+    });
+  })()`)
+}
+
+function commandsSeen(main: TauriPage): Promise<string[]> {
+  return main.evaluate<string[]>('window.__commandsSeen || []')
+}
+
+async function removeCommandProbe(main: TauriPage, eventId: number): Promise<void> {
+  await main.evaluate(`(async function() {
+    try { window.__TAURI_EVENT_PLUGIN_INTERNALS__.unregisterListener('execute-command', ${String(eventId)}); } catch (e) {}
+    await window.__TAURI_INTERNALS__.invoke('plugin:event|unlisten', { event: 'execute-command', eventId: ${String(eventId)} });
+    window.__commandsSeen = undefined;
+  })()`)
+}

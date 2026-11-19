@@ -591,7 +591,8 @@ for what only a real press proves: that GTK leaves a key to the page (a lone Alt
 in-page menu bar answers it. Xvfb has no window manager, so `focusMainWindow` gives the biggest visible top-level window
 the X focus first, a new window (Settings, the queue) shows up as a new visible top-level window
 (`visibleTopLevelWindows`), and `clickRealAt` clicks a page point (the windows have no decorations, so a DOM rect is the
-window's own coordinates). `menu-bar.spec.ts` is its user. Not in the `helpers.js` barrel: it's Linux-only.
+window's own coordinates). `menu-bar.spec.ts`, `menu-bar-windows.spec.ts`, and `menu-bar-text-field.spec.ts` use it. Not
+in the `helpers.js` barrel: it's Linux-only.
 
 `pressRealKey('F8')` sends a bare F8: the image's xdotool adds Alt to an F-key named by its keysym (the keymap types
 them `CTRL+ALT`), so the helper swaps each F-key for its keycode and keeps the chord's own modifiers (`shift+F8` is
