@@ -50,10 +50,13 @@ pub(super) fn make_test_volume_with(bucket: Option<&str>, host: VolumeHost) -> S
 
 /// `rel` under `volume`'s root as a typed app path, the root itself for `""` or `"."`.
 ///
-/// Panics on a `rel` that isn't a canonical relative tail (a `//`, a `.` or `..` name, a
-/// leading or trailing `/`), so a cell can't silently address a different path.
+/// A key prefix's trailing `/` (`scratch_prefix`'s `run/label/`) names its folder, the
+/// same object the server path it always reached named. Panics on any other `rel` that
+/// isn't a canonical relative tail (a `//`, a `.` or `..` name, a leading `/`), so a cell
+/// can't silently address a different path.
 pub(super) fn at(volume: &dyn Volume, rel: &str) -> AppPathBuf {
     let root = volume.root();
+    let rel = rel.strip_suffix('/').unwrap_or(rel);
     if rel.is_empty() || rel == "." {
         return root.to_owned();
     }

@@ -6,7 +6,6 @@
 //! no-overwrite HEAD), B2 any control character (`400 InvalidRequest`, its
 //! catch-all, so a code can't tell it apart).
 
-use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::ops::ControlFlow;
 use std::pin::Pin;
@@ -15,6 +14,7 @@ use std::time::Duration;
 use cmdr_fs::volume::{ServerCopyProgress, Volume, VolumeError, VolumeReadStream, WriteMode};
 
 use super::fake_s3::FakeS3;
+use super::test_support::at;
 use super::testing::BytesSource;
 use crate::params::S3Provider;
 
@@ -34,37 +34,19 @@ async fn every_write_path(provider: S3Provider, name: &str) {
     let s3 = FakeS3::start(Duration::ZERO).await;
     s3.seed("source.txt", 5);
     let volume = s3.volume_for(provider);
-    let at = |key: &str| volume.root().as_std_legacy().join(key);
+    let at = |key: &str| at(&volume, key);
     let source = BytesSource::new(b"hello".to_vec());
     let length = source.total_size();
     let uploaded = volume
-        .write_from_stream(
-            &AppPath::legacy_unchecked(&at(name)),
-            WriteMode::CreateNew,
-            length,
-            Box::new(source),
-            &|_| ControlFlow::Continue(()),
-        )
+        .write_from_stream(&at(name), WriteMode::CreateNew, length, Box::new(source), &|_| {
+            ControlFlow::Continue(())
+        })
         .await;
-    let created = volume
-        .create_file(&AppPath::legacy_unchecked(&at(name)), b"hello")
-        .await;
-    let folder = volume.create_directory(&AppPath::legacy_unchecked(&at(name))).await;
-    let renamed = volume
-        .rename(
-            &AppPath::legacy_unchecked(&at("source.txt")),
-            &AppPath::legacy_unchecked(&at(name)),
-            false,
-        )
-        .await;
+    let created = volume.create_file(&at(name), b"hello").await;
+    let folder = volume.create_directory(&at(name)).await;
+    let renamed = volume.rename(&at("source.txt"), &at(name), false).await;
     let copied = volume
-        .copy_on_server(
-            &volume,
-            &AppPath::legacy_unchecked(&at("source.txt")),
-            &AppPath::legacy_unchecked(&at(name)),
-            WriteMode::CreateNew,
-            &NoProgress,
-        )
+        .copy_on_server(&volume, &at("source.txt"), &at(name), WriteMode::CreateNew, &NoProgress)
         .await;
     for (what, outcome) in [
         ("upload", uploaded.map(|_| ())),
@@ -104,12 +86,7 @@ async fn b2_refuses_a_control_character_before_sending_anything() {
 async fn r2_stores_a_tab_in_a_name() {
     let s3 = FakeS3::start(Duration::ZERO).await;
     let volume = s3.volume();
-    let created = volume
-        .create_file(
-            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("tab\there.txt")),
-            b"hello",
-        )
-        .await;
+    let created = volume.create_file(&at(&volume, "tab\there.txt"), b"hello").await;
     assert!(created.is_ok(), "{created:?}");
     assert_eq!(s3.object("tab\there.txt").map(|s| s.len), Some(5));
 }

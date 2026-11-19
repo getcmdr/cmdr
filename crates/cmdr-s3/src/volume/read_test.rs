@@ -3,8 +3,7 @@
 //!
 //! The stack: `apps/desktop/test/s3-servers/start.sh`.
 
-use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 
 use cmdr_fs::volume::{ShareLinkExpiry, StreamLength, Volume, VolumeError};
 
@@ -21,18 +20,18 @@ const LARGE_LEN: usize = 65 * 1024 * 1024 + 123;
 /// so ❌ never write to it.
 const LARGE_KEY: &str = "cmdr-seed-large-65mib/blob.bin";
 
-fn at(volume: &S3Volume, key: &str) -> PathBuf {
-    volume.root().as_std_legacy().join(key)
+fn at(volume: &S3Volume, key: &str) -> AppPathBuf {
+    super::test_support::at(volume, key)
 }
 
-async fn read_all(volume: &S3Volume, path: &Path) -> Vec<u8> {
+async fn read_all(volume: &S3Volume, path: &AppPath) -> Vec<u8> {
     let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(path))
+        .open_read_stream(path)
         .await
-        .unwrap_or_else(|e| panic!("opening {}: {e:?} ({FIXTURE})", path.display()));
+        .unwrap_or_else(|e| panic!("opening {}: {e:?} ({FIXTURE})", path.as_str()));
     let mut out = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
-        out.extend_from_slice(&chunk.unwrap_or_else(|e| panic!("a chunk of {}: {e:?}", path.display())));
+        out.extend_from_slice(&chunk.unwrap_or_else(|e| panic!("a chunk of {}: {e:?}", path.as_str())));
     }
     out
 }
@@ -46,10 +45,7 @@ async fn a_whole_object_streams_back_byte_for_byte(service: FixtureService) {
     seed(service, FIXTURE_BUCKET, &[object(&key, &content)]).await;
 
     let path = at(&volume, &key);
-    let stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(&path))
-        .await
-        .expect(FIXTURE);
+    let stream = volume.open_read_stream(&path).await.expect(FIXTURE);
     assert_eq!(
         stream.total_size(),
         StreamLength::Known(content.len() as u64),
@@ -64,7 +60,7 @@ async fn a_whole_object_streams_back_byte_for_byte(service: FixtureService) {
     );
     assert!(
         volume
-            .open_read_stream_with_hint(&AppPath::legacy_unchecked(&path), Some(content.len() as u64))
+            .open_read_stream_with_hint(&path, Some(content.len() as u64))
             .await
             .is_ok(),
         "{}: a size hint changes nothing",
@@ -92,11 +88,7 @@ async fn an_empty_object_reads_as_no_bytes(service: FixtureService) {
     let path = at(&volume, &key);
     assert!(read_all(&volume, &path).await.is_empty(), "{}", service.key);
     assert!(
-        volume
-            .read_range(&AppPath::legacy_unchecked(&path), 0, 10)
-            .await
-            .expect(FIXTURE)
-            .is_empty(),
+        volume.read_range(&path, 0, 10).await.expect(FIXTURE).is_empty(),
         "{}: a window on an empty object is empty",
         service.key
     );
@@ -127,12 +119,7 @@ async fn ranged_reads_answer_exactly_the_window_asked_for(service: FixtureServic
     let window = |offset: u64, want: usize| {
         let volume = &volume;
         let path = &path;
-        async move {
-            volume
-                .read_range(&AppPath::legacy_unchecked(path), offset, want)
-                .await
-                .expect(FIXTURE)
-        }
+        async move { volume.read_range(path, offset, want).await.expect(FIXTURE) }
     };
     assert_eq!(window(0, 32).await, content[..32], "{}: the head", service.key);
     assert_eq!(
@@ -155,10 +142,7 @@ async fn ranged_reads_answer_exactly_the_window_asked_for(service: FixtureServic
     );
     assert!(window(5, 0).await.is_empty(), "{}: a zero-length window", service.key);
 
-    let mut tail = volume
-        .open_read_stream_at_offset(&AppPath::legacy_unchecked(&path), 200_000)
-        .await
-        .expect(FIXTURE);
+    let mut tail = volume.open_read_stream_at_offset(&path, 200_000).await.expect(FIXTURE);
     assert_eq!(
         tail.total_size(),
         StreamLength::Known(len),
@@ -200,10 +184,7 @@ async fn a_large_object_streams_in_small_pieces(service: FixtureService) {
     let volume = connect_fixture(service, Some(FIXTURE_BUCKET)).await;
     let expected = self_describing_bytes(LARGE_LEN, "large");
 
-    let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(&at(&volume, LARGE_KEY)))
-        .await
-        .expect(FIXTURE);
+    let mut stream = volume.open_read_stream(&at(&volume, LARGE_KEY)).await.expect(FIXTURE);
     let mut offset = 0usize;
     let mut chunks = 0usize;
     let mut largest = 0usize;
@@ -249,7 +230,7 @@ async fn a_share_link_downloads_the_object_with_no_keys_at_all(service: FixtureS
     seed(service, FIXTURE_BUCKET, &[object(&key, &content)]).await;
 
     let link = volume
-        .share_link(&AppPath::legacy_unchecked(&at(&volume, &key)), ShareLinkExpiry::OneHour)
+        .share_link(&at(&volume, &key), ShareLinkExpiry::OneHour)
         .await
         .expect(FIXTURE)
         .into_url();
@@ -296,7 +277,7 @@ async fn reads_that_cant_happen_say_why(service: FixtureService) {
     .await;
 
     let missing = at(&volume, &format!("{prefix}missing.txt"));
-    match volume.open_read_stream(&AppPath::legacy_unchecked(&missing)).await {
+    match volume.open_read_stream(&missing).await {
         Err(VolumeError::NotFound(carried)) => assert!(
             carried.contains("missing.txt"),
             "{}: NotFound names the path, got {carried:?}",
@@ -309,10 +290,7 @@ async fn reads_that_cant_happen_say_why(service: FixtureService) {
         ),
     }
     assert!(
-        matches!(
-            volume.read_range(&AppPath::legacy_unchecked(&missing), 0, 10).await,
-            Err(VolumeError::NotFound(_))
-        ),
+        matches!(volume.read_range(&missing, 0, 10).await, Err(VolumeError::NotFound(_))),
         "{}: and so does a window on it",
         service.key
     );
@@ -358,7 +336,7 @@ async fn a_scan_keeps_every_objects_size_and_upload_date(service: FixtureService
 
     let folder = at(&volume, prefix.trim_end_matches('/'));
     let batch = volume
-        .scan_for_copy_batch(std::slice::from_ref(&AppPath::legacy_unchecked(&folder).into_owned()))
+        .scan_for_copy_batch(std::slice::from_ref(&folder))
         .await
         .unwrap_or_else(|e| panic!("{}: scanning: {e:?} ({FIXTURE})", service.key));
 
@@ -398,17 +376,14 @@ async fn a_read_resumes_on_its_named_object_and_refuses_a_replaced_one(service: 
     seed(service, FIXTURE_BUCKET, &[object(&key, &content)]).await;
     let path = at(&volume, &key);
 
-    let first = volume
-        .open_read_stream(&AppPath::legacy_unchecked(&path))
-        .await
-        .expect(FIXTURE);
+    let first = volume.open_read_stream(&path).await.expect(FIXTURE);
     let version = first
         .source_version()
         .unwrap_or_else(|| panic!("{}: a GET names its object's version", service.key));
     drop(first);
 
     let mut rest = volume
-        .resume_read_stream(&AppPath::legacy_unchecked(&path), &version, 150_000)
+        .resume_read_stream(&path, &version, 150_000)
         .await
         .unwrap_or_else(|e| panic!("{}: the same object resumes: {e:?}", service.key));
     let mut read = Vec::new();
@@ -427,10 +402,7 @@ async fn a_read_resumes_on_its_named_object_and_refuses_a_replaced_one(service: 
         &[object(&key, &self_describing_bytes(400_000, "other"))],
     )
     .await;
-    match volume
-        .resume_read_stream(&AppPath::legacy_unchecked(&path), &version, 150_000)
-        .await
-    {
+    match volume.resume_read_stream(&path, &version, 150_000).await {
         Err(VolumeError::SourceChanged(_)) => {}
         Err(other) => panic!("{}: expected SourceChanged, got {other:?}", service.key),
         Ok(_) => panic!("{}: expected SourceChanged, got a stream", service.key),

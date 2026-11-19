@@ -8,10 +8,9 @@
 //! Skips without `CMDR_S3_LIVE=1` (`live_support.rs`); the runner is
 //! `apps/desktop/test/s3-servers/live.sh`.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::future::Future;
 use std::ops::ControlFlow;
-use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::time::Instant;
 
@@ -34,21 +33,15 @@ impl ServerCopyProgress for Silent {
     }
 }
 
-fn at(volume: &S3Volume, key: &str) -> PathBuf {
-    volume.root().as_std_legacy().join(key)
+fn at(volume: &S3Volume, key: &str) -> AppPathBuf {
+    super::test_support::at(volume, key)
 }
 
-async fn write(volume: &S3Volume, path: &Path, mode: WriteMode, bytes: Vec<u8>) -> Result<u64, VolumeError> {
+async fn write(volume: &S3Volume, path: &AppPath, mode: WriteMode, bytes: Vec<u8>) -> Result<u64, VolumeError> {
     let source = BytesSource::new(bytes).modified_at(distant_mtime());
     let length = cmdr_fs::volume::VolumeReadStream::total_size(&source);
     volume
-        .write_from_stream(
-            &AppPath::legacy_unchecked(path),
-            mode,
-            length,
-            Box::new(source),
-            &|_| ControlFlow::Continue(()),
-        )
+        .write_from_stream(path, mode, length, Box::new(source), &|_| ControlFlow::Continue(()))
         .await
         .map(|written| written.bytes)
 }
@@ -57,8 +50,8 @@ async fn copy(volume: &S3Volume, from: &str, to: &str) -> Result<u64, VolumeErro
     volume
         .copy_on_server(
             volume,
-            &AppPath::legacy_unchecked(&at(volume, from)),
-            &AppPath::legacy_unchecked(&at(volume, to)),
+            &at(volume, from),
+            &at(volume, to),
             WriteMode::CreateNew,
             &Silent,
         )
@@ -119,10 +112,7 @@ async fn live_volume_flows_end_to_end() {
             format!("{replaced:?}, reads back {:?}", String::from_utf8_lossy(&back)),
         );
         assert_eq!(back, b"replaced!", "[{}]", live.name);
-        let stat = volume
-            .get_metadata(&AppPath::legacy_unchecked(&at(&volume, &small)))
-            .await
-            .expect("a stat");
+        let stat = volume.get_metadata(&at(&volume, &small)).await.expect("a stat");
         let kept = stat.modified_at == Some(distant_mtime().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
         report(
             &live,
@@ -186,8 +176,8 @@ async fn live_volume_flows_end_to_end() {
         // copy each file on the server, then batch-delete the sources.
         let renamed = volume
             .rename(
-                &AppPath::legacy_unchecked(&at(&volume, &small)),
-                &AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}renamed.txt"))),
+                &at(&volume, &small),
+                &at(&volume, &format!("{prefix}renamed.txt")),
                 false,
             )
             .await;
@@ -210,26 +200,13 @@ async fn live_volume_flows_end_to_end() {
                 .expect("a folder file copies");
             sources.push(at(&volume, &from));
         }
-        let deleted = volume
-            .delete_files(
-                &sources
-                    .iter()
-                    .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                    .collect::<Vec<_>>(),
-            )
-            .await;
+        let deleted = volume.delete_files(&sources).await;
         let moved = volume
-            .list_directory(
-                &AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}moved"))),
-                None,
-            )
+            .list_directory(&at(&volume, &format!("{prefix}moved")), None)
             .await
             .map(|entries| entries.len());
         let left = volume
-            .list_directory(
-                &AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}folder"))),
-                None,
-            )
+            .list_directory(&at(&volume, &format!("{prefix}folder")), None)
             .await
             .map(|entries| entries.len());
         report(
@@ -244,7 +221,7 @@ async fn live_volume_flows_end_to_end() {
         // A share link fetched with no credentials, like a browser.
         let link = volume
             .share_link(
-                &AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}renamed.txt"))),
+                &at(&volume, &format!("{prefix}renamed.txt")),
                 ShareLinkExpiry::SevenDays,
             )
             .await
@@ -266,18 +243,15 @@ async fn live_volume_flows_end_to_end() {
 
         // A folder made and deleted, and the listing of what's left.
         let folder = at(&volume, &format!("{prefix}empty"));
-        let made = volume.create_directory(&AppPath::legacy_unchecked(&folder)).await;
-        let removed = volume.delete(&AppPath::legacy_unchecked(&folder)).await;
+        let made = volume.create_directory(&folder).await;
+        let removed = volume.delete(&folder).await;
         report(
             &live,
             "make and delete an empty folder",
             format!("{made:?}, {removed:?}"),
         );
         let listed = volume
-            .list_directory(
-                &AppPath::legacy_unchecked(&at(&volume, prefix.trim_end_matches('/'))),
-                None,
-            )
+            .list_directory(&at(&volume, prefix.trim_end_matches('/')), None)
             .await;
         report(
             &live,
@@ -313,9 +287,7 @@ async fn live_create_new_metadata_reads_back_under_the_names_cmdr_reads() {
             .map(http::HeaderName::as_str)
             .filter(|name| name.contains("-meta-"))
             .collect();
-        let stat = volume
-            .get_metadata(&AppPath::legacy_unchecked(&at(&volume, &key)))
-            .await;
+        let stat = volume.get_metadata(&at(&volume, &key)).await;
         let distant = distant_mtime()
             .duration_since(std::time::UNIX_EPOCH)
             .expect("after the epoch")
@@ -400,11 +372,7 @@ async fn live_encoded_objects_read_back_verbatim() {
                     back.len()
                 ),
             );
-            let size = volume
-                .get_metadata(&AppPath::legacy_unchecked(&at(&volume, &key)))
-                .await
-                .ok()
-                .and_then(|m| m.size);
+            let size = volume.get_metadata(&at(&volume, &key)).await.ok().and_then(|m| m.size);
             if !verbatim || size != Some(stored.len() as u64) {
                 misses.push(format!(
                     "[{}] {encoding}: {} B back, stat says {size:?}, for {} B stored",
@@ -447,7 +415,7 @@ async fn live_an_overwrite_off_the_allowlist_goes_in_one_part() {
         let length = cmdr_fs::volume::VolumeReadStream::total_size(&source);
         let cancelled = volume
             .write_from_stream(
-                &AppPath::legacy_unchecked(&path),
+                &path,
                 WriteMode::CreateOrReplace,
                 length,
                 Box::new(source),

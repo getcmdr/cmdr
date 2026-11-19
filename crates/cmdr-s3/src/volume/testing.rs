@@ -347,14 +347,14 @@ impl VolumeReadStream for BytesSource {
 }
 
 /// Everything at `path`, read back through the volume.
-pub async fn read_back(volume: &S3Volume, path: &Path) -> Vec<u8> {
+pub async fn read_back(volume: &S3Volume, path: &AppPath) -> Vec<u8> {
     let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(path))
+        .open_read_stream(path)
         .await
-        .unwrap_or_else(|e| panic!("reading {} back: {e:?}", path.display()));
+        .unwrap_or_else(|e| panic!("reading {} back: {e:?}", path.as_str()));
     let mut bytes = Vec::new();
     while let Some(piece) = stream.next_chunk().await {
-        bytes.extend(piece.unwrap_or_else(|e| panic!("reading {} back: {e:?}", path.display())));
+        bytes.extend(piece.unwrap_or_else(|e| panic!("reading {} back: {e:?}", path.as_str())));
     }
     bytes
 }

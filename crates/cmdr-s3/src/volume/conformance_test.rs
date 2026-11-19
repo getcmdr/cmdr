@@ -8,7 +8,20 @@
 use cmdr_fs::volume::Volume;
 use cmdr_fs::volume::conformance;
 
+use super::test_support::at;
 use super::testing::*;
+use cmdr_fs::app_path::AppPath;
+use std::path::PathBuf;
+
+/// `rel` under the volume's root, as the `std::path` value `conformance`'s assertions still
+/// take: the file's one bridge, which goes once `conformance` takes app paths.
+fn conformance_at(volume: &dyn Volume, rel: &str) -> PathBuf {
+    conformance_path(&at(volume, rel))
+}
+
+fn conformance_path(path: &AppPath) -> PathBuf {
+    path.as_std_legacy().into_owned()
+}
 
 /// Seeds `files` under `prefix` in the fixture bucket.
 async fn seeded(service: FixtureService, prefix: &str, files: &[(&str, &[u8])]) {
@@ -24,7 +37,7 @@ async fn seeded(service: FixtureService, prefix: &str, files: &[(&str, &[u8])]) 
 async fn a_place_keeps_the_write_promises(service: FixtureService) {
     let volume = connect_fixture(service, Some(FIXTURE_BUCKET)).await;
     let prefix = scratch_prefix("conformance-writes");
-    let at = |name: &str| volume.root().as_std_legacy().join(format!("{prefix}{name}"));
+    let at = |name: &str| conformance_at(&volume, &format!("{prefix}{name}"));
     seeded(
         service,
         &prefix,
@@ -78,18 +91,15 @@ async fn a_place_keeps_the_read_promises(service: FixtureService) {
 
     conformance::assert_export_matches_the_bytes_offered(
         &volume,
-        &volume.root().as_std_legacy().join(format!("{prefix}held.txt")),
+        &conformance_at(&volume, &format!("{prefix}held.txt")),
         content,
     )
     .await;
-    conformance::assert_not_found_carries_the_path(
-        &volume,
-        &volume.root().as_std_legacy().join(format!("{prefix}missing.txt")),
-    )
-    .await;
+    conformance::assert_not_found_carries_the_path(&volume, &conformance_at(&volume, &format!("{prefix}missing.txt")))
+        .await;
     // A folder holding the object: its listing and the object's HEAD may
     // carry a creation date (`supported_dates` claims it), never an added one.
-    let folder = volume.root().as_std_legacy().join(prefix.trim_end_matches('/'));
+    let folder = conformance_at(&volume, prefix.trim_end_matches('/'));
     conformance::assert_listing_dates_are_claimed(&volume, &folder).await;
 }
 
@@ -103,7 +113,7 @@ async fn a_copy_scan_stops_when_told_and_asks_inside_the_walk(service: FixtureSe
         .collect();
     let refs: Vec<(&str, &[u8])> = files.iter().map(|(name, bytes)| (name.as_str(), *bytes)).collect();
     seeded(service, &prefix, &refs).await;
-    let tree = volume.root().as_std_legacy().join(format!("{prefix}tree"));
+    let tree = conformance_at(&volume, &format!("{prefix}tree"));
 
     conformance::assert_batch_scan_stops_when_told(&volume, &tree).await;
     // Five files and three folders under the top.
