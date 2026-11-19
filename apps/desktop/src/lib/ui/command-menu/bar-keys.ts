@@ -6,10 +6,13 @@
  * through the commands. The viewer and every window that used to wear the main bar (Settings, the
  * queue, Keyboard shortcuts, Debug) have no such dispatcher, so they ask this: the row whose shown
  * key (`ariaKeyshortcuts`) is the keypress, and the caller picks it through `pick_menu_bar_item`,
- * the handler a native accelerator reached. So a shown key is a key that fires, by construction.
- * `DETAILS.md` § Command menus has the rules; `bar-keys.test.ts` walks every row the backend shows.
+ * the handler a native accelerator reached. `DETAILS.md` § Command menus has the rules;
+ * `bar-keys.test.ts` walks every row the backend shows.
  *
  * What it leaves alone, as a native bar did:
+ * - A row whose key carries neither Ctrl nor Alt (Tab, F5, `*`, `+`): a native bar only ever
+ *   DISPLAYED those (`menu/CLAUDE.md`), so they stay the page's own keys. Regression anchor (review
+ *   of #1271): firing Switch pane's Tab in Settings swallowed every Tab, so focus couldn't move.
  * - A key a page handler already took (`defaultPrevented`): the page's own keys win.
  * - The browser's own edit keys (cut, copy, paste, select all, undo, redo): a field, the page's
  *   selection, or the page's own handler (the queue's Select all, the viewer's Copy) owns them.
@@ -82,7 +85,13 @@ function leftToThePage(combo: string, inField: boolean, platform: Platform): boo
   )
 }
 
-/** Every pickable row with a key, submenus' included, as `[combo, row id]`. */
+/** Whether `aria` holds Ctrl or Alt: the only keys a native bar ever registered. */
+function isChord(aria: string): boolean {
+  const modifiers = aria.split('+').slice(0, -1)
+  return modifiers.includes('Control') || modifiers.includes('Alt')
+}
+
+/** Every pickable chord row, submenus' included, as `[combo, row id]`. */
 function keyedRows(rows: readonly Row[], into: Map<string, string>): void {
   for (const row of rows) {
     if (row.kind === 'submenu') {
@@ -91,6 +100,7 @@ function keyedRows(rows: readonly Row[], into: Map<string, string>): void {
     }
     if (row.kind !== 'item' && row.kind !== 'check') continue
     if (!row.enabled || row.ariaKeyshortcuts === null) continue
+    if (!isChord(row.ariaKeyshortcuts)) continue
     const combo = comboOfAriaShortcut(row.ariaKeyshortcuts)
     if (combo !== null && !into.has(combo)) into.set(combo, row.id)
   }

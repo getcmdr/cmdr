@@ -395,7 +395,7 @@ row is decided here or in the frontend.
   the viewer (`apps/desktop/src/routes/viewer/ViewerMenuBar.svelte`, from its own state), wherever `pageDrawsMenuBar()` says so
   (`apps/desktop/src/lib/platform/conventions.ts`: every menu model but macOS's, GNOME's `primaryMenu` included until
   its main-menu button lands in step 8). Settings, the queue, the Keyboard shortcuts window, and Debug wear no bar, yet
-  keep every key the main bar shows: each follows the bar and picks a row by its key
+  keep every Ctrl or Alt chord the main bar shows (never a bare key like Tab or F5): each follows the bar and picks a row by its key
   (`apps/desktop/src/lib/ui/DETAILS.md` § Command menus), so `CLOSE_TAB_ID`'s "close the focused non-main window" lane
   and the other app-wide rows still run there.
   On Windows each window's `SC_KEYMENU` guard keeps a lone Alt and F10 the page's

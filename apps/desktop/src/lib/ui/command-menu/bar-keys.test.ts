@@ -1,6 +1,7 @@
 /**
- * Every key a page-drawn bar shows FIRES (D5: off macOS nothing registers a bar key, so a shown
- * key that no page code runs would be a lie). The rows come from the backend's own bars, written by
+ * Every chord a page-drawn bar shows FIRES (D5: off macOS nothing registers a bar key, so a shown
+ * chord that no page code runs would be a lie), and every bare key (Tab, F5, `*`) stays the page's,
+ * as a native bar only displayed those. The rows come from the backend's own bars, written by
  * `crates/cmdr-menu/src/page/bar_keys_test.rs` into `bar_keys.tsv`, so a new row or a moved key
  * reaches this test without anyone listing it here.
  *
@@ -115,6 +116,12 @@ function barOf(keys: ShownKey[]): BarMenuView[] {
 
 const ALL = shownKeys()
 
+/** A key with neither Ctrl nor Alt: a native bar displayed it and never registered it. */
+function isBareKey(aria: string): boolean {
+  const modifiers = aria.split('+').slice(0, -1)
+  return !modifiers.includes('Control') && !modifiers.includes('Alt')
+}
+
 describe.each(['windows', 'linux'] as const)('every key the %s bars show', (platform) => {
   const undos: (() => void)[] = []
   beforeEach(() => {
@@ -140,7 +147,7 @@ describe.each(['windows', 'linux'] as const)('every key the %s bars show', (plat
       const dead: string[] = []
       for (const key of rows) {
         const picked = barRowForKey(keydownFor(key.aria), bar)
-        if (key.id in LEFT_TO_THE_PAGE) {
+        if (key.id in LEFT_TO_THE_PAGE || isBareKey(key.aria)) {
           if (picked !== null) dead.push(`${key.id} (${key.aria}) is the page's, yet the bar took it`)
         } else if (picked !== key.id) {
           dead.push(`${key.id} (${key.aria}) picked ${picked ?? 'nothing'}`)
@@ -199,6 +206,38 @@ describe('barRowForKey', () => {
     field.remove()
     expect(typedPick).toBeNull()
     expect(chordPick).toBe('close_tab')
+  })
+
+  // Regression anchor (review of #1271): Switch pane's Tab fired in Settings, so focus never moved.
+  it.each([
+    ['Tab', new KeyboardEvent('keydown', { key: 'Tab', code: 'Tab', bubbles: true, cancelable: true })],
+    [
+      'Shift+Tab',
+      new KeyboardEvent('keydown', { key: 'Tab', code: 'Tab', shiftKey: true, bubbles: true, cancelable: true }),
+    ],
+    ['F5', keydownFor('F5')],
+    ['*', keydownFor('*')],
+    ['Enter', new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true })],
+    ['Space', new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true, cancelable: true })],
+    ['Escape', new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true, cancelable: true })],
+    [
+      'ArrowDown',
+      new KeyboardEvent('keydown', { key: 'ArrowDown', code: 'ArrowDown', bubbles: true, cancelable: true }),
+    ],
+    ['a', new KeyboardEvent('keydown', { key: 'a', code: 'KeyA', bubbles: true, cancelable: true })],
+  ])('leaves a bare key to the page outside a field, though a row shows it (%s)', (_name, event) => {
+    const shown = barOf([
+      { platform: 'linux', window: 'main', id: 'switch_pane', aria: 'Tab', command: '' },
+      { platform: 'linux', window: 'main', id: 'file_copy', aria: 'F5', command: '' },
+      { platform: 'linux', window: 'main', id: 'invert_selection', aria: '*', command: '' },
+      { platform: 'linux', window: 'main', id: 'enter_row', aria: 'Enter', command: '' },
+      { platform: 'linux', window: 'main', id: 'space_row', aria: 'Space', command: '' },
+      { platform: 'linux', window: 'main', id: 'escape_row', aria: 'Escape', command: '' },
+      { platform: 'linux', window: 'main', id: 'down_row', aria: 'ArrowDown', command: '' },
+      { platform: 'linux', window: 'main', id: 'letter_row', aria: 'A', command: '' },
+    ])
+    document.body.dispatchEvent(event)
+    expect(barRowForKey(event, shown)).toBeNull()
   })
 
   it('skips a greyed row', () => {

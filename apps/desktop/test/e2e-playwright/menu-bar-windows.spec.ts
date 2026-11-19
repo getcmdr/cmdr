@@ -2,9 +2,11 @@
  * Linux: the bar's keys and rows in the windows beside the main one (D5, task 63 of
  * `docs/specs/windows-port-plan.md`), with real X events only (`helpers/x11-keys.ts`).
  *
- * - Settings, the queue, and Keyboard shortcuts draw no bar off macOS, yet keep every key the
- *   main bar showed (`#lib/ui/command-menu/window-bar-keys.ts`): a real Ctrl+W closes each. Debug
- *   is a dev-build window, which the E2E build doesn't open; it runs the same root-layout code.
+ * - Settings, the queue, and Keyboard shortcuts draw no bar off macOS, yet keep every chord the
+ *   main bar showed (`#lib/ui/command-menu/window-bar-keys.ts`): a real Ctrl+W closes each, and a
+ *   real Tab and Shift+Tab still walk focus (the bar shows Tab for Switch pane, but only displays
+ *   it). Debug is a dev-build window, which the E2E build doesn't open; it runs the same
+ *   root-layout code.
  * - The viewer draws its own bar: Ctrl+W (File > Close) closes it, Edit > Cut and Paste stay live
  *   while the menu is open over a focused search box, and View > Word wrap's check follows a pick.
  * - The main bar's View > Show hidden files check follows a pick.
@@ -196,6 +198,43 @@ test.describe('The bar in the other windows (Linux)', () => {
   test.afterEach(() => {
     focusMainWindow()
   })
+
+  // Regression anchor (review of #1271): the window fired Switch pane's Tab, so focus never moved.
+  for (const [name, open] of [
+    ['Settings', openSettingsWindowViaProd],
+    ['the operation queue', openQueueWindow],
+    ['Keyboard shortcuts', openShortcutsWindow],
+  ] as const) {
+    test(`a real Tab and Shift+Tab walk focus in ${name}`, async ({ tauriPage }) => {
+      await ensureAppReady(tauriPage)
+      const main = tauriPage as TauriPage
+      const child = await openChild(main, () => open(main))
+      try {
+        await focusChild(child.page, child.windowId)
+        // Start on the first focusable that isn't a text field (a field takes Tab as its own anyway),
+        // or on the page itself where nothing is (an empty queue).
+        await child.page.evaluate(`(function(){
+            var all = document.querySelectorAll('button:not([disabled]), [tabindex="0"], a[href]');
+            for (var i = 0; i < all.length; i++) {
+              var el = all[i];
+              if (el.offsetParent === null) continue;
+              el.focus();
+              if (document.activeElement === el) break;
+            }
+            window.__cmdrFocusMark = document.activeElement;
+        })()`)
+        const moved = () => child.page.evaluate<boolean>('document.activeElement !== window.__cmdrFocusMark')
+        const mark = () => child.page.evaluate('window.__cmdrFocusMark = document.activeElement')
+        pressRealKey('Tab')
+        await expect.poll(moved, { timeout: waitBudget(3000) }).toBe(true)
+        await mark()
+        pressRealKey('shift+Tab')
+        await expect.poll(moved, { timeout: waitBudget(3000) }).toBe(true)
+      } finally {
+        if ((await windowLabels(main)).includes(child.label)) await closeScopedWindow(main, child.page, child.label)
+      }
+    })
+  }
 
   // Regression anchor (review of #1265): with no native bar, Ctrl+W stopped closing these windows.
   for (const [name, open] of [
