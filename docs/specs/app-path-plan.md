@@ -1254,8 +1254,8 @@ included; the hidden couplings it found are why waves B and C differ from round 
   `volume::remote_paths` (7), `volume::scan_walk` (9), `volume::patching` (3), `in_memory` canonicalize (1),
   `child_name` (1), `ids` (1), `twin_path` (2). macOS/Linux: pins unchanged.
 - **DONE**: `rg '#1225' crates/cmdr-fs` is empty; `cmdr-fs`'s bridge count is zero.
-- **Partly done** (2026-11-19, branch `worktrees-agent-a43a5ade9424ef97a`): every `#1225` ignore is gone (24 cells run
-  on every OS), the shared arithmetic is typed, and the typed twins sit beside the `std::path` forms the backends still
+- **Partly done** (2026-11-19, branch `worktree-agent-a43a5ade9424ef97a`): every `#1225` ignore is gone (24 cells run on
+  every OS), the shared arithmetic is typed, and the typed twins sit beside the `std::path` forms the backends still
   call (`crates/cmdr-fs/DETAILS.md` § "App paths" lists them). What converted: `RemoteRoot` and `normalize_remote_path`
   (POSIX bytes split on `/` alone, plus `app`/`to_remote`/`to_app`, the last a typed `RemoteAppRefusal` for a server
   name that needs an escape), `anchor_at_root` beside `root_anchored`, the scan walk and the listing patcher
