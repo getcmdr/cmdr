@@ -16,6 +16,7 @@
 //! oracle (`transfer::volume::assert_operation_was_safe`), so "no byte the user
 //! didn't approve is gone" is stated in one place for every backend.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -47,7 +48,7 @@ pub(super) async fn seed(volume: &dyn Volume, root: &Path, files: &[(&str, &[u8]
     // An empty root is the volume's own root, which is always there.
     if root != Path::new("") {
         volume
-            .create_directory_all(root)
+            .create_directory_all(&AppPath::legacy_unchecked(root))
             .await
             .unwrap_or_else(|e| panic!("making {}: {e:?}", root.display()));
     }
@@ -55,12 +56,12 @@ pub(super) async fn seed(volume: &dyn Volume, root: &Path, files: &[(&str, &[u8]
         let path = root.join(relative);
         if let Some(parent) = path.parent().filter(|p| *p != Path::new("") && *p != root) {
             volume
-                .create_directory_all(parent)
+                .create_directory_all(&AppPath::legacy_unchecked(parent))
                 .await
                 .unwrap_or_else(|e| panic!("making {}: {e:?}", parent.display()));
         }
         volume
-            .create_file(&path, bytes)
+            .create_file(&AppPath::legacy_unchecked(&path), bytes)
             .await
             .unwrap_or_else(|e| panic!("seeding {}: {e:?}", path.display()));
     }
@@ -68,7 +69,7 @@ pub(super) async fn seed(volume: &dyn Volume, root: &Path, files: &[(&str, &[u8]
 
 /// The bytes at `path`, or `None` when nothing is there.
 pub(super) async fn try_read(volume: &dyn Volume, path: &Path) -> Option<Vec<u8>> {
-    if !volume.exists(path).await {
+    if !volume.exists(&AppPath::legacy_unchecked(path)).await {
         return None;
     }
     Some(read_all(volume, path).await)
@@ -77,7 +78,7 @@ pub(super) async fn try_read(volume: &dyn Volume, path: &Path) -> Option<Vec<u8>
 /// The names `dir` holds, sorted, byte for byte.
 pub(super) async fn names_in(volume: &dyn Volume, dir: &Path) -> Vec<String> {
     let mut names: Vec<String> = volume
-        .list_directory(dir, None)
+        .list_directory(&AppPath::legacy_unchecked(dir), None)
         .await
         .unwrap_or_else(|e| panic!("listing {}: {e:?}", dir.display()))
         .into_iter()
@@ -355,11 +356,14 @@ pub(super) async fn a_rename_policy_lands_the_clash_beside_the_users_file(remote
 pub(super) async fn overwrite_smaller_replaces_only_the_smaller_destination(remote: Arc<dyn Volume>, dir: PathBuf) {
     // A second clash where the user's file is the BIGGER one.
     remote
-        .create_directory_all(&dir.join("album"))
+        .create_directory_all(&AppPath::legacy_unchecked(&dir.join("album")))
         .await
         .expect("making the album on the server");
     remote
-        .create_file(&dir.join("album/big.txt"), b"DEST-big-and-longer-than-the-source")
+        .create_file(
+            &AppPath::legacy_unchecked(&dir.join("album/big.txt")),
+            b"DEST-big-and-longer-than-the-source",
+        )
         .await
         .expect("seeding the larger destination file");
 
@@ -417,10 +421,17 @@ pub(super) async fn a_move_merge_onto_the_server_spares_what_it_skipped(remote: 
         "❗ a skipped source file survives the move's sweep: it's the only copy"
     );
     assert!(
-        !local.exists(Path::new("album/fresh.txt")).await,
+        !local
+            .exists(&AppPath::legacy_unchecked(Path::new("album/fresh.txt")))
+            .await,
         "a delivered source file is swept"
     );
-    assert!(!local.exists(Path::new("album/sub/fresh2.txt")).await, "at every depth");
+    assert!(
+        !local
+            .exists(&AppPath::legacy_unchecked(Path::new("album/sub/fresh2.txt")))
+            .await,
+        "at every depth"
+    );
     assert_eq!(
         try_read(remote.as_ref(), &dir.join("album/clash.txt")).await.as_deref(),
         Some(&b"DEST-clash"[..]),
@@ -463,7 +474,7 @@ pub(super) async fn a_folder_moved_onto_the_server_leaves_no_source(remote: Arc<
         "the moved tree must match the original, name for name and byte for byte"
     );
     assert!(
-        !local.exists(Path::new("tree")).await,
+        !local.exists(&AppPath::legacy_unchecked(Path::new("tree"))).await,
         "a completed move leaves no source folder behind"
     );
     assert_no_staging_litter(remote.as_ref(), &dir.join("tree"), "a move onto the server").await;
@@ -495,7 +506,7 @@ pub(super) async fn a_folder_moved_off_the_server_leaves_no_source(remote: Arc<d
         "the moved tree must match the original, name for name and byte for byte"
     );
     assert!(
-        !remote.exists(&dir.join("tree")).await,
+        !remote.exists(&AppPath::legacy_unchecked(&dir.join("tree"))).await,
         "a completed move takes the folder off the server"
     );
 
@@ -567,7 +578,10 @@ pub(super) async fn a_same_server_move_without_a_clash_moves_the_folder_whole(re
     seed(remote.as_ref(), &src_album, &table).await;
     let expected = tree_fingerprint(remote.as_ref(), &src_album).await;
     let dst = dir.join("dst");
-    remote.create_directory(&dst).await.expect("making the destination");
+    remote
+        .create_directory(&AppPath::legacy_unchecked(&dst))
+        .await
+        .expect("making the destination");
 
     transfer(
         "same-server-move",
@@ -585,7 +599,10 @@ pub(super) async fn a_same_server_move_without_a_clash_moves_the_folder_whole(re
         expected,
         "the folder arrives whole"
     );
-    assert!(!remote.exists(&src_album).await, "a fully moved source folder is gone");
+    assert!(
+        !remote.exists(&AppPath::legacy_unchecked(&src_album)).await,
+        "a fully moved source folder is gone"
+    );
 
     clean_deep(remote.as_ref(), &dir).await;
 }
@@ -599,12 +616,15 @@ pub(super) async fn a_same_server_copy_duplicates_a_tree(remote: Arc<dyn Volume>
     let big = self_describing_bytes(300_000, "same-server-copy");
     seed(remote.as_ref(), &src.join("tree"), &MOVED_TREE).await;
     remote
-        .create_file(&src.join("tree/big.bin"), &big)
+        .create_file(&AppPath::legacy_unchecked(&src.join("tree/big.bin")), &big)
         .await
         .expect("seeding the big file");
     let expected = tree_fingerprint(remote.as_ref(), &src.join("tree")).await;
     let dst = dir.join("dst");
-    remote.create_directory(&dst).await.expect("making the destination");
+    remote
+        .create_directory(&AppPath::legacy_unchecked(&dst))
+        .await
+        .expect("making the destination");
 
     transfer(
         "same-server-copy",
@@ -657,7 +677,10 @@ pub(super) async fn a_copy_into_a_missing_nested_destination_makes_every_level(r
 
     for level in [dir.join("incoming"), dir.join("incoming/2026"), dest.clone()] {
         assert!(
-            remote.is_directory(&level).await.unwrap_or(false),
+            remote
+                .is_directory(&AppPath::legacy_unchecked(&level))
+                .await
+                .unwrap_or(false),
             "{} must be a folder on the server",
             level.display()
         );
@@ -680,7 +703,7 @@ pub(super) async fn a_multi_megabyte_file_round_trips_byte_exact(remote: Arc<dyn
     const LEN: usize = 6 * 1024 * 1024 + 13;
     let content = self_describing_bytes(LEN, "multi-megabyte");
     let (_out_dir, out) = local_volume("multi-megabyte-out");
-    out.create_file(Path::new("big.bin"), &content)
+    out.create_file(&AppPath::legacy_unchecked(Path::new("big.bin")), &content)
         .await
         .expect("seeding the local file");
 
@@ -730,7 +753,10 @@ pub(super) async fn many_files_at_full_concurrency_land_intact(remote: Arc<dyn V
         // runs at once.
         let len = (i * 7_919) % 180_000;
         local
-            .create_file(Path::new(&name), &self_describing_bytes(len, &name))
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&name)),
+                &self_describing_bytes(len, &name),
+            )
             .await
             .expect("seeding a local file");
         names.push(PathBuf::from(name));

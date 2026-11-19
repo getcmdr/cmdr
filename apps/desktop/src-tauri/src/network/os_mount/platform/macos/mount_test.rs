@@ -928,7 +928,7 @@ async fn smb_integration_a_saved_share_connects_on_its_stored_password_and_asks_
         && let Some(volume) = crate::file_system::volume::manager::get_volume_manager().get(volume_id)
     {
         let _ = std::process::Command::new("diskutil")
-            .args(["unmount", "force", &volume.root().to_string_lossy()])
+            .args(["unmount", "force", &volume.root().as_std_legacy().to_string_lossy()])
             .output();
     }
     assert!(

@@ -1,6 +1,7 @@
 //! `replace_root_in_place`'s cells: a saved place whose root was edited while
 //! it was connected.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -33,7 +34,7 @@ fn serving(volume: &Arc<RetiringVolume>) -> Arc<dyn Volume> {
 /// state, at another root.
 fn successor(volume: &RetiringVolume, root: &str) -> Arc<dyn Volume> {
     volume
-        .rerooted(Path::new(root))
+        .rerooted(&AppPath::legacy_unchecked(Path::new(root)))
         .expect("a RetiringVolume always re-roots")
 }
 
@@ -49,11 +50,14 @@ fn a_replaced_root_is_the_active_one() {
         panic!("the id is registered, so the replace must happen");
     };
     assert_eq!(
-        previous.root(),
+        &*previous.root().as_std_legacy(),
         Path::new(NARROW),
         "it hands back the instance it replaced"
     );
-    assert_eq!(manager.get(ID).expect("still registered").root(), Path::new(WIDE));
+    assert_eq!(
+        &*manager.get(ID).expect("still registered").root().as_std_legacy(),
+        Path::new(WIDE)
+    );
     assert_eq!(manager.known_roots(ID), vec![PathBuf::from(WIDE)]);
 }
 
@@ -110,7 +114,7 @@ fn a_replace_announces_the_volume_like_register_does() {
         let root = asked
             .upgrade()
             .and_then(|registry| registry.get(id))
-            .map(|volume| volume.root().to_path_buf());
+            .map(|volume| volume.root().as_std_legacy().to_path_buf());
         recorder.lock_ignore_poison().push((id.to_string(), root));
     });
 

@@ -512,6 +512,7 @@ mod write_ops_restic_test;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use cmdr_fs::app_path;
 
     #[test]
     fn reject_if_routed_over_a_parent_flags_a_path_inside_a_zip() {
@@ -602,7 +603,7 @@ mod tests {
             .await
             .expect("an archive source is never refused")
             .expect("archive source volume");
-        assert_eq!(source.root(), zip);
+        assert_eq!(*source.root().as_std_legacy(), zip);
 
         // A plain local source stays `None` — the `std::fs` fast path.
         let plain = dir.path().join("plain.txt");
@@ -617,11 +618,10 @@ mod tests {
     async fn register_slowly_creating_volume(volume_id: &str, delay: Duration) {
         use crate::file_system::volume::InMemoryVolume;
         use crate::test_support::SlowVolume;
-        use std::path::Path;
 
         let inner = InMemoryVolume::new("Slow NAS");
-        inner.create_directory(Path::new("/docs")).await.unwrap();
-        inner.create_directory(Path::new("/docs/taken")).await.unwrap();
+        inner.create_directory(app_path!("/docs")).await.unwrap();
+        inner.create_directory(app_path!("/docs/taken")).await.unwrap();
         get_volume_manager().register_if_absent(volume_id, Arc::new(SlowVolume::creating_slowly(inner, delay)));
     }
 
@@ -666,7 +666,7 @@ mod tests {
         assert_eq!(settled.pending_id, pending_id);
         assert!(matches!(settled.outcome, MutationSettledOutcome::Landed), "{settled:?}");
         let volume = get_volume_manager().get(volume_id).expect("registered");
-        assert!(volume.exists(std::path::Path::new("/docs/photos")).await);
+        assert!(volume.exists(app_path!("/docs/photos")).await);
     }
 
     /// The other end a slow create can reach: the volume refuses once it answers,

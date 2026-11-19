@@ -1,4 +1,5 @@
 use super::*;
+use cmdr_fs::app_path::AppPath;
 
 fn store_with(paths: &[(&str, &str)]) -> FavoritesStore {
     FavoritesStore {
@@ -732,7 +733,7 @@ async fn a_stored_favorite_with_a_trailing_slash_lists_like_the_plain_path() {
         let volume = &volume;
         async move {
             let mut rows: Vec<String> = volume
-                .list_directory(Path::new(&path), None)
+                .list_directory(&AppPath::legacy_unchecked(Path::new(&path)), None)
                 .await
                 .expect("lists")
                 .into_iter()

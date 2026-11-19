@@ -12,6 +12,7 @@
 // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 #![cfg(test)]
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 
 use crate::file_system::volume::{StreamLength, Volume, WriteMode};
@@ -40,7 +41,7 @@ async fn a_volume_listing_of_dot_git_carries_no_virtual_category() {
     let volume = LocalVolume::local_folder("Test", &dir, crate::volume_host::host());
 
     let names: Vec<String> = volume
-        .list_directory(Path::new(".git"), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new(".git")), None)
         .await
         .expect("listing .git succeeds")
         .into_iter()
@@ -67,7 +68,10 @@ async fn an_overlay_decorated_listing_of_dot_git_shows_the_six_rows() {
         std::sync::Arc::new(LocalVolume::local_folder("Test", &dir, crate::volume_host::host()));
     let dot_git = dir.join(".git");
 
-    let mut entries = volume.list_directory(&dot_git, None).await.expect("listing .git");
+    let mut entries = volume
+        .list_directory(&AppPath::legacy_unchecked(&dot_git), None)
+        .await
+        .expect("listing .git");
     let added =
         cmdr_listing::testing::decorate(crate::listing_host::listings(), "root", &volume, &dot_git, &mut entries).await;
     assert_eq!(added, 6, "one row per category");
@@ -93,7 +97,10 @@ async fn the_toggle_off_contributes_nothing_to_a_dot_git_listing() {
     let dot_git = dir.join(".git");
 
     super::wiring::set_virtual_portal_enabled(false);
-    let mut entries = volume.list_directory(&dot_git, None).await.expect("listing .git");
+    let mut entries = volume
+        .list_directory(&AppPath::legacy_unchecked(&dot_git), None)
+        .await
+        .expect("listing .git");
     let added =
         cmdr_listing::testing::decorate(crate::listing_host::listings(), "root", &volume, &dot_git, &mut entries).await;
     super::wiring::set_virtual_portal_enabled(true);
@@ -118,7 +125,10 @@ async fn the_volume_delete_walker_never_meets_a_virtual_folder() {
     let volume = LocalVolume::local_folder("Test", &dir, crate::volume_host::host());
 
     // What `delete_volume_files_with_progress_inner` does per directory.
-    let children = volume.list_directory(Path::new(".git"), None).await.unwrap();
+    let children = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new(".git")), None)
+        .await
+        .unwrap();
     let virtual_children: Vec<&str> = children
         .iter()
         .filter(|e| CATEGORIES.contains(&e.name.as_str()))
@@ -131,18 +141,28 @@ async fn the_volume_delete_walker_never_meets_a_virtual_folder() {
     let mut stack = vec![PathBuf::from(".git")];
     let mut directories = Vec::new();
     while let Some(next) = stack.pop() {
-        for child in volume.list_directory(&next, None).await.expect("listing a real dir") {
+        for child in volume
+            .list_directory(&AppPath::legacy_unchecked(&next), None)
+            .await
+            .expect("listing a real dir")
+        {
             let relative = next.join(&child.name);
             if child.is_directory {
                 stack.push(relative);
             } else {
-                volume.delete(&relative).await.expect("a real file under .git deletes");
+                volume
+                    .delete(&AppPath::legacy_unchecked(&relative))
+                    .await
+                    .expect("a real file under .git deletes");
             }
         }
         directories.push(next);
     }
     for directory in directories.into_iter().rev() {
-        volume.delete(&directory).await.expect("a real dir under .git deletes");
+        volume
+            .delete(&AppPath::legacy_unchecked(&directory))
+            .await
+            .expect("a real dir under .git deletes");
     }
     assert!(!dir.join(".git").exists(), ".git is gone");
     cleanup(&dir);
@@ -161,7 +181,7 @@ async fn real_files_under_dot_git_stay_fully_mutable() {
     // Reading `.git/config`'s real bytes and streaming them back out to a copy
     // beside it: the two stream methods that used to be claimed by the portal.
     let source = volume
-        .open_read_stream(Path::new(".git/config"))
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(".git/config")))
         .await
         .expect("`.git/config` streams as an ordinary file");
     let size = std::fs::metadata(dir.join(".git/config"))
@@ -169,7 +189,7 @@ async fn real_files_under_dot_git_stay_fully_mutable() {
         .len();
     volume
         .write_from_stream(
-            Path::new(".git/config.bak"),
+            &AppPath::legacy_unchecked(Path::new(".git/config.bak")),
             WriteMode::CreateOrReplace,
             StreamLength::Known(size),
             source,
@@ -186,18 +206,25 @@ async fn real_files_under_dot_git_stay_fully_mutable() {
 
     // Creating, renaming, and removing beside it.
     volume
-        .create_file(Path::new(".git/scratch"), b"x")
+        .create_file(&AppPath::legacy_unchecked(Path::new(".git/scratch")), b"x")
         .await
         .expect("creating under .git");
     volume
-        .rename(Path::new(".git/scratch"), Path::new(".git/scratch2"), false)
+        .rename(
+            &AppPath::legacy_unchecked(Path::new(".git/scratch")),
+            &AppPath::legacy_unchecked(Path::new(".git/scratch2")),
+            false,
+        )
         .await
         .expect("renaming under .git");
     volume
-        .delete(Path::new(".git/scratch2"))
+        .delete(&AppPath::legacy_unchecked(Path::new(".git/scratch2")))
         .await
         .expect("deleting under .git");
-    volume.delete(Path::new(".git/HEAD")).await.expect("removing HEAD");
+    volume
+        .delete(&AppPath::legacy_unchecked(Path::new(".git/HEAD")))
+        .await
+        .expect("removing HEAD");
     assert!(!dir.join(".git/HEAD").exists());
 
     cleanup(&dir);
@@ -214,7 +241,7 @@ async fn the_copy_scan_counts_only_what_is_on_disk() {
     let volume = LocalVolume::local_folder("Test", &dir, crate::volume_host::host());
 
     let scanned = volume
-        .scan_for_copy_batch(std::slice::from_ref(&dir))
+        .scan_for_copy_batch(std::slice::from_ref(&AppPath::legacy_unchecked(&dir).into_owned()))
         .await
         .expect("scanning the repo succeeds");
 
@@ -247,7 +274,10 @@ async fn the_listing_oracle_declines_an_overlay_decorated_dot_git_listing() {
 
     let volume: std::sync::Arc<dyn Volume> =
         std::sync::Arc::new(LocalVolume::local_folder("Test", &dir, crate::volume_host::host()));
-    let mut cached = volume.list_directory(&dot_git, None).await.unwrap();
+    let mut cached = volume
+        .list_directory(&AppPath::legacy_unchecked(&dot_git), None)
+        .await
+        .unwrap();
     let added =
         cmdr_listing::testing::decorate(crate::listing_host::listings(), "root", &volume, &dot_git, &mut cached).await;
     assert_eq!(added, 6, "the pane's listing holds the six virtual rows");
@@ -299,7 +329,10 @@ async fn a_linked_worktree_serves_the_categories_but_has_no_dot_git_landing() {
     let volume: std::sync::Arc<dyn Volume> =
         std::sync::Arc::new(LocalVolume::local_folder("Test", &linked, crate::volume_host::host()));
     assert!(
-        volume.list_directory(&gitlink, None).await.is_err(),
+        volume
+            .list_directory(&AppPath::legacy_unchecked(&gitlink), None)
+            .await
+            .is_err(),
         "listing a gitlink file is an error, not a portal root"
     );
 
@@ -316,7 +349,7 @@ async fn a_linked_worktree_serves_the_categories_but_has_no_dot_git_landing() {
     let parent: std::sync::Arc<dyn Volume> =
         std::sync::Arc::new(LocalVolume::local_folder("Parent", &linked, crate::volume_host::host()));
     let branches = cmdr_git::GitPortalVolume::new(portal, linked.clone(), parent)
-        .list_directory(&gitlink.join("branches"), None)
+        .list_directory(&AppPath::legacy_unchecked(&gitlink.join("branches")), None)
         .await
         .expect("the portal lists branches in a linked worktree");
     assert!(

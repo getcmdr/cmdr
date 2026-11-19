@@ -67,7 +67,7 @@ pub async fn record_visit(app: AppHandle, location: Location) -> Result<(), Stri
     // `Ok(())`: the visit signal is best-effort, navigation never depends on it.
     let live_root = crate::file_system::volume::manager::get_volume_manager()
         .get(&location.volume_id)
-        .map(|volume| volume.root().to_string_lossy().into_owned());
+        .map(|volume| volume.root().as_std_legacy().to_string_lossy().into_owned());
     let Some(path) = store_path_of_visit(&location, live_root.as_deref()) else {
         log::debug!(target: "importance", "record_visit skipped (path not on its volume's root)");
         return Ok(());

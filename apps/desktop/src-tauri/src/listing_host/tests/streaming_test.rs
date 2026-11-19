@@ -4,6 +4,8 @@
 
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::BridgedPath;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -139,14 +141,14 @@ async fn a_listing_holds_a_foreground_lease_for_its_whole_duration() {
 /// A volume whose read waits until the listing is cancelled, and says when it
 /// started.
 struct WaitsForCancel {
-    root: PathBuf,
+    root: BridgedPath,
     started: Arc<AtomicBool>,
 }
 
 impl WaitsForCancel {
     fn new() -> Self {
         Self {
-            root: PathBuf::from("/"),
+            root: BridgedPath::new(PathBuf::from("/")),
             started: Arc::new(AtomicBool::new(false)),
         }
     }
@@ -157,8 +159,8 @@ impl Volume for WaitsForCancel {
         "Waits for cancel"
     }
 
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -167,7 +169,7 @@ impl Volume for WaitsForCancel {
 
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
@@ -175,7 +177,7 @@ impl Volume for WaitsForCancel {
 
     fn list_directory_with_cancel<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
@@ -191,18 +193,22 @@ impl Volume for WaitsForCancel {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        Box::pin(async move { Err(VolumeError::NotFound(path.display().to_string())) })
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            Err(VolumeError::NotFound(path.display().to_string()))
+        })
     }
 
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { true })
     }
 
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(true) })
     }

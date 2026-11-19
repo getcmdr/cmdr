@@ -135,7 +135,7 @@ async fn eject_now(volume_id: String, scope: EjectScope) -> Result<EjectOutcome,
         let volume = get_volume_manager()
             .get(volume_id)
             .ok_or_else(|| nothing_registered_under(volume_id))?;
-        let mount_path = volume.root().to_string_lossy().to_string();
+        let mount_path = volume.root().as_std_legacy().to_string_lossy().to_string();
         // A drive whose eject just landed lingers in the switcher until
         // `volumes-changed` arrives, and a click there would read "not ejectable"
         // from `resolve_is_ejectable` on a path that's gone. Its goal is met.
@@ -649,7 +649,7 @@ pub async fn disconnect_smb(volume_id: &str) -> Result<(), EjectError> {
     }
 
     if platform::SMB_DISCONNECT_UNMOUNTS {
-        let mount_path = volume.root().to_string_lossy().to_string();
+        let mount_path = volume.root().as_std_legacy().to_string_lossy().to_string();
         run_teardown(volume_id, Teardown::volume_tool(UnmountVerb::Unmount, &mount_path)).await?;
         // The unmount notification will fire shortly and trigger on_unmount + volume-manager removal.
     } else {

@@ -332,7 +332,7 @@ pub(crate) async fn register_replacing_predecessor(
     // only records the new root, so retiring the incumbent here would leave the ID
     // pointing at a volume whose watcher we just stopped: the share stays listed
     // and silently stops seeing its own changes.
-    let refused = manager.would_keep_incumbent(volume_id, new_volume.root());
+    let refused = manager.would_keep_incumbent(volume_id, &new_volume.root().as_std_legacy());
     // Carry the mount roots across before anyone is retired. The registry keeps
     // the roots it has for this ID either way, so whichever instance ends up
     // holding it has to know where each of them sits inside the share, or a later
@@ -611,11 +611,11 @@ pub(crate) async fn return_to_os_mount(volume_id: &str) -> bool {
         return false;
     }
     // Behind the encryption gate while "Always require SMB encryption" is on.
-    let os_mount = crate::network::smb_mount_gate::os_mount_volume(current.name(), current.root());
+    let os_mount = crate::network::smb_mount_gate::os_mount_volume(current.name(), &current.root().as_std_legacy());
     register_replacing_predecessor(volume_id, os_mount).await;
     log::info!(
         "Handed {volume_id} back to the macOS mount at {}",
-        LogPrivate::dir_path(current.root())
+        LogPrivate::dir_path(&*current.root().as_std_legacy())
     );
     true
 }

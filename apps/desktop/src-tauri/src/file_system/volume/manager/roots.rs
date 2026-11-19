@@ -10,6 +10,7 @@
 
 use super::{Volume, VolumeManager};
 use crate::ignore_poison::RwLockIgnorePoison;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::os_error::OsErrorClass;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -60,7 +61,7 @@ pub(super) struct Registration {
 impl Registration {
     /// A fresh registration whose only known root is the volume's own.
     pub(super) fn new(volume: Arc<dyn Volume>) -> Self {
-        let root = MountRoot::new(volume.root());
+        let root = MountRoot::new(&*volume.root().as_std_legacy());
         Self {
             volume,
             roots: vec![root],
@@ -99,7 +100,7 @@ impl Registration {
     /// Swap the volume in place (a same-root replacement, like the SMB upgrade),
     /// keeping the fallback roots the entry has collected.
     pub(super) fn replace_volume(&mut self, volume: Arc<dyn Volume>) {
-        let root = volume.root().to_path_buf();
+        let root = volume.root().as_std_legacy().to_path_buf();
         self.volume = volume;
         self.record_root(&root);
     }
@@ -109,8 +110,8 @@ impl Registration {
     /// enters it fresh (never inheriting a stale mark), so nothing finds this
     /// entry by a root it no longer serves. Other fallback roots stay.
     pub(super) fn replace_root(&mut self, volume: Arc<dyn Volume>) -> Arc<dyn Volume> {
-        let old_root = self.volume.root().to_path_buf();
-        let new_root = volume.root().to_path_buf();
+        let old_root = self.volume.root().as_std_legacy().to_path_buf();
+        let new_root = volume.root().as_std_legacy().to_path_buf();
         if old_root != new_root {
             self.roots.retain(|r| r.path != old_root && r.path != new_root);
             self.roots.push(MountRoot::new(new_root));
@@ -133,7 +134,7 @@ impl Registration {
         let active = self.volume.root();
         self.roots
             .iter()
-            .find(|r| r.path == active)
+            .find(|r| r.path == *active.as_std_legacy())
             .is_none_or(|r| r.proven_stale)
     }
 
@@ -163,11 +164,11 @@ impl Registration {
         let Some(best) = self.best_root() else {
             return Promotion::NoRootsLeft;
         };
-        if best.path == self.volume.root() {
+        if best.path == *self.volume.root().as_std_legacy() {
             return Promotion::AlreadyBest;
         }
         let target = best.path.clone();
-        match self.volume.rerooted(&target) {
+        match self.volume.rerooted(&AppPath::legacy_unchecked(&target)) {
             Some(rerooted) => {
                 self.volume = rerooted;
                 Promotion::Promoted(target)
@@ -188,8 +189,14 @@ impl VolumeManager {
             return Vec::new();
         };
         let active = entry.volume.root();
-        let mut roots: Vec<PathBuf> = vec![active.to_path_buf()];
-        roots.extend(entry.roots.iter().filter(|r| r.path != active).map(|r| r.path.clone()));
+        let mut roots: Vec<PathBuf> = vec![active.as_std_legacy().to_path_buf()];
+        roots.extend(
+            entry
+                .roots
+                .iter()
+                .filter(|r| r.path != *active.as_std_legacy())
+                .map(|r| r.path.clone()),
+        );
         roots
     }
 
@@ -207,7 +214,7 @@ impl VolumeManager {
         };
         let id = id.clone();
 
-        let was_active = entry.volume.root() == root;
+        let was_active = &*entry.volume.root().as_std_legacy() == root;
         entry.roots.retain(|r| r.path != root);
 
         if !was_active {
@@ -300,9 +307,9 @@ impl VolumeManager {
             // volume is registered a moment before it enters its LRU, and a
             // concurrent caller must not see it in that gap.
             .filter(|(_, v)| !v.routes_over_a_parent())
-            .filter(|(_, v)| v.root() != Path::new("/"))
-            .filter(|(_, v)| target.starts_with(v.root()))
-            .max_by_key(|(_, v)| v.root().as_os_str().len())
+            .filter(|(_, v)| &*v.root().as_std_legacy() != Path::new("/"))
+            .filter(|(_, v)| target.starts_with(&*v.root().as_std_legacy()))
+            .max_by_key(|(_, v)| v.root().as_std_legacy().as_os_str().len())
             .map(|(id, _)| id.clone())
     }
 }
@@ -373,6 +380,9 @@ mod tests {
     use super::*;
     use crate::file_system::volume::{InMemoryVolume, VolumeError};
     use crate::ignore_poison::IgnorePoison;
+    use cmdr_fs::app_path;
+    use cmdr_fs::app_path::AppPath;
+    use cmdr_fs::app_path::BridgedPath;
     use cmdr_fs::entry::FileEntry;
     use cmdr_fs::volume::host::VolumeHost;
     use cmdr_local::LocalPosixVolume;
@@ -427,7 +437,7 @@ mod tests {
         let mut reg = registration_over(&["/Volumes/testshare", "/Volumes/testshare-1"]);
         reg.roots[0].proven_stale = true;
         assert!(matches!(reg.promote_to_best_root(), Promotion::Promoted(_)));
-        assert_eq!(reg.volume.root(), Path::new("/Volumes/testshare-1"));
+        assert_eq!(&*reg.volume.root().as_std_legacy(), Path::new("/Volumes/testshare-1"));
         assert_eq!(reg.volume.name(), "share", "the display name survives a promotion");
     }
 
@@ -435,7 +445,7 @@ mod tests {
     fn promotion_is_a_no_op_when_the_active_root_is_already_the_best() {
         let mut reg = registration_over(&["/Volumes/testshare", "/Volumes/testshare-1"]);
         assert!(matches!(reg.promote_to_best_root(), Promotion::AlreadyBest));
-        assert_eq!(reg.volume.root(), Path::new("/Volumes/testshare"));
+        assert_eq!(&*reg.volume.root().as_std_legacy(), Path::new("/Volumes/testshare"));
     }
 
     /// Every errno: the seven that say the mount is gone or wedged promote, and none
@@ -466,7 +476,7 @@ mod tests {
     /// ask which root was told its mount is gone. The log is shared across the
     /// instances a promotion creates; production keeps the answer per instance.
     struct RootSpy {
-        root: PathBuf,
+        root: BridgedPath,
         told: Arc<std::sync::Mutex<Vec<PathBuf>>>,
     }
 
@@ -474,7 +484,7 @@ mod tests {
     fn root_spy(root: &str) -> (Arc<RootSpy>, impl Fn() -> Vec<PathBuf>) {
         let told = Arc::new(std::sync::Mutex::new(Vec::new()));
         let spy = Arc::new(RootSpy {
-            root: PathBuf::from(root),
+            root: BridgedPath::new(PathBuf::from(root)),
             told: Arc::clone(&told),
         });
         (spy, move || told.lock_ignore_poison().clone())
@@ -485,28 +495,30 @@ mod tests {
             "spy"
         }
 
-        fn root(&self) -> &Path {
-            &self.root
+        fn root(&self) -> &AppPath {
+            self.root.app()
         }
 
         fn as_any(&self) -> &dyn std::any::Any {
             self
         }
 
-        fn rerooted(&self, new_root: &Path) -> Option<Arc<dyn Volume>> {
+        fn rerooted(&self, new_root: &AppPath) -> Option<Arc<dyn Volume>> {
+            let new_root_std = new_root.as_std_legacy();
+            let new_root: &Path = &new_root_std;
             Some(Arc::new(Self {
-                root: new_root.to_path_buf(),
+                root: BridgedPath::new(new_root.to_path_buf()),
                 told: Arc::clone(&self.told),
             }))
         }
 
         fn note_root_mount_gone(&self) {
-            self.told.lock_ignore_poison().push(self.root.clone());
+            self.told.lock_ignore_poison().push(self.root.clone().into_path_buf());
         }
 
         fn list_directory<'a>(
             &'a self,
-            _path: &'a Path,
+            _path: &'a AppPath,
             _on_progress: Option<&'a (dyn Fn(crate::file_system::volume::ListingProgress) + Sync)>,
         ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
             Box::pin(async { Ok(Vec::new()) })
@@ -514,18 +526,18 @@ mod tests {
 
         fn get_metadata<'a>(
             &'a self,
-            _path: &'a Path,
+            _path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
             Box::pin(async { Err(VolumeError::NotSupported) })
         }
 
-        fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+        fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
             Box::pin(async { false })
         }
 
         fn is_directory<'a>(
             &'a self,
-            _path: &'a Path,
+            _path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
             Box::pin(async { Err(VolumeError::NotSupported) })
         }
@@ -578,7 +590,7 @@ mod tests {
 
         manager.remove_root(Path::new("/Volumes/testshare"));
         assert_eq!(
-            manager.get("share").expect("still registered").root(),
+            &*manager.get("share").expect("still registered").root().as_std_legacy(),
             Path::new("/Volumes/testshare-1")
         );
         assert_eq!(told(), vec![PathBuf::from("/Volumes/testshare-1")]);
@@ -603,7 +615,7 @@ mod tests {
         let outcome = manager.remove_root(Path::new("/Volumes/testshare"));
         assert!(matches!(outcome, RootRemoval::Promoted { .. }), "a sibling survives");
         assert_eq!(
-            manager.get("share").expect("still registered").root(),
+            &*manager.get("share").expect("still registered").root().as_std_legacy(),
             Path::new("/Volumes/testshare-1")
         );
     }
@@ -628,7 +640,7 @@ mod tests {
         let outcome = manager.remove_root(Path::new("/Volumes/testshare-1"));
         assert!(matches!(outcome, RootRemoval::SiblingDropped { .. }));
         assert_eq!(
-            manager.get("share").expect("still registered").root(),
+            &*manager.get("share").expect("still registered").root().as_std_legacy(),
             Path::new("/Volumes/testshare")
         );
         assert_eq!(manager.known_roots("share"), vec![PathBuf::from("/Volumes/testshare")]);
@@ -654,7 +666,7 @@ mod tests {
         let outcome = manager.remove_root(Path::new("/Volumes/testshare"));
         assert!(matches!(outcome, RootRemoval::ActiveRootStranded { .. }));
         assert_eq!(
-            manager.get("share").expect("still registered").root(),
+            &*manager.get("share").expect("still registered").root().as_std_legacy(),
             Path::new("/Volumes/testshare"),
             "it stays where its transport is anchored"
         );
@@ -698,7 +710,7 @@ mod tests {
         // shortest path then picks the corpse, on every launch, forever.
         let manager = doubly_mounted_share();
         assert_eq!(
-            manager.get("share").expect("registered").root(),
+            &*manager.get("share").expect("registered").root().as_std_legacy(),
             Path::new("/Volumes/testshare"),
             "while both look alive, the shortest path is active"
         );
@@ -706,7 +718,7 @@ mod tests {
         let outcome = manager.mark_root_stale("share", Path::new("/Volumes/testshare"));
         assert!(matches!(outcome, StaleRootOutcome::Promoted { .. }));
         assert_eq!(
-            manager.get("share").expect("still registered").root(),
+            &*manager.get("share").expect("still registered").root().as_std_legacy(),
             Path::new("/Volumes/testshare-1")
         );
     }
@@ -732,7 +744,7 @@ mod tests {
             },
         );
         assert_eq!(
-            manager.get(id).expect("registered").root(),
+            &*manager.get(id).expect("registered").root().as_std_legacy(),
             Path::new("/Volumes/cmdr-test-stale"),
             "an ordinary file error must not rotate a healthy volume's root"
         );
@@ -745,7 +757,7 @@ mod tests {
             },
         );
         assert_eq!(
-            manager.get(id).expect("still registered").root(),
+            &*manager.get(id).expect("still registered").root().as_std_legacy(),
             Path::new("/Volumes/cmdr-test-stale-1"),
             "a stale-mount errno moves the volume to the mount that still answers"
         );
@@ -782,7 +794,7 @@ mod tests {
         let manager = VolumeManager::new();
         let (volume, is_retired) = RetiringVolume::at("/Volumes/testshare");
         manager.register("testshare", Arc::clone(&volume) as Arc<dyn Volume>);
-        manager.register("testshare", volume.rerooted(Path::new("/Volumes/testshare-1")).unwrap());
+        manager.register("testshare", volume.rerooted(app_path!("/Volumes/testshare-1")).unwrap());
 
         let outcome = manager.remove_root(Path::new("/Volumes/testshare"));
 

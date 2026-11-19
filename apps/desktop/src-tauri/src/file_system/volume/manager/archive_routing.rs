@@ -18,6 +18,7 @@ use cmdr_archive::{
     ArchiveFormat, ArchiveVolume, confirm_archive_boundary, confirm_archive_boundary_on_parent,
     confirm_remote_archive_boundary, format_for_path,
 };
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::archive_format::{archive_boundary_candidate, archive_boundary_candidates};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -109,8 +110,9 @@ impl VolumeManager {
         path: &Path,
         archive_root: ArchiveRoot,
     ) -> Option<ResolvedVolume> {
-        let (zip_path, inner) = archive_boundary_candidates(path)
-            .find(|(zip, _)| zip.starts_with(view.root()) && zip.as_path() != view.root())?;
+        let (zip_path, inner) = archive_boundary_candidates(path).find(|(zip, _)| {
+            zip.starts_with(&*view.root().as_std_legacy()) && zip.as_path() != &*view.root().as_std_legacy()
+        })?;
         if inner.as_os_str().is_empty() && archive_root == ArchiveRoot::File {
             return None;
         }
@@ -227,7 +229,7 @@ impl VolumeManager {
 
         self.get(&archive_id).map(|volume| ResolvedVolume {
             volume: Some(volume),
-            path: path.to_path_buf(),
+            path: AppPath::legacy_unchecked(&path.to_path_buf()).into_owned(),
             routed: Some(kind),
             unconfirmed: None,
         })
@@ -296,6 +298,7 @@ mod tests {
 
     use super::*;
     use crate::file_system::volume::InMemoryVolume;
+    use cmdr_fs::app_path::AppPath;
 
     /// Writes a file whose first bytes are a valid zip start-of-file signature.
     /// Enough for `confirm_archive_boundary`'s magic check (routing only; these
@@ -310,7 +313,10 @@ mod tests {
     async fn remote_parent_with_zip(zip_path: &Path) -> InMemoryVolume {
         let parent = InMemoryVolume::new("Remote");
         parent
-            .create_file(zip_path, b"PK\x03\x04not-a-real-archive-body")
+            .create_file(
+                &AppPath::legacy_unchecked(zip_path),
+                b"PK\x03\x04not-a-real-archive-body",
+            )
             .await
             .expect("seed remote zip");
         parent
@@ -323,7 +329,7 @@ mod tests {
 
         let resolved = manager.resolve("root", Path::new("/some/plain/dir")).await;
         assert!(!resolved.is_routed());
-        assert_eq!(resolved.path, PathBuf::from("/some/plain/dir"));
+        assert_eq!(*resolved.path.as_std_legacy(), PathBuf::from("/some/plain/dir"));
         assert_eq!(resolved.volume.expect("volume").name(), "Root");
     }
 
@@ -341,9 +347,9 @@ mod tests {
         let resolved = manager.resolve("root", &inner).await;
         assert!(resolved.is_routed());
         // The path is handed back unchanged (the ArchiveVolume maps it itself).
-        assert_eq!(resolved.path, inner);
+        assert_eq!(*resolved.path.as_std_legacy(), inner);
         // The resolved volume is the archive: its root is the `.zip` path.
-        assert_eq!(resolved.volume.expect("archive volume").root(), zip);
+        assert_eq!(*resolved.volume.expect("archive volume").root().as_std_legacy(), zip);
     }
 
     #[tokio::test]
@@ -357,8 +363,8 @@ mod tests {
         let inner = zip.join("docs/readme.txt");
         let resolved = manager.resolve("root", &inner).await;
         assert!(resolved.is_routed(), "a remote zip must route to an ArchiveVolume");
-        assert_eq!(resolved.path, inner);
-        assert_eq!(resolved.volume.expect("archive volume").root(), zip);
+        assert_eq!(*resolved.path.as_std_legacy(), inner);
+        assert_eq!(*resolved.volume.expect("archive volume").root().as_std_legacy(), zip);
     }
 
     #[tokio::test]

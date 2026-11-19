@@ -1,6 +1,7 @@
 //! Tauri commands for directory listing and virtual-scroll API.
 
 use crate::listing_host::listings;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_listing::{
     CompareDirectoriesError, CompareDirectoriesMode, CompareDirectoriesResult, DirectorySortMode, FuzzyJumpError,
@@ -453,8 +454,8 @@ pub async fn set_listing_name_filter(
 async fn watcher_backed_listing_path(listing_id: &str) -> Option<PathBuf> {
     let (volume_id, path) = listings().location(&ListingId::new(listing_id))?;
     let volume = get_volume_manager().resolve(&volume_id, &path).await.volume?;
-    let watcher_sees_every_writer =
-        volume.local_path().is_none() && volume.listing_watch_coverage(&path) == WatchCoverage::EveryWriter;
+    let watcher_sees_every_writer = volume.local_path().is_none()
+        && volume.listing_watch_coverage(&AppPath::legacy_unchecked(&path)) == WatchCoverage::EveryWriter;
     watcher_sees_every_writer.then_some(path)
 }
 

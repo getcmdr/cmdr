@@ -3,6 +3,7 @@
 //! The scenario is backend-blind; the cells stay per backend because the integration lane
 //! selects them by name prefix. `file_viewer/DETAILS.md` § "Media on a volume".
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -99,7 +100,8 @@ fn the_files() -> [(&'static str, Vec<u8>, ViewerContentKind, &'static str); 3] 
 fn pictures_and_a_pdf_render_through_the_volume(id: &str, remote: Arc<dyn Volume>, write_dir: &Path, view_dir: &Path) {
     get_volume_manager().register(id, Arc::clone(&remote));
     for (name, bytes, kind, mime) in the_files() {
-        tauri::async_runtime::block_on(remote.create_file(&write_dir.join(name), &bytes)).expect("the fixture file");
+        tauri::async_runtime::block_on(remote.create_file(&AppPath::legacy_unchecked(&write_dir.join(name)), &bytes))
+            .expect("the fixture file");
         renders(id, &view_dir.join(name), &bytes, kind, mime);
     }
     get_volume_manager().unregister(id);
@@ -142,7 +144,10 @@ fn s3_integration_pictures_and_a_pdf_render_through_the_volume() {
     use cmdr_s3::volume::testing::{S3Target, VERSITYGW};
     let target = S3Target::Fixture(VERSITYGW);
     let volume = tauri::async_runtime::block_on(target.connect(Some(target.bucket())));
-    let dir = volume.root().join(target.prefix("viewer-media").trim_end_matches('/'));
+    let dir = volume
+        .root()
+        .as_std_legacy()
+        .join(target.prefix("viewer-media").trim_end_matches('/'));
     pictures_and_a_pdf_render_through_the_volume("viewer-media-s3", Arc::new(volume), &dir, &dir);
 }
 
@@ -157,7 +162,8 @@ fn adb_pictures_and_a_pdf_render_through_the_volume() {
     ));
     for (name, bytes, kind, mime) in the_files() {
         let path = phone.dir.join(name);
-        tauri::async_runtime::block_on(phone.volume.create_file(&path, &bytes)).expect("the fixture file");
+        tauri::async_runtime::block_on(phone.volume.create_file(&AppPath::legacy_unchecked(&path), &bytes))
+            .expect("the fixture file");
         renders(&phone.volume_id, &path, &bytes, kind, mime);
     }
 }

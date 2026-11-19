@@ -1,6 +1,7 @@
 //! The write path, against a real migrated in-memory `main.db`, so the store's own guards
 //! are in the loop rather than mocked away.
 
+use cmdr_fs::app_path;
 use rusqlite::Connection;
 use serde_json::json;
 
@@ -247,7 +248,7 @@ async fn a_named_source_freezes_what_its_volume_says_about_it() {
 
     let volume = InMemoryVolume::new("Share");
     volume
-        .create_file(Path::new("/Users/someone/Downloads/a.dmg"), b"seven b")
+        .create_file(app_path!("/Users/someone/Downloads/a.dmg"), b"seven b")
         .await
         .expect("seed file");
     volume.set_modified_at(Path::new("/Users/someone/Downloads/a.dmg"), Some(1_700_000_000));

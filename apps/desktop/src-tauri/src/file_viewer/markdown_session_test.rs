@@ -3,6 +3,7 @@
 
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 
+use cmdr_fs::app_path::AppPath;
 use std::io::Write as _;
 use std::path::Path;
 use std::sync::Arc;
@@ -157,10 +158,16 @@ fn a_document_on_a_phone(id: &str) -> String {
     let document = format!("{root}/Notes/todo.md");
     tauri::async_runtime::block_on(async {
         volume
-            .create_file(Path::new(&document), b"# Todo\n\n![shot](../Pictures/shot.png)\n")
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&document)),
+                b"# Todo\n\n![shot](../Pictures/shot.png)\n",
+            )
             .await?;
         volume
-            .create_file(Path::new(&format!("{root}/Pictures/shot.png")), PNG)
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("{root}/Pictures/shot.png"))),
+                PNG,
+            )
             .await
     })
     .expect("seed the phone");

@@ -18,6 +18,7 @@
 //! selects the app crate's Docker cells by name, so a cell without it never
 //! runs in CI. `fixture-lane-coverage` fails on one that lacks it.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -102,7 +103,12 @@ async fn smb_integration_scan_uses_oracle_on_hit_skips_stat_pipeline() {
     ];
 
     let result = vol
-        .scan_for_copy_batch(&paths)
+        .scan_for_copy_batch(
+            &paths
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+        )
         .await
         .expect("oracle-served batch scan should succeed with no SMB session");
 

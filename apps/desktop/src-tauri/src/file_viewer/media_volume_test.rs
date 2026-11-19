@@ -1,8 +1,11 @@
 //! A picture or PDF on a volume renders like one on the local disk: sniffed through the
 //! volume, served by position, with no temp, and honest when the server goes quiet.
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::BridgedPath;
 use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -50,7 +53,7 @@ struct Counters {
 }
 
 struct OneFileVolume {
-    root: PathBuf,
+    root: BridgedPath,
     file: PathBuf,
     bytes: Arc<Vec<u8>>,
     /// What a stat and a reader say, when a test wants more than it stores.
@@ -102,8 +105,8 @@ impl Volume for OneFileVolume {
         "Server"
     }
 
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -120,7 +123,7 @@ impl Volume for OneFileVolume {
 
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(Vec::new()) })
@@ -128,9 +131,11 @@ impl Volume for OneFileVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             if path != self.file {
                 return Err(VolumeError::NotFound(path.display().to_string()));
             }
@@ -143,9 +148,11 @@ impl Volume for OneFileVolume {
 
     fn open_random_reader<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeRandomReader>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             if self.reads == Reads::DeadLink {
                 return Err(VolumeError::LinkTargetUnreachable(path.display().to_string()));
             }
@@ -168,7 +175,7 @@ impl Volume for OneFileVolume {
 
     fn read_range<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
@@ -200,7 +207,7 @@ fn a_volume_claiming(
     let bytes = Arc::new(bytes);
     let counters = Arc::new(Counters::default());
     let volume = Arc::new(OneFileVolume {
-        root,
+        root: BridgedPath::new(root),
         file: file.clone(),
         bytes: Arc::clone(&bytes),
         claimed_size,

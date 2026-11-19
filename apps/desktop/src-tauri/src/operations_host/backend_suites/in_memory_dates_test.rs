@@ -3,6 +3,7 @@
 //! the final rename) is pinned in the unit lane, onto local disk and off it,
 //! whatever state the network backends are in.
 
+use cmdr_fs::app_path;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -21,7 +22,7 @@ fn double() -> Arc<dyn Volume> {
 async fn a_copy_from_local_disk_keeps_the_source_date() {
     let remote = double();
     remote
-        .create_directory(std::path::Path::new("/dated"))
+        .create_directory(app_path!("/dated"))
         .await
         .expect("make the destination folder");
     a_copy_onto_the_server_keeps_the_source_date(remote, "/dated".into(), Duration::ZERO).await;
@@ -31,7 +32,7 @@ async fn a_copy_from_local_disk_keeps_the_source_date() {
 async fn a_copy_onto_local_disk_keeps_the_source_date() {
     let remote = double();
     remote
-        .create_directory(std::path::Path::new("/dated"))
+        .create_directory(app_path!("/dated"))
         .await
         .expect("make the source folder");
     a_copy_off_the_server_keeps_the_source_date(remote, "/dated".into(), Duration::ZERO).await;
@@ -41,7 +42,7 @@ async fn a_copy_onto_local_disk_keeps_the_source_date() {
 async fn folders_copied_from_local_disk_keep_their_dates() {
     let remote = double();
     remote
-        .create_directory(std::path::Path::new("/dated"))
+        .create_directory(app_path!("/dated"))
         .await
         .expect("make the destination folder");
     copied_folders_onto_the_server_keep_their_dates(remote, "/dated".into(), Duration::ZERO).await;
@@ -51,7 +52,7 @@ async fn folders_copied_from_local_disk_keep_their_dates() {
 async fn folders_copied_onto_local_disk_keep_their_dates() {
     let remote = double();
     remote
-        .create_directory(std::path::Path::new("/dated"))
+        .create_directory(app_path!("/dated"))
         .await
         .expect("make the source folder");
     copied_folders_off_the_server_keep_their_dates(remote, "/dated".into()).await;

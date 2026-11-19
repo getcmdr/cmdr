@@ -95,7 +95,7 @@ async fn force_volume(volume_id: String) -> Result<EjectOutcome, EjectError> {
         // The unmount the timeout didn't cancel landed meanwhile: the goal is met.
         return Ok(EjectOutcome::AlreadyGone);
     };
-    let mount_path = volume.root().to_string_lossy().to_string();
+    let mount_path = volume.root().as_std_legacy().to_string_lossy().to_string();
     run_teardown(
         &volume_id,
         Teardown::volume_tool(UnmountVerb::ForceUnmount, &mount_path),

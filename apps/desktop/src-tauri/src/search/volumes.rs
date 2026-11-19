@@ -413,7 +413,7 @@ fn read_mount_root(pool: &ReadPool, volume_id: &str) -> Option<String> {
 pub(crate) fn registry_mount_root(volume_id: &str) -> Option<String> {
     crate::file_system::volume::manager::get_volume_manager()
         .get(volume_id)
-        .map(|v| v.root().to_string_lossy().into_owned())
+        .map(|v| v.root().as_std_legacy().to_string_lossy().into_owned())
         .and_then(usable_mount_root)
 }
 

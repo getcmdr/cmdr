@@ -11,6 +11,7 @@
 //! stragglers on a dead mount can't pile up pool threads behind the user's back, and, being that
 //! mount's own permits, can't starve a stat on any other volume.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, LazyLock, Mutex};
@@ -140,7 +141,9 @@ async fn stat_one(budget: Arc<Semaphore>, volume: Arc<dyn Volume>, path: String,
             if tokio::time::Instant::now() >= give_up_at {
                 return SourceStat::Unknown;
             }
-            runtime.block_on(async move { classify(volume.get_metadata(Path::new(&path)).await) })
+            runtime.block_on(async move {
+                classify(volume.get_metadata(&AppPath::legacy_unchecked(Path::new(&path))).await)
+            })
         })
         .await
         .map_err(|e| StatGap::Panicked(e.to_string()))
@@ -219,6 +222,8 @@ pub fn source_runs_as(verb: ProposalVerb, source_volume_id: &str) -> Option<Runs
 #[cfg(test)]
 mod tests {
     use super::*;
+    use cmdr_fs::app_path;
+    use cmdr_fs::app_path::AppPath;
     use cmdr_fs::volume::InMemoryVolume;
 
     /// A volume that keeps a Trash, as `LocalPosixVolume` on a local disk does.
@@ -228,7 +233,7 @@ mod tests {
         fn name(&self) -> &str {
             self.0.name()
         }
-        fn root(&self) -> &Path {
+        fn root(&self) -> &AppPath {
             self.0.root()
         }
         fn as_any(&self) -> &dyn std::any::Any {
@@ -236,7 +241,7 @@ mod tests {
         }
         fn list_directory<'a>(
             &'a self,
-            path: &'a Path,
+            path: &'a AppPath,
             on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
         ) -> std::pin::Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>>
         {
@@ -244,7 +249,7 @@ mod tests {
         }
         fn get_metadata<'a>(
             &'a self,
-            path: &'a Path,
+            path: &'a AppPath,
         ) -> std::pin::Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>>
         {
             self.0.get_metadata(path)
@@ -298,12 +303,12 @@ mod tests {
     async fn each_source_gets_the_answer_its_volume_gives() {
         let volume = InMemoryVolume::new("Test");
         volume
-            .create_file(Path::new("/here.txt"), b"twelve bytes")
+            .create_file(app_path!("/here.txt"), b"twelve bytes")
             .await
             .expect("seed file");
         volume.set_modified_at(Path::new("/here.txt"), Some(1_700_000_000));
         volume
-            .create_file(Path::new("/unanswerable.txt"), b"x")
+            .create_file(app_path!("/unanswerable.txt"), b"x")
             .await
             .expect("seed file");
         volume.set_stat_failing(Path::new("/unanswerable.txt"));
@@ -342,7 +347,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn a_spent_deadline_answers_unknown_without_asking() {
         let volume = InMemoryVolume::new("Test");
-        volume.create_file(Path::new("/a.txt"), b"a").await.expect("seed file");
+        volume.create_file(app_path!("/a.txt"), b"a").await.expect("seed file");
         let volume: Arc<dyn Volume> = Arc::new(volume);
 
         let stats = stat_sources("test", volume, vec!["/a.txt".into()], &Deadline::new(Duration::ZERO)).await;

@@ -7,6 +7,7 @@
 //! a fresh mount, by hand: `docs/notes/smb-finder-tags-2026-10-31.md`.
 
 use super::tags_io::{TagWrites, clear_tags, toggle_color};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::TagRef;
 use cmdr_fs::volume::Volume;
 use cmdr_fs::volume::host::VolumeHost;
@@ -57,13 +58,22 @@ async fn smb_integration_finder_tags_work_with_no_mount() {
     manager.register(&id, volume.clone());
 
     let folder = PathBuf::from(NO_MOUNT).join(format!("_cmdr-tags-test-{}", std::process::id()));
-    volume.create_directory(&folder).await.unwrap();
+    volume
+        .create_directory(&AppPath::legacy_unchecked(&folder))
+        .await
+        .unwrap();
     let path_of = |name: &str| folder.join(name).to_string_lossy().into_owned();
     for name in ["red.txt", "plain.txt"] {
-        volume.create_file(&folder.join(name), b"x").await.unwrap();
+        volume
+            .create_file(&AppPath::legacy_unchecked(&folder.join(name)), b"x")
+            .await
+            .unwrap();
     }
 
-    let entries = volume.list_directory(&folder, None).await.unwrap();
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(&folder), None)
+        .await
+        .unwrap();
     let listings = crate::listing_host::listings();
     let listing = TestListing::new()
         .volume(&id)
@@ -101,7 +111,14 @@ async fn smb_integration_finder_tags_work_with_no_mount() {
         .unwrap();
     let paths = [folder.join("red.txt"), folder.join("plain.txt")];
     let raw = volume
-        .read_xattr_many(&paths, TAGS, cmdr_fs::volume::XattrReadMode::Verified)
+        .read_xattr_many(
+            &paths
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+            TAGS,
+            cmdr_fs::volume::XattrReadMode::Verified,
+        )
         .await;
     let as_hex = |bytes: &[u8]| bytes.iter().map(|byte| format!("{byte:02x}")).collect::<String>();
     assert_eq!(
@@ -113,9 +130,12 @@ async fn smb_integration_finder_tags_work_with_no_mount() {
     drop(listing);
     manager.unregister(&id);
     for name in ["red.txt", "plain.txt"] {
-        volume.delete(&folder.join(name)).await.unwrap();
+        volume
+            .delete(&AppPath::legacy_unchecked(&folder.join(name)))
+            .await
+            .unwrap();
     }
-    volume.delete(&folder).await.unwrap();
+    volume.delete(&AppPath::legacy_unchecked(&folder)).await.unwrap();
 }
 
 /// The by-hand half on a real NAS, for `crates/cmdr-smb/examples/tag_sweep_bench.rs`'s seeded
@@ -132,7 +152,10 @@ async fn nas_a_seeded_folder_sweeps_and_toggles_with_no_mount() {
     manager.register(&id, volume.clone());
 
     let folder = PathBuf::from(NO_MOUNT).join(&scratch);
-    let entries = volume.list_directory(&folder, None).await.unwrap();
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(&folder), None)
+        .await
+        .unwrap();
     let paths: Vec<String> = entries.iter().map(|entry| entry.path.clone()).collect();
     let listing = TestListing::new()
         .volume(&id)
@@ -161,7 +184,14 @@ async fn nas_a_seeded_folder_sweeps_and_toggles_with_no_mount() {
 async fn listing_row(volume: &SmbVolume, folder: &Path, name: &str) -> Vec<TagRef> {
     let paths = [folder.join(name)];
     let mut answers = volume
-        .read_xattr_many(&paths, TAGS, cmdr_fs::volume::XattrReadMode::Verified)
+        .read_xattr_many(
+            &paths
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+            TAGS,
+            cmdr_fs::volume::XattrReadMode::Verified,
+        )
         .await;
     let answer = answers.pop().expect("one answer per path");
     let bytes = answer.expect("the read answers").unwrap_or_default();

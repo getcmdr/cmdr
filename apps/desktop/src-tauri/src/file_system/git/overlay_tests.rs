@@ -8,6 +8,7 @@
 // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 #![cfg(test)]
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -38,7 +39,10 @@ async fn a_dot_git_that_is_not_this_repos_gitdir_gets_no_rows() {
     std::fs::create_dir_all(&stray).expect("make the placeholder");
 
     let volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder("Test", &dir, crate::volume_host::host()));
-    let mut entries = volume.list_directory(&stray, None).await.expect("listing it");
+    let mut entries = volume
+        .list_directory(&AppPath::legacy_unchecked(&stray), None)
+        .await
+        .expect("listing it");
     assert_eq!(
         cmdr_listing::testing::decorate(crate::listing_host::listings(), "root", &volume, &stray, &mut entries).await,
         0,
@@ -48,7 +52,10 @@ async fn a_dot_git_that_is_not_this_repos_gitdir_gets_no_rows() {
     // The repo's own `.git` still gets them, so the check isn't just refusing
     // everything.
     let real = dir.join(".git");
-    let mut real_entries = volume.list_directory(&real, None).await.expect("listing .git");
+    let mut real_entries = volume
+        .list_directory(&AppPath::legacy_unchecked(&real), None)
+        .await
+        .expect("listing .git");
     assert_eq!(
         cmdr_listing::testing::decorate(
             crate::listing_host::listings(),
