@@ -131,7 +131,7 @@ impl<'a> ListedFolder<'a> {
     ///
     /// # Errors
     ///
-    /// What [`AppPath::join`] refuses under a canonical folder (a drive or UNC folder takes
+    /// What [`PathArithmetic::join`](super::PathArithmetic::join) refuses under a canonical folder (a drive or UNC folder takes
     /// no name holding `\`). A bridge folder's join refuses nothing, as `Path::join` didn't.
     pub fn join(&self, name: &AppName) -> Result<AppPathBuf, NotAnAppPath> {
         match &self.0 {
