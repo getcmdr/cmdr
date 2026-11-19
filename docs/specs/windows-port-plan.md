@@ -654,8 +654,10 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     - Thread QoS: `cmdr_fs::thread_qos/platform/windows.rs`, `THREAD_PRIORITY_BELOW_NORMAL` plus EcoQoS (the
       execution-speed power throttle), ❌ never background mode.
     - System proxy: `cmdr-http` reads the user's Internet settings (`WinHttpGetIEProxyConfigForCurrentUser`) and walks
-      WPAD, the setup script, then the manual proxy and bypass list; PAC and WPAD run in WinHTTP
-      (`WinHttpGetProxyForUrl`) behind the shared PAC cache (`crates/cmdr-http/DETAILS.md` § "The Windows answer").
+      WPAD, the setup script, then the manual proxy and bypass list; PACs run in WinHTTP's async resolver
+      (`WinHttpGetProxyForUrlEx`, typed SOCKS and HTTPS answers) behind the shared PAC cache, and WPAD is discovered
+      once per network in the background, both dropped on a network change (`crates/cmdr-http/DETAILS.md` § "The Windows
+      answer").
     - Verified on the builder: `docs/notes/windows-port/build-progress.md` (2026-11-19, task 46). Not verified: a real
       proxy, PAC server, or WPAD network configured in Windows' settings (the builder's stay untouched), Windows 11's
       EcoQoS read-back, and a WinGet / Scoop `adb` install. Left: the `cmdr-sftp` agent's Pageant support (§ "Windows
