@@ -129,3 +129,17 @@ func TestABorrowedReturnRetypesItsOwnFilesStruct(t *testing.T) {
 		}
 	}
 }
+
+func TestAFlippedBodysStdReadOfItsParamGetsThePrelude(t *testing.T) {
+	text := implHead + "    fn get_metadata<'a>(&'a self, path: &'a AppPath) -> Fut<'a> {\n        Box::pin(async move {\n            if path != self.file {\n                return Err(e);\n            }\n            ok(self.root.starts_with(path))\n        })\n    }\n}\n"
+	d := withNote(compareDiag(t, text, "!=", "if path ", "AppPath", "std::path::PathBuf"), "required for `&AppPath` to implement `PartialEq<std::path::PathBuf>`")
+	got := run(t, text, d)
+	if strings.Contains(got, "as_std_legacy() !=") || !strings.Contains(got, "let path: &Path = &path_std;") {
+		t.Fatalf("a stale comparison of the param must get the prelude:\n%s", got)
+	}
+	d = diag("E0277", "the trait bound `AppPath: AsRef<std::path::Path>` is not satisfied",
+		spanOf(t, text, "path", "starts_with(", "", true), spanOf(t, text, "self.root.starts_with", "", "required by a bound introduced by this call", false))
+	if got := run(t, text, d); strings.Contains(got, "&*path") || !strings.Contains(got, "let path_std") {
+		t.Fatalf("a bound error on the param must get the prelude:\n%s", got)
+	}
+}

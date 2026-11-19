@@ -52,9 +52,6 @@ func (r *rewriter) editsFor(d *diagnostic) ([]edit, error) {
 	if e := compareEdits(d, src, p); len(e) > 0 {
 		return e, nil
 	}
-	if e := boundArgEdits(d, src, p); len(e) > 0 {
-		return e, nil
-	}
 	if e := importEdits(d, src, r.crate); len(e) > 0 {
 		return e, nil
 	}
@@ -66,6 +63,13 @@ func (r *rewriter) editsFor(d *diagnostic) ([]edit, error) {
 	}
 	from, to := region(d, src, p)
 	if e := preludeEdits(src, p.ByteStart, from, to); len(e) > 0 {
+		return e, nil
+	}
+	// After the prelude: in a flipped body, a std read of its own typed param wants the prelude.
+	if e := operatorCompareEdits(d, src, p); len(e) > 0 {
+		return e, nil
+	}
+	if e := boundArgEdits(d, src, p); len(e) > 0 {
 		return e, nil
 	}
 	if e := receiverEdits(d, src, p); len(e) > 0 {

@@ -45,6 +45,20 @@ func boundArgEdits(d *diagnostic, src *source, p *diagSpan) []edit {
 
 // ---- The operands of a plain `==` / `!=` ----
 
+// operatorCompareEdits answers a plain `a == b` outside a macro whose one side is typed: the
+// comparison rule's fix, with the operands read off the source. It runs after the prelude
+// rule, so a flipped body's stale comparison of its own param gets the prelude instead.
+func operatorCompareEdits(d *diagnostic, src *source, p *diagSpan) []edit {
+	if d.code() != "E0277" || !cantCompare.MatchString(d.Message) {
+		return nil
+	}
+	left, right, ok := comparedTypes(d)
+	if !ok {
+		return nil
+	}
+	return operandEdits(src, p, operatorOperands(src.masked, p), left, right)
+}
+
 // operatorOperands finds the two operands of the `==`/`!=` at [p.ByteStart, p.ByteEnd): the
 // span an E0277 "can't compare" points at outside a macro, with no label on either side.
 // Each operand must be a plain postfix chain (`entry.volume.root()`, `r.path`,

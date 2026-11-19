@@ -159,8 +159,6 @@ func compareEdits(d *diagnostic, src *source, p *diagSpan) []edit {
 	var operands [][2]int
 	if assertMacros[p.Macro] {
 		operands = macroArgs(src.masked, p.ByteStart, p.ByteEnd)
-	} else if d.code() == "E0277" {
-		operands = operatorOperands(src.masked, p)
 	} else if d.code() == "E0369" {
 		for _, s := range d.Spans {
 			if !s.IsPrimary && s.FileName == p.FileName && s.label() != "" {
@@ -168,6 +166,11 @@ func compareEdits(d *diagnostic, src *source, p *diagSpan) []edit {
 			}
 		}
 	}
+	return operandEdits(src, p, operands, left, right)
+}
+
+// operandEdits drops whichever of the two compared operands is typed to `std::path`.
+func operandEdits(src *source, p *diagSpan, operands [][2]int, left, right string) []edit {
 	if len(operands) < 2 {
 		return nil
 	}
