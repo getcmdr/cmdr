@@ -13,7 +13,7 @@
     import MainMenuButton from '#lib/ui/MainMenuButton.svelte'
     import { createContextMenu } from '#lib/ui/command-menu/context-menu.svelte.js'
     import Checkbox from '#lib/ui/Checkbox.svelte'
-    import type { BarMenuView, Row } from '#lib/ipc/bindings.js'
+    import type { BarMenuView, BarPickVia, Row } from '#lib/ipc/bindings.js'
     import {
         followMenuBar,
         getViewerMenuBar,
@@ -100,7 +100,7 @@
     let lastPick = $state<string | null>(null)
     let liveMenus = $state<BarMenuView[]>([])
     let viewerMenus = $state<BarMenuView[]>([])
-    const viewerInputs = $state({ wordWrap: false, canGoBack: true, canGoForward: false, searchFocused: false })
+    const viewerInputs = $state({ wordWrap: false, canGoBack: true, canGoForward: false, searchFocused: false, showMenuBar: true })
     const VIEWER_TOGGLES = [
         { key: 'wordWrap', label: 'Word wrap' },
         { key: 'canGoBack', label: 'Can go back' },
@@ -173,7 +173,7 @@
                 menus={liveMenus}
                 ariaLabel="Live menu bar"
                 takesWindowKeys={false}
-                onPick={(id: string) => void pickMenuBarItem(id, 'pick')}
+                onPick={(id: string, via: BarPickVia) => void pickMenuBarItem(id, via)}
             />
         </div>
     </div>

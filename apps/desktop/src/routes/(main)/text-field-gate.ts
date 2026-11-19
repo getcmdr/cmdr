@@ -8,10 +8,12 @@
  * (macOS's `F8`, `⇧F8`, `F6`, `⌥⌘V`, or any key a user bound) fires before the field sees the
  * key, and the menu event can't say whether a key or a click sent it, so on macOS a click on File >
  * Delete with a field focused does nothing either. Off macOS the page draws the bar and does know:
- * a row the person picked there arrives as `barPick` (`pick_menu_bar_item`'s `via: 'pick'`) and
- * runs, while the same command's key comes in as `keyboard` (or as `menu` when another window
- * fires it) and stays refused. The palette, the F-key bar, MCP, and a page bar's pick run: each is
- * a deliberate pick of the command itself.
+ * a row the person CLICKED there arrives as `barClick` (`pick_menu_bar_item`'s `via: 'click'`) and
+ * runs. Every key stays refused: the command's own key (`keyboard`, or `menu` when another window
+ * fires it) and the open menu's own keys too (Alt or F10 then letters, Alt+letter then a letter,
+ * arrows then Enter or Space, in the bar or the main-menu button: `via: 'key'`, the `menu` road),
+ * so typing never moves files, however the menu was reached (review of #1281). The palette, the
+ * F-key bar, MCP, and a page bar's click run: each is a deliberate pick of the command itself.
  */
 import { movesFiles, type CommandId } from '#lib/commands/index.js'
 import type { DispatchSource } from './command-dispatch-context'

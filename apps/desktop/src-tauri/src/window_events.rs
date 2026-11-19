@@ -45,7 +45,7 @@ impl ExecuteCommand {
 }
 
 /// Which road an `execute-command` came in by. The main window maps it onto its own
-/// `DispatchSource` (`menu` or `contextMenu`).
+/// `DispatchSource` (`menu`, `contextMenu`, or `barClick`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum CommandRoad {
@@ -53,9 +53,10 @@ pub enum CommandRoad {
     Relay,
     /// A right-click menu's own row.
     ContextMenu,
-    /// A row the person picked on a bar the page draws (a click, or the open menu's keyboard walk):
-    /// never an accelerator, which is what lets a file-moving row run with a text field focused.
-    BarPick,
+    /// A pointer click on a row of a bar the page draws (or of its main-menu button). Never a key:
+    /// not a chord and not the open menu's own keys, so this alone lets a file-moving row run with
+    /// a text field focused (`routes/(main)/text-field-gate.ts`).
+    BarClick,
 }
 
 /// `queue-select-all`: Edit > Select all (⌘A) while the operation queue window

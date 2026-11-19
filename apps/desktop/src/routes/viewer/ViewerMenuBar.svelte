@@ -56,7 +56,7 @@
             })
     })
 
-    function pick(menuId: string, via: BarPickVia = 'pick'): void {
+    function pick(menuId: string, via: BarPickVia): void {
         pickMenuBarItem(menuId, via).catch((error: unknown) => {
             log.warn("Couldn't run a menu bar pick: {error}", { error })
         })
@@ -84,8 +84,8 @@
         revealOnly={layout === 'barOnAlt'}
         ariaLabel={tString('ui.menuBar.label')}
         keyScope="Viewer window"
-        onPick={(menuId: string) => {
-            pick(menuId)
+        onPick={(menuId: string, via: BarPickVia) => {
+            pick(menuId, via)
         }}
         onFocusOrigin={(origin: Element | null) => {
             focusOrigin = origin

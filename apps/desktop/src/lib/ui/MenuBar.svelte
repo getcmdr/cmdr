@@ -9,7 +9,7 @@
      */
     import { untrack } from 'svelte'
     import { dependOn } from '#lib/utils/reactivity.js'
-    import type { BarMenuView } from '#lib/ipc/bindings.js'
+    import type { BarMenuView, BarPickVia } from '#lib/ipc/bindings.js'
     import type { CommandScope } from '#lib/commands/types.js'
     import { convention } from '#lib/platform/conventions.js'
     import { reservedAccessKeys } from './access-keys'
@@ -21,8 +21,11 @@
     interface Props {
         /** The bar's menus, as the backend answers them (`get_menu_bar`), kept live by the caller. */
         menus: readonly BarMenuView[]
-        /** A row was picked, by menu id. Focus is already back where it was. */
-        onPick: (menuId: string) => void
+        /**
+         * A row was picked, by menu id, and `via` a pointer click or a key (the bar's Enter, Space,
+         * or a row's letter). Focus is already back where it was.
+         */
+        onPick: (menuId: string, via: BarPickVia) => void
         ariaLabel: string
         /** How it behaves. Defaults to this platform's: `mac` where the OS owns the bar, else `desktop`. */
         flavor?: MenuFlavor
@@ -77,8 +80,8 @@
 
     const bar = createMenuBar({
         getMenus: () => menus,
-        onPick: (menuId) => {
-            onPick(menuId)
+        onPick: (menuId, via) => {
+            onPick(menuId, via)
         },
         flavor: () => flavor,
         accessKeys: () => convention('accessKeys') !== 'none',

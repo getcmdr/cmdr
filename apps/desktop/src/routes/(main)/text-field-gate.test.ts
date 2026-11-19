@@ -138,9 +138,9 @@ describe.each(['macos', 'windows', 'linux'] as const)('on %s, with a text field 
   })
 })
 
-// Task 63 step 9: off macOS the page draws the bar, so it knows a pick from a key, which a native
-// bar's menu event can't say. The person's own pick of File > Delete runs with a field focused; the
-// same command's key never does.
+// Task 63 step 9: off macOS the page draws the bar, so it knows a click from a key, which a native
+// bar's menu event can't say. The person's own click on File > Delete runs with a field focused; any
+// key never does, the menu's own keys included.
 describe('a bar the page draws, with a text field focused', () => {
   /** The road each `execute-command` takes, by the dispatcher `listener-setup.ts` hands it to. */
   function sourceFor(road: CommandRoad | undefined): DispatchSource {
@@ -149,15 +149,15 @@ describe('a bar the page draws, with a text field focused', () => {
       taken.push(source)
       return Promise.resolve()
     }
-    const dispatchers = { menu: recorder('menu'), barPick: recorder('barPick'), contextMenu: recorder('contextMenu') }
+    const dispatchers = { menu: recorder('menu'), barClick: recorder('barClick'), contextMenu: recorder('contextMenu') }
     void dispatcherForRoad(road, dispatchers)('file.delete')
     expect(taken, `the ${String(road)} road`).toHaveLength(1)
     return taken[0]
   }
 
-  it('runs a file-moving row the person picked (a click, or the open menu’s Enter)', () => {
+  it('runs a file-moving row the person clicked', () => {
     for (const commandId of FILE_MOVING_COMMAND_IDS) {
-      expect(isRefusedInTextField(commandId, sourceFor('barPick'), true), commandId).toBe(false)
+      expect(isRefusedInTextField(commandId, sourceFor('barClick'), true), commandId).toBe(false)
     }
   })
 

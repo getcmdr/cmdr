@@ -18,9 +18,9 @@ import type { ExplorerAPI } from './explorer-api'
  * - `menu`: the `execute-command` relay (the native menu bar, a click or its accelerator, which
  *   the menu event can't tell apart; the Dock menu; MCP's dialog tools; other windows), plus the
  *   menu's own `view-mode-changed` and `menu-sort` events.
- * - `barPick`: an `execute-command` from a row the person picked on a bar the page draws (off macOS:
- *   a click, or the open menu's keyboard walk; `road: barPick`), never an accelerator. A chord a
- *   bar row shows arrives as `keyboard` in this window and as `menu` from another.
+ * - `barClick`: an `execute-command` from a row the person clicked on a bar the page draws or its
+ *   main-menu button (off macOS; `road: barClick`). Never a key: the open menu's own keys arrive as
+ *   `menu`, and a chord a bar row shows as `keyboard` in this window and as `menu` from another.
  * - `contextMenu`: an `execute-command` from a right-click menu's own row (`road: contextMenu`).
  *   Only rows with an id the bar doesn't share say so (today "Tell me about this"); a context row
  *   sharing the bar's id arrives as `menu`.
@@ -32,7 +32,7 @@ import type { ExplorerAPI } from './explorer-api'
 export const DISPATCH_SOURCES = [
   'keyboard',
   'menu',
-  'barPick',
+  'barClick',
   'contextMenu',
   'mouse',
   'palette',

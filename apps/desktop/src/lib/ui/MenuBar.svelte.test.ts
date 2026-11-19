@@ -8,7 +8,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, tick, unmount } from 'svelte'
-import type { BarMenuView } from '#lib/ipc/bindings.js'
+import type { BarMenuView, BarPickVia } from '#lib/ipc/bindings.js'
 import { withConventions } from '#lib/platform/test-platform.js'
 import { expectNoA11yViolations } from '#lib/test-a11y.js'
 import MenuBar from './MenuBar.svelte'
@@ -114,13 +114,18 @@ async function setup(
 ) {
   withConventions(props.flavor === 'mac' ? 'macos' : 'windows')
   const picked: string[] = []
+  /** How each pick came, in `picked`'s order: a pointer click, or a key. */
+  const vias: BarPickVia[] = []
   const target = document.createElement('div')
   document.body.append(target)
   const component = mount(MenuBar, {
     target,
     props: {
       menus: props.menus ?? MENUS,
-      onPick: (id: string) => picked.push(id),
+      onPick: (id: string, via: BarPickVia) => {
+        picked.push(id)
+        vias.push(via)
+      },
       ariaLabel: 'Menu bar',
       flavor: props.flavor ?? 'desktop',
       keyScope: props.keyScope,
@@ -132,7 +137,7 @@ async function setup(
     void unmount(component)
   })
   await settle()
-  return { picked, bar: target.querySelector<HTMLElement>('[role="menubar"]') }
+  return { picked, vias, bar: target.querySelector<HTMLElement>('[role="menubar"]') }
 }
 
 /** Lets the placement pass and the focus effect run. */
@@ -376,6 +381,45 @@ describe('MenuBar keys on Windows', () => {
     await settle()
     rows()[0].click()
     expect(picked).toHaveLength(2)
+  })
+
+  // Regression anchor (review of #1281): from a text field, a stray Alt, then `f`, then `l` opened
+  // File > Delete, because the menu's own keys counted as a click. The text-field gate refuses a
+  // file-moving row reached by any key, so the bar says how each pick came.
+  it('tells a pointer click from a key: Enter, Space, and a row’s letter are keys', async () => {
+    const field = document.createElement('input')
+    document.body.append(field)
+    field.focus()
+    const { picked, vias } = await setup()
+    await tapAlt()
+    await press('f')
+    await press('Enter')
+    down('v', { code: 'KeyV', altKey: true })
+    await settle()
+    await press(' ')
+    expect(picked).toEqual(['file_rename', 'show_hidden_files'])
+    expect(vias).toEqual(['key', 'key'])
+
+    down('v', { code: 'KeyV', altKey: true })
+    await settle()
+    await press('b')
+    await press('s')
+    expect(vias.at(-1)).toBe('key')
+
+    titles()[0].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }))
+    await settle()
+    rows()[1].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }))
+    rows()[1].click()
+    await settle()
+    expect(picked.at(-1)).toBe('file_rename')
+    expect(vias.at(-1)).toBe('click')
+
+    // A menu a click opened, then the keyboard: still a key.
+    titles()[0].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }))
+    await settle()
+    await press('ArrowDown')
+    await press('Enter')
+    expect(vias.at(-1)).toBe('key')
   })
 
   it('picks by a row’s letter, entering a submenu by its letter too', async () => {

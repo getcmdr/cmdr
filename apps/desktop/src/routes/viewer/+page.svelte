@@ -50,7 +50,7 @@
     import { pageDrawsMenuBar, platformConventions } from '#lib/platform/index.js'
     import MainMenuButton from '#lib/ui/MainMenuButton.svelte'
     import { menuLayout, showsMainMenuButton } from '#lib/ui/command-menu/menu-layout.js'
-    import type { BarMenuView } from '#lib/ipc/bindings.js'
+    import type { BarMenuView, BarPickVia } from '#lib/ipc/bindings.js'
     import { pickMenuBarItem } from '#lib/tauri-commands/index.js'
     import { createViewerTail } from './viewer-tail.svelte'
     import { logSessionOpFailure, sessionOpFailureKey, type SessionOp } from './viewer-session-op-failure'
@@ -102,8 +102,8 @@
     /** The viewer bar's rows, bound out of `ViewerMenuBar` for the main-menu button. */
     let viewerMenus = $state<BarMenuView[]>([])
 
-    function pickViewerMenuRow(menuId: string): void {
-        pickMenuBarItem(menuId, 'pick').catch((error: unknown) => {
+    function pickViewerMenuRow(menuId: string, via: BarPickVia): void {
+        pickMenuBarItem(menuId, via).catch((error: unknown) => {
             log.warn("Couldn't run a menu bar pick: {error}", { error })
         })
     }
@@ -1220,6 +1220,7 @@
                 canGoBack: navigation.canGoBack,
                 canGoForward: navigation.canGoForward,
                 searchFocused: searchInputFocused,
+                showMenuBar: getShowMenuBar(),
             }}
             layout={menuChrome}
             bind:menus={viewerMenus}

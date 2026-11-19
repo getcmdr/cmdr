@@ -7950,15 +7950,17 @@ export type BarPickOutcome =
 
 /**
  *  How a page reached a bar row, which the main window's dispatch tells apart where a native bar
- *  can't: its text-field gate refuses a file-moving command's KEY while a field has focus, never
- *  the person's own pick of the row (`routes/(main)/text-field-gate.ts`).
+ *  can't: its text-field gate refuses a file-moving command reached by a KEY while a field has
+ *  focus, and runs one the person clicked (`routes/(main)/text-field-gate.ts`, task 63 step 9).
  */
 export type BarPickVia =
-  // A click on the row, or the open menu's own keyboard walk (Enter, Space, its letter).
-  | 'pick'
+  // A pointer click on the row.
+  | 'click'
   /**
-   *  A chord the row shows, fired from a window that draws no bar of its own
-   *  (`#lib/ui/command-menu/window-bar-keys.ts`, the viewer's): an accelerator, as a native bar's.
+   *  Any key: the open menu's own (Enter, Space, a row's letter, after Alt, F10, or Alt+letter),
+   *  or a chord the row shows, fired from a window that draws no bar of its own
+   *  (`#lib/ui/command-menu/window-bar-keys.ts`, the viewer's). Typed keys never move files from
+   *  a text field, however the menu was reached (review of #1281: Alt, `f`, `l` deleted).
    */
   | 'key'
 
@@ -8716,7 +8718,7 @@ export type CmdrOperation = {
 
 /**
  *  Which road an `execute-command` came in by. The main window maps it onto its own
- *  `DispatchSource` (`menu` or `contextMenu`).
+ *  `DispatchSource` (`menu`, `contextMenu`, or `barClick`).
  */
 export type CommandRoad =
   // The menu bar, the Dock menu, an MCP tool, or another window.
@@ -8724,10 +8726,11 @@ export type CommandRoad =
   // A right-click menu's own row.
   | 'contextMenu'
   /**
-   *  A row the person picked on a bar the page draws (a click, or the open menu's keyboard walk):
-   *  never an accelerator, which is what lets a file-moving row run with a text field focused.
+   *  A pointer click on a row of a bar the page draws (or of its main-menu button). Never a key:
+   *  not a chord and not the open menu's own keys, so this alone lets a file-moving row run with
+   *  a text field focused (`routes/(main)/text-field-gate.ts`).
    */
-  | 'barPick'
+  | 'barClick'
 
 // What [`count_all`] decided for a listing.
 export type CommitCountPass =
@@ -24421,6 +24424,11 @@ export type ViewerBarInputs = {
   canGoForward: boolean
   // The search box holds keyboard focus, which is what makes Cut and Paste live.
   searchFocused: boolean
+  /**
+   *  View > Show menu bar's check (Windows and Linux): whether the page draws the bar now, from
+   *  the `appearance.menuBar` setting. Its pick runs `view.toggleMenuBar`, as the main bar's does.
+   */
+  showMenuBar: boolean
 }
 
 /**

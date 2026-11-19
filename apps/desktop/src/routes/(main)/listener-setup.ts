@@ -95,7 +95,7 @@ export interface ListenerSetupContext {
    * with its own id takes `contextMenu`) and the mouse's side buttons. Each is bound to its road in
    * `+page.svelte`, so the dispatch core knows where a command came from.
    */
-  dispatchers: Pick<CommandDispatchers, 'menu' | 'barPick' | 'contextMenu' | 'mouse'>
+  dispatchers: Pick<CommandDispatchers, 'menu' | 'barClick' | 'contextMenu' | 'mouse'>
   /** The page's mount scope; every registered unlisten goes here. */
   scope: MountScope
   /** Write-only dialog setters (the component owns the `$state`). */
@@ -111,18 +111,18 @@ export interface ListenerSetupContext {
 
 /**
  * The dispatcher an `execute-command` takes by the road it says it came in on: a right-click
- * row's own (`contextMenu`), a page bar's pick (`barPick`, which the text-field gate lets through),
+ * row's own (`contextMenu`), a page bar's click (`barClick`, which the text-field gate lets through),
  * or the menu's for everything else (a native bar's click or accelerator, the Dock, other windows).
  */
 export function dispatcherForRoad(
   road: CommandRoad | undefined,
-  dispatchers: Pick<CommandDispatchers, 'menu' | 'barPick' | 'contextMenu'>,
+  dispatchers: Pick<CommandDispatchers, 'menu' | 'barClick' | 'contextMenu'>,
 ): CommandDispatchers['menu'] {
   // An emit that names no road (another window's, an E2E harness's) is the menu's, as before roads.
   // Regression anchor: an exhaustive switch returned nothing for it, so File > Tell me about this
   // from the harness threw "not a function" (Linux E2E lane, 2026-11-19).
   if (road === 'contextMenu') return dispatchers.contextMenu
-  if (road === 'barPick') return dispatchers.barPick
+  if (road === 'barClick') return dispatchers.barClick
   return dispatchers.menu
 }
 
@@ -280,7 +280,7 @@ export async function setupMenuListeners(ctx: ListenerSetupContext): Promise<voi
 
   // Single unified listener for all menu commands routed through "execute-command": the
   // native menu bar, the Dock menu, and other windows' emits take the menu's road; a
-  // right-click menu's own row (`road: contextMenu`) and a page bar's pick (`road: barPick`)
+  // right-click menu's own row (`road: contextMenu`) and a page bar's click (`road: barClick`)
   // take their own.
   try {
     scope.add(

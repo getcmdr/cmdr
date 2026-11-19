@@ -6,7 +6,7 @@
  * `context-menu.svelte.ts`). A greyed row never picks.
  */
 
-import type { Row } from '#lib/ipc/bindings.js'
+import type { BarPickVia, Row } from '#lib/ipc/bindings.js'
 import type { PlacementRect } from '../anchored-placement'
 import { edgeLive, isLive, nextLive, rowAccessKeys, type MenuFlavor, type PickableRow } from './rows'
 
@@ -53,8 +53,12 @@ export interface MenuStackDeps {
   flavor: () => MenuFlavor
   /** Whether rows carry access keys (the `desktop` flavor, on a platform that has them). */
   accessKeys: () => boolean
-  /** A live command or check was picked. The stack stays as it is; the caller closes it. */
-  onPick: (row: PickableRow) => void
+  /**
+   * A live command or check was picked, by a pointer click (`click`) or a key (`key`: Enter,
+   * Space, a row's letter). The stack stays as it is; the caller closes it. Which one matters: the
+   * main window's text-field gate runs a file-moving row only when it was clicked.
+   */
+  onPick: (row: PickableRow, via: BarPickVia) => void
 }
 
 /**
@@ -178,8 +182,8 @@ export function createMenuStack(deps: MenuStackDeps): MenuStack {
     surfaces = [...surfaces, child]
   }
 
-  /** Acts on a row: a submenu opens (its cursor inside), a command or check picks. */
-  function activate(depth: number, index: number, withCursor: boolean): boolean {
+  /** Acts on a row: a submenu opens (its cursor inside), a command or check picks, `via` a click or a key. */
+  function activate(depth: number, index: number, withCursor: boolean, via: BarPickVia): boolean {
     const row = surfaces.at(depth)?.rows.at(index)
     if (!isLive(row)) return false
     if (row.kind === 'submenu') {
@@ -187,7 +191,7 @@ export function createMenuStack(deps: MenuStackDeps): MenuStack {
       return true
     }
     cancelPending()
-    deps.onPick(row)
+    deps.onPick(row, via)
     return true
   }
 
@@ -255,7 +259,7 @@ export function createMenuStack(deps: MenuStackDeps): MenuStack {
       const depth = activeDepth()
       const surface = surfaces.at(depth)
       if (!surface || surface.highlighted < 0) return false
-      activate(depth, surface.highlighted, true)
+      activate(depth, surface.highlighted, true, 'key')
       return true
     },
     typeAhead(letter) {
@@ -265,7 +269,7 @@ export function createMenuStack(deps: MenuStackDeps): MenuStack {
       const index = surface.letters.indexOf(letter)
       if (index < 0 || !isLive(surface.rows[index])) return false
       setHighlight(surface, index, 'keyboard')
-      return activate(depth, index, true)
+      return activate(depth, index, true, 'key')
     },
     hoverRow(depth, index) {
       const surface = surfaces.at(depth)
@@ -291,7 +295,7 @@ export function createMenuStack(deps: MenuStackDeps): MenuStack {
       })
     },
     clickRow(depth, index) {
-      activate(depth, index, true)
+      activate(depth, index, true, 'click')
     },
     refresh(rows) {
       const first = surfaces.at(0)

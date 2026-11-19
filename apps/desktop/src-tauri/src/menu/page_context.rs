@@ -74,13 +74,16 @@ fn may_pick<R: Runtime>(menu_state: &MenuState<R>, token: u32, menu_id: &str) ->
 
 /// A page's pick of `menu_id` from the menu at `token`: the handler a native pick reaches, or
 /// nothing for a stale menu. One pick per menu, as a native menu closes on its pick.
-pub fn pick(app: &AppHandle<tauri::Wry>, token: u32, menu_id: &str) -> ContextPickOutcome {
+pub fn pick(app: &AppHandle<tauri::Wry>, token: u32, menu_id: &str, window: &str) -> ContextPickOutcome {
     let menu_state = app.state::<MenuState<tauri::Wry>>();
     if !may_pick(&menu_state, token, menu_id) {
         return ContextPickOutcome::Stale;
     }
     menu_state.page_context.lock_ignore_poison().live.clear();
-    super::menu_handlers::handle_menu_pick(app, menu_id, super::menu_handlers::PickSource::NATIVE);
+    // The page names its window (the viewer's text menu acts on that viewer, not the focused one).
+    // A right-click row keeps the native road: Relay, or `ContextMenu` for a row only it carries.
+    let source = super::menu_handlers::PickSource::page(crate::window_events::CommandRoad::Relay, window);
+    super::menu_handlers::handle_menu_pick(app, menu_id, source);
     ContextPickOutcome::Ran
 }
 

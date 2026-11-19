@@ -11,7 +11,7 @@
  * was. Mechanics: `../DETAILS.md` § Command menus.
  */
 
-import type { Row } from '#lib/ipc/bindings.js'
+import type { BarPickVia, Row } from '#lib/ipc/bindings.js'
 import { captureFocusOrigin, restoreFocus, type FocusOrigin } from '../focus-restore'
 import { createKeyboardCues, cueRule, type KeyboardCues } from '../keyboard-cues'
 import { createMenuStack, type MenuStack } from './menu-stack.svelte'
@@ -42,8 +42,11 @@ export interface ContextMenuOpen {
 }
 
 export interface ContextMenuDeps {
-  /** A row was picked: its menu id. The menu is closed and focus is back where it was. */
-  onPick: (menuId: string) => void
+  /**
+   * A row was picked: its menu id, and whether a pointer click (`click`) or a key (`key`) picked
+   * it. The menu is closed and focus is back where it was.
+   */
+  onPick: (menuId: string, via: BarPickVia) => void
   /** Defaults to `desktop`: only Windows draws its context menus in the page. The demo passes `mac`. */
   flavor?: () => MenuFlavor
   /** Whether this platform has access keys (`convention('accessKeys')`). */
@@ -90,9 +93,9 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
   const stack = createMenuStack({
     flavor,
     accessKeys: hasLetters,
-    onPick: (row) => {
+    onPick: (row, via) => {
       close(true, true)
-      deps.onPick(row.id)
+      deps.onPick(row.id, via)
     },
   })
 

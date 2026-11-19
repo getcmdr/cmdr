@@ -409,15 +409,21 @@ row is decided here or in the frontend.
   (`handle_menu_event` is a thin wrapper over it), after doing what a native check item does by itself: Show hidden
   files flips its stored check (and the native item, where one is built) first, since the handler reads the new state
   off it. The view-mode and sort lanes need no flip: they write every check from the stored state.
-  `via` (`BarPickVia`) says how the page reached the row: `pick` (a click, or the open menu's keyboard walk) sends a
-  plain command down the `BarPick` road, which the main window's text-field gate lets through; `key` (a chord a window
-  without a bar fires) sends it down `Relay`, as a native accelerator, which the gate refuses for a file-moving row.
-  The calling window stands in for focus too: a file-scoped row runs only when the page that asked is the main
-  window's (`menu_handlers::PickSource`), where a native pick asks whether the main window has focus. Regression
-  anchor: an X session with no window manager (the Linux E2E lane) never reports the main window focused, so every
-  file-scoped pick from the page bar did nothing there.- **The viewer's bar** is `get_viewer_menu_bar(inputs)`, a pure answer from the viewer page's own state
-  (`cmdr_menu::page::viewer`): no store, no event. Its picks go through `pick_menu_bar_item` too, to the focused viewer's
-  lanes; File > Close is `VIEWER_CLOSE_ID`, a lane only a page reaches (the native Close is the OS's own item).
+  `via` (`BarPickVia`) says how the page reached the row: `click` (a pointer click, on the bar or its main-menu button)
+  sends a plain command down the `BarClick` road, which the main window's text-field gate lets through; `key` (the
+  open menu's own keys, or a chord a window without a bar fires) sends it down `Relay`, as a native accelerator, which
+  the gate refuses for a file-moving row while a text field has focus. Regression anchor (review of #1281): a stray
+  Alt, then `f`, then `l` in a text field opened File > Delete while the menu's keys still counted as a click.
+  The calling window stands in for focus everywhere a row is window-bound (`menu_handlers::PickWindow`): a file-scoped
+  row runs only from the main window's page, an Edit row asks `edit_road` about the page that sent it (so a Ctrl+V in
+  the queue edits the queue's field, never the main window's files), Close closes the window that fired it, and the
+  viewer's rows act on the viewer that drew them. Only a native pick, whose event names no window, reads focus.
+  `pick_context_menu_item` names its window the same way. Regression anchors: an X session with no window manager
+  (the Linux E2E lane) reports focus wrong, so every file-scoped page pick did nothing there, and a queue Ctrl+V read
+  against a stale "main is focused" pasted files into the main pane (review of #1281).
+- **The viewer's bar** is `get_viewer_menu_bar(inputs)`, a pure answer from the viewer page's own state
+  (`cmdr_menu::page::viewer`): no store, no event. Its picks go through `pick_menu_bar_item` too, to the lanes of the viewer that sent
+  them; File > Close is `VIEWER_CLOSE_ID`, a lane only a page reaches (the native Close is the OS's own item).
 - A sync command runs on the main thread, as `on_menu_event` does, so a page's pick runs where a native one would.
 
 ### Right-click menus a page draws

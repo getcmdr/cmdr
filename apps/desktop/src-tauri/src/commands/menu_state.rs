@@ -396,5 +396,5 @@ pub fn pick_menu_bar_item(
     menu_id: String,
     via: page_bar::BarPickVia,
 ) -> BarPickOutcome {
-    page_bar::pick(&app, &menu_id, via, window.label() == "main")
+    page_bar::pick(&app, &menu_id, via, window.label())
 }

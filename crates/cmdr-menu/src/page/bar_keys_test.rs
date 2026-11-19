@@ -78,6 +78,7 @@ fn every_shown_page_bar_key_is_in_the_frontends_fixture() {
             can_go_back: true,
             can_go_forward: true,
             search_focused: true,
+            show_menu_bar: true,
         };
         lines_for(platform, "viewer", &viewer_bar_view(viewer, platform), &mut lines);
     }

@@ -7,7 +7,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest'
 import { mount, tick, unmount } from 'svelte'
-import type { BarMenuView } from '#lib/ipc/bindings.js'
+import type { BarMenuView, BarPickVia } from '#lib/ipc/bindings.js'
 import { withConventions } from '#lib/platform/test-platform.js'
 import type { ConventionsDesktop } from '#lib/platform/conventions.js'
 import { expectNoA11yViolations } from '#lib/test-a11y.js'
@@ -56,13 +56,17 @@ function pane(): HTMLButtonElement {
 async function setup(props: { desktop?: ConventionsDesktop; opensOnF10?: boolean } = {}) {
   teardowns.push(withConventions(props.desktop ?? 'gnome'))
   const picked: string[] = []
+  const vias: BarPickVia[] = []
   const target = document.createElement('div')
   document.body.append(target)
   const component = mount(MainMenuButton, {
     target,
     props: {
       menus: MENUS,
-      onPick: (id: string) => picked.push(id),
+      onPick: (id: string, via: BarPickVia) => {
+        picked.push(id)
+        vias.push(via)
+      },
       label: 'Main menu',
       opensOnF10: props.opensOnF10 ?? false,
     },
@@ -73,7 +77,7 @@ async function setup(props: { desktop?: ConventionsDesktop; opensOnF10?: boolean
   await settle()
   const button = target.querySelector<HTMLButtonElement>('.main-menu-button')
   if (!button) throw new Error('no button')
-  return { picked, button }
+  return { picked, vias, button }
 }
 
 function down(key: string, init: KeyboardEventInit = {}): KeyboardEvent {
@@ -142,6 +146,31 @@ describe('MainMenuButton', () => {
     expect(picked).toEqual(['rename'])
     expect(surfaces()).toHaveLength(0)
     expect(document.activeElement).toBe(origin)
+  })
+
+  // Regression anchor (review of #1281): F10, `f`, `l` in a text field opened File > Delete, since
+  // the menu's own keys counted as a click. The text-field gate runs a file-moving row only when
+  // it was clicked, so the button says how each pick came.
+  it('tells a pointer click on a row from the menu’s own keys', async () => {
+    const field = document.createElement('input')
+    document.body.append(field)
+    field.focus()
+    const { picked, vias, button } = await setup()
+    await click(button)
+    await press('ArrowDown')
+    await press('ArrowRight')
+    await press('Enter')
+    expect(picked).toEqual(['rename'])
+    expect(vias).toEqual(['key'])
+
+    await click(button)
+    await press('ArrowDown')
+    await press('ArrowRight')
+    const row = surfaces()[1]?.querySelector<HTMLElement>('[data-menu-id="rename"]')
+    row?.click()
+    await settle()
+    expect(picked).toEqual(['rename', 'rename'])
+    expect(vias).toEqual(['key', 'click'])
   })
 
   it('closes on a second press of the button, rather than reopening', async () => {

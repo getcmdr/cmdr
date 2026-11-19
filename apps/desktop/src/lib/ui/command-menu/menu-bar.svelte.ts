@@ -17,7 +17,7 @@
  */
 
 import { flushSync } from 'svelte'
-import type { BarMenuView } from '#lib/ipc/bindings.js'
+import type { BarMenuView, BarPickVia } from '#lib/ipc/bindings.js'
 import { allocateAccessKeys, accessKeyLettersOf } from '../access-keys'
 import { captureFocusOrigin, isInFocusHome, restoreFocus, type FocusOrigin } from '../focus-restore'
 import { createKeyboardCues, cueRule, type KeyboardCues } from '../keyboard-cues'
@@ -28,8 +28,11 @@ import { rowLabelText, type MenuFlavor } from './rows'
 
 export interface MenuBarDeps {
   getMenus: () => readonly BarMenuView[]
-  /** A row was picked: its menu id. Focus is already back where it was. */
-  onPick: (menuId: string) => void
+  /**
+   * A row was picked: its menu id, and whether a pointer click (`click`) or a key (`key`: the
+   * bar's own Enter, Space, or letter) picked it. Focus is already back where it was.
+   */
+  onPick: (menuId: string, via: BarPickVia) => void
   flavor: () => MenuFlavor
   /** Whether this platform has access keys (`convention('accessKeys')`). */
   accessKeys: () => boolean
@@ -135,9 +138,9 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
   const stack = createMenuStack({
     flavor: deps.flavor,
     accessKeys: hasLetters,
-    onPick: (row) => {
+    onPick: (row, via) => {
       deactivate(true)
-      deps.onPick(row.id)
+      deps.onPick(row.id, via)
     },
   })
 

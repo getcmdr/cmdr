@@ -8,7 +8,7 @@
      * the caller sends through `pick_menu_bar_item`. Mechanics: `DETAILS.md` § Command menus.
      */
     import { untrack } from 'svelte'
-    import type { BarMenuView } from '#lib/ipc/bindings.js'
+    import type { BarMenuView, BarPickVia } from '#lib/ipc/bindings.js'
     import { convention } from '#lib/platform/conventions.js'
     import { tooltip } from '#lib/tooltip/tooltip.js'
     import { isTextInputFocused } from '#lib/utils/text-input-focus.js'
@@ -22,8 +22,11 @@
     interface Props {
         /** The bar's menus, as the backend answers them (`get_menu_bar`), kept live by the caller. */
         menus: readonly BarMenuView[]
-        /** A row was picked, by menu id. The menu is closed and focus is back where it was. */
-        onPick: (menuId: string) => void
+        /**
+         * A row was picked, by menu id, and `via` a pointer click or a key (F10 then letters,
+         * arrows then Enter). The menu is closed and focus is back where it was.
+         */
+        onPick: (menuId: string, via: BarPickVia) => void
         /** Its tooltip and accessible name ("Main menu"). */
         label: string
         /** F10 opens it from anywhere in the window: GNOME's HIG key, where no bar takes it. */
@@ -44,8 +47,8 @@
     const rows = $derived(primaryMenuRows(menus, { standardGroup: convention('menuModel') === 'primaryMenu' }))
 
     const menu = createContextMenu({
-        onPick: (menuId) => {
-            onPick(menuId)
+        onPick: (menuId, via) => {
+            onPick(menuId, via)
         },
         accessKeys: () => convention('accessKeys') !== 'none',
         onClose: () => {

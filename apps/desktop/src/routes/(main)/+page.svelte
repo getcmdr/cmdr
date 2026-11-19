@@ -794,7 +794,7 @@
     const dispatchers: CommandDispatchers = {
         keyboard: gestureDispatcherFor('keyboard'),
         menu: gestureDispatcherFor('menu'),
-        barPick: gestureDispatcherFor('barPick'),
+        barClick: gestureDispatcherFor('barClick'),
         contextMenu: gestureDispatcherFor('contextMenu'),
         mouse: gestureDispatcherFor('mouse'),
         palette: gestureDispatcherFor('palette'),

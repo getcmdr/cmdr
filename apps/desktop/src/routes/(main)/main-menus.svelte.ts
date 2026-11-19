@@ -5,7 +5,7 @@
  * row, so both draw the same rows. A pick from either goes back through `pick_menu_bar_item`, the
  * handler a native click reaches.
  */
-import type { BarMenuView } from '#lib/ipc/bindings.js'
+import type { BarMenuView, BarPickVia } from '#lib/ipc/bindings.js'
 import { followMenuBar, pickMenuBarItem } from '#lib/tauri-commands/index.js'
 import { getAppLogger } from '#lib/logging/logger.js'
 
@@ -41,9 +41,12 @@ export function createMainMenus(): MainMenus {
   }
 }
 
-/** Runs a row the bar or the main-menu button picked, as a native click would. */
-export function pickMainMenuRow(menuId: string): void {
-  pickMenuBarItem(menuId, 'pick').catch((error: unknown) => {
+/**
+ * Runs a row the bar or the main-menu button picked, as a native click would. `via` says whether a
+ * pointer click or a key picked it, which the text-field gate needs (`text-field-gate.ts`).
+ */
+export function pickMainMenuRow(menuId: string, via: BarPickVia): void {
+  pickMenuBarItem(menuId, via).catch((error: unknown) => {
     log.warn("Couldn't run a menu bar pick: {error}", { error })
   })
 }

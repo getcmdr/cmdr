@@ -366,7 +366,7 @@ export const fileHandlers = {
   'file.tellMeAbout': (hctx) =>
     withEntryUnderCursor(hctx, (entry) => {
       // A page bar's pick is the menu bar's to the analytics vocabulary, as a native bar's click is.
-      const trigger = hctx.ctx.source === 'barPick' ? 'menu' : hctx.ctx.source
+      const trigger = hctx.ctx.source === 'barClick' ? 'menu' : hctx.ctx.source
       openAboutThisFor(hctx.explorerRef, entry, trigger)
     }),
 

@@ -300,24 +300,78 @@ pub fn handle_menu_event(app: &AppHandle<tauri::Wry>, event: tauri::menu::MenuEv
     handle_menu_pick(app, event.id().as_ref(), PickSource::NATIVE);
 }
 
-/// Where a menu pick came from, which decides how a plain command leaves for the main window.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Where a menu pick came from, which decides how a plain command leaves for the main window and
+/// which window a window-bound row (Edit, Close, the viewer's rows) acts on.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct PickSource {
-    /// The road the command takes: `Relay` for a native menu and a key, `BarPick` for a page bar
-    /// row the person picked.
+    /// The road the command takes: `Relay` for a native menu and any key, `BarClick` for a page bar
+    /// row the person clicked.
     pub road: crate::window_events::CommandRoad,
-    /// Whether the pick came from the main window: `Some` where the page that drew the row is
-    /// known, `None` for a native menu, whose event names no window, so the main window's focus
-    /// stands in. A file-scoped command runs only from the main window.
-    pub from_main_window: Option<bool>,
+    /// The window the pick is about.
+    pub window: PickWindow,
+}
+
+/// The window a pick came from. A page's pick names its own window, which is surer than focus:
+/// focus can lag a window switch, and an X session with no window manager (the Linux E2E lane)
+/// reports it wrong. Regression anchor (review of #1281): a Ctrl+V in the queue window, read
+/// against a stale "main is focused", pasted files into the main window's pane.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum PickWindow {
+    /// A native menu, whose event names no window: the focused one stands in.
+    Focused,
+    /// The page that drew the row (or fired its chord), by window label (`main`, `queue`,
+    /// `viewer-<n>`, ...).
+    Page(String),
 }
 
 impl PickSource {
     /// A native menu's click or accelerator.
     pub const NATIVE: Self = Self {
         road: crate::window_events::CommandRoad::Relay,
-        from_main_window: None,
+        window: PickWindow::Focused,
     };
+
+    /// A page's pick in the window labeled `label`, down `road`.
+    pub fn page(road: crate::window_events::CommandRoad, label: &str) -> Self {
+        Self {
+            road,
+            window: PickWindow::Page(label.to_string()),
+        }
+    }
+
+    /// Whether the pick came from the main window. A file-scoped command runs only from there.
+    fn is_from_main_window(&self, app: &AppHandle<tauri::Wry>) -> bool {
+        match &self.window {
+            PickWindow::Page(label) => label == "main",
+            PickWindow::Focused => app
+                .get_webview_window("main")
+                .is_some_and(|w| w.is_focused().unwrap_or(false)),
+        }
+    }
+
+    /// The windows an Edit row asks about (`edit_road`): the page's own, or focus for a native pick.
+    pub fn windows(&self, app: &AppHandle<tauri::Wry>) -> FocusedWindows {
+        match &self.window {
+            PickWindow::Page(label) => windows_of_page(label),
+            PickWindow::Focused => focused_windows(app),
+        }
+    }
+
+    /// The viewer window a viewer row acts on: the page's own, or the focused viewer for a native pick.
+    fn viewer_label(&self, app: &AppHandle<tauri::Wry>) -> Option<String> {
+        match &self.window {
+            PickWindow::Page(label) => label.starts_with("viewer-").then(|| label.clone()),
+            PickWindow::Focused => focused_viewer_label(app),
+        }
+    }
+}
+
+/// What `edit_road` hears for a pick from the page in window `label`.
+pub(crate) fn windows_of_page(label: &str) -> FocusedWindows {
+    FocusedWindows {
+        main: label == "main",
+        queue: label == "queue",
+    }
 }
 
 /// What a pick of menu item `id` does, from a native menu (`handle_menu_event`) or from a page
@@ -336,11 +390,11 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, source: Pi
                 road: crate::window_events::CommandRoad::ContextMenu,
                 ..source
             };
-            emit_command(app, command_id, scope, source);
+            emit_command(app, command_id, scope, &source);
             return;
         }
         Some(click) => {
-            dispatch_context_click(app, click);
+            dispatch_context_click(app, click, &source);
             return;
         }
     }
@@ -410,11 +464,17 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, source: Pi
 
     // === Close-tab exception: close focused non-main window, or emit tab.close ===
     if id == CLOSE_TAB_ID {
-        if let Some(main_window) = app.get_webview_window("main")
-            && main_window.is_focused().unwrap_or(false)
-        {
+        if source.is_from_main_window(app) {
             use tauri_specta::Event as _;
             let _ = crate::window_events::ExecuteCommand::relay("tab.close").emit_to(app, "main");
+        } else if let PickWindow::Page(label) = &source.window {
+            // A bar-less window fired the row's chord (Ctrl+W): that window closes, whatever has focus.
+            if let Some(window) = app.get_webview_window(label)
+                && let Err(e) = window.close()
+            {
+                // allowed-log-private: a window label Cmdr mints (`queue`, `settings`, `viewer-<n>`), no user value
+                log::warn!(target: "menu", "couldn't close the {label} window from its Close key: {e}");
+            }
         } else {
             for (_label, window) in app.webview_windows() {
                 if window.is_focused().unwrap_or(false) {
@@ -429,7 +489,9 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, source: Pi
     // === Viewer File > Close as a page draws it: close the viewer it came from ===
     // The native bar's Close is the OS's own item and never reaches here.
     if id == VIEWER_CLOSE_ID {
-        let window = focused_viewer_label(app).and_then(|label| app.get_webview_window(&label));
+        let window = source
+            .viewer_label(app)
+            .and_then(|label| app.get_webview_window(&label));
         match window.map(|window| window.close()) {
             Some(Ok(())) => {}
             Some(Err(e)) => log::warn!(target: "menu", "couldn't close the viewer from its bar: {e}"),
@@ -440,7 +502,7 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, source: Pi
 
     // === Viewer word wrap: emit to the focused viewer window ===
     if id == VIEWER_WORD_WRAP_ID {
-        if let Some(label) = focused_viewer_label(app) {
+        if let Some(label) = source.viewer_label(app) {
             use tauri_specta::Event as _;
             let _ = crate::window_events::ViewerWordWrapToggled.emit_to(app, &label);
         }
@@ -451,7 +513,7 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, source: Pi
     // The viewer runs both itself, over its own offset-based selection; see
     // `window_events::ViewerEditAction` for why these can't be native selectors.
     if let Some(action) = viewer_edit_action_for(id) {
-        let Some(label) = focused_viewer_label(app) else {
+        let Some(label) = source.viewer_label(app) else {
             log::warn!(target: "menu", "Viewer Edit item {id} clicked with no viewer focused, ignoring");
             return;
         };
@@ -462,7 +524,7 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, source: Pi
 
     // === Viewer Go > Back / Forward: emit to the focused viewer window, which owns its history ===
     if let Some(direction) = viewer_history_direction_for(id) {
-        let Some(label) = focused_viewer_label(app) else {
+        let Some(label) = source.viewer_label(app) else {
             log::warn!(target: "menu", "Viewer Go item {id} clicked with no viewer focused, ignoring");
             return;
         };
@@ -475,7 +537,7 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, source: Pi
     // One decision for both bars and every window (`edit_road`), which a page's pick asks too.
     // Focus is read only for an Edit row: two window lookups per pick otherwise.
     if native_edit_selector_for(id).is_some()
-        && let Some(road) = edit_road(id, focused_windows(app))
+        && let Some(road) = edit_road(id, source.windows(app))
     {
         run_edit_road(app, road);
         return;
@@ -637,7 +699,7 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, source: Pi
 
     // === Unified dispatch: look up command ID from the mapping ===
     if let Some((command_id, scope)) = menu_id_to_command(id) {
-        emit_command(app, command_id, scope, source);
+        emit_command(app, command_id, scope, &source);
     }
 
     // Unknown menu ID: no-op (all known IDs are handled above)
@@ -645,7 +707,7 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, source: Pi
 
 /// Sends `command_id` to the main window down `source.road`. A file-scoped one runs only from the
 /// main window: the page it came from where that's known, else the window with focus.
-fn emit_command(app: &AppHandle<tauri::Wry>, command_id: &'static str, scope: CommandScope, source: PickSource) {
+fn emit_command(app: &AppHandle<tauri::Wry>, command_id: &'static str, scope: CommandScope, source: &PickSource) {
     let road = source.road;
     if scope == CommandScope::FileScoped {
         // Focus guard: a file command acts on the main window's pane, so it must not
@@ -653,10 +715,7 @@ fn emit_command(app: &AppHandle<tauri::Wry>, command_id: &'static str, scope: Co
         // this handler whatever has focus, and a greyed-looking item is only a hint. A page's
         // pick names its own window, which is surer than focus: an X session with no window
         // manager (the Linux E2E lane) never reports the main window focused.
-        let focused = source.from_main_window.unwrap_or_else(|| {
-            app.get_webview_window("main")
-                .is_some_and(|w| w.is_focused().unwrap_or(false))
-        });
+        let focused = source.is_from_main_window(app);
         if !focused {
             // ❗ Say so. This refuses a click the user just made and shows them
             // nothing, so with no line here the symptom is "the menu did nothing"
@@ -681,7 +740,7 @@ fn emit_command(app: &AppHandle<tauri::Wry>, command_id: &'static str, scope: Co
 /// Runs a context-menu row's own lane. Every one acts on what the popup was opened over, which the
 /// `show_*` command stashed in `MenuState` (a path, a volume, a host row), or carries it in the id
 /// (a tab action, a date-sort pane).
-fn dispatch_context_click(app: &AppHandle<tauri::Wry>, click: ContextClick) {
+fn dispatch_context_click(app: &AppHandle<tauri::Wry>, click: ContextClick, source: &PickSource) {
     use tauri_specta::Event as _;
     let menu_state = app.state::<MenuState<tauri::Wry>>();
     let context_path = || menu_state.context.lock_ignore_poison().path.clone();
@@ -769,7 +828,7 @@ fn dispatch_context_click(app: &AppHandle<tauri::Wry>, click: ContextClick) {
         // `show_viewer_context_menu` focused the viewer before the popup, so the focused one is
         // the one it was popped over.
         ContextClick::ViewerText(action) => {
-            let Some(label) = focused_viewer_label(app) else {
+            let Some(label) = source.viewer_label(app) else {
                 log::warn!(target: "menu", "Viewer context item {action:?} clicked with no viewer focused, ignoring");
                 return;
             };
