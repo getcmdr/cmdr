@@ -5,7 +5,7 @@
 //! expires), so it travels as a `ShareLink`, whose `Debug` prints nothing, and
 //! ❌ nothing here logs it.
 
-use std::path::Path;
+use cmdr_fs::app_path::AppPath;
 
 use cmdr_fs::volume::{ShareLink, ShareLinkExpiry, VolumeError};
 
@@ -20,7 +20,7 @@ impl S3Volume {
     /// a request, and the UI only offers this on a file row.
     pub(super) async fn share_link_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         expires_in: ShareLinkExpiry,
     ) -> Result<ShareLink, VolumeError> {
         let Resolved { remote, holder } = self.resolve(path)?;

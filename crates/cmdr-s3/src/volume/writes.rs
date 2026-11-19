@@ -26,8 +26,8 @@
 //! That covers a write to a free name; an overwrite of an existing object
 //! there never goes as a PUT at all ([`ShortStream::OnePart`]).
 
+use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
-use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
@@ -38,7 +38,7 @@ use cmdr_fs::error_detail::ErrorDetail;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::metadata::MetadataClasses;
-use cmdr_fs::volume::patching::patch_created;
+use cmdr_fs::volume::patching::patch_created_at;
 use cmdr_fs::volume::{StreamLength, StreamWriteProgress, StreamWritten, VolumeError, VolumeReadStream, WriteMode};
 use log::{debug, warn};
 use tokio_util::sync::CancellationToken;
@@ -171,7 +171,7 @@ impl S3Volume {
     /// Streams `stream` to `dest`'s key. Returns the bytes written.
     pub(super) async fn write_from_stream_impl(
         &self,
-        dest: &Path,
+        dest: &AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
@@ -586,7 +586,7 @@ impl S3Volume {
 
     /// New File: a small PUT that only lands on a name nothing holds, a file
     /// or a folder.
-    pub(super) async fn create_file_impl(&self, path: &Path, content: &[u8]) -> Result<(), VolumeError> {
+    pub(super) async fn create_file_impl(&self, path: &AppPath, content: &[u8]) -> Result<(), VolumeError> {
         let remote = self.to_remote_path(path)?;
         let Target::Key { bucket, key } = target_of(&remote) else {
             return Err(VolumeError::AlreadyExists(remote));
@@ -632,7 +632,7 @@ impl S3Volume {
         }
         self.verify_landing(&client, &target, content.len() as u64, answer.header("etag"))
             .await?;
-        patch_created(self, path).await;
+        patch_created_at(self, path).await;
         Ok(())
     }
 }

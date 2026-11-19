@@ -5,7 +5,7 @@
 //! calls and nothing else (❌ no HEAD per child), and a stat is one HEAD plus,
 //! only when that finds no object, one bounded folder probe.
 
-use std::path::Path;
+use cmdr_fs::app_path::AppPath;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use cmdr_fs::entry::FileEntry;
@@ -71,7 +71,7 @@ impl S3Volume {
     /// after each page.
     pub(super) async fn list_directory_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&CancellationToken>,
     ) -> Result<Vec<FileEntry>, VolumeError> {
@@ -171,9 +171,9 @@ impl S3Volume {
     /// one bounded listing of what's under it.
     /// A folder a file of its name was listed beside is only ever the folder,
     /// and that file's `<name> (file)` row only ever the file (`paths.rs`).
-    pub(super) async fn get_metadata_impl(&self, path: &Path) -> Result<FileEntry, VolumeError> {
+    pub(super) async fn get_metadata_impl(&self, path: &AppPath) -> Result<FileEntry, VolumeError> {
         let Resolved { remote, holder } = self.resolve(path)?;
-        let not_here = || VolumeError::NotFound(path.to_string_lossy().into_owned());
+        let not_here = || VolumeError::NotFound(path.as_str().to_owned());
         match target_of(&remote) {
             Target::Account => self.folder_entry(&self.name, &remote, None).ok_or_else(not_here),
             Target::Bucket(bucket) => {
@@ -246,8 +246,7 @@ impl S3Volume {
                 archived,
                 ..
             } => {
-                let app_path = self.root.to_app_path(&remote)?;
-                let mut entry = FileEntry::new(name, app_path.to_string_lossy().into_owned(), false, false);
+                let mut entry = FileEntry::new(name, self.row_path(&remote)?, false, false);
                 entry.size = Some(size);
                 entry.modified_at = modified.and_then(unix_secs);
                 entry.in_cold_storage = archived;
@@ -260,8 +259,7 @@ impl S3Volume {
     /// `created` is a bucket's creation date. `None` when a misbehaving server
     /// named something off this place's root.
     pub(super) fn folder_entry(&self, name: &str, remote: &str, created: Option<SystemTime>) -> Option<FileEntry> {
-        let app_path = self.root.to_app_path(remote)?;
-        let mut entry = FileEntry::new(name.to_string(), app_path.to_string_lossy().into_owned(), true, false);
+        let mut entry = FileEntry::new(name.to_string(), self.row_path(remote)?, true, false);
         entry.created_at = created.and_then(unix_secs);
         Some(entry)
     }
@@ -277,8 +275,7 @@ impl S3Volume {
         } else {
             format!("{name}{FILE_SUFFIX}")
         };
-        let app_path = self.root.to_app_path(&shown)?;
-        let mut entry = FileEntry::new(name, app_path.to_string_lossy().into_owned(), false, false);
+        let mut entry = FileEntry::new(name, self.row_path(&shown)?, false, false);
         entry.size = head.object_length();
         entry.modified_at = modified_from_head(head.header(MTIME_HEADER), head.header("last-modified"));
         let carried = carried_from_headers(head.header(BTIME_HEADER), head.header(MODE_HEADER));

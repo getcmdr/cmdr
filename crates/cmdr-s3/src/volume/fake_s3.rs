@@ -359,6 +359,7 @@ impl FakeS3 {
             &[host],
             self.addr,
         );
-        S3Volume::assemble("fake", "s3-fake", params, client, VolumeHost::detached())
+        let place = super::paths::Place::of(&params).expect("the fake's place has an app root");
+        S3Volume::assemble("fake", "s3-fake", place, params, client, VolumeHost::detached())
     }
 }

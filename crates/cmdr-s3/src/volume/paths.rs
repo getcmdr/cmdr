@@ -9,12 +9,48 @@
 //! has why.
 
 use std::collections::HashMap;
-use std::path::Path;
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::volume::VolumeError;
+use cmdr_fs::volume::remote_paths::{RemoteAppRefusal, RemoteRoot};
 
 use super::S3Volume;
 use super::listing::{Child, FILE_SUFFIX, Settled};
+use crate::params::S3ConnectionParams;
+use crate::refusal::S3ConnectError;
+
+/// A place's root in the spellings a volume needs: the translation, the
+/// account's prefix, and the typed root `Volume::root` answers.
+pub(super) struct Place {
+    pub root: RemoteRoot,
+    /// `s3://<key id>@<host>:<port>`, what every app path on the account starts with.
+    pub prefix: String,
+    /// `<prefix>/` or `<prefix>/<bucket>`, the same text the root always had.
+    pub app: AppPathBuf,
+}
+
+impl Place {
+    /// The place `params` names.
+    ///
+    /// # Errors
+    ///
+    /// A bucket (or a key id) holding text no app path holds yet (a NUL, an
+    /// escape-range code point), which no S3 provider allows in a bucket name or
+    /// issues as a key id: `NoSuchBucket` for the bucket, `KeysRejected` for the
+    /// key id.
+    pub(super) fn of(params: &S3ConnectionParams) -> Result<Self, S3ConnectError> {
+        let prefix = cmdr_fs::volume::s3_app_root(params.host(), params.port(), params.access_key_id());
+        let root = RemoteRoot::new(prefix.clone(), std::path::Path::new(&params.remote_root()));
+        let app = match root.app() {
+            Ok(app) => app.to_owned(),
+            Err(_) if RemoteRoot::new(prefix.clone(), std::path::Path::new("/")).app().is_ok() => {
+                return Err(S3ConnectError::NoSuchBucket);
+            }
+            Err(_) => return Err(S3ConnectError::KeysRejected),
+        };
+        Ok(Self { root, prefix, app })
+    }
+}
 
 /// What a server-side path names.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -87,16 +123,23 @@ pub(super) enum Shown {
 impl S3Volume {
     /// The server-side path for `path`, or `NotFound` when `path` isn't on this
     /// place. A `<name> (file)` row's path gives its real key.
-    pub(super) fn to_remote_path(&self, path: &Path) -> Result<String, VolumeError> {
+    pub(super) fn to_remote_path(&self, path: &AppPath) -> Result<String, VolumeError> {
         Ok(self.resolve(path)?.remote)
     }
 
     /// The server-side path for `path` and which holder of its name it means.
-    pub(super) fn resolve(&self, path: &Path) -> Result<Resolved, VolumeError> {
-        let shown = self
-            .root
-            .to_remote_path(path)
-            .ok_or_else(|| VolumeError::NotFound(path.to_string_lossy().into_owned()))?;
+    pub(super) fn resolve(&self, path: &AppPath) -> Result<Resolved, VolumeError> {
+        self.resolve_shown(self.root.to_remote(path), || path.as_str().to_owned())
+    }
+
+    /// [`Self::resolve`] from the server-side path a row shows (`None` off
+    /// this place, `NotFound` naming `spelled()`).
+    pub(super) fn resolve_shown(
+        &self,
+        shown: Option<String>,
+        spelled: impl FnOnce() -> String,
+    ) -> Result<Resolved, VolumeError> {
+        let shown = shown.ok_or_else(|| VolumeError::NotFound(spelled()))?;
         let beside = self.beside_folders();
         if let Some(real) = shown.strip_suffix(FILE_SUFFIX)
             && beside.get(real) == Some(&Shown::AsFileRow)
@@ -112,6 +155,27 @@ impl S3Volume {
             Holder::Either
         };
         Ok(Resolved { remote: shown, holder })
+    }
+
+    /// The app path a row at the server-side `remote` carries, as text: what
+    /// `FileEntry.path` holds. `None` when a misbehaving server named something
+    /// off this place's root.
+    ///
+    /// ❗ A server name the typed path can't hold yet (an escape-range code
+    /// point, a NUL) keeps today's spelling, `<prefix><remote>`, ❌ never a
+    /// dropped row: escapes aren't live (`RemoteAppRefusal::NotAppText`).
+    pub(super) fn row_path(&self, remote: &str) -> Option<String> {
+        match self.root.to_app(remote) {
+            Ok(path) => Some(path.into_string()),
+            Err(RemoteAppRefusal::OffRoot) => None,
+            Err(RemoteAppRefusal::NotAppText(_)) => Some(format!("{}{remote}", self.prefix)),
+        }
+    }
+
+    /// [`Self::row_path`] as a typed app path, for the listing patcher; `None`
+    /// also for a server name the typed path can't hold yet.
+    pub(super) fn app_path_of(&self, remote: &str) -> Option<AppPathBuf> {
+        self.root.to_app(remote).ok()
     }
 
     /// The server-side path a pane shows the object at `remote` under:

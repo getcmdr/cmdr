@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::entry::FileEntry;
 
 use cmdr_fs::ignore_poison::RwLockIgnorePoison;
@@ -66,6 +67,11 @@ pub struct S3Volume {
     /// (`s3://AKIA…@s3.eu-west-1.amazonaws.com:443/photos`) and the server's
     /// (`/photos`). ❗ Every path translation goes through it, ❌ never by hand.
     root: RemoteRoot,
+    /// The account's `s3://<key id>@<host>:<port>`, for a row whose server name
+    /// the typed path can't hold yet (`paths::S3Volume::row_path`).
+    prefix: String,
+    /// The root `Volume::root` answers, typed.
+    app_root: AppPathBuf,
     inner: Arc<S3VolumeInner>,
 }
 
@@ -272,6 +278,7 @@ pub async fn connect_s3_volume(
     let Some(secret) = secret else {
         return Err(S3ConnectError::NeedsCredentials);
     };
+    let place = paths::Place::of(&params)?;
     let client = build_and_probe(&params, &secret.secret, &cancel).await?;
     if cancel.is_cancelled() {
         return Err(S3ConnectError::Cancelled);
@@ -280,7 +287,7 @@ pub async fn connect_s3_volume(
     // endpoint, key, bucket, or region crosses.
     host.analytics()
         .record("s3_connected", &[("provider", params.provider().kind_name())]);
-    let volume = S3Volume::assemble(name, volume_id, params, client, host);
+    let volume = S3Volume::assemble(name, volume_id, place, params, client, host);
     // Uploads an earlier session left unfinished are billed until aborted.
     volume.inner.spawn_upload_sweep();
     Ok(volume)
@@ -306,16 +313,21 @@ async fn build_and_probe(
 }
 
 impl S3Volume {
-    fn assemble(name: &str, volume_id: &str, params: S3ConnectionParams, client: S3Client, host: VolumeHost) -> Self {
-        let root = RemoteRoot::new(
-            cmdr_fs::volume::s3_app_root(params.host(), params.port(), params.access_key_id()),
-            std::path::Path::new(&params.remote_root()),
-        );
+    fn assemble(
+        name: &str,
+        volume_id: &str,
+        place: paths::Place,
+        params: S3ConnectionParams,
+        client: S3Client,
+        host: VolumeHost,
+    ) -> Self {
         let auto_reconnect = params.auto_reconnect;
         let ledger = UploadLedger::at(host.state_dir(BACKEND));
         Self {
             name: name.to_string(),
-            root,
+            root: place.root,
+            prefix: place.prefix,
+            app_root: place.app,
             inner: Arc::new_cyclic(|me| S3VolumeInner {
                 session: HttpSession::new(me, volume_id, &host, Some(client), auto_reconnect),
                 volume_id: volume_id.to_string(),

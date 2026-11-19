@@ -20,7 +20,7 @@
 //!   itself still refuses them with `NotSupported`, so nothing copies a whole
 //!   folder by accident.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::path::{Path, PathBuf};
 
 use cmdr_fs::entry::FileEntry;
@@ -30,7 +30,7 @@ use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::os_error::OsErrorClass;
 use cmdr_fs::volume::host::listings::ListingHost;
 use cmdr_fs::volume::mkdir_all::{self, LeadsTo, MakesDirectories};
-use cmdr_fs::volume::patching::{PatchSource, patch_created, patch_deleted, patch_renamed};
+use cmdr_fs::volume::patching::{PatchSource, patch_created_at, patch_deleted_at, patch_renamed_at};
 use cmdr_fs::volume::scan_walk::Walking;
 use cmdr_fs::volume::{DirectoryCreation, RenameWork, VolumeError, WriteMode};
 use log::{debug, warn};
@@ -75,22 +75,22 @@ impl S3Volume {
     }
 
     /// New folder: the zero-byte `name/` marker, refused like `mkdir` refuses.
-    pub(super) async fn create_directory_impl(&self, path: &Path) -> Result<(), VolumeError> {
+    pub(super) async fn create_directory_impl(&self, path: &AppPath) -> Result<(), VolumeError> {
         let remote = self.to_remote_path(path)?;
         let client = self.clone_client().await?;
         if let Target::Key { key, .. } = target_of(&remote) {
             refuse_unstorable(&client, key, &remote)?;
         }
         self.make_folder(&client, &remote).await?;
-        patch_created(self, path).await;
+        patch_created_at(self, path).await;
         Ok(())
     }
 
     /// `mkdir -p`, through the shared walk, which asks [`MakesDirectories`].
-    pub(super) async fn create_directory_all_impl(&self, path: &Path) -> Result<DirectoryCreation, VolumeError> {
-        let made = mkdir_all::create_directory_all(self, path).await?;
+    pub(super) async fn create_directory_all_impl(&self, path: &AppPath) -> Result<DirectoryCreation, VolumeError> {
+        let made = mkdir_all::create_directory_all_at(self, path).await?;
         if let Some(created) = made.shallowest_created {
-            patch_created(self, &created.as_std_legacy()).await;
+            patch_created_at(self, &created).await;
         }
         Ok(made.leaf)
     }
@@ -158,7 +158,7 @@ impl S3Volume {
     /// A `<name> (file)` row deletes only its file, and the folder row beside
     /// it only the folder's marker: ❗ a folder whose last key went is never
     /// mistaken for the file of its name (`paths.rs`).
-    pub(super) async fn delete_impl(&self, path: &Path) -> Result<(), VolumeError> {
+    pub(super) async fn delete_impl(&self, path: &AppPath) -> Result<(), VolumeError> {
         let resolved = self.resolve(path)?;
         self.delete_node(path, resolved).await
     }
@@ -170,7 +170,7 @@ impl S3Volume {
     /// is how a folder delete used to take a file nobody selected: one the
     /// listing hid behind a real `<name> (file)`, or any beside-folder file on
     /// a volume rebuilt without that listing.
-    pub(super) async fn delete_directory_impl(&self, path: &Path) -> Result<(), VolumeError> {
+    pub(super) async fn delete_directory_impl(&self, path: &AppPath) -> Result<(), VolumeError> {
         let Resolved { remote, holder } = self.resolve(path)?;
         if holder == Holder::File {
             return Err(VolumeError::NotADirectory(remote));
@@ -183,7 +183,7 @@ impl S3Volume {
     }
 
     /// [`Self::delete_impl`]'s body, for the holder `resolved` names.
-    async fn delete_node(&self, path: &Path, resolved: Resolved) -> Result<(), VolumeError> {
+    async fn delete_node(&self, path: &AppPath, resolved: Resolved) -> Result<(), VolumeError> {
         let Resolved { remote, holder } = resolved;
         let Target::Key { bucket, key } = target_of(&remote) else {
             // Deleting a bucket, or the account, isn't a file operation.
@@ -196,7 +196,7 @@ impl S3Volume {
             }
             self.delete_key(&client, bucket, key, &remote).await?;
             self.forget_beside_folder(&remote);
-            patch_deleted(self, path).await;
+            patch_deleted_at(self, path).await;
             return Ok(());
         }
         let prefix = format!("{key}/");
@@ -235,7 +235,7 @@ impl S3Volume {
             }
         };
         self.delete_key(&client, bucket, &target_key, &remote).await?;
-        patch_deleted(self, path).await;
+        patch_deleted_at(self, path).await;
         Ok(())
     }
 
@@ -254,7 +254,7 @@ impl S3Volume {
     /// `force`), a HEAD proving the copy is ours, then the source's delete. ❗
     /// The source goes only after the copy is verified, so the worst a failure
     /// leaves is two copies, never none.
-    pub(super) async fn rename_impl(&self, from: &Path, to: &Path, force: bool) -> Result<(), VolumeError> {
+    pub(super) async fn rename_impl(&self, from: &AppPath, to: &AppPath, force: bool) -> Result<(), VolumeError> {
         let Resolved {
             remote: remote_from,
             holder,
@@ -357,7 +357,7 @@ impl S3Volume {
             return Err(e);
         }
         self.forget_beside_folder(&remote_from);
-        patch_renamed(self, from, to).await;
+        patch_renamed_at(self, from, to).await;
         Ok(())
     }
 
@@ -365,7 +365,7 @@ impl S3Volume {
     /// floor is (`CopyObject`, then a delete); a folder, or a bigger object,
     /// is a copy the transfer engine runs. The account and a bucket's top
     /// can't be renamed at all, which `rename` itself says.
-    pub(super) async fn rename_work_impl(&self, path: &Path) -> Result<RenameWork, VolumeError> {
+    pub(super) async fn rename_work_impl(&self, path: &AppPath) -> Result<RenameWork, VolumeError> {
         let Resolved { remote, holder } = self.resolve(path)?;
         let Target::Key { bucket, key } = target_of(&remote) else {
             return Ok(RenameWork::OneCall);
@@ -389,10 +389,8 @@ impl S3Volume {
     }
 
     /// The path the app addresses `path` by.
-    fn display_path_for(&self, path: &Path) -> Option<PathBuf> {
-        self.root
-            .to_remote_path(path)
-            .and_then(|remote| self.root.to_app_path(&remote))
+    fn display_path_for(&self, path: &AppPath) -> Option<AppPathBuf> {
+        self.root.to_remote(path).and_then(|remote| self.app_path_of(&remote))
     }
 }
 
@@ -414,7 +412,13 @@ impl S3VolumeInner {
 }
 
 impl MakesDirectories for S3Volume {
+    /// The `std::path` form, kept until the shared walk stops asking it.
     fn remote_path_of(&self, path: &Path) -> Result<String, VolumeError> {
+        self.resolve_shown(self.root.to_remote_path(path), || path.to_string_lossy().into_owned())
+            .map(|resolved| resolved.remote)
+    }
+
+    fn remote_path_of_app(&self, path: &AppPath) -> Result<String, VolumeError> {
         self.to_remote_path(path)
     }
 
@@ -455,8 +459,6 @@ impl PatchSource for S3Volume {
     /// patch after an upload costs no second HEAD; else a fresh stat.
     fn patch_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             if let Ok(remote) = self.to_remote_path(path)
                 && let Some(entry) = self.take_written(&remote)
             {
@@ -466,7 +468,14 @@ impl PatchSource for S3Volume {
         })
     }
 
+    /// The `std::path` form, kept until the shared patcher stops asking it.
     fn patch_display_path(&self, path: &Path) -> Option<PathBuf> {
+        self.root
+            .to_remote_path(path)
+            .and_then(|remote| self.root.to_app_path(&remote))
+    }
+
+    fn patch_app_path(&self, path: &AppPath) -> Option<AppPathBuf> {
         self.display_path_for(path)
     }
 }

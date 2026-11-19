@@ -7,7 +7,6 @@ use cmdr_fs::app_path::{AppPathBuf, RelativeAppPath};
 use cmdr_fs::volume::Volume;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::http_session::HttpSession;
-use cmdr_fs::volume::remote_paths::RemoteRoot;
 use url::Url;
 
 use super::{S3Volume, S3VolumeInner};
@@ -29,12 +28,12 @@ pub(super) fn make_test_volume_with(bucket: Option<&str>, host: VolumeHost) -> S
         path_style: true,
     };
     let params = S3ConnectionParams::new(provider, "AKIATEST", bucket).expect("a valid test provider");
+    let place = super::paths::Place::of(&params).expect("the test place has an app root");
     S3Volume {
         name: "test".to_string(),
-        root: RemoteRoot::new(
-            cmdr_fs::volume::s3_app_root(params.host(), params.port(), params.access_key_id()),
-            std::path::Path::new(&params.remote_root()),
-        ),
+        root: place.root,
+        prefix: place.prefix,
+        app_root: place.app,
         inner: Arc::new_cyclic(|me| S3VolumeInner {
             session: HttpSession::new(me, "s3-test", &host, None, true),
             volume_id: "s3-test".to_string(),
