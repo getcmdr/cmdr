@@ -242,8 +242,8 @@ environment's `Language`), so it can't see the Regional format either. `platform
 an alternate-sort suffix (`de-DE_phoneb`) and answers `None` for any other shape (a neutral `en`, a variant like
 `ca-ES-valencia`, a custom `x-` name). The language half reads `GetUserPreferredUILanguages(MUI_LANGUAGE_NAME)`: the
 display language first, then its fallbacks, in the user's order, resolved exactly like `AppleLanguages`. So on Windows
-both `get_os_locales` halves answer, as on macOS (verified on Windows 10 22H2 with a Hungarian display language, the
-builder's unit tests, 2026-11-19).
+both `get_os_locales` halves answer, as on macOS (both reads verified on Windows 10 22H2, display and format `en-US`,
+the builder's unit tests, 2026-11-19; another language's answer is unverified there).
 
 ## Following a live language or region change
 
