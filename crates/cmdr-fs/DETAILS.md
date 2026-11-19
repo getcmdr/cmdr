@@ -303,7 +303,8 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   and the type (both flavors, every OS); the `escapes` rows run in Rust and in the frontend
   (`apps/desktop/src/lib/path/escape.test.ts`).
 - **Tests rooted in a scratch dir** take `testing::AppTestDir`: the dir plus its app path, 8.3 names expanded on Windows
-  first (`GetLongPathNameW`), since a listing never shows a short name.
+  first (`GetLongPathNameW`), since a listing never shows a short name. The expansion is `app_path::expand_short_names`,
+  which production's inbound crossings ask too (the Windows local volume's root).
 
 ## The browser build
 

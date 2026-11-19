@@ -73,7 +73,7 @@ impl LocalWindowsVolume {
     /// A volume rooted at a mount, with the [`MountClass`] its registration found.
     pub fn on_mount(name: impl Into<String>, root: impl Into<PathBuf>, mount: MountClass, host: VolumeHost) -> Self {
         let root = root.into();
-        let root = paths::long_path(&root).unwrap_or(root);
+        let root = cmdr_fs::app_path::expand_short_names(&root).unwrap_or(root);
         Self::on_mount_at(name, root_app(&root), mount, host)
     }
 

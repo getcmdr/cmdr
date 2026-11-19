@@ -37,38 +37,6 @@ pub(crate) fn app_of(path: &Path) -> io::Result<AppPathBuf> {
     AppPathBuf::from_native_unicode(path).map_err(not_an_app_path)
 }
 
-/// `path` with its 8.3 short names expanded (`GetLongPathNameW`), for a root the OS reported:
-/// `TEMP` under an account name past eight characters is spelled `C:\Users\LONGNA~1\…`, and a
-/// listing never shows a short name, so no row would ever sit under a root spelled that way.
-/// An inbound crossing that isn't a listing's own child goes through this first (plan § "The
-/// native boundary", 8.3 short names).
-///
-/// # Errors
-///
-/// What `GetLongPathNameW` answers, a missing path included.
-pub(crate) fn long_path(path: &Path) -> io::Result<PathBuf> {
-    use std::os::windows::ffi::{OsStrExt as _, OsStringExt as _};
-    use windows_sys::Win32::Storage::FileSystem::GetLongPathNameW;
-
-    let wide: Vec<u16> = path.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
-    let mut buf = vec![0u16; 512];
-    loop {
-        let capacity = u32::try_from(buf.len()).unwrap_or(u32::MAX);
-        // SAFETY: `wide` is NUL-terminated and outlives the call; `buf` is writable for
-        // `capacity` units, the size the call is told.
-        let written = unsafe { GetLongPathNameW(wide.as_ptr(), buf.as_mut_ptr(), capacity) } as usize;
-        if written == 0 {
-            return Err(io::Error::last_os_error());
-        }
-        if written < buf.len() {
-            buf.truncate(written);
-            return Ok(std::ffi::OsString::from_wide(&buf).into());
-        }
-        // Too small: `written` is the size it needs, its NUL included.
-        buf.resize(written, 0);
-    }
-}
-
 /// A typed refusal of an app path as an `io::Error` a `VolumeError` classifies.
 pub(crate) fn not_an_app_path(why: NotAnAppPath) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidInput, why)

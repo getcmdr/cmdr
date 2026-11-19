@@ -413,9 +413,9 @@ cross to the OS once per call. The design: `docs/specs/app-path-plan.md` milesto
 - **The `&Path` entry points** (`list_directory_core`, `get_single_entry`, `rename_local_exclusive`,
   `patch_listing_after_local_mutation`, space, the old constructors) take a NATIVE path. On Windows either spelling
   crosses up through `from_native_unicode` (`C:\x`, `C:/x`, `\\?\C:\x`), and the old constructors expand 8.3 short names
-  first (`GetLongPathNameW`), since a listing never shows a short name. Typed forms beside them (`local_folder_at`,
-  `on_mount_at`, `rename_local_exclusive_at`) are what 10a–10d switch their callers to; the native forms go then.
-  `platform/mod.rs` pins each pair to one signature on both OSes.
+  first (`cmdr_fs::app_path::expand_short_names`), since a listing never shows a short name. Typed forms beside them
+  (`local_folder_at`, `on_mount_at`, `rename_local_exclusive_at`) are what 10a–10d switch their callers to; the native
+  forms go then. `platform/mod.rs` pins each pair to one signature on both OSes.
 - **Decision**: the conflict scan refuses a source name that isn't one plain name as `InvalidName`. **Why**:
   `Path::join` of `..` asked about the destination's parent (and reported it as a conflict), and of `/x` about `/x`
   itself; no listing yields such a name, so only a broken or hostile caller sends one.

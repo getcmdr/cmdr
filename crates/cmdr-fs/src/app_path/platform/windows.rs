@@ -73,6 +73,29 @@ impl AppPathBuf {
     }
 }
 
+/// See the re-export in `mod.rs`: `GetLongPathNameW`.
+pub fn expand_short_names(path: &Path) -> std::io::Result<PathBuf> {
+    use windows_sys::Win32::Storage::FileSystem::GetLongPathNameW;
+
+    let wide: Vec<u16> = path.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
+    let mut buf = vec![0u16; 512];
+    loop {
+        let capacity = u32::try_from(buf.len()).unwrap_or(u32::MAX);
+        // SAFETY: `wide` is NUL-terminated and outlives the call; `buf` is writable for
+        // `capacity` units, the size the call is told.
+        let written = unsafe { GetLongPathNameW(wide.as_ptr(), buf.as_mut_ptr(), capacity) } as usize;
+        if written == 0 {
+            return Err(std::io::Error::last_os_error());
+        }
+        if written < buf.len() {
+            buf.truncate(written);
+            return Ok(OsString::from_wide(&buf).into());
+        }
+        // Too small: `written` is the size it needs, its NUL included.
+        buf.resize(written, 0);
+    }
+}
+
 /// The UTF-16 units the transition bridge hands back for `text`: each unit escape as its
 /// surrogate, everything else (a byte escape included) as its UTF-16.
 fn bridge_units(text: &str) -> Vec<u16> {

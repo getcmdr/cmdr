@@ -49,6 +49,8 @@ pub use escape::{
 };
 pub use native::{NativeRefusal, NotPlainSafe};
 pub use parse::NotAnAppPath;
+#[cfg(cmdr_host)]
+pub use platform::expand_short_names;
 pub use shape::is_scheme_url;
 
 use crate::volume::NotAChildName;
