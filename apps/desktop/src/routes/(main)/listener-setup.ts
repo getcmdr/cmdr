@@ -115,17 +115,15 @@ export interface ListenerSetupContext {
  * or the menu's for everything else (a native bar's click or accelerator, the Dock, other windows).
  */
 export function dispatcherForRoad(
-  road: CommandRoad,
+  road: CommandRoad | undefined,
   dispatchers: Pick<CommandDispatchers, 'menu' | 'barPick' | 'contextMenu'>,
 ): CommandDispatchers['menu'] {
-  switch (road) {
-    case 'contextMenu':
-      return dispatchers.contextMenu
-    case 'barPick':
-      return dispatchers.barPick
-    case 'relay':
-      return dispatchers.menu
-  }
+  // An emit that names no road (another window's, an E2E harness's) is the menu's, as before roads.
+  // Regression anchor: an exhaustive switch returned nothing for it, so File > Tell me about this
+  // from the harness threw "not a function" (Linux E2E lane, 2026-11-19).
+  if (road === 'contextMenu') return dispatchers.contextMenu
+  if (road === 'barPick') return dispatchers.barPick
+  return dispatchers.menu
 }
 
 /** Safe wrapper for Tauri event listeners - handles non-Tauri environment. */

@@ -29,6 +29,7 @@ import { ensureMcpClient } from '../e2e-shared/mcp-client.js'
 import {
   clickRealAt,
   F10_KEYCODE,
+  F6_KEYCODE,
   focusMainWindow,
   focusWindow,
   focusWindowAtCorner,
@@ -316,7 +317,7 @@ test.describe('The in-page menu bar (Linux)', () => {
       // The key: F6 reaches the page (the recorder sees it) and opens nothing.
       await installKeyRecorder(tauriPage)
       focusMainWindow()
-      pressRealKey('F6')
+      pressRealKey(F6_KEYCODE)
       await expect.poll(() => keydownsSeen(tauriPage), { timeout: waitBudget(3000) }).toContain('F6')
       expect(
         await tauriPage.evaluate<boolean>(`document.querySelector(${JSON.stringify(TRANSFER_DIALOG)}) !== null`),

@@ -143,7 +143,7 @@ describe.each(['macos', 'windows', 'linux'] as const)('on %s, with a text field 
 // same command's key never does.
 describe('a bar the page draws, with a text field focused', () => {
   /** The road each `execute-command` takes, by the dispatcher `listener-setup.ts` hands it to. */
-  function sourceFor(road: CommandRoad): DispatchSource {
+  function sourceFor(road: CommandRoad | undefined): DispatchSource {
     let taken: DispatchSource | null = null
     const recorder = (source: DispatchSource) => () => {
       taken = source
@@ -159,6 +159,11 @@ describe('a bar the page draws, with a text field focused', () => {
     for (const commandId of FILE_MOVING_COMMAND_IDS) {
       expect(isRefusedInTextField(commandId, sourceFor('barPick'), true), commandId).toBe(false)
     }
+  })
+
+  // Regression anchor: an emit with no road (another window's, the E2E harness's) found no dispatcher.
+  it('takes an emit that names no road down the menu road', () => {
+    expect(sourceFor(undefined)).toBe('menu')
   })
 
   it('still refuses the same command’s key: in the main window, and fired from another window', () => {
