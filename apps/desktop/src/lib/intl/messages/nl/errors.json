@@ -1957,6 +1957,18 @@
   "@errors.write.sourceInColdStorage.suggestion": {
     "sourceHash": "f279603"
   },
+  "errors.write.folderHoldsUnlistedItems.title": "Deze map bevat nog verborgen onderdelen",
+  "@errors.write.folderHoldsUnlistedItems.title": {
+    "sourceHash": "11b4b1f"
+  },
+  "errors.write.folderHoldsUnlistedItems.message": "{path} lijkt leeg, maar de opslag bewaart er onderdelen in onder namen die Cmdr niet kan tonen, dus de map blijft staan.",
+  "@errors.write.folderHoldsUnlistedItems.message": {
+    "sourceHash": "2b301e3"
+  },
+  "errors.write.folderHoldsUnlistedItems.suggestion": "Verwijder die onderdelen in de console van je opslagaanbieder of met een ander S3-programma en probeer het dan opnieuw.",
+  "@errors.write.folderHoldsUnlistedItems.suggestion": {
+    "sourceHash": "b3e259b"
+  },
   "errors.write.mountedVolumeInside.title": "Een gekoppelde schijf staat in de weg",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"
@@ -2312,6 +2324,10 @@
   "errors.volume.coldStorage": "‘{path}’ is gearchiveerd. Herstel het bestand eerst in de console van je opslagaanbieder.",
   "@errors.volume.coldStorage": {
     "sourceHash": "c742f7c"
+  },
+  "errors.volume.holdsUnlistedItems": "‘{path}’ lijkt leeg, maar de opslag bewaart er onderdelen in onder namen die Cmdr niet kan tonen. Verwijder ze eerst met een ander S3-programma.",
+  "@errors.volume.holdsUnlistedItems": {
+    "sourceHash": "8cfaa58"
   },
   "errors.volume.sourceChanged": "‘{path}’ is tijdens het kopiëren gewijzigd, dus Cmdr heeft niets bewaard. Probeer het opnieuw om de nieuwe versie te kopiëren.",
   "@errors.volume.sourceChanged": {

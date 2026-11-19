@@ -1957,6 +1957,18 @@
   "@errors.write.sourceInColdStorage.suggestion": {
     "sourceHash": "f279603"
   },
+  "errors.write.folderHoldsUnlistedItems.title": "Den här mappen innehåller fortfarande dolda objekt",
+  "@errors.write.folderHoldsUnlistedItems.title": {
+    "sourceHash": "11b4b1f"
+  },
+  "errors.write.folderHoldsUnlistedItems.message": "Mappen {path} ser tom ut, men lagringen sparar objekt där under namn som Cmdr inte kan visa, så mappen blir kvar.",
+  "@errors.write.folderHoldsUnlistedItems.message": {
+    "sourceHash": "2b301e3"
+  },
+  "errors.write.folderHoldsUnlistedItems.suggestion": "Radera de objekten i din lagringsleverantörs konsol eller med ett annat S3-program och försök sedan igen.",
+  "@errors.write.folderHoldsUnlistedItems.suggestion": {
+    "sourceHash": "b3e259b"
+  },
   "errors.write.mountedVolumeInside.title": "En monterad enhet är i vägen",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"
@@ -2312,6 +2324,10 @@
   "errors.volume.coldStorage": "Filen ”{path}” är arkiverad. Återställ filen i din lagringsleverantörs konsol först.",
   "@errors.volume.coldStorage": {
     "sourceHash": "c742f7c"
+  },
+  "errors.volume.holdsUnlistedItems": "Mappen ”{path}” ser tom ut, men lagringen sparar objekt där under namn som Cmdr inte kan visa. Radera dem först med ett annat S3-program.",
+  "@errors.volume.holdsUnlistedItems": {
+    "sourceHash": "8cfaa58"
   },
   "errors.volume.sourceChanged": "Filen ”{path}” ändrades medan Cmdr kopierade filen, så Cmdr sparade ingenting. Försök igen för att kopiera den nya versionen.",
   "@errors.volume.sourceChanged": {

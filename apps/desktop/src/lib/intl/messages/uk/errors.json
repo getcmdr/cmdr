@@ -1957,6 +1957,18 @@
   "@errors.write.sourceInColdStorage.suggestion": {
     "sourceHash": "f279603"
   },
+  "errors.write.folderHoldsUnlistedItems.title": "У цій папці ще є приховані елементи",
+  "@errors.write.folderHoldsUnlistedItems.title": {
+    "sourceHash": "11b4b1f"
+  },
+  "errors.write.folderHoldsUnlistedItems.message": "Папка {path} здається порожньою, але сховище зберігає в ній елементи з назвами, які Cmdr не може показати, тому папка лишається на місці.",
+  "@errors.write.folderHoldsUnlistedItems.message": {
+    "sourceHash": "2b301e3"
+  },
+  "errors.write.folderHoldsUnlistedItems.suggestion": "Видаліть ці елементи в консолі свого постачальника сховища або в іншій програмі для S3, а тоді спробуйте ще раз.",
+  "@errors.write.folderHoldsUnlistedItems.suggestion": {
+    "sourceHash": "b3e259b"
+  },
   "errors.write.mountedVolumeInside.title": "Заважає змонтований диск",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"
@@ -2312,6 +2324,10 @@
   "errors.volume.coldStorage": "Файл «{path}» в архівному сховищі. Спершу відновіть його в консолі свого постачальника сховища.",
   "@errors.volume.coldStorage": {
     "sourceHash": "c742f7c"
+  },
+  "errors.volume.holdsUnlistedItems": "Папка «{path}» здається порожньою, але сховище зберігає в ній елементи з назвами, які Cmdr не може показати. Спершу видаліть їх в іншій програмі для S3.",
+  "@errors.volume.holdsUnlistedItems": {
+    "sourceHash": "8cfaa58"
   },
   "errors.volume.sourceChanged": "Файл «{path}» змінився, поки Cmdr його копіював, тож Cmdr нічого не зберіг. Спробуйте ще раз, щоб скопіювати нову версію.",
   "@errors.volume.sourceChanged": {

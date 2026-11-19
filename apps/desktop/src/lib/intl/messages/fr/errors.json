@@ -1957,6 +1957,18 @@
   "@errors.write.sourceInColdStorage.suggestion": {
     "sourceHash": "f279603"
   },
+  "errors.write.folderHoldsUnlistedItems.title": "Ce dossier contient encore des éléments masqués",
+  "@errors.write.folderHoldsUnlistedItems.title": {
+    "sourceHash": "11b4b1f"
+  },
+  "errors.write.folderHoldsUnlistedItems.message": "Le dossier {path} semble vide, mais le stockage y conserve des éléments sous des noms que Cmdr ne peut pas afficher, donc le dossier reste en place.",
+  "@errors.write.folderHoldsUnlistedItems.message": {
+    "sourceHash": "2b301e3"
+  },
+  "errors.write.folderHoldsUnlistedItems.suggestion": "Supprimez ces éléments dans la console de votre fournisseur de stockage ou avec un autre outil S3, puis réessayez.",
+  "@errors.write.folderHoldsUnlistedItems.suggestion": {
+    "sourceHash": "b3e259b"
+  },
   "errors.write.mountedVolumeInside.title": "Un disque monté fait obstacle",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"
@@ -2312,6 +2324,10 @@
   "errors.volume.coldStorage": "Le fichier « {path} » est archivé. Restaurez-le d’abord dans la console de votre fournisseur de stockage.",
   "@errors.volume.coldStorage": {
     "sourceHash": "c742f7c"
+  },
+  "errors.volume.holdsUnlistedItems": "Le dossier « {path} » semble vide, mais le stockage y conserve des éléments sous des noms que Cmdr ne peut pas afficher. Supprimez-les d’abord avec un autre outil S3.",
+  "@errors.volume.holdsUnlistedItems": {
+    "sourceHash": "8cfaa58"
   },
   "errors.volume.sourceChanged": "Le fichier « {path} » a changé pendant que Cmdr le copiait, Cmdr n’a donc rien enregistré. Réessayez pour copier la nouvelle version.",
   "@errors.volume.sourceChanged": {

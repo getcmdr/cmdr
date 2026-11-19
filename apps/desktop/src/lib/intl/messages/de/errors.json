@@ -1957,6 +1957,18 @@
   "@errors.write.sourceInColdStorage.suggestion": {
     "sourceHash": "f279603"
   },
+  "errors.write.folderHoldsUnlistedItems.title": "Dieser Ordner enthält noch ausgeblendete Objekte",
+  "@errors.write.folderHoldsUnlistedItems.title": {
+    "sourceHash": "11b4b1f"
+  },
+  "errors.write.folderHoldsUnlistedItems.message": "{path} wirkt leer, aber der Speicher bewahrt darin Objekte unter Namen auf, die Cmdr nicht anzeigen kann. Deshalb bleibt der Ordner bestehen.",
+  "@errors.write.folderHoldsUnlistedItems.message": {
+    "sourceHash": "2b301e3"
+  },
+  "errors.write.folderHoldsUnlistedItems.suggestion": "Lösche diese Objekte in der Konsole deines Speicheranbieters oder mit einem anderen S3-Programm und versuche es dann noch einmal.",
+  "@errors.write.folderHoldsUnlistedItems.suggestion": {
+    "sourceHash": "b3e259b"
+  },
   "errors.write.mountedVolumeInside.title": "Ein eingebundenes Laufwerk ist im Weg",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"
@@ -2312,6 +2324,10 @@
   "errors.volume.coldStorage": "„{path}“ ist archiviert. Stelle die Datei zuerst in der Konsole deines Speicheranbieters wieder her.",
   "@errors.volume.coldStorage": {
     "sourceHash": "c742f7c"
+  },
+  "errors.volume.holdsUnlistedItems": "„{path}“ wirkt leer, aber der Speicher bewahrt darin Objekte unter Namen auf, die Cmdr nicht anzeigen kann. Lösche sie zuerst mit einem anderen S3-Programm.",
+  "@errors.volume.holdsUnlistedItems": {
+    "sourceHash": "8cfaa58"
   },
   "errors.volume.sourceChanged": "„{path}“ hat sich geändert, während Cmdr die Datei kopiert hat, deshalb hat Cmdr nichts gespeichert. Versuche es erneut, um die neue Version zu kopieren.",
   "@errors.volume.sourceChanged": {

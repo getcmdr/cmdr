@@ -1956,6 +1956,18 @@
   "@errors.write.sourceInColdStorage.suggestion": {
     "sourceHash": "f279603"
   },
+  "errors.write.folderHoldsUnlistedItems.title": "这个文件夹里还有隐藏的项目",
+  "@errors.write.folderHoldsUnlistedItems.title": {
+    "sourceHash": "11b4b1f"
+  },
+  "errors.write.folderHoldsUnlistedItems.message": "{path} 看起来是空的，但存储里仍有一些项目放在这个文件夹下，它们的名称 Cmdr 无法显示，所以文件夹会保留下来。",
+  "@errors.write.folderHoldsUnlistedItems.message": {
+    "sourceHash": "2b301e3"
+  },
+  "errors.write.folderHoldsUnlistedItems.suggestion": "请在存储提供方的控制台里或用别的 S3 工具删除这些项目，然后再试一次。",
+  "@errors.write.folderHoldsUnlistedItems.suggestion": {
+    "sourceHash": "b3e259b"
+  },
   "errors.write.mountedVolumeInside.title": "有个已装载的驱动器挡着",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"
@@ -2311,6 +2323,10 @@
   "errors.volume.coldStorage": "“{path}”已存档。请先在存储提供方的控制台里恢复。",
   "@errors.volume.coldStorage": {
     "sourceHash": "c742f7c"
+  },
+  "errors.volume.holdsUnlistedItems": "“{path}”看起来是空的，但存储里仍有一些项目放在这个文件夹下，它们的名称 Cmdr 无法显示。请先用别的 S3 工具删除这些项目。",
+  "@errors.volume.holdsUnlistedItems": {
+    "sourceHash": "8cfaa58"
   },
   "errors.volume.sourceChanged": "“{path}”在 Cmdr 拷贝期间发生了变化，所以 Cmdr 什么都没保存。再试一次就能拷贝新版本。",
   "@errors.volume.sourceChanged": {

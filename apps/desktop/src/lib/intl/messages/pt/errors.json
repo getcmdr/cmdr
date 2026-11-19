@@ -1957,6 +1957,18 @@
   "@errors.write.sourceInColdStorage.suggestion": {
     "sourceHash": "f279603"
   },
+  "errors.write.folderHoldsUnlistedItems.title": "Esta pasta ainda tem itens ocultos",
+  "@errors.write.folderHoldsUnlistedItems.title": {
+    "sourceHash": "11b4b1f"
+  },
+  "errors.write.folderHoldsUnlistedItems.message": "A pasta {path} parece vazia, mas o armazenamento guarda itens nela com nomes que o Cmdr não consegue mostrar, então a pasta continua lá.",
+  "@errors.write.folderHoldsUnlistedItems.message": {
+    "sourceHash": "2b301e3"
+  },
+  "errors.write.folderHoldsUnlistedItems.suggestion": "Apague esses itens no console do seu provedor de armazenamento ou em outra ferramenta de S3 e tente de novo.",
+  "@errors.write.folderHoldsUnlistedItems.suggestion": {
+    "sourceHash": "b3e259b"
+  },
   "errors.write.mountedVolumeInside.title": "Há um disco montado no caminho",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"
@@ -2312,6 +2324,10 @@
   "errors.volume.coldStorage": "O arquivo “{path}” está arquivado. Restaure-o primeiro no console do seu provedor de armazenamento.",
   "@errors.volume.coldStorage": {
     "sourceHash": "c742f7c"
+  },
+  "errors.volume.holdsUnlistedItems": "A pasta “{path}” parece vazia, mas o armazenamento guarda itens nela com nomes que o Cmdr não consegue mostrar. Apague-os primeiro com outra ferramenta de S3.",
+  "@errors.volume.holdsUnlistedItems": {
+    "sourceHash": "8cfaa58"
   },
   "errors.volume.sourceChanged": "O arquivo “{path}” mudou enquanto o Cmdr o copiava, então o Cmdr não salvou nada. Tente de novo para copiar a nova versão.",
   "@errors.volume.sourceChanged": {

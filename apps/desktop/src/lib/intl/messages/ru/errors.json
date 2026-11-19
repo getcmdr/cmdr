@@ -1957,6 +1957,18 @@
   "@errors.write.sourceInColdStorage.suggestion": {
     "sourceHash": "f279603"
   },
+  "errors.write.folderHoldsUnlistedItems.title": "В этой папке еще есть скрытые объекты",
+  "@errors.write.folderHoldsUnlistedItems.title": {
+    "sourceHash": "11b4b1f"
+  },
+  "errors.write.folderHoldsUnlistedItems.message": "Папка {path} выглядит пустой, но в хранилище в ней лежат объекты с именами, которые Cmdr не может показать, поэтому папка остается на месте.",
+  "@errors.write.folderHoldsUnlistedItems.message": {
+    "sourceHash": "2b301e3"
+  },
+  "errors.write.folderHoldsUnlistedItems.suggestion": "Удалите эти объекты в консоли поставщика хранилища или в другом инструменте для S3 и попробуйте еще раз.",
+  "@errors.write.folderHoldsUnlistedItems.suggestion": {
+    "sourceHash": "b3e259b"
+  },
   "errors.write.mountedVolumeInside.title": "Мешает подключенный диск",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"
@@ -2312,6 +2324,10 @@
   "errors.volume.coldStorage": "«{path}» находится в архивном хранилище. Сначала восстановите файл в консоли поставщика хранилища.",
   "@errors.volume.coldStorage": {
     "sourceHash": "c742f7c"
+  },
+  "errors.volume.holdsUnlistedItems": "Папка «{path}» выглядит пустой, но в хранилище в ней лежат объекты с именами, которые Cmdr не может показать. Сначала удалите их в другом инструменте для S3.",
+  "@errors.volume.holdsUnlistedItems": {
+    "sourceHash": "8cfaa58"
   },
   "errors.volume.sourceChanged": "Файл «{path}» изменился во время копирования, поэтому Cmdr ничего не сохранил. Повторите попытку, чтобы скопировать новую версию.",
   "@errors.volume.sourceChanged": {
