@@ -17,8 +17,8 @@
 
 use tauri::{Manager as _, Webview, Wry};
 use windows_sys::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
-use windows_sys::Win32::UI::Shell::{DefSubclassProc, SetWindowSubclass};
-use windows_sys::Win32::UI::WindowsAndMessaging::{SC_KEYMENU, WM_SYSCOMMAND};
+use windows_sys::Win32::UI::Shell::{DefSubclassProc, RemoveWindowSubclass, SetWindowSubclass};
+use windows_sys::Win32::UI::WindowsAndMessaging::{SC_KEYMENU, WM_NCDESTROY, WM_SYSCOMMAND};
 
 /// The subclass's id on the window (any constant unique to us; `SetWindowSubclass` with the same
 /// id and procedure again only replaces its data, so a second webview in one window is harmless).
@@ -31,6 +31,12 @@ const ALT_SPACE: LPARAM = 0x20;
 /// The low four bits of `wParam` are Windows' own (`SC_*` values are multiples of 16).
 pub(crate) fn swallows(msg: u32, wparam: WPARAM, lparam: LPARAM) -> bool {
     msg == WM_SYSCOMMAND && (wparam & 0xFFF0) == SC_KEYMENU as WPARAM && lparam != ALT_SPACE
+}
+
+/// Whether the guard takes itself off the window on this message: `WM_NCDESTROY`, the last one a
+/// window gets, as comctl32 asks of every subclass (it doesn't remove one for us).
+pub(crate) fn removes_itself_on(msg: u32) -> bool {
+    msg == WM_NCDESTROY
 }
 
 /// Subclasses `webview`'s window with the guard. A failure is logged, never fatal: the window
@@ -51,7 +57,7 @@ pub(crate) fn install(webview: &Webview<Wry>) {
         // SAFETY: `hwnd` is the live top-level window Tauri just handed over, and this runs on the
         // thread that owns it (the main thread), which `SetWindowSubclass` requires. `subclass` is
         // a `'static` `extern "system"` fn matching `SUBCLASSPROC`, and it reads no reference data
-        // (0), so nothing it touches can dangle; comctl32 removes it with the window.
+        // (0), so nothing it touches can dangle. It removes itself on `WM_NCDESTROY` (`subclass`).
         let installed = unsafe { SetWindowSubclass(hwnd, Some(subclass), SUBCLASS_ID, 0) };
         if installed == 0 {
             // allowed-log-private: a Tauri window label of our own
@@ -64,7 +70,8 @@ pub(crate) fn install(webview: &Webview<Wry>) {
 }
 
 /// The window procedure in front of the window's own: answers a swallowed `SC_KEYMENU` with 0 (the
-/// documented "processed" answer for `WM_SYSCOMMAND`), passes everything else on.
+/// documented "processed" answer for `WM_SYSCOMMAND`), passes everything else on, and takes itself
+/// off the window as it goes.
 unsafe extern "system" fn subclass(
     hwnd: HWND,
     msg: u32,
@@ -75,6 +82,16 @@ unsafe extern "system" fn subclass(
 ) -> LRESULT {
     if swallows(msg, wparam, lparam) {
         return 0;
+    }
+    if removes_itself_on(msg) {
+        // SAFETY: `hwnd` is the window this procedure was installed on with `SUBCLASS_ID`, and
+        // comctl32 calls it on the thread that owns the window, which `RemoveWindowSubclass`
+        // requires. The message still goes on to `DefSubclassProc` below, which may run after the
+        // removal, as the documented `WM_NCDESTROY` pattern does.
+        let removed = unsafe { RemoveWindowSubclass(hwnd, Some(subclass), SUBCLASS_ID) };
+        if removed == 0 {
+            log::debug!(target: "platform::keymenu", "the menu-loop guard was already off a closing window");
+        }
     }
     // SAFETY: comctl32 calls this procedure with the window's own message on its own thread, and
     // `DefSubclassProc` is the documented way to hand it to the next procedure in the chain.
@@ -104,6 +121,12 @@ mod tests {
     #[test]
     fn alt_space_opens_the_system_menu() {
         assert!(!swallows(WM_SYSCOMMAND, SC_KEYMENU as WPARAM, ALT_SPACE));
+    }
+
+    #[test]
+    fn the_guard_comes_off_with_the_windows_last_message() {
+        assert!(removes_itself_on(WM_NCDESTROY));
+        assert!(!removes_itself_on(WM_SYSCOMMAND));
     }
 
     #[test]
