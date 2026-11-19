@@ -3,8 +3,8 @@
 //! tick and nothing else, nothing at all with no pane open or while the volume
 //! is down, and nothing for a directory no pane shows any more.
 
-use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::AppPathBuf;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -44,19 +44,25 @@ fn seeded() -> FakeNfs {
 }
 
 /// `remote` as a pane addresses it on `volume`.
-fn at(volume: &NfsVolume, remote: &str) -> PathBuf {
-    PathBuf::from(format!("{}{remote}", volume.root().as_std_legacy().display()))
+fn at(volume: &NfsVolume, remote: &str) -> AppPathBuf {
+    crate::volume::testing::app_path(volume, remote)
+}
+
+/// Where the store files a pane on `remote`: the listing host still keys
+/// listings by `std::path`, spelled as the text the pane holds.
+fn filed(volume: &NfsVolume, remote: &str) -> PathBuf {
+    PathBuf::from(at(volume, remote).into_string())
 }
 
 /// A pane opens on `remote`: the volume lists it, and the store files it.
 async fn open_pane(volume: &NfsVolume, panes: &RecordingListings, remote: &str) -> PathBuf {
-    let path = at(volume, remote);
     volume
-        .list_directory(&AppPath::legacy_unchecked(&path), None)
+        .list_directory(&at(volume, remote), None)
         .await
         .expect("the folder lists");
-    panes.open_path(volume.volume_id(), &path);
-    path
+    let filed = filed(volume, remote);
+    panes.open_path(volume.volume_id(), &filed);
+    filed
 }
 
 /// One poll interval and a little, in virtual time.
@@ -126,7 +132,7 @@ async fn with_no_pane_open_nothing_is_sent_and_the_poller_stops() {
     let volume = shown_through(&fake, &panes).await;
     // A scan or a copy lists without a pane: the store shows nothing.
     volume
-        .list_directory(&AppPath::legacy_unchecked(&at(&volume, "/photos")), None)
+        .list_directory(&at(&volume, "/photos"), None)
         .await
         .expect("the folder lists");
     let before = fake.total_calls();
@@ -157,7 +163,7 @@ async fn a_change_for_a_directory_no_pane_shows_any_more_is_dropped() {
 
     assert_eq!(refreshed(&panes), [docs], "only the directory a pane still shows");
     let before = fake.calls(proc::GETATTR);
-    panes.close_path(volume.volume_id(), Path::new(&at(&volume, "/docs")));
+    panes.close_path(volume.volume_id(), &filed(&volume, "/docs"));
     a_tick().await;
     a_tick().await;
     assert_eq!(
@@ -184,9 +190,7 @@ async fn nothing_is_sent_while_the_volume_is_down() {
     assert_eq!(volume.connection_state(), Some(ConnectionState::Disconnected));
     assert!(
         matches!(
-            volume
-                .list_directory(&AppPath::legacy_unchecked(&at(&volume, "/photos")), None)
-                .await,
+            volume.list_directory(&at(&volume, "/photos"), None).await,
             Err(VolumeError::DeviceDisconnected(_))
         ),
         "down means down"
