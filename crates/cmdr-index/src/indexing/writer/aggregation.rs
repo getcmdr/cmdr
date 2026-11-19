@@ -141,7 +141,17 @@ pub(super) fn handle_compute_partial_aggregates(
 
     match result {
         Ok(stats) => {
-            log::info!(
+            // A pass that moved no row (the pane's folder sat still while the walk
+            // worked elsewhere) has nothing for a pane to re-read, so it logs at
+            // DEBUG and skips the refresh. Any other row that changed meanwhile
+            // came with its own refresh from whoever changed it.
+            let level = if stats.rows_written == 0 {
+                log::Level::Debug
+            } else {
+                log::Level::Info
+            };
+            log::log!(
+                level,
                 // allowed-log-private: `source` is the aggregation input (`AggSource`), not a path
                 "ComputePartialAggregates({source:?}): {} dirs computed, {} rows written, \
                  {}/{hot_paths_count} hot paths resolved ({}ms)",
@@ -150,6 +160,9 @@ pub(super) fn handle_compute_partial_aggregates(
                 stats.hot_paths_resolved,
                 t.elapsed().as_millis(),
             );
+            if stats.rows_written == 0 {
+                return;
+            }
             // Refresh both panes via the `/` full-refresh sentinel. Emitting from
             // inside the handler is correct by the same ordering argument as
             // `EmitDirUpdated`: the writes just committed on this thread, and
