@@ -1,10 +1,10 @@
 ---
 import { ClientRouter } from 'astro:transitions'
 import DownloadStartedPopup from '../components/DownloadStartedPopup.astro'
-import { chooseDownload, detectVisitorArch, detectVisitorOs } from '../lib/download-platforms'
+import { chooseDownload, detectVisitorArch, detectVisitorOs, macArchFromRenderer } from '../lib/download-platforms'
 
 // The picker's pure helpers, inlined from their source so the page runs the exact code the unit tests cover.
-const downloadPickerHelpers = `;window.__cmdrDownloadPicker = { detectVisitorOs: ${String(detectVisitorOs)}, detectVisitorArch: ${String(detectVisitorArch)}, chooseDownload: ${String(chooseDownload)} }`
+const downloadPickerHelpers = `;window.__cmdrDownloadPicker = { detectVisitorOs: ${String(detectVisitorOs)}, detectVisitorArch: ${String(detectVisitorArch)}, macArchFromRenderer: ${String(macArchFromRenderer)}, chooseDownload: ${String(chooseDownload)} }`
 
 interface Props {
     title: string
@@ -431,14 +431,14 @@ const {
                         })
                     })
                     section.querySelectorAll('[data-visitor-notice]').forEach(function (notice) {
-                        notice.hidden = notice.dataset.visitorNotice !== visitorOs
+                        notice.hidden = notice.dataset.visitorNotice !== (visitorOs || 'other')
                     })
                 }
 
                 // Detect a Mac's arch synchronously to avoid a flash of the universal build on first paint.
-                // WebGL renderer reports "Apple M1/M2/GPU" on Apple Silicon, "Intel/AMD" on Intel Macs.
-                // Windows and Linux read it off the user agent. Falls back to the localStorage cache from a
-                // previous async detection.
+                // The WebGL renderer names the GPU (`macArchFromRenderer`; Safari's "Apple GPU" names
+                // nothing). Windows and Linux read it off the user agent. Falls back to the localStorage
+                // cache from a previous async detection.
                 function detectMacArch() {
                     try {
                         var canvas = document.createElement('canvas')
@@ -446,9 +446,7 @@ const {
                         if (!gl) return null
                         var ext = gl.getExtension('WEBGL_debug_renderer_info')
                         if (!ext) return null
-                        var renderer = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)
-                        if (/Apple M|Apple GPU/.test(renderer)) return 'aarch64'
-                        if (/Intel|AMD/.test(renderer)) return 'x86_64'
+                        return picker.macArchFromRenderer(String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)))
                     } catch { /* WebGL unavailable */ }
                     return null
                 }

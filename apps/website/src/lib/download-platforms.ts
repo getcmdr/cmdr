@@ -44,11 +44,18 @@ function isOs(value: string): value is Os {
 /**
  * The OSes the API server serves downloads for, read off `wrangler.toml`'s `PUBLIC_DOWNLOAD_OSES` line the way
  * `publicDownloadOses` in `apps/api-server/src/telemetry/download.ts` reads the var: macOS always, plus every known OS
- * the comma-separated list names. No line means macOS only.
+ * the comma-separated list names. Throws unless the file has exactly one `PUBLIC_DOWNLOAD_OSES = "…"` line: a moved,
+ * single-quoted, or multi-line value would leave the API serving an OS the site never offers, so the build stops.
  */
 export function parsePublicDownloadOses(wranglerToml: string): ReadonlySet<Os> {
-  const line = /^PUBLIC_DOWNLOAD_OSES\s*=\s*"([^"]*)"/m.exec(wranglerToml)
-  const listed = (line?.[1] ?? '').split(',').map((os) => os.trim())
+  const lines = wranglerToml.split('\n').filter((l) => /^\s*PUBLIC_DOWNLOAD_OSES\s*=/.test(l))
+  const value = lines.length === 1 ? /^\s*PUBLIC_DOWNLOAD_OSES\s*=\s*"([^"\n]*)"\s*(#.*)?$/.exec(lines[0]) : null
+  if (!value) {
+    throw new Error(
+      'apps/api-server/wrangler.toml needs one `PUBLIC_DOWNLOAD_OSES = "macos,…"` line: the site reads it to know which OSes to offer',
+    )
+  }
+  const listed = value[1].split(',').map((os) => os.trim())
   return new Set<Os>(['macos', ...listed.filter(isOs)])
 }
 
@@ -71,26 +78,43 @@ export interface PlatformDownloads {
   options: DownloadOption[]
 }
 
+/** One name per arch off macOS, the same on Windows and Linux. */
 function archName(arch: string): string {
-  return arch === 'aarch64' ? 'ARM64' : arch
+  return arch === 'aarch64' ? 'ARM64' : arch === 'x86_64' ? 'x64' : arch
 }
 
 function optionLabel(os: Os, kind: string, arch: string): string {
   if (os === 'macos') return arch === 'aarch64' ? 'Apple Silicon' : arch === 'x86_64' ? 'Intel' : 'Universal'
-  if (os === 'windows') return `Installer · ${arch === 'x86_64' ? 'x64' : archName(arch)}`
+  if (os === 'windows') return `Installer · ${archName(arch)}`
   return `${kind === 'deb' ? '.deb' : 'AppImage'} · ${archName(arch)}`
+}
+
+function isReleaseDownload(d: unknown): boolean {
+  const e = d as Record<string, unknown> | null
+  return ['os', 'arch', 'kind', 'file'].every((k) => typeof e?.[k] === 'string') && typeof e?.size === 'number'
 }
 
 /**
  * The OSes the site offers, in `allOses` order, each with its files. `urlFor` turns a release file into its link
  * (`release.ts` points it at the API server's download route, or the mirror in dev).
+ *
+ * Throws on a malformed `downloads` list, and unless macOS (always public) has its universal DMG: that's every
+ * button's link with JS off and for a Mac whose arch is unknown, so without it the build would ship buttons with no
+ * link, or an Apple silicon DMG for Intel Macs. A failed build keeps the deployed site up.
  */
 export function offeredPlatforms(
   manifest: UpdateManifest,
   publicOses: ReadonlySet<Os>,
   urlFor: (download: ReleaseDownload) => string,
 ): PlatformDownloads[] {
+  const raw: unknown = manifest.downloads
+  if (raw !== undefined && !(Array.isArray(raw) && raw.every(isReleaseDownload))) {
+    throw new Error(`latest.json ${manifest.version} has a malformed \`downloads\` list, so the site won't build`)
+  }
   const downloads = releaseDownloads(manifest)
+  if (!downloads.some((d) => d.os === 'macos' && d.kind === 'dmg' && d.arch === 'universal')) {
+    throw new Error(`latest.json ${manifest.version} has no universal macOS DMG, so the site won't build`)
+  }
   return allOses.flatMap((os) => {
     if (!publicOses.has(os)) return []
     const kinds = websiteKinds[os]
@@ -121,14 +145,27 @@ export function formatOsList(oses: readonly Os[]): string {
 }
 
 /**
- * The download section's newsletter line: what isn't out yet, then the ask. Linux has an alpha people build from
- * source, so it says so while Linux isn't offered.
+ * The download section's newsletter line: what isn't out yet, then the ask. The form is the general newsletter
+ * (about once a month, as the download popup says), so the line promises only that the news will be in it, never a
+ * mail on release day. Linux has an alpha people build from source, so it says so while Linux isn't offered.
  */
 export function newsletterLabel(offered: readonly Os[]): string {
-  const parts: string[] = []
-  if (!offered.includes('windows')) parts.push('Windows coming soon.')
-  if (!offered.includes('linux')) parts.push('Linux in alpha (self-build for now).')
-  return parts.length === 0 ? 'Get an email when a new version is out:' : `${parts.join(' ')} Get notified:`
+  const windows = !offered.includes('windows')
+  const linux = !offered.includes('linux')
+  const cadence = 'The newsletter, about once a month,'
+  if (windows && linux) {
+    return `Windows is on its way, and Linux is in alpha (self-build for now). ${cadence} will announce both:`
+  }
+  if (windows) return `Windows is on its way. ${cadence} will announce it:`
+  if (linux) return `Linux is in alpha (self-build for now). ${cadence} will announce its download:`
+  return 'New versions go out in the newsletter, about once a month:'
+}
+
+/** The note a visitor gets whose device isn't one Cmdr runs on, or that detection couldn't place. Neutral on purpose. */
+export function otherDeviceNote(offered: readonly Os[]): string {
+  return offered.length === 1
+    ? `Cmdr is a desktop app for ${formatOsList(offered)}.`
+    : `Cmdr is a desktop app for ${formatOsList(offered)}. Pick yours below.`
 }
 
 // In the browser. Self-contained functions only, see the header.
@@ -145,7 +182,9 @@ export interface VisitorNavigator {
  * The visitor's desktop OS, or null for a phone, a tablet, a Chromebook, or anything unknown. It runs on the
  * visitor's device and its answer never leaves the page. Order: User-Agent Client Hints' platform (Chromium; the
  * most direct answer), then the User-Agent string, then the old `navigator.platform`. Android and ChromeOS say
- * "Linux" in their user agents, and iPadOS Safari says "Macintosh", so those are ruled out first.
+ * "Linux" in their user agents, and iPadOS Safari and Android tablets in "desktop site" mode say "Macintosh" or
+ * "X11; Linux", so those are ruled out first: without Client Hints, a Mac or Linux user agent on a touch screen
+ * counts as unknown (a touchscreen Linux laptop in Firefox lands there too, and gets the neutral note).
  */
 export function detectVisitorOs(nav: VisitorNavigator): Os | null {
   // Per OS: its Client Hints platform, how its user agent says it, and how `navigator.platform` does.
@@ -161,7 +200,7 @@ export function detectVisitorOs(nav: VisitorNavigator): Os | null {
   }
   const ua = nav.userAgent || ''
   if (/Android|iPhone|iPad|iPod|CrOS|Mobile/.test(ua)) return null
-  if (/Macintosh|Mac OS X/.test(ua) && (nav.maxTouchPoints || 0) > 1) return null
+  if (/Macintosh|Mac OS X|Linux|X11/.test(ua) && (nav.maxTouchPoints || 0) > 1) return null
   const platform = nav.platform || ''
   const match = rules.find((r) => r[1].test(ua)) || rules.find((r) => r[2].test(platform))
   return match ? match[3] : null
@@ -170,12 +209,25 @@ export function detectVisitorOs(nav: VisitorNavigator): Os | null {
 /**
  * The CPU arch a Windows or Linux user agent names, or null when it names none. Chromium freezes its user agent to
  * x86_64 everywhere, so the async Client Hints answer (`Layout.astro`) refines this when it can; Firefox on Linux
- * still names the real one. Macs get their arch from WebGL instead (`Layout.astro`).
+ * still names the real one. `armv8l` is a 32-bit userland, so it names no arch Cmdr builds. Macs get their arch from
+ * WebGL instead (`macArchFromRenderer`).
  */
 export function detectVisitorArch(nav: VisitorNavigator): string | null {
   const text = (nav.userAgent || '') + ' ' + (nav.platform || '')
-  if (/aarch64|arm64|armv8/i.test(text)) return 'aarch64'
+  if (/aarch64|arm64|armv8(?!l)/i.test(text)) return 'aarch64'
   if (/x86_64|x64|amd64|Win64|WOW64/i.test(text)) return 'x86_64'
+  return null
+}
+
+/**
+ * A Mac's arch from its WebGL renderer string (`UNMASKED_RENDERER_WEBGL`), or null when it doesn't say. Chrome and
+ * Firefox name the GPU ("ANGLE (Apple, ANGLE Metal Renderer: Apple M2, …)" or an Intel or AMD part). Safari reports
+ * "Apple GPU" on every Mac, Intel ones included, to resist fingerprinting (ua-parser-js#732, and an Intel Mac in
+ * forum.babylonjs.com/t/63890, read 2026-11-19), so that string means unknown and the button stays universal.
+ */
+export function macArchFromRenderer(renderer: string): string | null {
+  if (/Apple M\d/.test(renderer)) return 'aarch64'
+  if (/Intel|AMD|Radeon/.test(renderer)) return 'x86_64'
   return null
 }
 

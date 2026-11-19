@@ -515,7 +515,11 @@ its prerequisites; tasks without any can start any time. Order within a phase is
     that it's on its way (Linux: build from source), pointing at the existing newsletter signup. The Windows card
     carries a one-line SmartScreen "More info, then Run anyway" hint; task 58 adds the Store link and the fuller
     explainer. nginx passes `/download/latest/<os>/<arch>` through (the API gates it). Fixed on the way: a non-Mac
-    visitor's arch picked a Mac build (a Windows PC's x64 offered the Intel DMG and marked it ✓). Tests:
+    visitor's arch picked a Mac build (a Windows PC's x64 offered the Intel DMG and marked it ✓), and Safari's masked
+    "Apple GPU" renderer offered Intel Macs the arm64 DMG. After review: the build fails without the universal DMG or on
+    a misread toml, `deploy-website` waits until the API serves each newly public OS (15 minutes, else the old site
+    stays), nginx 404s `/download-fixture`, touch-screen Linux user agents (Android tablets in desktop mode) get a
+    neutral note, and the copy promises only the monthly newsletter. Tests:
     `apps/website/e2e/download-platforms.spec.ts` (unit and built-site, plus `/download-fixture` for the shipped
     states); no visual baseline changed. `apps/website/DETAILS.md` § Download platforms. Needs 30.
 33. [S] Win (Linux too). Updater trust parity off macOS: the Rust-side check, advisory list, and managed-install logic

@@ -1,22 +1,28 @@
 import { readFileSync } from 'node:fs'
 import { test, expect, type Page } from '@playwright/test'
+import { liveManifestProblem } from '../scripts/live-manifest-check'
 import {
   chooseDownload,
   detectVisitorArch,
   detectVisitorOs,
   formatOsList,
+  macArchFromRenderer,
   newsletterLabel,
   offeredPlatforms,
+  otherDeviceNote,
   parsePublicDownloadOses,
+  type DownloadOption,
   type Os,
+  type PlatformDownloads,
   type VisitorNavigator,
 } from '../src/lib/download-platforms'
 import type { UpdateManifest } from '../src/lib/release-downloads'
 import { emulateVisitor, visitors, type Visitor } from './visitor'
 
 // The download section and buttons per visitor OS. The first half tests the pure rules in
-// `src/lib/download-platforms.ts` (no page). The second checks the built site: the home page offers what's
-// public today (macOS), and `/download-fixture` renders a release that ships every OS.
+// `src/lib/download-platforms.ts` and the live-manifest check (no page). The second checks the built site: the home
+// page against what the committed config and `public/latest.json` make public (whatever that is, so it keeps
+// testing once Windows ships), no-JS defaults, and `/download-fixture`, a release that ships every OS.
 
 const mb = 1024 * 1024
 const everyOsManifest: UpdateManifest = {
@@ -36,6 +42,7 @@ const everyOsManifest: UpdateManifest = {
 }
 const fileUrl = (d: { file: string }) => `https://mirror.test/${d.file}`
 const oses = (...list: Os[]) => new Set<Os>(list)
+const withDownloads = (downloads: unknown): UpdateManifest => ({ ...everyOsManifest, downloads }) as UpdateManifest
 
 test.describe('download platforms: which OSes the site offers', () => {
   test('reads PUBLIC_DOWNLOAD_OSES the way the API server does', () => {
@@ -43,12 +50,28 @@ test.describe('download platforms: which OSes the site offers', () => {
     expect([...parsePublicDownloadOses(toml('macos'))]).toEqual(['macos'])
     expect([...parsePublicDownloadOses(toml('macos,windows'))]).toEqual(['macos', 'windows'])
     expect([...parsePublicDownloadOses(toml(' windows , linux '))]).toEqual(['macos', 'windows', 'linux'])
+    expect([...parsePublicDownloadOses(`${toml('macos,windows').trimEnd()} # on since 1.0\n`)]).toEqual([
+      'macos',
+      'windows',
+    ])
     // macOS is always public, whatever the var says, and an unknown OS is ignored.
     expect([...parsePublicDownloadOses(toml(''))]).toEqual(['macos'])
     expect([...parsePublicDownloadOses(toml('solaris'))]).toEqual(['macos'])
-    expect([...parsePublicDownloadOses('[vars]\nPRODUCT_NAME = "Cmdr"\n')]).toEqual(['macos'])
-    // A commented-out line doesn't count.
-    expect([...parsePublicDownloadOses('# PUBLIC_DOWNLOAD_OSES = "macos,windows"\n')]).toEqual(['macos'])
+  })
+
+  test('refuses a PUBLIC_DOWNLOAD_OSES the site could misread, rather than silently offering macOS only', () => {
+    expect(() => parsePublicDownloadOses('[vars]\nPRODUCT_NAME = "Cmdr"\n')).toThrow(/PUBLIC_DOWNLOAD_OSES/)
+    expect(() => parsePublicDownloadOses('# PUBLIC_DOWNLOAD_OSES = "macos,windows"\n')).toThrow(/PUBLIC_DOWNLOAD_OSES/)
+    // Valid TOML the API would read as Windows on.
+    expect(() => parsePublicDownloadOses("PUBLIC_DOWNLOAD_OSES = 'macos,windows'\n")).toThrow(/PUBLIC_DOWNLOAD_OSES/)
+    expect(() => parsePublicDownloadOses('PUBLIC_DOWNLOAD_OSES = "macos"\nPUBLIC_DOWNLOAD_OSES = "windows"\n')).toThrow(
+      /PUBLIC_DOWNLOAD_OSES/,
+    )
+  })
+
+  test('the committed wrangler.toml parses', () => {
+    const toml = readFileSync(new URL('../../api-server/wrangler.toml', import.meta.url), 'utf-8')
+    expect(parsePublicDownloadOses(toml).has('macos')).toBe(true)
   })
 
   test('a release carrying Windows files offers only macOS until Windows is public', () => {
@@ -57,10 +80,7 @@ test.describe('download platforms: which OSes the site offers', () => {
   })
 
   test('a public OS the release carries no file of stays off', () => {
-    const macOnly: UpdateManifest = {
-      ...everyOsManifest,
-      downloads: everyOsManifest.downloads?.filter((d) => d.os === 'macos'),
-    }
+    const macOnly = withDownloads(everyOsManifest.downloads?.filter((d) => d.os === 'macos'))
     expect(offeredPlatforms(macOnly, oses('macos', 'windows', 'linux'), fileUrl).map((p) => p.os)).toEqual(['macos'])
   })
 
@@ -78,7 +98,7 @@ test.describe('download platforms: which OSes the site offers', () => {
         size: '21 MB',
       },
     ])
-    expect(linux.options.map((o) => o.label)).toEqual(['AppImage · ARM64', 'AppImage · x86_64', '.deb · ARM64'])
+    expect(linux.options.map((o) => o.label)).toEqual(['AppImage · ARM64', 'AppImage · x64', '.deb · ARM64'])
     expect(linux.defaultArch).toBe('x86_64')
   })
 
@@ -93,13 +113,58 @@ test.describe('download platforms: which OSes the site offers', () => {
     ])
   })
 
+  // The review's finding 1: `downloads: []` built a site whose buttons had no link. Finding 2: no universal DMG made
+  // every no-JS button the Apple silicon one. Both now stop the build (`release.ts` and the blog plugin call this).
+  test('the build stops on a release without the universal macOS DMG, or with a malformed list', () => {
+    const noUniversal = withDownloads(everyOsManifest.downloads?.filter((d) => d.arch !== 'universal'))
+    for (const manifest of [withDownloads([]), noUniversal]) {
+      expect(() => offeredPlatforms(manifest, oses('macos'), fileUrl)).toThrow(/no universal macOS DMG/)
+    }
+    for (const bad of [{}, [{ os: 'macos' }], [{ ...everyOsManifest.downloads?.[2], size: '91' }]]) {
+      expect(() => offeredPlatforms(withDownloads(bad), oses('macos'), fileUrl)).toThrow(/malformed/)
+    }
+  })
+
+  test('the Docker build refuses the same live manifests before it builds', () => {
+    const live = {
+      version: '1.2.0',
+      notes: 'Notes',
+      pub_date: '2026-11-19T00:00:00Z',
+      platforms: Object.fromEntries(
+        ['darwin-aarch64', 'darwin-x86_64', 'darwin-universal'].map((k) => [k, { url: 'u', signature: 's' }]),
+      ),
+      downloads: everyOsManifest.downloads,
+    }
+    expect(liveManifestProblem(live)).toBeNull()
+    expect(liveManifestProblem({ ...live, downloads: [] })).toMatch(/universal macOS DMG/)
+    expect(
+      liveManifestProblem({ ...live, downloads: everyOsManifest.downloads?.filter((d) => d.arch !== 'universal') }),
+    ).toMatch(/universal macOS DMG/)
+    expect(liveManifestProblem({ ...live, downloads: [{ os: 'macos' }] })).toMatch(/malformed/)
+  })
+
   test('copy follows the offered OSes', () => {
     expect(formatOsList(['macos'])).toBe('macOS')
     expect(formatOsList(['macos', 'windows'])).toBe('macOS and Windows')
     expect(formatOsList(['macos', 'windows', 'linux'])).toBe('macOS, Windows, and Linux')
-    expect(newsletterLabel(['macos'])).toBe('Windows coming soon. Linux in alpha (self-build for now). Get notified:')
-    expect(newsletterLabel(['macos', 'windows'])).toBe('Linux in alpha (self-build for now). Get notified:')
-    expect(newsletterLabel(['macos', 'windows', 'linux'])).toBe('Get an email when a new version is out:')
+    expect(newsletterLabel(['macos'])).toBe(
+      'Windows is on its way, and Linux is in alpha (self-build for now). The newsletter, about once a month, will announce both:',
+    )
+    expect(newsletterLabel(['macos', 'windows'])).toBe(
+      'Linux is in alpha (self-build for now). The newsletter, about once a month, will announce its download:',
+    )
+    expect(newsletterLabel(['macos', 'linux'])).toBe(
+      'Windows is on its way. The newsletter, about once a month, will announce it:',
+    )
+    expect(newsletterLabel(['macos', 'windows', 'linux'])).toBe(
+      'New versions go out in the newsletter, about once a month:',
+    )
+    // The newsletter is monthly, so nothing promises a mail on release day.
+    for (const offered of [['macos'], ['macos', 'windows']] as Os[][]) {
+      expect(newsletterLabel(offered)).not.toMatch(/the day|coming soon/i)
+    }
+    expect(otherDeviceNote(['macos'])).toBe('Cmdr is a desktop app for macOS.')
+    expect(otherDeviceNote(['macos', 'windows'])).toBe('Cmdr is a desktop app for macOS and Windows. Pick yours below.')
   })
 })
 
@@ -115,13 +180,10 @@ function navigatorOf(v: Visitor): VisitorNavigator {
 test.describe('download platforms: detecting the visitor', () => {
   test('names the desktop OS from Client Hints, the user agent, or navigator.platform', () => {
     expect(detectVisitorOs(navigatorOf(visitors.macArm))).toBe('macos')
+    expect(detectVisitorOs(navigatorOf(visitors.macSafariIntel))).toBe('macos')
     expect(detectVisitorOs(navigatorOf(visitors.windows))).toBe('windows')
     expect(detectVisitorOs(navigatorOf(visitors.linux))).toBe('linux')
     expect(detectVisitorOs(navigatorOf(visitors.linuxArm))).toBe('linux')
-    // Safari and Firefox have no Client Hints: the user agent decides.
-    const safari =
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15'
-    expect(detectVisitorOs({ userAgent: safari, platform: 'MacIntel', maxTouchPoints: 0 })).toBe('macos')
     expect(
       detectVisitorOs({
         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0',
@@ -137,6 +199,8 @@ test.describe('download platforms: detecting the visitor', () => {
   test('phones, tablets, and Chromebooks get no desktop OS, though their user agents say Linux or Mac', () => {
     expect(detectVisitorOs(navigatorOf(visitors.android))).toBeNull()
     expect(detectVisitorOs({ userAgent: visitors.android.userAgent, platform: 'Linux armv8l' })).toBeNull()
+    // An Android tablet asking for the desktop site sends a desktop Linux user agent, but on a touch screen.
+    expect(detectVisitorOs(navigatorOf(visitors.androidTabletDesktopMode))).toBeNull()
     expect(
       detectVisitorOs({
         userAgent: 'Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) Chrome/140.0.0.0',
@@ -163,14 +227,27 @@ test.describe('download platforms: detecting the visitor', () => {
   test('reads the arch a user agent names', () => {
     expect(detectVisitorArch({ userAgent: visitors.linuxArm.userAgent })).toBe('aarch64')
     expect(detectVisitorArch({ platform: 'Linux aarch64' })).toBe('aarch64')
+    expect(detectVisitorArch({ platform: 'Linux armv8' })).toBe('aarch64')
+    // A 32-bit ARM userland: no build of Cmdr fits it.
+    expect(detectVisitorArch({ platform: 'Linux armv8l' })).toBeNull()
     expect(detectVisitorArch({ userAgent: visitors.windows.userAgent })).toBe('x86_64')
     expect(detectVisitorArch({ userAgent: visitors.linux.userAgent })).toBe('x86_64')
     expect(detectVisitorArch({ userAgent: 'SomeBrowser/1.0' })).toBeNull()
   })
+
+  test("reads a Mac's arch from the WebGL renderer, and Safari's masked one as unknown", () => {
+    expect(macArchFromRenderer(visitors.macArm.webglRenderer)).toBe('aarch64')
+    expect(macArchFromRenderer('Apple M3 Max')).toBe('aarch64')
+    expect(macArchFromRenderer(visitors.macIntel.webglRenderer)).toBe('x86_64')
+    expect(macArchFromRenderer('AMD Radeon Pro 5500M OpenGL Engine')).toBe('x86_64')
+    // Safari says "Apple GPU" on every Mac, Intel ones included (the review's finding 12).
+    expect(macArchFromRenderer('Apple GPU')).toBeNull()
+    expect(macArchFromRenderer('')).toBeNull()
+  })
 })
 
 test.describe('download platforms: what a button offers', () => {
-  const byOs = (offered: ReturnType<typeof offeredPlatforms>) => Object.fromEntries(offered.map((p) => [p.os, p]))
+  const byOs = (offered: PlatformDownloads[]) => Object.fromEntries(offered.map((p) => [p.os, p]))
   const macOnly = byOs(offeredPlatforms(everyOsManifest, oses('macos'), fileUrl))
   const every = byOs(offeredPlatforms(everyOsManifest, oses('macos', 'windows', 'linux'), fileUrl))
 
@@ -203,6 +280,7 @@ test.describe('download platforms: what a button offers', () => {
     const rebuilt = <T>(fn: T): T => (new Function(`return (${String(fn)})`) as () => T)()
     expect(rebuilt(detectVisitorOs)(navigatorOf(visitors.windows))).toBe('windows')
     expect(rebuilt(detectVisitorArch)({ platform: 'Linux aarch64' })).toBe('aarch64')
+    expect(rebuilt(macArchFromRenderer)('Apple M2')).toBe('aarch64')
     expect(rebuilt(chooseDownload)(every, { visitorOs: 'linux', arch: 'x86_64', pinnedOs: null })?.option.kind).toBe(
       'appimage',
     )
@@ -211,6 +289,61 @@ test.describe('download platforms: what a button offers', () => {
 
 // The built site.
 
+const builtManifest = JSON.parse(
+  readFileSync(new URL('../public/latest.json', import.meta.url), 'utf-8'),
+) as UpdateManifest
+const builtPublicOses = parsePublicDownloadOses(
+  readFileSync(new URL('../../api-server/wrangler.toml', import.meta.url), 'utf-8'),
+)
+/** What the build offers, from the same inputs it read; each option's `url` here is its file name. */
+const built = offeredPlatforms(builtManifest, builtPublicOses, (d) => d.file)
+const builtByOs = Object.fromEntries(built.map((p) => [p.os, p]))
+const builtOses = built.map((p) => p.os)
+
+/**
+ * Whether `href` downloads `option` of `os`: the mirror's file (no download base, as in the E2E build) or the API
+ * server's route for it (`release.ts`).
+ */
+function isLinkTo(href: string, os: string, option: DownloadOption): boolean {
+  const v = builtManifest.version
+  if (href.endsWith(`/${option.url}`)) return true
+  if (os === 'macos' && option.kind === 'dmg') return href.includes(`/download/${v}/${option.arch}?`)
+  return href.includes(`/download/${v}/${os}/${option.arch}?kind=${option.kind}`)
+}
+
+/**
+ * Who each visitor is, written out by hand so the page check doesn't reuse the code it checks: their OS (null for a
+ * device Cmdr doesn't run on) and the arch their own OS's build should match (null: unknown).
+ */
+const truth: Record<keyof typeof visitors, { os: Os | null; arch: string | null }> = {
+  macArm: { os: 'macos', arch: 'aarch64' },
+  macIntel: { os: 'macos', arch: 'x86_64' },
+  macSafariIntel: { os: 'macos', arch: null },
+  windows: { os: 'windows', arch: 'x86_64' },
+  linux: { os: 'linux', arch: 'x86_64' },
+  linuxArm: { os: 'linux', arch: 'aarch64' },
+  android: { os: null, arch: null },
+  androidTabletDesktopMode: { os: null, arch: null },
+}
+
+/**
+ * The file a visitor's auto-picked buttons must end on: their OS's build for their arch when the site offers it,
+ * else the universal DMG, which runs on every Mac. Never another OS's arch: a Windows PC's x64 says nothing about
+ * which Mac build to offer.
+ */
+function expectedChoice(name: keyof typeof visitors): { visitorOs: Os | null; os: Os; option: DownloadOption } {
+  const { os, arch } = truth[name]
+  const own = os ? builtByOs[os] : undefined
+  if (own) {
+    const main = own.options.filter((o) => o.kind === own.options[0].kind)
+    const option = main.find((o) => o.arch === arch) ?? main.find((o) => o.arch === own.defaultArch) ?? main[0]
+    return { visitorOs: os, os: own.os, option }
+  }
+  const universal = builtByOs.macos.options.find((o) => o.kind === 'dmg' && o.arch === 'universal')
+  if (!universal) throw new Error('the build has no universal DMG')
+  return { visitorOs: os, os: 'macos', option: universal }
+}
+
 /** Every download href on the page, main links and dropdown options alike. */
 async function downloadHrefs(page: Page): Promise<string[]> {
   return page
@@ -218,64 +351,88 @@ async function downloadHrefs(page: Page): Promise<string[]> {
     .evaluateAll((links) => links.map((a) => (a as HTMLAnchorElement).href))
 }
 
-test.describe('download section, as published (macOS only)', () => {
-  // The built home page offers what the committed config makes public; once another OS is, the fixture
-  // describe below covers the shipped states and this one stands down.
-  const publicOses = parsePublicDownloadOses(
-    readFileSync(new URL('../../api-server/wrangler.toml', import.meta.url), 'utf-8'),
-  )
-  test.skip(publicOses.size > 1, 'another OS is public, so the home page is no longer macOS-only')
+async function heroHref(page: Page): Promise<string> {
+  return (await page.locator('.split-btn--hero a[data-download-link]').getAttribute('href')) ?? ''
+}
 
-  for (const [name, visitor] of Object.entries(visitors)) {
-    test(`a ${name} visitor gets only macOS downloads`, async ({ page }) => {
+test.describe(`download section, as built (offering ${formatOsList(builtOses)})`, () => {
+  for (const [name, visitor] of Object.entries(visitors) as [keyof typeof visitors, Visitor][]) {
+    test(`a ${name} visitor gets their build, or the universal DMG, and only offered OSes' files`, async ({ page }) => {
+      const { visitorOs, ...choice } = expectedChoice(name)
       await emulateVisitor(page, visitor)
       await page.goto('/')
-      await expect(page.locator('html')).toHaveAttribute('data-visitor-os', /.+/)
+      await expect(page.locator('html')).toHaveAttribute('data-visitor-os', visitorOs ?? 'other')
+      // The old bug: a Windows PC's Intel GPU or a Safari Mac's "Apple GPU" picked a Mac arch. Polled, since Client
+      // Hints answer asynchronously.
+      await expect.poll(() => heroHref(page).then((h) => isLinkTo(h, choice.os, choice.option))).toBe(true)
+      const label = `Download for ${builtByOs[choice.os].name}`
+      await expect(page.locator('.split-btn--hero [data-download-label]')).toHaveText(label)
+
       const hrefs = await downloadHrefs(page)
       expect(hrefs.length).toBeGreaterThan(0)
-      for (const href of hrefs) expect(href).toMatch(/\.dmg$|\/download\/[^/]+\/(aarch64|x86_64|universal)\?/)
+      for (const href of hrefs) {
+        expect(
+          built.some((p) => p.options.some((o) => isLinkTo(href, p.os, o))),
+          href,
+        ).toBe(true)
+      }
+
+      // The ✓ marks the visitor's own build only.
+      const recommended = page.locator('.split-btn--hero [data-recommended]')
+      if (choice.os === visitorOs && choice.option.arch !== builtByOs[choice.os].defaultArch) {
+        await expect(recommended).toHaveAttribute('data-arch', choice.option.arch)
+      } else if (choice.os !== visitorOs) {
+        await expect(recommended).toHaveCount(0)
+      }
+
+      const shownCard = choice.os
       await expect(page.locator('[data-platform-card]:visible')).toHaveCount(1)
-      await expect(page.locator('[data-platform-card="macos"]')).toBeVisible()
-      await expect(page.locator('[data-show-platform]')).toHaveCount(0)
-      await expect(page.locator('.split-btn--hero [data-download-label]')).toHaveText('Download for macOS')
+      await expect(page.locator(`[data-platform-card="${shownCard}"]`)).toBeVisible()
+
+      // A note only for a visitor whose OS isn't offered, or that detection can't place.
+      const notice = page.locator('[data-visitor-notice]:visible')
+      if (visitorOs !== null && builtOses.includes(visitorOs)) await expect(notice).toHaveCount(0)
+      else await expect(notice).toHaveAttribute('data-visitor-notice', visitorOs ?? 'other')
+
+      await expect(page.locator('#download .newsletter-inline__label')).toHaveText(newsletterLabel(builtOses))
     })
   }
 
-  test('a Windows visitor hears their build is on its way', async ({ page }) => {
-    await emulateVisitor(page, visitors.windows)
-    await page.goto('/')
-    await expect(page.locator('[data-visitor-notice="windows"]')).toBeVisible()
-    await expect(page.locator('[data-visitor-notice="windows"]')).toContainText('Cmdr for Windows is on its way')
-    await expect(page.locator('[data-visitor-notice="linux"]')).toBeHidden()
-    await expect(page.locator('#download .newsletter-inline__label')).toHaveText(
-      'Windows coming soon. Linux in alpha (self-build for now). Get notified:',
-    )
-  })
-
-  test('a Linux visitor hears about the alpha and the build-from-source path', async ({ page }) => {
+  test('a Linux visitor, while Linux is out of reach, gets the build-from-source path', async ({ page }) => {
+    test.skip(builtOses.includes('linux'), 'Linux is offered, so its visitors get the download')
     await emulateVisitor(page, visitors.linux)
     await page.goto('/')
     const notice = page.locator('[data-visitor-notice="linux"]')
     await expect(notice).toBeVisible()
     await expect(notice.getByRole('link', { name: 'build it from source' })).toHaveAttribute('href', /CONTRIBUTING\.md/)
-    await expect(page.locator('[data-visitor-notice="windows"]')).toBeHidden()
   })
 
-  for (const name of ['macArm', 'android'] as const) {
-    test(`a ${name} visitor sees no not-yet note`, async ({ page }) => {
-      await emulateVisitor(page, visitors[name])
-      await page.goto('/')
-      await expect(page.locator('html')).toHaveAttribute('data-visitor-os', /.+/)
-      await expect(page.locator('[data-visitor-notice]:visible')).toHaveCount(0)
+  test('an Android tablet in desktop-site mode gets the neutral note, never build-from-source', async ({ page }) => {
+    await emulateVisitor(page, visitors.androidTabletDesktopMode)
+    await page.goto('/')
+    await expect(page.locator('[data-visitor-notice="other"]')).toHaveText(otherDeviceNote(builtOses))
+    await expect(page.locator('[data-visitor-notice="linux"]')).toBeHidden()
+  })
+})
+
+test.describe('download buttons with JS off', () => {
+  test.use({ javaScriptEnabled: false })
+
+  // Without the picker every button keeps its server-rendered link, which must run on every Mac: an Intel Mac must
+  // never get the Apple silicon DMG (the review's finding 2).
+  for (const path of ['/', '/pricing/', '/blog/total-commander-for-macos/']) {
+    test(`${path} offers the universal DMG on every main link`, async ({ page }) => {
+      await emulateVisitor(page, visitors.macIntel)
+      await page.goto(path)
+      const universal = builtByOs.macos.options.find((o) => o.arch === 'universal')
+      if (!universal) throw new Error('the build has no universal DMG')
+      const mains = await page
+        .locator('a[data-download-link]')
+        .evaluateAll((links) => links.map((a) => (a as HTMLAnchorElement).href))
+      for (const href of mains) expect(isLinkTo(href, 'macos', universal), href).toBe(true)
+      if (path !== '/blog/total-commander-for-macos/') expect(mains.length).toBeGreaterThan(0)
     })
   }
-
-  test('a Mac visitor on Apple Silicon gets the Apple Silicon build, marked', async ({ page }) => {
-    await emulateVisitor(page, visitors.macArm)
-    await page.goto('/')
-    await expect(page.locator('.split-btn--hero a[data-download-link]')).toHaveAttribute('href', /aarch64/)
-    await expect(page.locator('.split-btn--hero [data-arch="aarch64"]')).toHaveAttribute('data-recommended', 'true')
-  })
 })
 
 test.describe('download section, once every OS ships (/download-fixture)', () => {
@@ -292,7 +449,7 @@ test.describe('download section, once every OS ships (/download-fixture)', () =>
     await expect(windowsCard).toBeVisible()
     await expect(windowsCard).toContainText('Run anyway')
     await expect(page.locator('[data-platform-card="macos"]')).toBeHidden()
-    await expect(page.locator('[data-visitor-notice]')).toHaveCount(0)
+    await expect(page.locator('[data-visitor-notice]:visible')).toHaveCount(0)
 
     await windowsCard.getByRole('button', { name: 'macOS' }).click()
     await expect(page.locator('[data-platform-card="macos"]')).toBeVisible()
@@ -314,10 +471,13 @@ test.describe('download section, once every OS ships (/download-fixture)', () =>
     await expect(page.locator('[data-platform-card="linux"]')).toBeVisible()
   })
 
-  test('a phone visitor gets macOS, with every OS one tap away', async ({ page }) => {
+  test('a phone visitor gets macOS and a neutral note, with every OS one tap away', async ({ page }) => {
     await emulateVisitor(page, visitors.android)
     await page.goto('/download-fixture')
     await expect(page.locator('html')).toHaveAttribute('data-visitor-os', 'other')
+    await expect(page.locator('[data-visitor-notice="other"]')).toHaveText(
+      'Cmdr is a desktop app for macOS, Windows, and Linux. Pick yours below.',
+    )
     const macCard = page.locator('[data-platform-card="macos"]')
     await expect(macCard).toBeVisible()
     await expect(macCard.locator('[data-show-platform]')).toHaveText(['Windows', 'Linux'])

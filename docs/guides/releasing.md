@@ -1399,7 +1399,19 @@ environment already holds.
    `apps/api-server/wrangler.toml`. That one line turns the Windows download on at the API server's
    `/download/:version/:os/:arch` route (task 31) and on the website, whose buttons, download section, and
    `/trust#windows` read the same line at build time (`apps/website/DETAILS.md` § Download platforms). Until then a
-   release carries the Windows files with the site still offering macOS only.
+   release carries the Windows files with the site still offering macOS only. The two deploy from separate workflows, so
+   `deploy-website` first waits until the API serves the Windows file
+   (`apps/website/scripts/wait-for-public-downloads.sh`, up to 15 minutes; a timeout fails the job and the old
+   macOS-only site stays up, so re-run it once `deploy-api-server.yml` is green).
+
+**Rolling the Windows download back** (a bad build, or a wrong flip), in this order:
+
+1. Remove `windows` from `PUBLIC_DOWNLOAD_OSES` and land it. The API refuses Windows downloads the moment its deploy
+   finishes; the site drops its Windows buttons, cards, and `/trust#windows` when `deploy-website` finishes, a few
+   minutes later. In between, a Windows button answers the API's 404, which is the safe side: nobody gets the bad build.
+   The wait step has nothing to wait for (only macOS is public), so the site deploy doesn't stall.
+2. If the build itself is bad, ship a fixed release before turning Windows back on (step 8 again), and leave the bad
+   release's files alone: release files are immutable, and the API no longer serves them.
 
 Turning it on also wants, though nothing breaks without it: the Store link and the fuller "Run anyway" explainer on the
 website (task 58). In `local` mode, `windows-publish` is a second `release` environment approval if it arrives after you

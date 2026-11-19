@@ -257,33 +257,55 @@ page's platform line, the home page's schema, the llms files, and `/trust#window
   - Why the var and not `ShippedOSes`: the release builds an OS's files before anyone announces them, and the API
     answers 404 for an OS off the var, so linking on `ShippedOSes` alone would put dead buttons up.
   - Wiring: the Dockerfile copies `wrangler.toml` in (and `.dockerignore` lets it through), and ci.yml's `website`
-    filter lists it, so the flip's commit redeploys the site. The API deploys from its own workflow on the same push, so
-    for a few minutes either can be ahead; the site's links are the API's route, which 404s until the Worker is up.
+    filter lists it, so the flip's commit redeploys the site.
+  - The switch race: the API deploys from its own workflow on the same push, so `deploy-website` first runs
+    `scripts/wait-for-public-downloads.sh`. For each public OS but macOS that the live `latest.json` carries a website
+    file of, it polls that file's API route (as `cmdr-deploy-check-bot`, which the API's bot filter keeps out of D1)
+    until it redirects; after 15 minutes it fails the job and the old site stays up. Turning an OS off needs no wait:
+    the API refuses at once, and the site's buttons 404 until it redeploys (the rollback order is in
+    `docs/guides/releasing.md` § Windows releases).
+  - Fail loud: `parsePublicDownloadOses` throws unless the toml has one `PUBLIC_DOWNLOAD_OSES = "…"` line (a
+    single-quoted value would have the API serve an OS the site never offers), and `offeredPlatforms` throws on a
+    malformed `downloads` list or one without the universal macOS DMG. That DMG is every button's link with JS off and
+    for a Mac of unknown arch, so without it a build would ship buttons with no link, or the Apple silicon DMG for Intel
+    Macs. The Docker build refuses the same live manifests before building (`scripts/live-manifest-check.ts`), so the
+    deploy keeps the old site.
 - **Website kinds**: macOS DMGs, the Windows NSIS installer, Linux AppImages and `.deb`s. The MSIX is the Store's
   package (task 57 links the Store) and the Group Policy zip is for admins, so neither is a button.
 - **The picker** (two inline scripts at the end of `Layout.astro`'s `<body>`): the first inlines `detectVisitorOs`,
-  `detectVisitorArch`, and `chooseDownload` from their TS source with `String(fn)`, so the page runs the exact code the
-  unit tests cover (which is why they must stay self-contained); the second applies them. Each
+  `detectVisitorArch`, `macArchFromRenderer`, and `chooseDownload` from their TS source with `String(fn)`, so the page
+  runs the exact code the unit tests cover (which is why they must stay self-contained); the second applies them. Each
   `[data-download-split-btn]` carries its own offer as `data-downloads` JSON, so the fixture page can render a different
   release than the site.
   - The visitor's OS (Client Hints, then the user agent, then `navigator.platform`; phones, tablets, and Chromebooks
-    count as none) lands on `html[data-visitor-os]`. A button follows it when that OS is offered, else shows macOS; a
-    card button is pinned to its OS (`data-download-pinned-os`).
+    count as none, and so does a Mac or Linux user agent on a touch screen without Client Hints, which is how iPads and
+    Android tablets ask for the desktop site) lands on `html[data-visitor-os]` (`other` for none). A button follows it
+    when that OS is offered, else shows macOS; a card button is pinned to its OS (`data-download-pinned-os`).
   - The arch counts only within the visitor's own OS: a Windows visitor shown macOS gets the universal DMG, never Intel.
-    Macs read it from WebGL, others from the user agent, then the `cmdr-arch` localStorage cache (a preference flag),
-    and Client Hints refine it asynchronously.
+    Macs read it from WebGL (`macArchFromRenderer`), others from the user agent, then the `cmdr-arch` localStorage cache
+    (a preference flag), and Client Hints refine it asynchronously.
+  - Gotcha: Safari reports the WebGL renderer as "Apple GPU" on every Mac, Intel ones included (ua-parser-js#732, read
+    2026-11-19), so that string means unknown and Safari gets the universal DMG. Reading it as Apple silicon offered
+    Intel-Mac Safari the arm64 DMG with a ✓.
   - The download section shows the card of the buttons' OS, with "Also for …" switches to the other offered OSes. A
-    Windows or Linux visitor whose build isn't offered keeps the macOS card plus a note (`data-visitor-notice`): Windows
-    is on its way, Linux builds from source; both point at the newsletter signup below, whose label names what isn't out
-    yet (`newsletterLabel`).
+    visitor whose build isn't offered keeps the macOS card plus a note (`data-visitor-notice`): Windows isn't out yet,
+    Linux builds from source, and anything else (a phone, a tablet, an unknown device) gets a neutral line
+    (`otherDeviceNote`). The newsletter label below carries the "on its way" news and says what's true: it's the
+    newsletter, about once a month, which will announce the release (`newsletterLabel`), never a mail on release day.
   - Privacy: detection runs on the device, and nothing new leaves the page (no new Umami prop, no fetch).
   - With JS off, every button offers the macOS universal DMG, as before.
-- **Tests**: `e2e/download-platforms.spec.ts` holds the pure rules' unit tests (no page) and the built site's states:
-  the home page per visitor while macOS is the one public OS (it skips once another is), and `/download-fixture`
-  (`src/pages/download-fixture.astro`, a frozen every-OS release in `src/fixtures/download-fixture.ts`; unlinked,
-  `noindex`, out of the sitemap) for the shipped states. `e2e/visitor.ts` fakes the visitor's `navigator`: Playwright's
-  `userAgent` option leaves `platform` and Client Hints on the host's values. The visual baselines emulate an Intel Mac
-  for the same reason, so the dropdown shot keeps its ✓ on every runner.
+- **Tests**: `e2e/download-platforms.spec.ts` holds the pure rules' unit tests (no page, the live-manifest check
+  included) and the built site's states:
+  - The home page per visitor, against what the committed toml and `public/latest.json` offer (so it keeps testing once
+    Windows is public). Each visitor's OS and arch are written out by hand (`truth`), not derived with the code under
+    test, so the check fails on the old bugs (a Windows PC offered the Intel DMG, Safari the arm64 one).
+  - With JS off: every main link is the universal DMG.
+  - `/download-fixture` (`src/pages/download-fixture.astro`, a frozen every-OS release in
+    `src/fixtures/download-fixture.ts`; unlinked, `noindex`, out of the sitemap) for the shipped states. nginx answers
+    it 404 in production, since it would offer Windows and Linux buttons; `website-docker-build` probes that.
+  - `e2e/visitor.ts` fakes the visitor's `navigator` and WebGL renderer: Playwright's `userAgent` option leaves
+    `platform`, Client Hints, and the GPU on the host's values. The visual baselines emulate an Intel Mac for the same
+    reason, so the dropdown shot keeps its ✓ on every runner.
 
 ## Icons
 

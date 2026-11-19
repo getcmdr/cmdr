@@ -4,7 +4,7 @@ import HomebrewInstall from './HomebrewInstall.astro'
 import NewsletterInlineWrapper from './NewsletterInlineWrapper.astro'
 import Icon from './icons/Icon.astro'
 import { platformDownloads } from '../lib/release'
-import { newsletterLabel, osNames, type Os, type PlatformDownloads } from '../lib/download-platforms'
+import { newsletterLabel, osNames, otherDeviceNote, type Os, type PlatformDownloads } from '../lib/download-platforms'
 
 interface Props {
     /** What to offer; the published release's offered platforms by default. The download fixture page passes its own. */
@@ -13,7 +13,9 @@ interface Props {
 
 const { platforms = platformDownloads } = Astro.props
 const offered = platforms.map((p) => p.os)
-// A Windows or Linux visitor whose build isn't out yet gets a note; the picker in Layout.astro unhides theirs.
+// A Windows or Linux visitor whose build isn't out yet gets a note, and so does a phone, a tablet, or a device
+// detection can't place (a neutral one); the picker in Layout.astro unhides the visitor's. The newsletter label
+// below carries the "on its way" news, so the notes don't repeat it.
 const notYetOffered = (['windows', 'linux'] as const).filter((os) => !offered.includes(os))
 const linkClass = 'text-accent-text underline underline-offset-2 hover:text-accent-hover'
 const buildFromSource = 'https://github.com/getcmdr/cmdr/blob/main/CONTRIBUTING.md#building-a-deb-on-linux'
@@ -45,26 +47,23 @@ const others = (os: Os) => offered.filter((o) => o !== os)
         </p>
 
         {
-            notYetOffered.map((os) => (
+            [...notYetOffered, 'other' as const].map((os) => (
                 <p
                     class="mx-auto mb-6 max-w-md rounded-xl border border-border bg-surface px-5 py-4 text-sm text-text-secondary"
                     data-visitor-notice={os}
                     hidden
                 >
-                    {os === 'windows' ? (
-                        <>
-                            Looks like you're on Windows! Cmdr for Windows is on its way. Leave your email below to
-                            hear the day it's out.
-                        </>
-                    ) : (
+                    {os === 'windows' && <>Looks like you're on Windows! Cmdr for Windows isn't out yet.</>}
+                    {os === 'linux' && (
                         <>
                             Looks like you're on Linux! Cmdr runs there in alpha, and you can{' '}
                             <a href={buildFromSource} class={linkClass}>
                                 build it from source
                             </a>{' '}
-                            today. A ready-made download is on its way: leave your email below to hear when it's out.
+                            today.
                         </>
                     )}
+                    {os === 'other' && otherDeviceNote(offered)}
                 </p>
             ))
         }

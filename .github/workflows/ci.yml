@@ -1100,7 +1100,8 @@ jobs:
   deploy-website:
     name: Deploy website
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # 15 minutes of waiting for the API (the first step) plus the deploy itself.
+    timeout-minutes: 25
     # Deploys when the website lane passed in this run, or when it skipped because the landed
     # commit was already verified on its PR and the push touched the website.
     needs: [changes, website]
@@ -1113,6 +1114,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # The site and the API read one switch (`PUBLIC_DOWNLOAD_OSES`) but deploy separately, so the new site goes
+      # live only once the API serves every OS download it will offer. A timeout fails this job and the old site
+      # stays up (`apps/website/scripts/wait-for-public-downloads.sh`).
+      - name: Wait for the API to serve every public OS
+        run: ./apps/website/scripts/wait-for-public-downloads.sh
 
       - name: Find the released demo image
         id: demo
