@@ -1,6 +1,6 @@
 import type { APIContext } from 'astro'
 import { getCollection } from 'astro:content'
-import { version, dmgUrls } from '../lib/release'
+import { version, dmgUrls, otherOsDownloadLines } from '../lib/release'
 import { shippedLanguageCount } from '../lib/shipped-languages'
 
 export async function GET(context: APIContext) {
@@ -23,7 +23,7 @@ Current version: ${version}
 ## Key links
 
 - [Download (Apple Silicon)](${dmgUrls.aarch64}): DMG installer for Apple Silicon Macs
-- [Download (Intel)](${dmgUrls.x86_64}): DMG installer for Intel Macs
+- [Download (Intel)](${dmgUrls.x86_64}): DMG installer for Intel Macs${otherOsDownloadLines}
 - [Live demo](${site}/demo/): The real app running in the browser on a sample drive, nothing to install
 - [Pricing](${site}/pricing/): Free for personal use, $59 once for commercial use
 - [Trust and security](${site}/trust/): What the app sends over the network, where data is stored, signing and updates, and known gaps, for security and IT reviewers

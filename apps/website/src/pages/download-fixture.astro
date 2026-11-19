@@ -1,0 +1,21 @@
+---
+/**
+ * The download section and a hero-style button as they render once every OS ships, from the frozen release in
+ * `src/fixtures/download-fixture.ts`. The real build offers only what's public (macOS today), so this is where the
+ * E2E (`e2e/download-platforms.spec.ts`) checks the Windows and Linux states. Unlinked, `noindex`, and out of the
+ * sitemap (astro.config.ts).
+ */
+import Layout from '../layouts/Layout.astro'
+import Download from '../components/Download.astro'
+import DownloadButton from '../components/DownloadButton.astro'
+import { fixturePlatforms } from '../fixtures/download-fixture'
+---
+
+<Layout title="Download fixture" noindex>
+    <main class="pt-16">
+        <div class="flex justify-center px-6" data-fixture-hero>
+            <DownloadButton variant="hero" platforms={fixturePlatforms} />
+        </div>
+        <Download platforms={fixturePlatforms} />
+    </main>
+</Layout>
