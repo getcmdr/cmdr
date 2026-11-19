@@ -410,12 +410,16 @@ command takes the unanswered path quietly.
 
 - It globs every app source as text (a runtime `import.meta.glob`, so `svelte-tests-related` reaches it from any app
   file) minus tests, `lib/demo/`, `lib/ipc/`, and the debug window (the demo refuses to open it).
-- **Raw `invoke('…')`** (and `app.html`'s boot-guard `send('…')`): `ipc-calls.ts`'s `findRawInvokes` reads each wire
-  name, which must be answered (`isWireAnswered`: the engines, the page hosts, a webview, `plugins.ts`, `rawAnswers`, or
-  a bindings answer) or left out in `wireNotInDemo` with its reason.
-- **Tauri JS APIs**: `findTauriApiImports` reads every value imported from a `@tauri-apps/*` package, static or a
-  destructured `await import(…)` (any other dynamic import shape fails, unread). Each must be in `TAURI_API_CALLS`, with
-  the wire commands calling it sends, each answered or left out the same way.
+- **Raw `invoke('…')`**, bare or a member call (`core.invoke('…')`), and `app.html`'s boot-guard `send('…')`:
+  `ipc-calls.ts`'s `findRawInvokes` reads each wire name, which must be answered (`isWireAnswered`: the engines, the
+  page hosts, a webview, `plugins.ts`, `rawAnswers`, or a bindings answer) or left out in `wireNotInDemo` with its
+  reason. An `invoke` whose command isn't a literal (`invoke(command)`, a `${…}` template) fails, unread, unless it's a
+  forwarder listed in the test's `FORWARDERS` (the boot guard's own `send`), whose callers are read instead.
+- Both scans skip comment lines (`//`, `*`, `/*` at a line's start), so a doc comment quoting a call isn't one.
+- **Tauri JS APIs**: `findTauriApiImports` reads every value imported from a `@tauri-apps/*` package: static, a
+  destructured `await import(…)`, or an `import(…).then(({ … }) => …)`. Any other shape fails, unread: a namespace
+  import, a dynamic import kept whole, a `.then` taking the module whole. Each must be in `TAURI_API_CALLS`, with the
+  wire commands calling it sends, each answered or left out the same way.
 - **The one gap**: an API that hands back a window or webview handle (`getCurrentWindow`, `getCurrentWebview`,
   `WebviewWindow`, in `TAURI_API_HANDLES`) sends a command per METHOD, which no import names. Those stay with the
   runtime net below. Each list's entries must still be used (the test fails on a stale one).
@@ -569,11 +573,15 @@ staged paths. The controller runs unchanged: hit test, transfer dialog, conflict
 What a visitor reaches that the desktop hands to the OS, answered the way a page can (`browser-dialogs.ts`,
 `answers.ts`, `relayed.ts`):
 
-- **Questions** (`confirmDialog`, through the dialog plugin's `plugin:dialog|message`) go to the browser's own `confirm`
-  (two buttons) or `alert` (one), titled by the question's title, and answer the clicked button's name as the plugin
-  does. A three-button set has no browser equivalent, so its middle answer never comes back. `confirmWithCheckbox`
-  answers `unsupported`, the app's own Linux path, so it asks the plain question that way and leaves the option
-  unchecked. Custom button words don't show: `confirm` has OK and Cancel.
+- **Questions** (`confirmDialog`, through the dialog plugin's `plugin:dialog|message`) open in the app's own modal
+  (`question-dialog.ts` + `QuestionDialog.svelte`, on `ModalDialog` and `Button`) over the frame that asked, as the
+  native alert sits over its window: the asking webview answers it itself (`own-window.ts`). Every button of the
+  plugin's set shows, with its custom words, the confirming one last and default (Return), and the clicked button's name
+  comes back as the plugin answers it; Escape answers the cancelling one. `confirmWithCheckbox` answers `unsupported`,
+  the app's own Linux path, so it asks the plain question that way and leaves the option unchecked.
+  - **Decision: not the browser's `confirm` / `alert`.** **Why**: they block the whole page (the demo's other windows
+    and its timers), offer two buttons only (a Yes/No/Cancel lost its No), show OK and Cancel whatever the app's words,
+    and a `sandbox` on the hero's iframe without `allow-modals` would make every one answer Cancel silently.
 - **File and folder pickers** (`plugin:dialog|open`, `save`) and **a reveal in the file manager**
   (`plugin:opener|reveal_item_in_dir`): no page equivalent over the demo's pretend files. The visitor gets an info toast
   (`ui.demoDesktopOnly.*`), the app a picker's cancel (`null`).
@@ -650,11 +658,12 @@ tells the visitor with one notice, `ui.demoArchive.notBrowsable`, whichever way 
   and Ask Cmdr's New chat on both, plus Next and Previous tab on Linux (the bar's `Alt+T` / `Alt+W` mnemonics and
   Linux's terminal key leave no safe stand-in; the Tab menu and palette still reach them). A key the browser merely has
   a meaning for but lets the page cancel (`Alt+←`, `F1`, `F5`, `Ctrl+1`) stays.
-  - Two seeds in `shortcuts.json`, so the shortcut system needs no demo awareness and every hint (menus, the palette,
-    the function bar, the dialog's own chips) shows the remapped combo: a rebindable command's as `shortcut:<id>`, the
-    delta the Settings editor writes (so Settings shows its reset arrow), and a fixed-key command's as `default:<id>`,
-    the store's host defaults (`lib/shortcuts/DETAILS.md` § Host defaults), since the store drops a fixed-key command's
-    customization. `browser-shortcuts.test.ts` fails on any command, fixed-key or not, left on a withheld key.
+  - Two seams, so every hint (menus, the palette, the function bar, the dialog's own chips) shows the remapped combo: a
+    rebindable command's seeded in `shortcuts.json` as `shortcut:<id>`, the delta the Settings editor writes (so
+    Settings shows its reset arrow), and a fixed-key command's handed to every frame's store by `boot.ts` as host
+    defaults (`lib/shortcuts/DETAILS.md` § Host defaults), since the store drops a fixed-key command's customization.
+    Never from the file: there, a hand-edited desktop `shortcuts.json` could rebind a fixed-key command.
+    `browser-shortcuts.test.ts` fails on any command, fixed-key or not, left on a withheld key.
   - Safari's reserved keys don't matter off macOS (no Safari there). Firefox's are read off its source, not tried in a
     browser; Chromium's quit on Linux is inferred from `IsReservedCommandOrKey` (the module says how).
 - `plugins.ts` seeds `settings.json` as a user who just finished the current wizard (`onboarding.completed` and

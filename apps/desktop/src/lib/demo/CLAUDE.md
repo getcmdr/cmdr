@@ -11,10 +11,10 @@ a typed answer here; listing commands go to the real listing engine, built to WA
   (Windows, Linux): the window buttons. `drag-regions.ts`: Tauri's `drag.js`. `drag-session.ts` / `os-drop.ts`: drags
   out and drops in. `color-scheme.ts`: `setTheme` per frame.
 - `answers.ts`, `volumes.ts`, `favorites.ts` (in memory), `relayed.ts` (answers that emit), `plugins.ts` (in-memory
-  `plugin:store`, path, app), `browser-dialogs.ts` (questions, pickers), `opener.ts` (links open in a new tab),
-  `listing.ts` (routes to the WASM engine, loaded by `engine-module.ts`), `coverage.ts` (every command answered or left
-  out with a reason; `ipc-calls.ts` reads the raw ones off the app's sources), `own-window.ts` (what a webview answers
-  itself), `unanswered.ts` (a void resolves, any other rejects; an undecided gap logs an error into
+  `plugin:store`, path, app), `browser-dialogs.ts` (pickers), `question-dialog.ts` (questions), `opener.ts` (links open
+  in a new tab), `listing.ts` (routes to the WASM engine, loaded by `engine-module.ts`), `coverage.ts` (every command
+  answered or left out with a reason; `ipc-calls.ts` reads the raw ones off the app's sources), `own-window.ts` (what a
+  webview answers itself), `unanswered.ts` (a void resolves, any other rejects; an undecided gap logs an error into
   `window.__cmdrDemo.unanswered`).
 - `demo-tree.ts`, `demo-contents.ts`, and `browser-shortcuts.ts`: PLACEHOLDER content David still decides.
 

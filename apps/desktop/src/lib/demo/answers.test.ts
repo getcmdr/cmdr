@@ -63,10 +63,17 @@ describe('app answers', () => {
   })
 })
 
+/** The page's `navigator`, with a clipboard that writes through `writeText`. */
+function navigatorWithClipboard(writeText: (text: string) => Promise<void>): Navigator {
+  const stand = Object.create(navigator) as Navigator
+  Object.defineProperty(stand, 'clipboard', { value: { writeText } })
+  return stand
+}
+
 describe('raw and silent answers', () => {
   it('answer the raw commands, configure_ai with no secret-store failure', async () => {
     const writeText = vi.fn(() => Promise.resolve())
-    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
+    vi.stubGlobal('navigator', navigatorWithClipboard(writeText))
     for (const [name, answer] of Object.entries(rawAnswers)) {
       await expect(
         Promise.resolve().then(() => answer?.({})),
@@ -79,7 +86,7 @@ describe('raw and silent answers', () => {
 
   it('copy text to the browser’s clipboard, and pass a refusal on as a string, as Tauri rejects', async () => {
     const writeText = vi.fn(() => Promise.resolve())
-    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
+    vi.stubGlobal('navigator', navigatorWithClipboard(writeText))
     await expect(rawAnswers.copy_to_clipboard?.({ text: '/Users/you/notes.md' })).resolves.toBeNull()
     expect(writeText).toHaveBeenCalledWith('/Users/you/notes.md')
     writeText.mockImplementationOnce(() => Promise.reject(new Error('Document is not focused.')))

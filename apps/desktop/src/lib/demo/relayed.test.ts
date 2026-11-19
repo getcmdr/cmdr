@@ -57,7 +57,7 @@ describe('relayed answers', () => {
     expect(shortcuts['fav-documents']).toBe('H')
     expect(shortcuts['fav-home']).toBeNull()
     expect(() => answers.setFavoriteShortcut({ id: 'fav-home', shortcut: '1' })).toThrow()
-    expect(() => answers.setFavoriteShortcut({ id: 'fav-home', shortcut: '1' })).toThrowError(
+    expect(() => answers.setFavoriteShortcut({ id: 'fav-home', shortcut: '1' })).toThrow(
       expect.objectContaining({ type: 'invalidLetter' }) as Error,
     )
   })

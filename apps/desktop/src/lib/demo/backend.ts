@@ -247,6 +247,13 @@ export function createDemoBackend(): DemoBackend {
     return null
   }
 
+  /** The TS table that answers `cmd`, first match wins; the engines come after every table. */
+  function tableHandler(cmd: string) {
+    return (
+      drags.handler(cmd) ?? windows.handler(cmd) ?? pluginHandler(cmd) ?? rawAnswers[cmd] ?? answers[camelCase(cmd)]
+    )
+  }
+
   async function invoke(cmd: string, payload: Payload, origin?: InvokeOrigin): Promise<unknown> {
     // The app says no dialog holds file operations any more: a drop no transfer took by now never
     // will be, so the engine sweeps its staging (`os-drop.ts`). A fact passed on; the menu answers it.
@@ -254,8 +261,7 @@ export function createDemoBackend(): DemoBackend {
     if (cmd === 'open_path' && (await openInViewer(payload))) return null
     if (cmd === SET_APP_THEME) return setAppTheme(payload)
     if (cmd === 'get_menu_bar_title_mnemonics') return menu.titleMnemonics()
-    const handler =
-      drags.handler(cmd) ?? windows.handler(cmd) ?? pluginHandler(cmd) ?? rawAnswers[cmd] ?? answers[camelCase(cmd)]
+    const handler = tableHandler(cmd)
     if (handler) return handler(payload)
     if (await menu.opensPopup(cmd)) return openPopup(cmd, payload, origin ?? { label: 'main', pointer: null })
     if (await menu.handles(cmd)) return menu.invoke(cmd, payload)

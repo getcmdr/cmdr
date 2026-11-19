@@ -115,6 +115,7 @@ jobs:
         ${{ steps.verified.outputs.verified != 'true' && steps.mode.outputs.land == 'true' &&
         steps.filter.outputs.desktop || 'false' }}
       website: ${{ steps.verified.outputs.verified != 'true' && steps.filter.outputs.website || 'false' }}
+      website-demo: ${{ steps.verified.outputs.verified != 'true' && steps.filter.outputs.website-demo || 'false' }}
       api-server: ${{ steps.verified.outputs.verified != 'true' && steps.filter.outputs.api-server || 'false' }}
       dashboard: ${{ steps.verified.outputs.verified != 'true' && steps.filter.outputs.dashboard || 'false' }}
       scripts: ${{ steps.verified.outputs.verified != 'true' && steps.filter.outputs.scripts || 'false' }}
@@ -538,6 +539,34 @@ jobs:
               - 'feature-status.json'
               # Counted for the "translated into N languages" copy (`src/lib/shipped-languages.ts`).
               - 'apps/desktop/src-tauri/src/intl/shipped_locales.gen.rs'
+            # The browser demo's own sources and its full suite: a change here builds the demo from
+            # this commit and runs the whole suite on it (the website lane's `demo-suite` job), so a
+            # demo change is tested before it lands, not first by the nightly or the release.
+            # The rest of the desktop frontend feeds the demo too, but runs the suite nightly only.
+            website-demo:
+              - 'apps/desktop/src/lib/demo/**'
+              - 'apps/desktop/src/hooks.client.ts'
+              - 'apps/desktop/vite.config.js'
+              - 'apps/desktop/scripts/precompress-demo.ts'
+              - 'apps/desktop/scripts/vite-demo-void-commands.ts'
+              - 'crates/cmdr-listing-wasm/**'
+              - 'apps/website/e2e/demo*.ts'
+              - 'apps/website/playwright.config.ts'
+              - 'apps/website/src/plugins/demo.ts'
+              - 'scripts/check/checks/website-e2e.go'
+              - '.github/actions/website-demo-suite/**'
+              - '.github/actions/build-website-demo/**'
+              # The lane's own definition, as the `website` filter lists it (`ci-coverage`).
+              - '.mise.toml'
+              - '.github/workflows/ci.yml'
+              - '.github/workflows/website-lane.yml'
+              - '.github/actions/install-mise/**'
+              - '.github/actions/lane-marker/**'
+              - '.github/actions/pnpm-store/**'
+              - '.github/actions/pinned-rust-toolchain/**'
+              - '.github/actions/wasm-toolchain/**'
+              - '!**/CLAUDE.md'
+              - '!**/DETAILS.md'
               # The policy names and kinds `/trust` lists (`src/lib/trust-mdm.ts`).
               - 'apps/desktop/src-tauri/src/managed_policy/policies.json'
               - 'scripts/check.sh'
@@ -1045,13 +1074,13 @@ jobs:
     name: Website
     needs: changes
     if: >-
-      needs.changes.outputs.full == 'true' || (needs.changes.outputs.website == 'true' &&
-      !fromJSON(needs.changes.outputs.lanes)['website'].verified)
+      needs.changes.outputs.full == 'true' || ((needs.changes.outputs.website == 'true' ||
+      needs.changes.outputs.website-demo == 'true') && !fromJSON(needs.changes.outputs.lanes)['website'].verified)
     uses: ./.github/workflows/website-lane.yml
     with:
-      # The nightly builds the demo from `main` and runs its full suite; land runs smoke-test the
-      # released demo only.
-      demo-suite: ${{ github.event_name == 'schedule' }}
+      # The nightly, and any change to the demo's own sources (`website-demo`), build the demo from
+      # this commit and run its full suite; every other run smoke-tests the released demo only.
+      demo-suite: ${{ github.event_name == 'schedule' || needs.changes.outputs.website-demo == 'true' }}
       playwright-image: ${{ needs.changes.outputs.playwright-image }}
       marker-key: ${{ fromJSON(needs.changes.outputs.lanes)['website'].key }}
     secrets:
