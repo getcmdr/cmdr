@@ -29,6 +29,8 @@ import { waitBudget } from './wait-budget.js'
 
 const TITLES = '[role="menubar"] > [role="menuitem"]'
 const BAR_MENU = '[role="menu"][data-command-menu="bar"]'
+/** The viewer's search box. */
+const SEARCH_BOX = '.search-bar input.text-field-control'
 
 /** The X windows that appeared since `before`. */
 function newWindowsSince(before: readonly string[]): string[] {
@@ -152,6 +154,20 @@ async function openMenuHolding(page: PageLike, windowId: string, menuId: string)
   throw new Error(`no bar menu holds \`${menuId}\``)
 }
 
+/**
+ * Lets go of the bar: Escape closes the open menu, and a second gives the keyboard back (the Win32
+ * two-Escape walk), so the next key reaches the page, not a title.
+ */
+async function releaseBar(page: PageLike): Promise<void> {
+  const holds = () =>
+    page.evaluate<boolean>(`(function(){
+        var titles = Array.prototype.slice.call(document.querySelectorAll(${JSON.stringify(TITLES)}));
+        return document.querySelectorAll(${JSON.stringify(BAR_MENU)}).length > 0 || titles.indexOf(document.activeElement) >= 0;
+    })()`)
+  for (let tries = 0; tries < 4 && (await holds()); tries++) pressRealKey('Escape')
+  await expect.poll(holds, { timeout: waitBudget(3000) }).toBe(false)
+}
+
 /** Picks row `menuId` by a real click, from a closed bar. */
 async function pickRow(page: PageLike, windowId: string, menuId: string): Promise<void> {
   await openMenuHolding(page, windowId, menuId)
@@ -169,8 +185,7 @@ async function readRow(
 ): Promise<{ disabled: boolean; checked: string | null }> {
   await openMenuHolding(page, windowId, menuId)
   const row = await rowState(page, menuId)
-  pressRealKey('Escape')
-  await expect.poll(() => openMenus(page), { timeout: waitBudget(3000) }).toBe(0)
+  await releaseBar(page)
   if (!row) throw new Error(`row \`${menuId}\` vanished`)
   return row
 }
@@ -225,12 +240,17 @@ test.describe('The bar in the other windows (Linux)', () => {
       // Greyed with the search box closed.
       expect((await readRow(viewer.page, viewer.windowId, 'viewer_edit_cut')).disabled).toBe(true)
       await viewer.page.keyboard.press(defaultKey('viewer.search'))
+      await viewer.page.waitForSelector(SEARCH_BOX, waitBudget(5000))
+      // Focus the box itself until it holds focus: the bar opened just before may still be handing it back.
       await expect
         .poll(
-          () => viewer.page.evaluate<boolean>(`document.activeElement === document.querySelector('.search-bar input')`),
-          {
-            timeout: waitBudget(5000),
-          },
+          () =>
+            viewer.page.evaluate<boolean>(`(function(){
+                var el = document.querySelector(${JSON.stringify(SEARCH_BOX)});
+                if (el && document.activeElement !== el) el.focus();
+                return !!el && document.activeElement === el;
+            })()`),
+          { timeout: waitBudget(5000) },
         )
         .toBe(true)
       // Opening the menu moves focus to it; the rows still follow the box it came from.
@@ -239,8 +259,7 @@ test.describe('The bar in the other windows (Linux)', () => {
         .poll(async () => (await rowState(viewer.page, 'viewer_edit_cut'))?.disabled, { timeout: waitBudget(3000) })
         .toBe(false)
       expect((await rowState(viewer.page, 'viewer_edit_paste'))?.disabled).toBe(false)
-      pressRealKey('Escape')
-      await expect.poll(() => openMenus(viewer.page), { timeout: waitBudget(3000) }).toBe(0)
+      await releaseBar(viewer.page)
     } finally {
       await closeScopedWindow(main, viewer.page, viewer.label)
     }
