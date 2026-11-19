@@ -28,6 +28,7 @@ use serde_json::Value;
 
 use cmdr_fs::volume::host::VolumeHost;
 
+use crate::about::{ABOUT_COMMANDS, DemoAbout};
 use crate::backend_listings::BackendListings;
 use crate::events::{DemoEvents, EventSink, ListingPathEvent};
 use crate::folder_sizes::FolderSizes;
@@ -114,6 +115,8 @@ pub struct Demo {
     imports: Arc<DemoImports>,
     /// ⌃M over the same panes, renaming through the same write engine (`multi_rename.rs`).
     multi_rename: Arc<DemoMultiRename>,
+    /// "Tell me about this" over the same volume (`about.rs`).
+    about: Arc<DemoAbout>,
 }
 
 impl Demo {
@@ -178,6 +181,7 @@ impl Demo {
             home.map(PathBuf::from),
         );
         let listed = Arc::clone(&volume);
+        let about = Arc::new(DemoAbout::new(Arc::clone(&volume), Arc::clone(&sink)));
         let multi_rename = Arc::new(DemoMultiRename::new(
             listings.clone(),
             page_runtime(),
@@ -197,6 +201,7 @@ impl Demo {
             search,
             imports,
             multi_rename,
+            about,
         })
     }
 
@@ -213,6 +218,7 @@ impl Demo {
             || DemoViewer::handles(command)
             || DemoSearch::handles(command)
             || DemoMultiRename::handles(command)
+            || DemoAbout::handles(command)
     }
 
     /// Every command [`Demo::invoke`] answers, by its Tauri name.
@@ -222,6 +228,7 @@ impl Demo {
             .chain(VIEWER_COMMANDS)
             .chain(SEARCH_COMMANDS)
             .chain(MULTI_RENAME_COMMANDS)
+            .chain(ABOUT_COMMANDS)
             .copied()
             .chain(DemoOperations::commands())
     }
@@ -459,6 +466,7 @@ impl Demo {
             _ if DemoViewer::handles(command) => self.viewer.invoke(command, args),
             _ if DemoSearch::handles(command) => self.search.invoke(command, args),
             _ if DemoMultiRename::handles(command) => self.multi_rename.invoke(command, args).await,
+            _ if DemoAbout::handles(command) => self.about.invoke(command, args).await,
             _ => Err(Value::String(format!("the browser demo doesn't answer `{command}`"))),
         }
     }

@@ -12,6 +12,7 @@ import { createContextMenuHost, type ContextMenuHost } from './context-menu.js'
 import { startMenuEngine, type ContextPopup, type MenuEngineHandle } from './menu-engine.js'
 import { pluginHandler } from './plugins.js'
 import { relayedAnswers } from './relayed.js'
+import { channelTarget, type ChannelDelivery, type ChannelNotice } from './channels.js'
 import { openInBrowserTab } from './opener.js'
 import { visitorPlatform } from './platform.js'
 import { noteUnanswered } from './unanswered.js'
@@ -50,6 +51,8 @@ export interface InvokeOrigin {
 export interface DemoWebview {
   label: string
   deliver(event: string, payload: unknown, target: EventTarget): void
+  /** Hands one message (or the end) to this frame's `Channel` with callback `id` (`channels.ts`). */
+  deliverChannel(id: number, delivery: ChannelDelivery): void
   /** Pins this window's appearance: `setTheme` is app-wide, as on desktop. */
   setTheme(theme: AppTheme): void
 }
@@ -95,12 +98,22 @@ export function createDemoBackend(): DemoBackend {
     } else if (event === 'demo://archive-refused') {
       // A listing asked to enter an archive (Browse picked in Settings, or a typed path).
       sayArchivesStayClosed()
+    } else if (event === 'demo://channel') {
+      deliverToChannel(payload as ChannelNotice)
     } else if (event === 'demo://media-token-dropped') {
       const { token } = payload as { token: string }
       const url = mediaUrls.get(token)
       if (url !== undefined) URL.revokeObjectURL(url)
       mediaUrls.delete(token)
     }
+  }
+
+  /** An engine's message on a `Channel`, to the frame that made it. A frame gone since hears nothing, as in Tauri. */
+  function deliverToChannel(notice: ChannelNotice): void {
+    const target = channelTarget(notice.channel)
+    if (!target) return
+    const delivery: ChannelDelivery = 'end' in notice ? { end: true } : { message: notice.message }
+    for (const webview of webviews) if (webview.label === target.label) webview.deliverChannel(target.id, delivery)
   }
 
   function mediaUrl(token: string, label: string): string {
@@ -240,6 +253,7 @@ export function createDemoBackend(): DemoBackend {
     if (cmd === 'set_file_operations_blocked' && payload.blocked === false) void engine.importer.releaseOffered()
     if (cmd === 'open_path' && (await openInViewer(payload))) return null
     if (cmd === SET_APP_THEME) return setAppTheme(payload)
+    if (cmd === 'get_menu_bar_title_mnemonics') return menu.titleMnemonics()
     const handler =
       drags.handler(cmd) ?? windows.handler(cmd) ?? pluginHandler(cmd) ?? rawAnswers[cmd] ?? answers[camelCase(cmd)]
     if (handler) return handler(payload)

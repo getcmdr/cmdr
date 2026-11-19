@@ -67,6 +67,22 @@ every window. The demo keeps that shape, so secondary windows share its state, a
 - A window-plugin question about ANOTHER window (main asking for Settings' size) carries that window's `label`, so the
   webview forwards it to the backend instead of answering for itself.
 
+## Channels
+
+A Tauri `Channel` argument (the About card's `onEvent`) crosses the wire as `__CHANNEL__:<id>`, a callback in the frame
+that made it, so two frames can hold the same id. `channels.ts` makes it page-wide:
+
+- The webview tags every channel in an outgoing payload with its label (`__CHANNEL__:<label>:<id>`, `tagChannels`).
+- An engine sends each message back as a `demo://channel` notice (`{ channel, message }`, then
+  `{ channel, end: true }`). The backend hands it to the webview of that label (`DemoWebview.deliverChannel`), which
+  runs the callback as Tauri's IPC does: `{ message, index }` numbered per channel from zero, then
+  `{ end: true, index }`, so the `Channel` delivers in order and unregisters itself. A frame gone since hears nothing,
+  as with Tauri.
+- Notices ride the engine's events, a task late and in order (§ The listing seam).
+- Today's one user is "Tell me about this" (`crates/cmdr-listing-wasm/DETAILS.md` § Tell me about this): the card's
+  identity and Kind rows from the in-memory volume, no verdict. Pinned by `channels.test.ts`, `webview.test.ts`, and the
+  website suite's About cell.
+
 ## Secondary windows
 
 - `windows.ts` (`createWindowHost`, owned by the backend) answers the app's window plumbing:
@@ -218,6 +234,11 @@ every window. The demo keeps that shape, so secondary windows share its state, a
 - **Clicks**: `execute-command`, `settings-changed`, `view-mode-changed`, and `menu-sort` go to the main window, as
   `handle_menu_event`'s `emit_to("main")`. With a panel in front, Close tab closes it and an edit goes to its frame
   (`document.execCommand`, best effort: browsers refuse a scripted paste).
+- **Title mnemonics**: `get_menu_bar_title_mnemonics` (the Linux shortcut recorder's warning about a combo the bar's
+  Alt+letter takes) is answered from the drawn bar, not the engine (`MENU_PAGE_COMMANDS`): the titles in the bar's words
+  through the app's own `allocateAccessKeys`, exactly the letters `MenuBar.svelte` binds; none for a Mac visitor, as the
+  desktop answers on macOS. Why not the engine: the words are the page's (`getMessage`), and the desktop's Rust
+  allocator reads its own catalog.
 - **Keys**: the component's, in the visitor's flavor. On a Mac, ⌃F2 focuses the bar (macOS's own shortcut for it), the
   bar stays usable while a dialog is up, as macOS's does, and OS rows (Services, Hide, Quit, Undo, Minimize) draw
   greyed. Elsewhere a lone Alt or F10 focuses it, Alt plus a title's underlined letter opens a menu, and a modal surface

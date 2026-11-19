@@ -11,6 +11,7 @@ import { installColorScheme } from './color-scheme.js'
 import { installDragRegions } from './drag-regions.js'
 import { windowAnswer } from './own-window.js'
 import { installPlatform } from './platform.js'
+import { createChannelDelivery, tagChannels } from './channels.js'
 
 /** A listener's target, as `@tauri-apps/api/event`'s `listen` sends it. */
 type ListenTarget = { kind: 'Any' } | { kind: string; label: string }
@@ -85,8 +86,14 @@ export function installWebview(
     // backend, which knows the panels; only this frame can answer for itself.
     const own = payload.label === undefined || payload.label === label ? windowAnswer(cmd, payload) : undefined
     if (own) return own()
-    return overTheWire(await backend.invoke(cmd, overTheWire(payload), { label, pointer: lastPointer }))
+    // A `Channel` argument names a callback in THIS frame: tagged with the label, so its messages come back here.
+    const wired = tagChannels(overTheWire(payload), label) as Payload
+    return overTheWire(await backend.invoke(cmd, wired, { label, pointer: lastPointer }))
   }
+
+  const deliverChannel = createChannelDelivery((id, data) => {
+    internals().runCallback(id, overTheWire(data))
+  })
 
   mockWindows(label)
   mockIPC((cmd, payload) => invoke(cmd, (payload ?? {}) as Payload))
@@ -102,6 +109,7 @@ export function installWebview(
   const detach = backend.attach({
     label,
     deliver,
+    deliverChannel,
     setTheme: (theme) => {
       scheme.set(theme)
     },

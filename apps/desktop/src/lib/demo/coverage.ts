@@ -10,7 +10,7 @@ import type { CommandName } from './answer-types.js'
 import { appAnswers, rawAnswers, silentCommands } from './answers.js'
 import { SET_APP_THEME } from './color-scheme.js'
 import { DRAG_COMMANDS } from './drag-session.js'
-import { LISTING_ENGINE_COMMANDS, MENU_ENGINE_COMMANDS } from './engine-command-names.js'
+import { LISTING_ENGINE_COMMANDS, MENU_ENGINE_COMMANDS, MENU_PAGE_COMMANDS } from './engine-command-names.js'
 import { pluginHandler } from './plugins.js'
 import { RELAYED_COMMANDS } from './relayed.js'
 import { volumeAnswers } from './volumes.js'
@@ -21,7 +21,13 @@ import { WINDOW_HOST_COMMANDS, WINDOW_PLUGIN_COMMANDS } from './windows.js'
 type CamelCase<S extends string> = S extends `${infer Head}_${infer Tail}` ? `${Head}${Capitalize<CamelCase<Tail>>}` : S
 
 /** The wire (snake_case) names something other than a TS table answers. */
-const WIRE_ANSWERED = [...LISTING_ENGINE_COMMANDS, ...MENU_ENGINE_COMMANDS, ...WINDOW_HOST_COMMANDS, ...DRAG_COMMANDS]
+const WIRE_ANSWERED = [
+  ...LISTING_ENGINE_COMMANDS,
+  ...MENU_ENGINE_COMMANDS,
+  ...MENU_PAGE_COMMANDS,
+  ...WINDOW_HOST_COMMANDS,
+  ...DRAG_COMMANDS,
+]
 
 type Answered =
   | keyof typeof appAnswers
@@ -269,8 +275,6 @@ export const notInDemo = {
   deleteAiApiKey: AI,
   setLogLlmCalls: AI,
   answerToolAsk: AI,
-  aboutCancel: AI,
-  aboutStopVerdict: AI,
   translateSearchQuery: AI,
   translateSelectionQuery: AI,
   askCmdrSendMessage: AI,
@@ -368,7 +372,6 @@ export const notInDemo = {
   countFolderSizes: UNANSWERED_GAP,
   cancelFolderSizeCount: UNANSWERED_GAP,
   // The in-page menus' commands (D5)
-  getMenuBarTitleMnemonics: IN_PAGE_MENUS,
   getMenuBar: IN_PAGE_MENUS,
   getViewerMenuBar: IN_PAGE_MENUS,
   pickMenuBarItem: IN_PAGE_MENUS,
@@ -393,8 +396,6 @@ export const wireNotInDemo: Readonly<Record<string, string>> = {
   get_auto_sent_report_preview: SERVICES,
   // `app.html`'s boot guard quits an app whose webview is too old to run it.
   'plugin:process|exit': LIFECYCLE,
-  // Reachable in the demo and not answered yet: each is a dead end today.
-  about_start: UNANSWERED_GAP,
 }
 
 /** The reason the demo leaves `command` (a wire name) out, or `undefined` for one it doesn't know. */
