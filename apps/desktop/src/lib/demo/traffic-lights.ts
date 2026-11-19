@@ -7,6 +7,7 @@
  */
 import tauriMacOSConfig from '../../../src-tauri/tauri.macos.conf.json'
 import { getMessage } from '#lib/intl/messages.svelte.js'
+import { followLanguage } from './follow-language.svelte.js'
 import { canFullScreen, isBrowserFullScreen, setBrowserFullScreen } from './browser-full-screen.js'
 
 /** What one window's lights do. A missing action leaves that light inert (`aria-disabled`). */
@@ -24,6 +25,8 @@ export interface TrafficLights {
   /** Grey when the window isn't key, as macOS draws an inactive window's buttons. */
   setActive(active: boolean): void
   setZoomGlyph(glyph: ZoomGlyph): void
+  /** Stops following the UI language, for a window that closed. */
+  destroy(): void
 }
 
 /** A window's `trafficLightPosition`, in logical points, as the app hands it to Tauri. */
@@ -207,7 +210,6 @@ export function createTrafficLights(actions: TrafficLightActions, zoomGlyph: Zoo
     button.type = 'button'
     button.className = 'cmdr-demo-light'
     button.dataset.light = kind
-    button.setAttribute('aria-label', getMessage(LABEL_KEYS[kind]))
     // Like macOS's, the lights aren't Tab stops: the keyboard has ⌃W, Esc, and the menu.
     button.tabIndex = -1
     const action = actions[kind]
@@ -219,6 +221,12 @@ export function createTrafficLights(actions: TrafficLightActions, zoomGlyph: Zoo
     })
     root.append(button)
   }
+  // Each light's name, in the UI language now and after every switch.
+  const stopFollowing = followLanguage(() => {
+    for (const button of root.querySelectorAll<HTMLButtonElement>('.cmdr-demo-light')) {
+      button.setAttribute('aria-label', getMessage(LABEL_KEYS[button.dataset.light as keyof typeof LABEL_KEYS]))
+    }
+  })
   return {
     root,
     setActive: (active) => {
@@ -227,6 +235,7 @@ export function createTrafficLights(actions: TrafficLightActions, zoomGlyph: Zoo
     setZoomGlyph: (glyph) => {
       root.dataset.zoom = glyph
     },
+    destroy: stopFollowing,
   }
 }
 

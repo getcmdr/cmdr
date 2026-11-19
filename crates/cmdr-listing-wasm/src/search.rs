@@ -42,6 +42,7 @@ pub const SEARCH_COMMANDS: &[&str] = &[
     "search_files",
     "search_files_streaming",
     "cancel_search",
+    "is_search_run_live",
     "release_search_index",
     "parse_search_scope",
     "get_system_dir_excludes",
@@ -133,6 +134,11 @@ impl DemoSearch {
             "cancel_search" => {
                 let a: RunIdArgs = parse(command, args)?;
                 ok(self.runs.cancel(&a.run_id))
+            }
+            // A run is live only inside `search_files_streaming`, which ends it before it answers.
+            "is_search_run_live" => {
+                let a: RunIdArgs = parse(command, args)?;
+                ok(self.runs.is_live(&a.run_id))
             }
             "release_search_index" => {
                 // The arena stays (it's tiny); closing the dialog only stops its runs.

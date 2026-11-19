@@ -8,7 +8,9 @@ on:
   workflow_call:
     inputs:
       demo-suite:
-        description: Whether to build the browser demo from these sources and run its full suite (the nightly full run)
+        description:
+          Whether to build the browser demo from these sources and run its full suite (the nightly full run, and a
+          change to the demo's own sources)
         type: boolean
         required: true
       playwright-image:
@@ -219,10 +221,12 @@ jobs:
           path: apps/website/.lighthouseci/
           retention-days: 7
 
-  # The nightly full run only (`demo-suite`): the browser demo built from THESE sources and the full
-  # demo suite against it (`demo.spec.ts`, the `demo` Playwright project), which the land path never
-  # runs (its `site` job smoke-tests the released image), so a change that breaks the demo surfaces in
-  # the next morning's CI health digest instead of in the release's `demo` job. On the bare runner:
+  # The nightly full run, and any run whose change touches the demo's own sources (`ci.yml`'s
+  # `website-demo` filter), only (`demo-suite`): the browser demo built from THESE sources and the
+  # full demo suite against it (`demo.spec.ts`, the three per-OS `demo*` Playwright projects). Every
+  # other run's `site` job smoke-tests the released image only, so a change elsewhere in the frontend
+  # that breaks the demo surfaces in the next morning's CI health digest instead of in the release's
+  # `demo` job. On the bare runner:
   # it needs Rust for the demo, and the demo suite has no visual baselines tying it to the pinned
   # Playwright image. It reads the `website-demo` Rust cache the Rust lane's nightly `wasm` job
   # saves, and saves nothing. `apps/website/DETAILS.md` § Browser demo.

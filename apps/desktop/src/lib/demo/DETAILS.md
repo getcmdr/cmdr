@@ -67,11 +67,27 @@ every window. The demo keeps that shape, so secondary windows share its state, a
 - A window-plugin question about ANOTHER window (main asking for Settings' size) carries that window's `label`, so the
   webview forwards it to the backend instead of answering for itself.
 
+## Channels
+
+A Tauri `Channel` argument (the About card's `onEvent`) crosses the wire as `__CHANNEL__:<id>`, a callback in the frame
+that made it, so two frames can hold the same id. `channels.ts` makes it page-wide:
+
+- The webview tags every channel in an outgoing payload with its label (`__CHANNEL__:<label>:<id>`, `tagChannels`).
+- An engine sends each message back as a `demo://channel` notice (`{ channel, message }`, then
+  `{ channel, end: true }`). The backend hands it to the webview of that label (`DemoWebview.deliverChannel`), which
+  runs the callback as Tauri's IPC does: `{ message, index }` numbered per channel from zero, then
+  `{ end: true, index }`, so the `Channel` delivers in order and unregisters itself. A frame gone since hears nothing,
+  as with Tauri.
+- Notices ride the engine's events, a task late and in order (§ The listing seam).
+- Today's one user is "Tell me about this" (`crates/cmdr-listing-wasm/DETAILS.md` § Tell me about this): the card's
+  identity and Kind rows from the in-memory volume, no verdict. Pinned by `channels.test.ts`, `webview.test.ts`, and the
+  website suite's About cell.
+
 ## Secondary windows
 
 - `windows.ts` (`createWindowHost`, owned by the backend) answers the app's window plumbing:
   `plugin:webview|create_webview_window` opens an in-page panel (a same-origin `<iframe name="<label>">` of the route
-  under the demo's base, with the window's traffic lights over it), and `get_all_windows`, `close`, `destroy`,
+  under the demo's base, with the window's OS buttons: § Window buttons), and `get_all_windows`, `close`, `destroy`,
   `set_focus`, `set_effects`, `start_dragging`, `internal_toggle_maximize`, plus Cmdr's `close_child_window` and
   `raise_child_window`, work against those panels. Opening one that's already open raises it, through the app's own
   `getByLabel` + `raiseChildWindow` path.
@@ -96,16 +112,17 @@ every window. The demo keeps that shape, so secondary windows share its state, a
   remembers what had focus in the main window when a panel took it and puts it back when the last panel closes. It also
   sends `tauri://focus` / `tauri://blur` / `tauri://destroyed` to the windows involved, as Tauri does.
 - Look: plain app tokens (`--color-bg-primary`, `--radius-window`, `--shadow-lg`, `--z-modal`), injected once as a
-  `<style>` under `.cmdr-demo-window`. Decision: no title bar of the demo's own. Every Cmdr window is an overlay window
-  with a hidden title, so the panel is the page edge to edge, its lights over the page where its `trafficLightPosition`
-  puts them (§ Traffic lights), and the page's own drag strip (`data-tauri-drag-region`) moves it. Why: a demo bar
-  pushed the page down and put the lights in a spot no real window has (David saw them oversized in Settings). The strip
-  works because `drag-regions.ts` ports Tauri's injected `drag.js` into every frame: a press there sends
-  `start_dragging` (plus the press's screen position, which a page needs), and a double click released in place sends
-  `internal_toggle_maximize`, the panel's zoom. The panel follows the mouse in screen coordinates, listening in both its
-  frame and the page, since a held button's moves can stay with the frame. It opens centered, sized to the window's
-  width and height clamped to the viewport (fits at 960×600), and can't be dragged past an edge. Opening, dragging, and
-  zoom all keep it under the menu bar (`--cmdr-demo-window-top`), as macOS keeps windows under its own.
+  `<style>` under `.cmdr-demo-window`. Decision: for a Mac visitor, no title bar of the demo's own (a Windows or Linux
+  visitor's panels get their OS's: § Window buttons). Every Cmdr Mac window is an overlay window with a hidden title, so
+  the panel is the page edge to edge, its lights over the page where its `trafficLightPosition` puts them (§ Traffic
+  lights), and the page's own drag strip (`data-tauri-drag-region`) moves it. Why: a demo bar pushed the page down and
+  put the lights in a spot no real window has (David saw them oversized in Settings). The strip works because
+  `drag-regions.ts` ports Tauri's injected `drag.js` into every frame: a press there sends `start_dragging` (plus the
+  press's screen position, which a page needs), and a double click released in place sends `internal_toggle_maximize`,
+  the panel's zoom. The panel follows the mouse in screen coordinates, listening in both its frame and the page, since a
+  held button's moves can stay with the frame. It opens centered, sized to the window's width and height clamped to the
+  viewport (fits at 960×600), and can't be dragged past an edge. Opening, dragging, and zoom all keep it under the menu
+  bar (`--cmdr-demo-window-top`), as macOS keeps windows under its own.
 - Verified in headless Chromium (2026-11-04): ⌘, opens Settings; Esc, ⌃W, and the red light close it, and the cursor
   keys move the main pane's cursor right after; dragging moves and clamps it; a "Size colors" change in Settings
   recolors the main window's sizes through the fan-out. Keyboard shortcuts opens from the command palette, closes with
@@ -154,14 +171,15 @@ every window. The demo keeps that shape, so secondary windows share its state, a
   a fixed `macos`. Why: the platform picks the shortcut modifiers, and they have to match the keyboard under the
   visitor's hands; ⌘ on a PC keyboard is the Windows key, which the browser and the OS keep. The demo is the one place
   that reads the user agent for this: a page has no other signal, and app code never does.
-- Capabilities follow the platform (`visitorCapabilities`): a Mac visitor gets the Mac app's, everyone else none, except
-  `overlayTitleBar`. No `appMenu` off macOS: their bar is their own OS's, whose File menu ends with Quit, so Quit is a
-  palette command too, as on their desktop (`quit_app` is in `notInDemo`: a page can't quit its tab).
-  - Decision: every visitor gets `overlayTitleBar: true`. Why: the demo draws the macOS traffic lights over each
-    window's top left corner for every visitor (§ Traffic lights), and a page keeps its title line under them only with
-    this capability. Without it, a Windows or Linux visitor's queue started its toolbar under the lights, which took the
-    clicks meant for "Pause all" (the website suite's queue cell caught it, 2026-11-13). It goes off macOS once the demo
-    draws each OS's own window buttons.
+- Capabilities follow the platform (`visitorCapabilities`): a Mac visitor gets the Mac app's, everyone else none, as the
+  desktop answers for Windows and Linux. No `appMenu` off macOS: their bar is their own OS's, whose File menu ends with
+  Quit, so Quit is a palette command too, as on their desktop. A page can't quit its tab, so the bar's Quit (Exit) draws
+  greyed, as a Mac visitor's does, and the palette's answers `quit_app` with the `ui.demoDesktopOnly.quit` toast.
+  - Decision: no `overlayTitleBar` off macOS. Why: the desktop app keeps the OS's own decorations on Windows and Linux
+    (no `titleBarStyle` outside `tauri.macos.conf.json`), so its pages draw no title line, and the demo draws the OS's
+    title bar ABOVE each page (§ Window buttons) instead of buttons over it. Regression anchor: while the demo drew
+    macOS lights over every visitor's windows, a page without the capability started its toolbar under them, and the
+    lights took the queue's "Pause all" clicks (the website suite's queue cell caught it, 2026-11-13).
 - Conventions follow the platform too (`visitorConventions`): the desktop's own row for the visitor's OS, menu model
   included (task 63 step 11 of `docs/specs/windows-port-plan.md`), and the desktop-neutral Linux row for a Linux visitor
   (a page can't tell GNOME from KDE). So a Mac visitor gets `systemMenuBar` (the macOS bar), a Windows or Linux one
@@ -170,9 +188,15 @@ every window. The demo keeps that shape, so secondary windows share its state, a
 - The look follows the platform with no pin: `getLook()` is the copy platform, the visitor's OS, so `data-look` keys the
   menu tokens (`app-menu.css`) and the control tokens (`app-controls*.css`) to it. A Windows visitor's bar, menus,
   buttons, fields, and dialogs wear Windows 11's (the 40 px bar included: `--cmdr-demo-window-top` reads the look's own
-  `--spacing-menu-bar-height`, so the window, the status corner, and the toasts start under whichever bar is there).
+  `--spacing-menu-bar-height`, plus the main window's title bar above it off macOS, so the window, the status corner,
+  and the toasts start under whichever chrome is there).
+- The main volume wears the name the desktop gives it on the visitor's OS (`volumes.ts`'s `MAIN_VOLUME`):
+  `Macintosh HD`, `C:` (an unlabeled system drive, as `WindowsDrive::display_name` reads it), or `Root` (Linux's
+  `get_main_volume` row), with its file system. The engine's tree takes the same name for a transfer's summary
+  (`listing.ts`). Paths stay POSIX for every visitor; what Windows paths would take is in
+  `docs/specs/windows-port-plan.md` task 63 step 11.
 - The website's full demo suite runs once per visitor OS (`apps/website/playwright.config.ts`: `demo` is a Windows
-  visitor, `demo-mac` a Mac one), since keys and copy differ between them.
+  visitor, `demo-mac` a Mac one, `demo-linux` a Linux one), since keys, copy, and chrome differ between them.
 
 ## The menu bar
 
@@ -205,10 +229,16 @@ every window. The demo keeps that shape, so secondary windows share its state, a
   draw the old words.
 - **Shortcuts**: the spec's accelerators in the visitor's OS's spelling (a Mac's glyphs, `Ctrl+T` elsewhere), or the
   pushed rebind, so the browser-safe map (`browser-shortcuts.ts`) shows: a Mac visitor's Tab > New tab reads ⌃T, and a
-  Windows visitor's New tab shows no key, since Chromium keeps `Ctrl+T`.
+  Windows visitor's New tab shows no key, since Chromium keeps `Ctrl+T`. A menu item with a host default (a fixed-key
+  command's seed) reaches the bar the same way: the store pushes it at load.
 - **Clicks**: `execute-command`, `settings-changed`, `view-mode-changed`, and `menu-sort` go to the main window, as
   `handle_menu_event`'s `emit_to("main")`. With a panel in front, Close tab closes it and an edit goes to its frame
   (`document.execCommand`, best effort: browsers refuse a scripted paste).
+- **Title mnemonics**: `get_menu_bar_title_mnemonics` (the Linux shortcut recorder's warning about a combo the bar's
+  Alt+letter takes) is answered from the drawn bar, not the engine (`MENU_PAGE_COMMANDS`): the titles in the bar's words
+  through the app's own `allocateAccessKeys`, exactly the letters `MenuBar.svelte` binds; none for a Mac visitor, as the
+  desktop answers on macOS. Why not the engine: the words are the page's (`getMessage`), and the desktop's Rust
+  allocator reads its own catalog.
 - **Keys**: the component's, in the visitor's flavor. On a Mac, ⌃F2 focuses the bar (macOS's own shortcut for it), the
   bar stays usable while a dialog is up, as macOS's does, and OS rows (Services, Hide, Quit, Undo, Minimize) draw
   greyed. Elsewhere a lone Alt or F10 focuses it, Alt plus a title's underlined letter opens a menu, and a modal surface
@@ -257,12 +287,36 @@ every window. The demo keeps that shape, so secondary windows share its state, a
   named by its header, with the live shortcuts (F5, ⌥⌘C) and no OS-filled group; ↓ lands on Selection, hovering it opens
   the submenu beside it, and Selection > Select all selects the whole pane; no page error.
 
+## Window buttons
+
+Each window's OS buttons are the visitor's OS's: a Mac visitor's are the traffic lights (§ Traffic lights), anyone
+else's a title bar (`title-bar.ts`). `windows.ts` picks one per window from the visitor's platform
+(`createWindowHost(emit, onClosed, platform)`), behind one `WindowButtons` shape (`root`, `setActive`, `setZoomGlyph`),
+so key-window tracking and zoom don't care which.
+
+- **Windows and Linux**: the desktop app keeps the OS's own decorations there, so a window is the OS's title bar (its
+  title, minimize, maximize, close) with the page under it, and the main window's in-window menu bar under that. The
+  demo draws that bar: first in the page's column for the main window (`order: -1`, so it stays above the menu bar
+  whatever mounts first, and over a modal's backdrop, as the caption sits outside the client area a dialog dims), and
+  first in each panel. It sets `--cmdr-demo-title-bar-height`, which `menu-bar.svelte.ts` adds to
+  `--cmdr-demo-window-top`; `windows.ts`'s `desktopTop` measures that `calc()`.
+- **Looks** (a draft David reviews): Windows 11's caption (32 px, the title at the left in 12 px, 46 × 32 px buttons, a
+  tinted hover, close's red `#c42b1c` with a white glyph, dimmed when inactive); a desktop-neutral Linux bar (37 px, the
+  title centered in bold, three 24 px round buttons on the right), since a page can't tell GNOME from KDE. Dark mode
+  through `@media (prefers-color-scheme: dark)`, which `color-scheme.ts` pins per frame.
+- **What each does**: a panel's close closes it, maximize is the panel's zoom (filling the desktop under the main
+  window's chrome, and back; the glyph and label turn to Restore), a press on the bar moves it, and a double click
+  maximizes it. The main window's maximize is the browser's full screen; its minimize and close stay inert, and every
+  panel's minimize too (no taskbar to restore from). Labels: `menu.window.minimize` (the traffic lights' word),
+  `ui.demoWindow.maximize`, `ui.demoWindow.restore`, `ui.modalDialog.close`. No Tab stops, as on both OSes.
+- The main window's title is `tauri.conf.json`'s, a panel's the `title` its opener sends.
+
 ## Traffic lights
 
 On desktop the OS draws the close, minimize, and zoom buttons over each window's overlay title bar, at the
 `trafficLightPosition` the app gives that window, and the app only leaves them room. In a browser nothing draws them, so
-`traffic-lights.ts` does, from the demo's own DOM: the main window's as a fixed group at its top-left, each panel's
-absolutely placed over its frame (`windows.ts`).
+`traffic-lights.ts` does for a Mac visitor, from the demo's own DOM: the main window's as a fixed group at its top-left,
+each panel's absolutely placed over its frame (`windows.ts`).
 
 - Placement has one source, the app's own numbers: the main window's `trafficLightPosition` is read from
   `tauri.macos.conf.json` (imported), and a panel's from the `create_webview_window` options its opener sends (Settings
@@ -328,10 +382,11 @@ origin) from framing `localhost`; serve the parent page from a real loopback ser
 - One colocated `*.test.ts` per module. They pin what breaks the demo silently: the tree's parents and its 1,200 photos
   (the engine refuses a bad tree at boot), the browser-safe map (real command ids, the canonical combo vocabulary, no
   clash in an overlapping scope, no browser-reserved combo left), every bindings command answered or left out with a
-  reason (`coverage.test.ts`), no TS answer for an engine command (`engine-commands.test.ts`), the backend's routing
-  order (TS tables, then `handles()`, then `unanswered`), the webview's JSON wire and event targets, the window panels'
-  open/close/raise/refuse/zoom, the traffic lights' actions and key-window state, the Cmdr gold seed, and the boot role
-  pick. The lights' look is QA'd against AppKit's renders in a real browser (§ Traffic lights).
+  reason (`coverage.test.ts`), every raw `invoke` and Tauri API the app sources use the same (`ipc-calls.test.ts`), no
+  TS answer for an engine command (`engine-commands.test.ts`), the backend's routing order (TS tables, then `handles()`,
+  then `unanswered`), the webview's JSON wire and event targets, the window panels' open/close/raise/refuse/zoom, the
+  traffic lights' actions and key-window state, the Cmdr gold seed, and the boot role pick. The lights' look is QA'd
+  against AppKit's renders in a real browser (§ Traffic lights).
 - vitest aliases `#lib/demo/boot.js` to `boot-absent.ts`, `$app/paths` to `apps/desktop/src/test-app-paths-shim.ts`, and
   `virtual:cmdr-listing-wasm` to `apps/desktop/src/test-listing-wasm-shim.ts`; `listing.test.ts` mocks the last with a
   fake engine. `test-setup.ts` stubs `@tauri-apps/api/event` app-wide, so `webview.test.ts` unmocks it to test the real
@@ -351,9 +406,28 @@ reaches it). Why: a pane-boot command (`live_volume_path`) once shipped unanswer
 ready", and every pane said "didn't respond in time"; only the nightly demo suite would have caught it. A `notInDemo`
 command takes the unanswered path quietly.
 
-1. Find what's unanswered at runtime: a command no table, engine, or `notInDemo` knows (a raw `invoke`, a plugin
-   command) logs `[demo] no answer for …` as a console error and lands in `window.__cmdrDemo.unanswered` (command → call
-   count). `demo.spec.ts`'s `afterEach` fails any test that left one there.
+**Every call outside the bindings is accounted for too** (`ipc-calls.test.ts`), so the same holds for them:
+
+- It globs every app source as text (a runtime `import.meta.glob`, so `svelte-tests-related` reaches it from any app
+  file) minus tests, `lib/demo/`, `lib/ipc/`, and the debug window (the demo refuses to open it).
+- **Raw `invoke('…')`**, bare or a member call (`core.invoke('…')`), and `app.html`'s boot-guard `send('…')`:
+  `ipc-calls.ts`'s `findRawInvokes` reads each wire name, which must be answered (`isWireAnswered`: the engines, the
+  page hosts, a webview, `plugins.ts`, `rawAnswers`, or a bindings answer) or left out in `wireNotInDemo` with its
+  reason. An `invoke` whose command isn't a literal (`invoke(command)`, a `${…}` template) fails, unread, unless it's a
+  forwarder listed in the test's `FORWARDERS` (the boot guard's own `send`), whose callers are read instead.
+- Both scans skip comment lines (`//`, `*`, `/*` at a line's start), so a doc comment quoting a call isn't one.
+- **Tauri JS APIs**: `findTauriApiImports` reads every value imported from a `@tauri-apps/*` package: static, a
+  destructured `await import(…)`, or an `import(…).then(({ … }) => …)`. Any other shape fails, unread: a namespace
+  import, a dynamic import kept whole, a `.then` taking the module whole. Each must be in `TAURI_API_CALLS`, with the
+  wire commands calling it sends, each answered or left out the same way.
+- **The one gap**: an API that hands back a window or webview handle (`getCurrentWindow`, `getCurrentWebview`,
+  `WebviewWindow`, in `TAURI_API_HANDLES`) sends a command per METHOD, which no import names. Those stay with the
+  runtime net below. Each list's entries must still be used (the test fails on a stale one).
+
+1. Find what's unanswered at runtime: a command no table, engine, or `notInDemo` knows (a handle's method, or a call the
+   tests above missed) logs `[demo] no answer for …` as a console error and lands in `window.__cmdrDemo.unanswered`
+   (command → call count). `demo.spec.ts`'s `afterEach` fails any test that left one there, but only for what a spec
+   reaches.
 2. A listing command belongs to the engine (`crates/cmdr-listing-wasm`): ask there, don't answer it in TS.
 3. Look up its return type in `bindings.ts` (the `__TAURI_INVOKE<...>` or `typedError<Ok, Err>`).
 4. Void command (returns `()`): add its bindings name to `silentCommands` in `answers.ts`. `VoidCommand` rejects a
@@ -373,9 +447,10 @@ command takes the unanswered path quietly.
    and rename the visitor made (the viewer itself already read them, through the volume the write engine wrote to;
    `viewer_test.rs`'s copied-renamed-moved cell pins that half).
 6. Commands outside the bindings (generic `<R: Runtime>` ones called through raw `invoke`, see `lib/ipc/DETAILS.md`) go
-   in `rawAnswers`, keyed by their snake_case wire name, typed by hand against the wrapper's return type.
-7. Plugin commands (`plugin:<name>|<command>`) go in `plugins.ts`, or in `webview.ts`'s `windowAnswer` when they're
-   about the calling window.
+   in `rawAnswers`, keyed by their snake_case wire name, typed by hand against the wrapper's return type, or in
+   `wireNotInDemo`.
+7. Plugin commands (`plugin:<name>|<command>`) go in `plugins.ts`, or in `own-window.ts` when they're about the calling
+   window; a new Tauri API import goes in `TAURI_API_CALLS`.
 
 Gotcha: a new value command on the pane's boot path breaks the demo QUIETLY when the app's wrapper turns a rejection
 into a fallback. `liveVolumePath` maps any failure to `notReady`, so before the demo answered `live_volume_path`, every
@@ -395,6 +470,11 @@ demo can't ask it, so `getIcons` answers every id with the app's bundled generic
 - Search: ⌘F is the WASM engine's (`crates/cmdr-listing-wasm/DETAILS.md` § Search), so no TS table answers a search
   command (`engine-commands.test.ts` pins it). TS answers only `cloudAiConsentStatus` (no consent), which with
   `getAiStatus` unavailable keeps the dialog's AI mode off.
+- Go to folder (⌘G / Ctrl+G) and its recent paths are the engine's too, by the desktop's own rules
+  (`cmdr_fs::go_to_path`; `crates/cmdr-listing-wasm/DETAILS.md` § Go to path), so a typed path navigates, a missing one
+  lands on its nearest folder with the app's toast, and recents last the visit, the Selection dialog's too. So are
+  "Calculate folder sizes" (every size is already the fold's exact one, so it answers at once with nothing to count, as
+  a Mac with a full index does) and Settings' operation-log toggle (live on the engine's log).
 
 ## Writes
 
@@ -488,6 +568,34 @@ staged paths. The controller runs unchanged: hit test, transfer dialog, conflict
 - Risk: the tab opens a few microtasks after the click (the invoke is a promise chain), which Chromium and Firefox count
   as the same user gesture; a stricter popup blocker may still hold it.
 
+## Dialogs, the clipboard, and favorites
+
+What a visitor reaches that the desktop hands to the OS, answered the way a page can (`browser-dialogs.ts`,
+`answers.ts`, `relayed.ts`):
+
+- **Questions** (`confirmDialog`, through the dialog plugin's `plugin:dialog|message`) open in the app's own modal
+  (`question-dialog.ts` + `QuestionDialog.svelte`, on `ModalDialog` and `Button`) over the frame that asked, as the
+  native alert sits over its window: the asking webview answers it itself (`own-window.ts`). Every button of the
+  plugin's set shows, with its custom words, the confirming one last and default (Return), and the clicked button's name
+  comes back as the plugin answers it; Escape answers the cancelling one. `confirmWithCheckbox` answers `unsupported`,
+  the app's own Linux path, so it asks the plain question that way and leaves the option unchecked.
+  - **Decision: not the browser's `confirm` / `alert`.** **Why**: they block the whole page (the demo's other windows
+    and its timers), offer two buttons only (a Yes/No/Cancel lost its No), show OK and Cancel whatever the app's words,
+    and a `sandbox` on the hero's iframe without `allow-modals` would make every one answer Cancel silently.
+- **File and folder pickers** (`plugin:dialog|open`, `save`) and **a reveal in the file manager**
+  (`plugin:opener|reveal_item_in_dir`): no page equivalent over the demo's pretend files. The visitor gets an info toast
+  (`ui.demoDesktopOnly.*`), the app a picker's cancel (`null`).
+- **Copy path** and the other text copies (`copy_to_clipboard`): `navigator.clipboard.writeText`, inside the click's
+  gesture. A browser refusal rejects with a string, as Tauri does. Reading the clipboard stays out
+  (`readClipboardText`): a page reads it only behind a permission prompt, so Go to path opens without its prefill.
+- **Favorites** (`favorites.ts`): in memory, seeded with the four the volume list always had, with the desktop store's
+  rules (`src-tauri/src/favorites/store.rs`: a re-add moves the folder to the end, a letter has one owner, a reorder
+  never drops an entry). Each edit sends `volumes-changed` with the new list to every window, as `emit_volumes_changed`
+  does, so Add to favorites shows in the favorites menu and the volume picker at once.
+- **A viewer's setting write** (`persist_restricted_window_setting`: Word wrap, the binary warning) goes to the main
+  window as `persist-restricted-setting`, which persists it, as the desktop forwards it.
+- Verified in headless Chromium against `pnpm build:demo` (2026-11-19): see `apps/website/e2e/demo.spec.ts`.
+
 ## The listing seam
 
 - `listing.ts` (`startListingEngine`) imports the engine module, `await`s its `init()`, and builds one `DemoListing`
@@ -540,15 +648,24 @@ tells the visitor with one notice, `ui.demoArchive.notBrowsable`, whichever way 
   `node -e "const {chromium}=require('@playwright/test'),path=require('path'),fs=require('fs'),s=path.resolve('../desktop/scripts/demo-sample-docs'),o=path.resolve('../desktop/src/lib/demo/assets');(async()=>{const b=await chromium.launch(),p=await b.newPage();for(const f of fs.readdirSync(s).filter(f=>/^sample-.*\.html$/.test(f))){await p.goto('file://'+path.join(s,f));await p.pdf({path:path.join(o,f.replace(/\.html$/,'.pdf')),format:'A4',printBackground:true})}await b.close()})()"`.
   The viewer shows each as a `blob:` `<embed>`, which the demo's CSP allows in both `object-src` and `frame-src`
   (`apps/website/nginx-demo-security-headers.conf` says why).
-- `browser-shortcuts.ts`: the browser-safe shortcut map, one arm per visitor OS (§ Platform picks it). On macOS the
-  browser takes ⌘T, ⌘W, ⌘⇧T, ⌘N, and ⌘1–⌘9 before the page sees them, so those commands move to ⌃ (a placeholder map).
-  On Windows and Linux the arm is computed: the registry's defaults for that OS minus `BROWSER_WITHHELD`, the keys of
-  Chromium's reserved commands (close tab or window, new tab or window, reopen tab, next and previous tab; cited in the
-  module). A command whose every key is withheld is seeded with none, so the demo invents no key: today that's New tab,
-  Close tab, Reopen closed tab, and Ask Cmdr's New chat on both, plus Next tab on Linux. A key the browser merely has a
-  meaning for but lets the page cancel (`Alt+←`, `F5`, `Ctrl+1`) stays. Seeded into `shortcuts.json` as
-  `shortcut:<commandId>` keys, the same delta the Settings editor writes, so every hint in menus, the palette, and the
-  function bar shows the remapped combo with no demo awareness in the shortcut system.
+- `browser-shortcuts.ts`: the browser-safe shortcut maps, one arm per visitor OS (§ Platform picks it). On macOS the
+  browser takes ⌘T, ⌘W, ⌘⇧T, ⌘N, and ⌘1–⌘9 before the page sees them, so those commands move to ⌃ (a placeholder map),
+  the search dialog's new query (⌃N) and numbered modes (⌃1–⌃3) too. On Windows and Linux the arm is computed: the
+  registry's defaults for that OS minus `BROWSER_WITHHELD`, the keys Chromium (its reserved commands) and Firefox (its
+  `reserved="true"` keys: new private window `Ctrl+Shift+P`, quit) never hand a page, both cited in the module. A
+  command left with no key takes its `STAND_INS` key where one fits (placeholders): the search dialog's new query
+  `Alt+N`, the command palette `F1`, the queue `Ctrl+Shift+O`. The rest get none: New tab, Close tab, Reopen closed tab,
+  and Ask Cmdr's New chat on both, plus Next and Previous tab on Linux (the bar's `Alt+T` / `Alt+W` mnemonics and
+  Linux's terminal key leave no safe stand-in; the Tab menu and palette still reach them). A key the browser merely has
+  a meaning for but lets the page cancel (`Alt+←`, `F1`, `F5`, `Ctrl+1`) stays.
+  - Two seams, so every hint (menus, the palette, the function bar, the dialog's own chips) shows the remapped combo: a
+    rebindable command's seeded in `shortcuts.json` as `shortcut:<id>`, the delta the Settings editor writes (so
+    Settings shows its reset arrow), and a fixed-key command's handed to every frame's store by `boot.ts` as host
+    defaults (`lib/shortcuts/DETAILS.md` § Host defaults), since the store drops a fixed-key command's customization.
+    Never from the file: there, a hand-edited desktop `shortcuts.json` could rebind a fixed-key command.
+    `browser-shortcuts.test.ts` fails on any command, fixed-key or not, left on a withheld key.
+  - Safari's reserved keys don't matter off macOS (no Safari there). Firefox's are read off its source, not tried in a
+    browser; Chromium's quit on Linux is inferred from `IsReservedCommandOrKey` (the module says how).
 - `plugins.ts` seeds `settings.json` as a user who just finished the current wizard (`onboarding.completed` and
   `onboarding.upgradeNudgeShown`, the two flags `startup-gates.ts::completeOnboardingWizard` writes): a visitor came to
   try the panes. The full wizard is no first impression here: step 1 is Full Disk Access, which a browser can't grant,

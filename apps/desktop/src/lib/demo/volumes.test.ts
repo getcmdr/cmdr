@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEMO_HOME, DEMO_VOLUME_ID } from './demo-tree.js'
-import { demoPath, volumeAnswers } from './volumes.js'
+import { demoLocations, demoPath, mainVolumeName, volumeAnswers } from './volumes.js'
 
 /** Calls one answer by its bindings name. */
 function ask(name: keyof typeof volumeAnswers, payload: Record<string, unknown> = {}): unknown {
@@ -23,6 +23,21 @@ describe('demoPath', () => {
   it('leaves a plain absolute path and a ~ inside a name alone', () => {
     expect(demoPath('/Users/you/notes.md')).toBe('/Users/you/notes.md')
     expect(demoPath('/tmp/~backup')).toBe('/tmp/~backup')
+  })
+})
+
+describe('the main volume’s name', () => {
+  it('is the one the desktop gives its main volume on the visitor’s OS', () => {
+    const main = (platform: 'macos' | 'windows' | 'linux') =>
+      demoLocations(platform).find((v) => v.category === 'main_volume')
+    expect(main('macos')).toMatchObject({ name: 'Macintosh HD', fsType: 'apfs' })
+    // An unlabeled system drive, as `WindowsDrive::display_name` reads it, and Linux's root row.
+    expect(main('windows')).toMatchObject({ name: 'C:', fsType: 'ntfs' })
+    expect(main('linux')).toMatchObject({ name: 'Root', fsType: 'ext4' })
+    expect(mainVolumeName('windows')).toBe('C:')
+    // A favorite names the volume it's on the same way.
+    const favorite = demoLocations('windows').find((v) => v.category === 'favorite')
+    expect(favorite?.favoriteTarget?.volumeName).toBe('C:')
   })
 })
 

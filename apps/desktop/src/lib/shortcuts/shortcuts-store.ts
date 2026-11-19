@@ -14,6 +14,8 @@ import { getAppLogger } from '#lib/logging/logger.js'
 import { pluralize } from '#lib/utils/pluralize.js'
 import { toCanonicalShortcut, typingRefusal } from './key-capture'
 import { firstLiveShortcut, isShadowedDefault, liveShortcuts, type BindingReader } from './binding-priority'
+import { menuCommands } from './menu-commands'
+import { hostDefaultFor, hostDefaultIds } from './host-defaults'
 
 const log = getAppLogger('shortcuts')
 
@@ -188,7 +190,7 @@ export async function initializeShortcuts(options: { restrictedWindow?: boolean 
   // async init finishes; without the notification they'd keep showing registry
   // defaults until the next manual shortcut change. `notifyListeners` routes through
   // `updateMenuAccelerator`, which no-ops for commands without a menu item.
-  for (const commandId of customShortcuts.keys()) {
+  for (const commandId of new Set([...hostDefaultIds(), ...customShortcuts.keys()])) {
     notifyListeners(commandId)
   }
 }
@@ -205,6 +207,7 @@ async function readStoreEntries(): Promise<[string, unknown][]> {
   }
 
   // Custom shortcuts live in top-level keys (format: shortcut:commandId), like settings-store's values.
+  // Only those: a host default never comes from the file (`host-defaults.ts`).
   const shortcutKeys = (await store.keys()).filter((k) => k.startsWith('shortcut:'))
   return Promise.all(
     shortcutKeys.map(async (key): Promise<[string, unknown]> => [key.replace('shortcut:', ''), await store.get(key)]),
@@ -239,6 +242,18 @@ async function readRestrictedSnapshot(): Promise<[string, unknown][]> {
   }
 }
 
+/**
+ * The host's default for a command (`host-defaults.ts`), in canonical combos, `[]` for "no key
+ * here". A command the app menu owns gets none, as its customization doesn't (the OS owns its
+ * key); a fixed-key command does, since the host replaces the default itself and the command's
+ * matcher reads it (`eventMatchesCommand`).
+ */
+function hostDefault(commandId: string): string[] | undefined {
+  const combos = hostDefaultFor(commandId)
+  if (combos === undefined || isNativeShortcutCommand(commandId)) return undefined
+  return [...new Set(combos.filter((combo) => combo !== '').map(toCanonicalShortcut))]
+}
+
 /** Loads one persisted customization into the map, healed. Both init paths come through here. */
 function seedCustomShortcut(commandId: string, shortcuts: unknown): void {
   // Drop any persisted customization for a command the app menu owns on this OS
@@ -271,129 +286,6 @@ function seedCustomShortcut(commandId: string, shortcuts: unknown): void {
   // can fold two entries into one (`['⇧8', '*']` → `*` twice), so dedupe.
   customShortcuts.set(commandId, [...new Set(healed.map(toCanonicalShortcut))])
 }
-
-/**
- * Commands that have corresponding native menu items with accelerators.
- *
- * Exported so tests can verify the list matches the menu bar's command rows
- * (`crates/cmdr-menu/src/ids.rs`, checked by `rust-command-id-drift.test.ts`). Any command
- * listed here without a matching menu item silently drops the `updateMenuAccelerator` call on
- * the Rust side (no-op lookup), and any menu item not listed here misses out on accelerator
- * sync from custom shortcuts.
- */
-export const menuCommands = [
-  // View modes (CheckMenuItems, special handling in Rust)
-  'view.fullMode',
-  'view.briefMode',
-  // Zoom (text-size) presets and step
-  'view.zoom.set75',
-  'view.zoom.set100',
-  'view.zoom.set125',
-  'view.zoom.set150',
-  'view.zoom.in',
-  'view.zoom.out',
-  // View > Full screen (Windows and Linux; macOS's is AppKit's own item, so nothing syncs there)
-  'view.toggleFullScreen',
-  // File > Quit / Exit Cmdr (Windows and Linux; macOS quits from AppKit's app menu)
-  'app.quit',
-  // App-level
-  'app.commandPalette',
-  'app.settings',
-  'app.checkForUpdates',
-  'cmdr.openOnboarding',
-  'app.toggleCliCommand',
-  // Help (registered in MenuState.items so a future custom binding syncs its accelerator)
-  'help.whatsNew',
-  'help.viewDebugLog',
-  'help.accessibility',
-  // View > Operation queue (default ⌥⌘Q; registered so a custom binding syncs its accelerator)
-  'queue.show',
-  // View > Operation log (default ⌥⌘L; registered so a custom binding syncs its accelerator)
-  'log.operationLog',
-  // View > Suggested ops (no default; registered so a binding the user adds syncs its accelerator)
-  'suggestedOps.show',
-  // View > Ask Cmdr (default ⌥⌘A; registered so a custom binding syncs its accelerator)
-  'askCmdr.toggle',
-  // Edit menu (custom MenuItems; the focus-routed dispatch exception in
-  // handle_menu_event doesn't change that their accelerators sync generically)
-  'edit.cut',
-  'edit.copy',
-  'edit.paste',
-  'edit.pasteAsMove',
-  // File operations
-  'file.view',
-  'file.edit',
-  'file.copy',
-  'file.move',
-  'file.duplicate',
-  'file.compress',
-  'file.newFolder',
-  'file.newFile',
-  'file.delete',
-  'file.deletePermanently',
-  'file.rename',
-  'file.multiRename',
-  'file.showInFinder',
-  'file.openTerminalHere',
-  'file.getInfo',
-  'file.tellMeAbout',
-  'file.quickLook',
-  'file.copyPath',
-  'file.copyFilename',
-  'edit.undoTrash',
-  'file.copyShareLink',
-  'file.copyShareLinkOneDay',
-  'file.copyShareLinkOneHour',
-  // Cloud actions (macOS File Provider, items only show when the right-clicked file is in a cloud folder)
-  'cloud.makeOffline',
-  'cloud.removeDownload',
-  // Google Drive (items only show when the right-clicked item resolves to a Drive ID)
-  'cloud.openInGoogleDrive',
-  'cloud.copyGoogleDriveLink',
-  'cloud.askGemini',
-  // Selection
-  'selection.selectAll',
-  'selection.deselectAll',
-  'selection.selectSameKind',
-  'selection.compareDirectories',
-  'selection.invert',
-  'selection.selectFiles',
-  'selection.deselectFiles',
-  // Panes
-  'pane.switch',
-  'pane.swap',
-  'pane.clone',
-  'view.calculateFolderSizes',
-  // Search
-  'search.open',
-  // Sort
-  'sort.byName',
-  'sort.byExtension',
-  'sort.byModified',
-  'sort.bySize',
-  // Navigation
-  'nav.back',
-  'nav.forward',
-  'nav.parent',
-  'nav.goToRoot',
-  'nav.goHome',
-  'nav.goToPath',
-  // Downloads
-  'downloads.goToLatest',
-  // Favorites
-  'favorites.add',
-  'favorites.open',
-  // Servers
-  'servers.connect',
-  'servers.show',
-  // Tabs
-  'tab.new',
-  'tab.close',
-  'tab.reopen',
-  'tab.next',
-  'tab.prev',
-  'tab.closeOthers',
-]
 
 /**
  * Force save immediately. Should be called before window/page unload.
@@ -462,15 +354,15 @@ export function getEffectiveShortcuts(commandId: string): string[] {
     return [...custom]
   }
 
-  return [...defaultShortcuts(commandId)]
+  return getDefaultShortcuts(commandId)
 }
 
 /**
- * Get default shortcuts for a command from the registry.
- * Always returns a copy to prevent mutation of the original arrays.
+ * Get default shortcuts for a command: the host's (`host-defaults.ts`) where it gives one, else
+ * the registry's. Always returns a copy to prevent mutation of the original arrays.
  */
 export function getDefaultShortcuts(commandId: string): string[] {
-  return [...defaultShortcuts(commandId)]
+  return hostDefault(commandId) ?? [...defaultShortcuts(commandId)]
 }
 
 /**
@@ -731,11 +623,11 @@ export function isShadowed(commandId: string, combo: string): boolean {
 }
 
 // What each menu item was last told. A never-told item still carries the key the bar
-// was built with, which is its command's first default.
+// was built with, which is its command's first REGISTRY default: the bar knows no host default.
 const pushedMenuShortcut = new Map<string, string>()
 
 function menuShortcutNow(commandId: string): string {
-  return pushedMenuShortcut.get(commandId) ?? getDefaultShortcuts(commandId).at(0) ?? ''
+  return pushedMenuShortcut.get(commandId) ?? defaultShortcuts(commandId).at(0) ?? ''
 }
 
 /**
@@ -743,13 +635,17 @@ function menuShortcutNow(commandId: string): string {
  * native menu, for after the menu bar has been rebuilt in a new language.
  *
  * A rebuild replaces every menu item, so every item is back at its registry default on
- * a brand-new object. The customized ones need re-pushing, and so does any item whose
- * default another command's user binding shadows.
+ * a brand-new object. The customized ones and the ones with a host default need re-pushing,
+ * and so does any item whose default another command's user binding shadows.
  */
 export function resyncMenuAccelerators(): void {
   pushedMenuShortcut.clear()
   for (const commandId of menuCommands) {
-    if (customShortcuts.has(commandId) || getMenuShortcut(commandId) !== menuShortcutNow(commandId)) {
+    if (
+      customShortcuts.has(commandId) ||
+      hostDefault(commandId) !== undefined ||
+      getMenuShortcut(commandId) !== menuShortcutNow(commandId)
+    ) {
       void updateMenuAccelerator(commandId)
     }
   }

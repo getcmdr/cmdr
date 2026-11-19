@@ -166,12 +166,19 @@ impl DemoMenu {
     /// The bar as it stands: every menu and row, with its words, shortcut, and state, drawn
     /// by `cmdr_menu::page` as the desktop's in-window bar is.
     pub fn bar(&self) -> Vec<BarMenuView> {
-        bar_view(&self.model.lock_ignore_poison(), self.platform)
+        let mut menus = bar_view(&self.model.lock_ignore_poison(), self.platform);
+        for menu in &mut menus {
+            grey_what_a_page_cant_do(&mut menu.rows);
+        }
+        menus
     }
 
     /// What a click on `menu_id` asks for, applying what the click itself changes (a check item's
     /// own state), as `handle_menu_event` does.
     pub fn click(&self, menu_id: &str) -> Click {
+        if PAGE_CANT_DO.contains(&menu_id) {
+            return Click::Nothing;
+        }
         let mut m = self.model.lock_ignore_poison();
         let enabled = cmdr_menu::bar::spec_entry(menu_id, self.platform)
             .and_then(|entry| entry_enabled(entry, &m.item_inputs()))
@@ -214,6 +221,22 @@ impl DemoMenu {
                 emit("execute-command", json!({ "commandId": "tab.close", "road": "relay" }))
             }
             BarClick::CloseTab => Click::CloseFocusedWindow,
+        }
+    }
+}
+
+/// Rows a page has nothing behind: File > Quit (Exit on Windows), since a page can't quit its tab.
+/// They draw as an OS row, greyed, the way a Mac visitor's app-menu Quit does (`Row::System`).
+const PAGE_CANT_DO: [&str; 1] = [cmdr_menu::ids::QUIT_ID];
+
+fn grey_what_a_page_cant_do(rows: &mut [Row]) {
+    for row in rows {
+        match row {
+            Row::Item { id, label, .. } if PAGE_CANT_DO.contains(&id.as_str()) => {
+                *row = Row::System { label: label.clone() };
+            }
+            Row::Submenu { rows, .. } => grey_what_a_page_cant_do(rows),
+            _ => {}
         }
     }
 }
