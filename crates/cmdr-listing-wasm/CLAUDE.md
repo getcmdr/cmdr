@@ -7,12 +7,12 @@ The engine's second host, beside `apps/desktop/src-tauri/src/listing_host/`. Not
 
 - `tree.rs`: the page's JSON tree into an `InMemoryVolume`. `events.rs`: engine facts into Tauri-named events.
   `commands.rs`: `Demo`, the listing commands by their Tauri names, plus Brief widths and font metrics
-  (`cmdr-brief-columns`, memory only). `menu.rs`: `DemoMenu`, the menu-state pushes stored and the macOS bar drawn
-  through `cmdr_menu::page`, as the desktop's in-page bar is; `context_menu.rs`: its right-click popups, the `show_*`
-  commands answered with rows. `folder_sizes.rs`: the drive index's stand-in, a fold over the volume behind both
-  engines' index seams (DETAILS § Folder sizes). `viewer.rs`: the file viewer's commands (`cmdr-viewer`, same volume).
-  `multi_rename.rs`: ⌃M (`cmdr-multi-rename`, same panes and write engine; no media reads, no Results; DETAILS §
-  Multi-Rename). `search.rs`: ⌘F (`cmdr-search` over the same volume, sized by the fold; DETAILS § Search).
+  (`cmdr-brief-columns`, memory only). `menu.rs`: `DemoMenu`, the menu-state pushes stored and the visitor OS's bar
+  drawn through `cmdr_menu::page`, as the desktop's in-page bar is; `context_menu.rs`: its right-click popups, the
+  `show_*` commands answered with rows. `folder_sizes.rs`: the drive index's stand-in, a fold over the volume behind
+  both engines' index seams (DETAILS § Folder sizes). `viewer.rs`: the file viewer's commands (`cmdr-viewer`, same
+  volume). `multi_rename.rs`: ⌃M (`cmdr-multi-rename`, same panes and write engine; no media reads, no Results; DETAILS
+  § Multi-Rename). `search.rs`: ⌘F (`cmdr-search` over the same volume, sized by the fold; DETAILS § Search).
   `imports.rs`: files dropped in from the computer, staged under `/.drops/` within a 10 MB per-visit budget (DETAILS §
   Files dropped in from the computer). `invoke.rs`: the args/answer JSON helpers every command family shares, a leaf so
   no family imports `commands.rs`. `bindings.rs` (wasm only): the `wasm-bindgen` API.
@@ -28,7 +28,8 @@ The engine's second host, beside `apps/desktop/src-tauri/src/listing_host/`. Not
   `commands/menu.rs`, `commands/file_viewer.rs`, `commands/search.rs`, `commands/multi_rename.rs`, and
   `listing_host/events.rs` (writes: the desktop's `operations_host/` and its write commands; search events:
   `search/live/events.rs`). A change there needs one here; `events_test.rs`, `menu_test.rs`, `context_menu_test.rs`,
-  `search_test.rs`, and `multi_rename_test.rs` pin event keys and names against `bindings.ts`.
+  `search_test.rs`, and `multi_rename_test.rs` pin event keys and names against `bindings.ts`; a command added or
+  dropped here also goes in the demo's `engine-command-names.ts` (`engine_command_names_test.rs`).
 - **One volume, one `Listings`, shared by every engine** (listing, writes, viewer, Multi-Rename), or a copy lands unseen
   by the panes.
 - **Everything but `bindings.rs` builds natively**, so the tests run with `cargo nextest` like any crate. Keep JS types

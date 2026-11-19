@@ -1,5 +1,6 @@
 import { flushSync, tick } from 'svelte'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { withConventions, withPlatform } from '#lib/platform/test-platform.js'
 import { _setCatalogForTests, setLocale } from '#lib/intl/messages.svelte.js'
 import { rowLabelText } from '#lib/ui/command-menu/rows.js'
 import { installMenuBar, type MenuBarHandle } from './menu-bar.svelte.js'
@@ -137,6 +138,20 @@ afterEach(() => {
 })
 
 describe('demo menu bar', () => {
+  // A Mac visitor: the macOS bar, its look, and its keys.
+  let undoVisitor: (() => void) | undefined
+  beforeEach(() => {
+    const undoPlatform = withPlatform('macos')
+    const undoConventions = withConventions('macos')
+    undoVisitor = () => {
+      undoConventions()
+      undoPlatform()
+    }
+  })
+  afterEach(() => {
+    undoVisitor?.()
+  })
+
   it('draws the titles in a menubar at the top of the page, the app menu first and bold', async () => {
     setup()
     await settle()
@@ -268,5 +283,48 @@ describe('demo menu bar', () => {
       await setLocale(null)
       _setCatalogForTests('hu', null)
     }
+  })
+})
+
+// Task 63 step 11: a Windows visitor sees the Windows bar (the engine draws Windows' rows), in
+// Windows 11's look and keys, with the window under it at that bar's own height.
+describe('demo menu bar for a Windows visitor', () => {
+  let undoVisitor: (() => void) | undefined
+  beforeEach(() => {
+    const undoPlatform = withPlatform('windows')
+    const undoConventions = withConventions('windows')
+    undoVisitor = () => {
+      undoConventions()
+      undoPlatform()
+    }
+  })
+  afterEach(() => {
+    undoVisitor?.()
+  })
+
+  it('wears the Windows look and keys, not the Mac’s', async () => {
+    setup()
+    await settle()
+    const bar = document.querySelector('[role="menubar"]')
+    expect(bar?.classList.contains('cmdr-demo-macos-menu')).toBe(false)
+    expect(bar?.classList.contains('mac')).toBe(false)
+    // Alt plus a title's letter opens it, as on Windows.
+    expect(titles().every((t) => t.getAttribute('aria-keyshortcuts')?.startsWith('Alt+'))).toBe(true)
+  })
+
+  it('starts the window under the bar at the look’s own bar height', () => {
+    setup()
+    expect(document.documentElement.style.getPropertyValue('--cmdr-demo-window-top')).toBe(
+      'var(--spacing-menu-bar-height)',
+    )
+  })
+
+  it('opens on a lone Alt, as a Windows bar does', async () => {
+    setup()
+    await settle()
+    await key('Alt')
+    document.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', bubbles: true }))
+    await settle()
+    expect(document.activeElement).toBe(titles()[0])
   })
 })

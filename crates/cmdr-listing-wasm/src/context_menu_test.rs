@@ -241,3 +241,20 @@ fn eject_names_the_stashed_volume() {
 fn an_unknown_popup_is_refused() {
     assert!(DemoMenu::new().popup("show_nothing", json!({}), "main").is_err());
 }
+
+/// A Windows visitor's popups are Windows' rows, in Windows' key spelling, as its bar is.
+#[test]
+fn a_windows_visitor_s_popups_spell_their_keys_the_windows_way() {
+    let shortcut_of = |menu: &DemoMenu| {
+        let drawn = popup(menu, "show_viewer_context_menu", json!({ "hasSelection": true }));
+        match find(&drawn.rows, "viewer_context_copy") {
+            Some(Row::Item { shortcut, .. }) => shortcut.clone(),
+            other => panic!("no Copy row: {other:?}"),
+        }
+    };
+    assert_eq!(shortcut_of(&DemoMenu::new()).as_deref(), Some("⌘C"));
+    assert_eq!(
+        shortcut_of(&DemoMenu::for_platform(cmdr_menu::spec::Platform::Windows)).as_deref(),
+        Some("Ctrl+C")
+    );
+}

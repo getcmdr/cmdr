@@ -37,6 +37,9 @@ export interface DragSessions {
 }
 
 /** What an OS drag loop keeps from the page while it runs: the page sees no mouse until the drop. */
+/** The commands `handler` answers. */
+export const DRAG_COMMANDS = ['start_drag_paths'] as const
+
 const SWALLOWED_MOUSE = ['mousedown', 'mousemove', 'mouseup', 'click', 'dblclick', 'contextmenu'] as const
 
 function modifiersOf(event: MouseEvent | KeyboardEvent): Modifiers {
@@ -161,7 +164,7 @@ export function createDragSessions(win: Window, emit: EmitToMain): DragSessions 
 
   return {
     handler(cmd) {
-      if (cmd !== 'start_drag_paths') return undefined
+      if (cmd !== DRAG_COMMANDS[0]) return undefined
       return (payload) => {
         start(payload.paths as string[])
         return null

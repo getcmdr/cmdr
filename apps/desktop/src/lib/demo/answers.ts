@@ -29,10 +29,10 @@ const empty = () => []
 export const rawAnswers: Partial<Record<string, (payload: Payload) => unknown>> = {
   configure_ai: (): ConfigureAiOutcome => ({ secretStoreError: null }),
   // Window syncs that return nothing (the wrappers in `app-state.ts` and `app.html`'s boot guard). The
-  // menu-state pushes aren't here: the menu bar's engine stores them (`menu-engine.ts`).
+  // menu-state pushes (`update_menu_context` too) aren't here: the menu bar's engine stores them
+  // (`menu-engine.ts`), and an answer here would shadow it.
   show_main_window: nothing,
   set_ui_language: nothing,
-  update_menu_context: nothing,
   order_window_to_back: nothing,
 }
 
@@ -42,7 +42,7 @@ export const rawAnswers: Partial<Record<string, (payload: Payload) => unknown>> 
  * `VoidCommand` proves each returns nothing; a command that starts returning a value drops out of
  * the type and needs a real answer.
  */
-export const silentCommands: readonly VoidCommand[] = [
+export const silentCommands = [
   'registerKnownDialogs',
   'setMainWindowVisible',
   'notifyDialogOpened',
@@ -73,9 +73,9 @@ export const silentCommands: readonly VoidCommand[] = [
   'prepareSelfDragOverlay',
   'clearSelfDragOverlay',
   'setSelfDragResolvedOp',
-]
+] as const satisfies readonly VoidCommand[]
 
-export const appAnswers: AnswerTable = {
+export const appAnswers = {
   // Run mode and platform
   getAutomatedRun: () => 'none',
   isE2eMode: off,
@@ -256,4 +256,4 @@ export const appAnswers: AnswerTable = {
     coveredQualifyingCount: null,
     keptCount: null,
   }),
-}
+} satisfies AnswerTable

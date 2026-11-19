@@ -38,8 +38,8 @@ describe('volume answers', () => {
   })
 
   it('leaves the path questions to the engine, which sees every write', () => {
-    expect(volumeAnswers.pathExists).toBeUndefined()
-    expect(volumeAnswers.statPathsKinds).toBeUndefined()
+    expect('pathExists' in volumeAnswers).toBe(false)
+    expect('statPathsKinds' in volumeAnswers).toBe(false)
   })
 
   it('answers the default volume and resolves any path to the main one', () => {

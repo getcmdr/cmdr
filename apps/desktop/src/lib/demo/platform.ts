@@ -8,7 +8,6 @@ import {
   CAPABILITIES_GLOBAL,
   CONVENTIONS_GLOBAL,
   CONVENTIONS_ON,
-  LOOK_GLOBAL,
   NO_CAPABILITIES,
   PLATFORM_GLOBAL,
   type Platform,
@@ -58,19 +57,16 @@ const MAC_VISITOR_CAPABILITIES: Readonly<PlatformCapabilities> = Object.freeze({
 })
 
 /**
- * What every other visitor gets: no OS-backed surface, except the two the demo's own macOS chrome
- * stands behind. Both flip to `false` off macOS once the demo's chrome follows the visitor's OS
- * (task 63 of `docs/specs/windows-port-plan.md`).
- * - `appMenu`: the demo always draws the macOS bar (`crates/cmdr-listing-wasm/src/menu.rs`), whose
- *   app menu owns Quit, Hide, Hide others, and Show all as OS rows, so for every visitor those are
- *   the bar's and Quit isn't a palette command whose IPC has no backend.
- * - `overlayTitleBar`: the demo always draws the macOS traffic lights over each window's top left
- *   corner (`traffic-lights.ts`), so every page keeps its title line under them. Without it the
- *   queue's toolbar started under the lights, which took the clicks meant for "Pause all".
+ * What every other visitor gets: no OS-backed surface but one. `appMenu` stays off, since their bar
+ * is their own OS's (`crates/cmdr-listing-wasm/src/menu.rs`), which ends File with Quit, so Quit is
+ * a palette command too, as on their desktop (a page can't quit its tab, so it does nothing).
+ * - `overlayTitleBar`: the demo still draws the macOS traffic lights over each window's top left
+ *   corner for every visitor (`traffic-lights.ts`), so every page keeps its title line under them.
+ *   Without it the queue's toolbar started under the lights, which took the clicks meant for "Pause
+ *   all". It goes once the demo draws each OS's own window buttons.
  */
 const OTHER_VISITOR_CAPABILITIES: Readonly<PlatformCapabilities> = Object.freeze({
   ...NO_CAPABILITIES,
-  appMenu: true,
   overlayTitleBar: true,
 })
 
@@ -81,39 +77,28 @@ export function visitorCapabilities(platform: Platform): Readonly<PlatformCapabi
 
 /**
  * The demo's conventions for a visitor on `platform`: the desktop app's own row for their OS
- * (desktop-neutral on Linux: a page can't tell GNOME from KDE), with the macOS menu model for
- * everyone, since the demo always draws the macOS bar (the reason `appMenu` is on above). Exported
- * for its test.
+ * (desktop-neutral on Linux: a page can't tell GNOME from KDE), menu model included, so a Mac
+ * visitor gets the macOS bar and everyone else their OS's in-window bar (D5). Exported for its test.
  */
 export function visitorConventions(platform: Platform): Readonly<PlatformConventions> {
   return VISITOR_CONVENTIONS[platform]
 }
 
-function demoConventions(row: Readonly<PlatformConventions>): Readonly<PlatformConventions> {
-  return Object.freeze({ ...row, menuModel: CONVENTIONS_ON.macos.menuModel })
-}
-
 /** One frozen object per platform, so every frame of the page reads the same one. */
 const VISITOR_CONVENTIONS: Readonly<Record<Platform, Readonly<PlatformConventions>>> = {
-  macos: demoConventions(CONVENTIONS_ON.macos),
-  windows: demoConventions(CONVENTIONS_ON.windows),
-  linux: demoConventions(CONVENTIONS_ON.otherLinux),
+  macos: Object.freeze({ ...CONVENTIONS_ON.macos }),
+  windows: Object.freeze({ ...CONVENTIONS_ON.windows }),
+  linux: Object.freeze({ ...CONVENTIONS_ON.otherLinux }),
 }
 
 /**
- * The look for every visitor (`data-look`: the menus' and the controls' tokens): the Mac's, whose
- * bar and chrome the demo draws for everyone (as its `menuModel` above). Without the pin a Windows
- * visitor's menus wore Windows 11's tokens under the macOS bar (a 40 px bar the window's 30 px
- * offset didn't know about, and Segoe type), and its buttons, fields, and dialogs WinUI's. Goes
- * with the `appMenu` flip once the demo follows the visitor's OS (task 63 step 11).
+ * Defines the platform, its capabilities, and its conventions in `frame` before any app module
+ * reads them, read-only as on desktop. The look (`data-look`: the menus' and the controls' tokens)
+ * follows the platform by itself, so a Windows visitor's bar, menus, and controls wear Windows 11's.
  */
-const DEMO_LOOK: Platform = 'macos'
-
-/** Defines the platform, its capabilities, its conventions, and the look in `frame` before any app module reads them, read-only as on desktop. */
 export function installPlatform(frame: Window): void {
   const platform = visitorPlatform(frame.navigator.userAgent)
   Object.defineProperty(frame, PLATFORM_GLOBAL, { value: platform })
   Object.defineProperty(frame, CAPABILITIES_GLOBAL, { value: visitorCapabilities(platform) })
   Object.defineProperty(frame, CONVENTIONS_GLOBAL, { value: visitorConventions(platform) })
-  Object.defineProperty(frame, LOOK_GLOBAL, { value: DEMO_LOOK })
 }

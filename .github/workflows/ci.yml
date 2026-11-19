@@ -351,6 +351,8 @@ jobs:
               - 'apps/website/src/lib/trust-mdm.ts'
               # The browser listing engine's event drift guard embeds this (`cmdr-listing-wasm`).
               - 'apps/desktop/src/lib/ipc/bindings.ts'
+              # Its engine-command drift guard reads this (`engine_command_names_test.rs`).
+              - 'apps/desktop/src/lib/demo/engine-command-names.ts'
               # Built and smoke-run by `desktop-rust-listing-wasm`.
               - 'scripts/build-listing-wasm.sh'
               - 'scripts/build-listing-wasm/**'

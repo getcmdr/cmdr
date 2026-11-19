@@ -1,18 +1,24 @@
 /**
- * The demo menus' look: a macOS 27 menu bar and its Liquid Glass menus, for the bar and the
- * right-click menus alike. The shared component (`#lib/ui/MenuBar.svelte`, `ContextMenu.svelte`)
- * draws them from `app-menu.css`'s tokens; this sets those tokens to the Mac's values on the one
- * class the demo puts on its bar and menus ({@link DEMO_MENU_CLASS}), from the app's own glass
+ * The demo menus' look. Every visitor's bar and right-click menus are the shared component
+ * (`#lib/ui/MenuBar.svelte`, `ContextMenu.svelte`) on `app-menu.css`'s tokens, which `data-look`
+ * keys to the visitor's OS: a Windows visitor's wear Windows 11's as they are. A Mac visitor's get
+ * macOS 27's here, on the one class the demo puts on their bar and menus ({@link DEMO_MENU_CLASS}),
+ * since the desktop's macOS bar is AppKit's and has no tokens of its own: the app's own glass
  * tokens (`app.css` § Frosted-glass material), so they follow the Liquid Glass slider and
  * reduce-transparency like every other glass surface. Measured against the real bar and an open
  * menu on macOS 27 (`screencapture`, 2026-11-04): a 30 px bar, 13 px text, capsule title
  * highlights, 12 px menu corners, 24 px rows inset by 5 px, the accent pill under the cursor row,
  * and dimmed shortcut glyphs right-aligned with a little air between them. Injected once.
  */
-export const MENU_BAR_HEIGHT_PX = 30
+import { getLook } from '#lib/platform/index.js'
 
-/** The class on the demo's bar and every menu it opens, which carries the macOS look. */
+/** The class on a Mac visitor's bar and every menu it opens, which carries the macOS look. */
 export const DEMO_MENU_CLASS = 'cmdr-demo-macos-menu'
+
+/** The class the demo's bar and menus wear: the macOS look for a Mac visitor, none (their OS's own tokens) for anyone else. */
+export function demoMenuClass(): string {
+  return getLook() === 'macos' ? DEMO_MENU_CLASS : ''
+}
 
 export const MENU_BAR_STYLE = `
 .${DEMO_MENU_CLASS} {

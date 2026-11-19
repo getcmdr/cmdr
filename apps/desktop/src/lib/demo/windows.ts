@@ -35,6 +35,9 @@ const MARGIN = 16
 /** How much of a panel's top stays on screen when dragged down: a title bar's height, enough to grab it again. */
 const TITLE_STRIP = 28
 
+/** Cmdr's own commands (the bindings') this host answers; the rest of its table is Tauri's window plugin. */
+export const WINDOW_HOST_COMMANDS = ['close_child_window', 'raise_child_window', 'show_child_window'] as const
+
 type Emit = (event: string, payload: unknown, target: EventTarget) => void
 type Handler = (payload: Payload) => unknown
 
@@ -342,7 +345,8 @@ export function createWindowHost(emit: Emit, onClosed: (label: string) => void =
       if (panel) zoom(panel)
       return null
     },
-    // Cmdr's own child-window commands: a window closing itself (Esc in Settings) and being raised.
+    // Cmdr's own child-window commands (`WINDOW_HOST_COMMANDS`): a window closing itself (Esc in
+    // Settings) and being raised.
     close_child_window: (p) => {
       close(p.label as string)
       return null
