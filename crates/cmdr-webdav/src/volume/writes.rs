@@ -29,8 +29,8 @@
 //! answers `PauseOutlasted`, which the engine's per-file retry runs again from
 //! the first byte without spending an attempt. `DETAILS.md` § "Pause".
 
+use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
-use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, SystemTime};
@@ -345,7 +345,7 @@ impl WebdavVolume {
     /// any caller.
     pub(super) async fn write_from_stream_impl(
         &self,
-        dest: &Path,
+        dest: &AppPath,
         mode: WriteMode,
         size: u64,
         stream: Box<dyn VolumeReadStream>,

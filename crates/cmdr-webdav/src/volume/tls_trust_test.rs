@@ -7,7 +7,6 @@
 //! its fingerprint ahead of time: each reads it off the prompt, the way a
 //! person does.
 
-use cmdr_fs::app_path::AppPath;
 use std::sync::Arc;
 
 use cmdr_fs::volume::Volume;
@@ -86,26 +85,14 @@ async fn a_pinned_certificate_connects_lists_and_reconnects() {
     let volume = dial_trusting("TLS", 13484, Arc::clone(&certificates), "tls-pinned")
         .await
         .unwrap_or_else(|e| panic!("the pinned certificate should connect, got {e:?}"));
-    assert!(
-        volume
-            .exists(&AppPath::legacy_unchecked(
-                &volume.root().as_std_legacy().join("hello.txt")
-            ))
-            .await
-    );
+    assert!(volume.exists(&at(&volume, "hello.txt")).await);
 
     // ❗ A reconnect builds a new client, and reads the pin again for it.
     volume
         .attempt_reconnect()
         .await
         .unwrap_or_else(|e| panic!("a reconnect over the pin should come back, got {e:?}"));
-    assert!(
-        volume
-            .exists(&AppPath::legacy_unchecked(
-                &volume.root().as_std_legacy().join("hello.txt")
-            ))
-            .await
-    );
+    assert!(volume.exists(&at(&volume, "hello.txt")).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]

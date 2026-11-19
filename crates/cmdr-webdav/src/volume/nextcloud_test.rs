@@ -19,9 +19,8 @@
 //! The server is not in the stack's `core` mode: `./start.sh nextcloud`, or
 //! `pnpm check webdav-nextcloud`, is what brings it up.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use std::ops::ControlFlow;
-use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -32,20 +31,21 @@ use reqwest::header::{CONTENT_TYPE, RANGE};
 use reqwest::{Body, Method, StatusCode};
 
 use super::WebdavVolume;
+use super::test_support::conformance_path;
 use super::testing::*;
 use cmdr_fs::volume::WriteMode;
 
 const FIXTURE: &str = "webdav-servers/start.sh nextcloud (webdav-fixture-nextcloud)";
 
 /// The sabre/dav server, plus a scratch directory of this cell's own.
-async fn nextcloud_with_scratch() -> (WebdavVolume, PathBuf) {
+async fn nextcloud_with_scratch() -> (WebdavVolume, AppPathBuf) {
     let volume = connect_fixture("NEXTCLOUD", 13482).await;
     // ❗ This account persists now: its storage is a NAMED volume, so it is no
     // longer wiped by the container being recreated. Cells clean up after
     // themselves, so this only collects what a crashed run abandoned, and only
     // once per process.
     sweep_stale_scratch_dirs(&volume).await;
-    let dir = scratch_dir(&volume).await;
+    let dir = scratch_dir_at(&volume).await;
     (volume, dir)
 }
 
@@ -54,15 +54,15 @@ async fn nextcloud_with_scratch() -> (WebdavVolume, PathBuf) {
 /// ❗ `dir` is the APP spelling, prefix and all
 /// (`webdav://test_user_1@127.0.0.1:13482/cmdr-test-…`), because that is what a pane
 /// holds. The two cells that go straight at the server need the other half.
-fn server_relative(volume: &WebdavVolume, dir: &Path) -> String {
-    dir.strip_prefix(volume.root().as_std_legacy())
+fn server_relative(volume: &WebdavVolume, dir: &AppPath) -> String {
+    dir.strip_prefix(volume.root())
         .expect("a scratch dir made under this volume's own root")
-        .display()
-        .to_string()
+        .as_str()
+        .to_owned()
 }
 
 /// Removes everything a cell built, deepest first, and the scratch dir itself.
-async fn clean(volume: &WebdavVolume, dir: &Path) {
+async fn clean(volume: &WebdavVolume, dir: &AppPath) {
     remove_recursively(volume, dir).await;
 }
 
@@ -117,11 +117,8 @@ impl VolumeReadStream for BufferSource {
 }
 
 /// Reads a whole file back, the way the copy path does.
-async fn read_whole(volume: &WebdavVolume, path: &Path) -> Vec<u8> {
-    let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(path))
-        .await
-        .expect(FIXTURE);
+async fn read_whole(volume: &WebdavVolume, path: &AppPath) -> Vec<u8> {
+    let mut stream = volume.open_read_stream(path).await.expect(FIXTURE);
     let mut out = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         out.extend_from_slice(&chunk.expect(FIXTURE));
@@ -140,12 +137,12 @@ async fn the_write_path_lands_a_file_byte_exact_on_sabre_dav() {
     // `.cmdr-tmp-*` sibling and a MOVE with `Overwrite: F`, which sabre/dav must
     // refuse over a taken name. Everything else here asks a narrower question.
     let (volume, dir) = nextcloud_with_scratch().await;
-    let path = dir.join("copied.bin");
+    let path = child(&dir, "copied.bin");
     let bytes = fixture_large_bytes(1024 * 1024);
 
     let written = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(&path),
+            &path,
             WriteMode::CreateOrReplace,
             StreamLength::Known(bytes.len() as u64),
             Box::new(BufferSource {
@@ -163,15 +160,12 @@ async fn the_write_path_lands_a_file_byte_exact_on_sabre_dav() {
     // `Overwrite: F`), landed whole on a free name.
     cmdr_fs::volume::conformance::assert_write_from_stream_create_new_refuses_to_clobber(
         &volume,
-        &path,
-        &dir.join("fresh.bin"),
+        &conformance_path(&path),
+        &conformance_path(&child(&dir, "fresh.bin")),
         b"new",
     )
     .await;
-    let siblings = volume
-        .list_directory(&AppPath::legacy_unchecked(&dir), None)
-        .await
-        .expect(FIXTURE);
+    let siblings = volume.list_directory(&dir, None).await.expect(FIXTURE);
     // ❗ `is_staging_temp_name` looks anywhere in the name: a staging sibling is
     // `<destination>.cmdr-tmp-<id>`, so a `starts_with` test would pass whatever
     // the directory holds.
@@ -259,7 +253,7 @@ async fn a_big_file_goes_up_in_chunks_and_a_cancelled_one_leaves_nothing() {
     );
     volume.set_upload_chunk_size(5 * MIB);
 
-    let path = dir.join("big.bin");
+    let path = child(&dir, "big.bin");
     let bytes = fixture_large_bytes((12 * MIB + 7) as usize);
     let size = bytes.len() as u64;
     let modified = UNIX_EPOCH + Duration::from_secs(1_611_909_015);
@@ -267,7 +261,7 @@ async fn a_big_file_goes_up_in_chunks_and_a_cancelled_one_leaves_nothing() {
     let reported = std::sync::Mutex::new(Vec::new());
     let written = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(&path),
+            &path,
             WriteMode::CreateOrReplace,
             StreamLength::Known(size),
             Box::new(DatedBuffer {
@@ -294,10 +288,7 @@ async fn a_big_file_goes_up_in_chunks_and_a_cancelled_one_leaves_nothing() {
         "progress only climbs"
     );
     assert_eq!(reported.last(), Some(&size));
-    let listed = volume
-        .get_metadata(&AppPath::legacy_unchecked(&path))
-        .await
-        .expect(FIXTURE);
+    let listed = volume.get_metadata(&path).await.expect(FIXTURE);
     assert_eq!(
         listed.modified_at,
         Some(1_611_909_015),
@@ -315,10 +306,10 @@ async fn a_big_file_goes_up_in_chunks_and_a_cancelled_one_leaves_nothing() {
     );
 
     // Cancelled partway through the second chunk.
-    let cancelled_path = dir.join("cancelled.bin");
+    let cancelled_path = child(&dir, "cancelled.bin");
     let cancelled = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(&cancelled_path),
+            &cancelled_path,
             WriteMode::CreateOrReplace,
             StreamLength::Known(size),
             Box::new(BufferSource { bytes, at: 0 }),
@@ -332,10 +323,7 @@ async fn a_big_file_goes_up_in_chunks_and_a_cancelled_one_leaves_nothing() {
         )
         .await;
     assert!(matches!(cancelled, Err(VolumeError::Cancelled(_))), "{cancelled:?}");
-    assert!(
-        !volume.exists(&AppPath::legacy_unchecked(&cancelled_path)).await,
-        "the target never saw a byte"
-    );
+    assert!(!volume.exists(&cancelled_path).await, "the target never saw a byte");
     // ❗ Waited for, ❌ not asserted at once: the server may still be reading the
     // cut-off chunk and refuse the first DELETE, which the background retry then
     // repeats (`chunked_upload.rs`'s `abandon`; 2 in 25 red here before it).
@@ -364,13 +352,14 @@ async fn a_file_in_the_way_of_a_new_folder_is_named_on_sabre_dav() {
     // by-the-book branch up: read as "already there" and "parent missing", those
     // two answers report the folder the user asked Cmdr to create as not found.
     let (volume, dir) = nextcloud_with_scratch().await;
-    let notes = dir.join("notes");
-    volume
-        .create_file(&AppPath::legacy_unchecked(&notes), b"the user's notes")
-        .await
-        .expect(FIXTURE);
+    let notes = child(&dir, "notes");
+    volume.create_file(&notes, b"the user's notes").await.expect(FIXTURE);
 
-    cmdr_fs::volume::conformance::assert_create_directory_all_refuses_a_file_in_the_way(&volume, &notes).await;
+    cmdr_fs::volume::conformance::assert_create_directory_all_refuses_a_file_in_the_way(
+        &volume,
+        &conformance_path(&notes),
+    )
+    .await;
 
     clean(&volume, &dir).await;
 }
@@ -426,7 +415,7 @@ async fn a_put_with_no_content_length_is_accepted_rather_than_refused() {
         "a chunked PUT came back {status}; DETAILS.md records what this server answers, and it just changed"
     );
     assert_same_bytes(
-        &read_whole(&volume, &dir.join(name)).await,
+        &read_whole(&volume, &child(&dir, name)).await,
         &bytes,
         "a chunked PUT's body",
     );
@@ -449,7 +438,7 @@ async fn a_ranged_get_is_answered_with_a_window_rather_than_the_whole_file() {
     let bytes = fixture_large_bytes(512 * 1024);
     volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(&dir.join(name)),
+            &child(&dir, name),
             WriteMode::CreateOrReplace,
             StreamLength::Known(bytes.len() as u64),
             Box::new(BufferSource {
@@ -480,7 +469,7 @@ async fn a_ranged_get_is_answered_with_a_window_rather_than_the_whole_file() {
     // And the backend's own window, which is what a remote archive's central
     // directory is read through.
     let through_the_backend = volume
-        .read_range(&AppPath::legacy_unchecked(&dir.join(name)), 100_000, 100_000)
+        .read_range(&child(&dir, name), 100_000, 100_000)
         .await
         .expect(FIXTURE);
     assert_same_bytes(
@@ -570,11 +559,20 @@ async fn an_account_with_no_quota_reports_what_it_holds_and_no_ceiling() {
 #[ignore = "needs the Nextcloud WebDAV fixture: apps/desktop/test/webdav-servers/start.sh nextcloud (webdav-fixture-nextcloud)"]
 async fn nextcloud_a_copy_keeps_the_source_date() {
     let (volume, dir) = nextcloud_with_scratch().await;
-    let dated = dir.join("dated.txt");
+    let dated = child(&dir, "dated.txt");
 
-    cmdr_fs::volume::conformance::assert_write_from_stream_keeps_the_source_date(&volume, &dated, Duration::ZERO).await;
-    cmdr_fs::volume::conformance::assert_read_stream_reports_the_listed_date(&volume, &dated).await;
-    cmdr_fs::volume::conformance::assert_landed_time_agrees_with_get_metadata(&volume, &dir.join("landed.txt")).await;
+    cmdr_fs::volume::conformance::assert_write_from_stream_keeps_the_source_date(
+        &volume,
+        &conformance_path(&dated),
+        Duration::ZERO,
+    )
+    .await;
+    cmdr_fs::volume::conformance::assert_read_stream_reports_the_listed_date(&volume, &conformance_path(&dated)).await;
+    cmdr_fs::volume::conformance::assert_landed_time_agrees_with_get_metadata(
+        &volume,
+        &conformance_path(&child(&dir, "landed.txt")),
+    )
+    .await;
 
     clean(&volume, &dir).await;
 }
@@ -594,8 +592,9 @@ async fn nextcloud_keeps_a_files_creation_date() {
         "the connect probe found `nc:creation_time`"
     );
 
-    conformance::assert_write_from_stream_keeps_metadata(&volume, &dir.join("born.txt")).await;
-    conformance::assert_read_stream_reports_the_listed_metadata(&volume, &dir.join("born.txt")).await;
+    conformance::assert_write_from_stream_keeps_metadata(&volume, &conformance_path(&child(&dir, "born.txt"))).await;
+    conformance::assert_read_stream_reports_the_listed_metadata(&volume, &conformance_path(&child(&dir, "born.txt")))
+        .await;
 
     clean(&volume, &dir).await;
 }
@@ -609,8 +608,13 @@ async fn nextcloud_keeps_a_folders_dates() {
     use cmdr_fs::volume::conformance;
     let (volume, dir) = nextcloud_with_scratch().await;
 
-    conformance::assert_apply_metadata_keeps(&volume, &dir.join("born")).await;
-    conformance::assert_apply_metadata_dates_a_folder(&volume, &dir.join("dated"), Duration::ZERO).await;
+    conformance::assert_apply_metadata_keeps(&volume, &conformance_path(&child(&dir, "born"))).await;
+    conformance::assert_apply_metadata_dates_a_folder(
+        &volume,
+        &conformance_path(&child(&dir, "dated")),
+        Duration::ZERO,
+    )
+    .await;
 
     clean(&volume, &dir).await;
 }
@@ -622,16 +626,10 @@ async fn nextcloud_keeps_a_folders_dates() {
 #[ignore = "needs the Nextcloud WebDAV fixture: apps/desktop/test/webdav-servers/start.sh nextcloud (webdav-fixture-nextcloud)"]
 async fn a_folder_with_no_creation_time_lists_none() {
     let (volume, dir) = nextcloud_with_scratch().await;
-    let plain = dir.join("plain");
-    volume
-        .create_directory(&AppPath::legacy_unchecked(&plain))
-        .await
-        .expect(FIXTURE);
+    let plain = child(&dir, "plain");
+    volume.create_directory(&plain).await.expect(FIXTURE);
 
-    let listed = volume
-        .get_metadata(&AppPath::legacy_unchecked(&plain))
-        .await
-        .expect(FIXTURE);
+    let listed = volume.get_metadata(&plain).await.expect(FIXTURE);
 
     assert_eq!(listed.created_at, None);
     clean(&volume, &dir).await;
