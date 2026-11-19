@@ -121,10 +121,6 @@
   "@shortcuts.conflict.takenByLinuxDesktops": {
     "sourceHash": "8aefc0b"
   },
-  "shortcuts.conflict.opensMenuBarMenu": "{combo} öppnar menyn {menu} i Cmdrs menyrad, så genvägen når inte det här kommandot om inte en dialog är öppen.",
-  "@shortcuts.conflict.opensMenuBarMenu": {
-    "sourceHash": "f4b330a"
-  },
   "shortcuts.system.spotlight": "Spotlight",
   "@shortcuts.system.spotlight": {
     "sourceHash": "fca7aa8",

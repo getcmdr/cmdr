@@ -120,10 +120,6 @@
   "@shortcuts.conflict.takenByLinuxDesktops": {
     "sourceHash": "8aefc0b"
   },
-  "shortcuts.conflict.opensMenuBarMenu": "Kombinace {combo} otevírá v řádku nabídek Cmdru nabídku {menu}, takže se tato zkratka k tomuto příkazu dostane, jen když je otevřené dialogové okno.",
-  "@shortcuts.conflict.opensMenuBarMenu": {
-    "sourceHash": "f4b330a"
-  },
   "shortcuts.system.spotlight": "Spotlight",
   "@shortcuts.system.spotlight": {
     "sourceHash": "fca7aa8",

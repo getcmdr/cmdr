@@ -355,15 +355,6 @@ pub fn set_menu_mnemonics_suspended(window: tauri::Window, suspended: bool) {
     crate::menu::set_window_mnemonics_suspended(&window, suspended);
 }
 
-/// The menu bar titles' mnemonics in the active language (`Alt+F` opens File in English), for
-/// Settings' warning when a user records one for a command outside a modal surface: there GTK
-/// takes the key before the page. Empty where the bar has none (macOS).
-#[tauri::command]
-#[specta::specta]
-pub fn get_menu_bar_title_mnemonics() -> Vec<crate::menu::BarTitleMnemonic> {
-    crate::menu::bar_title_mnemonics(cmdr_menu::spec::Platform::current())
-}
-
 /// The main menu bar for a page that draws it (off macOS, the in-window bar): every menu and row,
 /// at its revision. From the first call on, every move of the bar emits `menu-bar-changed` with
 /// the next revision and the rows that moved; `menu/DETAILS.md` § "The bar a page draws" has the

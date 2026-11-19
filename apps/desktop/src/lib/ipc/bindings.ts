@@ -4792,12 +4792,6 @@ export const commands = {
   setMenuMnemonicsSuspended: (suspended: boolean) =>
     __TAURI_INVOKE<void>('set_menu_mnemonics_suspended', { suspended }),
   /**
-   *  The menu bar titles' mnemonics in the active language (`Alt+F` opens File in English), for
-   *  Settings' warning when a user records one for a command outside a modal surface: there GTK
-   *  takes the key before the page. Empty where the bar has none (macOS).
-   */
-  getMenuBarTitleMnemonics: () => __TAURI_INVOKE<BarTitleMnemonic[]>('get_menu_bar_title_mnemonics'),
-  /**
    *  The main menu bar for a page that draws it (off macOS, the in-window bar): every menu and row,
    *  at its revision. From the first call on, every move of the bar emits `menu-bar-changed` with
    *  the next revision and the rows that moved; `menu/DETAILS.md` § "The bar a page draws" has the
@@ -7939,14 +7933,6 @@ export type BarPickOutcome =
    *  on it (the viewer's Cut and Paste, and the main bar's Edit rows outside the main window).
    */
   | { kind: 'textEdit'; edit: PageTextEdit }
-
-// A bar title's mnemonic: GTK opens the `menu` menu on `Alt+<letter>`.
-export type BarTitleMnemonic = {
-  // Lowercased, as GTK matches it.
-  letter: string
-  // The menu's title in the active language, without its marker.
-  menu: string
-}
 
 /**
  *  The prefix's estimated size against the budget the next send resolves. Both are `chars/4`

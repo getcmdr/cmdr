@@ -121,10 +121,6 @@
   "@shortcuts.conflict.takenByLinuxDesktops": {
     "sourceHash": "8aefc0b"
   },
-  "shortcuts.conflict.opensMenuBarMenu": "{combo} öffnet das Menü „{menu}“ in der Menüleiste von Cmdr, daher erreicht der Kurzbefehl diesen Befehl nur, wenn ein Dialog geöffnet ist.",
-  "@shortcuts.conflict.opensMenuBarMenu": {
-    "sourceHash": "f4b330a"
-  },
   "shortcuts.system.spotlight": "Spotlight",
   "@shortcuts.system.spotlight": {
     "sourceHash": "fca7aa8",

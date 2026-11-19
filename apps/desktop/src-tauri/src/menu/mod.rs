@@ -68,7 +68,6 @@ mod display_accelerators;
 mod file_context_menu;
 #[cfg(target_os = "macos")]
 mod file_provider_items;
-#[cfg(target_os = "macos")]
 mod focused_field_edit;
 pub mod install;
 mod item_states;
@@ -147,7 +146,7 @@ pub use file_context_menu::build_context_menu;
 pub(crate) use item_states::{apply_menu_item_states, set_menu_context};
 #[cfg(target_os = "macos")]
 pub(crate) use item_states::{note_viewer_search_focus, swap_to_main_menu, swap_to_viewer_menu};
-pub use menu_bar_builder::{BarTitleMnemonic, bar_title_mnemonics, build_menu};
+pub use menu_bar_builder::build_menu;
 pub use menu_handlers::handle_menu_event;
 pub(crate) use menu_handlers::native_edit_selector_for_viewer_page;
 #[cfg(target_os = "macos")]

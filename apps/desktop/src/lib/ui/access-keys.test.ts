@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { accessKeyCandidates, accessKeyLettersOf, allocateAccessKeys, reservedAccessKeys } from './access-keys'
+import {
+  accessKeyCandidates,
+  accessKeyLettersOf,
+  allocateAccessKeys,
+  meetsTheBar,
+  reservedAccessKeys,
+} from './access-keys'
 
 describe('allocateAccessKeys', () => {
   // The same rule as the Linux menu bar (`src-tauri/src/menu/mnemonics.rs`), case for case.
@@ -106,5 +112,22 @@ describe('reservedAccessKeys', () => {
       expect(reserved.has(letter)).toBe(true)
     expect(reservedAccessKeys('Main window/Tell me about this')).toEqual(new Set(['s']))
     expect(reservedAccessKeys(undefined)).toEqual(new Set())
+  })
+
+  // Regression anchor (review of #1265): a user's Alt+<letter> in a pane's scope was the bar's
+  // title key from anywhere in the window, since only the bar's exact scope was reserved.
+  it("reserves a window bar's whole live scope tree, and none of a surface that makes it inert", () => {
+    expect(meetsTheBar('Main window/File list', 'Main window')).toBe(true)
+    expect(meetsTheBar('Main window/Brief mode', 'Main window')).toBe(true)
+    expect(meetsTheBar('Main window/Ask Cmdr', 'Main window')).toBe(true)
+    // The Multi-rename sheet's letters: the bar is inert under it, so the titles keep theirs.
+    expect(meetsTheBar('Main window/Multi-rename', 'Main window')).toBe(false)
+    expect(reservedAccessKeys('Main window').has('u')).toBe(false)
+    // Another window's scope, and the one above every window.
+    expect(meetsTheBar('Operation queue window', 'Main window')).toBe(false)
+    expect(meetsTheBar('App', 'Main window')).toBe(false)
+    // The viewer's own scope still counts for the viewer's bar.
+    const viewer = reservedAccessKeys('Viewer window')
+    expect(viewer.has('r') && viewer.has('c')).toBe(true)
   })
 })

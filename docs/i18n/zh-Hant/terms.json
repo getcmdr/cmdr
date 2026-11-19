@@ -3701,8 +3701,7 @@
     "exceptions": {
       "shortcuts.conflict.systemShortcut": "English's 'the shortcut' only replaces a pronoun for {combo}; Chinese keeps {combo} as the sentence topic and drops the subject (所以可能永遠傳不到 Cmdr), so no noun is needed; the macOS text stays as it is.",
       "shortcuts.conflict.takenByWindows": "Same topic-drop as shortcuts.conflict.systemShortcut, kept identical in frame across the conflict family.",
-      "shortcuts.conflict.takenByLinuxDesktops": "Same topic-drop as shortcuts.conflict.systemShortcut, kept identical in frame across the conflict family.",
-      "shortcuts.conflict.opensMenuBarMenu": "Same topic-drop as shortcuts.conflict.systemShortcut, kept identical in frame across the conflict family."
+      "shortcuts.conflict.takenByLinuxDesktops": "Same topic-drop as shortcuts.conflict.systemShortcut, kept identical in frame across the conflict family."
     }
   },
   "show": {

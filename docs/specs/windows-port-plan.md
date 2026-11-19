@@ -1046,11 +1046,11 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
        doesn't (task 55's entry; `routes/(main)/text-field-gate.ts`). Tests: a Vitest case per road. Done when: both
        cases are pinned.
     10. [S] **Linux cleanup.**
-        - Scope: delete `menu/mnemonic_mask/` and its IPC, `menu-mnemonics-capture.svelte.ts`,
-          `get_menu_bar_title_mnemonics` and Settings' title-mnemonic warning, and `menu-mnemonic-mask.spec.ts`; update
-          `menu/` and `cmdr-menu`'s C+D.md and `lib/ui/DETAILS.md`'s Windows-bar gotcha.
-        - Landmines: knip and the IPC binding checks catch leftovers; the Settings warning has strings in every catalog,
-          which go with it.
+        - Scope: delete `menu/mnemonic_mask/` and its IPC, `menu-mnemonics-capture.svelte.ts`, and the mask's own
+          leftovers in `menu-bar.spec.ts` (step 6 renamed `menu-mnemonic-mask.spec.ts` to it; Settings' title-mnemonic
+          warning and `get_menu_bar_title_mnemonics` went with step 6's review: the bar reserves a window's Alt keys
+          instead); update `menu/` and `cmdr-menu`'s C+D.md and `lib/ui/DETAILS.md`'s Windows-bar gotcha.
+        - Landmines: knip and the IPC binding checks catch leftovers.
         - Tests: the Linux E2E lane (step 6's spec replaces the deleted one).
         - Done when: nothing in the tree references the mask.
     11. [S] **The demo** draws the visitor's own model with the shared component (macOS bar, Windows bar, or the Linux
