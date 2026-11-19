@@ -24,6 +24,26 @@
   "@ui.demoArchive.notBrowsable": {
     "sourceHash": "760091f"
   },
+  "ui.demoDesktopOnly.filePicker": "Diese Demo kann die Dateiauswahl deines Computers nicht öffnen. In der richtigen App öffnet sich hier eine, in der du eine Datei oder einen Ordner auswählen kannst.",
+  "@ui.demoDesktopOnly.filePicker": {
+    "sourceHash": "8a28292"
+  },
+  "ui.demoDesktopOnly.revealFolder": "Diese Demo kann keine Ordner auf deinem Computer öffnen. In der richtigen App zeigt dir das den Ordner in deinem Dateimanager.",
+  "@ui.demoDesktopOnly.revealFolder": {
+    "sourceHash": "27ef83e"
+  },
+  "ui.demoDesktopOnly.quit": "Diese Demo läuft in einem Browser-Tab, deshalb kann sie sich nicht beenden. Schließ den Tab, wenn du fertig bist.",
+  "@ui.demoDesktopOnly.quit": {
+    "sourceHash": "c971af5"
+  },
+  "ui.demoWindow.maximize": "Maximieren",
+  "@ui.demoWindow.maximize": {
+    "sourceHash": "fba6c2c"
+  },
+  "ui.demoWindow.restore": "Verkleinern",
+  "@ui.demoWindow.restore": {
+    "sourceHash": "a76e13b"
+  },
   "ui.popover.defaultAriaLabel": "Optionen",
   "@ui.popover.defaultAriaLabel": {
     "sourceHash": "d0db8b5"

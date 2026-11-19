@@ -24,6 +24,26 @@
   "@ui.demoArchive.notBrowsable": {
     "sourceHash": "760091f"
   },
+  "ui.demoDesktopOnly.filePicker": "Это демо не может открыть окно выбора файлов на вашем компьютере. В настоящем приложении оно откроется, и вы сможете выбрать файл или папку.",
+  "@ui.demoDesktopOnly.filePicker": {
+    "sourceHash": "8a28292"
+  },
+  "ui.demoDesktopOnly.revealFolder": "Это демо не может открывать папки на вашем компьютере. В настоящем приложении это покажет папку в вашем файловом менеджере.",
+  "@ui.demoDesktopOnly.revealFolder": {
+    "sourceHash": "27ef83e"
+  },
+  "ui.demoDesktopOnly.quit": "Это демо работает во вкладке браузера, поэтому завершить его нельзя. Закройте вкладку, когда закончите.",
+  "@ui.demoDesktopOnly.quit": {
+    "sourceHash": "c971af5"
+  },
+  "ui.demoWindow.maximize": "Развернуть",
+  "@ui.demoWindow.maximize": {
+    "sourceHash": "fba6c2c"
+  },
+  "ui.demoWindow.restore": "Свернуть в окно",
+  "@ui.demoWindow.restore": {
+    "sourceHash": "a76e13b"
+  },
   "ui.popover.defaultAriaLabel": "Параметры",
   "@ui.popover.defaultAriaLabel": {
     "sourceHash": "d0db8b5"

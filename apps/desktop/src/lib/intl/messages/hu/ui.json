@@ -24,6 +24,26 @@
   "@ui.demoArchive.notBrowsable": {
     "sourceHash": "760091f"
   },
+  "ui.demoDesktopOnly.filePicker": "Ez a demó nem tudja megnyitni a számítógéped fájlválasztóját. Az igazi appban itt megnyílik, és kiválaszthatsz benne egy fájlt vagy mappát.",
+  "@ui.demoDesktopOnly.filePicker": {
+    "sourceHash": "8a28292"
+  },
+  "ui.demoDesktopOnly.revealFolder": "Ez a demó nem tud mappákat megnyitni a számítógépeden. Az igazi appban ez megmutatja a mappát a fájlkezelődben.",
+  "@ui.demoDesktopOnly.revealFolder": {
+    "sourceHash": "27ef83e"
+  },
+  "ui.demoDesktopOnly.quit": "Ez a demó egy böngészőlapon fut, így nem tud kilépni. Ha végeztél, zárd be a lapot.",
+  "@ui.demoDesktopOnly.quit": {
+    "sourceHash": "c971af5"
+  },
+  "ui.demoWindow.maximize": "Teljes méret",
+  "@ui.demoWindow.maximize": {
+    "sourceHash": "fba6c2c"
+  },
+  "ui.demoWindow.restore": "Előző méret",
+  "@ui.demoWindow.restore": {
+    "sourceHash": "a76e13b"
+  },
   "ui.popover.defaultAriaLabel": "Beállítások",
   "@ui.popover.defaultAriaLabel": {
     "sourceHash": "d0db8b5"
