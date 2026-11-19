@@ -188,15 +188,17 @@ async fn start_server(binary: PathBuf, port: u16) -> bool {
         "adb server not running; starting it via {}",
         LogPrivate::file_path(&binary)
     );
-    let run = tokio::process::Command::new(&binary)
+    let mut command = tokio::process::Command::new(&binary);
+    command
         .arg("-P")
         .arg(port.to_string())
         .arg("start-server")
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::piped())
-        .kill_on_drop(true)
-        .output();
+        .kill_on_drop(true);
+    platform::start_quietly(&mut command);
+    let run = command.output();
     match tokio::time::timeout(START_SERVER_TIMEOUT, run).await {
         Ok(Ok(output)) if output.status.success() => {
             debug!("adb start-server succeeded");
@@ -227,7 +229,9 @@ async fn start_server(binary: PathBuf, port: u16) -> bool {
 /// `$ANDROID_SDK_ROOT/platform-tools`, Android Studio's default SDK
 /// (`~/Library/Android/sdk` on macOS, `~/Android/Sdk` on Linux,
 /// `%LOCALAPPDATA%\Android\Sdk` on Windows), and the package-manager folders
-/// (Homebrew's on macOS, `/usr/local/bin` on Linux). `adb.exe` on Windows.
+/// (Homebrew's on macOS, `/usr/local/bin` on Linux, WinGet's and Scoop's per-user ones on
+/// Windows). `adb.exe` on Windows. Only folders the user or an administrator controls
+/// (`docs/security.md` § "Helper tools").
 /// `None` when nothing runnable turns up.
 pub fn locate_adb_binary() -> Option<PathBuf> {
     let configured = BINARY_OVERRIDE

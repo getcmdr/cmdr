@@ -37,14 +37,18 @@ export function createViewerNavigation<OpenResult>(deps: ViewerNavigationDeps<Op
   let history: ViewerHistory | null = null
   let landing = $state<MarkdownLanding | null>(null)
   let navigating = $state(false)
+  /** Whether Go > Back / Forward are live, for the bar this window's page draws (off macOS). */
+  let steps = $state({ canGoBack: false, canGoForward: false })
 
   /**
-   * Tells the menu bar whether Go > Back / Forward are live. Only the viewer in front may
-   * speak for the shared bar, so a step that lands while another window has focus keeps
-   * quiet; the focus-gain push (`force`) catches up.
+   * Tells the menu bar whether Go > Back / Forward are live: this window's page bar always, and
+   * macOS's shared native bar only from the viewer in front, so a step that lands while another
+   * window has focus keeps quiet there; the focus-gain push (`force`) catches up.
    */
   function pushHistoryState({ force = false }: { force?: boolean } = {}): void {
-    if (!history || (!force && !document.hasFocus())) return
+    if (!history) return
+    steps = { canGoBack: history.canGoBack, canGoForward: history.canGoForward }
+    if (!force && !document.hasFocus()) return
     viewerSetHistoryState(history.canGoBack, history.canGoForward).catch(() => {})
   }
 
@@ -77,6 +81,14 @@ export function createViewerNavigation<OpenResult>(deps: ViewerNavigationDeps<Op
     /** A linked file is opening; the current one stays up meanwhile. */
     get navigating() {
       return navigating
+    },
+    /** Whether there's a document to step back to, as Go > Back shows it. */
+    get canGoBack() {
+      return steps.canGoBack
+    },
+    /** Whether there's a document to step forward to, as Go > Forward shows it. */
+    get canGoForward() {
+      return steps.canGoForward
     },
 
     /** The window's first document, the history's only entry. */

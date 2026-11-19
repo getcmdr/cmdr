@@ -2,11 +2,11 @@
 //! a window other than the main one.
 //!
 //! The main bar's Edit items are Custom (`menu_handlers.rs` says why), so outside the main window
-//! nothing does the text edit for them: the bar takes the accelerator before the page sees the
-//! key, and the item's handler is the key's only road. macOS sends the selector down the responder
-//! chain; Linux asks the focused window's WebKitGTK view to run the editing command (verified with
-//! real X keys in the Linux lane, `menu-mnemonic-mask.spec.ts`: without it, `Ctrl+X` in a Settings
-//! field reached no keydown and cut nothing, 2026-11-12). Windows has no bar yet (task 63).
+//! nothing does the text edit for them: macOS's native bar takes the accelerator before the page
+//! sees the key, and the item's handler is the key's only road. macOS sends the selector down the
+//! responder chain. Windows and Linux have no native bar: a page's pick of such a row hands the edit
+//! back to the page (`page_bar::pick`, `BarPickOutcome::TextEdit`), the one place that can reach
+//! its field, so their arms run nothing.
 
 mod platform;
 

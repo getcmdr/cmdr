@@ -271,8 +271,7 @@ paths by `materialize_test.rs`, and the git half by
   `{ status: "running" | "done" | "cancelled" | "idle" | "invalidQuery", message?: string }`.
 - `viewer_search_cancel(session_id)` → cancels running search
 - `viewer_close(session_id)` → frees resources (also signals every in-flight read to cancel)
-- `viewer_setup_menu(label)`: builds viewer menu with word wrap item
-- `viewer_set_word_wrap(label, checked)`: syncs menu state
+- `viewer_set_word_wrap(label, checked)`: syncs macOS's shared viewer bar (elsewhere the viewer page draws its own bar)
 - `viewer_forward_edit_action_to_page(action)` (in `commands/menu.rs`): sends Edit > Copy or Select all to the first responder as the native
   `copy:` / `selectAll:`, for the PDF view, whose selection only the responder chain reaches. macOS only;
   `apps/desktop/src/routes/viewer/DETAILS.md` § "Media rendering (image / PDF)"

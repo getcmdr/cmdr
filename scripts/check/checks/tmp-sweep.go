@@ -37,6 +37,8 @@ var checkRunScopedArtifacts = []*regexp.Regexp{
 	regexp.MustCompile(`^cmdr-vitest-\d+-\d+\.log$`),
 	// Playwright JSON reports: cmdr-e2e-report-<shard>-<pid>.json
 	regexp.MustCompile(`^cmdr-e2e-report-[a-z0-9]+-\d+\.json$`),
+	// The Linux lane's second launch (Windows' in-page menus): cmdr-e2e-report-linux-<pid>-in-page-menus.json
+	regexp.MustCompile(`^cmdr-e2e-report-linux-\d+-in-page-menus\.json$`),
 	// Shard and build logs: cmdr-e2e-playwright-<name>-<ts>-<pid>.log
 	regexp.MustCompile(`^cmdr-e2e-playwright-[a-z0-9-]+-\d+-\d+\.log$`),
 	// Linux lane log: cmdr-e2e-linux-<ts>.log

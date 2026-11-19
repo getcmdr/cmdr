@@ -21,8 +21,43 @@
     import { installContextMenuOwnership } from '#lib/context-menu-ownership.js'
     import WindowBoundary from '#lib/error-reporter/WindowBoundary.svelte'
     import { trackScrollbarWidth } from '#lib/ui/scrollbar-width.js'
+    import { convention } from '#lib/platform/index.js'
+    import InPageContextMenus from '#lib/context-menu/InPageContextMenus.svelte'
+    import { getCurrentWindow } from '@tauri-apps/api/window'
+    import { pageDrawsMenuBar } from '#lib/platform/index.js'
+    import { fireWindowBarKeys } from '#lib/ui/command-menu/window-bar-keys.js'
+    import { followMenuBar, pickMenuBarItem } from '#lib/tauri-commands/index.js'
+    import { getAppLogger } from '#lib/logging/logger.js'
 
     const { children }: { children?: Snippet } = $props()
+
+    /**
+     * Whether this window keeps the main bar's keys with no bar of its own: off macOS, every window
+     * but the two that draw a bar (the main window and a viewer) used to wear the main one, and its
+     * keys still fire there (`#lib/ui/command-menu/window-bar-keys.ts`).
+     */
+    function keepsMainBarKeys(): boolean {
+        if (!pageDrawsMenuBar()) return false
+        let label: string
+        try {
+            label = getCurrentWindow().label
+        } catch {
+            return false // Not in a Tauri window (tests).
+        }
+        return label !== 'main' && !label.startsWith('viewer-')
+    }
+
+    function startMainBarKeys(): () => void {
+        const log = getAppLogger('inPageMenus')
+        return fireWindowBarKeys({
+            follow: followMenuBar,
+            pick: (menuId) => {
+                pickMenuBarItem(menuId).catch((error: unknown) => {
+                    log.warn("Couldn't run a menu bar key: {error}", { error })
+                })
+            },
+        })
+    }
 
     onMount(() => {
         // No WebKit page menu ("Reload", "Inspect Element") in ANY window: text fields
@@ -47,9 +82,13 @@
         // The live `--spacing-scrollbar-width` every gutter-reserving scroller spends,
         // in every window, following a mouse plugged in or out.
         const stopScrollbarWidth = trackScrollbarWidth()
+        // After the page's own keydown handlers (a child's render attaches them first), so a key
+        // the page takes stays the page's.
+        const stopMainBarKeys = keepsMainBarKeys() ? startMainBarKeys() : null
         return () => {
             uninstallContextMenuOwnership()
             stopScrollbarWidth()
+            stopMainBarKeys?.()
         }
     })
 </script>
@@ -58,4 +97,8 @@
      window impossible in all of them. `apps/desktop/src/DETAILS.md` § "Error boundaries". -->
 <WindowBoundary>
     {@render children?.()}
+    <!-- Where the page draws its right-click menus (Windows), every window's one menu. `#lib/context-menu/`. -->
+    {#if convention('contextMenus') === 'inPage'}
+        <InPageContextMenus />
+    {/if}
 </WindowBoundary>

@@ -21,6 +21,7 @@ import type {
   WriteProgressEvent,
 } from '#lib/ipc/bindings.js'
 import { oneCopyingFile } from '#lib/file-operations/transfer-tree/fixtures/one-copying-file.js'
+import { withPlatform } from '#lib/platform/test-platform.js'
 
 const cancelOperations = vi.fn((_ids: string[]) => Promise.resolve())
 const cancelOperation = vi.fn((_id: string) => Promise.resolve())
@@ -384,6 +385,35 @@ describe('queue window keyboard', () => {
 
     expect(selectedCountText()).toContain('3')
     expect(rowFor('op-4')?.hasAttribute('aria-selected')).toBe(false)
+  })
+
+  // Regression anchor (review of #1265): off macOS no bar takes the key first, so the keydown is
+  // its only road there, and it used to run only with focus in the grid. From a toolbar button it
+  // selected the page's text instead of the rows.
+  it('⌘A (the key road) checks every row with focus on a toolbar button too', async () => {
+    const undoPlatform = withPlatform('macos')
+    await renderPage(three)
+    target.querySelector<HTMLButtonElement>('.toolbar button:not(:disabled)')?.focus()
+    expect(document.activeElement?.tagName).toBe('BUTTON')
+
+    press({ key: 'a', code: 'KeyA', metaKey: true })
+
+    expect(selectedCountText()).toContain('3')
+    undoPlatform()
+  })
+
+  it('⌘A leaves a text field’s own select all alone', async () => {
+    const undoPlatform = withPlatform('macos')
+    await renderPage(three)
+    const field = document.createElement('input')
+    target.appendChild(field)
+    field.focus()
+
+    press({ key: 'a', code: 'KeyA', metaKey: true })
+
+    expect(selectedCountText() ?? '').not.toContain('3')
+    field.remove()
+    undoPlatform()
   })
 
   it('⌫ cancels the cursor row with no confirmation, like its Cancel button', async () => {

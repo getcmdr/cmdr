@@ -269,6 +269,56 @@ async fn no_proxy_sends_a_host_direct_past_both_proxies() {
     assert!(proxy_seen.lock().expect("an unpoisoned test log").is_empty());
 }
 
+/// An `https://` route (a PAC's `HTTPS host:port`, on Windows) reaches the proxy as TLS: the first
+/// byte reqwest sends it is a TLS record header (`0x16`, a handshake), ❌ never a plain `GET` or
+/// `CONNECT` line that would hand a TLS port the request in the clear.
+#[tokio::test]
+async fn a_system_https_proxy_is_spoken_to_over_tls() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.expect("a loopback port");
+    let proxy = format!("https://{}", listener.local_addr().expect("a bound address"));
+    let client = builder_with(env(&[]), Arc::new(FixedSystem(Route::Proxy(proxy))))
+        .build()
+        .expect("a client");
+    let request = tokio::spawn(async move { body(&client, "http://cmdr.invalid/tls").await });
+    let (mut socket, _) = listener.accept().await.expect("reqwest dials the proxy");
+    let first = read_exact::<1>(&mut socket).await.expect("a first byte");
+    assert_eq!(first, [0x16], "a TLS handshake record, not {:?}", char::from(first[0]));
+    // The fake proxy speaks no TLS, so the request itself fails; only its first byte mattered.
+    drop(socket);
+    assert!(request.await.expect("the request task").is_err());
+}
+
+/// A proxy that wants Windows' sign-in (NTLM or Negotiate, which reqwest doesn't speak) refuses
+/// the tunnel, and the request fails at once with reqwest's error: no hang, no retry loop
+/// (`DETAILS.md` § "Known limits").
+#[tokio::test]
+async fn a_proxy_wanting_ntlm_fails_the_request_at_once() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.expect("a loopback port");
+    let proxy = format!("http://{}", listener.local_addr().expect("a bound address"));
+    tokio::spawn(async move {
+        while let Ok((mut socket, _)) = listener.accept().await {
+            let mut head = Vec::new();
+            let mut byte = [0u8; 1];
+            while !head.ends_with(b"\r\n\r\n") && socket.read(&mut byte).await.unwrap_or(0) == 1 {
+                head.push(byte[0]);
+            }
+            let _ = socket
+                .write_all(b"HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: NTLM\r\nProxy-Authenticate: Negotiate\r\nContent-Length: 0\r\n\r\n")
+                .await;
+        }
+    });
+    let client = builder_with(env(&[]), Arc::new(FixedSystem(Route::Proxy(proxy))))
+        .build()
+        .expect("a client");
+    let answer = tokio::time::timeout(
+        std::time::Duration::from_secs(10),
+        body(&client, "https://cmdr.invalid/license"),
+    )
+    .await
+    .expect("an answer well inside 10 s, not a hang");
+    assert!(answer.is_err(), "{answer:?}");
+}
+
 /// A system layer that records each URL reqwest asks about and answers direct.
 #[derive(Default)]
 struct RecordingSystem(Mutex<Vec<Url>>);

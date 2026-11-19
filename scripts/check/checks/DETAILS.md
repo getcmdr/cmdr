@@ -2976,7 +2976,7 @@ Four things that detection has to get right, each learned from a miss:
   perfectly fine test lines.
 - **The gate walk balances brackets rather than pattern-matching continuation lines.** The gate can sit above a
   multi-line `#[cfg_attr(feature = "testing", allow(...))]`, whose inner `)` lines match no enumerable shape; stopping
-  there reports the most carefully gated code in the tree (`thread_qos.rs`).
+  there reports the most carefully gated code in the tree (the old `thread_qos.rs`, before its seam).
 
 **Decision**: `bare-poll` check to catch silently-passing E2E tests. **Why**: Cmdr's `pollUntil` helper (and its
 wrappers `pollFs`, `pollUntilValue`, `pollActiveMode`, `pollOverlayGone`, `pollFocusedPane`) returns `false` on timeout

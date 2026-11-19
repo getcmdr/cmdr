@@ -1,3 +1,5 @@
-//! Linux: no clipboard reader or writer yet (`text/uri-list` is the one to add).
+//! Linux: the clipboard's plain text through `arboard` (`arboard_text.rs`); no file reader or
+//! writer yet (`text/uri-list` is the one to add).
 
-pub(crate) use super::unsupported::{paste_as_file, read_file_urls, read_text, write_file_urls};
+pub(crate) use super::arboard_text::read_text;
+pub(crate) use super::unsupported::{paste_as_file, read_file_urls, write_file_urls};

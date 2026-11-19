@@ -421,8 +421,9 @@ the Mac markup and keys, so a convention change can't move them unnoticed.
   as its key once its letters are taken. Without the guard, typing é in a dialog field could press it.
 - Decision/Why: Windows moves to underlines (D5 in `docs/specs/windows-port-plan.md`, David, 2026-11-18, reversing the
   earlier keytips): they match the in-page menu bar's, and Windows' "Underline access keys" setting governs them.
-- Gotcha: Windows' native menu bar takes a lone Alt press (Alt, release, focuses the bar) until task 63 replaces it with
-  the in-page bar (unverified on Windows for dialogs).
+- Gotcha: a lone Alt in a dialog is the in-page bar's to ignore (it's inert under a dialog), and on Windows the window's
+  `SC_KEYMENU` guard keeps it from Windows' own menu loop (`apps/desktop/src-tauri/src/platform/windows/keymenu.rs`;
+  unverified on Windows for dialogs).
 
 ### Scrim clicks
 
@@ -1505,6 +1506,24 @@ the page: the in-window bar and its flyouts (D5's `windowMenuBar`, task 63 of `d
 Windows' right-click menus (`contextMenus: 'inPage'`), and the browser demo's macOS bar and menus. One implementation
 for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu look tokens).
 
+- **Where**: the main window (`apps/desktop/src/routes/(main)/MainMenuBar.svelte`) and the viewer
+  (`apps/desktop/src/routes/viewer/ViewerMenuBar.svelte`) mount the bar under `pageDrawsMenuBar()` (every menu model but
+  macOS's system bar); the Debug > Components catalog shows it on any platform. A bar with no rows draws nothing (the
+  browser demo answers none: its own strip is the page's bar).
+- **A shown chord fires** (`command-menu/bar-keys.ts`): no native bar registers anything off macOS, so the page runs
+  every Ctrl or Alt chord a row shows. A bare key a row shows (Tab, F5, `*`, `+`) stays the page's, as a native bar only
+  ever displayed those (`apps/desktop/src-tauri/src/menu/CLAUDE.md`). Regression anchor (review of #1271): firing Switch
+  pane's Tab in Settings swallowed every Tab there, so keyboard focus couldn't move. The main window's dispatcher does
+  it through the commands. The viewer (`ViewerMenuBar.svelte`) and every window that used to wear the main bar
+  (Settings, the queue, Keyboard shortcuts, Debug, through the root layout and `command-menu/window-bar-keys.ts`, which
+  draw no bar) pick the row whose `ariaKeyshortcuts` the keypress is, through `pickMenuBarItem`, the handler a native
+  accelerator reached: Ctrl+W closes them, Ctrl+, opens Settings, a file-scoped row stays a no-op outside the main
+  window. A key the page took (`defaultPrevented`), the browser's own edit keys (cut, copy, paste, select all, undo,
+  redo), and in a text field typing and the native text keys stay the page's. `bar-keys.test.ts` proves it for every row
+  the backend shows, from `crates/cmdr-menu/src/page/bar_keys.tsv` (written by the Rust side), in all three windows'
+  roads.
+  - Gotcha/Why: the listener must come after the page's own: the root layout's `onMount` runs after the page attached
+    its handlers, and `ViewerMenuBar`'s `<svelte:window>` renders after the viewer page's.
 - **Public API**:
   - `<MenuBar menus onPick ariaLabel flavor? keyScope? inert? takesWindowKeys? class?>`: `menus` is `get_menu_bar`'s
     answer kept live by the caller (`followMenuBar` from `#lib/tauri-commands` runs the ordering contract), `onPick(id)`
@@ -1514,7 +1533,19 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
   - `createContextMenu({ onPick, flavor?, accessKeys?, onClose? })` (`command-menu/context-menu.svelte.ts`) and one
     `<ContextMenu {menu}>` per window; `menu.open({ rows, at, fromKeyboard, anchorElement?, label? })` with the rows
     `open_context_menu_in_page` answered, its `anchor` or the pointer as `at`, and `onPick` sending
-    `pickContextMenuItem(token, id)`.
+    `pickContextMenuItem(token, id)`. `onClose({ picked })` fires on every close, before `onPick` when a pick closed it.
+    The desktop's windows don't call this themselves: `#lib/context-menu/` owns the one per window.
+  - `focusHolder` on `open` (a text field's edit menu): that element keeps DOM focus the whole time, the rows never take
+    it, the cursor is its `aria-activedescendant`, every key stays out of it, and a close restores nothing (focus never
+    left). Gotcha/Why: a restore sent a field inside the explorer (the rename editor) to the focus home's list, which
+    cancelled the rename; caught by the Linux in-page E2E group. A press anywhere on a surface is `preventDefault`ed on
+    `pointerdown`, so the page sees no `mousedown` and focus never moves. The house `Menu`'s outside-press check counts
+    `[data-command-menu="context"]` as its own, so a field inside one survives a pick.
+  - The bar does the same on its own (`MenuBarController.fieldHolder`): taking the keyboard from a text field (a click
+    on a title, Alt+letter, F10), it leaves focus in the field, opens every menu with it as `focusHolder`, makes the
+    keyboard's title the field's `aria-activedescendant` (drawn as focused, `.is-keyboard`), keeps every key it doesn't
+    use out of the field, and restores nothing on letting go. Regression anchor (review of #1271): a bar menu took focus
+    from the inline rename, whose blur cancelled it, so Edit > Paste from the bar had no field left to act on.
 - **Module map** (`command-menu/`): `rows.ts` (pure: labels, the live-row walk, access keys, the Mac shortcut glyphs),
   `menu-stack.svelte.ts` (the open surfaces and their cursors, the submenu delay), `menu-bar.svelte.ts` and
   `context-menu.svelte.ts` (each owner's keys, focus, and dismissal), `MenuSurfaces.svelte` / `MenuSurface.svelte` (the
@@ -1530,10 +1561,10 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
   Home/End, Enter / Space pick, Esc backs out one level then hands focus back (`focus-restore.ts`, so a pane's list goes
   through the explorer's own refocus), Tab leaves. The keyboard walks the deepest surface with a cursor: a submenu the
   pointer only hovered open has none, so ↓ walks its parent and closes it, as on Windows.
-- Gotcha: a lone Alt keydown is never `preventDefault`ed or stopped: the page must still see its keyup, and task 63 step
-  6's `SC_KEYMENU` guard relies on the page acting on that release. A lone Alt doesn't count once another key came
-  between press and release, AltGr (Ctrl+Alt) never does, and window blur resets it (WebView2 sends no keyup then).
-  Alt+Space, Alt+F4, and Shift+F10 pass through untouched.
+- Gotcha: a lone Alt keydown is never `preventDefault`ed or stopped: the page must still see its keyup, and Windows'
+  `SC_KEYMENU` guard (`apps/desktop/src-tauri/src/platform/windows/keymenu.rs`) relies on the page acting on that
+  release. A lone Alt doesn't count once another key came between press and release, AltGr (Ctrl+Alt) never does, and
+  window blur resets it (WebView2 sends no keyup then). Alt+Space, Alt+F4, and Shift+F10 pass through untouched.
 - **Keyboard cues** (`keyboard-cues.ts`, for dialogs too): `afterKeyboardUse` (Windows): a surface opened from the
   keyboard shows them, one a click opened shows them after the first key, then for its life; `whileAltHeld` (Linux):
   while Alt is held alone; the `underline-access-keys` class shows them always, followed live. The bar at rest

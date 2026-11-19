@@ -118,6 +118,8 @@ risk.
   - **Drag and drop in** opens the normal transfer confirmation.
   - **Process launches pass paths as argv**, never through a shell string. AppleScript takes paths through `on run argv`
     or `quoted form of`.
+  - **A helper Cmdr finds comes only from folders the user or an administrator controls** (`docs/security.md` § Helper
+    tools).
 - **Residual risk**:
   - With MCP turned on, a holder of the token can work the app and read Cmdr's own views and what it shows, and can open
     dialogs a person confirms. It can't read file contents or confirm a dialog itself. Direct mode, which can, exists

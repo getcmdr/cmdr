@@ -13,7 +13,7 @@
     import type { CommandScope } from '#lib/commands/types.js'
     import { convention } from '#lib/platform/conventions.js'
     import { reservedAccessKeys } from './access-keys'
-    import { isAnySoftDialogOpen } from './open-dialogs.svelte'
+    import { isAnySoftDialogOpenBesides } from './open-dialogs.svelte'
     import MenuSurfaces from './command-menu/MenuSurfaces.svelte'
     import { createMenuBar, titleId } from './command-menu/menu-bar.svelte'
     import { labelParts, rowLabelText, type MenuFlavor } from './command-menu/rows'
@@ -37,6 +37,11 @@
         takesWindowKeys?: boolean
         /** Extra classes on the bar and its menus: a look of its own (the demo's macOS bar). */
         class?: string
+        /**
+         * Hears where focus was when the bar took the keyboard, and `null` once it lets go: the bar
+         * moves focus into itself, so a row that follows a field's focus reads this instead.
+         */
+        onFocusOrigin?: (origin: Element | null) => void
     }
 
     const {
@@ -48,6 +53,7 @@
         inert = false,
         takesWindowKeys = true,
         class: lookClass = '',
+        onFocusOrigin,
     }: Props = $props()
 
     const uid = $props.id()
@@ -57,7 +63,10 @@
 
     // Under a dialog the desktop bar goes inert, as Win32 disables an owner window's bar; the Mac
     // bar stays usable, as macOS's own does over a sheet, its refused rows greyed by the backend.
-    const isInert = $derived(inert || (flavor === 'desktop' && isAnySoftDialogOpen()))
+    // The inline rename is a soft dialog only so it can be seen and confirmed (`rename-editor-presence.ts`):
+    // the bar stays live over it, so its Edit rows reach the name field. Regression anchor (review of
+    // #1271): an inert bar sent a title click to the page behind, which the rename read as a click away.
+    const isInert = $derived(inert || (flavor === 'desktop' && isAnySoftDialogOpenBesides('rename')))
 
     const bar = createMenuBar({
         getMenus: () => menus,
@@ -76,6 +85,14 @@
     // Once per mount: untracked, or a state read inside would tear the listeners down mid-use.
     $effect(() => untrack(() => bar.attach()))
 
+    // The focus the bar took, for a caller whose rows follow a field's focus.
+    $effect(() => {
+        const origin = bar.focusOrigin
+        untrack(() => {
+            onFocusOrigin?.(origin)
+        })
+    })
+
     // A modal surface coming up takes the bar's keyboard and closes its menu (the desktop flavor).
     $effect(() => {
         if (isInert) untrack(() => {
@@ -91,13 +108,27 @@
         })
     })
 
-    // The keyboard's title holds focus while no menu is open (an open menu holds it itself).
+    // The keyboard's title holds focus while no menu is open (an open menu holds it itself). Where a
+    // text field keeps focus (`bar.fieldHolder`), the title is its `aria-activedescendant` instead.
     $effect(() => {
         const index = bar.focusIndex
         if (!bar.active || bar.openIndex !== null) return
         const title = titleElements[index]
-        if (title && document.activeElement !== title) title.focus({ preventScroll: true })
+        if (!title) return
+        const holder = bar.fieldHolder
+        if (holder) {
+            holder.setAttribute('aria-activedescendant', title.id)
+            return () => {
+                holder.removeAttribute('aria-activedescendant')
+            }
+        }
+        if (document.activeElement !== title) title.focus({ preventScroll: true })
     })
+
+    /** The title the keyboard is on while a text field keeps focus, drawn as a focused one. */
+    function isKeyboardTitle(index: number): boolean {
+        return bar.fieldHolder !== null && bar.active && bar.openIndex === null && index === bar.focusIndex
+    }
 
     function tabIndexOf(index: number): 0 | -1 {
         // A Mac bar is a tab stop at its first title, as the demo's always was; Windows' isn't one
@@ -125,6 +156,7 @@
             id={titleId(barId, index)}
             class="menu-bar-title"
             class:is-open={bar.openIndex === index}
+            class:is-keyboard={isKeyboardTitle(index)}
             role="menuitem"
             tabindex={tabIndexOf(index)}
             aria-haspopup="menu"
@@ -195,7 +227,8 @@
     }
 
     /* The keyboard's title: its own fill (none on Windows) and the system focus rings. */
-    .menu-bar-title:focus-visible {
+    .menu-bar-title:focus-visible,
+    .menu-bar-title.is-keyboard {
         background: var(--color-menu-bar-item-bg-focus);
         box-shadow:
             inset 0 0 0 var(--spacing-menu-focus-outer) var(--color-menu-focus-outer),

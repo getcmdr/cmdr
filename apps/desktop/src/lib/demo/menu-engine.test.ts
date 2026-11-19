@@ -69,22 +69,6 @@ describe('menu engine', () => {
     expect(engine.platforms).toEqual(['windows'])
   })
 
-  // The Linux shortcut recorder warns about a combo the bar's Alt+letter takes: the letters are
-  // the ones the drawn bar binds, by the app's own access-key rule over its titles.
-  it('names the bar titles’ Alt letters off the Mac, and none on it', async () => {
-    engine.menus = ['File', 'Edit', 'Find', 'View'].map((text) => ({ id: text, title: { text }, rows: [] }))
-    const linux = startMenuEngine('linux')
-    await linux.ready
-    expect(await linux.titleMnemonics()).toEqual([
-      { letter: 'f', menu: 'File' },
-      { letter: 'e', menu: 'Edit' },
-      { letter: 'i', menu: 'Find' },
-      { letter: 'v', menu: 'View' },
-    ])
-    const mac = startMenuEngine('macos')
-    expect(await mac.titleMnemonics()).toEqual([])
-  })
-
   it('draws nothing, claims nothing, and refuses a push when the engine fails to load', async () => {
     engine.failInit = true
     vi.spyOn(console, 'error').mockImplementation(() => undefined)

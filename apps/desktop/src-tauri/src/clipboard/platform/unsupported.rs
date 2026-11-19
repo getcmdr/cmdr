@@ -19,11 +19,6 @@ pub(crate) fn read_file_urls(_app: AppHandle) -> Result<Vec<PathBuf>, String> {
 }
 
 /// Not supported yet.
-pub(crate) fn read_text(_app: AppHandle) -> Result<Option<String>, String> {
-    Err("Clipboard operations are not yet supported on this platform".to_string())
-}
-
-/// Not supported yet.
 pub(crate) async fn paste_as_file(
     _app: AppHandle,
     _volume_id: Option<String>,

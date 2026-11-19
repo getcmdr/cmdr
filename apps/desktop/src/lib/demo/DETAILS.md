@@ -97,12 +97,11 @@ that made it, so two frames can hold the same id. `channels.ts` makes it page-wi
   refusal: the creation promise rejects with a string, which reaches the opener as `tauri://error`, so the app's own
   failure handling runs and no panel appears.
 - The viewer runs on the WASM engine's viewer (`crates/cmdr-listing-wasm/src/viewer.rs`), so the route is unmodified:
-  its commands route to the engine like the listing's, its native-menu plumbing (`viewer_setup_menu`,
-  `viewer_set_word_wrap`, `viewer_set_search_input_focused`, `viewer_set_history_state`) is silent, and a closing panel
-  calls the engine's `closeViewerWindow` (the app's window-destroyed hook), freeing its sessions and media tokens. An
-  engine event with a target (`viewer-media-load`) reaches that window only. The engine's `demo://open-url` notice goes
-  through the same `openInBrowserTab` as every other link (§ Links); `demo://media-token-dropped` never reaches a
-  listener.
+  its commands route to the engine like the listing's, its native-menu plumbing (`viewer_set_word_wrap`,
+  `viewer_set_search_input_focused`, `viewer_set_history_state`) is silent, and a closing panel calls the engine's
+  `closeViewerWindow` (the app's window-destroyed hook), freeing its sessions and media tokens. An engine event with a
+  target (`viewer-media-load`) reaches that window only. The engine's `demo://open-url` notice goes through the same
+  `openInBrowserTab` as every other link (§ Links); `demo://media-token-dropped` never reaches a listener.
 - Verified in headless Chromium (2026-11-04, local `build:demo`): F3 on `notes.md` renders its Markdown; text mode, ⌘F
   search with its match count, hex, and a 38 MB generated `Cmdr.dmg` in streaming text all work, and Esc closes the
   panel, with `__cmdrDemo.unanswered` empty throughout.
@@ -183,8 +182,11 @@ that made it, so two frames can hold the same id. `channels.ts` makes it page-wi
 - Conventions follow the platform too (`visitorConventions`): the desktop's own row for the visitor's OS, menu model
   included (task 63 step 11 of `docs/specs/windows-port-plan.md`), and the desktop-neutral Linux row for a Linux visitor
   (a page can't tell GNOME from KDE). So a Mac visitor gets `systemMenuBar` (the macOS bar), a Windows or Linux one
-  `windowMenuBar` (D5's in-window bar), and a Windows one `contextMenus: 'inPage'`, which the demo's right-click menus
-  are for everyone anyway.
+  `windowMenuBar` (D5's in-window bar).
+  - Decision: `contextMenus: 'native'` is pinned for everyone. Why: the demo answers each `show_*` popup itself
+    (`context-menu.ts`) and has no `open_context_menu_in_page`, so Windows' `inPage` row opened no right-click menu at
+    all for a Windows visitor (caught in review of #1264; `platform.test.ts` and the website suite's right-click spec
+    pin it). It follows the visitor once the demo answers the in-page lane.
 - The look follows the platform with no pin: `getLook()` is the copy platform, the visitor's OS, so `data-look` keys the
   menu tokens (`app-menu.css`) and the control tokens (`app-controls*.css`) to it. A Windows visitor's bar, menus,
   buttons, fields, and dialogs wear Windows 11's (the 40 px bar included: `--cmdr-demo-window-top` reads the look's own
@@ -234,11 +236,6 @@ that made it, so two frames can hold the same id. `channels.ts` makes it page-wi
 - **Clicks**: `execute-command`, `settings-changed`, `view-mode-changed`, and `menu-sort` go to the main window, as
   `handle_menu_event`'s `emit_to("main")`. With a panel in front, Close tab closes it and an edit goes to its frame
   (`document.execCommand`, best effort: browsers refuse a scripted paste).
-- **Title mnemonics**: `get_menu_bar_title_mnemonics` (the Linux shortcut recorder's warning about a combo the bar's
-  Alt+letter takes) is answered from the drawn bar, not the engine (`MENU_PAGE_COMMANDS`): the titles in the bar's words
-  through the app's own `allocateAccessKeys`, exactly the letters `MenuBar.svelte` binds; none for a Mac visitor, as the
-  desktop answers on macOS. Why not the engine: the words are the page's (`getMessage`), and the desktop's Rust
-  allocator reads its own catalog.
 - **Keys**: the component's, in the visitor's flavor. On a Mac, ⌃F2 focuses the bar (macOS's own shortcut for it), the
   bar stays usable while a dialog is up, as macOS's does, and OS rows (Services, Hide, Quit, Undo, Minimize) draw
   greyed. Elsewhere a lone Alt or F10 focuses it, Alt plus a title's underlined letter opens a menu, and a modal surface

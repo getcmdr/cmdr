@@ -131,3 +131,56 @@ describe('resolveGlobalContextMenuAction', () => {
     expect(resolveGlobalContextMenuAction(new MouseEvent('contextmenu'))).toBe('suppress')
   })
 })
+
+/** Where the page draws its menus (Windows), a text field's menu is Cmdr's in-page one, and a control without text gets none. */
+describe('resolveGlobalContextMenuAction where menus are in-page', () => {
+  const resolveInPage = (el: Element) => resolveGlobalContextMenuAction(rightClickOn(el), 'inPage')
+
+  function input(type: string, setup: (el: HTMLInputElement) => void = () => {}): HTMLInputElement {
+    const el = document.createElement('input')
+    el.type = type
+    setup(el)
+    return el
+  }
+
+  it.each(['text', 'search', 'url', 'tel', 'email', 'password', 'number'])(
+    'opens the in-page edit menu on a %s input',
+    (type) => {
+      expect(resolveInPage(input(type))).toBe('in-page-text-menu')
+    },
+  )
+
+  it('opens it on a <textarea>, a read-only field, and inside a contenteditable host', () => {
+    expect(resolveInPage(document.createElement('textarea'))).toBe('in-page-text-menu')
+    expect(
+      resolveInPage(
+        input('text', (el) => {
+          el.readOnly = true
+        }),
+      ),
+    ).toBe('in-page-text-menu')
+    const host = document.createElement('div')
+    host.contentEditable = 'true'
+    const inner = document.createElement('span')
+    host.appendChild(inner)
+    document.body.appendChild(host)
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+    inner.dispatchEvent(event)
+    host.remove()
+    expect(resolveGlobalContextMenuAction(event, 'inPage')).toBe('in-page-text-menu')
+  })
+
+  it('gives a disabled field, a checkbox, a slider, and a <select> no menu at all', () => {
+    const disabled = input('text', (el) => {
+      el.disabled = true
+    })
+    expect(resolveInPage(disabled)).toBe('no-menu-in-control')
+    expect(resolveInPage(input('checkbox'))).toBe('no-menu-in-control')
+    expect(resolveInPage(input('range'))).toBe('no-menu-in-control')
+    expect(resolveInPage(document.createElement('select'))).toBe('no-menu-in-control')
+  })
+
+  it("suppresses everywhere else, so a row's own handler opens Cmdr's menu", () => {
+    expect(resolveInPage(document.createElement('div'))).toBe('suppress')
+  })
+})

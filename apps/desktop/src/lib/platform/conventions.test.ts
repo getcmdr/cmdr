@@ -4,6 +4,7 @@ import {
   CONVENTIONS_GLOBAL,
   CONVENTIONS_ON,
   FALLBACK_CONVENTIONS,
+  pageDrawsMenuBar,
   platformConventions,
   type ConventionsDesktop,
 } from './index.js'
@@ -48,6 +49,13 @@ describe('platformConventions', () => {
   it('keeps an injected null desktop: off Linux there is none', () => {
     onTestFinished(withConventions('windows'))
     expect(convention('linuxDesktop')).toBeNull()
+  })
+})
+
+describe('pageDrawsMenuBar', () => {
+  it.each(desktops)('answers for %s: the page draws the bar everywhere but macOS', (desktop) => {
+    onTestFinished(withConventions(desktop))
+    expect(pageDrawsMenuBar()).toBe(desktop !== 'macos')
   })
 })
 

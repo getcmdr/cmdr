@@ -22,13 +22,23 @@ consequences the code is shaped around:
   configured (`set_adb_binary_override`, from `fileOperations.adbBinaryPath`) first, then `$ADB`, then this OS's search:
   `$PATH`, `$ANDROID_HOME/platform-tools`, `$ANDROID_SDK_ROOT/platform-tools`, Android Studio's default SDK
   (`~/Library/Android/sdk` on macOS, `~/Android/Sdk` on Linux, `%LOCALAPPDATA%\Android\Sdk` on Windows), then the
-  package-manager bins (Homebrew's two on macOS, `/usr/local/bin` on Linux), all as `adb.exe` on Windows. Each OS's list
-  is data in `src/server/binary_search.rs` (tested for all three on every OS), and `src/server/platform/` picks this
-  OS's and says what's runnable. ❗ The settings description (`settings.fileOperations.adbBinaryPath.description`) names
-  only what this search covers: change both together. ❗ The override wins only while it is RUNNABLE: a path that went
-  stale (an SDK moved, a typo saved in Settings) falls through to the search rather than making every device vanish. No
-  binary is `AdbConnectError::AdbNotInstalled`; a second refusal after a start is `ServerUnreachable`, and both are the
-  user's to look at. `AdbEndpoint::at(addr)` (fixtures, a forwarded port) never starts anything.
+  package-manager bins (Homebrew's two on macOS, `/usr/local/bin` on Linux; on Windows WinGet's
+  `%LOCALAPPDATA%\Microsoft\WinGet\Links` and Scoop's `~\scoop\shims`, each already on `PATH` but not on the `PATH` a
+  Cmdr started before the install keeps), all as `adb.exe` on Windows. ❗ Every searched folder is one only the user or
+  an administrator controls (`docs/security.md` § "Helper tools"), pinned by
+  `binary_search_test.rs::windows_searches_only_folders_the_user_or_an_admin_controls`. ❌ Not Chocolatey's
+  `C:\ProgramData\chocolatey\bin`: on a default Windows install any standard user can create folders under
+  `C:\ProgramData` and owns what they make (`BUILTIN\Users:(CI)(WD,AD)` plus `CREATOR OWNER:(F)`, verified with `icacls`
+  on Windows 10 22H2, mami, 2026-11-19), and a real Chocolatey install puts its `bin` on the machine `PATH`. Each OS's
+  list is data in `src/server/binary_search.rs` (tested for all three on every OS), and `src/server/platform/` picks
+  this OS's, says what's runnable, and starts the tool quietly: `CREATE_NO_WINDOW` on Windows, since `adb.exe` is a
+  console program and a GUI process starting one otherwise gets a console window flashed open (verified on Windows 10
+  22H2, mami, the child's `GetConsoleWindow` answering null, 2026-11-19). ❗ The settings description
+  (`settings.fileOperations.adbBinaryPath.description`) names only what this search covers: change both together. ❗ The
+  override wins only while it is RUNNABLE: a path that went stale (an SDK moved, a typo saved in Settings) falls through
+  to the search rather than making every device vanish. No binary is `AdbConnectError::AdbNotInstalled`; a second
+  refusal after a start is `ServerUnreachable`, and both are the user's to look at. `AdbEndpoint::at(addr)` (fixtures, a
+  forwarded port) never starts anything.
 - **One socket per operation, no shared session.** Every sync operation opens its own `sync:` socket and closes it with
   the operation. A shared session behind a mutex deadlocks a same-volume copy (the source stream holds it while the
   destination write waits) and parks every listing while a transfer is paused mid-file. The server multiplexes sockets

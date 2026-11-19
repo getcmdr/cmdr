@@ -137,6 +137,8 @@ All under `apps/desktop/src/lib/`.
   `apps/desktop/src/lib/reveal/CLAUDE.md`
 - `cli-command/`: macOS-only. The app menu's "Install “cmdr” command" toggle and its palette twin: what a click does and
   the toast after it. The machine-facing half is `src-tauri/src/cli/`. See `apps/desktop/src/lib/cli-command/CLAUDE.md`
+- `context-menu/`: Windows' in-page right-click menus (`contextMenus: 'inPage'`): the window's one menu, the fork every
+  `show_*` wrapper takes, and the text fields' edit menu. See `apps/desktop/src/lib/context-menu/CLAUDE.md`
 - `ui/`: Shared UI primitives: ModalDialog, Button, AlertDialog, Notification, dialog registry, `SectionCard`
 - `routes/(main)/`: The main route: app orchestrator mounting the dual-pane explorer plus top-level dialogs
 - `routes/dev/components/`: Dev-only catalog of every `lib/ui/` primitive (Storybook replacement), in the Debug window

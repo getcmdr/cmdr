@@ -77,6 +77,38 @@ fn a_socks_entry_routes_through_socks5_with_the_proxy_resolving_names() {
     );
 }
 
+/// A PAC's `HTTPS host:port` is a proxy spoken to over TLS, ❌ never plain HTTP to its TLS port.
+#[test]
+fn an_https_entry_routes_through_tls_to_the_proxy() {
+    let entry = Entry::Https {
+        host: "secure-proxy.test".into(),
+        port: 443,
+    };
+    assert_eq!(walk(&[entry]), Route::Proxy("https://secure-proxy.test:443".into()));
+}
+
+/// A PAC's `SOCKS4 host:port`, with the proxy resolving names, as every SOCKS route here does.
+#[test]
+fn a_socks4_entry_routes_through_socks4a() {
+    let entry = Entry::Socks4 {
+        host: "socks.test".into(),
+        port: 1080,
+    };
+    assert_eq!(walk(&[entry]), Route::Proxy("socks4a://socks.test:1080".into()));
+}
+
+/// The Windows arm swaps WPAD for the PAC it found before the walk (or drops it); one still in
+/// the list stands for nothing, so the walk moves on without asking any PAC.
+#[test]
+fn an_unresolved_auto_detect_entry_is_skipped() {
+    let pac = FakePac::answering(Some(vec![http("pac.proxy", 8080)]));
+    assert_eq!(
+        first_route(&[Entry::AutoDetect, Entry::Direct], &url(), &pac),
+        Route::Direct
+    );
+    assert!(pac.asked.borrow().is_empty());
+}
+
 #[test]
 fn credentials_and_ipv6_hosts_make_a_valid_proxy_url() {
     let entry = Entry::Http {

@@ -586,11 +586,12 @@ Two rules:
 
 ## Keyboard: no press in this suite is a real one
 
-The one exception is Linux's `helpers/x11-keys.ts`: real X key events through the packaged `xdotool` (XTest), for what
-GTK takes before the webview ever sees a keydown (the menu bar's `Alt+<letter>` mnemonics). Xvfb has no window manager,
-so `focusMainWindow` gives the biggest visible top-level window the X focus first, and an open GTK menu shows up as a
-new visible top-level window (`visibleTopLevelWindows`). `menu-mnemonic-mask.spec.ts` is its user. Not in the
-`helpers.js` barrel: it's Linux-only.
+The one exception is Linux's `helpers/x11-keys.ts`: real X key and mouse events through the packaged `xdotool` (XTest),
+for what only a real press proves: that GTK leaves a key to the page (a lone Alt, F10, an `Alt+<letter>`) and that the
+in-page menu bar answers it. Xvfb has no window manager, so `focusMainWindow` gives the biggest visible top-level window
+the X focus first, a new window (Settings, the queue) shows up as a new visible top-level window
+(`visibleTopLevelWindows`), and `clickRealAt` clicks a page point (the windows have no decorations, so a DOM rect is the
+window's own coordinates). `menu-bar.spec.ts` is its user. Not in the `helpers.js` barrel: it's Linux-only.
 
 `tauriPage.keyboard.press('Tab')` looks like Playwright's, but `@srsholmes/tauri-playwright` implements it as
 `document.activeElement.dispatchEvent(new KeyboardEvent(...))` inside the webview (read its `TauriKeyboard` class,

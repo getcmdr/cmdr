@@ -648,15 +648,35 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       and the Text size zoom.
 41. [S] Windows. File icons via `SHGetFileInfoW` / `IShellItemImageFactory`. Needs 23.
 42. [S] Windows. Clipboard (`CF_HDROP`, `Preferred DropEffect` for cut) and drag-out of plain paths (OLE). Needs 18.
+    **Plain text read done** (2026-11-19): `clipboard/platform/arboard_text.rs` answers `read_text` on Windows and Linux
+    through `arboard` (the in-page text-field Paste needs it); the file arms stay `unsupported.rs`'s.
 43. [M] Windows. Drag-out of virtual files (MTP, SMB, archives) via `CFSTR_FILEDESCRIPTORW` / `FILECONTENTS`. Needs 42.
 44. [S] Windows. Open with, default app, text editors, terminal (`SHAssocEnumHandlers`, `wt -d`). Needs 18.
 45. [S] Windows. SMB OS mounts via `WNetAddConnection2W` and Credential Manager SMB credentials. Needs 22.
 46. [S] Windows. Small backend arms: `cmdr-nfs` identity (`GetComputerNameExW`, configurable uid/gid), `cmdr-adb`
     `adb.exe` discovery, special folders (`SHGetKnownFolderPath`), thread QoS (EcoQoS, not background mode), WinHTTP
-    system proxy. Needs 8, 16. **NFS identity done** (2026-11-18): `cmdr-nfs`' `dial/platform/windows.rs` asks as
-    `nobody` with no groups, the machine name from `GetComputerNameExW(ComputerNameDnsHostname)`, and the app's
-    `this_mac_identity` reads it through `NfsIdentity::of_this_process`; a place sets its own uid and gid in the add
-    form, as on every OS.
+    system proxy. Needs 8, 16. **Done** (2026-11-19), each arm behind its seam:
+    - NFS identity (2026-11-18): `cmdr-nfs`' `dial/platform/windows.rs` asks as `nobody` with no groups, the machine
+      name from `GetComputerNameExW(ComputerNameDnsHostname)`, and the app's `this_mac_identity` reads it through
+      `NfsIdentity::of_this_process`; a place sets its own uid and gid in the add form, as on every OS.
+    - `adb.exe`: the search (already `adb.exe` and `%LOCALAPPDATA%\Android\Sdk`) adds WinGet's and Scoop's per-user
+      command folders (only folders the user or an admin controls: `docs/security.md` § "Helper tools"), and
+      `adb start-server` runs with `CREATE_NO_WINDOW` (`cmdr-adb/src/server/platform/`), so a GUI Cmdr flashes no
+      console window.
+    - Special folders: the favorites seed reads the Desktop, Documents, and Downloads known folders (`dirs`, which calls
+      `SHGetKnownFolderPath`), so OneDrive's folder backup and a moved folder seed right; the special-folder icon keys
+      already classify both spellings.
+    - Thread QoS: `cmdr_fs::thread_qos/platform/windows.rs`, `THREAD_PRIORITY_BELOW_NORMAL` plus EcoQoS (the
+      execution-speed power throttle), ❌ never background mode.
+    - System proxy: `cmdr-http` reads the user's Internet settings (`WinHttpGetIEProxyConfigForCurrentUser`) and walks
+      WPAD, the setup script, then the manual proxy and bypass list; PACs run in WinHTTP's async resolver
+      (`WinHttpGetProxyForUrlEx`, typed SOCKS and HTTPS answers) behind the shared PAC cache, and WPAD is discovered
+      once per network in the background, both dropped on a network change (`crates/cmdr-http/DETAILS.md` § "The Windows
+      answer").
+    - Verified on the builder: `docs/notes/windows-port/build-progress.md` (2026-11-19, task 46). Not verified: a real
+      proxy, PAC server, or WPAD network configured in Windows' settings (the builder's stay untouched), Windows 11's
+      EcoQoS read-back, and a WinGet / Scoop `adb` install. Left: the `cmdr-sftp` agent's Pageant support (§ "Windows
+      build state").
 47. [S] Windows. Crash minidumps (`crash-handler` + `minidumper`) and Windows-shaped crash cards in the api-server.
     Needs 23.
 48. [XS] Windows. **Done**. WebView2 specifics: every `cmdr-media` URL comes from `mediaUrl` via `convertFileSrc`
@@ -1026,10 +1046,10 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
        - Done when: flipping the Windows setting shows or hides underlines without a restart.
     6. [S] **The bar in the windows, and the hosts.**
        - Scope: the main window and the viewer draw the bar (step 4) from step 2's answer on Windows, KDE, and other
-         Linux; `menu_bar_builder.rs` builds the native bar on macOS only; Windows answers a zero-`lParam` `SC_KEYMENU`
-         itself (ported from the spike's `subclass`) so a lone Alt or F10 doesn't start the system menu loop, letting
-         Alt+Space through; `bar_parity_test.rs` narrows its registered-key checks to macOS and keeps the shown-key
-         ones.
+         Linux; `menu_bar_builder.rs` builds the native bar on macOS only; Windows answers every `SC_KEYMENU` itself
+         (ported from the spike's `subclass`: a lone Alt or F10's zero `lParam`, and an Alt+letter no title took, which
+         would otherwise beep) so the system menu loop never starts, letting Alt+Space through; `bar_parity_test.rs`
+         narrows its registered-key checks to macOS and keeps the shown-key ones.
        - Landmines: a lone Alt release that WebView2 leaves unhandled reaches `DefWindowProc` as `SC_KEYMENU` 0, which
          the guard swallows: the page must still see the keyup and focus the bar; F10 must be `preventDefault`ed by the
          page or Windows sees it too; the bar takes vertical space, so the pane height math and the E2E screenshots
@@ -1055,6 +1075,11 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
          dismissal; the demo's context-menu tests keep passing.
        - Done when: every right-click and Shift+F10 menu on the Windows build is in-page, Fluent-styled, and runs the
          same commands as before.
+       - **Frontend built** (2026-11-18), unchecked on a Windows machine: each `show_*` wrapper forks in
+         `popContextMenu`, the root layout mounts one in-page menu per window, and the Menu key joins Shift+F10. David
+         reversed the text-field landmine the same day: on Windows a text field gets the in-page edit menu too (Undo,
+         Redo, Cut, Copy, Paste, Select all), so every menu looks the same.
+         `apps/desktop/src/lib/context-menu/DETAILS.md` has it and what's unverified on WebView2.
     8. [S] **The main-menu button and "Show menu bar".**
        - Scope: the main-menu button (GNOME's default, and the KDE and Windows stand-in when the bar is hidden), the
          "Show menu bar" setting and its View row; on Windows a hidden bar shows on Alt or F10 until focus leaves.
@@ -1066,11 +1091,11 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
        doesn't (task 55's entry; `routes/(main)/text-field-gate.ts`). Tests: a Vitest case per road. Done when: both
        cases are pinned.
     10. [S] **Linux cleanup.**
-        - Scope: delete `menu/mnemonic_mask/` and its IPC, `menu-mnemonics-capture.svelte.ts`,
-          `get_menu_bar_title_mnemonics` and Settings' title-mnemonic warning, and `menu-mnemonic-mask.spec.ts`; update
-          `menu/` and `cmdr-menu`'s C+D.md and `lib/ui/DETAILS.md`'s Windows-bar gotcha.
-        - Landmines: knip and the IPC binding checks catch leftovers; the Settings warning has strings in every catalog,
-          which go with it.
+        - Scope: delete `menu/mnemonic_mask/` and its IPC, `menu-mnemonics-capture.svelte.ts`, and the mask's own
+          leftovers in `menu-bar.spec.ts` (step 6 renamed `menu-mnemonic-mask.spec.ts` to it; Settings' title-mnemonic
+          warning and `get_menu_bar_title_mnemonics` went with step 6's review: the bar reserves a window's Alt keys
+          instead); update `menu/` and `cmdr-menu`'s C+D.md and `lib/ui/DETAILS.md`'s Windows-bar gotcha.
+        - Landmines: knip and the IPC binding checks catch leftovers.
         - Tests: the Linux E2E lane (step 6's spec replaces the deleted one).
         - Done when: nothing in the tree references the mask.
     11. [S] **The demo** draws the visitor's own model with the shared component (macOS bar, Windows bar, or the Linux

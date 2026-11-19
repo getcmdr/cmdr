@@ -57,6 +57,8 @@ const macDisplayKeyNames: Record<string, string> = {
 
 /** Canonical name → the abbreviation Windows and Linux keyboards use. */
 const nonMacDisplayKeyNames: Record<string, string> = {
+  // The Menu key (the application key beside the right Ctrl), as Windows' docs name it.
+  ContextMenu: 'Menu',
   Escape: 'Esc',
   PageUp: 'PgUp',
   PageDown: 'PgDn',

@@ -293,6 +293,16 @@ matches its build mode. The production private key exists only as a Cloudflare W
 shipping a new binary. Mechanism, the rotation caveat, and the test that guards both directions:
 `apps/desktop/src-tauri/src/licensing/DETAILS.md` § Signing keys.
 
+## Helper tools
+
+We only run tools from folders the current user or an administrator controls. Cmdr starts some helpers it finds rather
+than ships (today `adb`, found by a search when no ADB server runs, at launch and with nothing verified about the
+binary), so a searched folder another account can create or write would let that account run code as whoever launches
+Cmdr. The search covers `PATH` (the user's and the machine's own choice), the user's own folders (home,
+`%LOCALAPPDATA%`), and machine-wide folders only where an administrator owns them by default. ❌ Never a folder a
+standard user can create on a default install, such as anything under `C:\ProgramData`. The list and the test that pins
+it: `crates/cmdr-adb/DETAILS.md`.
+
 ## Cloud AI egress (to the user's LLM provider)
 
 AI features deliberately send user data OFF the Mac, to the cloud AI service the user configured, with their own API

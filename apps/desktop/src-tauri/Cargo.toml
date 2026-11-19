@@ -350,19 +350,23 @@ freedesktop-icons = "0.4"
 # window Tauri hands us. Tauri and muda already link gtk 0.18 (the last gtk3-rs release), so this
 # adds no crate; the version must stay Tauri's, or `gtk_window()` returns a different type.
 gtk = "0.18"
-# Edit > Cut / Copy / Paste / Select all in a window other than the main one
-# (`menu/focused_field_edit/`): `WebViewExt::execute_editing_command` on the view Tauri hands us.
-# Tauri's wry already links webkit2gtk 2.0, so this adds no crate; the version must stay wry's, or
-# `PlatformWebview::inner()` returns a different type.
-webkit2gtk = "2.0"
+# The clipboard's plain text (`clipboard/platform/arboard_text.rs`), read off the GTK main thread.
+# Already linked through `tauri-plugin-clipboard-manager` (same version and features), so it adds
+# no crate; direct because its typed `ContentNotAvailable` tells "no text" from a failure, which
+# the plugin flattens into a string.
+arboard = { version = "3.6", default-features = false, features = ["wayland-data-control"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
+# The clipboard's plain text (`clipboard/platform/arboard_text.rs`), as on Linux. Task 42's files
+# (`CF_HDROP`, `Preferred DropEffect`) go through `windows-sys` beside it.
+arboard = { version = "3.6", default-features = false }
 # Win32 calls behind the app's `platform/` seams: the registry (device id, OS names, managed
 # policy and its change watch), `RtlGetVersion`, the memory counters, the instance lock's
 # message box, the drive table (volume GUIDs, drive types, mapped shares), the system look's
 # settings window (`WM_SETTINGCHANGE`; `WNDCLASSW` needs Gdi's brush type) and its contrast-theme
-# read (`SPI_GETHIGHCONTRAST`), and the user's languages and format locale (`intl/platform/`).
-# Already in the lockfile through the workspace crates.
+# read (`SPI_GETHIGHCONTRAST`), the user's languages and format locale (`intl/platform/`), and the
+# windows' `SC_KEYMENU` guard (`platform/windows/keymenu.rs`: comctl32's `SetWindowSubclass`, in
+# `Win32_UI_Shell`). Already in the lockfile through the workspace crates.
 windows-sys = { version = "0.61", features = [
     "Wdk_System_SystemServices",
     "Win32_Foundation",
@@ -377,6 +381,7 @@ windows-sys = { version = "0.61", features = [
     "Win32_System_SystemInformation",
     "Win32_System_Threading",
     "Win32_UI_Accessibility",
+    "Win32_UI_Shell",
     "Win32_UI_WindowsAndMessaging",
 ] }
 # The system look's WinRT half (`system_look/platform/windows/ui_settings.rs`): `UISettings` for

@@ -13,9 +13,6 @@ use crate::file_viewer::{
 };
 use cmdr_fs::deadline::{StallWatch, blocking_typed_result_until_stalled, blocking_typed_result_with_timeout};
 use log::debug;
-use tauri::Manager;
-#[cfg(not(target_os = "macos"))]
-use tauri::menu::MenuItemKind;
 
 const VIEWER_TIMEOUT: Duration = Duration::from_secs(2);
 
@@ -638,32 +635,6 @@ pub async fn viewer_reload(session_id: String) -> Result<(), ViewerError> {
     blocking_viewer_op(move || file_viewer::app_viewer().reload(&session_id)).await
 }
 
-/// Sets up a viewer-specific menu on the given window (adds "Word wrap" to View submenu).
-///
-/// macOS has no per-window menus (one app-level menu bar, tauri-apps/tauri#5768): `window.set_menu`
-/// is a no-op there. Instead the viewer menu is built once at startup and swapped app-level via
-/// `activate_window_menu("viewer")` on the viewer's focus-gain, so this command is a no-op on macOS.
-/// Linux keeps its working per-window menu.
-#[tauri::command]
-#[specta::specta]
-pub fn viewer_setup_menu(app_handle: tauri::AppHandle, label: String) -> Result<(), String> {
-    #[cfg(target_os = "macos")]
-    {
-        let _ = (&app_handle, &label);
-        Ok(())
-    }
-
-    #[cfg(not(target_os = "macos"))]
-    {
-        let window = app_handle
-            .get_webview_window(&label)
-            .ok_or_else(|| format!("Window '{}' not found", label))?;
-        let viewer_menu = crate::menu::build_viewer_menu(&app_handle).map_err(|e| e.to_string())?;
-        window.set_menu(viewer_menu.menu).map_err(|e| e.to_string())?;
-        Ok(())
-    }
-}
-
 /// Tells the viewer menu bar whether this viewer's search box holds keyboard focus, which is what
 /// decides whether its Edit > Cut and Edit > Paste look live.
 ///
@@ -685,6 +656,7 @@ pub fn viewer_set_search_input_focused(
     #[cfg(target_os = "macos")]
     {
         use crate::ignore_poison::IgnorePoison;
+        use tauri::Manager as _;
         let menu_state = app_handle.state::<crate::menu::MenuState<tauri::Wry>>();
         {
             let mut holder = menu_state.viewer_search_focus.lock_ignore_poison();
@@ -719,6 +691,7 @@ pub fn viewer_set_history_state(
     #[cfg(target_os = "macos")]
     {
         use crate::ignore_poison::IgnorePoison;
+        use tauri::Manager as _;
         let menu_state = app_handle.state::<crate::menu::MenuState<tauri::Wry>>();
         *menu_state.viewer_history.lock_ignore_poison() = crate::menu::ViewerHistoryAvailability {
             can_go_back,
@@ -739,14 +712,15 @@ pub fn viewer_set_history_state(
 /// Syncs the viewer menu "Word wrap" check state (called when toggled via keyboard).
 ///
 /// On macOS the viewer menu is shared app-level (one menu bar), so we flip the single stored
-/// `CheckMenuItem` ref in `MenuState` directly (O(1), no tree walk). On Linux the menu is per-window,
-/// so we walk that window's menu to find the item.
+/// `CheckMenuItem` ref in `MenuState` directly (O(1), no tree walk). Elsewhere the page's bar reads
+/// the viewer's own state, so this is a no-op.
 #[tauri::command]
 #[specta::specta]
 pub fn viewer_set_word_wrap(app_handle: tauri::AppHandle, label: String, checked: bool) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     {
         let _ = &label;
+        use tauri::Manager as _;
         let menu_state = app_handle.state::<crate::menu::MenuState<tauri::Wry>>();
         if let Some(check) = crate::menu::cloned_handle(&menu_state.viewer_word_wrap) {
             check.set_checked(checked).map_err(|e| e.to_string())?;
@@ -754,28 +728,11 @@ pub fn viewer_set_word_wrap(app_handle: tauri::AppHandle, label: String, checked
         Ok(())
     }
 
+    // Off macOS the viewer page draws its own bar from its own state (`get_viewer_menu_bar`), so
+    // there's no item to flip.
     #[cfg(not(target_os = "macos"))]
     {
-        let window = app_handle
-            .get_webview_window(&label)
-            .ok_or_else(|| format!("Window '{}' not found", label))?;
-        let Some(menu) = window.menu() else {
-            return Ok(());
-        };
-        for item in menu.items().map_err(|e| e.to_string())? {
-            if let MenuItemKind::Submenu(submenu) = item
-                && submenu.text().map_err(|e| e.to_string())? == "View"
-            {
-                for sub_item in submenu.items().map_err(|e| e.to_string())? {
-                    if let MenuItemKind::Check(check) = sub_item
-                        && check.id().as_ref() == crate::menu::VIEWER_WORD_WRAP_ID
-                    {
-                        check.set_checked(checked).map_err(|e| e.to_string())?;
-                        return Ok(());
-                    }
-                }
-            }
-        }
+        let _ = (&app_handle, &label, checked);
         Ok(())
     }
 }
