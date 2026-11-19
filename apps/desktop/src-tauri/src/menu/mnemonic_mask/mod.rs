@@ -6,7 +6,7 @@
 //! blocks its parent's bar; Cmdr's dialogs are web content, so the window does it by hand: while
 //! one is up, its `GtkWindow` mnemonic modifier becomes a mask no keyboard produces, and it goes
 //! back to Alt when the last one closes (real X key events prove it in the Linux E2E lane:
-//! `apps/desktop/test/e2e-playwright/menu-mnemonic-mask.spec.ts`).
+//! `apps/desktop/test/e2e-playwright/menu-bar.spec.ts`).
 //!
 //! Item mnemonics are inert while a menu is closed, so the titles are the whole problem. A click on
 //! the bar still works: the mask only changes which modifier activates a mnemonic. The modifier is

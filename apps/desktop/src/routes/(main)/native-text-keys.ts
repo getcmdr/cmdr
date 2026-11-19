@@ -78,8 +78,9 @@ const WINDOWS_AND_LINUX: NativeTextKeys = {
     'Shift+Delete',
     // Paste as plain text (Windows, Chromium, and WebKitGTK).
     'Ctrl+Shift+V',
-    // The field's own context menu.
+    // The field's own context menu, from either of its keys.
     'Shift+F10',
+    'ContextMenu',
   ]),
   bailInField: new Set(['Ctrl+I']),
 }

@@ -21,7 +21,7 @@
  * classification in `keyboard-shortcuts-banner`.
  */
 import { commands, listedCommands } from '#lib/commands/command-registry.js'
-import { getPlatform, hasCapability, isMacOS } from '#lib/platform/index.js'
+import { hasCapability, isMacOS } from '#lib/platform/index.js'
 import { searchAllCommands } from '#lib/commands/fuzzy-search.js'
 import {
   getEffectiveShortcuts,
@@ -45,17 +45,7 @@ import { confirmDialog } from '#lib/utils/confirm-dialog.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 import { dependOn } from '#lib/utils/reactivity.js'
 import { groupCommandsByScope } from './keyboard-shortcuts-grouping'
-import {
-  classifyConflict,
-  classifyMenuBarMnemonic,
-  classifySystemShortcut,
-  type ConflictKind,
-} from './keyboard-shortcuts-banner'
-import { getMenuBarTitleMnemonics } from '#lib/tauri-commands/index.js'
-import type { BarTitleMnemonic } from '#lib/ipc/bindings.js'
-import { getAppLogger } from '#lib/logging/logger.js'
-
-const log = getAppLogger('shortcuts')
+import { classifyConflict, classifySystemShortcut, type ConflictKind } from './keyboard-shortcuts-banner'
 
 /** The combo being captured plus its classification (drives the conflict banner). */
 export interface ConflictWarning {
@@ -96,22 +86,6 @@ export function createKeyboardShortcutsController(getSearchQuery: () => string) 
   // The captured combo plus its classification (native → reserved-by-macOS,
   // Cancel-only; normal → resolvable Remove/Keep/Cancel). See keyboard-shortcuts-banner.ts.
   let conflictWarning = $state<ConflictWarning | null>(null)
-  // The menu bar titles' `Alt+<letter>` keys in the UI language (Linux), read fresh as each edit
-  // starts, so a language switch since the last one counts.
-  let menuBarMnemonics: readonly BarTitleMnemonic[] = []
-
-  function refreshMenuBarMnemonics(): void {
-    if (getPlatform() !== 'linux') return
-    void getMenuBarTitleMnemonics()
-      .then((mnemonics) => {
-        menuBarMnemonics = mnemonics
-      })
-      .catch((error: unknown) => {
-        // Only the warning goes missing; the recorder works the same.
-        log.warn("Couldn't read the menu bar's mnemonics for the shortcut recorder: {error}", { error })
-      })
-  }
-
   // Reactivity trigger for shortcut changes. The component subscribes to
   // `onShortcutChange` in an `$effect` and bumps this so the derivations below
   // (and the keyed `{#each}` in the markup) re-run.
@@ -227,11 +201,7 @@ export function createKeyboardShortcutsController(getSearchQuery: () => string) 
       const conflicts = findConflictsForShortcut(combo, command.scope, command.id)
       // In-app conflicts take priority; with none, still warn when the OS
       // (or a Linux desktop) usually takes the combo (Spotlight, Alt+Tab, …).
-      // A bar title's `Alt+<letter>` on Linux next: the menu takes it outside a dialog.
-      const conflict =
-        classifyConflict(conflicts) ??
-        classifyMenuBarMnemonic(combo, command.scope, menuBarMnemonics) ??
-        classifySystemShortcut(combo)
+      const conflict = classifyConflict(conflicts) ?? classifySystemShortcut(combo)
       if (conflict) {
         conflictWarning = { shortcut: combo, conflict }
         return // Don't auto-save, wait for user decision
@@ -327,7 +297,6 @@ export function createKeyboardShortcutsController(getSearchQuery: () => string) 
     editingShortcut = { commandId, index: getEffectiveShortcuts(commandId).length }
     pendingKey = ''
     conflictWarning = null
-    refreshMenuBarMnemonics()
   }
 
   function handleRemoveShortcutAtIndex(commandId: string, index: number) {
@@ -354,7 +323,6 @@ export function createKeyboardShortcutsController(getSearchQuery: () => string) 
     editingShortcut = { commandId, index }
     pendingKey = ''
     conflictWarning = null
-    refreshMenuBarMnemonics()
   }
 
   /** Clicking the synthetic add-slot pill resets the in-progress capture. */

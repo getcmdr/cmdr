@@ -125,7 +125,8 @@ Registry order, primary key first. W = Windows, L = Linux. Only commands that ex
   (verified, Windows Insider build 22543 notes, 2022-01-27:
   https://blogs.windows.com/windows-insider/2022/01/27/announcing-windows-11-insider-preview-build-22543/ ; not in
   Microsoft's current shortcut list). WebView2's DevTools inspect key until #1115 lands.
-- `file.contextMenu` (Open context menu): macOS `⌃Enter`; W `Shift+F10`, `Ctrl+Enter`; L same. TC, Explorer, GTK, Qt.
+- `file.contextMenu` (Open context menu): macOS `⌃Enter`; W `Shift+F10`, `ContextMenu` (the Menu key), `Ctrl+Enter`; L
+  same. TC, Explorer, GTK, Qt.
 - `multiRename.letterCase` (Open the letter case menu): macOS `⌘⌥U`; W `Alt+U`; L `Alt+U`.
 - `multiRename.removeDiacritics` (Turn Remove diacritics on or off): macOS `⌘⌥N`; W `Alt+N`; L `Alt+N`.
 - `multiRename.greekToLatin` (Turn Greek to Latin on or off): macOS `⌘⌥G`; W `Alt+G`; L `Alt+G`.
@@ -185,9 +186,9 @@ and `bar_parity_test.rs` holds every built accelerator to it.
   inside a field until 2026-11-12.
 - Windows and Linux: `Ctrl+C` with a selection, `Ctrl+Insert`, `Ctrl+←`/`Ctrl+→`, `Ctrl+Shift+←`/`Ctrl+Shift+→`,
   `Home`/`End` with their Shift and Ctrl forms, `Ctrl+Backspace`/`Ctrl+Delete` (word delete), `Shift+Delete` (cut),
-  `Ctrl+Shift+V` (paste as plain text), and `Shift+F10` (the field's own context menu). The bound ones today: `Ctrl+←/→`
-  (copy path between panes), `Shift+Delete` (Delete permanently), `Ctrl+Shift+V` (Move here), `Shift+F10` (Open context
-  menu), `Home`/`End` (first and last file).
+  `Ctrl+Shift+V` (paste as plain text), and `Shift+F10` and `ContextMenu` (the Menu key; both open the field's own
+  context menu). The bound ones today: `Ctrl+←/→` (copy path between panes), `Shift+Delete` (Delete permanently),
+  `Ctrl+Shift+V` (Move here), `Shift+F10` and `ContextMenu` (Open context menu), `Home`/`End` (first and last file).
 - Not native, but worth a bail: `Ctrl+I` (Switch pane) fires from a rename editor and blurs it.
 - Beyond the table, by command: a command that moves or removes files (`FILE_MOVING_COMMAND_IDS` in
   `lib/commands/command-registry.ts`: Move to trash, Delete permanently, Move, Move here, Undo trash, Remove download)
@@ -219,10 +220,9 @@ on that OS removed) pair by pair for the same combo in overlapping scopes, using
 - The two `Ctrl+D` clashes of the mechanical keymap are gone (Duplicate moved to `Shift+F5`, the error screen to
   `Ctrl+Shift+D`).
 - Not a clash by scope, worth knowing: `Alt+↑` is Go to parent (File list), Move row up (Multi-rename), and Move earlier
-  (operation queue window). The scopes never meet, but on Windows and Linux the queue window wears the main bar, so Go
-  to parent only SHOWS `Alt+↑` there (keydown dispatch runs it in the main window), and no bar row may register a key
-  the queue's commands use (`page_owned_keys.tsv`, `bar_parity_test.rs`). A real-X check in `menu-mnemonic-mask.spec.ts`
-  presses `Alt+↑` and `Alt+↓` in the queue window.
+  (operation queue window). The scopes never meet. Off macOS the queue window draws no bar but fires the main bar's keys
+  (`apps/desktop/src/lib/ui/command-menu/window-bar-keys.ts`) only for a key its own keydown left alone, so its Move
+  earlier keeps `Alt+↑` there. A real-X check in `menu-bar.spec.ts` presses `Alt+↑` and `Alt+↓` in the queue window.
 
 ## Reservations behind the Linux keys
 
@@ -296,10 +296,10 @@ Every new or moved Linux key against those five plus IBus and GTK:
   is closed. So without help the search dialog's `Alt+F`, `Alt+S`, and `Alt+V` and the 11 Multi-rename keys would open a
   menu. What shipped: while a main-window dialog, overlay, or the palette is up, the main window's `GtkWindow` mnemonic
   modifier is an unreachable mask, and Alt comes back after the last one closes, like a native modal
-  (`apps/desktop/src-tauri/src/menu/DETAILS.md` § "A modal surface takes the mnemonics away"). Settings, the queue, the
-  Keyboard shortcuts window, and Debug wear the main bar on Linux too; Settings' shortcut recorders hold the mask while
-  they listen. `menu-mnemonic-mask.spec.ts` proves it in the Linux E2E lane with real X key events through `xdotool`.
-  The viewer's bar has no mnemonics, so its `Alt+R` / `Alt+C` are safe.
+  (`apps/desktop/src-tauri/src/menu/DETAILS.md` § "A modal surface takes the mnemonics away"). Since task 63 step 6 no
+  window wears a GTK bar (the page draws one in the main window and the viewer), so the mask is moot until step 10
+  deletes it; `menu-bar.spec.ts` drives the in-page bar with real X key events through `xdotool`. The viewer's bar has
+  no mnemonics, so its `Alt+R` / `Alt+C` are safe.
 
 ## Windows checks
 

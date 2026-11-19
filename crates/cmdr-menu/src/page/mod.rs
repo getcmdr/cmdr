@@ -20,6 +20,8 @@ pub mod keys;
 pub mod viewer;
 
 #[cfg(test)]
+mod bar_keys_test;
+#[cfg(test)]
 mod bar_test;
 #[cfg(test)]
 mod keys_test;

@@ -92,6 +92,11 @@ dialog buttons like macOS, KDE like Windows.
   `contextMenus` (`native` | `inPage`), `screenReaders` (most used first), and `linuxDesktop` (`gnome` | `kde` |
   `other`, `null` off Linux). Each value and its guideline, with dates and what stayed unverified:
   `docs/notes/windows-port/platform-conventions.md`.
+- **`pageDrawsMenuBar()`** is the one reading of `menuModel` the windows mount their bar on: true for every model but
+  `systemMenuBar`, GNOME's `primaryMenu` included until its main-menu button (task 63 step 8). The backend asks the same
+  question of its own row (`menu::builds_native_bar`), so the page and the native bar never both draw, past a
+  `CMDR_MOCK_CONVENTIONS` dev run (which moves the webview alone: macOS keeps its bar and the page shows another
+  desktop's beside it).
 - **One table, five rows**: `conventions_on(Desktop)` answers macOS, Windows, and each Linux desktop in one `match`,
   compiled on every target; each OS arm (`macos.rs`, `windows.rs`, `linux/mod.rs`) only picks its row, Linux by the
   session's desktop (`apps/desktop/src-tauri/src/platform/linux/desktop.rs`, `XDG_CURRENT_DESKTOP` read once).
@@ -113,6 +118,10 @@ dialog buttons like macOS, KDE like Windows.
   (`../ui/DETAILS.md` § Platform conventions, through `../ui/dialog-keys.ts`), and so do the dialogs whose safe answer
   takes focus only where Return presses the focused button. The Windows theme (task 60), the menu model (63), and the
   screen reader pass (64) will read the rest.
+- **An E2E run's right-click menus**: a `playwright-e2e` build reads `CMDR_E2E_CONTEXT_MENUS=inPage` (or `native`) and
+  moves `contextMenus` alone, so the Linux lane drives Windows' in-page menus (`with_e2e_context_menus` in
+  `src-tauri/src/platform/frontend.rs`; `../context-menu/DETAILS.md` § Running them off Windows). Every other build,
+  release included, compiles it out.
 - **Seeing another desktop's row**: `CMDR_MOCK_CONVENTIONS=windows pnpm dev` (or `gnome`, `kde`, `otherLinux`, `macos`;
   debug builds only, `mock_conventions` in `conventions.rs`) hands every webview that row instead, which moves neither
   the platform nor the capabilities. It also defines `__CMDR_COPY_PLATFORM__` (the mocked desktop's OS), which only

@@ -1,5 +1,6 @@
 //! What every WebView2 webview gets before it's used: the browser accelerator keys off (#1115,
-//! task 67 of `docs/specs/windows-port-plan.md`).
+//! task 67 of `docs/specs/windows-port-plan.md`), and its window guarded against Windows' own menu
+//! loop (`keymenu.rs`, task 63).
 //!
 //! WebView2 handles its own browser keys (`F5` and `Ctrl+R` reload, `Ctrl+F` / `F3` find,
 //! `Ctrl+P` print, `Ctrl+J` downloads, `Alt+←/→` history, `F7` caret browsing, zoom, DevTools)
@@ -23,6 +24,7 @@ use windows_core::Interface;
 /// Turns WebView2's browser accelerator keys off for `webview`. A failure is logged, never
 /// fatal: the window still works, it only keeps WebView2's own keys.
 pub(crate) fn prepare_webview(webview: &Webview<Wry>) {
+    super::keymenu::install(webview);
     let label = webview.label().to_owned();
     let dispatched = webview.with_webview(move |platform| {
         // SAFETY: `controller()` is the live `ICoreWebView2Controller` Tauri hands this closure on

@@ -19,6 +19,7 @@ import { commands } from '#lib/commands/command-registry.js'
 import type { CommandScope } from '#lib/commands/types.js'
 // eslint-disable-next-line cmdr/no-raw-shortcut-text -- read as data to reserve letters, never shown as text
 import { getEffectiveShortcuts } from '#lib/shortcuts/shortcuts-store.js'
+import { getActiveScopes } from '#lib/shortcuts/scope-hierarchy.js'
 import { isAltGraphHeld } from '#lib/shortcuts/key-capture.js'
 import { createKeyboardCues, type KeyboardCues } from './keyboard-cues'
 
@@ -77,12 +78,42 @@ export function accessKeySpanIn(label: string, letter: string): { start: number;
   return first
 }
 
-/** The letters `scope`'s own commands bind as Alt plus one key (`Alt+S`), lowercase. */
+/**
+ * The scopes whose surfaces make a window's bar inert while they're up (a dialog, an explorer
+ * overlay, the palette): their Alt+letter keys never meet the bar's titles, so a bar leaves their
+ * letters to its titles.
+ */
+const BAR_INERT_SCOPES: ReadonlySet<CommandScope> = new Set<CommandScope>([
+  'Main window/Search dialog',
+  'Main window/Multi-rename',
+  'Main window/Operation log',
+  'Main window/Volume chooser',
+  'Main window/Favorites menu',
+  'Main window/Tell me about this',
+  'Command palette',
+  'Onboarding',
+])
+
+/** Whether `command`'s keys can meet a bar whose window's scope is `scope`: the same tree, the bar live. */
+export function meetsTheBar(commandScope: CommandScope, scope: CommandScope): boolean {
+  if (commandScope === scope) return true
+  if (BAR_INERT_SCOPES.has(commandScope)) return false
+  // A scope inside the window (`Main window/File list`, and Ask Cmdr, whose chain skips
+  // `Main window` on purpose).
+  return getActiveScopes(commandScope).includes(scope) || commandScope.startsWith(`${scope}/`)
+}
+
+/**
+ * The letters a window bar's titles leave free: every Alt plus one key (`Alt+S`), lowercase, that a
+ * command bound where the bar is live can hear (`scope`'s own and its window's inner scopes', past
+ * the surfaces that make the bar inert), so a user's own Alt+letter binding is
+ * never a title's.
+ */
 export function reservedAccessKeys(scope: CommandScope | undefined): Set<string> {
   const reserved = new Set<string>()
   if (scope === undefined) return reserved
   for (const command of commands) {
-    if (command.scope !== scope) continue
+    if (!meetsTheBar(command.scope, scope)) continue
     for (const shortcut of getEffectiveShortcuts(command.id)) {
       const match = /^Alt\+(.)$/u.exec(shortcut)
       if (match) reserved.add(match[1].toLowerCase())

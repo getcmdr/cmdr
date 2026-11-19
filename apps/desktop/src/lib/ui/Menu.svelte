@@ -269,9 +269,14 @@
         menu.close()
     }
 
-    /** Is the pointer-down inside a menu that hangs off a row of this one? */
+    /**
+     * Is the pointer-down inside a menu that hangs off a row of this one, or a right-click menu over
+     * a field in it (a favorite's rename)? The second is transient and above everything: pressing
+     * its row must not close this menu and unmount the field it edits.
+     */
     function hostsPopupAt(target: Node): boolean {
         const el = target instanceof Element ? target : target.parentElement
+        if (el?.closest('[data-command-menu="context"]')) return true
         return el?.closest('[data-menu]')?.getAttribute('data-menu-nested-in') === instanceId
     }
 

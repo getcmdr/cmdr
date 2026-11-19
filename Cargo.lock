@@ -1407,6 +1407,7 @@ dependencies = [
 name = "cmdr"
 version = "0.61.0"
 dependencies = [
+ "arboard",
  "axum",
  "base64 0.23.1",
  "bincode2",
@@ -1525,7 +1526,6 @@ dependencies = [
  "urlencoding",
  "uuid",
  "walkdir",
- "webkit2gtk",
  "webview2-com",
  "windows-core 0.62.2",
  "windows-native-keyring-store",

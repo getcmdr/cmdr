@@ -30,6 +30,7 @@ import type {
   NetworkHost,
   ShareListResult,
 } from '../file-explorer/types'
+import { popContextMenu } from './in-page-menus'
 
 export type { SignInShape }
 
@@ -653,7 +654,7 @@ export async function setNetworkEnabled(enabled: boolean): Promise<void> {
 // ============================================================================
 
 /**
- * Shows a native context menu for a servers hub row's SMB host (fire-and-forget).
+ * Shows a servers hub row's SMB host menu, native or in-page by the platform (`popContextMenu`).
  * It offers only what does something: "Edit server…" for a saved host, "Disconnect"
  * while a share from it is mounted, "Forget saved password" when one is stored, and
  * "Forget server" for a typed-in host. The host goes whole: its mounts are found by
@@ -671,22 +672,21 @@ export async function showNetworkHostContextMenu(
   hasCredentials: boolean,
   anchor: MenuAnchor | null = null,
 ): Promise<void> {
-  const res = await commands.showNetworkHostContextMenu(
-    rowId,
-    {
-      id: host.id,
-      name: host.name,
-      hostname: host.hostname ?? null,
-      ipAddress: host.ipAddress ?? null,
-      port: host.port,
-      source: host.source,
+  const wireHost = {
+    id: host.id,
+    name: host.name,
+    hostname: host.hostname ?? null,
+    ipAddress: host.ipAddress ?? null,
+    port: host.port,
+    source: host.source,
+  }
+  await popContextMenu(
+    { menu: 'networkHost', rowId, host: wireHost, isManual, isSaved, hasCredentials, anchor },
+    async () => {
+      const res = await commands.showNetworkHostContextMenu(rowId, wireHost, isManual, isSaved, hasCredentials, anchor)
+      if (res.status === 'error') throwIpcError(res.error)
     },
-    isManual,
-    isSaved,
-    hasCredentials,
-    anchor,
   )
-  if (res.status === 'error') throwIpcError(res.error)
 }
 
 /**

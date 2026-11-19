@@ -3,9 +3,18 @@
 Pull-tier docs for `src-tauri/src/menu/`: architecture, flows, and decision rationale. Must-know invariants and
 gotchas live in `CLAUDE.md`.
 
-Native menu bar for macOS and Linux. Builds platform-specific menus from scratch, handles menu
-events, syncs accelerator labels with user-customized shortcuts, and enables/disables items based on
-window focus context.
+macOS's native menu bar, every native right-click popup, and the backend half of the menus a page draws. Builds the
+native menus from scratch, handles menu events, syncs accelerator labels with user-customized shortcuts, and
+enables/disables items based on window focus context.
+
+**Only macOS builds a native bar** (D5, task 63 of `docs/specs/windows-port-plan.md`): `install::at_startup` asks
+`builds_native_bar()`, which reads the `menuModel` convention (`SystemMenuBar` on macOS alone). On Windows and Linux the
+main window and the viewer draw the bar in the page ("The bar a page draws"), so `MenuState` holds the facts and no muda
+handle: every native-item write (`set_item_label`, `update_menu_item_accelerator`, `rebuild_view_mode_items`, the pin
+label, the Show hidden check) stops after storing its fact (`MenuState::has_native_bar`), and a language change rebuilds
+nothing, since a page resolves its labels itself. The rest of this doc's bar mechanics (accelerators, mnemonics,
+display-only keys, swaps) are the native bar's, so macOS's; the rows themselves are every platform's
+(`crates/cmdr-menu/DETAILS.md`).
 
 ## File layout
 
@@ -21,7 +30,7 @@ window focus context.
   bar (`apps/desktop/src/lib/demo/DETAILS.md`). Why it's data: the menu-bar Decision under "Key
   decisions".
 - `menu_bar_builder.rs`: `build_menu`, which builds `MENU_BAR` for `Platform::current()`, allocates the mnemonics,
-  registers the tracked items, and hands back `MenuItems`.
+  registers the tracked items, and hands back `MenuItems`. Called only where the bar is native (`builds_native_bar`).
 - `display_accelerators.rs` (macOS): `set_display_accelerators`, the pass that draws a shortcut the bar can't register
   as a right-aligned, dimmed run on an item's attributed title. See "Display-only accelerators" below.
 - `menu_items.rs`: small shared pieces: `APP_MENU_TITLE`, `resolve` (a crate `LabelText` through `menu_t`),
@@ -38,7 +47,8 @@ window focus context.
 - `file_context_menu.rs`: the file context menu (`build_context_menu`): the crate's `file_menu` rows with each macOS
   `Slot` filled from `FileContextInfo` (`fill_slot`), plus `ContextMenuResult`, the empty non-macOS `FileContextInfo`,
   and `append_tag_color_group`.
-- `menu_structure.rs`: the viewer-window menu bar (`build_viewer_menu`).
+- `menu_structure.rs` (macOS): the viewer window's native menu bar (`build_viewer_menu`, `ViewerMenuItems`). Elsewhere
+  the viewer page draws its bar from `get_viewer_menu_bar`.
 - `date_sort_menu.rs`: the header Sort by popup's pick event, `DateSortMenuPick` (the popup's rows are the crate's
   `date_sort_menu`, with pane-carrying ids).
 - `install.rs`: `at_startup`, the single call `lib.rs` makes in `setup`: pin the UI language, build the bar,
@@ -52,7 +62,8 @@ window focus context.
 - `menu_handlers.rs`: `handle_menu_event`, the `.on_menu_event` dispatcher (a bar row's view-mode and sort lanes come
   from `cmdr_menu::click::bar_click`), plus the macOS
   post-construction wrappers `cleanup_macos_menus` / `set_macos_menu_icons` and
-  `send_native_edit_action` over the pure `native_edit_selector_for` (the per-OS edit lives in `focused_field_edit/`)
+  `edit_road` (where an Edit row's pick goes: the main window's command, the queue's rows, or the focused field;
+  macOS runs a field's edit through `focused_field_edit/`, a page bar gets it back as `BarPickOutcome::TextEdit`)
   and `focused_viewer_label` / `viewer_edit_action_for`, which route the viewer bar's own items to the viewer in front.
 - `accelerators.rs`: `frontend_shortcut_to_accelerator` (the crate's bar conversion for
   this platform), `update_menu_item_accelerator` (swapping one on a live item), and the muda-parsing tests.
@@ -166,6 +177,9 @@ that handler already makes.
 
 ### Linux mnemonics are allocated, not authored
 
+With no GTK bar (task 63 step 6), Linux builds no bar for these to label; the allocator still runs for the native
+right-click popups' rows. The in-page bar allocates its own letters (`apps/desktop/src/lib/ui/access-keys.ts`).
+
 A GTK mnemonic has to be unique within its submenu, and which letters are free depends on the words in the menu — so it
 depends on the LANGUAGE. A hand-picked English set couldn't survive nine translations, and a translator can't be handed
 a per-submenu uniqueness puzzle on top of translating. So `mnemonics::Mnemonics` allocates them at build time from the
@@ -176,13 +190,17 @@ so no row in `cmdr_menu::bar` names a mnemonic, and a new item can't get one on 
 
 ### A modal surface takes the mnemonics away (`mnemonic_mask/`)
 
+⚠️ Moot since task 63 step 6: Linux has no GTK bar, so there's no title mnemonic to mask, and the windows below wear no
+bar. The in-page bar goes inert under a modal surface itself (`apps/desktop/src/lib/ui/DETAILS.md` § Command menus).
+Step 10 of that task deletes the module, its IPC, and this section; what follows is how it worked with a GTK bar.
+
 GTK takes a bar TITLE's `Alt+<letter>` (English: F, E, S, V, G, T, H; other languages differ) before WebKit sees the
 keydown, so `preventDefault` can't help: the search dialog's `Alt+F`, `Alt+S`, and `Alt+V` would open menus. Item
 mnemonics are inert while their menu is closed. A native modal blocks its parent's bar; Cmdr's dialogs are web content,
 so the window does it by hand: `set_menu_mnemonics_suspended` sets the CALLING window's `GtkWindow` mnemonic modifier to
 every GDK modifier at once (nobody presses that), and back to Alt. The modifier is a property of the window, so a bar
 rebuild keeps it. A click on the bar still opens a menu. Verified with real X key events in the Linux E2E lane
-(`apps/desktop/test/e2e-playwright/menu-mnemonic-mask.spec.ts`, through `xdotool`). macOS has no mnemonics and Windows has none yet,
+(`apps/desktop/test/e2e-playwright/menu-bar.spec.ts`, through `xdotool`). macOS has no mnemonics and Windows has none yet,
 so both answer without touching anything.
 
 - **Main window**: `routes/(main)/menu-dialog-gate.svelte.ts` sends the gate's own "something is open" bit (a dialog, an
@@ -190,15 +208,15 @@ so both answer without touching anything.
   `REFUSED_OVER_DIALOGS` is non-empty. Stacked surfaces hold the mask until the last one closes, and a reload or HMR
   pushes the real state first. Inline rename and the palette count as modal input here, so `Alt+F` can't open the File
   menu mid-rename; intended.
-- **Every other window without a menu of its own wears the main bar on Linux** (Tauri hands the app-wide menu to every
-  window built without one, `AppHandle::set_menu`): Settings, the operation queue, the Keyboard shortcuts window, and
-  Debug. The viewer sets its own bar, which has no mnemonics. Settings is the one that captures combos, so its shortcut
+- **No window wears a GTK bar any more**: with a GTK bar, Tauri handed the app-wide menu to every window built
+  without one (`AppHandle::set_menu`), so Settings, the operation queue, the Keyboard shortcuts window, and Debug wore
+  it; off macOS today none is built, and those windows keep its keys through the page (§ "The bar a page draws"). The viewer sets its own bar, which has no mnemonics. Settings is the one that captures combos, so its shortcut
   recorder, its key filter, and the global go-to-latest recorder hold the mask while they listen
   (`apps/desktop/src/lib/shortcuts/menu-mnemonics-capture.svelte.ts`, claims counted per window; a fresh load there pushes
   the mnemonics back on once, since a reload mid-capture resets the count but not the window's mask).
-- **A key the user records outside a modal surface stays the bar's**: Settings warns when a recorded `Alt+<letter>` is a
-  title mnemonic in the UI language (`get_menu_bar_title_mnemonics`, from the same `bar_titles` the builder labels the
-  titles with, so the two can't disagree) and the command's scope wears a live bar.
+- **A key the user records stays the user's**: the in-page bar reserves every `Alt+<letter>` bound in its window's live
+  scopes (`apps/desktop/src/lib/ui/access-keys.ts` `reservedAccessKeys`), so its titles take other letters and Settings
+  has no title-mnemonic warning left to give.
 
 ## Key concepts
 
@@ -370,9 +388,18 @@ row is decided here or in the frontend.
   (an event further ahead) asks `get_menu_bar` again. An event that lands while the ask is in flight is buffered by
   that rule; `followMenuBar` retries a failed ask with backoff.
 - **The subscription is sticky**: once any page asks, every push for the rest of the session redraws the whole bar,
-  diffs it, and emits to every window (`update_select_same_kind_menu` runs per cursor move). Today only the dev Debug >
-  Components page asks; from task 63 step 6 the bar's own window does, where that cost is the design point. No
-  unsubscribe: a window's bar follows for the window's life.
+  diffs it, and emits to every window (`update_select_same_kind_menu` runs per cursor move). Off macOS the main window
+  asks at mount (`apps/desktop/src/routes/(main)/MainMenuBar.svelte`), where that cost is the design point; on macOS only the dev Debug >
+  Components page does. No unsubscribe: a window's bar follows for the window's life.
+- **Who draws it**: the main window (`MainMenuBar.svelte`, inert under a dialog, an explorer overlay, or the palette) and
+  the viewer (`apps/desktop/src/routes/viewer/ViewerMenuBar.svelte`, from its own state), wherever `pageDrawsMenuBar()` says so
+  (`apps/desktop/src/lib/platform/conventions.ts`: every menu model but macOS's, GNOME's `primaryMenu` included until
+  its main-menu button lands in step 8). Settings, the queue, the Keyboard shortcuts window, and Debug wear no bar, yet
+  keep every Ctrl or Alt chord the main bar shows (never a bare key like Tab or F5): each follows the bar and picks a row by its key
+  (`apps/desktop/src/lib/ui/DETAILS.md` § Command menus), so `CLOSE_TAB_ID`'s "close the focused non-main window" lane
+  and the other app-wide rows still run there.
+  On Windows each window's `SC_KEYMENU` guard keeps a lone Alt and F10 the page's
+  (`apps/desktop/src-tauri/src/platform/windows/keymenu.rs`).
 - **Live labels** come from the same pushes the native items get (`update_select_same_kind_menu`,
   `update_undo_trash_menu`, `update_pin_tab_menu`). ❗ The right-click Selection submenu's "same kind" label stays the
   caller's live value (`show_file_context_menu`'s `same_kind`), never this one, which the frontend debounces.
@@ -390,7 +417,8 @@ row is decided here or in the frontend.
 
 On Windows the right-click menus move into the page too (D5; the `contextMenus` convention reads `inPage` there, and
 `native` on macOS and every Linux desktop, which keep muda's popups). The frontend asks the convention, ❌ never the
-platform, and calls `open_context_menu_in_page` (`apps/desktop/src-tauri/src/commands/menu_in_page.rs`) instead of the `show_*` command.
+platform, and calls `open_context_menu_in_page` (`apps/desktop/src-tauri/src/commands/menu_in_page.rs`) instead of the `show_*` command:
+each `show_*` wrapper forks in `popContextMenu`, and the window draws and picks (`apps/desktop/src/lib/context-menu/DETAILS.md`).
 
 - **One request, nine menus**: `InPageContextMenuRequest` is tagged by `menu` (`file`, `breadcrumb`, `parentRow`, `tab`,
   `dateSort`, `functionKeyBar`, `viewer`, `queueRow`, `networkHost`), each variant carrying its `show_*` command's own
@@ -673,10 +701,10 @@ menu is swapped wholesale via `app.set_menu()`:
   - Its **Edit** submenu is a deliberate mix, because the two halves act on different things.
     - **Cut and Paste belong to the search box**, the only editable field in a viewer window. On macOS they're Custom
       items (`VIEWER_EDIT_CUT_ID` / `VIEWER_EDIT_PASTE_ID`) that forward the native `cut:` / `paste:` selectors down
-      the responder chain themselves, through the same `send_native_edit_action` the main bar's Edit items use outside
-      the main window. ❗ Everywhere else they stay `PredefinedMenuItem`s: the responder chain is macOS-only, so a
-      Custom item off macOS would leave ⌘X / ⌘V dead in the viewer's search field, which is exactly what trimming them
-      did once. ❌ Whatever else changes about these two, don't break that: `native_edit_selector_for` pins the
+      the responder chain themselves, through `edit_road`'s field road, the one the main bar's Edit items take outside the main window. Off
+      macOS no native viewer bar exists: the page bar's pick of either comes back as `BarPickOutcome::TextEdit`, and the
+      page runs it on the search box (`apps/desktop/src/lib/tauri-commands/in-page-menus.ts` `pickMenuBarItem`), which
+      keeps them live while their menu is open through the bar's focus origin (`ViewerMenuBar.svelte`). ❌ Whatever else changes about these two, don't break that: `native_edit_selector_for` pins the
       mapping.
     - **Decision/Why they're Custom at all:** so `apply_menu_item_states` can grey them out while the search box
       doesn't have focus (§ "Dialog refusals, and the one writer of an item's enabled state"). Always-live items that
@@ -707,8 +735,10 @@ menu is swapped wholesale via `app.set_menu()`:
   `app.set_menu()`). Both run on the main thread via `run_on_main_thread`, queued FIFO after Tauri's
   own main-thread menu install, so ordering is install → cleanup → icons.
 
-On Linux `activate_window_menu` skips the swap (viewer windows carry their own per-window menu set by
-`viewer_setup_menu` / `window.set_menu()`) and only does the enable/disable step.
+Off macOS `activate_window_menu` has no bar to swap (the viewer page draws its own), and `"other"` greys nothing: the
+page bar is the main window's own, not a bar shared with the window in front, so its file-scoped rows stay live while
+Settings or the queue has focus (a click on the bar focuses the main window first, which `emit_command`'s guard asks).
+Only `"main"` does the enable/disable step there.
 
 The enable/disable step is the private `set_menu_context("explorer" | "other")` helper: it stores whether the explorer
 owns the menu and recomputes every item (`"main"` → file-scoped items enabled, `"other"` → greyed). This is a visual
@@ -1205,6 +1235,8 @@ freed when `show_file_context_menu` returned (0.20 holds an `Rc` to it).
 ## Platform differences
 
 Every difference is marked on its row in `cmdr_menu::bar`, and `cmdr-menu`'s `bar_test.rs` spells out each bar in full.
+Off macOS the page draws the rows (no muda bar), so below, "registered" there means a key the row SHOWS and the page's
+keydown runs, and the GTK items (mnemonics, the label-spelled display key) describe the Linux popups only.
 The Windows bar has the Linux bar's rows and keys until the Windows menu model is decided (`crates/cmdr-menu/DETAILS.md`
 § "Three platforms"), so "Linux" below reads "Windows and Linux" for the bar's data; the GTK specifics are Linux's.
 
@@ -1436,17 +1468,15 @@ class of bug.
   Select all. In `handle_menu_event`, these are handled specially: if the main window is focused,
   they route through `execute-command` so the frontend can decide between file and text semantics
   (via `document.activeElement` check). If a non-main window is focused,
-  `send_native_edit_action()` in `menu_handlers.rs` runs the text edit in that window's focused field
-  (`focused_field_edit/`): on macOS the native `copy:`/`cut:`/`paste:`/`selectAll:` selector through the
-  responder chain via `NSApplication.sendAction:to:from:`, replicating what PredefinedMenuItems do
-  internally; on Linux WebKitGTK's `execute_editing_command` on the focused window's view, since GTK
-  takes the bar's `Ctrl+X` / `Ctrl+C` / `Ctrl+V` before the page sees them (real X keys in a Settings field
-  reached no keydown and cut nothing without it: `menu-mnemonic-mask.spec.ts`, 2026-11-12). This ensures text
-  clipboard and text select-all work natively in all windows. Undo and Redo remain
+  `edit_road` in `menu_handlers.rs` sends the text edit to that window's focused field: on macOS the native
+  `copy:`/`cut:`/`paste:`/`selectAll:` selector through the responder chain via `NSApplication.sendAction:to:from:`
+  (`focused_field_edit/`), replicating what PredefinedMenuItems do internally. Off macOS no native bar takes a key, so
+  the browser edits a field itself, and a page bar's pick of an Edit row comes back as `BarPickOutcome::TextEdit` for
+  the page to run (WebView2 has no editing command a host can send). Undo and Redo remain
   PredefinedMenuItems since they only apply to text fields. ❗ In practice the native branch serves Settings and the
   other main-bar windows: a focused VIEWER has swapped the viewer bar in, and all four of its items carry their own ids
-  and their own lanes (§ "Per-window menu activation"). The viewer's Cut / Paste land in the same
-  `send_native_edit_action`, off their own branch and unconditionally: `native_edit_selector_for` maps both bars' ids,
+  and their own lanes (§ "Per-window menu activation"). The viewer's Cut / Paste take the same field
+  road, unconditionally: `native_edit_selector_for` maps both bars' ids,
   and the main-bar branch asks a question ("is the MAIN window focused?") that a viewer click would answer right by
   accident rather than by rule.
 - **⌘A dual routing**: "Select all" uses ⌘A as a native menu accelerator (so it's visible in the
@@ -1454,9 +1484,9 @@ class of bug.
   above). Since macOS intercepts it before the webview, the keystroke must be re-routed per focus:
   main window → `execute-command`, where the frontend's `handleCommandExecute` checks
   `document.activeElement` (input/textarea → `.select()` for text, otherwise select files);
-  non-main window → native `selectAll:` via `send_native_edit_action()` (without this branch ⌘A is
+  non-main window → native `selectAll:` through `edit_road`'s field road (without this branch ⌘A is
   dead in settings text fields — the `FileScoped` focus guard would silently drop it); the operation queue window →
-  `queue-select-all`, ahead of that branch, because the queue's ⌘A checks every row for "Cancel selected" and a native
+  `queue-select-all`, ahead of the field road, because the queue's ⌘A checks every row for "Cancel selected" and a native
   `selectAll:` would only highlight its text (`apps/desktop/src/lib/file-operations/queue/DETAILS.md` § Keyboard). This avoids
   PredefinedMenuItem::select_all which would conflict with the custom MenuItem. Deselect all (⌘⇧A)
   stays on the plain `FileScoped` path: AppKit has no standard "deselect all" responder action for

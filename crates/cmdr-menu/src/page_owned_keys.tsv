@@ -36,6 +36,7 @@ windows	Ctrl+Delete	text field
 windows	Shift+Delete	text field
 windows	Ctrl+Shift+V	text field
 windows	Shift+F10	text field
+windows	ContextMenu	text field
 windows	Ctrl+I	text field
 windows	Escape	About window
 windows	↑	Operation queue window
@@ -74,6 +75,7 @@ linux	Ctrl+Delete	text field
 linux	Shift+Delete	text field
 linux	Ctrl+Shift+V	text field
 linux	Shift+F10	text field
+linux	ContextMenu	text field
 linux	Ctrl+I	text field
 linux	Escape	About window
 linux	↑	Operation queue window

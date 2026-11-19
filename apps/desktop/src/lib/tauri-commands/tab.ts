@@ -1,15 +1,18 @@
 import { type UnlistenFn } from '@tauri-apps/api/event'
 import { commands, events } from '#lib/ipc/bindings.js'
 import { throwIpcError } from './ipc-types'
+import { popContextMenu } from './in-page-menus'
 
-/** Shows a native context menu for a tab (fire-and-forget). */
+/** Shows a tab's context menu, native or in-page by the platform (`popContextMenu`); resolves once it's closed. */
 export async function showTabContextMenu(
   isPinned: boolean,
   canClose: boolean,
   hasOtherUnpinnedTabs: boolean,
 ): Promise<void> {
-  const res = await commands.showTabContextMenu(isPinned, canClose, hasOtherUnpinnedTabs)
-  if (res.status === 'error') throwIpcError(res.error)
+  await popContextMenu({ menu: 'tab', isPinned, canClose, hasOtherUnpinnedTabs }, async () => {
+    const res = await commands.showTabContextMenu(isPinned, canClose, hasOtherUnpinnedTabs)
+    if (res.status === 'error') throwIpcError(res.error)
+  })
 }
 
 /**

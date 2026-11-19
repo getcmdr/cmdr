@@ -10,7 +10,7 @@ import type { CommandName } from './answer-types.js'
 import { appAnswers, rawAnswers, silentCommands } from './answers.js'
 import { SET_APP_THEME } from './color-scheme.js'
 import { DRAG_COMMANDS } from './drag-session.js'
-import { LISTING_ENGINE_COMMANDS, MENU_ENGINE_COMMANDS, MENU_PAGE_COMMANDS } from './engine-command-names.js'
+import { LISTING_ENGINE_COMMANDS, MENU_ENGINE_COMMANDS } from './engine-command-names.js'
 import { pluginHandler } from './plugins.js'
 import { RELAYED_COMMANDS } from './relayed.js'
 import { volumeAnswers } from './volumes.js'
@@ -21,13 +21,7 @@ import { WINDOW_HOST_COMMANDS, WINDOW_PLUGIN_COMMANDS } from './windows.js'
 type CamelCase<S extends string> = S extends `${infer Head}_${infer Tail}` ? `${Head}${Capitalize<CamelCase<Tail>>}` : S
 
 /** The wire (snake_case) names something other than a TS table answers. */
-const WIRE_ANSWERED = [
-  ...LISTING_ENGINE_COMMANDS,
-  ...MENU_ENGINE_COMMANDS,
-  ...MENU_PAGE_COMMANDS,
-  ...WINDOW_HOST_COMMANDS,
-  ...DRAG_COMMANDS,
-]
+const WIRE_ANSWERED = [...LISTING_ENGINE_COMMANDS, ...MENU_ENGINE_COMMANDS, ...WINDOW_HOST_COMMANDS, ...DRAG_COMMANDS]
 
 type Answered =
   | keyof typeof appAnswers
@@ -356,8 +350,6 @@ export const notInDemo = {
   setShowSafeSaveFilesCmd: SUBSYSTEM_SETTING,
   setShowStagingTempFilesCmd: SUBSYSTEM_SETTING,
   // The in-page menus' commands (D5)
-  getMenuBar: IN_PAGE_MENUS,
-  getViewerMenuBar: IN_PAGE_MENUS,
   pickMenuBarItem: IN_PAGE_MENUS,
   openContextMenuInPage: IN_PAGE_MENUS,
   pickContextMenuItem: IN_PAGE_MENUS,

@@ -18,6 +18,7 @@ func TestE2EArtifactIsSweepable(t *testing.T) {
 		"cmdr-e2e-report-mtp-4242.json",
 		"cmdr-e2e-report-nonmtp1-4242.json",
 		"cmdr-e2e-report-linux-4242.json",
+		"cmdr-e2e-report-linux-4242-in-page-menus.json",
 		"cmdr-e2e-playwright-mtp-1700000000-4242.log",
 		"cmdr-e2e-playwright-build-1700000000-4242.log",
 		"cmdr-e2e-linux-1700000000.log",

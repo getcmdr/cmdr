@@ -59,8 +59,8 @@ menu menu_select menu.bar.select
   item compare_directories menu.select.compareDirectories [Shift+F2|Shift+F2]
 menu menu_view menu.bar.view
   submenu menu.view.leftPane menu.view.leftPane
-    radio view_mode_full_left menu.view.fullView [Ctrl+1|Control+1]
-    radio view_mode_brief_left menu.view.briefView [Ctrl+2|Control+2] checked
+    radio view_mode_full_left menu.view.fullView [Ctrl+F2|Control+F2]
+    radio view_mode_brief_left menu.view.briefView [Ctrl+F1|Control+F1] checked
   submenu menu.view.rightPane menu.view.rightPane
     radio view_mode_full_right menu.view.fullView
     radio view_mode_brief_right menu.view.briefView checked

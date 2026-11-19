@@ -49,6 +49,10 @@ pub fn update_menu_item_accelerator<R: Runtime>(
     new_accelerator: Option<&str>,
     display_accelerator: Option<&str>,
 ) -> tauri::Result<()> {
+    // Where the page draws the bar, the rebind is the pushed fact alone (`pushed_shortcuts`).
+    if !menu_state.has_native_bar() {
+        return Ok(());
+    }
     let mut items_guard = menu_state.items.lock_ignore_poison();
     let entry = items_guard
         .get(menu_item_id)
