@@ -495,6 +495,11 @@ impl AppNameBuf {
     pub fn as_app_name(&self) -> &AppName {
         AppName::new_unchecked(&self.0)
     }
+
+    /// The text, owned: a listing's row name, with no copy beside the name it joined.
+    pub fn into_string(self) -> String {
+        self.0
+    }
 }
 
 /// The one simple case folding the UNC share match uses: a character's lowercase when it's a

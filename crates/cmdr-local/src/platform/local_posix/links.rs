@@ -2,13 +2,14 @@
 //! trait methods in `local_posix.rs` delegate to.
 
 use super::LocalPosixVolume;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::VolumeError;
 use std::path::{Path, PathBuf};
 use tokio::task::spawn_blocking;
 
 impl LocalPosixVolume {
-    pub(super) async fn read_link_target_impl(&self, path: &Path) -> Result<Option<PathBuf>, VolumeError> {
-        let abs_path = self.resolve(path);
+    pub(super) async fn read_link_target_impl(&self, path: &AppPath) -> Result<Option<PathBuf>, VolumeError> {
+        let abs_path = self.os_path(path);
         spawn_blocking(move || match std::fs::read_link(&abs_path) {
             Ok(target) => Ok(Some(target)),
             // `EINVAL` is `readlink`'s own "that's no link".
@@ -24,8 +25,8 @@ impl LocalPosixVolume {
     /// `ENOTSUP`, or `EOPNOTSUPP`, all of which mean "can't hold it". The last two are one
     /// number on Linux and two on macOS, so this compares values: a `matches!` pattern
     /// naming both doesn't compile on Linux.
-    pub(super) async fn create_symlink_impl(&self, path: &Path, target: &Path) -> Result<(), VolumeError> {
-        let abs_path = self.resolve(path);
+    pub(super) async fn create_symlink_impl(&self, path: &AppPath, target: &Path) -> Result<(), VolumeError> {
+        let abs_path = self.os_path(path);
         let target = target.to_path_buf();
         spawn_blocking(move || match std::os::unix::fs::symlink(&target, &abs_path) {
             Ok(()) => Ok(()),

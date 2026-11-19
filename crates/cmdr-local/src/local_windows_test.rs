@@ -4,10 +4,9 @@
 
 #![cfg(target_os = "windows")]
 
-use cmdr_fs::app_path::AppPath;
+use crate::test_support::at;
 use std::fs::OpenOptions;
 use std::os::windows::fs::OpenOptionsExt as _;
-use std::path::Path;
 
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::{SpaceInfo, Volume, VolumeError};
@@ -23,20 +22,16 @@ async fn an_exclusive_rename_onto_a_taken_name_refuses_and_keeps_both_files() {
     let test_dir = TestDir::new("win_rename_taken");
     let volume = volume_at(&test_dir);
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("a.txt")), b"source")
+        .create_file(&at(&volume, "a.txt"), b"source")
         .await
         .expect("create");
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("b.txt")), b"the user's file")
+        .create_file(&at(&volume, "b.txt"), b"the user's file")
         .await
         .expect("create");
 
     let err = volume
-        .rename(
-            &AppPath::legacy_unchecked(Path::new("a.txt")),
-            &AppPath::legacy_unchecked(Path::new("b.txt")),
-            false,
-        )
+        .rename(&at(&volume, "a.txt"), &at(&volume, "b.txt"), false)
         .await
         .expect_err("an exclusive rename onto a taken name must refuse");
 
@@ -49,25 +44,15 @@ async fn an_exclusive_rename_onto_a_taken_name_refuses_and_keeps_both_files() {
 async fn an_exclusive_rename_of_a_folder_onto_a_taken_name_refuses() {
     let test_dir = TestDir::new("win_rename_dir_taken");
     let volume = volume_at(&test_dir);
+    volume.create_directory(&at(&volume, "from")).await.expect("mkdir");
+    volume.create_directory(&at(&volume, "to")).await.expect("mkdir");
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("from")))
-        .await
-        .expect("mkdir");
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("to")))
-        .await
-        .expect("mkdir");
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("to/keep.txt")), b"keep")
+        .create_file(&at(&volume, "to/keep.txt"), b"keep")
         .await
         .expect("create");
 
     let err = volume
-        .rename(
-            &AppPath::legacy_unchecked(Path::new("from")),
-            &AppPath::legacy_unchecked(Path::new("to")),
-            false,
-        )
+        .rename(&at(&volume, "from"), &at(&volume, "to"), false)
         .await
         .expect_err("a folder onto a taken name must refuse");
 
@@ -83,11 +68,11 @@ async fn a_rename_onto_a_file_another_program_holds_open_leaves_it_whole() {
     let test_dir = TestDir::new("win_rename_held_open");
     let volume = volume_at(&test_dir);
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("new.txt")), b"replacement")
+        .create_file(&at(&volume, "new.txt"), b"replacement")
         .await
         .expect("create");
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("doc.txt")), b"the open document")
+        .create_file(&at(&volume, "doc.txt"), b"the open document")
         .await
         .expect("create");
     let _held = OpenOptions::new()
@@ -97,21 +82,13 @@ async fn a_rename_onto_a_file_another_program_holds_open_leaves_it_whole() {
         .expect("hold the document open");
 
     let exclusive = volume
-        .rename(
-            &AppPath::legacy_unchecked(Path::new("new.txt")),
-            &AppPath::legacy_unchecked(Path::new("doc.txt")),
-            false,
-        )
+        .rename(&at(&volume, "new.txt"), &at(&volume, "doc.txt"), false)
         .await
         .expect_err("the name is taken");
     assert!(matches!(exclusive, VolumeError::AlreadyExists(_)), "got {exclusive:?}");
 
     let forced = volume
-        .rename(
-            &AppPath::legacy_unchecked(Path::new("new.txt")),
-            &AppPath::legacy_unchecked(Path::new("doc.txt")),
-            true,
-        )
+        .rename(&at(&volume, "new.txt"), &at(&volume, "doc.txt"), true)
         .await
         .expect_err("Windows refuses to replace a file another program holds open");
     assert!(
@@ -133,11 +110,11 @@ async fn a_forced_rename_onto_a_read_only_file_is_all_or_nothing() {
     let test_dir = TestDir::new("win_rename_read_only");
     let volume = volume_at(&test_dir);
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("new.txt")), b"replacement")
+        .create_file(&at(&volume, "new.txt"), b"replacement")
         .await
         .expect("create");
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("locked.txt")), b"read-only")
+        .create_file(&at(&volume, "locked.txt"), b"read-only")
         .await
         .expect("create");
     let locked = test_dir.join("locked.txt");
@@ -146,21 +123,13 @@ async fn a_forced_rename_onto_a_read_only_file_is_all_or_nothing() {
     std::fs::set_permissions(&locked, permissions).expect("set read-only");
 
     let exclusive = volume
-        .rename(
-            &AppPath::legacy_unchecked(Path::new("new.txt")),
-            &AppPath::legacy_unchecked(Path::new("locked.txt")),
-            false,
-        )
+        .rename(&at(&volume, "new.txt"), &at(&volume, "locked.txt"), false)
         .await
         .expect_err("the name is taken");
     assert!(matches!(exclusive, VolumeError::AlreadyExists(_)), "got {exclusive:?}");
 
     match volume
-        .rename(
-            &AppPath::legacy_unchecked(Path::new("new.txt")),
-            &AppPath::legacy_unchecked(Path::new("locked.txt")),
-            true,
-        )
+        .rename(&at(&volume, "new.txt"), &at(&volume, "locked.txt"), true)
         .await
     {
         Ok(()) => {
@@ -196,7 +165,7 @@ async fn a_path_past_max_path_lists_renames_and_deletes() {
             format!("{deep}/{segment}")
         };
         volume
-            .create_directory(&AppPath::legacy_unchecked(Path::new(&deep)))
+            .create_directory(&at(&volume, &deep))
             .await
             .expect("mkdir under a long path");
     }
@@ -209,11 +178,11 @@ async fn a_path_past_max_path_lists_renames_and_deletes() {
     );
 
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&file)), b"deep bytes")
+        .create_file(&at(&volume, &file), b"deep bytes")
         .await
         .expect("create a long-path file");
     let listed = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(&deep)), None)
+        .list_directory(&at(&volume, &deep), None)
         .await
         .expect("list a long-path folder");
     assert_eq!(listed.len(), 1);
@@ -222,27 +191,23 @@ async fn a_path_past_max_path_lists_renames_and_deletes() {
     assert_eq!(listed[0].size, Some(10));
 
     let entry = volume
-        .get_metadata(&AppPath::legacy_unchecked(Path::new(&file)))
+        .get_metadata(&at(&volume, &file))
         .await
         .expect("stat a long-path file");
     assert_eq!(entry.path, full);
 
     let renamed = format!("{deep}/renamed.txt");
     volume
-        .rename(
-            &AppPath::legacy_unchecked(Path::new(&file)),
-            &AppPath::legacy_unchecked(Path::new(&renamed)),
-            false,
-        )
+        .rename(&at(&volume, &file), &at(&volume, &renamed), false)
         .await
         .expect("rename under a long path");
     volume
-        .delete(&AppPath::legacy_unchecked(Path::new(&renamed)))
+        .delete(&at(&volume, &renamed))
         .await
         .expect("delete a long-path file");
     assert!(
         volume
-            .list_directory(&AppPath::legacy_unchecked(Path::new(&deep)), None)
+            .list_directory(&at(&volume, &deep), None)
             .await
             .expect("list")
             .is_empty()
@@ -261,14 +226,11 @@ async fn a_listing_reads_the_hidden_attribute() {
         .open(test_dir.join("secret.txt"))
         .expect("create a hidden file");
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("plain.txt")), b"x")
+        .create_file(&at(&volume, "plain.txt"), b"x")
         .await
         .expect("create");
 
-    let listed = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .expect("list");
+    let listed = volume.list_directory(&at(&volume, ""), None).await.expect("list");
     let hidden = |name: &str| listed.iter().find(|e| e.name == name).expect(name).is_hidden;
     assert!(hidden("secret.txt"));
     assert!(!hidden("plain.txt"));
@@ -278,20 +240,14 @@ async fn a_listing_reads_the_hidden_attribute() {
 async fn a_folder_symlink_deletes_as_the_link_and_keeps_the_target() {
     let test_dir = TestDir::new("win_delete_dir_link");
     let volume = volume_at(&test_dir);
+    volume.create_directory(&at(&volume, "real")).await.expect("mkdir");
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("real")))
-        .await
-        .expect("mkdir");
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("real/keep.txt")), b"keep")
+        .create_file(&at(&volume, "real/keep.txt"), b"keep")
         .await
         .expect("create");
     junction(&test_dir, "link", "real");
 
-    volume
-        .delete(&AppPath::legacy_unchecked(Path::new("link")))
-        .await
-        .expect("delete the junction");
+    volume.delete(&at(&volume, "link")).await.expect("delete the junction");
 
     assert!(!test_dir.join("link").exists());
     assert_eq!(std::fs::read(test_dir.join("real/keep.txt")).expect("read"), b"keep");
@@ -315,4 +271,33 @@ async fn the_root_reports_a_bounded_capacity() {
     assert!(total_bytes > 0);
     assert!(available_bytes <= total_bytes);
     assert!(used_bytes <= total_bytes);
+}
+
+/// A relative transition-bridge path (what a caller's crate still hands in, built with `/` or
+/// with `Path::join`'s `\`) lands under the root; a `..` is refused typed, ❌ never resolved by
+/// text, and creates nothing. Goes with the bridge (plan milestone 11).
+#[tokio::test]
+async fn a_relative_bridge_path_lands_under_the_root_and_a_dot_dot_is_refused() {
+    use cmdr_fs::app_path::AppPath;
+    use std::path::Path;
+
+    let test_dir = TestDir::new("win_relative");
+    let volume = volume_at(&test_dir);
+    std::fs::create_dir(test_dir.join("a")).expect("a");
+    volume
+        .create_file(&AppPath::legacy_unchecked(Path::new("a/one.txt")), b"1")
+        .await
+        .expect("a slashed relative path");
+    volume
+        .create_file(&AppPath::legacy_unchecked(Path::new(r"a\two.txt")), b"2")
+        .await
+        .expect("a backslashed relative path");
+    assert_eq!(std::fs::read(test_dir.join("a/one.txt")).expect("read"), b"1");
+    assert_eq!(std::fs::read(test_dir.join("a/two.txt")).expect("read"), b"2");
+
+    let refused = volume
+        .create_file(&AppPath::legacy_unchecked(Path::new("a/../three.txt")), b"3")
+        .await;
+    assert!(refused.is_err(), "{refused:?}");
+    assert!(!test_dir.join("three.txt").exists());
 }

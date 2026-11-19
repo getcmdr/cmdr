@@ -8,10 +8,10 @@ use std::path::Path;
 
 use cmdr_fs::entry::FileEntry;
 
-use super::super::{ListingTally, Pick, bulk};
+use super::super::{ListingDir, ListingTally, Pick, bulk};
 use super::OsFields;
 
-pub(crate) use super::unix::{child_path, lstat, mode_of, read_dir, stat};
+pub(crate) use super::unix::{located, lstat, mode_of, read_dir, stat};
 
 /// Whether a POSIX entry's `st_flags` carries `UF_HIDDEN`, what `chflags hidden` sets. Reads
 /// a field the `lstat` that produced `metadata` already fetched, so it costs no syscall.
@@ -26,12 +26,12 @@ pub(crate) fn os_fields(metadata: &Metadata) -> OsFields {
 
 /// macOS picks the lister (`bulk::read_entries`).
 pub(crate) fn read_entries(
-    path: &Path,
+    dir: &ListingDir<'_>,
     dot_hidden: &HashSet<String>,
     tally: Option<&ListingTally>,
     pick: Pick,
 ) -> io::Result<Vec<FileEntry>> {
-    bulk::read_entries(path, dot_hidden, tally, pick)
+    bulk::read_entries(dir, dot_hidden, tally, pick)
 }
 
 pub(crate) fn finish_single_entry(path: &Path, entry: FileEntry) -> FileEntry {

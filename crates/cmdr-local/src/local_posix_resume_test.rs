@@ -6,13 +6,12 @@
 #![cfg(unix)]
 
 use super::*;
+use crate::test_support::at;
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::WriteMode;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{StreamLength, Volume, VolumeError};
-use std::path::Path;
 
 /// A source stream that fails, as a dropped share does, once it has handed out
 /// `after` bytes.
@@ -68,7 +67,7 @@ async fn a_write_a_dropped_source_cut_short_carries_on_from_its_last_reported_by
     let reported = AtomicU64::new(0);
     let failed = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(Path::new("big.bin.tmp")),
+            &at(&volume, "big.bin.tmp"),
             WriteMode::CreateOrReplace,
             StreamLength::Known(data.len() as u64),
             Box::new(BreaksAfter {
@@ -83,21 +82,24 @@ async fn a_write_a_dropped_source_cut_short_carries_on_from_its_last_reported_by
         )
         .await;
     assert!(matches!(failed, Err(VolumeError::DeviceDisconnected(_))));
-    let at = reported.load(Ordering::SeqCst);
-    assert!(at > 0, "the write reported bytes before the source broke");
+    let resumed_at = reported.load(Ordering::SeqCst);
+    assert!(resumed_at > 0, "the write reported bytes before the source broke");
 
     let rest = source
-        .resume_read_stream(app_path!("/big.bin"), &version, at)
+        .resume_read_stream(app_path!("/big.bin"), &version, resumed_at)
         .await
         .unwrap();
     let written = volume
         .continue_write_from_stream(
-            &AppPath::legacy_unchecked(Path::new("big.bin.tmp")),
-            at,
+            &at(&volume, "big.bin.tmp"),
+            resumed_at,
             StreamLength::Known(data.len() as u64),
             rest,
             &|progress| {
-                assert!(progress.bytes_written > at, "progress counts from the file's start");
+                assert!(
+                    progress.bytes_written > resumed_at,
+                    "progress counts from the file's start"
+                );
                 std::ops::ControlFlow::Continue(())
             },
         )
@@ -122,16 +124,12 @@ async fn a_write_is_not_carried_on_into_a_target_that_is_gone_or_short() {
     let volume = LocalPosixVolume::local_folder("Test", dir.to_str().unwrap(), VolumeHost::detached());
     std::fs::write(dir.join("short.tmp"), b"0123").unwrap();
 
-    for (target, at) in [("gone.tmp", 4), ("short.tmp", 6)] {
+    for (target, offset) in [("gone.tmp", 4), ("short.tmp", 6)] {
         let rest = source.open_read_stream(app_path!("/f")).await.unwrap();
         let refused = volume
-            .continue_write_from_stream(
-                &AppPath::legacy_unchecked(Path::new(target)),
-                at,
-                StreamLength::Known(10),
-                rest,
-                &|_| std::ops::ControlFlow::Continue(()),
-            )
+            .continue_write_from_stream(&at(&volume, target), offset, StreamLength::Known(10), rest, &|_| {
+                std::ops::ControlFlow::Continue(())
+            })
             .await;
         assert!(
             matches!(refused, Err(VolumeError::NotSupported)),
@@ -151,14 +149,11 @@ async fn a_local_read_resumes_on_its_named_file_and_refuses_a_rewritten_one() {
     std::fs::write(dir.join("f.bin"), &data).unwrap();
     let volume = LocalPosixVolume::local_folder("Test", dir.to_str().unwrap(), VolumeHost::detached());
 
-    let first = volume
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new("f.bin")))
-        .await
-        .unwrap();
+    let first = volume.open_read_stream(&at(&volume, "f.bin")).await.unwrap();
     let version = first.source_version().expect("a local file names its version");
     drop(first);
     let mut rest = volume
-        .resume_read_stream(&AppPath::legacy_unchecked(Path::new("f.bin")), &version, 70_000)
+        .resume_read_stream(&at(&volume, "f.bin"), &version, 70_000)
         .await
         .expect("the same file resumes");
     let mut read = Vec::new();
@@ -170,9 +165,7 @@ async fn a_local_read_resumes_on_its_named_file_and_refuses_a_rewritten_one() {
     std::fs::remove_file(dir.join("f.bin")).unwrap();
     std::fs::write(dir.join("f.bin"), &data).unwrap();
     assert!(matches!(
-        volume
-            .resume_read_stream(&AppPath::legacy_unchecked(Path::new("f.bin")), &version, 70_000)
-            .await,
+        volume.resume_read_stream(&at(&volume, "f.bin"), &version, 70_000).await,
         Err(VolumeError::SourceChanged(_))
     ));
 }

@@ -13,7 +13,7 @@
 #![cfg(unix)]
 
 use super::*;
-use cmdr_fs::app_path::AppPath;
+use crate::test_support::at;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::Volume;
 use cmdr_fs::volume::host::VolumeHost;
@@ -29,12 +29,9 @@ async fn delete_honors_the_shared_non_recursion_contract() {
     let test_dir = TestDir::new("delete_non_recursion_test");
     let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
 
+    volume.create_directory(&at(&volume, "album")).await.unwrap();
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("album")))
-        .await
-        .unwrap();
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("album/keep.txt")), b"content")
+        .create_file(&at(&volume, "album/keep.txt"), b"content")
         .await
         .unwrap();
 
@@ -47,13 +44,10 @@ async fn delete_honors_the_shared_non_recursion_contract() {
 async fn delete_files_honors_the_shared_batch_contract() {
     let test_dir = TestDir::new("delete_files_batch_test");
     let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("level")))
-        .await
-        .unwrap();
+    volume.create_directory(&at(&volume, "level")).await.unwrap();
     for name in ["a.txt", "b.txt", "kept.txt"] {
         volume
-            .create_file(&AppPath::legacy_unchecked(&Path::new("level").join(name)), b"bytes")
+            .create_file(&at(&volume, &format!("level/{name}")), b"bytes")
             .await
             .unwrap();
     }
@@ -76,15 +70,9 @@ async fn rename_honors_the_shared_no_clobber_contract() {
     let test_dir = TestDir::new("rename_no_clobber_conformance_test");
     let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
 
+    volume.create_file(&at(&volume, "source.txt"), b"source").await.unwrap();
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("source.txt")), b"source")
-        .await
-        .unwrap();
-    volume
-        .create_file(
-            &AppPath::legacy_unchecked(Path::new("target.txt")),
-            b"the user's target file",
-        )
+        .create_file(&at(&volume, "target.txt"), b"the user's target file")
         .await
         .unwrap();
 
@@ -104,23 +92,11 @@ async fn forced_rename_honors_the_shared_non_empty_folder_contract() {
     let test_dir = TestDir::new("forced_rename_non_empty_folder_conformance_test");
     let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
 
+    volume.create_file(&at(&volume, "source.txt"), b"source").await.unwrap();
+    volume.create_directory(&at(&volume, "source-dir")).await.unwrap();
+    volume.create_directory(&at(&volume, "album")).await.unwrap();
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("source.txt")), b"source")
-        .await
-        .unwrap();
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("source-dir")))
-        .await
-        .unwrap();
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("album")))
-        .await
-        .unwrap();
-    volume
-        .create_file(
-            &AppPath::legacy_unchecked(Path::new("album/source.txt")),
-            b"the user's photo",
-        )
+        .create_file(&at(&volume, "album/source.txt"), b"the user's photo")
         .await
         .unwrap();
 
@@ -144,7 +120,7 @@ async fn create_file_honors_the_shared_no_clobber_contract() {
     let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
 
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("notes.txt")), b"the user's notes")
+        .create_file(&at(&volume, "notes.txt"), b"the user's notes")
         .await
         .unwrap();
 
@@ -159,7 +135,7 @@ async fn write_from_stream_create_new_honors_the_shared_no_clobber_contract() {
     let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
 
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("notes.txt")), b"the user's notes")
+        .create_file(&at(&volume, "notes.txt"), b"the user's notes")
         .await
         .unwrap();
 
@@ -197,24 +173,16 @@ async fn a_copy_keeps_the_source_date_per_the_shared_contract() {
 async fn listing_dates_honor_the_shared_claim_contract() {
     let test_dir = TestDir::new("listed_dates_conformance_test");
     let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
+    volume.create_directory(&at(&volume, "dated")).await.unwrap();
+    volume.create_directory(&at(&volume, "dated/folder")).await.unwrap();
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("dated")))
-        .await
-        .unwrap();
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("dated/folder")))
-        .await
-        .unwrap();
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("dated/file.txt")), b"bytes")
+        .create_file(&at(&volume, "dated/file.txt"), b"bytes")
         .await
         .unwrap();
     cmdr_fs::testing::symlink("file.txt", test_dir.join("dated/link")).unwrap();
 
     cmdr_fs::volume::conformance::assert_listing_dates_are_claimed(&volume, Path::new("dated")).await;
-    let claimed = volume
-        .supported_dates(&AppPath::legacy_unchecked(Path::new("dated")))
-        .await;
+    let claimed = volume.supported_dates(&at(&volume, "dated")).await;
     #[cfg(target_os = "macos")]
     assert_eq!(
         claimed,
@@ -265,7 +233,7 @@ async fn unknown_write_streams_all_bytes_and_reports_the_accepted_count() {
     let progress = std::sync::Mutex::new(Vec::new());
     let written = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(Path::new("notes.txt")),
+            &at(&volume, "notes.txt"),
             WriteMode::CreateNew,
             StreamLength::Unknown,
             Box::new(cmdr_fs::volume::ChannelReadStream::new(
@@ -295,10 +263,7 @@ async fn create_directory_all_honors_the_shared_honesty_contract() {
     let test_dir = TestDir::new("create_directory_all_honesty_conformance_test");
     let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
 
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("album")))
-        .await
-        .unwrap();
+    volume.create_directory(&at(&volume, "album")).await.unwrap();
 
     cmdr_fs::volume::conformance::assert_create_directory_all_reports_an_existing_dir_honestly(
         &volume,
@@ -316,7 +281,7 @@ async fn create_directory_all_honors_the_shared_file_in_the_way_contract() {
     let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
 
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("notes")), b"the user's notes")
+        .create_file(&at(&volume, "notes"), b"the user's notes")
         .await
         .unwrap();
 
@@ -332,10 +297,7 @@ async fn create_directory_all_honors_the_shared_through_a_link_contract() {
     let test_dir = TestDir::new("create_directory_all_through_a_link_conformance_test");
     let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
 
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("real")))
-        .await
-        .unwrap();
+    volume.create_directory(&at(&volume, "real")).await.unwrap();
     cmdr_fs::testing::symlink(test_dir.join("real"), test_dir.join("link")).unwrap();
 
     cmdr_fs::volume::conformance::assert_create_directory_all_goes_through_a_link_to_a_folder(
@@ -353,12 +315,9 @@ async fn delete_of_a_link_to_a_folder_honors_the_shared_contract() {
     let test_dir = TestDir::new("delete_of_a_link_conformance_test");
     let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
 
+    volume.create_directory(&at(&volume, "real")).await.unwrap();
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("real")))
-        .await
-        .unwrap();
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("real/keep.txt")), b"keep")
+        .create_file(&at(&volume, "real/keep.txt"), b"keep")
         .await
         .unwrap();
     cmdr_fs::testing::symlink(test_dir.join("real"), test_dir.join("link")).unwrap();
@@ -379,18 +338,12 @@ async fn a_link_to_a_folder_moves_as_the_link_per_the_shared_contract() {
     let test_dir = TestDir::new("link_move_conformance_test");
     let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
 
+    volume.create_directory(&at(&volume, "real")).await.unwrap();
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("real")))
+        .create_file(&at(&volume, "real/keep.txt"), b"keep")
         .await
         .unwrap();
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("real/keep.txt")), b"keep")
-        .await
-        .unwrap();
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new("moved")))
-        .await
-        .unwrap();
+    volume.create_directory(&at(&volume, "moved")).await.unwrap();
     cmdr_fs::testing::symlink(test_dir.join("real"), test_dir.join("link")).unwrap();
 
     cmdr_fs::volume::conformance::assert_a_link_to_a_folder_moves_as_the_link(
@@ -420,10 +373,7 @@ async fn export_honors_the_shared_handshake_contract() {
     let test_dir = TestDir::new("export_handshake_conformance_test");
     let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
     let content = b"the bytes a copy would move";
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("exported.txt")), content)
-        .await
-        .unwrap();
+    volume.create_file(&at(&volume, "exported.txt"), content).await.unwrap();
 
     cmdr_fs::volume::conformance::assert_export_matches_the_bytes_offered(&volume, Path::new("exported.txt"), content)
         .await;
@@ -438,7 +388,7 @@ async fn copy_within_honors_the_shared_handshake_contract() {
     let test_dir = TestDir::new("copy_within_handshake_conformance_test");
     let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("original.txt")), b"bytes")
+        .create_file(&at(&volume, "original.txt"), b"bytes")
         .await
         .unwrap();
 
@@ -494,10 +444,7 @@ async fn a_link_lands_verbatim() {
 async fn xattrs_keep_the_shared_contract() {
     let test_dir = TestDir::new("xattrs_contract_test");
     let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("plain.txt")), b"x")
-        .await
-        .unwrap();
+    volume.create_file(&at(&volume, "plain.txt"), b"x").await.unwrap();
     cmdr_fs::volume::conformance::assert_xattrs_keep_their_promises(
         &volume,
         Path::new("plain.txt"),

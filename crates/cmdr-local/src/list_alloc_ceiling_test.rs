@@ -6,7 +6,6 @@
 
 #![cfg(unix)]
 
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::testing::alloc_count::{CountingAllocator, allocations_during, allocations_for_one_entry};
 use cmdr_fs::volume::Volume;
@@ -38,8 +37,7 @@ fn a_local_listing_costs_at_most_its_pinned_allocations_per_entry() {
     let per_entry = allocations_for_one_entry(|count| {
         let dir = if count == 0 { &empty } else { &one };
         let volume = LocalPosixVolume::local_folder("Test", dir.to_path_buf(), VolumeHost::detached());
-        let (listed, allocations) =
-            allocations_during(|| runtime.block_on(volume.list_directory(&AppPath::legacy_unchecked(dir), None)));
+        let (listed, allocations) = allocations_during(|| runtime.block_on(volume.list_directory(volume.root(), None)));
         assert_eq!(listed.expect("lists").len() as u64, count);
         allocations
     });

@@ -5,12 +5,11 @@
 #![cfg(unix)]
 
 use super::*;
+use crate::test_support::at;
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{InMemoryVolume, Volume, WriteMode};
-use std::path::Path;
 
 #[tokio::test]
 async fn test_write_from_stream_multichunk_is_durable_and_correct() {
@@ -35,7 +34,7 @@ async fn test_write_from_stream_multichunk_is_durable_and_correct() {
     let volume = LocalPosixVolume::local_folder("Test", vol_dir.to_str().unwrap(), VolumeHost::detached());
     let bytes = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(Path::new("imported.bin")),
+            &at(&volume, "imported.bin"),
             WriteMode::CreateOrReplace,
             size,
             stream,
@@ -61,23 +60,13 @@ async fn write_from_stream_owes_one_barrier_per_device_not_per_file() {
         .with_barrier_interval(std::time::Duration::MAX);
     for i in 0..FILES {
         let name = format!("/f{i}.txt");
-        source
-            .create_file(&AppPath::legacy_unchecked(Path::new(&name)), b"small")
-            .await
-            .unwrap();
-        let stream = source
-            .open_read_stream(&AppPath::legacy_unchecked(Path::new(&name)))
-            .await
-            .unwrap();
+        source.create_file(&at(&volume, &name[1..]), b"small").await.unwrap();
+        let stream = source.open_read_stream(&at(&volume, &name[1..])).await.unwrap();
         let size = stream.total_size();
         volume
-            .write_from_stream(
-                &AppPath::legacy_unchecked(Path::new(&name[1..])),
-                WriteMode::CreateNew,
-                size,
-                stream,
-                &|_| std::ops::ControlFlow::Continue(()),
-            )
+            .write_from_stream(&at(&volume, &name[1..]), WriteMode::CreateNew, size, stream, &|_| {
+                std::ops::ControlFlow::Continue(())
+            })
             .await
             .unwrap();
     }
@@ -96,7 +85,7 @@ async fn stream_in(volume: &LocalPosixVolume, name: &str, mode: WriteMode) {
     let stream = source.open_read_stream(app_path!("/src")).await.unwrap();
     let size = stream.total_size();
     volume
-        .write_from_stream(&AppPath::legacy_unchecked(Path::new(name)), mode, size, stream, &|_| {
+        .write_from_stream(&at(volume, name), mode, size, stream, &|_| {
             std::ops::ControlFlow::Continue(())
         })
         .await

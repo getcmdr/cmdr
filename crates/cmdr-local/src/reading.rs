@@ -12,10 +12,12 @@
 #[cfg(target_os = "macos")]
 mod bulk;
 mod platform;
+mod row;
 
+use std::borrow::Cow;
 use std::collections::HashSet;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::time::Duration;
@@ -28,6 +30,9 @@ use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::host::listings::ListingHost;
 use cmdr_fs::volume::listing_progress::report_while;
 use cmdr_fs::volume::{ListingProgress, SupportedDates, VolumeError};
+
+pub(crate) use platform::located;
+pub(crate) use row::{ListingDir, Named, Row};
 
 /// Reads a volume root's `/.hidden` file (Finder's legacy per-volume hide list,
 /// still honored today) into the set of names it hides in that one directory.
@@ -52,8 +57,17 @@ fn read_dot_hidden_names(root_dir: &Path) -> HashSet<String> {
 
 /// Every entry of the folder at `path`, in the order `listings` decides
 /// (`ListingHost::sort_listing`). On APFS and HFS+ each carries its added date.
+///
+/// `path` is a native path (on Windows either spelling, `C:\x` or the app path's `C:/x`); the
+/// rows carry app paths.
 pub fn list_directory_core(path: &Path, listings: &dyn ListingHost) -> Result<Vec<FileEntry>, std::io::Error> {
-    list_directory_core_impl(path, None, false, listings, Pick::ByFilesystem)
+    list_directory_core_impl(&listing_dir_of(path)?, None, false, listings, Pick::ByFilesystem)
+}
+
+/// The reader's folder for a native `path` a caller outside the volumes hands in.
+fn listing_dir_of(path: &Path) -> std::io::Result<ListingDir<'_>> {
+    let (os, app) = located(path)?;
+    Ok(ListingDir::new(os, app.map(Cow::Owned)))
 }
 
 /// Like `list_directory_core`, but publishes a running count into `tally` as it stats.
@@ -69,12 +83,12 @@ pub fn list_directory_core(path: &Path, listings: &dyn ListingHost) -> Result<Ve
 /// `abs_path == self.root()`, the one place Cmdr knows a directory IS a volume
 /// root rather than merely a directory somewhere under one.
 pub(crate) fn list_directory_core_with_tally(
-    path: &Path,
+    dir: &ListingDir<'_>,
     tally: &ListingTally,
     is_volume_root: bool,
     listings: &dyn ListingHost,
 ) -> Result<Vec<FileEntry>, std::io::Error> {
-    list_directory_core_impl(path, Some(tally), is_volume_root, listings, Pick::ByFilesystem)
+    list_directory_core_impl(dir, Some(tally), is_volume_root, listings, Pick::ByFilesystem)
 }
 
 /// How often a local listing samples its running tally and reports progress.
@@ -89,15 +103,16 @@ const PROGRESS_SAMPLE_INTERVAL: Duration = if crate::TEST_FAST_PATHS {
     Duration::from_millis(200)
 };
 
-/// The body of both local volumes' `list_directory`: lists `abs_path` on a blocking thread
-/// and reports its progress meanwhile.
+/// The body of both local volumes' `list_directory`: lists `dir` on a blocking thread and
+/// reports its progress meanwhile. A failure names `named`, the folder as its caller reads it.
 ///
 /// `on_progress` is `Sync` but not `Send`, so it can't ride into `spawn_blocking` with the
 /// lister. Instead the lister publishes into `tally` and this side samples it on a timer,
 /// leaving the callback on the async task that owns it. Without this the pane sits on
 /// "Opening folder…" for a big folder's whole read. `DETAILS.md` § "The local reader".
 pub(crate) async fn list_reporting_progress(
-    abs_path: PathBuf,
+    dir: ListingDir<'static>,
+    named: Named,
     is_volume_root: bool,
     host: VolumeHost,
     tally: Arc<ListingTally>,
@@ -105,8 +120,8 @@ pub(crate) async fn list_reporting_progress(
 ) -> Result<Vec<FileEntry>, VolumeError> {
     let tally_for_listing = Arc::clone(&tally);
     let listing = tokio::task::spawn_blocking(move || {
-        list_directory_core_with_tally(&abs_path, &tally_for_listing, is_volume_root, host.listings())
-            .map_err(|e| VolumeError::from_io_at(&e, &abs_path))
+        list_directory_core_with_tally(&dir, &tally_for_listing, is_volume_root, host.listings())
+            .map_err(|e| named.error(&e))
     });
     report_while(listing, PROGRESS_SAMPLE_INTERVAL, || tally.snapshot(), on_progress)
         .await
@@ -141,7 +156,7 @@ pub fn list_directory_with(
     lister: Lister,
 ) -> Result<Vec<FileEntry>, std::io::Error> {
     list_directory_core_impl(
-        path,
+        &listing_dir_of(path)?,
         Some(&ListingTally::default()),
         is_volume_root,
         listings,
@@ -244,13 +259,14 @@ impl ListingTally {
 }
 
 fn list_directory_core_impl(
-    path: &Path,
+    dir: &ListingDir<'_>,
     tally: Option<&ListingTally>,
     is_volume_root: bool,
     listings: &dyn ListingHost,
     pick: Pick,
 ) -> Result<Vec<FileEntry>, std::io::Error> {
     benchmark::log_event("list_directory_core START");
+    let path = dir.os();
     let overall_start = std::time::Instant::now();
 
     // Read once per listing, never per entry: at a volume root only (see this
@@ -264,7 +280,8 @@ fn list_directory_core_impl(
 
     benchmark::log_event("read_entries START");
     let read_start = std::time::Instant::now();
-    let mut entries = platform::read_entries(path, &dot_hidden_names, tally, pick)?;
+    let mut entries = platform::read_entries(dir, &dot_hidden_names, tally, pick)?;
+    dir.report_lossy();
     let read_time = read_start.elapsed();
     benchmark::log_event_value("read_entries END, entries", entries.len());
 
@@ -319,22 +336,20 @@ fn list_directory_core_impl(
 /// `lstat` fails lists as the minimal row; an iteration error fails the whole
 /// listing.
 fn read_dir_entries(
-    path: &Path,
+    dir: &ListingDir<'_>,
     dot_hidden: &HashSet<String>,
     tally: Option<&ListingTally>,
     added: AddedAt,
 ) -> std::io::Result<Vec<FileEntry>> {
-    let dir_entries: Vec<_> = platform::read_dir(path)?.collect();
+    let dir_entries: Vec<_> = platform::read_dir(dir.os())?.collect();
     let mut entries = Vec::with_capacity(dir_entries.len());
     for entry in dir_entries {
         let entry = entry?;
-        let raw_name = entry.file_name();
-        let name = raw_name.to_string_lossy().into_owned();
-        let entry_path = platform::child_path(path, &raw_name);
-        let file_entry = entry_from_lstat(&entry_path, name.clone(), dot_hidden, added).unwrap_or_else(|| {
+        let (entry_path, row) = dir.child(&entry.file_name());
+        let file_entry = entry_from_lstat(&entry_path, row, dot_hidden, added).unwrap_or_else(|row| {
             // `d_type` still says whether it's a link, which picks the row's icon.
             let is_symlink = entry.file_type().is_ok_and(|ft| ft.is_symlink());
-            minimal_row(&entry_path, name, is_symlink, dot_hidden)
+            minimal_row(row, is_symlink, dot_hidden)
         });
         if let Some(tally) = tally {
             tally.record(&file_entry);
@@ -344,24 +359,26 @@ fn read_dir_entries(
     Ok(entries)
 }
 
-/// The entry at `path` from its own `lstat`, or `None` when that `lstat` fails
-/// (the entry vanished, its folder isn't searchable, a sandbox said `EPERM`).
+/// The entry at the OS path `path` from its own `lstat`, as `row`, or `row` back when that
+/// `lstat` fails (the entry vanished, its folder isn't searchable, a sandbox said `EPERM`).
 /// With `AddedAt::Fetch` it also carries the added date.
 pub(crate) fn entry_from_lstat(
     path: &Path,
-    name: String,
+    row: Row,
     dot_hidden: &HashSet<String>,
     added: AddedAt,
-) -> Option<FileEntry> {
-    let metadata = platform::lstat(path).ok()?;
-    let entry = entry_from_metadata(path, name, &metadata, dot_hidden);
+) -> Result<FileEntry, Row> {
+    let Ok(metadata) = platform::lstat(path) else {
+        return Err(row);
+    };
+    let entry = entry_from_metadata(path, row, &metadata, dot_hidden);
     match added {
         #[cfg(target_os = "macos")]
-        AddedAt::Fetch => Some(FileEntry {
+        AddedAt::Fetch => Ok(FileEntry {
             added_at: bulk::added_at_by_path(path),
             ..entry
         }),
-        AddedAt::Skip => Some(entry),
+        AddedAt::Skip => Ok(entry),
     }
 }
 
@@ -369,15 +386,15 @@ pub(crate) fn entry_from_lstat(
 /// link (from the caller's `d_type` or record type: it picks the
 /// `symlink-broken` icon), and nothing else. No size, no dates, no owner, never a
 /// folder.
-pub(crate) fn minimal_row(path: &Path, name: String, is_symlink: bool, dot_hidden: &HashSet<String>) -> FileEntry {
+pub(crate) fn minimal_row(row: Row, is_symlink: bool, dot_hidden: &HashSet<String>) -> FileEntry {
     FileEntry {
         icon_id: if is_symlink {
             "symlink-broken".to_string()
         } else {
             "file".to_string()
         },
-        is_hidden: is_hidden_by_name(&name) || dot_hidden.contains(&name),
-        ..FileEntry::new(name, path.to_string_lossy().into_owned(), false, is_symlink)
+        is_hidden: is_hidden_by_name(&row.name) || dot_hidden.contains(&row.name),
+        ..FileEntry::new(row.name, row.path, false, is_symlink)
     }
 }
 
@@ -388,14 +405,19 @@ pub(crate) fn minimal_row(path: &Path, name: String, is_symlink: bool, dot_hidde
 /// Builds the same entry a listing of its folder does (through
 /// `entry_from_metadata`), added date included, except that it never applies a
 /// volume root's `/.hidden`.
+///
+/// `path` is a native path (on Windows either spelling, `C:\x` or the app path's `C:/x`); the
+/// entry carries its app path.
 pub fn get_single_entry(path: &Path) -> Result<FileEntry, std::io::Error> {
-    let metadata = platform::lstat(path)?;
-    let name = path
-        .file_name()
-        .map(|s| s.to_string_lossy().to_string())
-        .unwrap_or_else(|| path.to_string_lossy().to_string());
-    let entry = entry_from_metadata(path, name, &metadata, &HashSet::new());
-    Ok(platform::finish_single_entry(path, entry))
+    let (os, app) = located(path)?;
+    single_entry(&os, Row::of(&os, app.as_deref()))
+}
+
+/// [`get_single_entry`] of the OS path `os`, as `row`.
+pub(crate) fn single_entry(os: &Path, row: Row) -> Result<FileEntry, std::io::Error> {
+    let metadata = platform::lstat(os)?;
+    let entry = entry_from_metadata(os, row, &metadata, &HashSet::new());
+    Ok(platform::finish_single_entry(os, entry))
 }
 
 /// Which dates a listing of the folder `dir` carries beyond the modification
@@ -443,7 +465,7 @@ pub(crate) fn withhold_unclaimed_dates(entry: FileEntry, dates: SupportedDates) 
 /// per entry by the caller. The added date is the caller's to fill.
 pub(crate) fn entry_from_metadata(
     path: &Path,
-    name: String,
+    row: Row,
     metadata: &fs::Metadata,
     dot_hidden: &HashSet<String>,
 ) -> FileEntry {
@@ -485,7 +507,7 @@ pub(crate) fn entry_from_metadata(
         permissions: os.permissions,
         owner: os.owner,
         group: os.group,
-        is_hidden: is_hidden_by_name(&name) || os.flag_hidden || dot_hidden.contains(&name),
-        ..FileEntry::new(name, path.to_string_lossy().to_string(), is_dir, is_symlink)
+        is_hidden: is_hidden_by_name(&row.name) || os.flag_hidden || dot_hidden.contains(&row.name),
+        ..FileEntry::new(row.name, row.path, is_dir, is_symlink)
     }
 }
