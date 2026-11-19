@@ -201,3 +201,36 @@ async fn a_remote_name_with_a_backslash_stays_one_name() {
         );
     }
 }
+
+/// A parent with no canonical twin (a relative folder a local engine hands its backend, a
+/// `..` spelling) joins its child as `Path::join` joined it, ❌ never drops the patch: the
+/// scan walk's own rule for such a folder.
+#[tokio::test]
+async fn a_parent_with_no_canonical_twin_still_patches_its_child() {
+    for parent in ["rel/dir", "/a/../b"] {
+        let child = format!("{parent}/new.txt");
+        let backend = FakeBackend::new(&[(child.as_str(), false), (format!("{parent}/after.txt").as_str(), false)]);
+
+        patch_mutation(&backend, Path::new(parent), MutationEvent::Created("new.txt".into())).await;
+        patch_mutation(
+            &backend,
+            Path::new(parent),
+            MutationEvent::Renamed {
+                from: "before.txt".into(),
+                to: "after.txt".into(),
+            },
+        )
+        .await;
+
+        let changes = backend.changes();
+        assert_eq!(changes.len(), 2, "{parent:?}");
+        assert!(
+            matches!(&changes[0].2, DirectoryChange::Added(entry) if entry.name == "new.txt"),
+            "{parent:?}"
+        );
+        assert!(
+            matches!(&changes[1].2, DirectoryChange::Renamed { new_entry, .. } if new_entry.name == "after.txt"),
+            "{parent:?}"
+        );
+    }
+}

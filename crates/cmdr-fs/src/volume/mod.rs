@@ -11,7 +11,7 @@
 //! implementation here is [`InMemoryVolume`], which needs no host at all and is
 //! what a test reaches for.
 
-use crate::app_path::{AppPath, AppPathBuf, NotAnAppPath, PathFlavor, RelativeAppPath};
+use crate::app_path::{AppPath, AppPathBuf, NotAnAppPath, PathFlavor, PathKind, RelativeAppPath};
 use crate::entry::FileEntry;
 use crate::metadata::{CarriedMetadata, MetadataClasses, MetadataReport, Unblock};
 use std::future::Future;
@@ -2461,9 +2461,13 @@ pub fn root_anchored(root: &Path, path: &Path) -> PathBuf {
 /// - Every spelling of "the volume root" (empty, `.`, `/`, `//`) is `root` itself.
 /// - Text that parses as a path on `root`'s volume ([`AppPath::is_on_volume`]: whole
 ///   names, a UNC server and share without case) is that path, normalized.
+/// - Text that names a path on ANOTHER volume (its own scheme, drive, or UNC root, or a
+///   folder beside this volume's root on the same server) is refused as
+///   [`AnchorRefusal::OffVolume`], ❌ never hung off `root` as a chain of names.
 /// - Anything else is volume-relative: its `/` and `.` names go, and the rest hangs off
-///   `root`. `/` is the only separator, so a Windows host never reads a remote name's `\`
-///   as one.
+///   `root`. A POSIX `/x` is volume-relative under every root (the transfer dialog's
+///   spelling). `/` is the only separator, so a Windows host never reads a remote name's
+///   `\` as one.
 ///
 /// Where the `std::path` form passes a `..` through for the OS to resolve (off the volume,
 /// past a symlink), this one refuses it, typed: a `..` is the volume's to answer
@@ -2471,22 +2475,26 @@ pub fn root_anchored(root: &Path, path: &Path) -> PathBuf {
 ///
 /// # Errors
 ///
-/// [`NotAnAppPath::DotName`] for a `..` name, and what [`AppPath::join_relative`] refuses
-/// (a drive or UNC root takes no name holding `\`).
-pub fn anchor_at_root(root: &AppPath, wire: &str) -> Result<AppPathBuf, NotAnAppPath> {
+/// [`AnchorRefusal::OffVolume`] for another volume's path, and
+/// [`AnchorRefusal::NotAppPath`] for a `..` name ([`NotAnAppPath::DotName`]) or what
+/// [`AppPath::join_relative`] refuses (a drive or UNC root takes no name holding `\`).
+pub fn anchor_at_root(root: &AppPath, wire: &str) -> Result<AppPathBuf, AnchorRefusal> {
     let root = root.to_canonical()?;
     // A POSIX `/x` is also tried where the host reads only drives (the in-memory volume's
     // `/` root on Windows); against a drive root it's no path on that volume, so relative.
-    if let Ok(path) = AppPathBuf::from_wire(wire).or_else(|_| AppPathBuf::parse(wire, PathFlavor::Posix))
-        && path.is_on_volume(&root)
-    {
-        return Ok(path);
+    if let Ok(path) = AppPathBuf::from_wire(wire).or_else(|_| AppPathBuf::parse(wire, PathFlavor::Posix)) {
+        if path.is_on_volume(&root) {
+            return Ok(path);
+        }
+        if path.kind() != PathKind::Posix {
+            return Err(AnchorRefusal::OffVolume);
+        }
     }
     let mut tail = String::with_capacity(wire.len());
     for name in wire.split('/') {
         match name {
             "" | "." => continue,
-            ".." => return Err(NotAnAppPath::DotName),
+            ".." => return Err(NotAnAppPath::DotName.into()),
             _ => {}
         }
         if !tail.is_empty() {
@@ -2494,7 +2502,22 @@ pub fn anchor_at_root(root: &AppPath, wire: &str) -> Result<AppPathBuf, NotAnApp
         }
         tail.push_str(name);
     }
-    root.join_relative(RelativeAppPath::new(&tail)?)
+    Ok(root.join_relative(RelativeAppPath::new(&tail)?)?)
+}
+
+/// Why [`anchor_at_root`] has no path on the volume for some wire text.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AnchorRefusal {
+    /// The text is a path on another volume: a scheme, drive, or UNC path off this one.
+    OffVolume,
+    /// The text, or the path it hangs off the root, is no app path.
+    NotAppPath(NotAnAppPath),
+}
+
+impl From<NotAnAppPath> for AnchorRefusal {
+    fn from(why: NotAnAppPath) -> Self {
+        Self::NotAppPath(why)
+    }
 }
 
 // Shared data types (`VolumeError`, `SpaceInfo`, `CopyScanResult`, `MutationEvent`,
@@ -2571,7 +2594,7 @@ pub mod host;
 
 pub use capabilities::VolumeCapabilities;
 pub use channel_stream::ChannelReadStream;
-pub use child_name::{ChildName, NotAChildName};
+pub use child_name::{ChildName, NameFlavor, NotAChildName, only_native_join_refuses};
 pub use connection::{BackendKind, ConnectionState, DeviceReadiness, DeviceUnavailableReason, MountClass, SignInShape};
 pub use connection_cell::{CellState, ConnectionCell};
 pub use connection_reporter::{ConnectionReporter, ReportedState};

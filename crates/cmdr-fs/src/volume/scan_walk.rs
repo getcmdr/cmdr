@@ -34,11 +34,15 @@
 //! owner and the walk carries on from the directory it was listing.
 
 use std::borrow::Cow;
+use std::fmt;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 
-use crate::app_path::{AppNameBuf, AppPath, AppPathBuf, Namer, PathArithmetic};
+use crate::app_path::{AppNameBuf, AppPath, AppPathBuf, ListedFolder, Namer};
 use crate::entry::FileEntry;
+use crate::error_detail::ErrorDetail;
+use crate::log_error::{ErrorLogText, ErrorText, write_plain};
+use crate::log_private::LogPrivate;
 use crate::volume::{BatchScanResult, CopyScanResult, ScanBoundary, ScanConflict, ScannedFile, SourceItemInfo};
 use crate::volume::{NotAChildName, VolumeError};
 
@@ -140,21 +144,46 @@ fn for_boundary(path: &AppPath) -> Cow<'_, Path> {
     path.as_std_legacy()
 }
 
-/// `name`, listed in `dir`, as its child: the app path's own join, so a remote or in-memory
-/// path never gains a Windows `\`. A listed name is text the backend handed over, so an
-/// escape-range code point in it is literal, as the bridge reads it.
+/// `name`, listed in `folder` (`dir`, its join decided once per level), as its child:
+/// [`ListedFolder`]'s join, so a remote or in-memory path never gains a Windows `\`, and a
+/// top with no canonical twin (a relative `src/album` a local engine hands its backend, a
+/// `..`) joins as the `std::path` walk joined it. A listed name is text the backend handed
+/// over, so an escape-range code point in it is literal, as the bridge reads it.
 ///
 /// ❗ A name that isn't one plain name (`..`, a `/`, a `\` under a drive or UNC folder)
-/// fails the walk as the typed `InvalidName`, ❌ never a join that lands somewhere else.
-fn child_of(dir: &AppPath, name: &str) -> Result<AppPathBuf, VolumeError> {
-    let refused = || VolumeError::from(NotAChildName(name.to_string()));
+/// fails the walk as the typed `InvalidName`, naming the folder that listed it, ❌ never a
+/// join that lands somewhere else. Failing beats skipping: a skip would let a delete or a
+/// copy count a folder as whole that isn't.
+fn child_of(folder: &ListedFolder<'_>, dir: &AppPath, name: &str) -> Result<AppPathBuf, VolumeError> {
+    let refused = || {
+        VolumeError::InvalidName(ErrorDetail::of(RefusedListedName {
+            name: NotAChildName(name.to_string()),
+            folder: dir.shown().into_owned(),
+        }))
+    };
     let typed = AppNameBuf::from_typed(name, Namer::HOST).map_err(|_| refused())?;
-    if dir.to_canonical().is_err() {
-        // A top with no canonical twin (a relative `src/album` a local engine hands its
-        // backend, a `..`): joined as the `std::path` walk joined it, by the bridge.
-        return Ok(bridged(&for_boundary(dir).join(name)).into_owned());
+    folder.join(&typed).map_err(|_| refused())
+}
+
+/// A listed name the walk refused, and the folder that listed it: the technical details a
+/// person needs to find it deep in a tree.
+struct RefusedListedName {
+    name: NotAChildName,
+    folder: String,
+}
+
+impl fmt::Display for RefusedListedName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write_plain(self, f)
     }
-    dir.join(&typed).map_err(|_| refused())
+}
+
+impl ErrorLogText for RefusedListedName {
+    fn write_log_text(&self, out: &mut ErrorText<'_>) -> fmt::Result {
+        out.error(&self.name)?;
+        fmt::Write::write_str(out, ", listed in ")?;
+        out.quoted_value(LogPrivate::dir_path(&self.folder))
+    }
 }
 
 /// [`scan_tree`], pushing every file onto `files` when it's `Some`.
@@ -389,6 +418,8 @@ fn walk_directory<'a>(
         into.dir_count += 1;
         let native = for_boundary(dir);
         boundary.dir(&native).await?;
+        // How this level's names join, decided once for all of them.
+        let folder = ListedFolder::new(dir);
         // A listing a dropped session cut off runs again once the owner has
         // waited it out; its entries are counted only after it answers.
         for entry in boundary
@@ -399,7 +430,7 @@ fn walk_directory<'a>(
             if boundary.leaves_out(&entry.name, entry.is_directory && !entry.is_symlink) {
                 continue;
             }
-            let child = child_of(dir, &entry.name)?;
+            let child = child_of(&folder, dir, &entry.name)?;
             // ❗ A symlinked directory is ONE entry, never a subtree. Following
             // one double-counts its target (Android's `/sdcard` and
             // `/storage/emulated/0` are the same bytes) and a link pointing at

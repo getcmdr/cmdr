@@ -254,16 +254,28 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   beside `root_anchored`; `scan_walk::{scan_tree_at, scan_one_at, scan_trees_at, scan_conflicts_at, fold_batch_at}`;
   `twin_path::{folder_of_app, own_pick_app, unpicked_app}`. The `std::path` forms already run the same arithmetic
   inside, so they're right on Windows too: `RemoteRoot` and `normalize_remote_path` read a server path as POSIX bytes
-  split on `/` alone (a `\` is a name character, `C:` a name), the scan walk and the listing patcher join a listed name
-  with `AppPath::join` (a name that isn't one plain name fails the walk as `InvalidName`; a top with no canonical twin,
-  a relative `src/album`, joins as `Path::join` did), and `InMemoryVolume::canonicalize` splits on `/`. What still
-  bridges here: the old forms' one crossing each, the boundary's `ScanRecorder`/`ScanOutages` (they take `std::path` and
-  live in the engines), `InMemoryVolume`'s `PathBuf`-keyed store, the conformance suites (they drive other crates'
-  volumes through their `std::path` fixtures), and `tally_by_listing`, `mkdir_all`, `root_echo`, `routed` (a
-  `FileEntry.path` is still text until escapes go live).
+  split on `/` alone (a `\` is a name character, `C:` a name), and `InMemoryVolume::canonicalize` splits the encoded
+  bytes on `/` (a name that isn't UTF-8 resolves by its bytes, never lossily).
+- **A listed name joins its folder through `app_path::ListedFolder`**, the one rule the scan walk, the listing patcher,
+  and `unpicked_app` share: the folder's canonical twin is looked up ONCE (a walk level, not per entry), a folder with
+  one joins by the app path's own join, and a bridge folder with none (a relative `src/album` a local engine hands its
+  backend, a `..` spelling) joins as `Path::join` did, ❌ never a refusal that drops a walk's children or a pane's
+  patch. A name that isn't one plain name fails the walk as `InvalidName`, naming the name AND the folder that listed
+  it. Joining such a name is what the walk must never do: `Path::join` of `""`, `.`, or `..` re-lists the folder or its
+  parent forever, and `a/b` walks a different subtree. Failing beats skipping: a skip would let a delete or copy count a
+  folder as whole that isn't. No real server lists such a name (S3, NFS, and ADB drop them at the listing; SFTP, WebDAV,
+  git, and restic only from a hostile or broken source). Cost: about 100 ns per entry against `Path::join`'s 50
+  (release, 200,000 names, 2026-11-19); the per-entry canonical check it replaced cost 530 ns, 2.4 µs under a top with a
+  trailing `/`. What still bridges here: the old forms' one crossing each, the boundary's `ScanRecorder`/`ScanOutages`
+  (they take `std::path` and live in the engines), `InMemoryVolume`'s `PathBuf`-keyed store, the conformance suites
+  (they drive other crates' volumes through their `std::path` fixtures), and `tally_by_listing`, `mkdir_all`,
+  `root_echo`, `routed` (a `FileEntry.path` is still text until escapes go live).
 - **`ChildName` refuses by the host's flavor** (`is_plain_name`): on Windows also `\` (a separator) and `:` (a stream,
   or a drive-relative path), since a native join would land the item in a subfolder or a stream. Reserved names and
-  trailing dots and spaces pass: NTFS holds them, and only the plain form refuses them (`NotPlainSafe`).
+  trailing dots and spaces pass: NTFS holds them, and only the plain form refuses them (`NotPlainSafe`). A name plain to
+  POSIX that only the host's join refuses (`only_native_join_refuses`: `12:00 notes` from a Linux server) is the
+  transfer's per-item "destination refuses this name" (`cmdr-operations`' `DestinationNames`), ❌ never the hostile
+  listing that ends it.
 - **The typed twins of `Path`'s methods are a trait, `PathArithmetic`** (`parent`, `file_name`, `extension`,
   `file_stem`, `with_file_name`, `join`, `starts_with`, `strip_prefix`, `relative_to`, `rebase`), ❌ never inherent: a
   value the flip typed would otherwise answer `x.file_name().is_some()` the typed way, silently, where `Path` answered
@@ -1271,7 +1283,10 @@ Its typed twin, `volume::anchor_at_root(&AppPath, wire: &str)`, keeps the three 
 `AppPathBuf`: a trailing `/` and `.` names go, "already under the root" is `is_on_volume` (a UNC server and share match
 without case), `/` alone separates (so a remote name's `\` stays a name; a drive root refuses it, `Backslash`), and a
 `..` is refused (`DotName`) where the `std::path` form passed it on to climb off the volume (pinned in
-`path_helper_pin_test.rs` as today's answer). Callers move to it in their own milestones.
+`path_helper_pin_test.rs` as today's answer). Text naming another volume's path (its own scheme, drive, or UNC root, or
+a folder beside the root on the same server) is refused as `AnchorRefusal::OffVolume`, where the path form hung it off
+the root as a chain of names (`…/srv/data/sftp:/…/srv/data-1/x`); a POSIX `/x` stays volume-relative under every root,
+the transfer dialog's spelling. Callers move to it in their own milestones.
 
 **Anchoring is the CALLER's job, and that's deliberate.** A backend that guesses at the dialect addresses real files at
 the wrong place: `SmbVolume::to_smb_path` answers `NotFound` for an out-of-mount absolute path instead, which is correct

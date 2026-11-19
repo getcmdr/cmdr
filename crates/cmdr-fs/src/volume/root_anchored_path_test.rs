@@ -102,15 +102,53 @@ fn a_scheme_shaped_root_anchors_the_same_way() {
 
 mod typed {
     use crate::app_path::{AppPath, NotAnAppPath, PathFlavor};
-    use crate::volume::anchor_at_root;
+    use crate::volume::{AnchorRefusal, anchor_at_root};
 
     fn root(text: &str, flavor: PathFlavor) -> &'static AppPath {
         let text: &'static str = Box::leak(text.to_string().into_boxed_str());
         AppPath::from_normalized_as(text, flavor).unwrap_or_else(|why| panic!("{text:?}: {why}"))
     }
 
+    /// The anchored text, or the app path's refusal of the wire text.
     fn anchored(root: &AppPath, wire: &str) -> Result<String, NotAnAppPath> {
-        anchor_at_root(root, wire).map(crate::app_path::AppPathBuf::into_string)
+        anchor_at_root(root, wire)
+            .map(crate::app_path::AppPathBuf::into_string)
+            .map_err(|refusal| match refusal {
+                AnchorRefusal::NotAppPath(why) => why,
+                AnchorRefusal::OffVolume => panic!("{wire:?} read as off the volume"),
+            })
+    }
+
+    /// ❗ A path on another volume (its own scheme, drive, or UNC root, or a folder beside
+    /// this volume's root on the same server) is refused as off the volume, ❌ never hung
+    /// off the root as a chain of names (`…/srv/data/sftp:/…/srv/data-1/x`).
+    #[test]
+    fn a_path_on_another_volume_is_refused_as_off_the_volume() {
+        let sftp = root("sftp://test_user_1@testnas.local:22/srv/data", PathFlavor::Posix);
+        let mtp = root("mtp://mtp-0-1/65537", PathFlavor::Posix);
+        let share = root("/Volumes/testshare", PathFlavor::Posix);
+        for (root, wire) in [
+            (sftp, "sftp://test_user_1@testnas.local:22/srv/data-1/x"),
+            (sftp, "sftp://test_user_1@testnas.local:2222/srv/data/x"),
+            (sftp, "mtp://mtp-0-1/65537/DCIM"),
+            (mtp, "mtp://mtp-0-1/65538/DCIM"),
+            (share, "smb://testnas.local/share/x"),
+        ] {
+            assert!(
+                matches!(anchor_at_root(root, wire), Err(AnchorRefusal::OffVolume)),
+                "{wire:?} under {root}: {:?}",
+                anchor_at_root(root, wire)
+            );
+        }
+        // A volume-relative `/x` still hangs off the root, as the transfer dialog types it.
+        assert_eq!(anchored(share, "/photos").as_deref(), Ok("/Volumes/testshare/photos"));
+        if PathFlavor::HOST == PathFlavor::Windows {
+            let drive = root("C:/Users/test_user_1", PathFlavor::Windows);
+            assert!(matches!(
+                anchor_at_root(drive, "D:/elsewhere"),
+                Err(AnchorRefusal::OffVolume)
+            ));
+        }
     }
 
     /// The `std::path` form's answers wherever it was right, on every host: the dialog's
@@ -135,12 +173,6 @@ mod typed {
                 "{root_ish:?}"
             );
         }
-        let sftp = root("sftp://test_user_1@testnas.local:22/srv/data", PathFlavor::Posix);
-        assert_eq!(
-            anchored(sftp, "sftp://test_user_1@testnas.local:22/srv/data-1/x").as_deref(),
-            Ok("sftp://test_user_1@testnas.local:22/srv/data/sftp:/test_user_1@testnas.local:22/srv/data-1/x"),
-            "a sibling sharing the root's text is no path under it, as in the path form"
-        );
     }
 
     /// ❗ What the path form got wrong: a trailing `/` is normalized away, and a `..` is

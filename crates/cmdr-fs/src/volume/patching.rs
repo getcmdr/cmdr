@@ -14,7 +14,9 @@
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 
-use crate::app_path::{AppNameBuf, AppPath, AppPathBuf, Namer, PathArithmetic, shown_name, unescape_bytes};
+use crate::app_path::{
+    AppNameBuf, AppPath, AppPathBuf, ListedFolder, Namer, PathArithmetic, shown_name, unescape_bytes,
+};
 use crate::entry::FileEntry;
 use crate::volume::host::listings::ListingHost;
 use crate::volume::scan_walk::Walking;
@@ -151,11 +153,12 @@ fn parent_and_name(source: &dyn PatchSource, path: &Path) -> Option<(PathBuf, St
 }
 
 /// `name` (a backend's listed name, so any escape-range code point in it is literal) in
-/// `parent_path`, by the app path's own join; `None`, so no patch, for a name that isn't
+/// `parent_path`, joined by [`ListedFolder`]'s rule (a parent with no canonical twin joins as
+/// `Path::join` did, ❌ never dropping the patch); `None`, so no patch, for a name that isn't
 /// one plain name.
 fn child_path(parent_path: &Path, name: &str) -> Option<AppPathBuf> {
     let name = AppNameBuf::from_typed(name, Namer::HOST).ok()?;
-    bridged(parent_path).join(&name).ok()
+    ListedFolder::new(&bridged(parent_path)).join(&name).ok()
 }
 
 /// A backend's `std::path` path as the app path it spells. The backends still call these

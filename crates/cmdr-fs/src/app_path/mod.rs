@@ -42,7 +42,7 @@ mod traits;
 
 use std::borrow::Cow;
 
-pub use bridge::BridgedPath;
+pub use bridge::{BridgedPath, ListedFolder};
 pub use escape::{
     EscapeRefusal, Namer, canonical_name, escape_bytes, escape_units, is_escape, native_name_length, shown_name,
     unescape_bytes, unescape_units,
@@ -218,7 +218,14 @@ impl AppPath {
             // A bridge base joins as the canonical place it names, so the result is canonical.
             return lenient::canonical(&self.0)?.join_text(tail);
         }
-        if matches!(self.kind(), PathKind::Drive | PathKind::Unc) && tail.contains('\\') {
+        self.join_canonical_text(tail)
+    }
+
+    /// [`Self::join_text`] for a path already known canonical: no re-check, so a caller
+    /// joining many names under one folder ([`ListedFolder`]) checks the folder once.
+    fn join_canonical_text(&self, tail: &str) -> Result<AppPathBuf, NotAnAppPath> {
+        debug_assert!(self.is_canonical(), "{:?} isn't canonical", &self.0);
+        if matches!(shape::root_of(&self.0).0, PathKind::Drive | PathKind::Unc) && tail.contains('\\') {
             return Err(NotAnAppPath::Backslash);
         }
         let slash = !self.0.ends_with('/');

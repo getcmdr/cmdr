@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use super::*;
+use crate::app_path::PathArithmetic;
 use crate::ignore_poison::IgnorePoison;
 use crate::volume::{ListingProgress, ScanOutages, ScanReadJudge, ScanReadNext, ScanStop, ScanStopSignal};
 
@@ -880,6 +881,37 @@ async fn a_relative_top_walks_its_children_as_before() {
 
     assert_eq!((scan.file_count, scan.dir_count, scan.total_bytes), (1, 2, 3));
     assert_eq!(tree.listings_of("src/album/inner"), 1);
+}
+
+/// A refused name says which folder listed it, deep in the tree: the technical details name
+/// the name AND the folder, and a log line marks both.
+#[tokio::test]
+async fn a_refused_listed_name_names_the_folder_that_listed_it() {
+    use crate::log_error::LogError;
+    use crate::log_private::{LogPrivate, RESERVED};
+
+    let tree = FakeTree::new()
+        .with_dir("/top", &[("deep", true, 0)])
+        .with_dir("/top/deep", &[("ok.txt", false, 1), ("a/b", false, 1)]);
+
+    let outcome = scan_tree(&tree, Path::new("/top"), &ScanBoundary::silent()).await;
+
+    let Err(error @ VolumeError::InvalidName(_)) = outcome else {
+        panic!("a refusal: {outcome:?}");
+    };
+    assert_eq!(
+        error.to_string(),
+        "Name not usable at the destination: not a single filename: \"a/b\", listed in \"/top/deep\""
+    );
+    let logged = LogError(&error).to_string();
+    for span in [
+        format!("{:?}", LogPrivate::name("a/b")),
+        format!("{:?}", LogPrivate::dir_path("/top/deep")),
+    ] {
+        assert!(logged.contains(&span), "{logged:?} lacks {span:?}");
+    }
+    let plain: String = logged.chars().filter(|c| !RESERVED.contains(c)).collect();
+    assert_eq!(plain, error.to_string());
 }
 
 /// The walk asks for the top folder as the caller spelled it, and for each child folder

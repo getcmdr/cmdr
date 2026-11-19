@@ -21,7 +21,7 @@ use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
-use crate::app_path::{AppName, AppPath, PathArithmetic};
+use crate::app_path::{AppName, AppPath, ListedFolder, PathArithmetic};
 
 /// What starts a pick segment.
 pub const PICK: char = '\0';
@@ -94,11 +94,15 @@ pub fn unpicked_app(path: &AppPath) -> Cow<'_, AppPath> {
     if own_pick_app(path).is_none() {
         return Cow::Borrowed(path);
     }
-    let joined = folder_of_app(path)
-        .zip(path.file_name())
-        .and_then(|(folder, name)| folder.join(AppName::from_app_spelling(name).ok()?).ok());
-    // A name already in a canonical path joins back onto its folder; a bridge value that
-    // doesn't comes back as it is, as `unpicked` leaves a path it can't split.
+    // The name joins back onto its folder by `ListedFolder`'s rule: typed under a folder with
+    // a canonical twin, as `Path::join` under a bridge folder with none (a relative or `..`
+    // spelling), so the pick goes either way. A name that isn't one plain name leaves the
+    // path as it is, as `unpicked` leaves a path it can't split.
+    let joined = folder_of_app(path).zip(path.file_name()).and_then(|(folder, name)| {
+        ListedFolder::new(folder)
+            .join(AppName::from_app_spelling(name).ok()?)
+            .ok()
+    });
     joined.map_or(Cow::Borrowed(path), Cow::Owned)
 }
 
@@ -223,6 +227,16 @@ mod tests {
             Path::new("mtp://dev/65537/DCIM/a")
         );
         assert!(matches!(shown("/DCIM/IMG_1.JPG"), Cow::Borrowed(_)));
+    }
+
+    /// The relative row the `Path` builder makes (`row("", …)`, a pick that starts the text)
+    /// shows as its bare name. Unix only: on Windows `Path::join` writes `\` after the pick,
+    /// which no row path holds; the hand-spelled cell above covers every OS.
+    #[test]
+    #[cfg(unix)]
+    fn a_relative_row_path_built_by_the_path_form_shows_its_name() {
+        let relative = row("", 3, "IMG_1.JPG");
+        assert_eq!(shown(relative.to_str().expect("UTF-8")), "IMG_1.JPG");
     }
 
     #[test]

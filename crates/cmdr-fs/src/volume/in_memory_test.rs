@@ -1016,3 +1016,28 @@ fn canonicalize_resolves_links_like_realpath() {
     assert_eq!(resolved("/abs/missing"), None);
     assert_eq!(resolved("/loop-a"), None);
 }
+
+/// A name that isn't UTF-8 (a Linux disk's, a server's) resolves by its exact bytes, through
+/// a link whose target holds one too: ❌ never a lossy spelling, which names no row (or a
+/// sibling literally called `caf\u{FFFD}`).
+#[test]
+#[cfg(unix)]
+fn canonicalize_keeps_a_name_that_is_not_utf8() {
+    use std::ffi::OsStr;
+    use std::os::unix::ffi::OsStrExt;
+
+    let dir = |path: &str| FileEntry::new(String::new(), path.to_string(), true, false);
+    let volume = InMemoryVolume::with_entries("Mem", vec![dir("/real"), dir("/real/inner")]);
+    let cafe = Path::new(OsStr::from_bytes(b"/caf\xe9"));
+    volume.plant_symlink(cafe, Path::new("/real"));
+    volume.plant_symlink(Path::new("/to-cafe"), Path::new(OsStr::from_bytes(b"caf\xe9")));
+
+    assert_eq!(
+        volume.canonicalize(&cafe.join("inner")),
+        Some(PathBuf::from("/real/inner"))
+    );
+    assert_eq!(
+        volume.canonicalize(Path::new("/to-cafe/inner")),
+        Some(PathBuf::from("/real/inner"))
+    );
+}
