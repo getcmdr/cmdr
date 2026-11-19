@@ -31,6 +31,8 @@ const CATEGORICAL_STRING_KEYS: &[&str] = &[
     "appearance.dateColors",
     "appearance.dateTimeFormat",
     "appearance.uiDensity",
+    // `desktopDefault` / `shown` / `hidden` (Windows and Linux): how many hide the bar.
+    "appearance.menuBar",
     "appearance.fileSizeFormat",
     "appearance.tintLocal",
     "appearance.tintSmb",
@@ -119,8 +121,10 @@ mod tests {
             "theme.mode": "dark",
             "ai.provider": "cloud",
             "listing.directorySortMode": "name",
+            "appearance.menuBar": "hidden",
         });
         let shape = build_config_shape(&settings, RuntimeState::default());
+        assert_eq!(shape["appearance.menuBar"], json!("hidden"));
         assert_eq!(shape["theme.mode"], json!("dark"));
         assert_eq!(shape["ai.provider"], json!("cloud"));
         assert_eq!(shape["listing.directorySortMode"], json!("name"));

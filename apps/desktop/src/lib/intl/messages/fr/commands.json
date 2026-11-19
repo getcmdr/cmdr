@@ -248,6 +248,10 @@
   "@commands.viewToggleFullScreen.label": {
     "sourceHash": "76055d3"
   },
+  "commands.viewToggleMenuBar.label": "Afficher ou masquer la barre des menus",
+  "@commands.viewToggleMenuBar.label": {
+    "sourceHash": "aad33a7"
+  },
   "commands.sortByName.label": "Trier par nom",
   "@commands.sortByName.label": {
     "sourceHash": "588a082"

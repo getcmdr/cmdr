@@ -85,6 +85,7 @@ menu menu_view menu.bar.view
     item view_zoom_in menu.zoom.in [Ctrl++|Control+Plus]
     item view_zoom_out menu.zoom.out [Ctrl+-|Control+-]
   item view_full_screen menu.view.fullScreen [F11|F11]
+  checkbox show_menu_bar menu.view.showMenuBar checked
   separator
   item switch_pane menu.view.switchPane [Tab|Tab]
   item swap_panes menu.view.swapPanes [Ctrl+U|Control+U]
@@ -145,6 +146,7 @@ menu menu_edit menu.bar.edit
   item viewer_select_all menu.select.all [Ctrl+A|Control+A]
 menu menu_view menu.bar.view
   checkbox viewer_word_wrap menu.viewer.wordWrap
+  checkbox show_menu_bar menu.view.showMenuBar
 menu menu_go menu.bar.go
   item viewer_go_back menu.go.back disabled
   item viewer_go_forward menu.go.forward disabled
@@ -404,6 +406,33 @@ fn a_shape_change_is_no_row_diff() {
     assert_eq!(changed_rows(&windows, &macos), None);
 }
 
+/// The viewer can hide and restore the menu bar itself, as the main window can: its View menu
+/// carries the same Show menu bar check off macOS (where the bar is the system's), so a viewer
+/// whose bar is hidden gets it back from its main-menu button (review of #1281).
+#[test]
+fn the_viewer_bar_offers_show_menu_bar_off_macos() {
+    fn check(menus: &[BarMenuView]) -> Option<bool> {
+        menus.iter().flat_map(|menu| &menu.rows).find_map(|row| match row {
+            Row::Check { id, checked, .. } if id == crate::ids::SHOW_MENU_BAR_ID => Some(*checked),
+            _ => None,
+        })
+    }
+    for platform in [Platform::Windows, Platform::Linux] {
+        for shown in [true, false] {
+            let inputs = ViewerBarInputs {
+                show_menu_bar: shown,
+                ..ViewerBarInputs::default()
+            };
+            assert_eq!(check(&viewer_bar_view(inputs, platform)), Some(shown), "{platform:?}");
+        }
+        assert!(super::viewer::is_viewer_bar_row(crate::ids::SHOW_MENU_BAR_ID, platform));
+    }
+    assert_eq!(
+        check(&viewer_bar_view(ViewerBarInputs::default(), Platform::MacOs)),
+        None
+    );
+}
+
 #[test]
 fn the_viewer_bar_follows_the_viewers_state() {
     let platform = Platform::Windows;
@@ -414,6 +443,7 @@ fn the_viewer_bar_follows_the_viewers_state() {
             can_go_back: true,
             can_go_forward: false,
             search_focused: true,
+            show_menu_bar: false,
         },
         platform,
     );

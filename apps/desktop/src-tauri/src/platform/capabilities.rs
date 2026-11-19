@@ -61,6 +61,9 @@ pub struct PlatformCapabilities {
     /// Cmdr offers a way into full screen, so the "Esc exits full screen" setting and its hint
     /// exist.
     pub full_screen: bool,
+    /// The page draws the window's menu bar, so the user can hide it: View > Show menu bar, the
+    /// `appearance.menuBar` setting, and `view.toggleMenuBar` exist (D5, `menu-model.md`).
+    pub hideable_menu_bar: bool,
     /// Cmdr ships as a Homebrew cask (the onboarding note asking for a star on the cask).
     pub homebrew_cask: bool,
     /// A system-wide shortcut works from any app (the global "go to latest download" shortcut).

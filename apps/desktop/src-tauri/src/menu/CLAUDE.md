@@ -36,7 +36,8 @@ viewer bar. `macos_appkit.rs`: the objc2 boundary. One line per file: DETAILS §
   own `VIEWER_*` ids (Copy / Select all emit `ViewerEditAction`; Cut / Paste edit its search box).
 - **Enabled state has ONE writer, `apply_menu_item_states`**: store a new input in the crate's `MenuItemInputs` /
   `menu_item_enabled`, ❌ never a direct `set_enabled` (the viewer's Cut / Paste too). Greying is chrome: the guard is
-  `main_window.is_focused()` in `on_menu_event`, and accelerators fire on greyed items.
+  the main window's focus for a native pick (a page's pick names its window, `PickWindow`), and accelerators fire on
+  greyed items.
 - **Only macOS builds a native bar** (`builds_native_bar`): elsewhere a push stores its fact and stops
   (`has_native_bar`), ❌ never fails for a missing item.
 - **macOS swaps ONE app-level bar on focus-gain (`activate_window_menu`)**. ❗ `cleanup_macos_menus`,

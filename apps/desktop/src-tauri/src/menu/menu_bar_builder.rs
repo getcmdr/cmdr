@@ -148,6 +148,8 @@ impl<R: Runtime> Builder<'_, R> {
                         CheckRole::ShowHiddenFiles => self.show_hidden_files,
                         CheckRole::ViewMode(pane, mode) => self.initial_view_mode(pane) == mode,
                         CheckRole::Sort(role) => role.is_on(self.requested_sort),
+                        // A page-drawn row (`windows_and_linux`), and only macOS builds a native bar.
+                        CheckRole::ShowMenuBar => true,
                     };
                     let accelerator = check.accelerator.on(platform);
                     let built = CheckMenuItem::with_id(app, check.id, &label, true, checked, accelerator)?;
@@ -157,6 +159,7 @@ impl<R: Runtime> Builder<'_, R> {
                         CheckRole::ViewMode(pane, ViewMode::Brief) => self.pane(pane).brief = Some(built.clone()),
                         // Found by id in `sort_submenu` whenever it's set (`sort_checks.rs`).
                         CheckRole::Sort(_) => {}
+                        CheckRole::ShowMenuBar => {}
                     }
                     if check.tracked {
                         tracked.push((check.id, position, TrackedItem::Check(built.clone()), label));

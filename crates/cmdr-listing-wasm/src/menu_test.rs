@@ -336,6 +336,28 @@ fn quit_is_greyed_for_every_visitor() {
     }
 }
 
+/// View > Show menu bar is greyed for a Windows or Linux visitor, as Quit is: the demo's own bar
+/// doesn't follow the setting (it isn't the app's bar yet), so a live row would only flip its check,
+/// a dead end (review of #1281). A pick does nothing, and the setting's push still moves the check;
+/// a Mac visitor's bar has no such row.
+#[test]
+fn show_menu_bar_is_greyed_where_the_demos_bar_ignores_it() {
+    for platform in [Platform::Windows, Platform::Linux] {
+        let menu = DemoMenu::for_platform(platform);
+        let bar = menu.bar();
+        let row = bar.iter().find_map(|menu| find(&menu.rows, "show_menu_bar"));
+        assert!(
+            matches!(row, Some(Row::Check { enabled: false, .. })),
+            "{platform:?} greys it: {row:?}"
+        );
+        assert!(matches!(menu.click("show_menu_bar"), Click::Nothing), "{platform:?}");
+        push(&menu, "sync_menu_show_menu_bar", json!({ "checked": false }));
+        assert!(!checked(&menu, "show_menu_bar"), "{platform:?}");
+    }
+    let mac = DemoMenu::new().bar();
+    assert!(mac.iter().all(|menu| find(&menu.rows, "show_menu_bar").is_none()));
+}
+
 /// A click and a rebind read the visitor's own bar, not the Mac's.
 #[test]
 fn a_windows_bar_clicks_and_rebinds_its_own_rows() {

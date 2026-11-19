@@ -16,6 +16,10 @@
   "@ui.menuBar.label": {
     "sourceHash": "2d9de7e"
   },
+  "ui.mainMenu.label": "Головне меню",
+  "@ui.mainMenu.label": {
+    "sourceHash": "45c892d"
+  },
   "ui.demoDrop.overBudget": "Демо вміщує до {budgetText} ваших файлів за один візит, тому {count, plural, one {не вмістився {countText} елемент} few {не вмістилося {countText} елементи} many {не вмістилося {countText} елементів} other {не вмістилося {countText} елемента}}.",
   "@ui.demoDrop.overBudget": {
     "sourceHash": "9a11992"

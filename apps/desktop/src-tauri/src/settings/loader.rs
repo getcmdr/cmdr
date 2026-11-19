@@ -463,6 +463,9 @@ pub struct RestrictedWindowSettings {
     /// without this a restricted one reads the registry default: a user who
     /// pinned Hungarian on an English Mac would get an English viewer.
     pub appearance_language: Option<String>,
+    /// Whether the viewer draws its menu bar or a main-menu button in its place (off macOS):
+    /// `desktopDefault`, `shown`, or `hidden`.
+    pub appearance_menu_bar: Option<String>,
 }
 
 /// Reads the [`RestrictedWindowSettings`] allowlist from `settings.json`.
@@ -503,6 +506,10 @@ fn parse_restricted_window_settings(contents: &str) -> RestrictedWindowSettings 
             .map(String::from),
         appearance_language: json
             .get("appearance.language")
+            .and_then(|v| v.as_str())
+            .map(String::from),
+        appearance_menu_bar: json
+            .get("appearance.menuBar")
             .and_then(|v| v.as_str())
             .map(String::from),
     }

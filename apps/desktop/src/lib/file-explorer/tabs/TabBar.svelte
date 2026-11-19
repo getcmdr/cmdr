@@ -1,4 +1,5 @@
 <script lang="ts">
+    import type { Snippet } from 'svelte'
     import type { TabState, TabId } from './tab-types'
     import type { TabBarDrag } from './tab-drag-controller.svelte'
     import Icon from '#lib/ui/Icon.svelte'
@@ -25,6 +26,8 @@
         onNewTab: () => void
         onContextMenu: (tabId: TabId, event: MouseEvent) => void
         onPaneFocus: () => void
+        /** Drawn at the bar's trailing end: the window's main-menu button, on the right pane's bar. */
+        trailing?: Snippet
     }
 
     const {
@@ -40,6 +43,7 @@
         onNewTab,
         onContextMenu,
         onPaneFocus,
+        trailing,
     }: Props = $props()
 
     const isSingleTab = $derived(tabs.length === 1)
@@ -223,6 +227,9 @@
              centred its line box. An SVG centres on its own viewBox. -->
         <Icon name="plus" size={14} aria-hidden="true" />
     </button>
+    {#if trailing}
+        <div class="tab-bar-trailing">{@render trailing()}</div>
+    {/if}
 </div>
 
 <style>
@@ -592,6 +599,14 @@
     .new-tab-btn:hover:not(.disabled) {
         background-color: color-mix(in srgb, var(--color-bg-tertiary), transparent 40%);
         color: var(--color-text-primary);
+    }
+
+    /* The window's main-menu button, last in the right pane's bar (GNOME's HIG: the end of the header). */
+    .tab-bar-trailing {
+        display: flex;
+        flex: none;
+        align-self: center;
+        margin-inline-start: var(--spacing-xxs);
     }
 
     .new-tab-btn.disabled {

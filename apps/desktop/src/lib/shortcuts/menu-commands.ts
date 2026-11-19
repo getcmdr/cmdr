@@ -21,6 +21,8 @@ export const menuCommands = [
   'view.zoom.out',
   // View > Full screen (Windows and Linux; macOS's is AppKit's own item, so nothing syncs there)
   'view.toggleFullScreen',
+  // View > Show menu bar (Windows and Linux, where a page draws the bar; a binding the user adds shows on it)
+  'view.toggleMenuBar',
   // File > Quit / Exit Cmdr (Windows and Linux; macOS quits from AppKit's app menu)
   'app.quit',
   // App-level

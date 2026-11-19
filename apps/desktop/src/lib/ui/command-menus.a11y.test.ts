@@ -12,6 +12,7 @@ import { withConventions } from '#lib/platform/test-platform.js'
 import { expectNoA11yViolations } from '#lib/test-a11y.js'
 import MenuBar from './MenuBar.svelte'
 import ContextMenu from './ContextMenu.svelte'
+import MainMenuButton from './MainMenuButton.svelte'
 import { createContextMenu } from './command-menu/context-menu.svelte'
 import type { MenuFlavor } from './command-menu/rows'
 
@@ -133,6 +134,29 @@ describe.each(['desktop', 'mac'] as MenuFlavor[])('command menus a11y (%s)', (fl
       at: { x: 10, y: 10 },
       fromKeyboard: true,
     })
+    await settle()
+    await expectNoA11yViolations(document.body)
+  })
+})
+
+describe('the main-menu button a11y', () => {
+  it.each(['gnome', 'windows'] as const)('closed, and open with a submenu out (%s)', async (desktop) => {
+    withConventions(desktop)
+    const target = document.createElement('div')
+    document.body.append(target)
+    const component = mount(MainMenuButton, {
+      target,
+      props: { menus: MENUS, onPick: () => {}, label: 'Main menu' },
+    })
+    teardowns.push(() => {
+      void unmount(component)
+    })
+    await settle()
+    await expectNoA11yViolations(document.body)
+    target.querySelector('button')?.focus()
+    key('Enter')
+    await settle()
+    key('ArrowRight')
     await settle()
     await expectNoA11yViolations(document.body)
   })

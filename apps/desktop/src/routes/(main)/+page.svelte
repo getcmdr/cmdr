@@ -69,8 +69,11 @@
     import { navCommandForMouseButton } from './mouse-nav'
     import { resolveGlobalKeyAction, unclaimedDispatchWarning } from './global-keydown'
     import { exitFullScreenOnEscape, installEscapeStopClaims } from './escape-key'
-    import { hasCapability, pageDrawsMenuBar } from '#lib/platform/index.js'
+    import { hasCapability, pageDrawsMenuBar, platformConventions } from '#lib/platform/index.js'
     import MainMenuBar from './MainMenuBar.svelte'
+    import MainMenuButton from '#lib/ui/MainMenuButton.svelte'
+    import { drawsBar, menuLayout, showsMainMenuButton } from '#lib/ui/command-menu/menu-layout.js'
+    import { createMainMenus, pickMainMenuRow } from './main-menus.svelte'
     import { getMessage, tString } from '#lib/intl/messages.svelte.js'
     import { showMainOnMount } from './show-main-on-mount'
     import {
@@ -93,7 +96,11 @@
     import { setOnboardingShowing } from '#lib/updates/updater.svelte.js'
     import { setWizardShowingForDownloadNotice } from '#lib/onboarding/local-download-notice.js'
     import { initSystemStrings } from '#lib/system-strings.svelte.js'
-    import { getShowFunctionKeyBar, getShowHiddenFiles } from '#lib/settings/reactive-settings.svelte.js'
+    import {
+        getShowFunctionKeyBar,
+        getShowHiddenFiles,
+        getShowMenuBar,
+    } from '#lib/settings/reactive-settings.svelte.js'
     import { addToast } from '#lib/ui/toast/index.js'
     import {
         revealPathInBestPane,
@@ -190,6 +197,14 @@
     const windowTitle = $derived(licenseIsPersonalUse ? getMessage('licensing.windowTitle.personalUse') : 'Cmdr')
     let appMode = $state<AppMode>(getAppMode())
     const showFunctionKeyBar = $derived(getShowFunctionKeyBar())
+
+    /**
+     * Where the menus live (`#lib/ui/command-menu/menu-layout.ts`): macOS's system bar, the bar,
+     * the bar hidden until Alt (Windows), or the main-menu button at the end of the tab row.
+     */
+    const menuChrome = $derived(menuLayout(platformConventions(), getShowMenuBar()))
+    /** The bar's rows off macOS, which the bar and the main-menu button both draw. */
+    const mainMenus = pageDrawsMenuBar() ? createMainMenus() : null
 
     /**
      * Every teardown `onMount` starts, disposed by `onDestroy`. `onMount` is async, so the page
@@ -382,6 +397,9 @@
         if (loadingScreen) {
             loadingScreen.style.display = 'none'
         }
+
+        // The page-drawn menus follow the backend's bar for the window's life.
+        if (mainMenus) mountScope.add(mainMenus.start())
 
         // Resolve dev/E2E/prod mode before anything opens child windows so the
         // Settings and Viewer titles can be decorated at creation time.
@@ -776,6 +794,7 @@
     const dispatchers: CommandDispatchers = {
         keyboard: gestureDispatcherFor('keyboard'),
         menu: gestureDispatcherFor('menu'),
+        barClick: gestureDispatcherFor('barClick'),
         contextMenu: gestureDispatcherFor('contextMenu'),
         mouse: gestureDispatcherFor('mouse'),
         palette: gestureDispatcherFor('palette'),
@@ -823,9 +842,23 @@
         </header>
     {/if}
 
-    {#if pageDrawsMenuBar()}
-        <MainMenuBar inert={menuBarInert()} />
+    {#if mainMenus && drawsBar(menuChrome)}
+        <MainMenuBar menus={mainMenus.menus} inert={menuBarInert()} revealOnly={menuChrome === 'barOnAlt'} />
     {/if}
+
+    <!-- The main-menu button, at the end of the tab row: GNOME's main menu, or the stand-in for a
+         bar the user hid. No rows, no button: the browser demo answers none. -->
+    {#snippet mainMenuButton()}
+        {#if mainMenus && mainMenus.menus.length > 0}
+            <MainMenuButton
+                menus={mainMenus.menus}
+                onPick={pickMainMenuRow}
+                label={tString('ui.mainMenu.label')}
+                opensOnF10={menuChrome === 'mainMenu'}
+                inert={menuBarInert()}
+            />
+        {/if}
+    {/snippet}
 
     <main class="main-content">
         <!-- eslint-disable-next-line cmdr/no-raw-user-facing-string -- "Cmdr" is the brand name, never translated (style guide); a screen-reader-only app heading. -->
@@ -968,7 +1001,11 @@
 
         {#if showApp}
             <div class="explorer-rail-row">
-                <DualPaneExplorer bind:this={explorerRef} onCommand={dispatchers.explorer} />
+                <DualPaneExplorer
+                    bind:this={explorerRef}
+                    onCommand={dispatchers.explorer}
+                    tabRowEnd={showsMainMenuButton(menuChrome) ? mainMenuButton : undefined}
+                />
                 <!-- A broken rail closes with its own toast and reopens fine; the panes stay. -->
                 <DialogBoundary
                     name="askCmdrRail"

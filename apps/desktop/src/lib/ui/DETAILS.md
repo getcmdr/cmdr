@@ -1506,10 +1506,24 @@ the page: the in-window bar and its flyouts (D5's `windowMenuBar`, task 63 of `d
 Windows' right-click menus (`contextMenus: 'inPage'`), and the browser demo's macOS bar and menus. One implementation
 for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu look tokens).
 
-- **Where**: the main window (`apps/desktop/src/routes/(main)/MainMenuBar.svelte`) and the viewer
-  (`apps/desktop/src/routes/viewer/ViewerMenuBar.svelte`) mount the bar under `pageDrawsMenuBar()` (every menu model but
-  macOS's system bar); the Debug > Components catalog shows it on any platform. A bar with no rows draws nothing (the
-  browser demo answers none: its own strip is the page's bar).
+- **Where**: the main window (`apps/desktop/src/routes/(main)/MainMenuBar.svelte`, rows followed by
+  `main-menus.svelte.ts`) and the viewer (`apps/desktop/src/routes/viewer/ViewerMenuBar.svelte`) draw their menus under
+  `pageDrawsMenuBar()` (every menu model but macOS's system bar); the Debug > Components catalog shows them on any
+  platform. A bar or button with no rows draws nothing (the browser demo answers none: its own strip is the page's bar).
+- **Bar, hidden bar, or button** (`command-menu/menu-layout.ts`'s `menuLayout`, from the menu model, the `hiddenMenuBar`
+  convention, and the `appearance.menuBar` setting, followed live): `bar`; `barOnAlt` (Windows with the setting off:
+  `<MenuBar revealOnly>` draws nothing until a lone Alt, F10, or Alt+letter hands it the keyboard, and hides again as it
+  lets go, plus the button); `mainMenu` (GNOME by default, any Linux desktop with the setting off: the button alone, and
+  F10 opens it). The button (`MainMenuButton.svelte`) sits last in the right pane's tab row (`DualPaneExplorer`'s
+  `tabRowEnd` into `TabBar`'s `trailing`) and the viewer's toolbar. Its rows are `primaryMenuRows`: every bar menu as a
+  submenu, and on `primaryMenu` (GNOME) GNOME's standard group copied from the bar's own rows (Settings, Keyboard
+  shortcuts, About) with File's Quit dropped. It runs on the context-menu controller (`opener` keeps a press on the
+  button its own, so a second press closes); like the bar, it leaves focus in a text field being edited (`focusHolder`),
+  goes inert under a dialog but not over the inline rename, and stops its click from reaching the tab row (which would
+  focus a pane or open a tab). The viewer's View menu carries Show menu bar too, so a viewer whose bar is hidden gets it
+  back from its own button.
+  - Gotcha/Why: a hidden bar's titles have no layout until Svelte draws them, so Alt+letter opening a menu in the same
+    keydown placed it at 0,0; `openMenu` flushes first when `revealOnly`.
 - **A shown chord fires** (`command-menu/bar-keys.ts`): no native bar registers anything off macOS, so the page runs
   every Ctrl or Alt chord a row shows. A bare key a row shows (Tab, F5, `*`, `+`) stays the page's, as a native bar only
   ever displayed those (`apps/desktop/src-tauri/src/menu/CLAUDE.md`). Regression anchor (review of #1271): firing Switch
@@ -1525,11 +1539,15 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
   - Gotcha/Why: the listener must come after the page's own: the root layout's `onMount` runs after the page attached
     its handlers, and `ViewerMenuBar`'s `<svelte:window>` renders after the viewer page's.
 - **Public API**:
-  - `<MenuBar menus onPick ariaLabel flavor? keyScope? inert? takesWindowKeys? class?>`: `menus` is `get_menu_bar`'s
-    answer kept live by the caller (`followMenuBar` from `#lib/tauri-commands` runs the ordering contract), `onPick(id)`
-    gets the row's menu id with focus already back where it was (send it through `pickMenuBarItem`). `keyScope` reserves
-    the window's own Alt+letter keys (the viewer's `'Viewer window'`). `inert` adds to the dialogs it follows itself
-    (`isAnySoftDialogOpen()`, the `desktop` flavor only): pass the palette and the explorer overlays.
+  - `<MenuBar menus onPick ariaLabel flavor? keyScope? inert? takesWindowKeys? revealOnly? class?>`: `menus` is
+    `get_menu_bar`'s answer kept live by the caller (`followMenuBar` from `#lib/tauri-commands` runs the ordering
+    contract), `onPick(id, via)` gets the row's menu id with focus already back where it was, and `via`: `click` for a
+    pointer click, `key` for Enter, Space, or a row's letter (send both through `pickMenuBarItem`). The main window's
+    text-field gate runs a file-moving row only when it was clicked, so ❌ never collapse `via`: the menu's own keys
+    typed from a field (a stray Alt, then `f`, then `l`) once opened File > Delete (review of #1281). The context menu's
+    `onPick(id, via)` and `MainMenuButton`'s say the same. `keyScope` reserves the window's own Alt+letter keys (the
+    viewer's `'Viewer window'`). `inert` adds to the dialogs it follows itself (`isAnySoftDialogOpen()`, the `desktop`
+    flavor only): pass the palette and the explorer overlays.
   - `createContextMenu({ onPick, flavor?, accessKeys?, onClose? })` (`command-menu/context-menu.svelte.ts`) and one
     `<ContextMenu {menu}>` per window; `menu.open({ rows, at, fromKeyboard, anchorElement?, label? })` with the rows
     `open_context_menu_in_page` answered, its `anchor` or the pointer as `at`, and `onPick` sending

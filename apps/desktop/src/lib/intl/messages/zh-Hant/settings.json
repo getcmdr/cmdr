@@ -324,6 +324,30 @@
   "@settings.appearance.showFunctionKeyBar.keywords": {
     "sourceHash": "c42e176"
   },
+  "settings.appearance.menuBar.label": "顯示選單列",
+  "@settings.appearance.menuBar.label": {
+    "sourceHash": "63809e3"
+  },
+  "settings.appearance.menuBar.description": "在每個視窗頂部的一列中顯示選單（檔案、編輯、顯示方式等）。隱藏後，這些選單會移到分頁列末端的「主選單」按鈕裡。",
+  "@settings.appearance.menuBar.description": {
+    "sourceHash": "af69e91"
+  },
+  "settings.appearance.menuBar.opt.desktopDefault": "桌面環境預設",
+  "@settings.appearance.menuBar.opt.desktopDefault": {
+    "sourceHash": "f3db16c"
+  },
+  "settings.appearance.menuBar.opt.shown": "顯示",
+  "@settings.appearance.menuBar.opt.shown": {
+    "sourceHash": "6ba2a0e"
+  },
+  "settings.appearance.menuBar.opt.hidden": "隱藏",
+  "@settings.appearance.menuBar.opt.hidden": {
+    "sourceHash": "7e6feff"
+  },
+  "settings.appearance.menuBar.keywords": "選單, 功能表, 漢堡, 三條線, 隱藏, 檔案, 編輯, 顯示方式",
+  "@settings.appearance.menuBar.keywords": {
+    "sourceHash": "7598526"
+  },
   "settings.listing.showHiddenFiles.label": "顯示隱藏檔案",
   "@settings.listing.showHiddenFiles.label": {
     "sourceHash": "b5ede7f"

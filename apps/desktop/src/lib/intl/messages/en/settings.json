@@ -389,6 +389,30 @@
   "@settings.appearance.showFunctionKeyBar.keywords": {
     "description": "Search keywords for the “Show function key bar” setting (settings.appearance.showFunctionKeyBar.label) in Settings > Appearance > Zoom and density. What it does: shows or hides the row of F-key buttons (Rename, View, Copy…) at the bottom of the window. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
   },
+  "settings.appearance.menuBar.label": "Show menu bar",
+  "@settings.appearance.menuBar.label": {
+    "description": "Label for the toggle that shows the menu bar (File, Edit, View, …) at the top of the window, on Windows and Linux only. In Settings > Appearance > Zoom and density. Same words as menu.view.showMenuBar."
+  },
+  "settings.appearance.menuBar.description": "Show the menus (File, Edit, View, and so on) in a bar at the top of each window. Hidden, they’re in the Main menu button at the end of the tab row instead.",
+  "@settings.appearance.menuBar.description": {
+    "description": "Help text for the menu-bar toggle, on Windows and Linux. \"Main menu\" names the button the menus move into (ui.mainMenu.label); keep it the same words. \"Tab row\" is the strip of folder tabs at the top of the panes."
+  },
+  "settings.appearance.menuBar.opt.desktopDefault": "Desktop default",
+  "@settings.appearance.menuBar.opt.desktopDefault": {
+    "description": "One stored value of the “Show menu bar” setting (settings.appearance.menuBar.label): the bar shows the way the user’s desktop does by default (shown on Windows and KDE, hidden on GNOME). Settings itself draws the setting as an on/off switch; this label names the value where a list of the setting’s values shows, such as an assistant reading the settings."
+  },
+  "settings.appearance.menuBar.opt.shown": "Shown",
+  "@settings.appearance.menuBar.opt.shown": {
+    "description": "One stored value of the “Show menu bar” setting (settings.appearance.menuBar.label): the user turned the menu bar on. Shown where a list of the setting’s values shows, such as an assistant reading the settings; Settings draws an on/off switch."
+  },
+  "settings.appearance.menuBar.opt.hidden": "Hidden",
+  "@settings.appearance.menuBar.opt.hidden": {
+    "description": "One stored value of the “Show menu bar” setting (settings.appearance.menuBar.label): the user turned the menu bar off, so the menus live in the Main menu button. Shown where a list of the setting’s values shows, such as an assistant reading the settings; Settings draws an on/off switch."
+  },
+  "settings.appearance.menuBar.keywords": "menu, bar, menubar, hamburger, hide, File, Edit, View",
+  "@settings.appearance.menuBar.keywords": {
+    "description": "Search keywords for the “Show menu bar” setting (settings.appearance.menuBar.label) in Settings > Appearance > Zoom and density. What it does: shows or hides the menu bar (File, Edit, View…) at the top of the window on Windows and Linux; hidden, the menus move into a Main menu button. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
+  },
   "settings.listing.showHiddenFiles.label": "Show hidden files",
   "@settings.listing.showHiddenFiles.label": {
     "description": "Label for the toggle that shows dotfiles and system-hidden items in both file panes. In Settings > Appearance > Listing.",

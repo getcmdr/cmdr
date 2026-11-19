@@ -242,8 +242,8 @@ describe('characterization — id partition self-check', () => {
     for (const id of EXEMPT_IDS) expect(COMMAND_IDS).toContain(id)
   })
 
-  it('dispatchable set is exactly 153 ids', () => {
-    expect(DISPATCHABLE_IDS).toHaveLength(153)
+  it('dispatchable set is exactly 154 ids', () => {
+    expect(DISPATCHABLE_IDS).toHaveLength(154)
   })
 
   it('dispatchable ∪ exempt = COMMAND_IDS, disjoint', () => {
@@ -797,6 +797,30 @@ describe('characterization — activeElement input branches', () => {
       await handleCommandExecute('edit.pasteAsMove', makeCtx(explorer))
       expect(explorer.pasteFromClipboard).toHaveBeenCalledExactlyOnceWith(true)
       undoPlatform()
+    })
+  })
+
+  // Regression anchor (review of #1281): from a text field, a stray Alt, then `f`, then `l` opened
+  // File > Delete on a bar the page draws, and with "Skip confirmation" on, that trashes with no
+  // prompt at all. A row reached by the menu's own keys arrives on the `menu` road, so the gate
+  // refuses it before the delete flow (where the skip lives) ever starts; only a click runs.
+  describe('file.delete from a bar the page draws, "Skip confirmation" on, a text field focused', () => {
+    it('opens no delete flow for a row the menu’s own keys reached', async () => {
+      getSetting.mockReturnValue(true)
+      const { cleanup } = focusInput('input')
+      const explorer = makeExplorerSpy()
+      await handleCommandExecute('file.delete', { ...makeCtx(explorer), source: 'menu' })
+      expect(explorer.openDeleteDialog).not.toHaveBeenCalled()
+      cleanup()
+    })
+
+    it('runs the delete flow for a row the person clicked', async () => {
+      getSetting.mockReturnValue(true)
+      const { cleanup } = focusInput('input')
+      const explorer = makeExplorerSpy()
+      await handleCommandExecute('file.delete', { ...makeCtx(explorer), source: 'barClick' })
+      expect(explorer.openDeleteDialog).toHaveBeenCalledOnce()
+      cleanup()
     })
   })
 })

@@ -4816,9 +4816,12 @@ export const commands = {
   getViewerMenuBar: (inputs: ViewerBarInputs) => __TAURI_INVOKE<BarMenuView[]>('get_viewer_menu_bar', { inputs }),
   /**
    *  A page's click on a bar row (the main bar's or the viewer's), by menu id: runs the handler a
-   *  native click reaches, or nothing for a row that's greyed out right now.
+   *  native click reaches, or nothing for a row that's greyed out right now. `via` says whether the
+   *  person picked the row or a window fired its chord (`BarPickVia`); `window` is the page that asked,
+   *  which a file-scoped command checks instead of focus (`menu_handlers::PickSource`).
    */
-  pickMenuBarItem: (menuId: string) => __TAURI_INVOKE<BarPickOutcome>('pick_menu_bar_item', { menuId }),
+  pickMenuBarItem: (menuId: string, via: BarPickVia) =>
+    __TAURI_INVOKE<BarPickOutcome>('pick_menu_bar_item', { menuId, via }),
   /**
    *  The in-page twin of every `show_*` popup command, where the platform's `contextMenus`
    *  convention is `inPage` (Windows): stashes the same `MenuState` facts the native command does,
@@ -7958,6 +7961,22 @@ export type BarPickOutcome =
   | { kind: 'textEdit'; edit: PageTextEdit }
 
 /**
+ *  How a page reached a bar row, which the main window's dispatch tells apart where a native bar
+ *  can't: its text-field gate refuses a file-moving command reached by a KEY while a field has
+ *  focus, and runs one the person clicked (`routes/(main)/text-field-gate.ts`, task 63 step 9).
+ */
+export type BarPickVia =
+  // A pointer click on the row.
+  | 'click'
+  /**
+   *  Any key: the open menu's own (Enter, Space, a row's letter, after Alt, F10, or Alt+letter),
+   *  or a chord the row shows, fired from a window that draws no bar of its own
+   *  (`#lib/ui/command-menu/window-bar-keys.ts`, the viewer's). Typed keys never move files from
+   *  a text field, however the menu was reached (review of #1281: Alt, `f`, `l` deleted).
+   */
+  | 'key'
+
+/**
  *  The prefix's estimated size against the budget the next send resolves. Both are `chars/4`
  *  estimates, like every other gauge figure.
  */
@@ -8711,13 +8730,19 @@ export type CmdrOperation = {
 
 /**
  *  Which road an `execute-command` came in by. The main window maps it onto its own
- *  `DispatchSource` (`menu` or `contextMenu`).
+ *  `DispatchSource` (`menu`, `contextMenu`, or `barClick`).
  */
 export type CommandRoad =
   // The menu bar, the Dock menu, an MCP tool, or another window.
   | 'relay'
   // A right-click menu's own row.
   | 'contextMenu'
+  /**
+   *  A pointer click on a row of a bar the page draws (or of its main-menu button). Never a key:
+   *  not a chord and not the open menu's own keys, so this alone lets a file-moving row run with
+   *  a text field focused (`routes/(main)/text-field-gate.ts`).
+   */
+  | 'barClick'
 
 // What [`count_all`] decided for a listing.
 export type CommitCountPass =
@@ -11921,6 +11946,21 @@ export type HiddenInName =
    *  that makes an emoji or a script draw right doesn't count.
    */
   | 'invisible'
+
+/**
+ *  What stands in for an in-window menu bar the user hid (the "Show menu bar" setting off), beside
+ *  the main-menu button every desktop off macOS then shows.
+ */
+export type HiddenMenuBar =
+  // No bar to hide: the OS owns it (macOS's system menu bar).
+  | 'none'
+  /**
+   *  A tap of Alt or F10 shows the hidden bar until focus leaves it, as Win32's guide asks and
+   *  VS Code's `toggle` does.
+   */
+  | 'showsOnAltOrF10'
+  // F10 opens the main-menu button's menu, GNOME's HIG key; KDE's hamburger answers it too.
+  | 'f10OpensMainMenu'
 
 // A single recent-search entry, persisted verbatim.
 export type HistoryEntry = {
@@ -17522,6 +17562,11 @@ export type PlatformCapabilities = {
    *  exist.
    */
   fullScreen: boolean
+  /**
+   *  The page draws the window's menu bar, so the user can hide it: View > Show menu bar, the
+   *  `appearance.menuBar` setting, and `view.toggleMenuBar` exist (D5, `menu-model.md`).
+   */
+  hideableMenuBar: boolean
   // Cmdr ships as a Homebrew cask (the onboarding note asking for a star on the cask).
   homebrewCask: boolean
   // A system-wide shortcut works from any app (the global "go to latest download" shortcut).
@@ -17554,6 +17599,8 @@ export type PlatformConventions = {
   accessKeys: AccessKeys
   // Where the app's menus live.
   menuModel: MenuModel
+  // What stands in for a window menu bar the user hid (View > Show menu bar).
+  hiddenMenuBar: HiddenMenuBar
   // Who draws the right-click menus.
   contextMenus: ContextMenus
   /**
@@ -18852,6 +18899,11 @@ export type RestrictedWindowSettings = {
    *  pinned Hungarian on an English Mac would get an English viewer.
    */
   appearanceLanguage: string | null
+  /**
+   *  Whether the viewer draws its menu bar or a main-menu button in its place (off macOS):
+   *  `desktopDefault`, `shown`, or `hidden`.
+   */
+  appearanceMenuBar: string | null
 }
 
 // What the queue window's Retry on a failed row did (`retry_failed_operation`).
@@ -24395,6 +24447,11 @@ export type ViewerBarInputs = {
   canGoForward: boolean
   // The search box holds keyboard focus, which is what makes Cut and Paste live.
   searchFocused: boolean
+  /**
+   *  View > Show menu bar's check (Windows and Linux): whether the page draws the bar now, from
+   *  the `appearance.menuBar` setting. Its pick runs `view.toggleMenuBar`, as the main bar's does.
+   */
+  showMenuBar: boolean
 }
 
 /**

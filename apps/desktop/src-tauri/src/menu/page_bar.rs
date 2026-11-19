@@ -24,7 +24,7 @@ use tauri_specta::Event as _;
 use crate::ignore_poison::IgnorePoison;
 
 use super::menu_handlers::{
-    EditRoad, FocusedWindows, NativeEditSelector, edit_road, focused_windows, native_edit_selector_for,
+    EditRoad, FocusedWindows, NativeEditSelector, edit_road, native_edit_selector_for, windows_of_page,
 };
 use super::{MenuState, cloned_handle};
 
@@ -60,6 +60,31 @@ pub struct MenuBarChanged {
     pub rows: Vec<RowState>,
     /// The whole bar, when its shape moved (no row diff describes that).
     pub menus: Option<Vec<BarMenuView>>,
+}
+
+/// How a page reached a bar row, which the main window's dispatch tells apart where a native bar
+/// can't: its text-field gate refuses a file-moving command reached by a KEY while a field has
+/// focus, and runs one the person clicked (`routes/(main)/text-field-gate.ts`, task 63 step 9).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub enum BarPickVia {
+    /// A pointer click on the row.
+    Click,
+    /// Any key: the open menu's own (Enter, Space, a row's letter, after Alt, F10, or Alt+letter),
+    /// or a chord the row shows, fired from a window that draws no bar of its own
+    /// (`#lib/ui/command-menu/window-bar-keys.ts`, the viewer's). Typed keys never move files from
+    /// a text field, however the menu was reached (review of #1281: Alt, `f`, `l` deleted).
+    Key,
+}
+
+impl BarPickVia {
+    /// The road a command this pick runs takes into the main window.
+    pub fn road(self) -> crate::window_events::CommandRoad {
+        match self {
+            Self::Click => crate::window_events::CommandRoad::BarClick,
+            Self::Key => crate::window_events::CommandRoad::Relay,
+        }
+    }
 }
 
 /// What a page's pick of a bar row did.
@@ -122,6 +147,7 @@ pub fn bar_inputs<R: Runtime>(menu_state: &MenuState<R>) -> BarInputs {
         refused: menu_state.commands_refused_over_dialog.lock_ignore_poison().clone(),
         requested_sort: *menu_state.requested_sort.lock_ignore_poison(),
         show_hidden_files: menu_state.show_hidden_checked.load(Ordering::Relaxed),
+        show_menu_bar: menu_state.show_menu_bar_checked.load(Ordering::Relaxed),
         active_pane: match menu_state.view_mode_active_pane.lock_ignore_poison().as_str() {
             "right" => Pane::Right,
             _ => Pane::Left,
@@ -226,13 +252,17 @@ fn wire_revision(revision: u64) -> u32 {
 /// the new state off it, so a pick flips Show hidden files first (both the stored check and the
 /// item, where one is built). The view-mode and sort rows need nothing: their handlers write every
 /// check from the stored state anyway.
-pub fn pick(app: &AppHandle<tauri::Wry>, menu_id: &str) -> BarPickOutcome {
+///
+/// `via` names the road a command it runs takes into the main window (`BarPickVia::road`), and
+/// `window` the label of the page that asked, which every window-bound row acts on instead of
+/// focus (`menu_handlers::PickWindow`).
+pub fn pick(app: &AppHandle<tauri::Wry>, menu_id: &str, via: BarPickVia, window: &str) -> BarPickOutcome {
     let menu_state = app.state::<MenuState<tauri::Wry>>();
     if !is_live(&menu_state, menu_id) {
         return BarPickOutcome::NotLive;
     }
     if native_edit_selector_for(menu_id).is_some()
-        && let Some(edit) = page_text_edit(menu_id, focused_windows(app), super::builds_native_bar())
+        && let Some(edit) = page_text_edit(menu_id, windows_of_page(window), super::builds_native_bar())
     {
         return BarPickOutcome::TextEdit { edit };
     }
@@ -245,7 +275,8 @@ pub fn pick(app: &AppHandle<tauri::Wry>, menu_id: &str) -> BarPickOutcome {
             log::warn!(target: "menu", "couldn't flip the native Show hidden files check: {e}");
         }
     }
-    super::menu_handlers::handle_menu_pick(app, menu_id);
+    let source = super::menu_handlers::PickSource::page(via.road(), window);
+    super::menu_handlers::handle_menu_pick(app, menu_id, source);
     BarPickOutcome::Ran
 }
 
@@ -268,6 +299,16 @@ mod tests {
     use cmdr_menu::sort::RequestedSort;
     use cmdr_menu::spec::ViewMode;
     use tauri::test::MockRuntime;
+
+    /// A pointer click takes its own road, which the main window's text-field gate lets through;
+    /// any key (the open menu's own, or a row's chord) takes the menu's, which the gate refuses for
+    /// a file-moving row.
+    #[test]
+    fn a_click_and_a_key_take_different_roads() {
+        use crate::window_events::CommandRoad;
+        assert_eq!(BarPickVia::Click.road(), CommandRoad::BarClick);
+        assert_eq!(BarPickVia::Key.road(), CommandRoad::Relay);
+    }
 
     /// A fresh `MenuState` reads as the bar a fresh app builds, the one the demo starts from too.
     #[test]
@@ -295,6 +336,7 @@ mod tests {
         };
         *menu_state.requested_sort.lock_ignore_poison() = Some(sort);
         menu_state.show_hidden_checked.store(true, Ordering::Relaxed);
+        menu_state.show_menu_bar_checked.store(false, Ordering::Relaxed);
         *menu_state.view_mode_active_pane.lock_ignore_poison() = "right".to_string();
         *menu_state.view_mode_left.lock_ignore_poison() = ViewMode::Full;
         *menu_state.view_mode_full_accel.lock_ignore_poison() = Some("Ctrl+F2".to_string());
@@ -317,6 +359,7 @@ mod tests {
         expected.refused.insert("file.copy".to_string());
         expected.requested_sort = Some(sort);
         expected.show_hidden_files = true;
+        expected.show_menu_bar = false;
         expected.active_pane = Pane::Right;
         expected.view_mode_left = ViewMode::Full;
         expected.view_mode_full_accel = Some("Ctrl+F2".to_string());
@@ -411,6 +454,31 @@ mod tests {
         // macOS's responder chain runs it.
         assert_eq!(page_text_edit(VIEWER_EDIT_CUT_ID, elsewhere, true), None);
         assert_eq!(page_text_edit(cmdr_menu::ids::FILE_COPY_ID, elsewhere, false), None);
+    }
+
+    /// Regression anchor (review of #1281): a Ctrl+V in the queue window, read against a stale
+    /// "main is focused", pasted files into the main window's pane. A page's pick names its window,
+    /// so only the main window's own pick reaches the main window's file semantics.
+    #[test]
+    fn an_edit_row_asks_the_window_that_sent_it_never_focus() {
+        use cmdr_menu::ids::{EDIT_COPY_ID, EDIT_CUT_ID, EDIT_PASTE_ID, SELECT_ALL_ID};
+        for window in ["queue", "settings", "viewer-1", "shortcuts", "debug"] {
+            for id in [EDIT_CUT_ID, EDIT_COPY_ID, EDIT_PASTE_ID] {
+                assert!(
+                    page_text_edit(id, windows_of_page(window), false).is_some(),
+                    "{id}, picked in {window}, belongs to that window's own field"
+                );
+            }
+        }
+        for id in [EDIT_CUT_ID, EDIT_COPY_ID, EDIT_PASTE_ID, SELECT_ALL_ID] {
+            assert_eq!(
+                page_text_edit(id, windows_of_page("main"), false),
+                None,
+                "{id} from main"
+            );
+        }
+        // The queue's Select all checks its rows.
+        assert_eq!(page_text_edit(SELECT_ALL_ID, windows_of_page("queue"), false), None);
     }
 
     /// The wire the page reads: `{ kind, edit }`.

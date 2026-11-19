@@ -324,6 +324,30 @@
   "@settings.appearance.showFunctionKeyBar.keywords": {
     "sourceHash": "c42e176"
   },
+  "settings.appearance.menuBar.label": "Menüsor megjelenítése",
+  "@settings.appearance.menuBar.label": {
+    "sourceHash": "63809e3"
+  },
+  "settings.appearance.menuBar.description": "Megjeleníti a menüket (Fájl, Szerkesztés, Nézet és így tovább) egy sávban minden ablak tetején. Ha a sáv rejtve van, a menük a lapsor végén lévő „Főmenü” gombban vannak.",
+  "@settings.appearance.menuBar.description": {
+    "sourceHash": "af69e91"
+  },
+  "settings.appearance.menuBar.opt.desktopDefault": "Asztali környezet alapértéke",
+  "@settings.appearance.menuBar.opt.desktopDefault": {
+    "sourceHash": "f3db16c"
+  },
+  "settings.appearance.menuBar.opt.shown": "Megjelenítve",
+  "@settings.appearance.menuBar.opt.shown": {
+    "sourceHash": "6ba2a0e"
+  },
+  "settings.appearance.menuBar.opt.hidden": "Rejtve",
+  "@settings.appearance.menuBar.opt.hidden": {
+    "sourceHash": "7e6feff"
+  },
+  "settings.appearance.menuBar.keywords": "menü, sáv, menüsáv, hamburger, elrejtés, eltüntetés, Fájl, Szerkesztés, Nézet",
+  "@settings.appearance.menuBar.keywords": {
+    "sourceHash": "7598526"
+  },
   "settings.listing.showHiddenFiles.label": "Rejtett fájlok megjelenítése",
   "@settings.listing.showHiddenFiles.label": {
     "sourceHash": "b5ede7f"

@@ -365,7 +365,9 @@ export const fileHandlers = {
   // The card is about the cursor entry, as Get info is, whatever the selection holds.
   'file.tellMeAbout': (hctx) =>
     withEntryUnderCursor(hctx, (entry) => {
-      openAboutThisFor(hctx.explorerRef, entry, hctx.ctx.source)
+      // A page bar's pick is the menu bar's to the analytics vocabulary, as a native bar's click is.
+      const trigger = hctx.ctx.source === 'barClick' ? 'menu' : hctx.ctx.source
+      openAboutThisFor(hctx.explorerRef, entry, trigger)
     }),
 
   'cloud.makeOffline': (hctx) =>

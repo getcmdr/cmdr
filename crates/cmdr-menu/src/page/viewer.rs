@@ -16,7 +16,7 @@ use crate::bar::APP_MENU_TITLE;
 use crate::context::popups::{viewer_copy_accelerator, viewer_select_all_accelerator};
 use crate::enabled::viewer_text_edit_enabled;
 use crate::ids::{
-    APP_MENU_ID, EDIT_MENU_ID, FILE_MENU_ID, GO_MENU_ID, HELP_MENU_ID, VIEW_MENU_ID, VIEWER_CLOSE_ID,
+    APP_MENU_ID, EDIT_MENU_ID, FILE_MENU_ID, GO_MENU_ID, HELP_MENU_ID, SHOW_MENU_BAR_ID, VIEW_MENU_ID, VIEWER_CLOSE_ID,
     VIEWER_EDIT_COPY_ID, VIEWER_EDIT_CUT_ID, VIEWER_EDIT_PASTE_ID, VIEWER_GO_BACK_ID, VIEWER_GO_FORWARD_ID,
     VIEWER_SELECT_ALL_ID, VIEWER_WORD_WRAP_ID, WINDOW_MENU_ID,
 };
@@ -52,6 +52,9 @@ pub struct ViewerBarInputs {
     pub can_go_forward: bool,
     /// The search box holds keyboard focus, which is what makes Cut and Paste live.
     pub search_focused: bool,
+    /// View > Show menu bar's check (Windows and Linux): whether the page draws the bar now, from
+    /// the `appearance.menuBar` setting. Its pick runs `view.toggleMenuBar`, as the main bar's does.
+    pub show_menu_bar: bool,
 }
 
 /// The viewer bar on `platform` under `inputs`.
@@ -120,18 +123,32 @@ pub fn viewer_bar_view(inputs: ViewerBarInputs, platform: Platform) -> Vec<BarMe
             ),
         ],
     });
-    menus.push(BarMenuView {
-        id: VIEW_MENU_ID.to_string(),
-        title: RowLabel::key("menu.bar.view"),
-        rows: vec![Row::Check {
-            id: VIEWER_WORD_WRAP_ID.to_string(),
-            label: RowLabel::key("menu.viewer.wordWrap"),
+    let mut view_rows = vec![Row::Check {
+        id: VIEWER_WORD_WRAP_ID.to_string(),
+        label: RowLabel::key("menu.viewer.wordWrap"),
+        shortcut: None,
+        aria_keyshortcuts: None,
+        enabled: true,
+        checked: inputs.word_wrap,
+        check_kind: CheckKind::Checkbox,
+    }];
+    // The main bar's own row (`bar.rs`), so the viewer can hide and restore its bar too: from its
+    // main-menu button once the bar is hidden. macOS's bar is the system's, so it has none.
+    if platform != Platform::MacOs {
+        view_rows.push(Row::Check {
+            id: SHOW_MENU_BAR_ID.to_string(),
+            label: RowLabel::key("menu.view.showMenuBar"),
             shortcut: None,
             aria_keyshortcuts: None,
             enabled: true,
-            checked: inputs.word_wrap,
+            checked: inputs.show_menu_bar,
             check_kind: CheckKind::Checkbox,
-        }],
+        });
+    }
+    menus.push(BarMenuView {
+        id: VIEW_MENU_ID.to_string(),
+        title: RowLabel::key("menu.bar.view"),
+        rows: view_rows,
     });
     // No accelerators, like Word wrap: the viewer's keydown owns ⌘[ / ⌘] through the registry.
     menus.push(BarMenuView {

@@ -1104,9 +1104,35 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
          submenu drops Quit.
        - Tests: Vitest for the setting's three layouts; the Linux E2E bar spec gains the hidden case.
        - Done when: each desktop's default matches `menu-model.md` and the setting flips it live.
+       - **Built** (2026-11-19), unchecked on real Windows and real GNOME: `appearance.menuBar` (`desktopDefault` |
+         `shown` | `hidden`: a literal default, since the analytics defaults manifest has no desktop axis) drawn as one
+         switch in Settings > Appearance > Zoom and density, View > Show menu bar (`windows_and_linux`, running
+         `view.toggleMenuBar`), the `hiddenMenuBar` convention and `hideableMenuBar` capability, and
+         `lib/ui/command-menu/menu-layout.ts` picking bar, hidden bar (Windows: `<MenuBar revealOnly>`), or the
+         main-menu button (`MainMenuButton.svelte`, at the end of the right pane's tab row and the viewer's toolbar; F10
+         opens it where no bar takes it). `apps/desktop/src/lib/ui/DETAILS.md` § Command menus has it. The viewer's View
+         menu carries the same row, so a viewer whose bar is hidden gets it back from its own main-menu button. The
+         setting is in the heartbeat's config shape (`CATEGORICAL_STRING_KEYS`). Gap: the browser demo's strip ignores
+         the setting, so a Windows or Linux visitor's View > Show menu bar is greyed, as Quit is, until step 11's
+         remainder moves the demo onto the app's own bar. Out of scope, written up for later: the bar's titles read
+         plain catalog values that several locales took from macOS (de "Ablage", "Darstellung"), so they need per-OS
+         values (`docs/notes/windows-port/menu-titles-per-os.md`). macOS unchanged: the row is `windows_and_linux` (the
+         macOS bar snapshot didn't move), `hideableMenuBar` is false there, and the demo's Mac shots (main window, View
+         menu, the palette searching "menu", Settings > Zoom and density; light and dark) differ by 0 pixels from the
+         merge base (`magick compare -metric AE`, 2026-11-19).
     9. [XS] **The text-field gate** lets a bar CLICK on a file-moving command run, and the same command's key still
        doesn't (task 55's entry; `routes/(main)/text-field-gate.ts`). Tests: a Vitest case per road. Done when: both
        cases are pinned.
+       - **Built** (2026-11-19): `pick_menu_bar_item(menuId, via)` (`BarPickVia::{Click, Key}`) sends a CLICKED row's
+         command down the `BarClick` road (`barClick` dispatch source), which the gate lets through. Every key stays
+         refused: the command's own (`keyboard` in the main window, `Relay` from another window's chord) and the menu's
+         own keys (Alt or F10 then letters, Alt+letter then a letter, arrows then Enter or Space, in the bar or the
+         main-menu button), which the menu stack reports as `key` (review of #1281: Alt, `f`, `l` in a field had opened
+         File > Delete). A page's pick also names its window, which Edit rows, Close, and the viewer's rows act on
+         instead of focus. Pinned by `text-field-gate.test.ts` § "a bar the page draws", the "Skip confirmation" cases
+         in `command-dispatch.characterization.test.ts`, `MenuBar.svelte.test.ts` and `MainMenuButton.svelte.test.ts` (a
+         click versus each key), `page_bar.rs`'s road and window tests, and the Linux E2E bar spec (real clicks and
+         keys). macOS keeps today's refusal (a native bar can't tell).
     10. [S] **Linux cleanup.**
         - Scope: delete `menu/mnemonic_mask/` and its IPC, `menu-mnemonics-capture.svelte.ts`, and the mask's own
           leftovers in `menu-bar.spec.ts` (step 6 renamed `menu-mnemonic-mask.spec.ts` to it; Settings' title-mnemonic
