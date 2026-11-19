@@ -7,6 +7,24 @@ a Mac with zig as the C compiler and `AWS_LC_SYS_PREBUILT_NASM=1`: `CC_x86_64_pc
 cc-rs's `--target` flag and runs `zig cc -target x86_64-windows-gnu`, and `AR_x86_64_pc_windows_gnu` runs `zig ar`. Two
 things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX-512 kernels, which zig's clang refuses.
 
+## Builder hygiene
+
+Mami got too slow for David to use after about 24 hours of agent builds (2026-11-19: 11 leftover checkouts and five
+target dirs, about 180 GB on `D:`, plus idle `cmd` windows on the desktop). So:
+
+- **One agent at a time, and ask David before heavy use** (a cold workspace build, a whole-workspace nextest, a bundle).
+  Check first: `Get-Process cargo,rustc,link,node,cargo-nextest,cmdr -EA SilentlyContinue` must come back empty.
+- **`CARGO_BUILD_JOBS=2`** for every build: 2 cores, 8 GB of RAM, and more jobs run out of page file (`os error 1455`).
+- **Keep one warm pair, delete the rest**: one checkout `D:\src\cmdr-<slug>` with one `D:\targets\<slug>`, the most
+  recent. When you're done, delete your checkout and target dir unless you're the newest pair, and check first that the
+  checkout has nothing unlanded (`git status`, and its `HEAD` is on `origin/main` from the Mac, since the box can't
+  push). `D:\src\cmdr` (the main checkout), `D:\src\mtp-rs`, `D:\src\menu-spike`, and `D:\tools\winapp-0.8.0` stay.
+- **Clean up after a desktop run**: a `start ... cmd /K` job leaves its window open, holding its folder; close it.
+- **Defender skips the build drive**: real-time scanning excludes `D:\` (set by the infra repo's
+  `mami-laptop/setup-builder.ps1`), so `D:\src` and `D:\targets` are covered; on Windows, scanning every fresh `rlib`
+  and object is the biggest cost in a Rust build. Real-time protection stays on for everything else (verified
+  2026-11-19, `Get-MpPreference`, `Get-MpComputerStatus`). No process exclusions.
+
 - **2026-11-18, baseline** (`52f7ec04ea`): the seven must-compile members (`cmdr-collation`, `cmdr-http`, `cmdr-menu`,
   `cmdr-platform-cfg`, `cmdr-recents`, `cmdr-sort`, `cmdr-update-trust`) build and pass `cargo test` on the builder, 141
   tests, in 1m 58s cold. `cmdr-fs` failed its own compile (54 errors natively, matching the CI break report) and blocked

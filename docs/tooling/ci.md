@@ -694,6 +694,8 @@ later PR happened to fix it.
   the checkout (`D:\src\cmdr`) live on it. To run Cmdr's GUI on its desktop from the Mac, use
   `~/projects-git/vdavid/infra/mami-laptop/run-on-desktop.sh --unlock-d -- 'D:\src\cmdr\target\debug\cmdr.exe'`: it
   returns the program's logs and a screenshot (`--help` lists the options, like `--wait`, `--keys`, and `--close`).
+  Before building there, read `docs/notes/windows-port/build-progress.md` § "Builder hygiene" (one agent at a time,
+  `CARGO_BUILD_JOBS=2`, keep one warm checkout and target pair).
 
 ## OpenSSF Scorecard
 
