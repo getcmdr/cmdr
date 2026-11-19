@@ -233,7 +233,8 @@ PADDLE_ENVIRONMENT = "live"
 # The OSes whose builds `/download/:version/:os/:arch` serves, comma-separated. A release can carry Windows or
 # Linux files before they're announced; until their OS is listed here, the route answers 404 for them and logs
 # nothing. Adding `windows` is the switch that makes the Windows download public (`src/telemetry/DETAILS.md`
-# § Download tracking). Absent means macOS only; macOS is always served, whatever this says.
+# § Download tracking). Absent means macOS only; macOS is always served, whatever this says. The website's download
+# buttons read this same line at build time (`apps/website/src/lib/download-platforms.ts`), so keep it one line.
 PUBLIC_DOWNLOAD_OSES = "macos"
 
 # D1's per-database cap on the account's plan, in MB: Workers Paid, 10 GB (the D1 limits page, checked

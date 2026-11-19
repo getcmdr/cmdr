@@ -2,9 +2,30 @@
 import DownloadButton from './DownloadButton.astro'
 import HomebrewInstall from './HomebrewInstall.astro'
 import NewsletterInlineWrapper from './NewsletterInlineWrapper.astro'
+import Icon from './icons/Icon.astro'
+import { platformDownloads } from '../lib/release'
+import { newsletterLabel, osNames, type Os, type PlatformDownloads } from '../lib/download-platforms'
+
+interface Props {
+    /** What to offer; the published release's offered platforms by default. The download fixture page passes its own. */
+    platforms?: PlatformDownloads[]
+}
+
+const { platforms = platformDownloads } = Astro.props
+const offered = platforms.map((p) => p.os)
+// A Windows or Linux visitor whose build isn't out yet gets a note; the picker in Layout.astro unhides theirs.
+const notYetOffered = (['windows', 'linux'] as const).filter((os) => !offered.includes(os))
+const linkClass = 'text-accent-text underline underline-offset-2 hover:text-accent-hover'
+const buildFromSource = 'https://github.com/getcmdr/cmdr/blob/main/CONTRIBUTING.md#building-a-deb-on-linux'
+const others = (os: Os) => offered.filter((o) => o !== os)
 ---
 
-<section id="download" class="relative px-6 py-32">
+<section
+    id="download"
+    class="relative px-6 py-32"
+    data-platform-picker={offered.join(',')}
+    data-shown-os="macos"
+>
     <!-- Background glow -->
     <div
         class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_50%_at_50%_100%,color-mix(in_srgb,var(--color-accent)_10%,transparent),transparent)]"
@@ -19,58 +40,126 @@ import NewsletterInlineWrapper from './NewsletterInlineWrapper.astro'
         <p class="mb-10 text-sm text-text-tertiary">
             Cmdr is in open beta: solid for daily use, and your feedback shapes what's next. See the <a
                 href="/features"
-                class="text-accent-text underline underline-offset-2 hover:text-accent-hover"
-                >feature status</a
+                class={linkClass}>feature status</a
             >.
         </p>
 
-        <!-- Download card -->
-        <div
-            class="mx-auto max-w-md rounded-2xl border border-border bg-surface p-8 transition-all duration-300 hover:border-accent/30"
-        >
-            <div class="mb-6 flex items-center justify-center gap-4">
-                <svg
-                    class="size-12 text-text-secondary"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
+        {
+            notYetOffered.map((os) => (
+                <p
+                    class="mx-auto mb-6 max-w-md rounded-xl border border-border bg-surface px-5 py-4 text-sm text-text-secondary"
+                    data-visitor-notice={os}
+                    hidden
                 >
-                    <path
-                        d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"
-                    ></path>
-                </svg>
-                <div class="font-semibold">macOS</div>
-            </div>
-
-            <DownloadButton variant="card" class="mb-4 w-full" />
-
-            <HomebrewInstall />
-
-            <div class="mt-6 space-y-2 text-sm text-text-tertiary">
-                <p>
-                    Free for personal use · <a
-                        href="/pricing"
-                        class="text-accent-text underline underline-offset-2 hover:text-accent-hover"
-                        >$59 once for work</a
-                    >
+                    {os === 'windows' ? (
+                        <>
+                            Looks like you're on Windows! Cmdr for Windows is on its way. Leave your email below to
+                            hear the day it's out.
+                        </>
+                    ) : (
+                        <>
+                            Looks like you're on Linux! Cmdr runs there in alpha, and you can{' '}
+                            <a href={buildFromSource} class={linkClass}>
+                                build it from source
+                            </a>{' '}
+                            today. A ready-made download is on its way: leave your email below to hear when it's out.
+                        </>
+                    )}
                 </p>
-                <p>
-                    Source-available · BSL 1.1 license · <a
-                        href="https://getcmdr.com/download/latest/checksums"
-                        class="text-accent-text underline underline-offset-2 hover:text-accent-hover"
-                        >SHA-256 checksums</a
-                    >
-                </p>
-                <p>
-                    Needs macOS 12 or newer. macOS 10.15 and 11 run on a best-effort basis: everything works, but
-                    a few colors and layout details can look off.
-                </p>
-            </div>
-        </div>
+            ))
+        }
+
+        {
+            platforms.map((p) => (
+                <div
+                    class="mx-auto max-w-md rounded-2xl border border-border bg-surface p-8 transition-all duration-300 hover:border-accent/30"
+                    data-platform-card={p.os}
+                    hidden={p.os !== 'macos'}
+                >
+                    <div class="mb-6 flex items-center justify-center gap-4">
+                        {p.os === 'macos' && (
+                            <svg
+                                class="size-12 text-text-secondary"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                            >
+                                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                            </svg>
+                        )}
+                        {p.os === 'windows' && (
+                            <svg
+                                class="size-10 text-text-secondary"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                            >
+                                <path d="M3 5.6 10.4 4.6v7H3zM11.4 4.4 21 3v8.6h-9.6zM3 12.6h7.4v7L3 18.4zM11.4 12.6H21V21l-9.6-1.4z" />
+                            </svg>
+                        )}
+                        {p.os === 'linux' && <Icon name="square-terminal" size={44} class="text-text-secondary" />}
+                        <div class="font-semibold">{p.name}</div>
+                    </div>
+
+                    <DownloadButton variant="card" class="mb-4 w-full" os={p.os} platforms={platforms} />
+
+                    {p.os === 'macos' && <HomebrewInstall />}
+
+                    <div class="mt-6 space-y-2 text-sm text-text-tertiary">
+                        <p>
+                            Free for personal use · <a href="/pricing" class={linkClass}>
+                                $59 once for work
+                            </a>
+                        </p>
+                        <p>
+                            Source-available · BSL 1.1 license · <a
+                                href="https://getcmdr.com/download/latest/checksums"
+                                class={linkClass}>SHA-256 checksums</a
+                            >
+                        </p>
+                        {p.os === 'macos' && (
+                            <p>
+                                Needs macOS 12 or newer. macOS 10.15 and 11 run on a best-effort basis: everything
+                                works, but a few colors and layout details can look off.
+                            </p>
+                        )}
+                        {p.os === 'windows' && (
+                            <>
+                                <p>Needs Windows 10 (22H2) or Windows 11, on a 64-bit PC.</p>
+                                <p>
+                                    Windows may say it doesn't recognize the installer. Choose More info, then Run
+                                    anyway.
+                                </p>
+                            </>
+                        )}
+                        {p.os === 'linux' && (
+                            <p>
+                                The AppImage runs on most distributions. The .deb package suits Debian, Ubuntu, and
+                                their relatives.
+                            </p>
+                        )}
+                    </div>
+
+                    {others(p.os).length > 0 && (
+                        <p class="mt-6 text-sm text-text-tertiary">
+                            Also for{' '}
+                            {others(p.os).map((o, i) => (
+                                <>
+                                    {i > 0 && ' · '}
+                                    <button type="button" class:list={[linkClass, 'cursor-pointer']} data-show-platform={o}>
+                                        {osNames[o]}
+                                    </button>
+                                </>
+                            ))}
+                        </p>
+                    )}
+                </div>
+            ))
+        }
 
         <!-- Other platforms -->
         <div class="mt-8">
-            <NewsletterInlineWrapper label="Windows coming soon. Linux in alpha (self-build for now). Get notified:" />
+            <NewsletterInlineWrapper label={newsletterLabel(offered)} />
         </div>
     </div>
 </section>

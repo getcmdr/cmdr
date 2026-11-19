@@ -1,25 +1,40 @@
 ---
-import { version, versionDisplay, dmgUrls, dmgSizes } from '../lib/release'
+import { version, versionDisplay, platformDownloads } from '../lib/release'
+import { chooseDownload, type Os, type PlatformDownloads } from '../lib/download-platforms'
 
 interface Props {
     variant: 'hero' | 'card' | 'header' | 'mobile' | 'pricing'
     class?: string
+    /** Offer only this OS's files, whatever the visitor runs (a card in the download section). */
+    os?: Os
+    /** What to offer; the published release's offered platforms by default. The download fixture page passes its own. */
+    platforms?: PlatformDownloads[]
 }
 
-const { variant, class: className = '' } = Astro.props
+const { variant, class: className = '', os, platforms: allPlatforms = platformDownloads } = Astro.props
+const platforms = os ? allPlatforms.filter((p) => p.os === os) : allPlatforms
 const hasGlow = variant === 'hero' || variant === 'card'
-// Styling lives in src/styles/download-button.css (global), and the dropdown toggle + arch detection
+// The data the inline picker in Layout.astro reads to point this button at the visitor's OS and arch.
+const byOs = Object.fromEntries(platforms.map((p) => [p.os, { name: p.name, defaultArch: p.defaultArch, options: p.options }]))
+// What the static HTML offers before the picker runs (and with JS off): macOS's universal build, or the pinned OS's default.
+const initial = chooseDownload(byOs, { visitorOs: null, arch: null, pinnedOs: os ?? null })
+const initialPlatform = platforms.find((p) => p.os === initial?.os)
+const initialSize = initial?.option.size
+const showsOsName = variant === 'hero' || variant === 'card' || variant === 'mobile'
+const grouped = platforms.length > 1
+// Styling lives in src/styles/download-button.css (global), and the dropdown toggle + OS and arch picker
 // scripts live in Layout.astro, so the same dropdown also works when emitted into blog posts.
 ---
 
-<div class:list={['split-btn', `split-btn--${variant}`, { glow: hasGlow }, className]} data-download-split-btn>
+<div
+    class:list={['split-btn', `split-btn--${variant}`, { glow: hasGlow }, className]}
+    data-download-split-btn
+    data-downloads={JSON.stringify(byOs)}
+    data-download-pinned-os={os}
+>
     <a
-        href={dmgUrls.universal}
+        href={initial?.option.url}
         data-download-link
-        data-dmg-arm={dmgUrls.aarch64}
-        data-dmg-intel={dmgUrls.x86_64}
-        data-size-arm={dmgSizes?.aarch64}
-        data-size-intel={dmgSizes?.x86_64}
         data-umami-event="download"
         data-umami-event-version={version}
         data-umami-event-arch="auto"
@@ -36,31 +51,46 @@ const hasGlow = variant === 'hero' || variant === 'card'
                     />
                 </svg>
             ) : (
-                <svg class="split-btn__icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-                </svg>
-            )
-        }
-
-        {
-            variant === 'hero' && (
-                <span class="split-btn__stack split-btn__stack--center">
-                    <span class="split-btn__label">Download for macOS</span>
-                    <span class="split-btn__sub">
-                        {versionDisplay}
-                        {dmgSizes && <span data-download-size> · {dmgSizes.universal}</span>}
+                platforms.map((p) => (
+                    <span class="split-btn__icon-slot" data-os-icon={p.os} hidden={p.os !== initial?.os}>
+                        {p.os === 'macos' && (
+                            <svg class="split-btn__icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                            </svg>
+                        )}
+                        {p.os === 'windows' && (
+                            <svg class="split-btn__icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M3 5.6 10.4 4.6v7H3zM11.4 4.4 21 3v8.6h-9.6zM3 12.6h7.4v7L3 18.4zM11.4 12.6H21V21l-9.6-1.4z" />
+                            </svg>
+                        )}
+                        {p.os === 'linux' && (
+                            <svg
+                                class="split-btn__icon"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                />
+                            </svg>
+                        )}
                     </span>
-                </span>
+                ))
             )
         }
 
         {
-            variant === 'card' && (
+            showsOsName && (
                 <span class="split-btn__stack split-btn__stack--center">
-                    <span class="split-btn__label">Download for macOS</span>
+                    <span class="split-btn__label" data-download-label>{`Download for ${initialPlatform?.name ?? 'macOS'}`}</span>
                     <span class="split-btn__sub">
                         {versionDisplay}
-                        {dmgSizes && <span data-download-size> · {dmgSizes.universal}</span>}
+                        {initialSize && <span data-download-size> · {initialSize}</span>}
                     </span>
                 </span>
             )
@@ -72,19 +102,7 @@ const hasGlow = variant === 'hero' || variant === 'card'
                     <span class="split-btn__label">Download</span>
                     <span class="split-btn__sub split-btn__sub--header">
                         {versionDisplay}
-                        {dmgSizes && <span data-download-size> · {dmgSizes.universal}</span>}
-                    </span>
-                </span>
-            )
-        }
-
-        {
-            variant === 'mobile' && (
-                <span class="split-btn__stack split-btn__stack--center">
-                    <span class="split-btn__label">Download for macOS</span>
-                    <span class="split-btn__sub">
-                        {versionDisplay}
-                        {dmgSizes && <span data-download-size> · {dmgSizes.universal}</span>}
+                        {initialSize && <span data-download-size> · {initialSize}</span>}
                     </span>
                 </span>
             )
@@ -96,7 +114,7 @@ const hasGlow = variant === 'hero' || variant === 'card'
                     <span class="split-btn__label split-btn__label--pricing">Download Cmdr</span>
                     <span class="split-btn__sub">
                         {versionDisplay}
-                        {dmgSizes && <span data-download-size> · {dmgSizes.universal}</span>}
+                        {initialSize && <span data-download-size> · {initialSize}</span>}
                     </span>
                 </span>
             )
@@ -108,8 +126,8 @@ const hasGlow = variant === 'hero' || variant === 'card'
         class="split-btn__chevron"
         aria-haspopup="true"
         aria-expanded="false"
-        aria-label="Other architecture versions"
-        title="Other architecture versions"
+        aria-label={grouped ? 'Other versions' : 'Other architecture versions'}
+        title={grouped ? 'Other versions' : 'Other architecture versions'}
         data-download-chevron
     >
         <svg class="split-btn__chevron-svg" viewBox="0 0 10 10" fill="none" aria-hidden="true">
@@ -123,83 +141,47 @@ const hasGlow = variant === 'hero' || variant === 'card'
     </button>
 
     <div class="split-btn__dropdown" role="menu" hidden data-download-dropdown>
-        <a
-            href={dmgUrls.aarch64}
-            role="menuitem"
-            tabindex="-1"
-            data-arch="aarch64"
-            data-umami-event="download"
-            data-umami-event-version={version}
-            data-umami-event-arch="aarch64"
-            class="split-btn__option"
-        >
-            <svg
-                class="split-btn__option-icon"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-            </svg>
-            <span class="split-btn__option-name">Apple Silicon</span>
-            {dmgSizes && <span class="split-btn__option-size">{dmgSizes.aarch64}</span>}
-        </a>
-        <a
-            href={dmgUrls.x86_64}
-            role="menuitem"
-            tabindex="-1"
-            data-arch="x86_64"
-            data-umami-event="download"
-            data-umami-event-version={version}
-            data-umami-event-arch="x86_64"
-            class="split-btn__option"
-        >
-            <svg
-                class="split-btn__option-icon"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-            </svg>
-            <span class="split-btn__option-name">Intel</span>
-            {dmgSizes && <span class="split-btn__option-size">{dmgSizes.x86_64}</span>}
-        </a>
-        <a
-            href={dmgUrls.universal}
-            role="menuitem"
-            tabindex="-1"
-            data-arch="universal"
-            data-umami-event="download"
-            data-umami-event-version={version}
-            data-umami-event-arch="universal"
-            class="split-btn__option"
-        >
-            <svg
-                class="split-btn__option-icon"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-            </svg>
-            <span class="split-btn__option-name">Universal</span>
-            {dmgSizes && <span class="split-btn__option-size">{dmgSizes.universal}</span>}
-        </a>
+        {
+            platforms.map((p) => (
+                <>
+                    {grouped && (
+                        <span class="split-btn__group" role="presentation">
+                            {p.name}
+                        </span>
+                    )}
+                    {p.options.map((o) => (
+                        <a
+                            href={o.url}
+                            role="menuitem"
+                            tabindex="-1"
+                            data-os={p.os}
+                            data-arch={o.arch}
+                            data-kind={o.kind}
+                            data-umami-event="download"
+                            data-umami-event-version={version}
+                            data-umami-event-arch={o.arch}
+                            class="split-btn__option"
+                        >
+                            <svg
+                                class="split-btn__option-icon"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                />
+                            </svg>
+                            <span class="split-btn__option-name">{o.label}</span>
+                            {o.size && <span class="split-btn__option-size">{o.size}</span>}
+                        </a>
+                    ))}
+                </>
+            ))
+        }
     </div>
 </div>

@@ -503,8 +503,21 @@ its prerequisites; tasks without any can start any time. Order within a phase is
       deploy, then task 32 links `/download/latest/windows/x86_64`. Not in this task: the website's
       `getcmdr.com/download/latest/<os>/<arch>` nginx redirect (task 32), an OS on `install_summary` (new installs and
       retention by OS), and per-OS wording in the privacy policy (it still says "macOS version"). Needs 30.
-32. [S] Win. Website download page for three OSes (the Linux plan's Part 3, built once). David reviews copy and design.
-    Needs 30.
+32. [S] Win. Website download page for three OSes (the Linux plan's Part 3, built once). **Done** (not landed or
+    deployed at writing; David reviews copy and design later, screenshots of every state from the build). One gate,
+    `offeredPlatforms` in `apps/website/src/lib/download-platforms.ts`: an OS is offered when `PUBLIC_DOWNLOAD_OSES`
+    (`apps/api-server/wrangler.toml`, read at build time, macOS always) lists it AND the published `latest.json` carries
+    its website file (NSIS, AppImage, `.deb`; the MSIX is the Store's). So adding `windows` to that var is the one
+    switch for the API and the site together, and today's site offers macOS only. Every button, the blog's inline
+    dropdown, the download section's per-OS cards ("Also for …" switches), pricing's platform line, the home schema, the
+    llms files, and `/trust#windows` read it. An inline picker detects the visitor's OS and arch on the device (nothing
+    sent), points the buttons at their OS when it's offered, and tells a Windows or Linux visitor whose build isn't out
+    that it's on its way (Linux: build from source), pointing at the existing newsletter signup. The Windows card
+    carries a one-line SmartScreen "More info, then Run anyway" hint; task 58 adds the Store link and the fuller
+    explainer. nginx passes `/download/latest/<os>/<arch>` through (the API gates it). Fixed on the way: a non-Mac
+    visitor's arch picked a Mac build (a Windows PC's x64 offered the Intel DMG and marked it ✓). Tests:
+    `apps/website/e2e/download-platforms.spec.ts` (unit and built-site, plus `/download-fixture` for the shipped
+    states); no visual baseline changed. `apps/website/DETAILS.md` § Download platforms. Needs 30.
 33. [S] Win (Linux too). Updater trust parity off macOS: the Rust-side check, advisory list, and managed-install logic
     run everywhere; the plugin only hands off the installer; the UI handles "the app quits to install". **Done**.
     `mod updater` builds on every OS and the frontend runs one flow (no OS branch, no `@tauri-apps/plugin-updater`, no

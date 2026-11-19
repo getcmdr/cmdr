@@ -1,5 +1,7 @@
 import latestRelease from '../../public/latest.json'
-import { macDmgFile, macDmgSizes, releaseShipsOs, type UpdateManifest } from './release-downloads'
+import apiServerWranglerToml from '../../../api-server/wrangler.toml?raw'
+import { offeredPlatforms, parsePublicDownloadOses, type Os, type PlatformDownloads } from './download-platforms'
+import { macDmgFile, macDmgSizes, type ReleaseDownload, type UpdateManifest } from './release-downloads'
 
 // The release pipeline writes this file (`docs/guides/releasing.md` § The release asset manifest),
 // so its shape is trusted, not validated.
@@ -30,11 +32,46 @@ export const dmgUrls = {
   universal: dmgUrl('universal'),
 }
 
+/** A release file's link: the API server's route (a macOS DMG keeps its `/:version/:arch` alias), else the mirror. */
+function downloadUrl(download: ReleaseDownload): string {
+  if (download.os === 'macos' && download.kind === 'dmg') return dmgUrl(download.arch)
+  if (downloadBase) {
+    return `${downloadBase}/download/${version}/${download.os}/${download.arch}?kind=${download.kind}&src=website`
+  }
+  return `${mirrorBase}/${download.file}`
+}
+
 /**
- * Whether the published release has a Windows download. Pages hold Windows-only copy back until it
- * does (`/trust#windows`), so a deploy from `main` can't describe a Windows app nobody can get.
+ * The OSes whose downloads the API server serves: `PUBLIC_DOWNLOAD_OSES` in its `wrangler.toml`, read at build time
+ * (the Docker build copies the file in). Adding `windows` there is the one switch, for the site as for the API.
  */
-export const releaseShipsWindows = releaseShipsOs(manifest, 'windows')
+export const publicDownloadOses = parsePublicDownloadOses(apiServerWranglerToml)
+
+/** What every download button and the download section offer, OS by OS (`src/lib/download-platforms.ts`). */
+export const platformDownloads: PlatformDownloads[] = offeredPlatforms(manifest, publicDownloadOses, downloadUrl)
+
+/** The offered OSes, macOS first. */
+export const offeredOses: Os[] = platformDownloads.map((p) => p.os)
+
+/**
+ * Whether the site offers a Windows download. Pages hold Windows-only copy back until it does (`/trust#windows`), so
+ * a deploy from `main` can't describe a Windows app nobody can get.
+ */
+export const offersWindows = offeredOses.includes('windows')
+
+/**
+ * The llms files' link lines for every offered OS but macOS (whose DMG lines they write out), each led by a newline,
+ * so a page appends it to its last macOS line; empty while macOS is the one offered.
+ */
+export const otherOsDownloadLines = platformDownloads
+  .filter((p) => p.os !== 'macos')
+  .flatMap((p) =>
+    p.options.map(
+      (o) =>
+        `\n- [Download for ${p.name} (${o.label})](${o.url}): ${p.name} ${o.kind === 'nsis' ? 'installer' : `${o.kind === 'deb' ? '.deb package' : 'AppImage'}`}`,
+    ),
+  )
+  .join('')
 
 /** Formatted download sizes (for example, "15 MB"), null if not yet populated by CI */
 export const dmgSizes = macDmgSizes(manifest)

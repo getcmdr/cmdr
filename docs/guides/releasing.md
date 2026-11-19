@@ -1395,9 +1395,15 @@ environment already holds.
 7. **Submit the MSIX** to the Store by hand from Partner Center (upload `Cmdr_<version>_x64.msix` from the release)
    until task 57 automates the submission. Store certification takes hours to days.
 
-Turning it on also wants, though nothing breaks without them: the website's Windows download (task 58) and the
-`/download/:version/:os/:arch` route (task 31). In `local` mode, `windows-publish` is a second `release` environment
-approval if it arrives after you approved `sign`.
+8. **Make the download public**, once that release is out: add `windows` to `PUBLIC_DOWNLOAD_OSES` in
+   `apps/api-server/wrangler.toml`. That one line turns the Windows download on at the API server's
+   `/download/:version/:os/:arch` route (task 31) and on the website, whose buttons, download section, and
+   `/trust#windows` read the same line at build time (`apps/website/DETAILS.md` § Download platforms). Until then a
+   release carries the Windows files with the site still offering macOS only.
+
+Turning it on also wants, though nothing breaks without it: the Store link and the fuller "Run anyway" explainer on the
+website (task 58). In `local` mode, `windows-publish` is a second `release` environment approval if it arrives after you
+approved `sign`.
 
 ### Building the Windows packages locally
 

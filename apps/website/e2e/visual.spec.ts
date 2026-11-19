@@ -1,4 +1,5 @@
 import { test, expect, type Page, type Locator } from '@playwright/test'
+import { emulateVisitor, visitors } from './visitor'
 
 /**
  * Visual-regression (golden screenshot) safety net for the marketing site.
@@ -62,8 +63,13 @@ function volatileMasks(page: Page): Locator[] {
 
 type Theme = 'light' | 'dark'
 
-/** Seed the forced theme + reduced motion, and block all cross-origin traffic, for this page. */
+/**
+ * Seed the forced theme + reduced motion, and block all cross-origin traffic, for this page. The visitor is an Intel
+ * Mac, so the download picker settles the same way on every runner (it reads the OS and arch off `navigator`, which
+ * would otherwise be the CI box's) and the dropdown shot keeps its recommended ✓.
+ */
 async function preparePage(page: Page, theme: Theme): Promise<void> {
+  await emulateVisitor(page, visitors.macIntel)
   await page.route('**/*', (route) => {
     const host = new URL(route.request().url()).host
     if (host === `localhost:${VIEWPORT_PORT}`) return route.continue()
