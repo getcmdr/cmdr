@@ -17,6 +17,9 @@ mod imp;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod unsupported;
 
+#[cfg(any(target_os = "linux", target_os = "windows"))]
+mod arboard_text;
+
 const _: fn(AppHandle, Vec<PathBuf>) -> Result<(), String> = write_file_urls;
 const _: fn(AppHandle) -> Result<Vec<PathBuf>, String> = read_file_urls;
 const _: fn(AppHandle) -> Result<Option<String>, String> = read_text;

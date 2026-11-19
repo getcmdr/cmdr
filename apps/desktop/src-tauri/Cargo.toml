@@ -350,8 +350,16 @@ freedesktop-icons = "0.4"
 # window Tauri hands us. Tauri and muda already link gtk 0.18 (the last gtk3-rs release), so this
 # adds no crate; the version must stay Tauri's, or `gtk_window()` returns a different type.
 gtk = "0.18"
+# The clipboard's plain text (`clipboard/platform/arboard_text.rs`), read off the GTK main thread.
+# Already linked through `tauri-plugin-clipboard-manager` (same version and features), so it adds
+# no crate; direct because its typed `ContentNotAvailable` tells "no text" from a failure, which
+# the plugin flattens into a string.
+arboard = { version = "3.6", default-features = false, features = ["wayland-data-control"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
+# The clipboard's plain text (`clipboard/platform/arboard_text.rs`), as on Linux. Task 42's files
+# (`CF_HDROP`, `Preferred DropEffect`) go through `windows-sys` beside it.
+arboard = { version = "3.6", default-features = false }
 # Win32 calls behind the app's `platform/` seams: the registry (device id, OS names, managed
 # policy and its change watch), `RtlGetVersion`, the memory counters, the instance lock's
 # message box, the drive table (volume GUIDs, drive types, mapped shares), and the system look's

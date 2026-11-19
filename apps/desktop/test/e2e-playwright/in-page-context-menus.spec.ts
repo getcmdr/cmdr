@@ -154,4 +154,30 @@ test.describe('in-page context menus @in-page-menus', () => {
     expect(await tauriPage.evaluate<number>(`window.__cmdrRenameBlurs`)).toBe(0)
     expect(await menuOpen(tauriPage)).toBe(false)
   })
+
+  // Regression anchor (review of #1271): Paste read the clipboard through a backend that answered
+  // "not supported" off macOS, so the row did nothing.
+  test("the rename editor's edit menu cuts the name and pastes it back through the system clipboard", async ({
+    tauriPage,
+  }) => {
+    await tauriPage.keyboard.press('F2')
+    await tauriPage.waitForSelector('.rename-input', waitBudget(3000))
+    const value = () => tauriPage.evaluate<string>(`document.querySelector('.rename-input').value`)
+    const before = await value()
+    await tauriPage.evaluate(`(function () {
+            var input = document.querySelector('.rename-input');
+            input.focus();
+            input.setSelectionRange(0, input.value.length);
+        })()`)
+    for (const [row, expected] of [
+      ['text_field_cut', ''],
+      ['text_field_paste', before],
+    ] as const) {
+      await rightClick(tauriPage, `document.querySelector('.rename-input')`)
+      await expect.poll(() => menuOpen(tauriPage), { timeout: waitBudget(3000) }).toBeTruthy()
+      await clickRow(tauriPage, row)
+      await expect.poll(value, { timeout: waitBudget(3000) }).toBe(expected)
+    }
+    expect(await tauriPage.isVisible('.rename-input')).toBe(true)
+  })
 })

@@ -635,6 +635,8 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     live-updating (`UISettings`, `WM_SETTINGCHANGE`). Light/dark already arrives through WebView2. Needs 19, 23.
 41. [S] Windows. File icons via `SHGetFileInfoW` / `IShellItemImageFactory`. Needs 23.
 42. [S] Windows. Clipboard (`CF_HDROP`, `Preferred DropEffect` for cut) and drag-out of plain paths (OLE). Needs 18.
+    **Plain text read done** (2026-11-19): `clipboard/platform/arboard_text.rs` answers `read_text` on Windows and Linux
+    through `arboard` (the in-page text-field Paste needs it); the file arms stay `unsupported.rs`'s.
 43. [M] Windows. Drag-out of virtual files (MTP, SMB, archives) via `CFSTR_FILEDESCRIPTORW` / `FILECONTENTS`. Needs 42.
 44. [S] Windows. Open with, default app, text editors, terminal (`SHAssocEnumHandlers`, `wt -d`). Needs 18.
 45. [S] Windows. SMB OS mounts via `WNetAddConnection2W` and Credential Manager SMB credentials. Needs 22.
