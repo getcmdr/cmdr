@@ -8,21 +8,25 @@ alias `LocalVolume`; only OS-dependent code names a sibling (`platform/mod.rs`).
 
 - **platform/** picks the volume per OS family: **local_posix.rs** (macOS, Linux; the struct, the rename primitive, the
   query and mutation half of `impl Volume`) with **local_posix/** (`scan`, `streams`, `links`; a trait impl can't span
-  files, so a moved method stays a one-line delegation), and **local_windows.rs** (Windows) with **local_windows/**
-  (`paths`, the one app-path to `\\?\` crossing, and `rename`). DETAILS § "The Windows sibling".
+  files, so a moved method stays a one-line delegation), **local_windows.rs** (Windows) with **local_windows/**
+  (`paths`, the one app-path to `\\?\` crossing, and `rename`), and **anchor.rs** (where a Windows caller's path lands).
+  DETAILS § "App paths in and out".
 - **reading.rs** (the local reader the watcher and `tags.rs` read through too; `read_dir` + `lstat`) with
-  **reading/bulk.rs** (macOS: the `getattrlistbulk` lister APFS and HFS+ take), **mutation.rs** (the listing patch a
-  local mutation sends), **space.rs** + **live_space.rs**, and the OS probes: **filesystem_kind.rs**,
-  **mount_table.rs**, **statfs.rs**, **nsurl.rs**, **linux_mounts.rs** (Linux), and **mounts/**, the one door to the
-  mount table (`list`, `is_mount_point`) that callers ask instead of naming the OS.
+  **reading/row.rs** (each row's app path, by `AppPath::join`), **reading/bulk.rs** (macOS: the `getattrlistbulk` lister
+  APFS and HFS+ take), **mutation.rs** (the listing patch a local mutation sends), **space.rs** + **live_space.rs**, and
+  the OS probes: **filesystem_kind.rs**, **mount_table.rs**, **statfs.rs**, **nsurl.rs**, **linux_mounts.rs** (Linux),
+  and **mounts/**, the one door to the mount table (`list`, `is_mount_point`) that callers ask instead of naming the OS.
 
 ## Must-knows
 
 - **It reaches the app only through its `VolumeHost`** (`host.listings()`: pane patches, watch coverage, name order), a
   required constructor argument. ❌ Never default it to `VolumeHost::detached()` in production: the scan oracle's fast
   path turns off and panes go stale after every local copy. ❌ Never depend on `cmdr-listing` or the app.
-- **❗ On Windows, `std::fs::rename` REPLACES**: forced path only. Paths there are app paths (`C:/x`), reaching the OS
-  only via `local_windows/paths.rs`; ❌ no `root_anchored` or `Path::join` on them (#1225).
+- **❗ On Windows, `std::fs::rename` REPLACES**: forced path only.
+- **One crossing per OS**: a volume body turns its `&AppPath` into the OS path once (`os_path` on POSIX, `locate` on
+  Windows, both `AppPath::to_native`), and rows join by `AppPath::join` (`reading/row.rs`); ❌ no `Path::join` or
+  `root_anchored` on an app path. A bridge value still reaches the POSIX OS as its raw text (`lstat("link/")` follows
+  the link) until its crate sends typed paths. DETAILS § "App paths in and out".
 - **`rename_local_exclusive` is the ONE no-replace rename**, and it degrades on a filesystem with no kernel flag (smbfs
   answers `ENOTSUP`). ❌ Never write a second `renamex_np` call: while `overwrite::rename_no_replace` was a separate
   copy, only it degraded, and every rename on a mounted SMB share failed (ERR-8RFN4). DETAILS § "Local renames are
