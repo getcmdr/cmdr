@@ -11,8 +11,6 @@ use windows_sys::Win32::Foundation::GetLastError;
 use windows_sys::Win32::UI::WindowsAndMessaging::{SPI_GETKEYBOARDCUES, SystemParametersInfoW};
 use windows_sys::core::BOOL;
 
-use crate::system_events::DisplayAccessibility;
-
 /// Whether Underline access keys is on, or `false` (Windows' default) when the read fails.
 pub(super) fn underline_access_keys() -> bool {
     let mut on: BOOL = 0;
@@ -27,31 +25,4 @@ pub(super) fn underline_access_keys() -> bool {
         return false;
     }
     on != 0
-}
-
-/// The display options as Windows answers them: Underline access keys, every macOS-only option off.
-pub(super) fn display_accessibility_from(underline_access_keys: bool) -> DisplayAccessibility {
-    DisplayAccessibility {
-        underline_access_keys,
-        ..DisplayAccessibility::default()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn underline_access_keys_maps_to_its_own_field_alone() {
-        let on = display_accessibility_from(true);
-        assert!(on.underline_access_keys);
-        assert_eq!(
-            on,
-            DisplayAccessibility {
-                underline_access_keys: true,
-                ..DisplayAccessibility::default()
-            }
-        );
-        assert_eq!(display_accessibility_from(false), DisplayAccessibility::default());
-    }
 }

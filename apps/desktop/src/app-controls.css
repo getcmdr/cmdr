@@ -17,9 +17,11 @@
    what CSS can't express: `docs/notes/windows-port/control-look-tokens.md`.
 
    The accent: WinUI fills with `SystemAccentColorDark1` (light) / `Light2` (dark) and writes
-   fixed white / black on it. The backend hands the frontend one accent and no shade ramp yet,
-   so the Windows tokens fill with `--color-accent` and write `--color-accent-fg` (picked for
-   contrast), at WinUI's own 90% / 80% opacity steps for hover and press. */
+   fixed white / black on it. The backend reads that ramp from `UISettings` and
+   `#lib/accent-color` writes the scheme's shade as `--color-accent-fill` (text
+   `--color-accent-fill-fg`), so the Windows tokens fill with it, at WinUI's own 90% / 80%
+   opacity steps for hover and press. Without an OS shade they fall back to `--color-accent` and
+   `--color-accent-fg` (picked for contrast). */
 
 :root {
   /* Focus ring (WinUI: `UseSystemFocusVisuals`, a two-ring rectangle) */

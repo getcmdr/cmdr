@@ -76,10 +76,11 @@ Two inputs aren't in the WinUI repo:
   stroke, and the focused field's second accent pixel is an inset shadow (`TextControlBorderThemeThicknessFocused`
   1,1,1,2 without moving the text). The select trigger has no border in the house look, so its edge is inset shadows.
 - **The accent.** WinUI fills with `SystemAccentColorDark1` (light) or `Light2` (dark) and writes fixed white or black
-  on it. The backend sends one accent and no shade ramp (`system_look/platform/windows.rs` has no reader yet), so the
-  Windows tokens fill with `--color-accent` and write `--color-accent-fg` (picked per accent for contrast). Hover and
-  press are WinUI's own `AccentFillColorSecondary` / `Tertiary`: the fill at 90% and 80% opacity, as `color-mix()`. Once
-  task 40's `UISettings` reader can send `AccentDark1` and `AccentLight2`, two tokens change and nothing else.
+  on it. The backend reads both from `UISettings` (`system_look/platform/windows/ui_settings.rs`) and the Windows tokens
+  fill with `--color-accent-fill` and write `--color-accent-fill-fg`, which `#lib/accent-color` sets to the scheme's
+  shade and WinUI's white / black (`apps/desktop/src/DETAILS.md` § Control look tokens). Without an OS shade (Cmdr gold,
+  the mocked look on a Mac) they are `--color-accent` and `--color-accent-fg` (picked per accent for contrast). Hover
+  and press are WinUI's own `AccentFillColorSecondary` / `Tertiary`: the fill at 90% and 80% opacity, as `color-mix()`.
 - **The checked radio and the slider thumb** are one element each in our DOM: the dot is the fill, and an inset shadow
   paints the ring around it (a 3px accent ring inside the 1px border leaves WinUI's 12px dot, 2px on hover leaves 14px;
   the slider's 2.84px / 1px / 3.74px rings leave its 10.3px / 14px / 8.5px dot).

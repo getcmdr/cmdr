@@ -1,8 +1,9 @@
 /**
  * Rehype plugin: turn the inline marker `[download](cmdr:download)` in a blog post into the same
  * arch-aware download dropdown the site uses elsewhere (see DownloadButton.astro). The text styles
- * as a normal prose link with a download glyph to its right; clicking it opens a menu of Apple
- * Silicon / Intel / Universal builds. The global arch-detection and dropdown-toggle scripts in
+ * as a normal prose link with a download glyph to its right; clicking it opens a menu of every
+ * offered OS's builds (only the Macs' Apple Silicon / Intel / Universal while macOS is the one
+ * offered, `src/lib/download-platforms.ts`). The global picker and dropdown-toggle scripts in
  * Layout.astro auto-wire any element carrying the `data-download-*` attributes, so no per-post JS is
  * needed; the shared look lives in src/styles/download-button.css.
  *
@@ -21,7 +22,8 @@
 
 import { readFileSync } from 'node:fs'
 import type { Root, Element, Text, ElementContent, Properties } from 'hast'
-import { macDmgFile, macDmgSizes, type UpdateManifest } from '../lib/release-downloads'
+import { offeredPlatforms, parsePublicDownloadOses, type DownloadOption } from '../lib/download-platforms'
+import type { UpdateManifest } from '../lib/release-downloads'
 
 const MARKER = 'cmdr:download'
 
@@ -30,12 +32,15 @@ const MARKER = 'cmdr:download'
 const latest = JSON.parse(readFileSync(new URL('../../public/latest.json', import.meta.url), 'utf-8')) as UpdateManifest
 const version = latest.version
 
-/** The EU mirror's DMG. */
-function dmgUrl(arch: string): string {
-  return `https://download.getcmdr.com/v${version}/${macDmgFile(latest, arch)}`
-}
-
-const sizes = macDmgSizes(latest)
+// The same gate as every other download button (`src/lib/download-platforms.ts`): the OSes the API
+// server serves, read off its `wrangler.toml`, that the release carries. Links go to the EU mirror.
+const publicOses = parsePublicDownloadOses(
+  readFileSync(new URL('../../../api-server/wrangler.toml', import.meta.url), 'utf-8'),
+)
+const platforms = offeredPlatforms(latest, publicOses, (d) => `https://download.getcmdr.com/v${version}/${d.file}`)
+const byOs = Object.fromEntries(
+  platforms.map((p) => [p.os, { name: p.name, defaultArch: p.defaultArch, options: p.options }]),
+)
 
 /** Build a hast element node. */
 function el(tagName: string, properties: Properties, children: ElementContent[] = []): Element {
@@ -62,32 +67,48 @@ function downloadIcon(className: string): Element {
   )
 }
 
-/** One arch row in the dropdown. */
-function option(arch: string, label: string, size: string | undefined): Element {
+/** One file's row in the dropdown. */
+function option(os: string, o: DownloadOption): Element {
   return el(
     'a',
     {
-      href: dmgUrl(arch),
+      href: o.url,
       role: 'menuitem',
       tabIndex: -1,
-      'data-arch': arch,
+      'data-os': os,
+      'data-arch': o.arch,
+      'data-kind': o.kind,
       'data-umami-event': 'download',
       'data-umami-event-version': version,
-      'data-umami-event-arch': arch,
+      'data-umami-event-arch': o.arch,
       className: ['split-btn__option'],
     },
     [
       downloadIcon('split-btn__option-icon'),
-      el('span', { className: ['split-btn__option-name'] }, [text(label)]),
-      ...(size ? [el('span', { className: ['split-btn__option-size'] }, [text(size)])] : []),
+      el('span', { className: ['split-btn__option-name'] }, [text(o.label)]),
+      ...(o.size ? [el('span', { className: ['split-btn__option-size'] }, [text(o.size)])] : []),
     ],
   )
+}
+
+/** Every offered OS's rows, each under its OS's name once there's more than one. */
+function options(): Element[] {
+  const grouped = platforms.length > 1
+  return platforms.flatMap((p) => [
+    ...(grouped ? [el('span', { className: ['split-btn__group'], role: 'presentation' }, [text(p.name)])] : []),
+    ...p.options.map((o) => option(p.os, o)),
+  ])
 }
 
 /** The full inline trigger + dropdown, mirroring DownloadButton.astro's menu in a prose-safe (no
  * block elements inside the host `<p>`) shape: spans throughout, displayed via CSS. */
 function buildDropdown(): Element {
-  return el('span', { className: ['split-btn', 'split-btn--inline'], 'data-download-split-btn': '' }, [
+  const wrapper = {
+    className: ['split-btn', 'split-btn--inline'],
+    'data-download-split-btn': '',
+    'data-downloads': JSON.stringify(byOs),
+  }
+  return el('span', wrapper, [
     el(
       'button',
       {
@@ -102,11 +123,11 @@ function buildDropdown(): Element {
         downloadIcon('split-btn__inline-icon'),
       ],
     ),
-    el('span', { className: ['split-btn__dropdown'], role: 'menu', hidden: true, 'data-download-dropdown': '' }, [
-      option('aarch64', 'Apple Silicon', sizes?.aarch64),
-      option('x86_64', 'Intel', sizes?.x86_64),
-      option('universal', 'Universal', sizes?.universal),
-    ]),
+    el(
+      'span',
+      { className: ['split-btn__dropdown'], role: 'menu', hidden: true, 'data-download-dropdown': '' },
+      options(),
+    ),
   ])
 }
 

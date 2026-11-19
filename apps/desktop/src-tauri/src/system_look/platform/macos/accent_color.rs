@@ -22,7 +22,7 @@ use objc2_foundation::{NSNotification, NSNotificationCenter};
 use tauri::{AppHandle, Runtime};
 use tauri_specta::Event as _;
 
-use crate::system_events::AccentColorChanged;
+use crate::system_events::{AccentColorChanged, SystemAccent};
 
 /// Brand fallback accent (mustard gold from getcmdr.com).
 /// Only used if NSColor.controlAccentColor() cannot be read.
@@ -57,14 +57,15 @@ fn read_accent_color(_mtm: MainThreadMarker) -> String {
     format!("#{r8:02x}{g8:02x}{b8:02x}")
 }
 
-/// The accent color, read off the blocking pool.
-pub(crate) async fn accent_color(app: AppHandle) -> String {
-    tauri::async_runtime::spawn_blocking(move || read_on_main_thread(app))
+/// The accent color, read off the blocking pool. macOS names no fill shades.
+pub(crate) async fn accent_color(app: AppHandle) -> SystemAccent {
+    let hex = tauri::async_runtime::spawn_blocking(move || read_on_main_thread(app))
         .await
         .unwrap_or_else(|e| {
             warn!("Reading the accent color stopped ({e}), using fallback");
             FALLBACK_ACCENT_HEX.to_owned()
-        })
+        });
+    SystemAccent::plain(hex)
 }
 
 /// `NSColor` is main-thread-only, so we hop to the AppKit main thread via
@@ -108,7 +109,8 @@ pub(crate) fn observe_accent_color_changes<R: Runtime>(app_handle: AppHandle<R>)
         let mtm = MainThreadMarker::new().expect("NSSystemColorsDidChange is delivered on the main thread");
         let hex = read_accent_color(mtm);
         info!("Accent color changed: {hex}");
-        if let Err(e) = (AccentColorChanged { hex }).emit(&app_handle) {
+        let accent = SystemAccent::plain(hex);
+        if let Err(e) = (AccentColorChanged { accent }).emit(&app_handle) {
             warn!("Failed to emit accent-color-changed event: {e}");
         }
     });

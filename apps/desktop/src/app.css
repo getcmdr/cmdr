@@ -178,6 +178,12 @@
   --color-accent-pop: color-mix(in oklch, var(--color-accent), black 40%);
   --color-cmdr-gold: #d4a006;
   --color-system-accent: #d4a006; /* Updated at runtime by accent-color.ts */
+  /* The accent shade a control fills with, and the text on it. The accent itself here;
+     `accent-color.ts` overrides both where the OS names its own fill shade (Windows'
+     `AccentDark1` / `AccentLight2`, with WinUI's fixed white / black text), and the Windows
+     control tokens read them (`app-controls-windows.css`). */
+  --color-accent-fill: var(--color-accent);
+  --color-accent-fill-fg: var(--color-accent-fg);
 
   /* === Cursor (row highlight in file lists) === */
   --color-cursor-inactive: color-mix(in srgb, var(--color-bg-tertiary), transparent 60%);

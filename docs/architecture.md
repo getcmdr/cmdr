@@ -336,17 +336,19 @@ All under `apps/desktop/src-tauri/src/`.
   motion), and the one WebKit-safe close every close path lands in. Frontend halves: `#lib/child-window-show`,
   `#lib/child-window-close`. See `apps/desktop/src-tauri/src/child_window_lifecycle/CLAUDE.md`
 - `system_look/`: what the OS says about how things should look, one command each, per OS behind `platform/`: the accent
-  color (macOS `NSColor`, Linux XDG portal), Accessibility > Display options (Reduce transparency, Increase contrast,
-  Differentiate without color, Invert colors, Show borders; also re-keys the icon caches via
-  `icons::apply_display_accessibility`) plus Windows' Underline access keys (live through a `WM_SETTINGCHANGE` window),
-  the macOS 27 Liquid Glass slider (undocumented `NSGlassTintAmount`), and Text Size (undocumented Apple APIs; risk
-  notes in each macOS source). Emits `accent-color-changed`, `display-accessibility-changed`, `glass-tint-changed`, and
+  color (macOS `NSColor`, Linux XDG portal, Windows `UISettings` with WinUI's fill shades), Accessibility > Display
+  options (Reduce transparency, Increase contrast, Differentiate without color, Invert colors, Show borders; also
+  re-keys the icon caches via `icons::apply_display_accessibility`) plus Windows' contrast themes, Transparency effects,
+  and Underline access keys (all live through one `WM_SETTINGCHANGE` window, which `intl/` also listens on), the macOS
+  27 Liquid Glass slider (undocumented `NSGlassTintAmount`), and Text Size (undocumented Apple APIs; risk notes in each
+  macOS source). Emits `accent-color-changed`, `display-accessibility-changed`, `glass-tint-changed`, and
   `system-text-size-changed`; the frontend sides are `#lib/display-accessibility` and `#lib/glass-material`
 - `system_strings.rs`: Localized macOS pane labels from `.loctable` system bundles (loctable catalog + risks in source).
   Also the ordered `AppleLanguages` read that `intl/` walks
-- `intl/`: What the OS says about language and region. Walks the user's ordered macOS language preferences against the
-  catalogs we ship (refusing to cross a script boundary), composes the formatting tag WebKit can't see (the `-u-rg-`
-  region override), and answers the frontend over `get_os_locales`. See its `CLAUDE.md`
+- `intl/`: What the OS says about language and region. Walks the user's ordered macOS or Windows language preferences
+  against the catalogs we ship (refusing to cross a script boundary), composes the formatting tag the webview can't see
+  (macOS's `-u-rg-` region override, Windows' Regional format), follows both live, and answers the frontend over
+  `get_os_locales`. See its `CLAUDE.md`
 - `favorites/`: User-editable favorites. Ordered `favorites.json` store (`{ id, path, name }`) backing the favorites
   menu. Seed-once-on-absence, dedup-by-path, pure testable core. Read by `get_favorites()` in each `volumes/` arm;
   mutated via `commands/favorites.rs`, which re-emits `volumes-changed` and owns the add gate (`favorites/DETAILS.md` §

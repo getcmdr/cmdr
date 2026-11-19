@@ -10,6 +10,11 @@
  * settings preview). --color-accent is set based on the user's choice.
  * When 'cmdr-gold' is selected, the inline --color-accent is removed
  * so the CSS fallback in app.css takes effect.
+ *
+ * Where the OS names the shade its own controls fill with (Windows' WinUI
+ * ramp), --color-accent-fill and --color-accent-fill-fg carry it for the
+ * current color scheme, and the Windows control tokens fill with it
+ * (`app-controls-windows.css`). macOS and Linux name none, so neither is set.
  */
 
 import { type UnlistenFn } from '@tauri-apps/api/event'
@@ -18,6 +23,7 @@ import { getAppLogger } from '#lib/logging/logger.js'
 import { clearDirectoryIconCache } from '#lib/icon-cache.js'
 import { getSetting, onSpecificSettingChange } from '#lib/settings/index.js'
 import { mixSrgb, readableFgOn, textSelectionFill, withAlpha } from '#lib/utils/srgb-mix.js'
+import type { AccentFill, SystemAccent } from '#lib/ipc/bindings.js'
 
 const log = getAppLogger('accent-color')
 
@@ -26,6 +32,7 @@ let unlistenSetting: (() => void) | undefined
 let darkModeQuery: MediaQueryList | undefined
 let darkModeListener: ((e: MediaQueryListEvent) => void) | undefined
 let lastSystemColor: string | undefined
+let lastSystemFill: AccentFill | undefined
 
 // Resting Cmdr gold per scheme. Must mirror `--color-accent` in `app.css`.
 // When the user picks "Cmdr gold" we don't write `--color-accent` and let the
@@ -43,9 +50,29 @@ function activeAccentHex(): string {
   return isDarkMode() ? CMDR_GOLD_DARK : CMDR_GOLD_LIGHT
 }
 
-function applySystemAccentPreview(hex: string): void {
-  document.documentElement.style.setProperty('--color-system-accent', hex)
-  lastSystemColor = hex
+function applySystemAccentPreview(accent: SystemAccent): void {
+  document.documentElement.style.setProperty('--color-system-accent', accent.hex)
+  lastSystemColor = accent.hex
+  lastSystemFill = accent.fill ?? undefined
+}
+
+/**
+ * Writes `--color-accent-fill` / `--color-accent-fill-fg` when the OS names the shade its own
+ * controls fill with (Windows: `AccentDark1` light, `AccentLight2` dark), else removes them so the
+ * Windows control tokens fall back to `--color-accent` / `--color-accent-fg`. The text on the fill
+ * is WinUI's fixed `TextOnAccentFillColorPrimary`: white in light, black in dark. Only under the
+ * system accent: Cmdr gold has no OS shades.
+ */
+function applyAccentFill(): void {
+  const root = document.documentElement.style
+  if (lastSystemFill && getSetting('appearance.appColor') === 'system') {
+    const dark = isDarkMode()
+    root.setProperty('--color-accent-fill', dark ? lastSystemFill.dark : lastSystemFill.light)
+    root.setProperty('--color-accent-fill-fg', dark ? '#000000' : '#ffffff')
+  } else {
+    root.removeProperty('--color-accent-fill')
+    root.removeProperty('--color-accent-fill-fg')
+  }
 }
 
 /**
@@ -131,6 +158,7 @@ function applyAccentForCurrentSetting(): void {
     log.debug('Removed accent override, using CSS fallback (Cmdr gold)')
   }
   applyDerivedAccentTokens()
+  applyAccentFill()
 }
 
 /**
@@ -151,16 +179,17 @@ export async function initAccentColor(): Promise<void> {
     darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)')
     darkModeListener = () => {
       applyDerivedAccentTokens()
+      applyAccentFill()
     }
     darkModeQuery.addEventListener('change', darkModeListener)
   }
 
   // Load system accent color
   try {
-    const hex = await getAccentColor()
-    applySystemAccentPreview(hex)
+    const accent = await getAccentColor()
+    applySystemAccentPreview(accent)
     applyAccentForCurrentSetting()
-    log.debug('System accent color loaded: {hex}', { hex })
+    log.debug('System accent color loaded: {hex}', { hex: accent.hex })
   } catch (error) {
     log.warn('Could not read system accent color, using CSS fallback: {error}', { error })
   }
@@ -168,12 +197,12 @@ export async function initAccentColor(): Promise<void> {
   // Listen for OS-level accent color changes
   try {
     unlisten = await onAccentColorChanged((payload) => {
-      applySystemAccentPreview(payload.hex)
+      applySystemAccentPreview(payload.accent)
       applyAccentForCurrentSetting()
       // macOS renders folder icons with the accent color baked in,
       // so we need to flush cached folder bitmaps and re-fetch them.
       void clearDirectoryIconCache()
-      log.debug('System accent color changed: {hex}', { hex: payload.hex })
+      log.debug('System accent color changed: {hex}', { hex: payload.accent.hex })
     })
   } catch (error) {
     log.warn('Could not subscribe to accent color changes: {error}', { error })
@@ -198,5 +227,7 @@ export function cleanupAccentColor(): void {
   }
   darkModeQuery = undefined
   darkModeListener = undefined
+  lastSystemColor = undefined
+  lastSystemFill = undefined
   log.debug('Accent color listeners cleaned up')
 }

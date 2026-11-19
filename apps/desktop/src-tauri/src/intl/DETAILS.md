@@ -76,8 +76,8 @@ The converse is allowed and happens in both directions:
 
 On Linux `get_os_locales` answers `ui: None` (§ The frontend contract), so the webview picks its own catalog from
 `navigator`'s tag by plain truncation, while the native surfaces go through `os_ui_locale` and this chain. A
-`LANG=en_NZ.UTF-8` session therefore gets "Bin" in the menu bar and "Trash" in the panes. macOS is unaffected: Rust
-answers the `ui` half there, and every surface reads the same answer.
+`LANG=en_NZ.UTF-8` session therefore gets "Bin" in the menu bar and "Trash" in the panes. macOS and Windows are
+unaffected: Rust answers the `ui` half there, and every surface reads the same answer.
 
 Closing it means letting Rust answer the `ui` half on Linux too, which is a deliberate change to that contract rather
 than an oversight, and nobody runs Cmdr on Linux outside the E2E suite yet.
@@ -233,6 +233,18 @@ region, or the `und` that means Foundation doesn't know) composes `None`. The fr
 own locale, which is at least a working answer; a malformed tag is not, since `Intl` would either throw or quietly
 resolve to something nobody chose.
 
+### Windows
+
+Windows splits the two the same way: the display language and the Regional format (Settings › Time & language ›
+Region) are separate, and WebView2's `Intl` default follows the display language (its documented default for the
+environment's `Language`), so it can't see the Regional format either. `platform/windows.rs` reads the format with
+`GetUserDefaultLocaleName`, already BCP-47-shaped (`en-SE`, `sr-Latn-RS`), and `format_locale_from_windows_name` drops
+an alternate-sort suffix (`de-DE_phoneb`) and answers `None` for any other shape (a neutral `en`, a variant like
+`ca-ES-valencia`, a custom `x-` name). The language half reads `GetUserPreferredUILanguages(MUI_LANGUAGE_NAME)`: the
+display language first, then its fallbacks, in the user's order, resolved exactly like `AppleLanguages`. So on Windows
+both `get_os_locales` halves answer, as on macOS (both reads verified on Windows 10 22H2, display and format `en-US`,
+the builder's unit tests, 2026-11-19; another language's answer is unverified there).
+
 ## Following a live language or region change
 
 `'system'` tracks the CURRENT system language, and the formatters track the CURRENT region. macOS nudges people to
@@ -276,18 +288,26 @@ knows the answer moved, which makes it the seam for anything else that has to be
 native menu bar rebuilds there, on the main thread, guarded by `refresh_active_locale` so a region-only change (or a
 language change under a pinned `appearance.language`) costs nothing.
 
-Linux gets a no-op. The desktop language lives in the session's environment (`LANG` / `LC_MESSAGES`), fixed for the
-life of the process, and no portal or D-Bus name broadcasts a change; a user who changes their language gets it at
-their next login, which is also when Cmdr restarts.
+The signals are each arm's (`platform::observe_locale_signals`); the watcher and the emit site are shared.
+
+- **Windows** feeds it every `WM_SETTINGCHANGE` broadcast, which the system look's settings window already hears
+  (`system_look/platform/windows/setting_changes.rs`, through its `on_setting_change` listener list), so there's no
+  second window. Unfiltered: Windows sends `"intl"` as the `lParam` for a Regional format change, but the watcher's two
+  filters make a string match pointless. A display-language change usually needs a sign-out before Windows applies it;
+  the re-read catches it whenever `GetUserPreferredUILanguages` reports it. That Settings' Region page broadcasts is
+  unverified on a real machine (2026-11-19: the builder's settings may only be read).
+- **Linux** gets a no-op. The desktop language lives in the session's environment (`LANG` / `LC_MESSAGES`), fixed for
+  the life of the process, and no portal or D-Bus name broadcasts a change; a user who changes their language gets it
+  at their next login, which is also when Cmdr restarts.
 
 ## The frontend contract
 
 `get_os_locales` is the only way out of this module. It returns an `OsLocales` pair, `{ ui, format }`, each half an
 `Option<String>`:
 
-- **`ui`, macOS**: always `Some`, falling back to `"en"` when the walk finds nothing, because English IS the answer when
-  the user reads no language we ship. **Off macOS**: `None`, meaning "no OS preference list here".
-- **`format`, macOS**: `Some` unless the region is missing or unreadable. **Off macOS**: `None`.
+- **`ui`, macOS and Windows**: always `Some`, falling back to `"en"` when the walk finds nothing, because English IS the
+  answer when the user reads no language we ship. **Linux**: `None`, meaning "no OS preference list here".
+- **`format`, macOS and Windows**: `Some` unless the region is missing or unreadable. **Linux**: `None`.
 
 A `None` half means "no OS answer": the frontend reads it as "no override" and lets the webview default stand, which is
 the right behavior on Linux.

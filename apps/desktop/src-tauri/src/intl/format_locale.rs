@@ -10,42 +10,30 @@
 //! writes `08/19/2026` and `1,234,567.89`, and handing the extension back
 //! explicitly doesn't help (`en-US-u-rg-sezzzz` resolves straight to `en-US`).
 //! A real region SUBTAG does: `en-SE` reproduces Foundation's output exactly.
-//! So we compose that tag here rather than asking the webview.
+//! So we compose that tag rather than asking the webview.
+//!
+//! Windows keeps the two apart the same way (display language versus Regional
+//! format), and WebView2 formats in the display language, so its arm composes
+//! from the Regional format's locale name.
+//!
+//! The OS reads live in `platform/` (`format_locale()`, one answer per OS:
+//! `None` on Linux, where WebKit reads the same environment the desktop formats
+//! from); this file is the pure string work they share.
 
-/// The tag whose conventions the user formats in, or `None` when the OS has no
-/// usable answer and the webview's own default should stand.
-///
-/// Reads the AUTOUPDATING current locale, the one Foundation documents as
-/// tracking the user's preferences. `+[NSLocale currentLocale]` is a snapshot,
-/// and this is read from a live-change path, so the autoupdating one removes
-/// any question of whether a cached snapshot outlived the change that triggered
-/// the read.
-#[cfg(target_os = "macos")]
-pub(crate) fn resolved_format_locale() -> Option<String> {
-    use objc2_foundation::NSLocale;
-
-    let locale = NSLocale::autoupdatingCurrentLocale();
-    // `countryCode` and ❌ never the better-named `regionCode`: that one is
-    // macOS 14+, and calling it on 12 or 13 raises an unrecognized-selector
-    // exception that unwinds out of an `extern "C"` frame and aborts the
-    // process. Both read the same value, `rg` override included (`en_US@rg=sezzzz`
-    // answers `SE` to either; macOS 26.5.2, Foundation via Swift, 2026-08-26),
-    // and Foundation's own header names `regionCode` as this one's replacement.
-    #[allow(deprecated, reason = "`regionCode`, the replacement, is macOS 14+ and we ship 12+")]
-    let region = locale.countryCode();
-    compose_format_locale(
-        &locale.languageCode().to_string(),
-        locale.scriptCode().map(|script| script.to_string()).as_deref(),
-        region.map(|region| region.to_string()).as_deref()?,
-    )
-}
-
-/// `None` off macOS: the webview's default is the right answer on Linux, where
-/// the desktop's formatting conventions come from the same environment WebKit
-/// already reads.
-#[cfg(not(target_os = "macos"))]
-pub(crate) fn resolved_format_locale() -> Option<String> {
-    None
+/// Composes the formatting tag from a Windows locale name
+/// (`GetUserDefaultLocaleName`): `en-SE`, `sr-Latn-RS`, or `de-DE_phoneb`, whose
+/// `_phoneb` names an alternate sort, not a convention, and is dropped. Any other
+/// shape (a neutral `en`, a variant like `ca-ES-valencia`, a custom `x-` name)
+/// answers `None`, so the webview default stands.
+#[cfg(any(target_os = "windows", test))]
+pub(super) fn format_locale_from_windows_name(name: &str) -> Option<String> {
+    let name = name.split('_').next().unwrap_or_default();
+    let parts: Vec<&str> = name.split('-').collect();
+    match parts.as_slice() {
+        [language, region] => compose_format_locale(language, None, region),
+        [language, script, region] if is_script_subtag(script) => compose_format_locale(language, Some(script), region),
+        _ => None,
+    }
 }
 
 /// Composes `<language>[-Script]-REGION` from Foundation's three parts, or
@@ -60,11 +48,11 @@ pub(crate) fn resolved_format_locale() -> Option<String> {
 /// dropping it would change the answer (`zh-Hans` and `zh-Hant` format dates
 /// differently). Foundation leaves it `nil` for every locale whose script is
 /// implied by its language, so the common tag stays the short one.
-/// Composed only on macOS; the tests exercise it on every platform, which is
-/// where the interesting cases live (this is pure string work with no Foundation
-/// in it).
-#[cfg(any(target_os = "macos", test))]
-fn compose_format_locale(language: &str, script: Option<&str>, region: &str) -> Option<String> {
+/// Composed on macOS and Windows; the tests exercise it on every platform, which
+/// is where the interesting cases live (this is pure string work with no OS in
+/// it).
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
+pub(super) fn compose_format_locale(language: &str, script: Option<&str>, region: &str) -> Option<String> {
     let language = language.trim();
     let region = region.trim();
     if !is_language_subtag(language) || !is_region_subtag(region) {
@@ -85,26 +73,26 @@ fn compose_format_locale(language: &str, script: Option<&str>, region: &str) -> 
 
 /// Two or three letters, and not the `und` that means "no language here".
 /// Composing `und-SE` would be a tag we can't defend; no answer is better.
-#[cfg(any(target_os = "macos", test))]
-fn is_language_subtag(part: &str) -> bool {
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
+pub(super) fn is_language_subtag(part: &str) -> bool {
     matches!(part.len(), 2 | 3) && part.chars().all(|c| c.is_ascii_alphabetic()) && !part.eq_ignore_ascii_case("und")
 }
 
 /// Four letters (`Hans`, `Latn`).
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 fn is_script_subtag(part: &str) -> bool {
     part.len() == 4 && part.chars().all(|c| c.is_ascii_alphabetic())
 }
 
 /// Two letters (`SE`) or three digits (the UN M49 codes, `419`).
-#[cfg(any(target_os = "macos", test))]
-fn is_region_subtag(part: &str) -> bool {
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
+pub(super) fn is_region_subtag(part: &str) -> bool {
     (part.len() == 2 && part.chars().all(|c| c.is_ascii_alphabetic()))
         || (part.len() == 3 && part.chars().all(|c| c.is_ascii_digit()))
 }
 
 /// `hans` → `Hans`, the casing BCP-47 writes scripts in.
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 fn titlecase(part: &str) -> String {
     let mut chars = part.chars();
     match chars.next() {
@@ -178,24 +166,41 @@ mod tests {
     }
 
     #[test]
-    fn an_empty_script_is_the_same_as_no_script() {
-        assert_eq!(compose_format_locale("en", Some(""), "SE"), Some("en-SE".to_string()));
+    fn a_windows_locale_name_composes_the_same_tag() {
+        // Windows' Regional format is a BCP-47-shaped name already (`GetUserDefaultLocaleName`):
+        // English (Sweden) is `en-SE`, the same tag macOS's region override composes.
+        assert_eq!(format_locale_from_windows_name("en-SE"), Some("en-SE".to_string()));
+        assert_eq!(format_locale_from_windows_name("hu-HU"), Some("hu-HU".to_string()));
+        assert_eq!(
+            format_locale_from_windows_name("sr-Latn-RS"),
+            Some("sr-Latn-RS".to_string())
+        );
+        assert_eq!(format_locale_from_windows_name("es-419"), Some("es-419".to_string()));
     }
 
-    /// The real machine, not a table: whatever this Mac is set to, the answer
-    /// has to be a tag we'd hand `Intl` without flinching.
-    #[cfg(target_os = "macos")]
     #[test]
-    fn the_live_answer_is_a_well_formed_tag() {
-        let Some(tag) = resolved_format_locale() else {
-            return; // A Mac with no region set at all: the webview default stands.
-        };
-        let mut parts = tag.split('-');
-        assert!(
-            is_language_subtag(parts.next().unwrap_or_default()),
-            "bad language in {tag}"
+    fn a_windows_sort_order_suffix_is_dropped() {
+        // An alternate sort rides on the name after `_` (German phone book order): it sorts,
+        // it doesn't format, and `Intl` would reject it.
+        assert_eq!(
+            format_locale_from_windows_name("de-DE_phoneb"),
+            Some("de-DE".to_string())
         );
-        let last = parts.next_back().unwrap_or_default();
-        assert!(is_region_subtag(last), "bad region in {tag}");
+    }
+
+    #[test]
+    fn a_windows_name_without_a_region_or_with_extra_parts_answers_nothing() {
+        // A neutral name has no conventions of its own, and a custom or variant name is one we
+        // can't vouch for: the webview default stands.
+        assert_eq!(format_locale_from_windows_name("en"), None);
+        assert_eq!(format_locale_from_windows_name(""), None);
+        assert_eq!(format_locale_from_windows_name("ca-ES-valencia"), None);
+        assert_eq!(format_locale_from_windows_name("x-custom-locale"), None);
+        assert_eq!(format_locale_from_windows_name("en-Latn"), None);
+    }
+
+    #[test]
+    fn an_empty_script_is_the_same_as_no_script() {
+        assert_eq!(compose_format_locale("en", Some(""), "SE"), Some("en-SE".to_string()));
     }
 }

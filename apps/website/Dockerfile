@@ -48,6 +48,10 @@ COPY apps/desktop/src-tauri/src/intl/shipped_locales.gen.rs ./apps/desktop/src-t
 # The app's policy definition, which `src/lib/trust-mdm.ts` lists the managed keys from.
 COPY apps/desktop/src-tauri/src/managed_policy/policies.json ./apps/desktop/src-tauri/src/managed_policy/
 
+# The API server's config, whose `PUBLIC_DOWNLOAD_OSES` decides which OSes the download buttons offer
+# (`src/lib/download-platforms.ts`).
+COPY apps/api-server/wrangler.toml ./apps/api-server/
+
 # The browser demo bundle, which the build copies into dist/demo/ (src/plugins/demo.ts). CI builds
 # it (Rust to WASM, then the desktop frontend) and publishes it as an image, so this box never
 # compiles Rust. The deploy passes `DEMO_IMAGE_DIGEST`, the digest CI pushed and signed into the

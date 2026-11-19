@@ -369,6 +369,21 @@
   flex: 1;
 }
 
+/* One OS's logo in the main link. The picker unhides the visitor's; `contents` keeps the layout what a bare <svg>
+ * child gives, and `:not([hidden])` keeps it from overriding `hidden`. */
+.split-btn__icon-slot:not([hidden]) {
+  display: contents;
+}
+
+/* An OS's name above its files, when the dropdown offers more than one OS. */
+.split-btn__group {
+  display: block;
+  padding: 0.5rem 0.75rem 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+}
+
 .split-btn__option:hover,
 .split-btn__option:focus {
   background: var(--color-surface);
