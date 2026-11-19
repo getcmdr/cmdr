@@ -25,19 +25,19 @@ Cmdr's SFTP backend: one SSH connection and one SFTP channel per volume. No `tau
   remember, and store nothing. Every phase stops where it stands, the hello included.
 - **Host-key trust keys on `(host, port, algorithm)` AND pins negotiation to it** — ❌ never one without the other. ❌
   Never record a fingerprint without re-asking the server (`volume::approve_host_key`).
-- **❌ Never anchor an out-of-root path; refuse it.** `root_anchored` turns `/etc/passwd` into `/srv/data/etc/passwd`.
+- **❌ Never anchor an out-of-root path; refuse it**, and ❌ no `std::path` arithmetic on an app or server path (a `\`
+  is a name). `DETAILS.md` § "Path handling".
 - **❌ Never read through `File`'s own offset or `read_all`**: it advances by the length it ASKED for, so one short
   answer holes the file. Name every offset.
 - **❌ Never wire `rename(force = false)` to `Fs::rename`** — `posix-rename@openssh.com` REPLACES the destination.
-- **❌ Never stat a path to decide whether to write it**: a TOCTOU window with an overwritten file in it.
-- **❗ Capabilities are read once, at dial** (`SshConnection::extensions()`). ❌ Never a `Sftp::support_*` predicate at
-  a call site.
+- **❌ Never stat a path to decide whether to write it**: a TOCTOU window.
+- **❗ Capabilities are read once, at dial** (`SshConnection::extensions()`). ❌ Never a `Sftp::support_*` call site.
 - **❗ What this backend SAYS is as load-bearing as what it does.** The copy engine gates on `supports_export` before
   calling anything, and `NotFound` / `PermissionDenied` carry the PATH — ❌ never the server's wording, which the
   frontend renders as the missing file's name.
 - **❗ Two independent switches gate a reconnect, `auto_reconnect` first, then the rung.** Off means no unattended dial
-  at all: `NotSupported` + `Disconnected`, ❌ never `NeedsCredentials`. Neither switch changes the other's meaning: an
-  attended sign-in files its secret, after it connected, only as its Remember box says.
+  at all: `NotSupported` + `Disconnected`, ❌ never `NeedsCredentials`. An attended sign-in files its secret only as its
+  Remember box says.
 - **❌ A secret is offered once unattended, then a person** (`auth::reconnect_policy`), on both the password and the
   encrypted-key rungs.
 - **❗ Operations ARE how a dead session is found** (no watcher here), so every wire-touching delegator in

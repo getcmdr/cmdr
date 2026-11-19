@@ -22,11 +22,11 @@
 //! noposixrename` is the fixture that has neither extension, so the fallback is
 //! exercised rather than assumed.
 
+use cmdr_fs::app_path::AppPath;
 use std::cmp::min;
 use std::io::SeekFrom;
 use std::num::NonZeroU64;
 use std::ops::ControlFlow;
-use std::path::Path;
 use std::pin::Pin;
 
 use cmdr_fs::volume::VolumeError;
@@ -55,8 +55,8 @@ impl SftpVolume {
     /// backend quietly doing its own would take the file outside all three.
     pub(super) async fn copy_within_impl(
         &self,
-        from: &Path,
-        to: &Path,
+        from: &AppPath,
+        to: &AppPath,
         on_progress: &(dyn Fn(u64, u64) -> ControlFlow<()> + Sync),
     ) -> Result<u64, VolumeError> {
         let remote_from = self.to_remote_path(from)?;

@@ -26,7 +26,6 @@
     reason = "a measurement harness reports its measurements; run it with --no-capture"
 )]
 
-use cmdr_fs::app_path::AppPath;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
@@ -82,7 +81,7 @@ async fn bench_volume() -> SftpVolume {
 /// measurement run exercises it a few hundred times for free.
 async fn read_prefix(volume: &SftpVolume, depth: usize) -> u64 {
     let mut stream = volume
-        .open_read_stream_impl(std::path::Path::new(BENCH_FILE), depth)
+        .open_read_stream_impl(&app_at(volume, BENCH_FILE), depth)
         .await
         .expect("the bench server exports large.bin");
     assert!(
@@ -290,7 +289,7 @@ async fn write_prefix(volume: &SftpVolume, depth: usize, name: &str) -> u64 {
     });
     volume
         .upload(
-            std::path::Path::new(name),
+            &app_at(volume, name),
             cmdr_fs::volume::WriteMode::CreateOrReplace,
             cmdr_fs::volume::StreamLength::Known(BENCH_BYTES),
             source,
@@ -314,7 +313,7 @@ async fn write_concurrently(volume: &SftpVolume, depth: usize, width: usize) -> 
         .sum();
     let elapsed = started.elapsed();
     for name in &names {
-        let _ = cmdr_fs::volume::Volume::delete(volume, &AppPath::legacy_unchecked(std::path::Path::new(name))).await;
+        let _ = cmdr_fs::volume::Volume::delete(volume, &app_at(volume, name)).await;
     }
     (bytes, elapsed)
 }
@@ -340,7 +339,7 @@ async fn a_windowed_write_beats_a_serial_one_by_at_least_four_times() {
     let windowed = rate(windowed_bytes, started.elapsed());
 
     for name in [&serial_name, &windowed_name] {
-        let _ = cmdr_fs::volume::Volume::delete(&volume, &AppPath::legacy_unchecked(std::path::Path::new(name))).await;
+        let _ = cmdr_fs::volume::Volume::delete(&volume, &app_at(&volume, name)).await;
     }
 
     println!("serial (depth 1):            {serial:.1} MB/s, bytes written: {serial_bytes}");

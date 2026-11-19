@@ -9,7 +9,7 @@
 //! Gated behind the `testing` feature, so it exists in dev targets and in no
 //! shipped build. The stack itself: `apps/desktop/test/sftp-servers/README.md`.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic, PathFlavor, RelativeAppPath};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
@@ -318,15 +318,14 @@ pub fn scratch_dir(what: &str) -> String {
 /// fails here loudly rather than leaving the next run a surprise.
 pub async fn clean_scratch(volume: &SftpVolume, dir: &str) {
     use cmdr_fs::volume::Volume;
-    use std::path::Path;
 
-    let root = Path::new(dir);
-    if let Ok(entries) = volume.list_directory(&AppPath::legacy_unchecked(root), None).await {
+    let root = app_at(volume, dir);
+    if let Ok(entries) = volume.list_directory(&root, None).await {
         for entry in entries {
-            let _ = volume.delete(&AppPath::legacy_unchecked(&root.join(&entry.name))).await;
+            let _ = volume.delete(&child(&root, &entry.name)).await;
         }
     }
-    let _ = volume.delete(&AppPath::legacy_unchecked(root)).await;
+    let _ = volume.delete(&root).await;
 }
 
 /// The same, for a cell that builds a tree on purpose.
@@ -338,18 +337,47 @@ pub async fn clean_scratch(volume: &SftpVolume, dir: &str) {
 /// cleaner and no such signal.
 pub async fn clean_scratch_deep(volume: &SftpVolume, dir: &str) {
     use cmdr_fs::volume::Volume;
-    use std::path::Path;
 
-    fn remove<'a>(volume: &'a SftpVolume, path: &'a Path) -> std::pin::Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
+    fn remove<'a>(
+        volume: &'a SftpVolume,
+        path: &'a AppPath,
+    ) -> std::pin::Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
         Box::pin(async move {
-            if let Ok(entries) = volume.list_directory(&AppPath::legacy_unchecked(path), None).await {
+            if let Ok(entries) = volume.list_directory(path, None).await {
                 for entry in entries {
-                    remove(volume, &path.join(&entry.name)).await;
+                    remove(volume, &child(path, &entry.name)).await;
                 }
             }
-            let _ = volume.delete(&AppPath::legacy_unchecked(path)).await;
+            let _ = volume.delete(path).await;
         })
     }
 
-    remove(volume, Path::new(dir)).await;
+    remove(volume, &app_at(volume, dir)).await;
+}
+
+/// The typed app path a cell means by `text` on `volume`: the root for `""`, `.`, or
+/// `/`; a full app path (`sftp://…`) as written; anything else volume-relative
+/// (`cmdr-test-1-2-x/a.bin`), joined under the root.
+///
+/// A typed path is absolute, so a cell names its file through the root rather than
+/// handing the volume relative text; what the volume does with relative text a
+/// `std::path` caller still sends is `paths_test`'s, through `RemoteRoot`.
+pub fn app_at(volume: &dyn cmdr_fs::volume::Volume, text: &str) -> AppPathBuf {
+    if matches!(text, "" | "." | "/") {
+        return volume.root().to_owned();
+    }
+    if text.contains("://") {
+        return AppPathBuf::parse(text, PathFlavor::Posix).expect("a cell's app path parses");
+    }
+    let rel = RelativeAppPath::new(text).expect("a cell's volume-relative path is plain names");
+    volume
+        .root()
+        .join_relative(rel)
+        .expect("a plain tail joins under the root")
+}
+
+/// `name`, a listed `FileEntry.name`, in `folder`.
+pub fn child(folder: &AppPath, name: &str) -> AppPathBuf {
+    let name = AppName::from_app_spelling(name).expect("a listed name is one plain name");
+    folder.join(name).expect("a listed name joins its folder")
 }

@@ -19,8 +19,8 @@
 //! `DETAILS.md` § "The read window" carries the measurements and the depth they
 //! set.
 
+use cmdr_fs::app_path::AppPath;
 use std::io::SeekFrom;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -254,7 +254,7 @@ impl SftpVolume {
     /// `total_size()` from its first progress tick.
     pub(super) async fn open_read_stream_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         depth: usize,
     ) -> Result<ChannelReadStream, VolumeError> {
         self.read_stream_from(path, depth, None).await
@@ -266,7 +266,7 @@ impl SftpVolume {
     /// handed out.
     pub(super) async fn resume_read_stream_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         version: &SourceVersion,
         offset: u64,
     ) -> Result<ChannelReadStream, VolumeError> {
@@ -282,7 +282,7 @@ impl SftpVolume {
 
     async fn read_stream_from(
         &self,
-        path: &Path,
+        path: &AppPath,
         depth: usize,
         from: Option<ReadFrom>,
     ) -> Result<ChannelReadStream, VolumeError> {
@@ -327,7 +327,12 @@ impl SftpVolume {
     /// The positioned primitive remote-archive browsing reads a `.zip`'s central
     /// directory through, so it returns short only at end of file — ❗ a caller
     /// never loops for a network short read.
-    pub(super) async fn read_range_impl(&self, path: &Path, offset: u64, len: usize) -> Result<Vec<u8>, VolumeError> {
+    pub(super) async fn read_range_impl(
+        &self,
+        path: &AppPath,
+        offset: u64,
+        len: usize,
+    ) -> Result<Vec<u8>, VolumeError> {
         let remote = self.to_remote_path(path)?;
         let session = self.clone_session().await?;
         let file = session

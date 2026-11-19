@@ -7,6 +7,7 @@ use std::sync::Arc;
 use cmdr_fs::volume::Volume;
 
 use crate::volume::test_support::*;
+use crate::volume::testing::app_at;
 
 /// The prefix this crate's test volume mints.
 const PREFIX: &str = "sftp://test_user_1@127.0.0.1:12599";
@@ -18,16 +19,16 @@ fn an_instance_sharing_the_connection_answers_to_its_own_name_and_root() {
     let wide = narrow.sharing_connection("test_user_1@testnas.local", Path::new("/srv/data"));
 
     assert_eq!(wide.name(), "test_user_1@testnas.local");
-    assert_eq!(wide.root().as_std_legacy(), Path::new(&format!("{PREFIX}/srv/data")));
+    assert_eq!(wide.root().as_str(), format!("{PREFIX}/srv/data"));
     assert_eq!(
-        wide.to_remote_path(Path::new(&format!("{PREFIX}/srv/data/photos")))
+        wide.to_remote_path(&app_at(&wide, &format!("{PREFIX}/srv/data/photos")))
             .expect("under the new root"),
         "/srv/data/photos",
         "every translation runs against the new root"
     );
     assert_eq!(
-        narrow.root().as_std_legacy(),
-        Path::new(&format!("{PREFIX}/srv/data/tmp")),
+        narrow.root().as_str(),
+        format!("{PREFIX}/srv/data/tmp"),
         "the instance it was built from keeps its own root: an in-flight holder still uses it"
     );
 }

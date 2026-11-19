@@ -22,7 +22,7 @@
 //! `DETAILS.md` § "The error policy" carries the table, and § "Renaming without
 //! clobbering" the reasoning behind the claim.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -31,7 +31,7 @@ use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::host::listings::ListingHost;
 use cmdr_fs::volume::mkdir_all::{self, LeadsTo, MakesDirectories};
-use cmdr_fs::volume::patching::{PatchSource, patch_created, patch_deleted, patch_modified, patch_renamed};
+use cmdr_fs::volume::patching::{PatchSource, patch_created_at, patch_deleted_at, patch_modified_at, patch_renamed_at};
 use cmdr_fs::volume::scan_walk::Walking;
 use cmdr_fs::volume::{DirectoryCreation, VolumeError};
 use log::debug;
@@ -50,7 +50,7 @@ impl SftpVolume {
     /// ❗ The refusal is `SSH_FXF_EXCL`'s, so there is no instant at which an
     /// existing file could be truncated. The New File command hands a user-typed
     /// name straight here and renders the refusal as "that name is taken".
-    pub(super) async fn create_file_impl(&self, path: &Path, content: &[u8]) -> Result<(), VolumeError> {
+    pub(super) async fn create_file_impl(&self, path: &AppPath, content: &[u8]) -> Result<(), VolumeError> {
         let remote = self.to_remote_path(path)?;
         let session = self.clone_session().await?;
         debug!(
@@ -85,7 +85,7 @@ impl SftpVolume {
             return Err(e);
         }
 
-        patch_created(self, path).await;
+        patch_created_at(self, path).await;
         Ok(())
     }
 
@@ -95,7 +95,7 @@ impl SftpVolume {
     /// not, which is what lets `Volume::create_directory_errors_on_existing_dir`
     /// answer `true` here — and that answer is what gives a remote archive edit
     /// its atomic swap.
-    pub(super) async fn create_directory_impl(&self, path: &Path) -> Result<(), VolumeError> {
+    pub(super) async fn create_directory_impl(&self, path: &AppPath) -> Result<(), VolumeError> {
         let remote = self.to_remote_path(path)?;
         let session = self.clone_session().await?;
         debug!(
@@ -104,7 +104,7 @@ impl SftpVolume {
         );
 
         self.create_one_directory(&session, &remote).await?;
-        patch_created(self, path).await;
+        patch_created_at(self, path).await;
         Ok(())
     }
 
@@ -116,11 +116,14 @@ impl SftpVolume {
     /// level before a single directory gets made, and a deep destination pays it
     /// on every copy. The honesty contract on the answer, and why a `Created` we
     /// aren't sure of is an overwrite: `cmdr_fs::volume::mkdir_all`.
-    pub(super) async fn create_directory_all_impl(&self, path: &Path) -> Result<DirectoryCreation, VolumeError> {
-        debug!("SftpVolume::create_directory_all: {}", LogPrivate::dir_path(path));
-        let made = mkdir_all::create_directory_all(self, path).await?;
+    pub(super) async fn create_directory_all_impl(&self, path: &AppPath) -> Result<DirectoryCreation, VolumeError> {
+        debug!(
+            "SftpVolume::create_directory_all: {}",
+            LogPrivate::dir_path(path.as_str())
+        );
+        let made = mkdir_all::create_directory_all_at(self, path).await?;
         if let Some(created) = made.shallowest_created {
-            patch_created(self, &created.as_std_legacy()).await;
+            patch_created_at(self, &created).await;
         }
         Ok(made.leaf)
     }
@@ -129,7 +132,7 @@ impl SftpVolume {
     /// (`SSH_FXP_SETSTAT`). SFTP v3 carries whole seconds and forces atime
     /// alongside (`ATTR_ACMODTIME`), so atime gets the same value, as on an
     /// upload (`writes.rs::keep_source_attrs`).
-    pub(super) async fn set_modified_impl(&self, path: &Path, modified: SystemTime) -> Result<(), VolumeError> {
+    pub(super) async fn set_modified_impl(&self, path: &AppPath, modified: SystemTime) -> Result<(), VolumeError> {
         let remote = self.to_remote_path(path)?;
         // Before 1970 or past 2106: outside what SFTP v3's `u32` can say.
         let stamp = UnixTimeStamp::new(modified).map_err(|e| VolumeError::IoError {
@@ -146,7 +149,7 @@ impl SftpVolume {
             .set_metadata(&remote, attrs)
             .await
             .map_err(|e| map_sftp_error(&e, &remote))?;
-        patch_modified(self, path).await;
+        patch_modified_at(self, path).await;
         Ok(())
     }
 
@@ -155,7 +158,7 @@ impl SftpVolume {
     /// ❗ Strictly one node. Real data-safety logic leans on the refusal rather
     /// than on a check of its own: a same-volume move keeps a skipped child's
     /// only copy purely by letting its parent's delete fail.
-    pub(super) async fn delete_impl(&self, path: &Path) -> Result<(), VolumeError> {
+    pub(super) async fn delete_impl(&self, path: &AppPath) -> Result<(), VolumeError> {
         let remote = self.to_remote_path(path)?;
         let session = self.clone_session().await?;
         debug!("SftpVolume::delete: {remote}", remote = LogPrivate::path(&remote));
@@ -165,14 +168,14 @@ impl SftpVolume {
         // directory form is the second guess.
         let first = match session.sftp().fs().remove_file(&remote).await {
             Ok(()) => {
-                patch_deleted(self, path).await;
+                patch_deleted_at(self, path).await;
                 return Ok(());
             }
             Err(e) => e,
         };
         let second = match session.sftp().fs().remove_dir(&remote).await {
             Ok(()) => {
-                patch_deleted(self, path).await;
+                patch_deleted_at(self, path).await;
                 return Ok(());
             }
             Err(e) => e,
@@ -199,7 +202,7 @@ impl SftpVolume {
     /// The two halves are genuinely different operations, and § "Renaming
     /// without clobbering" in `DETAILS.md` says why neither can be written as the
     /// other.
-    pub(super) async fn rename_impl(&self, from: &Path, to: &Path, force: bool) -> Result<(), VolumeError> {
+    pub(super) async fn rename_impl(&self, from: &AppPath, to: &AppPath, force: bool) -> Result<(), VolumeError> {
         let remote_from = self.to_remote_path(from)?;
         let remote_to = self.to_remote_path(to)?;
         let session = self.clone_session().await?;
@@ -215,7 +218,7 @@ impl SftpVolume {
             self.rename_into_a_free_name(&session, &remote_from, &remote_to).await?;
         }
 
-        patch_renamed(self, from, to).await;
+        patch_renamed_at(self, from, to).await;
         Ok(())
     }
 
@@ -389,6 +392,12 @@ impl SftpVolume {
 /// `cmdr_fs::volume::mkdir_all`.
 impl MakesDirectories for SftpVolume {
     fn remote_path_of(&self, path: &Path) -> Result<String, VolumeError> {
+        self.root
+            .to_remote_path(path)
+            .ok_or_else(|| VolumeError::NotFound(path.to_string_lossy().into_owned()))
+    }
+
+    fn remote_path_of_app(&self, path: &AppPath) -> Result<String, VolumeError> {
         self.to_remote_path(path)
     }
 
@@ -437,14 +446,14 @@ impl PatchSource for SftpVolume {
     }
 
     fn patch_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.get_metadata_impl(path).await
-        })
+        Box::pin(self.get_metadata_impl(path))
     }
 
     fn patch_display_path(&self, path: &Path) -> Option<PathBuf> {
+        self.display_path_for_std(path)
+    }
+
+    fn patch_app_path(&self, path: &AppPath) -> Option<AppPathBuf> {
         self.display_path_for(path)
     }
 }

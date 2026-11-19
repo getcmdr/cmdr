@@ -15,9 +15,6 @@
 //! makes a stray call inside a listing loop the kind of thing that silently
 //! doubles the cost of every big directory a user opens.
 
-use cmdr_fs::app_path::AppPath;
-use std::path::Path;
-
 use cmdr_fs::volume::host::listings::ListingHost;
 use cmdr_fs::volume::{DirectoryChange, MutationEvent, Volume};
 
@@ -48,15 +45,11 @@ async fn a_mutation_reports_exactly_one_change_naming_its_parent() {
         crate::auth::AuthRungUsed::Agent,
         host,
     );
-    let parent = Path::new("/srv/data/photos");
+    let parent = cmdr_fs::app_path!("/srv/data/photos");
 
     for name in ["a.txt", "b.txt", "c.txt"] {
         volume
-            .notify_mutation(
-                volume.volume_id(),
-                &AppPath::legacy_unchecked(parent),
-                MutationEvent::Deleted(name.to_string()),
-            )
+            .notify_mutation(volume.volume_id(), parent, MutationEvent::Deleted(name.to_string()))
             .await;
     }
 
@@ -71,7 +64,7 @@ async fn a_mutation_reports_exactly_one_change_naming_its_parent() {
     assert!(
         addressing
             .iter()
-            .all(|(id, path)| *id == volume.volume_id() && path.as_path() == parent),
+            .all(|(id, path)| *id == volume.volume_id() && path.to_str() == Some(parent.as_str())),
         "every change names the volume id and parent the listing cache keys on: {addressing:?}"
     );
     assert!(
@@ -96,16 +89,10 @@ async fn sftp_integration_a_walk_over_a_directory_reports_nothing_however_many_e
     let dir = scratch_dir("host-seam");
     clean_scratch(&volume, &dir).await;
 
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
-        .await
-        .expect(FIXTURE);
+    volume.create_directory(&app_at(&volume, &dir)).await.expect(FIXTURE);
     for i in 0..WALKED_FILES {
         volume
-            .create_file(
-                &AppPath::legacy_unchecked(Path::new(&format!("{dir}/file-{i:03}.txt"))),
-                b"x",
-            )
+            .create_file(&app_at(&volume, &format!("{dir}/file-{i:03}.txt")), b"x")
             .await
             .expect(FIXTURE);
     }
@@ -120,7 +107,7 @@ async fn sftp_integration_a_walk_over_a_directory_reports_nothing_however_many_e
     );
 
     let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(&dir)), None)
+        .list_directory(&app_at(&volume, &dir), None)
         .await
         .expect(FIXTURE);
     assert_eq!(entries.len(), WALKED_FILES, "the fixture is there to be walked");
@@ -130,10 +117,7 @@ async fn sftp_integration_a_walk_over_a_directory_reports_nothing_however_many_e
         "a listing is a READ: it crossed the whole fixture and must tell the panes nothing"
     );
 
-    let scan = volume
-        .scan_for_copy(&AppPath::legacy_unchecked(Path::new(&dir)))
-        .await
-        .expect(FIXTURE);
+    let scan = volume.scan_for_copy(&app_at(&volume, &dir)).await.expect(FIXTURE);
     assert_eq!(scan.file_count, WALKED_FILES, "the scan walked the same tree");
     assert_eq!(
         listings.change_count(),
@@ -149,7 +133,7 @@ async fn sftp_integration_a_walk_over_a_directory_reports_nothing_however_many_e
                 modified: None,
                 is_directory: false,
             }],
-            &AppPath::legacy_unchecked(Path::new(&dir)),
+            &app_at(&volume, &dir),
         )
         .await
         .expect(FIXTURE);
@@ -163,7 +147,7 @@ async fn sftp_integration_a_walk_over_a_directory_reports_nothing_however_many_e
     // One more mutation still costs exactly one call, so the counter is measuring
     // dispatch rather than having stopped moving.
     volume
-        .delete(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/file-000.txt"))))
+        .delete(&app_at(&volume, &format!("{dir}/file-000.txt")))
         .await
         .expect(FIXTURE);
     assert_eq!(

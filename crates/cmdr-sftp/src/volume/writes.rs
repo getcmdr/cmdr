@@ -25,10 +25,10 @@
 //! `DETAILS.md` § "The write window" carries the measurements and the depth they
 //! set.
 
+use cmdr_fs::app_path::AppPath;
 use std::cmp::min;
 use std::io::SeekFrom;
 use std::ops::ControlFlow;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -196,7 +196,7 @@ impl SftpVolume {
     /// staging.
     pub(super) async fn write_from_stream_impl(
         &self,
-        dest: &Path,
+        dest: &AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
@@ -210,7 +210,7 @@ impl SftpVolume {
     /// only thing that picks a different one; production takes the constant.
     pub(super) async fn upload(
         &self,
-        dest: &Path,
+        dest: &AppPath,
         mode: WriteMode,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,
@@ -268,7 +268,7 @@ impl SftpVolume {
                     return Err(e);
                 }
                 let report = keep_source_attrs(&session, &remote, stream.modified_at(), landed_mode).await;
-                cmdr_fs::volume::patching::patch_created(self, dest).await;
+                cmdr_fs::volume::patching::patch_created_at(self, dest).await;
                 let carried = CarriedMetadata {
                     mode: landed_mode,
                     ..CarriedMetadata::default()

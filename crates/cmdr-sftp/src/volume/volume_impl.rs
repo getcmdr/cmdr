@@ -130,11 +130,7 @@ impl Volume for SftpVolume {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.list_directory_impl(path, on_progress, None)).await
-        })
+        Box::pin(async move { self.noting(self.list_directory_impl(path, on_progress, None)).await })
     }
 
     fn list_directory_with_cancel<'a>(
@@ -143,22 +139,14 @@ impl Volume for SftpVolume {
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.list_directory_impl(path, on_progress, cancel)).await
-        })
+        Box::pin(async move { self.noting(self.list_directory_impl(path, on_progress, cancel)).await })
     }
 
     fn get_metadata<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.get_metadata_impl(path)).await
-        })
+        Box::pin(async move { self.noting(self.get_metadata_impl(path)).await })
     }
 
     /// Kept rather than taken from the trait default: the default routes through
@@ -166,33 +154,21 @@ impl Volume for SftpVolume {
     /// probe on a dropped link would report a connection transition and drive a
     /// reconnect. An existence question stays a question.
     fn presence<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.presence_impl(path).await
-        })
+        Box::pin(async move { self.presence_impl(path).await })
     }
 
     fn entry_kind<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<EntryKind, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.entry_kind_impl(path)).await
-        })
+        Box::pin(async move { self.noting(self.entry_kind_impl(path)).await })
     }
 
     fn read_link_target<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Option<PathBuf>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.read_link_target_impl(path)).await
-        })
+        Box::pin(async move { self.noting(self.read_link_target_impl(path)).await })
     }
 
     fn can_hold_links(&self) -> bool {
@@ -204,11 +180,7 @@ impl Volume for SftpVolume {
         path: &'a AppPath,
         target: &'a Path,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.create_symlink_impl(path, target)).await
-        })
+        Box::pin(async move { self.noting(self.create_symlink_impl(path, target)).await })
     }
 
     // ── The byte path ────────────────────────────────────────────────
@@ -247,8 +219,6 @@ impl Volume for SftpVolume {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(self.noting(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let stream = self.open_read_stream_impl(path, READ_WINDOW_DEPTH).await?;
             Ok(Box::new(stream) as Box<dyn VolumeReadStream>)
         }))
@@ -267,8 +237,6 @@ impl Volume for SftpVolume {
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(self.noting(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let stream = self.resume_read_stream_impl(path, version, offset).await?;
             Ok(Box::new(stream) as Box<dyn VolumeReadStream>)
         }))
@@ -287,8 +255,6 @@ impl Volume for SftpVolume {
         _size_hint: Option<u64>,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(self.noting(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let stream = self.open_read_stream_impl(path, SCAN_WINDOW_DEPTH).await?;
             Ok(Box::new(stream) as Box<dyn VolumeReadStream>)
         }))
@@ -305,11 +271,7 @@ impl Volume for SftpVolume {
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.read_range_impl(path, offset, len)).await
-        })
+        Box::pin(async move { self.noting(self.read_range_impl(path, offset, len)).await })
     }
 
     // ── The write path ───────────────────────────────────────────────
@@ -327,22 +289,14 @@ impl Volume for SftpVolume {
         path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.create_file_impl(path, content)).await
-        })
+        Box::pin(async move { self.noting(self.create_file_impl(path, content)).await })
     }
 
     fn create_directory<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.create_directory_impl(path)).await
-        })
+        Box::pin(async move { self.noting(self.create_directory_impl(path)).await })
     }
 
     /// ❗ Overridden. The trait default spends one `exists()` round trip per
@@ -352,11 +306,7 @@ impl Volume for SftpVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<DirectoryCreation, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.create_directory_all_impl(path)).await
-        })
+        Box::pin(async move { self.noting(self.create_directory_all_impl(path)).await })
     }
 
     /// `SSH_FXP_MKDIR` refuses an occupied name on every server, so the
@@ -385,8 +335,6 @@ impl Volume for SftpVolume {
         modified: Option<std::time::SystemTime>,
     ) -> Pin<Box<dyn Future<Output = MetadataReport> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let mut report = MetadataReport::none_applicable(carried, modified);
             if let Some(modified) = modified {
                 report.modified = match self.noting(self.set_modified_impl(path, modified)).await {
@@ -394,7 +342,7 @@ impl Volume for SftpVolume {
                     Err(e) => {
                         log::warn!(
                             "SftpVolume::apply_metadata: {} keeps the server's date, not the source's: {e}",
-                            cmdr_fs::log_private::LogPrivate::path(path),
+                            cmdr_fs::log_private::LogPrivate::path(path.as_str()),
                             e = LogError(&e)
                         );
                         ClassOutcome::Refused
@@ -406,11 +354,7 @@ impl Volume for SftpVolume {
     }
 
     fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.delete_impl(path)).await
-        })
+        Box::pin(async move { self.noting(self.delete_impl(path)).await })
     }
 
     /// ❗ `force = false` never reaches for `posix-rename@openssh.com`, which is
@@ -421,13 +365,7 @@ impl Volume for SftpVolume {
         to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let to_std = to.as_std_legacy();
-            let to: &Path = &to_std;
-            let from_std = from.as_std_legacy();
-            let from: &Path = &from_std;
-            self.noting(self.rename_impl(from, to, force)).await
-        })
+        Box::pin(async move { self.noting(self.rename_impl(from, to, force)).await })
     }
 
     /// The window an upload runs through. ❗ `write_is_single_shot` keeps its
@@ -442,8 +380,6 @@ impl Volume for SftpVolume {
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let dest_std = dest.as_std_legacy();
-            let dest: &Path = &dest_std;
             self.noting(self.write_from_stream_impl(dest, mode, length, stream, on_progress))
                 .await
         })
@@ -461,11 +397,7 @@ impl Volume for SftpVolume {
         parent_path: &'a AppPath,
         mutation: MutationEvent,
     ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
-        Box::pin(async move {
-            let parent_path_std = parent_path.as_std_legacy();
-            let parent_path: &Path = &parent_path_std;
-            patching::patch_mutation(self, parent_path, mutation).await
-        })
+        Box::pin(async move { patching::patch_mutation_at(self, parent_path, mutation).await })
     }
 
     // ── Scanning, before a copy runs ─────────────────────────────────
@@ -477,11 +409,7 @@ impl Volume for SftpVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(scan_walk::scan_one(self, path)).await
-        })
+        Box::pin(async move { self.noting(scan_walk::scan_one_at(self, path)).await })
     }
 
     /// ❗ Overridden for the progress alone. The trait default reports only
@@ -492,11 +420,7 @@ impl Volume for SftpVolume {
         paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
-            let paths: &[PathBuf] = &paths_std;
-            self.noting(scan_walk::scan_trees(self, paths, boundary)).await
-        })
+        Box::pin(async move { self.noting(scan_walk::scan_trees_at(self, paths, boundary)).await })
     }
 
     /// One listing of the destination, ❗ never one `exists()` per source item.
@@ -506,9 +430,7 @@ impl Volume for SftpVolume {
         dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let dest_path_std = dest_path.as_std_legacy();
-            let dest_path: &Path = &dest_path_std;
-            self.noting(scan_walk::scan_conflicts(self, source_items, dest_path))
+            self.noting(scan_walk::scan_conflicts_at(self, source_items, dest_path))
                 .await
         })
     }
@@ -524,13 +446,7 @@ impl Volume for SftpVolume {
         to: &'a AppPath,
         on_progress: &'a (dyn Fn(u64, u64) -> ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<u64, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let to_std = to.as_std_legacy();
-            let to: &Path = &to_std;
-            let from_std = from.as_std_legacy();
-            let from: &Path = &from_std;
-            self.noting(self.copy_within_impl(from, to, on_progress)).await
-        })
+        Box::pin(async move { self.noting(self.copy_within_impl(from, to, on_progress)).await })
     }
 
     /// Whether the server has `copy-data` is only known per session, so this
@@ -681,7 +597,7 @@ impl Volume for SftpVolume {
     /// The volume root's filesystem, or `NotSupported` from a server without
     /// `statvfs@openssh.com` (`DETAILS.md` § "The `Volume` answers").
     fn get_space_info<'a>(&'a self) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
-        Box::pin(self.noting(self.space_info_impl(Path::new("/"))))
+        Box::pin(self.noting(self.space_info_impl(self.root())))
     }
 
     /// The filesystem the destination folder is on, which on a server with
@@ -690,11 +606,7 @@ impl Volume for SftpVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.space_info_impl(path)).await
-        })
+        Box::pin(async move { self.noting(self.space_info_impl(path)).await })
     }
 
     /// One small round trip per poll, the same cadence as SMB.

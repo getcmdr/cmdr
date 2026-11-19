@@ -7,9 +7,7 @@
 //! cells in parallel, so a fixed name would have two of them deleting each
 //! other's files and reporting it as a backend bug.
 
-use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::Mutex;
 
@@ -70,11 +68,7 @@ async fn an_empty_file_is_written_and_is_empty() {
 
     assert_eq!(written, 0);
     assert_eq!(
-        volume
-            .get_metadata(&AppPath::legacy_unchecked(Path::new(&path)))
-            .await
-            .expect(FIXTURE)
-            .size,
+        volume.get_metadata(&app_at(&volume, &path)).await.expect(FIXTURE).size,
         Some(0)
     );
     clean_scratch(&volume, &dir).await;
@@ -94,7 +88,7 @@ async fn progress_counts_up_to_the_whole_file() {
     let size = bytes.len() as u64;
     volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(Path::new(&path)),
+            &app_at(&volume, &path),
             WriteMode::CreateOrReplace,
             StreamLength::Known(size),
             source(bytes),
@@ -130,7 +124,7 @@ async fn an_unknown_length_multichunk_write_streams_and_reports_its_actual_count
     assert!(volume.supports_unknown_length_writes());
     let written = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(Path::new(&path)),
+            &app_at(&volume, &path),
             WriteMode::CreateNew,
             StreamLength::Unknown,
             unknown_source(bytes.clone()),
@@ -167,13 +161,13 @@ async fn an_unknown_length_create_new_refuses_and_preserves_an_existing_file() {
     let (volume, dir) = scratch_on("OPENSSH", 12480, "write-unknown-refusal").await;
     let path = format!("{dir}/kept.bin");
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&path)), b"the user's bytes")
+        .create_file(&app_at(&volume, &path), b"the user's bytes")
         .await
         .expect(FIXTURE);
 
     let outcome = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(Path::new(&path)),
+            &app_at(&volume, &path),
             WriteMode::CreateNew,
             StreamLength::Unknown,
             unknown_source(fixture_large_bytes(PAYLOAD)),
@@ -203,7 +197,7 @@ async fn a_cancelled_write_leaves_nothing_behind() {
 
     let outcome = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(Path::new(&path)),
+            &app_at(&volume, &path),
             WriteMode::CreateOrReplace,
             StreamLength::Unknown,
             unknown_source(fixture_large_bytes(PAYLOAD)),
@@ -213,13 +207,13 @@ async fn a_cancelled_write_leaves_nothing_behind() {
 
     assert!(matches!(outcome, Err(VolumeError::Cancelled(_))), "got {outcome:?}");
     assert!(
-        !volume.exists(&AppPath::legacy_unchecked(Path::new(&path))).await,
+        !volume.exists(&app_at(&volume, &path)).await,
         "a cancelled write must not leave a partial on the server"
     );
     // And the session is still the session: a cancel abandons in-flight write
     // requests, and what must not survive it is a stale response poisoning the
     // channel for whatever the pane does next.
-    assert!(volume.exists(&AppPath::legacy_unchecked(Path::new("hello.txt"))).await);
+    assert!(volume.exists(&app_at(&volume, "hello.txt")).await);
     clean_scratch(&volume, &dir).await;
 }
 
@@ -234,7 +228,7 @@ async fn a_source_that_stops_partway_takes_the_partial_with_it() {
 
     let outcome = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(Path::new(&path)),
+            &app_at(&volume, &path),
             WriteMode::CreateOrReplace,
             StreamLength::Unknown,
             failing_unknown_source(fixture_large_bytes(PAYLOAD)),
@@ -246,7 +240,7 @@ async fn a_source_that_stops_partway_takes_the_partial_with_it() {
         matches!(outcome, Err(VolumeError::DeviceDisconnected(_))),
         "the source's own failure is what the caller has to see; got {outcome:?}"
     );
-    assert!(!volume.exists(&AppPath::legacy_unchecked(Path::new(&path))).await);
+    assert!(!volume.exists(&app_at(&volume, &path)).await);
     clean_scratch(&volume, &dir).await;
 }
 
@@ -261,7 +255,7 @@ async fn a_source_that_breaks_its_declared_length_takes_the_partial_with_it() {
 
         let outcome = volume
             .write_from_stream(
-                &AppPath::legacy_unchecked(Path::new(&path)),
+                &app_at(&volume, &path),
                 WriteMode::CreateOrReplace,
                 StreamLength::Known(declared),
                 misdeclared_source(fixture_large_bytes(PAYLOAD), declared),
@@ -274,7 +268,7 @@ async fn a_source_that_breaks_its_declared_length_takes_the_partial_with_it() {
             "{label}: a byte count off the declared length fails the write; got {outcome:?}"
         );
         assert!(
-            !volume.exists(&AppPath::legacy_unchecked(Path::new(&path))).await,
+            !volume.exists(&app_at(&volume, &path)).await,
             "{label}: nothing stays behind"
         );
     }
@@ -293,27 +287,23 @@ async fn a_forced_rename_replaces_the_destination_on_a_posix_rename_server() {
     let source = format!("{dir}/new.zip");
     let target = format!("{dir}/archive.zip");
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&source)), b"the new bytes")
+        .create_file(&app_at(&volume, &source), b"the new bytes")
         .await
         .expect(FIXTURE);
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&target)), b"old")
+        .create_file(&app_at(&volume, &target), b"old")
         .await
         .expect(FIXTURE);
 
     volume
-        .rename(
-            &AppPath::legacy_unchecked(Path::new(&source)),
-            &AppPath::legacy_unchecked(Path::new(&target)),
-            true,
-        )
+        .rename(&app_at(&volume, &source), &app_at(&volume, &target), true)
         .await
         .expect(FIXTURE);
 
-    assert!(!volume.exists(&AppPath::legacy_unchecked(Path::new(&source))).await);
+    assert!(!volume.exists(&app_at(&volume, &source)).await);
     assert_eq!(
         volume
-            .get_metadata(&AppPath::legacy_unchecked(Path::new(&target)))
+            .get_metadata(&app_at(&volume, &target))
             .await
             .expect(FIXTURE)
             .size,
@@ -333,26 +323,22 @@ async fn a_forced_rename_replaces_the_destination_without_the_extension_too() {
     let source = format!("{dir}/new.zip");
     let target = format!("{dir}/archive.zip");
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&source)), b"the new bytes")
+        .create_file(&app_at(&volume, &source), b"the new bytes")
         .await
         .expect(FIXTURE);
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&target)), b"old")
+        .create_file(&app_at(&volume, &target), b"old")
         .await
         .expect(FIXTURE);
 
     volume
-        .rename(
-            &AppPath::legacy_unchecked(Path::new(&source)),
-            &AppPath::legacy_unchecked(Path::new(&target)),
-            true,
-        )
+        .rename(&app_at(&volume, &source), &app_at(&volume, &target), true)
         .await
         .expect(FIXTURE);
 
     assert_eq!(
         volume
-            .get_metadata(&AppPath::legacy_unchecked(Path::new(&target)))
+            .get_metadata(&app_at(&volume, &target))
             .await
             .expect(FIXTURE)
             .size,
@@ -372,26 +358,22 @@ async fn a_forceless_rename_refuses_on_a_server_without_the_extension() {
     let source = format!("{dir}/source.txt");
     let target = format!("{dir}/target.txt");
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&source)), b"source")
+        .create_file(&app_at(&volume, &source), b"source")
         .await
         .expect(FIXTURE);
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&target)), b"the user's file")
+        .create_file(&app_at(&volume, &target), b"the user's file")
         .await
         .expect(FIXTURE);
 
     let outcome = volume
-        .rename(
-            &AppPath::legacy_unchecked(Path::new(&source)),
-            &AppPath::legacy_unchecked(Path::new(&target)),
-            false,
-        )
+        .rename(&app_at(&volume, &source), &app_at(&volume, &target), false)
         .await;
 
     assert!(matches!(outcome, Err(VolumeError::AlreadyExists(_))), "got {outcome:?}");
     assert_eq!(
         volume
-            .get_metadata(&AppPath::legacy_unchecked(Path::new(&target)))
+            .get_metadata(&app_at(&volume, &target))
             .await
             .expect(FIXTURE)
             .size,
@@ -411,59 +393,37 @@ async fn a_directory_moves_onto_a_free_name_and_refuses_an_occupied_one() {
     let album = format!("{dir}/album");
     let moved = format!("{dir}/moved");
     let occupied = format!("{dir}/occupied");
+    volume.create_directory(&app_at(&volume, &album)).await.expect(FIXTURE);
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&album)))
+        .create_directory(&app_at(&volume, &occupied))
         .await
         .expect(FIXTURE);
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&occupied)))
-        .await
-        .expect(FIXTURE);
-    volume
-        .create_file(
-            &AppPath::legacy_unchecked(Path::new(&format!("{album}/child.txt"))),
-            b"x",
-        )
+        .create_file(&app_at(&volume, &format!("{album}/child.txt")), b"x")
         .await
         .expect(FIXTURE);
 
     volume
-        .rename(
-            &AppPath::legacy_unchecked(Path::new(&album)),
-            &AppPath::legacy_unchecked(Path::new(&moved)),
-            false,
-        )
+        .rename(&app_at(&volume, &album), &app_at(&volume, &moved), false)
         .await
         .expect(FIXTURE);
-    assert!(
-        volume
-            .exists(&AppPath::legacy_unchecked(Path::new(&format!("{moved}/child.txt"))))
-            .await
-    );
+    assert!(volume.exists(&app_at(&volume, &format!("{moved}/child.txt"))).await);
 
     let refused = volume
-        .rename(
-            &AppPath::legacy_unchecked(Path::new(&moved)),
-            &AppPath::legacy_unchecked(Path::new(&occupied)),
-            false,
-        )
+        .rename(&app_at(&volume, &moved), &app_at(&volume, &occupied), false)
         .await;
     assert!(
         matches!(refused, Err(VolumeError::AlreadyExists(_))),
         "an occupied name refuses whatever shape the source is; got {refused:?}"
     );
     assert!(
-        volume
-            .exists(&AppPath::legacy_unchecked(Path::new(&format!("{moved}/child.txt"))))
-            .await,
+        volume.exists(&app_at(&volume, &format!("{moved}/child.txt"))).await,
         "and the refused source keeps its contents"
     );
 
-    let _ = volume
-        .delete(&AppPath::legacy_unchecked(Path::new(&format!("{moved}/child.txt"))))
-        .await;
-    let _ = volume.delete(&AppPath::legacy_unchecked(Path::new(&moved))).await;
-    let _ = volume.delete(&AppPath::legacy_unchecked(Path::new(&occupied))).await;
+    let _ = volume.delete(&app_at(&volume, &format!("{moved}/child.txt"))).await;
+    let _ = volume.delete(&app_at(&volume, &moved)).await;
+    let _ = volume.delete(&app_at(&volume, &occupied)).await;
     clean_scratch(&volume, &dir).await;
 }
 
@@ -478,16 +438,12 @@ async fn a_forceless_rename_that_finds_the_name_free_leaves_nothing_extra() {
     let target = format!("{dir}/landing.txt");
 
     let outcome = volume
-        .rename(
-            &AppPath::legacy_unchecked(Path::new(&missing)),
-            &AppPath::legacy_unchecked(Path::new(&target)),
-            false,
-        )
+        .rename(&app_at(&volume, &missing), &app_at(&volume, &target), false)
         .await;
 
     assert!(outcome.is_err(), "renaming something that isn't there must fail");
     assert!(
-        !volume.exists(&AppPath::legacy_unchecked(Path::new(&target))).await,
+        !volume.exists(&app_at(&volume, &target)).await,
         "and it must not leave a placeholder at the destination"
     );
     clean_scratch(&volume, &dir).await;
@@ -503,29 +459,21 @@ async fn a_directory_that_still_holds_something_refuses_with_the_shared_errno() 
     // sends the catch-all, so the number has to be put back by the probe.
     let (volume, dir) = scratch_on("OPENSSH", 12480, "delete-not-empty").await;
     let album = format!("{dir}/album");
+    volume.create_directory(&app_at(&volume, &album)).await.expect(FIXTURE);
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&album)))
-        .await
-        .expect(FIXTURE);
-    volume
-        .create_file(
-            &AppPath::legacy_unchecked(Path::new(&format!("{album}/child.txt"))),
-            b"x",
-        )
+        .create_file(&app_at(&volume, &format!("{album}/child.txt")), b"x")
         .await
         .expect(FIXTURE);
 
-    let outcome = volume.delete(&AppPath::legacy_unchecked(Path::new(&album))).await;
+    let outcome = volume.delete(&app_at(&volume, &album)).await;
 
     assert!(
         matches!(&outcome, Err(err @ VolumeError::IoError { .. }) if err.os_class() == Some(cmdr_fs::os_error::OsErrorClass::NotEmpty)),
         "got {outcome:?}"
     );
 
-    let _ = volume
-        .delete(&AppPath::legacy_unchecked(Path::new(&format!("{album}/child.txt"))))
-        .await;
-    let _ = volume.delete(&AppPath::legacy_unchecked(Path::new(&album))).await;
+    let _ = volume.delete(&app_at(&volume, &format!("{album}/child.txt"))).await;
+    let _ = volume.delete(&app_at(&volume, &album)).await;
     clean_scratch(&volume, &dir).await;
 }
 
@@ -537,9 +485,7 @@ async fn a_file_that_is_not_there_reads_as_missing_rather_than_as_a_catch_all() 
     let (volume, dir) = scratch_on("OPENSSH", 12480, "delete-missing").await;
 
     let outcome = volume
-        .delete(&AppPath::legacy_unchecked(Path::new(&format!(
-            "{dir}/never-existed.txt"
-        ))))
+        .delete(&app_at(&volume, &format!("{dir}/never-existed.txt")))
         .await;
 
     assert!(matches!(outcome, Err(VolumeError::NotFound(_))), "got {outcome:?}");
@@ -556,15 +502,12 @@ async fn a_deep_destination_is_created_whole_and_reported_as_created() {
     let volume = connect_fixture(&host, params).await;
     let dir = scratch_dir("mkdir-p-deep");
     clean_scratch(&volume, &dir).await;
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
-        .await
-        .expect(FIXTURE);
+    volume.create_directory(&app_at(&volume, &dir)).await.expect(FIXTURE);
     let before = listings.change_count();
     let leaf = format!("{dir}/2026/08/photos");
 
     let made = volume
-        .create_directory_all(&AppPath::legacy_unchecked(Path::new(&leaf)))
+        .create_directory_all(&app_at(&volume, &leaf))
         .await
         .expect(FIXTURE);
 
@@ -577,21 +520,16 @@ async fn a_deep_destination_is_created_whole_and_reported_as_created() {
             // ❗ The APP spelling, prefix and all: `display_path_for` answers what a
             // pane holds, so a patch keyed on the bare server path would never
             // reach the pane it is for.
-            .filter(|(_, parent, _)| parent == &volume.root().as_std_legacy().join(&dir))
+            .filter(|(_, parent, _)| parent.to_str() == Some(app_at(&volume, &dir).as_str()))
             .count(),
         1,
         "the SHALLOWEST new directory is the one a pane could be showing the parent of; \
          patching only the leaf leaves that pane a level short"
     );
+    assert!(volume.is_directory(&app_at(&volume, &leaf)).await.expect(FIXTURE));
     assert!(
         volume
-            .is_directory(&AppPath::legacy_unchecked(Path::new(&leaf)))
-            .await
-            .expect(FIXTURE)
-    );
-    assert!(
-        volume
-            .is_directory(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/2026"))))
+            .is_directory(&app_at(&volume, &format!("{dir}/2026")))
             .await
             .expect(FIXTURE)
     );
@@ -599,13 +537,13 @@ async fn a_deep_destination_is_created_whole_and_reported_as_created() {
     // And running it again is a no-op that says so, which is what the transfer
     // driver reads as "this may already hold something".
     let again = volume
-        .create_directory_all(&AppPath::legacy_unchecked(Path::new(&leaf)))
+        .create_directory_all(&app_at(&volume, &leaf))
         .await
         .expect(FIXTURE);
     assert_eq!(again, DirectoryCreation::AlreadyExisted);
 
     for path in [&leaf, &format!("{dir}/2026/08"), &format!("{dir}/2026")] {
-        let _ = volume.delete(&AppPath::legacy_unchecked(Path::new(path))).await;
+        let _ = volume.delete(&app_at(&volume, path)).await;
     }
     clean_scratch(&volume, &dir).await;
 }
@@ -624,30 +562,20 @@ async fn every_mutation_patches_the_listing_once() {
     let volume = connect_fixture(&host, params).await;
     let dir = scratch_dir("notify");
     clean_scratch(&volume, &dir).await;
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
-        .await
-        .expect(FIXTURE);
+    volume.create_directory(&app_at(&volume, &dir)).await.expect(FIXTURE);
 
     let before = listings.change_count();
     let notes = format!("{dir}/notes.txt");
     let renamed = format!("{dir}/renamed.txt");
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&notes)), b"hello")
+        .create_file(&app_at(&volume, &notes), b"hello")
         .await
         .expect(FIXTURE);
     volume
-        .rename(
-            &AppPath::legacy_unchecked(Path::new(&notes)),
-            &AppPath::legacy_unchecked(Path::new(&renamed)),
-            false,
-        )
+        .rename(&app_at(&volume, &notes), &app_at(&volume, &renamed), false)
         .await
         .expect(FIXTURE);
-    volume
-        .delete(&AppPath::legacy_unchecked(Path::new(&renamed)))
-        .await
-        .expect(FIXTURE);
+    volume.delete(&app_at(&volume, &renamed)).await.expect(FIXTURE);
 
     let changes: Vec<DirectoryChange> = listings
         .changes()
@@ -682,7 +610,7 @@ async fn a_private_file_streams_owner_only_and_lands_with_its_mode() {
         done: false,
     };
 
-    let path_app = AppPath::legacy_unchecked(Path::new(&path));
+    let path_app = app_at(&volume, &path);
     let write = volume.write_from_stream(
         &path_app,
         WriteMode::CreateOrReplace,
@@ -692,10 +620,7 @@ async fn a_private_file_streams_owner_only_and_lands_with_its_mode() {
     );
     let mid_stream = async {
         pulled_rx.await.expect("the upload pulls its first chunk");
-        let streaming = volume
-            .get_metadata(&AppPath::legacy_unchecked(Path::new(&path)))
-            .await
-            .expect(FIXTURE);
+        let streaming = volume.get_metadata(&app_at(&volume, &path)).await.expect(FIXTURE);
         release_tx.send(()).expect("the upload waits for the rest");
         streaming.permissions & 0o777
     };
@@ -706,10 +631,7 @@ async fn a_private_file_streams_owner_only_and_lands_with_its_mode() {
         mode_while_streaming, 0o600,
         "nobody but the owner reads a private file mid-copy"
     );
-    let landed = volume
-        .get_metadata(&AppPath::legacy_unchecked(Path::new(&path)))
-        .await
-        .expect(FIXTURE);
+    let landed = volume.get_metadata(&app_at(&volume, &path)).await.expect(FIXTURE);
     assert_eq!(landed.permissions & 0o7777, 0o600);
     clean_scratch(&volume, &dir).await;
 }
@@ -729,7 +651,7 @@ async fn a_script_lands_executable_and_a_setuid_bit_never_travels() {
         };
         volume
             .write_from_stream(
-                &AppPath::legacy_unchecked(Path::new(&path)),
+                &app_at(&volume, &path),
                 WriteMode::CreateOrReplace,
                 StreamLength::Known(10),
                 Box::new(source),
@@ -738,10 +660,7 @@ async fn a_script_lands_executable_and_a_setuid_bit_never_travels() {
             .await
             .expect(FIXTURE);
 
-        let landed = volume
-            .get_metadata(&AppPath::legacy_unchecked(Path::new(&path)))
-            .await
-            .expect(FIXTURE);
+        let landed = volume.get_metadata(&app_at(&volume, &path)).await.expect(FIXTURE);
         let expected = cmdr_fs::metadata::routed_mode(source_mode, cmdr_fs::metadata::default_file_mode());
         assert_eq!(Some(landed.permissions & 0o7777), expected, "{name}");
         assert_eq!(landed.permissions & 0o7000, 0, "{name}: no setuid on a routed copy");
@@ -759,10 +678,7 @@ async fn scratch_on(service: &str, fallback_port: u16, what: &str) -> (SftpVolum
     let volume = connect_fixture(&host, params).await;
     let dir = scratch_dir(what);
     clean_scratch(&volume, &dir).await;
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
-        .await
-        .expect(FIXTURE);
+    volume.create_directory(&app_at(&volume, &dir)).await.expect(FIXTURE);
     (volume, dir)
 }
 
@@ -771,7 +687,7 @@ async fn write(volume: &SftpVolume, path: &str, bytes: Vec<u8>) -> Result<u64, V
     let size = bytes.len() as u64;
     volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(Path::new(path)),
+            &app_at(volume, path),
             WriteMode::CreateOrReplace,
             StreamLength::Known(size),
             source(bytes),
@@ -783,10 +699,7 @@ async fn write(volume: &SftpVolume, path: &str, bytes: Vec<u8>) -> Result<u64, V
 
 /// Reads a whole file back, the way the copy path does.
 async fn read_whole(volume: &SftpVolume, path: &str) -> Vec<u8> {
-    let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
-        .await
-        .expect(FIXTURE);
+    let mut stream = volume.open_read_stream(&app_at(volume, path)).await.expect(FIXTURE);
     let mut out = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         out.extend_from_slice(&chunk.expect(FIXTURE));
