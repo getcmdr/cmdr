@@ -32,7 +32,6 @@ pub(super) fn make_test_volume_with(bucket: Option<&str>, host: VolumeHost) -> S
     S3Volume {
         name: "test".to_string(),
         root: place.root,
-        prefix: place.prefix,
         app_root: place.app,
         inner: Arc::new_cyclic(|me| S3VolumeInner {
             session: HttpSession::new(me, "s3-test", &host, None, true),

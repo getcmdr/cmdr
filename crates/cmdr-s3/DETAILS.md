@@ -28,13 +28,15 @@ switcher row each key on a place.
   another bucket's path (`RemoteRoot`'s containment check).
 - **Every body speaks typed app paths** (`cmdr_fs::app_path`, `crates/cmdr-fs/DETAILS.md` § "App paths"); the key layer
   stays text, and the two meet only in `paths.rs`: `resolve` (`RemoteRoot::to_remote`, then the beside-folder map) going
-  down, `row_path` (`RemoteRoot::to_app`) coming back. `paths::Place` builds the typed root once, at connect. ❗ A row's
-  `FileEntry.path` and `root()` keep the exact text they always had (pinned as strings in `paths_test.rs`): `to_app`'s
-  canonical text equals `<prefix><server path>` for every name S3 lists, and a name the typed path can't hold yet (an
-  escape-range code point, `RemoteAppRefusal::NotAppText`) keeps that text, ❌ never a dropped row. Such a row gets no
-  listing patch after a write (`patch_app_path` has no typed answer for it). A bucket or key id holding such text
-  refuses the connect (`NoSuchBucket` / `KeysRejected`) before the probe: no provider allows one, and `root()` needs a
-  typed answer.
+  down, `row_path` coming back. ❗ A row's `FileEntry.path` is `RemoteRoot::to_app_path`'s text
+  (`<prefix><normalized server path>`), ❌ never the typed `to_app`'s, as in SFTP, WebDAV, and NFS: a name the typed
+  path can't hold yet (an escape-range code point) keeps its row, and the text is byte for byte what it always was
+  (pinned as literal strings, `paths_test::a_rows_text_is_the_normalized_server_path_under_the_prefix`). Such a row gets
+  no listing patch after a write (`app_path_of`, the patcher's typed answer, has none for it). `Volume::root` answers
+  the typed root `paths::Place` builds once at connect, the same text as `RemoteRoot::app_root`; a bucket or key id
+  holding a NUL or an escape-range code point (U+10E800–U+10EFFF, U+10FE80–U+10FEFF) refuses the connect before the
+  probe (`NoSuchBucket` / `KeysRejected`, pinned by `paths_test::a_place_the_app_path_cant_hold_refuses_the_connect`):
+  no provider allows one.
 - **Two places of one account each hold their own client.** Sharing one is an optimisation for later; nothing depends on
   it.
 - **The account root needs `ListBuckets`.** A bucket-scoped key (R2 non-admin tokens, B2 keys without

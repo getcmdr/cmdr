@@ -12,20 +12,19 @@ use std::collections::HashMap;
 
 use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::volume::VolumeError;
-use cmdr_fs::volume::remote_paths::{RemoteAppRefusal, RemoteRoot};
+use cmdr_fs::volume::remote_paths::RemoteRoot;
 
 use super::S3Volume;
 use super::listing::{Child, FILE_SUFFIX, Settled};
 use crate::params::S3ConnectionParams;
 use crate::refusal::S3ConnectError;
 
-/// A place's root in the spellings a volume needs: the translation, the
-/// account's prefix, and the typed root `Volume::root` answers.
+/// A place's root in the spellings a volume needs: the translation, and the
+/// typed root `Volume::root` answers.
 pub(super) struct Place {
     pub root: RemoteRoot,
-    /// `s3://<key id>@<host>:<port>`, what every app path on the account starts with.
-    pub prefix: String,
-    /// `<prefix>/` or `<prefix>/<bucket>`, the same text the root always had.
+    /// `s3://<key id>@<host>:<port>/` or `…/<bucket>`, the same text the root
+    /// always had.
     pub app: AppPathBuf,
 }
 
@@ -43,12 +42,12 @@ impl Place {
         let root = RemoteRoot::new(prefix.clone(), std::path::Path::new(&params.remote_root()));
         let app = match root.app() {
             Ok(app) => app.to_owned(),
-            Err(_) if RemoteRoot::new(prefix.clone(), std::path::Path::new("/")).app().is_ok() => {
+            Err(_) if RemoteRoot::new(prefix, std::path::Path::new("/")).app().is_ok() => {
                 return Err(S3ConnectError::NoSuchBucket);
             }
             Err(_) => return Err(S3ConnectError::KeysRejected),
         };
-        Ok(Self { root, prefix, app })
+        Ok(Self { root, app })
     }
 }
 
@@ -161,15 +160,15 @@ impl S3Volume {
     /// `FileEntry.path` holds. `None` when a misbehaving server named something
     /// off this place's root.
     ///
-    /// ❗ A server name the typed path can't hold yet (an escape-range code
-    /// point, a NUL) keeps today's spelling, `<prefix><remote>`, ❌ never a
-    /// dropped row: escapes aren't live (`RemoteAppRefusal::NotAppText`).
+    /// ❗ `RemoteRoot::to_app_path`'s text (`<prefix><normalized server path>`),
+    /// ❌ never the typed `to_app`'s, as SFTP, WebDAV, and NFS spell theirs: the
+    /// wire keeps today's bytes, and a server name the typed path can't hold yet
+    /// (an escape-range code point, a NUL) still gets its row. The text is the
+    /// formatted prefix plus UTF-8, so the `to_string_lossy` is lossless.
     pub(super) fn row_path(&self, remote: &str) -> Option<String> {
-        match self.root.to_app(remote) {
-            Ok(path) => Some(path.into_string()),
-            Err(RemoteAppRefusal::OffRoot) => None,
-            Err(RemoteAppRefusal::NotAppText(_)) => Some(format!("{}{remote}", self.prefix)),
-        }
+        self.root
+            .to_app_path(remote)
+            .map(|path| path.to_string_lossy().into_owned())
     }
 
     /// [`Self::row_path`] as a typed app path, for the listing patcher; `None`

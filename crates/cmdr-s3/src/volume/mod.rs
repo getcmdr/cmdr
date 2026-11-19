@@ -67,9 +67,6 @@ pub struct S3Volume {
     /// (`s3://AKIA…@s3.eu-west-1.amazonaws.com:443/photos`) and the server's
     /// (`/photos`). ❗ Every path translation goes through it, ❌ never by hand.
     root: RemoteRoot,
-    /// The account's `s3://<key id>@<host>:<port>`, for a row whose server name
-    /// the typed path can't hold yet (`paths::S3Volume::row_path`).
-    prefix: String,
     /// The root `Volume::root` answers, typed.
     app_root: AppPathBuf,
     inner: Arc<S3VolumeInner>,
@@ -326,7 +323,6 @@ impl S3Volume {
         Self {
             name: name.to_string(),
             root: place.root,
-            prefix: place.prefix,
             app_root: place.app,
             inner: Arc::new_cyclic(|me| S3VolumeInner {
                 session: HttpSession::new(me, volume_id, &host, Some(client), auto_reconnect),
