@@ -4817,7 +4817,8 @@ export const commands = {
   /**
    *  A page's click on a bar row (the main bar's or the viewer's), by menu id: runs the handler a
    *  native click reaches, or nothing for a row that's greyed out right now. `via` says whether the
-   *  person picked the row or a window fired its chord (`BarPickVia`).
+   *  person picked the row or a window fired its chord (`BarPickVia`); `window` is the page that asked,
+   *  which a file-scoped command checks instead of focus (`menu_handlers::PickSource`).
    */
   pickMenuBarItem: (menuId: string, via: BarPickVia) =>
     __TAURI_INVOKE<BarPickOutcome>('pick_menu_bar_item', { menuId, via }),

@@ -304,6 +304,16 @@ test.describe('The in-page menu bar (Linux)', () => {
     const fieldFocused = () =>
       tauriPage.evaluate<boolean>(`document.activeElement === document.getElementById('e2e-text-field-gate')`)
     try {
+      // The control: with focus on the pane, the same click opens the Move dialog. Regression anchor:
+      // a file-scoped pick asked whether the main window had focus, which an X session with no
+      // window manager never reports, so no file row on the bar ran here at all.
+      await focusPane(tauriPage, 0)
+      await titleHolding(tauriPage, 'file_move')
+      const control = await rowCenter(tauriPage, 'file_move')
+      if (control) clickRealAt(mainWindowId(), control.x, control.y)
+      await tauriPage.waitForSelector(TRANSFER_DIALOG, waitBudget(5000))
+      await escapeOverlayUntilGone(tauriPage, TRANSFER_DIALOG)
+
       // A text field the person is typing in, in the main window: the gate asks only that one has focus.
       await tauriPage.evaluate(`(function(){
           var field = document.createElement('input');

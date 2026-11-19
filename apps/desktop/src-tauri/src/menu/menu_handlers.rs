@@ -297,17 +297,34 @@ fn viewer_history_direction_for(menu_id: &str) -> Option<ViewerHistoryDirection>
 /// the main window; the blocks above it are the exceptions that need direct emits, per-pane
 /// state syncing, focus-routed clipboard handling, or native macOS panels.
 pub fn handle_menu_event(app: &AppHandle<tauri::Wry>, event: tauri::menu::MenuEvent) {
-    handle_menu_pick(app, event.id().as_ref(), crate::window_events::CommandRoad::Relay);
+    handle_menu_pick(app, event.id().as_ref(), PickSource::NATIVE);
+}
+
+/// Where a menu pick came from, which decides how a plain command leaves for the main window.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct PickSource {
+    /// The road the command takes: `Relay` for a native menu and a key, `BarPick` for a page bar
+    /// row the person picked.
+    pub road: crate::window_events::CommandRoad,
+    /// Whether the pick came from the main window: `Some` where the page that drew the row is
+    /// known, `None` for a native menu, whose event names no window, so the main window's focus
+    /// stands in. A file-scoped command runs only from the main window.
+    pub from_main_window: Option<bool>,
+}
+
+impl PickSource {
+    /// A native menu's click or accelerator.
+    pub const NATIVE: Self = Self {
+        road: crate::window_events::CommandRoad::Relay,
+        from_main_window: None,
+    };
 }
 
 /// What a pick of menu item `id` does, from a native menu (`handle_menu_event`) or from a page
 /// that draws its menus itself (`page_bar::pick`, `page_context::pick`): one handler, so the two
 /// roads can't drift. A page's pick has already done what a native click does by itself (a check
-/// item's own flip).
-///
-/// `road` is the one a plain command (the unified dispatch at the bottom) takes into the main window:
-/// `Relay` for a native menu and a key, `BarPick` for a page bar row the person picked.
-pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, road: crate::window_events::CommandRoad) {
+/// item's own flip). `source` says how a plain command (the unified dispatch at the bottom) leaves.
+pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, source: PickSource) {
     // === A context-menu row's own lane: what it asks for comes off its id (`cmdr_menu::context::click`),
     // the same answer the browser demo's context menu gets. A plain command falls through to the
     // unified dispatch at the bottom, with the bar's.
@@ -315,7 +332,11 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, road: crat
         Some(ContextClick::Command { .. }) | None => {}
         // A row only the context menu carries: the main window hears it came from a right-click.
         Some(ContextClick::RowCommand { command_id, scope }) => {
-            emit_command(app, command_id, scope, crate::window_events::CommandRoad::ContextMenu);
+            let source = PickSource {
+                road: crate::window_events::CommandRoad::ContextMenu,
+                ..source
+            };
+            emit_command(app, command_id, scope, source);
             return;
         }
         Some(click) => {
@@ -616,27 +637,26 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, road: crat
 
     // === Unified dispatch: look up command ID from the mapping ===
     if let Some((command_id, scope)) = menu_id_to_command(id) {
-        emit_command(app, command_id, scope, road);
+        emit_command(app, command_id, scope, source);
     }
 
     // Unknown menu ID: no-op (all known IDs are handled above)
 }
 
-/// Sends `command_id` to the main window down `road`. A file-scoped one runs only while the main
-/// window has focus.
-fn emit_command(
-    app: &AppHandle<tauri::Wry>,
-    command_id: &'static str,
-    scope: CommandScope,
-    road: crate::window_events::CommandRoad,
-) {
+/// Sends `command_id` to the main window down `source.road`. A file-scoped one runs only from the
+/// main window: the page it came from where that's known, else the window with focus.
+fn emit_command(app: &AppHandle<tauri::Wry>, command_id: &'static str, scope: CommandScope, source: PickSource) {
+    let road = source.road;
     if scope == CommandScope::FileScoped {
         // Focus guard: a file command acts on the main window's pane, so it must not
-        // fire while the user is in Settings or the viewer — an accelerator reaches
-        // this handler whatever has focus, and a greyed-looking item is only a hint.
-        let focused = app
-            .get_webview_window("main")
-            .is_some_and(|w| w.is_focused().unwrap_or(false));
+        // fire while the user is in Settings or the viewer — a native accelerator reaches
+        // this handler whatever has focus, and a greyed-looking item is only a hint. A page's
+        // pick names its own window, which is surer than focus: an X session with no window
+        // manager (the Linux E2E lane) never reports the main window focused.
+        let focused = source.from_main_window.unwrap_or_else(|| {
+            app.get_webview_window("main")
+                .is_some_and(|w| w.is_focused().unwrap_or(false))
+        });
         if !focused {
             // ❗ Say so. This refuses a click the user just made and shows them
             // nothing, so with no line here the symptom is "the menu did nothing"

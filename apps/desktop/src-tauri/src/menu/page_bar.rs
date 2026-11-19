@@ -251,8 +251,10 @@ fn wire_revision(revision: u64) -> u32 {
 /// item, where one is built). The view-mode and sort rows need nothing: their handlers write every
 /// check from the stored state anyway.
 ///
-/// `via` names the road a command it runs takes into the main window (`BarPickVia::road`).
-pub fn pick(app: &AppHandle<tauri::Wry>, menu_id: &str, via: BarPickVia) -> BarPickOutcome {
+/// `via` names the road a command it runs takes into the main window (`BarPickVia::road`), and
+/// `from_main_window` whether the page that drew the row is the main window's, which a file-scoped
+/// command needs (`menu_handlers::PickSource`).
+pub fn pick(app: &AppHandle<tauri::Wry>, menu_id: &str, via: BarPickVia, from_main_window: bool) -> BarPickOutcome {
     let menu_state = app.state::<MenuState<tauri::Wry>>();
     if !is_live(&menu_state, menu_id) {
         return BarPickOutcome::NotLive;
@@ -271,7 +273,11 @@ pub fn pick(app: &AppHandle<tauri::Wry>, menu_id: &str, via: BarPickVia) -> BarP
             log::warn!(target: "menu", "couldn't flip the native Show hidden files check: {e}");
         }
     }
-    super::menu_handlers::handle_menu_pick(app, menu_id, via.road());
+    let source = super::menu_handlers::PickSource {
+        road: via.road(),
+        from_main_window: Some(from_main_window),
+    };
+    super::menu_handlers::handle_menu_pick(app, menu_id, source);
     BarPickOutcome::Ran
 }
 

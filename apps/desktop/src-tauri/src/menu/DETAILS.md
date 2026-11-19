@@ -412,7 +412,10 @@ row is decided here or in the frontend.
   `via` (`BarPickVia`) says how the page reached the row: `pick` (a click, or the open menu's keyboard walk) sends a
   plain command down the `BarPick` road, which the main window's text-field gate lets through; `key` (a chord a window
   without a bar fires) sends it down `Relay`, as a native accelerator, which the gate refuses for a file-moving row.
-- **The viewer's bar** is `get_viewer_menu_bar(inputs)`, a pure answer from the viewer page's own state
+  The calling window stands in for focus too: a file-scoped row runs only when the page that asked is the main
+  window's (`menu_handlers::PickSource`), where a native pick asks whether the main window has focus. Regression
+  anchor: an X session with no window manager (the Linux E2E lane) never reports the main window focused, so every
+  file-scoped pick from the page bar did nothing there.- **The viewer's bar** is `get_viewer_menu_bar(inputs)`, a pure answer from the viewer page's own state
   (`cmdr_menu::page::viewer`): no store, no event. Its picks go through `pick_menu_bar_item` too, to the focused viewer's
   lanes; File > Close is `VIEWER_CLOSE_ID`, a lane only a page reaches (the native Close is the OS's own item).
 - A sync command runs on the main thread, as `on_menu_event` does, so a page's pick runs where a native one would.

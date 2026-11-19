@@ -80,7 +80,7 @@ pub fn pick(app: &AppHandle<tauri::Wry>, token: u32, menu_id: &str) -> ContextPi
         return ContextPickOutcome::Stale;
     }
     menu_state.page_context.lock_ignore_poison().live.clear();
-    super::menu_handlers::handle_menu_pick(app, menu_id, crate::window_events::CommandRoad::Relay);
+    super::menu_handlers::handle_menu_pick(app, menu_id, super::menu_handlers::PickSource::NATIVE);
     ContextPickOutcome::Ran
 }
 
