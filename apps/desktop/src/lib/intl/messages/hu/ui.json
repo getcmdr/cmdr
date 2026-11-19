@@ -36,6 +36,14 @@
   "@ui.demoDesktopOnly.quit": {
     "sourceHash": "c971af5"
   },
+  "ui.demoQuestion.no": "No",
+  "@ui.demoQuestion.no": {
+    "sourceHash": "1ea442a"
+  },
+  "ui.demoQuestion.yes": "Yes",
+  "@ui.demoQuestion.yes": {
+    "sourceHash": "85a39ab"
+  },
   "ui.demoWindow.maximize": "Teljes méret",
   "@ui.demoWindow.maximize": {
     "sourceHash": "fba6c2c"
