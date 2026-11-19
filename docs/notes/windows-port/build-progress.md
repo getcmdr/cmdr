@@ -10,7 +10,7 @@ things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX
 ## Builder hygiene
 
 Mami got too slow for David to use after about 24 hours of agent builds (2026-11-19: 11 leftover checkouts and five
-target dirs, about 180 GB on `D:`, plus idle `cmd` windows on the desktop). So:
+target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
 
 - **One agent at a time, and ask David before heavy use** (a cold workspace build, a whole-workspace nextest, a bundle).
   Check first: `Get-Process cargo,rustc,link,node,cargo-nextest,cmdr -EA SilentlyContinue` must come back empty.
