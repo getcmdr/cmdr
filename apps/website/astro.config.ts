@@ -30,8 +30,8 @@ export default defineConfig({
     inlineStylesheets: 'always',
   },
   integrations: [
-    // /visual-fixture and /clip-fixture are Playwright fixtures (src/pages/visual-fixture.astro,
-    // src/pages/clip-fixture.astro): they have to build so the E2E can load them, but they're not
+    // /visual-fixture, /clip-fixture, and /download-fixture are Playwright fixtures (src/pages/*-fixture.astro,
+    // the shots and E2E behind them): they have to build so the E2E can load them, but they're not
     // content, so keep them out of the sitemap. They carry `noindex` too.
     // /demo/ is copied in after the build (demoIntegration), so it's no Astro route: it's listed by
     // hand when the build publishes it. Only the page itself: the app's own routes under it
@@ -43,6 +43,7 @@ export default defineConfig({
         return (
           !path.startsWith('/visual-fixture') &&
           !path.startsWith('/clip-fixture') &&
+          !path.startsWith('/download-fixture') &&
           (!path.startsWith('/demo/') || path === '/demo/')
         )
       },

@@ -7,7 +7,8 @@ import Showcase from '../components/Showcase.astro'
 import Testimonials from '../components/Testimonials.astro'
 import Download from '../components/Download.astro'
 import Footer from '../components/Footer.astro'
-import { version, dmgUrls } from '../lib/release'
+import { version, dmgUrls, offeredOses } from '../lib/release'
+import { osNames } from '../lib/download-platforms'
 
 const softwareApplicationSchema = {
     '@context': 'https://schema.org',
@@ -16,7 +17,7 @@ const softwareApplicationSchema = {
     description:
         'The fastest two-pane file manager for macOS. Indexes your whole drive in minutes, shows folder sizes everywhere, instant search, keyboard-driven everything. Built in Rust, free for personal use.',
     applicationCategory: 'UtilitiesApplication',
-    operatingSystem: 'macOS',
+    operatingSystem: offeredOses.map((os) => osNames[os]).join(', '),
     offers: [
         {
             '@type': 'Offer',

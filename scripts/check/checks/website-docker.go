@@ -81,7 +81,15 @@ type websiteServingProbe struct {
 // Search engines may list `/demo/` itself, so it goes out without `X-Robots-Tag`, while the app's
 // own routes under it (its secondary windows, served the same page by the SPA fallback) stay
 // `noindex` (`$demo_robots` in nginx.conf).
+//
+// `/download-fixture` offers Windows and Linux buttons from a frozen every-OS release for the E2E, so production
+// answers it with the site's 404 (nginx.conf), never the page.
 var websiteServingProbes = []websiteServingProbe{
+	{path: "/download-fixture/", wantStatus: http.StatusNotFound},
+	{path: "/download-fixture", wantStatus: http.StatusNotFound},
+	{path: "/download-fixture/index.html", wantStatus: http.StatusNotFound},
+	// The home page still serves, so the 404s above aren't a container that serves nothing.
+	{path: "/", wantStatus: http.StatusOK},
 	{
 		path:          "/demo/",
 		wantStatus:    http.StatusOK,
