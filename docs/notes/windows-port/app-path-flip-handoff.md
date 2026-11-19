@@ -139,7 +139,39 @@ From the plan; each agent owns whole crates, on its own branch off the tier befo
   over six files. Both: no-op re-runs (default, `testing`/`--all-features`), Windows and Linux (zig), wasm32 (`--lib`,
   plus `--tests` for `cmdr-listing-wasm`), clippy clean, nextest 143 and 114 passed. New codemod rules: the lib phase
   and the typed-first assert argument.
-- Tier 4: (H) the app, `cmdr` (33 impls, 629 test call sites), one agent with subagents by directory.
+- Tier 4: (H) the app, `cmdr` (33 impls, 629 test call sites), one agent, on `worktree-agent-aac5515068e4d32d3`. Done:
+  - **Codemod passes** (no hand edit in any): pass 1 (default, 7 rounds, about 1,100 edits over 140 files), pass 2 (the
+    clippy phase, 4), pass 3 (`--features virtual-mtp`, 32: its E2E paths), pass 4 (`--target x86_64-pc-windows-gnu`, 1:
+    an assert in `volumes/platform/windows/mod.rs`). No-op re-runs: default, each of `playwright-e2e`, `virtual-mtp`,
+    `smb-e2e`, `mimalloc` alone, and `--all-features` on the Mac; default and `virtual-mtp,smb-e2e,mimalloc` for
+    Windows; default and `--all-features` for Linux.
+  - **The Linux pass runs in the Docker image**, ❌ not zig: the app links GTK (`glib-sys` needs pkg-config and a Linux
+    sysroot). The `cmdr-rust-linux` image has Go, so the codemod runs there as is
+    (`go -C scripts/app-path-flip run . -p cmdr …`, the repo at `/repo`, a target volume of its own). Windows needs a
+    stand-in `x86_64-w64-mingw32-windres` on `PATH` for the build script (`build-progress.md` § the app).
+  - **New codemod rules** (each its own commit, pinned by `rules_app_test.go`): the plain-comparison operands and the
+    generic std bound (`rules_operands.go`, both after the prelude), and the borrowed-return field retype preferring the
+    impl's own file (the app's two `WaitsForCancel` doubles: the first match had retyped the other file's field).
+  - **Residue, by hand, three sites** (`0047693086`, replay these on regeneration): `location/facts.rs` `note_live_root`
+    (`let root_std = volume.root().as_std_legacy();` before `to_string_lossy`, E0716); `network/smb_pane_upgrade.rs`
+    (`let root_std = volume.as_ref().map(|v| v.root().as_std_legacy());` before `plan`, passed as
+    `root_std.as_deref()`); `search/execute/tests/live_drive.rs` `drive_with_a_covered(data: &Path)` (the codemod's
+    `Path` import made the qualified `&std::path::Path` warn `unused_qualifications`).
+  - **Outside the flip**: `examples/docker_smb_test.rs` spreads `..Default::default()` into its `ClientConfig` (E0063
+    since `smb2` 0.43; it kept `--features smb-e2e` and `--all-features` from checking at all).
+  - **Bridge counts**: 578 calls over 131 app files in `app-path-std-bridge-allowlist.json`; `file-length` takes
+    `file_system/volume/manager/roots.rs` at 810 lines with a reason.
+  - **Verified**: clippy `-D warnings` clean (Mac workspace via `pnpm check clippy`, app default and `--all-features`;
+    Linux in Docker), the Windows workspace checks (zig, `--exclude cmdr-fsevent-stream`, the macOS-only member),
+    nextest 6,805 of 6,805 (481 skipped), `-audit-imports` (five hits, all hand-written `cfg`-gated imports from before
+    the flip), `pnpm check --fast`, `app-path-std-bridge`, `file-length`.
+  - **Known, not the flip's**: Windows with `--features playwright-e2e` doesn't compile `cmdr-index`
+    (`media_index/scheduler/lifecycle.rs` `platform_backends` has no arm for Windows plus that feature); no CI builds
+    that pair.
+  - **Open, for the lead**: `pnpm check fuzz-compile` fails: `fuzz/fuzz_targets/app_path_native.rs:42` asserts on a
+    typed `path.file_name()`, which moved onto `PathArithmetic` in tier 0. It's the app path module's own property (a
+    pin, in effect), and the fix is an assert line or a `PathArithmetic` import, so tier 4 left it: importing the trait
+    there, as the module's pins do, keeps the property as written.
 
 ## The worked example, in numbers
 
