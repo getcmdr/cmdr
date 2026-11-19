@@ -401,7 +401,7 @@
         <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 pl-11 text-xs text-text-secondary">
             {#if legend}
                 {#each legend as item (item.label)}
-                    <span class="flex items-center gap-1.5">
+                    <span class={['flex items-center gap-1.5', item.muted && 'text-text-tertiary']}>
                         <span class="inline-block size-2.5 rounded-sm" style={swatchStyle(item)}></span>{item.label}
                     </span>
                 {/each}

@@ -68,6 +68,8 @@ export interface LegendItem {
   label: string
   color: string
   hatch?: boolean
+  /** A label in the tertiary ink, for entries that recede (like the rollout's older versions). */
+  muted?: boolean
 }
 
 /**

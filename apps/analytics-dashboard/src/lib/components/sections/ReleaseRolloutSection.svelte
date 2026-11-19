@@ -1,8 +1,9 @@
 <!--
   Product § Release rollout: how far the latest release has spread (yesterday's share of active installs),
-  over a daily stack of active installs by the version each ran. Every version in view draws its own layer
-  in its fixed `versionColor`, oldest at the bottom, with no "Older" bucket and no folding of thin layers;
-  the legend and tooltip list newest first. Today is faded and not in the headline.
+  over a daily stack of active installs by the version each ran. Every version in view draws its own layer,
+  oldest at the bottom, with no "Older" bucket and no folding of thin layers: the eight newest wear strong
+  colors and older ones a fading ramp (`versionColors`). The legend and tooltip list newest first, older
+  versions' legend labels muted. Today is faded and not in the headline.
 -->
 <script lang="ts">
     import type { SourceResult, DashboardSelection } from '#lib/server/types.js'
@@ -12,7 +13,7 @@
     import type { TooltipRow } from '#lib/daily-chart.js'
     import { breakdownRows } from '#lib/daily-chart.js'
     import { rolloutHeadline, rolloutSentence, versionStack } from '#lib/rollout.js'
-    import { versionColor } from '#lib/version-colors.js'
+    import { latestCount, versionColors } from '#lib/version-colors.js'
     import { cell, viewRange } from '#lib/trend-row.js'
     import { formatNumber } from '#lib/format.js'
     import DailyChart from '../DailyChart.svelte'
@@ -35,6 +36,8 @@
     const shownDays = $derived(all.slice(range.start, range.stop))
     const stack = $derived(versionStack(shownDays))
     const newestFirst = $derived([...stack.versions].reverse())
+    const colors = $derived(versionColors(stack.versions))
+    const colorOf = (version: string): string => colors.get(version) ?? ''
 </script>
 
 <section class="rounded-xl border border-border bg-surface p-4 sm:p-6">
@@ -45,7 +48,7 @@
             <ul>
                 <li>Each install counts once a day, under the highest version it ran that day, so a day's layers add up to its active installs.</li>
                 <li>The headline is yesterday's share on the newest stable GitHub release; today is still going, so it's faded and left out.</li>
-                <li>Every version keeps its own color, load after load. No version folds into an "Older" bucket.</li>
+                <li>The eight newest versions get strong colors; older ones fade with age. No version folds into an "Older" bucket.</li>
                 <li>Counts installs with usage stats on, like the usage charts above.</li>
             </ul>
             <p><span class="info-label">Source:</span> the app's heartbeat via the api-server, and GitHub releases.</p>
@@ -68,16 +71,20 @@
                 series={stack.versions.map((version) => ({
                     key: version,
                     label: `v${version}`,
-                    color: versionColor(version),
+                    color: colorOf(version),
                     values: stack.series[version],
                 }))}
-                legend={newestFirst.map((version) => ({ label: `v${version}`, color: versionColor(version) }))}
+                legend={newestFirst.map((version, rank) => ({
+                    label: `v${version}`,
+                    color: colorOf(version),
+                    muted: rank >= latestCount,
+                }))}
                 tooltip={(i: number): TooltipRow[] => [
                     { label: 'Active installs', value: cell(shownDays[i].dau) },
                     ...breakdownRows(
                         newestFirst.map((version) => ({
                             label: `v${version}`,
-                            color: versionColor(version),
+                            color: colorOf(version),
                             count: stack.series[version][i],
                         })),
                         shownDays[i].dau,

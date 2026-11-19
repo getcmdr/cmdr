@@ -523,12 +523,14 @@ association from one section to the next:
 - Countries: eight fixed colors in `#lib/country-colors.ts` (`countryColor(code)`), assigned once to the 90-day top
   eight and never reshuffled by rank; every other country, and "Other", is the grey. The file's header carries the
   validator run and the near-pair caveat. Add a color deliberately when an uncolored country climbs into the top 20.
-- Versions: a 32-slot validated table in `#lib/version-colors.ts` (`versionColor(version)`): 16 slots for releases
-  (keyed on the minor, so any 16 consecutive minors differ) and 16 for patches, a pure function of the version string,
-  so a version keeps its color load after load and versions leaving the view never recolor the rest. Gold, Homebrew
-  blue, the unknown grey, and gold-reading ochres and olives are never a version. The rollout chart
-  (`ReleaseRolloutSection`) draws every version in view as its own layer (no "Older" bucket, no folding), legend and
-  tooltip newest first. The file's header carries the validator run and the slot rule that keeps stack neighbors apart.
+- Versions: color follows recency, in `#lib/version-colors.ts` (`versionColors(versions)`): the eight newest versions in
+  view (each distinct version string is a step, patches included) get eight strong validated colors, newest first, and
+  every older version its own step on one muted mauve-to-plum ramp that fades with age. A pure function of the version
+  and the versions in view, so a dataset always draws the same, but every color moves one step when a release ships
+  (David's call, #1217: telling the recent versions apart beats a color that never moves). Gold, Homebrew blue, the
+  unknown grey, and gold-reading ochres and olives are never a version. The rollout chart (`ReleaseRolloutSection`)
+  draws every version in view as its own layer (no "Older" bucket, no folding), legend and tooltip newest first, older
+  versions' legend labels muted. The file's header carries the validator run.
 - Breakdown and referrer pies: four hues of their own plus two greys, in `#lib/pie-slices.ts` (§ "Acquisition trends").
   Each referrer card's dot beside the site name wears that site's color.
 - Status bands (`COLOR_BAND`): the app's success / warning / danger tokens, only as faint backgrounds behind rate

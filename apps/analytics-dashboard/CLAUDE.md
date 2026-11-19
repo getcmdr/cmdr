@@ -26,6 +26,6 @@ Access plus an in-app JWT gate (`src/hooks.server.ts`).
 - **Null renders as `–`, never 0.** A missing worker field reads "Not available yet".
 - **Every stat skips today and pools rates as ratios of sums** (`#lib/acquisition-stats.ts`, `#lib/product-stats.ts`).
 - **On `/`, ❌ never rebuild a URL from `page.url`**: country chips update it shallowly; read `window.location`.
-- **One color means one property everywhere**; a version's color depends only on its string (`versionColor`).
-  `DETAILS.md` § Color coding.
+- **One color means one property everywhere**; a version's color follows its recency among the versions in view
+  (`versionColors`). `DETAILS.md` § Color coding.
 - **❌ Never auto-scale `#lib/count-color-scale.ts`.** `DETAILS.md` § "The country map and table".

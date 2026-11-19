@@ -1,96 +1,88 @@
 /**
- * Client-safe: one fixed color per app version, so a version reads the same in every chart and legend,
- * load after load. Color follows the version, never its rank (as `country-colors.ts`): it's a pure function
- * of the version string, so versions leaving the view never recolor the ones that stay. Gold (the product),
- * Homebrew blue, and the unknown grey are never a version, and no slot sits in the ochre-to-olive hues
- * (OKLCH 48°–128°) that read as gold.
+ * Client-safe: the app versions' colors on the rollout chart. Color follows recency, so the versions that
+ * matter stand out: the eight newest versions in view get strong, distinct colors (`latestPalette`, newest
+ * first), and every older version gets its own step on one muted ramp that fades with age (`olderColor`).
+ * No version folds into a grey "Older" bucket; the legend and tooltip name each one.
  *
- * `versionPalette` has 32 slots: 16 for releases, 16 for patches.
- * - A release `M.m.0` sits at minor slot `i = (M * 1000 + m) mod 16`, so consecutive minors are neighbors and
- *   any 16 consecutive minors (a 90-day window spans about 12) all differ.
- * - Its first patch `M.m.1` sits at `16 + i`, its second at `16 + (i + 8) mod 16`. Patches of different minors
- *   share a color only when their minors are a multiple of 16 apart, or a second patch meets the first patch
- *   of the minor 8 away. A third patch wraps onto the first's color; none has shipped since 0.36.2.
- * - So in stack order (oldest first), the pairs that can touch are: minor i ↔ minor i + 1, minor i ↔ patch i,
- *   patch i ↔ minor i + 1, patch i ↔ patch i + 8, and patch i + 8 ↔ minor i + 1. The palette is validated for
- *   exactly those, plus minor i ↔ minor i + 2 at a lower bar (a minor nobody runs drops out of the stack).
+ * - A color is a pure function of the version and the set of versions in view, so a given dataset always
+ *   draws the same. When a release ships, every version moves one step down (accepted, #1217).
+ * - Each distinct version string is its own step, patches and pre-releases included: a patch and its minor
+ *   draw as adjacent layers, so sharing a color would merge them, and a patch usually replaces its minor
+ *   among the newest installs, so it earns its own strong slot.
+ * - Gold (the product), Homebrew blue, and the unknown grey are never a version, and no color sits in the
+ *   ochre-to-olive hues (OKLCH 48°–128°) that read as gold.
  *
- * Why 16 + 16 and not a plain cycle with patches at an offset: no fixed offset keeps a patch off all 16 minor
- * colors, and a 32-slot interleave (minors on evens) can't meet the neighbor floors in the dark band. Why a
- * validated table and not a golden-angle hue walk: the walk failed the validator in most 20-version windows.
- *
- * Validation (dataviz skill's `validate_palette.js --mode dark --surface #1a1917`, 2026-11-17):
- * - The 16 minor slots in order, wrapping: PASS, worst adjacent CVD ΔE 8.4 (protan), normal ΔE 15.9.
- * - 0.46.0–0.61.0 in stack order with patches 0.46.1, 0.52.1, 0.52.2, 0.55.1, 0.58.1, 0.61.1, 0.61.2: PASS,
- *   worst adjacent CVD ΔE 8.4, normal ΔE 15.9.
- * - Across every neighbor pair above: worst CVD ΔE 8.4, normal ΔE 15.8; minors two apart CVD 6.1, normal 12.0.
- *   All 32 sit in L 0.48–0.67, chroma ≥ 0.10, ≥ 3:1 on the surface, ≥ 18 ΔE from gold, blue, and grey.
- * - All 32 as all-pairs FAILs (closest two ΔE 4.8): 32 dark-band hues can't all be far apart, so identity
- *   for non-neighbors comes from the legend and tooltip, as the rollout chart already does.
- * Picked by simulated annealing over an OKLCH grid (neighbor floors first, then the all-pairs minimum).
+ * Validation (dataviz skill's `validate_palette.js --mode dark --surface #1a1917`, 2026-11-19):
+ * - `latestPalette` in stack order (oldest of the eight at the bottom): PASS, worst adjacent CVD ΔE 11.2
+ *   (deutan), worst adjacent normal ΔE 21.5. With `--pairs all`: PASS with a CVD WARN, worst CVD ΔE 7.6
+ *   (#3aa593 ↔ #c97d68, not neighbors), worst normal ΔE 16.0. All eight in L 0.48–0.67, chroma ≥ 0.10, ≥ 3:1.
+ * - The ramp: OKLCH (0.68, 0.11, 335°) to (0.44, 0.07, 305°), mauve to dusk plum. Its start sits ΔE 21.7
+ *   (CVD 17.6) from the eighth color it stacks under; every point stays ≥ ΔE 10.7 from the strong eight,
+ *   ≥ 7.3 from the unknown grey, and its newer two-thirds keep 3:1 on the surface (the oldest fade below).
+ * Picked by simulated annealing over an OKLCH grid: hue families first, then neighbor and all-pairs floors.
  * `version-colors.test.ts` re-checks those floors.
  */
+import { compareVersions } from './rollout.js'
 
-/** Minor slots 0–15, then patch slots 16–31. ❌ Never reorder or swap one: every version's color would move. */
-export const versionPalette = [
-  // Releases, by `(M * 1000 + m) mod 16`.
-  '#c83846',
-  '#803de9',
-  '#c95ad1',
-  '#519c03',
-  '#fb2b7b',
-  '#6c3efd',
-  '#f208c3',
-  '#e46212',
-  '#1da871',
-  '#a609ea',
-  '#de0784',
-  '#f84713',
-  '#169b4a',
-  '#fb1597',
-  '#c518e5',
-  '#11ad32',
-  // Patches, at 16 + the minor slot (first patch) or 16 + the minor slot + 8 (second).
-  '#c865b5',
-  '#c23913',
-  '#c4236b',
-  '#b1319d',
-  '#cc5b1c',
-  '#d5677c',
-  '#ae54fc',
-  '#d040b9',
-  '#e83120',
-  '#5da34d',
-  '#a549dc',
-  '#d91dfc',
-  '#b905c5',
-  '#298c01',
-  '#cf4887',
-  '#9322fb',
+/** The eight newest versions' colors, newest first. Neighbors here are neighbors in the stack. */
+export const latestPalette = [
+  '#3aa593',
+  '#b13b6e',
+  '#ac6ef8',
+  '#0d8500',
+  '#ef10c8',
+  '#c97d68',
+  '#534bfb',
+  '#f50004',
 ] as const
 
-const minorSlotCount = 16
+export const latestCount = latestPalette.length
 
-/** How far a second patch's slot sits from its first's, so it lands far from both neighbors' colors. */
-const nextPatchStep = 8
-
-function numericPart(part: string | undefined): number {
-  return part !== undefined && /^\d+$/.test(part) ? Number(part) : 0
+/** The older ramp's ends in OKLCH: `from` is the newest older version, `to` the oldest. */
+const olderRamp = {
+  from: { lightness: 0.68, chroma: 0.11, hue: 335 },
+  to: { lightness: 0.44, chroma: 0.07, hue: 305 },
 }
 
-/**
- * A version's slot in `versionPalette`. Parts that aren't plain numbers (a pre-release suffix like
- * `0-beta`) and missing parts read as zero, so `0.62.0-beta.1` and `0.62` share `0.62.0`'s color.
- */
-export function versionSlot(version: string): number {
-  const parts = version.replace(/^v/, '').split('.')
-  const [major, minor, patch] = [0, 1, 2].map((i) => numericPart(parts.at(i)))
-  const minorSlot = (major * 1000 + minor) % minorSlotCount
-  if (patch === 0) return minorSlot
-  return minorSlotCount + ((minorSlot + nextPatchStep * (patch - 1)) % minorSlotCount)
+/** A point on the older ramp: `t` 0 is the newest older version, 1 the oldest (clamped). */
+export function olderColor(t: number): string {
+  const at = Math.min(1, Math.max(0, t))
+  const mix = (key: keyof typeof olderRamp.from): number =>
+    olderRamp.from[key] + (olderRamp.to[key] - olderRamp.from[key]) * at
+  return oklchToHex(mix('lightness'), mix('chroma'), mix('hue'))
 }
 
-/** The color for an app version like `0.61.0` (a leading `v` is ignored). */
-export function versionColor(version: string): string {
-  return versionPalette[versionSlot(version)]
+/** Every version's color, keyed by the version string as given. Order and duplicates in `versions` don't matter. */
+export function versionColors(versions: readonly string[]): Map<string, string> {
+  const newestFirst = [...new Set(versions)].sort((a, b) => compareVersions(b.replace(/^v/, ''), a.replace(/^v/, '')))
+  const olderSteps = newestFirst.length - latestCount
+  return new Map(
+    newestFirst.map((version, rank) => {
+      if (rank < latestCount) return [version, latestPalette[rank]]
+      const step = rank - latestCount
+      return [version, olderColor(olderSteps > 1 ? step / (olderSteps - 1) : 0)]
+    }),
+  )
+}
+
+function oklchToHex(lightness: number, chroma: number, hue: number): string {
+  const radians = (hue * Math.PI) / 180
+  const [a, b] = [chroma * Math.cos(radians), chroma * Math.sin(radians)]
+  const l = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3
+  const m = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3
+  const s = (lightness - 0.0894841775 * a - 1.291485548 * b) ** 3
+  const linear = [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  ]
+  return `#${linear
+    .map((c) => {
+      const clamped = Math.min(1, Math.max(0, c))
+      const srgb = clamped <= 0.0031308 ? 12.92 * clamped : 1.055 * clamped ** (1 / 2.4) - 0.055
+      return Math.round(srgb * 255)
+        .toString(16)
+        .padStart(2, '0')
+    })
+    .join('')}`
 }
