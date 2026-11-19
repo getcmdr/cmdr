@@ -67,6 +67,19 @@ pub(super) struct LogWriter {
     thread: Option<thread::JoinHandle<()>>,
 }
 
+/// Opens the log at `path` emptied, in the append mode [`LogWriter::spawn`]
+/// takes, creating it when it's missing.
+///
+/// ❗ Emptied by its own truncating open, ❌ never `set_len(0)` on the append
+/// handle: Windows grants an append-only handle `FILE_APPEND_DATA` without
+/// `FILE_WRITE_DATA`, so the truncate is refused ("Access is denied", verified on
+/// Windows 10 22H2, the builder's nextest run, 2026-11-18), and a log that never
+/// empties replays every record it ever held at each launch.
+pub(super) fn open_emptied(path: &Path) -> std::io::Result<File> {
+    File::create(path)?;
+    File::options().append(true).open(path)
+}
+
 impl LogWriter {
     /// Starts the writer thread for `log`, which must be open in append mode
     /// at `path`.

@@ -240,6 +240,17 @@ pub enum WriteOperationError {
     SymlinkLoop {
         path: String,
     },
+    /// The destination's file system refused to hold a symlink the copy carries
+    /// (a share or file system with no link operation: `ENOTSUP`, `ENOSYS`; Windows, which makes none yet).
+    /// The link is made under a temp name first, so whatever held `path` is still
+    /// there, untouched; `path` is the name the link was meant to take.
+    ///
+    /// ❗ Built from the errno at the link's creation
+    /// (`error_classification::classify_link_creation_error`), ❌ never from a
+    /// message.
+    LinksNotSupported {
+        path: String,
+    },
     Cancelled {
         message: cmdr_fs::error_detail::ErrorDetail,
     },
@@ -588,6 +599,7 @@ macro_rules! item_path_of {
             | WriteOperationError::SourceInColdStorage { path }
             | WriteOperationError::SourceChanged { path }
             | WriteOperationError::LandingNotRecorded { path }
+            | WriteOperationError::LinksNotSupported { path }
             | WriteOperationError::SymlinkLoop { path } => Some(path),
             _ => None,
         }

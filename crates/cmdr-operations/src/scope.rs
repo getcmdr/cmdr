@@ -38,6 +38,11 @@ pub(crate) struct OpScope {
     /// once its test arms it.
     #[cfg(test)]
     aside_park: super::overwrite::aside_park::AsideParkSlot,
+    /// The error this operation's local link creation answers instead of
+    /// making the link, once its test arms it: a drive that holds no links, or a
+    /// folder that refuses the write.
+    #[cfg(test)]
+    link_refusal: std::sync::Mutex<Option<fn() -> std::io::Error>>,
 }
 
 impl OpScope {
@@ -56,6 +61,8 @@ impl OpScope {
             landed_nodes: OnceLock::new(),
             #[cfg(test)]
             aside_park: Default::default(),
+            #[cfg(test)]
+            link_refusal: Default::default(),
         }
     }
 
@@ -111,5 +118,18 @@ impl OpScope {
     #[cfg(test)]
     pub(crate) fn aside_park(&self) -> &super::overwrite::aside_park::AsideParkSlot {
         &self.aside_park
+    }
+
+    /// The test seam that makes every local link this operation creates refuse
+    /// with `error()`, the answer the link's `symlink(2)` would have given.
+    #[cfg(test)]
+    pub(crate) fn refuse_links(&self, error: fn() -> std::io::Error) {
+        *cmdr_fs::ignore_poison::IgnorePoison::lock_ignore_poison(&self.link_refusal) = Some(error);
+    }
+
+    /// The refusal [`Self::refuse_links`] armed, if any.
+    #[cfg(test)]
+    pub(crate) fn link_refusal(&self) -> Option<std::io::Error> {
+        cmdr_fs::ignore_poison::IgnorePoison::lock_ignore_poison(&self.link_refusal).map(|error| error())
     }
 }

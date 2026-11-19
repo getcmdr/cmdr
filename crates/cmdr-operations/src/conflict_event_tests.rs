@@ -63,6 +63,10 @@ fn directory_over_file_marks_source_is_directory() {
 /// links, and a link to a folder is a leaf to every local engine.
 #[test]
 fn type_flags_come_from_the_side_not_from_a_link_following_stat() {
+    // A link needs Developer Mode or elevation on Windows.
+    if cmdr_fs::testing::skip_without_symlinks() {
+        return;
+    }
     let temp = TempDir::new().unwrap();
     let target = temp.path().join("target");
     let source = temp.path().join("link");

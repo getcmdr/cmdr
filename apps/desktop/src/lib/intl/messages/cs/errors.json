@@ -2073,6 +2073,18 @@
   "@errors.write.landingNotRecorded.suggestion": {
     "sourceHash": "98864f9"
   },
+  "errors.write.linksNotSupported.title": "Tento disk neumí uložit odkazy",
+  "@errors.write.linksNotSupported.title": {
+    "sourceHash": "d084f5e"
+  },
+  "errors.write.linksNotSupported.message": "Souborový systém v cíli neumí uložit symbolické odkazy, takže Cmdr odkaz do umístění {path} nezkopíroval. Nic se tam nezměnilo.",
+  "@errors.write.linksNotSupported.message": {
+    "sourceHash": "bb2d53a"
+  },
+  "errors.write.linksNotSupported.suggestion": "{platform, select, macos {Kopírujte na disk naformátovaný jako APFS nebo Mac OS rozšířený, nebo odkaz při kopírování vynechte.} windows {Cmdr ve Windows zatím neumí vytvářet odkazy. Odkaz při kopírování vynechte, nebo zkopírujte položku, na kterou odkaz vede.} other {Kopírujte na disk s linuxovým souborovým systémem, například ext4, nebo odkaz při kopírování vynechte.}}",
+  "@errors.write.linksNotSupported.suggestion": {
+    "sourceHash": "8e0a0f7"
+  },
   "errors.write.newDataKeptAt.title": "Váš nový soubor má jiný název",
   "@errors.write.newDataKeptAt.title": {
     "sourceHash": "06bc297"

@@ -2147,7 +2147,22 @@
     "distinct": ["symlink"],
     "en": "link",
     "match": ["link", "links"],
-    "notMatch": ["symbolic link", "symbolic links", "symlink", "symlinks", "linked worktree", "link loop"],
+    "notMatch": [
+      "symbolic link",
+      "symbolic links",
+      "symlink",
+      "symlinks",
+      "linked worktree",
+      "link loop",
+      {
+        "key": "errors.write.linksNotSupported.title",
+        "why": "\"links\" here are symbolic links (the symlink concept), shortened in a title"
+      },
+      {
+        "key": "errors.write.linksNotSupported.suggestion",
+        "why": "\"the link\" here is the symbolic link the message names (the symlink concept)"
+      }
+    ],
     "note": "The DFS sense (a folder in an SMB share that points to another server: `*.linkTargetUnreachable`, `*.linkNeedsConsent`, the SMB link sign-ins) shares the word: Windows and Samba call it a DFS link. A filesystem symlink is the `symlink` concept.",
     "sense": "A reference that leads somewhere else: a hyperlink in a document, a shareable web address (a share link, a Google Drive link), or a DFS link in an SMB share that leads to a folder on another server."
   },
@@ -4446,5 +4461,12 @@
     "sense": "Android's USB Preferences screen: a label on the user's phone that Cmdr quotes so they can find it.",
     "distinct": ["preferences"],
     "note": "Quote the label the user's phone shows in your language; no pile source carries Android's strings."
+  },
+  "mac-os-extended": {
+    "en": "Mac OS Extended",
+    "match": ["mac os extended"],
+    "sense": "Apple's HFS+ volume format as Disk Utility names it, which Apple localizes in some languages and keeps English in others.",
+    "distinct": ["file-system", "format"],
+    "note": "Take the name from Disk Utility's format menu (StorageKit `Localizable.loctable`, key `HFS Not Journaled`), never from a key description."
   }
 }

@@ -118,6 +118,10 @@ fn walk_reports_type_and_totals_per_top_level_source() {
 /// FILE source even when it points at a directory.
 #[test]
 fn walk_reports_a_symlinked_directory_source_as_a_file() {
+    // A link needs Developer Mode or elevation on Windows.
+    if cmdr_fs::testing::skip_without_symlinks() {
+        return;
+    }
     let dir = cmdr_fs::testing::TestDir::new("scan-per-path-symlink");
     let root: &Path = &dir;
     fs::create_dir(root.join("real")).unwrap();
@@ -554,6 +558,10 @@ mod online_only_tally {
     /// a link moves the link, so the walk never asks about one.
     #[test]
     fn a_symlink_in_the_tree_is_never_asked_about() {
+        // A link needs Developer Mode or elevation on Windows.
+        if cmdr_fs::testing::skip_without_symlinks() {
+            return;
+        }
         let scratch = TestDir::new("walk_online_only_symlink");
         let folder = scratch.join("Work");
         fs::create_dir_all(&folder).expect("fixture tree");

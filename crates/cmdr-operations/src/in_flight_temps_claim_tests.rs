@@ -47,6 +47,45 @@ fn a_second_claim_on_one_engine_is_refused_and_leaves_the_ledger_file_as_it_is()
     );
 }
 
+/// The claim's open empties the log, so a record it swept is never replayed
+/// again. Regression anchor: Windows refused the old truncate on the append
+/// handle and dropped the error, so every launch replayed every record the log
+/// ever held, and the log only grew (`log_writer::open_emptied`).
+#[test]
+fn a_launch_empties_the_ledger_so_the_next_launch_replays_nothing() {
+    let dir = TestDir::new("ledger-launch-empties");
+    let temp = dir.join("song.mp3.cmdr-tmp-44444444-4444-4444-4444-444444444444");
+    let crashed = crashed_run_with_a_live_temp(&dir, &temp);
+    assert_eq!(Ledger::replay_log(&dir).len(), 1, "the crashed run left one record");
+
+    let first = TestOperations::new();
+    first.claim_ledger(Some(&*dir)).expect("the first launch claims").wait();
+    first.flush_in_flight_temps();
+    assert!(!temp.exists(), "the first launch swept the temp");
+    drop(first);
+
+    assert!(
+        Ledger::replay_log(&dir).is_empty(),
+        "the second launch replays nothing: the first emptied the log and re-recorded nothing"
+    );
+    // A retire line alone replays as nothing either way, so the bytes are what
+    // tell an emptied log from one that kept growing: the crashed run's record
+    // line must be gone, with only the sweep's own retire after it.
+    let after = std::fs::read(dir.join(STORE_FILENAME)).expect("the ledger file");
+    assert!(
+        !after.windows(crashed.len()).any(|line| line == crashed.as_slice()),
+        "the first launch emptied the log before writing to it, got {:?}",
+        String::from_utf8_lossy(&after)
+    );
+    let second = TestOperations::new();
+    second
+        .claim_ledger(Some(&*dir))
+        .expect("the second launch claims")
+        .wait();
+    second.flush_in_flight_temps();
+    assert!(Ledger::replay_log(&dir).is_empty(), "and stays empty");
+}
+
 #[test]
 fn an_engine_that_never_claims_leaves_another_runs_ledger_and_its_temps_alone() {
     let dir = TestDir::new("ledger-unclaimed-engine");

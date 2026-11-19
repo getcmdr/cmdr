@@ -208,6 +208,11 @@ const perVariant: Record<WriteOperationError['type'], TransferErrorFixture> = {
     operationType: 'copy',
     error: { type: 'symlink_loop', path: '/Users/test_user_11/dev/node_modules/.pnpm/self/node_modules/self' },
   },
+  // A link copied onto a drive whose file system has no link operation.
+  links_not_supported: {
+    operationType: 'copy',
+    error: { type: 'links_not_supported', path: '/Volumes/USB/projects/current' },
+  },
   cancelled: {
     operationType: 'copy',
     error: { type: 'cancelled', message: 'Cancelled after 1,284 of 12,900 files' },

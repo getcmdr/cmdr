@@ -2073,6 +2073,18 @@
   "@errors.write.landingNotRecorded.suggestion": {
     "sourceHash": "98864f9"
   },
+  "errors.write.linksNotSupported.title": "Этот диск не может хранить ссылки",
+  "@errors.write.linksNotSupported.title": {
+    "sourceHash": "d084f5e"
+  },
+  "errors.write.linksNotSupported.message": "Файловая система места назначения не может хранить символические ссылки, поэтому Cmdr не стал копировать ссылку по пути {path}. Там ничего не изменилось.",
+  "@errors.write.linksNotSupported.message": {
+    "sourceHash": "bb2d53a"
+  },
+  "errors.write.linksNotSupported.suggestion": "{platform, select, macos {Скопируйте на диск в формате APFS или Mac OS Extended либо исключите ссылку из копирования.} windows {В Windows Cmdr пока не умеет создавать ссылки. Исключите ссылку из копирования или скопируйте объект, на который она указывает.} other {Скопируйте на диск с файловой системой Linux, например ext4, либо исключите ссылку из копирования.}}",
+  "@errors.write.linksNotSupported.suggestion": {
+    "sourceHash": "8e0a0f7"
+  },
   "errors.write.newDataKeptAt.title": "Новый файл сохранен под другим именем",
   "@errors.write.newDataKeptAt.title": {
     "sourceHash": "06bc297"

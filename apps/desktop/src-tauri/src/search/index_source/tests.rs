@@ -23,7 +23,8 @@ use crate::test_support::TestDir;
 /// and then walked nothing at all.
 #[test]
 fn canonicalize_scope_path_expands_the_home_tilde() {
-    let home = std::env::var("HOME").expect("HOME is set");
+    // The home the expansion itself reads: Windows sets no `HOME`.
+    let home = crate::search::host_home_dir().expect("this machine has a home folder");
     for namespace in [PathNamespace::Os, PathNamespace::Backend] {
         assert_eq!(
             canonicalize_scope_path("~", namespace),

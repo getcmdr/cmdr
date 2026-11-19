@@ -2073,6 +2073,18 @@
   "@errors.write.landingNotRecorded.suggestion": {
     "sourceHash": "98864f9"
   },
+  "errors.write.linksNotSupported.title": "Ổ đĩa này không chứa được liên kết",
+  "@errors.write.linksNotSupported.title": {
+    "sourceHash": "d084f5e"
+  },
+  "errors.write.linksNotSupported.message": "Hệ thống tệp ở đích không chứa được liên kết mềm, nên Cmdr không sao chép liên kết vào {path}. Ở đó không có gì thay đổi.",
+  "@errors.write.linksNotSupported.message": {
+    "sourceHash": "bb2d53a"
+  },
+  "errors.write.linksNotSupported.suggestion": "{platform, select, macos {Hãy sao chép sang ổ đĩa được định dạng APFS hoặc Mac OS Extended, hoặc bỏ liên kết ra khỏi những gì bạn sao chép.} windows {Cmdr chưa tạo được liên kết trên Windows. Hãy bỏ liên kết ra khỏi những gì bạn sao chép, hoặc sao chép mục mà liên kết trỏ tới.} other {Hãy sao chép sang ổ đĩa dùng hệ thống tệp Linux như ext4, hoặc bỏ liên kết ra khỏi những gì bạn sao chép.}}",
+  "@errors.write.linksNotSupported.suggestion": {
+    "sourceHash": "8e0a0f7"
+  },
   "errors.write.newDataKeptAt.title": "Tệp mới của bạn đang mang tên khác",
   "@errors.write.newDataKeptAt.title": {
     "sourceHash": "06bc297"

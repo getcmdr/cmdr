@@ -559,7 +559,8 @@ route it through `overwrite::safe_overwrite_dir`; the copy's folder→file case 
   copy, and one of their own files returning isn't one. Pinned by `folder_over_file_rollback_tests.rs` and
   `crates/cmdr-operations/src/tests.rs::{displace_with_directory_keeps_the_file_until_the_transaction_answers, a_committed_transaction_drops_what_it_displaced}`.
 - The symlink branch's file→folder overwrite goes through `safe_overwrite_dir`, correctly: a symlink is complete the
-  moment its closure creates it.
+  moment its closure creates it, and a refused link puts the folder back. Over a file or link it stages instead
+  (`overwrite::stage_and_land_link`; `../../DETAILS.md` § "Key patterns and gotchas (shared)").
 - Local move `move_with_rename` / `merge_move_directory`: when `resolve_conflict` returns Overwrite for a
   type-mismatched pair, the closure does `fs::rename(source, target)`.
 - Volume copy/move via `volume::conflict::apply_volume_conflict_resolution`: a type swap can't temp-rename across

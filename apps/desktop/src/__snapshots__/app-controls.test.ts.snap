@@ -1,5 +1,20 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`Windows typography and motion (\`app-type-motion-windows.css\`) > keeps the house font, sizes, and motion (macOS and Linux paint exactly these) 1`] = `
+{
+  "--font-size-input": "var(--font-size-md)",
+  "--font-size-lg": "1rem",
+  "--font-size-md": "0.875rem",
+  "--font-size-sm": "0.75rem",
+  "--font-size-xl": "1.25rem",
+  "--font-size-xs": "0.625rem",
+  "--font-system": "-apple-system, BlinkMacSystemFont, system-ui, sans-serif",
+  "--transition-base": "150ms ease",
+  "--transition-fast": "100ms ease",
+  "--transition-slow": "200ms ease",
+}
+`;
+
 exports[`control look tokens > keeps the house values (macOS and Linux paint exactly these) 1`] = `
 {
   "--color-button-danger-bg": "transparent",

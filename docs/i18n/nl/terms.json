@@ -4480,5 +4480,10 @@
     "confidence": "tentative",
     "sources": "catalog (settings.fileOperations.mtpEnabled.description: Instellingen > USB-voorkeuren); no pile source carries Android's strings",
     "note": "Quote the label Dutch Android shows on the phone; the path's first step is Android's Instellingen app."
+  },
+  "mac-os-extended": {
+    "chosen": "Mac OS Uitgebreid",
+    "confidence": "high",
+    "sources": "Disk Utility format menu: StorageKit Localizable.loctable, key HFS Not Journaled (verified on macOS 27.0.1 (26A434), plutil, 2026-11-19)"
   }
 }

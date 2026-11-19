@@ -45,7 +45,7 @@ Decision: the user's own paths and names in `cmdr://state` render VERBATIM: pane
 
 ### `cmdr://state` lists no real volumes on Linux
 
-**Known gap, unfixed.** `resources/volumes.rs::snapshot_volumes` enumerates every discovered location on macOS and
+**Known gap, unfixed, not intended (#1263).** `resources/volumes.rs::snapshot_volumes` enumerates every discovered location on macOS and
 Windows (`#[cfg(not(target_os = "linux"))]`), through `volume_listing::list_with_timeout` (2 s), then the synthetic
 `Network` root. Linux falls into the `#[cfg(target_os = "linux")]` branch, which pushes ONE hardcoded `root` entry and
 nothing else, plus its own MTP block (the others get device storages from the shared pipeline instead). Windows took

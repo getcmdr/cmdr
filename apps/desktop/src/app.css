@@ -11,6 +11,7 @@
 @import './app-controls.css';
 @import './app-controls-windows.css';
 @import './app-controls-windows-contrast.css';
+@import './app-type-motion-windows.css';
 @import './app-reset.css';
 
 :root {
@@ -1278,6 +1279,9 @@ body {
      neither painted layer has to fight an opaque root underneath. */
   background-color: transparent;
   color: var(--color-text-primary);
+  /* The token, so text that inherits it wears the look's font (Segoe UI Variable on Windows).
+     `app.html` writes the same house stack as a literal for the boot screen. */
+  font-family: var(--font-system);
   /* Disable text selection globally */
   user-select: none;
   -webkit-user-select: none;

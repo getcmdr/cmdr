@@ -834,6 +834,17 @@ const cases: Case[] = [
     },
   },
   {
+    // Says the file at the destination stays: an Overwrite put it at stake.
+    name: 'links_not_supported',
+    error: { type: 'links_not_supported', path: '/Volumes/USB/notes.txt' },
+    expected: {
+      title: 'This drive can’t hold links',
+      message:
+        'The destination’s file system can’t hold symbolic links, so Cmdr didn’t copy the link to /Volumes/USB/notes.txt. Nothing there changed.',
+      suggestion: 'Copy to a drive formatted as APFS or Mac OS Extended, or leave the link out of what you copy.',
+    },
+  },
+  {
     // Names the file: a move involves two, and "this file" left a reader guessing
     // between the one being moved and the one at the destination (cmdr-reports#17).
     name: 'delete_pending',

@@ -4938,5 +4938,11 @@
     "confidence": "high",
     "sources": "AOSP packages/apps/Settings res/values-zh-rTW/strings.xml usb_preference → USB 偏好設定, settings_label → 設定, usb_use_file_transfers → 檔案傳輸 (aosp-mirror main, 2026-11-18)",
     "note": "Android phone label quoted in settings.fileOperations.mtpEnabled.description: 「設定 > USB 偏好設定」."
+  },
+  "mac-os-extended": {
+    "chosen": "Mac OS 擴充格式",
+    "confidence": "high",
+    "sources": "Disk Utility format menu: StorageKit Localizable.loctable, key HFS Not Journaled (verified on macOS 27.0.1 (26A434), plutil, 2026-11-19)",
+    "note": "Apple writes it with no space before the Han text; the catalog spaces it per the Han–Latin spacing rule."
   }
 }

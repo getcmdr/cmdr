@@ -2073,6 +2073,18 @@
   "@errors.write.landingNotRecorded.suggestion": {
     "sourceHash": "98864f9"
   },
+  "errors.write.linksNotSupported.title": "這個磁碟機存不了連結",
+  "@errors.write.linksNotSupported.title": {
+    "sourceHash": "d084f5e"
+  },
+  "errors.write.linksNotSupported.message": "目標位置的檔案系統存不了符號連結，所以 Cmdr 沒有把連結複製到 {path}。那裡什麼都沒變。",
+  "@errors.write.linksNotSupported.message": {
+    "sourceHash": "bb2d53a"
+  },
+  "errors.write.linksNotSupported.suggestion": "{platform, select, macos {請複製到 APFS 或 Mac OS 擴充格式的磁碟機，或者複製時略過這個連結。} windows {Cmdr 目前還不能在 Windows 上建立連結。你可以在複製時略過這個連結，或者複製它指向的項目。} other {請複製到使用 Linux 檔案系統（例如 ext4）的磁碟機，或者複製時略過這個連結。}}",
+  "@errors.write.linksNotSupported.suggestion": {
+    "sourceHash": "8e0a0f7"
+  },
   "errors.write.newDataKeptAt.title": "你的新檔案換了個名字",
   "@errors.write.newDataKeptAt.title": {
     "sourceHash": "06bc297"
