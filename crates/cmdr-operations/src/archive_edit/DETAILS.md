@@ -277,14 +277,16 @@ reaped, fresh spared, other-archive ignored, delete-failure doesn't fail the edi
   flight. Tier 2 (`backend_abort`) isn't raced here. Pinned by the `cancel_reaches_*` tests in `fresh_compress_tests.rs`
   (a hung remote source and a destination holding a write in flight).
 
-  The producer emits empty directories/files, clamps deflate level to 1–9, and carries Unix modes and each source's
-  mtime (a source with none is dated now) through `cmdr_archive::mutator::with_entry_mtime`: local DOS time plus the
-  exact UTC second, the convention `crates/cmdr-archive/src/mutation/DETAILS.md` owns. It sets `large_file(true)` when
-  zlib's conservative deflate bound for the planned size (`n + n/8 + n/64 + 5`) reaches `zip::ZIP64_BYTES_THR`: `zip`
-  refuses a non-ZIP64 data descriptor once the COMPRESSED size passes 4 GiB, and incompressible input really grows by up
-  to an eighth at level 1, so the input size alone failed near-4 GiB videos. Entries from about 3.76 GiB up pay a
-  20-byte ZIP64 extra. Stream local headers cannot be rewritten; only `finish` writes the central directory and returns
-  the writer (verified against installed zip 8.6 and zlib-rs 0.6.5 source, 2026-09-29).
+  The producer emits empty directories/files, clamps deflate level to 1–9, and carries Unix modes (an entry with a mode
+  declares a Unix creator: the `zip` crate's default is the host's, DOS on Windows, whose attributes a reader takes for
+  the read-only flag alone, so the mode read back as `0o775` on the Windows builder, 2026-11-18) and each source's mtime
+  (a source with none is dated now) through `cmdr_archive::mutator::with_entry_mtime`: local DOS time plus the exact UTC
+  second, the convention `crates/cmdr-archive/src/mutation/DETAILS.md` owns. It sets `large_file(true)` when zlib's
+  conservative deflate bound for the planned size (`n + n/8 + n/64 + 5`) reaches `zip::ZIP64_BYTES_THR`: `zip` refuses a
+  non-ZIP64 data descriptor once the COMPRESSED size passes 4 GiB, and incompressible input really grows by up to an
+  eighth at level 1, so the input size alone failed near-4 GiB videos. Entries from about 3.76 GiB up pay a 20-byte
+  ZIP64 extra. Stream local headers cannot be rewritten; only `finish` writes the central directory and returns the
+  writer (verified against installed zip 8.6 and zlib-rs 0.6.5 source, 2026-09-29).
 
   **Finder tags ride `__MACOSX` sidecars, only when worth keeping.** A LOCAL source file's xattrs are read off the fd
   the producer already holds, a local folder entry's off its folder (`FreshZipSource::Local` on a directory entry is

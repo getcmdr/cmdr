@@ -4053,5 +4053,10 @@
     "confidence": "high",
     "sources": "AOSP packages/apps/Settings res/values-vi/strings.xml usb_preference → Lựa chọn ưu tiên về USB, settings_label → Cài đặt, usb_use_file_transfers → Truyền tệp (aosp-mirror main, 2026-11-18)",
     "note": "Android phone labels quoted in settings.fileOperations.mtpEnabled.description: Cài đặt > Lựa chọn ưu tiên về USB, mode “Truyền tệp”. A vi phone shows them in Vietnamese, so they are not kept English."
+  },
+  "mac-os-extended": {
+    "chosen": "Mac OS Extended",
+    "confidence": "high",
+    "sources": "Disk Utility format menu: StorageKit Localizable.loctable, key HFS Not Journaled (verified on macOS 27.0.1 (26A434), plutil, 2026-11-19)"
   }
 }

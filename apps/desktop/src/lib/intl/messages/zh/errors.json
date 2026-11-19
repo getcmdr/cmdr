@@ -2072,6 +2072,18 @@
   "@errors.write.landingNotRecorded.suggestion": {
     "sourceHash": "98864f9"
   },
+  "errors.write.linksNotSupported.title": "这个驱动器无法存放链接",
+  "@errors.write.linksNotSupported.title": {
+    "sourceHash": "d084f5e"
+  },
+  "errors.write.linksNotSupported.message": "目标位置的文件系统无法存放符号链接，所以 Cmdr 没有把链接拷贝到 {path}。那里没有任何变化。",
+  "@errors.write.linksNotSupported.message": {
+    "sourceHash": "bb2d53a"
+  },
+  "errors.write.linksNotSupported.suggestion": "{platform, select, macos {请拷贝到采用 APFS 或 Mac OS 扩展格式的驱动器，或者不拷贝这个链接。} windows {Cmdr 暂时还不能在 Windows 上创建链接。你可以不拷贝这个链接，或者拷贝它指向的项目。} other {请拷贝到采用 Linux 文件系统（比如 ext4）的驱动器，或者不拷贝这个链接。}}",
+  "@errors.write.linksNotSupported.suggestion": {
+    "sourceHash": "8e0a0f7"
+  },
   "errors.write.newDataKeptAt.title": "你的新文件换了个名字",
   "@errors.write.newDataKeptAt.title": {
     "sourceHash": "06bc297"

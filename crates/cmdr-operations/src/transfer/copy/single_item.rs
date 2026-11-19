@@ -31,7 +31,7 @@ use crate::conflict::{ApplyToAll, IncomingItem, resolve_conflict};
 use crate::error_classification::IoResultExt;
 use crate::event_sinks::OperationEventSink;
 use crate::ledger::CopyTransaction;
-use crate::overwrite::{PostLanding, displace_with_directory, safe_overwrite_dir};
+use crate::overwrite::{PostLanding, displace_with_directory, safe_overwrite_dir, stage_and_land_link};
 use crate::scan_source_tracker::FileVerdict;
 use crate::state::WriteOperationState;
 use crate::transfer_tree::TreeLeaf;
@@ -442,12 +442,20 @@ pub(in crate::transfer) fn copy_single_item(
         // Validate destination path length limits
         validate_path_length(&actual_dest)?;
 
-        // Materializer closure: create the symlink at the target path.
+        // Materializer closure: create the symlink at the target path. A drive
+        // that holds no links refuses HERE, typed (`LinksNotSupported`), before
+        // anything standing at the destination was touched.
         let source_for_symlink = source.to_path_buf();
         let create_symlink = |target: &Path| -> Result<(), WriteOperationError> {
             // Register the symlink destination with the downloads watcher's
             // ignore set before issuing the syscall; no-ops outside ~/Downloads.
             state.scope().host().announce(target);
+            #[cfg(test)]
+            if let Some(refusal) = state.scope().link_refusal() {
+                return Err(crate::error_classification::classify_link_creation_error(
+                    &refusal, target,
+                ));
+            }
             #[cfg(target_os = "macos")]
             {
                 copy_symlink(&source_for_symlink, target)?;
@@ -458,27 +466,23 @@ pub(in crate::transfer) fn copy_single_item(
                     path: source_for_symlink.display().to_string(),
                     message: format!("Failed to read symlink: {}", e).into(),
                 })?;
-                crate::local_disk::platform::symlink(&link_target, target).map_err(|e| {
-                    WriteOperationError::IoError {
-                        path: target.display().to_string(),
-                        message: format!("Failed to create symlink: {}", e).into(),
-                    }
-                })?;
+                crate::local_disk::platform::symlink(&link_target, target)
+                    .map_err(|e| crate::error_classification::classify_link_creation_error(&e, target))?;
             }
             Ok(())
         };
 
         if needs_safe_overwrite && actual_dest.is_dir() {
             // File→folder overwrite for the symlink branch: route the existing
-            // dest folder through `safe_overwrite_dir` so a mid-delete crash
-            // can't lose the folder. Pre-fix this branch did a direct
-            // `fs::remove_dir_all` then created the symlink, which had no
-            // crash-recoverable intermediate state.
+            // dest folder through `safe_overwrite_dir`, which puts the folder
+            // back when the link is refused and keeps it findable across a crash.
             safe_overwrite_dir(state, &actual_dest, create_symlink)?;
+        } else if needs_safe_overwrite {
+            // Over a file or a link: made beside it, then renamed over it, so a
+            // refused link leaves the person's file as it was.
+            stage_and_land_link(state, state.scope().host().announce(&actual_dest), create_symlink)?;
         } else {
-            if needs_safe_overwrite {
-                fs::remove_file(&actual_dest).with_path(&actual_dest)?;
-            }
+            // Nothing there: a link is made in one step, so it can't be partial.
             create_symlink(&actual_dest)?;
         }
 

@@ -4659,5 +4659,10 @@
     "confidence": "tentative",
     "sources": "catalog (settings.fileOperations.mtpEnabled.description: Einstellungen > USB-Einstellungen); no pile source carries Android's strings",
     "note": "Quote the label German Android shows on the phone; the path's first step is Android's Einstellungen app."
+  },
+  "mac-os-extended": {
+    "chosen": "Mac OS Extended",
+    "confidence": "high",
+    "sources": "Disk Utility format menu: StorageKit Localizable.loctable, key HFS Not Journaled (verified on macOS 27.0.1 (26A434), plutil, 2026-11-19)"
   }
 }

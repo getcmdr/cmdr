@@ -48,7 +48,11 @@ fn source_folder() -> TestDir {
     std::fs::write(source.join("Cafe\u{301}.txt"), b"nfd").expect("NFD name");
     std::fs::write(source.join("with  two spaces.txt"), b"spaces").expect("spaced name");
     std::fs::write(source.join("x".repeat(LONG_NAME_LEN)), b"long").expect("long name");
-    cmdr_fs::testing::symlink("a.txt", source.join("link")).expect("symlink");
+    // Windows creates a link only with Developer Mode or elevation; without either
+    // the backup has no link, and the link cells skip themselves.
+    if cmdr_fs::testing::can_create_symlinks() {
+        cmdr_fs::testing::symlink("a.txt", source.join("link")).expect("symlink");
+    }
     for file in ["a.txt", "nested/b.bin", "run.sh"] {
         File::options()
             .write(true)
@@ -337,8 +341,10 @@ async fn a_snapshot_tree_lists_files_folders_links_and_odd_names() {
     assert_eq!(named(&entries, "a.txt").modified_at, Some(OLD_DATE));
     assert!(named(&entries, "nested").is_directory);
     assert!(named(&entries, "empty").is_directory);
-    let link = named(&entries, "link");
-    assert!(link.is_symlink && !link.is_directory, "a link is a row, never followed");
+    if cmdr_fs::testing::can_create_symlinks() {
+        let link = named(&entries, "link");
+        assert!(link.is_symlink && !link.is_directory, "a link is a row, never followed");
+    }
     named(&entries, "Cafe\u{301}.txt");
     named(&entries, "with  two spaces.txt");
     named(&entries, &"x".repeat(LONG_NAME_LEN));
@@ -415,6 +421,9 @@ async fn a_file_streams_its_bytes_date_and_mode() {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn a_folder_or_a_link_has_no_bytes_to_stream() {
+    if cmdr_fs::testing::skip_without_symlinks() {
+        return;
+    }
     let browse = Browse::new().await;
     let dir = browse.source_in("latest").await;
     for path in [view(), view().join("latest"), dir.join("nested"), dir.join("link")] {
@@ -435,6 +444,9 @@ async fn a_folder_or_a_link_has_no_bytes_to_stream() {
 /// in the view is a link, the view's own folders included.
 #[tokio::test(flavor = "multi_thread")]
 async fn a_link_reports_the_target_the_backup_recorded() {
+    if cmdr_fs::testing::skip_without_symlinks() {
+        return;
+    }
     let browse = Browse::new().await;
     let dir = browse.source_in("latest").await;
     assert_eq!(

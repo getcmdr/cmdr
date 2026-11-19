@@ -2073,6 +2073,18 @@
   "@errors.write.landingNotRecorded.suggestion": {
     "sourceHash": "98864f9"
   },
+  "errors.write.linksNotSupported.title": "Ez a meghajtó nem tud linkeket tárolni",
+  "@errors.write.linksNotSupported.title": {
+    "sourceHash": "d084f5e"
+  },
+  "errors.write.linksNotSupported.message": "A cél fájlrendszere nem tud szimbolikus linkeket tárolni, ezért a Cmdr nem másolta át a linket ide: {path}. Ott semmi sem változott.",
+  "@errors.write.linksNotSupported.message": {
+    "sourceHash": "bb2d53a"
+  },
+  "errors.write.linksNotSupported.suggestion": "{platform, select, macos {Másolj APFS vagy Mac OS kiterjesztett formátumú meghajtóra, vagy hagyd ki a linket abból, amit másolsz.} windows {Windowson a Cmdr egyelőre nem tud linkeket létrehozni. Hagyd ki a linket abból, amit másolsz, vagy másold azt az elemet, amelyre a link mutat.} other {Másolj olyan meghajtóra, amelyen linuxos fájlrendszer van (például ext4), vagy hagyd ki a linket abból, amit másolsz.}}",
+  "@errors.write.linksNotSupported.suggestion": {
+    "sourceHash": "8e0a0f7"
+  },
   "errors.write.newDataKeptAt.title": "Az új fájlod más néven van meg",
   "@errors.write.newDataKeptAt.title": {
     "sourceHash": "06bc297"

@@ -230,6 +230,9 @@ const errorDisplayMetaMap: Record<WriteOperationError['type'], ErrorDisplayMeta>
   // old `io_error` wording did, and it was the useless half of the dialog.
   trash_refused: { category: 'needs_action', retryHint: false },
   symlink_loop: { category: 'serious', retryHint: false },
+  // No Retry: the same drive refuses the same link. The way out is another
+  // destination, or leaving the link out.
+  links_not_supported: { category: 'needs_action', retryHint: false },
   source_not_found: { category: 'needs_action', retryHint: false },
   // No Retry: the folder is missing, so the identical request can only fail
   // again. The way out is picking another destination or restoring the folder.
@@ -623,6 +626,9 @@ const NAMED_ITEM_FAMILY: Partial<Record<WriteOperationError['type'], string>> = 
   // Cmdr refused to clear the way because its note of the replace couldn't be
   // saved. It says the file stays, because that's what was at stake.
   landing_not_recorded: 'landingNotRecorded',
+  // A drive that holds no links refused one the copy carries. It says the file
+  // that was there stays, because an Overwrite put that at stake.
+  links_not_supported: 'linksNotSupported',
 }
 
 /** A `NAMED_ITEM_FAMILY` variant's message, or `null` for any other variant. */

@@ -774,3 +774,14 @@ path = "target/nextest/ci/junit.xml"
 
 [profile.default.junit]
 path = "target/nextest/default/junit.xml"
+
+[profile.windows-baseline]
+# The Windows builder's whole-workspace run for `scripts/windows-test-baseline`. A cell
+# that skips itself (`cmdr_fs::testing::skip_without_symlinks`) reads as a PASS, so the
+# report keeps every pass's output: the tool counts the skip marker in it, and a run
+# without the symlink privilege shows which cells it never ran.
+inherits = "default"
+fail-fast = false
+[profile.windows-baseline.junit]
+path = "target/nextest/windows-baseline/junit.xml"
+store-success-output = true

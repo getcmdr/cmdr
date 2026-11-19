@@ -904,6 +904,18 @@ hands the aside to the `CopyTransaction` and lets commit, a reversal, or a failu
 a ` (recovered)` sibling, since the half-filled folder keeps the name). `src/transfer/DETAILS.md` § "Cross-type
 overwrites" holds the why.
 
+A copied LINK over a file or a link lands through `overwrite::stage_and_land_link`: the link is made at a tracked
+`.cmdr-tmp-*` sibling, then one rename puts it over the destination. Gotcha/Why: the branch used to delete the
+destination and then make the link, so any refusal (a drive or share with no link operation, Windows today, Linux's
+exFAT and FAT, an immutable folder) came after the person's file was gone. The refusal is typed at the link's creation
+(`error_classification::classify_link_creation_error`): only `Unsupported`, `ENOTSUP`/`EOPNOTSUPP`, and `ENOSYS` become
+`LinksNotSupported`, so the dialog says the drive can't hold links and that the file there stays. `EPERM` is ambiguous
+(Linux's exFAT and FAT answer it, and so does an immutable folder everywhere), so it keeps the permission-style refusal.
+macOS's own FAT32, exFAT, and HFS+ make links fine, and its `chflags uchg` APFS folder answers `EPERM` (verified on
+macOS 27.0.1, `symlink(2)` on `hdiutil` images and a locked folder, 2026-11-19; macOS SMB unverified). Undo is
+unchanged: the item settles as the same overwrite it always did. Pinned by `src/transfer/copy/link_landing_tests.rs`
+(the `EPERM` cell included), which arms the scope's `refuse_links` test seam.
+
 The four copy mechanisms (`copy_strategy::LocalCopyStrategy`) each hand `stage_and_land_file` a closure that puts bytes
 at a path, so the landing is written once rather than once per branch. ❌ Don't add a mechanism that writes straight to
 `dest`. Details and the no-clobber rule: `src/transfer/DETAILS.md` § "Local copies stage".
@@ -3122,7 +3134,9 @@ ledger file:
   truncates, or sweeps a file.
 - **`Operations::claim_ledger(data_dir)`** (`in_flight_claim.rs`) is the one path to a file: it opens and truncates
   `data_dir`'s log, replays it, and starts the sweep. It consumes the engine's one claim; a second is
-  `Err(AlreadyClaimed)` and leaves the file alone. ❌ Never call it from `build()`.
+  `Err(AlreadyClaimed)` and leaves the file alone. ❌ Never call it from `build()`. The truncate is its own truncating
+  open (`log_writer::open_emptied`), ❌ never `set_len(0)` on the append handle: Windows refuses that on an append-only
+  handle, so the log never emptied there and every launch replayed every record the log ever held.
 - **The app claims through `operations_host::claim_ledger`**, which goes through `operations()`, so only the `OnceLock`
   winner can be claimed. It runs where the launch sweep always ran: after the instance lock (`instance_lock.rs` keeps a
   second process off the data dir whenever its lock can be taken), before `init_volume_manager`, unconditionally.

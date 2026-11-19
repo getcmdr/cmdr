@@ -132,8 +132,9 @@ vitest's 5 s timeout under load (`shortcuts-store.test.ts`).
 - **A scratch directory in a Rust test**: `crate::test_support::TestDir` (`cmdr_fs::testing::TestDir` from another
   crate), see § "Scratch directories (Rust)". **Never** `std::env::temp_dir().join("cmdr_something")`
 - **A symlink, a root check, or a FIFO in a Rust test**: `cmdr_fs::testing::{symlink, is_root, make_fifo}`, and
-  `can_create_symlinks()` to skip where links need a privilege (Windows). **Never** `std::os::unix::fs::symlink` or
-  `libc::geteuid` in a test
+  `if skip_without_symlinks() { return; }` to skip where links need a privilege (Windows): it prints the skip marker the
+  Windows baseline tool counts, since an early return reads as a pass. **Never** a bare `can_create_symlinks()` skip,
+  `std::os::unix::fs::symlink`, or `libc::geteuid` in a test
 - **Wait for background work in a Rust test**: `crate::test_support::wait_until` (sync) / `wait_until_async`
   (`#[tokio::test]`), see § "Waiting for background work (Rust)". **Never** a hand-rolled poll loop or a fixed sleep
 - **A Rust test that stores a credential or an API key**: open it with `crate::test_support::isolate_secrets()`, see §

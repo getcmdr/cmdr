@@ -227,6 +227,12 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   `disco` for drive, `iniciar a sessão` for sign in), which the termbase caught. And the plain Settings label
   `settings.indexing.enabled.label` ("Drive indexing", pt `Indexação de disco`) then pins `disco` in four Windows
   pointers that quote it: a per-OS value there would let Windows say `unidade`. (pt)
+- `errors.write.linksNotSupported.suggestion`'s description says don't translate "Mac OS Extended", but Disk Utility
+  localizes it (cs `Mac OS rozšířený`, es `Mac OS Plus`, fr `Mac OS étendu`, zh `Mac OS扩展`; the new `mac-os-extended`
+  concept has every ruling). Fix the description to say "Apple's localized name". (cs, es, fr, hu, nl, pt, zh, zh-Hant)
+- `errors.write.linksNotSupported.message`: "didn't copy the link to {path}" also reads as "the link that points to
+  {path}". "didn't put the link at {path}" would be unambiguous. Its "links" in the title and suggestion are symlinks,
+  which the `link` concept caught; now key-scoped `notMatch` entries. (all)
 
 ## Process feedback
 
@@ -401,3 +407,7 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   foreground limit and moved to the background. A shell variable for the run directory was refused again ("names git").
   A `--lang all` on `check-locale` (reading each locale's latest run directory) and on `i18n:pile` would make each one
   call. No script written. (all locales, demo question box)
+- The pile has no Disk Utility strings, so "Mac OS Extended" had no hits; it came from `plutil` + `jq` over StorageKit's
+  `Localizable.loctable` on the live system. A `pnpm i18n:pile --macos-live` lookup would cover it. Also, `i18n:apply`
+  takes one `--lang` and the guard refused shell loops and variables, so 13 locales meant 26 separate calls; the
+  per-locale term patches were split out of one `jq` output with `awk`. (all, linksNotSupported batch)

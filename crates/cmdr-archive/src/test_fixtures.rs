@@ -8,7 +8,7 @@
 use std::io::{Cursor, Write};
 
 use zip::write::SimpleFileOptions;
-use zip::{CompressionMethod, ZipWriter};
+use zip::{CompressionMethod, System, ZipWriter};
 
 /// A file to write into a fixture zip.
 pub struct FixtureFile {
@@ -117,7 +117,9 @@ pub fn build_zip(entries: &[FixtureFile]) -> Vec<u8> {
             .compression_method(entry.method)
             .large_file(entry.zip64);
         if let Some(mode) = entry.unix_mode {
-            opts = opts.unix_permissions(mode);
+            // A Unix creator, or a Windows-built fixture declares DOS and the mode
+            // reads back as the DOS stand-in.
+            opts = opts.unix_permissions(mode).system(System::Unix);
         }
         if entry.name.ends_with('/') {
             writer

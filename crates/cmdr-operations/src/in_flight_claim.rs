@@ -3,13 +3,12 @@
 //! hands the leftovers to the sweep. The only code that reads a ledger file.
 
 use std::collections::BTreeSet;
-use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
 
 use super::super::host::{EngineHost, OperationErrorReport};
 use super::super::sync_primitives::thread;
-use super::log_writer::LogWriter;
+use super::log_writer::{LogWriter, open_emptied};
 use super::{Ledger, Record, RecordedTemp, STORE_FILENAME, SweepHandle, TrackedItem, append, sweep};
 use cmdr_fs::log_private::LogPrivate;
 
@@ -82,24 +81,19 @@ impl Ledger {
         // Truncating as we open is what retires the records we're about to act
         // on: sweeping twice would be harmless, but a log that only ever grew
         // wouldn't.
-        match File::options().create(true).append(true).open(&path) {
-            Ok(log) => {
-                // `truncate` isn't legal alongside `append`; retire the replayed
-                // records with an explicit `ftruncate` instead.
-                let _ = log.set_len(0);
-                match LogWriter::spawn(log, path.clone()) {
-                    Ok(writer) => {
-                        let mut store = self.store();
-                        store.log = Some(writer);
-                        store.logged_bytes = 0;
-                    }
-                    Err(e) => log::warn!(
-                        target: "copy",
-                        "couldn't start the in-flight temp ledger's writer: {e}. A copy interrupted this session \
-                         will leave its leftovers for the next transfer into that directory to reap."
-                    ),
+        match open_emptied(&path) {
+            Ok(log) => match LogWriter::spawn(log, path.clone()) {
+                Ok(writer) => {
+                    let mut store = self.store();
+                    store.log = Some(writer);
+                    store.logged_bytes = 0;
                 }
-            }
+                Err(e) => log::warn!(
+                    target: "copy",
+                    "couldn't start the in-flight temp ledger's writer: {e}. A copy interrupted this session \
+                     will leave its leftovers for the next transfer into that directory to reap."
+                ),
+            },
             Err(e) => log::warn!(
                 target: "copy",
                 "couldn't open the in-flight temp ledger at {}: {e}. A copy interrupted this session will \

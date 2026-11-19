@@ -2073,6 +2073,18 @@
   "@errors.write.landingNotRecorded.suggestion": {
     "sourceHash": "98864f9"
   },
+  "errors.write.linksNotSupported.title": "Dieses Laufwerk kann keine Verknüpfungen speichern",
+  "@errors.write.linksNotSupported.title": {
+    "sourceHash": "d084f5e"
+  },
+  "errors.write.linksNotSupported.message": "Das Dateisystem am Ziel kann keine symbolischen Verknüpfungen speichern, darum hat Cmdr die Verknüpfung nicht nach {path} kopiert. Dort hat sich nichts geändert.",
+  "@errors.write.linksNotSupported.message": {
+    "sourceHash": "bb2d53a"
+  },
+  "errors.write.linksNotSupported.suggestion": "{platform, select, macos {Kopiere auf ein Laufwerk, das mit APFS oder Mac OS Extended formatiert ist, oder lass die Verknüpfung beim Kopieren weg.} windows {Unter Windows kann Cmdr noch keine symbolischen Verknüpfungen erstellen. Lass die Verknüpfung beim Kopieren weg, oder kopiere das Objekt, auf das sie verweist.} other {Kopiere auf ein Laufwerk mit einem Linux-Dateisystem wie ext4, oder lass die Verknüpfung beim Kopieren weg.}}",
+  "@errors.write.linksNotSupported.suggestion": {
+    "sourceHash": "8e0a0f7"
+  },
   "errors.write.newDataKeptAt.title": "Deine neue Datei liegt unter einem anderen Namen",
   "@errors.write.newDataKeptAt.title": {
     "sourceHash": "06bc297"
