@@ -97,7 +97,7 @@ async fn smb_integration_scan_uses_oracle_on_hit_skips_stat_pipeline() {
     // all for served paths, so it survives.
     vol.detach_session_for_test().await;
 
-    let paths = vec![
+    let paths = [
         PathBuf::from(format!("{}/a.bin", parent)),
         PathBuf::from(format!("{}/b.bin", parent)),
     ];

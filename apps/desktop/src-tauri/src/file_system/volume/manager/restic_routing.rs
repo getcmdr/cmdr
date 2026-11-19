@@ -132,7 +132,7 @@ impl VolumeManager {
         match self.get(&view_id) {
             Some(volume) => ResolvedVolume {
                 volume: Some(volume),
-                path: AppPath::legacy_unchecked(&path.to_path_buf()).into_owned(),
+                path: AppPath::legacy_unchecked(path).into_owned(),
                 routed: Some(RoutedKind::Restic),
                 unconfirmed: None,
             },
