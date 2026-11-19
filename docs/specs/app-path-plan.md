@@ -1429,9 +1429,14 @@ included; the hidden couplings it found are why waves B and C differ from round 
     pinned at 13, not lowered here); `index_benchmarks` and `transfer_benchmarks` were not run (no M1 run this round).
   - Intended behavior change, on every OS, its own cell seen red first: the conflict scan refuses a source name that
     isn't one plain name (`..`, `/x`, `a/b`) as `InvalidName`, where `Path::join` asked about the destination's parent
-    or another path. On Windows only (no install has data): a relative path is anchored by app-path names (a `..`
-    refused, where `resolve_under` resolved it lexically), a name holding `:` is `InvalidName` before any OS call, and
-    the `&Path` entry points take native `C:\…` paths they refused before.
+    or another path. The refusal is that item's alone (logged; the batch's other items are still checked), and a name
+    holding escape code points stays one plain name, checked by today's text join (review fix, 2026-11-19: one such name
+    used to fail the whole batch). Review fixes, no expectation changed: every row built from an app path passes
+    `rows_can_carry`, so `get_metadata` and a mutation patch answer the listing's lossy text for a name that needs an
+    escape (they had put the escape on the wire, a second row beside the listing's), and an old Windows constructor
+    reads the disk for 8.3 names only for a root holding a `~`. On Windows only (no install has data): a relative path
+    is anchored by app-path names (a `..` refused, where `resolve_under` resolved it lexically), a name holding `:` is
+    `InvalidName` before any OS call, and the `&Path` entry points take native `C:\…` paths they refused before.
   - What still bridges (24 calls, from 214), each with its milestone: the POSIX fallback for bridge values (`os_path`,
     the root's `os_of`; 11), the old constructors' root (10a–10d), `notify_mutation`'s bridged parent (10a), the
     `ScanRecorder`'s caller spelling (10a), the listing host's `&Path` (Windows `notify_mutation`; 10c), and the test

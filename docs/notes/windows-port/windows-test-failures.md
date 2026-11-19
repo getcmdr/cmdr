@@ -102,7 +102,20 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
   own (all six fail on `a4449b5cb7` too, run alone): the three `refused_class_tests::*_native_join_refuses` cells and
   the two `link_landing_tests` overwrite cells (both added after this note's run), and
   `source_binding::tests::a_source_replaced_by_a_different_file_of_the_same_size_is_dropped` (node identity, task 35).
-  The app's suites didn't run on the builder this round.
+  What each needs (by reading, in the PR #1287 review, 2026-11-19; not rerun on the builder):
+  - The three `refused_class_tests::*_native_join_refuses` cells (serial copy, concurrent copy, cross-volume move): they
+    preset Windows' native join on an in-memory POSIX tree, and the volume engines still join with `std::path`, so they
+    wait on 10a's typed join (`app-path-plan.md` milestone 10a).
+  - `link_landing_tests::an_overwrite_with_a_link_lands_the_link_and_leaves_no_temp`: can't pass on Windows until task
+    35 makes links real. The engine's Windows `symlink` (`crates/cmdr-operations/src/local_disk/platform/windows.rs`) is
+    a stub that always answers `Unsupported`, so no link lands, and the cell gates only on whether the OS can make links
+    (`skip_without_symlinks`). The destination is safe meanwhile: `overwrite::stage_and_land_link` makes the link under
+    a temp first, so a refusal never touches the file that was there.
+  - The second `link_landing_tests` overwrite cell: its failure text wasn't captured; rerun
+    `cargo nextest run -p cmdr-operations link_landing_tests` on the builder before guessing.
+  - The `source_binding` cell, and the product bug the same missing identity causes: #1291 (Windows `file_id` is `None`,
+    so `may_be_same_file` is true for every existing destination and an Overwrite copy is silently skipped). The app's
+    suites didn't run on the builder this round.
 - **10a, `cmdr-operations`**: 229.
 - **10b, `cmdr-index`**: 133, the 48 cold-drive timeouts among them.
 - **10e, `cmdr-listing-wasm`**: 7.
