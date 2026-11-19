@@ -3,7 +3,7 @@
 
 use std::time::{Duration, SystemTime};
 
-use super::{Child, FolderContents, children_of, folder_contents, settle};
+use super::{Child, FolderContents, children_of, folder_contents, read_page, settle};
 use crate::xml::{ObjectEntry, ObjectPage, StorageClass};
 
 fn object(key: &str, size: u64) -> ObjectEntry {
@@ -154,6 +154,26 @@ fn names_that_cant_be_addressed_are_left_out() {
         "",
     );
     assert_eq!(names(&listed), [("ok.txt", false)]);
+}
+
+#[test]
+fn names_that_cant_be_addressed_are_counted() {
+    // Each prefix or key the page named under one: `a//b` and `a/./b` would
+    // otherwise spell `a/b`'s path, so they're skipped, and the skip is known.
+    let read = read_page(
+        &page(
+            &["a/./", "a/../", "a//"],
+            vec![
+                object("a/.", 1),
+                object("a/..", 1),
+                object("a//b", 1),
+                object("a/ok.txt", 1),
+            ],
+        ),
+        "a/",
+    );
+    assert_eq!(names(&read.children), [("ok.txt", false)]);
+    assert_eq!(read.unaddressable, 6);
 }
 
 #[test]

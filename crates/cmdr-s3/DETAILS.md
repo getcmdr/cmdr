@@ -85,7 +85,13 @@ keys and the rights. `integration_test.rs` pins both servers' answers.
   the running tally (never per entry), cancel checked between pages. `listing.rs` turns a page into children:
   `CommonPrefixes` are folders; the folder's own marker (the key `<key>/` itself) is left out; a key with a `/` past the
   prefix (a child's marker, or a server that ignored the delimiter) names a folder, once; an empty, `.`, or `..` name is
-  left out (unaddressable). `settle` then works on every page at once (a file and its folder can straddle a page break).
+  left out and counted (`PageChildren::unaddressable`, one `debug` line per listing). `settle` then works on every page
+  at once (a file and its folder can straddle a page break).
+- ❗ **Keys aren't paths**: `a/b`, `a//b`, `a/./b`, and `a/../b` are four objects, but an app path has one spelling for
+  them all (`…/a/b`), and an operation on it maps to the key `a/b` alone (`RemoteRoot` normalizes on the way down). So
+  the other three never list: their segment under `a/` is empty, `.`, or `..`. They stay unreachable from the app (a
+  copy of `a` leaves them behind, as before), and a folder holding only such keys lists empty and refuses its delete as
+  `NotEmpty`. Pinned by `key_collision_test.rs` over `fake_s3.rs`.
 - **A file beside a folder of its name lists as `<name> (file)`.** S3 allows `notes` beside `notes/…`, but a pane row is
   one path: the frontend keys rows, selection, the listing cache, and every operation by `path`, and Svelte throws on a
   duplicate key. Showing both under one name would need a row whose name isn't its path's last segment, which the app

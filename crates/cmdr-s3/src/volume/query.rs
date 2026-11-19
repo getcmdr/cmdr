@@ -14,7 +14,7 @@ use cmdr_fs::volume::{LandedModified, ListingProgress, VolumeError};
 use tokio_util::sync::CancellationToken;
 
 use super::errors::map_s3_error;
-use super::listing::{Child, FILE_SUFFIX, can_hold_keys, children_of, settle};
+use super::listing::{Child, FILE_SUFFIX, can_hold_keys, read_page, settle};
 use super::paths::{Holder, Resolved, Target, child_of, target_of};
 use super::{S3Volume, S3VolumeInner};
 use crate::error::S3Error;
@@ -23,6 +23,7 @@ use crate::ops::{self, ListObjectsParams};
 use crate::request::S3Request;
 use crate::transport::{Answer, QUERY_BUDGET, S3Client, map_exchange_error};
 use crate::xml::{BodyError, StorageClass, parse_list_buckets, parse_list_objects};
+use log::debug;
 
 impl S3VolumeInner {
     /// One request, in the `Volume` vocabulary: a transport failure by its
@@ -118,6 +119,9 @@ impl S3Volume {
                 // Settled once every page is in: a file and the folder of its
                 // name can sit on different pages.
                 let mut children = Vec::new();
+                // Keys whose name here is empty, `.`, or `..`: skipped, since
+                // each would spell another key's app path (`listing::PageChildren`).
+                let mut unaddressable = 0;
                 loop {
                     let params = ListObjectsParams {
                         prefix: &prefix,
@@ -130,7 +134,9 @@ impl S3Volume {
                     let answer = self.ask(&client, request, &remote).await?;
                     let page = parse_list_objects(&answer.text()).map_err(|e| body_error(&e, &remote))?;
                     found |= !page.prefixes.is_empty() || !page.objects.is_empty();
-                    for child in children_of(&page, &wire_prefix) {
+                    let read = read_page(&page, &wire_prefix);
+                    unaddressable += read.unaddressable;
+                    for child in read.children {
                         gathered.count(&child);
                         children.push(child);
                     }
@@ -143,6 +149,9 @@ impl S3Volume {
                 }
                 if !found {
                     return Err(VolumeError::NotFound(remote));
+                }
+                if unaddressable > 0 {
+                    debug!(target: "volume", "s3: left {unaddressable} key(s) out of a listing whose name there is empty, `.`, or `..`");
                 }
                 let settled = settle(children);
                 self.note_beside_folders(&remote, &settled);
