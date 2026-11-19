@@ -28,6 +28,8 @@ pub(crate) fn capabilities() -> PlatformCapabilities {
         dock_pin: true,
         cli_command: true,
         overlay_title_bar: true,
+        // `NSVisualEffectView` behind the child windows.
+        window_material: true,
         image_indexing: true,
         local_network_permission: true,
         local_ai: true,

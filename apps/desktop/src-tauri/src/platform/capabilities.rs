@@ -46,6 +46,10 @@ pub struct PlatformCapabilities {
     /// leaves room for them (`--titlebar-height`). Where `false`, the OS draws the title bar
     /// outside the webview.
     pub overlay_title_bar: bool,
+    /// Child windows (Settings, the queue, Debug) open see-through over a material the OS draws
+    /// behind the webview (`setEffects`). Where `false` they open opaque in the system appearance:
+    /// a transparent window there shows whatever sits behind it.
+    pub window_material: bool,
     /// An image engine for OCR and tags, so the Image indexing settings exist.
     pub image_indexing: bool,
     /// A Local Network permission the OS asks the user for (the explainer in Network settings).

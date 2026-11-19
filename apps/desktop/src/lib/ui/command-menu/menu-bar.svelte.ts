@@ -18,7 +18,7 @@
 
 import type { BarMenuView } from '#lib/ipc/bindings.js'
 import { allocateAccessKeys, accessKeyLettersOf } from '../access-keys'
-import { captureFocusOrigin, isInFocusHome, restoreFocus, type FocusOrigin } from '../focus-restore'
+import { captureFocusOrigin, focusHome, isInFocusHome, restoreFocus, type FocusOrigin } from '../focus-restore'
 import { createKeyboardCues, cueRule, type KeyboardCues } from '../keyboard-cues'
 import { isAltGraphHeld } from '#lib/shortcuts/key-capture.js'
 import { isTextInputFocused } from '#lib/utils/text-input-focus.js'
@@ -185,9 +185,11 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
     // Where the field kept focus, there's nothing to give back, and a restore would do harm: a
     // field inside the window's focus home (the rename editor) would be sent to the home's list.
     if (focusStayed) return
-    if (restore) {
-      restoreFocus(target, { leaving })
-    } else if (leaving?.contains(document.activeElement)) {
+    if (restore) restoreFocus(target, { leaving })
+    if (restore && leaving?.contains(document.activeElement)) {
+      // Nothing to give back (focus was adrift on `<body>` when the bar took it): home, else nowhere.
+      if (!focusHome()) (document.activeElement as HTMLElement | null)?.blur()
+    } else if (!restore && leaving?.contains(document.activeElement)) {
       // A title keeping focus after the bar let go would leave every key with nowhere to go.
       ;(document.activeElement as HTMLElement | null)?.blur()
     }

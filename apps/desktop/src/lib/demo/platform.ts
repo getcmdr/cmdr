@@ -43,6 +43,7 @@ const MAC_VISITOR_CAPABILITIES: Readonly<PlatformCapabilities> = Object.freeze({
   dockPin: true,
   cliCommand: true,
   overlayTitleBar: true,
+  windowMaterial: true,
   imageIndexing: true,
   localNetworkPermission: true,
   localAi: true,

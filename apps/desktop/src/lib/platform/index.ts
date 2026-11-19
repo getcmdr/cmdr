@@ -92,6 +92,7 @@ export const NO_CAPABILITIES: Readonly<PlatformCapabilities> = Object.freeze({
   dockPin: false,
   cliCommand: false,
   overlayTitleBar: false,
+  windowMaterial: false,
   imageIndexing: false,
   localNetworkPermission: false,
   localAi: false,

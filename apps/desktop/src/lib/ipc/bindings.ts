@@ -1129,7 +1129,7 @@ export const commands = {
       | { type: 'symlink_loop'; path: string }
       /**
        *  The destination's file system refused to hold a symlink the copy carries
-       *  (exFAT, FAT, some SMB shares, Windows without the privilege to make one).
+       *  (a share or file system with no link operation: `ENOTSUP`, `ENOSYS`; Windows, which makes none yet).
        *  The link is made under a temp name first, so whatever held `path` is still
        *  there, untouched; `path` is the name the link was meant to take.
        *
@@ -17489,6 +17489,12 @@ export type PlatformCapabilities = {
    *  outside the webview.
    */
   overlayTitleBar: boolean
+  /**
+   *  Child windows (Settings, the queue, Debug) open see-through over a material the OS draws
+   *  behind the webview (`setEffects`). Where `false` they open opaque in the system appearance:
+   *  a transparent window there shows whatever sits behind it.
+   */
+  windowMaterial: boolean
   // An image engine for OCR and tags, so the Image indexing settings exist.
   imageIndexing: boolean
   // A Local Network permission the OS asks the user for (the explainer in Network settings).
@@ -26215,7 +26221,7 @@ export type WriteOperationError =
   | { type: 'symlink_loop'; path: string }
   /**
    *  The destination's file system refused to hold a symlink the copy carries
-   *  (exFAT, FAT, some SMB shares, Windows without the privilege to make one).
+   *  (a share or file system with no link operation: `ENOTSUP`, `ENOSYS`; Windows, which makes none yet).
    *  The link is made under a temp name first, so whatever held `path` is still
    *  there, untouched; `path` is the name the link was meant to take.
    *

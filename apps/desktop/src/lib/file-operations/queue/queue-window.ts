@@ -26,6 +26,7 @@ import { getEffectiveScale } from '#lib/text-size.svelte.js'
 import { decorateChildWindowTitle, isE2eRun, orderChildWindowToBackInE2e } from '#lib/app-mode.js'
 import { readMainRect, readMonitors, readSavedRect, resolveChildPosition } from '#lib/window-positioning.js'
 import { scheduleShowFallback } from '#lib/child-window-show.js'
+import { childWindowMaterial } from '#lib/child-window-material.js'
 
 const log = getAppLogger('queue')
 
@@ -66,12 +67,6 @@ async function readReduceTransparency(): Promise<boolean> {
     log.warn('Failed to read reduce-transparency; opening opaque: {error}', { error })
     return true
   }
-}
-
-/** Clear behind the vibrancy material, or an opaque fill in the system appearance. */
-function windowBackground(reduceTransparency: boolean): [number, number, number, number] {
-  if (!reduceTransparency) return [0, 0, 0, 0]
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? [30, 30, 30, 255] : [255, 255, 255, 255]
 }
 
 /**
@@ -115,13 +110,9 @@ export async function openQueueWindow(): Promise<void> {
   const [main, monitors, saved] = await Promise.all([readMainRect(), readMonitors(), readSavedRect('queue')])
   const rect = main ? resolveChildPosition({ size: { width, height }, main, monitors, saved }) : null
 
-  // Honor macOS "Reduce transparency": open an opaque window and skip the
-  // vibrancy material (the page tokens flip to opaque under the
-  // `reduce-transparency` class). Read the value from the backend (NSWorkspace),
-  // NOT a media query: WKWebView doesn't reflect `prefers-reduced-transparency`.
-  // `prefers-color-scheme` IS reflected, so dark detection stays a media query.
-  const reduceTransparency = await readReduceTransparency()
-  const backgroundColor = windowBackground(reduceTransparency)
+  // See-through over the macOS material, or opaque where there is none or Reduce transparency
+  // is on (`#lib/child-window-material`). A failed read opens it opaque, with a log line.
+  const { glass, backgroundColor } = await childWindowMaterial(readReduceTransparency)
 
   const win = new WebviewWindow('queue', {
     url: '/queue',
@@ -139,10 +130,10 @@ export async function openQueueWindow(): Promise<void> {
     // Created hidden; the queue page shows it, sliding in, once it's ready
     // (`#lib/child-window-show`). E2E keeps the immediate show.
     visible: !takesFocus,
-    // Translucent glass backdrop via the macOS `NSVisualEffectView` material,
-    // UNLESS the user reduces transparency (then open opaque). Requires
+    // Translucent glass backdrop via the macOS `NSVisualEffectView` material
+    // where `glass` says so (else opaque). Requires
     // `tauri/macos-private-api` (enabled in `Cargo.toml`).
-    transparent: !reduceTransparency,
+    transparent: glass,
     backgroundColor,
     // Overlay title bar with the traffic lights where the main window has them,
     // so the page paints its title on their line like a native window title.
@@ -166,7 +157,7 @@ export async function openQueueWindow(): Promise<void> {
   // "HUD-ish" panel — the macOS convention for a transfer/activity manager —
   // and follows the window's active state. Radius matches `--radius-window`
   // (the file viewer's stock corner), like every other child window.
-  if (!reduceTransparency) {
+  if (glass) {
     void win.once('tauri://created', () => {
       void win
         .setEffects({

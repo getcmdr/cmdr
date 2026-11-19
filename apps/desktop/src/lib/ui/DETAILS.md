@@ -1546,6 +1546,11 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
     keyboard's title the field's `aria-activedescendant` (drawn as focused, `.is-keyboard`), keeps every key it doesn't
     use out of the field, and restores nothing on letting go. Regression anchor (review of #1271): a bar menu took focus
     from the inline rename, whose blur cancelled it, so Edit > Paste from the bar had no field left to act on.
+  - `.is-keyboard` marks the keyboard's title whenever the bar is active with no menu open, field or not: Chromium
+    doesn't count a modifier-only keydown as keyboard use, so after a lone Alt `:focus-visible` drew no ring (verified
+    on Windows 10 22H2, WebView2 157.0.4341.60, by screenshot, 2026-11-19). Letting go with Escape or a second Alt puts
+    focus home when there's nothing to give back (focus was adrift on `<body>`), else a title kept focus in a bar that
+    had let go and no key worked.
 - **Module map** (`command-menu/`): `rows.ts` (pure: labels, the live-row walk, access keys, the Mac shortcut glyphs),
   `menu-stack.svelte.ts` (the open surfaces and their cursors, the submenu delay), `menu-bar.svelte.ts` and
   `context-menu.svelte.ts` (each owner's keys, focus, and dismissal), `MenuSurfaces.svelte` / `MenuSurface.svelte` (the

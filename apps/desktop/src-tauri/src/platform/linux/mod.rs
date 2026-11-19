@@ -33,6 +33,8 @@ pub(crate) fn capabilities() -> PlatformCapabilities {
         dock_pin: false,
         cli_command: false,
         overlay_title_bar: false,
+        // Nothing draws a material behind a transparent window here.
+        window_material: false,
         image_indexing: cfg!(feature = "playwright-e2e"),
         // Linux asks nothing for the local network.
         local_network_permission: false,

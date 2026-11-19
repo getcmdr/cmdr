@@ -45,6 +45,12 @@ Frosted-glass material, and two per-window modules feed them the two macOS setti
   transparency flips `--color-bg-glass` / `--color-bg-glass-steady` / `--color-border-glass` to opaque and
   `--glass-backdrop` to `none`, so a surface using the tokens needs no rule of its own. `prefers-reduced-motion`
   WKWebView does honor, so that one stays a media query.
+- **Child windows' own material.** Settings, the queue, and Debug open see-through over `NSVisualEffectView` only where
+  the `windowMaterial` capability says the OS draws one (macOS) and Reduce transparency is off; anywhere else they open
+  opaque in the system appearance (`#lib/child-window-material`), and the page's translucent fill sits on that solid
+  color. Gotcha/Why: the openers checked Reduce transparency alone, so on Windows Settings and the queue showed the
+  windows behind them (verified on Windows 10 22H2 build 19045, WebView2 157.0.4341.60, by screenshot, 2026-11-19). The
+  opaque fill is fixed at creation, so a live theme flip leaves it in the old appearance until the window reopens.
 - **The Liquid Glass slider** (macOS 27 Appearance). The backend reads the undocumented `NSGlassTintAmount` global
   default, re-reading it each time the app becomes active
   (`apps/desktop/src-tauri/src/system_look/platform/macos/glass_tint.rs` has why no notification works), and
