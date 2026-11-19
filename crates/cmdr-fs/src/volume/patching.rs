@@ -11,9 +11,10 @@
 //! stat that doesn't answer, means no patch, and the pane re-lists eventually.
 //! The write already landed, and reporting it as a failure would be a lie.
 
+use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 
-use crate::app_path::AppPath;
+use crate::app_path::{AppNameBuf, AppPath, AppPathBuf, Namer, PathArithmetic, shown_name, unescape_bytes};
 use crate::entry::FileEntry;
 use crate::volume::host::listings::ListingHost;
 use crate::volume::scan_walk::Walking;
@@ -46,10 +47,10 @@ pub async fn patch_mutation(source: &dyn PatchSource, parent_path: &Path, mutati
         MutationEvent::Created(ref name) | MutationEvent::Modified(ref name) => {
             // One stat, and a failure is simply no patch: the pane re-lists
             // eventually, and the mutation itself has already succeeded.
-            let Ok(entry) = source
-                .patch_stat(&AppPath::legacy_unchecked(&parent_path.join(name)))
-                .await
-            else {
+            let Some(child) = child_path(parent_path, name) else {
+                return;
+            };
+            let Ok(entry) = source.patch_stat(&child).await else {
                 return;
             };
             let change = if matches!(mutation, MutationEvent::Created(_)) {
@@ -63,10 +64,10 @@ pub async fn patch_mutation(source: &dyn PatchSource, parent_path: &Path, mutati
             listings.directory_changed(volume_id, parent_path, DirectoryChange::Removed(name));
         }
         MutationEvent::Renamed { from, to } => {
-            let Ok(entry) = source
-                .patch_stat(&AppPath::legacy_unchecked(&parent_path.join(&to)))
-                .await
-            else {
+            let Some(child) = child_path(parent_path, &to) else {
+                return;
+            };
+            let Ok(entry) = source.patch_stat(&child).await else {
                 return;
             };
             listings.directory_changed(
@@ -133,9 +134,34 @@ pub async fn patch_renamed(source: &dyn PatchSource, from: &Path, to: &Path) {
 
 /// `path`'s parent as the app addresses it, plus `path`'s own name. `None` when
 /// either is missing, which is the "nothing to patch" answer.
+///
+/// Split by the app path's own arithmetic, so a remote name holding `\` stays one name on
+/// Windows. The name comes back as the native name's lossy text, the spelling the
+/// backends' listings carry.
 fn parent_and_name(source: &dyn PatchSource, path: &Path) -> Option<(PathBuf, String)> {
-    let parent = source.patch_display_path(path.parent()?)?;
-    Some((parent, path.file_name()?.to_string_lossy().into_owned()))
+    let app = bridged(path);
+    let parent = source.patch_display_path(&app.parent()?.as_std_legacy())?;
+    let name = app.file_name()?;
+    let name = match unescape_bytes(name) {
+        Ok(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
+        // A unit escape (an unpaired surrogate on Windows): what a person reads.
+        Err(_) => shown_name(name).into_owned(),
+    };
+    Some((parent, name))
+}
+
+/// `name` (a backend's listed name, so any escape-range code point in it is literal) in
+/// `parent_path`, by the app path's own join; `None`, so no patch, for a name that isn't
+/// one plain name.
+fn child_path(parent_path: &Path, name: &str) -> Option<AppPathBuf> {
+    let name = AppNameBuf::from_typed(name, Namer::HOST).ok()?;
+    bridged(parent_path).join(&name).ok()
+}
+
+/// A backend's `std::path` path as the app path it spells. The backends still call these
+/// functions with `std::path` values, and the bridge keeps their exact bytes.
+fn bridged(path: &Path) -> Cow<'_, AppPath> {
+    AppPath::legacy_unchecked(path)
 }
 
 #[cfg(test)]

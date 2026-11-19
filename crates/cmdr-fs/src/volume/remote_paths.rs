@@ -180,7 +180,7 @@ impl RemoteRoot {
     /// collection, `..` for a name) would otherwise mint an app path off this
     /// volume. A caller drops that entry.
     pub fn to_app_path(&self, remote: &str) -> Option<PathBuf> {
-        self.app_text_of(remote).map(PathBuf::from)
+        self.app_text_of(remote).map(Into::into)
     }
 
     /// [`Self::to_app_path`] as a typed app path: the same containment check, and the same

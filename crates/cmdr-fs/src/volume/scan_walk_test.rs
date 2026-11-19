@@ -92,14 +92,9 @@ impl FakeTree {
 impl ScanSource for FakeTree {
     fn scan_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            let key = path.to_string_lossy().into_owned();
+            let key = path.as_str().to_string();
             self.drop_if_armed(&key)?;
-            let name = path
-                .file_name()
-                .map(|n| n.to_string_lossy().into_owned())
-                .unwrap_or_default();
+            let name = path.file_name().map(str::to_string).unwrap_or_default();
             if self.dirs.contains_key(&key) {
                 return Ok(FileEntry::new(name, key, true, false));
             }
@@ -117,9 +112,7 @@ impl ScanSource for FakeTree {
 
     fn scan_list<'a>(&'a self, path: &'a AppPath) -> Walking<'a, Vec<FileEntry>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            let key = path.to_string_lossy().into_owned();
+            let key = path.as_str().to_string();
             self.asked.lock_ignore_poison().push(key.clone());
             self.drop_if_armed(&key)?;
             self.dirs.get(&key).cloned().ok_or(VolumeError::NotFound(key))
@@ -135,7 +128,6 @@ impl ScanSource for FakeTree {
 const DATED_FROM: u64 = 1_700_000_000;
 
 #[tokio::test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_backend_that_keeps_files_gets_every_files_size_and_date() {
     let mut tree = FakeTree::new()
         .with_dir("/top", &[("a.txt", false, 10), ("sub", true, 0)])
@@ -165,7 +157,6 @@ async fn a_backend_that_keeps_files_gets_every_files_size_and_date() {
 /// selected paths as given, each child joined below its parent. A symlinked
 /// directory is one entry, never a subtree, exactly as the counts treat it.
 #[tokio::test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn the_walk_records_every_entry_under_the_callers_paths() {
     use crate::testing::scan_recording::{Recorded, ScanRecording};
 
@@ -201,7 +192,6 @@ async fn the_walk_records_every_entry_under_the_callers_paths() {
 /// A transfer that skips Mac-only files counts and records none of them, at any
 /// depth, while a FOLDER of such a name and a selected one still count (#314).
 #[tokio::test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_walk_leaving_out_mac_only_files_neither_counts_nor_records_them() {
     use crate::mac_only_files::MacOnlyFiles;
     use crate::testing::scan_recording::{Recorded, ScanRecording};
@@ -263,7 +253,6 @@ fn item(name: &str, size: u64, is_directory: bool) -> SourceItemInfo {
 }
 
 #[tokio::test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_subtree_counts_every_level_and_keeps_dedup_in_lockstep() {
     let tree = FakeTree::new()
         .with_dir("/top", &[("a.txt", false, 10), ("deep", true, 0)])
@@ -296,7 +285,6 @@ async fn a_single_file_is_one_file_and_no_directory() {
 }
 
 #[tokio::test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn the_walk_lists_each_directory_once_and_stats_no_child() {
     // ❗ The cell behind the module's cost claim: a stat per child turns a
     // 1,000-file folder from one round trip into a thousand.
@@ -617,7 +605,6 @@ async fn a_walk_stops_at_the_boundary_the_cancel_landed_on() {
 /// A paused walk stands still and then carries on to a complete, correct total:
 /// Pause is not a slower Cancel.
 #[tokio::test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_paused_walk_resumes_and_still_reports_the_whole_tree() {
     let tree = stoppable_tree();
     let signal = crate::volume::scan_stop::TestScanStop::new();
@@ -651,7 +638,6 @@ async fn a_paused_walk_resumes_and_still_reports_the_whole_tree() {
 /// honest state: the trait method hands it no stop. Pinned so nobody reads the
 /// silence as a walk ignoring one it was given.
 #[tokio::test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn the_single_path_body_has_no_stop_to_honor() {
     let tree = stoppable_tree();
     let scan = scan_one(&tree, Path::new("/top")).await.expect("the walk");
@@ -708,7 +694,6 @@ impl ScanReadJudge for Judge<'_> {
 /// the directory it was listing. Every entry is counted and recorded exactly
 /// once, the same totals a walk with no drop gets.
 #[tokio::test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_read_the_owner_rides_out_runs_again_and_counts_each_entry_once() {
     use crate::testing::scan_recording::ScanRecording;
 
@@ -766,7 +751,6 @@ async fn a_read_the_owner_rides_out_runs_again_and_counts_each_entry_once() {
 /// leaves the read's own error to end the walk, and one that stopped while it
 /// waited ends it as a stopped scan.
 #[tokio::test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_read_the_owner_does_not_ride_out_ends_the_walk() {
     let dropping_tree = || {
         FakeTree::new()
@@ -800,16 +784,7 @@ struct StuckListings {
 
 impl ScanSource for StuckListings {
     fn scan_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            Ok(FileEntry::new(
-                "top".to_string(),
-                path.display().to_string(),
-                true,
-                false,
-            ))
-        })
+        Box::pin(async move { Ok(FileEntry::new("top".to_string(), path.to_string(), true, false)) })
     }
 
     fn scan_list<'a>(&'a self, _path: &'a AppPath) -> Walking<'a, Vec<FileEntry>> {
@@ -867,19 +842,40 @@ async fn a_walk_that_may_not_abandon_a_listing_waits_it_out() {
     assert!(outcome.is_err(), "the listing was left to answer: {outcome:?}");
 }
 
-/// The walk lists a child folder at `Path::join(folder, name)`, so the folder's spelling
-/// carries down as given: a trailing `/` doesn't double, but a `.` name stays in every
-/// path below it, and a scheme folder takes the name after a `/`. A typed app path
-/// normalizes the `.` away, so converting the walk changes what this asks for: on
-/// purpose, in its own commit.
+/// ❗ A listed name that isn't one plain name fails the walk as the typed `InvalidName`,
+/// where a join would have climbed (`..`) or walked into another folder (`a/b`). A `\` is
+/// a name character under a POSIX or scheme folder on every host.
 #[tokio::test]
-#[cfg(unix)]
-async fn the_walk_lists_each_child_folder_under_the_folder_as_spelled() {
+async fn a_listed_name_that_is_no_plain_name_fails_the_walk_typed() {
+    for hostile in ["..", "a/b", "."] {
+        let tree = FakeTree::new().with_dir("/top", &[(hostile, true, 0)]);
+        let outcome = scan_tree(&tree, Path::new("/top"), &ScanBoundary::silent()).await;
+        assert!(
+            matches!(outcome, Err(VolumeError::InvalidName(_))),
+            "{hostile:?}: {outcome:?}"
+        );
+    }
+    let tree = FakeTree::new()
+        .with_dir("sftp://test_user_1@nas:22/srv", &[("a\\b", false, 7)])
+        .with_dir("/top", &[("c:d", false, 5)]);
+    let boundary = ScanBoundary::silent();
+    let remote = scan_tree_at(&tree, crate::app_path!("sftp://test_user_1@nas:22/srv"), &boundary).await;
+    assert_eq!(remote.map(|scan| scan.total_bytes).ok(), Some(7));
+    let local = scan_tree_at(&tree, crate::app_path!("/top"), &boundary).await;
+    assert_eq!(local.map(|scan| scan.total_bytes).ok(), Some(5));
+}
+
+/// The walk asks for the top folder as the caller spelled it, and for each child folder
+/// at the app path's own `join`: a trailing `/` doesn't double, a `.` name in the top is
+/// gone from every path below it (the `Path::join` the walk used to do carried
+/// `/dot/./sub` down), and a scheme folder takes the name after a `/`.
+#[tokio::test]
+async fn the_walk_lists_each_child_folder_under_the_folder_as_joined() {
     let tree = FakeTree::new()
         .with_dir("/top/", &[("sub", true, 0)])
         .with_dir("/top/sub", &[])
         .with_dir("/dot/.", &[("sub", true, 0)])
-        .with_dir("/dot/./sub", &[])
+        .with_dir("/dot/sub", &[])
         .with_dir("sftp://test_user_1@nas:22/srv", &[("sub", true, 0)])
         .with_dir("sftp://test_user_1@nas:22/srv/sub", &[]);
 
@@ -894,7 +890,7 @@ async fn the_walk_lists_each_child_folder_under_the_folder_as_spelled() {
             "/top/",
             "/top/sub",
             "/dot/.",
-            "/dot/./sub",
+            "/dot/sub",
             "sftp://test_user_1@nas:22/srv",
             "sftp://test_user_1@nas:22/srv/sub",
         ]

@@ -49,15 +49,10 @@ impl PatchSource for FakeBackend {
 
     fn patch_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            let key = path.to_string_lossy().into_owned();
+            let key = path.as_str().to_string();
             match self.entries.get(&key) {
                 Some(is_dir) => {
-                    let name = path
-                        .file_name()
-                        .map(|n| n.to_string_lossy().into_owned())
-                        .unwrap_or_default();
+                    let name = path.file_name().map(str::to_string).unwrap_or_default();
                     Ok(FileEntry::new(name, key, *is_dir, false))
                 }
                 None => Err(VolumeError::NotFound(key)),
@@ -72,7 +67,6 @@ impl PatchSource for FakeBackend {
 }
 
 #[tokio::test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_new_file_is_added_to_its_parents_listing() {
     let backend = FakeBackend::new(&[("/dir/new.txt", false)]);
 
@@ -99,7 +93,6 @@ async fn a_deleted_file_needs_no_stat_to_leave_its_listing() {
 }
 
 #[tokio::test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_rename_inside_one_directory_is_a_single_renamed_change() {
     let backend = FakeBackend::new(&[("/dir/after.txt", false)]);
 
@@ -114,7 +107,6 @@ async fn a_rename_inside_one_directory_is_a_single_renamed_change() {
 }
 
 #[tokio::test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_rename_across_directories_is_a_loss_here_and_a_gain_there() {
     // ❗ A single `Renamed` would leave whichever pane it wasn't sent to stale.
     let backend = FakeBackend::new(&[("/to/moved.txt", false)]);
@@ -164,7 +156,6 @@ async fn a_path_with_no_parent_is_no_patch() {
 /// parent. A typed app path must answer the same parent, or a rename inside one folder
 /// turns into a remove plus an add.
 #[tokio::test]
-#[cfg(unix)]
 async fn a_rename_between_two_spellings_of_one_folder_is_a_single_renamed_change() {
     let backend = FakeBackend::new(&[("/dir/after.txt", false)]);
 
@@ -181,7 +172,6 @@ async fn a_rename_between_two_spellings_of_one_folder_is_a_single_renamed_change
 
 /// On a scheme path the parent is `Path::parent`'s slice, the folder as the pane holds it.
 #[tokio::test]
-#[cfg(unix)]
 async fn a_scheme_paths_change_is_filed_under_its_folder() {
     let backend = FakeBackend::new(&[("sftp://test_user_1@nas:22/srv/new.txt", false)]);
 
@@ -190,4 +180,24 @@ async fn a_scheme_paths_change_is_filed_under_its_folder() {
     let changes = backend.changes();
     assert_eq!(changes.len(), 1);
     assert_eq!(changes[0].1.as_os_str(), "sftp://test_user_1@nas:22/srv");
+}
+
+/// ❗ A remote name holding `\` or `:` is one name on every host: the patch is filed under
+/// its real folder and stats the real child, where a Windows `Path` split it at the `\`.
+#[tokio::test]
+async fn a_remote_name_with_a_backslash_stays_one_name() {
+    for name in ["a\\b.txt", "12:00 notes", "C:"] {
+        let child = format!("sftp://test_user_1@nas:22/srv/{name}");
+        let backend = FakeBackend::new(&[(child.as_str(), false)]);
+
+        patch_created(&backend, Path::new(&child)).await;
+
+        let changes = backend.changes();
+        assert_eq!(changes.len(), 1, "{name:?}");
+        assert_eq!(changes[0].1.as_os_str(), "sftp://test_user_1@nas:22/srv", "{name:?}");
+        assert!(
+            matches!(&changes[0].2, DirectoryChange::Added(entry) if entry.name == name),
+            "{name:?}"
+        );
+    }
 }
