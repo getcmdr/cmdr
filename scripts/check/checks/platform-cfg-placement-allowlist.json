@@ -187,12 +187,7 @@
       "outsideSeam": 2
     },
     "apps/desktop/src-tauri/src/intl/format_locale.rs": {
-      "negated": 1,
-      "outsideSeam": 7
-    },
-    "apps/desktop/src-tauri/src/intl/live_locale.rs": {
-      "negated": 1,
-      "outsideSeam": 10
+      "outsideSeam": 6
     },
     "apps/desktop/src-tauri/src/ipc.rs": {
       "outsideSeam": 8

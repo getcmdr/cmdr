@@ -94,7 +94,7 @@ export const appAnswers = {
   getOsLocales: () => ({ ui: navigator.language, format: navigator.language }),
   getOsMajorVersion: () => 26,
   getSystemTextSizeMultiplier: () => 1,
-  getAccentColor: () => '#007aff',
+  getAccentColor: () => ({ hex: '#007aff', fill: null }),
   getGlassTintAmount: none,
   getDisplayAccessibility: () => ({
     reduceTransparency: false,

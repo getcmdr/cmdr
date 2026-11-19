@@ -2,20 +2,23 @@
 //! options, the Liquid Glass slider, and Text Size. One command each, answered per OS by
 //! `platform/`, plus the observers that push a change as it happens.
 
-mod platform;
+/// `pub(crate)` for one Windows-only item: `platform::on_setting_change`, which lets another
+/// module follow `WM_SETTINGCHANGE` without a window of its own (`intl/platform/windows.rs`).
+pub(crate) mod platform;
 
 use tauri::AppHandle;
 
-use crate::system_events::DisplayAccessibility;
+use crate::system_events::{DisplayAccessibility, SystemAccent};
 
 /// Starts following every system-look signal this OS posts. Call once, from the setup hook.
 pub(crate) use platform::observe_changes;
 
 /// Tauri command: returns the system accent color as a hex string (for example, `#007aff`), or the
-/// brand gold when the OS doesn't say.
+/// brand gold when the OS doesn't say, plus the shades the OS fills controls with, where it names
+/// them.
 #[tauri::command]
 #[specta::specta]
-pub async fn get_accent_color(app: AppHandle) -> String {
+pub async fn get_accent_color(app: AppHandle) -> SystemAccent {
     platform::accent_color(app).await
 }
 

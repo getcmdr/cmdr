@@ -35,7 +35,10 @@ Control look tokens.
   font, Segoe UI unless the user changed it) and `sans-serif` close the stack.
 - **Respecting the system font**: Windows has no user-facing system font setting, and WinUI ignores the message font
   anyway (`XamlAutoFontFamily` always picks Segoe UI Variable), so naming the font matches native apps. Text size is the
-  setting that matters, and it's task 40's (`UISettings.TextScaleFactor` into `--font-scale`).
+  setting that matters, and WebView2 applies it itself: Chromium multiplies `UISettings.TextScaleFactor` into the device
+  scale factor and follows it live (crbug 40586200, WebView2Feedback #1662: a per-monitor-DPI-aware host, which tao
+  makes Cmdr, zooms with Text size as Edge does), so task 40's backend reports `1.0` into `--font-scale` rather than
+  scaling twice. The trade: the whole page zooms, where WinUI grows text alone.
 - **Gap: optical size**. `XamlAutoFontFamily` sets the `opsz` axis from the font size. In a browser each named instance
   has its own fixed `opsz` (Small 8, Text 10.5, Display 36), and the same article reports `font-optical-sizing` doesn't
   vary it. So every size draws the Text cut: a 20px dialog title is a touch looser than WinUI's. Picking `Display` per

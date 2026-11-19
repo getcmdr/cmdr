@@ -6,37 +6,30 @@
 //! change like that; an app that just does the right thing is better than one
 //! that asks.
 //!
-//! macOS posts locale changes in bursts (System Settings writes language,
-//! region, and calendar as separate preferences), and most of those bursts don't
-//! move either answer. So `LocaleWatcher` sits between the notification and
-//! the app: it collapses a burst into one re-read and stays silent unless the
-//! answer actually changed. Both halves matter downstream, where an
-//! announcement re-renders every open `t()` in every window.
+//! The OS signals come from `platform/` (`observe_locale_signals`): two
+//! notifications on macOS, every `WM_SETTINGCHANGE` on Windows, none on Linux.
+//! They arrive in bursts (System Settings writes language, region, and calendar
+//! as separate preferences), and most of those bursts don't move either answer.
+//! So `LocaleWatcher` sits between the signal and the app: it collapses a burst
+//! into one re-read and stays silent unless the answer actually changed. Both
+//! halves matter downstream, where an announcement re-renders every open `t()`
+//! in every window.
 
-// The watcher itself is macOS-only (nothing else posts a locale notification),
-// so everything it needs comes in under the same gate as the tests that exercise
-// it on every platform.
-#[cfg(any(target_os = "macos", test))]
 use std::sync::{
     Arc, Mutex,
     atomic::{AtomicBool, Ordering},
 };
-#[cfg(any(target_os = "macos", test))]
 use std::time::Duration;
 
-#[cfg(any(target_os = "macos", test))]
-use crate::ignore_poison::IgnorePoison as _;
-
-#[cfg(target_os = "macos")]
 use log::{info, warn};
-#[cfg(target_os = "macos")]
 use tauri::{AppHandle, Runtime};
+
+use crate::ignore_poison::IgnorePoison as _;
 
 /// How long we wait for a notification burst to settle before re-reading the
 /// preferences. Long enough to swallow the several notifications one System
 /// Settings change posts, short enough that the UI follows while the user is
 /// still looking at it.
-#[cfg(target_os = "macos")]
 const SETTLE_WINDOW: Duration = Duration::from_millis(300);
 
 /// Turns a stream of "something locale-ish changed" notifications into the rare
@@ -50,7 +43,6 @@ const SETTLE_WINDOW: Duration = Duration::from_millis(300);
 /// Generic in the answer so the comparison is the whole answer, not a piece of
 /// it: production watches [`crate::intl::OsLocales`], where a region change with
 /// the language untouched still has to reach the formatters.
-#[cfg(any(target_os = "macos", test))]
 pub(crate) struct LocaleWatcher<T> {
     /// How long to wait for a burst to settle before re-reading.
     settle_window: Duration,
@@ -65,7 +57,6 @@ pub(crate) struct LocaleWatcher<T> {
     settling: AtomicBool,
 }
 
-#[cfg(any(target_os = "macos", test))]
 impl<T: PartialEq + Clone + Send + Sync + 'static> LocaleWatcher<T> {
     /// Builds a watcher seeded with the CURRENT resolution, so the first
     /// notification is compared against what the app is already running on
@@ -117,113 +108,55 @@ impl<T: PartialEq + Clone + Send + Sync + 'static> LocaleWatcher<T> {
     }
 }
 
-/// Starts following live macOS language and region changes, emitting
+/// Starts following live language and region changes, emitting
 /// [`crate::system_events::OsLocalesChanged`] whenever either answer moves.
 ///
-/// Called from the Tauri `setup` hook, which runs on the main thread; the
-/// observer registration itself has no main-thread requirement, but keeping it
-/// beside the other system observers is what makes it discoverable.
-///
-/// Two notification names feed one watcher, and they carry different halves of
-/// the answer. `AppleLanguagePreferencesChangedNotification` is the distributed
-/// notification the System Settings pane posts when the LANGUAGE order moves;
-/// it's undocumented in the same way `system_look/platform/macos/text_size.rs`'s
-/// accessibility notification is, with the same fallback story (if Apple stops posting it, the language
-/// still resolves correctly on the next launch).
-/// `NSCurrentLocaleDidChangeNotification` is the documented signal and tracks
-/// `AppleLocale`, which is where the REGION override lives, so it's what carries
-/// a region change to the formatters. Overlap costs nothing, since a burst
-/// collapses into one re-read and an unchanged answer announces nothing. The
-/// evidence for both claims, and why `defaults write` alone can't test this, is
-/// in `DETAILS.md`.
+/// Called from the Tauri `setup` hook. Which OS signals feed the watcher, and
+/// the evidence for each, is the platform arm's business
+/// (`platform::observe_locale_signals`); on Linux nothing does, and the watcher
+/// goes with the dropped callback.
 ///
 /// This is also the seam for anything else that has to be rebuilt in the new
-/// language: the emit site below is the one place that knows the answer moved.
-#[cfg(target_os = "macos")]
+/// language: [`announce`] is the one place that knows the answer moved.
 pub fn observe_os_locale_changes<R: Runtime>(app_handle: AppHandle<R>) {
-    use std::ptr::NonNull;
+    let watcher = LocaleWatcher::new(SETTLE_WINDOW, super::resolved_os_locales, move |locales| {
+        announce(&app_handle, locales);
+    });
+    super::platform::observe_locale_signals(Arc::new(move || watcher.notify()));
+}
 
-    use objc2_foundation::{
-        NSCurrentLocaleDidChangeNotification, NSDistributedNotificationCenter, NSNotification, NSNotificationCenter,
-        NSString,
-    };
+/// Tells the app the OS's answer moved: the OS's own caches and the native menu
+/// bar first, then every window.
+fn announce<R: Runtime>(app_handle: &AppHandle<R>, locales: super::OsLocales) {
     use tauri_specta::Event as _;
 
     use crate::system_events::OsLocalesChanged;
 
-    let watcher = LocaleWatcher::new(SETTLE_WINDOW, super::resolved_os_locales, move |locales| {
-        info!(
-            "OS locales changed: language {:?}, formats {:?}",
-            locales.ui, locales.format
-        );
-        // The native menu bar can't re-render itself off a rune the way the
-        // webview does, so it's rebuilt here. Only when the catalog the native
-        // side reads actually moved: a region change (or a language change under
-        // a pinned `appearance.language`) leaves every label as it was.
-        // The macOS pane labels we quote ("Full Disk Access", "Privacy &
-        // Security") follow the SYSTEM language, not our UI language, so they
-        // move on any language change regardless of `appearance.language`.
-        // Dropped here, before the emit below, so the frontend's re-read on that
-        // event can't beat the invalidation and re-cache the old answer.
-        crate::system_strings::invalidate();
-        if super::native_strings::refresh_active_locale() {
-            let for_rebuild = app_handle.clone();
-            if let Err(e) = app_handle.run_on_main_thread(move || {
-                if let Err(e) = crate::menu::rebuild_menu_bar(&for_rebuild) {
-                    warn!("Couldn't rebuild the menu bar in the new language: {e}");
-                }
-            }) {
-                warn!("Couldn't reach the main thread to rebuild the menu bar: {e}");
+    info!(
+        "OS locales changed: language {:?}, formats {:?}",
+        locales.ui, locales.format
+    );
+    // Dropped here, before the emit below, so the frontend's re-read on that
+    // event can't beat the invalidation and re-cache the old answer.
+    super::platform::forget_system_language_caches();
+    // The native menu bar can't re-render itself off a rune the way the
+    // webview does, so it's rebuilt here. Only when the catalog the native
+    // side reads actually moved: a region change (or a language change under
+    // a pinned `appearance.language`) leaves every label as it was.
+    if super::native_strings::refresh_active_locale() {
+        let for_rebuild = app_handle.clone();
+        if let Err(e) = app_handle.run_on_main_thread(move || {
+            if let Err(e) = crate::menu::rebuild_menu_bar(&for_rebuild) {
+                warn!("Couldn't rebuild the menu bar in the new language: {e}");
             }
+        }) {
+            warn!("Couldn't reach the main thread to rebuild the menu bar: {e}");
         }
-        if let Err(e) = (OsLocalesChanged { locales }).emit(&app_handle) {
-            warn!("Failed to emit os-locales-changed event: {e}");
-        }
-    });
-
-    let default_center = NSNotificationCenter::defaultCenter();
-    let distributed_center = NSDistributedNotificationCenter::defaultCenter();
-    let language_preferences_changed = NSString::from_str("AppleLanguagePreferencesChangedNotification");
-
-    let for_default = Arc::clone(&watcher);
-    let default_block = block2::RcBlock::new(move |_notification: NonNull<NSNotification>| {
-        for_default.notify();
-    });
-    let distributed_block = block2::RcBlock::new(move |_notification: NonNull<NSNotification>| {
-        watcher.notify();
-    });
-
-    // SAFETY: both names are valid notification names (one the Foundation
-    // constant, one an `NSString` we own) and both centres are live singletons.
-    // Each block is a live `RcBlock` with the expected
-    // `(NonNull<NSNotification>) -> ()` signature. The centres retain the
-    // observers for the lifetime of the app; we never remove them, because we
-    // want updates for the whole session.
-    unsafe {
-        default_center.addObserverForName_object_queue_usingBlock(
-            Some(NSCurrentLocaleDidChangeNotification),
-            None,
-            None,
-            &default_block,
-        );
-        distributed_center.addObserverForName_object_queue_usingBlock(
-            Some(&language_preferences_changed),
-            None,
-            None,
-            &distributed_block,
-        );
+    }
+    if let Err(e) = (OsLocalesChanged { locales }).emit(app_handle) {
+        warn!("Failed to emit os-locales-changed event: {e}");
     }
 }
-
-/// No-op off macOS.
-///
-/// Linux has no equivalent signal: the desktop language and formats live in the
-/// session's environment (`LANG` / `LC_MESSAGES` / `LC_NUMERIC`), which is fixed
-/// for the life of the process, and no portal or D-Bus name broadcasts a change.
-/// A logged-in user changing either gets it at their next login, which is also
-/// when Cmdr restarts. ❌ Don't go looking for a watcher here; there isn't one.
-#[cfg(not(target_os = "macos"))]
-pub fn observe_os_locale_changes<R: tauri::Runtime>(_app_handle: tauri::AppHandle<R>) {}
 
 #[cfg(test)]
 mod tests {

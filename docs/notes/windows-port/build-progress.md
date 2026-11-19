@@ -353,3 +353,18 @@ things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX
     trailing `DIRECT`; a stalling PAC server given up on within its budget; the address-change subscription's callback
     reaching the network number; the WPAD state machine; the per-network PAC cache), and 5 of 5 `cmdr-adb`
     `binary_search` (the Windows search pinned to user- or admin-controlled folders).
+- **2026-11-19, task 40: the system look** (`7a2d5eb037`, merged with `main` at `d3bbc2aeea`): the accent with WinUI's
+  fill shades, contrast themes, Transparency effects, and the language and Regional format, all live from the system
+  look's settings window (`apps/desktop/src-tauri/src/system_look/platform/windows/`); Text size stays WebView2's own
+  zoom. The Mac's zig cross-check of `cmdr` (`--all-targets`, a stand-in `windres`) was clean first time; the Windows
+  lane's clippy ran green on the branch. On the builder, in `D:\src\cmdr-t40` with `CARGO_TARGET_DIR=D:\targets\t40`
+  (seeded from `D:\targets\triage`, yet most workspace members and several dependencies rebuilt: 80 min at
+  `CARGO_BUILD_JOBS=2`), `cargo nextest run -p cmdr system_look intl::`: 79 of 79, the real-machine cells included
+  (`UISettings` activates in an unpackaged process and answers `#0078d7` with `AccentDark1` `#005a9e` and `AccentLight2`
+  `#76b9ed`, the change events register, `GetUserPreferredUILanguages` resolves to a shipped catalog, and the Regional
+  format composes a well-formed tag). Gotchas: the box's disk is slow under load (the target copy ran at about 9 MB/s
+  and a `git reset --hard` across 11,678 files took 53 min while it ran), and a command started over SSH can outlive the
+  session, so check for a leftover `git` before blaming a stale `index.lock`. Only read on the builder, never changed
+  (the settings belong to the box): that each Settings page broadcasts or fires its `UISettings` event, a contrast
+  theme's and another accent's look, the Text size zoom, and a non-English language all wait for a human on a real
+  Windows.

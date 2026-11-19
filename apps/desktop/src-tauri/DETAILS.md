@@ -34,9 +34,17 @@ Second, a whole PHASE whose steps are independent of each other, so lifting it h
   goes here.
 - `platform::startup::install(app)`: each OS's own installers (macOS: the system-look observers, mouse navigation,
   Services, the volume watcher and unmount approver, `ptpcamerad`, the updater's state; Linux: the volume watcher, the
-  portal accent color, the title-bar revert; Windows: none yet), one arm per OS behind a pinned signature. They observe
-  or hook the OS and don't depend on each other; the call sits at the strictest point any of them needs, which its doc
-  names. An installer whose position is part of its contract (the E2E activation policy, first) stays on the spine.
+  portal accent color, the title-bar revert; Windows: the system-look observers), one arm per OS behind a pinned
+  signature. They observe or hook the OS and don't depend on each other; the call sits at the strictest point any of
+  them needs, which its doc names. An installer whose position is part of its contract (the E2E activation policy,
+  first) stays on the spine.
+- The Windows system-look observer (`system_look/platform/windows/setting_changes.rs`) returns at once: its baseline
+  read (one `UISettings` activation plus two `SystemParametersInfoW` calls) runs on the settings window's own thread,
+  before the window exists, so it never holds up setup and no signal can beat it. The frontend's first look comes from
+  its own `get_accent_color` / `get_display_accessibility` calls either way. Cost: not yet measured on hardware
+  (2026-11-19: the review session had no Windows machine). The thread logs it at debug as `Windows look, read in …`, so
+  the next Windows dev run with `RUST_LOG=system_look=debug` gives the number; record it here with the
+  machine.
 - `crate_deps`: the `use foo as _;` markers `unused_crate_dependencies` needs. Lint artifacts rather than structure, and
   a marker satisfies the lint from anywhere in the crate.
 
