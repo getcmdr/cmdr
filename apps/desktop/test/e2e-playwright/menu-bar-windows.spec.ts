@@ -15,7 +15,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { test, expect } from './fixtures.js'
-import { ensureAppReady, type PageLike } from './helpers.js'
+import { ensureAppReady, moveCursorToFile, type PageLike } from './helpers.js'
 import {
   clickRealAt,
   focusMainWindow,
@@ -200,36 +200,65 @@ test.describe('The bar in the other windows (Linux)', () => {
   })
 
   // Regression anchor (review of #1271): the window fired Switch pane's Tab, so focus never moved.
-  for (const [name, open] of [
-    ['Settings', openSettingsWindowViaProd],
-    ['the operation queue', openQueueWindow],
-    ['Keyboard shortcuts', openShortcutsWindow],
+  // The queue starts empty, with nothing to Tab to, so there only the key's fate is checked.
+  for (const [name, open, walks] of [
+    ['Settings', openSettingsWindowViaProd, true],
+    ['the operation queue', openQueueWindow, false],
+    ['Keyboard shortcuts', openShortcutsWindow, true],
   ] as const) {
-    test(`a real Tab and Shift+Tab walk focus in ${name}`, async ({ tauriPage }) => {
+    test(`a real Tab and Shift+Tab reach ${name}'s page, and Tab walks its focus`, async ({ tauriPage }) => {
       await ensureAppReady(tauriPage)
       const main = tauriPage as TauriPage
       const child = await openChild(main, () => open(main))
       try {
         await focusChild(child.page, child.windowId)
         // Start on the first focusable that isn't a text field (a field takes Tab as its own anyway),
-        // or on the page itself where nothing is (an empty queue).
-        await child.page.evaluate(`(function(){
+        // or on the page itself where nothing is. The recorder listens last, on the window, so it
+        // sees whether anything before it (the bar's keys among them) took the key.
+        const startOnFirstFocusable = `(function(){
             var all = document.querySelectorAll('button:not([disabled]), [tabindex="0"], a[href]');
             for (var i = 0; i < all.length; i++) {
               var el = all[i];
               if (el.offsetParent === null) continue;
               el.focus();
-              if (document.activeElement === el) break;
+              if (document.activeElement === el) return true;
             }
-            window.__cmdrFocusMark = document.activeElement;
+            return false;
+        })()`
+        // A window that walks has rendered its controls first.
+        if (walks)
+          await expect
+            .poll(() => child.page.evaluate<boolean>(startOnFirstFocusable), { timeout: waitBudget(8000) })
+            .toBe(true)
+        await child.page.evaluate(`(function(){
+            ${walks ? '' : `${startOnFirstFocusable};`}
+            window.__cmdrTabStart = document.activeElement;
+            window.__cmdrTabKeys = [];
+            window.addEventListener('keydown', function (e) {
+              // WebKitGTK names Shift+Tab (X's ISO_Left_Tab) 'Unidentified'.
+              if (e.key === 'Tab' || e.key === 'Unidentified') window.__cmdrTabKeys.push(e.defaultPrevented);
+            });
         })()`)
-        const moved = () => child.page.evaluate<boolean>('document.activeElement !== window.__cmdrFocusMark')
-        const mark = () => child.page.evaluate('window.__cmdrFocusMark = document.activeElement')
+        const keys = () => child.page.evaluate<boolean[]>('window.__cmdrTabKeys')
         pressRealKey('Tab')
-        await expect.poll(moved, { timeout: waitBudget(3000) }).toBe(true)
-        await mark()
+        await expect.poll(async () => (await keys()).length, { timeout: waitBudget(3000) }).toBe(1)
+        expect(await keys()).toEqual([false])
+        if (walks)
+          await expect
+            .poll(
+              () =>
+                child.page.evaluate<string>(`(function(){
+                    var a = document.activeElement, s = window.__cmdrTabStart;
+                    if (a !== s) return 'moved';
+                    return 'still on ' + (s ? s.tagName + '.' + s.className + ' ' + s.textContent.trim().slice(0, 30) : 'nothing');
+                })()`),
+              { timeout: waitBudget(3000) },
+            )
+            .toBe('moved')
         pressRealKey('shift+Tab')
-        await expect.poll(moved, { timeout: waitBudget(3000) }).toBe(true)
+        await expect.poll(async () => (await keys()).length, { timeout: waitBudget(3000) }).toBe(2)
+        // Neither key was taken from the page: the browser moved focus.
+        expect(await keys()).toEqual([false, false])
       } finally {
         if ((await windowLabels(main)).includes(child.label)) await closeScopedWindow(main, child.page, child.label)
       }
@@ -347,6 +376,77 @@ test.describe('The bar in the other windows (Linux)', () => {
       // One app serves the shard, so the setting goes back as found.
       if ((await readRow(tauriPage, main, 'show_hidden_files')).checked !== before)
         await pickRow(tauriPage, main, 'show_hidden_files')
+    }
+  })
+
+  // Regression anchors (review of #1271): the bar's menu took focus from the rename field, whose blur
+  // ended the rename; and Paste read the clipboard through a backend that said "not supported".
+  test('the main bar’s Edit > Cut and Paste edit the inline rename’s name, which stays open', async ({ tauriPage }) => {
+    await ensureAppReady(tauriPage)
+    focusMainWindow()
+    const main = mainWindowId()
+    await tauriPage.click('.file-pane.is-focused')
+    expect(await moveCursorToFile(tauriPage, 'file-a.txt')).toBe(true)
+    await tauriPage.keyboard.press('F2')
+    await tauriPage.waitForSelector('.rename-input', waitBudget(5000))
+    const value = () =>
+      tauriPage.evaluate<string>(`(function(){
+          var input = document.querySelector('.rename-input');
+          return input ? input.value : 'gone';
+      })()`)
+    try {
+      const before = await value()
+      await tauriPage.evaluate(`(function(){
+          var input = document.querySelector('.rename-input');
+          input.focus();
+          input.setSelectionRange(0, input.value.length);
+      })()`)
+      await pickRow(tauriPage, main, 'edit_cut')
+      await expect.poll(value, { timeout: waitBudget(3000) }).toBe('')
+      await pickRow(tauriPage, main, 'edit_paste')
+      await expect.poll(value, { timeout: waitBudget(3000) }).toBe(before)
+      expect(
+        await tauriPage.evaluate<boolean>(`document.activeElement === document.querySelector('.rename-input')`),
+      ).toBe(true)
+    } finally {
+      if (await tauriPage.isVisible('.rename-input')) await tauriPage.press('.rename-input', 'Escape')
+    }
+  })
+
+  test('the viewer bar’s Edit > Cut and Paste edit the search box', async ({ tauriPage }) => {
+    await ensureAppReady(tauriPage)
+    const main = tauriPage as TauriPage
+    const viewer = await openChild(main, () => openViewerWindow(main, viewerFile()))
+    const box = () =>
+      viewer.page.evaluate<string>(`(function(){
+          var el = document.querySelector(${JSON.stringify(SEARCH_BOX)});
+          return el ? el.value : 'gone';
+      })()`)
+    try {
+      await viewer.page.waitForSelector('[role="menubar"]', waitBudget(8000))
+      await focusChild(viewer.page, viewer.windowId)
+      await viewer.page.keyboard.press(defaultKey('viewer.search'))
+      await viewer.page.waitForSelector(SEARCH_BOX, waitBudget(5000))
+      await expect
+        .poll(
+          () =>
+            viewer.page.evaluate<boolean>(`(function(){
+                var el = document.querySelector(${JSON.stringify(SEARCH_BOX)});
+                if (el && document.activeElement !== el) el.focus();
+                return !!el && document.activeElement === el;
+            })()`),
+          { timeout: waitBudget(5000) },
+        )
+        .toBe(true)
+      for (const key of ['x', 'y', 'z']) pressRealKey(key)
+      await expect.poll(box, { timeout: waitBudget(3000) }).toBe('xyz')
+      await viewer.page.evaluate(`document.querySelector(${JSON.stringify(SEARCH_BOX)}).select()`)
+      await pickRow(viewer.page, viewer.windowId, 'viewer_edit_cut')
+      await expect.poll(box, { timeout: waitBudget(3000) }).toBe('')
+      await pickRow(viewer.page, viewer.windowId, 'viewer_edit_paste')
+      await expect.poll(box, { timeout: waitBudget(3000) }).toBe('xyz')
+    } finally {
+      await closeScopedWindow(main, viewer.page, viewer.label)
     }
   })
 })

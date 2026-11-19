@@ -446,6 +446,22 @@ describe('MenuBar keys on Windows', () => {
     expect(document.querySelector('[role="menubar"]')?.hasAttribute('inert')).toBe(true)
   })
 
+  // Regression anchor (review of #1271): an inert bar over the rename sent a title click to the
+  // page, which the rename read as a click away, so the Edit rows never reached its field.
+  it('stays live over the inline rename, a soft dialog only to be seen', async () => {
+    pane()
+    await setup()
+    markDialogOpen('rename')
+    teardowns.push(() => {
+      markDialogClosed('rename')
+    })
+    await settle()
+    expect(document.querySelector('[role="menubar"]')?.hasAttribute('inert')).toBe(false)
+    titles()[0].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }))
+    await settle()
+    expect(surfaces()).toHaveLength(1)
+  })
+
   it('closes on a click elsewhere, without moving focus', async () => {
     const origin = pane()
     await setup()
@@ -455,6 +471,47 @@ describe('MenuBar keys on Windows', () => {
     origin.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }))
     await settle()
     expect(surfaces()).toHaveLength(0)
+  })
+
+  // Regression anchor (review of #1271): the menu took focus from the inline rename's field, whose
+  // blur ended the rename before the Edit row it was opened for could act on it.
+  it('leaves focus in a text field the whole time, by a click or by the keyboard, so the field never blurs', async () => {
+    const field = document.createElement('input')
+    document.body.append(field)
+    field.focus()
+    let blurs = 0
+    field.addEventListener('blur', () => {
+      blurs++
+    })
+    const { picked } = await setup()
+
+    // A click on a title, a click on a row.
+    titles()[0].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }))
+    await settle()
+    expect(surfaces()).toHaveLength(1)
+    expect(document.activeElement).toBe(field)
+    rows()[1].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }))
+    rows()[1].click()
+    await settle()
+    expect(picked).toEqual(['file_rename'])
+
+    // Alt+letter, a walk, Escape back to the title (its cursor is the field's active descendant), Enter.
+    down('f', { code: 'KeyF', altKey: true })
+    await settle()
+    expect(document.activeElement).toBe(field)
+    expect(field.getAttribute('aria-activedescendant')).toBe(rows()[1].id)
+    const typed = await press('x')
+    expect(typed.defaultPrevented).toBe(true)
+    await press('Escape')
+    expect(field.getAttribute('aria-activedescendant')).toBe(titles()[0].id)
+    expect(titles()[0].classList.contains('is-keyboard')).toBe(true)
+    await press('Enter')
+    await press('Enter')
+    expect(picked).toEqual(['file_rename', 'file_rename'])
+
+    expect(document.activeElement).toBe(field)
+    expect(field.hasAttribute('aria-activedescendant')).toBe(false)
+    expect(blurs).toBe(0)
   })
 
   it('opens a hovered submenu after the menu delay, not at once', async () => {
@@ -648,7 +705,10 @@ describe('MenuBar on the Mac flavor (the browser demo)', () => {
     await settle()
     expect(surfaces()).toHaveLength(1)
     await press('ArrowDown')
-    expect(focusedText()).toContain('Show hidden files')
+    // The dialog's field keeps focus; the cursor is its active descendant.
+    expect(document.activeElement).toBe(field)
+    const cursor = document.getElementById(field.getAttribute('aria-activedescendant') ?? '')
+    expect(cursor?.textContent).toContain('Show hidden files')
     await press('Escape')
     await press('Escape')
     expect(document.activeElement).toBe(field)

@@ -89,7 +89,7 @@
     } from './window-services'
     import { createMountScope } from '#lib/utils/mount-scope.js'
     import { SOFT_DIALOG_REGISTRY } from '#lib/ui/dialog-registry.js'
-    import { isAnySoftDialogOpen } from '#lib/ui/open-dialogs.svelte.js'
+    import { isAnySoftDialogOpen, isAnySoftDialogOpenBesides } from '#lib/ui/open-dialogs.svelte.js'
     import { setOnboardingShowing } from '#lib/updates/updater.svelte.js'
     import { setWizardShowingForDownloadNotice } from '#lib/onboarding/local-download-notice.js'
     import { initSystemStrings } from '#lib/system-strings.svelte.js'
@@ -233,6 +233,19 @@
     function isExplorerOverlayOpen(): boolean {
         if (!explorerRef) return false
         return explorerRef.isConfirmationDialogOpen() || explorerRef.isRenaming() || explorerRef.isHeaderMenuOpen()
+    }
+
+    /**
+     * Whether the page-drawn bar goes inert: under every dialog, overlay, and the palette, but NOT
+     * over the inline rename, where a native bar stays live too. Its Edit rows then reach the name
+     * field (the bar leaves focus in it, `MenuBarController.fieldHolder`), and the dialog gate
+     * still refuses every file command while the rename is up. Regression anchor (review of
+     * #1271): an inert bar sent the click to the header, which the rename read as a click away.
+     */
+    function menuBarInert(): boolean {
+        if (showCommandPalette || isAnySoftDialogOpenBesides('rename')) return true
+        if (!explorerRef) return false
+        return explorerRef.isConfirmationDialogOpen() || explorerRef.isHeaderMenuOpen()
     }
 
     /**
@@ -811,7 +824,7 @@
     {/if}
 
     {#if pageDrawsMenuBar()}
-        <MainMenuBar inert={dialogsOnScreen().dialogOpen || dialogsOnScreen().paletteOpen} />
+        <MainMenuBar inert={menuBarInert()} />
     {/if}
 
     <main class="main-content">

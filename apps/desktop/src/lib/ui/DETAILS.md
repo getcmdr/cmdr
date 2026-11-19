@@ -1541,6 +1541,11 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
     cancelled the rename; caught by the Linux in-page E2E group. A press anywhere on a surface is `preventDefault`ed on
     `pointerdown`, so the page sees no `mousedown` and focus never moves. The house `Menu`'s outside-press check counts
     `[data-command-menu="context"]` as its own, so a field inside one survives a pick.
+  - The bar does the same on its own (`MenuBarController.fieldHolder`): taking the keyboard from a text field (a click
+    on a title, Alt+letter, F10), it leaves focus in the field, opens every menu with it as `focusHolder`, makes the
+    keyboard's title the field's `aria-activedescendant` (drawn as focused, `.is-keyboard`), keeps every key it doesn't
+    use out of the field, and restores nothing on letting go. Regression anchor (review of #1271): a bar menu took focus
+    from the inline rename, whose blur cancelled it, so Edit > Paste from the bar had no field left to act on.
 - **Module map** (`command-menu/`): `rows.ts` (pure: labels, the live-row walk, access keys, the Mac shortcut glyphs),
   `menu-stack.svelte.ts` (the open surfaces and their cursors, the submenu delay), `menu-bar.svelte.ts` and
   `context-menu.svelte.ts` (each owner's keys, focus, and dismissal), `MenuSurfaces.svelte` / `MenuSurface.svelte` (the

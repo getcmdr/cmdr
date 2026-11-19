@@ -21,6 +21,7 @@ import { allocateAccessKeys, accessKeyLettersOf } from '../access-keys'
 import { captureFocusOrigin, isInFocusHome, restoreFocus, type FocusOrigin } from '../focus-restore'
 import { createKeyboardCues, cueRule, type KeyboardCues } from '../keyboard-cues'
 import { isAltGraphHeld } from '#lib/shortcuts/key-capture.js'
+import { isTextInputFocused } from '#lib/utils/text-input-focus.js'
 import { createMenuStack, type MenuStack } from './menu-stack.svelte'
 import { rowLabelText, type MenuFlavor } from './rows'
 
@@ -61,6 +62,13 @@ export interface MenuBarController {
    * and Paste follow its search box) reads this to keep them live while its menu is open.
    */
   readonly focusOrigin: Element | null
+  /**
+   * The text field that keeps DOM focus while the bar has the keyboard, or `null` where the bar
+   * holds focus itself. A field the bar took the keyboard from never blurs: the keyboard's title
+   * and the open menu's cursor reach a screen reader as its `aria-activedescendant`, so a field
+   * that ends its edit on blur (the inline rename) survives a pick from the bar's Edit menu.
+   */
+  readonly fieldHolder: HTMLElement | null
   /** Each title's access key, or null. */
   readonly titleLetters: readonly (string | null)[]
   pointerDownTitle(index: number, event: PointerEvent): void
@@ -81,6 +89,8 @@ const FLYOUT_NUDGE: Record<MenuFlavor, { x: number; y: number }> = {
   desktop: { x: 0, y: 0 },
 }
 
+const MODIFIER_KEYS: readonly string[] = ['Shift', 'Control', 'Alt', 'Meta', 'AltGraph']
+
 function isLoneAlt(event: KeyboardEvent): boolean {
   return event.key === 'Alt' && !event.ctrlKey && !event.metaKey && !event.shiftKey && !isAltGraphHeld(event)
 }
@@ -96,6 +106,7 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
   let cuesShown = $state(false)
   let origin: FocusOrigin | null = null
   let focusOrigin = $state<Element | null>(null)
+  let fieldHolder = $state<HTMLElement | null>(null)
   /** A lone Alt is down and nothing else came since: its release takes or gives back the bar. */
   let altArmed = false
   /** The bar took focus back from the app once this session (`onFocusIn`), so a second re-home isn't fought. */
@@ -144,6 +155,9 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
     if (active) return
     origin = captureFocusOrigin()
     focusOrigin = document.activeElement
+    // Regression anchor (review of #1271): a menu taking focus from the inline rename's field
+    // ended the rename, so the Edit rows it opened for had nothing left to act on.
+    fieldHolder = isTextInputFocused() && focusOrigin instanceof HTMLElement ? focusOrigin : null
     active = true
     reclaimedFocus = false
     sessionCues = createKeyboardCues({ rule: rule(), openedByKeyboard: fromKeyboard })
@@ -164,8 +178,13 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
     syncCues()
     const leaving = deps.barElement()
     const target = origin
+    const focusStayed = fieldHolder !== null
     origin = null
     focusOrigin = null
+    fieldHolder = null
+    // Where the field kept focus, there's nothing to give back, and a restore would do harm: a
+    // field inside the window's focus home (the rename editor) would be sent to the home's list.
+    if (focusStayed) return
     if (restore) {
       restoreFocus(target, { leaving })
     } else if (leaving?.contains(document.activeElement)) {
@@ -193,7 +212,7 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
     stack.open(
       menu.rows,
       { kind: 'below', rect: { left, right: left, top: bottom, bottom } },
-      { fromKeyboard, fromEnd, labelledBy: titleId(bar.id, wrap(index)) },
+      { fromKeyboard, fromEnd, labelledBy: titleId(bar.id, wrap(index)), focusHolder: fieldHolder ?? undefined },
     )
   }
 
@@ -336,6 +355,9 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
     if (handleActiveKey(event)) {
       event.preventDefault()
       sessionCues?.reveal()
+    } else if (fieldHolder && !MODIFIER_KEYS.includes(event.key)) {
+      // The field keeps focus, so a key the bar doesn't use would type into it behind the menu.
+      event.preventDefault()
     }
     // Whatever the bar didn't use stays out of the app, as an open native menu swallows it.
     event.stopPropagation()
@@ -401,7 +423,7 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
 
   /** Puts focus back on the keyboard's title, or the open menu's surface, while the bar still has the keyboard. */
   function reclaimFocus(): void {
-    if (!active) return
+    if (!active || fieldHolder) return
     if (openIndex === null) {
       deps.titleElement(focusIndex)?.focus({ preventScroll: true })
       return
@@ -425,6 +447,9 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
     },
     get focusOrigin() {
       return focusOrigin
+    },
+    get fieldHolder() {
+      return fieldHolder
     },
     get cuesShown() {
       return cuesShown
