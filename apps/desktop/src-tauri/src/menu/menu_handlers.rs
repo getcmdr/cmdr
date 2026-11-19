@@ -405,8 +405,9 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str) {
 
     // === Select all in the operation queue: its rows, not its text ===
     // Ahead of the edit-action block below, which would send the native `selectAll:` and
-    // highlight the page's text. The queue's own keydown never sees ⌘A (the accelerator
-    // fires first), so this event is the key's only road there.
+    // highlight the page's text. On macOS the queue's own keydown never sees ⌘A (the native
+    // accelerator fires first), so this event is the key's only road there. Off macOS no bar
+    // wears the key, and the queue's keydown runs it (`routes/queue/+page.svelte`).
     if id == SELECT_ALL_ID
         && app
             .get_webview_window("queue")
