@@ -293,10 +293,10 @@ The keys themselves are `docs/notes/windows-port/keymap-decisions.md`'s; a chang
    `crates/cmdr-menu/src/bar.rs` for the menu bar (rows are tracked by default, which is what lets accelerator rebinding
    reach them; update the pinned bar in `crates/cmdr-menu/src/bar_test.rs` and its enabled states in
    `crates/cmdr-menu/src/bar_states_test.rs` alongside) or add its row to `crates/cmdr-menu/src/context/` for the
-   right-click menu, and add the id to `menuCommands` in `shortcuts-store.ts`. `rust-command-id-drift.test.ts` fails if
-   `menu_id_to_command` emits an unknown id, or if `menuCommands` and the reverse map disagree. Then refresh the parity
-   TSV (`vitest -u default-keymap`): `bar_parity_test.rs` fails until the row's accelerator on each OS is what the
-   command's first default key registers there.
+   right-click menu, and add the id to `menuCommands` in `../shortcuts/menu-commands.ts`.
+   `rust-command-id-drift.test.ts` fails if `menu_id_to_command` emits an unknown id, or if `menuCommands` and the
+   reverse map disagree. Then refresh the parity TSV (`vitest -u default-keymap`): `bar_parity_test.rs` fails until the
+   row's accelerator on each OS is what the command's first default key registers there.
 
 ## Fuzzy search
 

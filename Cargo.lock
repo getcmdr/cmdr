@@ -1756,6 +1756,7 @@ dependencies = [
 name = "cmdr-listing-wasm"
 version = "0.0.0"
 dependencies = [
+ "cmdr-about",
  "cmdr-brief-columns",
  "cmdr-collation",
  "cmdr-fs",

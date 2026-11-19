@@ -115,12 +115,13 @@ The house values are each primitive's old literal, moved into a token. Checked t
   select list goes transparent on Windows (the pill marks the choice), but keeps its column.
 - **Motion.** The switch knob's grow on hover (12 → 14px) and stretch on press, the slider dot's scale animation, and
   the radio dot's press shrink are WinUI animations; the tokens set the resting and hover sizes where one element can
-  (radio, slider) and skip the switch's. Durations stay the house ones (task 62 owns motion).
+  (radio, slider) and skip the switch's. Durations and curves are the Windows look's `--transition-*`
+  (`docs/notes/windows-port/type-and-motion.md` § Motion).
 - **Scrollbars.** WinUI's bar is an overlay that rests as a 2px indicator and expands to 6px on hover.
   `::-webkit-scrollbar` can't overlay or animate, so Windows gets the expanded bar (a 12px gutter, a 6px rounded thumb)
   in place of WebView2's 17px classic one; `--spacing-scrollbar-width` measures it as usual.
-- **The font.** Segoe UI Variable and the type ramp are task 62's; the controls keep the system stack. The dialog title
-  takes the ramp's 20px subtitle size.
+- **The font.** The controls read the app's `--font-system`, Segoe UI Variable on the Windows look, and its type ramp
+  (`docs/notes/windows-port/type-and-motion.md`). The dialog title takes the ramp's 20px subtitle size.
 - **Dialog layout.** `ContentDialog` stretches its buttons to equal widths and leaves 12px under the title; ours keep
   their natural widths and the title bar's 24px, since the footer also hosts leading content.
 - **Not themed.** `ToggleGroup` (WinUI has no segmented control), `Chip`, and list selection (`ColumnList`'s cursor): no

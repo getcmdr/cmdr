@@ -169,9 +169,9 @@
   --spacing-menu-row-min-height: 0;
   /* MenuFlyoutItem CornerRadius → ControlCornerRadius 4 */
   --radius-menu-row: 4px;
-  /* ContentControlThemeFontFamily → XamlAutoFontFamily, which is Segoe UI Variable on
-     Windows 11; Windows 10 has only Segoe UI. Task 62 owns the app-wide stack. */
-  --font-menu-family: 'Segoe UI Variable', 'Segoe UI Variable Text', 'Segoe UI', var(--font-system);
+  /* ContentControlThemeFontFamily → XamlAutoFontFamily: the app's font, which the Windows look
+     sets to Segoe UI Variable (`app-type-motion-windows.css`) */
+  --font-menu-family: var(--font-system);
   /* FontSize → ControlContentThemeFontSize 14; the TextBlock keeps the font's own line height */
   --font-menu-size: var(--font-size-md);
   --font-menu-line-height: normal;

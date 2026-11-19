@@ -23,6 +23,34 @@
   "@ui.demoArchive.notBrowsable": {
     "sourceHash": "760091f"
   },
+  "ui.demoDesktopOnly.filePicker": "這個線上展示無法打開你電腦上的檔案選擇器。在真正的 App 裡，這裡會打開一個，讓你選擇檔案或資料夾。",
+  "@ui.demoDesktopOnly.filePicker": {
+    "sourceHash": "8a28292"
+  },
+  "ui.demoDesktopOnly.revealFolder": "這個線上展示無法打開你電腦上的資料夾。在真正的 App 裡，這會在你的檔案管理程式中顯示該資料夾。",
+  "@ui.demoDesktopOnly.revealFolder": {
+    "sourceHash": "27ef83e"
+  },
+  "ui.demoDesktopOnly.quit": "這個線上展示在瀏覽器分頁中執行，所以無法結束。完成後關閉這個分頁就好。",
+  "@ui.demoDesktopOnly.quit": {
+    "sourceHash": "c971af5"
+  },
+  "ui.demoQuestion.no": "否",
+  "@ui.demoQuestion.no": {
+    "sourceHash": "1ea442a"
+  },
+  "ui.demoQuestion.yes": "是",
+  "@ui.demoQuestion.yes": {
+    "sourceHash": "85a39ab"
+  },
+  "ui.demoWindow.maximize": "最大化",
+  "@ui.demoWindow.maximize": {
+    "sourceHash": "fba6c2c"
+  },
+  "ui.demoWindow.restore": "還原",
+  "@ui.demoWindow.restore": {
+    "sourceHash": "a76e13b"
+  },
   "ui.popover.defaultAriaLabel": "選項",
   "@ui.popover.defaultAriaLabel": {
     "sourceHash": "d0db8b5"

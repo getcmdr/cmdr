@@ -9,7 +9,7 @@ import { demoContents } from './demo-contents.js'
 import { DEMO_HOME, DEMO_ROOT, DEMO_VOLUME_ID, demoEntries } from './demo-tree.js'
 import { loadEngineModule } from './engine-module.js'
 import type { DropImporter } from './os-drop.js'
-import { demoPath } from './volumes.js'
+import { demoPath, mainVolumeName } from './volumes.js'
 
 /** The loaded engine, by Tauri command name, as the backend routes to it. */
 export interface ListingEngineHandle {
@@ -83,7 +83,8 @@ export function startListingEngine(sink: ListingEventSink): ListingEngineHandle 
     const contents = await demoContents()
     const tree = {
       volumeId: DEMO_VOLUME_ID,
-      volumeName: 'Macintosh HD',
+      // The name a transfer's summary reads it by, the visitor's OS's main volume (`volumes.ts`).
+      volumeName: mainVolumeName(),
       home: DEMO_HOME,
       freeBytes: freeBytesFromSearch(window.location.search),
       root: DEMO_ROOT,

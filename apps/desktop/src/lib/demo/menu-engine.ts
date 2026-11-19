@@ -5,9 +5,11 @@
  * draws the visitor's own OS's bar from them, so this file holds no menu logic: it loads, routes, and types the
  * answers. See `DETAILS.md` § The menu bar.
  */
-import type { BarMenuView, Row } from '#lib/ipc/bindings.js'
+import type { BarMenuView, BarTitleMnemonic, Row } from '#lib/ipc/bindings.js'
 import type { Payload } from './answer-types.js'
 import type { Platform } from '#lib/platform/index.js'
+import { allocateAccessKeys } from '#lib/ui/access-keys.js'
+import { rowLabelText } from '#lib/ui/command-menu/rows.js'
 import { loadEngineModule } from './engine-module.js'
 
 /**
@@ -48,6 +50,13 @@ export interface MenuEngineHandle {
   popup(cmd: string, payload: Payload, label: string): Promise<ContextPopup>
   /** What a pick of `menuId` from the last popup sends. */
   contextClick(menuId: string): MenuClick
+  /**
+   * The bar titles' Alt+letter keys (`get_menu_bar_title_mnemonics`), in the words the bar draws:
+   * the letters `#lib/ui/MenuBar.svelte` binds, by the app's own access-key rule over the same
+   * titles, so the shortcut recorder warns about exactly the keys the bar takes. None on a Mac,
+   * whose bar has none, as the desktop answers there.
+   */
+  titleMnemonics(): Promise<BarTitleMnemonic[]>
   /** Resolves once the engine answered, with whether it did. */
   readonly ready: Promise<boolean>
   /**
@@ -101,5 +110,13 @@ export function startMenuEngine(platform: Platform): MenuEngineHandle {
       return menu.popup(cmd, payload, label) as ContextPopup
     },
     contextClick: (menuId) => (menu ? (menu.contextClick(menuId) as MenuClick) : { kind: 'nothing' }),
+    titleMnemonics: async () => {
+      await ready
+      if (platform === 'macos' || !menu) return []
+      const titles = (menu.bar() as BarMenu[]).map((barMenu) => rowLabelText(barMenu.title))
+      return allocateAccessKeys(titles).flatMap((letter, index) =>
+        letter === null ? [] : [{ letter, menu: titles[index] }],
+      )
+    },
   }
 }

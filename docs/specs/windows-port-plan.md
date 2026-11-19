@@ -911,6 +911,17 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
 62. [S] Windows. Typography and motion: Segoe UI Variable through the system font stack, the Windows type ramp, Windows
     animation curves and durations, and the system's animation setting. Linux: follows the desktop's font and
     reduced-motion settings. Needs 40.
+    - **Built** (2026-11-19), awaiting David's design review: `apps/desktop/src/app-type-motion-windows.css`
+      (`apps/desktop/src/DETAILS.md` § Typography and motion). The Windows look's `--font-system` is
+      `'Segoe UI Variable Text', 'Segoe UI'` (Chromium resolves only the variable font's named instances), read by
+      `html, body` so inherited text follows; `--font-size-lg` takes the ramp's BodyLarge 18 (12, 14, and 20 were
+      already Caption, Body, and Subtitle); `--transition-fast` / `-base` are WinUI's 83 ms `BrushTransition`, `-slow`
+      250 ms on the fast-out-slow-in curve. Windows' Animation effects and Linux's reduced-animation settings reach the
+      page as `prefers-reduced-motion` with no backend reader; Linux keeps the house stack's `system-ui`. macOS and
+      Linux unchanged: 0 differing pixels across the demo's Mac shots. Unverified until a real Windows run: that
+      WebView2 resolves the font name, and the reduced-motion mapping. Gaps: optical size (every size draws the Text
+      cut), WinUI's theme animations, and Windows text scale (task 40). Evidence:
+      `docs/notes/windows-port/type-and-motion.md`.
 63. [L] Windows and Linux. The menu model (D5, final). Off macOS, Cmdr draws its menus in the page from `cmdr-menu`'s
     data. Windows, KDE, and other Linux show an in-window menu bar (`menuModel: 'windowMenuBar'`): Windows 11's Fluent
     look, matched precisely, on Windows 10 and 11 alike, and the neutral theme on Linux. A tap of Alt or F10 focuses it,
@@ -1071,10 +1082,24 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
         sees the Windows bar.
         - Status: the bar, the right-click menus, and the look follow the visitor (`new DemoMenuBar(platform)`, the
           visitor's own conventions row, no look pin; `lib/demo/DETAILS.md` § Platform). Still open: the new-query key
-          (a fixed-key command can't be seeded, so picking one needs a seam in the shortcut store, David's call), and
-          the macOS traffic lights every visitor still gets (with `overlayTitleBar`). Once step 6 draws the bar in the
-          main window, the demo answers `get_menu_bar` and the pick commands from `DemoMenuBar` and drops its own strip
-          for a Windows or Linux visitor (`coverage.ts`'s `IN_PAGE_MENUS`).
+          (a fixed-key command can't be seeded, so picking one needs a seam in the shortcut store, David's call).
+          Windows and Linux visitors get their OS's title bar above each window (`lib/demo/title-bar.ts`, no
+          `overlayTitleBar`, as the desktop keeps the OS's decorations there) and the main volume named as the desktop
+          names it (`C:`, `Root`).
+        - Paths stay POSIX for every visitor (`/Users/you`, `~/Downloads`, Copy path's `/Users/you/…`). Windows paths
+          for a Windows visitor would take: (1) the engine's demo volume rooted at an app path `C:/` with the tree under
+          `C:/Users/you` (`cmdr-listing-wasm`'s `tree.rs` takes the root and home from `lib/demo/demo-tree.ts`, whose
+          entries are POSIX strings today), (2) nothing in the frontend: its grammar already follows the platform
+          (`hostPathFlavor` in `#lib/path/grammar.ts`), so breadcrumbs and Go to folder would follow. Landmine: that
+          means a Windows visitor's frontend reads today's POSIX paths in Windows flavor (`/Users/you` has no drive root
+          there); the panes work, but no test pins which grammar helper a POSIX path survives, (3) `demoPath`'s `~`
+          expansion and every `~`-expanded argument in `listing.ts` against the new home, (4) `getNameRules` answering
+          Windows' format (reserved names, forbidden characters) for that visitor, with the write engine refusing what
+          the desktop's Windows volume refuses, (5) Copy path's text in Windows spelling (`\`), as the desktop's
+          clipboard command writes it, and (6) the volume answers (`volumes.ts`: `path`, `volumeRoot`, favorites) and
+          the website suite's path assertions per visitor. Not started: David's call.
+        - Once step 6 draws the bar in the main window, the demo answers `get_menu_bar` and the pick commands from
+          `DemoMenuBar` and drops its own strip for a Windows or Linux visitor (`coverage.ts`'s `IN_PAGE_MENUS`).
     12. [XS] **Delete `tools/menu-spike/`** once steps 6 and 7 and task 67 have taken what they need (list above): the
         folder, its line in `AGENTS.md`'s `tools/` list, and the README pointer in `menu-spike.md` (the note stays as
         the decision's record). Done when: no doc links the folder.

@@ -84,12 +84,11 @@ describe('visitorCapabilities', () => {
       expect(mac[capability], capability).toBe(true)
   })
 
-  // No `appMenu`: their bar is their own OS's, with Quit at the end of File (task 63 step 11).
-  // With `overlayTitleBar`, each page keeps its title line under the traffic lights the demo draws
-  // on every window, so the lights never cover a page's own controls (the queue's "Pause all").
-  it('shows everyone else no OS-backed surface but the title line the demo’s traffic lights sit on', () => {
-    const chrome = { ...NO_CAPABILITIES, overlayTitleBar: true }
-    expect(visitorCapabilities('windows')).toEqual(chrome)
-    expect(visitorCapabilities('linux')).toEqual(chrome)
+  // No `appMenu`: their bar is their own OS's, with Quit at the end of File (task 63 step 11). No
+  // `overlayTitleBar`: their windows keep the OS's title bar above the page (`title-bar.ts`), so
+  // no page leaves room under buttons drawn over it.
+  it('shows everyone else no OS-backed surface, as the desktop answers for Windows and Linux', () => {
+    expect(visitorCapabilities('windows')).toEqual(NO_CAPABILITIES)
+    expect(visitorCapabilities('linux')).toEqual(NO_CAPABILITIES)
   })
 })

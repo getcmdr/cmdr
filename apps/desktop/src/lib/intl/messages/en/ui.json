@@ -31,6 +31,34 @@
   "@ui.demoArchive.notBrowsable": {
     "description": "Notification in the browser demo on getcmdr.com, shown when a visitor tries to open or step into an archive file (a .zip, .tar.gz, .7z, and so on). The demo can't show what's inside archives; the installed app can. The second sentence lists what the real app does with archives: browse them like folders, change their contents, unpack (extract) them, and compress files into new ones. It's information, not a problem report: nothing went wrong."
   },
+  "ui.demoDesktopOnly.filePicker": "This demo can’t open your computer’s file picker. In the real app, this opens one, so you can choose a file or folder.",
+  "@ui.demoDesktopOnly.filePicker": {
+    "description": "Notification in the browser demo on getcmdr.com, shown when a visitor does something that opens the operating system's own file or folder picker in the installed app (for example Save as in the file viewer, or choosing an app or folder in Settings). A web page can't show that picker for the demo's pretend files, so nothing opens. It's information, not a problem report: nothing went wrong."
+  },
+  "ui.demoDesktopOnly.revealFolder": "This demo can’t open folders on your computer. In the real app, this shows the folder in your file manager.",
+  "@ui.demoDesktopOnly.revealFolder": {
+    "description": "Notification in the browser demo on getcmdr.com, shown when a visitor clicks something that, in the installed app, opens a folder on their computer in the operating system's own file manager (Finder on a Mac, File Explorer on Windows), for example the logs folder in Settings. A web page can't do that. \"File manager\" is the generic name for that app. It's information, not a problem report: nothing went wrong."
+  },
+  "ui.demoDesktopOnly.quit": "This demo runs in a browser tab, so it can’t quit. Close the tab when you’re done.",
+  "@ui.demoDesktopOnly.quit": {
+    "description": "Notification in the browser demo on getcmdr.com, shown when a visitor picks Quit Cmdr (Exit Cmdr on Windows) from the command palette. A web page can't close its own browser tab, so the demo stays open and tells them how to leave. Friendly and brief; nothing went wrong."
+  },
+  "ui.demoQuestion.no": "No",
+  "@ui.demoQuestion.no": {
+    "description": "Button label in a yes-or-no question box in the browser demo on getcmdr.com, standing in for the operating system's own question box the installed app shows. It answers the question with no. Use the exact word your operating system's own question boxes use for this button."
+  },
+  "ui.demoQuestion.yes": "Yes",
+  "@ui.demoQuestion.yes": {
+    "description": "Button label in a yes-or-no question box in the browser demo on getcmdr.com, standing in for the operating system's own question box the installed app shows. It answers the question with yes. Use the exact word your operating system's own question boxes use for this button."
+  },
+  "ui.demoWindow.maximize": "Maximize",
+  "@ui.demoWindow.maximize": {
+    "description": "VERB (imperative). Screen-reader name of the middle of the three window buttons (minimize, maximize, close) at the right end of a window's title bar, which makes the window fill the screen, as the browser demo on getcmdr.com draws it for a visitor on Windows or Linux. Use the exact word Windows uses for this caption button's tooltip in this language."
+  },
+  "ui.demoWindow.restore": "Restore",
+  "@ui.demoWindow.restore": {
+    "description": "VERB (imperative). The same middle window button while the window fills the screen: it brings the window back to its earlier size. Browser demo on getcmdr.com, Windows or Linux visitor. Use the exact word Windows uses for this caption button's tooltip in this language (in English, Windows says \"Restore\" or \"Restore Down\")."
+  },
   "ui.popover.defaultAriaLabel": "Options",
   "@ui.popover.defaultAriaLabel": {
     "description": "Default aria-label naming a popover region when the caller passes none. Generic fallback meaning a small floating panel of choices."

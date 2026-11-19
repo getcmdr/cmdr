@@ -3282,7 +3282,14 @@
     "distinct": ["put-back", "undo", "rollback", "reset"],
     "en": "restore",
     "match": ["restore", "restores", "restored", "restoring"],
-    "notMatch": ["politely restored", "restore defaults"],
+    "notMatch": [
+      "politely restored",
+      "restore defaults",
+      {
+        "key": "ui.demoWindow.restore",
+        "why": "The window caption button that un-maximizes a window (Windows Restore Down), not getting a file or state back; each locale takes its Windows tooltip word."
+      }
+    ],
     "sense": "Getting a file or an earlier state back from somewhere that kept it (a document revision, a cloud service's trash, a backup)."
   },
   "resume": {

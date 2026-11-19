@@ -56,6 +56,26 @@ describe('demo webview', () => {
     expect(result).not.toBe(answer)
   })
 
+  // "Tell me about this" streams its card over a `Channel`: the id crosses tagged with this
+  // window's label, and each message comes back in order, then the end.
+  it('tags a Channel with its window and delivers its messages in order, then its end', async () => {
+    const fake = fakeBackend(null)
+    installWebview(fake.backend, 'viewer-2')
+    const { Channel } = await import('@tauri-apps/api/core')
+    const heard: unknown[] = []
+    const channel = new Channel<string>((message) => heard.push(message))
+    await invoke('about_start', { request: { requestId: 'r' }, onEvent: channel })
+
+    const sent = fake.invoked[0][1] as { onEvent: string }
+    expect(sent.onEvent).toBe(`__CHANNEL__:viewer-2:${String(channel.id)}`)
+    const webview = fake.webview()
+    if (!webview) throw new Error('the webview never attached')
+    webview.deliverChannel(channel.id, { message: 'planned' })
+    webview.deliverChannel(channel.id, { message: 'fact' })
+    webview.deliverChannel(channel.id, { end: true })
+    expect(heard).toEqual(['planned', 'fact'])
+  })
+
   it('answers questions about its own window itself, and forwards ones about another', async () => {
     const fake = fakeBackend()
     installWebview(fake.backend, 'main')

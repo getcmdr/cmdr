@@ -18,10 +18,11 @@ func RunWebsiteE2E(ctx *CheckContext) (CheckResult, error) {
 
 // RunWebsiteDemoE2E runs the full browser demo suite (the smoke plus `demo.spec.ts`) against the
 // site's `dist/demo/`, which must exist: the release pipeline's `demo` job and the nightly CI run
-// build the demo from the same sources first. Two projects, one per visitor OS: the demo answers a
-// Windows visitor (`demo`) and a Mac one (`demo-mac`) with their own OS's keys and copy.
+// build the demo from the same sources first. Three projects, one per visitor OS: the demo answers a
+// Windows visitor (`demo`), a Mac one (`demo-mac`), and a Linux one (`demo-linux`) with their own
+// OS's keys, copy, and window chrome.
 func RunWebsiteDemoE2E(ctx *CheckContext) (CheckResult, error) {
-	return runWebsitePlaywright(ctx, []string{"demo", "demo-mac"}, true)
+	return runWebsitePlaywright(ctx, []string{"demo", "demo-mac", "demo-linux"}, true)
 }
 
 func runWebsitePlaywright(ctx *CheckContext, projects []string, needsDemo bool) (CheckResult, error) {

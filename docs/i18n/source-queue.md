@@ -402,6 +402,11 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   `i18n-mechanics`, then a byte-compare script). An `i18n:values --ref <rev>` that prints escapes, or an
   `i18n:apply --restore-from <rev>` for the `macos` branch, would make the restore exact. (all locales, per-OS machine
   names batch)
+- A two-key batch for 13 locales: `i18n:pile` and `i18n:check-locale` take one `--lang` each, so the lookups took four
+  chained calls and the checks two chains of six to seven locales, and each check chain outran the Bash tool's 120 s
+  foreground limit and moved to the background. A shell variable for the run directory was refused again ("names git").
+  A `--lang all` on `check-locale` (reading each locale's latest run directory) and on `i18n:pile` would make each one
+  call. No script written. (all locales, demo question box)
 - The pile has no Disk Utility strings, so "Mac OS Extended" had no hits; it came from `plutil` + `jq` over StorageKit's
   `Localizable.loctable` on the live system. A `pnpm i18n:pile --macos-live` lookup would cover it. Also, `i18n:apply`
   takes one `--lang` and the guard refused shell loops and variables, so 13 locales meant 26 separate calls; the

@@ -6,7 +6,10 @@ const engine = vi.hoisted(() => ({
   invoked: [] as [string, unknown][],
   platforms: [] as string[],
   failInit: false,
+  menus: null as unknown[] | null,
 }))
+
+const MAC_BAR = [{ id: 'app', title: { text: 'Cmdr' }, rows: [{ kind: 'separator' }] }]
 
 vi.mock('virtual:cmdr-listing-wasm', () => ({
   default: () => (engine.failInit ? Promise.reject(new Error('no wasm')) : Promise.resolve()),
@@ -22,7 +25,7 @@ vi.mock('virtual:cmdr-listing-wasm', () => ({
       return null
     }
     bar(): unknown {
-      return [{ id: 'app', title: { text: 'Cmdr' }, rows: [{ kind: 'separator' }] }]
+      return engine.menus ?? MAC_BAR
     }
     click(menuId: string): unknown {
       return { kind: 'emit', event: 'execute-command', payload: { commandId: menuId } }
@@ -38,6 +41,7 @@ afterEach(() => {
   engine.invoked = []
   engine.platforms = []
   engine.failInit = false
+  engine.menus = null
   vi.restoreAllMocks()
 })
 
@@ -63,6 +67,22 @@ describe('menu engine', () => {
     const handle = startMenuEngine('windows')
     expect(await handle.ready).toBe(true)
     expect(engine.platforms).toEqual(['windows'])
+  })
+
+  // The Linux shortcut recorder warns about a combo the bar's Alt+letter takes: the letters are
+  // the ones the drawn bar binds, by the app's own access-key rule over its titles.
+  it('names the bar titles’ Alt letters off the Mac, and none on it', async () => {
+    engine.menus = ['File', 'Edit', 'Find', 'View'].map((text) => ({ id: text, title: { text }, rows: [] }))
+    const linux = startMenuEngine('linux')
+    await linux.ready
+    expect(await linux.titleMnemonics()).toEqual([
+      { letter: 'f', menu: 'File' },
+      { letter: 'e', menu: 'Edit' },
+      { letter: 'i', menu: 'Find' },
+      { letter: 'v', menu: 'View' },
+    ])
+    const mac = startMenuEngine('macos')
+    expect(await mac.titleMnemonics()).toEqual([])
   })
 
   it('draws nothing, claims nothing, and refuses a push when the engine fails to load', async () => {

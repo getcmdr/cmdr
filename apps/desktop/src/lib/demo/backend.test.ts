@@ -87,15 +87,34 @@ import { clearAllToasts, getToasts } from '#lib/ui/toast/index.js'
 function fakeWebview(label: string) {
   const heard: [string, unknown, EventTarget][] = []
   const themes: AppTheme[] = []
+  const channels: [number, unknown][] = []
   const webview: DemoWebview = {
     label,
     deliver: (event, payload, target) => heard.push([event, payload, target]),
+    deliverChannel: (id, delivery) => channels.push([id, delivery]),
     setTheme: (theme) => themes.push(theme),
   }
-  return { webview, heard, themes }
+  return { webview, heard, themes, channels }
 }
 
 describe('demo backend', () => {
+  // The About card's messages: an engine notice names the frame's tagged channel (`channels.ts`).
+  it('hands a channel message to the frame that made the channel, and to no other', () => {
+    const backend = createDemoBackend()
+    const main = fakeWebview('main')
+    const viewer = fakeWebview('viewer-1')
+    backend.attach(main.webview)
+    backend.attach(viewer.webview)
+    engine.sink?.({ name: 'demo://channel', payload: { channel: '__CHANNEL__:viewer-1:4', message: 'planned' } })
+    engine.sink?.({ name: 'demo://channel', payload: { channel: '__CHANNEL__:viewer-1:4', end: true } })
+    expect(viewer.channels).toEqual([
+      [4, { message: 'planned' }],
+      [4, { end: true }],
+    ])
+    expect(main.channels).toEqual([])
+    expect(main.heard).toEqual([])
+  })
+
   it('answers from its TS tables before asking the engine', async () => {
     const backend = createDemoBackend()
     // `get_default_volume_id` is claimed by both: the TS answer wins.

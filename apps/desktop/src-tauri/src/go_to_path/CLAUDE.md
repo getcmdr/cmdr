@@ -5,8 +5,10 @@ reasoning plus the recent-paths store; the IPC layer (`commands/go_to_path.rs`) 
 
 ## Module map
 
-- **`mod.rs`**: pure `resolve(input, base_dir) -> GoToPathResolution` (`~` expansion, relative-to-`base_dir` join,
-  lexical `.`/`..` normalization, nearest-ancestor walk, dir/file classify) + unit tests
+- **`mod.rs`**: pure `resolve(input, base_dir) -> GoToPathResolution` over the local disk (`LocalDisk`: `~`, `metadata`,
+  the archive boundary) + unit tests. The rules (`~` expansion, relative-to-`base_dir` join, lexical `.`/`..`
+  normalization, nearest-ancestor walk, dir/file classify) and the type are `cmdr_fs::go_to_path`, shared with the
+  browser demo's engine (`crates/cmdr-listing-wasm/src/go_to.rs`)
 - **`history.rs`**: the `RecentPathEntry` shape and `RECENT_PATHS`, a `crate::recents` list keyed on the resolved path
   with a fixed cap
 
