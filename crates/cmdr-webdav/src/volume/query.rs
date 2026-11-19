@@ -74,7 +74,10 @@ impl WebdavVolume {
                 continue;
             }
             let name = href_name(&prop.href);
-            if name.is_empty() {
+            // ❗ A member named `.` or `..` (a misbehaving server's `%2E%2E`) would list as
+            // the folder itself or its parent, where a delete or a move of that row acts on
+            // a folder nobody picked: no row, ❌ never one at the normalized path.
+            if matches!(name, "" | "." | "..") {
                 continue;
             }
             // A delete's empty leftover aside goes the moment a listing sees it.

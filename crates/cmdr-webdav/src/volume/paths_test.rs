@@ -178,3 +178,24 @@ async fn a_name_holding_a_backslash_or_a_colon_is_one_name() {
     assert_eq!(stat.name, name);
     assert_eq!(stat.path, expected_path);
 }
+
+/// ❗ A member a server names `.` or `..` (percent-encoded, `%2E%2E`, so it survives the
+/// href's own normalization) is dropped from the listing, ❌ never a row: its path would be
+/// the folder itself or its PARENT, so a delete or a move of that row would act on a folder
+/// the person never picked. Its siblings still list.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_member_named_dot_or_dot_dot_is_no_row() {
+    let server = super::super::fake_dav::FakeDav::start().await;
+    let (volume, _) = server.connected().await;
+    server.put_node("box", true);
+    server.put_node("box/.", false);
+    server.put_node("box/..", false);
+    server.put_node("box/kept.txt", false);
+    let tree = super::super::testing::child(volume.root(), "tree");
+    let folder = super::super::testing::child(&tree, "box");
+
+    let listed = volume.list_directory(&folder, None).await.expect("the listing");
+
+    let names: Vec<&str> = listed.iter().map(|entry| entry.name.as_str()).collect();
+    assert_eq!(names, vec!["kept.txt"]);
+}
