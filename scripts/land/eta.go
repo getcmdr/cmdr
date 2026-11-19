@@ -467,6 +467,7 @@ var laneShortNames = map[string]string{
 	"Desktop (Rust)":                                  "Rust",
 	"Desktop (Rust, fixtures)":                        "Rust fixtures",
 	"Desktop (Rust, macOS)":                           "macOS",
+	"Desktop (Rust, Windows)":                         "Windows",
 	"Desktop (Svelte)":                                "Svelte",
 	"E2E tests (Playwright, Linux)":                   "E2E",
 	"E2E base image":                                  "",

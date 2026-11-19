@@ -11,7 +11,8 @@ import (
 
 // Rule 9 of `ci-coverage`: a standalone lane file. Every `*-lane.yml` is a reusable
 // workflow `ci.yml` calls, except one that triggers itself and declares no `workflow_call`
-// (`windows-lane.yml`, which has to stay outside `CI OK` until it's green). Nothing in `ci.yml` gates it, so its own
+// (none today; `windows-lane.yml` was one until it joined `CI OK`, and a new platform lane
+// that must stay outside the gate until it's green would be the next). Nothing in `ci.yml` gates it, so its own
 // `push.paths` is its filter, and it answers to the same contract a caller's filter does
 // (rules 6 and 8): it lists the lane file, every local action the lane uses, and
 // `.mise.toml`, and it covers the fingerprint of every check the lane runs. Without that, a

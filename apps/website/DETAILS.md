@@ -503,6 +503,10 @@ embeds it (below), and `/demo/` is a page of its own too, in the sitemap and `ll
     cells); and a PR that changed the demo once reached `main` with its own suite never run (PR #1269). Both jobs
     prepare through `.github/actions/website-demo-suite`. Locally: `pnpm build:demo`, `CMDR_WEBSITE_DEMO=1 pnpm build`
     here, then `pnpm check website-demo-e2e`.
+- **Each E2E run serves `dist/` on its own port**: `website-e2e` and `website-demo-e2e` probe a free port in 10000–29999
+  on 127.0.0.1 and pass it as `CMDR_WEBSITE_E2E_PORT`, which `playwright.config.ts` turns into `serve`'s listen address
+  and `baseURL` (a direct `playwright test` picks one at random). The fixed 18473 let two worktrees' runs collide
+  (2026-11-19).
 - **Other dist checks skip `dist/demo/`**: `.htmlvalidateignore` (the desktop's `app.html` conventions differ) and
   `website-dead-links` (Vite hashes its own asset names, so the `?v=` rule doesn't apply). A build without the demo (no
   `CMDR_WEBSITE_DEMO=1`) can't judge links INTO `/demo/` either, like the hero's, so `website-dead-links` skips those

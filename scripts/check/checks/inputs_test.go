@@ -425,6 +425,7 @@ var realTreeReadingTests = map[string][]string{
 	"TestMiseGoVersionReadsThePin":                             {".mise.toml"},
 	"TestLinuxImageProvisionsThePinnedTools":                   {".mise.toml", "rust-toolchain.toml"},
 	"TestLinuxRustdocAsksCIsQuestion":                          {"Cargo.toml", "crates/fsevent-stream/Cargo.toml", "apps/desktop/src-tauri/Cargo.toml"},
+	"TestWindowsClippyAsksTheWindowsLanesQuestion":             {"Cargo.toml", "crates/fsevent-stream/Cargo.toml"},
 	"TestCheckoutCacheKeyMatchesTheE2ELinuxScript":             {"apps/desktop/scripts/e2e-linux.sh"},
 	"TestModuleCyclesAllowlistMatchesPinnedVersion":            {"scripts/check/checks/module-cycles-allowlist.json"},
 	"TestModuleCyclesPackagesAreTheLibraryMembers":             {"Cargo.toml", "crates/cmdr-fs/Cargo.toml"},
