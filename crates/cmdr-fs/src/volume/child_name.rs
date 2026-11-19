@@ -14,7 +14,7 @@
 //! either way would be a guess (`crates/cmdr-fs/DETAILS.md` § "App paths").
 //!
 //! What it refuses: the empty name, `.`, `..`, any `/`, and NUL. An absolute
-//! name starts with `/`, so it's covered. What it keeps:
+//! name starts with `/`, so it's covered. What it keeps, on macOS and Linux:
 //!
 //! - `:` is an ordinary character at the POSIX layer every write goes through.
 //!   Finder shows it as `/` (the old HFS separator swap), but the kernel never
@@ -22,6 +22,11 @@
 //! - `\` is ordinary on macOS too. An SMB destination, where it IS a separator,
 //!   never sees it raw: `smb2` maps it into the private-use area like every other
 //!   character SMB forbids (`VolumeError::InvalidName`'s doc).
+//!
+//! ❗ On Windows the native join splits on `\` and reads `a:b` as a stream of `a`, so there
+//! both are refused too (`is_plain_name`): the item fails as an unusable name, where a
+//! join would have written into a subfolder or a stream. A name a remote destination could
+//! hold that way waits for the engines' app-path join (`AppName`).
 //!
 //! A refusal is [`VolumeError::InvalidName`](super::VolumeError::InvalidName)
 //! (through [`NotAChildName`], whose `From` lives beside `VolumeError`), the
@@ -32,6 +37,7 @@ use std::ffi::OsStr;
 use std::fmt;
 use std::path::{Path, PathBuf};
 
+use crate::app_path::PathFlavor;
 use crate::log_error::{ErrorLogText, ErrorText, write_plain};
 use crate::log_private::LogPrivate;
 
@@ -49,9 +55,7 @@ impl<'a> ChildName<'a> {
     /// `name`, if it's one plain path component.
     pub fn new(name: &'a (impl AsRef<OsStr> + ?Sized)) -> Result<Self, NotAChildName> {
         let name = name.as_ref();
-        let bytes = name.as_encoded_bytes();
-        let plain = !matches!(bytes, b"" | b"." | b"..") && !bytes.iter().any(|&b| b == b'/' || b == 0);
-        if plain {
+        if is_plain_name(name.as_encoded_bytes(), PathFlavor::HOST) {
             Ok(Self(name))
         } else {
             Err(NotAChildName(name.to_string_lossy().into_owned()))
@@ -75,6 +79,18 @@ impl<'a> ChildName<'a> {
     }
 }
 
+/// Whether `bytes` (an `OsStr`'s encoded bytes) are one plain name a native `join` under
+/// `flavor`'s rules keeps a direct child: never empty, `.`, or `..`, never a `/` or a NUL,
+/// and under Windows never a `\` (a separator there, so `dest.join("a\\b")` lands in a
+/// subfolder) or a `:` (`dest.join("a:b")` names an alternate data stream of `a`, or with
+/// a drive letter a drive-relative path). Reserved names and trailing dots and spaces pass:
+/// they're names an NTFS folder can hold, and only the plain-path form refuses them
+/// (`app_path::NotPlainSafe`). Pure, so every OS tests both flavors.
+pub(crate) fn is_plain_name(bytes: &[u8], flavor: PathFlavor) -> bool {
+    let separator = |b: u8| b == b'/' || b == 0 || (flavor == PathFlavor::Windows && (b == b'\\' || b == b':'));
+    !matches!(bytes, b"" | b"." | b"..") && !bytes.iter().any(|&b| separator(b))
+}
+
 impl fmt::Display for NotAChildName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write_plain(self, f)
@@ -95,10 +111,59 @@ mod tests {
     use super::*;
     use crate::volume::VolumeError;
 
+    /// The names each host's native join keeps a direct child: `:` and `\` are ordinary on
+    /// POSIX and separators (or a stream) on Windows. Pure, so both flavors run on every OS.
     #[test]
-    #[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
+    fn a_plain_name_is_one_component_under_each_flavor() {
+        let both = [
+            "photo.jpg",
+            "...",
+            ".hidden",
+            "with space",
+            "ünï",
+            "CON",
+            "trail.",
+            "trail ",
+            "nul.txt",
+        ];
+        for good in both {
+            for flavor in [PathFlavor::Posix, PathFlavor::Windows] {
+                assert!(is_plain_name(good.as_bytes(), flavor), "{good:?} under {flavor:?}");
+            }
+        }
+        for posix_only in ["a:b", "back\\slash", "C:", "x:$DATA", "\\\\server"] {
+            assert!(
+                is_plain_name(posix_only.as_bytes(), PathFlavor::Posix),
+                "{posix_only:?}"
+            );
+            assert!(
+                !is_plain_name(posix_only.as_bytes(), PathFlavor::Windows),
+                "{posix_only:?}"
+            );
+        }
+        for neither in ["", ".", "..", "a/b", "/x", "x\0y"] {
+            for flavor in [PathFlavor::Posix, PathFlavor::Windows] {
+                assert!(
+                    !is_plain_name(neither.as_bytes(), flavor),
+                    "{neither:?} under {flavor:?}"
+                );
+            }
+        }
+        // Not valid UTF-8 (a Linux name): plain under POSIX.
+        assert!(is_plain_name(b"caf\xe9", PathFlavor::Posix));
+    }
+
+    #[test]
     fn a_plain_name_passes_and_joins_as_a_direct_child() {
-        for good in ["photo.jpg", "a:b", "back\\slash", "...", ".hidden", "with space", "ünï"] {
+        let host_only: &[&str] = if PathFlavor::HOST == PathFlavor::Posix {
+            &["a:b", "back\\slash"]
+        } else {
+            &[]
+        };
+        for good in ["photo.jpg", "...", ".hidden", "with space", "ünï"]
+            .iter()
+            .chain(host_only)
+        {
             let name = ChildName::new(good).unwrap_or_else(|e| panic!("{good:?} refused: {e}"));
             assert_eq!(
                 name.under(Path::new("/dest")).parent(),

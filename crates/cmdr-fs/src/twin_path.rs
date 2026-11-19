@@ -21,6 +21,8 @@ use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
+use crate::app_path::{AppName, AppPath, PathArithmetic};
+
 /// What starts a pick segment.
 pub const PICK: char = '\0';
 
@@ -63,6 +65,41 @@ pub fn unpicked(path: &Path) -> Cow<'_, Path> {
         (Some(_), Some(folder), Some(name)) => Cow::Owned(folder.join(name)),
         _ => Cow::Borrowed(path),
     }
+}
+
+/// The id `name` picks, or `None` for an ordinary name: [`pick_id`] for an app path's name.
+pub fn pick_id_of_name(name: &str) -> Option<u64> {
+    name.strip_prefix(PICK)?.parse().ok()
+}
+
+/// [`folder_of`] for an app path: its parent, stepping over a pick, and `None` at its
+/// volume's root (a pick right under a scheme root steps back to that root, never above
+/// it).
+pub fn folder_of_app(path: &AppPath) -> Option<&AppPath> {
+    let parent = path.parent()?;
+    if parent.file_name().is_some_and(|name| name.starts_with(PICK)) {
+        parent.parent()
+    } else {
+        Some(parent)
+    }
+}
+
+/// [`own_pick`] for an app path.
+pub fn own_pick_app(path: &AppPath) -> Option<u64> {
+    path.parent()?.file_name().and_then(pick_id_of_name)
+}
+
+/// [`unpicked`] for an app path.
+pub fn unpicked_app(path: &AppPath) -> Cow<'_, AppPath> {
+    if own_pick_app(path).is_none() {
+        return Cow::Borrowed(path);
+    }
+    let joined = folder_of_app(path)
+        .zip(path.file_name())
+        .and_then(|(folder, name)| folder.join(AppName::from_app_spelling(name).ok()?).ok());
+    // A name already in a canonical path joins back onto its folder; a bridge value that
+    // doesn't comes back as it is, as `unpicked` leaves a path it can't split.
+    joined.map_or(Cow::Borrowed(path), Cow::Owned)
 }
 
 /// `text` as a person reads it: every pick segment taken out, with the `/`
@@ -148,36 +185,97 @@ mod tests {
         assert_eq!(own_pick(Path::new("/DCIM/IMG_1.JPG")), None);
     }
 
-    #[test]
-    #[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
-    fn a_shown_path_has_every_pick_taken_out() {
-        let shown_of = |path: &Path| shown(path.to_str().expect("UTF-8")).into_owned();
+    /// A row path as an app path, built by the type's own join on every OS.
+    fn app_row(folder: &str, id: u64, name: &str) -> crate::app_path::AppPathBuf {
+        let pick = pick_segment(id);
+        let named = |text: &str| {
+            AppName::from_app_spelling(text)
+                .map(ToOwned::to_owned)
+                .expect("a plain name")
+        };
+        AppPath::from_normalized(folder)
+            .expect("a canonical folder")
+            .join(&named(&pick))
+            .and_then(|picked| picked.join(&named(name)))
+            .expect("joins")
+    }
 
-        assert_eq!(shown_of(&row("/DCIM", 42, "IMG_1.JPG")), "/DCIM/IMG_1.JPG");
-        assert_eq!(shown_of(&row("/DCIM", 7, "Trip").join("a.jpg")), "/DCIM/Trip/a.jpg");
-        assert_eq!(shown_of(&row("/", 3, "x")), "/x");
-        assert_eq!(shown_of(&row("", 3, "IMG_1.JPG")), "IMG_1.JPG", "a relative row path");
+    #[test]
+    fn a_shown_path_has_every_pick_taken_out() {
+        let shown_of = |path: &AppPath| shown(path.as_str()).into_owned();
+        let in_trip = app_row("/DCIM", 7, "Trip").join(AppName::from_app_spelling("a.jpg").expect("a name"));
+
+        assert_eq!(shown_of(&app_row("/DCIM", 42, "IMG_1.JPG")), "/DCIM/IMG_1.JPG");
+        assert_eq!(shown_of(&in_trip.expect("joins")), "/DCIM/Trip/a.jpg");
+        assert_eq!(shown_of(&app_row("/", 3, "x")), "/x");
         assert_eq!(
-            shown_of(&Path::new("/DCIM").join(pick_segment(9))),
+            shown(&format!("{}/IMG_1.JPG", pick_segment(3))),
+            "IMG_1.JPG",
+            "a relative row path"
+        );
+        assert_eq!(
+            shown(&format!("/DCIM/{}", pick_segment(9))),
             "/DCIM",
             "a pick at the end"
         );
         assert_eq!(
-            shown_path(&row("mtp://dev/65537/DCIM", 1, "a")),
+            shown_path(Path::new(&format!("mtp://dev/65537/DCIM/{}/a", pick_segment(1)))),
             Path::new("mtp://dev/65537/DCIM/a")
         );
         assert!(matches!(shown("/DCIM/IMG_1.JPG"), Cow::Borrowed(_)));
     }
 
     #[test]
-    #[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
     fn text_holding_twin_paths_reads_with_the_plain_paths() {
-        let first = row("/DCIM", 1, "a.jpg");
-        let second = row("/DCIM", 2, "a.jpg");
-        let text = format!("“{}” and “{}” clash", first.display(), second.display());
+        let first = app_row("/DCIM", 1, "a.jpg");
+        let second = app_row("/DCIM", 2, "a.jpg");
+        let text = format!("“{first}” and “{second}” clash");
 
         assert_eq!(shown(&text), "“/DCIM/a.jpg” and “/DCIM/a.jpg” clash");
         assert!(!shown(&text).contains(PICK));
+    }
+
+    /// The typed twins answer what the `Path` forms answer, on every root shape and every
+    /// OS, and never climb above a volume's root.
+    #[test]
+    fn the_typed_twins_find_the_folder_the_pick_and_the_shared_path() {
+        for folder in [
+            "/DCIM",
+            "mtp://dev/65537",
+            "mtp://dev/65537/DCIM",
+            "C:/DCIM",
+            "//nas/share/x",
+        ] {
+            let flavor = if folder.starts_with('/') && !folder.starts_with("//") {
+                crate::app_path::PathFlavor::Posix
+            } else {
+                crate::app_path::PathFlavor::Windows
+            };
+            let folder_path = AppPath::from_normalized_as(folder, flavor).expect("canonical");
+            let pick = AppName::from_app_spelling(&pick_segment(42))
+                .expect("a pick is a name")
+                .to_owned();
+            let name = AppName::from_app_spelling("IMG_1.JPG").expect("a name").to_owned();
+            let twin = folder_path.join(&pick).and_then(|p| p.join(&name)).expect("joins");
+            assert_eq!(folder_of_app(&twin), Some(folder_path), "{folder}");
+            assert_eq!(own_pick_app(&twin), Some(42), "{folder}");
+            let plain = folder_path.join(&name).expect("joins");
+            assert_eq!(unpicked_app(&twin).as_str(), plain.as_str(), "{folder}");
+            assert_eq!(own_pick_app(&plain), None, "{folder}");
+            assert!(matches!(unpicked_app(&plain), Cow::Borrowed(_)), "{folder}");
+        }
+        let under_root = AppPath::from_normalized(&format!("mtp://dev/{}/IMG_1.JPG", pick_segment(4)))
+            .expect("canonical")
+            .to_owned();
+        assert_eq!(
+            folder_of_app(&under_root).map(AppPath::as_str),
+            Some("mtp://dev/"),
+            "a pick right under the root steps back to the root, ❌ never above it"
+        );
+        assert_eq!(
+            folder_of_app(AppPath::from_normalized("mtp://dev/").expect("a root")),
+            None
+        );
     }
 
     #[test]
