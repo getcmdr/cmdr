@@ -7928,12 +7928,17 @@ export type BarMenuView = {
 // What a page's pick of a bar row did.
 export type BarPickOutcome =
   // The row's handler ran.
-  | 'ran'
+  | { kind: 'ran' }
   /**
    *  The row is greyed out right now, or isn't on the bar: nothing ran, as a greyed native row
    *  can't be clicked.
    */
-  | 'notLive'
+  | { kind: 'notLive' }
+  /**
+   *  The row edits the focused text field, which only the page can reach: the page runs `edit`
+   *  on it (the viewer's Cut and Paste, and the main bar's Edit rows outside the main window).
+   */
+  | { kind: 'textEdit'; edit: PageTextEdit }
 
 // A bar title's mnemonic: GTK opens the `menu` menu on `Alt+<letter>`.
 export type BarTitleMnemonic = {
@@ -16971,6 +16976,12 @@ export type OwnerPlace =
   | 'webData'
   // `~/.var/app` or `~/snap`: a sandboxed Linux app's home.
   | 'sandboxHome'
+
+/**
+ *  A text edit a page runs on its focused field. The wire words are the frontend's `TextFieldEdit`
+ *  (`#lib/context-menu/text-field-menu.ts`).
+ */
+export type PageTextEdit = 'cut' | 'copy' | 'paste' | 'selectAll'
 
 /**
  *  What the PANE contributes to a file context menu, as opposed to the file that

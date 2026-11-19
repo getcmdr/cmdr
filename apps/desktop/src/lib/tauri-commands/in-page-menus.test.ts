@@ -1,16 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { BarMenuView, MenuBarAnswer, MenuBarChanged } from '#lib/ipc/bindings.js'
+import type { BarMenuView, BarPickOutcome, MenuBarAnswer, MenuBarChanged } from '#lib/ipc/bindings.js'
 
 const ipc = vi.hoisted(() => ({
   answers: [] as (MenuBarAnswer | Error)[],
   listener: null as ((event: { payload: MenuBarChanged }) => void) | null,
   asked: 0,
+  /** What `pick_menu_bar_item` answers. */
+  pickOutcome: { kind: 'ran' } as BarPickOutcome,
   /** Lets a test land events while `get_menu_bar` is in flight. */
   beforeAnswer: null as (() => void) | null,
 }))
 
 vi.mock('#lib/ipc/bindings.js', () => ({
   commands: {
+    pickMenuBarItem: () => Promise.resolve(ipc.pickOutcome),
     getMenuBar: () => {
       ipc.asked++
       ipc.beforeAnswer?.()
@@ -33,7 +36,7 @@ vi.mock('#lib/ipc/bindings.js', () => ({
 }))
 
 import { applyMenuBarChange } from '#lib/ui/command-menu/bar-change.js'
-import { followMenuBar } from './in-page-menus'
+import { followMenuBar, pickMenuBarItem } from './in-page-menus'
 
 function bar(hidden: boolean, label = 'Show hidden files'): BarMenuView[] {
   return [
@@ -173,5 +176,39 @@ describe('followMenuBar', () => {
     const stop = await followMenuBar(() => {})
     stop()
     expect(ipc.listener).toBeNull()
+  })
+})
+
+describe('pickMenuBarItem', () => {
+  afterEach(() => {
+    ipc.pickOutcome = { kind: 'ran' }
+    document.body.replaceChildren()
+  })
+
+  function focusedField(): HTMLInputElement {
+    const field = document.createElement('input')
+    field.value = 'test_file_1'
+    document.body.append(field)
+    field.focus()
+    field.setSelectionRange(0, 0)
+    return field
+  }
+
+  // Regression anchor (review of #1265): the viewer bar's Cut and Paste went to a host lane that
+  // did nothing on Windows. A field's edit comes back to the page, which runs it on the field.
+  it('runs a text edit the backend hands back on the field that holds focus', async () => {
+    const field = focusedField()
+    ipc.pickOutcome = { kind: 'textEdit', edit: 'selectAll' }
+
+    await pickMenuBarItem('select_all_files')
+
+    expect([field.selectionStart, field.selectionEnd]).toEqual([0, 'test_file_1'.length])
+  })
+
+  it('leaves the page alone for a row the backend ran', async () => {
+    const field = focusedField()
+
+    expect(await pickMenuBarItem('file_copy')).toEqual({ kind: 'ran' })
+    expect([field.selectionStart, field.selectionEnd]).toEqual([0, 0])
   })
 })

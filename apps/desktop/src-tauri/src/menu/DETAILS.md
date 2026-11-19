@@ -62,7 +62,8 @@ display-only keys, swaps) are the native bar's, so macOS's; the rows themselves 
 - `menu_handlers.rs`: `handle_menu_event`, the `.on_menu_event` dispatcher (a bar row's view-mode and sort lanes come
   from `cmdr_menu::click::bar_click`), plus the macOS
   post-construction wrappers `cleanup_macos_menus` / `set_macos_menu_icons` and
-  `send_native_edit_action` over the pure `native_edit_selector_for` (the per-OS edit lives in `focused_field_edit/`)
+  `edit_road` (where an Edit row's pick goes: the main window's command, the queue's rows, or the focused field;
+  macOS runs a field's edit through `focused_field_edit/`, a page bar gets it back as `BarPickOutcome::TextEdit`)
   and `focused_viewer_label` / `viewer_edit_action_for`, which route the viewer bar's own items to the viewer in front.
 - `accelerators.rs`: `frontend_shortcut_to_accelerator` (the crate's bar conversion for
   this platform), `update_menu_item_accelerator` (swapping one on a live item), and the muda-parsing tests.
@@ -393,7 +394,10 @@ row is decided here or in the frontend.
 - **Who draws it**: the main window (`MainMenuBar.svelte`, inert under a dialog, an explorer overlay, or the palette) and
   the viewer (`apps/desktop/src/routes/viewer/ViewerMenuBar.svelte`, from its own state), wherever `pageDrawsMenuBar()` says so
   (`apps/desktop/src/lib/platform/conventions.ts`: every menu model but macOS's, GNOME's `primaryMenu` included until
-  its main-menu button lands in step 8). Settings, the queue, the Keyboard shortcuts window, and Debug wear no bar.
+  its main-menu button lands in step 8). Settings, the queue, the Keyboard shortcuts window, and Debug wear no bar, yet
+  keep every key the main bar shows: each follows the bar and picks a row by its key
+  (`apps/desktop/src/lib/ui/DETAILS.md` § Command menus), so `CLOSE_TAB_ID`'s "close the focused non-main window" lane
+  and the other app-wide rows still run there.
   On Windows each window's `SC_KEYMENU` guard keeps a lone Alt and F10 the page's
   (`apps/desktop/src-tauri/src/platform/windows/keymenu.rs`).
 - **Live labels** come from the same pushes the native items get (`update_select_same_kind_menu`,
@@ -697,10 +701,10 @@ menu is swapped wholesale via `app.set_menu()`:
   - Its **Edit** submenu is a deliberate mix, because the two halves act on different things.
     - **Cut and Paste belong to the search box**, the only editable field in a viewer window. On macOS they're Custom
       items (`VIEWER_EDIT_CUT_ID` / `VIEWER_EDIT_PASTE_ID`) that forward the native `cut:` / `paste:` selectors down
-      the responder chain themselves, through the same `send_native_edit_action` the main bar's Edit items use outside
-      the main window. ❗ Everywhere else they stay `PredefinedMenuItem`s: the responder chain is macOS-only, so a
-      Custom item off macOS would leave ⌘X / ⌘V dead in the viewer's search field, which is exactly what trimming them
-      did once. ❌ Whatever else changes about these two, don't break that: `native_edit_selector_for` pins the
+      the responder chain themselves, through `edit_road`'s field road, the one the main bar's Edit items take outside the main window. Off
+      macOS no native viewer bar exists: the page bar's pick of either comes back as `BarPickOutcome::TextEdit`, and the
+      page runs it on the search box (`apps/desktop/src/lib/tauri-commands/in-page-menus.ts` `pickMenuBarItem`), which
+      keeps them live while their menu is open through the bar's focus origin (`ViewerMenuBar.svelte`). ❌ Whatever else changes about these two, don't break that: `native_edit_selector_for` pins the
       mapping.
     - **Decision/Why they're Custom at all:** so `apply_menu_item_states` can grey them out while the search box
       doesn't have focus (§ "Dialog refusals, and the one writer of an item's enabled state"). Always-live items that
@@ -1464,17 +1468,15 @@ class of bug.
   Select all. In `handle_menu_event`, these are handled specially: if the main window is focused,
   they route through `execute-command` so the frontend can decide between file and text semantics
   (via `document.activeElement` check). If a non-main window is focused,
-  `send_native_edit_action()` in `menu_handlers.rs` runs the text edit in that window's focused field
-  (`focused_field_edit/`): on macOS the native `copy:`/`cut:`/`paste:`/`selectAll:` selector through the
-  responder chain via `NSApplication.sendAction:to:from:`, replicating what PredefinedMenuItems do
-  internally; on Linux WebKitGTK's `execute_editing_command` on the focused window's view, since GTK
-  takes the bar's `Ctrl+X` / `Ctrl+C` / `Ctrl+V` before the page sees them (real X keys in a Settings field
-  reached no keydown and cut nothing without it: `menu-bar.spec.ts`, 2026-11-12). This ensures text
-  clipboard and text select-all work natively in all windows. Undo and Redo remain
+  `edit_road` in `menu_handlers.rs` sends the text edit to that window's focused field: on macOS the native
+  `copy:`/`cut:`/`paste:`/`selectAll:` selector through the responder chain via `NSApplication.sendAction:to:from:`
+  (`focused_field_edit/`), replicating what PredefinedMenuItems do internally. Off macOS no native bar takes a key, so
+  the browser edits a field itself, and a page bar's pick of an Edit row comes back as `BarPickOutcome::TextEdit` for
+  the page to run (WebView2 has no editing command a host can send). Undo and Redo remain
   PredefinedMenuItems since they only apply to text fields. ❗ In practice the native branch serves Settings and the
   other main-bar windows: a focused VIEWER has swapped the viewer bar in, and all four of its items carry their own ids
-  and their own lanes (§ "Per-window menu activation"). The viewer's Cut / Paste land in the same
-  `send_native_edit_action`, off their own branch and unconditionally: `native_edit_selector_for` maps both bars' ids,
+  and their own lanes (§ "Per-window menu activation"). The viewer's Cut / Paste take the same field
+  road, unconditionally: `native_edit_selector_for` maps both bars' ids,
   and the main-bar branch asks a question ("is the MAIN window focused?") that a viewer click would answer right by
   accident rather than by rule.
 - **⌘A dual routing**: "Select all" uses ⌘A as a native menu accelerator (so it's visible in the
@@ -1482,9 +1484,9 @@ class of bug.
   above). Since macOS intercepts it before the webview, the keystroke must be re-routed per focus:
   main window → `execute-command`, where the frontend's `handleCommandExecute` checks
   `document.activeElement` (input/textarea → `.select()` for text, otherwise select files);
-  non-main window → native `selectAll:` via `send_native_edit_action()` (without this branch ⌘A is
+  non-main window → native `selectAll:` through `edit_road`'s field road (without this branch ⌘A is
   dead in settings text fields — the `FileScoped` focus guard would silently drop it); the operation queue window →
-  `queue-select-all`, ahead of that branch, because the queue's ⌘A checks every row for "Cancel selected" and a native
+  `queue-select-all`, ahead of the field road, because the queue's ⌘A checks every row for "Cancel selected" and a native
   `selectAll:` would only highlight its text (`apps/desktop/src/lib/file-operations/queue/DETAILS.md` § Keyboard). This avoids
   PredefinedMenuItem::select_all which would conflict with the custom MenuItem. Deselect all (⌘⇧A)
   stays on the plain `FileScoped` path: AppKit has no standard "deselect all" responder action for

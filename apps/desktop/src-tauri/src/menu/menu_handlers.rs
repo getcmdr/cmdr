@@ -137,16 +137,98 @@ pub(crate) fn native_edit_selector_for(menu_id: &str) -> Option<NativeEditSelect
     }
 }
 
-/// Runs menu item `menu_id`'s native text edit (cut, copy, paste, select all) in the focused
-/// window's focused field.
-///
-/// Used when a non-main window is focused: the custom Edit/Select menu items can't use the
-/// native machinery like PredefinedMenuItems do, and the bar took the key before the page saw it,
-/// so this is the key's only road (`super::focused_field_edit`).
-fn send_native_edit_action(app: &AppHandle<tauri::Wry>, menu_id: &str) {
-    if let Some(selector) = native_edit_selector_for(menu_id) {
-        super::focused_field_edit::run_in_focused_window(app, selector);
+/// Which windows hold focus, as far as the Edit rows care.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub(crate) struct FocusedWindows {
+    pub main: bool,
+    pub queue: bool,
+}
+
+pub(crate) fn focused_windows(app: &AppHandle<tauri::Wry>) -> FocusedWindows {
+    let focused = |label: &str| {
+        app.get_webview_window(label)
+            .is_some_and(|w| w.is_focused().unwrap_or(false))
+    };
+    FocusedWindows {
+        main: focused("main"),
+        queue: focused("queue"),
     }
+}
+
+/// Where an Edit row's pick goes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum EditRoad {
+    /// The main window decides between file and text semantics (`execute-command`).
+    MainCommand(&'static str),
+    /// The queue selects its rows, never its text.
+    QueueSelectAll,
+    /// The focused window's focused text field does the edit: on macOS the responder chain
+    /// (`super::focused_field_edit`), elsewhere the page itself (`page_bar::pick` hands it back).
+    FieldEdit(NativeEditSelector),
+}
+
+/// Where Edit row `menu_id`'s pick goes with `focus`, or `None` for a row that isn't one.
+///
+/// - The viewer bar's Cut and Paste always edit its search box, the only editable thing in that
+///   window (and why they're greyed while it lacks focus). ❗ Never the main bar's rule: that one
+///   asks whether the MAIN window is focused, and a viewer pick would answer no and land in the same
+///   place by accident rather than by rule.
+/// - The main bar's four go through `execute-command` in the main window, so the frontend decides
+///   between file and text semantics. Select all in the queue checks its rows. Anywhere else the
+///   focused field does the text edit: without it, ⌘A would be dead in a Settings field on macOS
+///   (the accelerator fires before the webview sees the key, and the file-scoped guard drops it).
+pub(crate) fn edit_road(menu_id: &str, focus: FocusedWindows) -> Option<EditRoad> {
+    if menu_id == VIEWER_EDIT_CUT_ID || menu_id == VIEWER_EDIT_PASTE_ID {
+        return native_edit_selector_for(menu_id).map(EditRoad::FieldEdit);
+    }
+    let command_id = match menu_id {
+        EDIT_CUT_ID => "edit.cut",
+        EDIT_COPY_ID => "edit.copy",
+        EDIT_PASTE_ID => "edit.paste",
+        SELECT_ALL_ID => "selection.selectAll",
+        _ => return None,
+    };
+    if focus.main {
+        return Some(EditRoad::MainCommand(command_id));
+    }
+    if menu_id == SELECT_ALL_ID && focus.queue {
+        return Some(EditRoad::QueueSelectAll);
+    }
+    native_edit_selector_for(menu_id).map(EditRoad::FieldEdit)
+}
+
+/// Runs `road` for Edit row `menu_id`.
+fn run_edit_road(app: &AppHandle<tauri::Wry>, menu_id: &str, road: EditRoad) {
+    use tauri_specta::Event as _;
+    match road {
+        EditRoad::MainCommand(command_id) => {
+            let _ = crate::window_events::ExecuteCommand::relay(command_id).emit_to(app, "main");
+        }
+        // On macOS the queue's own keydown never sees ⌘A (the native accelerator fires first), so
+        // this event is the key's only road there. Off macOS no bar wears the key, and the queue's
+        // keydown runs it (`routes/queue/+page.svelte`); a page bar's pick still lands here.
+        EditRoad::QueueSelectAll => {
+            if let Err(e) = crate::window_events::QueueSelectAll.emit_to(app, "queue") {
+                log::warn!(target: "menu", "failed to emit queue-select-all: {e}");
+            }
+        }
+        EditRoad::FieldEdit(selector) => run_field_edit(app, menu_id, selector),
+    }
+}
+
+/// The focused field's text edit, from a native Edit item: macOS sends the selector down the
+/// responder chain, as a Predefined item would.
+#[cfg(target_os = "macos")]
+fn run_field_edit(app: &AppHandle<tauri::Wry>, _menu_id: &str, selector: NativeEditSelector) {
+    super::focused_field_edit::run_in_focused_window(app, selector);
+}
+
+/// Off macOS only a page's pick reaches an Edit row, and `page_bar::pick` hands the edit back to
+/// the page before it gets here, since only the page can reach its field (WebView2 has no editing
+/// command a host can send).
+#[cfg(not(target_os = "macos"))]
+fn run_field_edit(_app: &AppHandle<tauri::Wry>, menu_id: &str, _selector: NativeEditSelector) {
+    log::debug!(target: "menu", "`{menu_id}` is the page's own text edit; nothing to run here");
 }
 
 /// The native selector the viewer page asks for when the view on screen keeps its selection
@@ -377,13 +459,10 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str) {
         return;
     }
 
-    // === Viewer Edit > Cut / Paste: forward the native selector to the focused text field ===
-    // The viewer's search box, the only editable thing in that window, which is also why
-    // `apply_menu_item_states` greys these two out while it doesn't have focus. ❗ Never the
-    // main bar's lane below: that one asks whether the MAIN window is focused, and a viewer
-    // click would answer no and land in the same place by accident rather than by rule.
-    if id == VIEWER_EDIT_CUT_ID || id == VIEWER_EDIT_PASTE_ID {
-        send_native_edit_action(app, id);
+    // === The Edit rows: file semantics in the main window, the focused field's text elsewhere ===
+    // One decision for both bars and every window (`edit_road`), which a page's pick asks too.
+    if let Some(road) = edit_road(id, focused_windows(app)) {
+        run_edit_road(app, id, road);
         return;
     }
 
@@ -400,50 +479,6 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str) {
             value: value.to_string(),
         }
         .emit_to(app, "main");
-        return;
-    }
-
-    // === Select all in the operation queue: its rows, not its text ===
-    // Ahead of the edit-action block below, which would send the native `selectAll:` and
-    // highlight the page's text. On macOS the queue's own keydown never sees ⌘A (the native
-    // accelerator fires first), so this event is the key's only road there. Off macOS no bar
-    // wears the key, and the queue's keydown runs it (`routes/queue/+page.svelte`).
-    if id == SELECT_ALL_ID
-        && app
-            .get_webview_window("queue")
-            .is_some_and(|w| w.is_focused().unwrap_or(false))
-    {
-        use tauri_specta::Event as _;
-        if let Err(e) = crate::window_events::QueueSelectAll.emit_to(app, "queue") {
-            log::warn!(target: "menu", "failed to emit queue-select-all: {e}");
-        }
-        return;
-    }
-
-    // === Edit-action exception: file semantics in main window, native text semantics elsewhere ===
-    // Custom MenuItems for Cut/Copy/Paste/Select all route through execute-command in the main
-    // window so the frontend can decide between file and text semantics. In non-main windows
-    // (viewer, settings), we send the native action through the responder chain so WKWebView
-    // handles text clipboard / text select-all natively, just like PredefinedMenuItems would.
-    // Without the Select-all branch, ⌘A is dead in settings text fields: the accelerator fires
-    // before the webview ever sees the key, and the FileScoped focus guard would drop it.
-    if id == EDIT_CUT_ID || id == EDIT_COPY_ID || id == EDIT_PASTE_ID || id == SELECT_ALL_ID {
-        let main_focused = app
-            .get_webview_window("main")
-            .is_some_and(|w| w.is_focused().unwrap_or(false));
-        if main_focused {
-            let command_id = match id {
-                EDIT_CUT_ID => "edit.cut",
-                EDIT_COPY_ID => "edit.copy",
-                EDIT_PASTE_ID => "edit.paste",
-                _ => "selection.selectAll",
-            };
-            use tauri_specta::Event as _;
-            let _ = crate::window_events::ExecuteCommand::relay(command_id).emit_to(app, "main");
-        } else {
-            // The focused window's focused field does the text edit.
-            send_native_edit_action(app, id);
-        }
         return;
     }
 

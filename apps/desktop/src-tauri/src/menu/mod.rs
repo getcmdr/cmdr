@@ -68,6 +68,7 @@ mod display_accelerators;
 mod file_context_menu;
 #[cfg(target_os = "macos")]
 mod file_provider_items;
+#[cfg(target_os = "macos")]
 mod focused_field_edit;
 pub mod install;
 mod item_states;

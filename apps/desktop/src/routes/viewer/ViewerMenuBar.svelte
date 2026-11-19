@@ -8,6 +8,7 @@
      * Alt+letter commands keep their letters (`keyScope`).
      */
     import MenuBar from '#lib/ui/MenuBar.svelte'
+    import { barRowForKey } from '#lib/ui/command-menu/bar-keys.js'
     import type { BarMenuView, ViewerBarInputs } from '#lib/ipc/bindings.js'
     import { getViewerMenuBar, pickMenuBarItem } from '#lib/tauri-commands/index.js'
     import { tString } from '#lib/intl/messages.svelte.js'
@@ -26,8 +27,20 @@
     /** Each ask's number: an answer to an older ask than the newest is dropped. */
     let asked = 0
 
+    /** Where focus was when the bar took the keyboard (`MenuBar`'s `onFocusOrigin`). */
+    let focusOrigin = $state<Element | null>(null)
+
+    /**
+     * Whether `element` is the search box, the one field Cut and Paste act on.
+     * Regression anchor (review of #1265): opening a menu moves focus into it, which blurs the box,
+     * so its own focus flag greyed Cut and Paste in the very menu that offered them.
+     */
+    function isSearchBox(element: Element | null): boolean {
+        return element instanceof HTMLInputElement && element.closest('.search-bar') !== null
+    }
+
     $effect(() => {
-        const current = { ...inputs }
+        const current = { ...inputs, searchFocused: inputs.searchFocused || isSearchBox(focusOrigin) }
         const ask = ++asked
         getViewerMenuBar(current)
             .then((next) => {
@@ -43,6 +56,31 @@
             log.warn("Couldn't run a menu bar pick: {error}", { error })
         })
     }
+
+    /**
+     * A key a row shows fires that row, as the native bar's accelerator did (Close's Ctrl+W): the
+     * viewer's own keydown has no lane for them. Attached after the page's window handler (this
+     * component renders after the page's `<svelte:window>`), so a key the page took stays its own.
+     */
+    function onKeyDown(event: KeyboardEvent): void {
+        const id = barRowForKey(event, menus)
+        if (id === null) return
+        event.preventDefault()
+        pick(id)
+    }
 </script>
 
-<MenuBar {menus} ariaLabel={tString('ui.menuBar.label')} keyScope="Viewer window" onPick={pick} />
+<svelte:window onkeydown={onKeyDown} />
+
+<!-- No rows, no bar: a host that draws its own (the browser demo) answers none. -->
+{#if menus.length > 0}
+    <MenuBar
+        {menus}
+        ariaLabel={tString('ui.menuBar.label')}
+        keyScope="Viewer window"
+        onPick={pick}
+        onFocusOrigin={(origin) => {
+            focusOrigin = origin
+        }}
+    />
+{/if}

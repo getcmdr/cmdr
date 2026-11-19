@@ -83,11 +83,8 @@ pub fn build_viewer_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Viewer
     //
     // - Cut and Paste belong to the search box, the only editable field in the window. On macOS
     //   they're Custom items that forward the native `cut:` / `paste:` selectors down the
-    //   responder chain themselves (`send_native_edit_action`), which is what lets
-    //   `apply_menu_item_states` grey them out while that box doesn't have focus. ❗ Everywhere
-    //   else they stay Predefined: the responder chain is macOS-only, so a Custom item would
-    //   leave ⌘X / ⌘V dead in the viewer's search field, which is exactly what trimming them did
-    //   once.
+    //   responder chain themselves (`edit_road`'s field road), which is what lets
+    //   `apply_menu_item_states` grey them out while that box doesn't have focus.
     // - Copy and Select all are Custom items routed to the focused viewer's FRONTEND
     //   (`ViewerEditAction`). Their native selectors reach the DOM, and the viewed file isn't
     //   there: `.file-content` is `user-select: none` because the viewer owns an offset-based

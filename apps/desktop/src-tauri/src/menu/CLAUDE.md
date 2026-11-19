@@ -31,9 +31,9 @@ viewer bar. `macos_appkit.rs`: the objc2 boundary. One line per file: DETAILS §
   label moves through `MenuState::set_item_label`, ❌ never a bare `set_text`.
 - **Four families skip `"execute-command"`**: CheckMenuItems auto-toggle (they send `"settings-changed"` /
   `"view-mode-changed"`); sort resets its checks, then sends `"menu-sort"`; the edit items are Custom (❌ not
-  Predefined), running the text edit via `send_native_edit_action()` outside the main window, or ⌘A and the
-  clipboard die there; the VIEWER bar's four are Custom on their own `VIEWER_*` ids (Copy / Select all emit
-  `ViewerEditAction`; Cut / Paste forward to its search box, ❗ Predefined off macOS or ⌘X / ⌘V die there).
+  Predefined), their road one `edit_road` (outside the main window the focused field edits: macOS's responder chain,
+  or a page bar's `TextEdit` outcome), or ⌘A and the clipboard die there; the VIEWER bar's four are Custom on their
+  own `VIEWER_*` ids (Copy / Select all emit `ViewerEditAction`; Cut / Paste edit its search box).
 - **Enabled state has ONE writer, `apply_menu_item_states`**: store a new input in the crate's `MenuItemInputs` /
   `menu_item_enabled`, ❌ never a direct `set_enabled` (the viewer's Cut / Paste too). Greying is chrome: the guard is
   `main_window.is_focused()` in `on_menu_event`, and accelerators fire on greyed items.

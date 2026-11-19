@@ -103,7 +103,14 @@ function pane(): HTMLButtonElement {
   return button
 }
 
-async function setup(props: { flavor?: MenuFlavor; keyScope?: 'Viewer window'; menus?: BarMenuView[] } = {}) {
+async function setup(
+  props: {
+    flavor?: MenuFlavor
+    keyScope?: 'Viewer window'
+    menus?: BarMenuView[]
+    onFocusOrigin?: (origin: Element | null) => void
+  } = {},
+) {
   withConventions(props.flavor === 'mac' ? 'macos' : 'windows')
   const picked: string[] = []
   const target = document.createElement('div')
@@ -116,6 +123,7 @@ async function setup(props: { flavor?: MenuFlavor; keyScope?: 'Viewer window'; m
       ariaLabel: 'Menu bar',
       flavor: props.flavor ?? 'desktop',
       keyScope: props.keyScope,
+      onFocusOrigin: props.onFocusOrigin,
     },
   })
   teardowns.push(() => {
@@ -210,6 +218,22 @@ describe('MenuBar roles and states', () => {
 })
 
 describe('MenuBar keys on Windows', () => {
+  // Regression anchor (review of #1265): the viewer's Cut and Paste read the search box's focus,
+  // which the open menu took, so they were greyed in the very menu that offered them.
+  it('tells its caller where focus was while it has the keyboard, and null once it lets go', async () => {
+    const origin = pane()
+    const heard: (Element | null)[] = []
+    await setup({ onFocusOrigin: (element) => heard.push(element) })
+    await tapAlt()
+    await press('ArrowDown')
+    expect(document.activeElement).not.toBe(origin)
+    expect(heard.at(-1)).toBe(origin)
+    await press('Escape')
+    await press('Escape')
+    expect(document.activeElement).toBe(origin)
+    expect(heard.at(-1)).toBeNull()
+  })
+
   it('takes the keyboard on a lone Alt tap and gives it back on the next', async () => {
     const origin = pane()
     await setup()

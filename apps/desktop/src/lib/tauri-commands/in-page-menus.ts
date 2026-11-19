@@ -20,12 +20,24 @@ import {
 import { getAppLogger } from '#lib/logging/logger.js'
 import { convention } from '#lib/platform/index.js'
 import { applyMenuBarChange } from '#lib/ui/command-menu/bar-change.js'
+import { runTextFieldEdit, textTargetOf } from '#lib/context-menu/text-field-menu.js'
+import { readClipboardText } from './clipboard-files'
 
 const log = getAppLogger('inPageMenus')
 
-/** A pick from the in-page bar (the main bar's or the viewer's), run by the handler a native click reaches. */
+/**
+ * A pick from the in-page bar (the main bar's or the viewer's), run by the handler a native click
+ * reaches. A row that edits the focused text field comes back as `textEdit`, since only the page
+ * can reach its field: the edit runs here, on the field that holds focus (the bar has handed it
+ * back by the time a pick is sent), as the text-field menu runs its own (`#lib/context-menu`).
+ */
 export async function pickMenuBarItem(menuId: string): Promise<BarPickOutcome> {
-  return commands.pickMenuBarItem(menuId)
+  const outcome = await commands.pickMenuBarItem(menuId)
+  if (outcome.kind === 'textEdit') {
+    const target = textTargetOf(document.activeElement)
+    if (target.kind === 'field') await runTextFieldEdit(target.field, outcome.edit, { readClipboardText })
+  }
+  return outcome
 }
 
 /** The viewer window's bar from its own state; asked again whenever one of `inputs` moves (no event). */

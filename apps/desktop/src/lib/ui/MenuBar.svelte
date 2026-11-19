@@ -37,6 +37,11 @@
         takesWindowKeys?: boolean
         /** Extra classes on the bar and its menus: a look of its own (the demo's macOS bar). */
         class?: string
+        /**
+         * Hears where focus was when the bar took the keyboard, and `null` once it lets go: the bar
+         * moves focus into itself, so a row that follows a field's focus reads this instead.
+         */
+        onFocusOrigin?: (origin: Element | null) => void
     }
 
     const {
@@ -48,6 +53,7 @@
         inert = false,
         takesWindowKeys = true,
         class: lookClass = '',
+        onFocusOrigin,
     }: Props = $props()
 
     const uid = $props.id()
@@ -75,6 +81,14 @@
 
     // Once per mount: untracked, or a state read inside would tear the listeners down mid-use.
     $effect(() => untrack(() => bar.attach()))
+
+    // The focus the bar took, for a caller whose rows follow a field's focus.
+    $effect(() => {
+        const origin = bar.focusOrigin
+        untrack(() => {
+            onFocusOrigin?.(origin)
+        })
+    })
 
     // A modal surface coming up takes the bar's keyboard and closes its menu (the desktop flavor).
     $effect(() => {
