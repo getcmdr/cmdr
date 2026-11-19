@@ -12,7 +12,6 @@ fn env() -> SearchEnv {
         android_sdk_root: Some(PathBuf::from("/asr")),
         home: Some(PathBuf::from("/home/test_user_1")),
         local_app_data: Some(PathBuf::from("/lad")),
-        program_data: Some(PathBuf::from("/pd")),
     }
 }
 
@@ -56,8 +55,8 @@ fn linux_searches_android_studios_default_sdk_under_home() {
 }
 
 /// Windows names the binary `adb.exe` everywhere, and Android Studio puts its SDK under
-/// `%LOCALAPPDATA%`, not the home folder (#1108). The package managers' folders come last, for an
-/// `adb` installed after Cmdr started.
+/// `%LOCALAPPDATA%`, not the home folder (#1108). The per-user package managers' folders come
+/// last, for an `adb` installed after Cmdr started.
 #[test]
 fn windows_searches_adb_exe_the_sdk_under_local_app_data_and_the_package_managers() {
     assert_eq!(
@@ -70,7 +69,33 @@ fn windows_searches_adb_exe_the_sdk_under_local_app_data_and_the_package_manager
             "/lad/Android/Sdk/platform-tools/adb.exe",
             "/lad/Microsoft/WinGet/Links/adb.exe",
             "/home/test_user_1/scoop/shims/adb.exe",
-            "/pd/chocolatey/bin/adb.exe",
+        ]
+    );
+}
+
+/// ❗ Cmdr runs whatever `adb` the search finds, at launch, with nothing verified, so a searched
+/// folder must be one only the current user or an administrator controls (`docs/security.md`
+/// § "Helper tools"). On a default Windows install any standard user can create folders under
+/// `C:\ProgramData` and owns what they make there, so `C:\ProgramData\chocolatey\bin` (with
+/// Chocolatey not installed, the usual machine) is another account's to plant an `adb.exe` in.
+/// This pins every fixed folder to a per-user base; a machine-wide one needs an admin-owned base.
+#[test]
+fn windows_searches_only_folders_the_user_or_an_admin_controls() {
+    let search = AdbSearch::WINDOWS;
+    let bases: Vec<DirBase> = std::iter::once(search.default_sdk.0)
+        .chain(search.fixed_dirs.iter().map(|&(base, _)| base))
+        .collect();
+    assert!(
+        bases
+            .iter()
+            .all(|base| matches!(base, DirBase::Home | DirBase::LocalAppData)),
+        "{bases:?}"
+    );
+    assert_eq!(
+        search.fixed_dirs,
+        [
+            (DirBase::LocalAppData, "Microsoft/WinGet/Links"),
+            (DirBase::Home, "scoop/shims"),
         ]
     );
 }
@@ -83,7 +108,6 @@ fn a_missing_variable_drops_only_its_own_candidates() {
         android_sdk_root: None,
         home: None,
         local_app_data: None,
-        program_data: None,
     };
     assert_eq!(shown(candidates(&AdbSearch::LINUX, &bare)), ["/usr/local/bin/adb"]);
     assert!(candidates(&AdbSearch::WINDOWS, &bare).is_empty());

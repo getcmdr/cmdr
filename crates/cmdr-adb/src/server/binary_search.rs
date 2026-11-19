@@ -6,6 +6,10 @@
 use std::path::PathBuf;
 
 /// The folder a search entry sits under.
+///
+/// ❗ Cmdr runs the `adb` it finds with nothing verified, so every base names a folder only the
+/// current user or an administrator controls (`docs/security.md` § "Helper tools"). ❌ Never
+/// `%ProgramData%`: on a default Windows install any standard user can create folders there.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum DirBase {
     /// None: the entry is an absolute path.
@@ -14,8 +18,6 @@ pub(crate) enum DirBase {
     Home,
     /// `%LOCALAPPDATA%` on Windows.
     LocalAppData,
-    /// `%ProgramData%` on Windows.
-    ProgramData,
 }
 
 /// One OS's answer to "where might `adb` be?", after `$PATH`, `$ANDROID_HOME`, and
@@ -52,17 +54,18 @@ impl AdbSearch {
         fixed_dirs: &[(DirBase::Root, "/usr/local/bin")],
     };
 
-    /// `adb.exe`, Android Studio's `%LOCALAPPDATA%\Android\Sdk`, then the command folders of
-    /// WinGet (`Google.PlatformTools`), Scoop (`adb`), and Chocolatey (`adb`). Each installer puts
-    /// its folder on `PATH`, but a running Cmdr keeps the `PATH` it started with, so an `adb`
-    /// installed while it runs would otherwise stay invisible until a restart.
+    /// `adb.exe`, Android Studio's `%LOCALAPPDATA%\Android\Sdk`, then the per-user command
+    /// folders of WinGet (`Google.PlatformTools`) and Scoop (`adb`). Each installer puts its folder
+    /// on `PATH`, but a running Cmdr keeps the `PATH` it started with, so an `adb` installed while
+    /// it runs would otherwise stay invisible until a restart. ❌ Not Chocolatey's
+    /// `C:\ProgramData\chocolatey\bin`: on a machine without Chocolatey any standard user can
+    /// create that folder ([`DirBase`]); a real Chocolatey install puts it on the machine `PATH`.
     pub(crate) const WINDOWS: AdbSearch = AdbSearch {
         exe: "adb.exe",
         default_sdk: (DirBase::LocalAppData, "Android/Sdk"),
         fixed_dirs: &[
             (DirBase::LocalAppData, "Microsoft/WinGet/Links"),
             (DirBase::Home, "scoop/shims"),
-            (DirBase::ProgramData, "chocolatey/bin"),
         ],
     };
 }
@@ -76,7 +79,6 @@ pub(crate) struct SearchEnv {
     pub(crate) android_sdk_root: Option<PathBuf>,
     pub(crate) home: Option<PathBuf>,
     pub(crate) local_app_data: Option<PathBuf>,
-    pub(crate) program_data: Option<PathBuf>,
 }
 
 impl SearchEnv {
@@ -90,7 +92,6 @@ impl SearchEnv {
             android_sdk_root: env_dir("ANDROID_SDK_ROOT"),
             home: std::env::home_dir(),
             local_app_data: env_dir("LOCALAPPDATA"),
-            program_data: env_dir("ProgramData"),
         }
     }
 }
@@ -129,7 +130,6 @@ fn resolve(env: &SearchEnv, base: DirBase, path: &str) -> Option<PathBuf> {
         DirBase::Root => return Some(PathBuf::from(path)),
         DirBase::Home => env.home.as_ref(),
         DirBase::LocalAppData => env.local_app_data.as_ref(),
-        DirBase::ProgramData => env.program_data.as_ref(),
     }?;
     // One component at a time, so a Windows path gets Windows separators throughout.
     Some(path.split('/').fold(base_dir.clone(), |dir, name| dir.join(name)))

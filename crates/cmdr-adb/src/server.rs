@@ -229,7 +229,9 @@ async fn start_server(binary: PathBuf, port: u16) -> bool {
 /// `$ANDROID_SDK_ROOT/platform-tools`, Android Studio's default SDK
 /// (`~/Library/Android/sdk` on macOS, `~/Android/Sdk` on Linux,
 /// `%LOCALAPPDATA%\Android\Sdk` on Windows), and the package-manager folders
-/// (Homebrew's on macOS, `/usr/local/bin` on Linux). `adb.exe` on Windows.
+/// (Homebrew's on macOS, `/usr/local/bin` on Linux, WinGet's and Scoop's per-user ones on
+/// Windows). `adb.exe` on Windows. Only folders the user or an administrator controls
+/// (`docs/security.md` § "Helper tools").
 /// `None` when nothing runnable turns up.
 pub fn locate_adb_binary() -> Option<PathBuf> {
     let configured = BINARY_OVERRIDE
