@@ -1957,6 +1957,18 @@
   "@errors.write.sourceInColdStorage.suggestion": {
     "sourceHash": "f279603"
   },
+  "errors.write.folderHoldsUnlistedItems.title": "Thư mục này vẫn còn mục ẩn",
+  "@errors.write.folderHoldsUnlistedItems.title": {
+    "sourceHash": "11b4b1f"
+  },
+  "errors.write.folderHoldsUnlistedItems.message": "{path} trông như trống, nhưng dịch vụ lưu trữ vẫn giữ các mục trong đó dưới những tên mà Cmdr không hiển thị được, nên thư mục vẫn còn.",
+  "@errors.write.folderHoldsUnlistedItems.message": {
+    "sourceHash": "2b301e3"
+  },
+  "errors.write.folderHoldsUnlistedItems.suggestion": "Hãy xóa các mục đó trong bảng điều khiển của nhà cung cấp dịch vụ lưu trữ hoặc bằng một công cụ S3 khác, rồi thử lại.",
+  "@errors.write.folderHoldsUnlistedItems.suggestion": {
+    "sourceHash": "b3e259b"
+  },
   "errors.write.mountedVolumeInside.title": "Một ổ đĩa đã gắn kết đang chắn đường",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"
@@ -2312,6 +2324,10 @@
   "errors.volume.coldStorage": "“{path}” đang ở kho lưu trữ lạnh. Hãy khôi phục tệp trong bảng điều khiển của nhà cung cấp dịch vụ lưu trữ trước.",
   "@errors.volume.coldStorage": {
     "sourceHash": "c742f7c"
+  },
+  "errors.volume.holdsUnlistedItems": "“{path}” trông như trống, nhưng dịch vụ lưu trữ vẫn giữ các mục trong đó dưới những tên mà Cmdr không hiển thị được. Hãy xóa các mục đó bằng một công cụ S3 khác trước.",
+  "@errors.volume.holdsUnlistedItems": {
+    "sourceHash": "8cfaa58"
   },
   "errors.volume.sourceChanged": "“{path}” đã thay đổi trong lúc Cmdr đang sao chép, nên Cmdr không lưu gì cả. Hãy thử lại để sao chép phiên bản mới.",
   "@errors.volume.sourceChanged": {

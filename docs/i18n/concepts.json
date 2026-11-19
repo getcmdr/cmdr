@@ -158,7 +158,15 @@
       "a tool that handles",
       "some tools",
       "open the tool",
-      "the tool opens"
+      "the tool opens",
+      {
+        "key": "errors.write.folderHoldsUnlistedItems.suggestion",
+        "why": "another S3 program, not a function the AI calls"
+      },
+      {
+        "key": "errors.volume.holdsUnlistedItems",
+        "why": "another S3 program, not a function the AI calls"
+      }
     ],
     "sense": "A function the AI can call (list a folder, search), and its status lines."
   },
@@ -3192,6 +3200,14 @@
       {
         "key": "commands.fileTellMeAbout.description",
         "why": "deleting the item, the delete sense"
+      },
+      {
+        "key": "errors.write.folderHoldsUnlistedItems.suggestion",
+        "why": "deleting the unlisted objects from the bucket, the delete sense"
+      },
+      {
+        "key": "errors.volume.holdsUnlistedItems",
+        "why": "deleting the unlisted objects from the bucket, the delete sense"
       }
     ],
     "sense": "Taking something out of a list or setting (a favorite, a host, a folder from indexing) without deleting files."

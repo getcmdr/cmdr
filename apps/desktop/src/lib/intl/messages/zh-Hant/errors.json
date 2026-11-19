@@ -1957,6 +1957,18 @@
   "@errors.write.sourceInColdStorage.suggestion": {
     "sourceHash": "f279603"
   },
+  "errors.write.folderHoldsUnlistedItems.title": "這個資料夾裡還有隱藏的項目",
+  "@errors.write.folderHoldsUnlistedItems.title": {
+    "sourceHash": "11b4b1f"
+  },
+  "errors.write.folderHoldsUnlistedItems.message": "{path} 看起來是空的，但儲存服務裡仍有一些項目放在這個資料夾下，它們的名稱 Cmdr 無法顯示，所以資料夾會保留下來。",
+  "@errors.write.folderHoldsUnlistedItems.message": {
+    "sourceHash": "2b301e3"
+  },
+  "errors.write.folderHoldsUnlistedItems.suggestion": "請到儲存服務提供者的主控台或用其他 S3 工具刪除這些項目，再試一次。",
+  "@errors.write.folderHoldsUnlistedItems.suggestion": {
+    "sourceHash": "b3e259b"
+  },
   "errors.write.mountedVolumeInside.title": "有個已裝載的磁碟機擋著",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"
@@ -2312,6 +2324,10 @@
   "errors.volume.coldStorage": "「{path}」已封存。請先到儲存服務提供者的主控台回復這個檔案。",
   "@errors.volume.coldStorage": {
     "sourceHash": "c742f7c"
+  },
+  "errors.volume.holdsUnlistedItems": "「{path}」看起來是空的，但儲存服務裡仍有一些項目放在這個資料夾下，它們的名稱 Cmdr 無法顯示。請先用其他 S3 工具刪除這些項目。",
+  "@errors.volume.holdsUnlistedItems": {
+    "sourceHash": "8cfaa58"
   },
   "errors.volume.sourceChanged": "「{path}」在 Cmdr 複製時變動了，所以 Cmdr 什麼都沒儲存。再試一次，就能複製新的版本。",
   "@errors.volume.sourceChanged": {

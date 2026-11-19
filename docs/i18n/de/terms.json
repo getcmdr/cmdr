@@ -1846,7 +1846,10 @@
     "chosen": "verborgen",
     "confidence": "high",
     "forms": "hidden files → verborgene Dateien; Show hidden files → Verborgene Dateien einblenden",
-    "sources": "standard German; catalog (settings.listing.showHiddenFiles.description)"
+    "sources": "standard German; catalog (settings.listing.showHiddenFiles.description)",
+    "exceptions": {
+      "errors.write.folderHoldsUnlistedItems.title": "hidden here means objects Cmdr leaves out of every listing (unaddressable names), not the hidden-file flag, so the taken-out-of-view ausgeblendet (the hide concept)"
+    }
   },
   "hide": {
     "accept": ["ausgeblendet", "Ausblenden", "blendet"],

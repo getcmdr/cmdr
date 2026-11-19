@@ -1957,6 +1957,18 @@
   "@errors.write.sourceInColdStorage.suggestion": {
     "sourceHash": "f279603"
   },
+  "errors.write.folderHoldsUnlistedItems.title": "Tato složka ještě obsahuje skryté položky",
+  "@errors.write.folderHoldsUnlistedItems.title": {
+    "sourceHash": "11b4b1f"
+  },
+  "errors.write.folderHoldsUnlistedItems.message": "Složka {path} vypadá jako prázdná, ale úložiště v ní uchovává položky s názvy, které Cmdr nedokáže zobrazit, takže složka zůstává.",
+  "@errors.write.folderHoldsUnlistedItems.message": {
+    "sourceHash": "2b301e3"
+  },
+  "errors.write.folderHoldsUnlistedItems.suggestion": "Smažte tyto položky v konzoli svého poskytovatele úložiště nebo v jiném nástroji pro S3 a pak to zkuste znovu.",
+  "@errors.write.folderHoldsUnlistedItems.suggestion": {
+    "sourceHash": "b3e259b"
+  },
   "errors.write.mountedVolumeInside.title": "V cestě je připojený disk",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"
@@ -2312,6 +2324,10 @@
   "errors.volume.coldStorage": "Soubor „{path}“ je archivovaný. Nejdřív ho obnovte v konzoli poskytovatele úložiště.",
   "@errors.volume.coldStorage": {
     "sourceHash": "c742f7c"
+  },
+  "errors.volume.holdsUnlistedItems": "Složka „{path}“ vypadá jako prázdná, ale úložiště v ní uchovává položky s názvy, které Cmdr nedokáže zobrazit. Nejdřív je smažte v jiném nástroji pro S3.",
+  "@errors.volume.holdsUnlistedItems": {
+    "sourceHash": "8cfaa58"
   },
   "errors.volume.sourceChanged": "Soubor „{path}“ se změnil, zatímco ho Cmdr kopíroval, takže Cmdr nic neuložil. Zkuste to znovu a zkopíruje se nová verze.",
   "@errors.volume.sourceChanged": {

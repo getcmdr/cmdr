@@ -1957,6 +1957,18 @@
   "@errors.write.sourceInColdStorage.suggestion": {
     "sourceHash": "f279603"
   },
+  "errors.write.folderHoldsUnlistedItems.title": "Esta carpeta aún contiene elementos ocultos",
+  "@errors.write.folderHoldsUnlistedItems.title": {
+    "sourceHash": "11b4b1f"
+  },
+  "errors.write.folderHoldsUnlistedItems.message": "La carpeta {path} parece vacía, pero el almacenamiento guarda elementos en ella con nombres que Cmdr no puede mostrar, así que la carpeta sigue ahí.",
+  "@errors.write.folderHoldsUnlistedItems.message": {
+    "sourceHash": "2b301e3"
+  },
+  "errors.write.folderHoldsUnlistedItems.suggestion": "Elimina esos elementos en la consola de tu proveedor de almacenamiento o con otra herramienta de S3 y vuelve a intentarlo.",
+  "@errors.write.folderHoldsUnlistedItems.suggestion": {
+    "sourceHash": "b3e259b"
+  },
   "errors.write.mountedVolumeInside.title": "Hay una unidad montada de por medio",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"
@@ -2312,6 +2324,10 @@
   "errors.volume.coldStorage": "El archivo “{path}” está archivado. Primero restáuralo en la consola de tu proveedor de almacenamiento.",
   "@errors.volume.coldStorage": {
     "sourceHash": "c742f7c"
+  },
+  "errors.volume.holdsUnlistedItems": "La carpeta “{path}” parece vacía, pero el almacenamiento guarda elementos en ella con nombres que Cmdr no puede mostrar. Elimínalos primero con otra herramienta de S3.",
+  "@errors.volume.holdsUnlistedItems": {
+    "sourceHash": "8cfaa58"
   },
   "errors.volume.sourceChanged": "El archivo “{path}” ha cambiado mientras Cmdr hacía la copia, así que Cmdr no ha guardado nada. Vuelve a intentarlo para copiar la versión nueva.",
   "@errors.volume.sourceChanged": {

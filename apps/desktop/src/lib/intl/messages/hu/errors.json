@@ -1957,6 +1957,18 @@
   "@errors.write.sourceInColdStorage.suggestion": {
     "sourceHash": "f279603"
   },
+  "errors.write.folderHoldsUnlistedItems.title": "Ebben a mappában még vannak rejtett elemek",
+  "@errors.write.folderHoldsUnlistedItems.title": {
+    "sourceHash": "11b4b1f"
+  },
+  "errors.write.folderHoldsUnlistedItems.message": "{path} üresnek látszik, de a tárhely olyan nevek alatt tárol benne elemeket, amelyeket a Cmdr nem tud megjeleníteni, ezért a mappa megmarad.",
+  "@errors.write.folderHoldsUnlistedItems.message": {
+    "sourceHash": "2b301e3"
+  },
+  "errors.write.folderHoldsUnlistedItems.suggestion": "Töröld ezeket az elemeket a tárhelyszolgáltatód konzolján vagy egy másik S3-kezelő programmal, aztán próbáld újra.",
+  "@errors.write.folderHoldsUnlistedItems.suggestion": {
+    "sourceHash": "b3e259b"
+  },
   "errors.write.mountedVolumeInside.title": "Útban van egy csatolt meghajtó",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"
@@ -2312,6 +2324,10 @@
   "errors.volume.coldStorage": "„{path}” archiválva van. Előbb állítsd vissza a tárhelyszolgáltatód konzolján.",
   "@errors.volume.coldStorage": {
     "sourceHash": "c742f7c"
+  },
+  "errors.volume.holdsUnlistedItems": "„{path}” üresnek látszik, de a tárhely olyan nevek alatt tárol benne elemeket, amelyeket a Cmdr nem tud megjeleníteni. Előbb töröld őket egy másik S3-kezelő programmal.",
+  "@errors.volume.holdsUnlistedItems": {
+    "sourceHash": "8cfaa58"
   },
   "errors.volume.sourceChanged": "„{path}” megváltozott, miközben a Cmdr másolta, ezért a Cmdr nem mentett semmit. Próbáld újra az új változat másolásához.",
   "@errors.volume.sourceChanged": {
