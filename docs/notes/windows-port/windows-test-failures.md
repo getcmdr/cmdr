@@ -87,9 +87,13 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
 
 - **5, `cmdr-fs`**: none in this run; its 24 cells were `#[ignore]`d for #1225 and run since milestone 5 (2026-11-19).
 - **6, network backends**: 123 (`cmdr-s3` 47 with its 5 pause timeouts, `cmdr-nfs` 46, `cmdr-webdav` 23, `cmdr-sftp` 7).
-  Converted 2026-11-19 (`docs/specs/app-path-plan.md` milestone 6's "Done"): expected green, not yet run on the builder.
-  Not this milestone's, and still expected red: `cmdr-nfs`'s three `errors_test` cells (Linux errno) and
-  `apply_metadata_dates_and_modes_a_folder` (modes), and `cmdr-s3`'s `nanoseconds_survive_and_trailing_zeros_drop`.
+  Seen on the builder (2026-11-19, `--profile windows-baseline`, the four crates only, 0 self-skipped): milestone 5
+  already took 71 of these on `main` (`RemoteRoot` splits on `/` alone), so `main` at `450e3ab9f2` failed 56 (NFS 4, S3
+  42 with the 5 pause timeouts, WebDAV 10, SFTP 0), and milestone 6's conversion (`31f8887eca`) leaves 5: none
+  path-shaped. Still red and not this milestone's: `cmdr-nfs`'s three `errors_test` cells and
+  `mutation_test::delete_removes_a_file_an_empty_folder_and_a_link_but_never_recurses` (an NFS status mapped to Win32's
+  145 where Linux's `ENOTEMPTY` 41 is expected; the baseline saw it fail earlier, on a path), and `cmdr-s3`'s
+  `nanoseconds_survive_and_trailing_zeros_drop` (100 ns `SystemTime`). `apply_metadata_dates_and_modes_a_folder` passes.
 - **7, device backends**: 66 (`cmdr-adb` 51, `cmdr-smb` 13, `cmdr-mtp` 2).
 - **8, virtual volumes and leaf crates**: 72 (`cmdr-restic` 45 with its 5 hub timeouts, `cmdr-viewer` 13, `cmdr-archive`
   9, `cmdr-operation-log` 3, `cmdr-listing` 2).

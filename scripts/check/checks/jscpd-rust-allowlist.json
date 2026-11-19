@@ -90,7 +90,7 @@
     },
     "crates/cmdr-adb/src/volume/volume_impl.rs ↔ crates/cmdr-archive/src/volume.rs": {
       "lines": 9,
-      "reason": "`Volume` trait boilerplate the flip to app paths (#1225) made token-identical: `scan_for_copy_batch_with_boundary` delegating to `scan_walk::scan_trees` behind the same bridged `paths_std` prelude in both. Not new code: jscpd reported this fragment against `cmdr-webdav` until that crate converted (milestone 6), and hands it to this pair now. The prelude goes when ADB (milestone 7) and the archive volume (milestone 8) convert to `scan_trees_at`."
+      "reason": "`Volume` trait boilerplate the flip to app paths (#1225) made token-identical: `scan_for_copy_batch_with_boundary` delegating to `scan_walk::scan_trees` behind the same bridged `paths_std` prelude in both. Not new code: jscpd reported this fragment against `cmdr-webdav` until that crate moved to the typed `scan_trees_at`, and hands it to this pair now. The prelude goes when ADB and the archive volume convert to `scan_trees_at` too."
     }
   }
 }

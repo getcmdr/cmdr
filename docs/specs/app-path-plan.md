@@ -1281,8 +1281,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
   - The `ScanRecorder`/`ScanOutages` callbacks: they take `std::path` and live in the engines (10a).
   - `InMemoryVolume`'s `PathBuf`-keyed store and builders (`with_root(impl Into<PathBuf>)`), used by every crate's tests
     (11, after the last crate's tests move).
-  - The `conformance` suites (113), driving other crates' volumes through their fixtures (6, 7, 8, 9, each with its
-    backend).
+  - The `conformance` suites (113), driving other crates' volumes through their fixtures: `cmdr_fs::volume::conformance`
+    flips to app paths in 9 (its last `std::path` caller, `cmdr-local`, converts there), and each backend's
+    `conformance_test.rs` crossings go in that commit.
   - `tally_by_listing`, `mkdir_all`, `root_echo`, `routed`: they read `FileEntry.path` text (10f).
   - `app_paths.rs`: its string helpers are right on Windows already and `AppPath` has the typed answers (`strip_prefix`,
     `rebase`, `is_on_volume`); it goes when its callers move (8: `cmdr-operation-log`, 10a, 10c/10d: the app).
@@ -1301,12 +1302,13 @@ included; the hidden couplings it found are why waves B and C differ from round 
   the other object. The colliding or unrepresentable key is skipped with a typed count (as NFS skips a non-UTF-8 name),
   pinned by a test with both `a/b` and `a//b` in one bucket; first pin what today's listing does with them. WebDAV
   `href`s are percent-encoded; decode before `to_app_path`, never after, and a decoded name holding `/`, or equal to `.`
-  or `..`, is dropped as today. SFTP and NFS names arrive as raw bytes: each backend either escapes a non-UTF-8 name (§
-  "Names that aren't UTF-8") or skips it with a typed count, ❌ never `from_utf8_lossy`; pin today's behavior first and
-  tell the lead which it picks. Escaping is the default for SFTP (byte escapes in its own alphabet, decoded back to
-  bytes for the server); WebDAV and S3 are UTF-8-only, so a name carrying any escape is `NotRepresentable` on write (the
-  cross-namer rule). SFTP overrides `parent_for_dot_dot` in 10c's commit, not here. ❗ The escaping itself lands in 10f
-  (the escape gate); here the bodies convert and a non-UTF-8 name keeps today's answer.
+  or `..`, is dropped and counted (`mapping::members`), in a relative or an absolute-URL href alike. SFTP and NFS names
+  arrive as raw bytes: each backend either escapes a non-UTF-8 name (§ "Names that aren't UTF-8") or skips it with a
+  typed count, ❌ never `from_utf8_lossy`; pin today's behavior first and tell the lead which it picks. Escaping is the
+  default for SFTP (byte escapes in its own alphabet, decoded back to bytes for the server); WebDAV and S3 are
+  UTF-8-only, so a name carrying any escape is `NotRepresentable` on write (the cross-namer rule). SFTP overrides
+  `parent_for_dot_dot` in 10c's commit, not here. ❗ The escaping itself lands in 10f (the escape gate); here the bodies
+  convert and a non-UTF-8 name keeps today's answer.
 - **Test plan**: Windows: `cmdr-sftp` 7 (`paths_test`), `cmdr-webdav` 23, `cmdr-s3` 42 plus the 5 pause timeouts,
   `cmdr-nfs` 45 (30 with a `\` in the path, and 15 fake mounts answering `ExportNotFound`, not 7: the export is picked
   by a prefix match over the typed path). Not here (review round 4): `cmdr-nfs`'s three `errors_test` cells and
@@ -1314,7 +1316,8 @@ included; the hidden couplings it found are why waves B and C differ from round 
   mapped"); `cmdr-s3`'s `nanoseconds_survive_and_trailing_zeros_drop` (Windows' `SystemTime` holds 100 ns); `cmdr-nfs`'s
   `apply_metadata_dates_and_modes_a_folder` (modes) unless the baseline shows it path-shaped. macOS/Linux: each crate's
   suite plus its Docker fixture lane where CI runs one.
-- **DONE**: the four crates' bridge counts are zero and their Windows suites green.
+- **DONE**: the four crates' bodies bridge nothing (the 5 test-side sites left each have an owner, below) and their
+  Windows suites are green but for the 5 non-path cells named in the Windows results.
 - **Done** (2026-11-19, branch `worktree-agent-ac797eccf4593af1f`; the lead on SFTP, one helper each on WebDAV, S3, and
   NFS): every body and crate helper takes `&AppPath`, server paths come from `RemoteRoot::to_remote`, and the server
   side is POSIX text split on `/` alone (a stat's name came from `Path::file_name`, which splits on `\` on Windows).
@@ -1324,9 +1327,11 @@ included; the hidden couplings it found are why waves B and C differ from round 
   - **`root()` and every row's `FileEntry.path` keep `RemoteRoot`'s own text** (`app_root`, `to_app_path`), ❌ never the
     typed `to_app`'s canonical one: NFS's export root is `nfs://h:2049/Public/` with its trailing `/` on the wire
     (`server-path-utils.ts` compares the root by string), and a canonical root drops it. Pinned
-    (`the_export_root_keeps_its_trailing_slash_on_the_wire`). The typed `to_app` answers only the listing patcher
-    (`patch_app_path`), whose matches are `PathBuf`'s component-wise ones; a server path whose text needs an escape
-    keeps its row and only loses its patch (the pane re-lists).
+    (`the_export_root_keeps_its_trailing_slash_on_the_wire`; S3's rows as literal strings,
+    `a_rows_text_is_the_normalized_server_path_under_the_prefix`). S3's `root()` alone is a typed value built at connect
+    (`paths::Place`), the same text as `app_root`, which is why its place refuses text the type can't hold (below). The
+    typed `to_app` answers only the listing patcher (`patch_app_path`), whose matches are `PathBuf`'s component-wise
+    ones; a server path whose text needs an escape keeps its row and only loses its patch (the pane re-lists).
   - **`cmdr-fs` gained typed cores for the shared bodies**: `patching::patch_*_at` with `PatchSource::patch_app_path`
     (the `std::path` forms stay for ADB and the in-memory panes, 7 and 11), and `mkdir_all` typed only
     (`MakesDirectories::remote_path_of(&AppPath)`, `create_directory_all_at`), since its four implementors are these
@@ -1338,28 +1343,49 @@ included; the hidden couplings it found are why waves B and C differ from round 
   - **NFS's poller keys what it saw by server path** (the store's spelling and the listing's typed path both come down
     to it), so two spellings of one shown folder share one `GETATTR` and both hear its change.
   - **Non-UTF-8 names keep today's answer** (no escapes, `ESCAPES_LIVE` stays `false`): SFTP's crate still fails the
-    session on one, NFS skips it counted. ❗ For 10f: `RemoteRoot::to_remote` decodes through `from_utf8_lossy`, so an
-    escaped name must be refused there (`NotRepresentable`) before escapes go live, or an S3 or WebDAV key could map to
-    a U+FFFD sibling.
+    session on one, NFS skips it counted. Until escapes go live, `RemoteRoot::to_remote` sends an escape-range code
+    point as its own UTF-8 bytes, the `std::path` door's answer
+    (`until_escapes_go_live_an_escape_range_name_reaches_the_server_as_its_literal_text`); decoding it addressed a
+    look-alike sibling (`caf\u{10FEC3}\u{10FEA9}` reached `café`). ❗ For 10f: once live, `to_remote` decodes through
+    `from_utf8_lossy`, so an escaped name must be refused there (`NotRepresentable`) for WebDAV and S3 before escapes go
+    live, or a key could map to a U+FFFD sibling.
 - **Intended behavior changes** (each red first):
   - WebDAV: a member a server names `.` or `..` (a `%2E%2E` href) is no row. It listed as the folder itself or its
     PARENT, so deleting that row acted on a folder nobody picked; this section said "dropped as today", but it wasn't
-    (`paths_test::a_member_named_dot_or_dot_dot_is_no_row`).
+    (`paths_test::a_member_named_dot_or_dot_dot_is_no_row`). The same holds in an absolute-URL href (IIS): `decode_href`
+    keeps dot segments as sent, where `url::Url` resolved `…/box/%2e%2e` to the parent and listed it under the parent's
+    name. And a member holding an encoded `/` (`a%2Fb`) is no row either: decoded, it listed as `b`. Both are counted
+    (`mapping::members`, a debug line per listing), pinned per server spelling with crafted `multistatus` bodies
+    (`members_test.rs`).
   - S3: a listed name that can't be addressed (empty, `.`, `..`, the collisions `a//b`, `a/./b`, `a/../b`) was already
     skipped, and now the skip is counted (`PageChildren::unaddressable`, a debug line per listing;
     `listing_test::names_that_cant_be_addressed_are_counted`). Today's answer is pinned first (`key_collision_test.rs`:
-    only `a/b` lists, and an op on it reaches only `a/b`). What lists doesn't change.
-  - Edge cases with no real-world source: an S3 bucket or key id holding a NUL or an escape-range code point refuses the
-    connect (`NoSuchBucket` / `KeysRejected`), since `root()` needs a typed value; no provider allows one.
+    only `a/b` lists, and an op on it reaches only `a/b`). What lists doesn't change. A folder holding only such keys
+    lists empty, and its delete now says why it refuses (`VolumeError::HoldsUnlistedItems` →
+    `WriteOperationError::FolderHoldsUnlistedItems`, "looks empty, but the storage keeps items in it under names Cmdr
+    can't show"), where it answered a bare `NotEmpty`. ❗ Not done, and more than a small change: the LISTING saying "N
+    items can't be shown" needs a count on the listing result (`Volume::list_directory` returns rows alone) carried
+    through `cmdr-listing`'s events to a quiet pane note; no backend has that road today (NFS's non-UTF-8 skips and
+    WebDAV's members are debug lines too). It wants its own issue, after 10c moves the listing host to app paths.
+  - Edge cases with no real-world source: an S3 bucket or key id holding a NUL or an escape-range code point
+    (U+10E800–U+10EFFF, U+10FE80–U+10FEFF) refuses the connect (`NoSuchBucket` / `KeysRejected`), since `root()` needs a
+    typed value; no provider allows one, and non-ASCII buckets and key ids connect as before
+    (`paths_test::a_place_the_app_path_cant_hold_refuses_the_connect`).
 - **What still bridges, and who takes it**: `testing::scratch_dir` in WebDAV and NFS, the `std::path` twin the app's
-  backend suites call (10d switches them); the `conformance` crossings in WebDAV's and S3's `conformance_test.rs` (the
-  milestone that flips `cmdr_fs::volume::conformance` to app paths, after 7–9); S3's `live_hostile_test.rs` `dotted`,
-  two live cells that hand the volume a `..`, which only a bridge value can spell (11).
+  backend suites call (10d switches its callers and deletes both); the `conformance` crossings in WebDAV's and S3's
+  `conformance_test.rs` (9, which flips `cmdr_fs::volume::conformance` to app paths); S3's `live_hostile_test.rs`
+  `dotted`, two live cells that hand the volume a `..`, which only a bridge value can spell (11, which turns them into
+  pins that a typed path refuses `..` before any request).
+- **Windows results** (2026-11-19, the builder, `--profile windows-baseline`, the four crates only, 0 self-skipped):
+  `main` at `450e3ab9f2` 56 red (milestone 5 had already taken 71 of the 127 the triage counted here), this conversion
+  at `31f8887eca` 5 red, none path-shaped: NFS's three `errors_test` cells and
+  `mutation_test::delete_removes_a_file_an_empty_folder_and_a_link_but_never_recurses` (Win32 145 for `NOTEMPTY`), and
+  S3's `nanoseconds_survive_and_trailing_zeros_drop`. Counts per crate:
+  `docs/notes/windows-port/windows-test-failures.md` § "By milestone".
 - **Verified**: clippy `-D warnings` (default and `--all-features`), nextest `cmdr-fs` + the four crates 1,963 passed
   (328 Docker or live cells skipped), `cmdr` checks against them, the zig cross-checks for Windows and Linux,
-  `pnpm check --fast`, `app-path-std-bridge`, `file-length`, and the Docker fixture lane for the four crates. ❗ Not
-  run: the Windows builder (no `ssh mami` handed over), so the 123 cells in
-  `docs/notes/windows-port/windows-test-failures.md` § "By milestone" are expected green, not seen green.
+  `pnpm check --fast`, `app-path-std-bridge`, `file-length`, the Docker fixture lane for the four crates, and the
+  Windows builder (above).
 
 ### 7. Device backends: SMB, MTP, ADB
 
@@ -1454,7 +1480,8 @@ included; the hidden couplings it found are why waves B and C differ from round 
   code point in the DOM's text, `caf\u{FFFD}.txt` shown, delete of that row removes `caf\xe9.txt` and leaves the
   sibling). That E2E is the first end-to-end proof for #1236; close #1236 when 10a also lands.
 - **DONE**: `cmdr-local` has no bridges, `rename_local_exclusive` accepts an app path on Windows, and no
-  `to_string_lossy` builds a path in `cmdr-local` (names for display only).
+  `to_string_lossy` builds a path in `cmdr-local` (names for display only). `cmdr_fs::volume::conformance` takes app
+  paths, so no backend's `conformance_test.rs` crosses a bridge (WebDAV's and S3's included).
 
 ### 10a. `cmdr-operations`
 
@@ -1596,7 +1623,8 @@ included; the hidden couplings it found are why waves B and C differ from round 
   an MCP write given `/x/link/../y` lands where `ls` says and one given a path past the root refuses typed; Linux: an
   MCP listing of the non-UTF-8 fixture shows `caf\u{FFFD}.txt` flagged `unaddressable`, and an MCP delete of
   `caf\u{FFFD}.txt` with both files present refuses as `AmbiguousName`.
-- **DONE**: the app's bridge count is zero.
+- **DONE**: the app's bridge count is zero, and the backend crates' `testing::scratch_dir` `std::path` twins (WebDAV,
+  NFS) are gone with their last callers, the app's backend suites.
 
 ### 10f. The escape lands
 
@@ -1621,11 +1649,12 @@ included; the hidden couplings it found are why waves B and C differ from round 
 ### 11. Close
 
 - **Size**: S.
-- **Scope**: delete `legacy_unchecked` and `as_std_legacy`; turn `app-path-std-bridge` into the permanent ban; add
-  `app-path-native-crossing` with its allowlist; remove every remaining `#1225` ignore; update D1 and tasks 34–36 in the
-  Windows plan, `crates/cmdr-fs/DETAILS.md` § "App paths" (the durable home), `apps/desktop/src/lib/path/DETAILS.md` (a
-  pointer to the Rust twin), and `docs/notes/windows-port/build-progress.md` with the builder's full run. Then wipe this
-  spec per `docs/specs/DETAILS.md`.
+- **Scope**: delete `legacy_unchecked` and `as_std_legacy` (S3's `live_hostile_test.rs` `dotted` cells, the last to hand
+  a volume `..` through one, become pins that a typed path refuses `..` before any request); turn `app-path-std-bridge`
+  into the permanent ban; add `app-path-native-crossing` with its allowlist; remove every remaining `#1225` ignore;
+  update D1 and tasks 34–36 in the Windows plan, `crates/cmdr-fs/DETAILS.md` § "App paths" (the durable home),
+  `apps/desktop/src/lib/path/DETAILS.md` (a pointer to the Rust twin), and `docs/notes/windows-port/build-progress.md`
+  with the builder's full run. Then wipe this spec per `docs/specs/DETAILS.md`.
 - **Test plan**: the builder's full `cargo nextest run` over the workspace, totals logged; macOS/Linux full CI.
 - **DONE**: `rg 'legacy_unchecked|as_std_legacy|#1225'` is empty; #1225 closes; #1232 holds only what's not paths.
 
