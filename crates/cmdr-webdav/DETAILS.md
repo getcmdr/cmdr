@@ -161,6 +161,21 @@ anchored). ❗ A bare server-absolute path is refused too; `crates/cmdr-sftp/DET
 reasoning, which is the same here. The three root aliases stay, and `query.rs` uses one: `is_root` and
 `get_space_info_impl` ask for `/`.
 
+Every body takes the trait's `&AppPath` and does no `std::path` arithmetic (`crates/cmdr-fs/DETAILS.md` § "App paths").
+Going down, `WebdavVolume::to_remote_path` is `RemoteRoot::to_remote`; a server path's last name is split on `/` alone
+(`mapping::href_name`), since `Path::file_name` on Windows also splits on `\`. Coming back, a row's `FileEntry.path`
+(and `get_metadata`'s) is `RemoteRoot::to_app_path`'s TEXT (`row_path_of`), ❌ never the typed `to_app`'s canonical
+spelling: panes, tabs, and the listing cache hold that exact text, and a name the app path can't hold yet (a NUL) keeps
+its row. `Volume::root` answers `app_root().app()` for the same reason. The typed `to_app` serves only where an
+`AppPathBuf` is the answer: `PatchSource::patch_app_path` (`app_path_for`). The scan, the patcher, and `mkdir -p` run
+through `cmdr-fs`'s typed twins (`scan_*_at`, `patch_*_at`, `create_directory_all_at`); the `std::path` trait methods
+(`patch_display_path`, `remote_path_of`) stay, written over `RemoteRoot`'s `std::path` forms, until `cmdr-fs` drops
+them. A listed name of `.` or `..` isn't filtered here: `child_of` plus `to_app_path` resolve it lexically, so it lists
+as a row pointing at the folder or its parent (off the root it drops), and the scan walk refuses it (`InvalidName`).
+Tests name files through `volume::testing::{at, child}` (a relative spelling never reaches a volume) and
+`test_support::typed` for `format!`-built text; `test_support::conformance_path` is the crate's one bridge, until
+`cmdr_fs::volume::conformance` takes app paths.
+
 The remote half is what `WebdavClient::url_for` percent-encodes (`urls.rs`: everything but unreserved characters) and
 appends a trailing slash to for collections. ❗ `FileEntry.path` is the APP spelling, prefix and all, because a pane
 hands what a listing gave it straight back — as does `display_path_for`, the listing-cache patcher's.
