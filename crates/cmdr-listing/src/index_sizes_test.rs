@@ -5,6 +5,7 @@
 //! held mid-enrich while the test does something to the same listing.
 
 use crate::RowSpan;
+use cmdr_fs::app_path::AppPath;
 use std::collections::VecDeque;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -124,7 +125,7 @@ impl ListingVolumes for OneVolume {
     fn resolve_local_only(&self, _volume_id: &str, path: &Path) -> ResolvedVolume {
         ResolvedVolume {
             volume: Some(Arc::clone(&self.volume)),
-            path: path.to_path_buf(),
+            path: AppPath::legacy_unchecked(path).into_owned(),
             routed: self.routed,
             unconfirmed: None,
         }
@@ -144,11 +145,11 @@ impl ListingVolumes for OneVolume {
 async fn engine_with(index: Arc<ScriptedIndex>, routed: Option<RoutedKind>) -> Listings {
     let volume = InMemoryVolume::new("sized");
     volume
-        .create_directory(Path::new(DIR))
+        .create_directory(&AppPath::legacy_unchecked(Path::new(DIR)))
         .await
         .expect("create the listed folder");
     volume
-        .create_directory(Path::new(FOLDER))
+        .create_directory(&AppPath::legacy_unchecked(Path::new(FOLDER)))
         .await
         .expect("create the subfolder");
     let engine = Listings::builder(

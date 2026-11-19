@@ -5,15 +5,16 @@
 use super::*;
 use crate::testing::TestOperations;
 use crate::transfer::conflict_responder_test_support::ConflictResponderSink;
+use cmdr_fs::app_path;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_skip_all_answer_becomes_the_reported_policy() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_file(Path::new("/a.txt"), b"new a").await.unwrap();
-    source.create_file(Path::new("/b.txt"), b"new b").await.unwrap();
-    dest.create_file(Path::new("/a.txt"), b"old a").await.unwrap();
-    dest.create_file(Path::new("/b.txt"), b"old b").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"new a").await.unwrap();
+    source.create_file(app_path!("/b.txt"), b"new b").await.unwrap();
+    dest.create_file(app_path!("/a.txt"), b"old a").await.unwrap();
+    dest.create_file(app_path!("/b.txt"), b"old b").await.unwrap();
 
     let state = Arc::new(
         engine

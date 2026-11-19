@@ -11,6 +11,7 @@
 //! contract, proven in `priority::host_policy`'s tests and, at the decision, by
 //! `scan_pace::tests::app_wide_activity_alone_does_not_throttle_a_quiet_share`.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -60,7 +61,7 @@ impl Volume for CeilingVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &std::path::Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -68,21 +69,21 @@ impl Volume for CeilingVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a std::path::Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Fut<'a, Result<Vec<cmdr_fs::entry::FileEntry>, cmdr_fs::volume::VolumeError>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a std::path::Path,
+        path: &'a AppPath,
     ) -> Fut<'a, Result<cmdr_fs::entry::FileEntry, cmdr_fs::volume::VolumeError>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a std::path::Path) -> Fut<'a, bool> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Fut<'a, bool> {
         self.inner.exists(path)
     }
-    fn is_directory<'a>(&'a self, path: &'a std::path::Path) -> Fut<'a, Result<bool, cmdr_fs::volume::VolumeError>> {
+    fn is_directory<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<bool, cmdr_fs::volume::VolumeError>> {
         self.inner.is_directory(path)
     }
     fn max_concurrent_scan_listings(&self) -> usize {

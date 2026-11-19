@@ -1,6 +1,7 @@
 //! Fresh compression coordinator shutdown and stage-validation tests.
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path;
 use cmdr_local::LocalPosixVolume;
 use std::ops::ControlFlow;
 
@@ -25,7 +26,7 @@ impl Volume for RefuseAfterProducerProgress {
         self.inner.name()
     }
 
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
 
@@ -35,7 +36,7 @@ impl Volume for RefuseAfterProducerProgress {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
@@ -43,18 +44,18 @@ impl Volume for RefuseAfterProducerProgress {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
 
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
 
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
@@ -69,7 +70,7 @@ impl Volume for RefuseAfterProducerProgress {
 
     fn write_from_stream<'a>(
         &'a self,
-        _dest: &'a Path,
+        _dest: &'a AppPath,
         _mode: WriteMode,
         _length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
@@ -194,7 +195,7 @@ impl Volume for GatedDestination {
         self.inner.name()
     }
 
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
 
@@ -216,7 +217,7 @@ impl Volume for GatedDestination {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
@@ -224,29 +225,29 @@ impl Volume for GatedDestination {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
 
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
 
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
 
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.delete(path)
     }
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         self.inner.open_read_stream(path)
     }
@@ -261,7 +262,7 @@ impl Volume for GatedDestination {
 
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         _mode: WriteMode,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,
@@ -269,6 +270,9 @@ impl Volume for GatedDestination {
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
         use std::sync::atomic::Ordering;
         Box::pin(async move {
+            let dest_app = dest;
+            let dest_std = dest.as_std_legacy();
+            let dest: &Path = &dest_std;
             let mut written = 0u64;
             let mut gate = self.gate.clone();
             loop {
@@ -278,7 +282,7 @@ impl Volume for GatedDestination {
                 };
                 let chunk = chunk?;
                 if written == 0 {
-                    self.inner.create_file(dest, &chunk).await?;
+                    self.inner.create_file(dest_app, &chunk).await?;
                 }
                 written += chunk.len() as u64;
                 if matches!(self.script, AfterFirstChunk::ClaimSuccess) {
@@ -337,7 +341,7 @@ impl Volume for HungSource {
         self.inner.name()
     }
 
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
 
@@ -351,7 +355,7 @@ impl Volume for HungSource {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
@@ -359,18 +363,18 @@ impl Volume for HungSource {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
 
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
 
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
@@ -381,7 +385,7 @@ impl Volume for HungSource {
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             let size = self.inner.get_metadata(path).await?.size.unwrap_or(0);
@@ -448,9 +452,9 @@ impl GatedRun {
         let inner = InMemoryVolume::new("Share")
             .with_lane_key(id.clone())
             .with_backend_kind(BackendKind::Smb);
-        inner.create_directory(Path::new("/share")).await.expect("seed dir");
+        inner.create_directory(app_path!("/share")).await.expect("seed dir");
         inner
-            .create_file(Path::new("/share/archive.zip"), ORIGINAL_ARCHIVE)
+            .create_file(app_path!("/share/archive.zip"), ORIGINAL_ARCHIVE)
             .await
             .expect("seed original");
         let (open_gate, gate) = tokio::sync::watch::channel(false);
@@ -504,7 +508,7 @@ impl GatedRun {
         let listing = self
             .destination
             .inner
-            .list_directory(Path::new("/share"), None)
+            .list_directory(app_path!("/share"), None)
             .await
             .expect("list share");
         assert!(sibling_temps(&listing).is_empty(), "the stage is removed: {listing:?}");
@@ -581,7 +585,7 @@ async fn cancel_reaches_a_producer_waiting_on_a_hung_remote_source() {
     let lane = format!("hung-source-{}", uuid::Uuid::new_v4());
     let inner = InMemoryVolume::new("HungSource").with_lane_key(lane);
     inner
-        .create_file(Path::new("/stuck.bin"), &[b's'; 4096])
+        .create_file(app_path!("/stuck.bin"), &[b's'; 4096])
         .await
         .expect("seed source");
     let reading = Arc::new(std::sync::atomic::AtomicBool::new(false));
@@ -630,7 +634,10 @@ async fn cancel_reaches_a_producer_waiting_on_a_hung_remote_source() {
 }
 
 async fn read_remote_file(volume: &dyn Volume, path: &Path) -> Vec<u8> {
-    let mut stream = volume.open_read_stream(path).await.expect("open");
+    let mut stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(path))
+        .await
+        .expect("open");
     let mut bytes = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         bytes.extend(chunk.expect("chunk"));
@@ -839,7 +846,7 @@ fn the_expected_index_names_what_the_reader_synthesizes() {
 async fn validation_rejects_byte_count_drift_before_parsing() {
     let volume: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("stage"));
     volume
-        .create_file(Path::new("archive.zip"), b"not a ZIP")
+        .create_file(&AppPath::legacy_unchecked(Path::new("archive.zip")), b"not a ZIP")
         .await
         .expect("create stage");
 
@@ -855,7 +862,7 @@ async fn validation_rejects_corrupt_zip_bytes_even_when_counts_agree() {
     let volume: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("stage"));
     let corrupt = b"PK\x03\x04truncated";
     volume
-        .create_file(Path::new("archive.zip"), corrupt)
+        .create_file(&AppPath::legacy_unchecked(Path::new("archive.zip")), corrupt)
         .await
         .expect("create stage");
 

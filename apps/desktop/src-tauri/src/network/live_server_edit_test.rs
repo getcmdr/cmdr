@@ -6,6 +6,8 @@
 //! that run the same flow over a real session are in `sftp_volume_wiring_test.rs`
 //! and `webdav_volume_wiring_test.rs`.
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::BridgedPath;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -66,14 +68,14 @@ fn over_the_same_server(name: &str, root: &Path) -> Arc<dyn Volume> {
 /// never answers at all.
 struct DeadSession {
     name: String,
-    root: PathBuf,
+    root: BridgedPath,
     hangs: bool,
 }
 
 fn dead_session(name: &str, root: &str, hangs: bool) -> Arc<dyn Volume> {
     Arc::new(DeadSession {
         name: name.to_string(),
-        root: PathBuf::from(app(root)),
+        root: BridgedPath::new(PathBuf::from(app(root))),
         hangs,
     })
 }
@@ -83,8 +85,8 @@ impl Volume for DeadSession {
         &self.name
     }
 
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -93,7 +95,7 @@ impl Volume for DeadSession {
 
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::DeviceDisconnected("dead".into())) })
@@ -101,18 +103,18 @@ impl Volume for DeadSession {
 
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::DeviceDisconnected("dead".into())) })
     }
 
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { false })
     }
 
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         let hangs = self.hangs;
         Box::pin(async move {
@@ -167,7 +169,7 @@ async fn a_wider_root_the_server_has_is_installed_and_announced() {
     accepted.install(&manager);
 
     let installed = manager.get(id).expect("still registered");
-    assert_eq!(installed.root(), Path::new(&app("/srv/data")));
+    assert_eq!(&*installed.root().as_std_legacy(), Path::new(&app("/srv/data")));
     assert!(
         volume_broadcast::volumes_changed_requests() > asked_before,
         "the switcher hears about the new root"
@@ -210,7 +212,7 @@ async fn a_rename_alone_swaps_the_instance_without_asking_the_server() {
 
     let installed = manager.get(id).expect("still registered");
     assert_eq!(installed.name(), "Testnas");
-    assert_eq!(installed.root(), Path::new(&app("/srv/data")));
+    assert_eq!(&*installed.root().as_std_legacy(), Path::new(&app("/srv/data")));
     assert!(
         volume_broadcast::volume_root_changes(id).is_empty(),
         "neither the root nor the landing moved"

@@ -72,6 +72,7 @@
 //! back the source's [`WriteStamp`]: the caller puts it on by path (idempotent),
 //! so the file never keeps the server's date silently.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -228,15 +229,19 @@ async fn same_size_streams(
     final_path: &Path,
 ) -> Option<(Box<dyn VolumeReadStream>, Box<dyn VolumeReadStream>)> {
     let same_size = matches!(
-        dest_volume.get_metadata(final_path).await,
+        dest_volume.get_metadata(&AppPath::legacy_unchecked(final_path)).await,
         Ok(entry) if !entry.is_directory && !entry.is_symlink && entry.size == Some(size)
     );
     if !same_size {
         return None;
     }
     match (
-        source_volume.open_read_stream_with_hint(source_path, Some(size)).await,
-        dest_volume.open_read_stream(final_path).await,
+        source_volume
+            .open_read_stream_with_hint(&AppPath::legacy_unchecked(source_path), Some(size))
+            .await,
+        dest_volume
+            .open_read_stream(&AppPath::legacy_unchecked(final_path))
+            .await,
     ) {
         (Ok(ours), Ok(at_the_name)) => Some((ours, at_the_name)),
         _ => None,

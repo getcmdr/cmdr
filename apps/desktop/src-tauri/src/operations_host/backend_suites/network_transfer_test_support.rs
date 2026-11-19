@@ -16,6 +16,7 @@
 //! length full of the wrong bytes is a data-loss bug that an `exists()`
 //! assertion reports as a pass.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
@@ -97,7 +98,7 @@ pub(super) fn sha256(bytes: &[u8]) -> String {
 /// (which is what a copy uses), so the check covers the same machinery.
 pub(super) async fn read_all(volume: &dyn Volume, path: &Path) -> Vec<u8> {
     let mut stream = volume
-        .open_read_stream(path)
+        .open_read_stream(&AppPath::legacy_unchecked(path))
         .await
         .unwrap_or_else(|e| panic!("reading {} back: {e:?}", path.display()));
     let mut out = Vec::new();
@@ -136,7 +137,7 @@ fn collect_fingerprint<'a>(
 ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
     Box::pin(async move {
         let entries = volume
-            .list_directory(dir, None)
+            .list_directory(&AppPath::legacy_unchecked(dir), None)
             .await
             .unwrap_or_else(|e| panic!("listing {}: {e:?}", dir.display()));
         for entry in entries {
@@ -158,12 +159,12 @@ fn collect_fingerprint<'a>(
 /// shared export as it found it.
 pub(super) fn clean_deep<'a>(volume: &'a dyn Volume, dir: &'a Path) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
     Box::pin(async move {
-        if let Ok(entries) = volume.list_directory(dir, None).await {
+        if let Ok(entries) = volume.list_directory(&AppPath::legacy_unchecked(dir), None).await {
             for entry in entries {
                 clean_deep(volume, &dir.join(&entry.name)).await;
             }
         }
-        let _ = volume.delete(dir).await;
+        let _ = volume.delete(&AppPath::legacy_unchecked(dir)).await;
     })
 }
 
@@ -180,7 +181,7 @@ fn staging_leftovers(entries: &[cmdr_fs::entry::FileEntry]) -> Vec<String> {
 /// Asserts nothing of Cmdr's own scratch survives at `dir`.
 pub(super) async fn assert_no_staging_litter(volume: &dyn Volume, dir: &Path, what: &str) {
     let entries = volume
-        .list_directory(dir, None)
+        .list_directory(&AppPath::legacy_unchecked(dir), None)
         .await
         .unwrap_or_else(|e| panic!("listing {} after {what}: {e:?}", dir.display()));
     let litter = staging_leftovers(&entries);
@@ -422,12 +423,12 @@ async fn seed_remote_tree(volume: &dyn Volume, root: &Path) {
         let path = root.join(relative);
         if let Some(parent) = path.parent() {
             volume
-                .create_directory_all(parent)
+                .create_directory_all(&AppPath::legacy_unchecked(parent))
                 .await
                 .unwrap_or_else(|e| panic!("making {} on the server: {e:?}", parent.display()));
         }
         volume
-            .create_file(&path, &self_describing_bytes(len, relative))
+            .create_file(&AppPath::legacy_unchecked(&path), &self_describing_bytes(len, relative))
             .await
             .unwrap_or_else(|e| panic!("seeding {} on the server: {e:?}", path.display()));
     }
@@ -607,7 +608,7 @@ pub(super) async fn a_cancelled_upload_leaves_nothing_behind(remote: Arc<dyn Vol
     );
 
     let entries = remote
-        .list_directory(&dir, None)
+        .list_directory(&AppPath::legacy_unchecked(&dir), None)
         .await
         .unwrap_or_else(|e| panic!("listing {} after the cancel: {e:?}", dir.display()));
     let names: Vec<&str> = entries.iter().map(|e| e.name.as_str()).collect();
@@ -636,7 +637,7 @@ pub(super) async fn an_overwrite_answer_replaces_the_destination_bytes(remote: A
     let old = self_describing_bytes(40_000, "the-old-bytes");
     let new = self_describing_bytes(180_000, "the-new-bytes");
     remote
-        .create_file(&dir.join("target.bin"), &old)
+        .create_file(&AppPath::legacy_unchecked(&dir.join("target.bin")), &old)
         .await
         .expect("seeding the destination file on the server");
 
@@ -697,12 +698,12 @@ pub(super) async fn an_overwrite_answer_replaces_the_destination_bytes(remote: A
 pub(super) async fn a_pre_existing_destination_still_probes_each_name(remote: Arc<dyn Volume>, dir: PathBuf) {
     let landing = dir.join("landing");
     remote
-        .create_directory_all(&landing)
+        .create_directory_all(&AppPath::legacy_unchecked(&landing))
         .await
         .expect("making the destination folder on the server");
     let kept = self_describing_bytes(30_000, "the-file-the-user-already-had");
     remote
-        .create_file(&landing.join("keepme.bin"), &kept)
+        .create_file(&AppPath::legacy_unchecked(&landing.join("keepme.bin")), &kept)
         .await
         .expect("seeding the pre-existing destination file");
 

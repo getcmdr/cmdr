@@ -173,7 +173,7 @@ pub(crate) fn handle_volume_will_unmount(volume_path: &str) {
     // needless rescan — so act only when the ACTIVE root is the one going away.
     if let Some((id, volume)) =
         crate::file_system::volume::manager::get_volume_manager().find_by_root(std::path::Path::new(volume_path))
-        && volume.root() == std::path::Path::new(volume_path)
+        && &*volume.root().as_std_legacy() == std::path::Path::new(volume_path)
     {
         stop_local_external_index_off_main(id);
     }
@@ -485,7 +485,7 @@ mod tests {
             .get(volume_id)
             .expect("a live sibling mount keeps the volume registered");
         assert_eq!(
-            promoted.root(),
+            &*promoted.root().as_std_legacy(),
             std::path::Path::new(second),
             "the surviving mount becomes the active root"
         );

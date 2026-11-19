@@ -6,6 +6,7 @@
 //! `use super::*` still reaches its private items.
 
 use super::*;
+use cmdr_fs::app_path;
 use std::path::Path;
 use std::time::Duration;
 
@@ -75,9 +76,11 @@ async fn a_mount_that_answers_its_identity_read_keeps_the_answer() {
 /// volume without breaking the holders still using it.
 mod tracking {
     use crate::file_system::volume::{SpaceInfo, Volume, VolumeError};
+    use cmdr_fs::app_path::AppPath;
+    use cmdr_fs::app_path::BridgedPath;
     use cmdr_fs::entry::FileEntry;
     use std::future::Future;
-    use std::path::{Path, PathBuf};
+    use std::path::PathBuf;
     use std::pin::Pin;
     use std::sync::Arc;
     use std::sync::atomic::{AtomicBool, Ordering};
@@ -85,7 +88,7 @@ mod tracking {
     pub(super) struct TrackingVolume {
         pub(super) on_unmount_called: Arc<AtomicBool>,
         pub(super) on_superseded_called: Arc<AtomicBool>,
-        root: PathBuf,
+        root: BridgedPath,
         smb_state: Option<crate::file_system::volume::ConnectionState>,
     }
 
@@ -125,7 +128,7 @@ mod tracking {
             let vol = Arc::new(Self {
                 on_unmount_called: Arc::clone(&unmounted),
                 on_superseded_called: Arc::clone(&superseded),
-                root: PathBuf::from(root),
+                root: BridgedPath::new(PathBuf::from(root)),
                 smb_state,
             }) as Arc<dyn Volume>;
             (vol, Hooks { unmounted, superseded })
@@ -136,26 +139,26 @@ mod tracking {
         fn name(&self) -> &str {
             "tracking"
         }
-        fn root(&self) -> &Path {
-            &self.root
+        fn root(&self) -> &AppPath {
+            self.root.app()
         }
         fn as_any(&self) -> &dyn std::any::Any {
             self
         }
         fn list_directory<'a>(
             &'a self,
-            _path: &'a Path,
+            _path: &'a AppPath,
             _on_progress: Option<&'a (dyn Fn(crate::file_system::volume::ListingProgress) + Sync + 'a)>,
         ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
             Box::pin(async { Err(VolumeError::NotSupported) })
         }
         fn get_metadata<'a>(
             &'a self,
-            _path: &'a Path,
+            _path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
             Box::pin(async { Err(VolumeError::NotSupported) })
         }
-        fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+        fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
             Box::pin(async { false })
         }
         /// Stands in for any real request on a held volume reference: it
@@ -164,7 +167,7 @@ mod tracking {
         /// `check_connection` gate.
         fn is_directory<'a>(
             &'a self,
-            _path: &'a Path,
+            _path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
             let torn_down = self.on_unmount_called.load(Ordering::Relaxed);
             Box::pin(async move {
@@ -315,7 +318,7 @@ async fn a_held_volume_reference_keeps_working_across_a_replace() {
     // What a running transfer holds: an `Arc` clone taken before the swap.
     let held = manager.get(volume_id).expect("registered above");
     assert!(
-        held.is_directory(Path::new("/anything")).await.is_ok(),
+        held.is_directory(app_path!("/anything")).await.is_ok(),
         "the held reference works before the swap"
     );
 
@@ -323,7 +326,7 @@ async fn a_held_volume_reference_keeps_working_across_a_replace() {
     register_replacing_predecessor(volume_id, new_volume).await;
 
     assert!(
-        held.is_directory(Path::new("/anything")).await.is_ok(),
+        held.is_directory(app_path!("/anything")).await.is_ok(),
         "the held reference must survive the swap: an upgrade is not a disconnect"
     );
 
@@ -775,7 +778,11 @@ async fn returning_a_direct_share_to_the_os_mount_supersedes_its_session() {
     manager.unregister(volume_id);
     assert!(returned, "a direct share has a session to hand back");
     assert_eq!(current.backend_kind(), BackendKind::Local, "the OS mount serves it now");
-    assert_eq!(current.root(), Path::new("/Volumes/back-to-os"), "at the same mount");
+    assert_eq!(
+        &*current.root().as_std_legacy(),
+        Path::new("/Volumes/back-to-os"),
+        "at the same mount"
+    );
     assert!(hooks.superseded.load(Ordering::Relaxed), "the session is superseded");
     assert!(
         !hooks.unmounted.load(Ordering::Relaxed),

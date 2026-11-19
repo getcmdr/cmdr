@@ -19,6 +19,7 @@
 //! the other. The cells stay here because the integration lane selects them by
 //! the `webdav_integration_` name prefix.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -51,7 +52,7 @@ async fn webdav_integration_copying_off_a_server_lands_every_byte() {
     let content = self_describing_bytes(PAYLOAD_BYTES, "downloaded.bin");
     let remote_file = dir.join("downloaded.bin");
     remote
-        .create_file(&remote_file, &content)
+        .create_file(&AppPath::legacy_unchecked(&remote_file), &content)
         .await
         .expect("seed the file on the server");
 
@@ -106,7 +107,7 @@ async fn webdav_integration_copying_onto_a_server_lands_every_byte() {
         crate::volume_host::host(),
     ));
     local
-        .create_file(Path::new("uploaded.bin"), &content)
+        .create_file(&AppPath::legacy_unchecked(Path::new("uploaded.bin")), &content)
         .await
         .expect("seed the local file");
 
@@ -189,6 +190,9 @@ async fn webdav_integration_awkward_names_survive_a_round_trip() {
 #[ignore = "needs the WebDAV fixture stack: apps/desktop/test/webdav-servers/start.sh (webdav-fixture)"]
 async fn webdav_integration_a_copy_off_a_server_keeps_the_source_date() {
     let remote: Arc<dyn Volume> = Arc::new(connect(WebdavFixture::Stock).await);
-    let seeded = remote.root().join(cmdr_webdav::volume::testing::FIXTURE_DATED_FILE);
+    let seeded = remote
+        .root()
+        .as_std_legacy()
+        .join(cmdr_webdav::volume::testing::FIXTURE_DATED_FILE);
     a_copy_off_the_server_keeps_the_date_it_lists(remote, seeded).await;
 }

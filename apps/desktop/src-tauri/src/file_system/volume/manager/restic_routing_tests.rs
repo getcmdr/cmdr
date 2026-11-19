@@ -5,6 +5,7 @@
 
 use super::*;
 use crate::file_system::volume::{InMemoryVolume, VolumeError};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::ListingProgress;
 use std::future::Future;
@@ -38,7 +39,7 @@ impl Volume for CountingParent {
         self.inner.name()
     }
 
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
 
@@ -48,7 +49,7 @@ impl Volume for CountingParent {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.listings.fetch_add(1, Ordering::Relaxed);
@@ -57,7 +58,7 @@ impl Volume for CountingParent {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
@@ -68,11 +69,14 @@ impl Volume for CountingParent {
 /// browses snapshots builds a real repo with `FixtureRepo`.
 async fn repo_shaped(volume: &InMemoryVolume, root: &Path) {
     volume
-        .create_file(&root.join("config"), b"encrypted")
+        .create_file(&AppPath::legacy_unchecked(&root.join("config")), b"encrypted")
         .await
         .expect("config");
     for dir in ["data", "index", "keys", "snapshots", "locks"] {
-        volume.create_directory(&root.join(dir)).await.expect("repo dir");
+        volume
+            .create_directory(&AppPath::legacy_unchecked(&root.join(dir)))
+            .await
+            .expect("repo dir");
     }
 }
 
@@ -100,8 +104,11 @@ async fn the_row_and_every_path_below_it_route_to_the_view() {
         let resolved = manager.resolve("restic-routes-below", &path).await;
         assert_eq!(resolved.routed, Some(RoutedKind::Restic), "{}", path.display());
         // The path travels through untouched; the view classifies it itself.
-        assert_eq!(resolved.path, path);
-        assert_eq!(resolved.volume.expect("the view").root(), Path::new(VIEW));
+        assert_eq!(*resolved.path.as_std_legacy(), path);
+        assert_eq!(
+            &*resolved.volume.expect("the view").root().as_std_legacy(),
+            Path::new(VIEW)
+        );
     }
 }
 
@@ -129,7 +136,10 @@ async fn the_repo_folder_and_its_real_files_stay_on_the_parent() {
 async fn a_non_repo_browse_snapshots_folder_passes_through_for_one_listing() {
     let inner = InMemoryVolume::new("testshare");
     let real = Path::new("/Volumes/testshare/photos/Browse snapshots");
-    inner.create_directory(real).await.expect("a real folder of that name");
+    inner
+        .create_directory(&AppPath::legacy_unchecked(real))
+        .await
+        .expect("a real folder of that name");
     let parent = Arc::new(CountingParent::new(inner));
     let manager = VolumeManager::new();
     manager.register("restic-non-repo", Arc::clone(&parent) as Arc<dyn Volume>);
@@ -233,7 +243,10 @@ async fn a_repo_below_a_non_repo_browse_snapshots_folder_still_routes() {
         .resolve("restic-nested-name", &repo.join("Browse snapshots/latest"))
         .await;
     assert_eq!(resolved.routed, Some(RoutedKind::Restic));
-    assert_eq!(resolved.volume.expect("the view").root(), repo.join("Browse snapshots"));
+    assert_eq!(
+        *resolved.volume.expect("the view").root().as_std_legacy(),
+        repo.join("Browse snapshots")
+    );
 }
 
 /// A view isn't a parent for another view: a repo backed up inside a snapshot
@@ -441,7 +454,7 @@ async fn entering_the_row_lists_the_snapshots() {
     assert!(unlock(view, "pw").await);
 
     let names: Vec<String> = volume
-        .list_directory(Path::new(VIEW), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new(VIEW)), None)
         .await
         .expect("lists the snapshots")
         .into_iter()
@@ -499,7 +512,10 @@ async fn a_zip_inside_a_snapshot_browses_as_an_archive_over_the_view() {
         "the zip itself is a file in the backup"
     );
     let file = file.volume.expect("the view");
-    let meta = file.get_metadata(&zip).await.expect("the backed-up zip");
+    let meta = file
+        .get_metadata(&AppPath::legacy_unchecked(&zip))
+        .await
+        .expect("the backed-up zip");
     assert!(!meta.is_directory);
     assert_eq!(meta.size, Some(zip_bytes.len() as u64));
     let entered = manager.resolve_to_list("restic-zip-browse", &zip).await;
@@ -511,14 +527,18 @@ async fn a_zip_inside_a_snapshot_browses_as_an_archive_over_the_view() {
 
     let inside = manager.resolve("restic-zip-browse", &zip.join("docs")).await;
     assert_eq!(inside.routed, Some(RoutedKind::ArchiveInSnapshot));
-    assert_eq!(inside.path, zip.join("docs"), "the path travels through untouched");
+    assert_eq!(
+        *inside.path.as_std_legacy(),
+        zip.join("docs"),
+        "the path travels through untouched"
+    );
     let archive = inside.volume.expect("the archive");
     assert!(
         archive.as_any().downcast_ref::<cmdr_archive::ArchiveVolume>().is_some(),
         "an archive volume serves the inside"
     );
     let mut names: Vec<String> = archive
-        .list_directory(&zip, None)
+        .list_directory(&AppPath::legacy_unchecked(&zip), None)
         .await
         .expect("lists the archive's root")
         .into_iter()
@@ -527,12 +547,12 @@ async fn a_zip_inside_a_snapshot_browses_as_an_archive_over_the_view() {
     names.sort();
     assert_eq!(names, ["docs", "readme.txt"]);
     let notes = archive
-        .list_directory(&zip.join("docs"), None)
+        .list_directory(&AppPath::legacy_unchecked(&zip.join("docs")), None)
         .await
         .expect("lists a folder inside");
     assert_eq!(notes.iter().map(|e| e.name.as_str()).collect::<Vec<_>>(), ["notes.txt"]);
     let mut stream = archive
-        .open_read_stream(&zip.join("readme.txt"))
+        .open_read_stream(&AppPath::legacy_unchecked(&zip.join("readme.txt")))
         .await
         .expect("opens an entry");
     let mut bytes = Vec::new();

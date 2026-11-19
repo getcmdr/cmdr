@@ -9,6 +9,8 @@
 //! one would touch the wrong file.
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -66,7 +68,7 @@ fn in_memory(name: &str) -> Arc<InMemoryVolume> {
 
 async fn read(volume: &InMemoryVolume, path: &str) -> Vec<u8> {
     let mut reader = volume
-        .open_read_stream(Path::new(path))
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
         .await
         .unwrap_or_else(|e| panic!("open {path}: {e:?}"));
     reader
@@ -209,10 +211,10 @@ async fn undoing_a_named_volume_copy_deletes_exactly_the_named_copy() {
     rig.vm.register("smb-src", Arc::clone(&source) as Arc<dyn Volume>);
     rig.vm.register("smb-dst", Arc::clone(&dest) as Arc<dyn Volume>);
     source
-        .create_file(Path::new("/original.txt"), b"payload")
+        .create_file(app_path!("/original.txt"), b"payload")
         .await
         .expect("source");
-    dest.create_file(Path::new("/original.txt"), b"payload")
+    dest.create_file(app_path!("/original.txt"), b"payload")
         .await
         .expect("bystander");
 
@@ -253,11 +255,11 @@ async fn undoing_a_named_volume_copy_deletes_exactly_the_named_copy() {
     let report = rig.undo(op_id).await;
     assert_eq!(report.skipped, 0, "nothing skipped, got {report:?}");
     assert!(
-        !dest.exists(Path::new("/backup.txt")).await,
+        !dest.exists(app_path!("/backup.txt")).await,
         "undo removed the named copy"
     );
     assert_eq!(read(&dest, "/original.txt").await, b"payload", "the bystander stays");
-    assert!(source.exists(Path::new("/original.txt")).await);
+    assert!(source.exists(app_path!("/original.txt")).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -278,11 +280,11 @@ async fn undoing_a_named_volume_move_restores_the_original_name() {
         rig.vm.register(source_id, Arc::clone(&source) as Arc<dyn Volume>);
         rig.vm.register(dest_id, Arc::clone(&dest) as Arc<dyn Volume>);
         source
-            .create_file(Path::new("/original.txt"), b"payload")
+            .create_file(app_path!("/original.txt"), b"payload")
             .await
             .expect("source");
-        dest.create_directory(Path::new("/dest")).await.expect("dest folder");
-        dest.create_file(Path::new("/dest/original.txt"), b"bystander")
+        dest.create_directory(app_path!("/dest")).await.expect("dest folder");
+        dest.create_file(app_path!("/dest/original.txt"), b"bystander")
             .await
             .expect("bystander");
 
@@ -340,7 +342,7 @@ async fn undoing_a_named_volume_move_restores_the_original_name() {
         }
         journal::finalize_op(state.scope(), OpKind::Move, ExecutionStatus::Done);
         assert_eq!(read(&dest, "/dest/renamed.txt").await, b"payload");
-        assert!(!source.exists(Path::new("/original.txt")).await);
+        assert!(!source.exists(app_path!("/original.txt")).await);
 
         let report = rig.undo(op_id).await;
         assert_eq!(report.skipped, 0, "nothing skipped, got {report:?}");
@@ -350,7 +352,7 @@ async fn undoing_a_named_volume_move_restores_the_original_name() {
             "the original name is back"
         );
         assert!(
-            !dest.exists(Path::new("/dest/renamed.txt")).await,
+            !dest.exists(app_path!("/dest/renamed.txt")).await,
             "the named leaf is gone"
         );
         assert_eq!(

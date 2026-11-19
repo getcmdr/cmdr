@@ -117,15 +117,15 @@ const ROOT_RECORDED_RESOLUTION: &str =
 /// exception is [`identity_conflict_level`]'s nested case, which can only be a
 /// double mount.
 fn report_identity_conflict(id: &str, existing: &Arc<dyn Volume>, incoming: &Arc<dyn Volume>, resolution: &str) {
-    if !is_identity_conflict(existing.root(), incoming.root()) {
+    if !is_identity_conflict(&existing.root().as_std_legacy(), &incoming.root().as_std_legacy()) {
         return;
     }
     log::log!(
         target: "cmdr_lib::file_system::volume",
-        identity_conflict_level(existing.root(), incoming.root()),
+        identity_conflict_level(&existing.root().as_std_legacy(), &incoming.root().as_std_legacy()),
         "Two different mount roots ({} and {}) claim volume ID {id}; {resolution}, so the two share per-volume state. Expected only for a cloned volume or a doubly-mounted filesystem.",
-        LogPrivate::dir_path(existing.root()),
-        LogPrivate::dir_path(incoming.root()),
+        LogPrivate::dir_path(&*existing.root().as_std_legacy()),
+        LogPrivate::dir_path(&*incoming.root().as_std_legacy()),
     );
 }
 
@@ -254,8 +254,8 @@ impl VolumeManager {
         let mut volumes = self.volumes.write_ignore_poison();
         if let Some(existing) = volumes.get_mut(id) {
             report_identity_conflict(id, &existing.volume, &volume, ROOT_RECORDED_RESOLUTION);
-            if is_identity_conflict(existing.volume.root(), volume.root()) {
-                existing.record_root(volume.root());
+            if is_identity_conflict(&existing.volume.root().as_std_legacy(), &volume.root().as_std_legacy()) {
+                existing.record_root(&volume.root().as_std_legacy());
                 return true;
             }
             existing.replace_volume(volume);
@@ -296,7 +296,7 @@ impl VolumeManager {
         self.volumes
             .read_ignore_poison()
             .get(id)
-            .is_some_and(|entry| is_identity_conflict(entry.volume.root(), root))
+            .is_some_and(|entry| is_identity_conflict(&entry.volume.root().as_std_legacy(), root))
     }
 
     /// Registers a volume only if no volume with this ID exists yet.
@@ -313,8 +313,9 @@ impl VolumeManager {
             Entry::Occupied(mut existing) => {
                 let entry = existing.get_mut();
                 report_identity_conflict(id, &entry.volume, &volume, ROOT_RECORDED_RESOLUTION);
-                let conflict = is_identity_conflict(entry.volume.root(), volume.root());
-                entry.record_root(volume.root());
+                let conflict =
+                    is_identity_conflict(&entry.volume.root().as_std_legacy(), &volume.root().as_std_legacy());
+                entry.record_root(&volume.root().as_std_legacy());
                 (false, conflict)
             }
             Entry::Vacant(e) => {

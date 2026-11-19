@@ -46,7 +46,7 @@ const LARGE_KEY: &str = "cmdr-seed-large-65mib/blob.bin";
 pub(super) async fn place(target: &S3Target, label: &str) -> (Arc<dyn Volume>, String, PathBuf) {
     let volume = target.connect(Some(target.bucket())).await;
     let prefix = target.prefix(label);
-    let dir = volume.root().join(prefix.trim_end_matches('/'));
+    let dir = volume.root().as_std_legacy().join(prefix.trim_end_matches('/'));
     (Arc::new(volume), prefix, dir)
 }
 
@@ -134,7 +134,7 @@ pub(super) async fn a_large_object_copies_off_a_bucket_byte_for_byte(target: &S3
         }
     };
     let remote: Arc<dyn Volume> = Arc::new(target.connect(Some(target.bucket())).await);
-    let source = remote.root().join(&key);
+    let source = remote.root().as_std_legacy().join(&key);
     copy_off_and_compare("s3_copy_large_off_bucket", remote, source, LARGE_LEN).await;
 }
 
@@ -197,7 +197,7 @@ pub(super) async fn copying_onto_a_bucket_lands_every_byte_and_the_mtime(target:
     let volume = target.connect(Some(target.bucket())).await;
     volume.set_part_floor(SMALL_PART as u64);
     let prefix = target.prefix("copy-onto");
-    let dir = volume.root().join(prefix.trim_end_matches('/'));
+    let dir = volume.root().as_std_legacy().join(prefix.trim_end_matches('/'));
     let remote: Arc<dyn Volume> = Arc::new(volume);
     let local_dir = TestDir::new("s3_copy_onto_bucket");
     let mtime = std::time::SystemTime::UNIX_EPOCH + std::time::Duration::new(1_354_040_105, 250_000_000);
@@ -288,7 +288,7 @@ pub(super) async fn copying_between_buckets_lands_every_byte(target: &S3Target) 
         )
         .await;
     let dest: Arc<dyn Volume> = Arc::new(target.connect(Some(second)).await);
-    let dest_dir = dest.root().join(prefix.trim_end_matches('/'));
+    let dest_dir = dest.root().as_std_legacy().join(prefix.trim_end_matches('/'));
 
     run_copy(
         "s3_copy_between_buckets",

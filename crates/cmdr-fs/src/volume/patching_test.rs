@@ -47,8 +47,10 @@ impl PatchSource for FakeBackend {
         self.listings.as_ref()
     }
 
-    fn patch_stat<'a>(&'a self, path: &'a Path) -> Walking<'a, FileEntry> {
+    fn patch_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let key = path.to_string_lossy().into_owned();
             match self.entries.get(&key) {
                 Some(is_dir) => {

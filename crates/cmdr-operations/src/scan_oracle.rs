@@ -3,6 +3,7 @@
 //! volume's, so it serves the volume scan preview in every build; the local
 //! walk over top-level sources is `scan.rs`.
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -85,7 +86,11 @@ pub(super) async fn scan_subtree_with_oracle(
     // Load entries from oracle or the volume itself.
     let entries: Vec<FileEntry> = match listings.authoritative_listing(volume_id, path) {
         Some(e) => e,
-        None => volume.list_directory(path, on_progress).await?,
+        None => {
+            volume
+                .list_directory(&AppPath::legacy_unchecked(path), on_progress)
+                .await?
+        }
     };
 
     let mut totals = SubtreeTotals::default();

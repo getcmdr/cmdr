@@ -17,6 +17,7 @@
 //! scratch directory in, the directory gone afterwards, and the `#[tokio::test]`
 //! cells in the backend files the lane selects by name prefix.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -121,7 +122,9 @@ pub(super) async fn a_failed_folder_copy_onto_a_users_folder_keeps_their_files(r
     assert_users_album_intact(remote.as_ref(), &album, "a failed copy").await;
     for (relative, _) in ARRIVING_ALBUM {
         assert!(
-            local.exists(&Path::new("album").join(relative)).await,
+            local
+                .exists(&AppPath::legacy_unchecked(&Path::new("album").join(relative)))
+                .await,
             "a failed copy never takes a source file, yet album/{relative} is gone"
         );
     }
@@ -246,7 +249,7 @@ pub(super) async fn a_delete_with_a_local_shaped_preview_removes_only_the_reques
     assert!(result.is_ok(), "the delete should succeed: {result:?}");
 
     assert!(
-        !remote.exists(&requested).await,
+        !remote.exists(&AppPath::legacy_unchecked(&requested)).await,
         "the requested tree survived the delete"
     );
     assert_eq!(
@@ -278,7 +281,7 @@ pub(super) async fn a_delete_of_a_non_empty_folder_takes_exactly_the_selection(r
     )
     .await;
     remote
-        .create_directory(&dir.join("doomed/empty-dir"))
+        .create_directory(&AppPath::legacy_unchecked(&dir.join("doomed/empty-dir")))
         .await
         .expect("making an empty folder inside the doomed one");
     let registered = Registered::new(&remote, "delete-tree");
@@ -358,7 +361,10 @@ pub(super) async fn an_unknown_source_type_never_clears_a_server_folder(remote: 
         "the source type was never probed, so this cell proved nothing about an unanswerable probe"
     );
     assert!(
-        remote.is_directory(&swap).await.unwrap_or(false),
+        remote
+            .is_directory(&AppPath::legacy_unchecked(&swap))
+            .await
+            .unwrap_or(false),
         "❗ the server's folder was replaced after an unanswerable source probe"
     );
     assert_eq!(
@@ -386,7 +392,10 @@ const DOWNLOAD_BYTES: usize = 20 * 1024 * 1024;
 /// landed mid-file" is a fact rather than a race against a fast link.
 pub(super) async fn a_cancelled_download_leaves_nothing_behind(remote: Arc<dyn Volume>, dir: PathBuf) {
     remote
-        .create_file(&dir.join("big.bin"), &self_describing_bytes(DOWNLOAD_BYTES, "download"))
+        .create_file(
+            &AppPath::legacy_unchecked(&dir.join("big.bin")),
+            &self_describing_bytes(DOWNLOAD_BYTES, "download"),
+        )
         .await
         .expect("seeding the file on the server");
     let source = gated_reads(Arc::clone(&remote));
@@ -497,7 +506,7 @@ pub(super) async fn a_name_taken_mid_upload_is_never_replaced(
     )
     .await;
     remote
-        .create_file(&dir.join("big.bin"), &theirs)
+        .create_file(&AppPath::legacy_unchecked(&dir.join("big.bin")), &theirs)
         .await
         .expect("the other writer takes the free name");
     source.gate.add_permits(10_000);

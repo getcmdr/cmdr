@@ -11,6 +11,7 @@
 //! every server backend; the cells stay here because the integration lane
 //! selects them by the `nfs_integration_` name prefix.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -56,7 +57,10 @@ async fn nfs_integration_copying_off_an_export_lands_every_byte() {
     let (remote, dir) = fixture("app-copy-from").await;
     let content = self_describing_bytes(PAYLOAD_BYTES, "downloaded.bin");
     let remote_file = dir.join("downloaded.bin");
-    remote.create_file(&remote_file, &content).await.expect(FIXTURE);
+    remote
+        .create_file(&AppPath::legacy_unchecked(&remote_file), &content)
+        .await
+        .expect(FIXTURE);
     // The checksum at the SOURCE end, taken off the server itself, so a bad
     // seed can't make a bad copy look good.
     let source_digest = sha256(&read_all(remote.as_ref(), &remote_file).await);
@@ -92,7 +96,7 @@ async fn nfs_integration_copying_onto_an_export_lands_every_byte() {
     let local_dir = TestDir::new("nfs_copy_onto_export");
     let local = local_volume(&local_dir);
     local
-        .create_file(Path::new("uploaded.bin"), &content)
+        .create_file(&AppPath::legacy_unchecked(Path::new("uploaded.bin")), &content)
         .await
         .expect("seed the local file");
 
@@ -192,7 +196,7 @@ async fn nfs_integration_a_paused_upload_resumes_and_lands() {
         "a paused upload doesn't finish"
     );
     assert!(
-        !remote.exists(&dir.join("big.bin")).await,
+        !remote.exists(&AppPath::legacy_unchecked(&dir.join("big.bin"))).await,
         "nothing wears the user's name mid-pause"
     );
 
@@ -263,7 +267,10 @@ async fn nfs_integration_a_copy_onto_an_export_keeps_the_mode() {
     )
     .await;
 
-    let landed = remote.get_metadata(&dir.join("private.txt")).await.expect(FIXTURE);
+    let landed = remote
+        .get_metadata(&AppPath::legacy_unchecked(&dir.join("private.txt")))
+        .await
+        .expect(FIXTURE);
     assert_eq!(
         landed.permissions & 0o777,
         0o640,
@@ -329,7 +336,9 @@ async fn nfs_integration_a_tagged_upload_reports_its_tags_and_an_untagged_one_no
     assert_eq!(left_behind(&plain), None, "a plain file loses nothing worth a note");
     assert_eq!(read_all(remote.as_ref(), &dir.join("tagged.txt")).await, b"tagged.txt");
     assert!(
-        !remote.exists(&dir.join("._tagged.txt")).await,
+        !remote
+            .exists(&AppPath::legacy_unchecked(&dir.join("._tagged.txt")))
+            .await,
         "❌ no AppleDouble sidecar"
     );
     clean_deep(remote.as_ref(), &dir).await;

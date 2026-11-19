@@ -19,6 +19,7 @@
 //! The server is not in the stack's `core` mode: `./start.sh nextcloud`, or
 //! `pnpm check webdav-nextcloud`, is what brings it up.
 
+use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -54,7 +55,7 @@ async fn nextcloud_with_scratch() -> (WebdavVolume, PathBuf) {
 /// (`webdav://test_user_1@127.0.0.1:13482/cmdr-test-…`), because that is what a pane
 /// holds. The two cells that go straight at the server need the other half.
 fn server_relative(volume: &WebdavVolume, dir: &Path) -> String {
-    dir.strip_prefix(volume.root())
+    dir.strip_prefix(volume.root().as_std_legacy())
         .expect("a scratch dir made under this volume's own root")
         .display()
         .to_string()
@@ -117,7 +118,10 @@ impl VolumeReadStream for BufferSource {
 
 /// Reads a whole file back, the way the copy path does.
 async fn read_whole(volume: &WebdavVolume, path: &Path) -> Vec<u8> {
-    let mut stream = volume.open_read_stream(path).await.expect(FIXTURE);
+    let mut stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(path))
+        .await
+        .expect(FIXTURE);
     let mut out = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         out.extend_from_slice(&chunk.expect(FIXTURE));
@@ -141,7 +145,7 @@ async fn the_write_path_lands_a_file_byte_exact_on_sabre_dav() {
 
     let written = volume
         .write_from_stream(
-            &path,
+            &AppPath::legacy_unchecked(&path),
             WriteMode::CreateOrReplace,
             StreamLength::Known(bytes.len() as u64),
             Box::new(BufferSource {
@@ -164,7 +168,10 @@ async fn the_write_path_lands_a_file_byte_exact_on_sabre_dav() {
         b"new",
     )
     .await;
-    let siblings = volume.list_directory(&dir, None).await.expect(FIXTURE);
+    let siblings = volume
+        .list_directory(&AppPath::legacy_unchecked(&dir), None)
+        .await
+        .expect(FIXTURE);
     // ❗ `is_staging_temp_name` looks anywhere in the name: a staging sibling is
     // `<destination>.cmdr-tmp-<id>`, so a `starts_with` test would pass whatever
     // the directory holds.
@@ -260,7 +267,7 @@ async fn a_big_file_goes_up_in_chunks_and_a_cancelled_one_leaves_nothing() {
     let reported = std::sync::Mutex::new(Vec::new());
     let written = volume
         .write_from_stream(
-            &path,
+            &AppPath::legacy_unchecked(&path),
             WriteMode::CreateOrReplace,
             StreamLength::Known(size),
             Box::new(DatedBuffer {
@@ -287,7 +294,10 @@ async fn a_big_file_goes_up_in_chunks_and_a_cancelled_one_leaves_nothing() {
         "progress only climbs"
     );
     assert_eq!(reported.last(), Some(&size));
-    let listed = volume.get_metadata(&path).await.expect(FIXTURE);
+    let listed = volume
+        .get_metadata(&AppPath::legacy_unchecked(&path))
+        .await
+        .expect(FIXTURE);
     assert_eq!(
         listed.modified_at,
         Some(1_611_909_015),
@@ -308,7 +318,7 @@ async fn a_big_file_goes_up_in_chunks_and_a_cancelled_one_leaves_nothing() {
     let cancelled_path = dir.join("cancelled.bin");
     let cancelled = volume
         .write_from_stream(
-            &cancelled_path,
+            &AppPath::legacy_unchecked(&cancelled_path),
             WriteMode::CreateOrReplace,
             StreamLength::Known(size),
             Box::new(BufferSource { bytes, at: 0 }),
@@ -322,7 +332,10 @@ async fn a_big_file_goes_up_in_chunks_and_a_cancelled_one_leaves_nothing() {
         )
         .await;
     assert!(matches!(cancelled, Err(VolumeError::Cancelled(_))), "{cancelled:?}");
-    assert!(!volume.exists(&cancelled_path).await, "the target never saw a byte");
+    assert!(
+        !volume.exists(&AppPath::legacy_unchecked(&cancelled_path)).await,
+        "the target never saw a byte"
+    );
     // ❗ Waited for, ❌ not asserted at once: the server may still be reading the
     // cut-off chunk and refuse the first DELETE, which the background retry then
     // repeats (`chunked_upload.rs`'s `abandon`; 2 in 25 red here before it).
@@ -352,7 +365,10 @@ async fn a_file_in_the_way_of_a_new_folder_is_named_on_sabre_dav() {
     // two answers report the folder the user asked Cmdr to create as not found.
     let (volume, dir) = nextcloud_with_scratch().await;
     let notes = dir.join("notes");
-    volume.create_file(&notes, b"the user's notes").await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&notes), b"the user's notes")
+        .await
+        .expect(FIXTURE);
 
     cmdr_fs::volume::conformance::assert_create_directory_all_refuses_a_file_in_the_way(&volume, &notes).await;
 
@@ -433,7 +449,7 @@ async fn a_ranged_get_is_answered_with_a_window_rather_than_the_whole_file() {
     let bytes = fixture_large_bytes(512 * 1024);
     volume
         .write_from_stream(
-            &dir.join(name),
+            &AppPath::legacy_unchecked(&dir.join(name)),
             WriteMode::CreateOrReplace,
             StreamLength::Known(bytes.len() as u64),
             Box::new(BufferSource {
@@ -464,7 +480,7 @@ async fn a_ranged_get_is_answered_with_a_window_rather_than_the_whole_file() {
     // And the backend's own window, which is what a remote archive's central
     // directory is read through.
     let through_the_backend = volume
-        .read_range(&dir.join(name), 100_000, 100_000)
+        .read_range(&AppPath::legacy_unchecked(&dir.join(name)), 100_000, 100_000)
         .await
         .expect(FIXTURE);
     assert_same_bytes(
@@ -607,9 +623,15 @@ async fn nextcloud_keeps_a_folders_dates() {
 async fn a_folder_with_no_creation_time_lists_none() {
     let (volume, dir) = nextcloud_with_scratch().await;
     let plain = dir.join("plain");
-    volume.create_directory(&plain).await.expect(FIXTURE);
+    volume
+        .create_directory(&AppPath::legacy_unchecked(&plain))
+        .await
+        .expect(FIXTURE);
 
-    let listed = volume.get_metadata(&plain).await.expect(FIXTURE);
+    let listed = volume
+        .get_metadata(&AppPath::legacy_unchecked(&plain))
+        .await
+        .expect(FIXTURE);
 
     assert_eq!(listed.created_at, None);
     clean(&volume, &dir).await;

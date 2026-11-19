@@ -31,6 +31,7 @@
 //! `SMB_CONSUMER_UNICODE_PORT=11484`, then
 //! `cargo nextest run -E 'test(smb_integration_a_live_search)' --run-ignored only`.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
@@ -102,17 +103,20 @@ impl Share {
         };
         share
             .volume
-            .create_directory(&share.path(&share.top))
+            .create_directory(&AppPath::legacy_unchecked(&share.path(&share.top)))
             .await
             .expect("the scratch folder");
         share
             .volume
-            .create_directory(&share.folder(NFC_FOLDER))
+            .create_directory(&AppPath::legacy_unchecked(&share.folder(NFC_FOLDER)))
             .await
             .expect("the NFC folder");
         share
             .volume
-            .create_file(&share.folder(NFC_FOLDER).join(FILE), b"a receipt")
+            .create_file(
+                &AppPath::legacy_unchecked(&share.folder(NFC_FOLDER).join(FILE)),
+                b"a receipt",
+            )
             .await
             .expect("the file inside it");
         share
@@ -227,8 +231,14 @@ async fn smb_integration_a_live_search_scoped_to_the_nfd_spelling_names_the_fold
     // The precondition the whole cell rests on: this Samba matches names by their
     // bytes, so the NFD spelling isn't there. If an image bump ever made Samba
     // fold Unicode forms, this is where it says so.
-    let nfd_exists = share.volume.exists(Path::new(&nfd_scope)).await;
-    let nfc_exists = share.volume.exists(&share.folder(NFC_FOLDER)).await;
+    let nfd_exists = share
+        .volume
+        .exists(&AppPath::legacy_unchecked(Path::new(&nfd_scope)))
+        .await;
+    let nfc_exists = share
+        .volume
+        .exists(&AppPath::legacy_unchecked(&share.folder(NFC_FOLDER)))
+        .await;
     let answer = search(nfd_scope.clone(), "faktura").await;
     share.clean_up().await;
 

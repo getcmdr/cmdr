@@ -126,7 +126,10 @@ fn re_registering_the_same_mount_is_not_an_identity_conflict() {
     // `SmbVolume` at the same root. Routine, and it must stay quiet.
     let existing: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("OS mount").with_root("/Volumes/testshare"));
     let incoming: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Direct SMB").with_root("/Volumes/testshare"));
-    assert!(!is_identity_conflict(existing.root(), incoming.root()));
+    assert!(!is_identity_conflict(
+        &existing.root().as_std_legacy(),
+        &incoming.root().as_std_legacy()
+    ));
 }
 
 #[test]
@@ -156,7 +159,10 @@ fn one_id_over_two_roots_is_an_identity_conflict() {
     // be loud rather than silent.
     let existing: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Disk A").with_root("/Volumes/A"));
     let incoming: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Disk B").with_root("/Volumes/B"));
-    assert!(is_identity_conflict(existing.root(), incoming.root()));
+    assert!(is_identity_conflict(
+        &existing.root().as_std_legacy(),
+        &incoming.root().as_std_legacy()
+    ));
 }
 
 #[test]
@@ -181,7 +187,7 @@ fn an_identity_conflict_keeps_the_incumbent_whatever_the_order() {
 
         let registered = manager.get("smb-share").expect("registered above");
         assert_eq!(registered.name(), "First", "the incumbent keeps the ID");
-        assert_eq!(registered.root(), Path::new(first_root));
+        assert_eq!(&*registered.root().as_std_legacy(), Path::new(first_root));
     }
 }
 
@@ -204,7 +210,7 @@ fn a_second_mount_of_one_share_is_recorded_as_a_sibling_root() {
 
     let active = manager.get("smb-share").expect("registered above");
     assert_eq!(
-        active.root(),
+        &*active.root().as_std_legacy(),
         Path::new("/Volumes/testshare"),
         "the incumbent stays active"
     );

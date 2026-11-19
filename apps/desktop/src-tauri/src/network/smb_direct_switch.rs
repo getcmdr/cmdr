@@ -54,7 +54,7 @@ async fn read_share_within(
     let Some(volume) = get_volume_manager().get(volume_id) else {
         return ShareRead::NotSmb;
     };
-    let root = volume.root().to_string_lossy().to_string();
+    let root = volume.root().as_std_legacy().to_string_lossy().to_string();
     let Some(info) = blocking_with_timeout(limit, None, move || Some(read(&root))).await else {
         return ShareRead::NotResponding;
     };

@@ -63,7 +63,7 @@ async fn ensure_direct_smb(volume_id: &str) -> Result<PathBuf, DriveIndexRefusal
     if volume.backend_kind() == BackendKind::Smb {
         match volume.connection_state() {
             // Already a direct smb2 session: ready to index.
-            Some(ConnectionState::Direct) => return Ok(volume.root().to_path_buf()),
+            Some(ConnectionState::Direct) => return Ok(volume.root().as_std_legacy().to_path_buf()),
             // A live SmbVolume whose session dropped. Don't silently index a stale
             // session; the FE reconnect flow owns recovery.
             _ => {
@@ -78,7 +78,7 @@ async fn ensure_direct_smb(volume_id: &str) -> Result<PathBuf, DriveIndexRefusal
     // that ISN'T on an smbfs mount is an ordinary disk — reject it rather than
     // trying to upgrade it.
     if volumes
-        .smb_volume_id_for_path(&volume.root().to_string_lossy())
+        .smb_volume_id_for_path(&volume.root().as_std_legacy().to_string_lossy())
         .is_none()
     {
         log::warn!(target: "indexing::smb_index", "SMB index gate: '{volume_id}' is not an SMB volume");
@@ -103,7 +103,7 @@ async fn ensure_direct_smb(volume_id: &str) -> Result<PathBuf, DriveIndexRefusal
     // Re-fetch: the upgrade replaced the LocalPosixVolume with an SmbVolume.
     if is_direct_smb(volume_id) {
         let volume = volumes.get(volume_id).ok_or(DriveIndexRefusal::NotConnected)?;
-        Ok(volume.root().to_path_buf())
+        Ok(volume.root().as_std_legacy().to_path_buf())
     } else {
         Err(DriveIndexRefusal::UpgradeFailed)
     }

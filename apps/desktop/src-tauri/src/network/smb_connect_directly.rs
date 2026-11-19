@@ -161,7 +161,7 @@ async fn find_mounted_share_within(
     if volume.backend_kind() == cmdr_fs::volume::BackendKind::Smb {
         return Err(UpgradeResult::Success);
     }
-    let mount_path = volume.root().to_string_lossy().to_string();
+    let mount_path = volume.root().as_std_legacy().to_string_lossy().to_string();
     let path = mount_path.clone();
     // ❗ Only this read is bounded, ❌ never the whole flow: the saved-password door
     // goes on to wait for the person's answer to the Keychain consent dialog.

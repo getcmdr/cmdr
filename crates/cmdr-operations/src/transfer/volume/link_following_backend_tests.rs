@@ -24,6 +24,9 @@ use crate::state::WriteOperationState;
 use crate::testing::TestOperations;
 use crate::transfer_tree::test_support::row_states;
 use crate::types::{ConflictResolution, VolumeCopyConfig};
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::scan_walk::{self, ScanSource, Walking};
@@ -53,11 +56,11 @@ struct LinkFollowingVolume {
 }
 
 impl ScanSource for LinkFollowingVolume {
-    fn scan_stat<'a>(&'a self, path: &'a Path) -> Walking<'a, FileEntry> {
+    fn scan_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
         self.inner.get_metadata(path)
     }
 
-    fn scan_list<'a>(&'a self, path: &'a Path) -> Walking<'a, Vec<FileEntry>> {
+    fn scan_list<'a>(&'a self, path: &'a AppPath) -> Walking<'a, Vec<FileEntry>> {
         self.inner.list_directory(path, None)
     }
 }
@@ -66,7 +69,7 @@ impl Volume for LinkFollowingVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -77,71 +80,79 @@ impl Volume for LinkFollowingVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.delete(path)
     }
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            self.inner.rename(from, to, force).await?;
+            let from_app = from;
+            let from_std = from.as_std_legacy();
+            let from: &Path = &from_std;
+            self.inner.rename(from_app, to, force).await?;
             if let Some((name, target)) = &self.link_takes_freed_name
                 && from == name
             {
-                cmdr_fs::testing::symlink(target, self.inner.root().join(name)).expect("racing symlink");
+                cmdr_fs::testing::symlink(target, self.inner.root().as_std_legacy().join(name))
+                    .expect("racing symlink");
             }
             Ok(())
         })
     }
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.create_directory(path)
     }
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_copy(path)
     }
     fn scan_for_copy_batch_with_boundary<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
         if self.shared_scan_walk {
-            scan_walk::scan_trees(self, paths, boundary)
+            Box::pin(async move {
+                let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
+                let paths: &[PathBuf] = &paths_std;
+                scan_walk::scan_trees(self, paths, boundary).await
+            })
         } else {
             self.inner.scan_for_copy_batch_with_boundary(paths, boundary)
         }
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         self.inner.open_read_stream(path)
     }
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
@@ -333,7 +344,7 @@ async fn a_cross_volume_move_of_a_dir_link_removes_the_link_never_the_target() {
         "the moved link is gone"
     );
     assert!(
-        dest.exists(Path::new("/album/inside.txt")).await,
+        dest.exists(app_path!("/album/inside.txt")).await,
         "the destination got the copy"
     );
 }
@@ -358,7 +369,7 @@ async fn a_cross_volume_move_of_a_folder_holding_a_dir_link_spares_the_target() 
 
     assert_eq!(read(root, "outside/target/inside.txt"), b"OUTSIDE THE SELECTION");
     assert!(!exists(root, "src/album"), "the moved folder is gone, link and all");
-    assert!(dest.exists(Path::new("/album/plain.txt")).await);
+    assert!(dest.exists(app_path!("/album/plain.txt")).await);
 }
 
 /// A same-volume move of a real folder onto a same-named LINK to a folder: the
@@ -433,7 +444,7 @@ async fn on_an_lstat_backend_a_moved_dir_link_goes_as_the_link() {
     assert_eq!(read(root, "outside/target/inside.txt"), b"OUTSIDE THE SELECTION");
     assert!(!is_link(root, "src/album"), "the moved link is gone");
     assert!(
-        dest.exists(Path::new("/album/inside.txt")).await,
+        dest.exists(app_path!("/album/inside.txt")).await,
         "the destination holds what the link pointed at (#570)"
     );
 }
@@ -514,14 +525,20 @@ async fn stamp_then_sweep_spares_a_link_target_on_a_following_backend() {
 async fn incoming_album() -> Arc<dyn Volume> {
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for dir in ["/album", "/album/link"] {
-        source.create_directory(Path::new(dir)).await.expect("source dir");
+        source
+            .create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            .await
+            .expect("source dir");
     }
     for (path, content) in [
         ("/album/plain.txt", b"PLAIN".as_slice()),
         ("/album/link/inside.txt", b"INCOMING"),
         ("/album/link/new.txt", b"NEW"),
     ] {
-        source.create_file(Path::new(path), content).await.expect("source file");
+        source
+            .create_file(&AppPath::legacy_unchecked(Path::new(path)), content)
+            .await
+            .expect("source file");
     }
     source
 }
@@ -760,10 +777,13 @@ async fn a_policy_free_pull_refuses_a_deep_dest_link_instead_of_walking_through_
     // refuse this: a same-named file would be turned away as an occupied name.
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for dir in ["/album", "/album/link"] {
-        source.create_directory(Path::new(dir)).await.expect("source dir");
+        source
+            .create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            .await
+            .expect("source dir");
     }
     source
-        .create_file(Path::new("/album/link/new.txt"), b"NEW")
+        .create_file(app_path!("/album/link/new.txt"), b"NEW")
         .await
         .expect("source file");
 
@@ -812,12 +832,12 @@ async fn a_cross_volume_move_onto_a_deep_dest_link_keeps_the_target_and_the_unla
     assert!(is_link(root, "dst/album/link"), "the link is still the link");
     assert_eq!(read(root, "dst/album/plain.txt"), b"PLAIN", "the rest moved");
     assert!(
-        !source.exists(Path::new("/album/plain.txt")).await,
+        !source.exists(app_path!("/album/plain.txt")).await,
         "the carried file left the source"
     );
     for kept in ["/album/link/inside.txt", "/album/link/new.txt"] {
         assert!(
-            source.exists(Path::new(kept)).await,
+            source.exists(&AppPath::legacy_unchecked(Path::new(kept))).await,
             "{kept} never landed, so the move must leave it in the source"
         );
     }

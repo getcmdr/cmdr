@@ -26,7 +26,11 @@ fn a_renamed_drive_keeps_its_id_at_its_new_root() {
     );
 
     let serving = manager.get(ID).expect("still registered under its id");
-    assert_eq!(serving.root(), Path::new(NEW), "it serves from the new root");
+    assert_eq!(
+        &*serving.root().as_std_legacy(),
+        Path::new(NEW),
+        "it serves from the new root"
+    );
     assert_eq!(manager.known_roots(ID), vec![Path::new(NEW).to_path_buf()]);
     assert!(manager.find_by_root(Path::new(OLD)).is_none(), "the old root is gone");
     assert_eq!(
@@ -50,7 +54,7 @@ fn a_renamed_sibling_root_moves_in_the_set_only() {
         RootMove::SiblingMoved { id: ID.to_string() }
     );
     assert_eq!(
-        manager.get(ID).expect("registered").root(),
+        &*manager.get(ID).expect("registered").root().as_std_legacy(),
         Path::new("/Volumes/Active"),
         "the active root stays"
     );
@@ -73,7 +77,10 @@ fn a_backend_that_cant_reroot_stays_anchored_to_the_old_root() {
         manager.move_root(Path::new(OLD), Path::new(NEW)),
         RootMove::BackendCantReroot { id: ID.to_string() }
     );
-    assert_eq!(manager.get(ID).expect("still registered").root(), Path::new(OLD));
+    assert_eq!(
+        &*manager.get(ID).expect("still registered").root().as_std_legacy(),
+        Path::new(OLD)
+    );
 }
 
 /// A root nobody registered is nobody's to move.

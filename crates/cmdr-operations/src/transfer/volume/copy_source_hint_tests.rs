@@ -18,6 +18,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::{ConflictResolution, WriteConflictEvent};
+use cmdr_fs::app_path;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::{CopyScanResult, InMemoryVolume, ListingProgress, SpaceInfo, VolumeReadStream};
@@ -54,7 +55,7 @@ impl Volume for PoisonedChildVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -62,23 +63,23 @@ impl Volume for PoisonedChildVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
@@ -93,7 +94,7 @@ impl Volume for PoisonedChildVolume {
     }
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_copy(path)
     }
@@ -102,18 +103,21 @@ impl Volume for PoisonedChildVolume {
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         let name = self.poisoned_file.clone();
         let inner = Arc::clone(&self.inner);
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             if path.to_string_lossy() == name {
                 return Err(VolumeError::IoError {
                     message: "Injected read failure".into(),
                     raw_os_error: Some(5), // EIO
                 });
             }
-            inner.open_read_stream(path).await
+            inner.open_read_stream(path_app).await
         })
     }
 }
@@ -127,13 +131,16 @@ impl Volume for PoisonedChildVolume {
 /// forward writes, so they have to be seeded here.
 async fn poisoned_dir_source_and_merged_dest(extra_source_files: &[&str]) -> (Arc<dyn Volume>, Arc<dyn Volume>) {
     let inner_source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    inner_source.create_directory(Path::new("/album")).await.unwrap();
+    inner_source.create_directory(app_path!("/album")).await.unwrap();
     inner_source
-        .create_file(Path::new("/album/poison.bin"), &vec![0xAB; 4096])
+        .create_file(app_path!("/album/poison.bin"), &vec![0xAB; 4096])
         .await
         .unwrap();
     for name in extra_source_files {
-        inner_source.create_file(Path::new(name), b"aaaa").await.unwrap();
+        inner_source
+            .create_file(&AppPath::legacy_unchecked(Path::new(name)), b"aaaa")
+            .await
+            .unwrap();
     }
     let source: Arc<dyn Volume> = Arc::new(PoisonedChildVolume {
         inner: inner_source,
@@ -141,8 +148,8 @@ async fn poisoned_dir_source_and_merged_dest(extra_source_files: &[&str]) -> (Ar
     });
 
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest.create_directory(Path::new("/album")).await.unwrap();
-    dest.create_file(Path::new("/album/sentinel.txt"), b"precious user data")
+    dest.create_directory(app_path!("/album")).await.unwrap();
+    dest.create_file(app_path!("/album/sentinel.txt"), b"precious user data")
         .await
         .unwrap();
 
@@ -152,7 +159,10 @@ async fn poisoned_dir_source_and_merged_dest(extra_source_files: &[&str]) -> (Ar
 /// Reads a destination file back, so the assertion checks CONTENT survival, not
 /// just a name.
 async fn read_dest_file(dest: &Arc<dyn Volume>, path: &str) -> Option<Vec<u8>> {
-    let mut stream = dest.open_read_stream(Path::new(path)).await.ok()?;
+    let mut stream = dest
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .ok()?;
     let mut collected = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         collected.extend_from_slice(&chunk);
@@ -170,11 +180,11 @@ async fn read_dest_file(dest: &Arc<dyn Volume>, path: &str) -> Option<Vec<u8>> {
 async fn directory_source_copies_when_preview_carries_no_per_path_serial() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_directory(Path::new("/album")).await.unwrap();
-    source.create_file(Path::new("/album/one.bin"), b"first").await.unwrap();
-    source.create_directory(Path::new("/album/inner")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
+    source.create_file(app_path!("/album/one.bin"), b"first").await.unwrap();
+    source.create_directory(app_path!("/album/inner")).await.unwrap();
     source
-        .create_file(Path::new("/album/inner/two.bin"), b"second")
+        .create_file(app_path!("/album/inner/two.bin"), b"second")
         .await
         .unwrap();
 
@@ -217,15 +227,15 @@ async fn directory_source_copies_when_preview_carries_no_per_path_serial() {
 async fn directory_source_copies_when_preview_carries_no_per_path_concurrent() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_directory(Path::new("/album")).await.unwrap();
-    source.create_file(Path::new("/album/one.bin"), b"first").await.unwrap();
-    source.create_directory(Path::new("/album/inner")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
+    source.create_file(app_path!("/album/one.bin"), b"first").await.unwrap();
+    source.create_directory(app_path!("/album/inner")).await.unwrap();
     source
-        .create_file(Path::new("/album/inner/two.bin"), b"second")
+        .create_file(app_path!("/album/inner/two.bin"), b"second")
         .await
         .unwrap();
-    source.create_file(Path::new("/loose_a.bin"), b"aaaa").await.unwrap();
-    source.create_file(Path::new("/loose_b.bin"), b"bbbb").await.unwrap();
+    source.create_file(app_path!("/loose_a.bin"), b"aaaa").await.unwrap();
+    source.create_file(app_path!("/loose_b.bin"), b"bbbb").await.unwrap();
 
     let preview_id = "test-preview-no-per-path-concurrent";
     seed_preview_without_per_path(&engine, preview_id, &["/album", "/loose_a.bin", "/loose_b.bin"], 4, 19);

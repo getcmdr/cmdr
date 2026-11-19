@@ -8,9 +8,8 @@
 //! the containers with `./apps/desktop/test/smb-servers/start.sh` and run
 //! `cargo nextest run smb_integration --run-ignored all`.
 
-use std::path::Path;
-
 use crate::operations_host::backend_suites::smb_test_support::*;
+use cmdr_fs::app_path;
 use cmdr_smb::volume::ConnectionState;
 
 /// Regression: closing a pane's listing must NOT tear down the SMB watcher.
@@ -31,7 +30,7 @@ async fn smb_integration_pane_close_does_not_kill_index_watcher() {
     let vol = make_docker_volume().await;
     assert_eq!(vol.session_state(), ConnectionState::Direct);
     assert_eq!(
-        vol.listing_watch_coverage(Path::new("/")),
+        vol.listing_watch_coverage(app_path!("/")),
         WatchCoverage::EveryWriter,
         "watcher must be alive right after connect",
     );
@@ -43,7 +42,7 @@ async fn smb_integration_pane_close_does_not_kill_index_watcher() {
     listings().end(&ListingId::new("another-pane-listing-id"));
 
     assert_eq!(
-        vol.listing_watch_coverage(Path::new("/")),
+        vol.listing_watch_coverage(app_path!("/")),
         WatchCoverage::EveryWriter,
         "pane close must NOT tear down the volume's index watcher",
     );

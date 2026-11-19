@@ -332,7 +332,7 @@ fn old_mounts(server: &SmbServer, shares: &[&KnownNetworkShare], places: &[Strin
     let mut roots = Vec::new();
     for (row, place) in shares.iter().zip(places) {
         if let Some(volume) = manager.get(place) {
-            roots.push(volume.root().to_string_lossy().to_string());
+            roots.push(volume.root().as_std_legacy().to_string_lossy().to_string());
             mounts.push(OldMount::Volume {
                 share: row.share_name.clone(),
                 volume_id: place.clone(),

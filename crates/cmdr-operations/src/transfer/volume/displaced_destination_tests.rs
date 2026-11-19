@@ -7,6 +7,7 @@
 //! share and settles, and a wait that ends without the share leaves the record
 //! for the sweep that next reaches it, which puts the file back.
 
+use cmdr_fs::app_path;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -46,8 +47,11 @@ struct Share {
 async fn share(lane: &str, meanwhile: Meanwhile) -> Share {
     let engine = TestOperations::new();
     let inner = Arc::new(InMemoryVolume::new("Testnas"));
-    inner.create_directory(Path::new("/photos")).await.unwrap();
-    inner.create_file(Path::new(ORIGINAL), BYTES).await.unwrap();
+    inner.create_directory(app_path!("/photos")).await.unwrap();
+    inner
+        .create_file(&AppPath::legacy_unchecked(Path::new(ORIGINAL)), BYTES)
+        .await
+        .unwrap();
     let nas = OutageVolume::wrap(Arc::clone(&inner), lane);
     let ledger = Ledger::for_test();
     let budget = match meanwhile {
@@ -87,7 +91,7 @@ async fn share(lane: &str, meanwhile: Meanwhile) -> Share {
 }
 
 async fn read_all(volume: &dyn Volume, path: &Path) -> Option<Vec<u8>> {
-    let mut stream = volume.open_read_stream(path).await.ok()?;
+    let mut stream = volume.open_read_stream(&AppPath::legacy_unchecked(path)).await.ok()?;
     let mut buf = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         buf.extend_from_slice(&chunk.ok()?);
@@ -112,7 +116,7 @@ impl Share {
     /// Every `.cmdr-temp-` aside beside the original.
     async fn asides(&self) -> Vec<PathBuf> {
         self.inner
-            .list_directory(Path::new("/photos"), None)
+            .list_directory(app_path!("/photos"), None)
             .await
             .unwrap()
             .into_iter()

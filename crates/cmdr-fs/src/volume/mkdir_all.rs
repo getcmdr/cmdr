@@ -45,6 +45,7 @@
 //! `conformance::assert_create_directory_all_goes_through_a_link_to_a_folder`
 //! holds every backend that has links to it.
 
+use crate::app_path::{AppPath, AppPathBuf};
 use std::path::{Path, PathBuf};
 
 use crate::volume::scan_walk::Walking;
@@ -98,7 +99,7 @@ pub struct MadeDirectories {
     /// The SHALLOWEST directory this created, if any: its parent is the only
     /// listing a pane could be holding, so it is the one patch worth making.
     /// ❗ One patch, ❌ never one per level.
-    pub shallowest_created: Option<PathBuf>,
+    pub shallowest_created: Option<AppPathBuf>,
 }
 
 /// Creates `path` and any missing ancestors under the volume root.
@@ -130,7 +131,7 @@ pub async fn create_directory_all(maker: &dyn MakesDirectories, path: &Path) -> 
         Ok(()) => {
             return Ok(MadeDirectories {
                 leaf: DirectoryCreation::Created,
-                shallowest_created: Some(path.to_path_buf()),
+                shallowest_created: Some(AppPath::legacy_unchecked(path).into_owned()),
             });
         }
         Err(VolumeError::AlreadyExists(_)) => {
@@ -168,7 +169,7 @@ pub async fn create_directory_all(maker: &dyn MakesDirectories, path: &Path) -> 
     }
     Ok(MadeDirectories {
         leaf,
-        shallowest_created,
+        shallowest_created: shallowest_created.map(|created| AppPath::legacy_unchecked(&created).into_owned()),
     })
 }
 
@@ -220,9 +221,9 @@ async fn blamed_on_what_is_in_the_way(
 /// local disk, where metadata reports a link to a folder as a directory. It
 /// only happens for a name that is there and isn't a directory in its own right.
 pub(super) async fn volume_path_leads_to<V: Volume + ?Sized>(volume: &V, path: &Path) -> LeadsTo {
-    match volume.is_directory(path).await {
+    match volume.is_directory(&AppPath::legacy_unchecked(path)).await {
         Ok(true) => LeadsTo::Directory,
-        Ok(false) => match volume.get_metadata(path).await {
+        Ok(false) => match volume.get_metadata(&AppPath::legacy_unchecked(path)).await {
             Ok(entry) if entry.is_directory => LeadsTo::Directory,
             _ => LeadsTo::NotADirectory,
         },

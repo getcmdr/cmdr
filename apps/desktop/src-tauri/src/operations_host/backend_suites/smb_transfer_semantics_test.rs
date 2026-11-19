@@ -35,6 +35,7 @@ use super::network_semantics_test_support::{
 };
 use super::smb_test_support::*;
 use crate::operations_host::app_engine;
+use cmdr_fs::app_path::AppPath;
 use cmdr_operations::testing::new_operation_state;
 use cmdr_smb::volume::*;
 use std::sync::atomic::AtomicUsize;
@@ -168,9 +169,12 @@ async fn smb_integration_move_into_a_subfolder_addressed_the_way_the_dialog_addr
     let dest_vol: Arc<dyn Volume> = smb_vol.clone();
 
     // The destination subfolder exists already, as `test_photos/…` did.
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
     smb_vol
-        .create_directory(Path::new(&format!("{base}/photos")))
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&format!("{base}/photos"))))
         .await
         .unwrap();
 
@@ -184,7 +188,7 @@ async fn smb_integration_move_into_a_subfolder_addressed_the_way_the_dialog_addr
 
     // What the dialog puts on the wire, and what the boundary makes of it.
     let dialog_dest = format!("/{base}/photos");
-    let dest_path = cmdr_fs::volume::root_anchored(smb_vol.root(), Path::new(&dialog_dest));
+    let dest_path = cmdr_fs::volume::root_anchored(&smb_vol.root().as_std_legacy(), Path::new(&dialog_dest));
     assert_eq!(
         dest_path,
         Path::new(&share_path(&format!("{base}/photos"))),
@@ -212,7 +216,9 @@ async fn smb_integration_move_into_a_subfolder_addressed_the_way_the_dialog_addr
     // The file is on the share, under the subfolder the dialog named, and the
     // move took the source with it.
     let mut stream = dest_vol
-        .open_read_stream(Path::new(&format!("{base}/photos/clip.mp4")))
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&format!(
+            "{base}/photos/clip.mp4"
+        ))))
         .await
         .expect("the moved file is readable at the destination");
     let mut landed = Vec::new();
@@ -260,7 +266,10 @@ async fn smb_integration_a_running_copy_survives_the_volume_being_replaced() {
     let volume_id = smb_vol.volume_id().to_string();
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
 
     // Enough files that the replace lands in the middle rather than before or
     // after: each one is a separate round trip to the server.
@@ -319,7 +328,10 @@ async fn smb_integration_a_running_copy_survives_the_volume_being_replaced() {
         let landed = Arc::clone(&landed);
         async move {
             loop {
-                if let Ok(entries) = vol.list_directory(Path::new(&dest), None).await {
+                if let Ok(entries) = vol
+                    .list_directory(&AppPath::legacy_unchecked(Path::new(&dest)), None)
+                    .await
+                {
                     landed.store(entries.len(), Ordering::Relaxed);
                 }
                 // allowed-test-sleep: the probe's own polling interval; the test's
@@ -361,11 +373,17 @@ async fn smb_integration_a_running_copy_survives_the_volume_being_replaced() {
 
     // Every file landed, whole and correct. A dropped session mid-copy would
     // leave the tail missing or truncated.
-    let entries = smb_vol.list_directory(Path::new(&base), None).await.unwrap();
+    let entries = smb_vol
+        .list_directory(&AppPath::legacy_unchecked(Path::new(&base)), None)
+        .await
+        .unwrap();
     assert_eq!(entries.len(), FILE_COUNT, "every file must have landed");
     for i in [0usize, FILE_COUNT / 2, FILE_COUNT - 1] {
         let path = format!("{base}/file-{i:03}.bin");
-        let mut stream = dest_vol.open_read_stream(Path::new(&path)).await.unwrap();
+        let mut stream = dest_vol
+            .open_read_stream(&AppPath::legacy_unchecked(Path::new(&path)))
+            .await
+            .unwrap();
         let mut out = Vec::new();
         while let Some(Ok(chunk)) = stream.next_chunk().await {
             out.extend_from_slice(&chunk);

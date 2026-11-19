@@ -3,7 +3,7 @@
 //! original must still be there"). Copy photos off a card, delete them there, then
 //! roll the copy back: without this check the undo removed the only copy left.
 
-use std::path::Path;
+use cmdr_fs::app_path;
 use std::sync::Arc;
 
 use super::test_support::*;
@@ -142,7 +142,7 @@ async fn finishing_the_rollback_removes_the_copy_once_the_original_is_back() {
     let first = rig.rollback_as("op", "inv-1").await;
     assert_eq!(first.final_state, RollbackState::PartiallyRolledBack);
 
-    card.create_directory(Path::new("/DCIM")).await.ok();
+    card.create_directory(app_path!("/DCIM")).await.ok();
     put(&card, "/DCIM/a.jpg", b"photo").await;
     let second = rig.rollback_as("op", "inv-2").await;
 

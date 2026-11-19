@@ -13,6 +13,7 @@
 //! elsewhere (a container's overlay) it carries none, and `expected_at` follows it.
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -299,10 +300,10 @@ fn local_disk(root: &Path) -> Arc<dyn Volume> {
 
 async fn share_with_an_album() -> Arc<InMemoryVolume> {
     let share = in_memory("Share");
-    share.create_directory(Path::new("/album")).await.expect("album");
-    share.create_file(Path::new("/album/a.jpg"), b"aaa").await.expect("a");
+    share.create_directory(app_path!("/album")).await.expect("album");
+    share.create_file(app_path!("/album/a.jpg"), b"aaa").await.expect("a");
     share
-        .create_file(Path::new("/notes.txt"), b"notes")
+        .create_file(app_path!("/notes.txt"), b"notes")
         .await
         .expect("notes");
     share.set_modified_at(Path::new("/album/a.jpg"), Some(OLD as u64));
@@ -416,7 +417,7 @@ async fn a_copy_onto_a_share_records_no_node() {
     let (engine, log) = journaled();
     let share = share_with_an_album().await;
     let other = in_memory("Other");
-    other.create_directory(Path::new("/in")).await.expect("in");
+    other.create_directory(app_path!("/in")).await.expect("in");
 
     volume_transfer(
         &engine,
@@ -431,7 +432,7 @@ async fn a_copy_onto_a_share_records_no_node() {
 
     assert!(
         other
-            .node_identity(Path::new("/in/notes.txt"))
+            .node_identity(app_path!("/in/notes.txt"))
             .await
             .expect("stat")
             .is_some(),

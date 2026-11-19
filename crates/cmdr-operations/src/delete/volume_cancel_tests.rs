@@ -12,9 +12,11 @@
 //! manual smoke test; these unit tests pin the wiring so the prompt-cancel behaviour
 //! is regression-safe.
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_operation_log::types::OperationId;
 use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
@@ -76,7 +78,7 @@ impl Volume for CancellingVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -85,7 +87,7 @@ impl Volume for CancellingVolume {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>> {
         // No-cancel path: fall through to inner. Tests don't hit this; the
@@ -97,7 +99,7 @@ impl Volume for CancellingVolume {
 
     fn list_directory_with_cancel<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>> {
@@ -135,7 +137,7 @@ impl Volume for CancellingVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
         // Mirror MTP's "find by name in parent listing" behavior so the
         // delete path's `is_directory` probe resolves. The top-level test
@@ -143,6 +145,8 @@ impl Volume for CancellingVolume {
         // the scan recursion treats it as a folder and descends into the
         // simulated 500-entry listing below.
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let path_str = path.to_string_lossy();
             if path_str == "/dir" || path_str == "dir" {
                 return Ok(make_file_entry("dir", "/", true));
@@ -159,24 +163,24 @@ impl Volume for CancellingVolume {
         })
     }
 
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async move { self.get_metadata(path).await.is_ok() })
     }
 
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async move { self.get_metadata(path).await.map(|e| e.is_directory) })
     }
 
-    fn delete<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(()) })
     }
 
     fn delete_with_cancel<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -526,7 +530,7 @@ async fn volume_error_emits_write_settled_event() {
         fn name(&self) -> &str {
             self.inner.name()
         }
-        fn root(&self) -> &Path {
+        fn root(&self) -> &AppPath {
             self.inner.root()
         }
         fn as_any(&self) -> &dyn std::any::Any {
@@ -534,7 +538,7 @@ async fn volume_error_emits_write_settled_event() {
         }
         fn list_directory<'a>(
             &'a self,
-            _path: &'a Path,
+            _path: &'a AppPath,
             _on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
         ) -> Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>> {
             Box::pin(async move {
@@ -546,7 +550,7 @@ async fn volume_error_emits_write_settled_event() {
         }
         fn list_directory_with_cancel<'a>(
             &'a self,
-            _path: &'a Path,
+            _path: &'a AppPath,
             _on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
             _cancel: Option<&'a CancellationToken>,
         ) -> Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>> {
@@ -559,9 +563,11 @@ async fn volume_error_emits_write_settled_event() {
         }
         fn get_metadata<'a>(
             &'a self,
-            path: &'a Path,
+            path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
             Box::pin(async move {
+                let path_std = path.as_std_legacy();
+                let path: &Path = &path_std;
                 let path_str = path.to_string_lossy();
                 if path_str == "/dir" || path_str == "dir" {
                     return Ok(make_file_entry("dir", "/", true));
@@ -569,16 +575,19 @@ async fn volume_error_emits_write_settled_event() {
                 Err(VolumeError::NotFound(path.display().to_string()))
             })
         }
-        fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+        fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
             Box::pin(async move { self.get_metadata(path).await.is_ok() })
         }
         fn is_directory<'a>(
             &'a self,
-            path: &'a Path,
+            path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
             Box::pin(async move { self.get_metadata(path).await.map(|e| e.is_directory) })
         }
-        fn delete<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        fn delete<'a>(
+            &'a self,
+            _path: &'a AppPath,
+        ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
             Box::pin(async { Ok(()) })
         }
     }

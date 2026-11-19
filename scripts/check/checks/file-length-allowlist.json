@@ -9,6 +9,10 @@
     "scripts/check/checks/registry.go": "append-only check registry (one CheckDefinition entry per check); line count tracks the number of checks, not splittable logic"
   },
   "files": {
+    "apps/desktop/src-tauri/src/file_system/volume/manager/roots.rs": {
+      "lines": 810,
+      "reason": "The mount roots one volume ID owns and the rules for picking its active one; it crossed the line only through the `Volume` trait's flip to app paths: each `volume.root()` read in its `std::path` root bookkeeping goes through the bridge (`&*volume.root().as_std_legacy()`), which rustfmt spreads over more lines. Those go once the app speaks app paths here (milestone 10c), which brings it back under."
+    },
     "scripts/check/checks/index-crate-isolation-ceilings.go": {
       "lines": 806,
       "reason": "data, one entry per isolated crate with its ceilings and the dated reason behind each raise (the audit trail the check asks for); length tracks how often a surface grew, not logic. Splitting by crate would only scatter one table"
@@ -194,16 +198,28 @@
       "reason": "the egress line's tests: `every_field_that_leaves_names_its_disclosure_item` must see every fixture card that reaches a key path, so the fixtures sit beside it; splitting the fixtures out would let a new projection field slip past the one test that files it under a consent line"
     },
     "crates/cmdr-archive/src/volume.rs": {
-      "lines": 842,
-      "reason": "the archive's one `Volume` impl, one short method per trait call over the cached index; the stream adapters already live in `volume_streams.rs` and the AppleDouble pairing in `read/sidecars.rs`, so a further split would only scatter the trait impl"
+      "lines": 930,
+      "reason": "the archive's one `Volume` impl, one short method per trait call over the cached index; the stream adapters already live in `volume_streams.rs` and the AppleDouble pairing in `read/sidecars.rs`, so a further split would only scatter the trait impl The trait's flip to app paths added a two-line bridge prelude to most methods, which go once this crate speaks app paths internally."
+    },
+    "crates/cmdr-operations/src/rename/bulk.rs": {
+      "lines": 863,
+      "reason": "Bulk rename's planner and executor; it crossed the line only through the `Volume` trait's flip to app paths, whose bridge calls (`AppPath::legacy_unchecked` at each `Volume` call) rustfmt spreads over more lines. Those go once `cmdr-operations` speaks app paths internally, which brings it back under."
+    },
+    "crates/cmdr-operations/src/transfer/volume/faulty_volume_test_support.rs": {
+      "lines": 802,
+      "reason": "`forward_volume_methods!` (one arm per `Volume` method, spelled fully qualified) and `FaultyVolume`; it crossed the line only through the `Volume` trait's flip to app paths, whose longer `::cmdr_fs::app_path::AppPath` signatures and bridge preludes rustfmt spreads over more lines. Those go once `cmdr-operations` speaks app paths internally."
+    },
+    "crates/cmdr-fs/src/volume/conformance.rs": {
+      "lines": 808,
+      "reason": "The cross-backend contract suite's shared cases; it crossed the line only through the `Volume` trait's flip to app paths, whose bridge calls (`AppPath::legacy_unchecked` at each `Volume` call) rustfmt spreads over more lines. Those go once `cmdr-fs` speaks app paths internally, which brings it back under."
     },
     "crates/cmdr-fs/src/volume/in_memory.rs": {
       "lines": 946,
       "reason": "TODO: the 25 knob builders (`with_*`, each a field plus a doc saying which `Volume` method it bends and what real backend it stands in for) are the bulk of the file; move them into `in_memory/knobs.rs` as a second `impl InMemoryVolume` block, beside `volume_impl.rs`. What stays here is the store (`InMemoryEntry`, the struct and its fields), `new`, and the private helpers the impl calls."
     },
     "crates/cmdr-fs/src/volume/in_memory/volume_impl.rs": {
-      "lines": 924,
-      "reason": "The contract oracle's `Volume` impl: one short method per trait method (every backend contract `conformance.rs` asserts has its in-memory answer here), so it grows by a few lines with each trait method, plus the device model's `breathe` at each call boundary (the model itself lives in `in_memory/device.rs`). Its test knobs and behaviors already live apart (`in_memory.rs` builders, `in_memory/transfer_holds.rs`); what's left is the impl block Rust needs in one place."
+      "lines": 1065,
+      "reason": "The contract oracle's `Volume` impl: one short method per trait method (every backend contract `conformance.rs` asserts has its in-memory answer here), so it grows by a few lines with each trait method, plus the device model's `breathe` at each call boundary (the model itself lives in `in_memory/device.rs`). Its test knobs and behaviors already live apart (`in_memory.rs` builders, `in_memory/transfer_holds.rs`); what's left is the impl block Rust needs in one place. The trait's flip to app paths added a two-line bridge prelude to most methods (`let path_std = path.as_std_legacy();`), which go once `cmdr-fs` speaks app paths internally."
     },
     "crates/cmdr-fs/src/volume/mod.rs": {
       "lines": 2473,
@@ -252,6 +268,10 @@
     "crates/cmdr-index/src/media_index/scheduler/enrich_tests.rs": {
       "lines": 1262,
       "reason": "TODO: split along the section banners the file already draws, into the per-concern `*_tests.rs` siblings this directory keeps (`kick_tests.rs`, `live_tests.rs`, `reclaim_tests.rs`, `coalescing_tests.rs`). The CLIP two-part-staleness group (`clip_state`, `clip_pass`, `model_absent_is_vision_only_no_clip_embedding`, `installing_clip_embeds_without_re_running_vision`, `a_clip_model_bump_re_embeds_without_touching_vision`, `delete_clip_model_removes_the_model_and_every_volumes_embeddings`) is roughly 210 lines over a different pass, and the live scoped-walk group (`seed_media`, `touched`, the two `walk_in_dirs_*`, `scoped_gc_spares_rows_in_untouched_dirs`, `whole_store_gc_over_a_scoped_walk_would_wipe_untouched_dirs`, `a_scoped_tick_promotes_a_lone_raw_and_gcs_the_deleted_jpg`) another roughly 205. Move them to `enrich_clip_tests.rs` and `enrich_scoped_tests.rs`, importing `build_index` / `media_writer` / `no_op_hooks` from here the way `live_tests.rs` already imports from `kick_tests.rs`, leaving roughly 850 lines of core-pass, GC, throttle, and progress tests."
+    },
+    "crates/cmdr-local/src/local_posix_test.rs": {
+      "lines": 1276,
+      "reason": "Pushed past the test budget (1,148 lines before) by the trait's flip to app paths: rustfmt breaks most `Volume` calls whose argument became `&AppPath::legacy_unchecked(…)` over several lines. The bridge goes as `cmdr-local` speaks app paths in its own conversion milestone, which brings the file back under 1,200."
     },
     "crates/cmdr-local/src/platform/local_posix.rs": {
       "lines": 972,
@@ -326,8 +346,8 @@
       "reason": "The crate's headline invariant is that `russh` is named in exactly one module so a breaking minor stays one file's problem (eight breaking minors in eight months), stated in the module doc and again in `crates/cmdr-sftp/CLAUDE.md`; everything russh-free has already been pushed out to `auth.rs`, `trust.rs`, `known_hosts.rs`, `extensions.rs`, and `errors.rs`, so what remains is one dial conversation (`open_session` to `authenticate` to `hello`) plus the `PendingEngine` teardown guard and the two `Handler` impls, under a 57-line module doc for the three abort hazards the shape defends against. The per-OS agent connect sits in its `transport/platform/` seam, still inside this module."
     },
     "crates/cmdr-smb/src/volume/volume_impl.rs": {
-      "lines": 832,
-      "reason": "The one `impl Volume for SmbVolume`, which Rust needs in one block: one-line delegators plus the capability answers, whose doc comments are their whole content. Every body already lives in its concern module (`DETAILS.md` § Layout), so a split could only move delegators."
+      "lines": 1039,
+      "reason": "The one `impl Volume for SmbVolume`, which Rust needs in one block: one-line delegators plus the capability answers, whose doc comments are their whole content. Every body already lives in its concern module (`DETAILS.md` § Layout), so a split could only move delegators. The trait's flip to app paths added a two-line bridge prelude to most methods, and moved each lazy delegator into an `async move` block, which go once this crate speaks app paths internally."
     },
     "crates/cmdr-viewer/src/rows_test.rs": {
       "lines": 1212,

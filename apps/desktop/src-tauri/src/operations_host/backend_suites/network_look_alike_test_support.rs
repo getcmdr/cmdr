@@ -18,6 +18,7 @@
 //! `transfer/volume/look_alike_tests.rs`, `rename/bulk/look_alike_tests.rs`.
 
 use crate::operations_host::app_engine;
+use cmdr_fs::app_path::AppPath;
 use cmdr_operations::testing::CollectorEventSink;
 use cmdr_operations::{BulkRenameRow, ConflictResolution, MutationError, SourceFingerprint};
 use std::path::{Path, PathBuf};
@@ -396,7 +397,10 @@ pub(super) async fn a_rename_never_lands_on_a_taken_name(remote: Arc<dyn Volume>
         try_read(remote.as_ref(), &dir.join("renamed.txt")).await.as_deref(),
         Some(&b"A"[..])
     );
-    assert!(!remote.exists(&dir.join("a.txt")).await, "and the old name is gone");
+    assert!(
+        !remote.exists(&AppPath::legacy_unchecked(&dir.join("a.txt"))).await,
+        "and the old name is gone"
+    );
 
     clean_deep(remote.as_ref(), &dir).await;
     registered.leave();

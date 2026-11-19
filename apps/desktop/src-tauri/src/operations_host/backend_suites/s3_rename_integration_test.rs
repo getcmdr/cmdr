@@ -14,6 +14,7 @@
 //! take an `S3Target`, so `s3_live_engine_test.rs` runs the same bodies against
 //! real accounts.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
@@ -54,7 +55,7 @@ async fn registered(target: &S3Target, label: &str, part_floor: Option<u64>) -> 
 }
 
 fn at(volume: &S3Volume, key: &str) -> PathBuf {
-    volume.root().join(key.trim_end_matches('/'))
+    volume.root().as_std_legacy().join(key.trim_end_matches('/'))
 }
 
 /// Starts `from` → `new_name` in its own folder through the rename route,
@@ -114,14 +115,20 @@ pub(super) async fn a_folder_of_1005_objects_renames_through_the_engine(target: 
     assert_eq!(sent.get("CopyObject"), Some(&1_005), "{sent:?}");
 
     let renamed = volume
-        .list_directory(&at(&volume, &format!("{prefix}renamed")), None)
+        .list_directory(
+            &AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}renamed"))),
+            None,
+        )
         .await
         .expect("the renamed folder lists");
     assert_eq!(renamed.len(), 1_005, "every object arrived under the new name");
     assert!(
         matches!(
             volume
-                .list_directory(&at(&volume, &format!("{prefix}folder")), None)
+                .list_directory(
+                    &AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}folder"))),
+                    None
+                )
                 .await,
             Err(VolumeError::NotFound(_))
         ),
@@ -159,7 +166,10 @@ pub(super) async fn a_big_file_renames_by_multipart_copy_keeping_its_date(target
         Some(rclone_mtime_of_distant()),
         "the source's date survives the rename"
     );
-    assert!(!volume.exists(&at(&volume, &from_key)).await, "the old name is gone");
+    assert!(
+        !volume.exists(&AppPath::legacy_unchecked(&at(&volume, &from_key))).await,
+        "the old name is gone"
+    );
     assert!(target.unfinished_uploads(target.bucket(), &prefix).await.is_empty());
 }
 
@@ -198,7 +208,10 @@ pub(super) async fn a_paused_then_cancelled_rename_keeps_the_source_whole(target
     );
     wait_for_the_ledger_to_settle(&volume, &prefix).await;
     assert!(target.unfinished_uploads(target.bucket(), &prefix).await.is_empty());
-    if volume.exists(&at(&volume, &format!("{prefix}gone.bin"))).await {
+    if volume
+        .exists(&AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}gone.bin"))))
+        .await
+    {
         // A cancel that landed after the copy published is a finished copy
         // with its source kept: a duplicate, never a loss.
         assert_eq!(
@@ -230,7 +243,7 @@ pub(super) async fn a_paused_rename_resumes_and_lands(target: &S3Target) {
         sha256(&read_all(volume.as_ref(), &at(&volume, &format!("{prefix}b.bin"))).await),
         sha256(&bytes)
     );
-    assert!(!volume.exists(&at(&volume, &from_key)).await);
+    assert!(!volume.exists(&AppPath::legacy_unchecked(&at(&volume, &from_key))).await);
 }
 
 /// A reviewed batch with a folder in it (Ask Cmdr's proposals and the bulk
@@ -270,10 +283,25 @@ pub(super) async fn a_batch_with_a_folder_renames_as_one_move(target: &S3Target)
     );
     settle(&events, "the batch to settle").await;
 
-    assert!(volume.exists(&at(&volume, &format!("{prefix}photos/a.jpg"))).await);
-    assert!(volume.exists(&at(&volume, &format!("{prefix}memo.txt"))).await);
-    assert!(!volume.exists(&at(&volume, &folder_file)).await);
-    assert!(!volume.exists(&at(&volume, &note)).await);
+    assert!(
+        volume
+            .exists(&AppPath::legacy_unchecked(&at(
+                &volume,
+                &format!("{prefix}photos/a.jpg")
+            )))
+            .await
+    );
+    assert!(
+        volume
+            .exists(&AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}memo.txt"))))
+            .await
+    );
+    assert!(
+        !volume
+            .exists(&AppPath::legacy_unchecked(&at(&volume, &folder_file)))
+            .await
+    );
+    assert!(!volume.exists(&AppPath::legacy_unchecked(&at(&volume, &note))).await);
 }
 
 /// A copy between two buckets of one account runs on the server: the
@@ -295,11 +323,11 @@ pub(super) async fn a_copy_between_two_buckets_runs_on_the_server(target: &S3Tar
             }],
         )
         .await;
-    let dest_dir = destination.root().join(prefix.trim_end_matches('/'));
-    let source_path = source.root().join(&key);
+    let dest_dir = destination.root().as_std_legacy().join(prefix.trim_end_matches('/'));
+    let source_path = source.root().as_std_legacy().join(&key);
     let destination = Arc::new(destination);
     destination
-        .create_directory_all(&dest_dir)
+        .create_directory_all(&AppPath::legacy_unchecked(&dest_dir))
         .await
         .expect("making the destination folder");
     take_sent_requests(&destination).await;
@@ -332,11 +360,11 @@ pub(super) async fn a_bucket_bound_provider_streams_a_cross_bucket_copy(target: 
     let bytes = self_describing_bytes(2 * MIB, "streamed");
     let key = format!("{prefix}moved.bin");
     target.seed(target.bucket(), &[object(&key, &bytes)]).await;
-    let dest_dir = destination.root().join(prefix.trim_end_matches('/'));
-    let source_path = source.root().join(&key);
+    let dest_dir = destination.root().as_std_legacy().join(prefix.trim_end_matches('/'));
+    let source_path = source.root().as_std_legacy().join(&key);
     let destination = Arc::new(destination);
     destination
-        .create_directory_all(&dest_dir)
+        .create_directory_all(&AppPath::legacy_unchecked(&dest_dir))
         .await
         .expect("making the destination folder");
     take_sent_requests(&destination).await;

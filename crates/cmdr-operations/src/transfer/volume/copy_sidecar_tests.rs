@@ -4,6 +4,7 @@
 //! injected probe, since no automated test may attach a FAT image.
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path::AppPath;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -35,7 +36,7 @@ fn fat_source(scratch: &Path) -> Arc<LocalPosixVolume> {
 
 async fn names_in(volume: &dyn Volume, dir: &str) -> Vec<String> {
     let mut names: Vec<String> = volume
-        .list_directory(Path::new(dir), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
         .await
         .expect("the landed folder lists")
         .into_iter()
@@ -75,7 +76,10 @@ async fn the_scan_of_a_fat_folder_counts_no_sidecars() {
     let scratch = TestDir::new("volume_sidecar_scan");
     let source = fat_source(&scratch);
 
-    let scan = source.scan_for_copy(Path::new("folder")).await.expect("the scan runs");
+    let scan = source
+        .scan_for_copy(&AppPath::legacy_unchecked(Path::new("folder")))
+        .await
+        .expect("the scan runs");
 
     assert_eq!(scan.file_count, 3, "child, inner, and the orphan");
     assert_eq!(scan.dir_count, 1, "sub");
@@ -89,7 +93,7 @@ async fn a_selected_sidecar_and_a_native_volume_keep_everything() {
     let scratch = TestDir::new("volume_sidecar_selected");
     let source = fat_source(&scratch);
     let selected = source
-        .scan_for_copy(Path::new("folder/._child.txt"))
+        .scan_for_copy(&AppPath::legacy_unchecked(Path::new("folder/._child.txt")))
         .await
         .expect("scan");
     assert_eq!((selected.file_count, selected.total_bytes), (1, 4096));
@@ -97,7 +101,7 @@ async fn a_selected_sidecar_and_a_native_volume_keep_everything() {
     let native = LocalPosixVolume::local_folder("APFS", &*scratch, crate::host::testing::pane_order_host())
         .with_sidecar_probe(|_| false);
     let listed = native
-        .list_directory_as_source(Path::new("folder"))
+        .list_directory_as_source(&AppPath::legacy_unchecked(Path::new("folder")))
         .await
         .expect("the folder lists");
     assert_eq!(listed.len(), 5, "all five entries, sidecars included");

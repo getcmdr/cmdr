@@ -5,6 +5,7 @@
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 
 use crate::test_support::TestDir;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::{MutationEvent, Volume, WatchCoverage};
 use cmdr_local::LocalPosixVolume;
 use std::path::Path;
@@ -22,7 +23,7 @@ fn test_listing_watch_coverage_flips_with_watcher_lifecycle() {
 
     // No listing yet, no watcher: no coverage.
     assert_eq!(
-        volume.listing_watch_coverage(&path),
+        volume.listing_watch_coverage(&AppPath::legacy_unchecked(&path)),
         WatchCoverage::None,
         "expected no coverage before listing opens"
     );
@@ -34,7 +35,7 @@ fn test_listing_watch_coverage_flips_with_watcher_lifecycle() {
 
     // Listing exists but no watcher: still `None` (the race-window contract).
     assert_eq!(
-        volume.listing_watch_coverage(&path),
+        volume.listing_watch_coverage(&AppPath::legacy_unchecked(&path)),
         WatchCoverage::None,
         "expected no coverage during the listing->watcher gap"
     );
@@ -43,7 +44,7 @@ fn test_listing_watch_coverage_flips_with_watcher_lifecycle() {
     // reaches FSEvents (a network mount would report `ThisMachineOnly` here).
     start_watching(listing.id(), &path).expect("start_watching should succeed on a real temp dir");
     assert_eq!(
-        volume.listing_watch_coverage(&path),
+        volume.listing_watch_coverage(&AppPath::legacy_unchecked(&path)),
         WatchCoverage::EveryWriter,
         "expected full coverage once the watcher is attached"
     );
@@ -51,7 +52,7 @@ fn test_listing_watch_coverage_flips_with_watcher_lifecycle() {
     // Stop the watcher: back to `None`.
     stop_watching(listing.id());
     assert_eq!(
-        volume.listing_watch_coverage(&path),
+        volume.listing_watch_coverage(&AppPath::legacy_unchecked(&path)),
         WatchCoverage::None,
         "expected no coverage after the watcher stops"
     );
@@ -71,7 +72,7 @@ async fn a_local_listing_comes_back_in_the_panes_name_order() {
 
     let volume = LocalPosixVolume::local_folder("Test", &*dir, crate::volume_host::host());
     let entries = volume
-        .list_directory(Path::new(""), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
         .await
         .expect("listing the scratch dir");
 
@@ -101,7 +102,11 @@ async fn a_local_mutation_patches_the_pane_showing_its_folder() {
 
     std::fs::write(dir.join("landed.txt"), b"x").expect("writing the new file");
     volume
-        .notify_mutation(&volume_id, &dir, MutationEvent::Created("landed.txt".to_string()))
+        .notify_mutation(
+            &volume_id,
+            &AppPath::legacy_unchecked(&dir),
+            MutationEvent::Created("landed.txt".to_string()),
+        )
         .await;
     assert_eq!(listing.entry_names(), ["landed.txt"], "the create reaches the pane");
 
@@ -109,7 +114,7 @@ async fn a_local_mutation_patches_the_pane_showing_its_folder() {
     volume
         .notify_mutation(
             &volume_id,
-            &dir,
+            &AppPath::legacy_unchecked(&dir),
             MutationEvent::Renamed {
                 from: "landed.txt".to_string(),
                 to: "renamed.txt".to_string(),
@@ -120,7 +125,11 @@ async fn a_local_mutation_patches_the_pane_showing_its_folder() {
 
     std::fs::remove_file(dir.join("renamed.txt")).expect("deleting the file");
     volume
-        .notify_mutation(&volume_id, &dir, MutationEvent::Deleted("renamed.txt".to_string()))
+        .notify_mutation(
+            &volume_id,
+            &AppPath::legacy_unchecked(&dir),
+            MutationEvent::Deleted("renamed.txt".to_string()),
+        )
         .await;
     assert!(listing.entry_names().is_empty(), "the delete reaches the pane");
 }

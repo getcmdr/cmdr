@@ -67,7 +67,7 @@ async fn copy_up(
 async fn clean_up_past_the_proxy(dir: &Path) {
     let direct = connect(WebdavFixture::Stock).await;
     let name = dir.file_name().expect("a scratch dir has a name");
-    clean_deep(&direct, &direct.root().join(name)).await;
+    clean_deep(&direct, &direct.root().as_std_legacy().join(name)).await;
 }
 
 /// Three new files in a folder: one `PUT` and one `MOVE` each.

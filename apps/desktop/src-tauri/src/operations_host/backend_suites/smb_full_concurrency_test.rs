@@ -24,6 +24,7 @@
 //! from `super::smb_test_support`.
 
 use super::smb_test_support::*;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::StreamLength;
 use cmdr_smb::volume::*;
 use std::sync::atomic::AtomicBool;
@@ -229,7 +230,9 @@ fn peak_in_flight(progress: &[WriteProgressEvent]) -> u32 {
 fn spawn_staging_probe(vol: Arc<SmbVolume>, dir: String, seen: Arc<AtomicBool>) -> tokio::task::JoinHandle<()> {
     tokio::spawn(async move {
         loop {
-            if let Ok(entries) = vol.list_directory(Path::new(&dir), None).await
+            if let Ok(entries) = vol
+                .list_directory(&AppPath::legacy_unchecked(Path::new(&dir)), None)
+                .await
                 && entries.iter().any(|entry| entry.name.contains(".cmdr-tmp-"))
             {
                 seen.store(true, Ordering::SeqCst);
@@ -291,7 +294,10 @@ async fn smb_integration_many_files_at_full_concurrency_land_intact() {
     let smb_vol = Arc::new(make_docker_volume().await);
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
     let dest_vol: Arc<dyn Volume> = smb_vol.clone();
 
     // Size the large files off what THIS server negotiated rather than a
@@ -411,7 +417,7 @@ async fn smb_integration_many_files_at_full_concurrency_land_intact() {
     }
 
     let landed = smb_vol
-        .list_directory(Path::new(&base), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new(&base)), None)
         .await
         .expect("list the destination");
     let leftovers: Vec<&str> = landed
@@ -497,7 +503,10 @@ async fn smb_integration_a_wedged_copy_is_caught_and_names_its_phase() {
     let smb_vol = Arc::new(make_docker_volume().await);
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
     let dest_vol: Arc<dyn Volume> = smb_vol.clone();
 
     // Enough sources to take the concurrent path and fill a window; they never

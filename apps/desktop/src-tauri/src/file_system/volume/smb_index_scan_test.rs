@@ -19,6 +19,7 @@
 //! this is the app proving ITS backend works with the index's scanner — a test
 //! between the two, which belongs on the side that can build both halves.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -79,18 +80,20 @@ fn unique_base() -> String {
 }
 
 async fn rm_rf(vol: &dyn Volume, dir: &str) {
-    if vol.exists(Path::new(dir)).await
-        && let Ok(entries) = vol.list_directory(Path::new(dir), None).await
+    if vol.exists(&AppPath::legacy_unchecked(Path::new(dir))).await
+        && let Ok(entries) = vol
+            .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
+            .await
     {
         for e in entries {
             let child = format!("{dir}/{}", e.name);
             if e.is_directory {
                 Box::pin(rm_rf(vol, &child)).await;
             } else {
-                let _ = vol.delete(Path::new(&child)).await;
+                let _ = vol.delete(&AppPath::legacy_unchecked(Path::new(&child))).await;
             }
         }
-        let _ = vol.delete(Path::new(dir)).await;
+        let _ = vol.delete(&AppPath::legacy_unchecked(Path::new(dir))).await;
     }
 }
 
@@ -108,17 +111,25 @@ async fn smb_integration_volume_scan_indexes_share() {
     //   <base>/top.txt        (5 bytes)
     let base = unique_base();
     rm_rf(vol.as_ref(), &base).await;
-    vol.create_directory(Path::new(&base))
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
         .await
         .expect("create base dir on share");
     let sub = format!("{base}/sub");
-    vol.create_directory(Path::new(&sub)).await.expect("create sub dir");
-    vol.create_file(Path::new(&format!("{sub}/leaf.txt")), b"hello world")
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&sub)))
         .await
-        .expect("create leaf.txt");
-    vol.create_file(Path::new(&format!("{base}/top.txt")), b"hello")
-        .await
-        .expect("create top.txt");
+        .expect("create sub dir");
+    vol.create_file(
+        &AppPath::legacy_unchecked(Path::new(&format!("{sub}/leaf.txt"))),
+        b"hello world",
+    )
+    .await
+    .expect("create leaf.txt");
+    vol.create_file(
+        &AppPath::legacy_unchecked(Path::new(&format!("{base}/top.txt"))),
+        b"hello",
+    )
+    .await
+    .expect("create top.txt");
 
     // Scan ONLY the seeded subtree (the share is shared across tests, so we
     // scope to our base dir as the scan root — `scan_volume_via_trait` maps the
@@ -179,17 +190,25 @@ async fn smb_integration_volume_scan_via_connection_pool() {
     // Same seeded subtree shape as the plain-scan test.
     let base = unique_base();
     rm_rf(vol.as_ref(), &base).await;
-    vol.create_directory(Path::new(&base))
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
         .await
         .expect("create base dir on share");
     let sub = format!("{base}/sub");
-    vol.create_directory(Path::new(&sub)).await.expect("create sub dir");
-    vol.create_file(Path::new(&format!("{sub}/leaf.txt")), b"hello world")
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&sub)))
         .await
-        .expect("create leaf.txt");
-    vol.create_file(Path::new(&format!("{base}/top.txt")), b"hello")
-        .await
-        .expect("create top.txt");
+        .expect("create sub dir");
+    vol.create_file(
+        &AppPath::legacy_unchecked(Path::new(&format!("{sub}/leaf.txt"))),
+        b"hello world",
+    )
+    .await
+    .expect("create leaf.txt");
+    vol.create_file(
+        &AppPath::legacy_unchecked(Path::new(&format!("{base}/top.txt"))),
+        b"hello",
+    )
+    .await
+    .expect("create top.txt");
 
     let dir = tempfile::tempdir().expect("temp db dir");
     let db_path = dir.path().join("smb-scan-pool.db");
@@ -248,12 +267,15 @@ async fn smb_integration_watch_event_updates_index() {
     // Seed and scan a known subtree (same shape as the scan test).
     let base = unique_base();
     rm_rf(vol.as_ref(), &base).await;
-    vol.create_directory(Path::new(&base))
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
         .await
         .expect("create base dir on share");
-    vol.create_file(Path::new(&format!("{base}/top.txt")), b"hello")
-        .await
-        .expect("create top.txt");
+    vol.create_file(
+        &AppPath::legacy_unchecked(Path::new(&format!("{base}/top.txt"))),
+        b"hello",
+    )
+    .await
+    .expect("create top.txt");
 
     let dir = tempfile::tempdir().expect("temp db dir");
     let db_path = dir.path().join("smb-watch.db");
@@ -275,10 +297,13 @@ async fn smb_integration_watch_event_updates_index() {
 
     // ── Mutation 1: add a file. The watcher would stat it and emit Added. ──
     let added_path = format!("{base}/added.txt");
-    vol.create_file(Path::new(&added_path), b"twelve bytes")
+    vol.create_file(&AppPath::legacy_unchecked(Path::new(&added_path)), b"twelve bytes")
         .await
         .expect("create added.txt on share");
-    let added_meta = vol.get_metadata(Path::new(&added_path)).await.expect("stat added.txt");
+    let added_meta = vol
+        .get_metadata(&AppPath::legacy_unchecked(Path::new(&added_path)))
+        .await
+        .expect("stat added.txt");
 
     // The watcher delivers a mount-absolute parent path; the index ROOT_ID is the
     // scan root (`base`), so `resolve_and_send_for_test` strips `base` to `/`.
@@ -315,7 +340,7 @@ async fn smb_integration_watch_event_updates_index() {
     }
 
     // ── Mutation 2: delete top.txt. The watcher emits Removed by name. ──
-    vol.delete(Path::new(&format!("{base}/top.txt")))
+    vol.delete(&AppPath::legacy_unchecked(Path::new(&format!("{base}/top.txt"))))
         .await
         .expect("delete top.txt on share");
     {
@@ -368,17 +393,25 @@ async fn smb_integration_enrich_listing_shows_sizes() {
     //                        <base>/top.txt (5 bytes)
     let base = unique_base();
     rm_rf(vol.as_ref(), &base).await;
-    vol.create_directory(Path::new(&base))
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
         .await
         .expect("create base dir on share");
     let sub = format!("{base}/sub");
-    vol.create_directory(Path::new(&sub)).await.expect("create sub dir");
-    vol.create_file(Path::new(&format!("{sub}/leaf.txt")), b"hello world")
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&sub)))
         .await
-        .expect("create leaf.txt");
-    vol.create_file(Path::new(&format!("{base}/top.txt")), b"hello")
-        .await
-        .expect("create top.txt");
+        .expect("create sub dir");
+    vol.create_file(
+        &AppPath::legacy_unchecked(Path::new(&format!("{sub}/leaf.txt"))),
+        b"hello world",
+    )
+    .await
+    .expect("create leaf.txt");
+    vol.create_file(
+        &AppPath::legacy_unchecked(Path::new(&format!("{base}/top.txt"))),
+        b"hello",
+    )
+    .await
+    .expect("create top.txt");
 
     // Scan the subtree (scan root → ROOT_ID, like a real volume-root scan).
     let dir = tempfile::tempdir().expect("temp db dir");

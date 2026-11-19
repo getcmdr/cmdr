@@ -21,6 +21,7 @@
 //!
 //! Every cell here needs the SFTP fixture stack: `sftp-servers/start.sh`.
 
+use cmdr_fs::app_path::AppPath;
 use std::net::SocketAddr;
 use std::path::Path;
 use std::sync::Arc;
@@ -90,7 +91,7 @@ async fn through_a_proxy() -> Proxied {
 /// legitimately differ there.
 async fn names(volume: &SftpVolume) -> Result<Vec<String>, VolumeError> {
     let mut names: Vec<String> = volume
-        .list_directory(Path::new("."), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new(".")), None)
         .await?
         .into_iter()
         .map(|entry| entry.name)

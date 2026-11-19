@@ -1,6 +1,7 @@
 //! Where a staged proposal lives: what survives a restart, what deliberately doesn't, and
 //! the two halves of the acceptance binding a revise has to invalidate.
 
+use cmdr_fs::app_path;
 use rusqlite::Connection;
 
 use super::super::plan::check_row_evidence;
@@ -644,7 +645,7 @@ async fn a_staged_rename_plan_freezes_each_rows_creation_snapshot() {
 
     let volume = InMemoryVolume::new("Macintosh HD");
     volume
-        .create_file(Path::new("/shots/a.png"), b"five!")
+        .create_file(app_path!("/shots/a.png"), b"five!")
         .await
         .expect("seed file");
     volume.set_modified_at(Path::new("/shots/a.png"), Some(1_700_000_000));

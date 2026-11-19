@@ -7,6 +7,7 @@
 //! own outcome is pinned by every other suite here, and none of them changes
 //! with the tree.
 
+use cmdr_fs::app_path;
 use std::collections::BTreeSet;
 use std::sync::atomic::Ordering;
 
@@ -48,9 +49,15 @@ fn verdict(source: &str, outcome: SourceItemOutcome, removed: bool) -> (String, 
 
 async fn put(volume: &Arc<dyn Volume>, path: &str, bytes: &[u8]) {
     if let Some(parent) = Path::new(path).parent() {
-        volume.create_directory_all(parent).await.expect("parent folder");
+        volume
+            .create_directory_all(&AppPath::legacy_unchecked(parent))
+            .await
+            .expect("parent folder");
     }
-    volume.create_file(Path::new(path), bytes).await.expect("file");
+    volume
+        .create_file(&AppPath::legacy_unchecked(Path::new(path)), bytes)
+        .await
+        .expect("file");
 }
 
 async fn copy(
@@ -84,11 +91,11 @@ async fn a_concurrent_copy_shows_files_in_flight_across_folders_and_every_row_en
     let fx = fixture(CHUNK as u64 * 2);
     for path in ["/a/1.bin", "/a/2.bin", "/b/1.bin", "/c/1.bin"] {
         fx.source_inner
-            .create_directory_all(Path::new(path).parent().expect("parent"))
+            .create_directory_all(&AppPath::legacy_unchecked(Path::new(path).parent().expect("parent")))
             .await
             .expect("folder");
         fx.source_inner
-            .create_file(Path::new(path), &vec![0xAB; CHUNK * 2])
+            .create_file(&AppPath::legacy_unchecked(Path::new(path)), &vec![0xAB; CHUNK * 2])
             .await
             .expect("file");
     }
@@ -302,12 +309,12 @@ async fn a_cancel_leaves_the_rows_it_stopped_waiting() {
     let _drain = CancelDrainGuard::set(Duration::from_millis(150));
     let fx = fixture(CHUNK as u64 * 4);
     fx.source_inner
-        .create_file(Path::new("/landed.txt"), b"")
+        .create_file(app_path!("/landed.txt"), b"")
         .await
         .expect("file");
     for name in ["/wedge-a.bin", "/wedge-b.bin", "/wedge-c.bin"] {
         fx.source_inner
-            .create_file(Path::new(name), &vec![0xAB; CHUNK * 4])
+            .create_file(&AppPath::legacy_unchecked(Path::new(name)), &vec![0xAB; CHUNK * 4])
             .await
             .expect("file");
     }
@@ -370,7 +377,7 @@ async fn a_same_volume_move_shows_one_row_per_item_and_reports_each_rename() {
     let (volume, _) = make_volumes();
     put(&volume, "/src/folder/inner.txt", b"inner").await;
     put(&volume, "/src/file.txt", b"file").await;
-    volume.create_directory_all(Path::new("/dest")).await.expect("dest");
+    volume.create_directory_all(app_path!("/dest")).await.expect("dest");
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
 
@@ -415,9 +422,12 @@ impl Volume for StatFailsAfterCleanup {
         self
     }
 
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let result = self.inner.delete(path).await;
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            let result = self.inner.delete(path_app).await;
             if path == Path::new("/src/keep") {
                 self.inner.set_stat_failing(path);
             }
@@ -662,7 +672,10 @@ async fn a_tree_that_fails_to_build_leaves_a_volume_copy_as_it_would_run_without
     .expect("the copy succeeds");
 
     for path in ["/a/1.bin", bug.as_str(), "/b.bin"] {
-        assert!(dest.exists(Path::new(path)).await, "{path} landed");
+        assert!(
+            dest.exists(&AppPath::legacy_unchecked(Path::new(path))).await,
+            "{path} landed"
+        );
     }
     assert!(
         state.transfer_tree.get().is_none(),

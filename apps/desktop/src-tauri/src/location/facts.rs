@@ -102,7 +102,8 @@ pub(crate) fn start_root_history() {
 /// Record `volume`'s live root this session and save it as its last root. A view into
 /// another volume (an archive, a `.git` portal) has no root of its own to save.
 fn note_live_root(id: &str, volume: &dyn cmdr_fs::volume::Volume) {
-    let root = volume.root().to_string_lossy();
+    let root_std = volume.root().as_std_legacy();
+    let root = root_std.to_string_lossy();
     ROOT_HISTORY.record(id, &root);
     if !volume.routes_over_a_parent() {
         super::last_roots::note(id, &root);
@@ -127,7 +128,7 @@ impl VolumeFacts {
             let Some(kind) = kind_of_backend(volume.backend_kind(), volume.mount_class()) else {
                 continue;
             };
-            let live_root = volume.root().to_string_lossy().into_owned();
+            let live_root = volume.root().as_std_legacy().to_string_lossy().into_owned();
             ROOT_HISTORY.record(&id, &live_root);
             let Some(root) = volume_root(RootSources {
                 live: Some(&live_root),

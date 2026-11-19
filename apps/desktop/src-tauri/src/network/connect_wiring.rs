@@ -331,7 +331,7 @@ pub async fn install_retiring_incumbent(volume_id: &str, volume: Arc<dyn Volume>
     // Asked BEFORE retiring anyone: a registry that keeps the incumbent would
     // otherwise leave the id pointing at a volume whose background work we just
     // stopped.
-    let refused = manager.would_keep_incumbent(volume_id, volume.root());
+    let refused = manager.would_keep_incumbent(volume_id, &volume.root().as_std_legacy());
     if !refused && let Some(previous) = manager.get(volume_id) {
         let _ = tokio::task::spawn_blocking(move || previous.on_superseded()).await;
     }

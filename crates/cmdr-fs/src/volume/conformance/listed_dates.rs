@@ -1,6 +1,7 @@
 //! What a volume's listings promise about dates: no entry carries a date its
 //! volume doesn't claim through [`Volume::supported_dates`].
 
+use crate::app_path::AppPath;
 use std::path::Path;
 
 use crate::volume::Volume;
@@ -21,7 +22,7 @@ use crate::volume::Volume;
 /// backend, and nothing but this keeps it in step with the mapping code.
 pub async fn assert_listing_dates_are_claimed(volume: &dyn Volume, dir: &Path) {
     let listed = volume
-        .list_directory(dir, None)
+        .list_directory(&AppPath::legacy_unchecked(dir), None)
         .await
         .unwrap_or_else(|e| panic!("{} must be listable, got {e:?}", dir.display()));
     assert!(
@@ -29,11 +30,11 @@ pub async fn assert_listing_dates_are_claimed(volume: &dyn Volume, dir: &Path) {
         "fixture precondition: {} must hold at least one entry",
         dir.display()
     );
-    let claimed = volume.supported_dates(dir).await;
+    let claimed = volume.supported_dates(&AppPath::legacy_unchecked(dir)).await;
 
     for entry in &listed {
         let stat = volume
-            .get_metadata(Path::new(&entry.path))
+            .get_metadata(&AppPath::legacy_unchecked(Path::new(&entry.path)))
             .await
             .unwrap_or_else(|e| panic!("{} must be stattable, got {e:?}", entry.path));
         for (read, entry) in [("its folder's listing", entry), ("get_metadata", &stat)] {

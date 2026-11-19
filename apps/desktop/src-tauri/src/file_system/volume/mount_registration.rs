@@ -203,7 +203,7 @@ mod tests {
         let adopted = adopt_with(&volume_id, &path, |_| Some(identity(&root, &volume_id)));
 
         let adopted = adopted.expect("the live mount derives this exact ID, so it is adoptable");
-        assert_eq!(adopted.root(), Path::new(&root));
+        assert_eq!(&*adopted.root().as_std_legacy(), Path::new(&root));
         assert!(
             get_volume_manager().get(&volume_id).is_some(),
             "adoption registers, so every later caller finds it too"

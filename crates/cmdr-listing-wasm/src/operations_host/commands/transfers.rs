@@ -2,6 +2,7 @@
 //! transfer asks (`commands/file_system/{write_ops,volume_copy}.rs` and
 //! `commands/volumes.rs`'s `get_volume_space` in the app).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -184,7 +185,7 @@ impl DemoOperations {
                     return ok(WriteAccess::Unknown);
                 }
                 let dest = resolve_dest_path(&self.volume, a.dest_path);
-                ok(self.volume.write_access_at(&dest).await)
+                ok(self.volume.write_access_at(&AppPath::legacy_unchecked(&dest)).await)
             }
             "resolve_write_conflict" => {
                 let a: ResolveConflictArgs = parse(command, args)?;

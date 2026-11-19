@@ -5,6 +5,7 @@
 //! [`Landing`] and rescue rules it shares, and whose cut-off settle
 //! (`staged_write_landing_cut_off.rs`) calls its resume and give-up steps.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -76,7 +77,14 @@ async fn set_aside(
     let Some(aside) = landing.aside_path().map(Path::to_path_buf) else {
         return rename_onto_aside(dest_volume, landing, patience).await;
     };
-    match dest_volume.rename(&landing.final_path, &aside, false).await {
+    match dest_volume
+        .rename(
+            &AppPath::legacy_unchecked(&landing.final_path),
+            &AppPath::legacy_unchecked(&aside),
+            false,
+        )
+        .await
+    {
         Ok(()) => rename_onto_aside(dest_volume, landing, patience).await,
         // Nothing at the name after all: no original to keep.
         Err(VolumeError::NotFound(_)) => {
@@ -133,7 +141,14 @@ pub(super) async fn rename_onto_aside(
     mut landing: Landing,
     patience: Patience,
 ) -> Result<(), LandingError> {
-    match dest_volume.rename(landing.temp(), &landing.final_path, false).await {
+    match dest_volume
+        .rename(
+            &AppPath::legacy_unchecked(landing.temp()),
+            &AppPath::legacy_unchecked(&landing.final_path),
+            false,
+        )
+        .await
+    {
         Ok(()) => {
             landing.original_replaced();
             landing.settled();
@@ -201,7 +216,7 @@ pub(super) async fn resume_setting_aside(dest_volume: &Arc<dyn Volume>, landing:
     let Some(aside) = landing.aside_path().map(Path::to_path_buf) else {
         return rename_onto_aside(dest_volume, landing, Patience::Waits).await.into();
     };
-    match dest_volume.get_metadata(&aside).await {
+    match dest_volume.get_metadata(&AppPath::legacy_unchecked(&aside)).await {
         // The move aside went through before the drop.
         Ok(_) => rename_onto_aside(dest_volume, landing, Patience::Waits).await.into(),
         // It never reached the server: move it now.
@@ -229,7 +244,10 @@ pub(super) async fn give_up_onto_aside(
     mut landing: Landing,
     error: VolumeError,
 ) -> Result<(), FinalizeFailure> {
-    match dest_volume.get_metadata(landing.temp()).await {
+    match dest_volume
+        .get_metadata(&AppPath::legacy_unchecked(landing.temp()))
+        .await
+    {
         // The rename never happened: the original goes back.
         Ok(_) => Err(put_the_original_back(dest_volume, landing, error).await),
         // Our temp is gone from a name that was empty: the rename happened,
@@ -255,7 +273,10 @@ pub(super) async fn run_again_with_the_original_home(
     error: VolumeError,
 ) -> Resumed {
     if let Some(aside) = landing.aside.take() {
-        match dest_volume.get_metadata(aside.aside_path()).await {
+        match dest_volume
+            .get_metadata(&AppPath::legacy_unchecked(aside.aside_path()))
+            .await
+        {
             // The move aside never happened.
             Err(VolumeError::NotFound(_)) => aside.forget(),
             _ => {

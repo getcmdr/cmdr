@@ -9,6 +9,7 @@
 
 use super::*;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::staging::StagingTemp;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::testing::wait_until_async;
@@ -101,7 +102,10 @@ async fn a_recorded_partial_on_a_volume_is_swept_through_that_volume() {
     let volume_id = "in-flight-temps-test-nas-swept";
     let volume = Arc::new(InMemoryVolume::new("nas"));
     let orphan = PathBuf::from("/photos/holiday.raw.cmdr-tmp-4242");
-    volume.create_file(&orphan, b"half a photo").await.unwrap();
+    volume
+        .create_file(&AppPath::legacy_unchecked(&orphan), b"half a photo")
+        .await
+        .unwrap();
     let next_app = TestOperations::new();
     next_app
         .volumes()
@@ -115,7 +119,7 @@ async fn a_recorded_partial_on_a_volume_is_swept_through_that_volume() {
     let tally = next_run.launch_in(&data_dir, &next_app).wait();
 
     assert!(
-        !volume.exists(&orphan).await,
+        !volume.exists(&AppPath::legacy_unchecked(&orphan)).await,
         "the recorded partial must be gone from the volume that holds it"
     );
     assert_eq!(tally.swept, 1, "and it must be counted as swept: {tally:?}");
@@ -185,7 +189,10 @@ async fn a_deferred_record_is_swept_the_moment_its_volume_arrives() {
 
     // The user connects it.
     let volume = Arc::new(InMemoryVolume::new("nas"));
-    volume.create_file(&orphan, b"half a photo").await.unwrap();
+    volume
+        .create_file(&AppPath::legacy_unchecked(&orphan), b"half a photo")
+        .await
+        .unwrap();
     next_app
         .volumes()
         .register(volume_id, Arc::clone(&volume) as Arc<dyn Volume>);
@@ -195,7 +202,7 @@ async fn a_deferred_record_is_swept_the_moment_its_volume_arrives() {
     })
     .await;
     assert!(
-        !volume.exists(&orphan).await,
+        !volume.exists(&AppPath::legacy_unchecked(&orphan)).await,
         "the partial must be gone from the volume that just arrived"
     );
 }
@@ -223,7 +230,10 @@ async fn a_reconnect_in_place_settles_what_waits_on_that_volume_and_nothing_else
     ] {
         let volume = Arc::new(InMemoryVolume::new("nas"));
         let temp = PathBuf::from(name);
-        volume.create_file(&temp, b"half a photo").await.unwrap();
+        volume
+            .create_file(&AppPath::legacy_unchecked(&temp), b"half a photo")
+            .await
+            .unwrap();
         engine
             .volumes()
             .register(volume_id, Arc::clone(&volume) as Arc<dyn Volume>);
@@ -242,11 +252,11 @@ async fn a_reconnect_in_place_settles_what_waits_on_that_volume_and_nothing_else
     })
     .await;
     assert!(
-        !reconnected.exists(swept).await,
+        !reconnected.exists(&AppPath::legacy_unchecked(swept)).await,
         "the temp goes from the share that came back"
     );
     assert!(
-        stayed_out.exists(waiting).await,
+        stayed_out.exists(&AppPath::legacy_unchecked(waiting)).await,
         "another volume's temp is no business of this reconnect"
     );
     assert!(
@@ -268,7 +278,10 @@ async fn a_delete_the_volume_refuses_leaves_the_record_to_retry() {
     let volume_id = "in-flight-temps-test-nas-blip";
     let orphan = PathBuf::from("/photos/holiday.raw.cmdr-tmp-9999");
     let volume = Arc::new(InMemoryVolume::new("nas").with_delete_failing());
-    volume.create_file(&orphan, b"half a photo").await.unwrap();
+    volume
+        .create_file(&AppPath::legacy_unchecked(&orphan), b"half a photo")
+        .await
+        .unwrap();
     let next_app = TestOperations::new();
     next_app
         .volumes()
@@ -709,7 +722,10 @@ async fn the_sweep_refuses_a_volume_path_that_isnt_one_of_our_scratch_files() {
     let volume_id = "in-flight-temps-test-nas-tampered";
     let volume = Arc::new(InMemoryVolume::new("nas"));
     let precious = PathBuf::from("/documents/taxes.pdf");
-    volume.create_file(&precious, b"the user's own file").await.unwrap();
+    volume
+        .create_file(&AppPath::legacy_unchecked(&precious), b"the user's own file")
+        .await
+        .unwrap();
     let next_app = TestOperations::new();
     next_app
         .volumes()
@@ -726,7 +742,7 @@ async fn the_sweep_refuses_a_volume_path_that_isnt_one_of_our_scratch_files() {
     let tally = next_run.launch_in(&data_dir, &next_app).wait();
 
     assert!(
-        volume.exists(&precious).await,
+        volume.exists(&AppPath::legacy_unchecked(&precious)).await,
         "the sweep must only ever remove files carrying our scratch marker"
     );
     // Counted and retired says the sweep reached it and refused, rather than

@@ -15,6 +15,7 @@ use crate::backend::VolumeBackend;
 use crate::index_feed::{IndexFeed, Keep, Start};
 use crate::repo::{IndexedRepo, ResticError, on_own_pool, open_blocking, worker_crashed};
 use bytes::Bytes;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::{ListingPhase, ListingProgress, Volume, VolumeError};
 use rustic_core::{FileType, Id};
 use std::path::{Path, PathBuf};
@@ -264,7 +265,7 @@ async fn run(
 /// The index files in `dir`, by id, with their sizes. A missing folder is an
 /// empty index.
 async fn index_files(parent: &dyn Volume, dir: &Path) -> Result<Vec<(Id, u64)>, VolumeError> {
-    let entries = match parent.list_directory(dir, None).await {
+    let entries = match parent.list_directory(&AppPath::legacy_unchecked(dir), None).await {
         Ok(entries) => entries,
         Err(VolumeError::NotFound(_)) => return Ok(Vec::new()),
         Err(err) => return Err(err),
@@ -336,7 +337,7 @@ async fn read_one(
     if feed.cancel().is_cancelled() {
         return Ok(());
     }
-    let mut stream = parent.open_read_stream(&path).await?;
+    let mut stream = parent.open_read_stream(&AppPath::legacy_unchecked(&path)).await?;
     let mut bytes = Vec::with_capacity(usize::try_from(start.reserve).unwrap_or(0));
     while let Some(chunk) = stream.next_chunk().await {
         let chunk = chunk?;

@@ -4,6 +4,7 @@
 //! outcome back to the runner; a step that fails returns a [`Fault`] for
 //! [`FileRun::on_fault`], ❌ never a wait of its own.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -148,7 +149,11 @@ impl FileRun<'_> {
         // silently.
         let report = self
             .dest_volume
-            .apply_metadata(self.dest_path, &stamp.carried, stamp.modified)
+            .apply_metadata(
+                &AppPath::legacy_unchecked(self.dest_path),
+                &stamp.carried,
+                stamp.modified,
+            )
             .await;
         self.state
             .metadata_losses
@@ -179,12 +184,13 @@ impl FileRun<'_> {
         // so a source that learns it in its open's own frame (SMB's stream
         // listing) asks only then.
         let ask = MetadataAsk::for_copy(source_volume.metadata_caps(), dest_volume.metadata_caps());
+        let source_path_app = AppPath::legacy_unchecked(self.source_path);
         let opened = tokio::select! {
             biased;
             () = state.backend_abort.cancelled() => {
                 return Err(hard_abort_error(self.source_path)).at_source(self.source_path).map_err(Stop::Over);
             }
-            opened = source_volume.open_read_stream_for_copy(self.source_path, self.source_facts.size, ask) => opened,
+            opened = source_volume.open_read_stream_for_copy(&source_path_app, self.source_facts.size, ask) => opened,
         };
         let stream = opened.map_err(|error| Stop::Faulted(Box::new(Fault::OpenSource { error, started_on })))?;
         // Asked of the stream the backend handed out, before anything wraps it.
@@ -285,12 +291,13 @@ impl FileRun<'_> {
         let Continuation { staged, carry, at } = continuation;
         set_task_phase(TaskPhase::OpeningSource);
         let started_on = StartedOn::now(&[source_volume, self.dest_volume]);
+        let source_path_app = AppPath::legacy_unchecked(source_path);
         let reopened = tokio::select! {
             biased;
             () = state.backend_abort.cancelled() => {
                 return Err(hard_abort_error(source_path)).at_source(source_path).map_err(Stop::Over);
             }
-            reopened = source_volume.resume_read_stream(source_path, &carry.version, at) => reopened,
+            reopened = source_volume.resume_read_stream(&source_path_app, &carry.version, at) => reopened,
         };
         let stream = match reopened {
             Ok(stream) => stream,
@@ -434,9 +441,10 @@ impl FileRun<'_> {
             on_file_progress(progress.bytes_written, size)
         };
         let started_on = StartedOn::now(&[source_volume, dest_volume]);
+        let target_app = AppPath::legacy_unchecked(staged.target());
         let write_fut = match at {
-            0 => dest_volume.write_from_stream(staged.target(), staged.write_mode(), length, stream, &write_progress),
-            at => dest_volume.continue_write_from_stream(staged.target(), at, length, stream, &write_progress),
+            0 => dest_volume.write_from_stream(&target_app, staged.write_mode(), length, stream, &write_progress),
+            at => dest_volume.continue_write_from_stream(&target_app, at, length, stream, &write_progress),
         };
         let outcome = tokio::select! {
             biased;
@@ -530,12 +538,13 @@ impl FileRun<'_> {
         let staging = resolve_staging(self.staging, dest_volume.publishes_writes_whole());
         let staged = StagedWrite::begin(state, &**dest_volume, self.announced_dest, staging);
         let started_on = StartedOn::now(&[self.source_volume, dest_volume]);
+        let target_app = AppPath::legacy_unchecked(staged.target());
         let made = tokio::select! {
             biased;
             () = state.backend_abort.cancelled() => {
                 return Err(hard_abort_error(dest_path)).at_destination(dest_path).map_err(Stop::Over);
             }
-            made = dest_volume.create_symlink(staged.target(), target) => made,
+            made = dest_volume.create_symlink(&target_app, target) => made,
         };
         match made {
             Ok(()) => Ok(Written {

@@ -24,6 +24,7 @@
 //! reason a share that drops under the sweep re-runs it whole once it's back
 //! ([`sweep_carried_source`]), ❌ never one delete blind.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -159,7 +160,7 @@ async fn sweep_level(
     let opened = locked.unlock(dir);
     // As the copy walk listed it: a sidecar it left behind travels with its
     // owner, which the kernel removes with the owner.
-    let entries = match volume.list_directory_as_source(dir).await {
+    let entries = match volume.list_directory_as_source(&AppPath::legacy_unchecked(dir)).await {
         Ok(entries) => entries,
         // Gone already: whoever removed it, nothing of it is left to protect.
         Err(VolumeError::NotFound(_)) => {
@@ -190,9 +191,11 @@ async fn sweep_level(
                 // A link the move carried goes as the link, ❌ never through it:
                 // on a backend whose listing follows links the walk copied what
                 // it points at, and that target is not the user's selection.
-                Ok(EntryKind::Symlink) if ledger.carried(&path) => {
-                    volume.delete(&path).await.at_source(&path).map(|()| false)
-                }
+                Ok(EntryKind::Symlink) if ledger.carried(&path) => volume
+                    .delete(&AppPath::legacy_unchecked(&path))
+                    .await
+                    .at_source(&path)
+                    .map(|()| false),
                 Ok(EntryKind::Directory | EntryKind::Symlink) => {
                     left.appeared += 1;
                     Ok(true)
@@ -222,7 +225,14 @@ async fn sweep_level(
         note_outcome(outcome, &mut remains, &mut first_failure);
     }
     let unlocked: Vec<Unlocked> = doomed.iter().map(|path| locked.unlock(path)).collect();
-    let results = volume.delete_files(&doomed).await;
+    let results = volume
+        .delete_files(
+            &doomed
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+        )
+        .await;
     for ((path, result), unlocked) in doomed.iter().zip(results).zip(unlocked) {
         if result.is_ok() {
             unlocked.gone();
@@ -239,7 +249,16 @@ async fn sweep_level(
     // Everything the move carried is gone, so the folder goes too, and the
     // Mac-only files it held with it: ❌ never a husk folder in the source.
     if !husk.is_empty() {
-        for (path, result) in husk.iter().zip(volume.delete_files(&husk).await) {
+        for (path, result) in husk.iter().zip(
+            volume
+                .delete_files(
+                    &husk
+                        .iter()
+                        .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                        .collect::<Vec<_>>(),
+                )
+                .await,
+        ) {
             match result {
                 Ok(()) => {}
                 Err(VolumeError::NotFound(_)) => left.read_gone = true,
@@ -249,7 +268,7 @@ async fn sweep_level(
     }
     // ❗ As a folder, never `delete`: once such a folder's last file goes, a
     // plain delete finds only a file of its name, which the move never copied.
-    match volume.delete_directory(dir, None).await {
+    match volume.delete_directory(&AppPath::legacy_unchecked(dir), None).await {
         // A folder that only existed through what was in it (an object
         // store's prefix with no marker) went with its last file.
         Ok(()) => {
@@ -309,13 +328,22 @@ pub(crate) enum CarriedSource {
 /// not into the ledger, so it stays in the source too: a duplicate, never a
 /// loss.
 pub(crate) async fn stamp_source(volume: &Arc<dyn Volume>, source: &Path) -> Result<CarriedSource, PathedVolumeError> {
-    if volume.entry_kind(source).await.at_source(source)? != EntryKind::Directory {
+    if volume
+        .entry_kind(&AppPath::legacy_unchecked(source))
+        .await
+        .at_source(source)?
+        != EntryKind::Directory
+    {
         return Ok(CarriedSource::File(stamp_file(volume, source).await));
     }
     let mut ledger = SourceLedger::default();
     let mut pending = vec![source.to_path_buf()];
     while let Some(dir) = pending.pop() {
-        for entry in volume.list_directory_as_source(&dir).await.at_source(&dir)? {
+        for entry in volume
+            .list_directory_as_source(&AppPath::legacy_unchecked(&dir))
+            .await
+            .at_source(&dir)?
+        {
             let path = PathBuf::from(&entry.path);
             match kind_of(volume, &entry, &path).await? {
                 EntryKind::Directory => pending.push(path),
@@ -369,7 +397,7 @@ async fn sweep_once(
     after_a_wait: bool,
 ) -> Result<FolderLeftovers, PathedVolumeError> {
     let delete_top_level = || async {
-        match volume.delete(source).await {
+        match volume.delete(&AppPath::legacy_unchecked(source)).await {
             Err(VolumeError::NotFound(_)) if after_a_wait => Ok(FolderLeftovers {
                 read_gone: true,
                 ..FolderLeftovers::default()
@@ -378,7 +406,7 @@ async fn sweep_once(
         }
     };
     match carried {
-        CarriedSource::Folder(ledger) => match volume.entry_kind(source).await {
+        CarriedSource::Folder(ledger) => match volume.entry_kind(&AppPath::legacy_unchecked(source)).await {
             // A selected link the walk followed: the link goes, its target stays.
             Ok(EntryKind::Symlink) => delete_top_level().await,
             Ok(_) | Err(VolumeError::NotFound(_)) => sweep_moved_folder(volume, source, ledger, skipped, locked).await,
@@ -404,7 +432,7 @@ async fn sweep_once(
 /// during the copy counts as a change too. `None` when the stat fails.
 pub(super) async fn stamp_file(volume: &Arc<dyn Volume>, file: &Path) -> Option<SourceStamp> {
     volume
-        .get_metadata(file)
+        .get_metadata(&AppPath::legacy_unchecked(file))
         .await
         .ok()
         .map(|entry| SourceStamp::of(&entry))
@@ -418,7 +446,7 @@ async fn file_is_unchanged(
     file: &Path,
     before: Option<SourceStamp>,
 ) -> Result<bool, PathedVolumeError> {
-    match volume.get_metadata(file).await {
+    match volume.get_metadata(&AppPath::legacy_unchecked(file)).await {
         Ok(now) => Ok(before == Some(SourceStamp::of(&now))),
         Err(VolumeError::NotFound(_)) => Ok(true),
         Err(e) => Err(e).at_source(file),
@@ -431,7 +459,10 @@ async fn file_is_unchanged(
 /// (`../DETAILS.md` § "Symlinks are opaque to a move").
 async fn kind_of(volume: &Arc<dyn Volume>, entry: &FileEntry, path: &Path) -> Result<EntryKind, PathedVolumeError> {
     if entry.is_directory || entry.is_symlink {
-        volume.entry_kind(path).await.at_source(path)
+        volume
+            .entry_kind(&AppPath::legacy_unchecked(path))
+            .await
+            .at_source(path)
     } else {
         Ok(EntryKind::File)
     }

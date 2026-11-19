@@ -18,6 +18,7 @@
 //! - **The same**: deleted again with the same non-recursive `delete` (a
 //!   folder's `delete_directory`), ❌ never escalated to a recursive one.
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::path::Path;
 use std::sync::Arc;
@@ -135,7 +136,10 @@ pub(super) async fn delete_entry(
 /// `NotFound` for a dangling one that's still there, and that link must stay
 /// reported, ❌ never counted as done. One request, only on the failure path.
 async fn is_gone(volume: &dyn Volume, path: &Path) -> bool {
-    matches!(volume.entry_kind(path).await, Err(VolumeError::NotFound(_)))
+    matches!(
+        volume.entry_kind(&AppPath::legacy_unchecked(path)).await,
+        Err(VolumeError::NotFound(_))
+    )
 }
 
 enum AttemptStop {
@@ -164,9 +168,13 @@ async fn attempt(
     // is gone with its last child, and a plain delete of its path would take
     // the file of its name instead (#510).
     let deleted = if listed.kind == EntryKind::Directory {
-        volume.delete_directory(path, Some(&state.backend_cancel)).await
+        volume
+            .delete_directory(&AppPath::legacy_unchecked(path), Some(&state.backend_cancel))
+            .await
     } else {
-        volume.delete_with_cancel(path, Some(&state.backend_cancel)).await
+        volume
+            .delete_with_cancel(&AppPath::legacy_unchecked(path), Some(&state.backend_cancel))
+            .await
     };
     match deleted {
         Ok(()) => Ok(()),
@@ -185,7 +193,7 @@ enum Recheck {
 
 /// Whether the entry at `path` is still the one the walk listed.
 async fn still_as_listed(volume: &dyn Volume, path: &Path, listed: Listed) -> Result<Recheck, VolumeError> {
-    let kind = match volume.entry_kind(path).await {
+    let kind = match volume.entry_kind(&AppPath::legacy_unchecked(path)).await {
         Ok(kind) => kind,
         Err(VolumeError::NotFound(_)) => return Ok(Recheck::Gone),
         Err(error) => return Err(error),
@@ -201,7 +209,7 @@ async fn still_as_listed(volume: &dyn Volume, path: &Path, listed: Listed) -> Re
     let Some(listed_size) = listed.size else {
         return Ok(Recheck::Changed);
     };
-    match volume.get_metadata(path).await {
+    match volume.get_metadata(&AppPath::legacy_unchecked(path)).await {
         Ok(entry) if entry.size == Some(listed_size) => Ok(Recheck::Same),
         Ok(_) => Ok(Recheck::Changed),
         Err(VolumeError::NotFound(_)) => Ok(Recheck::Gone),

@@ -9,6 +9,7 @@
 //! there's no pre-scan-then-write TOCTOU window and it works on any writable
 //! volume (local or network).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 
 use cmdr_fs::volume::VolumeError;
@@ -87,7 +88,7 @@ impl super::Operations {
                 // Register the destination with the downloads watcher's ignore set
                 // before the syscall (no-op outside ~/Downloads).
                 self.host().announce(&path);
-                match volume.create_file(&path, bytes).await {
+                match volume.create_file(&AppPath::legacy_unchecked(&path), bytes).await {
                     Ok(()) => break Ok::<(PathBuf, String), MutationError>((path, name)),
                     Err(VolumeError::AlreadyExists(_)) => {
                         counter = counter

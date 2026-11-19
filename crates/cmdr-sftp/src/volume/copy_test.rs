@@ -6,6 +6,8 @@
 //! would have two of them deleting each other's files and reporting it as a
 //! backend bug.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
 use std::path::Path;
 use std::sync::Mutex;
@@ -29,14 +31,20 @@ async fn scratch_on(service: &str, fallback_port: u16, what: &str) -> (SftpVolum
     let volume = connect_fixture(&host, params).await;
     let dir = scratch_dir(what);
     clean_scratch(&volume, &dir).await;
-    volume.create_directory(Path::new(&dir)).await.expect(FIXTURE);
+    volume
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .expect(FIXTURE);
     (volume, dir)
 }
 
 /// Reads a file back whole, so byte-exactness is asserted against what the server
 /// actually holds.
 async fn read_back(volume: &SftpVolume, path: &str, len: usize) -> Vec<u8> {
-    volume.read_range(Path::new(path), 0, len).await.expect(FIXTURE)
+    volume
+        .read_range(&AppPath::legacy_unchecked(Path::new(path)), 0, len)
+        .await
+        .expect(FIXTURE)
 }
 
 /// The stock server copies for itself, byte for byte, ❗ without the bytes ever
@@ -47,14 +55,17 @@ async fn sftp_integration_a_server_side_copy_lands_byte_for_byte() {
     let (volume, dir) = scratch_on("OPENSSH", 12480, "copy-within").await;
     let payload = fixture_large_bytes(PAYLOAD);
     volume
-        .create_file(Path::new(&format!("{dir}/source.bin")), &payload)
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/source.bin"))),
+            &payload,
+        )
         .await
         .expect(FIXTURE);
 
     let copied = volume
         .copy_within(
-            Path::new(&format!("{dir}/source.bin")),
-            Path::new(&format!("{dir}/copy.bin")),
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/source.bin"))),
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/copy.bin"))),
             &|_, _| ControlFlow::Continue(()),
         )
         .await
@@ -81,7 +92,7 @@ async fn sftp_integration_a_server_side_copy_keeps_the_source_date() {
     let (volume, dir) = scratch_on("OPENSSH", 12480, "copy-within-dated").await;
     let source = format!("{dir}/source.bin");
     volume
-        .create_file(Path::new(&source), b"bytes from 2021")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&source)), b"bytes from 2021")
         .await
         .expect(FIXTURE);
     let stamp = UnixTimeStamp::new(std::time::UNIX_EPOCH + std::time::Duration::from_secs(SOURCE_DATE_SECS))
@@ -98,14 +109,16 @@ async fn sftp_integration_a_server_side_copy_keeps_the_source_date() {
         .expect("date the seed into the past");
 
     volume
-        .copy_within(Path::new(&source), Path::new(&format!("{dir}/copy.bin")), &|_, _| {
-            ControlFlow::Continue(())
-        })
+        .copy_within(
+            &AppPath::legacy_unchecked(Path::new(&source)),
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/copy.bin"))),
+            &|_, _| ControlFlow::Continue(()),
+        )
         .await
         .expect(FIXTURE);
 
     let landed = volume
-        .get_metadata(Path::new(&format!("{dir}/copy.bin")))
+        .get_metadata(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/copy.bin"))))
         .await
         .expect(FIXTURE)
         .modified_at;
@@ -129,15 +142,18 @@ async fn sftp_integration_a_server_side_copy_reports_progress_up_to_the_whole_fi
     let (volume, dir) = scratch_on("OPENSSH", 12480, "copy-progress").await;
     let payload = fixture_large_bytes(PAYLOAD);
     volume
-        .create_file(Path::new(&format!("{dir}/source.bin")), &payload)
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/source.bin"))),
+            &payload,
+        )
         .await
         .expect(FIXTURE);
 
     let seen: Mutex<Vec<(u64, u64)>> = Mutex::new(Vec::new());
     volume
         .copy_within(
-            Path::new(&format!("{dir}/source.bin")),
-            Path::new(&format!("{dir}/copy.bin")),
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/source.bin"))),
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/copy.bin"))),
             &|done, total| {
                 seen.lock_ignore_poison().push((done, total));
                 ControlFlow::Continue(())
@@ -168,14 +184,17 @@ async fn sftp_integration_a_server_side_copy_reports_progress_up_to_the_whole_fi
 async fn sftp_integration_a_cancelled_server_side_copy_leaves_nothing_behind() {
     let (volume, dir) = scratch_on("OPENSSH", 12480, "copy-cancel").await;
     volume
-        .create_file(Path::new(&format!("{dir}/source.bin")), b"stop right there")
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/source.bin"))),
+            b"stop right there",
+        )
         .await
         .expect(FIXTURE);
 
     let outcome = volume
         .copy_within(
-            Path::new(&format!("{dir}/source.bin")),
-            Path::new(&format!("{dir}/copy.bin")),
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/source.bin"))),
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/copy.bin"))),
             &|_, _| ControlFlow::Break(()),
         )
         .await;
@@ -185,7 +204,9 @@ async fn sftp_integration_a_cancelled_server_side_copy_leaves_nothing_behind() {
         "the only cancellation this path has is the callback: {outcome:?}"
     );
     assert!(
-        !volume.exists(Path::new(&format!("{dir}/copy.bin"))).await,
+        !volume
+            .exists(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/copy.bin"))))
+            .await,
         "❗ every error path takes the partial with it, cancellation included"
     );
 
@@ -198,14 +219,14 @@ async fn sftp_integration_a_cancelled_server_side_copy_leaves_nothing_behind() {
 async fn sftp_integration_an_empty_file_copies_to_an_empty_file() {
     let (volume, dir) = scratch_on("OPENSSH", 12480, "copy-empty").await;
     volume
-        .create_file(Path::new(&format!("{dir}/empty.bin")), b"")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/empty.bin"))), b"")
         .await
         .expect(FIXTURE);
 
     let copied = volume
         .copy_within(
-            Path::new(&format!("{dir}/empty.bin")),
-            Path::new(&format!("{dir}/empty-copy.bin")),
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/empty.bin"))),
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/empty-copy.bin"))),
             &|_, _| ControlFlow::Continue(()),
         )
         .await
@@ -213,7 +234,7 @@ async fn sftp_integration_an_empty_file_copies_to_an_empty_file() {
 
     assert_eq!(copied, 0);
     let entry = volume
-        .get_metadata(Path::new(&format!("{dir}/empty-copy.bin")))
+        .get_metadata(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/empty-copy.bin"))))
         .await
         .expect(FIXTURE);
     assert_eq!(entry.size, Some(0));
@@ -232,14 +253,17 @@ async fn sftp_integration_an_empty_file_copies_to_an_empty_file() {
 async fn sftp_integration_a_server_without_the_extension_refuses_rather_than_failing() {
     let (volume, dir) = scratch_on("NOPOSIXRENAME", 12486, "copy-unsupported").await;
     volume
-        .create_file(Path::new(&format!("{dir}/source.bin")), b"still here")
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/source.bin"))),
+            b"still here",
+        )
         .await
         .expect(FIXTURE);
 
     let outcome = volume
         .copy_within(
-            Path::new(&format!("{dir}/source.bin")),
-            Path::new(&format!("{dir}/copy.bin")),
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/source.bin"))),
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/copy.bin"))),
             &|_, _| ControlFlow::Continue(()),
         )
         .await;
@@ -249,11 +273,15 @@ async fn sftp_integration_a_server_without_the_extension_refuses_rather_than_fai
         "the caller reads this as 'stream it', so it can be nothing else: {outcome:?}"
     );
     assert!(
-        !volume.exists(Path::new(&format!("{dir}/copy.bin"))).await,
+        !volume
+            .exists(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/copy.bin"))))
+            .await,
         "and a refusal touches nothing: the destination must be free for the streamed attempt"
     );
     assert!(
-        volume.exists(Path::new(&format!("{dir}/source.bin"))).await,
+        volume
+            .exists(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/source.bin"))))
+            .await,
         "the source is untouched too"
     );
 
@@ -268,8 +296,8 @@ async fn sftp_integration_a_copy_out_of_the_root_is_refused() {
 
     let outcome = volume
         .copy_within(
-            Path::new("/etc/passwd"),
-            Path::new(&format!("{dir}/stolen")),
+            app_path!("/etc/passwd"),
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/stolen"))),
             &|_, _| ControlFlow::Continue(()),
         )
         .await;

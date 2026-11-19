@@ -15,6 +15,7 @@
 //! - Local → MTP: Uses volume.import_from_local()
 //! - MTP → Local: Uses volume.export_to_local()
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashSet;
 use std::future::Future;
 
@@ -178,7 +179,7 @@ impl crate::Operations {
         // Validate that volumes support the required operations
         if !source_volume.supports_export() {
             return Err(WriteOperationError::IoError {
-                path: source_volume.root().display().to_string(),
+                path: source_volume.root().as_std_legacy().display().to_string(),
                 message: format!("Source volume '{}' does not support export", source_volume.name()).into(),
             });
         }
@@ -502,7 +503,10 @@ impl crate::Operations {
 /// `a_destination_that_cant_report_free_space_is_still_copyable_into` and its
 /// sibling in `copy_space_tests.rs` hold both sides.
 async fn dest_space_if_known(dest_volume: &dyn Volume, dest_path: &Path) -> Result<Option<SpaceInfo>, VolumeError> {
-    match dest_volume.get_space_info_at(dest_path).await {
+    match dest_volume
+        .get_space_info_at(&AppPath::legacy_unchecked(dest_path))
+        .await
+    {
         Ok(info) => Ok(Some(info)),
         Err(VolumeError::NotSupported) => Ok(None),
         Err(other) => Err(other),
@@ -537,7 +541,7 @@ fn room_to_check(dest_space: Option<SpaceInfo>) -> Option<u64> {
 /// before the first write, the one window this guard accepts: a write refused
 /// later is still refused, with the backend's own error.
 pub(super) async fn destination_refusal(dest_volume: &dyn Volume, dest_path: &Path) -> Option<WriteOperationError> {
-    match dest_volume.write_access_at(dest_path).await {
+    match dest_volume.write_access_at(&AppPath::legacy_unchecked(dest_path)).await {
         cmdr_fs::volume::WriteAccess::Unwritable { reason } => Some(WriteOperationError::DestinationNotWritable {
             path: dest_path.display().to_string(),
             reason,
@@ -682,7 +686,10 @@ pub async fn copy_volumes_with_progress(
             // can't, and a missing source surfaces later as a per-source copy
             // error, so `Ok(false)` / `Err(_)` fall through without rejecting.
             if (dest_path == source.as_path() || dest_path.starts_with(source))
-                && matches!(dest_volume.is_directory(source).await, Ok(true))
+                && matches!(
+                    dest_volume.is_directory(&AppPath::legacy_unchecked(source)).await,
+                    Ok(true)
+                )
             {
                 return Err(WriteFailure::synthetic(WriteOperationError::DestinationInsideSource {
                     source: source.display().to_string(),
@@ -712,7 +719,7 @@ pub async fn copy_volumes_with_progress(
     // dest-inside-source guard above so we never create a folder inside a
     // source. A merge into an already-existing dest is a no-op create.
     let dest_dir_creation = dest_volume
-        .create_directory_all(dest_path)
+        .create_directory_all(&AppPath::legacy_unchecked(dest_path))
         .await
         .map_err(|e| WriteFailure::from_volume(dest_path, PathRole::Destination, e))?;
 

@@ -63,6 +63,7 @@ mod volume_impl_test;
 pub use streams::volume_read_stream_to_chunk_stream;
 
 use crate::connection::MtpConnectionManager;
+use cmdr_fs::app_path::BridgedPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -82,7 +83,7 @@ pub struct MtpVolume {
     /// Storage ID within the device
     pub(super) storage_id: u32,
     /// Virtual root path for this volume (for example, "/mtp-20-5/65537")
-    root: PathBuf,
+    root: BridgedPath,
     /// Volume ID for listing cache lookups (format: "{device_id}:{storage_id}").
     volume_id: String,
 }
@@ -102,7 +103,7 @@ impl MtpVolume {
             manager,
             device_id: device_id.to_string(),
             storage_id,
-            root: PathBuf::from(format!("mtp://{}/{}", device_id, storage_id)),
+            root: BridgedPath::new(PathBuf::from(format!("mtp://{}/{}", device_id, storage_id))),
             volume_id,
         }
     }
@@ -166,7 +167,7 @@ impl MtpVolume {
         }
         let inner = self.to_mtp_path(path);
         if inner.is_empty() {
-            self.root.clone()
+            self.root.clone().into_path_buf()
         } else {
             self.root.join(inner)
         }

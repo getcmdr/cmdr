@@ -7,6 +7,7 @@
 //! ❗ The portmap port comes from `NFS_FIXTURE_PORTMAP_PORT` HERE, in test
 //! code, ❌ never in the crate proper: a real server's portmapper is on 111.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 
 use cmdr_fs::volume::Volume;
@@ -86,9 +87,9 @@ pub async fn connect_insecure() -> NfsVolume {
 pub fn app_path(volume: &NfsVolume, remote: &str) -> PathBuf {
     let remote = remote.trim_start_matches('/');
     if remote.is_empty() {
-        return volume.root().to_path_buf();
+        return volume.root().as_std_legacy().to_path_buf();
     }
-    Path::new(volume.root()).join(remote)
+    volume.root().as_std_legacy().join(remote)
 }
 
 /// What every scratch folder's name starts with, so a cell that reads the
@@ -125,7 +126,7 @@ pub async fn scratch_dir(volume: &NfsVolume, what: &str) -> PathBuf {
         &format!("/{SCRATCH_PREFIX}{what}-{}-{nanos}", std::process::id()),
     );
     volume
-        .create_directory(&dir)
+        .create_directory(&AppPath::legacy_unchecked(&dir))
         .await
         .unwrap_or_else(|err| panic!("the scratch folder for {what} must be creatable: {err:?}"));
     dir
@@ -137,7 +138,7 @@ pub async fn scratch_dir(volume: &NfsVolume, what: &str) -> PathBuf {
 /// enter into it.
 async fn sweep_stale_scratch(volume: &NfsVolume, now: std::time::Duration) {
     let root = app_path(volume, "/");
-    let Ok(entries) = volume.list_directory(&root, None).await else {
+    let Ok(entries) = volume.list_directory(&AppPath::legacy_unchecked(&root), None).await else {
         return;
     };
     for entry in entries {
@@ -164,17 +165,17 @@ pub fn clean_deep<'a>(
     path: &'a Path,
 ) -> std::pin::Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
     Box::pin(async move {
-        if let Ok(entries) = volume.list_directory(path, None).await {
+        if let Ok(entries) = volume.list_directory(&AppPath::legacy_unchecked(path), None).await {
             for entry in entries {
                 let child = path.join(&entry.name);
                 if entry.is_directory && !entry.is_symlink {
                     clean_deep(volume, &child).await;
                 } else {
-                    let _ = volume.delete(&child).await;
+                    let _ = volume.delete(&AppPath::legacy_unchecked(&child)).await;
                 }
             }
         }
-        let _ = volume.delete(path).await;
+        let _ = volume.delete(&AppPath::legacy_unchecked(path)).await;
     })
 }
 

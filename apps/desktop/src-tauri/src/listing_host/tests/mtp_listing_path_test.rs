@@ -12,6 +12,8 @@
 //! These cells stop at the match rather than at the patch, because the match is
 //! the step that failed.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -33,7 +35,7 @@ async fn a_pane_entered_with_enter_is_found_at_the_url_changes_are_reported_unde
 
     // What Enter on the `Documents` row navigates to: the row's own path.
     let root_rows = volume
-        .list_directory(Path::new("/"), None)
+        .list_directory(app_path!("/"), None)
         .await
         .expect("listing the storage root");
     let entered = root_rows
@@ -47,7 +49,7 @@ async fn a_pane_entered_with_enter_is_found_at_the_url_changes_are_reported_unde
         "the premise: an MTP row carries the inner spelling, got {entered}"
     );
     let rows = volume
-        .list_directory(Path::new(&entered), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new(&entered)), None)
         .await
         .expect("listing Documents");
     let listing = TestListing::new()
@@ -86,7 +88,7 @@ async fn a_pane_opened_at_the_url_answers_the_oracle_at_the_inner_path() {
 
     let opened = format!("mtp://{}/{}/Documents", device.id, device.storage_id);
     let rows = volume
-        .list_directory(Path::new(&opened), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new(&opened)), None)
         .await
         .expect("listing Documents at its URL");
     let listing = TestListing::new()

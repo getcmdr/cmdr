@@ -17,6 +17,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::CancelRollbackOutcome;
+use cmdr_fs::app_path;
 use cmdr_fs::volume::InMemoryVolume;
 
 /// Cancellation between sources stops further transfers and emits `write-cancelled`.
@@ -26,9 +27,9 @@ use cmdr_fs::volume::InMemoryVolume;
 async fn cross_volume_move_cancel_between_sources_emits_cancelled_event() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_file(Path::new("/a.txt"), b"alpha").await.unwrap();
-    source.create_file(Path::new("/b.txt"), b"bravo").await.unwrap();
-    source.create_file(Path::new("/c.txt"), b"charlie").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"alpha").await.unwrap();
+    source.create_file(app_path!("/b.txt"), b"bravo").await.unwrap();
+    source.create_file(app_path!("/c.txt"), b"charlie").await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
@@ -64,10 +65,10 @@ async fn cross_volume_move_cancel_between_sources_emits_cancelled_event() {
     ));
 
     // Nothing transferred (cancel before any iteration).
-    assert!(source.exists(Path::new("/a.txt")).await);
-    assert!(source.exists(Path::new("/b.txt")).await);
-    assert!(source.exists(Path::new("/c.txt")).await);
-    assert!(!dest.exists(Path::new("/a.txt")).await);
+    assert!(source.exists(app_path!("/a.txt")).await);
+    assert!(source.exists(app_path!("/b.txt")).await);
+    assert!(source.exists(app_path!("/c.txt")).await);
+    assert!(!dest.exists(app_path!("/a.txt")).await);
 
     // The critical assertion: write-cancelled was emitted. Pre-fix this would
     // be empty.
@@ -91,7 +92,10 @@ async fn cross_volume_move_cancel_mid_batch_keeps_the_held_originals() {
     let (source, dest) = make_volumes();
     for name in ["a", "b", "c", "d", "e"] {
         source
-            .create_file(Path::new(&format!("/{}.txt", name)), name.as_bytes())
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/{}.txt", name))),
+                name.as_bytes(),
+            )
             .await
             .unwrap();
     }
@@ -139,11 +143,14 @@ async fn cross_volume_move_cancel_mid_batch_keeps_the_held_originals() {
     let mut copied = 0;
     for name in ["a", "b", "c", "d", "e"] {
         let p = format!("/{}.txt", name);
-        if dest.exists(Path::new(&p)).await {
+        if dest.exists(&AppPath::legacy_unchecked(Path::new(&p))).await {
             copied += 1;
         }
         // Copied or not, no barrier proved it, so the original stays.
-        assert!(source.exists(Path::new(&p)).await, "{p}: the original must stay");
+        assert!(
+            source.exists(&AppPath::legacy_unchecked(Path::new(&p))).await,
+            "{p}: the original must stay"
+        );
     }
     assert!((1..5).contains(&copied), "expected a partial move (1..5), got {copied}");
 
@@ -162,9 +169,9 @@ async fn cross_volume_move_cancel_mid_batch_keeps_the_held_originals() {
 async fn same_volume_move_cancel_emits_cancelled_event() {
     let engine = TestOperations::new();
     let volume: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("V").with_space_info(10_000_000, 10_000_000));
-    volume.create_file(Path::new("/a.txt"), b"alpha").await.unwrap();
-    volume.create_file(Path::new("/b.txt"), b"bravo").await.unwrap();
-    volume.create_directory(Path::new("/dst")).await.unwrap();
+    volume.create_file(app_path!("/a.txt"), b"alpha").await.unwrap();
+    volume.create_file(app_path!("/b.txt"), b"bravo").await.unwrap();
+    volume.create_directory(app_path!("/dst")).await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
@@ -184,9 +191,9 @@ async fn same_volume_move_cancel_emits_cancelled_event() {
     assert!(matches!(result, Err(WriteOperationError::Cancelled { .. })));
 
     // Nothing renamed.
-    assert!(volume.exists(Path::new("/a.txt")).await);
-    assert!(volume.exists(Path::new("/b.txt")).await);
-    assert!(!volume.exists(Path::new("/dst/a.txt")).await);
+    assert!(volume.exists(app_path!("/a.txt")).await);
+    assert!(volume.exists(app_path!("/b.txt")).await);
+    assert!(!volume.exists(app_path!("/dst/a.txt")).await);
 
     let cancelled = events.cancelled.lock().unwrap();
     assert_eq!(cancelled.len(), 1, "expected exactly one write-cancelled event");
@@ -208,8 +215,8 @@ async fn cross_volume_move_cancelled_at_a_conflict_prompt_emits_cancelled_event(
     let engine = TestOperations::new();
 
     let (source, dest) = make_volumes();
-    source.create_file(Path::new("/a.txt"), b"incoming").await.unwrap();
-    dest.create_file(Path::new("/a.txt"), b"the user's own file")
+    source.create_file(app_path!("/a.txt"), b"incoming").await.unwrap();
+    dest.create_file(app_path!("/a.txt"), b"the user's own file")
         .await
         .unwrap();
 
@@ -255,10 +262,10 @@ async fn cross_volume_move_cancelled_at_a_conflict_prompt_emits_cancelled_event(
         "a cancel is not a failure"
     );
     assert!(
-        source.exists(Path::new("/a.txt")).await,
+        source.exists(app_path!("/a.txt")).await,
         "the source stays where it was"
     );
-    let mut stream = dest.open_read_stream(Path::new("/a.txt")).await.unwrap();
+    let mut stream = dest.open_read_stream(app_path!("/a.txt")).await.unwrap();
     let mut kept = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         kept.extend_from_slice(&chunk.unwrap());
@@ -278,10 +285,10 @@ async fn same_volume_move_cancelled_at_a_conflict_prompt_emits_cancelled_event()
     let engine = TestOperations::new();
 
     let volume: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("V").with_space_info(10_000_000, 10_000_000));
-    volume.create_file(Path::new("/a.txt"), b"incoming").await.unwrap();
-    volume.create_directory(Path::new("/dst")).await.unwrap();
+    volume.create_file(app_path!("/a.txt"), b"incoming").await.unwrap();
+    volume.create_directory(app_path!("/dst")).await.unwrap();
     volume
-        .create_file(Path::new("/dst/a.txt"), b"the user's own file")
+        .create_file(app_path!("/dst/a.txt"), b"the user's own file")
         .await
         .unwrap();
 
@@ -318,7 +325,7 @@ async fn same_volume_move_cancelled_at_a_conflict_prompt_emits_cancelled_event()
         assert_eq!(cancelled[0].rollback.outcome, CancelRollbackOutcome::NotRolledBack);
     }
     assert!(
-        volume.exists(Path::new("/a.txt")).await,
+        volume.exists(app_path!("/a.txt")).await,
         "the source stays where it was"
     );
 }

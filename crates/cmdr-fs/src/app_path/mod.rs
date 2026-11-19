@@ -21,9 +21,11 @@
 //!   bridge ([`AppPath::legacy_unchecked`], [`AppPath::as_std_legacy`]) is counted by the
 //!   `app-path-std-bridge` check and goes away once every crate speaks this type.
 //! - `Eq`, `Hash`, and `Ord` are component-wise: text the host's OS opens reads as its
-//!   `PathBuf` does, everything else with the app's own grammar, so a sorted or hashed
-//!   collection keyed on app paths behaves as one keyed on `PathBuf` for every value the
-//!   host's `std` meets (`shape::components` says where they differ, and why).
+//!   `PathBuf` does, everything else with the app's own grammar, so a hashed collection keyed
+//!   on app paths behaves as one keyed on `PathBuf` for every value the host's `std` meets
+//!   (`shape::components` says where they differ, and why). A sorted one does too, except
+//!   that an escaped name sorts by its escape code point, above every raw byte, where
+//!   `PathBuf` sorted the raw byte (`crates/cmdr-fs/DETAILS.md` § "App paths").
 //!
 //! Pure: builds for the browser too, and every conversion runs on every OS as data.
 //! `crates/cmdr-fs/DETAILS.md` § "App paths" holds the design and its decisions.
@@ -181,61 +183,6 @@ impl AppPath {
         }
     }
 
-    /// The folder holding this path (a slice, no allocation), or `None` at a root: there is
-    /// no parent INSIDE the volume. A row under an MTP pick answers the pick, as `Path` did;
-    /// `twin_path::folder_of` steps over it.
-    pub fn parent(&self) -> Option<&AppPath> {
-        if !self.is_canonical() {
-            let end = lenient::read(&self.0).parent_end()?;
-            return Some(AppPath::new_unchecked(&self.0[..end]));
-        }
-        let root_len = shape::root_of(&self.0).1;
-        if root_len >= self.0.len() {
-            return None;
-        }
-        let cut = self.0.rfind('/')?;
-        let end = if cut < root_len { root_len } else { cut };
-        Some(AppPath::new_unchecked(&self.0[..end]))
-    }
-
-    /// The last name, or `None` at a root.
-    pub fn file_name(&self) -> Option<&str> {
-        if !self.is_canonical() {
-            return lenient::read(&self.0).file_name();
-        }
-        let root_len = shape::root_of(&self.0).1;
-        if root_len >= self.0.len() {
-            return None;
-        }
-        Some(&self.0[self.0.rfind('/').map_or(0, |i| i + 1).max(root_len)..])
-    }
-
-    /// The last name's extension, as `Path::extension` reads one: after the last `.`, `None`
-    /// for a name with no `.` past its first character (`.bashrc`) and at a root.
-    pub fn extension(&self) -> Option<&str> {
-        split_at_dot(self.file_name()?).1
-    }
-
-    /// The last name without its extension, as `Path::file_stem` reads it.
-    pub fn file_stem(&self) -> Option<&str> {
-        split_at_dot(self.file_name()?).0
-    }
-
-    /// This path with its last name replaced by `name` (at a root, `name` under it, as
-    /// `Path::with_file_name` does).
-    ///
-    /// # Errors
-    ///
-    /// As [`Self::join`], plus [`NotAnAppPath::DotName`] for a bridge value ending in `..`.
-    pub fn with_file_name(&self, name: &AppName) -> Result<AppPathBuf, NotAnAppPath> {
-        // A bridge value ending in `..` has no last name to replace: `Path` would build
-        // `/a/b/../z` (which opens `/a/z`), the lenient parent `/a/b/z`, another folder.
-        if !self.is_root() && self.file_name().is_none() {
-            return Err(NotAnAppPath::DotName);
-        }
-        self.parent().unwrap_or(self).join(name)
-    }
-
     /// The last name as a person reads it (every escape as U+FFFD), or `None` at a root.
     pub fn shown_name(&self) -> Option<Cow<'_, str>> {
         self.file_name().map(shown_name)
@@ -251,17 +198,6 @@ impl AppPath {
             ("", lenient::read(&self.0).names(&self.0))
         };
         canonical.split('/').filter(|name| !name.is_empty()).chain(lenient)
-    }
-
-    /// `name` inside this folder: THE join, one plain name, so it can neither climb nor
-    /// replace the base. One allocation, sized exactly.
-    ///
-    /// # Errors
-    ///
-    /// [`NotAnAppPath::Backslash`] when this is a drive or UNC path and `name` holds a `\`
-    /// (a name from another OS's listing): Windows would read it as a subfolder.
-    pub fn join(&self, name: &AppName) -> Result<AppPathBuf, NotAnAppPath> {
-        self.join_text(&name.0)
     }
 
     /// `rel`'s names inside this folder: the multi-name join, for a validated tail (a remote
@@ -295,25 +231,6 @@ impl AppPath {
         Ok(AppPathBuf(out))
     }
 
-    /// Whether this is `ancestor` or sits under it, by whole names. Exact, case included:
-    /// case is the volume's business (`same_root` folds a UNC root).
-    pub fn starts_with(&self, ancestor: &AppPath) -> bool {
-        self.strip_prefix(ancestor).is_some()
-    }
-
-    /// The names below `ancestor` (empty for `ancestor` itself), or `None` when this isn't
-    /// `ancestor` or under it. A slice, no allocation, for canonical values. A bridge value
-    /// (either side) is read as the canonical place it names, its tail owned; one with no
-    /// canonical twin (a `..`, no root) sits under nothing, since by text a `..` can name a
-    /// different file across a symlink.
-    pub fn strip_prefix(&self, ancestor: &AppPath) -> Option<Cow<'_, RelativeAppPath>> {
-        if self.is_canonical() && ancestor.is_canonical() {
-            return self.strip_prefix_canonical(ancestor).map(Cow::Borrowed);
-        }
-        let (mine, theirs) = (self.to_canonical().ok()?, ancestor.to_canonical().ok()?);
-        Some(Cow::Owned(mine.strip_prefix_canonical(&theirs)?.to_owned()))
-    }
-
     fn strip_prefix_canonical(&self, ancestor: &AppPath) -> Option<&RelativeAppPath> {
         // Never across roots: `//s/h/x` is not under `/`, though its text starts with it.
         if self.root().0 != ancestor.root().0 {
@@ -327,18 +244,6 @@ impl AppPath {
             return Some(RelativeAppPath::new_unchecked(rest));
         }
         rest.strip_prefix('/').map(RelativeAppPath::new_unchecked)
-    }
-
-    /// [`Self::strip_prefix`], named for readers asking "where is this, from there".
-    pub fn relative_to(&self, ancestor: &AppPath) -> Option<Cow<'_, RelativeAppPath>> {
-        self.strip_prefix(ancestor)
-    }
-
-    /// This path moved from under `old_root` to the same place under `new_root` (a remounted
-    /// share, a renamed drive), or `None` when it isn't under `old_root`, or when `new_root`
-    /// can't hold its names.
-    pub fn rebase(&self, old_root: &AppPath, new_root: &AppPath) -> Option<AppPathBuf> {
-        new_root.join_relative(&self.strip_prefix(old_root)?).ok()
     }
 
     /// Whether both paths sit on the same root. A UNC server compares without ASCII case (DNS
@@ -593,6 +498,135 @@ fn simple_fold(c: char) -> char {
     match (lower.next(), lower.next()) {
         (Some(single), None) => single,
         _ => c,
+    }
+}
+
+/// The app path's own arithmetic for every method `Path` also has (`parent`, `file_name`,
+/// `join`, `starts_with`, `strip_prefix`, …), kept off the inherent `impl` so a value the trait
+/// flip typed can't silently answer with it: while bodies still do `std::path` arithmetic
+/// through the bridge, `x.file_name()` on a typed `x` must fail to compile (the flip's codemod
+/// then drops the receiver to `as_std_legacy()`, `Path`'s answer), ❌ never pick these, which
+/// answer differently on bridge values (`flip_shapes_test.rs`). Import it to adopt them on
+/// purpose: this module and its pins do; each crate's own conversion milestone imports it
+/// where it flips its pins deliberately (docs/specs/app-path-plan.md § "4. Flip the trait").
+pub trait PathArithmetic {
+    /// The folder holding this path (a slice, no allocation), or `None` at a root: there is
+    /// no parent INSIDE the volume. A row under an MTP pick answers the pick, as `Path` did;
+    /// `twin_path::folder_of` steps over it.
+    fn parent(&self) -> Option<&AppPath>;
+
+    /// The last name, or `None` at a root.
+    fn file_name(&self) -> Option<&str>;
+
+    /// The last name's extension, as `Path::extension` reads one: after the last `.`, `None`
+    /// for a name with no `.` past its first character (`.bashrc`) and at a root.
+    fn extension(&self) -> Option<&str>;
+
+    /// The last name without its extension, as `Path::file_stem` reads it.
+    fn file_stem(&self) -> Option<&str>;
+
+    /// This path with its last name replaced by `name` (at a root, `name` under it, as
+    /// `Path::with_file_name` does).
+    ///
+    /// # Errors
+    ///
+    /// As [`Self::join`], plus [`NotAnAppPath::DotName`] for a bridge value ending in `..`.
+    fn with_file_name(&self, name: &AppName) -> Result<AppPathBuf, NotAnAppPath>;
+
+    /// `name` inside this folder: THE join, one plain name, so it can neither climb nor
+    /// replace the base. One allocation, sized exactly.
+    ///
+    /// # Errors
+    ///
+    /// [`NotAnAppPath::Backslash`] when this is a drive or UNC path and `name` holds a `\`
+    /// (a name from another OS's listing): Windows would read it as a subfolder.
+    fn join(&self, name: &AppName) -> Result<AppPathBuf, NotAnAppPath>;
+
+    /// Whether this is `ancestor` or sits under it, by whole names. Exact, case included:
+    /// case is the volume's business (`same_root` folds a UNC root).
+    fn starts_with(&self, ancestor: &AppPath) -> bool;
+
+    /// The names below `ancestor` (empty for `ancestor` itself), or `None` when this isn't
+    /// `ancestor` or under it. A slice, no allocation, for canonical values. A bridge value
+    /// (either side) is read as the canonical place it names, its tail owned; one with no
+    /// canonical twin (a `..`, no root) sits under nothing, since by text a `..` can name a
+    /// different file across a symlink.
+    fn strip_prefix(&self, ancestor: &AppPath) -> Option<Cow<'_, RelativeAppPath>>;
+
+    /// [`Self::strip_prefix`], named for readers asking "where is this, from there".
+    fn relative_to(&self, ancestor: &AppPath) -> Option<Cow<'_, RelativeAppPath>>;
+
+    /// This path moved from under `old_root` to the same place under `new_root` (a remounted
+    /// share, a renamed drive), or `None` when it isn't under `old_root`, or when `new_root`
+    /// can't hold its names.
+    fn rebase(&self, old_root: &AppPath, new_root: &AppPath) -> Option<AppPathBuf>;
+}
+
+impl PathArithmetic for AppPath {
+    fn parent(&self) -> Option<&AppPath> {
+        if !self.is_canonical() {
+            let end = lenient::read(&self.0).parent_end()?;
+            return Some(AppPath::new_unchecked(&self.0[..end]));
+        }
+        let root_len = shape::root_of(&self.0).1;
+        if root_len >= self.0.len() {
+            return None;
+        }
+        let cut = self.0.rfind('/')?;
+        let end = if cut < root_len { root_len } else { cut };
+        Some(AppPath::new_unchecked(&self.0[..end]))
+    }
+
+    fn file_name(&self) -> Option<&str> {
+        if !self.is_canonical() {
+            return lenient::read(&self.0).file_name();
+        }
+        let root_len = shape::root_of(&self.0).1;
+        if root_len >= self.0.len() {
+            return None;
+        }
+        Some(&self.0[self.0.rfind('/').map_or(0, |i| i + 1).max(root_len)..])
+    }
+
+    fn extension(&self) -> Option<&str> {
+        split_at_dot(self.file_name()?).1
+    }
+
+    fn file_stem(&self) -> Option<&str> {
+        split_at_dot(self.file_name()?).0
+    }
+
+    fn with_file_name(&self, name: &AppName) -> Result<AppPathBuf, NotAnAppPath> {
+        // A bridge value ending in `..` has no last name to replace: `Path` would build
+        // `/a/b/../z` (which opens `/a/z`), the lenient parent `/a/b/z`, another folder.
+        if !self.is_root() && self.file_name().is_none() {
+            return Err(NotAnAppPath::DotName);
+        }
+        self.parent().unwrap_or(self).join(name)
+    }
+
+    fn join(&self, name: &AppName) -> Result<AppPathBuf, NotAnAppPath> {
+        self.join_text(&name.0)
+    }
+
+    fn starts_with(&self, ancestor: &AppPath) -> bool {
+        self.strip_prefix(ancestor).is_some()
+    }
+
+    fn strip_prefix(&self, ancestor: &AppPath) -> Option<Cow<'_, RelativeAppPath>> {
+        if self.is_canonical() && ancestor.is_canonical() {
+            return self.strip_prefix_canonical(ancestor).map(Cow::Borrowed);
+        }
+        let (mine, theirs) = (self.to_canonical().ok()?, ancestor.to_canonical().ok()?);
+        Some(Cow::Owned(mine.strip_prefix_canonical(&theirs)?.to_owned()))
+    }
+
+    fn relative_to(&self, ancestor: &AppPath) -> Option<Cow<'_, RelativeAppPath>> {
+        self.strip_prefix(ancestor)
+    }
+
+    fn rebase(&self, old_root: &AppPath, new_root: &AppPath) -> Option<AppPathBuf> {
+        new_root.join_relative(&self.strip_prefix(old_root)?).ok()
     }
 }
 

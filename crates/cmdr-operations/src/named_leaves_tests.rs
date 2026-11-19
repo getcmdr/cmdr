@@ -7,6 +7,7 @@
 //! `named_leaf_undo_tests.rs` and the move journal suite.
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -612,7 +613,7 @@ async fn a_name_with_a_bidi_override_or_a_zero_width_joiner_refuses() {
 async fn archive_routes_refuse_per_source_names() {
     let engine = engine();
     let zip = Arc::new(InMemoryVolume::new("Zip").with_space_info(1_000_000, 900_000));
-    zip.create_file(Path::new("/archive.zip/inner.txt"), b"z")
+    zip.create_file(app_path!("/archive.zip/inner.txt"), b"z")
         .await
         .expect("a zip entry");
     engine
@@ -694,10 +695,10 @@ async fn archive_routes_refuse_per_source_names() {
         assert_refused(result, NamedLeavesRefusal::RouteCannotName, case.what);
     }
     assert!(
-        zip.exists(Path::new("/archive.zip/inner.txt")).await,
+        zip.exists(app_path!("/archive.zip/inner.txt")).await,
         "the zip entry stays"
     );
-    assert!(!zip.exists(Path::new("/archive.zip/sub/renamed.txt")).await);
+    assert!(!zip.exists(app_path!("/archive.zip/sub/renamed.txt")).await);
     assert!(local.exists(), "the local source stays");
     assert!(names_in(&local_dest).is_empty());
 }

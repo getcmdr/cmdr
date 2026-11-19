@@ -4,6 +4,7 @@
 use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path::AppPath;
 
 #[test]
 fn paced_sleep_gives_way_to_a_cancel_within_a_slice() {
@@ -209,7 +210,10 @@ async fn a_temp_a_stopped_edit_left_on_a_share_that_is_out_waits_for_the_drives_
     let nas = OutageVolume::wrap(Arc::clone(&inner), NAS_ID);
     engine.volumes().register(NAS_ID, Arc::clone(&nas) as Arc<dyn Volume>);
     let temp = PathBuf::from("/share/bundle.zip.cmdr-tmp-77aa");
-    inner.create_file(&temp, b"half an archive").await.unwrap();
+    inner
+        .create_file(&AppPath::legacy_unchecked(&temp), b"half an archive")
+        .await
+        .unwrap();
     let state = Arc::new(
         engine
             .new_operation_state(Duration::ZERO)

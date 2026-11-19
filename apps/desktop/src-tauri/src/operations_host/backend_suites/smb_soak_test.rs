@@ -14,6 +14,7 @@
 
 use super::smb_test_support::*;
 use crate::operations_host::app_engine;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::smb_volume_id;
 use cmdr_operations::testing::new_operation_state;
 use cmdr_smb::volume::*;
@@ -240,7 +241,10 @@ async fn smb_soak_copy_loop() {
     let smb_vol = Arc::new(make_docker_auth_volume().await);
     let src_dir = test_dir_name();
     ensure_clean(&smb_vol, &src_dir).await;
-    smb_vol.create_directory(Path::new(&src_dir)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&src_dir)))
+        .await
+        .unwrap();
     let vol: Arc<dyn Volume> = smb_vol.clone();
 
     let fixture_start = Instant::now();
@@ -248,7 +252,7 @@ async fn smb_soak_copy_loop() {
     for i in 0..FILE_COUNT {
         let name = format!("f_{:03}.bin", i);
         let smb_path = format!("{}/{}", src_dir, name);
-        vol.create_file(Path::new(&smb_path), &expected_content(i))
+        vol.create_file(&AppPath::legacy_unchecked(Path::new(&smb_path)), &expected_content(i))
             .await
             .unwrap();
         source_paths.push(PathBuf::from(smb_path));

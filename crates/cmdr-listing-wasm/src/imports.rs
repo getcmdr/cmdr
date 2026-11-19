@@ -19,6 +19,7 @@
 //! Nothing here leaves the page: the bytes go from the browser's `File` into
 //! the volume's memory, gone on reload.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -444,7 +445,7 @@ impl DemoImports {
         // Deepest first: the store refuses to delete a folder that holds something.
         held.sort_by_key(|(path, _, _)| std::cmp::Reverse(path.components().count()));
         for (path, _, _) in &held {
-            if let Err(error) = self.volume.delete(path).await {
+            if let Err(error) = self.volume.delete(&AppPath::legacy_unchecked(path)).await {
                 log::warn!(target: "imports", "couldn't clear a staged drop: {}", cmdr_fs::log_error::LogError(&error));
             }
         }

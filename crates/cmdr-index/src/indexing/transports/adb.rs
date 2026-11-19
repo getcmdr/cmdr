@@ -30,7 +30,7 @@ pub(crate) fn start_indexing_for_adb(volume_id: &str) -> Result<(), String> {
     }
 
     let volume_root = match crate::indexing::host::volumes::current().get(volume_id) {
-        Some(volume) => volume.root().to_path_buf(),
+        Some(volume) => volume.root().as_std_legacy().to_path_buf(),
         None => return Err(format!("ADB volume '{volume_id}' isn't connected")),
     };
 

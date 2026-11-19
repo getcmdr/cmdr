@@ -25,6 +25,7 @@ use super::test_support::{
 use super::*;
 use crate::state::OperationIntent;
 use crate::transfer::transfer_driver::{LeafProgressLedger, ObservedProgress};
+use cmdr_fs::app_path;
 use cmdr_fs::testing::wait_until_async;
 use std::ops::ControlFlow;
 use std::path::Path;
@@ -123,7 +124,7 @@ async fn streaming_copy_parks_mid_file_while_paused_then_resumes() {
         .expect("resumed copy must succeed");
     assert_eq!(bytes, total, "resumed copy reports the full byte count");
     assert_eq!(
-        dest.get_metadata(Path::new("/big.bin")).await.unwrap().size,
+        dest.get_metadata(app_path!("/big.bin")).await.unwrap().size,
         Some(total),
         "resumed copy lands the full file at the destination"
     );
@@ -216,7 +217,7 @@ async fn streaming_copy_cancel_while_paused_mid_file_unblocks() {
     // Keep-partials: the local sink removes its in-flight file on the cancel
     // break, so no torn target is left behind.
     assert!(
-        !dest.exists(Path::new("big.bin")).await,
+        !dest.exists(&AppPath::legacy_unchecked(Path::new("big.bin"))).await,
         "a cancelled mid-file copy leaves no partial dest file"
     );
 }
@@ -416,7 +417,7 @@ async fn paused_mtp_copy_cancel_while_paused_keeps_no_partial() {
         "cancel wins over pause: the copy ends Cancelled, got {result:?}"
     );
     assert!(
-        !dest.exists(Path::new("movie.bin")).await,
+        !dest.exists(&AppPath::legacy_unchecked(Path::new("movie.bin"))).await,
         "a cancelled mid-file copy leaves no partial dest file"
     );
 }
@@ -487,7 +488,7 @@ impl Volume for BufferingDest {
     }
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         _mode: WriteMode,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,
@@ -521,7 +522,7 @@ async fn a_destination_that_buffers_ahead_parks_on_the_operation_pause() {
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("Source"));
     source
-        .create_file(Path::new("/big.bin"), &vec![9u8; 3 * 1024 * 1024])
+        .create_file(app_path!("/big.bin"), &vec![9u8; 3 * 1024 * 1024])
         .await
         .expect("the source file is seeded");
     let source: Arc<dyn Volume> = source;

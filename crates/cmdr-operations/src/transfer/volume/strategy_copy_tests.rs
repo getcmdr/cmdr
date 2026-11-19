@@ -8,6 +8,7 @@ use super::test_support::{SLOW_CHUNK_COUNT, SlowSource, make_state};
 use super::*;
 use crate::state::OperationIntent;
 use crate::transfer::transfer_driver::{LeafProgressLedger, ObservedProgress};
+use cmdr_fs::app_path;
 use cmdr_fs::testing::wait_until_async;
 use std::path::Path;
 use std::sync::Arc;
@@ -117,7 +118,7 @@ async fn test_streaming_copy_single_file() {
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source"));
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest"));
     source
-        .create_file(Path::new("/photo.jpg"), b"JPEG data here")
+        .create_file(app_path!("/photo.jpg"), b"JPEG data here")
         .await
         .unwrap();
 
@@ -140,7 +141,7 @@ async fn test_streaming_copy_single_file() {
 
     assert_eq!(bytes, 14);
     // Verify content
-    let mut stream = dest.open_read_stream(Path::new("/photo.jpg")).await.unwrap();
+    let mut stream = dest.open_read_stream(app_path!("/photo.jpg")).await.unwrap();
     let chunk = stream.next_chunk().await.unwrap().unwrap();
     assert_eq!(chunk, b"JPEG data here");
 }
@@ -151,7 +152,7 @@ async fn test_streaming_copy_large_file_with_progress() {
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source"));
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest"));
     let data: Vec<u8> = (0..=255).cycle().take(200_000).collect();
-    source.create_file(Path::new("/big.bin"), &data).await.unwrap();
+    source.create_file(app_path!("/big.bin"), &data).await.unwrap();
 
     let state = make_state(&engine);
     // What the copy REPORTS, read off the progress events the dialog reads.
@@ -190,7 +191,7 @@ async fn test_streaming_copy_large_file_with_progress() {
     );
 
     // Verify content integrity
-    let mut stream = dest.open_read_stream(Path::new("/big.bin")).await.unwrap();
+    let mut stream = dest.open_read_stream(app_path!("/big.bin")).await.unwrap();
     let mut reassembled = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         reassembled.extend_from_slice(&chunk);
@@ -248,7 +249,7 @@ async fn test_streaming_copy_cancel_mid_file() {
     assert!(result.is_err(), "a cancelled copy must not report success");
     // Nothing lands at the destination: the backend dropped its own partial when
     // the progress callback broke, and the staged temp never took the real name.
-    assert!(!dest.exists(Path::new("/big.bin")).await);
+    assert!(!dest.exists(app_path!("/big.bin")).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -256,7 +257,7 @@ async fn test_streaming_copy_empty_file() {
     let engine = TestOperations::new();
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source"));
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest"));
-    source.create_file(Path::new("/empty.txt"), b"").await.unwrap();
+    source.create_file(app_path!("/empty.txt"), b"").await.unwrap();
 
     let state = make_state(&engine);
     let bytes = copy_single_path(
@@ -276,7 +277,7 @@ async fn test_streaming_copy_empty_file() {
     .unwrap();
 
     assert_eq!(bytes, 0);
-    assert!(dest.exists(Path::new("/empty.txt")).await);
+    assert!(dest.exists(app_path!("/empty.txt")).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -318,7 +319,7 @@ async fn test_streaming_copy_uses_streaming_for_non_local_volumes() {
     assert!(dest.supports_streaming(), "InMemoryVolume should support streaming");
 
     source
-        .create_file(Path::new("/test.txt"), b"routed correctly")
+        .create_file(app_path!("/test.txt"), b"routed correctly")
         .await
         .unwrap();
 
@@ -347,7 +348,7 @@ async fn test_streaming_copy_uses_streaming_for_non_local_volumes() {
         "on_file_complete should fire"
     );
 
-    let mut stream = dest.open_read_stream(Path::new("/test.txt")).await.unwrap();
+    let mut stream = dest.open_read_stream(app_path!("/test.txt")).await.unwrap();
     let chunk = stream.next_chunk().await.unwrap().unwrap();
     assert_eq!(chunk, b"routed correctly");
 }
@@ -358,13 +359,13 @@ async fn test_streaming_copy_directory_recursive() {
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source"));
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest"));
 
-    source.create_directory(Path::new("/docs")).await.unwrap();
+    source.create_directory(app_path!("/docs")).await.unwrap();
     source
-        .create_file(Path::new("/docs/readme.txt"), b"Read me")
+        .create_file(app_path!("/docs/readme.txt"), b"Read me")
         .await
         .unwrap();
     source
-        .create_file(Path::new("/docs/notes.txt"), b"Notes here")
+        .create_file(app_path!("/docs/notes.txt"), b"Notes here")
         .await
         .unwrap();
 
@@ -389,6 +390,6 @@ async fn test_streaming_copy_directory_recursive() {
     assert_eq!(bytes, 17); // 7 + 10
     assert_eq!(progress.files.load(Ordering::Relaxed), 2);
 
-    assert!(dest.exists(Path::new("/docs/readme.txt")).await);
-    assert!(dest.exists(Path::new("/docs/notes.txt")).await);
+    assert!(dest.exists(app_path!("/docs/readme.txt")).await);
+    assert!(dest.exists(app_path!("/docs/notes.txt")).await);
 }

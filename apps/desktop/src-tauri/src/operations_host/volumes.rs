@@ -95,7 +95,7 @@ mod tests {
         let path = PathBuf::from("/a/plain/file.txt");
         let resolved = volumes.resolve(volume_id, &path).await;
         assert!(resolved.volume.as_ref().is_some_and(|v| Arc::ptr_eq(v, &volume)));
-        assert_eq!(resolved.path, path);
+        assert_eq!(*resolved.path.as_std_legacy(), path);
         assert!(!resolved.is_routed());
         assert!(!volumes.routes_over_its_parent(&path));
 

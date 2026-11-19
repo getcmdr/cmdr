@@ -59,6 +59,7 @@
 //! [`CleanupPolicy::retry_after`]: crate::outage_slot::CleanupPolicy::retry_after
 //! [`CleanupPolicy::late_landing_recheck`]: crate::outage_slot::CleanupPolicy::late_landing_recheck
 
+use cmdr_fs::app_path::AppPath;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -280,7 +281,12 @@ async fn delete_each(pass: &Pass, temps: Vec<PathBuf>) -> Deletes {
             round.remaining.push(temp);
             continue;
         }
-        match crate::rt::time::timeout(state.outage_policy.attempt_timeout, volume.delete(&temp)).await {
+        match crate::rt::time::timeout(
+            state.outage_policy.attempt_timeout,
+            volume.delete(&AppPath::legacy_unchecked(&temp)),
+        )
+        .await
+        {
             Ok(Ok(()) | Err(VolumeError::NotFound(_))) => {
                 in_flight_temps::retire_temp(state, pass.home.clone(), &temp);
             }

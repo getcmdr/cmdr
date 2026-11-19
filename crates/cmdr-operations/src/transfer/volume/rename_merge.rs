@@ -54,6 +54,7 @@
 //! `name → MergeChildResolution` map so a late collision on an already-resolved
 //! child finalizes its stored decision instead of re-prompting.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -219,7 +220,15 @@ pub(super) async fn rename_merge_directory(
         // No exact-match hit: try a plain rename. A whole subtree (or symlink, or
         // file) rides along on this one server-side call — never descended.
         note_both_halves(&child_source, &child_dest);
-        match ctx.volume.rename(&child_source, &child_dest, false).await {
+        match ctx
+            .volume
+            .rename(
+                &AppPath::legacy_unchecked(&child_source),
+                &AppPath::legacy_unchecked(&child_dest),
+                false,
+            )
+            .await
+        {
             Ok(()) => {}
             Err(VolumeError::AlreadyExists(_)) => {
                 // The exact-match map missed it, but the backend rejects the
@@ -243,7 +252,11 @@ pub(super) async fn rename_merge_directory(
     // skipped / errored / unmoved child fails benignly and survives, and so do
     // its ancestors. Never deletes a source dir while content remains, and
     // never a file of its name (`Volume::delete_directory`).
-    match ctx.volume.delete_directory(source_dir, None).await {
+    match ctx
+        .volume
+        .delete_directory(&AppPath::legacy_unchecked(source_dir), None)
+        .await
+    {
         Ok(()) | Err(VolumeError::NotFound(_)) => {}
         Err(_non_empty_or_other) => {
             // Non-empty (children left behind) or a transient backend error:
@@ -416,7 +429,7 @@ async fn apply_child_decision(
         // following backend's `is_directory` says it is. Merging renames the
         // source's files into the link's target. The rename below refuses the
         // taken name instead.
-        let write_path_is_dir = match ctx.volume.entry_kind(&write_path).await {
+        let write_path_is_dir = match ctx.volume.entry_kind(&AppPath::legacy_unchecked(&write_path)).await {
             Ok(kind) => kind == EntryKind::Directory,
             Err(VolumeError::NotFound(_)) => false,
             Err(e) => return Err(map_rename_error(&write_path, e)),
@@ -481,8 +494,8 @@ async fn apply_child_decision(
         None => {
             // Ours to clear, so no longer the post-loop's to take back.
             ctx.state.claimed_names.release_placeholder(&write_path);
-            if ctx.volume.exists(&write_path).await {
-                match ctx.volume.delete(&write_path).await {
+            if ctx.volume.exists(&AppPath::legacy_unchecked(&write_path)).await {
+                match ctx.volume.delete(&AppPath::legacy_unchecked(&write_path)).await {
                     Ok(()) | Err(VolumeError::NotFound(_)) => {}
                     Err(e) => return Err(map_rename_error(&write_path, e)),
                 }
@@ -506,7 +519,15 @@ async fn rename_replacing(
     target: &Path,
     displaced: Option<DisplacedDestination>,
 ) -> Result<(), WriteOperationError> {
-    match ctx.volume.rename(child_source, target, false).await {
+    match ctx
+        .volume
+        .rename(
+            &AppPath::legacy_unchecked(child_source),
+            &AppPath::legacy_unchecked(target),
+            false,
+        )
+        .await
+    {
         Ok(()) => {
             if let Some(displaced) = displaced {
                 displaced.discard(ctx.volume).await;

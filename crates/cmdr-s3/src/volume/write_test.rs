@@ -7,6 +7,7 @@
 //! see several parts without uploading hundreds of megabytes; one cell per
 //! fixture uploads at the production 64 MiB.
 
+use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -30,7 +31,13 @@ fn key_of(prefix: &str, name: &str) -> String {
 async fn write(volume: &S3Volume, path: &Path, mode: WriteMode, source: BytesSource) -> Result<u64, VolumeError> {
     let length = source.total_size();
     volume
-        .write_from_stream(path, mode, length, Box::new(source), &|_| ControlFlow::Continue(()))
+        .write_from_stream(
+            &AppPath::legacy_unchecked(path),
+            mode,
+            length,
+            Box::new(source),
+            &|_| ControlFlow::Continue(()),
+        )
         .await
         .map(|written| written.bytes)
 }
@@ -41,7 +48,7 @@ async fn small_and_large_uploads_round_trip_with_their_mtime(service: FixtureSer
     let mtime = SystemTime::UNIX_EPOCH + Duration::new(1_354_040_105, 123_456_789);
 
     let small = self_describing_bytes(3 * MIB + 17, "small");
-    let small_path = volume.root().join(key_of(&prefix, "small.bin"));
+    let small_path = volume.root().as_std_legacy().join(key_of(&prefix, "small.bin"));
     let written = write(
         &volume,
         &small_path,
@@ -60,7 +67,10 @@ async fn small_and_large_uploads_round_trip_with_their_mtime(service: FixtureSer
         stored_mtime_header(service, FIXTURE_BUCKET, &key_of(&prefix, "small.bin")).await,
         Some(format_mtime(mtime))
     );
-    let entry = volume.get_metadata(&small_path).await.expect("a stat");
+    let entry = volume
+        .get_metadata(&AppPath::legacy_unchecked(&small_path))
+        .await
+        .expect("a stat");
     assert_eq!(
         entry.modified_at,
         Some(1_354_040_105),
@@ -69,7 +79,7 @@ async fn small_and_large_uploads_round_trip_with_their_mtime(service: FixtureSer
 
     // Production parts: 64 + 64 + 12 MiB.
     let large = self_describing_bytes(140 * MIB, "large");
-    let large_path = volume.root().join(key_of(&prefix, "large.bin"));
+    let large_path = volume.root().as_std_legacy().join(key_of(&prefix, "large.bin"));
     let written = write(
         &volume,
         &large_path,
@@ -98,7 +108,7 @@ async fn uploads_of_unknown_length_round_trip(service: FixtureService) {
 
     // Ends inside its first part: one PUT after all.
     let short = self_describing_bytes(300 * 1024, "short");
-    let short_path = volume.root().join(key_of(&prefix, "short.bin"));
+    let short_path = volume.root().as_std_legacy().join(key_of(&prefix, "short.bin"));
     let written = write(
         &volume,
         &short_path,
@@ -112,7 +122,7 @@ async fn uploads_of_unknown_length_round_trip(service: FixtureService) {
 
     // Three parts: 5 + 5 + 2 MiB.
     let long = self_describing_bytes(12 * MIB, "long");
-    let long_path = volume.root().join(key_of(&prefix, "long.bin"));
+    let long_path = volume.root().as_std_legacy().join(key_of(&prefix, "long.bin"));
     let written = write(
         &volume,
         &long_path,
@@ -167,7 +177,7 @@ impl VolumeReadStream for StallingSource {
 async fn a_cancelled_single_put_publishes_nothing(service: FixtureService) {
     let volume = connect_fixture(service, Some(FIXTURE_BUCKET)).await;
     let prefix = scratch_prefix("write-cancel-put");
-    let path = volume.root().join(key_of(&prefix, "cancelled.bin"));
+    let path = volume.root().as_std_legacy().join(key_of(&prefix, "cancelled.bin"));
     // Two pieces of three, then the source stalls for good.
     let source = StallingSource {
         pieces: vec![
@@ -180,7 +190,7 @@ async fn a_cancelled_single_put_publishes_nothing(service: FixtureService) {
 
     let outcome = volume
         .write_from_stream(
-            &path,
+            &AppPath::legacy_unchecked(&path),
             WriteMode::CreateNew,
             source.total_size(),
             Box::new(source),
@@ -196,7 +206,11 @@ async fn a_cancelled_single_put_publishes_nothing(service: FixtureService) {
         .await;
 
     assert!(matches!(outcome, Err(VolumeError::Cancelled(_))), "got {outcome:?}");
-    let left = volume.get_metadata(&path).await.ok().map(|entry| entry.size);
+    let left = volume
+        .get_metadata(&AppPath::legacy_unchecked(&path))
+        .await
+        .ok()
+        .map(|entry| entry.size);
     assert!(
         left.is_none(),
         "a cancelled PUT left an object of {left:?} bytes under the name"
@@ -214,7 +228,7 @@ async fn a_cancelled_overwrite_keeps_the_original(service: FixtureService) {
     let key = key_of(&prefix, "kept.txt");
     let original = b"the original, which must survive".to_vec();
     seed(service, FIXTURE_BUCKET, &[object(&key, &original)]).await;
-    let path = volume.root().join(&key);
+    let path = volume.root().as_std_legacy().join(&key);
     // Two MiB of three, then the source stalls: the cancel lands while the
     // one part is still filling, and must not wait for the source.
     let source = StallingSource {
@@ -228,7 +242,7 @@ async fn a_cancelled_overwrite_keeps_the_original(service: FixtureService) {
 
     let outcome = volume
         .write_from_stream(
-            &path,
+            &AppPath::legacy_unchecked(&path),
             WriteMode::CreateOrReplace,
             source.total_size(),
             Box::new(source),
@@ -247,9 +261,9 @@ async fn a_cancelled_overwrite_keeps_the_original(service: FixtureService) {
         read_back(&volume, &path).await == original,
         "a cancelled overwrite must leave the original byte for byte"
     );
-    let folder = volume.root().join(prefix.trim_end_matches('/'));
+    let folder = volume.root().as_std_legacy().join(prefix.trim_end_matches('/'));
     let names: Vec<String> = volume
-        .list_directory(&folder, None)
+        .list_directory(&AppPath::legacy_unchecked(&folder), None)
         .await
         .expect("the folder lists")
         .into_iter()
@@ -278,8 +292,8 @@ async fn a_finished_overwrite_lands_whole_as_one_upload(service: FixtureService)
         &[object(&key, b"old bytes"), object(&open_key, b"old, too")],
     )
     .await;
-    let path = volume.root().join(&key);
-    let open_path = volume.root().join(&open_key);
+    let path = volume.root().as_std_legacy().join(&key);
+    let open_path = volume.root().as_std_legacy().join(&open_key);
     let fresh = self_describing_bytes(2 * MIB + 9, "fresh");
     let mtime = SystemTime::UNIX_EPOCH + Duration::new(1_354_040_105, 5);
 
@@ -313,8 +327,11 @@ async fn a_finished_overwrite_lands_whole_as_one_upload(service: FixtureService)
             "{key} must land as a one-part multipart upload, got the ETag {etag}"
         );
     }
-    let folder = volume.root().join(prefix.trim_end_matches('/'));
-    let listed = volume.list_directory(&folder, None).await.expect("the folder lists");
+    let folder = volume.root().as_std_legacy().join(prefix.trim_end_matches('/'));
+    let listed = volume
+        .list_directory(&AppPath::legacy_unchecked(&folder), None)
+        .await
+        .expect("the folder lists");
     assert_eq!(listed.len(), 2, "nothing stays beside them: {listed:?}");
     assert!(unfinished_uploads(service, FIXTURE_BUCKET, &prefix).await.is_empty());
     assert!(
@@ -332,13 +349,13 @@ async fn a_cancel_mid_multipart_leaves_no_upload_behind(service: FixtureService)
     let volume = connect_fixture(service, Some(FIXTURE_BUCKET)).await;
     volume.set_part_floor(5 * MIB as u64);
     let prefix = scratch_prefix("write-cancel");
-    let path = volume.root().join(key_of(&prefix, "cancelled.bin"));
+    let path = volume.root().as_std_legacy().join(key_of(&prefix, "cancelled.bin"));
     let bytes = self_describing_bytes(30 * MIB, "cancel");
     let length = StreamLength::Known(bytes.len() as u64);
 
     let outcome = volume
         .write_from_stream(
-            &path,
+            &AppPath::legacy_unchecked(&path),
             WriteMode::CreateNew,
             length,
             Box::new(BytesSource::new(bytes)),
@@ -361,7 +378,10 @@ async fn a_cancel_mid_multipart_leaves_no_upload_behind(service: FixtureService)
         unfinished_uploads(service, FIXTURE_BUCKET, &prefix).await.is_empty(),
         "a cancelled upload must be aborted on the server"
     );
-    assert!(!volume.exists(&path).await, "nothing was published");
+    assert!(
+        !volume.exists(&AppPath::legacy_unchecked(&path)).await,
+        "nothing was published"
+    );
 }
 
 /// The header path, against VersityGW, which honours `If-None-Match: *` on
@@ -377,7 +397,7 @@ async fn create_new_is_refused_by_the_conditional_header_on_versitygw() {
     let theirs: &[u8] = b"another writer's file";
     let key = key_of(&prefix, "taken.txt");
     seed(VERSITYGW, FIXTURE_BUCKET, &[object(&key, theirs)]).await;
-    let path = volume.root().join(&key);
+    let path = volume.root().as_std_legacy().join(&key);
 
     let single = write(&volume, &path, WriteMode::CreateNew, BytesSource::new(vec![1; 1000])).await;
     assert!(matches!(single, Err(VolumeError::AlreadyExists(_))), "got {single:?}");
@@ -458,13 +478,16 @@ async fn create_new_checks_then_writes_and_catches_a_writer_mid_upload(service: 
     seed(service, FIXTURE_BUCKET, &[object(&taken, b"already here")]).await;
     let refused = write(
         &volume,
-        &volume.root().join(&taken),
+        &volume.root().as_std_legacy().join(&taken),
         WriteMode::CreateNew,
         BytesSource::new(vec![2; 4000]),
     )
     .await;
     assert!(matches!(refused, Err(VolumeError::AlreadyExists(_))), "got {refused:?}");
-    assert_eq!(read_back(&volume, &volume.root().join(&taken)).await, b"already here");
+    assert_eq!(
+        read_back(&volume, &volume.root().as_std_legacy().join(&taken)).await,
+        b"already here"
+    );
 
     let raced = key_of(&prefix, "raced.bin");
     let bytes = self_describing_bytes(12 * MIB, "raced");
@@ -477,7 +500,7 @@ async fn create_new_checks_then_writes_and_catches_a_writer_mid_upload(service: 
     };
     let outcome = volume
         .write_from_stream(
-            &volume.root().join(&raced),
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join(&raced)),
             WriteMode::CreateNew,
             StreamLength::Known(bytes.len() as u64),
             Box::new(source),
@@ -486,7 +509,7 @@ async fn create_new_checks_then_writes_and_catches_a_writer_mid_upload(service: 
         .await;
     assert!(matches!(outcome, Err(VolumeError::AlreadyExists(_))), "got {outcome:?}");
     assert_eq!(
-        read_back(&volume, &volume.root().join(&raced)).await,
+        read_back(&volume, &volume.root().as_std_legacy().join(&raced)).await,
         b"the other writer won",
         "the writer that took the name mid-upload keeps it"
     );
@@ -500,7 +523,7 @@ async fn a_replace_writes_over_the_object_in_place(service: FixtureService) {
     let prefix = scratch_prefix("write-replace");
     let key = key_of(&prefix, "report.txt");
     seed(service, FIXTURE_BUCKET, &[object(&key, b"the old report")]).await;
-    let path = volume.root().join(&key);
+    let path = volume.root().as_std_legacy().join(&key);
 
     write(
         &volume,
@@ -556,11 +579,17 @@ async fn folders_are_markers_and_prefixes(service: FixtureService) {
     let volume = connect_fixture(service, Some(FIXTURE_BUCKET)).await;
     let prefix = scratch_prefix("write-folders");
     seed(service, FIXTURE_BUCKET, &[object(&key_of(&prefix, "anchor.txt"), b"x")]).await;
-    let at = |name: &str| -> PathBuf { volume.root().join(key_of(&prefix, name)) };
+    let at = |name: &str| -> PathBuf { volume.root().as_std_legacy().join(key_of(&prefix, name)) };
 
-    volume.create_directory(&at("empty")).await.expect("a new folder");
+    volume
+        .create_directory(&AppPath::legacy_unchecked(&at("empty")))
+        .await
+        .expect("a new folder");
     let names: Vec<(String, bool)> = volume
-        .list_directory(&volume.root().join(prefix.trim_end_matches('/')), None)
+        .list_directory(
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join(prefix.trim_end_matches('/'))),
+            None,
+        )
         .await
         .expect("a listing")
         .into_iter()
@@ -571,37 +600,48 @@ async fn folders_are_markers_and_prefixes(service: FixtureService) {
         "the empty folder shows: {names:?}"
     );
     assert!(matches!(
-        volume.create_directory(&at("empty")).await,
+        volume.create_directory(&AppPath::legacy_unchecked(&at("empty"))).await,
         Err(VolumeError::AlreadyExists(_))
     ));
     assert!(
         matches!(
-            volume.create_directory(&at("missing/child")).await,
+            volume
+                .create_directory(&AppPath::legacy_unchecked(&at("missing/child")))
+                .await,
             Err(VolumeError::NotFound(_))
         ),
         "a folder needs its parent, the way mkdir does"
     );
 
     assert_eq!(
-        volume.create_directory_all(&at("deep/er/est")).await.ok(),
+        volume
+            .create_directory_all(&AppPath::legacy_unchecked(&at("deep/er/est")))
+            .await
+            .ok(),
         Some(DirectoryCreation::Created)
     );
     for level in ["deep", "deep/er", "deep/er/est"] {
         assert!(
-            volume.is_directory(&at(level)).await.unwrap_or(false),
+            volume
+                .is_directory(&AppPath::legacy_unchecked(&at(level)))
+                .await
+                .unwrap_or(false),
             "{level} is a folder"
         );
     }
 
     // An empty folder deletes as its marker, and is gone.
-    volume.delete(&at("empty")).await.expect("an empty folder deletes");
-    assert!(!volume.exists(&at("empty")).await);
+    volume
+        .delete(&AppPath::legacy_unchecked(&at("empty")))
+        .await
+        .expect("an empty folder deletes");
+    assert!(!volume.exists(&AppPath::legacy_unchecked(&at("empty"))).await);
 }
 
 async fn delete_takes_one_node_and_refuses_a_folder_with_keys_under_it(service: FixtureService) {
     let volume = connect_fixture(service, Some(FIXTURE_BUCKET)).await;
     let prefix = scratch_prefix("write-delete");
-    let at = |name: &str| -> PathBuf { volume.root().join(key_of(&prefix, name)) };
+    let at = |name: &str| -> PathBuf { volume.root().as_std_legacy().join(key_of(&prefix, name)) };
     // A folder with no marker: it exists only through the key under it.
     seed(
         service,
@@ -613,20 +653,25 @@ async fn delete_takes_one_node_and_refuses_a_folder_with_keys_under_it(service: 
     )
     .await;
 
-    let refused = volume.delete(&at("unmarked")).await;
+    let refused = volume.delete(&AppPath::legacy_unchecked(&at("unmarked"))).await;
     assert!(
         matches!(&refused, Err(err @ VolumeError::IoError { .. }) if err.os_class() == Some(cmdr_fs::os_error::OsErrorClass::NotEmpty)),
         "got {refused:?}"
     );
     assert!(
-        volume.exists(&at("unmarked/inside.txt")).await,
+        volume
+            .exists(&AppPath::legacy_unchecked(&at("unmarked/inside.txt")))
+            .await,
         "a refused delete destroys nothing"
     );
 
-    volume.delete(&at("file.txt")).await.expect("a file deletes");
-    assert!(!volume.exists(&at("file.txt")).await);
+    volume
+        .delete(&AppPath::legacy_unchecked(&at("file.txt")))
+        .await
+        .expect("a file deletes");
+    assert!(!volume.exists(&AppPath::legacy_unchecked(&at("file.txt"))).await);
     assert!(matches!(
-        volume.delete(&at("file.txt")).await,
+        volume.delete(&AppPath::legacy_unchecked(&at("file.txt"))).await,
         Err(VolumeError::NotFound(_))
     ));
 }
@@ -634,7 +679,7 @@ async fn delete_takes_one_node_and_refuses_a_folder_with_keys_under_it(service: 
 async fn rename_moves_one_small_file_and_refuses_a_folder(service: FixtureService) {
     let volume = connect_fixture(service, Some(FIXTURE_BUCKET)).await;
     let prefix = scratch_prefix("write-rename");
-    let at = |name: &str| -> PathBuf { volume.root().join(key_of(&prefix, name)) };
+    let at = |name: &str| -> PathBuf { volume.root().as_std_legacy().join(key_of(&prefix, name)) };
     let mtime = distant_mtime();
     seed(
         service,
@@ -651,11 +696,15 @@ async fn rename_moves_one_small_file_and_refuses_a_folder(service: FixtureServic
     .await;
 
     volume
-        .rename(&at("before.txt"), &at("after.txt"), false)
+        .rename(
+            &AppPath::legacy_unchecked(&at("before.txt")),
+            &AppPath::legacy_unchecked(&at("after.txt")),
+            false,
+        )
         .await
         .expect("a small file renames");
     assert!(
-        !volume.exists(&at("before.txt")).await,
+        !volume.exists(&AppPath::legacy_unchecked(&at("before.txt"))).await,
         "the source goes once the copy is verified"
     );
     assert_eq!(read_back(&volume, &at("after.txt")).await, b"renamed bytes");
@@ -665,7 +714,13 @@ async fn rename_moves_one_small_file_and_refuses_a_folder(service: FixtureServic
         "a rename keeps the file's own date"
     );
     assert!(matches!(
-        volume.rename(&at("folder"), &at("moved"), false).await,
+        volume
+            .rename(
+                &AppPath::legacy_unchecked(&at("folder")),
+                &AppPath::legacy_unchecked(&at("moved")),
+                false
+            )
+            .await,
         Err(VolumeError::NotSupported)
     ));
 }

@@ -19,6 +19,7 @@
 //! can't answer (no `smbutil`, a hung mount, Linux, a changed output) must not open
 //! the share in the clear.
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -94,9 +95,9 @@ pub(crate) async fn follow_requirement() {
             log::debug!(
                 target: "network::smb_encryption",
                 "Re-registering the SMB mount at {} for the encryption requirement",
-                LogPrivate::dir_path(volume.root())
+                LogPrivate::dir_path(&*volume.root().as_std_legacy())
             );
-            let replacement = os_mount_volume(volume.name(), volume.root());
+            let replacement = os_mount_volume(volume.name(), &volume.root().as_std_legacy());
             crate::network::smb_upgrade::register_replacing_predecessor(&volume_id, replacement).await;
         }
     }
@@ -150,7 +151,7 @@ impl UnverifiedSmbMount {
         if !cmdr_smb::SmbEncryption::is_required() {
             return true;
         }
-        let root = self.mount.root().to_path_buf();
+        let root = self.mount.root().as_std_legacy().to_path_buf();
         *self.verdict.get_or_init(|| probe(root)).await == MountEncryption::Encrypted
     }
 
@@ -161,12 +162,12 @@ impl UnverifiedSmbMount {
             log::info!(
                 target: "network::smb_encryption",
                 "Not browsing the SMB mount at {} through macOS: its connection isn't encrypted, and SMB encryption is required",
-                LogPrivate::dir_path(self.mount.root())
+                LogPrivate::dir_path(&*self.mount.root().as_std_legacy())
             );
             return;
         }
         let manager = crate::file_system::volume::manager::get_volume_manager();
-        let Some((volume_id, current)) = manager.find_by_root(self.mount.root()) else {
+        let Some((volume_id, current)) = manager.find_by_root(&self.mount.root().as_std_legacy()) else {
             return;
         };
         let still_this_gate = current
@@ -174,14 +175,17 @@ impl UnverifiedSmbMount {
             .downcast_ref::<Self>()
             .is_some_and(|gate| std::ptr::eq(gate, self.as_ref()));
         if still_this_gate {
-            let plain =
-                crate::volumes::local_volume_on_mount(self.mount.name(), self.mount.root(), MountClass::SmbShare);
+            let plain = crate::volumes::local_volume_on_mount(
+                self.mount.name(),
+                &self.mount.root().as_std_legacy(),
+                MountClass::SmbShare,
+            );
             crate::network::smb_upgrade::register_replacing_predecessor(&volume_id, plain).await;
         }
     }
 
     fn refusal(&self) -> VolumeError {
-        VolumeError::EncryptionRequired(self.mount.root().to_string_lossy().into_owned())
+        VolumeError::EncryptionRequired(self.mount.root().as_std_legacy().to_string_lossy().into_owned())
     }
 }
 
@@ -192,12 +196,14 @@ impl Volume for UnverifiedSmbMount {
         self.mount.name()
     }
 
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.mount.root()
     }
 
     /// The same share at another of its roots: a new gate, probing that mount.
-    fn rerooted(&self, new_root: &Path) -> Option<Arc<dyn Volume>> {
+    fn rerooted(&self, new_root: &AppPath) -> Option<Arc<dyn Volume>> {
+        let new_root_std = new_root.as_std_legacy();
+        let new_root: &Path = &new_root_std;
         Some(os_mount_volume(self.mount.name(), new_root))
     }
 
@@ -211,7 +217,7 @@ impl Volume for UnverifiedSmbMount {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Fut<'a, Result<Vec<FileEntry>, VolumeError>> {
         Box::pin(async move {
@@ -223,7 +229,7 @@ impl Volume for UnverifiedSmbMount {
         })
     }
 
-    fn get_metadata<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<FileEntry, VolumeError>> {
+    fn get_metadata<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<FileEntry, VolumeError>> {
         Box::pin(async move {
             if self.admitted().await {
                 self.mount.get_metadata(path).await
@@ -233,25 +239,25 @@ impl Volume for UnverifiedSmbMount {
         })
     }
 
-    fn create_file<'a>(&'a self, _path: &'a Path, _content: &'a [u8]) -> Fut<'a, Result<(), VolumeError>> {
+    fn create_file<'a>(&'a self, _path: &'a AppPath, _content: &'a [u8]) -> Fut<'a, Result<(), VolumeError>> {
         Box::pin(async move { Err(self.refusal()) })
     }
 
-    fn create_directory<'a>(&'a self, _path: &'a Path) -> Fut<'a, Result<(), VolumeError>> {
+    fn create_directory<'a>(&'a self, _path: &'a AppPath) -> Fut<'a, Result<(), VolumeError>> {
         Box::pin(async move { Err(self.refusal()) })
     }
 
-    fn delete<'a>(&'a self, _path: &'a Path) -> Fut<'a, Result<(), VolumeError>> {
+    fn delete<'a>(&'a self, _path: &'a AppPath) -> Fut<'a, Result<(), VolumeError>> {
         Box::pin(async move { Err(self.refusal()) })
     }
 
-    fn rename<'a>(&'a self, _from: &'a Path, _to: &'a Path, _force: bool) -> Fut<'a, Result<(), VolumeError>> {
+    fn rename<'a>(&'a self, _from: &'a AppPath, _to: &'a AppPath, _force: bool) -> Fut<'a, Result<(), VolumeError>> {
         Box::pin(async move { Err(self.refusal()) })
     }
 
     fn open_read_stream<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Fut<'a, Result<Box<dyn cmdr_fs::volume::VolumeReadStream>, VolumeError>> {
         Box::pin(async move { Err(self.refusal()) })
     }

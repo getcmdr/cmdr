@@ -175,7 +175,7 @@ async fn on_local_disk(
     };
     let on_disk: Vec<PathBuf> = paths
         .iter()
-        .map(|path| cmdr_fs::volume::root_anchored(&root, path))
+        .map(|path| cmdr_fs::volume::root_anchored(&root.as_std_legacy(), path))
         .collect();
     state
         .scope()

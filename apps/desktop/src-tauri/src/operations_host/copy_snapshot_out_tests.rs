@@ -13,6 +13,7 @@
 
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -69,7 +70,7 @@ fn mode_of(path: &Path) -> u32 {
 
 async fn read_dest_file(dest: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
     let mut stream = dest
-        .open_read_stream(Path::new(path))
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
         .await
         .unwrap_or_else(|e| panic!("dest missing {path}: {e:?}"));
     let mut out = Vec::new();

@@ -10,7 +10,9 @@
 //! that blocks until a test lets it go, which is what holds a walk (and with it
 //! its frontier claim) open long enough for a second search to meet it.
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
+use std::path::Path;
 use std::sync::Arc;
 
 use cmdr_fs::entry::FileEntry;
@@ -112,7 +114,7 @@ impl Volume for GatedDrive {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &std::path::Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -120,27 +122,27 @@ impl Volume for GatedDrive {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a std::path::Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Fut<'a, Result<Vec<FileEntry>, cmdr_fs::volume::VolumeError>> {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             if path == self.gate {
                 self.reached.store(true, std::sync::atomic::Ordering::SeqCst);
                 self.released.notified().await;
             }
-            self.inner.list_directory(path, on_progress).await
+            self.inner.list_directory(path_app, on_progress).await
         })
     }
-    fn get_metadata<'a>(
-        &'a self,
-        path: &'a std::path::Path,
-    ) -> Fut<'a, Result<FileEntry, cmdr_fs::volume::VolumeError>> {
+    fn get_metadata<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<FileEntry, cmdr_fs::volume::VolumeError>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a std::path::Path) -> Fut<'a, bool> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Fut<'a, bool> {
         self.inner.exists(path)
     }
-    fn is_directory<'a>(&'a self, path: &'a std::path::Path) -> Fut<'a, Result<bool, cmdr_fs::volume::VolumeError>> {
+    fn is_directory<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<bool, cmdr_fs::volume::VolumeError>> {
         self.inner.is_directory(path)
     }
 }
@@ -287,7 +289,7 @@ pub(super) fn cover_to_completion(index: &Index, root: &str) {
 
 /// A volume with `a` already covered, ready for a second walk to move its token.
 /// Returns the index, its guards, and the mount root.
-pub(super) fn drive_with_a_covered(data: &std::path::Path) -> (Index, impl Sized, String) {
+pub(super) fn drive_with_a_covered(data: &Path) -> (Index, impl Sized, String) {
     let root = format!("{MOUNT_PREFIX}/{VOLUME_ID}");
     let provider = FakeVolumeProvider::shared();
     provider.register(VOLUME_ID, drive(&root)).mark_network(&root);

@@ -10,6 +10,7 @@
 //! existence bit, and a path that stopped announcing fails on a missing entry.
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -501,7 +502,7 @@ async fn a_fresh_compress_announces_its_zip_and_temp_before_they_exist() {
 async fn a_volume_copy_onto_a_local_disk_announces_its_destination_and_temp() {
     let rig = Rig::new("announce_volume_copy");
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_file(Path::new("/a.txt"), b"a").await.expect("source");
+    source.create_file(app_path!("/a.txt"), b"a").await.expect("source");
     let dest: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
         "Dest",
         rig.join("dst"),

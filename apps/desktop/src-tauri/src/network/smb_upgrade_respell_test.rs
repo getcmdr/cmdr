@@ -11,6 +11,7 @@
 
 use super::*;
 use crate::operations_host::backend_suites::smb_test_support::*;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_listing::testing::TestListing;
 use cmdr_smb::volume::{MountAnchor, connect_smb_volume};
@@ -32,10 +33,19 @@ async fn smb_integration_a_pane_in_an_accented_folder_survives_the_upgrade_to_a_
     let top = test_dir_name();
     ensure_clean(&seeder, &top).await;
     let album = share_path(&format!("{top}/{NFC_DIR}"));
-    seeder.create_directory(Path::new(&share_path(&top))).await.unwrap();
-    seeder.create_directory(Path::new(&album)).await.unwrap();
+    seeder
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&share_path(&top))))
+        .await
+        .unwrap();
+    seeder
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&album)))
+        .await
+        .unwrap();
     let photo = format!("{album}/{NFD_FILE}");
-    seeder.create_file(Path::new(&photo), PAYLOAD).await.unwrap();
+    seeder
+        .create_file(&AppPath::legacy_unchecked(Path::new(&photo)), PAYLOAD)
+        .await
+        .unwrap();
 
     // What the kernel mount handed the pane: the folder and its photo, decomposed.
     let kernel_album: String = album.nfd().collect();
@@ -69,7 +79,9 @@ async fn smb_integration_a_pane_in_an_accented_folder_survives_the_upgrade_to_a_
         .get(&volume_id)
         .expect("the direct volume is registered");
     let read = async {
-        let mut stream = direct.open_read_stream(Path::new(&entry_paths[0])).await?;
+        let mut stream = direct
+            .open_read_stream(&AppPath::legacy_unchecked(Path::new(&entry_paths[0])))
+            .await?;
         let mut bytes = Vec::new();
         while let Some(chunk) = stream.next_chunk().await {
             bytes.extend_from_slice(&chunk?);
@@ -79,7 +91,7 @@ async fn smb_integration_a_pane_in_an_accented_folder_survives_the_upgrade_to_a_
     .await;
 
     crate::file_system::volume::manager::get_volume_manager().unregister(&volume_id);
-    seeder.delete(Path::new(&photo)).await.ok();
+    seeder.delete(&AppPath::legacy_unchecked(Path::new(&photo))).await.ok();
     ensure_clean(&seeder, &top).await;
 
     assert_eq!(entry_paths, vec![photo.clone()], "the entry carries the server's bytes");

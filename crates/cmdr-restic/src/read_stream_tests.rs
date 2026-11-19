@@ -5,6 +5,7 @@ use crate::ResticVolume;
 use crate::hub::{ResticRepos, Tuning};
 use crate::path::VIRTUAL_ENTRY_NAME;
 use crate::test_fixtures::{self, FixtureRepo};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::testing::{TestDir, wait_until_async};
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
@@ -69,7 +70,10 @@ async fn big_file() -> (TestDir, Arc<InMemoryVolume>, ResticVolume, PathBuf) {
 #[tokio::test(flavor = "multi_thread")]
 async fn the_stream_reads_the_next_chunks_before_they_are_asked_for() {
     let (_source, parent, volume, path) = big_file().await;
-    let mut stream = volume.open_read_stream(&path).await.expect("opens");
+    let mut stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(&path))
+        .await
+        .expect("opens");
     let before = parent.read_range_log().len();
 
     let first = stream.next_chunk().await.expect("a chunk").expect("reads");
@@ -93,7 +97,10 @@ async fn the_stream_reads_the_next_chunks_before_they_are_asked_for() {
 #[tokio::test(flavor = "multi_thread")]
 async fn the_chunks_come_out_in_order() {
     let (_source, _parent, volume, path) = big_file().await;
-    let mut stream = volume.open_read_stream(&path).await.expect("opens");
+    let mut stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(&path))
+        .await
+        .expect("opens");
     let mut out = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         out.extend_from_slice(&chunk.expect("a chunk"));

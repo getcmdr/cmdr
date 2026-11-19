@@ -21,6 +21,7 @@
 //!   `../../conflict.rs::resolution_for_clash` holds the rule.
 //! - Rename: Find unique name like "file (1).txt"
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -120,7 +121,10 @@ pub(super) async fn resolve_volume_conflict(
     // stat fails the item instead.
     let source_is_directory = match source_is_directory_hint {
         Some(is_dir) => is_dir,
-        None => source_volume.is_directory(source_path).await.at_source(source_path)?,
+        None => source_volume
+            .is_directory(&AppPath::legacy_unchecked(source_path))
+            .await
+            .at_source(source_path)?,
     };
 
     // A source that would land on ITSELF is a request to DUPLICATE it, never a
@@ -260,12 +264,15 @@ pub(super) async fn resolve_volume_conflict(
             // policies. Each is bounded by the time the user takes to click,
             // so the cost is invisible.
             let source_modified: Option<i64> = source_volume
-                .get_metadata(source_path)
+                .get_metadata(&AppPath::legacy_unchecked(source_path))
                 .await
                 .ok()
                 .and_then(|m| m.modified_at)
                 .map(|s| s as i64);
-            let destination_meta = dest_volume.get_metadata(dest_path).await.ok();
+            let destination_meta = dest_volume
+                .get_metadata(&AppPath::legacy_unchecked(dest_path))
+                .await
+                .ok();
             let destination_modified: Option<i64> =
                 destination_meta.as_ref().and_then(|m| m.modified_at).map(|s| s as i64);
 
@@ -466,11 +473,19 @@ async fn reduce_volume_conditional_resolution(
         ConflictResolution::OverwriteSmaller => {
             let src_size = match source_size_hint {
                 Some(s) => Some(s),
-                None => source_volume.get_metadata(source_path).await.ok().and_then(|m| m.size),
+                None => source_volume
+                    .get_metadata(&AppPath::legacy_unchecked(source_path))
+                    .await
+                    .ok()
+                    .and_then(|m| m.size),
             };
             let dst_size = match dest_size_hint {
                 Some(s) => Some(s),
-                None => dest_volume.get_metadata(dest_path).await.ok().and_then(|m| m.size),
+                None => dest_volume
+                    .get_metadata(&AppPath::legacy_unchecked(dest_path))
+                    .await
+                    .ok()
+                    .and_then(|m| m.size),
             };
             match (src_size, dst_size) {
                 (Some(src), Some(dst)) if dst < src => ConflictResolution::Overwrite,
@@ -495,12 +510,12 @@ async fn reduce_volume_conditional_resolution(
         }
         ConflictResolution::OverwriteOlder => {
             let src_t = source_volume
-                .get_metadata(source_path)
+                .get_metadata(&AppPath::legacy_unchecked(source_path))
                 .await
                 .ok()
                 .and_then(|m| m.modified_at);
             let dst_t = dest_volume
-                .get_metadata(dest_path)
+                .get_metadata(&AppPath::legacy_unchecked(dest_path))
                 .await
                 .ok()
                 .and_then(|m| m.modified_at);
@@ -553,7 +568,10 @@ async fn resolve_dest_is_directory(
     path: &Path,
 ) -> Result<bool, PathedVolumeError> {
     let asked = through_outages(state, &[dest_volume], || async move {
-        dest_volume.entry_kind(path).await.at_destination(path)
+        dest_volume
+            .entry_kind(&AppPath::legacy_unchecked(path))
+            .await
+            .at_destination(path)
     })
     .await;
     match asked {

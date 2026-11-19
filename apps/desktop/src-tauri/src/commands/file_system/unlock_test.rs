@@ -2,6 +2,7 @@
 //! back as the volume answered it, a cancel or a timeout keeps nothing, and a
 //! path that leads into nothing locked is a typed refusal.
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::path::Path;
 use std::pin::Pin;
@@ -116,7 +117,7 @@ impl Volume for LockedStub {
         self.inner.name()
     }
 
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
 
@@ -130,7 +131,7 @@ impl Volume for LockedStub {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
@@ -138,7 +139,7 @@ impl Volume for LockedStub {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }

@@ -12,6 +12,7 @@
 //! The index rows (a folder's size, what's inside, its importance) read
 //! databases only, so they answer even when the volume doesn't.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, Mutex};
@@ -158,7 +159,10 @@ impl SnapshotPath {
                 (1..=self.after.len()).find_map(|taken| {
                     let name = self.after[..taken].join("/");
                     let candidate = category.join(&name);
-                    asked.ask(asked.volume.get_metadata(&candidate)).ok().map(|_| name)
+                    asked
+                        .ask(asked.volume.get_metadata(&AppPath::legacy_unchecked(&candidate)))
+                        .ok()
+                        .map(|_| name)
                 })
             }
         }
@@ -232,7 +236,12 @@ fn job(kind: FactKind, through: Through, sub_jobs: SubJobs) -> Option<Job<AboutF
     let job: Job<AboutFact> = match kind {
         FactKind::Identity => Box::new(move || {
             note_activity("the volume's metadata", "identity");
-            let answer = through.asked.ask(through.asked.volume.get_metadata(&through.path));
+            let answer = through.asked.ask(
+                through
+                    .asked
+                    .volume
+                    .get_metadata(&AppPath::legacy_unchecked(&through.path)),
+            );
             AboutFact::Identity(identity_answer(answer))
         }),
         FactKind::Download => {
@@ -256,7 +265,12 @@ fn job(kind: FactKind, through: Through, sub_jobs: SubJobs) -> Option<Job<AboutF
             let snapshot = through.snapshot.clone()?;
             Box::new(move || {
                 note_activity("the portal's metadata", "gitSnapshot");
-                let entry = through.asked.ask(through.asked.volume.get_metadata(&through.path));
+                let entry = through.asked.ask(
+                    through
+                        .asked
+                        .volume
+                        .get_metadata(&AppPath::legacy_unchecked(&through.path)),
+                );
                 AboutFact::GitSnapshot(match entry {
                     Err(error) => Fact::unknown(why_of(&error)),
                     Ok(entry) => match snapshot.ref_name(&through.asked) {
@@ -328,9 +342,14 @@ fn download_through(asked: &Asked, path: &Path) -> Fact<Download> {
     let mut failed = None;
     let fact = platform::download_record(&mut |name| {
         let answers = asked.ask(
-            asked
-                .volume
-                .read_xattr_many(&paths, name, XattrReadMode::AssumePathsExist),
+            asked.volume.read_xattr_many(
+                &paths
+                    .iter()
+                    .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                    .collect::<Vec<_>>(),
+                name,
+                XattrReadMode::AssumePathsExist,
+            ),
         );
         match answers.into_iter().next() {
             Some(Ok(Some(value))) if value.len() > MAX_XATTR_BYTES => Some(vec![0; MAX_XATTR_BYTES + 1]),

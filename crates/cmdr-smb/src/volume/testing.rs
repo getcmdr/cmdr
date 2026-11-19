@@ -17,6 +17,7 @@
 //! Gated behind the `testing` feature, so it exists in dev targets and in no
 //! shipped build. See `DETAILS.md` § "Which side a test lives on".
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::atomic::Ordering;
 
@@ -150,20 +151,23 @@ pub fn test_dir_name() -> String {
 
 /// Ensures a test directory is clean before use (deletes recursively if it exists).
 pub async fn ensure_clean(vol: &SmbVolume, dir: &str) {
-    if vol.exists(Path::new(dir)).await {
+    if vol.exists(&AppPath::legacy_unchecked(Path::new(dir))).await {
         // Delete contents recursively
-        if let Ok(entries) = vol.list_directory(Path::new(dir), None).await {
+        if let Ok(entries) = vol
+            .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
+            .await
+        {
             for entry in entries {
                 let child = format!("{}/{}", dir, entry.name);
                 // A link goes as the one entry it is, never through it.
                 if entry.is_directory && !entry.is_symlink {
                     Box::pin(ensure_clean(vol, &child)).await;
                 } else {
-                    let _ = vol.delete(Path::new(&child)).await;
+                    let _ = vol.delete(&AppPath::legacy_unchecked(Path::new(&child))).await;
                 }
             }
         }
-        let _ = vol.delete(Path::new(dir)).await;
+        let _ = vol.delete(&AppPath::legacy_unchecked(Path::new(dir))).await;
     }
 }
 
@@ -189,7 +193,7 @@ pub fn hash_bytes(data: &[u8]) -> [u8; 32] {
 /// message is what's actionable on failure.
 pub async fn hash_volume_file(volume: &dyn Volume, path: &Path) -> [u8; 32] {
     let mut stream = volume
-        .open_read_stream(path)
+        .open_read_stream(&AppPath::legacy_unchecked(path))
         .await
         .expect("open read stream for hashing");
     let mut hasher = blake3::Hasher::new();
@@ -224,7 +228,7 @@ pub async fn cleanup_test_prefix(vol: &SmbVolume, mount_path: &Path, unique_pref
             .map(|s| s.trim_start_matches('/').to_string())
             .unwrap_or_else(|| abs.to_string_lossy().to_string())
     };
-    match vol.list_directory(&dir_abs, None).await {
+    match vol.list_directory(&AppPath::legacy_unchecked(&dir_abs), None).await {
         Ok(entries) => {
             for entry in entries {
                 let abs = dir_abs.join(&entry.name);
@@ -236,7 +240,7 @@ pub async fn cleanup_test_prefix(vol: &SmbVolume, mount_path: &Path, unique_pref
                     );
                     continue;
                 }
-                if let Err(e) = vol.delete(&abs).await {
+                if let Err(e) = vol.delete(&AppPath::legacy_unchecked(&abs)).await {
                     log::warn!(
                         "cleanup_test_prefix: failed to delete {}: {e:?}",
                         LogPrivate::path(&rel)
@@ -251,7 +255,7 @@ pub async fn cleanup_test_prefix(vol: &SmbVolume, mount_path: &Path, unique_pref
     }
     let rel_dir = rel_of(&dir_abs);
     if rel_dir.starts_with(TEST_PREFIX_ROOT)
-        && let Err(e) = vol.delete(&dir_abs).await
+        && let Err(e) = vol.delete(&AppPath::legacy_unchecked(&dir_abs)).await
     {
         log::warn!(
             "cleanup_test_prefix: failed to delete prefix dir {}: {e:?}",

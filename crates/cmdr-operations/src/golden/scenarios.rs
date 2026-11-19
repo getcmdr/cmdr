@@ -3,6 +3,7 @@
 //! volumes, `src` and `dst`), shared by every host; the local engine's world is
 //! the native test's own (`golden_trace_tests.rs`).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -80,21 +81,37 @@ impl World for VolumeWorld {
     }
     async fn seed(&self, dest_out: bool) {
         let v = &self.src;
-        v.create_file(Path::new("/a.txt"), b"aaa").await.expect("a");
-        v.create_file(Path::new("/b.txt"), b"bbbb").await.expect("b");
-        v.create_file(Path::new("/c.txt"), b"ccccc").await.expect("c");
-        v.create_directory(Path::new("/docs")).await.expect("docs");
-        v.create_file(Path::new("/docs/note.md"), b"# note")
+        v.create_file(&AppPath::legacy_unchecked(Path::new("/a.txt")), b"aaa")
+            .await
+            .expect("a");
+        v.create_file(&AppPath::legacy_unchecked(Path::new("/b.txt")), b"bbbb")
+            .await
+            .expect("b");
+        v.create_file(&AppPath::legacy_unchecked(Path::new("/c.txt")), b"ccccc")
+            .await
+            .expect("c");
+        v.create_directory(&AppPath::legacy_unchecked(Path::new("/docs")))
+            .await
+            .expect("docs");
+        v.create_file(&AppPath::legacy_unchecked(Path::new("/docs/note.md")), b"# note")
             .await
             .expect("note");
-        v.create_directory(Path::new("/out")).await.expect("out");
+        v.create_directory(&AppPath::legacy_unchecked(Path::new("/out")))
+            .await
+            .expect("out");
         if dest_out {
-            self.dst.create_directory(Path::new("/out")).await.expect("out");
+            self.dst
+                .create_directory(&AppPath::legacy_unchecked(Path::new("/out")))
+                .await
+                .expect("out");
         }
     }
     async fn occupy(&self, name: &str, bytes: &'static [u8]) {
         let path = Path::new("/out").join(name);
-        self.dst.create_file(&path, bytes).await.expect("taken");
+        self.dst
+            .create_file(&AppPath::legacy_unchecked(&path), bytes)
+            .await
+            .expect("taken");
     }
     fn source(&self, name: &str) -> PathBuf {
         Path::new("/").join(name)

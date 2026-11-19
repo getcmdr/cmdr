@@ -6,6 +6,7 @@
 //! parent's listing answers, so a listing run again after the wait plans every
 //! entry once, in tree order.
 
+use cmdr_fs::app_path;
 use std::sync::Mutex;
 
 use super::*;
@@ -37,15 +38,18 @@ fn outage_state(engine: &TestOperations, budget: Duration) -> Arc<WriteOperation
 /// A share holding `/photos` (two files) and `/photos/trip` (two more).
 async fn nas(lane: &str) -> Arc<OutageVolume> {
     let inner = Arc::new(InMemoryVolume::new("Testnas"));
-    inner.create_directory(Path::new("/photos")).await.unwrap();
-    inner.create_directory(Path::new("/photos/trip")).await.unwrap();
+    inner.create_directory(app_path!("/photos")).await.unwrap();
+    inner.create_directory(app_path!("/photos/trip")).await.unwrap();
     for path in [
         "/photos/a.jpg",
         "/photos/b.jpg",
         "/photos/trip/c.jpg",
         "/photos/trip/d.jpg",
     ] {
-        inner.create_file(Path::new(path), b"pixels").await.unwrap();
+        inner
+            .create_file(&AppPath::legacy_unchecked(Path::new(path)), b"pixels")
+            .await
+            .unwrap();
     }
     OutageVolume::wrap(inner, lane)
 }

@@ -9,6 +9,7 @@
 
 use super::{write_content_on, write_payload_replying, write_payload_to_dir};
 use crate::clipboard::{ClipboardPasteOutcome, ClipboardPayload, PasteClipboardReply, PastedKind};
+use cmdr_fs::app_path;
 
 use std::fs;
 use std::path::Path;
@@ -210,7 +211,7 @@ async fn register_slowly_creating_volume(volume_id: &str, delay: std::time::Dura
     use std::sync::Arc;
 
     let inner = InMemoryVolume::new("Slow NAS");
-    inner.create_directory(Path::new("/docs")).await.unwrap();
+    inner.create_directory(app_path!("/docs")).await.unwrap();
     get_volume_manager().register_if_absent(volume_id, Arc::new(SlowVolume::creating_slowly(inner, delay)));
 }
 

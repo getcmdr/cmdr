@@ -3,6 +3,7 @@
 //! Gated behind the `testing` feature, so it exists in dev targets and in no
 //! shipped build. The fake server itself is `crate::testing::FakeAdbServer`.
 
+use cmdr_fs::app_path::BridgedPath;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
@@ -35,7 +36,7 @@ pub fn detached_volume() -> AdbVolume {
     let (root, paths) = app_root_for(FIXTURE_SERIAL);
     AdbVolume {
         name: "Fixture phone".to_string(),
-        root,
+        root: BridgedPath::new(root),
         paths,
         inner: Arc::new(AdbVolumeInner {
             connection: cmdr_fs::volume::ConnectionReporter::new(

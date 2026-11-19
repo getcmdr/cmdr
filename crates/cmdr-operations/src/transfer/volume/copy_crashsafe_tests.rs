@@ -17,6 +17,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::ConflictResolution;
+use cmdr_fs::app_path;
 use cmdr_fs::volume::InMemoryVolume;
 
 // ========================================================================
@@ -81,7 +82,7 @@ impl Volume for FailingReadSourceVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -95,29 +96,29 @@ impl Volume for FailingReadSourceVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> StdPin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> StdPin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> StdPin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         // Delegate so the preflight scan succeeds and the copy reaches the
         // streaming read (where our failure is injected). Without this the
@@ -127,7 +128,7 @@ impl Volume for FailingReadSourceVolume {
     }
     fn open_read_stream<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         let total = self.file_size;
         Box::pin(async move {
@@ -153,7 +154,7 @@ async fn cross_volume_overwrite_preserves_dest_on_midstream_failure() {
     // 100 bytes: bigger than the one 4-byte chunk the stream yields, so the
     // dest write loop pulls a second chunk and hits the failure.
     source_inner
-        .create_file(Path::new("/notes.txt"), &[0xAB; 100])
+        .create_file(app_path!("/notes.txt"), &[0xAB; 100])
         .await
         .unwrap();
     let source: Arc<dyn Volume> = Arc::new(FailingReadSourceVolume {
@@ -163,7 +164,7 @@ async fn cross_volume_overwrite_preserves_dest_on_midstream_failure() {
 
     let dest_inner = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
     dest_inner
-        .create_file(Path::new("/notes.txt"), b"ORIGINAL DEST DATA")
+        .create_file(app_path!("/notes.txt"), b"ORIGINAL DEST DATA")
         .await
         .unwrap();
     let dest: Arc<dyn Volume> = Arc::clone(&dest_inner) as Arc<dyn Volume>;
@@ -191,7 +192,7 @@ async fn cross_volume_overwrite_preserves_dest_on_midstream_failure() {
     assert!(result.is_err(), "the mid-stream read failure must surface as an error");
 
     // The original destination data MUST be intact.
-    let mut stream = dest_inner.open_read_stream(Path::new("/notes.txt")).await.unwrap();
+    let mut stream = dest_inner.open_read_stream(app_path!("/notes.txt")).await.unwrap();
     assert_eq!(
         stream.next_chunk().await.unwrap().unwrap(),
         b"ORIGINAL DEST DATA",
@@ -199,7 +200,7 @@ async fn cross_volume_overwrite_preserves_dest_on_midstream_failure() {
     );
 
     // No temp sibling should be left behind in the dest root.
-    let entries = dest_inner.list_directory(Path::new("/"), None).await.unwrap();
+    let entries = dest_inner.list_directory(app_path!("/"), None).await.unwrap();
     assert!(
         !entries.iter().any(|e| e.name.contains(".cmdr-tmp-")),
         "partial cleanup must remove the temp sibling on failure: {:?}",
@@ -213,11 +214,11 @@ async fn cross_volume_overwrite_preserves_dest_on_midstream_failure() {
 async fn cross_volume_overwrite_success_replaces_and_cleans_temp() {
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_file(Path::new("/file.txt"), b"NEW").await.unwrap();
+    source.create_file(app_path!("/file.txt"), b"NEW").await.unwrap();
     let source: Arc<dyn Volume> = source;
 
     let dest_inner = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest_inner.create_file(Path::new("/file.txt"), b"OLD").await.unwrap();
+    dest_inner.create_file(app_path!("/file.txt"), b"OLD").await.unwrap();
     let dest: Arc<dyn Volume> = Arc::clone(&dest_inner) as Arc<dyn Volume>;
 
     let events = Arc::new(CollectorEventSink::new());
@@ -241,10 +242,10 @@ async fn cross_volume_overwrite_success_replaces_and_cleans_temp() {
 
     assert!(result.is_ok(), "overwrite copy should succeed: {:?}", result);
 
-    let mut stream = dest_inner.open_read_stream(Path::new("/file.txt")).await.unwrap();
+    let mut stream = dest_inner.open_read_stream(app_path!("/file.txt")).await.unwrap();
     assert_eq!(stream.next_chunk().await.unwrap().unwrap(), b"NEW");
 
-    let entries = dest_inner.list_directory(Path::new("/"), None).await.unwrap();
+    let entries = dest_inner.list_directory(app_path!("/"), None).await.unwrap();
     assert!(
         !entries.iter().any(|e| e.name.contains(".cmdr-tmp-")),
         "no temp sibling should remain after a successful overwrite: {:?}",
@@ -262,11 +263,11 @@ async fn cross_volume_overwrite_success_replaces_and_cleans_temp() {
 async fn cross_volume_overwrite_concurrent_replaces_and_cleans_temp() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_file(Path::new("/a.txt"), b"AAA").await.unwrap();
-    source.create_file(Path::new("/b.txt"), b"BBB-new").await.unwrap();
-    source.create_file(Path::new("/c.txt"), b"CCC").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"AAA").await.unwrap();
+    source.create_file(app_path!("/b.txt"), b"BBB-new").await.unwrap();
+    source.create_file(app_path!("/c.txt"), b"CCC").await.unwrap();
     // Pre-existing dest file for /b.txt → file→file overwrite on the concurrent path.
-    dest.create_file(Path::new("/b.txt"), b"BBB-old").await.unwrap();
+    dest.create_file(app_path!("/b.txt"), b"BBB-old").await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
@@ -293,10 +294,10 @@ async fn cross_volume_overwrite_concurrent_replaces_and_cleans_temp() {
 
     assert!(result.is_ok(), "concurrent overwrite copy should succeed: {:?}", result);
 
-    let mut sb = dest.open_read_stream(Path::new("/b.txt")).await.unwrap();
+    let mut sb = dest.open_read_stream(app_path!("/b.txt")).await.unwrap();
     assert_eq!(sb.next_chunk().await.unwrap().unwrap(), b"BBB-new");
 
-    let entries = dest.list_directory(Path::new("/"), None).await.unwrap();
+    let entries = dest.list_directory(app_path!("/"), None).await.unwrap();
     assert!(
         !entries.iter().any(|e| e.name.contains(".cmdr-tmp-")),
         "no temp sibling should remain after a successful concurrent overwrite: {:?}",
@@ -324,7 +325,7 @@ impl Volume for RenameFailsDestVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -342,40 +343,43 @@ impl Volume for RenameFailsDestVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> StdPin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> StdPin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> StdPin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.create_directory(path)
     }
     fn create_file<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         content: &'a [u8],
     ) -> StdPin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.create_file(path, content)
     }
-    fn delete<'a>(&'a self, path: &'a Path) -> StdPin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> StdPin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.delete(path)
     }
     fn get_space_info<'a>(&'a self) -> StdPin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
@@ -383,13 +387,13 @@ impl Volume for RenameFailsDestVolume {
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         self.inner.open_read_stream(path)
     }
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
@@ -402,12 +406,15 @@ impl Volume for RenameFailsDestVolume {
     /// goes through, so the test isolates the finalize failure.
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> StdPin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let to_app = to;
+        let to_std = to.as_std_legacy();
+        let to: &Path = &to_std;
         if to != self.fails_onto {
-            return self.inner.rename(from, to, force);
+            return self.inner.rename(from, to_app, force);
         }
         Box::pin(async {
             Err(VolumeError::IoError {
@@ -424,12 +431,12 @@ impl Volume for RenameFailsDestVolume {
 /// be the case that both the original and the temp are gone — that's total data
 /// loss, the defect under test.
 async fn assert_new_data_survives(dest_inner: &Arc<InMemoryVolume>, expected_new: &[u8]) {
-    let entries = dest_inner.list_directory(Path::new("/"), None).await.unwrap();
+    let entries = dest_inner.list_directory(app_path!("/"), None).await.unwrap();
     // Find any path whose content equals the new bytes.
     let mut found = false;
     for e in &entries {
         let p = PathBuf::from(&e.path);
-        if let Ok(mut stream) = dest_inner.open_read_stream(&p).await {
+        if let Ok(mut stream) = dest_inner.open_read_stream(&AppPath::legacy_unchecked(&p)).await {
             let mut buf = Vec::new();
             while let Some(Ok(chunk)) = stream.next_chunk().await {
                 buf.extend_from_slice(&chunk);
@@ -457,11 +464,11 @@ async fn assert_new_data_survives(dest_inner: &Arc<InMemoryVolume>, expected_new
 async fn cross_volume_overwrite_serial_preserves_new_data_on_finalize_failure() {
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_file(Path::new("/notes.txt"), b"NEW").await.unwrap();
+    source.create_file(app_path!("/notes.txt"), b"NEW").await.unwrap();
     let source: Arc<dyn Volume> = source;
 
     let dest_inner = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest_inner.create_file(Path::new("/notes.txt"), b"OLD").await.unwrap();
+    dest_inner.create_file(app_path!("/notes.txt"), b"OLD").await.unwrap();
     let dest: Arc<dyn Volume> = Arc::new(RenameFailsDestVolume {
         inner: Arc::clone(&dest_inner),
         fails_onto: PathBuf::from("/notes.txt"),
@@ -499,14 +506,14 @@ async fn cross_volume_overwrite_serial_preserves_new_data_on_finalize_failure() 
 async fn cross_volume_overwrite_concurrent_preserves_new_data_on_finalize_failure() {
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_file(Path::new("/a.txt"), b"AAA").await.unwrap();
-    source.create_file(Path::new("/b.txt"), b"BBB-new").await.unwrap();
-    source.create_file(Path::new("/c.txt"), b"CCC").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"AAA").await.unwrap();
+    source.create_file(app_path!("/b.txt"), b"BBB-new").await.unwrap();
+    source.create_file(app_path!("/c.txt"), b"CCC").await.unwrap();
     let source: Arc<dyn Volume> = source;
 
     let dest_inner = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
     // Conflict on /b.txt → file→file overwrite → safe-replace finalize fails.
-    dest_inner.create_file(Path::new("/b.txt"), b"BBB-old").await.unwrap();
+    dest_inner.create_file(app_path!("/b.txt"), b"BBB-old").await.unwrap();
     let dest: Arc<dyn Volume> = Arc::new(RenameFailsDestVolume {
         inner: Arc::clone(&dest_inner),
         fails_onto: PathBuf::from("/b.txt"),

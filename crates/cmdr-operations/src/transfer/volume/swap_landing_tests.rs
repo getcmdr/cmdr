@@ -17,6 +17,8 @@ use crate::testing::TestOperations;
 use crate::transfer::recovered_name::{FinalizeFailure, LandingAftermath};
 use crate::transfer::staged_write::StagedWrite;
 use crate::types::{ConflictResolution, VolumeCopyConfig, WriteOperationError};
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeError};
 use std::path::{Path, PathBuf};
@@ -43,12 +45,15 @@ impl Volume for RenameRefusesOne {
     }
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let to_app = to;
+        let to_std = to.as_std_legacy();
+        let to: &Path = &to_std;
         if to != self.fails_onto {
-            return self.inner.rename(from, to, force);
+            return self.inner.rename(from, to_app, force);
         }
         Box::pin(async {
             Err(VolumeError::IoError {
@@ -62,7 +67,7 @@ impl Volume for RenameRefusesOne {
 /// `/notes.txt` holds the user's old file, as every cell starts.
 async fn dest_holding_the_original(inner: InMemoryVolume) -> Arc<InMemoryVolume> {
     let inner = Arc::new(inner.with_space_info(10_000_000, 10_000_000));
-    inner.create_file(Path::new("/notes.txt"), b"OLD").await.unwrap();
+    inner.create_file(app_path!("/notes.txt"), b"OLD").await.unwrap();
     inner
 }
 
@@ -87,13 +92,16 @@ async fn swap_over_the_original_on(
     let original = state.scope().host().announce_on(&**dest, Path::new("/notes.txt"));
     let staged = StagedWrite::begin(&state, &**dest, original, WriteStaging::StageOverOriginal);
     let temp = staged.target().to_path_buf();
-    inner.create_file(&temp, b"NEW").await.unwrap();
+    inner
+        .create_file(&AppPath::legacy_unchecked(&temp), b"NEW")
+        .await
+        .unwrap();
     (temp, staged.commit_without_a_wait(dest, 3).await)
 }
 
 /// What `path` holds right now, or `None` if it isn't there.
 async fn contents(volume: &InMemoryVolume, path: &Path) -> Option<Vec<u8>> {
-    let mut stream = volume.open_read_stream(path).await.ok()?;
+    let mut stream = volume.open_read_stream(&AppPath::legacy_unchecked(path)).await.ok()?;
     let mut buf = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         buf.extend_from_slice(&chunk);
@@ -103,7 +111,7 @@ async fn contents(volume: &InMemoryVolume, path: &Path) -> Option<Vec<u8>> {
 
 async fn names_in_root(volume: &InMemoryVolume) -> Vec<String> {
     volume
-        .list_directory(Path::new("/"), None)
+        .list_directory(app_path!("/"), None)
         .await
         .unwrap()
         .into_iter()
@@ -186,7 +194,7 @@ async fn a_taken_recovered_name_continues_the_house_series() {
     let engine = TestOperations::new();
     let (inner, dest) = dest_refusing_the_rename().await;
     inner
-        .create_file(Path::new("/notes (recovered).txt"), b"AN EARLIER RESCUE")
+        .create_file(app_path!("/notes (recovered).txt"), b"AN EARLIER RESCUE")
         .await
         .unwrap();
 
@@ -264,16 +272,19 @@ impl Volume for AsideRefused {
     }
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let from_app = from;
+            let from_std = from.as_std_legacy();
+            let from: &Path = &from_std;
             if from != self.refuses {
-                return self.inner.rename(from, to, force).await;
+                return self.inner.rename(from_app, to, force).await;
             }
             if self.goes_through {
-                self.inner.rename(from, to, force).await?;
+                self.inner.rename(from_app, to, force).await?;
             }
             Err(VolumeError::PermissionDenied {
                 path: from.display().to_string(),
@@ -370,14 +381,17 @@ async fn copy_over_a_file_the_server_wont_let_go(engine: &TestOperations, names:
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for name in names {
         source
-            .create_file(&Path::new("/").join(name), format!("SRC-{name}").as_bytes())
+            .create_file(
+                &AppPath::legacy_unchecked(&Path::new("/").join(name)),
+                format!("SRC-{name}").as_bytes(),
+            )
             .await
             .unwrap();
     }
     let inner = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    inner.create_directory(Path::new("/dest")).await.unwrap();
+    inner.create_directory(app_path!("/dest")).await.unwrap();
     inner
-        .create_file(Path::new("/dest/notes.txt"), b"THE USER'S FILE")
+        .create_file(app_path!("/dest/notes.txt"), b"THE USER'S FILE")
         .await
         .unwrap();
     let dest: Arc<dyn Volume> = Arc::new(AsideRefused {
@@ -415,7 +429,7 @@ async fn copy_over_a_file_the_server_wont_let_go(engine: &TestOperations, names:
         "❗ the user's file must be exactly as it was"
     );
     let leftovers: Vec<String> = inner
-        .list_directory(Path::new("/dest"), None)
+        .list_directory(app_path!("/dest"), None)
         .await
         .unwrap()
         .into_iter()

@@ -21,6 +21,7 @@
 //! carry the older state, since bumping would drop every re-read during a busy
 //! burst. `DETAILS.md` § "Read generations".
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
 
@@ -105,7 +106,7 @@ impl Inner {
         };
 
         let generation = self.next_read_generation();
-        let entries = match volume.list_directory(&path, None).await {
+        let entries = match volume.list_directory(&AppPath::legacy_unchecked(&path), None).await {
             Ok(entries) => entries,
             Err(VolumeError::NotFound(_)) => return RefreshOutcome::DirectoryGone(path),
             Err(VolumeError::PermissionDenied { .. }) => return RefreshOutcome::Skipped,

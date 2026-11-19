@@ -364,7 +364,7 @@ mod tests {
     #[test]
     fn the_root_volume_lists_the_system_drive() {
         let root = root_volume();
-        assert_eq!(root.root(), Path::new(&system_drive_root()));
+        assert_eq!(&*root.root().as_std_legacy(), Path::new(&system_drive_root()));
         assert!(is_local_volume(root.as_ref()));
     }
 }

@@ -1,5 +1,6 @@
 //! Fresh-ZIP source planning and source/destination identity checks.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -224,7 +225,7 @@ async fn plan_sources_with_context(
                             PlannedSource::Local(if path.is_absolute() {
                                 path.clone()
                             } else {
-                                root.join(&path)
+                                root.as_std_legacy().join(&path)
                             })
                         },
                     ),
@@ -233,11 +234,12 @@ async fn plan_sources_with_context(
                     modified,
                     unix_mode,
                 });
+                let path_app = AppPath::legacy_unchecked(&path);
                 // A listing the dropped share cut off runs again once it's
                 // back; its children join the plan only after it answers.
                 let mut children =
                     read_through_outages(state, source, &path, announce.as_ref(), volume_read_error, || {
-                        source.list_directory(&path, None)
+                        source.list_directory(&path_app, None)
                     })
                     .await?;
                 dirs += 1;
@@ -269,7 +271,7 @@ async fn plan_sources_with_context(
                     PlannedSource::Local(if path.is_absolute() {
                         path.clone()
                     } else {
-                        root.join(&path)
+                        root.as_std_legacy().join(&path)
                     })
                 } else {
                     PlannedSource::Remote(path.clone())
@@ -368,19 +370,21 @@ async fn settle_tops(
             continue;
         }
         top_names.insert(top_name.clone(), top.clone());
+        let top_app = AppPath::legacy_unchecked(top);
         // A selected link is skipped like a nested one. Asked with `entry_kind`
         // (an `lstat`), ❌ never read off `get_metadata`: SFTP's `stat` follows
         // the link and reports its target.
         let top_kind = read_through_outages(state, source, top, announce.as_ref(), volume_read_error, || {
-            source.entry_kind(top)
+            source.entry_kind(&top_app)
         })
         .await?;
         if top_kind == EntryKind::Symlink {
             skipped += 1;
             continue;
         }
+        let top_app = AppPath::legacy_unchecked(top);
         let top_meta = read_through_outages(state, source, top, announce.as_ref(), volume_read_error, || {
-            source.get_metadata(top)
+            source.get_metadata(&top_app)
         })
         .await?;
         tops.push((top.clone(), top_name, top_meta));
@@ -422,8 +426,8 @@ async fn prompt_duplicate_source(
     state: &Arc<WriteOperationState>,
     context: PlanConflictContext<'_>,
 ) -> Result<super::super::state::ConflictResolutionResponse, EditError> {
-    let incoming_meta = source.get_metadata(incoming).await.ok();
-    let existing_meta = source.get_metadata(existing).await.ok();
+    let incoming_meta = source.get_metadata(&AppPath::legacy_unchecked(incoming)).await.ok();
+    let existing_meta = source.get_metadata(&AppPath::legacy_unchecked(existing)).await.ok();
     let source_size = incoming_meta.as_ref().and_then(|meta| meta.size);
     let destination_size = existing_meta.as_ref().and_then(|meta| meta.size);
     let source_modified = incoming_meta
@@ -475,8 +479,10 @@ async fn reduce_duplicate_conditional(
     existing: &Path,
     resolution: ConflictResolution,
 ) -> ConflictResolution {
-    let (Ok(incoming), Ok(existing)) = (source.get_metadata(incoming).await, source.get_metadata(existing).await)
-    else {
+    let (Ok(incoming), Ok(existing)) = (
+        source.get_metadata(&AppPath::legacy_unchecked(incoming)).await,
+        source.get_metadata(&AppPath::legacy_unchecked(existing)).await,
+    ) else {
         return match resolution {
             ConflictResolution::OverwriteSmaller | ConflictResolution::OverwriteOlder => ConflictResolution::Skip,
             other => other,
@@ -528,14 +534,14 @@ pub(super) async fn validate_aliases(
                 if path.is_absolute() {
                     path.clone()
                 } else {
-                    root.join(path)
+                    root.as_std_legacy().join(path)
                 }
             })
             .collect::<Vec<_>>();
         let absolute_dest = if archive_path.is_absolute() {
             archive_path.to_path_buf()
         } else {
-            dest_root.join(archive_path)
+            dest_root.as_std_legacy().join(archive_path)
         };
         return runtime
             .spawn_blocking(move || {
@@ -559,7 +565,7 @@ pub(super) async fn validate_aliases(
         let archive_path = cmdr_fs::volume::remote_paths::normalize_remote_path(archive_path);
         for source_path in source_paths {
             let source_path = cmdr_fs::volume::remote_paths::normalize_remote_path(source_path);
-            let meta = source.get_metadata(&source_path).await.ok();
+            let meta = source.get_metadata(&AppPath::legacy_unchecked(&source_path)).await.ok();
             if source_path == archive_path
                 || meta.is_some_and(|entry| entry.is_directory && archive_path.starts_with(&source_path))
             {

@@ -12,6 +12,7 @@ use crate::outage_slot::OutagePolicy;
 use crate::testing::TestOperations;
 use crate::transfer::outage_volume_test_support::{OutageVolume, RenameDrop};
 use crate::types::{ConflictResolution, WriteOperationError};
+use cmdr_fs::app_path;
 use cmdr_fs::testing::wait_until_async;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
 use std::time::Instant;
@@ -41,11 +42,14 @@ const SOURCE_MODIFIED: u64 = 1_500_000_000;
 /// window. Every file is dated [`SOURCE_MODIFIED`].
 async fn source_with(count: usize) -> Arc<dyn Volume> {
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_directory(Path::new("/batch")).await.unwrap();
+    source.create_directory(app_path!("/batch")).await.unwrap();
     for n in 0..count {
         let body = format!("file {n}");
         for path in [format!("/batch/f{n}.txt"), format!("/f{n}.txt")] {
-            source.create_file(Path::new(&path), body.as_bytes()).await.unwrap();
+            source
+                .create_file(&AppPath::legacy_unchecked(Path::new(&path)), body.as_bytes())
+                .await
+                .unwrap();
             source.set_modified_at(Path::new(&path), Some(SOURCE_MODIFIED));
         }
     }
@@ -81,7 +85,7 @@ fn come_back_when_waited_for(state: &Arc<WriteOperationState>, nas: &Arc<OutageV
 }
 
 async fn landed(inner: &Arc<InMemoryVolume>, path: &str) -> bool {
-    inner.exists(Path::new(path)).await
+    inner.exists(&AppPath::legacy_unchecked(Path::new(path))).await
 }
 
 /// The commonest copy there is: one folder, so the SERIAL driver and the merge
@@ -155,7 +159,10 @@ async fn a_download_waits_out_a_source_share_that_drops_at_the_open() {
     for n in 0..3 {
         let path = format!("/f{n}.txt");
         source_inner
-            .create_file(Path::new(&path), format!("file {n}").as_bytes())
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&path)),
+                format!("file {n}").as_bytes(),
+            )
             .await
             .unwrap();
     }
@@ -237,7 +244,7 @@ async fn a_late_error_from_a_replaced_session_is_run_again_and_every_file_lands(
         "the copy dialed nothing: the share was already back"
     );
     let leftovers: Vec<String> = inner
-        .list_directory(Path::new("/"), None)
+        .list_directory(app_path!("/"), None)
         .await
         .expect("the destination")
         .into_iter()
@@ -303,7 +310,7 @@ async fn a_copy_that_outlasts_its_outage_says_it_lost_the_connection() {
     // holds only whole files under real names, never a half-written one.
     nas.reconnected_elsewhere();
     let listing = inner
-        .list_directory(Path::new("/batch"), None)
+        .list_directory(app_path!("/batch"), None)
         .await
         .unwrap_or_default();
     assert!(
@@ -359,10 +366,13 @@ async fn a_deep_clash_that_outlasts_its_outage_says_it_lost_the_connection() {
     let engine = TestOperations::new();
     let source = source_with(2).await;
     let (inner, nas, dest) = nas("outage-deep-clash");
-    inner.create_directory(Path::new("/batch")).await.unwrap();
+    inner.create_directory(app_path!("/batch")).await.unwrap();
     for n in 0..2 {
         inner
-            .create_file(Path::new(&format!("/batch/f{n}.txt")), b"old")
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/batch/f{n}.txt"))),
+                b"old",
+            )
             .await
             .unwrap();
     }
@@ -584,11 +594,11 @@ async fn copy_through_a_drop_at_landing(
         if let Some(theirs) = theirs {
             // Ours landed before the drop; they save over it.
             behind_the_share
-                .delete(Path::new("/batch/f1.txt"))
+                .delete(app_path!("/batch/f1.txt"))
                 .await
                 .expect("ours is there to save over");
             behind_the_share
-                .create_file(Path::new("/batch/f1.txt"), theirs)
+                .create_file(app_path!("/batch/f1.txt"), theirs)
                 .await
                 .expect("their save");
         }
@@ -616,7 +626,7 @@ async fn copy_through_a_drop_at_landing(
 
 async fn names_in_batch(inner: &Arc<InMemoryVolume>) -> Vec<String> {
     let mut names: Vec<String> = inner
-        .list_directory(Path::new("/batch"), None)
+        .list_directory(app_path!("/batch"), None)
         .await
         .expect("the destination folder")
         .into_iter()
@@ -627,7 +637,10 @@ async fn names_in_batch(inner: &Arc<InMemoryVolume>) -> Vec<String> {
 }
 
 async fn content_of(inner: &Arc<InMemoryVolume>, path: &str) -> Vec<u8> {
-    let mut stream = inner.open_read_stream(Path::new(path)).await.expect("the file opens");
+    let mut stream = inner
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .expect("the file opens");
     let mut bytes = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         bytes.extend_from_slice(&chunk.expect("a chunk"));
@@ -756,11 +769,11 @@ async fn copy_through_a_swallowed_single_shot_write(
         .await;
         if let Some(theirs) = theirs {
             behind_the_share
-                .delete(Path::new("/batch/f1.txt"))
+                .delete(app_path!("/batch/f1.txt"))
                 .await
                 .expect("ours is there to save over");
             behind_the_share
-                .create_file(Path::new("/batch/f1.txt"), theirs)
+                .create_file(app_path!("/batch/f1.txt"), theirs)
                 .await
                 .expect("their save");
         }
@@ -835,7 +848,10 @@ async fn a_settled_single_shot_write_gets_the_date_its_stamp_lost() {
             format!("file {n}").into_bytes(),
             "f{n} must land byte-exact"
         );
-        let entry = inner.get_metadata(Path::new(&path)).await.expect("it landed");
+        let entry = inner
+            .get_metadata(&AppPath::legacy_unchecked(Path::new(&path)))
+            .await
+            .expect("it landed");
         assert_eq!(entry.modified_at, Some(SOURCE_MODIFIED), "the source's date is on f{n}");
     }
 }
