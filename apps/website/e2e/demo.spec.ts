@@ -287,6 +287,30 @@ test.describe('Browser demo', () => {
       expect(errors.map((error) => error.message)).toEqual([])
     })
 
+    // Copy path writes the browser's clipboard, and Add to favorites lands in the demo's in-memory
+    // favorites (`lib/demo/DETAILS.md` § Dialogs, the clipboard, and favorites): neither is a dead end.
+    test('copies a path to the clipboard and adds a folder to the favorites', async ({ page, context }) => {
+      const errors = collectPageErrors(page)
+      await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+      await openDemo(page)
+      await row(left(page), 'notes').click({ button: 'right' })
+      await page.getByRole('menuitem', { name: 'Copy path' }).click()
+      await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('/Users/you/notes.md')
+
+      await row(left(page), 'Projects').click({ button: 'right' })
+      await page.getByRole('menuitem', { name: 'Add to favorites' }).click()
+      const favorites = () =>
+        page.evaluate(async () => {
+          const internals = (
+            window as unknown as { __TAURI_INTERNALS__: { invoke: (cmd: string) => Promise<unknown> } }
+          ).__TAURI_INTERNALS__
+          const answer = (await internals.invoke('list_volumes')) as { data: { name: string; category: string }[] }
+          return answer.data.filter((volume) => volume.category === 'favorite').map((volume) => volume.name)
+        })
+      await expect.poll(favorites).toContain('Projects')
+      expect(errors.map((error) => error.message)).toEqual([])
+    })
+
     test('the operation queue pauses a running copy', async ({ page }) => {
       const errors = collectPageErrors(page)
       await openDemo(page)
