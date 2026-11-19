@@ -3102,7 +3102,7 @@
   "errors.write.linksNotSupported.message": "The destination’s file system can’t hold symbolic links, so Cmdr didn’t copy the link to {path}. Nothing there changed.",
   "errors.write.linksNotSupported.suggestion": "{platform, select, macos {Copy to a drive formatted as APFS or Mac OS Extended, or leave the link out of what you copy.} windows {Cmdr can’t make links on Windows yet. Leave the link out of what you copy, or copy the item it points to.} other {Copy to a drive with a Linux file system like ext4, or leave the link out of what you copy.}}",
   "@errors.write.linksNotSupported.title": {
-    "description": "Title of the copy/move error dialog when the destination drive (often a USB stick or memory card formatted as exFAT or FAT, or some network shares) can't store a symbolic link that was part of the copy. \"Links\" means symbolic links (shortcuts that point to another file or folder). Plain text."
+    "description": "Title of the copy/move error dialog when the destination (some network shares, or any drive on Windows, where Cmdr makes no links yet) can’t store a symbolic link that was part of the copy. \"Links\" means symbolic links (shortcuts that point to another file or folder). Plain text."
   },
   "@errors.write.linksNotSupported.message": {
     "description": "Body of the copy/move error dialog when the destination's file system can't store a symbolic link. \"Symbolic links\" are shortcuts that point to another file or folder; use the platform's usual term. \"Nothing there changed\" reassures that whatever already sat at that path (a file the copy was going to replace) is untouched. \"Cmdr\" is the product name. Plain text.",

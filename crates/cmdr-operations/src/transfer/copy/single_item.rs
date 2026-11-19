@@ -451,10 +451,9 @@ pub(in crate::transfer) fn copy_single_item(
             // ignore set before issuing the syscall; no-ops outside ~/Downloads.
             state.scope().host().announce(target);
             #[cfg(test)]
-            if state.scope().refuses_links() {
+            if let Some(refusal) = state.scope().link_refusal() {
                 return Err(crate::error_classification::classify_link_creation_error(
-                    &std::io::Error::from(std::io::ErrorKind::Unsupported),
-                    target,
+                    &refusal, target,
                 ));
             }
             #[cfg(target_os = "macos")]

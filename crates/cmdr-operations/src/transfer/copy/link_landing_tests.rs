@@ -1,10 +1,10 @@
 //! A copied LINK meeting an existing entry on a destination that can't hold links
-//! (exFAT, FAT, some SMB shares, Windows without the privilege).
+//! (a share or file system with no link operation, Windows today).
 //!
 //! The link is made under a `.cmdr-tmp-*` sibling and renamed over the
 //! destination, so a refusal to make it leaves the person's file exactly as it
-//! was. These cells arm the scope's `refuse_links` seam, the refusal those
-//! drives give, and check the bytes that were there.
+//! was. These cells arm the scope's `refuse_links` seam with the refusal those
+//! drives give (or an ambiguous `EPERM`) and check the bytes that were there.
 
 use super::super::conflict_responder_test_support::ConflictResponderSink;
 use super::*;
@@ -18,9 +18,14 @@ fn temp(name: &str) -> TestDir {
     TestDir::new(&format!("copy_link_landing_{}_{}", name, uuid::Uuid::new_v4()))
 }
 
+/// A state whose links refuse as a drive with no link operation does.
 fn refusing_state(engine: &TestOperations) -> Arc<WriteOperationState> {
+    refusing_state_with(engine, || std::io::Error::from(std::io::ErrorKind::Unsupported))
+}
+
+fn refusing_state_with(engine: &TestOperations, error: fn() -> std::io::Error) -> Arc<WriteOperationState> {
     let state = Arc::new(engine.new_operation_state(Duration::from_millis(0)));
-    state.scope().refuse_links();
+    state.scope().refuse_links(error);
     state
 }
 
@@ -79,6 +84,43 @@ fn an_overwrite_with_a_link_the_destination_refuses_keeps_the_file_that_was_ther
     assert!(
         matches!(&result, Err(WriteOperationError::LinksNotSupported { path }) if *path == dst.join("note.txt").display().to_string()),
         "expected LinksNotSupported naming the destination, got {result:?}"
+    );
+}
+
+/// `EPERM` is ambiguous (an immutable folder answers it as readily as Linux's
+/// exFAT), so it stays a permission refusal, ❌ never "the drive can't hold
+/// links". The person's file survives either way.
+#[cfg(unix)]
+#[test]
+fn an_ambiguous_eperm_keeps_the_file_and_reads_as_a_permission_refusal() {
+    let engine = TestOperations::new();
+    let dir = temp("eperm");
+    let link = plant_source_link(&dir);
+    let dst = dir.join("dst");
+    fs::create_dir_all(&dst).unwrap();
+    fs::write(dst.join("note.txt"), USER_BYTES).unwrap();
+
+    let result = copy_files_with_progress_inner(
+        &CollectorEventSink::new(),
+        "op-link-refused-eperm",
+        &refusing_state_with(&engine, || std::io::Error::from_raw_os_error(libc::EPERM)),
+        std::slice::from_ref(&link),
+        &dst,
+        &WriteOperationConfig {
+            conflict_resolution: ConflictResolution::Overwrite,
+            ..Default::default()
+        },
+    );
+
+    assert_eq!(
+        fs::read_to_string(dst.join("note.txt")).unwrap(),
+        USER_BYTES,
+        "the person's bytes survive"
+    );
+    assert_eq!(names_in(&dst), ["note.txt"], "no temp is left beside it");
+    assert!(
+        matches!(&result, Err(WriteOperationError::PermissionDenied { path, .. }) if *path == dst.join("note.txt").display().to_string()),
+        "expected a permission refusal naming the destination, got {result:?}"
     );
 }
 

@@ -352,8 +352,8 @@ where
 /// creates it under a `.cmdr-tmp-*` sibling, and one same-directory rename puts it
 /// over `dest`. A folder in the way goes through [`safe_overwrite_dir`] instead.
 ///
-/// ❗ The point is the refusal: a drive that holds no links (exFAT, FAT, some SMB
-/// shares, Windows without the privilege) refuses at `make_link`, before anything
+/// ❗ The point is the refusal: a drive that holds no links (a share with no link
+/// operation, Windows today) or a folder that refuses the write refuses at `make_link`, before anything
 /// touched `dest`, so the person's file stays as it was. Deleting `dest` first and
 /// then making the link lost it. No aside and no flush: the rename replaces `dest`
 /// in one step, and a link has no bytes to reach the drive.

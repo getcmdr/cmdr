@@ -38,11 +38,11 @@ pub(crate) struct OpScope {
     /// once its test arms it.
     #[cfg(test)]
     aside_park: super::overwrite::aside_park::AsideParkSlot,
-    /// Makes this operation's local link creation refuse the way a drive that
-    /// can't hold links does (exFAT, FAT, some SMB shares, Windows without the
-    /// privilege), once its test arms it.
+    /// The error this operation's local link creation answers instead of
+    /// making the link, once its test arms it: a drive that holds no links, or a
+    /// folder that refuses the write.
     #[cfg(test)]
-    refuses_links: std::sync::atomic::AtomicBool,
+    link_refusal: std::sync::Mutex<Option<fn() -> std::io::Error>>,
 }
 
 impl OpScope {
@@ -62,7 +62,7 @@ impl OpScope {
             #[cfg(test)]
             aside_park: Default::default(),
             #[cfg(test)]
-            refuses_links: Default::default(),
+            link_refusal: Default::default(),
         }
     }
 
@@ -121,15 +121,15 @@ impl OpScope {
     }
 
     /// The test seam that makes every local link this operation creates refuse
-    /// as a link-less destination does.
+    /// with `error()`, the answer the link's `symlink(2)` would have given.
     #[cfg(test)]
-    pub(crate) fn refuse_links(&self) {
-        self.refuses_links.store(true, std::sync::atomic::Ordering::SeqCst);
+    pub(crate) fn refuse_links(&self, error: fn() -> std::io::Error) {
+        *cmdr_fs::ignore_poison::IgnorePoison::lock_ignore_poison(&self.link_refusal) = Some(error);
     }
 
-    /// Whether [`Self::refuse_links`] armed this operation.
+    /// The refusal [`Self::refuse_links`] armed, if any.
     #[cfg(test)]
-    pub(crate) fn refuses_links(&self) -> bool {
-        self.refuses_links.load(std::sync::atomic::Ordering::SeqCst)
+    pub(crate) fn link_refusal(&self) -> Option<std::io::Error> {
+        cmdr_fs::ignore_poison::IgnorePoison::lock_ignore_poison(&self.link_refusal).map(|error| error())
     }
 }

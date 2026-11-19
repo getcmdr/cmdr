@@ -241,7 +241,7 @@ pub enum WriteOperationError {
         path: String,
     },
     /// The destination's file system refused to hold a symlink the copy carries
-    /// (exFAT, FAT, some SMB shares, Windows without the privilege to make one).
+    /// (a share or file system with no link operation: `ENOTSUP`, `ENOSYS`; Windows, which makes none yet).
     /// The link is made under a temp name first, so whatever held `path` is still
     /// there, untouched; `path` is the name the link was meant to take.
     ///

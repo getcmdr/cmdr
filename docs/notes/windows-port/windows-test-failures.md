@@ -189,6 +189,7 @@ the right cluster is named; the TSV keeps the tool's inherited answer.
    builder can't run, so it waits for a Linux build to verify on.
 5. **`platform_backends()` had no arm on Windows with `playwright-e2e`** (fixed here): a compile error in that build.
 6. **A link copied over an existing file deleted the file before making the link** (fixed here, older than this run).
-   Where the link was refused (always on Windows today, exFAT and FAT, some SMB shares on any OS), the person's file was
-   gone and nothing replaced it. The link is now made under a temp name and renamed over the file, and a refusal is the
-   typed `LinksNotSupported` (`crates/cmdr-operations/src/transfer/copy/link_landing_tests.rs`).
+   Where the link was refused (always on Windows today, Linux's exFAT and FAT, an immutable folder, a share with no link
+   operation), the person's file was gone and nothing replaced it. The link is now made under a temp name and renamed
+   over the file, and a refusal is the typed `LinksNotSupported` where the errno can only mean that
+   (`crates/cmdr-operations/DETAILS.md` § "Key patterns and gotchas (shared)").

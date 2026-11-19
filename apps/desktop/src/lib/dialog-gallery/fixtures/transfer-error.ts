@@ -208,7 +208,7 @@ const perVariant: Record<WriteOperationError['type'], TransferErrorFixture> = {
     operationType: 'copy',
     error: { type: 'symlink_loop', path: '/Users/test_user_11/dev/node_modules/.pnpm/self/node_modules/self' },
   },
-  // A link copied onto a USB stick formatted exFAT, which holds no links.
+  // A link copied onto a drive whose file system has no link operation.
   links_not_supported: {
     operationType: 'copy',
     error: { type: 'links_not_supported', path: '/Volumes/USB/projects/current' },
