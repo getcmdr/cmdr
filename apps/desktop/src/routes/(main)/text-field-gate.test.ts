@@ -144,15 +144,15 @@ describe.each(['macos', 'windows', 'linux'] as const)('on %s, with a text field 
 describe('a bar the page draws, with a text field focused', () => {
   /** The road each `execute-command` takes, by the dispatcher `listener-setup.ts` hands it to. */
   function sourceFor(road: CommandRoad | undefined): DispatchSource {
-    let taken: DispatchSource | null = null
+    const taken: DispatchSource[] = []
     const recorder = (source: DispatchSource) => () => {
-      taken = source
+      taken.push(source)
       return Promise.resolve()
     }
     const dispatchers = { menu: recorder('menu'), barPick: recorder('barPick'), contextMenu: recorder('contextMenu') }
     void dispatcherForRoad(road, dispatchers)('file.delete')
-    if (taken === null) throw new Error(`no dispatcher took the ${road} road`)
-    return taken
+    expect(taken, `the ${String(road)} road`).toHaveLength(1)
+    return taken[0]
   }
 
   it('runs a file-moving row the person picked (a click, or the open menu’s Enter)', () => {

@@ -24,6 +24,7 @@
         menus?: BarMenuView[]
     }
 
+    // eslint-disable-next-line prefer-const -- `$bindable()` requires `let` destructuring
     let { inputs, layout, menus = $bindable([]) }: Props = $props()
 
     const log = getAppLogger('inPageMenus')
