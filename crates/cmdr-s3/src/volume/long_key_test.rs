@@ -4,12 +4,12 @@
 //! for `<key>/`, one byte past the ceiling, which no key can match, so the
 //! volume answers it without asking and the object stays reachable.
 
-use cmdr_fs::app_path::AppPath;
 use std::time::Duration;
 
 use cmdr_fs::volume::{RenameWork, Volume, VolumeError};
 
 use super::fake_s3::FakeS3;
+use super::test_support::at;
 
 /// An ASCII key of exactly 1,024 bytes (so its wire spelling is the same).
 fn ceiling_key() -> String {
@@ -22,18 +22,18 @@ async fn a_key_at_the_ceiling_stats_tallies_renames_and_deletes() {
     let key = ceiling_key();
     s3.seed(&key, 42);
     let volume = s3.volume();
-    let path = volume.root().as_std_legacy().join(&key);
+    let path = at(&volume, &key);
 
-    let stat = volume.get_metadata(&AppPath::legacy_unchecked(&path)).await;
+    let stat = volume.get_metadata(&path).await;
     assert!(
         matches!(&stat, Ok(e) if e.size == Some(42) && !e.is_directory),
         "{stat:?}"
     );
-    let tally = volume.tally_subtree(&AppPath::legacy_unchecked(&path), 10).await;
+    let tally = volume.tally_subtree(&path, 10).await;
     assert!(matches!(&tally, Ok(t) if t.files == 1 && t.bytes == 42), "{tally:?}");
-    let work = volume.rename_work(&AppPath::legacy_unchecked(&path)).await;
+    let work = volume.rename_work(&path).await;
     assert!(matches!(work, Ok(RenameWork::OneCall)), "{work:?}");
-    let deleted = volume.delete(&AppPath::legacy_unchecked(&path)).await;
+    let deleted = volume.delete(&path).await;
     assert!(deleted.is_ok(), "{deleted:?}");
     assert!(s3.object(&key).is_none(), "the object is gone");
     assert!(
@@ -47,11 +47,11 @@ async fn a_key_at_the_ceiling_stats_tallies_renames_and_deletes() {
 async fn a_missing_key_at_the_ceiling_is_not_found() {
     let s3 = FakeS3::start(Duration::ZERO).await;
     let volume = s3.volume();
-    let path = volume.root().as_std_legacy().join(ceiling_key());
-    let stat = volume.get_metadata(&AppPath::legacy_unchecked(&path)).await;
+    let path = at(&volume, &ceiling_key());
+    let stat = volume.get_metadata(&path).await;
     assert!(matches!(stat, Err(VolumeError::NotFound(_))), "{stat:?}");
-    let listed = volume.list_directory(&AppPath::legacy_unchecked(&path), None).await;
+    let listed = volume.list_directory(&path, None).await;
     assert!(matches!(listed, Err(VolumeError::NotFound(_))), "{listed:?}");
-    let deleted = volume.delete(&AppPath::legacy_unchecked(&path)).await;
+    let deleted = volume.delete(&path).await;
     assert!(matches!(deleted, Err(VolumeError::NotFound(_))), "{deleted:?}");
 }

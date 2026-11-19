@@ -5,7 +5,7 @@
 //! calls and nothing else (❌ no HEAD per child), and a stat is one HEAD plus,
 //! only when that finds no object, one bounded folder probe.
 
-use std::path::Path;
+use cmdr_fs::app_path::AppPath;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use cmdr_fs::entry::FileEntry;
@@ -14,7 +14,7 @@ use cmdr_fs::volume::{LandedModified, ListingProgress, VolumeError};
 use tokio_util::sync::CancellationToken;
 
 use super::errors::map_s3_error;
-use super::listing::{Child, FILE_SUFFIX, can_hold_keys, children_of, settle};
+use super::listing::{Child, FILE_SUFFIX, can_hold_keys, read_page, settle};
 use super::paths::{Holder, Resolved, Target, child_of, target_of};
 use super::{S3Volume, S3VolumeInner};
 use crate::error::S3Error;
@@ -23,6 +23,7 @@ use crate::ops::{self, ListObjectsParams};
 use crate::request::S3Request;
 use crate::transport::{Answer, QUERY_BUDGET, S3Client, map_exchange_error};
 use crate::xml::{BodyError, StorageClass, parse_list_buckets, parse_list_objects};
+use log::debug;
 
 impl S3VolumeInner {
     /// One request, in the `Volume` vocabulary: a transport failure by its
@@ -70,7 +71,7 @@ impl S3Volume {
     /// after each page.
     pub(super) async fn list_directory_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&CancellationToken>,
     ) -> Result<Vec<FileEntry>, VolumeError> {
@@ -118,6 +119,9 @@ impl S3Volume {
                 // Settled once every page is in: a file and the folder of its
                 // name can sit on different pages.
                 let mut children = Vec::new();
+                // Keys whose name here is empty, `.`, or `..`: skipped, since
+                // each would spell another key's app path (`listing::PageChildren`).
+                let mut unaddressable = 0;
                 loop {
                     let params = ListObjectsParams {
                         prefix: &prefix,
@@ -130,7 +134,9 @@ impl S3Volume {
                     let answer = self.ask(&client, request, &remote).await?;
                     let page = parse_list_objects(&answer.text()).map_err(|e| body_error(&e, &remote))?;
                     found |= !page.prefixes.is_empty() || !page.objects.is_empty();
-                    for child in children_of(&page, &wire_prefix) {
+                    let read = read_page(&page, &wire_prefix);
+                    unaddressable += read.unaddressable;
+                    for child in read.children {
                         gathered.count(&child);
                         children.push(child);
                     }
@@ -143,6 +149,9 @@ impl S3Volume {
                 }
                 if !found {
                     return Err(VolumeError::NotFound(remote));
+                }
+                if unaddressable > 0 {
+                    debug!(target: "volume", "s3: left {unaddressable} key(s) out of a listing whose name there is empty, `.`, or `..`");
                 }
                 let settled = settle(children);
                 self.note_beside_folders(&remote, &settled);
@@ -162,9 +171,9 @@ impl S3Volume {
     /// one bounded listing of what's under it.
     /// A folder a file of its name was listed beside is only ever the folder,
     /// and that file's `<name> (file)` row only ever the file (`paths.rs`).
-    pub(super) async fn get_metadata_impl(&self, path: &Path) -> Result<FileEntry, VolumeError> {
+    pub(super) async fn get_metadata_impl(&self, path: &AppPath) -> Result<FileEntry, VolumeError> {
         let Resolved { remote, holder } = self.resolve(path)?;
-        let not_here = || VolumeError::NotFound(path.to_string_lossy().into_owned());
+        let not_here = || VolumeError::NotFound(path.as_str().to_owned());
         match target_of(&remote) {
             Target::Account => self.folder_entry(&self.name, &remote, None).ok_or_else(not_here),
             Target::Bucket(bucket) => {
@@ -237,8 +246,7 @@ impl S3Volume {
                 archived,
                 ..
             } => {
-                let app_path = self.root.to_app_path(&remote)?;
-                let mut entry = FileEntry::new(name, app_path.to_string_lossy().into_owned(), false, false);
+                let mut entry = FileEntry::new(name, self.row_path(&remote)?, false, false);
                 entry.size = Some(size);
                 entry.modified_at = modified.and_then(unix_secs);
                 entry.in_cold_storage = archived;
@@ -251,8 +259,7 @@ impl S3Volume {
     /// `created` is a bucket's creation date. `None` when a misbehaving server
     /// named something off this place's root.
     pub(super) fn folder_entry(&self, name: &str, remote: &str, created: Option<SystemTime>) -> Option<FileEntry> {
-        let app_path = self.root.to_app_path(remote)?;
-        let mut entry = FileEntry::new(name.to_string(), app_path.to_string_lossy().into_owned(), true, false);
+        let mut entry = FileEntry::new(name.to_string(), self.row_path(remote)?, true, false);
         entry.created_at = created.and_then(unix_secs);
         Some(entry)
     }
@@ -268,8 +275,7 @@ impl S3Volume {
         } else {
             format!("{name}{FILE_SUFFIX}")
         };
-        let app_path = self.root.to_app_path(&shown)?;
-        let mut entry = FileEntry::new(name, app_path.to_string_lossy().into_owned(), false, false);
+        let mut entry = FileEntry::new(name, self.row_path(&shown)?, false, false);
         entry.size = head.object_length();
         entry.modified_at = modified_from_head(head.header(MTIME_HEADER), head.header("last-modified"));
         let carried = carried_from_headers(head.header(BTIME_HEADER), head.header(MODE_HEADER));

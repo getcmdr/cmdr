@@ -7,10 +7,9 @@
 //! `apps/desktop/test/s3-servers/live.sh all live_connect`. Findings:
 //! `docs/notes/s3/live-verification-2026-10.md`.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::future::Future;
 use std::ops::ControlFlow;
-use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
 
@@ -21,6 +20,7 @@ use cmdr_fs::volume::{ServerCopyProgress, ShareLinkExpiry, Volume, VolumeError, 
 use tokio_util::sync::CancellationToken;
 
 use super::live_support::*;
+use super::test_support::at;
 use super::testing::{BytesSource, read_back};
 use super::{S3Volume, connect_s3_volume};
 use crate::S3ConnectError;
@@ -188,19 +188,19 @@ async fn live_connect_account_root_through_another_region() {
             .list_directory(root.root(), None)
             .await
             .map(|entries| entries.into_iter().map(|e| e.name).collect::<Vec<_>>());
-        let bucket = root.root().as_std_legacy().join(&live.bucket);
-        let listed = root
-            .list_directory(&AppPath::legacy_unchecked(&bucket), None)
-            .await
-            .map(|e| e.len());
-        let path = bucket.join(format!("{}elsewhere.txt", live_prefix("routing")));
+        let bucket = at(&root, &live.bucket);
+        let listed = root.list_directory(&bucket, None).await.map(|e| e.len());
+        let path = at(
+            &root,
+            &format!("{}/{}elsewhere.txt", live.bucket, live_prefix("routing")),
+        );
         let written = put(&root, &path, b"elsewhere").await;
         let back = if written.is_ok() {
             String::from_utf8_lossy(&read_back(&root, &path).await).into_owned()
         } else {
             String::new()
         };
-        let deleted = root.delete(&AppPath::legacy_unchecked(&path)).await;
+        let deleted = root.delete(&path).await;
         report(
             &live,
             &format!("account root through {other:?}"),
@@ -254,17 +254,13 @@ impl ServerCopyProgress for Silent {
     }
 }
 
-async fn put(volume: &S3Volume, path: &Path, bytes: &[u8]) -> Result<u64, VolumeError> {
+async fn put(volume: &S3Volume, path: &AppPath, bytes: &[u8]) -> Result<u64, VolumeError> {
     let source = BytesSource::new(bytes.to_vec());
     let length = cmdr_fs::volume::VolumeReadStream::total_size(&source);
     volume
-        .write_from_stream(
-            &AppPath::legacy_unchecked(path),
-            WriteMode::CreateNew,
-            length,
-            Box::new(source),
-            &|_| ControlFlow::Continue(()),
-        )
+        .write_from_stream(path, WriteMode::CreateNew, length, Box::new(source), &|_| {
+            ControlFlow::Continue(())
+        })
         .await
         .map(|written| written.bytes)
 }
@@ -287,7 +283,7 @@ async fn live_connect_routes_each_bucket_to_its_region() {
         let root = dial(&live.provider, &live.key_id, &secret, None)
             .await
             .unwrap_or_else(|e| panic!("[{}] the account root didn't connect: {e:?}", live.name));
-        let in_far = |volume: &S3Volume, key: &str| -> PathBuf { volume.root().as_std_legacy().join(&far).join(key) };
+        let in_far = |volume: &S3Volume, key: &str| -> AppPathBuf { at(volume, &format!("{far}/{key}")) };
         let key = format!("{}hello.txt", live_prefix("routing"));
 
         // Listed upfront: `ListBuckets` names each bucket's region.
@@ -305,12 +301,7 @@ async fn live_connect_routes_each_bucket_to_its_region() {
         if !all_three {
             misses.push(format!("the root listing: {names:?}"));
         }
-        let listed = root
-            .list_directory(
-                &AppPath::legacy_unchecked(&root.root().as_std_legacy().join(&far)),
-                None,
-            )
-            .await;
+        let listed = root.list_directory(&at(&root, &far), None).await;
         report(
             &live,
             &format!("list the {far_region} bucket"),
@@ -334,9 +325,7 @@ async fn live_connect_routes_each_bucket_to_its_region() {
         let fresh = dial(&live.provider, &live.key_id, &secret, None)
             .await
             .expect("connects");
-        let stat = fresh
-            .get_metadata(&AppPath::legacy_unchecked(&in_far(&fresh, &key)))
-            .await;
+        let stat = fresh.get_metadata(&in_far(&fresh, &key)).await;
         let back = read_back(&fresh, &in_far(&fresh, &key)).await;
         report(
             &live,
@@ -367,12 +356,7 @@ async fn live_connect_routes_each_bucket_to_its_region() {
         }
 
         // A share link signed for the far region fetches unsigned.
-        let link = root
-            .share_link(
-                &AppPath::legacy_unchecked(&in_far(&root, &key)),
-                ShareLinkExpiry::OneHour,
-            )
-            .await;
+        let link = root.share_link(&in_far(&root, &key), ShareLinkExpiry::OneHour).await;
         let fetched = match link {
             Ok(link) => match cmdr_http::client_builder()
                 .build()
@@ -392,21 +376,11 @@ async fn live_connect_routes_each_bucket_to_its_region() {
         }
 
         // A server-side copy from the home region into the far one.
-        let source = root
-            .root()
-            .as_std_legacy()
-            .join(&live.bucket)
-            .join(format!("{}source.txt", live_prefix("routing")));
+        let source = at(&root, &format!("{}/{}source.txt", live.bucket, live_prefix("routing")));
         let copied_to = in_far(&root, &format!("{}copied.txt", live_prefix("routing")));
         let seeded = put(&root, &source, b"crossing regions").await;
         let copied = root
-            .copy_on_server(
-                &root,
-                &AppPath::legacy_unchecked(&source),
-                &AppPath::legacy_unchecked(&copied_to),
-                WriteMode::CreateNew,
-                &Silent,
-            )
+            .copy_on_server(&root, &source, &copied_to, WriteMode::CreateNew, &Silent)
             .await;
         // ❗ A copy that says it landed must have: an `Ok` with nothing there
         // would let a move delete its source.
@@ -438,7 +412,7 @@ async fn live_connect_routes_each_bucket_to_its_region() {
         }
 
         for path in [in_far(&root, &key), in_far(&root, &cold_key), copied_to, source] {
-            let _ = root.delete(&AppPath::legacy_unchecked(&path)).await;
+            let _ = root.delete(&path).await;
         }
         assert!(misses.is_empty(), "[{}] {misses:#?}", live.name);
     }

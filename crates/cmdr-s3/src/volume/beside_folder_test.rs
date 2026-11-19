@@ -6,15 +6,15 @@
 //! second of the two (the one VersityGW cell pins that), and the case never
 //! arises there.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::future::Future;
 use std::ops::ControlFlow;
-use std::path::{Path, PathBuf};
 use std::pin::Pin;
 
 use cmdr_fs::volume::{RenameWork, ServerCopyProgress, ShareLinkExpiry, Volume, VolumeError, WriteMode};
 
 use super::S3Volume;
+use super::test_support::at;
 use super::testing::*;
 
 const FIXTURE: &str = "s3-servers/start.sh (s3-fixture)";
@@ -45,31 +45,24 @@ impl Seeded {
         seeded
     }
 
-    fn at(&self, name: &str) -> PathBuf {
-        self.volume
-            .root()
-            .as_std_legacy()
-            .join(format!("{}{name}", self.prefix))
+    fn at(&self, name: &str) -> AppPathBuf {
+        at(&self.volume, &format!("{}{name}", self.prefix))
     }
 
-    fn file_row(&self) -> PathBuf {
+    fn file_row(&self) -> AppPathBuf {
         self.at("photos (file)")
     }
 
-    fn folder_row(&self) -> PathBuf {
+    fn folder_row(&self) -> AppPathBuf {
         self.at("photos")
     }
 
     /// The prefix's rows: name, whether a folder, and path, sorted by name.
     async fn listed(&self) -> Vec<(String, bool, String)> {
-        let folder = self
-            .volume
-            .root()
-            .as_std_legacy()
-            .join(self.prefix.trim_end_matches('/'));
+        let folder = at(&self.volume, self.prefix.trim_end_matches('/'));
         let mut rows: Vec<(String, bool, String)> = self
             .volume
-            .list_directory(&AppPath::legacy_unchecked(&folder), None)
+            .list_directory(&folder, None)
             .await
             .expect(FIXTURE)
             .into_iter()
@@ -92,8 +85,8 @@ fn row(name: &str, is_folder: bool) -> (String, bool) {
     (name.to_string(), is_folder)
 }
 
-fn path_text(path: &Path) -> String {
-    path.to_string_lossy().into_owned()
+fn path_text(path: &AppPath) -> String {
+    path.as_str().to_owned()
 }
 
 /// A server-side copy that never stops or pauses.
@@ -123,21 +116,13 @@ async fn both_rows_list_and_stat_as_what_they_are(service: FixtureService) {
         service.key
     );
 
-    let file = s
-        .volume
-        .get_metadata(&AppPath::legacy_unchecked(&s.file_row()))
-        .await
-        .expect(FIXTURE);
+    let file = s.volume.get_metadata(&s.file_row()).await.expect(FIXTURE);
     assert!(!file.is_directory, "{}", service.key);
     assert_eq!(file.name, "photos (file)", "{}", service.key);
     assert_eq!(file.path, path_text(&s.file_row()), "{}", service.key);
     assert_eq!(file.size, Some(FILE_BYTES.len() as u64), "{}", service.key);
 
-    let folder = s
-        .volume
-        .get_metadata(&AppPath::legacy_unchecked(&s.folder_row()))
-        .await
-        .expect(FIXTURE);
+    let folder = s.volume.get_metadata(&s.folder_row()).await.expect(FIXTURE);
     assert!(
         folder.is_directory,
         "{}: the folder row stats as the folder",
@@ -159,7 +144,7 @@ async fn the_file_row_reads_shares_and_copies_its_own_bytes(service: FixtureServ
 
     let link = s
         .volume
-        .share_link(&AppPath::legacy_unchecked(&s.file_row()), ShareLinkExpiry::OneHour)
+        .share_link(&s.file_row(), ShareLinkExpiry::OneHour)
         .await
         .expect(FIXTURE)
         .into_url();
@@ -177,20 +162,13 @@ async fn the_file_row_reads_shares_and_copies_its_own_bytes(service: FixtureServ
         "{}",
         service.key
     );
-    let folder_link = s
-        .volume
-        .share_link(&AppPath::legacy_unchecked(&s.folder_row()), ShareLinkExpiry::OneHour)
-        .await;
+    let folder_link = s.volume.share_link(&s.folder_row(), ShareLinkExpiry::OneHour).await;
     assert!(
         matches!(folder_link, Err(VolumeError::IsADirectory(_))),
         "{}: the folder row has no link, {folder_link:?}",
         service.key
     );
-    let folder_read = s
-        .volume
-        .open_read_stream(&AppPath::legacy_unchecked(&s.folder_row()))
-        .await
-        .map(|_| ());
+    let folder_read = s.volume.open_read_stream(&s.folder_row()).await.map(|_| ());
     assert!(
         matches!(folder_read, Err(VolumeError::IsADirectory(_))),
         "{}: the folder row doesn't read as the file, {folder_read:?}",
@@ -201,8 +179,8 @@ async fn the_file_row_reads_shares_and_copies_its_own_bytes(service: FixtureServ
         .volume
         .copy_on_server(
             &s.volume,
-            &AppPath::legacy_unchecked(&s.file_row()),
-            &AppPath::legacy_unchecked(&s.at("copy.txt")),
+            &s.file_row(),
+            &s.at("copy.txt"),
             WriteMode::CreateNew,
             &Steady,
         )
@@ -221,10 +199,7 @@ async fn the_file_row_reads_shares_and_copies_its_own_bytes(service: FixtureServ
 async fn deleting_the_file_row_keeps_the_folder(service: FixtureService) {
     let s = Seeded::new(service, "beside-delete-file").await;
 
-    s.volume
-        .delete(&AppPath::legacy_unchecked(&s.file_row()))
-        .await
-        .expect(FIXTURE);
+    s.volume.delete(&s.file_row()).await.expect(FIXTURE);
 
     assert_eq!(s.names().await, [row("photos", true)], "{}", service.key);
     assert_eq!(
@@ -239,11 +214,8 @@ async fn deleting_the_folder_row_never_touches_the_file(service: FixtureService)
     let s = Seeded::new(service, "beside-delete-folder").await;
 
     // The engine's order for a folder: its children, then the folder itself.
-    s.volume
-        .delete(&AppPath::legacy_unchecked(&s.at("photos/inside.txt")))
-        .await
-        .expect(FIXTURE);
-    let folder = s.volume.delete(&AppPath::legacy_unchecked(&s.folder_row())).await;
+    s.volume.delete(&s.at("photos/inside.txt")).await.expect(FIXTURE);
+    let folder = s.volume.delete(&s.folder_row()).await;
     assert!(
         matches!(folder, Ok(()) | Err(VolumeError::NotFound(_))),
         "{}: {folder:?}",
@@ -266,31 +238,18 @@ async fn renaming_each_row_moves_its_own_object(service: FixtureService) {
     let s = Seeded::new(service, "beside-rename").await;
 
     assert_eq!(
-        s.volume
-            .rename_work(&AppPath::legacy_unchecked(&s.file_row()))
-            .await
-            .expect(FIXTURE),
+        s.volume.rename_work(&s.file_row()).await.expect(FIXTURE),
         RenameWork::OneCall,
         "{}: the file row renames in one call",
         service.key
     );
     assert_eq!(
-        s.volume
-            .rename_work(&AppPath::legacy_unchecked(&s.folder_row()))
-            .await
-            .expect(FIXTURE),
+        s.volume.rename_work(&s.folder_row()).await.expect(FIXTURE),
         RenameWork::CopyThenDelete,
         "{}: the folder row is a folder",
         service.key
     );
-    let folder_rename = s
-        .volume
-        .rename(
-            &AppPath::legacy_unchecked(&s.folder_row()),
-            &AppPath::legacy_unchecked(&s.at("elsewhere")),
-            false,
-        )
-        .await;
+    let folder_rename = s.volume.rename(&s.folder_row(), &s.at("elsewhere"), false).await;
     assert!(
         matches!(folder_rename, Err(VolumeError::NotSupported)),
         "{}: renaming the folder row never moves the file, {folder_rename:?}",
@@ -298,11 +257,7 @@ async fn renaming_each_row_moves_its_own_object(service: FixtureService) {
     );
 
     s.volume
-        .rename(
-            &AppPath::legacy_unchecked(&s.file_row()),
-            &AppPath::legacy_unchecked(&s.at("renamed.txt")),
-            false,
-        )
+        .rename(&s.file_row(), &s.at("renamed.txt"), false)
         .await
         .expect(FIXTURE);
 
@@ -333,7 +288,7 @@ async fn overwriting_the_file_row_replaces_the_file(service: FixtureService) {
     let written = s
         .volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(&s.file_row()),
+            &s.file_row(),
             WriteMode::CreateOrReplace,
             cmdr_fs::volume::StreamLength::Known(replacement.len() as u64),
             Box::new(BytesSource::new(replacement.clone())),
@@ -349,11 +304,7 @@ async fn overwriting_the_file_row_replaces_the_file(service: FixtureService) {
         "{}",
         service.key
     );
-    let file = s
-        .volume
-        .get_metadata(&AppPath::legacy_unchecked(&s.file_row()))
-        .await
-        .expect(FIXTURE);
+    let file = s.volume.get_metadata(&s.file_row()).await.expect(FIXTURE);
     assert_eq!(file.path, path_text(&s.file_row()), "{}", service.key);
     assert_eq!(
         s.names().await,
@@ -371,7 +322,7 @@ async fn versitygw_cant_hold_a_file_and_a_folder_of_one_name() {
         async move {
             volume
                 .write_from_stream(
-                    &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join(key)),
+                    &at(volume, &key),
                     WriteMode::CreateNew,
                     cmdr_fs::volume::StreamLength::Known(bytes.len() as u64),
                     Box::new(BytesSource::new(bytes.to_vec())),

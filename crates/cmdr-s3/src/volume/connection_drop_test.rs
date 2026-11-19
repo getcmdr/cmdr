@@ -19,6 +19,7 @@ use cmdr_fs::volume::{ConnectionState, Volume, VolumeError, VolumeReadStream};
 use tokio_util::sync::CancellationToken;
 use url::Url;
 
+use super::test_support::at;
 use super::testing::*;
 use super::{S3Volume, connect_s3_volume};
 use crate::params::{S3ConnectionParams, S3Provider};
@@ -116,7 +117,7 @@ async fn a_server_that_goes_away_is_reported_down_and_comes_back_on_its_own() {
 /// `hole_after` bytes went out and saying so on `holed`.
 async fn write_holing_at(
     volume: &S3Volume,
-    path: &std::path::Path,
+    path: &AppPath,
     bytes: Vec<u8>,
     hole_after: Option<(u64, &TcpProxy, &tokio::sync::Notify)>,
 ) -> Result<u64, VolumeError> {
@@ -124,7 +125,7 @@ async fn write_holing_at(
     let holed = std::sync::atomic::AtomicBool::new(false);
     volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(path),
+            path,
             cmdr_fs::volume::WriteMode::CreateNew,
             source.total_size(),
             Box::new(source),
@@ -158,7 +159,7 @@ async fn a_put_cut_off_by_an_outage_leaves_nothing_for_the_retry_to_trip_over() 
     // rather than whenever the backoff probes.
     volume.set_auto_reconnect(false);
     let key = format!("{}cut-off.bin", scratch_prefix("cut-off-put"));
-    let path = volume.root().as_std_legacy().join(&key);
+    let path = at(&volume, &key);
     // One PUT (under the part floor), well past what the sockets on the way
     // take in once the hole opens.
     let bytes = self_describing_bytes(24 * 1024 * 1024, "cut-off");

@@ -9,8 +9,6 @@ use cmdr_fs::app_path::AppPath;
 use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::volume::Presence;
 use std::ops::ControlFlow;
-use std::path::Path;
-use std::path::PathBuf;
 use std::pin::Pin;
 use std::time::Duration;
 
@@ -60,7 +58,7 @@ impl Volume for S3Volume {
     }
 
     fn root(&self) -> &AppPath {
-        self.root.app_root().app()
+        &self.app_root
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -89,11 +87,7 @@ impl Volume for S3Volume {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.list_directory_impl(path, on_progress, None)).await
-        })
+        Box::pin(async move { self.noting(self.list_directory_impl(path, on_progress, None)).await })
     }
 
     fn list_directory_with_cancel<'a>(
@@ -102,22 +96,14 @@ impl Volume for S3Volume {
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.list_directory_impl(path, on_progress, cancel)).await
-        })
+        Box::pin(async move { self.noting(self.list_directory_impl(path, on_progress, cancel)).await })
     }
 
     fn get_metadata<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.get_metadata_impl(path)).await
-        })
+        Box::pin(async move { self.noting(self.get_metadata_impl(path)).await })
     }
 
     /// Kept rather than taken from the trait default: the default routes
@@ -125,11 +111,7 @@ impl Volume for S3Volume {
     /// report a connection transition and drive a reconnect. An existence
     /// question stays a question.
     fn presence<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            Presence::of(&self.get_metadata_impl(path).await)
-        })
+        Box::pin(async move { Presence::of(&self.get_metadata_impl(path).await) })
     }
 
     // ── The byte path ────────────────────────────────────────────────
@@ -168,8 +150,6 @@ impl Volume for S3Volume {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(self.noting(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let stream = self.open_read_stream_impl(path, 0).await?;
             Ok(Box::new(stream) as Box<dyn VolumeReadStream>)
         }))
@@ -188,8 +168,6 @@ impl Volume for S3Volume {
         size_hint: Option<u64>,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(self.noting(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let stream = self.open_read_stream_impl(path, 0).await?.hinted(size_hint);
             Ok(Box::new(stream) as Box<dyn VolumeReadStream>)
         }))
@@ -205,8 +183,6 @@ impl Volume for S3Volume {
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(self.noting(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let stream = self.open_read_stream_impl(path, offset).await?;
             Ok(Box::new(stream) as Box<dyn VolumeReadStream>)
         }))
@@ -224,11 +200,7 @@ impl Volume for S3Volume {
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.read_range_impl(path, offset, len)).await
-        })
+        Box::pin(async move { self.noting(self.read_range_impl(path, offset, len)).await })
     }
 
     /// A copy off S3 scans its source first: one listing per folder
@@ -237,11 +209,7 @@ impl Volume for S3Volume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(scan_walk::scan_one(self, path)).await
-        })
+        Box::pin(async move { self.noting(scan_walk::scan_one_at(self, path)).await })
     }
 
     fn scan_for_copy_batch_with_boundary<'a>(
@@ -249,11 +217,7 @@ impl Volume for S3Volume {
         paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
-            let paths: &[PathBuf] = &paths_std;
-            self.noting(scan_walk::scan_trees(self, paths, boundary)).await
-        })
+        Box::pin(async move { self.noting(scan_walk::scan_trees_at(self, paths, boundary)).await })
     }
 
     /// A presigned GET, signed offline (`share_link.rs`), so ❌ no `noting`:
@@ -267,11 +231,7 @@ impl Volume for S3Volume {
         path: &'a AppPath,
         expires_in: ShareLinkExpiry,
     ) -> Pin<Box<dyn Future<Output = Result<ShareLink, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.share_link_impl(path, expires_in).await
-        })
+        Box::pin(async move { self.share_link_impl(path, expires_in).await })
     }
 
     fn scan_for_conflicts<'a>(
@@ -280,9 +240,7 @@ impl Volume for S3Volume {
         dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let dest_path_std = dest_path.as_std_legacy();
-            let dest_path: &Path = &dest_path_std;
-            self.noting(scan_walk::scan_conflicts(self, source_items, dest_path))
+            self.noting(scan_walk::scan_conflicts_at(self, source_items, dest_path))
                 .await
         })
     }
@@ -316,8 +274,6 @@ impl Volume for S3Volume {
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let dest_std = dest.as_std_legacy();
-            let dest: &Path = &dest_std;
             self.noting(self.write_from_stream_impl(dest, mode, length, stream, on_progress))
                 .await
         })
@@ -330,22 +286,14 @@ impl Volume for S3Volume {
         path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.create_file_impl(path, content)).await
-        })
+        Box::pin(async move { self.noting(self.create_file_impl(path, content)).await })
     }
 
     fn create_directory<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.create_directory_impl(path)).await
-        })
+        Box::pin(async move { self.noting(self.create_directory_impl(path)).await })
     }
 
     /// The shared walk over this backend's marker write (`mutation.rs`).
@@ -353,11 +301,7 @@ impl Volume for S3Volume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<DirectoryCreation, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.create_directory_all_impl(path)).await
-        })
+        Box::pin(async move { self.noting(self.create_directory_all_impl(path)).await })
     }
 
     /// A taken name, folder or file, is refused before the marker is written,
@@ -374,11 +318,7 @@ impl Volume for S3Volume {
 
     /// ❗ One node: a folder still holding anything is refused (`mutation.rs`).
     fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.delete_impl(path)).await
-        })
+        Box::pin(async move { self.noting(self.delete_impl(path)).await })
     }
 
     /// ❗ The folder only, never the object of its name (`mutation.rs`). One
@@ -388,11 +328,7 @@ impl Volume for S3Volume {
         path: &'a AppPath,
         _cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.delete_directory_impl(path)).await
-        })
+        Box::pin(async move { self.noting(self.delete_directory_impl(path)).await })
     }
 
     /// One small file by copy-then-delete. A folder or a big file answers
@@ -403,13 +339,7 @@ impl Volume for S3Volume {
         to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let to_std = to.as_std_legacy();
-            let to: &Path = &to_std;
-            let from_std = from.as_std_legacy();
-            let from: &Path = &from_std;
-            self.noting(self.rename_impl(from, to, force)).await
-        })
+        Box::pin(async move { self.noting(self.rename_impl(from, to, force)).await })
     }
 
     /// ❗ A folder, and a file past the part floor, are `CopyThenDelete`: S3
@@ -418,11 +348,7 @@ impl Volume for S3Volume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<RenameWork, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.rename_work_impl(path)).await
-        })
+        Box::pin(async move { self.noting(self.rename_work_impl(path)).await })
     }
 
     /// A folder, and an object past the part floor, rename by copying.
@@ -436,11 +362,7 @@ impl Volume for S3Volume {
         path: &'a AppPath,
         cap: u64,
     ) -> Pin<Box<dyn Future<Output = Result<SubtreeTally, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.noting(self.tally_subtree_impl(path, cap)).await
-        })
+        Box::pin(async move { self.noting(self.tally_subtree_impl(path, cap)).await })
     }
 
     /// `DeleteObjects`, a thousand keys a request (`batch.rs`).
@@ -453,8 +375,6 @@ impl Volume for S3Volume {
         paths: &'a [AppPathBuf],
     ) -> Pin<Box<dyn Future<Output = Vec<Result<(), VolumeError>>> + Send + 'a>> {
         Box::pin(async move {
-            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
-            let paths: &[PathBuf] = &paths_std;
             // Read before the batch, like `noting`'s own: a per-key loss is
             // pinned to the client the batch started on.
             let ran_on = self.inner.session.connection().generation();
@@ -487,10 +407,6 @@ impl Volume for S3Volume {
         progress: &'a dyn ServerCopyProgress,
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let to_std = to.as_std_legacy();
-            let to: &Path = &to_std;
-            let from_std = from.as_std_legacy();
-            let from: &Path = &from_std;
             self.noting(self.copy_on_server_impl(source, from, to, mode, progress))
                 .await
         })
@@ -510,11 +426,7 @@ impl Volume for S3Volume {
         parent_path: &'a AppPath,
         mutation: MutationEvent,
     ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
-        Box::pin(async move {
-            let parent_path_std = parent_path.as_std_legacy();
-            let parent_path: &Path = &parent_path_std;
-            patching::patch_mutation(self, parent_path, mutation).await
-        })
+        Box::pin(async move { patching::patch_mutation_at(self, parent_path, mutation).await })
     }
 
     // ── Lifecycle ────────────────────────────────────────────────────

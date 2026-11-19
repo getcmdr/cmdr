@@ -8,7 +8,6 @@
 //! milliseconds, so the engine's pause, which parks the SOURCE, never reached
 //! the bytes already read, and the upload ran to its end while "paused".
 
-use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -20,6 +19,7 @@ use tokio::sync::Notify;
 
 use super::S3Volume;
 use super::fake_s3::FakeS3;
+use super::test_support::at;
 use super::testing::BytesSource;
 
 const MIB: usize = 1024 * 1024;
@@ -122,33 +122,27 @@ fn start_write(
     cancel: Arc<std::sync::atomic::AtomicBool>,
 ) -> tokio::task::JoinHandle<Result<u64, VolumeError>> {
     let volume = Arc::clone(volume);
-    let path = volume.root().as_std_legacy().join(key);
+    let path = at(&*volume, key);
     let signal = Arc::clone(&source.signal);
     let pause_at = pause_at.map(|at| (at.past, Arc::clone(&at.raised)));
     let paused_once = std::sync::atomic::AtomicBool::new(false);
     tokio::spawn(async move {
         let length = source.total_size();
         volume
-            .write_from_stream(
-                &AppPath::legacy_unchecked(&path),
-                WriteMode::CreateNew,
-                length,
-                Box::new(source),
-                &|progress| {
-                    if let Some((past, raised)) = &pause_at
-                        && progress.bytes_written > *past
-                        && !paused_once.swap(true, std::sync::atomic::Ordering::SeqCst)
-                    {
-                        signal.pause();
-                        raised.notify_one();
-                    }
-                    if cancel.load(std::sync::atomic::Ordering::SeqCst) {
-                        ControlFlow::Break(())
-                    } else {
-                        ControlFlow::Continue(())
-                    }
-                },
-            )
+            .write_from_stream(&path, WriteMode::CreateNew, length, Box::new(source), &|progress| {
+                if let Some((past, raised)) = &pause_at
+                    && progress.bytes_written > *past
+                    && !paused_once.swap(true, std::sync::atomic::Ordering::SeqCst)
+                {
+                    signal.pause();
+                    raised.notify_one();
+                }
+                if cancel.load(std::sync::atomic::Ordering::SeqCst) {
+                    ControlFlow::Break(())
+                } else {
+                    ControlFlow::Continue(())
+                }
+            })
             .await
             .map(|written| written.bytes)
     })

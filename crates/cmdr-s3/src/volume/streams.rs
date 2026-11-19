@@ -7,7 +7,7 @@
 //! the way `crates/cmdr-webdav/src/volume/streams.rs` does. Both fixtures answer
 //! 206 with the exact window; [`judge_get`]'s unit cells pin the 200 case.
 
-use std::path::Path;
+use cmdr_fs::app_path::AppPath;
 use std::pin::Pin;
 use std::time::SystemTime;
 
@@ -175,7 +175,7 @@ impl VolumeReadStream for S3ReadStream {
 
 impl S3Volume {
     /// A GET from `offset`, in whatever chunks the body arrives in.
-    pub(super) async fn open_read_stream_impl(&self, path: &Path, offset: u64) -> Result<S3ReadStream, VolumeError> {
+    pub(super) async fn open_read_stream_impl(&self, path: &AppPath, offset: u64) -> Result<S3ReadStream, VolumeError> {
         let range = (offset > 0).then_some(ByteRange {
             start: offset,
             end: None,
@@ -224,7 +224,12 @@ impl S3Volume {
     /// A GET for `[offset, offset + len)`, collected up to `len` bytes and no
     /// further: the response is dropped as soon as the window is full, so a
     /// server that ignored the range doesn't send the whole object.
-    pub(super) async fn read_range_impl(&self, path: &Path, offset: u64, len: usize) -> Result<Vec<u8>, VolumeError> {
+    pub(super) async fn read_range_impl(
+        &self,
+        path: &AppPath,
+        offset: u64,
+        len: usize,
+    ) -> Result<Vec<u8>, VolumeError> {
         if len == 0 {
             // Still a path that has to be on this place.
             self.to_remote_path(path)?;
@@ -278,7 +283,7 @@ impl S3Volume {
     /// the wire and the server-side path errors name. The account root and a
     /// bucket's top are folders.
     /// The folder row beside a `<name> (file)` row is a folder too.
-    async fn get(&self, path: &Path, range: Option<ByteRange>) -> Result<(Opened, String), VolumeError> {
+    async fn get(&self, path: &AppPath, range: Option<ByteRange>) -> Result<(Opened, String), VolumeError> {
         let Resolved { remote, holder } = self.resolve(path)?;
         let Target::Key { bucket, key } = target_of(&remote) else {
             return Err(VolumeError::IsADirectory(remote));

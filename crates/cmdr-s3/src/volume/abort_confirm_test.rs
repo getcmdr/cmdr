@@ -2,7 +2,6 @@
 //! that confirm it (list, abort again while a late part brings the upload back)
 //! run afterwards, ending early when the volume is gone.
 
-use cmdr_fs::app_path::AppPath;
 use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use std::ops::ControlFlow;
@@ -13,6 +12,7 @@ use cmdr_fs::volume::{Volume, VolumeError, VolumeReadStream, WriteMode};
 
 use super::fake_s3::FakeS3;
 use super::multipart_upload::{UploadEnd, settle_abort};
+use super::test_support::at;
 use super::testing::{BytesSource, wait_for_the_ledger_to_settle};
 
 const MIB: usize = 1024 * 1024;
@@ -43,7 +43,7 @@ async fn a_failed_upload_answers_before_its_abort_is_confirmed() {
 
     let outcome = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("raced.bin")),
+            &at(&volume, "raced.bin"),
             WriteMode::CreateNew,
             length,
             Box::new(source),

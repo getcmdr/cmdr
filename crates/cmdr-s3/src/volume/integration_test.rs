@@ -8,8 +8,7 @@
 //!
 //! The stack: `apps/desktop/test/s3-servers/start.sh`.
 
-use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::sync::Mutex;
 
 use cmdr_fs::entry::FileEntry;
@@ -23,16 +22,16 @@ use crate::refusal::S3ConnectError;
 const FIXTURE: &str = "s3-servers/start.sh (s3-fixture)";
 
 /// The app path of `key` on a bucket place.
-fn at(volume: &S3Volume, key: &str) -> PathBuf {
-    volume.root().as_std_legacy().join(key.trim_end_matches('/'))
+fn at(volume: &S3Volume, key: &str) -> AppPathBuf {
+    super::test_support::at(volume, key.trim_end_matches('/'))
 }
 
 /// A listing's names and whether each is a folder, sorted by name.
-async fn listed(volume: &S3Volume, path: &Path) -> Vec<(String, bool)> {
+async fn listed(volume: &S3Volume, path: &AppPath) -> Vec<(String, bool)> {
     let mut entries: Vec<(String, bool)> = volume
-        .list_directory(&AppPath::legacy_unchecked(path), None)
+        .list_directory(path, None)
         .await
-        .unwrap_or_else(|e| panic!("listing {}: {e:?} ({FIXTURE})", path.display()))
+        .unwrap_or_else(|e| panic!("listing {}: {e:?} ({FIXTURE})", path.as_str()))
         .into_iter()
         .map(|entry| (entry.name, entry.is_directory))
         .collect();
@@ -57,19 +56,14 @@ async fn connect_with(service: FixtureService, bucket: Option<&str>, secret: &st
 
 async fn the_account_root_lists_the_buckets(service: FixtureService) {
     let volume = connect_fixture(service, None).await;
-    let buckets = listed(&volume, &volume.root().as_std_legacy()).await;
+    let buckets = listed(&volume, volume.root()).await;
     assert!(
         buckets.contains(&(FIXTURE_BUCKET.to_string(), true))
             && buckets.contains(&(FIXTURE_BUCKET_2.to_string(), true)),
         "{}: both fixture buckets list as folders, got {buckets:?}",
         service.key
     );
-    let bucket = volume
-        .get_metadata(&AppPath::legacy_unchecked(
-            &volume.root().as_std_legacy().join(FIXTURE_BUCKET),
-        ))
-        .await
-        .expect(FIXTURE);
+    let bucket = volume.get_metadata(&at(&volume, FIXTURE_BUCKET)).await.expect(FIXTURE);
     assert!(bucket.is_directory, "{}: a bucket is a folder", service.key);
 }
 
@@ -167,11 +161,7 @@ const PAGING_COUNT: usize = 1_005;
 async fn a_folder_past_one_page_lists_whole_and_reports_each_page(service: FixtureService) {
     let volume = connect_fixture(service, Some(FIXTURE_BUCKET)).await;
     let folder = at(&volume, PAGING_PREFIX);
-    let already = volume
-        .list_directory(&AppPath::legacy_unchecked(&folder), None)
-        .await
-        .map(|e| e.len())
-        .unwrap_or(0);
+    let already = volume.list_directory(&folder, None).await.map(|e| e.len()).unwrap_or(0);
     if already != PAGING_COUNT {
         let keys: Vec<String> = (0..PAGING_COUNT)
             .map(|n| format!("{PAGING_PREFIX}file-{n:04}.txt"))
@@ -182,10 +172,7 @@ async fn a_folder_past_one_page_lists_whole_and_reports_each_page(service: Fixtu
 
     let reports: Mutex<Vec<ListingProgress>> = Mutex::new(Vec::new());
     let on_progress = |progress: ListingProgress| reports.lock().expect("no poison in a test").push(progress);
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(&folder), Some(&on_progress))
-        .await
-        .expect(FIXTURE);
+    let entries = volume.list_directory(&folder, Some(&on_progress)).await.expect(FIXTURE);
 
     assert_eq!(entries.len(), PAGING_COUNT, "{}: every page lands", service.key);
     let reports = reports.into_inner().expect("no poison in a test");
@@ -253,12 +240,12 @@ async fn nested_folders_and_awkward_names_list_as_stored(service: FixtureService
     );
 
     let plus = volume
-        .get_metadata(&AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}a b+c.txt"))))
+        .get_metadata(&at(&volume, &format!("{prefix}a b+c.txt")))
         .await
         .expect(FIXTURE);
     assert_eq!(plus.size, Some(5), "{}: the `+` key is the one we wrote", service.key);
     let folder = volume
-        .get_metadata(&AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}x + y"))))
+        .get_metadata(&at(&volume, &format!("{prefix}x + y")))
         .await
         .expect(FIXTURE);
     assert!(
@@ -305,10 +292,7 @@ async fn a_folder_marker_is_a_folder_and_never_a_file(service: FixtureService) {
         "{}: an empty folder lists empty",
         service.key
     );
-    let stat = volume
-        .get_metadata(&AppPath::legacy_unchecked(&empty))
-        .await
-        .expect(FIXTURE);
+    let stat = volume.get_metadata(&empty).await.expect(FIXTURE);
     assert!(stat.is_directory, "{}: a marker stats as a folder", service.key);
 }
 
@@ -347,20 +331,14 @@ async fn an_objects_own_mtime_shows_over_its_upload_time(service: FixtureService
         .expect("after the epoch")
         .as_secs();
 
-    let stat = volume
-        .get_metadata(&AppPath::legacy_unchecked(&at(&volume, &dated)))
-        .await
-        .expect(FIXTURE);
+    let stat = volume.get_metadata(&at(&volume, &dated)).await.expect(FIXTURE);
     assert_eq!(
         stat.modified_at,
         Some(distant),
         "{}: x-amz-meta-mtime is the date shown",
         service.key
     );
-    let uploaded = volume
-        .get_metadata(&AppPath::legacy_unchecked(&at(&volume, &plain)))
-        .await
-        .expect(FIXTURE);
+    let uploaded = volume.get_metadata(&at(&volume, &plain)).await.expect(FIXTURE);
     let upload_time = uploaded.modified_at.expect("Last-Modified is always there");
     assert!(
         upload_time > distant,
@@ -369,10 +347,7 @@ async fn an_objects_own_mtime_shows_over_its_upload_time(service: FixtureService
     );
 
     // A listing carries no user metadata, so both show their upload time there.
-    let entries: Vec<FileEntry> = volume
-        .list_directory(&AppPath::legacy_unchecked(&at(&volume, &prefix)), None)
-        .await
-        .expect(FIXTURE);
+    let entries: Vec<FileEntry> = volume.list_directory(&at(&volume, &prefix), None).await.expect(FIXTURE);
     assert!(
         entries
             .iter()
@@ -400,25 +375,18 @@ async fn what_isnt_there_is_not_found(service: FixtureService) {
     let missing = at(&volume, &format!("{prefix}nothing-here"));
     assert!(
         matches!(
-            volume.list_directory(&AppPath::legacy_unchecked(&missing), None).await,
+            volume.list_directory(&missing, None).await,
             Err(VolumeError::NotFound(_))
         ),
         "{}: a prefix with no keys is no folder",
         service.key
     );
     assert!(
-        matches!(
-            volume.get_metadata(&AppPath::legacy_unchecked(&missing)).await,
-            Err(VolumeError::NotFound(_))
-        ),
+        matches!(volume.get_metadata(&missing).await, Err(VolumeError::NotFound(_))),
         "{}",
         service.key
     );
-    assert!(
-        !volume.exists(&AppPath::legacy_unchecked(&missing)).await,
-        "{}",
-        service.key
-    );
+    assert!(!volume.exists(&missing).await, "{}", service.key);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
