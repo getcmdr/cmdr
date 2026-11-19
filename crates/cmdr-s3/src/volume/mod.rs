@@ -364,6 +364,8 @@ mod get_length_test;
 #[cfg(test)]
 mod integration_test;
 #[cfg(test)]
+mod key_collision_test;
+#[cfg(test)]
 mod late_cancel_test;
 #[cfg(test)]
 mod lifecycle_test;

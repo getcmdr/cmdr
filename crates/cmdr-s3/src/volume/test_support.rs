@@ -3,6 +3,8 @@
 
 use std::sync::Arc;
 
+use cmdr_fs::app_path::{AppPathBuf, RelativeAppPath};
+use cmdr_fs::volume::Volume;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::http_session::HttpSession;
 use cmdr_fs::volume::remote_paths::RemoteRoot;
@@ -45,4 +47,18 @@ pub(super) fn make_test_volume_with(bucket: Option<&str>, host: VolumeHost) -> S
             beside_folders: std::sync::Mutex::new(std::collections::HashMap::new()),
         }),
     }
+}
+
+/// `rel` under `volume`'s root as a typed app path, the root itself for `""` or `"."`.
+///
+/// Panics on a `rel` that isn't a canonical relative tail (a `//`, a `.` or `..` name, a
+/// leading or trailing `/`), so a cell can't silently address a different path.
+pub(super) fn at(volume: &dyn Volume, rel: &str) -> AppPathBuf {
+    let root = volume.root();
+    if rel.is_empty() || rel == "." {
+        return root.to_owned();
+    }
+    let tail = RelativeAppPath::new(rel).unwrap_or_else(|why| panic!("{rel:?} is no relative app path: {why}"));
+    root.join_relative(tail)
+        .unwrap_or_else(|why| panic!("{rel:?} doesn't join the root: {why}"))
 }
