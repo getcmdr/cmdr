@@ -197,7 +197,9 @@ Open, waiting on David (each task entry has the detail):
 
 Which members compile for Windows is `windowsPending` in `scripts/check/checks/member-coverage-allowlist.json` (the
 check shrinks it). Milestones and what the builder ran: `docs/notes/windows-port/build-progress.md`. Every test failure
-there by cause: `docs/notes/windows-port/windows-test-failures.md`.
+there by cause: `docs/notes/windows-port/windows-test-failures.md`. The first real-desktop check of the menus, browser
+keys, and look (tasks 34, 60, 62, 63, 67), with its open problems:
+`docs/notes/windows-port/real-windows-check-2026-11-19.md`.
 
 Honest stubs: Windows arms that compile and answer "unsupported", "unknown", or nothing, each waiting for the task that
 owns its real body. Remove a line when its body lands.
@@ -1096,7 +1098,7 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
          `popContextMenu`, the root layout mounts one in-page menu per window, and the Menu key joins Shift+F10. David
          reversed the text-field landmine the same day: on Windows a text field gets the in-page edit menu too (Undo,
          Redo, Cut, Copy, Paste, Select all), so every menu looks the same.
-         `apps/desktop/src/lib/context-menu/DETAILS.md` has it and what's unverified on WebView2.
+         `apps/desktop/src/lib/context-menu/DETAILS.md` has it and what a WebView2 run checked (2026-11-19).
     8. [S] **The main-menu button and "Show menu bar".**
        - Scope: the main-menu button (GNOME's default, and the KDE and Windows stand-in when the bar is hidden), the
          "Show menu bar" setting and its View row; on Windows a hidden bar shows on Alt or F10 until focus leaves.

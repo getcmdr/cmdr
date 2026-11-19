@@ -94,6 +94,7 @@ export const CAPABILITIES_POSSIBLE_ON: Readonly<Record<Platform, readonly Capabi
     'dockPin',
     'cliCommand',
     'overlayTitleBar',
+    'windowMaterial',
     'imageIndexing',
     'localNetworkPermission',
     'localAi',

@@ -570,8 +570,9 @@ afterwards as `tauri://error`, which `queue-window.ts` listens for and logs at w
 `core:window:allow-set-effects`). UnderWindowBackground reads as a clean utility/HUD-style panel — the macOS convention
 for a transfer/activity manager — and follows the window's active state.
 
-Under macOS "Reduce transparency" the window opens opaque (no material, `backgroundColor` mirroring the theme) and the
-page surface uses the shared `--color-bg-glass` / `--color-border-glass` tokens, which flip to opaque under
+Off macOS, where nothing draws a material, it always opens opaque (`src/DETAILS.md` § Glass material). Under macOS
+"Reduce transparency" the window opens opaque (no material, `backgroundColor` mirroring the theme) and the page surface
+uses the shared `--color-bg-glass` / `--color-border-glass` tokens, which flip to opaque under
 `html.reduce-transparency` (toggled from the backend `NSWorkspace` value via `#lib/display-accessibility`, since
 WKWebView doesn't reflect `prefers-reduced-transparency`). `prefers-color-scheme` IS reflected, so dark detection stays
 a media query. Reduced motion is honored by the shared `ProgressBar` and `Spinner`: the bar's shimmer lives inside

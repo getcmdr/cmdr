@@ -35,6 +35,9 @@ pub(crate) fn capabilities() -> PlatformCapabilities {
         dock_pin: false,
         cli_command: false,
         overlay_title_bar: false,
+        // Tauri's Mica and Acrylic effects aren't wired, so a transparent child window showed
+        // the windows behind it (real Windows 10, 2026-11-19).
+        window_material: false,
         image_indexing: false,
         // Windows asks nothing for the local network; its firewall prompt is its own thing.
         local_network_permission: false,

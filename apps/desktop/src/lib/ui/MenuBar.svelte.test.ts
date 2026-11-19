@@ -251,6 +251,19 @@ describe('MenuBar keys on Windows', () => {
     expect(document.activeElement).toBe(origin)
   })
 
+  it("marks the keyboard's title after an Alt tap, which `:focus-visible` alone misses", async () => {
+    // Regression anchor (real Windows 10, WebView2 157, 2026-11-19): Chromium doesn't count a
+    // modifier-only keydown as keyboard use, so after a lone Alt the focused title drew no ring.
+    pane()
+    await setup()
+    await tapAlt()
+    expect(titles()[0].classList.contains('is-keyboard')).toBe(true)
+    await press('ArrowRight')
+    expect(titles().map((title) => title.classList.contains('is-keyboard'))).toEqual([false, true, false])
+    await press('ArrowDown')
+    expect(titles()[1].classList.contains('is-keyboard')).toBe(false)
+  })
+
   it("doesn't count an Alt that another key came between, nor AltGr", async () => {
     const origin = pane()
     await setup()
@@ -718,6 +731,18 @@ describe('MenuBar and the app moving focus on its own', () => {
     await settle()
     expect(surfaces()).toHaveLength(1)
     expect(titles()[0].getAttribute('aria-expanded')).toBe('true')
+  })
+
+  it('puts focus home when it gives back a keyboard it took while focus was adrift', async () => {
+    // Regression anchor (real Windows 10, 2026-11-19): after a dialog closed by a click left focus
+    // on `<body>`, Alt then Escape left focus on a title of a bar that had let go, and no key worked.
+    const list = explorerList()
+    await setup()
+    ;(document.activeElement as HTMLElement | null)?.blur()
+    await tapAlt()
+    expect(document.activeElement).toBe(titles()[0])
+    await press('Escape')
+    expect(document.activeElement).toBe(list)
   })
 
   it('lets go when focus leaves the bar for somewhere else (a text field a command opened)', async () => {
