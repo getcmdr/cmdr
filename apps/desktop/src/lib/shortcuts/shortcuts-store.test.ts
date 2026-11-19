@@ -774,15 +774,21 @@ describe('shortcuts-store menu accelerators follow the user-binding rule', () =>
   })
 })
 
-describe('shortcuts-store host defaults (`default:<commandId>` entries)', () => {
+/** The store with `map` as the host's defaults, set as the demo's boot does: before the store loads. */
+async function loadStoreWithHostDefaults(map: Record<string, string[]>) {
+  const { setHostDefaults } = await import('./host-defaults')
+  setHostDefaults(map)
+  return await loadStore()
+}
+
+describe('shortcuts-store host defaults (`host-defaults.ts`)', () => {
   // A host that can't deliver some registry keys (the browser demo, whose browser keeps
   // Ctrl+N) gives a command other keys in their place. They're the command's DEFAULTS
   // there, never a customization: a fixed-key command takes them too, Settings shows no
   // change, and a reset goes back to them.
 
   it("replaces a fixed-key command's registry keys, without making it modified", async () => {
-    disk.set('default:search.newQuery', ['⌥N'])
-    const store = await loadStore()
+    const store = await loadStoreWithHostDefaults({ 'search.newQuery': ['⌥N'] })
     await store.initializeShortcuts()
 
     expect(store.getDefaultShortcuts('search.newQuery')).toEqual(['⌥N'])
@@ -791,18 +797,16 @@ describe('shortcuts-store host defaults (`default:<commandId>` entries)', () => 
   })
 
   it("still drops a fixed-key command's customization", async () => {
-    disk.set('default:search.newQuery', ['⌥N'])
     disk.set('shortcut:search.newQuery', ['F9'])
-    const store = await loadStore()
+    const store = await loadStoreWithHostDefaults({ 'search.newQuery': ['⌥N'] })
     await store.initializeShortcuts()
 
     expect(store.getEffectiveShortcuts('search.newQuery')).toEqual(['⌥N'])
   })
 
   it("is a rebindable command's default: a customization wins, and a reset goes back to it", async () => {
-    disk.set('default:file.copy', ['F9'])
     disk.set('shortcut:file.copy', ['F10'])
-    const store = await loadStore()
+    const store = await loadStoreWithHostDefaults({ 'file.copy': ['F9'] })
     await store.initializeShortcuts()
     expect(store.getEffectiveShortcuts('file.copy')).toEqual(['F10'])
 
@@ -812,34 +816,28 @@ describe('shortcuts-store host defaults (`default:<commandId>` entries)', () => 
   })
 
   it('keeps an empty list: the host gives the command no key', async () => {
-    disk.set('default:tab.new', [])
-    const store = await loadStore()
+    const store = await loadStoreWithHostDefaults({ 'tab.new': [] })
     await store.initializeShortcuts()
     expect(store.getEffectiveShortcuts('tab.new')).toEqual([])
   })
 
-  it('heals the combos to the canonical vocabulary, and skips garbage', async () => {
-    disk.set('default:file.copy', ['⌘⌫', '', 7])
-    disk.set('default:file.move', 'F6')
-    const store = await loadStore()
+  it('heals the combos to the canonical vocabulary', async () => {
+    const store = await loadStoreWithHostDefaults({ 'file.copy': ['⌘⌫', ''] })
     await store.initializeShortcuts()
     expect(store.getDefaultShortcuts('file.copy')).toEqual(['⌘Backspace'])
-    expect(store.getDefaultShortcuts('file.move')).toEqual(getDefaultShortcuts('file.move'))
   })
 
-  it('never writes or deletes a host default, not even on reset-all', async () => {
-    disk.set('default:file.copy', ['F9'])
-    const store = await loadStore()
+  it('never reaches the file, not even on reset-all', async () => {
+    const store = await loadStoreWithHostDefaults({ 'file.copy': ['F9'] })
     await store.initializeShortcuts()
     store.setShortcut('file.move', 0, 'F10')
     await store.resetAllShortcuts()
     await flushSave()
-    expect(disk.get('default:file.copy')).toEqual(['F9'])
+    expect([...disk.keys()].filter((key) => key.startsWith('default:'))).toEqual([])
   })
 
   it('pushes a menu item whose host default differs from the key the bar was built with, at load and after a rebuild', async () => {
-    disk.set('default:tab.new', [])
-    const store = await loadStore()
+    const store = await loadStoreWithHostDefaults({ 'tab.new': [] })
     await store.initializeShortcuts()
     await flushSave()
     expect(menuPushes.filter(([id]) => id === 'tab.new')).toEqual([['tab.new', '']])
@@ -848,6 +846,29 @@ describe('shortcuts-store host defaults (`default:<commandId>` entries)', () => 
     store.resyncMenuAccelerators()
     await flushSave()
     expect(menuPushes.filter(([id]) => id === 'tab.new')).toEqual([['tab.new', '']])
+  })
+})
+
+describe('shortcuts-store and a `default:<commandId>` key in `shortcuts.json`', () => {
+  // The desktop has no host defaults: only the demo's boot sets them, and no file can. A
+  // hand-edited `default:` key must not rebind a fixed-key command, or any other.
+
+  it("leaves a fixed-key command on the registry's keys", async () => {
+    disk.set('default:search.newQuery', ['F9'])
+    const store = await loadStore()
+    await store.initializeShortcuts()
+
+    expect(store.getDefaultShortcuts('search.newQuery')).toEqual(getDefaultShortcuts('search.newQuery'))
+    expect(store.getEffectiveShortcuts('search.newQuery')).toEqual(getDefaultShortcuts('search.newQuery'))
+  })
+
+  it("leaves a rebindable command on the registry's keys, and the key on disk untouched", async () => {
+    disk.set('default:file.copy', ['F9'])
+    const store = await loadStore()
+    await store.initializeShortcuts()
+
+    expect(store.getEffectiveShortcuts('file.copy')).toEqual(getDefaultShortcuts('file.copy'))
+    expect(disk.get('default:file.copy')).toEqual(['F9'])
   })
 })
 
@@ -862,8 +883,7 @@ describe('shortcuts-store host defaults on macOS', () => {
   })
 
   it('drops one for a command the app menu owns', async () => {
-    disk.set('default:app.quit', ['⌘⌥Q'])
-    const store = await loadStore()
+    const store = await loadStoreWithHostDefaults({ 'app.quit': ['⌘⌥Q'] })
     await store.initializeShortcuts()
     expect(store.getDefaultShortcuts('app.quit')).toEqual(getDefaultShortcuts('app.quit'))
   })

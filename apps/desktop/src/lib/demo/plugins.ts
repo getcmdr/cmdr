@@ -7,7 +7,7 @@
  * `own-window.ts`.
  */
 import type { RestrictedWindowSettings } from '#lib/ipc/bindings.js'
-import { browserHostDefaults, browserSafeShortcuts } from './browser-shortcuts.js'
+import { browserSafeShortcuts } from './browser-shortcuts.js'
 import { visitorPlatform } from './platform.js'
 import { DEMO_HOME } from './demo-tree.js'
 import { openInBrowserTab } from './opener.js'
@@ -31,18 +31,16 @@ const seeds: Partial<Record<string, () => Record<string, unknown>>> = {
     // can only end on an error screen. Settings still offers all three.
     'behavior.archiveEnter.zip': 'open',
   }),
-  // One `shortcut:<commandId>` key per customization and one `default:<commandId>` key per
-  // fixed-key command's host default, as `shortcuts-store.ts` reads them, in the visitor's own
-  // OS's spelling (the same answer `platform.ts` gives every frame).
-  'shortcuts.json': () => {
-    const platform = visitorPlatform(navigator.userAgent)
-    const keyed = (prefix: string, map: Record<string, string[] | undefined>) =>
-      Object.entries(map).map(([id, keys]) => [`${prefix}${id}`, keys])
-    return Object.fromEntries([
-      ...keyed('shortcut:', browserSafeShortcuts(platform)),
-      ...keyed('default:', browserHostDefaults(platform)),
-    ])
-  },
+  // One `shortcut:<commandId>` key per customization, as `shortcuts-store.ts` reads them, in the
+  // visitor's own OS's spelling (the same answer `platform.ts` gives every frame). The fixed-key
+  // commands' keys aren't here: `boot.ts` hands them to the store as host defaults.
+  'shortcuts.json': () =>
+    Object.fromEntries(
+      Object.entries(browserSafeShortcuts(visitorPlatform(navigator.userAgent))).map(([id, keys]) => [
+        `shortcut:${id}`,
+        keys,
+      ]),
+    ),
 }
 
 const storesByPath = new Map<string, number>()
@@ -123,7 +121,7 @@ const handlers: Partial<Record<string, PluginHandler>> = {
   'plugin:app|tauri_version': () => '2',
   // `openExternalUrl`: a new browser tab, for web and email links only (`opener.ts`).
   'plugin:opener|open_url': (p) => openInBrowserTab(p.url as string),
-  // Questions in the browser's own dialogs; pickers and reveals get the demo's notice.
+  // Pickers and reveals get the demo's notice (a question is the asking webview's, `own-window.ts`).
   ...browserDialogAnswers,
 }
 

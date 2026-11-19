@@ -17,8 +17,15 @@ vi.mock('./webview.js', () => ({
   installWebview: (backend: unknown, label: string) => calls.webviews.push([backend, label]),
 }))
 
+const hostDefaults = vi.hoisted(() => ({ set: [] as unknown[] }))
+vi.mock('#lib/shortcuts/host-defaults.js', () => ({
+  setHostDefaults: (map: unknown) => hostDefaults.set.push(map),
+}))
+
 // Imported for its export: under vitest `__CMDR_DEMO_BUILD__` is false, so the module installs nothing by itself.
 import { installDemoBackend } from './boot.js'
+import { browserHostDefaults } from './browser-shortcuts.js'
+import { visitorPlatform } from './platform.js'
 
 type Host = { __cmdrDemoBackend?: unknown }
 
@@ -26,6 +33,7 @@ afterEach(() => {
   calls.created = 0
   calls.webviews = []
   calls.menuBars = 0
+  hostDefaults.set = []
   delete (window as unknown as Host).__cmdrDemoBackend
   vi.restoreAllMocks()
 })
@@ -34,6 +42,16 @@ describe('boot role', () => {
   it('installs nothing on import outside a demo build', () => {
     expect(calls.created).toBe(0)
     expect(calls.webviews).toEqual([])
+    expect(hostDefaults.set).toEqual([])
+  })
+
+  it("hands every frame's shortcuts store the visitor's host defaults", () => {
+    installDemoBackend()
+    vi.spyOn(window, 'parent', 'get').mockReturnValue({ __cmdrDemoBackend: { id: 'parent' } } as unknown as Window)
+    installDemoBackend()
+    const expected = browserHostDefaults(visitorPlatform(navigator.userAgent))
+    expect(Object.keys(expected).length).toBeGreaterThan(0)
+    expect(hostDefaults.set).toEqual([expected, expected])
   })
 
   it('makes the top frame the backend and its main webview', () => {

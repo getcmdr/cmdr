@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
-import { browserHostDefaults, browserSafeShortcuts } from './browser-shortcuts.js'
+import { browserSafeShortcuts } from './browser-shortcuts.js'
 import { visitorPlatform } from './platform.js'
 import { DEMO_HOME } from './demo-tree.js'
 import { customShortcuts, pluginHandler, restrictedWindowSettings } from './plugins.js'
@@ -66,13 +66,10 @@ describe('in-memory store plugin', () => {
     }
   })
 
-  it("seeds the fixed-key commands' browser-safe keys as default:<id> keys, the store's host defaults", () => {
+  it("keeps the fixed-key commands' keys out of the file (`boot.ts` sets them as host defaults)", () => {
     const rid = load('shortcuts.json')
-    const hostDefaults = Object.entries(browserHostDefaults(visitorPlatform(navigator.userAgent)))
-    expect(hostDefaults.length).toBeGreaterThan(0)
-    for (const [id, combos] of hostDefaults) {
-      expect(call('plugin:store|get', { rid, key: `default:${id}` })).toEqual([combos, true])
-    }
+    const keys = call('plugin:store|keys', { rid }) as string[]
+    expect(keys.filter((key) => !key.startsWith('shortcut:'))).toEqual([])
   })
 
   it('reads the custom shortcuts back the way the viewer window asks for them', () => {

@@ -7,9 +7,9 @@ Background on default sort-order shortcuts: `docs/notes/sort-order-shortcut-rese
 
 ## Module map
 
-- `shortcuts-store.ts` (persistence, host defaults, cross-window emit, the native/fixed boundary), `menu-commands.ts`,
-  `reactive-shortcuts.svelte.ts` (reactive reads), `scope-hierarchy.ts` + `conflict-detector.ts` (overlap → conflict),
-  `key-capture.ts`, `shortcut-dispatch.ts` (Tier 1 reverse lookup), `binding-priority.ts`.
+- `shortcuts-store.ts` (persistence, cross-window emit, the native/fixed boundary), `host-defaults.ts`,
+  `menu-commands.ts`, `reactive-shortcuts.svelte.ts` (reactive reads), `scope-hierarchy.ts` + `conflict-detector.ts`
+  (overlap → conflict), `key-capture.ts`, `shortcut-dispatch.ts` (Tier 1 reverse lookup), `binding-priority.ts`.
 - Read-only help window (Help > Keyboard shortcuts): `shortcuts-window.ts` (opener), `ShortcutsList.svelte` (grouped
   list), `shortcut-diff.ts` (default-vs-effective diff), route `routes/shortcuts/`. DETAILS.md § "Keyboard shortcuts
   help window".
@@ -28,8 +28,8 @@ Background on default sort-order shortcuts: `docs/notes/sort-order-shortcut-rese
 - **macOS-native (`app.quit`/`hide`/`hideOthers`/`showAll`) and fixed-key (`FIXED_KEY_COMMAND_IDS`) commands aren't
   customizable, at the store boundary.** Load drops their entries, the mutators no-op with `log.warn`, `resetShortcut`
   stays permissive.
-- **Read defaults via `getDefaultShortcuts`, ❌ never the registry's `defaultShortcuts`**: only it sees host defaults
-  (`default:<id>`). DETAILS § Host defaults.
+- **Read defaults via `getDefaultShortcuts`, ❌ never the registry's `defaultShortcuts`**: it sees host defaults
+  (`host-defaults.ts`: demo boot, ❌ never the file). DETAILS § Host defaults.
 - **Every mutation emits `shortcuts:changed` after saving; `SENDER_ID` is the loop guard.** The listener updates the
   local map and calls `notifyListeners`, never saving or re-emitting.
 - **`initializeShortcuts` heals leaked `''` entries on load:** `[]` kept; `['']` dropped (❌ never collapsed to `[]`,

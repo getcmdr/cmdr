@@ -1,13 +1,12 @@
 /**
  * The demo's browser-safe shortcut maps, one arm per visitor OS: the keys a browser takes before
- * the page sees them come off, so no hint in the demo names a key that can't reach it. Two seeds
- * in `shortcuts.json`, so the app's shortcut system needs no demo awareness and every hint
- * (menus, palette, function bar, chips) shows the remapped combo:
+ * the page sees them come off, so no hint in the demo names a key that can't reach it. Two seams,
+ * so every hint (menus, palette, function bar, chips) shows the remapped combo:
  *
- * - {@link browserSafeShortcuts}: a rebindable command's, as `shortcut:<id>` user customizations,
- *   the same delta the Settings editor writes.
- * - {@link browserHostDefaults}: a fixed-key command's, as `default:<id>` host defaults
- *   (`lib/shortcuts/DETAILS.md` § Host defaults). The store drops a fixed-key command's
+ * - {@link browserSafeShortcuts}: a rebindable command's, seeded in `shortcuts.json` as
+ *   `shortcut:<id>` user customizations, the same delta the Settings editor writes.
+ * - {@link browserHostDefaults}: a fixed-key command's, which `boot.ts` hands every frame's store as
+ *   host defaults (`lib/shortcuts/host-defaults.ts`). The store drops a fixed-key command's
  *   customization, and its own matcher (`eventMatchesCommand`) reads the default.
  *
  * Arms:

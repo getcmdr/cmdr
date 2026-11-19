@@ -145,7 +145,8 @@ describe.each(['windows', 'linux'] as const)('the %s arm', (platform) => {
   /** What the demo gives a command whose registry defaults on `platform` hold a withheld combo. */
   function expected(id: string): string[] {
     const kept = defaultShortcuts(id, platform).filter((c) => !withheld.has(c))
-    return kept.length > 0 ? kept : [...(STAND_INS[platform][id as keyof (typeof STAND_INS)[typeof platform]] ?? [])]
+    const standIns: Partial<Record<string, readonly string[]>> = STAND_INS[platform]
+    return kept.length > 0 ? kept : [...(standIns[id] ?? [])]
   }
 
   it('changes only commands holding a combo the browser keeps: drops it, or stands in where none is left', () => {

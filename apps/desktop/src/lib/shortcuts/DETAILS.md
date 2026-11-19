@@ -90,12 +90,17 @@ Some fixed commands are fixed by product choice, not because their handler ignor
 (`search.*`), Ask Cmdr's and the viewer's find chords, all matched through `eventMatchesCommand`, which reads effective
 shortcuts. Those follow a host default (next section); a hardcoded one (`nav.up`, `palette.close`) wouldn't.
 
-### Host defaults (`default:<commandId>`)
+### Host defaults (`host-defaults.ts`)
 
-A `default:<commandId>` entry in `shortcuts.json` is a host's own default for a command: the keys it gives in place of
-the registry's, for a host that can't deliver some of them. Today that's the browser demo, whose browser keeps `Ctrl+N`
-and `⌘N` (new window) before the page sees them, so the search dialog's new query takes `Alt+N` / `⌃N` there
-(`lib/demo/browser-shortcuts.ts`, seeded by `lib/demo/plugins.ts`). Nothing in the app writes one.
+A host default is a host's own default for a command: the keys it gives in place of the registry's, for a host that
+can't deliver some of them. Today that's the browser demo, whose browser keeps `Ctrl+N` and `⌘N` (new window) before the
+page sees them, so the search dialog's new query takes `Alt+N` / `⌃N` there (`lib/demo/browser-shortcuts.ts`).
+`lib/demo/boot.ts` calls `setHostDefaults` in every frame before any app module runs; nothing in the app calls it.
+
+- **Decision: never from `shortcuts.json`.** **Why**: a file entry would let a hand-edited desktop `shortcuts.json`
+  rebind a fixed-key command, around the store boundary that keeps them fixed. A `default:<id>` key in the file is
+  ignored (`shortcuts-store.test.ts` pins it). `host-defaults.ts` has no imports, so the demo's boot sets it without
+  pulling in the store.
 
 - `getDefaultShortcuts` answers the host default where there is one, else the registry's, and `getEffectiveShortcuts`
   falls back to it. So every reader (chips, tooltips, the palette, the help window's default-vs-effective diff, the
@@ -103,13 +108,13 @@ and `⌘N` (new window) before the page sees them, so the search dialog's new qu
 - Why a separate layer and not a `shortcut:` seed: a fixed-key command's customization is dropped on load, by design,
   and a host default isn't the user's choice anyway.
 - A fixed-key command takes one too (the host replaces the default itself); a command the app menu owns (macOS Quit,
-  Hide) doesn't, as the OS owns its key. Loading heals it like a customization: canonical combos, `[]` kept as "no key
-  here", junk skipped.
-- Never saved, deleted, or reset: `performSave` and reset-all touch `shortcut:*` keys only.
+  Hide) doesn't, as the OS owns its key. Reading heals it like a customization: canonical combos, `[]` kept as "no key
+  here", `''` skipped.
+- Never saved, deleted, or reset: it lives in memory only, and `performSave` and reset-all touch `shortcut:*` keys only.
 - The menu bar is built with the REGISTRY's keys, so `menuShortcutNow` compares against those: a menu item with a host
   default gets pushed at load and on every `resyncMenuAccelerators`.
-- A restricted window (the viewer) reads only the customizations snapshot (`get_restricted_window_shortcuts`), so it
-  sees no host default. No viewer command needs one today.
+- A restricted window (the viewer) reads its customizations from the snapshot (`get_restricted_window_shortcuts`), and
+  its frame's boot sets the same host defaults as any other.
 
 ### Cross-window propagation (`shortcuts:changed`)
 

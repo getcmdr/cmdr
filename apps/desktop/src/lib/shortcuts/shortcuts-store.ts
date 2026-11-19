@@ -15,6 +15,7 @@ import { pluralize } from '#lib/utils/pluralize.js'
 import { toCanonicalShortcut, typingRefusal } from './key-capture'
 import { firstLiveShortcut, isShadowedDefault, liveShortcuts, type BindingReader } from './binding-priority'
 import { menuCommands } from './menu-commands'
+import { hostDefaultFor, hostDefaultIds } from './host-defaults'
 
 const log = getAppLogger('shortcuts')
 
@@ -29,11 +30,6 @@ let storeInstance: Store | null = null
 
 // In-memory cache of custom shortcuts
 const customShortcuts = new Map<string, string[]>()
-// The host's defaults (`default:<commandId>` entries): keys a host that can't deliver some
-// registry keys gives a command in their place (the browser demo, whose browser keeps Ctrl+N).
-// They ARE the command's defaults there: a fixed-key command takes them too, a customization
-// still wins, a reset returns to them, and no window ever writes one. See DETAILS § Host defaults.
-const hostDefaults = new Map<string, string[]>()
 // Commands THIS window rebound or reset since its last save: the patch
 // `performSave` applies. Windows share one in-memory plugin store per file, and a
 // window that loaded before another's rebind (it listens only after loading)
@@ -166,14 +162,10 @@ export async function initializeShortcuts(options: { restrictedWindow?: boolean 
 
   log.debug('Initializing shortcuts store')
 
-  const { entries, hostEntries } = options.restrictedWindow
-    ? { entries: await readRestrictedSnapshot(), hostEntries: [] }
-    : await readStoreEntries()
+  const entries = options.restrictedWindow ? await readRestrictedSnapshot() : await readStoreEntries()
 
   // Clear in-memory cache and load fresh
   customShortcuts.clear()
-  hostDefaults.clear()
-  for (const [commandId, shortcuts] of hostEntries) seedHostDefault(commandId, shortcuts)
   for (const [commandId, shortcuts] of entries) seedCustomShortcut(commandId, shortcuts)
   if (!options.restrictedWindow) await writeBackHealedEntries(entries)
 
@@ -198,16 +190,13 @@ export async function initializeShortcuts(options: { restrictedWindow?: boolean 
   // async init finishes; without the notification they'd keep showing registry
   // defaults until the next manual shortcut change. `notifyListeners` routes through
   // `updateMenuAccelerator`, which no-ops for commands without a menu item.
-  for (const commandId of new Set([...hostDefaults.keys(), ...customShortcuts.keys()])) {
+  for (const commandId of new Set([...hostDefaultIds(), ...customShortcuts.keys()])) {
     notifyListeners(commandId)
   }
 }
 
-/**
- * Every `shortcut:<commandId>` entry in the store (`entries`) and every `default:<commandId>` one
- * (`hostEntries`), as `[commandId, raw value]`, after any schema migration.
- */
-async function readStoreEntries(): Promise<{ entries: [string, unknown][]; hostEntries: [string, unknown][] }> {
+/** Every `shortcut:<commandId>` entry in the store, as `[commandId, raw value]`, after any schema migration. */
+async function readStoreEntries(): Promise<[string, unknown][]> {
   const store = await getStore()
 
   // Check schema version and migrate if needed
@@ -217,15 +206,12 @@ async function readStoreEntries(): Promise<{ entries: [string, unknown][]; hostE
     await migrateShortcuts(store, version)
   }
 
-  // Both live in top-level keys (`shortcut:<commandId>`, `default:<commandId>`), like settings-store's values.
-  const keys = await store.keys()
-  const read = (prefix: string): Promise<[string, unknown][]> =>
-    Promise.all(
-      keys
-        .filter((k) => k.startsWith(prefix))
-        .map(async (key): Promise<[string, unknown]> => [key.slice(prefix.length), await store.get(key)]),
-    )
-  return { entries: await read('shortcut:'), hostEntries: await read('default:') }
+  // Custom shortcuts live in top-level keys (format: shortcut:commandId), like settings-store's values.
+  // Only those: a host default never comes from the file (`host-defaults.ts`).
+  const shortcutKeys = (await store.keys()).filter((k) => k.startsWith('shortcut:'))
+  return Promise.all(
+    shortcutKeys.map(async (key): Promise<[string, unknown]> => [key.replace('shortcut:', ''), await store.get(key)]),
+  )
 }
 
 /**
@@ -257,16 +243,15 @@ async function readRestrictedSnapshot(): Promise<[string, unknown][]> {
 }
 
 /**
- * Loads one host default, healed like a customization: a list of canonical combos, `[]` for "no
- * key here", garbage skipped. A command the app menu owns is skipped, as its customization is (the
- * OS owns its key); a fixed-key command takes it, since the host replaces the default itself and
- * the command's matcher reads it (`eventMatchesCommand`).
+ * The host's default for a command (`host-defaults.ts`), in canonical combos, `[]` for "no key
+ * here". A command the app menu owns gets none, as its customization doesn't (the OS owns its
+ * key); a fixed-key command does, since the host replaces the default itself and the command's
+ * matcher reads it (`eventMatchesCommand`).
  */
-function seedHostDefault(commandId: string, shortcuts: unknown): void {
-  if (isNativeShortcutCommand(commandId) || !Array.isArray(shortcuts)) return
-  const combos = shortcuts.filter((s): s is string => typeof s === 'string' && s !== '')
-  if (combos.length === 0 && shortcuts.length > 0) return
-  hostDefaults.set(commandId, [...new Set(combos.map(toCanonicalShortcut))])
+function hostDefault(commandId: string): string[] | undefined {
+  const combos = hostDefaultFor(commandId)
+  if (combos === undefined || isNativeShortcutCommand(commandId)) return undefined
+  return [...new Set(combos.filter((combo) => combo !== '').map(toCanonicalShortcut))]
 }
 
 /** Loads one persisted customization into the map, healed. Both init paths come through here. */
@@ -373,11 +358,11 @@ export function getEffectiveShortcuts(commandId: string): string[] {
 }
 
 /**
- * Get default shortcuts for a command: the host's (`default:<commandId>`) where it gives one, else
+ * Get default shortcuts for a command: the host's (`host-defaults.ts`) where it gives one, else
  * the registry's. Always returns a copy to prevent mutation of the original arrays.
  */
 export function getDefaultShortcuts(commandId: string): string[] {
-  return [...(hostDefaults.get(commandId) ?? defaultShortcuts(commandId))]
+  return hostDefault(commandId) ?? [...defaultShortcuts(commandId)]
 }
 
 /**
@@ -658,7 +643,7 @@ export function resyncMenuAccelerators(): void {
   for (const commandId of menuCommands) {
     if (
       customShortcuts.has(commandId) ||
-      hostDefaults.has(commandId) ||
+      hostDefault(commandId) !== undefined ||
       getMenuShortcut(commandId) !== menuShortcutNow(commandId)
     ) {
       void updateMenuAccelerator(commandId)

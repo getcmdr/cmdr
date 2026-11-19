@@ -9,8 +9,11 @@
  * installs only a webview. The demo itself may be framed by another page (the landing page's
  * embed): a parent without a backend, or a cross-origin one, makes this frame the top.
  */
+import { setHostDefaults } from '#lib/shortcuts/host-defaults.js'
 import { createDemoBackend, type DemoBackend } from './backend.js'
+import { browserHostDefaults } from './browser-shortcuts.js'
 import { installMenuBar } from './menu-bar.svelte.js'
+import { visitorPlatform } from './platform.js'
 import { exposeUnanswered } from './unanswered.js'
 import { installWebview } from './webview.js'
 
@@ -31,6 +34,9 @@ function parentBackend(): DemoBackend | undefined {
 
 /** Installs this frame's role. Exported for its test; the app runs it only through the guard below. */
 export function installDemoBackend(): void {
+  // Every frame's own module graph: the fixed-key commands' browser-safe keys, before the app's
+  // shortcuts store first reads a default (`lib/shortcuts/host-defaults.ts`).
+  setHostDefaults(browserHostDefaults(visitorPlatform(navigator.userAgent)))
   const shared = parentBackend()
   if (shared) {
     installWebview(shared, window.name || 'secondary')
