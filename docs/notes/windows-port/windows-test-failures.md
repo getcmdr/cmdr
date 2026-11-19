@@ -97,8 +97,12 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
   surrogates, native entry points), the relative bridge input, and the anchoring table. Its `&Path` entry points now
   take a native `C:\…` path (`list_directory_core`, `get_single_entry`, `rename_local_exclusive`), which is what the N
   cells through `list_directory_core` and the F cells (the finalize handing `rename_local_exclusive` a native path)
-  failed on, so some of 10a's and 10c/10d's clusters may turn green before their crate converts: unverified, no
-  dependent ran on the builder this round.
+  failed on, so part of 10a's clusters turned green before their crate converts: `cmdr-operations` on the branch ran
+  1,763 tests, 190 failed, against this note's 299 (115 of those now pass). The six failures not in the TSV are `main`'s
+  own (all six fail on `a4449b5cb7` too, run alone): the three `refused_class_tests::*_native_join_refuses` cells and
+  the two `link_landing_tests` overwrite cells (both added after this note's run), and
+  `source_binding::tests::a_source_replaced_by_a_different_file_of_the_same_size_is_dropped` (node identity, task 35).
+  The app's suites didn't run on the builder this round.
 - **10a, `cmdr-operations`**: 229.
 - **10b, `cmdr-index`**: 133, the 48 cold-drive timeouts among them.
 - **10e, `cmdr-listing-wasm`**: 7.

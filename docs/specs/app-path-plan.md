@@ -1436,7 +1436,16 @@ included; the hidden couplings it found are why waves B and C differ from round 
     the root's `os_of`; 11), the old constructors' root (10a–10d), `notify_mutation`'s bridged parent (10a), the
     `ScanRecorder`'s caller spelling (10a), the listing host's `&Path` (Windows `notify_mutation`; 10c), and the test
     cells that hand in bridge shapes on purpose (`wire_path_shape_test.rs` 6, 10c; the relative and alias cells in
-    `local_posix_test.rs` 8 and `local_windows_test.rs` 3, 11).
+    `local_posix_test.rs` 8 and `local_windows_test.rs` 3, 11). The text budgets: `appTextToPath` keeps 3 (the sidecar
+    filter's `OsStr::new(&entry.name)`, a bulk-test and a parity-test row read, 10f), `pathFromBareText` 4 (native mount
+    probes and space, outside the conversion).
+  - Verified: macOS `cargo nextest run` for `cmdr-local` (154), `cmdr-operations` and `cmdr-restic` (2,752), and the app
+    (6,807), all green; clippy `--all-targets -D warnings` on macOS (the four crates) and, through the zig cross-check,
+    for Windows and Linux (`cmdr-local`); `pnpm check --fast`, `fuzz-compile`, `module-cycles`, `clippy`. Windows
+    builder: `cmdr-local` 30 of 30 on `main` before, 40 of 40 after (8 skipped both times, the task-35 ignores);
+    `cmdr-operations` 190 failing of 1,763, from the triage run's 299, none newly red by this branch
+    (`docs/notes/windows-port/windows-test-failures.md` § "By milestone"). The 33 task-35 `MountedVolumeInside` cells
+    stay task 35's: the guard reads the mount table, which answers "can't say" on Windows.
 
 ### 10a. `cmdr-operations`
 
