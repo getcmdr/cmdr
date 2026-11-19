@@ -322,27 +322,27 @@
   "@settings.appearance.showFunctionKeyBar.keywords": {
     "sourceHash": "c42e176"
   },
-  "settings.appearance.menuBar.label": "Show menu bar",
+  "settings.appearance.menuBar.label": "Zobrazit řádek nabídek",
   "@settings.appearance.menuBar.label": {
     "sourceHash": "63809e3"
   },
-  "settings.appearance.menuBar.description": "Show the menus (File, Edit, View, and so on) in a bar at the top of each window. Hidden, they’re in the Main menu button at the end of the tab row instead.",
+  "settings.appearance.menuBar.description": "Zobrazí nabídky (Soubor, Úpravy, Zobrazení a další) na řádku v horní části každého okna. Když je řádek skrytý, najdete je pod tlačítkem „Hlavní nabídka“ na konci řádku záložek.",
   "@settings.appearance.menuBar.description": {
     "sourceHash": "af69e91"
   },
-  "settings.appearance.menuBar.opt.desktopDefault": "Desktop default",
+  "settings.appearance.menuBar.opt.desktopDefault": "Výchozí pro pracovní prostředí",
   "@settings.appearance.menuBar.opt.desktopDefault": {
     "sourceHash": "f3db16c"
   },
-  "settings.appearance.menuBar.opt.shown": "Shown",
+  "settings.appearance.menuBar.opt.shown": "Zobrazeno",
   "@settings.appearance.menuBar.opt.shown": {
     "sourceHash": "6ba2a0e"
   },
-  "settings.appearance.menuBar.opt.hidden": "Hidden",
+  "settings.appearance.menuBar.opt.hidden": "Skryto",
   "@settings.appearance.menuBar.opt.hidden": {
     "sourceHash": "7e6feff"
   },
-  "settings.appearance.menuBar.keywords": "menu, bar, menubar, hamburger, hide, File, Edit, View",
+  "settings.appearance.menuBar.keywords": "nabídka, menu, lišta, panel nabídek, hamburger, skrýt, schovat, Soubor, Úpravy, Zobrazení",
   "@settings.appearance.menuBar.keywords": {
     "sourceHash": "7598526"
   },

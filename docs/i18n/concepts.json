@@ -1089,7 +1089,7 @@
     "distinct": ["documents", "download"],
     "en": "Desktop",
     "match": ["desktop"],
-    "notMatch": ["desktop app", "the desktop usually takes", "desktop’s keyboard settings"],
+    "notMatch": ["desktop app", "the desktop usually takes", "desktop’s keyboard settings", "desktop default"],
     "sense": "The macOS Desktop folder (named in lists of protected folders), and the Desktop & Dock settings pane."
   },
   "destination": {
@@ -1417,7 +1417,16 @@
     "en": "file",
     "match": ["file", "files"],
     "note": "The macOS menu bar's File menu is Apple's own localized title and may differ from the ordinary word.",
-    "notMatch": ["file change log", "file ops", "file viewer", "file history"],
+    "notMatch": [
+      "file change log",
+      "file ops",
+      "file viewer",
+      "file history",
+      {
+        "key": "settings.appearance.menuBar.description",
+        "why": "\"File\" names the menu-bar menu, whose title is each locale's menu.bar.file (Apple's own word: de Ablage, nl Archief, sv Arkiv)"
+      }
+    ],
     "sense": "A file on disk."
   },
   "file-handle": {
@@ -1794,7 +1803,15 @@
       "simply hidden",
       "these folders are hidden",
       "hidden path segments",
-      "images from the web are hidden"
+      "images from the web are hidden",
+      {
+        "key": "settings.appearance.menuBar.opt.hidden",
+        "why": "the menu bar kept out of view (the hide sense), not a hidden file"
+      },
+      {
+        "key": "settings.appearance.menuBar.description",
+        "why": "\"Hidden\" is the menu bar kept out of view (the hide sense), not a hidden file"
+      }
     ],
     "sense": "A file or folder macOS doesn't show by default (dotfiles, the hidden flag)."
   },
@@ -4475,5 +4492,11 @@
     "sense": "Apple's HFS+ volume format as Disk Utility names it, which Apple localizes in some languages and keeps English in others.",
     "distinct": ["file-system", "format"],
     "note": "Take the name from Disk Utility's format menu (StorageKit `Localizable.loctable`, key `HFS Not Journaled`), never from a key description."
+  },
+  "main-menu": {
+    "en": "Main menu",
+    "match": ["main menu"],
+    "sense": "The three-line button at the end of the tab row on Windows and Linux that holds every menu-bar menu as submenus; GNOME's Main Menu.",
+    "distinct": ["menu"]
   }
 }
