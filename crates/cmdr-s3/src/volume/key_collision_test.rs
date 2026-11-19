@@ -78,7 +78,7 @@ async fn an_operation_on_the_shared_path_reaches_only_the_plain_key() {
     volume.delete(&path).await.expect("a/b deletes");
     assert!(s3.object("a/b").is_none(), "the plain key went");
     for other in ["a//b", "a/./b", "a/../b"] {
-        assert!(s3.object(other).is_some(), "{other} stays");
+        assert!(s3.object(other).is_some(), "the object {other} is still there");
     }
     assert!(
         matches!(volume.get_metadata(&path).await, Err(VolumeError::NotFound(_))),
