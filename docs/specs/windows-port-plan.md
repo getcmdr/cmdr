@@ -1065,7 +1065,10 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
          opens it where no bar takes it). `apps/desktop/src/lib/ui/DETAILS.md` § Command menus has it. Gaps: the
          viewer's own bar has no Show menu bar row (the main window's, Settings, and the palette flip it); the browser
          demo's strip ignores the setting (a Windows or Linux visitor's View > Show menu bar flips the check only),
-         until step 11's remainder moves the demo onto the app's own bar.
+         until step 11's remainder moves the demo onto the app's own bar. macOS unchanged: the row is
+         `windows_and_linux` (the macOS bar snapshot didn't move), `hideableMenuBar` is false there, and the demo's Mac
+         shots (main window, View menu, the palette searching "menu", Settings > Zoom and density; light and dark)
+         differ by 0 pixels from the merge base (`magick compare -metric AE`, 2026-11-19).
     9. [XS] **The text-field gate** lets a bar CLICK on a file-moving command run, and the same command's key still
        doesn't (task 55's entry; `routes/(main)/text-field-gate.ts`). Tests: a Vitest case per road. Done when: both
        cases are pinned.
