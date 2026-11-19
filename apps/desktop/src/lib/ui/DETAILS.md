@@ -1508,7 +1508,19 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
 
 - **Where**: the main window (`apps/desktop/src/routes/(main)/MainMenuBar.svelte`) and the viewer
   (`apps/desktop/src/routes/viewer/ViewerMenuBar.svelte`) mount the bar under `pageDrawsMenuBar()` (every menu model but
-  macOS's system bar); the Debug > Components catalog shows it on any platform.
+  macOS's system bar); the Debug > Components catalog shows it on any platform. A bar with no rows draws nothing (the
+  browser demo answers none: its own strip is the page's bar).
+- **A shown key fires** (`command-menu/bar-keys.ts`): no native bar registers anything off macOS, so the page runs every
+  key a row shows. The main window's dispatcher does it through the commands. The viewer (`ViewerMenuBar.svelte`) and
+  every window that used to wear the main bar (Settings, the queue, Keyboard shortcuts, Debug, through the root layout
+  and `command-menu/window-bar-keys.ts`, which draw no bar) pick the row whose `ariaKeyshortcuts` the keypress is,
+  through `pickMenuBarItem`, the handler a native accelerator reached: Ctrl+W closes them, Ctrl+, opens Settings, a
+  file-scoped row stays a no-op outside the main window. A key the page took (`defaultPrevented`), the browser's own
+  edit keys (cut, copy, paste, select all, undo, redo), and in a text field typing and the native text keys stay the
+  page's. `bar-keys.test.ts` proves it for every row the backend shows, from `crates/cmdr-menu/src/page/bar_keys.tsv`
+  (written by the Rust side), in all three windows' roads.
+  - Gotcha/Why: the listener must come after the page's own: the root layout's `onMount` runs after the page attached
+    its handlers, and `ViewerMenuBar`'s `<svelte:window>` renders after the viewer page's.
 - **Public API**:
   - `<MenuBar menus onPick ariaLabel flavor? keyScope? inert? takesWindowKeys? class?>`: `menus` is `get_menu_bar`'s
     answer kept live by the caller (`followMenuBar` from `#lib/tauri-commands` runs the ordering contract), `onPick(id)`

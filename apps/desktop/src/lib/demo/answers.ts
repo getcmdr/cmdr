@@ -255,4 +255,8 @@ export const appAnswers = {
     coveredQualifyingCount: null,
     keptCount: null,
   }),
+  // The demo draws its own bar (`menu-bar.svelte.ts`), the page's one, so the app's in-page bars
+  // get no rows: they draw nothing, and their windows fire no bar keys.
+  getMenuBar: () => ({ revision: 1, menus: [] }),
+  getViewerMenuBar: () => [],
 } satisfies AnswerTable

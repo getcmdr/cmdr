@@ -368,8 +368,6 @@ export const notInDemo = {
   applyRecentSelectionsMaxCount: NOT_YET,
   // The in-page menus' commands (D5)
   getMenuBarTitleMnemonics: IN_PAGE_MENUS,
-  getMenuBar: IN_PAGE_MENUS,
-  getViewerMenuBar: IN_PAGE_MENUS,
   pickMenuBarItem: IN_PAGE_MENUS,
   openContextMenuInPage: IN_PAGE_MENUS,
   pickContextMenuItem: IN_PAGE_MENUS,
