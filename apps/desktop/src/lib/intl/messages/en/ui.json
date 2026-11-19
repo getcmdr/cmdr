@@ -31,6 +31,14 @@
   "@ui.demoArchive.notBrowsable": {
     "description": "Notification in the browser demo on getcmdr.com, shown when a visitor tries to open or step into an archive file (a .zip, .tar.gz, .7z, and so on). The demo can't show what's inside archives; the installed app can. The second sentence lists what the real app does with archives: browse them like folders, change their contents, unpack (extract) them, and compress files into new ones. It's information, not a problem report: nothing went wrong."
   },
+  "ui.demoDesktopOnly.filePicker": "This demo can’t open your computer’s file picker. In the real app, this opens one, so you can choose a file or folder.",
+  "@ui.demoDesktopOnly.filePicker": {
+    "description": "Notification in the browser demo on getcmdr.com, shown when a visitor does something that opens the operating system's own file or folder picker in the installed app (for example Save as in the file viewer, or choosing an app or folder in Settings). A web page can't show that picker for the demo's pretend files, so nothing opens. It's information, not a problem report: nothing went wrong."
+  },
+  "ui.demoDesktopOnly.revealFolder": "This demo can’t open folders on your computer. In the real app, this shows the folder in your file manager.",
+  "@ui.demoDesktopOnly.revealFolder": {
+    "description": "Notification in the browser demo on getcmdr.com, shown when a visitor clicks something that, in the installed app, opens a folder on their computer in the operating system's own file manager (Finder on a Mac, File Explorer on Windows), for example the logs folder in Settings. A web page can't do that. \"File manager\" is the generic name for that app. It's information, not a problem report: nothing went wrong."
+  },
   "ui.popover.defaultAriaLabel": "Options",
   "@ui.popover.defaultAriaLabel": {
     "description": "Default aria-label naming a popover region when the caller passes none. Generic fallback meaning a small floating panel of choices."

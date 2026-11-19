@@ -5934,6 +5934,8 @@ export type MessageKey =
   | 'ui.copyBox.copyAria'
   | 'ui.copyButton.copied'
   | 'ui.demoArchive.notBrowsable'
+  | 'ui.demoDesktopOnly.filePicker'
+  | 'ui.demoDesktopOnly.revealFolder'
   | 'ui.demoDrop.overBudget'
   | 'ui.dialogBoundary.closedToast'
   | 'ui.findBar.close'

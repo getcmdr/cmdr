@@ -4,6 +4,7 @@
 import type { LocationCategory, LocationInfo } from '#lib/ipc/bindings.js'
 import type { AnswerTable } from './answer-types.js'
 import { DEMO_HOME, DEMO_VOLUME_ID } from './demo-tree.js'
+import { demoFavorites } from './favorites.js'
 
 function location(
   id: string,
@@ -48,13 +49,13 @@ function location(
 
 const mainVolume = location(DEMO_VOLUME_ID, 'Macintosh HD', '/', 'main_volume')
 
-const demoLocations: LocationInfo[] = [
-  location('fav-home', 'you', DEMO_HOME, 'favorite', 'h'),
-  location('fav-desktop', 'Desktop', `${DEMO_HOME}/Desktop`, 'favorite', 'd'),
-  location('fav-documents', 'Documents', `${DEMO_HOME}/Documents`, 'favorite', 'o'),
-  location('fav-downloads', 'Downloads', `${DEMO_HOME}/Downloads`, 'favorite', 'w'),
-  mainVolume,
-]
+/** The volume list as it stands: the favorites (`favorites.ts`, which the visitor can edit), then the disk. */
+export function demoLocations(): LocationInfo[] {
+  return [
+    ...demoFavorites().map(({ id, name, path, shortcut }) => location(id, name, path, 'favorite', shortcut)),
+    mainVolume,
+  ]
+}
 
 /** A path as the demo volume spells it: `~` expanded, no trailing slash. */
 export function demoPath(raw: string): string {
@@ -63,7 +64,7 @@ export function demoPath(raw: string): string {
 }
 
 export const volumeAnswers = {
-  listVolumes: () => ({ data: demoLocations, timedOut: false }),
+  listVolumes: () => ({ data: demoLocations(), timedOut: false }),
   getDefaultVolumeId: () => DEMO_VOLUME_ID,
   getE2eStartPath: () => null,
   resolvePathVolume: () => ({ volume: mainVolume, timedOut: false }),

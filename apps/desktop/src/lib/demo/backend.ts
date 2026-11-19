@@ -11,6 +11,7 @@ import { startListingEngine, type ListingEngineHandle } from './listing.js'
 import { createContextMenuHost, type ContextMenuHost } from './context-menu.js'
 import { startMenuEngine, type ContextPopup, type MenuEngineHandle } from './menu-engine.js'
 import { pluginHandler } from './plugins.js'
+import { relayedAnswers } from './relayed.js'
 import { openInBrowserTab } from './opener.js'
 import { visitorPlatform } from './platform.js'
 import { noteUnanswered } from './unanswered.js'
@@ -126,7 +127,10 @@ export function createDemoBackend(): DemoBackend {
   }
 
   const silent: AnswerTable = Object.fromEntries(silentCommands.map((name) => [name, () => undefined]))
-  const answers = { ...silent, ...appAnswers, ...volumeAnswers } as Record<string, Handler | undefined>
+  const answers = { ...silent, ...appAnswers, ...volumeAnswers, ...relayedAnswers(emit) } as Record<
+    string,
+    Handler | undefined
+  >
   const engine: ListingEngineHandle = startListingEngine(({ name, payload, target }) => {
     if (name.startsWith(DEMO_EVENT_PREFIX)) {
       onEngineNotice(name, payload)

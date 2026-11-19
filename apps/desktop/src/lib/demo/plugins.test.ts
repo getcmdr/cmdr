@@ -161,7 +161,7 @@ describe('path and app plugins', () => {
   })
 
   it('knows no other plugin command', () => {
-    expect(pluginHandler('plugin:dialog|open')).toBeUndefined()
+    expect(pluginHandler('plugin:shell|open')).toBeUndefined()
   })
 })
 

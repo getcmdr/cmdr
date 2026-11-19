@@ -2,14 +2,16 @@
  * Tauri plugin commands (`plugin:<name>|<command>`) the backend answers: the store plugin, which
  * keeps each file in memory (a demo session's settings live until the tab reloads, and every
  * webview sees the same values, as with the real plugin), plus `path`, `app`, the drag image's `fs`
- * writes, and the opener's `open_url` (a new browser tab, `opener.ts`). Commands about one webview's
- * own window live in `webview.ts`.
+ * writes, the opener's `open_url` (a new browser tab, `opener.ts`), and the dialog plugin's
+ * questions and pickers (`browser-dialogs.ts`). Commands about one webview's own window live in
+ * `own-window.ts`.
  */
 import type { RestrictedWindowSettings } from '#lib/ipc/bindings.js'
 import { browserSafeShortcuts } from './browser-shortcuts.js'
 import { visitorPlatform } from './platform.js'
 import { DEMO_HOME } from './demo-tree.js'
 import { openInBrowserTab } from './opener.js'
+import { browserDialogAnswers } from './browser-dialogs.js'
 
 /** What a fresh demo starts with, per store file. Only keys an actor would have set (sparse, like the app). */
 const seeds: Partial<Record<string, () => Record<string, unknown>>> = {
@@ -118,6 +120,8 @@ const handlers: Partial<Record<string, PluginHandler>> = {
   'plugin:app|tauri_version': () => '2',
   // `openExternalUrl`: a new browser tab, for web and email links only (`opener.ts`).
   'plugin:opener|open_url': (p) => openInBrowserTab(p.url as string),
+  // Questions in the browser's own dialogs; pickers and reveals get the demo's notice.
+  ...browserDialogAnswers,
 }
 
 /**

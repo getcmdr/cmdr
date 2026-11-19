@@ -12,6 +12,7 @@ import { SET_APP_THEME } from './color-scheme.js'
 import { DRAG_COMMANDS } from './drag-session.js'
 import { LISTING_ENGINE_COMMANDS, MENU_ENGINE_COMMANDS } from './engine-command-names.js'
 import { pluginHandler } from './plugins.js'
+import { RELAYED_COMMANDS } from './relayed.js'
 import { volumeAnswers } from './volumes.js'
 import { WEBVIEW_COMMANDS } from './own-window.js'
 import { WINDOW_HOST_COMMANDS, WINDOW_PLUGIN_COMMANDS } from './windows.js'
@@ -26,6 +27,7 @@ type Answered =
   | keyof typeof appAnswers
   | keyof typeof volumeAnswers
   | (typeof silentCommands)[number]
+  | (typeof RELAYED_COMMANDS)[number]
   | CamelCase<(typeof WIRE_ANSWERED)[number]>
 
 /** The bindings commands nothing in the demo answers. */
@@ -38,6 +40,7 @@ export const answeredCommands: ReadonlySet<string> = new Set<string>([
   ...Object.keys(appAnswers),
   ...Object.keys(volumeAnswers),
   ...silentCommands,
+  ...RELAYED_COMMANDS,
   ...WIRE_ANSWERED.map(camelCase),
 ])
 
@@ -45,6 +48,8 @@ export const answeredCommands: ReadonlySet<string> = new Set<string>([
 const OS_SHELL =
   'asks the OS shell (Finder, Explorer, Quick Look, the Dock, System Settings), which a page has no door to'
 const OS_CLIPBOARD = "the OS file clipboard: a page can't put files on it or read them back"
+const CLIPBOARD_READ =
+  "a page reads the clipboard only behind the browser's permission prompt, which opening Go to path mustn't raise, so it opens without the prefill"
 const NETWORK = 'the demo has no network hosts, servers, or saved places: its one volume is in memory'
 const DEVICES = 'the demo has no USB phones or cameras'
 const ARCHIVES = "the demo doesn't browse or pack archives (`DETAILS.md` § Archives)"
@@ -55,7 +60,6 @@ const SERVICES = 'no license server, updater, report upload, or newsletter from 
 const LIFECYCLE = "a page can't quit, relaunch, or wipe its tab"
 const DEV = 'developer and diagnostics tooling (MCP, logs, debug fixtures) the demo has no backend for'
 const SUBSYSTEM_SETTING = "a setting pushed to a backend subsystem the demo doesn't run"
-const NOT_YET = 'not built for the demo yet: no store behind it, so the app gets its "unavailable" path'
 const UNANSWERED_GAP = 'a visitor reaches it and the demo has no answer yet: a known dead end'
 const IN_PAGE_MENUS =
   "the demo draws its bar and menus itself (`menu-bar.svelte.ts`, `context-menu.ts`); answer these from `DemoMenuBar` once the app's own in-page bar asks them (task 63 steps 6 and 7)"
@@ -98,19 +102,16 @@ export const notInDemo = {
   uninstallCliCommand: OS_SHELL,
   getNotificationPermission: OS_SHELL,
   showNotification: OS_SHELL,
-  confirmWithCheckbox: OS_SHELL,
   goToLatestDownload: OS_SHELL,
   downloadsWatcherStatus: OS_SHELL,
   recheckDownloadsWatcherGate: OS_SHELL,
   setGlobalGoToLatestShortcut: OS_SHELL,
-  getSystemMemoryInfo: OS_SHELL,
-  getMemoryDiagnostics: OS_SHELL,
   viewerForwardEditActionToPage: OS_SHELL,
   // The file clipboard
   copyPathsToClipboard: OS_CLIPBOARD,
   cutPathsToClipboard: OS_CLIPBOARD,
   readClipboardFiles: OS_CLIPBOARD,
-  readClipboardText: OS_CLIPBOARD,
+  readClipboardText: CLIPBOARD_READ,
   pasteClipboardAsFile: OS_CLIPBOARD,
   clearClipboardCutState: OS_CLIPBOARD,
   // Network volumes, servers, and saved places
@@ -215,8 +216,6 @@ export const notInDemo = {
   countAllGitCommits: GIT,
   getGitStatusForPaths: GIT,
   // The drive and media indexes
-  countFolderSizes: INDEX,
-  cancelFolderSizeCount: INDEX,
   startDriveIndex: INDEX,
   clearDriveIndex: INDEX,
   getIndexDiskUsage: INDEX,
@@ -254,6 +253,8 @@ export const notInDemo = {
   mediaIndexFolderCoverage: INDEX,
   // AI, Ask Cmdr, and the AI-backed tools
   getAiModelInfo: AI,
+  // The local model's memory check (Settings > AI).
+  getSystemMemoryInfo: AI,
   stopAiServer: AI,
   checkAiConnection: AI,
   getAiModelLimits: AI,
@@ -346,30 +347,27 @@ export const notInDemo = {
   setMaxLogStorageMb: DEV,
   createDialogGalleryFixtures: DEV,
   previewFriendlyError: DEV,
+  getMemoryDiagnostics: DEV,
   // Settings for subsystems the demo doesn't run
   setDiskSpaceThreshold: SUBSYSTEM_SETTING,
   setLowDiskSpaceConfig: SUBSYSTEM_SETTING,
   setShowSafeSaveFilesCmd: SUBSYSTEM_SETTING,
   setShowStagingTempFilesCmd: SUBSYSTEM_SETTING,
-  setOperationLogEnabled: SUBSYSTEM_SETTING,
-  // Features the demo could have and doesn't yet
-  persistRestrictedWindowSetting: NOT_YET,
-  isSearchRunLive: NOT_YET,
-  resolveGoToPath: NOT_YET,
-  getRecentPaths: NOT_YET,
-  addRecentPath: NOT_YET,
-  removeRecentPath: NOT_YET,
-  clearRecentPaths: NOT_YET,
-  addFavorite: NOT_YET,
-  removeFavorite: NOT_YET,
-  renameFavorite: NOT_YET,
-  setFavoriteShortcut: NOT_YET,
-  reorderFavorites: NOT_YET,
-  getRecentSelections: NOT_YET,
-  addRecentSelection: NOT_YET,
-  removeRecentSelection: NOT_YET,
-  clearRecentSelections: NOT_YET,
-  applyRecentSelectionsMaxCount: NOT_YET,
+  // Reachable in the demo and not answered yet: each is a dead end today.
+  setOperationLogEnabled: UNANSWERED_GAP,
+  isSearchRunLive: UNANSWERED_GAP,
+  resolveGoToPath: UNANSWERED_GAP,
+  getRecentPaths: UNANSWERED_GAP,
+  addRecentPath: UNANSWERED_GAP,
+  removeRecentPath: UNANSWERED_GAP,
+  clearRecentPaths: UNANSWERED_GAP,
+  getRecentSelections: UNANSWERED_GAP,
+  addRecentSelection: UNANSWERED_GAP,
+  removeRecentSelection: UNANSWERED_GAP,
+  clearRecentSelections: UNANSWERED_GAP,
+  applyRecentSelectionsMaxCount: UNANSWERED_GAP,
+  countFolderSizes: UNANSWERED_GAP,
+  cancelFolderSizeCount: UNANSWERED_GAP,
   // The in-page menus' commands (D5)
   getMenuBarTitleMnemonics: IN_PAGE_MENUS,
   getMenuBar: IN_PAGE_MENUS,
@@ -398,11 +396,6 @@ export const wireNotInDemo: Readonly<Record<string, string>> = {
   'plugin:process|exit': LIFECYCLE,
   // Reachable in the demo and not answered yet: each is a dead end today.
   about_start: UNANSWERED_GAP,
-  copy_to_clipboard: UNANSWERED_GAP,
-  'plugin:dialog|message': UNANSWERED_GAP,
-  'plugin:dialog|open': UNANSWERED_GAP,
-  'plugin:dialog|save': UNANSWERED_GAP,
-  'plugin:opener|reveal_item_in_dir': UNANSWERED_GAP,
 }
 
 /** The reason the demo leaves `command` (a wire name) out, or `undefined` for one it doesn't know. */

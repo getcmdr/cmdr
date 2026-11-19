@@ -505,6 +505,30 @@ staged paths. The controller runs unchanged: hit test, transfer dialog, conflict
 - Risk: the tab opens a few microtasks after the click (the invoke is a promise chain), which Chromium and Firefox count
   as the same user gesture; a stricter popup blocker may still hold it.
 
+## Dialogs, the clipboard, and favorites
+
+What a visitor reaches that the desktop hands to the OS, answered the way a page can (`browser-dialogs.ts`,
+`answers.ts`, `relayed.ts`):
+
+- **Questions** (`confirmDialog`, through the dialog plugin's `plugin:dialog|message`) go to the browser's own `confirm`
+  (two buttons) or `alert` (one), titled by the question's title, and answer the clicked button's name as the plugin
+  does. A three-button set has no browser equivalent, so its middle answer never comes back. `confirmWithCheckbox`
+  answers `unsupported`, the app's own Linux path, so it asks the plain question that way and leaves the option
+  unchecked. Custom button words don't show: `confirm` has OK and Cancel.
+- **File and folder pickers** (`plugin:dialog|open`, `save`) and **a reveal in the file manager**
+  (`plugin:opener|reveal_item_in_dir`): no page equivalent over the demo's pretend files. The visitor gets an info toast
+  (`ui.demoDesktopOnly.*`), the app a picker's cancel (`null`).
+- **Copy path** and the other text copies (`copy_to_clipboard`): `navigator.clipboard.writeText`, inside the click's
+  gesture. A browser refusal rejects with a string, as Tauri does. Reading the clipboard stays out
+  (`readClipboardText`): a page reads it only behind a permission prompt, so Go to path opens without its prefill.
+- **Favorites** (`favorites.ts`): in memory, seeded with the four the volume list always had, with the desktop store's
+  rules (`src-tauri/src/favorites/store.rs`: a re-add moves the folder to the end, a letter has one owner, a reorder
+  never drops an entry). Each edit sends `volumes-changed` with the new list to every window, as `emit_volumes_changed`
+  does, so Add to favorites shows in the favorites menu and the volume picker at once.
+- **A viewer's setting write** (`persist_restricted_window_setting`: Word wrap, the binary warning) goes to the main
+  window as `persist-restricted-setting`, which persists it, as the desktop forwards it.
+- Verified in headless Chromium against `pnpm build:demo` (2026-11-19): see `apps/website/e2e/demo.spec.ts`.
+
 ## The listing seam
 
 - `listing.ts` (`startListingEngine`) imports the engine module, `await`s its `init()`, and builds one `DemoListing`
