@@ -1,5 +1,3 @@
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
-
 use super::*;
 use crate::scope::OpScope;
 use crate::state::IntentCell;

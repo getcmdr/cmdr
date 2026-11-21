@@ -6,7 +6,6 @@
 //! because the whole point of this seam is what the manager, the preview map,
 //! and the operation task agree on. The manager is a process-global singleton,
 //! so ids and lane keys are unique per test.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use crate::testing::TestOperations;
 use std::path::PathBuf;

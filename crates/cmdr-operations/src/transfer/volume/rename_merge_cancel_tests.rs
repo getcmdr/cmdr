@@ -6,7 +6,6 @@
 //! first child rename lands, so `rename_merge_directory`'s per-child recheck
 //! bails on the next iteration with the rest of the tree untouched. The merge
 //! semantics these tests assume are in `rename_merge_tests.rs`.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::move_same::move_within_same_volume_with_progress;
 use super::rename_merge_test_support::{exists, make_state, mkdir, write_file};

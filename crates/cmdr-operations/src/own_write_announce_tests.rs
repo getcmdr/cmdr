@@ -8,7 +8,6 @@
 //! source announces one that still does. The whole sequence is pinned, so an
 //! announce moved after its syscall goes red on order or count, not only on the
 //! existence bit, and a path that stopped announcing fails on a missing entry.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use cmdr_fs::app_path;
 use std::fs;

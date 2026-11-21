@@ -2,7 +2,6 @@
 //! `InMemoryVolume`). These pin private spool production followed by staged
 //! upload, fresh replacement rather than mutation, backend-specific publication,
 //! and cleanup of unpublished stages.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::test_support::*;
 use crate::WriteOperationPhase;

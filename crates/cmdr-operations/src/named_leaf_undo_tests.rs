@@ -7,7 +7,6 @@
 //! Each fixture keeps a bystander under the source's ORIGINAL name at the
 //! destination, so an undo that read the original name instead of the landed
 //! one would touch the wrong file.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;

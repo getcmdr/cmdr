@@ -3,7 +3,6 @@
 //! itself, so it never needs the source's `Volume` streams. Windows' local volume
 //! has no export streams yet, and every local copy there refused with "does not
 //! support export" before reaching the shortcut (2026-11-21, on Mami).
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::*;
 use crate::event_sinks::CollectorEventSink;

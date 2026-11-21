@@ -5,7 +5,6 @@
 //! the local disk onto a remote volume, and within the local volume. What lands
 //! where, a clash at a renamed leaf, every refusal, a source pruned after
 //! admission, and undo. The native engines' half is `named_leaves_tests.rs`.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use cmdr_fs::app_path::AppPath;
 use std::borrow::Cow;

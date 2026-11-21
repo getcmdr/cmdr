@@ -6,7 +6,6 @@
 //! path routes such a child through the conflict resolver, prompting exactly
 //! once, instead of erroring or prompting twice. The wrapper below models the
 //! backend; the merge semantics they assume are in `rename_merge_tests.rs`.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::super::conflict_responder_test_support::{
     ConflictResponderSink, file_conflict_count, folder_conflict_count_any_dir,

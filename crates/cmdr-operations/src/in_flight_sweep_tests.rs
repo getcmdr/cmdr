@@ -4,7 +4,6 @@
 //! pointed at a `TestDir`, so each rule is pinned at the level it's decided
 //! rather than through a launch. The ledger's own behavior (what replays, what
 //! defers, what a producer records) lives in `in_flight_temps_tests.rs`.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::*;
 use crate::host::testing::{FakeVolumes, RecordingEngineEvents};

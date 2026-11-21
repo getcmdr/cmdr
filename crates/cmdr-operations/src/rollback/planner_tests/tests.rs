@@ -10,7 +10,6 @@
 //! guards exist for (`crates/cmdr-operation-log/DETAILS.md` § "The two data-safety guards").
 //!
 //! The rig and its seeding helpers live in `test_support`, shared with `undo_tests`.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::path::Path;
 use std::sync::Arc;

@@ -10,7 +10,6 @@
 //! same way `rename_merge_cancel_tests.rs` wires its cancel: a `LocalVolume`
 //! wrapper pauses the op the instant the first child rename lands, so the walk is
 //! provably mid-flight when the gate has to hold it.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::move_same::move_within_same_volume_with_progress;
 use super::rename_merge_test_support::{exists, make_state, mkdir, write_file};

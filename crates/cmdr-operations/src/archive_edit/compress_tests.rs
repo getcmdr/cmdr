@@ -1,5 +1,4 @@
 //! Fresh compression lifecycle, output, progress, metadata, and journaling.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::test_support::*;
 use crate::WriteOperationPhase;

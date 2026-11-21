@@ -9,7 +9,6 @@
 //! portal, an id nothing knows), which `FakeVolumes` doesn't route through, so
 //! each cell builds an engine of its own over the app's answers
 //! (`operations_host::test_engine`).
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::resolve_dest_path;
 use cmdr_fs::volume::{InMemoryVolume, Volume};

@@ -17,7 +17,6 @@
 //! The other race at the landing is with OUR OWN file: a rename the server
 //! performed whose reply is a late error from a session someone else already
 //! replaced. That file is ours and must count as landed once, never as a clash.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use cmdr_fs::app_path;
 use std::path::{Path, PathBuf};
