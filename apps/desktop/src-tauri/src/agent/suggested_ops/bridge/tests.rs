@@ -4,8 +4,6 @@
 //! because the operation outlives the call that started it, and two in-memory connections are
 //! two different databases. This is the production shape.
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
-
 use cmdr_fs::app_path;
 use std::collections::HashMap;
 use std::path::PathBuf;

@@ -3,8 +3,6 @@
 //! then rendered by the preview. `media_test.rs` pins the loader with a stand-in
 //! reader; this proves the real path behind it fits together.
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
-
 use std::sync::Arc;
 use std::time::Duration;
 

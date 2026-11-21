@@ -8,8 +8,6 @@
 //! pane through `crates/cmdr-listing/src/host/overlays.rs`, and every other
 //! reader lists through `Volume`, which doesn't hold it.
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
-
 use cmdr_fs::app_path::AppPathBuf;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
