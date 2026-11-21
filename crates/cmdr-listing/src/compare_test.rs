@@ -137,14 +137,8 @@ fn safety_successive_removes_publish_before_returning() {
         vec![file(L, "a", 1, 1), file(L, "b", 1, 1)],
     );
     left.engine().inner.diffs.hold(left.id());
-    left.engine()
-        .inner
-        .remove_entry_by_name(left.id(), std::ffi::OsStr::new("a"))
-        .unwrap();
-    left.engine()
-        .inner
-        .remove_entry_by_name(left.id(), std::ffi::OsStr::new("b"))
-        .unwrap();
+    left.engine().inner.remove_entry_by_name(left.id(), "a").unwrap();
+    left.engine().inner.remove_entry_by_name(left.id(), "b").unwrap();
     assert_eq!(pending_changes(left.engine(), left.id()).len(), 2);
     assert_eq!(
         left.with_listing(|l| l.sequence.load(std::sync::atomic::Ordering::Acquire)),
@@ -619,11 +613,7 @@ fn scratch_drift_precedes_entry_mutation_in_the_correct_row_spaces() {
     );
     left.engine().inner.diffs.hold(left.id());
     drop(owner);
-    let (rows, _) = left
-        .engine()
-        .inner
-        .remove_entry_by_name(left.id(), std::ffi::OsStr::new("b"))
-        .unwrap();
+    let (rows, _) = left.engine().inner.remove_entry_by_name(left.id(), "b").unwrap();
     assert_eq!(rows.before, Some(1));
     let batches = left.engine().inner.diffs.pending_batches(left.id());
     assert_eq!(batches.len(), 2);

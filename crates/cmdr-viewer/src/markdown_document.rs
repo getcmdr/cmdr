@@ -3,8 +3,8 @@
 //! Its own module, below both `markdown_session.rs` (which creates and renders it) and
 //! `session_store.rs` (which stores it), so the two don't depend on each other in a circle.
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
@@ -16,12 +16,14 @@ use super::host::images::DocumentImages;
 use super::markdown_images::{ImageTarget, resolve_image_src};
 use super::markdown_render::ImageMarker;
 use super::media::{MediaSource, MediaTokens};
+use super::volume_source::host_path_of;
 
 /// A Markdown session's document: where it lives, and the image tokens its render minted.
 pub(super) struct MarkdownDocument {
     /// The document's path on its volume (never a temp copy's), which relative image
-    /// sources resolve against.
-    path: PathBuf,
+    /// sources resolve against. `None` when the app path type refuses the requested text
+    /// (a `..` in it): no relative source or link resolves then.
+    path: Option<AppPathBuf>,
     volume_id: String,
     /// Set when the session closes, so an image pull still running stops.
     closed: Arc<AtomicBool>,
@@ -39,7 +41,12 @@ pub(super) struct MarkdownDocument {
 
 impl MarkdownDocument {
     /// A document minting into `tokens` and pulling its images through `host`.
-    pub(super) fn new(tokens: &Arc<MediaTokens>, host: &ViewerHost, path: PathBuf, volume_id: String) -> Self {
+    pub(super) fn new(
+        tokens: &Arc<MediaTokens>,
+        host: &ViewerHost,
+        path: Option<AppPathBuf>,
+        volume_id: String,
+    ) -> Self {
         Self {
             path,
             volume_id,
@@ -52,8 +59,8 @@ impl MarkdownDocument {
         }
     }
 
-    pub(super) fn path(&self) -> &Path {
-        &self.path
+    pub(super) fn path(&self) -> Option<&AppPath> {
+        self.path.as_deref()
     }
 
     pub(super) fn volume_id(&self) -> &str {
@@ -70,8 +77,8 @@ impl MarkdownDocument {
     }
 
     /// What an image `src` becomes, minting its token on first sight.
-    pub(super) fn image_marker(&self, src: &str, volume_root: &Path) -> ImageMarker {
-        let target = resolve_image_src(src, &self.path, volume_root);
+    pub(super) fn image_marker(&self, src: &str, volume_root: &AppPath) -> ImageMarker {
+        let target = resolve_image_src(src, self.path(), volume_root);
         let mut images = self.images.lock_ignore_poison();
         let token = |images: &mut HashMap<ImageTarget, String>, source: &dyn Fn() -> MediaSource| {
             images
@@ -82,7 +89,7 @@ impl MarkdownDocument {
         match &target {
             ImageTarget::Local(path) => ImageMarker::Local(token(&mut images, &|| {
                 self.sources
-                    .on_volume(path.clone(), self.volume_id.clone(), Arc::clone(&self.closed))
+                    .on_volume(host_path_of(path), self.volume_id.clone(), Arc::clone(&self.closed))
             })),
             ImageTarget::Remote(url) => ImageMarker::Remote(token(&mut images, &|| {
                 self.sources

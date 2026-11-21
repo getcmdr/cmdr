@@ -8,8 +8,7 @@
 //! decided by identity (a node id, or exact names in a fresh listing), never by
 //! folding names.
 
-use cmdr_fs::app_path::AppPath;
-use std::path::{Component, Path, PathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::Volume;
@@ -21,43 +20,49 @@ use crate::store::fold_name;
 /// names. `parent` is spelled the way the landed entry's path spells it, so it exists.
 #[derive(Debug, Clone, PartialEq)]
 pub(super) struct SpellingTwin {
-    pub(super) parent: PathBuf,
+    pub(super) parent: AppPathBuf,
     pub(super) from_name: String,
     pub(super) to_name: String,
 }
 
-/// Where `from` and `to` differ, component by component, if they differ ONLY by case
-/// or normalization (each pair of names exactly equal or [`fold_name`]-equal). `None`
-/// when any pair genuinely differs, or the depths differ: then the occupant is some
-/// other entry. An empty list means the two paths are spelled identically.
+/// Where `from` and `to` differ, name by name, if they differ ONLY by case or
+/// normalization (each pair of names exactly equal or [`fold_name`]-equal). `None`
+/// when any pair genuinely differs, the roots differ, or the depths differ: then the
+/// occupant is some other entry. An empty list means the two paths are spelled
+/// identically.
 ///
-/// Each `parent` is an ancestor of `from` sliced off its own text, never rebuilt from
-/// components: rebuilding would collapse a remote root's `scheme://` into `scheme:/`.
-fn spelling_twins(from: &Path, to: &Path) -> Option<Vec<SpellingTwin>> {
-    let from_parts: Vec<_> = from.components().collect();
-    let to_parts: Vec<_> = to.components().collect();
-    if from_parts.len() != to_parts.len() {
+/// Each `parent` is an ancestor of `from` by the app path's own `parent`, so a remote
+/// root stays one root (`sftp://nas/`), never `scheme:/`, and on Windows a name holding
+/// `\` stays one name.
+fn spelling_twins(from: &AppPath, to: &AppPath) -> Option<Vec<SpellingTwin>> {
+    if from.root() != to.root() {
+        return None;
+    }
+    let from_names: Vec<&str> = from.names().collect();
+    let to_names: Vec<&str> = to.names().collect();
+    if from_names.len() != to_names.len() {
         return None;
     }
     let mut twins = Vec::new();
-    for (depth, (f, t)) in from_parts.iter().zip(&to_parts).enumerate() {
-        if f == t {
+    for (depth, (f_name, t_name)) in from_names.iter().zip(&to_names).enumerate() {
+        if f_name == t_name {
             continue;
         }
-        let (Component::Normal(f_name), Component::Normal(t_name)) = (f, t) else {
-            return None;
-        };
-        let (f_name, t_name) = (f_name.to_string_lossy(), t_name.to_string_lossy());
-        if fold_name(&f_name) != fold_name(&t_name) {
+        if fold_name(f_name) != fold_name(t_name) {
             return None;
         }
         twins.push(SpellingTwin {
-            parent: from.ancestors().nth(from_parts.len() - depth)?.to_path_buf(),
-            from_name: f_name.into_owned(),
-            to_name: t_name.into_owned(),
+            parent: ancestor(from, from_names.len() - depth)?.to_owned(),
+            from_name: (*f_name).to_owned(),
+            to_name: (*t_name).to_owned(),
         });
     }
     Some(twins)
+}
+
+/// `path`'s ancestor `up` folders above it (`up` of 1 is its parent).
+fn ancestor(path: &AppPath, up: usize) -> Option<&AppPath> {
+    (0..up).try_fold(path, |at, _| at.parent())
 }
 
 /// What the cheap checks say about an entry occupying a restore target.
@@ -87,8 +92,8 @@ pub(super) enum SelfCollision {
 /// - Otherwise, ask the listings.
 pub(super) fn classify_self_collision(
     same_volume: bool,
-    from: &Path,
-    to: &Path,
+    from: &AppPath,
+    to: &AppPath,
     from_entry: &FileEntry,
     occupant: &FileEntry,
 ) -> SelfCollision {
@@ -129,8 +134,8 @@ pub(super) fn listing_confirms_twin(listed: &[FileEntry], twin: &SpellingTwin) -
 pub(super) async fn is_self_collision(
     volume: &dyn Volume,
     same_volume: bool,
-    from: &Path,
-    to: &Path,
+    from: &AppPath,
+    to: &AppPath,
     from_entry: &FileEntry,
     occupant: &FileEntry,
 ) -> bool {
@@ -140,10 +145,7 @@ pub(super) async fn is_self_collision(
         SelfCollision::AskTheListings(twins) => twins,
     };
     for twin in &twins {
-        match volume
-            .list_directory(&AppPath::legacy_unchecked(&twin.parent), None)
-            .await
-        {
+        match volume.list_directory(&twin.parent, None).await {
             Ok(listed) if listing_confirms_twin(&listed, twin) => {}
             _ => return false,
         }

@@ -20,7 +20,7 @@ use super::OperationLogStoreError;
 pub(crate) const ESCAPE_MARK_KEY: &str = "escape_mark_last_literal_op_id";
 
 /// How an op's stored paths read. Crate-internal until its first reader, the rollback
-/// planner's typed conversion (the app-path plan's milestone 8), lands beside it.
+/// planner's typed conversion (once `RollbackUnit` carries app paths), lands beside it.
 #[cfg_attr(
     not(test),
     expect(dead_code, reason = "the rollback planner's typed conversion is its first caller")

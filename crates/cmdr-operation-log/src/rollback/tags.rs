@@ -1,12 +1,12 @@
 //! A tag write's inverse: put each file's prior Finder-tags value back (`DETAILS.md` § "A
 //! tag write restores the exact prior value").
 
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FINDER_TAGS_XATTR;
 use cmdr_fs::volume::{VolumeError, XattrReadMode};
 
 use super::super::store::RollbackUnit;
 use super::super::types::SkipReason;
+use super::target::app_path_of;
 use super::{ActRefusal, InverseAct, ItemResult, RollbackRunner, VolumeLookup, vanished_item};
 
 /// Write a tag write's prior value back onto the file.
@@ -30,22 +30,16 @@ pub(super) async fn restore_tags(
         return ItemResult::Skipped(SkipReason::Failed);
     };
     let path = unit.source_path.as_path();
-    let paths = [path.to_path_buf()];
+    let app = app_path_of(path);
+    let batch = [app.clone().into_owned()];
     let answer = volume
-        .read_xattr_many(
-            &paths
-                .iter()
-                .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                .collect::<Vec<_>>(),
-            FINDER_TAGS_XATTR,
-            XattrReadMode::Verified,
-        )
+        .read_xattr_many(&batch, FINDER_TAGS_XATTR, XattrReadMode::Verified)
         .await
         .into_iter()
         .next();
     let live = match answer {
         Some(Ok(value)) => value,
-        Some(Err(VolumeError::NotFound(_))) => return vanished_item(&[(&*volume, path)]),
+        Some(Err(VolumeError::NotFound(_))) => return vanished_item(&[(&*volume, &app)]),
         Some(Err(_)) | None => return ItemResult::Skipped(SkipReason::Failed),
     };
     match live.as_deref() {
@@ -66,7 +60,7 @@ pub(super) async fn restore_tags(
         .await
     {
         Ok(()) => ItemResult::Reversed,
-        Err(ActRefusal::Volume(VolumeError::NotFound(_))) => vanished_item(&[(&*volume, path)]),
+        Err(ActRefusal::Volume(VolumeError::NotFound(_))) => vanished_item(&[(&*volume, &app)]),
         Err(_) => ItemResult::Skipped(SkipReason::Failed),
     }
 }

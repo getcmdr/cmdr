@@ -4,7 +4,6 @@
 //! reports recorded, foreground holds counted.
 
 use cmdr_fs::app_path::AppPath;
-use cmdr_fs::app_path::BridgedPath;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -215,15 +214,9 @@ async fn a_foreign_spelling_lands_the_listing_on_the_stored_path() {
     let volume_id = &format!("test-spelling-{}", uuid::Uuid::new_v4());
     let listing = TestListingGuard::adopt(&engine, unique_test_id("streaming-spelling"));
     let inner = InMemoryVolume::new("Share");
+    inner.create_directory(crate::testing::app(stored)).await.unwrap();
     inner
-        .create_directory(&AppPath::legacy_unchecked(Path::new(stored)))
-        .await
-        .unwrap();
-    inner
-        .create_file(
-            &AppPath::legacy_unchecked(&Path::new(stored).join("photo.jpg")),
-            b"jpeg",
-        )
+        .create_file(&crate::testing::app_child(stored, "photo.jpg"), b"jpeg")
         .await
         .unwrap();
     let volume = SpelledVolume::new(inner).resolving(foreign, Ok(Some(stored)));
@@ -258,7 +251,7 @@ async fn a_foreign_spelling_lands_the_listing_on_the_stored_path() {
 /// ran to its own cooperative end; `aborted` means it was dropped mid-listing,
 /// which on a real phone abandons a PTP transaction and wedges the device.
 struct CooperativeCancelVolume {
-    root: BridgedPath,
+    root: &'static AppPath,
     started: Arc<AtomicBool>,
     finished: Arc<AtomicBool>,
     aborted: Arc<AtomicBool>,
@@ -281,7 +274,7 @@ impl Drop for AbortWitness {
 impl CooperativeCancelVolume {
     fn new() -> Self {
         Self {
-            root: BridgedPath::new(PathBuf::from("/")),
+            root: cmdr_fs::app_path!("/"),
             started: Arc::new(AtomicBool::new(false)),
             finished: Arc::new(AtomicBool::new(false)),
             aborted: Arc::new(AtomicBool::new(false)),
@@ -322,7 +315,7 @@ impl Volume for CooperativeCancelVolume {
     }
 
     fn root(&self) -> &AppPath {
-        self.root.app()
+        self.root
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

@@ -34,7 +34,7 @@
 //! a 100,000-commit listing would keep the walk burning CPU for nobody. Per
 //! listing, ❌ never a static: two listings must not cancel each other.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, OnceLock};
 
@@ -42,7 +42,11 @@ use gix::ObjectId;
 use gix::revision::walk::Sorting;
 use gix::traverse::commit::simple::CommitTimeOrder;
 
+use cmdr_fs::app_path::{AppPathBuf, PathArithmetic};
 use cmdr_fs::entry::FileEntry;
+
+use crate::path::Cat;
+use crate::row_path::RowPath;
 
 use crate::column_meta::files_changed_count;
 use crate::repo::RepoHandle;
@@ -125,7 +129,7 @@ pub fn list_commits(
     repo_root: &Path,
     control: &WalkControl,
 ) -> Result<Vec<FileEntry>, FriendlyGitError> {
-    let parent = repo_root.join(".git").join("commits");
+    let parent = RowPath::category_of(repo_root, Cat::Commits);
     let repo = handle.to_thread_local();
 
     let head_id = match repo.head_id() {
@@ -165,16 +169,16 @@ pub fn list_commits(
 /// count, for the host's pass after the walk. A path
 /// that isn't a commit row of this repo, or whose commit doesn't resolve, is
 /// left out.
-pub fn commit_rows_with_counts(handle: &RepoHandle, repo_root: &Path, paths: &[PathBuf]) -> Vec<FileEntry> {
-    let parent = repo_root.join(".git").join("commits");
+pub fn commit_rows_with_counts(handle: &RepoHandle, repo_root: &Path, paths: &[AppPathBuf]) -> Vec<FileEntry> {
+    let parent = RowPath::category_of(repo_root, Cat::Commits);
     let repo = handle.to_thread_local();
     paths
         .iter()
         .filter_map(|path| {
-            if path.parent() != Some(parent.as_path()) {
+            if parent.app().is_none_or(|commits| path.parent() != Some(commits)) {
                 return None;
             }
-            let short = path.file_name()?.to_str()?;
+            let short = path.file_name()?;
             let id = resolve_commit_id(handle, short).ok()?;
             commit_row(&repo, &parent, id, true).ok()
         })
@@ -185,7 +189,7 @@ pub fn commit_rows_with_counts(handle: &RepoHandle, repo_root: &Path, paths: &[P
 /// `with_count`) its files-changed count as Size.
 fn commit_row(
     repo: &gix::Repository,
-    parent: &Path,
+    parent: &RowPath,
     id: ObjectId,
     with_count: bool,
 ) -> Result<FileEntry, FriendlyGitError> {
@@ -195,8 +199,10 @@ fn commit_row(
     let (subject, committer_secs) = decode_commit_meta(repo, id)?;
 
     let short = short_sha(&id);
-    let entry_path = parent.join(&short);
-    let mut fe = FileEntry::new(short.clone(), entry_path.to_string_lossy().into_owned(), true, false);
+    let entry_path = parent
+        .child(&short)
+        .unwrap_or_else(|| unreachable!("a short sha is one plain name"));
+    let mut fe = FileEntry::new(short.clone(), entry_path.into_text(), true, false);
     fe.icon_id = "git:commit".into();
     fe.permissions = 0o755;
     // Display: `<short-sha> <subject>` – same shape as `git log --oneline` so

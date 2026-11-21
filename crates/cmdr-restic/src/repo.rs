@@ -6,6 +6,8 @@
 //! each method here is async and hops to a blocking thread once.
 
 use crate::backend::{VolumeBackend, pack_gone_in, volume_error_in};
+use crate::path::text_of;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{LockedContainer, Volume, VolumeError};
 use rustic_core::repofile::SnapshotFile;
@@ -13,7 +15,7 @@ use rustic_core::{
     Credentials, FileType, IndexedFullStatus, OpenStatus, ReadBackend, Repository, RepositoryBackends,
     RepositoryOptions, RusticError,
 };
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::runtime::Handle;
 use tokio::sync::Semaphore;
@@ -72,13 +74,13 @@ pub(crate) enum ResticError {
 
 impl ResticError {
     /// The [`VolumeError`] a volume answers for this, about `path`.
-    pub(crate) fn into_volume_error(self, path: &Path) -> VolumeError {
+    pub(crate) fn into_volume_error(self, path: &AppPath) -> VolumeError {
         match self {
             Self::WrongPassword => VolumeError::NeedsPassword {
                 container: LockedContainer::ResticRepo,
                 wrong_attempt: true,
             },
-            Self::NotARepository => VolumeError::NotFound(path.display().to_string()),
+            Self::NotARepository => VolumeError::NotFound(text_of(path)),
             Self::Volume(err) | Self::PackGone(err) => err,
             Self::Unreadable { detail } => VolumeError::IoError {
                 message: detail.into(),
@@ -131,7 +133,7 @@ impl ResticRepo {
     /// and never takes a restic lock.
     pub(crate) async fn open(
         parent: Arc<dyn Volume>,
-        root: PathBuf,
+        root: AppPathBuf,
         password: &str,
         cache_dir: Option<PathBuf>,
         host: &VolumeHost,

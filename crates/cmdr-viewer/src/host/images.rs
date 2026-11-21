@@ -16,7 +16,7 @@ use super::super::content_kind::{CLASSIFY_HEAD_LEN, ViewerContentKind, classify_
 use super::super::media::{DeferredMedia, MediaEntry, MediaSource};
 use super::super::media_volume::VolumeMedia;
 use super::super::source::read_head;
-use super::super::volume_source::{PositionedRead, VolumeSource};
+use super::super::volume_source::{PositionedRead, VolumeSource, app_path_of};
 use super::volumes::ViewerVolumes;
 
 /// Reaches a document's pictures.
@@ -63,7 +63,9 @@ impl DocumentImages for InPlace {
         let Some(volume) = self.volumes.get(&volume_id) else {
             return MediaSource::Deferred(Arc::new(Unreachable));
         };
-        let Ok((source, total)) = VolumeSource::open(volume, &path, PositionedRead::Ranged, &self.runtime) else {
+        let Ok((source, total)) =
+            VolumeSource::open(volume, &app_path_of(&path), PositionedRead::Ranged, &self.runtime)
+        else {
             return MediaSource::Deferred(Arc::new(Unreachable));
         };
         let head = read_head(&source, total, CLASSIFY_HEAD_LEN).unwrap_or_default();

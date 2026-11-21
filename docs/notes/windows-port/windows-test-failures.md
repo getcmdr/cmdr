@@ -97,7 +97,10 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
 - **7, device backends**: 66 (`cmdr-adb` 51, `cmdr-smb` 13, `cmdr-mtp` 2). Converted 2026-11-21 (PR #1302), no builder
   run yet: expected green.
 - **8, virtual volumes and leaf crates**: 72 (`cmdr-restic` 45 with its 5 hub timeouts, `cmdr-viewer` 13, `cmdr-archive`
-  9, `cmdr-operation-log` 3, `cmdr-listing` 2).
+  9, `cmdr-operation-log` 3, `cmdr-listing` 2). Converted (2026-11-21, PR #1303), not yet run on the builder: every cell
+  but the two `cmdr-archive` zip-creator cells, the `symlink` skips, and `cmdr-listing`'s
+  `stall_test::a_read_that_never_answers_reports_the_listing_stalled_within_the_deadline` (P) is expected green;
+  `cmdr-viewer`'s `the_browser_url_conversions_answer_what_url_does` is gone with the wasm text twin it tested.
 - **9, `cmdr-local`**: none of its own; it's the native crossing 10a–10d wait on. Done (2026-11-19, in `D:\src\cmdr-m9`,
   `cargo nextest run -p cmdr-local`): 30 of 30 before on `main` (`a4449b5cb7`), 40 of 40 after on the branch
   (`d0490c0c11`), 8 skipped both times (the `#[ignore]`d task-35 conformance cells). The 10 new cells are the NTFS names

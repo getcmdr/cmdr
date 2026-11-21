@@ -6,11 +6,15 @@
 //! executor, so those cells live app-side, beside it
 //! (`crates/cmdr-operations/src/rollback/planner_tests/`).
 
-use std::path::{Path, PathBuf};
-
 use super::*;
 use crate::types::{EntryType, OpKind, RollbackState};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
+
+/// A canonical app path literal.
+fn app(text: &str) -> &AppPath {
+    AppPath::from_normalized(text).expect("a canonical literal")
+}
 
 /// A fixed mtime the snapshots and live entries agree on.
 const MT: u64 = 1_700_000_000;
@@ -62,10 +66,10 @@ fn verify_snapshot_match_drift_unverifiable() {
 #[test]
 fn self_collision_is_decided_by_identity_never_by_folding() {
     let classify = |same_volume: bool, from: &str, to: &str, a: &FileEntry, b: &FileEntry| {
-        classify_self_collision(same_volume, Path::new(from), Path::new(to), a, b)
+        classify_self_collision(same_volume, app(from), app(to), a, b)
     };
     let twin = |parent: &str, from: &str, to: &str| SpellingTwin {
-        parent: PathBuf::from(parent),
+        parent: app(parent).to_owned(),
         from_name: from.to_string(),
         to_name: to.to_string(),
     };
@@ -107,6 +111,23 @@ fn self_collision_is_decided_by_identity_never_by_folding() {
         classify(true, "sftp://nas/srv/img.jpg", "sftp://nas/srv/IMG.JPG", &x, &y),
         SelfCollision::AskTheListings(vec![twin("sftp://nas/srv", "img.jpg", "IMG.JPG")])
     );
+    // A twin directly under a remote root asks the listing of the root as a volume
+    // spells it, `sftp://nas/` (the app path's parent; `Path::parent` said `sftp://nas`).
+    assert_eq!(
+        classify(true, "sftp://nas/img.jpg", "sftp://nas/IMG.JPG", &x, &y),
+        SelfCollision::AskTheListings(vec![twin("sftp://nas/", "img.jpg", "IMG.JPG")])
+    );
+    // On Windows a name holding `\` stays one name (a remote one can), so the depths
+    // match and the twin is found; `Path::components` split it there.
+    assert_eq!(
+        classify(true, "sftp://nas/a\\b/img.jpg", "sftp://nas/a\\b/IMG.JPG", &x, &y),
+        SelfCollision::AskTheListings(vec![twin("sftp://nas/a\\b", "img.jpg", "IMG.JPG")])
+    );
+    // Two roots never twin, whatever their names.
+    assert_eq!(
+        classify(true, "sftp://nas/img.jpg", "sftp://NAS/img.jpg", &x, &y),
+        SelfCollision::Different
+    );
     // No inodes, DIFFERENT volume, same relative path ⇒ NOT self (the occupant is a
     // genuinely different file — a move-back must never overwrite it).
     assert_eq!(classify(false, "/a.txt", "/a.txt", &x, &y), SelfCollision::Different);
@@ -120,7 +141,7 @@ fn self_collision_is_decided_by_identity_never_by_folding() {
 #[test]
 fn a_listing_confirms_a_twin_only_when_it_holds_just_the_landed_spelling() {
     let twin = SpellingTwin {
-        parent: PathBuf::from("/d"),
+        parent: app("/d").to_owned(),
         from_name: "img.jpg".to_string(),
         to_name: "IMG.JPG".to_string(),
     };

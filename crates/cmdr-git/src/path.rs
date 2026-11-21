@@ -21,6 +21,8 @@
 
 use std::path::{Component, Path, PathBuf};
 
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic};
+
 use crate::repo::{RepoCache, RepoHandle};
 
 /// Top-level categories under `.git/`.
@@ -122,7 +124,7 @@ pub fn portal_route(path: &Path) -> Option<PathBuf> {
 /// whose cache it uses. A fresh cache per call costs one repository open, which
 /// is what keeps this convenience from being a global in disguise.
 #[cfg(test)]
-pub(crate) fn classify(path: &Path) -> Option<(VirtualGitPath, RepoHandle, PathBuf)> {
+pub(crate) fn classify(path: &AppPath) -> Option<(VirtualGitPath, RepoHandle, PathBuf)> {
     classify_in(&RepoCache::new(), path)
 }
 
@@ -136,15 +138,48 @@ pub(crate) fn classify(path: &Path) -> Option<(VirtualGitPath, RepoHandle, PathB
 ///
 /// A [`GitPortalVolume`](crate::volume::GitPortalVolume) passes its own
 /// portal's cache rather than reaching the app's parked one.
-pub fn classify_in(repos: &RepoCache, path: &Path) -> Option<(VirtualGitPath, RepoHandle, PathBuf)> {
-    let (worktree_root, after_dot_git) = split_at_dot_git(path)?;
-    let (handle, canonical_root) = repos.discover(&worktree_root).ok()?;
+///
+/// The split is app-path arithmetic; only the worktree root crosses to the disk
+/// (`to_native`), where gix opens it, and the canonical root comes back native.
+pub fn classify_in(repos: &RepoCache, path: &AppPath) -> Option<(VirtualGitPath, RepoHandle, PathBuf)> {
+    let (worktree_root, after_dot_git) = split_app_at_dot_git(path)?;
+    let (handle, canonical_root) = repos.discover(&worktree_root.to_native().ok()?).ok()?;
 
     let parsed = parse_after_dot_git(&after_dot_git, &handle)?;
     Some((parsed, handle, canonical_root))
 }
 
+/// [`split_at_dot_git`] for an app path: the worktree root (the names before the first
+/// `.git`, under the path's own root) and the names after it.
+///
+/// `None` where the `std::path` split answered `None` (no `.git`, a `..` after it), and
+/// for a `..` before it, which that split dropped and so asked gix about another folder.
+fn split_app_at_dot_git(path: &AppPath) -> Option<(AppPathBuf, Vec<String>)> {
+    // The root as its canonical twin: a bridge value's root (`//` in `//.git/x`) has no native form.
+    let mut worktree_root = path.root().to_canonical().ok()?.into_owned();
+    let mut names = path.names();
+    loop {
+        let name = names.next()?;
+        if name == ".git" {
+            break;
+        }
+        worktree_root = worktree_root.join(AppName::from_app_spelling(name).ok()?).ok()?;
+    }
+    let mut after = Vec::new();
+    for name in names {
+        if matches!(name, "" | "." | "..") {
+            return None;
+        }
+        after.push(name.to_owned());
+    }
+    Some((worktree_root, after))
+}
+
 /// Splits a path at its first `.git` segment, returning `(worktree_root, rest_after_dot_git)`.
+///
+/// [`portal_route`]'s split, over the `std::path` value the app's resolver hands it (its
+/// routing orders boundaries by this root's `components()`, so the answer stays this one
+/// until that routing speaks app paths). Classification is [`split_app_at_dot_git`].
 ///
 /// `rest_after_dot_git` is empty for `<root>/.git` itself. The returned
 /// worktree root is `path` truncated at (excluding) the `.git` component;
@@ -369,23 +404,23 @@ mod tests {
     #[test]
     fn classify_names_every_shape_against_a_real_repo() {
         let dir = crate::test_fixtures::build_repo_with_a_tag_and_a_slashed_branch("classify");
-        let dot_git = dir.join(".git");
+        let at = |rest: &str| crate::test_fixtures::portal_path(&dir, rest);
 
         // Root.
-        let (virt, _, _) = classify(&dot_git).expect("classify root");
+        let (virt, _, _) = classify(&at("")).expect("classify root");
         assert_eq!(virt, VirtualGitPath::Root);
 
         // Category.
-        let (virt, _, _) = classify(&dot_git.join("branches")).expect("classify branches");
+        let (virt, _, _) = classify(&at("branches")).expect("classify branches");
         assert_eq!(virt, VirtualGitPath::Category(Cat::Branches));
 
         // Ref with a slash in its name.
-        let p = dot_git.join("branches").join("feature").join("foo");
+        let p = at("branches/feature/foo");
         let (virt, _, _) = classify(&p).expect("classify feature/foo");
         assert_eq!(virt, VirtualGitPath::Ref(Cat::Branches, "feature/foo".into()));
 
         // A path inside a branch snapshot.
-        let p = dot_git.join("branches").join("main").join("scripts").join("run.sh");
+        let p = at("branches/main/scripts/run.sh");
         let (virt, _, _) = classify(&p).expect("classify reftree");
         assert_eq!(
             virt,
@@ -393,7 +428,7 @@ mod tests {
         );
 
         // And inside a tag snapshot.
-        let p = dot_git.join("tags").join("v1.0").join("README.md");
+        let p = at("tags/v1.0/README.md");
         let (virt, _, _) = classify(&p).expect("classify tag tree");
         assert_eq!(
             virt,
@@ -403,12 +438,9 @@ mod tests {
         // Real `.git/*` entries don't classify as virtual, so the parent
         // volume's real-FS path takes over for them.
         for real in ["HEAD", "config"] {
-            assert!(classify(&dot_git.join(real)).is_none(), "{real} is real, not virtual");
+            assert!(classify(&at(real)).is_none(), "{real} is real, not virtual");
         }
-        assert!(
-            classify(&dot_git.join("refs").join("heads").join("main")).is_none(),
-            "refs/ is real, not virtual"
-        );
+        assert!(classify(&at("refs/heads/main")).is_none(), "refs/ is real, not virtual");
 
         crate::test_fixtures::cleanup(&dir);
     }

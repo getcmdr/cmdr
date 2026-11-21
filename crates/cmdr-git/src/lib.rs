@@ -61,6 +61,10 @@ use cmdr_git as _;
 
 use std::path::Path;
 
+use cmdr_fs::app_path::AppPath;
+
+use crate::row_path::RowPath;
+
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::git_error::FriendlyGitError;
 use cmdr_fs::volume::{VolumeError, VolumeReadStream};
@@ -74,6 +78,7 @@ mod portal;
 mod read_blob;
 mod releasing;
 mod repo;
+mod row_path;
 mod snapshot_dates;
 mod stash;
 mod state_sink;
@@ -156,10 +161,10 @@ fn open_blob(handle: &RepoHandle, cat: path::Cat, name: &str, sub: &str) -> Look
 /// Folds a [`Lookup`] into what a `Volume` method returns: a miss becomes
 /// `NotFound` carrying the path the caller asked for, so the transfer layer
 /// renders the user's own filename rather than a git diagnostic.
-pub(crate) fn found_or_not_found<T>(found: Lookup<T>, path: &Path) -> Result<T, VolumeError> {
+pub(crate) fn found_or_not_found<T>(found: Lookup<T>, path: &AppPath) -> Result<T, VolumeError> {
     match found {
         Ok(Some(value)) => Ok(value),
-        Ok(None) => Err(VolumeError::NotFound(path.display().to_string())),
+        Ok(None) => Err(VolumeError::NotFound(path.shown().into_owned())),
         Err(e) => Err(friendly_to_volume_error(e)),
     }
 }
@@ -168,11 +173,9 @@ fn list_ref_tree(handle: &RepoHandle, root: &Path, cat: path::Cat, name: &str, s
     let Some(commit_id) = resolve_commit_for_cat(handle, cat, name)? else {
         return Ok(None);
     };
-    let display_parent = root
-        .join(".git")
-        .join(cat.as_segment())
-        .join(name)
-        .join(sub.replace('/', std::path::MAIN_SEPARATOR_STR));
+    let Some(display_parent) = RowPath::category_of(root, cat).under(name).and_then(|at| at.under(sub)) else {
+        return Ok(None);
+    };
     tree::list_tree(handle, commit_id, sub, &display_parent)
 }
 

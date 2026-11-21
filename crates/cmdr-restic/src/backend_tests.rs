@@ -1,12 +1,11 @@
 use super::VolumeBackend;
-use cmdr_fs::app_path::AppPath;
-use cmdr_fs::app_path::BridgedPath;
+use crate::test_fixtures::{app, path_in};
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::wait_until_async;
 use cmdr_fs::volume::{InMemoryVolume, ListingProgress, Volume, VolumeError, VolumeRandomReader};
 use rustic_core::{FileType, Id, ReadBackend, WriteBackend};
 use std::future::Future;
-use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -37,36 +36,34 @@ fn key_json(n: u32, r: u32, p: u32) -> Vec<u8> {
 /// the adapter only moves bytes, so no real repo is needed at this layer.
 async fn layout_volume(volume: InMemoryVolume) -> Arc<InMemoryVolume> {
     let files: [(String, Vec<u8>); 6] = [
-        (format!("{ROOT}/config"), b"config bytes".to_vec()),
-        (format!("{ROOT}/keys/{KEY}"), key_json(DEFAULT_N, 8, 1)),
-        (format!("{ROOT}/snapshots/{SNAP}"), b"snapshot".to_vec()),
-        (format!("{ROOT}/data/ab/{PACK_A}"), (0u8..=99).collect()),
-        (format!("{ROOT}/data/cd/{PACK_B}"), vec![7; 1_000]),
+        ("config".to_owned(), b"config bytes".to_vec()),
+        (format!("keys/{KEY}"), key_json(DEFAULT_N, 8, 1)),
+        (format!("snapshots/{SNAP}"), b"snapshot".to_vec()),
+        (format!("data/ab/{PACK_A}"), (0u8..=99).collect()),
+        (format!("data/cd/{PACK_B}"), vec![7; 1_000]),
         // Not a restic id: a Finder droppings file the listing must skip.
-        (format!("{ROOT}/snapshots/.DS_Store"), b"junk".to_vec()),
+        ("snapshots/.DS_Store".to_owned(), b"junk".to_vec()),
     ];
     for dir in ["keys", "snapshots", "index", "data", "data/ab", "data/cd"] {
-        volume
-            .create_directory(&AppPath::legacy_unchecked(&PathBuf::from(format!("{ROOT}/{dir}"))))
-            .await
-            .expect("mkdir");
+        volume.create_directory(&in_repo(dir)).await.expect("mkdir");
     }
     for (path, content) in &files {
         volume
-            .create_file(&AppPath::legacy_unchecked(Path::new(path)), content)
+            .create_file(&in_repo(path), content)
             .await
             .expect("write fixture file");
     }
     Arc::new(volume)
 }
 
+/// `rel` inside the repo at [`ROOT`].
+fn in_repo(rel: &str) -> AppPathBuf {
+    path_in(&app(ROOT), rel)
+}
+
 fn backend(parent: &Arc<InMemoryVolume>) -> Arc<VolumeBackend> {
     let parent: Arc<dyn Volume> = Arc::clone(parent) as Arc<dyn Volume>;
-    Arc::new(VolumeBackend::new(
-        parent,
-        PathBuf::from(ROOT),
-        tokio::runtime::Handle::current(),
-    ))
+    Arc::new(VolumeBackend::new(parent, app(ROOT), tokio::runtime::Handle::current()))
 }
 
 /// Runs `f` the way production does: on a blocking thread, never an async worker.
@@ -109,10 +106,7 @@ async fn the_config_lists_as_one_default_id() {
 #[tokio::test(flavor = "multi_thread")]
 async fn a_missing_config_lists_as_none() {
     let parent = layout_volume(InMemoryVolume::new("parent")).await;
-    parent
-        .delete(&AppPath::legacy_unchecked(Path::new(&format!("{ROOT}/config"))))
-        .await
-        .expect("rm config");
+    parent.delete(&in_repo("config")).await.expect("rm config");
     let be = backend(&parent);
     let config = blocking(move || be.list_with_size(FileType::Config).expect("config")).await;
     assert_eq!(config, vec![]);
@@ -198,11 +192,7 @@ async fn every_write_is_refused_and_counted() {
     assert_eq!(be.write_attempts(), 3);
     // And the parent is untouched.
     let snapshot = parent
-        .read_range(
-            &AppPath::legacy_unchecked(Path::new(&format!("{ROOT}/snapshots/{SNAP}"))),
-            0,
-            100,
-        )
+        .read_range(&in_repo(&format!("snapshots/{SNAP}")), 0, 100)
         .await
         .expect("still there");
     assert_eq!(snapshot, b"snapshot");
@@ -214,10 +204,7 @@ async fn add_keys(parent: &InMemoryVolume, first: usize, count: usize, json: imp
     for i in first..first + count {
         let hex = format!("{:064x}", 0xe000 + i);
         parent
-            .create_file(
-                &AppPath::legacy_unchecked(&PathBuf::from(format!("{ROOT}/keys/{hex}"))),
-                &json(i - first),
-            )
+            .create_file(&in_repo(&format!("keys/{hex}")), &json(i - first))
             .await
             .expect("key file");
         ids.push(id(&hex));
@@ -297,7 +284,7 @@ impl ReaderParent {
 
 struct CountingReader {
     inner: Arc<InMemoryVolume>,
-    path: BridgedPath,
+    path: AppPathBuf,
     size: u64,
     closes: Arc<AtomicUsize>,
 }
@@ -312,7 +299,7 @@ impl VolumeRandomReader for CountingReader {
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + '_>> {
-        self.inner.read_range(self.path.app(), offset, len)
+        self.inner.read_range(&self.path, offset, len)
     }
 
     fn close(self: Box<Self>) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send>> {
@@ -363,14 +350,11 @@ impl Volume for ReaderParent {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeRandomReader>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_app = path;
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            let size = self.inner.get_metadata(path_app).await?.size.unwrap_or(0);
+            let size = self.inner.get_metadata(path).await?.size.unwrap_or(0);
             self.opens.fetch_add(1, Ordering::SeqCst);
             Ok(Box::new(CountingReader {
                 inner: Arc::clone(&self.inner),
-                path: BridgedPath::new(path.to_path_buf()),
+                path: path.to_owned(),
                 size,
                 closes: Arc::clone(&self.closes),
             }) as Box<dyn VolumeRandomReader>)
@@ -380,27 +364,17 @@ impl Volume for ReaderParent {
 
 fn backend_over(parent: &Arc<ReaderParent>) -> Arc<VolumeBackend> {
     let parent: Arc<dyn Volume> = Arc::clone(parent) as Arc<dyn Volume>;
-    Arc::new(VolumeBackend::new(
-        parent,
-        PathBuf::from(ROOT),
-        tokio::runtime::Handle::current(),
-    ))
+    Arc::new(VolumeBackend::new(parent, app(ROOT), tokio::runtime::Handle::current()))
 }
 
 /// Writes `count` more packs, each 100 bytes, and returns their ids.
 async fn add_packs(parent: &InMemoryVolume, count: usize) -> Vec<Id> {
-    parent
-        .create_directory(&AppPath::legacy_unchecked(&PathBuf::from(format!("{ROOT}/data/ee"))))
-        .await
-        .expect("mkdir");
+    parent.create_directory(&in_repo("data/ee")).await.expect("mkdir");
     let mut ids = Vec::new();
     for i in 0..count {
         let hex = format!("ee{:062x}", i);
         parent
-            .create_file(
-                &AppPath::legacy_unchecked(&PathBuf::from(format!("{ROOT}/data/ee/{hex}"))),
-                &[i as u8; 100],
-            )
+            .create_file(&in_repo(&format!("data/ee/{hex}")), &[i as u8; 100])
             .await
             .expect("pack");
         ids.push(id(&hex));
@@ -421,7 +395,7 @@ async fn held_readers_close_after_a_short_idle() {
     let be = Arc::new(
         VolumeBackend::new(
             Arc::clone(&parent) as Arc<dyn Volume>,
-            PathBuf::from(ROOT),
+            app(ROOT),
             tokio::runtime::Handle::current(),
         )
         .with_reader_idle(Duration::from_millis(100)),
@@ -602,11 +576,7 @@ async fn a_key_file_past_the_limit_is_skipped_even_when_the_listing_hides_its_si
     padded.extend(std::iter::repeat_n(b' ', 200_000));
     let big = add_keys(&inner, 0, 1, move |_| padded.clone()).await;
     let parent: Arc<dyn Volume> = Arc::new(SizelessParent { inner });
-    let be = Arc::new(VolumeBackend::new(
-        parent,
-        PathBuf::from(ROOT),
-        tokio::runtime::Handle::current(),
-    ));
+    let be = Arc::new(VolumeBackend::new(parent, app(ROOT), tokio::runtime::Handle::current()));
 
     let keys = blocking(move || be.list_with_size(FileType::Key).expect("keys")).await;
     assert!(!keys.iter().any(|(id, _)| *id == big[0]), "{keys:?}");

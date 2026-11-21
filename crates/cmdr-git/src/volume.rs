@@ -28,7 +28,7 @@
 
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::app_path::AppPathBuf;
-use cmdr_fs::app_path::BridgedPath;
+
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -70,7 +70,10 @@ pub struct GitPortalVolume {
     portal: Arc<GitPortal>,
     /// `<worktree>/.git`: this volume's root, and the prefix of every path it
     /// serves.
-    dot_git: BridgedPath,
+    dot_git: AppPathBuf,
+    /// The worktree root on the disk, which a read in flight is matched against when its
+    /// volume leaves (`GuardedRead`).
+    worktree_root: PathBuf,
     /// The volume physically holding the repo. Source of the shared lane key
     /// (portal work must not run in parallel with other work on the same disk)
     /// and of the space answer.
@@ -86,10 +89,19 @@ impl GitPortalVolume {
     /// holding the `.zip`. Cheap and infallible; the repository is opened on
     /// first use through the portal's shared cache, and a `.git` that isn't one
     /// answers `NotFound` rather than failing to construct.
+    ///
+    /// `repo_root` is the worktree on the disk (the host canonicalizes it), so the root
+    /// crosses as a native path: `from_native_unicode`, and a root that isn't Unicode text
+    /// keeps the spelling it always had ([`host_app_path`]) until escapes go live.
     pub fn new(portal: Arc<GitPortal>, repo_root: PathBuf, parent: Arc<dyn Volume>) -> Self {
+        let dot_git_native = repo_root.join(".git");
+        let dot_git =
+            AppPathBuf::from_native_unicode(&dot_git_native).unwrap_or_else(|_| host_app_path(&dot_git_native));
+        let worktree_root = dot_git_native.parent().unwrap_or(&dot_git_native).to_path_buf();
         Self {
             portal,
-            dot_git: BridgedPath::new(repo_root.join(".git")),
+            dot_git,
+            worktree_root,
             parent,
         }
     }
@@ -106,7 +118,7 @@ impl GitPortalVolume {
         T: Send + 'static,
         F: FnOnce(&GuardedRead) -> Result<T, VolumeError> + Send + 'static,
     {
-        let worktree_root = self.dot_git.parent().unwrap_or(&self.dot_git).to_path_buf();
+        let worktree_root = self.worktree_root.clone();
         let guarded = move || {
             let read = GuardedRead::begin(&worktree_root);
             let answer = work(&read);
@@ -135,7 +147,7 @@ impl Volume for GitPortalVolume {
     }
 
     fn root(&self) -> &AppPath {
-        self.dot_git.app()
+        &self.dot_git
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -154,9 +166,7 @@ impl Volume for GitPortalVolume {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let owned = path.to_path_buf();
+        let owned = path.to_owned();
         let portal = Arc::clone(&self.portal);
         let control = Arc::new(log::WalkControl::default());
         let walk_control = Arc::clone(&control);
@@ -164,7 +174,7 @@ impl Volume for GitPortalVolume {
             // A volume about to unmount stops the commit walk the way a pane leaving does.
             walk_control.stop_when(read.stop_flag());
             let Some((virt, handle, root)) = path::classify_in(portal.repos(), &owned) else {
-                return Err(VolumeError::NotFound(owned.display().to_string()));
+                return Err(VolumeError::NotFound(owned.shown().into_owned()));
             };
             found_or_not_found(listing_for(&virt, &handle, &root, &walk_control), &owned)
         });
@@ -192,13 +202,11 @@ impl Volume for GitPortalVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let owned = path.to_path_buf();
+        let owned = path.to_owned();
         let portal = Arc::clone(&self.portal);
         self.blocking(move |_| {
             let Some((virt, handle, root)) = path::classify_in(portal.repos(), &owned) else {
-                return Err(VolumeError::NotFound(owned.display().to_string()));
+                return Err(VolumeError::NotFound(owned.shown().into_owned()));
             };
             found_or_not_found(virtual_listing::get_metadata_for(&root, &virt, &handle), &owned)
         })
@@ -248,13 +256,11 @@ impl Volume for GitPortalVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let owned = path.to_path_buf();
+        let owned = path.to_owned();
         let portal = Arc::clone(&self.portal);
         self.blocking(move |_| {
             let Some((virt, handle, _root)) = path::classify_in(portal.repos(), &owned) else {
-                return Err(VolumeError::NotFound(owned.display().to_string()));
+                return Err(VolumeError::NotFound(owned.shown().into_owned()));
             };
             let opened = match &virt {
                 VirtualGitPath::RefTree(cat, name, sub) if cat.browses_commit_tree() => {
@@ -271,11 +277,7 @@ impl Volume for GitPortalVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            scan_walk::scan_one(self, path).await
-        })
+        Box::pin(async move { scan_walk::scan_one_at(self, path).await })
     }
 
     fn scan_for_copy_batch_with_boundary<'a>(
@@ -283,11 +285,7 @@ impl Volume for GitPortalVolume {
         paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
-            let paths: &[PathBuf] = &paths_std;
-            scan_walk::scan_trees(self, paths, boundary).await
-        })
+        Box::pin(async move { scan_walk::scan_trees_at(self, paths, boundary).await })
     }
 
     // ---- Capability flags: answered explicitly, never inherited ------------
@@ -331,11 +329,7 @@ impl Volume for GitPortalVolume {
         &'a self,
         _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            self.parent
-                .get_space_info_at(&AppPath::legacy_unchecked(&self.dot_git))
-                .await
-        })
+        Box::pin(async move { self.parent.get_space_info_at(&self.dot_git).await })
     }
 
     /// `false`, and `listing_watch_coverage` stays at the trait's `None`: these
@@ -384,4 +378,12 @@ impl ScanSource for GitPortalVolume {
     fn scan_list<'a>(&'a self, path: &'a AppPath) -> Walking<'a, Vec<FileEntry>> {
         self.list_directory(path, None)
     }
+}
+
+/// A path the host hands this crate as a `std::path` value that carries app text (a
+/// commit row's path for the count pass, a portal root that isn't Unicode text), as an
+/// app path. The crate's one transition-bridge crossing, lossless; it goes when the
+/// host's git wiring hands typed paths.
+pub(crate) fn host_app_path(path: &Path) -> AppPathBuf {
+    AppPath::legacy_unchecked(path).into_owned()
 }

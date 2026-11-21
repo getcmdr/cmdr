@@ -471,6 +471,43 @@ pub fn discover_repo(path: &Path) -> Result<(RepoHandle, PathBuf), FriendlyGitEr
     RepoCache::new().discover(path)
 }
 
+/// A fixture folder on the disk (a scratch repo, a canonical root gix answered) as the app
+/// path a pane holds for it: 8.3 names expanded on Windows (a listing never shows one).
+/// This crate's cells only: a scratch folder is always Unicode text.
+#[cfg(test)]
+pub(crate) fn app_dir(dir: &Path) -> cmdr_fs::app_path::AppPathBuf {
+    let long = cmdr_fs::app_path::expand_short_names(dir).unwrap_or_else(|_| dir.to_path_buf());
+    cmdr_fs::app_path::AppPathBuf::from_native_unicode(&long).expect("a scratch folder is an app path")
+}
+
+/// `rel` (`/`-separated names) under `base`, by the app path's own arithmetic, so a cell
+/// names a portal path the way a pane does on every OS.
+#[cfg(test)]
+pub(crate) fn app_at(base: &cmdr_fs::app_path::AppPath, rel: &str) -> cmdr_fs::app_path::AppPathBuf {
+    let rel = cmdr_fs::app_path::RelativeAppPath::new(rel).expect("plain names");
+    base.join_relative(rel).expect("the names join")
+}
+
+/// `rest` under the `.git` of the worktree at `repo` (native), as an app path.
+#[cfg(test)]
+pub(crate) fn portal_path(repo: &Path, rest: &str) -> cmdr_fs::app_path::AppPathBuf {
+    let dot_git = app_at(&app_dir(repo), ".git");
+    if rest.is_empty() {
+        dot_git
+    } else {
+        app_at(&dot_git, rest)
+    }
+}
+
+/// The folder `rest` names under the `.git` of the worktree at `root` (gix's canonical
+/// root), as the portal's listings build their rows under it.
+#[cfg(test)]
+pub(crate) fn row_at(root: &Path, rest: &str) -> crate::row_path::RowPath {
+    crate::row_path::RowPath::dot_git_of(root)
+        .under(rest)
+        .expect("plain names")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

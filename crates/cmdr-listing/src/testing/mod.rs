@@ -24,6 +24,21 @@ pub use listing::{TestListing, TestListingGuard};
 pub use observers::{Heard, RecordingObserver, StaticOverlay};
 pub use volumes::{ScriptedListVolume, SpelledVolume, WatchCoverageVolume};
 
+/// `text`, a canonical app path a test names (a `const` the `app_path!` literal form can't take).
+#[cfg(test)]
+pub(crate) fn app(text: &str) -> &cmdr_fs::app_path::AppPath {
+    cmdr_fs::app_path::AppPath::from_normalized(text).expect("a canonical app path")
+}
+
+/// `name` inside the canonical app path `dir`, joined by the app path's own join, so a
+/// test builds the path a volume lists on every OS (`Path::join` adds `\` on Windows).
+#[cfg(test)]
+pub(crate) fn app_child(dir: &str, name: &str) -> cmdr_fs::app_path::AppPathBuf {
+    use cmdr_fs::app_path::{AppName, PathArithmetic};
+    let name = AppName::from_app_spelling(name).expect("one plain name");
+    app(dir).join(name).expect("joins")
+}
+
 /// A read's cancel token and stall watch, as `Listings::streaming_state` hands
 /// it out.
 pub use crate::streaming::StreamingListingState;

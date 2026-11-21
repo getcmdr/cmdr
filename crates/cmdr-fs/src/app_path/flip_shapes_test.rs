@@ -1,4 +1,4 @@
-//! The trait flip's two codemod rules (`scripts/app-path-flip/README.md`), proven on shapes of
+//! The trait flip's two bridge rules (its codemod applied them), proven on shapes of
 //! the real implementors (`docs/specs/app-path-plan.md` § "4. Flip the trait", review 3's 3a
 //! and 3b).
 //!

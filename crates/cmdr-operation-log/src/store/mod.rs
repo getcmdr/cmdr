@@ -30,7 +30,9 @@ use unicode_normalization::UnicodeNormalization;
 pub use connection::open_read_connection;
 pub(crate) use connection::open_write_connection;
 pub use dirs::reconstruct_dir_path;
-pub(crate) use dirs::{find_dir, intern_child_dir, intern_dir};
+pub(crate) use dirs::{find_dir, intern_child_dir, intern_dir, join_leaf, join_leaf_text};
+#[cfg(test)]
+pub(crate) use dirs::{find_dir_as, intern_dir_as};
 pub use migrations::{MIGRATIONS, Migration, run_migrations};
 pub(crate) use tree_indexes::{build_tree_item_indexes, tree_item_indexes_exist};
 
@@ -529,12 +531,6 @@ pub(super) fn resolve_dir(conn: &Connection, dir_id: i64) -> Result<(String, Str
         .query_row(rusqlite::params![dir_id], |row| row.get(0))?;
     let path = reconstruct_dir_path(conn, dir_id)?;
     Ok((volume_id, path))
-}
-
-/// Join a resolved dir path with a leaf name into a full path. The root renders as
-/// `/`, so `join_leaf("/", "a")` is `/a` and `join_leaf("/a/b", "c")` is `/a/b/c`.
-pub(super) fn join_leaf(dir_path: &str, name: &str) -> PathBuf {
-    PathBuf::from(dir_path).join(name)
 }
 
 /// Resolve one raw row's interned dirs into the [`RollbackUnit`] the engine acts on.

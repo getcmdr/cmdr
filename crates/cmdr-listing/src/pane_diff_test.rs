@@ -181,10 +181,7 @@ fn a_single_add_reports_the_pane_row_and_a_hidden_one_reports_nothing() {
     let listing = pane("pane-diff-single-add", false, home_entries());
 
     listing.engine().inner.notify_added(listing.id(), entry(".lesshst", 7));
-    listing
-        .engine()
-        .inner
-        .notify_removed(listing.id(), std::path::Path::new(&format!("{DIR}/.DS_Store")));
+    listing.engine().inner.notify_removed(listing.id(), ".DS_Store");
     listing.engine().inner.notify_added(listing.id(), entry("bravo.txt", 2));
 
     let bravo_row = row(&listing, "bravo.txt", false);
@@ -203,10 +200,7 @@ fn a_removal_reports_the_row_it_left() {
     let listing = pane("pane-diff-remove", false, home_entries());
     let charlie_row = row(&listing, "charlie.txt", false);
 
-    listing
-        .engine()
-        .inner
-        .notify_removed(listing.id(), std::path::Path::new(&format!("{DIR}/charlie.txt")));
+    listing.engine().inner.notify_removed(listing.id(), "charlie.txt");
 
     assert_eq!(
         queued(&listing),
@@ -337,4 +331,24 @@ fn toggling_hidden_files_switches_the_row_space_and_drops_what_was_queued() {
             row(&listing, ".lesshst", true)
         )]
     );
+}
+
+/// A watcher's removal matches the row by its exact name, so of two case twins (a
+/// case-sensitive volume) only the named one goes, and a case-folded name removes
+/// nothing. A rename that changes only the case is that removal plus an add.
+#[test]
+fn a_removal_drops_only_the_exactly_named_case_twin() {
+    let listing = pane(
+        "pane-diff-case-twins",
+        true,
+        sorted(vec![entry("A.txt", 1), entry("a.txt", 2), entry("b.txt", 3)]),
+    );
+
+    listing.engine().inner.notify_removed(listing.id(), "a.txt");
+    listing.engine().inner.notify_removed(listing.id(), "B.txt");
+
+    let names = listing.entry_names();
+    assert!(names.contains(&"A.txt".to_string()), "{names:?}");
+    assert!(!names.contains(&"a.txt".to_string()), "{names:?}");
+    assert!(names.contains(&"b.txt".to_string()), "{names:?}");
 }

@@ -12,7 +12,7 @@ use std::path::Path;
 use cmdr_fs::volume::NodeIdentity;
 use rusqlite::Connection;
 
-use crate::store::{OperationLogStoreError, decode, find_dir, fold_name, join_leaf, resolve_dir};
+use crate::store::{OperationLogStoreError, decode, find_dir, fold_name, join_leaf_text, resolve_dir};
 use crate::types::{Initiator, ItemOutcome, OpKind};
 
 /// How many rows at one path are looked through, newest first. A path collects a
@@ -114,9 +114,7 @@ pub fn landed_at(
                 initiator: landing.initiator,
                 at: landing.at,
                 source_volume_id,
-                source_path: join_leaf(&source_folder, &landing.source_name)
-                    .to_string_lossy()
-                    .into_owned(),
+                source_path: join_leaf_text(&source_folder, &landing.source_name),
                 dates_changed: landing.dates_changed,
             })
         }

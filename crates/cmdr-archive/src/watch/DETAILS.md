@@ -30,6 +30,11 @@ path (`Path::starts_with`, component-wise — so `/a/foo.zip` matches the root a
 does NOT go through the app's `listing_host::directory_changed`: that runs the drive-index sync (`apply_smb_change`) up
 front, and an archive-inner path isn't a real filesystem path, so feeding it to the index would be meaningless.
 
+**Two spellings of one file.** `start_watch` takes the backing file's NATIVE path (what `notify` watches, what its
+events carry, and what `watch_for_real` keys on) and its APP path in the `std::path` spelling the listing seam still
+takes (`shown_at`, made by the volume's `std_view`), which the refresh names. On macOS and Linux they're the same text;
+on Windows the native one is `\\?\C:\…` while listings key on `C:/…`. The second goes when the seam takes app paths.
+
 ## Cache invalidation
 
 The `(path, size, mtime)` key already misses after any edit, so `cache.clear()` isn't needed for correctness — but it

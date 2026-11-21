@@ -3,6 +3,7 @@
 //! "Passwords and the credential store".
 
 use super::{Bound, KEYCHAIN_SERVICE, RepoSlot, ResticRepos, lock};
+use crate::path::text_of;
 use crate::repo::{ResticError, ResticRepo};
 use cmdr_fs::volume::secret_store::{self, SignIn};
 use cmdr_fs::volume::{LockedContainer, Volume, VolumeError};
@@ -35,7 +36,7 @@ impl ResticRepos {
                     // and answer so the host files nothing either.
                     let mut kept = lock(&slot.password);
                     if slot.forgets() != forgets {
-                        return Err(VolumeError::Cancelled(slot.key.root.display().to_string().into()));
+                        return Err(VolumeError::Cancelled(text_of(&slot.key.root).into()));
                     }
                     *kept = Some(Zeroizing::new(password.to_string()));
                 }

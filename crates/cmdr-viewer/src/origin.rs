@@ -12,7 +12,8 @@ use super::host::ViewerHost;
 use super::replacement::ReplacementHook;
 use super::source::{OpenedFile, open_local};
 use super::volume_error::map_volume_error;
-use super::volume_source::{PositionedRead, open_on_volume, size_on_volume};
+use super::volume_source::{PositionedRead, app_path_of, open_on_volume, size_on_volume};
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::rt::Runtime;
 use cmdr_fs::volume::{Volume, VolumeError};
 
@@ -25,7 +26,7 @@ pub enum SourceOrigin {
     /// A file read through its volume's positioned reads (`volume_source.rs`).
     Volume {
         volume: Arc<dyn Volume>,
-        path: PathBuf,
+        path: AppPathBuf,
         way: PositionedRead,
         runtime: Runtime,
         /// Told when the file changes under a reader this origin opened.
@@ -143,7 +144,7 @@ fn open_through_volume(
     let os_visible = volume.paths_are_os_visible();
     let origin = SourceOrigin::Volume {
         volume,
-        path: requested.to_path_buf(),
+        path: app_path_of(requested),
         way,
         runtime: runtime.clone(),
         replaced: ReplacementHook::default(),

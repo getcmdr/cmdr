@@ -446,26 +446,25 @@ fn full_path_match_misses_inner_mtp_entry_from_url_notifier() {
 fn name_match_removes_inner_mtp_entry() {
     let engine = TestEngine::new();
     let listing = insert_mtp_style_listing(&engine, "mtp_name_hit");
-    let removed = listing
-        .engine()
-        .inner
-        .remove_entry_by_name(listing.id(), std::ffi::OsStr::new("notes.txt"));
+    let removed = listing.engine().inner.remove_entry_by_name(listing.id(), "notes.txt");
     assert!(removed.is_some(), "name match removes the inner-path entry");
     assert_eq!(removed.unwrap().1.name, "notes.txt");
     assert_eq!(listing.entry_names(), ["report.txt"], "only the named entry is removed");
 }
 
-/// End-to-end on the real patch function: `notify_removed` is called by
-/// `notify_directory_changed` with the URL full path (`parent_url.join(name)`).
-/// It must drop the inner-path entry from the cache. Pre-fix (full-path match) this
-/// left the entry in place; post-fix (name match) it is removed.
+/// End-to-end on the real patch function: a removal reported under the URL
+/// parent (`notify_directory_changed`, as the MTP watcher reports it) must drop
+/// the inner-path entry from the cache. Pre-fix (full-path match) this left the
+/// entry in place; post-fix (name match) it is removed.
 #[test]
 fn notify_removed_drops_inner_mtp_entry_via_url_path() {
     let engine = TestEngine::new();
     let listing = insert_mtp_style_listing(&engine, "mtp_notify_removed");
-    // Exactly what notify_directory_changed builds: parent URL joined with the name.
-    let url = PathBuf::from("mtp://mtp-dev/65537/Documents").join("notes.txt");
-    listing.engine().inner.notify_removed(listing.id(), &url);
+    listing.engine().inner.notify_directory_changed(
+        "mtp-dev:65537",
+        Path::new("mtp://mtp-dev/65537/Documents"),
+        DirectoryChange::Removed("notes.txt".to_string()),
+    );
     assert_eq!(
         listing.entry_names(),
         ["report.txt"],
@@ -490,10 +489,7 @@ fn name_match_removes_local_style_entry() {
             make_entry("beta.txt", false, Some(2)),
         ],
     );
-    let removed = listing
-        .engine()
-        .inner
-        .remove_entry_by_name(listing.id(), std::ffi::OsStr::new("beta.txt"));
+    let removed = listing.engine().inner.remove_entry_by_name(listing.id(), "beta.txt");
     assert_eq!(removed.expect("removed").1.name, "beta.txt");
 }
 
