@@ -688,7 +688,7 @@ fn a_name_swap_journals_every_hop_of_its_rotation() {
 /// Undo a batch that skipped a row and only the landed row is offered for reversal.
 #[test]
 fn a_skipped_row_is_logged_but_never_offered_to_undo_as_a_rollback_unit() {
-    use cmdr_operation_log::store::{open_read_connection, read_rollback_units_page};
+    use cmdr_operation_log::store::{open_read_connection, read_typed_rollback_units};
 
     let bed = LandingJournal::new("skip_not_a_unit");
     let tmp = create_test_dir("skip_not_a_unit_files");
@@ -719,7 +719,7 @@ fn a_skipped_row_is_logged_but_never_offered_to_undo_as_a_rollback_unit() {
     assert_eq!(rows.len(), 2, "both rows are in the log: {rows:?}");
 
     let conn = open_read_connection(bed.log.db()).expect("read conn");
-    let units = read_rollback_units_page(&conn, &bed.op_id, i64::MAX, 100).expect("rollback units");
+    let units = read_typed_rollback_units(&conn, &bed.op_id, i64::MAX, 100).expect("rollback units");
     assert_eq!(
         units.len(),
         1,

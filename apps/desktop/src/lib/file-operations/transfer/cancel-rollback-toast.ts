@@ -106,6 +106,8 @@ const REASON_KEYS: Record<SkipReason, { named: MessageKey; counted: MessageKey }
   // Only the journal's undo of a FINISHED copy checks the copy's original; a cancel's
   // reversal removes copies whose originals it was reading moments ago.
   originalGone: null,
+  // Only the journal's undo reads a stored path; a cancel's reversal holds the live ones.
+  unreadablePath: null,
 }
 
 /** What happened to the items one reason applies to: named when it's the only

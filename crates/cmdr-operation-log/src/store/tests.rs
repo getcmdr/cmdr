@@ -263,7 +263,7 @@ fn intern_dir_round_trips_a_scheme_rooted_path() {
     ] {
         let id = intern_dir(&conn, "remote", remote).expect("intern");
         assert_eq!(reconstruct_dir_path(&conn, id).expect("path"), remote);
-        assert_eq!(join_leaf(remote, "a.zip").to_str(), Some(&*format!("{remote}/a.zip")));
+        assert_eq!(join_leaf_text(remote, "a.zip"), format!("{remote}/a.zip"));
     }
 
     // The root is one shared row: two folders under it are siblings of each other.
@@ -371,9 +371,12 @@ fn v4_migration_keeps_older_rows_with_no_recorded_identity() {
 
     run_migrations(&conn, MIGRATIONS).expect("migrate to current");
 
-    let units = read_rollback_units_page(&conn, "op", i64::MAX, 10).expect("units");
+    let units = read_typed_rollback_units(&conn, "op", i64::MAX, 10).expect("units");
     assert_eq!(units.len(), 1, "the pre-migration row survives the step");
-    assert_eq!(units[0].dest_path, Some(PathBuf::from("/.Trash/Invoices")));
+    assert_eq!(
+        units[0].dest_path.as_ref().map(|p| p.as_str()),
+        Some("/.Trash/Invoices")
+    );
     assert_eq!(
         units[0].dest_identity, None,
         "no identity was recorded, so none is made up"

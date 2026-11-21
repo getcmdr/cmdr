@@ -161,6 +161,8 @@ export function skipReasonNotice(reason: SkipReason): MessageKey {
       return 'operationLog.skipReason.failed'
     case 'locked':
       return 'operationLog.skipReason.locked'
+    case 'unreadablePath':
+      return 'operationLog.skipReason.unreadablePath'
   }
 }
 

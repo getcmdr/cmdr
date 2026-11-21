@@ -15473,6 +15473,19 @@ export type MtpConnectionError =
       path: string
     }
   /**
+   *  A folder refused its delete because what it still holds sits under names no
+   *  path can address (`..`, ``, `.`, or holding `/`), which list no row, so the
+   *  folder looks empty. Nothing was deleted, and ❌ never deleted for the person:
+   *  those objects are real, and only the device's own tools can name them.
+   */
+  | {
+      type: 'holdsUnlistedItems'
+      // The device this is about.
+      device_id: string
+      // The folder that looks empty.
+      path: string
+    }
+  /**
    *  The cached parent-folder handle was rejected by the device during an
    *  upload's `SendObjectInfo` (the device re-keyed its object handles since
    *  the folder was last listed). The cache has been refreshed; the caller
@@ -21827,6 +21840,12 @@ export type SkipReason =
    *  A user flag or an ACL the copy carried over is cleared, never reported here.
    */
   | 'locked'
+  /**
+   *  The row's stored path names no place undo can act on (relative text, a `..`
+   *  name, or anything else the typed app path refuses), so the undo never touches
+   *  it. No operation Cmdr journals writes one; it guards a damaged or hand-edited log.
+   */
+  | 'unreadablePath'
 
 // The slot as the rail sees it before a send.
 export type SlotStatus = {

@@ -42,6 +42,20 @@ impl SkipTally {
     /// Count one skipped item. `path` is where the undo found the item; its leaf name
     /// becomes the group's example if this is the first item for `reason`.
     pub fn record(&mut self, reason: SkipReason, path: &Path) {
+        self.count(reason, || {
+            path.file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default()
+        });
+    }
+
+    /// [`Self::record`] for a caller holding the item's leaf name already (the journal
+    /// planner, whose paths are app paths).
+    pub(crate) fn record_named(&mut self, reason: SkipReason, example_name: String) {
+        self.count(reason, || example_name);
+    }
+
+    fn count(&mut self, reason: SkipReason, example_name: impl FnOnce() -> String) {
         // A linear scan over at most one entry per SkipReason variant.
         if let Some(group) = self.groups.iter_mut().find(|g| g.reason == reason) {
             group.count += 1;
@@ -50,10 +64,7 @@ impl SkipTally {
         self.groups.push(SkipBreakdown {
             reason,
             count: 1,
-            example_name: path
-                .file_name()
-                .map(|n| n.to_string_lossy().into_owned())
-                .unwrap_or_default(),
+            example_name: example_name(),
         });
     }
 

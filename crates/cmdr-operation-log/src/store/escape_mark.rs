@@ -10,7 +10,7 @@
 //! which sort by time as text, so an op at or below the mark is older. No row changes shape,
 //! so no migration (the plan's loud rule 4).
 
-use cmdr_fs::app_path::{AppPathBuf, Namer, NotAnAppPath};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, Namer, NotAnAppPath, is_escape};
 use rusqlite::{Connection, OptionalExtension};
 
 use super::OperationLogStoreError;
@@ -19,12 +19,8 @@ use super::OperationLogStoreError;
 /// log held none).
 pub(crate) const ESCAPE_MARK_KEY: &str = "escape_mark_last_literal_op_id";
 
-/// How an op's stored paths read. Crate-internal until its first reader, the rollback
-/// planner's typed conversion (once `RollbackUnit` carries app paths), lands beside it.
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "the rollback planner's typed conversion is its first caller")
-)]
+/// How an op's stored paths read. Its reader is the rollback planner's typed conversion
+/// (`rollback_unit.rs`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum StoredPathReading {
     /// Written before escapes went live: every escape-range code point is literal text.
@@ -34,21 +30,50 @@ pub(crate) enum StoredPathReading {
 }
 
 impl StoredPathReading {
-    /// The app path a stored path text names, read as this op's rows were written. `namer` is
-    /// the namer of the volume the path is on.
+    /// The app path a stored path text names, read as this op's rows were written. `namer`
+    /// answers the namer of the volume the path is on, and is asked only for literal text
+    /// holding an escape-range code point: no other text spells differently through either
+    /// namer, so a row on a volume the host can't name still reads as it always did.
     ///
     /// # Errors
     ///
-    /// As [`AppPathBuf::from_wire`].
-    #[cfg_attr(
-        not(test),
-        expect(dead_code, reason = "the rollback planner's typed conversion is its first caller")
-    )]
-    pub(crate) fn app_path(self, text: &str, namer: Namer) -> Result<AppPathBuf, NotAnAppPath> {
+    /// [`StoredPathRefusal::NotAnAppPath`] as [`AppPathBuf::from_wire`], and
+    /// [`StoredPathRefusal::UnknownNamer`] when the text needs a namer `namer` can't give.
+    pub(crate) fn app_path(
+        self,
+        text: &str,
+        namer: impl FnOnce() -> Option<Namer>,
+    ) -> Result<AppPathBuf, StoredPathRefusal> {
         match self {
-            StoredPathReading::Literal => AppPathBuf::from_literal_store(text, namer),
-            StoredPathReading::Live => AppPathBuf::from_wire(text),
+            StoredPathReading::Literal if text.chars().any(is_escape) => {
+                let namer = namer().ok_or(StoredPathRefusal::UnknownNamer)?;
+                Ok(AppPathBuf::from_literal_store(text, namer)?)
+            }
+            StoredPathReading::Literal | StoredPathReading::Live => match AppPathBuf::from_wire(text) {
+                // A POSIX `/` path on Windows: canonical, it's the in-memory volume's, which
+                // `from_normalized` keeps valid there as the engine does (on macOS and Linux
+                // this refuses the same drive or UNC shape `from_wire` refused).
+                Err(NotAnAppPath::WrongFlavor) => Ok(AppPath::from_normalized(text)?.to_owned()),
+                read => Ok(read?),
+            },
         }
+    }
+}
+
+/// Why a stored path text names no app path the planner can act on.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum StoredPathRefusal {
+    /// The text is no app path: relative, a `..` name, or anything else
+    /// [`AppPathBuf::from_wire`] refuses.
+    NotAnAppPath(NotAnAppPath),
+    /// The text holds a literal escape-range code point, which spells through its volume's
+    /// namer, and the host can't name that volume.
+    UnknownNamer,
+}
+
+impl From<NotAnAppPath> for StoredPathRefusal {
+    fn from(why: NotAnAppPath) -> Self {
+        StoredPathRefusal::NotAnAppPath(why)
     }
 }
 
@@ -69,10 +94,6 @@ pub(crate) fn stamp_escape_mark(conn: &Connection, escapes_live: bool) -> Result
 /// How `op_id`'s stored paths read: [`StoredPathReading::Literal`] for every op while no mark
 /// is stamped (escapes aren't live yet, so no stored text holds one) and for an op at or below
 /// the mark; [`StoredPathReading::Live`] for one written since.
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "the rollback planner's typed conversion is its first caller")
-)]
 pub(crate) fn stored_path_reading(conn: &Connection, op_id: &str) -> Result<StoredPathReading, OperationLogStoreError> {
     let mark: Option<String> = conn
         .query_row(
@@ -149,14 +170,14 @@ mod tests {
     fn a_pre_mark_row_names_the_file_it_named() {
         let root = if cfg!(windows) { "C:/d" } else { "/d" };
         let stored = format!("{root}/\u{10FEC3}\u{10FEA9}.txt");
-        let live = StoredPathReading::Live.app_path(&stored, Namer::HOST).expect("parses");
+        let live = StoredPathReading::Live.app_path(&stored, || None).expect("parses");
         assert_eq!(
             live.as_str(),
             format!("{root}/\u{e9}.txt"),
             "read live, it would name `é.txt`"
         );
         let literal = StoredPathReading::Literal
-            .app_path(&stored, Namer::HOST)
+            .app_path(&stored, || Some(Namer::HOST))
             .expect("parses");
         assert_ne!(literal, live);
         // What reaches the OS is the text the row held, code point for code point.

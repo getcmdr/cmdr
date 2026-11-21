@@ -552,6 +552,8 @@ const SKIP_REASON_KEYS: Record<SkipReason, { named: MessageKey; counted: Message
   locked: null,
   // Only undoing a COPY checks an original, and a rename's undo renames back.
   originalGone: null,
+  // A damaged journal row, which no rename this chat made writes; the undo dialog names it.
+  unreadablePath: null,
   alreadyGone: null,
 }
 

@@ -6,8 +6,8 @@ use cmdr_fs::volume::{VolumeError, XattrReadMode};
 
 use super::super::store::RollbackUnit;
 use super::super::types::SkipReason;
-use super::target::app_path_of;
 use super::{ActRefusal, InverseAct, ItemResult, RollbackRunner, VolumeLookup, vanished_item};
+use cmdr_fs::app_path::AppPath;
 
 /// Write a tag write's prior value back onto the file.
 ///
@@ -29,8 +29,8 @@ pub(super) async fn restore_tags(
     let Some(volume) = volumes.get(&unit.source_volume_id) else {
         return ItemResult::Skipped(SkipReason::Failed);
     };
-    let app = app_path_of(&unit.source_path);
-    let batch = [app.clone().into_owned()];
+    let app: &AppPath = &unit.source_path;
+    let batch = [app.to_owned()];
     let answer = volume
         .read_xattr_many(&batch, FINDER_TAGS_XATTR, XattrReadMode::Verified)
         .await
@@ -38,7 +38,7 @@ pub(super) async fn restore_tags(
         .next();
     let live = match answer {
         Some(Ok(value)) => value,
-        Some(Err(VolumeError::NotFound(_))) => return vanished_item(&[(&*volume, &app)]),
+        Some(Err(VolumeError::NotFound(_))) => return vanished_item(&[(&*volume, app)]),
         Some(Err(_)) | None => return ItemResult::Skipped(SkipReason::Failed),
     };
     match live.as_deref() {
@@ -52,14 +52,14 @@ pub(super) async fn restore_tags(
         .perform(InverseAct::WriteXattr {
             volume_id: &unit.source_volume_id,
             volume: &volume,
-            path: &app,
+            path: app,
             name: FINDER_TAGS_XATTR,
             value: &tags.before,
         })
         .await
     {
         Ok(()) => ItemResult::Reversed,
-        Err(ActRefusal::Volume(VolumeError::NotFound(_))) => vanished_item(&[(&*volume, &app)]),
+        Err(ActRefusal::Volume(VolumeError::NotFound(_))) => vanished_item(&[(&*volume, app)]),
         Err(_) => ItemResult::Skipped(SkipReason::Failed),
     }
 }

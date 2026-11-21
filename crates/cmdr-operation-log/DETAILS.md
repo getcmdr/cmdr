@@ -115,10 +115,37 @@ for an op at or below it (UUIDv7 ids sort by time as text) and for every op whil
 stored path into an app path with `StoredPathReading::app_path`, which for `Literal` goes through
 `AppPathBuf::from_literal_store`: the file the row named, exactly. No row changes shape, so it's no migration step. ❗
 Every reader that turns a stored path into a typed path goes through it; a `from_wire` of a stored row skips the mark.
-Its first reader is the rollback planner, once `RollbackUnit` carries app paths built in `rollback_unit_of` (where the
-op id and the stored text are), the plan's milestone 10a, before escapes go live. Until then the planner crosses once,
-`rollback/target.rs`' `app_path_of` over the unit's `PathBuf`, which is the identity while no escape exists, and hands
-those same app paths to the runner's `InverseAct`. Tag writes journal here too (`OpKind::Tag`), so they're covered.
+Tag writes journal here too (`OpKind::Tag`), so they're covered.
+
+**The planner reads every row typed** (`src/store/rollback_unit.rs`, Decision/Why; David, 2026-11-21). `UnitReader`
+holds an op's `StoredPathReading` (read once per run) and the host's namer per volume, and turns each row into a
+`UnitReading`: `Read(RollbackUnit)`, whose `AppPathBuf` paths every check (size, date, node) and every act reads, so an
+undo acts on exactly what its checks read; or `Refused { unit, reason }`, the row with its stored text, which the loop
+records as skipped with `reason` and ❌ never acts on (no pause, pace, or deepest-first turn; it still credits the bar).
+
+- **A stored path no app path takes** (a `..` name, a NUL, anything `from_wire` refuses) is
+  `SkipReason::UnreadablePath`. No operation Cmdr journals writes one (the journal interns every folder from a root, so
+  relative text can't reach a row); it guards a damaged or hand-edited log. Why skip, not migrate or rewrite: the
+  theoretical case gets the cheapest safe answer, and the stored row stays the evidence. A live root a rebase lands on
+  that can't hold the names refuses the unit the same way (`rollback/live_roots.rs`).
+- **The namer comes from `VolumeLookup::namer`** (default: the registered volume's `BackendKind::namer` in `cmdr-fs`: a
+  local disk is the host's, SMB units, the rest bytes), asked only for literal text holding an escape-range code point:
+  every other text spells the same through either namer, so a row on a volume nobody registered reads exactly as it did.
+  An unknown volume for text that needs one is the planner's "can't tell", `SkipReason::Failed` (the verdict an
+  unregistered volume gets at the act), ❌ never a guessed namer.
+- **A POSIX `/` row on Windows** (the in-memory volume's) reads through `AppPath::from_normalized`, which keeps it valid
+  there as the engine does, after `from_wire` refuses it as `WrongFlavor`.
+- **The books keep the journal's spelling**: the inverse op's rows, a skip's example name, the progress line, the
+  dispatch summary, and the folder sweep's depth all read `rollback/target.rs`' `StoredPath` (a typed path decodes each
+  escape back to the literal text it stood for), split by `std::path` exactly as every row was made.
+- **Evidence** (throwaway differential on macOS, 2026-11-21: the old `PathBuf` reading against the typed one over
+  1,000,000 generated rows through a real store; POSIX, scheme, MTP, and drive-shaped dirs; names with `..`, `.`, NUL,
+  `\`, `:`, NFC/NFD, U+FFFD, and literal byte- and unit-escape code points): with the host's namer every canonical path
+  (908,891) is byte-exact in its act path, inverse-row split, skip name, sweep depth, in-place test, and root rebase;
+  non-canonical text (`/./`, `//`, a trailing `/`, which no journal row holds) names the same place respelled; every
+  `..` or NUL row is refused. With SMB's units namer, only text holding a literal escape-range code point differs (unit
+  escapes where the host bridge spelled byte escapes); while escapes aren't live, no SMB name holding one addressed its
+  file either way (`to_smb_path` sends app text raw).
 
 ## Case folding, not a collation
 
@@ -927,7 +954,7 @@ reads the summary), `tooManyToggles` (normalizing drops the NEWEST toggles past 
 a row the person unchecked), `nothingSelected` (`N = 0`). A selection that normalizes to everything IS `None`, so its
 run, report, and bar are an unfiltered run's. The engine normalizes again before it streams.
 
-- **Decided on the RAW row, before any path resolves** (`store::read_rollback_rows_page`, then `store::rollback_unit_of`
+- **Decided on the RAW row, before any path resolves** (`store::read_rollback_rows_page`, then `UnitReader::unit_of`
   only for kept rows): a left-out row costs one `HashMap` lookup plus one summary read per distinct folder for the run
   (each page's `OpReader` borrows the filter's run-long `DirCache` and hands it back; past `DIR_CACHE_CAP` folders it
   starts over at the next page; gated by `scale_tests.rs`, `the_engine_reads_each_folder_once_per_run`), is never

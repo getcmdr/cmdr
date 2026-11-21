@@ -25,3 +25,4 @@ mod test_support;
 mod tests;
 mod trash_identity_tests;
 mod undo_tests;
+mod unreadable_path_tests;

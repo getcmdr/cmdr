@@ -264,6 +264,10 @@ token_enum! {
         /// process can't clear (`schg`, which only root can), so it can't be removed.
         /// A user flag or an ACL the copy carried over is cleared, never reported here.
         Locked => "locked",
+        /// The row's stored path names no place undo can act on (relative text, a `..`
+        /// name, or anything else the typed app path refuses), so the undo never touches
+        /// it. No operation Cmdr journals writes one; it guards a damaged or hand-edited log.
+        UnreadablePath => "unreadable_path",
     }
 }
 
@@ -407,7 +411,8 @@ mod tests {
                 Vanished,
                 OriginalGone,
                 Failed,
-                Locked
+                Locked,
+                UnreadablePath
             ]
         );
     }

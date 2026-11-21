@@ -2,7 +2,6 @@
 //! (`DETAILS.md` § Schema), and the walk back to a full path.
 
 use std::borrow::Cow;
-use std::path::PathBuf;
 
 use cmdr_fs::app_path::PathFlavor;
 use rusqlite::{Connection, OptionalExtension};
@@ -233,13 +232,9 @@ pub fn reconstruct_dir_path(conn: &Connection, dir_id: i64) -> Result<String, Op
     Ok(render(&names))
 }
 
-/// Join a resolved dir path with a leaf name into a full path. The root renders as
-/// `/`, so `join_leaf("/", "a")` is `/a` and `join_leaf("/a/b", "c")` is `/a/b/c`.
-pub(crate) fn join_leaf(dir_path: &str, name: &str) -> PathBuf {
-    PathBuf::from(join_leaf_text(dir_path, name))
-}
-
-/// [`join_leaf`]'s text: `Path::join`'s rule over `/` alone, on every host, so a drive
+/// Join a resolved dir path with a leaf name into a full path's text. The root renders as
+/// `/`, so `join_leaf_text("/", "a")` is `/a` and `join_leaf_text("/a/b", "c")` is
+/// `/a/b/c`. `Path::join`'s rule over `/` alone, on every host, so a drive
 /// path `C:/x` joins to `C:/x/a`, where `Path::join` on Windows wrote `C:/x\a`. A
 /// separator goes between unless the dir is empty or ends in one (a root: `/`, `C:/`,
 /// `//server/share/`), and a name led by `/` replaces the dir, as `Path::join` does on

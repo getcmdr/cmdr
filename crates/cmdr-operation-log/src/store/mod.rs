@@ -18,10 +18,12 @@ mod connection;
 mod dirs;
 mod escape_mark;
 mod migrations;
+mod rollback_unit;
 mod tree_indexes;
 
 use std::path::{Path, PathBuf};
 
+use cmdr_fs::app_path::Namer;
 use cmdr_fs::entry::TagsChange;
 use cmdr_fs::volume::NodeIdentity;
 use rusqlite::{Connection, ErrorCode, OptionalExtension};
@@ -30,10 +32,12 @@ use unicode_normalization::UnicodeNormalization;
 pub use connection::open_read_connection;
 pub(crate) use connection::open_write_connection;
 pub use dirs::reconstruct_dir_path;
-pub(crate) use dirs::{find_dir, intern_child_dir, intern_dir, join_leaf, join_leaf_text};
+pub(crate) use dirs::{find_dir, intern_child_dir, intern_dir, join_leaf_text};
 #[cfg(test)]
 pub(crate) use dirs::{find_dir_as, intern_dir_as};
 pub use migrations::{MIGRATIONS, Migration, run_migrations};
+pub use rollback_unit::RollbackUnit;
+pub(crate) use rollback_unit::{UnitReader, UnitReading};
 pub(crate) use tree_indexes::{build_tree_item_indexes, tree_item_indexes_exist};
 
 use super::types::{
@@ -456,54 +460,6 @@ pub fn read_operation_items(
 
 // ── Rollback reads ──────────────────────────────────────────────────────
 
-/// One `rollback_unit` row with its interned dir prefixes resolved to full paths
-/// and real volume ids — everything the rollback engine needs to reverse the
-/// item without a second query per row. `source` is the item's original location;
-/// `dest` (present for copy/move/trash/rename) is where the item ended up (the
-/// thing a restore-move brings back, or a remove-inverse deletes).
-#[derive(Debug, Clone, PartialEq)]
-pub struct RollbackUnit {
-    /// The item's position within its operation.
-    pub seq: i64,
-    /// File, directory, or symlink.
-    pub entry_type: EntryType,
-    /// The volume of the item's original location.
-    pub source_volume_id: String,
-    /// The item's original location.
-    pub source_path: PathBuf,
-    /// The volume it ended up on.
-    pub dest_volume_id: Option<String>,
-    /// Where it ended up.
-    pub dest_path: Option<PathBuf>,
-    /// The size snapshot the reversal verifies against.
-    pub size: Option<i64>,
-    /// The mtime snapshot the reversal verifies against.
-    pub mtime: Option<i64>,
-    /// Whether landing it replaced an existing entry.
-    pub overwrote: bool,
-    /// What happened to the item.
-    pub outcome: ItemOutcome,
-    /// Why an earlier rollback held the item back, when one did. Present only
-    /// alongside [`ItemOutcome::Skipped`].
-    pub rollback_skip_reason: Option<SkipReason>,
-    /// Which node the item landed as at `dest_path`, when that was recorded. A
-    /// restore moves back only that node, never a stranger under its name.
-    pub dest_identity: Option<NodeIdentity>,
-    /// A tag write's value before and after. The undo writes `before` back only
-    /// while the file still reads `after`.
-    pub tags: Option<TagsChange>,
-}
-
-impl RollbackUnit {
-    /// Whether a reversal still owes this item an attempt: the operation landed it
-    /// (`done`), or an earlier rollback held it back (`skipped` WITH a rollback
-    /// verdict). A `skipped` row without one is the operation's own skip, a log entry
-    /// that never moved anything. The in-code twin of `AWAITS_REVERSAL_SQL`.
-    pub(crate) fn awaits_reversal(&self) -> bool {
-        awaits_reversal(self.outcome, self.rollback_skip_reason)
-    }
-}
-
 /// [`RollbackUnit::awaits_reversal`] over a row's two fields, for readers holding a
 /// raw row (the tree's row roles).
 pub(crate) fn awaits_reversal(outcome: ItemOutcome, skip_reason: Option<SkipReason>) -> bool {
@@ -533,60 +489,53 @@ pub(super) fn resolve_dir(conn: &Connection, dir_id: i64) -> Result<(String, Str
     Ok((volume_id, path))
 }
 
-/// Resolve one raw row's interned dirs into the [`RollbackUnit`] the engine acts on.
-/// Two dir resolutions per row, so the engine calls it only for a row it will act on.
-pub(crate) fn rollback_unit_of(
-    conn: &Connection,
-    item: &OperationItemRow,
-) -> Result<RollbackUnit, OperationLogStoreError> {
-    let (source_volume_id, source_dir) = resolve_dir(conn, item.source_dir_id)?;
-    let source_path = join_leaf(&source_dir, &item.source_name);
-    let (dest_volume_id, dest_path) = match (item.dest_dir_id, &item.dest_name) {
-        (Some(dir_id), Some(name)) => {
-            let (vol, dir) = resolve_dir(conn, dir_id)?;
-            (Some(vol), Some(join_leaf(&dir, name)))
-        }
-        _ => (None, None),
-    };
-    Ok(RollbackUnit {
-        seq: item.seq,
-        entry_type: item.entry_type,
-        source_volume_id,
-        source_path,
-        dest_volume_id,
-        dest_path,
-        size: item.size,
-        mtime: item.mtime,
-        overwrote: item.overwrote,
-        outcome: item.outcome,
-        rollback_skip_reason: item.rollback_skip_reason,
-        dest_identity: item.dest_identity,
-        tags: item.tags.clone(),
-    })
-}
-
 /// A page of `rollback_unit` rows for an op, newest-`seq`-first (reverse order, so
 /// a rollback undoes in inverse order and removes created files before the
 /// `entry_type = dir` rows that held them). Streaming: pass `i64::MAX` for the
 /// first page, then the smallest `seq` of the returned page (exclusive) as
 /// `before_seq` for the next — so the engine never materializes a 1M-row op.
 /// Only rows that [await reversal](RollbackUnit::awaits_reversal) come back;
-/// `search_only` rows are excluded (they're for search, never reversal).
-pub fn read_rollback_units_page(
+/// `search_only` rows are excluded (they're for search, never reversal). Each row's
+/// paths read through the op's escape mark, `namer_of` naming each volume
+/// (`rollback_unit.rs`).
+pub(crate) fn read_rollback_units_page(
+    conn: &Connection,
+    op_id: &str,
+    before_seq: i64,
+    limit: u32,
+    namer_of: &(dyn Fn(&str) -> Option<Namer> + Sync),
+) -> Result<Vec<UnitReading>, OperationLogStoreError> {
+    let reader = UnitReader::for_op(conn, op_id, namer_of)?;
+    read_rollback_rows_page(conn, op_id, before_seq, limit)?
+        .iter()
+        .map(|item| reader.unit_of(conn, item))
+        .collect()
+}
+
+/// [`read_rollback_units_page`] for a cell reading the rows its own operation wrote: every
+/// volume named as this host's disk, and every row typed. ❗ Panics on a refused row, so a
+/// cell never silently inspects fewer rows than the journal holds.
+#[cfg(any(test, feature = "testing"))]
+pub fn read_typed_rollback_units(
     conn: &Connection,
     op_id: &str,
     before_seq: i64,
     limit: u32,
 ) -> Result<Vec<RollbackUnit>, OperationLogStoreError> {
-    read_rollback_rows_page(conn, op_id, before_seq, limit)?
-        .iter()
-        .map(|item| rollback_unit_of(conn, item))
-        .collect()
+    Ok(
+        read_rollback_units_page(conn, op_id, before_seq, limit, &|_| Some(Namer::HOST))?
+            .into_iter()
+            .map(|reading| match reading {
+                UnitReading::Read(unit) => unit,
+                UnitReading::Refused { unit, reason } => panic!("a refused row ({reason:?}): {unit:?}"),
+            })
+            .collect(),
+    )
 }
 
 /// [`read_rollback_units_page`]'s rows before their dirs are resolved: a selective
 /// rollback decides each row on these, so a row its selection leaves out never pays
-/// for a path ([`rollback_unit_of`] resolves the ones it keeps). Page by the raw
+/// for a path (`UnitReader::unit_of` resolves the ones it keeps). Page by the raw
 /// rows' smallest `seq`, never the kept ones', or a page that keeps nothing would
 /// read again forever.
 pub(crate) fn read_rollback_rows_page(

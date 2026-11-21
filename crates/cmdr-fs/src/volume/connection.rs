@@ -148,6 +148,30 @@ pub enum BackendKind {
     Restic,
 }
 
+impl BackendKind {
+    /// How this backend's native API spells names, which picks the escape alphabet a
+    /// path on it takes ([`Namer`](crate::app_path::Namer)): a local disk is the host's,
+    /// SMB speaks UTF-16 units, and every other backend raw bytes or UTF-8 text. The
+    /// operation log reads a pre-escape row's path through it
+    /// (`AppPathBuf::from_literal_store`).
+    pub const fn namer(self) -> crate::app_path::Namer {
+        use crate::app_path::Namer;
+        match self {
+            BackendKind::Local => Namer::HOST,
+            BackendKind::Smb => Namer::Units,
+            BackendKind::Sftp
+            | BackendKind::Webdav
+            | BackendKind::S3
+            | BackendKind::Nfs
+            | BackendKind::Mtp
+            | BackendKind::Adb
+            | BackendKind::Archive
+            | BackendKind::GitPortal
+            | BackendKind::Restic => Namer::Bytes,
+        }
+    }
+}
+
 /// What kind of mount a volume reached through `std::fs` sits on, as far as a
 /// drive index cares. Decided once, when the mount is registered, so the
 /// published capability and the index's routing can't disagree about it.

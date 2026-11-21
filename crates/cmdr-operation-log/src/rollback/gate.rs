@@ -3,17 +3,16 @@
 //! plan to the injected spawn (`DETAILS.md` § "The `rolling_back` state machine +
 //! startup reconcile"). The run itself is `execute_rollback` in the parent module.
 
-use std::path::Path;
-
 use rusqlite::Connection;
 
 use super::super::store::{
-    OperationRow, open_read_connection, read_item_row, read_operation, read_rollback_units_page, rollback_unit_of,
+    OperationRow, UnitReader, open_read_connection, read_item_row, read_operation, read_rollback_units_page,
 };
 use super::super::tree::rollback_filter::{Narrowed, RollbackFilter, narrow};
 use super::super::tree::selection::RollbackSelection;
 use super::super::types::{EntryType, NotRollbackableReason, RollbackState};
 use super::super::writer::OperationLogWriter;
+use super::target::{StoredPath, stored_split};
 use super::{
     InverseAction, RollbackRefusal, VolumeLookup, is_created_in_place, item_action, removal_target, untouched_state,
 };
@@ -104,36 +103,43 @@ fn summarize_inverse(
     op: &OperationRow,
     filter: Option<&RollbackFilter>,
 ) -> InverseSummary {
+    let namer_of = |volume_id: &str| volumes.namer(volume_id);
+    let Ok(reader) = UnitReader::for_op(conn, &op.op_id, &namer_of) else {
+        return InverseSummary::default();
+    };
     let sampled = match filter.map(|filter| filter.sample_seq(conn)) {
         Some(Ok(Some(seq))) => read_item_row(conn, &op.op_id, seq)
             .ok()
             .flatten()
-            .and_then(|row| rollback_unit_of(conn, &row).ok()),
+            .and_then(|row| reader.unit_of(conn, &row).ok()),
         _ => None,
     };
-    let unit = match sampled {
-        Some(unit) => unit,
-        None => match read_rollback_units_page(conn, &op.op_id, i64::MAX, 1) {
+    let reading = match sampled {
+        Some(reading) => reading,
+        None => match read_rollback_units_page(conn, &op.op_id, i64::MAX, 1, &namer_of) {
             Ok(mut page) if !page.is_empty() => page.swap_remove(0),
             _ => return InverseSummary::default(),
         },
     };
-    // On the live roots, as the run will act (`live_roots.rs`), so the confirm names that place.
-    let unit = super::live_roots::LiveRoots::new(volumes).rebase(unit);
+    // On the live roots, as the run will act (`live_roots.rs`), so the confirm names that
+    // place. A row the run won't act on names nothing.
+    let Some(unit) = super::live_roots::LiveRoots::new(volumes).rebase(reading).into_read() else {
+        return InverseSummary::default();
+    };
     let (_, acting_on) = removal_target(&unit);
     // A directory row IS the thing being removed; a file row names its folder.
     let from = if unit.entry_type == EntryType::Dir {
-        Some(acting_on)
+        Some(acting_on.stored().into_owned())
     } else {
-        acting_on.parent().map(Path::to_path_buf)
+        Some(stored_split(acting_on).0)
     };
     let to = match item_action(op.kind, unit.entry_type, is_created_in_place(&unit)) {
-        Some(InverseAction::RestoreMove) => unit.source_path.parent().map(Path::to_path_buf),
+        Some(InverseAction::RestoreMove) => Some(stored_split(&unit.source_path).0),
         _ => None,
     };
     InverseSummary {
-        from: from.map(|p| p.to_string_lossy().into_owned()),
-        to: to.map(|p| p.to_string_lossy().into_owned()),
+        from: from.filter(|dir| !dir.is_empty()),
+        to: to.filter(|dir| !dir.is_empty()),
     }
 }
 
