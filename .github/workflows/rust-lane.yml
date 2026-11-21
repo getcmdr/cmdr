@@ -177,6 +177,9 @@ jobs:
       - name: Check platform-cfg-placement
         run: ./scripts/check/check --check desktop-rust-platform-cfg-placement --ci
 
+      - name: Check os-test-gate-reason
+        run: ./scripts/check/check --check desktop-rust-os-test-gate-reason --ci
+
       - name: Check tools-module-boundary
         run: ./scripts/check/check --check tools-module-boundary --ci
 
