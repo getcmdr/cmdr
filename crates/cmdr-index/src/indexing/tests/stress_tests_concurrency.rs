@@ -713,13 +713,16 @@ fn mixed_storm_reaches_consistent_fixed_point() {
     let mut next_id: i64 = 2;
     let mut entries: Vec<EntryRow> = Vec::new();
     let mut parent_id = ROOT_ID;
-    for c in canonical_root.components().skip(1) {
+    // The names of the text the index stores (`D:/…` on Windows, where `components()`
+    // would hand back a `\\?\D:` prefix and a root as names).
+    let root_text = native_text(&canonical_root).into_owned();
+    for name in root_text.split('/').filter(|n| !n.is_empty()) {
         let id = next_id;
         next_id += 1;
         entries.push(EntryRow {
             id,
             parent_id,
-            name: native_name(c.as_os_str()).into_owned(),
+            name: name.to_string(),
             is_directory: true,
             is_symlink: false,
             logical_size: None,
@@ -989,9 +992,9 @@ fn test_listings_complete_under_reconciler_load_and_rapid_navigation() {
     };
     let mut parent_id = ROOT_ID;
     let mut components: Vec<String> = Vec::new();
-    for c in canonical_root.components().skip(1) {
-        // skip the root `/`
-        components.push(native_name(c.as_os_str()).into_owned());
+    // The names of the text the index stores, as above.
+    for name in native_text(&canonical_root).split('/').filter(|n| !n.is_empty()) {
+        components.push(name.to_string());
     }
     for c in &components {
         let id = next_id;

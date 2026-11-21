@@ -221,7 +221,14 @@ mod tests {
         // A registered volume on a local mount is a local external drive rooted at
         // that path. Exercises the real wiring: registry lookup + mount probe + the
         // typed decision, with the host answering both.
-        let mount = std::path::Path::new("/media/LocalExternalClassifyTest");
+        // A mount point on this host: a bare `/media/…` has no native crossing on Windows.
+        let mount = std::path::Path::new(
+            if cmdr_fs::app_path::PathFlavor::HOST == cmdr_fs::app_path::PathFlavor::Windows {
+                "E:/LocalExternalClassifyTest"
+            } else {
+                "/media/LocalExternalClassifyTest"
+            },
+        );
         let vid = "local-external-classify-test";
         let provider = FakeVolumeProvider::shared();
         provider.register(vid, Arc::new(InMemoryVolume::new("Test drive").with_root(mount)));

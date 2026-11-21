@@ -109,6 +109,8 @@ fn the_reconcile_read_matches_a_per_entry_stat() {
     );
     assert!(bulk.contains_key("link.txt") && bulk.contains_key("broken_link"));
     assert!(bulk.contains_key("small_alias.txt"), "the hardlink is listed");
+    // The fifo exists only where it was made: Unix.
+    #[cfg(unix)]
     assert!(
         bulk.contains_key("pipe"),
         "an entry with no inline stat is still listed, not dropped"
