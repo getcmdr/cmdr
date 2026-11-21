@@ -1759,6 +1759,11 @@ included; the hidden couplings it found are why waves B and C differ from round 
 - **Intended behavior changes** (input no backend lists): a listed folder whose name isn't one plain name, or whose row
   text names no place, is indexed as a row and not descended (the reconcile walk asked the volume to list `dir/..`); a
   phone's start no longer asks `statvfs` about `mtp://…` (it answered `None` with a warning).
+- **The review round's fixes** (2026-11-21): the native root crosses through its canonical twin, so a bridge-only root
+  shape (a trailing `/`, `//`, `.`) opens where the OS opens it instead of sending a local drive to the SMB gate (only a
+  `..` refuses); `app_path_of` folds separators but never respells escapes (non-canonical escape text was read as `xé`,
+  a look-alike whose children a walk filed under the literal row; now `None`, not descended); and a cover root resolves
+  its row by its own text, not `stored_text`, which read a literal escape-range code point as U+FFFD.
 - **Left for the next step** (the Windows clusters, #1232): the LOCAL pipeline (the guarded walker, the reconciler, the
   watcher, the phase machine) stays native inside, and its native → stored-text edge is about 100 `to_string_lossy`
   sites that spell `D:\x` on Windows where the index wants `D:/x`; that edge (`from_native_unicode`, a `NotUnicode`

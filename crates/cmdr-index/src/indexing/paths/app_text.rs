@@ -36,22 +36,34 @@ pub(crate) fn stored_text(path: &AppPath) -> Cow<'_, str> {
 /// watcher, and the host's space and mount answers: `root`'s one native crossing.
 ///
 /// `None` for a root no OS opens: a phone's `mtp://` or `adb://` root, which the index walks
-/// over the `Volume` trait alone.
+/// over the `Volume` trait alone, or one holding a `..`.
+///
+/// A root is the bridge's unnormalized text of what its registration got
+/// (`LocalPosixVolume::on_mount`), which `to_native` refuses as not canonical, so it
+/// crosses as its canonical twin: a trailing `/`, `//`, or `.` folds to the place the OS
+/// opens for that text, where the local walker ran before the root was typed. ❌ Never a
+/// `None` for those: a local drive would fall through to the SMB gate and never index.
 pub(crate) fn native_root(root: &AppPath) -> Option<PathBuf> {
-    root.to_native().ok()
+    root.to_canonical().ok()?.to_native().ok()
 }
 
 /// Stored `text` (an absolute path the index holds, such as a frontier root on a share) as
 /// the app path a `Volume` method takes: the text itself when it's canonical, which every
 /// row a backend lists is, else the canonical place it names. `None` for text that names no
-/// place (no root, a `..`).
+/// place (no root, a `..`), and for non-canonical text holding an escape-range code point.
 ///
 /// On a trait-scanned volume (a share, a phone) the stored text IS the listed rows' own text
 /// (`FileEntry.path` and `.name`, as the backend spelled them), so reading it back as app
 /// spelling names the very row it came from.
+///
+/// ❗ The respelling may fold separators (`//`, `/./`, a trailing `/`), which names the same
+/// place, but never escapes: canonicalizing the two byte escapes of `é`'s UTF-8 spells
+/// `xé`, a DIFFERENT folder, whose children a walk would file under the literal folder's
+/// row (#1310). Such text names no place a walk may list.
 pub(crate) fn app_path_of(text: &str) -> Option<Cow<'_, AppPath>> {
     match AppPath::from_normalized(text) {
         Ok(path) => Some(Cow::Borrowed(path)),
+        Err(_) if text.chars().any(cmdr_fs::app_path::is_escape) => None,
         Err(_) => cmdr_fs::app_path::AppPathBuf::from_wire(text).ok().map(Cow::Owned),
     }
 }

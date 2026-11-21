@@ -182,13 +182,20 @@ and `Path::file_name` split on one).
 - **Root, app path → native**: `native_root`, once per `IndexManager` (`../lifecycle/manager/root.rs`: `root_text`,
   `local_root`). `None` for a root no OS opens (`mtp://`, `adb://`): those volumes never run the local pipeline, so the
   space and mount questions are skipped where they used to ask `statvfs` about `mtp://…` and log a warning. Byte-exact
-  for every canonical root; it refuses only bridge-only shapes (a trailing `/`, `//`, `.`, `..`), which no mount point
-  has. ❗ A `//`-led root of three names reads as UNC on POSIX (#1309) and refuses `WrongFlavor`.
+  for every canonical root. A root is the bridge's unnormalized text of what its registration got
+  (`LocalPosixVolume::on_mount`), so a bridge-only shape (a trailing `/`, `//`, `.`) crosses as its canonical twin, the
+  place the OS opens for that text; only a `..` refuses. A `None` there would send a local drive to the SMB gate, never
+  to be indexed. ❗ A `//`-led root of three names reads as UNC on POSIX (#1309) and refuses `WrongFlavor`.
 - **Row, text → app path**: `app_path_of` (`FileEntry.path`, a frontier root on a share). Borrowed when the text is
   canonical, which every backend's row is; else the canonical place it names; `None` for text naming no place, which no
-  walk descends into. The same text the bridge handed the volume for every canonical row but one class: a name holding a
-  literal escape-range code point, which the bridge re-escaped and the typed path keeps as the row spelled it (#1310,
-  settled with the escape's landing).
+  walk descends into. ❗ The respelling folds separators only: non-canonical text holding an escape-range code point is
+  `None`, since canonicalizing escapes respells a name (two byte escapes of `é`'s UTF-8 become `é`) and a walk would
+  list a look-alike folder's children under the row (pinned by
+  `a_fresh_walk_never_lists_a_look_alike_for_a_folder_spelled_with_escape_code_points`). A cover root came from stored
+  text, so its row lookup reads the app path's own text, ❌ never `stored_text`, which is for a volume's root. The same
+  text the bridge handed the volume for every canonical row but one class: a name holding a literal escape-range code
+  point, which the bridge re-escaped and the typed path keeps as the row spelled it (#1310, settled with the escape's
+  landing).
 - **Child, folder + listed name**: `network_scanner::child_of`, the app path's own join. A name that isn't one plain
   name (`..`, empty, `a/b`) gives `None`, and the folder is indexed as a row, never descended: the reconcile walk used
   to ask the volume to list `dir/..`.

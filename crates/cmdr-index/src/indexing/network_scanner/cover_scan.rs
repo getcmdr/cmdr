@@ -368,12 +368,15 @@ pub(crate) async fn cover_volume_subtree(
 /// the boot disk, mount-root-stripped on every trait-scanned volume, whose index
 /// `ROOT_ID` is the mount): an absolute walk from `ROOT_ID` misses at the very
 /// first component on a share.
-fn resolve_root_id(
+pub(super) fn resolve_root_id(
     conn: &rusqlite::Connection,
     space: &IndexPathSpace,
     root: &AppPath,
 ) -> Result<i64, VolumeScanError> {
-    let absolute = space.absolute(&crate::indexing::paths::app_text::stored_text(root));
+    // A cover root came FROM stored text (`app_text::app_path_of`), so its own text is the
+    // index's spelling; ❌ not `stored_text`, which is for a volume's root and would read a
+    // row's literal escape-range code point as an escape.
+    let absolute = space.absolute(root.as_str());
     let index_relative = space
         .index_relative(&absolute)
         .ok_or_else(|| VolumeScanError::OutsideIndex(root.to_owned()))?;

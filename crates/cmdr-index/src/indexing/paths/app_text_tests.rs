@@ -49,3 +49,47 @@ fn a_windows_root_holding_an_unpaired_surrogate_is_stored_lossily_too() {
     let path = AppPathBuf::from_native_windows(&units, PathFlavor::Windows).expect("a drive path");
     assert_eq!(stored_text(&path), "C:/x\u{FFFD}");
 }
+
+/// A volume's root is the bridge's unnormalized text of the path its registration got
+/// (`LocalPosixVolume::on_mount`), so a mount reported as `/Volumes/X/` must still open
+/// where the OS opens it: the local walker ran there before the root was typed.
+#[cfg(unix)]
+#[test]
+fn a_bridge_root_the_os_reads_as_one_place_crosses_to_that_place() {
+    use cmdr_fs::volume::{InMemoryVolume, Volume as _};
+    use std::path::Path;
+    // `with_root` keeps its text as the bridge does, the way `LocalPosixVolume::on_mount` does.
+    let root_of = |text: &str| InMemoryVolume::new("Drive").with_root(text);
+    for (text, native) in [
+        ("/Volumes/X/", "/Volumes/X"),
+        ("/Volumes/./X", "/Volumes/X"),
+        ("/", "/"),
+    ] {
+        assert_eq!(
+            native_root(root_of(text).root()).as_deref(),
+            Some(Path::new(native)),
+            "{text}"
+        );
+    }
+    assert_eq!(
+        native_root(root_of("/Volumes/X/../Y").root()),
+        None,
+        "a `..` is a volume's question, never the text's"
+    );
+}
+
+#[test]
+fn stored_text_reads_back_as_its_own_place_or_none_never_a_look_alike() {
+    assert_eq!(app_path_of("/Volumes/s/a").expect("canonical").as_str(), "/Volumes/s/a");
+    assert_eq!(
+        app_path_of("adb://R58").expect("a bare scheme root").as_str(),
+        "adb://R58/"
+    );
+    assert_eq!(app_path_of("/Volumes/s//a/").expect("folded").as_str(), "/Volumes/s/a");
+    // A canonical escape stays the row's own text.
+    let lone = "/Volumes/s/x\u{10FEFF}";
+    assert_eq!(app_path_of(lone).expect("canonical").as_str(), lone);
+    // Non-canonical escapes would respell to `/Volumes/s/xé`, another folder.
+    assert!(app_path_of("/Volumes/s/x\u{10FEC3}\u{10FEA9}").is_none());
+    assert!(app_path_of("/Volumes/s/../x").is_none());
+}
