@@ -25,11 +25,8 @@ impl Volume for RenamesThenLosesTheReply {
         force: bool,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let to_app = to;
-            let to_std = to.as_std_legacy();
-            let to: &Path = &to_std;
-            self.inner.rename(from, to_app, force).await?;
-            if to == Path::new("/notes.txt") {
+            self.inner.rename(from, to, force).await?;
+            if to == app_path!("/notes.txt") {
                 return Err(VolumeError::ConnectionTimeout("the rename's reply never came".into()));
             }
             Ok(())
@@ -132,10 +129,7 @@ async fn a_cancel_during_a_cut_off_landings_byte_compare_stops_it_and_keeps_the_
     });
     let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::StageOntoClaimedName);
     let temp = staged.target().to_path_buf();
-    inner
-        .create_file(&AppPath::legacy_unchecked(&temp), b"THE NEW BYTES")
-        .await
-        .unwrap();
+    inner.create_file(staged.target_app(), b"THE NEW BYTES").await.unwrap();
     let Err(LandingError::CutOff(cut_off)) = staged.commit(&dest, 13).await else {
         panic!("the rename onto the cleared name lost its reply, so the landing is cut off");
     };

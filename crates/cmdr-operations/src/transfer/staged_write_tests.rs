@@ -42,14 +42,15 @@ async fn land_unrecorded(
 ) -> Result<(), FinalizeFailure> {
     let engine = TestOperations::new();
     let state = state(&engine);
+    let temp = Temp::new(StagingTemp::adopt(temp.to_path_buf(), state.liveness_token()));
     let size = dest
-        .get_metadata(&AppPath::legacy_unchecked(temp))
+        .get_metadata(temp.app())
         .await
         .ok()
         .and_then(|entry| entry.size)
         .unwrap_or(0);
-    let temp = StagingTemp::adopt(temp.to_path_buf(), state.liveness_token());
     let home_volume = state.dest_volume_id().map(str::to_owned);
+    let final_path = Spelled::new(final_path);
     match land(dest, Landing::new(&state, temp, final_path, landing, size, home_volume)).await {
         Ok(()) => Ok(()),
         Err(LandingError::Failed(failure)) => Err(failure),
@@ -107,8 +108,12 @@ fn a_write_over_an_original_stages_and_is_never_single_shot() {
 /// What a destination was asked to do, in order.
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Call {
-    Delete(PathBuf),
-    Rename { from: PathBuf, to: PathBuf, force: bool },
+    Delete(AppPathBuf),
+    Rename {
+        from: AppPathBuf,
+        to: AppPathBuf,
+        force: bool,
+    },
 }
 
 /// A destination that logs every delete and rename it gets.
@@ -147,11 +152,8 @@ impl Volume for CallLog {
         &'a self,
         path: &'a AppPath,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        let path_app = path;
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        self.calls.lock_ignore_poison().push(Call::Delete(path.to_path_buf()));
-        self.inner.delete(path_app)
+        self.calls.lock_ignore_poison().push(Call::Delete(path.to_owned()));
+        self.inner.delete(path)
     }
     fn rename<'a>(
         &'a self,
@@ -159,18 +161,12 @@ impl Volume for CallLog {
         to: &'a AppPath,
         force: bool,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        let from_app = from;
-        let from_std = from.as_std_legacy();
-        let from: &Path = &from_std;
-        let to_app = to;
-        let to_std = to.as_std_legacy();
-        let to: &Path = &to_std;
         self.calls.lock_ignore_poison().push(Call::Rename {
-            from: from.to_path_buf(),
-            to: to.to_path_buf(),
+            from: from.to_owned(),
+            to: to.to_owned(),
             force,
         });
-        self.inner.rename(from_app, to_app, force)
+        self.inner.rename(from, to, force)
     }
 }
 
@@ -187,11 +183,8 @@ async fn a_swap_moves_the_original_aside_first_and_never_renames_with_force() {
     let dest: Arc<dyn Volume> = Arc::clone(&log) as Arc<dyn Volume>;
 
     let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::StageOverOriginal);
-    let temp = staged.target().to_path_buf();
-    inner
-        .create_file(&AppPath::legacy_unchecked(&temp), b"NEW")
-        .await
-        .unwrap();
+    let temp_app = staged.target_app().to_owned();
+    inner.create_file(&temp_app, b"NEW").await.unwrap();
     staged.commit(&dest, 3).await.expect("the swap lands");
 
     let calls = log.calls.lock_ignore_poison().clone();
@@ -199,20 +192,20 @@ async fn a_swap_moves_the_original_aside_first_and_never_renames_with_force() {
         panic!("the original moves first: {calls:?}");
     };
     assert!(
-        aside.to_string_lossy().contains(".cmdr-temp-"),
+        aside.as_str().contains(".cmdr-temp-"),
         "onto an aside name no stale-temp reap takes: {aside:?}"
     );
     assert_eq!(
         calls,
         vec![
             Call::Rename {
-                from: PathBuf::from("/notes.txt"),
+                from: app_path!("/notes.txt").to_owned(),
                 to: aside.clone(),
                 force: false,
             },
             Call::Rename {
-                from: temp.clone(),
-                to: PathBuf::from("/notes.txt"),
+                from: temp_app.clone(),
+                to: app_path!("/notes.txt").to_owned(),
                 force: false,
             },
             Call::Delete(aside.clone()),
@@ -223,11 +216,8 @@ async fn a_swap_moves_the_original_aside_first_and_never_renames_with_force() {
         Some(3),
         "the new bytes replaced the original"
     );
-    assert!(!inner.exists(&AppPath::legacy_unchecked(&temp)).await);
-    assert!(
-        !inner.exists(&AppPath::legacy_unchecked(aside)).await,
-        "and the aside is gone"
-    );
+    assert!(!inner.exists(&temp_app).await);
+    assert!(!inner.exists(aside).await, "and the aside is gone");
     assert!(state.in_flight_temps.lock_ignore_poison().is_empty());
 }
 
@@ -243,18 +233,15 @@ async fn a_swap_on_an_atomic_replace_backend_lands_in_one_replacing_rename() {
     let dest: Arc<dyn Volume> = Arc::clone(&log) as Arc<dyn Volume>;
 
     let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::StageOverOriginal);
-    let temp = staged.target().to_path_buf();
-    inner
-        .create_file(&AppPath::legacy_unchecked(&temp), b"THE NEW BYTES")
-        .await
-        .unwrap();
+    let temp_app = staged.target_app().to_owned();
+    inner.create_file(&temp_app, b"THE NEW BYTES").await.unwrap();
     staged.commit(&dest, 13).await.expect("the swap lands");
 
     assert_eq!(
         *log.calls.lock_ignore_poison(),
         vec![Call::Rename {
-            from: temp.clone(),
-            to: PathBuf::from("/notes.txt"),
+            from: temp_app.clone(),
+            to: app_path!("/notes.txt").to_owned(),
             force: true,
         }],
         "one replacing rename, ❌ no delete of the original",
@@ -264,7 +251,7 @@ async fn a_swap_on_an_atomic_replace_backend_lands_in_one_replacing_rename() {
         Some(13),
         "the new bytes replaced the original"
     );
-    assert!(!inner.exists(&AppPath::legacy_unchecked(&temp)).await);
+    assert!(!inner.exists(&temp_app).await);
     assert!(state.in_flight_temps.lock_ignore_poison().is_empty());
 }
 
@@ -288,11 +275,8 @@ async fn a_refused_replacing_rename_leaves_the_original_and_takes_the_temp_away(
     });
     let dest: Arc<dyn Volume> = Arc::clone(&log) as Arc<dyn Volume>;
     let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::StageOverOriginal);
-    let temp = staged.target().to_path_buf();
-    inner
-        .create_file(&AppPath::legacy_unchecked(&temp), b"THE NEW BYTES")
-        .await
-        .unwrap();
+    let temp_app = staged.target_app().to_owned();
+    inner.create_file(&temp_app, b"THE NEW BYTES").await.unwrap();
 
     let failure = staged
         .commit(&dest, 13)
@@ -306,10 +290,7 @@ async fn a_refused_replacing_rename_leaves_the_original_and_takes_the_temp_away(
         "nothing was cleared, so nothing was rescued"
     );
     assert_eq!(size_of(&inner, "/notes.txt").await, Some(3), "the original stays");
-    assert!(
-        !inner.exists(&AppPath::legacy_unchecked(&temp)).await,
-        "the spare temp goes"
-    );
+    assert!(!inner.exists(&temp_app).await, "the spare temp goes");
     assert!(state.in_flight_temps.lock_ignore_poison().is_empty());
 }
 
@@ -394,16 +375,13 @@ async fn commit_lands_the_bytes_and_stops_tracking_them() {
     let dest: Arc<dyn Volume> = Arc::clone(&inner) as Arc<dyn Volume>;
 
     let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::Stage);
-    let temp = staged.target().to_path_buf();
-    inner
-        .create_file(&AppPath::legacy_unchecked(&temp), b"NEW")
-        .await
-        .unwrap();
+    let temp_app = staged.target_app().to_owned();
+    inner.create_file(&temp_app, b"NEW").await.unwrap();
 
     staged.commit(&dest, 3).await.unwrap();
 
     assert!(inner.exists(app_path!("/notes.txt")).await);
-    assert!(!inner.exists(&AppPath::legacy_unchecked(&temp)).await);
+    assert!(!inner.exists(&temp_app).await);
     assert!(state.in_flight_temps.lock_ignore_poison().is_empty());
 }
 
@@ -632,15 +610,12 @@ async fn abandon_removes_the_partial() {
     let dest: Arc<dyn Volume> = Arc::clone(&inner) as Arc<dyn Volume>;
 
     let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::Stage);
-    let temp = staged.target().to_path_buf();
-    inner
-        .create_file(&AppPath::legacy_unchecked(&temp), b"half")
-        .await
-        .unwrap();
+    let temp_app = staged.target_app().to_owned();
+    inner.create_file(&temp_app, b"half").await.unwrap();
 
     staged.abandon(&dest).await;
 
-    assert!(!inner.exists(&AppPath::legacy_unchecked(&temp)).await);
+    assert!(!inner.exists(&temp_app).await);
     assert!(state.in_flight_temps.lock_ignore_poison().is_empty());
 }
 
@@ -657,6 +632,7 @@ async fn a_cut_off_upload_that_lands_after_the_abandon_is_taken_on_the_recheck()
 
     let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::Stage);
     let temp = staged.target().to_path_buf();
+    let temp_app = staged.target_app().to_owned();
     // Nothing there yet: the server hasn't got to the dropped upload.
     staged.abandon(&dest).await;
     assert_eq!(
@@ -665,17 +641,11 @@ async fn a_cut_off_upload_that_lands_after_the_abandon_is_taken_on_the_recheck()
         "kept on record until the recheck"
     );
     // The server stores what arrived only now.
-    inner
-        .create_file(&AppPath::legacy_unchecked(&temp), b"half")
-        .await
-        .unwrap();
+    inner.create_file(&temp_app, b"half").await.unwrap();
 
     engine.leftover_cleanups_settled().await;
 
-    assert!(
-        !inner.exists(&AppPath::legacy_unchecked(&temp)).await,
-        "the recheck takes the late partial"
-    );
+    assert!(!inner.exists(&temp_app).await, "the recheck takes the late partial");
     assert!(state.in_flight_temps.lock_ignore_poison().is_empty());
 }
 
@@ -692,17 +662,12 @@ async fn an_abandon_the_destination_refuses_keeps_the_temp_listed() {
 
     let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::Stage);
     let temp = staged.target().to_path_buf();
-    inner
-        .create_file(&AppPath::legacy_unchecked(&temp), b"half")
-        .await
-        .unwrap();
+    let temp_app = staged.target_app().to_owned();
+    inner.create_file(&temp_app, b"half").await.unwrap();
 
     staged.abandon(&dest).await;
 
-    assert!(
-        inner.exists(&AppPath::legacy_unchecked(&temp)).await,
-        "the fixture refuses the delete"
-    );
+    assert!(inner.exists(&temp_app).await, "the fixture refuses the delete");
     assert_eq!(*state.in_flight_temps.lock_ignore_poison(), vec![temp]);
 }
 
@@ -721,11 +686,8 @@ async fn a_refused_landing_takes_its_temp_away_and_stops_tracking_it() {
         .unwrap();
 
     let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::Stage);
-    let temp = staged.target().to_path_buf();
-    inner
-        .create_file(&AppPath::legacy_unchecked(&temp), b"NEW")
-        .await
-        .unwrap();
+    let temp_app = staged.target_app().to_owned();
+    inner.create_file(&temp_app, b"NEW").await.unwrap();
 
     let outcome = staged.commit(&dest, 3).await.map_err(LandingError::ended);
 
@@ -740,7 +702,7 @@ async fn a_refused_landing_takes_its_temp_away_and_stops_tracking_it() {
         "got {outcome:?}"
     );
     assert_eq!(size_of(&inner, "/notes.txt").await, Some(15), "the user's file stays");
-    assert!(!inner.exists(&AppPath::legacy_unchecked(&temp)).await, "our temp goes");
+    assert!(!inner.exists(&temp_app).await, "our temp goes");
     assert!(state.in_flight_temps.lock_ignore_poison().is_empty());
 }
 
@@ -760,18 +722,15 @@ async fn a_refused_displacement_preserves_the_original_and_cleans_the_generated_
         .await
         .unwrap();
     let staged = StagedWrite::begin_generated(&state, dest.as_ref(), Announced::assumed(Path::new("/notes.txt")), true);
-    let temp = staged.target().to_path_buf();
-    inner
-        .create_file(&AppPath::legacy_unchecked(&temp), b"NEW")
-        .await
-        .unwrap();
+    let temp_app = staged.target_app().to_owned();
+    inner.create_file(&temp_app, b"NEW").await.unwrap();
 
     let outcome = staged.commit_with_displaced_original(&dest, 3).await;
 
     assert!(outcome.is_err());
     assert_eq!(size_of(&inner, "/notes.txt").await, Some(15));
     assert!(
-        !inner.exists(&AppPath::legacy_unchecked(&temp)).await,
+        !inner.exists(&temp_app).await,
         "the completed but unpublished stage goes"
     );
     assert!(
@@ -819,10 +778,8 @@ async fn a_landing_dropped_midway_leaves_its_temp_to_the_abandoned_write_sweep()
 
     let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::Stage);
     let temp = staged.target().to_path_buf();
-    inner
-        .create_file(&AppPath::legacy_unchecked(&temp), b"NEW")
-        .await
-        .unwrap();
+    let temp_app = staged.target_app().to_owned();
+    inner.create_file(&temp_app, b"NEW").await.unwrap();
 
     let landed = tokio::time::timeout(Duration::from_millis(50), staged.commit(&dest, 3)).await;
 

@@ -10,6 +10,7 @@ use crate::outage_slot::{CleanupPolicy, OutagePolicy};
 use crate::testing::TestOperations;
 use crate::transfer::outage_volume_test_support::OutageVolume;
 use crate::transfer::volume_outage::{OutageEnd, wait_while_out};
+use cmdr_fs::app_path;
 use cmdr_fs::testing::wait_until_async;
 use cmdr_fs::volume::InMemoryVolume;
 
@@ -26,11 +27,9 @@ async fn an_outage_the_operation_gave_up_on_gets_one_look_and_no_wait() {
     let inner = Arc::new(InMemoryVolume::new("Testnas"));
     let nas = OutageVolume::wrap(Arc::clone(&inner), "leftover-cleanup-test-gave-up");
     let volume: Arc<dyn Volume> = Arc::clone(&nas) as Arc<dyn Volume>;
+    let temp_app = app_path!("/holiday.jpg.cmdr-tmp-9b62");
     let temp = PathBuf::from("/holiday.jpg.cmdr-tmp-9b62");
-    inner
-        .create_file(&AppPath::legacy_unchecked(&temp), b"half a photo")
-        .await
-        .unwrap();
+    inner.create_file(temp_app, b"half a photo").await.unwrap();
     let state = Arc::new(
         engine
             .new_operation_state(Duration::from_millis(50))
@@ -82,7 +81,7 @@ async fn an_outage_the_operation_gave_up_on_gets_one_look_and_no_wait() {
         vec![temp.clone()],
         "and hands the temp to the reconnect sweep"
     );
-    assert!(inner.exists(&AppPath::legacy_unchecked(&temp)).await);
+    assert!(inner.exists(temp_app).await);
 }
 
 /// ❗ A temp the share refuses the moment it's back gets the same retries as a
@@ -100,11 +99,9 @@ async fn a_temp_the_share_refuses_the_moment_it_is_back_goes_on_the_retries() {
     let inner = Arc::new(InMemoryVolume::new("Testnas"));
     let nas = OutageVolume::wrap(Arc::clone(&inner), VOLUME_ID);
     let volume: Arc<dyn Volume> = Arc::clone(&nas) as Arc<dyn Volume>;
+    let temp_app = app_path!("/holiday.jpg.cmdr-tmp-5c17");
     let temp = PathBuf::from("/holiday.jpg.cmdr-tmp-5c17");
-    inner
-        .create_file(&AppPath::legacy_unchecked(&temp), b"half a photo")
-        .await
-        .unwrap();
+    inner.create_file(temp_app, b"half a photo").await.unwrap();
     let state = Arc::new(
         engine
             .new_operation_state(Duration::from_millis(50))
@@ -147,10 +144,7 @@ async fn a_temp_the_share_refuses_the_moment_it_is_back_goes_on_the_retries() {
         .await
         .expect("the pass settles once the share is back");
 
-    assert!(
-        !inner.exists(&AppPath::legacy_unchecked(&temp)).await,
-        "a later retry takes the temp"
-    );
+    assert!(!inner.exists(temp_app).await, "a later retry takes the temp");
     assert!(
         ledger.pending_paths().is_empty(),
         "❌ not left for the share's next reconnect"

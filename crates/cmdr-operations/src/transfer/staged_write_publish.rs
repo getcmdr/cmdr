@@ -14,18 +14,15 @@
 //! nothing. The caller waits for the destination and then settles
 //! ([`CutOffPublish::resume`]) or gives up ([`CutOffPublish::give_up`]).
 
-use cmdr_fs::app_path::AppPath;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use super::super::super::state::WriteOperationState;
 use super::super::super::types::RecoveredOriginal;
 use super::super::volume::{DisplacedDestination, displace_destination};
 use super::landing::holds_our_size;
-use super::{StagedWrite, home_of};
+use super::{Spelled, StagedWrite, Temp, home_of};
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
-use cmdr_fs::staging::StagingTemp;
 use cmdr_fs::volume::{Volume, VolumeError};
 
 /// Why a publish didn't give the bytes their name.
@@ -64,8 +61,8 @@ enum Replacing {
 /// One publish in flight: the temp, where it's going, and how.
 struct Publish {
     state: Arc<WriteOperationState>,
-    temp: StagingTemp,
-    final_path: PathBuf,
+    temp: Temp,
+    final_path: Spelled,
     /// The byte count the write confirmed: what a whole temp holds.
     size: u64,
     /// The staged write's ledger home.
@@ -113,7 +110,7 @@ impl StagedWrite {
                 recovered: None,
             }));
         };
-        match displace_destination(&self.state, dest_volume, &self.final_path, false).await {
+        match displace_destination(&self.state, dest_volume, self.final_path.path(), false).await {
             Ok(displaced) => {
                 self.publish(temp, size, Replacing::SetAside(displaced.map(Box::new)))
                     .rename(dest_volume)
@@ -128,7 +125,7 @@ impl StagedWrite {
         }
     }
 
-    fn publish(&self, temp: StagingTemp, size: u64, replacing: Replacing) -> Publish {
+    fn publish(&self, temp: Temp, size: u64, replacing: Replacing) -> Publish {
         Publish {
             state: Arc::clone(&self.state),
             temp,
@@ -144,14 +141,7 @@ impl Publish {
     /// The rename that publishes the bytes.
     async fn rename(self, dest_volume: &Arc<dyn Volume>) -> Result<(), PublishError> {
         let force = matches!(self.replacing, Replacing::Atomically);
-        match dest_volume
-            .rename(
-                &AppPath::legacy_unchecked(self.temp.path()),
-                &AppPath::legacy_unchecked(&self.final_path),
-                force,
-            )
-            .await
-        {
+        match dest_volume.rename(self.temp.app(), self.final_path.app(), force).await {
             Ok(()) => {
                 self.published(dest_volume).await;
                 Ok(())
@@ -160,7 +150,7 @@ impl Publish {
                 log::info!(
                     target: "copy",
                     "publish: {} was cut off on the transport ({error}); settling it once the destination is back",
-                    LogPrivate::file_path(&self.final_path), error = LogError(&error),
+                    LogPrivate::file_path(self.final_path.path()), error = LogError(&error),
                 );
                 Err(PublishError::CutOff(Box::new(CutOffPublish { publish: self, error })))
             }
@@ -189,10 +179,10 @@ impl Publish {
             Replacing::SetAside(Some(displaced)) => displaced
                 .restore(dest_volume)
                 .await
-                .map(|kept_at| RecoveredOriginal::new(&self.final_path, &kept_at)),
+                .map(|kept_at| RecoveredOriginal::new(self.final_path.path(), &kept_at)),
             Replacing::SetAside(None) | Replacing::Atomically => None,
         };
-        match dest_volume.delete(&AppPath::legacy_unchecked(self.temp.path())).await {
+        match dest_volume.delete(self.temp.app()).await {
             Ok(()) | Err(VolumeError::NotFound(_)) => super::super::super::in_flight_temps::retire_temp(
                 &self.state,
                 home_of(self.home_volume.as_deref()),
@@ -219,7 +209,7 @@ impl std::fmt::Debug for CutOffPublish {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("CutOffPublish")
             .field("temp", &self.publish.temp.path())
-            .field("final_path", &self.publish.final_path)
+            .field("final_path", &self.publish.final_path.path())
             .field("error", &self.error)
             .finish()
     }
@@ -268,18 +258,17 @@ impl CutOffPublish {
     ///   unless the original couldn't go back (then it's reported where it is).
     pub(crate) async fn resume(self, dest_volume: &Arc<dyn Volume>) -> Republished {
         let Self { publish, error } = self;
-        match dest_volume
-            .get_metadata(&AppPath::legacy_unchecked(publish.temp.path()))
-            .await
-        {
+        match dest_volume.get_metadata(publish.temp.app()).await {
             Ok(entry) if !entry.is_directory && !entry.is_symlink && entry.size == Some(publish.size) => {
                 publish.rename(dest_volume).await.into()
             }
-            Err(VolumeError::NotFound(_)) if holds_our_size(dest_volume, &publish.final_path, publish.size).await => {
+            Err(VolumeError::NotFound(_))
+                if holds_our_size(dest_volume, publish.final_path.app(), publish.size).await =>
+            {
                 log::info!(
                     target: "copy",
                     "publish: {} was published before the drop swallowed the reply; counting it done",
-                    LogPrivate::file_path(&publish.final_path),
+                    LogPrivate::file_path(publish.final_path.path()),
                 );
                 publish.published(dest_volume).await;
                 Republished::Published

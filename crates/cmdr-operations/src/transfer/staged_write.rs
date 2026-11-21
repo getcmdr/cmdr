@@ -42,7 +42,7 @@
 //! single-shot-ness, ❌ NEVER by smallness: the destination is asked
 //! (`Volume::write_is_single_shot`), the caller never guesses from a size.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -168,10 +168,10 @@ pub(crate) struct StagedWrite {
     /// why a landing that FAILS is right to let it go: a temp that survives one
     /// (a rescue or a discard that couldn't happen) is something the user may
     /// need to see.
-    temp: Option<StagingTemp>,
+    temp: Option<Temp>,
     /// Where the file must end up: the user's original itself under
     /// [`WriteStaging::StageOverOriginal`].
-    final_path: PathBuf,
+    final_path: Spelled,
     /// What the caller believes about that name, which is what [`land`] needs to
     /// tell a clash nobody answered from a name the caller itself claimed, and
     /// an original to replace from both.
@@ -270,7 +270,7 @@ impl StagedWrite {
             | WriteStaging::StageOverOriginal => {
                 let staged = StagingTemp::mint(final_path, state.liveness_token());
                 in_flight_temps::track_temp(state, home_of(home_volume.as_deref()), staged.path());
-                Some(staged)
+                Some(Temp::new(staged))
             }
             // Straight to the final name: no intermediate state to track, and
             // nothing to hide.
@@ -278,7 +278,7 @@ impl StagedWrite {
         };
         Self {
             temp,
-            final_path: final_path.to_path_buf(),
+            final_path: Spelled::new(final_path),
             // An unstaged write never lands and answers `ClaimedByTheCaller`
             // for the same reason it may write over the name: what's there is
             // its own attempt's. A single-shot write keeps the answer of the
@@ -315,7 +315,20 @@ impl StagedWrite {
 
     /// Where the streaming writer must put the bytes.
     pub(crate) fn target(&self) -> &Path {
-        self.temp.as_ref().map_or(&self.final_path, StagingTemp::path)
+        self.temp.as_ref().map_or(self.final_path.path(), Temp::path)
+    }
+
+    /// [`target`](Self::target) as the destination volume addresses it, made
+    /// once with the write.
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "the cross-volume writers still address `target()`; each drops its bridge onto this as it converts"
+        )
+    )]
+    pub(crate) fn target_app(&self) -> &AppPath {
+        self.temp.as_ref().map_or(self.final_path.app(), Temp::app)
     }
 
     /// What the write to [`target`](Self::target) may do to a file already
@@ -385,7 +398,7 @@ impl StagedWrite {
             Landing::new(
                 &self.state,
                 temp,
-                &self.final_path,
+                self.final_path.clone(),
                 self.landing,
                 size,
                 self.home_volume.clone(),
@@ -431,7 +444,7 @@ impl StagedWrite {
         // the driver's post-loop cleanup takes it later, whatever the ending, or
         // the ledger does on the share's next reconnect. Retired first, it would
         // be forgotten on the share.
-        match dest_volume.delete(&AppPath::legacy_unchecked(temp.path())).await {
+        match dest_volume.delete(temp.app()).await {
             // The cut-off upload may land after this delete (a WebDAV server
             // still reading the dropped PUT stores what arrived, #732), so the
             // background pass asks again, and retires it then.
@@ -476,12 +489,12 @@ impl StagedWrite {
             return;
         }
         if self.unstaged {
-            let target = self.final_path.clone();
-            if let Err(e) = dest_volume.delete(&AppPath::legacy_unchecked(&target)).await {
+            let target = &self.final_path;
+            if let Err(e) = dest_volume.delete(target.app()).await {
                 log::debug!(
                     target: "copy",
                     "staged write: couldn't clear {} before the next attempt: {e}",
-                    LogPrivate::file_path(&target), e = LogError(&e)
+                    LogPrivate::file_path(target.path()), e = LogError(&e)
                 );
             }
         }
@@ -489,6 +502,59 @@ impl StagedWrite {
 
     fn retire_temp(&self, temp: &Path) {
         in_flight_temps::retire_temp(&self.state, home_of(self.home_volume.as_deref()), temp);
+    }
+}
+
+/// A staged write's `.cmdr-tmp-*`: the guard that owns it, and its spelling
+/// for the destination volume, made once with it. Every volume call on the
+/// temp addresses [`app`](Self::app); the ledgers and the logs read
+/// [`path`](Self::path), so their text stays byte-exact.
+pub(super) struct Temp {
+    guard: StagingTemp,
+    app: AppPathBuf,
+}
+
+impl Temp {
+    pub(super) fn new(guard: StagingTemp) -> Self {
+        let app = AppPath::legacy_unchecked(guard.path()).into_owned();
+        Self { guard, app }
+    }
+
+    /// The temp as the ledgers and the logs spell it.
+    pub(super) fn path(&self) -> &Path {
+        self.guard.path()
+    }
+
+    /// The temp as its volume addresses it.
+    pub(super) fn app(&self) -> &AppPath {
+        &self.app
+    }
+}
+
+/// A path a staged write addresses on its volume, in both spellings made once:
+/// the `std::path` one for the ledgers, the logs, and the errors (its text
+/// exits, byte-exact on a name that isn't UTF-8), the app one for every volume
+/// call.
+#[derive(Debug, Clone)]
+pub(super) struct Spelled {
+    path: PathBuf,
+    app: AppPathBuf,
+}
+
+impl Spelled {
+    pub(super) fn new(path: &Path) -> Self {
+        Self {
+            path: path.to_path_buf(),
+            app: AppPath::legacy_unchecked(path).into_owned(),
+        }
+    }
+
+    pub(super) fn path(&self) -> &Path {
+        &self.path
+    }
+
+    pub(super) fn app(&self) -> &AppPath {
+        &self.app
     }
 }
 

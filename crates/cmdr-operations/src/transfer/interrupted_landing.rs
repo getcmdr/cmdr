@@ -177,8 +177,13 @@ pub(super) async fn settle_unanswered_create(
     final_path: &Path,
     stop: &CancellationToken,
 ) -> Result<Option<WriteStamp>, CompareStopped> {
+    let (source_path, final_path) = (
+        AppPath::legacy_unchecked(source_path),
+        AppPath::legacy_unchecked(final_path),
+    );
     unless_stopped(stop, async {
-        let (ours, at_the_name) = same_size_streams(source_volume, source_path, size, dest_volume, final_path).await?;
+        let (ours, at_the_name) =
+            same_size_streams(source_volume, &source_path, size, dest_volume, &final_path).await?;
         // Read before the compare consumes the stream: the open already holds it.
         let stamp = WriteStamp::of(&*ours, &**dest_volume);
         same_bytes(ours, at_the_name).await.then_some(stamp)
@@ -198,11 +203,12 @@ pub(super) async fn holds_the_source(
     source_path: &Path,
     size: u64,
     dest_volume: &Arc<dyn Volume>,
-    final_path: &Path,
+    final_path: &AppPath,
     stop: &CancellationToken,
 ) -> Result<bool, CompareStopped> {
+    let source_path = AppPath::legacy_unchecked(source_path);
     unless_stopped(stop, async {
-        match same_size_streams(source_volume, source_path, size, dest_volume, final_path).await {
+        match same_size_streams(source_volume, &source_path, size, dest_volume, final_path).await {
             Some((ours, at_the_name)) => same_bytes(ours, at_the_name).await,
             None => false,
         }
@@ -223,25 +229,21 @@ async fn unless_stopped<T>(stop: &CancellationToken, compare: impl Future<Output
 /// `size` bytes (the cheap check first).
 async fn same_size_streams(
     source_volume: &Arc<dyn Volume>,
-    source_path: &Path,
+    source_path: &AppPath,
     size: u64,
     dest_volume: &Arc<dyn Volume>,
-    final_path: &Path,
+    final_path: &AppPath,
 ) -> Option<(Box<dyn VolumeReadStream>, Box<dyn VolumeReadStream>)> {
     let same_size = matches!(
-        dest_volume.get_metadata(&AppPath::legacy_unchecked(final_path)).await,
+        dest_volume.get_metadata(final_path).await,
         Ok(entry) if !entry.is_directory && !entry.is_symlink && entry.size == Some(size)
     );
     if !same_size {
         return None;
     }
     match (
-        source_volume
-            .open_read_stream_with_hint(&AppPath::legacy_unchecked(source_path), Some(size))
-            .await,
-        dest_volume
-            .open_read_stream(&AppPath::legacy_unchecked(final_path))
-            .await,
+        source_volume.open_read_stream_with_hint(source_path, Some(size)).await,
+        dest_volume.open_read_stream(final_path).await,
     ) {
         (Ok(ours), Ok(at_the_name)) => Some((ours, at_the_name)),
         _ => None,
