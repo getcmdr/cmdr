@@ -348,7 +348,8 @@ impl Volume for MtpVolume {
                     raw_os_error: None,
                 });
             };
-            let Some(name) = path.file_name().and_then(device_name) else {
+            let typed_name = path.file_name();
+            let Some(name) = typed_name.and_then(device_name) else {
                 return Err(VolumeError::IoError {
                     message: "Invalid directory name".into(),
                     raw_os_error: None,
@@ -364,8 +365,12 @@ impl Volume for MtpVolume {
                 .map(|_| ())
                 .map_err(map_mtp_error)?;
 
-            self.notify_mutation(&self.volume_id, parent, MutationEvent::Created(name.to_string()))
-                .await;
+            // The patch looks the new folder up by its TYPED name, as a stat does: the
+            // device's decoded spelling, read back as app text, names nothing.
+            if let Some(typed_name) = typed_name {
+                self.notify_mutation(&self.volume_id, parent, MutationEvent::Created(typed_name.to_string()))
+                    .await;
+            }
             Ok(())
         })
     }
@@ -470,9 +475,11 @@ impl Volume for MtpVolume {
                     self.notify_mutation(
                         &self.volume_id,
                         from_parent_path,
+                        // `from` matches the row by the device's name; `to` is looked up
+                        // by its typed name, as a stat does.
                         MutationEvent::Renamed {
                             from: from_name.to_string(),
-                            to: to_name.to_string(),
+                            to: to.file_name().unwrap_or(to_name).to_string(),
                         },
                     )
                     .await;
@@ -531,7 +538,7 @@ impl Volume for MtpVolume {
                     self.notify_mutation(
                         &self.volume_id,
                         to_parent_path,
-                        MutationEvent::Created(to_name.to_string()),
+                        MutationEvent::Created(to.file_name().unwrap_or(to_name).to_string()),
                     )
                     .await;
                 }
@@ -817,8 +824,9 @@ impl Volume for MtpVolume {
             // unreliable for self-mutations (many devices emit no events at
             // all), so without this the cache would only catch up on the
             // next manual refresh.
-            if let Some(parent) = twins::folder_of(dest) {
-                self.notify_mutation(&self.volume_id, parent, MutationEvent::Created(filename))
+            // By the typed name, as `create_directory` patches.
+            if let (Some(parent), Some(typed_name)) = (twins::folder_of(dest), dest.file_name()) {
+                self.notify_mutation(&self.volume_id, parent, MutationEvent::Created(typed_name.to_string()))
                     .await;
             }
             // MTP keeps no metadata beyond the date `SendObjectInfo` carries.

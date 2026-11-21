@@ -180,6 +180,54 @@ async fn a_walk_over_a_directory_reports_nothing_however_many_entries_it_holds()
     device.teardown(&manager).await;
 }
 
+/// A new folder or upload whose typed name spells a device name with escapes (a literal
+/// `U+10FEE9`, as the bridge escapes it) still patches its pane: the patch looks the new
+/// object up by the typed name, as a stat does, ❌ never by the device's decoded spelling,
+/// which read back as app text names nothing.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_new_object_whose_name_needs_an_escape_patches_its_pane() {
+    let _guard = device_lock().await;
+    let (listings, manager, device, volume) = recording_walk_fixture().await;
+    let dir = app_path!("/host-seam-escaped");
+    volume.create_directory(dir).await.expect("creating the folder");
+    // The bytes of U+10FEE9 (F4 8F BB A9), one byte escape each.
+    let escaped = "\u{10FEF4}\u{10FE8F}\u{10FEBB}\u{10FEA9}";
+    let folder_text = format!("/host-seam-escaped/dir-{escaped}");
+    let file_text = format!("/host-seam-escaped/file-{escaped}.txt");
+    let folder = app_path::AppPath::from_normalized(&folder_text).expect("the canonical spelling of that device name");
+    let file = app_path::AppPath::from_normalized(&file_text).expect("the canonical spelling of that device name");
+
+    volume
+        .create_directory(folder)
+        .await
+        .expect("creating the escaped folder");
+    volume
+        .write_from_stream(
+            file,
+            WriteMode::CreateOrReplace,
+            StreamLength::Known(1),
+            Box::new(BytesStream::new(b"x".to_vec())),
+            &|_| ControlFlow::Continue(()),
+        )
+        .await
+        .expect("uploading the escaped file");
+
+    let added: Vec<String> = listings
+        .changes()
+        .into_iter()
+        .filter_map(|(_, _, change)| match change {
+            DirectoryChange::Added(entry) => Some(entry.name),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        added.contains(&"dir-\u{10FEE9}".to_string()) && added.contains(&"file-\u{10FEE9}.txt".to_string()),
+        "both new objects reach the pane as an `Added` row under the device's name, got {added:?}"
+    );
+
+    device.teardown(&manager).await;
+}
+
 /// A one-shot `VolumeReadStream` over bytes already in hand: what an upload's
 /// source looks like when the test doesn't care where the bytes came from.
 struct BytesStream {
