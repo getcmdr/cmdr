@@ -8,7 +8,7 @@
 //! crate's own cells (`crates/cmdr-nfs/DETAILS.md`). Each cell uses a host of its
 //! own, since the store and the registry are process-global.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, PathArithmetic};
 use std::collections::{HashMap, VecDeque};
 use std::future::Future;
 use std::pin::Pin;
@@ -104,7 +104,7 @@ impl NfsBackend for FakeNfs {
     }
 
     fn params_of(&self, volume: &dyn Volume) -> Option<NfsConnectionParams> {
-        let root = volume.root().as_std_legacy().to_string_lossy().into_owned();
+        let root = volume.root().as_str().to_owned();
         self.live.lock().expect("test lock").get(&root).cloned()
     }
 
@@ -122,7 +122,7 @@ impl NfsBackend for FakeNfs {
     }
 
     fn set_start_folder(&self, volume: &dyn Volume, folder: Option<String>) {
-        let root = volume.root().as_std_legacy().to_string_lossy().into_owned();
+        let root = volume.root().as_str().to_owned();
         if let Some(params) = self.live.lock().expect("test lock").get_mut(&root) {
             params.start_folder = folder;
         }
@@ -455,10 +455,11 @@ async fn a_changed_start_folder_on_an_open_place_moves_the_live_volume_params() 
     let id = id_of("start-folder.test", "/");
     let _ = connect(&backend, "", place("start-folder.test", "/"), "nfs-start-folder").await;
     let live = get_volume_manager().get(&id).expect("connected");
-    let photos = std::path::Path::new(&*live.root().as_std_legacy()).join("photos");
-    live.create_directory(&AppPath::legacy_unchecked(&photos))
-        .await
-        .expect("the fake holds the folder");
+    let photos = live
+        .root()
+        .join(AppName::from_app_spelling("photos").expect("a plain name"))
+        .expect("a name under the root");
+    live.create_directory(&photos).await.expect("the fake holds the folder");
 
     let edit = KnownNfsPlace {
         start_folder: Some("/photos".to_string()),

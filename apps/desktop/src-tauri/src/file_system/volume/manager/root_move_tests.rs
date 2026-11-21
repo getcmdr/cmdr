@@ -1,5 +1,6 @@
 //! `move_root`'s cells: a drive renamed while it's mounted.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -26,12 +27,11 @@ fn a_renamed_drive_keeps_its_id_at_its_new_root() {
     );
 
     let serving = manager.get(ID).expect("still registered under its id");
+    assert_eq!(serving.root().as_str(), NEW, "it serves from the new root");
     assert_eq!(
-        &*serving.root().as_std_legacy(),
-        Path::new(NEW),
-        "it serves from the new root"
+        manager.known_roots(ID),
+        vec![AppPath::from_normalized(NEW).expect("canonical").to_owned()]
     );
-    assert_eq!(manager.known_roots(ID), vec![Path::new(NEW).to_path_buf()]);
     assert!(manager.find_by_root(Path::new(OLD)).is_none(), "the old root is gone");
     assert_eq!(
         manager.mount_id_for_path("/Volumes/New/photos").as_deref(),
@@ -54,8 +54,8 @@ fn a_renamed_sibling_root_moves_in_the_set_only() {
         RootMove::SiblingMoved { id: ID.to_string() }
     );
     assert_eq!(
-        &*manager.get(ID).expect("registered").root().as_std_legacy(),
-        Path::new("/Volumes/Active"),
+        manager.get(ID).expect("registered").root().as_str(),
+        "/Volumes/Active",
         "the active root stays"
     );
     assert_eq!(
@@ -77,10 +77,7 @@ fn a_backend_that_cant_reroot_stays_anchored_to_the_old_root() {
         manager.move_root(Path::new(OLD), Path::new(NEW)),
         RootMove::BackendCantReroot { id: ID.to_string() }
     );
-    assert_eq!(
-        &*manager.get(ID).expect("still registered").root().as_std_legacy(),
-        Path::new(OLD)
-    );
+    assert_eq!(manager.get(ID).expect("still registered").root().as_str(), OLD);
 }
 
 /// A root nobody registered is nobody's to move.

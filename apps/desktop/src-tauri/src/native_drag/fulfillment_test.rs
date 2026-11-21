@@ -3,7 +3,7 @@
 use super::*;
 use crate::file_system::volume::{InMemoryVolume, ListingProgress};
 use crate::operations_host::app_engine;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, PathArithmetic};
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -24,13 +24,13 @@ fn populated_volume() -> Arc<InMemoryVolume> {
 }
 
 async fn add_file(v: &InMemoryVolume, path: &str, content: &[u8]) {
-    v.create_file(&AppPath::legacy_unchecked(Path::new(path)), content)
+    v.create_file(AppPath::from_normalized(path).expect("a canonical app path"), content)
         .await
         .unwrap();
 }
 
 async fn add_dir(v: &InMemoryVolume, path: &str) {
-    v.create_directory(&AppPath::legacy_unchecked(Path::new(path)))
+    v.create_directory(AppPath::from_normalized(path).expect("a canonical app path"))
         .await
         .unwrap();
 }
@@ -118,19 +118,11 @@ impl Volume for MidStreamFailVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
-        let path_app = path;
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let name = path
-            .file_name()
-            .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_default();
+        let name = path.file_name().unwrap_or_default().to_string();
         Box::pin(async move {
-            let path_std = path_app.as_std_legacy();
-            let path: &Path = &path_std;
             Ok(cmdr_fs::entry::FileEntry {
                 size: Some(4096),
-                ..cmdr_fs::entry::FileEntry::new(name, path.display().to_string(), false, false)
+                ..cmdr_fs::entry::FileEntry::new(name, path.as_str().to_string(), false, false)
             })
         })
     }
@@ -383,11 +375,8 @@ impl Volume for PartialFailFolderVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
-        let path_app = path;
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         // The "bad.jpg" file fails mid-stream; everything else streams fine.
-        if path.file_name().map(|n| n == "bad.jpg").unwrap_or(false) {
+        if path.file_name() == Some("bad.jpg") {
             Box::pin(async {
                 Ok(Box::new(FailingReadStream {
                     first_chunk_sent: false,
@@ -395,7 +384,7 @@ impl Volume for PartialFailFolderVolume {
                 }) as Box<dyn VolumeReadStream>)
             })
         } else {
-            self.inner.open_read_stream(path_app)
+            self.inner.open_read_stream(path)
         }
     }
 }
@@ -434,7 +423,10 @@ async fn folder_with_a_listed_name_that_climbs_out_is_refused() {
     v.set_reported_name(Path::new("/DCIM/evil.jpg"), "../escape.jpg");
     // Where the raw join would read from, so a missing source can't be what
     // stops the escape.
-    add_file(&v, "/DCIM/../escape.jpg", b"EVIL").await;
+    // The raw `..` text on purpose: the fixture sits where a bridge join would land.
+    v.create_file(&AppPath::legacy_unchecked(Path::new("/DCIM/../escape.jpg")), b"EVIL")
+        .await
+        .unwrap();
 
     let dest_dir = tempfile::tempdir().unwrap();
     let dest = dest_dir.path().join("DCIM");

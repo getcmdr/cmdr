@@ -34,16 +34,16 @@ async fn smb_integration_a_pane_in_an_accented_folder_survives_the_upgrade_to_a_
     ensure_clean(&seeder, &top).await;
     let album = share_path(&format!("{top}/{NFC_DIR}"));
     seeder
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&share_path(&top))))
+        .create_directory(AppPath::from_normalized(&share_path(&top)).expect("a canonical app path"))
         .await
         .unwrap();
     seeder
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&album)))
+        .create_directory(AppPath::from_normalized(&album).expect("a canonical app path"))
         .await
         .unwrap();
     let photo = format!("{album}/{NFD_FILE}");
     seeder
-        .create_file(&AppPath::legacy_unchecked(Path::new(&photo)), PAYLOAD)
+        .create_file(AppPath::from_normalized(&photo).expect("a canonical app path"), PAYLOAD)
         .await
         .unwrap();
 
@@ -80,7 +80,7 @@ async fn smb_integration_a_pane_in_an_accented_folder_survives_the_upgrade_to_a_
         .expect("the direct volume is registered");
     let read = async {
         let mut stream = direct
-            .open_read_stream(&AppPath::legacy_unchecked(Path::new(&entry_paths[0])))
+            .open_read_stream(AppPath::from_normalized(&entry_paths[0]).expect("a canonical app path"))
             .await?;
         let mut bytes = Vec::new();
         while let Some(chunk) = stream.next_chunk().await {
@@ -91,7 +91,10 @@ async fn smb_integration_a_pane_in_an_accented_folder_survives_the_upgrade_to_a_
     .await;
 
     crate::file_system::volume::manager::get_volume_manager().unregister(&volume_id);
-    seeder.delete(&AppPath::legacy_unchecked(Path::new(&photo))).await.ok();
+    seeder
+        .delete(AppPath::from_normalized(&photo).expect("a canonical app path"))
+        .await
+        .ok();
     ensure_clean(&seeder, &top).await;
 
     assert_eq!(entry_paths, vec![photo.clone()], "the entry carries the server's bytes");

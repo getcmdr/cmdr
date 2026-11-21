@@ -10,14 +10,32 @@
 
 use super::{Volume, VolumeManager};
 use crate::ignore_poison::RwLockIgnorePoison;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::os_error::OsErrorClass;
-use std::path::{Path, PathBuf};
+use std::borrow::Cow;
+use std::cmp::Ordering;
+use std::path::Path;
 use std::sync::Arc;
+
+/// Whether two spellings name one mount root: the same text, or the same canonical place,
+/// so `/Volumes/X/` and `/Volumes/X` are one root, as `Path`'s `==` read them.
+pub(super) fn same_root(a: &AppPath, b: &AppPath) -> bool {
+    a == b || matches!((a.to_canonical(), b.to_canonical()), (Ok(a), Ok(b)) if a == b)
+}
+
+/// A mount root the OS reported (a mount, unmount, or rename event's native path) as the
+/// registry's app path. A name that isn't plain Unicode text (Linux bytes) stays a lossless
+/// bridge value until the escape lands, so the event still finds the root it registered.
+pub(super) fn mount_root_from_os(native: &Path) -> Cow<'_, AppPath> {
+    match AppPathBuf::from_native_unicode(native) {
+        Ok(root) => Cow::Owned(root),
+        Err(_) => AppPath::legacy_unchecked(native),
+    }
+}
 
 /// One mount root carrying a volume's ID.
 pub(super) struct MountRoot {
-    pub(super) path: PathBuf,
+    pub(super) path: AppPathBuf,
     /// Set once an operation on this root came back with an errno that PROVES
     /// the mount is gone rather than the file. Never cleared: a root that has
     /// answered `ENOTCONN` is only trustworthy again after a fresh mount event,
@@ -26,15 +44,15 @@ pub(super) struct MountRoot {
 }
 
 impl MountRoot {
-    fn new(path: impl Into<PathBuf>) -> Self {
+    fn new(path: &AppPath) -> Self {
         Self {
-            path: path.into(),
+            path: path.to_owned(),
             proven_stale: false,
         }
     }
 
-    /// Ranking key for "which root should be active": liveness first, then the
-    /// canonical path shape. Lower sorts better.
+    /// Ranking for "which root should be active": liveness first, then the
+    /// canonical path shape. `Less` sorts better.
     ///
     /// The path half is the original rule (shortest, ties lexicographic) and it
     /// still decides between equally-live roots: macOS suffixes the LATER mount
@@ -42,9 +60,13 @@ impl MountRoot {
     /// saved path, favorite, and index row already refers to. What changed is its
     /// RANK — a proven-dead shortest root loses to a live longer one, because
     /// path shape is a guess about identity and an errno is evidence about health.
-    fn rank(&self) -> (bool, usize, &Path) {
-        let text = self.path.as_os_str();
-        (self.proven_stale, text.len(), &self.path)
+    /// The tie goes name by name, as `Path`'s order went, so `/Volumes/a b` and
+    /// `/Volumes/a/b` keep the order they had.
+    fn rank(&self, other: &Self) -> Ordering {
+        (self.proven_stale, self.path.as_str().len())
+            .cmp(&(other.proven_stale, other.path.as_str().len()))
+            .then_with(|| self.path.root().as_str().cmp(other.path.root().as_str()))
+            .then_with(|| self.path.names().cmp(other.path.names()))
     }
 }
 
@@ -61,7 +83,7 @@ pub(super) struct Registration {
 impl Registration {
     /// A fresh registration whose only known root is the volume's own.
     pub(super) fn new(volume: Arc<dyn Volume>) -> Self {
-        let root = MountRoot::new(&*volume.root().as_std_legacy());
+        let root = MountRoot::new(volume.root());
         Self {
             volume,
             roots: vec![root],
@@ -69,12 +91,12 @@ impl Registration {
     }
 
     /// Whether any known root of this entry is `root` (active or fallback).
-    pub(super) fn knows_root(&self, root: &Path) -> bool {
-        self.roots.iter().any(|r| r.path == root)
+    pub(super) fn knows_root(&self, root: &AppPath) -> bool {
+        self.roots.iter().any(|r| same_root(&r.path, root))
     }
 
     /// Record `root` as another mount reaching this volume. Idempotent.
-    pub(super) fn record_root(&mut self, root: &Path) {
+    pub(super) fn record_root(&mut self, root: &AppPath) {
         if !self.knows_root(root) {
             self.roots.push(MountRoot::new(root));
         }
@@ -87,11 +109,11 @@ impl Registration {
     /// that declined to re-root: without this the entry would be anchored to a
     /// path it no longer claims, so `find_by_root` (and a later unmount or
     /// re-mount event for that same path) would stop recognizing it.
-    pub(super) fn readd_stale_root(&mut self, root: &Path) {
-        match self.roots.iter_mut().find(|r| r.path == root) {
+    pub(super) fn readd_stale_root(&mut self, root: &AppPath) {
+        match self.roots.iter_mut().find(|r| same_root(&r.path, root)) {
             Some(existing) => existing.proven_stale = true,
             None => self.roots.push(MountRoot {
-                path: root.to_path_buf(),
+                path: root.to_owned(),
                 proven_stale: true,
             }),
         }
@@ -100,7 +122,7 @@ impl Registration {
     /// Swap the volume in place (a same-root replacement, like the SMB upgrade),
     /// keeping the fallback roots the entry has collected.
     pub(super) fn replace_volume(&mut self, volume: Arc<dyn Volume>) {
-        let root = volume.root().as_std_legacy().to_path_buf();
+        let root = volume.root().to_owned();
         self.volume = volume;
         self.record_root(&root);
     }
@@ -110,10 +132,11 @@ impl Registration {
     /// enters it fresh (never inheriting a stale mark), so nothing finds this
     /// entry by a root it no longer serves. Other fallback roots stay.
     pub(super) fn replace_root(&mut self, volume: Arc<dyn Volume>) -> Arc<dyn Volume> {
-        let old_root = self.volume.root().as_std_legacy().to_path_buf();
-        let new_root = volume.root().as_std_legacy().to_path_buf();
-        if old_root != new_root {
-            self.roots.retain(|r| r.path != old_root && r.path != new_root);
+        let old_root = self.volume.root();
+        let new_root = volume.root();
+        if !same_root(old_root, new_root) {
+            self.roots
+                .retain(|r| !same_root(&r.path, old_root) && !same_root(&r.path, new_root));
             self.roots.push(MountRoot::new(new_root));
         }
         std::mem::replace(&mut self.volume, volume)
@@ -122,7 +145,7 @@ impl Registration {
     /// The root that SHOULD be active: the best-ranked one, or `None` when the
     /// entry has no roots left at all.
     fn best_root(&self) -> Option<&MountRoot> {
-        self.roots.iter().min_by(|a, b| a.rank().cmp(&b.rank()))
+        self.roots.iter().min_by(|a, b| a.rank(b))
     }
 
     /// Whether the ACTIVE root is one this entry has proven dead.
@@ -134,7 +157,7 @@ impl Registration {
         let active = self.volume.root();
         self.roots
             .iter()
-            .find(|r| r.path == *active.as_std_legacy())
+            .find(|r| same_root(&r.path, active))
             .is_none_or(|r| r.proven_stale)
     }
 
@@ -164,11 +187,11 @@ impl Registration {
         let Some(best) = self.best_root() else {
             return Promotion::NoRootsLeft;
         };
-        if best.path == *self.volume.root().as_std_legacy() {
+        if same_root(&best.path, self.volume.root()) {
             return Promotion::AlreadyBest;
         }
         let target = best.path.clone();
-        match self.volume.rerooted(&AppPath::legacy_unchecked(&target)) {
+        match self.volume.rerooted(&target) {
             Some(rerooted) => {
                 self.volume = rerooted;
                 Promotion::Promoted(target)
@@ -183,18 +206,18 @@ impl Registration {
 impl VolumeManager {
     /// Every mount root known to reach `id`, active one first.
     #[cfg(test)]
-    pub fn known_roots(&self, id: &str) -> Vec<PathBuf> {
+    pub fn known_roots(&self, id: &str) -> Vec<AppPathBuf> {
         let volumes = self.volumes.read_ignore_poison();
         let Some(entry) = volumes.get(id) else {
             return Vec::new();
         };
         let active = entry.volume.root();
-        let mut roots: Vec<PathBuf> = vec![active.as_std_legacy().to_path_buf()];
+        let mut roots: Vec<AppPathBuf> = vec![active.to_owned()];
         roots.extend(
             entry
                 .roots
                 .iter()
-                .filter(|r| r.path != *active.as_std_legacy())
+                .filter(|r| !same_root(&r.path, active))
                 .map(|r| r.path.clone()),
         );
         roots
@@ -207,15 +230,18 @@ impl VolumeManager {
     /// twice survives an eject of either mount. Pure registry work under the
     /// write lock: teardown (`on_unmount`, stopping an index) belongs to the
     /// caller, which is why [`RootRemoval::Unregistered`] hands the volume back.
+    ///
+    /// `root` is the native mount path the OS reported (the unmount event's).
     pub fn remove_root(&self, root: &Path) -> RootRemoval {
+        let root = &*mount_root_from_os(root);
         let mut volumes = self.volumes.write_ignore_poison();
         let Some((id, entry)) = volumes.iter_mut().find(|(_, entry)| entry.knows_root(root)) else {
             return RootRemoval::Unknown;
         };
         let id = id.clone();
 
-        let was_active = &*entry.volume.root().as_std_legacy() == root;
-        entry.roots.retain(|r| r.path != root);
+        let was_active = same_root(entry.volume.root(), root);
+        entry.roots.retain(|r| !same_root(&r.path, root));
 
         if !was_active {
             return RootRemoval::SiblingDropped { id };
@@ -257,12 +283,12 @@ impl VolumeManager {
     /// find out whether it's alive (that blocks for 30–120 s on a wedged one),
     /// so the evidence arrives as a failed operation and the promotion rides on
     /// it. A root already known stale re-reports cheaply and changes nothing.
-    pub fn mark_root_stale(&self, id: &str, root: &Path) -> StaleRootOutcome {
+    pub fn mark_root_stale(&self, id: &str, root: &AppPath) -> StaleRootOutcome {
         let mut volumes = self.volumes.write_ignore_poison();
         let Some(entry) = volumes.get_mut(id) else {
             return StaleRootOutcome::Unchanged;
         };
-        let Some(marked) = entry.roots.iter_mut().find(|r| r.path == root) else {
+        let Some(marked) = entry.roots.iter_mut().find(|r| same_root(&r.path, root)) else {
             return StaleRootOutcome::Unchanged;
         };
         marked.proven_stale = true;
@@ -307,16 +333,20 @@ impl VolumeManager {
             // volume is registered a moment before it enters its LRU, and a
             // concurrent caller must not see it in that gap.
             .filter(|(_, v)| !v.routes_over_a_parent())
-            .filter(|(_, v)| &*v.root().as_std_legacy() != Path::new("/"))
-            .filter(|(_, v)| target.starts_with(&*v.root().as_std_legacy()))
-            .max_by_key(|(_, v)| v.root().as_std_legacy().as_os_str().len())
+            // `Path`'s component-wise `starts_with` on the caller's text, `..` and all,
+            // until this takes an app path (the tools' `..` resolution decides that).
+            .filter_map(|(id, v)| {
+                let root = v.root().as_std_legacy();
+                (root != Path::new("/") && target.starts_with(&root)).then(|| (id, root.as_os_str().len()))
+            })
+            .max_by_key(|(_, len)| *len)
             .map(|(id, _)| id.clone())
     }
 }
 
 /// What [`Registration::promote_to_best_root`] did.
 pub(super) enum Promotion {
-    Promoted(PathBuf),
+    Promoted(AppPathBuf),
     /// The active root is already the best-ranked one.
     AlreadyBest,
     /// A better root exists but the backend won't leave its own.
@@ -332,7 +362,7 @@ pub enum RootRemoval {
     /// A FALLBACK root went away; the active root and the volume are untouched.
     SiblingDropped { id: String },
     /// The active root went away and a surviving sibling took over.
-    Promoted { id: String, new_root: PathBuf },
+    Promoted { id: String, new_root: AppPathBuf },
     /// The active root went away, a sibling survives, but the backend can't be
     /// re-rooted, so the registration stays where it is. The volume keeps serving
     /// whoever holds it, which beats unregistering a filesystem that's still
@@ -349,7 +379,7 @@ pub enum StaleRootOutcome {
     /// Nothing to do: no such volume, no such root, or nothing better to move to.
     Unchanged,
     /// A live sibling took over the ID.
-    Promoted { new_root: PathBuf },
+    Promoted { new_root: AppPathBuf },
 }
 
 /// Whether an OS error of this class proves the MOUNT behind a path is gone or
@@ -382,7 +412,6 @@ mod tests {
     use crate::ignore_poison::IgnorePoison;
     use cmdr_fs::app_path;
     use cmdr_fs::app_path::AppPath;
-    use cmdr_fs::app_path::BridgedPath;
     use cmdr_fs::entry::FileEntry;
     use cmdr_fs::volume::host::VolumeHost;
     use cmdr_local::LocalPosixVolume;
@@ -396,7 +425,7 @@ mod tests {
     fn registration_over(roots: &[&str]) -> Registration {
         let mut reg = Registration::new(local_volume("share", roots[0]));
         for root in &roots[1..] {
-            reg.record_root(Path::new(root));
+            reg.record_root(AppPath::from_normalized(root).expect("a canonical test root"));
         }
         reg
     }
@@ -408,7 +437,7 @@ mod tests {
         let reg = registration_over(&["/Volumes/testshare-1", "/Volumes/testshare"]);
         assert_eq!(
             reg.best_root().expect("two roots").path,
-            Path::new("/Volumes/testshare")
+            *app_path!("/Volumes/testshare")
         );
     }
 
@@ -416,7 +445,7 @@ mod tests {
     fn equal_length_roots_break_ties_lexicographically() {
         // Pure and order-independent, so discovery order can't decide identity.
         let reg = registration_over(&["/Volumes/bbb", "/Volumes/aaa"]);
-        assert_eq!(reg.best_root().expect("two roots").path, Path::new("/Volumes/aaa"));
+        assert_eq!(reg.best_root().expect("two roots").path, *app_path!("/Volumes/aaa"));
     }
 
     #[test]
@@ -428,7 +457,7 @@ mod tests {
         reg.roots[0].proven_stale = true;
         assert_eq!(
             reg.best_root().expect("two roots").path,
-            Path::new("/Volumes/testshare-1")
+            *app_path!("/Volumes/testshare-1")
         );
     }
 
@@ -437,7 +466,7 @@ mod tests {
         let mut reg = registration_over(&["/Volumes/testshare", "/Volumes/testshare-1"]);
         reg.roots[0].proven_stale = true;
         assert!(matches!(reg.promote_to_best_root(), Promotion::Promoted(_)));
-        assert_eq!(&*reg.volume.root().as_std_legacy(), Path::new("/Volumes/testshare-1"));
+        assert_eq!(reg.volume.root(), app_path!("/Volumes/testshare-1"));
         assert_eq!(reg.volume.name(), "share", "the display name survives a promotion");
     }
 
@@ -445,7 +474,7 @@ mod tests {
     fn promotion_is_a_no_op_when_the_active_root_is_already_the_best() {
         let mut reg = registration_over(&["/Volumes/testshare", "/Volumes/testshare-1"]);
         assert!(matches!(reg.promote_to_best_root(), Promotion::AlreadyBest));
-        assert_eq!(&*reg.volume.root().as_std_legacy(), Path::new("/Volumes/testshare"));
+        assert_eq!(reg.volume.root(), app_path!("/Volumes/testshare"));
     }
 
     /// Every errno: the seven that say the mount is gone or wedged promote, and none
@@ -476,15 +505,17 @@ mod tests {
     /// ask which root was told its mount is gone. The log is shared across the
     /// instances a promotion creates; production keeps the answer per instance.
     struct RootSpy {
-        root: BridgedPath,
-        told: Arc<std::sync::Mutex<Vec<PathBuf>>>,
+        root: AppPathBuf,
+        told: Arc<std::sync::Mutex<Vec<AppPathBuf>>>,
     }
 
     /// A spy rooted at `root`, plus a reader for what it has been told.
-    fn root_spy(root: &str) -> (Arc<RootSpy>, impl Fn() -> Vec<PathBuf>) {
+    fn root_spy(root: &str) -> (Arc<RootSpy>, impl Fn() -> Vec<AppPathBuf>) {
         let told = Arc::new(std::sync::Mutex::new(Vec::new()));
         let spy = Arc::new(RootSpy {
-            root: BridgedPath::new(PathBuf::from(root)),
+            root: AppPath::from_normalized(root)
+                .expect("a canonical test root")
+                .to_owned(),
             told: Arc::clone(&told),
         });
         (spy, move || told.lock_ignore_poison().clone())
@@ -496,7 +527,7 @@ mod tests {
         }
 
         fn root(&self) -> &AppPath {
-            self.root.app()
+            &self.root
         }
 
         fn as_any(&self) -> &dyn std::any::Any {
@@ -504,16 +535,14 @@ mod tests {
         }
 
         fn rerooted(&self, new_root: &AppPath) -> Option<Arc<dyn Volume>> {
-            let new_root_std = new_root.as_std_legacy();
-            let new_root: &Path = &new_root_std;
             Some(Arc::new(Self {
-                root: BridgedPath::new(new_root.to_path_buf()),
+                root: new_root.to_owned(),
                 told: Arc::clone(&self.told),
             }))
         }
 
         fn note_root_mount_gone(&self) {
-            self.told.lock_ignore_poison().push(self.root.clone().into_path_buf());
+            self.told.lock_ignore_poison().push(self.root.clone());
         }
 
         fn list_directory<'a>(
@@ -553,11 +582,11 @@ mod tests {
         let (spy, told) = root_spy("/Volumes/testshare");
         manager.register("share", spy);
 
-        let outcome = manager.mark_root_stale("share", Path::new("/Volumes/testshare"));
+        let outcome = manager.mark_root_stale("share", app_path!("/Volumes/testshare"));
         assert!(matches!(outcome, StaleRootOutcome::Unchanged), "nowhere to promote to");
         assert_eq!(
             told(),
-            vec![PathBuf::from("/Volumes/testshare")],
+            vec![app_path!("/Volumes/testshare").to_owned()],
             "the volume has to hear that its mount is gone"
         );
     }
@@ -570,7 +599,7 @@ mod tests {
         let (spy, told) = root_spy("/Volumes/testshare");
         manager.register("share", spy);
 
-        let outcome = manager.mark_root_stale("share", Path::new("/Volumes/testshare"));
+        let outcome = manager.mark_root_stale("share", app_path!("/Volumes/testshare"));
         assert!(matches!(outcome, StaleRootOutcome::Promoted { .. }));
         assert!(told().is_empty(), "a live root needs no warning");
     }
@@ -585,15 +614,15 @@ mod tests {
         manager.register("share", spy);
         manager.register("share", local_volume("testshare", "/Volumes/testshare-1"));
 
-        manager.mark_root_stale("share", Path::new("/Volumes/testshare-1"));
+        manager.mark_root_stale("share", app_path!("/Volumes/testshare-1"));
         assert!(told().is_empty(), "the ACTIVE root still looks alive");
 
         manager.remove_root(Path::new("/Volumes/testshare"));
         assert_eq!(
-            &*manager.get("share").expect("still registered").root().as_std_legacy(),
-            Path::new("/Volumes/testshare-1")
+            manager.get("share").expect("still registered").root(),
+            app_path!("/Volumes/testshare-1")
         );
-        assert_eq!(told(), vec![PathBuf::from("/Volumes/testshare-1")]);
+        assert_eq!(told(), vec![app_path!("/Volumes/testshare-1").to_owned()]);
     }
 
     /// A registry holding one share reached through two mount points, the
@@ -615,8 +644,8 @@ mod tests {
         let outcome = manager.remove_root(Path::new("/Volumes/testshare"));
         assert!(matches!(outcome, RootRemoval::Promoted { .. }), "a sibling survives");
         assert_eq!(
-            &*manager.get("share").expect("still registered").root().as_std_legacy(),
-            Path::new("/Volumes/testshare-1")
+            manager.get("share").expect("still registered").root(),
+            app_path!("/Volumes/testshare-1")
         );
     }
 
@@ -640,10 +669,13 @@ mod tests {
         let outcome = manager.remove_root(Path::new("/Volumes/testshare-1"));
         assert!(matches!(outcome, RootRemoval::SiblingDropped { .. }));
         assert_eq!(
-            &*manager.get("share").expect("still registered").root().as_std_legacy(),
-            Path::new("/Volumes/testshare")
+            manager.get("share").expect("still registered").root(),
+            app_path!("/Volumes/testshare")
         );
-        assert_eq!(manager.known_roots("share"), vec![PathBuf::from("/Volumes/testshare")]);
+        assert_eq!(
+            manager.known_roots("share"),
+            vec![app_path!("/Volumes/testshare").to_owned()]
+        );
     }
 
     #[test]
@@ -666,8 +698,8 @@ mod tests {
         let outcome = manager.remove_root(Path::new("/Volumes/testshare"));
         assert!(matches!(outcome, RootRemoval::ActiveRootStranded { .. }));
         assert_eq!(
-            &*manager.get("share").expect("still registered").root().as_std_legacy(),
-            Path::new("/Volumes/testshare"),
+            manager.get("share").expect("still registered").root(),
+            app_path!("/Volumes/testshare"),
             "it stays where its transport is anchored"
         );
     }
@@ -698,7 +730,7 @@ mod tests {
         assert!(
             manager
                 .known_roots("share")
-                .contains(&PathBuf::from("/Volumes/testshare")),
+                .contains(&app_path!("/Volumes/testshare").to_owned()),
             "and it reports as such"
         );
     }
@@ -710,16 +742,16 @@ mod tests {
         // shortest path then picks the corpse, on every launch, forever.
         let manager = doubly_mounted_share();
         assert_eq!(
-            &*manager.get("share").expect("registered").root().as_std_legacy(),
-            Path::new("/Volumes/testshare"),
+            manager.get("share").expect("registered").root(),
+            app_path!("/Volumes/testshare"),
             "while both look alive, the shortest path is active"
         );
 
-        let outcome = manager.mark_root_stale("share", Path::new("/Volumes/testshare"));
+        let outcome = manager.mark_root_stale("share", app_path!("/Volumes/testshare"));
         assert!(matches!(outcome, StaleRootOutcome::Promoted { .. }));
         assert_eq!(
-            &*manager.get("share").expect("still registered").root().as_std_legacy(),
-            Path::new("/Volumes/testshare-1")
+            manager.get("share").expect("still registered").root(),
+            app_path!("/Volumes/testshare-1")
         );
     }
 
@@ -744,8 +776,8 @@ mod tests {
             },
         );
         assert_eq!(
-            &*manager.get(id).expect("registered").root().as_std_legacy(),
-            Path::new("/Volumes/cmdr-test-stale"),
+            manager.get(id).expect("registered").root(),
+            app_path!("/Volumes/cmdr-test-stale"),
             "an ordinary file error must not rotate a healthy volume's root"
         );
 
@@ -757,8 +789,8 @@ mod tests {
             },
         );
         assert_eq!(
-            &*manager.get(id).expect("still registered").root().as_std_legacy(),
-            Path::new("/Volumes/cmdr-test-stale-1"),
+            manager.get(id).expect("still registered").root(),
+            app_path!("/Volumes/cmdr-test-stale-1"),
             "a stale-mount errno moves the volume to the mount that still answers"
         );
 

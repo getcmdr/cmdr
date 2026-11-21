@@ -7,7 +7,6 @@
 
 use super::*;
 use cmdr_fs::app_path;
-use std::path::Path;
 use std::time::Duration;
 
 /// What the OS records about an ordinary mount of `share`, at the share root.
@@ -76,11 +75,9 @@ async fn a_mount_that_answers_its_identity_read_keeps_the_answer() {
 /// volume without breaking the holders still using it.
 mod tracking {
     use crate::file_system::volume::{SpaceInfo, Volume, VolumeError};
-    use cmdr_fs::app_path::AppPath;
-    use cmdr_fs::app_path::BridgedPath;
+    use cmdr_fs::app_path::{AppPath, AppPathBuf};
     use cmdr_fs::entry::FileEntry;
     use std::future::Future;
-    use std::path::PathBuf;
     use std::pin::Pin;
     use std::sync::Arc;
     use std::sync::atomic::{AtomicBool, Ordering};
@@ -88,7 +85,7 @@ mod tracking {
     pub(super) struct TrackingVolume {
         pub(super) on_unmount_called: Arc<AtomicBool>,
         pub(super) on_superseded_called: Arc<AtomicBool>,
-        root: BridgedPath,
+        root: AppPathBuf,
         smb_state: Option<crate::file_system::volume::ConnectionState>,
     }
 
@@ -128,7 +125,9 @@ mod tracking {
             let vol = Arc::new(Self {
                 on_unmount_called: Arc::clone(&unmounted),
                 on_superseded_called: Arc::clone(&superseded),
-                root: BridgedPath::new(PathBuf::from(root)),
+                root: AppPath::from_normalized(root)
+                    .expect("a canonical mount path")
+                    .to_owned(),
                 smb_state,
             }) as Arc<dyn Volume>;
             (vol, Hooks { unmounted, superseded })
@@ -140,7 +139,7 @@ mod tracking {
             "tracking"
         }
         fn root(&self) -> &AppPath {
-            self.root.app()
+            &self.root
         }
         fn as_any(&self) -> &dyn std::any::Any {
             self
@@ -291,7 +290,7 @@ async fn a_registration_the_registry_refuses_leaves_the_incumbent_untouched() {
         manager
             .known_roots(volume_id)
             .iter()
-            .any(|r| r.as_path() == Path::new("/Volumes/testshare-1")),
+            .any(|r| r.as_str() == "/Volumes/testshare-1"),
         "the second mount root is recorded as a fallback"
     );
 
@@ -778,11 +777,7 @@ async fn returning_a_direct_share_to_the_os_mount_supersedes_its_session() {
     manager.unregister(volume_id);
     assert!(returned, "a direct share has a session to hand back");
     assert_eq!(current.backend_kind(), BackendKind::Local, "the OS mount serves it now");
-    assert_eq!(
-        &*current.root().as_std_legacy(),
-        Path::new("/Volumes/back-to-os"),
-        "at the same mount"
-    );
+    assert_eq!(current.root(), app_path!("/Volumes/back-to-os"), "at the same mount");
     assert!(hooks.superseded.load(Ordering::Relaxed), "the session is superseded");
     assert!(
         !hooks.unmounted.load(Ordering::Relaxed),

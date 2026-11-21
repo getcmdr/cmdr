@@ -13,7 +13,7 @@
 
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -47,6 +47,7 @@ fn repo(name: &str) -> PathBuf {
 async fn a_full_refresh_of_dot_git_tracks_what_the_overlay_contributes() {
     let dir = repo("full_refresh");
     let dot_git = dir.join(".git");
+    let dot_git_app = AppPathBuf::from_native_unicode(&dot_git).expect("a scratch path");
     crate::file_system::git::wiring::set_virtual_portal_enabled(true);
 
     let volume_id = unique_test_id("overlay-refresh-vol");
@@ -54,10 +55,7 @@ async fn a_full_refresh_of_dot_git_tracks_what_the_overlay_contributes() {
     get_volume_manager().register(&volume_id, Arc::clone(&volume));
 
     // A pane's listing as the first read left it: real entries plus the six.
-    let mut entries = volume
-        .list_directory(&AppPath::legacy_unchecked(&dot_git), None)
-        .await
-        .expect("listing .git");
+    let mut entries = volume.list_directory(&dot_git_app, None).await.expect("listing .git");
     let added = decorate(listings(), "root", &volume, &dot_git, &mut entries).await;
     assert_eq!(added, 6);
     let listing = TestListing::new()
@@ -116,16 +114,14 @@ async fn refresh(volume_id: &str, path: &std::path::Path, listing_id: &str) {
 async fn a_listing_refresh_of_dot_git_keeps_the_portal_rows() {
     let dir = repo("listing_refresh");
     let dot_git = dir.join(".git");
+    let dot_git_app = AppPathBuf::from_native_unicode(&dot_git).expect("a scratch path");
     crate::file_system::git::wiring::set_virtual_portal_enabled(true);
 
     let volume_id = unique_test_id("overlay-listing-refresh-vol");
     let volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder("Repo", &dir, crate::volume_host::host()));
     get_volume_manager().register(&volume_id, Arc::clone(&volume));
 
-    let mut entries = volume
-        .list_directory(&AppPath::legacy_unchecked(&dot_git), None)
-        .await
-        .expect("listing .git");
+    let mut entries = volume.list_directory(&dot_git_app, None).await.expect("listing .git");
     let added = decorate(listings(), "root", &volume, &dot_git, &mut entries).await;
     assert_eq!(added, 6);
     let listing = TestListing::new()

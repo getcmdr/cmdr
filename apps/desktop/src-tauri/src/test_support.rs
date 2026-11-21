@@ -39,7 +39,9 @@ use std::cell::Cell;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicI64, AtomicU64, AtomicUsize, Ordering};
 
-pub(crate) use cmdr_fs::testing::{TestDir, WedgedVolume, wait_until, wait_until_async, wait_until_async_while_moving};
+pub(crate) use cmdr_fs::testing::{
+    AppTestDir, TestDir, WedgedVolume, wait_until, wait_until_async, wait_until_async_while_moving,
+};
 
 use crate::file_system::volume::{InMemoryVolume, ListingProgress, Volume, VolumeError};
 use cmdr_fs::entry::FileEntry;

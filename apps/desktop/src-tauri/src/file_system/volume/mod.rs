@@ -58,14 +58,14 @@ pub fn note_root_failure(volume_id: &str, error: &VolumeError) {
     let Some(volume) = registry.get(volume_id) else {
         return;
     };
-    let failed_root = volume.root().as_std_legacy().to_path_buf();
+    let failed_root = volume.root();
 
-    if let manager::StaleRootOutcome::Promoted { new_root } = registry.mark_root_stale(volume_id, &failed_root) {
+    if let manager::StaleRootOutcome::Promoted { new_root } = registry.mark_root_stale(volume_id, failed_root) {
         log::info!(
             target: "cmdr_lib::file_system::volume",
             "Volume {volume_id}'s mount at {} is gone (errno {errno}); promoted it to {}, which is still live.",
-            cmdr_fs::log_private::LogPrivate::dir_path(&failed_root),
-            cmdr_fs::log_private::LogPrivate::dir_path(&new_root),
+            cmdr_fs::log_private::LogPrivate::dir_path(failed_root.as_str()),
+            cmdr_fs::log_private::LogPrivate::dir_path(new_root.as_str()),
         );
         // The switcher and every pane still point at the old root, so tell them.
         crate::volume_broadcast::emit_volumes_changed();
