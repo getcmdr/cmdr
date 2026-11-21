@@ -2117,9 +2117,15 @@ included; the hidden couplings it found are why waves B and C differ from round 
     real links, and the app's `go_to_path/{tests,wire_shape_tests}.rs` (pin (g) flipped: a `..` after a folder link
     lands on `real/y`; a hung mount refuses through `WedgedVolume` within the deadline; no volume refuses),
     `cli/script_tests.rs` and `reveal/delivery_test.rs`. Bridge: `go_to_path/mod.rs`'s entry gone (1 → 0); no file grew.
+  - **Review round** (same branch): `GoToHost::found` tells "couldn't check" (`Err`) from "nothing there", so a hung
+    mount is `Invalid` instead of a nearest-ancestor walk to the root; the script's existence check runs on its result,
+    so `cmdr ../sibling` from a linked folder finds what `cd` finds.
   - **Left for 10d**: the MCP tools' path inputs call `AppHost::registry().resolve_typed(text, base, TypedBy::Agent)`
-    and turn `TypedPathRefusal` (`OffRoot`, `Unanswered`, …) into typed tool errors. The new key needs the translator
-    pass before landing (`i18n-coverage` fails it in CI).
+    and turn `TypedPathRefusal` (`OffRoot`, `Unanswered`, …) into typed tool errors. ❗ `OffRoot` is a TEXT check (a
+    `..` at an app-path root); it says nothing about where the answer lands. `/allowed/link/..` with `link -> /etc/x`
+    resolves to `/etc` with `crossed_link: true` and no refusal, and the resolved path's own last name may be a link
+    too. Any allowed-roots rule 10d enforces must check the RESOLVED place (its canonical form, links included), ❌
+    never the typed text. The new key needs the translator pass before landing (`i18n-coverage` fails it in CI).
 
 ### 10d. The app, part two: operations host, tools, and the rest
 

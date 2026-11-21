@@ -37,6 +37,15 @@ Depth and rationale. `CLAUDE.md` holds the must-knows; the decision rationale an
   work runs on in its own task rather than being dropped (the MTP rule). The command itself then answers inside the
   deadline, and the frontend's `withTimeout` races it. The local `metadata` and the archive check run on the blocking
   pool inside it.
+- **"Couldn't check" is `Invalid`, ❌ never "doesn't exist".** `GoToHost::found` answers `Err` for a missed deadline, no
+  volume to ask, or a dropped connection, and `Ok(None)` only for a stat that answered "nothing there" (or refused).
+  Reading the first as the second sent a hung mount down the nearest-ancestor walk, every ancestor past the spent
+  deadline, to the root: the jump landed on `/` with a "doesn't exist" toast. `Invalid` keeps the dialog open, as the
+  old whole-command timeout did. Pinned by `a_hung_mount_with_no_dot_dot_is_nothing_to_go_to_never_the_root`.
+- **A detached stat on a hung mount outlives its resolve.** Each resolve that hits one leaves one blocking-pool thread
+  parked in `metadata` / `readlink` until the mount answers (the deadline short-circuits the rest of that resolve). The
+  preview is debounced (200 ms) and drops a superseded answer, but the backend work isn't canceled, so steady typing
+  over a dead mount parks about one thread per pause. Same as before 10c; a per-mount "known hung" breaker would cap it.
 - **A remote pane's relative input classifies through its volume** (`is_directory`), a local path through `metadata`.
 - **Recents rides on the shared `crate::recents` list.** This module supplies the entry shape, the dedupe key (the
   resolved path string), and the cap; the file, dedupe, eviction, and quarantine are shared with Search and Selection.

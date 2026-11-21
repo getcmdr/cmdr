@@ -76,10 +76,10 @@ urlencode() {
 # relative path's leading `..`s stepping up from the shell's folder by text (as `cd ..`
 # does), and every other `..` kept. Only the disk knows what that one means (past a link,
 # the link target's parent, where `ls` lands), so Cmdr asks it. Returns 1 if nothing is there.
+# ❗ The check runs on the RESULT, never on $1: from a folder the shell reached through a link,
+# $1's leading `..` means the physical cwd's parent to the kernel, which isn't where `cd ..` goes.
 absolute() {
-    if [ ! -e "$1" ] && [ ! -L "$1" ]; then
-        return 1
-    fi
+    [ -n "$1" ] || return 1
     case $1 in
         /*) out=; leading= ;;
         *) out=$(pwd); leading=1 ;;
@@ -103,7 +103,11 @@ absolute() {
             *) leading=; out=$out/$name ;;
         esac
     done
-    printf '%s\n' "${out:-/}"
+    out=${out:-/}
+    if [ ! -e "$out" ] && [ ! -L "$out" ]; then
+        return 1
+    fi
+    printf '%s\n' "$out"
 }
 
 pane=

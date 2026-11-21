@@ -325,6 +325,8 @@
         margin: var(--spacing-sm) 0 0;
         font-size: var(--font-size-sm);
         color: var(--color-text-secondary);
+        /* A long path has no spaces to break at: wrap it inside the dialog. */
+        overflow-wrap: anywhere;
     }
 
     .hint.warning {

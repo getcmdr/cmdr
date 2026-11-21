@@ -124,29 +124,40 @@ impl TypedPathHost for AppHost {
 impl GoToHost for AppHost {
     /// A local path through `metadata` (follows links, so a link to a folder is a
     /// folder), off the async thread; a remote one through its volume. Either within
-    /// the deadline, since a hung mount blocks `metadata` for minutes.
-    async fn found(&self, path: &AppPath) -> Option<FoundKind> {
+    /// the deadline, since a hung mount blocks `metadata` for minutes. A missed deadline,
+    /// or no volume to ask, is `Err` ("couldn't check"); a stat that answers with an
+    /// error (missing, refused) is nothing there, as it always was.
+    async fn found(&self, path: &AppPath) -> Result<Option<FoundKind>, VolumeError> {
         let is_directory = match path.to_native() {
-            Ok(native) => self
-                .within(async move {
+            Ok(native) => {
+                self.within(async move {
                     let stat = tokio::task::spawn_blocking(move || std::fs::metadata(native).map(|meta| meta.is_dir()));
                     Ok(stat.await.ok().and_then(Result::ok))
                 })
-                .await
-                .ok()??,
+                .await?
+            }
             Err(_) => {
-                let volume = self.volume(path).ok()?;
+                let volume = self.volume(path)?;
                 let path = path.to_owned();
-                self.within(async move { volume.is_directory(&path).await })
-                    .await
-                    .ok()?
+                match self.within(async move { volume.is_directory(&path).await }).await {
+                    Ok(is_directory) => Some(is_directory),
+                    Err(
+                        err @ (VolumeError::ConnectionTimeout(_)
+                        | VolumeError::NotConnected(_)
+                        | VolumeError::DeviceDisconnected(_)
+                        | VolumeError::DeviceSessionReset(_)),
+                    ) => return Err(err),
+                    Err(_) => None,
+                }
             }
         };
-        Some(if is_directory {
-            FoundKind::Directory
-        } else {
-            FoundKind::File
-        })
+        Ok(is_directory.map(|is_directory| {
+            if is_directory {
+                FoundKind::Directory
+            } else {
+                FoundKind::File
+            }
+        }))
     }
 
     /// A path that crosses into a supported archive is browsed as a folder, even though the

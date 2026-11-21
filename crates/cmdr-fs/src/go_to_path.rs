@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::app_path::{AppPath, PathArithmetic};
 use crate::typed_path::{TypedBy, TypedPath, TypedPathHost, TypedPathRefusal, resolve_typed_with};
+use crate::volume::VolumeError;
 
 /// The outcome of resolving a typed "go to path" input. The variant is the contract the
 /// frontend branches on; ❌ never classify by string-matching `reason`.
@@ -53,8 +54,8 @@ pub enum GoToPathResolution {
         /// The closest folder above it that exists.
         ancestor_dir: String,
     },
-    /// The input was empty or leads nowhere (no app path, or a volume that couldn't say
-    /// what a `..` means there in time).
+    /// The input was empty or leads nowhere (no app path), or a volume couldn't say in
+    /// time what a `..` means there or what's at the path or an ancestor of it.
     Invalid {
         /// Why, for the log only.
         reason: String,
@@ -73,8 +74,11 @@ pub enum FoundKind {
 /// What a host answers for [`resolve`]: the typed-path host (`~`, the flavor, and each
 /// `..`), plus what's at a path.
 pub trait GoToHost: TypedPathHost {
-    /// What's at `path`, following links, or `None` when nothing is (or it can't be read).
-    fn found(&self, path: &AppPath) -> impl Future<Output = Option<FoundKind>>;
+    /// What's at `path`, following links: `Ok(None)` when nothing is (or it can't be read),
+    /// `Err` when the host couldn't check (a hung mount, a spent deadline, no volume to ask).
+    /// ❗ The two differ: "couldn't check" must never read as "doesn't exist", or the
+    /// nearest-ancestor walk lands a person on the root with a "doesn't exist" toast.
+    fn found(&self, path: &AppPath) -> impl Future<Output = Result<Option<FoundKind>, VolumeError>>;
 
     /// Whether `path` crosses into an archive the host browses as a folder. None by default.
     fn enters_archive(&self, path: &AppPath) -> impl Future<Output = bool> {
@@ -102,7 +106,8 @@ pub async fn answer(typed: Result<TypedPath, TypedPathRefusal>, host: &impl GoTo
     }
 }
 
-/// A folder, a file, or the nearest existing ancestor.
+/// A folder, a file, or the nearest existing ancestor; nothing to go to when the host
+/// couldn't check.
 async fn classify(typed: TypedPath, host: &impl GoToHost) -> GoToPathResolution {
     let TypedPath { path, crossed_link } = typed;
     if host.enters_archive(&path).await {
@@ -111,7 +116,11 @@ async fn classify(typed: TypedPath, host: &impl GoToHost) -> GoToPathResolution 
             crossed_link,
         };
     }
-    match host.found(&path).await {
+    let found = match host.found(&path).await {
+        Ok(found) => found,
+        Err(err) => return unchecked(&err),
+    };
+    match found {
         Some(FoundKind::Directory) => GoToPathResolution::Directory {
             path: path.into_string(),
             crossed_link,
@@ -127,26 +136,38 @@ async fn classify(typed: TypedPath, host: &impl GoToHost) -> GoToPathResolution 
                 crossed_link,
             }
         }
-        None => {
-            let ancestor_dir = nearest_existing_ancestor(&path, host).await.as_str().to_string();
-            GoToPathResolution::NearestAncestor {
+        None => match nearest_existing_ancestor(&path, host).await {
+            Ok(ancestor) => GoToPathResolution::NearestAncestor {
+                ancestor_dir: ancestor.as_str().to_string(),
                 requested: path.into_string(),
-                ancestor_dir,
-            }
-        }
+            },
+            Err(err) => unchecked(&err),
+        },
+    }
+}
+
+/// What the dialog hears when the host couldn't check: nothing to go to, so the dialog
+/// stays open, ❌ never a guess.
+fn unchecked(err: &VolumeError) -> GoToPathResolution {
+    GoToPathResolution::Invalid {
+        reason: format!("couldn't check the path: {err}"),
     }
 }
 
 /// Walks up from `path` to the closest ancestor that exists; the root when none does.
-async fn nearest_existing_ancestor<'a>(path: &'a AppPath, host: &impl GoToHost) -> &'a AppPath {
+///
+/// # Errors
+///
+/// The host couldn't check one of them.
+async fn nearest_existing_ancestor<'a>(path: &'a AppPath, host: &impl GoToHost) -> Result<&'a AppPath, VolumeError> {
     let mut current = path;
     loop {
-        if host.found(current).await.is_some() {
-            return current;
+        if host.found(current).await?.is_some() {
+            return Ok(current);
         }
         match current.parent() {
             Some(parent) => current = parent,
-            None => return current,
+            None => return Ok(current),
         }
     }
 }

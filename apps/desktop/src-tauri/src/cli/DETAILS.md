@@ -45,7 +45,10 @@ opens the path. The only thing a valid URL can do is move a pane.
 is handed on as typed. The app answers that one at delivery (`reveal::delivery`'s `resolve_dot_dots`, through
 `go_to_path::AppHost::resolve_typed`): past a symlink it's the link TARGET's parent, where `ls` (and the script's own
 `-e` existence check) lands. The script used to `cd` there, which reads `..` by text and so landed beside the link.
-A path with no `..` reaches the app exactly as before.
+A path with no `..` reaches the app exactly as before. ❗ The existence check runs on the script's RESULT, never on the
+typed text: from a folder the shell reached through a link, the kernel reads a leading `..` as the physical cwd's
+parent, so checking the text said "there's no file or folder" about a sibling `cd` finds
+(`a_leading_dot_dot_from_a_linked_folder_finds_what_cd_finds`).
 
 **Encoding.** The script percent-encodes every byte (`od` + `sed`): wasteful, but nothing (`+`, `&`, `#`, `%`, UTF-8)
 can change meaning on the way, and `query_pairs` decodes it back. `script_tests.rs` pins the round trip on a filename

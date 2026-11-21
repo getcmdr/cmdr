@@ -107,15 +107,19 @@ impl TypedPathHost for DemoGoTo {
 }
 
 impl GoToHost for DemoGoTo {
-    /// What's at `path`, following links as the desktop's `metadata` does.
-    async fn found(&self, path: &AppPath) -> Option<FoundKind> {
-        let target = self.store.canonical_app_path(path)?;
-        let entry = self.store.get_metadata(&target).await.ok()?;
-        Some(if entry.is_directory {
-            FoundKind::Directory
-        } else {
-            FoundKind::File
-        })
+    /// What's at `path`, following links as the desktop's `metadata` does. An in-memory
+    /// volume always answers, so this is never "couldn't check".
+    async fn found(&self, path: &AppPath) -> Result<Option<FoundKind>, VolumeError> {
+        let Some(target) = self.store.canonical_app_path(path) else {
+            return Ok(None);
+        };
+        Ok(self.store.get_metadata(&target).await.ok().map(|entry| {
+            if entry.is_directory {
+                FoundKind::Directory
+            } else {
+                FoundKind::File
+            }
+        }))
     }
 }
 

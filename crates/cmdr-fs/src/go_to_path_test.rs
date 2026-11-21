@@ -24,12 +24,17 @@ impl TypedPathHost for Fixed {
 }
 
 impl GoToHost for Fixed {
-    async fn found(&self, path: &AppPath) -> Option<FoundKind> {
-        match path.as_str() {
+    /// `/hung` and `/home/hung` (and everything under them) never answer in time.
+    async fn found(&self, path: &AppPath) -> Result<Option<FoundKind>, VolumeError> {
+        let text = path.as_str();
+        if text == "/hung" || text.starts_with("/hung/") || text == "/home/hung" {
+            return Err(VolumeError::ConnectionTimeout("the mount didn't answer".into()));
+        }
+        Ok(match path.as_str() {
             "/" | "/home" | "/home/test_user_1" | "/home/test_user_1/Downloads" => Some(FoundKind::Directory),
             "/home/test_user_1/notes.md" => Some(FoundKind::File),
             _ => None,
-        }
+        })
     }
 
     async fn enters_archive(&self, path: &AppPath) -> bool {
@@ -99,4 +104,15 @@ async fn a_relative_input_with_no_pane_folder_is_invalid() {
 #[tokio::test]
 async fn an_archive_the_host_browses_enters_as_a_folder() {
     assert_eq!(go("/a.zip/inner", "/").await, folder("/a.zip/inner"));
+}
+
+/// "Couldn't check" is nothing to go to, ❌ never "doesn't exist": the path itself, and an
+/// ancestor the nearest-ancestor walk asks on the way up.
+#[tokio::test]
+async fn a_path_the_host_cant_check_is_nothing_to_go_to() {
+    assert!(matches!(go("/hung/x", "/").await, GoToPathResolution::Invalid { .. }));
+    assert!(matches!(
+        go("/home/hung/nope", "/").await,
+        GoToPathResolution::Invalid { .. }
+    ));
 }

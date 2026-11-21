@@ -211,6 +211,17 @@ async fn a_hung_mount_refuses_a_dot_dot_in_time() {
     ));
 }
 
+/// A stat that misses the deadline is "couldn't check", ❌ never "doesn't exist": reading it as
+/// missing walked every ancestor past the spent deadline to the root, and the jump landed there
+/// with a "doesn't exist" toast about a path that may well exist.
+#[tokio::test]
+async fn a_hung_mount_with_no_dot_dot_is_nothing_to_go_to_never_the_root() {
+    let wedged: Arc<dyn Volume> = Arc::new(WedgedVolume::new("Hung share"));
+    let host = AppHost::over(move |_| Some(wedged.clone()), Duration::from_millis(50));
+    let answer = resolve_over("sftp://h:22/x/y", "/", &host).await;
+    assert!(matches!(answer, GoToPathResolution::Invalid { .. }), "got {answer:?}");
+}
+
 /// What 10d's MCP tools call: an agent's `..` above the root is refused, typed.
 #[tokio::test]
 async fn an_agent_above_the_root_is_refused_off_root() {

@@ -91,6 +91,43 @@ fn a_dot_dot_after_a_name_is_handed_on_as_typed() {
     assert_eq!(open.paths, vec![logical(&dir).join("x/link/../y")]);
 }
 
+/// From a folder the shell reached through a link, `cmdr ../sibling` finds what `cd ../sibling`
+/// finds: the leading `..` steps up the shell's `PWD` by text, and the existence check asks about
+/// THAT path. Checking the typed text against the physical cwd said "there's no file or folder"
+/// about a sibling that's right there (and let through one that only exists beside the target).
+#[cfg(unix)]
+#[test]
+fn a_leading_dot_dot_from_a_linked_folder_finds_what_cd_finds() {
+    let dir = TestDir::new("cli_script_linked_cwd");
+    std::fs::create_dir_all(dir.join("real/inner")).expect("mkdir");
+    std::fs::create_dir_all(dir.join("x/sibling")).expect("mkdir");
+    std::fs::create_dir(dir.join("real/only_beside_the_target")).expect("mkdir");
+    std::os::unix::fs::symlink("../real/inner", dir.join("x/link")).expect("link");
+    let shell_pwd = logical(&dir).join("x/link");
+    let run = |arg: &str| {
+        Command::new(script())
+            .args(["--print-url", arg])
+            .current_dir(&shell_pwd)
+            .env("PWD", &shell_pwd)
+            .env_remove("CMDR_BUNDLE_ID")
+            .output()
+            .expect("the script runs")
+    };
+
+    let output = run("../sibling");
+    assert!(
+        output.status.success(),
+        "the script refused: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let url = String::from_utf8(output.stdout).expect("a UTF-8 URL");
+    let open = parse_cli_url(&Url::parse(url.trim()).expect("a URL")).expect("the app accepts it");
+    assert_eq!(open.paths, vec![logical(&dir).join("x/sibling")]);
+
+    // `cd ../only_beside_the_target` fails from there, so the command says there's nothing.
+    assert!(!run("../only_beside_the_target").status.success());
+}
+
 #[test]
 fn the_flags_pick_the_pane_and_the_tab() {
     let dir = TestDir::new("cli_script_flags");
