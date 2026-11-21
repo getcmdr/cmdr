@@ -46,7 +46,7 @@ fn rename_the_drive(drive: &ColdDrive) -> (PathBuf, PutBack) {
         drive.volume_id,
         Arc::new(
             cmdr_fs::volume::InMemoryVolume::new("Renamed")
-                .with_root(&new_root)
+                .with_root(native_text(&new_root).into_owned())
                 .with_local_fs_access(),
         ),
     );

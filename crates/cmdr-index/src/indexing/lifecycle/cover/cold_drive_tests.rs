@@ -103,7 +103,7 @@ impl ColdDrive {
         volumes.register(
             volume_id,
             Arc::new(describe(
-                cmdr_fs::volume::InMemoryVolume::new("Cold").with_root(tree.path()),
+                cmdr_fs::volume::InMemoryVolume::new("Cold").with_root(native_text(tree.path()).into_owned()),
             )),
         );
         let events = Arc::new(crate::indexing::events::RecordingSink::new());

@@ -37,8 +37,9 @@ is the canonical owner of `IndexPathSpace` and the read-side path transforms.
 - `path_space.rs` — `IndexPathSpace`, the space the local scan / reconcile / live pipeline holds.
 - `app_text.rs` — the ONE set of crossings between a volume's app path and the index: `stored_text` (the text stores and
   strips compare, byte for byte the old lossy spelling), `native_root` (`None` for `mtp://`/`adb://`), `app_path_of`
-  (stored text back to an app path for a trait walk), `local_path` (stored text to the local walker). ❌ No
-  `PathBuf::from(entry.path)` or `Path::join` on a share's path: `DETAILS.md` § "App paths at the edges".
+  (stored text back to an app path for a trait walk), `local_path` (to the local walker), `native_text` / `native_name`
+  (the local pipeline's way up: `D:/x` on Windows). ❌ No `to_string_lossy` on a path headed for index text, no
+  `Path::join` on a share's path: `DETAILS.md` § "App paths at the edges".
 - `path_prefix.rs` — component-aware absolute-path prefix tests (`/a/bc` is never a child of `/a/b`): the predicates
   (`is_strict_descendant`, `is_at_or_under`) and their lookup forms for a keyed collection (`self_and_ancestors`,
   `descendant_range_prefix`), plus `compute_parent_path`, `collect_ancestor_paths`, and `with_ancestor_closure` (origins

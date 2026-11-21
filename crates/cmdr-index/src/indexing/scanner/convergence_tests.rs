@@ -24,7 +24,15 @@ use crate::indexing::store::{EXCLUSION_POLICY_KEY, IndexStore, UnreadableCause};
 
 /// The tree David's case is written against: `/A/B/C`, ten files of ten bytes
 /// each, and a walk that is cancelled the moment it reaches C.
-const TREE_ROOT: &str = "/cmdr-convergence-test";
+/// The mock tree's root, an absolute path on this host: a bare `/x` is no place on Windows,
+/// whose app paths start at a drive.
+fn tree_root() -> PathBuf {
+    if cmdr_fs::app_path::PathFlavor::HOST == cmdr_fs::app_path::PathFlavor::Windows {
+        PathBuf::from("C:/cmdr-convergence-test")
+    } else {
+        PathBuf::from("/cmdr-convergence-test")
+    }
+}
 
 const FILE_NAMES: [&str; 10] = [
     "f0.txt", "f1.txt", "f2.txt", "f3.txt", "f4.txt", "f5.txt", "f6.txt", "f7.txt", "f8.txt", "f9.txt",
@@ -112,7 +120,7 @@ fn frontier(db_path: &Path, scope: &str) -> Vec<String> {
 #[test]
 fn a_cancelled_walk_leaves_durable_partial_coverage() {
     let (writer, db_path, _db_dir) = setup_writer();
-    let root = PathBuf::from(TREE_ROOT);
+    let root = tree_root();
     let a = root.join("A");
     let b = a.join("B");
     let c = b.join("C");
@@ -200,7 +208,7 @@ fn a_cancelled_walk_leaves_durable_partial_coverage() {
 #[test]
 fn a_folder_the_walk_cannot_read_stops_re_entering_the_frontier() {
     let (writer, db_path, _db_dir) = setup_writer();
-    let root = PathBuf::from(TREE_ROOT);
+    let root = tree_root();
     let a = root.join("A");
     let denied = a.join("denied");
     let root_only = a.join("root-only");
@@ -330,7 +338,7 @@ fn walk_a_wedged_dir_while(drive_is_there: bool) -> (Result<ScanSummary, ScanErr
     let _installed = crate::indexing::host::volumes::install_for_test(Arc::clone(&provider) as _);
 
     let (writer, db_path, _db_dir) = setup_writer();
-    let root = PathBuf::from(TREE_ROOT);
+    let root = tree_root();
     let a = root.join("A");
     let wedged = a.join("wedged");
     seed_chain(&db_path, &a, &writer);
@@ -401,7 +409,7 @@ fn a_walk_whose_drive_left_condemns_nothing_and_reports_the_vanish() {
 #[test]
 fn marking_abandoned_ground_costs_no_coverage() {
     let (writer, db_path, _db_dir) = setup_writer();
-    let root = PathBuf::from(TREE_ROOT);
+    let root = tree_root();
     let a = root.join("A");
     let b = a.join("B");
     let c = b.join("C");
@@ -485,7 +493,7 @@ fn marking_abandoned_ground_costs_no_coverage() {
 #[test]
 fn a_frontier_node_can_hold_a_listed_descendant() {
     let (writer, db_path, _db_dir) = setup_writer();
-    let root = PathBuf::from(TREE_ROOT);
+    let root = tree_root();
     let f = root.join("F");
     let g = f.join("G");
     seed_chain(&db_path, &f, &writer);
@@ -548,7 +556,7 @@ fn a_frontier_node_can_hold_a_listed_descendant() {
 #[test]
 fn covering_a_frontier_node_never_removes_a_row_it_did_not_write() {
     let (writer, db_path, _db_dir) = setup_writer();
-    let root = PathBuf::from(TREE_ROOT);
+    let root = tree_root();
     let f = root.join("F");
     let g = f.join("G");
     seed_chain(&db_path, &f, &writer);

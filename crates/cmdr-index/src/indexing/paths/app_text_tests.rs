@@ -85,7 +85,13 @@ fn stored_text_reads_back_as_its_own_place_or_none_never_a_look_alike() {
         app_path_of("adb://R58").expect("a bare scheme root").as_str(),
         "adb://R58/"
     );
-    assert_eq!(app_path_of("/Volumes/s//a/").expect("folded").as_str(), "/Volumes/s/a");
+    // The wire reads text in the host's flavor, where `/Volumes/…` is no place on Windows.
+    let (unfolded, folded) = if PathFlavor::HOST == PathFlavor::Windows {
+        ("D:/s//a/", "D:/s/a")
+    } else {
+        ("/Volumes/s//a/", "/Volumes/s/a")
+    };
+    assert_eq!(app_path_of(unfolded).expect("folded").as_str(), folded);
     // A canonical escape stays the row's own text.
     let lone = "/Volumes/s/x\u{10FEFF}";
     assert_eq!(app_path_of(lone).expect("canonical").as_str(), lone);

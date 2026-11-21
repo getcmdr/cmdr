@@ -20,6 +20,44 @@ fn components(path: &str) -> impl Iterator<Item = &str> {
     path.split('/').filter(|c| !c.is_empty())
 }
 
+/// Absolute text for `components`, rooted the way the text they came from was: `/a/b` for
+/// POSIX text, and on Windows `D:/a/b` when the first is a drive (`D:`, whose root is `D:/`).
+/// The one place a path is put back together from its names, so no helper spells a drive
+/// path `/D:/a`. On macOS and Linux a first name `D:` is a folder like any other.
+pub(crate) fn rooted<'a>(components: impl IntoIterator<Item = &'a str>) -> String {
+    let mut components = components.into_iter().peekable();
+    let mut out = String::new();
+    if let Some(first) = components.peek()
+        && is_drive_name(first)
+    {
+        out.push_str(first);
+        components.next();
+        if components.peek().is_none() {
+            out.push('/');
+            return out;
+        }
+    }
+    for name in components {
+        out.push('/');
+        out.push_str(name);
+    }
+    if out.is_empty() {
+        out.push('/');
+    }
+    out
+}
+
+/// Whether `name`, a path's FIRST name, is a Windows drive (`D:`) on this host.
+pub(crate) fn is_drive_name(name: &str) -> bool {
+    cmdr_fs::app_path::PathFlavor::HOST == cmdr_fs::app_path::PathFlavor::Windows
+        && matches!(name.as_bytes(), [letter, b':'] if letter.is_ascii_alphabetic())
+}
+
+/// Whether `path` is a Windows drive's root text (`D:/`) on this host.
+fn is_drive_root(path: &str) -> bool {
+    path.strip_suffix('/').is_some_and(is_drive_name)
+}
+
 /// Number of path components. `/` is 0, `/a/b` is 2. Used to sort shallow-first.
 pub(crate) fn depth(path: &str) -> usize {
     components(path).count()
@@ -64,6 +102,10 @@ pub(crate) fn self_and_ancestors(path: &str) -> impl Iterator<Item = &str> {
             // `/a` -> `/`. The volume root is a branch like any other and
             // contains everything, so the chain has to reach it.
             Some(0) if current.len() > 1 => Some("/"),
+            // A Windows drive's root (`D:/`) is its chain's end, as `/` is.
+            Some(_) if is_drive_root(current) => None,
+            // `D:/a` -> `D:/`, never the bare drive `D:`.
+            Some(cut) if is_drive_name(&current[..cut]) => Some(&current[..=cut]),
             Some(cut) if cut > 0 => Some(&current[..cut]),
             // `/` (and anything relative) has nowhere left to go.
             _ => None,
@@ -98,7 +140,7 @@ pub(crate) fn capped_prefix(path: &str, max_depth: usize) -> String {
         return "/".to_string();
     }
     let take = comps.len().min(max_depth);
-    format!("/{}", comps[..take].join("/"))
+    rooted(comps[..take].iter().copied())
 }
 
 /// The deepest common ancestor of a set of absolute paths, as an absolute path.
@@ -115,17 +157,15 @@ pub(crate) fn deepest_common_ancestor<'a>(paths: impl IntoIterator<Item = &'a st
             break;
         }
     }
-    Some(if common.is_empty() {
-        "/".to_string()
-    } else {
-        format!("/{}", common.join("/"))
-    })
+    Some(rooted(common))
 }
 
 /// Compute parent path from a normalized path.
 pub(crate) fn compute_parent_path(path: &str) -> String {
     match path.rfind('/') {
         Some(0) => "/".to_string(),
+        // `D:/a` -> `D:/`: a Windows drive's root keeps its `/`.
+        Some(pos) if is_drive_name(&path[..pos]) => path[..=pos].to_string(),
         Some(pos) => path[..pos].to_string(),
         None => String::new(),
     }
@@ -260,6 +300,36 @@ mod tests {
         assert_eq!(compute_parent_path("/Users/foo/bar.txt"), "/Users/foo");
         assert_eq!(compute_parent_path("/Users"), "/");
         assert_eq!(compute_parent_path("/"), "/");
+    }
+
+    /// A Windows drive's text keeps its own root through every helper that puts a path
+    /// back together, where a POSIX host reads `D:` as the folder it is there.
+    #[test]
+    fn a_drive_path_keeps_its_root_on_windows_and_a_d_colon_folder_stays_a_folder_elsewhere() {
+        let windows = cmdr_fs::app_path::PathFlavor::HOST == cmdr_fs::app_path::PathFlavor::Windows;
+        let (drive_root, deep, parent) = if windows {
+            ("D:/", "D:/src/x", "D:/src")
+        } else {
+            ("/D:", "/D:/src/x", "/D:/src")
+        };
+        assert_eq!(rooted(["D:", "src", "x"]), deep);
+        assert_eq!(rooted(["D:"]), drive_root);
+        assert_eq!(rooted(["a", "b"]), "/a/b");
+        assert_eq!(rooted(std::iter::empty::<&str>()), "/");
+        assert_eq!(compute_parent_path("D:/src/x"), "D:/src");
+        assert_eq!(
+            deepest_common_ancestor(["D:/src/x/a", "D:/src/x/b"]).as_deref(),
+            Some(deep)
+        );
+        assert_eq!(capped_prefix("D:/src/x/a", 2), parent);
+        if windows {
+            assert_eq!(compute_parent_path("D:/src"), "D:/");
+            assert_eq!(
+                self_and_ancestors("D:/src/x").collect::<Vec<_>>(),
+                ["D:/src/x", "D:/src", "D:/"],
+                "the chain ends at the drive's root"
+            );
+        }
     }
 
     /// The recursive-size refresh set is REBUILT from the origins, so the FE emit and

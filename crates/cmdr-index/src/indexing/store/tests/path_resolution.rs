@@ -250,7 +250,7 @@ fn platform_case_compare_normalizes_unicode_nfc_to_nfd() {
     );
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "linux")]
 #[test]
 fn platform_case_compare_is_binary_off_macos() {
     // Linux ext4/btrfs: exact byte comparison, NOT case-folded.
@@ -274,11 +274,23 @@ fn normalize_for_comparison_lowercases_and_nfd_normalizes() {
     );
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "linux")]
 #[test]
 fn normalize_for_comparison_is_identity_off_macos() {
     assert_eq!(normalize_for_comparison("Users"), "Users");
     assert_eq!(normalize_for_comparison("hello"), "hello");
+}
+
+// NTFS folds case and keeps the Unicode form: `Users` and `users` are one name, NFC and NFD two.
+#[cfg(target_os = "windows")]
+#[test]
+fn the_collation_folds_case_but_not_the_unicode_form_on_windows() {
+    assert_eq!(platform_case_compare("Users", "users"), std::cmp::Ordering::Equal);
+    assert_ne!(
+        platform_case_compare("caf\u{e9}", "cafe\u{301}"),
+        std::cmp::Ordering::Equal
+    );
+    assert_eq!(normalize_for_comparison("Users"), "users");
 }
 
 // ── platform_case_compare (property-based) ───────────────────────
@@ -363,7 +375,7 @@ mod platform_case_proptests {
 
     // Off macOS, the comparator is exact byte comparison. We pin
     // this by checking that the result matches `str::cmp`.
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "linux")]
     proptest! {
         #[test]
         fn matches_byte_cmp_off_macos(a in ".*", b in ".*") {

@@ -104,9 +104,17 @@ mod tests {
 
     #[test]
     fn keeps_matching_volume_absolute_paths_normalized_and_deduped() {
+        // An absolute path on this host: a bare `/x` is relative on Windows.
+        let abs = |p: &str| {
+            if cmdr_fs::app_path::PathFlavor::HOST == cmdr_fs::app_path::PathFlavor::Windows {
+                format!("C:{p}")
+            } else {
+                p.to_string()
+            }
+        };
         let listings = vec![
             // On the scanned volume, absolute: kept.
-            summary("vol-main", "/Users/test_user_3"),
+            summary("vol-main", &abs("/Users/test_user_3")),
             // Same path on another local volume: dropped (would resolve against
             // the wrong per-volume DB).
             summary("vol-other", "/Users/test_user_3"),
@@ -118,17 +126,17 @@ mod tests {
             // the absolute-path filter.
             summary("vol-main", "relative/dir"),
             // Needs firmlink normalization.
-            summary("vol-main", "/tmp/scratch"),
+            summary("vol-main", &abs("/tmp/scratch")),
             // Duplicate of the first (two panes on the same dir): deduped.
-            summary("vol-main", "/Users/test_user_3"),
+            summary("vol-main", &abs("/Users/test_user_3")),
         ];
 
         let hot = collect_hot_paths(&listings, "vol-main");
 
         // First-seen order preserved; the /tmp entry normalized; duplicate gone;
         // every other-volume / virtual / relative entry filtered out.
-        let expected_tmp = firmlinks::normalize_path("/tmp/scratch");
-        assert_eq!(hot, vec!["/Users/test_user_3".to_string(), expected_tmp]);
+        let expected_tmp = firmlinks::normalize_path(&abs("/tmp/scratch"));
+        assert_eq!(hot, vec![abs("/Users/test_user_3"), expected_tmp]);
     }
 
     #[test]

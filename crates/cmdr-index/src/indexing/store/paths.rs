@@ -90,7 +90,9 @@ pub(super) fn reconstruct_path(conn: &Connection, entry_id: i64) -> Result<Strin
     }
 
     components.reverse();
-    Ok(format!("/{}", components.join("/")))
+    Ok(crate::indexing::paths::path_prefix::rooted(
+        components.iter().map(String::as_str),
+    ))
 }
 
 /// Resolve a path string to an entry ID by walking component-by-component from
@@ -162,5 +164,5 @@ pub(super) fn reconstruct_path_from_map(entry_id: i64, map: &std::collections::H
     }
 
     components.reverse();
-    format!("/{}", components.join("/"))
+    crate::indexing::paths::path_prefix::rooted(components)
 }

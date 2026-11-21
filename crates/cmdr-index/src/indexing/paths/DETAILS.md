@@ -199,7 +199,29 @@ and `Path::file_name` split on one).
 - **Child, folder + listed name**: `network_scanner::child_of`, the app path's own join. A name that isn't one plain
   name (`..`, empty, `a/b`) gives `None`, and the folder is indexed as a row, never descended: the reconcile walk used
   to ask the volume to list `dir/..`.
-- **Stored text → local walker**: `local_path`, `Path::new` over text the local pipeline spelled from the OS's own
-  names. The local scanner, reconciler, and watcher stay native inside; their native → stored-text edge
-  (`to_string_lossy`, about 100 sites) is what's left for Windows, where it spells `D:\x` where the index wants `D:/x`
-  (#1232).
+- **Stored text → local walker**: `local_path`, `Path::new` over text the local pipeline spelled from the OS's own names
+  (Windows opens `D:/x` as it opens `D:\x`). The local scanner, reconciler, watcher, and phase machine stay native
+  inside.
+- **Native → stored text, the local pipeline's way up**: `native_text` for a path (a walked child, a watcher event, a
+  scan or rescan root, a path set's key), `native_name` for a walked child's name. ❌ Never `to_string_lossy` on a path
+  headed for index text: on Windows it spells `D:\x`, which no root, strip, or `resolve_path` (all splitting on `/`)
+  reads, so rows landed as `D:\src\…` names or not at all (#1232). `native_text` crosses through
+  `AppPathBuf::from_native_unicode` (`D:\x` → `D:/x`, `\\?\D:\x` → `D:/x`).
+  - **Byte-exact on macOS and Linux, and free**: the native text of a Unicode path IS its app text, so it's borrowed as
+    is, with no allocation, and a non-canonical shape (a trailing `/`, `//`) stays as spelled, as the index always
+    stored it. On Windows a path already spelled with `/` is borrowed too; a `\` one allocates its respelling. The
+    escape check is one byte scan for `0xF4` (every escape code point sits in plane 16). Verified on macOS 27
+    (2026-11-21, a throwaway harness against `to_string_lossy`): 2,000,000 generated paths (NFC and NFD, `\`, `:`,
+    invalid bytes, literal escape code points, `//`, a trailing `/`) and 1,713,933 names, 0 differ; 3,011,023 real paths
+    under a home folder and Dropbox (539 non-ASCII, 329 NFD), 0 differ, every one borrowed. Folded names are computed
+    from those same bytes, so they match too.
+  - **A name the app path can't hold yet** (not Unicode text, or a literal escape-range code point, while
+    `cmdr_fs::app_path::ESCAPES_LIVE` is false) keeps today's lossy row and is COUNTED (`names_kept_lossy`, logged once
+    and at each walk's end), ❌ never dropped. Milestone 10f swaps in `from_native`, which escapes it, and the row's
+    name changes once (one remove, one add, then convergence).
+- **Text put back together from names**: `path_prefix::rooted`, the one join every helper that rebuilds a path uses
+  (`store`'s `reconstruct_path`, `capped_prefix`, `deepest_common_ancestor`), and `compute_parent_path` and
+  `self_and_ancestors` stop at the same root. On Windows a first name that is a drive (`D:`) roots the text at `D:/`, so
+  a row chain `D:` → `src` reads back `D:/src`, never `/D:/src`, and an ancestor chain ends at `D:/`. Gated on
+  `PathFlavor::HOST`: on macOS and Linux a top-level folder named `D:` is a folder, and every answer is byte for byte
+  what it was.

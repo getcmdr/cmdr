@@ -392,7 +392,7 @@ impl Drive {
             volume_id,
             std::sync::Arc::new(
                 cmdr_fs::volume::InMemoryVolume::new("Phased")
-                    .with_root(tree.path())
+                    .with_root(native_text(tree.path()).into_owned())
                     .with_local_fs_access(),
             ),
         );
