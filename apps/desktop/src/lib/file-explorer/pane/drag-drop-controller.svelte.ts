@@ -1,11 +1,11 @@
 import {
   onDragImageSize,
+  getHomeFolder,
   onDragModifiers,
   setSelfDragResolvedOperation,
   type UnlistenFn,
 } from '#lib/tauri-commands/index.js'
 import { getCurrentWebview } from '@tauri-apps/api/webview'
-import { homeDir } from '@tauri-apps/api/path'
 import { toCanonical } from '#lib/path/canonical.js'
 import { toViewportPosition } from '../drag/drag-position'
 import {
@@ -74,7 +74,7 @@ export interface DragDropControllerDeps {
    * so the controller stays headless-testable; defaults to the real command.
    */
   resolvePathVolume?: (path: string) => Promise<PathVolumeResolution>
-  /** The user's home folder, for a `~` pane path; injected for the same reason. Defaults to Tauri's. */
+  /** The user's home folder, for a `~` pane path; injected for the same reason. Defaults to the backend's app-path spelling (`getHomeFolder`). */
   homeDir?: () => Promise<string>
 }
 
@@ -102,7 +102,7 @@ export function createDragDropController(deps: DragDropControllerDeps) {
   // A pane can sit at `~` (a first run, the Home shortcut), which no volume root matches, so the
   // drop rules compare its spelled-out path. Empty until it lands: `~` stays as is meanwhile.
   let home = ''
-  ;(deps.homeDir ?? homeDir)()
+  ;(deps.homeDir ?? getHomeFolder)()
     .then((dir) => {
       // eslint-disable-next-line cmdr/no-raw-path-arithmetic -- the home folder is never a volume root, so its trailing slash can go
       home = dir.endsWith('/') ? dir.slice(0, -1) : dir

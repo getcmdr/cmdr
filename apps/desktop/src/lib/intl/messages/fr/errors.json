@@ -1969,6 +1969,18 @@
   "@errors.write.folderHoldsUnlistedItems.suggestion": {
     "sourceHash": "b3e259b"
   },
+  "errors.write.cantTellIfSameFile.title": "Il s’agit peut-être du fichier que vous copiez",
+  "@errors.write.cantTellIfSameFile.title": {
+    "sourceHash": "80f2303"
+  },
+  "errors.write.cantTellIfSameFile.message": "Ce disque n’indique pas si {path} est le fichier même que vous copiez, atteint par un autre chemin. Remplacer ce fichier aurait pu faire disparaître votre original, donc Cmdr a arrêté la copie ici et n’a pas touché à ce fichier.",
+  "@errors.write.cantTellIfSameFile.message": {
+    "sourceHash": "358ef5a"
+  },
+  "errors.write.cantTellIfSameFile.suggestion": "Si vous savez qu’il s’agit bien de deux fichiers différents, supprimez celui qui se trouve à destination et relancez la copie. Vous pouvez aussi copier vers un autre dossier ou garder les deux fichiers sous des noms différents.",
+  "@errors.write.cantTellIfSameFile.suggestion": {
+    "sourceHash": "c5c76a7"
+  },
   "errors.write.mountedVolumeInside.title": "Un disque monté fait obstacle",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"

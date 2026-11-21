@@ -111,6 +111,23 @@ const tsBaseConfigs = noTypecheck ? tseslint.configs.strict : tseslint.configs.s
 // (e.g. a Svelte `<Trans>` snippet that ignores its `_children` because a chip
 // replaces the tag's content). Honor the convention everywhere `no-unused-vars`
 // runs.
+/** Tauri folder getters whose native spelling is no app path (see the block that uses it). */
+const nativeFolderGetters = {
+  name: '@tauri-apps/api/path',
+  importNames: [
+    'homeDir',
+    'desktopDir',
+    'documentDir',
+    'downloadDir',
+    'pictureDir',
+    'audioDir',
+    'videoDir',
+    'publicDir',
+  ],
+  message:
+    "These answer the OS's native spelling (`C:\\Users\\…` on Windows), which is no app path. Use `getHomeFolder` from `#lib/tauri-commands` and app-path arithmetic, or a backend command.",
+}
+
 const unusedVarsRule = ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }]
 
 // Shared non-type-aware rules used across TS and Svelte-runes file sections.
@@ -268,6 +285,17 @@ export default tseslint.config(
     },
   },
   {
+    // Tauri's folder getters answer the OS's native spelling (`C:\Users\…` on
+    // Windows), which the frontend's app-path grammar refuses (#1292). A folder the
+    // frontend reasons about comes from the backend as an app path. The ones that only
+    // feed an OS API (`tempDir`, `appLogDir`) stay allowed.
+    files: ['src/**/*.{ts,svelte.ts,svelte}'],
+    ignores: ['src/**/*.test.ts'],
+    rules: {
+      'no-restricted-imports': ['error', { paths: [nativeFolderGetters] }],
+    },
+  },
+  {
     // A registry-backed text setting goes through `SettingTextInput`, which owns
     // store synchronization. Raw fields in sections may only represent transient
     // filters or a specialized workflow explicitly exempted below.
@@ -277,6 +305,7 @@ export default tseslint.config(
         'error',
         {
           paths: [
+            nativeFolderGetters,
             {
               name: '#lib/ui/TextInput.svelte',
               message:

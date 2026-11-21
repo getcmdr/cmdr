@@ -1,8 +1,11 @@
 /** Complete Copy/Move targets and the rename-by-move confirmation. */
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, onTestFinished } from 'vitest'
 import { tick } from 'svelte'
 import type { TransferConfirmPayload } from '#lib/file-explorer/pane/dialog-props.js'
+import { withPlatform } from '#lib/platform/test-platform.js'
 import {
+  getHomeFolderMock,
+  nativeHomeDirMock,
   flushMicrotasks,
   makeConflict,
   mountDialog,
@@ -44,6 +47,32 @@ describe('copy to a filename', () => {
       expect(target.querySelector('#transfer-path-error')).toBeNull()
     },
   )
+})
+
+describe('a `~` target on Windows', () => {
+  // #1292: the dialog expanded `~` against the OS's native `C:\Users\test`, which the app-path
+  // grammar can't read, so every local copy under home said "Filename can't be empty".
+  it.each(['copy', 'move'] as const)('expands from the backend home folder for a %s', async (operationType) => {
+    onTestFinished(withPlatform('windows'))
+    nativeHomeDirMock.mockResolvedValueOnce('C:\\Users\\test')
+    getHomeFolderMock.mockResolvedValueOnce('C:/Users/test')
+    const onConfirm = vi.fn<ConfirmFn>()
+    const target = mountDialog({
+      operationType,
+      sourcePaths: ['C:/Users/test/3D Objects'],
+      sourceFolderPath: 'C:/Users/test',
+      destinationPath: '~/Downloads',
+      onConfirm,
+    })
+    await flushMicrotasks()
+    expect(pathInput(target).value).toBe('~/Downloads/3D Objects')
+    confirmButton(target).click()
+    await flushMicrotasks()
+    expect(target.querySelector('#transfer-path-error')).toBeNull()
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ destination: 'C:/Users/test/Downloads', destinationName: '3D Objects' }),
+    )
+  })
 })
 
 describe('complete single-copy target', () => {

@@ -392,6 +392,25 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   failures were fixed and re-run on `968733ae7f` (see-through Settings and queue, no ring after a lone Alt, focus
   stranded on a title). Per-check evidence and the open problems (a Copy dialog that refuses every local copy first):
   `docs/notes/windows-port/real-windows-check-2026-11-19.md`.
+- **2026-11-21, local copy works on the real desktop** (#1292, #1291, PR #1304; `D:\src\cmdr-m6` with
+  `CARGO_TARGET_DIR=D:\targets\m6`, `CARGO_BUILD_JOBS=2`; a debug `pnpm tauri build --no-bundle` took 28m 41s from a
+  test-profile-warm target, the rebuild after one `cmdr-operations` fix about 12 min). Three blockers, each with a
+  failing test first:
+  - The Copy dialog's "Filename can't be empty": the frontend expanded `~` against Tauri's native `homeDir()`
+    (`C:\Users\Admin`), which the app-path grammar refuses. Now the backend's `getHomeFolder` (an app path).
+  - Every Overwrite onto an existing file skipped silently: no file identity on Windows. Now `FileId::at` reads
+    `FileIdInfo` through a handle. `cargo nextest run -p cmdr-fs -p cmdr-operations`: 172 failures against 200 at the
+    merge base `77d59d3126`; 31 cells green, three newly meet task 35's mount arm
+    (`docs/notes/windows-port/windows-test-failures.md` § "By milestone").
+  - Then every local copy refused with "Source volume 'C:' does not support export": `copy_between_volumes` checked
+    export streams before its both-local shortcut, which never needs them. Now after it.
+  - On the desktop (real mouse and keys from a PowerShell driver, `mouse_event` / `keybd_event`; an elevated Task
+    Manager on top of the desktop meant the driver had to run elevated too): a folder copy `~/w1291-src` → `~/Downloads`
+    landed both files; an Overwrite copy after changing the source landed the new bytes (`SECOND!`, 7 bytes); a
+    destination inside the source refused in the dialog ("Can't copy … into its own subfolder"), and the source's own
+    path too ("… is already in this location"); `~/W1291-SRC`, the source under another case, passed the dialog and the
+    engine's identity read it as the same folder, so it duplicated to `W1291-SRC (1)` with the source untouched (the
+    self-collision rule). Everything the run added is gone; `cmdr-m6` is back on `origin/main`.
 - **2026-11-21, app-path milestones 7 and 8 on the builder** (`main` at `97befe7c07`, the warm pair `D:\src\cmdr-m6` +
   `D:\targets\m6`, 9 min warm for nine crates): 2,095 tests, 6 red where `windows-test-failures.tsv` had 164; per crate
   and per cause in `docs/notes/windows-port/windows-test-failures.md` § "By milestone". Elevated through

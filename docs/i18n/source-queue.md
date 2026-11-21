@@ -237,6 +237,9 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   against the house split `menu.view.showHiddenFiles` has (nl `Toon` vs `tonen`, ru `Показать` vs `Показывать`). Both
   now use the settings form, which KDE's own `Show Menubar` item matches; split them with a reasoned allowlist entry if
   David prefers the menu register. (nl, ru)
+- `errors.write.cantTellIfSameFile.message` is a plain value saying "This drive", but cs, fr, and pt rule a Windows form
+  for drive (`jednotka`, `lecteur`, `unidade`), so Windows readers get the macOS word. Make it per-OS, or accept the
+  macOS word in plain `errors.write.*` values as a family rule. (cs, fr, pt)
 
 ## Process feedback
 
@@ -419,3 +422,7 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   `Localizable.loctable` on the live system. A `pnpm i18n:pile --macos-live` lookup would cover it. Also, `i18n:apply`
   takes one `--lang` and the guard refused shell loops and variables, so 13 locales meant 26 separate calls; the
   per-locale term patches were split out of one `jq` output with `awk`. (all, linksNotSupported batch)
+- A three-key batch for 13 locales: `i18n:apply` still takes one `--lang`, so the guard's loop refusal meant three `&&`
+  chains, and the `es-419` fork's values file sat outside any run directory again. `i18n:check-locale` with every locale
+  and one `--keys-file` worked in a single call. The brief's "No concept yet" words (say, reached, left, keep) were
+  plain prose verbs, so the pile wasn't mined for them. No script written. (all, cantTellIfSameFile batch)

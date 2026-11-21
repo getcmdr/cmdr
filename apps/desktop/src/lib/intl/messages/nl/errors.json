@@ -1969,6 +1969,18 @@
   "@errors.write.folderHoldsUnlistedItems.suggestion": {
     "sourceHash": "b3e259b"
   },
+  "errors.write.cantTellIfSameFile.title": "Dit is misschien het bestand dat je kopieert",
+  "@errors.write.cantTellIfSameFile.title": {
+    "sourceHash": "80f2303"
+  },
+  "errors.write.cantTellIfSameFile.message": "Deze schijf laat niet weten of {path} precies het bestand is dat je kopieert, alleen via een andere weg bereikt. Bij vervangen had je je origineel kwijt kunnen raken, dus Cmdr is hier gestopt met kopiëren en heeft dat bestand gelaten zoals het was.",
+  "@errors.write.cantTellIfSameFile.message": {
+    "sourceHash": "358ef5a"
+  },
+  "errors.write.cantTellIfSameFile.suggestion": "Weet je zeker dat het twee verschillende bestanden zijn? Verwijder dan het bestand op de bestemming en kopieer opnieuw. Of kopieer naar een andere map, of houd beide bestanden onder verschillende namen.",
+  "@errors.write.cantTellIfSameFile.suggestion": {
+    "sourceHash": "c5c76a7"
+  },
   "errors.write.mountedVolumeInside.title": "Een gekoppelde schijf staat in de weg",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"

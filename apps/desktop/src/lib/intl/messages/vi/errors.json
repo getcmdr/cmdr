@@ -1969,6 +1969,18 @@
   "@errors.write.folderHoldsUnlistedItems.suggestion": {
     "sourceHash": "b3e259b"
   },
+  "errors.write.cantTellIfSameFile.title": "Đây có thể chính là tệp bạn đang sao chép",
+  "@errors.write.cantTellIfSameFile.title": {
+    "sourceHash": "80f2303"
+  },
+  "errors.write.cantTellIfSameFile.message": "Ổ đĩa này không cho biết {path} có phải chính là tệp bạn đang sao chép hay không, chỉ là được truy cập theo một đường khác. Nếu thay thế, bản gốc của bạn có thể đã bị xóa mất, nên Cmdr đã dừng sao chép tại đây và để nguyên tệp đó.",
+  "@errors.write.cantTellIfSameFile.message": {
+    "sourceHash": "358ef5a"
+  },
+  "errors.write.cantTellIfSameFile.suggestion": "Nếu bạn chắc chắn đó là hai tệp khác nhau, hãy xóa tệp ở đích rồi sao chép lại. Hoặc sao chép vào một thư mục khác, hoặc giữ cả hai tệp với tên khác nhau.",
+  "@errors.write.cantTellIfSameFile.suggestion": {
+    "sourceHash": "c5c76a7"
+  },
   "errors.write.mountedVolumeInside.title": "Một ổ đĩa đã gắn kết đang chắn đường",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"

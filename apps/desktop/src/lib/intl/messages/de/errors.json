@@ -1969,6 +1969,18 @@
   "@errors.write.folderHoldsUnlistedItems.suggestion": {
     "sourceHash": "b3e259b"
   },
+  "errors.write.cantTellIfSameFile.title": "Das könnte die Datei sein, die du gerade kopierst",
+  "@errors.write.cantTellIfSameFile.title": {
+    "sourceHash": "80f2303"
+  },
+  "errors.write.cantTellIfSameFile.message": "Dieses Laufwerk verrät nicht, ob {path} genau die Datei ist, die du kopierst, nur über einen anderen Weg erreicht. Beim Ersetzen hätte dein Original gelöscht werden können, deshalb hat Cmdr den Kopiervorgang hier gestoppt und die Datei so gelassen, wie sie war.",
+  "@errors.write.cantTellIfSameFile.message": {
+    "sourceHash": "358ef5a"
+  },
+  "errors.write.cantTellIfSameFile.suggestion": "Wenn du sicher bist, dass es zwei verschiedene Dateien sind, lösche die Datei am Ziel und kopiere erneut. Du kannst auch in einen anderen Ordner kopieren oder beide Dateien unter verschiedenen Namen behalten.",
+  "@errors.write.cantTellIfSameFile.suggestion": {
+    "sourceHash": "c5c76a7"
+  },
   "errors.write.mountedVolumeInside.title": "Ein eingebundenes Laufwerk ist im Weg",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"

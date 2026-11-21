@@ -8,6 +8,9 @@ commands, and notable non-obvious placements.
 - **`ipc-types.ts`**: `TimedOut<T>` and `throwIpcError()`. ❌ No generic IPC error type: each command family ships its
   own typed enum, and a refusal a person reads crosses the throw as a `TypedFailure` (`#lib/ipc/typed-failure.ts`).
 - **`index.ts`**: barrel re-export of everything below.
+- **`home-folder.ts`**: `getHomeFolder`, the home folder as an app path, asked once and shared. Its own module so
+  `src/test-setup.ts` stands one in for every suite. ❌ Never Tauri's `homeDir()`: its native `C:\Users\…` is no app
+  path on Windows (#1292).
 - **`file-listing.ts`**: virtual-scroll listing API, the revision-checked selection reads `getSelectionSnapshot` (atomic
   selected paths and counts) and `getSelectionEntries` (full entries, for delete), the only way a selection's row
   numbers reach the backend (pane protocol in `../file-explorer/pane/DETAILS.md` § Compare directories), `getFileBeside`

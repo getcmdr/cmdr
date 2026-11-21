@@ -423,7 +423,6 @@ export const TAURI_API_CALLS: Readonly<Record<string, readonly string[]>> = {
   'api/event#emitTo': ['plugin:event|emit_to'],
   'api/app#getVersion': ['plugin:app|version'],
   'api/app#setTheme': [SET_APP_THEME],
-  'api/path#homeDir': ['plugin:path|resolve_directory'],
   'api/path#tempDir': ['plugin:path|resolve_directory'],
   'api/path#appLogDir': ['plugin:path|resolve_directory'],
   'api/path#join': ['plugin:path|join'],

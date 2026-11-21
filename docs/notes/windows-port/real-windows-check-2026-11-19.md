@@ -108,13 +108,18 @@ Task 34 leftovers:
    (`apps/desktop/src/lib/file-operations/transfer/transfer-dialog-utils.ts`) answering `null` on Windows, which the
    dialog words as an empty name: `~/` expands through `joinPath` onto the home path, and `splitNormalizedPath`'s
    `parsePath` may not read the result (a native home, or a mixed `C:/…` spelling). Not chased; local copy doesn't land
-   on Windows yet anyway (#1225), but the message is also wrong for a `null` answer.
+   on Windows yet anyway (#1225), but the message is also wrong for a `null` answer. Fixed (2026-11-21, #1292, PR
+   #1304): the native home was the cause. The dialog read Tauri's `homeDir()` (`C:\Users\Admin`), so `~/Downloads/…`
+   expanded to a path holding a `\`, which the app-path grammar refuses; it now reads the backend's `getHomeFolder`
+   (`C:/Users/Admin`), as do the pane's breadcrumb `~` and the drop rules, which had the same bug.
 2. **Low: Settings is slow to appear under load**: on `a394bbdcfc`, with another agent's build on both cores, Ctrl+,
    took more than 3.5 s to show Settings, and the main window went "Not responding" (a ghost window) for a few seconds
-   the first time; Alt+F4 then took over 5 s to exit. Not seen on `4314b3cf1f` under a similar load; not attributed.
+   the first time; Alt+F4 then took over 5 s to exit. Not seen on `4314b3cf1f` under a similar load; not attributed. Now
+   #1307.
 3. **Low: path bar spelling**: the drive root shows no segment, and `~`-paths keep `/` (task 34 leftovers).
 4. **Low: the Copy dialog offers "Skip Mac-only hidden files (.DS_Store, .\_\*)" on a Windows-to-Windows copy** (`77`).
+   Now #1305: a Mac-made stick or share carries those files on Windows too, so it needs a decision.
 5. **Low: the Tauri MCP bridge connects but runs nothing on Windows** ("WebView execution failed" for `execute_js` and
-   `manage_window list`), so agents can't read DOM state there.
+   `manage_window list`), so agents can't read DOM state there. Now #1306.
 6. **Untested**: AltGr typing (needs a layout with AltGr), dark mode, Segoe UI Variable (Windows 11), an audible beep,
    Tab in a non-empty queue.

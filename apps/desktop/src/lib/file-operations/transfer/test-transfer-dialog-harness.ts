@@ -66,12 +66,18 @@ export const destinationRootEchoMock = vi.fn<
   (payload: { volumeId: string; path: string }) => Promise<RootEchoAnswer | null>
 >(() => Promise.resolve(null))
 
-// Home dir resolution for the long-form display of a bare `~` destination.
+// The home folder a `~` destination expands against, as the backend spells it (an app path).
+export const getHomeFolderMock = vi.fn<() => Promise<string>>(() => Promise.resolve('/Users/test'))
+
+// The OS's own home spelling, which the dialog must not read: on Windows it's `C:\Users\…`,
+// no app path, and every `~/…` target came back unnamed (#1292).
+export const nativeHomeDirMock = vi.fn<() => Promise<string>>(() => Promise.resolve('/Users/test'))
 vi.mock('@tauri-apps/api/path', () => ({
-  homeDir: () => Promise.resolve('/Users/test'),
+  homeDir: () => nativeHomeDirMock(),
 }))
 
 vi.mock('#lib/tauri-commands/index.js', () => ({
+  getHomeFolder: () => getHomeFolderMock(),
   // The destination's name rules never answer here: the dialog keeps POSIX's.
   getNameRules: vi.fn(() => new Promise(() => {})),
   estimateOperationCost: vi.fn(() => Promise.resolve([])),

@@ -176,14 +176,6 @@ impl crate::Operations {
         initiator: cmdr_operation_log::types::Initiator,
         expected_sources: Option<ExpectedSources>,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
-        // Validate that volumes support the required operations
-        if !source_volume.supports_export() {
-            return Err(WriteOperationError::IoError {
-                path: source_volume.root().as_std_legacy().display().to_string(),
-                message: format!("Source volume '{}' does not support export", source_volume.name()).into(),
-            });
-        }
-
         // Optimization: If both volumes are local filesystem paths, use the battle-tested
         // copy.rs implementation which has proper cancellation support via macOS copyfile API.
         #[cfg(not(target_family = "wasm"))]
@@ -258,6 +250,17 @@ impl crate::Operations {
                     Some(sides),
                 )
                 .await;
+        }
+
+        // Only the streaming engine below reads the source through its `Volume`
+        // streams; the native shortcut above reads the disk itself, so it never
+        // asks. Windows' local volume has no export streams yet, and checking
+        // first refused every local copy there.
+        if !source_volume.supports_export() {
+            return Err(WriteOperationError::IoError {
+                path: source_volume.root().as_std_legacy().display().to_string(),
+                message: format!("Source volume '{}' does not support export", source_volume.name()).into(),
+            });
         }
 
         let operation_id = OperationId::from(cmdr_operation_log::new_operation_id());
@@ -1373,6 +1376,9 @@ mod landing_race_tests;
 #[cfg(test)]
 #[path = "merge_placeholder_tests.rs"]
 mod merge_placeholder_tests;
+#[cfg(test)]
+#[path = "copy_native_delegation_tests.rs"]
+mod native_delegation_tests;
 #[cfg(test)]
 #[path = "copy_outage_tests.rs"]
 mod outage_tests;
