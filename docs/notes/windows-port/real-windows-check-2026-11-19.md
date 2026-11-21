@@ -123,3 +123,35 @@ Task 34 leftovers:
    `manage_window list`), so agents can't read DOM state there. Now #1306.
 6. **Untested**: AltGr typing (needs a layout with AltGr), dark mode, Segoe UI Variable (Windows 11), an audible beep,
    Tab in a non-empty queue.
+7. **High: a move within one drive refuses before it starts** (found 2026-11-21 with task 35's mount table, a debug
+   build of `f07ceab5d4`): the Move dialog hands the same-root local move (`transfer-dispatch.ts` → `moveFiles` →
+   `commands/file_system/write_ops.rs::move_files`) its destination volume-relative, and nothing anchors it at the root
+   volume's `C:/`, so the engine refuses it. The log:
+   `move_files_start: sources=["C:/Users/Admin/w35/src/same-drive"], destination="/Users/Admin/w35/dst"`, then
+   `failed: {"type":"io_error",…,"message":"a path shaped for another OS"}`. Copy and a move onto another drive carry
+   their volume ids (`copyBetweenVolumes`, `moveBetweenVolumes`), whose paths the backend anchors, so they land. On
+   macOS the root is `/`, so the two spellings coincide. Fix in flight (#1225): `move_files` anchors its destination at
+   the root volume's root, like the copy path.
+
+## Task 35's mount table on the desktop (2026-11-21)
+
+A debug `pnpm tauri build --debug --no-bundle` of `f07ceab5d4` in `D:\src\cmdr-m6` (`CARGO_TARGET_DIR=D:\targets\m6`,
+13m 18s warm), started through `run-on-desktop.sh` with its own `CMDR_DATA_DIR`, and driven by Cmdr's own MCP server
+(`CMDR_MCP_PORT`, a pinned `CMDR_MCP_TOKEN`, `CMDR_MCP_DIRECT_MODE=1` so `dialog_confirm` runs) over `ssh -L` with
+`scripts/mcp-call.sh`: `nav_to_path`, `select_volume`, `select`, `move` / `copy`, `dialog_confirm`, `resolve_conflict`,
+and `cmdr://state`. Fixtures under `C:\Users\Admin\w35` and `D:\w35-dst`, removed after.
+
+- Blocked: a folder move within `C:` (problem 7 above). The engine half (a same-drive move renames, the file id kept) is
+  the suite's: the `move_op::tests::a_same_fs_*` and `journal_capture_tests::*same_fs*` cells turned green
+  (`windows-test-failures.md` § "By milestone", task 35).
+- Pass: a folder move from `C:` to `D:` (`cross-drive` with a subfolder): staged under `D:\w35-dst\.cmdr-staging-…`,
+  landed whole with both files' bytes, the source folder gone from `C:`, no staging or temp left.
+- Pass: Overwrite a folder with a file: copying the file `report` onto the folder `report` (holding `old.txt`) asked per
+  clash; answered Overwrite, the folder gave way to the 19-byte file, nothing else left (`Get-ChildItem -Force`).
+- Pass: a folder onto a same-named folder with Overwrite all merges: `photos\p.txt` reads `NEW`.
+- Not one `MountedVolumeInside` in the app's log. Not testable here: the refusal on a real folder mount (making one is a
+  `mountvol` system change, not done); the mount-table cells and the Win32 probes in
+  `crates/cmdr-local/src/mounts/platform/windows.rs` cover it.
+- Seen, not chased: `nav_to_path` to `D:/w35-dst` from a `C:` pane timed out its 2 s existence check (with the index
+  walking `C:` on both cores); `select_volume` first, then `nav_to_path`, landed. A pending clash spells its destination
+  `C:/Users/Admin/w35/ow-dst\report` (#1225's mixed separators).

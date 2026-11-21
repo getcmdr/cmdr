@@ -582,7 +582,14 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     PATH (2026-11-21, #1291, PR #1304): `cmdr_fs::file_identity::FileId::at` / `same_node_at` open a handle and read
     `FileIdInfo` (`file_identity/platform/windows.rs`), which the copy's same-file guards and the source binding ask;
     the `Metadata` readers (`device_of`, `link_count`, walk dedup, the journal's `NodeIdentity`) still answer `None` and
-    move over as each consumer needs it. Bugs it owns: the six `cmdr-operations` cells that fail on Windows on `main`
+    move over as each consumer needs it. The mount table is real (2026-11-21, `cmdr_local::mounts`' Windows arm): drive
+    letters and folder mounts, "is this a mount point" by `GetVolumeNameForVolumeMountPointW` (a junction is none), the
+    app's drive list reading the same table; and the device reads by path (`file_identity::device_at`, the volume
+    serial), so a same-drive move renames. So a move and a folder Overwrite are refused as `MountedVolumeInside` only
+    over a real mount; on the desktop a move onto another drive and a folder Overwrite land (unverified on a real folder
+    mount, which would take a `mountvol` change). Left of the mount half: the ledger's and journal's node identity from
+    `Metadata` (the ledger records `Unverifiable` on Windows), and the app's `live_volume_space`, `mount_identity_at`,
+    and `network_mount_under` arms. Bugs it owns: the six `cmdr-operations` cells that fail on Windows on `main`
     (`docs/notes/windows-port/windows-test-failures.md` § "By milestone", item 9). ❗ The engine's Windows `symlink`
     (`cmdr-operations/src/local_disk/platform/windows.rs`) is a stub that always refuses, so no link lands on Windows
     until this task makes links real.
@@ -615,10 +622,10 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     open the way `FlushFileBuffers` needs (`cmdr_fs::durable::{open_to_sync, open_dir_to_sync}`). A copy takes the
     chunked loop. A local copy lands on the real desktop, Overwrite included (2026-11-21, PR #1304,
     `docs/notes/windows-port/build-progress.md`). Left, in data-safety order: the rest of the local engine's app paths
-    (#1225, `docs/specs/app-path-plan.md` milestone 10a), a mount table so a folder delete, move, or folder Overwrite
-    isn't refused as a mount (task 35's mount arm), the rest of the `Unknown`-identity rule above, the `CopyFileExW`
-    arm, the Recycle Bin, read-only as Locked, and sharing violations as a typed refusal. Stubs: § "Windows build
-    state".
+    (#1225, `docs/specs/app-path-plan.md` milestone 10a; a same-drive move's destination reaches `move_files`
+    unanchored, `docs/notes/windows-port/real-windows-check-2026-11-19.md` problem 7), the rest of the
+    `Unknown`-identity rule above, the `CopyFileExW` arm, the Recycle Bin, read-only as Locked, and sharing violations
+    as a typed refusal. Stubs: § "Windows build state".
 
 37. [S] Windows. Cloud Files placeholders (OneDrive and friends: sync badges, cloud trash) and Mark of the Web on
     extract (`cmdr-operations` + `cmdr-archive`). Needs 36.
