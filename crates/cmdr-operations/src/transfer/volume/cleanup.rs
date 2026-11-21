@@ -27,6 +27,7 @@ use super::super::super::types::{
 use super::super::super::unblocked_removal::{NodeKind, RemovalRefused, delete_clearing_blockers};
 use super::super::leftover_cleanup::{LeftBehind, finish_in_background};
 use super::super::recovered_name::KeptNewData;
+use super::landing::{ListedName, std_of};
 use super::transfer_error::{PathRole, PathedVolumeError, failed_native};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
@@ -393,7 +394,8 @@ pub(super) async fn reap_stale_transfer_temps(
     volume: &Arc<dyn Volume>,
     dir: &Path,
 ) -> Option<Vec<FileEntry>> {
-    let entries = match volume.list_directory(&AppPath::legacy_unchecked(dir), None).await {
+    let dir_app = AppPath::legacy_unchecked(dir);
+    let entries = match volume.list_directory(&dir_app, None).await {
         Ok(entries) => entries,
         Err(e) => {
             log::debug!(target: "copy", "skipping stale-temp reap of {}: {e}", LogPrivate::dir_path(dir), e = LogError(&e));
@@ -423,26 +425,37 @@ pub(super) async fn reap_stale_transfer_temps(
                 .is_some_and(|modified| now_secs.saturating_sub(modified) >= min_age_secs);
         // ❗ A listed name is the server's word: one that isn't one plain name
         // (`<temp>/../../x`) joins onto a path outside `dir`, so it's never reaped.
-        let is_one_name = AppName::from_app_spelling(&entry.name).is_ok();
-        if is_stale_temp && !is_one_name {
+        // It joins as a listed name (the typed join): `Path::join` put a `\` between
+        // a remote folder and the name on Windows, so a real temp was never reaped.
+        let temp_app = match AppName::from_app_spelling(&entry.name) {
+            Ok(_) => ListedName::new(&entry.name)
+                .ok()
+                .and_then(|name| name.under(&dir_app).ok()),
+            Err(_) => None,
+        };
+        if is_stale_temp && temp_app.is_none() {
             log::debug!(
                 target: "copy",
                 "reap_stale_transfer_temps: leaving a listed temp that isn't one plain name: {}",
                 LogPrivate::name(&entry.name)
             );
         }
-        let temp_path = dir.join(&entry.name);
-        if !is_stale_temp || !is_one_name || recorded_by_the_ledger(&temp_path) {
+        let Some(temp_app) = temp_app.filter(|_| is_stale_temp) else {
+            survivors.push(entry);
+            continue;
+        };
+        let temp_path = std_of(&temp_app);
+        if recorded_by_the_ledger(&temp_path) {
             survivors.push(entry);
             continue;
         }
         log::info!(
             target: "copy",
             "reap_stale_transfer_temps: removing a transfer partial left by an earlier run: {}",
-            LogPrivate::file_path(&temp_path)
+            LogPrivate::file_path(&*temp_path)
         );
-        if let Err(e) = volume.delete(&AppPath::legacy_unchecked(&temp_path)).await {
-            log::debug!(target: "copy", "couldn't reap stale temp {}: {e}", LogPrivate::file_path(&temp_path), e = LogError(&e));
+        if let Err(e) = volume.delete(&temp_app).await {
+            log::debug!(target: "copy", "couldn't reap stale temp {}: {e}", LogPrivate::file_path(&*temp_path), e = LogError(&e));
         }
     }
     Some(survivors)

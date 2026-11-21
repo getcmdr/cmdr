@@ -53,7 +53,7 @@ use super::super::state::WriteOperationState;
 use super::super::transfer::StagedWrite;
 use super::super::transfer::retry::after_a_cut_off_landing_wait;
 use super::super::transfer::staged_write::{LandingError, LandingSource, Resumed};
-use super::super::transfer::volume::PathRole;
+use super::super::transfer::volume::{ListedName, PathRole};
 use super::super::transfer::volume_outage::{OutageEnd, StartedOn, lost_connection, wait_after_failure};
 use super::super::types::WriteOperationError;
 use super::edit_error::EditError;
@@ -461,7 +461,8 @@ async fn reap_remote_temps(
     // The mint's own prefix, so a temp shortened to fit is matched too.
     let prefix = temp_sibling_prefix(&file_name.to_string_lossy());
 
-    let entries = match parent.list_directory(&AppPath::legacy_unchecked(dir), None).await {
+    let dir_app = AppPath::legacy_unchecked(dir);
+    let entries = match parent.list_directory(&dir_app, None).await {
         Ok(entries) => entries,
         Err(err) => {
             log::debug!(target: "archive_remote_edit", "skipping remote temp reap ({}): {err}", LogPrivate::dir_path(dir), err = LogError(&err));
@@ -481,21 +482,29 @@ async fn reap_remote_temps(
         }
         // ❗ A listed name is the server's word: one that isn't one plain name
         // (`<temp>/../../x`) joins onto a path outside `dir`, so it's never reaped.
-        if AppName::from_app_spelling(&entry.name).is_err() {
+        // It joins as a listed name (the typed join): `Path::join` put a `\` between
+        // the remote folder and the name on Windows, so a real temp was never reaped.
+        let temp_app = match AppName::from_app_spelling(&entry.name) {
+            Ok(_) => ListedName::new(&entry.name)
+                .ok()
+                .and_then(|name| name.under(&dir_app).ok()),
+            Err(_) => None,
+        };
+        let Some(temp_app) = temp_app else {
             log::debug!(target: "archive_remote_edit", "leaving a listed temp that isn't one plain name: {}", LogPrivate::name(&entry.name));
             continue;
-        }
+        };
         // Spare anything without a confirmably-old mtime: an unknown mtime, or one
         // younger than the threshold (a possible live upload), is left alone.
         let old_enough = entry
             .modified_at
             .is_some_and(|modified| now_secs.saturating_sub(modified) >= min_age_secs);
-        let temp_path = dir.join(&entry.name);
+        let temp_path = temp_app.as_std_legacy();
         if !old_enough || in_flight_temps::is_recorded_on(state, parent_volume_id, parent.root(), &temp_path) {
             continue;
         }
-        if let Err(err) = parent.delete(&AppPath::legacy_unchecked(&temp_path)).await {
-            log::debug!(target: "archive_remote_edit", "couldn't reap remote temp {}: {err}", LogPrivate::file_path(&temp_path), err = LogError(&err));
+        if let Err(err) = parent.delete(&temp_app).await {
+            log::debug!(target: "archive_remote_edit", "couldn't reap remote temp {}: {err}", LogPrivate::file_path(&*temp_path), err = LogError(&err));
         }
     }
 }
