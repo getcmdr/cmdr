@@ -27,7 +27,7 @@ use super::super::super::types::{
 use super::super::super::unblocked_removal::{NodeKind, RemovalRefused, delete_clearing_blockers};
 use super::super::leftover_cleanup::{LeftBehind, finish_in_background};
 use super::super::recovered_name::KeptNewData;
-use super::landing::{ListedName, std_of};
+use super::listed_name::{ListedName, std_of};
 use super::transfer_error::{PathRole, PathedVolumeError, failed_native};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;

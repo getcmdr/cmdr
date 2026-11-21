@@ -132,7 +132,12 @@ records as skipped with `reason` and ❌ never acts on (no pause, pace, or deepe
   local disk is the host's, SMB units, the rest bytes), asked only for literal text holding an escape-range code point:
   every other text spells the same through either namer, so a row on a volume nobody registered reads exactly as it did.
   An unknown volume for text that needs one is the planner's "can't tell", `SkipReason::Failed` (the verdict an
-  unregistered volume gets at the act), ❌ never a guessed namer.
+  unregistered volume gets at the act), ❌ never a guessed namer. While escapes aren't live a wrong namer changes
+  nothing that matters: no backend decodes an escape yet (#1310), so a literal escape-range row reaches the server as
+  escape text and answers `NotFound` through either alphabet. ❗ Before 10f flips `ESCAPES_LIVE`, the namer must equal
+  the alphabet each backend's own decoder uses, decided per VOLUME: by kind it's wrong for a 7z archive (UTF-16 names
+  inside an `Archive` volume, whose zip and tar siblings are bytes) and possibly MTP (PTP strings are UTF-16), so
+  `Volume` should answer it beside `backend_kind`.
 - **On Windows a row reads by its own shape** (`StoredPathReading::app_path_as`, which a cell runs under either host's
   rules). A drive or UNC row reads `\` as a separator, as Win32 did when the engine acted: `local_split` stores
   `to_string_lossy` of a `PathBuf` that `Path::join` built, so every row below a copied folder's top holds one

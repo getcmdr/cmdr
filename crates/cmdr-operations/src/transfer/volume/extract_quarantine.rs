@@ -42,7 +42,7 @@ use cmdr_fs::metadata::{CarriedMetadata, MetadataClasses, Xattr};
 use cmdr_fs::volume::ScanStop;
 
 use super::super::super::state::WriteOperationState;
-use super::landing::std_of;
+use super::listed_name::std_of;
 use cmdr_fs::volume::{StreamLength, Volume, VolumeError, VolumeReadStream};
 
 /// Wraps `stream` so its xattrs carry the archive's quarantine, when

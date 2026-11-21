@@ -41,7 +41,8 @@ use super::super::transfer_probe::{CURRENT_TASK_PROBE, TaskPhase, TaskProbeHandl
 use super::super::volume_outage::through_outages;
 use super::conflict::{ResolvedConflict, resolve_volume_conflict};
 use super::folder_metadata::{FolderMetadata, SourceFolderDates};
-use super::landing::{DestFolder, ListedName, NewName, into_std, on_volume, std_of, where_it_lands};
+use super::landing::{DestFolder, NewName, where_it_lands};
+use super::listed_name::{ListedName, into_std, on_volume, std_of};
 use super::merge_ctx::{CreatedPaths, FileWindow, MergeCtx, MergeProbe};
 use super::naming::take_back_reservation;
 use super::preflight::SourceFileFacts;
@@ -656,7 +657,7 @@ pub(super) async fn copy_directory_streaming(
         merge.and_then(|ctx| ctx.probe.clone()),
     );
     // The walk holds its destination as an app path from here down, every
-    // child joined typed (`landing.rs::ListedName`).
+    // child joined typed (`listed_name.rs::ListedName`).
     let walked = merge_level(
         source_volume,
         source_path,

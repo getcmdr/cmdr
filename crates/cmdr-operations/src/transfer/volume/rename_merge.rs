@@ -67,7 +67,7 @@ use super::super::super::types::{RecoveredOriginal, VolumeCopyConfig, WriteOpera
 use super::super::dest_name_index::{DestLookup, DestNameIndex};
 use super::conflict::{ResolvedConflict, resolve_volume_conflict};
 use super::displaced_destination::{DisplacedDestination, displace_destination};
-use super::landing::{ListedName, on_volume, std_of};
+use super::listed_name::{ListedName, on_volume, std_of};
 use super::strategy::Replaces;
 use super::transfer_error::{PathRole, map_volume_error};
 use cmdr_fs::entry::FileEntry;

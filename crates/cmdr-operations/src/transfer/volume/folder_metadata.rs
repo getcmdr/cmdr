@@ -37,7 +37,7 @@ use cmdr_fs::metadata::{CarriedMetadata, ClassOutcome, MetadataClasses};
 use super::super::super::metadata_losses::FolderLosses;
 use super::super::super::state::WriteOperationState;
 use super::super::volume_outage::{OutageEnd, StartedOn, wait_after_shortfall};
-use super::landing::std_of;
+use super::listed_name::std_of;
 use cmdr_fs::volume::Volume;
 
 /// A source folder's own dates (Unix seconds), as the listing entry or the

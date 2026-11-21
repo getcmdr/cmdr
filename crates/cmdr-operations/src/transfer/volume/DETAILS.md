@@ -812,8 +812,8 @@ which the backend resolves the way it will resolve the write.
 
 A source listing comes from whoever answers it: an SMB, SFTP, WebDAV, or S3 server, an MTP or ADB device, an archive. A
 hostile one can list `../x` or `/x`, and `dest_dir.join(name)` would then write outside the folder the user dropped
-onto. So a listed name reaches a destination path ONLY as a `landing.rs::ListedName`, proven to be one plain name (not
-empty, `.`, or `..`, no `/`, no NUL) and joined by the app path's own join (`cmdr_fs::app_path::ListedFolder`). A
+onto. So a listed name reaches a destination path ONLY as a `listed_name.rs::ListedName`, proven to be one plain name
+(not empty, `.`, or `..`, no `/`, no NUL) and joined by the app path's own join (`cmdr_fs::app_path::ListedFolder`). A
 refusal is the typed `VolumeError::InvalidName`, which fails that item the way any unusable name does.
 
 - `landing.rs::where_it_lands` takes a `ListedName` and the folder as an `&AppPath`, and answers an app path, so the
@@ -825,8 +825,11 @@ refusal is the typed `VolumeError::InvalidName`, which fails that item the way a
   text read with escapes not live (`AppName::from_listed_text`: a literal escape-range code point is spelled the way the
   bridge spells it inside a joined `Path`), and `ListedFolder` joins it. A bridge folder folds to its canonical place
   (`//`, `/./`, a leading `//` on macOS and Linux), the same file. The walk's crossings back to `std::path` for the
-  bodies that still take it are `landing.rs`'s `on_volume`, `std_of`, and `into_std` (the join's own buffer, no copy,
-  when the two spellings are one). Evidence: `docs/specs/app-path-plan.md` § 10a, third pass.
+  bodies that still take it are `listed_name.rs`'s `on_volume`, `std_of`, and `into_std` (the join's own buffer, no
+  copy, when the two spellings are one). Evidence: `docs/specs/app-path-plan.md` § 10a, third pass.
+- **`listed_name.rs` is a leaf** (no engine module): the stale-temp reaps in `cleanup.rs` and the remote zip edit join
+  through it, and importing it from `landing.rs` closed a module cycle (`landing` → `transfer_driver` → `staged_write` →
+  `cleanup`).
 - On Windows `ListedName` also refuses `\` and `:` (through `ChildName`), which a POSIX server's name can hold
   (`12:00 notes`): the typed join keeps such a name whole, but the bodies past the join still take `std::path`, whose
   `parent` and `file_name` would split it into a subfolder or a stream. Such a name isn't hostile, so it's the
