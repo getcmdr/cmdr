@@ -528,7 +528,9 @@ fn staging_of(batch: u64) -> AppPathBuf {
 /// NUL), or [`ImportError::BadPath`].
 fn relative_path(path: &str) -> Result<&RelativeAppPath, ImportError> {
     let bad = || ImportError::BadPath { path: path.to_string() };
-    if path.is_empty() {
+    // A NUL is refused by hand: `RelativeAppPath` takes one as an MTP pick (`\0` plus digits),
+    // which no dropped file is.
+    if path.is_empty() || path.contains('\0') {
         return Err(bad());
     }
     RelativeAppPath::new(path).map_err(|_| bad())

@@ -200,7 +200,17 @@ async fn a_file_that_changed_size_lands_nothing_and_gives_its_room_back() {
 #[tokio::test(flavor = "multi_thread")]
 async fn a_path_that_climbs_out_of_the_drop_is_refused() {
     let (demo, _) = demo();
-    for bad in ["../escape.txt", "/abs.txt", "", "a/./b"] {
+    // A NUL plus digits is an MTP pick's shape, which `RelativeAppPath` alone would take.
+    for bad in [
+        "../escape.txt",
+        "/abs.txt",
+        "",
+        "a/./b",
+        "a/",
+        "a//b",
+        "a/\u{0}12",
+        "nul\u{0}.txt",
+    ] {
         let refused = demo
             .imports()
             .plan(&items(json!([{ "path": bad, "kind": "file", "size": 1 }])))
