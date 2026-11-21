@@ -212,6 +212,11 @@ detection and resolution (Stop/Skip/Overwrite/Rename/OverwriteSmaller/OverwriteO
 (Local↔MTP, MTP↔MTP). Volume copy supports rollback (delete all copied files in reverse order with progress events,
 matching the local copy's `rollback_with_progress` pattern) and cancel cleanup (delete only the last partial file).
 
+**The both-local shortcut comes before the export check.** `copy_between_volumes` hands a transfer whose two volumes
+both have a `local_path` to the local engine, which reads the disk itself; only the streaming engine after it needs the
+source's `supports_export`. Checked first, the gate refused every local copy on Windows, whose local volume has no
+export streams yet (2026-11-21, on Mami). Pinned by `copy_native_delegation_tests.rs`.
+
 **Decision**: Cross-volume rollback records per-file destinations for a directory source, never the directory root.
 **Why**: A directory source merges into an existing dest directory ("Overwrite means merge for dirs"), so dest-only
 files the user already had legitimately coexist in the merged tree. Recording the top-level dest directory in
