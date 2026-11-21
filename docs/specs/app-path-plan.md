@@ -1939,6 +1939,65 @@ included; the hidden couplings it found are why waves B and C differ from round 
   suite and `desktop-e2e-linux` (it touches listings); pins (g) and (h) per entry point, an IPC delete of `/x/link/`
   removes the link and leaves the target's contents, and § "Typed and pasted `..`"'s cells.
 - **DONE**: bridge count zero in these directories.
+- **First step done** (2026-11-21, PR #1322, branch `worktree-agent-a4ca45328a62809bc`; the lead on the volume manager,
+  `listing_host/`, and `commands/`, one helper on `network/`, `about/`, `native_drag/`, `file_viewer/`, and
+  `favorites/`, one on the rest of `file_system/` and `volumes/`). The mechanical conversion only, a clean partial.
+  Bridge calls in the 11 directories 319 → 103 (the call-counting meter; `file_system/` 187 → 60, `network/` 51 → 12,
+  `listing_host/` 23 → 1, `commands/` 19 → 13, `file_viewer/` 13 → 4, `native_drag/` 10 → 5, `about/` 10 → 4, `volumes/`
+  5 → 3, `favorites/` 1 → 1), `appTextToPath` 12 → 11, `pathFromBareText` 179 → 151; workspace bridges 1,351 → 1,135. No
+  other directory's total rose, and no per-file entry grew. What converted:
+  - **The volume registry's mount roots** (`file_system/volume/manager/roots.rs`, `manager.rs`, `root_move.rs`): the
+    root set, rank, identity-conflict check, promotion, and every `Promoted { new_root }` are `AppPathBuf`;
+    `roots::same_root` is the one comparison (same text, or the same canonical place, which is `Path`'s `==` for
+    `/Volumes/X/` against `/Volumes/X`). The OS-event entry points (`remove_root`, `move_root`, `find_by_root`) keep
+    their native `&Path` and cross once at `roots::mount_root_from_os` (`from_native_unicode`, a non-Unicode name
+    staying a lossless bridge value); `find_by_app_root`, `mark_root_stale`, and `would_keep_incumbent` take a root in
+    hand. Durable design: `apps/desktop/src-tauri/src/file_system/volume/DETAILS.md` § "A volume ID owns a set of mount
+    roots".
+  - **Test doubles and fixtures** in these directories: `app_path!` / `from_normalized` for canonical text, and
+    `cmdr_fs::testing::AppTestDir` (re-exported from `crate::test_support`) for a scratch tree, so a cell hands a volume
+    `C:/…` on Windows where the native tempdir was refused. Cells handed relative text keep `std::path` on purpose.
+  - **Cross once per value** where a body crossed once per call, the same `legacy_unchecked` value made earlier, so
+    byte-exact by construction: `tags_io.rs` (each wire path once, at grouping), the SMB encryption gate's native root,
+    the macOS-mount handback's share root, the viewer's pull (`as_volume_calls_spell_it`), the drag-out file stream, the
+    About card's xattr read, and the snapshot archive route's view root.
+  - **The cells**: git and restic portal cells cross their tempdir once through `from_native_unicode` (the restic read
+    gate matches a typed path's `names()`); the in-memory, SMB scan and index, MTP oracle, tags, network wiring, About,
+    drag-out, and viewer cells are typed; the SMB gate's two tempdir cells use `AppTestDir` (their Windows tempdir
+    panics, expected green, not run on the builder).
+- **Byte-exact on macOS** (throwaway differential harnesses, old `Path` answers against the new; the lead's scratchpad):
+  root equality 2,000,000 generated pairs and the OS-event equality 2,000,000, 0 differ; the rank's tie-break over
+  103,583 equal-length pairs and the nested-mount log level over 2,000,000, every local difference holding a `..` name
+  (no mount root does), the rest mixed root kinds or `//` leads (#1309) one id never holds. The one other candidate for
+  typed arithmetic, `tag_store_for`'s longest-root fallback, measured 180,617 of 3,617,300 differing (every one a row
+  holding `..` or a `//` lead), so it keeps `Path`'s logic and its two bridges. Suites on macOS: the app 6,807, green.
+- **What stays, and where it goes**:
+  - **The IPC edges keep `legacy_unchecked`** (`commands/`'s `share_link`, `volume_copy`'s write probe, `path_checks`,
+    `suggested_ops`): today's answer for `/x/link/` and `/x/../y`. They switch to `from_wire` in the first
+    behavior-change commit (loud rule 1's second exception, pins (g) flipped, the lead's OK), which is also where
+    `path_checks.rs`'s `root_anchored` becomes `anchor_at_root` (#1314 item 2: `anchor_at_root` refuses `..` and drops a
+    trailing `/`, so it isn't mechanical). `go_to_path::resolve_with`'s `std::path` arithmetic (#1314 item 1) resolves
+    `..` lexically today; it goes typed with `resolve_typed` and `Volume::parent_for_dot_dot` in the second
+    behavior-change commit.
+  - **The routing seam**: `VolumeManager::resolve(volume_id, &Path)` and its `ResolvedVolume.path` built by
+    `legacy_unchecked` (archive, git, restic routes) is the next mechanical step; it takes most of the manager's
+    remaining bridges and the routing tests' with it. `mount_id_for_path` keeps `Path`'s `starts_with` on its caller's
+    text (a `..` included) until its callers (index routing, 10d's `inspect` tools) pass app paths.
+  - **The text exits** (`commands/importance.rs`, `media_index/`, `volume_copy`'s root echo:
+    `as_std_legacy() .to_string_lossy()`): an app path's own text differs for a Linux name that isn't UTF-8 while
+    `ESCAPES_LIVE` is false, so they wait for 10f's type-level gate, as in 10a.
+  - **Still 10c's, not started**: the listing host's `&Path` seams from MTP and SMB (`DirectoryChange` parent paths
+    through `cmdr-listing`'s `notify_directory_changed` and the index's `apply_smb_change`), `cmdr-listing`'s 16
+    crossings, `CoveredEntry.path`, and `listing.rs`'s `listings().location()` (a `PathBuf` from `cmdr-listing`).
+  - **Kept on purpose**: native crossings that hand a root on as OS text (`smb_direct_switch`, `smb_connect_directly`,
+    `smb_pane_upgrade`, the gate's `rerooted`), wire text turned into app paths in `about/through.rs` and
+    `native_drag/fulfillment.rs` (a direct wrap changes a name holding an escape-range code point, #1310, and the folder
+    walk's typed join answers differently on `/a/./b`), `live_server_edit::check`'s `Path` comparisons over
+    `RemoteRoot`'s bridged values (`RemoteRoot` goes typed first), the eject and `drive_release` mount-path text exits
+    (10f), and cells handed relative or empty text (git `.git/…`, in-memory `""`, share-relative media names, the
+    relative SFTP cells, a drag-out `..`, a favorite stored with a trailing `/`).
+- **Windows**: `pnpm check clippy-windows` and `clippy-linux` green; no builder run this step (time), so the cells this
+  step touches (the SMB gate's tempdir pair, the manager's root cells) are expected green by their causes, not run.
 
 ### 10d. The app, part two: operations host, tools, and the rest
 
