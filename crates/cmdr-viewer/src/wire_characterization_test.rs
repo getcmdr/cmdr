@@ -25,6 +25,7 @@ use super::pending_open::PullProgress;
 use super::session::{self, SavedAs};
 use super::session_test_support::{create_test_dir, viewer, write_test_file};
 use super::{ArchiveFailureKind, PendingOpen, RowText, SearchMode, SeekTarget, ViewerError, ViewerOpenResult};
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::testing::wait_until;
 
 /// Masks what's random per run: session ids, media tokens, and the tokens inside a
@@ -60,16 +61,22 @@ fn pin(actual: impl Serialize, expected: &str) {
     assert_eq!(value.to_string(), expected);
 }
 
+/// The wire carries app paths (`C:/…` on Windows), so a fixture's native tempdir path
+/// crosses once here. Native text (`C:\…`) leaves a document with no app path, and its
+/// relative pictures then resolve nowhere.
+fn wire_text(path: &Path) -> String {
+    AppPathBuf::from_native_unicode(path)
+        .expect("a scratch file is an app path")
+        .as_str()
+        .to_owned()
+}
+
 fn open(path: &Path) -> ViewerOpenResult {
-    viewer()
-        .open_session(path.to_str().expect("utf-8 path"), "root")
-        .expect("opens")
+    viewer().open_session(&wire_text(path), "root").expect("opens")
 }
 
 fn open_as_text(path: &Path) -> ViewerOpenResult {
-    viewer()
-        .open_session_as_text(path.to_str().expect("utf-8 path"), "root")
-        .expect("opens")
+    viewer().open_session_as_text(&wire_text(path), "root").expect("opens")
 }
 
 fn write_bytes(dir: &Path, name: &str, bytes: &[u8]) -> std::path::PathBuf {
@@ -156,7 +163,7 @@ fn the_log_view_opens_with_this_answer() {
     let file = write_test_file(&dir, "cmdr.log", "INFO plain line\n");
     let result = viewer()
         .open_for_window(
-            file.to_str().expect("utf-8 path"),
+            &wire_text(&file),
             "root",
             "",
             false,
