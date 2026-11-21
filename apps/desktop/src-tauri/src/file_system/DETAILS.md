@@ -846,8 +846,16 @@ Pinned by `watcher_fsevents_test.rs` (synthetic events, including a drop at `/` 
   renaming the watched folder itself works, deleting an ancestor works. ❗ Renaming or moving an ANCESTOR fails with
   "Access is denied" while a pane shows a folder under it: NTFS refuses to rename a directory with an open handle below
   it, whatever the share mode. That includes Cmdr's own F2 on the parent from the other pane. Ejecting a removable drive
-  with a watch open is vetoed the same way unless the holder closes on query-remove; unverified here. Both are open
-  follow-ups (#1330's comment).
+  with a watch open is vetoed the same way unless the holder closes on query-remove; unverified here. Both: #1340.
+- **In the running app** (a debug build on the builder, 2026-11-21, PowerShell and `cmd` as the other program, the
+  pane on `D:\`, which no index watches, so only this watch could update it): a create showed in about 0.6 s; a
+  rename, a case-only rename of a file and of a folder, a delete, and a size change all showed (by screenshot); 3,000
+  files made in a burst took the over-500 re-read; deleting 20,000 files overflowed the buffer and logged
+  `Watcher: the OS lost events for …, re-reading` three times; deleting the watched folder emitted `directory-deleted`
+  within about 200 ms. Under a flood from a test program, unpatched 8.2.2 reported nothing and the patched copy
+  reported `Rescan` twice. Two engine and frontend gaps it surfaced, neither Windows-watch code: a burst can leave a
+  pane two files short (#1342), and a deleted folder on `D:` re-lands on itself instead of its parent (#1341).
+  ❗ `cmdr://state`'s rows don't refresh on a same-count change (#1343): check a rename by screenshot.
 - **Idle cost**: one directory handle and one pending overlapped read per watch, completed by the kernel, so nothing
   polls the disk. Two threads per watch still wake on a timer: notify 8.2.2's server loop every 100 ms (to drain its
   command queue; 9.0 waits with no timeout, which needed a reworked semaphore lifetime, too big to backport) and

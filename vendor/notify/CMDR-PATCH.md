@@ -31,8 +31,10 @@ so inotify and FSEvents builds are the release's code.
 - **A fatal read error reaches the handler**: any other completion error (a pulled drive, a dropped share) is emitted
   as an `Err` before the watch stops, where 8.2.2 only logged it.
 
-Verified on Windows 10 22H2 (NTFS, the builder): see `docs/notes/windows-port/build-progress.md`, the task 35 listing
-watch entry.
+Verified on Windows 10 22H2 (NTFS, the builder, 2026-11-21) with a standalone program that arms a
+`notify-debouncer-full` watch the way the app does: a flood of 20,000 files from four threads reported `Rescan` twice
+on this copy and nothing at all on the crates.io 8.2.2; deleting the watched folder reported `Remove(Folder)` on it.
+In the app: `docs/notes/windows-port/build-progress.md`, the task 35 listing watch entry.
 
 ## Dropping it
 

@@ -204,6 +204,15 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
   `the_temp_reap_never_deletes_a_listed_name_that_isnt_one_plain_name` (born red, above), and
   `an_overwrite_with_a_link_lands_the_link_and_leaves_no_temp` (`LinksNotSupported`, the engine's Windows `symlink`
   stub, task 35).
+- **Task 35's listing watch** (#1330, 2026-11-21, the warm pair, not elevated, plain `cargo nextest run`, branch on
+  `main` `ff908871f7`): the app's 23 `file_system::watcher` cells all pass, among them the five the TSV had red
+  (`a_batch_publishes_removes_then_adds_then_modifies`, `a_child_renamed_away_leaves_the_listing`,
+  `a_modify_keeps_the_finder_tags_the_cache_holds`, and the two `a_dotfile_write_*` cells). Their reads had already
+  turned green on `main`; what stayed red was the hand-built change paths, native `C:\…` where the cache's rows key on
+  `C:/…`, which the cells now spell as the real `notify` stream does (`listing_spelling_of`). `cmdr-local` 53 of 53 with
+  its four new Windows cells, `cmdr-index`'s 11 notify cells pass on the patched `notify`, and `cmdr-fs` 1,042 of 1,047:
+  the five red are #1225's (`app_path::bridge_test` 2, `volume::patching`, `volume::remote_paths`,
+  `volume::root_anchored_path_test`), none the watch's.
 - **10a, `cmdr-operations`**: 229.
 - **10b, `cmdr-index`**: 133, the 48 cold-drive timeouts among them. Seen on the builder (2026-11-21, the warm pair
   `D:\src\cmdr-m6` + `D:\targets\m6`, elevated through `run-on-desktop.sh`, `--profile windows-baseline`,

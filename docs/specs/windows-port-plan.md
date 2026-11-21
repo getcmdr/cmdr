@@ -595,10 +595,10 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     (`ReadDirectoryChangesW`) watch, with coverage by drive kind (fixed, removable, and `subst` `EveryWriter`; mapped
     and UNC `ThisMachineOnly`), the `\\?\` crossing both ways, case-only renames, and lost events re-reading through
     `vendor/notify` (overflow and a deleted root, notify 9.0's fix backported; the index's notify backend gets it too,
-    #1128): `apps/desktop/src-tauri/src/file_system/DETAILS.md` § "Windows listing watches". Left: an open watch blocks
-    renaming an ANCESTOR of the watched folder (NTFS, whatever the share mode) and likely vetoes a removable drive's
-    eject; both want the watch to let go on demand (task 39's device notifications, and Cmdr's own rename of a watched
-    folder's parent).
+    #1128): `apps/desktop/src-tauri/src/file_system/DETAILS.md` § "Windows listing watches" (verified in the running app
+    on the builder). Left: an open watch blocks renaming an ANCESTOR of the watched folder (NTFS, whatever the share
+    mode) and likely vetoes a removable drive's eject, so the watch has to let go on demand (#1340, partly task 39's
+    device notifications); and a deleted folder on a drive other than `C:` re-lands on itself (#1341).
 36. [M] Windows. `cmdr-operations` arms: `CopyFileExW` strategy (with ReFS/Dev Drive block clone), Recycle Bin via
     `trash` with identity, read-only as "locked" in `clear_blockers`, sharing violations as a typed refusal. Needs 35.
     Plus the honest `Unknown`-identity rule (`cmdr_fs::file_identity` module docs): a move onto a taken name with
