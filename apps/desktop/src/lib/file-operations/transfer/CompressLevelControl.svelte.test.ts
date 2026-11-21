@@ -38,11 +38,8 @@ vi.mock('#lib/settings/index.js', () => ({
   })),
 }))
 
-vi.mock('@tauri-apps/api/path', () => ({
-  homeDir: () => Promise.resolve('/Users/test'),
-}))
-
 vi.mock('#lib/tauri-commands/index.js', () => ({
+  getHomeFolder: vi.fn(() => Promise.resolve('/Users/test')),
   notifyDialogOpened: vi.fn(() => Promise.resolve()),
   notifyDialogClosed: vi.fn(() => Promise.resolve()),
   getVolumeSpace: vi.fn(() =>

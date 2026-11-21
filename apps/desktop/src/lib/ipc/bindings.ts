@@ -623,6 +623,12 @@ export const commands = {
     ),
   getPathLimits: () => __TAURI_INVOKE<PathLimits>('get_path_limits'),
   /**
+   *  The user's home folder as an app path (`/Users/test_user_1`, `C:/Users/test_user_1`), no
+   *  trailing `/`, or `None` when the OS names none. What the frontend expands a typed or pane
+   *  `~` against; the OS's own `C:\Users\…` is no app path there (#1292).
+   */
+  getHomeFolder: () => __TAURI_INVOKE<string | null>('get_home_folder'),
+  /**
    *  Which names the filesystem holding `dir` on `volume_id` takes
    *  (`cmdr_operations::Operations::name_rules_at`), for the rename editor's and the
    *  New folder dialog's keystroke checks (asked once per editor), and the transfer
@@ -1301,6 +1307,15 @@ export const commands = {
        *  name them. Not transient: a retry meets the same keys.
        */
       | { type: 'folder_holds_unlisted_items'; path: string }
+      /**
+       *  An Overwrite met a file the OS can't tell apart from its source: no node
+       *  identity on one side or both (`cmdr_fs::file_identity::Sameness::Unknown`, a
+       *  filesystem that reports no file id). The two might be one file, and
+       *  overwriting it would truncate the source, so the copy refused before writing
+       *  anything. `path` is the destination file. Not transient: a retry meets the
+       *  same filesystem.
+       */
+      | { type: 'cant_tell_if_same_file'; path: string }
       /**
        *  The source changed while the copy read it (an S3 server-side copy saw
        *  it replaced, or its stream delivered more or fewer bytes than its
@@ -26482,6 +26497,15 @@ export type WriteOperationError =
    *  name them. Not transient: a retry meets the same keys.
    */
   | { type: 'folder_holds_unlisted_items'; path: string }
+  /**
+   *  An Overwrite met a file the OS can't tell apart from its source: no node
+   *  identity on one side or both (`cmdr_fs::file_identity::Sameness::Unknown`, a
+   *  filesystem that reports no file id). The two might be one file, and
+   *  overwriting it would truncate the source, so the copy refused before writing
+   *  anything. `path` is the destination file. Not transient: a retry meets the
+   *  same filesystem.
+   */
+  | { type: 'cant_tell_if_same_file'; path: string }
   /**
    *  The source changed while the copy read it (an S3 server-side copy saw
    *  it replaced, or its stream delivered more or fewer bytes than its

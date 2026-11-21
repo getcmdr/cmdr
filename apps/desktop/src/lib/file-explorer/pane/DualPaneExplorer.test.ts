@@ -49,6 +49,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 // Mock pathExists
 vi.mock('#lib/tauri-commands/index.js', () => ({
+  getHomeFolder: vi.fn(() => Promise.resolve('/Users/test')),
   pathExists: vi.fn().mockResolvedValue(true),
   listDirectoryStartSession: vi.fn().mockResolvedValue({
     sessionId: 'mock-session-id',

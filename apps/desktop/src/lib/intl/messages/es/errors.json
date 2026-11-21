@@ -1969,6 +1969,18 @@
   "@errors.write.folderHoldsUnlistedItems.suggestion": {
     "sourceHash": "b3e259b"
   },
+  "errors.write.cantTellIfSameFile.title": "Puede que sea el archivo que estás copiando",
+  "@errors.write.cantTellIfSameFile.title": {
+    "sourceHash": "80f2303"
+  },
+  "errors.write.cantTellIfSameFile.message": "Esta unidad no indica si {path} es el mismo archivo que estás copiando, solo que accesible por otra ruta. Reemplazar ese archivo podría haber eliminado tu original, así que Cmdr ha detenido la copia aquí y ha dejado ese archivo como estaba.",
+  "@errors.write.cantTellIfSameFile.message": {
+    "sourceHash": "358ef5a"
+  },
+  "errors.write.cantTellIfSameFile.suggestion": "Si sabes con certeza que son dos archivos distintos, elimina el que está en el destino y vuelve a copiar. También puedes copiar en otra carpeta o conservar ambos archivos con nombres distintos.",
+  "@errors.write.cantTellIfSameFile.suggestion": {
+    "sourceHash": "c5c76a7"
+  },
   "errors.write.mountedVolumeInside.title": "Hay una unidad montada de por medio",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"

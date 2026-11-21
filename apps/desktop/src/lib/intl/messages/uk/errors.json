@@ -1969,6 +1969,18 @@
   "@errors.write.folderHoldsUnlistedItems.suggestion": {
     "sourceHash": "b3e259b"
   },
+  "errors.write.cantTellIfSameFile.title": "Можливо, це той самий файл, який ви копіюєте",
+  "@errors.write.cantTellIfSameFile.title": {
+    "sourceHash": "80f2303"
+  },
+  "errors.write.cantTellIfSameFile.message": "Цей диск не повідомляє, чи збігається файл {path} з тим файлом, який ви копіюєте, просто доступним іншим шляхом. Заміна могла знищити ваш оригінал, тому Cmdr зупинив копіювання на цьому місці й не чіпав цей файл.",
+  "@errors.write.cantTellIfSameFile.message": {
+    "sourceHash": "358ef5a"
+  },
+  "errors.write.cantTellIfSameFile.suggestion": "Якщо ви точно знаєте, що це два різні файли, видаліть той, що в місці призначення, і скопіюйте ще раз. Або скопіюйте в іншу папку чи залиште обидва файли під різними назвами.",
+  "@errors.write.cantTellIfSameFile.suggestion": {
+    "sourceHash": "c5c76a7"
+  },
   "errors.write.mountedVolumeInside.title": "Заважає змонтований диск",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"

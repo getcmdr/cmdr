@@ -26,7 +26,6 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushSync, mount, unmount, type ComponentProps } from 'svelte'
-import { homeDir } from '@tauri-apps/api/path'
 import * as commands from '#lib/tauri-commands/index.js'
 import DialogManager from './DialogManager.svelte'
 import { createDialogState } from './dialog-state.svelte'
@@ -269,7 +268,7 @@ describe('an MCP confirm on the transfer dialog', () => {
 
   it('starts no scan once it confirmed while the dialog was still resolving the home dir', async () => {
     const home = deferred<string>()
-    vi.mocked(homeDir).mockReturnValueOnce(home.promise)
+    vi.mocked(commands.getHomeFolder).mockReturnValueOnce(home.promise)
     const { dialogs, target, onDismissAll } = openTransferDialog()
 
     confirmFromMcp(dialogs)

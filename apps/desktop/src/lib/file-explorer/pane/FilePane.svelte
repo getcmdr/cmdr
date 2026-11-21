@@ -12,6 +12,7 @@
         VisibleRangePayload,
     } from '../types'
     import {
+        getHomeFolder,
         refreshListingIndexSizes,
         type ListingIndexSizesChanged,
         type Location,
@@ -102,7 +103,6 @@
     import { capabilitiesForPane, paneFolderIsPolledForDeletion, paneRowsAreOsVisible } from './volume-capabilities'
     import { createEnterMenu } from './enter-menu.svelte'
     import Menu from '#lib/ui/Menu.svelte'
-    import { homeDir } from '@tauri-apps/api/path'
     import { type CanonicalPath, parentOf, toCanonical } from '#lib/path/canonical.js'
     import { shownSeparator } from '#lib/path/grammar.js'
     import { getVolumes as getStoreVolumes } from '#lib/stores/volume-store.svelte.js'
@@ -2098,9 +2098,13 @@
 
     onMount(() => {
         // Fetch user home dir for breadcrumb display (~ substitution)
-        void homeDir().then((h) => {
-            userHomePath = h.endsWith('/') ? h.slice(0, -1) : h
-        })
+        void getHomeFolder()
+            .then((home) => {
+                userHomePath = home
+            })
+            .catch((error: unknown) => {
+                log.warn('Could not resolve the home folder: {error}', { error })
+            })
 
         // Live disk-space updates from the backend poller (typed event).
         diskSpace.startListening()

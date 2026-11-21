@@ -686,11 +686,18 @@ conflict policy, and neither prompts. Why the suffix is ` (N)` rather than Finde
 selection") and a 10 GB video duplicates instantly, at no extra space. Worth not losing: anything that routes a
 duplicate through a rewrite rather than the ordinary copy path pays full bytes for what the filesystem gives away.
 
-**Why identity rather than paths.** `validation.rs::may_be_same_file` compares file ids (`dev+ino` on Unix), which
-settles a symlinked parent, a case-differing path on APFS, and NFC/NFD normalization in one comparison. It uses
-`fs::metadata`, which FOLLOWS symlinks — that is what makes the symlinked-parent case work, so ❌ don't "fix" it to
-`symlink_metadata`. (`rename/` answers a narrower question with `symlink_metadata` because it must treat a symlink as
-its own entry; the two are deliberately different.)
+**Why identity rather than paths.** `validation.rs::may_be_same_file` compares file ids (`dev+ino` on Unix, volume
+serial plus file id on Windows, read by path through `cmdr_fs::file_identity::same_node_at`), which settles a symlinked
+parent, a case-differing path on APFS, and NFC/NFD normalization in one comparison. It FOLLOWS symlinks — that is what
+makes the symlinked-parent case work, so ❌ don't "fix" it to `Follow::NotLinks`.
+
+**The per-file guard refuses what it can't tell** (`copy/single_item.rs`, after conflict resolution, so it only ever
+sees an overwrite): `Same` skips the file as a self-collision, `Unknown` (a filesystem with no file id) stops the copy
+with `CantTellIfSameFile` before anything is written, ❌ never a skip, which reported the person's Overwrite as done
+(#1291). Pinned by `copy/overwrite_identity_tests.rs`, which runs on every OS. The top-level duplicate decision
+(`copy/mod.rs`) still takes `may_be_same` and duplicates on `Unknown`; the `unknown_identity_today_*` cells pin it until
+windows-port task 36 brings the asking flow. (`rename/` answers a narrower question with `symlink_metadata` because it
+must treat a symlink as its own entry; the two are deliberately different.)
 
 **The guard and the identity rule are one change, and a self-collision never reaches the conflict machinery.** An
 operation-level lexical verdict (`source.parent() == destination`) answers the wrong question at the wrong altitude: it

@@ -71,6 +71,92 @@ mod on_a_real_disk {
     }
 }
 
+/// The path reader on every host OS: the one that answers on Windows (#1291), where no
+/// `Metadata` carries an id.
+mod by_path {
+    use std::fs;
+
+    use super::*;
+
+    #[test]
+    fn a_hard_link_is_the_same_node_and_a_sibling_is_not() {
+        let dir = tempfile::tempdir().unwrap();
+        let (original, link, sibling) = (dir.path().join("a.txt"), dir.path().join("b.txt"), dir.path().join("c"));
+        fs::write(&original, b"x").unwrap();
+        fs::hard_link(&original, &link).unwrap();
+        fs::write(&sibling, b"x").unwrap();
+
+        assert_eq!(same_node_at(&original, &link), Sameness::Same);
+        assert_eq!(same_node_at(&original, &sibling), Sameness::Different);
+        let (a, c) = (
+            FileId::at(&original, Follow::Links),
+            FileId::at(&sibling, Follow::Links),
+        );
+        assert_eq!(a.map(FileId::device), c.map(FileId::device), "one folder, one volume");
+    }
+
+    #[test]
+    fn a_folder_has_an_id_of_its_own() {
+        let dir = tempfile::tempdir().unwrap();
+        let inner = dir.path().join("inner");
+        fs::create_dir(&inner).unwrap();
+
+        assert_eq!(same_node_at(dir.path(), dir.path()), Sameness::Same);
+        assert_eq!(same_node_at(dir.path(), &inner), Sameness::Different);
+    }
+
+    #[test]
+    fn a_file_replaced_under_its_name_is_a_different_node() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("invoice.pdf");
+        fs::write(&path, b"aaaa").unwrap();
+        let before = FileId::at(&path, Follow::NotLinks).expect("a local file has an id");
+        // A second name keeps the old node alive, so no filesystem can hand its number on.
+        fs::hard_link(&path, dir.path().join("kept")).unwrap();
+        fs::remove_file(&path).unwrap();
+        fs::write(&path, b"bbbb").unwrap();
+
+        assert_ne!(FileId::at(&path, Follow::NotLinks), Some(before));
+    }
+
+    #[test]
+    fn a_path_that_isnt_there_has_no_id() {
+        let dir = tempfile::tempdir().unwrap();
+        let missing = dir.path().join("missing");
+
+        assert_eq!(FileId::at(&missing, Follow::Links), None);
+        assert_eq!(same_node_at(&missing, dir.path()), Sameness::Unknown);
+    }
+
+    #[test]
+    fn a_followed_link_is_its_target_and_an_unfollowed_one_is_not() {
+        if crate::testing::skip_without_symlinks() {
+            return;
+        }
+        let dir = tempfile::tempdir().unwrap();
+        let (target, link) = (dir.path().join("target"), dir.path().join("link"));
+        fs::write(&target, b"x").unwrap();
+        crate::testing::symlink(&target, &link).unwrap();
+        let target_id = FileId::at(&target, Follow::Links);
+
+        assert_eq!(FileId::at(&link, Follow::Links), target_id);
+        assert_ne!(FileId::at(&link, Follow::NotLinks), target_id);
+    }
+
+    #[test]
+    fn a_hidden_identity_hides_from_the_path_reader_too() {
+        let dir = tempfile::tempdir().unwrap();
+        let (a, b) = (dir.path().join("a"), dir.path().join("b"));
+        fs::write(&a, b"1").unwrap();
+        fs::write(&b, b"2").unwrap();
+        {
+            let _hidden = hide_identity_of(&[&a]);
+            assert_eq!(same_node_at(&a, &b), Sameness::Unknown);
+        }
+        assert_eq!(same_node_at(&a, &b), Sameness::Different);
+    }
+}
+
 #[cfg(unix)]
 #[test]
 fn a_hidden_identity_reads_as_unknown_until_the_guard_drops() {

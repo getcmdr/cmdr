@@ -365,8 +365,8 @@ Key files:
   - **Gotcha**: a pane can sit at `~` or `~/Downloads` (a first run, the Home shortcut), which no volume root matches,
     so a same-disk drop onto such a pane read as cross-volume and preselected Copy, and the descendant guard compared
     two spellings of one folder. `targetPathOf` spells a `~` pane path out from the home folder (`toCanonical`, home
-    fetched once by the controller, injectable as `homeDir`) before either rule reads it. Found on the browser demo,
-    whose panes start at `~` (2026-11-04).
+    fetched once by the controller, injectable as `homeDir`, the backend's app-path `getHomeFolder` by default) before
+    either rule reads it. Found on the browser demo, whose panes start at `~` (2026-11-04).
 - **Decision**: Internal-drop modifier semantics align with the outgoing arbitration macOS does for us
   - **Why**: For drags out to other apps, AppKit arbitrates the operation from the source mask plus modifiers (Alt →
     Copy, Cmd → Move, Ctrl-Alt → Link). We own the choice for internal drops, so we replicate the same Alt/Cmd

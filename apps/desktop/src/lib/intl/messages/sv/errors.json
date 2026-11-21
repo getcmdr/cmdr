@@ -1969,6 +1969,18 @@
   "@errors.write.folderHoldsUnlistedItems.suggestion": {
     "sourceHash": "b3e259b"
   },
+  "errors.write.cantTellIfSameFile.title": "Det här kan vara filen du kopierar",
+  "@errors.write.cantTellIfSameFile.title": {
+    "sourceHash": "80f2303"
+  },
+  "errors.write.cantTellIfSameFile.message": "Den här enheten talar inte om ifall {path} är just den fil du kopierar, fast nådd via en annan väg. Att ersätta filen kunde ha raderat ditt original, så Cmdr stoppade kopieringen här och lät filen vara som den var.",
+  "@errors.write.cantTellIfSameFile.message": {
+    "sourceHash": "358ef5a"
+  },
+  "errors.write.cantTellIfSameFile.suggestion": "Är du säker på att det är två olika filer kan du radera den som ligger på målet och kopiera igen. Du kan också kopiera till en annan mapp eller behålla båda filerna med olika namn.",
+  "@errors.write.cantTellIfSameFile.suggestion": {
+    "sourceHash": "c5c76a7"
+  },
   "errors.write.mountedVolumeInside.title": "En monterad enhet är i vägen",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"

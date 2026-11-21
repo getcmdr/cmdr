@@ -578,20 +578,24 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     (file vs dir) and reparse tags, ADS-backed xattrs, the write-access probe, the copy scan, the mount table and
     filesystem type, the `FindFirstFileExW` lister, and registering a volume per drive (with 34). The ignored
     conformance cells in `local_windows_conformance_test.rs` are the checklist. App paths in and out of both local
-    volumes (one crossing per OS through `AppPath::to_native`): `docs/specs/app-path-plan.md`. Bugs it owns: #1291 (no
-    file identity, so an Overwrite copy onto an existing file is silently skipped as "the same file"), and the six
-    `cmdr-operations` cells that fail on Windows on `main` (`docs/notes/windows-port/windows-test-failures.md` § "By
-    milestone", item 9). ❗ The engine's Windows `symlink` (`cmdr-operations/src/local_disk/platform/windows.rs`) is a
-    stub that always refuses, so no link lands on Windows until this task makes links real.
+    volumes (one crossing per OS through `AppPath::to_native`): `docs/specs/app-path-plan.md`. File identity is real by
+    PATH (2026-11-21, #1291, PR #1304): `cmdr_fs::file_identity::FileId::at` / `same_node_at` open a handle and read
+    `FileIdInfo` (`file_identity/platform/windows.rs`), which the copy's same-file guards and the source binding ask;
+    the `Metadata` readers (`device_of`, `link_count`, walk dedup, the journal's `NodeIdentity`) still answer `None` and
+    move over as each consumer needs it. Bugs it owns: the six `cmdr-operations` cells that fail on Windows on `main`
+    (`docs/notes/windows-port/windows-test-failures.md` § "By milestone", item 9). ❗ The engine's Windows `symlink`
+    (`cmdr-operations/src/local_disk/platform/windows.rs`) is a stub that always refuses, so no link lands on Windows
+    until this task makes links real.
 36. [M] Windows. `cmdr-operations` arms: `CopyFileExW` strategy (with ReFS/Dev Drive block clone), Recycle Bin via
     `trash` with identity, read-only as "locked" in `clear_blockers`, sharing violations as a typed refusal. Needs 35.
     Plus the honest `Unknown`-identity rule (`cmdr_fs::file_identity` module docs): a move onto a taken name with
     unknown identity goes through the conflict flow instead of counting as already in place (`move_op/mod.rs` and
     `conflict_preflight.rs`), a copy asks instead of duplicating (`copy/mod.rs`, `free_space.rs`, `scan_dry_run.rs`,
-    `routing.rs`), the per-file guard in `copy/single_item.rs` refuses an overwrite instead of skipping, and a compress
-    onto an existing archive asks instead of refusing (`archive_edit/fresh_plan.rs`). Needs a typed refusal with its own
-    copy ("can't tell whether these are the same file"); the `unknown_identity_today_*` tests flip with it. Plus the
-    typed-OS-error gaps task 10 left for the Windows arms (35 and 36 between them):
+    `routing.rs`), and a compress onto an existing archive asks instead of refusing (`archive_edit/fresh_plan.rs`). The
+    `unknown_identity_today_*` tests flip with it. **Done** (2026-11-21, #1291, PR #1304): the per-file guard in
+    `copy/single_item.rs` refuses an overwrite it can't tell apart from its source with the typed `CantTellIfSameFile`
+    (its own copy), ❌ never a skip; the rest of the rule can reuse that refusal. Plus the typed-OS-error gaps task 10
+    left for the Windows arms (35 and 36 between them):
     - A backend-built error carries its class only through `host_code`, and Windows has no Win32 code for `Busy`,
       `WouldBlock`, `LinkLoop`, `Protocol`, `BadMessage`, `FileTooLarge`, `TooManyLinks`, `Remote`, or
       `DeviceNotConfigured`, so `io_of_class` yields `raw_os_error: None` there: WebDAV's `423 Locked` and NFS's
@@ -609,11 +613,12 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     **Started** (2026-11-18): `cmdr-operations` builds and passes clippy on the Windows builder. Real: the write probe
     (`local_disk/platform/windows.rs`, tested on NTFS), free space, the folder volume, and file and directory syncs that
     open the way `FlushFileBuffers` needs (`cmdr_fs::durable::{open_to_sync, open_dir_to_sync}`). A copy takes the
-    chunked loop. Left, in data-safety order: the local engine taking app paths at `rename_local_exclusive` (#1225,
-    planned in `docs/specs/app-path-plan.md`: today every local copy and move refuses at its landing), a Windows file id
-    and mount table so a folder delete or move isn't refused as a mount (`file_identity`, task 35's mount arm), the
-    `Unknown`-identity rule above, the `CopyFileExW` arm, the Recycle Bin, read-only as Locked, and sharing violations
-    as a typed refusal. Stubs: § "Windows build state".
+    chunked loop. A local copy lands on the real desktop, Overwrite included (2026-11-21, PR #1304,
+    `docs/notes/windows-port/build-progress.md`). Left, in data-safety order: the rest of the local engine's app paths
+    (#1225, `docs/specs/app-path-plan.md` milestone 10a), a mount table so a folder delete, move, or folder Overwrite
+    isn't refused as a mount (task 35's mount arm), the rest of the `Unknown`-identity rule above, the `CopyFileExW`
+    arm, the Recycle Bin, read-only as Locked, and sharing violations as a typed refusal. Stubs: § "Windows build
+    state".
 
 37. [S] Windows. Cloud Files placeholders (OneDrive and friends: sync badges, cloud trash) and Mark of the Web on
     extract (`cmdr-operations` + `cmdr-archive`). Needs 36.
@@ -750,9 +755,10 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     root, a small spec subset. Needs the app to run on Windows (34–36).
 55. [M] Windows. Windows QA pass on a real machine: an agent drives the checklist and fixes what it finds; David QAs
     look, feel, and timing-sensitive UI. Open from the first real-Windows check (2026-11-19,
-    `docs/notes/windows-port/real-windows-check-2026-11-19.md`): #1292 (the Copy dialog refuses every local copy with
-    "Filename can't be empty", plus the check's three low findings), and #1291 (an Overwrite copy onto an existing file
-    is silently skipped; task 35's to fix).
+    `docs/notes/windows-port/real-windows-check-2026-11-19.md`): the check's three low findings, now #1305 (the "Skip
+    Mac-only hidden files" toggle on Windows, a decision), #1306 (the MCP bridge runs nothing), and #1307 (Settings slow
+    under load). Fixed (2026-11-21, PR #1304): #1292 (the Copy dialog refused every local copy: the frontend expanded
+    `~` against Tauri's native `homeDir()`) and #1291 (an Overwrite copy skipped silently: no file identity).
     - **Keyboard (from task 26; unit tests cover the data, these need the real OS)**:
       - What WebView2 reports for AltGr (`AltGraph`, `ctrlKey`, `altKey`) on German and Hungarian layouts, for
         LeftCtrl+LeftAlt+E, and for right Alt with empty modifiers (Multi-rename's `Alt+<letter>` would then need the

@@ -1,8 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy, tick } from 'svelte'
     import { slide } from 'svelte/transition'
-    import { homeDir } from '@tauri-apps/api/path'
-    import { getVolumeSpace, DEFAULT_VOLUME_ID, type SpaceInfo } from '#lib/tauri-commands/index.js'
+    import { getHomeFolder, getVolumeSpace, DEFAULT_VOLUME_ID, type SpaceInfo } from '#lib/tauri-commands/index.js'
     import type { ConflictResolution, TransferOperationType } from '#lib/file-explorer/types.js'
     import type { ConfirmOptions, TransferConfirmPayload, TransferConfirmer } from '#lib/file-explorer/pane/dialog-props.js'
     import { isStillConnecting } from '#lib/adb/device-readiness.js'
@@ -594,8 +593,7 @@
         // expands `~` on execution. Done before the scan/conflict check so they
         // run against the absolute path.
         try {
-            const home = await homeDir()
-            userHomePath = home.endsWith('/') ? home.slice(0, -1) : home
+            userHomePath = await getHomeFolder()
         } catch (err) {
             log.warn('Could not resolve home dir for the destination box: {error}', { error: err })
         }

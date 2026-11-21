@@ -1968,6 +1968,18 @@
   "@errors.write.folderHoldsUnlistedItems.suggestion": {
     "sourceHash": "b3e259b"
   },
+  "errors.write.cantTellIfSameFile.title": "这可能就是你正在拷贝的文件",
+  "@errors.write.cantTellIfSameFile.title": {
+    "sourceHash": "80f2303"
+  },
+  "errors.write.cantTellIfSameFile.message": "这个驱动器没法说明 {path} 是不是你正在拷贝的同一个文件，只是从另一条路径访问到的。如果替换，可能会抹掉你的原文件，所以 Cmdr 在这里停止了拷贝，那个文件保持原样。",
+  "@errors.write.cantTellIfSameFile.message": {
+    "sourceHash": "358ef5a"
+  },
+  "errors.write.cantTellIfSameFile.suggestion": "如果你确定这是两个不同的文件，先删掉目标位置的那个，再重新拷贝。也可以拷贝到另一个文件夹，或者用不同的名称保留两个文件。",
+  "@errors.write.cantTellIfSameFile.suggestion": {
+    "sourceHash": "c5c76a7"
+  },
   "errors.write.mountedVolumeInside.title": "有个已装载的驱动器挡着",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"

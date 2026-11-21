@@ -1969,6 +1969,18 @@
   "@errors.write.folderHoldsUnlistedItems.suggestion": {
     "sourceHash": "b3e259b"
   },
+  "errors.write.cantTellIfSameFile.title": "Lehet, hogy ez az a fájl, amit éppen másolsz",
+  "@errors.write.cantTellIfSameFile.title": {
+    "sourceHash": "80f2303"
+  },
+  "errors.write.cantTellIfSameFile.message": "Ez a meghajtó nem árulja el, hogy ez a fájl ugyanaz-e, amit éppen másolsz, csak más úton elérve: {path}. Ha a Cmdr lecserélte volna, törölhette volna az eredeti fájlodat, ezért itt leállította a másolást, és a fájlt úgy hagyta, ahogy volt.",
+  "@errors.write.cantTellIfSameFile.message": {
+    "sourceHash": "358ef5a"
+  },
+  "errors.write.cantTellIfSameFile.suggestion": "Ha biztosan tudod, hogy két különböző fájlról van szó, töröld a célhelyen lévőt, és másold újra. Másolhatsz másik mappába is, vagy megtarthatod mindkét fájlt különböző néven.",
+  "@errors.write.cantTellIfSameFile.suggestion": {
+    "sourceHash": "c5c76a7"
+  },
   "errors.write.mountedVolumeInside.title": "Útban van egy csatolt meghajtó",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"

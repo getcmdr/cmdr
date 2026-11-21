@@ -78,6 +78,7 @@ const {
 }))
 
 vi.mock('#lib/tauri-commands/index.js', () => ({
+  getHomeFolder: vi.fn(() => Promise.resolve('/Users/test')),
   DEFAULT_VOLUME_ID: 'root',
   // The drop path reports one PII-free event per drop; the emitter is fire-and-forget
   // so a stub is all it needs (`drag/drag-analytics.ts`).

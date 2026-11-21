@@ -53,6 +53,7 @@ export {
 } from './file-listing'
 // Streaming-listing event payload types, from the typed-events bindings via `file-listing.ts`.
 export type { CompareDirectoriesMode, CompareDirectoriesResult } from './file-listing'
+export { getHomeFolder } from './home-folder'
 export type {
   ListingOpeningEvent,
   ListingStalledEvent,

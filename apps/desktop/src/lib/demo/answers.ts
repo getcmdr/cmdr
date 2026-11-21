@@ -8,6 +8,7 @@ import { refuse, refuseWith, type AnswerTable, type Payload, type VoidCommand } 
 import type { ConfigureAiOutcome } from '#lib/tauri-commands/settings.js'
 import { customShortcuts, restrictedWindowSettings } from './plugins.js'
 import { sayDesktopOnly } from './browser-dialogs.js'
+import { DEMO_HOME } from './demo-tree.js'
 
 /** The bundled generic icon for an icon id: a folder for folder-ish ids (as `FileIcon.svelte` reads them), else a document. */
 function genericIcon(iconId: string): string {
@@ -111,6 +112,7 @@ export const appAnswers = {
     appearance: 'Appearance',
     automation: 'Automation',
   }),
+  getHomeFolder: () => DEMO_HOME,
   getPathLimits: () => ({ name: { max: 255, unit: 'utf16Units' }, path: { max: 1023, unit: 'bytes' } }),
   // The demo's one volume is in memory, which takes what POSIX takes.
   getNameRules: () => ({

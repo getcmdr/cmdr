@@ -1969,6 +1969,18 @@
   "@errors.write.folderHoldsUnlistedItems.suggestion": {
     "sourceHash": "b3e259b"
   },
+  "errors.write.cantTellIfSameFile.title": "Může jít o soubor, který právě kopírujete",
+  "@errors.write.cantTellIfSameFile.title": {
+    "sourceHash": "80f2303"
+  },
+  "errors.write.cantTellIfSameFile.message": "Tento disk neumí říct, jestli je soubor {path} ten samý soubor, který kopírujete, jen dostupný jinou cestou. Nahrazení by mohlo smazat váš původní soubor, a proto Cmdr kopírování tady zastavil a ten soubor nechal tak, jak byl.",
+  "@errors.write.cantTellIfSameFile.message": {
+    "sourceHash": "358ef5a"
+  },
+  "errors.write.cantTellIfSameFile.suggestion": "Pokud víte jistě, že jde o dva různé soubory, smažte soubor v cíli a spusťte kopírování znovu. Nebo kopírujte do jiné složky, případně si ponechte oba soubory pod různými názvy.",
+  "@errors.write.cantTellIfSameFile.suggestion": {
+    "sourceHash": "c5c76a7"
+  },
   "errors.write.mountedVolumeInside.title": "V cestě je připojený disk",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"

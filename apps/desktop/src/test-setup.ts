@@ -95,9 +95,10 @@ vi.mock('@tauri-apps/api/event', () => ({
   emit: vi.fn(() => Promise.resolve()),
 }))
 
-// Mock Tauri path API (used by FilePane for ~ substitution in breadcrumbs)
-vi.mock('@tauri-apps/api/path', () => ({
-  homeDir: vi.fn(() => Promise.resolve('/Users/test')),
+// The home folder a `~` expands against (FilePane's breadcrumbs, the drop rules, the transfer
+// dialog). A suite that mocks the whole `#lib/tauri-commands` barrel names `getHomeFolder` itself.
+vi.mock('#lib/tauri-commands/home-folder.js', () => ({
+  getHomeFolder: vi.fn(() => Promise.resolve('/Users/test')),
 }))
 
 // Mock Tauri webview API for drag-and-drop

@@ -348,6 +348,11 @@ const perVariant: Record<WriteOperationError['type'], TransferErrorFixture> = {
       path: 's3://AKIAIOSFODNN7EXAMPLE@s3.eu-west-1.amazonaws.com:443/family-photos/2019/exports',
     },
   },
+  // An Overwrite onto a file a Windows share reports no file id for.
+  cant_tell_if_same_file: {
+    operationType: 'copy',
+    error: { type: 'cant_tell_if_same_file', path: '//testnas.local/public/reports/notes.txt' },
+  },
   // A copy off an S3 bucket meeting an object in Glacier.
   source_in_cold_storage: {
     operationType: 'copy',
