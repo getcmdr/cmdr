@@ -104,8 +104,12 @@ import LegalLayout from '../layouts/LegalLayout.astro'
         <li>
             <strong>Crash reports</strong> (on by default): the app version, your operating system and its version,
             where in our code the crash happened, and the crash message, cleaned of personal data on your computer
-            first, plus a few basic facts about your computer: its model, CPU core count, memory, free disk space, the
-            size of Cmdr's drive index, and your preferred language. On a Mac, for a crash with no message, we also
+            first. They also carry some basic facts about your computer and the app, as far as your system tells us:
+            the computer's model, processor type, CPU core count, and memory, the free and total space on the disk
+            that holds Cmdr's data, the size of Cmdr's drive index, your preferred language, how long Cmdr had been
+            running, whether drive indexing, the MCP server, and detailed logging were on, and which kind of AI you
+            picked (none, cloud, or local). A random id, separate from the one on your usage stats, groups the reports
+            that come from one install. On a Mac, for a crash with no message, we also
             include the memory addresses the code stopped at and the address Cmdr itself was loaded at, which
             is what lets us turn those numbers back into a place in our code. They're randomized by macOS on every
             launch and say nothing about you or your Mac. We read the crash report macOS writes for the same crash and
@@ -118,8 +122,12 @@ import LegalLayout from '../layouts/LegalLayout.astro'
             off in Settings &gt; Updates &amp; privacy.
         </li>
         <li>
-            <strong>Error reports</strong> (opt-in): a zip of recent app logs plus your app and OS version and the same basic facts
-            about your computer as a crash report, sent from Help &gt; Send error report. The app shows you what's inside before it goes anywhere. File and folder names
+            <strong>Error reports</strong> (opt-in): a zip of recent app logs, sent from Help &gt; Send error report.
+            With the logs go your app and OS version, the same basic facts and install id as a crash report, how much
+            memory Cmdr and your computer were using, a short list of settings that change what Cmdr does (like
+            whether hidden files show), the names of the last commands you ran in the app, and a few snapshots of what
+            the app was doing (the folders open in each pane, running copies, and connected drives, with their names
+            replaced as below). The app shows you what's inside before it goes anywhere. File and folder names
             are replaced with placeholders on your computer first, so a path arrives as something like
             <code>$HOME/Documents/&lt;file&gt;.pdf</code>. This covers every path, a name repeated in the same log
             line as its path, and the names of servers, shares, and user accounts. A placeholder stays the same within
@@ -141,7 +149,8 @@ import LegalLayout from '../layouts/LegalLayout.astro'
         <li>
             <strong>Usage stats</strong> (open beta): which features you use, basic preferences (like light or dark
             mode), your app version, your operating system and its version, and your processor type, and on a Mac,
-            whether you installed Cmdr with Homebrew or downloaded it directly. Cloudflare, our host, also tells us which country each connection comes from. We
+            whether you installed Cmdr with Homebrew or downloaded it directly, plus how long the app was open since
+            the last send. Cloudflare, our host, also tells us which country each connection comes from. We
             store that country and don't keep your IP address. The app sends these about once every three hours while
             it's open. They're tied to a random id created on your computer, never to your name, email, or license. That id
             stays the same between launches, which is how we tell 100 people opening the app once from one person
@@ -187,11 +196,12 @@ import LegalLayout from '../layouts/LegalLayout.astro'
             Your prompts, the AI's answers, tool calls, etc. With a cloud provider, the app talks to it directly using
             your own API key: the conversation never passes through our servers. What you send is between you and that
             provider, under their terms. Cloud AI stays off until you allow it in Settings,
-            where Cmdr lists what each feature sends. On a Mac, you can also keep everything on your computer with a local model.
+            where Cmdr lists what each feature sends. On a Mac with Apple silicon, you can also keep everything on your computer with a
+            local model.
         </li>
         <li>
-            Crash reports carry only technical diagnostics: code locations, app and system version, and
-            a crash message cleaned on your computer first. Never file contents.
+            Crash reports carry only technical diagnostics: code locations, app and system version, the basic facts
+            about your computer listed above, and a crash message cleaned on your computer first. Never file contents.
         </li>
         <li>
             Your keystrokes or screenshots. During the open beta we do see which features are used, never their content.
