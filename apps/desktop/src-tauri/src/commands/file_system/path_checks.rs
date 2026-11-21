@@ -61,19 +61,17 @@ pub async fn get_name_rules(volume_id: Option<String>, dir: String) -> NameRules
         return NameRules::POSIX;
     };
     let volume_id = volume_id.unwrap_or_else(|| crate::volumes::local_volume_id_for_path(&dir));
-    let dir = if volume_id == "root" {
-        expand_tilde(&dir)
-    } else {
-        match get_volume_manager().get(&volume_id) {
-            Some(volume) if volume.local_path().is_some() => cmdr_operations::resolve_dest_path(&volume, dir)
-                .to_string_lossy()
-                .into_owned(),
-            _ => dir,
-        }
+    // Anchored on its volume's root like the transfer's own destination
+    // (`resolve_dest_path`), the boot volume's too: on Windows its root is `C:/`, and the
+    // dialog's `/Users/x` is `C:/Users/x` there.
+    let dir = match get_volume_manager().get(&volume_id) {
+        Some(volume) if volume.local_path().is_some() => cmdr_operations::resolve_dest_path(&volume, dir),
+        _ if volume_id == "root" => PathBuf::from(expand_tilde(&dir)),
+        _ => PathBuf::from(dir),
     };
     let engine = engine.clone();
     blocking_with_timeout(NAME_RULES_TIMEOUT, NameRules::POSIX, move || {
-        engine.name_rules_at(&volume_id, Path::new(&dir))
+        engine.name_rules_at(&volume_id, &dir)
     })
     .await
 }

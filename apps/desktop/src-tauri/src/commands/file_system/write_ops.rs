@@ -229,12 +229,30 @@ fn local_transfer_request(
     config: Option<WriteOperationConfig>,
 ) -> Result<(Vec<PathBuf>, PathBuf, WriteOperationConfig), WriteOperationError> {
     let sources: Vec<PathBuf> = sources.iter().map(|s| PathBuf::from(expand_tilde(s))).collect();
-    let destination = PathBuf::from(expand_tilde(destination));
+    let destination = same_root_destination(destination);
     // Twice, so the refusal names the half that actually refused rather than
     // whichever path the loop happened to reach first.
     reject_if_routed_over_a_parent(sources.iter(), ReadOnlySide::Source)?;
     reject_if_routed_over_a_parent(std::iter::once(&destination), ReadOnlySide::Destination)?;
     Ok((sources, destination, config.unwrap_or_default()))
+}
+
+/// A same-`root` move's destination, the Move dialog's VOLUME-RELATIVE box text, anchored
+/// on the boot volume's root the way a copy anchors its own (`resolve_dest_path`): on
+/// Windows that root is `C:/`, so `/Users/x` is `C:/Users/x`, which the engine takes; on
+/// macOS and Linux it's `/`, and the path is the one sent. With no boot volume registered
+/// (a test), the text as sent, tilde expanded. A `..` in it is the person's, so it stays
+/// for the OS to resolve, as a copy's does.
+fn same_root_destination(text: &str) -> PathBuf {
+    same_root_destination_on(get_volume_manager().get(cmdr_fs::volume::DEFAULT_VOLUME_ID), text)
+}
+
+/// [`same_root_destination`] on a given boot volume.
+fn same_root_destination_on(root: Option<Arc<dyn Volume>>, text: &str) -> PathBuf {
+    match root {
+        Some(root) => cmdr_operations::resolve_dest_path(&root, text.to_owned()),
+        None => PathBuf::from(expand_tilde(text)),
+    }
 }
 
 /// Uses rename() for same-filesystem (instant), copy+delete for cross-filesystem.
@@ -508,6 +526,10 @@ pub fn answer_locked_sources(operation_id: String, answer: LockedSourcesAnswer) 
 #[cfg(test)]
 #[path = "write_ops_restic_test.rs"]
 mod write_ops_restic_test;
+
+#[cfg(test)]
+#[path = "write_ops_destination_test.rs"]
+mod write_ops_destination_test;
 
 #[cfg(test)]
 mod tests {
