@@ -185,4 +185,11 @@ Every fixture and every item this run put in the Recycle Bin is gone again; noth
   - Not tested in the app: a drive with no Recycle Bin (no USB stick or share on the builder); `windows_tests.rs`'s
     `\\localhost\C$` cell covers the veto.
   - Seen, not chased: two folders PowerShell made in the listed folder never appeared in the left pane until it was
-    navigated away and back (a watcher miss on Windows).
+    navigated away and back: no listing watch is armed on a Windows drive at all (#1330).
+- **The review round** (`windows_tests.rs` on the builder, sparse files on `C:`, whose bin holds 5,831 MB): a file past
+  the bin's limit was DELETED FOR GOOD by a trash before `bin.rs` (the Shell announced it with the recycle flag and
+  reported success with no bin item, out of the sink's sight); at the limit it recycled. A folder past the limit, even
+  of files that each fit, fell back to its children, which the sink vetoed whole. A folder holding a file another
+  program holds unshared refused whole, a junction recycled as the link with its target kept, and a permanent delete on
+  a drive's volume walk (every drive but the boot one) now refuses a read-only file as `file_locked` too. Every item
+  these runs put in the bin is gone again.

@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use windows::Win32::Foundation::{
-    E_ACCESSDENIED, ERROR_ACCESS_DENIED, ERROR_CANCELLED, ERROR_LOCK_VIOLATION, ERROR_SHARING_VIOLATION,
+    E_ACCESSDENIED, E_UNEXPECTED, ERROR_ACCESS_DENIED, ERROR_CANCELLED, ERROR_LOCK_VIOLATION, ERROR_SHARING_VIOLATION,
     RPC_E_CHANGED_MODE,
 };
 use windows::Win32::System::Com::{
@@ -92,15 +92,35 @@ pub(super) fn refusal_kind_of(hr: HRESULT) -> TrashRefusalKind {
 /// Recycles the item at the plain path `plain` (a whole tree for a folder), or
 /// leaves it exactly where it was.
 pub(super) fn recycle(plain: &Path) -> Result<Recycled, Refusal> {
-    let _apartment = Apartment::enter().map_err(Refusal::Setup)?;
+    match Apartment::enter() {
+        Ok(Some(_apartment)) => recycle_in_this_apartment(plain),
+        // This thread already belongs to a multithreaded apartment, where Microsoft says
+        // `IFileOperation` can't be used: a thread of its own enters a single-threaded one.
+        Ok(None) => std::thread::scope(|scope| {
+            scope
+                .spawn(|| match Apartment::enter() {
+                    Ok(Some(_apartment)) => recycle_in_this_apartment(plain),
+                    Ok(None) => Err(Refusal::Setup(RPC_E_CHANGED_MODE)),
+                    Err(hr) => Err(Refusal::Setup(hr)),
+                })
+                .join()
+                .unwrap_or(Err(Refusal::Setup(E_UNEXPECTED)))
+        }),
+        Err(hr) => Err(Refusal::Setup(hr)),
+    }
+}
+
+/// [`recycle`]'s body, on a thread that entered a single-threaded apartment.
+fn recycle_in_this_apartment(plain: &Path) -> Result<Recycled, Refusal> {
     let verdict = Rc::new(RefCell::new(Verdict::default()));
     let sink: IFileOperationProgressSink = DeleteSink {
         verdict: Rc::clone(&verdict),
     }
     .into();
 
-    // SAFETY: plain COM calls on an apartment this thread entered above; every
-    // interface is a ref-counted smart pointer released on drop, before `_apartment`.
+    // SAFETY: plain COM calls on the single-threaded apartment the caller entered on this
+    // thread; every interface is a ref-counted smart pointer released on drop, before the
+    // caller leaves the apartment.
     let performed = unsafe {
         let operation: IFileOperation = CoCreateInstance(&FileOperation, None, CLSCTX_ALL).map_err(setup)?;
         // No UI at all (no progress, no confirmation, no error dialog), the first
@@ -135,21 +155,20 @@ fn setup(e: windows::core::Error) -> Refusal {
     Refusal::Setup(e.code())
 }
 
-/// A single-threaded COM apartment for the call, left on drop. A thread already in a
-/// multithreaded one (`RPC_E_CHANGED_MODE`) stays in it: `IFileOperation` works there
-/// too, and that apartment isn't ours to leave.
-struct Apartment {
-    entered: bool,
-}
+/// A single-threaded COM apartment on this thread for the call, left on drop.
+struct Apartment;
 
 impl Apartment {
-    fn enter() -> Result<Self, HRESULT> {
-        // SAFETY: initializing COM on the calling thread; balanced by `Drop`.
+    /// Enters one (`S_FALSE`, already in one, counts and is balanced the same), or `None`
+    /// when this thread is in a multithreaded apartment (`RPC_E_CHANGED_MODE`), which isn't
+    /// ours to leave.
+    fn enter() -> Result<Option<Self>, HRESULT> {
+        // SAFETY: initializing COM on the calling thread; a success is balanced by `Drop`.
         let hr = unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE) };
         if hr == RPC_E_CHANGED_MODE {
-            Ok(Self { entered: false })
+            Ok(None)
         } else if hr.is_ok() {
-            Ok(Self { entered: true })
+            Ok(Some(Self))
         } else {
             Err(hr)
         }
@@ -158,10 +177,9 @@ impl Apartment {
 
 impl Drop for Apartment {
     fn drop(&mut self) {
-        if self.entered {
-            // SAFETY: balances the successful `CoInitializeEx` in `enter`.
-            unsafe { CoUninitialize() };
-        }
+        // SAFETY: balances the successful `CoInitializeEx` in `enter`, on the same thread
+        // (`Apartment` is built and dropped inside one call frame).
+        unsafe { CoUninitialize() };
     }
 }
 
@@ -172,6 +190,8 @@ impl Drop for Apartment {
 struct Verdict {
     /// The Shell announced a delete it wouldn't recycle, and the sink stopped it.
     vetoed: bool,
+    /// How many deletes the Shell announced (`PreDeleteItem`): one, for an item that moves whole.
+    announced: u32,
     /// The delete's own result, from `PostDeleteItem`.
     result: Option<HRESULT>,
     /// The item it became in the Recycle Bin.
@@ -257,10 +277,16 @@ impl IFileOperationProgressSink_Impl for DeleteSink_Impl {
     }
 
     /// The veto: a delete the Shell won't recycle is refused before it starts, which
-    /// cancels it and everything after it (the `PreDeleteItem` contract).
+    /// cancels it and everything after it (the `PreDeleteItem` contract). So is any delete
+    /// past the first: our one item recycles as one move, and a second announcement means
+    /// the Shell fell back to a folder's children, which it does when the folder can't move
+    /// whole (verified on Windows 10 22H2: a folder past the bin's limit came back
+    /// `COPYENGINE_S_NOT_HANDLED`, then its file was announced with no recycle flag).
     fn PreDeleteItem(&self, dwflags: u32, _psiitem: Ref<'_, IShellItem>) -> windows::core::Result<()> {
-        if dwflags & TSF_DELETE_RECYCLE_IF_POSSIBLE.0 as u32 == 0 {
-            self.verdict.borrow_mut().vetoed = true;
+        let mut verdict = self.verdict.borrow_mut();
+        verdict.announced += 1;
+        if dwflags & TSF_DELETE_RECYCLE_IF_POSSIBLE.0 as u32 == 0 || verdict.announced > 1 {
+            verdict.vetoed = true;
             return Err(HRESULT::from_win32(ERROR_CANCELLED.0).into());
         }
         Ok(())

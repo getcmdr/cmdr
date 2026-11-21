@@ -87,6 +87,31 @@ fn a_folder_lands_whole() {
     assert_eq!(fs::read_to_string(landed.0.join("2026").join("a.txt")).unwrap(), "a");
 }
 
+/// `IFileOperation` works only in a single-threaded apartment, so a caller whose thread
+/// already joined a multithreaded one still gets its recycle, on a thread of its own.
+#[test]
+fn a_thread_in_a_multithreaded_apartment_still_recycles() {
+    use windows::Win32::System::Com::{COINIT_MULTITHREADED, CoInitializeEx, CoUninitialize};
+
+    let dir = TestDir::new("recycle_mta");
+    let file = dir.join("mta.txt");
+    fs::write(&file, "x").unwrap();
+    let on_thread = file.clone();
+    std::thread::spawn(move || {
+        // SAFETY: this fresh thread enters a multithreaded apartment, balanced below.
+        let hr = unsafe { CoInitializeEx(None, COINIT_MULTITHREADED) };
+        assert!(hr.is_ok(), "{hr:?}");
+        let landed = recycled(&on_thread);
+        drop(landed);
+        // SAFETY: balances the `CoInitializeEx` above, on the same thread.
+        unsafe { CoUninitialize() };
+    })
+    .join()
+    .unwrap();
+
+    assert!(fs::symlink_metadata(&file).is_err(), "it went to the Recycle Bin");
+}
+
 /// Windows moves a read-only file like any other; only a permanent delete refuses one.
 #[test]
 fn a_read_only_file_recycles() {
@@ -211,22 +236,33 @@ fn sparse_of_len(file: &Path, len: u64) -> bool {
             .is_ok()
 }
 
-/// 64 GiB: past any default Recycle Bin cap on a drive under about 1.3 TB (Windows sizes
-/// it at a few percent of the volume), so the Shell won't recycle it.
-const TOO_BIG_FOR_THE_BIN: u64 = 64 << 30;
+const MIB: u64 = 1 << 20;
 
-/// An item bigger than the drive's Recycle Bin is one the Shell deletes for good with no
-/// word under `FOF_NO_UI`; the veto keeps it. A sparse file stands in for a big one.
+/// A sparse file of `len` bytes at `dir\name` (no disk space taken), or `None` when the
+/// volume can't hold one (then the caller skips).
+fn sparse_file(dir: &Path, name: &str, len: u64) -> Option<PathBuf> {
+    let file = dir.join(name);
+    fs::write(&file, "head").unwrap();
+    sparse_of_len(&file, len).then_some(file)
+}
+
+/// The Recycle Bin limit of the drive `dir` sits on, as `bin.rs` reads it.
+fn bin_limit(dir: &Path) -> u64 {
+    bin::limit_of(&PathBuf::from(dir.to_string_lossy().replace('/', "\\"))).expect("a fixed drive has a bin limit")
+}
+
+/// A file past the bin's limit is one the Shell announces as a recycle and then deletes
+/// for good with no word under `FOF_NO_UI`, out of the sink's sight: `bin.rs` weighs it
+/// first, and it stays. A sparse file stands in for a big one.
 #[test]
 #[expect(clippy::print_stderr, reason = "a skip says why")]
-fn a_file_too_big_for_the_recycle_bin_is_refused_and_kept() {
+fn a_file_past_the_recycle_bins_limit_is_refused_and_kept() {
     let dir = TestDir::new("recycle_too_big");
-    let file = dir.join("huge.bin");
-    fs::write(&file, "head").unwrap();
-    if !sparse_of_len(&file, TOO_BIG_FOR_THE_BIN) {
+    let len = bin_limit(&dir) + MIB;
+    let Some(file) = sparse_file(&dir, "huge.bin", len) else {
         eprintln!("{SKIP_MARKER}this volume can't hold a sparse file");
         return;
-    }
+    };
 
     let result = move_to_trash_sync(&file);
     // If the bin took it after all, take it back out before the assertion fails.
@@ -236,28 +272,38 @@ fn a_file_too_big_for_the_recycle_bin_is_refused_and_kept() {
     };
 
     assert_no_trash_for_volume(&result);
-    assert_eq!(
-        fs::metadata(&file).unwrap().len(),
-        TOO_BIG_FOR_THE_BIN,
-        "never deleted for good"
-    );
+    assert_eq!(fs::metadata(&file).unwrap().len(), len, "never deleted for good");
 }
 
-/// A folder holding a file bigger than the bin: the Shell weighs the whole tree, and the
-/// veto keeps all of it, the small file beside the big one included.
+/// The other side of the line: a file right at the bin's limit still recycles.
 #[test]
 #[expect(clippy::print_stderr, reason = "a skip says why")]
-fn a_folder_too_big_for_the_recycle_bin_is_refused_whole() {
+fn a_file_at_the_recycle_bins_limit_recycles() {
+    let dir = TestDir::new("recycle_at_limit");
+    let Some(file) = sparse_file(&dir, "big.bin", bin_limit(&dir)) else {
+        eprintln!("{SKIP_MARKER}this volume can't hold a sparse file");
+        return;
+    };
+
+    let _landed = recycled(&file);
+
+    assert!(fs::symlink_metadata(&file).is_err());
+}
+
+/// A folder whose files each fit the bin but together don't can't move whole, so the
+/// Shell falls back to its children, announcing them for good: the sink vetoes the first,
+/// and every file stays.
+#[test]
+#[expect(clippy::print_stderr, reason = "a skip says why")]
+fn a_folder_past_the_recycle_bins_limit_is_refused_whole() {
     let dir = TestDir::new("recycle_too_big_folder");
     let folder = dir.join("archive");
     fs::create_dir(&folder).unwrap();
-    fs::write(folder.join("small.txt"), "small").unwrap();
-    let huge = folder.join("huge.bin");
-    fs::write(&huge, "head").unwrap();
-    if !sparse_of_len(&huge, TOO_BIG_FOR_THE_BIN) {
+    let each = bin_limit(&dir) / 5 * 3;
+    let (Some(a), Some(b)) = (sparse_file(&folder, "a.bin", each), sparse_file(&folder, "b.bin", each)) else {
         eprintln!("{SKIP_MARKER}this volume can't hold a sparse file");
         return;
-    }
+    };
 
     let result = move_to_trash_sync(&folder);
     let _landed = match &result {
@@ -266,8 +312,8 @@ fn a_folder_too_big_for_the_recycle_bin_is_refused_whole() {
     };
 
     assert_no_trash_for_volume(&result);
-    assert_eq!(fs::read_to_string(folder.join("small.txt")).unwrap(), "small");
-    assert_eq!(fs::metadata(&huge).unwrap().len(), TOO_BIG_FOR_THE_BIN);
+    assert_eq!(fs::metadata(&a).unwrap().len(), each);
+    assert_eq!(fs::metadata(&b).unwrap().len(), each);
 }
 
 /// A folder with one file another program holds open can't move as one: the trash

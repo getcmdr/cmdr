@@ -229,7 +229,7 @@ owns its real body. Remove a line when its body lands.
   never Pageant.
 - `cmdr_local::LocalWindowsVolume` (`platform/local_windows.rs`), task 35: no read or write streams (so no copy onto or
   off it, no export), no copy scan, no `create_symlink` / `read_link_target` (`can_hold_links` false), no ADS-backed
-  xattrs, no `apply_metadata` or metadata caps, no `write_access_at`, no trash, no listing watch, and no
+  xattrs, no `apply_metadata` or metadata caps, no `write_access_at`, no listing watch (#1330), and no
   `FindFirstFileExW` lister. Each keeps the trait's conservative default, and each conformance cell it can't pass yet is
   `#[ignore]`d with its piece (`local_windows_conformance_test.rs`).
 - `cmdr_local::reading` Windows arm (`reading/platform/windows.rs`), task 35: no allocation size, mode `0`, no owner or
@@ -625,17 +625,17 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     unanchored, `docs/notes/windows-port/real-windows-check-2026-11-19.md` problem 7), the rest of the
     `Unknown`-identity rule above, and the `CopyFileExW` arm. Stubs: § "Windows build state". **Delete done**
     (2026-11-21): the Recycle Bin (`delete/trash/platform/windows/`, `IFileOperation` one item per call, a progress-sink
-    veto so a drive with no bin refuses as `NoTrashForVolume` and never deletes for good, the `$R…` item journaled so
-    the trash undo renames it back and drops its `$I` record; `delete/DETAILS.md` § "Windows: the Recycle Bin"), the
-    switcher's `supports_trash` from `WindowsDriveKind::has_recycle_bin` (fixed disks only), read-only as Locked (a
-    permanent delete and an Overwrite refuse a read-only file as `FileLocked`, since `std::fs::remove_file` deletes
-    through it: `local_disk::locked_against_removal`), and a sharing or lock violation on trash as
-    `TrashRefusalKind::InUse` with a Retry (a permanent delete already refused as `FileInUse`). On the desktop:
+    veto plus an up-front check of the drive and the bin's size limit (`bin.rs`) so an item no bin takes refuses as
+    `NoTrashForVolume` and never deletes for good, the `$R…` item journaled so the trash undo renames it back and drops
+    its `$I` record; `delete/DETAILS.md` § "Windows: the Recycle Bin"), the switcher's `supports_trash` from
+    `WindowsDriveKind::has_recycle_bin` (fixed disks only), read-only as Locked (a permanent delete on any drive and an
+    Overwrite refuse a read-only file as `FileLocked`, since `std::fs::remove_file` deletes through it:
+    `local_disk::locked_against_removal`), and a sharing or lock violation on trash as `TrashRefusalKind::InUse` with a
+    Retry (a permanent delete already refused as `FileInUse`). On the desktop:
     `docs/notes/windows-port/real-windows-check-2026-11-19.md` § "Task 36's delete on the desktop". Left of delete: a
-    non-system drive's permanent delete runs the volume walker (`LocalWindowsVolume::delete`), which still deletes a
-    read-only file (no typed Locked `VolumeError` yet); `removal_lock` / `clear_blockers` don't read read-only (a move
-    asks no Locked consent, and a cross-drive move deletes a read-only original); "Go to trash" has no folder; the
-    volume's `has_trash` says yes on a removable drive (its class is `LocalDisk`; the row and the veto both say no).
+    move asks no Locked consent for a read-only file and a cross-drive move deletes a read-only original (#1331); "Go to
+    trash" has no folder, and the volume's `has_trash` says yes on a removable drive (#1332). Seen beside it: no listing
+    watch on a Windows drive, so panes miss outside changes (#1330).
 
 37. [S] Windows. Cloud Files placeholders (OneDrive and friends: sync badges, cloud trash) and Mark of the Web on
     extract (`cmdr-operations` + `cmdr-archive`). Needs 36.

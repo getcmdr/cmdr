@@ -131,8 +131,9 @@ xattr = "1"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 # The write probe's access mask, share mode, and flag constants
-# (`local_disk/platform/windows.rs`). The version `cmdr-fs` and `cmdr-local` use.
-windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Storage_FileSystem"] }
+# (`local_disk/platform/windows.rs`), and the Recycle Bin's drive, size limit, and
+# settings (`delete/trash/platform/windows/bin.rs`). The version `cmdr-fs` and `cmdr-local` use.
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_Registry"] }
 # The Recycle Bin (`delete/trash/platform/windows/`): the Shell's `IFileOperation`
 # and the progress sink it calls back, a COM object `windows-core`'s `implement`
 # builds. The `windows` / `windows-core` versions the app already uses.

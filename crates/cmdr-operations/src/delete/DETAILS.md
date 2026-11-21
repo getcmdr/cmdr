@@ -382,24 +382,44 @@ go" rather than reporting something went wrong.
 ## Windows: the Recycle Bin (`trash/platform/windows/`)
 
 One `IFileOperation::DeleteItem` per top-level item, on the caller's worker thread in a single-threaded COM apartment it
-enters and leaves (`shell.rs`), with `FOF_NO_UI | FOF_ALLOWUNDO | FOFX_RECYCLEONDELETE | FOFX_EARLYFAILURE`.
-`IFileOperation` over `SHFileOperationW` because Microsoft replaced the latter with it in Vista, and only it hands back
-the in-trash item (`PostDeleteItem`'s `psiNewlyCreated`). Cancel and progress stay the batch loop's, between items,
-exactly as on macOS: a same-drive recycle is one rename, so a folder costs one call.
+enters and leaves (`shell.rs`; a thread already in a multithreaded apartment hands the call to a short-lived thread of
+its own, since Microsoft supports `IFileOperation` in a single-threaded one only), with
+`FOF_NO_UI | FOF_ALLOWUNDO | FOFX_RECYCLEONDELETE | FOFX_EARLYFAILURE`. `IFileOperation` over `SHFileOperationW` because
+Microsoft replaced the latter with it in Vista, and only it hands back the in-trash item (`PostDeleteItem`'s
+`psiNewlyCreated`). Cancel and progress stay the batch loop's, between items, exactly as on macOS: a same-drive recycle
+is one rename, so a folder costs one call.
 
 - **❗ The Shell DELETES what it can't recycle**, silently under `FOF_NO_UI` (a share, a USB stick, a `subst` letter, a
-  bin that's full, turned off, or too small for the item). So the progress sink's `PreDeleteItem` refuses every delete
-  announced without `TSF_DELETE_RECYCLE_IF_POSSIBLE`, which cancels it before anything is touched, and that refusal is
-  `NoTrashForVolume`: the item stays, and the dialog offers the permanent delete with its own consent. ❌ Never
-  `FOF_WANTNUKEWARNING` instead: it raises the Shell's own dialog. ❌ Never drop the veto because the switcher row says
-  "no trash" for those drives (`WindowsDriveKind::has_recycle_bin`): a full or turned-off bin on a fixed disk is the
-  same silent delete.
+  bin turned off, an item past the bin's size limit). Three walls stop it, each refusing as `NoTrashForVolume`: the item
+  stays, and the dialog offers the permanent delete with its own consent.
+  - **`bin.rs`, before the Shell**: a drive that isn't a fixed disk (`GetDriveTypeW`), one Windows names no volume GUID
+    for, a bin turned off (`NukeOnDelete`, the `NoRecycleFiles` policy), and a FILE past the bin's limit (Explorer's
+    per-drive `MaxCapacity` in MiB under `HKCU\…\Explorer\BitBucket\Volume\{GUID}`, or the `RecycleBinSize` policy's
+    percentage, the smaller; 5% of the drive when neither is written, at or below Windows' own starting size). ❗ The
+    sink can't catch that file: the Shell announces it WITH `TSF_DELETE_RECYCLE_IF_POSSIBLE`, deletes it for good, and
+    reports `PostDeleteItem` success (`0x00270008`) with no new item. A bin that's merely full takes the item (it trims
+    old ones later), so only the limit matters.
+  - **The sink's `PreDeleteItem`**: a delete announced without `TSF_DELETE_RECYCLE_IF_POSSIBLE`, which cancels it before
+    anything is touched (Microsoft's documented contract for an error from it).
+  - **The sink again: any announcement past the first.** One item recycles as one move, so a second means the Shell fell
+    back to a folder's children: it does for a folder that can't move whole (past the limit in total, even when each
+    file fits), answering the folder `COPYENGINE_S_NOT_HANDLED` and announcing each child for good.
+  - ❌ Never `FOF_WANTNUKEWARNING` instead: it raises the Shell's own dialog. ❌ Never drop a wall because another one
+    or the switcher row ("no trash", `WindowsDriveKind::has_recycle_bin`) seems to cover it.
+  - A success with no bin item still logs an error (`trash` target): it's how the Shell reports a delete for good it
+    chose, so a case none of the walls knows reaches a report.
+  - (verified on Windows 10 22H2, NTFS, `C:` with a 5,831 MB bin, sparse files, `windows_tests.rs` on the builder,
+    2026-11-21: 5,831 MiB recycled, 5,832 MiB and 64 GiB were deleted for good before `bin.rs`; a folder of two 4 GiB
+    files fell back to its children and was vetoed whole; a 4 GiB file into a bin already holding 3 GiB landed.)
 - **The in-trash location is the Shell's `$R…` item** (`C:\$Recycle.Bin\<SID>\$RAB12CD.txt`), returned in the app
   spelling and journaled as the trash row's dest like macOS's, so the trash undo is the same one rename back. The bin
   lists an item by its `$I…` record beside it (original path, size, date), so a restore then deletes that record
-  (`forget_restored`, called by the rollback runner after a same-volume restore rename; a no-op off Windows and for any
-  other path), or Explorer would list an entry whose item is gone. A restore by hand in Explorer is Explorer's own and
-  needs nothing from us.
+  (`forget_restored`, called by the rollback runner after a same-volume restore rename on a local-disk volume; a no-op
+  off Windows and for any other path), or Explorer would list an entry whose item is gone. The pair is the Shell's own
+  naming (`$R` and `$I` share their random suffix in one `<SID>` folder), and the restore first proves the `$R` item is
+  the one the trash left (`landed_node_holds` when the row recorded its node, a file's size and date), so the record
+  removed is that item's. A restore by hand in Explorer is Explorer's own and needs nothing from us; an emptied bin
+  reads as "nothing came back".
 - **Refusals are read from the Shell's `HRESULT`**, ❌ never its words: a sharing or lock violation (the Win32 codes or
   `COPYENGINE_E_SHARING_VIOLATION_SRC`) is `InUse`, which the dialog words with a Retry (closing the item elsewhere is
   the fix), an access refusal `NotPermitted`, the rest `Other`. The `detail` carries the `HRESULT`.
@@ -409,8 +429,9 @@ exactly as on macOS: a same-drive recycle is one rename, so a folder costs one c
   trash" has nowhere to go yet.
 - (verified on Windows 10 22H2, NTFS, `windows_tests.rs` on the builder and the running app, 2026-11-21: a file and a
   folder on `C:` land as `$R…` items with their bytes, a file another program holds unshared refuses as `InUse` and
-  stays, a file through `\\localhost\C$` (no bin) is vetoed and stays, and a restore by rename plus `forget_restored`
-  takes the entry out of the bin.)
+  stays, so does a folder holding one, a junction recycles as the link and its target stays, a file through
+  `\\localhost\C$` (no bin) is vetoed by the sink and by `bin.rs` each on its own, and a restore by rename plus
+  `forget_restored` takes the entry out of the bin.)
 
 ## A trash of online-only cloud content becomes a delete (`cloud_trash.rs`)
 

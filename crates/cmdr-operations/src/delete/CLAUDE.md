@@ -45,7 +45,7 @@ A local-FS walker, a volume walker (every backend), and OS-native trash.
   it is data loss), ❌ never on the refusal; only a provider we know by name, all-or-nothing. A FOLDER is answered by
   the scan preview's walk (`OnlineOnlyWatch`), ❌ no second walk. DETAILS.
 - **A refusal carries a typed `TrashRefusalKind`, from the OS's CODE** (`NSError` domain + code, the Shell's `HRESULT`),
-  ❌ never its words. ❗ Windows' Shell DELETES what it can't recycle: ❌ keep the sink's veto (DETAILS § Windows). A
+  ❌ never its words. ❗ Windows' Shell DELETES what it can't recycle: ❌ keep all three walls (DETAILS § Windows). A
   failed batch is `WriteOperationError::TrashRefused`, ❌ not an `IoError`, reporting `strongest_refusal`, ❌ not the
   most common one.
 - **A test that really trashes holds `testing::TrashCleanup`** (`docs/testing.md`).
