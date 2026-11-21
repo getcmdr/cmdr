@@ -123,7 +123,8 @@ export function actOnSchemeInput(
     onConnected: (place: ConnectedPlace) => void
   },
 ): Promise<GoToPathOutcome> {
-  if (intent.kind === 'place') return Promise.resolve({ kind: 'directory', path: intent.path })
+  // A scheme place is navigated to as written: no `..` was resolved, so none crossed a link.
+  if (intent.kind === 'place') return Promise.resolve({ kind: 'directory', path: intent.path, crossedLink: false })
   // ❗ `invalid` keeps the dialog OPEN with the preview line still under the box,
   // which is the honest answer: there's nowhere to send the person, and closing
   // on it would look like the jump worked.

@@ -149,11 +149,11 @@ describe('goToPath handler', () => {
     it('navigates to a saved place, and ❌ never asks the local resolver', async () => {
       const path = 'sftp://test_user_1@testnas.local:22/srv/data'
       readSchemeInputMock.mockResolvedValue({ kind: 'place', path, label: 'Testnas' })
-      actOnSchemeInputMock.mockResolvedValue({ kind: 'directory', path })
+      actOnSchemeInputMock.mockResolvedValue({ kind: 'directory', path, crossedLink: false })
 
       const outcome = await goToPath(makeExplorerStub(), path)
 
-      expect(outcome).toEqual({ kind: 'directory', path })
+      expect(outcome).toEqual({ kind: 'directory', path, crossedLink: false })
       expect(navigateToDirMock).toHaveBeenCalledWith(expect.anything(), 'left', { volumeId: 'root', path })
       expect(addRecentPathStateMock).toHaveBeenCalled()
       // ❗ `resolve_go_to_path` walks `std::fs::metadata`: given this it would
@@ -267,7 +267,7 @@ describe('goToPath handler', () => {
     it('a saved place', async () => {
       const path = 'sftp://test_user_1@testnas.local:22/srv/data'
       readSchemeInputMock.mockResolvedValue({ kind: 'place', path, label: 'Testnas' })
-      actOnSchemeInputMock.mockResolvedValue({ kind: 'directory', path })
+      actOnSchemeInputMock.mockResolvedValue({ kind: 'directory', path, crossedLink: false })
       navigateToDirMock.mockResolvedValue(false)
       await goToPath(makeExplorerStub(), path)
       expect(addRecentPathStateMock).not.toHaveBeenCalled()
