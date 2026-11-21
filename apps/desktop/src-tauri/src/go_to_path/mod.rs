@@ -6,7 +6,8 @@
 //! The IPC wrappers in `commands/go_to_path.rs` are pass-throughs.
 //!
 //! [`AppHost::resolve_typed`] is the ONE resolver for text a person or an agent typed: Go to
-//! path, the `cmdr` CLI's paths, deep links, and (10d) the MCP tools' path inputs. It
+//! path, the `cmdr` CLI's paths, deep links, and the MCP tools' path inputs
+//! (`tools/agent_path.rs`). It
 //! runs `cmdr_fs::typed_path` over [`AppHost`]: the volume registry picks the volume
 //! holding a path and answers each `..` through `Volume::parent_for_dot_dot`, under a
 //! timeout, so a hung mount refuses instead of blocking. Decisions: `DETAILS.md`.
@@ -73,10 +74,16 @@ impl AppHost {
         (self.volume_for)(path).ok_or_else(|| VolumeError::NotConnected(path.to_string()))
     }
 
+    /// The root of the volume holding `path`, `None` when none does: what the MCP tools' path
+    /// door (`tools/agent_path.rs`) compares to tell a link that leads onto another volume.
+    pub(crate) fn root_holding(&self, path: &AppPath) -> Option<AppPathBuf> {
+        (self.volume_for)(path).map(|volume| volume.root().to_owned())
+    }
+
     /// `work` within what's left of the deadline. Detached on expiry (the MTP rule,
     /// `cmdr_fs::deadline`): the caller gets `ConnectionTimeout` at once, and the work
     /// runs on to its own end rather than being dropped mid-transaction.
-    async fn within<T: Send + 'static>(
+    pub(crate) async fn within<T: Send + 'static>(
         &self,
         work: impl Future<Output = Result<T, VolumeError>> + Send + 'static,
     ) -> Result<T, VolumeError> {

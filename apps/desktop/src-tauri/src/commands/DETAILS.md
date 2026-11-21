@@ -545,9 +545,9 @@ A path the frontend sends is read as an app path at the command edge, `wire_path
   (go-to's `crossedLink`).
 - **A pane never stands on a `..`**, or every row under it would carry one and each delete, trash, or move from it
   would refuse as a bug: the listing start takes its path as sent, so the senders that can hold a `..` are closed
-  before a pane takes one. The CLI refuses it (`cli/open_url.rs`), go-to-path resolves it, and the MCP `nav_to_path`
-  tool refuses it typed (`data.refusal: "dotDotName"`, `tools/actions/nav.rs`) until the typed-path resolver answers an
-  agent's `..`. A tab persisted on a `..` path before that refusal still lists, and its rows' writes refuse.
+  before a pane takes one. The CLI refuses it (`cli/open_url.rs`), go-to-path resolves it, and every MCP tool's path input
+  resolves it as the volume does before a handler reads it (`apps/desktop/src-tauri/src/tools/agent_path.rs`). A tab persisted on a `..` path
+  before that still lists, and its rows' writes refuse.
 - **`move_files`' destination on macOS and Linux** is the one sent for every absolute path (the root is `/`); a relative
   or empty one now anchors on `/` as a copy's does (`foo` is `/foo`, as the dialog's own validation already read it),
   where it used to reach the engine relative.

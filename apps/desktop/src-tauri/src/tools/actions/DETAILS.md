@@ -276,10 +276,10 @@ its reply is allowed to mean (`parse_mcp_response`, `parse_operation_start_respo
 `expand_user_path(s)` for optional or conditional sites (the `dialog` tool's optional `path`, the `await` tool's `value`
 when path-shaped). Both in `mod.rs`. Virtual paths (`mtp://…`) don't start with `~`, so expansion is a no-op for them.
 
-`nav_to_path` refuses a path holding a `..` name, typed (`data.refusal: "dotDotName"`): a pane standing on one would
-carry the `..` into every row, and the command edge refuses each delete, trash, or move of such a row as a bug
-(`../../commands/DETAILS.md` § "Sent paths"). It lifts in 10d, when the tool routes an agent's `..` through `AppHost::registry().resolve_typed(…, TypedBy::Agent)`
-(`apps/desktop/src-tauri/src/go_to_path/DETAILS.md`).
+No handler here sees an agent's `..`: the dispatch resolves every declared path field first (`../agent_path.rs`,
+`../DETAILS.md` § "An agent's path"), so `nav_to_path` takes a pane where the volume says `x/link/../y` leads, and a
+pane never stands on a path holding a `..` (every row under it would refuse its delete, trash, or move as a bug,
+`../../commands/DETAILS.md` § "Sent paths").
 
 ## Empty-operation fast-fail (`file_ops.rs`)
 

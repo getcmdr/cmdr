@@ -7,8 +7,8 @@ ONE typed-path resolver, `AppHost::resolve_typed`, for every text a person or an
 ## Module map
 
 - **`mod.rs`**: `AppHost` (the registry picks the volume holding a path; every stat and `..` runs detached under one
-  2 s `Deadline`), `AppHost::resolve_typed` (go-to, the CLI's paths, deep links via `reveal::delivery`, and 10d's MCP
-  inputs; `AppHost::on_volume` for text whose volume is already picked, the transfer box's `..` in
+  2 s `Deadline`), `AppHost::resolve_typed` (go-to, the CLI's paths, deep links via `reveal::delivery`, and the MCP
+  tools' inputs via `apps/desktop/src-tauri/src/tools/agent_path.rs`; `AppHost::on_volume` for text whose volume is already picked, the transfer box's `..` in
   `commands/wire_path.rs`), and `resolve(input, base_dir) -> GoToPathResolution`. The rules are `cmdr_fs::typed_path` (`~`, the pane's
   folder, each `..`) and `cmdr_fs::go_to_path` (classify), shared with the browser demo
   (`crates/cmdr-listing-wasm/src/go_to.rs`). Cells: `tests.rs`, `wire_shape_tests.rs` (the symlink pins).

@@ -34,17 +34,16 @@ transport for outside clients; `../agent/` is the in-process runtime, with the g
 - **A call is checked against its declared schema before a handler sees it** (`params.rs`). Every schema closes itself
   with `additionalProperties: false`, nested objects too. Params are camelCase, tool
   names snake_case.
-- **Whatever a user can reach, an agent must reach, answer, and OBSERVE.** ❌ No modal state with no way to see or answer
-  it.
+- **Whatever a user can reach, an agent must reach, answer, and OBSERVE.** ❌ No modal state it can't see or answer.
 - **A handler calls a deterministic core** and only SHAPES the result.
-- **A place is `path` + optional `volumeId` in, `location` out, via `crate::location`'s one resolver.** A miss is a typed
-  `Ok`, ❌ never an empty listing.
+- **A place is `path` + optional `volumeId` in, `location` out, via `crate::location`'s resolver**, a miss a typed `Ok`.
+  Path inputs first pass `agent_path.rs`. `DETAILS.md` § An agent's path.
 - **A list must fit ONE tool result**: `fit_to_result_budget`, reporting `total` / `returned` / `truncated`. ⚠️ `search`'s
   `matchCount` counts PAST the cap, so it's never a `total`.
 - **A core schema and a deferred `brief` are PREFIX**, so a new tool is `Load::Deferred` unless a flow needs it. ⚠️ Every
   declared property needs a `type`, or llama-server refuses the request. `DETAILS.md` § Lazy loading.
 - **Every result voices its coverage**: a typed field, never a wrong zero.
-- **A proposal claiming file CONTENTS must prove it** through `ImageFactsLedger`. `propose/DETAILS.md`.
+- **A proposal claiming file CONTENTS proves it** via `ImageFactsLedger` (`propose/DETAILS.md`).
 - **Only `inspect_file`, `list_dir`'s live read, and `about_item` read a live filesystem**, bounded. Contents pass
   `sensitive.rs`. A new content KIND is a copy change plus a `CLOUD_AI_CONSENT_VERSION` bump.
 - **New tool** = table entry + handler and schema + its class's `EXPECTED_*_TOOL_NAMES` + a rail label + the wire fixture.

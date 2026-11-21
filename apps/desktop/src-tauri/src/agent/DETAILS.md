@@ -28,7 +28,9 @@ The backend modules:
 - `suggested_ops/`: the service over the spine — resolving a selector to a frozen op list against the drive index,
   wrapping the store's claim, and the acceptance-rate metric. Depth: `suggested_ops/DETAILS.md`.
 - `tool_gate.rs`: the dispatch that shapes what `admit` decides, before `execute_tool`, plus `line/`, what the rail says
-  about a call. Depth: `line/DETAILS.md`, `../tools/DETAILS.md` § The dispatch gate.
+  about a call. Its `propose_rename_plan` branch skips `execute_tool`, so it runs the schema gate and the path door
+  (`../tools/agent_path.rs`) itself. Depth: `line/DETAILS.md`, `../tools/DETAILS.md` § The dispatch gate and § An
+  agent's path.
 - `../tools/`: the toolset, a sibling of this module: one table for both callers (agent decision D49, extend-don't-fork),
   the handlers/result shapes that reuse the shipped cores
   (drive index, importance, operation log, volumes, app state, the file viewer), and the propose and memory tiers. Depth:
