@@ -18,6 +18,9 @@ use notify_debouncer_full::{
     },
 };
 
+use cmdr_fs::log_private::LogPrivate;
+use cmdr_local::reading::{listing_spelling_of, watch_os_path};
+
 use super::ListingChange;
 
 /// A live `notify` watch. Dropping it stops watching.
@@ -30,12 +33,25 @@ pub(super) fn arm(
     debounce: Duration,
     deliver: impl Fn(Vec<ListingChange>) + Send + 'static,
 ) -> Result<ListingStream, String> {
-    let os_dir = cmdr_local::reading::watch_os_path(path).map_err(|e| format!("Failed to watch path: {e}"))?;
+    let os_dir = watch_os_path(path).map_err(|e| format!("Failed to watch path: {e}"))?;
+    let shown = path.to_path_buf();
     let mut debouncer = new_debouncer_opt::<_, RecommendedWatcher, NoCache>(
         debounce,
         None, // No tick rate limit
         move |result: DebounceEventResult| match result {
-            Ok(events) => deliver(translate(events)),
+            Ok(events) => {
+                let changes = translate(events);
+                // One line per window, like FSEvents' "lost history" line, so a bug bundle
+                // tells an OS that dropped events (an inotify queue or a `ReadDirectoryChangesW`
+                // buffer overflow) from a watch that heard nothing.
+                if changes.contains(&ListingChange::Rescan) {
+                    log::info!(
+                        "Watcher: the OS lost events for {}, re-reading",
+                        LogPrivate::dir_path(&shown)
+                    );
+                }
+                deliver(changes);
+            }
             // Watcher errors often mean the watched directory was deleted. The re-read
             // emits `directory-deleted` when it finds it gone.
             Err(_errors) => deliver(vec![ListingChange::Rescan]),
@@ -72,7 +88,7 @@ pub(crate) fn translate(events: Vec<DebouncedEvent>) -> Vec<ListingChange> {
             continue;
         }
         for path in &event.paths {
-            let path = cmdr_local::reading::listing_spelling_of(path);
+            let path = listing_spelling_of(path);
             changes.push(if structural {
                 ListingChange::Structural(path)
             } else {

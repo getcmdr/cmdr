@@ -808,6 +808,51 @@ Still unconfirmed: whether a single-directory stream is handed ancestor-anchored
 with no such line in the bundle, the next step is option (a): re-read open listings under the indexer's drop anchors.
 Pinned by `watcher_fsevents_test.rs` (synthetic events, including a drop at `/` re-reading a real listing).
 
+## Windows listing watches
+
+`LocalWindowsVolume` answers `can_watch_listings` (#1330), so a pane on a drive or share folder arms the same
+`notify_stream.rs` watch Linux uses, over `ReadDirectoryChangesW`. What's Windows-shaped:
+
+- **Paths cross once each way.** The watch opens `cmdr_local::reading::watch_os_path` (the verbatim `\\?\C:\…`, so a
+  folder past `MAX_PATH` arms), and `translate` hands every event path through `listing_spelling_of` back to the app
+  spelling (`C:/…`) the listing and its rows key on. Without the crossing, `has_entry`'s string match would miss every
+  removal. On Linux both are the identity.
+- **A rename is two halves** (`FILE_ACTION_RENAMED_OLD_NAME`, `…_NEW_NAME`): both are `Structural`, and the stat sorts
+  them, as on Linux.
+- **A case-only rename** (`a.txt` → `A.txt`): a Windows stat of the old spelling answers for the new one, so the plain
+  stat kept both rows. The handler stats through `get_single_entry` (`FindFirstFileExW` reads the folder's own
+  name for it), so the old spelling reads as gone. On macOS and Linux it's the plain stat, no extra syscall.
+- **Lost events re-read.** notify 8.2.2 dropped a `ReadDirectoryChangesW` overflow and a deleted watch root silently;
+  `vendor/notify` (its `CMDR-PATCH.md`) backports notify 9.0's fix: an overflow emits a `Flag::Rescan` event
+  (`ListingChange::Rescan`, a full re-read), and a deleted root emits `Remove(Folder)` on the root
+  (`watch_root_identity_changed`, then `directory-deleted`). The same patch reaches the index's notify backend (#1128).
+- **Coverage per drive kind**, decided at arm time (`coverage_for_watched_path`, the `GetDriveTypeW` probe in
+  `cmdr-local`'s `filesystem_kind.rs`). Verified on Windows 10 22H2 with a `FileSystemWatcher` (which is
+  `ReadDirectoryChangesW`) and a second process writing, 2026-11-21:
+  - A fixed drive: `EveryWriter` (`C:\`, also through a `C:/` spelling).
+  - A `subst` letter: `EveryWriter`. A watch on `Q:\` heard a write through the target folder and the other way round.
+    `GetVolumePathNameW` refuses a `subst` path (`ERROR_INVALID_PARAMETER`), so the probe falls back to the letter's
+    root, which answers `DRIVE_FIXED` and `NTFS`.
+  - A removable drive: `EveryWriter` by the same reasoning (every writer goes through this machine's filesystem
+    driver). Unverified: the builder has no removable drive.
+  - A mapped drive or UNC share (`DRIVE_REMOTE`): `ThisMachineOnly`. Over `\\localhost\C$` the watch heard a local
+    process's write, because a Windows server answers SMB change notify for every writer, but a NAS may not implement
+    it, and no server forwards a change the network buffer (64 KiB) dropped. So it never lets a delete walker skip a
+    read.
+  - A FAT32 or ReFS drive probes as not-local (`mount_is_local_disk` knows `ntfs` and `exfat` among Windows names), so
+    it's `ThisMachineOnly`: an under-claim, costing a re-read before a delete.
+- **What the open handle blocks** (notify opens it `FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE`; same
+  probe, 2026-11-21): deleting the watched folder works (it's gone at once, and the same name can be made again),
+  renaming the watched folder itself works, deleting an ancestor works. ❗ Renaming or moving an ANCESTOR fails with
+  "Access is denied" while a pane shows a folder under it: NTFS refuses to rename a directory with an open handle below
+  it, whatever the share mode. That includes Cmdr's own F2 on the parent from the other pane. Ejecting a removable drive
+  with a watch open is vetoed the same way unless the holder closes on query-remove; unverified here. Both are open
+  follow-ups (#1330's comment).
+- **Idle cost**: one directory handle and one pending overlapped read per watch, completed by the kernel, so nothing
+  polls the disk. Two threads per watch still wake on a timer: notify 8.2.2's server loop every 100 ms (to drain its
+  command queue; 9.0 waits with no timeout, which needed a reworked semaphore lifetime, too big to backport) and
+  `notify-debouncer-full`'s tick every quarter of the debounce window (50 ms, as on Linux).
+
 ## Tag analytics
 
 `toggle_color` reports `tag_toggled` at its single exit, so all three triggers (the seven keyboard commands, the

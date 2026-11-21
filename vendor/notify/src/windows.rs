@@ -21,11 +21,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use windows_sys::Win32::Foundation::{
-    CloseHandle, ERROR_ACCESS_DENIED, ERROR_OPERATION_ABORTED, ERROR_SUCCESS, HANDLE,
-    INVALID_HANDLE_VALUE, WAIT_OBJECT_0,
+    CloseHandle, ERROR_ACCESS_DENIED, ERROR_NOTIFY_ENUM_DIR, ERROR_OPERATION_ABORTED,
+    ERROR_SUCCESS, HANDLE, INVALID_HANDLE_VALUE, WAIT_OBJECT_0,
 };
 use windows_sys::Win32::Storage::FileSystem::{
-    CreateFileW, ReadDirectoryChangesW, FILE_ACTION_ADDED, FILE_ACTION_MODIFIED,
+    CreateFileW, FileStandardInfo, GetFileInformationByHandleEx, ReadDirectoryChangesW,
+    FILE_ACTION_ADDED, FILE_ACTION_MODIFIED, FILE_STANDARD_INFO,
     FILE_ACTION_REMOVED, FILE_ACTION_RENAMED_NEW_NAME, FILE_ACTION_RENAMED_OLD_NAME,
     FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OVERLAPPED, FILE_LIST_DIRECTORY,
     FILE_NOTIFY_CHANGE_ATTRIBUTES, FILE_NOTIFY_CHANGE_CREATION, FILE_NOTIFY_CHANGE_DIR_NAME,
@@ -343,9 +344,31 @@ fn start_read(
     }
 }
 
+// CMDR-PATCH: hands `event` to the watch's handler, as the parsing loop below does.
+fn emit_to(event_handler: &Mutex<dyn EventHandler>, res: Result<Event>) {
+    if let Ok(mut guard) = event_handler.lock() {
+        let f: &mut dyn EventHandler = &mut *guard;
+        f.handle_event(res);
+    }
+}
+
+// CMDR-PATCH: whether the watched directory's handle is delete-pending: deleted, but still
+// visible by name until its last handle closes (backported from notify 9.0's
+// `is_delete_pending`).
+unsafe fn is_delete_pending(handle: HANDLE) -> bool {
+    let mut info: FILE_STANDARD_INFO = std::mem::zeroed();
+    let success = GetFileInformationByHandleEx(
+        handle,
+        FileStandardInfo,
+        &mut info as *mut _ as *mut c_void,
+        std::mem::size_of_val(&info) as u32,
+    );
+    success != 0 && info.DeletePending
+}
+
 unsafe extern "system" fn handle_event(
     error_code: u32,
-    _bytes_written: u32,
+    bytes_written: u32,
     overlapped: *mut OVERLAPPED,
 ) {
     let overlapped: Box<OVERLAPPED> = Box::from_raw(overlapped);
@@ -367,13 +390,23 @@ unsafe extern "system" fn handle_event(
         ERROR_ACCESS_DENIED => {
             // This could happen when the watched directory is deleted or trashed, first check if it's the case.
             // If so, unwatch the directory and return, otherwise, continue to handle the event.
-            if !request.data.dir.exists() {
+            // CMDR-PATCH: also when the handle is delete-pending (the name still answers until
+            // this handle closes), and a directory watch reports its own removal, as notify 9.0
+            // does, so a consumer learns the watched path is gone.
+            if !request.data.dir.exists() || is_delete_pending(request.handle) {
+                if request.data.file.is_none() {
+                    let event = Event::new(EventKind::Remove(RemoveKind::Folder))
+                        .add_path(request.data.dir.clone());
+                    emit_to(&request.event_handler, Ok(event));
+                }
                 request.unwatch();
                 ReleaseSemaphore(request.data.complete_sem, 1, ptr::null_mut());
                 return;
             }
         }
-        ERROR_SUCCESS => {
+        // CMDR-PATCH: `ERROR_NOTIFY_ENUM_DIR` says the details were lost; it's handled with the
+        // zero-byte completion below instead of unwatching.
+        ERROR_SUCCESS | ERROR_NOTIFY_ENUM_DIR => {
             // Success, continue to handle the event
         }
         _ => {
@@ -382,6 +415,13 @@ unsafe extern "system" fn handle_event(
                 "unknown error in ReadDirectoryChangesW for directory {}: {}",
                 request.data.dir.display(),
                 error_code
+            );
+            // CMDR-PATCH: the handler hears it too (a pulled drive, a dropped share), as in
+            // notify 9.0, rather than the watch going quiet.
+            emit_to(
+                &request.event_handler,
+                Err(Error::io(std::io::Error::from_raw_os_error(error_code as i32))
+                    .add_path(request.data.dir.clone())),
             );
             request.unwatch();
             ReleaseSemaphore(request.data.complete_sem, 1, ptr::null_mut());
@@ -396,6 +436,19 @@ unsafe extern "system" fn handle_event(
         request.handle,
         request.action_tx,
     );
+
+    // CMDR-PATCH: Windows reports discarded notification details (a buffer overflow) as a
+    // zero-byte successful completion or `ERROR_NOTIFY_ENUM_DIR`, both meaning "enumerate the
+    // directory yourself". 8.2.2 parsed the freshly zeroed buffer as one entry with action 0 and
+    // skipped it, so the loss reached nobody (#1128). Backported from notify 9.0's
+    // `completion_rescan_event`.
+    if error_code == ERROR_NOTIFY_ENUM_DIR || (error_code == ERROR_SUCCESS && bytes_written == 0) {
+        emit_to(
+            &request.event_handler,
+            Ok(Event::new(EventKind::Other).set_flag(Flag::Rescan)),
+        );
+        return;
+    }
 
     // The FILE_NOTIFY_INFORMATION struct has a variable length due to the variable length
     // string as its last member. Each struct contains an offset for getting the next entry in

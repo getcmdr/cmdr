@@ -229,9 +229,9 @@ owns its real body. Remove a line when its body lands.
   never Pageant.
 - `cmdr_local::LocalWindowsVolume` (`platform/local_windows.rs`), task 35: no read or write streams (so no copy onto or
   off it, no export), no copy scan, no `create_symlink` / `read_link_target` (`can_hold_links` false), no ADS-backed
-  xattrs, no `apply_metadata` or metadata caps, no `write_access_at`, no listing watch (#1330), and no
-  `FindFirstFileExW` lister. Each keeps the trait's conservative default, and each conformance cell it can't pass yet is
-  `#[ignore]`d with its piece (`local_windows_conformance_test.rs`).
+  xattrs, no `apply_metadata` or metadata caps, no `write_access_at`, and no `FindFirstFileExW` lister. Each keeps the
+  trait's conservative default, and each conformance cell it can't pass yet is `#[ignore]`d with its piece
+  (`local_windows_conformance_test.rs`).
 - `cmdr_local::reading` Windows arm (`reading/platform/windows.rs`), task 35: no allocation size, mode `0`, no owner or
   group; only `FILE_ATTRIBUTE_HIDDEN` is real.
 - `cmdr_operations::local_disk` Windows arm (`local_disk/platform/windows.rs`), tasks 35 and 36: `set_mode` and
@@ -591,7 +591,14 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     and `network_mount_under` arms. Bugs it owns: the six `cmdr-operations` cells that fail on Windows on `main`
     (`docs/notes/windows-port/windows-test-failures.md` § "By milestone", item 9). ❗ The engine's Windows `symlink`
     (`cmdr-operations/src/local_disk/platform/windows.rs`) is a stub that always refuses, so no link lands on Windows
-    until this task makes links real.
+    until this task makes links real. **Listing watch done** (2026-11-21, #1330): `LocalWindowsVolume` arms the `notify`
+    (`ReadDirectoryChangesW`) watch, with coverage by drive kind (fixed, removable, and `subst` `EveryWriter`; mapped
+    and UNC `ThisMachineOnly`), the `\\?\` crossing both ways, case-only renames, and lost events re-reading through
+    `vendor/notify` (overflow and a deleted root, notify 9.0's fix backported; the index's notify backend gets it too,
+    #1128): `apps/desktop/src-tauri/src/file_system/DETAILS.md` § "Windows listing watches". Left: an open watch blocks
+    renaming an ANCESTOR of the watched folder (NTFS, whatever the share mode) and likely vetoes a removable drive's
+    eject; both want the watch to let go on demand (task 39's device notifications, and Cmdr's own rename of a watched
+    folder's parent).
 36. [M] Windows. `cmdr-operations` arms: `CopyFileExW` strategy (with ReFS/Dev Drive block clone), Recycle Bin via
     `trash` with identity, read-only as "locked" in `clear_blockers`, sharing violations as a typed refusal. Needs 35.
     Plus the honest `Unknown`-identity rule (`cmdr_fs::file_identity` module docs): a move onto a taken name with
@@ -635,7 +642,7 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     `docs/notes/windows-port/real-windows-check-2026-11-19.md` § "Task 36's delete on the desktop". Left of delete: a
     move asks no Locked consent for a read-only file and a cross-drive move deletes a read-only original (#1331); "Go to
     trash" has no folder, and the volume's `has_trash` says yes on a removable drive (#1332). Seen beside it: no listing
-    watch on a Windows drive, so panes miss outside changes (#1330).
+    watch on a Windows drive (#1330, task 35's, now done).
 
 37. [S] Windows. Cloud Files placeholders (OneDrive and friends: sync badges, cloud trash) and Mark of the Web on
     extract (`cmdr-operations` + `cmdr-archive`). Needs 36.
