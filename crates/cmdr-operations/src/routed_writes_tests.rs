@@ -3,7 +3,9 @@
 //! leaves the drive untouched (#463).
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::{AppName, AppPath, PathArithmetic};
+use cmdr_fs::app_path::AppPath;
+#[cfg(target_os = "macos")]
+use cmdr_fs::app_path::{AppName, PathArithmetic};
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
