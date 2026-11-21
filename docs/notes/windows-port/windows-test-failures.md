@@ -173,7 +173,10 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
     0 patches for 2), `go_to_path::tests`' five resolve `/home` as `\home` through `std::path`,
     `remote_paths_test::a_path_anchored_by_the_app_still_lands_where_the_pane_says` anchors nothing, and
     `root_anchored_path_test::typed::drive_and_unc_roots_anchor_by_their_own_rules` refuses `//testnas.local/Share` as
-    not canonical. Not milestone 7's or 8's; unowned so far.
+    not canonical. Not milestone 7's or 8's: #1314, which sorts them. Two point at product code doing `std::path`
+    arithmetic on app paths (`go_to_path::resolve_with`, the legacy `root_anchored`, which on Windows break a remote
+    pane's Go to path and relative anchoring, by reading). The UNC cell's fixture spells the share root without its `/`,
+    and the bridge and patching cells expect POSIX's `Path::join`.
 - **10a, `cmdr-operations`**: 229.
 - **10b, `cmdr-index`**: 133, the 48 cold-drive timeouts among them.
 - **10e, `cmdr-listing-wasm`**: 7.
