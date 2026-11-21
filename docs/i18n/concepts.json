@@ -1261,8 +1261,8 @@
   "dropped-file": {
     "distinct": ["drag"],
     "en": "dropped file",
-    "match": ["dropped file", "dropped files"],
-    "sense": "A file the user dragged into Cmdr from another app and let go of, while or after Cmdr receives it (a browser image, a Mail attachment)."
+    "match": ["dropped file", "dropped files", "dropped item", "dropped items"],
+    "sense": "A file or folder the user dragged into Cmdr from another app and let go of, while or after Cmdr receives it (a browser image, a Mail attachment, a Finder or File Explorer item)."
   },
   "duplicate": {
     "distinct": ["copy"],

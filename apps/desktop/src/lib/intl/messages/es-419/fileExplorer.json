@@ -435,6 +435,10 @@
   "@fileExplorer.network.browser.hostRemoved": {
     "sourceHash": "b6ed0e4"
   },
+  "fileExplorer.drop.uncrossedPaths": "Cmdr no puede leer dónde están uno o varios de los elementos arrastrados, así que omitió todo lo que soltaste. Vuelve a intentarlo sin esos elementos.",
+  "@fileExplorer.drop.uncrossedPaths": {
+    "sourceHash": "2b6b6ea"
+  },
   "fileExplorer.folderSizes.unreadable": "{count, plural, one {No se pudo leer por completo # carpeta, así que puede que su tamaño esté incompleto.} many {No se pudieron leer por completo # carpetas, así que puede que sus tamaños estén incompletos.} other {No se pudieron leer por completo # carpetas, así que puede que sus tamaños estén incompletos.}}",
   "@fileExplorer.folderSizes.unreadable": {
     "sourceHash": "82dc6a5"
