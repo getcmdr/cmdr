@@ -135,6 +135,49 @@ fn a_permanent_delete_refuses_a_read_only_file_as_locked_and_keeps_it() {
     set_read_only(&file, false);
 }
 
+/// A drive other than the boot one deletes through the volume walk, whose backend unlinks
+/// with `std::fs::remove_file` too: the same up-front ask keeps a read-only file there, so
+/// the rule holds on every drive.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_volume_delete_refuses_a_read_only_file_as_locked_and_keeps_it() {
+    use crate::delete::delete_volume_files_with_progress_inner;
+    use crate::event_sinks::CollectorEventSink;
+    use crate::testing::TestOperations;
+    use crate::types::{WriteOperationConfig, WriteOperationError};
+
+    let dir = tempfile::tempdir().unwrap();
+    let free = dir.path().join("free.txt");
+    std::fs::write(&free, b"free").unwrap();
+    let file = dir.path().join("frozen.txt");
+    std::fs::write(&file, b"keep me").unwrap();
+    set_read_only(&file, true);
+    let engine = TestOperations::new();
+    let state = std::sync::Arc::new(engine.new_operation_state(std::time::Duration::from_millis(0)));
+    let volume = super::folder_volume("test", dir.path().to_path_buf(), engine.host().volume_host().clone());
+    let app = |p: &std::path::Path| {
+        std::path::PathBuf::from(cmdr_fs::app_path::AppPathBuf::from_native_unicode(p).unwrap().as_str())
+    };
+
+    let result = delete_volume_files_with_progress_inner(
+        volume,
+        "vol-test",
+        &CollectorEventSink::new(),
+        "op-volume-delete-read-only",
+        &state,
+        &[app(&file)],
+        &WriteOperationConfig::default(),
+    )
+    .await;
+
+    assert!(
+        matches!(result, Err(WriteOperationError::FileLocked { .. })),
+        "{result:?}"
+    );
+    assert_eq!(std::fs::read(&file).unwrap(), b"keep me");
+    assert_eq!(std::fs::read(&free).unwrap(), b"free", "and nothing else was touched");
+    set_read_only(&file, false);
+}
+
 /// A destination another program holds open can't step aside: the Overwrite refuses as
 /// `FileInUse` (the dialog's "close it there" with a Retry), never an unexplained failure.
 #[test]

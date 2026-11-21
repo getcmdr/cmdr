@@ -44,8 +44,12 @@ const _: fn(&Path) -> Option<u64> = free_bytes;
 const _: fn(&Path) -> Option<u64> = important_free_bytes;
 const _: fn(&Path) -> bool = is_locked_item;
 const _: fn(&Path) -> bool = locked_against_removal;
+const _: bool = ASKS_ABOUT_LOCKS;
 const _: fn(&str, PathBuf, VolumeHost) -> Arc<dyn Volume> = folder_volume;
 
+/// Whether [`locked_against_removal`] can ever answer `true` here, so a caller off the
+/// worker thread (the volume delete) skips the per-file hop where it never would.
+pub(crate) use imp::ASKS_ABOUT_LOCKS;
 /// `mkdir(dir, mode)`; off POSIX the mode is dropped.
 pub(crate) use imp::create_dir_with_mode;
 /// A volume over the local folder `root`, for a working copy or a spool.

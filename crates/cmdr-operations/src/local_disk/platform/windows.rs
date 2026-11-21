@@ -84,7 +84,13 @@ pub(crate) fn important_free_bytes(_path: &Path) -> Option<u64> {
 /// ❗ A folder's read-only bit isn't a lock: Explorer sets it to mark a customized
 /// folder (`desktop.ini`), and nothing honors it as one. Never follows a link.
 pub(crate) fn is_locked_item(path: &Path) -> bool {
-    std::fs::symlink_metadata(path).is_ok_and(|meta| meta.is_file() && meta.permissions().readonly())
+    // Through the verbatim spelling, so a path past `MAX_PATH` or in the app spelling
+    // (`D:/x`, what a volume walk carries) reads the item itself.
+    let verbatim = cmdr_fs::app_path::AppPathBuf::from_native_unicode(path)
+        .ok()
+        .and_then(|app| app.to_native().ok());
+    std::fs::symlink_metadata(verbatim.as_deref().unwrap_or(path))
+        .is_ok_and(|meta| meta.is_file() && meta.permissions().readonly())
 }
 
 /// A read-only file: `std::fs::remove_file` deletes it anyway (it clears the
@@ -94,6 +100,8 @@ pub(crate) fn is_locked_item(path: &Path) -> bool {
 pub(crate) fn locked_against_removal(path: &Path) -> bool {
     is_locked_item(path)
 }
+
+pub(crate) const ASKS_ABOUT_LOCKS: bool = true;
 
 pub(crate) fn folder_volume(name: &str, root: PathBuf, host: VolumeHost) -> Arc<dyn Volume> {
     Arc::new(cmdr_local::LocalVolume::local_folder(name, root, host))

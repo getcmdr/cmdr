@@ -2,12 +2,13 @@
 //! replacement for `SHFileOperationW` since Vista), one item per call.
 //!
 //! ❗ The Shell DELETES an item it can't recycle (a share, a removable or `subst`
-//! drive, a bin that's full or turned off), silently under `FOF_NO_UI`. So the
-//! progress sink vetoes every delete the Shell announces without
+//! drive, a bin that's full or turned off, an item too big for it), silently under
+//! `FOF_NO_UI`. So the progress sink vetoes every delete the Shell announces without
 //! `TSF_DELETE_RECYCLE_IF_POSSIBLE` (`shell.rs`), and that refusal is
 //! `NoTrashForVolume`: the item stays, and the UI offers the permanent delete it
-//! asks consent for. ❌ Never pass `FOF_WANTNUKEWARNING` instead: it shows the
-//! Shell's own dialog.
+//! asks consent for. A drive that isn't a fixed disk refuses before the Shell is even
+//! asked ([`on_a_fixed_drive`]), so a share or a stick has two walls. ❌ Never pass
+//! `FOF_WANTNUKEWARNING` instead: it shows the Shell's own dialog.
 //!
 //! The in-trash location is the Shell's `$R…` item under
 //! `<drive>\$Recycle.Bin\<SID>\`, returned in the app spelling, so the trash undo
@@ -42,15 +43,59 @@ pub fn move_to_trash_sync(path: &Path) -> Result<Option<PathBuf>, MutationError>
             detail: "the Shell can't name this path (too long, or a name Windows can't store plainly)".into(),
         });
     };
-    match shell::recycle(&plain) {
-        Ok(Recycled::InBin(landed)) => Ok(Some(host_app_path(landed))),
-        // Recycled, but the Shell named no item for it: trashed, with no restore location.
-        Ok(Recycled::Unnamed) => Ok(None),
-        Err(refusal) => Err(MutationError::TrashRefused {
-            reason: refusal.kind(),
-            detail: refusal.to_string(),
-        }),
+    // A second wall before the sink's veto: a drive that isn't a fixed disk (a share, a
+    // USB stick, a disc) never has a Recycle Bin, so it refuses without asking the Shell.
+    if !on_a_fixed_drive(&plain) {
+        return Err(MutationError::TrashRefused {
+            reason: TrashRefusalKind::NoTrashForVolume,
+            detail: "this drive has no Recycle Bin (not a fixed disk)".into(),
+        });
     }
+    let landed = match shell::recycle(&plain) {
+        Ok(Recycled::InBin(landed)) => Some(host_app_path(landed)),
+        // Recycled, but the Shell named no item for it: trashed, with no restore location.
+        Ok(Recycled::Unnamed) => None,
+        Err(refusal) => {
+            return Err(MutationError::TrashRefused {
+                reason: refusal.kind(),
+                detail: refusal.to_string(),
+            });
+        }
+    };
+    // The Shell answers a skipped item with a success code too (`COPYENGINE_S_*`), so a
+    // "recycled" item still in place wasn't: say so, ❌ never journal a trash that didn't happen.
+    if fs::symlink_metadata(path).is_ok() {
+        return Err(MutationError::TrashRefused {
+            reason: TrashRefusalKind::Other,
+            detail: "the Shell reported the item recycled, but it's still in place".into(),
+        });
+    }
+    Ok(landed)
+}
+
+/// Whether `plain` sits on a fixed disk (`GetDriveTypeW`'s `DRIVE_FIXED`), the only kind
+/// of drive Windows keeps a Recycle Bin on. A path whose volume Windows can't name answers
+/// `true`: the sink's veto still guards it.
+fn on_a_fixed_drive(plain: &Path) -> bool {
+    use std::os::windows::ffi::OsStrExt as _;
+    use windows_sys::Win32::Storage::FileSystem::{GetDriveTypeW, GetVolumePathNameW};
+
+    /// `GetDriveTypeW`'s `DRIVE_FIXED` (`WindowsProgramming`'s constant, a feature this crate
+    /// doesn't otherwise need).
+    const DRIVE_FIXED: u32 = 3;
+
+    let wide: Vec<u16> = plain.as_os_str().encode_wide().chain(Some(0)).collect();
+    // The volume root is never longer than the path itself (plus its trailing `\`).
+    let mut root = vec![0u16; wide.len().max(261) + 1];
+    let Ok(root_len) = u32::try_from(root.len()) else {
+        return true;
+    };
+    // SAFETY: `wide` is NUL-terminated and `root` holds `root_len` units.
+    if unsafe { GetVolumePathNameW(wide.as_ptr(), root.as_mut_ptr(), root_len) } == 0 {
+        return true;
+    }
+    // SAFETY: `root` is the NUL-terminated root `GetVolumePathNameW` wrote.
+    unsafe { GetDriveTypeW(root.as_ptr()) == DRIVE_FIXED }
 }
 
 /// `None`: the Recycle Bin is a Shell folder with no path a pane can list (its

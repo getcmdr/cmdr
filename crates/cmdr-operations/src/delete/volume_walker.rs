@@ -140,6 +140,29 @@ async fn delete_batch(
     results
 }
 
+/// The first file of `batch` wearing a lock the OS would otherwise delete through
+/// (`local_disk::locked_against_removal`), on a volume backed by the local filesystem.
+/// `None` straight away where no lock needs asking (macOS, Linux, a backend's paths).
+async fn first_locked_file(
+    volume: &Arc<dyn Volume>,
+    state: &Arc<WriteOperationState>,
+    batch: &[&VolumeDeleteEntry],
+) -> Option<PathBuf> {
+    if !crate::local_disk::ASKS_ABOUT_LOCKS || volume.local_path().is_none() {
+        return None;
+    }
+    let paths: Vec<PathBuf> = batch.iter().map(|entry| entry.path.clone()).collect();
+    // On the worker pool: a `stat`, which a dead share can hold for a long time.
+    state
+        .scope()
+        .host()
+        .runtime()
+        .spawn_blocking(move || paths.into_iter().find(|p| crate::local_disk::locked_against_removal(p)))
+        .await
+        .ok()
+        .flatten()
+}
+
 /// Journals a deleted leaf under the REAL volume id so "when did I delete
 /// dog.jpg" is searchable for SMB / MTP too. Delete is never rollbackable (the
 /// op finalizes `permanent_delete`), so these rows exist purely for search —
@@ -518,6 +541,14 @@ pub(super) async fn delete_volume_files_with_progress_probed(
         // generic per-step throttle). Zero-cost outside E2E.
         if let Some(pause) = state.scope().host().pacing().copy_throttle() {
             crate::rt::time::sleep(pause).await;
+        }
+
+        // A lock the OS would delete through (Windows' read-only file) stops the delete
+        // here, as Locked, on every drive the way the local walker stops it on the boot one.
+        if let Some(locked) = first_locked_file(&volume, state, batch).await {
+            return Err(WriteOperationError::FileLocked {
+                path: locked.display().to_string(),
+            });
         }
 
         let results = match batch_size {

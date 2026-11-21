@@ -211,9 +211,12 @@ impl RollbackRunner for ReversalRunner {
                         // A same-FS move / rename-back / trash-restore: one rename,
                         // atomic, nothing to stream. A restore out of Windows' Recycle
                         // Bin then drops the item's `$I` record, or the bin would list
-                        // an entry whose item is gone (a no-op for every other path).
+                        // an entry whose item is gone (a no-op for every other path). Only
+                        // on a local disk: the OS's trash is never on a backend's paths.
                         from.rename(from_path, to_path, force).await?;
-                        crate::delete::trash::forget_restored(&std_seam_path(from_path));
+                        if from.local_path().is_some() {
+                            crate::delete::trash::forget_restored(&std_seam_path(from_path));
+                        }
                         Ok(())
                     } else {
                         // Cross-volume, or a rename that copies: the staged per-file move, which is what buys

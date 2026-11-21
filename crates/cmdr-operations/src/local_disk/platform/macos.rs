@@ -52,6 +52,8 @@ pub(crate) fn locked_against_removal(_path: &Path) -> bool {
     false
 }
 
+pub(crate) const ASKS_ABOUT_LOCKS: bool = false;
+
 /// `NSURLVolumeAvailableCapacityForImportantUsageKey`: free space including
 /// what macOS purges on demand, matching Finder and the status bar.
 pub(crate) fn important_free_bytes(path: &Path) -> Option<u64> {

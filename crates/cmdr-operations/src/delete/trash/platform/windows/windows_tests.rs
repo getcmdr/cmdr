@@ -25,7 +25,10 @@ impl Drop for InBin {
             )]
             permissions.set_readonly(false);
             let _ = fs::set_permissions(item, permissions);
-            let _ = if meta.is_dir() {
+            // A link (a junction too) goes as itself, ❌ never through to its target.
+            let _ = if meta.file_type().is_symlink() {
+                fs::remove_dir(item).or_else(|_| fs::remove_file(item))
+            } else if meta.is_dir() {
                 fs::remove_dir_all(item)
             } else {
                 fs::remove_file(item)
@@ -122,32 +125,28 @@ fn a_file_another_program_holds_open_refuses_as_in_use_and_stays() {
     assert!(file.exists(), "a refusal leaves the item where it was");
 }
 
-/// A path through a share has no Recycle Bin, so the Shell would delete it for good;
-/// the sink's veto keeps it. Reached through the admin share `\\localhost\C$`, which
-/// needs an administrator's token: without one the share refuses the path itself,
-/// and this cell skips, saying so.
-#[test]
+/// `file` (on `C:`) as the admin share `\\localhost\C$` reaches it, a path with no Recycle
+/// Bin, or `None` (saying why) when the share isn't reachable: it needs an administrator's
+/// token, and without one the share refuses the path itself.
 #[expect(
     clippy::print_stderr,
     reason = "a skip says why, the way `cmdr_fs::testing::skip_without_symlinks` does"
 )]
-fn a_path_with_no_recycle_bin_is_refused_and_kept() {
-    let dir = TestDir::new("recycle_no_bin");
-    let file = dir.join("keep-me.txt");
-    fs::write(&file, "keep").unwrap();
+fn through_the_admin_share(file: &Path) -> Option<PathBuf> {
     let local = file.to_string_lossy().replace('/', "\\");
     let Some(rest) = local.strip_prefix("C:\\").or_else(|| local.strip_prefix("c:\\")) else {
         eprintln!("{SKIP_MARKER}the temp folder isn't on C: ({local})");
-        return;
+        return None;
     };
     let through_share = PathBuf::from(format!("\\\\localhost\\C$\\{rest}"));
     if fs::metadata(&through_share).is_err() {
         eprintln!("{SKIP_MARKER}\\\\localhost\\C$ isn't reachable here (no administrator token)");
-        return;
+        return None;
     }
+    Some(through_share)
+}
 
-    let result = move_to_trash_sync(&through_share);
-
+fn assert_no_trash_for_volume(result: &Result<Option<PathBuf>, MutationError>) {
     assert!(
         matches!(
             result,
@@ -158,7 +157,181 @@ fn a_path_with_no_recycle_bin_is_refused_and_kept() {
         ),
         "{result:?}"
     );
+}
+
+/// A path through a share has no Recycle Bin, so the Shell would delete it for good: it
+/// refuses before the Shell is asked (not a fixed disk) and the file stays.
+#[test]
+fn a_path_with_no_recycle_bin_is_refused_and_kept() {
+    let dir = TestDir::new("recycle_no_bin");
+    let file = dir.join("keep-me.txt");
+    fs::write(&file, "keep").unwrap();
+    let Some(through_share) = through_the_admin_share(&file) else {
+        return;
+    };
+
+    assert_no_trash_for_volume(&move_to_trash_sync(&through_share));
     assert_eq!(fs::read_to_string(&file).unwrap(), "keep", "never deleted for good");
+}
+
+/// The sink's veto on its own, past the drive-type wall: the Shell, handed a path with no
+/// Recycle Bin, announces a delete it won't recycle, and the veto keeps the file.
+#[test]
+fn the_sink_vetoes_a_delete_the_shell_would_not_recycle() {
+    let dir = TestDir::new("recycle_sink_veto");
+    let file = dir.join("keep-me.txt");
+    fs::write(&file, "keep").unwrap();
+    let Some(through_share) = through_the_admin_share(&file) else {
+        return;
+    };
+
+    let result = shell::recycle(&through_share);
+
+    assert!(
+        matches!(result, Err(shell::Refusal::NoRecycleBin)),
+        "{:?}",
+        result.as_ref().err()
+    );
+    assert_eq!(fs::read_to_string(&file).unwrap(), "keep", "never deleted for good");
+}
+
+/// Marks `file` sparse (`fsutil`) and stretches it to `len` bytes, which takes no disk
+/// space; `false` when the volume can't (then the caller skips).
+fn sparse_of_len(file: &Path, len: u64) -> bool {
+    let marked = std::process::Command::new("fsutil")
+        .args(["sparse", "setflag"])
+        .arg(file)
+        .output()
+        .is_ok_and(|out| out.status.success());
+    marked
+        && fs::OpenOptions::new()
+            .write(true)
+            .open(file)
+            .and_then(|f| f.set_len(len))
+            .is_ok()
+}
+
+/// 64 GiB: past any default Recycle Bin cap on a drive under about 1.3 TB (Windows sizes
+/// it at a few percent of the volume), so the Shell won't recycle it.
+const TOO_BIG_FOR_THE_BIN: u64 = 64 << 30;
+
+/// An item bigger than the drive's Recycle Bin is one the Shell deletes for good with no
+/// word under `FOF_NO_UI`; the veto keeps it. A sparse file stands in for a big one.
+#[test]
+#[expect(clippy::print_stderr, reason = "a skip says why")]
+fn a_file_too_big_for_the_recycle_bin_is_refused_and_kept() {
+    let dir = TestDir::new("recycle_too_big");
+    let file = dir.join("huge.bin");
+    fs::write(&file, "head").unwrap();
+    if !sparse_of_len(&file, TOO_BIG_FOR_THE_BIN) {
+        eprintln!("{SKIP_MARKER}this volume can't hold a sparse file");
+        return;
+    }
+
+    let result = move_to_trash_sync(&file);
+    // If the bin took it after all, take it back out before the assertion fails.
+    let _landed = match &result {
+        Ok(Some(landed)) => Some(InBin(landed.clone())),
+        _ => None,
+    };
+
+    assert_no_trash_for_volume(&result);
+    assert_eq!(
+        fs::metadata(&file).unwrap().len(),
+        TOO_BIG_FOR_THE_BIN,
+        "never deleted for good"
+    );
+}
+
+/// A folder holding a file bigger than the bin: the Shell weighs the whole tree, and the
+/// veto keeps all of it, the small file beside the big one included.
+#[test]
+#[expect(clippy::print_stderr, reason = "a skip says why")]
+fn a_folder_too_big_for_the_recycle_bin_is_refused_whole() {
+    let dir = TestDir::new("recycle_too_big_folder");
+    let folder = dir.join("archive");
+    fs::create_dir(&folder).unwrap();
+    fs::write(folder.join("small.txt"), "small").unwrap();
+    let huge = folder.join("huge.bin");
+    fs::write(&huge, "head").unwrap();
+    if !sparse_of_len(&huge, TOO_BIG_FOR_THE_BIN) {
+        eprintln!("{SKIP_MARKER}this volume can't hold a sparse file");
+        return;
+    }
+
+    let result = move_to_trash_sync(&folder);
+    let _landed = match &result {
+        Ok(Some(landed)) => Some(InBin(landed.clone())),
+        _ => None,
+    };
+
+    assert_no_trash_for_volume(&result);
+    assert_eq!(fs::read_to_string(folder.join("small.txt")).unwrap(), "small");
+    assert_eq!(fs::metadata(&huge).unwrap().len(), TOO_BIG_FOR_THE_BIN);
+}
+
+/// A folder with one file another program holds open can't move as one: the trash
+/// refuses and every file inside stays, the free ones too.
+#[test]
+fn a_folder_with_a_file_held_open_inside_is_refused_whole() {
+    let dir = TestDir::new("recycle_folder_in_use");
+    let folder = dir.join("project");
+    fs::create_dir(&folder).unwrap();
+    fs::write(folder.join("free.txt"), "free").unwrap();
+    let held_path = folder.join("held.txt");
+    fs::write(&held_path, "held").unwrap();
+    let held = fs::OpenOptions::new()
+        .read(true)
+        .share_mode(0)
+        .open(&held_path)
+        .unwrap();
+
+    let result = move_to_trash_sync(&folder);
+    let _landed = match &result {
+        Ok(Some(landed)) => Some(InBin(landed.clone())),
+        _ => None,
+    };
+    drop(held);
+
+    assert!(matches!(result, Err(MutationError::TrashRefused { .. })), "{result:?}");
+    assert_eq!(fs::read_to_string(folder.join("free.txt")).unwrap(), "free");
+    assert_eq!(fs::read_to_string(&held_path).unwrap(), "held");
+}
+
+/// A junction recycles as the link: its target's files stay where they are.
+#[test]
+#[expect(clippy::print_stderr, reason = "a skip says why")]
+fn a_junction_recycles_as_the_link_and_keeps_its_target() {
+    let dir = TestDir::new("recycle_junction");
+    let target = dir.join("target");
+    fs::create_dir(&target).unwrap();
+    fs::write(target.join("keep.txt"), "keep").unwrap();
+    let link = dir.join("link");
+    let made = std::process::Command::new("cmd")
+        .args(["/C", "mklink", "/J"])
+        .arg(&link)
+        .arg(&target)
+        .output()
+        .is_ok_and(|out| out.status.success());
+    if !made {
+        eprintln!("{SKIP_MARKER}couldn't make a junction here");
+        return;
+    }
+
+    let landed = recycled(&link);
+
+    assert!(fs::symlink_metadata(&link).is_err(), "the link is gone");
+    assert_eq!(
+        fs::read_to_string(target.join("keep.txt")).unwrap(),
+        "keep",
+        "its target stays"
+    );
+    drop(landed);
+    assert_eq!(
+        fs::read_to_string(target.join("keep.txt")).unwrap(),
+        "keep",
+        "and the guard's cleanup took only the link"
+    );
 }
 
 #[test]

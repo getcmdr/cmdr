@@ -49,6 +49,8 @@ pub(crate) fn locked_against_removal(_path: &Path) -> bool {
     false
 }
 
+pub(crate) const ASKS_ABOUT_LOCKS: bool = false;
+
 /// Unreachable there (archive edits refuse on a host with no local disk); an
 /// empty in-memory folder is the honest stand-in for "no disk here".
 pub(crate) fn folder_volume(name: &str, root: PathBuf, _host: VolumeHost) -> Arc<dyn Volume> {
