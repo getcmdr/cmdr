@@ -15,8 +15,7 @@
 //! watcher stopped hearing the drive the moment its path moved, and an external
 //! drive has no journal to replay the gap from.
 
-use std::path::PathBuf;
-
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_private::LogPrivate;
 
@@ -57,13 +56,13 @@ enum Next {
 /// later teardown drop it, exactly like a toggle's.
 ///
 /// **Blocking**: draining a running manager takes up to five seconds.
-pub(crate) fn follow_the_move(volume_id: &str, new_root: PathBuf) -> bool {
+pub(crate) fn follow_the_move(volume_id: &str, new_root: AppPathBuf) -> bool {
     let next = {
         let mut reg = INDEX_REGISTRY.lock_ignore_poison();
         let Some(instance) = reg.get_mut(volume_id) else {
             return false;
         };
-        if !instance.kind().uses_local_scanner() || instance.started_as.volume_root() == new_root {
+        if !instance.kind().uses_local_scanner() || *instance.started_as.volume_root() == *new_root {
             return false;
         }
         let moved = instance.started_as.clone().moved_to(new_root.clone());
@@ -111,7 +110,7 @@ pub(crate) fn follow_the_move(volume_id: &str, new_root: PathBuf) -> bool {
         Next::Drain(mgr) => {
             log::info!(
                 "'{volume_id}' moved to {}; restarting its index there",
-                LogPrivate::dir_path(&new_root)
+                LogPrivate::dir_path(new_root.as_str())
             );
             finish_stopping(volume_id, mgr, PersistDisable::No);
             true
@@ -119,7 +118,7 @@ pub(crate) fn follow_the_move(volume_id: &str, new_root: PathBuf) -> bool {
         Next::StartAgain(request) => {
             log::info!(
                 "'{volume_id}' moved to {} while its index was starting; starting it there",
-                LogPrivate::dir_path(&new_root)
+                LogPrivate::dir_path(new_root.as_str())
             );
             if let Err(e) = request.start(volume_id) {
                 log::warn!("Starting '{volume_id}' at its new root failed: {e}");
@@ -129,14 +128,14 @@ pub(crate) fn follow_the_move(volume_id: &str, new_root: PathBuf) -> bool {
         Next::Followed => {
             log::info!(
                 "'{volume_id}' moved to {} while paused for disk space; it starts there once there's room",
-                LogPrivate::dir_path(&new_root)
+                LogPrivate::dir_path(new_root.as_str())
             );
             true
         }
         Next::Recorded => {
             log::info!(
                 "'{volume_id}' moved to {} mid-transition; it starts there once that ends",
-                LogPrivate::dir_path(&new_root)
+                LogPrivate::dir_path(new_root.as_str())
             );
             true
         }
@@ -149,7 +148,7 @@ pub(crate) fn follow_the_move(volume_id: &str, new_root: PathBuf) -> bool {
 /// A phase with a teardown and no restart is the user's last word being "off", so
 /// it stays off: a move is no reason to bring a drive back.
 fn record_the_move(phase: &mut IndexPhase, moved: StartRequest) -> Next {
-    let new_root = moved.volume_root().to_path_buf();
+    let new_root = moved.volume_root().to_owned();
     let retarget = |restart: &mut Option<StartRequest>| match restart.take() {
         Some(request) => {
             *restart = Some(request.moved_to(new_root));

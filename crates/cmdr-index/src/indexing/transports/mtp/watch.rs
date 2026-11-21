@@ -40,12 +40,12 @@
 //! them after, so they aren't lost against the rebuilding index.
 
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::{LazyLock, Mutex};
 
 use crate::indexing::lifecycle::state;
 use crate::indexing::store::{self, IndexStore};
 use crate::indexing::writer::{IndexWriter, WriteMessage};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use cmdr_fs::ignore_poison::IgnorePoison;
 
 /// A resolved MTP add/change: the object's storage-relative path plus the
@@ -53,9 +53,10 @@ use cmdr_fs::ignore_poison::IgnorePoison;
 /// Built by the event loop from the handle→path resolver + `ObjectInfo`.
 #[derive(Debug, Clone)]
 pub(crate) struct MtpUpsert {
-    /// Storage-relative path of the changed object (e.g. `/DCIM/Camera/IMG.jpg`).
-    /// Already in the index path space (the index root is the storage root).
-    pub path: PathBuf,
+    /// Storage-relative path of the changed object (e.g. `/DCIM/Camera/IMG.jpg`), a
+    /// canonical app path under the POSIX `/` root. Already in the index path space
+    /// (the index root is the storage root), so its parent's text is the lookup key.
+    pub path: AppPathBuf,
     /// The PTP object handle, stored in the index `inode` so a later
     /// `ObjectRemoved{handle}` resolves to this row.
     pub handle: u32,
@@ -255,13 +256,10 @@ fn send_resolved(
 /// `None` when the parent isn't indexed (nothing to attach to). Pure over the DB
 /// state so the mapping is testable against a seeded index.
 fn resolve_upsert(conn: &rusqlite::Connection, upsert: &MtpUpsert) -> Option<ResolvedWrite> {
-    let parent_rel = upsert
-        .path
-        .parent()
-        .map(path_to_index_str)
-        .unwrap_or_else(|| "/".to_string());
-    let name = upsert.path.file_name()?.to_string_lossy().into_owned();
-    let parent_id = store::resolve_path(conn, &parent_rel).ok().flatten()?;
+    // The storage root itself has no name and no parent: nothing to upsert.
+    let name = upsert.path.file_name()?.to_owned();
+    let parent_rel = upsert.path.parent().map_or("/", AppPath::as_str);
+    let parent_id = store::resolve_path(conn, parent_rel).ok().flatten()?;
     Some(ResolvedWrite::Upsert {
         parent_id,
         name,
@@ -291,25 +289,11 @@ fn resolve_remove(conn: &rusqlite::Connection, handle: u32) -> Option<ResolvedWr
     }
 }
 
-/// Turn a storage-relative index path into the index lookup string (`/` rooted).
-/// The path is already storage-relative; this just normalizes the leading slash.
-fn path_to_index_str(path: &std::path::Path) -> String {
-    let s = path.to_string_lossy();
-    if s.is_empty() || s == "/" {
-        "/".to_string()
-    } else if s.starts_with('/') {
-        s.into_owned()
-    } else {
-        format!("/{s}")
-    }
-}
-
 /// Build the absolute MTP URL (`mtp://{device}/{storage}/inner`) for a
 /// storage-relative path, for the FE `DirsUpdated` listing-cache key.
-fn mtp_url_for(volume_id: &str, storage_rel: &std::path::Path) -> String {
+fn mtp_url_for(volume_id: &str, storage_rel: &AppPath) -> String {
     let (device_id, storage_id) = cmdr_fs::volume::mtp_ids::split_volume_id(volume_id).unwrap_or((volume_id, 0));
-    let inner = storage_rel.to_string_lossy();
-    let inner = inner.trim_start_matches('/');
+    let inner = storage_rel.as_str().trim_start_matches('/');
     if inner.is_empty() {
         format!("mtp://{device_id}/{storage_id}")
     } else {

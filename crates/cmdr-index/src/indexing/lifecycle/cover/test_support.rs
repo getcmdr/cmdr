@@ -12,7 +12,7 @@
 //! A single-file fixture stays with its tests: the `ColdDrive` in
 //! `cold_drive_tests.rs`.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathFlavor};
 use std::future::Future;
 use std::path::PathBuf;
 use std::pin::Pin;
@@ -89,7 +89,7 @@ impl Share {
             let inner = InMemoryVolume::with_entries("Share", build(&tree)).with_root(root);
             let mut volume = Instrumented::new(inner);
             if let Some(gate) = gate {
-                volume = volume.gated_at(tree.path(gate));
+                volume = volume.gated_at(&tree.path(gate));
             }
             let volume = Arc::new(volume);
             instrumented = Some(Arc::clone(&volume));
@@ -249,6 +249,11 @@ impl Tree {
     }
 }
 
+/// A test's absolute path text as the app path a walk asks the backend about.
+pub(super) fn app_path(text: &str) -> AppPathBuf {
+    AppPathBuf::parse(text, PathFlavor::HOST).expect("a test share path is an absolute app path")
+}
+
 fn leaf(relative: &str) -> String {
     relative.rsplit('/').next().unwrap_or(relative).to_string()
 }
@@ -268,7 +273,7 @@ pub(super) struct Instrumented {
     in_flight: AtomicU64,
     pub(super) max_in_flight: AtomicU64,
     /// The one listing that blocks, if any.
-    gate: Option<PathBuf>,
+    gate: Option<AppPathBuf>,
     gate_reached: AtomicBool,
     /// Released by the test. A permit stored before the walk even reaches the gate
     /// is still honored, so the test can't lose the race by releasing early.
@@ -289,8 +294,8 @@ impl Instrumented {
         }
     }
 
-    fn gated_at(mut self, path: impl Into<PathBuf>) -> Self {
-        self.gate = Some(path.into());
+    fn gated_at(mut self, path: &str) -> Self {
+        self.gate = Some(app_path(path));
         self
     }
 
@@ -342,9 +347,6 @@ impl Volume for Instrumented {
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Fut<'a, Result<Vec<FileEntry>, VolumeError>> {
         Box::pin(async move {
-            let path_app = path;
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let now = self.in_flight.fetch_add(1, Ordering::SeqCst) + 1;
             self.max_in_flight.fetch_max(now, Ordering::SeqCst);
             // Let sibling listings launched in the same batch coexist before any
@@ -355,7 +357,7 @@ impl Volume for Instrumented {
                 self.gate_reached.store(true, Ordering::SeqCst);
                 self.gate_released.notified().await;
             }
-            let result = self.inner.list_directory(path_app, on_progress).await;
+            let result = self.inner.list_directory(path, on_progress).await;
             self.in_flight.fetch_sub(1, Ordering::SeqCst);
             result
         })
@@ -376,7 +378,7 @@ impl Volume for Instrumented {
 /// hold two children called the same thing.
 pub(super) struct SameNameSiblings {
     pub(super) inner: InMemoryVolume,
-    pub(super) doubled: PathBuf,
+    pub(super) doubled: AppPathBuf,
 }
 
 impl Volume for SameNameSiblings {
@@ -395,11 +397,8 @@ impl Volume for SameNameSiblings {
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Fut<'a, Result<Vec<FileEntry>, VolumeError>> {
         Box::pin(async move {
-            let path_app = path;
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            let entries = self.inner.list_directory(path_app, on_progress).await?;
-            if path != self.doubled {
+            let entries = self.inner.list_directory(path, on_progress).await?;
+            if *path != self.doubled {
                 return Ok(entries);
             }
             Ok([entries.clone(), entries].concat())
@@ -424,12 +423,12 @@ impl Volume for SameNameSiblings {
 /// backend that says two different things over its life.
 pub(super) struct RefusesToList {
     inner: InMemoryVolume,
-    refused: Mutex<Vec<PathBuf>>,
+    refused: Mutex<Vec<AppPathBuf>>,
     /// The one listing that blocks until the test lets it go, same as
     /// [`Instrumented`]'s. Here it's what makes a cancel land at a KNOWN point in
     /// the walk, so "the walk had already proved this give-up" is a fact rather
     /// than a race.
-    gate: Mutex<Option<PathBuf>>,
+    gate: Mutex<Option<AppPathBuf>>,
     gate_reached: AtomicBool,
     gate_released: tokio::sync::Notify,
 }
@@ -442,7 +441,7 @@ impl RefusesToList {
 
     /// Hold the listing of `path` open until [`release_the_gate`](Self::release_the_gate).
     pub(super) fn gate_at(&self, path: &str) {
-        *self.gate.lock_ignore_poison() = Some(PathBuf::from(path));
+        *self.gate.lock_ignore_poison() = Some(app_path(path));
     }
 
     /// Block until the walk has reached the gated listing.
@@ -474,9 +473,6 @@ impl Volume for RefusesToList {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Fut<'a, Result<Vec<FileEntry>, VolumeError>> {
-        let path_app = path;
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         if self.refused.lock_ignore_poison().iter().any(|refused| refused == path) {
             return Box::pin(async {
                 Err(VolumeError::PermissionDenied {
@@ -491,7 +487,7 @@ impl Volume for RefusesToList {
                 self.gate_reached.store(true, Ordering::SeqCst);
                 self.gate_released.notified().await;
             }
-            self.inner.list_directory(path_app, on_progress).await
+            self.inner.list_directory(path, on_progress).await
         })
     }
     fn get_metadata<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<FileEntry, VolumeError>> {
@@ -528,7 +524,7 @@ impl Share {
         let share = Self::with_volume(volume_id, |root| {
             let tree = Tree(root.to_string());
             let volume = Arc::new(RefusesToList {
-                refused: Mutex::new(refuse.iter().map(|r| PathBuf::from(tree.path(r))).collect()),
+                refused: Mutex::new(refuse.iter().map(|r| app_path(&tree.path(r))).collect()),
                 inner: InMemoryVolume::with_entries("Share", build(&tree)).with_root(root),
                 gate: Mutex::new(None),
                 gate_reached: AtomicBool::new(false),
@@ -651,8 +647,8 @@ pub(super) struct StopsAnswering {
     /// the failure run.
     answers_left: AtomicI64,
     /// Paths that time out while the share itself stays healthy.
-    wedged: Mutex<Vec<PathBuf>>,
-    listed: Mutex<Vec<PathBuf>>,
+    wedged: Mutex<Vec<AppPathBuf>>,
+    listed: Mutex<Vec<AppPathBuf>>,
 }
 
 impl StopsAnswering {
@@ -666,7 +662,7 @@ impl StopsAnswering {
     /// directory on a live share, which is the case that must NOT read as a
     /// disconnect.
     pub(super) fn wedge(&self, paths: &[String]) {
-        *self.wedged.lock_ignore_poison() = paths.iter().map(PathBuf::from).collect();
+        *self.wedged.lock_ignore_poison() = paths.iter().map(|path| app_path(path)).collect();
     }
 
     /// Stop timing out, as a directory that comes back does.
@@ -675,13 +671,13 @@ impl StopsAnswering {
     }
 
     /// Every listing this share has been asked for, in order.
-    pub(super) fn listings(&self) -> Vec<PathBuf> {
+    pub(super) fn listings(&self) -> Vec<AppPathBuf> {
         self.listed.lock_ignore_poison().clone()
     }
 
     /// The listings since `mark`, so a two-phase test asserts on what the SECOND
     /// walk paid for rather than on the setup that came before it.
-    pub(super) fn listings_since(&self, mark: usize) -> Vec<PathBuf> {
+    pub(super) fn listings_since(&self, mark: usize) -> Vec<AppPathBuf> {
         self.listed.lock_ignore_poison()[mark..].to_vec()
     }
 }
@@ -701,10 +697,7 @@ impl Volume for StopsAnswering {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Fut<'a, Result<Vec<FileEntry>, VolumeError>> {
-        let path_app = path;
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        self.listed.lock_ignore_poison().push(path.to_path_buf());
+        self.listed.lock_ignore_poison().push(path.to_owned());
         if let Some(how) = *self.gone.lock_ignore_poison()
             && self.answers_left.fetch_sub(1, Ordering::SeqCst) <= 0
         {
@@ -713,7 +706,7 @@ impl Volume for StopsAnswering {
         if self.wedged.lock_ignore_poison().iter().any(|wedged| wedged == path) {
             return Box::pin(async { Err(VolumeError::ConnectionTimeout("test: no answer".into())) });
         }
-        self.inner.list_directory(path_app, on_progress)
+        self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<FileEntry, VolumeError>> {
         self.inner.get_metadata(path)

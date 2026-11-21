@@ -1254,7 +1254,6 @@ async fn get_storages(device: &MtpDevice, device_supports_write: bool) -> Result
 /// - `ListingHost::directory_changed` and `authoritative_listing`: when the app's listing
 ///   host converts.
 /// - `ScanBoundary::dir` and `file`, whose `ScanRecorder` lives in the engines.
-/// - [`ResolvedMtpObject::path`], a `pub` field the app's index feed reads.
 pub(crate) fn std_path_for_host(path: &AppPath) -> std::borrow::Cow<'_, std::path::Path> {
     path.as_std_legacy()
 }

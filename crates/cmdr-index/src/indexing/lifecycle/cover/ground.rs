@@ -38,6 +38,7 @@ use crate::indexing::host::runtime;
 use crate::indexing::metadata::{MetadataSnapshot, extract_metadata};
 use crate::indexing::network_scanner::scan_pace::ScanPacer;
 use crate::indexing::network_scanner::{VolumeScanError, cover_volume_subtree, stat_one_directory};
+use crate::indexing::paths::app_text;
 use crate::indexing::scanner::{CoveredEntry, LiveWalk, ScanError, ScanSummary, WalkHeartbeat, cover_subtree};
 use crate::indexing::store::IndexStore;
 
@@ -89,18 +90,22 @@ impl Ground {
         }
     }
 
-    /// Whether `path` is a directory this walk may descend into, and what to record
-    /// for it. `None` for anything else: gone, unreadable, or a symlink.
-    pub(super) fn stat_directory(&self, path: &Path) -> Option<MetadataSnapshot> {
+    /// Whether `path` (an absolute path as the index stores it) is a directory this walk
+    /// may descend into, and what to record for it. `None` for anything else: gone,
+    /// unreadable, a symlink, or, on a trait-scanned volume, text that names no place.
+    pub(super) fn stat_directory(&self, path: &str) -> Option<MetadataSnapshot> {
         match self {
             Ground::Local => {
-                let metadata = std::fs::symlink_metadata(path).ok()?;
+                let metadata = std::fs::symlink_metadata(app_text::local_path(path)).ok()?;
                 // A symlink reports `is_dir() == false` here, which is the answer we
                 // want: the index stores symlinks without descending into them.
                 metadata.is_dir().then(|| extract_metadata(&metadata, true, false))
             }
             Ground::ViaTrait { volume, .. } => {
-                let entry = runtime::block_on(stat_one_directory(Arc::clone(volume), path.to_path_buf()))?;
+                let entry = runtime::block_on(stat_one_directory(
+                    Arc::clone(volume),
+                    app_text::app_path_of(path)?.into_owned(),
+                ))?;
                 Some(MetadataSnapshot {
                     // A directory's own row carries no size, on every walk here.
                     logical_size: None,
@@ -117,13 +122,14 @@ impl Ground {
     pub(super) fn cover(
         &self,
         context: &CoverContext,
-        root: &Path,
+        root: &str,
         sender: &SyncSender<Vec<CoveredEntry>>,
         cancel: &CancellationToken,
         heartbeat: &WalkHeartbeat,
     ) -> (Option<ScanSummary>, RootOutcome) {
         match self {
             Ground::Local => {
+                let root = app_text::local_path(root);
                 match cover_subtree(
                     root,
                     &context.space,
@@ -144,6 +150,10 @@ impl Ground {
                 }
             }
             Ground::ViaTrait { volume, pacer } => {
+                let Some(app_root) = app_text::app_path_of(root) else {
+                    log::warn!("Cover: {} names no place on this volume", LogPrivate::dir_path(root));
+                    return (None, RootOutcome::Failed);
+                };
                 // ❌ There is no `NotVirgin` arm here, and no repair path to route
                 // one to: the trait walk is add-only per directory (it keeps the
                 // rows a name already has), so ground an earlier walk touched is
@@ -152,7 +162,7 @@ impl Ground {
                 // the two halves differ here and nowhere else.
                 let result = runtime::block_on(cover_volume_subtree(
                     Arc::clone(volume),
-                    root.to_path_buf(),
+                    app_root.into_owned(),
                     &context.space,
                     &context.writer,
                     Some(sender.clone()),

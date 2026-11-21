@@ -5,7 +5,7 @@
 //! whatever [`Activation`] says happens next. The per-transport entry points below
 //! it differ only in the kind they name.
 
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -55,8 +55,10 @@ pub(crate) enum Activation {
 /// writer.
 #[derive(Debug, Clone)]
 pub(crate) struct StartRequest {
-    /// Where the volume is mounted.
-    volume_root: PathBuf,
+    /// Where the volume is rooted, as its `Volume` names it (`/`, `/Volumes/X`, `C:/`,
+    /// `mtp://…`). The local walker and watcher read its native crossing
+    /// (`paths::app_text::native_root`).
+    volume_root: AppPathBuf,
     /// What kind of storage it is, which picks its scanner and its capabilities.
     kind: IndexVolumeKind,
     /// Whether this filesystem's inode identity can be trusted.
@@ -111,7 +113,7 @@ impl StartRequest {
     #[cfg(any(test, feature = "testing"))]
     pub(crate) fn for_test(kind: IndexVolumeKind) -> Self {
         Self {
-            volume_root: PathBuf::from("/"),
+            volume_root: AppPathBuf::parse("/", cmdr_fs::app_path::PathFlavor::Posix).expect("`/` is an app path"),
             kind,
             inodes_trustworthy: true,
             activation: Activation::IndexTheVolume,
@@ -121,9 +123,9 @@ impl StartRequest {
 
     /// [`Self::for_test`] for a volume mounted at `volume_root`.
     #[cfg(test)]
-    pub(crate) fn for_test_at(kind: IndexVolumeKind, volume_root: impl Into<PathBuf>) -> Self {
+    pub(crate) fn for_test_at(kind: IndexVolumeKind, volume_root: AppPathBuf) -> Self {
         Self {
-            volume_root: volume_root.into(),
+            volume_root,
             ..Self::for_test(kind)
         }
     }
@@ -134,14 +136,14 @@ impl StartRequest {
     }
 
     /// Where the volume this start names is mounted, for the hold it reserves.
-    pub(super) fn volume_root(&self) -> &Path {
+    pub(super) fn volume_root(&self) -> &AppPath {
         &self.volume_root
     }
 
     /// The same start for a volume whose mount point moved to `volume_root`: same
     /// kind, same inode fact, same activation. A rename keeps the filesystem, so
     /// nothing but the root can have changed.
-    pub(super) fn moved_to(self, volume_root: PathBuf) -> Self {
+    pub(super) fn moved_to(self, volume_root: AppPathBuf) -> Self {
         Self { volume_root, ..self }
     }
 }
@@ -199,11 +201,18 @@ pub fn start_indexing() -> Result<(), String> {
     // there, which Windows reads as the process's current drive.
     start_indexing_for(
         ROOT_VOLUME_ID,
-        PathBuf::from(cmdr_fs::mount_layout::boot_volume_root()),
+        boot_root()?,
         IndexVolumeKind::Local,
         true,
         Activation::IndexTheVolume,
     )
+}
+
+/// Where `root` starts, as an app path: the boot volume root `mount_layout` names (`/`, or
+/// the system drive on Windows).
+pub(in crate::indexing::lifecycle) fn boot_root() -> Result<AppPathBuf, String> {
+    let root = cmdr_fs::mount_layout::boot_volume_root();
+    AppPathBuf::from_wire(&root).map_err(|e| format!("the boot volume root {root:?} is no app path: {e:?}"))
 }
 
 /// Start indexing for a specific volume id and root path.
@@ -217,7 +226,7 @@ pub fn start_indexing() -> Result<(), String> {
 /// writer alone for a search-driven walk to fill in ([`Activation`]).
 pub(in crate::indexing::lifecycle) fn start_indexing_for(
     volume_id: &str,
-    volume_root: PathBuf,
+    volume_root: AppPathBuf,
     kind: IndexVolumeKind,
     inodes_trustworthy: bool,
     activation: Activation,
@@ -639,7 +648,7 @@ fn resume_branch_watch(volume_id: &str) {
 /// AFTER the direct-smb2 gate has passed. Funnels into the shared
 /// `start_indexing_for` with the `Smb` kind so the lock-first reservation,
 /// load-as-Stale freshness seeding, and `Volume`-trait scan path all apply.
-pub(crate) fn start_indexing_for_smb_inner(volume_id: &str, mount_root: PathBuf) -> Result<(), String> {
+pub(crate) fn start_indexing_for_smb_inner(volume_id: &str, mount_root: AppPathBuf) -> Result<(), String> {
     // SMB stores trait-provided inodes and doesn't run the local inode-keyed
     // rename pre-pass, so its inode identity is treated as trustworthy.
     start_indexing_for(
@@ -656,7 +665,7 @@ pub(crate) fn start_indexing_for_smb_inner(volume_id: &str, mount_root: PathBuf)
 /// `start_indexing_for` with the `Mtp` kind so the lock-first reservation,
 /// load-as-Stale freshness seeding, and `Volume`-trait scan path all apply.
 /// `volume_root` is the MTP volume's `mtp://{device}/{storage}` root.
-pub(crate) fn start_indexing_for_mtp_inner(volume_id: &str, volume_root: PathBuf) -> Result<(), String> {
+pub(crate) fn start_indexing_for_mtp_inner(volume_id: &str, volume_root: AppPathBuf) -> Result<(), String> {
     // MTP reuses the `inode` column for PTP object handles and doesn't run the
     // local rename pre-pass, so its inode identity is treated as trustworthy.
     start_indexing_for(
@@ -673,7 +682,7 @@ pub(crate) fn start_indexing_for_mtp_inner(volume_id: &str, volume_root: PathBuf
 /// `start_indexing_for` with the `Adb` kind so the lock-first reservation,
 /// load-as-Stale freshness seeding, and `Volume`-trait scan path all apply.
 /// `volume_root` is the phone's `adb://<serial>` root.
-pub(crate) fn start_indexing_for_adb_inner(volume_id: &str, volume_root: PathBuf) -> Result<(), String> {
+pub(crate) fn start_indexing_for_adb_inner(volume_id: &str, volume_root: AppPathBuf) -> Result<(), String> {
     // A trait-scanned volume never runs the local inode-keyed rename pre-pass, so
     // its inode identity counts as trustworthy, as SMB's and MTP's do.
     start_indexing_for(
@@ -700,7 +709,7 @@ pub(crate) fn start_indexing_for_adb_inner(volume_id: &str, volume_root: PathBuf
 /// false move), `true` for every other local format.
 pub(crate) fn start_indexing_for_local_external_inner(
     volume_id: &str,
-    mount_root: PathBuf,
+    mount_root: AppPathBuf,
     inodes_trustworthy: bool,
 ) -> Result<(), String> {
     start_indexing_for(

@@ -16,7 +16,7 @@ use std::sync::atomic::Ordering;
 
 use cmdr_fs::volume::{InMemoryVolume, Volume};
 
-use super::test_support::{SameNameSiblings, Share, Tree, drain};
+use super::test_support::{SameNameSiblings, Share, Tree, app_path, drain};
 use super::*;
 use crate::indexing::lifecycle::rescan_request::{RescanOutcome, ScanStartError};
 
@@ -493,7 +493,7 @@ fn a_same_name_sibling_keeps_the_first_row_rather_than_orphaning_a_subtree() {
         .with_root(root);
         Arc::new(SameNameSiblings {
             inner,
-            doubled: PathBuf::from(tree.path("scope")),
+            doubled: app_path(&tree.path("scope")),
         })
     });
     let scope = share.path("scope");

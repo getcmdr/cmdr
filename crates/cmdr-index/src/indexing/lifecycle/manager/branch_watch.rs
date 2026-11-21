@@ -192,13 +192,15 @@ impl IndexManager {
         if branches.is_empty() {
             return None;
         }
+        // A branch watch is the local watcher, so only a root the OS opens has one.
+        let volume_root = self.native_root.clone()?;
         if self.branch_watch_starting.swap(true, Ordering::AcqRel) {
             return None;
         }
         Some(BranchWatchStart {
             in_flight: InFlight(Arc::clone(&self.branch_watch_starting)),
             volume_id: self.volume_id.clone(),
-            volume_root: self.volume_root.clone(),
+            volume_root,
             db_path: self.db_path().to_path_buf(),
             writer: self.writer.clone(),
             paths: branches.branch_paths().into_iter().map(PathBuf::from).collect(),

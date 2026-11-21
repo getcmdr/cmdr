@@ -49,7 +49,7 @@
       "reason": "TODO: `run_wal_checkpoint` in `importance/writer.rs` and in `media_index/writer/maintenance.rs` are identical apart from the `log::` target, down to the 250 ms busy timeout, the restore to 5000 ms, and the four-arm match on the returned `(busy, log_size, checkpointed)` row; the media copy's own doc comment says it mirrors the importance one. Add a crate-private `crates/cmdr-index/src/sqlite_wal.rs` beside `fingerprint.rs` exposing `pub(crate) fn checkpoint_truncate(conn: &Connection, log_target: &'static str)`, and leave each writer a one-line call plus its own doc comment about why its workload needs the truncate. `indexing/writer/maintenance.rs`'s `handle_wal_checkpoint` stays separate: it carries a busy handler and an `IndexFailureSignal`, so it is a different function that happens to run the same pragma."
     },
     "crates/cmdr-index/src/indexing/network_scanner/full_scan.rs ↔ crates/cmdr-index/src/indexing/network_scanner/reconcile_scan.rs": {
-      "lines": 18,
+      "lines": 17,
       "reason": "The `use` block, nothing else. Two sibling scanners in `network_scanner/` reach for the same 17 imports (`VecDeque`, `FuturesUnordered`, `cmdr_fs::volume::Volume`, `super::ScanPacer`, `BATCH_SIZE`, the `LogPrivate` markers, and the rest), because a full scan and a reconcile scan walk the same trait with the same pacing. Rust makes every file spell its own imports out, so there is nothing here to extract."
     },
     "crates/cmdr-index/src/indexing/reconcile/reconcile_bench.rs": {

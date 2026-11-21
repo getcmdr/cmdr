@@ -7,8 +7,8 @@
 //! per-dir diff itself is `reconciler::diff_dir_against_db`, shared with the
 //! local reconcile walk. Shared helpers live in `mod.rs`.
 
+use cmdr_fs::app_path::AppPathBuf;
 use std::collections::VecDeque;
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use std::time::Instant;
@@ -22,10 +22,10 @@ use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::Volume;
 
 use super::scan_pace::ScanPacer;
-use super::walk_descends;
 use super::{
     CONSECUTIVE_FAILURE_ABORT, VolumeScanError, is_typed_disconnect, list_one_directory, log_scan_progress, summary,
 };
+use super::{child_of, walk_descends};
 use crate::indexing::reconcile::reconciler;
 use crate::indexing::scanner::{ScanProgress, ScanSummary};
 use crate::indexing::store::IndexStore;
@@ -54,7 +54,7 @@ use crate::indexing::writer::{IndexWriter, WriteMessage};
 /// catastrophic `INSERT OR REPLACE`/`platform_case` path.
 pub(crate) async fn reconcile_volume_via_trait(
     volume: Arc<dyn Volume>,
-    root: PathBuf,
+    root: AppPathBuf,
     writer: IndexWriter,
     progress: Arc<ScanProgress>,
     cancel: CancellationToken,
@@ -88,19 +88,19 @@ pub(crate) async fn reconcile_volume_via_trait(
     // BFS by (absolute dir path, its DB id). The scan root maps to ROOT_ID in this
     // index (same as the fresh scan). New dirs discovered this pass are resolved to
     // ids after a writer flush before we recurse into them.
-    let mut queue: VecDeque<(PathBuf, i64)> = VecDeque::new();
+    let mut queue: VecDeque<(AppPathBuf, i64)> = VecDeque::new();
     queue.push_back((root.clone(), ROOT_ID));
     let mut last_progress_log = Instant::now();
     let mut inflight = FuturesUnordered::new();
     // New child dirs discovered this pass, drained after a WAVE's flush (when nothing
-    // is queued or in flight). Each is (parent dir path, parent DB id, child name): we
+    // is queued or in flight). Each is (the child dir's path, its parent's DB id, child name): we
     // resolve the freshly-written child by `(parent_id, name)` rather than by absolute
     // path, because the index root is the VOLUME root (mapped to ROOT_ID), not `/`. An
     // absolute-path walk from ROOT_ID would fail for any non-`/` root (e.g.
     // `/Volumes/testshare`), which is exactly the SMB/MTP case — that bug left a post-Forget
     // enable resolving zero new dirs, so the reconcile stopped at the root and falsely
     // completed. See `indexing/DETAILS.md` § "Non-destructive rescan".
-    let mut new_dirs: Vec<(PathBuf, i64, String)> = Vec::new();
+    let mut new_dirs: Vec<(AppPathBuf, i64, String)> = Vec::new();
 
     // Suppress per-entry ancestor propagation for the bulk walk; the guard restores
     // it on EVERY exit (clean finish, cancel, empty-root, disconnect, error). The
@@ -152,8 +152,7 @@ pub(crate) async fn reconcile_volume_via_trait(
                 .flush()
                 .await
                 .map_err(|e| VolumeScanError::WriterSend(e.to_string()))?;
-            for (parent_path, parent_id, child_name) in new_dirs.drain(..) {
-                let child_path = parent_path.join(&child_name);
+            for (child_path, parent_id, child_name) in new_dirs.drain(..) {
                 // Resolve by (parent_id, name), NOT by absolute path: the index root is
                 // the volume root (ROOT_ID), so an absolute-path walk from ROOT_ID only
                 // works when the root is `/`. We hold the parent's DB id, so a
@@ -162,11 +161,11 @@ pub(crate) async fn reconcile_volume_via_trait(
                     Ok(Some(id)) => queue.push_back((child_path, id)),
                     Ok(None) => log::debug!(
                         "network_scanner: reconcile couldn't resolve new dir after flush: {}",
-                        LogPrivate::dir_path(&child_path)
+                        LogPrivate::dir_path(child_path.as_str())
                     ),
                     Err(e) => log::warn!(
                         "network_scanner: reconcile resolve_component failed for {}: {e}",
-                        LogPrivate::dir_path(&child_path)
+                        LogPrivate::dir_path(child_path.as_str())
                     ),
                 }
             }
@@ -191,7 +190,7 @@ pub(crate) async fn reconcile_volume_via_trait(
                 log::warn!(
                     "network_scanner: device disconnected reconciling {}: {e}; \
                      keeping prior index ({} re-listed, {} queued/in-flight unreached)",
-                    LogPrivate::dir_path(&dir_path),
+                    LogPrivate::dir_path(dir_path.as_str()),
                     cmdr_fs::pluralize::pluralize(total_dirs, "dir"),
                     cmdr_fs::pluralize::pluralize((queue.len() + inflight.len() + new_dirs.len()) as u64, "dir"),
                     e = LogError(&e),
@@ -208,7 +207,7 @@ pub(crate) async fn reconcile_volume_via_trait(
                 consecutive_failures += 1;
                 log::debug!(
                     "network_scanner: skipping unlistable dir {} during reconcile (consecutive_failures={consecutive_failures}): {err}",
-                    LogPrivate::dir_path(&dir_path),
+                    LogPrivate::dir_path(dir_path.as_str()),
                     err = LogError(&err),
                 );
                 if consecutive_failures >= CONSECUTIVE_FAILURE_ABORT {
@@ -239,7 +238,7 @@ pub(crate) async fn reconcile_volume_via_trait(
         if dir_path == root && entries.is_empty() {
             log::warn!(
                 "network_scanner: reconcile root listed empty for {} ({}ms) — treating as a failed rescan, keeping prior index",
-                LogPrivate::dir_path(&root),
+                LogPrivate::dir_path(root.as_str()),
                 start.elapsed().as_millis()
             );
             return Err(VolumeScanError::EmptyRoot);
@@ -308,26 +307,28 @@ pub(crate) async fn reconcile_volume_via_trait(
         // The diff already leaves links out of both sets, so what's left is a real
         // directory, or a link the listing turned into one because the volume walks it.
         for (child_id, child_name) in diff.matched_child_dirs {
-            let child_path = dir_path.join(&child_name);
-            if !walk_descends(volume.as_ref(), &child_path, &child_name, false) {
+            let Some(child_path) = child_of(&dir_path, &child_name)
+                .filter(|child| walk_descends(volume.as_ref(), child, &child_name, false))
+            else {
                 log::debug!(
-                    "network_scanner: not descending into {} (a NAS system dir or a tree the volume keeps out of its walks)",
-                    LogPrivate::dir_path(&child_path)
+                    "network_scanner: not descending into {} (a NAS system dir, a tree the volume keeps out of its walks, or no plain name)",
+                    LogPrivate::dir_name(&child_name)
                 );
                 continue;
-            }
+            };
             queue.push_back((child_path, child_id));
         }
         for child_name in diff.new_child_dir_names {
-            let child_path = dir_path.join(&child_name);
-            if !walk_descends(volume.as_ref(), &child_path, &child_name, false) {
+            let Some(child_path) = child_of(&dir_path, &child_name)
+                .filter(|child| walk_descends(volume.as_ref(), child, &child_name, false))
+            else {
                 log::debug!(
-                    "network_scanner: not descending into {} (a NAS system dir or a tree the volume keeps out of its walks)",
-                    LogPrivate::dir_path(&child_path)
+                    "network_scanner: not descending into {} (a NAS system dir, a tree the volume keeps out of its walks, or no plain name)",
+                    LogPrivate::dir_name(&child_name)
                 );
                 continue;
-            }
-            new_dirs.push((dir_path.clone(), dir_id, child_name));
+            };
+            new_dirs.push((child_path, dir_id, child_name));
         }
     }
 
@@ -340,7 +341,7 @@ pub(crate) async fn reconcile_volume_via_trait(
     let dirs_listed = cmdr_fs::pluralize::pluralize(total_dirs, "dir");
     log::info!(
         "network_scanner: reconcile complete for {}: +{added} -{removed} ~{updated} ({dirs_listed} re-listed) in {}ms",
-        LogPrivate::dir_path(&root),
+        LogPrivate::dir_path(root.as_str()),
         start.elapsed().as_millis()
     );
 

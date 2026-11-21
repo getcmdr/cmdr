@@ -122,7 +122,8 @@ pub(super) fn try_reserve_initializing_phase_on(
     // lives, ❌ never by its root path: a rename moves the root while the drive stays
     // mounted. Only a local-scanner volume's root is a mount point to name.
     let mount_identity = if kind.uses_local_scanner() {
-        crate::indexing::host::volumes::current().mount_identity(request.volume_root())
+        crate::indexing::paths::app_text::native_root(request.volume_root())
+            .and_then(|root| crate::indexing::host::volumes::current().mount_identity(&root))
     } else {
         None
     };

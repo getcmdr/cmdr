@@ -840,7 +840,7 @@ fn scan_context_id_allocation() {
     // Seed the counter from the DB (root sentinel is id=1, so next_id=2)
     let next_id = Arc::new(AtomicI64::new(IndexStore::get_next_id(&conn).unwrap()));
 
-    let root_path = Path::new("/test/root");
+    let root_path = cmdr_fs::app_path!("/test/root");
     let mut ctx = ScanContext::new(&conn, root_path, true, next_id).unwrap();
 
     let id1 = ctx.alloc_id();
@@ -854,12 +854,12 @@ fn scan_context_id_allocation() {
     assert_eq!(ctx.lookup_parent(root_path), Some(ROOT_ID));
 
     // Register a directory and look it up
-    let dir_path = PathBuf::from("/test/root/mydir");
+    let dir_path = cmdr_fs::app_path!("/test/root/mydir").to_owned();
     ctx.register_dir(dir_path.clone(), id1);
     assert_eq!(ctx.lookup_parent(&dir_path), Some(id1));
 
     // Unknown path returns None
-    assert_eq!(ctx.lookup_parent(Path::new("/unknown")), None);
+    assert_eq!(ctx.lookup_parent(cmdr_fs::app_path!("/unknown")), None);
 }
 
 #[test]
@@ -884,7 +884,7 @@ fn scan_context_subtree_resolves_actual_id() {
     let next_id = Arc::new(AtomicI64::new(IndexStore::get_next_id(&conn).unwrap()));
 
     // Create ScanContext for the subtree root
-    let subtree_root = Path::new("/Volumes/NO NAME");
+    let subtree_root = cmdr_fs::app_path!("/Volumes/NO NAME");
     let ctx = ScanContext::new(&conn, subtree_root, false, next_id).unwrap();
 
     // Should resolve to the actual entry ID, NOT ROOT_ID

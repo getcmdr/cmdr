@@ -29,7 +29,7 @@ async fn reconcile_noop_writes_zero_entry_rows() {
     let cancelled = CancellationToken::new();
     reconcile_volume_via_trait(
         Arc::clone(&vol),
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -90,7 +90,7 @@ async fn reconcile_with_changes_matches_fresh_from_scratch() {
     let cancelled = CancellationToken::new();
     reconcile_volume_via_trait(
         Arc::clone(&vol_after),
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -177,7 +177,7 @@ async fn mid_reconcile_disconnect_keeps_prior_index() {
     let cancelled = CancellationToken::new();
     let result = reconcile_volume_via_trait(
         vol_disc,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -230,7 +230,7 @@ async fn first_scan_builds_then_reconcile_is_a_no_op() {
     let cancelled = CancellationToken::new();
     reconcile_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -309,7 +309,7 @@ async fn reconcile_descends_into_existing_unchanged_child_dirs() {
     let cancelled = CancellationToken::new();
     reconcile_volume_via_trait(
         vol_full,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -382,7 +382,7 @@ async fn reconcile_empty_root_does_not_complete() {
     let cancelled = CancellationToken::new();
     let result = reconcile_volume_via_trait(
         empty,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -426,7 +426,7 @@ async fn reconcile_empty_root_does_not_complete() {
 #[tokio::test]
 async fn reconcile_from_empty_db_with_non_root_mount_indexes_full_tree() {
     // An SMB-shaped mount: root is `/Volumes/testshare`, with a multi-level tree.
-    let root = PathBuf::from("/Volumes/testshare");
+    let root = cmdr_fs::app_path!("/Volumes/testshare").to_owned();
     let tree = vec![
         entry("top", "/Volumes/testshare/top", true, None),
         entry("sub", "/Volumes/testshare/top/sub", true, None),

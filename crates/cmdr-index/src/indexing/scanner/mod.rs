@@ -757,12 +757,12 @@ fn run_scan(
         // walk from `ROOT_ID` misses at the very first component on a mount-rooted
         // volume, and a subtree outside the mount root has no entry here at all.
         let root_id = if is_volume_root {
-            resolve_scan_root(&conn, root, true).map_err(|e| ScanError::WriterSend(e.to_string()))?
+            resolve_scan_root(&conn, "/", true).map_err(|e| ScanError::WriterSend(e.to_string()))?
         } else {
             let index_root = space
                 .index_relative(&root.to_string_lossy())
                 .ok_or_else(|| ScanError::OutsideIndex(root.to_path_buf()))?;
-            resolve_scan_root(&conn, Path::new(&index_root), false).map_err(|e| ScanError::WriterSend(e.to_string()))?
+            resolve_scan_root(&conn, &index_root, false).map_err(|e| ScanError::WriterSend(e.to_string()))?
         };
         // An add-only walk is safe only over ground the index holds nothing for.
         // Asked in the same breath as the resolve, on the same connection, because

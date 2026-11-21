@@ -185,9 +185,11 @@ by the stored handle. PTP events are device-wide but storages are separate names
   (the livelock). `replay_buffered_mtp_changes` applies the sync changes, then spawns one task to resolve the buffered
   raw handles post-scan (device idle); a failed resolve is dropped (the scan captured the object; a later change
   re-fires). A handle can be buffered for the wrong storage, but its replay resolve fails cleanly.
-- **Path space — no mount-strip.** The MTP resolver produces storage-relative paths (`/DCIM/Camera`) and the index
-  `ROOT_ID` is the storage root, so `apply_mtp_*` resolves against the index directly. The read-side `index_read_path`
-  strips the `mtp://{device}/{storage}` scheme prefix off listing/dir-stats paths (owned by `../paths/DETAILS.md`).
+- **Path space — no mount-strip.** The MTP resolver produces storage-relative paths (`/DCIM/Camera`), typed
+  (`AppPathBuf` under the POSIX `/` root), and the index `ROOT_ID` is the storage root, so `apply_mtp_*` resolves
+  against the index directly: the row's parent lookup is the typed parent's text, its name the typed `file_name`, so a
+  device name holding `\` or `:` stays one name on every OS. The read-side `index_read_path` strips the
+  `mtp://{device}/{storage}` scheme prefix off listing/dir-stats paths (owned by `../paths/DETAILS.md`).
 - **Resolved on the writer, like SMB.** Both upserts (parent by path) and removals (row by stored handle) ride
   `WriteMessage::ResolveThenWrite` (`send_resolved`), live and in post-scan replay. Decision/Why: on a `ReadPool`
   connection a file added right behind its new folder missed the uncommitted folder row and was never indexed, and an

@@ -66,7 +66,7 @@ fn a_walk_on_a_left_over_index_reads_it_as_stale() {
     // that can load Fresh at all, so it's the only one where this can go wrong.
     crate::indexing::lifecycle::state::start_indexing_for(
         drive.volume_id,
-        drive.tree.path().to_path_buf(),
+        cmdr_fs::app_path::AppPathBuf::from_native_unicode(drive.tree.path()).expect("a Unicode tempdir"),
         IndexVolumeKind::Local,
         true,
         crate::indexing::lifecycle::state::Activation::WriterOnly,

@@ -309,12 +309,14 @@ impl IndexManager {
         if self.pending_phases != PendingPhases::Owed {
             return None;
         }
+        // The phase machine runs the local pipeline, so only a root the OS opens has one.
+        let volume_root = self.native_root.clone()?;
         self.pending_phases = PendingPhases::BeingStarted;
         Some(PhaseStart {
             db_path: self.writer.db_path(),
             context: MachineContext {
                 volume_id: self.volume_id.clone(),
-                volume_root: self.volume_root.clone(),
+                volume_root,
                 space: self.path_space(),
                 writer: self.writer.clone(),
                 events: Arc::clone(&self.events),

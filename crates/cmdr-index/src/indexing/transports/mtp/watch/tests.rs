@@ -49,9 +49,14 @@ fn seed_index() -> (rusqlite::Connection, tempfile::TempDir) {
     (conn, dir)
 }
 
+/// `text` as the storage path the handle resolver hands over.
+fn storage_path(text: &str) -> AppPathBuf {
+    AppPathBuf::parse(text, cmdr_fs::app_path::PathFlavor::Posix).expect("a storage path")
+}
+
 fn upsert(path: &str, handle: u32, is_dir: bool, size: Option<u64>) -> MtpUpsert {
     MtpUpsert {
-        path: PathBuf::from(path),
+        path: storage_path(path),
         handle,
         is_directory: is_dir,
         size,
@@ -187,23 +192,31 @@ fn a_removal_right_behind_its_add_deletes_the_row_the_add_made() {
 // ── path / url helpers ─────────────────────────────────────────────────
 
 #[test]
-fn path_to_index_str_normalizes_root_and_leading_slash() {
-    assert_eq!(path_to_index_str(std::path::Path::new("/")), "/");
-    assert_eq!(path_to_index_str(std::path::Path::new("/DCIM")), "/DCIM");
-    assert_eq!(path_to_index_str(std::path::Path::new("")), "/");
+fn the_storage_root_itself_is_no_upsert() {
+    let (conn, _dir) = seed_index();
+    assert!(resolve_upsert(&conn, &upsert("/", 1, true, None)).is_none());
+}
+
+#[test]
+fn a_name_holding_a_backslash_or_colon_stays_one_row_name_on_every_os() {
+    let (conn, _dir) = seed_index();
+    match resolve_upsert(&conn, &upsert("/DCIM/a\\b 12:00.jpg", 22, false, Some(3))).expect("a write") {
+        ResolvedWrite::Upsert { parent_id, name, .. } => {
+            assert_eq!(parent_id, 2, "resolved under /DCIM (id=2), never a `\\` subfolder");
+            assert_eq!(name, "a\\b 12:00.jpg");
+        }
+        _ => panic!("Added must map to Upsert"),
+    }
 }
 
 #[test]
 fn mtp_url_for_builds_the_listing_cache_key() {
     let vid = "mtp-PIXEL7:65537";
-    assert_eq!(mtp_url_for(vid, std::path::Path::new("/")), "mtp://mtp-PIXEL7/65537");
-    assert_eq!(
-        mtp_url_for(vid, std::path::Path::new("/DCIM")),
-        "mtp://mtp-PIXEL7/65537/DCIM"
-    );
+    assert_eq!(mtp_url_for(vid, &storage_path("/")), "mtp://mtp-PIXEL7/65537");
+    assert_eq!(mtp_url_for(vid, &storage_path("/DCIM")), "mtp://mtp-PIXEL7/65537/DCIM");
     // A serial device id containing a colon round-trips into the URL.
     assert_eq!(
-        mtp_url_for("mtp-AA:BB:65537", std::path::Path::new("/Music")),
+        mtp_url_for("mtp-AA:BB:65537", &storage_path("/Music")),
         "mtp://mtp-AA:BB/65537/Music"
     );
 }

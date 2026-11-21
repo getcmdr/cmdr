@@ -181,7 +181,7 @@ fn a_chain_running_through_a_file_row_is_declined() {
     assert!(entries.is_empty());
     assert!(
         matches!(
-            bootstrap::ensure_walkable(&f.context(), &Ground::Local, &root.join("mixed/inner")),
+            bootstrap::ensure_walkable(&f.context(), &Ground::Local, &f.path("mixed/inner")),
             Err(bootstrap::NotWalkable::FileRowInTheChain(_))
         ),
         "and says which kind of broken"
@@ -200,7 +200,7 @@ fn a_frontier_path_that_is_not_a_directory_on_disk_is_declined() {
 
     assert!(
         matches!(
-            bootstrap::ensure_walkable(&f.context(), &Ground::Local, &root.join("gone")),
+            bootstrap::ensure_walkable(&f.context(), &Ground::Local, &f.path("gone")),
             Err(bootstrap::NotWalkable::NotADirectoryOnDisk(_))
         ),
         "a path that isn't there can't be walked"
@@ -210,7 +210,7 @@ fn a_frontier_path_that_is_not_a_directory_on_disk_is_declined() {
         cmdr_fs::testing::symlink(root.join("real"), root.join("link")).expect("symlink");
         assert!(
             matches!(
-                bootstrap::ensure_walkable(&f.context(), &Ground::Local, &root.join("link")),
+                bootstrap::ensure_walkable(&f.context(), &Ground::Local, &f.path("link")),
                 Err(bootstrap::NotWalkable::NotADirectoryOnDisk(_))
             ),
             "a symlink is not a directory to descend into"
@@ -491,7 +491,7 @@ fn a_row_still_absent_after_its_upsert_marks_its_folder() {
     use cmdr_fs::log_private::LogPrivate;
 
     let folder = "Trips/Summer (Lake House) 2026";
-    let error = bootstrap::NotWalkable::AbsentAfterUpsert(Path::new(folder).to_path_buf());
+    let error = bootstrap::NotWalkable::AbsentAfterUpsert(folder.to_string());
     let span = LogPrivate::dir_path(folder).to_string();
     let marked = LogError(&error).to_string();
     assert!(marked.contains(&span), "{marked:?}");

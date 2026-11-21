@@ -16,16 +16,25 @@ const ROOT: &str = "Trips/Summer (Lake House) 2026";
 
 /// `marked` holds `ROOT` as one folder span, and reads as `plain` once that span is plain again.
 fn assert_marks_root_as_a_folder(marked: &str, plain: &str) {
-    let span = LogPrivate::dir_path(ROOT).to_string();
-    assert!(marked.contains(&span), "{ROOT} isn't marked as a folder: {marked:?}");
-    assert_eq!(marked.replace(&span, ROOT), plain);
-    assert!(plain.contains(ROOT), "{plain:?}");
+    assert_marks_as_a_folder(ROOT, marked, plain);
+}
+
+/// [`assert_marks_root_as_a_folder`] for any `root` text.
+fn assert_marks_as_a_folder(root: &str, marked: &str, plain: &str) {
+    let span = LogPrivate::dir_path(root).to_string();
+    assert!(marked.contains(&span), "{root} isn't marked as a folder: {marked:?}");
+    assert_eq!(marked.replace(&span, root), plain);
+    assert!(plain.contains(root), "{plain:?}");
 }
 
 #[test]
 fn a_network_scan_root_outside_the_index_marks_the_root() {
-    let error = VolumeScanError::OutsideIndex(Path::new(ROOT).to_path_buf());
-    assert_marks_root_as_a_folder(&LogError(&error).to_string(), &error.to_string());
+    // A network walk's root is an app path, so absolute.
+    let root = format!("/{ROOT}");
+    let error = VolumeScanError::OutsideIndex(
+        cmdr_fs::app_path::AppPathBuf::parse(&root, cmdr_fs::app_path::PathFlavor::Posix).expect("an app path"),
+    );
+    assert_marks_as_a_folder(&root, &LogError(&error).to_string(), &error.to_string());
 }
 
 #[test]

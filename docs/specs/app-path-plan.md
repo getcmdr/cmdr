@@ -1789,6 +1789,47 @@ included; the hidden couplings it found are why waves B and C differ from round 
   cold-drive cell that renames a mount point with handles open (Windows refuses the rename). macOS/Linux: suite plus
   `index_benchmarks` before/after.
 - **DONE**: bridge count zero in `cmdr-index` and `index-query`; #1232 updated with what's left.
+- **Done, first step** (2026-11-21, branch `worktree-agent-af451005373bb3ef6`; the lead on the roots and the network
+  scanner, one helper on MTP's resolved object, the test doubles, and the media fetch): the index takes each volume's
+  root, and walks a share or a phone, by its typed app path. Bridge calls in `cmdr-index` 29 → 0 (`index-query` had
+  none), `appTextToPath` 6 → 3, `pathFromBareText` 48 → 42; workspace bridges 1,882 → 1,853. No budget rose. The durable
+  design: `crates/cmdr-index/src/indexing/paths/DETAILS.md` § "App paths at the edges". What converted:
+  - **Roots**: `StartRequest` and `IndexManager` hold the `Volume`'s root (`AppPathBuf`), crossing once each way in
+    `paths/app_text.rs`: `stored_text` for every stored or compared root text, `native_root` for the local pipeline
+    (`None` for `mtp://` and `adb://`). The boot root parses `mount_layout::boot_volume_root()` (`C:/` on Windows), and
+    the cover bootstrap's `root` now roots there too instead of a bare `/`.
+  - **The network scanner** (fresh, reconcile, cover): its queue and `ScanContext` are app paths; a row's path is its
+    own canonical text (`app_path_of`, no extra copy), a reconcile child the typed join (`child_of`); a folder path is
+    built only for a folder row. `resolve_scan_root` takes index text; the cover chain joins `/` text (`push_name`).
+  - **MTP's resolved object** (`ResolvedMtpObject.path`, in `cmdr-mtp` and the index's host seam) is an `AppPathBuf`,
+    and the MTP watch does typed `parent`/`file_name`; the media fetch builds its path through `from_external_text`.
+- **Byte-exact on macOS** (throwaway differential harnesses, old bridge answers against the new, generated input; in the
+  lead's scratchpad): root text 2,000,000, 0 differ; native root 2,000,000, byte-identical for every canonical root,
+  refusing only bridge-only shapes (a trailing `/`, `//`, `.`, `..`) and `//`-led three-name text (#1309's UNC reading),
+  and `None` for scheme roots; row paths 1,621,506, the same text for every canonical row except a name holding a
+  literal escape-range code point (#1310's class: the bridge re-escaped it); reconcile children 886,428, every
+  difference holding an escape-range code point, and a name that isn't one plain name now `None`; the bootstrap join
+  1,536,466, 0 differ. MTP watch 3,008,374 (parent text, row name, `DirsUpdated` URL), 0 outside the literal-escape
+  class (1,874,102 of them: the bridge wrote U+FFFD, the typed path keeps the row's text); media fetch 1,034,928 joined
+  texts, 0 differ (refused now: empty, relative, `..`, NUL text, a per-file skip; `//`, `/./`, a trailing `/` fold). The
+  suites: `cmdr-index` 2,013 and `cmdr-mtp` 206, green.
+- **Intended behavior changes** (input no backend lists): a listed folder whose name isn't one plain name, or whose row
+  text names no place, is indexed as a row and not descended (the reconcile walk asked the volume to list `dir/..`); a
+  phone's start no longer asks `statvfs` about `mtp://…` (it answered `None` with a warning).
+- **The review round's fixes** (2026-11-21): the native root crosses through its canonical twin, so a bridge-only root
+  shape (a trailing `/`, `//`, `.`) opens where the OS opens it instead of sending a local drive to the SMB gate (only a
+  `..` refuses); `app_path_of` folds separators but never respells escapes (non-canonical escape text was read as `xé`,
+  a look-alike whose children a walk filed under the literal row; now `None`, not descended); and a cover root resolves
+  its row by its own text, not `stored_text`, which read a literal escape-range code point as U+FFFD.
+- **Left for the next step** (the Windows clusters, #1232): the LOCAL pipeline (the guarded walker, the reconciler, the
+  watcher, the phase machine) stays native inside, and its native → stored-text edge is about 100 `to_string_lossy`
+  sites that spell `D:\x` on Windows where the index wants `D:/x`; that edge (`from_native_unicode`, a `NotUnicode`
+  child keeping today's lossy row, counted) and the fixtures' switch to `tempdir_in` are what turn the 133 cells green.
+  Also: `CoveredEntry.path` (a `pub` `PathBuf` `cmdr-search` reads) still carries a share row's text as a `std::path`,
+  one `appTextToPath` site in `cover_scan.rs`; the SMB watcher's `&Path` seam (`apply_smb_change`) waits on the app's
+  listing host (10c), and the index reads its text through `app_path_of` meanwhile.
+- **Windows**: `pnpm check clippy-windows` green on the merged branch; no builder run (no Mami today). Expected green:
+  nothing yet among the 133 local-pipeline cells, which wait on the edge above.
 
 ### 10e. `cmdr-multi-rename` and `cmdr-listing-wasm`
 

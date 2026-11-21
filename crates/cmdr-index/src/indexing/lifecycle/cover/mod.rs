@@ -514,7 +514,7 @@ fn walk_roots(
         // that isn't only a cold volume's problem: a folder created since its
         // parent was last listed has no row on a fully indexed drive either. Give
         // the walk the chain it needs, without claiming a listing for any of it.
-        match bootstrap::ensure_walkable(context, ground, root) {
+        match bootstrap::ensure_walkable(context, ground, path) {
             Err(e) => {
                 log::warn!(
                     "Cover: can't walk {}: {e}",
@@ -542,7 +542,7 @@ fn walk_roots(
         // both arms hand the same summary to the same accumulation and only the
         // VERDICT differs. Keeping one `+=` pair is what stops the cancel path
         // drifting from the completion path.
-        let (summary, verdict) = ground.cover(context, root, sender, cancel, heartbeat);
+        let (summary, verdict) = ground.cover(context, path, sender, cancel, heartbeat);
         if let Some(summary) = summary {
             outcome.entries_found += summary.total_entries;
             outcome.dirs_found += summary.total_dirs;

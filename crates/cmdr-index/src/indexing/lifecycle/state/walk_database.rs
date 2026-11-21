@@ -95,7 +95,7 @@ pub(super) fn evict_an_index_no_walk_can_trust(volume_id: &str, db_path: &Path) 
 ///
 /// Best-effort throughout: a failure costs coverage claims, never correctness, so
 /// it's logged rather than propagated into a refusal to walk at all.
-pub(super) fn prepare_database_for_a_walk(volume_id: &str, db_path: &Path, volume_root: &Path) {
+pub(super) fn prepare_database_for_a_walk(volume_id: &str, db_path: &Path, volume_root: &cmdr_fs::app_path::AppPath) {
     let conn = match IndexStore::open_write_connection(db_path) {
         Ok(conn) => conn,
         Err(e) => {
@@ -106,7 +106,11 @@ pub(super) fn prepare_database_for_a_walk(volume_id: &str, db_path: &Path, volum
     if let Err(e) = IndexStore::seed_current_epoch(&conn) {
         log::warn!("start_indexing_for('{volume_id}'): seeding the epoch failed: {e}");
     }
-    if let Err(e) = IndexStore::update_meta(&conn, "volume_path", &volume_root.to_string_lossy()) {
+    if let Err(e) = IndexStore::update_meta(
+        &conn,
+        "volume_path",
+        &crate::indexing::paths::app_text::stored_text(volume_root),
+    ) {
         log::warn!("start_indexing_for('{volume_id}'): recording the mount root failed: {e}");
     }
     match IndexStore::get_entry_count(&conn) {
