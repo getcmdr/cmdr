@@ -65,8 +65,8 @@
       "reason": "`OperationVolumes` trait-method signatures with constant bodies: the browser demo's `DemoVolumes` and the engine's test-only `NoOperationVolumes` both answer \"no archive or git-portal routes\" (`routes_over_its_parent`, `path_is_inside_archive`, `path_crosses_archive_boundary`, `forget_archive_index`). Folding them into trait defaults would let a host that DOES serve archives (the desktop's) compile without answering, and silently treat an edit inside a `.zip` as a plain path, so each host spells its answer out. Revisit if a third archive-less host appears: then a named `NoArchiveRoutes` helper the host delegates to pays for itself."
     },
     "crates/cmdr-mtp/src/volume/volume_impl.rs ↔ crates/cmdr-smb/src/volume/volume_impl.rs": {
-      "lines": 17,
-      "reason": "`Volume` trait-method signatures with one-line bodies, not logic: `supported_dates` answering `CREATED`, `supports_export`, and `scan_for_copy` delegating to an inherent `*_impl`. The SMB bodies lost their app-path bridge preludes (#1225), which left the signatures token-identical to MTP's. Same trade as the `cmdr-sftp` ↔ `cmdr-webdav` entry: folding them takes a macro emitting trait methods, which costs more lines than it removes and hides them from `codegraph_search` and go-to-definition. Revisit when a body stops being a one-line delegation."
+      "lines": 19,
+      "reason": "`Volume` trait-method signatures with one-line bodies, not logic: `supported_dates` answering `CREATED`, `supports_export`, and `scan_for_copy` delegating to an inherent `*_impl`. Both backends' bodies lost their app-path bridge preludes (#1225), which left the signatures token-identical. Same trade as the `cmdr-sftp` ↔ `cmdr-webdav` entry: folding them takes a macro emitting trait methods, which costs more lines than it removes and hides them from `codegraph_search` and go-to-definition. Revisit when a body stops being a one-line delegation."
     },
     "crates/cmdr-nfs/src/volume/volume_impl.rs ↔ crates/cmdr-s3/src/volume/volume_impl.rs": {
       "lines": 13,

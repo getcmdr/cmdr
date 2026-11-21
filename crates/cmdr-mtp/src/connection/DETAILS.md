@@ -326,8 +326,8 @@ back as `/Documents\report-2.txt` and a device name holding `\` read as two (`cr
   the volume's root too.
 - **The host seams still take `&Path`**: `directory_changed`, `authoritative_listing`, `ScanBoundary::dir` / `file`, and
   the `pub` `ResolvedMtpObject::path`. Each call crosses through `std_path_for_host`, the crate's one bridge call; its
-  doc names the milestone that types each seam. The whole-device `FullRefresh` key (`mtp://{device}`) is a host key
-  built as text, never an app path.
+  doc names what retires each seam. The whole-device `FullRefresh` key (`mtp://{device}`) is a host key built as text,
+  never an app path.
 - **Text that isn't valid Unicode keeps today's answer**: no device name holds an escape (`mtp-rs` hands over
   `String`s), and a device name with a literal escape-range code point lists under its literal text, as the rows did.
 

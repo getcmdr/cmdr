@@ -1249,12 +1249,12 @@ async fn get_storages(device: &MtpDevice, device_supports_write: bool) -> Result
 /// `path` as the `std::path` value the host seams still take, byte for byte. ❗ The crate's
 /// one crossing, and every `&Path` seam call goes through it: all path arithmetic here is
 /// the app path's own, and only the finished value crosses. It goes when the last of these
-/// takes app paths (`docs/specs/app-path-plan.md`, issue #1225):
+/// takes app paths (issue #1225):
 ///
 /// - `ListingHost::directory_changed` and `authoritative_listing`: when the app's listing
-///   host converts (milestone 10c).
-/// - `ScanBoundary::dir` and `file`, whose `ScanRecorder` lives in the engines (10a).
-/// - [`ResolvedMtpObject::path`], a `pub` field the app's index feed reads (10c/10d).
+///   host converts.
+/// - `ScanBoundary::dir` and `file`, whose `ScanRecorder` lives in the engines.
+/// - [`ResolvedMtpObject::path`], a `pub` field the app's index feed reads.
 pub(crate) fn std_path_for_host(path: &AppPath) -> std::borrow::Cow<'_, std::path::Path> {
     path.as_std_legacy()
 }
