@@ -5,13 +5,13 @@
 //! None of them touches `ArchiveVolume`'s fields; they depend only on the
 //! reading core's types and [`to_volume_error`].
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use std::future::Future;
-use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use super::paths::entry_path;
 use super::to_volume_error;
 use crate::{ArchiveByteSource, ArchiveEntryReader, SubtreeExtractReader};
 use cmdr_fs::error_detail::ErrorDetail;
@@ -121,7 +121,7 @@ impl VolumeReadStream for ArchiveVolumeReadStream {
 /// ownership and `Send`, not concurrency.
 pub(super) struct ArchiveSequentialExtract {
     reader: Arc<tokio::sync::Mutex<SubtreeExtractReader>>,
-    archive_path: PathBuf,
+    archive_path: AppPathBuf,
     /// Uncompressed size of the member the last `next_file` returned, so
     /// `current_stream` can report `total_size()` without touching the reader.
     current_size: u64,
@@ -134,7 +134,7 @@ pub(super) struct ArchiveSequentialExtract {
 }
 
 impl ArchiveSequentialExtract {
-    pub(super) fn new(reader: SubtreeExtractReader, archive_path: PathBuf) -> Self {
+    pub(super) fn new(reader: SubtreeExtractReader, archive_path: AppPathBuf) -> Self {
         Self {
             reader: Arc::new(tokio::sync::Mutex::new(reader)),
             archive_path,
@@ -157,8 +157,7 @@ impl SequentialExtract for ArchiveSequentialExtract {
                     self.current_mode = member.mode;
                     self.current_xattrs = member.xattrs;
                     Ok(Some(ExtractedFile {
-                        source_path: AppPath::legacy_unchecked(&self.archive_path.join(&member.inner_path))
-                            .into_owned(),
+                        source_path: entry_path(&self.archive_path, &member.inner_path).into_app(),
                         size: member.size,
                     }))
                 }
@@ -241,7 +240,7 @@ impl VolumeReadStream for MemberStream {
 pub(super) struct VolumeByteSource {
     parent: Arc<dyn Volume>,
     /// Absolute path of the `.zip` on the parent volume.
-    path: PathBuf,
+    path: AppPathBuf,
     /// The archive's size, from the parent's metadata at construction. A read at
     /// or past it returns EOF, matching a local `pread`.
     size: u64,
@@ -249,7 +248,7 @@ pub(super) struct VolumeByteSource {
 }
 
 impl VolumeByteSource {
-    pub(super) fn new(parent: Arc<dyn Volume>, path: PathBuf, size: u64, runtime: Runtime) -> Self {
+    pub(super) fn new(parent: Arc<dyn Volume>, path: AppPathBuf, size: u64, runtime: Runtime) -> Self {
         Self {
             parent,
             path,
@@ -274,9 +273,10 @@ impl ArchiveByteSource for VolumeByteSource {
         let want = buf.len().min((self.size - offset) as usize);
         let parent = Arc::clone(&self.parent);
         let path = self.path.clone();
-        let data = block_on(&self.runtime, async move {
-            parent.read_range(&AppPath::legacy_unchecked(&path), offset, want).await
-        })
+        let data = block_on(
+            &self.runtime,
+            async move { parent.read_range(&path, offset, want).await },
+        )
         // Typed, so the archive error it becomes still marks the parent's path.
         .map_err(|err| std::io::Error::other(ErrorDetail::of(err)))?;
         let n = data.len().min(buf.len());

@@ -76,18 +76,43 @@ volume physically storing the `.zip`), the archive path, the display name, and a
 `parent.supports_local_fs_access()` (§ "Remote-backed archives (read path)"). The index and reader are unchanged either
 way — both already speak `dyn ArchiveByteSource`.
 
-**Path namespace.** `root()` is the real `.zip` path and inner entries join under it, held as a `BridgedPath` (`root()`
-and `local_backing_file()` return its app spelling, every body reads it as the `Path` it holds), so
-`/path/to/foo.zip/inner` renders transparently (the FE splits on `/`). `inner_path()` maps a volume-namespace path back
-to the index key: it strips the archive-path prefix (the FE sends full absolute paths), accepts an already-inner
-relative path, and treats an empty path / `.` as the root `""`. `node_to_entry` builds each `FileEntry`'s full path as
-`archive_path/inner`; the root node (`""`) carries the archive's own filename and path. `ArchiveNode::modified` is Unix
-seconds, matching `FileEntry` (a negative timestamp is dropped), and it's the only date a member carries
-(`supported_dates` keeps the trait's Modified-only default). `FileEntry` has no `encrypted` field, so `index()` is
-`pub`: a host caller that must name encryption (the Ask Cmdr `inspect_file` tool) queries the same cached `ArchiveIndex`
-the listing maps from (`get` / `list` / `has_encrypted_entries`, keyed by the inner path `archive_boundary_candidate`
-splits off), so the two never disagree. For 7z the per-entry flag is derived from the entry's block: an `AES256_SHA256`
-coder in its chain (`sevenz.rs`); an entry with no block (a directory, an empty file) is never flagged.
+**Path namespace.** `root()` is the `.zip`'s app path (an `AppPathBuf`) and inner entries join under it by the app
+path's own arithmetic (`src/volume_paths.rs`), so `/path/to/foo.zip/inner` renders transparently (the FE splits on `/`),
+a remote `sftp://…/a.zip` keeps its `//`, and a Windows `C:/x/a.zip` never gains a `\`. `inner_path()` maps a
+volume-namespace path back to the index key: it strips the archive-path prefix (the FE sends full absolute paths), and
+for a bridge caller also accepts an already-inner relative path and an empty path / `.` as the root `""`.
+`node_to_entry` builds each `FileEntry`'s full path as `archive_path/inner`; the root node (`""`) carries the archive's
+own filename and path.
+
+- **Two constructors** (Decision/Why: the wave-B rule, no `pub` signature change while other crates call it):
+  `ArchiveVolume::new_at(parent, AppPathBuf, …)` is the typed one, and `ArchiveVolume::new(parent, PathBuf, …)` stays
+  for today's callers (`cmdr-operations`' tests, the app's `archive_routing.rs`): it keeps the `PathBuf` as the native
+  backing file exactly as given and takes its app spelling through the bridge, so `root()` and every row keep their text
+  (pinned by `the_std_path_constructor_keeps_its_spelling_and_takes_relative_inner_paths`). It goes when those callers
+  switch (the operations engine and the app's conversions).
+- **The local backing file crosses to the OS once**, at construction (`native`, from `AppPath::to_native` through
+  `boundary::native_of`; a browser build answers `NotLocal`): the `std::fs` stat and `pread` source of the local fast
+  path and the content watch's `notify` arm read it. A refusal is kept and answered at the first local read, ❌ never a
+  fallback to the app text. A remote archive's cache key is its app path (`ArchiveIndexCache::index_for_source`).
+- **Two shapes keep `Path`'s answer, so the wire stays byte-identical on macOS and Linux**: a non-canonical path (only
+  the bridge makes one: `new`'s `PathBuf`, a caller's relative or `//` text) and text holding an escape code point (a
+  name that isn't valid UTF-8, whose row is spelled lossily until escapes go live). `volume_paths.rs` routes both
+  through `std_view` (`volume.rs`), the crate's one `as_std_legacy`; the typed arithmetic answers every canonical,
+  escape-free path. Verified by a differential run of `main`'s bodies against these (3,873,528 generated cases: root
+  rows, entry rows, `NotFound` text, sequential-extract `source_path`s, and `inner_path`; 0 differences, 2026-11-21).
+- **What still bridges, and who takes it** (`app-path-std-bridge` counts six): `new`'s one `legacy_unchecked` (its
+  callers' conversions), `std_view` and its way back `from_std_view` (the bridge shapes above, plus two seams that still
+  speak `std::path`: the transfer engine's `ScanRecorder`, `record_subtree`'s one crossing, and the listing host's
+  `refresh_archive_listings`, which the content watch names the archive to; they go when those seams take app paths and
+  the bridge is deleted), `confirm_remote_archive_boundary`'s one crossing into its typed form (the app's routing), and
+  `volume_test.rs`' two relative-spelling cells (the bridge's deletion turns them into refusal pins).
+  `ArchiveNode::modified` is Unix seconds, matching `FileEntry` (a negative timestamp is dropped), and it's the only
+  date a member carries (`supported_dates` keeps the trait's Modified-only default). `FileEntry` has no `encrypted`
+  field, so `index()` is `pub`: a host caller that must name encryption (the Ask Cmdr `inspect_file` tool) queries the
+  same cached `ArchiveIndex` the listing maps from (`get` / `list` / `has_encrypted_entries`, keyed by the inner path
+  `archive_boundary_candidate` splits off), so the two never disagree. For 7z the per-entry flag is derived from the
+  entry's block: an `AES256_SHA256` coder in its chain (`sevenz.rs`); an entry with no block (a directory, an empty
+  file) is never flagged.
 
 **Streaming reads.** `open_read_stream` / `open_read_stream_at_offset` parse the index (cached) and open the byte source
 on `spawn_blocking`, then wrap `ArchiveEntryReader` as an `ArchiveVolumeReadStream`. A compressed entry has no random
@@ -301,6 +326,18 @@ An `ArchiveVolume` is never constructed here directly in production — it's min
     `RemoteRoot::to_remote_path`), and `sftp:/a` and `sftp://a` have identical components. Only the frontend, which does
     string arithmetic on the path, could see the difference. ❗ That also means a `PathBuf` assertion can't defend the
     spelling — a regression test has to compare `to_str()`.
+- **Typed forms sit beside the `std::path` ones**
+  (`boundary::{confirm_archive_boundary_at, path_crosses_archive_boundary_at, path_is_inside_archive_at, path_targets_archive_file_at}`,
+  and `confirm_archive_boundary_on_parent_at` / `confirm_remote_archive_boundary_at` at the root), for callers holding
+  an app path; the `std::path` forms stay untouched until their callers move. The typed split
+  (`archive_boundary_candidate_at`) reads the canonical twin's text left to right, root included, as the `std::path`
+  split reads components, and reads each name as its native text (`native_text`: a byte-escaped name is checked by its
+  decoded bytes, so a name that isn't UTF-8 is never an archive). The local confirm opens the archive through
+  `native_of`. Agreement with the `std::path` split is the same differential run's (every canonical generated path, 0
+  differences), with one deliberate exception set aside: a match INSIDE the root (`sftp://box.zip/…`, a POSIX-host
+  `//srv/share.zip/…` read as a UNC root) splits `None`, where the `std::path` split answered the root text, which names
+  no file, so its confirm answered `None` too. Pinned by `boundary_test.rs`'
+  `the_split_takes_the_first_archive_name_and_keeps_a_remote_root_spelled_exactly`.
 - **`SUPPORTED_ARCHIVE_EXTENSIONS` is the one source of truth** shared by `is_archive` and boundary detection; confirm's
   magic check carries a sibling signature per format.
 - **Write-routing reuses the same parent-aware confirm.** The write seams (delete / rename / create / copy-out-source)
@@ -345,10 +382,12 @@ absolute-path prefix stripping, the progress tick, the cancelable-listing defaul
 tail, concurrent two-entry reads, `scan_for_copy` (subtree / single file / missing), every-mutation-unsupported (incl.
 the `create_directory_all` guard), encrypted/corrupt/non-zip typed errors through the `Volume` API, the parent
 `lane_key` / `get_space_info` delegation, and the capability flags. It uses the shared `src/test_fixtures.rs` builders
-(at the archive root). `src/boundary.rs` tests the per-format magic (incl. plain-tar ustar-at-257) and the
-double-extension split; `src/boundary_on_parent_test.rs` the parent-aware confirm (the local-or-remote fork, a folder
-named `foo.zip`, a mislabeled file, and the sniff's refuse-typed routing on a missing primitive or a transient fault).
-The reading-core, mutation, and watch tests live with their modules.
+(at the archive root), and names entries through `src/testing.rs`'s `at` (a typed join under a root, so a test never
+hands a volume a native or relative spelling). `src/boundary_test.rs` tests the per-format magic (incl. plain-tar
+ustar-at-257), the double-extension split, and the typed split's agreement with the `std::path` one;
+`src/boundary_on_parent_test.rs` the parent-aware confirm (the local-or-remote fork, a folder named `foo.zip`, a
+mislabeled file, and the sniff's refuse-typed routing on a missing primitive or a transient fault). The reading-core,
+mutation, and watch tests live with their modules.
 
 ## Left for later
 

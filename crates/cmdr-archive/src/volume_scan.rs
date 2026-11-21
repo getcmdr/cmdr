@@ -5,10 +5,10 @@
 //! subtree from the parsed index, and handing a transfer's tree every entry of
 //! it, is one subject rather than one more `Volume` method.
 
-use std::path::{Path, PathBuf};
-
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::mac_only_files::MacOnlyFiles;
-use cmdr_fs::volume::{BatchScanResult, CopyScanResult, ScanBoundary, ScanRecorder, VolumeError, fold_batch};
+use cmdr_fs::volume::scan_walk::fold_batch_at;
+use cmdr_fs::volume::{BatchScanResult, CopyScanResult, ScanBoundary, ScanRecorder, VolumeError};
 
 use super::ArchiveVolume;
 
@@ -17,14 +17,12 @@ impl ArchiveVolume {
     /// decompression during a scan.
     pub(super) async fn scan_subtree(
         &self,
-        path: &Path,
+        path: &AppPath,
         mac_only: MacOnlyFiles,
     ) -> Result<CopyScanResult, VolumeError> {
         let inner = self.inner_path(path);
         let index = self.index().await?;
-        let node = index
-            .get(&inner)
-            .ok_or_else(|| VolumeError::NotFound(self.archive_path.join(&inner).display().to_string()))?;
+        let node = index.get(&inner).ok_or_else(|| self.not_found(&inner))?;
         let top_level_modified_at = node.modified.and_then(|secs| u64::try_from(secs).ok());
 
         // A single file: one entry, its uncompressed size.
@@ -79,7 +77,7 @@ impl ArchiveVolume {
     /// draws the selection as a full tree. The counts are the default's.
     pub(super) async fn scan_batch(
         &self,
-        paths: &[PathBuf],
+        paths: &[AppPathBuf],
         boundary: &ScanBoundary<'_>,
     ) -> Result<BatchScanResult, VolumeError> {
         let mut per_path = Vec::with_capacity(paths.len());
@@ -93,7 +91,7 @@ impl ArchiveVolume {
             boundary.counted(&scan).await?;
             per_path.push((path.clone(), scan));
         }
-        let mut batch = fold_batch(per_path);
+        let mut batch = fold_batch_at(per_path);
         // The default's aggregate, which never claims a type for the batch.
         batch.aggregate.top_level_is_directory = false;
         batch.aggregate.top_level_modified_at = None;
@@ -103,9 +101,14 @@ impl ArchiveVolume {
 
     /// Hands `recorder` the entry at `path` and every one below it, named under
     /// `path` as the caller spelled it.
+    ///
+    /// The recorder still speaks `std::path` (it lives in the transfer engine),
+    /// so `path` crosses the bridge once here and the names below it join as
+    /// `Path::join` joined them; that crossing goes when `ScanRecorder` takes app
+    /// paths.
     async fn record_subtree(
         &self,
-        path: &Path,
+        path: &AppPath,
         recorder: &dyn ScanRecorder,
         mac_only: MacOnlyFiles,
     ) -> Result<(), VolumeError> {
@@ -114,6 +117,8 @@ impl ArchiveVolume {
         let Some(node) = index.get(&inner) else {
             return Ok(());
         };
+        let path = super::std_view(path);
+        let path: &std::path::Path = &path;
         if !node.is_dir {
             recorder.file(path, node.size.unwrap_or(0));
             return Ok(());

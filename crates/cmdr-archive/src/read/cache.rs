@@ -15,6 +15,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::ignore_poison::IgnorePoison;
 
 use super::error::ArchiveError;
@@ -26,11 +27,19 @@ use super::source::{ArchiveByteSource, LocalFileSource};
 /// current when it was parsed. Any change to size or mtime misses the cache.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct CacheKey {
-    path: PathBuf,
+    path: CachedAt,
     size: u64,
     /// Modification time as nanoseconds since the Unix epoch, or `None` if the
     /// platform/file doesn't report one (then only size guards freshness).
     mtime_nanos: Option<i128>,
+}
+
+/// Where a cached archive lives: a local file by its native path, a remote one
+/// by its app path on the parent volume. Never equal across the two.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+enum CachedAt {
+    Local(PathBuf),
+    Remote(AppPathBuf),
 }
 
 /// A thread-safe cache of parsed archive indexes for local files.
@@ -82,7 +91,7 @@ impl ArchiveIndexCache {
     /// `spawn_blocking` context.
     pub fn index_for_source(
         &self,
-        path: &Path,
+        path: &AppPath,
         size: u64,
         mtime_nanos: Option<i128>,
         source: Arc<dyn ArchiveByteSource>,
@@ -90,7 +99,7 @@ impl ArchiveIndexCache {
         password: Option<&str>,
     ) -> Result<Arc<ArchiveIndex>, ArchiveError> {
         let key = CacheKey {
-            path: path.to_path_buf(),
+            path: CachedAt::Remote(path.to_owned()),
             size,
             mtime_nanos,
         };
@@ -135,7 +144,7 @@ fn cache_key_for(path: &Path) -> Result<CacheKey, ArchiveError> {
         .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
         .map(|d| d.as_nanos() as i128);
     Ok(CacheKey {
-        path: path.to_path_buf(),
+        path: CachedAt::Local(path.to_path_buf()),
         size: meta.len(),
         mtime_nanos,
     })
