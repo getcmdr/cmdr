@@ -1,4 +1,6 @@
 use super::{child, entry_of, permissions_of};
+use crate::test_fixtures::app;
+use cmdr_fs::app_path::AppPathBuf;
 use rustic_core::jiff::Timestamp;
 use rustic_core::repofile::{Metadata, Node, NodeType, Tree};
 use std::ffi::OsStr;
@@ -33,6 +35,10 @@ fn tree(nodes: Vec<Node>) -> Tree {
 
 const DIR: &str = "/r/Browse snapshots/latest/Users";
 
+fn dir() -> AppPathBuf {
+    app(DIR)
+}
+
 #[test]
 fn a_file_lists_with_its_size_date_mode_and_owner() {
     let mut n = file("notes.txt", 1_234);
@@ -40,7 +46,7 @@ fn a_file_lists_with_its_size_date_mode_and_owner() {
     n.meta.user = Some("test_user_3".to_string());
     n.meta.group = Some("staff".to_string());
 
-    let entry = entry_of(&n, Path::new(DIR));
+    let entry = entry_of(&n, &dir());
     assert_eq!(entry.name, "notes.txt");
     assert_eq!(entry.path, format!("{DIR}/notes.txt"));
     assert!(!entry.is_directory && !entry.is_symlink);
@@ -65,7 +71,7 @@ fn a_directory_lists_as_one_without_a_size() {
             ..Metadata::default()
         },
     );
-    let entry = entry_of(&n, Path::new(DIR));
+    let entry = entry_of(&n, &dir());
     assert!(entry.is_directory);
     assert_eq!(entry.size, None);
 }
@@ -94,7 +100,7 @@ fn a_symlink_is_a_row_of_its_own_and_never_followed() {
             ..Metadata::default()
         },
     );
-    let entry = entry_of(&n, Path::new(DIR));
+    let entry = entry_of(&n, &dir());
     assert!(entry.is_symlink);
     assert!(!entry.is_directory, "a link to a folder is still not a folder here");
 }
@@ -115,7 +121,7 @@ fn devices_fifos_and_sockets_are_plain_rows_with_no_bytes() {
                 ..Metadata::default()
             },
         );
-        let entry = entry_of(&n, Path::new(DIR));
+        let entry = entry_of(&n, &dir());
         assert!(!entry.is_directory && !entry.is_symlink);
         assert_eq!(entry.size, Some(0));
     }
@@ -125,17 +131,18 @@ fn devices_fifos_and_sockets_are_plain_rows_with_no_bytes() {
 fn a_date_before_1970_is_left_out() {
     let mut n = file("old.txt", 1);
     n.meta.mtime = Some("1969-07-20T20:17:00Z".parse::<Timestamp>().expect("time"));
-    assert_eq!(entry_of(&n, Path::new(DIR)).modified_at, None);
+    assert_eq!(entry_of(&n, &dir()).modified_at, None);
 }
 
 #[test]
 fn odd_names_pass_through_as_stored() {
     let long = "x".repeat(255);
     for name in ["Cafe\u{301}.txt", "with  two spaces", " leading", long.as_str()] {
-        let entry = entry_of(&file(name, 1), Path::new(DIR));
+        let entry = entry_of(&file(name, 1), &dir());
         assert_eq!(entry.name, name);
+        assert_eq!(entry.path, format!("{DIR}/{name}"));
         let listing = tree(vec![file(name, 1)]);
-        let found = child(&listing, OsStr::new(name), Path::new(DIR)).expect("no error");
+        let found = child(&listing, name, &dir()).expect("no error");
         assert!(found.is_some(), "{name:?} is found by its stored name");
     }
 }
@@ -147,11 +154,11 @@ fn odd_names_pass_through_as_stored() {
 fn a_non_utf8_name_lists_lossily_and_its_lossy_name_finds_nothing() {
     let raw = OsStr::from_bytes(b"caf\xe9.txt");
     let n = node(raw, NodeType::File, Metadata::default());
-    let entry = entry_of(&n, Path::new(DIR));
+    let entry = entry_of(&n, &dir());
     assert_eq!(entry.name, "caf\u{FFFD}.txt");
 
     let listing = tree(vec![n]);
-    let found = child(&listing, OsStr::new(&entry.name), Path::new(DIR)).expect("no error");
+    let found = child(&listing, &entry.name, &dir()).expect("no error");
     assert!(found.is_none(), "the lossy name is not the stored one");
 }
 
@@ -164,9 +171,31 @@ fn a_lossy_name_shared_with_a_real_sibling_is_ambiguous() {
     let raw = node(OsStr::from_bytes(b"caf\xe9.txt"), NodeType::File, Metadata::default());
     let real = file("caf\u{FFFD}.txt", 1);
     let listing = tree(vec![raw, real]);
-    let result = child(&listing, OsStr::new("caf\u{FFFD}.txt"), Path::new(DIR));
+    let result = child(&listing, "caf\u{FFFD}.txt", &dir());
     assert!(
-        matches!(result, Err(cmdr_fs::volume::VolumeError::AmbiguousName(_))),
+        matches!(&result, Err(cmdr_fs::volume::VolumeError::AmbiguousName(path)) if *path == format!("{DIR}/caf\u{FFFD}.txt")),
         "got {result:?}"
+    );
+}
+
+/// A name a Linux backup stores with `\` or `:` lists as one name, under its
+/// folder by `/`, on every OS (`Path::join` put a `\` before it on Windows).
+#[test]
+fn a_name_holding_a_backslash_or_a_colon_lists_as_one_name() {
+    for name in ["a\\b.txt", "12:00 notes"] {
+        let entry = entry_of(&file(name, 1), &dir());
+        assert_eq!(entry.name, name);
+        assert_eq!(entry.path, format!("{DIR}/{name}"));
+    }
+}
+
+/// A name a hostile repo stores that isn't one plain name keeps the row
+/// `Path::join` gave it, ❌ never a dropped row.
+#[test]
+fn a_name_that_isnt_one_plain_name_keeps_its_row() {
+    let entry = entry_of(&file("a/b", 1), &dir());
+    assert_eq!(
+        (entry.name.as_str(), entry.path.as_str()),
+        ("a/b", format!("{DIR}/a/b").as_str())
     );
 }

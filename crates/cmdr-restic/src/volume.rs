@@ -14,15 +14,13 @@
 //! The volume is thin (the hub, the repo's slot, the parent): everything costly
 //! lives in the shared [`ResticRepos`].
 
-use crate::hub::{IndexSource, RepoSlot, ResticRepos};
-use crate::path::{SnapshotRef, VIRTUAL_ENTRY_NAME, VirtualPath, classify};
+use crate::hub::{IndexSource, RepoSlot, ResticRepos, bridged};
+use crate::path::{SnapshotRef, VIRTUAL_ENTRY_NAME, VirtualPath, child, child_text, classify, spelled, text_of};
 use crate::read_stream::ResticReadStream;
 use crate::repo::{IndexedRepo, ResticError, worker_crashed};
 use crate::snapshots::{LATEST_FOLDER_NAME, Snapshot, SnapshotList};
 use crate::tree::{entry_of, folder_tree, modified_secs, node_at, permissions_of};
-use cmdr_fs::app_path::AppPath;
-use cmdr_fs::app_path::AppPathBuf;
-use cmdr_fs::app_path::BridgedPath;
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, ListedFolder, NotAnAppPath, PathArithmetic};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::metadata::MetadataCaps;
 use cmdr_fs::volume::scan_walk::{self, ScanSource, Walking};
@@ -31,9 +29,9 @@ use cmdr_fs::volume::{
     PasswordLocked, ScanBoundary, SpaceInfo, TransferHold, UnlockOutcome, Volume, VolumeError, VolumeReadStream,
 };
 use rustic_core::repofile::Node;
-use std::ffi::OsString;
+use std::borrow::Cow;
 use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
@@ -55,7 +53,7 @@ pub struct ResticVolume {
     parent: Arc<dyn Volume>,
     /// `<repo>/Browse snapshots`: this volume's root, and the prefix of every
     /// path it serves.
-    root: BridgedPath,
+    root: AppPathBuf,
 }
 
 /// A snapshot a path named, and how: through `latest`, or by its own folder.
@@ -72,12 +70,17 @@ impl ResticVolume {
     /// password, opened repo, and index live in `hub`, keyed by `volume_id` and
     /// `repo_root` exactly as spelled.
     pub fn new(hub: Arc<ResticRepos>, volume_id: &str, parent: Arc<dyn Volume>, repo_root: PathBuf) -> Self {
+        Self::new_at(hub, volume_id, parent, bridged(&repo_root).into_owned())
+    }
+
+    /// [`Self::new`] for a repo folder the caller holds as an app path.
+    pub fn new_at(hub: Arc<ResticRepos>, volume_id: &str, parent: Arc<dyn Volume>, repo_root: AppPathBuf) -> Self {
         let slot = hub.slot(volume_id, &repo_root);
         Self {
             hub,
             slot,
             parent,
-            root: BridgedPath::new(repo_root.join(VIRTUAL_ENTRY_NAME)),
+            root: child(&repo_root, VIRTUAL_ENTRY_NAME),
         }
     }
 
@@ -93,21 +96,20 @@ impl ResticVolume {
         Arc::clone(&self.slot)
     }
 
-    /// `path` as an absolute path under the root, the way rows report it.
-    fn absolute(&self, path: &Path) -> PathBuf {
-        if path.is_absolute() {
-            path.to_path_buf()
-        } else {
-            self.root.join(path)
-        }
+    /// `path` as a path under the root, the way rows report it: `path` itself,
+    /// or for a relative one (only a transition-bridge value is one) its names
+    /// joined under the root. One that climbs stays as it is: `classify`
+    /// refuses it.
+    fn absolute<'p>(&self, path: &'p AppPath) -> Cow<'p, AppPath> {
+        absolute_under(&self.root, path)
     }
 
-    fn classify(&self, path: &Path) -> Result<VirtualPath, VolumeError> {
+    fn classify(&self, path: &AppPath) -> Result<VirtualPath, VolumeError> {
         classify(&self.root, path).ok_or_else(|| not_found(path))
     }
 
     /// The snapshot `which` names. `refresh` reads the snapshot list afresh.
-    async fn resolve(&self, which: &SnapshotRef, path: &Path, refresh: bool) -> Result<Resolved, VolumeError> {
+    async fn resolve(&self, which: &SnapshotRef, path: &AppPath, refresh: bool) -> Result<Resolved, VolumeError> {
         // Anything inside a snapshot counts as using the index; the root
         // listing, which never needs it, doesn't (it goes to `snapshots` directly).
         self.slot.touch_index();
@@ -142,7 +144,7 @@ impl ResticVolume {
         &self,
         snapshot: &Snapshot,
         on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
-        path: &Path,
+        path: &AppPath,
         work: F,
     ) -> Result<(T, Arc<IndexedRepo>), VolumeError>
     where
@@ -171,7 +173,7 @@ impl ResticVolume {
 
     /// Runs `work` on the blocking pool: every rustic call below reads through
     /// the parent with `block_on`, which would panic on an async worker.
-    async fn blocking<T, F>(&self, path: &Path, work: F) -> Result<T, VolumeError>
+    async fn blocking<T, F>(&self, path: &AppPath, work: F) -> Result<T, VolumeError>
     where
         T: Send + 'static,
         F: FnOnce() -> Result<T, VolumeError> + Send + 'static,
@@ -186,7 +188,7 @@ impl ResticVolume {
 
     async fn list(
         &self,
-        path: &Path,
+        path: &AppPath,
         on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
     ) -> Result<Vec<FileEntry>, VolumeError> {
         let dir = self.absolute(path);
@@ -197,7 +199,7 @@ impl ResticVolume {
             }
             VirtualPath::Snapshot(which, inner) => {
                 let resolved = self.resolve(&which, path, false).await?;
-                let (tree_root, at) = (resolved.snapshot.tree, dir.clone());
+                let (tree_root, at) = (resolved.snapshot.tree, dir.clone().into_owned());
                 let (tree, _) = self
                     .on_index(&resolved.snapshot, on_progress, path, move |repo| {
                         folder_tree(repo, tree_root, &inner, &at)
@@ -216,12 +218,12 @@ impl ResticVolume {
         let mut rows: Vec<FileEntry> = list
             .snapshots()
             .iter()
-            .map(|s| snapshot_row(&s.folder_name, &self.root.join(&s.folder_name), s))
+            .map(|s| snapshot_row(&s.folder_name, child_text(&self.root, &s.folder_name), s))
             .collect();
         if let Some(latest) = self.slot.latest_shown(list) {
             rows.push(snapshot_row(
                 LATEST_FOLDER_NAME,
-                &self.root.join(LATEST_FOLDER_NAME),
+                child_text(&self.root, LATEST_FOLDER_NAME),
                 latest,
             ));
         }
@@ -233,11 +235,11 @@ impl ResticVolume {
     async fn node(
         &self,
         which: &SnapshotRef,
-        inner: Vec<OsString>,
-        path: &Path,
+        inner: Vec<String>,
+        path: &AppPath,
     ) -> Result<(Node, Arc<IndexedRepo>, Resolved), VolumeError> {
         let resolved = self.resolve(which, path, false).await?;
-        let (tree_root, at) = (resolved.snapshot.tree, self.absolute(path));
+        let (tree_root, at) = (resolved.snapshot.tree, self.absolute(path).into_owned());
         let (node, repo) = self
             .on_index(&resolved.snapshot, None, path, move |repo| {
                 node_at(repo, tree_root, &inner, &at)
@@ -247,51 +249,52 @@ impl ResticVolume {
         Ok((node, repo, resolved))
     }
 
-    async fn metadata(&self, path: &Path) -> Result<FileEntry, VolumeError> {
+    async fn metadata(&self, path: &AppPath) -> Result<FileEntry, VolumeError> {
         let absolute = self.absolute(path);
-        let name = absolute
-            .file_name()
-            .map(|name| name.to_string_lossy().into_owned())
-            .unwrap_or_default();
+        let name = spelled(absolute.file_name().unwrap_or_default()).into_owned();
         match self.classify(path)? {
             VirtualPath::Root => Ok(FileEntry {
                 ..FileEntry::new(
                     VIRTUAL_ENTRY_NAME.to_string(),
-                    absolute.to_string_lossy().into_owned(),
+                    absolute_text_under(&self.root, path),
                     true,
                     false,
                 )
             }),
             VirtualPath::Snapshot(which, inner) if inner.is_empty() => {
                 let resolved = self.resolve(&which, path, false).await?;
-                Ok(snapshot_row(&name, &absolute, &resolved.snapshot))
+                Ok(snapshot_row(
+                    &name,
+                    absolute_text_under(&self.root, path),
+                    &resolved.snapshot,
+                ))
             }
             VirtualPath::Snapshot(which, inner) => {
                 let (node, _, _) = self.node(&which, inner, path).await?;
-                let dir = absolute.parent().unwrap_or(&self.root);
+                let dir = absolute.parent().unwrap_or(self.root.as_app_path());
                 Ok(entry_of(&node, dir))
             }
         }
     }
 
     /// The file at `path`, opened for reads, with what its stream reports.
-    async fn open_file(&self, path: &Path) -> Result<ResticReadStream, VolumeError> {
+    async fn open_file(&self, path: &AppPath) -> Result<ResticReadStream, VolumeError> {
         let VirtualPath::Snapshot(which, inner) = self.classify(path)? else {
-            return Err(VolumeError::IsADirectory(path.display().to_string()));
+            return Err(VolumeError::IsADirectory(text_of(path)));
         };
         if inner.is_empty() {
-            return Err(VolumeError::IsADirectory(path.display().to_string()));
+            return Err(VolumeError::IsADirectory(text_of(path)));
         }
         let (node, repo, resolved) = self.node(&which, inner, path).await?;
         if node.is_dir() {
-            return Err(VolumeError::IsADirectory(path.display().to_string()));
+            return Err(VolumeError::IsADirectory(text_of(path)));
         }
         if !node.is_file() {
             // A symlink is never followed, and a device, fifo, or socket has no
             // bytes in a backup. Typed, so a folder copy skips it and carries on.
-            return Err(VolumeError::NoContent(path.display().to_string()));
+            return Err(VolumeError::NoContent(text_of(path)));
         }
-        let (task_repo, task_node, at) = (Arc::clone(&repo), node.clone(), path.to_path_buf());
+        let (task_repo, task_node, at) = (Arc::clone(&repo), node.clone(), path.to_owned());
         let file = self
             .blocking(path, move || {
                 task_repo
@@ -306,7 +309,7 @@ impl ResticVolume {
             reloaded: false,
             file: Arc::new(file),
             runtime: self.hub.host().runtime(),
-            path: path.to_path_buf(),
+            path: path.to_owned(),
             size: node.meta.size,
             modified: modified_secs(&node).map(|secs| UNIX_EPOCH + Duration::from_secs(secs)),
             mode: permissions_of(node.meta.mode),
@@ -320,7 +323,7 @@ impl ResticVolume {
 
 /// A snapshot's folder row: dated by the backup, sized by what it processed,
 /// and stating the host, tags, and paths it recorded.
-fn snapshot_row(name: &str, path: &Path, snapshot: &Snapshot) -> FileEntry {
+fn snapshot_row(name: &str, path: String, snapshot: &Snapshot) -> FileEntry {
     let modified_at = snapshot
         .time
         .duration_since(UNIX_EPOCH)
@@ -332,12 +335,37 @@ fn snapshot_row(name: &str, path: &Path, snapshot: &Snapshot) -> FileEntry {
         recursive_size: snapshot.size,
         restic_meta: Some(snapshot.meta.clone()),
         modified_at,
-        ..FileEntry::new(name.to_string(), path.to_string_lossy().into_owned(), true, false)
+        ..FileEntry::new(name.to_string(), path, true, false)
     }
 }
 
-fn not_found(path: &Path) -> VolumeError {
-    VolumeError::NotFound(path.display().to_string())
+/// [`ResticVolume::absolute`] under the view root `root`.
+pub(crate) fn absolute_under<'p>(root: &AppPath, path: &'p AppPath) -> Cow<'p, AppPath> {
+    if !matches!(path.to_canonical(), Err(NotAnAppPath::Relative)) {
+        return Cow::Borrowed(path);
+    }
+    let mut at = root.to_owned();
+    for name in path.names().filter(|name| *name != ".") {
+        match AppName::from_app_spelling(name).map(|name| ListedFolder::new(&at).join(name)) {
+            Ok(Ok(joined)) => at = joined,
+            _ => return Cow::Borrowed(path),
+        }
+    }
+    Cow::Owned(at)
+}
+
+/// The text a row for `path` itself carries: [`absolute_under`]'s, or for a
+/// relative bridge value the text `Path::join` made under the root (`latest/`
+/// keeps its `/`).
+pub(crate) fn absolute_text_under(root: &AppPath, path: &AppPath) -> String {
+    if matches!(path.to_canonical(), Err(NotAnAppPath::Relative)) {
+        return child_text(root, path.as_str());
+    }
+    text_of(path)
+}
+
+fn not_found(path: &AppPath) -> VolumeError {
+    VolumeError::NotFound(text_of(path))
 }
 
 impl Volume for ResticVolume {
@@ -354,7 +382,7 @@ impl Volume for ResticVolume {
     }
 
     fn root(&self) -> &AppPath {
-        self.root.app()
+        &self.root
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -387,13 +415,11 @@ impl Volume for ResticVolume {
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let listing = self.list(path, on_progress);
             let entries = match cancel {
                 Some(token) => tokio::select! {
                     biased;
-                    () = token.cancelled() => return Err(VolumeError::Cancelled(path.display().to_string().into())),
+                    () = token.cancelled() => return Err(VolumeError::Cancelled(text_of(path).into())),
                     entries = listing => entries?,
                 },
                 None => listing.await?,
@@ -417,11 +443,7 @@ impl Volume for ResticVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.metadata(path).await
-        })
+        Box::pin(async move { self.metadata(path).await })
     }
 
     /// The target the backup recorded, raw bytes included. A folder of the view
@@ -431,8 +453,6 @@ impl Volume for ResticVolume {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Option<PathBuf>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let VirtualPath::Snapshot(which, inner) = self.classify(path)? else {
                 return Ok(None);
             };
@@ -487,8 +507,6 @@ impl Volume for ResticVolume {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let stream = self.open_file(path).await?;
             Ok(Box::new(stream) as Box<dyn VolumeReadStream>)
         })
@@ -501,8 +519,6 @@ impl Volume for ResticVolume {
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let mut stream = self.open_file(path).await?;
             if offset >= stream.size {
                 return Ok(Vec::new());
@@ -516,11 +532,7 @@ impl Volume for ResticVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            scan_walk::scan_one(self, path).await
-        })
+        Box::pin(async move { scan_walk::scan_one_at(self, path).await })
     }
 
     fn scan_for_copy_batch_with_boundary<'a>(
@@ -528,11 +540,7 @@ impl Volume for ResticVolume {
         paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
-            let paths: &[PathBuf] = &paths_std;
-            scan_walk::scan_trees(self, paths, boundary).await
-        })
+        Box::pin(async move { scan_walk::scan_trees_at(self, paths, boundary).await })
     }
 
     // ---- Capability flags: answered explicitly, never inherited ------------
@@ -584,12 +592,8 @@ impl Volume for ResticVolume {
         &'a self,
         _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
-        let repo_root = self.root.parent().unwrap_or(&self.root);
-        Box::pin(async move {
-            self.parent
-                .get_space_info_at(&AppPath::legacy_unchecked(repo_root))
-                .await
-        })
+        let repo_root = self.root.parent().unwrap_or(self.root.as_app_path());
+        Box::pin(async move { self.parent.get_space_info_at(repo_root).await })
     }
 
     /// `false`, and `listing_watch_coverage` stays at the trait's `None`: these

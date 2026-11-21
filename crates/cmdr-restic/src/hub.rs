@@ -7,17 +7,18 @@
 
 use crate::detect::is_restic_repo;
 use crate::index_load::{Load, LoadSpec, WINDOW, Waiter};
-use crate::path::VIRTUAL_ENTRY_NAME;
+use crate::path::{VIRTUAL_ENTRY_NAME, child, child_text, text_of};
 use crate::repo::{IndexedRepo, ResticError, ResticRepo};
 use crate::snapshots::{Snapshot, SnapshotList, snapshot_list_of};
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{ListingProgress, LockedContainer, Volume, VolumeError};
 use index_slot::{IndexSlot, Installed, free_off_the_runtime};
 use rustic_core::repofile::SnapshotFile;
+use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
@@ -96,7 +97,7 @@ pub(crate) const KEYCHAIN_SERVICE: &str = "restic://";
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) struct RepoKey {
     pub(crate) volume_id: String,
-    pub(crate) root: PathBuf,
+    pub(crate) root: AppPathBuf,
 }
 
 impl RepoKey {
@@ -104,7 +105,7 @@ impl RepoKey {
     /// The same share through an OS mount and through a direct session is two
     /// volume ids, so two entries.
     pub(crate) fn store_scope(&self) -> String {
-        format!("{}:{}", self.volume_id, self.root.display())
+        format!("{}:{}", self.volume_id, text_of(&self.root))
     }
 }
 
@@ -170,16 +171,20 @@ impl ResticRepos {
     /// detached, ❌ never dropped, since a transaction abandoned mid-flight wedges
     /// a phone (MTP).
     pub async fn confirm_repo(&self, volume_id: &str, parent: &Arc<dyn Volume>, repo_root: &Path) -> Option<bool> {
-        let key = key(volume_id, repo_root);
+        self.confirm_repo_at(volume_id, parent, &bridged(repo_root)).await
+    }
+
+    /// [`Self::confirm_repo`] for a repo folder the caller holds as an app path.
+    pub async fn confirm_repo_at(&self, volume_id: &str, parent: &Arc<dyn Volume>, root: &AppPath) -> Option<bool> {
+        let key = key(volume_id, root);
         if let Some(known) = self.remembered(&key) {
             return known;
         }
-        let listing = {
-            let (parent, root) = (Arc::clone(parent), repo_root.to_path_buf());
-            self.host
-                .runtime()
-                .spawn(async move { parent.list_directory(&AppPath::legacy_unchecked(&root), None).await })
-        };
+        let (parent, root) = (Arc::clone(parent), root.to_owned());
+        let listing = self
+            .host
+            .runtime()
+            .spawn(async move { parent.list_directory(&root, None).await });
         let answer = match tokio::time::timeout(self.tuning.confirm_deadline, listing).await {
             Ok(Ok(Ok(entries))) => Some(is_restic_repo(&entries)),
             Ok(Ok(Err(VolumeError::NotFound(_) | VolumeError::NotADirectory(_)))) => Some(false),
@@ -195,6 +200,11 @@ impl ResticRepos {
     /// `None` never asked, undecided, or the "no" went stale. For a synchronous
     /// seam that can't afford a listing.
     pub fn serves_confirmed(&self, volume_id: &str, repo_root: &Path) -> Option<bool> {
+        self.serves_confirmed_at(volume_id, &bridged(repo_root))
+    }
+
+    /// [`Self::serves_confirmed`] for a repo folder held as an app path.
+    pub fn serves_confirmed_at(&self, volume_id: &str, repo_root: &AppPath) -> Option<bool> {
         self.remembered(&key(volume_id, repo_root)).flatten()
     }
 
@@ -203,13 +213,17 @@ impl ResticRepos {
     /// (`is_restic_repo`). Also confirms `repo_root` in the memo, for free, so
     /// entering the row costs no confirmation listing.
     pub fn overlay_row(&self, volume_id: &str, repo_root: &Path) -> FileEntry {
+        self.overlay_row_at(volume_id, &bridged(repo_root))
+    }
+
+    /// [`Self::overlay_row`] for a repo folder the caller holds as an app path.
+    pub fn overlay_row_at(&self, volume_id: &str, repo_root: &AppPath) -> FileEntry {
         self.remember(key(volume_id, repo_root), Some(true));
-        let path = repo_root.join(VIRTUAL_ENTRY_NAME);
         FileEntry {
             icon_id: OVERLAY_ROW_ICON_ID.to_string(),
             ..FileEntry::new(
                 VIRTUAL_ENTRY_NAME.to_string(),
-                path.to_string_lossy().into_owned(),
+                child_text(repo_root, VIRTUAL_ENTRY_NAME),
                 true,
                 false,
             )
@@ -247,7 +261,7 @@ impl ResticRepos {
 
     /// The slot for one repo, made on first use. A slot is never dropped, so the
     /// password in it outlives every volume over it.
-    pub(crate) fn slot(&self, volume_id: &str, repo_root: &Path) -> Arc<RepoSlot> {
+    pub(crate) fn slot(&self, volume_id: &str, repo_root: &AppPath) -> Arc<RepoSlot> {
         let key = key(volume_id, repo_root);
         let mut repos = lock(&self.repos);
         Arc::clone(
@@ -393,7 +407,7 @@ impl ResticRepos {
             slot.drop_opened_repo(&self.host.runtime());
             *lock(&slot.snapshots) = None;
             lock(&self.confirmations).remove(&slot.key);
-            return Err(VolumeError::NotFound(slot.key.root.display().to_string()));
+            return Err(VolumeError::NotFound(text_of(&slot.key.root)));
         }
         let list = Arc::new(snapshot_list_of(&files));
         let held = slot.is_held_for_transfer();
@@ -548,22 +562,24 @@ impl ResticRepos {
     }
 }
 
+/// The one bridge every `std::path` form here crosses (DETAILS § "App paths").
+pub(crate) fn bridged(path: &Path) -> Cow<'_, AppPath> {
+    AppPath::legacy_unchecked(path)
+}
+
 /// Whether the repo at `root` on `parent` still has its `config`.
-async fn config_exists(parent: &dyn Volume, root: &Path) -> Result<bool, VolumeError> {
-    match parent
-        .get_metadata(&AppPath::legacy_unchecked(&root.join("config")))
-        .await
-    {
+async fn config_exists(parent: &dyn Volume, root: &AppPath) -> Result<bool, VolumeError> {
+    match parent.get_metadata(&child(root, "config")).await {
         Ok(_) => Ok(true),
         Err(VolumeError::NotFound(_)) => Ok(false),
         Err(err) => Err(err),
     }
 }
 
-fn key(volume_id: &str, repo_root: &Path) -> RepoKey {
+fn key(volume_id: &str, repo_root: &AppPath) -> RepoKey {
     RepoKey {
         volume_id: volume_id.to_string(),
-        root: repo_root.to_path_buf(),
+        root: repo_root.to_owned(),
     }
 }
 

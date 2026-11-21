@@ -2,13 +2,14 @@
 //! `read_file_at` on a blocking thread, [`READ_AHEAD`] of them in flight.
 
 use crate::hub::{IndexSource, RepoSlot};
+use crate::path::text_of;
 use crate::repo::{IndexedRepo, ResticError, worker_crashed};
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::metadata::{CarriedMetadata, MetadataClasses};
 use cmdr_fs::volume::{StreamLength, VolumeError, VolumeReadStream};
 use rustic_core::vfs::OpenFile;
 use std::collections::VecDeque;
 use std::future::Future;
-use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -47,7 +48,7 @@ pub(crate) struct ResticReadStream {
     pub(crate) file: Arc<OpenFile>,
     pub(crate) runtime: Handle,
     /// The path asked for, for the error a short read answers.
-    pub(crate) path: PathBuf,
+    pub(crate) path: AppPathBuf,
     pub(crate) size: u64,
     pub(crate) modified: Option<SystemTime>,
     /// The node's permission bits (see `tree::permissions_of`).
@@ -145,7 +146,7 @@ impl VolumeReadStream for ResticReadStream {
                 // short file to a copy would land it silently.
                 Ok(bytes) if bytes.len() != want => {
                     self.forget_ahead();
-                    Err(VolumeError::SourceChanged(self.path.display().to_string()))
+                    Err(VolumeError::SourceChanged(text_of(&self.path)))
                 }
                 Ok(bytes) => {
                     self.read += bytes.len() as u64;
