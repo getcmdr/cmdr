@@ -593,3 +593,97 @@ fn a_dotfile_write_reaches_a_pane_showing_dotfiles() {
         .collect();
     assert_eq!(queued, vec![(DiffChangeType::Modify, ".zsh_history".to_string())]);
 }
+
+/// #1340: on Windows a watch's open folder handle refuses every rename above it, so Cmdr's own
+/// write announced at or above a watched folder closes that watch first. Released, a watch
+/// claims no coverage (no delete walk trusts a listing nobody's keeping fresh), and once the
+/// writes go quiet it re-arms with its coverage back. A sibling and a folder above the write
+/// keep theirs throughout.
+#[test]
+fn a_write_at_or_above_a_watched_folder_releases_its_watch_until_the_writes_go_quiet() {
+    use crate::file_system::watcher::{coverage_for_listings, release_with, start_watching, stop_watching};
+    use crate::test_support::{TestDir, wait_until};
+    use cmdr_fs::testing::unique_test_id;
+    use cmdr_fs::volume::WatchCoverage;
+    use std::time::Duration;
+
+    let scratch = TestDir::new("release-watch");
+    let parent = scratch.join("parent");
+    let shown = parent.join("shown");
+    let sibling = scratch.join("sibling");
+    for dir in [&shown, &sibling] {
+        std::fs::create_dir_all(dir).expect("mkdir");
+    }
+    let (shown_id, parent_id, sibling_id, above_id) = (
+        unique_test_id("release-shown"),
+        unique_test_id("release-parent"),
+        unique_test_id("release-sibling"),
+        unique_test_id("release-above"),
+    );
+    start_watching(&shown_id, &shown).expect("arm");
+    start_watching(&parent_id, &parent).expect("arm");
+    start_watching(&sibling_id, &sibling).expect("arm");
+    start_watching(&above_id, &scratch).expect("arm");
+    let coverage = |id: &String| coverage_for_listings(std::slice::from_ref(id));
+
+    assert_eq!(
+        release_with(&parent, Duration::from_millis(50)),
+        2,
+        "the folder itself and the one below"
+    );
+    assert_eq!(coverage(&shown_id), WatchCoverage::None);
+    assert_eq!(coverage(&parent_id), WatchCoverage::None);
+    assert_eq!(coverage(&sibling_id), WatchCoverage::EveryWriter);
+    assert_eq!(
+        coverage(&above_id),
+        WatchCoverage::EveryWriter,
+        "a write below a watch never releases it"
+    );
+
+    wait_until(Duration::from_secs(10), "both watches re-arm", || {
+        coverage(&shown_id) == WatchCoverage::EveryWriter && coverage(&parent_id) == WatchCoverage::EveryWriter
+    });
+    assert_eq!(
+        release_with(&shown.join("new.txt"), Duration::from_millis(50)),
+        0,
+        "a write inside releases nothing"
+    );
+
+    for id in [&shown_id, &parent_id, &sibling_id, &above_id] {
+        stop_watching(id);
+    }
+}
+
+/// A released watch whose folder went away with the write (its parent renamed) can't re-arm:
+/// it keeps claiming nothing, and the re-read it asks for is what lands the pane on a parent.
+/// A later release supersedes an earlier one's timer, and a closed listing never comes back.
+#[test]
+fn a_released_watch_whose_folder_moved_away_stays_uncovered_and_only_the_last_release_rearms() {
+    use crate::file_system::watcher::{
+        coverage_for_listings, rearm, release_with, start_watching, stop_watching, watched_release,
+    };
+    use crate::test_support::TestDir;
+    use cmdr_fs::testing::unique_test_id;
+    use cmdr_fs::volume::WatchCoverage;
+    use std::time::Duration;
+
+    let scratch = TestDir::new("release-moved");
+    let shown = scratch.join("parent").join("shown");
+    std::fs::create_dir_all(&shown).expect("mkdir");
+    let id = unique_test_id("release-moved");
+    start_watching(&id, &shown).expect("arm");
+
+    // A long quiet period: this cell drives the re-arm by hand.
+    release_with(&scratch.join("parent"), Duration::from_secs(3_600));
+    let first = watched_release(&id).expect("released");
+    release_with(&scratch.join("parent"), Duration::from_secs(3_600));
+    let second = watched_release(&id).expect("released again");
+    assert!(!rearm(&id, first), "an earlier release's timer is stale");
+
+    std::fs::rename(scratch.join("parent"), scratch.join("renamed")).expect("rename the parent");
+    assert!(rearm(&id, second), "the folder is gone: re-read, which finds it gone");
+    assert_eq!(coverage_for_listings(std::slice::from_ref(&id)), WatchCoverage::None);
+
+    stop_watching(&id);
+    assert!(!rearm(&id, second), "a closed listing stays closed");
+}

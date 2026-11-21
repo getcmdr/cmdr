@@ -35,12 +35,16 @@ use cmdr_local::reading::{get_single_entry, list_directory_core};
 mod fsevents;
 #[cfg(not(target_os = "macos"))]
 mod notify_stream;
+mod release;
 #[cfg(target_os = "macos")]
 pub(super) use fsevents::WatchRoot;
 #[cfg(all(test, target_os = "macos"))]
 pub(super) use fsevents::{classify, pump};
 #[cfg(all(test, not(target_os = "macos")))]
 pub(super) use notify_stream::translate;
+pub(crate) use release::release_watches_at_or_below;
+#[cfg(test)]
+pub(crate) use release::{rearm, release_with};
 
 /// What one OS event means for a listing, whichever backend heard it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -88,17 +92,29 @@ pub struct DirectoryDeletedEvent {
     pub path: String,
 }
 
+/// One OS backend's live watch on a folder (`fsevents.rs`, `notify_stream.rs`), which
+/// disarms when dropped.
+trait OsWatch: Send + Sync {
+    /// Whether its open handle on the folder stops every folder above it from being renamed
+    /// (`ReadDirectoryChangesW`'s does; FSEvents and inotify hold none). Such a watch lets go
+    /// for Cmdr's own writes there (`watcher/release.rs`).
+    fn pins_ancestors(&self) -> bool;
+
+    /// Stops watching, returning once the OS has let go of the folder.
+    fn close_now(self: Box<Self>);
+}
+
 /// What keeps a watch delivering: the OS stream, which disarms when dropped.
 enum WatchStream {
-    #[cfg(target_os = "macos")]
-    FsEvents(#[allow(dead_code, reason = "held to keep the stream alive")] fsevents::ListingStream),
-    #[cfg(not(target_os = "macos"))]
-    Notify(#[allow(dead_code, reason = "held to keep the stream alive")] notify_stream::ListingStream),
+    Os(Box<dyn OsWatch>),
     /// A test build's watch: the bookkeeping without an OS stream, so a test that only
     /// asserts arming, disarming, or coverage never waits on `fseventsd`. Its drop is
     /// free, so `stop_watching`'s lock-free teardown holds trivially.
     #[cfg(test)]
     Scripted,
+    /// Let go for Cmdr's own write at or above the folder (`watcher/release.rs`): no OS
+    /// stream until the writes there go quiet and the watch re-arms.
+    Released,
 }
 
 /// State for a watched directory.
@@ -120,6 +136,12 @@ pub(crate) struct WatchedDirectory {
     /// Private on purpose: `coverage_for_listings` is the only reader, so the
     /// backend asks a function rather than reaching into the manager's map.
     coverage: WatchCoverage,
+    /// The folder, as the listing passed it in: what `release.rs` matches a write against
+    /// and re-arms on.
+    path: PathBuf,
+    /// The release this watch is waiting out, `None` while it's armed. A later release
+    /// bumps it, so only the last one's quiet timer re-arms.
+    released: Option<u64>,
 }
 
 /// Manages file watchers for directories
@@ -174,9 +196,15 @@ pub fn start_watching(listing_id: &str, path: &Path) -> Result<(), String> {
     let coverage = coverage_for_watched_path(path);
     let mut manager = WATCHER_MANAGER.write().map_err(|_| "Failed to acquire watcher lock")?;
 
-    manager
-        .watches
-        .insert(listing_id.to_string(), WatchedDirectory { stream, coverage });
+    manager.watches.insert(
+        listing_id.to_string(),
+        WatchedDirectory {
+            stream,
+            coverage,
+            path: path.to_path_buf(),
+            released: None,
+        },
+    );
 
     Ok(())
 }
@@ -207,10 +235,23 @@ static REAL_STREAMS: LazyLock<std::sync::Mutex<HashSet<String>>> =
 #[cfg(test)]
 #[cfg_attr(
     not(target_os = "macos"),
-    allow(dead_code, reason = "its one caller, the replaced-root cell, is FSEvents-only")
+    allow(
+        dead_code,
+        reason = "its callers, the replaced-root and rename-above cells, are FSEvents- and Windows-only"
+    )
 )]
 pub(crate) fn watch_for_real(listing_id: &str) {
     REAL_STREAMS.lock_ignore_poison().insert(listing_id.to_string());
+}
+
+/// The release `listing_id`'s watch is waiting out, if any.
+#[cfg(test)]
+pub(crate) fn watched_release(listing_id: &str) -> Option<u64> {
+    WATCHER_MANAGER
+        .read_ignore_poison()
+        .watches
+        .get(listing_id)
+        .and_then(|w| w.released)
 }
 
 /// Whether `listing_id`'s watch holds an OS stream.
@@ -222,20 +263,20 @@ pub(crate) fn has_os_stream(listing_id: &str) -> bool {
             .watches
             .get(listing_id)
             .map(|w| &w.stream),
-        Some(stream) if !matches!(stream, WatchStream::Scripted)
+        Some(WatchStream::Os(_))
     )
 }
 
 /// The OS stream on `path`, handing each debounced batch to the listing: FSEvents on
 /// macOS (`watcher/fsevents.rs`), `notify` elsewhere (`watcher/notify_stream.rs`).
 fn arm_os_stream(listing_id: &str, path: &Path) -> Result<WatchStream, String> {
-    let listing_id = listing_id.to_string();
-    let deliver = move |changes: Vec<ListingChange>| handle_directory_change_incremental(&listing_id, changes);
+    let id = listing_id.to_string();
+    let deliver = move |changes: Vec<ListingChange>| handle_directory_change_incremental(&id, changes);
     let debounce = Duration::from_millis(get_debounce_ms());
     #[cfg(target_os = "macos")]
-    return fsevents::arm(WatchRoot::new(path), debounce, deliver).map(WatchStream::FsEvents);
+    return fsevents::arm(WatchRoot::new(path), debounce, deliver).map(|s| WatchStream::Os(Box::new(s)));
     #[cfg(not(target_os = "macos"))]
-    return notify_stream::arm(path, debounce, deliver).map(WatchStream::Notify);
+    return notify_stream::arm(path, debounce, deliver, listing_id).map(|s| WatchStream::Os(Box::new(s)));
 }
 
 /// What an OS watch on `path` can actually see.
@@ -246,17 +287,20 @@ fn arm_os_stream(listing_id: &str, path: &Path) -> Result<WatchStream, String> {
 /// user's own work, which is why the watch is worth arming at all; the oracle
 /// just can't treat that cache as a substitute for reading the directory.
 ///
-/// On Windows the probe is `GetDriveTypeW` (`filesystem_kind.rs`): a fixed or removable
-/// drive, or a `subst` letter over one, is `EveryWriter`, since every writer goes through
-/// this machine's filesystem driver, which is what `ReadDirectoryChangesW` hears. A mapped
+/// On Windows the probe is `GetDriveTypeW` (`filesystem_kind.rs`): a fixed drive, or a
+/// `subst` letter over one, is `EveryWriter`, since every writer goes through this machine's
+/// filesystem driver, which is what `ReadDirectoryChangesW` hears (verified for NTFS). A
+/// removable drive is `ThisMachineOnly` until someone verifies FAT32 and exFAT's change
+/// notifications on one: an unverified claim never lets a delete walk skip a read. A mapped
 /// drive or UNC share is `ThisMachineOnly`: the server forwards other clients' changes only
 /// if it implements SMB change notify (a Windows server does, verified over
-/// `\\localhost\C$`; a NAS may not), so it's no ground for skipping a read. Asked of the
-/// OS path, so a folder past `MAX_PATH` still probes. Evidence: `file_system/DETAILS.md`
-/// § "Windows listing watches".
+/// `\\localhost\C$`; a NAS may not). Asked of the OS path, so a folder past `MAX_PATH`
+/// still probes. Evidence: `file_system/DETAILS.md` § "Windows listing watches".
 fn coverage_for_watched_path(path: &Path) -> WatchCoverage {
+    use cmdr_local::filesystem_kind::{is_network, probe_mount_for_path};
     let os_path = cmdr_local::reading::watch_os_path(path).unwrap_or_else(|_| path.to_path_buf());
-    if cmdr_local::filesystem_kind::path_is_on_network_mount(&os_path) {
+    let probe = probe_mount_for_path(&os_path);
+    if is_network(&probe) || probe.on_removable_drive {
         WatchCoverage::ThisMachineOnly
     } else {
         WatchCoverage::EveryWriter

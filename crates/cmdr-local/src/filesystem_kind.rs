@@ -18,6 +18,9 @@ pub struct MountProbe {
     pub info: FilesystemInfo,
     /// The mount's source, `None` when the probe couldn't resolve the mount.
     pub source: Option<String>,
+    /// A Windows `DRIVE_REMOVABLE` drive (a USB stick, an SD card). Always `false` on macOS
+    /// and Linux, which don't ask: a listing watch's coverage is the one reader.
+    pub on_removable_drive: bool,
 }
 
 /// Detects the filesystem at `path` by resolving its mount and reading the OS
@@ -45,6 +48,7 @@ pub fn probe_mount_for_path(path: &std::path::Path) -> MountProbe {
     MountProbe {
         info: FilesystemInfo::from_raw_type(raw),
         source,
+        on_removable_drive: false,
     }
 }
 
@@ -59,6 +63,7 @@ pub fn probe_mount_for_path(path: &std::path::Path) -> MountProbe {
     MountProbe {
         info: FilesystemInfo::from_raw_type(raw),
         source,
+        on_removable_drive: false,
     }
 }
 
@@ -88,9 +93,9 @@ pub fn probe_mount_for_path(path: &std::path::Path) -> MountProbe {
         (chars.next() == Some(':')).then(|| format!("{letter}:\\").encode_utf16().chain(Some(0)).collect())
     }
 
-    /// The filesystem name of the local volume holding `path`, `None` for a network or
-    /// optical drive, or when Windows can't say.
-    fn local_filesystem_name(path: &Path) -> Option<String> {
+    /// The filesystem name of the local volume holding `path` and whether it's a removable
+    /// drive; `None` for a network or optical drive, or when Windows can't say.
+    fn local_filesystem_name(path: &Path) -> Option<(String, bool)> {
         let wide: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
         // The volume root is never longer than the path itself (plus its trailing `\`).
         let mut root = vec![0u16; wide.len().max(261) + 1];
@@ -128,12 +133,15 @@ pub fn probe_mount_for_path(path: &std::path::Path) -> MountProbe {
             return None;
         }
         let len = name.iter().position(|&unit| unit == 0).unwrap_or(name.len());
-        Some(String::from_utf16_lossy(&name[..len]))
+        Some((String::from_utf16_lossy(&name[..len]), drive_type == DRIVE_REMOVABLE))
     }
 
+    let local = local_filesystem_name(path);
+    let on_removable_drive = local.as_ref().is_some_and(|(_, removable)| *removable);
     MountProbe {
-        info: FilesystemInfo::from_raw_type(local_filesystem_name(path)),
+        info: FilesystemInfo::from_raw_type(local.map(|(name, _)| name)),
         source: None,
+        on_removable_drive,
     }
 }
 
@@ -159,9 +167,9 @@ mod windows_tests {
 /// One `statfs` (a `/proc/mounts` read on Linux), so ❌ never call it in a loop
 /// over entries or on a hot read path: it can block for as long as the mount
 /// takes to answer. The index's `mount_facts` is one caller (the walker
-/// choice); `watcher::start_watching` is another, deciding a watch's
-/// [`WatchCoverage`](cmdr_fs::volume::WatchCoverage) once at arm time rather than
-/// per query. Both want the same answer: a remote tree can't be walked at local
+/// choice); `watcher::start_watching` asks the same probe (plus its removable flag),
+/// deciding a watch's [`WatchCoverage`](cmdr_fs::volume::WatchCoverage) once at arm time
+/// rather than per query. Both want the same answer: a remote tree can't be walked at local
 /// speed, and its other writers never reach FSEvents.
 pub fn path_is_on_network_mount(path: &std::path::Path) -> bool {
     is_network(&probe_mount_for_path(path))

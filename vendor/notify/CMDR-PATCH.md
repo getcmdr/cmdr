@@ -38,6 +38,9 @@ In the app: `docs/notes/windows-port/build-progress.md`, the task 35 listing wat
 
 ## Dropping it
 
-When the workspace moves to notify 9.0 or later (a major bump with API changes the index's and the app's backends
-both need), delete this folder, its `[patch.crates-io]` line, and its `exclude` entry. `desktop-rust-vendor-patch-applied`
-fails as soon as a bump past 8.2.2 makes cargo resolve crates.io again.
+notify 9.0.0 shipped 2026-11-21 (with `notify-debouncer-full` 0.8.0), so it clears the 3-day release-age window on
+2026-11-24. When the workspace moves to it (a major bump with API changes the index's and the app's backends both need,
+so Renovate opens it as a major, not a routine bump), delete this folder, its `[patch.crates-io]` line, and its `exclude` entry. `desktop-rust-vendor-patch-applied`
+fails as soon as a bump past 8.2.2 makes cargo resolve crates.io again. On that bump, re-check
+`apps/desktop/src-tauri/src/file_system/watcher/notify_stream.rs`'s `close_now`: it leans on the Windows backend
+answering `configure` on the same thread, after a queued `unwatch`.

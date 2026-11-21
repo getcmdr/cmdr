@@ -104,3 +104,30 @@ fn windows_event_paths_cross_back_to_the_app_spelling() {
         ]
     );
 }
+
+/// #1340: NTFS refuses to rename a folder above a watch's open `ReadDirectoryChangesW` handle,
+/// Cmdr's own F2 from the other pane included. Cmdr's write announces the folder first, and the
+/// release closes the handle before it returns, so the rename right after goes through.
+#[cfg(target_os = "windows")] // Only `ReadDirectoryChangesW` holds the folder open; inotify pins nothing.
+#[test]
+fn a_rename_above_a_watched_folder_goes_through_once_the_write_releases_the_watch() {
+    use crate::file_system::watcher::{has_os_stream, release_with, start_watching, stop_watching, watch_for_real};
+    use crate::test_support::TestDir;
+    use cmdr_fs::testing::unique_test_id;
+
+    let scratch = TestDir::new("release-rename-above");
+    let parent = scratch.join("parent");
+    let shown = parent.join("shown");
+    std::fs::create_dir_all(&shown).expect("mkdir");
+    let id = unique_test_id("release-rename-above");
+    watch_for_real(&id);
+    start_watching(&id, &shown).expect("arm a real watch");
+    assert!(has_os_stream(&id));
+
+    let refused = std::fs::rename(&parent, scratch.join("held")).expect_err("the open handle pins the parent");
+    assert_eq!(refused.kind(), std::io::ErrorKind::PermissionDenied, "{refused:?}");
+
+    assert_eq!(release_with(&parent, std::time::Duration::from_secs(1)), 1);
+    std::fs::rename(&parent, scratch.join("renamed")).expect("released, the parent renames");
+    stop_watching(&id);
+}

@@ -833,8 +833,10 @@ Pinned by `watcher_fsevents_test.rs` (synthetic events, including a drop at `/` 
   - A `subst` letter: `EveryWriter`. A watch on `Q:\` heard a write through the target folder and the other way round.
     `GetVolumePathNameW` refuses a `subst` path (`ERROR_INVALID_PARAMETER`), so the probe falls back to the letter's
     root, which answers `DRIVE_FIXED` and `NTFS`.
-  - A removable drive: `EveryWriter` by the same reasoning (every writer goes through this machine's filesystem
-    driver). Unverified: the builder has no removable drive.
+  - A removable drive: `ThisMachineOnly` (`MountProbe::on_removable_drive`). Every writer does go through this
+    machine's filesystem driver while it's plugged in, and unplugging it invalidates the handle (the watch's error path
+    below), but nobody has checked FAT32's and exFAT's change notifications on one, and an unverified claim mustn't
+    let a delete walk skip a read. Raise it once a removable FAT32 and exFAT drive show every writer.
   - A mapped drive or UNC share (`DRIVE_REMOTE`): `ThisMachineOnly`. Over `\\localhost\C$` the watch heard a local
     process's write, because a Windows server answers SMB change notify for every writer, but a NAS may not implement
     it, and no server forwards a change the network buffer (64 KiB) dropped. So it never lets a delete walker skip a
@@ -845,8 +847,20 @@ Pinned by `watcher_fsevents_test.rs` (synthetic events, including a drop at `/` 
   probe, 2026-11-21): deleting the watched folder works (it's gone at once, and the same name can be made again),
   renaming the watched folder itself works, deleting an ancestor works. ❗ Renaming or moving an ANCESTOR fails with
   "Access is denied" while a pane shows a folder under it: NTFS refuses to rename a directory with an open handle below
-  it, whatever the share mode. That includes Cmdr's own F2 on the parent from the other pane. Ejecting a removable drive
-  with a watch open is vetoed the same way unless the holder closes on query-remove; unverified here. Both: #1340.
+  it, whatever the share mode (#1340).
+- **Cmdr's own writes release the watch first** (`watcher/release.rs`). The write engine announces every path before
+  its syscall (`OwnWrites`, a rename both ends, a trash its source); on Windows `operations_host/own_writes.rs` hands
+  each announce to `release_watches_at_or_below`, which closes every watch on that folder or below it, and waits for
+  the close: notify closes the handle on its own server thread, so `notify_stream::close_now` queues the `unwatch` and
+  then blocks on a `configure` round trip, which the same thread answers after it. A released watch's coverage is
+  `None`; after 1 s with no further announce at or above it, it re-arms and re-reads (the pane lands on a parent if
+  its folder went with the write). An announce inside a watched folder (every file of a copy) releases nothing and
+  costs a read lock. Another program's rename of an ancestor still fails, and so does "Safely remove" of a USB drive
+  a pane shows (Cmdr has no Windows eject yet, and the device query-remove notification is the drives task in
+  `docs/specs/windows-port-plan.md`): both stay on #1340.
+- **A watch the OS stopped** (a fatal completion error, which the patched notify now reports): notify unwatches after
+  it, so `notify_stream::arm`'s `lost` hook drops the listing's coverage at once and re-arms after the same quiet
+  period. Without it the listing kept `EveryWriter` over a dead watch.
 - **In the running app** (a debug build on the builder, 2026-11-21, PowerShell and `cmd` as the other program, the
   pane on `D:\`, which no index watches, so only this watch could update it): a create showed in about 0.6 s; a
   rename, a case-only rename of a file and of a folder, a delete, and a size change all showed (by screenshot); 3,000
@@ -859,7 +873,9 @@ Pinned by `watcher_fsevents_test.rs` (synthetic events, including a drop at `/` 
 - **Idle cost**: one directory handle and one pending overlapped read per watch, completed by the kernel, so nothing
   polls the disk. Two threads per watch still wake on a timer: notify 8.2.2's server loop every 100 ms (to drain its
   command queue; 9.0 waits with no timeout, which needed a reworked semaphore lifetime, too big to backport) and
-  `notify-debouncer-full`'s tick every quarter of the debounce window (50 ms, as on Linux).
+  `notify-debouncer-full`'s tick every quarter of the debounce window (50 ms at the default 200 ms). So 30 wake-ups a
+  second per open watch on Windows, 20 on Linux (inotify itself blocks with no timeout), none on macOS (FSEvents); two
+  panes make it 60 on Windows. The debouncer's share predates the Windows port.
 
 ## Tag analytics
 
