@@ -183,13 +183,14 @@ async fn reverse_written_file(runtime: &Handle, volume: &Arc<dyn Volume>, entry:
             ItemResult::Skipped(SkipReason::UnverifiablePrecondition)
         }
     };
+    let written_at = AppPath::legacy_unchecked(&entry.path);
     let recheck = if let WrittenIdentity::VolumeLink { target } = &entry.identity {
-        match volume.read_link_target(&AppPath::legacy_unchecked(&entry.path)).await {
+        match volume.read_link_target(&written_at).await {
             Ok(live) => recheck_volume_link(target, live.as_deref()),
             Err(e) => return couldnt_recheck(&e),
         }
     } else {
-        match volume.get_metadata(&AppPath::legacy_unchecked(&entry.path)).await {
+        match volume.get_metadata(&written_at).await {
             Ok(live) => recheck_volume(entry, live.size),
             Err(e) => return couldnt_recheck(&e),
         }

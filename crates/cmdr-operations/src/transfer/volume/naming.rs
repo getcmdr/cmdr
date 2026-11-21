@@ -201,9 +201,10 @@ pub(super) async fn take_back_reservation(dest_volume: &Arc<dyn Volume>, path: &
     // Released FIRST: once we've looked, a later sweep has no business looking
     // again, and the name may be someone else's by then.
     claimed.release_placeholder(path);
-    match dest_volume.get_metadata(&AppPath::legacy_unchecked(path)).await {
+    let placeholder = AppPath::legacy_unchecked(path);
+    match dest_volume.get_metadata(&placeholder).await {
         Ok(entry) if !entry.is_directory && entry.size.unwrap_or(0) == 0 => {
-            if let Err(e) = dest_volume.delete(&AppPath::legacy_unchecked(path)).await {
+            if let Err(e) = dest_volume.delete(&placeholder).await {
                 log::debug!(target: "copy", "couldn't take back the reservation at {}: {e}", LogPrivate::file_path(path), e = LogError(&e));
             }
         }
