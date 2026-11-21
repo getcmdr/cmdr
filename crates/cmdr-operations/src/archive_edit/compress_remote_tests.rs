@@ -7,7 +7,7 @@
 use super::test_support::*;
 use crate::WriteOperationPhase;
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath, PathArithmetic};
 use cmdr_fs::volume::InMemoryVolume;
 use cmdr_operation_log::types::OperationId;
 use uuid::Uuid;
@@ -17,15 +17,17 @@ use uuid::Uuid;
 /// siblings (`create_directory_errors_on_existing_dir() == false`), so the swap
 /// takes MTP's delete-then-rename path instead of SMB's atomic rename-replace.
 /// Registered on `engine`.
-async fn register_remote_parent(engine: &TestOperations, dir: &Path, mtp_style: bool) -> (String, Arc<InMemoryVolume>) {
+async fn register_remote_parent(
+    engine: &TestOperations,
+    dir: &AppPath,
+    mtp_style: bool,
+) -> (String, Arc<InMemoryVolume>) {
     let id = format!("remote-parent-{}", Uuid::new_v4());
     let mut vol = InMemoryVolume::new("Remote").with_lane_key(id.clone());
     if mtp_style {
         vol = vol.with_sibling_duplicates_allowed();
     }
-    vol.create_directory(&AppPath::legacy_unchecked(dir))
-        .await
-        .expect("seed parent dir");
+    vol.create_directory(dir).await.expect("seed parent dir");
     let vol = Arc::new(vol);
     engine.volumes().register(&id, Arc::clone(&vol) as Arc<dyn Volume>);
     (id, vol)
@@ -66,7 +68,7 @@ async fn compress_onto_a_remote_parent_spools_then_packs_local_files() {
     let payload = vec![b'z'; 128 * 1024];
     let (_src_tmp, source_volume) = local_source_with(&[("one.txt", &payload), ("two.txt", b"second")]);
     let archive_path = PathBuf::from("/share/bundle.zip");
-    let (parent_id, parent) = register_remote_parent(&engine, Path::new("/share"), false).await;
+    let (parent_id, parent) = register_remote_parent(&engine, app_path!("/share"), false).await;
 
     let events = PhaseGateSink::new(WriteOperationPhase::FinishingTransfer);
     let start = engine
@@ -187,7 +189,7 @@ async fn cancel_during_remote_close_does_not_publish_or_complete() {
     let engine = TestOperations::new();
     let (_src_tmp, source_volume) = local_source_with(&[("one.txt", &[b'x'; 4096])]);
     let archive_path = PathBuf::from("/share/cancelled.zip");
-    let (parent_id, parent) = register_remote_parent(&engine, Path::new("/share"), false).await;
+    let (parent_id, parent) = register_remote_parent(&engine, app_path!("/share"), false).await;
 
     // The first finishing event replaces the final 100% transfer tick; the
     // second starts after `write_from_stream` has closed successfully.
@@ -357,7 +359,7 @@ async fn compress_onto_an_mtp_style_remote_parent_spools_and_packs() {
     // target must tolerate there being no original to displace.
     let (_src_tmp, source_volume) = local_source_with(&[("photo.raw", b"pixels")]);
     let archive_path = PathBuf::from("/device/DCIM/album.zip");
-    let (parent_id, parent) = register_remote_parent(&engine, Path::new("/device/DCIM"), true).await;
+    let (parent_id, parent) = register_remote_parent(&engine, app_path!("/device/DCIM"), true).await;
 
     let events = Arc::new(CollectorEventSink::new());
     engine
@@ -501,7 +503,9 @@ async fn register_share(engine: &TestOperations, existing: Option<&str>) -> (Str
         .expect("seed parent dir");
     if let Some(name) = existing {
         vol.create_file(
-            &AppPath::legacy_unchecked(&Path::new("/share").join(name)),
+            &app_path!("/share")
+                .join(AppName::from_app_spelling(name).expect("a plain name"))
+                .expect("a path in the share"),
             &zip_bytes(&[("stale.txt", b"old")]),
         )
         .await
@@ -620,7 +624,9 @@ async fn a_compress_two_stored_archives_fit_is_refused_and_leaves_both_alone() {
     let (parent_id, parent) = register_share(&engine, Some(composed)).await;
     parent
         .create_file(
-            &AppPath::legacy_unchecked(&Path::new("/share").join(decomposed)),
+            &app_path!("/share")
+                .join(AppName::from_app_spelling(decomposed).expect("a plain name"))
+                .expect("a path in the share"),
             &zip_bytes(&[("stale.txt", b"old")]),
         )
         .await

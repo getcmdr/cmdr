@@ -11,7 +11,7 @@
 //! the original as it was.
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath, PathArithmetic};
 use std::io::{Cursor, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -32,6 +32,11 @@ use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeError};
 
 const NAS_ID: &str = "zip-edit-nas";
 const ARCHIVE: &str = "/share/bundle.zip";
+
+/// [`ARCHIVE`] as the app path a volume is asked about.
+fn archive_app() -> &'static AppPath {
+    AppPath::from_normalized(ARCHIVE).expect("a canonical app path")
+}
 const WAIT: Duration = Duration::from_secs(10);
 const CADENCE: &[Duration] = &[Duration::from_millis(10), Duration::from_millis(20)];
 
@@ -113,10 +118,7 @@ async fn run_on(cut: Cut, meanwhile: Meanwhile, replace: Replace) -> Ran {
     let engine = TestOperations::new();
     let inner = Arc::new(InMemoryVolume::new("Testnas"));
     inner.create_directory(app_path!("/share")).await.unwrap();
-    inner
-        .create_file(&AppPath::legacy_unchecked(Path::new(ARCHIVE)), &original_zip())
-        .await
-        .unwrap();
+    inner.create_file(archive_app(), &original_zip()).await.unwrap();
     let nas = OutageVolume::wrap(Arc::clone(&inner), &format!("zip-edit-{label}"));
     if replace == Replace::InOneStep {
         nas.replace_atomically();
@@ -202,8 +204,8 @@ async fn run_on(cut: Cut, meanwhile: Meanwhile, replace: Replace) -> Ran {
     }
 }
 
-async fn read_all(volume: &dyn Volume, path: &Path) -> Option<Vec<u8>> {
-    let mut stream = volume.open_read_stream(&AppPath::legacy_unchecked(path)).await.ok()?;
+async fn read_all(volume: &dyn Volume, path: &AppPath) -> Option<Vec<u8>> {
+    let mut stream = volume.open_read_stream(path).await.ok()?;
     let mut buf = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         buf.extend_from_slice(&chunk.ok()?);
@@ -245,7 +247,7 @@ impl Ran {
     }
 
     async fn archive_entries(&self) -> Option<Vec<String>> {
-        read_all(&*self.inner, Path::new(ARCHIVE))
+        read_all(&*self.inner, archive_app())
             .await
             .map(|bytes| entry_names(&bytes))
     }
@@ -289,7 +291,7 @@ impl Ran {
     /// The original archive, byte for byte, and no temp beside it.
     async fn assert_original_intact(&self) {
         assert_eq!(
-            read_all(&*self.inner, Path::new(ARCHIVE)).await,
+            read_all(&*self.inner, archive_app()).await,
             Some(original_zip()),
             "{}: the original archive is untouched",
             self.label
@@ -378,18 +380,21 @@ async fn a_share_that_stays_gone_at_the_upload_reports_the_lost_connection() {
 /// Answers the aside, recorded for the share's next arrival.
 async fn assert_original_kept_aside(ran: &Ran) -> PathBuf {
     let label = &ran.label;
-    let asides: Vec<PathBuf> = ran
+    let asides: Vec<String> = ran
         .names()
         .await
         .into_iter()
         .filter(|name| name.contains(".cmdr-temp-"))
-        .map(|name| Path::new("/share").join(name))
         .collect();
-    let [aside] = asides.as_slice() else {
+    let [aside_name] = asides.as_slice() else {
         panic!("{label}: exactly one aside holds the original archive, got {asides:?}");
     };
+    let aside = &Path::new("/share").join(aside_name);
+    let aside_app = app_path!("/share")
+        .join(AppName::from_app_spelling(aside_name).expect("a listed name"))
+        .expect("a path in the share");
     assert_eq!(
-        read_all(&*ran.inner, aside).await,
+        read_all(&*ran.inner, &aside_app).await,
         Some(original_zip()),
         "{label}: ❗ the original survives, whole"
     );
@@ -458,10 +463,7 @@ async fn a_cancel_while_the_upload_waits_leaves_the_original() {
 async fn a_refused_upload_fails_at_once() {
     let inner = Arc::new(InMemoryVolume::new("Remote"));
     inner.create_directory(app_path!("/share")).await.unwrap();
-    inner
-        .create_file(&AppPath::legacy_unchecked(Path::new(ARCHIVE)), &original_zip())
-        .await
-        .unwrap();
+    inner.create_file(archive_app(), &original_zip()).await.unwrap();
     let faulty = FaultyVolume::wrapping(Arc::clone(&inner))
         .failing_call(
             FaultyOp::WriteFromStream,
@@ -498,7 +500,7 @@ async fn a_refused_upload_fails_at_once() {
         "the refusal is reported as itself"
     );
     assert_eq!(
-        read_all(&*inner, Path::new(ARCHIVE)).await,
+        read_all(&*inner, archive_app()).await,
         Some(original_zip()),
         "the original is untouched"
     );

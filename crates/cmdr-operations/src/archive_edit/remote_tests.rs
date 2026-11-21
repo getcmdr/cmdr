@@ -11,7 +11,7 @@
 //! live in the integration suites.
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath, PathArithmetic};
 use std::collections::HashMap;
 use std::future::Future;
 use std::io::{Cursor, Write};
@@ -396,7 +396,7 @@ async fn remote_edit_swaps_via_delete_then_rename_on_a_sibling_allowing_backend(
     let parent = InMemoryVolume::new("Remote-MTP").with_sibling_duplicates_allowed();
     parent.create_directory(app_path!("/device")).await.expect("seed dir");
     parent
-        .create_file(&AppPath::legacy_unchecked(&archive_path), &original)
+        .create_file(app_path!("/device/bundle.zip"), &original)
         .await
         .expect("seed zip");
     let parent = Arc::new(parent);
@@ -499,15 +499,12 @@ async fn a_remote_edit_journals_as_a_zip_edit_never_as_an_overwrite() {
 const SWAP_VOLUME_ID: &str = "remote-swap";
 
 /// A phone-like parent (no atomic replace, same-name siblings allowed) seeded
-/// with `bundle.zip`.
-async fn sibling_allowing_parent(archive_path: &Path) -> Arc<InMemoryVolume> {
+/// with `/device/bundle.zip`.
+async fn sibling_allowing_parent() -> Arc<InMemoryVolume> {
     let parent = InMemoryVolume::new("Remote-MTP").with_sibling_duplicates_allowed();
     parent.create_directory(app_path!("/device")).await.expect("seed dir");
     parent
-        .create_file(
-            &AppPath::legacy_unchecked(archive_path),
-            &build_zip(&[("keep.txt", b"keep me")]),
-        )
+        .create_file(app_path!("/device/bundle.zip"), &build_zip(&[("keep.txt", b"keep me")]))
         .await
         .expect("seed zip");
     Arc::new(parent)
@@ -565,7 +562,11 @@ async fn sweep_transfer_temps(parent: &dyn Volume) {
     for name in names_in(parent, "/device").await {
         if name.contains(".cmdr-tmp-") {
             parent
-                .delete(&AppPath::legacy_unchecked(&Path::new("/device").join(name)))
+                .delete(
+                    &app_path!("/device")
+                        .join(AppName::from_app_spelling(&name).expect("a listed name"))
+                        .expect("a path in the device"),
+                )
                 .await
                 .expect("sweep a temp");
         }
@@ -587,7 +588,7 @@ async fn aside_in_device(parent: &dyn Volume) -> Option<PathBuf> {
 #[tokio::test]
 async fn a_name_that_refuses_both_the_edit_and_the_original_keeps_both_findable() {
     let archive_path = PathBuf::from("/device/bundle.zip");
-    let inner = sibling_allowing_parent(&archive_path).await;
+    let inner = sibling_allowing_parent().await;
     inner.set_rename_to_failing(&archive_path);
 
     let result = add_edit(inner.clone() as Arc<dyn Volume>, archive_path.clone()).await;
@@ -624,7 +625,7 @@ async fn a_name_that_refuses_both_the_edit_and_the_original_keeps_both_findable(
 #[tokio::test]
 async fn a_landing_that_fails_puts_the_original_back() {
     let archive_path = PathBuf::from("/device/bundle.zip");
-    let parent = FaultyVolume::wrapping(sibling_allowing_parent(&archive_path).await)
+    let parent = FaultyVolume::wrapping(sibling_allowing_parent().await)
         .failing_call(FaultyOp::Rename, 2, VolumeError::NotConnected("a hiccup".into()))
         .arc();
 
@@ -652,7 +653,7 @@ async fn a_landing_that_fails_puts_the_original_back() {
 #[tokio::test]
 async fn a_refused_move_aside_leaves_the_original_whole_and_takes_the_temp_away() {
     let archive_path = PathBuf::from("/device/bundle.zip");
-    let parent = FaultyVolume::wrapping(sibling_allowing_parent(&archive_path).await)
+    let parent = FaultyVolume::wrapping(sibling_allowing_parent().await)
         .failing_call(FaultyOp::Rename, 1, VolumeError::NotConnected("busy".into()))
         .arc();
 
@@ -682,7 +683,7 @@ async fn a_refused_move_aside_leaves_the_original_whole_and_takes_the_temp_away(
 #[tokio::test]
 async fn an_aside_that_wont_delete_stays_beside_the_landed_edit() {
     let archive_path = PathBuf::from("/device/bundle.zip");
-    let parent = FaultyVolume::wrapping(sibling_allowing_parent(&archive_path).await)
+    let parent = FaultyVolume::wrapping(sibling_allowing_parent().await)
         .failing_call(FaultyOp::Delete, 1, VolumeError::NotConnected("busy".into()))
         .arc();
 
@@ -723,12 +724,9 @@ async fn a_crash_after_any_step_of_the_swap_loses_no_archive() {
                 .new_operation_state(Duration::from_millis(50))
                 .with_in_flight_ledger(ledger.clone()),
         );
-        let inner = sibling_allowing_parent(&archive_path).await;
+        let inner = sibling_allowing_parent().await;
         inner
-            .create_file(
-                &AppPath::legacy_unchecked(&sibling),
-                &build_zip(&[("other.txt", b"other")]),
-            )
+            .create_file(app_path!("/device/other.zip"), &build_zip(&[("other.txt", b"other")]))
             .await
             .expect("seed the sibling zip");
         let dying = Arc::new(GoesSilentAfter::new(Arc::clone(&inner), cut));
@@ -740,8 +738,7 @@ async fn a_crash_after_any_step_of_the_swap_loses_no_archive() {
         assert_eq!(landed, cut >= 3, "cut {cut}: success only once the edit took its name");
         if cut == 2 {
             assert!(
-                !inner.exists(&AppPath::legacy_unchecked(&archive_path)).await
-                    && aside_in_device(inner.as_ref()).await.is_some(),
+                !inner.exists(app_path!("/device/bundle.zip")).await && aside_in_device(inner.as_ref()).await.is_some(),
                 "cut 2: the original is aside, its name empty"
             );
         }
@@ -793,14 +790,14 @@ async fn a_crash_after_any_step_of_the_swap_loses_no_archive() {
 async fn two_asides_claiming_one_empty_name_both_stay_put() {
     let sibling = PathBuf::from("/device/other.zip");
     let inner = remote_parent_with_zip(&sibling, &build_zip(&[("other.txt", b"other")])).await;
-    let older = PathBuf::from("/device/bundle.zip.cmdr-temp-00000000-0000-4000-8000-000000000001");
-    let newer = PathBuf::from("/device/bundle.zip.cmdr-temp-ffffffff-0000-4000-8000-000000000002");
+    let older = app_path!("/device/bundle.zip.cmdr-temp-00000000-0000-4000-8000-000000000001");
+    let newer = app_path!("/device/bundle.zip.cmdr-temp-ffffffff-0000-4000-8000-000000000002");
     inner
-        .create_file(&AppPath::legacy_unchecked(&older), &build_zip(&[("v.txt", b"older")]))
+        .create_file(older, &build_zip(&[("v.txt", b"older")]))
         .await
         .expect("seed the older aside");
     inner
-        .create_file(&AppPath::legacy_unchecked(&newer), &build_zip(&[("v.txt", b"newer")]))
+        .create_file(newer, &build_zip(&[("v.txt", b"newer")]))
         .await
         .expect("seed the newer aside");
 
@@ -811,8 +808,7 @@ async fn two_asides_claiming_one_empty_name_both_stay_put() {
         "an ambiguous pair must not pick a version for the name"
     );
     assert!(
-        inner.exists(&AppPath::legacy_unchecked(&older)).await
-            && inner.exists(&AppPath::legacy_unchecked(&newer)).await,
+        inner.exists(older).await && inner.exists(newer).await,
         "both asides stay"
     );
 }
@@ -1132,16 +1128,13 @@ impl Volume for ClearsThenDiesOnAForcedRename {
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let to_app = to;
-            let to_std = to.as_std_legacy();
-            let to: &Path = &to_std;
             self.alive()?;
-            if force && self.inner.exists(&AppPath::legacy_unchecked(to)).await {
-                self.inner.delete(&AppPath::legacy_unchecked(to)).await?;
+            if force && self.inner.exists(to).await {
+                self.inner.delete(to).await?;
                 self.dead.store(true, Ordering::SeqCst);
                 return Err(gone());
             }
-            self.inner.rename(from, to_app, force).await
+            self.inner.rename(from, to, force).await
         })
     }
 

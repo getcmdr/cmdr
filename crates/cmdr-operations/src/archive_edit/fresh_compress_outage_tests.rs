@@ -38,6 +38,11 @@ use cmdr_local::LocalPosixVolume;
 
 const NAS_ID: &str = "compress-nas";
 const ARCHIVE: &str = "/share/photos.zip";
+
+/// [`ARCHIVE`] as the app path a volume is asked about.
+fn archive_app() -> &'static AppPath {
+    AppPath::from_normalized(ARCHIVE).expect("a canonical app path")
+}
 const WAIT: Duration = Duration::from_secs(10);
 const CADENCE: &[Duration] = &[Duration::from_millis(10), Duration::from_millis(20)];
 const PAYLOAD: &[u8] = b"the photo's bytes, compressed into a fresh archive";
@@ -180,10 +185,7 @@ async fn compress(direct: bool, atomic: bool, replace: bool, cut: Cut, meanwhile
     let inner = Arc::new(InMemoryVolume::new("Testnas"));
     inner.create_directory(app_path!("/share")).await.unwrap();
     if replace {
-        inner
-            .create_file(&AppPath::legacy_unchecked(Path::new(ARCHIVE)), &old_archive())
-            .await
-            .unwrap();
+        inner.create_file(archive_app(), &old_archive()).await.unwrap();
     }
     let nas = OutageVolume::wrap(Arc::clone(&inner), &format!("compress-{label}"));
     match cut {
@@ -262,8 +264,8 @@ async fn compress(direct: bool, atomic: bool, replace: bool, cut: Cut, meanwhile
     }
 }
 
-async fn read_all(volume: &dyn Volume, path: &Path) -> Option<Vec<u8>> {
-    let mut stream = volume.open_read_stream(&AppPath::legacy_unchecked(path)).await.ok()?;
+async fn read_all(volume: &dyn Volume, path: &AppPath) -> Option<Vec<u8>> {
+    let mut stream = volume.open_read_stream(path).await.ok()?;
     let mut buf = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         buf.extend_from_slice(&chunk.ok()?);
@@ -298,7 +300,7 @@ impl Ran {
             "{label}: the compress publishes, got {:?}",
             self.result.as_ref().err().map(describe)
         );
-        let bytes = read_all(&*self.inner, Path::new(ARCHIVE)).await.expect("the archive");
+        let bytes = read_all(&*self.inner, archive_app()).await.expect("the archive");
         let mut archive = zip::ZipArchive::new(Cursor::new(bytes)).expect("a valid zip");
         let mut entry = archive.by_name("photo.jpg").expect("the photo is in it");
         let mut content = Vec::new();
@@ -379,7 +381,7 @@ async fn a_share_that_stays_gone_reports_the_lost_connection_and_keeps_the_old_a
         );
         ran.nas.become_reachable();
         assert_eq!(
-            read_all(&*ran.inner, Path::new(ARCHIVE)).await,
+            read_all(&*ran.inner, archive_app()).await,
             Some(old_archive()),
             "{}: the old archive is untouched",
             ran.label
@@ -438,8 +440,5 @@ async fn a_refused_upload_fails_at_once() {
         "the refusal reached the upload"
     );
     assert!(result.is_err(), "the refusal ends the compress");
-    assert!(
-        !inner.exists(&AppPath::legacy_unchecked(Path::new(ARCHIVE))).await,
-        "nothing published"
-    );
+    assert!(!inner.exists(archive_app()).await, "nothing published");
 }
