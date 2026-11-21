@@ -7,7 +7,7 @@
 //! `staged_write_landing_aside.rs`.
 
 use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 
 use super::super::super::in_flight_temps::{self, TrackedRecord};
@@ -19,11 +19,10 @@ use super::super::recovered_name::{
     what_a_refused_delete_left,
 };
 use super::super::volume::DisplacedDestination;
-use super::{LandingName, home_of};
+use super::{LandingName, Spelled, Temp, home_of};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
-use cmdr_fs::staging::StagingTemp;
 use cmdr_fs::volume::{Volume, VolumeError};
 use cmdr_operation_log::types::NotRollbackableReason;
 
@@ -63,8 +62,8 @@ pub(super) struct Landing {
     state: Arc<WriteOperationState>,
     /// The temp, kept out of the pane until the landing settles
     /// (`cmdr_fs::staging`).
-    temp: StagingTemp,
-    final_path: PathBuf,
+    temp: Temp,
+    final_path: Spelled,
     name: LandingName,
     /// The byte count the write confirmed: what a whole temp holds.
     size: u64,
@@ -102,8 +101,8 @@ enum Recorded {
 impl Landing {
     pub(super) fn new(
         state: &Arc<WriteOperationState>,
-        temp: StagingTemp,
-        final_path: &Path,
+        temp: Temp,
+        final_path: Spelled,
         name: LandingName,
         size: u64,
         home_volume: Option<String>,
@@ -111,7 +110,7 @@ impl Landing {
         Self {
             state: Arc::clone(state),
             temp,
-            final_path: final_path.to_path_buf(),
+            final_path,
             name,
             size,
             home_volume,
@@ -124,6 +123,11 @@ impl Landing {
 
     fn temp(&self) -> &Path {
         self.temp.path()
+    }
+
+    /// The final name as the ledgers and the logs spell it.
+    fn final_path(&self) -> &Path {
+        self.final_path.path()
     }
 
     fn home(&self) -> Option<in_flight_temps::RecordHome> {
@@ -147,7 +151,7 @@ impl Landing {
             return true;
         }
         let held =
-            in_flight_temps::hold_for_landing(&self.state, self.home(), self.temp.path(), &self.final_path, self.size)
+            in_flight_temps::hold_for_landing(&self.state, self.home(), self.temp.path(), self.final_path(), self.size)
                 .await;
         match held {
             Ok(record) => {
@@ -167,7 +171,7 @@ impl Landing {
             self.state
                 .kept_landings
                 .lock_ignore_poison()
-                .push(self.final_path.clone());
+                .push(self.final_path().to_path_buf());
         }
     }
 
@@ -199,7 +203,7 @@ impl Landing {
     /// it. Answers whether it's gone; a temp that isn't stays as recorded.
     async fn discard(&mut self, dest_volume: &Arc<dyn Volume>) -> bool {
         self.discard_asked = true;
-        let gone = discard_unplaced_temp(dest_volume.as_ref(), self.temp.path()).await;
+        let gone = discard_unplaced_temp(dest_volume.as_ref(), &self.temp).await;
         if gone {
             self.settled();
         }
@@ -267,7 +271,7 @@ fn cut_off(landing: Landing, at: CutOffAt, error: VolumeError) -> LandingError {
     log::info!(
         target: "copy",
         "landing: {} was cut off on the transport ({error}); settling it once the destination is back",
-        LogPrivate::file_path(&landing.final_path), error = LogError(&error),
+        LogPrivate::file_path(landing.final_path()), error = LogError(&error),
     );
     LandingError::CutOff(Box::new(CutOffLanding { landing, at, error }))
 }
@@ -284,7 +288,7 @@ impl std::fmt::Debug for CutOffLanding {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("CutOffLanding")
             .field("temp", &self.landing.temp())
-            .field("final_path", &self.landing.final_path)
+            .field("final_path", &self.landing.final_path())
             .field("at", &self.at)
             .field("error", &self.error)
             .finish()
@@ -423,11 +427,7 @@ pub(super) async fn land(dest_volume: &Arc<dyn Volume>, mut landing: Landing) ->
         return swap_through_an_aside(dest_volume, landing).await;
     }
     let Err(first) = dest_volume
-        .rename(
-            &AppPath::legacy_unchecked(landing.temp()),
-            &AppPath::legacy_unchecked(&landing.final_path),
-            false,
-        )
+        .rename(landing.temp.app(), landing.final_path.app(), false)
         .await
     else {
         landing.settled();
@@ -445,7 +445,7 @@ pub(super) async fn land(dest_volume: &Arc<dyn Volume>, mut landing: Landing) ->
             target: "copy",
             "staged write: {} is taken by something nobody resolved a conflict for; \
              leaving it alone and taking our temp {} away.",
-            LogPrivate::file_path(&landing.final_path),
+            LogPrivate::file_path(landing.final_path()),
             LogPrivate::file_path(landing.temp()),
         );
         landing.discard(dest_volume).await;
@@ -467,11 +467,7 @@ pub(super) async fn land(dest_volume: &Arc<dyn Volume>, mut landing: Landing) ->
 /// the name.
 async fn replace_in_one_step(dest_volume: &Arc<dyn Volume>, mut landing: Landing) -> Result<(), LandingError> {
     match dest_volume
-        .rename(
-            &AppPath::legacy_unchecked(landing.temp()),
-            &AppPath::legacy_unchecked(&landing.final_path),
-            true,
-        )
+        .rename(landing.temp.app(), landing.final_path.app(), true)
         .await
     {
         Ok(()) => {
@@ -488,7 +484,7 @@ async fn replace_in_one_step(dest_volume: &Arc<dyn Volume>, mut landing: Landing
                 log::info!(
                     target: "copy",
                     "landing: the replace onto {} answered {refused}, but its temp is gone, so it landed",
-                    LogPrivate::file_path(&landing.final_path), refused = LogError(&refused),
+                    LogPrivate::file_path(landing.final_path()), refused = LogError(&refused),
                 );
                 landing.original_replaced();
                 landing.settled();
@@ -506,9 +502,7 @@ async fn replace_in_one_step(dest_volume: &Arc<dyn Volume>, mut landing: Landing
 async fn temp_is_gone(dest_volume: &Arc<dyn Volume>, landing: &Landing) -> bool {
     !landing.discard_asked
         && matches!(
-            dest_volume
-                .get_metadata(&AppPath::legacy_unchecked(landing.temp()))
-                .await,
+            dest_volume.get_metadata(landing.temp.app()).await,
             Err(VolumeError::NotFound(_))
         )
 }
@@ -529,10 +523,7 @@ async fn clear_the_way(
     first: VolumeError,
     patience: Patience,
 ) -> Result<(), LandingError> {
-    landing.in_the_way = match dest_volume
-        .get_metadata(&AppPath::legacy_unchecked(&landing.final_path))
-        .await
-    {
+    landing.in_the_way = match dest_volume.get_metadata(landing.final_path.app()).await {
         Ok(entry) if NameHeld::of(&entry).is_an_empty_file() => Some(NameHeld::of(&entry)),
         // Gone already: nothing to clear, and nothing a resume could match, so
         // a resume never clears the name again.
@@ -545,7 +536,7 @@ async fn clear_the_way(
                 target: "copy",
                 "staged write: {} holds something that isn't our empty placeholder; \
                  leaving it alone and taking our temp {} away.",
-                LogPrivate::file_path(&landing.final_path),
+                LogPrivate::file_path(landing.final_path()),
                 LogPrivate::file_path(landing.temp()),
             );
             landing.discard(dest_volume).await;
@@ -557,15 +548,12 @@ async fn clear_the_way(
             target: "copy",
             "landing: couldn't confirm the landing record for {} on disk, so {} stays where it is",
             LogPrivate::file_path(landing.temp()),
-            LogPrivate::file_path(&landing.final_path),
+            LogPrivate::file_path(landing.final_path()),
         );
         landing.discard(dest_volume).await;
         return Err(LandingError::Failed(landing_not_recorded()));
     }
-    match dest_volume
-        .delete(&AppPath::legacy_unchecked(&landing.final_path))
-        .await
-    {
+    match dest_volume.delete(landing.final_path.app()).await {
         Ok(()) | Err(VolumeError::NotFound(_)) => {}
         Err(error) if patience == Patience::Waits && error.transport_fault().is_some() => {
             return Err(cut_off(landing, CutOffAt::ClearingDelete(first), error));
@@ -607,7 +595,7 @@ async fn after_a_refused_delete(
                 target: "copy",
                 "landing: {} still holds what was in the way after a refused delete ({refused}); \
                  taking the temp {} away",
-                LogPrivate::file_path(&landing.final_path),
+                LogPrivate::file_path(landing.final_path()),
                 LogPrivate::file_path(landing.temp()), refused = LogError(&refused),
             );
             if !landing.discard(dest_volume).await {
@@ -631,11 +619,7 @@ async fn rename_onto_cleared(
     patience: Patience,
 ) -> Result<(), LandingError> {
     match dest_volume
-        .rename(
-            &AppPath::legacy_unchecked(landing.temp()),
-            &AppPath::legacy_unchecked(&landing.final_path),
-            false,
-        )
+        .rename(landing.temp.app(), landing.final_path.app(), false)
         .await
     {
         Ok(()) => {
@@ -656,7 +640,7 @@ async fn rename_onto_cleared(
 /// it went. A rescue that couldn't rename either leaves the bytes on the temp,
 /// recorded.
 async fn rescue(dest_volume: &Arc<dyn Volume>, mut landing: Landing, error: VolumeError) -> FinalizeFailure {
-    let new_data_at = rescue_out_of_temp_space(dest_volume.as_ref(), landing.temp(), &landing.final_path).await;
+    let new_data_at = rescue_out_of_temp_space(dest_volume.as_ref(), landing.temp(), landing.final_path()).await;
     if new_data_at == landing.temp() {
         // ❗ All that holds the new bytes now. A swap's temp is still recorded
         // as a temp (its original went aside, never cleared), and a temp is
@@ -681,9 +665,9 @@ async fn rescue(dest_volume: &Arc<dyn Volume>, mut landing: Landing, error: Volu
 }
 
 /// Whether `final_path` holds a file of exactly `size` bytes.
-pub(super) async fn holds_our_size(dest_volume: &Arc<dyn Volume>, final_path: &Path, size: u64) -> bool {
+pub(super) async fn holds_our_size(dest_volume: &Arc<dyn Volume>, final_path: &AppPath, size: u64) -> bool {
     matches!(
-        dest_volume.get_metadata(&AppPath::legacy_unchecked(final_path)).await,
+        dest_volume.get_metadata(final_path).await,
         Ok(entry) if !entry.is_directory && !entry.is_symlink && entry.size == Some(size)
     )
 }

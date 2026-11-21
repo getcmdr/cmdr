@@ -29,6 +29,7 @@ use std::path::{Path, PathBuf};
 use super::super::state::WriteOperationState;
 use super::super::types::{StagedLeftoverFate, StagedLeftovers, WriteOperationError};
 use super::super::unique_name::{NameCandidates, RESCUE_NAME_ATTEMPTS, recovered_sibling};
+use super::staged_write::{Spelled, Temp};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
@@ -94,13 +95,10 @@ impl From<VolumeError> for FinalizeFailure {
 /// eight timeouts to an error path the user is waiting on. A name that is merely
 /// TAKEN is the one answer a different name fixes.
 pub(crate) async fn rescue_out_of_temp_space(dest_volume: &dyn Volume, temp: &Path, orig: &Path) -> PathBuf {
+    let temp_app = AppPath::legacy_unchecked(temp);
     let recovered = recovered_sibling(orig);
     match dest_volume
-        .rename(
-            &AppPath::legacy_unchecked(temp),
-            &AppPath::legacy_unchecked(&recovered),
-            false,
-        )
+        .rename(&temp_app, &AppPath::legacy_unchecked(&recovered), false)
         .await
     {
         Ok(()) => return recovered,
@@ -113,11 +111,7 @@ pub(crate) async fn rescue_out_of_temp_space(dest_volume: &dyn Volume, temp: &Pa
     while candidates.attempts() < RESCUE_NAME_ATTEMPTS {
         let candidate = candidates.current();
         match dest_volume
-            .rename(
-                &AppPath::legacy_unchecked(temp),
-                &AppPath::legacy_unchecked(&candidate),
-                false,
-            )
+            .rename(&temp_app, &AppPath::legacy_unchecked(&candidate), false)
             .await
         {
             Ok(()) => return candidate,
@@ -149,15 +143,15 @@ pub(crate) enum AfterARefusedDelete {
     Unknown,
 }
 
-pub(crate) async fn what_a_refused_delete_left(dest_volume: &dyn Volume, path: &Path) -> AfterARefusedDelete {
-    match dest_volume.get_metadata(&AppPath::legacy_unchecked(path)).await {
+pub(super) async fn what_a_refused_delete_left(dest_volume: &dyn Volume, path: &Spelled) -> AfterARefusedDelete {
+    match dest_volume.get_metadata(path.app()).await {
         Ok(_) => AfterARefusedDelete::StillThere,
         Err(VolumeError::NotFound(_)) => AfterARefusedDelete::Gone,
         Err(e) => {
             log::warn!(
                 target: "copy",
                 "landing: couldn't tell whether {} survived a refused delete ({e}), so the temp stays",
-                LogPrivate::path(path), e = LogError(&e)
+                LogPrivate::path(path.path()), e = LogError(&e)
             );
             AfterARefusedDelete::Unknown
         }
@@ -178,14 +172,14 @@ pub(crate) async fn what_a_refused_delete_left(dest_volume: &dyn Volume, path: &
 /// the sweeps: the operation's abandoned-write sweep if the temp is still
 /// registered, and `cleanup.rs::reap_stale_transfer_temps` on the next transfer
 /// into that folder once it is an hour old.
-pub(crate) async fn discard_unplaced_temp(dest_volume: &dyn Volume, temp: &Path) -> bool {
-    match dest_volume.delete(&AppPath::legacy_unchecked(temp)).await {
+pub(super) async fn discard_unplaced_temp(dest_volume: &dyn Volume, temp: &Temp) -> bool {
+    match dest_volume.delete(temp.app()).await {
         Ok(()) | Err(VolumeError::NotFound(_)) => true,
         Err(e) => {
             log::warn!(
                 target: "copy",
                 "landing: couldn't remove the unplaced temp {} ({e}); the stale-temp sweep will",
-                LogPrivate::file_path(temp), e = LogError(&e)
+                LogPrivate::file_path(temp.path()), e = LogError(&e)
             );
             false
         }

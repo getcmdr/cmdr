@@ -59,6 +59,7 @@ struct ClaimedLanding {
     dest: Arc<WatchedLanding>,
     staged: StagedWrite,
     temp: PathBuf,
+    temp_app: AppPathBuf,
 }
 
 async fn claimed_landing(name: &str, hold_rename_after_delete: bool) -> ClaimedLanding {
@@ -79,10 +80,8 @@ async fn claimed_landing(name: &str, hold_rename_after_delete: bool) -> ClaimedL
     });
     let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::StageOntoClaimedName);
     let temp = staged.target().to_path_buf();
-    inner
-        .create_file(&AppPath::legacy_unchecked(&temp), b"THE NEW BYTES")
-        .await
-        .unwrap();
+    let temp_app = staged.target_app().to_owned();
+    inner.create_file(&temp_app, b"THE NEW BYTES").await.unwrap();
     ClaimedLanding {
         dir,
         engine,
@@ -92,6 +91,7 @@ async fn claimed_landing(name: &str, hold_rename_after_delete: bool) -> ClaimedL
         dest,
         staged,
         temp,
+        temp_app,
     }
 }
 
@@ -172,7 +172,7 @@ async fn a_landing_cut_off_after_clearing_the_way_is_finished_by_the_next_launch
         Some(13),
         "the next launch lands the new bytes at their name: {tally:?}"
     );
-    assert!(!fixture.inner.exists(&AppPath::legacy_unchecked(&fixture.temp)).await);
+    assert!(!fixture.inner.exists(&fixture.temp_app).await);
     drop(fixture.engine);
 }
 
@@ -182,23 +182,20 @@ async fn swap_over(state: &Arc<WriteOperationState>) -> (Arc<InMemoryVolume>, Ar
     let inner = Arc::new(InMemoryVolume::new("dest"));
     inner.create_file(app_path!("/notes.txt"), b"OLD").await.unwrap();
     let staged = StagedWrite::begin_unannounced(state, Path::new("/notes.txt"), WriteStaging::StageOverOriginal);
-    inner
-        .create_file(&AppPath::legacy_unchecked(staged.target()), b"THE NEW BYTES")
-        .await
-        .unwrap();
+    inner.create_file(staged.target_app(), b"THE NEW BYTES").await.unwrap();
     let dest: Arc<dyn Volume> = Arc::clone(&inner) as Arc<dyn Volume>;
     (inner, dest, staged)
 }
 
 /// Every aside (`.cmdr-temp-*`) in `folder`.
-async fn asides_in(volume: &InMemoryVolume, folder: &str) -> Vec<PathBuf> {
+async fn asides_in(volume: &InMemoryVolume, folder: &str) -> Vec<String> {
     volume
         .list_directory(AppPath::from_normalized(folder).expect("a canonical path"), None)
         .await
         .unwrap()
         .into_iter()
         .filter(|entry| entry.name.contains(cmdr_fs::staging::STAGING_ASIDE_MARKER))
-        .map(|entry| PathBuf::from(entry.path))
+        .map(|entry| entry.path)
         .collect()
 }
 
@@ -213,7 +210,7 @@ async fn assert_refused_with_the_original_in_place(
     assert_eq!(size_of(inner, "/notes.txt").await, Some(3), "the original survives");
     assert_eq!(
         asides_in(inner, "/").await,
-        Vec::<PathBuf>::new(),
+        Vec::<String>::new(),
         "and never went aside"
     );
     assert_eq!(

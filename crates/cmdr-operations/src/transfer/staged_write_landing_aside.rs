@@ -5,8 +5,7 @@
 //! [`Landing`] and rescue rules it shares, and whose cut-off settle
 //! (`staged_write_landing_cut_off.rs`) calls its resume and give-up steps.
 
-use cmdr_fs::app_path::AppPath;
-use std::path::Path;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::sync::Arc;
 
 use super::super::super::super::in_flight_temps;
@@ -20,10 +19,18 @@ use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::{Volume, VolumeError};
 
+/// The one crossing of a held aside's path to its volume's spelling:
+/// [`DisplacedDestination`] answers it as a `std::path` value (its ledgers'
+/// and logs' spelling).
+fn aside_on_volume(aside: &DisplacedDestination) -> AppPathBuf {
+    AppPath::legacy_unchecked(aside.aside_path()).into_owned()
+}
+
 impl Landing {
-    /// The swap's aside, recorded and not yet settled.
-    fn aside_path(&self) -> Option<&Path> {
-        self.aside.as_ref().map(DisplacedDestination::aside_path)
+    /// The swap's aside, recorded and not yet settled, as the destination
+    /// addresses it.
+    fn aside_app(&self) -> Option<AppPathBuf> {
+        self.aside.as_ref().map(aside_on_volume)
     }
 
     /// The new bytes are at the name, so the original set aside for them goes.
@@ -53,13 +60,14 @@ pub(super) async fn swap_through_an_aside(
     dest_volume: &Arc<dyn Volume>,
     mut landing: Landing,
 ) -> Result<(), LandingError> {
-    match DisplacedDestination::hold_for_swap(&landing.state, landing.home(), &landing.final_path, landing.size).await {
+    match DisplacedDestination::hold_for_swap(&landing.state, landing.home(), landing.final_path(), landing.size).await
+    {
         Ok(aside) => landing.aside = Some(aside),
         Err(in_flight_temps::NotOnDisk) => {
             log::warn!(
                 target: "copy",
                 "landing: couldn't confirm the aside record for {} on disk, so it stays where it is",
-                LogPrivate::file_path(&landing.final_path),
+                LogPrivate::file_path(landing.final_path()),
             );
             landing.discard(dest_volume).await;
             return Err(LandingError::Failed(landing_not_recorded()));
@@ -74,17 +82,10 @@ async fn set_aside(
     mut landing: Landing,
     patience: Patience,
 ) -> Result<(), LandingError> {
-    let Some(aside) = landing.aside_path().map(Path::to_path_buf) else {
+    let Some(aside) = landing.aside_app() else {
         return rename_onto_aside(dest_volume, landing, patience).await;
     };
-    match dest_volume
-        .rename(
-            &AppPath::legacy_unchecked(&landing.final_path),
-            &AppPath::legacy_unchecked(&aside),
-            false,
-        )
-        .await
-    {
+    match dest_volume.rename(landing.final_path.app(), &aside, false).await {
         Ok(()) => rename_onto_aside(dest_volume, landing, patience).await,
         // Nothing at the name after all: no original to keep.
         Err(VolumeError::NotFound(_)) => {
@@ -117,7 +118,7 @@ pub(super) async fn after_a_refused_aside(
             log::warn!(
                 target: "copy",
                 "landing: {} stayed at its name after a refused move aside ({refused}); taking the temp {} away",
-                LogPrivate::file_path(&landing.final_path),
+                LogPrivate::file_path(landing.final_path()),
                 LogPrivate::file_path(landing.temp()), refused = LogError(&refused),
             );
             if let Some(aside) = landing.aside.take() {
@@ -142,11 +143,7 @@ pub(super) async fn rename_onto_aside(
     patience: Patience,
 ) -> Result<(), LandingError> {
     match dest_volume
-        .rename(
-            &AppPath::legacy_unchecked(landing.temp()),
-            &AppPath::legacy_unchecked(&landing.final_path),
-            false,
-        )
+        .rename(landing.temp.app(), landing.final_path.app(), false)
         .await
     {
         Ok(()) => {
@@ -164,7 +161,7 @@ pub(super) async fn rename_onto_aside(
                 log::info!(
                     target: "copy",
                     "landing: the rename onto {} answered {refused}, but its temp is gone, so it landed",
-                    LogPrivate::file_path(&landing.final_path), refused = LogError(&refused),
+                    LogPrivate::file_path(landing.final_path()), refused = LogError(&refused),
                 );
                 landing.original_replaced();
                 landing.settled();
@@ -201,7 +198,7 @@ async fn put_the_original_back(
             log::warn!(
                 target: "copy",
                 "landing: {} couldn't take its name or give it back, so the original stays at {} for the volume's next sweep",
-                LogPrivate::file_path(&landing.final_path),
+                LogPrivate::file_path(landing.final_path()),
                 LogPrivate::file_path(aside.aside_path()),
             );
             aside.keep_for_arrival();
@@ -213,10 +210,10 @@ async fn put_the_original_back(
 /// [`CutOffLanding::resume`] of a move aside, with the temp still whole: the
 /// aside says whether the move went through.
 pub(super) async fn resume_setting_aside(dest_volume: &Arc<dyn Volume>, landing: Landing) -> Resumed {
-    let Some(aside) = landing.aside_path().map(Path::to_path_buf) else {
+    let Some(aside) = landing.aside_app() else {
         return rename_onto_aside(dest_volume, landing, Patience::Waits).await.into();
     };
-    match dest_volume.get_metadata(&AppPath::legacy_unchecked(&aside)).await {
+    match dest_volume.get_metadata(&aside).await {
         // The move aside went through before the drop.
         Ok(_) => rename_onto_aside(dest_volume, landing, Patience::Waits).await.into(),
         // It never reached the server: move it now.
@@ -244,16 +241,13 @@ pub(super) async fn give_up_onto_aside(
     mut landing: Landing,
     error: VolumeError,
 ) -> Result<(), FinalizeFailure> {
-    match dest_volume
-        .get_metadata(&AppPath::legacy_unchecked(landing.temp()))
-        .await
-    {
+    match dest_volume.get_metadata(landing.temp.app()).await {
         // The rename never happened: the original goes back.
         Ok(_) => Err(put_the_original_back(dest_volume, landing, error).await),
         // Our temp is gone from a name that was empty: the rename happened,
         // when the name holds exactly what we wrote.
         Err(VolumeError::NotFound(_))
-            if !landing.discard_asked && holds_our_size(dest_volume, &landing.final_path, landing.size).await =>
+            if !landing.discard_asked && holds_our_size(dest_volume, landing.final_path.app(), landing.size).await =>
         {
             landing.settled();
             landing.discard_aside(dest_volume).await;
@@ -273,10 +267,7 @@ pub(super) async fn run_again_with_the_original_home(
     error: VolumeError,
 ) -> Resumed {
     if let Some(aside) = landing.aside.take() {
-        match dest_volume
-            .get_metadata(&AppPath::legacy_unchecked(aside.aside_path()))
-            .await
-        {
+        match dest_volume.get_metadata(&aside_on_volume(&aside)).await {
             // The move aside never happened.
             Err(VolumeError::NotFound(_)) => aside.forget(),
             _ => {
@@ -284,7 +275,7 @@ pub(super) async fn run_again_with_the_original_home(
                     log::warn!(
                         target: "copy",
                         "landing: the original of {} couldn't go back to its name, so it stays at {} for the volume's next sweep",
-                        LogPrivate::file_path(&landing.final_path),
+                        LogPrivate::file_path(landing.final_path()),
                         LogPrivate::file_path(aside.aside_path()),
                     );
                     aside.keep_for_arrival();

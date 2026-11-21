@@ -5,7 +5,6 @@
 //! vocabulary, and the refusal rules a give-up meets; the proofs it settles by
 //! live in `interrupted_landing.rs`.
 
-use cmdr_fs::app_path::AppPath;
 use std::sync::Arc;
 
 use super::super::super::interrupted_landing::{NameHeld, holds_the_source};
@@ -62,10 +61,7 @@ impl CutOffLanding {
     /// again; one that meets a refusal settles by the refusal rules.
     pub(crate) async fn resume(self, dest_volume: &Arc<dyn Volume>, source: Option<LandingSource<'_>>) -> Resumed {
         let Self { mut landing, at, error } = self;
-        match dest_volume
-            .get_metadata(&AppPath::legacy_unchecked(landing.temp()))
-            .await
-        {
+        match dest_volume.get_metadata(landing.temp.app()).await {
             Ok(entry) if !entry.is_directory && !entry.is_symlink && entry.size == Some(landing.size) => {
                 resume_with_a_whole_temp(dest_volume, landing, at).await
             }
@@ -90,7 +86,7 @@ impl CutOffLanding {
                 let proof = match (&at, source) {
                     _ if landing.discard_asked => Ok(false),
                     (CutOffAt::FirstRename, _) => {
-                        Ok(holds_our_size(dest_volume, &landing.final_path, landing.size).await)
+                        Ok(holds_our_size(dest_volume, landing.final_path.app(), landing.size).await)
                     }
                     (_, Some(source)) => {
                         holds_the_source(
@@ -98,7 +94,7 @@ impl CutOffLanding {
                             source.path,
                             landing.size,
                             dest_volume,
-                            &landing.final_path,
+                            landing.final_path.app(),
                             &landing.state.stop_work,
                         )
                         .await
@@ -109,7 +105,7 @@ impl CutOffLanding {
                     log::info!(
                         target: "copy",
                         "landing: the work stopped while {} was compared against its source; leaving it for the volume's next arrival",
-                        LogPrivate::file_path(&landing.final_path),
+                        LogPrivate::file_path(landing.final_path()),
                     );
                     landing.stopped_unproven();
                     return Resumed::Stopped;
@@ -120,7 +116,7 @@ impl CutOffLanding {
                     log::info!(
                         target: "copy",
                         "landing: {} landed before the drop swallowed the reply; counting it done",
-                        LogPrivate::file_path(&landing.final_path),
+                        LogPrivate::file_path(landing.final_path()),
                     );
                     landing.discard_aside(dest_volume).await;
                     Resumed::Landed
@@ -184,13 +180,10 @@ async fn give_up_onto_cleared(
     mut landing: Landing,
     error: VolumeError,
 ) -> Result<(), FinalizeFailure> {
-    match dest_volume
-        .get_metadata(&AppPath::legacy_unchecked(landing.temp()))
-        .await
-    {
+    match dest_volume.get_metadata(landing.temp.app()).await {
         Ok(_) => Err(rescue(dest_volume, landing, error).await),
         Err(VolumeError::NotFound(_)) if !landing.discard_asked => {
-            let landed = holds_our_size(dest_volume, &landing.final_path, landing.size).await;
+            let landed = holds_our_size(dest_volume, landing.final_path.app(), landing.size).await;
             landing.settled();
             if landed { Ok(()) } else { Err(error.into()) }
         }
@@ -206,10 +199,7 @@ async fn resume_with_a_whole_temp(dest_volume: &Arc<dyn Volume>, landing: Landin
         CutOffAt::RenameOntoCleared => rename_onto_cleared(dest_volume, landing, Patience::Waits).await.into(),
         CutOffAt::RenameOntoAside => rename_onto_aside(dest_volume, landing, Patience::Waits).await.into(),
         CutOffAt::SettingAside => resume_setting_aside(dest_volume, landing).await,
-        CutOffAt::ClearingDelete(first) => match dest_volume
-            .get_metadata(&AppPath::legacy_unchecked(&landing.final_path))
-            .await
-        {
+        CutOffAt::ClearingDelete(first) => match dest_volume.get_metadata(landing.final_path.app()).await {
             // The delete went through before the drop.
             Err(VolumeError::NotFound(_)) => rename_onto_cleared(dest_volume, landing, Patience::Waits).await.into(),
             // It never reached the server: what was in the way still is.
