@@ -154,8 +154,13 @@ jobs:
       - name: Run Rust tests
         run: ./scripts/check/check --check desktop-rust-tests --ci
 
-      # The check owns the pin and prints it here.
+      # Hosted only: the Linux Rust lane's `module-cycles` job measures the same graph on every PR
+      # run (byte-identical DOT for all 33 library crates, ubuntu vs an M1, run 44935394792,
+      # 2026-11-21), so the M1 skips it. A hosted run (the nightly, the release gate, or a land
+      # while the M1 is busy) still measures it on macOS, so a drift between the two hosts shows
+      # there. The check owns the pin and prints it here.
       - name: Install cargo-modules (pinned)
+        if: ${{ !inputs.self-hosted }}
         run: |
           version="$(./scripts/check/check --print-cargo-modules-version)"
           if [ "$(cargo-modules --version 2>/dev/null)" != "cargo-modules $version" ]; then
@@ -163,6 +168,7 @@ jobs:
           fi
 
       - name: Check Rust module cycles
+        if: ${{ !inputs.self-hosted }}
         run: ./scripts/check/check --check desktop-rust-module-cycles --ci
 
   # The lane's marker, once `lane` passed and `finder-extension` passed or wasn't asked for (not

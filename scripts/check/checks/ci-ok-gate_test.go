@@ -21,6 +21,7 @@ jobs:
     outputs:
       verified: ${{ steps.verified.outputs.verified }}
       land: ${{ steps.mode.outputs.land }}
+      ignored: ${{ steps.mode.outputs.ignored }}
       lint: ${{ steps.verified.outputs.verified != 'true' && steps.filter.outputs.lint || 'false' }}
       lint-changed: ${{ steps.filter.outputs.lint }}
 
@@ -34,7 +35,8 @@ jobs:
 
   ci-ok:
     name:
-      ${{ (github.event_name != 'pull_request' || needs.changes.outputs.land == 'true') && 'CI OK' || 'CI light' }}
+      ${{ (github.event_name != 'pull_request' || needs.changes.outputs.land == 'true') && 'CI OK' ||
+      needs.changes.outputs.ignored == 'true' && 'CI label only' || 'CI light' }}
     needs:
       [
         changes,
@@ -73,11 +75,29 @@ func TestCIOKGateFlagsASkippableGate(t *testing.T) {
 // be a green required check over lanes that never ran.
 func TestCIOKGateFlagsAGateNamedCIOKOnEveryRun(t *testing.T) {
 	yml := strings.Replace(ciOKGateFixture,
-		"    name:\n      ${{ (github.event_name != 'pull_request' || needs.changes.outputs.land == 'true') && 'CI OK' || 'CI light' }}\n",
+		"    name:\n      ${{ (github.event_name != 'pull_request' || needs.changes.outputs.land == 'true') && 'CI OK' ||\n      needs.changes.outputs.ignored == 'true' && 'CI label only' || 'CI light' }}\n",
 		"    name: CI OK\n", 1)
 	got := validateCIOKGate(yml)
 	if len(got) != 1 || !strings.Contains(got[0], "CI light") {
 		t.Errorf("want one violation about the gate's name, got:\n%s", strings.Join(got, "\n"))
+	}
+}
+
+// PR #1326: the `claude-created` label's do-nothing run reported a green `CI light` beside the
+// real light run's red one, and read as the verdict. Its gate must carry a name of its own.
+func TestCIOKGateFlagsALabelRunNamedCILight(t *testing.T) {
+	yml := strings.Replace(ciOKGateFixture, " ||\n      needs.changes.outputs.ignored == 'true' && 'CI label only' || 'CI light' }}", " || 'CI light' }}", 1)
+	got := validateCIOKGate(yml)
+	if len(got) != 1 || !strings.Contains(got[0], "CI label only") {
+		t.Errorf("want one violation about the gate's name, got:\n%s", strings.Join(got, "\n"))
+	}
+}
+
+func TestCIOKGateFlagsAnIgnoredOutputNotFromTheModeStep(t *testing.T) {
+	yml := strings.Replace(ciOKGateFixture, "ignored: ${{ steps.mode.outputs.ignored }}", "ignored: 'false'", 1)
+	got := validateCIOKGate(yml)
+	if len(got) != 1 || !strings.Contains(got[0], "`ignored`") {
+		t.Errorf("want one violation about the `ignored` output, got:\n%s", strings.Join(got, "\n"))
 	}
 }
 
