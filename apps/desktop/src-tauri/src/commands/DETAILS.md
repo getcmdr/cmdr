@@ -514,6 +514,10 @@ A path the frontend sends is read as an app path at the command edge, `wire_path
   still takes `PathBuf`s until 10d. Text that's no app path (relative, empty) keeps today's answer there.
 - **A volume call takes the typed path** (`on_volume`), a POSIX `/x` on Windows read as volume-relative; text that names
   no place is refused like a `..`. `read_on_volume` is the same without the bug report, for an agent's stored text.
+  The unlock commands (and the MCP `unlock` tool) read their container path through `on_volume` before the route;
+  the probes pick their volume through `path_checks::box_volume` (`resolve` on the text's `read_on_volume` reading,
+  else the volume by id); `stat_paths_kinds` routes a route-served path through `app_path`. A write start's checked
+  `PathBuf` crosses back for the scan preview's route at `checked_as_app_path`, until the starts take app paths (10d).
 - **While escapes aren't live, an escape-range code point is literal** (`from_literal_store`), so a path crosses byte
   for byte.
 - **The transfer dialog's destination box is person-typed and VOLUME-RELATIVE.** Its probes (`path_exists` /
