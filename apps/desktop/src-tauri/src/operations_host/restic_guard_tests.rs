@@ -473,7 +473,7 @@ async fn a_write_refuses_when_the_route_cant_decide() {
     );
 
     let resolved = get_volume_manager()
-        .resolve(&id, &crate::test_support::native_app_path(IN_VIEW))
+        .resolve(&id, AppPath::from_normalized(IN_VIEW).expect("a canonical view path"))
         .await;
     assert_eq!(resolved.routed, None, "a read goes to the drive");
     assert_eq!(resolved.unconfirmed, Some(RoutedKind::Restic));
