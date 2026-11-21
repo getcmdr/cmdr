@@ -770,6 +770,10 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       The release reads the committed files (`desktop-group-policy-fresh` already holds them to `policies.json`).
 54. [S] Windows. E2E smoke on `windows-latest`: `tauri-plugin-playwright` over TCP, three-way helpers, a Windows fixture
     root, a small spec subset. Needs the app to run on Windows (34–36).
+    - **The Rust half is in (2026-11-21)**: the Windows lane's `tests` job runs every member's suite on `windows-latest`
+      against a shrink-only known-failures list (`scripts/windows-test-baseline/ci-known-failures.tsv`, 239 entries on
+      2026-11-21), required for Rust-touching landings like clippy (`docs/tooling/ci.md` § Windows lane). The E2E smoke
+      above is what's left.
 55. [M] Windows. Windows QA pass on a real machine: an agent drives the checklist and fixes what it finds; David QAs
     look, feel, and timing-sensitive UI. Open from the first real-Windows check (2026-11-19,
     `docs/notes/windows-port/real-windows-check-2026-11-19.md`): the check's three low findings, now #1305 (the "Skip
