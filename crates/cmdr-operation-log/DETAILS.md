@@ -114,9 +114,11 @@ newest op id then on record (`INSERT OR IGNORE`: once, ever), and `stored_path_r
 for an op at or below it (UUIDv7 ids sort by time as text) and for every op while no mark exists. A reader turns a
 stored path into an app path with `StoredPathReading::app_path`, which for `Literal` goes through
 `AppPathBuf::from_literal_store`: the file the row named, exactly. No row changes shape, so it's no migration step. ❗
-Every reader that turns a stored path into a typed path goes through it (the rollback planner's conversion, the plan's
-milestone 8); a `from_wire` of a stored row skips the mark. Tag writes journal here too (`OpKind::Tag`), so they're
-covered.
+Every reader that turns a stored path into a typed path goes through it; a `from_wire` of a stored row skips the mark.
+Its first reader is the rollback planner, once `RollbackUnit` carries app paths built in `rollback_unit_of` (where the
+op id and the stored text are), the plan's milestone 10a, before escapes go live. Until then the planner crosses once,
+`rollback/target.rs`' `app_path_of` over the unit's `PathBuf`, which is the identity while no escape exists. Tag writes
+journal here too (`OpKind::Tag`), so they're covered.
 
 ## Case folding, not a collation
 
@@ -159,6 +161,14 @@ appended step). The shape and its non-obvious choices (the fourth, `operation_tr
     as `/adb:/serial/x`: a path no volume answers to, in the item views AND in the `RollbackUnit` the rollback hands to
     the volume. No real folder name can hold `://` (a name has no `/`), so the rule can't misfire on a local path. Rows
     written before it keep their mangled chain. Pinned by `intern_dir_round_trips_a_scheme_rooted_path`.
+  - **On Windows a drive and a UNC share are ONE name each too** (`store/dirs.rs`, `split_root`): `C:/` (the letter
+    uppercased, as the app path spells it) and `//server/share/`, each ending in `/`, which no real name can, so
+    `reconstruct_dir_path` renders `C:/x/y` and `//srv/share/x` again, and a folder NAMED `C:` under `/` stays `/C:`.
+    Split on `/` like the rest, they came back as `/C:/x/y` and `/srv/share/x`, paths a rollback would hand a volume
+    that never held them. Only under the Windows rules (`PathFlavor::HOST`): on macOS and Linux `C:/x` is relative text
+    and a leading `//` is the `/` root, so every POSIX row keeps its bytes. No migration: no Windows install has rows.
+    The leaf joins by `join_leaf_text` (`Path::join`'s rule over `/` alone; `Path::join` wrote `C:/x\a` there). Pinned
+    by `a_drive_or_unc_path_is_one_root_name_on_windows` (on every OS, through `intern_dir_as`) and its POSIX twin.
 - **`operations` — one row per batch.** `op_id` (the pipeline UUID), typed `kind` + nullable `archive_subkind`,
   `initiator`, the two-axis status (`execution_status` + `rollback_state` + nullable `not_rollbackable_reason`),
   `rolls_back_op_id` (the rollback linkage), source/dest volume ids, timestamps, `item_count` (the **planned** total,
@@ -642,12 +652,13 @@ fork any of them.
      `scan_preview/volume.rs`) key a seen-set on the bare inode with no device, so every file would join that set
      (memory on a 1M-file scan), and same-numbered inodes on two devices under one walked tree would dedupe as one file.
    - **Spelled identically ⇒ self** (the very path the entry sits at).
-   - **Otherwise the listings decide** (`listing_confirms_twin`): for each component whose spelling differs, list its
-     parent (sliced from the landed path, so a remote `scheme://` root survives) and compare EXACT names. Only the
-     landed spelling listed and the target spelling absent ⇒ the volume folded the target onto the landed entry ⇒ self.
-     Both listed ⇒ two entries ⇒ `RestoreTargetOccupied`. Neither, only the target, or a failed listing ⇒ unproven ⇒
-     occupied too. The same rule covers NFC/NFD-only differences and a move between case-twin folders. It costs one
-     listing per differing component, and only when the target is already occupied.
+   - **Otherwise the listings decide** (`listing_confirms_twin`): for each name whose spelling differs, list its parent
+     (the landed path's app-path ancestor, so a remote root stays `sftp://nas/` and a remote name holding `\` stays one
+     name on Windows; two different roots never twin) and compare EXACT names. Only the landed spelling listed and the
+     target spelling absent ⇒ the volume folded the target onto the landed entry ⇒ self. Both listed ⇒ two entries ⇒
+     `RestoreTargetOccupied`. Neither, only the target, or a failed listing ⇒ unproven ⇒ occupied too. The same rule
+     covers NFC/NFD-only differences and a move between case-twin folders. It costs one listing per differing component,
+     and only when the target is already occupied.
 
    Pinned by `rollback/decision_tests.rs` and `crates/cmdr-operations/src/rollback/planner_tests/case_twin_tests.rs`:
    three case-sensitive `InMemoryVolume` cells that must skip and keep the occupant's bytes, and a macOS cell on the
@@ -661,12 +672,14 @@ the end state the undo wanted already holds. That's only true for a path the vol
 operation ran (`network/DETAILS.md` § "Editing a connected place"). Reading that refusal as "gone" reported a clean undo
 that left every copied file on the server (seen on a real NAS, 2026-09-11).
 
-So `missing_item` checks every side an item touches (both ends of a restore) against `volume.root()`, by whole path
-components, and a path outside one is `SkipReason::Failed`: the op lands `partially_rolled_back`. A path inside the root
-keeps the idempotent no-op. It fails safe in the one other shape that reaches it, a local share whose active mount root
-moved to a second mount: a path under the old mount reads as outside, and the item is reported unreversed rather than
-counted. Pinned by `planner_tests/root_reach_tests.rs`, where `RootFenced` (`planner_tests/test_support.rs`) stands in
-for the refusing volume, since `InMemoryVolume` serves any path it holds.
+So `missing_item` checks every side an item touches (both ends of a restore) against `volume.root()`, by whole names
+(the app path's `starts_with`), and a path outside one is `SkipReason::Failed`: the op lands `partially_rolled_back`. A
+recorded path holding a `..` sits under no root, so it's `Failed` too: `Path::starts_with` read `/Volumes/x/../y` as
+under `/Volumes/x`, which it isn't (`rollback/target.rs`' test). A path inside the root keeps the idempotent no-op. It
+fails safe in the one other shape that reaches it, a local share whose active mount root moved to a second mount: a path
+under the old mount reads as outside, and the item is reported unreversed rather than counted. Pinned by
+`planner_tests/root_reach_tests.rs`, where `RootFenced` (`planner_tests/test_support.rs`) stands in for the refusing
+volume, since `InMemoryVolume` serves any path it holds.
 
 **A restore-move whose item is gone asks the OTHER side before calling it done** (`restore_move`). Back at its original
 path (an earlier undo, Finder's Put Back) is the end state the undo wanted: `AlreadyGone`, credited. Absent from BOTH
