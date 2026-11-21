@@ -39,8 +39,7 @@
     reason = "a benchmark's whole product is the numbers it prints, and `cargo test --nocapture` is where they have to land: the fern logger isn't wired up in a unit-test binary, so `log::info!` would swallow them. Scoped to this hardware-only, `#[ignore]`d module."
 )]
 
-use cmdr_fs::app_path::AppPath;
-use std::path::Path;
+use cmdr_fs::app_path::RelativeAppPath;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -117,7 +116,10 @@ async fn mtp_read_range_hardware_bench() {
     println!("target: {rel_path} ({:.1} MB)", size as f64 / 1e6);
 
     let volume = MtpVolume::new(Arc::clone(connection_manager()), &device_id, storage.id, &storage.name);
-    let path = Path::new(&rel_path);
+    let path = volume
+        .root()
+        .join_relative(RelativeAppPath::new(&rel_path).expect("a device path is plain names"))
+        .expect("joins under the storage root");
 
     // Disjoint, forward-walking offsets: no iteration reads a block a previous
     // one already pulled into the device's cache.
@@ -129,7 +131,7 @@ async fn mtp_read_range_hardware_bench() {
         let offset = step * i as u64;
         let start = Instant::now();
         let bytes = volume
-            .read_range(&AppPath::legacy_unchecked(path), offset, READ_LEN)
+            .read_range(&path, offset, READ_LEN)
             .await
             .expect("read_range should succeed");
         let elapsed = start.elapsed();

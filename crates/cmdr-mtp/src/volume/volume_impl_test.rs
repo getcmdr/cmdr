@@ -6,8 +6,6 @@
 //! asserted by connecting one and taking it away again.
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
-use std::path::Path;
 use std::sync::Arc;
 
 use cmdr_fs::volume::{IndexWalk, Volume, WatchCoverage};
@@ -124,12 +122,33 @@ async fn an_index_walk_descends_every_folder_an_mtp_phone_lists() {
     for folder in folders {
         assert!(!folder.is_symlink, "{} is not a link", folder.path);
         assert_eq!(
-            volume.index_walk(&AppPath::legacy_unchecked(Path::new(&folder.path)), folder.is_symlink),
+            volume.index_walk(&crate::volume::test_paths::row(&folder.path), folder.is_symlink),
             IndexWalk::Descend,
             "{} is walked",
             folder.path
         );
     }
+
+    device.teardown(test_connection_manager()).await;
+}
+
+/// A device name holding a literal escape-range code point (`U+10FEE9`, plane-16 private
+/// use) reaches the app's typed path as that code point's escaped bytes, the spelling its
+/// row is handed back in. A stat looks it up by the device's own spelling, so it finds the
+/// object, as the `std::path` door found it; read as app text, the name matched nothing.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_name_holding_an_escape_range_code_point_stats_by_the_devices_spelling() {
+    let _guard = device_lock().await;
+    let fixture = crate::virtual_device::setup_virtual_mtp_device();
+    std::fs::write(fixture.root().join("internal/Documents/pua-\u{10FEE9}.txt"), "x").expect("the fixture file");
+    let device = crate::testing::connect_fixture(test_connection_manager(), fixture).await;
+    let volume = volume_for(test_connection_manager(), &device, Some("/Documents")).await;
+
+    // The bytes of U+10FEE9 (F4 8F BB A9), one byte escape each.
+    let typed = app_path::AppPath::from_normalized("/Documents/pua-\u{10FEF4}\u{10FE8F}\u{10FEBB}\u{10FEA9}.txt")
+        .expect("the canonical spelling of that native name");
+    let stat = volume.get_metadata(typed).await.expect("the object is there");
+    assert_eq!(stat.name, "pua-\u{10FEE9}.txt", "the row carries the device's spelling");
 
     device.teardown(test_connection_manager()).await;
 }

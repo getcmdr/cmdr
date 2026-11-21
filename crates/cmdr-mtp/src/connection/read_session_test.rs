@@ -99,7 +99,7 @@ fn spawn_listing(device: &ConnectedDevice) -> tokio::task::JoinHandle<()> {
     let (id, storage_id) = (device.id.clone(), device.storage_id);
     tokio::spawn(async move {
         manager
-            .invalidate_listing_cache(&id, storage_id, std::path::Path::new("/"))
+            .invalidate_listing_cache(&id, storage_id, super::storage_path::storage_root())
             .await;
         manager
             .list_directory(&id, storage_id, "/")

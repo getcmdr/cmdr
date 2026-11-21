@@ -137,7 +137,10 @@ pub async fn volume_for(
     let volume = MtpVolume::new(Arc::clone(manager), &device.id, device.storage_id, "Test");
     if let Some(path) = primed {
         volume
-            .list_directory(&AppPath::legacy_unchecked(Path::new(path)), None)
+            .list_directory(
+                AppPath::from_normalized(path).unwrap_or_else(|why| panic!("{path:?} is a storage path: {why}")),
+                None,
+            )
             .await
             .unwrap_or_else(|error| panic!("priming the {path} listing: {error:?}"));
     }

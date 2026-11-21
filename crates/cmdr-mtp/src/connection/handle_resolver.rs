@@ -29,10 +29,12 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use mtp_rs::{ObjectHandle, StorageId};
 
 use super::errors::MtpConnectionError;
-use super::{MtpConnectionManager, acquire_device_lock};
+use super::storage_path::{child, storage_root};
+use super::{MtpConnectionManager, acquire_device_lock, std_path_for_host};
 
 /// Upper bound on how many parent hops the walk will follow before giving up.
 /// Real MTP trees are shallow (a handful of levels); this only exists to bound a
@@ -79,15 +81,23 @@ fn is_root_handle(handle: ObjectHandle) -> bool {
 /// - `None` if a `lookup` returns `None` (handle gone/invalid), or the chain
 ///   exceeds [`MAX_WALK_DEPTH`] (cycle guard).
 ///
-/// `start` being a root handle itself resolves to `/` (the storage root).
+/// `start` being a root handle itself resolves to `/` (the storage root). A name on the
+/// chain that isn't one plain name (`..`, `a/b`) resolves to `None` too: no path names
+/// that object, and a joined one would name another.
 fn walk_handle_to_path(
     start: ObjectHandle,
-    reverse_cache: &HashMap<ObjectHandle, PathBuf>,
+    reverse_cache: &HashMap<ObjectHandle, AppPathBuf>,
     mut lookup: impl FnMut(ObjectHandle) -> Option<(ObjectHandle, String)>,
-) -> Option<PathBuf> {
+) -> Option<AppPathBuf> {
     if is_root_handle(start) {
-        return Some(PathBuf::from("/"));
+        return Some(storage_root().to_owned());
     }
+    let under = |folder: &AppPath, names_leaf_first: &[String]| {
+        names_leaf_first
+            .iter()
+            .rev()
+            .try_fold(folder.to_owned(), |path, name| child(&path, name))
+    };
 
     // Filenames from `start` up toward root, in child→ancestor order; reversed
     // into a path at the end.
@@ -98,11 +108,7 @@ fn walk_handle_to_path(
         // Cached ancestor: splice the known prefix in front of what we've
         // collected and we're done — no more USB round trips.
         if let Some(cached) = reverse_cache.get(&current) {
-            let mut path = cached.clone();
-            for name in names_leaf_first.iter().rev() {
-                path.push(name);
-            }
-            return Some(path);
+            return under(cached, &names_leaf_first);
         }
 
         let (parent, filename) = lookup(current)?;
@@ -110,11 +116,7 @@ fn walk_handle_to_path(
 
         if is_root_handle(parent) {
             // Reached the storage root: build `/<a>/<b>/…` from the names.
-            let mut path = PathBuf::from("/");
-            for name in names_leaf_first.iter().rev() {
-                path.push(name);
-            }
-            return Some(path);
+            return under(storage_root(), &names_leaf_first);
         }
 
         current = parent;
@@ -160,7 +162,7 @@ impl MtpConnectionManager {
         device_id: &str,
         storage_id: u32,
         handle: ObjectHandle,
-    ) -> Result<PathBuf, MtpConnectionError> {
+    ) -> Result<AppPathBuf, MtpConnectionError> {
         // Foreground priority: this resolve drives the live update of the
         // CURRENTLY-VISIBLE pane (the targeted-refresh path) and the not-scanning
         // index feed. Either way it's a small bounded walk that should preempt the
@@ -275,7 +277,7 @@ impl MtpConnectionManager {
 
         let is_directory = info.is_folder();
         Ok(ResolvedMtpObject {
-            path,
+            path: std_path_for_host(&path).into_owned(),
             is_directory,
             size: if is_directory { None } else { Some(info.size) },
             modified_at: info.modified.and_then(super::convert_mtp_datetime),
@@ -295,7 +297,7 @@ impl MtpConnectionManager {
         storage_id: u32,
         handle: ObjectHandle,
         device_arc: &std::sync::Arc<tokio::sync::Mutex<mtp_rs::MtpDevice>>,
-        reverse_cache: &HashMap<ObjectHandle, PathBuf>,
+        reverse_cache: &HashMap<ObjectHandle, AppPathBuf>,
     ) -> Result<HashMap<ObjectHandle, (ObjectHandle, String)>, MtpConnectionError> {
         let mut memo: HashMap<ObjectHandle, (ObjectHandle, String)> = HashMap::new();
 
@@ -334,11 +336,17 @@ impl MtpConnectionManager {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use std::path::PathBuf;
+
+    use cmdr_fs::app_path::AppPathBuf;
 
     use mtp_rs::ObjectHandle;
 
+    use super::super::storage_path::storage_path;
     use super::{MAX_WALK_DEPTH, walk_handle_to_path};
+
+    fn at(text: &str) -> AppPathBuf {
+        storage_path(text).expect("a storage path")
+    }
 
     /// Build a `lookup` closure from a `handle -> (parent, filename)` graph, and
     /// a counter so tests can assert how many round trips the walk made.
@@ -361,7 +369,7 @@ mod tests {
         let calls = std::cell::RefCell::new(Vec::new());
         let graph = HashMap::new();
         let path = walk_handle_to_path(ObjectHandle::ROOT, &cache, graph_lookup(&graph, &calls));
-        assert_eq!(path, Some(PathBuf::from("/")));
+        assert_eq!(path, Some(at("/")));
         // No lookups for a root handle.
         assert!(calls.borrow().is_empty());
     }
@@ -372,7 +380,7 @@ mod tests {
         let calls = std::cell::RefCell::new(Vec::new());
         let graph = HashMap::new();
         let path = walk_handle_to_path(ObjectHandle::ALL, &cache, graph_lookup(&graph, &calls));
-        assert_eq!(path, Some(PathBuf::from("/")));
+        assert_eq!(path, Some(at("/")));
     }
 
     #[test]
@@ -383,7 +391,7 @@ mod tests {
         let cache = HashMap::new();
         let calls = std::cell::RefCell::new(Vec::new());
         let path = walk_handle_to_path(ObjectHandle(10), &cache, graph_lookup(&graph, &calls));
-        assert_eq!(path, Some(PathBuf::from("/DCIM")));
+        assert_eq!(path, Some(at("/DCIM")));
         assert_eq!(*calls.borrow(), vec![10]);
     }
 
@@ -395,7 +403,7 @@ mod tests {
         let cache = HashMap::new();
         let calls = std::cell::RefCell::new(Vec::new());
         let path = walk_handle_to_path(ObjectHandle(10), &cache, graph_lookup(&graph, &calls));
-        assert_eq!(path, Some(PathBuf::from("/Download")));
+        assert_eq!(path, Some(at("/Download")));
     }
 
     #[test]
@@ -408,7 +416,7 @@ mod tests {
         let cache = HashMap::new();
         let calls = std::cell::RefCell::new(Vec::new());
         let path = walk_handle_to_path(ObjectHandle(30), &cache, graph_lookup(&graph, &calls));
-        assert_eq!(path, Some(PathBuf::from("/DCIM/Camera/IMG.jpg")));
+        assert_eq!(path, Some(at("/DCIM/Camera/IMG.jpg")));
         // Walked all three levels.
         assert_eq!(*calls.borrow(), vec![30, 20, 10]);
     }
@@ -423,21 +431,21 @@ mod tests {
         graph.insert(20u32, (10u32, "Camera"));
         graph.insert(10u32, (0u32, "DCIM"));
         let mut cache = HashMap::new();
-        cache.insert(ObjectHandle(20), PathBuf::from("/DCIM/Camera"));
+        cache.insert(ObjectHandle(20), at("/DCIM/Camera"));
         let calls = std::cell::RefCell::new(Vec::new());
         let path = walk_handle_to_path(ObjectHandle(30), &cache, graph_lookup(&graph, &calls));
-        assert_eq!(path, Some(PathBuf::from("/DCIM/Camera/IMG.jpg")));
+        assert_eq!(path, Some(at("/DCIM/Camera/IMG.jpg")));
         assert_eq!(*calls.borrow(), vec![30], "only the leaf should be looked up");
     }
 
     #[test]
     fn start_handle_already_cached_needs_no_lookup() {
         let mut cache = HashMap::new();
-        cache.insert(ObjectHandle(42), PathBuf::from("/Music/song.mp3"));
+        cache.insert(ObjectHandle(42), at("/Music/song.mp3"));
         let graph = HashMap::new();
         let calls = std::cell::RefCell::new(Vec::new());
         let path = walk_handle_to_path(ObjectHandle(42), &cache, graph_lookup(&graph, &calls));
-        assert_eq!(path, Some(PathBuf::from("/Music/song.mp3")));
+        assert_eq!(path, Some(at("/Music/song.mp3")));
         assert!(calls.borrow().is_empty());
     }
 

@@ -6,14 +6,15 @@
 //! `host_seam_test.rs` or one of the `device_tests` modules, which carry the
 //! `virtual-mtp` gate.
 
-use std::path::PathBuf;
 use std::sync::Arc;
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::host::VolumeHost;
 
+use super::storage_path::storage_path;
 use super::{
     ConnectedDeviceInfo, MtpConnectionManager, MtpDisconnectReason, MtpObjectInfo, MtpVolumeRegistrar, events,
-    get_mtp_icon_id, normalize_mtp_path, resolve_device_location_id,
+    get_mtp_icon_id, resolve_device_location_id,
 };
 
 fn detached_manager() -> Arc<MtpConnectionManager> {
@@ -87,36 +88,48 @@ fn resolve_device_location_id_is_none_when_no_device_matches() {
 
 #[test]
 fn test_normalize_mtp_path_empty() {
-    assert_eq!(normalize_mtp_path(""), PathBuf::from("/"));
+    assert_eq!(storage_path("").as_deref().map(AppPath::as_str), Some("/"));
 }
 
 #[test]
 fn test_normalize_mtp_path_dot() {
-    assert_eq!(normalize_mtp_path("."), PathBuf::from("/"));
+    assert_eq!(storage_path(".").as_deref().map(AppPath::as_str), Some("/"));
 }
 
 #[test]
 fn test_normalize_mtp_path_root() {
-    assert_eq!(normalize_mtp_path("/"), PathBuf::from("/"));
+    assert_eq!(storage_path("/").as_deref().map(AppPath::as_str), Some("/"));
 }
 
 #[test]
 fn test_normalize_mtp_path_absolute() {
-    assert_eq!(normalize_mtp_path("/DCIM"), PathBuf::from("/DCIM"));
-    assert_eq!(normalize_mtp_path("/DCIM/Camera"), PathBuf::from("/DCIM/Camera"));
+    assert_eq!(storage_path("/DCIM").as_deref().map(AppPath::as_str), Some("/DCIM"));
+    assert_eq!(
+        storage_path("/DCIM/Camera").as_deref().map(AppPath::as_str),
+        Some("/DCIM/Camera")
+    );
 }
 
 #[test]
 fn test_normalize_mtp_path_relative() {
-    assert_eq!(normalize_mtp_path("DCIM"), PathBuf::from("/DCIM"));
-    assert_eq!(normalize_mtp_path("DCIM/Camera"), PathBuf::from("/DCIM/Camera"));
+    assert_eq!(storage_path("DCIM").as_deref().map(AppPath::as_str), Some("/DCIM"));
+    assert_eq!(
+        storage_path("DCIM/Camera").as_deref().map(AppPath::as_str),
+        Some("/DCIM/Camera")
+    );
 }
 
 #[test]
 fn test_normalize_mtp_path_special_characters() {
     // Test paths with spaces and special characters
-    assert_eq!(normalize_mtp_path("/My Files"), PathBuf::from("/My Files"));
-    assert_eq!(normalize_mtp_path("Photos & Videos"), PathBuf::from("/Photos & Videos"));
+    assert_eq!(
+        storage_path("/My Files").as_deref().map(AppPath::as_str),
+        Some("/My Files")
+    );
+    assert_eq!(
+        storage_path("Photos & Videos").as_deref().map(AppPath::as_str),
+        Some("/Photos & Videos")
+    );
 }
 
 // ========================================================================

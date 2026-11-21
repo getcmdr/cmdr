@@ -53,6 +53,10 @@ mod twins_test;
 #[cfg(all(test, feature = "virtual-device"))]
 mod volume_impl_test;
 
+/// The typed paths a cell hands the volume: a row's own path, and a name under a folder.
+#[cfg(test)]
+mod test_paths;
+
 /// The `VolumeReadStream` → chunk-stream adapter the upload path feeds `mtp-rs`.
 ///
 /// Published under the test gate for the cells that assert on its per-chunk
@@ -63,8 +67,9 @@ mod volume_impl_test;
 pub use streams::volume_read_stream_to_chunk_stream;
 
 use crate::connection::MtpConnectionManager;
-use cmdr_fs::app_path::BridgedPath;
-use std::path::{Path, PathBuf};
+use crate::connection::storage_path::{storage_path, storage_url, url_of};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathFlavor, unescape_bytes};
+use std::borrow::Cow;
 use std::sync::Arc;
 
 /// A volume backed by an MTP device storage.
@@ -82,8 +87,8 @@ pub struct MtpVolume {
     pub(super) device_id: String,
     /// Storage ID within the device
     pub(super) storage_id: u32,
-    /// Virtual root path for this volume (for example, "/mtp-20-5/65537")
-    root: BridgedPath,
+    /// The storage's URL, `mtp://{device_id}/{storage_id}`: this volume's root.
+    root: AppPathBuf,
     /// Volume ID for listing cache lookups (format: "{device_id}:{storage_id}").
     volume_id: String,
 }
@@ -103,7 +108,7 @@ impl MtpVolume {
             manager,
             device_id: device_id.to_string(),
             storage_id,
-            root: BridgedPath::new(PathBuf::from(format!("mtp://{}/{}", device_id, storage_id))),
+            root: root_of(device_id, storage_id),
             volume_id,
         }
     }
@@ -115,42 +120,22 @@ impl MtpVolume {
     /// - Absolute path: `/DCIM/Camera`
     /// - Relative path: `DCIM/Camera`
     ///
-    /// The MTP API expects paths relative to the storage root (for example, `DCIM/Camera`).
-    pub(super) fn to_mtp_path(&self, path: &Path) -> String {
-        let path_str = path.to_string_lossy();
+    /// The MTP API expects paths relative to the storage root (for example,
+    /// `DCIM/Camera`). Text work on the path's own spelling, split on `/` alone, so
+    /// it answers the same on every OS.
+    pub(super) fn to_mtp_path(&self, path: &AppPath) -> String {
+        mtp_path_of_text(&device_text(path))
+    }
 
-        // Handle MTP URLs (mtp://device-id/storage-id/optional/path)
-        if path_str.starts_with("mtp://") {
-            // Parse: mtp://mtp-0-1/65537/DCIM/Camera -> DCIM/Camera
-            // The format is: mtp://{device_id}/{storage_id}/{path}
-            let without_scheme = path_str.strip_prefix("mtp://").unwrap_or(&path_str);
-
-            // Find the device_id/storage_id prefix and skip it
-            // Device ID format: mtp-{bus}-{address} (like mtp-0-1)
-            // So we need to skip: device_id/storage_id/
-            let parts: Vec<&str> = without_scheme.splitn(3, '/').collect();
-            // parts[0] = device_id (like "mtp-0-1")
-            // parts[1] = storage_id (like "65537")
-            // parts[2] = inner path (like "DCIM/Camera") or absent for root
-
-            return if parts.len() >= 3 {
-                parts[2].to_string()
-            } else {
-                String::new() // Root of storage
-            };
-        }
-
-        // Handle empty or root paths
-        if path_str.is_empty() || path_str == "/" || path_str == "." {
-            return String::new();
-        }
-
-        // Strip leading slash if present
-        path_str.strip_prefix('/').unwrap_or(&path_str).to_string()
+    /// `path`'s storage path, the inner spelling (`/DCIM/Camera`, `/` for the root),
+    /// or `None` for one no object can sit at (a `..` name).
+    pub(super) fn storage_path_of(&self, path: &AppPath) -> Option<AppPathBuf> {
+        storage_path(&self.to_mtp_path(path))
     }
 
     /// Normalizes any caller-supplied path on this volume to the canonical
-    /// absolute MTP URL (`mtp://{device_id}/{storage_id}[/inner/path]`).
+    /// absolute MTP URL (`mtp://{device_id}/{storage_id}[/inner/path]`). A URL
+    /// comes back as it is; `None` for a path no object can sit at.
     ///
     /// `notify_mutation` reports its PARENT path in this spelling, and so does
     /// the event loop. The app's listing cache folds it onto
@@ -160,16 +145,77 @@ impl MtpVolume {
     /// The per-ENTRY paths inside a listing are the inner form
     /// (`/Documents/notes.txt`), so the `Removed` patch matches entries by NAME
     /// (see `cmdr-listing`'s `remove_entry_by_name`).
-    fn to_url_path(&self, path: &Path) -> PathBuf {
-        let path_str = path.to_string_lossy();
-        if path_str.starts_with("mtp://") {
-            return path.to_path_buf();
+    fn to_url_path(&self, path: &AppPath) -> Option<AppPathBuf> {
+        if device_text(path).starts_with("mtp://") {
+            return Some(path.to_owned());
         }
-        let inner = self.to_mtp_path(path);
-        if inner.is_empty() {
-            self.root.clone().into_path_buf()
+        url_of(&self.device_id, self.storage_id, &self.storage_path_of(path)?)
+    }
+}
+
+/// [`MtpVolume::to_mtp_path`] over a path's text, where the URL, absolute, relative,
+/// and empty spellings a `std::path` caller still sends all reduce.
+fn mtp_path_of_text(path_str: &str) -> String {
+    // Handle MTP URLs (mtp://device-id/storage-id/optional/path)
+    if let Some(without_scheme) = path_str.strip_prefix("mtp://") {
+        // Parse: mtp://mtp-0-1/65537/DCIM/Camera -> DCIM/Camera
+        // The format is: mtp://{device_id}/{storage_id}/{path}, so skip
+        // device_id/storage_id/.
+        let parts: Vec<&str> = without_scheme.splitn(3, '/').collect();
+        // parts[0] = device_id (like "mtp-0-1")
+        // parts[1] = storage_id (like "65537")
+        // parts[2] = inner path (like "DCIM/Camera") or absent for root
+        return if parts.len() >= 3 {
+            parts[2].to_string()
         } else {
-            self.root.join(inner)
-        }
+            String::new() // Root of storage
+        };
+    }
+
+    // Handle empty or root paths
+    if path_str.is_empty() || path_str == "/" || path_str == "." {
+        return String::new();
+    }
+
+    // Strip leading slash if present
+    path_str.strip_prefix('/').unwrap_or(path_str).to_string()
+}
+
+/// The volume root, `mtp://{device_id}/{storage_id}`. Every id `mtp_ids::device_id_for`
+/// mints is a plain authority (a slug and a digest); a hand-made one holding a `/`
+/// reads as `parse` reads it.
+fn root_of(device_id: &str, storage_id: u32) -> AppPathBuf {
+    storage_url(device_id, storage_id)
+        .or_else(|| AppPathBuf::parse(&format!("mtp://{device_id}/{storage_id}"), PathFlavor::Posix).ok())
+        .unwrap_or_else(|| storage_url("mtp-unnamed", storage_id).expect("a plain authority makes a storage URL"))
+}
+
+/// The text of `path` as the session layer reads it: [`device_spelling`].
+fn device_text(path: &AppPath) -> Cow<'_, str> {
+    device_spelling(path.as_str())
+}
+
+/// One name as a device spells it, or `None` for a name whose native bytes aren't text
+/// (a Linux name joined onto a phone path): ❌ never its lossy spelling, which could
+/// match a sibling the device really lists as `caf\u{FFFD}.txt`. What a lookup by name,
+/// a new folder's name, or an upload's name takes.
+fn device_name(name: &str) -> Option<Cow<'_, str>> {
+    match unescape_bytes(name).ok()? {
+        Cow::Borrowed(_) => Some(Cow::Borrowed(name)),
+        Cow::Owned(bytes) => String::from_utf8(bytes).ok().map(Cow::Owned),
+    }
+}
+
+/// App text (a path, or one name) as a device spells it: an escape (a name no device
+/// spelled, joined in from a Linux disk, or a literal escape-range code point the bridge
+/// escaped) as the native bytes' lossy text, the text a `std::path` view of it gave. A
+/// name compared with a listing's `FileEntry.name` goes through here, since a device
+/// lists the literal spelling.
+fn device_spelling(text: &str) -> Cow<'_, str> {
+    match unescape_bytes(text) {
+        Ok(Cow::Borrowed(_)) => Cow::Borrowed(text),
+        Ok(Cow::Owned(bytes)) => Cow::Owned(String::from_utf8_lossy(&bytes).into_owned()),
+        // A unit escape (an unpaired surrogate on Windows): what a person reads.
+        Err(_) => cmdr_fs::app_path::shown_name(text),
     }
 }

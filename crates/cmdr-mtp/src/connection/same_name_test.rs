@@ -118,3 +118,49 @@ async fn renaming_a_twin_row_renames_that_object_and_leaves_the_other() {
 
     device.teardown(connection_manager()).await;
 }
+
+/// ❗ A device that names an object `..`, ``, `.`, or `a/b` lists no row for it: its row's
+/// path would have named the folder's parent, the folder itself, or an object in another
+/// folder, so a delete of that row acted on something nobody picked. The rest of the
+/// folder lists as before.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn an_object_no_path_can_address_lists_no_row() {
+    let _guard = device_lock().await;
+    let manager = connection_manager();
+    let device = connect_virtual_device(manager).await;
+    let entries = manager
+        .list_directory(&device.id, device.storage_id, "/Documents")
+        .await
+        .expect("list Documents should succeed");
+    let report = entries
+        .iter()
+        .find(|entry| entry.name == "report.txt")
+        .and_then(|entry| entry.inode)
+        .expect("the fixture holds report.txt");
+
+    for name in ["..", "", ".", "a/b"] {
+        manager
+            .report_object_as_for_test(&device.id, mtp_rs::ObjectHandle(report), name)
+            .await;
+        let listed = manager
+            .list_directory(&device.id, device.storage_id, "/Documents")
+            .await
+            .expect("the folder still lists");
+        assert!(
+            listed.iter().all(|entry| entry.inode != Some(report)),
+            "an object named {name:?} must be no row, got {:?}",
+            listed
+                .iter()
+                .map(|entry| (&entry.name, &entry.path))
+                .collect::<Vec<_>>()
+        );
+        assert!(
+            listed
+                .iter()
+                .any(|entry| entry.name == "notes.txt" && entry.path == "/Documents/notes.txt"),
+            "the rest of the folder lists as before, with {name:?} beside it"
+        );
+    }
+
+    device.teardown(manager).await;
+}

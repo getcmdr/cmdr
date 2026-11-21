@@ -22,10 +22,10 @@
 //! The device-lifecycle sequence a user would have seen is
 //! `connection::events::device_lifecycle_test`.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path;
 use std::future::Future;
 use std::ops::ControlFlow;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 
@@ -37,6 +37,7 @@ use crate::connection::MtpConnectionManager;
 use crate::connection::events::no_device_events;
 use crate::testing::{ConnectedDevice, connect_virtual_device, device_lock, recording_registrar, volume_for};
 use crate::volume::MtpVolume;
+use crate::volume::test_paths::child;
 use cmdr_fs::volume::WriteMode;
 
 /// How many files the walked directory holds.
@@ -76,16 +77,16 @@ async fn recording_walk_fixture() -> (
 async fn a_walk_over_a_directory_reports_nothing_however_many_entries_it_holds() {
     let _guard = device_lock().await;
     let (listings, manager, device, volume) = recording_walk_fixture().await;
-    let dir = Path::new("/host-seam");
+    let dir = app_path!("/host-seam");
 
     volume
-        .create_directory(&AppPath::legacy_unchecked(dir))
+        .create_directory(dir)
         .await
         .expect("creating the walked directory");
     for i in 0..WALKED_FILES {
         volume
             .write_from_stream(
-                &AppPath::legacy_unchecked(&dir.join(format!("file-{i:03}.txt"))),
+                &child(dir, &format!("file-{i:03}.txt")),
                 WriteMode::CreateOrReplace,
                 StreamLength::Known(1),
                 Box::new(BytesStream::new(b"x".to_vec())),
@@ -104,10 +105,7 @@ async fn a_walk_over_a_directory_reports_nothing_however_many_entries_it_holds()
         WALKED_FILES + 1
     );
 
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(dir), None)
-        .await
-        .expect("listing the directory");
+    let entries = volume.list_directory(dir, None).await.expect("listing the directory");
     assert_eq!(entries.len(), WALKED_FILES, "the directory is there to be walked");
     assert_eq!(
         listings.change_count(),
@@ -115,36 +113,24 @@ async fn a_walk_over_a_directory_reports_nothing_however_many_entries_it_holds()
         "a listing is a READ: it crossed every entry and must tell the panes nothing"
     );
 
-    let one = dir.join("file-000.txt");
-    volume
-        .get_metadata(&AppPath::legacy_unchecked(&one))
-        .await
-        .expect("stat one entry");
+    let one = child(dir, "file-000.txt");
+    volume.get_metadata(&one).await.expect("stat one entry");
     assert_eq!(
         listings.change_count(),
         after_seeding,
         "a stat lists the parent to find its entry, and still reports nothing"
     );
 
-    let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(&one))
-        .await
-        .expect("open a read stream");
+    let mut stream = volume.open_read_stream(&one).await.expect("open a read stream");
     while stream.next_chunk().await.is_some() {}
-    volume
-        .read_range(&AppPath::legacy_unchecked(&one), 0, 1)
-        .await
-        .expect("a ranged read");
+    volume.read_range(&one, 0, 1).await.expect("a ranged read");
     assert_eq!(
         listings.change_count(),
         after_seeding,
         "reading bytes off the device is a read too, windowed or ranged"
     );
 
-    let scan = volume
-        .scan_for_copy(&AppPath::legacy_unchecked(dir))
-        .await
-        .expect("a copy scan");
+    let scan = volume.scan_for_copy(dir).await.expect("a copy scan");
     assert_eq!(scan.file_count, WALKED_FILES, "the scan walked the same tree");
     let conflicts = volume
         .scan_for_conflicts(
@@ -154,7 +140,7 @@ async fn a_walk_over_a_directory_reports_nothing_however_many_entries_it_holds()
                 modified: None,
                 is_directory: false,
             }],
-            &AppPath::legacy_unchecked(dir),
+            dir,
         )
         .await
         .expect("a conflict scan");
@@ -167,10 +153,7 @@ async fn a_walk_over_a_directory_reports_nothing_however_many_entries_it_holds()
 
     // One more mutation still costs exactly one call, so the counter is measuring
     // dispatch rather than having stopped moving.
-    volume
-        .delete(&AppPath::legacy_unchecked(&one))
-        .await
-        .expect("deleting one entry");
+    volume.delete(&one).await.expect("deleting one entry");
     assert_eq!(
         listings.change_count(),
         after_seeding + 1,

@@ -304,6 +304,33 @@ handle on upload"). A row still on screen then names a handle that belongs to so
 Pinned by `connection/stale_handle_test.rs` (a planted stale entry; the virtual device never reuses a handle) and
 `cache.rs`'s `path_handle_cache_tests`.
 
+## Storage paths are app paths (`storage_path.rs`)
+
+The session layer's paths (`/DCIM/Camera`, `/` for the storage root) are typed app paths under the POSIX `/` root, so
+every split and join is the app path's own on every OS. `PathBuf::join` wrote `\` on Windows, so a renamed twin came
+back as `/Documents\report-2.txt` and a device name holding `\` read as two (`crates/cmdr-fs/DETAILS.md` § "App paths").
+
+- **One door from text**: the session calls take `&str` (`DCIM/Camera`, `/DCIM/Camera`, ``, `.`), and `storage_path` is
+  where it turns typed. It is canonical, so `//`, `.`, and a trailing `/` fold the way `PathBuf`'s component-wise
+  equality folded them for the cache keys. A `..` name or a NUL that's no pick is no storage path: an op on one answers
+  `ObjectNotFound` naming the text asked about (`storage_path_on`, `storage_text`), which is what the device lookup
+  answered before.
+- **A listed name joins through `child`** (`AppName::from_app_spelling`). An object the device names `..`, ``, `.`, or
+  with a `/` lists no row (`directory_ops::entry_for_object`, a debug line per object): its row's path would have named
+  the folder's parent, the folder itself, or another folder's object, so a delete of that row reached something nobody
+  picked. A tree delete of a folder holding one refuses as `DirectoryNotEmpty`, and the handle walk resolves such a
+  chain to nothing (a blanket refresh). Pinned by `same_name_test::an_object_no_path_can_address_lists_no_row`.
+- **A new name the device took that no path can address** (a rename to `a/b`) still reports its text (`child_and_text`),
+  and the caches stay out of it.
+- **The report URL** (`url_of`, `mtp://{device}/{storage}[/inner]`) joins the storage path's names under `storage_url`,
+  the volume's root too.
+- **The host seams still take `&Path`**: `directory_changed`, `authoritative_listing`, `ScanBoundary::dir` / `file`, and
+  the `pub` `ResolvedMtpObject::path`. Each call crosses through `std_path_for_host`, the crate's one bridge call; its
+  doc names the milestone that types each seam. The whole-device `FullRefresh` key (`mtp://{device}`) is a host key
+  built as text, never an app path.
+- **Text that isn't valid Unicode keeps today's answer**: no device name holds an escape (`mtp-rs` hands over
+  `String`s), and a device name with a literal escape-range code point lists under its literal text, as the rows did.
+
 ## Same-named siblings
 
 PTP lets a folder hold two objects with the same name: a file is a database record keyed by a handle, and the name is
@@ -317,10 +344,10 @@ row two's file (#523).
   shared name, and the leaf of the path is the real name, so a copy names its destination after it and a walk below a
   twin folder builds relative paths from it. NUL because no real name can hold one (Android names are Linux names, PTP
   strings are NUL-terminated), so a pick never collides with a folder the device holds.
-- **"The folder holding this" steps over the pick**: `twins::folder_of`, ❌ never `Path::parent`, at every site that
-  lists, invalidates, or verifies a path's folder (resolver heal, mutations' parent check, the batch scan's grouping,
-  `MtpVolume::get_metadata`, uploads, the event loop's affected dir). A child of a twin folder is an ordinary child of
-  that row path.
+- **"The folder holding this" steps over the pick**: `twins::folder_of` (`twin_path::folder_of_app`), ❌ never `parent`,
+  at every site that lists, invalidates, or verifies a path's folder (resolver heal, mutations' parent check, the batch
+  scan's grouping, `MtpVolume::get_metadata`, uploads, the event loop's affected dir). A child of a twin folder is an
+  ordinary child of that row path.
 - **The cache holds both.** `PathHandleCache::record_listing` caches each row path like any other path (its reverse
   entry points at the row, so an event finds it), and marks the shared name `same_named` (no forward entry, nothing
   beneath it). A row path whose twin has since gone still reaches its object while the shared name now resolves to that
@@ -329,18 +356,18 @@ row two's file (#523).
   name answers `MtpConnectionError::AmbiguousName` and touches nothing. `MtpVolume` maps it to
   `VolumeError::DuplicateName`, its own variant (not SMB's look-alike `AmbiguousName`) so the person reads the device's
   cause, and `MtpVolume::presence` (so `exists`) counts it as taken, so a no-clobber rename or upload can't add a third.
-- **A twin's change re-reads its folder.** `MtpVolume::notify_mutation` given a row path minus its name (what
-  `Path::parent` of a row path yields) reports `FullRefresh` on the real folder: the by-name `Removed` / `Renamed`
-  patches can't tell a twin from its sibling.
+- **A twin's change re-reads its folder.** `MtpVolume::notify_mutation` given a row path minus its name (what `parent`
+  of a row path yields) reports `FullRefresh` on the real folder: the by-name `Removed` / `Renamed` patches can't tell a
+  twin from its sibling.
 - **A copy keeps both.** The second twin meets the first as a clash, settled by the conflict policy:
   `crates/cmdr-operations/src/transfer/volume/DETAILS.md` § "A source listing one name twice".
 - **The grammar is backend-blind** (`cmdr_fs::twin_path`): `folder_of`, `unpicked`, and `shown`, so engine code steps
   over a pick without knowing MTP. `twins.rs` adds only that the id is an object handle.
-- **A destination never carries a pick.** A new name built as `Path::parent(row).join(new)` means `folder/new`:
-  `MtpVolume`'s `rename`, `create_directory`, and `write_from_stream` take `twin_path::unpicked` of it before the
-  no-clobber check, and so does a bulk rename's start (`cmdr-operations/src/rename/bulk.rs`), which compares rows by
-  `folder_of` (a twin and its plain destination are one folder, never a cross-folder rename). The transfer tree hangs a
-  twin off its real folder too (`transfer_tree/build.rs`).
+- **A destination never carries a pick.** A new name built as `parent(row).join(new)` means `folder/new`: `MtpVolume`'s
+  `rename`, `create_directory`, and `write_from_stream` take `twin_path::unpicked_app` of it before the no-clobber
+  check, and so does a bulk rename's start (`cmdr-operations/src/rename/bulk.rs`), which compares rows by `folder_of` (a
+  twin and its plain destination are one folder, never a cross-folder rename). The transfer tree hangs a twin off its
+  real folder too (`transfer_tree/build.rs`).
 - **❌ A pick never reaches a person.** `twin_path::shown` (Rust) and `displayPath`
   (`apps/desktop/src/lib/utils/display-path.ts`, the same rule) take every pick out of text holding a path, at the few
   places a path becomes something read, copied, or sent: `McpResponse::into_shown` (every MCP reply),

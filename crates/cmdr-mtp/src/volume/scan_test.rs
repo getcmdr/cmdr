@@ -1,14 +1,13 @@
 //! Selected-source progress against an asymmetric virtual phone tree.
 
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::scan_stop::TestScanStop;
 use cmdr_fs::volume::{ListingProgress, ScanBoundary, ScanStop, Volume, VolumeError};
-use std::path::PathBuf;
 use std::sync::Mutex;
 
 use crate::testing::{connect_fixture, device_lock, test_connection_manager, volume_for};
 use crate::virtual_device::setup_virtual_mtp_device;
+use crate::volume::test_paths::row;
 
 #[tokio::test]
 async fn selected_subtrees_report_cumulative_recursive_progress() {
@@ -39,15 +38,9 @@ async fn selected_subtrees_report_cumulative_recursive_progress() {
         let ticks = Mutex::new(Vec::new());
         let report = |progress: ListingProgress| ticks.lock_ignore_poison().push(progress);
         let boundary = ScanBoundary::new(Some(&report));
-        let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
+        let paths: Vec<_> = paths.into_iter().map(row).collect();
         let result = volume
-            .scan_for_copy_batch_with_boundary(
-                &paths
-                    .iter()
-                    .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                    .collect::<Vec<_>>(),
-                &boundary,
-            )
+            .scan_for_copy_batch_with_boundary(&paths, &boundary)
             .await
             .unwrap();
         let ticks = ticks.lock_ignore_poison();
@@ -88,27 +81,13 @@ async fn selected_subtrees_report_cumulative_recursive_progress() {
         }
     };
     let boundary = ScanBoundary::new(Some(&report)).stopping_at(ScanStop::new(stop.clone()));
-    let paths = [PathBuf::from("/Progress/Selected")];
+    let paths = [row("/Progress/Selected")];
     assert!(matches!(
-        volume
-            .scan_for_copy_batch_with_boundary(
-                &paths
-                    .iter()
-                    .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                    .collect::<Vec<_>>(),
-                &boundary
-            )
-            .await,
+        volume.scan_for_copy_batch_with_boundary(&paths, &boundary).await,
         Err(VolumeError::Cancelled(_))
     ));
     let result = volume
-        .scan_for_copy_batch_with_boundary(
-            &paths
-                .iter()
-                .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                .collect::<Vec<_>>(),
-            &ScanBoundary::silent(),
-        )
+        .scan_for_copy_batch_with_boundary(&paths, &ScanBoundary::silent())
         .await
         .unwrap();
     assert_eq!(
@@ -150,13 +129,7 @@ async fn a_batch_scan_records_the_selection_under_the_callers_paths() {
     let boundary = ScanBoundary::silent().recording_to(Arc::clone(&recording) as Arc<dyn ScanRecorder>);
 
     volume
-        .scan_for_copy_batch_with_boundary(
-            &[
-                AppPath::legacy_unchecked(&PathBuf::from("/Recorded/Selected")).into_owned(),
-                AppPath::legacy_unchecked(&PathBuf::from("/Recorded/loose.bin")).into_owned(),
-            ],
-            &boundary,
-        )
+        .scan_for_copy_batch_with_boundary(&[row("/Recorded/Selected"), row("/Recorded/loose.bin")], &boundary)
         .await
         .unwrap();
 
