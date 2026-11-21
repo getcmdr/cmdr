@@ -270,9 +270,6 @@ impl Volume for GatedDestination {
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
         use std::sync::atomic::Ordering;
         Box::pin(async move {
-            let dest_app = dest;
-            let dest_std = dest.as_std_legacy();
-            let dest: &Path = &dest_std;
             let mut written = 0u64;
             let mut gate = self.gate.clone();
             loop {
@@ -282,7 +279,7 @@ impl Volume for GatedDestination {
                 };
                 let chunk = chunk?;
                 if written == 0 {
-                    self.inner.create_file(dest_app, &chunk).await?;
+                    self.inner.create_file(dest, &chunk).await?;
                 }
                 written += chunk.len() as u64;
                 if matches!(self.script, AfterFirstChunk::ClaimSuccess) {
@@ -298,7 +295,7 @@ impl Volume for GatedDestination {
                 }
                 if on_progress(StreamWriteProgress::new(written, length)).is_break() {
                     self.stopped_by_break.store(true, Ordering::SeqCst);
-                    return Err(VolumeError::Cancelled(dest.display().to_string().into()));
+                    return Err(VolumeError::Cancelled(dest.shown().into_owned().into()));
                 }
             }
         })
@@ -501,7 +498,7 @@ impl GatedRun {
     /// The original stays byte-exact and no stage survives.
     async fn assert_destination_untouched_and_finish(self) {
         assert_eq!(
-            read_remote_file(&self.destination.inner, Path::new("/share/archive.zip")).await,
+            read_remote_file(&self.destination.inner, app_path!("/share/archive.zip")).await,
             ORIGINAL_ARCHIVE,
             "the original archive stays byte-exact"
         );
@@ -633,11 +630,8 @@ async fn cancel_reaches_a_producer_waiting_on_a_hung_remote_source() {
     assert!(leftovers.is_empty(), "the stage is removed: {leftovers:?}");
 }
 
-async fn read_remote_file(volume: &dyn Volume, path: &Path) -> Vec<u8> {
-    let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(path))
-        .await
-        .expect("open");
+async fn read_remote_file(volume: &dyn Volume, path: &AppPath) -> Vec<u8> {
+    let mut stream = volume.open_read_stream(path).await.expect("open");
     let mut bytes = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         bytes.extend(chunk.expect("chunk"));

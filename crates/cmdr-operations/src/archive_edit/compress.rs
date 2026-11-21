@@ -14,8 +14,13 @@ use cmdr_fs::volume::Volume;
 
 /// Picks the concrete remote spelling that the overwrite warning referred to.
 /// One equivalent spelling is the target; several are ambiguous and refused.
-async fn archive_landing(parent: &dyn Volume, target: PathBuf) -> Result<(PathBuf, bool), WriteOperationError> {
-    if parent.exists(&AppPath::legacy_unchecked(&target)).await {
+/// `target_app` is `target` as the volume is asked about it.
+async fn archive_landing(
+    parent: &dyn Volume,
+    target: PathBuf,
+    target_app: &AppPath,
+) -> Result<(PathBuf, bool), WriteOperationError> {
+    if parent.exists(target_app).await {
         return Ok((target, true));
     }
     let (Some(dir), Some(name)) = (target.parent(), target.file_name().and_then(|name| name.to_str())) else {
@@ -97,13 +102,15 @@ impl crate::Operations {
         mac_only: MacOnlyFiles,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
         super::routing::ensure_zip_writable(&dest_zip_full_path, ReadOnlySide::Destination)?;
+        // The `.zip` as its parent drive is asked about it.
+        let dest_app = AppPath::legacy_unchecked(&dest_zip_full_path).into_owned();
         // Plain `get`: the `.zip` file itself is a plain file on its parent drive.
         let (dest_zip_full_path, existed) = match self.host().volumes().get(&parent_volume_id) {
             Some(parent) if !parent.supports_local_fs_access() => {
-                archive_landing(parent.as_ref(), dest_zip_full_path).await?
+                archive_landing(parent.as_ref(), dest_zip_full_path, &dest_app).await?
             }
             Some(parent) => {
-                let existed = parent.exists(&AppPath::legacy_unchecked(&dest_zip_full_path)).await;
+                let existed = parent.exists(&dest_app).await;
                 (dest_zip_full_path, existed)
             }
             None => {

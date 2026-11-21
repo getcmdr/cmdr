@@ -3,7 +3,7 @@
 //! `use super::test_support::*;` (these helpers and the common types), so the test
 //! bodies read the same as when they lived in one file.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic, PathFlavor};
 use uuid::Uuid;
 
 // Common re-exports the test bodies reference by bare name (they also serve
@@ -247,19 +247,17 @@ pub(super) async fn register_remote_source(
     use cmdr_fs::volume::InMemoryVolume;
     let source = InMemoryVolume::new("RemoteSource");
     for (rel, bytes) in files {
-        let path = PathBuf::from("/").join(rel);
-        if let Some(parent) = path.parent() {
-            let mut acc = PathBuf::from("/");
-            for comp in parent.strip_prefix("/").unwrap_or(parent).components() {
-                acc = acc.join(comp);
-                // Ignore "already exists" for shared ancestors across files.
-                let _ = source.create_directory(&AppPath::legacy_unchecked(&acc)).await;
-            }
+        let path = AppPathBuf::parse(&format!("/{rel}"), PathFlavor::Posix).expect("a relative source path");
+        // Every ancestor below the root, shallowest first.
+        let mut ancestors: Vec<&AppPath> = std::iter::successors(path.parent(), |dir| dir.parent())
+            .filter(|dir| !dir.is_root())
+            .collect();
+        ancestors.reverse();
+        for dir in ancestors {
+            // Ignore "already exists" for shared ancestors across files.
+            let _ = source.create_directory(dir).await;
         }
-        source
-            .create_file(&AppPath::legacy_unchecked(&path), bytes)
-            .await
-            .expect("seed remote source file");
+        source.create_file(&path, bytes).await.expect("seed remote source file");
     }
     let source = Arc::new(source);
     let id = format!("remote-source-{}", Uuid::new_v4());

@@ -41,15 +41,12 @@ async fn nas(lane: &str) -> Arc<OutageVolume> {
     inner.create_directory(app_path!("/photos")).await.unwrap();
     inner.create_directory(app_path!("/photos/trip")).await.unwrap();
     for path in [
-        "/photos/a.jpg",
-        "/photos/b.jpg",
-        "/photos/trip/c.jpg",
-        "/photos/trip/d.jpg",
+        app_path!("/photos/a.jpg"),
+        app_path!("/photos/b.jpg"),
+        app_path!("/photos/trip/c.jpg"),
+        app_path!("/photos/trip/d.jpg"),
     ] {
-        inner
-            .create_file(&AppPath::legacy_unchecked(Path::new(path)), b"pixels")
-            .await
-            .unwrap();
+        inner.create_file(path, b"pixels").await.unwrap();
     }
     OutageVolume::wrap(inner, lane)
 }

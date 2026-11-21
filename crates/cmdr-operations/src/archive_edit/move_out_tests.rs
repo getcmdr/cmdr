@@ -5,7 +5,7 @@
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, PathArithmetic};
 use cmdr_operation_log::types::OperationId;
 use std::future::Future;
 use std::pin::Pin;
@@ -484,13 +484,7 @@ impl Volume for FailOnNameVolume {
         stream: Box<dyn cmdr_fs::volume::VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
-        let dest_app = dest;
-        let dest_std = dest.as_std_legacy();
-        let dest: &Path = &dest_std;
-        let fails = dest
-            .file_name()
-            .map(|n| n.to_string_lossy() == self.fail_name)
-            .unwrap_or(false);
+        let fails = dest.file_name().is_some_and(|name| name == self.fail_name);
         if fails {
             return Box::pin(async {
                 Err(VolumeError::IoError {
@@ -499,8 +493,7 @@ impl Volume for FailOnNameVolume {
                 })
             });
         }
-        self.inner
-            .write_from_stream(dest_app, mode, length, stream, on_progress)
+        self.inner.write_from_stream(dest, mode, length, stream, on_progress)
     }
 }
 

@@ -13,7 +13,6 @@
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
 use std::sync::Mutex;
 
 use futures_util::FutureExt;
@@ -132,25 +131,21 @@ async fn a_remote_source_keeps_what_changed_or_appeared_during_a_move_into_a_zip
 
     let edited = Arc::clone(&source);
     let events = EditOnFirstProgress::new(move || {
-        let draft = Path::new("/d/draft.txt");
+        let draft = app_path!("/d/draft.txt");
         let modified = edited
-            .get_metadata(&AppPath::legacy_unchecked(draft))
+            .get_metadata(draft)
             .now_or_never()
             .unwrap()
             .unwrap()
             .modified_at
             .unwrap();
+        edited.delete(draft).now_or_never().unwrap().unwrap();
         edited
-            .delete(&AppPath::legacy_unchecked(draft))
+            .create_file(draft, b"final draft")
             .now_or_never()
             .unwrap()
             .unwrap();
-        edited
-            .create_file(&AppPath::legacy_unchecked(draft), b"final draft")
-            .now_or_never()
-            .unwrap()
-            .unwrap();
-        edited.set_modified_at(draft, Some(modified + 5));
+        edited.set_modified_at(Path::new("/d/draft.txt"), Some(modified + 5));
         edited
             .create_file(app_path!("/d/download.zip"), b"arrived mid-move")
             .now_or_never()
