@@ -1015,6 +1015,23 @@ fn canonicalize_resolves_links_like_realpath() {
     assert_eq!(resolved("/"), Some(PathBuf::from("/")));
     assert_eq!(resolved("/abs/missing"), None);
     assert_eq!(resolved("/loop-a"), None);
+
+    // The typed answer is the same key, read back as an app path.
+    for path in [
+        "/real/inner",
+        "/abs/inner",
+        "/real/rel",
+        "/hop/inner/",
+        "/abs/inner/..",
+        "/",
+        "/abs/missing",
+    ] {
+        assert_eq!(
+            volume.canonical_app_path(Path::new(path)).map(AppPathBuf::into_string),
+            resolved(path).map(|p| p.to_str().expect("UTF-8 text").to_owned()),
+            "{path:?}"
+        );
+    }
 }
 
 /// A name that isn't UTF-8 (a Linux disk's, a server's) resolves by its exact bytes, through

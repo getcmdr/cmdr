@@ -33,6 +33,17 @@ pub struct RootEcho {
 /// echoes. Folders match by whole COMPONENTS, so `/srv/data-1` isn't a repeat of
 /// `/srv/data`.
 pub fn root_echo(root: &Path, path: &Path) -> Option<RootEcho> {
+    echo_under(root.to_str()?, path)
+}
+
+/// [`root_echo`] for a volume's typed root, read by its text.
+pub fn root_echo_at(root: &AppPath, path: &Path) -> Option<RootEcho> {
+    echo_under(root.as_str(), path)
+}
+
+/// [`root_echo`] over the root's text: a `std::path` root that isn't text has no
+/// scheme, so it never echoes.
+fn echo_under(root: &str, path: &Path) -> Option<RootEcho> {
     let root_folder = scheme_root_folder(root)?;
     if path.as_os_str().is_empty() || path == Path::new(".") || path == Path::new("/") || path.starts_with(root) {
         return None;
@@ -49,8 +60,8 @@ pub fn root_echo(root: &Path, path: &Path) -> Option<RootEcho> {
 
 /// The folder part of a `<scheme>://<authority>/<folder>` root, or `None` for a
 /// mounted root and for one at the server's `/`.
-fn scheme_root_folder(root: &Path) -> Option<PathBuf> {
-    let (_scheme, rest) = root.to_str()?.split_once("://")?;
+fn scheme_root_folder(root: &str) -> Option<PathBuf> {
+    let (_scheme, rest) = root.split_once("://")?;
     let folder = Path::new(&rest[rest.find('/')?..]);
     (folder != Path::new("/")).then(|| folder.to_path_buf())
 }
