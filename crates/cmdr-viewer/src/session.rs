@@ -376,7 +376,7 @@ impl Viewer {
             return Ok(markdown_session::open_markdown_session(
                 self,
                 markdown_session::MarkdownOpen {
-                    requested,
+                    requested: cmdr_fs::app_path::AppPathBuf::from_wire(&expanded).ok(),
                     volume_id: volume_id.to_string(),
                     file_path,
                     origin,

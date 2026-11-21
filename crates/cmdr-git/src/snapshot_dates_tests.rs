@@ -73,7 +73,7 @@ fn snapshot_listing_shows_distinct_dates_across_files() {
     let commit = virtual_listing::resolve_ref_commit(&handle, Cat::Branches, "main")
         .unwrap()
         .expect("main exists");
-    let display = root.join(".git").join("branches").join("main");
+    let display = crate::test_fixtures::row_at(&root, "branches/main");
     let entries = tree::list_tree(&handle, commit, "", &display)
         .unwrap()
         .expect("the snapshot root is there");

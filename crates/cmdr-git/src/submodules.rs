@@ -17,13 +17,15 @@ use gix::bstr::ByteSlice;
 
 use cmdr_fs::entry::FileEntry;
 
+use crate::path::Cat;
 use crate::repo::RepoHandle;
+use crate::row_path::{RowPath, redirect_text};
 use cmdr_fs::git_meta::GitEntryMeta;
 use cmdr_fs::volume::git_error::{FriendlyGitError, FriendlyGitErrorKind};
 
 /// Lists submodules as virtual entries with `redirectToPath` set.
 pub fn list_submodules(handle: &RepoHandle, repo_root: &Path) -> Result<Vec<FileEntry>, FriendlyGitError> {
-    let parent = repo_root.join(".git").join("submodules");
+    let parent = RowPath::category_of(repo_root, Cat::Submodules);
     let repo = handle.to_thread_local();
     let modules = match repo
         .submodules()
@@ -41,11 +43,13 @@ pub fn list_submodules(handle: &RepoHandle, repo_root: &Path) -> Result<Vec<File
             Err(_) => continue,
         };
         let work_dir = repo_root.join(&rel_path);
-        let display_path = parent.join(&name);
-        let mut fe = FileEntry::new(name, display_path.to_string_lossy().into_owned(), true, false);
+        let Some(display_path) = parent.under(&name) else {
+            continue;
+        };
+        let mut fe = FileEntry::new(name, display_path.into_text(), true, false);
         fe.icon_id = "git:fork".into();
         fe.permissions = 0o755;
-        fe.redirect_to_path = Some(work_dir.display().to_string());
+        fe.redirect_to_path = Some(redirect_text(&work_dir));
 
         // Pinned commit: open the submodule's repo at its working dir
         // and read HEAD. If the submodule isn't initialized yet, leave

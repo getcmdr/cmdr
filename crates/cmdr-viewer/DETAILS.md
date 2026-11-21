@@ -122,8 +122,8 @@ clock read compiles there and then panics, which only a smoke run against the re
   reads through its `read_range`, and a file no volume serves is `NotSupported`. A local file's positioned read is a
   typed refusal.
 - **No watcher**: `watcher.rs` is native-only (`WatcherEvent` lives in `watcher_event.rs` so sessions build without it).
-- **Markdown paths**: `url`'s path conversions don't exist there, so `markdown_links::text_urls` builds the same URLs
-  from the path's text; `markdown_links_test.rs` pins both pairs to the same answers.
+- **Markdown paths** need no `cfg`: the resolution is app-path arithmetic over `url`'s segments, never `url`'s path
+  conversions (which don't exist there), § "Markdown rendering".
 - **Randomness**: `rand`'s OS RNG reads `crypto.getRandomValues` through `getrandom`'s `wasm_js` feature, so a media
   token keeps its 128-bit, 32-hex-character form.
 
@@ -153,6 +153,11 @@ handle sees them, and `extend_to` only moves the size.
 alive. No temp, no `PREVIEW_CAP_BYTES`, no OS open: a 5 GiB log on a share opens and jumps like a local one. Every other
 volume answers `NotSupported` and the open goes on exactly as before (`std::fs`, or a pull into a temp). A routed path
 (`.zip` inner, `.git` portal) never asks: its route mints the volume that serves it.
+
+`VolumeSource`, `RangeReader`, and `SourceOrigin::Volume` hold the file as an `AppPathBuf`. The host's seams still hand
+the viewer `std::path` values (`open_session`'s wire text as a `PathBuf`, `DocumentImages::on_volume`), so each crosses
+once through `volume_source::app_path_of` / `host_path_of` (the transition bridge, lossless both ways). Both go when the
+app's viewer host hands typed paths, with its IPC edge.
 
 **Decision**: SMB reads through smb2 even while the mount is alive. **Why**: smbfs adds an OS open and its own 64 KiB
 reads per fetch, and depends on the mount's health; smb2 is already the connection Cmdr browses with, reconnects, and
@@ -387,6 +392,23 @@ answer is always waiting when the marker comes up (`PendingImage`).
   (`volume.root()`), so `..` past the root stops AT the root, and the query, fragment, and `%20` escapes are handled.
   The path is the document's path on its VOLUME (the `requested` path, never a temp copy's), so a document in a zip or
   on a phone finds its pictures there too.
+- **It's app-path arithmetic, the same on every OS** (`markdown_links::resolve_relative`): the document is an `AppPath`
+  (`from_wire` of the requested text; `None` for text the type refuses, a `..` in it, and then nothing relative
+  resolves), the folder's names become `url` segments (`url` encodes them itself, so a `C:` segment keeps `url`'s
+  drive-letter rule), and the joined URL's decoded segments become names under the root again: an empty or `.` name
+  drops, and an escaped `/` splits a segment, as `Path` read the decoded text. A volume that's gone resolves under the
+  local root: `/`, or on Windows the document's own drive. Decision/Why: `std::path` read every document path with the
+  host's rules (`\` and `C:` on Windows, so every cell answered `Blocked` there) and `url`'s file-path conversions are
+  host-shaped too.
+- **A decoded name that is no name resolves nowhere** (`Blocked`): `..` (an escaped `/` hid it from the URL's dot rule,
+  so `a%2F..%2F..` climbed past the volume root once the OS resolved the text), bytes that aren't UTF-8 (a link named
+  their U+FFFD sibling, an image read the raw bytes; an app path holds neither until escapes go live), a NUL, and
+  escapes that aren't canonical. An image also refuses a target holding an escape-range code point: the host's
+  `std::path` spelling would decode it as a live escape, another file. Measured against the old `std::path` resolution
+  over 2.4 million generated cases (document paths × volume roots × hrefs, 2026-11-21): no other answer differs, but a
+  link through an escaped `/` that left an empty name now names its file canonically (`a/b`, where it said `a//b`).
+- The path reaches the host's `DocumentImages::on_volume` as a `std::path` value through `volume_source::host_path_of`
+  (lossless, `as_std_legacy`); the trait goes typed when the app's viewer host converts.
 - `http(s)`, and protocol-relative `//host/…` as `https`: remote.
 - `data:image/…`: inline.
 - Decision: absolute paths (`/img.png`) and `file:` are BLOCKED, as is every other scheme. On GitHub `/img.png` means

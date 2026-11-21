@@ -1,14 +1,14 @@
 //! Where a link in a rendered Markdown document goes: the web or a mail app, a spot in
 //! the same document, another file on the document's volume, or nowhere we follow.
 
-use std::path::Path;
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::PathFlavor::Posix;
 
 use super::markdown_links::{MarkdownLink, resolve_link};
 
-const DOCUMENT: &str = "/Users/a/proj/docs/README.md";
-
 fn resolve(href: &str) -> MarkdownLink {
-    resolve_link(href, Path::new(DOCUMENT), Path::new("/"))
+    resolve_link(href, Some(app_path!("/Users/a/proj/docs/README.md")), app_path!("/"))
 }
 
 fn file(path: &str, element_id: Option<&str>) -> MarkdownLink {
@@ -68,8 +68,8 @@ fn climbing_past_the_volume_root_stops_at_the_root() {
     assert_eq!(resolve("../../../../../../etc/passwd"), file("/etc/passwd", None));
     let on_share = resolve_link(
         "../../../../notes.md",
-        Path::new("/Volumes/share/docs/README.md"),
-        Path::new("/Volumes/share"),
+        Some(app_path!("/Volumes/share/docs/README.md")),
+        app_path!("/Volumes/share"),
     );
     assert_eq!(on_share, file("/Volumes/share/notes.md", None));
 }
@@ -78,11 +78,11 @@ fn climbing_past_the_volume_root_stops_at_the_root() {
 fn a_document_on_a_phone_or_in_an_archive_links_within_it() {
     let on_phone = resolve_link(
         "../Docs/b.md",
-        Path::new("adb://R58M1/sdcard/Notes/a.md"),
-        Path::new("adb://R58M1"),
+        Some(app_path!("adb://R58M1/sdcard/Notes/a.md")),
+        app_path!("adb://R58M1/"),
     );
     assert_eq!(on_phone, file("adb://R58M1/sdcard/Docs/b.md", None));
-    let in_zip = resolve_link("b.md#x", Path::new("/Users/a/x.zip/docs/a.md"), Path::new("/"));
+    let in_zip = resolve_link("b.md#x", Some(app_path!("/Users/a/x.zip/docs/a.md")), app_path!("/"));
     assert_eq!(in_zip, file("/Users/a/x.zip/docs/b.md", Some("md-x")));
 }
 
@@ -130,42 +130,60 @@ fn absolute_paths_files_and_other_schemes_are_not_followed() {
     }
 }
 
-/// The browser builds a folder's URL and reads a joined URL's path from text (`url`'s
-/// path conversions don't exist there); each case must answer what `url`'s do natively.
+/// The folder's names go into the URL escaped and come back out decoded, whatever they
+/// hold: what `url`'s own path conversions answered on macOS and Linux, now on every OS
+/// and in the browser alike (they don't exist there, nor on Windows for a `/` path).
 #[test]
-fn the_browser_url_conversions_answer_what_url_does() {
-    use super::markdown_links::text_urls;
-    // No `..` folder: a document's folder is the opened file's, never one with a `..` in it
-    // (`url` keeps such a segment literal; the browser's parse would fold it).
-    let folders = ["", "docs", "docs/sub dir", "a/b/c", "naïve/日本", "100%/#hash?q", "./x"];
-    let references = [
-        "x.md",
-        "../x.md",
-        "../../../../x.md",
-        "./a b.md",
-        "%2e%2e/x.md",
-        "sub/%20spaced.md#frag",
-        "//evil.host/x.md",
-        "//localhost/x.md",
-        "/abs.md",
-        "?q=1",
-        "file:///etc/passwd",
-        "caf%C3%A9.md",
-        "bad%FF.md",
-    ];
-    for folder in folders {
-        let ours = text_urls::folder_url(Path::new(folder)).expect("a folder URL");
-        let theirs = url::Url::from_directory_path(Path::new("/").join(folder)).expect("a folder URL");
-        for reference in references {
-            let (Ok(ours), Ok(theirs)) = (ours.join(reference), theirs.join(reference)) else {
-                panic!("{folder:?} + {reference:?} didn't join on one side");
-            };
-            // A non-UTF-8 path is the one place the two differ: the browser has none.
-            assert_eq!(
-                text_urls::url_path(&ours),
-                theirs.to_file_path().ok().filter(|path| path.to_str().is_some()),
-                "{folder:?} + {reference:?}"
-            );
-        }
+fn a_folders_names_survive_the_url_round_trip() {
+    for (document, href, expected) in [
+        ("/docs/sub dir/README.md", "%2e%2e/x.md", "/docs/x.md"),
+        ("/naïve/日本/README.md", "../x.md", "/naïve/x.md"),
+        ("/100%/#hash?q/README.md", "./a b.md", "/100%/#hash?q/a b.md"),
+        ("/a/(b)[c]{d}`e`\\f/README.md", "x.md", "/a/(b)[c]{d}`e`\\f/x.md"),
+        ("/a/b/c/README.md", "../../../../x.md", "/x.md"),
+        ("/docs/README.md", "caf%C3%A9.md", "/docs/café.md"),
+        // `url` reads a `C:` segment as a drive letter, which `..` doesn't climb past.
+        ("/x/C:/y.md", "../../x.md", "/x/C:/x.md"),
+    ] {
+        let resolved = resolve_link(
+            href,
+            Some(AppPath::from_normalized_as(document, Posix).unwrap()),
+            app_path!("/"),
+        );
+        assert_eq!(resolved, file(expected, None), "{document:?} + {href:?}");
     }
+    assert_eq!(
+        resolve("sub/%20spaced.md#frag"),
+        file("/Users/a/proj/docs/sub/ spaced.md", Some("md-frag"))
+    );
+}
+
+/// An escaped `/` splits a segment into names, as `Path` read the decoded text.
+#[test]
+fn an_escaped_slash_separates_names() {
+    assert_eq!(resolve("a%2Fb.md"), file("/Users/a/proj/docs/a/b.md", None));
+    assert_eq!(resolve("a%2F%2F.%2Fb.md"), file("/Users/a/proj/docs/a/b.md", None));
+}
+
+/// A decoded name that is no name resolves nowhere. `std::path` handed the volume each of
+/// these: `a/../../etc` (an escaped `/` hid the `..` from the URL's dot rule, so it climbed
+/// past the volume root once the OS resolved it), a link to the U+FFFD sibling of a name
+/// that isn't UTF-8 (an image got the raw bytes), and a NUL.
+#[test]
+fn a_decoded_name_that_is_no_name_resolves_nowhere() {
+    for href in [
+        "a%2F..%2F..%2F..%2Fetc",
+        "..%2F..%2F..%2Fetc/passwd",
+        "bad%FF.md",
+        "x%00.md",
+    ] {
+        assert_eq!(resolve(href), MarkdownLink::Blocked, "{href:?}");
+    }
+}
+
+/// A document whose text the app path type refuses has no folder to resolve against.
+#[test]
+fn a_document_the_type_refuses_links_nowhere_relative() {
+    assert_eq!(resolve_link("x.md", None, app_path!("/")), MarkdownLink::Blocked);
+    assert_eq!(resolve_link("#md-top", None, app_path!("/")), anchor(Some("md-top")));
 }

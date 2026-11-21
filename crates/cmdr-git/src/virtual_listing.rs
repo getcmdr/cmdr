@@ -28,6 +28,7 @@ use crate::column_meta::{
 };
 use crate::path::{Cat, strip_ref_prefix};
 use crate::repo::RepoHandle;
+use crate::row_path::{RowPath, redirect_text};
 use cmdr_fs::git_meta::{GitCountKind, GitEntryMeta};
 use cmdr_fs::volume::git_error::{FriendlyGitError, FriendlyGitErrorKind};
 
@@ -38,17 +39,17 @@ use cmdr_fs::volume::git_error::{FriendlyGitError, FriendlyGitErrorKind};
 /// its own root: the volume serves the virtual namespace and nothing else, so
 /// the real `.git/*` entries are the parent volume's to list.
 pub fn list_categories(handle: &RepoHandle, repo_root: &Path) -> Vec<FileEntry> {
-    let dot_git = repo_root.join(".git");
+    let dot_git = RowPath::dot_git_of(repo_root);
     Cat::ALL
         .into_iter()
-        .map(|cat| {
+        .filter_map(|cat| {
             let segment = cat.as_segment();
-            let path = dot_git.join(segment).to_string_lossy().into_owned();
+            let path = dot_git.child(segment)?.into_text();
             let mut fe = FileEntry::new(segment.to_string(), path, true, false);
             fe.permissions = 0o755;
             fe.icon_id = icon_for_category(cat).to_string();
             populate_root_category(&mut fe, cat, handle, repo_root);
-            fe
+            Some(fe)
         })
         .collect()
 }
@@ -287,7 +288,7 @@ fn pinned_commit_secs(sm: &gix::Submodule<'_>, repo_root: &Path) -> Option<i64> 
 /// ahead-count so within-category Size sort puts the most-ahead branch
 /// first.
 pub fn list_branches(handle: &RepoHandle, repo_root: &Path) -> Result<Vec<FileEntry>, FriendlyGitError> {
-    let parent = repo_root.join(".git").join(Cat::Branches.as_segment());
+    let parent = RowPath::category_of(repo_root, Cat::Branches);
     let repo = handle.to_thread_local();
     let platform = repo
         .references()
@@ -304,7 +305,9 @@ pub fn list_branches(handle: &RepoHandle, repo_root: &Path) -> Result<Vec<FileEn
         if short.is_empty() {
             continue;
         }
-        let path = parent.join(&short).to_string_lossy().into_owned();
+        let Some(path) = parent.under(&short).map(RowPath::into_text) else {
+            continue;
+        };
         let mut fe = FileEntry::new(short.clone(), path, true, false);
         fe.permissions = 0o755;
         fe.icon_id = "git:branch".into();
@@ -340,7 +343,7 @@ pub fn list_branches(handle: &RepoHandle, repo_root: &Path) -> Result<Vec<FileEn
 /// tagged commit's committer date. The Size column shows the short SHA
 /// of the tagged commit so users can ID it at a glance.
 pub fn list_tags(handle: &RepoHandle, repo_root: &Path) -> Result<Vec<FileEntry>, FriendlyGitError> {
-    let parent = repo_root.join(".git").join(Cat::Tags.as_segment());
+    let parent = RowPath::category_of(repo_root, Cat::Tags);
     let repo = handle.to_thread_local();
     let platform = repo
         .references()
@@ -357,7 +360,9 @@ pub fn list_tags(handle: &RepoHandle, repo_root: &Path) -> Result<Vec<FileEntry>
         if short.is_empty() {
             continue;
         }
-        let path = parent.join(&short).to_string_lossy().into_owned();
+        let Some(path) = parent.under(&short).map(RowPath::into_text) else {
+            continue;
+        };
         let mut fe = FileEntry::new(short, path, true, false);
         fe.permissions = 0o755;
         fe.icon_id = "git:tag".into();
@@ -389,7 +394,7 @@ pub fn get_metadata_for(
     use crate::path::VirtualGitPath::*;
     match virt {
         Root => {
-            let path = repo_root.join(".git").to_string_lossy().into_owned();
+            let path = RowPath::dot_git_of(repo_root).into_text();
             let mut fe = FileEntry::new(".git".into(), path, true, false);
             fe.permissions = 0o755;
             fe.icon_id = "git:fork".into();
@@ -404,7 +409,7 @@ pub fn get_metadata_for(
         }
         Category(cat) => {
             let segment = cat.as_segment();
-            let path = repo_root.join(".git").join(segment).to_string_lossy().into_owned();
+            let path = RowPath::category_of(repo_root, *cat).into_text();
             let mut fe = FileEntry::new(segment.into(), path, true, false);
             fe.permissions = 0o755;
             fe.icon_id = icon_for_category(*cat).to_string();
@@ -418,12 +423,12 @@ pub fn get_metadata_for(
             if matches!(cat, Cat::Branches | Cat::Tags) && resolve_ref_commit(handle, *cat, name)?.is_none() {
                 return Ok(None);
             }
-            let path = repo_root
-                .join(".git")
-                .join(cat.as_segment())
-                .join(name)
-                .to_string_lossy()
-                .into_owned();
+            let Some(path) = RowPath::category_of(repo_root, *cat)
+                .under(name)
+                .map(RowPath::into_text)
+            else {
+                return Ok(None);
+            };
             let mut fe = FileEntry::new(name.clone(), path, true, false);
             fe.permissions = 0o755;
             fe.icon_id = icon_for_category(*cat).to_string();
@@ -439,7 +444,7 @@ pub fn get_metadata_for(
                             if p.id().is_ok_and(|id| id == name.as_bytes().as_bstr())
                                 && let Ok(base) = p.base()
                             {
-                                fe.redirect_to_path = Some(base.display().to_string());
+                                fe.redirect_to_path = Some(redirect_text(&base));
                                 break;
                             }
                         }
@@ -453,8 +458,7 @@ pub fn get_metadata_for(
                             if sm.name().as_bstr() == name.as_bytes().as_bstr()
                                 && let Ok(rel) = sm.path()
                             {
-                                fe.redirect_to_path =
-                                    Some(repo_root.join(rel.to_str_lossy().as_ref()).display().to_string());
+                                fe.redirect_to_path = Some(redirect_text(&repo_root.join(rel.to_str_lossy().as_ref())));
                                 break;
                             }
                         }
@@ -468,11 +472,12 @@ pub fn get_metadata_for(
             let Some(commit_id) = crate::resolve_commit_for_cat(handle, *cat, name)? else {
                 return Ok(None);
             };
-            let display_path = repo_root
-                .join(".git")
-                .join(cat.as_segment())
-                .join(name)
-                .join(sub.replace('/', std::path::MAIN_SEPARATOR_STR));
+            let Some(display_path) = RowPath::category_of(repo_root, *cat)
+                .under(name)
+                .and_then(|at| at.under(sub))
+            else {
+                return Ok(None);
+            };
             crate::tree::get_tree_entry(handle, commit_id, sub, &display_path)
         }
     }

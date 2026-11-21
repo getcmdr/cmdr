@@ -9,7 +9,7 @@ chip, and the read-only `Volume` that turns `.git/branches/`, `tags/`, `commits/
 
 - `portal.rs` (`GitPortal`, which owns the repo cache, the watcher registry, and the sink, and is what every portal
   volume is built over), `volume.rs` (`GitPortalVolume`), `path.rs` (the `VirtualGitPath` parser, the lexical
-  `portal_route`).
+  `portal_route`), `row_path.rs` (row paths).
 - `repo.rs` (discovery, `RepoInfo`, `RepoCache`), `status.rs` (the cached status walk), `path_status.rs` (one item's),
   `watcher.rs` (the refcounted per-repo registry, plus the backend that arms it: `notify` in production, scripted under
   `testing`), `state_sink.rs` (where it reports), `fault_guard.rs` + `releasing.rs` (a disk going away or about to).
@@ -20,7 +20,7 @@ chip, and the read-only `Volume` that turns `.git/branches/`, `tags/`, `commits/
 ## Must-knows
 
 - **❌ Nothing here may name `tauri`, `tauri_specta`, or `cmdr`.** `cargo check -p cmdr-git --all-targets` is the whole
-  verification loop, and `index-crate-isolation` proves the tree stays app-free.
+  verification loop; `index-crate-isolation` proves the tree app-free.
 - **The public surface is capped**: 13 root promises, EVERY module private. A new `pub` needs David's say-so. Item by
   item: `DETAILS.md`.
 - **Everything mutable is a field on `GitPortal`**, ❌ never a static: the repo cache, the watcher registry, the sink.

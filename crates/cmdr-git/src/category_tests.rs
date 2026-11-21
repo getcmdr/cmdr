@@ -9,12 +9,12 @@
 
 #![cfg(test)]
 
-use std::path::PathBuf;
+use cmdr_fs::app_path::AppPathBuf;
 
 use crate::path::{Cat, VirtualGitPath, classify};
 use crate::test_fixtures::{
     Fixture, build_repo_with_a_tag_and_a_slashed_branch, build_simple_repo, cleanup, discover_repo, git_cli,
-    git_cli_capture, temp_dir,
+    git_cli_capture, portal_path, temp_dir,
 };
 use crate::{log as git_log, stash, submodules, virtual_listing, worktrees};
 use cmdr_fs::git_meta::{GitCountKind, GitEntryMeta};
@@ -95,7 +95,6 @@ fn list_commits_yields_entries_with_short_sha_and_subject() {
 }
 
 #[test]
-#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn commit_tree_browsing_via_short_sha() {
     let (dir, _f) = build_simple_repo("category", 2);
     let (handle, root) = discover_repo(&dir).unwrap();
@@ -106,7 +105,7 @@ fn commit_tree_browsing_via_short_sha() {
     assert_eq!(segment.len(), git_log::SHORT_SHA_LEN);
 
     // Direct path entry: classify `.git/commits/<sha>` and resolve.
-    let p = root.join(".git").join("commits").join(&segment).join("README.md");
+    let p = portal_path(&root, &format!("commits/{segment}/README.md"));
     let (virt, _, _) = classify(&p).expect("classify commit path");
     match virt {
         VirtualGitPath::RefTree(Cat::Commits, name, sub) => {
@@ -178,7 +177,10 @@ fn a_commit_row_filled_in_later_is_the_walked_row_plus_its_count() {
     let (handle, root) = discover_repo(&dir).unwrap();
     let uncounted = git_log::list_commits(&handle, &root, &git_log::WalkControl::default()).unwrap();
 
-    let paths: Vec<PathBuf> = uncounted.iter().map(|e| PathBuf::from(&e.path)).collect();
+    let paths: Vec<AppPathBuf> = uncounted
+        .iter()
+        .map(|e| AppPathBuf::from_wire(&e.path).expect("a row path is an app path"))
+        .collect();
     let filled = git_log::commit_rows_with_counts(&handle, &root, &paths);
 
     assert_eq!(filled.len(), 3);
@@ -206,7 +208,10 @@ fn filling_in_counts_skips_a_path_that_is_no_commit_row() {
     let filled = git_log::commit_rows_with_counts(
         &handle,
         &root,
-        &[root.join(".git/commits/zzzzzzz"), root.join(".git/branches/main")],
+        &[
+            portal_path(&root, "commits/zzzzzzz"),
+            portal_path(&root, "branches/main"),
+        ],
     );
 
     assert!(filled.is_empty());
@@ -326,7 +331,10 @@ fn list_worktrees_redirects_to_working_dir() {
     assert!(wt.redirect_to_path.is_some(), "redirect_to_path must be set");
     let canonical_wt = wt_path.canonicalize().unwrap();
     assert_eq!(
-        PathBuf::from(wt.redirect_to_path.as_ref().unwrap())
+        AppPathBuf::from_wire(wt.redirect_to_path.as_ref().unwrap())
+            .expect("the redirect is an app path")
+            .to_native()
+            .expect("a local folder")
             .canonicalize()
             .unwrap(),
         canonical_wt
@@ -367,8 +375,9 @@ fn list_submodules_redirects_to_working_dir() {
     let sm = &entries[0];
     assert_eq!(sm.name, "vendor/inner");
     assert!(sm.redirect_to_path.is_some());
-    let target = PathBuf::from(sm.redirect_to_path.as_ref().unwrap());
-    assert_eq!(target, root.join("vendor").join("inner"));
+    let target = AppPathBuf::from_wire(sm.redirect_to_path.as_ref().unwrap()).expect("the redirect is an app path");
+    let app_root = crate::test_fixtures::app_dir(&root);
+    assert_eq!(target, crate::test_fixtures::app_at(&app_root, "vendor/inner"));
 
     cleanup(&outer);
     cleanup(&inner);
