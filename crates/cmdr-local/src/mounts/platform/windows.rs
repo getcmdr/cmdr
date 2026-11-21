@@ -48,26 +48,14 @@ const DRIVE_REMOTE: u32 = 4;
 /// A volume GUID path (`\\?\Volume{…}\`) is 49 UTF-16 units plus its NUL.
 const GUID_PATH_LEN: usize = 50;
 
-/// One volume the mount manager knows, from the GUID sweep.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct WindowsVolume {
-    /// Its GUID path, `\\?\Volume{…}\`.
-    pub guid_path: String,
-    /// Every place it's mounted, natively spelled with a trailing `\`: its letter (`D:\`) and
-    /// each folder (`C:\Mnt\Data\`). Empty for a volume mounted nowhere (EFI, recovery).
-    pub mount_paths: Vec<String>,
-}
-
 pub(crate) fn list() -> Option<Vec<PathBuf>> {
     let mut mounts: Vec<PathBuf> = drive_letters()?
         .into_iter()
         .map(|letter| PathBuf::from(format!(r"\\?\{letter}:\")))
         .collect();
-    for volume in volumes()? {
-        for path in volume.mount_paths {
-            if drive_root_letter(&path).is_none() {
-                mounts.push(folder_mount_as_canonical(&path));
-            }
+    for path in mount_paths()? {
+        if drive_root_letter(&path).is_none() {
+            mounts.push(folder_mount_as_canonical(&path));
         }
     }
     Some(mounts)
@@ -117,7 +105,7 @@ pub(crate) fn is_mount_point(path: &Path) -> Option<bool> {
 
 /// The drive letters in use (`GetLogicalDriveStringsW`), uppercase, mapped and `subst` ones
 /// included; `None` when Windows wouldn't answer.
-pub fn drive_letters() -> Option<Vec<char>> {
+fn drive_letters() -> Option<Vec<char>> {
     let mut buffer = vec![0u16; 256];
     for _ in 0..2 {
         let len = u32::try_from(buffer.len()).unwrap_or(u32::MAX);
@@ -142,10 +130,10 @@ pub fn drive_letters() -> Option<Vec<char>> {
     None
 }
 
-/// Every volume the mount manager knows, with where each is mounted (EFI and recovery
-/// partitions too, with no paths); `None` when the sweep wouldn't start. A mapped or `subst`
-/// drive is no volume here: [`drive_letters`] has those.
-pub fn volumes() -> Option<Vec<WindowsVolume>> {
+/// Every place a volume the mount manager knows is mounted (`D:\`, `C:\Mnt\Data\`), from the
+/// GUID sweep; `None` when the sweep wouldn't start. A mapped or `subst` drive is no volume
+/// here: [`drive_letters`] has those.
+fn mount_paths() -> Option<Vec<String>> {
     let mut out = Vec::new();
     let mut name = [0u16; GUID_PATH_LEN];
     // SAFETY: `name` holds `GUID_PATH_LEN` units.
@@ -154,10 +142,7 @@ pub fn volumes() -> Option<Vec<WindowsVolume>> {
         return None;
     }
     loop {
-        out.push(WindowsVolume {
-            guid_path: from_wide(&name),
-            mount_paths: volume_path_names(&name),
-        });
+        out.extend(volume_path_names(&name));
         // SAFETY: `handle` came from `FindFirstVolumeW`; `name` holds `GUID_PATH_LEN` units.
         if unsafe { FindNextVolumeW(handle, name.as_mut_ptr(), GUID_PATH_LEN as u32) } == 0 {
             break;
@@ -292,12 +277,6 @@ fn uppercase_drive(path: &str) -> String {
 /// `text` as a NUL-terminated wide string.
 fn wide(text: &str) -> Vec<u16> {
     std::ffi::OsStr::new(text).encode_wide().chain(Some(0)).collect()
-}
-
-/// A wide buffer up to its first NUL.
-fn from_wide(buffer: &[u16]) -> String {
-    let end = buffer.iter().position(|&unit| unit == 0).unwrap_or(buffer.len());
-    String::from_utf16_lossy(&buffer[..end])
 }
 
 #[cfg(test)]

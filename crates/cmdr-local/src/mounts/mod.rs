@@ -1,11 +1,9 @@
 //! The mount table, asked one way on every OS: which mount points exist, and whether a path is
 //! one. Callers (the write engine's mount guards) ask here and never name the OS. Where this OS
 //! mounts a person's volumes is pure path knowledge, so it lives in `cmdr_fs::mount_layout`.
-//!
-//! `platform` is public only for an OS's own extras (Windows' drive letters and volume sweep,
-//! which the app's drive list reads); the cross-OS questions are the two below.
+//! The app's Windows drive list reads its letters and folder mounts from [`list`] too.
 
-pub mod platform;
+mod platform;
 
 use std::path::{Path, PathBuf};
 

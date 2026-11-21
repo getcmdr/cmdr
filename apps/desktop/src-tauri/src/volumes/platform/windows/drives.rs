@@ -19,9 +19,9 @@
 //!   with `ERROR_NOT_READY` (21); it lists no row until media is in.
 //! - `FindFirstVolumeW` also lists the EFI and recovery partitions, with no path names.
 //!
-//! The letters and the GUID sweep come from the mount table (`cmdr_local::mounts`), the same
-//! reads the write engine's mount guards ask, so the drive list and the guards can't disagree
-//! on what's mounted where.
+//! The letters and folder mounts come from the mount table (`cmdr_local::mounts::list`), the
+//! same read the write engine's mount guards ask, so the drive list and the guards can't
+//! disagree on what's mounted where.
 //!
 //! ❗ `GetVolumeInformationW` is asked only of a local drive: on a mapped drive it's a
 //! network round trip, which blocks on a dead server.
@@ -95,9 +95,33 @@ pub(super) fn unc_drive(root: &str, system_root: &str) -> Option<WindowsDrive> {
     })
 }
 
-/// The letters in use, from the mount table (`cmdr_local::mounts`), none when it can't be read.
+/// Every mount point in the mount table (`cmdr_local::mounts::list`), natively spelled with
+/// a trailing `\` (`C:\`, `C:\Mnt\Data\`), none when it can't be read.
+fn mount_points() -> Vec<String> {
+    cmdr_local::mounts::list()
+        .unwrap_or_default()
+        .iter()
+        .map(|mount| {
+            let text = mount.to_string_lossy();
+            let plain = text.strip_prefix(r"\\?\").unwrap_or(&text);
+            format!("{}\\", plain.trim_end_matches('\\'))
+        })
+        .collect()
+}
+
+/// The letters in use (`C:\`, `D:\`, …), mapped and `subst` drives included.
 fn drive_letters() -> Vec<char> {
-    cmdr_local::mounts::platform::drive_letters().unwrap_or_default()
+    mount_points()
+        .iter()
+        .filter_map(|point| letter_of_root(point))
+        .collect()
+}
+
+/// The letter of a bare drive root (`D:\`), `None` for a folder mount.
+fn letter_of_root(point: &str) -> Option<char> {
+    let mut chars = point.chars();
+    let letter = chars.next().filter(char::is_ascii_alphabetic)?;
+    (chars.as_str() == r":\").then(|| letter.to_ascii_uppercase())
 }
 
 /// One drive letter's row, or `None` for one with nothing usable behind it (an empty card
@@ -151,48 +175,36 @@ fn letter_drive(letter: char, system_root: &str) -> Option<WindowsDrive> {
     })
 }
 
-/// Every volume mounted in a folder rather than (or as well as) on a letter, from the mount
-/// table's GUID sweep (`cmdr_local::mounts`), which also names each volume's letters (skipped
-/// here: [`letter_drive`] has them).
+/// Every volume mounted in a folder rather than (or as well as) on a letter: the mount
+/// table's folder mounts (its letters are [`letter_drive`]'s), each keyed by the GUID path of
+/// the volume mounted there.
 fn folder_mounts(system_root: &str) -> Vec<WindowsDrive> {
     let mut out = Vec::new();
-    for volume in cmdr_local::mounts::platform::volumes().unwrap_or_default() {
-        let guid_path = volume.guid_path;
-        for path in volume.mount_paths {
-            let app = path.replace('\\', "/");
-            let app = app.trim_end_matches('/');
-            let is_letter_root = app.len() == 2;
-            if is_letter_root || app.is_empty() {
-                continue;
-            }
-            let native_root = wide(&path);
-            let Some(info) = volume_information(&native_root) else {
-                continue;
-            };
-            // SAFETY: `native_root` is NUL-terminated.
-            let kind = match unsafe { GetDriveTypeW(native_root.as_ptr()) } {
-                DRIVE_REMOVABLE => WindowsDriveKind::Removable,
-                DRIVE_CDROM => WindowsDriveKind::Optical,
-                _ => WindowsDriveKind::Fixed,
-            };
-            let root = uppercase_drive(app);
-            out.push(WindowsDrive {
-                id: windows_volume_id(
-                    &root,
-                    &WindowsVolumeIdentity::Local {
-                        guid_path: guid_path.clone(),
-                    },
-                    system_root,
-                ),
-                root,
-                kind,
-                label: info.label,
-                share_root: None,
-                is_alias: false,
-                fs_type: info.fs_type,
-                read_only: info.read_only,
-            });
+    for path in mount_points() {
+        if letter_of_root(&path).is_some() {
+            continue;
         }
+        let native_root = wide(&path);
+        let (Some(guid_path), Some(info)) = (volume_guid_path(&native_root), volume_information(&native_root)) else {
+            continue;
+        };
+        // SAFETY: `native_root` is NUL-terminated.
+        let kind = match unsafe { GetDriveTypeW(native_root.as_ptr()) } {
+            DRIVE_REMOVABLE => WindowsDriveKind::Removable,
+            DRIVE_CDROM => WindowsDriveKind::Optical,
+            _ => WindowsDriveKind::Fixed,
+        };
+        let root = uppercase_drive(path.replace('\\', "/").trim_end_matches('/'));
+        out.push(WindowsDrive {
+            id: windows_volume_id(&root, &WindowsVolumeIdentity::Local { guid_path }, system_root),
+            root,
+            kind,
+            label: info.label,
+            share_root: None,
+            is_alias: false,
+            fs_type: info.fs_type,
+            read_only: info.read_only,
+        });
     }
     out
 }
