@@ -5,7 +5,7 @@
 use super::cancel::MtpCancelBridge;
 use super::mapping::map_mtp_error;
 use super::streams::{MtpReadStream, mtp_read_pacing, volume_read_stream_to_chunk_stream};
-use super::{MtpVolume, device_text};
+use super::{MtpVolume, device_name, device_spelling, device_text};
 use crate::connection::storage_path::{folder_or_root, storage_path};
 use crate::connection::{MtpConnectionError, MtpDeleteScope, UploadedFile, std_path_for_host, twins};
 use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, ListedFolder, PathArithmetic};
@@ -156,7 +156,7 @@ impl Volume for MtpVolume {
                 return Ok(root_entry());
             };
 
-            let Some(name) = path.file_name() else {
+            let Some(name) = path.file_name().and_then(device_name) else {
                 return Err(VolumeError::NotFound(path_str.into_owned()));
             };
 
@@ -348,7 +348,7 @@ impl Volume for MtpVolume {
                     raw_os_error: None,
                 });
             };
-            let Some(name) = path.file_name() else {
+            let Some(name) = path.file_name().and_then(device_name) else {
                 return Err(VolumeError::IoError {
                     message: "Invalid directory name".into(),
                     raw_os_error: None,
@@ -401,8 +401,12 @@ impl Volume for MtpVolume {
             // A twin's row path hands its pick to `notify_mutation` as the parent,
             // which re-reads the folder rather than dropping a row by name.
             if let (Some(parent), Some(name)) = (path.parent(), path.file_name()) {
-                self.notify_mutation(&self.volume_id, parent, MutationEvent::Deleted(name.to_string()))
-                    .await;
+                self.notify_mutation(
+                    &self.volume_id,
+                    parent,
+                    MutationEvent::Deleted(device_spelling(name).into_owned()),
+                )
+                .await;
             }
             Ok(())
         })
@@ -781,6 +785,7 @@ impl Volume for MtpVolume {
             let dest_folder = twins::folder_of(dest).map(|p| self.to_mtp_path(p)).unwrap_or_default();
             let filename = dest
                 .file_name()
+                .and_then(device_name)
                 .ok_or_else(|| VolumeError::IoError {
                     message: "Invalid filename".into(),
                     raw_os_error: None,

@@ -190,11 +190,28 @@ fn root_of(device_id: &str, storage_id: u32) -> AppPathBuf {
         .unwrap_or_else(|| storage_url("mtp-unnamed", storage_id).expect("a plain authority makes a storage URL"))
 }
 
-/// The text of `path` as the session layer reads it: an escape (a name no device
-/// spelled, joined in from a Linux disk) as the native bytes' lossy text, the text a
-/// `std::path` view of it gave.
+/// The text of `path` as the session layer reads it: [`device_spelling`].
 fn device_text(path: &AppPath) -> Cow<'_, str> {
-    let text = path.as_str();
+    device_spelling(path.as_str())
+}
+
+/// One name as a device spells it, or `None` for a name whose native bytes aren't text
+/// (a Linux name joined onto a phone path): ❌ never its lossy spelling, which could
+/// match a sibling the device really lists as `caf\u{FFFD}.txt`. What a lookup by name,
+/// a new folder's name, or an upload's name takes.
+fn device_name(name: &str) -> Option<Cow<'_, str>> {
+    match unescape_bytes(name).ok()? {
+        Cow::Borrowed(_) => Some(Cow::Borrowed(name)),
+        Cow::Owned(bytes) => String::from_utf8(bytes).ok().map(Cow::Owned),
+    }
+}
+
+/// App text (a path, or one name) as a device spells it: an escape (a name no device
+/// spelled, joined in from a Linux disk, or a literal escape-range code point the bridge
+/// escaped) as the native bytes' lossy text, the text a `std::path` view of it gave. A
+/// name compared with a listing's `FileEntry.name` goes through here, since a device
+/// lists the literal spelling.
+fn device_spelling(text: &str) -> Cow<'_, str> {
     match unescape_bytes(text) {
         Ok(Cow::Borrowed(_)) => Cow::Borrowed(text),
         Ok(Cow::Owned(bytes)) => Cow::Owned(String::from_utf8_lossy(&bytes).into_owned()),
