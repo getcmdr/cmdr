@@ -4,7 +4,8 @@
 
 use super::*;
 use crate::test_support::TestDir;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPathBuf, PathArithmetic};
+use cmdr_fs::testing::AppTestDir;
 
 /// `smbutil statshares -m` on a share mounted from the `auth` fixture as is (Samba
 /// offers a cipher and asks for none, so macOS doesn't encrypt), trimmed to its
@@ -68,12 +69,18 @@ fn a_table_without_the_row_proves_nothing() {
     );
 }
 
-fn gate_over(dir: &TestDir) -> UnverifiedSmbMount {
+fn gate_over(dir: &AppTestDir) -> UnverifiedSmbMount {
     UnverifiedSmbMount::new(crate::volumes::local_volume_on_mount(
         "share",
-        dir.as_ref(),
+        dir.native(),
         MountClass::SmbShare,
     ))
+}
+
+/// `name` inside the scratch folder, as an app path.
+fn child(dir: &AppTestDir, name: &str) -> AppPathBuf {
+    let name = AppName::from_app_spelling(name).expect("a plain name");
+    dir.app_path().join(name).expect("a name inside the folder")
 }
 
 /// A mount that never proves encrypted (a scratch folder isn't an SMB mount at all,
@@ -81,30 +88,28 @@ fn gate_over(dir: &TestDir) -> UnverifiedSmbMount {
 /// reading, and writing alike, with the typed error that names the setting.
 #[tokio::test]
 async fn an_unproven_mount_is_refused_while_encryption_is_required() {
-    let dir = TestDir::new("smb-gate-refused");
-    std::fs::write(dir.join("a.txt"), b"a").expect("writes the fixture");
+    let dir = AppTestDir::new("smb-gate-refused");
+    std::fs::write(dir.native().join("a.txt"), b"a").expect("writes the fixture");
     cmdr_smb::SmbEncryption::set_required(true);
     let gate = gate_over(&dir);
 
     assert!(matches!(
-        gate.list_directory(&AppPath::legacy_unchecked(&dir), None).await,
+        gate.list_directory(dir.app_path(), None).await,
         Err(VolumeError::EncryptionRequired(_))
     ));
     assert!(matches!(
-        gate.get_metadata(&AppPath::legacy_unchecked(&dir.join("a.txt"))).await,
+        gate.get_metadata(&child(&dir, "a.txt")).await,
         Err(VolumeError::EncryptionRequired(_))
     ));
     assert!(matches!(
-        gate.open_read_stream(&AppPath::legacy_unchecked(&dir.join("a.txt")))
-            .await,
+        gate.open_read_stream(&child(&dir, "a.txt")).await,
         Err(VolumeError::EncryptionRequired(_))
     ));
     assert!(matches!(
-        gate.create_directory(&AppPath::legacy_unchecked(&dir.join("new")))
-            .await,
+        gate.create_directory(&child(&dir, "new")).await,
         Err(VolumeError::EncryptionRequired(_))
     ));
-    assert!(!dir.join("new").exists(), "nothing went through the mount");
+    assert!(!dir.native().join("new").exists(), "nothing went through the mount");
     cmdr_smb::SmbEncryption::set_required(false);
 }
 
@@ -112,13 +117,13 @@ async fn an_unproven_mount_is_refused_while_encryption_is_required() {
 /// the registry has swapped it out.
 #[tokio::test]
 async fn a_lifted_requirement_lets_the_listing_through() {
-    let dir = TestDir::new("smb-gate-lifted");
-    std::fs::write(dir.join("a.txt"), b"a").expect("writes the fixture");
+    let dir = AppTestDir::new("smb-gate-lifted");
+    std::fs::write(dir.native().join("a.txt"), b"a").expect("writes the fixture");
     cmdr_smb::SmbEncryption::set_required(false);
     let gate = gate_over(&dir);
 
     let entries = gate
-        .list_directory(&AppPath::legacy_unchecked(&dir), None)
+        .list_directory(dir.app_path(), None)
         .await
         .expect("lists through the mount");
     assert_eq!(entries.len(), 1);
