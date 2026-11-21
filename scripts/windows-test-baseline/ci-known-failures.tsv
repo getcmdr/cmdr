@@ -44,11 +44,6 @@ cmdr	file_system::volume::manager::archive_routing::tests::path_is_inside_archiv
 cmdr	file_system::volume::manager::archive_routing::tests::resolve_evicts_the_least_recently_used_archive_past_the_cap	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	file_system::volume::manager::archive_routing::tests::resolve_routes_a_remote_zip_via_the_parents_ranged_reads	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	file_system::volume::manager::archive_routing::tests::resolve_routes_an_archive_inner_path_to_an_archive_volume	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
-cmdr	file_system::watcher_incremental_test::a_batch_publishes_removes_then_adds_then_modifies	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
-cmdr	file_system::watcher_incremental_test::a_child_renamed_away_leaves_the_listing	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
-cmdr	file_system::watcher_incremental_test::a_modify_keeps_the_finder_tags_the_cache_holds	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
-cmdr	file_system::watcher_test::a_dotfile_write_reaches_a_pane_showing_dotfiles	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
-cmdr	file_system::watcher_test::a_dotfile_write_reaches_the_cache_but_not_a_pane_hiding_dotfiles	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	go_to_path::tests::deep_nonexistent_path_falls_back_to_nearest_ancestor	fails	#1337: a typed path holding an 8.3 short name (the runner TEMP is RUNNER~1) answers in its short spelling, where listings and the expectation use the long one
 cmdr	go_to_path::tests::dotdot_past_a_nonexistent_middle_segment_is_no_link	fails	#1337: a typed path holding an 8.3 short name (the runner TEMP is RUNNER~1) answers in its short spelling, where listings and the expectation use the long one
 cmdr	go_to_path::tests::existing_dir_resolves_to_directory	fails	#1337: a typed path holding an 8.3 short name (the runner TEMP is RUNNER~1) answers in its short spelling, where listings and the expectation use the long one
