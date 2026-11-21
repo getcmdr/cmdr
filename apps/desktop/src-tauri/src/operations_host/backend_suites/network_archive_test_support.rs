@@ -164,10 +164,21 @@ pub(super) async fn a_zip_on_the_server_browses_and_extracts(remote: Arc<dyn Vol
 /// The parent-aware routing predicate sees a zip-INNER path on the server (the
 /// `std::fs`-only one would say no), and the `.zip` itself stays a plain file.
 pub(super) async fn a_zip_inner_path_on_the_server_routes_as_inside_the_archive(remote: Arc<dyn Volume>, dir: PathBuf) {
-    let (_zip_path, zip) = seed_zip_at(remote.as_ref(), &dir).await;
+    use cmdr_fs::app_path::RelativeAppPath;
+
+    let (_zip_path, seeded) = seed_zip_at(remote.as_ref(), &dir).await;
     let registered = Registered::new(&remote, "zip-routing");
+    // A pane names the zip absolutely, under the volume's root; the fixtures spell
+    // their scratch dir relative to it (`cmdr-test-…`), which no route can place.
+    let zip = match seeded.to_canonical() {
+        Ok(_) => seeded,
+        Err(_) => remote
+            .root()
+            .join_relative(RelativeAppPath::new(seeded.as_str()).expect("a relative scratch path"))
+            .expect("joins under the root"),
+    };
     let inner = zip
-        .join_relative(cmdr_fs::app_path::RelativeAppPath::new("dir/drop.txt").expect("a relative path"))
+        .join_relative(RelativeAppPath::new("dir/drop.txt").expect("a relative path"))
         .expect("joins under the zip");
 
     assert!(
