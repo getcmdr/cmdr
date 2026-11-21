@@ -1804,6 +1804,32 @@ included; the hidden couplings it found are why waves B and C differ from round 
   - The typed `RollbackUnit` needs each volume's `Namer` where `cmdr-operation-log` reads the rows (no volume is in hand
     there) and a decision for stored text `from_literal_store` refuses (relative, `..`): today such a row plans through
     the bridge. David's call before it's built.
+- **Third pass done** (2026-11-21, branch `worktree-agent-a4e240410649dae62`, PR #1321; one agent, no helpers). A clean
+  partial: the merge walk's DESTINATION side is typed, the leaf bodies past it aren't. Bridge calls in `cmdr-operations`
+  471 → 462 (workspace 1,351 → 1,342), `appTextToPath` + `pathFromBareText` 610 → 608; no entry grew. What it is:
+  - **The typed join**: `AppName::from_listed_text` (`cmdr-fs`) reads a row's name as app text with escapes not live (a
+    literal escape-range code point spelled as the bridge spelled it inside a joined `Path`), and
+    `landing.rs::ListedName` is the one way a listed name reaches a destination path, joined by `ListedFolder`.
+    `where_it_lands` takes the folder as `&AppPath` and answers app paths; `landing_at` is the top-level split both
+    drivers share. `DestNameIndex::lookup` takes the listed text.
+  - **The walk holds its destination typed**: `merge_level` from `copy_directory_streaming` down (`merge.rs` 3 → 0), the
+    folder-date notes (`FolderMetadata.dest`), the extract quarantine, and `rename_merge.rs`'s child renames. The bodies
+    that still take `std::path` cross through `landing.rs`'s `on_volume`, `std_of`, and `into_std` (the join's own
+    buffer when the spellings are one), so no new per-file allocation.
+- **Byte-exact evidence** (throwaway differential on macOS, old code against new): 2,497,624 (folder, listed name) cases
+  over POSIX, scheme, and MTP folders with non-UTF-8 bytes, NFC/NFD, literal byte- and unit-escape code points, `\`,
+  `:`, `.`, `..`, `/`, and NUL: the typed join's text and its `std_of` bytes equal `legacy_unchecked(dir.join(name))`,
+  and the 796,288 refusals match, 0 differ. The top-level split over 400,000 generated destinations: 0 differ for
+  canonical text (167,908 cases); the rest fold `//`, `/./`, and a leading `//` to the same place, text no driver hands
+  in. Everything past the join is the same value made once. Suites on macOS: `cmdr-operations` + `cmdr-operation-log`
+  2,789 green.
+- **What's left of the cascade**, and why `native_join_refuses` stays: the leaf bodies (`copy_leaf`,
+  `LeafPool::submit`'s rows, `RefusedChild`/`RefusedLeaf`, `stream_pipe_file` and `land_link`, the staged write's
+  `Spelled`, the resolver's `ResolvedConflict.write_path`, `CreatedPaths`) take `std::path`, whose Windows
+  `parent`/`file_name` split a POSIX server's `a\b`. So `ListedName::new` still refuses `\` and `:` on Windows (through
+  `ChildName`), and the per-item `native_join_refuses` question stays until those bodies take app paths; typing them
+  alone moves crossings to their readers (the journal, the logs, the ledgers: pass two's finding), so the count falls
+  there only with 10f's text exits.
 
 ### 10b. `cmdr-index`
 

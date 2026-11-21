@@ -209,19 +209,13 @@ pub(super) async fn rename_merge_directory(
         if merges_as_a_directory(entry) && dest_hit.is_some_and(merges_as_a_directory) {
             // Real dir vs real dir: always merge, never prompt. Recurse. A
             // symlink on either side is a leaf and falls to the resolver below.
-            Box::pin(rename_merge_directory(
-                ctx,
-                &child_source,
-                &child_dest,
-                note_both_halves,
-            ))
-            .await?;
+            Box::pin(rename_merge_directory(ctx, &child_source, child_dest, note_both_halves)).await?;
             continue;
         }
 
         if let Some(_hit) = dest_hit {
             // File or cross-type clash: consult the file policy.
-            let (decision, aside) = resolve_child(ctx, &child_source, entry, &child_dest).await?;
+            let (decision, aside) = resolve_child(ctx, &child_source, entry, child_dest).await?;
             resolved_children.insert(entry.name.clone(), decision.clone());
             apply_child_decision(ctx, entry, &child_source, decision, aside, note_both_halves).await?;
             continue;
@@ -229,7 +223,7 @@ pub(super) async fn rename_merge_directory(
 
         // No exact-match hit: try a plain rename. A whole subtree (or symlink, or
         // file) rides along on this one server-side call — never descended.
-        note_both_halves(&child_source, &child_dest);
+        note_both_halves(&child_source, child_dest);
         match ctx
             .volume
             .rename(&on_volume(&child_source), &child_dest_app, false)
@@ -244,7 +238,7 @@ pub(super) async fn rename_merge_directory(
                     ctx,
                     &child_source,
                     entry,
-                    &child_dest,
+                    child_dest,
                     &mut resolved_children,
                     note_both_halves,
                 )
