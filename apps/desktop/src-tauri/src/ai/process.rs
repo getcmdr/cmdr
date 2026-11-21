@@ -220,7 +220,7 @@ pub fn is_process_alive(pid: u32) -> bool {
     }
 }
 
-#[cfg(all(test, unix))]
+#[cfg(all(test, unix))] // The stale-server sweep is `pgrep` plus the pid's executable (a no-op elsewhere); cells spawn `/bin/sleep`.
 mod tests {
     use super::*;
     use crate::test_support::{TestDir, wait_until};

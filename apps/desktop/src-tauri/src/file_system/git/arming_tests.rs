@@ -8,8 +8,8 @@
 //! The parked portal's watcher is scripted in a test binary (`wiring::portal`),
 //! so none of this pays for FSEvents.
 
+// #1225: `arming` takes `std::path` listing paths on a `/`-rooted volume; un-gates with app-path plan milestone 10c.
 #![cfg(unix)]
-// POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 #![cfg(test)]
 
 use std::path::{Path, PathBuf};
