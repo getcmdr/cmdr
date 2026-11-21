@@ -49,7 +49,10 @@ async fn a_pane_entered_with_enter_is_found_at_the_url_changes_are_reported_unde
         "the premise: an MTP row carries the inner spelling, got {entered}"
     );
     let rows = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(&entered)), None)
+        .list_directory(
+            AppPath::from_normalized(&entered).expect("a row path is canonical"),
+            None,
+        )
         .await
         .expect("listing Documents");
     let listing = TestListing::new()
@@ -88,7 +91,10 @@ async fn a_pane_opened_at_the_url_answers_the_oracle_at_the_inner_path() {
 
     let opened = format!("mtp://{}/{}/Documents", device.id, device.storage_id);
     let rows = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(&opened)), None)
+        .list_directory(
+            AppPath::from_normalized(&opened).expect("a row path is canonical"),
+            None,
+        )
         .await
         .expect("listing Documents at its URL");
     let listing = TestListing::new()

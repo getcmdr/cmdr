@@ -20,12 +20,12 @@ const FOREIGN: &str = "/foto\u{301}k";
 async fn album() -> InMemoryVolume {
     let volume = InMemoryVolume::new("Share");
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(STORED)))
+        .create_directory(AppPath::from_normalized(STORED).expect("canonical"))
         .await
         .expect("seed the album");
     volume
         .create_file(
-            &AppPath::legacy_unchecked(&Path::new(STORED).join("photo.jpg")),
+            AppPath::from_normalized(&format!("{STORED}/photo.jpg")).expect("canonical"),
             b"jpeg",
         )
         .await
@@ -103,12 +103,12 @@ async fn a_listing_read_while_the_backend_is_replaced_lands_on_the_stored_spelli
     let volume_id = format!("respell-mid-listing-{}", uuid::Uuid::new_v4());
     let kernel = InMemoryVolume::new("Share");
     kernel
-        .create_directory(&AppPath::legacy_unchecked(Path::new(FOREIGN)))
+        .create_directory(AppPath::from_normalized(FOREIGN).expect("canonical"))
         .await
         .expect("seed");
     kernel
         .create_file(
-            &AppPath::legacy_unchecked(&Path::new(FOREIGN).join("photo.jpg")),
+            AppPath::from_normalized(&format!("{FOREIGN}/photo.jpg")).expect("canonical"),
             b"jpeg",
         )
         .await

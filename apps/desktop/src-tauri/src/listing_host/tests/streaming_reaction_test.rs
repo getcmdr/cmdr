@@ -9,8 +9,8 @@
 //! `start` read's task does (`read_as_task`). These cells are the proof that the
 //! policy behind the `ListingEvents` seam kept every reaction.
 
+use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
-use cmdr_fs::app_path::BridgedPath;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -256,7 +256,7 @@ async fn a_cancel_before_the_read_ends_the_listing_unread() {
 /// A volume whose read waits until the listing is cancelled, and says when it
 /// started.
 struct WaitsForCancel {
-    root: BridgedPath,
+    root: &'static AppPath,
     started: Arc<AtomicBool>,
 }
 
@@ -266,7 +266,7 @@ impl Volume for WaitsForCancel {
     }
 
     fn root(&self) -> &AppPath {
-        self.root.app()
+        self.root
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -301,11 +301,7 @@ impl Volume for WaitsForCancel {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            Err(VolumeError::NotFound(path.display().to_string()))
-        })
+        Box::pin(async move { Err(VolumeError::NotFound(path.as_str().to_string())) })
     }
 
     fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
@@ -326,7 +322,7 @@ async fn a_cancel_during_the_read_ends_the_listing_without_waiting_for_it() {
     let volume = Registered::new(
         "reaction-cancel-during",
         Arc::new(WaitsForCancel {
-            root: BridgedPath::new(PathBuf::from("/")),
+            root: app_path!("/"),
             started: Arc::clone(&started),
         }),
     );
