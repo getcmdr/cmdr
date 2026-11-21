@@ -167,7 +167,7 @@ async fn a_tree_removal_deletes_its_folders_as_folders() {
     let spy = FolderDeleteSpy::seeded().await;
     let volume: Arc<dyn Volume> = spy.clone();
 
-    remove_tree(&volume, Path::new("/d"), TreeRemoval::UserChoseOverwriteAcrossTypes)
+    remove_tree(&volume, app_path!("/d"), TreeRemoval::UserChoseOverwriteAcrossTypes)
         .await
         .expect("the tree goes");
 

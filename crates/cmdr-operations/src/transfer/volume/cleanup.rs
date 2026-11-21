@@ -27,7 +27,7 @@ use super::super::super::types::{
 use super::super::super::unblocked_removal::{NodeKind, RemovalRefused, delete_clearing_blockers};
 use super::super::leftover_cleanup::{LeftBehind, finish_in_background};
 use super::super::recovered_name::KeptNewData;
-use super::transfer_error::{PathRole, PathedVolumeError};
+use super::transfer_error::{FailedAt as _, PathRole, PathedVolumeError};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_error::LogError;
@@ -540,18 +540,22 @@ impl TreeRemoval {
 /// folder the user never selected.
 pub(super) async fn remove_tree(
     volume: &Arc<dyn Volume>,
-    path: &Path,
+    path: &AppPath,
     why: TreeRemoval,
 ) -> Result<(), PathedVolumeError> {
-    log::debug!(target: "delete", "remove_tree: {} ({why:?})", LogPrivate::path(path));
+    log::debug!(target: "delete", "remove_tree: {} ({why:?})", LogPrivate::path(&*path.failed_at()));
     remove_tree_inner(volume, path, why.side()).await.map(|_| ())
 }
 
 /// Recursion body. `Ok(true)` means "content remains under here", so the caller
 /// must keep this directory. `side` is the volume's role in the transfer.
-async fn remove_tree_inner(volume: &Arc<dyn Volume>, path: &Path, side: PathRole) -> Result<bool, PathedVolumeError> {
-    let refused = |at: &Path, error| PathedVolumeError::new(side, at, error);
-    let kind = match volume.entry_kind(&AppPath::legacy_unchecked(path)).await {
+async fn remove_tree_inner(
+    volume: &Arc<dyn Volume>,
+    path: &AppPath,
+    side: PathRole,
+) -> Result<bool, PathedVolumeError> {
+    let refused = |at: &AppPath, error| PathedVolumeError::new(side, at, error);
+    let kind = match volume.entry_kind(path).await {
         Ok(kind) => kind,
         Err(_) => {
             // Path may not exist (already deleted or never fully created). Nothing to do.
@@ -560,23 +564,18 @@ async fn remove_tree_inner(volume: &Arc<dyn Volume>, path: &Path, side: PathRole
     };
 
     if kind != EntryKind::Directory {
-        volume
-            .delete(&AppPath::legacy_unchecked(path))
-            .await
-            .map_err(|e| refused(path, e))?;
+        volume.delete(path).await.map_err(|e| refused(path, e))?;
         return Ok(false);
     }
 
     // List directory contents and delete children first
-    let children = volume
-        .list_directory(&AppPath::legacy_unchecked(path), None)
-        .await
-        .map_err(|e| refused(path, e))?;
+    let children = volume.list_directory(path, None).await.map_err(|e| refused(path, e))?;
 
     let mut first_child_failure: Option<PathedVolumeError> = None;
     let mut content_remains = false;
     for child in &children {
-        let child_path = PathBuf::from(&child.path);
+        // The row's own text, read the way the walk always read it (`legacy_unchecked`).
+        let child_path = AppPath::legacy_unchecked(Path::new(&child.path));
         // Labelled with `child_path` at the frame that knows the child: one level
         // up and every leaf failure would answer with this directory's name instead.
         let outcome = if child.is_directory || child.is_symlink {
@@ -585,7 +584,7 @@ async fn remove_tree_inner(volume: &Arc<dyn Volume>, path: &Path, side: PathRole
             Box::pin(remove_tree_inner(volume, &child_path, side)).await
         } else {
             volume
-                .delete(&AppPath::legacy_unchecked(&child_path))
+                .delete(&child_path)
                 .await
                 .map_err(|e| refused(&child_path, e))
                 .map(|()| false)
@@ -616,7 +615,7 @@ async fn remove_tree_inner(volume: &Arc<dyn Volume>, path: &Path, side: PathRole
     }
 
     // Delete the now-empty directory, as a directory (`Volume::delete_directory`)
-    match volume.delete_directory(&AppPath::legacy_unchecked(path), None).await {
+    match volume.delete_directory(path, None).await {
         Ok(()) => Ok(false),
         Err(e) => Err(refused(path, e)),
     }

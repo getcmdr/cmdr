@@ -8,6 +8,8 @@
 
 use std::path::{Path, PathBuf};
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
+
 use super::super::super::host::{EngineHost, UnregisteredVolume};
 use super::super::super::state::WriteOperationState;
 use super::super::super::types::{
@@ -230,6 +232,42 @@ impl OutageFailure for PathedVolumeError {
     }
 }
 
+/// A path a failure names: the engine's `std::path` values, or an app path a typed body
+/// holds. [`PathedVolumeError::path`] keeps the `std::path` spelling, because its text exits
+/// (`display()` into the error the user reads, the logs) must stay byte-exact on Linux names
+/// that aren't UTF-8, which an app path's own text can't reproduce until escapes go live.
+pub(crate) trait FailedAt {
+    /// The path as the error carries it.
+    fn failed_at(&self) -> PathBuf;
+}
+
+impl FailedAt for Path {
+    fn failed_at(&self) -> PathBuf {
+        self.to_path_buf()
+    }
+}
+
+impl FailedAt for PathBuf {
+    fn failed_at(&self) -> PathBuf {
+        self.clone()
+    }
+}
+
+/// ❗ The one crossing a typed body's failure takes back to `std::path` (lossless: the
+/// bridge's exact bytes). It goes once [`PathedVolumeError::path`] holds an app path, which
+/// waits on the escape gate (app-path plan, 10f).
+impl FailedAt for AppPath {
+    fn failed_at(&self) -> PathBuf {
+        self.as_std_legacy().into_owned()
+    }
+}
+
+impl FailedAt for AppPathBuf {
+    fn failed_at(&self) -> PathBuf {
+        self.as_app_path().failed_at()
+    }
+}
+
 /// The ways a `PathedVolumeError` comes to be, besides [`AtPath`].
 ///
 /// ❗ `from_landing` is inherent to `PathedVolumeError`, the type it PRODUCES,
@@ -241,9 +279,9 @@ impl OutageFailure for PathedVolumeError {
 /// § "Rust module cycles", trap 4.
 impl PathedVolumeError {
     /// A failure of a call made on `role`'s volume, at `path` on it.
-    pub(super) fn new(role: PathRole, path: &Path, error: VolumeError) -> Self {
+    pub(super) fn new(role: PathRole, path: &(impl FailedAt + ?Sized), error: VolumeError) -> Self {
         Self {
-            path: path.to_path_buf(),
+            path: path.failed_at(),
             role,
             error,
             aftermath: None,
@@ -275,9 +313,9 @@ impl PathedVolumeError {
     /// A refusal made before any volume call, at `path` on the destination.
     /// `error` is what a walker that inspects it sees: a plain I/O failure,
     /// neither a cancel nor an outage, so nothing retries or waits on it.
-    pub(super) fn refused(path: &Path, refusal: WriteOperationError) -> Self {
+    pub(super) fn refused(path: &(impl FailedAt + ?Sized), refusal: WriteOperationError) -> Self {
         Self {
-            path: path.to_path_buf(),
+            path: path.failed_at(),
             role: PathRole::Destination,
             error: VolumeError::IoError {
                 message: ErrorDetail::of(refusal.clone()),
@@ -312,17 +350,17 @@ impl PathedVolumeError {
 /// `child_dest`.
 pub(super) trait AtPath<T> {
     /// The call went to the source volume, at `path` on it.
-    fn at_source(self, path: &Path) -> Result<T, PathedVolumeError>;
+    fn at_source(self, path: &(impl FailedAt + ?Sized)) -> Result<T, PathedVolumeError>;
     /// The call went to the destination volume, at `path` on it.
-    fn at_destination(self, path: &Path) -> Result<T, PathedVolumeError>;
+    fn at_destination(self, path: &(impl FailedAt + ?Sized)) -> Result<T, PathedVolumeError>;
 }
 
 impl<T> AtPath<T> for Result<T, VolumeError> {
-    fn at_source(self, path: &Path) -> Result<T, PathedVolumeError> {
+    fn at_source(self, path: &(impl FailedAt + ?Sized)) -> Result<T, PathedVolumeError> {
         self.map_err(|error| PathedVolumeError::new(PathRole::Source, path, error))
     }
 
-    fn at_destination(self, path: &Path) -> Result<T, PathedVolumeError> {
+    fn at_destination(self, path: &(impl FailedAt + ?Sized)) -> Result<T, PathedVolumeError> {
         self.map_err(|error| PathedVolumeError::new(PathRole::Destination, path, error))
     }
 }

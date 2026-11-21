@@ -14,7 +14,7 @@
 //! settle when it ends. The local-FS twin is
 //! `crates/cmdr-operations/src/overwrite.rs::DisplacedEntry`.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -53,6 +53,10 @@ use cmdr_fs::volume::{Volume, VolumeError};
 pub(crate) struct DisplacedDestination {
     aside: StagingTemp,
     original: PathBuf,
+    /// The two paths in the volume's own spelling, made once ([`Self::new`]): every
+    /// volume call here addresses one of them.
+    aside_app: AppPathBuf,
+    original_app: AppPathBuf,
     /// Whether it's a FOLDER, which only a cross-type Overwrite sets aside and
     /// which [`DisplacedDestination::discard`] has to take down as a tree.
     is_directory: bool,
@@ -127,23 +131,13 @@ pub(crate) async fn displace_destination(
         ),
         None => None,
     };
-    let displaced = DisplacedDestination {
-        aside,
-        original: original.to_path_buf(),
-        is_directory,
-        record,
-        state: Arc::clone(state),
-    };
+    let displaced = DisplacedDestination::new(aside, original, is_directory, record, state);
     let volumes = [volume];
     let mut outages = 0;
     loop {
         let started_on = StartedOn::now(&volumes);
         let mut error = match volume
-            .rename(
-                &AppPath::legacy_unchecked(original),
-                &AppPath::legacy_unchecked(displaced.aside.path()),
-                false,
-            )
+            .rename(&displaced.original_app, &displaced.aside_app, false)
             .await
         {
             Ok(()) => return Ok(Some(displaced)),
@@ -165,10 +159,7 @@ pub(crate) async fn displace_destination(
                 ended => break ended,
             }
             started_on = StartedOn::now(&volumes);
-            match volume
-                .get_metadata(&AppPath::legacy_unchecked(displaced.aside.path()))
-                .await
-            {
+            match volume.get_metadata(&displaced.aside_app).await {
                 Ok(_) => return Ok(Some(displaced)),
                 Err(VolumeError::NotFound(_)) => break OutageEnd::Back,
                 Err(stat) if stat.transport_fault().is_some() => error = stat,
@@ -202,10 +193,7 @@ pub(crate) async fn displace_destination(
 /// so it goes back home now. Can't tell (the share is still out): the record
 /// waits for the share's next arrival, whose sweep does the same.
 async fn settle_unfinished_aside(displaced: DisplacedDestination, volume: &Arc<dyn Volume>) {
-    match volume
-        .get_metadata(&AppPath::legacy_unchecked(displaced.aside.path()))
-        .await
-    {
+    match volume.get_metadata(&displaced.aside_app).await {
         Err(VolumeError::NotFound(_)) => displaced.forget(),
         Ok(_) => {
             if let Some(kept_at) = displaced.restore(volume).await {
@@ -229,6 +217,25 @@ fn retire(state: &Arc<WriteOperationState>, record: Option<&TrackedRecord>) {
 }
 
 impl DisplacedDestination {
+    /// Holds `aside` as the place `original` goes, both spelled for the volume once.
+    fn new(
+        aside: StagingTemp,
+        original: &Path,
+        is_directory: bool,
+        record: Option<TrackedRecord>,
+        state: &Arc<WriteOperationState>,
+    ) -> Self {
+        Self {
+            aside_app: AppPath::legacy_unchecked(aside.path()).into_owned(),
+            original_app: AppPath::legacy_unchecked(original).into_owned(),
+            aside,
+            original: original.to_path_buf(),
+            is_directory,
+            record,
+            state: Arc::clone(state),
+        }
+    }
+
     /// Records where a file→file Overwrite's landing is about to set the user's
     /// original at `original` aside, for a replacement of `replacement_size`
     /// bytes: on disk before this resolves (`in_flight_temps::hold_aside`), so
@@ -248,13 +255,7 @@ impl DisplacedDestination {
     ) -> Result<Self, NotOnDisk> {
         let aside = StagingTemp::mint_aside(original, uuid::Uuid::new_v4(), state.liveness_token());
         let record = in_flight_temps::hold_aside(state, home, aside.path(), original, replacement_size).await?;
-        Ok(Self {
-            aside,
-            original: original.to_path_buf(),
-            is_directory: false,
-            record,
-            state: Arc::clone(state),
-        })
+        Ok(Self::new(aside, original, false, record, state))
     }
 
     /// Where the original goes (or went).
@@ -284,11 +285,11 @@ impl DisplacedDestination {
     /// prompt naming both types, and what replaced it has fully landed.
     pub(crate) async fn discard(self, volume: &Arc<dyn Volume>) {
         let removed = if self.is_directory {
-            remove_tree(volume, self.aside.path(), TreeRemoval::UserChoseOverwriteAcrossTypes)
+            remove_tree(volume, &self.aside_app, TreeRemoval::UserChoseOverwriteAcrossTypes)
                 .await
                 .map_err(|e| e.error)
         } else {
-            volume.delete(&AppPath::legacy_unchecked(self.aside.path())).await
+            volume.delete(&self.aside_app).await
         };
         match removed {
             Ok(()) => retire(&self.state, self.record.as_ref()),
@@ -315,17 +316,10 @@ impl DisplacedDestination {
     /// original, still recognizable as the aside, goes home later on its own.
     #[must_use = "an original that couldn't go back must be kept for the volume's next sweep"]
     pub(crate) async fn put_back(self, volume: &Arc<dyn Volume>) -> Option<Self> {
-        let back = match volume
-            .rename(
-                &AppPath::legacy_unchecked(self.aside.path()),
-                &AppPath::legacy_unchecked(&self.original),
-                false,
-            )
-            .await
-        {
+        let back = match volume.rename(&self.aside_app, &self.original_app, false).await {
             Ok(()) => true,
             Err(cut_off) if cut_off.transport_fault().is_some() => matches!(
-                volume.get_metadata(&AppPath::legacy_unchecked(self.aside.path())).await,
+                volume.get_metadata(&self.aside_app).await,
                 Err(VolumeError::NotFound(_))
             ),
             Err(e) => {
@@ -361,27 +355,13 @@ impl DisplacedDestination {
     /// and the bytes are where the aside is. A rescue on the raw error would
     /// report a file that was already home as kept under its scratch name.
     pub(crate) async fn restore(self, volume: &Arc<dyn Volume>) -> Option<PathBuf> {
-        let mut result = volume
-            .rename(
-                &AppPath::legacy_unchecked(self.aside.path()),
-                &AppPath::legacy_unchecked(&self.original),
-                false,
-            )
-            .await;
+        let mut result = volume.rename(&self.aside_app, &self.original_app, false).await;
         if let Err(cut_off) = &result
             && cut_off.transport_fault().is_some()
         {
-            match volume.get_metadata(&AppPath::legacy_unchecked(self.aside.path())).await {
+            match volume.get_metadata(&self.aside_app).await {
                 Err(VolumeError::NotFound(_)) => result = Ok(()),
-                Ok(_) => {
-                    result = volume
-                        .rename(
-                            &AppPath::legacy_unchecked(self.aside.path()),
-                            &AppPath::legacy_unchecked(&self.original),
-                            false,
-                        )
-                        .await
-                }
+                Ok(_) => result = volume.rename(&self.aside_app, &self.original_app, false).await,
                 Err(_) => {
                     let kept_at = self.aside.path().to_path_buf();
                     self.keep_for_arrival();

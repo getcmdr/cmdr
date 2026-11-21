@@ -375,7 +375,7 @@ async fn remove_tree_removes_nonempty_directory() {
     let result: Arc<dyn Volume> = vol.clone();
     remove_tree(
         &result,
-        Path::new("/photos"),
+        app_path!("/photos"),
         TreeRemoval::UserChoseOverwriteAcrossTypes,
     )
     .await
@@ -394,7 +394,7 @@ async fn remove_tree_removes_single_file() {
     let result: Arc<dyn Volume> = vol.clone();
     remove_tree(
         &result,
-        Path::new("/file.txt"),
+        app_path!("/file.txt"),
         TreeRemoval::UserChoseOverwriteAcrossTypes,
     )
     .await
@@ -426,7 +426,7 @@ async fn remove_tree_reports_the_leaf_that_refused() {
         .await
         .unwrap();
 
-    let failure = remove_tree(&volume, Path::new("/tree"), TreeRemoval::UserChoseOverwriteAcrossTypes)
+    let failure = remove_tree(&volume, app_path!("/tree"), TreeRemoval::UserChoseOverwriteAcrossTypes)
         .await
         .expect_err("the leaf never deletes, so the sweep can't finish");
     assert_eq!(
@@ -448,7 +448,7 @@ async fn remove_tree_missing_path_is_ok() {
     let result: Arc<dyn Volume> = vol.clone();
     let r = remove_tree(
         &result,
-        Path::new("/never-existed"),
+        app_path!("/never-existed"),
         TreeRemoval::UserChoseOverwriteAcrossTypes,
     )
     .await;
