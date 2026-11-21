@@ -187,3 +187,10 @@ fn a_document_the_type_refuses_links_nowhere_relative() {
     assert_eq!(resolve_link("x.md", None, app_path!("/")), MarkdownLink::Blocked);
     assert_eq!(resolve_link("#md-top", None, app_path!("/")), anchor(Some("md-top")));
 }
+
+/// A query alone names the document's folder, spelled canonically (no trailing `/`, which
+/// `url`'s own path conversion left on).
+#[test]
+fn a_query_alone_names_the_documents_folder() {
+    assert_eq!(resolve("?q=1"), file("/Users/a/proj/docs", None));
+}

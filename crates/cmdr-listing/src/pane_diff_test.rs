@@ -332,3 +332,23 @@ fn toggling_hidden_files_switches_the_row_space_and_drops_what_was_queued() {
         )]
     );
 }
+
+/// A watcher's removal matches the row by its exact name, so of two case twins (a
+/// case-sensitive volume) only the named one goes, and a case-folded name removes
+/// nothing. A rename that changes only the case is that removal plus an add.
+#[test]
+fn a_removal_drops_only_the_exactly_named_case_twin() {
+    let listing = pane(
+        "pane-diff-case-twins",
+        true,
+        sorted(vec![entry("A.txt", 1), entry("a.txt", 2), entry("b.txt", 3)]),
+    );
+
+    listing.engine().inner.notify_removed(listing.id(), "a.txt");
+    listing.engine().inner.notify_removed(listing.id(), "B.txt");
+
+    let names = listing.entry_names();
+    assert!(names.contains(&"A.txt".to_string()), "{names:?}");
+    assert!(!names.contains(&"a.txt".to_string()), "{names:?}");
+    assert!(names.contains(&"b.txt".to_string()), "{names:?}");
+}
