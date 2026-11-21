@@ -214,13 +214,18 @@ impl MtpConnectionManager {
         // only the leaf: re-deriving each ancestor's own full path to cache it
         // correctly isn't worth it, and the next browse of the folder repopulates
         // those anyway via `finalize_listing`. The root handle resolves to `/`
-        // with no walk, so there's nothing handle-keyed to cache for it.
+        // with no walk, so there's nothing handle-keyed to cache for it. ❗ The
+        // walk spells a twin by the name it shares, so `learn_resolved` never
+        // lets that name reach one twin (#523).
         if !is_root_handle(handle) {
             let devices = self.devices.lock().await;
             if let Some(entry) = devices.get(device_id)
                 && let Ok(mut cache_map) = entry.path_cache.write()
             {
-                cache_map.entry(storage_id).or_default().insert(path.clone(), handle);
+                cache_map
+                    .entry(storage_id)
+                    .or_default()
+                    .learn_resolved(path.clone(), handle);
             }
         }
 

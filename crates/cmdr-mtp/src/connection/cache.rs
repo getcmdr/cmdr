@@ -92,6 +92,22 @@ impl PathHandleCache {
         self.handle_to_path.insert(handle, path);
     }
 
+    /// Records what a handle walk found (`handle_resolver.rs`): `handle` sits at `path`.
+    ///
+    /// A walk spells a twin by the name it shares, so it may only teach a path the
+    /// cache doesn't yet tie to another object. ❗ When the path names a same-named
+    /// pair, or another handle, two objects now answer to it: the path's entry goes
+    /// (the next op re-lists and finds the twins), ❌ never pointing at this handle,
+    /// or a row meaning the first object would act on this one (#523).
+    pub(super) fn learn_resolved(&mut self, path: AppPathBuf, handle: ObjectHandle) {
+        match self.lookup(&path) {
+            None => self.insert(path, handle),
+            Some(Cached::Handle(cached)) if cached == handle => {}
+            Some(Cached::Handle(_)) => self.remove_path(&path),
+            Some(Cached::SameNamed) => {}
+        }
+    }
+
     /// Forgets `path` in both directions, and everything cached under it.
     ///
     /// Always remove through this (never `path_to_handle.remove` directly).
@@ -407,6 +423,33 @@ mod path_handle_cache_tests {
             "a listing without the name ends it"
         );
         assert!(!cache.handle_to_path.contains_key(&ObjectHandle(3)));
+    }
+
+    /// ❗ Regression anchor (#523): a handle walk spells a twin by the name it shares,
+    /// so what it learns never makes that name reach one object: not over a cached
+    /// pair, and not over the one object a row of that name means (a twin appearing
+    /// beside it, which an `ObjectAdded` resolves before any listing sees two).
+    #[test]
+    fn a_handle_walk_never_ties_a_shared_name_to_one_twin() {
+        let mut cache = PathHandleCache::default();
+        cache.record_listing(storage_root(), vec![at("/IMG_1.JPG", 1), at("/IMG_1.JPG", 2)]);
+        cache.learn_resolved(path("/IMG_1.JPG"), ObjectHandle(2));
+        assert_eq!(cache.lookup(&path("/IMG_1.JPG")), Some(Cached::SameNamed));
+
+        let mut cache = PathHandleCache::default();
+        cache.record_listing(storage_root(), vec![at("/a.txt", 1)]);
+        cache.learn_resolved(path("/a.txt"), ObjectHandle(7));
+        assert_eq!(
+            cache.lookup(&path("/a.txt")),
+            None,
+            "two objects answer to the name now: the next op re-lists, ❌ never reaching the newcomer"
+        );
+
+        let mut cache = PathHandleCache::default();
+        cache.learn_resolved(path("/new.txt"), ObjectHandle(3));
+        assert_eq!(cache.lookup(&path("/new.txt")), Some(Cached::Handle(ObjectHandle(3))));
+        cache.learn_resolved(path("/new.txt"), ObjectHandle(3));
+        assert_eq!(cache.lookup(&path("/new.txt")), Some(Cached::Handle(ObjectHandle(3))));
     }
 
     /// ❗ Regression anchor (#523): each twin's row reaches its own object, and
