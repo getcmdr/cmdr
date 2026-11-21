@@ -1974,12 +1974,13 @@ included; the hidden couplings it found are why waves B and C differ from round 
   other directory's total rose, and no per-file entry grew. What converted:
   - **The volume registry's mount roots** (`file_system/volume/manager/roots.rs`, `manager.rs`, `root_move.rs`): the
     root set, rank, identity-conflict check, promotion, and every `Promoted { new_root }` are `AppPathBuf`;
-    `roots::same_root` is the one comparison (same text, or the same canonical place, which is `Path`'s `==` for
-    `/Volumes/X/` against `/Volumes/X`). The OS-event entry points (`remove_root`, `move_root`, `find_by_root`) keep
-    their native `&Path` and cross once at `roots::mount_root_from_os` (`from_native_unicode`, a non-Unicode name
-    staying a lossless bridge value); `find_by_app_root`, `mark_root_stale`, and `would_keep_incumbent` take a root in
-    hand. Durable design: `apps/desktop/src-tauri/src/file_system/volume/DETAILS.md` § "A volume ID owns a set of mount
-    roots".
+    `roots::same_root` is the one comparison (`AppPath`'s `==`, `Path`'s `==` by construction; the rank's tie is
+    `AppPath`'s `Ord`, `PathBuf`'s order by construction, a `..` included: the review's fix, after a name-text tie had
+    put `/Volumes/-a` before `/Volumes/..` and a canonical-twin arm had equated Windows `\\?\C:\x` with `C:\x`). The
+    OS-event entry points (`remove_root`, `move_root`, `find_by_root`) keep their native `&Path` and cross once at
+    `roots::mount_root_from_os` (`from_native_unicode`, a non-Unicode name staying a lossless bridge value);
+    `find_by_app_root`, `mark_root_stale`, and `would_keep_incumbent` take a root in hand. Durable design:
+    `apps/desktop/src-tauri/src/file_system/volume/DETAILS.md` § "A volume ID owns a set of mount roots".
   - **Test doubles and fixtures** in these directories: `app_path!` / `from_normalized` for canonical text, and
     `cmdr_fs::testing::AppTestDir` (re-exported from `crate::test_support`) for a scratch tree, so a cell hands a volume
     `C:/…` on Windows where the native tempdir was refused. Cells handed relative text keep `std::path` on purpose.

@@ -1033,11 +1033,13 @@ The rules over the set:
 - **Ranking** (`MountRoot::rank`): liveness first, then shortest path, then lexicographic. The path half is the original
   dedupe rule and still decides between equally-live roots, which is what keeps a saved `/Volumes/testshare/…` path
   restoring correctly. What changed is its RANK: path shape is a guess about identity, an errno is evidence about
-  health, so a proven-stale short root loses to a live long one. The tie compares root then names, as `Path`'s order
-  did, so every local root without a `..` name keeps its order (`/Volumes/a b` against `/Volumes/a/b` included;
-  verified on macOS, a differential harness over 2,000,000 generated pairs, 2026-11-21).
-- **Roots are app paths**: the set holds `AppPathBuf`s, compared by `roots::same_root` (same text, or the same
-  canonical place, which is what `Path`'s `==` answered: `/Volumes/X/` is `/Volumes/X`). The OS-event entry points
+  health, so a proven-stale short root loses to a live long one. The tie is `AppPath`'s own `Ord`, which is
+  `PathBuf`'s component order, so every root keeps its order, a `..` name included (`/Volumes/a b` against
+  `/Volumes/a/b`, and `..` before any name; pinned by `the_tie_orders_roots_as_path_did`).
+- **Roots are app paths**: the set holds `AppPathBuf`s, compared by `roots::same_root`, which is `AppPath`'s `==`:
+  components as `Path`'s `==` read them, so `/Volumes/X/` is `/Volumes/X` (pinned by `same_root_is_paths_equality`).
+  ❌ Not a canonical-twin comparison: on Windows that would also equate `\\?\C:\x` with `C:\x`, which `Path` kept
+  apart. The OS-event entry points
   (`remove_root`, `move_root`, `find_by_root`) take the NATIVE mount path an event reported and cross once at
   `roots::mount_root_from_os`; a root already in hand uses `find_by_app_root`, `mark_root_stale`, and
   `would_keep_incumbent`. `mount_id_for_path` still reads its caller's text with `Path`'s component-wise
