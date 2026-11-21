@@ -431,6 +431,8 @@ mod cancel_test;
 #[cfg(test)]
 mod conformance_test;
 #[cfg(test)]
+mod dot_dot_test;
+#[cfg(test)]
 mod host_seam_test;
 #[cfg(test)]
 mod integration_test;

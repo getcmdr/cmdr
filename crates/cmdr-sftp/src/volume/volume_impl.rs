@@ -171,6 +171,13 @@ impl Volume for SftpVolume {
         Box::pin(async move { self.noting(self.read_link_target_impl(path)).await })
     }
 
+    fn parent_for_dot_dot<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Result<AppPathBuf, VolumeError>> + Send + 'a>> {
+        Box::pin(async move { self.noting(self.parent_for_dot_dot_impl(path)).await })
+    }
+
     fn can_hold_links(&self) -> bool {
         true
     }

@@ -1,7 +1,8 @@
 //! Reading what's on the server without changing it.
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::volume::Presence;
-use std::path::PathBuf;
+use cmdr_fs::volume::dot_dot::{LinkFuture, LinkReader, parent_across_links};
+use std::path::{Path, PathBuf};
 
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{EntryKind, ListingProgress, SpaceInfo, VolumeError};
@@ -14,6 +15,19 @@ use cmdr_fs::volume::remote_paths::RemoteRoot;
 
 use super::mapping::{metadata_to_file_entry, statvfs_to_space_info};
 use crate::errors::map_sftp_error;
+
+/// The server's links, for a `..` ([`SftpVolume::parent_for_dot_dot_impl`]). A link
+/// read off this volume's root answers `NotFound` (no link this volume can see), and an
+/// absolute target off it can't be spelled, so it's refused.
+impl LinkReader for SftpVolume {
+    fn read_link<'a>(&'a self, path: &'a AppPath) -> LinkFuture<'a> {
+        Box::pin(self.read_link_target_impl(path))
+    }
+
+    fn absolute_target(&self, target: &Path) -> Option<AppPathBuf> {
+        self.root.to_app(target.to_str()?).ok()
+    }
+}
 
 // ⚠️ **A filename that isn't UTF-8 costs the SESSION, not just the listing.**
 // SFTP v3 filenames are BYTES with no declared encoding, and a Linux server may
@@ -138,6 +152,14 @@ impl SftpVolume {
             .await
             .map_err(|e| map_sftp_error(&e, &remote))?;
         Ok(Some(target))
+    }
+
+    /// `<path>/..` as the server reads it: the link target's parent when the last
+    /// name is a symlink (`cmdr_fs::volume::dot_dot`), one `LSTAT` per name asked
+    /// and one `READLINK` per link followed. A target off this volume's root is
+    /// refused, ❌ never anchored.
+    pub(super) async fn parent_for_dot_dot_impl(&self, path: &AppPath) -> Result<AppPathBuf, VolumeError> {
+        parent_across_links(self, path).await
     }
 
     /// The free and total space of the filesystem holding `path`: one
