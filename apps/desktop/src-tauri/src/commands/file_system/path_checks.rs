@@ -174,22 +174,19 @@ async fn exists_on_volume(volume_id: Option<String>, path: String, spelling: Spe
         // what the volume accepts; without it a share answers "doesn't exist"
         // for every subfolder, and the dialog promises to create one that's
         // already there.
-        // The typed anchor drops a trailing `/`. A `..` (only a person types one into the
-        // box) or another volume's path has no anchor here, so it's "couldn't tell" until the
-        // typed-path resolver answers it (`wire_path::anchored`).
-        let Some(target) = crate::commands::wire_path::anchored(volume.root(), &expanded_path) else {
-            return TimedOut {
-                data: false,
-                timed_out: true,
-            };
-        };
-        let path_for_check = target.as_std_legacy().into_owned();
         // Detached, so a deadline never abandons an MTP transaction mid-flight
-        // (`crates/cmdr-fs/src/deadline/CLAUDE.md`). `Err(())` is "couldn't tell": the deadline, or
-        // a look-alike listing that failed.
+        // (`crates/cmdr-fs/src/deadline/CLAUDE.md`). `Err(())` is "couldn't tell": the deadline,
+        // a look-alike listing that failed, or a destination with no place on this volume.
         let probe = {
             let volume = std::sync::Arc::clone(&volume);
             async move {
+                // The typed anchor drops a trailing `/`, and a `..` (only a person types one
+                // into the box) resolves the way the write's will (`wire_path::destination`),
+                // inside this probe's budget.
+                let target = crate::commands::wire_path::destination(&volume, &expanded_path)
+                    .await
+                    .map_err(|_| ())?;
+                let path_for_check = target.as_std_legacy().into_owned();
                 let exists = if volume.local_path().is_some() {
                     local_exists(path_for_check.clone()).await?
                 } else {

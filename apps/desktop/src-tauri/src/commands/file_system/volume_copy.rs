@@ -5,6 +5,7 @@
 //! and destination-path resolution and the archive forks. That split is what lets
 //! a backend caller start the same transfer with its own injected sink.
 
+use crate::commands::wire_path;
 use crate::file_system::ScanConflict;
 use crate::operations_host::TauriEventSink;
 use crate::operations_host::{NotInstalled, operations, refuse_not_installed};
@@ -64,6 +65,8 @@ async fn copy_between_volumes_on(
     // Before `install` there is no engine to start on: refuse, never write.
     let engine = engine.map_err(refuse_not_installed)?;
     let sources: Vec<PathBuf> = source_paths.iter().map(PathBuf::from).collect();
+    // A typed `..` resolves here, where the probes resolve it, so the engine gets none.
+    let dest_path = wire_path::transfer_destination(&dest_volume_id, dest_path).await?;
     let started = engine
         .start_volume_copy(
             events,
@@ -101,6 +104,7 @@ pub async fn move_between_volumes(
     let engine = operations().map_err(refuse_not_installed)?;
     let events: Arc<dyn OperationEventSink> = Arc::new(TauriEventSink::new(app));
     let sources: Vec<PathBuf> = source_paths.iter().map(PathBuf::from).collect();
+    let dest_path = wire_path::transfer_destination(&dest_volume_id, dest_path).await?;
     let started = engine
         .start_volume_move(
             events,
@@ -169,6 +173,7 @@ pub async fn compress_files(
     let engine = operations().map_err(refuse_not_installed)?;
     let events: Arc<dyn OperationEventSink> = Arc::new(TauriEventSink::new(app));
     let sources: Vec<PathBuf> = source_paths.iter().map(PathBuf::from).collect();
+    let dest_zip_path = wire_path::transfer_destination(&dest_volume_id, dest_zip_path).await?;
     let started = engine
         .start_volume_compress(
             events,
@@ -205,16 +210,19 @@ pub async fn destination_write_access(dest_volume_id: String, dest_path: String)
     } else {
         dest_path
     };
-    // A `..` the person typed has no typed anchor yet: nothing to show.
-    let Some(dest_path) = crate::commands::wire_path::anchored(dest_volume.root(), &expanded) else {
-        return WriteAccess::Unknown;
-    };
-    // Detached, like the scan: dropping a probe mid-round-trip wedges an MTP phone.
+    // Detached, like the scan: dropping a probe mid-round-trip wedges an MTP phone. A `..`
+    // the person typed resolves the way the write's will, inside the same 2 s; a place
+    // that names nothing on this volume shows nothing.
     timeout_detached_typed(
         Duration::from_secs(2),
         || WriteAccess::Unknown,
         |_| WriteAccess::Unknown,
-        async move { Ok::<_, WriteAccess>(dest_volume.write_access_at(&dest_path).await) },
+        async move {
+            let Ok(dest_path) = wire_path::destination(&dest_volume, &expanded).await else {
+                return Ok::<_, WriteAccess>(WriteAccess::Unknown);
+            };
+            Ok::<_, WriteAccess>(dest_volume.write_access_at(&dest_path).await)
+        },
     )
     .await
     .unwrap_or_else(|unknown| unknown)
@@ -276,6 +284,12 @@ pub async fn scan_volume_for_conflicts(
     // Before `install` no volume is registered, so the destination isn't found.
     let Ok(engine) = operations() else {
         return Err(VolumeScanError::DestinationVolumeNotFound { volume_id });
+    };
+    // The preview names the place the write will: a typed `..` resolves as the start's does.
+    let dest_path = match wire_path::box_destination(&volume_id, &dest_path).await {
+        Ok(Some(resolved)) => resolved,
+        Ok(None) => dest_path,
+        Err(refusal) => return Err(refusal.into_scan_error(dest_path)),
     };
     engine
         .scan_volume_for_conflicts_within(

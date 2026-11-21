@@ -2106,14 +2106,12 @@ included; the hidden couplings it found are why waves B and C differ from round 
     bridge back to the start's `PathBuf` in a file with no budget, and would refuse a typed `..` the copy accepts), and
     so does `get_name_rules` for the boot volume. The other same-root commands (delete, trash, rename, create, compress)
     take row or pane paths, never the dialog's box, so they had no gap.
-  - **Next, now that `resolve_typed` exists** (second step, below): a `..` in a person-typed destination. The writes
-    keep `std::path`'s `root_anchored` (the OS resolves it), and the probes answer "couldn't tell" (no typed anchor),
-    since refusing it would refuse what a person typed; the next step resolves it through
-    `AppHost::registry().resolve_typed(…, TypedBy::Person)` before the anchor. The listing start, the create commands,
-    rename, the pre-checks, the scan preview, and the volume transfers (whose engine starts already drop a trailing `/`)
-    take the text as sent: their senders are rows, pane paths, or typed text, and a listing of `x/link/` lists the
-    target's rows under `x/link` either way. The `cmdr-local`, delete-engine, and MCP pins (g) stay: they pin the
-    volume's and the engine's own answers, or belong to 10d (the go-to pin flipped in the second step).
+  - **A `..` in a person-typed destination**: resolved before the anchor since the second step ("Transfer box `..`
+    done", below). The listing start, the create commands, rename, the pre-checks, the scan preview, and the volume
+    transfers (whose engine starts already drop a trailing `/`) take the text as sent: their senders are rows, pane
+    paths, or typed text, and a listing of `x/link/` lists the target's rows under `x/link` either way. The
+    `cmdr-local`, delete-engine, and MCP pins (g) stay: they pin the volume's and the engine's own answers, or belong to
+    10d (the go-to pin flipped in the second step).
   - **Review round** (2026-11-21): the single trash (`move_to_trash`) reads its path at the edge too, and its engine
     body (`trash_single_journaled`) drops a trailing `/` like every other start (the OS trashed the link either way; its
     `lstat` journaled the target's subtree). The MCP `nav_to_path` refuses a `..` typed, so no pane stands on one (rows
@@ -2159,6 +2157,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
   - **Review round** (same branch): `GoToHost::found` tells "couldn't check" (`Err`) from "nothing there", so a hung
     mount is `Invalid` instead of a nearest-ancestor walk to the root; the script's existence check runs on its result,
     so `cmdr ../sibling` from a linked folder finds what `cd` finds.
+  - **Transfer box `..` done** (2026-11-21): the probes, the conflict scan, and the copy/move/compress starts resolve it
+    at the edge (`commands/wire_path.rs::destination`, over `AppHost::on_volume`), the frontend folds only a relative
+    input's leading `..`s; durable design `apps/desktop/src-tauri/src/commands/DETAILS.md` § "Sent paths".
   - **Left for 10d**: the MCP tools' path inputs call `AppHost::registry().resolve_typed(text, base, TypedBy::Agent)`
     and turn `TypedPathRefusal` (`OffRoot`, `Unanswered`, …) into typed tool errors. ❗ `OffRoot` is a TEXT check (a
     `..` at an app-path root); it says nothing about where the answer lands. `/allowed/link/..` with `link -> /etc/x`

@@ -250,8 +250,8 @@ fn tilde_expanded_checked(sources: &[String]) -> Result<Vec<PathBuf>, WriteOpera
 /// on the boot volume's root the way a copy anchors its own (`resolve_dest_path`): on
 /// Windows that root is `C:/`, so `/Users/x` is `C:/Users/x`, which the engine takes; on
 /// macOS and Linux it's `/`, and the path is the one sent. With no boot volume registered
-/// (a test), the text as sent, tilde expanded. A `..` in it is the person's, so it stays
-/// for the OS to resolve, as a copy's does.
+/// (a test), the text as sent, tilde expanded. A `..` in it is the person's, resolved
+/// before this (`wire_path::transfer_destination`), as a copy's is.
 fn same_root_destination(text: &str) -> PathBuf {
     same_root_destination_on(get_volume_manager().get(cmdr_fs::volume::DEFAULT_VOLUME_ID), text)
 }
@@ -289,6 +289,8 @@ async fn move_files_with(
 ) -> Result<WriteOperationStartResult, WriteOperationError> {
     // Before `install` there is no engine to start on: refuse, never write.
     let engine = operations().map_err(refuse_not_installed)?;
+    // The Move dialog's box: a typed `..` resolves where its probes resolve it.
+    let destination = wire_path::transfer_destination(cmdr_fs::volume::DEFAULT_VOLUME_ID, destination).await?;
     let (sources, destination, config) = local_transfer_request(&sources, &destination, config)?;
 
     // Same-`root` local move (the FE uses `move_between_volumes` whenever the

@@ -139,6 +139,29 @@ async fn a_single_trash_through_a_dot_dot_is_refused_and_trashes_nothing() {
     );
 }
 
+/// The Move dialog's box is person-typed, so a `..` in its DESTINATION is no bug: it resolves
+/// at the edge (`wire_path::transfer_destination`) and the file lands where `ls` says
+/// `x/link/../dst` is, `real/dst`, the place the dialog's probes looked at.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_move_into_a_dot_dot_destination_lands_beside_the_link_target() {
+    ensure_root_volume();
+    let dir = link_tree("wire_move_dot_dot_dest");
+    std::fs::create_dir(dir.join("real/dst")).unwrap();
+    let events = Arc::new(CollectorEventSink::new());
+    move_files_with(
+        Arc::clone(&events) as Arc<dyn OperationEventSink>,
+        vec![wire(&dir, "x/y")],
+        wire(&dir, "x/link/../dst"),
+        None,
+        Initiator::User,
+    )
+    .await
+    .expect("the move starts");
+    settle(&events).await;
+    assert_eq!(std::fs::read(dir.join("real/dst/y")).expect("moved"), b"x");
+    assert!(!dir.join("x/dst").exists(), "❌ not the lexical `x/dst`");
+}
+
 /// On macOS and Linux the boot volume's root is `/`, so anchoring a same-root move's
 /// destination on it changes nothing: the move lands where it always did.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
