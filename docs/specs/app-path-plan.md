@@ -2113,6 +2113,13 @@ included; the hidden couplings it found are why waves B and C differ from round 
     rows, pane paths, or typed text, and a listing of `x/link/` lists the target's rows under `x/link` either way. The
     `cmdr-local`, delete-engine, MCP, and go-to-path pins (g) stay: they pin the volume's and the engine's own answers,
     or belong to 10d and the second commit.
+  - **Review round** (2026-11-21): the single trash (`move_to_trash`) reads its path at the edge too, and its engine
+    body (`trash_single_journaled`) drops a trailing `/` like every other start (the OS trashed the link either way; its
+    `lstat` journaled the target's subtree). The MCP `nav_to_path` refuses a `..` typed, so no pane stands on one (rows
+    under it would refuse every delete as a bug). Cells:
+    `a_single_trash_through_a_dot_dot_is_refused_and_trashes_nothing`,
+    `a_single_trash_of_a_folder_link_with_a_trailing_separator_trashes_the_link`,
+    `a_dot_dot_name_is_refused_and_a_dotted_name_is_not`.
   - Bridge calls in `commands/`: 13 → 9 (`path_checks` 2 → 1, `volume_copy` 5 → 4, `share_link` and `suggested_ops`
     gone; `wire_path.rs` holds none), and `pathFromBareText` 3 down (`path_checks`, `write_ops`, `share_link`).
 - **Windows**: `pnpm check clippy-windows` and `clippy-linux` green. The builder, the app's cells in these 11

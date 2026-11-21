@@ -28,3 +28,11 @@ fn a_same_root_move_destination_on_a_posix_root_is_as_sent() {
         );
     }
 }
+
+/// The one shape that changed on a POSIX root: a relative box text anchors on `/`, as a
+/// copy's does and as the dialog's validation (`anchorOnVolume`) already read it.
+#[test]
+fn a_relative_same_root_move_destination_anchors_on_the_root() {
+    let root: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Root"));
+    assert_eq!(same_root_destination_on(Some(root), "dst"), PathBuf::from("/dst"));
+}

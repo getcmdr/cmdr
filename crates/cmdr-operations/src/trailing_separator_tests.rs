@@ -202,3 +202,22 @@ async fn a_trash_of_a_folder_link_with_a_trailing_separator_trashes_the_link() {
     assert!(!tree.is_link("x/link"), "the link went to the Trash");
     assert!(tree.target_intact(), "the target stayed");
 }
+
+/// The single trash (the rename dialog's "trash the one that's there",
+/// `move_to_trash`) runs outside the batch start, so it drops the trailing `/` itself.
+/// The OS trash took the link either way (verified on macOS 27, this cell, 2026-11-21);
+/// what the guard keeps right is the journal: an `lstat` of `x/link/` read the target,
+/// a folder, and enumerated its subtree as the trashed item's.
+#[cfg(target_os = "macos")]
+#[test]
+fn a_single_trash_of_a_folder_link_with_a_trailing_separator_trashes_the_link() {
+    let tree = LinkTree::new("trailing_sep_trash_single");
+    // Over both, so a red run (the target trashed) doesn't leave it in the real Trash.
+    let _cleanup = super::testing::TrashCleanup::of(&[tree.dir.join("x/link"), tree.dir.join("real/inner")]);
+    let engine = TestOperations::new();
+    engine
+        .trash_single_journaled(&tree.wire("x/link/"), Initiator::User)
+        .expect("the trash lands");
+    assert!(!tree.is_link("x/link"), "the link went to the Trash");
+    assert!(tree.target_intact(), "the target stayed");
+}

@@ -35,8 +35,8 @@ use cmdr_operations::{
 #[specta::specta]
 pub async fn move_to_trash(path: String, initiator: cmdr_operation_log::types::Initiator) -> Result<(), MutationError> {
     let engine = operations().map_err(refuse_instant_not_installed)?;
-    let expanded = expand_tilde(&path);
-    let path_buf = PathBuf::from(&expanded);
+    // Read at the command edge (`wire_path`): a `..` refuses before anything goes.
+    let path_buf = crate::commands::wire_path::checked(&expand_tilde(&path))?;
 
     // Defensive registration with the downloads watcher's ignore set; no-ops
     // outside ~/Downloads.

@@ -29,7 +29,7 @@ use cmdr_fs::app_path::{AppPath, AppPathBuf, ESCAPES_LIVE, Namer, NotAnAppPath, 
 use cmdr_fs::error_detail::ErrorDetail;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::{VolumeError, anchor_at_root};
-use cmdr_operations::WriteOperationError;
+use cmdr_operations::{MutationError, WriteOperationError};
 
 /// A wire path the command edge refused: a `..` name, or (for a volume call) text that's no
 /// app path. The caller turns it into its own family's typed error; [`refused`] has already
@@ -56,6 +56,15 @@ impl From<WirePathRefused> for WriteOperationError {
         WriteOperationError::IoError {
             message: refused.detail(),
             path: refused.path,
+        }
+    }
+}
+
+/// An instant mutation's refusal: the one "something went wrong" fallback, details as above.
+impl From<WirePathRefused> for MutationError {
+    fn from(refused: WirePathRefused) -> Self {
+        MutationError::Unexpected {
+            detail: refused.detail(),
         }
     }
 }

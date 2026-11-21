@@ -262,6 +262,9 @@ impl super::super::Operations {
     ) -> Result<Option<PathBuf>, MutationError> {
         use cmdr_operation_log::types::{EntryType, ExecutionStatus, OpKind};
         let scope = self.op_scope();
+        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`): the `lstat`
+        // below would follow it, and journal the target's subtree as the trashed item's.
+        let source = &*crate::wire_paths::without_trailing_separators(source);
 
         let source_meta = fs::symlink_metadata(source).map_err(|_| MutationError::NotFound {
             path: source.display().to_string(),

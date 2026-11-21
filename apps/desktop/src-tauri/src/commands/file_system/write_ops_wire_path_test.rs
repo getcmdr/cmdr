@@ -123,6 +123,22 @@ async fn a_move_with_a_dot_dot_source_is_refused() {
     assert!(dir.join("real/y").exists() && !dir.join("dst/y").exists());
 }
 
+/// The single trash (`move_to_trash`, the rename dialog's "trash the one that's there")
+/// reads its path at the edge too: a `..` trashes nothing.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_single_trash_through_a_dot_dot_is_refused_and_trashes_nothing() {
+    ensure_root_volume();
+    let dir = link_tree("wire_trash_single_dot_dot");
+    // Over both, so a red run doesn't leave either in the real Trash.
+    let _cleanup = cmdr_operations::testing::TrashCleanup::of(&[dir.join("real/y"), dir.join("x/y")]);
+    let refused = crate::commands::rename::move_to_trash(wire(&dir, "x/link/../y"), Initiator::User).await;
+    assert!(matches!(refused, Err(MutationError::Unexpected { .. })), "{refused:?}");
+    assert!(
+        dir.join("real/y").exists() && dir.join("x/y").exists(),
+        "nothing trashed"
+    );
+}
+
 /// On macOS and Linux the boot volume's root is `/`, so anchoring a same-root move's
 /// destination on it changes nothing: the move lands where it always did.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
