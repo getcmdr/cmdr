@@ -303,6 +303,8 @@ export type WriteOperationError =
   | { type: 'source_in_cold_storage'; path: string }
   // An S3 folder that lists empty but keeps keys no path can address (`p//x`).
   | { type: 'folder_holds_unlisted_items'; path: string }
+  // An Overwrite onto a file the OS can't tell apart from its source.
+  | { type: 'cant_tell_if_same_file'; path: string }
   | { type: 'source_changed'; path: string }
   | {
       type: 'files_too_large_for_filesystem'

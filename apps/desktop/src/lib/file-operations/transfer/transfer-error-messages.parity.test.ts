@@ -900,6 +900,21 @@ const cases: Case[] = [
   },
 
   {
+    // An Overwrite onto a file the OS can't tell from its source: the words say
+    // nothing was replaced, ❌ never that the copy is done.
+    name: 'cant_tell_if_same_file',
+    error: { type: 'cant_tell_if_same_file', path: 'D:/Shared/test_user_1/notes.txt' },
+    op: 'copy',
+    expected: {
+      title: 'This might be the file you’re copying',
+      message:
+        'This drive doesn’t say whether D:/Shared/test_user_1/notes.txt is the very file you’re copying, reached another way. Replacing it could have erased your original, so Cmdr stopped the copy here and left that file as it was.',
+      suggestion:
+        'If you’re sure they’re two different files, delete the one at the destination and copy again. Or copy to another folder, or keep both files under different names.',
+    },
+  },
+
+  {
     // The person's own home folder: refused whoever asked.
     name: 'home_folder (is home)',
     error: { type: 'home_folder', path: '/Users/test_user_11', relation: 'isHome', action: 'delete' },

@@ -599,6 +599,10 @@
   "@errors.write.deletePending.message": {
     "sourceHash": "5ff91b5"
   },
+  "errors.write.cantTellIfSameFile.message": "Esta unidad no indica si {path} es el mismo archivo que estás copiando, solo que accesible por otra ruta. Reemplazar ese archivo podría haber eliminado tu original, así que Cmdr detuvo la copia aquí y dejó ese archivo como estaba.",
+  "@errors.write.cantTellIfSameFile.message": {
+    "sourceHash": "57806f8"
+  },
   "errors.write.homeFolderMove.message.isHome": "{platform, select, macos {Oye, tu carpeta de inicio vive justo donde está. Si la mueves, la próxima vez que inicies sesión tu Mac te buscará en el lugar equivocado.} windows {Oye, tu carpeta de usuario vive justo donde está. Si la mueves, la próxima vez que inicies sesión Windows te buscará en el lugar equivocado.} other {Oye, tu carpeta de inicio vive justo donde está. Si la mueves, la próxima vez que inicies sesión tu computadora te buscará en el lugar equivocado.}}",
   "@errors.write.homeFolderMove.message.isHome": {
     "sourceHash": "7d7c2ff"

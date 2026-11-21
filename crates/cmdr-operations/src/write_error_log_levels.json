@@ -416,6 +416,13 @@
     {
       "level": "warn",
       "error": {
+        "type": "cant_tell_if_same_file",
+        "path": "D:/Shared/test_user_1/notes.txt"
+      }
+    },
+    {
+      "level": "warn",
+      "error": {
         "type": "source_in_cold_storage",
         "path": "s3://AKIAIOSFODNN7EXAMPLE@s3.eu-west-1.amazonaws.com:443/family-photos/2019/holiday-raw.tar"
       }

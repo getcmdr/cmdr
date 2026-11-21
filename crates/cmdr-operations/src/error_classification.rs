@@ -259,6 +259,7 @@ impl WriteOperationError {
             | Self::FileInUse { .. }
             | Self::SourceInColdStorage { .. }
             | Self::FolderHoldsUnlistedItems { .. }
+            | Self::CantTellIfSameFile { .. }
             | Self::SourceChanged { .. }
             | Self::FilesTooLargeForFilesystem { .. }
             | Self::ArchiveNeedsPassword { .. }

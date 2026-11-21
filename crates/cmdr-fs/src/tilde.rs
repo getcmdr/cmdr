@@ -47,6 +47,31 @@ pub fn expand_tilde_with(path: &str, home: Option<&str>, flavor: PathFlavor) -> 
     }
 }
 
+/// The user's home folder as an app path (`C:/Users/test_user_1` on Windows), with no trailing
+/// `/` except the root's own, or `None` when the OS names none. What the frontend expands `~`
+/// against: the OS's native spelling (`C:\Users\…`) is no app path there.
+pub fn home_folder() -> Option<String> {
+    let home = dirs::home_dir();
+    home_folder_with(
+        home.as_deref().map(|h| h.to_string_lossy()).as_deref(),
+        PathFlavor::HOST,
+    )
+}
+
+/// [`home_folder`] against an explicit `home` (as the OS reports it) and `flavor`.
+pub fn home_folder_with(home: Option<&str>, flavor: PathFlavor) -> Option<String> {
+    let expanded = expand_tilde_with("~", home, flavor);
+    if expanded == "~" {
+        return None;
+    }
+    let trimmed = expanded.trim_end_matches('/');
+    Some(if trimmed.is_empty() {
+        "/".to_string()
+    } else {
+        trimmed.to_string()
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -115,7 +140,28 @@ mod tests {
         assert_eq!(expand_tilde_with("~/x", Some("relative"), PathFlavor::Windows), "~/x");
     }
 
-    /// The host's own expansion leaves no `~` behind and lands on an app path.
+    /// The frontend's home folder is an app path, ❌ never the native `C:\Users\…` the OS
+    /// reports, which the frontend's grammar refuses to read (#1292).
+    #[test]
+    fn the_home_folder_is_an_app_path_without_a_trailing_slash() {
+        assert_eq!(
+            home_folder_with(Some(r"C:\Users\test_user_1"), PathFlavor::Windows).as_deref(),
+            Some("C:/Users/test_user_1")
+        );
+        assert_eq!(
+            home_folder_with(Some(r"\\nas\homes\test_user_1\"), PathFlavor::Windows).as_deref(),
+            Some("//nas/homes/test_user_1")
+        );
+        assert_eq!(
+            home_folder_with(Some("/Users/test_user_1/"), PathFlavor::Posix).as_deref(),
+            Some("/Users/test_user_1")
+        );
+        assert_eq!(home_folder_with(Some("/"), PathFlavor::Posix).as_deref(), Some("/"));
+        assert_eq!(home_folder_with(None, PathFlavor::Posix), None);
+        assert_eq!(home_folder_with(Some("relative"), PathFlavor::Windows), None);
+    }
+
+    /// The host expansion leaves no `~` behind and lands on an app path.
     #[test]
     fn the_host_expansion_is_an_app_path() {
         let expanded = expand_tilde("~/Documents");

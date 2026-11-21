@@ -17,7 +17,15 @@
 //! Today's callers still take the cautious-but-silent branch on `Unknown` (`may_be_same`: a
 //! copy duplicates, a move counts the item in place, a compress onto an existing archive is
 //! refused), which `unknown_identity_today_*` tests pin until the Windows local backend
-//! brings the rule above with its refusal copy. Unknown never arises on macOS or Linux.
+//! brings the rule above with its refusal copy. The one exception is a copy's per-file
+//! guard, which already refuses an overwrite it can't prove safe. Unknown never arises on
+//! macOS or Linux.
+//!
+//! **Two ways to read an id.** [`FileId::of`] reads the `Metadata` a caller already holds,
+//! which is free on Unix and always `None` on Windows: Windows keeps the id (volume serial
+//! plus file id) behind an open handle, never in `Metadata`. [`FileId::at`] and
+//! [`same_node_at`] read by PATH, opening a handle on Windows, so they answer there; a data
+//! guard holding a path asks them. `DETAILS.md` § "File identity".
 
 mod platform;
 
@@ -28,6 +36,7 @@ pub use hidden::{HiddenIdentities, hide_identity_of};
 
 use std::collections::HashSet;
 use std::fs::Metadata;
+use std::path::Path;
 
 /// Which volume a node lives on, as this OS numbers volumes (`st_dev` on Unix). Only
 /// ever compared with another read on the same machine in the same session: ❌ never
@@ -66,6 +75,26 @@ impl FileId {
         Some(id)
     }
 
+    /// The node at `path`, read by path: the one reader that answers on Windows, where it
+    /// opens a handle (`DETAILS.md` § "File identity"). `None` when `path` can't be read or
+    /// the filesystem gives no usable id (a network redirector answering zero).
+    pub fn at(path: &Path, follow: Follow) -> Option<Self> {
+        Self::read_at(path, follow).ok().flatten()
+    }
+
+    /// [`FileId::at`] with the failed read kept: `Err` when `path` can't be read (its kind
+    /// tells a missing path from an unreadable one), `Ok(None)` when it can but the
+    /// filesystem gives no usable id. One read either way, so a guard that must tell "not
+    /// there" from "can't tell" asks this ❌ rather than re-reading the path.
+    pub fn read_at(path: &Path, follow: Follow) -> std::io::Result<Option<Self>> {
+        let id = platform::file_id_at(path, follow)?;
+        #[cfg(any(test, feature = "testing"))]
+        if id.is_some_and(hidden::hides) {
+            return Ok(None);
+        }
+        Ok(id)
+    }
+
     /// The device the node lives on.
     pub fn device(self) -> DeviceId {
         self.device
@@ -87,6 +116,16 @@ impl FileId {
     pub(crate) fn from_parts(device: DeviceId, node: u128) -> Self {
         Self { device, node }
     }
+}
+
+/// Whether a read by path ([`FileId::at`]) follows a final symlink, like `fs::metadata`, or
+/// reads the link itself, like `fs::symlink_metadata`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Follow {
+    /// The node a final link points at.
+    Links,
+    /// The link itself.
+    NotLinks,
 }
 
 /// The device `metadata`'s node lives on. `None` where this OS's metadata doesn't say.
@@ -152,6 +191,12 @@ impl Sameness {
 /// Whether `a` and `b` describe the same node.
 pub fn same_node(a: &Metadata, b: &Metadata) -> Sameness {
     Sameness::of(FileId::of(a), FileId::of(b))
+}
+
+/// Whether the paths `a` and `b` name the same node, links followed ([`FileId::at`]).
+/// `Unknown` when either can't be read or carries no id.
+pub fn same_node_at(a: &Path, b: &Path) -> Sameness {
+    Sameness::of(FileId::at(a, Follow::Links), FileId::at(b, Follow::Links))
 }
 
 /// Whether `a` and `b` live on the same device.

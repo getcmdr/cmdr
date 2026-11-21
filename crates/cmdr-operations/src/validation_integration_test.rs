@@ -638,6 +638,29 @@ fn test_may_be_same_file_nonexistent_dest() {
     assert!(!may_be_same_file(&file, &missing));
 }
 
+/// The per-file guard's three answers: absent on either side is no answer (the copy
+/// proceeds), two readable nodes compare, and two EXISTING paths with no id are
+/// `Unknown` (the guard refuses), ❌ never `None`, which would let an Overwrite truncate
+/// its own source on a filesystem with no ids.
+#[test]
+fn file_sameness_tells_absent_from_unknown() {
+    use crate::validation::file_sameness;
+    use cmdr_fs::file_identity::Sameness;
+
+    let temp_dir = create_temp_dir("file_sameness");
+    let (a, b, missing) = (temp_dir.join("a"), temp_dir.join("b"), temp_dir.join("missing"));
+    fs::write(&a, "1").unwrap();
+    fs::write(&b, "2").unwrap();
+
+    assert_eq!(file_sameness(&a, &missing), None, "a fresh copy's destination");
+    assert_eq!(file_sameness(&missing, &a), None, "a source that left");
+    assert_eq!(file_sameness(&a, &b), Some(Sameness::Different));
+    assert_eq!(file_sameness(&a, &a), Some(Sameness::Same));
+    let _hidden = cmdr_fs::testing::hide_identity_of(&[&a, &b]);
+    assert_eq!(file_sameness(&a, &b), Some(Sameness::Unknown));
+    assert_eq!(file_sameness(&a, &missing), None, "absent still wins over no id");
+}
+
 // ============================================================================
 // Copy safety: path length validation
 // ============================================================================

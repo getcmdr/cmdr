@@ -126,7 +126,16 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
     `cargo nextest run -p cmdr-operations link_landing_tests` on the builder before guessing.
   - The `source_binding` cell, and the product bug the same missing identity causes: #1291 (Windows `file_id` is `None`,
     so `may_be_same_file` is true for every existing destination and an Overwrite copy is silently skipped). The app's
-    suites didn't run on the builder this round.
+    suites didn't run on the builder this round. Fixed (2026-11-21, PR #1304,
+    `cargo nextest run -p cmdr-fs -p cmdr-operations` in `D:\src\cmdr-m6` at the branch against its merge base
+    `77d59d3126`): the path reader (`cmdr_fs::file_identity::FileId::at`) gives Windows a real id, so the failures went
+    from 200 to 172. 31 cells turned green (the `source_binding` cell, and every Overwrite cell the silent skip had
+    failed: `approved_op_parity_tests`, `cross_type_policy_tests`, `folder_over_file_rollback_tests`, the
+    `safety_matrix_tests` overwrites, and more). Three cells that the skip had let pass now meet the next guard, task
+    35's mount arm (`MountedVolumeInside` on an ordinary temp folder, § "Owned elsewhere"):
+    `link_landing_tests::an_overwrite_of_a_folder_with_a_refused_link_puts_the_folder_back`,
+    `cross_type_policy_tests::a_move_under_overwrite_all_never_deletes_a_file_a_folder_landed_on`, and
+    `move_op::tests::a_same_fs_merge_that_skipped_a_child_reports_the_source_still_there`.
 - **10a, `cmdr-operations`**: 229.
 - **10b, `cmdr-index`**: 133, the 48 cold-drive timeouts among them.
 - **10e, `cmdr-listing-wasm`**: 7.

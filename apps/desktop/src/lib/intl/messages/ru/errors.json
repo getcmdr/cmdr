@@ -1969,6 +1969,18 @@
   "@errors.write.folderHoldsUnlistedItems.suggestion": {
     "sourceHash": "b3e259b"
   },
+  "errors.write.cantTellIfSameFile.title": "Возможно, это тот же файл, который вы копируете",
+  "@errors.write.cantTellIfSameFile.title": {
+    "sourceHash": "80f2303"
+  },
+  "errors.write.cantTellIfSameFile.message": "Этот диск не сообщает, тот же ли это файл, что вы копируете, только доступный другим путем: {path}. Замена могла уничтожить ваш оригинал, поэтому Cmdr остановил копирование здесь и не тронул этот файл.",
+  "@errors.write.cantTellIfSameFile.message": {
+    "sourceHash": "358ef5a"
+  },
+  "errors.write.cantTellIfSameFile.suggestion": "Если вы точно знаете, что это два разных файла, удалите файл в месте назначения и скопируйте снова. Или скопируйте в другую папку либо сохраните оба файла под разными именами.",
+  "@errors.write.cantTellIfSameFile.suggestion": {
+    "sourceHash": "c5c76a7"
+  },
   "errors.write.mountedVolumeInside.title": "Мешает подключенный диск",
   "@errors.write.mountedVolumeInside.title": {
     "sourceHash": "eedcbbc"
