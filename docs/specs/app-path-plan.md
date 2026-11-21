@@ -1430,6 +1430,58 @@ included; the hidden couplings it found are why waves B and C differ from round 
   targets the drive path.
 - **DONE**: bridge counts zero in these crates; the named Windows clusters green; the operation log round-trips every
   root shape.
+- **Done** (2026-11-21, branch `worktree-agent-a7270d9360407bb2c`, PR #1303; the lead on `cmdr-operation-log` and
+  `cmdr-listing`, one helper each on `cmdr-restic`, `cmdr-archive`, and `cmdr-git` + `cmdr-viewer`; `cmdr-search` and
+  `cmdr-brief-columns` held no `std::path` value to convert). Bridge calls 336 → 29 (`cmdr-archive` 100 → 6,
+  `cmdr-restic` 132 → 2, `cmdr-git` 35 → 1, `cmdr-viewer` 8 → 2, `cmdr-listing` 49 → 17, `cmdr-operation-log` 12 → 1),
+  `appTextToPath` 9 → 1, `pathFromBareText` 37 → 23; no budget rose anywhere. The codemod and its handoff note went
+  first (`scripts/app-path-flip/`, last at `4fcd2231d0`). What converted:
+  - **The operation log's roots**: on Windows a drive (`C:/`) and a UNC share (`//server/share/`) are each one name in
+    the dir tree, ending in `/` (no real name can), under the host's rules only, so POSIX rows keep their bytes; the
+    leaf joins as text (`join_leaf_text`). The rollback planner's acts read and compare app paths, crossing from the
+    journal's `PathBuf` once (`rollback/target.rs`' `app_path_of`).
+  - **Archive, restic, git, viewer**: bodies and helpers do `AppPath` arithmetic, `BridgedPath` roots became
+    `AppPathBuf`, the local `.zip` crosses at `to_native` once, `git2`/gix get native paths at `to_native`. Typed forms
+    beside the old: `ResticVolume::new_at`, `ResticRepos::{confirm_repo_at, serves_confirmed_at, overlay_row_at}`,
+    `FixtureRepo::{write_into_at, sync_into_at}`; `cmdr-archive`'s `new_at` and six boundary `_at` forms stay
+    `pub(crate)` (its surface cap has no headroom; each turns `pub` with its first outside caller); `cmdr-git` adds none
+    (its docs forbid callerless `pub`; 10c/10d add them).
+  - **The listing engine**: a watcher's removal or rename matches the row by name (`mutate::last_name`), never
+    `parent.join(name)`; its API, host seams, and `ListingPath` still carry `std::path` for the app's listing host, so
+    each volume call crosses once.
+- **Byte-exact on macOS and Linux** (throwaway differential harnesses, old `main` code against new, generated inputs):
+  operation-log interning and leaf join 239,004 cases, 0 differ; the rollback planner's containment and case-twin search
+  3,575,605, differing only in the two intended changes below; listing removal 489,354, 0; `cmdr-archive` 3,873,528, 0
+  (2,080 set aside: a typed split answering `None` where the old split's root text named no file, so its confirm
+  answered `None` too); `cmdr-restic` 1,834,880 answers over 200,000 requests with roots built the app's way, 0 (69,581
+  from root shapes no route makes); `cmdr-viewer` 2,386,272, 0 outside the intended classes; `cmdr-git` 8,565, 0 for
+  canonical roots and real names.
+- **Intended behavior changes, on every OS** (each pinned, red on `main`; all for input no real operation produces):
+  - Rollback: a recorded path holding a `..` is outside every root (`Failed`, where `Path::starts_with` credited
+    `/Volumes/x/../y` as already gone under `/Volumes/x`); a case twin directly under a remote root lists that root as a
+    volume spells it (`sftp://nas/`, where `Path::parent` said `sftp://nas`); two roots never twin.
+  - Viewer: a decoded link name that is no name (`a%2F..%2F..`, `bad%FF`, `%00`) resolves nowhere (it climbed past the
+    root, or opened the U+FFFD sibling); a picture target holding an escape-range code point is blocked; a link through
+    an escaped `/` names its file canonically (`a/b`, was `a//b`). The `text_urls` pin went with the deleted wasm text
+    twin it tested.
+  - Git: a tree name that is no name (`..`, empty, NUL) makes no row (it became the parent folder or `/abs`).
+  - Restic: a parent `data/` listing's name that isn't one plain name is skipped, never joined.
+- **Windows**: `pnpm check clippy-windows` green on the merged branch; the builder wasn't free, so the named clusters
+  are expected green by their causes, not yet run: `cmdr-archive` 9 (its two zip-creator cells aren't paths),
+  `cmdr-restic` every non-`symlink` cell (the hub timeouts included), `cmdr-viewer` 12 (the 13th is the deleted pin),
+  `cmdr-git` 1 (un-ignored), `cmdr-operation-log` 3, `cmdr-listing` 1 (`stall_test`'s `/`-is-a-local-disk cell stays).
+- **What still bridges, and who takes it**: the listing engine's 16 crossings and the archive host routing's (10c); the
+  rollback planner's one (`RollbackUnit` and `InverseAct` carry `PathBuf` for `cmdr-operations`, 10a, which also builds
+  the typed unit through the escape mark's `StoredPathReading`, before 10f); restic's and git's host seams (10c/10d);
+  the viewer's host seams (10d); archive's `ScanRecorder` crossing (10a); the test-only crossings into `std::path`
+  fixtures (`conformance`, `InMemoryVolume::set_stat_failing`, 11).
+- **Found on the way, not fixed here**: restic can't browse a repo on a `scheme://` parent (`restic_route_candidates`
+  reads components, so `sftp://h/x` becomes `sftp:/h/x`); 10c's typed root fixes it. `cmdr-restic`'s `tree::child`
+  `AmbiguousName` error names the wrong path (kept byte-exact). ❗ On macOS `cmdr-fs`'s lenient reading of a bridge
+  value led by `//` with three or more names is a UNC root (`//a/b/c`: kind `Unc`, root `//a/b/`, parent `//a/b/`) while
+  `//a/b` reads as POSIX (root `/`), which disagrees with § "App paths"' "a leading `//` is a plain root" on POSIX
+  (verified on macOS 27 at this branch's tip, a throwaway example). Only bridge text reaches it; none of this
+  milestone's crossings makes such text. For milestone 11, or a `cmdr-fs` fix first.
 
 ### 9. `cmdr-local`
 
