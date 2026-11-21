@@ -213,6 +213,27 @@ pub(crate) async fn destination(volume: &Arc<dyn Volume>, text: &str) -> Result<
     destination_over(volume.as_ref(), text, &AppHost::on_volume(Arc::clone(volume))).await
 }
 
+/// [`destination`] for a probe, with the volume that answers for the place it names: text with
+/// no `..` keeps `volume` (the caller routed it already, `path_checks::box_volume`), and a
+/// resolved `..` routes its place again, so `x/a.zip/sub/../y` is asked of the archive, as
+/// `x/a.zip/y` typed plainly is. `volume_id` is `volume`'s registry id.
+///
+/// # Errors
+///
+/// [`DestinationRefusal`], as [`destination`].
+pub(crate) async fn probed_destination(
+    volume_id: &str,
+    volume: Arc<dyn Volume>,
+    text: &str,
+) -> Result<(Arc<dyn Volume>, AppPathBuf), DestinationRefusal> {
+    let target = destination(&volume, text).await?;
+    if !has_dot_dot_name(text) {
+        return Ok((volume, target));
+    }
+    let routed = get_volume_manager().resolve(volume_id, &target).await.volume;
+    Ok((routed.unwrap_or(volume), target))
+}
+
 /// [`destination`] with each `..` answered by `host`.
 async fn destination_over(volume: &dyn Volume, text: &str, host: &AppHost) -> Result<AppPathBuf, DestinationRefusal> {
     let root = volume.root();

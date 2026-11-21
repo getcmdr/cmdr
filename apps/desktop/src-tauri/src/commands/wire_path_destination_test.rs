@@ -73,6 +73,34 @@ async fn a_transfer_start_hands_the_engine_the_resolved_place() {
     assert!(!resolved.split('/').any(|name| name == ".."), "{resolved}");
 }
 
+/// A `..` inside an archive lands inside it, and the probes ask the ARCHIVE about that place,
+/// as they do for the same destination typed without the `..`: the disk holding the `.zip`
+/// can't see `a.zip/inner/name` and would answer "not there".
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_dot_dot_inside_an_archive_is_probed_inside_the_archive() {
+    use std::io::Write as _;
+
+    ensure_root_volume();
+    let dir = TestDir::new("dest_dot_dot_in_archive");
+    {
+        let file = std::fs::File::create(dir.join("a.zip")).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        let options = zip::write::SimpleFileOptions::default();
+        zip.add_directory("sub/", options).unwrap();
+        zip.start_file("inner/name", options).unwrap();
+        zip.write_all(b"there").unwrap();
+        zip.finish().unwrap();
+    }
+
+    let plain = path_exists(Some("root".into()), wire(&dir, "a.zip/inner/name")).await;
+    assert!(plain.data && !plain.timed_out, "the no-`..` spelling: {plain:?}");
+    let typed = path_exists(Some("root".into()), wire(&dir, "a.zip/sub/../inner/name")).await;
+    assert!(
+        typed.data && !typed.timed_out,
+        "the `..` spelling names the same entry: {typed:?}"
+    );
+}
+
 /// A destination with no `..` crosses byte for byte, as it always did.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_destination_with_no_dot_dot_answers_as_before() {

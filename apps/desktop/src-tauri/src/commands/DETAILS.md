@@ -538,7 +538,11 @@ A path the frontend sends is read as an app path at the command edge, `wire_path
   input's LEADING `..`s (lexical, from the source folder, as the pane's `..` row goes) and sends every later `..` as
   typed (`transfer-dialog-utils.ts::toAbsoluteTarget`). `on_volume`, ❌ not `registry()`: the registry's longest-root
   pick ties between volumes sharing a root, and a mounted share under the boot volume is written through the boot
-  volume's OS calls. No "lands through a link" preview line in the dialog yet (go-to's `crossedLink`).
+  volume's OS calls. The probes then ask the place's own volume (`probed_destination` routes it again), so
+  `x/a.zip/sub/../y` is checked inside the archive, as `x/a.zip/y` is. Known limit: the frontend picks a local
+  destination's volume by the text before the `..`, so `/Volumes/Ext/../Users/x` lands on `Ext`, resolves off it, and
+  refuses as `DestinationNotFound` (never a wrong place). No "lands through a link" preview line in the dialog yet
+  (go-to's `crossedLink`).
 - **A pane never stands on a `..`**, or every row under it would carry one and each delete, trash, or move from it
   would refuse as a bug: the listing start takes its path as sent, so the senders that can hold a `..` are closed
   before a pane takes one. The CLI refuses it (`cli/open_url.rs`), go-to-path resolves it, and the MCP `nav_to_path`

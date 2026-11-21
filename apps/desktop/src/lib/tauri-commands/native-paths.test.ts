@@ -153,6 +153,26 @@ describe('onAppPathDragDrop', () => {
     expect(events[0]).toMatchObject({ paths: ['C:/a'], refused: 0 })
   })
 
+  it('keeps delivering after a handler throws, so one bad event never ends every later drag', async () => {
+    const events: AppPathDragDropEvent[] = []
+    let first = true
+    await onAppPathDragDrop((event) => {
+      if (first) {
+        first = false
+        throw new Error('a handler bug')
+      }
+      events.push(event)
+    })
+    const handler = dragDropHandlerRef.current
+    if (!handler) throw new Error('no drag-drop subscription')
+    handler({ payload: { type: 'leave' } })
+    handler({ payload: { type: 'drop', paths: ['C:\\a'], position: { x: 0, y: 0 } } })
+    await vi.waitFor(() => {
+      expect(events).toHaveLength(1)
+    })
+    expect(events[0]).toMatchObject({ type: 'drop', paths: ['C:/a'] })
+  })
+
   it('counts every path refused when the bridge is broken, so no native text slips by', async () => {
     cross.mockRejectedValueOnce(new Error('bridge down'))
     const { events, fire } = await subscribe()

@@ -218,7 +218,9 @@ pub async fn destination_write_access(dest_volume_id: String, dest_path: String)
         || WriteAccess::Unknown,
         |_| WriteAccess::Unknown,
         async move {
-            let Ok(dest_path) = wire_path::destination(&dest_volume, &expanded).await else {
+            let Ok((dest_volume, dest_path)) =
+                wire_path::probed_destination(&dest_volume_id, dest_volume, &expanded).await
+            else {
                 return Ok::<_, WriteAccess>(WriteAccess::Unknown);
             };
             Ok::<_, WriteAccess>(dest_volume.write_access_at(&dest_path).await)

@@ -473,6 +473,14 @@ export default tseslint.config(
           selector: 'Literal[value=/cmdr-media:\\/\\//], TemplateElement[value.raw=/cmdr-media:\\/\\//]',
           message: 'Build a media URL with `mediaUrl(token)` from `routes/viewer/media-view.ts`, never by hand.',
         },
+        // A drop's paths are the OS's native spelling (`C:\…` on Windows), whichever Tauri handle
+        // (`Webview`, `Window`, `WebviewWindow`) hands them over, so every subscription goes
+        // through the one door that crosses them to app paths (#1311).
+        {
+          selector: "CallExpression[callee.property.name='onDragDropEvent']",
+          message:
+            "Its `paths` are the OS's native spelling (`C:\\Users\\…` on Windows), which is no app path. Use `onAppPathDragDrop` from `#lib/tauri-commands`.",
+        },
       ],
       // Catalina's WebKit has no `Intl.ListFormat` (JavaScriptCore installs it only
       // against ICU 67+), so a bare `new Intl.ListFormat` crashed the main window at

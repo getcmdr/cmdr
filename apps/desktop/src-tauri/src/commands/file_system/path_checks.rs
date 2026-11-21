@@ -179,13 +179,15 @@ async fn exists_on_volume(volume_id: Option<String>, path: String, spelling: Spe
         // a look-alike listing that failed, or a destination with no place on this volume.
         let probe = {
             let volume = std::sync::Arc::clone(&volume);
+            let volume_id = volume_id.clone();
             async move {
                 // The typed anchor drops a trailing `/`, and a `..` (only a person types one
-                // into the box) resolves the way the write's will (`wire_path::destination`),
-                // inside this probe's budget.
-                let target = crate::commands::wire_path::destination(&volume, &expanded_path)
-                    .await
-                    .map_err(|_| ())?;
+                // into the box) resolves the way the write's will, inside this probe's budget,
+                // its place asked of the volume serving it (`wire_path::probed_destination`).
+                let (volume, target) =
+                    crate::commands::wire_path::probed_destination(&volume_id, volume, &expanded_path)
+                        .await
+                        .map_err(|_| ())?;
                 let path_for_check = target.as_std_legacy().into_owned();
                 let exists = if volume.local_path().is_some() {
                     local_exists(path_for_check.clone()).await?

@@ -13,6 +13,9 @@ import { getCurrentWebview } from '@tauri-apps/api/webview'
 import { open, save, type OpenDialogOptions, type SaveDialogOptions } from '@tauri-apps/plugin-dialog'
 import type { UnlistenFn } from '@tauri-apps/api/event'
 import { commands } from '#lib/ipc/bindings.js'
+import { getAppLogger } from '#lib/logging/logger.js'
+
+const log = getAppLogger('nativePaths')
 
 /** Native paths crossed to app text, in the order sent, and how many had no app path. */
 interface AppPathsFromNative {
@@ -58,18 +61,25 @@ export type AppPathDragDropEvent =
  */
 export async function onAppPathDragDrop(handler: (event: AppPathDragDropEvent) => void): Promise<UnlistenFn> {
   let queue: Promise<void> = Promise.resolve()
+  // eslint-disable-next-line no-restricted-syntax -- the door itself: every drop crosses here.
   return getCurrentWebview().onDragDropEvent((event) => {
     const payload = event.payload
-    queue = queue.then(async () => {
-      if (payload.type === 'enter' || payload.type === 'drop') {
-        const crossed = await crossOrRefuseAll(payload.paths)
-        handler({ type: payload.type, ...crossed, position: payload.position })
-      } else if (payload.type === 'over') {
-        handler({ type: 'over', position: payload.position })
-      } else {
-        handler({ type: 'leave' })
-      }
-    })
+    // A handler that throws is logged and the queue carries on: a rejected link would skip
+    // every later event, so one bug would end drag-and-drop until a reload.
+    queue = queue
+      .then(async () => {
+        if (payload.type === 'enter' || payload.type === 'drop') {
+          const crossed = await crossOrRefuseAll(payload.paths)
+          handler({ type: payload.type, ...crossed, position: payload.position })
+        } else if (payload.type === 'over') {
+          handler({ type: 'over', position: payload.position })
+        } else {
+          handler({ type: 'leave' })
+        }
+      })
+      .catch((error: unknown) => {
+        log.error('A drag-drop handler threw on a {type} event: {error}', { type: payload.type, error })
+      })
   })
 }
 
