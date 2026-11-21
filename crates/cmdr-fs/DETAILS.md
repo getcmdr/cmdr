@@ -419,11 +419,11 @@ or lock violation) has no Unix code, so no Unix errno produces it (`src/os_error
 ## File identity
 
 `file_identity` is the one place a local identity question is asked: `FileId::of(&metadata)` (device plus a node number
-with 128 bits of room, since a ReFS file id doesn't fit in 64), `device_of`, `link_count`, `same_node` / `same_device`,
-and `first_sighting` (the hardlink dedup every size walk shares). No caller reads `st_dev`, `st_ino`, or `st_nlink`
-itself. The per-OS readers sit behind `file_identity/platform/` (the seam shape in `docs/guides/platform-seams.md`):
-both Unixes read the `stat` the metadata already holds; Windows and the browser answer `None` from `Metadata`, because
-std's stable `Metadata` carries no Windows file id.
+with 128 bits of room, since a ReFS file id doesn't fit in 64), `device_of` / `device_at`, `link_count`, `same_node` /
+`same_device` / `same_device_at`, and `first_sighting` (the hardlink dedup every size walk shares). No caller reads
+`st_dev`, `st_ino`, or `st_nlink` itself. The per-OS readers sit behind `file_identity/platform/` (the seam shape in
+`docs/guides/platform-seams.md`): both Unixes read the `stat` the metadata already holds; Windows and the browser answer
+`None` from `Metadata`, because std's stable `Metadata` carries no Windows file id.
 
 **Decision**: a second reader by PATH, `FileId::at(path, Follow)` and `same_node_at(a, b)`, beside the `Metadata` one.
 **Why**: on Windows the id (volume serial plus file id) lives behind a handle, so only a reader that opens one can
@@ -436,9 +436,13 @@ ids, every Windows pair read `Unknown`, so an Overwrite onto an existing file sk
 content in one call), and `leaf_validation`'s identity read. `FileId::read_at` keeps the failed read's `io::Error`, so a
 guard that must tell "not there" (`NotFound`) from "there, but no id" answers in one read: the copy's per-file guard
 runs on every file, and a re-stat to tell the two apart doubled its syscalls on a fresh copy. The `Metadata` callers
-(walk dedup, device checks, the journal's `NodeIdentity`) still answer `None` on Windows; each moves to the path reader
-as its Windows task needs it. Unix pays one `stat` per read, the same as before. (Verified on Windows 10 22H2 build
-19045, NTFS, `cargo nextest run -p cmdr-fs file_identity`, 2026-11-21.)
+(walk dedup, the journal's `NodeIdentity`) still answer `None` on Windows; each moves to the path reader as its Windows
+task needs it. The device has its own path reader, `device_at` / `same_device_at`, the volume serial from the same
+handle reads `FileId::at` makes (so the two agree); `cmdr-operations`' `is_same_filesystem` asks it when `Metadata`
+can't say, which is what lets a same-drive move on Windows rename in place. A cloned disk can share its source's serial,
+so "same device" there is a hint a rename's own cross-volume refusal (`ERROR_NOT_SAME_DEVICE`) still checks. Unix pays
+one `stat` per read, the same as before. (Verified on Windows 10 22H2 build 19045, NTFS,
+`cargo nextest run -p cmdr-fs file_identity`, 2026-11-21.)
 
 **Decision**: a two-read comparison answers `Sameness` (`Same`, `Different`, `Unknown`), ❌ never a bare `bool`.
 **Why**: the stubs this replaced answered "don't know" as "not the same file", which on a platform without ids switched

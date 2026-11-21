@@ -377,6 +377,21 @@ nearly every method and hide which answers are real.
   reports the server's `NTFS`, so it stays `Other` and network to `is_network`. The name rules never rest on it alone: a
   local disk on Windows is held to Win32's refusals whatever it answers (`crates/cmdr-fs/DETAILS.md` § "Name rules").
   Unverified on a Windows host until the builder runs `name_rules_test.rs`'s `cfg(windows)` cell.
+- **The mount table** (`src/mounts/platform/windows.rs`, whose module docs carry the Win32 answers it rests on): every
+  drive letter plus every folder a volume is mounted in, and "is this a mount point" by
+  `GetVolumeNameForVolumeMountPointW`, which answers only for a drive root or a volume mount point (a junction, even one
+  to `C:\`, is none).
+
+  **Decision**: `list` spells each mount the way `std::fs::canonicalize` spells a folder: verbatim (`\\?\C:\`), a folder
+  mount in its ON-DISK case read from the reparse point itself. **Why**: the write engine's `mount_at_or_under`
+  canonicalizes the folder it's about to remove and asks `mount.strip_prefix(resolved)`, which compares components
+  exactly; the mount manager keeps whatever case a mount was made with, so its own spelling could miss a mount under the
+  folder and let an Overwrite empty the volume. `is_mount_point` normalizes instead, since its callers pass a volume
+  root in app spelling (`C:/`) as often as a resolved one.
+
+  **Decision**: a network path is never a local mount (`Some(false)`), and a bare share root can't say (`None`).
+  **Why**: a share can't hold a volume mount point, and asking would be a round trip to a server that may be dead;
+  `None` keeps the engine's "drive left" answer from firing on a share it can't see.
 
 What's real and what's stubbed, by name: the windows-port plan, § "Windows build state" and task 35's entry. Every
 capability not yet real keeps the trait's conservative default (streams, copy scan, symlink creation, xattrs, metadata,
@@ -494,9 +509,11 @@ app read of a local disk that doesn't go through a volume:
 - **`space`** (`get_space_info_for_path`, `get_volume_space`) and **`live_space`** (`live_volume_space`,
   `expect_space_change`): the index's tier-2 progress, the copy pre-flight, the IPC command, and the space poller.
 - **`mounts`** (`list`, `is_mount_point`): the one door to the mount table, per OS behind `mounts/platform/`, so the
-  write engine's mount guards never name the OS. Raised the ceiling by one module and two items (2026-11-11): the wider
-  surface is the better design, because every caller that moves onto it is a two-arm OS dispatch gone, and once the
-  app's volume code reads its records through it too, `mount_table` and `linux_mounts` can go private.
+  write engine's mount guards never name the OS. The app's Windows drive list reads its letters and folder mounts from
+  `list` too, so the Windows arm's letter and GUID-sweep helpers stay private. Raised the ceiling by one module and two
+  items (2026-11-11): the wider surface is the better design, because every caller that moves onto it is a two-arm OS
+  dispatch gone, and once the app's volume code reads its records through it too, `mount_table` and `linux_mounts` can
+  go private.
 - **The mount probes**: `filesystem_kind` (seven, counting `probe_mount_for_path`'s three platform arms), `mount_table`
   (four), `statfs` (three), `nsurl` (two), and `linux_mounts` (16, the `/proc/mounts` and `mountinfo` readers the app's
   Linux volumes arm builds on). The counter reads source, so each platform's module counts whatever the build target.

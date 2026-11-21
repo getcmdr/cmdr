@@ -234,8 +234,6 @@ owns its real body. Remove a line when its body lands.
   `#[ignore]`d with its piece (`local_windows_conformance_test.rs`).
 - `cmdr_local::reading` Windows arm (`reading/platform/windows.rs`), task 35: no allocation size, mode `0`, no owner or
   group; only `FILE_ATTRIBUTE_HIDDEN` is real.
-- `cmdr_local::mounts` Windows arm (`mounts/platform/windows.rs`) and `filesystem_kind::probe_mount_for_path`, task 35:
-  no mount table and no filesystem type, so every answer is "can't say" (its one test is ignored by name).
 - `cmdr_operations::local_disk` Windows arm (`local_disk/platform/windows.rs`), tasks 35 and 36: `set_mode` and
   `symlink` refuse as unsupported (a copied link fails its item; a copied folder's mode narrowing is skipped), nothing
   reads as locked (`is_locked_item`, so a refusal never gets the "uncheck Locked" advice), and there's no
@@ -250,11 +248,12 @@ owns its real body. Remove a line when its body lands.
   branch, so a Cloud Files placeholder trashes (and hydrates) like any file.
 - `cmdr_operations` extract quarantine on Windows (`transfer/volume/extract_quarantine.rs`), task 37: an extract carries
   no Mark of the Web.
-- `cmdr_fs::file_identity` on Windows (`file_identity/platform/windows.rs`), task 36: every answer is `Unknown`, since
-  `std::fs::Metadata` doesn't carry the file id there. The guards take the cautious-but-silent branch on it today: a
-  copy onto a taken name duplicates to a ` (N)` name, a move onto one counts the item in place and leaves both, and a
-  compress onto an existing archive refuses. Nothing is lost, but each is the wrong outcome until the path-based id
-  reader (`GetFileInformationByHandleEx(FileIdInfo)`) and task 36's `Unknown` rule land.
+- `cmdr_fs::file_identity` on Windows (`file_identity/platform/windows.rs`), tasks 35 and 36: the path readers are real
+  (`FileId::at`, `same_node_at`, `device_at`, through a handle), but every `Metadata` reader (`FileId::of`, `device_of`,
+  `link_count`) answers `None`, since stable std's `Metadata` carries no id, serial, or link count there. So a walk's
+  hardlink dedup counts each name (the total over-counts), the journal's `NodeIdentity` is absent, and a delete walk's
+  per-folder mount test skips the device shortcut and asks the mount table for every folder. Each `Metadata` consumer
+  moves to a path reader as it needs one; the guards that hold a path already ask by path.
 - `cmdr-operations` tests on Windows: 65 test files that drive `LocalPosixVolume`, POSIX modes, or errnos are
   `#![cfg(unix)]` (three single cells too), and `lib.rs` allows `dead_code` and `unused_imports` in a Windows test build
   for the fixtures only they use. Each file un-gates as `LocalWindowsVolume` grows.
@@ -263,7 +262,8 @@ owns its real body. Remove a line when its body lands.
 - The drive table on Windows (`volumes/platform/windows/`), task 39: read at startup and on each switcher refresh, with
   no arrival or removal watcher, so a drive plugged in later shows on the next refresh and one pulled stays registered
   until then. A mapped share carries no `SmbMountInfo`, so nothing upgrades it to a direct session (task 45).
-  `live_volume_space`, `mount_identity_at`, and `network_mount_under` answer nothing (task 35's mount table).
+  `live_volume_space`, `mount_identity_at`, and `network_mount_under` answer nothing (task 35; the mount table they'd
+  read is `cmdr_local::mounts`, real since 2026-11-21).
 - The app's eject on Windows (`file_system/volume/eject/platform/windows.rs`), task 39: nothing reads as ejectable, so a
   local drive's eject refuses as `NotEjectable`; a tool run (an SMB share's unmount, "Eject and save") answers that no
   tool could start (`EjectError::Unexpected`); the holder scan is "couldn't tell"; an SMB Disconnect drops the direct
