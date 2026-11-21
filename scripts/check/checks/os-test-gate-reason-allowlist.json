@@ -1,28 +1,10 @@
 {
   "$comment": "OS-gated test files and test modules that had no reason comment when `desktop-rust-os-test-gate-reason` landed (2026-11-21). It only shrinks: a local run drops an entry once its gate says why (a comment on the gate line or right above it) or is gone. Adding one needs David's OK (scripts/check/checks/DETAILS.md § Allowlist consent); give the gate its reason instead.",
   "gates": {
-    "apps/desktop/src-tauri/src/about/place.rs#tests": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "apps/desktop/src-tauri/src/ai/process.rs#tests": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "apps/desktop/src-tauri/src/crash_reporter/tests.rs#signal_tests": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
     "apps/desktop/src-tauri/src/file_system/cloud_actions.rs#tests": {
       "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
     },
     "apps/desktop/src-tauri/src/file_system/get_info.rs#tests": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "apps/desktop/src-tauri/src/file_system/git/arming_tests.rs": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "apps/desktop/src-tauri/src/file_system/git/overlay_tests.rs": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "apps/desktop/src-tauri/src/file_system/git/walker_exposure_tests.rs": {
       "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
     },
     "apps/desktop/src-tauri/src/file_system/mod.rs#tags_io_integration_test": {
@@ -32,24 +14,6 @@
       "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
     },
     "apps/desktop/src-tauri/src/file_system/mod.rs#watcher_notify_test": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "apps/desktop/src-tauri/src/file_system/restic/mod.rs#test_repo": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "apps/desktop/src-tauri/src/file_system/restic/snapshot_watch_tests.rs": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "apps/desktop/src-tauri/src/file_system/volume/mod.rs#mtp_scan_oracle_tests": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "apps/desktop/src-tauri/src/file_system/volume/mod.rs#smb_index_scan_test": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "apps/desktop/src-tauri/src/file_system/volume/mod.rs#smb_scan_oracle_tests": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "apps/desktop/src-tauri/src/listing_host/tests/lifecycle_order_test.rs": {
       "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
     },
     "apps/desktop/src-tauri/src/notifications.rs#tests": {

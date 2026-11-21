@@ -252,6 +252,7 @@ pub(crate) fn resolved_within(path: &Path, mounts: &Mounts, fs: &dyn LocalFs) ->
     (walked.end != End::Unproven).then_some(walked.path)
 }
 
+// The walk is POSIX-rooted: a `/`-anchored mount table and POSIX symlinks (Windows gets its own walk).
 #[cfg(all(test, unix))]
 #[path = "place_tests.rs"]
 mod tests;

@@ -4,8 +4,8 @@
 //! `crates/cmdr-listing/src/host/overlays_test.rs`; the walker-exposure consequences in
 //! `walker_exposure_tests.rs`.
 
+// #1225: the overlay's `applies_to` matches `std::path` paths on a `/`-rooted volume; un-gates with app-path plan milestone 10c.
 #![cfg(unix)]
-// POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 #![cfg(test)]
 
 use cmdr_fs::app_path::AppPathBuf;
