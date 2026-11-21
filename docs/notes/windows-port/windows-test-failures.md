@@ -177,6 +177,21 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
     arithmetic on app paths (`go_to_path::resolve_with`, the legacy `root_anchored`, which on Windows break a remote
     pane's Go to path and relative anchoring, by reading). The UNC cell's fixture spells the share root without its `/`,
     and the bridge and patching cells expect POSIX's `Path::join`.
+- **Task 35's mount table and by-path device** (2026-11-21, the warm pair `D:\src\cmdr-m6` + `D:\targets\m6`, elevated,
+  `--profile windows-baseline`): `main` at `ea4e561e0a` (milestone 10a's three passes in) ran
+  `-p cmdr-fs -p cmdr-operations`: 2,735 tests, 149 red (`cmdr-fs` 10, `cmdr-operations` 139), against the 168 above; no
+  cell newly red apart from two born red in `815b6a16b7`, both the stale-temp reap's hostile-name cells
+  (`transfer::volume::cleanup::tests::` and
+  `archive_edit::remote::remote_tests::the_temp_reap_never_deletes_a_listed_name_that_isnt_one_plain_name`): the reap
+  joins a listed name with `std::path` (`cleanup.rs` and `archive_edit/remote.rs`, `dir.join(&entry.name)`), so on
+  Windows it asks for `/album\orphan…` (S, 10a's). The branch (`45d5fcee5c`,
+  `-p cmdr-fs -p cmdr-local -p cmdr-operations`): 2,786 tests, 112 red (`cmdr-fs` 10, `cmdr-operations` 102,
+  `cmdr-local` 0, its four new mount cells green), none newly red, and no `MountedVolumeInside` anywhere in the log. 37
+  turned green: every `MountedVolumeInside` cell (the folder deletes, the same-drive and cross-drive moves, the
+  Overwrite cells, the three PR #1304 had moved onto the mount arm), plus the same-drive move cells that now rename
+  (`is_same_filesystem` reads the device by path). The TSV's task-35 rows still red, each with its cause in `rerun`: the
+  ledger's four (node identity from `Metadata`), four golden traces and one folder-delete journal row (path spelling,
+  N), and one trash cell (Recycle Bin, task 36).
 - **10a, `cmdr-operations`**: 229.
 - **10b, `cmdr-index`**: 133, the 48 cold-drive timeouts among them. Seen on the builder (2026-11-21, the warm pair
   `D:\src\cmdr-m6` + `D:\targets\m6`, elevated through `run-on-desktop.sh`, `--profile windows-baseline`,
