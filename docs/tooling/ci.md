@@ -9,7 +9,7 @@ How the GitHub workflows fit together, and the invariants that keep them honest.
 | ----------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `ci.yml`                      | PRs, pushes to main, nightly, manual    | Main suite: change detection, one `uses:` job per lane (§ Lane files), the deploy, and `CI OK`       |
 | `<lane>-lane.yml`             | Called by `ci.yml`                      | One lane's steps each: `rust`, `rust-fixtures`, `macos`, `windows`, `svelte`, `e2e-linux`, and so on |
-| `windows-lane.yml`            | Called by `ci.yml`, manual              | Required on land runs that touch Rust: Windows clippy (native MSVC), plus a break report. § Windows  |
+| `windows-lane.yml`            | Called by `ci.yml`, manual              | Required on PR runs that touch Rust: Windows clippy (native MSVC), plus a break report. § Windows    |
 | `ci-upkeep.yml`               | CI finished on a `main` push            | Warms `main`'s build caches, then drops superseded ones. § CI upkeep                                 |
 | `slow-checks.yml`             | Nightly (3 AM UTC), manual              | osv-scanner, cargo-deny/udeps, govulncheck, website Docker build, 30-min SMB soak                    |
 | `advisories.yml`              | Daily (4:17 AM UTC), manual             | osv-scanner (every lockfile) and cargo-deny (no compile): new advisories surface in a day            |
@@ -76,10 +76,10 @@ A filter compares the PR's whole delta against `main`, so a docs fix pushed onto
 lane. `scripts/lane-markers/` hashes each lane's exact inputs (its filters' matches at the commit, its workflow and
 local actions, the toolchain pins, the check runner); a lane that passes saves a `lane-green-<lane>-<hash>` Actions
 cache entry, a later PR run that finds it in a trusted scope skips the lane, and `CI OK` re-proves every such skip.
-Pushes, dispatches, and `run_all` ignore markers. A light run doesn't run the heavy lanes, so it saves no marker for
-them; the land run does, and a later land run on the same inputs skips them (§ Light runs and land runs). Trust
-argument, store choice, the one risk (a filter missing an input) and its guards, and the per-lane wiring:
-`scripts/lane-markers/DETAILS.md`.
+Pushes, dispatches, and `run_all` ignore markers. A light run saves markers for the lanes it runs (the hosted Rust lanes
+included), so a land run on the same inputs skips them; it doesn't run macOS or E2E, so the first land run pays those
+two (§ Light runs and land runs). Trust argument, store choice, the one risk (a filter missing an input) and its guards,
+and the per-lane wiring: `scripts/lane-markers/DETAILS.md`.
 
 The seven path-filtered lanes are wired (`desktop-rust`, `desktop-rust-fixtures`, `desktop-rust-macos`,
 `desktop-rust-windows`, `desktop-svelte`, `desktop-e2e-linux`, `website`); the light lane isn't, since it gates on no
@@ -415,12 +415,19 @@ These estimates are from the old jobs' step times; the first land runs on the sp
 
 **The concurrent-job budget.** GitHub's free plan runs at most 20 jobs at once per account (five of them macOS), and a
 job over the cap queues. The splits made a land run wider: at its peak (the first few minutes) one runs about 18 Linux
-jobs (the light lane and `go-tools`; Rust `lane`, `nextest-filters`, `kani`, `shuttle`; fixtures `lane` and `nextcloud`;
-Svelte `checks`, `eslint-typecheck`, and four Vitest slices; the E2E build; the website's `demo`; plus `changes` and the
-gate), one Windows job (which counts toward the 20), and one macOS job, and the three E2E slices start as the Vitest
-slices finish. Two land runs at once, or a land run beside a light run, queue some jobs; a light run alone is far
-narrower (no Rust, fixtures, macOS, or E2E). If queueing eats the gain, shard Vitest three ways before anything else,
-since its slices are the shortest.
+jobs (the light lane and `go-tools`; Rust `lane`, `nextest-filters`, `module-cycles`, `kani`, `shuttle`; fixtures `lane`
+and `nextcloud`; Svelte `checks`, `eslint-typecheck`, and four Vitest slices; the E2E build; the website's `demo`; plus
+`changes` and the gate), one Windows job (which counts toward the 20), and one macOS job, and the three E2E slices start
+as the Vitest slices finish. Two land runs at once, or a land run beside a light run, queue some jobs; a Rust-touching
+light run is nearly as wide (no macOS or E2E), so several agents pushing Rust milestones at once queue too. If queueing
+eats the gain, shard Vitest three ways before anything else, since its slices are the shortest.
+
+What bounds that queue: a PR's runs share the `ci-pr-<n>` group with `cancel-in-progress`, so a newer push, and the
+`land` label's run, cancel that PR's older run (seen on PR #1328, 2026-11-21: each push cancelled the run before it). A
+cancelled job still runs its `if: always()` steps before the run ends, and the newer run waits `pending` until it does,
+so keep those steps short. Nothing ranks a land run above another PR's light run: GitHub starts queued jobs with no
+priority, so a land run beside several Rust light runs can wait on their slots. If that bites, the fix is a cap on Rust
+light runs (say, through a job-level `concurrency` group) that leaves land runs alone.
 
 ## CI upkeep
 
@@ -545,9 +552,16 @@ only the newest run of a workflow on a commit, so a newer run without a green `C
 workflows don't shadow each other, as `codeql.yml` and `ci.yml` show. Evidence and what `pnpm land` does about it:
 `scripts/land/DETAILS.md` § Gotcha: GitHub reads only the newest run on a commit.
 
-Last, it runs `desktop-rust-module-cycles`, whose baseline is a macOS module graph (`scripts/check/checks/DETAILS.md` §
-"Rust module cycles"), so it can't move to ubuntu. It first installs the cargo-modules version the check pins;
-rust-cache carries `~/.cargo/bin`, so that multi-minute build runs only on a cold entry or a bump.
+`desktop-rust-module-cycles` measures a macOS module graph (`scripts/check/checks/DETAILS.md` § "Rust module cycles"),
+and the check analyzes for `aarch64-apple-darwin` on every host, so the Linux Rust lane's `module-cycles` job owns it on
+every PR run, light or land. Verified equivalent: the DOT cargo-modules printed on ubuntu was byte-identical to an M1's
+for all 33 library crates, the app crate included (run 44935394792 against a local run, cargo-modules 0.27.0,
+2026-11-21); against a Linux target the app crate has 784 modules instead of 884. Decision: the M1 skips it, saving ~3
+min of its time per landing; a hosted macOS run (the nightly, the release gate, a land while the M1 is busy) still runs
+it last, so a host drift shows there. The one way the two could part: a build script that can't run on Linux for the
+macOS target, whose `rustc-cfg` (like `cmdr_host`) would then gate modules out of the Linux graph. It first installs the
+cargo-modules version the check pins; rust-cache carries `~/.cargo/bin`, so that multi-minute build runs only on a cold
+entry or a bump.
 
 Why one job: a split-out tests job saved ~5 min of wall time, but the account runs at most five macOS jobs at once, and
 with several PRs in flight the second macOS job per run queued for longer than that (§ Build caching, Critical path).
@@ -657,10 +671,10 @@ later PR happened to fix it.
   host, `CMDR_WINDOWS_BREAKS_TARGET=x86_64-pc-windows-gnu pnpm check windows-breaks` gives the same report from a mingw
   cross-check (`apt-get install mingw-w64`, `rustup target add x86_64-pc-windows-gnu`). On a Mac, zig stands in for
   mingw's C compiler and `AWS_LC_SYS_PREBUILT_NASM=1` for NASM; that recipe's in the progress log above.
-- **When it runs**: a land run (§ Light runs and land runs) whose change matches the `rust-windows` filter (the Rust
-  lanes' shared `rust-inputs` plus the lane file), and every full run (the nightly, the release gate's `run_all`). A
-  light run skips it like the other heavy lanes, and a lane marker skips it when its exact inputs already passed. By
-  hand on any branch: `gh workflow run windows-lane.yml --ref <branch>` (no marker saved).
+- **When it runs**: any PR run, light or land (§ Light runs and land runs), whose change matches the `rust-windows`
+  filter (the Rust lanes' shared `rust-inputs` plus the lane file), and every full run (the nightly, the release gate's
+  `run_all`). A lane marker skips it when its exact inputs already passed, so a land after a green light run on the same
+  tree skips it. By hand on any branch: `gh workflow run windows-lane.yml --ref <branch>` (no marker saved).
 - **Cost, and why native over a Linux cross-compile**: measured on the runs of 2026-11-19, the lane takes 7–11 min cold
   (run 44462048164: 10.3 min, clippy over the whole workspace 8.7 of it), while a land run's wall clock was 17–22 min,
   set by Svelte, E2E, and the Rust lanes, so it starts at t=0 and finishes well inside the critical path: about zero
@@ -778,11 +792,12 @@ through `CODEQL_EXTRACTOR_RUST_OPTION_*` env vars.
 ## Light runs and land runs
 
 An agent pushes each milestone with `pnpm land -no-wait`, and most of those pushes are never landed as they are. So a PR
-run is **light** until someone asks to land its head: `desktop-rust`, `desktop-rust-fixtures`, `desktop-rust-macos`,
-`desktop-rust-windows`, `desktop-e2e-linux`, and `e2e-base-image` skip, and every other lane runs as usual. `pnpm land`
-asks by adding the PR's `land` label; that `labeled` run, any re-run of it, and every later push while the label stays
-are **land runs**, where every lane the change needs runs or skips as a verified marker (§ Lane markers), the same gate
-as before.
+run is **light** until someone asks to land its head: `desktop-rust-macos`, `desktop-e2e-linux`, and `e2e-base-image`
+skip, and every other lane runs as usual, the hosted Rust lanes (`desktop-rust` with its `module-cycles` job,
+`desktop-rust-fixtures`, `desktop-rust-windows`) included. macOS stays land-only because its runner is David's M1, which
+he works next to; E2E because it builds the whole app and is usually the critical path. `pnpm land` asks by adding the
+PR's `land` label; that `labeled` run, any re-run of it, and every later push while the label stays are **land runs**,
+where every lane the change needs runs or skips as a verified marker (§ Lane markers), the same gate as before.
 
 - **The gate's name is the line `main` holds.** `ci-ok`'s `name:` is `CI OK` on a land run and `CI light` on a light
   one, so a light run's green gate is a check the ruleset doesn't accept. GitHub creates a job's check run only when the
@@ -802,16 +817,25 @@ as before.
   which a fork's author lacks, and a re-run keeps its payload, so it keeps its mode. Asking only ever adds lanes, so no
   fork-controlled input can turn a light run into a passing one. A fork PR's run executes the fork's own workflow, which
   the approval rule for outside contributors guards (§ The light lane).
-- **Any other label** also starts a `labeled` run. It checks nothing (`verified` is set), names its gate `CI light`, and
-  sits in a concurrency group of its own, so it can't cancel the PR's real run.
+- **Any other label** also starts a `labeled` run. It checks nothing (`verified` is set), sits in a concurrency group of
+  its own, so it can't cancel the PR's real run, and is titled `Light: checks nothing (the <label> label): <PR title>`
+  with its gate named `CI label only` (`changes`' `ignored` output). Why: a PR opened with `claude-created` starts one,
+  and when its gate was `CI light` too, it went green in a minute beside the real light run's red one and read as the
+  verdict (PR #1326, 2026-11-21). The title keeps the `Light: ` prefix, so `pnpm land` never waits on it, and the ETA
+  skips it (`isLabelRun`).
 - **`run-name` titles a light run `Light: <PR title>`** (other runs keep GitHub's default, which an empty `run-name`
   falls back to), so `pnpm land` waits only on land runs (`scripts/land/DETAILS.md` § Decision: ask for a land run). It
   mirrors the `mode` step; drift there can only make `land` wait on the wrong run, never land on one.
 - `ci-coverage` rule 5 pins the gate's name expression and the `land` output to `mode`
   (`scripts/check/checks/ci-ok-gate.go`).
-- **Cost of the trade**: a light run runs no clippy, Rust test, or macOS build, so a Rust slip shows at land time
-  instead of at the milestone. Agents run `pnpm check clippy` and the Rust tests they touched before each commit
-  (`AGENTS.md` § Checker script).
+- **Cost of the trade**: a light run runs no macOS build or E2E, so a macOS-only slip or an E2E failure shows at land
+  time instead of at the milestone. Linux clippy and tests, module cycles, and the Windows compile run light since
+  2026-11-21 (David: "CI is free"), after PR #1313 met a module cycle 20+ min into a landing. A Rust-touching push adds
+  about 70 hosted job-minutes (PR #1328's light run 44932475102, 2026-11-21: Rust lane 43 across its six jobs, fixtures
+  18, Windows 7.5) and finished in 16.5 min wall, set by `module-cycles` (13 min cold: 4 of them the cargo-modules
+  install that `warm-rust-cache` removes, 7.5 the analysis). Free on this public repo, but each takes slots from the
+  account's 20-job concurrency budget (§ Build caching, Critical path). Docs-only pushes stay cheap: the Rust filters
+  exclude `CLAUDE.md` and `DETAILS.md`.
 
 ## Branch protection
 

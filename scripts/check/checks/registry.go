@@ -233,10 +233,9 @@ var AllChecks = []CheckDefinition{
 		DisplayName: "Rust module cycles",
 		App:         AppDesktop,
 		Tech:        "🦀 Rust",
-		// CI runs it in `ci.yml`'s macOS `desktop-rust-macos` job, never in an ubuntu lane: the
-		// baseline is a macOS module graph, and a Linux analysis drops the macOS-gated
-		// modules (`drag_image_detection` and `drag_image_swap` are a tangle), so its
-		// numbers would disagree for reasons that have nothing to do with coupling.
+		// CI runs it in the Linux Rust lane's `module-cycles` job (light runs too) and in a
+		// hosted macOS lane (the M1 skips it). The baseline is a macOS module graph, so the check always analyzes for
+		// `aarch64-apple-darwin` (`moduleCyclesTarget`), whatever the host.
 		// ~90 s across the library crates, most of it the app crate, and the
 		// thing it measures moves on the scale of a refactor rather than a commit.
 		IsSlow:    true,

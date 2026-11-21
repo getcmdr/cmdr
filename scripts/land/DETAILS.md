@@ -94,9 +94,11 @@ it with the release flow (`docs/guides/releasing.md`).
 
 ## Decision: ask for a land run
 
-Decision: a PR run is light (no Rust lanes, macOS, or Linux E2E; gate `CI light`) until `land` asks to land its head by
-adding the PR's `land` label (`docs/tooling/ci.md` § Light runs and land runs). Why: most `-no-wait` milestone pushes
-are never landed as they are, and each one used to pay the macOS lane's ~34 min and E2E's ~21.
+Decision: a PR run is light (no macOS lane or Linux E2E; gate `CI light`) until `land` asks to land its head by adding
+the PR's `land` label (`docs/tooling/ci.md` § Light runs and land runs). Why: most `-no-wait` milestone pushes are never
+landed as they are, and each one used to pay the macOS lane's ~34 min (on David's M1) and E2E's ~21. The hosted Rust
+lanes do run light, so a milestone push sees a Rust, module-cycle, or Windows break before a landing does, and their
+markers let the land run on the same tree skip them.
 
 - **Asking** (`askToLand`, `nextLandAsk`): no label adds it, which starts a `labeled` land run on the head. With the
   label on, a push already started one, so it waits; but when every run on the head is light (the label went on before

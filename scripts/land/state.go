@@ -404,7 +404,7 @@ const (
 )
 
 // lightRunPrefix starts a light run's title (`ci.yml`'s `run-name`): a PR run nobody asked to land,
-// which skips the heavy lanes and reports `CI light`, never `CI OK`.
+// which skips the macOS and Linux E2E lanes and reports `CI light`, never `CI OK`.
 const lightRunPrefix = "Light: "
 
 // isLightRun tells a light run from a land run before either finishes. A title that lies only
@@ -412,6 +412,15 @@ const lightRunPrefix = "Light: "
 // green.
 func (r workflowRun) isLightRun() bool {
 	return strings.HasPrefix(r.DisplayTitle, lightRunPrefix)
+}
+
+// labelRunPrefix starts the title of a run some other label started (`ci.yml`'s `run-name`): it
+// checks nothing and its gate is `CI label only`. It's a light run too, so it never lands a head.
+const labelRunPrefix = lightRunPrefix + "checks nothing ("
+
+// isLabelRun tells a label's do-nothing run from a real light run, which the ETA learns from.
+func (r workflowRun) isLabelRun() bool {
+	return strings.HasPrefix(r.DisplayTitle, labelRunPrefix)
 }
 
 // landRuns drops the light runs: only a land run can report the `CI OK` that lands a head.

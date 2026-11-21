@@ -90,6 +90,20 @@ func TestPickHistoryRunsSkipsReRuns(t *testing.T) {
 	}
 }
 
+// A label's do-nothing run (PR #1326) is green in a minute; sampled as a light run, it would
+// drag the light-run ETA toward a minute.
+func TestPickHistoryRunsSkipsLabelRuns(t *testing.T) {
+	label := workflowRun{ID: 1, RunAttempt: 1, DisplayTitle: "Light: checks nothing (the claude-created label): x"}
+	light := workflowRun{ID: 2, RunAttempt: 1, DisplayTitle: lightRunPrefix + "x"}
+	if !label.isLightRun() || !label.isLabelRun() || light.isLabelRun() {
+		t.Fatalf("label run: light %v, label %v; light run: label %v", label.isLightRun(), label.isLabelRun(), light.isLabelRun())
+	}
+	picked := pickHistoryRuns([]workflowRun{label, light})
+	if len(picked) != 1 || picked[0].ID != 2 {
+		t.Errorf("picked %+v, want only the light run", picked)
+	}
+}
+
 func TestMeasureLoad(t *testing.T) {
 	var jobs []runJob
 	for range 20 {
