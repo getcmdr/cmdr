@@ -1,6 +1,7 @@
-//! The OS's own trash, one arm per OS plus the browser build's
-//! (`docs/guides/platform-seams.md`): macOS's `trashItemAtURL`, the `trash` crate's
-//! XDG trash on Linux, and the Shell's `IFileOperation` Recycle Bin on Windows.
+//! The OS's own trash, one arm per OS (`docs/guides/platform-seams.md`): macOS's
+//! `trashItemAtURL`, the `trash` crate's XDG trash on Linux, and the Shell's
+//! `IFileOperation` Recycle Bin on Windows. The browser build has no trash: `delete::trash`
+//! isn't compiled there at all.
 
 use std::path::{Path, PathBuf};
 
@@ -9,7 +10,6 @@ use super::super::super::mutation_error::MutationError;
 #[cfg_attr(target_os = "macos", path = "macos.rs")]
 #[cfg_attr(target_os = "linux", path = "linux.rs")]
 #[cfg_attr(target_os = "windows", path = "windows/mod.rs")]
-#[cfg_attr(target_family = "wasm", path = "wasm.rs")]
 mod imp;
 
 const _: fn(&Path) -> Result<Option<PathBuf>, MutationError> = move_to_trash_sync;

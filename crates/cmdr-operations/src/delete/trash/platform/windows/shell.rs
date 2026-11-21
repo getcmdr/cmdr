@@ -6,19 +6,24 @@
 //! file on `\\localhost\C$` has no Recycle Bin, and the sink's veto leaves it in place.)
 
 use std::cell::RefCell;
+use std::ffi::OsString;
 use std::fmt;
+use std::os::windows::ffi::OsStringExt as _;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
-use windows::Win32::Foundation::{E_ACCESSDENIED, ERROR_ACCESS_DENIED, ERROR_CANCELLED, RPC_E_CHANGED_MODE};
+use windows::Win32::Foundation::{
+    E_ACCESSDENIED, ERROR_ACCESS_DENIED, ERROR_CANCELLED, ERROR_LOCK_VIOLATION, ERROR_SHARING_VIOLATION,
+    RPC_E_CHANGED_MODE,
+};
 use windows::Win32::System::Com::{
     CLSCTX_ALL, COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE, CoCreateInstance, CoInitializeEx, CoTaskMemFree,
     CoUninitialize,
 };
 use windows::Win32::UI::Shell::{
-    COPYENGINE_E_ACCESS_DENIED_SRC, FOF_ALLOWUNDO, FOF_NO_UI, FOFX_EARLYFAILURE, FOFX_RECYCLEONDELETE, FileOperation,
-    IFileOperation, IFileOperationProgressSink, IFileOperationProgressSink_Impl, IShellItem,
-    SHCreateItemFromParsingName, SIGDN_FILESYSPATH, TSF_DELETE_RECYCLE_IF_POSSIBLE,
+    COPYENGINE_E_ACCESS_DENIED_SRC, COPYENGINE_E_SHARING_VIOLATION_SRC, FOF_ALLOWUNDO, FOF_NO_UI, FOFX_EARLYFAILURE,
+    FOFX_RECYCLEONDELETE, FileOperation, IFileOperation, IFileOperationProgressSink, IFileOperationProgressSink_Impl,
+    IShellItem, SHCreateItemFromParsingName, SIGDN_FILESYSPATH, TSF_DELETE_RECYCLE_IF_POSSIBLE,
 };
 use windows::core::{HRESULT, HSTRING, PCWSTR, Ref};
 use windows_core::implement;
@@ -66,12 +71,18 @@ impl fmt::Display for Refusal {
     }
 }
 
-/// The reason for an `HRESULT` the Shell reported for one item: an access refusal is
+/// The reason for an `HRESULT` the Shell reported for one item: a sharing or lock
+/// violation (another program holds it open) is `InUse`, an access refusal is
 /// `NotPermitted`, the rest `Other`. Both the plain Win32 codes and the copy engine's
 /// own (`COPYENGINE_E_*_SRC`) count.
 pub(super) fn refusal_kind_of(hr: HRESULT) -> TrashRefusalKind {
     let win32 = |code: windows::Win32::Foundation::WIN32_ERROR| HRESULT::from_win32(code.0);
-    if hr == E_ACCESSDENIED || hr == win32(ERROR_ACCESS_DENIED) || hr == COPYENGINE_E_ACCESS_DENIED_SRC {
+    if hr == win32(ERROR_SHARING_VIOLATION)
+        || hr == win32(ERROR_LOCK_VIOLATION)
+        || hr == COPYENGINE_E_SHARING_VIOLATION_SRC
+    {
+        TrashRefusalKind::InUse
+    } else if hr == E_ACCESSDENIED || hr == win32(ERROR_ACCESS_DENIED) || hr == COPYENGINE_E_ACCESS_DENIED_SRC {
         TrashRefusalKind::NotPermitted
     } else {
         TrashRefusalKind::Other
@@ -155,6 +166,8 @@ impl Drop for Apartment {
 }
 
 /// What the sink saw of the one delete.
+// DEFAULT-OK: the state before the Shell has called the sink at all: nothing vetoed,
+// no result, nothing landed, and `recycle` reads a missing result as "nothing moved".
 #[derive(Default)]
 struct Verdict {
     /// The Shell announced a delete it wouldn't recycle, and the sink stopped it.
@@ -311,8 +324,9 @@ fn file_system_path(item: &IShellItem) -> Option<PathBuf> {
     // right after it's copied.
     unsafe {
         let name = item.GetDisplayName(SIGDN_FILESYSPATH).ok()?;
-        let path = name.to_string().ok().map(PathBuf::from);
+        // The units as the OS wrote them, so a name that isn't valid UTF-16 survives.
+        let path = PathBuf::from(OsString::from_wide(name.as_wide()));
         CoTaskMemFree(Some(name.0 as *const _));
-        path
+        Some(path)
     }
 }

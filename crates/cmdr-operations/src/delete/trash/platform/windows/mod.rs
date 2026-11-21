@@ -82,7 +82,7 @@ pub(crate) fn forget_restored(in_trash: &Path) {
 /// an app path or a native one, or `None` when the plain form would name a different
 /// file or can't be spelled at all.
 fn shell_spelling(path: &Path) -> Option<PathBuf> {
-    AppPathBuf::from_native(path).ok()?.to_native_plain().ok()
+    AppPathBuf::from_native_unicode(path).ok()?.to_native_plain().ok()
 }
 
 /// The `$I…` record of the Recycle Bin item `$R…` at `item`, when `item` sits in a

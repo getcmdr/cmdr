@@ -32,6 +32,7 @@ var operationsLocalDiskModules = []string{
 	"transfer/copy_strategy.rs",
 	"delete/walker.rs",
 	"delete/trash.rs",
+	"delete/trash/platform/",
 	"delete/cloud_trash.rs",
 	"scan.rs",
 	"scan_dry_run.rs",
@@ -144,11 +145,13 @@ var operationsBrowserGate = regexp.MustCompile(`#\[cfg\((?:not\(target_family = 
 
 // operationsBrowserGateViolations answers each local-engine module (every entry in
 // `operationsLocalDiskModules` but `local_disk/`, whose browser answers are the point) whose
-// `mod` declaration lacks a browser gate in the attributes right above it.
+// `mod` declaration lacks a browser gate in the attributes right above it. A module inside another
+// listed one (`delete/trash/platform/` under `delete/trash.rs`) builds only where that parent does,
+// so the parent's gate covers it.
 func operationsBrowserGateViolations(files map[string]string) []string {
 	var violations []string
 	for _, module := range operationsLocalDiskModules {
-		if module == "local_disk/" {
+		if module == "local_disk/" || insideListedModule(module) {
 			continue
 		}
 		trimmed := strings.TrimSuffix(strings.TrimSuffix(module, "/"), ".rs")
@@ -180,6 +183,25 @@ func operationsBrowserGateViolations(files map[string]string) []string {
 	}
 	sort.Strings(violations)
 	return violations
+}
+
+// insideListedModule answers whether `module` sits under another entry of
+// `operationsLocalDiskModules`: a `foo.rs` entry's children live in `foo/`, a `foo/` entry's in
+// itself.
+func insideListedModule(module string) bool {
+	for _, other := range operationsLocalDiskModules {
+		if other == module {
+			continue
+		}
+		dir := strings.TrimSuffix(other, ".rs")
+		if !strings.HasSuffix(dir, "/") {
+			dir += "/"
+		}
+		if strings.HasPrefix(module, dir) {
+			return true
+		}
+	}
+	return false
 }
 
 // operationsTestOnlyPaths finds the files a `#[cfg(test)] mod name;` declares, as `name.rs`

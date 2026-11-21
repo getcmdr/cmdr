@@ -2459,6 +2459,13 @@
     "screenshot": "error-message-example.png",
     "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
   },
+  "errors.write.trashRefused.message.inUse": "Another app has {count} of the items you picked open, so they stayed where they were.",
+  "@errors.write.trashRefused.message.inUse": {
+    "description": "Explanation when another program holds the items open in a way that stops them from moving to the trash (on Windows, the Recycle Bin), so they stayed where they were. Only Windows reports this today. Two surfaces share it: the error panel below, when nothing at all could go to the trash, and a brief warning toast when some items went and these ones stayed behind. So it has to stand alone as one sentence. Plain text, raw errors.* string (no ICU), so phrase it to read correctly for any count, including 1. \"app\" means any other program on this computer, not Cmdr.",
+    "placeholders": {
+      "count": "how many top-level items were refused, already formatted for the locale (for example 7)"
+    }
+  },
   "errors.write.trashRefused.message.other": "{platform, select, macos {macOS wouldn’t move {count} of the items you picked to the trash.} windows {Windows wouldn’t move {count} of the items you picked to the Recycle Bin.} other {Cmdr couldn’t move {count} of the items you picked to the trash.}}",
   "@errors.write.trashRefused.message.other": {
     "description": "Explanation when the OS refused for a reason Cmdr doesn't classify. Two surfaces share it: the error panel below, when nothing at all could go to the trash, and a brief warning toast when some items went and these ones stayed behind. So it has to stand alone as one sentence. Plain text, raw errors.* string (no ICU), so phrase it to read correctly for any count, including 1. \"macOS\" and \"Windows\" stay as-is. The Windows branch names the Recycle Bin, Windows' own name for it. The screenshot shows the macOS wording.",
@@ -2515,6 +2522,10 @@
     "description": "The keyless sibling of errors.write.trashRefused.suggestion.noTrashForVolumeWithKey, shown when no key runs Delete permanently (the user removed it), so it names the command instead of a key; keep the two worded alike. Plain text. \"Delete permanently\" is the name of Cmdr’s command as the command palette and the menu show it (commands.fileDeletePermanently.label); use the same name. The Windows branch names the Recycle Bin, Windows' own name for it. The screenshot shows the macOS wording.",
     "screenshot": "error-message-example.png",
     "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
+  },
+  "errors.write.trashRefused.suggestion.inUse": "Close them in that app, then try again.",
+  "@errors.write.trashRefused.suggestion.inUse": {
+    "description": "Recovery suggestion under errors.write.trashRefused.message.inUse: the items stayed because another program has them open, and closing them there lets the same move through (the panel offers a Try again button). Plain text. \"that app\" is the other program the explanation above mentions."
   },
   "errors.write.trashRefused.suggestion.other": "{platform, select, macos {Check the technical details below for what macOS reported.} windows {Check the technical details below for what Windows reported.} other {Check the technical details below for the exact reason.}}",
   "@errors.write.trashRefused.suggestion.other": {

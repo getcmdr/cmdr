@@ -327,6 +327,9 @@ const errorDisplayMetaMap: Record<WriteOperationError['type'], ErrorDisplayMeta>
 export function getErrorDisplayMeta(error: WriteOperationError): ErrorDisplayMeta {
   // The kept files don't change why it stopped, so the cause decides.
   if (error.type === 'new_files_kept') return getErrorDisplayMeta(error.cause)
+  // Another app holds the items open (Windows): closing them there lets the same trash
+  // through, the same way out as `file_in_use`.
+  if (error.type === 'trash_refused' && error.reason === 'inUse') return errorDisplayMetaMap.file_in_use
   return errorDisplayMetaMap[error.type]
 }
 

@@ -54,4 +54,10 @@ func TestOperationsBrowserGate(t *testing.T) {
 	if len(got) != 1 || !strings.HasPrefix(got[0], "scan.rs:") {
 		t.Errorf("violations %v, want only scan.rs", got)
 	}
+	// A module inside another listed one (`delete/trash/platform/` under `delete/trash.rs`) builds only
+	// where its parent does, so its own `mod` line needs no second gate.
+	files["delete/trash/mod.rs"] = "mod platform;\n"
+	if got := operationsBrowserGateViolations(files); len(got) != 1 {
+		t.Errorf("violations %v, want only scan.rs (the trash seam rides its parent's gate)", got)
+	}
 }

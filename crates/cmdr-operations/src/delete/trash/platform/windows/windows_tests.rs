@@ -3,6 +3,7 @@
 //! `$I…` record on drop, so a run never leaves anything in the user's Recycle Bin.
 
 use std::fs;
+use std::os::windows::fs::OpenOptionsExt as _;
 use std::path::{Path, PathBuf};
 
 use cmdr_fs::testing::{SKIP_MARKER, TestDir};
@@ -98,6 +99,29 @@ fn a_read_only_file_recycles() {
     assert!(fs::symlink_metadata(&file).is_err());
 }
 
+#[test]
+fn a_file_another_program_holds_open_refuses_as_in_use_and_stays() {
+    let dir = TestDir::new("recycle_in_use");
+    let file = dir.join("open.txt");
+    fs::write(&file, "x").unwrap();
+    // No sharing at all: the way a program that locks its document opens it.
+    let _held = fs::OpenOptions::new().read(true).share_mode(0).open(&file).unwrap();
+
+    let result = move_to_trash_sync(&file);
+
+    assert!(
+        matches!(
+            result,
+            Err(MutationError::TrashRefused {
+                reason: TrashRefusalKind::InUse,
+                ..
+            })
+        ),
+        "{result:?}"
+    );
+    assert!(file.exists(), "a refusal leaves the item where it was");
+}
+
 /// A path through a share has no Recycle Bin, so the Shell would delete it for good;
 /// the sink's veto keeps it. Reached through the admin share `\\localhost\C$`, which
 /// needs an administrator's token: without one the share refuses the path itself,
@@ -178,6 +202,8 @@ fn the_shells_codes_read_as_reasons() {
     use windows::Win32::Foundation::{E_ACCESSDENIED, E_FAIL};
     use windows::core::HRESULT;
 
+    assert_eq!(refusal_kind_of(HRESULT::from_win32(32)), TrashRefusalKind::InUse);
+    assert_eq!(refusal_kind_of(HRESULT::from_win32(33)), TrashRefusalKind::InUse);
     assert_eq!(refusal_kind_of(E_ACCESSDENIED), TrashRefusalKind::NotPermitted);
     assert_eq!(refusal_kind_of(E_FAIL), TrashRefusalKind::Other);
 }

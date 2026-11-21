@@ -220,6 +220,13 @@ where
             in_flight_temps::retire(state, record);
         }
         discard_temp(state, &temp_record);
+        // Another program holding the destination open (Windows' sharing or lock
+        // violation; no Unix code has the class) is the typed, retryable refusal.
+        if cmdr_fs::os_error::OsErrorClass::of_io(&e) == Some(cmdr_fs::os_error::OsErrorClass::InUseByAnotherApp) {
+            return Err(WriteOperationError::FileInUse {
+                path: dest.display().to_string(),
+            });
+        }
         return Err(WriteOperationError::IoError {
             path: dest.display().to_string(),
             message: format!("Failed to set aside existing destination: {}", e).into(),

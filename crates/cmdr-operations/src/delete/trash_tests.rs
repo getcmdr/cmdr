@@ -527,6 +527,15 @@ fn a_batch_ranks_the_item_level_refusals_between_permission_and_no_trash() {
         ]),
         TrashRefusalKind::TrashNotWritable
     );
+    // A file another program holds open (Windows) names a fix too: close it there.
+    assert_eq!(
+        strongest_refusal(&[item(TrashRefusalKind::NoTrashForVolume), item(TrashRefusalKind::InUse)]),
+        TrashRefusalKind::InUse
+    );
+    assert_eq!(
+        strongest_refusal(&[item(TrashRefusalKind::InUse), item(TrashRefusalKind::TrashNotWritable)]),
+        TrashRefusalKind::TrashNotWritable
+    );
 }
 
 /// The refusal's technical detail carries the `NSError` codes beside the OS's words,

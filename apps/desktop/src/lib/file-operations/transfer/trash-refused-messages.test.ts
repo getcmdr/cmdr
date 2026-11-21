@@ -28,7 +28,7 @@ vi.mock(import('#lib/shortcuts/shortcuts-store.js'), async (importOriginal) => {
   return { ...actual, getLiveShortcuts: (id: string) => (unbound.has(id) ? [] : actual.getLiveShortcuts(id)) }
 })
 
-import { getUserFriendlyMessage, mayBeAPermissionGrantAway } from './transfer-error-messages'
+import { getUserFriendlyMessage, mayBeAPermissionGrantAway, offersRetry } from './transfer-error-messages'
 
 const ALL_REASONS: TrashRefusalKind[] = [
   'notPermitted',
@@ -36,6 +36,7 @@ const ALL_REASONS: TrashRefusalKind[] = [
   'folderNotWritable',
   'ownedByAnotherUser',
   'trashNotWritable',
+  'inUse',
   'noTrashForVolume',
   'other',
 ]
@@ -62,14 +63,26 @@ describe('a refused trash', () => {
     expect(new Set(suggestions).size).toBe(ALL_REASONS.length)
   })
 
+  // Windows: another app holds the item open. Closing it there is the whole fix, so the
+  // same request is the way out, like `file_in_use`'s.
+  it('offers Retry only for an item another app holds open', () => {
+    const asError = (reason: TrashRefusalKind) =>
+      ({ type: 'trash_refused', itemCount: 1, reason, message: 'os words', onlineOnly: false }) as const
+    expect(offersRetry(asError('inUse'))).toBe(true)
+    expect(refused('inUse').suggestion).toContain('try again')
+    for (const reason of ALL_REASONS.filter((r) => r !== 'inUse')) {
+      expect(offersRetry(asError(reason)), reason).toBe(false)
+    }
+  })
+
   it('names how many items it could not take', () => {
     expect(refused('notPermitted', 7).message).toContain('7')
   })
 
   // Retrying a permission refusal produces the identical refusal. The old wording said
   // "Try again. If the problem persists, check the technical details below."
-  it('never tells the user to try again', () => {
-    for (const reason of ALL_REASONS) {
+  it('never tells the user to try again, unless closing the item elsewhere lets it through', () => {
+    for (const reason of ALL_REASONS.filter((r) => r !== 'inUse')) {
       expect(refused(reason).suggestion.toLowerCase()).not.toContain('try again')
     }
   })

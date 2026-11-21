@@ -135,6 +135,39 @@ fn a_permanent_delete_refuses_a_read_only_file_as_locked_and_keeps_it() {
     set_read_only(&file, false);
 }
 
+/// A destination another program holds open can't step aside: the Overwrite refuses as
+/// `FileInUse` (the dialog's "close it there" with a Retry), never an unexplained failure.
+#[test]
+fn an_overwrite_onto_a_file_another_program_holds_open_refuses_as_in_use_and_keeps_it() {
+    use crate::host::Announced;
+    use crate::overwrite::{PostLanding, Staged, stage_and_land_file};
+    use crate::testing::TestOperations;
+    use crate::types::WriteOperationError;
+
+    let dir = tempfile::tempdir().unwrap();
+    let dest = dir.path().join("open.txt");
+    std::fs::write(&dest, b"keep me").unwrap();
+    let held = std::fs::OpenOptions::new()
+        .read(true)
+        .share_mode(0)
+        .open(&dest)
+        .unwrap();
+    let state = std::sync::Arc::new(TestOperations::new().new_operation_state(std::time::Duration::from_millis(0)));
+
+    let result = stage_and_land_file(&state, Announced::assumed(&dest), true, PostLanding::Apply, |temp| {
+        std::fs::write(temp, b"new").unwrap();
+        Ok(Staged::bytes(3))
+    });
+    drop(held);
+
+    assert!(
+        matches!(result, Err(WriteOperationError::FileInUse { .. })),
+        "{:?}",
+        result.err()
+    );
+    assert_eq!(std::fs::read(&dest).unwrap(), b"keep me");
+}
+
 /// The landing's rename would carry a read-only destination aside and delete it, so an
 /// Overwrite refuses it as Locked before writing a byte.
 #[test]

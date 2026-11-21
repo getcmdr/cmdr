@@ -23431,9 +23431,9 @@ export type TranslatedQuery = {
  *  Why the OS wouldn't take something to the Trash.
  *
  *  ❗ Classified from the `NSError` domain and code at the boundary, ❌ never from
- *  its words: the wording is localized and reformats between macOS releases, and
- *  `error-string-match` forbids it. `delete/trash.rs::classify_trash_refusal` is the
- *  one place that decides.
+ *  its words: the wording is localized and reformats between releases, and
+ *  `error-string-match` forbids it. Each OS arm of `delete/trash/platform/` is the
+ *  one place that decides for its OS (macOS: the `NSError`; Windows: the Shell's `HRESULT`).
  */
 export type TrashRefusalKind =
   /**
@@ -23468,14 +23468,20 @@ export type TrashRefusalKind =
    */
   | 'trashNotWritable'
   /**
+   *  Another program holds the item open without letting it move (Windows' sharing or
+   *  lock violation from the Shell). Retryable: closing it there lets the move through.
+   */
+  | 'inUse'
+  /**
    *  macOS couldn't find a Trash for the item's volume
-   *  (`NSFeatureUnsupportedError`). It reads as "this volume doesn't have one",
-   *  and that is what it says for a File Provider folder the app can't reach,
-   *  which is why the UI treats it as permission-adjacent rather than as a fact
-   *  about the disk.
+   *  (`NSFeatureUnsupportedError`), or on Windows the item's drive has no Recycle Bin
+   *  that can take it (the Shell would have deleted it for good, so Cmdr stopped it).
+   *  On macOS it reads as "this volume doesn't have one", and that is what it says for
+   *  a File Provider folder the app can't reach, which is why the UI treats it as
+   *  permission-adjacent rather than as a fact about the disk.
    */
   | 'noTrashForVolume'
-  // Anything else, including every non-macOS refusal.
+  // Anything else, including every Linux refusal.
   | 'other'
 
 /**

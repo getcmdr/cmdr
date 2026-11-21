@@ -461,15 +461,16 @@ pub(crate) fn trash_files_with_progress(
 /// a batch of nine items where one was refused for permission is still a batch where
 /// granting a permission might help, and the majority answer would hide that. The
 /// reasons read from the item and where it sits (Locked, a folder that takes no
-/// writes, a sticky folder, a Trash that takes no writes) come next: each names a
-/// concrete fix the user can make.
+/// writes, a sticky folder, a Trash that takes no writes, a program holding the item
+/// open) come next: each names a concrete fix the user can make.
 fn strongest_refusal(errors: &[TrashItemError]) -> TrashRefusalKind {
-    const RANKED: [TrashRefusalKind; 6] = [
+    const RANKED: [TrashRefusalKind; 7] = [
         TrashRefusalKind::NotPermitted,
         TrashRefusalKind::Locked,
         TrashRefusalKind::FolderNotWritable,
         TrashRefusalKind::OwnedByAnotherUser,
         TrashRefusalKind::TrashNotWritable,
+        TrashRefusalKind::InUse,
         TrashRefusalKind::NoTrashForVolume,
     ];
     RANKED
