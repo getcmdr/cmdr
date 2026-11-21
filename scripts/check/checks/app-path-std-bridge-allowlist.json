@@ -18,7 +18,7 @@
     "apps/desktop/src-tauri/src/file_system/volume/eject/escalate.rs": 1,
     "apps/desktop/src-tauri/src/file_system/volume/eject/mod.rs": 2,
     "apps/desktop/src-tauri/src/file_system/volume/inmemory_test.rs": 8,
-    "apps/desktop/src-tauri/src/file_system/volume/manager/archive_routing.rs": 2,
+    "apps/desktop/src-tauri/src/file_system/volume/manager/archive_routing.rs": 1,
     "apps/desktop/src-tauri/src/file_system/volume/manager/git_routing.rs": 4,
     "apps/desktop/src-tauri/src/file_system/volume/manager/restic_routing_tests.rs": 12,
     "apps/desktop/src-tauri/src/file_system/volume/manager/roots.rs": 2,

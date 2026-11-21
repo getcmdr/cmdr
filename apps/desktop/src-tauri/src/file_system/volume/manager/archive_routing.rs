@@ -265,9 +265,9 @@ impl VolumeManager {
     ///
     /// `zip_path` is the write engine's `std::path` value (its host seam,
     /// `OperationVolumes::forget_archive_index`), crossed here once; it goes
-    /// typed with that seam (milestone 10d).
+    /// typed with that seam (milestone 10d), through [`engine_archive_volume_id`].
     pub fn forget_archive_index(&self, zip_path: &Path) {
-        if let Some(volume) = self.get(&archive_volume_id(&AppPath::legacy_unchecked(zip_path)))
+        if let Some(volume) = self.get(&engine_archive_volume_id(zip_path))
             && let Some(archive) = volume.as_any().downcast_ref::<ArchiveVolume>()
         {
             archive.forget_parsed_index();
@@ -292,6 +292,18 @@ fn archive_volume_id(zip_path: &AppPath) -> String {
         Err(_) => zip_path.as_str().hash(&mut hasher),
     }
     format!("archive-{:016x}", hasher.finish())
+}
+
+/// [`archive_volume_id`] for the write engine's `std::path` spelling of a zip. A native
+/// path crosses as the OS spells it: Windows' `C:\…` is the app's `C:/…`, and a bridge value
+/// of that text can't reach `to_native`, so its id would hash the raw text and miss the
+/// routed archive's (verified on the Windows CI lane, run 44953346940, 2026-11-21). A scheme
+/// path with no native form crosses through the bridge, its text as sent.
+fn engine_archive_volume_id(zip_path: &Path) -> String {
+    match AppPathBuf::from_native_unicode(zip_path) {
+        Ok(app) => archive_volume_id(&app),
+        Err(_) => archive_volume_id(&AppPath::legacy_unchecked(zip_path)),
+    }
 }
 
 /// The first archive-named folder in `path` strictly below `view_root`, split
@@ -588,7 +600,7 @@ mod tests {
 
         let engine_spelling = zip.to_native().expect("a scratch dir has a native path");
         assert_eq!(
-            archive_volume_id(&AppPath::legacy_unchecked(&engine_spelling)),
+            engine_archive_volume_id(&engine_spelling),
             archive_volume_id(&zip),
             "one archive, one id, whichever door names it"
         );
