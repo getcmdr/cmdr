@@ -12,7 +12,7 @@
 // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 #![cfg(test)]
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::path::{Path, PathBuf};
 
 use crate::file_system::volume::{StreamLength, Volume, WriteMode};
@@ -21,6 +21,11 @@ use cmdr_listing::testing::TestListing;
 use cmdr_local::LocalVolume;
 
 const CATEGORIES: [&str; 6] = ["branches", "tags", "commits", "stash", "worktrees", "submodules"];
+
+/// A scratch folder on disk, crossed in once: the tempdir is plain Unicode text.
+fn app(native: &Path) -> AppPathBuf {
+    AppPathBuf::from_native_unicode(native).expect("a scratch folder is an app path")
+}
 
 /// A one-commit repo with a branch, enough for every category to answer.
 fn repo(name: &str) -> PathBuf {
@@ -68,10 +73,7 @@ async fn an_overlay_decorated_listing_of_dot_git_shows_the_six_rows() {
         std::sync::Arc::new(LocalVolume::local_folder("Test", &dir, crate::volume_host::host()));
     let dot_git = dir.join(".git");
 
-    let mut entries = volume
-        .list_directory(&AppPath::legacy_unchecked(&dot_git), None)
-        .await
-        .expect("listing .git");
+    let mut entries = volume.list_directory(&app(&dot_git), None).await.expect("listing .git");
     let added =
         cmdr_listing::testing::decorate(crate::listing_host::listings(), "root", &volume, &dot_git, &mut entries).await;
     assert_eq!(added, 6, "one row per category");
@@ -97,10 +99,7 @@ async fn the_toggle_off_contributes_nothing_to_a_dot_git_listing() {
     let dot_git = dir.join(".git");
 
     super::wiring::set_virtual_portal_enabled(false);
-    let mut entries = volume
-        .list_directory(&AppPath::legacy_unchecked(&dot_git), None)
-        .await
-        .expect("listing .git");
+    let mut entries = volume.list_directory(&app(&dot_git), None).await.expect("listing .git");
     let added =
         cmdr_listing::testing::decorate(crate::listing_host::listings(), "root", &volume, &dot_git, &mut entries).await;
     super::wiring::set_virtual_portal_enabled(true);
@@ -241,7 +240,7 @@ async fn the_copy_scan_counts_only_what_is_on_disk() {
     let volume = LocalVolume::local_folder("Test", &dir, crate::volume_host::host());
 
     let scanned = volume
-        .scan_for_copy_batch(std::slice::from_ref(&AppPath::legacy_unchecked(&dir).into_owned()))
+        .scan_for_copy_batch(std::slice::from_ref(&app(&dir)))
         .await
         .expect("scanning the repo succeeds");
 
@@ -274,10 +273,7 @@ async fn the_listing_oracle_declines_an_overlay_decorated_dot_git_listing() {
 
     let volume: std::sync::Arc<dyn Volume> =
         std::sync::Arc::new(LocalVolume::local_folder("Test", &dir, crate::volume_host::host()));
-    let mut cached = volume
-        .list_directory(&AppPath::legacy_unchecked(&dot_git), None)
-        .await
-        .unwrap();
+    let mut cached = volume.list_directory(&app(&dot_git), None).await.unwrap();
     let added =
         cmdr_listing::testing::decorate(crate::listing_host::listings(), "root", &volume, &dot_git, &mut cached).await;
     assert_eq!(added, 6, "the pane's listing holds the six virtual rows");
@@ -329,10 +325,7 @@ async fn a_linked_worktree_serves_the_categories_but_has_no_dot_git_landing() {
     let volume: std::sync::Arc<dyn Volume> =
         std::sync::Arc::new(LocalVolume::local_folder("Test", &linked, crate::volume_host::host()));
     assert!(
-        volume
-            .list_directory(&AppPath::legacy_unchecked(&gitlink), None)
-            .await
-            .is_err(),
+        volume.list_directory(&app(&gitlink), None).await.is_err(),
         "listing a gitlink file is an error, not a portal root"
     );
 
@@ -349,7 +342,7 @@ async fn a_linked_worktree_serves_the_categories_but_has_no_dot_git_landing() {
     let parent: std::sync::Arc<dyn Volume> =
         std::sync::Arc::new(LocalVolume::local_folder("Parent", &linked, crate::volume_host::host()));
     let branches = cmdr_git::GitPortalVolume::new(portal, linked.clone(), parent)
-        .list_directory(&AppPath::legacy_unchecked(&gitlink.join("branches")), None)
+        .list_directory(&app(&gitlink.join("branches")), None)
         .await
         .expect("the portal lists branches in a linked worktree");
     assert!(
