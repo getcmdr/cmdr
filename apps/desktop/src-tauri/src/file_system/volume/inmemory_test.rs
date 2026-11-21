@@ -5,7 +5,7 @@
 
 use super::{InMemoryVolume, Volume};
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::entry::FileEntry;
 use std::path::Path;
 
@@ -35,7 +35,7 @@ async fn test_inmemory_volume_full_workflow() {
 
     // Verify volume properties
     assert_eq!(volume.name(), "Test Volume");
-    assert_eq!(&*volume.root().as_std_legacy(), Path::new("/"));
+    assert_eq!(volume.root(), app_path!("/"));
 
     // List directory
     let listed = volume
@@ -280,7 +280,6 @@ use super::{DirectoryCreation, ListingProgress, VolumeError};
 use crate::ignore_poison::{IgnorePoison, RwLockIgnorePoison};
 use std::collections::HashSet;
 use std::future::Future;
-use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Mutex;
 use std::sync::RwLock as StdRwLock;
@@ -298,12 +297,14 @@ async fn create_directory_all_creates_deeply_nested_missing_dest() {
     // Every ancestor now exists as a real directory.
     for dir in ["/a", "/a/b", "/a/b/c", "/a/b/c/d"] {
         assert!(
-            volume.exists(&AppPath::legacy_unchecked(Path::new(dir))).await,
+            volume
+                .exists(AppPath::from_normalized(dir).expect("a canonical literal"))
+                .await,
             "{dir} should exist"
         );
         assert!(
             volume
-                .is_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+                .is_directory(AppPath::from_normalized(dir).expect("a canonical literal"))
                 .await
                 .expect("ancestor should be statable"),
             "{dir} should be a directory"
@@ -382,7 +383,7 @@ async fn create_directory_all_surfaces_create_failure_as_typed_error() {
     // A backend whose `create_directory` fails at a specific level: the helper
     // must surface the typed `VolumeError`, never silently swallow it.
     let volume = MockDirVolume::new(/* errors_on_existing */ true);
-    volume.fail_create_at(Path::new("/a/b"));
+    volume.fail_create_at(app_path!("/a/b"));
 
     let err = volume
         .create_directory_all(app_path!("/a/b/c"))
@@ -400,7 +401,7 @@ async fn create_directory_all_pre_checks_existence_on_mtp_like_backend() {
     // duplicated.
     let volume = MockDirVolume::new(/* errors_on_existing */ false);
     // `/photos` already on the device.
-    volume.seed_existing(Path::new("/photos"));
+    volume.seed_existing(app_path!("/photos"));
 
     let creation = volume
         .create_directory_all(app_path!("/photos/2026/trip"))
@@ -413,7 +414,10 @@ async fn create_directory_all_pre_checks_existence_on_mtp_like_backend() {
     let calls = volume.create_calls();
     assert_eq!(
         calls,
-        vec![PathBuf::from("/photos/2026"), PathBuf::from("/photos/2026/trip")],
+        vec![
+            app_path!("/photos/2026").to_owned(),
+            app_path!("/photos/2026/trip").to_owned()
+        ],
         "must create only the missing levels, in shallowest-first order"
     );
 }
@@ -426,11 +430,11 @@ async fn create_directory_all_pre_checks_existence_on_mtp_like_backend() {
 /// failure at one level.
 struct MockDirVolume {
     errors_on_existing: bool,
-    existing: StdRwLock<HashSet<PathBuf>>,
-    create_calls: Mutex<Vec<PathBuf>>,
-    fail_at: Mutex<Option<PathBuf>>,
+    existing: StdRwLock<HashSet<AppPathBuf>>,
+    create_calls: Mutex<Vec<AppPathBuf>>,
+    fail_at: Mutex<Option<AppPathBuf>>,
     /// Paths that answer `AlreadyExists` on create while `exists()` says no.
-    raced: Mutex<HashSet<PathBuf>>,
+    raced: Mutex<HashSet<AppPathBuf>>,
 }
 
 impl MockDirVolume {
@@ -444,22 +448,22 @@ impl MockDirVolume {
         }
     }
 
-    fn seed_existing(&self, path: &Path) {
-        self.existing.write_ignore_poison().insert(path.to_path_buf());
+    fn seed_existing(&self, path: &AppPath) {
+        self.existing.write_ignore_poison().insert(path.to_owned());
     }
 
-    fn fail_create_at(&self, path: &Path) {
-        *self.fail_at.lock_ignore_poison() = Some(path.to_path_buf());
+    fn fail_create_at(&self, path: &AppPath) {
+        *self.fail_at.lock_ignore_poison() = Some(path.to_owned());
     }
 
     /// A path that `exists()` reports as absent but whose `create_directory`
     /// answers `AlreadyExists`: what losing a race to another process looks
     /// like from inside the recursive walk.
-    fn claim_created_by_someone_else(&self, path: &Path) {
-        self.raced.lock_ignore_poison().insert(path.to_path_buf());
+    fn claim_created_by_someone_else(&self, path: &AppPath) {
+        self.raced.lock_ignore_poison().insert(path.to_owned());
     }
 
-    fn create_calls(&self) -> Vec<PathBuf> {
+    fn create_calls(&self) -> Vec<AppPathBuf> {
         self.create_calls.lock_ignore_poison().clone()
     }
 }
@@ -488,23 +492,17 @@ impl Volume for MockDirVolume {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
     fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.existing.read_ignore_poison().contains(path)
-        })
+        Box::pin(async move { self.existing.read_ignore_poison().contains(path) })
     }
     fn is_directory<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             if self.existing.read_ignore_poison().contains(path) {
                 Ok(true)
             } else {
-                Err(VolumeError::NotFound(path.display().to_string()))
+                Err(VolumeError::NotFound(path.as_str().to_string()))
             }
         })
     }
@@ -513,11 +511,9 @@ impl Volume for MockDirVolume {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.create_calls.lock_ignore_poison().push(path.to_path_buf());
+            self.create_calls.lock_ignore_poison().push(path.to_owned());
             if self.raced.lock_ignore_poison().contains(path) {
-                return Err(VolumeError::AlreadyExists(path.display().to_string()));
+                return Err(VolumeError::AlreadyExists(path.as_str().to_string()));
             }
             if self.fail_at.lock_ignore_poison().as_deref() == Some(path) {
                 return Err(VolumeError::IoError {
@@ -527,12 +523,12 @@ impl Volume for MockDirVolume {
             }
             let mut existing = self.existing.write_ignore_poison();
             if existing.contains(path) && self.errors_on_existing {
-                return Err(VolumeError::AlreadyExists(path.display().to_string()));
+                return Err(VolumeError::AlreadyExists(path.as_str().to_string()));
             }
             // MTP-like backend (errors_on_existing == false) inserts idempotently;
             // a real one would make a DUPLICATE sibling, which the helper avoids
             // by pre-checking existence.
-            existing.insert(path.to_path_buf());
+            existing.insert(path.to_owned());
             Ok(())
         })
     }
@@ -550,7 +546,7 @@ async fn a_leaf_that_appeared_mid_walk_is_not_reported_as_ours() {
     let volume = MockDirVolume::new(/* errors_on_existing */ true);
     // `exists()` says no, `create_directory` says AlreadyExists: exactly the
     // shape of losing the race.
-    volume.claim_created_by_someone_else(Path::new("/shared/inbox"));
+    volume.claim_created_by_someone_else(app_path!("/shared/inbox"));
 
     let creation = volume
         .create_directory_all(app_path!("/shared/inbox"))

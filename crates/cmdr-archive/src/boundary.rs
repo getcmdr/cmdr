@@ -23,11 +23,7 @@
 
 use std::path::{Path, PathBuf};
 
-use std::borrow::Cow;
-
-use cmdr_fs::app_path::{
-    AppPath, AppPathBuf, NativeRefusal, PathArithmetic, RelativeAppPathBuf, is_escape, unescape_bytes,
-};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, NativeRefusal, PathArithmetic, RelativeAppPathBuf};
 
 use super::read::{ArchiveFormat, TarCodec, format_for_name, format_for_path};
 
@@ -42,8 +38,8 @@ pub(crate) const ARCHIVE_MAGIC_PREFIX_LEN: usize = 512;
 // listing engine asks the split without depending on this crate. The predicate is
 // re-exported so this module stays its import site; the split is named at
 // `cmdr_fs::archive_format` everywhere.
-use cmdr_fs::archive_format::archive_boundary_candidate;
 pub use cmdr_fs::archive_format::has_supported_archive_extension;
+use cmdr_fs::archive_format::{archive_boundary_candidate, archive_boundary_candidate_at, archive_name_text};
 
 /// Whether `header` (a file's first bytes, ideally [`ARCHIVE_MAGIC_PREFIX_LEN`]
 /// long) carries the magic signature for `format`. Short slices simply fail to
@@ -134,65 +130,10 @@ pub fn path_targets_archive_file(path: &Path) -> bool {
     std::fs::metadata(&archive_path).is_ok_and(|meta| meta.is_file())
 }
 
-/// [`archive_boundary_candidate`] for an app path: the archive (the path up to
-/// and including the FIRST name carrying a supported archive extension) and the
-/// names inside it (empty when the archive is the path's last name). No I/O.
-///
-/// Reads the path's canonical twin (a bridge value with none splits nowhere)
-/// and scans its text left to right, root included, as the `std::path` form
-/// scans its components, so the two agree: a scheme authority that looks like
-/// an archive (`sftp://box.zip/…`) is the first match there too, and since it
-/// names no file the split is `None`. A name is read as its native text
-/// ([`native_text`]), as the `std::path` form reads a component.
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "a typed twin the host switches to when its routing speaks app paths"
-    )
-)]
-pub(crate) fn archive_boundary_candidate_at(path: &AppPath) -> Option<(AppPathBuf, RelativeAppPathBuf)> {
-    let path = path.to_canonical().ok()?;
-    let text = path.as_str();
-    let root_len = path.root().as_str().len();
-    let mut start = 0;
-    let end = loop {
-        let end = text[start..].find('/').map_or(text.len(), |offset| start + offset);
-        let name = &text[start..end];
-        if native_text(name).is_some_and(|name| has_supported_archive_extension(&name)) {
-            break end;
-        }
-        if end == text.len() {
-            return None;
-        }
-        start = end + 1;
-    };
-    if end <= root_len {
-        return None;
-    }
-    let archive = std::iter::successors(Some(&*path), |ancestor| ancestor.parent())
-        .find(|ancestor| ancestor.as_str().len() == end)?;
-    let inner = path.strip_prefix(archive)?.into_owned();
-    Some((archive.to_owned(), inner))
-}
-
 /// The archive format `path`'s last name denotes, read as its native text, as
 /// [`format_for_path`] reads a native one.
 pub(crate) fn format_at(path: &AppPath) -> Option<ArchiveFormat> {
-    format_for_name(&native_text(path.file_name()?)?)
-}
-
-/// The text `name` spells natively, which is what an extension is read from:
-/// `name` itself when it holds no escape, else its native bytes when they
-/// are valid UTF-8 (a literal escape-range code point, which the bridge
-/// escapes through its bytes), and `None` for a name that isn't text
-/// natively. The `std::path` forms read a component's bytes the same way.
-fn native_text(name: &str) -> Option<Cow<'_, str>> {
-    if !name.chars().any(is_escape) {
-        return Some(Cow::Borrowed(name));
-    }
-    let bytes = unescape_bytes(name).ok()?;
-    String::from_utf8(bytes.into_owned()).ok().map(Cow::Owned)
+    format_for_name(&archive_name_text(path.file_name()?)?)
 }
 
 /// [`confirm_archive_boundary`] for an app path: the split when `path` crosses

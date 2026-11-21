@@ -426,3 +426,8 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   chains, and the `es-419` fork's values file sat outside any run directory again. `i18n:check-locale` with every locale
   and one `--keys-file` worked in a single call. The brief's "No concept yet" words (say, reached, left, keep) were
   plain prose verbs, so the pile wasn't mined for them. No script written. (all, cantTellIfSameFile batch)
+- A one-key batch for 13 locales: the guard refused a shell function writing the 13 `values.json` files ("too complex to
+  verify"), so they went in as 13 Write calls, and `i18n:apply` took 13 `&&`-chained calls. The `log` concept matched
+  "the log" in `operationLog.skipReason.unreadablePath`, which means the operation log, so a key-scoped `notMatch` keeps
+  it out. An `i18n:apply --lang all` reading every locale's latest run directory would make this one call. No script
+  written. (all, unreadablePath batch)

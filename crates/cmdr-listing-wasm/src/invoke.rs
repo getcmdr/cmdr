@@ -3,6 +3,7 @@
 //! (which dispatches to every family) and the families it dispatches to (`viewer.rs`,
 //! `operations_host/commands/`) all lean on it without leaning back on `commands.rs`.
 
+use cmdr_fs::app_path::{AppPathBuf, NotAnAppPath, PathFlavor};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -23,6 +24,14 @@ pub(crate) fn answer<T: Serialize, E: Serialize>(result: Result<T, E>) -> Result
         Ok(answer) => ok(answer),
         Err(error) => Err(ok(error)?),
     }
+}
+
+/// `text`, a path the page or the volume spells (an arg, a `FileEntry.path`), as the app path it
+/// names. The demo's volume is POSIX on every host, so it parses as POSIX even where the tests
+/// run on Windows (where `from_wire` reads only drives). Normalized, as `Path`'s own compare read
+/// it (`//`, `.`, a trailing `/`); a `..` or relative text is refused, which no pane spells.
+pub(crate) fn demo_path(text: &str) -> Result<AppPathBuf, NotAnAppPath> {
+    AppPathBuf::parse(text, PathFlavor::Posix)
 }
 
 /// The runtime the engines' background work runs on (the viewer, the folder-size gather, Multi-Rename's media

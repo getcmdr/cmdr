@@ -13,10 +13,6 @@
       "lines": 830,
       "reason": "TODO: move the in-container test run (the ~170-line `bash -c` string from the node_modules install to `exit \"$playwright_status\"`) into `e2e-linux-in-container.sh`, run inside the container by path, like the sourced `e2e-linux-fixtures.sh` on the host side. That also lifts the apostrophe-free-comment rule the single-quoted string imposes."
     },
-    "apps/desktop/src-tauri/src/file_system/volume/manager/roots.rs": {
-      "lines": 810,
-      "reason": "The mount roots one volume ID owns and the rules for picking its active one; it crossed the line only through the `Volume` trait's flip to app paths: each `volume.root()` read in its `std::path` root bookkeeping goes through the bridge (`&*volume.root().as_std_legacy()`), which rustfmt spreads over more lines. Those go once the app speaks app paths here (milestone 10c), which brings it back under."
-    },
     "apps/desktop/src-tauri/src/lib.rs": {
       "lines": 886,
       "reason": "TODO: `setup()` wires every OS observer as a `#[cfg]` pair (accent color, reduce transparency, Liquid Glass tint, text size); moving those pairs into one `os_appearance::observe(app)` helper beside `system_events.rs` would bring the file back under 800 and give them one home."

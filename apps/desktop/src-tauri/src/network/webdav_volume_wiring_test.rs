@@ -97,7 +97,7 @@ async fn webdav_integration_connecting_registers_the_volume_and_remembers_the_se
     let volume = manager.get(&volume_id).expect("a connect registers the volume it made");
     assert!(
         volume
-            .exists(&AppPath::legacy_unchecked(Path::new(&app_path(&params, "/hello.txt"))))
+            .exists(AppPath::from_normalized(&app_path(&params, "/hello.txt")).expect("a canonical app path"))
             .await,
         "the registered volume is the live one, not a placeholder"
     );
@@ -178,7 +178,10 @@ async fn webdav_integration_disconnecting_drops_the_client_and_unregisters_the_v
     assert!(
         matches!(
             volume
-                .list_directory(&AppPath::legacy_unchecked(Path::new(&app_path(&params, "/"))), None)
+                .list_directory(
+                    AppPath::from_normalized(&app_path(&params, "/")).expect("a canonical app path"),
+                    None
+                )
                 .await,
             Err(cmdr_fs::volume::VolumeError::DeviceDisconnected(_))
         ),
@@ -522,12 +525,12 @@ async fn webdav_integration_widening_a_connected_root_applies_live_over_the_same
     let wide = manager.get(&volume_id).expect("still registered");
     let wide_root = format!("{prefix}/");
     assert_eq!(
-        &*wide.root().as_std_legacy(),
-        Path::new(&wide_root),
+        wide.root(),
+        AppPath::from_normalized(&wide_root).expect("a canonical app path"),
         "the registry serves the wider root"
     );
     assert!(
-        wide.exists(&AppPath::legacy_unchecked(Path::new(&format!("{prefix}/hello.txt"))))
+        wide.exists(AppPath::from_normalized(&format!("{prefix}/hello.txt")).expect("a canonical app path"))
             .await,
         "a file only the wider root covers lists through the live client"
     );
@@ -544,9 +547,12 @@ async fn webdav_integration_widening_a_connected_root_applies_live_over_the_same
 
     webdav.simulate_session_loss().await;
     assert!(
-        wide.list_directory(&AppPath::legacy_unchecked(Path::new(&wide_root)), None)
-            .await
-            .is_err(),
+        wide.list_directory(
+            AppPath::from_normalized(&wide_root).expect("a canonical app path"),
+            None
+        )
+        .await
+        .is_err(),
         "an operation is what notices the loss and starts the loop"
     );
     cmdr_fs::testing::wait_until_async(
@@ -556,9 +562,12 @@ async fn webdav_integration_widening_a_connected_root_applies_live_over_the_same
     )
     .await;
     assert!(
-        wide.list_directory(&AppPath::legacy_unchecked(Path::new(&wide_root)), None)
-            .await
-            .is_ok(),
+        wide.list_directory(
+            AppPath::from_normalized(&wide_root).expect("a canonical app path"),
+            None
+        )
+        .await
+        .is_ok(),
         "the rebuilt client serves the wider root"
     );
 

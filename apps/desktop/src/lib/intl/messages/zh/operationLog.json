@@ -235,6 +235,10 @@
   "@operationLog.skipReason.locked": {
     "sourceHash": "39e4c78"
   },
+  "operationLog.skipReason.unreadablePath": "Cmdr 无法从操作日志确定这一项的确切位置，所以没有动它。",
+  "@operationLog.skipReason.unreadablePath": {
+    "sourceHash": "9fc06ef"
+  },
   "operationLog.summary.canceled": "{summary}，随后已取消（原计划 {plannedText} 个）",
   "@operationLog.summary.canceled": {
     "sourceHash": "9a27d89"

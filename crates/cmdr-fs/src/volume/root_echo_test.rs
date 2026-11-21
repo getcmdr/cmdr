@@ -80,3 +80,25 @@ fn a_trailing_slash_on_the_root_still_matches() {
     assert_eq!(echo.root_folder.as_std_legacy(), Path::new("/dav/files"));
     assert_eq!(echo.stripped.as_std_legacy(), Path::new("/a"));
 }
+
+#[test]
+fn the_typed_root_echoes_as_its_text_does() {
+    let root = crate::app_path::AppPath::from_normalized(SERVER_ROOT).expect("canonical");
+    for typed in [
+        Path::new("/srv/data/photos"),
+        Path::new("/srv/data"),
+        Path::new("/photos"),
+        Path::new("photos/2026"),
+        Path::new(""),
+        Path::new("/"),
+        Path::new("/srv/data-1/x"),
+    ] {
+        assert_eq!(
+            super::root_echo_at(root, typed),
+            root_echo(Path::new(SERVER_ROOT), typed),
+            "{typed:?}"
+        );
+    }
+    let home = crate::app_path::AppPath::from_normalized("/").expect("canonical");
+    assert!(super::root_echo_at(home, Path::new("/Users/test_user_3")).is_none());
+}

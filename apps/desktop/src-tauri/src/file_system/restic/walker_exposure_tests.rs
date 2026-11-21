@@ -10,7 +10,7 @@
 
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -35,6 +35,11 @@ async fn local_repo() -> (tempfile::TempDir, PathBuf, Arc<dyn Volume>) {
     (dir, repo, volume)
 }
 
+/// A scratch path on disk, crossed in once: the tempdir is plain Unicode text.
+fn app(native: &Path) -> AppPathBuf {
+    AppPathBuf::from_native_unicode(native).expect("a scratch folder is an app path")
+}
+
 fn names(entries: &[FileEntry]) -> Vec<&str> {
     entries.iter().map(|entry| entry.name.as_str()).collect()
 }
@@ -44,10 +49,7 @@ fn names(entries: &[FileEntry]) -> Vec<&str> {
 async fn a_volume_listing_of_the_repo_carries_no_row() {
     let (_dir, repo, volume) = local_repo().await;
 
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(&repo), None)
-        .await
-        .expect("lists the repo");
+    let entries = volume.list_directory(&app(&repo), None).await.expect("lists the repo");
     assert!(names(&entries).contains(&"config"), "{:?}", names(&entries));
     assert!(!names(&entries).contains(&VIRTUAL_ENTRY_NAME), "{:?}", names(&entries));
 }
@@ -57,10 +59,7 @@ async fn a_volume_listing_of_the_repo_carries_no_row() {
 async fn a_decorated_listing_of_the_repo_shows_the_row() {
     let (_dir, repo, volume) = local_repo().await;
 
-    let mut entries = volume
-        .list_directory(&AppPath::legacy_unchecked(&repo), None)
-        .await
-        .expect("lists the repo");
+    let mut entries = volume.list_directory(&app(&repo), None).await.expect("lists the repo");
     let added = cmdr_listing::testing::decorate(
         crate::listing_host::listings(),
         "walker-decorated",
@@ -84,7 +83,7 @@ async fn the_delete_walker_never_meets_the_row_and_deletes_the_repo() {
     let mut directories = Vec::new();
     while let Some(next) = stack.pop() {
         for child in volume
-            .list_directory(&AppPath::legacy_unchecked(&next), None)
+            .list_directory(&app(&next), None)
             .await
             .expect("listing a real dir")
         {
@@ -93,17 +92,14 @@ async fn the_delete_walker_never_meets_the_row_and_deletes_the_repo() {
             if child.is_directory {
                 stack.push(path);
             } else {
-                volume
-                    .delete(&AppPath::legacy_unchecked(&path))
-                    .await
-                    .expect("a real repo file deletes");
+                volume.delete(&app(&path)).await.expect("a real repo file deletes");
             }
         }
         directories.push(next);
     }
     for directory in directories.into_iter().rev() {
         volume
-            .delete(&AppPath::legacy_unchecked(&directory))
+            .delete(&app(&directory))
             .await
             .expect("a real repo folder deletes");
     }
@@ -117,14 +113,11 @@ async fn real_repo_files_stay_fully_mutable() {
     let (_dir, repo, volume) = local_repo().await;
     let config = repo.join("config");
 
-    let source = volume
-        .open_read_stream(&AppPath::legacy_unchecked(&config))
-        .await
-        .expect("config streams");
+    let source = volume.open_read_stream(&app(&config)).await.expect("config streams");
     let size = std::fs::metadata(&config).expect("config is on disk").len();
     volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(&repo.join("config.bak")),
+            &app(&repo.join("config.bak")),
             WriteMode::CreateOrReplace,
             StreamLength::Known(size),
             source,
@@ -133,21 +126,14 @@ async fn real_repo_files_stay_fully_mutable() {
         .await
         .expect("writing beside it lands");
     volume
-        .rename(
-            &AppPath::legacy_unchecked(&repo.join("config.bak")),
-            &AppPath::legacy_unchecked(&repo.join("config.old")),
-            false,
-        )
+        .rename(&app(&repo.join("config.bak")), &app(&repo.join("config.old")), false)
         .await
         .expect("renaming in the repo");
     volume
-        .delete(&AppPath::legacy_unchecked(&repo.join("config.old")))
+        .delete(&app(&repo.join("config.old")))
         .await
         .expect("deleting in the repo");
-    volume
-        .delete(&AppPath::legacy_unchecked(&config))
-        .await
-        .expect("deleting the config itself");
+    volume.delete(&app(&config)).await.expect("deleting the config itself");
     assert!(!config.exists());
 }
 
@@ -157,7 +143,7 @@ async fn the_copy_scan_counts_only_what_is_on_disk() {
     let (_dir, repo, volume) = local_repo().await;
 
     let scanned = volume
-        .scan_for_copy_batch(std::slice::from_ref(&AppPath::legacy_unchecked(&repo).into_owned()))
+        .scan_for_copy_batch(std::slice::from_ref(&app(&repo)))
         .await
         .expect("scanning the repo succeeds");
 
@@ -178,10 +164,7 @@ async fn the_copy_scan_counts_only_what_is_on_disk() {
 #[tokio::test]
 async fn the_listing_oracle_declines_a_decorated_repo_listing() {
     let (_dir, repo, volume) = local_repo().await;
-    let mut cached = volume
-        .list_directory(&AppPath::legacy_unchecked(&repo), None)
-        .await
-        .expect("lists the repo");
+    let mut cached = volume.list_directory(&app(&repo), None).await.expect("lists the repo");
     let added = cmdr_listing::testing::decorate(
         crate::listing_host::listings(),
         crate::file_system::volume::DEFAULT_VOLUME_ID,
@@ -300,10 +283,7 @@ async fn folder_size_counting_skips_the_row_unless_asked_for_it() {
     use crate::listing_index_sizes::count::plan;
 
     let (_dir, repo, volume) = local_repo().await;
-    let mut entries = volume
-        .list_directory(&AppPath::legacy_unchecked(&repo), None)
-        .await
-        .expect("lists the repo");
+    let mut entries = volume.list_directory(&app(&repo), None).await.expect("lists the repo");
     let added = cmdr_listing::testing::decorate(
         crate::listing_host::listings(),
         "walker-count",

@@ -92,12 +92,13 @@ pub(crate) async fn follow_requirement() {
         let is_plain_smb_mount =
             crate::volumes::is_local_volume(volume.as_ref()) && volume.mount_class() == Some(MountClass::SmbShare);
         if (required && is_plain_smb_mount) || (!required && is_gate) {
+            let mount_root = volume.root().as_std_legacy();
             log::debug!(
                 target: "network::smb_encryption",
                 "Re-registering the SMB mount at {} for the encryption requirement",
-                LogPrivate::dir_path(&*volume.root().as_std_legacy())
+                LogPrivate::dir_path(&*mount_root)
             );
-            let replacement = os_mount_volume(volume.name(), &volume.root().as_std_legacy());
+            let replacement = os_mount_volume(volume.name(), &mount_root);
             crate::network::smb_upgrade::register_replacing_predecessor(&volume_id, replacement).await;
         }
     }
@@ -129,6 +130,9 @@ pub(crate) async fn refuses(volume_id: &str) -> bool {
 pub(crate) struct UnverifiedSmbMount {
     /// The plain local volume over the mount (`volumes::local_volume_on_mount`).
     mount: Arc<dyn Volume>,
+    /// The mount's root as the OS spells it, crossed once: what the probe, the log,
+    /// the refusal, and the plain mount that takes over read.
+    native_root: PathBuf,
     verdict: Arc<OnceCell<MountEncryption>>,
 }
 
@@ -140,6 +144,7 @@ const STATSHARES_LIMIT: std::time::Duration = std::time::Duration::from_secs(5);
 impl UnverifiedSmbMount {
     fn new(mount: Arc<dyn Volume>) -> Self {
         Self {
+            native_root: mount.root().as_std_legacy().into_owned(),
             mount,
             verdict: Arc::new(OnceCell::new()),
         }
@@ -151,8 +156,7 @@ impl UnverifiedSmbMount {
         if !cmdr_smb::SmbEncryption::is_required() {
             return true;
         }
-        let root = self.mount.root().as_std_legacy().to_path_buf();
-        *self.verdict.get_or_init(|| probe(root)).await == MountEncryption::Encrypted
+        *self.verdict.get_or_init(|| probe(self.native_root.clone())).await == MountEncryption::Encrypted
     }
 
     /// Hands the share to the plain mount once the probe says encrypted, if the
@@ -162,12 +166,12 @@ impl UnverifiedSmbMount {
             log::info!(
                 target: "network::smb_encryption",
                 "Not browsing the SMB mount at {} through macOS: its connection isn't encrypted, and SMB encryption is required",
-                LogPrivate::dir_path(&*self.mount.root().as_std_legacy())
+                LogPrivate::dir_path(&self.native_root)
             );
             return;
         }
         let manager = crate::file_system::volume::manager::get_volume_manager();
-        let Some((volume_id, current)) = manager.find_by_root(&self.mount.root().as_std_legacy()) else {
+        let Some((volume_id, current)) = manager.find_by_app_root(self.mount.root()) else {
             return;
         };
         let still_this_gate = current
@@ -175,17 +179,14 @@ impl UnverifiedSmbMount {
             .downcast_ref::<Self>()
             .is_some_and(|gate| std::ptr::eq(gate, self.as_ref()));
         if still_this_gate {
-            let plain = crate::volumes::local_volume_on_mount(
-                self.mount.name(),
-                &self.mount.root().as_std_legacy(),
-                MountClass::SmbShare,
-            );
+            let plain =
+                crate::volumes::local_volume_on_mount(self.mount.name(), &self.native_root, MountClass::SmbShare);
             crate::network::smb_upgrade::register_replacing_predecessor(&volume_id, plain).await;
         }
     }
 
     fn refusal(&self) -> VolumeError {
-        VolumeError::EncryptionRequired(self.mount.root().as_std_legacy().to_string_lossy().into_owned())
+        VolumeError::EncryptionRequired(self.native_root.to_string_lossy().into_owned())
     }
 }
 

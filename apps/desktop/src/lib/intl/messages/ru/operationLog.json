@@ -236,6 +236,10 @@
   "@operationLog.skipReason.locked": {
     "sourceHash": "39e4c78"
   },
+  "operationLog.skipReason.unreadablePath": "Cmdr не удалось точно определить по журналу операций, где находится этот объект, поэтому он оставлен как есть.",
+  "@operationLog.skipReason.unreadablePath": {
+    "sourceHash": "9fc06ef"
+  },
   "operationLog.summary.canceled": "{summary}, затем отменено (запланировано: {plannedText})",
   "@operationLog.summary.canceled": {
     "sourceHash": "9a27d89"

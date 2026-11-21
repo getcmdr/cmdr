@@ -6,10 +6,9 @@
 //! that run the same flow over a real session are in `sftp_volume_wiring_test.rs`
 //! and `webdav_volume_wiring_test.rs`.
 
-use cmdr_fs::app_path::AppPath;
-use cmdr_fs::app_path::BridgedPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
@@ -32,6 +31,11 @@ const NO_TIME: Duration = Duration::from_millis(50);
 
 fn app(remote: &str) -> String {
     format!("{PREFIX}{remote}")
+}
+
+/// `text` as the canonical app path it is, so a typo can't test another path.
+fn canonical(text: &str) -> &AppPath {
+    AppPath::from_normalized(text).unwrap_or_else(|why| panic!("{text:?} is no canonical app path: {why}"))
 }
 
 fn leaf(remote: &str) -> String {
@@ -68,14 +72,14 @@ fn over_the_same_server(name: &str, root: &Path) -> Arc<dyn Volume> {
 /// never answers at all.
 struct DeadSession {
     name: String,
-    root: BridgedPath,
+    root: AppPathBuf,
     hangs: bool,
 }
 
 fn dead_session(name: &str, root: &str, hangs: bool) -> Arc<dyn Volume> {
     Arc::new(DeadSession {
         name: name.to_string(),
-        root: BridgedPath::new(PathBuf::from(app(root))),
+        root: canonical(&app(root)).to_owned(),
         hangs,
     })
 }
@@ -86,7 +90,7 @@ impl Volume for DeadSession {
     }
 
     fn root(&self) -> &AppPath {
-        self.root.app()
+        &self.root
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -169,7 +173,7 @@ async fn a_wider_root_the_server_has_is_installed_and_announced() {
     accepted.install(&manager);
 
     let installed = manager.get(id).expect("still registered");
-    assert_eq!(&*installed.root().as_std_legacy(), Path::new(&app("/srv/data")));
+    assert_eq!(installed.root(), canonical(&app("/srv/data")));
     assert!(
         volume_broadcast::volumes_changed_requests() > asked_before,
         "the switcher hears about the new root"
@@ -212,7 +216,7 @@ async fn a_rename_alone_swaps_the_instance_without_asking_the_server() {
 
     let installed = manager.get(id).expect("still registered");
     assert_eq!(installed.name(), "Testnas");
-    assert_eq!(&*installed.root().as_std_legacy(), Path::new(&app("/srv/data")));
+    assert_eq!(installed.root(), canonical(&app("/srv/data")));
     assert!(
         volume_broadcast::volume_root_changes(id).is_empty(),
         "neither the root nor the landing moved"

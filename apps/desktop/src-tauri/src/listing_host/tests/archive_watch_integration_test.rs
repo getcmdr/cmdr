@@ -12,7 +12,7 @@
 //! backend and is asserted against a recording host in `watch/host_seam_test.rs`.
 //! No FSEvents timing lives in this file.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::volume::host::listings::ListingHost;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -197,17 +197,18 @@ async fn lru_eviction_releases_the_archive_and_its_watch() {
     let zip_a = base.path().join("a.zip");
     std::fs::write(&zip_a, build_zip(&[stored("x.txt", b"x".to_vec())])).expect("write a.zip");
     let a = manager.resolve("root", &zip_a).await.volume.expect("archive a");
+    let zip_a_app = AppPathBuf::from_native_unicode(&zip_a).expect("a scratch path");
     // `resolve` registers the archive but gates the watch on a registered app
     // handle, which a headless test has none of — so no real OS watch starts
     // behind our back, and this test starts one itself.
     assert_eq!(
-        a.listing_watch_coverage(&AppPath::legacy_unchecked(&zip_a)),
+        a.listing_watch_coverage(&zip_a_app),
         WatchCoverage::None,
         "resolve must not auto-start the watch without an app handle"
     );
     start_watch_on(&a, "root");
     assert_eq!(
-        a.listing_watch_coverage(&AppPath::legacy_unchecked(&zip_a)),
+        a.listing_watch_coverage(&zip_a_app),
         WatchCoverage::EveryWriter,
         "A's watch must be live while registered"
     );
@@ -232,7 +233,7 @@ async fn lru_eviction_releases_the_archive_and_its_watch() {
         "eviction must release the registry's Arc, leaving only the test's"
     );
     assert_eq!(
-        a.listing_watch_coverage(&AppPath::legacy_unchecked(&zip_a)),
+        a.listing_watch_coverage(&zip_a_app),
         WatchCoverage::EveryWriter,
         "the still-held Arc keeps the watch alive until the last reference drops"
     );

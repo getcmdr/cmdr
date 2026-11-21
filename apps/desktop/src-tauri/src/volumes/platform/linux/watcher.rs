@@ -476,7 +476,7 @@ fn unregister_volume_from_manager(volume_path: &str) {
         RootRemoval::Promoted { id, new_root } => {
             info!(
                 "{volume_path} unmounted, but volume {id} is still mounted at {}; promoted it to that root.",
-                LogPrivate::dir_path(&new_root),
+                LogPrivate::dir_path(new_root.as_str()),
                 volume_path = LogPrivate::dir_path(volume_path),
             );
         }

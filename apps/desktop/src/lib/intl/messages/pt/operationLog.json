@@ -237,6 +237,10 @@
   "@operationLog.skipReason.locked": {
     "sourceHash": "39e4c78"
   },
+  "operationLog.skipReason.unreadablePath": "O Cmdr não conseguiu saber pelo registro de operações onde exatamente este item está, então não mexeu nele.",
+  "@operationLog.skipReason.unreadablePath": {
+    "sourceHash": "9fc06ef"
+  },
   "operationLog.summary.canceled": "{summary}, até o cancelamento (total previsto: {plannedText})",
   "@operationLog.summary.canceled": {
     "sourceHash": "9a27d89"

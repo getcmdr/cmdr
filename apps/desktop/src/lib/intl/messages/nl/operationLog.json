@@ -238,6 +238,10 @@
   "@operationLog.skipReason.locked": {
     "sourceHash": "39e4c78"
   },
+  "operationLog.skipReason.unreadablePath": "Cmdr kon uit het bewerkingenlogboek niet precies opmaken waar dit onderdeel staat, dus heeft het dit ongemoeid gelaten.",
+  "@operationLog.skipReason.unreadablePath": {
+    "sourceHash": "9fc06ef"
+  },
   "operationLog.summary.canceled": "{summary}, daarna geannuleerd ({plannedText} gepland)",
   "@operationLog.summary.canceled": {
     "sourceHash": "9a27d89"

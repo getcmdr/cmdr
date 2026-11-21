@@ -8,7 +8,7 @@
 // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 #![cfg(test)]
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -40,7 +40,10 @@ async fn a_dot_git_that_is_not_this_repos_gitdir_gets_no_rows() {
 
     let volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder("Test", &dir, crate::volume_host::host()));
     let mut entries = volume
-        .list_directory(&AppPath::legacy_unchecked(&stray), None)
+        .list_directory(
+            &AppPathBuf::from_native_unicode(&stray).expect("a scratch folder is an app path"),
+            None,
+        )
         .await
         .expect("listing it");
     assert_eq!(
@@ -53,7 +56,10 @@ async fn a_dot_git_that_is_not_this_repos_gitdir_gets_no_rows() {
     // everything.
     let real = dir.join(".git");
     let mut real_entries = volume
-        .list_directory(&AppPath::legacy_unchecked(&real), None)
+        .list_directory(
+            &AppPathBuf::from_native_unicode(&real).expect("a scratch folder is an app path"),
+            None,
+        )
         .await
         .expect("listing .git");
     assert_eq!(

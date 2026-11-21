@@ -6,10 +6,10 @@
 //! remount would be the wrong model: the unmount half stops the drive's index and
 //! sends every pane on it home. Rationale: `../DETAILS.md` § "A renamed drive".
 
-use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 
 use super::VolumeManager;
+use super::roots::{mount_root_from_os, same_root};
 use crate::ignore_poison::RwLockIgnorePoison;
 
 /// What [`VolumeManager::move_root`] did.
@@ -38,19 +38,22 @@ impl VolumeManager {
     ///
     /// The re-rooted instance is ❌ not retired, the same as a promotion: it's the
     /// same mount, and nothing about it ended.
+    ///
+    /// `from` and `to` are the native mount paths the OS reported.
     pub fn move_root(&self, from: &Path, to: &Path) -> RootMove {
+        let (from, to) = (&*mount_root_from_os(from), &*mount_root_from_os(to));
         let mut volumes = self.volumes.write_ignore_poison();
         let Some((id, entry)) = volumes.iter_mut().find(|(_, entry)| entry.knows_root(from)) else {
             return RootMove::Unknown;
         };
         let id = id.clone();
 
-        if &*entry.volume.root().as_std_legacy() != from {
-            entry.roots.retain(|root| root.path != from);
+        if !same_root(entry.volume.root(), from) {
+            entry.roots.retain(|root| !same_root(&root.path, from));
             entry.record_root(to);
             return RootMove::SiblingMoved { id };
         }
-        match entry.volume.rerooted(&AppPath::legacy_unchecked(to)) {
+        match entry.volume.rerooted(to) {
             Some(rerooted) => {
                 // The instance it replaced is the same mount's previous handle, and
                 // nothing about that mount ended, so it goes without retiring.

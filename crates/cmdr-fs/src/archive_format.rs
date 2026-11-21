@@ -9,13 +9,18 @@
 //! [`archive_boundary_candidate`] is the same suffix test applied to each component
 //! of a path: where an archive path splits into the archive and the path inside
 //! it, still with no I/O. It lives here, not beside `cmdr-archive`'s magic-byte
-//! confirm, so the listing engine can ask it without depending on every codec.
+//! confirm, so the listing engine can ask it without depending on every codec;
+//! [`archive_boundary_candidate_at`] is its app-path twin, here for the same reason
+//! (the browser demo asks it too).
 //!
 //! Only the naming lives here. The decoders that unwrap a tar's outer
 //! compression are the app's, next to the rest of the archive reading core.
 
+use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
+
+use crate::app_path::{AppPath, AppPathBuf, PathArithmetic, RelativeAppPathBuf, is_escape, unescape_bytes};
 
 /// The archive formats Cmdr browses as folders.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -216,9 +221,82 @@ pub fn archive_boundary_candidates(path: &Path) -> impl Iterator<Item = (PathBuf
     })
 }
 
+/// [`archive_boundary_candidate`] for an app path: the archive (the path up to
+/// and including the FIRST name carrying a supported archive extension) and the
+/// names inside it (empty when the archive is the path's last name). No I/O.
+///
+/// Reads the path's canonical twin (a bridge value with none splits nowhere)
+/// and scans its text left to right, root included, as the `std::path` form
+/// scans its components, so the two agree: a scheme authority that looks like
+/// an archive (`sftp://box.zip/…`) is the first match there too, and since it
+/// names no file the split is `None`. A name is read as its native text
+/// ([`archive_name_text`]), as the `std::path` form reads a component.
+pub fn archive_boundary_candidate_at(path: &AppPath) -> Option<(AppPathBuf, RelativeAppPathBuf)> {
+    let path = path.to_canonical().ok()?;
+    let text = path.as_str();
+    let root_len = path.root().as_str().len();
+    let mut start = 0;
+    let end = loop {
+        let end = text[start..].find('/').map_or(text.len(), |offset| start + offset);
+        let name = &text[start..end];
+        if archive_name_text(name).is_some_and(|name| has_supported_archive_extension(&name)) {
+            break end;
+        }
+        if end == text.len() {
+            return None;
+        }
+        start = end + 1;
+    };
+    if end <= root_len {
+        return None;
+    }
+    let archive = std::iter::successors(Some(&*path), |ancestor| ancestor.parent())
+        .find(|ancestor| ancestor.as_str().len() == end)?;
+    let inner = path.strip_prefix(archive)?.into_owned();
+    Some((archive.to_owned(), inner))
+}
+
+/// The text an app-spelled `name` spells natively, which is what an extension is
+/// read from: `name` itself when it holds no escape, else its native bytes when
+/// they are valid UTF-8 (a literal escape-range code point, which the bridge
+/// escapes through its bytes), and `None` for a name that isn't text natively.
+/// The `std::path` forms read a component's bytes the same way.
+pub fn archive_name_text(name: &str) -> Option<Cow<'_, str>> {
+    if !name.chars().any(is_escape) {
+        return Some(Cow::Borrowed(name));
+    }
+    let bytes = unescape_bytes(name).ok()?;
+    String::from_utf8(bytes.into_owned()).ok().map(Cow::Owned)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_typed_split_takes_the_first_archive_name_and_keeps_a_remote_root_spelled_exactly() {
+        let split = |text: &str| {
+            archive_boundary_candidate_at(AppPath::from_normalized(text).expect("canonical"))
+                .map(|(archive, inner)| (archive.into_string(), inner.as_str().to_owned()))
+        };
+        let pair = |archive: &str, inner: &str| Some((archive.to_owned(), inner.to_owned()));
+
+        assert_eq!(split("/x/a.zip/b/c.txt"), pair("/x/a.zip", "b/c.txt"));
+        assert_eq!(split("/x/a.zip"), pair("/x/a.zip", ""));
+        // Leftmost wins: a nested archive is a plain inner entry.
+        assert_eq!(split("/x/a.zip/b.zip/c"), pair("/x/a.zip", "b.zip/c"));
+        assert_eq!(
+            split("sftp://test_user_1@testnas.local:22/srv/a.tar.gz/d"),
+            pair("sftp://test_user_1@testnas.local:22/srv/a.tar.gz", "d")
+        );
+        assert_eq!(split("/x/plain/folder"), None);
+        assert_eq!(split("/x/photo.gz/y"), None);
+        // An authority named like an archive is the first match, as the `std::path`
+        // form reads it, and names no file.
+        assert_eq!(split("sftp://box.zip/srv/a.zip/x"), None);
+        // A name that isn't valid UTF-8 natively is never an archive.
+        assert_eq!(split("/x/caf\u{10FEE9}.zip/y"), None);
+    }
 
     #[test]
     fn every_label_round_trips_through_format_for_name() {

@@ -236,6 +236,10 @@
   "@operationLog.skipReason.locked": {
     "sourceHash": "39e4c78"
   },
+  "operationLog.skipReason.unreadablePath": "Cmdr z historie operací nepoznal, kde přesně tato položka je, takže ji nechal beze změny.",
+  "@operationLog.skipReason.unreadablePath": {
+    "sourceHash": "9fc06ef"
+  },
   "operationLog.summary.canceled": "{summary}, pak zrušeno (plánováno: {plannedText})",
   "@operationLog.summary.canceled": {
     "sourceHash": "9a27d89"

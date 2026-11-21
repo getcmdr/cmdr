@@ -2274,6 +2274,10 @@
       {
         "key": "aboutThis.ownerPlace.logs",
         "why": "the literal macOS Library folder name Logs, kept as the system names it"
+      },
+      {
+        "key": "operationLog.skipReason.unreadablePath",
+        "why": "the log here is the operation log this dialog shows, so each language names that feature, not the diagnostic log file"
       }
     ],
     "sense": "Cmdr's on-disk diagnostic log file, and the Logging settings."

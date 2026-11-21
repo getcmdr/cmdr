@@ -1,11 +1,8 @@
 //! Test isolation for the process-global `VolumeManager`.
 
-use cmdr_fs::app_path::AppPath;
-use cmdr_fs::app_path::BridgedPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::volume::Retirement;
 use std::future::Future;
-use std::path::Path;
-use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 
@@ -74,7 +71,7 @@ impl Drop for TestVolumeRegistration {
 /// re-rooted onto a surviving mount is the same share, the same session, and the
 /// same watcher, so retiring one instance would stand the live one down.
 pub(crate) struct RetiringVolume {
-    root: BridgedPath,
+    root: AppPathBuf,
     retirement: Arc<Retirement>,
 }
 
@@ -84,7 +81,9 @@ impl RetiringVolume {
         let retirement = Arc::new(Retirement::new());
         let reader = Arc::clone(&retirement);
         let volume = Arc::new(Self {
-            root: BridgedPath::new(PathBuf::from(root)),
+            root: AppPath::from_normalized(root)
+                .expect("a canonical test root")
+                .to_owned(),
             retirement,
         });
         (volume, move || reader.is_retired())
@@ -97,7 +96,7 @@ impl Volume for RetiringVolume {
     }
 
     fn root(&self) -> &AppPath {
-        self.root.app()
+        &self.root
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -109,10 +108,8 @@ impl Volume for RetiringVolume {
     }
 
     fn rerooted(&self, new_root: &AppPath) -> Option<Arc<dyn Volume>> {
-        let new_root_std = new_root.as_std_legacy();
-        let new_root: &Path = &new_root_std;
         Some(Arc::new(Self {
-            root: BridgedPath::new(new_root.to_path_buf()),
+            root: new_root.to_owned(),
             retirement: Arc::clone(&self.retirement),
         }))
     }
