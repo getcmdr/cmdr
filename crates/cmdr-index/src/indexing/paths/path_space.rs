@@ -215,6 +215,14 @@ impl IndexPathSpace {
 pub(crate) fn join_volume_relative(volume_root: &str, relative: &str) -> String {
     let trimmed_root = volume_root.trim_end_matches('/');
     let trimmed_relative = relative.trim_start_matches('/');
+    // Under the `/` root, a Windows drive's text is already absolute (`D:/src`), and a
+    // `/` in front of it would name no place.
+    if trimmed_root.is_empty()
+        && let Some(first) = trimmed_relative.split('/').next()
+        && super::path_prefix::is_drive_name(first)
+    {
+        return trimmed_relative.to_string();
+    }
     if trimmed_relative.is_empty() {
         // The volume root itself, spelled without a trailing slash like every other
         // absolute path the pipeline hands around.

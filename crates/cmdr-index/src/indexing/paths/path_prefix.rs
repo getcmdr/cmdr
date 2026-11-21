@@ -47,6 +47,17 @@ pub(crate) fn rooted<'a>(components: impl IntoIterator<Item = &'a str>) -> Strin
     out
 }
 
+/// [`rooted`] for names taken from `original`, which also keeps a Windows UNC path's
+/// `//server/share` lead (from names alone that reads as `/server/share`). Only for
+/// absolute text: an index-relative `/x` is never `//`-led.
+fn rooted_like<'a>(original: &str, components: impl IntoIterator<Item = &'a str>) -> String {
+    let text = rooted(components);
+    let unc = cmdr_fs::app_path::PathFlavor::HOST == cmdr_fs::app_path::PathFlavor::Windows
+        && original.starts_with("//")
+        && text.len() > 1;
+    if unc { format!("/{text}") } else { text }
+}
+
 /// Whether `name`, a path's FIRST name, is a Windows drive (`D:`) on this host.
 pub(crate) fn is_drive_name(name: &str) -> bool {
     cmdr_fs::app_path::PathFlavor::HOST == cmdr_fs::app_path::PathFlavor::Windows
@@ -140,7 +151,7 @@ pub(crate) fn capped_prefix(path: &str, max_depth: usize) -> String {
         return "/".to_string();
     }
     let take = comps.len().min(max_depth);
-    rooted(comps[..take].iter().copied())
+    rooted_like(path, comps[..take].iter().copied())
 }
 
 /// The deepest common ancestor of a set of absolute paths, as an absolute path.
@@ -157,7 +168,7 @@ pub(crate) fn deepest_common_ancestor<'a>(paths: impl IntoIterator<Item = &'a st
             break;
         }
     }
-    Some(rooted(common))
+    Some(rooted_like(first, common))
 }
 
 /// Compute parent path from a normalized path.
@@ -322,6 +333,17 @@ mod tests {
             Some(deep)
         );
         assert_eq!(capped_prefix("D:/src/x/a", 2), parent);
+        // A UNC share keeps its `//` lead on Windows; POSIX folds it as it always did.
+        let unc = if windows {
+            "//testnas.local/s/a"
+        } else {
+            "/testnas.local/s/a"
+        };
+        assert_eq!(
+            deepest_common_ancestor(["//testnas.local/s/a/x", "//testnas.local/s/a/y"]).as_deref(),
+            Some(unc)
+        );
+        assert_eq!(capped_prefix("//testnas.local/s/a/x", 3), unc);
         if windows {
             assert_eq!(compute_parent_path("D:/src"), "D:/");
             assert_eq!(

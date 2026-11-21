@@ -358,6 +358,15 @@ pub(super) fn ensure_walkable(context: &CoverContext, ground: &Ground, root: &st
     let mut parent_id = ROOT_ID;
     let mut root_row = RootRow::Existing;
     let mut components = index_relative.split('/').filter(|c| !c.is_empty()).peekable();
+    // Under the `/` root a Windows drive's chain starts at the drive (`D:` → `D:/src`),
+    // never at `/D:`.
+    if on_disk == "/"
+        && components
+            .peek()
+            .is_some_and(|first| crate::indexing::paths::path_prefix::is_drive_name(first))
+    {
+        on_disk.clear();
+    }
     while let Some(component) = components.next() {
         push_name(&mut on_disk, component);
         let is_root = components.peek().is_none();
