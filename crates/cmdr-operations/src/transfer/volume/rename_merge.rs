@@ -407,6 +407,9 @@ async fn apply_child_decision(
         }
     };
 
+    // The resolved name in the volume's spelling, made once for whichever of its
+    // stat or its placeholder's delete this child takes (a borrow for UTF-8).
+    let write_app = AppPath::legacy_unchecked(&write_path);
     if merges_as_a_directory(entry) {
         // A directory child that resolved to Proceed is a cross-type
         // Overwrite/Rename (dir source vs a same-named dest FILE). The resolver
@@ -429,7 +432,7 @@ async fn apply_child_decision(
         // following backend's `is_directory` says it is. Merging renames the
         // source's files into the link's target. The rename below refuses the
         // taken name instead.
-        let write_path_is_dir = match ctx.volume.entry_kind(&AppPath::legacy_unchecked(&write_path)).await {
+        let write_path_is_dir = match ctx.volume.entry_kind(&write_app).await {
             Ok(kind) => kind == EntryKind::Directory,
             Err(VolumeError::NotFound(_)) => false,
             Err(e) => return Err(map_rename_error(&write_path, e)),
@@ -494,9 +497,8 @@ async fn apply_child_decision(
         None => {
             // Ours to clear, so no longer the post-loop's to take back.
             ctx.state.claimed_names.release_placeholder(&write_path);
-            let placeholder = AppPath::legacy_unchecked(&write_path);
-            if ctx.volume.exists(&placeholder).await {
-                match ctx.volume.delete(&placeholder).await {
+            if ctx.volume.exists(&write_app).await {
+                match ctx.volume.delete(&write_app).await {
                     Ok(()) | Err(VolumeError::NotFound(_)) => {}
                     Err(e) => return Err(map_rename_error(&write_path, e)),
                 }
