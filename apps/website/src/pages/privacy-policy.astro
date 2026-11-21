@@ -5,7 +5,7 @@ import LegalLayout from '../layouts/LegalLayout.astro'
 <LegalLayout
     title="Privacy policy"
     description="How Cmdr collects, uses, and protects your personal data. GDPR compliant."
-    lastUpdated="2026-11-18"
+    lastUpdated="2026-11-22"
 >
     <p>
         Your privacy matters to us a lot. This policy explains what data we collect, why, and how we protect it. We've
@@ -90,33 +90,37 @@ import LegalLayout from '../layouts/LegalLayout.astro'
     <h3>In the desktop app</h3>
     <ul>
         <li>
-            <strong>License key</strong>: stored on your machine, in the macOS Keychain. The app verifies it cryptographically offline,
+            <strong>License key</strong>: stored on your computer, in the macOS Keychain or, on Windows, in Windows Credential Manager. The app verifies it cryptographically offline,
             and periodically checks our server to see if your license has been revoked, or your subscription has expired
             or been extended. During these
-            checks, we also send a hashed device identifier so we can detect key sharing. We don't use this to track you
-            or your activity, only to count distinct devices per license.
+            checks, we also send a hashed device identifier so we can detect key sharing. It's a one-way hash of the id
+            your Mac's hardware carries, or on Windows, of the id Windows Setup gives your PC. We don't use this to track
+            you or your activity, only to count distinct devices per license.
         </li>
         <li>
             <strong>Organization name</strong>: for commercial licenses, we store the organization name you provide at
             checkout, to display it in the app's About window.
         </li>
         <li>
-            <strong>Crash reports</strong> (on by default): the app version, macOS version, where in our code the crash
-            happened, and the crash message, cleaned of personal data on your Mac first. For a crash with no message,
-            we also include the memory addresses the code stopped at and the address Cmdr itself was loaded at, which
+            <strong>Crash reports</strong> (on by default): the app version, your operating system and its version,
+            where in our code the crash happened, and the crash message, cleaned of personal data on your computer
+            first, plus a few basic facts about your computer: its model, CPU core count, memory, free disk space, the
+            size of Cmdr's drive index, and your preferred language. On a Mac, for a crash with no message, we also
+            include the memory addresses the code stopped at and the address Cmdr itself was loaded at, which
             is what lets us turn those numbers back into a place in our code. They're randomized by macOS on every
             launch and say nothing about you or your Mac. We read the crash report macOS writes for the same crash and
             take two things from it: the one-line reason the crash happened, and the list of function names the code
             was in. We pick those out by name and leave the rest of that file on your Mac, including the id that
-            identifies your machine and the name of whatever app launched Cmdr. No filenames, no file
-            contents. If you've added a beta contact email, you can tick a box to attach it so we can reply; we include
+            identifies your machine and the name of whatever app launched Cmdr. On Windows, Cmdr reports only a crash
+            its own code detects as it happens, and it doesn't read any crash file Windows writes. No filenames, no
+            file contents. If you've added a beta contact email, you can tick a box to attach it so we can reply; we include
             it only when you do, and delete it after 90 days. Crash reports are on by default, and you can turn them
             off in Settings &gt; Updates &amp; privacy.
         </li>
         <li>
-            <strong>Error reports</strong> (opt-in): a zip of recent app logs plus your app and macOS version, sent from
-            Help &gt; Send error report. The app shows you what's inside before it goes anywhere. File and folder names
-            are replaced with placeholders on your Mac first, so a path arrives as something like
+            <strong>Error reports</strong> (opt-in): a zip of recent app logs plus your app and OS version and the same basic facts
+            about your computer as a crash report, sent from Help &gt; Send error report. The app shows you what's inside before it goes anywhere. File and folder names
+            are replaced with placeholders on your computer first, so a path arrives as something like
             <code>$HOME/Documents/&lt;file&gt;.pdf</code>. This covers every path, a name repeated in the same log
             line as its path, and the names of servers, shares, and user accounts. A placeholder stays the same within
             one report, so we can tell which lines are about the same file, but not across reports. Error messages from
@@ -127,7 +131,7 @@ import LegalLayout from '../layouts/LegalLayout.astro'
             a report you already sent, and that goes to the same place. Everything here is kept for 90 days.
         </li>
         <li>
-            <strong>Feedback you send</strong>: your message, your app and macOS version, and your email address if you
+            <strong>Feedback you send</strong>: your message, your app and OS version, and your email address if you
             add one so we can reply. No install id travels with it, so feedback can't be connected to your usage stats.
             If you tick the box to include the past five hours of logs, they go as an error report (below), redacted
             the same way and kept for the same 90 days, and we keep a note of which report belongs to your message so
@@ -136,25 +140,25 @@ import LegalLayout from '../layouts/LegalLayout.astro'
         </li>
         <li>
             <strong>Usage stats</strong> (open beta): which features you use, basic preferences (like light or dark
-            mode), your app version, macOS version, and Mac architecture, and whether you installed Cmdr with Homebrew
-            or downloaded it directly. Cloudflare, our host, also tells us which country each connection comes from. We
+            mode), your app version, your operating system and its version, and your processor type, and on a Mac,
+            whether you installed Cmdr with Homebrew or downloaded it directly. Cloudflare, our host, also tells us which country each connection comes from. We
             store that country and don't keep your IP address. The app sends these about once every three hours while
-            it's open. They're tied to a random id created on your Mac, never to your name, email, or license. That id
+            it's open. They're tied to a random id created on your computer, never to your name, email, or license. That id
             stays the same between launches, which is how we tell 100 people opening the app once from one person
             opening it 100 times. That makes these stats pseudonymous rather than truly anonymous: we can't work out who
             you are, but the records do link to each other. No filenames, contents, paths, search terms, or prompts. On
             by default during the beta, off anytime in Settings &gt; Updates &amp; privacy.
         </li>
         <li>
-            <strong>Beta contact email</strong> (optional): if you share it, it's stored on your Mac and sent only to our
+            <strong>Beta contact email</strong> (optional): if you share it, it's stored on your computer and sent only to our
             mailing list so we can reach out. We never send it with your usage stats, so the two can't be connected.
         </li>
         <li>
-            <strong>Days you opened Cmdr</strong>: the app notes each day you open it, in a file on your Mac, so a tip
-            can wait until you've settled in. It stays on your Mac and never reaches us.
+            <strong>Days you opened Cmdr</strong>: the app notes each day you open it, in a file on your computer, so a
+            tip can wait until you've settled in. It stays there and never reaches us.
         </li>
         <li>
-            <strong>Security event log</strong>: a small file on your Mac that notes security-relevant changes and
+            <strong>Security event log</strong>: a small file on your computer that notes security-relevant changes and
             refusals, like cloud AI consent given, an update installed, or an app turned away from the MCP server. It
             holds no filenames, contents, passwords, or keys, it's never part of an error report, and it never reaches
             us. On by default, off anytime in Settings &gt; Updates &amp; privacy, unless your organization requires it.
@@ -174,7 +178,7 @@ import LegalLayout from '../layouts/LegalLayout.astro'
     <ul>
         <li>
             The contents of your files, ever. We don't want to know your files. Your file and folder names don't reach
-            us either: in an error report they're replaced with placeholders on your Mac, keeping only the file
+            us either: in an error report they're replaced with placeholders on your computer, keeping only the file
             extension and everyday folder names like Documents or Downloads. (A name mentioned on its own, with no path
             next to it, can slip through, which is why you see the report before you send it.) We see the shape of what
             happened, not what you were working on.
@@ -183,12 +187,11 @@ import LegalLayout from '../layouts/LegalLayout.astro'
             Your prompts, the AI's answers, tool calls, etc. With a cloud provider, the app talks to it directly using
             your own API key: the conversation never passes through our servers. What you send is between you and that
             provider, under their terms. Cloud AI stays off until you allow it in Settings,
-            where Cmdr lists what each feature sends. With Cmdr you can also keep everything on your Mac with a local
-            model.
+            where Cmdr lists what each feature sends. On a Mac, you can also keep everything on your computer with a local model.
         </li>
         <li>
             Crash reports carry only technical diagnostics: code locations, app and system version, and
-            a crash message cleaned on your Mac first. Never file contents.
+            a crash message cleaned on your computer first. Never file contents.
         </li>
         <li>
             Your keystrokes or screenshots. During the open beta we do see which features are used, never their content.
@@ -372,7 +375,7 @@ import LegalLayout from '../layouts/LegalLayout.astro'
         <li>
             <strong>Error reports</strong>: 90 days. That covers the whole bundle, your email address if you
             attached one, anything you added to the report afterwards, and what you wrote in our issue tracker copy.
-            What's left after that is the technical part (the report id, your app and macOS version, and where the
+            What's left after that is the technical part (the report id, your app and OS version, and where the
             bundle used to live), which has no time limit: it names nobody, and it's how we keep track of a bug we
             haven't fixed yet.
         </li>
