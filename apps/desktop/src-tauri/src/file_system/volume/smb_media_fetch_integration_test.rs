@@ -25,7 +25,7 @@ use cmdr_index::media_index::testing::{ByteFetcher, FetchError, VolumeByteFetche
 #[ignore = "Requires Docker SMB containers (./apps/desktop/test/smb-servers/start.sh)"]
 async fn smb_integration_media_fetch_reads_bytes_via_direct_session() {
     let vol = Arc::new(make_docker_volume().await);
-    let mount_root = vol.root().as_std_legacy().to_string_lossy().into_owned();
+    let mount_root = vol.root().as_str().to_owned();
 
     // A unique file so parallel runs never collide; content big enough to span
     // several chunks on the streaming path.
@@ -70,7 +70,7 @@ async fn smb_integration_media_fetch_reads_bytes_via_direct_session() {
 #[ignore = "Requires Docker SMB containers (./apps/desktop/test/smb-servers/start.sh)"]
 async fn smb_integration_media_fetch_missing_file_is_not_found() {
     let vol = Arc::new(make_docker_volume().await);
-    let mount_root = vol.root().as_std_legacy().to_string_lossy().into_owned();
+    let mount_root = vol.root().as_str().to_owned();
     let fetcher = VolumeByteFetcher::new(vol.clone(), tokio::runtime::Handle::current());
     let os_path = os_join(&mount_root, &format!("/{}-missing.jpg", test_dir_name()));
 
@@ -94,7 +94,7 @@ async fn smb_integration_media_fetch_missing_file_is_not_found() {
 #[ignore = "Requires Docker SMB containers (./apps/desktop/test/smb-servers/start.sh)"]
 async fn smb_integration_media_fetch_parallel_reads_over_the_scan_pool() {
     let vol = Arc::new(make_docker_volume().await);
-    let mount_root = vol.root().as_std_legacy().to_string_lossy().into_owned();
+    let mount_root = vol.root().as_str().to_owned();
 
     // Seed several distinct small files (well under max_read, so the compound
     // fast-path applies to each).
