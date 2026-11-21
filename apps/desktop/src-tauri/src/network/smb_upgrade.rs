@@ -332,7 +332,7 @@ pub(crate) async fn register_replacing_predecessor(
     // only records the new root, so retiring the incumbent here would leave the ID
     // pointing at a volume whose watcher we just stopped: the share stays listed
     // and silently stops seeing its own changes.
-    let refused = manager.would_keep_incumbent(volume_id, &new_volume.root().as_std_legacy());
+    let refused = manager.would_keep_incumbent(volume_id, new_volume.root());
     // Carry the mount roots across before anyone is retired. The registry keeps
     // the roots it has for this ID either way, so whichever instance ends up
     // holding it has to know where each of them sits inside the share, or a later

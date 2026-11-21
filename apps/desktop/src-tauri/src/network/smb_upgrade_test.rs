@@ -291,7 +291,7 @@ async fn a_registration_the_registry_refuses_leaves_the_incumbent_untouched() {
         manager
             .known_roots(volume_id)
             .iter()
-            .any(|r| r.as_path() == Path::new("/Volumes/testshare-1")),
+            .any(|r| r.as_str() == "/Volumes/testshare-1"),
         "the second mount root is recorded as a fallback"
     );
 

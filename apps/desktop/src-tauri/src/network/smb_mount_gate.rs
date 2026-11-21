@@ -167,7 +167,7 @@ impl UnverifiedSmbMount {
             return;
         }
         let manager = crate::file_system::volume::manager::get_volume_manager();
-        let Some((volume_id, current)) = manager.find_by_root(&self.mount.root().as_std_legacy()) else {
+        let Some((volume_id, current)) = manager.find_by_app_root(self.mount.root()) else {
             return;
         };
         let still_this_gate = current
