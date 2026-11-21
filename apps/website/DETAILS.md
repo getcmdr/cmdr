@@ -474,10 +474,11 @@ embeds it (below), and `/demo/` is a page of its own too, in the sitemap and `ll
   with the listing engine's smoke run and golden traces (`desktop-rust-listing-wasm`, `desktop-rust-viewer-wasm`), runs
   `pnpm build:demo` on the tagged sources, runs the full demo suite against it, pushes `cmdr-demo:<tag>`, and attests it
   (SLSA provenance naming `release-pipeline.yml`, pushed beside the image). `publish` needs it, so a release whose demo
-  doesn't build or pass doesn't ship. The nightly CI run also builds both engines (`rust-lane.yml`'s `wasm` job) and the
-  demo with its full suite (`website-lane.yml`'s `demo-suite` job), so a host-only dep reaching the engine or a change
-  that breaks the demo surfaces the next morning, not on release day. A change to the desktop frontend or the engine
-  reaches `/demo/` with the next release; a change to the site itself still deploys on land.
+  doesn't build or pass doesn't ship. Any CI run whose change reaches an engine's crates builds it for wasm
+  (`rust-lane.yml`'s `wasm` job, `docs/tooling/ci.md` § Browser engines for wasm), so a host-only dep reaching the
+  engine fails that PR. The nightly also builds the demo with its full suite (`website-lane.yml`'s `demo-suite` job), so
+  a change that breaks the demo surfaces the next morning, not on release day. A change to the desktop frontend or the
+  engine reaches `/demo/` with the next release; a change to the site itself still deploys on land.
 - **Decision: the source of truth is GitHub's "Latest" release, resolved at use.** `scripts/released-demo.sh` reads the
   Latest release's tag, resolves `cmdr-demo:<tag>` to its digest, and runs `gh attestation verify` against
   `release-pipeline.yml` as signer, so a tag moved by anything but the release pipeline is refused. Why this over a file
