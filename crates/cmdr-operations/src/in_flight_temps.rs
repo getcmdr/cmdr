@@ -342,12 +342,22 @@ pub(super) enum OnDisk {
 /// `path` is in the volume's own namespace and `root` is that volume's root, so
 /// each record is compared in its own path space (`RecordHome::record_path`):
 /// as it is for a volume-space record, relative to `root` for a mount-homed one.
-pub(super) fn is_recorded_on(state: &WriteOperationState, volume_id: &str, root: &Path, path: &Path) -> bool {
+///
+/// `root` is the volume's own (`Volume::root`); it crosses to the records'
+/// `std::path` spelling here, once per ask, ❗ the ledger's one root crossing
+/// (lossless; the records stay native, app-path plan 10a).
+pub(super) fn is_recorded_on(
+    state: &WriteOperationState,
+    volume_id: &str,
+    root: &cmdr_fs::app_path::AppPath,
+    path: &Path,
+) -> bool {
+    let root = root.as_std_legacy();
     Ledger::of(state)
         .store()
         .recorded
         .iter()
-        .any(|record| record.names(volume_id, root, path))
+        .any(|record| record.names(volume_id, &root, path))
 }
 
 /// Records `temp` as a partial in both ledgers, in the `+` line shape every

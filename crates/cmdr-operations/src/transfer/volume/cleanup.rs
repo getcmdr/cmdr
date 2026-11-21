@@ -409,9 +409,9 @@ pub(super) async fn reap_stale_transfer_temps(
     // An operation that never named its destination volume can't ask: nothing
     // of its own was persisted, and its live temps are in its own state.
     let recorded_by_the_ledger = |path: &Path| {
-        state.dest_volume_id().is_some_and(|volume_id| {
-            in_flight_temps::is_recorded_on(state, volume_id, &volume.root().as_std_legacy(), path)
-        })
+        state
+            .dest_volume_id()
+            .is_some_and(|volume_id| in_flight_temps::is_recorded_on(state, volume_id, volume.root(), path))
     };
 
     let mut survivors = Vec::with_capacity(entries.len());
