@@ -178,7 +178,31 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
     pane's Go to path and relative anchoring, by reading). The UNC cell's fixture spells the share root without its `/`,
     and the bridge and patching cells expect POSIX's `Path::join`.
 - **10a, `cmdr-operations`**: 229.
-- **10b, `cmdr-index`**: 133, the 48 cold-drive timeouts among them.
+- **10b, `cmdr-index`**: 133, the 48 cold-drive timeouts among them. Seen on the builder (2026-11-21, the warm pair
+  `D:\src\cmdr-m6` + `D:\targets\m6`, elevated through `run-on-desktop.sh`, `--profile windows-baseline`,
+  `cargo nextest run -p cmdr-index`, 1,932 tests, 20 skipped): `main` at `a24de3dd99` (10b's first step merged) was red
+  on 192 (128 failed, 64 timed out; the TSV's 160 plus 33 newer cells, the rest of the cover and network walks); 10b's
+  second step (`cf872d40f0`, PR #1318) leaves 31 red, every one in the TSV, and no cell newly red. Of the TSV's 160, 125
+  pass, three moved to Linux-only (with a Windows twin that passes), and 32 stay red (31 plus one timeout that passes
+  alone, the builder's speed). What turned them: the local pipeline's native → text edge (`native_text`, `D:/x` where
+  `to_string_lossy` gave `D:\x`), drive- and UNC-aware path rebuilding (`path_prefix::rooted`, `reconstruct_path`,
+  `join_volume_relative`, the cover bootstrap), a root's PLAIN native form (verbatim `\\?\UNC\…` matched no host mount
+  answer, so a share was walked as a local drive), and fixtures rooted at their app spelling
+  (`crates/cmdr-index/src/indexing/paths/DETAILS.md` § "App paths at the edges"). The 31, by cause (the TSV's `rerun`
+  column says which):
+  - **#1226, a file another handle holds open (19)**: `importance::store::legacy_split` 17,
+    `handle::tests::building_splits_an_older_builds_importance_store`, and
+    `integration_tests::read_pool_over_a_recreated_database_never_serves_the_old_one` (`os error 32`, or 5 on a copy).
+  - **Renaming a folder with handles open (5)**: `cold_drive_tests::moves::*` rename the drive's mount point folder
+    mid-index, which Windows refuses (`Access is denied`); the test models a macOS volume rename. Not a path.
+  - **No `nlink` or file index from `std` on Windows (4)**: `reconciler::tests::hardlinks` 3 and
+    `directory_read::the_reconcile_read_matches_a_per_entry_stat` ("the hardlink pair reports nlink 2", `None`):
+    hardlink dedup has nothing to key on. Task 35's node identity.
+  - **P on the root volume (3)**: `integration_tests::enrich_entries_fallback_individual_paths` and
+    `enrichment_under_contention` (rows `/docs` under the root, read back at `/docs`), and
+    `queries::tests::a_registered_folder_that_is_not_a_mount_point_stays_on_root` (`/Users/statustest/…`): on Windows
+    the root volume is `C:/`, so a POSIX path routes nowhere. Task 34's root volume decides whether these become
+    `C:/`-shaped or Unix-only.
 - **10e, `cmdr-listing-wasm`**: 7.
 - **10c and 10d, the app**: 164 (10c the file system and listings half, 10d the rest; the 2 crash reporter timeouts go
   to #1232 instead).

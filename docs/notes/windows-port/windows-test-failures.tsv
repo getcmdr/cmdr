@@ -246,166 +246,166 @@ cmdr-archive	boundary_on_parent::boundary_on_parent_test::a_remote_parent_withou
 cmdr-archive	volume::volume_test::a_unix_mode_in_the_external_attributes_reaches_the_entry	zip-creator	read	assertion `left == right` failed: the archive recorded an executable entry	green@97befe7c07
 cmdr-archive	volume::volume_test::an_entry_with_no_recorded_mode_reports_the_no_concept_sentinel	zip-creator	read	assertion `left == right` failed: and a recorded one travels verbatim	green@97befe7c07
 cmdr-archive	volume::volume_test::entry_paths_keep_a_url_rooted_archive_path_spelled_exactly	S	read	assertion `left == right` failed	green@97befe7c07
-cmdr-index	importance::store::legacy_split::tests::a_background_split_is_waited_for	1226	read	assertion failed: none_of(&d.old())	
-cmdr-index	importance::store::legacy_split::tests::a_clock_set_back_after_a_split_still_adds_a_downgrades_visits	1226	read	schema: SqlInputError { error: Error { code: Unknown, extended_code: 1 }, msg: "table weights already exists", sql: "\n    CREATE TABLE weights (\n        path_folded TEXT PRIMARY KEY, path TEXT NOT N	
-cmdr-index	importance::store::legacy_split::tests::a_crash_after_the_copy_only_deletes_the_old_store	1226	read	copy: New(Io(Os { code: 5, kind: PermissionDenied, message: "Access is denied." }))	
-cmdr-index	importance::store::legacy_split::tests::a_crash_after_the_token_redoes_the_copy_once	1226	read	assertion `left == right` failed	
-cmdr-index	importance::store::legacy_split::tests::a_crash_inside_the_copy_leaves_nothing_half_copied	1226	read	assertion failed: none_of(&d.old())	
-cmdr-index	importance::store::legacy_split::tests::a_crash_inside_the_delete_leaves_sidecars_the_next_run_clears	1226	read	assertion `left == right` failed	
-cmdr-index	importance::store::legacy_split::tests::a_downgrade_round_trip_merges_both_histories	1226	read	schema: SqlInputError { error: Error { code: Unknown, extended_code: 1 }, msg: "table weights already exists", sql: "\n    CREATE TABLE weights (\n        path_folded TEXT PRIMARY KEY, path TEXT NOT N	
-cmdr-index	importance::store::legacy_split::tests::a_failure_that_may_pass_leaves_the_old_store_whole	1226	read	assertion `left == right` failed	
-cmdr-index	importance::store::legacy_split::tests::a_restored_copy_of_a_split_store_adds_nothing	1226	read	assertion failed: none_of(&d.old())	
-cmdr-index	importance::store::legacy_split::tests::a_second_run_after_a_full_split_does_nothing	1226	read	assertion `left == right` failed	
-cmdr-index	importance::store::legacy_split::tests::after_a_split_the_volume_is_due_its_full_pass	1226	read	probe: HoldsVisits	
-cmdr-index	importance::store::legacy_split::tests::an_empty_visit_table_still_splits_and_the_old_store_goes	1226	read	assertion `left == right` failed	
-cmdr-index	importance::store::legacy_split::tests::an_older_build_writing_under_a_marked_token_adds_only_what_it_wrote	1226	read	copy: New(Io(Os { code: 5, kind: PermissionDenied, message: "Access is denied." }))	
-cmdr-index	importance::store::legacy_split::tests::each_volume_splits_on_its_own	1226	read	assertion `left == right` failed	
-cmdr-index	importance::store::legacy_split::tests::the_visits_move_to_their_own_file_and_the_old_store_goes	1226	read	assertion `left == right` failed	
-cmdr-index	importance::store::legacy_split::tests::together_the_combined_store_splits_too	1226	read	assertion `left == right` failed	
-cmdr-index	importance::store::legacy_split::tests::visits_only_in_the_old_write_ahead_log_come_over_too	1226	read	assertion `left == right` failed	
-cmdr-index	indexing::handle::tests::building_splits_an_older_builds_importance_store	1226	read	the combined store left the data dir	
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::activation::a_cold_volume_bootstraps_and_claims_only_what_it_walked	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::activation::a_second_walk_reuses_the_index_the_first_one_stood_up	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::activation::an_index_that_predates_the_exclusion_policy_is_dropped_before_the_next_walk	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::activation::turning_indexing_on_after_a_walk_covers_the_drive_without_truncating_it	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::branches::a_branch_comes_back_when_the_volume_does	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::branches::a_change_inside_a_walked_branch_reaches_the_index_and_one_beside_it_does_not	timeout	read	timed out after 10.0s waiting for the walked scope to read as covered	
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::branches::a_vetoed_drive_is_walked_and_left_unwatched	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::branches::a_walk_leaves_the_ground_it_covered_watched_and_written_down	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::branches::clearing_a_drives_index_drops_the_branches_with_the_coverage	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::intent::a_searched_drive_is_never_recorded_as_one_the_user_turned_on	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::intent::enabling_a_drive_a_search_walked_records_the_choice_too	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::moves::a_drive_renamed_while_it_indexes_keeps_indexing_at_its_new_mount_point	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::moves::a_drive_turned_off_before_its_rename_stays_off	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::moves::a_first_index_finishing_after_a_rename_leaves_no_branch_at_the_old_mount_point	P	unread	rename the drive's mount point: Os { code: 5, kind: PermissionDenied, message: "Access is denied." }	
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::moves::a_rename_between_a_walks_last_row_and_its_release_keeps_the_index	timeout	read	timed out after 5.0s waiting for the walk's rows and marks to land	
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::moves::a_rename_inside_a_drain_window_moves_the_start_that_window_carries	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::moves::a_rename_while_a_scan_starts_restarts_the_drive_at_the_handback	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::removals::a_stop_that_lands_during_a_scan_start_waits_for_the_handback	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::removals::a_stop_that_meets_a_drain_in_flight_waits_for_it	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::removals::a_stop_waits_for_a_search_walk_still_reading_the_drive_and_stops_it	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_clear_during_the_extraction_window_really_clears	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_disable_during_the_extraction_window_stops_the_drive_and_records_the_veto	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_drive_that_stopped_indexing_is_owed_no_rescan	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_remembered_rescan_waits_for_the_last_walk_out	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_rescan_asked_for_during_a_scan_runs_when_that_scan_ends	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_rescan_during_the_phased_window_starts_the_machine_under_a_live_walk	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_rescan_refused_under_a_walk_runs_when_the_walk_ends	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_stop_during_the_extraction_window_really_stops	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_storage_failure_during_the_extraction_window_still_fails_the_volume	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_truncating_rescan_refuses_while_a_search_cover_walk_is_live	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::clicking_rescan_five_times_during_a_scan_queues_one_walk	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::space::a_drive_pauses_while_the_disk_is_low_and_resumes_when_there_is_room	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::space::a_pause_landing_mid_scan_start_still_ends_paused	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::space::a_paused_external_drive_keeps_serving_its_sizes_and_rescans_itself_when_room_returns	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::space::a_watchdog_stop_during_the_pause_keeps_the_drive_stopped_when_space_returns	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::space::stopping_a_paused_drive_keeps_it_stopped_when_space_returns	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::switches::a_search_walks_a_drive_the_user_turned_indexing_off_for	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::switches::a_search_walks_a_drive_with_the_master_switch_off	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::a_clear_claimed_on_a_detached_drive_waits_for_the_volume_to_be_let_go	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::a_clear_waits_for_the_volume_to_be_let_go_before_deleting_its_database	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::a_forget_during_a_stop_deletes_the_index_once_the_stop_is_done	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::a_start_on_a_detached_drive_lets_its_manager_come_back	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::a_start_that_meets_a_dead_index_rebuilds_it	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::a_stop_after_a_forget_in_one_drain_still_deletes_the_index	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::rapid_alternating_toggles_settle_on_the_last_one	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::turning_indexing_off_then_on_inside_the_drain_window_leaves_the_drive_indexing	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::turning_indexing_on_then_off_inside_the_drain_window_leaves_the_drive_off	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::two_teardowns_and_a_start_during_the_first_index_end_with_a_rebuilt_index	timeout	read		
-cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::two_teardowns_and_a_start_in_one_window_end_with_a_rebuilt_index	timeout	read		
-cmdr-index	indexing::lifecycle::cover::repair_tests::a_repair_reports_the_directories_it_read	P	unread	assertion `left == right` failed: the repair pulses per directory read, exactly as the parallel walker does	
-cmdr-index	indexing::lifecycle::cover::repair_tests::a_repair_whose_consumer_left_still_covers_the_ground	P	unread	assertion `left == right` failed: it wrote every directory and its file anyway	
-cmdr-index	indexing::lifecycle::cover::repair_tests::a_repaired_frontier_node_reports_the_rows_it_wrote	P	unread	assertion `left == right` failed: every row the repair wrote reached the consumer: nothing else will ever report them to the search that asked for this walk	
-cmdr-index	indexing::lifecycle::cover::tests::a_chain_running_through_a_file_row_is_declined	P	unread	assertion `left == right` failed: the walk declined the broken chain	
-cmdr-index	indexing::lifecycle::cover::tests::a_frontier_path_with_no_row_is_materialized_and_walked	P	unread	assertion `left == right` failed: and delivered what it found there, plus the folder it had to materialize: nothing else will ever report that row to whoever asked for the walk	
-cmdr-index	indexing::lifecycle::cover::tests::a_walk_emits_what_it_writes	P	unread	assertion `left == right` failed	
-cmdr-index	indexing::lifecycle::partial_agg::tests::keeps_matching_volume_absolute_paths_normalized_and_deduped	P	read	assertion `left == right` failed	
-cmdr-index	indexing::lifecycle::phases::tests::completion::a_permanently_timing_out_directory_still_lets_completion_happen	P	unread	the walk wrote a row for it	
-cmdr-index	indexing::lifecycle::phases::tests::completion::a_subtree_pruned_by_the_failure_budget_still_lets_completion_happen	P	unread	the walk wrote a row for it	
-cmdr-index	indexing::lifecycle::phases::tests::coverage::a_changed_exclusion_fingerprint_rebuilds_a_phased_index	P	unread	and the rebuilt index converges	
-cmdr-index	indexing::lifecycle::phases::tests::coverage::a_completed_index_under_an_older_policy_is_rebuilt_and_re_stamped	P	unread	the ghost's parent is indexed	
-cmdr-index	indexing::lifecycle::phases::tests::coverage::a_fresh_phased_volume_s_frontier_shrinks_after_one_walk	P	unread	the whole drive reads as covered once the machine has been over it	
-cmdr-index	indexing::lifecycle::phases::tests::coverage::frontier_excludes_covered_ground_after_a_stitch	P	unread	assertion `left == right` failed: the covered child is gone from the frontier and the untouched one is offered whole	
-cmdr-index	indexing::lifecycle::phases::tests::coverage::start_scan_refuses_while_a_phase_is_active	P	unread	and the machine finished what it was doing	
-cmdr-index	indexing::lifecycle::phases::tests::interleaving::a_folder_the_user_opens_stops_the_walk_of_a_big_sibling	P	unread	precondition: the machine started on the big sibling ([["D:\\src\\cmdr-triage\\crates\\cmdr-index\\cmdr-phased-drive-Vb7mza/big-a"], ["D:\\src\\cmdr-triage\\crates\\cmdr-index\\cmdr-phased-drive-Vb7mz	
-cmdr-index	indexing::lifecycle::phases::tests::interleaving::a_visited_root_is_taken_between_frontier_roots	P	unread	and the rest of the drive still gets covered	
-cmdr-index	indexing::lifecycle::phases::tests::interleaving::tiny_frontier_roots_are_walked_several_to_a_call	P	unread	and grouping them covers the drive exactly as walking them one at a time did	
-cmdr-index	indexing::lifecycle::phases::tests::menu_actions::forgetting_a_half_covered_drive_takes_the_branch_set_with_the_database	P	unread	and the drive indexes again from nothing, converging the same way a fresh install does	
-cmdr-index	indexing::lifecycle::phases::tests::menu_actions::stopping_a_half_covered_drive_leaves_it_resumable	P	unread	the ghost's parent is indexed	
-cmdr-index	indexing::lifecycle::phases::tests::relaunch::a_legacy_interrupted_partial_is_thrown_away_and_rebuilt	P	unread	the ghost's parent is indexed	
-cmdr-index	indexing::lifecycle::phases::tests::relaunch::a_master_switch_cycle_resumes_the_phases_instead_of_rebuilding	P	unread	the ghost's parent is indexed	
-cmdr-index	indexing::lifecycle::phases::tests::relaunch::a_stopped_phased_index_comes_back_with_its_rows	P	unread	the ghost's parent is indexed	
-cmdr-index	indexing::lifecycle::phases::tests::relaunch::an_automatic_rescan_restarts_the_phases_instead_of_truncating	P	unread	the ghost's parent is indexed	
-cmdr-index	indexing::lifecycle::phases::tests::relaunch::the_kill_switch_gives_a_phased_partial_back_to_the_bulk_scan	P	unread	the ghost's parent is indexed	
-cmdr-index	indexing::lifecycle::phases::tests::retry::a_machine_that_stops_short_asks_for_another_go	P	unread	assertion `left == right` failed: precondition: the machine has to have stopped SHORT for there to be anything to retry	
-cmdr-index	indexing::lifecycle::phases::tests::retry::the_retry_completes_the_drive_once_the_churn_stops	P	unread	assertion `left == right` failed: precondition: it stopped short	
-cmdr-index	indexing::read::queries::tests::a_registered_folder_that_is_not_a_mount_point_stays_on_root	1226	unread	assertion `left == right` failed	
-cmdr-index	indexing::reconcile::local_reconcile::tests::a_reconcile_cancelled_after_discovering_a_dir_leaves_no_exact_size_lies	N	unread	the walk discovered the new dir	
-cmdr-index	indexing::reconcile::local_reconcile::tests::cancelled_reconcile_leaves_prior_index_and_writes_no_marks	N	unread	sub indexed	
-cmdr-index	indexing::reconcile::local_reconcile::tests::cost_budget_walk::a_budget_skipped_subtree_keeps_every_row_and_its_sizes	N	unread	indexed	
-cmdr-index	indexing::reconcile::local_reconcile::tests::cost_budget_walk::a_budget_skipped_subtree_leaves_its_epoch_and_every_ancestor_epoch_untouched	N	unread	ancestor indexed	
-cmdr-index	indexing::reconcile::local_reconcile::tests::cost_budget_walk::a_subtree_over_the_read_budget_stops_being_descended	N	unread	indexed	
-cmdr-index	indexing::reconcile::local_reconcile::tests::cost_budget_walk::a_subtree_within_the_read_budget_is_fully_walked	N	unread	indexed	
-cmdr-index	indexing::reconcile::local_reconcile::tests::reconcile_after_real_fresh_scan_of_unchanged_tree_is_a_no_op	N	unread	a resolved	
-cmdr-index	indexing::reconcile::local_reconcile::tests::reconcile_descends_into_existing_unchanged_child_dirs	N	unread	a indexed	
-cmdr-index	indexing::reconcile::local_reconcile::tests::reconcile_empty_root_keeps_prior_index_and_signals_empty_root	N	unread	precondition: ghost present	
-cmdr-index	indexing::reconcile::local_reconcile::tests::reconcile_from_empty_index_builds_correct_aggregates	N	unread	a resolved	
-cmdr-index	indexing::reconcile::local_reconcile::tests::reconcile_removes_entry_deleted_on_disk	N	unread	sub indexed	
-cmdr-index	indexing::reconcile::reconcile_correctness::tests::deleted_dir_unreached_by_interrupted_reconcile_heals_on_next_complete	N	unread	covered after first pass	
-cmdr-index	indexing::reconcile::reconcile_correctness::tests::partial_reconcile_keeps_a_fresh_b_stale	N	read	path not in DB: D:\src\cmdr-triage\crates\cmdr-index\cmdr_reconcile_KXxUfq\a	
-cmdr-index	indexing::reconcile::reconcile_correctness::tests::reconcile_handles_add_remove_modify_typechange	N	unread	sub indexed	
-cmdr-index	indexing::reconcile::reconcile_correctness::tests::repeated_interrupted_then_complete_reconcile_leaves_no_orphans_or_ghosts	N	unread	entry-set mismatch (reconciled-only: ["d5/f1.txt", "d4/nested/deep.txt", "d7/f4.txt", "d5/f2.txt", "d4/f2.txt", "d7/f3.txt", "d4/f1.txt", "d4/f3.txt", "d6/nested", "d4/f4.txt", "d4/nested", "d7/f1.txt	
-cmdr-index	indexing::reconcile::reconciler::rescan::hold::tests::an_established_anchor_holds_from_the_moment_it_is_queued	N	unread	and its ancestors read as 'size updating', which is honest here	
-cmdr-index	indexing::reconcile::reconciler::tests::delete_gates::a_removal_event_on_a_listed_drive_still_deletes	N	unread	a real removal on a healthy drive is still a delete	
-cmdr-index	indexing::reconcile::reconciler::tests::directory_read::the_reconcile_read_matches_a_per_entry_stat	symlink	read	called `Result::unwrap()` on an `Err` value: Os { code: 1314, kind: Uncategorized, message: "A required privilege is not held by the client." }	
-cmdr-index	indexing::reconcile::reconciler::tests::hardlinks::reconcile_deduped_hardlink_with_a_new_mtime_is_written	N	unread	one row is deduped	
-cmdr-index	indexing::reconcile::reconciler::tests::hardlinks::reconcile_deduped_hardlink_writes_nothing_on_a_repeat_pass	N	unread	assertion `left == right` failed: exactly one occurrence of the inode carries its bytes: [("payload.bin", Some(12)), ("payload.bin.link1", Some(12))]	
-cmdr-index	indexing::reconcile::reconciler::tests::hardlinks::reconcile_sized_hardlink_still_compares_on_size	N	unread	assertion `left == right` failed: only the wrongly-sized row is re-written	
-cmdr-index	indexing::reconcile::reconciler::tests::live_events::a_change_reports_only_the_dir_whose_listing_changed	N	unread	assertion `left == right` failed: only the file's own directory changed its listing; its ancestors did not	
-cmdr-index	indexing::reconcile::reconciler::tests::live_events::a_file_indexed_while_a_walk_holds_its_listing_stays_indexed	timeout	read		
-cmdr-index	indexing::reconcile::reconciler::tests::live_events::a_folder_created_live_gets_walked_and_reads_exact	N	unread	the folder is indexed	
-cmdr-index	indexing::reconcile::reconciler::tests::live_events::live_create_under_mount_rooted_index_resolves_via_strip	N	unread	assertion `left == right` failed: the mount-relative strip resolves the parent, so the file is indexed	
-cmdr-index	indexing::reconcile::reconciler::tests::live_events::live_delete_under_mount_rooted_index_resolves_via_strip	N	unread	the mount-relative strip resolves the target, so the delete removes the row	
-cmdr-index	indexing::reconcile::reconciler::tests::live_events::live_throttle_collapses_rapid_rewrites_and_trailing_flushes_last_size	N	unread	assertion `left == right` failed: leading edge applied immediately	
-cmdr-index	indexing::reconcile::reconciler::tests::live_events::live_throttle_significant_jump_applies_immediately	N	unread	assertion `left == right` failed	
-cmdr-index	indexing::reconcile::reconciler::tests::live_events::process_dir_creation_writes_entry_and_propagates	N	unread	assertion `left == right` failed	
-cmdr-index	indexing::reconcile::reconciler::tests::live_events::process_file_creation_writes_entry	N	unread	assertion `left == right` failed	
-cmdr-index	indexing::reconcile::reconciler::tests::live_events::removal_event_for_existing_directory_upserts_not_deletes	N	unread	called `Option::unwrap()` on a `None` value	
-cmdr-index	indexing::reconcile::reconciler::tests::must_scan_routing::a_deep_must_scan_buffered_during_a_scan_walks_on_the_drain	N	unread	a deep anchor never rescans the whole volume	
-cmdr-index	indexing::reconcile::reconciler::tests::must_scan_routing::missing_parent_creation_escalates_to_highest_missing_dir	N	unread	assertion `left == right` failed: escalates to the highest missing dir (child of the deepest existing dir)	
-cmdr-index	indexing::reconcile::reconciler::tests::must_scan_routing::reconcile_subtree_missing_chain_escalates	N	unread	assertion `left == right` failed: escalates to the highest missing dir	
-cmdr-index	indexing::reconcile::reconciler::tests::replay::replay_calls_callback_with_affected_paths	N	unread	assertion failed: !notified_paths.is_empty()	
-cmdr-index	indexing::reconcile::reconciler::tests::replay::replay_processes_events_after_scan_start	N	unread	assertion `left == right` failed	
-cmdr-index	indexing::reconcile::reconciler::tests::subtree::reconcile_subtree_deep_nested_dirs	N	unread	assertion `left == right` failed: dirs a, b, c and file.txt should all be added	
-cmdr-index	indexing::reconcile::reconciler::tests::subtree::reconcile_subtree_indexes_new_directory_not_in_db	N	unread	expected at least 2 entries added, got 1	
-cmdr-index	indexing::reconcile::reconciler::tests::subtree::reconcile_subtree_marks_listed_dirs_at_current_epoch	N	read	D:\src\cmdr-triage\crates\cmdr-index\cmdr_test_JpZD0j\tree should be in DB	
-cmdr-index	indexing::reconcile::reconciler::tests::subtree::reconcile_subtree_new_nested_dir_with_child	N	unread	assertion `left == right` failed: new_dir and child.txt should both be added	
-cmdr-index	indexing::reconcile::verifier::tests::verify_corrects_a_mount_rooted_volumes_own_index	N	unread	the verifier must report the directory it corrected	
-cmdr-index	indexing::reconcile::verifier::tests::verify_scans_a_new_directory_into_a_mount_rooted_volumes_index	N	unread	the new directory must be indexed	
-cmdr-index	indexing::scanner::convergence_tests::a_cancelled_walk_leaves_durable_partial_coverage	S	read	/cmdr-convergence-test\A\B should have a row	
-cmdr-index	indexing::scanner::convergence_tests::a_folder_the_walk_cannot_read_stops_re_entering_the_frontier	S	unread	row	
-cmdr-index	indexing::scanner::convergence_tests::a_frontier_node_can_hold_a_listed_descendant	S	unread	walk G: WriterSend("SQLite error: Query returned no rows")	
-cmdr-index	indexing::scanner::convergence_tests::a_wedged_dir_on_a_drive_that_stays_is_still_condemned	S	unread	assertion `left == right` failed: a read that failed on a mounted drive is the walk's own verdict	
-cmdr-index	indexing::scanner::convergence_tests::covering_a_frontier_node_never_removes_a_row_it_did_not_write	S	unread	walk G: WriterSend("SQLite error: Query returned no rows")	
-cmdr-index	indexing::scanner::convergence_tests::marking_abandoned_ground_costs_no_coverage	S	unread	row	
-cmdr-index	indexing::scanner::policy_tests::a_boot_disk_walk_stops_at_a_mount_inside_the_boot_tree	S	unread	assertion `left == right` failed	
-cmdr-index	indexing::scanner::policy_tests::a_search_walk_cuts_where_another_volume_is_mounted	S	unread	assertion `left == right` failed	
-cmdr-index	indexing::scanner::policy_tests::a_search_walk_skips_a_structurally_excluded_child	S	unread	assertion `left == right` failed	
-cmdr-index	indexing::scanner::policy_tests::a_search_walk_stops_at_a_mount_inside_the_boot_tree	S	unread	assertion `left == right` failed	
-cmdr-index	indexing::store::tests::path_resolution::normalize_for_comparison_is_identity_off_macos	windows-only	read	assertion `left == right` failed	
-cmdr-index	indexing::store::tests::path_resolution::platform_case_compare_is_binary_off_macos	windows-only	read	assertion `left == right` failed	
-cmdr-index	indexing::store::tests::path_resolution::platform_case_proptests::matches_byte_cmp_off_macos	windows-only	read	Test failed: assertion failed: `(left == right)`	
-cmdr-index	indexing::tests::integration_tests::enrich_entries_fallback_individual_paths	1226	unread	assertion `left == right` failed	
-cmdr-index	indexing::tests::integration_tests::enrichment_under_contention	1226	unread	assertion `left == right` failed: enrichment should work under contention	
-cmdr-index	indexing::tests::integration_tests::read_pool_over_a_recreated_database_never_serves_the_old_one	1226	read	delete the database: Os { code: 32, kind: Uncategorized, message: "The process cannot access the file because it is being used by another process." }	
-cmdr-index	indexing::tests::stress_tests_concurrency::mixed_storm_reaches_consistent_fixed_point	1226	unread	the bulk subtree was deleted via the coalesced storm	
-cmdr-index	indexing::watch::branches::tests::an_event_inside_a_covered_branch_reaches_the_index_and_one_outside_does_not	S	unread	a change inside the walked branch updates the index	
-cmdr-index	indexing::watch::branches::tests::an_event_that_lands_mid_walk_is_not_lost	S	unread	and the moment the walk ends it lands, so the branch's rows and sizes are whole	
-cmdr-index	indexing::watch::branches::tests::the_branch_collapse_is_visible_to_the_running_live_loop	S	read	assertion `left == right` failed: and the database says the same thing the loop is reading	
-cmdr-index	indexing::watch::branches::tests::the_branch_set_survives_a_restart_through_the_volumes_own_database	S	read	assertion `left == right` failed: the covered ground comes back	
-cmdr-index	indexing::watch::event_loop::tests::replay_chunks::a_deferred_rescan_commits_with_the_position_that_passes_its_event	S	unread	assertion `left == right` failed: the rescan is on disk in the same commit as the position past its event	
-cmdr-index	indexing::watch::event_loop::tests::replay_chunks::a_drained_window_commits_its_rows_with_its_position_and_nothing_past_it	S	unread	the drained window's rows commit with its position	
-cmdr-index	indexing::watch::event_loop::tests::replay_chunks::a_replay_that_resumes_from_the_last_chunk_applies_every_change_once	S	unread	assertion `left == right` failed: a.txt is indexed exactly once	
+cmdr-index	importance::store::legacy_split::tests::a_background_split_is_waited_for	1226	read	assertion failed: none_of(&d.old())	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	importance::store::legacy_split::tests::a_clock_set_back_after_a_split_still_adds_a_downgrades_visits	1226	read	schema: SqlInputError { error: Error { code: Unknown, extended_code: 1 }, msg: "table weights already exists", sql: "\n    CREATE TABLE weights (\n        path_folded TEXT PRIMARY KEY, path TEXT NOT N	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	importance::store::legacy_split::tests::a_crash_after_the_copy_only_deletes_the_old_store	1226	read	copy: New(Io(Os { code: 5, kind: PermissionDenied, message: "Access is denied." }))	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	importance::store::legacy_split::tests::a_crash_after_the_token_redoes_the_copy_once	1226	read	assertion `left == right` failed	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	importance::store::legacy_split::tests::a_crash_inside_the_copy_leaves_nothing_half_copied	1226	read	assertion failed: none_of(&d.old())	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	importance::store::legacy_split::tests::a_crash_inside_the_delete_leaves_sidecars_the_next_run_clears	1226	read	assertion `left == right` failed	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	importance::store::legacy_split::tests::a_downgrade_round_trip_merges_both_histories	1226	read	schema: SqlInputError { error: Error { code: Unknown, extended_code: 1 }, msg: "table weights already exists", sql: "\n    CREATE TABLE weights (\n        path_folded TEXT PRIMARY KEY, path TEXT NOT N	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	importance::store::legacy_split::tests::a_failure_that_may_pass_leaves_the_old_store_whole	1226	read	assertion `left == right` failed	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	importance::store::legacy_split::tests::a_restored_copy_of_a_split_store_adds_nothing	1226	read	assertion failed: none_of(&d.old())	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	importance::store::legacy_split::tests::a_second_run_after_a_full_split_does_nothing	1226	read	assertion `left == right` failed	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	importance::store::legacy_split::tests::after_a_split_the_volume_is_due_its_full_pass	1226	read	probe: HoldsVisits	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	importance::store::legacy_split::tests::an_empty_visit_table_still_splits_and_the_old_store_goes	1226	read	assertion `left == right` failed	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	importance::store::legacy_split::tests::an_older_build_writing_under_a_marked_token_adds_only_what_it_wrote	1226	read	copy: New(Io(Os { code: 5, kind: PermissionDenied, message: "Access is denied." }))	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	importance::store::legacy_split::tests::each_volume_splits_on_its_own	1226	read	assertion `left == right` failed	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	importance::store::legacy_split::tests::the_visits_move_to_their_own_file_and_the_old_store_goes	1226	read	assertion `left == right` failed	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	importance::store::legacy_split::tests::together_the_combined_store_splits_too	1226	read	assertion `left == right` failed	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	importance::store::legacy_split::tests::visits_only_in_the_old_write_ahead_log_come_over_too	1226	read	assertion `left == right` failed	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	indexing::handle::tests::building_splits_an_older_builds_importance_store	1226	read	the combined store left the data dir	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::activation::a_cold_volume_bootstraps_and_claims_only_what_it_walked	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::activation::a_second_walk_reuses_the_index_the_first_one_stood_up	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::activation::an_index_that_predates_the_exclusion_policy_is_dropped_before_the_next_walk	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::activation::turning_indexing_on_after_a_walk_covers_the_drive_without_truncating_it	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::branches::a_branch_comes_back_when_the_volume_does	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::branches::a_change_inside_a_walked_branch_reaches_the_index_and_one_beside_it_does_not	timeout	read	timed out after 10.0s waiting for the walked scope to read as covered	green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::branches::a_vetoed_drive_is_walked_and_left_unwatched	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::branches::a_walk_leaves_the_ground_it_covered_watched_and_written_down	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::branches::clearing_a_drives_index_drops_the_branches_with_the_coverage	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::intent::a_searched_drive_is_never_recorded_as_one_the_user_turned_on	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::intent::enabling_a_drive_a_search_walked_records_the_choice_too	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::moves::a_drive_renamed_while_it_indexes_keeps_indexing_at_its_new_mount_point	timeout	read		red@cf872d40f0: Windows refuses renaming the mount point folder while handles are open (Access is denied); not a path
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::moves::a_drive_turned_off_before_its_rename_stays_off	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::moves::a_first_index_finishing_after_a_rename_leaves_no_branch_at_the_old_mount_point	P	unread	rename the drive's mount point: Os { code: 5, kind: PermissionDenied, message: "Access is denied." }	red@cf872d40f0: Windows refuses renaming the mount point folder while handles are open (Access is denied); not a path
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::moves::a_rename_between_a_walks_last_row_and_its_release_keeps_the_index	timeout	read	timed out after 5.0s waiting for the walk's rows and marks to land	red@cf872d40f0: Windows refuses renaming the mount point folder while handles are open (Access is denied); not a path
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::moves::a_rename_inside_a_drain_window_moves_the_start_that_window_carries	timeout	read		red@cf872d40f0: Windows refuses renaming the mount point folder while handles are open (Access is denied); not a path
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::moves::a_rename_while_a_scan_starts_restarts_the_drive_at_the_handback	timeout	read		red@cf872d40f0: Windows refuses renaming the mount point folder while handles are open (Access is denied); not a path
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::removals::a_stop_that_lands_during_a_scan_start_waits_for_the_handback	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::removals::a_stop_that_meets_a_drain_in_flight_waits_for_it	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::removals::a_stop_waits_for_a_search_walk_still_reading_the_drive_and_stops_it	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_clear_during_the_extraction_window_really_clears	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_disable_during_the_extraction_window_stops_the_drive_and_records_the_veto	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_drive_that_stopped_indexing_is_owed_no_rescan	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_remembered_rescan_waits_for_the_last_walk_out	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_rescan_asked_for_during_a_scan_runs_when_that_scan_ends	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_rescan_during_the_phased_window_starts_the_machine_under_a_live_walk	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_rescan_refused_under_a_walk_runs_when_the_walk_ends	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_stop_during_the_extraction_window_really_stops	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_storage_failure_during_the_extraction_window_still_fails_the_volume	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::a_truncating_rescan_refuses_while_a_search_cover_walk_is_live	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::rescans::clicking_rescan_five_times_during_a_scan_queues_one_walk	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::space::a_drive_pauses_while_the_disk_is_low_and_resumes_when_there_is_room	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::space::a_pause_landing_mid_scan_start_still_ends_paused	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::space::a_paused_external_drive_keeps_serving_its_sizes_and_rescans_itself_when_room_returns	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::space::a_watchdog_stop_during_the_pause_keeps_the_drive_stopped_when_space_returns	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::space::stopping_a_paused_drive_keeps_it_stopped_when_space_returns	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::switches::a_search_walks_a_drive_the_user_turned_indexing_off_for	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::switches::a_search_walks_a_drive_with_the_master_switch_off	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::a_clear_claimed_on_a_detached_drive_waits_for_the_volume_to_be_let_go	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::a_clear_waits_for_the_volume_to_be_let_go_before_deleting_its_database	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::a_forget_during_a_stop_deletes_the_index_once_the_stop_is_done	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::a_start_on_a_detached_drive_lets_its_manager_come_back	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::a_start_that_meets_a_dead_index_rebuilds_it	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::a_stop_after_a_forget_in_one_drain_still_deletes_the_index	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::rapid_alternating_toggles_settle_on_the_last_one	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::turning_indexing_off_then_on_inside_the_drain_window_leaves_the_drive_indexing	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::turning_indexing_on_then_off_inside_the_drain_window_leaves_the_drive_off	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::two_teardowns_and_a_start_during_the_first_index_end_with_a_rebuilt_index	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::cold_drive_tests::toggles::two_teardowns_and_a_start_in_one_window_end_with_a_rebuilt_index	timeout	read		green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::repair_tests::a_repair_reports_the_directories_it_read	P	unread	assertion `left == right` failed: the repair pulses per directory read, exactly as the parallel walker does	green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::repair_tests::a_repair_whose_consumer_left_still_covers_the_ground	P	unread	assertion `left == right` failed: it wrote every directory and its file anyway	green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::repair_tests::a_repaired_frontier_node_reports_the_rows_it_wrote	P	unread	assertion `left == right` failed: every row the repair wrote reached the consumer: nothing else will ever report them to the search that asked for this walk	green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::tests::a_chain_running_through_a_file_row_is_declined	P	unread	assertion `left == right` failed: the walk declined the broken chain	green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::tests::a_frontier_path_with_no_row_is_materialized_and_walked	P	unread	assertion `left == right` failed: and delivered what it found there, plus the folder it had to materialize: nothing else will ever report that row to whoever asked for the walk	green@cf872d40f0
+cmdr-index	indexing::lifecycle::cover::tests::a_walk_emits_what_it_writes	P	unread	assertion `left == right` failed	green@cf872d40f0
+cmdr-index	indexing::lifecycle::partial_agg::tests::keeps_matching_volume_absolute_paths_normalized_and_deduped	P	read	assertion `left == right` failed	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::completion::a_permanently_timing_out_directory_still_lets_completion_happen	P	unread	the walk wrote a row for it	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::completion::a_subtree_pruned_by_the_failure_budget_still_lets_completion_happen	P	unread	the walk wrote a row for it	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::coverage::a_changed_exclusion_fingerprint_rebuilds_a_phased_index	P	unread	and the rebuilt index converges	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::coverage::a_completed_index_under_an_older_policy_is_rebuilt_and_re_stamped	P	unread	the ghost's parent is indexed	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::coverage::a_fresh_phased_volume_s_frontier_shrinks_after_one_walk	P	unread	the whole drive reads as covered once the machine has been over it	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::coverage::frontier_excludes_covered_ground_after_a_stitch	P	unread	assertion `left == right` failed: the covered child is gone from the frontier and the untouched one is offered whole	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::coverage::start_scan_refuses_while_a_phase_is_active	P	unread	and the machine finished what it was doing	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::interleaving::a_folder_the_user_opens_stops_the_walk_of_a_big_sibling	P	unread	precondition: the machine started on the big sibling ([["D:\\src\\cmdr-triage\\crates\\cmdr-index\\cmdr-phased-drive-Vb7mza/big-a"], ["D:\\src\\cmdr-triage\\crates\\cmdr-index\\cmdr-phased-drive-Vb7mz	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::interleaving::a_visited_root_is_taken_between_frontier_roots	P	unread	and the rest of the drive still gets covered	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::interleaving::tiny_frontier_roots_are_walked_several_to_a_call	P	unread	and grouping them covers the drive exactly as walking them one at a time did	green@cf872d40f0: timed out once under the full suite's load on the 2-core builder; 1.5 s alone, 1.6 and 1.9 s in two earlier full runs
+cmdr-index	indexing::lifecycle::phases::tests::menu_actions::forgetting_a_half_covered_drive_takes_the_branch_set_with_the_database	P	unread	and the drive indexes again from nothing, converging the same way a fresh install does	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::menu_actions::stopping_a_half_covered_drive_leaves_it_resumable	P	unread	the ghost's parent is indexed	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::relaunch::a_legacy_interrupted_partial_is_thrown_away_and_rebuilt	P	unread	the ghost's parent is indexed	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::relaunch::a_master_switch_cycle_resumes_the_phases_instead_of_rebuilding	P	unread	the ghost's parent is indexed	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::relaunch::a_stopped_phased_index_comes_back_with_its_rows	P	unread	the ghost's parent is indexed	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::relaunch::an_automatic_rescan_restarts_the_phases_instead_of_truncating	P	unread	the ghost's parent is indexed	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::relaunch::the_kill_switch_gives_a_phased_partial_back_to_the_bulk_scan	P	unread	the ghost's parent is indexed	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::retry::a_machine_that_stops_short_asks_for_another_go	P	unread	assertion `left == right` failed: precondition: the machine has to have stopped SHORT for there to be anything to retry	green@cf872d40f0
+cmdr-index	indexing::lifecycle::phases::tests::retry::the_retry_completes_the_drive_once_the_churn_stops	P	unread	assertion `left == right` failed: precondition: it stopped short	green@cf872d40f0
+cmdr-index	indexing::read::queries::tests::a_registered_folder_that_is_not_a_mount_point_stays_on_root	1226	unread	assertion `left == right` failed	red@cf872d40f0: P: a POSIX fixture on the root volume, whose Windows root is C:/ (task 34's root volume)
+cmdr-index	indexing::reconcile::local_reconcile::tests::a_reconcile_cancelled_after_discovering_a_dir_leaves_no_exact_size_lies	N	unread	the walk discovered the new dir	green@cf872d40f0
+cmdr-index	indexing::reconcile::local_reconcile::tests::cancelled_reconcile_leaves_prior_index_and_writes_no_marks	N	unread	sub indexed	green@cf872d40f0
+cmdr-index	indexing::reconcile::local_reconcile::tests::cost_budget_walk::a_budget_skipped_subtree_keeps_every_row_and_its_sizes	N	unread	indexed	green@cf872d40f0
+cmdr-index	indexing::reconcile::local_reconcile::tests::cost_budget_walk::a_budget_skipped_subtree_leaves_its_epoch_and_every_ancestor_epoch_untouched	N	unread	ancestor indexed	green@cf872d40f0
+cmdr-index	indexing::reconcile::local_reconcile::tests::cost_budget_walk::a_subtree_over_the_read_budget_stops_being_descended	N	unread	indexed	green@cf872d40f0
+cmdr-index	indexing::reconcile::local_reconcile::tests::cost_budget_walk::a_subtree_within_the_read_budget_is_fully_walked	N	unread	indexed	green@cf872d40f0
+cmdr-index	indexing::reconcile::local_reconcile::tests::reconcile_after_real_fresh_scan_of_unchanged_tree_is_a_no_op	N	unread	a resolved	green@cf872d40f0
+cmdr-index	indexing::reconcile::local_reconcile::tests::reconcile_descends_into_existing_unchanged_child_dirs	N	unread	a indexed	green@cf872d40f0
+cmdr-index	indexing::reconcile::local_reconcile::tests::reconcile_empty_root_keeps_prior_index_and_signals_empty_root	N	unread	precondition: ghost present	green@cf872d40f0
+cmdr-index	indexing::reconcile::local_reconcile::tests::reconcile_from_empty_index_builds_correct_aggregates	N	unread	a resolved	green@cf872d40f0
+cmdr-index	indexing::reconcile::local_reconcile::tests::reconcile_removes_entry_deleted_on_disk	N	unread	sub indexed	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconcile_correctness::tests::deleted_dir_unreached_by_interrupted_reconcile_heals_on_next_complete	N	unread	covered after first pass	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconcile_correctness::tests::partial_reconcile_keeps_a_fresh_b_stale	N	read	path not in DB: D:\src\cmdr-triage\crates\cmdr-index\cmdr_reconcile_KXxUfq\a	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconcile_correctness::tests::reconcile_handles_add_remove_modify_typechange	N	unread	sub indexed	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconcile_correctness::tests::repeated_interrupted_then_complete_reconcile_leaves_no_orphans_or_ghosts	N	unread	entry-set mismatch (reconciled-only: ["d5/f1.txt", "d4/nested/deep.txt", "d7/f4.txt", "d5/f2.txt", "d4/f2.txt", "d7/f3.txt", "d4/f1.txt", "d4/f3.txt", "d6/nested", "d4/f4.txt", "d4/nested", "d7/f1.txt	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::rescan::hold::tests::an_established_anchor_holds_from_the_moment_it_is_queued	N	unread	and its ancestors read as 'size updating', which is honest here	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::delete_gates::a_removal_event_on_a_listed_drive_still_deletes	N	unread	a real removal on a healthy drive is still a delete	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::directory_read::the_reconcile_read_matches_a_per_entry_stat	symlink	read	called `Result::unwrap()` on an `Err` value: Os { code: 1314, kind: Uncategorized, message: "A required privilege is not held by the client." }	red@cf872d40f0: std reports no nlink or file index on Windows, so hardlink dedup has nothing to key on (task 35's node identity)
+cmdr-index	indexing::reconcile::reconciler::tests::hardlinks::reconcile_deduped_hardlink_with_a_new_mtime_is_written	N	unread	one row is deduped	red@cf872d40f0: std reports no nlink or file index on Windows, so hardlink dedup has nothing to key on (task 35's node identity)
+cmdr-index	indexing::reconcile::reconciler::tests::hardlinks::reconcile_deduped_hardlink_writes_nothing_on_a_repeat_pass	N	unread	assertion `left == right` failed: exactly one occurrence of the inode carries its bytes: [("payload.bin", Some(12)), ("payload.bin.link1", Some(12))]	red@cf872d40f0: std reports no nlink or file index on Windows, so hardlink dedup has nothing to key on (task 35's node identity)
+cmdr-index	indexing::reconcile::reconciler::tests::hardlinks::reconcile_sized_hardlink_still_compares_on_size	N	unread	assertion `left == right` failed: only the wrongly-sized row is re-written	red@cf872d40f0: std reports no nlink or file index on Windows, so hardlink dedup has nothing to key on (task 35's node identity)
+cmdr-index	indexing::reconcile::reconciler::tests::live_events::a_change_reports_only_the_dir_whose_listing_changed	N	unread	assertion `left == right` failed: only the file's own directory changed its listing; its ancestors did not	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::live_events::a_file_indexed_while_a_walk_holds_its_listing_stays_indexed	timeout	read		green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::live_events::a_folder_created_live_gets_walked_and_reads_exact	N	unread	the folder is indexed	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::live_events::live_create_under_mount_rooted_index_resolves_via_strip	N	unread	assertion `left == right` failed: the mount-relative strip resolves the parent, so the file is indexed	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::live_events::live_delete_under_mount_rooted_index_resolves_via_strip	N	unread	the mount-relative strip resolves the target, so the delete removes the row	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::live_events::live_throttle_collapses_rapid_rewrites_and_trailing_flushes_last_size	N	unread	assertion `left == right` failed: leading edge applied immediately	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::live_events::live_throttle_significant_jump_applies_immediately	N	unread	assertion `left == right` failed	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::live_events::process_dir_creation_writes_entry_and_propagates	N	unread	assertion `left == right` failed	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::live_events::process_file_creation_writes_entry	N	unread	assertion `left == right` failed	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::live_events::removal_event_for_existing_directory_upserts_not_deletes	N	unread	called `Option::unwrap()` on a `None` value	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::must_scan_routing::a_deep_must_scan_buffered_during_a_scan_walks_on_the_drain	N	unread	a deep anchor never rescans the whole volume	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::must_scan_routing::missing_parent_creation_escalates_to_highest_missing_dir	N	unread	assertion `left == right` failed: escalates to the highest missing dir (child of the deepest existing dir)	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::must_scan_routing::reconcile_subtree_missing_chain_escalates	N	unread	assertion `left == right` failed: escalates to the highest missing dir	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::replay::replay_calls_callback_with_affected_paths	N	unread	assertion failed: !notified_paths.is_empty()	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::replay::replay_processes_events_after_scan_start	N	unread	assertion `left == right` failed	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::subtree::reconcile_subtree_deep_nested_dirs	N	unread	assertion `left == right` failed: dirs a, b, c and file.txt should all be added	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::subtree::reconcile_subtree_indexes_new_directory_not_in_db	N	unread	expected at least 2 entries added, got 1	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::subtree::reconcile_subtree_marks_listed_dirs_at_current_epoch	N	read	D:\src\cmdr-triage\crates\cmdr-index\cmdr_test_JpZD0j\tree should be in DB	green@cf872d40f0
+cmdr-index	indexing::reconcile::reconciler::tests::subtree::reconcile_subtree_new_nested_dir_with_child	N	unread	assertion `left == right` failed: new_dir and child.txt should both be added	green@cf872d40f0
+cmdr-index	indexing::reconcile::verifier::tests::verify_corrects_a_mount_rooted_volumes_own_index	N	unread	the verifier must report the directory it corrected	green@cf872d40f0
+cmdr-index	indexing::reconcile::verifier::tests::verify_scans_a_new_directory_into_a_mount_rooted_volumes_index	N	unread	the new directory must be indexed	green@cf872d40f0
+cmdr-index	indexing::scanner::convergence_tests::a_cancelled_walk_leaves_durable_partial_coverage	S	read	/cmdr-convergence-test\A\B should have a row	green@cf872d40f0
+cmdr-index	indexing::scanner::convergence_tests::a_folder_the_walk_cannot_read_stops_re_entering_the_frontier	S	unread	row	green@cf872d40f0
+cmdr-index	indexing::scanner::convergence_tests::a_frontier_node_can_hold_a_listed_descendant	S	unread	walk G: WriterSend("SQLite error: Query returned no rows")	green@cf872d40f0
+cmdr-index	indexing::scanner::convergence_tests::a_wedged_dir_on_a_drive_that_stays_is_still_condemned	S	unread	assertion `left == right` failed: a read that failed on a mounted drive is the walk's own verdict	green@cf872d40f0
+cmdr-index	indexing::scanner::convergence_tests::covering_a_frontier_node_never_removes_a_row_it_did_not_write	S	unread	walk G: WriterSend("SQLite error: Query returned no rows")	green@cf872d40f0
+cmdr-index	indexing::scanner::convergence_tests::marking_abandoned_ground_costs_no_coverage	S	unread	row	green@cf872d40f0
+cmdr-index	indexing::scanner::policy_tests::a_boot_disk_walk_stops_at_a_mount_inside_the_boot_tree	S	unread	assertion `left == right` failed	green@cf872d40f0
+cmdr-index	indexing::scanner::policy_tests::a_search_walk_cuts_where_another_volume_is_mounted	S	unread	assertion `left == right` failed	green@cf872d40f0
+cmdr-index	indexing::scanner::policy_tests::a_search_walk_skips_a_structurally_excluded_child	S	unread	assertion `left == right` failed	green@cf872d40f0
+cmdr-index	indexing::scanner::policy_tests::a_search_walk_stops_at_a_mount_inside_the_boot_tree	S	unread	assertion `left == right` failed	green@cf872d40f0
+cmdr-index	indexing::store::tests::path_resolution::normalize_for_comparison_is_identity_off_macos	windows-only	read	assertion `left == right` failed	green@cf872d40f0: Linux-only now (target_os = "linux"); its Windows twin the_collation_folds_case_but_not_the_unicode_form_on_windows passes
+cmdr-index	indexing::store::tests::path_resolution::platform_case_compare_is_binary_off_macos	windows-only	read	assertion `left == right` failed	green@cf872d40f0: Linux-only now (target_os = "linux"); its Windows twin the_collation_folds_case_but_not_the_unicode_form_on_windows passes
+cmdr-index	indexing::store::tests::path_resolution::platform_case_proptests::matches_byte_cmp_off_macos	windows-only	read	Test failed: assertion failed: `(left == right)`	green@cf872d40f0: Linux-only now (target_os = "linux"); its Windows twin the_collation_folds_case_but_not_the_unicode_form_on_windows passes
+cmdr-index	indexing::tests::integration_tests::enrich_entries_fallback_individual_paths	1226	unread	assertion `left == right` failed	red@cf872d40f0: P: a POSIX fixture on the root volume, whose Windows root is C:/ (task 34's root volume)
+cmdr-index	indexing::tests::integration_tests::enrichment_under_contention	1226	unread	assertion `left == right` failed: enrichment should work under contention	red@cf872d40f0: P: a POSIX fixture on the root volume, whose Windows root is C:/ (task 34's root volume)
+cmdr-index	indexing::tests::integration_tests::read_pool_over_a_recreated_database_never_serves_the_old_one	1226	read	delete the database: Os { code: 32, kind: Uncategorized, message: "The process cannot access the file because it is being used by another process." }	red@cf872d40f0: #1226, a file another handle holds open (os error 32 or 5)
+cmdr-index	indexing::tests::stress_tests_concurrency::mixed_storm_reaches_consistent_fixed_point	1226	unread	the bulk subtree was deleted via the coalesced storm	green@cf872d40f0
+cmdr-index	indexing::watch::branches::tests::an_event_inside_a_covered_branch_reaches_the_index_and_one_outside_does_not	S	unread	a change inside the walked branch updates the index	green@cf872d40f0
+cmdr-index	indexing::watch::branches::tests::an_event_that_lands_mid_walk_is_not_lost	S	unread	and the moment the walk ends it lands, so the branch's rows and sizes are whole	green@cf872d40f0
+cmdr-index	indexing::watch::branches::tests::the_branch_collapse_is_visible_to_the_running_live_loop	S	read	assertion `left == right` failed: and the database says the same thing the loop is reading	green@cf872d40f0
+cmdr-index	indexing::watch::branches::tests::the_branch_set_survives_a_restart_through_the_volumes_own_database	S	read	assertion `left == right` failed: the covered ground comes back	green@cf872d40f0
+cmdr-index	indexing::watch::event_loop::tests::replay_chunks::a_deferred_rescan_commits_with_the_position_that_passes_its_event	S	unread	assertion `left == right` failed: the rescan is on disk in the same commit as the position past its event	green@cf872d40f0
+cmdr-index	indexing::watch::event_loop::tests::replay_chunks::a_drained_window_commits_its_rows_with_its_position_and_nothing_past_it	S	unread	the drained window's rows commit with its position	green@cf872d40f0
+cmdr-index	indexing::watch::event_loop::tests::replay_chunks::a_replay_that_resumes_from_the_last_chunk_applies_every_change_once	S	unread	assertion `left == right` failed: a.txt is indexed exactly once	green@cf872d40f0
 cmdr-listing	foreign_path::foreign_path_test::a_backend_swap_respells_an_open_listing_and_its_entries	S	read	assertion `left == right` failed: entries carry the stored bytes	green@97befe7c07
 cmdr-listing	stall_test::a_read_that_never_answers_reports_the_listing_stalled_within_the_deadline	S	unread	assertion `left == right` failed	red@97befe7c07: P, / is no local disk
 cmdr-listing	stalled_on::tests::resolves_a_symlink_into_its_target	symlink	read	called `Result::unwrap()` on an `Err` value: Os { code: 1314, kind: Uncategorized, message: "A required privilege is not held by the client." }	green@97befe7c07

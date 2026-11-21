@@ -415,3 +415,12 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   `D:\targets\m6`, 9 min warm for nine crates): 2,095 tests, 6 red where `windows-test-failures.tsv` had 164; per crate
   and per cause in `docs/notes/windows-port/windows-test-failures.md` § "By milestone". Elevated through
   `run-on-desktop.sh --elevated`, a run holds the symlink privilege, so nothing skipped itself.
+- **2026-11-21, app-path milestone 10b's second step on the builder** (the warm pair, `CARGO_BUILD_JOBS=2`, elevated
+  through `run-on-desktop.sh`; about 10 min for the first warm build, 2–3 min per incremental run of
+  `cargo nextest run -p cmdr-index --profile windows-baseline`): `cmdr-index` 192 red on `main` (`a24de3dd99`) → 31 at
+  `cf872d40f0`, causes in `windows-test-failures.md` § "By milestone". Gotchas: the `windows-baseline` JUnit report
+  lands under the checkout (`D:\src\cmdr-m6\target\nextest\windows-baseline\target\nextest\windows-baseline\junit.xml`),
+  not under `CARGO_TARGET_DIR`; a nextest filter holding `|` breaks a `.cmd` job (pass test names as positional
+  arguments instead); and a failing proptest writes `proptest-regressions/` into the checkout, which goes before handing
+  the pair back (the directory also holds tracked files, so restore it with `git checkout --` after). `cmdr-m6` is back
+  on `origin/main`, clean.

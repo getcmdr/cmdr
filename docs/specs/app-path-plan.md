@@ -1830,6 +1830,36 @@ included; the hidden couplings it found are why waves B and C differ from round 
   listing host (10c), and the index reads its text through `app_path_of` meanwhile.
 - **Windows**: `pnpm check clippy-windows` green on the merged branch; no builder run (no Mami today). Expected green:
   nothing yet among the 133 local-pipeline cells, which wait on the edge above.
+- **Done, second step** (2026-11-21, PR #1318, branch `worktree-agent-a9d98875cd8e03dac`): the local pipeline's way up
+  from the OS. Durable design: `crates/cmdr-index/src/indexing/paths/DETAILS.md` § "App paths at the edges".
+  - **The edge**: `paths/app_text.rs`'s `native_text` (a path) and `native_name` (a walked name) replace about 100
+    `to_string_lossy` sites in `scanner/`, `reconcile/`, `watch/`, `lifecycle/`, `read/expected_totals.rs`, and their
+    tests; through `from_native_unicode`, a name the app path can't hold yet keeps its lossy row and is counted
+    (`names_kept_lossy`), never dropped. On Windows a plain or verbatim drive path takes a separator swap
+    (`plain_drive_text`) instead of the full crossing.
+  - **Rebuilt text**: `path_prefix::rooted` (with `reconstruct_path`, `capped_prefix`, `deepest_common_ancestor`),
+    `compute_parent_path`, `self_and_ancestors`, `join_volume_relative`, and the cover bootstrap root a drive's text at
+    `D:/` and keep a UNC `//` lead, gated on `PathFlavor::HOST`.
+  - **The root's native form**: `native_root` is plain first (`to_native_plain`), verbatim only past what plain can
+    spell; a verbatim root matched no host mount answer.
+  - **Fixtures**: the phase machine's and cold drive's volumes root at the tree's app spelling; POSIX-literal fixtures
+    (convergence, `partial_agg`, the removable stops, `local_external`) became host-absolute; the three
+    `store::tests::path_resolution` `*_off_macos` cells are Linux's, with a Windows twin.
+- **Byte-exact on macOS** (throwaway harnesses in the agent's scratchpad, against `to_string_lossy`): 2,000,000
+  generated paths (NFC and NFD, `\`, `:`, invalid bytes, literal escape-range code points, `//`, a trailing `/`) and
+  1,713,933 names, 0 differ; 3,011,023 real paths under a home folder and Dropbox (539 non-ASCII, 329 NFD), 0 differ,
+  every one borrowed. Every `rooted` / drive / UNC change is behind `PathFlavor::HOST == Windows`. The separator swap
+  against `from_native_windows`: 1,865,802 generated Windows texts, the 319,536 it answers all equal. The suite:
+  `cmdr-index` 2,021, green.
+- **Allocation**: on macOS and Linux none added; the hot walk loop's path text is borrowed exactly as `to_string_lossy`
+  borrowed it, and its name is the one `String` it always was. On Windows a `\`-spelled child pays one `String` for its
+  respelling (the walker joins with `\`): about 127 ns a path against 1,046 ns for the full crossing (macOS proxy over
+  1,000,000 real paths spelled `D:\…`).
+- **Windows** (the builder, `cmdr-index`, 1,932 tests): `main` 192 red → 31, none newly red; the 31 are #1226 (19), a
+  rename of a folder with open handles (5), no `nlink` from `std` (4, task 35), and POSIX fixtures on the root volume
+  (3, task 34). `docs/notes/windows-port/windows-test-failures.md` § "By milestone" and the TSV's `rerun` column.
+- **Left for 10c**: `CoveredEntry.path` and the SMB watcher's `&Path` seam, as the first step said; `#1310` unchanged
+  (no escape spelled anywhere new).
 
 ### 10e. `cmdr-multi-rename` and `cmdr-listing-wasm`
 
