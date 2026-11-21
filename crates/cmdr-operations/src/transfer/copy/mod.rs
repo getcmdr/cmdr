@@ -833,3 +833,7 @@ mod link_landing_tests;
 #[cfg(test)]
 #[path = "folder_dates_tests.rs"]
 mod folder_dates_tests;
+
+#[cfg(test)]
+#[path = "overwrite_identity_tests.rs"]
+mod overwrite_identity_tests;

@@ -7,7 +7,7 @@ use std::path::Path;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use super::{FileId, platform};
+use super::{FileId, Follow, platform};
 use crate::ignore_poison::IgnorePoison;
 
 static HIDDEN: Mutex<Vec<FileId>> = Mutex::new(Vec::new());
@@ -27,11 +27,9 @@ pub struct HiddenIdentities(Vec<FileId>);
 pub fn hide_identity_of(paths: &[&Path]) -> HiddenIdentities {
     let mut ids = Vec::new();
     for path in paths {
-        for metadata in [std::fs::symlink_metadata(path), std::fs::metadata(path)]
-            .into_iter()
-            .flatten()
-        {
-            if let Some(id) = platform::file_id(&metadata) {
+        // By path, so a Windows id (which no `Metadata` carries) hides too.
+        for follow in [Follow::NotLinks, Follow::Links] {
+            if let Some(id) = platform::file_id_at(path, follow) {
                 ids.push(id);
             }
         }

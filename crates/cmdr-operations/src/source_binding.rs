@@ -19,7 +19,7 @@ use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use cmdr_fs::file_identity::FileId;
+use cmdr_fs::file_identity::{FileId, Follow};
 
 use super::event_sinks::OperationEventSink;
 use super::queued_sources::{kept_after_queue_local, kept_after_queue_on, local_source_is_gone};
@@ -118,7 +118,8 @@ impl SourceFingerprint {
             }
         };
         Some(Self::Local {
-            id: FileId::of(&metadata),
+            // By path, the one reader Windows answers (no `Metadata` carries an id there).
+            id: FileId::at(path, Follow::NotLinks),
             content,
         })
     }

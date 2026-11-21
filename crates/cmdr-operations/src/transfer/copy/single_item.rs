@@ -38,7 +38,8 @@ use crate::transfer_tree::TreeLeaf;
 use crate::types::{
     WriteOperationConfig, WriteOperationError, WriteOperationPhase, WriteOperationType, WriteProgressEvent,
 };
-use crate::validation::{may_be_same_file, path_exists_or_is_symlink, validate_path_length};
+use crate::validation::{file_sameness, path_exists_or_is_symlink, validate_path_length};
+use cmdr_fs::file_identity::Sameness;
 
 /// The source folder that lands at `blocking`, the file standing where a
 /// folder→file clash needs a directory.
@@ -550,8 +551,19 @@ pub(in crate::transfer) fn copy_single_item(
             );
         }
 
-        // Prevent copying a file over itself via symlinks (same inode + device)
-        if may_be_same_file(source, &actual_dest) {
+        // Prevent copying a file over itself via symlinks (same node). Only an
+        // existing destination can be the source, which is an overwrite: one the
+        // OS can't tell apart from the source REFUSES (it might be the source,
+        // and the overwrite would truncate it), ❌ never a silent skip that
+        // reports the person's Overwrite as done (#1291). `cmdr_fs::file_identity`
+        // module docs hold the rule.
+        let sameness = file_sameness(source, &actual_dest);
+        if sameness == Some(Sameness::Unknown) {
+            return Err(WriteOperationError::CantTellIfSameFile {
+                path: actual_dest.display().to_string(),
+            });
+        }
+        if sameness == Some(Sameness::Same) {
             log::warn!(
                 "copy: skipping {}: source and destination resolve to the same file",
                 LogPrivate::file_path(source)

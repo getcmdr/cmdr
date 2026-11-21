@@ -2926,6 +2926,23 @@
   "@errors.write.folderHoldsUnlistedItems.suggestion": {
     "description": "Recovery suggestion for the same dialog. Plain text. \"Storage provider’s console\" means the provider's website or admin tool (for example the AWS console). \"Another S3 tool\" means any other program that talks to S3-compatible storage (for example the AWS command-line tool), which can name those items where Cmdr can't. Keep \"S3\" as is."
   },
+  "errors.write.cantTellIfSameFile.title": "This might be the file you’re copying",
+  "errors.write.cantTellIfSameFile.message": "Cmdr can’t tell whether {path} is the file you’re copying under another name, so it didn’t overwrite it. Replacing it could have erased your original.",
+  "errors.write.cantTellIfSameFile.suggestion": "Copy it under another name, or remove the file that’s there yourself if you’re sure it’s a different one, then try again.",
+  "@errors.write.cantTellIfSameFile.title": {
+    "description": "Title of the error dialog when a copy was about to replace an existing file, but the system couldn't say whether that file and the one being copied are the same file reached two ways (for example through a link or a network share). Plain text."
+  },
+  "@errors.write.cantTellIfSameFile.message": {
+    "description": "Body of the same dialog. Plain text. Explains that Cmdr stopped instead of replacing the existing file: if the two were really one file, replacing it would have destroyed the original. \"Under another name\" means the same file reached through a different path.",
+    "placeholders": {
+      "path": {
+        "description": "The full path of the existing file the copy would have replaced, inserted verbatim. Do not translate or reformat it."
+      }
+    }
+  },
+  "@errors.write.cantTellIfSameFile.suggestion": {
+    "description": "Recovery suggestion for the same dialog. Plain text. Two ways forward: copy under a different name, or delete the existing file by hand first when the person knows it's a different file."
+  },
   "errors.write.mountedVolumeInside.title": "A mounted drive is in the way",
   "errors.write.mountedVolumeInside.message.delete": "A drive or server is mounted at {mountPoint}, and deleting there would erase everything on it. Cmdr stopped before deleting anything.",
   "errors.write.mountedVolumeInside.message.replace": "A drive or server is mounted at {mountPoint}, so replacing the folder that holds it would erase everything on the drive. Cmdr left that folder and the drive as they were.",

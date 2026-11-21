@@ -1308,6 +1308,15 @@ export const commands = {
        */
       | { type: 'folder_holds_unlisted_items'; path: string }
       /**
+       *  An Overwrite met a file the OS can't tell apart from its source: no node
+       *  identity on one side or both (`cmdr_fs::file_identity::Sameness::Unknown`, a
+       *  filesystem that reports no file id). The two might be one file, and
+       *  overwriting it would truncate the source, so the copy refused before writing
+       *  anything. `path` is the destination file. Not transient: a retry meets the
+       *  same filesystem.
+       */
+      | { type: 'cant_tell_if_same_file'; path: string }
+      /**
        *  The source changed while the copy read it (an S3 server-side copy saw
        *  it replaced, or its stream delivered more or fewer bytes than its
        *  declared length), so the copy landed nothing that could mix two
@@ -26488,6 +26497,15 @@ export type WriteOperationError =
    *  name them. Not transient: a retry meets the same keys.
    */
   | { type: 'folder_holds_unlisted_items'; path: string }
+  /**
+   *  An Overwrite met a file the OS can't tell apart from its source: no node
+   *  identity on one side or both (`cmdr_fs::file_identity::Sameness::Unknown`, a
+   *  filesystem that reports no file id). The two might be one file, and
+   *  overwriting it would truncate the source, so the copy refused before writing
+   *  anything. `path` is the destination file. Not transient: a retry meets the
+   *  same filesystem.
+   */
+  | { type: 'cant_tell_if_same_file'; path: string }
   /**
    *  The source changed while the copy read it (an S3 server-side copy saw
    *  it replaced, or its stream delivered more or fewer bytes than its

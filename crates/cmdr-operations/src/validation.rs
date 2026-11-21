@@ -4,7 +4,7 @@
 //! guard, writability and disk-space checks, same-file / same-filesystem inode
 //! comparisons, path/name length limits, and symlink-loop detection.
 
-use cmdr_fs::file_identity::{Sameness, same_device, same_node};
+use cmdr_fs::file_identity::{Sameness, same_device, same_node_at};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -359,10 +359,19 @@ pub(crate) fn validate_file_sizes_for_filesystem(
 /// the same one. Two existing paths the OS can't tell apart answer `true`: ❗ "can't
 /// tell" must never read as "different" here, or a copy truncates its own source.
 pub(crate) fn may_be_same_file(source: &Path, destination: &Path) -> bool {
-    let (Ok(src_meta), Ok(dst_meta)) = (fs::metadata(source), fs::metadata(destination)) else {
-        return false;
-    };
-    same_node(&src_meta, &dst_meta).may_be_same()
+    file_sameness(source, destination).is_some_and(Sameness::may_be_same)
+}
+
+/// Whether `source` and `destination` (links followed) are one file, `None` when either
+/// isn't there. Read by PATH (`same_node_at`), the one reader Windows answers (#1291).
+/// `Unknown` is two existing paths the OS can't tell apart.
+pub(crate) fn file_sameness(source: &Path, destination: &Path) -> Option<Sameness> {
+    match same_node_at(source, destination) {
+        Sameness::Unknown => {
+            (fs::metadata(source).is_ok() && fs::metadata(destination).is_ok()).then_some(Sameness::Unknown)
+        }
+        known => Some(known),
+    }
 }
 
 /// Returns `true` when `path` already names something we should treat as a

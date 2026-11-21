@@ -2,8 +2,17 @@
 
 use std::fs::Metadata;
 use std::os::unix::fs::MetadataExt as _;
+use std::path::Path;
 
-use super::super::{DeviceId, FileId};
+use super::super::{DeviceId, FileId, Follow};
+
+pub(crate) fn file_id_at(path: &Path, follow: Follow) -> Option<FileId> {
+    let metadata = match follow {
+        Follow::Links => std::fs::metadata(path),
+        Follow::NotLinks => std::fs::symlink_metadata(path),
+    };
+    file_id(&metadata.ok()?)
+}
 
 pub(crate) fn file_id(metadata: &Metadata) -> Option<FileId> {
     Some(FileId::from_parts(
