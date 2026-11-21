@@ -15,3 +15,8 @@ pub(super) use imp::list;
 
 /// Whether `path` is a mount point, or `None` when the table can't say.
 pub(super) use imp::is_mount_point;
+
+/// Windows' own table, for the app's drive list (`volumes/platform/windows/drives.rs`): the
+/// letters in use and each volume's GUID path with every place it's mounted.
+#[cfg(target_os = "windows")]
+pub use imp::{WindowsVolume, drive_letters, volumes};
