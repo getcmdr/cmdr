@@ -25,7 +25,7 @@ use crate::testing::{TestOperationLog, TestOperations};
 use cmdr_fs::volume::Volume;
 use cmdr_local::LocalVolume;
 use cmdr_operation_log::rollback::{RollbackReport, execute_rollback, rollback_operation};
-use cmdr_operation_log::store::{open_read_connection, read_rollback_units_page};
+use cmdr_operation_log::store::{open_read_connection, read_typed_rollback_units};
 use cmdr_operation_log::types::{ExecutionStatus, Initiator, OpKind, RollbackState, SkipReason};
 
 const OLD: i64 = 1_500_000_000;
@@ -83,7 +83,7 @@ impl UndoRig {
         journal::finalize_op(state.scope(), kind, ExecutionStatus::Done);
         result.expect("the operation ran");
         let conn = open_read_connection(self.log.db()).expect("read conn");
-        let units = read_rollback_units_page(&conn, "op", i64::MAX, 100).expect("units");
+        let units = read_typed_rollback_units(&conn, "op", i64::MAX, 100).expect("units");
         assert_eq!(
             units.iter().any(|unit| unit.dest_identity.is_some()),
             rows == Rows::WithNode && crate::local_disk::keeps_node_identity(dest),

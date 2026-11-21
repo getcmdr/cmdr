@@ -4158,6 +4158,7 @@ export type MessageKey =
   | 'operationLog.skipReason.locked'
   | 'operationLog.skipReason.originalGone'
   | 'operationLog.skipReason.restoreTargetOccupied'
+  | 'operationLog.skipReason.unreadablePath'
   | 'operationLog.skipReason.unverifiablePrecondition'
   | 'operationLog.skipReason.vanished'
   | 'operationLog.status.canceled'

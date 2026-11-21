@@ -72,7 +72,7 @@ impl Landing {
 /// device can list `../x` or `/x`: this is the one way such a name reaches a
 /// destination path, so it lands inside the folder or is refused
 /// (`VolumeError::InvalidName`), ❌ never joined raw.
-pub(super) struct ListedName<'a> {
+pub(crate) struct ListedName<'a> {
     /// The text as listed, `None` for a native name that isn't UTF-8.
     text: Option<&'a str>,
     app: Cow<'a, AppName>,
@@ -88,7 +88,7 @@ impl<'a> ListedName<'a> {
     /// it there, and a child joined under the wrong folder is a write nobody
     /// picked. Goes once those bodies take app paths (the plan's 10a); on macOS
     /// and Linux it refuses nothing the plain-name check doesn't.
-    pub(super) fn new(text: &'a str) -> Result<Self, NotAChildName> {
+    pub(crate) fn new(text: &'a str) -> Result<Self, NotAChildName> {
         ChildName::new(text)?;
         Ok(Self {
             text: Some(text),
@@ -110,7 +110,7 @@ impl<'a> ListedName<'a> {
 
     /// `dir/<name>`, the typed join, for a caller that names the place the
     /// child would take (a refusal's question, a failure's path).
-    pub(super) fn under(&self, dir: &AppPath) -> Result<AppPathBuf, VolumeError> {
+    pub(crate) fn under(&self, dir: &AppPath) -> Result<AppPathBuf, VolumeError> {
         join_under(&ListedFolder::new(dir), &self.app)
     }
 }

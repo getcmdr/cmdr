@@ -399,6 +399,12 @@
     "screenshot": "operation-log-more-pages.png",
     "screenshotNote": "The operation log dialog, pictured here with entries in it. Your string is the line under the item tree that explains why a rollback skipped the row under the cursor, so this screenshot may not show it."
   },
+  "operationLog.skipReason.unreadablePath": "Cmdr couldn’t tell from the log exactly where this item is, so it left it alone.",
+  "@operationLog.skipReason.unreadablePath": {
+    "description": "Why a rollback skipped one item: the path the operation log recorded for it is damaged (for example, it names a folder in a way no real location uses), so Cmdr can’t be sure which file it means and never touches it. Rare: no normal operation records such a path. \"The log\" is the operation log this dialog shows. Shown under the item tree for the row under the cursor, and read by screen readers. Avoid the words error and failed. The apostrophe is a curly typographic apostrophe (U+2019).",
+    "screenshot": "operation-log-more-pages.png",
+    "screenshotNote": "The operation log dialog, pictured here with entries in it. Your string is the line under the item tree that explains why a rollback skipped the row under the cursor, so this screenshot may not show it."
+  },
   "operationLog.summary.canceled": "{summary}, then canceled ({plannedText} planned)",
   "@operationLog.summary.canceled": {
     "description": "One-line summary of an operation the person canceled partway, in the Operation log list. summary is the operation's own summary counting only what it got done (for example \"Copied 30 items\"); plannedText is how many items it was going to handle, formatted with the locale's thousands separator. Full example: \"Copied 30 items, then canceled (1,200 planned)\".",

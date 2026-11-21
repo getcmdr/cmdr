@@ -5,16 +5,15 @@
 //! Split from the loop so `rollback.rs` reads as the decision it makes and the
 //! order it makes them in. Nothing here decides anything.
 
-use std::path::Path;
-
 use cmdr_fs::entry::TagsChange;
 
 use super::super::capture::compute_eligibility;
 use super::super::store::{OperationRow, RollbackUnit};
 use super::super::types::{EntryType, ExecutionStatus, ItemOutcome, OpKind, RowRole, SearchCoverage};
 use super::super::writer::{FinalizeOperation, ItemOutcomeUpdate, JournalItem, OperationLogWriter};
+use super::ItemResult;
 use super::skips::SkipTally;
-use super::{ItemResult, removal_target};
+use super::target::{StoredPath, removal_target, stored_leaf, stored_split};
 
 /// Accumulates a rollback run's tally + the two journal side-effects (the inverse
 /// op's item rows, and the original op's per-item outcome updates), so the driver
@@ -48,7 +47,7 @@ impl RunAcc {
         }
     }
 
-    pub(super) fn record(&mut self, unit: &RollbackUnit, result: ItemResult) {
+    pub(super) fn record<P: StoredPath>(&mut self, unit: &RollbackUnit<P>, result: ItemResult) {
         // A skip that counts as reversed (`AlreadyGone` — the end state already holds)
         // is NOT a skip, so it reports no reason: the column explains items the undo
         // left behind, and an idempotent no-op left nothing behind.
@@ -71,7 +70,8 @@ impl RunAcc {
         if let Some(reason) = skip_reason {
             // Group by reason at the location the undo found the item — the name the
             // file carries now, which is what the user sees in the pane.
-            self.skips.record(reason, &removal_target(unit).1);
+            self.skips
+                .record_named(reason, stored_leaf(removal_target(unit).1).unwrap_or_default());
         }
         self.original_outcomes.push(ItemOutcomeUpdate {
             seq: unit.seq,
@@ -160,19 +160,19 @@ pub(super) fn finalize_inverse(
 /// (the removed copy, or the location a restore-move brought back FROM), falling
 /// back to source when no dest was recorded (create_file/folder record source ==
 /// dest). Its outcome reflects reversed vs skipped.
-fn inverse_item_row(seq: i64, unit: &RollbackUnit, result: &ItemResult) -> JournalItem {
+fn inverse_item_row<P: StoredPath>(seq: i64, unit: &RollbackUnit<P>, result: &ItemResult) -> JournalItem {
     let outcome = match result {
         ItemResult::Reversed => ItemOutcome::Done,
         ItemResult::Skipped(r) if r.counts_as_reversed() => ItemOutcome::Done,
         ItemResult::Skipped(_) => ItemOutcome::Skipped,
     };
     let (act_vol, act_path) = removal_target(unit);
-    let (dir, name) = split(&act_path);
+    let (dir, name) = stored_split(act_path);
     JournalItem {
         seq,
         entry_type: unit.entry_type,
         row_role: RowRole::RollbackUnit,
-        source_volume_id: act_vol,
+        source_volume_id: act_vol.to_string(),
         source_dir: dir,
         source_name: name,
         dest_volume_id: None,
@@ -189,16 +189,4 @@ fn inverse_item_row(seq: i64, unit: &RollbackUnit, result: &ItemResult) -> Journ
             after: tags.before.clone(),
         }),
     }
-}
-
-fn split(path: &Path) -> (String, String) {
-    let name = path
-        .file_name()
-        .map(|n| n.to_string_lossy().into_owned())
-        .unwrap_or_default();
-    let dir = path
-        .parent()
-        .map(|p| p.to_string_lossy().into_owned())
-        .unwrap_or_default();
-    (dir, name)
 }

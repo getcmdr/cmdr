@@ -8,7 +8,7 @@ use std::sync::Arc;
 use super::test_support::*;
 use cmdr_fs::volume::InMemoryVolume;
 use cmdr_fs::volume::app_paths::RootMove;
-use cmdr_operation_log::store::{open_read_connection, read_rollback_units_page};
+use cmdr_operation_log::store::{open_read_connection, read_typed_rollback_units};
 use cmdr_operation_log::types::{OpKind, RollbackState};
 
 #[tokio::test]
@@ -58,10 +58,13 @@ async fn an_undo_acts_and_journals_on_the_volumes_live_root() {
     // The inverse op's own rows name where it acted, so its undo and the crash reconcile
     // read the drive's paths, not the old letter's.
     let conn = open_read_connection(rig.writer.db_path()).expect("conn");
-    let rows = read_rollback_units_page(&conn, "inv-1", i64::MAX, 100).expect("inverse rows");
+    let rows = read_typed_rollback_units(&conn, "inv-1", i64::MAX, 100).expect("inverse rows");
     assert!(!rows.is_empty(), "the inverse op journals what it reversed");
     for row in &rows {
-        let paths = [Some(row.source_path.as_path()), row.dest_path.as_deref()];
+        let paths = [
+            Some(row.source_path.as_str()),
+            row.dest_path.as_ref().map(|p| p.as_str()),
+        ];
         for path in paths.into_iter().flatten() {
             assert!(
                 !path.starts_with("/E"),

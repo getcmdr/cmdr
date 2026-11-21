@@ -1802,8 +1802,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
     across four crates; typing them alone nets about zero (each backend's `for_boundary` is one counted helper), so they
     go with the transfer tree's sources.
   - The typed `RollbackUnit` needs each volume's `Namer` where `cmdr-operation-log` reads the rows (no volume is in hand
-    there) and a decision for stored text `from_literal_store` refuses (relative, `..`): today such a row plans through
-    the bridge. David's call before it's built.
+    there) and a decision for stored text `from_literal_store` refuses (relative, `..`). David's call (2026-11-21): such
+    a row is skipped with a new per-item reason, no migration; the namer comes as a lookup beside the volume lookup.
+    Built in the fourth pass below.
 - **Third pass done** (2026-11-21, branch `worktree-agent-a4e240410649dae62`, PR #1321; one agent, no helpers). A clean
   partial: the merge walk's DESTINATION side is typed, the leaf bodies past it aren't. Bridge calls in `cmdr-operations`
   471 → 462 (workspace 1,351 → 1,342), `appTextToPath` + `pathFromBareText` 610 → 608; no entry grew. What it is:
@@ -1830,6 +1831,30 @@ included; the hidden couplings it found are why waves B and C differ from round 
   `ChildName`), and the per-item `native_join_refuses` question stays until those bodies take app paths; typing them
   alone moves crossings to their readers (the journal, the logs, the ledgers: pass two's finding), so the count falls
   there only with 10f's text exits.
+- **Fourth pass done** (2026-11-21, branch `worktree-agent-a4e2fe2e5f47733a1`; one agent, no helpers): the typed
+  `RollbackUnit`. `cmdr-operation-log` reads every rollback row through the escape mark's `StoredPathReading`
+  (`store/rollback_unit.rs`'s `UnitReader`), and the planner and the executor act on those app paths: the planner's one
+  crossing (`target.rs`' `app_path_of`) is gone. Bridge calls 1,342 → 1,340, `pathFromBareText` 608 → 607; no entry
+  grew. The design and its evidence: `crates/cmdr-operation-log/DETAILS.md` § "The escape mark". In short:
+  - **A row the typed reading refuses** (a `..` name, a NUL) is `UnitReading::Refused`, recorded as
+    `SkipReason::UnreadablePath` and never acted on. No migration, no stored row rewritten.
+  - **The namer** is `VolumeLookup::namer` (default `BackendKind::namer`, new in `cmdr-fs`), asked only for literal
+    escape-range text; unknown is `Failed`, never a guess.
+  - **The books** (inverse rows, skip names, progress, summary, sweep depth) spell the journal's text back
+    (`StoredPath`), split by `std::path` as every row was made.
+- **Byte-exact evidence**: 1,000,000 generated rows through a real store, old `PathBuf` reading against the typed one:
+  every canonical path (908,891) byte-exact in act path, inverse-row split, skip name, depth, in-place test, and root
+  rebase under the host's namer; non-canonical text (no journal row holds it) names the same place respelled; `..` and
+  NUL rows refused. Under SMB's units namer only literal escape-range text differs. Suites on macOS: `cmdr-operations` +
+  `cmdr-operation-log` 2,794 and the app's 43 rollback and operation-log cells, green.
+- **Fixed on the way** (a Mami run's two cells, red on Windows from birth, `815b6a16b7`): both stale-temp reaps
+  (`cleanup.rs::reap_stale_transfer_temps`, the remote zip edit's `reap_remote_temps`) joined a listed temp onto a
+  remote folder with `Path::join`, a `\` on Windows, so a real leftover was never reaped. They join through
+  `landing.rs::ListedName` now (re-exported for `archive_edit`), keeping the one-plain-name refusal; macOS and Linux
+  bytes unchanged (pass three's join evidence). `remote_tests`' cell may stay red on Windows for its `/device` POSIX
+  fixture, which its siblings share. Bridge calls 1,340 → 1,339.
+- **Windows, open**: a stored row with `\` in a drive path is refused (`Backslash`); whether today's Windows journal
+  writes `\` (its `local_split` is `to_string_lossy` of a native `PathBuf`) wasn't checked on a builder (no Mami run).
 
 ### 10b. `cmdr-index`
 

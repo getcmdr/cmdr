@@ -19,8 +19,8 @@ use std::time::Duration;
 
 use super::super::store::RollbackUnit;
 use super::super::types::EntryType;
-use super::removal_target;
-use cmdr_fs::app_path::AppPath;
+use super::target::{StoredPath, removal_target, stored_leaf};
+use cmdr_fs::app_path::{AppPath, Namer};
 use cmdr_fs::volume::app_paths::RootMove;
 use cmdr_fs::volume::{Volume, VolumeError};
 
@@ -40,6 +40,15 @@ pub trait VolumeLookup: Send + Sync {
     /// every recorded path, and the planner's snapshot checks still guard each act.
     fn root_move(&self, _volume_id: &str) -> Option<RootMove> {
         None
+    }
+
+    /// How `volume_id` spells names natively, for reading a row written before escapes went
+    /// live: its literal escape-range code points spell through it
+    /// (`AppPathBuf::from_literal_store`). `None` for a volume the host can't name, which the
+    /// planner reads as "can't tell" and never guesses; it asks only for a path holding such
+    /// a code point. Defaults to the registered volume's backend's namer.
+    fn namer(&self, volume_id: &str) -> Option<Namer> {
+        self.get(volume_id).map(|volume| volume.backend_kind().namer())
     }
 }
 
@@ -202,12 +211,8 @@ impl ProgressStand {
     /// Tell the runner where things stand. `next` is the item about to be
     /// reversed (`None` for the closing frame, which reports the position the run
     /// finished at).
-    pub(super) fn announce(&self, runner: &dyn RollbackRunner, next: Option<&RollbackUnit>) {
-        let acting_on = next.map(|unit| removal_target(unit).1);
-        let current_name = acting_on
-            .as_deref()
-            .and_then(|path| path.file_name())
-            .map(|name| name.to_string_lossy());
+    pub(super) fn announce<P: StoredPath>(&self, runner: &dyn RollbackRunner, next: Option<&RollbackUnit<P>>) {
+        let current_name = next.and_then(|unit| stored_leaf(removal_target(unit).1));
         runner.report_progress(RollbackProgress {
             files_done: self.files_done,
             files_total: self.files_total,
@@ -219,7 +224,7 @@ impl ProgressStand {
 
     /// One item done. Only a file adds bytes: a folder's recorded `size` is an inode
     /// length, never bytes, so the totals carry none for it either.
-    pub(super) fn credit(&mut self, unit: &RollbackUnit) {
+    pub(super) fn credit<P>(&mut self, unit: &RollbackUnit<P>) {
         self.files_done += 1;
         if unit.entry_type == EntryType::File {
             self.bytes_done += unit.size.unwrap_or(0).max(0) as u64;

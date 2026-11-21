@@ -106,6 +106,7 @@ describe('the words never blame the person or reach for "error" and "failed"', (
     'originalGone',
     'failed',
     'locked',
+    'unreadablePath',
   ]
   const unexpandable: UnexpandableReason[] = ['empty', 'notRecorded', 'capped']
 

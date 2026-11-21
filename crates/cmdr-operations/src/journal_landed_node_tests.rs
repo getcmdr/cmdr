@@ -29,7 +29,7 @@ use crate::testing::{TestOperationLog, TestOperations};
 
 use cmdr_fs::volume::{InMemoryVolume, NodeIdentity, Volume};
 use cmdr_local::LocalPosixVolume;
-use cmdr_operation_log::store::{RollbackUnit, open_read_connection, read_rollback_units_page};
+use cmdr_operation_log::store::{RollbackUnit, open_read_connection, read_typed_rollback_units};
 use cmdr_operation_log::types::{EntryType, ExecutionStatus, Initiator, OpKind};
 
 const OLD: i64 = 1_500_000_000;
@@ -71,13 +71,13 @@ fn the_scratch_disk_on_a_mac_keeps_a_lasting_identity() {
 
 fn units(log: &TestOperationLog, op_id: &str) -> Vec<RollbackUnit> {
     let conn = open_read_connection(log.db()).expect("read conn");
-    read_rollback_units_page(&conn, op_id, i64::MAX, 1_000).expect("units")
+    read_typed_rollback_units(&conn, op_id, i64::MAX, 1_000).expect("units")
 }
 
 fn unit_landing_at<'a>(units: &'a [RollbackUnit], path: &Path) -> &'a RollbackUnit {
     units
         .iter()
-        .find(|unit| unit.dest_path.as_deref() == Some(path))
+        .find(|unit| unit.dest_path.as_ref().map(|p| p.as_str()) == path.to_str())
         .unwrap_or_else(|| panic!("a row lands at {}: {units:?}", path.display()))
 }
 

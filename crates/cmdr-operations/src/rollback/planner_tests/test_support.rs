@@ -20,7 +20,7 @@ use cmdr_operation_log::query::{RollbackSelection, SelectionBase, SelectionToggl
 use cmdr_operation_log::rollback::*;
 use cmdr_operation_log::store::{
     OperationItemRow, OperationRow, open_read_connection, operation_log_db_path, read_operation, read_operation_items,
-    read_rollback_units_page,
+    read_typed_rollback_units,
 };
 use cmdr_operation_log::types::{
     EntryType, ExecutionStatus, Initiator, ItemOutcome, OpKind, RollbackState, RowRole, SearchCoverage,
@@ -191,14 +191,14 @@ impl Rig {
     /// gone leaves this out (`copy_original_tests.rs`).
     pub(super) async fn put_originals(&self, op_id: &str) {
         let conn = open_read_connection(self.writer.db_path()).expect("read conn");
-        let units = read_rollback_units_page(&conn, op_id, i64::MAX, 10_000).expect("read units");
+        let units = read_typed_rollback_units(&conn, op_id, i64::MAX, 10_000).expect("read units");
         for unit in units.iter().filter(|unit| unit.entry_type == EntryType::File) {
             let volume = self
                 .vm
                 .get(&unit.source_volume_id)
                 .expect("the source volume is registered");
-            // The journal's row, read back as the app path it holds.
-            let source = AppPath::legacy_unchecked(&unit.source_path);
+            // The journal's row, read as the app path it holds.
+            let source: &AppPath = &unit.source_path;
             if let Some(parent) = source.parent() {
                 volume
                     .create_directory_all(parent)
@@ -207,7 +207,7 @@ impl Rig {
             }
             let size = unit.size.expect("a copy row records its size") as usize;
             volume
-                .create_file(&source, &vec![b'o'; size])
+                .create_file(source, &vec![b'o'; size])
                 .await
                 .expect("the original");
         }

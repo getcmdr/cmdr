@@ -438,7 +438,7 @@ async fn a_cross_fs_move_records_final_paths_and_really_puts_the_file_back() {
 #[tokio::test]
 async fn a_cross_fs_move_records_the_node_that_ends_up_at_the_final_path() {
     use cmdr_fs::volume::NodeIdentity;
-    use cmdr_operation_log::store::read_rollback_units_page;
+    use cmdr_operation_log::store::read_typed_rollback_units;
 
     let fixture = MoveLoop::new("op-cross-fs-node");
     let source = fixture.write("src/album/notes.txt", b"NOTES");
@@ -452,10 +452,10 @@ async fn a_cross_fs_move_records_the_node_that_ends_up_at_the_final_path() {
 
     let landed = fixture.path("dst/album/notes.txt");
     let conn = open_read_connection(fixture.log.db()).expect("read conn");
-    let units = read_rollback_units_page(&conn, &fixture.op_id, i64::MAX, 100).expect("units");
+    let units = read_typed_rollback_units(&conn, &fixture.op_id, i64::MAX, 100).expect("units");
     let unit = units
         .iter()
-        .find(|unit| unit.dest_path.as_deref() == Some(landed.as_path()))
+        .find(|unit| unit.dest_path.as_ref().map(|p| p.as_str()) == landed.to_str())
         .expect("the file's row names its final path");
     let expected = crate::local_disk::keeps_node_identity(&landed)
         .then(|| NodeIdentity::of(&std::fs::symlink_metadata(&landed).expect("landed")))

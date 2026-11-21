@@ -46,8 +46,8 @@
 use rusqlite::Connection;
 
 use super::store::{
-    OperationItemRow, OperationLogStoreError, OperationRow, RollbackUnit, open_read_connection,
-    read_rollback_progress_totals, read_rollback_rows_page, rollback_unit_of,
+    OperationItemRow, OperationLogStoreError, OperationRow, RollbackUnit, UnitReader, UnitReading,
+    open_read_connection, read_rollback_progress_totals, read_rollback_rows_page,
 };
 pub use super::tree::rollback_filter::SelectionRefusal;
 use super::tree::rollback_filter::{Narrowed, RollbackFilter, narrow};
@@ -174,9 +174,9 @@ pub fn inverse_kind(kind: OpKind) -> OpKind {
 /// counts as reversed, leaving the moved folder's empty skeleton at the
 /// destination. A move of an existing directory records source ≠ dest, so it
 /// keeps its restore.
-fn is_created_in_place(unit: &RollbackUnit) -> bool {
+fn is_created_in_place<P: PartialEq>(unit: &RollbackUnit<P>) -> bool {
     unit.dest_volume_id.as_deref() == Some(unit.source_volume_id.as_str())
-        && unit.dest_path.as_deref() == Some(unit.source_path.as_path())
+        && unit.dest_path.as_ref() == Some(&unit.source_path)
 }
 
 /// The verdict of rechecking an item against its recorded snapshot.
@@ -406,6 +406,15 @@ pub async fn execute_rollback_with_selection(
         None => read_rollback_progress_totals(&conn, &original.op_id, original.kind).unwrap_or_default(),
     };
     let mut stand = ProgressStand::over(totals);
+    // How this op's stored paths read (its escape mark, and the host's namer per volume).
+    let namer_of = |volume_id: &str| volumes.namer(volume_id);
+    let reader = match UnitReader::for_op(&conn, &original.op_id, &namer_of) {
+        Ok(reader) => reader,
+        Err(e) => {
+            log::warn!(target: "operation_log", "rollback: the escape mark didn't read: {e}");
+            return abandon_run(writer, original, inverse_op_id, inv_kind);
+        }
+    };
 
     // Reverse in two phases, matching `CopyTransaction::rollback`: first every
     // FILE (streamed `seq DESC`, so the 1M-row list is never materialized), then
@@ -439,7 +448,7 @@ pub async fn execute_rollback_with_selection(
         // Page on the raw rows, never the kept ones: a page the selection keeps none of
         // would otherwise read again forever.
         before = last.seq;
-        let page = match admit_page(&conn, filter.as_mut(), &rows) {
+        let page = match admit_page(&conn, &reader, filter.as_mut(), &rows) {
             Ok(admitted) => {
                 left_out += admitted.left_out;
                 admitted.units
@@ -451,8 +460,25 @@ pub async fn execute_rollback_with_selection(
             }
         };
 
-        for unit in page {
-            let unit = live_roots.rebase(unit);
+        for reading in page {
+            let unit = match live_roots.rebase(reading) {
+                UnitReading::Read(unit) => unit,
+                // A stored path the undo can't name: recorded with its reason, ❌ never acted
+                // on, so it needs no pause, pace, or deepest-first turn.
+                UnitReading::Refused { unit, reason } => {
+                    if runner.should_stop() {
+                        canceled = true;
+                        break 'pages;
+                    }
+                    let credits = credits_progress(original.kind, &unit);
+                    if credits {
+                        stand.announce(runner, Some(&unit));
+                        stand.credit(&unit);
+                    }
+                    acc.record(&unit, ItemResult::Skipped(reason));
+                    continue;
+                }
+            };
             if runner.should_stop() {
                 canceled = true;
                 break 'pages;
@@ -515,7 +541,7 @@ pub async fn execute_rollback_with_selection(
     // mid-way (pause, then quit) must leave what it put back durable, or the next
     // launch's reconcile reads "nothing came back" and resets the op to rollbackable.
     if !canceled && !read_failed {
-        deferred_dirs.sort_by_key(|u| std::cmp::Reverse(u.source_path.components().count()));
+        deferred_dirs.sort_by_key(|u| std::cmp::Reverse(stored_depth(&u.source_path)));
         for (swept, unit) in deferred_dirs.iter().enumerate() {
             if swept > 0 && swept % ROLLBACK_PAGE as usize == 0 {
                 acc.flush(writer, inverse_op_id, &original.op_id);
@@ -549,7 +575,7 @@ pub async fn execute_rollback_with_selection(
     acc.flush(writer, inverse_op_id, &original.op_id);
     // The frame that lands on the total (or wherever a stop left it), so a bar that
     // was throttled mid-item still ends where the run ended.
-    stand.announce(runner, None);
+    stand.announce::<cmdr_fs::app_path::AppPathBuf>(runner, None);
 
     let inv_status = if read_failed {
         ExecutionStatus::Failed
@@ -612,12 +638,13 @@ fn abandon_run(
 /// resolved, and how many the selection left out. Resolves the whole page before any
 /// item runs, so a page with a row it can't read fails as a unit, as it always has.
 struct AdmittedPage {
-    units: Vec<RollbackUnit>,
+    units: Vec<UnitReading>,
     left_out: u64,
 }
 
 fn admit_page(
     conn: &Connection,
+    reader: &UnitReader<'_>,
     filter: Option<&mut RollbackFilter>,
     rows: &[OperationItemRow],
 ) -> Result<AdmittedPage, OperationLogStoreError> {
@@ -633,7 +660,7 @@ fn admit_page(
             admitted.left_out += 1;
             continue;
         }
-        admitted.units.push(rollback_unit_of(conn, row)?);
+        admitted.units.push(reader.unit_of(conn, row)?);
     }
     Ok(admitted)
 }
@@ -643,7 +670,7 @@ fn admit_page(
 /// sweep removes, not something a person is waiting on. The totals count the same
 /// rows (`store::read_rollback_progress_totals`, and a selection's
 /// `units_selectable` off the tree summary).
-fn credits_progress(kind: OpKind, unit: &RollbackUnit) -> bool {
+fn credits_progress<P: PartialEq>(kind: OpKind, unit: &RollbackUnit<P>) -> bool {
     let role = unit_role(
         kind,
         RowRole::RollbackUnit,
@@ -685,7 +712,7 @@ use self_collision::is_self_collision;
 use self_collision::{SelfCollision, SpellingTwin, classify_self_collision, listing_confirms_twin};
 pub use skips::{SkipBreakdown, SkipTally};
 use tags::restore_tags;
-use target::{removal_target, vanished_item};
+use target::{removal_target, stored_depth, vanished_item};
 
 // The end-to-end cells drive the write engine's real executor, so they live
 // beside it: `crates/cmdr-operations/src/rollback/planner_tests/`.

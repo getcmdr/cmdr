@@ -7,7 +7,7 @@
 use super::*;
 use crate::store::{
     OperationLogStore, operation_log_db_path, ops_in_rolling_back, read_inverse_op, read_operation,
-    read_operation_items, read_rollback_units_page, reconstruct_dir_path,
+    read_operation_items, read_typed_rollback_units, reconstruct_dir_path,
 };
 
 /// Open a fresh store + writer over one temp-dir DB. The store owns the schema
@@ -255,7 +255,7 @@ fn finalize_counts_split_by_row_role() {
 
 // ── Rollback reads + state-mutation messages ─────────────────────────────
 
-/// `read_rollback_units_page` streams `rollback_unit` rows newest-`seq`-first,
+/// `read_typed_rollback_units` streams `rollback_unit` rows newest-`seq`-first,
 /// resolves interned dirs to full paths + real volume ids, EXCLUDES `search_only`
 /// leaves, and pages via the `before_seq` cursor without materializing the op.
 #[test]
@@ -308,19 +308,19 @@ fn rollback_units_page_streams_reverse_and_excludes_search_leaves() {
 
     let conn = store.conn();
     // First page of 2: newest seq first (2, 1).
-    let page1 = read_rollback_units_page(conn, "op", i64::MAX, 2).expect("page1");
+    let page1 = read_typed_rollback_units(conn, "op", i64::MAX, 2).expect("page1");
     assert_eq!(page1.iter().map(|u| u.seq).collect::<Vec<_>>(), vec![2, 1]);
-    assert_eq!(page1[0].source_path, PathBuf::from("/src/c"));
-    assert_eq!(page1[0].dest_path, Some(PathBuf::from("/dst/c")));
+    assert_eq!(page1[0].source_path.as_str(), "/src/c");
+    assert_eq!(page1[0].dest_path.as_ref().map(|p| p.as_str()), Some("/dst/c"));
     assert_eq!(page1[0].source_volume_id, "vol-1");
     assert_eq!(page1[0].dest_volume_id.as_deref(), Some("vol-2"));
 
     // Next page: everything with seq < 1 ⇒ just seq 0. The search-only leaf (seq
     // 3) never appears in any page.
     let cursor = page1.last().expect("last").seq;
-    let page2 = read_rollback_units_page(conn, "op", cursor, 2).expect("page2");
+    let page2 = read_typed_rollback_units(conn, "op", cursor, 2).expect("page2");
     assert_eq!(page2.iter().map(|u| u.seq).collect::<Vec<_>>(), vec![0]);
-    let all: Vec<_> = read_rollback_units_page(conn, "op", i64::MAX, 100)
+    let all: Vec<_> = read_typed_rollback_units(conn, "op", i64::MAX, 100)
         .expect("all")
         .into_iter()
         .map(|u| u.seq)
@@ -361,9 +361,12 @@ fn rollback_unit_keeps_the_exact_spelling_of_a_case_twin_folder() {
     }
     writer.flush_blocking().expect("flush");
 
-    let units = read_rollback_units_page(store.conn(), "op-lower", i64::MAX, 10).expect("units");
+    let units = read_typed_rollback_units(store.conn(), "op-lower", i64::MAX, 10).expect("units");
     assert_eq!(units.len(), 1);
-    assert_eq!(units[0].dest_path, Some(PathBuf::from("/srv/media/report.pdf")));
+    assert_eq!(
+        units[0].dest_path.as_ref().map(|p| p.as_str()),
+        Some("/srv/media/report.pdf")
+    );
 
     writer.shutdown();
 }
@@ -547,7 +550,7 @@ fn a_recorded_dest_identity_round_trips_through_the_journal() {
         .expect("record");
     writer.flush_blocking().expect("flush");
 
-    let units = read_rollback_units_page(store.conn(), "op", i64::MAX, 10).expect("units");
+    let units = read_typed_rollback_units(store.conn(), "op", i64::MAX, 10).expect("units");
     let identities: Vec<_> = units.iter().map(|u| (u.seq, u.dest_identity)).collect();
     assert_eq!(identities, vec![(1, None), (0, Some(landed))]);
 }

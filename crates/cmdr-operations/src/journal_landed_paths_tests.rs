@@ -8,7 +8,7 @@
 //! the way it would with nothing journaled: reading the node never fails or
 //! redirects an operation.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -69,13 +69,14 @@ fn write_tar_gz(path: &Path, files: &[(&str, &[u8])]) {
 /// inside the archive: the shape a reader tells an extract from a copy by.
 fn assert_extracted(log: &TestOperationLog, archive: &Path, landed: &[PathBuf]) {
     let units = units(log, "op");
+    let archive = AppPathBuf::from_native_unicode(archive).expect("a test path is text");
     for path in landed {
         let unit = unit_landing_at(&units, path);
         assert_eq!(unit.dest_identity, expected_at(path), "{}", path.display());
         assert!(
-            unit.source_path.starts_with(archive) && unit.source_path != archive,
+            unit.source_path.starts_with(&archive) && unit.source_path != archive,
             "the row's source is inside the archive: {}",
-            unit.source_path.display()
+            unit.source_path
         );
     }
 }
@@ -181,13 +182,13 @@ fn assert_merged(log: &TestOperationLog, folder: &Path) {
     assert!(
         units
             .iter()
-            .all(|unit| unit.dest_path.as_deref() != Some(kept.as_path())),
+            .all(|unit| unit.dest_path.as_ref().map(|p| p.as_str()) != kept.to_str()),
         "a file the merge never touched has no row"
     );
     assert!(
         units
             .iter()
-            .filter(|unit| unit.dest_path.as_deref() == Some(folder))
+            .filter(|unit| unit.dest_path.as_ref().map(|p| p.as_str()) == folder.to_str())
             .all(|unit| unit.dest_identity.is_none()),
         "the folder that was there claims no node: {units:?}"
     );

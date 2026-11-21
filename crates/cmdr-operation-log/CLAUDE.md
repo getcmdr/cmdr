@@ -32,8 +32,9 @@ The full text of each, with its why: DETAILS § "Must-knows, in full".
 - **A multi-operation undo reverses NEWEST FIRST** (`undo_order`); callers pass ids in APPLY order.
 - **Rollback FAILS SAFE**: recheck each item against its snapshot AND its restore target (a copy: its original; a row
   that recorded one: the node it landed as; a tag write: the exact bytes it left); drift, unverifiable, an occupied
-  target, or a gone original ⇒ SKIP, never operate. `verify_snapshot` + `SkipReason` + `SkipTally` are SHARED with the
-  in-flight reversals: ❌ don't fork them. `rolling_back` guards double-rollback and the retention race.
+  target, a gone original, or a stored path the typed reading refuses (`UnreadablePath`) ⇒ SKIP, never operate.
+  `verify_snapshot` + `SkipReason` + `SkipTally` are SHARED with the in-flight reversals: ❌ don't fork them.
+  `rolling_back` guards double-rollback and the retention race.
 - **The planner PLANS; an injected `RollbackRunner` acts.** Pause parks BEFORE the item is verified, and a reversal's
   "should I stop?" is `StopMeans`, ❌ NOT `is_cancelled`.
 - **Op ids are UUIDv7 (`new_operation_id`)**, ❌ never v4: only v7 sorts by time.
