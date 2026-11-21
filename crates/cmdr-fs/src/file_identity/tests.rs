@@ -144,6 +144,34 @@ mod by_path {
     }
 
     #[test]
+    fn two_items_in_one_folder_share_a_device_and_a_missing_one_cant_say() {
+        let dir = tempfile::tempdir().unwrap();
+        let (file, folder) = (dir.path().join("a.txt"), dir.path().join("sub"));
+        fs::write(&file, b"x").unwrap();
+        fs::create_dir(&folder).unwrap();
+
+        assert!(device_at(&file).is_some(), "a local file has a device");
+        assert_eq!(same_device_at(&file, &folder), Sameness::Same);
+        // Windows keys `device_at` by the volume's GUID or share, not the serial a `FileId` holds.
+        #[cfg(unix)]
+        assert_eq!(device_at(&file), FileId::at(&file, Follow::Links).map(FileId::device));
+        assert_eq!(same_device_at(&file, &dir.path().join("missing")), Sameness::Unknown);
+    }
+
+    #[test]
+    fn a_hidden_identity_hides_its_device_by_path() {
+        let dir = tempfile::tempdir().unwrap();
+        let (a, b) = (dir.path().join("a"), dir.path().join("b"));
+        fs::write(&a, b"1").unwrap();
+        fs::write(&b, b"2").unwrap();
+        {
+            let _hidden = hide_identity_of(&[&a]);
+            assert_eq!(same_device_at(&a, &b), Sameness::Unknown);
+        }
+        assert_eq!(same_device_at(&a, &b), Sameness::Same);
+    }
+
+    #[test]
     fn a_hidden_identity_hides_from_the_path_reader_too() {
         let dir = tempfile::tempdir().unwrap();
         let (a, b) = (dir.path().join("a"), dir.path().join("b"));

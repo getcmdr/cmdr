@@ -17,6 +17,7 @@ mod imp;
 const _: fn(&Metadata) -> Option<FileId> = file_id;
 const _: fn(&Path, Follow) -> std::io::Result<Option<FileId>> = file_id_at;
 const _: fn(&Metadata) -> Option<DeviceId> = device_of;
+const _: fn(&Path) -> Option<DeviceId> = device_at;
 const _: fn(&Metadata) -> Option<u64> = link_count;
 
 /// The node `metadata` describes, or `None` where this OS's metadata carries no id.
@@ -28,6 +29,10 @@ pub(super) use imp::file_id_at;
 
 /// The device `metadata`'s node lives on, or `None` where this OS's metadata doesn't say.
 pub(super) use imp::device_of;
+
+/// The device the node at a path lives on, links followed, or `None` when the path can't be
+/// read or this OS gives no device.
+pub(super) use imp::device_at;
 
 /// The node's name count, or `None` where this OS's metadata doesn't say.
 pub(super) use imp::link_count;

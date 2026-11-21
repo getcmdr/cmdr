@@ -424,3 +424,11 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   arguments instead); and a failing proptest writes `proptest-regressions/` into the checkout, which goes before handing
   the pair back (the directory also holds tracked files, so restore it with `git checkout --` after). `cmdr-m6` is back
   on `origin/main`, clean.
+- **2026-11-21, task 35's mount table** (the warm pair, `CARGO_BUILD_JOBS=2`, suites elevated through
+  `run-on-desktop.sh`): `cargo nextest run -p cmdr-fs -p cmdr-operations` 149 red on `main` (`ea4e561e0a`), 112 with
+  `cmdr-local` added on the branch (`45d5fcee5c`), none newly red (`windows-test-failures.md` § "By milestone"); a debug
+  app build 13m 18s warm. On the desktop, driven through Cmdr's own MCP server (`CMDR_MCP_DIRECT_MODE=1` lets
+  `dialog_confirm` run): a move from `C:` to `D:` and a folder Overwrite land, and a move within `C:` is refused before
+  the engine by an unanchored destination (`real-windows-check-2026-11-19.md` § "Task 35's mount table on the desktop").
+  Gotcha: `nav_to_path` across drives can time out its 2 s existence check while the index walks `C:`; `select_volume`
+  first, then `nav_to_path`, lands. `cmdr-m6` is back on `origin/main`, clean.

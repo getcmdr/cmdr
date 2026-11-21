@@ -28,13 +28,14 @@ included, § "One-pass sequential extract"). Only the layout facts that none of 
   wrapper journals the op canceled rather than done. Pinned by
   `move_op_tests.rs::a_rollback_clicked_as_the_last_item_lands_puts_the_move_back`. Pre-flight scan, dry-run,
   disk-space, and bulk-skip filtering stay OUTSIDE the driver, in `copy/mod.rs`.
-- **`move_op/` splits the local move by engine**: `mod.rs` picks between them on `is_same_filesystem` and owns what both
-  need (`MoveTransaction`, `move_resolved_into_place`, `merge_move_directory` — the last is written for two callers at
-  once), `same_fs.rs` holds the `rename(2)` engine, `cross_fs.rs` the five-phase staging engine, and `source_sweep.rs`
-  its Phase 4 (the ledger-driven source delete). Both engine tests all attach to `mod.rs`, so each can reach both
-  engines: `move_op/move_op_tests.rs` (engine behavior), `move_op/move_source_sweep_tests.rs` (what Phase 4 may remove),
-  `move_op/safety_matrix_tests.rs` (one data-safety invariant swept over both engines × every resolution), and
-  `move_op/move_journal_tests.rs` (the journal + reversal full loop), over the rig in `move_op/test_support.rs`.
+- **`move_op/` splits the local move by engine**: `mod.rs` picks between them on `is_same_filesystem` (one device; on
+  Windows read by path, `cmdr_fs::file_identity::same_device_at`, since `Metadata` carries no device there) and owns
+  what both need (`MoveTransaction`, `move_resolved_into_place`, `merge_move_directory` — the last is written for two
+  callers at once), `same_fs.rs` holds the `rename(2)` engine, `cross_fs.rs` the five-phase staging engine, and
+  `source_sweep.rs` its Phase 4 (the ledger-driven source delete). Both engine tests all attach to `mod.rs`, so each can
+  reach both engines: `move_op/move_op_tests.rs` (engine behavior), `move_op/move_source_sweep_tests.rs` (what Phase 4
+  may remove), `move_op/safety_matrix_tests.rs` (one data-safety invariant swept over both engines × every resolution),
+  and `move_op/move_journal_tests.rs` (the journal + reversal full loop), over the rig in `move_op/test_support.rs`.
 - **`volume/` holds the whole cross-volume engine and is a facade** (`volume/mod.rs`): copy phases (`copy.rs` + the two
   drivers, serial in `copy_serial.rs` and concurrent across `copy_concurrent{,_source,_task}.rs`), move (`move.rs`,
   declared `mod r#move;` because `move` is a keyword, and only the strategy dispatcher; the cross-volume

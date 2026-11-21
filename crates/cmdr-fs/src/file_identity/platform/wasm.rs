@@ -17,6 +17,10 @@ pub(crate) fn device_of(_metadata: &Metadata) -> Option<DeviceId> {
     None
 }
 
+pub(crate) fn device_at(_path: &Path) -> Option<DeviceId> {
+    None
+}
+
 pub(crate) fn link_count(_metadata: &Metadata) -> Option<u64> {
     None
 }

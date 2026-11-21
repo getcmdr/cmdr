@@ -46,11 +46,12 @@ Every drive letter, folder mount, and mapped share is its own volume (plan D1), 
 a mapped drive and its UNC spelling on `(server, 445, share)`, a `subst` drive on its path. The ladder and the drive
 table's pure rules (`covering_drive`, `display_name`) are `cmdr_fs::volume::windows_volume_ids`, tested on every OS.
 
-- **The drive table** (`platform/windows/drives.rs::enumerate`): `GetLogicalDriveStringsW` for the letters, then per
-  letter `GetDriveTypeW`, the GUID (`GetVolumeNameForVolumeMountPointW`), the `subst` target (`QueryDosDeviceW`), a
-  mapped drive's share (`WNetGetConnectionW`, the redirector's own table, no server round trip), and for a local drive
-  only `GetVolumeInformationW` (label, filesystem, read-only). Folder mounts come from the `FindFirstVolumeW` sweep. What
-  each call answers on Windows 10 22H2 sits in that file's header, with its evidence anchor.
+- **The drive table** (`platform/windows/drives.rs::enumerate`): the letters and folder mounts from the mount table the
+  write engine's guards read too (`cmdr_local::mounts::list`: `GetLogicalDriveStringsW` and the `FindFirstVolumeW`
+  sweep), then per letter `GetDriveTypeW`, the GUID (`GetVolumeNameForVolumeMountPointW`, also each folder mount's key),
+  the `subst` target (`QueryDosDeviceW`), a mapped drive's share (`WNetGetConnectionW`, the redirector's own table, no
+  server round trip), and for a local drive only `GetVolumeInformationW` (label, filesystem, read-only). What each call
+  answers on Windows 10 22H2 sits in that file's header, with its evidence anchor.
 - **When it's read**: at startup (`register_every_mount` through `registrable_mount_roots`), on every switcher refresh
   (`list_locations` reads it fresh), and when a path names a root the cached table (2 s) doesn't hold. ❌ No arrival
   watcher yet: task 39's `CM_Register_Notification`. A drive plugged in later shows on the next refresh.

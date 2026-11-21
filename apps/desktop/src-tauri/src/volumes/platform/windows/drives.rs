@@ -19,6 +19,10 @@
 //!   with `ERROR_NOT_READY` (21); it lists no row until media is in.
 //! - `FindFirstVolumeW` also lists the EFI and recovery partitions, with no path names.
 //!
+//! The letters and folder mounts come from the mount table (`cmdr_local::mounts::list`), the
+//! same read the write engine's mount guards ask, so the drive list and the guards can't
+//! disagree on what's mounted where.
+//!
 //! ❗ `GetVolumeInformationW` is asked only of a local drive: on a mapped drive it's a
 //! network round trip, which blocks on a dead server.
 
@@ -28,11 +32,10 @@ use cmdr_fs::volume::windows_volume_ids::{
     WindowsDrive, WindowsDriveKind, WindowsVolumeIdentity, subst_target, unc_app_root, unc_server_share,
     windows_volume_id,
 };
-use windows_sys::Win32::Foundation::{ERROR_MORE_DATA, INVALID_HANDLE_VALUE, NO_ERROR};
+use windows_sys::Win32::Foundation::{ERROR_MORE_DATA, NO_ERROR};
 use windows_sys::Win32::NetworkManagement::WNet::WNetGetConnectionW;
 use windows_sys::Win32::Storage::FileSystem::{
-    FindFirstVolumeW, FindNextVolumeW, FindVolumeClose, GetDriveTypeW, GetLogicalDriveStringsW, GetVolumeInformationW,
-    GetVolumeNameForVolumeMountPointW, GetVolumePathNamesForVolumeNameW, QueryDosDeviceW,
+    GetDriveTypeW, GetVolumeInformationW, GetVolumeNameForVolumeMountPointW, QueryDosDeviceW,
 };
 
 /// `GetDriveTypeW`'s answers (`WindowsProgramming`'s constants, a feature the app doesn't
@@ -92,21 +95,33 @@ pub(super) fn unc_drive(root: &str, system_root: &str) -> Option<WindowsDrive> {
     })
 }
 
-/// The letters in use, from `GetLogicalDriveStringsW` (`C:\`, `D:\`, …).
-fn drive_letters() -> Vec<char> {
-    let mut buffer = vec![0u16; 256];
-    let len = u32::try_from(buffer.len()).unwrap_or(u32::MAX);
-    // SAFETY: `buffer` holds `len` units, and the call writes at most that many.
-    let written = unsafe { GetLogicalDriveStringsW(len, buffer.as_mut_ptr()) } as usize;
-    if written == 0 || written > buffer.len() {
-        return Vec::new();
-    }
-    String::from_utf16_lossy(&buffer[..written])
-        .split('\0')
-        .filter_map(|root| root.chars().next())
-        .filter(char::is_ascii_alphabetic)
-        .map(|letter| letter.to_ascii_uppercase())
+/// Every mount point in the mount table (`cmdr_local::mounts::list`), natively spelled with
+/// a trailing `\` (`C:\`, `C:\Mnt\Data\`), none when it can't be read.
+fn mount_points() -> Vec<String> {
+    cmdr_local::mounts::list()
+        .unwrap_or_default()
+        .iter()
+        .map(|mount| {
+            let text = mount.to_string_lossy();
+            let plain = text.strip_prefix(r"\\?\").unwrap_or(&text);
+            format!("{}\\", plain.trim_end_matches('\\'))
+        })
         .collect()
+}
+
+/// The letters in use (`C:\`, `D:\`, …), mapped and `subst` drives included.
+fn drive_letters() -> Vec<char> {
+    mount_points()
+        .iter()
+        .filter_map(|point| letter_of_root(point))
+        .collect()
+}
+
+/// The letter of a bare drive root (`D:\`), `None` for a folder mount.
+fn letter_of_root(point: &str) -> Option<char> {
+    let mut chars = point.chars();
+    let letter = chars.next().filter(char::is_ascii_alphabetic)?;
+    (chars.as_str() == r":\").then(|| letter.to_ascii_uppercase())
 }
 
 /// One drive letter's row, or `None` for one with nothing usable behind it (an empty card
@@ -160,60 +175,37 @@ fn letter_drive(letter: char, system_root: &str) -> Option<WindowsDrive> {
     })
 }
 
-/// Every volume mounted in a folder rather than (or as well as) on a letter, from the GUID
-/// sweep, which also names each volume's letters (skipped here: [`letter_drive`] has them).
+/// Every volume mounted in a folder rather than (or as well as) on a letter: the mount
+/// table's folder mounts (its letters are [`letter_drive`]'s), each keyed by the GUID path of
+/// the volume mounted there.
 fn folder_mounts(system_root: &str) -> Vec<WindowsDrive> {
     let mut out = Vec::new();
-    let mut name = [0u16; GUID_PATH_LEN];
-    // SAFETY: `name` holds `GUID_PATH_LEN` units.
-    let handle = unsafe { FindFirstVolumeW(name.as_mut_ptr(), GUID_PATH_LEN as u32) };
-    if handle == INVALID_HANDLE_VALUE {
-        return out;
-    }
-    loop {
-        let guid_path = from_wide(&name);
-        for path in volume_path_names(&name) {
-            let app = path.replace('\\', "/");
-            let app = app.trim_end_matches('/');
-            let is_letter_root = app.len() == 2;
-            if is_letter_root || app.is_empty() {
-                continue;
-            }
-            let native_root = wide(&path);
-            let Some(info) = volume_information(&native_root) else {
-                continue;
-            };
-            // SAFETY: `native_root` is NUL-terminated.
-            let kind = match unsafe { GetDriveTypeW(native_root.as_ptr()) } {
-                DRIVE_REMOVABLE => WindowsDriveKind::Removable,
-                DRIVE_CDROM => WindowsDriveKind::Optical,
-                _ => WindowsDriveKind::Fixed,
-            };
-            let root = uppercase_drive(app);
-            out.push(WindowsDrive {
-                id: windows_volume_id(
-                    &root,
-                    &WindowsVolumeIdentity::Local {
-                        guid_path: guid_path.clone(),
-                    },
-                    system_root,
-                ),
-                root,
-                kind,
-                label: info.label,
-                share_root: None,
-                is_alias: false,
-                fs_type: info.fs_type,
-                read_only: info.read_only,
-            });
+    for path in mount_points() {
+        if letter_of_root(&path).is_some() {
+            continue;
         }
-        // SAFETY: `handle` came from `FindFirstVolumeW`; `name` holds `GUID_PATH_LEN` units.
-        if unsafe { FindNextVolumeW(handle, name.as_mut_ptr(), GUID_PATH_LEN as u32) } == 0 {
-            break;
-        }
+        let native_root = wide(&path);
+        let (Some(guid_path), Some(info)) = (volume_guid_path(&native_root), volume_information(&native_root)) else {
+            continue;
+        };
+        // SAFETY: `native_root` is NUL-terminated.
+        let kind = match unsafe { GetDriveTypeW(native_root.as_ptr()) } {
+            DRIVE_REMOVABLE => WindowsDriveKind::Removable,
+            DRIVE_CDROM => WindowsDriveKind::Optical,
+            _ => WindowsDriveKind::Fixed,
+        };
+        let root = uppercase_drive(path.replace('\\', "/").trim_end_matches('/'));
+        out.push(WindowsDrive {
+            id: windows_volume_id(&root, &WindowsVolumeIdentity::Local { guid_path }, system_root),
+            root,
+            kind,
+            label: info.label,
+            share_root: None,
+            is_alias: false,
+            fs_type: info.fs_type,
+            read_only: info.read_only,
+        });
     }
-    // SAFETY: `handle` came from `FindFirstVolumeW` and is closed once, here.
-    unsafe { FindVolumeClose(handle) };
     out
 }
 
@@ -224,37 +216,6 @@ fn uppercase_drive(app: &str) -> String {
         Some(letter) => letter.to_ascii_uppercase().to_string() + chars.as_str(),
         None => String::new(),
     }
-}
-
-/// Every path the volume GUID path in `name` is mounted at (`C:\`, `C:\mnt\data\`).
-fn volume_path_names(name: &[u16]) -> Vec<String> {
-    let mut buffer = vec![0u16; 1024];
-    let mut needed = 0u32;
-    for _ in 0..2 {
-        // SAFETY: `name` is NUL-terminated (the buffer `FindFirstVolumeW` filled), `buffer`
-        // holds its length in units, and `needed` is a valid out pointer.
-        let ok = unsafe {
-            GetVolumePathNamesForVolumeNameW(
-                name.as_ptr(),
-                buffer.as_mut_ptr(),
-                u32::try_from(buffer.len()).unwrap_or(u32::MAX),
-                &mut needed,
-            )
-        };
-        if ok != 0 {
-            let end = (needed as usize).min(buffer.len());
-            return String::from_utf16_lossy(&buffer[..end])
-                .split('\0')
-                .filter(|path| !path.is_empty())
-                .map(str::to_string)
-                .collect();
-        }
-        if needed as usize <= buffer.len() {
-            break;
-        }
-        buffer = vec![0u16; needed as usize];
-    }
-    Vec::new()
 }
 
 /// What `GetVolumeInformationW` says about a local volume.
