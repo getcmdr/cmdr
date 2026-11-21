@@ -10,8 +10,10 @@ failures "cause unread" (their output names no cause), and this note reads them.
   66 timed out, 669 skipped (612 s of tests after a cold build). Against `app-path-baseline.md`: 3 turned green, 10
   newly red (two crash-reporter cells that time out; the rest sit in the clusters below).
 - **The record**: `windows-test-failures.tsv` beside this note, one line per failure (crate, test, cluster, whether the
-  cluster was read from its output or inherited, first panic line), from `scripts/windows-test-baseline` (`tsv`). The
-  raw log and JUnit report stay on the builder (`D:\logs\triage\run2.log`, `main-junit.xml`).
+  cluster was read from its output or inherited, first panic line), from `scripts/windows-test-baseline` (`tsv`), plus a
+  hand-kept sixth column, `rerun`: the latest builder run that re-ran the cell, as `green@<commit>` or
+  `red@<commit>: <cause>`, empty where none has. The raw log and JUnit report stay on the builder
+  (`D:\logs\triage\run2.log`, `main-junit.xml`).
 - **How the causes were read**: the tool's classifier reads each failure's output (its rules now cover every cluster
   below); a failure whose output names nothing takes its nearest classified sibling's cluster and is marked `unread`.
   For the unread ones, one or two per module were read by hand against the test's source (§ "Read by hand").
@@ -94,12 +96,36 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
   `mutation_test::delete_removes_a_file_an_empty_folder_and_a_link_but_never_recurses` (an NFS status mapped to Win32's
   145 where Linux's `ENOTEMPTY` 41 is expected; the baseline saw it fail earlier, on a path), and `cmdr-s3`'s
   `nanoseconds_survive_and_trailing_zeros_drop` (100 ns `SystemTime`). `apply_metadata_dates_and_modes_a_folder` passes.
-- **7, device backends**: 66 (`cmdr-adb` 51, `cmdr-smb` 13, `cmdr-mtp` 2). Converted 2026-11-21 (PR #1302), no builder
-  run yet: expected green.
+- **7 and 8, seen on the builder** (2026-11-21, `main` at `97befe7c07` with both merged, in `D:\src\cmdr-m6` with
+  `CARGO_TARGET_DIR=D:\targets\m6`, elevated through `run-on-desktop.sh`, `--profile windows-baseline` over the nine
+  crates, 0 self-skipped): 2,095 tests, 2,089 passed, 5 failed, 1 timed out, 199 skipped (the Docker cells). Per crate,
+  this note's run against now: `cmdr-adb` 52 → 3 (170 tests), `cmdr-smb` 13 → 0 (243), `cmdr-mtp` 2 → 0 (205),
+  `cmdr-restic` 67 → 1 (150; the 22 link-fixture cells and the hub timeouts pass), `cmdr-viewer` 13 → 1 (402),
+  `cmdr-archive` 11 → 0 (229; the two zip-creator cells too, fixed with this note), `cmdr-operation-log` 3 → 0 (175),
+  `cmdr-listing` 3 → 1 (385), `cmdr-git` 0 → 0 (136, the un-ignored cell passes). No cell newly red: all six were in the
+  TSV. The six, by cause:
+  - `cmdr-viewer wire_characterization_test::a_markdown_session_renders_and_resolves_links_in_these_shapes` (P in the
+    TSV, really N): the test opened its tempdir file by native text (`C:\…`), which `from_wire` refuses, so the document
+    had no app path and its `pic.png` read `blocked`. Fixed in the test (`26e751e85c`, the helpers send the app
+    spelling); `cmdr-viewer` 402 of 402 on the builder after.
+  - `cmdr-adb volume::conformance_test::create_directory_all_refuses_a_file_in_the_way` and
+    `create_directory_all_goes_through_a_link_to_a_folder` (S): not ADB's code. The shared assertions
+    (`cmdr-fs/src/volume/conformance/directory_creation.rs`) build `file.join("inside")` with `std::path`, so they ask
+    for `adb://…/sdcard/notes.txt\inside`, one legal sibling name on a phone, and ADB rightly creates it. Milestone 11's
+    (the conformance suite's `std::path` fixtures, `app-path-plan.md` milestone 8's "What still bridges").
+  - `cmdr-restic read_stream::tests::the_chunks_come_out_in_order` (S in the TSV, now a timeout): no path cause left. It
+    reads its 6 MiB backup whole in a debug build; alone it passes (both `read_stream` cells serially in 9.2 s), and
+    under nextest's parallel load on the 2-core box it runs past the 8 s cap (its sibling took 6.0 and 7.3 s). The
+    builder's speed, not Windows.
+  - `cmdr-listing stall_test::a_read_that_never_answers_reports_the_listing_stalled_within_the_deadline` (P): expected,
+    its fixture reads `/` as a local disk.
+  - `cmdr-adb errors::errors_test::an_unlisted_device_errno_arrives_as_its_linux_class`: expected, § "A Linux errno read
+    through the host's codes".
+- **7, device backends**: 66 (`cmdr-adb` 51, `cmdr-smb` 13, `cmdr-mtp` 2), converted 2026-11-21 (PR #1302). 64 green on
+  the builder; the two left are the conformance suite's (above).
 - **8, virtual volumes and leaf crates**: 72 (`cmdr-restic` 45 with its 5 hub timeouts, `cmdr-viewer` 13, `cmdr-archive`
-  9, `cmdr-operation-log` 3, `cmdr-listing` 2). Converted (2026-11-21, PR #1303), not yet run on the builder: every cell
-  but the two `cmdr-archive` zip-creator cells, the `symlink` skips, and `cmdr-listing`'s
-  `stall_test::a_read_that_never_answers_reports_the_listing_stalled_within_the_deadline` (P) is expected green;
+  9, `cmdr-operation-log` 3, `cmdr-listing` 2), converted 2026-11-21 (PR #1303). All green on the builder but the
+  `read_stream` timeout and the `stall_test` cell (above), with the viewer's last cell after its test fix;
   `cmdr-viewer`'s `the_browser_url_conversions_answer_what_url_does` is gone with the wasm text twin it tested.
 - **9, `cmdr-local`**: none of its own; it's the native crossing 10a–10d wait on. Done (2026-11-19, in `D:\src\cmdr-m9`,
   `cargo nextest run -p cmdr-local`): 30 of 30 before on `main` (`a4449b5cb7`), 40 of 40 after on the branch

@@ -392,3 +392,7 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   failures were fixed and re-run on `968733ae7f` (see-through Settings and queue, no ring after a lone Alt, focus
   stranded on a title). Per-check evidence and the open problems (a Copy dialog that refuses every local copy first):
   `docs/notes/windows-port/real-windows-check-2026-11-19.md`.
+- **2026-11-21, app-path milestones 7 and 8 on the builder** (`main` at `97befe7c07`, the warm pair `D:\src\cmdr-m6` +
+  `D:\targets\m6`, 9 min warm for nine crates): 2,095 tests, 6 red where `windows-test-failures.tsv` had 164; per crate
+  and per cause in `docs/notes/windows-port/windows-test-failures.md` § "By milestone". Elevated through
+  `run-on-desktop.sh --elevated`, a run holds the symlink privilege, so nothing skipped itself.
