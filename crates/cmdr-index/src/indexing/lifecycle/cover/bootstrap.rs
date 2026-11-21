@@ -369,6 +369,10 @@ pub(super) fn ensure_walkable(context: &CoverContext, ground: &Ground, root: &st
     }
     while let Some(component) = components.next() {
         push_name(&mut on_disk, component);
+        // The drive's own row stats `D:/`: a bare `D:` is that drive's CURRENT directory.
+        if crate::indexing::paths::path_prefix::is_drive_name(&on_disk) {
+            on_disk.push('/');
+        }
         let is_root = components.peek().is_none();
         parent_id = match IndexStore::resolve_component(&conn, parent_id, component)
             .map_err(|e| NotWalkable::Store(e.to_string()))?

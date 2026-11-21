@@ -216,12 +216,17 @@ pub(crate) fn join_volume_relative(volume_root: &str, relative: &str) -> String 
     let trimmed_root = volume_root.trim_end_matches('/');
     let trimmed_relative = relative.trim_start_matches('/');
     // Under the `/` root, a Windows drive's text is already absolute (`D:/src`), and a
-    // `/` in front of it would name no place.
+    // `/` in front of it would name no place. The drive alone is its root, `D:/`: a bare
+    // `D:` is that drive's CURRENT directory to Win32.
     if trimmed_root.is_empty()
         && let Some(first) = trimmed_relative.split('/').next()
         && super::path_prefix::is_drive_name(first)
     {
-        return trimmed_relative.to_string();
+        return if trimmed_relative == first {
+            format!("{first}/")
+        } else {
+            trimmed_relative.to_string()
+        };
     }
     if trimmed_relative.is_empty() {
         // The volume root itself, spelled without a trailing slash like every other
@@ -299,5 +304,22 @@ mod tests {
 
         // The boot disk (APFS) is always trustworthy.
         assert!(IndexPathSpace::root().inodes_trustworthy());
+    }
+
+    /// Under the `/` root a Windows drive's text is absolute already, and the drive alone
+    /// joins to its root `D:/` (a bare `D:` is the drive's current directory to Win32). On
+    /// macOS and Linux a top-level `D:` is a folder, joined like any other.
+    #[test]
+    fn a_drive_under_the_slash_root_joins_to_its_own_root() {
+        let windows = cmdr_fs::app_path::PathFlavor::HOST == cmdr_fs::app_path::PathFlavor::Windows;
+        let (drive, deep) = if windows { ("D:/", "D:/src") } else { ("/D:", "/D:/src") };
+        assert_eq!(join_volume_relative("/", "D:"), drive);
+        if windows {
+            assert_eq!(join_volume_relative("/", "D:/"), "D:/");
+        }
+        assert_eq!(join_volume_relative("/", "D:/src"), deep);
+        assert_eq!(join_volume_relative("/", "/Users/x"), "/Users/x");
+        assert_eq!(join_volume_relative("/", ""), "/");
+        assert_eq!(join_volume_relative("/Volumes/USB/", "/a"), "/Volumes/USB/a");
     }
 }

@@ -135,7 +135,10 @@ fn a_native_name_the_app_path_cant_hold_keeps_its_lossy_row_and_is_counted() {
     // A literal escape-range code point is Unicode text the app path would escape: kept.
     let literal = "/Volumes/x\u{10FEE9}";
     assert_eq!(native_text(Path::new(literal)), literal);
-    assert!(names_kept_lossy() >= before + 3, "each one is counted");
+    assert_eq!(native_name(OsStr::new("x\u{10FEE9}")), "x\u{10FEE9}");
+    // Counted where a row's NAME crosses, once each: a lossy folder makes every path under
+    // it lossy, so the paths above don't count.
+    assert!(names_kept_lossy() >= before + 2, "each name is counted");
 }
 
 #[cfg(windows)]

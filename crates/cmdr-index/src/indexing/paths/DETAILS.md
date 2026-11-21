@@ -211,18 +211,21 @@ and `Path::file_name` split on one).
   headed for index text: on Windows it spells `D:\x`, which no root, strip, or `resolve_path` (all splitting on `/`)
   reads, so rows landed as `D:\src\…` names or not at all (#1232). `native_text` crosses through
   `AppPathBuf::from_native_unicode` (`D:\x` → `D:/x`, `\\?\D:\x` → `D:/x`).
-  - **Byte-exact on macOS and Linux, and free**: the native text of a Unicode path IS its app text, so it's borrowed as
-    is, with no allocation, and a non-canonical shape (a trailing `/`, `//`) stays as spelled, as the index always
-    stored it. On Windows a path already spelled with `/` is borrowed too; a `\` one allocates its respelling. The
-    escape check is one byte scan for `0xF4` (every escape code point sits in plane 16). Verified on macOS 27
+  - **Byte-exact on macOS and Linux, and free**: there `native_text` IS `to_string_lossy`, by construction (the native
+    text of a Unicode path is its app text, a non-canonical shape such as a trailing `/` or `//` stays as spelled, and a
+    path the app path can't hold keeps the lossy text either way), so the walk pays what it always did. `native_name`
+    adds one byte scan for `0xF4` per name (every escape code point sits in plane 16) to count the lossy ones. On
+    Windows a path already spelled with `/` is borrowed; a `\` one allocates its respelling. Verified on macOS 27
     (2026-11-21, a throwaway harness against `to_string_lossy`): 2,000,000 generated paths (NFC and NFD, `\`, `:`,
     invalid bytes, literal escape code points, `//`, a trailing `/`) and 1,713,933 names, 0 differ; 3,011,023 real paths
     under a home folder and Dropbox (539 non-ASCII, 329 NFD), 0 differ, every one borrowed. Folded names are computed
     from those same bytes, so they match too.
   - **A name the app path can't hold yet** (not Unicode text, or a literal escape-range code point, while
     `cmdr_fs::app_path::ESCAPES_LIVE` is false) keeps today's lossy row and is COUNTED (`names_kept_lossy`, logged once
-    and at each walk's end), ❌ never dropped. Milestone 10f swaps in `from_native`, which escapes it, and the row's
-    name changes once (one remove, one add, then convergence).
+    and at each walk's end), ❌ never dropped. Counted at the NAME crossing only (`native_name`), once per crossing: a
+    path under a lossy folder is lossy too, and the walker crosses each child's path and name both, so counting paths
+    would report one odd name as thousands. Milestone 10f swaps in `from_native`, which escapes it, and the row's name
+    changes once (one remove, one add, then convergence).
 - **Text put back together from names**: `path_prefix::rooted`, the one join every helper that rebuilds a path uses
   (`store`'s `reconstruct_path`, `capped_prefix`, `deepest_common_ancestor`), and `compute_parent_path` and
   `self_and_ancestors` stop at the same root. On Windows a first name that is a drive (`D:`) roots the text at `D:/`, so
