@@ -4,12 +4,11 @@
 use crate::ResticVolume;
 use crate::hub::{ResticRepos, Tuning};
 use crate::path::VIRTUAL_ENTRY_NAME;
-use crate::test_fixtures::{self, FixtureRepo};
-use cmdr_fs::app_path::AppPath;
+use crate::test_fixtures::{self, FixtureRepo, app, path_in};
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::testing::{TestDir, wait_until_async};
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
@@ -41,28 +40,30 @@ fn noise() -> Vec<u8> {
 
 /// A repo holding `big.bin` on a remote-style parent, unlocked, and the file's
 /// path in `latest`.
-async fn big_file() -> (TestDir, Arc<InMemoryVolume>, ResticVolume, PathBuf) {
+async fn big_file() -> (TestDir, Arc<InMemoryVolume>, ResticVolume, AppPathBuf) {
     let source = TestDir::new("restic_read_ahead_source");
     std::fs::write(source.join("big.bin"), noise()).expect("source file");
     let fixture = FixtureRepo::init(PASSWORD);
     fixture.backup(&source, SystemTime::now());
     let parent = Arc::new(InMemoryVolume::new("share"));
-    fixture.write_into(parent.as_ref(), Path::new(ROOT)).await;
+    let root = app(ROOT);
+    fixture.write_into_at(parent.as_ref(), &root).await;
     let hub = Arc::new(ResticRepos::with_tuning(VolumeHost::detached(), Tuning::default()));
-    let volume = ResticVolume::new(
-        hub,
-        "smb-share",
-        Arc::clone(&parent) as Arc<dyn Volume>,
-        PathBuf::from(ROOT),
-    );
+    let volume = ResticVolume::new_at(hub, "smb-share", Arc::clone(&parent) as Arc<dyn Volume>, root);
     assert!(test_fixtures::unlock(&volume, PASSWORD).await);
-    let canonical = std::fs::canonicalize(&*source).expect("canonical source");
-    let path = Path::new(ROOT)
-        .join(VIRTUAL_ENTRY_NAME)
-        .join("latest")
-        .join(canonical.strip_prefix("/").expect("absolute"))
-        .join("big.bin");
-    (source, parent, volume, path)
+    // The backup holds the source under its own absolute path, spelled the way
+    // the OS that made it spells it: walk down to it rather than rebuild it.
+    let mut dir = path_in(&app(ROOT), &format!("{VIRTUAL_ENTRY_NAME}/latest"));
+    loop {
+        let entries = volume.list_directory(&dir, None).await.expect("lists");
+        if entries.iter().any(|e| e.name == "big.bin") {
+            return (source, parent, volume, path_in(&dir, "big.bin"));
+        }
+        let [only] = entries.as_slice() else {
+            panic!("{dir:?} should hold one folder on the way down: {entries:?}");
+        };
+        dir = path_in(&dir, &only.name);
+    }
 }
 
 /// One chunk handed out, and the pack reads behind the next ones already
@@ -70,10 +71,7 @@ async fn big_file() -> (TestDir, Arc<InMemoryVolume>, ResticVolume, PathBuf) {
 #[tokio::test(flavor = "multi_thread")]
 async fn the_stream_reads_the_next_chunks_before_they_are_asked_for() {
     let (_source, parent, volume, path) = big_file().await;
-    let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(&path))
-        .await
-        .expect("opens");
+    let mut stream = volume.open_read_stream(&path).await.expect("opens");
     let before = parent.read_range_log().len();
 
     let first = stream.next_chunk().await.expect("a chunk").expect("reads");
@@ -97,10 +95,7 @@ async fn the_stream_reads_the_next_chunks_before_they_are_asked_for() {
 #[tokio::test(flavor = "multi_thread")]
 async fn the_chunks_come_out_in_order() {
     let (_source, _parent, volume, path) = big_file().await;
-    let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(&path))
-        .await
-        .expect("opens");
+    let mut stream = volume.open_read_stream(&path).await.expect("opens");
     let mut out = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         out.extend_from_slice(&chunk.expect("a chunk"));

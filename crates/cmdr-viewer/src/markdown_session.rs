@@ -11,6 +11,8 @@
 //! call, and the images load after it.
 
 use std::path::{Path, PathBuf};
+
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathFlavor, PathKind};
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
@@ -57,8 +59,9 @@ pub(super) fn is_markdown(requested: &Path, opened: &OpenedFile) -> bool {
 
 /// What a Markdown open hands over: the file as the text path would have opened it.
 pub(super) struct MarkdownOpen {
-    /// The path the viewer was asked for, on `volume_id`.
-    pub(super) requested: PathBuf,
+    /// The path the viewer was asked for, on `volume_id`, as an app path (`None` when the
+    /// type refuses its text).
+    pub(super) requested: Option<AppPathBuf>,
     pub(super) volume_id: String,
     /// What the session reads: `requested`, or the temp copy of it.
     pub(super) file_path: PathBuf,
@@ -139,7 +142,7 @@ impl Viewer {
             (document, session.open_file()?)
         };
         let text = read_document(&opened)?;
-        let volume_root = self.volume_root(document.volume_id());
+        let volume_root = self.volume_root(document.volume_id(), document.path());
 
         document.drop_images();
         let for_images = Arc::clone(&document);
@@ -167,7 +170,7 @@ impl Viewer {
         Ok(resolve_link(
             href,
             document.path(),
-            &self.volume_root(document.volume_id()),
+            &self.volume_root(document.volume_id(), document.path()),
         ))
     }
 
@@ -184,12 +187,12 @@ impl Viewer {
     }
 
     /// The root of the volume a document lives on, which its relative references can't climb
-    /// past. The local drive's `/` when the volume is gone.
-    fn volume_root(&self, volume_id: &str) -> PathBuf {
-        self.host().volumes.get(volume_id).map_or_else(
-            || PathBuf::from("/"),
-            |volume| volume.root().as_std_legacy().to_path_buf(),
-        )
+    /// past. The local disk's root when the volume is gone ([`local_root`]).
+    fn volume_root(&self, volume_id: &str, document: Option<&AppPath>) -> AppPathBuf {
+        self.host()
+            .volumes
+            .get(volume_id)
+            .map_or_else(|| local_root(document), |volume| volume.root().to_owned())
     }
 
     /// Lets this session's document load its web images. Until it's called, a remote
@@ -201,6 +204,16 @@ impl Viewer {
         })?;
         markdown_of(session, session_id)?.allow_remote_images();
         Ok(())
+    }
+}
+
+/// The root a document resolves under when its volume is gone: the local disk's. That's
+/// `/`, or on Windows the document's own drive or share (a POSIX host's wire text never
+/// spells one).
+fn local_root(document: Option<&AppPath>) -> AppPathBuf {
+    match document {
+        Some(document) if matches!(document.kind(), PathKind::Drive | PathKind::Unc) => document.root().to_owned(),
+        _ => AppPathBuf::parse("/", PathFlavor::Posix).unwrap_or_else(|_| unreachable!("`/` is an app path")),
     }
 }
 

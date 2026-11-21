@@ -145,11 +145,11 @@ impl ListingVolumes for OneVolume {
 async fn engine_with(index: Arc<ScriptedIndex>, routed: Option<RoutedKind>) -> Listings {
     let volume = InMemoryVolume::new("sized");
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(DIR)))
+        .create_directory(crate::testing::app(DIR))
         .await
         .expect("create the listed folder");
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(FOLDER)))
+        .create_directory(crate::testing::app(FOLDER))
         .await
         .expect("create the subfolder");
     let engine = Listings::builder(

@@ -8,10 +8,9 @@
 //! drive; the app's real table is its own cell (`listing_host/mounts.rs`).
 
 use cmdr_fs::app_path::AppPath;
-use cmdr_fs::app_path::BridgedPath;
 use std::collections::VecDeque;
 use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -59,7 +58,7 @@ struct Step {
 
 /// A volume whose reads block like a hung kernel mount until `server_back` flips.
 struct SilentServerVolume {
-    root: BridgedPath,
+    root: &'static AppPath,
     server_back: watch::Receiver<bool>,
     /// What each read does, in call order; the last step repeats.
     script: Mutex<VecDeque<Step>>,
@@ -71,7 +70,7 @@ struct SilentServerVolume {
 impl SilentServerVolume {
     fn new(server_back: watch::Receiver<bool>, script: Vec<Step>) -> Self {
         Self {
-            root: BridgedPath::new(PathBuf::from("/")),
+            root: cmdr_fs::app_path!("/"),
             server_back,
             script: Mutex::new(script.into()),
             calls: AtomicUsize::new(0),
@@ -113,7 +112,7 @@ impl Volume for SilentServerVolume {
     }
 
     fn root(&self) -> &AppPath {
-        self.root.app()
+        self.root
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -432,7 +431,7 @@ async fn reads_on_a_hung_volume_stay_bounded_however_many_listings_start() {
 /// A slow read that ticks every third of the stall deadline, with whatever
 /// `tick` reports for step `n`, and then lists `STEPS` entries.
 struct SlowButSteady {
-    root: BridgedPath,
+    root: &'static AppPath,
     tick: fn(usize) -> ListingProgress,
 }
 
@@ -445,7 +444,7 @@ impl Volume for SlowButSteady {
         "Slow but steady"
     }
     fn root(&self) -> &AppPath {
-        self.root.app()
+        self.root
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
@@ -492,7 +491,7 @@ async fn list_slow_but_steady(tick: fn(usize) -> ListingProgress, name: &str) ->
     engine.volumes.register(
         &volume_id,
         Arc::new(SlowButSteady {
-            root: BridgedPath::new(PathBuf::from("/")),
+            root: cmdr_fs::app_path!("/"),
             tick,
         }) as Arc<dyn Volume>,
     );

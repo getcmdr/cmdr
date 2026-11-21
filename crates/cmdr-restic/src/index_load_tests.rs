@@ -5,10 +5,9 @@
 
 use super::{INDEX_DECODERS, Load, LoadSpec};
 use crate::repo::IndexedRepo;
-use crate::test_fixtures::FixtureRepo;
+use crate::test_fixtures::{FixtureRepo, app, path_in};
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
 use zeroize::Zeroizing;
@@ -35,7 +34,7 @@ async fn fixture() -> IndexedFixture {
         repo.backup(&source, UNIX_EPOCH + Duration::from_secs(1_791_000_000 + i * 3_600));
     }
     let parent = Arc::new(InMemoryVolume::new("testshare"));
-    repo.write_into(parent.as_ref(), Path::new(ROOT)).await;
+    repo.write_into_at(parent.as_ref(), &app(ROOT)).await;
     let index_sizes = repo
         .files()
         .into_iter()
@@ -52,7 +51,7 @@ async fn fixture() -> IndexedFixture {
 async fn load(fixture: &IndexedFixture, window: u64) -> Arc<IndexedRepo> {
     let spec = LoadSpec {
         parent: Arc::clone(&fixture.parent),
-        root: PathBuf::from(ROOT),
+        root: app(ROOT),
         password: Zeroizing::new(PASSWORD.to_string()),
         runtime: tokio::runtime::Handle::current(),
         window,
@@ -127,7 +126,7 @@ async fn rustic_decodes_the_index_on_the_loads_own_pool() {
 #[tokio::test(flavor = "multi_thread")]
 async fn a_read_whose_task_runs_after_the_cancel_opens_nothing() {
     let fixture = fixture().await;
-    let dir = Path::new(ROOT).join("index");
+    let dir = path_in(&app(ROOT), "index");
     let files = super::index_files(fixture.parent.as_ref(), &dir).await.expect("listed");
     let cancel = tokio_util::sync::CancellationToken::new();
     let (progress, _) = tokio::sync::watch::channel(None);
@@ -137,7 +136,7 @@ async fn a_read_whose_task_runs_after_the_cancel_opens_nothing() {
 
     // An empty parent: any open answers `NotFound`.
     let empty: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("testshare"));
-    let path = dir.join(&*start.id.to_hex());
+    let path = path_in(&dir, &start.id.to_hex());
     let read = super::read_one(empty, path, start, feed).await;
 
     assert!(read.is_ok(), "the read opened its file after the cancel: {read:?}");

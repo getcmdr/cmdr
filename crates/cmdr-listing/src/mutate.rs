@@ -2,7 +2,7 @@
 //! its sorted position, apply what the deferred passes read (Finder tags,
 //! packages macOS reports), and carry both across a re-stat.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use cmdr_fs::ignore_poison::RwLockIgnorePoison;
@@ -128,11 +128,7 @@ impl Inner {
     /// inner path (`/Documents/notes.txt`) while `notify_mutation` reports the parent
     /// at the `mtp://…` URL, so a full-path match would drop the removal. Local and
     /// SMB entries share the notifier's spelling, where name matching is equivalent.
-    pub(crate) fn remove_entry_by_name(
-        &self,
-        listing_id: &str,
-        name: &std::ffi::OsStr,
-    ) -> Option<(PaneRows, FileEntry)> {
+    pub(crate) fn remove_entry_by_name(&self, listing_id: &str, name: &str) -> Option<(PaneRows, FileEntry)> {
         let visibility = self.scratch_visibility();
         let mut cache = self.write_cache();
         let (listing, publish) = cache.get_mut(listing_id)?;
@@ -141,7 +137,7 @@ impl Inner {
         let idx = listing
             .entries()
             .iter()
-            .position(|e| Path::new(&e.path).file_name() == Some(name))?;
+            .position(|e| last_name(&e.path) == Some(name))?;
         let rows = PaneRows {
             before: listing.pane_rows().row_of_entry(idx),
             after: None,
@@ -331,4 +327,14 @@ impl Inner {
             listing.publish_changes(&publish, listing_id, changes);
         }
     }
+}
+
+/// The last name of an entry's path text, by `Path::file_name`'s rule over `/` alone (empty and
+/// `.` names skipped, none after a `..`), so on Windows a remote name holding `\` stays one
+/// name, where `Path::file_name` split it there. On macOS and Linux it answers `file_name`'s
+/// exact text.
+pub(crate) fn last_name(path: &str) -> Option<&str> {
+    path.split('/')
+        .rfind(|name| !name.is_empty() && *name != ".")
+        .filter(|name| *name != "..")
 }

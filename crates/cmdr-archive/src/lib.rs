@@ -75,6 +75,8 @@ pub mod watch;
 mod apple_double;
 mod boundary_on_parent;
 mod mutation;
+#[cfg(test)]
+mod testing;
 
 /// Fixture builders for archive tests: clean zips, hostile byte-patched variants,
 /// and encrypted zip / 7z archives, all built in memory with no blobs checked in.

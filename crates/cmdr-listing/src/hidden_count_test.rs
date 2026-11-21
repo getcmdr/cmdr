@@ -11,7 +11,6 @@
 //! Every diff test holds the listing's flush, so "nothing queued" is an answer,
 //! not a race lost to the 50 ms timer.
 
-use std::path::Path;
 use std::sync::Arc;
 
 use cmdr_fs::entry::FileEntry;
@@ -83,10 +82,6 @@ fn counts(listing: &TestListingGuard) -> Vec<(usize, usize, usize)> {
         .into_iter()
         .map(|b| (b.total_count, b.hidden_count, b.changes.len()))
         .collect()
-}
-
-fn path(name: &str) -> String {
-    format!("{DIR}/{name}")
 }
 
 // ============================================================================
@@ -177,10 +172,7 @@ fn a_dotfile_added_to_a_folder_that_looks_empty_publishes_the_new_count() {
 fn a_dotfile_removed_from_a_folder_that_looks_empty_publishes_the_new_count() {
     let listing = pane("hidden-count-remove", false, looks_empty());
 
-    listing
-        .engine()
-        .inner
-        .notify_removed(listing.id(), Path::new(&path(".gitignore")));
+    listing.engine().inner.notify_removed(listing.id(), ".gitignore");
 
     assert_eq!(counts(&listing), vec![(0, 1, 0)]);
 }
@@ -189,10 +181,7 @@ fn a_dotfile_removed_from_a_folder_that_looks_empty_publishes_the_new_count() {
 fn the_last_hidden_item_going_leaves_a_truly_empty_folder() {
     let listing = pane("hidden-count-last", false, sorted(vec![entry(".DS_Store", 6)]));
 
-    listing
-        .engine()
-        .inner
-        .notify_removed(listing.id(), Path::new(&path(".DS_Store")));
+    listing.engine().inner.notify_removed(listing.id(), ".DS_Store");
 
     assert_eq!(counts(&listing), vec![(0, 0, 0)]);
 }
@@ -230,10 +219,7 @@ fn a_dotfile_added_to_a_folder_with_rows_publishes_nothing() {
     );
 
     listing.engine().inner.notify_added(listing.id(), entry(".lesshst", 3));
-    listing
-        .engine()
-        .inner
-        .notify_removed(listing.id(), Path::new(&path(".zshrc")));
+    listing.engine().inner.notify_removed(listing.id(), ".zshrc");
 
     assert_eq!(counts(&listing), vec![]);
 }
@@ -253,10 +239,7 @@ fn the_last_visible_file_going_says_how_many_hidden_items_stay() {
     entries.push(entry("notes.txt", 2));
     let listing = pane("hidden-count-last-visible", false, sorted(entries));
 
-    listing
-        .engine()
-        .inner
-        .notify_removed(listing.id(), Path::new(&path("notes.txt")));
+    listing.engine().inner.notify_removed(listing.id(), "notes.txt");
 
     assert_eq!(counts(&listing), vec![(0, 2, 1)]);
 }

@@ -13,12 +13,12 @@
 
 use crate::backend::VolumeBackend;
 use crate::index_feed::{IndexFeed, Keep, Start};
+use crate::path::{child, text_of};
 use crate::repo::{IndexedRepo, ResticError, on_own_pool, open_blocking, worker_crashed};
 use bytes::Bytes;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::volume::{ListingPhase, ListingProgress, Volume, VolumeError};
 use rustic_core::{FileType, Id};
-use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 use tokio::runtime::Handle;
@@ -49,7 +49,7 @@ type Outcome = Option<Result<Arc<IndexedRepo>, ResticError>>;
 pub(crate) struct LoadSpec {
     pub(crate) parent: Arc<dyn Volume>,
     /// The repo's folder on `parent`.
-    pub(crate) root: PathBuf,
+    pub(crate) root: AppPathBuf,
     pub(crate) password: Zeroizing<String>,
     pub(crate) runtime: Handle,
     /// The most index bytes to read ahead of rustic ([`WINDOW`]).
@@ -206,7 +206,7 @@ async fn run(
     cancel: CancellationToken,
     progress: watch::Sender<Option<ListingPhase>>,
 ) -> Result<IndexedRepo, ResticError> {
-    let index_dir = spec.root.join(FileType::Index.dirname());
+    let index_dir = child(&spec.root, FileType::Index.dirname());
     // On its own task, so a cancel DETACHES the listing (dropping the handle),
     // ❌ never drops it mid-transaction: that wedges a phone (MTP).
     let listing = {
@@ -264,8 +264,8 @@ async fn run(
 
 /// The index files in `dir`, by id, with their sizes. A missing folder is an
 /// empty index.
-async fn index_files(parent: &dyn Volume, dir: &Path) -> Result<Vec<(Id, u64)>, VolumeError> {
-    let entries = match parent.list_directory(&AppPath::legacy_unchecked(dir), None).await {
+async fn index_files(parent: &dyn Volume, dir: &AppPath) -> Result<Vec<(Id, u64)>, VolumeError> {
+    let entries = match parent.list_directory(dir, None).await {
         Ok(entries) => entries,
         Err(VolumeError::NotFound(_)) => return Ok(Vec::new()),
         Err(err) => return Err(err),
@@ -284,13 +284,13 @@ async fn index_files(parent: &dyn Volume, dir: &Path) -> Result<Vec<(Id, u64)>, 
 /// ❌ Never aborted mid-read: a read dropped inside a device transaction (a repo
 /// on a phone) can wedge the device, so the reads are detached, not aborted. A
 /// failed read fails the load: the decoder waiting hears it.
-async fn stream_files(parent: Arc<dyn Volume>, dir: PathBuf, feed: Arc<IndexFeed>, runtime: Handle) {
+async fn stream_files(parent: Arc<dyn Volume>, dir: AppPathBuf, feed: Arc<IndexFeed>, runtime: Handle) {
     let mut running = JoinSet::new();
     loop {
         while let Some(start) = feed.next_read() {
             let read = read_one(
                 Arc::clone(&parent),
-                dir.join(&*start.id.to_hex()),
+                child(&dir, &start.id.to_hex()),
                 start,
                 Arc::clone(&feed),
             );
@@ -328,7 +328,7 @@ async fn stream_files(parent: Arc<dyn Volume>, dir: PathBuf, feed: Arc<IndexFeed
 /// what the window gave it).
 async fn read_one(
     parent: Arc<dyn Volume>,
-    path: PathBuf,
+    path: AppPathBuf,
     start: Start,
     feed: Arc<IndexFeed>,
 ) -> Result<(), VolumeError> {
@@ -337,7 +337,7 @@ async fn read_one(
     if feed.cancel().is_cancelled() {
         return Ok(());
     }
-    let mut stream = parent.open_read_stream(&AppPath::legacy_unchecked(&path)).await?;
+    let mut stream = parent.open_read_stream(&path).await?;
     let mut bytes = Vec::with_capacity(usize::try_from(start.reserve).unwrap_or(0));
     while let Some(chunk) = stream.next_chunk().await {
         let chunk = chunk?;
@@ -354,8 +354,8 @@ async fn read_one(
 #[path = "index_load_tests.rs"]
 mod tests;
 
-fn cancelled(path: &Path) -> ResticError {
-    ResticError::Volume(VolumeError::Cancelled(path.display().to_string().into()))
+fn cancelled(path: &AppPath) -> ResticError {
+    ResticError::Volume(VolumeError::Cancelled(text_of(path).into()))
 }
 
 /// Locks a std mutex, taking the data over from a thread that panicked holding

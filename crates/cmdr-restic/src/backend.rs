@@ -8,12 +8,12 @@
 //! (`repo.rs`). Same bridge as `cmdr-archive`'s `VolumeByteSource`.
 
 use crate::index_feed::{IndexFeed, Taken};
+use crate::path::{child, text_of};
 use bytes::Bytes;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, ListedFolder};
 use cmdr_fs::volume::{Volume, VolumeError, VolumeRandomReader};
 use rustic_core::repofile::KeyFile;
 use rustic_core::{BytesList, ErrorKind, FileType, Id, ReadBackend, RusticError, RusticResult, WriteBackend};
-use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError, Weak};
 use std::time::{Duration, Instant};
@@ -24,7 +24,7 @@ use tokio::runtime::Handle;
 pub(crate) struct VolumeBackend {
     parent: Arc<dyn Volume>,
     /// The repo's folder on `parent`: the one holding `config`.
-    root: PathBuf,
+    root: AppPathBuf,
     handle: Handle,
     /// How many writes rustic tried. Every one is refused; the count is what lets
     /// a test pin "browsing never even tries to write".
@@ -43,7 +43,7 @@ pub(crate) struct VolumeBackend {
 }
 
 impl VolumeBackend {
-    pub(crate) fn new(parent: Arc<dyn Volume>, root: PathBuf, handle: Handle) -> Self {
+    pub(crate) fn new(parent: Arc<dyn Volume>, root: AppPathBuf, handle: Handle) -> Self {
         Self {
             parent,
             root,
@@ -95,24 +95,23 @@ impl VolumeBackend {
 
     /// Where a file of type `tpe` lives, per the restic repo layout. Packs fan out
     /// into 256 subfolders by their id's first two hex digits.
-    fn path_of(&self, tpe: FileType, id: &Id) -> PathBuf {
+    fn path_of(&self, tpe: FileType, id: &Id) -> AppPathBuf {
         match tpe {
-            FileType::Config => self.root.join("config"),
+            FileType::Config => child(&self.root, "config"),
             FileType::Pack => {
                 let hex = id.to_hex();
-                self.root.join(tpe.dirname()).join(&hex[..2]).join(&*hex)
+                child(&child(&child(&self.root, tpe.dirname()), &hex[..2]), &hex)
             }
-            FileType::Index | FileType::Key | FileType::Snapshot => self.root.join(tpe.dirname()).join(&*id.to_hex()),
+            FileType::Index | FileType::Key | FileType::Snapshot => {
+                child(&child(&self.root, tpe.dirname()), &id.to_hex())
+            }
         }
     }
 
     /// The files in `dir` whose names are restic ids, with their sizes. A missing
     /// folder lists as empty (`index/` can be empty, and some copies drop it).
-    fn list_ids_in(&self, dir: &Path) -> RusticResult<Vec<(Id, u32)>> {
-        let entries = match self
-            .handle
-            .block_on(self.parent.list_directory(&AppPath::legacy_unchecked(dir), None))
-        {
+    fn list_ids_in(&self, dir: &AppPath) -> RusticResult<Vec<(Id, u32)>> {
+        let entries = match self.handle.block_on(self.parent.list_directory(dir, None)) {
             Ok(entries) => entries,
             Err(VolumeError::NotFound(_)) => return Ok(Vec::new()),
             Err(err) => return Err(backend_error(err)),
@@ -129,9 +128,9 @@ impl VolumeBackend {
 
     /// Streams a whole file. Used for the small files (config, keys, snapshots,
     /// index) and as the fallback for a parent without ranged reads.
-    fn read_stream(&self, path: &Path, stop_after: Option<usize>) -> Result<Vec<u8>, VolumeError> {
+    fn read_stream(&self, path: &AppPath, stop_after: Option<usize>) -> Result<Vec<u8>, VolumeError> {
         self.handle.block_on(async {
-            let mut stream = self.parent.open_read_stream(&AppPath::legacy_unchecked(path)).await?;
+            let mut stream = self.parent.open_read_stream(path).await?;
             let mut out = Vec::new();
             while let Some(chunk) = stream.next_chunk().await {
                 out.extend_from_slice(&chunk?);
@@ -193,14 +192,13 @@ impl VolumeBackend {
     /// `[offset, offset + length)` of `path`. A pack is read through a reader
     /// held open for it when the parent hands those out; anything else (and a
     /// parent that doesn't) is one `read_range`.
-    fn read_window(&self, tpe: FileType, path: &Path, offset: u64, length: usize) -> Result<Vec<u8>, VolumeError> {
+    fn read_window(&self, tpe: FileType, path: &AppPath, offset: u64, length: usize) -> Result<Vec<u8>, VolumeError> {
         if tpe == FileType::Pack
             && let Some(reader) = self.held_reader(path)?
         {
             return self.handle.block_on(reader.read_at(offset, length));
         }
-        self.handle
-            .block_on(self.parent.read_range(&AppPath::legacy_unchecked(path), offset, length))
+        self.handle.block_on(self.parent.read_range(path, offset, length))
     }
 
     /// The reader held open for the pack at `path`, opened on first use. `None`
@@ -211,7 +209,7 @@ impl VolumeBackend {
     /// SMB a `read_range` is an open, a read, and a close: ~14 ms a tree, against
     /// one round trip through a held handle (`docs/notes/restic/open-cost.md`).
     /// Packs never change once written, so a held handle never goes stale.
-    fn held_reader(&self, path: &Path) -> Result<Option<Arc<HeldReader>>, VolumeError> {
+    fn held_reader(&self, path: &AppPath) -> Result<Option<Arc<HeldReader>>, VolumeError> {
         {
             let mut held = lock(&self.held);
             if held.unsupported {
@@ -222,10 +220,7 @@ impl VolumeBackend {
                 return Ok(Some(reader));
             }
         }
-        let opened = match self
-            .handle
-            .block_on(self.parent.open_random_reader(&AppPath::legacy_unchecked(path)))
-        {
+        let opened = match self.handle.block_on(self.parent.open_random_reader(path)) {
             Ok(reader) => Arc::new(HeldReader {
                 reader: Some(reader),
                 handle: self.handle.clone(),
@@ -287,7 +282,7 @@ async fn close_when_idle(held: Weak<Mutex<HeldReaders>>, idle: Duration) {
 /// [`MAX_HELD_READERS`]. Dropping the adapter (the repo going away) drops them
 /// all, and each closes as its last user lets go ([`HeldReader`]'s `Drop`).
 struct HeldReaders {
-    readers: Vec<(PathBuf, Arc<HeldReader>)>,
+    readers: Vec<(AppPathBuf, Arc<HeldReader>)>,
     /// The parent answered `NotSupported`: every pack read is a `read_range`.
     unsupported: bool,
     /// When a held reader was last taken or put.
@@ -309,7 +304,7 @@ impl Default for HeldReaders {
 
 impl HeldReaders {
     /// The reader for `path`, moved to most recently used.
-    fn take(&mut self, path: &Path) -> Option<Arc<HeldReader>> {
+    fn take(&mut self, path: &AppPath) -> Option<Arc<HeldReader>> {
         let at = self.readers.iter().position(|(held, _)| held == path)?;
         let entry = self.readers.remove(at);
         let reader = Arc::clone(&entry.1);
@@ -319,9 +314,9 @@ impl HeldReaders {
 
     /// Holds `reader` for `path`, letting go of the least recently used one past
     /// the cap. `path` must not be held already.
-    fn put(&mut self, path: &Path, reader: Arc<HeldReader>) {
+    fn put(&mut self, path: &AppPath, reader: Arc<HeldReader>) {
         if self.readers.iter().all(|(held, _)| held != path) {
-            self.readers.push((path.to_path_buf(), reader));
+            self.readers.push((path.to_owned(), reader));
         }
         if self.readers.len() > MAX_HELD_READERS {
             self.readers.remove(0);
@@ -485,16 +480,16 @@ fn refuse_write(be: &VolumeBackend) -> Box<RusticError> {
 
 impl ReadBackend for VolumeBackend {
     fn location(&self) -> String {
-        self.root.display().to_string()
+        text_of(&self.root)
     }
 
     fn list_with_size(&self, tpe: FileType) -> RusticResult<Vec<(Id, u32)>> {
         match tpe {
             // rustic lists the config as one file with the default id.
-            FileType::Config => match self.handle.block_on(
-                self.parent
-                    .get_metadata(&AppPath::legacy_unchecked(&self.path_of(tpe, &Id::default()))),
-            ) {
+            FileType::Config => match self
+                .handle
+                .block_on(self.parent.get_metadata(&self.path_of(tpe, &Id::default())))
+            {
                 Ok(entry) if !entry.is_directory => Ok(vec![(Id::default(), size_u32(entry.size.unwrap_or(0)))]),
                 Ok(_) | Err(VolumeError::NotFound(_)) => Ok(Vec::new()),
                 Err(err) => Err(backend_error(err)),
@@ -502,28 +497,34 @@ impl ReadBackend for VolumeBackend {
             // `data/` holds up to 256 subfolders; list the ones that exist rather
             // than asking for all 256 names.
             FileType::Pack => {
-                let data = self.root.join(tpe.dirname());
-                let subdirs = match self
-                    .handle
-                    .block_on(self.parent.list_directory(&AppPath::legacy_unchecked(&data), None))
-                {
+                let data = child(&self.root, tpe.dirname());
+                let subdirs = match self.handle.block_on(self.parent.list_directory(&data, None)) {
                     Ok(entries) => entries,
                     Err(VolumeError::NotFound(_)) => return Ok(Vec::new()),
                     Err(err) => return Err(backend_error(err)),
                 };
+                let data = ListedFolder::new(&data);
                 let mut packs = Vec::new();
                 for subdir in subdirs.into_iter().filter(|e| e.is_directory) {
-                    packs.extend(self.list_ids_in(&data.join(&subdir.name))?);
+                    // A name that isn't one plain name (`..`, `a/b`) is no pack
+                    // folder restic writes, and joining it would list another one.
+                    let Ok(name) = AppName::from_app_spelling(&subdir.name) else {
+                        continue;
+                    };
+                    let Ok(dir) = data.join(name) else {
+                        continue;
+                    };
+                    packs.extend(self.list_ids_in(&dir)?);
                 }
                 Ok(packs)
             }
-            FileType::Key => self.tolerable_keys(self.list_ids_in(&self.root.join(tpe.dirname()))?),
+            FileType::Key => self.tolerable_keys(self.list_ids_in(&child(&self.root, tpe.dirname()))?),
             // During an index load, the load's own listing: rustic asks for
             // exactly the files the feed streams, and `index/` is listed once.
             FileType::Index if let Some(feed) = self.index_feed.as_ref().filter(|feed| !feed.has_stepped_aside()) => {
                 Ok(feed.listing())
             }
-            FileType::Index | FileType::Snapshot => self.list_ids_in(&self.root.join(tpe.dirname())),
+            FileType::Index | FileType::Snapshot => self.list_ids_in(&child(&self.root, tpe.dirname())),
         }
     }
 

@@ -6,14 +6,15 @@
 
 use std::future::Future;
 use std::io::Write;
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::task::{Context, Poll, Wake, Waker};
 use std::thread::Thread;
 
 use super::*;
 use crate::test_fixtures::{build_zip, deflated, stored};
-use cmdr_fs::testing::TestDir;
+use crate::testing::at;
+use cmdr_fs::app_path;
+use cmdr_fs::testing::AppTestDir;
 use cmdr_fs::volume::{InMemoryVolume, VolumeReadStream};
 
 /// Wakes the polling thread by unparking it.
@@ -61,15 +62,15 @@ async fn drain(stream: &mut dyn VolumeReadStream) -> Vec<u8> {
     out
 }
 
-fn write_fixture(dir: &TestDir, name: &str, bytes: &[u8]) -> PathBuf {
-    let path = dir.join(name);
-    std::fs::write(&path, bytes).expect("write the fixture");
-    path
+/// Writes `bytes` as `name` in `dir`, answering its app path.
+fn write_fixture(dir: &AppTestDir, name: &str, bytes: &[u8]) -> AppPathBuf {
+    std::fs::write(dir.native().join(name), bytes).expect("write the fixture");
+    at(dir.app_path(), name)
 }
 
 #[test]
 fn a_local_zip_parses_and_decompresses_on_the_hosts_runtime() {
-    let dir = TestDir::new("archive-runtime-local");
+    let dir = AppTestDir::new("archive-runtime-local");
     let zip = write_fixture(
         &dir,
         "local.zip",
@@ -78,16 +79,10 @@ fn a_local_zip_parses_and_decompresses_on_the_hosts_runtime() {
 
     let (listed, bytes) = on_a_thread_without_a_runtime(move |host| {
         let parent = Arc::new(InMemoryVolume::new("parent").with_local_fs_access());
-        let volume = ArchiveVolume::new(parent, zip.clone(), ArchiveFormat::Zip, host);
+        let volume = ArchiveVolume::new_at(parent, zip.clone(), ArchiveFormat::Zip, host);
         poll_to_completion(async {
-            let listed = volume
-                .list_directory(&AppPath::legacy_unchecked(&zip.join("docs")), None)
-                .await
-                .expect("list");
-            let mut stream = volume
-                .open_read_stream(&AppPath::legacy_unchecked(&zip.join("docs/a.txt")))
-                .await
-                .expect("open");
+            let listed = volume.list_directory(&at(&zip, "docs"), None).await.expect("list");
+            let mut stream = volume.open_read_stream(&at(&zip, "docs/a.txt")).await.expect("open");
             (listed.len(), drain(stream.as_mut()).await)
         })
     });
@@ -100,21 +95,15 @@ fn a_local_zip_parses_and_decompresses_on_the_hosts_runtime() {
 fn a_remote_zip_bridges_its_reads_on_the_hosts_runtime() {
     // A remote parent: every byte arrives through `VolumeByteSource`, which blocks
     // on the parent's async `read_range` from inside the blocking parse.
-    let zip = PathBuf::from("/device/remote.zip");
+    let zip = app_path!("/device/remote.zip").to_owned();
     let bytes = build_zip(&[stored("a.txt", "over the wire")]);
 
     let read = on_a_thread_without_a_runtime(move |host| {
         let parent = InMemoryVolume::new("Remote");
         poll_to_completion(async {
-            parent
-                .create_file(&AppPath::legacy_unchecked(&zip), &bytes)
-                .await
-                .expect("seed the remote zip");
-            let volume = ArchiveVolume::new(Arc::new(parent), zip.clone(), ArchiveFormat::Zip, host);
-            let mut stream = volume
-                .open_read_stream(&AppPath::legacy_unchecked(&zip.join("a.txt")))
-                .await
-                .expect("open");
+            parent.create_file(&zip, &bytes).await.expect("seed the remote zip");
+            let volume = ArchiveVolume::new_at(Arc::new(parent), zip.clone(), ArchiveFormat::Zip, host);
+            let mut stream = volume.open_read_stream(&at(&zip, "a.txt")).await.expect("open");
             drain(stream.as_mut()).await
         })
     });
@@ -124,7 +113,7 @@ fn a_remote_zip_bridges_its_reads_on_the_hosts_runtime() {
 
 #[test]
 fn a_tar_gz_subtree_extract_decodes_on_the_hosts_runtime() {
-    let dir = TestDir::new("archive-runtime-tgz");
+    let dir = AppTestDir::new("archive-runtime-tgz");
     let mut builder = ::tar::Builder::new(Vec::new());
     let mut header = ::tar::Header::new_ustar();
     header.set_mode(0o644);
@@ -140,10 +129,10 @@ fn a_tar_gz_subtree_extract_decodes_on_the_hosts_runtime() {
 
     let read = on_a_thread_without_a_runtime(move |host| {
         let parent = Arc::new(InMemoryVolume::new("parent").with_local_fs_access());
-        let volume = ArchiveVolume::new(parent, tgz.clone(), ArchiveFormat::Tar(crate::TarCodec::Gzip), host);
+        let volume = ArchiveVolume::new_at(parent, tgz.clone(), ArchiveFormat::Tar(crate::TarCodec::Gzip), host);
         poll_to_completion(async {
             let mut extract = volume
-                .open_sequential_extract(&AppPath::legacy_unchecked(Path::new("docs")))
+                .open_sequential_extract(&at(&tgz, "docs"))
                 .await
                 .expect("open the extract");
             extract.next_file().await.expect("next_file").expect("the one member");

@@ -16,7 +16,9 @@
 //! rather than delayed; and FSEvents coalesces or drops a lone event when the
 //! host is saturated (a full-suite run pins every core).
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPathBuf;
+use cmdr_fs::testing::AppTestDir;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -36,8 +38,11 @@ const PARENT_DRIVE: &str = "parent-drive";
 /// recorder its host reports to. The zip sits in its own directory so the
 /// parent-directory content watch sees nothing else.
 struct WatchedArchive {
-    _dir: tempfile::TempDir,
+    _dir: AppTestDir,
+    /// The zip's native path, for the rewrites.
     zip_path: PathBuf,
+    /// Its app path: the volume's root, and what the refresh names.
+    zip_app: AppPathBuf,
     volume: ArchiveVolume,
     listings: Arc<RecordingListings>,
 }
@@ -46,8 +51,9 @@ impl WatchedArchive {
     /// Builds the fixture zip and an `ArchiveVolume` over it, hosted by a
     /// recorder. The watch isn't started yet.
     fn new(entries: &[FixtureFile]) -> Self {
-        let dir = tempfile::tempdir().expect("tempdir");
-        let zip_path = dir.path().join("bundle.zip");
+        let dir = AppTestDir::new("archive-watch");
+        let zip_path = dir.native().join("bundle.zip");
+        let zip_app = crate::testing::at(dir.app_path(), "bundle.zip");
         std::fs::write(&zip_path, build_zip(entries)).expect("write fixture zip");
 
         let listings = Arc::new(RecordingListings::new());
@@ -57,10 +63,11 @@ impl WatchedArchive {
         // A local-backed parent, so the archive reads the real temp file and the
         // watch can arm on its directory.
         let parent: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("parent").with_local_fs_access());
-        let volume = ArchiveVolume::new(parent, zip_path.clone(), ArchiveFormat::Zip, host);
+        let volume = ArchiveVolume::new_at(parent, zip_app.clone(), ArchiveFormat::Zip, host);
         Self {
             _dir: dir,
             zip_path,
+            zip_app,
             volume,
             listings,
         }
@@ -93,7 +100,7 @@ impl WatchedArchive {
         const FIXTURE_SETTLE: Duration = Duration::from_secs(1);
         // allowed-test-sleep: ages the fixture write past FSEvents' replay window; there's no condition to wait on
         tokio::time::sleep(FIXTURE_SETTLE).await;
-        crate::watch::watch_for_real(&self.zip_path);
+        crate::watch::watch_for_real(&self.zip_app.to_native().expect("a scratch path opens natively"));
         self.volume
             .start_content_watch(PARENT_DRIVE, WatchCoverage::EveryWriter);
         assert!(
@@ -126,9 +133,10 @@ impl WatchedArchive {
         })
         .await;
 
+        let (drive, archive) = &self.listings.archive_refreshes()[0];
         assert_eq!(
-            self.listings.archive_refreshes()[0],
-            (PARENT_DRIVE.to_string(), self.zip_path.clone()),
+            (drive.as_str(), archive.to_string_lossy().as_ref()),
+            (PARENT_DRIVE, self.zip_app.as_str()),
             "the refresh must name the parent drive and the archive path, not the archive's own volume id"
         );
     }
@@ -140,18 +148,14 @@ impl WatchedArchive {
 async fn a_rewrite_asks_the_host_to_refresh_the_archive_listings() {
     let fixture = WatchedArchive::new(&[stored("a.txt", b"a".to_vec())]);
     assert_eq!(
-        fixture
-            .volume
-            .listing_watch_coverage(&AppPath::legacy_unchecked(&fixture.zip_path)),
+        fixture.volume.listing_watch_coverage(&fixture.zip_app),
         WatchCoverage::None,
         "a volume with no watch must not claim its listings are watched"
     );
 
     fixture.start_watch_for_real().await;
     assert_eq!(
-        fixture
-            .volume
-            .listing_watch_coverage(&AppPath::legacy_unchecked(&fixture.zip_path)),
+        fixture.volume.listing_watch_coverage(&fixture.zip_app),
         WatchCoverage::EveryWriter,
         "an archive with an established watch must report coverage"
     );
@@ -205,9 +209,7 @@ async fn an_archive_on_a_network_mount_reports_only_this_machine() {
         .start_content_watch(PARENT_DRIVE, WatchCoverage::ThisMachineOnly);
 
     assert_eq!(
-        fixture
-            .volume
-            .listing_watch_coverage(&AppPath::legacy_unchecked(&fixture.zip_path)),
+        fixture.volume.listing_watch_coverage(&fixture.zip_app),
         WatchCoverage::ThisMachineOnly,
         "a live watch must not report more coverage than its backing storage allows"
     );
@@ -225,13 +227,13 @@ async fn a_remote_parent_establishes_no_watch() {
     // No `with_local_fs_access`, and the path doesn't exist locally: `notify` has
     // nothing to arm on.
     let parent: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("remote"));
-    let path = PathBuf::from("/nowhere-remote/bundle.zip");
-    let volume = ArchiveVolume::new(parent, path.clone(), ArchiveFormat::Zip, host);
+    let path = app_path!("/nowhere-remote/bundle.zip");
+    let volume = ArchiveVolume::new_at(parent, path.to_owned(), ArchiveFormat::Zip, host);
 
     volume.start_content_watch(PARENT_DRIVE, WatchCoverage::EveryWriter);
 
     assert_eq!(
-        volume.listing_watch_coverage(&AppPath::legacy_unchecked(&path)),
+        volume.listing_watch_coverage(path),
         WatchCoverage::None,
         "a watch that couldn't establish must never claim freshness"
     );

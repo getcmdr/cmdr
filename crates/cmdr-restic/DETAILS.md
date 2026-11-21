@@ -77,10 +77,12 @@ path stays the caller's path.
 - **Kinds**: symlinks are rows with `is_symlink`, ❌ never followed; devices, fifos, and sockets are non-directory rows
   with size 0. Hard links are separate nodes, so they list and copy as separate files. Owner and group are the user and
   group names the node recorded. Dates are whole Unix seconds; a date before 1970 is left out.
-- **Odd names** pass through as stored (NFD, double spaces, 255 bytes). A name that isn't UTF-8 (a Linux machine's
-  backup) lists lossily, the way `LocalPosixVolume` lists one (`to_string_lossy`). The lossy name then finds nothing
-  (`NotFound`), and when a real sibling's stored name IS that lossy spelling, the lookup answers `AmbiguousName` rather
-  than hand over the wrong file.
+- **Odd names** pass through as stored (NFD, double spaces, 255 bytes, `a\b`, `12:00`: one name on every OS, § "App
+  paths"). A name crosses into app spelling at `AppNameBuf::from_native_os_unicode`. One that isn't UTF-8 (a Linux
+  machine's backup) lists lossily, the way `LocalPosixVolume` lists one (`to_string_lossy`), until escapes go live. The
+  lossy name then finds nothing (`NotFound`), and when a real sibling's stored name IS that lossy spelling, the lookup
+  answers `AmbiguousName` rather than hand over the wrong file. A name a hostile repo stores that isn't one plain name
+  (`a/b`, `..`) keeps the row text `Path::join` gave it, ❌ never a dropped row.
 
 ### Reads (`read_stream.rs`)
 
@@ -396,6 +398,35 @@ depend on the machine's.
 `restic_route` is lexical: the folder holding the path's first `Browse snapshots` component (a repo backed up inside a
 snapshot still routes at the outer boundary). It's a candidate, not a verdict; § "Is this folder a repo?".
 
+## App paths
+
+The view's paths are app paths (`crates/cmdr-fs/DETAILS.md` § "App paths"), and a snapshot's names are POSIX names from
+the repo, whatever OS made the backup. Every body takes `&AppPath`; the view's root, `RepoKey.root`, the adapter's root,
+a load's root, and a stream's path are `AppPathBuf`. So a name holding `\` or `:` stays one name on Windows, and the
+tests' `/Volumes/…` fixtures root the same on every OS.
+
+- **Arithmetic**: `classify` is the app path's own `strip_prefix`; a fixed name (a repo folder, an id,
+  `Browse snapshots`) joins through `path::child`, `ListedFolder`'s join. A relative path, which only a bridge value is,
+  reads against the view's root as before.
+- **Text stays main's, byte for byte, on macOS and Linux** (a differential harness over 200,000 routed requests found 0
+  differences, 2026-11-21): rows and errors spell through `path::child_text` (the typed join under a canonical folder,
+  else `Path::join`'s POSIX text, so a bridge folder and a hostile repo's `a/b` keep their row) and `path::text_of` /
+  `spelled`. Until escapes go live, an escape in app text is the bridge's lossless spelling of a literal escape-range
+  code point the wire carried, so `spelled` spells it back before a name match, a row, or an error, as `Path` did; once
+  live, the text stays.
+- **Typed forms beside the `std::path` ones the app calls**: `ResticVolume::new_at`,
+  `ResticRepos::{confirm_repo_at, serves_confirmed_at, overlay_row_at}`, `FixtureRepo::{write_into_at, sync_into_at}`.
+  The old forms cross once each through `hub::bridged`, the crate's one `legacy_unchecked`, and go with it when the
+  app's route, overlay, snapshot watch, and tests switch (`docs/specs/app-path-plan.md` § "10c" and § "10d").
+  `test_fixtures::std_path_of`, the tests' one `as_std_legacy`, feeds `cmdr_fs::volume::conformance` and
+  `InMemoryVolume::set_stat_failing`, which still take `std::path` (§ "11").
+- **❗ A repo on a `scheme://` parent (SFTP, WebDAV, S3, NFS, MTP) can't be browsed yet**, as before:
+  `restic_route_candidates` reads `Path` components, which collapse `sftp://h/x` to `sftp:/h/x`, and no canonical pane
+  path sits under that root, so every path in the view is `NotFound` (`Path::strip_prefix` read the canonical path as
+  relative before, with the same answer). A typed root through the `*_at` forms browses. The one place `AppPath`'s `Eq`
+  answers differently from `PathBuf`'s here: that collapsed root and the overlay's canonical spelling are two memo keys
+  now, so the route's confirm lists the folder once where it read the overlay's answer.
+
 ## Detection (`detect.rs`)
 
 A folder is a restic repo when its listing holds a regular file named `config` and the folders `data`, `index`, `keys`,
@@ -481,8 +512,9 @@ exactly what it exposes. Each has a caller in the host:
 
 - Detection: `is_restic_repo` (the overlay asks it per listing).
 - The route: `restic_route` and `VIRTUAL_ENTRY_NAME` (the host's lexical gate, and the row's name).
-- The hub: `ResticRepos`, with `new`, `confirm_repo`, `serves_confirmed`, and `overlay_row`.
-- The view: `ResticVolume`, with `new`.
+- The hub: `ResticRepos`, with `new`, `confirm_repo`, `serves_confirmed`, and `overlay_row`, each with its `*_at` twin
+  for an app path (§ "App paths").
+- The view: `ResticVolume`, with `new` and `new_at`.
 
 `test_fixtures` is `testing`-gated and counts apart. Opening, the snapshot list, trees, and the adapter stay
 crate-private: the volume that needs them lives here.

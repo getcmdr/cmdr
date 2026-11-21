@@ -21,8 +21,13 @@
 //!   It's `std::fs`-only; the parent-aware confirm a host routes with (local or
 //!   through a remote parent's own I/O) is `crate::boundary_on_parent`'s.
 
-use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
+
+use std::borrow::Cow;
+
+use cmdr_fs::app_path::{
+    AppPath, AppPathBuf, NativeRefusal, PathArithmetic, RelativeAppPathBuf, is_escape, unescape_bytes,
+};
 
 use super::read::{ArchiveFormat, TarCodec, format_for_name, format_for_path};
 
@@ -129,6 +134,161 @@ pub fn path_targets_archive_file(path: &Path) -> bool {
     std::fs::metadata(&archive_path).is_ok_and(|meta| meta.is_file())
 }
 
+/// [`archive_boundary_candidate`] for an app path: the archive (the path up to
+/// and including the FIRST name carrying a supported archive extension) and the
+/// names inside it (empty when the archive is the path's last name). No I/O.
+///
+/// Reads the path's canonical twin (a bridge value with none splits nowhere)
+/// and scans its text left to right, root included, as the `std::path` form
+/// scans its components, so the two agree: a scheme authority that looks like
+/// an archive (`sftp://box.zip/…`) is the first match there too, and since it
+/// names no file the split is `None`. A name is read as its native text
+/// ([`native_text`]), as the `std::path` form reads a component.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "a typed twin the host switches to when its routing speaks app paths"
+    )
+)]
+pub(crate) fn archive_boundary_candidate_at(path: &AppPath) -> Option<(AppPathBuf, RelativeAppPathBuf)> {
+    let path = path.to_canonical().ok()?;
+    let text = path.as_str();
+    let root_len = path.root().as_str().len();
+    let mut start = 0;
+    let end = loop {
+        let end = text[start..].find('/').map_or(text.len(), |offset| start + offset);
+        let name = &text[start..end];
+        if native_text(name).is_some_and(|name| has_supported_archive_extension(&name)) {
+            break end;
+        }
+        if end == text.len() {
+            return None;
+        }
+        start = end + 1;
+    };
+    if end <= root_len {
+        return None;
+    }
+    let archive = std::iter::successors(Some(&*path), |ancestor| ancestor.parent())
+        .find(|ancestor| ancestor.as_str().len() == end)?;
+    let inner = path.strip_prefix(archive)?.into_owned();
+    Some((archive.to_owned(), inner))
+}
+
+/// The archive format `path`'s last name denotes, read as its native text, as
+/// [`format_for_path`] reads a native one.
+pub(crate) fn format_at(path: &AppPath) -> Option<ArchiveFormat> {
+    format_for_name(&native_text(path.file_name()?)?)
+}
+
+/// The text `name` spells natively, which is what an extension is read from:
+/// `name` itself when it holds no escape, else its native bytes when they
+/// are valid UTF-8 (a literal escape-range code point, which the bridge
+/// escapes through its bytes), and `None` for a name that isn't text
+/// natively. The `std::path` forms read a component's bytes the same way.
+fn native_text(name: &str) -> Option<Cow<'_, str>> {
+    if !name.chars().any(is_escape) {
+        return Some(Cow::Borrowed(name));
+    }
+    let bytes = unescape_bytes(name).ok()?;
+    String::from_utf8(bytes.into_owned()).ok().map(Cow::Owned)
+}
+
+/// [`confirm_archive_boundary`] for an app path: the split when `path` crosses
+/// into a confirmed archive on this machine's disk. The archive file crosses to
+/// the OS at [`AppPath::to_native`]; a path the OS can't open (a scheme path) is
+/// no archive here.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "a typed twin the host switches to when its routing speaks app paths"
+    )
+)]
+pub(crate) fn confirm_archive_boundary_at(path: &AppPath) -> Option<(AppPathBuf, RelativeAppPathBuf)> {
+    let (archive, inner) = archive_boundary_candidate_at(path)?;
+    confirms_on_disk(&archive).then_some((archive, inner))
+}
+
+/// Whether the archive at `archive` is a real file on this machine's disk
+/// carrying its format's magic.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "a typed twin the host switches to when its routing speaks app paths"
+    )
+)]
+pub(crate) fn confirms_on_disk(archive: &AppPath) -> bool {
+    let Ok(native) = native_of(archive) else {
+        return false;
+    };
+    if !std::fs::metadata(&native).is_ok_and(|meta| meta.is_file()) {
+        return false;
+    }
+    format_at(archive).is_some_and(|format| file_matches_archive_magic(&native, format))
+}
+
+/// Where the local backing file of an archive at `path` lives on this machine:
+/// [`AppPath::to_native`], the one crossing. A browser build has no local files,
+/// so every path there is `NotLocal`.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "a typed twin the host switches to when its routing speaks app paths"
+    )
+)]
+pub(crate) fn native_of(path: &AppPath) -> Result<PathBuf, NativeRefusal> {
+    #[cfg(not(target_family = "wasm"))]
+    return path.to_native();
+    #[cfg(target_family = "wasm")]
+    {
+        let _ = path;
+        Err(NativeRefusal::NotLocal)
+    }
+}
+
+/// [`path_crosses_archive_boundary`] for an app path.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "a typed twin the host switches to when its routing speaks app paths"
+    )
+)]
+pub(crate) fn path_crosses_archive_boundary_at(path: &AppPath) -> bool {
+    confirm_archive_boundary_at(path).is_some()
+}
+
+/// [`path_is_inside_archive`] for an app path.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "a typed twin the host switches to when its routing speaks app paths"
+    )
+)]
+pub(crate) fn path_is_inside_archive_at(path: &AppPath) -> bool {
+    confirm_archive_boundary_at(path).is_some_and(|(_archive, inner)| !inner.is_empty())
+}
+
+/// [`path_targets_archive_file`] for an app path.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "a typed twin the host switches to when its routing speaks app paths"
+    )
+)]
+pub(crate) fn path_targets_archive_file_at(path: &AppPath) -> bool {
+    let Some((archive, _inner)) = archive_boundary_candidate_at(path) else {
+        return false;
+    };
+    native_of(&archive).is_ok_and(|native| std::fs::metadata(native).is_ok_and(|meta| meta.is_file()))
+}
+
 /// Reads up to [`ARCHIVE_MAGIC_PREFIX_LEN`] bytes and checks them against
 /// `format`'s magic ([`bytes_match_archive_magic`]). Best-effort read: a file
 /// shorter than the prefix (a tiny zip) yields fewer bytes, and the magic check
@@ -165,147 +325,5 @@ fn bytes_start_with_zip_signature(bytes: &[u8]) -> bool {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn confirm_accepts_a_real_zip_file() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        let zip = dir.path().join("real.zip");
-        // A minimal but valid start-of-file zip signature is enough for the
-        // magic check (which reads only the first four bytes).
-        std::fs::write(&zip, b"PK\x03\x04rest-of-archive").expect("write zip");
-
-        let inner = zip.join("inner/a.txt");
-        let (got_zip, got_inner) = confirm_archive_boundary(&inner).expect("confirmed boundary");
-        assert_eq!(got_zip, zip);
-        assert_eq!(got_inner, PathBuf::from("inner/a.txt"));
-    }
-
-    #[test]
-    fn confirm_rejects_a_real_directory_named_like_an_archive() {
-        // A directory literally named `foo.zip` must lose to normal directory
-        // navigation, never route into an archive volume.
-        let dir = tempfile::tempdir().expect("tempdir");
-        let fake = dir.path().join("foo.zip");
-        std::fs::create_dir(&fake).expect("create dir named foo.zip");
-        std::fs::create_dir(fake.join("sub")).expect("create child");
-
-        assert!(confirm_archive_boundary(&fake.join("sub")).is_none());
-        assert!(!path_crosses_archive_boundary(&fake.join("sub")));
-    }
-
-    #[test]
-    fn confirm_rejects_a_mislabeled_non_zip_file() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        let mislabeled = dir.path().join("notreally.zip");
-        std::fs::write(&mislabeled, b"this is plain text, not a zip").expect("write file");
-
-        assert!(confirm_archive_boundary(&mislabeled.join("inner")).is_none());
-    }
-
-    #[test]
-    fn inside_archive_distinguishes_the_zip_file_itself_from_its_contents() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        let zip = dir.path().join("real.zip");
-        std::fs::write(&zip, b"PK\x03\x04rest-of-archive").expect("write zip");
-
-        // A path INSIDE the archive is "inside"...
-        assert!(path_is_inside_archive(&zip.join("inner/a.txt")));
-        // ...but the `.zip` file ITSELF is NOT inside — it's a regular file, even
-        // though it DOES "cross" a boundary (navigation enters it).
-        assert!(!path_is_inside_archive(&zip));
-        assert!(path_crosses_archive_boundary(&zip));
-        // A plain non-archive path is neither.
-        assert!(!path_is_inside_archive(dir.path()));
-        assert!(!path_crosses_archive_boundary(dir.path()));
-    }
-
-    #[test]
-    fn targets_archive_file_true_for_a_real_file_named_like_an_archive() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        // A mislabeled file (no zip magic) still counts: browsing it failed because
-        // it isn't a real archive, which is the "unreadable archive" case.
-        let mislabeled = dir.path().join("notreally.zip");
-        std::fs::write(&mislabeled, b"plain text").expect("write file");
-        assert!(path_targets_archive_file(&mislabeled));
-        assert!(path_targets_archive_file(&mislabeled.join("inner")));
-    }
-
-    #[test]
-    fn targets_archive_file_false_for_a_directory_or_a_non_archive_path() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        // A real directory named like an archive lists normally, so it's not the case.
-        let fake = dir.path().join("foo.zip");
-        std::fs::create_dir(&fake).expect("create dir named foo.zip");
-        assert!(!path_targets_archive_file(&fake));
-        // No archive-extension component at all.
-        assert!(!path_targets_archive_file(&dir.path().join("plain/folder")));
-        // Archive-extension name that doesn't exist on disk.
-        assert!(!path_targets_archive_file(&dir.path().join("ghost.zip")));
-    }
-
-    #[test]
-    fn confirm_is_none_when_the_archive_component_does_not_exist() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        let missing = dir.path().join("ghost.zip").join("inner");
-        assert!(confirm_archive_boundary(&missing).is_none());
-    }
-
-    // ---- Multi-format extension + magic ------------------------------------
-
-    #[test]
-    fn extension_check_recognizes_the_tar_family_and_7z() {
-        for name in [
-            "a.tar",
-            "a.tar.gz",
-            "a.tgz",
-            "a.tar.xz",
-            "a.txz",
-            "a.tar.bz2",
-            "a.tbz2",
-            "a.tar.zst",
-            "a.tzst",
-            "a.7z",
-            "a.TAR.GZ",
-        ] {
-            assert!(has_supported_archive_extension(name), "{name} should be an archive");
-        }
-        // A bare compressed file (not a tar) is not a browsable archive.
-        assert!(!has_supported_archive_extension("photo.gz"));
-        assert!(!has_supported_archive_extension("data.zst"));
-    }
-
-    #[test]
-    fn confirm_matches_per_format_magic() {
-        let dir = tempfile::tempdir().expect("tempdir");
-
-        // A plain tar has no offset-0 magic; ustar sits at 257.
-        let tar = dir.path().join("real.tar");
-        let mut tar_bytes = vec![0u8; 512];
-        tar_bytes[257..262].copy_from_slice(b"ustar");
-        std::fs::write(&tar, &tar_bytes).expect("write tar");
-        assert!(confirm_archive_boundary(&tar.join("inner")).is_some());
-
-        // gzip-wrapped tar.
-        let tgz = dir.path().join("real.tar.gz");
-        std::fs::write(&tgz, [0x1f, 0x8b, 0x08, 0x00]).expect("write tgz");
-        let (zip, inner) = confirm_archive_boundary(&tgz.join("d/f.txt")).expect("tgz boundary");
-        assert_eq!(zip, tgz);
-        assert_eq!(inner, PathBuf::from("d/f.txt"));
-
-        // 7z magic.
-        let sevenz = dir.path().join("real.7z");
-        std::fs::write(&sevenz, [0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c, 0x00]).expect("write 7z");
-        assert!(confirm_archive_boundary(&sevenz.join("x")).is_some());
-    }
-
-    #[test]
-    fn confirm_rejects_a_mislabeled_tar_gz() {
-        // A `.tar.gz` name whose bytes aren't gzip must not route.
-        let dir = tempfile::tempdir().expect("tempdir");
-        let fake = dir.path().join("notreally.tar.gz");
-        std::fs::write(&fake, b"plain text, definitely not gzip").expect("write file");
-        assert!(confirm_archive_boundary(&fake.join("inner")).is_none());
-    }
-}
+#[path = "boundary_test.rs"]
+mod tests;

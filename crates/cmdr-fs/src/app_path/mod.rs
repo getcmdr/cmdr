@@ -668,6 +668,8 @@ macro_rules! app_path {
 }
 
 #[cfg(test)]
+mod arithmetic_is_opt_in_test;
+#[cfg(test)]
 mod bridge_test;
 #[cfg(test)]
 mod flip_shapes_test;

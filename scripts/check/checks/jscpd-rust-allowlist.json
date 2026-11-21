@@ -33,8 +33,8 @@
       "reason": "Two contract cases' shared fixture setup (assert the folder is absent, create it, write one file into it): the trait's flip to app paths (#1225) bridged each `Volume` call (`&AppPath::legacy_unchecked(dir)`), and rustfmt's longer lines made the two setups token-identical. The bridges go when `cmdr-fs` speaks app paths internally (milestone 5); if the setup still matches then, extract it into a conformance helper."
     },
     "crates/cmdr-git/src/volume.rs ↔ crates/cmdr-restic/src/volume.rs": {
-      "lines": 29,
-      "reason": "`Volume` trait boilerplate shared by the two routed read-only views (`GitPortalVolume`, `ResticVolume`): `scan_for_copy` and `scan_for_copy_batch_with_boundary`, each a one-line delegation to `cmdr_fs::volume::scan_walk`, then the `routes_over_a_parent() == true` capability flag under the same section banner. Same trade as the backend `volume_impl.rs` pairs: folding them takes a macro that emits trait methods, which costs more lines than it removes and hides them from `codegraph_search` and go-to-definition. Revisit when a body stops being a one-line delegation. The `Volume` trait's flip to app paths (#1225) grew it: each flipped method gained the same two-line bridge prelude (`let path_std = path.as_std_legacy(); let path: &Path = &path_std;`) or bridged argument, which made neighbouring trait methods token-identical across backends. Those go as each crate converts (milestones 5–10e)."
+      "lines": 21,
+      "reason": "`Volume` trait boilerplate shared by the two routed read-only views (`GitPortalVolume`, `ResticVolume`): `scan_for_copy` and `scan_for_copy_batch_with_boundary`, each a one-line delegation to `cmdr_fs::volume::scan_walk`'s typed walk, then the `routes_over_a_parent() == true` capability flag under the same section banner. Same trade as the backend `volume_impl.rs` pairs: folding them takes a macro that emits trait methods, which costs more lines than it removes and hides them from `codegraph_search` and go-to-definition. Revisit when a body stops being a one-line delegation."
     },
     "crates/cmdr-index/src/importance/writer.rs ↔ crates/cmdr-index/src/media_index/writer/maintenance.rs": {
       "lines": 11,
@@ -87,10 +87,6 @@
     "crates/cmdr-sftp/src/volume/volume_impl.rs ↔ crates/cmdr-webdav/src/volume/volume_impl.rs": {
       "lines": 53,
       "reason": "`Volume` trait-method signatures, not logic: the listing and file-creation blocks, where every body is one line delegating to an inherent `*_impl`. The trait makes each backend spell the full signature out, so folding these takes a macro that emits trait methods: roughly 120 lines of macro to remove about 38 lines per backend, so the code gets no smaller, and every generated method goes invisible to `codegraph_search` and to go-to-definition. The behavior behind the signatures is already shared, in `cmdr_fs::volume` (`scan_walk`, `mkdir_all`, `patching`, `secret_store`) and `network::connect_wiring`. Revisit when a body stops being a one-line delegation, or when enough backends land that the macro pays for itself. The `Volume` trait's flip to app paths (#1225) grew it: each flipped method gained the same two-line bridge prelude (`let path_std = path.as_std_legacy(); let path: &Path = &path_std;`) or bridged argument, which made neighbouring trait methods token-identical across backends. Those go as each crate converts (milestones 5–10e)."
-    },
-    "crates/cmdr-adb/src/volume/volume_impl.rs ↔ crates/cmdr-archive/src/volume.rs": {
-      "lines": 9,
-      "reason": "`Volume` trait boilerplate the flip to app paths (#1225) made token-identical: `scan_for_copy_batch_with_boundary` delegating to `scan_walk::scan_trees` behind the same bridged `paths_std` prelude in both. Not new code: jscpd reported this fragment against `cmdr-webdav` until that crate moved to the typed `scan_trees_at`, and hands it to this pair now. The prelude goes when ADB and the archive volume convert to `scan_trees_at` too."
     }
   }
 }

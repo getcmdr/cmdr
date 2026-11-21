@@ -1,11 +1,9 @@
 use super::{IndexedRepo, ResticError, ResticRepo};
 use crate::snapshots::snapshot_list_of;
-use crate::test_fixtures::FixtureRepo;
-use cmdr_fs::app_path::AppPath;
+use crate::test_fixtures::{FixtureRepo, app, path_in, std_path_of};
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeError};
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -19,13 +17,13 @@ fn at(secs: u64) -> SystemTime {
 /// A remote-style parent (no local file access) holding `fixture` at [`ROOT`].
 async fn parent_with(fixture: &FixtureRepo, volume: InMemoryVolume) -> Arc<InMemoryVolume> {
     let volume = Arc::new(volume);
-    fixture.write_into(volume.as_ref(), Path::new(ROOT)).await;
+    fixture.write_into_at(volume.as_ref(), &app(ROOT)).await;
     volume
 }
 
 async fn open(parent: &Arc<InMemoryVolume>, password: &str) -> Result<ResticRepo, ResticError> {
     let parent: Arc<dyn Volume> = Arc::clone(parent) as Arc<dyn Volume>;
-    ResticRepo::open(parent, PathBuf::from(ROOT), password, None, &VolumeHost::detached()).await
+    ResticRepo::open(parent, app(ROOT), password, None, &VolumeHost::detached()).await
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -88,7 +86,7 @@ async fn opening_and_listing_never_write_to_the_repo() {
     // No lock file either: rustic's read path doesn't take restic locks.
     assert!(
         parent
-            .list_directory(&AppPath::legacy_unchecked(&Path::new(ROOT).join("locks")), None)
+            .list_directory(&path_in(&app(ROOT), "locks"), None)
             .await
             .expect("locks/")
             .is_empty()
@@ -99,10 +97,7 @@ async fn opening_and_listing_never_write_to_the_repo() {
 async fn a_folder_without_a_config_is_not_a_repository() {
     let fixture = FixtureRepo::init(PASSWORD);
     let parent = parent_with(&fixture, InMemoryVolume::new("nas")).await;
-    parent
-        .delete(&AppPath::legacy_unchecked(&Path::new(ROOT).join("config")))
-        .await
-        .expect("rm config");
+    parent.delete(&path_in(&app(ROOT), "config")).await.expect("rm config");
 
     let result = open(&parent, PASSWORD).await;
     assert!(matches!(result, Err(ResticError::NotARepository)), "got {result:?}");
@@ -113,7 +108,7 @@ async fn a_parent_that_cant_answer_surfaces_its_typed_error() {
     let fixture = FixtureRepo::init(PASSWORD);
     let parent = parent_with(&fixture, InMemoryVolume::new("nas")).await;
     // The config's stat fails the way a dropped session does.
-    parent.set_stat_failing(&Path::new(ROOT).join("config"));
+    parent.set_stat_failing(&std_path_of(&path_in(&app(ROOT), "config")));
 
     let result = open(&parent, PASSWORD).await;
     assert!(
@@ -145,7 +140,7 @@ async fn reading_a_tree_uses_ranged_reads_of_the_pack_never_the_whole_pack() {
     let parent_dyn: Arc<dyn Volume> = Arc::clone(&parent) as Arc<dyn Volume>;
     let backend = Arc::new(crate::backend::VolumeBackend::new(
         parent_dyn,
-        PathBuf::from(ROOT),
+        app(ROOT),
         tokio::runtime::Handle::current(),
     ));
     let indexed = tokio::task::spawn_blocking(move || {

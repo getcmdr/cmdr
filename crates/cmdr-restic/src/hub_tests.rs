@@ -3,14 +3,13 @@
 
 use super::{ResticRepos, Tuning};
 use crate::path::VIRTUAL_ENTRY_NAME;
-use crate::test_fixtures::FixtureRepo;
+use crate::test_fixtures::{FixtureRepo, app};
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::{WedgedVolume, wait_until_async};
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{InMemoryVolume, ListingProgress, Volume, VolumeError};
 use std::future::Future;
-use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -36,11 +35,8 @@ impl CountingParent {
 
     async fn slow(delay: Duration) -> Arc<Self> {
         let inner = InMemoryVolume::new("testshare");
-        FixtureRepo::init("pw").write_into(&inner, Path::new(REPO)).await;
-        inner
-            .create_directory(&AppPath::legacy_unchecked(Path::new(PLAIN)))
-            .await
-            .expect("plain folder");
+        FixtureRepo::init("pw").write_into_at(&inner, &app(REPO)).await;
+        inner.create_directory(&app(PLAIN)).await.expect("plain folder");
         Arc::new(Self {
             inner,
             delay,
@@ -107,18 +103,18 @@ async fn a_repo_is_confirmed_by_one_listing_and_remembered() {
     let parent = CountingParent::new().await;
     let hub = hub();
 
-    assert_eq!(hub.serves_confirmed("nas", Path::new(REPO)), None, "never asked");
+    assert_eq!(hub.serves_confirmed_at("nas", &app(REPO)), None, "never asked");
     assert_eq!(
-        hub.confirm_repo("nas", &parent.as_volume(), Path::new(REPO)).await,
+        hub.confirm_repo_at("nas", &parent.as_volume(), &app(REPO)).await,
         Some(true)
     );
     assert_eq!(
-        hub.confirm_repo("nas", &parent.as_volume(), Path::new(REPO)).await,
+        hub.confirm_repo_at("nas", &parent.as_volume(), &app(REPO)).await,
         Some(true)
     );
 
     assert_eq!(parent.listings(), 1);
-    assert_eq!(hub.serves_confirmed("nas", Path::new(REPO)), Some(true));
+    assert_eq!(hub.serves_confirmed_at("nas", &app(REPO)), Some(true));
 }
 
 /// ❗ Without a remembered "no", every path below a real folder named
@@ -130,12 +126,12 @@ async fn a_folder_that_isnt_a_repo_costs_one_listing_across_many_calls() {
 
     for _ in 0..5 {
         assert_eq!(
-            hub.confirm_repo("nas", &parent.as_volume(), Path::new(PLAIN)).await,
+            hub.confirm_repo_at("nas", &parent.as_volume(), &app(PLAIN)).await,
             Some(false)
         );
     }
     assert_eq!(parent.listings(), 1);
-    assert_eq!(hub.serves_confirmed("nas", Path::new(PLAIN)), Some(false));
+    assert_eq!(hub.serves_confirmed_at("nas", &app(PLAIN)), Some(false));
 }
 
 #[tokio::test]
@@ -150,16 +146,16 @@ async fn a_no_goes_stale_and_is_asked_again() {
     );
 
     assert_eq!(
-        hub.confirm_repo("nas", &parent.as_volume(), Path::new(PLAIN)).await,
+        hub.confirm_repo_at("nas", &parent.as_volume(), &app(PLAIN)).await,
         Some(false)
     );
     assert_eq!(
-        hub.serves_confirmed("nas", Path::new(PLAIN)),
+        hub.serves_confirmed_at("nas", &app(PLAIN)),
         None,
         "a stale no is no answer"
     );
     assert_eq!(
-        hub.confirm_repo("nas", &parent.as_volume(), Path::new(PLAIN)).await,
+        hub.confirm_repo_at("nas", &parent.as_volume(), &app(PLAIN)).await,
         Some(false)
     );
     assert_eq!(parent.listings(), 2);
@@ -170,12 +166,12 @@ async fn a_missing_folder_is_not_a_repo() {
     let parent = CountingParent::new().await;
     let hub = hub();
     assert_eq!(
-        hub.confirm_repo("nas", &parent.as_volume(), Path::new("/Volumes/testshare/gone"))
+        hub.confirm_repo_at("nas", &parent.as_volume(), &app("/Volumes/testshare/gone"))
             .await,
         Some(false)
     );
     assert_eq!(
-        hub.serves_confirmed("nas", Path::new("/Volumes/testshare/gone")),
+        hub.serves_confirmed_at("nas", &app("/Volumes/testshare/gone")),
         Some(false)
     );
 }
@@ -187,15 +183,15 @@ async fn the_overlay_row_confirms_the_repo_without_a_listing() {
     let parent = CountingParent::new().await;
     let hub = hub();
 
-    let row = hub.overlay_row("nas", Path::new(REPO));
+    let row = hub.overlay_row_at("nas", &app(REPO));
 
     assert_eq!(row.name, VIRTUAL_ENTRY_NAME);
-    assert_eq!(PathBuf::from(&row.path), Path::new(REPO).join(VIRTUAL_ENTRY_NAME));
+    assert_eq!(row.path, format!("{REPO}/{VIRTUAL_ENTRY_NAME}"));
     assert!(row.is_directory && !row.is_symlink);
     // The frontend draws its own glyph for this reserved id, never an OS folder icon.
     assert_eq!(row.icon_id, "restic:snapshots");
     assert_eq!(
-        hub.confirm_repo("nas", &parent.as_volume(), Path::new(REPO)).await,
+        hub.confirm_repo_at("nas", &parent.as_volume(), &app(REPO)).await,
         Some(true)
     );
     assert_eq!(parent.listings(), 0);
@@ -204,8 +200,8 @@ async fn the_overlay_row_confirms_the_repo_without_a_listing() {
 #[tokio::test]
 async fn the_memo_is_per_volume() {
     let hub = hub();
-    hub.overlay_row("nas", Path::new(REPO));
-    assert_eq!(hub.serves_confirmed("other-volume", Path::new(REPO)), None);
+    hub.overlay_row_at("nas", &app(REPO));
+    assert_eq!(hub.serves_confirmed_at("other-volume", &app(REPO)), None);
 }
 
 /// A wedged share must not hang every path below it: the confirmation gives up
@@ -222,8 +218,8 @@ async fn a_wedged_parent_times_out_undecided() {
         },
     );
 
-    assert_eq!(hub.confirm_repo("nas", &parent, Path::new(REPO)).await, None);
-    assert_eq!(hub.serves_confirmed("nas", Path::new(REPO)), None);
+    assert_eq!(hub.confirm_repo_at("nas", &parent, &app(REPO)).await, None);
+    assert_eq!(hub.serves_confirmed_at("nas", &app(REPO)), None);
 }
 
 /// ❗ The confirm listing past its deadline is DETACHED, never dropped: a parent
@@ -241,14 +237,8 @@ async fn a_slow_confirm_detaches_its_listing_and_remembers_undecided_briefly() {
         },
     );
 
-    assert_eq!(
-        hub.confirm_repo("nas", &parent.as_volume(), Path::new(REPO)).await,
-        None
-    );
-    assert_eq!(
-        hub.confirm_repo("nas", &parent.as_volume(), Path::new(REPO)).await,
-        None
-    );
+    assert_eq!(hub.confirm_repo_at("nas", &parent.as_volume(), &app(REPO)).await, None);
+    assert_eq!(hub.confirm_repo_at("nas", &parent.as_volume(), &app(REPO)).await, None);
     assert_eq!(parent.listings(), 1, "the undecided answer is remembered");
 
     let finished = Arc::clone(&parent);

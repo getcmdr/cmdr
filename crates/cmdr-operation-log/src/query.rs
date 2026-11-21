@@ -42,7 +42,7 @@ use rusqlite::Connection;
 use super::store::fold_name;
 use super::store::{
     ITEM_COLUMNS, OPERATION_COLUMNS, OperationItemRow, OperationLogStoreError, OperationRow, fill_inverse_op_ids,
-    join_leaf, map_item_row, map_operation_row, resolve_dir,
+    join_leaf_text, map_item_row, map_operation_row, resolve_dir,
 };
 use super::types::{EntryType, ExecutionStatus, Initiator, ItemOutcome, OpKind, RollbackState, RowRole, SkipReason};
 
@@ -161,11 +161,11 @@ pub struct OperationItemView {
 
 fn view_from_row(conn: &Connection, item: &OperationItemRow) -> Result<OperationItemView, OperationLogStoreError> {
     let (source_volume_id, source_dir) = resolve_dir(conn, item.source_dir_id)?;
-    let source_path = join_leaf(&source_dir, &item.source_name).to_string_lossy().into_owned();
+    let source_path = join_leaf_text(&source_dir, &item.source_name);
     let (dest_volume_id, dest_path) = match (item.dest_dir_id, &item.dest_name) {
         (Some(dir_id), Some(name)) => {
             let (vol, dir) = resolve_dir(conn, dir_id)?;
-            (Some(vol), Some(join_leaf(&dir, name).to_string_lossy().into_owned()))
+            (Some(vol), Some(join_leaf_text(&dir, name)))
         }
         _ => (None, None),
     };

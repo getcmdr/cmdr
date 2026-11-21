@@ -8,7 +8,7 @@
 //! volume through `bridge.rs`.
 //! `DETAILS.md` § "Byte sources".
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use std::collections::VecDeque;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -20,7 +20,7 @@ use log::debug;
 
 use super::ViewerError;
 use super::replacement::ReplacementHook;
-use super::source::{ByteSource, OpenedFile, file_name_of};
+use super::source::{ByteSource, OpenedFile};
 use super::volume_error::map_volume_error;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::rt::Runtime;
@@ -89,17 +89,17 @@ pub enum PositionedRead {
 /// The size comes from a stat at open, and reads clamp to it like any reader's.
 struct RangeReader {
     volume: Arc<dyn Volume>,
-    path: PathBuf,
+    path: AppPathBuf,
     size: u64,
 }
 
 impl RangeReader {
     /// `NotSupported` when the stat doesn't say how big the file is: a reader that can't
     /// answer `size` can't serve a `Range` either, and the caller falls back to a pull.
-    async fn open(volume: Arc<dyn Volume>, path: PathBuf) -> Result<Self, VolumeError> {
-        let entry = volume.get_metadata(&AppPath::legacy_unchecked(&path)).await?;
+    async fn open(volume: Arc<dyn Volume>, path: AppPathBuf) -> Result<Self, VolumeError> {
+        let entry = volume.get_metadata(&path).await?;
         if entry.is_directory {
-            return Err(VolumeError::IsADirectory(path.display().to_string()));
+            return Err(VolumeError::IsADirectory(path.to_string()));
         }
         let size = entry.size.ok_or(VolumeError::NotSupported)?;
         Ok(Self { volume, path, size })
@@ -117,10 +117,7 @@ impl VolumeRandomReader for RangeReader {
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + '_>> {
         Box::pin(async move {
-            let mut bytes = self
-                .volume
-                .read_range(&AppPath::legacy_unchecked(&self.path), offset, len)
-                .await?;
+            let mut bytes = self.volume.read_range(&self.path, offset, len).await?;
             bytes.truncate(self.size.saturating_sub(offset).min(len as u64) as usize);
             Ok(bytes)
         })
@@ -133,15 +130,15 @@ impl VolumeRandomReader for RangeReader {
 
 fn open_reader(
     volume: &Arc<dyn Volume>,
-    path: &Path,
+    path: &AppPath,
     way: PositionedRead,
     runtime: &Runtime,
 ) -> Result<Box<dyn VolumeRandomReader>, VolumeError> {
     super::bridge::block_on(runtime, async {
         match way {
-            PositionedRead::Held => volume.open_random_reader(&AppPath::legacy_unchecked(path)).await,
+            PositionedRead::Held => volume.open_random_reader(path).await,
             PositionedRead::Ranged => {
-                let reader = RangeReader::open(Arc::clone(volume), path.to_path_buf()).await?;
+                let reader = RangeReader::open(Arc::clone(volume), path.to_owned()).await?;
                 Ok(Box::new(reader) as Box<dyn VolumeRandomReader>)
             }
         }
@@ -151,7 +148,7 @@ fn open_reader(
 /// A [`ByteSource`] over a volume's positioned reads, with a small block cache.
 pub struct VolumeSource {
     volume: Arc<dyn Volume>,
-    path: PathBuf,
+    path: AppPathBuf,
     way: PositionedRead,
     runtime: Runtime,
     reader: Mutex<Arc<HeldReader>>,
@@ -170,7 +167,7 @@ impl VolumeSource {
     /// bridges to the volume on `runtime`.
     pub fn open(
         volume: Arc<dyn Volume>,
-        path: &Path,
+        path: &AppPath,
         way: PositionedRead,
         runtime: &Runtime,
     ) -> Result<(Self, u64), VolumeError> {
@@ -179,7 +176,7 @@ impl VolumeSource {
         Ok((
             Self {
                 volume,
-                path: path.to_path_buf(),
+                path: path.to_owned(),
                 way,
                 runtime: runtime.clone(),
                 reader: Mutex::new(Arc::new(HeldReader::new(reader, runtime))),
@@ -235,7 +232,7 @@ impl VolumeSource {
             Err(first) => {
                 debug!(
                     "viewer volume source: read at {offset} failed ({first}); reopening {} once",
-                    cmdr_fs::log_private::LogPrivate::file_path(&self.path),
+                    cmdr_fs::log_private::LogPrivate::file_path(self.path.as_str()),
                     first = cmdr_fs::log_error::LogError(&first)
                 );
                 let fresh = self.reopen(reader)?;
@@ -337,7 +334,7 @@ impl ByteSource for VolumeSource {
 /// when the file changes under its reader.
 pub(super) fn open_on_volume(
     volume: &Arc<dyn Volume>,
-    path: &Path,
+    path: &AppPath,
     way: PositionedRead,
     runtime: &Runtime,
     replaced: &ReplacementHook,
@@ -346,13 +343,25 @@ pub(super) fn open_on_volume(
     Ok(OpenedFile {
         source: Arc::new(source.reporting_replacement_to(replaced.clone())),
         total_bytes: size,
-        file_name: file_name_of(path),
+        file_name: path.file_name().map_or_else(|| path.to_string(), str::to_owned),
     })
 }
 
 /// The file's size now, from the volume's stat.
-pub(super) fn size_on_volume(volume: &Arc<dyn Volume>, path: &Path, runtime: &Runtime) -> Result<u64, ViewerError> {
-    let entry = super::bridge::block_on(runtime, volume.get_metadata(&AppPath::legacy_unchecked(path)))
-        .map_err(|e| map_volume_error(e, None))?;
+pub(super) fn size_on_volume(volume: &Arc<dyn Volume>, path: &AppPath, runtime: &Runtime) -> Result<u64, ViewerError> {
+    let entry = super::bridge::block_on(runtime, volume.get_metadata(path)).map_err(|e| map_volume_error(e, None))?;
     Ok(entry.size.unwrap_or(0))
+}
+
+/// A path the host's seams hand the viewer as a `std::path` value (`open_session`'s wire
+/// text, a picture's `DocumentImages::on_volume`), as the app path its volume reads. The
+/// viewer's one crossing in, lossless both ways with [`host_path_of`]; both go when the
+/// app's viewer host hands typed paths (its IPC edge converts).
+pub(super) fn app_path_of(path: &Path) -> AppPathBuf {
+    AppPath::legacy_unchecked(path).into_owned()
+}
+
+/// [`app_path_of`]'s way back: a picture's path on its way to the host.
+pub(super) fn host_path_of(path: &AppPath) -> PathBuf {
+    path.as_std_legacy().into_owned()
 }

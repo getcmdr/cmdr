@@ -4,8 +4,6 @@
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::app_path::AppPathBuf;
 use std::future::Future;
-use std::path::Path;
-use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU8, Ordering};
 
@@ -213,7 +211,7 @@ impl Volume for WatchCoverageVolume {
 pub struct SpelledVolume {
     inner: InMemoryVolume,
     /// Foreign path → what the resolve answers for it.
-    answers: std::collections::HashMap<PathBuf, Result<Option<PathBuf>, VolumeError>>,
+    answers: std::collections::HashMap<AppPathBuf, Result<Option<AppPathBuf>, VolumeError>>,
     /// When set, every listing is refused with this instead of reaching `inner`.
     listing_refusal: Option<VolumeError>,
     resolves: std::sync::atomic::AtomicUsize,
@@ -239,8 +237,8 @@ impl SpelledVolume {
 
     /// Makes the resolve answer `answer` for `foreign`.
     pub fn resolving(mut self, foreign: &str, answer: Result<Option<&str>, VolumeError>) -> Self {
-        self.answers
-            .insert(PathBuf::from(foreign), answer.map(|p| p.map(PathBuf::from)));
+        let app = |text: &str| AppPath::from_normalized(text).expect("a canonical app path").to_owned();
+        self.answers.insert(app(foreign), answer.map(|p| p.map(app)));
         self
     }
 
@@ -266,13 +264,10 @@ impl Volume for SpelledVolume {
             // `InMemoryVolume` lists a directory it doesn't hold as empty; a share
             // answers a name it doesn't store with a miss, which is the whole point.
             None => Box::pin(async move {
-                let path_app = path;
-                let path_std = path.as_std_legacy();
-                let path: &Path = &path_std;
-                if path != self.inner.root().as_std_legacy() && !self.inner.exists(path_app).await {
-                    return Err(VolumeError::NotFound(path.display().to_string()));
+                if path != self.inner.root() && !self.inner.exists(path).await {
+                    return Err(VolumeError::NotFound(path.as_str().to_owned()));
                 }
-                self.inner.list_directory(path_app, on_progress).await
+                self.inner.list_directory(path, on_progress).await
             }),
         }
     }
@@ -282,11 +277,8 @@ impl Volume for SpelledVolume {
         path: &'a AppPath,
         _cancel: Option<&'a tokio_util::sync::CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Option<AppPathBuf>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         self.resolves.fetch_add(1, Ordering::Relaxed);
         let answer = self.answers.get(path).cloned().unwrap_or(Ok(None));
-        let answer = answer.map(|stored| stored.map(|p| AppPath::legacy_unchecked(&p).into_owned()));
         Box::pin(async move { answer })
     }
 }

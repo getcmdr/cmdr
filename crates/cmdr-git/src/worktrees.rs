@@ -24,7 +24,9 @@ use std::path::Path;
 
 use cmdr_fs::entry::FileEntry;
 
+use crate::path::Cat;
 use crate::repo::RepoHandle;
+use crate::row_path::{RowPath, redirect_text};
 use cmdr_fs::git_meta::GitEntryMeta;
 use cmdr_fs::volume::git_error::{FriendlyGitError, FriendlyGitErrorKind};
 
@@ -35,7 +37,7 @@ use cmdr_fs::volume::git_error::{FriendlyGitError, FriendlyGitErrorKind};
 /// shows the worktree's checked-out branch (`on feature-x`) or short
 /// SHA when detached.
 pub fn list_worktrees(handle: &RepoHandle, repo_root: &Path) -> Result<Vec<FileEntry>, FriendlyGitError> {
-    let parent = repo_root.join(".git").join("worktrees");
+    let parent = RowPath::category_of(repo_root, Cat::Worktrees);
     let repo = handle.to_thread_local();
     let proxies = repo
         .worktrees()
@@ -55,13 +57,15 @@ pub fn list_worktrees(handle: &RepoHandle, repo_root: &Path) -> Result<Vec<FileE
         let Ok(base) = proxy.base() else {
             continue;
         };
-        let display_path = parent.join(&id);
-        let mut fe = FileEntry::new(id, display_path.to_string_lossy().into_owned(), true, false);
+        let Some(display_path) = parent.child(&id) else {
+            continue;
+        };
+        let mut fe = FileEntry::new(id, display_path.into_text(), true, false);
         fe.icon_id = "git:fork".into();
         fe.permissions = 0o755;
         // Redirect navigation: opening this entry takes the user to the
         // worktree's working directory, which itself is a git portal.
-        fe.redirect_to_path = Some(base.display().to_string());
+        fe.redirect_to_path = Some(redirect_text(&base));
         // Decode the worktree's HEAD: a symbolic ref points at a branch
         // (`on feature-x`), a detached HEAD shows the short SHA.
         if let Ok(wt_repo) = proxy.into_repo() {

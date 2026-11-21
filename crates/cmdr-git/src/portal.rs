@@ -14,6 +14,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::volume::git_error::FriendlyGitError;
 use cmdr_fs::volume::host::VolumeHost;
 
@@ -110,18 +111,21 @@ impl GitPortal {
     ///
     /// **Blocking**: one tree diff per row (~230 µs each). Run it on the host's
     /// blocking pool.
+    ///
+    /// `paths` are the rows' wire text as `std::path` values (the host's commit-count
+    /// pass), each crossing once into an app path ([`crate::volume::host_app_path`]).
     pub fn commit_rows_with_counts(&self, paths: &[PathBuf]) -> Vec<FileEntry> {
         // Counts read while a mapped page went away may be zeros: the rows stay pending.
         let watch = FaultWatch::start();
-        let mut by_repo: Vec<(RepoHandle, PathBuf, Vec<PathBuf>)> = Vec::new();
-        for path in paths {
-            let Some((VirtualGitPath::Ref(Cat::Commits, _), handle, root)) = path::classify_in(&self.repos, path)
+        let mut by_repo: Vec<(RepoHandle, PathBuf, Vec<AppPathBuf>)> = Vec::new();
+        for path in paths.iter().map(|path| crate::volume::host_app_path(path)) {
+            let Some((VirtualGitPath::Ref(Cat::Commits, _), handle, root)) = path::classify_in(&self.repos, &path)
             else {
                 continue;
             };
             match by_repo.iter_mut().find(|(_, r, _)| *r == root) {
-                Some((_, _, group)) => group.push(path.clone()),
-                None => by_repo.push((handle, root, vec![path.clone()])),
+                Some((_, _, group)) => group.push(path),
+                None => by_repo.push((handle, root, vec![path])),
             }
         }
         let rows: Vec<FileEntry> = by_repo
