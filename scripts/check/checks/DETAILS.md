@@ -18,7 +18,7 @@ recipe for adding one is § "Adding a new check". Only the layout rules live her
   `{app}-{name}-{part}.go`, each with its own test file: `desktop-rust-cfg-gate-manifest.go` reads the manifests.
 - **An allowlist is a sibling JSON named `<check>-allowlist.json`**, and it's NEVER hand-edited: the owning check
   shrink-wraps it on local runs, so you run the check and commit its rewrite (§ "Allowlist consent"). The shared
-  staleness policy, and why it lives inside each check rather than a meta-check, is § "Allowlist shrink-wrap". Seventeen
+  staleness policy, and why it lives inside each check rather than a meta-check, is § "Allowlist shrink-wrap". Nineteen
   exist today; `a11y-coverage-allowlist.json` and `ui-primitive-coverage-allowlist.json` are the two with no § of their
   own (both are exempt-with-reason lists whose checks FAIL on a dead or redundant entry rather than auto-removing it).
   `macos-availability-selectors.json` is a sibling JSON that isn't an allowlist: it's the SDK's own answer, cached so
@@ -1166,6 +1166,25 @@ whole is left alone rather than guessed at.
 raising one needs David's OK (§ "Allowlist consent"). Zero isn't the target everywhere: the `mod` gate of a feature that
 exists only on macOS (Quick Look, the Services menu) is a fair entry, and counting it keeps each new one a deliberate
 call rather than a habit.
+
+## OS-gated tests say why
+
+`desktop-rust-os-test-gate-reason` (`IsFast`, app and crates) holds test code to `docs/testing.md` § "A test runs on
+every OS": a test file whose inner `#![cfg(…)]` names an OS, or a `mod` whose name holds `test` behind an outer
+`#[cfg(…)]` naming one, carries a comment on the gate's line (after the `]`) or on the line right above it (other
+attributes between are fine). OS predicates and parsing are platform-cfg-placement's (`parsedCfgsIn`, `mentionsOS`), so
+`all(test, unix)` counts and `test` alone doesn't.
+
+**Decision**: single `#[test]` cells are out of scope. **Why**: a cell's gate sits beside the code that explains it, and
+there are hundreds; the file and module gates are the ones that take a whole suite off an OS at once, unseen.
+
+**Decision**: a comment's presence is the rule, not its content. **Why**: a cheap check can't judge a reason, and the
+gates that matter most already carry one (`// POSIX-only cells: …`); the point is that writing a gate makes the author
+say why.
+
+**Allowlist**: `os-test-gate-reason-allowlist.json`, keyed on the gate (the file for an inner gate, `file#mod` for a
+module gate), each entry with a `reason`. Seeded 2026-11-21 with the 88 gates that had none. Local runs drop an entry
+once its gate has a reason or is gone; CI reports it; adding one needs David's OK (§ "Allowlist consent").
 
 ## Allowlist shrink-wrap
 
@@ -2491,23 +2510,25 @@ Checks by app and tech:
   and `pathFromBareText`, counted per line, a tripwire that refuses a production escape producer while either is above
   zero, ❗ not a sound gate, and a zero-tolerance refusal of OS text handed to an app-spelling door;
   `crates/cmdr-fs/DETAILS.md` § "App paths"), platform-cfg-placement (negated OS cfgs, and OS cfgs outside a `platform/`
-  seam, on a per-file ratchet; § "Platform cfg placement"), log-private-values (an unmarked path, name, or identity in a
-  log macro, strict with no allowlist, and a marked value made into a `String`; § "The log-private-values check"),
-  test-sleep (flags a fixed `thread::sleep` / `tokio::time::sleep` in test code, where a condition-based `wait_until`
-  belongs; opt out a genuine sleep-is-the-subject site with `// allowed-test-sleep: <reason>`), fixed-temp-dir (flags a
-  test fixture built on `std::env::temp_dir()`, where every process on the machine shares the path and two suite runs
-  delete each other's live fixtures; the sanctioned fixture is `crate::test_support::TestDir`, and a site where the temp
-  root is load bearing opts out with `// allowed-fixed-temp-dir: <reason>`), no-hand-rolled-fixture (bans a struct
-  literal of `CachedScanResult` / `SourceHint` / `VolumePreflight` / `WrittenFile` in test code, so a fixture can only
-  be one of the shapes a named constructor actually builds; it ships with ZERO findings on purpose and is a regression
-  fence rather than a finder — the shapes are already clean, and the point is that the next test author can't undo that
-  by copy-pasting an old literal), derive-default-justified (every `#[derive(..., Default, ...)]` under `file_system/`,
-  `cmdr-fs`, `cmdr-local`, `cmdr-operations`, and the IPC twins of `cmdr-fs` file types listed in `deriveDefaultTrees`
-  carries a `// DEFAULT-OK: <why>` line, because a zero value on a fact-carrying type isn't "no information", it's a
-  claim about the disk that nobody made; it and probe-unwrap fail when a governed member scans no file,
-  `minScannedPerGovernedRoot`, so a tree moving out from under them reads red), probe-unwrap-justified (flags
-  `\.is_directory(…).await.unwrap_or(…)` in production `file_system/`, `cmdr-local`, and `cmdr-operations` code, where a
-  probe that COULDN'T answer gets collapsed into a confident "no" and picks the branch that deletes; opt out with
+  seam, on a per-file ratchet; § "Platform cfg placement"), os-test-gate-reason (an OS-gated test file or test module
+  with no reason comment, on a shrink-only allowlist; § "OS-gated tests say why"), log-private-values (an unmarked path,
+  name, or identity in a log macro, strict with no allowlist, and a marked value made into a `String`; § "The
+  log-private-values check"), test-sleep (flags a fixed `thread::sleep` / `tokio::time::sleep` in test code, where a
+  condition-based `wait_until` belongs; opt out a genuine sleep-is-the-subject site with
+  `// allowed-test-sleep: <reason>`), fixed-temp-dir (flags a test fixture built on `std::env::temp_dir()`, where every
+  process on the machine shares the path and two suite runs delete each other's live fixtures; the sanctioned fixture is
+  `crate::test_support::TestDir`, and a site where the temp root is load bearing opts out with
+  `// allowed-fixed-temp-dir: <reason>`), no-hand-rolled-fixture (bans a struct literal of `CachedScanResult` /
+  `SourceHint` / `VolumePreflight` / `WrittenFile` in test code, so a fixture can only be one of the shapes a named
+  constructor actually builds; it ships with ZERO findings on purpose and is a regression fence rather than a finder —
+  the shapes are already clean, and the point is that the next test author can't undo that by copy-pasting an old
+  literal), derive-default-justified (every `#[derive(..., Default, ...)]` under `file_system/`, `cmdr-fs`,
+  `cmdr-local`, `cmdr-operations`, and the IPC twins of `cmdr-fs` file types listed in `deriveDefaultTrees` carries a
+  `// DEFAULT-OK: <why>` line, because a zero value on a fact-carrying type isn't "no information", it's a claim about
+  the disk that nobody made; it and probe-unwrap fail when a governed member scans no file, `minScannedPerGovernedRoot`,
+  so a tree moving out from under them reads red), probe-unwrap-justified (flags `\.is_directory(…).await.unwrap_or(…)`
+  in production `file_system/`, `cmdr-local`, and `cmdr-operations` code, where a probe that COULDN'T answer gets
+  collapsed into a confident "no" and picks the branch that deletes; opt out with
   `// allowed-probe-unwrap: <why the guess is truthful>`), discarded-outcome (a function that returns NOTHING while
   dropping a typed answer from the free function it delegates to; three of these shipped before it existed, and each
   ended as an IPC command or MCP tool inventing a success. `Result` and `Option` returns are deliberately out of scope:

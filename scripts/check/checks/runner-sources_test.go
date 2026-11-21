@@ -169,6 +169,7 @@ func TestRunnerCoreCoversWhatTheExecutorReaches(t *testing.T) {
 		// The lanes read the value it prints through `rustTestScopeFromEnv`, in the same file, so
 		// every lane that honors the scope already fingerprints it.
 		"ComputeRustTestScope": "printed by `--print-rust-test-scope` for CI to hand the Rust test lanes; no check run calls it",
+		"HostCargoLaneArgs":    "printed by `--print-host-cargo-args` for the Windows test job's own cargo calls; every lane that calls it fingerprints `cargo-workspace.go` through its own `Run`",
 		"BuildDocGraph":        "the `--docs-graph` renderer, which draws a diagram instead of running checks",
 		"DocGraph":             "the type that renderer hands around; same path, same reasoning",
 		"EnsureE2EBinary":      "`--ensure-e2e-binary` builds the E2E binary and exits; the Playwright lane reaches the same code through its own `Run`, so that lane fingerprints `e2e-build.go`",

@@ -214,6 +214,8 @@ impl RollbackRunner for ReversalRunner {
                         // an entry whose item is gone (a no-op for every other path). Only
                         // on a local disk: the OS's trash is never on a backend's paths.
                         from.rename(from_path, to_path, force).await?;
+                        // The browser build has no OS trash (`delete::trash` is gated off there).
+                        #[cfg(not(target_family = "wasm"))]
                         if from.local_path().is_some() {
                             crate::delete::trash::forget_restored(&std_seam_path(from_path));
                         }

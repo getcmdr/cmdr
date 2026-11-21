@@ -162,6 +162,24 @@ vitest's 5 s timeout under load (`shortcuts-store.test.ts`).
 - **A network volume's server going away (refused, or silent)**: a `cmdr_fs::testing::tcp_proxy::TcpProxy` the test
   owns, between the client and the fixture. ❌ Never pause or stop a shared fixture container
 
+## A test runs on every OS (Rust)
+
+A Rust test is OS-neutral by default: it runs on macOS, Linux, and Windows, and CI runs it on all three (Windows against
+a known-failures list that only shrinks: `docs/tooling/ci.md` § Windows lane). Cmdr ships for more than one OS, so a
+cell that only runs where it was written leaves the others untested.
+
+- **What makes a neutral cell cheap**: `AppTestDir` (§ "Scratch directories" below) for a directory an app-path API
+  takes, `TestDir::new_in` / `AppTestDir::new_in` for one under a parent you pick, `app_path!` (`cmdr_fs::app_path`) for
+  an app path literal, and the `Volume` conformance suite (`cmdr_fs::volume::conformance`) for a backend's safety
+  promises. A path assertion compares app paths, never a native path's text.
+- **An OS-only test says why**, in one line on the gate or right above it: `#![cfg(unix)] // POSIX modes` on a file, the
+  same on a `#[cfg(…)] mod foo_test;`. Good reasons name what the other OSes lack (POSIX modes, `/proc`, FSEvents, a
+  Windows drive). "Fails on Windows" isn't one: that's a known failure, and it belongs on the CI list with a fix
+  planned. Enforced for test files and test modules by `desktop-rust-os-test-gate-reason`, whose allowlist holds the
+  older gates and only shrinks.
+- **A cell that needs a capability some machines lack** (the symlink privilege) skips itself through
+  `cmdr_fs::testing::skip_without_symlinks`, never a silent early return (§ "Decision table" above).
+
 ## Test scaffolding a crate shares (Rust)
 
 `cfg(test)` is set only while a crate compiles its OWN tests, so a fake, a fixture, or a test-only gate that another
