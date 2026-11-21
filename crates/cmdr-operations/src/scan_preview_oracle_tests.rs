@@ -515,3 +515,93 @@ async fn scan_preview_handles_listing_closed_mid_walk() {
         "should reflect real file size, not the stale cache"
     );
 }
+
+/// Answers every scan as one empty file, whatever the path: a batch scan that
+/// echoes each source it was handed.
+struct ScansAnyPath {
+    inner: InMemoryVolume,
+}
+
+impl Volume for ScansAnyPath {
+    fn name(&self) -> &str {
+        "scans-any-path"
+    }
+    fn root(&self) -> &AppPath {
+        self.inner.root()
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn list_directory<'a>(
+        &'a self,
+        _path: &'a AppPath,
+        _on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        Box::pin(async { Ok(Vec::new()) })
+    }
+    fn get_metadata<'a>(
+        &'a self,
+        _path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
+        Box::pin(async { Err(VolumeError::NotSupported) })
+    }
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+        Box::pin(async { true })
+    }
+    fn is_directory<'a>(
+        &'a self,
+        _path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
+        Box::pin(async { Ok(false) })
+    }
+    fn scan_for_copy<'a>(
+        &'a self,
+        _path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
+        Box::pin(async {
+            Ok(CopyScanResult {
+                file_count: 1,
+                dir_count: 0,
+                total_bytes: 0,
+                dedup_bytes: 0,
+                top_level_is_directory: false,
+                top_level_modified_at: None,
+                top_level_created_at: None,
+            })
+        })
+    }
+}
+
+/// The merged result keys each source by its app path, where a scheme root is
+/// ONE name: `sftp:` and `sftp://` (no authority, so no real volume's path)
+/// are two sources with a result each, as the aggregate already counts them.
+/// Keyed by `std::path`, which reads both as the one component `sftp:`, the
+/// second overwrote the first and the batch listed one result for two.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn scan_preview_keeps_a_result_per_source_that_differs_only_in_a_bare_scheme_root() {
+    let panes = PaneListings::new();
+    let vid = unique("bare_scheme");
+    let vol = ScansAnyPath {
+        inner: InMemoryVolume::new("scans-any-path"),
+    };
+    let sources = vec![PathBuf::from("sftp:"), PathBuf::from("sftp://")];
+    let is_cancelled = || false;
+    let on_progress = |_: cmdr_fs::volume::ListingProgress| {};
+    let result = run_oracle_aware_batch_scan(
+        panes.as_ref(),
+        &vol,
+        &vid,
+        &sources,
+        &is_cancelled,
+        None,
+        &on_progress,
+        None,
+        cmdr_fs::mac_only_files::MacOnlyFiles::Include,
+    )
+    .await
+    .expect("scan");
+
+    assert_eq!(result.aggregate.file_count, 2);
+    let keys: Vec<&str> = result.per_path.iter().map(|(path, _)| path.as_str()).collect();
+    assert_eq!(keys, ["sftp:", "sftp://"]);
+}

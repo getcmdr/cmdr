@@ -284,7 +284,7 @@
     "crates/cmdr-operations/src/routing_table_tests.rs": 5,
     "crates/cmdr-operations/src/scan_failure_tests.rs": 5,
     "crates/cmdr-operations/src/scan_oracle.rs": 1,
-    "crates/cmdr-operations/src/scan_preview/volume.rs": 6,
+    "crates/cmdr-operations/src/scan_preview/volume.rs": 3,
     "crates/cmdr-operations/src/source_binding.rs": 2,
     "crates/cmdr-operations/src/source_binding/tests.rs": 4,
     "crates/cmdr-operations/src/summary.rs": 3,
