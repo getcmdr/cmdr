@@ -3,7 +3,7 @@
 //! Gated behind the `testing` feature, so it exists in dev targets and in no
 //! shipped build. The fake server itself is `crate::testing::FakeAdbServer`.
 
-use cmdr_fs::app_path::BridgedPath;
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic, PathFlavor};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
@@ -29,6 +29,22 @@ pub fn fixture_path(device: &str) -> PathBuf {
     PathBuf::from(format!("{}{device}", adb_app_root(FIXTURE_SERIAL)))
 }
 
+/// [`fixture_path`] as a typed app path, `adb://<FIXTURE_SERIAL><device>` parsed:
+/// the device's `/` (or `""`) is the canonical root, `adb://<FIXTURE_SERIAL>/`.
+///
+/// A typed path holds no `..` and no relative text; what the volume does with such
+/// TEXT, which only a `std::path` caller can still send, is `paths_test`'s.
+pub fn fixture_app_path(device: &str) -> AppPathBuf {
+    let text = format!("{}{device}", adb_app_root(FIXTURE_SERIAL));
+    AppPathBuf::parse(&text, PathFlavor::Posix).expect("a fixture device path is an app path")
+}
+
+/// `name`, a listed `FileEntry.name`, in `folder`.
+pub fn child(folder: &AppPath, name: &str) -> AppPathBuf {
+    let name = AppName::from_app_spelling(name).expect("a listed name is one plain name");
+    folder.join(name).expect("a listed name joins its folder")
+}
+
 /// A volume with no server behind it, for the pure paths (path translation,
 /// capability answers). Every wire-touching call on it fails.
 pub fn detached_volume() -> AdbVolume {
@@ -36,7 +52,7 @@ pub fn detached_volume() -> AdbVolume {
     let (root, paths) = app_root_for(FIXTURE_SERIAL);
     AdbVolume {
         name: "Fixture phone".to_string(),
-        root: BridgedPath::new(root),
+        root,
         paths,
         inner: Arc::new(AdbVolumeInner {
             connection: cmdr_fs::volume::ConnectionReporter::new(

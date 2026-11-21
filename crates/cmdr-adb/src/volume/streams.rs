@@ -7,8 +7,8 @@
 //! whole file. The producer runs on the host's runtime and stops on the first
 //! of: the file ending, the consumer going away, or the stream's cancel.
 
+use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
-use std::path::Path;
 
 use cmdr_fs::error_detail::ErrorDetail;
 use cmdr_fs::log_detail::LogDetail;
@@ -62,7 +62,7 @@ impl AdbVolume {
     /// as they arrive: correct, and the cost of a resume on this protocol.
     pub(super) async fn open_read_stream_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         offset: u64,
     ) -> Result<ChannelReadStream, VolumeError> {
         let device = self.to_device_path(path)?;
@@ -116,7 +116,12 @@ impl AdbVolume {
     /// files, but does not support GNU's byte flags. Aligning down keeps both
     /// device I/O and shell stdout bounded to the requested range plus one
     /// block; the host trims that leading block fragment.
-    pub(super) async fn read_range_impl(&self, path: &Path, offset: u64, len: usize) -> Result<Vec<u8>, VolumeError> {
+    pub(super) async fn read_range_impl(
+        &self,
+        path: &AppPath,
+        offset: u64,
+        len: usize,
+    ) -> Result<Vec<u8>, VolumeError> {
         let device = self.to_device_path(path)?;
         let prefix = (offset % RANGE_BLOCK_BYTES) as usize;
         let requested = u64::try_from(len).map_err(|_| invalid_range(&device))?;
@@ -183,7 +188,7 @@ impl AdbVolume {
     ///   moved). On any failure the staging name is removed.
     pub(super) async fn write_from_stream_impl(
         &self,
-        dest: &Path,
+        dest: &AppPath,
         mode: WriteMode,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,

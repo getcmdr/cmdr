@@ -1,8 +1,7 @@
 //! The capability answers and the connect's refusals, against the fake server.
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
-use std::path::Path;
+use cmdr_fs::app_path::{AppPathBuf, PathFlavor};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -12,12 +11,18 @@ use cmdr_fs::volume::host::events::{RecordingVolumeEvents, VolumeConnection};
 use cmdr_fs::volume::{LaneKey, SignInShape, Volume, WatchCoverage, adb_volume_id};
 use tokio_util::sync::CancellationToken;
 
-use super::testing::{FIXTURE_SERIAL, connect_fake, detached_volume, fixture_path};
+use super::testing::{FIXTURE_SERIAL, connect_fake, detached_volume, fixture_app_path};
 use super::{ConnectionState, connect_adb_volume};
 use crate::devices::{AdbDevice, AdbDeviceState};
 use crate::errors::AdbConnectError;
 use crate::params::AdbConnectionParams;
 use crate::testing::{FakeAdbServer, FakeTree, fake_device};
+
+/// A full app path (`adb://<serial>/…`), as a pane holds it, for a device other
+/// than the fixture's.
+fn app(text: &str) -> AppPathBuf {
+    AppPathBuf::parse(text, PathFlavor::Posix).expect("a pane's app path")
+}
 
 /// A background index walk keeps eight listings in flight on a phone: the knee a
 /// real phone measured, past which a walk gains nothing and the pane's own
@@ -38,9 +43,7 @@ fn an_index_walk_of_a_phone_descends_only_its_storage() {
     use cmdr_fs::volume::IndexWalk::{Descend, RowOnly};
 
     let volume = detached_volume();
-    let walk = |device: &str, is_symlink: bool| {
-        volume.index_walk(&AppPath::legacy_unchecked(&fixture_path(device)), is_symlink)
-    };
+    let walk = |device: &str, is_symlink: bool| volume.index_walk(&fixture_app_path(device), is_symlink);
 
     assert_eq!(walk("/", false), Descend, "the root, on the way to storage");
     assert_eq!(walk("/sdcard", true), Descend, "the link IS the phone's storage");
@@ -86,8 +89,8 @@ fn an_index_walk_of_a_phone_descends_only_its_storage() {
 fn the_device_anchored_answers() {
     let volume = detached_volume();
     assert_eq!(
-        *volume.root().as_std_legacy(),
-        fixture_path(""),
+        volume.root().as_str(),
+        cmdr_fs::volume::adb_app_root(FIXTURE_SERIAL),
         "rooted at the device's app prefix, no trailing slash"
     );
     assert_eq!(volume.volume_id(), adb_volume_id(FIXTURE_SERIAL));
@@ -98,7 +101,7 @@ fn the_device_anchored_answers() {
     assert!(volume.supports_streaming());
     assert!(!volume.can_watch_listings());
     assert_eq!(
-        volume.listing_watch_coverage(&AppPath::legacy_unchecked(&fixture_path("/sdcard"))),
+        volume.listing_watch_coverage(&fixture_app_path("/sdcard")),
         WatchCoverage::None
     );
     assert!(!volume.supports_local_fs_access());
@@ -211,7 +214,7 @@ async fn a_listing_maps_kinds_sizes_and_symlinked_folders() {
     let progress = std::sync::Mutex::new(Vec::new());
     let entries = volume
         .list_directory(
-            &AppPath::legacy_unchecked(&fixture_path("/sdcard")),
+            &fixture_app_path("/sdcard"),
             Some(&|p| progress.lock().unwrap().push(p)),
         )
         .await
@@ -224,8 +227,8 @@ async fn a_listing_maps_kinds_sizes_and_symlinked_folders() {
     };
     assert_eq!(by_name("a.txt").size, Some(5));
     assert_eq!(
-        Path::new(&by_name("a.txt").path),
-        fixture_path("/sdcard/a.txt"),
+        by_name("a.txt").path,
+        fixture_app_path("/sdcard/a.txt").as_str(),
         "an entry carries the pane's spelling"
     );
     assert!(by_name("DCIM").is_directory);
@@ -263,7 +266,7 @@ async fn a_listing_through_the_app_prefix_reaches_the_device_and_hands_back_pref
     let prefix = format!("adb://{SERIAL}");
 
     let root = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(&prefix)), None)
+        .list_directory(&app(&prefix), None)
         .await
         .expect("the device root lists through its app prefix");
     let sdcard = root
@@ -273,7 +276,7 @@ async fn a_listing_through_the_app_prefix_reaches_the_device_and_hands_back_pref
     assert_eq!(sdcard.path, format!("{prefix}/sdcard"));
 
     let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(&sdcard.path)), None)
+        .list_directory(&app(&sdcard.path), None)
         .await
         .expect("a folder lists through the path its entry carried");
     let mut paths: Vec<&str> = entries.iter().map(|e| e.path.as_str()).collect();
@@ -284,7 +287,7 @@ async fn a_listing_through_the_app_prefix_reaches_the_device_and_hands_back_pref
     );
 
     let file = volume
-        .get_metadata(&AppPath::legacy_unchecked(Path::new(&format!("{prefix}/sdcard/a.txt"))))
+        .get_metadata(&app(&format!("{prefix}/sdcard/a.txt")))
         .await
         .expect("a prefixed file stats");
     assert_eq!(file.path, format!("{prefix}/sdcard/a.txt"));
@@ -296,9 +299,7 @@ async fn a_listing_of_a_missing_directory_carries_the_path() {
     let server = FakeAdbServer::start(FakeTree::new()).await;
     let (volume, _) = connect_fake(&server, FIXTURE_SERIAL).await;
     // Prefixed, so the refusal is the device's `ENOENT` and not the translation's.
-    let outcome = volume
-        .list_directory(&AppPath::legacy_unchecked(&fixture_path("/nowhere")), None)
-        .await;
+    let outcome = volume.list_directory(&fixture_app_path("/nowhere"), None).await;
     assert!(
         matches!(outcome, Err(cmdr_fs::volume::VolumeError::NotFound(ref p)) if p == "/nowhere"),
         "{outcome:?}"
@@ -325,9 +326,7 @@ async fn a_listing_of_a_directory_the_phone_wont_open_is_refused_not_empty() {
     // a missing folder alike, and `stat` succeeds on a folder it can't read, so
     // `/data` on a real Pixel listed as an empty folder with no word of why.
     let (_server, volume) = phone_with_unreadable_data().await;
-    let outcome = volume
-        .list_directory(&AppPath::legacy_unchecked(&fixture_path("/data")), None)
-        .await;
+    let outcome = volume.list_directory(&fixture_app_path("/data"), None).await;
     assert!(
         matches!(outcome, Err(cmdr_fs::volume::VolumeError::PermissionDenied { ref path, raw_os_error: None }) if path == "/data"),
         "{outcome:?}"
@@ -340,9 +339,7 @@ async fn a_copy_scan_refuses_a_directory_the_phone_wont_open() {
     use cmdr_fs::volume::scan_walk::ScanSource;
 
     let (_server, volume) = phone_with_unreadable_data().await;
-    let scanned = volume
-        .scan_list(&AppPath::legacy_unchecked(&fixture_path("/data")))
-        .await;
+    let scanned = volume.scan_list(&fixture_app_path("/data")).await;
     assert!(
         matches!(scanned, Err(cmdr_fs::volume::VolumeError::PermissionDenied { .. })),
         "{scanned:?}"
@@ -358,7 +355,7 @@ async fn an_index_walk_pays_no_shell_round_trip_for_an_empty_folder() {
     let before = shells();
     let walked = volume
         .list_directory_for_scan(
-            &AppPath::legacy_unchecked(&fixture_path("/sdcard/empty")),
+            &fixture_app_path("/sdcard/empty"),
             None,
             &cmdr_fs::volume::ScanListingClock::start(),
         )
@@ -372,7 +369,7 @@ async fn an_index_walk_pays_no_shell_round_trip_for_an_empty_folder() {
 async fn an_empty_folder_the_phone_can_read_lists_as_empty() {
     let (server, volume) = phone_with_unreadable_data().await;
     let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(&fixture_path("/sdcard/empty")), None)
+        .list_directory(&fixture_app_path("/sdcard/empty"), None)
         .await
         .expect("an empty readable folder lists");
     assert!(entries.is_empty());
@@ -380,7 +377,7 @@ async fn an_empty_folder_the_phone_can_read_lists_as_empty() {
     let shells = || server.requests().iter().filter(|r| r.starts_with("shell")).count();
     let before = shells();
     let root = volume
-        .list_directory(&AppPath::legacy_unchecked(&fixture_path("/")), None)
+        .list_directory(&fixture_app_path("/"), None)
         .await
         .expect("root lists");
     assert!(!root.is_empty());
@@ -422,24 +419,24 @@ async fn space_at_a_path_is_the_filesystem_holding_it() {
     let (volume, _) = connect_fake(&server, FIXTURE_SERIAL).await;
 
     let card = volume
-        .get_space_info_at(&AppPath::legacy_unchecked(&fixture_path("/storage/1A2B-3C4D/Music")))
+        .get_space_info_at(&fixture_app_path("/storage/1A2B-3C4D/Music"))
         .await
         .expect("df -k on the SD card");
     assert_eq!(card.available_bytes(), Some(59_000_000 * 1024));
     let shared = volume
-        .get_space_info_at(&AppPath::legacy_unchecked(&fixture_path("/sdcard/Download")))
+        .get_space_info_at(&fixture_app_path("/sdcard/Download"))
         .await
         .expect("df -k on the shared storage");
     assert_eq!(shared, PIXEL_SHARED_STORAGE);
     let nested = volume
-        .get_space_info_at(&AppPath::legacy_unchecked(&fixture_path("/sdcard/DCIM/Camera")))
+        .get_space_info_at(&fixture_app_path("/sdcard/DCIM/Camera"))
         .await
         .expect("df -k on a folder deep in the shared storage");
     assert_eq!(nested, PIXEL_SHARED_STORAGE);
     // The root really is the full system image; only the volume's own figure
     // stands for the phone.
     let root = volume
-        .get_space_info_at(&AppPath::legacy_unchecked(&fixture_path("")))
+        .get_space_info_at(&fixture_app_path(""))
         .await
         .expect("df -k on the root");
     assert_eq!(
@@ -469,19 +466,19 @@ async fn space_at_a_folder_that_does_not_exist_yet_is_the_filesystem_it_would_la
     let (volume, _) = connect_fake(&server, FIXTURE_SERIAL).await;
 
     let deeper = volume
-        .get_space_info_at(&AppPath::legacy_unchecked(&fixture_path("/sdcard/New album/Deeper")))
+        .get_space_info_at(&fixture_app_path("/sdcard/New album/Deeper"))
         .await
         .expect("the shared storage answers for a folder two levels short");
     assert_eq!(deeper, PIXEL_SHARED_STORAGE);
     let card = volume
-        .get_space_info_at(&AppPath::legacy_unchecked(&fixture_path("/storage/1A2B-3C4D/New")))
+        .get_space_info_at(&fixture_app_path("/storage/1A2B-3C4D/New"))
         .await
         .expect("the SD card answers for a folder on it");
     assert_eq!(card.available_bytes(), Some(59_000_000 * 1024));
     // A plain space answer even where nothing could be created: `/` is the
     // read-only system image, and saying so is the copy's job, not this one's.
     let top = volume
-        .get_space_info_at(&AppPath::legacy_unchecked(&fixture_path("/nowhere")))
+        .get_space_info_at(&fixture_app_path("/nowhere"))
         .await
         .expect("the root answers for a folder at the top");
     assert_eq!(top.available_bytes(), Some(0));
@@ -502,7 +499,7 @@ async fn a_folder_under_a_file_is_cant_tell_where_the_climb_stops() {
     );
     let (volume, _) = connect_fake(&server, FIXTURE_SERIAL).await;
     let outcome = volume
-        .get_space_info_at(&AppPath::legacy_unchecked(&fixture_path("/sdcard/photo.jpg/New")))
+        .get_space_info_at(&fixture_app_path("/sdcard/photo.jpg/New"))
         .await;
     assert!(
         matches!(outcome, Err(cmdr_fs::volume::VolumeError::NotSupported)),
@@ -527,28 +524,22 @@ async fn write_access_is_what_test_w_says_about_the_nearest_folder() {
         reason: UnwritableReason::Unexplained,
     };
     assert_eq!(
-        volume
-            .write_access_at(&AppPath::legacy_unchecked(&fixture_path("")))
-            .await,
+        volume.write_access_at(&fixture_app_path("")).await,
         unexplained,
         "the root is the read-only system image"
     );
     assert_eq!(
-        volume
-            .write_access_at(&AppPath::legacy_unchecked(&fixture_path("/system/New")))
-            .await,
+        volume.write_access_at(&fixture_app_path("/system/New")).await,
         unexplained,
         "a folder a copy would create under the root answers for the root"
     );
     assert_eq!(
-        volume
-            .write_access_at(&AppPath::legacy_unchecked(&fixture_path("/sdcard/Download")))
-            .await,
+        volume.write_access_at(&fixture_app_path("/sdcard/Download")).await,
         WriteAccess::Writable
     );
     assert_eq!(
         volume
-            .write_access_at(&AppPath::legacy_unchecked(&fixture_path("/sdcard/New album/Deeper")))
+            .write_access_at(&fixture_app_path("/sdcard/New album/Deeper"))
             .await,
         WriteAccess::Writable,
         "a folder a copy will create answers for the shared storage"
@@ -564,9 +555,7 @@ async fn write_access_of_a_phone_that_stopped_answering_is_unknown() {
     server.stop();
 
     assert_eq!(
-        volume
-            .write_access_at(&AppPath::legacy_unchecked(&fixture_path("/sdcard")))
-            .await,
+        volume.write_access_at(&fixture_app_path("/sdcard")).await,
         cmdr_fs::volume::WriteAccess::Unknown
     );
 }
@@ -579,9 +568,7 @@ async fn a_df_that_fails_anywhere_else_is_cant_tell_never_a_zero() {
     let server = FakeAdbServer::start(tree).await;
     let (volume, _) = connect_fake(&server, FIXTURE_SERIAL).await;
     for path in ["/sdcard/Download", "/sdcard/Missing"] {
-        let outcome = volume
-            .get_space_info_at(&AppPath::legacy_unchecked(&fixture_path(path)))
-            .await;
+        let outcome = volume.get_space_info_at(&fixture_app_path(path)).await;
         assert!(
             matches!(outcome, Err(cmdr_fs::volume::VolumeError::NotSupported)),
             "{path}: {outcome:?}"
@@ -627,34 +614,28 @@ async fn every_write_patches_the_pane_once() {
     let (volume, listings) = connect_fake(&server, FIXTURE_SERIAL).await;
 
     volume
-        .create_file(&AppPath::legacy_unchecked(&fixture_path("/sdcard/a.txt")), b"abc")
+        .create_file(&fixture_app_path("/sdcard/a.txt"), b"abc")
         .await
         .expect("create");
     assert_eq!(listings.change_count(), 1);
     volume
-        .create_directory(&AppPath::legacy_unchecked(&fixture_path("/sdcard/dir")))
+        .create_directory(&fixture_app_path("/sdcard/dir"))
         .await
         .expect("mkdir");
     assert_eq!(listings.change_count(), 2);
     volume
         .rename(
-            &AppPath::legacy_unchecked(&fixture_path("/sdcard/a.txt")),
-            &AppPath::legacy_unchecked(&fixture_path("/sdcard/b.txt")),
+            &fixture_app_path("/sdcard/a.txt"),
+            &fixture_app_path("/sdcard/b.txt"),
             false,
         )
         .await
         .expect("rename");
     assert_eq!(listings.change_count(), 3);
-    volume
-        .delete(&AppPath::legacy_unchecked(&fixture_path("/sdcard/b.txt")))
-        .await
-        .expect("delete");
+    volume.delete(&fixture_app_path("/sdcard/b.txt")).await.expect("delete");
     assert_eq!(listings.change_count(), 4);
     // A scan is a read and reports nothing.
-    volume
-        .scan_for_copy(&AppPath::legacy_unchecked(&fixture_path("/sdcard")))
-        .await
-        .expect("scan");
+    volume.scan_for_copy(&fixture_app_path("/sdcard")).await.expect("scan");
     assert_eq!(listings.change_count(), 4);
 }
 
@@ -671,26 +652,17 @@ async fn a_link_to_a_folder_is_a_link_and_deletes_as_one() {
         .add_symlink("/sdcard/shortcut", "/sdcard/DCIM");
     let server = FakeAdbServer::start(tree).await;
     let (volume, _) = connect_fake(&server, FIXTURE_SERIAL).await;
-    let link = fixture_path("/sdcard/shortcut");
+    let link = fixture_app_path("/sdcard/shortcut");
 
+    assert_eq!(volume.entry_kind(&link).await.expect("kind"), EntryKind::Symlink);
     assert_eq!(
         volume
-            .entry_kind(&AppPath::legacy_unchecked(&link))
-            .await
-            .expect("kind"),
-        EntryKind::Symlink
-    );
-    assert_eq!(
-        volume
-            .entry_kind(&AppPath::legacy_unchecked(&fixture_path("/sdcard/DCIM")))
+            .entry_kind(&fixture_app_path("/sdcard/DCIM"))
             .await
             .expect("kind"),
         EntryKind::Directory
     );
-    volume
-        .delete(&AppPath::legacy_unchecked(&link))
-        .await
-        .expect("the link deletes");
+    volume.delete(&link).await.expect("the link deletes");
 
     let tree = server.tree();
     let tree = tree.lock().unwrap();

@@ -1,6 +1,6 @@
 //! Reading what's on the device without changing it.
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::Presence;
-use std::path::Path;
 
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{EntryKind, ListingProgress, VolumeError};
@@ -8,7 +8,7 @@ use tokio_util::sync::CancellationToken;
 
 use super::AdbVolume;
 use super::mapping::{stat_to_file_entry, with_link_target};
-use super::paths::join_device_path;
+use super::paths::{device_file_name, join_device_path};
 use crate::errors::{EACCES, ENOENT, ENOTDIR, volume_error_from_errno};
 use crate::sync::{SyncDirEntry, SyncEntryKind, SyncSession, SyncStat};
 
@@ -38,7 +38,7 @@ impl AdbVolume {
     /// atomic and the entries arrive on one socket.
     pub(super) async fn list_directory_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&CancellationToken>,
     ) -> Result<Vec<FileEntry>, VolumeError> {
@@ -49,7 +49,7 @@ impl AdbVolume {
     /// [`list_directory_impl`](Self::list_directory_impl), saying what an empty answer means.
     pub(super) async fn list_directory_taking_empty_as(
         &self,
-        path: &Path,
+        path: &AppPath,
         on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&CancellationToken>,
         empty: EmptyListing,
@@ -94,10 +94,10 @@ impl AdbVolume {
                     return;
                 }
                 let child = join_device_path(&device, &entry.name);
-                let Some(app_path) = self.to_app_path(&child) else {
+                let Some(app_path) = self.app_text_of(&child) else {
                     return;
                 };
-                let built = stat_to_file_entry(&entry.name, &app_path.to_string_lossy(), &entry.stat);
+                let built = stat_to_file_entry(&entry.name, &app_path, &entry.stat);
                 if built.is_symlink {
                     symlinks.push((entries.len(), child));
                 }
@@ -187,7 +187,7 @@ impl AdbVolume {
     }
 
     /// One `stat` round trip, as a `FileEntry`.
-    pub(super) async fn get_metadata_impl(&self, path: &Path) -> Result<FileEntry, VolumeError> {
+    pub(super) async fn get_metadata_impl(&self, path: &AppPath) -> Result<FileEntry, VolumeError> {
         let device = self.to_device_path(path)?;
         let mut session = self.open_sync(&device).await?;
         let stat = session
@@ -198,14 +198,11 @@ impl AdbVolume {
             session.quit().await;
             return Err(volume_error_from_errno(stat.errno.unwrap_or(ENOENT), &device));
         }
-        let name = Path::new(&device)
-            .file_name()
-            .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_else(|| self.name.clone());
+        let name = device_file_name(&device).map_or_else(|| self.name.clone(), str::to_owned);
         let app_path = self
-            .to_app_path(&device)
-            .ok_or_else(|| VolumeError::NotFound(path.to_string_lossy().into_owned()))?;
-        let mut entry = stat_to_file_entry(&name, &app_path.to_string_lossy(), &stat);
+            .app_text_of(&device)
+            .ok_or_else(|| VolumeError::NotFound(path.to_string()))?;
+        let mut entry = stat_to_file_entry(&name, &app_path, &stat);
         if entry.is_symlink
             && let Some(target) = self.follow(&mut session, &device).await
         {
@@ -217,7 +214,7 @@ impl AdbVolume {
 
     /// What is at `path`, a link answered AS a link: one `STAT`, which the sync
     /// service answers as an `lstat`, and ❌ no `readlink` to follow it.
-    pub(super) async fn entry_kind_impl(&self, path: &Path) -> Result<EntryKind, VolumeError> {
+    pub(super) async fn entry_kind_impl(&self, path: &AppPath) -> Result<EntryKind, VolumeError> {
         let device = self.to_device_path(path)?;
         let mut session = self.open_sync(&device).await?;
         let stat = session.stat(&device).await;
@@ -235,7 +232,7 @@ impl AdbVolume {
 
     /// Whether `path` is there. A path off this volume is `Absent` (nothing is
     /// there ON THIS VOLUME, the question asked); a refusal is `Unknown`.
-    pub(super) async fn presence_impl(&self, path: &Path) -> Presence {
+    pub(super) async fn presence_impl(&self, path: &AppPath) -> Presence {
         Presence::of(&self.get_metadata_impl(path).await)
     }
 

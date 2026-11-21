@@ -4,12 +4,14 @@
 //! volume is wired to them with its own prefix, and pin the one refusal that is
 //! this backend's own (a `..` above the root).
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-use cmdr_fs::volume::{VolumeError, root_anchored};
+use cmdr_fs::app_path::{AppPathBuf, PathFlavor};
+use cmdr_fs::volume::{VolumeError, anchor_at_root};
 
-use super::join_device_path;
-use crate::volume::testing::{FIXTURE_SERIAL, detached_volume};
+use super::{device_file_name, join_device_path};
+use crate::volume::AdbVolume;
+use crate::volume::testing::{FIXTURE_SERIAL, detached_volume, fixture_app_path};
 
 /// The prefix the fixture volume mints, spelled out so a cell reads as the app
 /// would see it.
@@ -17,32 +19,44 @@ fn prefix() -> String {
     format!("adb://{FIXTURE_SERIAL}")
 }
 
+/// A bare POSIX app path (`/sdcard/DCIM`), a value any host holds.
+fn posix(text: &str) -> AppPathBuf {
+    AppPathBuf::parse(text, PathFlavor::Posix).expect("a POSIX app path")
+}
+
+/// What this volume makes of TEXT a `std::path` caller can still hand it through the
+/// transition bridge (relative, `..`, empty): its own climb refusal, then `RemoteRoot`'s
+/// `std::path` form, the same rules the typed [`AdbVolume::to_device_path`] runs, which no
+/// typed app path can spell.
+fn device_of_text(volume: &AdbVolume, text: &str) -> Result<String, VolumeError> {
+    let refused = || VolumeError::NotFound(text.to_owned());
+    if volume.climbs_above_the_root(text) {
+        return Err(refused());
+    }
+    volume.paths.to_remote_path(Path::new(text)).ok_or_else(refused)
+}
+
 #[test]
 fn every_spelling_of_the_root_is_the_root() {
     let volume = detached_volume();
-    for spelling in [
-        String::new(),
-        ".".into(),
-        "/".into(),
-        prefix(),
-        format!("{}/", prefix()),
-    ] {
-        assert_eq!(
-            volume.to_device_path(Path::new(&spelling)).unwrap(),
-            "/",
-            "{spelling:?}"
-        );
+    for spelling in ["", ".", "/"] {
+        assert_eq!(device_of_text(&volume, spelling).unwrap(), "/", "{spelling:?}");
     }
+    let root = cmdr_fs::volume::Volume::root(&volume);
+    assert_eq!(root.as_str(), prefix(), "`root()` is the bare prefix");
+    assert_eq!(volume.to_device_path(root).unwrap(), "/");
+    assert_eq!(volume.to_device_path(&fixture_app_path("/")).unwrap(), "/");
+    assert_eq!(fixture_app_path("/").as_str(), format!("{}/", prefix()));
 }
 
 #[test]
 fn a_prefixed_and_a_relative_path_land_on_the_same_device_path() {
     let volume = detached_volume();
-    let prefixed = format!("{}/sdcard/DCIM", prefix());
-    assert_eq!(volume.to_device_path(Path::new(&prefixed)).unwrap(), "/sdcard/DCIM");
-    assert_eq!(volume.to_device_path(Path::new("sdcard/DCIM")).unwrap(), "/sdcard/DCIM");
+    let prefixed = fixture_app_path("/sdcard/DCIM");
+    assert_eq!(volume.to_device_path(&prefixed).unwrap(), "/sdcard/DCIM");
+    assert_eq!(device_of_text(&volume, "sdcard/DCIM").unwrap(), "/sdcard/DCIM");
     assert_eq!(
-        volume.to_device_path(Path::new(&format!("{prefixed}/"))).unwrap(),
+        device_of_text(&volume, &format!("{prefixed}/")).unwrap(),
         "/sdcard/DCIM"
     );
 }
@@ -52,45 +66,48 @@ fn a_prefixed_and_a_relative_path_land_on_the_same_device_path() {
 #[test]
 fn the_app_spelling_round_trips_and_the_root_has_no_trailing_slash() {
     let volume = detached_volume();
-    assert_eq!(volume.to_app_path("/"), Some(PathBuf::from(prefix())));
+    assert_eq!(volume.app_text_of("/"), Some(prefix()));
     assert_eq!(
-        volume.to_app_path("/sdcard/DCIM"),
-        Some(PathBuf::from(format!("{}/sdcard/DCIM", prefix())))
+        volume.app_text_of("/sdcard/DCIM"),
+        Some(format!("{}/sdcard/DCIM", prefix()))
     );
     assert_eq!(
-        volume.display_path_for(Path::new("sdcard/DCIM")),
-        Some(PathBuf::from(format!("{}/sdcard/DCIM", prefix())))
+        volume.display_path_for(&fixture_app_path("/sdcard/DCIM")),
+        Some(fixture_app_path("/sdcard/DCIM"))
+    );
+    assert_eq!(
+        volume
+            .display_path_for(&fixture_app_path("/"))
+            .map(|root| root.as_str().to_owned()),
+        Some(prefix()),
+        "the listing host hears the root folder as `root()` spells it"
     );
 }
 
-/// ❗ **The transfer dialog's box is volume-relative** (`/sdcard`), and five app
-/// sites run it through `root_anchored` against `Volume::root` before the volume
-/// sees it. It has to land on the device's `/sdcard`, and a pane's already
-/// prefixed path has to come through unchanged.
+/// ❗ **The transfer dialog's box is volume-relative** (`/sdcard`), and the app
+/// anchors it against `Volume::root` before the volume sees it. It has to land on
+/// the device's `/sdcard`, and a pane's already prefixed path has to come through
+/// unchanged.
 #[test]
 fn a_dialog_path_anchored_at_the_root_lands_on_the_device_path() {
     let volume = detached_volume();
     let root = cmdr_fs::volume::Volume::root(&volume);
-    let anchored = root_anchored(&root.as_std_legacy(), Path::new("/sdcard"));
-    assert_eq!(anchored, PathBuf::from(format!("{}/sdcard", prefix())));
+    let anchored = anchor_at_root(root, "/sdcard").expect("a volume-relative box anchors");
+    assert_eq!(anchored.as_str(), format!("{}/sdcard", prefix()));
     assert_eq!(volume.to_device_path(&anchored).unwrap(), "/sdcard");
-    let pane = PathBuf::from(format!("{}/sdcard", prefix()));
-    assert_eq!(root_anchored(&root.as_std_legacy(), &pane), pane);
+    let pane = format!("{}/sdcard", prefix());
+    assert_eq!(anchor_at_root(root, &pane).expect("a pane path anchors").as_str(), pane);
 }
 
 #[test]
 fn dot_dot_is_resolved_lexically() {
     let volume = detached_volume();
     assert_eq!(
-        volume
-            .to_device_path(Path::new(&format!("{}/sdcard/DCIM/../Pictures", prefix())))
-            .unwrap(),
+        device_of_text(&volume, &format!("{}/sdcard/DCIM/../Pictures", prefix())).unwrap(),
         "/sdcard/Pictures"
     );
     assert_eq!(
-        volume
-            .to_device_path(Path::new(&format!("{}/sdcard/..", prefix())))
-            .unwrap(),
+        device_of_text(&volume, &format!("{}/sdcard/..", prefix())).unwrap(),
         "/"
     );
 }
@@ -100,7 +117,7 @@ fn a_path_climbing_above_the_root_is_refused_not_anchored() {
     let volume = detached_volume();
     let prefixed_escape = format!("{}/sdcard/../../etc/passwd", prefix());
     for escape in ["..", "../etc", "sdcard/../../etc", prefixed_escape.as_str()] {
-        let outcome = volume.to_device_path(Path::new(escape));
+        let outcome = device_of_text(&volume, escape);
         assert!(
             matches!(outcome, Err(VolumeError::NotFound(ref p)) if p == escape),
             "{escape}: {outcome:?}"
@@ -108,8 +125,8 @@ fn a_path_climbing_above_the_root_is_refused_not_anchored() {
     }
 }
 
-/// A bare `/sdcard` reaching the volume means a caller skipped `root_anchored`,
-/// and anchoring it here would hide that. Another device's path is never ours.
+/// A bare `/sdcard` reaching the volume means a caller skipped anchoring, and
+/// anchoring it here would hide that. Another device's path is never ours.
 #[test]
 fn a_bare_device_path_and_another_devices_path_are_refused() {
     let volume = detached_volume();
@@ -120,15 +137,27 @@ fn a_bare_device_path_and_another_devices_path_are_refused() {
         "mtp://1-2/65537",
     ] {
         assert!(
-            matches!(volume.to_device_path(Path::new(foreign)), Err(VolumeError::NotFound(_))),
+            matches!(volume.to_device_path(&posix(foreign)), Err(VolumeError::NotFound(_))),
             "{foreign}"
         );
     }
     let longer_serial = format!("{}0/sdcard", prefix());
     assert!(
-        volume.to_device_path(Path::new(&longer_serial)).is_err(),
+        volume.to_device_path(&posix(&longer_serial)).is_err(),
         "a serial that merely starts with ours is another device"
     );
+}
+
+/// ❗ Device paths are POSIX on every host: a `\` or a `:` a phone lists is part of
+/// a name, never a separator or a drive (a `std::path` join on Windows sent the
+/// device `\sdcard\…`, which it refused with `EROFS`).
+#[test]
+fn a_backslash_or_a_colon_stays_inside_one_device_name() {
+    let volume = detached_volume();
+    let odd = fixture_app_path("/sdcard/a\\b:c.txt");
+    assert_eq!(volume.to_device_path(&odd).unwrap(), "/sdcard/a\\b:c.txt");
+    assert_eq!(device_file_name("/sdcard/a\\b:c.txt"), Some("a\\b:c.txt"));
+    assert_eq!(device_file_name("/"), None);
 }
 
 #[test]

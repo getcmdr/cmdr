@@ -85,10 +85,14 @@ pub struct AdbVolume {
 
 /// The root and the translation for the device named `serial`, both from its
 /// one minted prefix, so they can't disagree.
-fn app_root_for(serial: &str) -> (PathBuf, RemoteRoot) {
+///
+/// ❗ The root keeps the bare `adb://<serial>` text (no trailing slash), which only
+/// the transition bridge holds: a typed root is canonical (`adb://<serial>/`), and
+/// a pane compares the root by string.
+fn app_root_for(serial: &str) -> (BridgedPath, RemoteRoot) {
     let prefix = adb_app_root(serial);
     (
-        PathBuf::from(&prefix),
+        BridgedPath::new(PathBuf::from(&prefix)),
         RemoteRoot::new(prefix, std::path::Path::new("/")),
     )
 }
@@ -263,7 +267,7 @@ pub async fn connect_adb_volume(
     let (root, paths) = app_root_for(&params.serial);
     Ok(AdbVolume {
         name,
-        root: BridgedPath::new(root),
+        root,
         paths,
         inner,
     })

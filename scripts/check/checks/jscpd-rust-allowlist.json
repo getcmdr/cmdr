@@ -24,6 +24,14 @@
       "lines": 21,
       "reason": "The assertion tail of two parser tests, one per share-listing CLI (`parse_smbclient_output` and `parse_smbutil_output`), each fed a fixture in that tool's own column layout; the assertions spell out the shared `ShareInfo` contract (four disk shares survive, `IPC$` and `ADMIN$` are filtered, a missing comment reads as `None`). An `assert_nas_shares` helper would need a test-support module reachable from both files and would move the expectations away from the fixture that produces them, so a red run would name a helper line instead of the case that broke."
     },
+    "crates/cmdr-adb/src/volume/mutation.rs ↔ crates/cmdr-sftp/src/volume/mutation.rs": {
+      "lines": 21,
+      "reason": "`PatchSource` trait boilerplate, not logic: the volume id, the listing host, `patch_stat` forwarding to the backend's own stat, and `patch_display_path` / `patch_app_path` forwarding to its `paths.rs` translation. The patching itself is already shared (`cmdr_fs::volume::patching`). With the app-path conversion (#1225) both backends' impls lost their bridge preludes and came out token-identical. Same trade as the `volume_impl.rs` pairs: a macro emitting trait methods costs more lines than it removes and hides them from `codegraph_search` and go-to-definition. `patch_display_path` goes when the trait drops its `std::path` form, which shrinks this pair."
+    },
+    "crates/cmdr-adb/src/volume/volume_impl.rs ↔ crates/cmdr-webdav/src/volume/volume_impl.rs": {
+      "lines": 108,
+      "reason": "`Volume` trait-method signatures delegating in one line, in five blocks: `list_directory*`, the read path (`open_read_stream*`, `read_range`), the write path's `create_*`, `delete` / `rename`, and `notify_mutation` beside the three `scan_for_*`. Every body is `self.noting(self.*_impl(..))` or a call straight into `cmdr_fs::volume` (`patching`, `scan_walk`). The app-path conversion (#1225) removed ADB's bridge preludes, which had kept the bodies apart since WebDAV converted. Same trade as the `cmdr-sftp` ↔ `cmdr-webdav` entry: a macro emitting trait methods costs more lines than it removes and hides every one from `codegraph_search` and go-to-definition. Revisit when a body stops being a one-line delegation, or when enough backends land that the macro pays for itself."
+    },
     "crates/cmdr-fs/src/metadata/platform/wasm.rs ↔ crates/cmdr-fs/src/metadata/platform/windows.rs": {
       "lines": 51,
       "reason": "TODO: windows-port plan tasks 35 and 36. Windows' metadata arm is honest stubs today (no mode, xattrs, ACL, flags, or removal blockers: `NotApplicable`, `Free`, empty), which read line for line like the browser build's arm, whose answers are final. Each stub gets its real Windows body in those tasks (the read-only attribute, alternate data streams, the DACL, Hidden and Locked as attributes), and the pair stops matching one class at a time. Sharing a \"no metadata\" module now would tie a final answer to a placeholder and be undone class by class."
@@ -87,10 +95,6 @@
     "crates/cmdr-sftp/src/volume/volume_impl.rs ↔ crates/cmdr-webdav/src/volume/volume_impl.rs": {
       "lines": 53,
       "reason": "`Volume` trait-method signatures, not logic: the listing and file-creation blocks, where every body is one line delegating to an inherent `*_impl`. The trait makes each backend spell the full signature out, so folding these takes a macro that emits trait methods: roughly 120 lines of macro to remove about 38 lines per backend, so the code gets no smaller, and every generated method goes invisible to `codegraph_search` and to go-to-definition. The behavior behind the signatures is already shared, in `cmdr_fs::volume` (`scan_walk`, `mkdir_all`, `patching`, `secret_store`) and `network::connect_wiring`. Revisit when a body stops being a one-line delegation, or when enough backends land that the macro pays for itself. The `Volume` trait's flip to app paths (#1225) grew it: each flipped method gained the same two-line bridge prelude (`let path_std = path.as_std_legacy(); let path: &Path = &path_std;`) or bridged argument, which made neighbouring trait methods token-identical across backends. Those go as each crate converts (milestones 5–10e)."
-    },
-    "crates/cmdr-adb/src/volume/volume_impl.rs ↔ crates/cmdr-archive/src/volume.rs": {
-      "lines": 9,
-      "reason": "`Volume` trait boilerplate the flip to app paths (#1225) made token-identical: `scan_for_copy_batch_with_boundary` delegating to `scan_walk::scan_trees` behind the same bridged `paths_std` prelude in both. Not new code: jscpd reported this fragment against `cmdr-webdav` until that crate moved to the typed `scan_trees_at`, and hands it to this pair now. The prelude goes when ADB and the archive volume convert to `scan_trees_at` too."
     }
   }
 }

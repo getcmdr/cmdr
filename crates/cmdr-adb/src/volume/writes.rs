@@ -35,7 +35,7 @@
 //! `write_from_stream(WriteMode::CreateNew)` takes the same stat just before its
 //! landing `mv -f`, so it shares the window.
 
-use std::path::Path;
+use cmdr_fs::app_path::AppPath;
 
 use cmdr_fs::log_detail::LogDetail;
 use cmdr_fs::log_private::LogPrivate;
@@ -62,7 +62,7 @@ pub(super) enum WhatIsThere {
 impl AdbVolume {
     /// Writes `content` to a name nothing else holds, refusing an occupied one
     /// (`writes.rs` § "The two accepted TOCTOU windows").
-    pub(super) async fn create_file_impl(&self, path: &Path, content: &[u8]) -> Result<(), VolumeError> {
+    pub(super) async fn create_file_impl(&self, path: &AppPath, content: &[u8]) -> Result<(), VolumeError> {
         let device = self.to_device_path(path)?;
         debug!(
             "AdbVolume::create_file: {device}, size={}",
@@ -87,7 +87,7 @@ impl AdbVolume {
     /// `mkdir -p`: creates the directory and every missing ancestor, and
     /// succeeds on one that is already there. That is what lets
     /// `create_directory_errors_on_existing_dir` answer `false`.
-    pub(super) async fn create_directory_impl(&self, path: &Path) -> Result<(), VolumeError> {
+    pub(super) async fn create_directory_impl(&self, path: &AppPath) -> Result<(), VolumeError> {
         let device = self.to_device_path(path)?;
         debug!(
             "AdbVolume::create_directory: {device}",
@@ -109,7 +109,7 @@ impl AdbVolume {
     /// A file where an ANCESTOR should be is looked for only once `mkdir -p` has
     /// refused, so a create that works costs what it did. The probe follows
     /// links, so a path through a link to a folder (`/sdcard`) is created into.
-    pub(super) async fn create_directory_all_impl(&self, path: &Path) -> Result<DirectoryCreation, VolumeError> {
+    pub(super) async fn create_directory_all_impl(&self, path: &AppPath) -> Result<DirectoryCreation, VolumeError> {
         let device = self.to_device_path(path)?;
         if device == "/" {
             return Ok(DirectoryCreation::AlreadyExisted);
@@ -151,7 +151,7 @@ impl AdbVolume {
     /// ❌ never `rm -r`. Real data-safety logic leans on the refusal: a
     /// same-volume move keeps a skipped child's only copy purely by letting its
     /// parent's delete fail, and that refusal carries `ENOTEMPTY`.
-    pub(super) async fn delete_impl(&self, path: &Path) -> Result<(), VolumeError> {
+    pub(super) async fn delete_impl(&self, path: &AppPath) -> Result<(), VolumeError> {
         let device = self.to_device_path(path)?;
         debug!("AdbVolume::delete: {device}", device = LogPrivate::path(&device));
         // `entry_kind_impl`, ❌ never the following `probe`: a link to a folder
@@ -166,7 +166,7 @@ impl AdbVolume {
     }
 
     /// One `rmdir`, refused with `ENOTEMPTY` when something is still inside.
-    async fn remove_empty_directory(&self, path: &Path, device: &str) -> Result<(), VolumeError> {
+    async fn remove_empty_directory(&self, path: &AppPath, device: &str) -> Result<(), VolumeError> {
         if let Err(e) = self.shell_verb(&["rmdir", device], device).await {
             // The one refusal the contract names: something is still inside.
             // Asked of the sync service, not of stderr.
@@ -187,7 +187,7 @@ impl AdbVolume {
     /// the source INTO it, replacing a same-named file inside, and `mv -T`
     /// needs toybox 0.8.3 (Android 11). A link to a folder never clears: its
     /// `rmdir` fails, and it reads as held when its target holds anything.
-    pub(super) async fn rename_impl(&self, from: &Path, to: &Path, force: bool) -> Result<(), VolumeError> {
+    pub(super) async fn rename_impl(&self, from: &AppPath, to: &AppPath, force: bool) -> Result<(), VolumeError> {
         let device_from = self.to_device_path(from)?;
         let device_to = self.to_device_path(to)?;
         debug!(
@@ -239,8 +239,8 @@ impl AdbVolume {
     /// which is `write_from_stream`'s contract too.
     pub(super) async fn copy_within_impl(
         &self,
-        from: &Path,
-        to: &Path,
+        from: &AppPath,
+        to: &AppPath,
         on_progress: &(dyn Fn(u64, u64) -> std::ops::ControlFlow<()> + Sync),
     ) -> Result<u64, VolumeError> {
         let device_from = self.to_device_path(from)?;

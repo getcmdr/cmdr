@@ -3,7 +3,7 @@
 //!
 //! No `#[ignore]`: the fake is in-process, so these run in every lane.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathFlavor};
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -13,7 +13,7 @@ use cmdr_fs::volume::conformance;
 use cmdr_fs::volume::{DirectoryCreation, StreamLength, Volume, VolumeError, VolumeReadStream};
 
 use super::AdbVolume;
-use super::testing::{FIXTURE_SERIAL, connect_fake, fixture_path};
+use super::testing::{FIXTURE_SERIAL, connect_fake, fixture_app_path, fixture_path};
 use crate::testing::{FakeAdbServer, FakeTree};
 use cmdr_fs::volume::WriteMode;
 
@@ -87,15 +87,15 @@ async fn a_forced_rename_replaces_an_empty_folder_under_its_name() {
 
     volume
         .rename(
-            &AppPath::legacy_unchecked(&fixture_path("/sdcard/source.txt")),
-            &AppPath::legacy_unchecked(&fixture_path("/sdcard/empty")),
+            &fixture_app_path("/sdcard/source.txt"),
+            &fixture_app_path("/sdcard/empty"),
             true,
         )
         .await
         .expect("an empty folder gives way to a confirmed replace");
 
     let landed = volume
-        .get_metadata(&AppPath::legacy_unchecked(&fixture_path("/sdcard/empty")))
+        .get_metadata(&fixture_app_path("/sdcard/empty"))
         .await
         .expect("the source answers at the folder's name");
     assert!(
@@ -103,11 +103,7 @@ async fn a_forced_rename_replaces_an_empty_folder_under_its_name() {
         "the file took the name, so it's no folder any more"
     );
     assert_eq!(landed.size, Some(b"source".len() as u64));
-    assert!(
-        !volume
-            .exists(&AppPath::legacy_unchecked(&fixture_path("/sdcard/source.txt")))
-            .await
-    );
+    assert!(!volume.exists(&fixture_app_path("/sdcard/source.txt")).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -150,8 +146,8 @@ async fn a_forceless_rename_refuses_when_the_destination_cant_be_checked() {
     let (server, volume) = seeded_with_target_unstatable().await;
     let outcome = volume
         .rename(
-            &AppPath::legacy_unchecked(&fixture_path("/sdcard/source.txt")),
-            &AppPath::legacy_unchecked(&fixture_path("/sdcard/target.txt")),
+            &fixture_app_path("/sdcard/source.txt"),
+            &fixture_app_path("/sdcard/target.txt"),
             false,
         )
         .await;
@@ -173,10 +169,7 @@ async fn a_create_new_write_refuses_when_the_destination_cant_be_checked() {
     // The `CreateNew` landing has no second probe: its stat is the only guard.
     let (server, volume) = seeded_with_target_unstatable().await;
     let outcome = volume
-        .create_file(
-            &AppPath::legacy_unchecked(&fixture_path("/sdcard/target.txt")),
-            b"new bytes",
-        )
+        .create_file(&fixture_app_path("/sdcard/target.txt"), b"new bytes")
         .await;
     assert!(
         outcome.is_err(),
@@ -203,9 +196,7 @@ async fn create_directory_all_never_answers_created_for_a_folder_it_couldnt_chec
     tree.deny_sync_stat("/sdcard/album");
     let server = FakeAdbServer::start(tree).await;
     let (volume, _) = connect_fake(&server, FIXTURE_SERIAL).await;
-    let outcome = volume
-        .create_directory_all(&AppPath::legacy_unchecked(&fixture_path("/sdcard/album")))
-        .await;
+    let outcome = volume.create_directory_all(&fixture_app_path("/sdcard/album")).await;
     assert!(
         !matches!(outcome, Ok(DirectoryCreation::Created)),
         "an unchecked folder is never reported new, got {outcome:?}"
@@ -326,10 +317,7 @@ async fn export_matches_the_bytes_offered() {
 async fn copy_within_matches_what_is_offered() {
     let (_server, volume) = seeded().await;
     volume
-        .create_file(
-            &AppPath::legacy_unchecked(&fixture_path("/sdcard/original.txt")),
-            b"copied on the device",
-        )
+        .create_file(&fixture_app_path("/sdcard/original.txt"), b"copied on the device")
         .await
         .expect("seed the source");
     conformance::assert_copy_within_matches_what_is_offered(
@@ -393,10 +381,7 @@ async fn a_read_over_the_v1_verbs_declares_no_exact_length() {
     let (volume, _) = connect_fake(&server, FIXTURE_SERIAL).await;
 
     for path in ["/sdcard/notes.txt", "/sdcard/notes-link"] {
-        let mut stream = volume
-            .open_read_stream(&AppPath::legacy_unchecked(&fixture_path(path)))
-            .await
-            .expect(path);
+        let mut stream = volume.open_read_stream(&fixture_app_path(path)).await.expect(path);
         assert_eq!(stream.total_size(), StreamLength::Unknown, "{path}");
         assert_eq!(drain(stream.as_mut()).await, b"the user's notes", "{path}");
     }
@@ -407,7 +392,7 @@ async fn a_read_over_the_v1_verbs_declares_no_exact_length() {
 async fn a_read_over_stat_v2_declares_its_exact_length() {
     let (_server, volume) = seeded().await;
     let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(&fixture_path("/sdcard/notes.txt")))
+        .open_read_stream(&fixture_app_path("/sdcard/notes.txt"))
         .await
         .expect("notes");
     assert_eq!(stream.total_size(), StreamLength::Known(16));
@@ -446,10 +431,8 @@ async fn a_copy_sends_the_sources_mode_and_a_modeless_one_lands_as_adb_push_woul
         };
         let source = cmdr_fs::volume::InMemoryVolume::new("Source").with_metadata_caps(caps);
         let from = std::path::PathBuf::from(format!("/{name}"));
-        source
-            .create_file(&AppPath::legacy_unchecked(&from), b"bytes")
-            .await
-            .unwrap();
+        let from_app = AppPathBuf::parse(&format!("/{name}"), PathFlavor::Posix).expect("a POSIX app path");
+        source.create_file(&from_app, b"bytes").await.unwrap();
         source.set_carried_metadata(
             &from,
             cmdr_fs::metadata::CarriedMetadata {
@@ -457,28 +440,16 @@ async fn a_copy_sends_the_sources_mode_and_a_modeless_one_lands_as_adb_push_woul
                 ..cmdr_fs::metadata::CarriedMetadata::default()
             },
         );
-        let stream = source
-            .open_read_stream(&AppPath::legacy_unchecked(&from))
-            .await
-            .unwrap();
-        let dest = fixture_path(&format!("/sdcard/{name}"));
+        let stream = source.open_read_stream(&from_app).await.unwrap();
+        let dest = fixture_app_path(&format!("/sdcard/{name}"));
         volume
-            .write_from_stream(
-                &AppPath::legacy_unchecked(&dest),
-                WriteMode::CreateNew,
-                StreamLength::Known(5),
-                stream,
-                &|_| std::ops::ControlFlow::Continue(()),
-            )
+            .write_from_stream(&dest, WriteMode::CreateNew, StreamLength::Known(5), stream, &|_| {
+                std::ops::ControlFlow::Continue(())
+            })
             .await
             .unwrap();
 
-        let landed = volume
-            .get_metadata(&AppPath::legacy_unchecked(&dest))
-            .await
-            .unwrap()
-            .permissions
-            & 0o7777;
+        let landed = volume.get_metadata(&dest).await.unwrap().permissions & 0o7777;
         let expected = mode
             .and_then(|mode| cmdr_fs::metadata::routed_mode(mode, cmdr_fs::metadata::default_file_mode()))
             .unwrap_or(0o660);
@@ -489,6 +460,8 @@ async fn a_copy_sends_the_sources_mode_and_a_modeless_one_lands_as_adb_push_woul
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_path_escaping_the_root_is_refused_before_any_io() {
     let (server, volume) = seeded().await;
+    // A typed path refuses `..` before it exists, so only a bridge value, the text a
+    // `std::path` caller still sends, can carry the climb to the volume.
     let outcome = volume
         .get_metadata(&AppPath::legacy_unchecked(&fixture_path("/sdcard/../../etc/passwd")))
         .await;
@@ -516,7 +489,7 @@ async fn a_replacing_write_streams_straight_onto_the_callers_name() {
     let payload = vec![5u8; 150_003];
     volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(&fixture_path("/sdcard/target.txt")),
+            &fixture_app_path("/sdcard/target.txt"),
             WriteMode::CreateOrReplace,
             StreamLength::Known(payload.len() as u64),
             Box::new(super::streams::BytesReadStream::new(payload.clone())),
@@ -545,7 +518,7 @@ async fn a_replacing_write_whose_source_fails_removes_what_it_sent() {
     let (server, volume) = seeded().await;
     let outcome = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(&fixture_path("/sdcard/target.txt")),
+            &fixture_app_path("/sdcard/target.txt"),
             WriteMode::CreateOrReplace,
             StreamLength::Unknown,
             Box::new(ChunkedSource::failing_unknown(&[3u8; 90_003], 31_003)),
@@ -575,11 +548,7 @@ async fn a_rename_of_a_missing_source_names_it_and_clears_nothing() {
         ("/sdcard/empty", true),
     ] {
         let outcome = volume
-            .rename(
-                &AppPath::legacy_unchecked(&fixture_path("/sdcard/gone.txt")),
-                &AppPath::legacy_unchecked(&fixture_path(to)),
-                force,
-            )
+            .rename(&fixture_app_path("/sdcard/gone.txt"), &fixture_app_path(to), force)
             .await;
         assert!(
             matches!(&outcome, Err(VolumeError::NotFound(path)) if path == "/sdcard/gone.txt"),
@@ -603,7 +572,7 @@ async fn a_create_new_write_lands_through_a_staging_sibling_and_leaves_no_partia
     let seen = std::sync::Mutex::new(Vec::new());
     let written = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(&fixture_path("/sdcard/big.bin")),
+            &fixture_app_path("/sdcard/big.bin"),
             WriteMode::CreateNew,
             StreamLength::Known(payload.len() as u64),
             source,
@@ -693,7 +662,7 @@ async fn an_unknown_length_multichunk_write_streams_and_reports_its_actual_count
     assert!(volume.supports_unknown_length_writes());
     let written = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(&fixture_path("/sdcard/generated.zip")),
+            &fixture_app_path("/sdcard/generated.zip"),
             WriteMode::CreateNew,
             StreamLength::Unknown,
             Box::new(ChunkedSource::unknown(&payload, 37_003)),
@@ -730,7 +699,7 @@ async fn an_unknown_length_create_new_refuses_and_preserves_an_existing_file() {
 
     let outcome = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(&fixture_path("/sdcard/target.txt")),
+            &fixture_app_path("/sdcard/target.txt"),
             WriteMode::CreateNew,
             StreamLength::Unknown,
             Box::new(ChunkedSource::unknown(&payload, 31_003)),
@@ -761,7 +730,7 @@ async fn a_cancelled_write_removes_its_partial() {
     let payload = vec![7u8; 100_000];
     let outcome = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(&fixture_path("/sdcard/never.bin")),
+            &fixture_app_path("/sdcard/never.bin"),
             WriteMode::CreateOrReplace,
             StreamLength::Unknown,
             Box::new(ChunkedSource::unknown(&payload, 17_003)),
@@ -788,7 +757,7 @@ async fn an_unknown_length_source_failure_removes_its_partial_and_keeps_the_caus
     let payload = vec![11u8; 150_003];
     let outcome = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(&fixture_path("/sdcard/source-failed.bin")),
+            &fixture_app_path("/sdcard/source-failed.bin"),
             WriteMode::CreateNew,
             StreamLength::Unknown,
             Box::new(ChunkedSource::failing_unknown(&payload, 31_003)),
@@ -817,21 +786,16 @@ async fn an_unknown_length_source_failure_removes_its_partial_and_keeps_the_caus
 async fn mkdir_on_an_existing_directory_succeeds() {
     let (_server, volume) = seeded().await;
     volume
-        .create_directory(&AppPath::legacy_unchecked(&fixture_path("/sdcard/album")))
+        .create_directory(&fixture_app_path("/sdcard/album"))
         .await
         .expect("mkdir -p over an existing directory is a success");
     assert!(!volume.create_directory_errors_on_existing_dir());
     let deep = volume
-        .create_directory_all(&AppPath::legacy_unchecked(&fixture_path("/sdcard/a/b/c")))
+        .create_directory_all(&fixture_app_path("/sdcard/a/b/c"))
         .await
         .expect("a deep create must work");
     assert_eq!(deep, DirectoryCreation::Created);
-    assert!(
-        volume
-            .is_directory(&AppPath::legacy_unchecked(&fixture_path("/sdcard/a/b/c")))
-            .await
-            .unwrap()
-    );
+    assert!(volume.is_directory(&fixture_app_path("/sdcard/a/b/c")).await.unwrap());
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -845,7 +809,7 @@ async fn cancelling_a_read_mid_file_releases_the_socket_and_the_volume_keeps_wor
     let (volume, _) = connect_fake(&server, FIXTURE_SERIAL).await;
 
     let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(&fixture_path("/sdcard/big.bin")))
+        .open_read_stream(&fixture_app_path("/sdcard/big.bin"))
         .await
         .expect("open");
     assert_eq!(stream.total_size(), StreamLength::Known(big.len() as u64));
@@ -856,12 +820,12 @@ async fn cancelling_a_read_mid_file_releases_the_socket_and_the_volume_keeps_wor
 
     // The volume is still perfectly usable afterwards.
     let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(&fixture_path("/sdcard")), None)
+        .list_directory(&fixture_app_path("/sdcard"), None)
         .await
         .expect("list after cancel");
     assert!(entries.iter().any(|e| e.name == "big.bin"));
     let mut resumed = volume
-        .open_read_stream_at_offset(&AppPath::legacy_unchecked(&fixture_path("/sdcard/big.bin")), 100_000)
+        .open_read_stream_at_offset(&fixture_app_path("/sdcard/big.bin"), 100_000)
         .await
         .expect("open at offset");
     let mut tail = Vec::new();
@@ -879,23 +843,17 @@ async fn a_bounded_range_read_seeks_on_device_and_returns_only_the_requested_win
     tree.add_file("/sdcard/a 'quoted' archive.zip", &bytes);
     let server = FakeAdbServer::start(tree).await;
     let (volume, _) = connect_fake(&server, FIXTURE_SERIAL).await;
-    let path = fixture_path("/sdcard/a 'quoted' archive.zip");
+    let path = fixture_app_path("/sdcard/a 'quoted' archive.zip");
 
-    let window = volume
-        .read_range(&AppPath::legacy_unchecked(&path), 65_539, 200_003)
-        .await
-        .expect("range");
+    let window = volume.read_range(&path, 65_539, 200_003).await.expect("range");
     assert_eq!(window, bytes[65_539..265_542]);
     assert_eq!(
-        volume
-            .read_range(&AppPath::legacy_unchecked(&path), 349_990, 100)
-            .await
-            .expect("short range"),
+        volume.read_range(&path, 349_990, 100).await.expect("short range"),
         bytes[349_990..]
     );
     assert!(
         volume
-            .read_range(&AppPath::legacy_unchecked(&path), 400_000, 4096)
+            .read_range(&path, 400_000, 4096)
             .await
             .expect("past EOF")
             .is_empty()
