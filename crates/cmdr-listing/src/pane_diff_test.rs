@@ -181,10 +181,7 @@ fn a_single_add_reports_the_pane_row_and_a_hidden_one_reports_nothing() {
     let listing = pane("pane-diff-single-add", false, home_entries());
 
     listing.engine().inner.notify_added(listing.id(), entry(".lesshst", 7));
-    listing
-        .engine()
-        .inner
-        .notify_removed(listing.id(), std::path::Path::new(&format!("{DIR}/.DS_Store")));
+    listing.engine().inner.notify_removed(listing.id(), ".DS_Store");
     listing.engine().inner.notify_added(listing.id(), entry("bravo.txt", 2));
 
     let bravo_row = row(&listing, "bravo.txt", false);
@@ -203,10 +200,7 @@ fn a_removal_reports_the_row_it_left() {
     let listing = pane("pane-diff-remove", false, home_entries());
     let charlie_row = row(&listing, "charlie.txt", false);
 
-    listing
-        .engine()
-        .inner
-        .notify_removed(listing.id(), std::path::Path::new(&format!("{DIR}/charlie.txt")));
+    listing.engine().inner.notify_removed(listing.id(), "charlie.txt");
 
     assert_eq!(
         queued(&listing),

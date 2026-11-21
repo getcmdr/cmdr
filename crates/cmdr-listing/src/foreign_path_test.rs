@@ -14,14 +14,11 @@ const FOREIGN: &str = "/foto\u{301}k";
 async fn album() -> InMemoryVolume {
     let volume = InMemoryVolume::new("Share");
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(STORED)))
+        .create_directory(crate::testing::app(STORED))
         .await
         .expect("seed the album");
     volume
-        .create_file(
-            &AppPath::legacy_unchecked(&Path::new(STORED).join("photo.jpg")),
-            b"jpeg",
-        )
+        .create_file(&crate::testing::app_child(STORED, "photo.jpg"), b"jpeg")
         .await
         .expect("seed a photo");
     volume

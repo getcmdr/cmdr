@@ -5,10 +5,8 @@
 
 use super::testing::{TestEngine, TestListing, TestListingGuard};
 use crate::RowSpan;
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
-use std::path::Path;
 use std::sync::Arc;
 
 /// Creates a test entry with the given name.
@@ -57,10 +55,7 @@ async fn test_get_total_count_with_hidden_includes_all() {
     let volume = create_test_volume();
 
     // Manually insert into listing cache (simulating list_directory_start)
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-total-count-hidden", entries);
 
     let count = listing.engine().inner.get_total_count(listing.id(), true).unwrap();
@@ -73,10 +68,7 @@ async fn test_get_total_count_with_hidden_includes_all() {
 async fn test_get_total_count_without_hidden_excludes_dot_files() {
     let volume = create_test_volume();
 
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-total-count-no-hidden", entries);
 
     let count = listing.engine().inner.get_total_count(listing.id(), false).unwrap();
@@ -93,10 +85,7 @@ async fn test_get_total_count_without_hidden_excludes_dot_files() {
 async fn test_get_file_range_with_hidden_returns_all() {
     let volume = create_test_volume();
 
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-range-hidden", entries);
 
     let range = listing
@@ -118,10 +107,7 @@ async fn test_get_file_range_with_hidden_returns_all() {
 async fn test_get_file_range_without_hidden_excludes_dot_files() {
     let volume = create_test_volume();
 
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-range-no-hidden", entries);
 
     let range = listing
@@ -147,10 +133,7 @@ async fn test_get_file_range_without_hidden_excludes_dot_files() {
 async fn test_get_file_range_pagination_respects_hidden_filter() {
     let volume = create_test_volume();
 
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-range-pagination", entries);
 
     // Get first 2 visible entries
@@ -187,10 +170,7 @@ async fn test_get_file_range_pagination_respects_hidden_filter() {
 async fn test_find_file_index_hidden_file_with_hidden_enabled() {
     let volume = create_test_volume();
 
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-find-hidden-enabled", entries);
 
     let index = listing
@@ -206,10 +186,7 @@ async fn test_find_file_index_hidden_file_with_hidden_enabled() {
 async fn test_find_file_index_hidden_file_with_hidden_disabled() {
     let volume = create_test_volume();
 
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-find-hidden-disabled", entries);
 
     let index = listing
@@ -225,10 +202,7 @@ async fn test_find_file_index_hidden_file_with_hidden_disabled() {
 async fn test_find_file_index_visible_file_index_changes_with_hidden_setting() {
     let volume = create_test_volume();
 
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-find-visible-index-changes", entries);
 
     // Find "Documents" with hidden enabled (should be after hidden dirs)
@@ -265,10 +239,7 @@ async fn test_find_file_index_visible_file_index_changes_with_hidden_setting() {
 async fn test_get_file_at_index_0_with_hidden_enabled() {
     let volume = create_test_volume();
 
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-at-0-hidden", entries);
 
     let entry = listing.engine().inner.get_file_at(listing.id(), 0, true).unwrap();
@@ -286,10 +257,7 @@ async fn test_get_file_at_index_0_with_hidden_enabled() {
 async fn test_get_file_at_index_0_with_hidden_disabled() {
     let volume = create_test_volume();
 
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-at-0-no-hidden", entries);
 
     let entry = listing.engine().inner.get_file_at(listing.id(), 0, false).unwrap();
@@ -322,10 +290,7 @@ async fn test_visible_rows_and_fuzzy_jump_agree_on_a_non_dot_hidden_entry() {
     let entries = vec![hidden_no_dot, make_entry("visible.txt", false)];
     let volume = Arc::new(InMemoryVolume::with_entries("TestVolume", entries));
 
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-non-dot-hidden-agree", entries);
 
     assert_eq!(
@@ -372,10 +337,7 @@ async fn test_directory_with_only_hidden_files() {
     ];
     let volume = Arc::new(InMemoryVolume::with_entries("AllHidden", entries));
 
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-all-hidden", entries);
 
     let count_with = listing.engine().inner.get_total_count(listing.id(), true).unwrap();
@@ -396,10 +358,7 @@ async fn test_directory_with_no_hidden_files() {
     let entries = vec![make_entry("Documents", true), make_entry("file.txt", false)];
     let volume = Arc::new(InMemoryVolume::with_entries("NoHidden", entries));
 
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-no-hidden", entries);
 
     let count_with = listing.engine().inner.get_total_count(listing.id(), true).unwrap();
@@ -416,10 +375,7 @@ async fn test_directory_with_no_hidden_files() {
 #[tokio::test]
 async fn test_find_file_indices_basic_lookup() {
     let volume = create_test_volume();
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-find-indices-basic", entries);
 
     let names = vec!["Documents".to_string(), "file.txt".to_string()];
@@ -439,10 +395,7 @@ async fn test_find_file_indices_basic_lookup() {
 #[tokio::test]
 async fn test_find_file_indices_hidden_filtering() {
     let volume = create_test_volume();
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-find-indices-hidden", entries);
 
     let names = vec![
@@ -470,10 +423,7 @@ async fn test_find_file_indices_hidden_filtering() {
 #[tokio::test]
 async fn test_find_file_indices_names_not_in_listing() {
     let volume = create_test_volume();
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-find-indices-missing", entries);
 
     let names = vec!["nonexistent.txt".to_string(), "also_missing".to_string()];
@@ -489,10 +439,7 @@ async fn test_find_file_indices_names_not_in_listing() {
 #[tokio::test]
 async fn test_find_file_indices_empty_names() {
     let volume = create_test_volume();
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-find-indices-empty", entries);
 
     let names: Vec<String> = vec![];
@@ -508,10 +455,7 @@ async fn test_find_file_indices_empty_names() {
 #[tokio::test]
 async fn test_find_file_indices_duplicate_names_in_input() {
     let volume = create_test_volume();
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-find-indices-dupes", entries);
 
     let names = vec!["file.txt".to_string(), "file.txt".to_string(), "Documents".to_string()];
@@ -530,10 +474,7 @@ async fn test_find_file_indices_duplicate_names_in_input() {
 #[tokio::test]
 async fn test_find_file_indices_consistent_with_find_file_index() {
     let volume = create_test_volume();
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
-        .await
-        .unwrap();
+    let entries = volume.list_directory(volume.root(), None).await.unwrap();
     let listing = insert_test_listing("test-find-indices-consistent", entries);
 
     let names = vec!["Documents".to_string(), "file.txt".to_string(), "readme.md".to_string()];

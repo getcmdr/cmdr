@@ -150,9 +150,8 @@ impl Inner {
                 }
             }
             DirectoryChange::Removed(name) => {
-                let full_path = parent_path.join(&name);
                 for listing_id in &listings {
-                    self.notify_removed(listing_id, &full_path);
+                    self.notify_removed(listing_id, &name);
                 }
             }
             DirectoryChange::Modified(entry) => {
@@ -165,9 +164,8 @@ impl Inner {
             DirectoryChange::Renamed { old_name, new_entry } => {
                 let mut new_entry = new_entry;
                 self.index.enrich(volume_id, std::slice::from_mut(&mut new_entry));
-                let old_path = parent_path.join(&old_name);
                 for listing_id in &listings {
-                    self.notify_removed(listing_id, &old_path);
+                    self.notify_removed(listing_id, &old_name);
                     self.notify_added(listing_id, new_entry.clone());
                 }
             }
@@ -226,16 +224,15 @@ impl Inner {
         let _ = self.insert_entry_sorted(listing_id, entry);
     }
 
-    /// Removes an entry from the cache and queues a single-remove change.
+    /// Removes the entry named `name` from the cache and queues a single-remove change.
     ///
-    /// Matches by filename within the listing (its directory), NOT the full path, so
+    /// Matches by name within the listing (its directory), NOT the full path, so
     /// it works when the listing's stored entry paths use a different path space than
     /// the notifier's resolved parent (MTP: inner `/Dir/file` entries vs `mtp://…`
-    /// parent). See `remove_entry_by_name`.
-    pub(crate) fn notify_removed(&self, listing_id: &str, full_path: &Path) {
-        let Some(name) = full_path.file_name() else {
-            return;
-        };
+    /// parent). See `remove_entry_by_name`. The name goes straight through: joining it
+    /// onto the parent with `Path::join` and splitting it off again split a remote name
+    /// holding `\` on Windows, and removed the wrong row.
+    pub(crate) fn notify_removed(&self, listing_id: &str, name: &str) {
         let _ = self.remove_entry_by_name(listing_id, name);
     }
 

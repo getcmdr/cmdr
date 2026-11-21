@@ -771,11 +771,25 @@ without full re-reads. Callers outside the crate reach them through `Listings`' 
   different path space than the notifier's resolved parent. That's the case for MTP: `MtpVolume` stores each entry's
   `path` as the storage-relative inner form (`/Documents/notes.txt`) while `notify_mutation` resolves the parent to the
   absolute `mtp://…` URL, so a full-path match never matched and `notify_mutation(Deleted)` silently no-oped (moved or
-  deleted MTP files lingered in the source pane until a manual refresh).
+  deleted MTP files lingered in the source pane until a manual refresh). The reported name goes straight in, and an
+  entry's name is read off its path text by `mutate::last_name` (`Path::file_name`'s rule over `/` alone, its exact text
+  on macOS and Linux): joining the name onto the parent with `Path::join` and splitting it off again cut a remote name
+  holding `\` in two on Windows and removed the wrong row.
 - `update_entry_sorted(listing_id, entry)`: updates an existing entry (remove + re-insert if sort position changed),
   returns the pane rows before and after; a pair that differs is a `Move`.
 - `has_entry(listing_id, path)`: whether a path exists in the cached listing (classifies watcher events add vs modify).
 - `Listings::location(id)`: a listing's volume id and directory (the watcher filters its events to direct children).
+
+## App paths at the engine's edge
+
+The `Volume` trait speaks app paths (`crates/cmdr-fs/DETAILS.md` § "App paths"); this engine's own API, its `host`
+seams, `ListingPath`, and its read results still carry `std::path` values holding app text, since the app's listing host
+calls them that way. So each volume call crosses once, through the transition bridge (`legacy_unchecked` going in,
+`as_std_legacy` coming back: the foreign-spelling resolve, `listing_path`, the root a read reports), and nothing in the
+engine does `std::path` arithmetic on a listed name: a removal matches by name (`mutate::last_name`), never by
+`parent.join(name)`. Those crossings go when the app's listing host speaks app paths and the API turns typed (the plan's
+milestone 10c, `docs/specs/app-path-plan.md`). Tests build volume paths with `testing::app` / `app_child` (the app
+path's own join), never `Path::join`, which adds `\` on Windows.
 
 ## One spelling per directory (`ListingPath`)
 
