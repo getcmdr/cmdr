@@ -603,7 +603,7 @@ mod tests {
             .await
             .expect("an archive source is never refused")
             .expect("archive source volume");
-        assert_eq!(*source.root().as_std_legacy(), zip);
+        assert_eq!(source.root().as_str(), zip.to_str().expect("a UTF-8 scratch path"));
 
         // A plain local source stays `None` — the `std::fs` fast path.
         let plain = dir.path().join("plain.txt");
