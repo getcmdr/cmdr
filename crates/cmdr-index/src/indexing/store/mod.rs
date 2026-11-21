@@ -18,8 +18,9 @@
 //! - **macOS**: case-insensitive + NFD normalization (matching APFS)
 //! - **Linux**: binary comparison (matching ext4/btrfs)
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use rusqlite::Connection;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicI64, Ordering};
 
@@ -174,15 +175,16 @@ pub struct EntryRow {
 
 /// Mutable context held during a network (SMB/MTP) scan for assigning parent IDs.
 ///
-/// Maintains a `HashMap<PathBuf, i64>` mapping directory paths to their
+/// Maintains a `HashMap<AppPathBuf, i64>` mapping directory paths to their
 /// pre-assigned entry IDs. The `network_scanner`'s serial BFS looks up each
 /// entry's parent path in this map to get its `parent_id`, assigns a fresh `id`
 /// from `next_id`, and (if the entry is a directory) inserts its own mapping. The
 /// LOCAL scanner does NOT use this — it carries `parent_id` through its parallel
 /// walk, so it never builds a whole-volume path map.
 pub(crate) struct ScanContext {
-    /// Map from directory absolute path to its assigned entry ID.
-    pub dir_ids: std::collections::HashMap<PathBuf, i64>,
+    /// Map from directory absolute path (the app path the walk lists it by) to its
+    /// assigned entry ID.
+    pub dir_ids: std::collections::HashMap<AppPathBuf, i64>,
     /// Shared ID counter. Atomically incremented to allocate unique IDs.
     /// Owned by `IndexWriter`, shared with all scanners and the writer thread.
     next_id: Arc<AtomicI64>,
@@ -196,13 +198,13 @@ impl ScanContext {
     /// see [`resolve_scan_root`].
     pub fn new(
         conn: &Connection,
-        root: &Path,
+        root: &AppPath,
         is_volume_root: bool,
         next_id: Arc<AtomicI64>,
     ) -> Result<Self, IndexStoreError> {
-        let root_id = resolve_scan_root(conn, root, is_volume_root)?;
+        let root_id = resolve_scan_root(conn, root.as_str(), is_volume_root)?;
         let mut dir_ids = std::collections::HashMap::new();
-        dir_ids.insert(root.to_path_buf(), root_id);
+        dir_ids.insert(root.to_owned(), root_id);
         Ok(Self { dir_ids, next_id })
     }
 
@@ -213,12 +215,12 @@ impl ScanContext {
 
     /// Register a directory path with its assigned ID, so children can
     /// look up their parent_id.
-    pub fn register_dir(&mut self, path: PathBuf, id: i64) {
+    pub fn register_dir(&mut self, path: AppPathBuf, id: i64) {
         self.dir_ids.insert(path, id);
     }
 
     /// Look up the parent_id for an entry given its parent's absolute path.
-    pub fn lookup_parent(&self, parent_path: &Path) -> Option<i64> {
+    pub fn lookup_parent(&self, parent_path: &AppPath) -> Option<i64> {
         self.dir_ids.get(parent_path).copied()
     }
 }

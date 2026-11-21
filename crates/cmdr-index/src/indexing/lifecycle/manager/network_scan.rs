@@ -226,9 +226,11 @@ impl IndexManager {
         // Capture tier-2 calibration before truncating (same flow as start_scan).
         // The per-kind bucket is picked below, once the walk kind is known.
         let calibration_set = IndexStore::read_scan_calibration_set(self.store.read_conn()).unwrap_or_default();
-        let volume_root = self.volume_root.clone();
-        let volume_used_bytes =
-            tokio::task::block_in_place(|| crate::indexing::host::volumes::current().volume_used_bytes(&volume_root));
+        // A phone has no filesystem to ask; a share mounted by the OS does.
+        let native_root = self.native_root.clone();
+        let volume_used_bytes = native_root.and_then(|root| {
+            tokio::task::block_in_place(|| crate::indexing::host::volumes::current().volume_used_bytes(&root))
+        });
 
         // Pre-arm-before-snapshot: flip `ground_in_flux` BEFORE truncating, so any live
         // SMB change racing in during/after the truncate is BUFFERED by
@@ -357,11 +359,7 @@ impl IndexManager {
         });
         // The ground: the whole share, reported the same way a phase reports its
         // branch.
-        announce_whole_volume_walk(
-            self.events.as_ref(),
-            &self.volume_id,
-            self.volume_root.to_string_lossy().into_owned(),
-        );
+        announce_whole_volume_walk(self.events.as_ref(), &self.volume_id, self.root_text());
         set_phase_for(
             self.events.as_ref(),
             &self.volume_id,
@@ -410,7 +408,7 @@ impl IndexManager {
         // Kept alongside `root` (which the scan consumes): the completion handler
         // persists it as `volume_path` so search can strip the mount root off scope
         // paths (symmetry with the local scan-completion path).
-        let volume_root_str = self.volume_root.to_string_lossy().into_owned();
+        let volume_root_str = self.root_text();
         let kind = self.kind;
         // Pace the walk against foreground activity on THIS volume: while the user
         // browses the share, the walk drops to one listing in flight so a navigation

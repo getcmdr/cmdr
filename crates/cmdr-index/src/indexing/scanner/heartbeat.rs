@@ -58,6 +58,13 @@ impl WalkHeartbeat {
         *self.current.lock_ignore_poison() = Some(path.to_string_lossy().into_owned());
     }
 
+    /// [`Self::entering`] for a trait walk's folder, named by its app path: the same text
+    /// the index stores for it.
+    pub(crate) fn entering_at(&self, path: &cmdr_fs::app_path::AppPath) {
+        self.dirs_scanned.fetch_add(1, Ordering::Relaxed);
+        *self.current.lock_ignore_poison() = Some(crate::indexing::paths::app_text::stored_text(path).into_owned());
+    }
+
     /// Record `count` more give-ups (see [`Self::abandoned_count`]).
     pub(crate) fn abandoned(&self, count: u64) {
         if count > 0 {

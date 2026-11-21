@@ -45,8 +45,7 @@
 //! `scan_completed_at`-absent ⇒ no-Fresh / heal-to-rescan mechanism the local
 //! scanner relies on (see `lifecycle/manager.rs`).
 
-use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio_util::sync::CancellationToken;
@@ -154,7 +153,7 @@ const CONSECUTIVE_FAILURE_ABORT: usize = 32;
 #[derive(Debug)]
 pub enum VolumeScanError {
     /// A directory listing exceeded `LIST_TIMEOUT` (wedged/hung mount).
-    Timeout(PathBuf),
+    Timeout(AppPathBuf),
     /// The backend returned an error (disconnect mid-walk, permission, etc.).
     /// A `DeviceDisconnected`/`Disconnected` value here is a TERMINAL disconnect
     /// (see [`VolumeScanError::is_terminal_disconnect`]); other variants are the
@@ -173,7 +172,7 @@ pub enum VolumeScanError {
     Context(String),
     /// The walk's root doesn't cross into the volume's index path space, so the index has no
     /// entry to walk it from. Carries the root, typed so a log line marks it.
-    OutsideIndex(PathBuf),
+    OutsideIndex(AppPathBuf),
     /// The walk stopped because its cancellation token fired, carrying the
     /// partial totals it had reached. A distinct variant rather than a flag on
     /// the summary, so `Ok` means "this walk finished" and no caller can mark a
@@ -227,7 +226,7 @@ impl ErrorLogText for VolumeScanError {
         match self {
             Self::Timeout(p) => {
                 out.write_str("listing timed out: ")?;
-                out.value(LogPrivate::dir_path(p))
+                out.value(LogPrivate::dir_path(p.as_str()))
             }
             Self::Volume(e) => {
                 out.write_str("volume error: ")?;
@@ -242,7 +241,7 @@ impl ErrorLogText for VolumeScanError {
             Self::Context(m) => write!(out, "scan context setup failed: {m}"),
             Self::OutsideIndex(root) => {
                 out.write_str("scan context setup failed: ")?;
-                out.value(LogPrivate::dir_path(root))?;
+                out.value(LogPrivate::dir_path(root.as_str()))?;
                 out.write_str(" is outside the volume's index")
             }
             Self::Cancelled(s) => write!(
@@ -282,7 +281,7 @@ impl std::error::Error for VolumeScanError {}
 /// (#835), while a round trip the device never answers still times out.
 async fn list_one_directory(
     volume: Arc<dyn Volume>,
-    dir_path: PathBuf,
+    dir_path: AppPathBuf,
     cancel: CancellationToken,
 ) -> Result<Vec<cmdr_fs::entry::FileEntry>, VolumeScanError> {
     let listing_path = dir_path.clone();
@@ -290,7 +289,7 @@ async fn list_one_directory(
     let listing_clock = clock.clone();
     let listing = tokio::spawn(async move {
         let result = volume
-            .list_directory_for_scan(&AppPath::legacy_unchecked(&listing_path), Some(&cancel), &listing_clock)
+            .list_directory_for_scan(&listing_path, Some(&cancel), &listing_clock)
             .await
             .map(|entries| walked_links_as_directories(volume.as_ref(), entries));
         // Drain the autoreleased ObjC objects this listing created before the
@@ -346,11 +345,11 @@ async fn race_with_active_time<T>(
 /// ❌ Same detach rule as [`list_one_directory`]: the timeout races the task's JOIN
 /// HANDLE, never the future itself. Dropping a `get_metadata` future mid-round-trip
 /// abandons an in-flight PTP transaction and wedges the phone.
-pub(crate) async fn stat_one_directory(volume: Arc<dyn Volume>, path: PathBuf) -> Option<cmdr_fs::entry::FileEntry> {
+pub(crate) async fn stat_one_directory(volume: Arc<dyn Volume>, path: AppPathBuf) -> Option<cmdr_fs::entry::FileEntry> {
     let stat_path = path.clone();
     let stat = tokio::spawn(async move {
         let result = volume
-            .get_metadata(&AppPath::legacy_unchecked(&stat_path))
+            .get_metadata(&stat_path)
             .await
             .map(|entry| walked_links_as_directories(volume.as_ref(), vec![entry]).remove(0));
         drain_autorelease_pool();
@@ -362,7 +361,7 @@ pub(crate) async fn stat_one_directory(volume: Arc<dyn Volume>, path: PathBuf) -
         Ok(Ok(Err(e))) => {
             log::debug!(
                 "network_scanner: can't stat {}: {}",
-                LogPrivate::dir_path(&path),
+                LogPrivate::dir_path(path.as_str()),
                 LogError(&e)
             );
             None
@@ -370,12 +369,15 @@ pub(crate) async fn stat_one_directory(volume: Arc<dyn Volume>, path: PathBuf) -
         Ok(Err(join_err)) => {
             log::debug!(
                 "network_scanner: stat task for {} failed: {join_err}",
-                LogPrivate::dir_path(&path)
+                LogPrivate::dir_path(path.as_str())
             );
             None
         }
         Err(_elapsed) => {
-            log::warn!("network_scanner: stat of {} timed out", LogPrivate::dir_path(&path));
+            log::warn!(
+                "network_scanner: stat of {} timed out",
+                LogPrivate::dir_path(path.as_str())
+            );
             None
         }
     }
@@ -405,8 +407,7 @@ fn walked_links_as_directories(
     for entry in &mut entries {
         if entry.is_directory
             && entry.is_symlink
-            && volume.index_walk(&AppPath::legacy_unchecked(Path::new(&entry.path)), true)
-                == cmdr_fs::volume::IndexWalk::Descend
+            && row_path(entry).is_some_and(|path| volume.index_walk(&path, true) == cmdr_fs::volume::IndexWalk::Descend)
         {
             entry.is_symlink = false;
         }
@@ -419,9 +420,26 @@ fn walked_links_as_directories(
 /// by default is every real directory and never a link.
 ///
 /// All three walks ask this; the cover walk marks a "no" as ground it won't read.
-pub(crate) fn walk_descends(volume: &dyn Volume, dir: &Path, name: &str, is_symlink: bool) -> bool {
-    !is_recursion_excluded_dir(name)
-        && volume.index_walk(&AppPath::legacy_unchecked(dir), is_symlink) == cmdr_fs::volume::IndexWalk::Descend
+pub(crate) fn walk_descends(volume: &dyn Volume, dir: &AppPath, name: &str, is_symlink: bool) -> bool {
+    !is_recursion_excluded_dir(name) && volume.index_walk(dir, is_symlink) == cmdr_fs::volume::IndexWalk::Descend
+}
+
+/// The app path a walk lists or stats a listed row by, next: the row's own text, which every
+/// backend builds canonical (`AppPath::from_normalized`, no copy past the one the queue
+/// owns), else the canonical place that text names. `None` for text that names no place (no
+/// root, a `..`), which no walk descends into, as for a link: its row is indexed, its
+/// subtree isn't.
+pub(crate) fn row_path(entry: &cmdr_fs::entry::FileEntry) -> Option<AppPathBuf> {
+    crate::indexing::paths::app_text::app_path_of(&entry.path).map(std::borrow::Cow::into_owned)
+}
+
+/// The app path of the folder `name` lists in, by the app path's own join (`/` the only
+/// separator, so a Windows host never puts a `\` into a share's path). `None` for a name
+/// that isn't one plain name (`..`, empty, `a/b`), which no walk descends into.
+pub(crate) fn child_of(dir: &AppPath, name: &str) -> Option<AppPathBuf> {
+    use cmdr_fs::app_path::PathArithmetic as _;
+    let name = cmdr_fs::app_path::AppName::from_app_spelling(name).ok()?;
+    dir.join(name).ok()
 }
 
 /// Whether a `VolumeError` means the whole volume went away mid-walk (terminal
@@ -446,7 +464,7 @@ const PROGRESS_LOG_INTERVAL: Duration = Duration::from_secs(1);
 /// scan this is what tells a triager reading an error report that the walk is ALIVE,
 /// WHERE it is, and how far along — without the per-directory flood. `phase` is
 /// `"scanning"` (fresh) or `"reconciling"`.
-fn log_scan_progress(last_log: &mut Instant, phase: &str, dir_path: &Path, total_dirs: u64, total_entries: u64) {
+fn log_scan_progress(last_log: &mut Instant, phase: &str, dir_path: &AppPath, total_dirs: u64, total_entries: u64) {
     if last_log.elapsed() < PROGRESS_LOG_INTERVAL {
         return;
     }
@@ -455,7 +473,7 @@ fn log_scan_progress(last_log: &mut Instant, phase: &str, dir_path: &Path, total
         "network_scanner: {phase}… {}, {}, current: {}",
         cmdr_fs::pluralize::pluralize(total_dirs, "dir"),
         cmdr_fs::pluralize::pluralize_with(total_entries, "entry", "entries"),
-        LogPrivate::dir_path(&dir_path)
+        LogPrivate::dir_path(dir_path.as_str())
     );
 }
 

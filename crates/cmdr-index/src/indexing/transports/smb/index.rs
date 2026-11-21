@@ -14,7 +14,7 @@
 //! TCC-protected, so per-volume SMB enable is FDA-independent and never routes
 //! through `should_auto_start_indexing`.
 
-use std::path::PathBuf;
+use cmdr_fs::app_path::AppPathBuf;
 
 use crate::DriveIndexRefusal;
 use crate::indexing::host::volumes::SmbUpgradeRefusal;
@@ -42,7 +42,7 @@ fn is_direct_smb(volume_id: &str) -> bool {
 /// Mirrors the FE "Turn on indexing" intent: an `os_mount` share triggers/awaits
 /// the host's `ensure_direct_smb`; a failed/credential-needing upgrade keeps
 /// indexing disabled with a typed reason.
-async fn ensure_direct_smb(volume_id: &str) -> Result<PathBuf, DriveIndexRefusal> {
+async fn ensure_direct_smb(volume_id: &str) -> Result<AppPathBuf, DriveIndexRefusal> {
     let volumes = crate::indexing::host::volumes::current();
 
     let Some(volume) = volumes.get(volume_id) else {
@@ -63,7 +63,7 @@ async fn ensure_direct_smb(volume_id: &str) -> Result<PathBuf, DriveIndexRefusal
     if volume.backend_kind() == BackendKind::Smb {
         match volume.connection_state() {
             // Already a direct smb2 session: ready to index.
-            Some(ConnectionState::Direct) => return Ok(volume.root().as_std_legacy().to_path_buf()),
+            Some(ConnectionState::Direct) => return Ok(volume.root().to_owned()),
             // A live SmbVolume whose session dropped. Don't silently index a stale
             // session; the FE reconnect flow owns recovery.
             _ => {
@@ -78,7 +78,7 @@ async fn ensure_direct_smb(volume_id: &str) -> Result<PathBuf, DriveIndexRefusal
     // that ISN'T on an smbfs mount is an ordinary disk — reject it rather than
     // trying to upgrade it.
     if volumes
-        .smb_volume_id_for_path(&volume.root().as_std_legacy().to_string_lossy())
+        .smb_volume_id_for_path(&crate::indexing::paths::app_text::stored_text(volume.root()))
         .is_none()
     {
         log::warn!(target: "indexing::smb_index", "SMB index gate: '{volume_id}' is not an SMB volume");
@@ -103,7 +103,7 @@ async fn ensure_direct_smb(volume_id: &str) -> Result<PathBuf, DriveIndexRefusal
     // Re-fetch: the upgrade replaced the LocalPosixVolume with an SmbVolume.
     if is_direct_smb(volume_id) {
         let volume = volumes.get(volume_id).ok_or(DriveIndexRefusal::NotConnected)?;
-        Ok(volume.root().as_std_legacy().to_path_buf())
+        Ok(volume.root().to_owned())
     } else {
         Err(DriveIndexRefusal::UpgradeFailed)
     }
@@ -145,7 +145,10 @@ pub async fn start_indexing_for_smb(volume_id: String) -> Result<(), DriveIndexR
     // yet, so the brief write connection can't contend (`SQLITE_BUSY`).
     if let Ok(db_path) = state::resolved_index_db_path(&volume_id)
         && db_path.exists()
-        && let Err(e) = crate::indexing::store::IndexStore::set_volume_path(&db_path, &mount_root.to_string_lossy())
+        && let Err(e) = crate::indexing::store::IndexStore::set_volume_path(
+            &db_path,
+            &crate::indexing::paths::app_text::stored_text(&mount_root),
+        )
     {
         log::warn!(target: "indexing::smb_index", "start_indexing_for_smb: healing volume_path for '{volume_id}' failed: {e}");
     }

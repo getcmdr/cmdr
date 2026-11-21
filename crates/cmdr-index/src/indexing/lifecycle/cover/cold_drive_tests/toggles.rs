@@ -247,7 +247,7 @@ fn a_start_that_meets_a_dead_index_rebuilds_it() {
 
     state::start_indexing_for(
         drive.volume_id,
-        drive.tree.path().to_path_buf(),
+        cmdr_fs::app_path::AppPathBuf::from_native_unicode(drive.tree.path()).expect("a Unicode tempdir"),
         IndexVolumeKind::LocalExternal,
         true,
         state::Activation::IndexTheVolume,

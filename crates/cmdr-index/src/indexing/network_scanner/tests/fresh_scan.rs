@@ -32,7 +32,7 @@ async fn a_fresh_walk_never_descends_a_symlinked_directory() {
 
     let summary = scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         CancellationToken::new(),
@@ -91,7 +91,7 @@ async fn scans_in_memory_tree_into_index() {
     let cancelled = CancellationToken::new();
     let summary = scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -155,7 +155,7 @@ async fn errored_listing_is_not_marked() {
     let cancelled = CancellationToken::new();
     scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -223,7 +223,7 @@ async fn walk_lists_directories_concurrently() {
     let cancelled = CancellationToken::new();
     scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -265,7 +265,7 @@ async fn empty_root_fresh_scan_does_not_complete() {
     let cancelled = CancellationToken::new();
     let result = scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -306,7 +306,7 @@ async fn failed_root_listing_does_not_complete() {
     let cancelled = CancellationToken::new();
     let result = scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -343,7 +343,7 @@ async fn honors_cancellation_before_first_listing() {
     cancelled.cancel();
     let result = scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,

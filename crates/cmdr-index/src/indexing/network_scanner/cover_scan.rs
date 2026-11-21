@@ -22,8 +22,9 @@
 //! ❌ It never deletes, and it never writes `scan_completed_at`: covering one
 //! folder says nothing about the volume.
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic as _};
 use std::collections::{HashMap, VecDeque};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use std::time::Instant;
@@ -37,11 +38,11 @@ use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::Volume;
 
 use super::scan_pace::ScanPacer;
-use super::walk_descends;
 use super::{
     BATCH_SIZE, CONSECUTIVE_FAILURE_ABORT, SCAN_COMMIT_INTERVAL, VolumeScanError, begin_scan_tx, commit_scan_tx,
     flush_batch, is_typed_disconnect, list_one_directory, log_scan_progress, restart_scan_tx, summary,
 };
+use super::{row_path, walk_descends};
 use crate::indexing::IndexPathSpace;
 use crate::indexing::reconcile::reconciler;
 use crate::indexing::scanner::{CoveredEntry, EmitPacer, EntrySender, ScanSummary, WalkHeartbeat};
@@ -66,7 +67,7 @@ use crate::indexing::writer::{IndexWriter, WriteMessage};
 )]
 pub(crate) async fn cover_volume_subtree(
     volume: Arc<dyn Volume>,
-    root: PathBuf,
+    root: AppPathBuf,
     space: &IndexPathSpace,
     writer: &IndexWriter,
     emit: Option<EntrySender>,
@@ -94,11 +95,11 @@ pub(crate) async fn cover_volume_subtree(
     // 10 TB volume), so the walk says "won't read" instead of "haven't read".
     if root
         .file_name()
-        .is_some_and(|name| !walk_descends(volume.as_ref(), &root, &name.to_string_lossy(), false))
+        .is_some_and(|name| !walk_descends(volume.as_ref(), &root, name, false))
     {
         log::debug!(
             "network_scanner: not covering {} (a NAS system dir or a tree the volume keeps out of its walks); marking it as ground we won't read",
-            LogPrivate::dir_path(&root)
+            LogPrivate::dir_path(root.as_str())
         );
         writes.mark_unreadable(root_id);
         writes.finish(root_id)?;
@@ -114,7 +115,7 @@ pub(crate) async fn cover_volume_subtree(
     // scan root is a frontier node rather than the volume root, so ids are carried
     // rather than looked up by path. Only the network I/O overlaps — results are
     // processed serially on this task, so id allocation stays single-owner.
-    let mut queue: VecDeque<(PathBuf, i64)> = VecDeque::new();
+    let mut queue: VecDeque<(AppPathBuf, i64)> = VecDeque::new();
     queue.push_back((root.clone(), root_id));
     let mut inflight = FuturesUnordered::new();
     let mut last_progress_log = Instant::now();
@@ -151,7 +152,7 @@ pub(crate) async fn cover_volume_subtree(
             // Counted (and named) as the listing goes OUT, not as it comes back: a
             // round trip that never returns is exactly the one a watcher wants to
             // see named.
-            heartbeat.entering(&dir);
+            heartbeat.entering_at(&dir);
             let vol = Arc::clone(&volume);
             let cancel = cancel.clone();
             inflight.push(async move {
@@ -179,7 +180,7 @@ pub(crate) async fn cover_volume_subtree(
             Err(VolumeScanError::Volume(e)) if is_typed_disconnect(&e) => {
                 log::warn!(
                     "network_scanner: device disconnected covering {}: {e}; keeping what the walk covered",
-                    LogPrivate::dir_path(&dir_path),
+                    LogPrivate::dir_path(dir_path.as_str()),
                     e = LogError(&e)
                 );
                 writes.share_went_away();
@@ -215,7 +216,7 @@ pub(crate) async fn cover_volume_subtree(
                 heartbeat.abandoned(1);
                 log::debug!(
                     "network_scanner: skipping unlistable dir {} while covering (consecutive_failures={consecutive_failures}): {err}",
-                    LogPrivate::dir_path(&dir_path),
+                    LogPrivate::dir_path(dir_path.as_str()),
                     err = LogError(&err),
                 );
                 if consecutive_failures >= CONSECUTIVE_FAILURE_ABORT {
@@ -264,11 +265,11 @@ pub(crate) async fn cover_volume_subtree(
                 // too; nothing is rewritten either way.
                 Some(Slot::InTheIndex(child)) => {
                     if let Some(child_id) = child {
-                        let child_path = PathBuf::from(&entry.path);
-                        if walk_descends(volume.as_ref(), &child_path, &entry.name, entry.is_symlink) {
-                            queue.push_back((child_path, child_id));
-                        } else {
-                            writes.mark_unreadable(child_id);
+                        match row_path(&entry)
+                            .filter(|child| walk_descends(volume.as_ref(), child, &entry.name, entry.is_symlink))
+                        {
+                            Some(child_path) => queue.push_back((child_path, child_id)),
+                            None => writes.mark_unreadable(child_id),
                         }
                     }
                     taken.insert(folded, Slot::TakenHere);
@@ -291,7 +292,6 @@ pub(crate) async fn cover_volume_subtree(
 
             let is_dir = entry.is_directory;
             let is_symlink = entry.is_symlink;
-            let child_path = PathBuf::from(&entry.path);
             let id = writer.next_id().fetch_add(1, Ordering::Relaxed);
 
             if is_dir {
@@ -300,14 +300,16 @@ pub(crate) async fn cover_volume_subtree(
                 // system dir doesn't get walked (`system_dirs.rs`). Marked as ground
                 // we won't read, so the frontier stops offering it — see the root
                 // case above for why that matters more here than on a full scan.
-                if !walk_descends(volume.as_ref(), &child_path, &entry.name, is_symlink) {
-                    log::debug!(
-                        "network_scanner: not descending into {} (a NAS system dir, a link, or a tree the volume keeps out of its walks)",
-                        LogPrivate::dir_path(&child_path)
-                    );
-                    writes.mark_unreadable(id);
-                } else {
-                    queue.push_back((child_path.clone(), id));
+                // The path is made for a folder alone, the one row the walk lists next.
+                match row_path(&entry).filter(|child| walk_descends(volume.as_ref(), child, &entry.name, is_symlink)) {
+                    Some(child_path) => queue.push_back((child_path, id)),
+                    None => {
+                        log::debug!(
+                            "network_scanner: not descending into {} (a NAS system dir, a link, a tree the volume keeps out of its walks, or a row naming no place)",
+                            LogPrivate::dir_path(&entry.path)
+                        );
+                        writes.mark_unreadable(id);
+                    }
                 }
             }
 
@@ -336,7 +338,7 @@ pub(crate) async fn cover_volume_subtree(
                     inode: space.trust_inode(entry.inode),
                 },
                 CoveredEntry {
-                    path: child_path,
+                    path: PathBuf::from(&entry.path),
                     is_directory: is_dir,
                     is_symlink,
                     logical_size,
@@ -352,7 +354,7 @@ pub(crate) async fn cover_volume_subtree(
 
     log::debug!(
         "network_scanner: covered {} ({} entries, {} dirs) in {}ms",
-        LogPrivate::dir_path(&root),
+        LogPrivate::dir_path(root.as_str()),
         total_entries,
         total_dirs,
         start.elapsed().as_millis()
@@ -366,12 +368,16 @@ pub(crate) async fn cover_volume_subtree(
 /// the boot disk, mount-root-stripped on every trait-scanned volume, whose index
 /// `ROOT_ID` is the mount): an absolute walk from `ROOT_ID` misses at the very
 /// first component on a share.
-fn resolve_root_id(conn: &rusqlite::Connection, space: &IndexPathSpace, root: &Path) -> Result<i64, VolumeScanError> {
-    let absolute = space.absolute(&root.to_string_lossy());
+fn resolve_root_id(
+    conn: &rusqlite::Connection,
+    space: &IndexPathSpace,
+    root: &AppPath,
+) -> Result<i64, VolumeScanError> {
+    let absolute = space.absolute(&crate::indexing::paths::app_text::stored_text(root));
     let index_relative = space
         .index_relative(&absolute)
-        .ok_or_else(|| VolumeScanError::OutsideIndex(root.to_path_buf()))?;
-    resolve_scan_root(conn, Path::new(&index_relative), false).map_err(|e| VolumeScanError::Context(e.to_string()))
+        .ok_or_else(|| VolumeScanError::OutsideIndex(root.to_owned()))?;
+    resolve_scan_root(conn, &index_relative, false).map_err(|e| VolumeScanError::Context(e.to_string()))
 }
 
 /// Directory ids per `MarkDirsUnreadable` message, mirroring the local walker's.

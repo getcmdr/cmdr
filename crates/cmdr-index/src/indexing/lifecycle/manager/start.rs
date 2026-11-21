@@ -59,7 +59,7 @@ impl IndexManager {
     /// ⚠️ The claim outlives this call. Whoever starts a run keeps it until that
     /// run ends — see `scan_completion.rs` and the two entries.
     pub(in crate::indexing::lifecycle) fn claim_the_volume(&self) -> Result<cover::Claim, ScanStartError> {
-        let whole_volume = vec![self.volume_root.to_string_lossy().into_owned()];
+        let whole_volume = vec![self.root_text()];
         let claim = cover::Claim::take(&self.volume_id, whole_volume, cover::Holder::Rewriting);
         if !claim.mine().is_empty() {
             return Ok(claim);
@@ -91,10 +91,11 @@ impl IndexManager {
         // forward task into dropping events (Fix 2). Memory is bounded by the
         // ingestion hard cap in `run_replay_event_loop`, not by the channel.
         let (event_tx, event_rx) = tokio::sync::mpsc::unbounded_channel();
-        let current_id = watcher::current_event_id(&self.volume_root);
+        let local_root = self.local_root()?.to_path_buf();
+        let current_id = watcher::current_event_id(&local_root);
 
         let watcher_overflow: Option<Arc<AtomicBool>>;
-        match DriveWatcher::start(&self.volume_root, since_event_id, event_tx) {
+        match DriveWatcher::start(&local_root, since_event_id, event_tx) {
             Ok(watcher) => {
                 watcher_overflow = Some(watcher.overflow_flag());
                 self.drive_watcher = Some(watcher);
@@ -145,11 +146,7 @@ impl IndexManager {
         // ends, not where this task does: the same task goes on to run the live
         // loop for the rest of the session, and ground held that long would refuse
         // every scan and every search walk on the boot disk until quit.
-        let ground = cover::Claim::take(
-            &self.volume_id,
-            vec![self.volume_root.to_string_lossy().into_owned()],
-            cover::Holder::Rewriting,
-        );
+        let ground = cover::Claim::take(&self.volume_id, vec![self.root_text()], cover::Holder::Rewriting);
         if ground.mine().is_empty() {
             // Nothing here can act on it: replay is the launch path and its writes
             // are already queued. Worth a line, because it means something else
@@ -350,9 +347,9 @@ impl IndexManager {
         // commands), so wrap it in `block_in_place`, matching the `flush_blocking`
         // call below. A bare blocking call on a tokio worker can stall on a wedged
         // mount. Failure → `None`; never block or delay the scan for the denominator.
-        let volume_root = self.volume_root.clone();
+        let local_root = self.local_root().map_err(ScanStartError::Internal)?.to_path_buf();
         let volume_used_bytes =
-            tokio::task::block_in_place(|| crate::indexing::host::volumes::current().volume_used_bytes(&volume_root));
+            tokio::task::block_in_place(|| crate::indexing::host::volumes::current().volume_used_bytes(&local_root));
 
         let calibration = ScanCalibration {
             prior,
@@ -451,7 +448,7 @@ impl IndexManager {
         let watcher_root = std::env::var("CMDR_E2E_START_PATH")
             .ok()
             .map(PathBuf::from)
-            .unwrap_or_else(|| self.volume_root.clone());
+            .unwrap_or_else(|| local_root.clone());
         let scan_start_event_id = watcher::current_event_id(&watcher_root);
 
         // watcher_overflow is None if the watcher failed to start (non-fatal).
@@ -494,11 +491,7 @@ impl IndexManager {
         // And the ground it covers, which is all of it. The listing tests one
         // list of walked roots either way; nothing downstream knows there are two
         // kinds of run.
-        announce_whole_volume_walk(
-            self.events.as_ref(),
-            &self.volume_id,
-            self.volume_root.to_string_lossy().into_owned(),
-        );
+        announce_whole_volume_walk(self.events.as_ref(), &self.volume_id, self.root_text());
 
         set_phase_for(
             self.events.as_ref(),
@@ -536,7 +529,7 @@ impl IndexManager {
         let (scan_handle, join_handle) = if reconcile {
             log::info!("local scan: reconcile rescan for '{}' ({scan_trigger})", self.volume_id);
             local_reconcile::start_local_reconcile(
-                self.volume_root.clone(),
+                local_root.clone(),
                 space.clone(),
                 &self.writer,
                 self.work.child(HoldKind::LocalReconcile),
@@ -548,7 +541,7 @@ impl IndexManager {
                 self.volume_id
             );
             let config = ScanConfig {
-                root: self.volume_root.clone(),
+                root: local_root.clone(),
                 // Carries both volume facts the walk needs: a mount-rooted drive
                 // gates children with `MountRooted` (the boot tier would exclude its
                 // own `/Volumes/X` subtree and falsely complete the scan empty), and

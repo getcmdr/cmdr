@@ -7,7 +7,6 @@
 
 use cmdr_fs::log_private::LogPrivate;
 use rusqlite::{Connection, params};
-use std::path::Path;
 
 use super::schema::{ROOT_ID, ROOT_PARENT_ID, ensure_root_sentinel};
 use super::{IndexStore, IndexStoreError};
@@ -24,7 +23,7 @@ use super::{IndexStore, IndexStoreError};
 /// [`ScanContext`](super::ScanContext) path→id map (its serial BFS resolves parents
 /// by path); the local scanner carries `parent_id` through its parallel walk and
 /// needs only the root id from here.
-pub fn resolve_scan_root(conn: &Connection, root: &Path, is_volume_root: bool) -> Result<i64, IndexStoreError> {
+pub fn resolve_scan_root(conn: &Connection, root: &str, is_volume_root: bool) -> Result<i64, IndexStoreError> {
     if is_volume_root {
         // Only volume-root scans create the sentinel; subtree scans run after the
         // full scan already inserted it, and their connection may be read-only or
@@ -33,13 +32,12 @@ pub fn resolve_scan_root(conn: &Connection, root: &Path, is_volume_root: bool) -
         return Ok(ROOT_ID);
     }
 
-    let root_str = root.to_string_lossy();
-    if let Some(id) = resolve_path(conn, &root_str)? {
+    if let Some(id) = resolve_path(conn, root)? {
         return Ok(id);
     }
 
     // Diagnose which component is missing by walking the path.
-    let stripped = root_str.strip_prefix('/').unwrap_or(&root_str);
+    let stripped = root.strip_prefix('/').unwrap_or(root);
     let mut current_id = ROOT_ID;
     for component in stripped.split('/') {
         if component.is_empty() {
@@ -50,7 +48,7 @@ pub fn resolve_scan_root(conn: &Connection, root: &Path, is_volume_root: bool) -
             Ok(None) => {
                 log::debug!(
                     "resolve_scan_root: resolve_path({root_str}) failed at component \"{component}\" (parent_id={current_id})",
-                    root_str = LogPrivate::dir_path(&*root_str),
+                    root_str = LogPrivate::dir_path(root),
                     component = LogPrivate::dir_name(component),
                 );
                 break;
@@ -58,7 +56,7 @@ pub fn resolve_scan_root(conn: &Connection, root: &Path, is_volume_root: bool) -
             Err(e) => {
                 log::debug!(
                     "resolve_scan_root: resolve_path({root_str}) errored at component \"{component}\" (parent_id={current_id}): {e}",
-                    root_str = LogPrivate::dir_path(&*root_str),
+                    root_str = LogPrivate::dir_path(root),
                     component = LogPrivate::dir_name(component),
                 );
                 break;

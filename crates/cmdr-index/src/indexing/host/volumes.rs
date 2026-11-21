@@ -463,11 +463,13 @@ impl VolumeProvider for FakeVolumeProvider {
     fn mount_id_for_path(&self, path: &str) -> Option<String> {
         // Longest mount root wins, like the real registry: a drive mounted inside
         // another one must not resolve to its parent.
+        use cmdr_fs::app_path::PathArithmetic as _;
+        let path = crate::indexing::paths::app_text::app_path_of(path)?;
         self.volumes
             .read_ignore_poison()
             .iter()
-            .filter(|(_, volume)| Path::new(path).starts_with(volume.root().as_std_legacy()))
-            .max_by_key(|(_, volume)| volume.root().as_std_legacy().as_os_str().len())
+            .filter(|(_, volume)| path.starts_with(volume.root()))
+            .max_by_key(|(_, volume)| volume.root().as_str().len())
             .map(|(id, _)| id.clone())
     }
 

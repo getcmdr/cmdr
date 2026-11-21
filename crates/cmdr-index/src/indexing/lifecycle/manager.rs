@@ -1,6 +1,8 @@
 //! `IndexManager`: central coordinator for the drive indexing system.
 
 use std::path::{Path, PathBuf};
+
+use cmdr_fs::app_path::AppPathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
@@ -55,8 +57,12 @@ pub(crate) struct IndexManager {
     /// walker + FSEvents for `Local`, the `Volume`-trait scanner with no journal for
     /// `Smb`) and the launch-time freshness. See `IndexVolumeKind`.
     pub(super) kind: IndexVolumeKind,
-    /// Volume root path
-    pub(super) volume_root: PathBuf,
+    /// Where the volume is rooted, as its `Volume` names it: what the index stores and
+    /// compares (through `paths::app_text::stored_text`).
+    pub(super) volume_root: AppPathBuf,
+    /// The root's native crossing, for the local walker, the watcher, and the host's space
+    /// and mount answers; `None` for a root no OS opens (`mtp://`, `adb://`).
+    pub(super) native_root: Option<PathBuf>,
     /// Whether this volume's filesystem inode is a trustworthy identity, resolved
     /// once at construction (from the volume's `FilesystemKind` for a local
     /// external drive; `true` for the boot disk and trait-scanned volumes). Feeds
@@ -285,7 +291,7 @@ impl IndexManager {
     /// needs to reach app-owned configuration.
     pub fn new_for_kind(
         volume_id: String,
-        volume_root: PathBuf,
+        volume_root: AppPathBuf,
         db_path: PathBuf,
         kind: IndexVolumeKind,
         inodes_trustworthy: bool,
@@ -308,12 +314,13 @@ impl IndexManager {
 
         log::debug!(
             "IndexManager created for volume '{volume_id}' ({kind:?}) at {}",
-            LogPrivate::dir_path(&volume_root)
+            LogPrivate::dir_path(volume_root.as_str())
         );
 
         Ok(Self {
             volume_id,
             kind,
+            native_root: crate::indexing::paths::app_text::native_root(&volume_root),
             volume_root,
             inodes_trustworthy,
             store,
@@ -433,7 +440,7 @@ impl IndexManager {
             stored_event_id,
         );
         let current_id = if journal_replayable {
-            watcher::current_event_id(&self.volume_root)
+            self.native_root.as_deref().map_or(0, watcher::current_event_id)
         } else {
             0
         };
@@ -618,7 +625,9 @@ impl IndexManager {
         // for one that just reloaded.
         let walked_roots = match self.phases.as_ref() {
             Some(phases) if phases.has_work() => phases.walked_roots(),
-            _ if self.ground_in_flux.load(Ordering::Relaxed) => vec![self.volume_root.to_string_lossy().into_owned()],
+            _ if self.ground_in_flux.load(Ordering::Relaxed) => {
+                vec![crate::indexing::paths::app_text::stored_text(&self.volume_root).into_owned()]
+            }
             _ => Vec::new(),
         };
 
@@ -775,6 +784,7 @@ mod launch_route;
 mod network_scan;
 mod phased;
 mod registry_rescan;
+mod root;
 mod start;
 
 pub(in crate::indexing) use branch_watch::BranchWatchStart;

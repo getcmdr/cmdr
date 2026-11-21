@@ -196,7 +196,7 @@ pub(crate) fn exclusion_scope_for_volume(volume_id: &str) -> ExclusionScope {
     }
     let mount_root = host::volumes::current()
         .get(volume_id)
-        .map(|v| v.root().as_std_legacy().to_string_lossy().into_owned())
+        .map(|v| crate::indexing::paths::app_text::stored_text(v.root()).into_owned())
         .unwrap_or_default();
     ExclusionScope::mount_rooted(mount_root)
 }
@@ -298,7 +298,7 @@ pub(crate) fn index_read_path(volume_id: &str, abs_path: &str) -> Option<String>
     }
     let mount_root = host::volumes::current()
         .get(volume_id)
-        .map(|v| v.root().as_std_legacy().to_string_lossy().into_owned());
+        .map(|v| crate::indexing::paths::app_text::stored_text(v.root()).into_owned());
     index_read_path_pure(volume_id, abs_path, mount_root.as_deref())
 }
 
@@ -315,12 +315,8 @@ pub(crate) fn local_path_of(volume_id: &str, index_relative: &str) -> Option<Str
     if volume_id == ROOT_VOLUME_ID {
         return Some(index_relative.to_string());
     }
-    let mount_root = host::volumes::current()
-        .get(volume_id)?
-        .root()
-        .as_std_legacy()
-        .to_string_lossy()
-        .into_owned();
+    let volume = host::volumes::current().get(volume_id)?;
+    let mount_root = crate::indexing::paths::app_text::stored_text(volume.root());
     Some(crate::indexing::paths::path_space::join_volume_relative(
         &mount_root,
         index_relative,

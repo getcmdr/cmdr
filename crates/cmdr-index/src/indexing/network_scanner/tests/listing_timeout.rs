@@ -67,7 +67,7 @@ fn parking(parked: Duration, working: Duration) -> Arc<dyn Volume> {
 #[tokio::test(start_paused = true)]
 async fn a_listing_parked_by_its_backend_far_past_the_timeout_still_lists() {
     let volume = parking(LIST_TIMEOUT * 5, Duration::from_secs(1));
-    let listed = list_one_directory(volume, PathBuf::from("/"), CancellationToken::new()).await;
+    let listed = list_one_directory(volume, cmdr_fs::app_path!("/").to_owned(), CancellationToken::new()).await;
     assert_eq!(
         listed.expect("a parked listing is our own pacing, not a wedge").len(),
         3
@@ -78,7 +78,12 @@ async fn a_listing_parked_by_its_backend_far_past_the_timeout_still_lists() {
 async fn a_round_trip_that_never_answers_still_times_out() {
     let volume = parking(Duration::ZERO, Duration::from_secs(60 * 60));
     let started = tokio::time::Instant::now();
-    let listed = list_one_directory(volume, PathBuf::from("/wedged"), CancellationToken::new()).await;
+    let listed = list_one_directory(
+        volume,
+        cmdr_fs::app_path!("/wedged").to_owned(),
+        CancellationToken::new(),
+    )
+    .await;
     assert!(matches!(listed, Err(VolumeScanError::Timeout(_))), "got {listed:?}");
     assert_eq!(started.elapsed(), LIST_TIMEOUT, "times out after exactly the budget");
 }
@@ -88,7 +93,12 @@ async fn only_the_time_after_parking_counts_toward_the_timeout() {
     let parked = Duration::from_secs(600);
     let volume = parking(parked, Duration::from_secs(60 * 60));
     let started = tokio::time::Instant::now();
-    let listed = list_one_directory(volume, PathBuf::from("/wedged"), CancellationToken::new()).await;
+    let listed = list_one_directory(
+        volume,
+        cmdr_fs::app_path!("/wedged").to_owned(),
+        CancellationToken::new(),
+    )
+    .await;
     assert!(matches!(listed, Err(VolumeScanError::Timeout(_))), "got {listed:?}");
     assert_eq!(started.elapsed(), parked + LIST_TIMEOUT);
 }

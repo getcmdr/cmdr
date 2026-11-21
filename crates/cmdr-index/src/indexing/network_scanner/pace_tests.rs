@@ -12,7 +12,6 @@
 //! `scan_pace::tests::app_wide_activity_alone_does_not_throttle_a_quiet_share`.
 
 use cmdr_fs::app_path::AppPath;
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
@@ -94,9 +93,16 @@ impl Volume for CeilingVolume {
 /// Run a full trait scan of `vol` under `pacer`, flushing the writer.
 async fn scan(vol: Arc<dyn Volume>, writer: &IndexWriter, pacer: ScanPacer) -> ScanSummary {
     let cancelled = CancellationToken::new();
-    let summary = scan_volume_via_trait(vol, PathBuf::from("/"), writer.clone(), progress(), cancelled, pacer)
-        .await
-        .expect("scan completes");
+    let summary = scan_volume_via_trait(
+        vol,
+        cmdr_fs::app_path!("/").to_owned(),
+        writer.clone(),
+        progress(),
+        cancelled,
+        pacer,
+    )
+    .await
+    .expect("scan completes");
     writer.flush().await.expect("flush");
     summary
 }

@@ -8,8 +8,8 @@
 //! autoreleasepool, terminal-disconnect + consecutive-failure backstop) and the
 //! helpers that implement them, in `mod.rs`.
 
+use cmdr_fs::app_path::AppPathBuf;
 use std::collections::VecDeque;
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use std::time::Instant;
@@ -23,11 +23,11 @@ use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::Volume;
 
 use super::scan_pace::ScanPacer;
-use super::walk_descends;
 use super::{
     BATCH_SIZE, CONSECUTIVE_FAILURE_ABORT, SCAN_COMMIT_INTERVAL, VolumeScanError, begin_scan_tx, commit_scan_tx,
     flush_batch, is_typed_disconnect, list_one_directory, log_scan_progress, restart_scan_tx, summary,
 };
+use super::{row_path, walk_descends};
 use crate::indexing::reconcile::reconciler;
 use crate::indexing::scanner::{ScanProgress, ScanSummary};
 use crate::indexing::store::{EntryRow, IndexStore, ScanContext};
@@ -83,7 +83,7 @@ fn finish_partial_scan(
 /// gets out of the way while the user browses this share ([`ScanPacer`]).
 pub async fn scan_volume_via_trait(
     volume: Arc<dyn Volume>,
-    root: PathBuf,
+    root: AppPathBuf,
     writer: IndexWriter,
     progress: Arc<ScanProgress>,
     cancel: CancellationToken,
@@ -128,7 +128,7 @@ pub async fn scan_volume_via_trait(
     // we list the child" invariant holds even though the network listings overlap. Only
     // the I/O overlaps; result processing (id alloc, batching) stays single-owner, so no
     // locking. Each queue item is an absolute directory path; the root maps to ROOT_ID.
-    let mut queue: VecDeque<PathBuf> = VecDeque::new();
+    let mut queue: VecDeque<AppPathBuf> = VecDeque::new();
     queue.push_back(root.clone());
     let mut last_progress_log = Instant::now();
     let mut inflight = FuturesUnordered::new();
@@ -206,7 +206,7 @@ pub async fn scan_volume_via_trait(
                 log::warn!(
                     "network_scanner: device disconnected listing {}: {e}; \
                      keeping honest partial ({} listed, {} queued/in-flight unscanned)",
-                    LogPrivate::dir_path(&dir_path),
+                    LogPrivate::dir_path(dir_path.as_str()),
                     cmdr_fs::pluralize::pluralize(total_dirs, "dir"),
                     cmdr_fs::pluralize::pluralize((queue.len() + inflight.len()) as u64, "dir"),
                     e = LogError(&e),
@@ -236,7 +236,7 @@ pub async fn scan_volume_via_trait(
                 consecutive_failures += 1;
                 log::debug!(
                     "network_scanner: skipping unlistable dir {} (consecutive_failures={consecutive_failures}): {err}",
-                    LogPrivate::dir_path(&dir_path),
+                    LogPrivate::dir_path(dir_path.as_str()),
                     err = LogError(&err),
                 );
                 if consecutive_failures >= CONSECUTIVE_FAILURE_ABORT {
@@ -265,7 +265,7 @@ pub async fn scan_volume_via_trait(
             None => {
                 log::debug!(
                     "network_scanner: parent id missing for {}, skipping",
-                    LogPrivate::dir_path(&dir_path)
+                    LogPrivate::dir_path(dir_path.as_str())
                 );
                 continue;
             }
@@ -282,7 +282,6 @@ pub async fn scan_volume_via_trait(
         for entry in entries {
             let is_dir = entry.is_directory;
             let is_symlink = entry.is_symlink;
-            let child_path = PathBuf::from(&entry.path);
             let id = scan_ctx.alloc_id();
 
             if is_dir {
@@ -293,14 +292,16 @@ pub async fn scan_volume_via_trait(
                 // stalled a real first-scan. The row is still indexed (visible,
                 // navigable); we just don't walk its subtree, so its size stays
                 // honestly unknown rather than a misleading roll-up. See `system_dirs`.
-                if !walk_descends(volume.as_ref(), &child_path, &entry.name, is_symlink) {
-                    log::debug!(
-                        "network_scanner: not descending into {} (a NAS system dir, a link, or a tree the volume keeps out of its walks)",
-                        LogPrivate::dir_path(&child_path)
-                    );
-                } else {
-                    scan_ctx.register_dir(child_path.clone(), id);
-                    queue.push_back(child_path);
+                // The path is made for a folder alone, the one row the walk lists next.
+                match row_path(&entry).filter(|child| walk_descends(volume.as_ref(), child, &entry.name, is_symlink)) {
+                    Some(child_path) => {
+                        scan_ctx.register_dir(child_path.clone(), id);
+                        queue.push_back(child_path);
+                    }
+                    None => log::debug!(
+                        "network_scanner: not descending into {} (a NAS system dir, a link, a tree the volume keeps out of its walks, or a row naming no place)",
+                        LogPrivate::dir_path(&entry.path)
+                    ),
                 }
             }
 
@@ -349,7 +350,7 @@ pub async fn scan_volume_via_trait(
     if total_entries == 0 {
         log::warn!(
             "network_scanner: root listed empty for {} ({}ms) — treating as a failed scan, not marking complete",
-            LogPrivate::dir_path(&root),
+            LogPrivate::dir_path(root.as_str()),
             start.elapsed().as_millis()
         );
         // Close the (empty) transaction before bailing BEFORE finish, so the
@@ -371,7 +372,7 @@ pub async fn scan_volume_via_trait(
 
     log::info!(
         "network_scanner: walk complete for {}: entries={total_entries}, dirs={total_dirs} in {}ms",
-        LogPrivate::dir_path(&root),
+        LogPrivate::dir_path(root.as_str()),
         start.elapsed().as_millis()
     );
 

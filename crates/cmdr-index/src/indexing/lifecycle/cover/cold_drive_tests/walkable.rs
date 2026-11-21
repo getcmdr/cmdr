@@ -83,7 +83,7 @@ fn a_volume_mid_full_scan_is_not_walked() {
     // A writer-only start is the shape a walk leaves: Running, nothing scanning.
     crate::indexing::lifecycle::state::start_indexing_for(
         drive.volume_id,
-        drive.tree.path().to_path_buf(),
+        cmdr_fs::app_path::AppPathBuf::from_native_unicode(drive.tree.path()).expect("a Unicode tempdir"),
         IndexVolumeKind::Local,
         true,
         crate::indexing::lifecycle::state::Activation::WriterOnly,

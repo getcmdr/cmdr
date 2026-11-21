@@ -22,7 +22,7 @@
 //! NOT here; `docs/notes/index-extraction-baseline.md` says why and where it
 //! lives instead.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use cmdr_fs::entry::FileEntry;
 use cmdr_index::store::{EntryRow, IndexStore, ROOT_ID, resolve_scan_root};
@@ -110,7 +110,7 @@ fn build_fixture(dirs: usize) -> Fixture {
     drop(IndexStore::open(&db_path).expect("create the bench index DB"));
     let conn = IndexStore::open_write_connection(&db_path).expect("open a write connection");
 
-    resolve_scan_root(&conn, Path::new("/"), true).expect("seed the root sentinel");
+    resolve_scan_root(&conn, "/", true).expect("seed the root sentinel");
     IndexStore::seed_current_epoch(&conn).expect("seed current_epoch");
 
     let mut rows: Vec<EntryRow> = Vec::new();

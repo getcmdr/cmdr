@@ -41,7 +41,7 @@ async fn skips_recursion_into_nas_system_dirs() {
     let cancelled = CancellationToken::new();
     scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -186,7 +186,7 @@ async fn reconcile_cannot_shed_rows_left_under_a_now_excluded_dir() {
     let cancelled = CancellationToken::new();
     reconcile_volume_via_trait(
         Arc::clone(&vol),
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -261,7 +261,7 @@ async fn reconcile_keeps_walking_lookalike_user_folders() {
     let cancelled = CancellationToken::new();
     reconcile_volume_via_trait(
         Arc::clone(&vol),
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -323,7 +323,7 @@ async fn a_walk_descends_where_the_volume_says_and_nowhere_else() {
     }
     reconcile_volume_via_trait(
         Arc::clone(&vol),
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         CancellationToken::new(),

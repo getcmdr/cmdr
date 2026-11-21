@@ -7,8 +7,7 @@
 //! (`index_read_path`). Both strip a mount root with the same
 //! `transports::smb::watch::index_relative_path`, never a second copy.
 
-use std::path::Path;
-
+use cmdr_fs::app_path::AppPath;
 use rusqlite::Connection;
 
 use crate::indexing::scanner::ExclusionScope;
@@ -116,12 +115,12 @@ impl IndexPathSpace {
     /// `inodes_trustworthy` is resolved once per scan from the volume's
     /// filesystem (see `local_external_index::classify`); only a FAT/exFAT local
     /// external drive is `false`.
-    pub(crate) fn for_volume(kind: IndexVolumeKind, volume_root: &Path, inodes_trustworthy: bool) -> Self {
+    pub(crate) fn for_volume(kind: IndexVolumeKind, volume_root: &AppPath, inodes_trustworthy: bool) -> Self {
         // `root` on Windows is the system drive (`C:/`), mount-rooted like any other drive
         // (`routing::root_mount_root`); on macOS and Linux it's the pass-through boot disk.
         let rooted_at_a_drive = super::routing::root_mount_root().is_some();
         let base = if kind.mount_rooted() || rooted_at_a_drive {
-            Self::mount_rooted(volume_root.to_string_lossy().into_owned())
+            Self::mount_rooted(super::app_text::stored_text(volume_root).into_owned())
         } else {
             Self::root()
         };
@@ -240,8 +239,6 @@ mod tests {
     /// unit-tested there; here we pin the root-vs-mount decision the pipeline branches on.
     #[test]
     fn index_path_space_root_vs_mount() {
-        use std::path::Path;
-
         let root = IndexPathSpace::root();
         assert_eq!(root.exclusion_scope().tier(), ExclusionTier::BootDisk);
         assert_eq!(root.volume_root_string(), "/");
@@ -256,15 +253,19 @@ mod tests {
 
         // `for_volume` derives the space from the kind + root: `root` is the `/`-rooted boot
         // disk on macOS and Linux, and mount-rooted at the system drive on Windows.
-        let local = IndexPathSpace::for_volume(IndexVolumeKind::Local, Path::new("/"), true);
+        let local = IndexPathSpace::for_volume(IndexVolumeKind::Local, cmdr_fs::app_path!("/"), true);
         match super::super::routing::root_mount_root() {
             None => assert_eq!(local.exclusion_scope().tier(), ExclusionTier::BootDisk),
             Some(_) => assert_eq!(local.exclusion_scope().tier(), ExclusionTier::MountRooted),
         }
         assert_eq!(
-            IndexPathSpace::for_volume(IndexVolumeKind::LocalExternal, Path::new("/Volumes/NONAME"), true)
-                .exclusion_scope()
-                .tier(),
+            IndexPathSpace::for_volume(
+                IndexVolumeKind::LocalExternal,
+                cmdr_fs::app_path!("/Volumes/NONAME"),
+                true
+            )
+            .exclusion_scope()
+            .tier(),
             ExclusionTier::MountRooted,
         );
     }
@@ -274,13 +275,16 @@ mod tests {
     /// paths store `inode: None` there and the rename pre-pass can never match.
     #[test]
     fn index_path_space_trust_inode_nulls_on_untrusted() {
-        use std::path::Path;
-
-        let trusted = IndexPathSpace::for_volume(IndexVolumeKind::LocalExternal, Path::new("/Volumes/USB"), true);
+        let trusted =
+            IndexPathSpace::for_volume(IndexVolumeKind::LocalExternal, cmdr_fs::app_path!("/Volumes/USB"), true);
         assert!(trusted.inodes_trustworthy());
         assert_eq!(trusted.trust_inode(Some(42)), Some(42), "trusted keeps the inode");
 
-        let untrusted = IndexPathSpace::for_volume(IndexVolumeKind::LocalExternal, Path::new("/Volumes/USB"), false);
+        let untrusted = IndexPathSpace::for_volume(
+            IndexVolumeKind::LocalExternal,
+            cmdr_fs::app_path!("/Volumes/USB"),
+            false,
+        );
         assert!(!untrusted.inodes_trustworthy());
         assert_eq!(untrusted.trust_inode(Some(42)), None, "FAT/exFAT nulls the inode");
         assert_eq!(untrusted.trust_inode(None), None);

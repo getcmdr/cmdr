@@ -3,6 +3,7 @@
 //! and the reconcile setup helpers. The themes themselves are the sibling
 //! modules (`fresh_scan`, `disconnects`, `reconcile`, `nas_system_dirs`).
 
+use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicU64;
 
 use std::future::Future;
@@ -287,7 +288,7 @@ async fn fresh_scan(vol: Arc<dyn Volume>) -> (IndexWriter, PathBuf, tempfile::Te
     let cancelled = CancellationToken::new();
     scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
