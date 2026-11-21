@@ -4,7 +4,7 @@
 //! guard, writability and disk-space checks, same-file / same-filesystem inode
 //! comparisons, path/name length limits, and symlink-loop detection.
 
-use cmdr_fs::file_identity::{FileId, Follow, Sameness, same_device};
+use cmdr_fs::file_identity::{FileId, Follow, Sameness, same_device, same_device_at};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -467,11 +467,16 @@ pub(super) fn is_symlink_loop(path: &Path, visited: &HashSet<PathBuf>) -> bool {
 
 /// Whether two paths are known to be on the same filesystem (one device id). A device
 /// the OS can't name answers `false`, so a move takes copy-then-delete rather than a
-/// rename that might cross volumes.
+/// rename that might cross volumes. Windows' `Metadata` carries no device, so there the
+/// answer comes from the by-path reader (`same_device_at`, the volume serial).
 pub(crate) fn is_same_filesystem(source: &Path, destination: &Path) -> std::io::Result<bool> {
     let source_meta = fs::metadata(source)?;
     let dest_meta = fs::metadata(destination)?;
-    Ok(same_device(&source_meta, &dest_meta) == Sameness::Same)
+    let sameness = match same_device(&source_meta, &dest_meta) {
+        Sameness::Unknown => same_device_at(source, destination),
+        known => known,
+    };
+    Ok(sameness == Sameness::Same)
 }
 
 #[cfg(all(test, unix))]

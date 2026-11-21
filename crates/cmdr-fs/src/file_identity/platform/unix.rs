@@ -25,6 +25,10 @@ pub(crate) fn device_of(metadata: &Metadata) -> Option<DeviceId> {
     Some(DeviceId::from_raw(metadata.dev()))
 }
 
+pub(crate) fn device_at(path: &Path) -> Option<DeviceId> {
+    device_of(&std::fs::metadata(path).ok()?)
+}
+
 pub(crate) fn link_count(metadata: &Metadata) -> Option<u64> {
     Some(metadata.nlink())
 }

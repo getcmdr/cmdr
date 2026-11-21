@@ -204,5 +204,26 @@ pub fn same_device(a: &Metadata, b: &Metadata) -> Sameness {
     Sameness::of(device_of(a), device_of(b))
 }
 
+/// The device the node at `path` lives on, links followed, read by path: the one device
+/// reader that answers on Windows, where it opens a handle (the volume serial). `None` when
+/// `path` can't be read or the OS gives no device.
+pub fn device_at(path: &Path) -> Option<DeviceId> {
+    #[cfg(any(test, feature = "testing"))]
+    if platform::file_id_at(path, Follow::Links)
+        .ok()
+        .flatten()
+        .is_some_and(hidden::hides)
+    {
+        return None;
+    }
+    platform::device_at(path)
+}
+
+/// Whether the paths `a` and `b` live on the same device, links followed ([`device_at`]).
+/// `Unknown` when either can't be read or carries no device.
+pub fn same_device_at(a: &Path, b: &Path) -> Sameness {
+    Sameness::of(device_at(a), device_at(b))
+}
+
 #[cfg(test)]
 mod tests;

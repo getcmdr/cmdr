@@ -1,7 +1,7 @@
 //! Windows keeps a node's id (volume serial plus file id) behind a handle, not in
 //! `std::fs::Metadata` (`std`'s `MetadataExt::file_index` is unstable, and a listing's
 //! metadata comes from `FindFirstFileW`, which carries none), so every `Metadata` answer here
-//! is "don't know". The path reader [`file_id_at`] opens a handle and asks it.
+//! is "don't know". The path readers [`file_id_at`] and [`device_at`] open a handle and ask it.
 //!
 //! - **The read**: `GetFileInformationByHandleEx(FileIdInfo)`, the 64-bit volume serial plus
 //!   the 128-bit file id, which holds a ReFS id whole. On NTFS the id is the 64-bit file
@@ -36,54 +36,75 @@ pub(crate) fn file_id(_metadata: &Metadata) -> Option<FileId> {
 }
 
 pub(crate) fn file_id_at(path: &Path, follow: Follow) -> std::io::Result<Option<FileId>> {
-    let flags = match follow {
-        Follow::Links => FILE_FLAG_BACKUP_SEMANTICS,
-        Follow::NotLinks => FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
-    };
     // An open that fails (missing, access denied) is the `Err`: the caller tells a missing
     // path from one it couldn't open by the error's kind.
-    let file = OpenOptions::new()
-        .access_mode(FILE_READ_ATTRIBUTES)
-        .share_mode(FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE)
-        .custom_flags(flags)
-        .open(path)?;
+    let file = open_for_id(path, follow)?;
     let handle: HANDLE = file.as_raw_handle();
     Ok(match id_info(handle) {
-        Ok(id) => id,
-        Err(code) if refuses_the_class(code) => file_index(handle),
+        Ok(info) => usable(info.VolumeSerialNumber, u128::from_le_bytes(info.FileId.Identifier)),
+        Err(code) if refuses_the_class(code) => {
+            file_index(handle).and_then(|info| usable(u64::from(info.dwVolumeSerialNumber), index_of(&info)))
+        }
         Err(_) => None,
     })
 }
 
-/// `FileIdInfo`'s answer: `Ok(None)` for a zero or invalid id, `Err` with the Win32 code
-/// when the call failed.
-fn id_info(handle: HANDLE) -> Result<Option<FileId>, Option<i32>> {
+/// The volume serial from the same reads [`file_id_at`] makes, so the two agree on what a
+/// device is (the 64-bit serial, or the older 32-bit one where the filesystem refuses
+/// `FileIdInfo`). A zero serial is no serial. ❗ A cloned disk keeps its source's serial, so
+/// two volumes can share one: a "same device" answer may still meet a rename that refuses to
+/// cross volumes (`ERROR_NOT_SAME_DEVICE`), never a wrong success.
+pub(crate) fn device_at(path: &Path) -> Option<DeviceId> {
+    let file = open_for_id(path, Follow::Links).ok()?;
+    let handle: HANDLE = file.as_raw_handle();
+    let serial = match id_info(handle) {
+        Ok(info) => info.VolumeSerialNumber,
+        Err(code) if refuses_the_class(code) => u64::from(file_index(handle)?.dwVolumeSerialNumber),
+        Err(_) => return None,
+    };
+    (serial != 0).then(|| DeviceId::from_raw(serial))
+}
+
+/// A handle that reads attributes only, shares everything, and opens folders, so it never
+/// blocks or is blocked by another program holding the file.
+fn open_for_id(path: &Path, follow: Follow) -> std::io::Result<std::fs::File> {
+    let flags = match follow {
+        Follow::Links => FILE_FLAG_BACKUP_SEMANTICS,
+        Follow::NotLinks => FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
+    };
+    OpenOptions::new()
+        .access_mode(FILE_READ_ATTRIBUTES)
+        .share_mode(FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE)
+        .custom_flags(flags)
+        .open(path)
+}
+
+/// `FileIdInfo`'s answer, or `Err` with the Win32 code when the call failed.
+fn id_info(handle: HANDLE) -> Result<FILE_ID_INFO, Option<i32>> {
     let mut info = FILE_ID_INFO::default();
     let size = u32::try_from(size_of::<FILE_ID_INFO>()).expect("FILE_ID_INFO is 24 bytes");
-    // SAFETY: `handle` is an open file handle `file_id_at`'s `File` owns for this whole
-    // call, and `info` is a `FILE_ID_INFO` of exactly `size` bytes, the buffer `FileIdInfo`
-    // fills.
+    // SAFETY: `handle` is an open file handle the caller's `File` owns for this whole call,
+    // and `info` is a `FILE_ID_INFO` of exactly `size` bytes, the buffer `FileIdInfo` fills.
     let ok = unsafe { GetFileInformationByHandleEx(handle, FileIdInfo, (&raw mut info).cast(), size) };
     if ok == 0 {
         return Err(std::io::Error::last_os_error().raw_os_error());
     }
-    Ok(usable(
-        info.VolumeSerialNumber,
-        u128::from_le_bytes(info.FileId.Identifier),
-    ))
+    Ok(info)
 }
 
-/// The older 64-bit file index, for a filesystem that refuses `FileIdInfo`.
-fn file_index(handle: HANDLE) -> Option<FileId> {
+/// The older handle information (32-bit serial, 64-bit file index), for a filesystem that
+/// refuses `FileIdInfo`.
+fn file_index(handle: HANDLE) -> Option<BY_HANDLE_FILE_INFORMATION> {
     let mut info = BY_HANDLE_FILE_INFORMATION::default();
-    // SAFETY: `handle` is an open file handle `file_id_at`'s `File` owns for this whole
-    // call, and `info` is the `BY_HANDLE_FILE_INFORMATION` the call fills.
+    // SAFETY: `handle` is an open file handle the caller's `File` owns for this whole call,
+    // and `info` is the `BY_HANDLE_FILE_INFORMATION` the call fills.
     let ok = unsafe { GetFileInformationByHandle(handle, &raw mut info) };
-    if ok == 0 {
-        return None;
-    }
-    let index = (u64::from(info.nFileIndexHigh) << 32) | u64::from(info.nFileIndexLow);
-    usable(u64::from(info.dwVolumeSerialNumber), u128::from(index))
+    (ok != 0).then_some(info)
+}
+
+/// The 64-bit file index the older call splits in two.
+fn index_of(info: &BY_HANDLE_FILE_INFORMATION) -> u128 {
+    u128::from((u64::from(info.nFileIndexHigh) << 32) | u64::from(info.nFileIndexLow))
 }
 
 /// Whether a failed `FileIdInfo` call means the filesystem doesn't offer that class, the one
