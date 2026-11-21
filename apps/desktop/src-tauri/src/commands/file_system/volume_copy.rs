@@ -8,10 +8,9 @@
 use crate::file_system::ScanConflict;
 use crate::operations_host::TauriEventSink;
 use crate::operations_host::{NotInstalled, operations, refuse_not_installed};
-use cmdr_fs::app_path::AppPath;
 use cmdr_operations::{
     CONFLICT_CHECK_BUDGET, OperationEventSink, Operations, SourceItemInput, VolumeCopyConfig, VolumeScanError,
-    WriteOperationError, WriteOperationStartResult, resolve_dest_path,
+    WriteOperationError, WriteOperationStartResult,
 };
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -205,19 +204,22 @@ pub async fn destination_write_access(dest_volume_id: String, dest_path: String)
     else {
         return WriteAccess::Unknown;
     };
-    let dest_path = resolve_dest_path(&dest_volume, dest_path);
+    // `resolve_dest_path`'s anchor, typed: a local `~` expands, and a trailing `/` goes.
+    let expanded = if dest_volume.local_path().is_some() {
+        cmdr_fs::tilde::expand_tilde(&dest_path)
+    } else {
+        dest_path
+    };
+    // A `..` the person typed has no typed anchor yet: nothing to show.
+    let Some(dest_path) = crate::commands::wire_path::anchored(dest_volume.root(), &expanded) else {
+        return WriteAccess::Unknown;
+    };
     // Detached, like the scan: dropping a probe mid-round-trip wedges an MTP phone.
     timeout_detached_typed(
         Duration::from_secs(2),
         || WriteAccess::Unknown,
         |_| WriteAccess::Unknown,
-        async move {
-            Ok::<_, WriteAccess>(
-                dest_volume
-                    .write_access_at(&AppPath::legacy_unchecked(&dest_path))
-                    .await,
-            )
-        },
+        async move { Ok::<_, WriteAccess>(dest_volume.write_access_at(&dest_path).await) },
     )
     .await
     .unwrap_or_else(|unknown| unknown)

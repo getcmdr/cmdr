@@ -2061,13 +2061,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
   typed arithmetic, `tag_store_for`'s longest-root fallback, measured 180,617 of 3,617,300 differing (every one a row
   holding `..` or a `//` lead), so it keeps `Path`'s logic and its two bridges. Suites on macOS: the app 6,807, green.
 - **What stays, and where it goes**:
-  - **The IPC edges keep `legacy_unchecked`** (`commands/`'s `share_link`, `volume_copy`'s write probe, `path_checks`,
-    `suggested_ops`): today's answer for `/x/link/` and `/x/../y`. They switch to `from_wire` in the first
-    behavior-change commit (loud rule 1's second exception, pins (g) flipped, the lead's OK), which is also where
-    `path_checks.rs`'s `root_anchored` becomes `anchor_at_root` (#1314 item 2: `anchor_at_root` refuses `..` and drops a
-    trailing `/`, so it isn't mechanical). `go_to_path::resolve_with`'s `std::path` arithmetic (#1314 item 1) resolves
-    `..` lexically today; it goes typed with `resolve_typed` and `Volume::parent_for_dot_dot` in the second
-    behavior-change commit.
+  - **The IPC edges** switched to `from_wire` in the first behavior-change commit (below). `go_to_path::resolve_with`'s
+    `std::path` arithmetic (#1314 item 1) resolves `..` lexically today; it goes typed with `resolve_typed` and
+    `Volume::parent_for_dot_dot` in the second behavior-change commit.
   - **The routing seam**: `VolumeManager::resolve(volume_id, &Path)` and its `ResolvedVolume.path` built by
     `legacy_unchecked` (archive, git, restic routes) is the next mechanical step; it takes most of the manager's
     remaining bridges and the routing tests' with it. `mount_id_for_path` keeps `Path`'s `starts_with` on its caller's
@@ -2085,6 +2081,40 @@ included; the hidden couplings it found are why waves B and C differ from round 
     `RemoteRoot`'s bridged values (`RemoteRoot` goes typed first), the eject and `drive_release` mount-path text exits
     (10f), and cells handed relative or empty text (git `.git/…`, in-memory `""`, share-relative media names, the
     relative SFTP cells, a drag-out `..`, a favorite stored with a trailing `/`).
+- **First behavior-change commit done** (2026-11-21, approved by David the same day; loud rule 1's second exception, its
+  `from_wire` half). One door, `apps/desktop/src-tauri/src/commands/wire_path.rs`; the durable design is
+  `apps/desktop/src-tauri/src/commands/DETAILS.md` § "Sent paths".
+  - **Flipped**: `delete_files`, `trash_files`, and `move_files`' sources (a `..` refuses the start with the generic
+    `IoError`, logged through `log_error!`; otherwise the text goes on as sent, since the starts drop a trailing `/`
+    themselves and still take `PathBuf`s), `stat_paths_kinds` (a trailing `/` stats the link; a `..` is unknown),
+    `share_link` (`VolumeError::IoError`), `suggested_ops`' destination check (a `..` is `Unknown`, warned, no bug
+    report: a stored agent proposal can hold one until 10d's tools resolve it), and the destination probes
+    (`path_exists`, `destination_exists`, `destination_write_access`), which anchor through the typed `anchor_at_root`
+    (#1314 item 2: `path_checks`' `root_anchored` is gone). An escape-range code point stays literal
+    (`from_literal_store`) while `ESCAPES_LIVE` is false, so a row's path crosses byte for byte.
+  - **Pin (g) flipped**: `commands/file_system/stat.rs`'s `a_trailing_slash_names_the_link_and_a_dot_dot_is_refused`
+    (was `…_are_the_os_answers_today`: `x/link/` read as a folder, `x/link/../y` as `real/y`). New cells, red first:
+    `write_ops_wire_path_test.rs` (an IPC delete of `x/link/` removes the link and keeps `real/inner/kept.txt`; deletes
+    of `x/link/../y` and `/Volumes/share/../etc` refuse and delete nothing; a move with a `..` source refuses; a
+    same-root move lands as before), `wire_path_test.rs` (a row's path unchanged, NFD, an archive-inner path, scheme
+    paths, an escape-range code point; the typed anchor on `/`, a share, and `C:/`), and `write_ops_destination_test.rs`
+    (the Windows Move dialog's `/Users/Admin/w35/dst` on a `C:/` boot volume lands on `C:/Users/Admin/w35/dst`, run on
+    every host; a POSIX root's destination is as sent).
+  - **The Windows same-drive move** (found on the builder): the Move dialog hands `move_files` a volume-relative
+    `/Users/…`, which nothing anchored on the boot volume's `C:/`, so the engine's `from_wire` refused it. `move_files`
+    now anchors it the way a copy does, through `cmdr_operations::resolve_dest_path` (the typed anchor would need a
+    bridge back to the start's `PathBuf` in a file with no budget, and would refuse a typed `..` the copy accepts), and
+    so does `get_name_rules` for the boot volume. The other same-root commands (delete, trash, rename, create, compress)
+    take row or pane paths, never the dialog's box, so they had no gap.
+  - **Kept, waiting on `resolve_typed`**: a `..` in a person-typed destination: the writes keep today's `std::path`
+    `root_anchored` (the OS resolves it), and the probes answer "couldn't tell" (no typed anchor), since refusing it
+    would refuse what a person typed. The listing start, the create commands, rename, the pre-checks, the scan preview,
+    and the volume transfers (whose engine starts already drop a trailing `/`) take the text as sent: their senders are
+    rows, pane paths, or typed text, and a listing of `x/link/` lists the target's rows under `x/link` either way. The
+    `cmdr-local`, delete-engine, MCP, and go-to-path pins (g) stay: they pin the volume's and the engine's own answers,
+    or belong to 10d and the second commit.
+  - Bridge calls in `commands/`: 13 → 9 (`path_checks` 2 → 1, `volume_copy` 5 → 4, `share_link` and `suggested_ops`
+    gone; `wire_path.rs` holds none), and `pathFromBareText` 3 down (`path_checks`, `write_ops`, `share_link`).
 - **Windows**: `pnpm check clippy-windows` and `clippy-linux` green. The builder, the app's cells in these 11
   directories (1,236 tests): `main` 44 red → the branch 43, none newly red; of the baseline's 70 here, 27 pass and 43
   stay red, waiting on the routing seam, the two behavior-change commits, and the watcher fixtures

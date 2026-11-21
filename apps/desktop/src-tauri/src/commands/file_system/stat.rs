@@ -34,9 +34,15 @@ const STAT_PATHS_TIMEOUT: Duration = Duration::from_secs(2);
 pub fn stat_paths_kinds_blocking(paths: &[String]) -> Vec<Option<bool>> {
     paths
         .iter()
-        .map(|p| match std::fs::symlink_metadata(Path::new(p)) {
-            Ok(meta) => Some(meta.is_dir()),
-            Err(_) => None,
+        .map(|p| {
+            // Read at the command edge (`wire_path`): `x/link/` stats the link, and a
+            // `..` is refused (logged as the sender bug it is), so its kind is unknown.
+            // Text that's no app path (an MTP-shaped pasteboard string) stats as sent.
+            let meta = match crate::commands::wire_path::app_path(p).ok()? {
+                Some(path) => std::fs::symlink_metadata(path.to_native().ok()?),
+                None => std::fs::symlink_metadata(Path::new(p)),
+            };
+            meta.ok().map(|meta| meta.is_dir())
         })
         .collect()
 }
@@ -69,7 +75,11 @@ pub async fn stat_paths_kinds(paths: Vec<String>) -> TimedOut<Vec<Option<bool>>>
     // beyond the archive half's extension check.
     if !result.timed_out {
         for (kind, path) in result.data.iter_mut().zip(paths.iter()) {
-            if kind.is_some() || !crate::file_system::volume::manager::path_routes_over_its_parent(Path::new(path)) {
+            // A `..` was refused (and logged) above, and stays unknown.
+            if kind.is_some() || crate::commands::wire_path::has_dot_dot_name(path) {
+                continue;
+            }
+            if !crate::file_system::volume::manager::path_routes_over_its_parent(Path::new(path)) {
                 continue;
             }
             let resolved = crate::file_system::volume::manager::get_volume_manager()
@@ -211,15 +221,14 @@ mod tests {
         cleanup(&dir);
     }
 
-    /// What the stat does TODAY with a wire path a listing never builds. A trailing
-    /// `/` makes `symlink_metadata` follow a link, so a link to a folder reads as a
-    /// folder; and `link/..` is the link TARGET's parent, so `x/link/../y` stats
-    /// `real/y` (a file here), ❌ not the `x/y` folder its text names. The app-path
-    /// type flips both at the wire: a trailing `/` dropped (the link is a non-folder
-    /// again), a `..` resolved by the volume or refused. #1225.
+    /// A wire path a listing never builds, read at the command edge (`wire_path`): a
+    /// trailing `/` is dropped, so `x/link/` stats the LINK (a non-folder), ❌ never
+    /// the target `symlink_metadata` followed it to; and `x/link/../y` is refused
+    /// (unknown), ❌ never `real/y`, the link TARGET's sibling the OS's `..` reached.
+    /// Was the OS's answer for both until the edge took `from_wire`. #1225.
     #[cfg(unix)] // POSIX symlinks and the OS's own `..` through one.
     #[test]
-    fn a_trailing_slash_and_a_dot_dot_through_a_link_are_the_os_answers_today() {
+    fn a_trailing_slash_names_the_link_and_a_dot_dot_is_refused() {
         let tmp = test_dir("wire_shapes");
         fs::create_dir_all(tmp.join("real/inner")).unwrap();
         fs::write(tmp.join("real/y"), b"real").unwrap();
@@ -230,8 +239,8 @@ mod tests {
         let kinds = stat_paths_kinds_blocking(&[wire("x/link"), wire("x/link/"), wire("x/link/../y"), wire("x/y")]);
         assert_eq!(
             kinds,
-            vec![Some(false), Some(true), Some(false), Some(true)],
-            "the link, its target through the slash, `real/y` through the `..`, and the folder `x/y`"
+            vec![Some(false), Some(false), None, Some(true)],
+            "the link, the link again with its slash dropped, the `..` refused, and the folder `x/y`"
         );
     }
 }

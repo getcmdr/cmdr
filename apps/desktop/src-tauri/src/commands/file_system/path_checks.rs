@@ -2,7 +2,6 @@
 //! the platform's name and path limits, which names a folder's filesystem takes, and
 //! whether a path exists on its volume.
 
-use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 
 use tokio::time::Duration;
@@ -167,7 +166,16 @@ async fn exists_on_volume(volume_id: Option<String>, path: String, spelling: Spe
         // what the volume accepts; without it a share answers "doesn't exist"
         // for every subfolder, and the dialog promises to create one that's
         // already there.
-        let path_for_check = cmdr_fs::volume::root_anchored(&volume.root().as_std_legacy(), Path::new(&expanded_path));
+        // The typed anchor drops a trailing `/`. A `..` (only a person types one into the
+        // box) or another volume's path has no anchor here, so it's "couldn't tell" until the
+        // typed-path resolver answers it (`wire_path::anchored`).
+        let Some(target) = crate::commands::wire_path::anchored(volume.root(), &expanded_path) else {
+            return TimedOut {
+                data: false,
+                timed_out: true,
+            };
+        };
+        let path_for_check = target.as_std_legacy().into_owned();
         // Detached, so a deadline never abandons an MTP transaction mid-flight
         // (`crates/cmdr-fs/src/deadline/CLAUDE.md`). `Err(())` is "couldn't tell": the deadline, or
         // a look-alike listing that failed.
@@ -180,7 +188,7 @@ async fn exists_on_volume(volume_id: Option<String>, path: String, spelling: Spe
                     // `presence`, ❌ never `exists`: a refusal (a share folder this
                     // account may not read) is "couldn't tell", and `exists` folds
                     // it into a "no" the pane reads as "deleted" (#1018).
-                    match volume.presence(&AppPath::legacy_unchecked(&path_for_check)).await {
+                    match volume.presence(&target).await {
                         Presence::Present => true,
                         Presence::Absent => false,
                         Presence::Unknown => return Err(()),

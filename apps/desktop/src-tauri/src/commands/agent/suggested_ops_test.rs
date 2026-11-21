@@ -4,6 +4,7 @@ use super::*;
 use crate::agent::store::proposals::ProposalGroup;
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
+use std::path::Path;
 
 /// Every refusal sends the user somewhere different, so the mapping is the thing worth
 /// pinning: "somebody already answered" closes the group, "the list changed" sends them back

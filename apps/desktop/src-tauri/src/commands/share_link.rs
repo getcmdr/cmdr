@@ -9,8 +9,6 @@
 //! reach an IPC log, a frontend logger, or an uncaught-rejection report, and ❌
 //! nothing here logs it.
 
-use cmdr_fs::app_path::AppPath;
-use std::path::Path;
 use std::sync::Arc;
 
 use cmdr_fs::volume::{ShareLink, ShareLinkExpiry, Volume, VolumeError};
@@ -53,9 +51,9 @@ async fn mint(
     let Some(volume) = volume else {
         return Err(VolumeError::NotConnected(path.to_string()));
     };
-    volume
-        .share_link(&AppPath::legacy_unchecked(Path::new(path)), expires_in)
-        .await
+    // A row's path, read at the command edge: a `..` is refused, typed (`wire_path`).
+    let path = crate::commands::wire_path::on_volume(path)?;
+    volume.share_link(&path, expires_in).await
 }
 
 #[cfg(test)]
