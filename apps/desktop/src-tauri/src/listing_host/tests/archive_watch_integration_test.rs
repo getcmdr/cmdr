@@ -102,7 +102,9 @@ async fn refresh_reflects_a_new_entry_and_leaves_outside_listings_alone() {
 
     // Resolve once so the zip is recognized as an archive (this test drives the
     // refresh directly, so it needs no live watch).
-    let resolved = get_volume_manager().resolve(&volume_id, &fixture.zip_path).await;
+    let resolved = get_volume_manager()
+        .resolve(&volume_id, &crate::test_support::native_app_path(&fixture.zip_path))
+        .await;
     assert!(resolved.is_routed(), "the zip path must resolve to an ArchiveVolume");
 
     // A listing at the archive root, plus a sibling listing on the same drive
@@ -154,7 +156,9 @@ async fn a_truncated_midwrite_archive_keeps_the_previous_listing() {
         &volume_id,
         Arc::new(InMemoryVolume::new("parent").with_local_fs_access()),
     );
-    get_volume_manager().resolve(&volume_id, &fixture.zip_path).await;
+    get_volume_manager()
+        .resolve(&volume_id, &crate::test_support::native_app_path(&fixture.zip_path))
+        .await;
 
     let listing = seed_listing(
         "archive-truncated",
@@ -196,7 +200,11 @@ async fn lru_eviction_releases_the_archive_and_its_watch() {
     // Resolve archive A, start its watch, and hold its Arc.
     let zip_a = base.path().join("a.zip");
     std::fs::write(&zip_a, build_zip(&[stored("x.txt", b"x".to_vec())])).expect("write a.zip");
-    let a = manager.resolve("root", &zip_a).await.volume.expect("archive a");
+    let a = manager
+        .resolve("root", &crate::test_support::native_app_path(&zip_a))
+        .await
+        .volume
+        .expect("archive a");
     let zip_a_app = AppPathBuf::from_native_unicode(&zip_a).expect("a scratch path");
     // `resolve` registers the archive but gates the watch on a registered app
     // handle, which a headless test has none of — so no real OS watch starts
@@ -222,7 +230,9 @@ async fn lru_eviction_releases_the_archive_and_its_watch() {
     for i in 0..20 {
         let zip = base.path().join(format!("more-{i}.zip"));
         std::fs::write(&zip, build_zip(&[stored("y.txt", b"y".to_vec())])).expect("write filler zip");
-        manager.resolve("root", &zip.join("inner")).await;
+        manager
+            .resolve("root", &crate::test_support::native_app_path(zip.join("inner")))
+            .await;
     }
 
     // The registry has dropped A: nothing but the test's own Arc remains, so

@@ -35,6 +35,8 @@ pub mod menu_in_page;
 pub mod menu_state;
 pub mod mtp;
 pub mod multi_rename;
+// The frontend's one door from native path text (drops, pickers) to app text.
+pub mod native_paths;
 pub mod network;
 pub mod nfs;
 pub mod operation_log;

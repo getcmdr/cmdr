@@ -12,6 +12,7 @@
  * to keep this module independent of UI primitives.
  */
 import {
+  chooseSaveTarget,
   viewerCancelRead,
   viewerReadRange,
   viewerWriteRangeToFile,
@@ -19,7 +20,6 @@ import {
   type SavedAs,
   type ViewerError,
 } from '#lib/tauri-commands/index.js'
-import { save as showSavePanel } from '@tauri-apps/plugin-dialog'
 import { addToast } from '#lib/ui/toast/toast-store.svelte.js'
 import { getAppLogger } from '#lib/logging/logger.js'
 import { tString } from '#lib/intl/messages.svelte.js'
@@ -335,15 +335,23 @@ export function createViewerCopyOrchestrator(deps: CopyOrchestratorDeps) {
   async function handleSaveAs(): Promise<void> {
     const fileName = deps.getFileName()
     const defaultName = `${fileName.replace(/\.[^.]*$/, '') || tString('viewer.saveAs.defaultName')}.selection.txt`
-    let chosen: string | null
+    // An app path (`C:/Users/…` on Windows), crossed at the door (#1311): the save checks it
+    // against the routed volumes' app roots, and its last name is the toast's.
+    let target: Awaited<ReturnType<typeof chooseSaveTarget>>
     try {
-      chosen = await showSavePanel({ defaultPath: defaultName, title: tString('viewer.saveAs.title') })
+      target = await chooseSaveTarget({ defaultPath: defaultName, title: tString('viewer.saveAs.title') })
     } catch (e) {
       log.warn('Save panel rejected: {error}', { error: e })
       addToast(tString('viewer.saveAs.panelFailed'), { level: 'warn' })
       return
     }
-    if (chosen === null) return // user cancelled
+    if (target.kind === 'cancelled') return
+    if (target.kind === 'refused') {
+      // The panel named a place no app path names; nothing was written.
+      addToast(tString('viewer.saveAs.saveFailed'), { level: 'warn' })
+      return
+    }
+    const chosen = target.path
 
     // Close the open copy dialog so the user can see progress.
     confirmBytes = null

@@ -81,12 +81,19 @@ async fn read_server_zip(remote: &dyn Volume, path: &Path) -> HashMap<String, Ve
 
 /// Seeds the two-entry zip at `dir/archive.zip` and returns its path.
 async fn seed_zip(remote: &dyn Volume, dir: &Path) -> PathBuf {
+    seed_zip_at(remote, dir).await.0
+}
+
+/// [`seed_zip`], with the zip's app path beside it (the spelling the volume
+/// and the route take).
+async fn seed_zip_at(remote: &dyn Volume, dir: &Path) -> (PathBuf, cmdr_fs::app_path::AppPathBuf) {
     let zip_path = dir.join("archive.zip");
+    let zip = AppPath::legacy_unchecked(&zip_path).into_owned();
     remote
-        .create_file(&AppPath::legacy_unchecked(&zip_path), &two_entry_zip())
+        .create_file(&zip, &two_entry_zip())
         .await
         .expect("seeding the zip on the server");
-    zip_path
+    (zip_path, zip)
 }
 
 /// Waits for an archive op's terminal event and fails loudly on an error one.
@@ -157,19 +164,31 @@ pub(super) async fn a_zip_on_the_server_browses_and_extracts(remote: Arc<dyn Vol
 /// The parent-aware routing predicate sees a zip-INNER path on the server (the
 /// `std::fs`-only one would say no), and the `.zip` itself stays a plain file.
 pub(super) async fn a_zip_inner_path_on_the_server_routes_as_inside_the_archive(remote: Arc<dyn Volume>, dir: PathBuf) {
-    let zip_path = seed_zip(remote.as_ref(), &dir).await;
+    use cmdr_fs::app_path::RelativeAppPath;
+
+    let (_zip_path, seeded) = seed_zip_at(remote.as_ref(), &dir).await;
     let registered = Registered::new(&remote, "zip-routing");
+    // A pane names the zip absolutely, under the volume's root; the fixtures spell
+    // their scratch dir relative to it (`cmdr-test-…`), which no route can place.
+    let zip = match seeded.to_canonical() {
+        Ok(_) => seeded,
+        Err(_) => remote
+            .root()
+            .join_relative(RelativeAppPath::new(seeded.as_str()).expect("a relative scratch path"))
+            .expect("joins under the root"),
+    };
+    let inner = zip
+        .join_relative(RelativeAppPath::new("dir/drop.txt").expect("a relative path"))
+        .expect("joins under the zip");
 
     assert!(
         get_volume_manager()
-            .path_is_inside_archive(&registered.id, &zip_path.join("dir/drop.txt"))
+            .path_is_inside_archive(&registered.id, &inner)
             .await,
         "a zip-inner path on the server must route to the archive-edit driver"
     );
     assert!(
-        !get_volume_manager()
-            .path_is_inside_archive(&registered.id, &zip_path)
-            .await,
+        !get_volume_manager().path_is_inside_archive(&registered.id, &zip).await,
         "the `.zip` itself is a plain file, not archive-inner"
     );
 

@@ -40,6 +40,14 @@ use crate::ignore_poison::IgnorePoison;
 /// and the next card says so at once instead of stranding another thread.
 pub(crate) const MAX_STUCK_PER_VOLUME: usize = 2;
 
+/// A card's row text as an app path, crossed the way this module's rows cross
+/// (the bridge, byte for byte): a direct wrap would change a name holding an
+/// escape-range code point (#1310). The route's resolve reads it too. Goes with
+/// the rows' crossings, once the card's wire carries app paths (milestone 10f).
+pub(super) fn row_as_app_path(path: &str) -> cmdr_fs::app_path::AppPathBuf {
+    AppPath::legacy_unchecked(Path::new(path)).into_owned()
+}
+
 /// Calls out per volume id, counted from their start to their real end.
 #[derive(Default)]
 pub(crate) struct Stuck(Mutex<HashMap<String, usize>>);

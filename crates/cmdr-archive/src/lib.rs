@@ -91,8 +91,8 @@ pub mod test_fixtures;
 pub use mutation::mutator;
 
 pub use boundary::{
-    confirm_archive_boundary, has_supported_archive_extension, path_crosses_archive_boundary, path_is_inside_archive,
-    path_targets_archive_file,
+    confirm_archive_boundary_at, has_supported_archive_extension, path_crosses_archive_boundary,
+    path_is_inside_archive, path_targets_archive_file,
 };
 pub use boundary_on_parent::{confirm_archive_boundary_on_parent, confirm_remote_archive_boundary};
 pub use read::{

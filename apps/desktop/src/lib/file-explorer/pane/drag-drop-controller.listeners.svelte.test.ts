@@ -87,6 +87,14 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   setSelfDragResolvedOperation: setSelfDragResolvedOperationSpy,
   statPathsKinds: statPathsKindsSpy,
   storedSpellings: storedSpellingsSpy,
+  // The drop door (`native-paths.ts`, pinned in its own suite) hands app paths over; here
+  // the test fires them already crossed, with a `refused` count of 0 unless it names one.
+  onAppPathDragDrop: vi.fn((handler: (event: DragDropPayload & { refused?: number }) => void) => {
+    dragDropHandlerRef.current = ({ payload }) => {
+      handler(payload.type === 'enter' || payload.type === 'drop' ? { refused: 0, ...payload } : payload)
+    }
+    return Promise.resolve(vi.fn())
+  }),
   // `resolvePathVolume` is the controller's default fallback. Tests that want it
   // to fire inject a per-test spy via `create(..., resolvePathVolume)`; this stub
   // keeps the import resolvable for the default path (no registered-root miss in
@@ -146,15 +154,6 @@ vi.mock('#lib/ui/toast/index.js', () => ({ addToast: addToastSpy, dismissToast: 
 // Its verdict is driven in `drag-drop-controller.svelte.test.ts`.
 vi.mock('./operation-start-gate', () => ({ operationStartIsBlocked: () => false }))
 
-vi.mock('@tauri-apps/api/webview', () => ({
-  getCurrentWebview: () => ({
-    onDragDropEvent: vi.fn((handler: (event: { payload: DragDropPayload }) => void) => {
-      dragDropHandlerRef.current = handler
-      return Promise.resolve(vi.fn())
-    }),
-  }),
-}))
-
 vi.mock('../drag/drag-position', () => ({ toViewportPosition: (p: { x: number; y: number }) => p }))
 
 vi.mock('../drag/drop-target-hit-testing', () => ({ resolveDropTarget: resolveDropTargetSpy }))
@@ -192,6 +191,7 @@ vi.mock('../modifier-key-tracker.svelte', () => ({
 // end-to-end through the actual builder.
 
 import { createDragDropController } from './drag-drop-controller.svelte'
+import { tString } from '#lib/intl/messages.svelte.js'
 
 /** Returns the args of the most recent `updateOverlay` call: [x, y, targetName, canDrop, operation]. */
 function lastOverlayArgs(): [number, number, string | null, boolean, 'copy' | 'move'] {
@@ -298,6 +298,24 @@ describe('drag-drop-controller — native listeners', () => {
       expect(hideOverlaySpy).toHaveBeenCalled()
       // Drop clears the highlight as part of its teardown.
       expect(controller.getDropTargetPane()).toBeNull()
+    })
+
+    it('leaves an external drop alone, and says so, when one of its paths had no app path', async () => {
+      // #1311: the door crossed one Explorer path and refused another (a device namespace).
+      // Copying the rest would quietly transfer fewer items than were dragged.
+      resolveDropTargetSpy.mockReturnValue(paneTarget('right'))
+      const { controller, showTransfer } = create({ focusedPane: 'left', paths: { right: '/right/dir' } })
+      await controller.init()
+      const fire = dragDropHandler()
+
+      const drop = { type: 'drop' as const, paths: [SAME_VOL_PATH_A], refused: 1, position: { x: 2, y: 2 } }
+      fire({ payload: drop })
+      await flushDrop()
+
+      expect(showTransfer).not.toHaveBeenCalled()
+      expect(hideOverlaySpy).toHaveBeenCalled()
+      expect(addToastSpy).toHaveBeenCalledWith(tString('fileExplorer.drop.uncrossedPaths'), { level: 'warn' })
+      expect(trackEventSpy).toHaveBeenCalledWith('drop_received', expect.objectContaining({ outcome: 'nothingUsable' }))
     })
 
     it('on leave, hides the overlay and clears targets without ending the self-drag session', async () => {

@@ -94,7 +94,10 @@ A finger can't arm a drag on the press: a press and a swipe start the same way, 
 
 ### Drop-in (receiving drops)
 
-Uses Tauri 2's `onDragDropEvent` (window-level) with DOM hit-testing to resolve target pane/folder.
+Uses Tauri 2's `onDragDropEvent` (window-level) with DOM hit-testing to resolve target pane/folder, through
+`onAppPathDragDrop` (`#lib/tauri-commands`), which crosses the payload's native paths (`C:\…` on Windows) to app paths
+before the controller sees them (#1311). An external drop holding a path no app path names is left whole: a toast
+(`fileExplorer.drop.uncrossedPaths`) and the `nothingUsable` outcome, ❌ never a transfer of the rest.
 
 Key files:
 

@@ -46,6 +46,15 @@ pub(crate) use cmdr_fs::testing::{
 use crate::file_system::volume::{InMemoryVolume, ListingProgress, Volume, VolumeError};
 use cmdr_fs::entry::FileEntry;
 
+/// A fixture's native path (a scratch dir's, a POSIX constant on a Unix-only cell) as the
+/// app path a pane would hand a volume or the route: crossed once through
+/// `from_native_unicode`, so a Windows scratch dir reads `C:/…`. Panics on a name that
+/// isn't Unicode, which no fixture makes.
+#[track_caller]
+pub(crate) fn native_app_path(path: impl AsRef<std::path::Path>) -> cmdr_fs::app_path::AppPathBuf {
+    cmdr_fs::app_path::AppPathBuf::from_native_unicode(path.as_ref()).expect("a fixture path is Unicode")
+}
+
 /// Points the secret store at a scratch directory of this test's own, and returns it.
 ///
 /// **Every test that reaches `crate::secrets::store()` needs this**, including the ones that get

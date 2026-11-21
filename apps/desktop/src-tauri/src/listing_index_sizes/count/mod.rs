@@ -163,6 +163,13 @@ fn is_a_view_row(dir: &Path, row: &Path) -> bool {
     (portal_serves(row) && !portal_serves(dir)) || (restic_route(row).is_some() && restic_route(dir).is_none())
 }
 
+/// A counted folder (the listing's `PathBuf` location) as the routing seam reads
+/// it, crossed through the bridge byte for byte. Goes when the listing engine's
+/// locations are app paths.
+fn counted_dir_as_app_path(dir: &Path) -> cmdr_fs::app_path::AppPathBuf {
+    cmdr_fs::app_path::AppPath::legacy_unchecked(dir).into_owned()
+}
+
 /// Counts the folders [`plan`] picks, resolving the listing's volume the way a
 /// copy scan does (an archive or `.git` route included). `sink` receives each
 /// event, after its reading is in the listing cache.
@@ -183,7 +190,7 @@ pub(crate) async fn count(
         plan,
         async move {
             crate::file_system::volume::manager::get_volume_manager()
-                .resolve(&volume_id, &dir)
+                .resolve(&volume_id, &counted_dir_as_app_path(&dir))
                 .await
                 .volume
         },

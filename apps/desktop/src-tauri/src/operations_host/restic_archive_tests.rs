@@ -286,7 +286,7 @@ async fn writes_into_the_zip_and_a_move_out_refuse_before_anything_moves() {
 
     // The snapshot still holds the zip it held.
     let archive = get_volume_manager()
-        .resolve_to_list(&drive.volume_id, &zip)
+        .resolve_to_list(&drive.volume_id, &crate::test_support::native_app_path(&zip))
         .await
         .volume
         .expect("the archive");

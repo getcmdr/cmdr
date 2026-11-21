@@ -9,7 +9,7 @@
 //! macOS only; `tags_io_off_macos.rs` stands in under this name elsewhere.
 
 pub use super::tags_journal::TagWrites;
-use cmdr_fs::app_path::{AppPath, AppPathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use cmdr_operation_log::types::Initiator;
 
 use super::tags::{
@@ -55,11 +55,12 @@ static TAG_READS: BlockingBudget = BlockingBudget::new(4);
 /// Answers the volume's registered id beside it, which a tag write journals so its undo
 /// finds the same volume (a passthrough resolve is the volume registered under
 /// `volume_id`).
-async fn tag_store_for(volume_id: Option<&str>, row: &Path) -> Option<TagStore> {
+///
+/// `app` is `row` in its app spelling, which the route reads.
+async fn tag_store_for(volume_id: Option<&str>, row: &Path, app: &AppPath) -> Option<TagStore> {
     let manager = super::volume::manager::get_volume_manager();
-    let parent = row.parent().unwrap_or(row);
     if let Some(volume_id) = volume_id {
-        let resolved = manager.resolve(volume_id, parent).await;
+        let resolved = manager.resolve(volume_id, app.parent().unwrap_or(app)).await;
         if resolved.is_routed() || resolved.unconfirmed.is_some() {
             return None;
         }
@@ -100,7 +101,7 @@ async fn group_by_store(volume_id: Option<&str>, paths: Vec<String>) -> (Vec<Vol
         let store = match by_parent.get(&parent) {
             Some(store) => store.clone(),
             None => {
-                let store = tag_store_for(volume_id, row).await;
+                let store = tag_store_for(volume_id, row, &app).await;
                 by_parent.insert(parent, store.clone());
                 store
             }

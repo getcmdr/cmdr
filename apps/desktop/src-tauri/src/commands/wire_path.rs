@@ -15,8 +15,10 @@
 //!   so the bytes reach the engine as they always did. Text that's no app path (relative,
 //!   empty) keeps today's answer.
 //! - **A person-typed destination** (the transfer dialog's box) anchors on its volume's root
-//!   ([`anchored`]), and a `..` in it is no sender bug: its probe can't tell, and the transfer
-//!   keeps today's OS answer until the typed-path resolver takes that text.
+//!   ([`anchored`]), and a `..` in it is no sender bug: [`destination`] resolves it through the
+//!   typed-path resolver on the volume doing the write, so the probes, the conflict scan, and
+//!   the start ([`transfer_destination`]) all name the place `ls` names, and the engine never
+//!   sees a `..`. Text with no `..` crosses as it always did.
 //!
 //! While escapes aren't live ([`ESCAPES_LIVE`]), an escape-range code point in wire text is
 //! LITERAL (no producer made it), so it parses through `from_literal_store`, and the native
@@ -24,12 +26,17 @@
 
 use std::borrow::Cow;
 use std::path::PathBuf;
+use std::sync::Arc;
 
-use cmdr_fs::app_path::{AppPath, AppPathBuf, ESCAPES_LIVE, Namer, NotAnAppPath, PathFlavor, is_escape};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, ESCAPES_LIVE, Namer, NotAnAppPath, PathFlavor, is_escape, is_scheme_url};
 use cmdr_fs::error_detail::ErrorDetail;
 use cmdr_fs::log_private::LogPrivate;
-use cmdr_fs::volume::{VolumeError, anchor_at_root};
-use cmdr_operations::{MutationError, WriteOperationError};
+use cmdr_fs::typed_path::{TypedBy, TypedPathRefusal};
+use cmdr_fs::volume::{Volume, VolumeError, anchor_at_root};
+use cmdr_operations::{MutationError, VolumeScanError, WriteOperationError};
+
+use crate::file_system::volume::manager::get_volume_manager;
+use crate::go_to_path::AppHost;
 
 /// A wire path the command edge refused: a `..` name, or (for a volume call) text that's no
 /// app path. The caller turns it into its own family's typed error; [`refused`] has already
@@ -96,6 +103,13 @@ pub(crate) fn checked(text: &str) -> Result<PathBuf, WirePathRefused> {
     Ok(PathBuf::from(text))
 }
 
+/// A [`checked`] source as the routing seam reads it (the scan preview's route): the
+/// engine's starts take the `PathBuf` back, so this crosses it through the bridge, byte
+/// for byte. Goes when the starts take app paths (milestone 10d).
+pub(crate) fn checked_as_app_path(source: &std::path::Path) -> AppPathBuf {
+    AppPath::legacy_unchecked(source).into_owned()
+}
+
 /// [`checked`] over a start's sources, refusing the whole set on the first `..`.
 pub(crate) fn checked_all<'a>(texts: impl IntoIterator<Item = &'a str>) -> Result<Vec<PathBuf>, WirePathRefused> {
     texts.into_iter().map(checked).collect()
@@ -124,9 +138,7 @@ pub(crate) fn read_on_volume(text: &str) -> Result<AppPathBuf, NotAnAppPath> {
 ///
 /// `None`, with no bug report, for text holding a `..`, text that names another volume, and
 /// text that's no app path: a person typed it, and the typed-path resolver is what answers a
-/// `..` (`docs/specs/app-path-plan.md` § "Typed and pasted `..`"). The caller's probe answers
-/// "couldn't tell" for it; the transfer itself still anchors it the `std::path` way
-/// (`cmdr_operations::resolve_dest_path`), which leaves the `..` to the OS.
+/// `..` ([`destination`], `docs/specs/app-path-plan.md` § "Typed and pasted `..`").
 pub(crate) fn anchored(root: &AppPath, text: &str) -> Option<AppPathBuf> {
     if has_dot_dot_name(text) {
         return None;
@@ -139,6 +151,170 @@ pub(crate) fn anchored(root: &AppPath, text: &str) -> Option<AppPathBuf> {
         Err(_) => Cow::Borrowed(text),
     };
     anchor_at_root(root, &spelled).ok()
+}
+
+/// Why a destination box's text names no place on its volume ([`destination`]).
+#[derive(Debug)]
+pub(crate) enum DestinationRefusal {
+    /// No path on this volume: another volume's, no app path at all, or (while escapes
+    /// aren't live) a `..` beside an escape-range code point, which has no typed spelling.
+    NoAnchor,
+    /// The volume couldn't say what a `..` means there (a hung mount, a link loop).
+    Unresolved(TypedPathRefusal),
+    /// A `..` led off the volume: through a link to another disk, or above a share's root.
+    OffVolume,
+}
+
+impl DestinationRefusal {
+    /// A transfer start's refusal of the box text `path`: a volume that didn't answer is
+    /// the interrupted connection it was; anything else names no folder to write into.
+    pub(crate) fn into_write_error(self, path: String) -> WriteOperationError {
+        match self {
+            Self::Unresolved(TypedPathRefusal::Unanswered(
+                VolumeError::ConnectionTimeout(_)
+                | VolumeError::NotConnected(_)
+                | VolumeError::DeviceDisconnected(_)
+                | VolumeError::DeviceSessionReset(_),
+            )) => WriteOperationError::ConnectionInterrupted { path },
+            _ => WriteOperationError::DestinationNotFound { path },
+        }
+    }
+
+    /// The conflict scan's refusal of the box text `path`, in the volume's own vocabulary.
+    pub(crate) fn into_scan_error(self, path: String) -> VolumeScanError {
+        match self {
+            Self::Unresolved(TypedPathRefusal::Unanswered(error)) => VolumeScanError::Volume { error },
+            _ => VolumeScanError::Volume {
+                error: VolumeError::NotFound(path),
+            },
+        }
+    }
+}
+
+/// The destination box's text (person-typed, VOLUME-RELATIVE or absolute, a local `~`
+/// already expanded by the caller) as the app path on `volume` a write lands on: text with
+/// no `..` is [`anchored`], byte for byte as before. A `..` is the person's, so it's answered
+/// the way `ls` would answer it: the part before it anchors on the volume's root, and the
+/// typed-path resolver (`AppHost::resolve_typed`, `TypedBy::Person`) asks THIS volume, the
+/// one doing the write, so `x/link/../dst` lands on the link target's sibling and the
+/// probes, the scan, and the write all name that one place. Bounded by the resolver's 2 s
+/// deadline.
+///
+/// `AppHost::on_volume`, ❌ not `AppHost::registry()`: the volume is already picked, and the
+/// registry's longest-root pick ties between volumes sharing a root (every `InMemoryVolume`
+/// sits at `/`) and would hand a mounted share's `..` to the share's volume when the write
+/// goes through the boot volume's OS calls.
+///
+/// # Errors
+///
+/// [`DestinationRefusal`]: no anchor on this volume, a volume that couldn't answer a `..`,
+/// or a `..` that led off the volume.
+pub(crate) async fn destination(volume: &Arc<dyn Volume>, text: &str) -> Result<AppPathBuf, DestinationRefusal> {
+    destination_over(volume.as_ref(), text, &AppHost::on_volume(Arc::clone(volume))).await
+}
+
+/// [`destination`] for a probe, with the volume that answers for the place it names: text with
+/// no `..` keeps `volume` (the caller routed it already, `path_checks::box_volume`), and a
+/// resolved `..` routes its place again, so `x/a.zip/sub/../y` is asked of the archive, as
+/// `x/a.zip/y` typed plainly is. `volume_id` is `volume`'s registry id.
+///
+/// # Errors
+///
+/// [`DestinationRefusal`], as [`destination`].
+pub(crate) async fn probed_destination(
+    volume_id: &str,
+    volume: Arc<dyn Volume>,
+    text: &str,
+) -> Result<(Arc<dyn Volume>, AppPathBuf), DestinationRefusal> {
+    let target = destination(&volume, text).await?;
+    if !has_dot_dot_name(text) {
+        return Ok((volume, target));
+    }
+    let routed = get_volume_manager().resolve(volume_id, &target).await.volume;
+    Ok((routed.unwrap_or(volume), target))
+}
+
+/// [`destination`] with each `..` answered by `host`.
+async fn destination_over(volume: &dyn Volume, text: &str, host: &AppHost) -> Result<AppPathBuf, DestinationRefusal> {
+    let root = volume.root();
+    if !has_dot_dot_name(text) {
+        return anchored(root, text).ok_or(DestinationRefusal::NoAnchor);
+    }
+    if !ESCAPES_LIVE && text.chars().any(is_escape) {
+        return Err(DestinationRefusal::NoAnchor);
+    }
+    let slashed = if PathFlavor::HOST == PathFlavor::Windows && !is_scheme_url(text) {
+        text.replace('\\', "/")
+    } else {
+        text.to_owned()
+    };
+    let (head, rest) = slashed.split_at(first_dot_dot(&slashed));
+    // A bare leading `..` (the box anchors relative text on the root) starts at the root.
+    let head = if head.split('/').all(|name| name.is_empty() || name == ".") {
+        "/"
+    } else {
+        head
+    };
+    let anchor = anchored(root, head).ok_or(DestinationRefusal::NoAnchor)?;
+    let typed_text = format!("{}/{rest}", anchor.as_str().trim_end_matches('/'));
+    let typed = host
+        .resolve_typed(&typed_text, None, TypedBy::Person)
+        .await
+        .map_err(DestinationRefusal::Unresolved)?;
+    if !typed.path.is_on_volume(root) {
+        return Err(DestinationRefusal::OffVolume);
+    }
+    Ok(typed.path)
+}
+
+/// The destination box text an engine start (or its conflict scan) takes on `volume_id`,
+/// `..`-free: `None` when the text holds no `..` (the engine anchors it,
+/// `cmdr_operations::resolve_dest_path`, as it always did) or names a volume nothing has
+/// registered (the engine refuses that volume itself), else the place [`destination`]
+/// resolves it to, spelled as the engine takes it.
+///
+/// # Errors
+///
+/// [`DestinationRefusal`].
+pub(crate) async fn box_destination(volume_id: &str, text: &str) -> Result<Option<String>, DestinationRefusal> {
+    if !has_dot_dot_name(text) {
+        return Ok(None);
+    }
+    let Some(volume) = get_volume_manager().get(volume_id) else {
+        return Ok(None);
+    };
+    // `~` expands for a local volume only, as `resolve_dest_path` expands it.
+    let expanded = if volume.local_path().is_some() {
+        Cow::Owned(cmdr_fs::tilde::expand_tilde(text))
+    } else {
+        Cow::Borrowed(text)
+    };
+    let path = destination(&volume, &expanded).await?;
+    Ok(Some(path.into_string()))
+}
+
+/// [`box_destination`] for a write start: the text as sent, or the resolved place.
+///
+/// # Errors
+///
+/// [`DestinationRefusal::into_write_error`].
+pub(crate) async fn transfer_destination(volume_id: &str, text: String) -> Result<String, WriteOperationError> {
+    match box_destination(volume_id, &text).await {
+        Ok(resolved) => Ok(resolved.unwrap_or(text)),
+        Err(refusal) => Err(refusal.into_write_error(text)),
+    }
+}
+
+/// The byte offset of the first `..` name in `/`-separated text, or its length.
+fn first_dot_dot(text: &str) -> usize {
+    let mut offset = 0;
+    for name in text.split('/') {
+        if name == ".." {
+            return offset;
+        }
+        offset += name.len() + 1;
+    }
+    text.len()
 }
 
 /// `text` parsed with this host's flavor; its escape-range code points literal while no
@@ -186,3 +362,7 @@ fn refused(text: &str, why: NotAnAppPath) -> WirePathRefused {
 #[cfg(test)]
 #[path = "wire_path_test.rs"]
 mod wire_path_test;
+
+#[cfg(test)]
+#[path = "wire_path_destination_test.rs"]
+mod wire_path_destination_test;

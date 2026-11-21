@@ -514,16 +514,35 @@ A path the frontend sends is read as an app path at the command edge, `wire_path
   still takes `PathBuf`s until 10d. Text that's no app path (relative, empty) keeps today's answer there.
 - **A volume call takes the typed path** (`on_volume`), a POSIX `/x` on Windows read as volume-relative; text that names
   no place is refused like a `..`. `read_on_volume` is the same without the bug report, for an agent's stored text.
+  The unlock commands (and the MCP `unlock` tool) read their container path through `on_volume` before the route;
+  the probes pick their volume through `path_checks::box_volume` (`resolve` on the text's `read_on_volume` reading,
+  else the volume by id); `stat_paths_kinds` routes a route-served path through `app_path`. A write start's checked
+  `PathBuf` crosses back for the scan preview's route at `checked_as_app_path`, until the starts take app paths (10d).
 - **While escapes aren't live, an escape-range code point is literal** (`from_literal_store`), so a path crosses byte
   for byte.
 - **The transfer dialog's destination box is person-typed and VOLUME-RELATIVE.** Its probes (`path_exists` /
   `destination_exists`, `destination_write_access`) anchor through the typed `anchor_at_root` (`anchored`): `/photos`
-  on a share is under its root. A `..` there (or another volume's path) has no typed anchor, so the probe answers
-  "couldn't tell", with no bug report, until the typed-path resolver takes that text. The writes themselves and
-  `get_name_rules` anchor through `cmdr_operations::resolve_dest_path`, which leaves a `..` to the OS: on Windows the
-  boot volume's `C:/` takes the Move dialog's `/Users/x` as `C:/Users/x` (`move_files` once handed the engine the bare
-  `/Users/x`, which its `from_wire` refused as "a path shaped for another OS"). The other same-root commands (delete,
-  trash, rename, create, compress) take row or pane paths, never the box.
+  on a share is under its root. Another volume's path has no anchor, so the probe answers "couldn't tell". The writes
+  themselves and `get_name_rules` anchor through `cmdr_operations::resolve_dest_path`: on Windows the boot volume's
+  `C:/` takes the Move dialog's `/Users/x` as `C:/Users/x` (`move_files` once handed the engine the bare `/Users/x`,
+  which its `from_wire` refused as "a path shaped for another OS"). The other same-root commands (delete, trash,
+  rename, create) take row or pane paths, never the box.
+- **A `..` in the box is the person's, and the backend resolves it** (`wire_path::destination`): the part before the
+  first `..` anchors on the root, then `AppHost::on_volume(dest).resolve_typed(…, TypedBy::Person)` asks the volume
+  doing the write, so `x/link/../dst` (with `x/link -> real/sub`) is `real/dst`, where `ls` puts it. The probes resolve
+  inside their own detached budget (a hung volume is "couldn't tell"), and the starts (`copy_between_volumes`,
+  `move_between_volumes`, `move_files`, `compress_files`) and `scan_volume_for_conflicts` take `transfer_destination` /
+  `box_destination`, so the engine never sees a `..`. A refusal is typed: a volume that didn't answer in 2 s is
+  `ConnectionInterrupted`, a `..` that leads off the volume (a link to another disk, above a share's root) or names no
+  place is `DestinationNotFound`. Text with no `..` is untouched, byte for byte. The frontend keeps only a relative
+  input's LEADING `..`s (lexical, from the source folder, as the pane's `..` row goes) and sends every later `..` as
+  typed (`transfer-dialog-utils.ts::toAbsoluteTarget`). `on_volume`, ❌ not `registry()`: the registry's longest-root
+  pick ties between volumes sharing a root, and a mounted share under the boot volume is written through the boot
+  volume's OS calls. The probes then ask the place's own volume (`probed_destination` routes it again), so
+  `x/a.zip/sub/../y` is checked inside the archive, as `x/a.zip/y` is. Known limit: the frontend picks a local
+  destination's volume by the text before the `..`, so `/Volumes/Ext/../Users/x` lands on `Ext`, resolves off it, and
+  refuses as `DestinationNotFound` (never a wrong place). No "lands through a link" preview line in the dialog yet
+  (go-to's `crossedLink`).
 - **A pane never stands on a `..`**, or every row under it would carry one and each delete, trash, or move from it
   would refuse as a bug: the listing start takes its path as sent, so the senders that can hold a `..` are closed
   before a pane takes one. The CLI refuses it (`cli/open_url.rs`), go-to-path resolves it, and the MCP `nav_to_path`
@@ -535,9 +554,17 @@ A path the frontend sends is read as an app path at the command edge, `wire_path
 - **Which edges read this way**: `delete_files`, `trash_files`, `move_to_trash` (the single trash, its refusal
   `MutationError::Unexpected`), and `move_files` (sources), `stat_paths_kinds`,
   `share_link`, the agent's destination check (`suggested_ops`, no bug report: a stored agent proposal can hold a `..`),
-  and the two destination probes. The listing start, the create commands, rename, the pre-checks
-  (`check_home_folder_guard`, `trash_routing_for_paths`), the scan preview, and the volume transfers take the text as
-  sent: rows, pane paths, or typed text, and a listing of `x/link/` lists the target's rows under `x/link` either way.
+  and the three destination probes; the transfer box's destination at every start and the conflict scan (above). The
+  listing start, the create commands, rename, the pre-checks (`check_home_folder_guard`, `trash_routing_for_paths`),
+  the scan preview's sources, and the volume transfers' sources take the text as sent: rows, pane paths, or typed text, and a listing of `x/link/` lists the target's rows under `x/link` either way.
+
+**Native text the OS handed the WEBVIEW crosses at `native_paths.rs`** (`app_paths_from_native`, #1311): a drop's
+`paths` and a folder picker's or Save panel's answer are the OS's spelling (`C:\Users\…` on Windows), so the frontend's
+door (`src/lib/tauri-commands/native-paths.ts`) sends them here before anything compares or stores them. The crossing is
+`AppPathBuf::from_native_unicode` (no escape made); a path no app path names answers `Refused`, warned with the path as
+`LogPrivate`, and the caller says so. macOS and Linux answer the text sent. Pure text, no I/O, so no deadline; async
+only to keep a big drop off the main thread. What stays native on purpose: the adb binary and an SFTP key file (only the
+OS reads them, and a person types the same native text into those fields), and the macOS `.app` picker.
 
 **JSON for all Tauri IPC, not binary (MessagePack/Protobuf).** Benchmarked with real directory listings: MessagePack is
 34-58% SLOWER than JSON despite being 17-19% smaller. Tauri serializes `Vec<u8>` as a JSON array of numbers, so binary

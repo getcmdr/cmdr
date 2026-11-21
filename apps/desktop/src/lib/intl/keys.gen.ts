@@ -2335,6 +2335,7 @@ export type MessageKey =
   | 'fileExplorer.doubleClickHint.title'
   | 'fileExplorer.dragOut.failed'
   | 'fileExplorer.dragOut.partial'
+  | 'fileExplorer.drop.uncrossedPaths'
   | 'fileExplorer.dropIn.noFolder'
   | 'fileExplorer.dropIn.nothingReceived'
   | 'fileExplorer.dropIn.nothingReceivedFromApp'

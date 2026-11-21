@@ -77,7 +77,7 @@ pub(crate) fn bytes_match_archive_magic(format: ArchiveFormat, header: &[u8]) ->
 /// This is `std::fs`-only, so it answers for a LOCAL parent alone; a host asks
 /// `confirm_archive_boundary_on_parent`, which forks to a remote parent's own
 /// I/O (sharing this module's magic predicate).
-pub fn confirm_archive_boundary(path: &Path) -> Option<(PathBuf, PathBuf)> {
+pub(crate) fn confirm_archive_boundary(path: &Path) -> Option<(PathBuf, PathBuf)> {
     let (archive_path, inner_path) = archive_boundary_candidate(path)?;
     let metadata = std::fs::metadata(&archive_path).ok()?;
     if !metadata.is_file() {
@@ -140,27 +140,13 @@ pub(crate) fn format_at(path: &AppPath) -> Option<ArchiveFormat> {
 /// into a confirmed archive on this machine's disk. The archive file crosses to
 /// the OS at [`AppPath::to_native`]; a path the OS can't open (a scheme path) is
 /// no archive here.
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "a typed twin the host switches to when its routing speaks app paths"
-    )
-)]
-pub(crate) fn confirm_archive_boundary_at(path: &AppPath) -> Option<(AppPathBuf, RelativeAppPathBuf)> {
+pub fn confirm_archive_boundary_at(path: &AppPath) -> Option<(AppPathBuf, RelativeAppPathBuf)> {
     let (archive, inner) = archive_boundary_candidate_at(path)?;
     confirms_on_disk(&archive).then_some((archive, inner))
 }
 
 /// Whether the archive at `archive` is a real file on this machine's disk
 /// carrying its format's magic.
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "a typed twin the host switches to when its routing speaks app paths"
-    )
-)]
 pub(crate) fn confirms_on_disk(archive: &AppPath) -> bool {
     let Ok(native) = native_of(archive) else {
         return false;
@@ -174,13 +160,6 @@ pub(crate) fn confirms_on_disk(archive: &AppPath) -> bool {
 /// Where the local backing file of an archive at `path` lives on this machine:
 /// [`AppPath::to_native`], the one crossing. A browser build has no local files,
 /// so every path there is `NotLocal`.
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "a typed twin the host switches to when its routing speaks app paths"
-    )
-)]
 pub(crate) fn native_of(path: &AppPath) -> Result<PathBuf, NativeRefusal> {
     #[cfg(not(target_family = "wasm"))]
     return path.to_native();

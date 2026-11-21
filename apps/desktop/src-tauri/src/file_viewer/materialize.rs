@@ -338,7 +338,8 @@ fn materialize_with(
     // Locality is `paths_are_os_visible`, ❌ never `supports_local_fs_access`: a
     // direct SMB share answers `false` there, yet its mounted path opens with
     // `std::fs` and keeps tail mode, so it stays a direct open until its mount goes.
-    let resolved = tauri::async_runtime::block_on(get_volume_manager().resolve(volume_id, requested));
+    let resolved =
+        tauri::async_runtime::block_on(get_volume_manager().resolve(volume_id, &requested_on_volume(requested)));
     let Some(volume) = resolved.volume else {
         // Unregistered (an eject or unmount race): the caller's existence check answers.
         return Ok(None);
@@ -348,7 +349,7 @@ fn materialize_with(
     }
     tauri::async_runtime::block_on(pull_to_temp(
         volume,
-        as_volume_calls_spell_it(&resolved.path),
+        resolved.path,
         TempSpot::viewer(dir),
         cap,
         None,
@@ -436,24 +437,26 @@ fn resolve_route(requested: &Path, volume_id: &str) -> Option<Route> {
     if !path_routes_over_its_parent(requested) {
         return None;
     }
-    let resolved = tauri::async_runtime::block_on(get_volume_manager().resolve(volume_id, requested));
+    let resolved =
+        tauri::async_runtime::block_on(get_volume_manager().resolve(volume_id, &requested_on_volume(requested)));
     let kind = resolved.routed?;
     // `None`: the route confirmed but the volume vanished (unmount / evict race). Treat
     // as unrouted; the caller's existence check surfaces NotFound.
     let volume = resolved.volume?;
     Some(Route {
         volume,
-        entry_path: as_volume_calls_spell_it(&resolved.path),
+        entry_path: resolved.path,
         kind,
     })
 }
 
-/// `path` as the pull hands it to its volume: through the bridge and back, crossed once
-/// for both of the pull's calls. Not the identity for a text holding an escape-range
-/// code point (the bridge decodes it and re-escapes the bytes), so it stays until the
-/// resolver's answer reaches the volume as is.
-fn as_volume_calls_spell_it(path: &AppPath) -> AppPathBuf {
-    AppPath::legacy_unchecked(&path.as_std_legacy()).into_owned()
+/// `requested` as the routing seam and the pull's two volume calls read it: the
+/// viewer core and `inspect_file` hand a `std::path` value, crossed here once
+/// through the bridge, byte for byte (an escape-range code point decodes and
+/// re-escapes, as it always did). Goes when those callers hand app paths
+/// (`cmdr-viewer`'s `pulls` seam, 10d's `inspect_file`).
+fn requested_on_volume(requested: &Path) -> AppPathBuf {
+    AppPath::legacy_unchecked(requested).into_owned()
 }
 
 /// Streams one file to a fresh temp subdir in `spot`, refusing an oversize file

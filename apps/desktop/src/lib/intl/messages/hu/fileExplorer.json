@@ -2237,6 +2237,10 @@
   "@fileExplorer.dragOut.partial": {
     "sourceHash": "9215226"
   },
+  "fileExplorer.drop.uncrossedPaths": "A Cmdr nem tudja kiolvasni, hol van egy vagy több behúzott elem, ezért az egész behúzást kihagyta. Próbáld újra ezek nélkül az elemek nélkül.",
+  "@fileExplorer.drop.uncrossedPaths": {
+    "sourceHash": "c4daabf"
+  },
   "fileExplorer.dropIn.sourceNameFromAppAndHost": "{name}, innen: {appName} ({host})",
   "@fileExplorer.dropIn.sourceNameFromAppAndHost": {
     "sourceHash": "94c2e01"

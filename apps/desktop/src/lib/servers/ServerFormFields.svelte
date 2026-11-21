@@ -26,6 +26,7 @@
      * navigates above the root; opening the place lands on the start folder, which
      * has to be the root or under it. Empty means the root.
      */
+    // eslint-disable-next-line no-restricted-imports -- OS-only: the SFTP key file the backend reads off this disk. It stays native (`C:\…\id_ed25519` on Windows), the same text a person types into this field.
     import { open as openFilePicker } from '@tauri-apps/plugin-dialog'
     import Button from '#lib/ui/Button.svelte'
     import Checkbox from '#lib/ui/Checkbox.svelte'
