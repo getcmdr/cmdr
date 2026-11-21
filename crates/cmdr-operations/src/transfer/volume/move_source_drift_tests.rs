@@ -137,7 +137,7 @@ fn create_on(source: &Arc<InMemoryVolume>, path: &'static str, bytes: &'static [
     Box::new(move || {
         Box::pin(async move {
             source
-                .create_file(&AppPath::legacy_unchecked(Path::new(path)), bytes)
+                .create_file(AppPath::from_normalized(path).expect("a canonical path"), bytes)
                 .await
                 .unwrap()
         })
@@ -146,7 +146,7 @@ fn create_on(source: &Arc<InMemoryVolume>, path: &'static str, bytes: &'static [
 
 async fn read(volume: &dyn Volume, path: &str) -> Vec<u8> {
     let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .unwrap();
     let mut bytes = Vec::new();

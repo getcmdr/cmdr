@@ -78,7 +78,7 @@ async fn a_destination_that_cant_report_free_space_is_still_copyable_into() {
     // The bytes, not just the absence of an error.
     for (name, content) in [("/a.txt", &b"alpha"[..]), ("/b.txt", &b"bravo"[..])] {
         let landed = dest
-            .read_range(&AppPath::legacy_unchecked(Path::new(name)), 0, 64)
+            .read_range(AppPath::from_normalized(name).expect("a canonical path"), 0, 64)
             .await
             .expect("the copy landed");
         assert_eq!(landed, content, "{name} must arrive byte for byte");

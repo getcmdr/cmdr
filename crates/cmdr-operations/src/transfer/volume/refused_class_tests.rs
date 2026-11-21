@@ -41,13 +41,13 @@ async fn run_case(driver: Driver) {
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for dir in ["/album", "/album/dir."] {
         source
-            .create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            .create_directory(AppPath::from_normalized(dir).expect("a canonical path"))
             .await
             .unwrap();
     }
     for file in ["/album/ok.txt", "/album/dup.", "/album/dir./x.txt"] {
         source
-            .create_file(&AppPath::legacy_unchecked(Path::new(file)), b"incoming")
+            .create_file(AppPath::from_normalized(file).expect("a canonical path"), b"incoming")
             .await
             .unwrap();
     }
@@ -60,12 +60,12 @@ async fn run_case(driver: Driver) {
     // What a stripped name would land on: siblings the user already has.
     let dest = Arc::new(InMemoryVolume::new("Stick").with_space_info(10_000_000, 10_000_000));
     for dir in ["/inbox", "/inbox/album", "/inbox/album/dir"] {
-        dest.create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+        dest.create_directory(AppPath::from_normalized(dir).expect("a canonical path"))
             .await
             .unwrap();
     }
     for file in ["/inbox/album/dup", "/inbox/album/dir/x.txt", "/inbox/top"] {
-        dest.create_file(&AppPath::legacy_unchecked(Path::new(file)), SIBLING)
+        dest.create_file(AppPath::from_normalized(file).expect("a canonical path"), SIBLING)
             .await
             .unwrap();
     }
@@ -113,7 +113,7 @@ async fn run_case(driver: Driver) {
 
     for sibling in ["/inbox/album/dup", "/inbox/album/dir/x.txt", "/inbox/top"] {
         let mut stream = dest
-            .open_read_stream(&AppPath::legacy_unchecked(Path::new(sibling)))
+            .open_read_stream(AppPath::from_normalized(sibling).expect("a canonical path"))
             .await
             .expect("the sibling opens");
         let mut bytes = Vec::new();
@@ -124,7 +124,9 @@ async fn run_case(driver: Driver) {
     }
     for refused in ["/inbox/album/dup.", "/inbox/album/dir.", "/inbox/top."] {
         assert!(
-            !dest.exists(&AppPath::legacy_unchecked(Path::new(refused))).await,
+            !dest
+                .exists(AppPath::from_normalized(refused).expect("a canonical path"))
+                .await,
             "{driver:?}: {refused} landed"
         );
     }
@@ -154,7 +156,9 @@ async fn run_case(driver: Driver) {
     if driver == Driver::CrossVolumeMove {
         for kept in ["/album/dup.", "/album/dir./x.txt", "/top."] {
             assert!(
-                source.exists(&AppPath::legacy_unchecked(Path::new(kept))).await,
+                source
+                    .exists(AppPath::from_normalized(kept).expect("a canonical path"))
+                    .await,
                 "a move keeps a skipped source: {kept}"
             );
         }

@@ -81,7 +81,7 @@ async fn seeded_source(names: &[&str]) -> (Arc<InMemoryVolume>, Vec<PathBuf>) {
 
 async fn bytes_at(volume: &Arc<InMemoryVolume>, path: &str) -> Option<Vec<u8>> {
     let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(&PathBuf::from(path)))
+        .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .ok()?;
     let mut out = Vec::new();

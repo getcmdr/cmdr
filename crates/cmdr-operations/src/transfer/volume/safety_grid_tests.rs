@@ -771,7 +771,7 @@ async fn tier_b_fixture(
     if concurrent {
         for name in ["/filler_a.bin", "/filler_b.bin"] {
             source
-                .create_file(&AppPath::legacy_unchecked(Path::new(name)), b"filler")
+                .create_file(AppPath::from_normalized(name).expect("a canonical path"), b"filler")
                 .await
                 .unwrap();
             sources.push(PathBuf::from(name));

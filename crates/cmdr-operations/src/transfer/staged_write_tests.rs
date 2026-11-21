@@ -20,7 +20,7 @@ use std::time::Duration;
 /// destination is untouched" from "we replaced it".
 async fn size_of(volume: &InMemoryVolume, path: &str) -> Option<u64> {
     volume
-        .get_metadata(&AppPath::legacy_unchecked(Path::new(path)))
+        .get_metadata(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .ok()
         .and_then(|e| e.size)

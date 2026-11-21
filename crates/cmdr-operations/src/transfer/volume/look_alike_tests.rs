@@ -26,14 +26,14 @@ fn volume(name: &str) -> Arc<InMemoryVolume> {
 
 async fn put(volume: &InMemoryVolume, path: &str, content: &[u8]) {
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(path)), content)
+        .create_file(AppPath::from_normalized(path).expect("a canonical path"), content)
         .await
         .unwrap();
 }
 
 async fn mkdir(volume: &InMemoryVolume, path: &str) {
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(path)))
+        .create_directory(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .unwrap();
 }
@@ -41,7 +41,7 @@ async fn mkdir(volume: &InMemoryVolume, path: &str) {
 /// The names `dir` holds, byte for byte, sorted.
 async fn names_in(volume: &InMemoryVolume, dir: &str) -> Vec<String> {
     let mut names: Vec<String> = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
+        .list_directory(AppPath::from_normalized(dir).expect("a canonical path"), None)
         .await
         .unwrap_or_else(|e| panic!("list {dir}: {e:?}"))
         .into_iter()
@@ -53,7 +53,7 @@ async fn names_in(volume: &InMemoryVolume, dir: &str) -> Vec<String> {
 
 async fn bytes_at(volume: &InMemoryVolume, path: &str) -> Vec<u8> {
     let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .unwrap_or_else(|e| panic!("open {path}: {e:?}"));
     let mut out = Vec::new();

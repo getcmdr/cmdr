@@ -1,7 +1,7 @@
 //! The background pass's own rules. What a stop hands it, and how the stop
 //! reports, is pinned where the stop happens (`volume/cleanup_tests.rs`).
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::Duration;
 
 use super::*;
@@ -82,7 +82,7 @@ async fn an_outage_the_operation_gave_up_on_gets_one_look_and_no_wait() {
         vec![temp.clone()],
         "and hands the temp to the reconnect sweep"
     );
-    assert!(inner.exists(&AppPath::legacy_unchecked(Path::new(&temp))).await);
+    assert!(inner.exists(&AppPath::legacy_unchecked(&temp)).await);
 }
 
 /// ❗ A temp the share refuses the moment it's back gets the same retries as a
@@ -148,7 +148,7 @@ async fn a_temp_the_share_refuses_the_moment_it_is_back_goes_on_the_retries() {
         .expect("the pass settles once the share is back");
 
     assert!(
-        !inner.exists(&AppPath::legacy_unchecked(Path::new(&temp))).await,
+        !inner.exists(&AppPath::legacy_unchecked(&temp)).await,
         "a later retry takes the temp"
     );
     assert!(

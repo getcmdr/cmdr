@@ -117,7 +117,7 @@ async fn run(
 
 async fn content_of(volume: &Arc<InMemoryVolume>, path: &str) -> Vec<u8> {
     let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .expect("the file opens");
     let mut bytes = Vec::new();

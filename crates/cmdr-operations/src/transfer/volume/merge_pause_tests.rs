@@ -79,10 +79,10 @@ async fn a_paused_cross_volume_merge_stops_walking_until_it_resumes() {
     for i in 0..CHILDREN {
         let name = format!("/album/c{:02}.txt", i);
         source
-            .create_file(&AppPath::legacy_unchecked(Path::new(&name)), b"SRC")
+            .create_file(AppPath::from_normalized(&name).expect("a canonical path"), b"SRC")
             .await
             .unwrap();
-        dest.create_file(&AppPath::legacy_unchecked(Path::new(&name)), b"DEST")
+        dest.create_file(AppPath::from_normalized(&name).expect("a canonical path"), b"DEST")
             .await
             .unwrap();
     }

@@ -143,12 +143,17 @@ async fn cross_volume_move_cancel_mid_batch_keeps_the_held_originals() {
     let mut copied = 0;
     for name in ["a", "b", "c", "d", "e"] {
         let p = format!("/{}.txt", name);
-        if dest.exists(&AppPath::legacy_unchecked(Path::new(&p))).await {
+        if dest
+            .exists(AppPath::from_normalized(&p).expect("a canonical path"))
+            .await
+        {
             copied += 1;
         }
         // Copied or not, no barrier proved it, so the original stays.
         assert!(
-            source.exists(&AppPath::legacy_unchecked(Path::new(&p))).await,
+            source
+                .exists(AppPath::from_normalized(&p).expect("a canonical path"))
+                .await,
             "{p}: the original must stay"
         );
     }

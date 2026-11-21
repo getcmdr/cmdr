@@ -33,7 +33,10 @@ async fn test_concurrent_copy_50_files_all_succeed() {
     for i in 0..50 {
         let name = format!("/file_{:02}.bin", i);
         source
-            .create_file(&AppPath::legacy_unchecked(Path::new(&name)), &vec![i as u8; 1024])
+            .create_file(
+                AppPath::from_normalized(&name).expect("a canonical path"),
+                &vec![i as u8; 1024],
+            )
             .await
             .unwrap();
     }
@@ -63,7 +66,7 @@ async fn test_concurrent_copy_50_files_all_succeed() {
     for i in 0..50 {
         let name = format!("/file_{:02}.bin", i);
         let mut stream = dest
-            .open_read_stream(&AppPath::legacy_unchecked(Path::new(&name)))
+            .open_read_stream(AppPath::from_normalized(&name).expect("a canonical path"))
             .await
             .unwrap();
         let mut collected = Vec::new();
@@ -173,7 +176,10 @@ async fn test_concurrent_copy_aborts_on_first_error() {
     for i in 0..20 {
         let name = format!("/file_{:02}.bin", i);
         inner_source
-            .create_file(&AppPath::legacy_unchecked(Path::new(&name)), &vec![0xAB; 1024])
+            .create_file(
+                AppPath::from_normalized(&name).expect("a canonical path"),
+                &vec![0xAB; 1024],
+            )
             .await
             .unwrap();
     }
@@ -267,7 +273,10 @@ async fn test_concurrent_copy_cancellation_mid_batch() {
     for i in 0..20 {
         let name = format!("/big_{:02}.bin", i);
         source
-            .create_file(&AppPath::legacy_unchecked(Path::new(&name)), &vec![i as u8; 200_000])
+            .create_file(
+                AppPath::from_normalized(&name).expect("a canonical path"),
+                &vec![i as u8; 200_000],
+            )
             .await
             .unwrap();
     }

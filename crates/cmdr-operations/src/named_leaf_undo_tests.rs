@@ -68,7 +68,7 @@ fn in_memory(name: &str) -> Arc<InMemoryVolume> {
 
 async fn read(volume: &InMemoryVolume, path: &str) -> Vec<u8> {
     let mut reader = volume
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .unwrap_or_else(|e| panic!("open {path}: {e:?}"));
     reader

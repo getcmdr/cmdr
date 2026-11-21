@@ -302,7 +302,10 @@ async fn a_merge_child_abandoned_at_the_drain_deadline_takes_its_rename_placehol
     for name in ["/album/clash.bin", "/wedge-a.bin", "/wedge-b.bin"] {
         gated
             .source_inner
-            .create_file(&AppPath::legacy_unchecked(Path::new(name)), &vec![0xAB; CHUNK * 4])
+            .create_file(
+                AppPath::from_normalized(name).expect("a canonical path"),
+                &vec![0xAB; CHUNK * 4],
+            )
             .await
             .unwrap();
     }

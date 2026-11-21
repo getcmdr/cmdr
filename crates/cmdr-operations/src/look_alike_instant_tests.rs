@@ -33,7 +33,7 @@ async fn share(engine: &TestOperations, label: &str) -> (String, Arc<InMemoryVol
 
 async fn names_in(volume: &InMemoryVolume, dir: &str) -> Vec<String> {
     let mut names: Vec<String> = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
+        .list_directory(AppPath::from_normalized(dir).expect("a canonical path"), None)
         .await
         .unwrap()
         .into_iter()

@@ -33,7 +33,7 @@ fn store() -> Arc<InMemoryVolume> {
 
 async fn read(volume: &Arc<InMemoryVolume>, path: &str) -> Vec<u8> {
     let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .unwrap();
     let mut bytes = Vec::new();
@@ -45,7 +45,7 @@ async fn read(volume: &Arc<InMemoryVolume>, path: &str) -> Vec<u8> {
 
 async fn seed_tree(volume: &Arc<InMemoryVolume>, root: &str) {
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(root)))
+        .create_directory(AppPath::from_normalized(root).expect("a canonical path"))
         .await
         .unwrap();
     volume

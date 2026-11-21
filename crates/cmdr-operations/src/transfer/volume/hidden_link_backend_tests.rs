@@ -237,7 +237,7 @@ async fn a_copy_never_merges_into_a_hidden_destination_link() {
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for dir in ["/album", "/album/link"] {
         source
-            .create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            .create_directory(AppPath::from_normalized(dir).expect("a canonical path"))
             .await
             .expect("source dir");
     }
@@ -246,7 +246,7 @@ async fn a_copy_never_merges_into_a_hidden_destination_link() {
         ("/album/link/new.txt", b"NEW"),
     ] {
         source
-            .create_file(&AppPath::legacy_unchecked(Path::new(path)), content)
+            .create_file(AppPath::from_normalized(path).expect("a canonical path"), content)
             .await
             .expect("source file");
     }

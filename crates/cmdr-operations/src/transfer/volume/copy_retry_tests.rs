@@ -241,7 +241,7 @@ async fn merge_fixture() -> (Arc<dyn Volume>, Arc<InMemoryVolume>) {
 
 async fn read_all(vol: &Arc<InMemoryVolume>, path: &str) -> Option<Vec<u8>> {
     let mut stream = vol
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .ok()?;
     let mut out = Vec::new();

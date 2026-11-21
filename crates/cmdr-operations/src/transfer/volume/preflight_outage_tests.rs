@@ -54,7 +54,7 @@ async fn nas(lane: &str) -> (Arc<OutageVolume>, Arc<dyn Volume>) {
         "/batch/sub/g1.txt",
     ] {
         inner
-            .create_file(&AppPath::legacy_unchecked(Path::new(path)), b"file 0")
+            .create_file(AppPath::from_normalized(path).expect("a canonical path"), b"file 0")
             .await
             .unwrap();
     }

@@ -134,7 +134,7 @@ impl RecordingDest {
     async fn read(&self, path: &str) -> Option<Vec<u8>> {
         let mut stream = self
             .inner
-            .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+            .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
             .await
             .ok()?;
         let mut buf = Vec::new();
@@ -149,7 +149,7 @@ impl RecordingDest {
     async fn names_under(&self, dir: &str) -> Vec<String> {
         let mut names: Vec<String> = self
             .inner
-            .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
+            .list_directory(AppPath::from_normalized(dir).expect("a canonical path"), None)
             .await
             .expect("listing the destination")
             .into_iter()
@@ -358,7 +358,7 @@ async fn sources_named(names: &[&str]) -> (Arc<InMemoryVolume>, Vec<PathBuf>) {
         let path = format!("/{name}");
         source
             .create_file(
-                &AppPath::legacy_unchecked(Path::new(&path)),
+                AppPath::from_normalized(&path).expect("a canonical path"),
                 format!("source {name}").as_bytes(),
             )
             .await
@@ -721,7 +721,7 @@ async fn a_directory_source_still_merges_and_keeps_destination_only_files() {
     let source = Arc::new(InMemoryVolume::new("source").with_space_info(10_000_000, 10_000_000));
     for name in ["/loose-a.txt", "/loose-b.txt"] {
         source
-            .create_file(&AppPath::legacy_unchecked(Path::new(name)), b"loose")
+            .create_file(AppPath::from_normalized(name).expect("a canonical path"), b"loose")
             .await
             .expect("seed a loose source file");
     }

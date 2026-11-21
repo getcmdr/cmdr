@@ -80,7 +80,8 @@ async fn move_anyway_deletes_each_locked_original_once_its_copy_landed() {
 
     for landed in ["/album/locked.txt", "/album/acl.txt", "/top.txt"] {
         assert!(
-            dest.exists(&AppPath::legacy_unchecked(Path::new(landed))).await,
+            dest.exists(AppPath::from_normalized(landed).expect("a canonical path"))
+                .await,
             "{landed} landed"
         );
     }

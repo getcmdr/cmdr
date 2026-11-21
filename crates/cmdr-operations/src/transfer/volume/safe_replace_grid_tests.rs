@@ -784,7 +784,7 @@ async fn a_concurrent_task_dropped_mid_swap_keeps_the_original_for_the_sweep_to_
     let source_inner = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for (name, bytes) in [("/a.txt", SIBLING_A), ("/notes.txt", NEW), ("/z.txt", SIBLING_Z)] {
         source_inner
-            .create_file(&AppPath::legacy_unchecked(Path::new(name)), bytes)
+            .create_file(AppPath::from_normalized(name).expect("a canonical path"), bytes)
             .await
             .unwrap();
     }

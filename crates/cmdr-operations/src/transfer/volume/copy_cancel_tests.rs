@@ -48,7 +48,10 @@ async fn wedged_fixture(with_a_landed_file: bool) -> (Fixture, Vec<PathBuf>) {
     }
     for name in ["/wedge-a.bin", "/wedge-b.bin", "/wedge-c.bin"] {
         fx.source_inner
-            .create_file(&AppPath::legacy_unchecked(Path::new(name)), &vec![0xAB; CHUNK * 4])
+            .create_file(
+                AppPath::from_normalized(name).expect("a canonical path"),
+                &vec![0xAB; CHUNK * 4],
+            )
             .await
             .unwrap();
         sources.push(PathBuf::from(name));
@@ -254,7 +257,10 @@ async fn an_abort_shortens_the_drain_window_a_cancel_already_armed() {
     let mut sources = Vec::new();
     for name in ["/wedge-a.bin", "/wedge-b.bin", "/wedge-c.bin"] {
         fx.source_inner
-            .create_file(&AppPath::legacy_unchecked(Path::new(name)), &vec![0xAB; CHUNK])
+            .create_file(
+                AppPath::from_normalized(name).expect("a canonical path"),
+                &vec![0xAB; CHUNK],
+            )
             .await
             .unwrap();
         sources.push(PathBuf::from(name));
@@ -333,7 +339,10 @@ async fn refusing_a_conflict_prompt_mid_copy_sweeps_the_partials_and_reports_can
     for n in 0..7 {
         let name = format!("/a-wedge-{n}.bin");
         fx.source_inner
-            .create_file(&AppPath::legacy_unchecked(Path::new(&name)), &vec![0xAB; CHUNK * 16])
+            .create_file(
+                AppPath::from_normalized(&name).expect("a canonical path"),
+                &vec![0xAB; CHUNK * 16],
+            )
             .await
             .unwrap();
         sources.push(PathBuf::from(name));
@@ -449,7 +458,10 @@ async fn rollback_undoes_what_an_abandoned_folder_task_already_landed() {
         .unwrap();
     for name in ["/folder/wedge.bin", "/wedge-b.bin", "/wedge-c.bin"] {
         fx.source_inner
-            .create_file(&AppPath::legacy_unchecked(Path::new(name)), &vec![0xAB; CHUNK * 4])
+            .create_file(
+                AppPath::from_normalized(name).expect("a canonical path"),
+                &vec![0xAB; CHUNK * 4],
+            )
             .await
             .unwrap();
     }

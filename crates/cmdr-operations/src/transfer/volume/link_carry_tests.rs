@@ -83,7 +83,7 @@ async fn copy(
 
 async fn target_at(volume: &InMemoryVolume, path: &str) -> Option<PathBuf> {
     volume
-        .read_link_target(&AppPath::legacy_unchecked(Path::new(path)))
+        .read_link_target(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .unwrap()
 }
@@ -101,7 +101,7 @@ fn no_temps(names: &[String]) {
 
 async fn names_at(volume: &dyn Volume, dir: &str) -> Vec<String> {
     let listed = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
+        .list_directory(AppPath::from_normalized(dir).expect("a canonical path"), None)
         .await
         .unwrap();
     listed.into_iter().map(|entry| entry.name).collect()

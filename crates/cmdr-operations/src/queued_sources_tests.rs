@@ -299,7 +299,7 @@ async fn on_a_volume_only_a_source_that_is_really_missing_counts_as_gone() {
     let volume = InMemoryVolume::new("queued-sources-vol");
     for name in ["/kept.txt", "/unreadable.txt"] {
         volume
-            .create_file(&AppPath::legacy_unchecked(Path::new(name)), b"x")
+            .create_file(AppPath::from_normalized(name).expect("a canonical path"), b"x")
             .await
             .expect("seed");
     }

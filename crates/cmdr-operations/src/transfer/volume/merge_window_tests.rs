@@ -191,7 +191,10 @@ async fn folder_of(count: usize) -> Arc<dyn Volume> {
     for index in 0..count {
         let name = format!("/album/f-{index:02}.bin");
         source
-            .create_file(&AppPath::legacy_unchecked(Path::new(&name)), &vec![index as u8; 4_096])
+            .create_file(
+                AppPath::from_normalized(&name).expect("a canonical path"),
+                &vec![index as u8; 4_096],
+            )
             .await
             .unwrap();
     }
@@ -243,7 +246,9 @@ async fn one_folders_subtree_fills_the_operation_window() {
     for index in 0..12 {
         let landed = format!("/out/album/f-{index:02}.bin");
         assert!(
-            dest_volume.exists(&AppPath::legacy_unchecked(Path::new(&landed))).await,
+            dest_volume
+                .exists(AppPath::from_normalized(&landed).expect("a canonical path"))
+                .await,
             "{landed} must be at the destination"
         );
     }
@@ -261,13 +266,16 @@ async fn four_folder_sources_share_one_window_rather_than_taking_one_each() {
     for folder in 0..4 {
         let dir = format!("/album-{folder}");
         source
-            .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+            .create_directory(AppPath::from_normalized(&dir).expect("a canonical path"))
             .await
             .unwrap();
         for index in 0..6 {
             let name = format!("{dir}/f-{index:02}.bin");
             source
-                .create_file(&AppPath::legacy_unchecked(Path::new(&name)), &vec![index as u8; 4_096])
+                .create_file(
+                    AppPath::from_normalized(&name).expect("a canonical path"),
+                    &vec![index as u8; 4_096],
+                )
                 .await
                 .unwrap();
         }
@@ -303,7 +311,9 @@ async fn four_folder_sources_share_one_window_rather_than_taking_one_each() {
         for index in 0..6 {
             let landed = format!("/out/album-{folder}/f-{index:02}.bin");
             assert!(
-                dest_volume.exists(&AppPath::legacy_unchecked(Path::new(&landed))).await,
+                dest_volume
+                    .exists(AppPath::from_normalized(&landed).expect("a canonical path"))
+                    .await,
                 "{landed} must be at the destination"
             );
         }
@@ -534,7 +544,7 @@ async fn a_rolled_back_wide_window_copy_leaves_no_directory_it_created() {
     for sub in 0..3 {
         let dir = format!("/album/sub-{sub}");
         source
-            .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+            .create_directory(AppPath::from_normalized(&dir).expect("a canonical path"))
             .await
             .unwrap();
         for index in 0..8 {
@@ -582,7 +592,9 @@ async fn a_rolled_back_wide_window_copy_leaves_no_directory_it_created() {
     for sub in 0..3 {
         let dir = format!("/out/album/sub-{sub}");
         assert!(
-            !dest_volume.exists(&AppPath::legacy_unchecked(Path::new(&dir))).await,
+            !dest_volume
+                .exists(AppPath::from_normalized(&dir).expect("a canonical path"))
+                .await,
             "{dir} survived the rollback, so something it holds was never recorded"
         );
     }
@@ -826,7 +838,7 @@ async fn a_walker_waiting_out_an_outage_keeps_its_leaves_moving() {
         assert_eq!(
             share
                 .inner
-                .get_metadata(&AppPath::legacy_unchecked(Path::new(&landed)))
+                .get_metadata(AppPath::from_normalized(&landed).expect("a canonical path"))
                 .await
                 .unwrap()
                 .size,

@@ -68,7 +68,9 @@ async fn assert_lands_without_mac_only_files(dest: &Arc<dyn Volume>) {
         "/work/only-metadata/.DS_Store",
     ] {
         assert!(
-            !dest.exists(&AppPath::legacy_unchecked(Path::new(gone))).await,
+            !dest
+                .exists(AppPath::from_normalized(gone).expect("a canonical path"))
+                .await,
             "{gone} reached the destination"
         );
     }

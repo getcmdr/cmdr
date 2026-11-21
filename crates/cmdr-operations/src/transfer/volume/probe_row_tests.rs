@@ -139,7 +139,7 @@ async fn folder_of(count: usize) -> Arc<dyn Volume> {
         let name = format!("/album/f-{index:02}.bin");
         source
             .create_file(
-                &AppPath::legacy_unchecked(Path::new(&name)),
+                AppPath::from_normalized(&name).expect("a canonical path"),
                 &vec![index as u8; LEAF_BYTES],
             )
             .await

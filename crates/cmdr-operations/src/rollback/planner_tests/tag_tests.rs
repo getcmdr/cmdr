@@ -7,7 +7,6 @@
 
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use super::test_support::*;
@@ -48,7 +47,7 @@ fn tagged(seq: i64, path: &str) -> JournalItem {
 
 async fn tags_on(vol: &InMemoryVolume, path: &str) -> Option<Vec<u8>> {
     vol.read_xattr_many(
-        &[AppPath::legacy_unchecked(&PathBuf::from(path)).into_owned()],
+        &[AppPath::from_normalized(path).expect("a canonical path").to_owned()],
         FINDER_TAGS_XATTR,
         XattrReadMode::Verified,
     )
@@ -58,9 +57,13 @@ async fn tags_on(vol: &InMemoryVolume, path: &str) -> Option<Vec<u8>> {
 }
 
 async fn set_tags(vol: &InMemoryVolume, path: &str, value: &[u8]) {
-    vol.write_xattr(&AppPath::legacy_unchecked(Path::new(path)), FINDER_TAGS_XATTR, value)
-        .await
-        .expect("write the tags");
+    vol.write_xattr(
+        AppPath::from_normalized(path).expect("a canonical path"),
+        FINDER_TAGS_XATTR,
+        value,
+    )
+    .await
+    .expect("write the tags");
 }
 
 /// Two tagged files, both still carrying what the write left.

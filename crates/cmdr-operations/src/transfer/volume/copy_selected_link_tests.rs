@@ -111,7 +111,7 @@ fn plant_linked_folder(root: &Path) -> PathBuf {
 }
 
 async fn read_dest(dest: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
-    dest.read_range(&AppPath::legacy_unchecked(Path::new(path)), 0, 1024)
+    dest.read_range(AppPath::from_normalized(path).expect("a canonical path"), 0, 1024)
         .await
         .unwrap_or_else(|e| panic!("{path} should have landed: {e:?}"))
 }

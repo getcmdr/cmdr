@@ -225,7 +225,7 @@ async fn test_scan_for_copy_batch_without_progress_still_works() {
     let vol: Arc<dyn Volume> = Arc::new(vol);
 
     let result = vol
-        .scan_for_copy_batch(&[AppPath::legacy_unchecked(&PathBuf::from("/x.txt")).into_owned()])
+        .scan_for_copy_batch(&[app_path!("/x.txt").to_owned()])
         .await
         .unwrap();
     assert_eq!(result.aggregate.file_count, 1);

@@ -85,7 +85,7 @@ async fn tree_source(width: usize) -> Arc<ReversedListingSource> {
     let inner = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for dir in ["/src", "/src/a", "/src/a/sub", "/src/b"] {
         inner
-            .create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            .create_directory(AppPath::from_normalized(dir).expect("a canonical path"))
             .await
             .unwrap();
     }
@@ -97,7 +97,7 @@ async fn tree_source(width: usize) -> Arc<ReversedListingSource> {
         "/src/z.txt",
     ] {
         inner
-            .create_file(&AppPath::legacy_unchecked(Path::new(file)), b"bytes")
+            .create_file(AppPath::from_normalized(file).expect("a canonical path"), b"bytes")
             .await
             .unwrap();
     }

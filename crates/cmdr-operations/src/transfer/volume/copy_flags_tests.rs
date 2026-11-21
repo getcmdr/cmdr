@@ -84,7 +84,7 @@ async fn copy(
 
 async fn seed_file(volume: &InMemoryVolume, path: &str, flags: UserFlags) {
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(path)), b"bytes")
+        .create_file(AppPath::from_normalized(path).expect("a canonical path"), b"bytes")
         .await
         .unwrap();
     volume.set_carried_metadata(

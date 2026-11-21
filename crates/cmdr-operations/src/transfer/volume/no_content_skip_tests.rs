@@ -33,7 +33,7 @@ async fn seeded_source(count: usize) -> (Arc<InMemoryVolume>, Vec<PathBuf>) {
         paths.push(root);
     }
     source
-        .create_file(&AppPath::legacy_unchecked(Path::new(LINK)), b"")
+        .create_file(AppPath::from_normalized(LINK).expect("a canonical path"), b"")
         .await
         .unwrap();
     (source, paths)

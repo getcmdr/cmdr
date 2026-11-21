@@ -28,7 +28,7 @@ async fn drive_with_routes(label: &str) -> (TestOperations, String, Arc<InMemory
     let drive = Arc::new(InMemoryVolume::new(&volume_id));
     for dir in ["/repo", "/repo/.git", BRANCHES, "/repo/.git/branches/main", ZIP] {
         drive
-            .create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            .create_directory(AppPath::from_normalized(dir).expect("a canonical path"))
             .await
             .unwrap();
     }
@@ -79,7 +79,11 @@ async fn a_bulk_rename_under_dot_git_refuses() {
         matches!(&result, Err(RenameStartError::Engine { error }) if is_read_only(error, ReadOnlySide::Source)),
         "{result:?}"
     );
-    assert!(drive.exists(&AppPath::legacy_unchecked(Path::new(from))).await);
+    assert!(
+        drive
+            .exists(AppPath::from_normalized(from).expect("a canonical path"))
+            .await
+    );
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

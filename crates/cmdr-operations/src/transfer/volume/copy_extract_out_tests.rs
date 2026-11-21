@@ -40,7 +40,7 @@ fn build_extract_out_fixture() -> (tempfile::TempDir, PathBuf) {
 
 async fn read_dest_file(dest: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
     let mut stream = dest
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .unwrap_or_else(|e| panic!("dest missing {path}: {e:?}"));
     let mut out = Vec::new();

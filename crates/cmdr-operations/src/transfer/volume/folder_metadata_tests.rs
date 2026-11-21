@@ -66,7 +66,7 @@ fn volumes() -> (Arc<InMemoryVolume>, Arc<InMemoryVolume>) {
 
 async fn listed_date(volume: &InMemoryVolume, path: &str) -> Option<u64> {
     volume
-        .get_metadata(&AppPath::legacy_unchecked(Path::new(path)))
+        .get_metadata(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .unwrap_or_else(|e| panic!("{path} must exist, got {e:?}"))
         .modified_at
@@ -207,7 +207,10 @@ async fn a_copy_that_fails_partway_dates_no_folder() {
     );
     assert!(result.is_err(), "the second file's write failing fails the copy");
     for folder in ["/inbox/album", "/inbox/album/inner"] {
-        if dest_inner.exists(&AppPath::legacy_unchecked(Path::new(folder))).await {
+        if dest_inner
+            .exists(AppPath::from_normalized(folder).expect("a canonical path"))
+            .await
+        {
             let listed = listed_date(&dest_inner, folder).await;
             assert!(
                 listed != Some(FOLDER_DATE) && listed != Some(INNER_FOLDER_DATE),
@@ -251,7 +254,7 @@ async fn copied_folders_keep_their_creation_dates_through_both_drivers() {
             let created = |path: String| {
                 let dest = Arc::clone(&dest);
                 async move {
-                    dest.get_metadata(&AppPath::legacy_unchecked(Path::new(&path)))
+                    dest.get_metadata(AppPath::from_normalized(&path).expect("a canonical path"))
                         .await
                         .unwrap()
                         .created_at

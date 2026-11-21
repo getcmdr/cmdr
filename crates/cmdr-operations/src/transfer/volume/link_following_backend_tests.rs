@@ -526,7 +526,7 @@ async fn incoming_album() -> Arc<dyn Volume> {
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for dir in ["/album", "/album/link"] {
         source
-            .create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            .create_directory(AppPath::from_normalized(dir).expect("a canonical path"))
             .await
             .expect("source dir");
     }
@@ -536,7 +536,7 @@ async fn incoming_album() -> Arc<dyn Volume> {
         ("/album/link/new.txt", b"NEW"),
     ] {
         source
-            .create_file(&AppPath::legacy_unchecked(Path::new(path)), content)
+            .create_file(AppPath::from_normalized(path).expect("a canonical path"), content)
             .await
             .expect("source file");
     }
@@ -778,7 +778,7 @@ async fn a_policy_free_pull_refuses_a_deep_dest_link_instead_of_walking_through_
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for dir in ["/album", "/album/link"] {
         source
-            .create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            .create_directory(AppPath::from_normalized(dir).expect("a canonical path"))
             .await
             .expect("source dir");
     }
@@ -837,7 +837,9 @@ async fn a_cross_volume_move_onto_a_deep_dest_link_keeps_the_target_and_the_unla
     );
     for kept in ["/album/link/inside.txt", "/album/link/new.txt"] {
         assert!(
-            source.exists(&AppPath::legacy_unchecked(Path::new(kept))).await,
+            source
+                .exists(AppPath::from_normalized(kept).expect("a canonical path"))
+                .await,
             "{kept} never landed, so the move must leave it in the source"
         );
     }

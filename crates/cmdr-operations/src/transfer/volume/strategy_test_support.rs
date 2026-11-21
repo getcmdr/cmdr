@@ -297,7 +297,7 @@ impl FlakyDest {
     pub(crate) async fn read(&self, path: &str) -> Option<Vec<u8>> {
         let mut stream = self
             .inner
-            .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+            .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
             .await
             .ok()?;
         let mut buf = Vec::new();

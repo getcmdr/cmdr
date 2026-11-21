@@ -55,7 +55,7 @@ async fn put(volume: &Arc<dyn Volume>, path: &str, bytes: &[u8]) {
             .expect("parent folder");
     }
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(path)), bytes)
+        .create_file(AppPath::from_normalized(path).expect("a canonical path"), bytes)
         .await
         .expect("file");
 }
@@ -95,7 +95,10 @@ async fn a_concurrent_copy_shows_files_in_flight_across_folders_and_every_row_en
             .await
             .expect("folder");
         fx.source_inner
-            .create_file(&AppPath::legacy_unchecked(Path::new(path)), &vec![0xAB; CHUNK * 2])
+            .create_file(
+                AppPath::from_normalized(path).expect("a canonical path"),
+                &vec![0xAB; CHUNK * 2],
+            )
             .await
             .expect("file");
     }
@@ -314,7 +317,10 @@ async fn a_cancel_leaves_the_rows_it_stopped_waiting() {
         .expect("file");
     for name in ["/wedge-a.bin", "/wedge-b.bin", "/wedge-c.bin"] {
         fx.source_inner
-            .create_file(&AppPath::legacy_unchecked(Path::new(name)), &vec![0xAB; CHUNK * 4])
+            .create_file(
+                AppPath::from_normalized(name).expect("a canonical path"),
+                &vec![0xAB; CHUNK * 4],
+            )
             .await
             .expect("file");
     }
@@ -673,7 +679,8 @@ async fn a_tree_that_fails_to_build_leaves_a_volume_copy_as_it_would_run_without
 
     for path in ["/a/1.bin", bug.as_str(), "/b.bin"] {
         assert!(
-            dest.exists(&AppPath::legacy_unchecked(Path::new(path))).await,
+            dest.exists(AppPath::from_normalized(path).expect("a canonical path"))
+                .await,
             "{path} landed"
         );
     }

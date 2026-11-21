@@ -89,7 +89,7 @@ fn stop_config() -> VolumeCopyConfig {
 /// Every byte of the file at `path`.
 async fn read_all(volume: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
     let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .unwrap();
     let mut bytes = Vec::new();
@@ -102,7 +102,7 @@ async fn read_all(volume: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
 /// The names at `dir` on `volume`, sorted.
 async fn names_in(volume: &Arc<dyn Volume>, dir: &str) -> Vec<String> {
     let mut names: Vec<String> = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
+        .list_directory(AppPath::from_normalized(dir).expect("a canonical path"), None)
         .await
         .unwrap()
         .into_iter()

@@ -290,7 +290,7 @@ async fn a_source_from_a_case_differing_folder_is_still_a_conflict() {
     let volume = Arc::new(InMemoryVolume::new("Device")) as Arc<dyn Volume>;
     for dir in ["/photos", "/PHOTOS"] {
         volume
-            .create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            .create_directory(AppPath::from_normalized(dir).expect("a canonical path"))
             .await
             .expect("create dir");
         volume

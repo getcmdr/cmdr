@@ -43,7 +43,10 @@ async fn drain_fixture() -> (Fixture, Arc<tokio::sync::Semaphore>, Vec<PathBuf>)
     let mut sources = vec![PathBuf::from("/landed.txt"), PathBuf::from(FAILING)];
     for name in std::iter::once(FAILING).chain(SIBLINGS) {
         fx.source_inner
-            .create_file(&AppPath::legacy_unchecked(Path::new(name)), &vec![0xAB; CHUNK * 4])
+            .create_file(
+                AppPath::from_normalized(name).expect("a canonical path"),
+                &vec![0xAB; CHUNK * 4],
+            )
             .await
             .unwrap();
     }

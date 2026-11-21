@@ -435,25 +435,26 @@ pub(super) fn dir_unit(seq: i64, vol: &str, path: &str) -> JournalItem {
 }
 
 pub(super) async fn put(vol: &InMemoryVolume, path: &str, content: &[u8]) {
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(path)), content)
+    vol.create_file(AppPath::from_normalized(path).expect("a canonical path"), content)
         .await
         .expect("create_file");
     vol.set_modified_at(Path::new(path), Some(MT));
 }
 
 pub(super) async fn mkdir(vol: &InMemoryVolume, path: &str) {
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(path)))
+    vol.create_directory(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .expect("create_directory");
 }
 
 pub(super) async fn exists(vol: &InMemoryVolume, path: &str) -> bool {
-    vol.exists(&AppPath::legacy_unchecked(Path::new(path))).await
+    vol.exists(AppPath::from_normalized(path).expect("a canonical path"))
+        .await
 }
 
 pub(super) async fn read(vol: &InMemoryVolume, path: &str) -> Vec<u8> {
     let mut s = vol
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .expect("open stream");
     let mut out = Vec::new();

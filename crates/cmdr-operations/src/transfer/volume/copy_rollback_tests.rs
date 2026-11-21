@@ -655,7 +655,9 @@ async fn rollback_of_a_concurrently_merged_directory_preserves_preexisting_dest_
     for i in 0..3 {
         let leaf = format!("/album/new{i}.bin");
         assert!(
-            !dest.exists(&AppPath::legacy_unchecked(Path::new(&leaf))).await,
+            !dest
+                .exists(AppPath::from_normalized(&leaf).expect("a canonical path"))
+                .await,
             "rollback left behind {leaf}, a file this operation created",
         );
     }

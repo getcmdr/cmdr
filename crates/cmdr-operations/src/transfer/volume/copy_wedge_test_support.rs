@@ -440,7 +440,7 @@ pub(super) async fn dest_names(dest: &Arc<InMemoryVolume>) -> Vec<String> {
 /// Full contents of a destination file, or `None` if it isn't there.
 pub(super) async fn read_dest(dest: &Arc<InMemoryVolume>, path: &str) -> Option<Vec<u8>> {
     let mut stream = dest
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .ok()?;
     let mut buf = Vec::new();

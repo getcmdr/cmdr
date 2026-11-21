@@ -81,10 +81,13 @@ where
 
 /// Someone saves over `path` on the share: new bytes, a new size.
 async fn save_over(inner: &InMemoryVolume, path: &str) {
-    inner.delete(&AppPath::legacy_unchecked(Path::new(path))).await.unwrap();
+    inner
+        .delete(AppPath::from_normalized(path).expect("a canonical path"))
+        .await
+        .unwrap();
     inner
         .create_file(
-            &AppPath::legacy_unchecked(Path::new(path)),
+            AppPath::from_normalized(path).expect("a canonical path"),
             b"saved while the share was out",
         )
         .await
@@ -147,11 +150,14 @@ async fn a_folder_sweep_waits_out_a_dropped_share_and_keeps_what_changed_meanwhi
     for n in [0, 1, 3] {
         let path = format!("/batch/f{n}.txt");
         assert!(
-            !inner.exists(&AppPath::legacy_unchecked(Path::new(&path))).await,
+            !inner
+                .exists(AppPath::from_normalized(&path).expect("a canonical path"))
+                .await,
             "{path} was carried, so it goes"
         );
         assert!(
-            dest.exists(&AppPath::legacy_unchecked(Path::new(&path))).await,
+            dest.exists(AppPath::from_normalized(&path).expect("a canonical path"))
+                .await,
             "{path} arrived"
         );
     }

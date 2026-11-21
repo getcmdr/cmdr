@@ -53,7 +53,7 @@ fn duplicate_config() -> VolumeCopyConfig {
 
 async fn read_all(vol: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
     let mut stream = vol
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .unwrap();
     let mut out = Vec::new();
@@ -66,7 +66,7 @@ async fn read_all(vol: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
 /// Child names of a directory on a volume, sorted.
 async fn children(vol: &Arc<dyn Volume>, path: &str) -> Vec<String> {
     let mut names: Vec<String> = vol
-        .list_directory(&AppPath::legacy_unchecked(Path::new(path)), None)
+        .list_directory(AppPath::from_normalized(path).expect("a canonical path"), None)
         .await
         .expect("directory should be listable")
         .into_iter()
@@ -83,7 +83,7 @@ async fn subtree(vol: &Arc<dyn Volume>, root: &str) -> Vec<String> {
     let mut queue = vec![root.to_string()];
     while let Some(dir) = queue.pop() {
         for entry in vol
-            .list_directory(&AppPath::legacy_unchecked(Path::new(&dir)), None)
+            .list_directory(AppPath::from_normalized(&dir).expect("a canonical path"), None)
             .await
             .expect("listable")
         {
@@ -482,7 +482,7 @@ async fn an_nfd_path_on_one_volume_is_the_same_item_as_its_nfc_twin() {
     let volume = one_volume();
     volume.create_directory(app_path!("/photos")).await.unwrap();
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(composed)), b"pixels")
+        .create_file(AppPath::from_normalized(composed).expect("a canonical path"), b"pixels")
         .await
         .unwrap();
 

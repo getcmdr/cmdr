@@ -322,7 +322,7 @@ async fn cross_volume_move_pre_known_conflicts_bulk_skip() {
     for name in ["a.txt", "c.txt", "e.txt"] {
         let path = format!("/{}", name);
         let mut s = dest
-            .open_read_stream(&AppPath::legacy_unchecked(Path::new(&path)))
+            .open_read_stream(AppPath::from_normalized(&path).expect("a canonical path"))
             .await
             .unwrap();
         let chunk = s.next_chunk().await.unwrap().unwrap();
@@ -333,7 +333,9 @@ async fn cross_volume_move_pre_known_conflicts_bulk_skip() {
             chunk
         );
         assert!(
-            source.exists(&AppPath::legacy_unchecked(Path::new(&path))).await,
+            source
+                .exists(AppPath::from_normalized(&path).expect("a canonical path"))
+                .await,
             "source {} must remain (skip is non-destructive)",
             name
         );
@@ -607,7 +609,7 @@ async fn cross_volume_move_creates_missing_nested_dest() {
 
     for dir in ["/incoming", "/incoming/2026", "/incoming/2026/trip"] {
         assert!(
-            dest.is_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            dest.is_directory(AppPath::from_normalized(dir).expect("a canonical path"))
                 .await
                 .expect("ancestor statable"),
             "{dir} should be a directory"

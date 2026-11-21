@@ -31,7 +31,7 @@ use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeReadStream};
 /// Reads a whole file from a volume into a `Vec<u8>`.
 async fn read_all(vol: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
     let mut stream = vol
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .unwrap();
     let mut out = Vec::new();

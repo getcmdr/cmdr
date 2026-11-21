@@ -138,7 +138,7 @@ async fn poisoned_dir_source_and_merged_dest(extra_source_files: &[&str]) -> (Ar
         .unwrap();
     for name in extra_source_files {
         inner_source
-            .create_file(&AppPath::legacy_unchecked(Path::new(name)), b"aaaa")
+            .create_file(AppPath::from_normalized(name).expect("a canonical path"), b"aaaa")
             .await
             .unwrap();
     }
@@ -160,7 +160,7 @@ async fn poisoned_dir_source_and_merged_dest(extra_source_files: &[&str]) -> (Ar
 /// just a name.
 async fn read_dest_file(dest: &Arc<dyn Volume>, path: &str) -> Option<Vec<u8>> {
     let mut stream = dest
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .ok()?;
     let mut collected = Vec::new();

@@ -143,7 +143,7 @@ impl TarGzFixture {
 
 async fn read_dest(dest: &Arc<dyn Volume>, path: &str) -> Result<Vec<u8>, VolumeError> {
     let mut stream = dest
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
         .await?;
     let mut out = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
@@ -300,7 +300,7 @@ async fn sequential_extract_keeps_the_folders_dates() {
 
     for folder in ["/out", "/out/sub"] {
         let listed = dest
-            .get_metadata(&AppPath::legacy_unchecked(Path::new(folder)))
+            .get_metadata(AppPath::from_normalized(folder).expect("a canonical path"))
             .await
             .unwrap()
             .modified_at;

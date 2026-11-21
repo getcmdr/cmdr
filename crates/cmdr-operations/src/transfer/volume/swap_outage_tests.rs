@@ -350,7 +350,7 @@ fn act_once_it_waits(
 /// Every `.cmdr-temp-*` aside in `folder`.
 async fn asides_in(volume: &InMemoryVolume, folder: &str) -> Vec<PathBuf> {
     volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(folder)), None)
+        .list_directory(AppPath::from_normalized(folder).expect("a canonical path"), None)
         .await
         .unwrap()
         .into_iter()
@@ -362,7 +362,7 @@ async fn asides_in(volume: &InMemoryVolume, folder: &str) -> Vec<PathBuf> {
 /// Every `.cmdr-tmp-*` in `folder`.
 async fn temps_in(volume: &InMemoryVolume, folder: &str) -> Vec<PathBuf> {
     volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(folder)), None)
+        .list_directory(AppPath::from_normalized(folder).expect("a canonical path"), None)
         .await
         .unwrap()
         .into_iter()

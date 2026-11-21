@@ -653,7 +653,8 @@ async fn a_directory_source_takes_no_slot_from_the_file_window() {
         for i in 0..3 {
             let leaf = format!("/{dir}/leaf{i}.bin");
             assert!(
-                dest.exists(&AppPath::legacy_unchecked(Path::new(&leaf))).await,
+                dest.exists(AppPath::from_normalized(&leaf).expect("a canonical path"))
+                    .await,
                 "{leaf} never landed"
             );
         }
@@ -941,7 +942,10 @@ async fn a_sibling_landing_when_another_source_fails_lands_and_is_recorded() {
     let source_inner = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for name in ["/fail.bin", "/lands.bin"] {
         source_inner
-            .create_file(&AppPath::legacy_unchecked(Path::new(name)), &vec![7u8; 20_000])
+            .create_file(
+                AppPath::from_normalized(name).expect("a canonical path"),
+                &vec![7u8; 20_000],
+            )
             .await
             .unwrap();
     }

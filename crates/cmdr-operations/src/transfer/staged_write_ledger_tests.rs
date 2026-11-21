@@ -193,7 +193,7 @@ async fn swap_over(state: &Arc<WriteOperationState>) -> (Arc<InMemoryVolume>, Ar
 /// Every aside (`.cmdr-temp-*`) in `folder`.
 async fn asides_in(volume: &InMemoryVolume, folder: &str) -> Vec<PathBuf> {
     volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(folder)), None)
+        .list_directory(AppPath::from_normalized(folder).expect("a canonical path"), None)
         .await
         .unwrap()
         .into_iter()

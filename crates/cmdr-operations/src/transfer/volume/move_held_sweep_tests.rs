@@ -185,10 +185,16 @@ async fn a_barrier_refused_mid_move_keeps_its_batch() {
     }
     for moved in ["/f00.txt", "/f01.txt"] {
         assert!(
-            !source.exists(&AppPath::legacy_unchecked(Path::new(moved))).await,
+            !source
+                .exists(AppPath::from_normalized(moved).expect("a canonical path"))
+                .await,
             "{moved}: a held barrier proved it"
         );
-        assert!(dest_inner.exists(&AppPath::legacy_unchecked(Path::new(moved))).await);
+        assert!(
+            dest_inner
+                .exists(AppPath::from_normalized(moved).expect("a canonical path"))
+                .await
+        );
     }
     assert!(
         source.exists(app_path!("/f02.txt")).await,
@@ -197,10 +203,14 @@ async fn a_barrier_refused_mid_move_keeps_its_batch() {
     assert!(dest_inner.exists(app_path!("/f02.txt")).await, "beside its landed copy");
     assert_eq!(last_removed(&events, "/f02.txt"), Some(false));
     for untouched in ["/f03.txt", "/f04.txt"] {
-        assert!(source.exists(&AppPath::legacy_unchecked(Path::new(untouched))).await);
+        assert!(
+            source
+                .exists(AppPath::from_normalized(untouched).expect("a canonical path"))
+                .await
+        );
         assert!(
             !dest_inner
-                .exists(&AppPath::legacy_unchecked(Path::new(untouched)))
+                .exists(AppPath::from_normalized(untouched).expect("a canonical path"))
                 .await,
             "{untouched}: never started"
         );
@@ -343,11 +353,14 @@ async fn a_refused_sweep_keeps_the_rest_of_its_batch() {
     );
     for kept in ["/f01.txt", "/f02.txt"] {
         assert!(
-            source_inner.exists(&AppPath::legacy_unchecked(Path::new(kept))).await,
+            source_inner
+                .exists(AppPath::from_normalized(kept).expect("a canonical path"))
+                .await,
             "{kept}: still at the source"
         );
         assert!(
-            dest.exists(&AppPath::legacy_unchecked(Path::new(kept))).await,
+            dest.exists(AppPath::from_normalized(kept).expect("a canonical path"))
+                .await,
             "{kept} landed"
         );
         assert_eq!(last_removed(&events, kept), Some(false));
@@ -400,11 +413,14 @@ async fn a_failed_copy_still_sweeps_the_sources_held_before_it() {
     assert_eq!(dest.calls_to(FaultyOp::FlushWrites), 1, "one closing barrier");
     for moved in ["/f00.txt", "/f01.txt"] {
         assert!(
-            !source_inner.exists(&AppPath::legacy_unchecked(Path::new(moved))).await,
+            !source_inner
+                .exists(AppPath::from_normalized(moved).expect("a canonical path"))
+                .await,
             "{moved}: proven, so moved"
         );
         assert!(
-            dest.exists(&AppPath::legacy_unchecked(Path::new(moved))).await,
+            dest.exists(AppPath::from_normalized(moved).expect("a canonical path"))
+                .await,
             "{moved} landed"
         );
     }
@@ -430,11 +446,14 @@ async fn a_failed_copy_whose_closing_barrier_refuses_keeps_the_held_sources() {
     assert!(dest.fault_fired(FaultyOp::FlushWrites));
     for kept in ["/f00.txt", "/f01.txt"] {
         assert!(
-            source_inner.exists(&AppPath::legacy_unchecked(Path::new(kept))).await,
+            source_inner
+                .exists(AppPath::from_normalized(kept).expect("a canonical path"))
+                .await,
             "{kept}: still at the source, no barrier proved it"
         );
         assert!(
-            dest.exists(&AppPath::legacy_unchecked(Path::new(kept))).await,
+            dest.exists(AppPath::from_normalized(kept).expect("a canonical path"))
+                .await,
             "{kept} landed"
         );
     }

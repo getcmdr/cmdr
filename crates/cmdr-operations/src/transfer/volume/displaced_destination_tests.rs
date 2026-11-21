@@ -49,7 +49,7 @@ async fn share(lane: &str, meanwhile: Meanwhile) -> Share {
     let inner = Arc::new(InMemoryVolume::new("Testnas"));
     inner.create_directory(app_path!("/photos")).await.unwrap();
     inner
-        .create_file(&AppPath::legacy_unchecked(Path::new(ORIGINAL)), BYTES)
+        .create_file(AppPath::from_normalized(ORIGINAL).expect("a canonical path"), BYTES)
         .await
         .unwrap();
     let nas = OutageVolume::wrap(Arc::clone(&inner), lane);

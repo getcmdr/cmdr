@@ -14,7 +14,7 @@ use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::testing::wait_until_async;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
 use cmdr_operation_log::types::{Initiator, OperationId};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::oneshot;
@@ -30,7 +30,7 @@ async fn volumes(name: &str) -> (Arc<InMemoryVolume>, Arc<dyn Volume>) {
     );
     for file in ["/a.txt", "/b.txt"] {
         source
-            .create_file(&AppPath::legacy_unchecked(Path::new(file)), b"restored")
+            .create_file(AppPath::from_normalized(file).expect("a canonical path"), b"restored")
             .await
             .expect("seed");
     }

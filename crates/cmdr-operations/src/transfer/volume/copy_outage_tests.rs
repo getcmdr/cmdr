@@ -47,7 +47,10 @@ async fn source_with(count: usize) -> Arc<dyn Volume> {
         let body = format!("file {n}");
         for path in [format!("/batch/f{n}.txt"), format!("/f{n}.txt")] {
             source
-                .create_file(&AppPath::legacy_unchecked(Path::new(&path)), body.as_bytes())
+                .create_file(
+                    AppPath::from_normalized(&path).expect("a canonical path"),
+                    body.as_bytes(),
+                )
                 .await
                 .unwrap();
             source.set_modified_at(Path::new(&path), Some(SOURCE_MODIFIED));
@@ -85,7 +88,9 @@ fn come_back_when_waited_for(state: &Arc<WriteOperationState>, nas: &Arc<OutageV
 }
 
 async fn landed(inner: &Arc<InMemoryVolume>, path: &str) -> bool {
-    inner.exists(&AppPath::legacy_unchecked(Path::new(path))).await
+    inner
+        .exists(AppPath::from_normalized(path).expect("a canonical path"))
+        .await
 }
 
 /// The commonest copy there is: one folder, so the SERIAL driver and the merge
@@ -160,7 +165,7 @@ async fn a_download_waits_out_a_source_share_that_drops_at_the_open() {
         let path = format!("/f{n}.txt");
         source_inner
             .create_file(
-                &AppPath::legacy_unchecked(Path::new(&path)),
+                AppPath::from_normalized(&path).expect("a canonical path"),
                 format!("file {n}").as_bytes(),
             )
             .await
@@ -638,7 +643,7 @@ async fn names_in_batch(inner: &Arc<InMemoryVolume>) -> Vec<String> {
 
 async fn content_of(inner: &Arc<InMemoryVolume>, path: &str) -> Vec<u8> {
     let mut stream = inner
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .open_read_stream(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .expect("the file opens");
     let mut bytes = Vec::new();
@@ -849,7 +854,7 @@ async fn a_settled_single_shot_write_gets_the_date_its_stamp_lost() {
             "f{n} must land byte-exact"
         );
         let entry = inner
-            .get_metadata(&AppPath::legacy_unchecked(Path::new(&path)))
+            .get_metadata(AppPath::from_normalized(&path).expect("a canonical path"))
             .await
             .expect("it landed");
         assert_eq!(entry.modified_at, Some(SOURCE_MODIFIED), "the source's date is on f{n}");

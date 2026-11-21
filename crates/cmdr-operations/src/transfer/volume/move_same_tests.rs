@@ -245,7 +245,7 @@ async fn same_volume_move_creates_missing_nested_dest() {
     for dir in ["/archive", "/archive/2026"] {
         assert!(
             volume
-                .is_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+                .is_directory(AppPath::from_normalized(dir).expect("a canonical path"))
                 .await
                 .expect("ancestor statable"),
             "{dir} should be a directory"

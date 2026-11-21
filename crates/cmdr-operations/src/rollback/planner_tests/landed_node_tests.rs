@@ -11,7 +11,6 @@
 
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
-use std::path::Path;
 use std::sync::Arc;
 
 use super::test_support::*;
@@ -24,7 +23,7 @@ const ORIGINAL: &str = "/DCIM/a.jpg";
 const LANDED: &str = "/photos/a.jpg";
 
 async fn identity_at(vol: &InMemoryVolume, path: &str) -> NodeIdentity {
-    vol.node_identity(&AppPath::legacy_unchecked(Path::new(path)))
+    vol.node_identity(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .expect("stat")
         .expect("the double reports an identity")
@@ -32,7 +31,7 @@ async fn identity_at(vol: &InMemoryVolume, path: &str) -> NodeIdentity {
 
 /// Someone else's file takes the landed one's place: same name, same size, same date.
 async fn replace_with_a_twin(vol: &InMemoryVolume, path: &str, bytes: &[u8]) {
-    vol.delete(&AppPath::legacy_unchecked(Path::new(path)))
+    vol.delete(AppPath::from_normalized(path).expect("a canonical path"))
         .await
         .expect("the landed file leaves");
     put(vol, path, bytes).await;
@@ -145,7 +144,7 @@ async fn undoing_a_copy_whose_volume_cannot_report_an_identity_keeps_it() {
 #[tokio::test]
 async fn undoing_a_copy_that_is_already_gone_counts_it_reversed() {
     let (rig, v, landed) = copied().await;
-    v.delete(&AppPath::legacy_unchecked(Path::new(LANDED)))
+    v.delete(AppPath::from_normalized(LANDED).expect("a canonical path"))
         .await
         .expect("gone");
     seed_copy(&rig, Some(landed));

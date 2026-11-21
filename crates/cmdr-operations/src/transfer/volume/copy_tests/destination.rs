@@ -49,7 +49,7 @@ async fn cross_volume_copy_creates_missing_nested_dest() {
     // Every ancestor was created as a directory.
     for dir in ["/incoming", "/incoming/2026", "/incoming/2026/trip"] {
         assert!(
-            dest.is_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            dest.is_directory(AppPath::from_normalized(dir).expect("a canonical path"))
                 .await
                 .expect("ancestor statable"),
             "{dir} should be a directory"
