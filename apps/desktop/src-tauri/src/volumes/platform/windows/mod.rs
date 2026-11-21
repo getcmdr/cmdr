@@ -156,8 +156,8 @@ fn drive_row(drive: &WindowsDrive) -> LocationInfo {
             drive.fs_type.clone()
         },
         mount_is_read_only: drive.read_only,
-        // No Recycle Bin yet (task 36), and a share never had one.
-        supports_trash: !is_share,
+        // Only a fixed disk keeps a Recycle Bin; elsewhere a delete is for good, so it asks.
+        supports_trash: drive.kind.has_recycle_bin(),
         ..row(&drive.id, &drive.display_name(), Path::new(&drive.root), category)
     }
 }

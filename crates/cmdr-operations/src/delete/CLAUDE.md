@@ -13,9 +13,8 @@ A local-FS walker, a volume walker (every backend), and OS-native trash.
   `delete_batch_size`. DETAILS § "Volume-delete internals".
 - **`outage.rs`**: waits out a dropped share. ❗ A re-run re-checks the entry (kind, size); a mismatch stops the delete
   (`ChangedWhileDisconnected`). ❌ No `through_outages` around a delete. DETAILS § "Waiting out a dropped share".
-- **`trash.rs`**: `move_to_trash_sync()`, `trash_files_with_progress()` (batch, per-item progress, cancel), and
-  `trash_dir_for_path()` (❌ keep its ancestor walk, DETAILS § Where a trash is). Each item it can't take emits a
-  `Failed` source-item event.
+- **`trash.rs`**: the batch (per-item progress, cancel; a refused item emits `Failed`); the OS arms in `trash/platform/`
+  (❌ keep macOS's `trash_dir_for_path` ancestor walk, DETAILS § Where a trash is).
 - **`cloud_trash.rs`**: `routing_for_selection()` behind the `trash_routing_for_paths` command. DETAILS § "A trash of
   online-only cloud content becomes a delete".
 - **`volume_start.rs`**: a volume delete's managed `async` lifecycle. DETAILS § "The volume delete's own lifecycle".
@@ -39,16 +38,16 @@ A local-FS walker, a volume walker (every backend), and OS-native trash.
   (`../home_folder.rs`). DETAILS § "The home folder stays".
 - **❌ Never resolve a top-level source's type with `.unwrap_or(false)`.** Hand the `Option` to `scan_volume_recursive`,
   which propagates a failed probe: a guessed "file" books zero bytes for a whole tree.
-- **Trash has no scan phase**: `trashItemAtURL` is atomic per top-level item, so progress tracks items. A PARTLY refused
-  batch still COMPLETES, and its event carries `refused` (count + `strongest_refusal`): ❌ never `None`, or the ending
-  reads as a clean success.
+- **Trash has no scan phase**: it's atomic per top-level item, so progress tracks items. A PARTLY refused batch still
+  COMPLETES, carrying `refused` (count + `strongest_refusal`), ❌ never `None` (a clean success).
 - **ONLINE-ONLY content (`SF_DATALESS`) in `~/Library/CloudStorage/<domain>/` trashes as a permanent delete**: trashing
   an evicted file DOWNLOADS it first. ❌ Never route on the folder alone (an ordinary Dropbox file trashes fine; routing
   it is data loss), ❌ never on the refusal; only a provider we know by name, all-or-nothing. A FOLDER is answered by
   the scan preview's walk (`OnlineOnlyWatch`), ❌ no second walk. DETAILS.
-- **A refusal carries a typed `TrashRefusalKind`, read from the `NSError` DOMAIN + CODE**, ❌ never its localized words
-  (`error-string-match` forbids it). A failed batch is `WriteOperationError::TrashRefused`, ❌ not an `IoError` (that
-  leaves the dialog only "try again"), reporting `strongest_refusal`, ❌ not the most common one.
+- **A refusal carries a typed `TrashRefusalKind`, from the OS's CODE** (`NSError` domain + code, the Shell's `HRESULT`),
+  ❌ never its words. ❗ Windows' Shell DELETES what it can't recycle: ❌ keep the sink's veto (DETAILS § Windows). A
+  failed batch is `WriteOperationError::TrashRefused`, ❌ not an `IoError`, reporting `strongest_refusal`, ❌ not the
+  most common one.
 - **A test that really trashes holds `testing::TrashCleanup`** (`docs/testing.md`).
 - **Delete and trash don't `fsync`, and ❌ never a global `sync(2)`** (it stalled every other app; `clippy.toml` bans
   `libc::sync`).

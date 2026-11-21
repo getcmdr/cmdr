@@ -133,6 +133,11 @@ xattr = "1"
 # The write probe's access mask, share mode, and flag constants
 # (`local_disk/platform/windows.rs`). The version `cmdr-fs` and `cmdr-local` use.
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Storage_FileSystem"] }
+# The Recycle Bin (`delete/trash/platform/windows/`): the Shell's `IFileOperation`
+# and the progress sink it calls back, a COM object `windows-core`'s `implement`
+# builds. The `windows` / `windows-core` versions the app already uses.
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_System_Com", "Win32_UI_Shell"] }
+windows-core = "0.62"
 
 [dev-dependencies]
 # Depending on ourselves turns the `testing` feature on for every DEV target and

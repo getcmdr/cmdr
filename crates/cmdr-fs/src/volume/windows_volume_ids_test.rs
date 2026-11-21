@@ -6,6 +6,22 @@ use crate::volume::VolumeScheme;
 const C_GUID: &str = r"\\?\Volume{7ee27290-b54a-45d8-bcfd-9f3bd4318a54}\";
 const D_GUID: &str = r"\\?\Volume{caa3226d-b12e-447b-acbe-74d20a3f2a83}\";
 
+/// The Recycle Bin lives on fixed disks only: Windows deletes for good on a USB stick, a
+/// share, a `subst` letter, a RAM disk, and a disc, so those ask before a permanent delete.
+#[test]
+fn only_a_fixed_disk_keeps_a_recycle_bin() {
+    assert!(WindowsDriveKind::Fixed.has_recycle_bin());
+    for kind in [
+        WindowsDriveKind::Removable,
+        WindowsDriveKind::Optical,
+        WindowsDriveKind::Ram,
+        WindowsDriveKind::Network,
+        WindowsDriveKind::Subst,
+    ] {
+        assert!(!kind.has_recycle_bin(), "{kind:?}");
+    }
+}
+
 fn local(guid_path: &str) -> WindowsVolumeIdentity {
     WindowsVolumeIdentity::Local {
         guid_path: guid_path.to_string(),

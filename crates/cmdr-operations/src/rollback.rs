@@ -209,8 +209,12 @@ impl RollbackRunner for ReversalRunner {
                         );
                     if renames_in_one_call {
                         // A same-FS move / rename-back / trash-restore: one rename,
-                        // atomic, nothing to stream.
-                        Ok(from.rename(from_path, to_path, force).await?)
+                        // atomic, nothing to stream. A restore out of Windows' Recycle
+                        // Bin then drops the item's `$I` record, or the bin would list
+                        // an entry whose item is gone (a no-op for every other path).
+                        from.rename(from_path, to_path, force).await?;
+                        crate::delete::trash::forget_restored(&std_seam_path(from_path));
+                        Ok(())
                     } else {
                         // Cross-volume, or a rename that copies: the staged per-file move, which is what buys
                         // mid-file cancel, byte progress, a `.cmdr-tmp-*` landing,

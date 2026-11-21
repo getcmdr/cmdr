@@ -435,6 +435,14 @@ impl Volume for LocalWindowsVolume {
         Some(self.mount)
     }
 
+    /// A local disk's Recycle Bin, a share's none: the mount class's answer, as on POSIX. A
+    /// removable or `subst` drive still answers yes here (its class is `LocalDisk`); the
+    /// switcher row says no for it (`WindowsDriveKind::has_recycle_bin`), and the Recycle Bin
+    /// arm refuses rather than delete for good.
+    fn has_trash(&self) -> bool {
+        self.mount.has_trash()
+    }
+
     fn supported_dates<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = SupportedDates> + Send + 'a>> {
         let at = self.locate(path);
         Box::pin(blocking("supported_dates", move || match at {
