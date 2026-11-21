@@ -22,10 +22,10 @@ pub(super) fn removal_target(unit: &RollbackUnit) -> (String, PathBuf) {
 }
 
 /// A unit's recorded path as the app path it holds, for the acts' volume reads and
-/// arithmetic. ❗ The planner's one crossing: [`RollbackUnit`] and the runner's
-/// [`super::InverseAct`] carry `std::path` values (the engine in `cmdr-operations` reads
-/// them), so the path is the stored app text in a `PathBuf`, and this reads it back
-/// losslessly. It goes when those two types carry app paths.
+/// arithmetic and the runner's [`super::InverseAct`]. ❗ The planner's one crossing:
+/// [`RollbackUnit`] carries `std::path` values, so the path is the stored app text in a
+/// `PathBuf`, and this reads it back losslessly. It goes when the unit carries app paths
+/// built through the escape mark's `StoredPathReading`.
 pub(super) fn app_path_of(path: &Path) -> Cow<'_, AppPath> {
     AppPath::legacy_unchecked(path)
 }

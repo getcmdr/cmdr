@@ -3,7 +3,6 @@
 //! first, whatever order their `seq`s put them in the stream; and what a sweep
 //! leaves durable when it's stopped or dropped inside.
 
-use cmdr_fs::app_path::AppPath;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -89,7 +88,7 @@ impl RollbackRunner for HangMidSweep {
         Box::pin(async move {
             match act {
                 InverseAct::RemoveDir { volume, path } => {
-                    volume.delete(&AppPath::legacy_unchecked(path)).await?;
+                    volume.delete(path).await?;
                     self.dirs_removed.fetch_add(1, Ordering::SeqCst);
                     Ok(())
                 }

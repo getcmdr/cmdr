@@ -21,7 +21,6 @@
 //! live half of `pause_operation` / `resume_operation`, by operation id.
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
@@ -327,9 +326,9 @@ impl RollbackRunner for StopAfterOneDir {
             match act {
                 InverseAct::RemoveDir { volume, path } => {
                     self.dirs_removed.fetch_add(1, Ordering::SeqCst);
-                    Ok(volume.delete(&AppPath::legacy_unchecked(path)).await?)
+                    Ok(volume.delete(path).await?)
                 }
-                InverseAct::RemoveFile { volume, path } => Ok(volume.delete(&AppPath::legacy_unchecked(path)).await?),
+                InverseAct::RemoveFile { volume, path } => Ok(volume.delete(path).await?),
                 InverseAct::Restore { .. } | InverseAct::WriteXattr { .. } => Err(VolumeError::NotSupported.into()),
             }
         })

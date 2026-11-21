@@ -7,7 +7,7 @@
 //! through the gate and the real executor.
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::PathArithmetic;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -765,18 +765,12 @@ impl RollbackRunner for ParkCounting {
                     ..
                 } => {
                     if let Some(parent) = to_path.parent() {
-                        from.create_directory_all(&AppPath::legacy_unchecked(parent)).await?;
+                        from.create_directory_all(parent).await?;
                     }
-                    Ok(from
-                        .rename(
-                            &AppPath::legacy_unchecked(from_path),
-                            &AppPath::legacy_unchecked(to_path),
-                            force,
-                        )
-                        .await?)
+                    Ok(from.rename(from_path, to_path, force).await?)
                 }
                 InverseAct::RemoveDir { volume, path } | InverseAct::RemoveFile { volume, path } => {
-                    Ok(volume.delete(&AppPath::legacy_unchecked(path)).await?)
+                    Ok(volume.delete(path).await?)
                 }
                 InverseAct::WriteXattr { .. } => Err(VolumeError::NotSupported.into()),
             }

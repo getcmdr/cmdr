@@ -29,8 +29,7 @@ pub(super) async fn restore_tags(
     let Some(volume) = volumes.get(&unit.source_volume_id) else {
         return ItemResult::Skipped(SkipReason::Failed);
     };
-    let path = unit.source_path.as_path();
-    let app = app_path_of(path);
+    let app = app_path_of(&unit.source_path);
     let batch = [app.clone().into_owned()];
     let answer = volume
         .read_xattr_many(&batch, FINDER_TAGS_XATTR, XattrReadMode::Verified)
@@ -53,7 +52,7 @@ pub(super) async fn restore_tags(
         .perform(InverseAct::WriteXattr {
             volume_id: &unit.source_volume_id,
             volume: &volume,
-            path,
+            path: &app,
             name: FINDER_TAGS_XATTR,
             value: &tags.before,
         })

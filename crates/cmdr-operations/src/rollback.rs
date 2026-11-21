@@ -27,7 +27,8 @@
 //! pause (the op's `PauseGate`), and progress (`write-progress` frames).
 
 use crate::rt::Instant;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, PathArithmetic};
+use std::borrow::Cow;
 use std::future::Future;
 use std::ops::ControlFlow;
 use std::path::Path;
@@ -195,7 +196,7 @@ impl RollbackRunner for ReversalRunner {
                     // never produce. Creating a directory only ever adds, so it
                     // can't take anything away from the user.
                     if let Some(parent) = to_path.parent() {
-                        to.create_directory_all(&AppPath::legacy_unchecked(parent)).await?;
+                        to.create_directory_all(parent).await?;
                     }
                     // ❗ On an object store a rename of a big file isn't one call
                     // (`Volume::rename_work`), and `rename` refuses it: that one
@@ -203,19 +204,13 @@ impl RollbackRunner for ReversalRunner {
                     // server, where it can) and then deleted.
                     let renames_in_one_call = same_volume
                         && matches!(
-                            from.rename_work(&AppPath::legacy_unchecked(from_path)).await,
+                            from.rename_work(from_path).await,
                             Ok(cmdr_fs::volume::RenameWork::OneCall)
                         );
                     if renames_in_one_call {
                         // A same-FS move / rename-back / trash-restore: one rename,
                         // atomic, nothing to stream.
-                        Ok(from
-                            .rename(
-                                &AppPath::legacy_unchecked(from_path),
-                                &AppPath::legacy_unchecked(to_path),
-                                force,
-                            )
-                            .await?)
+                        Ok(from.rename(from_path, to_path, force).await?)
                     } else {
                         // Cross-volume, or a rename that copies: the staged per-file move, which is what buys
                         // mid-file cancel, byte progress, a `.cmdr-tmp-*` landing,
@@ -229,11 +224,16 @@ impl RollbackRunner for ReversalRunner {
                             self.frame(written, false);
                             ControlFlow::Continue(())
                         };
-                        Ok(
-                            move_file_across_volumes(from, from_path, to, to_path, &self.state, &on_progress)
-                                .await
-                                .map(|_bytes| ())?,
+                        Ok(move_file_across_volumes(
+                            from,
+                            &std_seam_path(from_path),
+                            to,
+                            &std_seam_path(to_path),
+                            &self.state,
+                            &on_progress,
                         )
+                        .await
+                        .map(|_bytes| ())?)
                     }
                 }
                 // A tag write's undo: one attribute, atomic per attribute on every
@@ -247,9 +247,11 @@ impl RollbackRunner for ReversalRunner {
                     name,
                     value,
                 } => {
-                    volume
-                        .write_xattr(&AppPath::legacy_unchecked(path), name, value)
-                        .await?;
+                    volume.write_xattr(path, name, value).await?;
+                    // The listings seam files panes by `std::path`, so the folder is the
+                    // `Path` parent it always was (`sftp://h` for `sftp://h/a`, where the
+                    // app path's own parent is the root `sftp://h/`).
+                    let path = std_seam_path(path);
                     if let Some(parent) = path.parent() {
                         self.state.scope().host().listings().row_xattrs_may_have_changed(
                             volume_id,
@@ -302,15 +304,23 @@ impl RollbackRunner for ReversalRunner {
 async fn delete_clearing_blockers(
     runtime: &Handle,
     volume: &Arc<dyn Volume>,
-    path: &Path,
+    path: &AppPath,
     kind: NodeKind,
 ) -> Result<(), ActRefusal> {
-    super::unblocked_removal::delete_clearing_blockers(runtime, volume, path, kind)
+    super::unblocked_removal::delete_clearing_blockers(runtime, volume, &std_seam_path(path), kind)
         .await
         .map_err(|refused| match refused {
             RemovalRefused::Volume(e) => ActRefusal::Volume(e),
             RemovalRefused::Locked => ActRefusal::Locked,
         })
+}
+
+/// A decided act's path for a callee that still speaks `std::path` (the reversal's blocker
+/// clearing, the staged cross-volume move, and the listings seam): the planner's app path
+/// as the `Path` the journal row held, losslessly. The executor's one crossing; it goes
+/// when those callees take app paths.
+fn std_seam_path(path: &AppPath) -> Cow<'_, Path> {
+    path.as_std_legacy()
 }
 
 impl super::types::OperationSnapshot {
