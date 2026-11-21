@@ -932,9 +932,10 @@ async fn entry_paths_keep_a_url_rooted_archive_path_spelled_exactly() {
         )
         .await
         .expect("load remote zip into parent store");
-    let (archive_path, inner) = crate::confirm_archive_boundary_on_parent_at(parent.as_ref(), pane_path)
-        .await
-        .expect("boundary");
+    let (archive_path, inner) =
+        crate::boundary_on_parent::confirm_archive_boundary_on_parent_at(parent.as_ref(), pane_path)
+            .await
+            .expect("boundary");
     assert!(inner.is_empty(), "the pane sits at the archive root");
     let volume = ArchiveVolume::new_at(
         Arc::clone(&parent) as Arc<dyn Volume>,

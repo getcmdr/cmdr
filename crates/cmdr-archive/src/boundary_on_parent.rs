@@ -59,7 +59,14 @@ pub async fn confirm_remote_archive_boundary(parent: &dyn Volume, archive_path: 
 
 /// [`confirm_archive_boundary_on_parent`] for an app path: the split when `path`
 /// crosses into a CONFIRMED archive on `parent`, forked the same way.
-pub async fn confirm_archive_boundary_on_parent_at(
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "a typed twin the host switches to when its routing speaks app paths"
+    )
+)]
+pub(crate) async fn confirm_archive_boundary_on_parent_at(
     parent: &dyn Volume,
     path: &AppPath,
 ) -> Option<(AppPathBuf, RelativeAppPathBuf)> {
@@ -73,7 +80,7 @@ pub async fn confirm_archive_boundary_on_parent_at(
 }
 
 /// [`confirm_remote_archive_boundary`] for an app path.
-pub async fn confirm_remote_archive_boundary_at(parent: &dyn Volume, archive_path: &AppPath) -> bool {
+pub(crate) async fn confirm_remote_archive_boundary_at(parent: &dyn Volume, archive_path: &AppPath) -> bool {
     match parent.get_metadata(archive_path).await {
         Ok(meta) if !meta.is_directory => {}
         // A real remote folder named `foo.zip`, a missing file, or a metadata

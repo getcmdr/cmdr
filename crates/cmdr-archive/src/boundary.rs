@@ -144,6 +144,13 @@ pub fn path_targets_archive_file(path: &Path) -> bool {
 /// an archive (`sftp://box.zip/…`) is the first match there too, and since it
 /// names no file the split is `None`. A name is read as its native text
 /// ([`native_text`]), as the `std::path` form reads a component.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "a typed twin the host switches to when its routing speaks app paths"
+    )
+)]
 pub(crate) fn archive_boundary_candidate_at(path: &AppPath) -> Option<(AppPathBuf, RelativeAppPathBuf)> {
     let path = path.to_canonical().ok()?;
     let text = path.as_str();
@@ -192,13 +199,27 @@ fn native_text(name: &str) -> Option<Cow<'_, str>> {
 /// into a confirmed archive on this machine's disk. The archive file crosses to
 /// the OS at [`AppPath::to_native`]; a path the OS can't open (a scheme path) is
 /// no archive here.
-pub fn confirm_archive_boundary_at(path: &AppPath) -> Option<(AppPathBuf, RelativeAppPathBuf)> {
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "a typed twin the host switches to when its routing speaks app paths"
+    )
+)]
+pub(crate) fn confirm_archive_boundary_at(path: &AppPath) -> Option<(AppPathBuf, RelativeAppPathBuf)> {
     let (archive, inner) = archive_boundary_candidate_at(path)?;
     confirms_on_disk(&archive).then_some((archive, inner))
 }
 
 /// Whether the archive at `archive` is a real file on this machine's disk
 /// carrying its format's magic.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "a typed twin the host switches to when its routing speaks app paths"
+    )
+)]
 pub(crate) fn confirms_on_disk(archive: &AppPath) -> bool {
     let Ok(native) = native_of(archive) else {
         return false;
@@ -212,6 +233,13 @@ pub(crate) fn confirms_on_disk(archive: &AppPath) -> bool {
 /// Where the local backing file of an archive at `path` lives on this machine:
 /// [`AppPath::to_native`], the one crossing. A browser build has no local files,
 /// so every path there is `NotLocal`.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "a typed twin the host switches to when its routing speaks app paths"
+    )
+)]
 pub(crate) fn native_of(path: &AppPath) -> Result<PathBuf, NativeRefusal> {
     #[cfg(not(target_family = "wasm"))]
     return path.to_native();
@@ -223,17 +251,38 @@ pub(crate) fn native_of(path: &AppPath) -> Result<PathBuf, NativeRefusal> {
 }
 
 /// [`path_crosses_archive_boundary`] for an app path.
-pub fn path_crosses_archive_boundary_at(path: &AppPath) -> bool {
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "a typed twin the host switches to when its routing speaks app paths"
+    )
+)]
+pub(crate) fn path_crosses_archive_boundary_at(path: &AppPath) -> bool {
     confirm_archive_boundary_at(path).is_some()
 }
 
 /// [`path_is_inside_archive`] for an app path.
-pub fn path_is_inside_archive_at(path: &AppPath) -> bool {
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "a typed twin the host switches to when its routing speaks app paths"
+    )
+)]
+pub(crate) fn path_is_inside_archive_at(path: &AppPath) -> bool {
     confirm_archive_boundary_at(path).is_some_and(|(_archive, inner)| !inner.is_empty())
 }
 
 /// [`path_targets_archive_file`] for an app path.
-pub fn path_targets_archive_file_at(path: &AppPath) -> bool {
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "a typed twin the host switches to when its routing speaks app paths"
+    )
+)]
+pub(crate) fn path_targets_archive_file_at(path: &AppPath) -> bool {
     let Some((archive, _inner)) = archive_boundary_candidate_at(path) else {
         return false;
     };

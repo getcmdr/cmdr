@@ -94,10 +94,7 @@ pub use boundary::{
     confirm_archive_boundary, has_supported_archive_extension, path_crosses_archive_boundary, path_is_inside_archive,
     path_targets_archive_file,
 };
-pub use boundary_on_parent::{
-    confirm_archive_boundary_on_parent, confirm_archive_boundary_on_parent_at, confirm_remote_archive_boundary,
-    confirm_remote_archive_boundary_at,
-};
+pub use boundary_on_parent::{confirm_archive_boundary_on_parent, confirm_remote_archive_boundary};
 pub use read::{
     ArchiveByteSource, ArchiveEntryReader, ArchiveError, ArchiveFormat, ArchiveIndex, ArchiveIndexCache, ArchiveNode,
     BytesSource, DEFAULT_TAIL_CACHE_LEN, LocalFileSource, QuarantineReason, SanitizedName, SubtreeExtractReader,

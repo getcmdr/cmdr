@@ -343,20 +343,11 @@ var surfaceGuardedCrates = []struct {
 		// `boundary`, `read`, `volume`, `watch`. `mutation` is private and reaches the
 		// root only as the `mutator` re-export; `test_fixtures` is `testing`-gated and
 		// counts apart.
-		//
-		// Raised 2026-11-21 (#1225, the app path), root 33 → 35 and subsystem 32 → 37:
-		// the typed `_at` twins beside the `std::path` forms the host still calls
-		// (`ArchiveVolume::new_at`, `boundary::{confirm_archive_boundary_at,
-		// path_crosses_archive_boundary_at, path_is_inside_archive_at,
-		// path_targets_archive_file_at}`, and the root's
-		// `confirm_archive_boundary_on_parent_at` and `confirm_remote_archive_boundary_at`).
-		// Each old form goes with its last caller (the operations engine and the app
-		// convert), and these numbers come back down with it.
 		Name: "cmdr-archive",
 		Ceilings: surfaceCeilings{
-			RootPromises:   35,
+			RootPromises:   33,
 			PublicModules:  4,
-			SubsystemItems: 37,
+			SubsystemItems: 32,
 		},
 	},
 	{

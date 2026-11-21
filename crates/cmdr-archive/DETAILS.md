@@ -85,7 +85,8 @@ for a bridge caller also accepts an already-inner relative path and an empty pat
 own filename and path.
 
 - **Two constructors** (Decision/Why: the wave-B rule, no `pub` signature change while other crates call it):
-  `ArchiveVolume::new_at(parent, AppPathBuf, …)` is the typed one, and `ArchiveVolume::new(parent, PathBuf, …)` stays
+  `ArchiveVolume::new_at(parent, AppPathBuf, …)` is the typed one (crate-internal for now: the crate's surface cap has
+  no headroom, so it turns `pub` when its first outside caller does), and `ArchiveVolume::new(parent, PathBuf, …)` stays
   for today's callers (`cmdr-operations`' tests, the app's `archive_routing.rs`): it keeps the `PathBuf` as the native
   backing file exactly as given and takes its app spelling through the bridge, so `root()` and every row keep their text
   (pinned by `the_std_path_constructor_keeps_its_spelling_and_takes_relative_inner_paths`). It goes when those callers
@@ -328,16 +329,18 @@ An `ArchiveVolume` is never constructed here directly in production — it's min
     spelling — a regression test has to compare `to_str()`.
 - **Typed forms sit beside the `std::path` ones**
   (`boundary::{confirm_archive_boundary_at, path_crosses_archive_boundary_at, path_is_inside_archive_at, path_targets_archive_file_at}`,
-  and `confirm_archive_boundary_on_parent_at` / `confirm_remote_archive_boundary_at` at the root), for callers holding
-  an app path; the `std::path` forms stay untouched until their callers move. The typed split
-  (`archive_boundary_candidate_at`) reads the canonical twin's text left to right, root included, as the `std::path`
-  split reads components, and reads each name as its native text (`native_text`: a byte-escaped name is checked by its
-  decoded bytes, so a name that isn't UTF-8 is never an archive). The local confirm opens the archive through
-  `native_of`. Agreement with the `std::path` split is the same differential run's (every canonical generated path, 0
-  differences), with one deliberate exception set aside: a match INSIDE the root (`sftp://box.zip/…`, a POSIX-host
-  `//srv/share.zip/…` read as a UNC root) splits `None`, where the `std::path` split answered the root text, which names
-  no file, so its confirm answered `None` too. Pinned by `boundary_test.rs`'
-  `the_split_takes_the_first_archive_name_and_keeps_a_remote_root_spelled_exactly`.
+  and `boundary_on_parent::{confirm_archive_boundary_on_parent_at, confirm_remote_archive_boundary_at}`), for callers
+  holding an app path; the `std::path` forms stay untouched until their callers move. They're `pub(crate)` (tested here,
+  `expect(dead_code)` outside tests) rather than `pub`: the crate's surface cap (`index-crate-isolation`) has no
+  headroom, and raising it needs David's OK, so each turns `pub` with the consumer that switches to it (the host's
+  routing, the operations engine), as its old form goes. The typed split (`archive_boundary_candidate_at`) reads the
+  canonical twin's text left to right, root included, as the `std::path` split reads components, and reads each name as
+  its native text (`native_text`: a byte-escaped name is checked by its decoded bytes, so a name that isn't UTF-8 is
+  never an archive). The local confirm opens the archive through `native_of`. Agreement with the `std::path` split is
+  the same differential run's (every canonical generated path, 0 differences), with one deliberate exception set aside:
+  a match INSIDE the root (`sftp://box.zip/…`, a POSIX-host `//srv/share.zip/…` read as a UNC root) splits `None`, where
+  the `std::path` split answered the root text, which names no file, so its confirm answered `None` too. Pinned by
+  `boundary_test.rs`' `the_split_takes_the_first_archive_name_and_keeps_a_remote_root_spelled_exactly`.
 - **`SUPPORTED_ARCHIVE_EXTENSIONS` is the one source of truth** shared by `is_archive` and boundary detection; confirm's
   magic check carries a sibling signature per format.
 - **Write-routing reuses the same parent-aware confirm.** The write seams (delete / rename / create / copy-out-source)
