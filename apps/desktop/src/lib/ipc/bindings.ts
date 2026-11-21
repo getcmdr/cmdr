@@ -11751,7 +11751,7 @@ export type GoToPathResolution =
       parentDir: string
       // Its name.
       fileName: string
-      // As [`Self::Directory`]'s.
+      // As `Directory`'s.
       crossedLink: boolean
     }
   /**
@@ -11766,8 +11766,8 @@ export type GoToPathResolution =
       ancestorDir: string
     }
   /**
-   *  The input was empty or leads nowhere (no app path, or a volume that couldn't say
-   *  what a `..` means there in time).
+   *  The input was empty or leads nowhere (no app path), or a volume couldn't say in
+   *  time what a `..` means there or what's at the path or an ancestor of it.
    */
   | {
       kind: 'invalid'
