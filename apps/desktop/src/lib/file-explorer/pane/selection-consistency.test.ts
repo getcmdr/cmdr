@@ -20,6 +20,7 @@ let mockEntry: unknown = null
 let emitDirectoryDiff: ((payload: unknown) => void) | null = null
 
 vi.mock('#lib/tauri-commands/index.js', () => ({
+  getHomeFolder: vi.fn(() => Promise.resolve('/Users/test')),
   listDirectoryStart: vi.fn().mockResolvedValue({ listingId: 'mock-listing', status: { status: 'ready' } }),
   cancelListing: vi.fn().mockResolvedValue(undefined),
   listDirectoryEnd: vi.fn().mockResolvedValue(undefined),

@@ -815,10 +815,14 @@ write-access probe below anchors through too).
 
 Two niceties on top:
 
-- **Home shows as its long form.** On mount the dialog resolves `homeDir()` and, when `editedPath` is exactly `~` (the
-  destination pane sitting at home root), replaces it with the absolute path (`/Users/me`) — a bare `~` in the box reads
-  as a glitch. A `~/sub` path keeps its short form; only the exact-home case expands. Done before the scan and conflict
-  check so they run against the absolute path.
+- **Home shows as its long form.** On mount the dialog resolves the home folder (`getHomeFolder`, the backend's app-path
+  spelling) and, when `editedPath` is exactly `~` (the destination pane sitting at home root), replaces it with the
+  absolute path (`/Users/me`) — a bare `~` in the box reads as a glitch. A `~/sub` path keeps its short form; only the
+  exact-home case expands. Done before the scan and conflict check so they run against the absolute path.
+  - **Gotcha**: the home folder comes from the BACKEND as an app path, ❌ never Tauri's `homeDir()`: on Windows that
+    answers the native `C:\Users\…`, which the app-path grammar can't read, so `resolveTransferFilename` named no leaf
+    for any `~/…` target and the dialog refused every local copy with "Filename can't be empty" (#1292, verified on
+    Windows 10 22H2 build 19045, 2026-11-19).
 - **Yellow "this folder will be created" warning.** A debounced (`createDebounce`, 300 ms) `destinationExists` probe of
   the resolved destination flips `targetMissing`. When the path is structurally valid (no red `pathError`) but the
   folder doesn't exist, the field takes `TextInput`'s `warning` state (a yellow border and ring) and a yellow message

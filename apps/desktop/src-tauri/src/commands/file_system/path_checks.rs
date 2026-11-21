@@ -36,6 +36,15 @@ pub fn get_path_limits() -> PathLimits {
     }
 }
 
+/// The user's home folder as an app path (`/Users/test_user_1`, `C:/Users/test_user_1`), no
+/// trailing `/`, or `None` when the OS names none. What the frontend expands a typed or pane
+/// `~` against; the OS's own `C:\Users\…` is no app path there (#1292).
+#[tauri::command]
+#[specta::specta]
+pub fn get_home_folder() -> Option<String> {
+    cmdr_fs::tilde::home_folder()
+}
+
 /// Which names the filesystem holding `dir` on `volume_id` takes
 /// (`cmdr_operations::Operations::name_rules_at`), for the rename editor's and the
 /// New folder dialog's keystroke checks (asked once per editor), and the transfer

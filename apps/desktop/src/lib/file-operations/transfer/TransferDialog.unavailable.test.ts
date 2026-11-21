@@ -23,11 +23,8 @@ let scanErrorCb: ((e: { previewId: string; message: string; timedOut: boolean })
 
 const scanVolumeForConflictsMock = vi.fn<() => Promise<unknown[]>>(() => Promise.resolve([]))
 
-vi.mock('@tauri-apps/api/path', () => ({
-  homeDir: () => Promise.resolve('/Users/test'),
-}))
-
 vi.mock('#lib/tauri-commands/index.js', () => ({
+  getHomeFolder: vi.fn(() => Promise.resolve('/Users/test')),
   // The destination's name rules never answer here: the dialog keeps POSIX's.
   getNameRules: vi.fn(() => new Promise(() => {})),
   estimateOperationCost: vi.fn(() => Promise.resolve([])),
