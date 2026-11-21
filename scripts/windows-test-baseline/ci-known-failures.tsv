@@ -177,7 +177,6 @@ cmdr-operations	archive_edit::remote::remote_tests::two_asides_claiming_one_empt
 cmdr-operations	create::tests::create_directory_core_rejects_a_target_inside_an_archive	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr-operations	create::tests::route_archive_create_on_an_existing_inner_name_errors_without_building_a_temp	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr-operations	delete::preview_binding_tests::a_local_delete_never_acts_on_a_preview_walked_for_a_copy	fails	#1225: a native home path where an app path belongs (cluster H) (windows-test-failures.md)
-cmdr-operations	delete::trash::tests::test_move_to_trash_sync_nonexistent	fails	#1225: a native home path where an app path belongs (cluster H) (windows-test-failures.md)
 cmdr-operations	golden_trace_tests::golden_local_conflict_skip	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr-operations	golden_trace_tests::golden_local_copy	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr-operations	golden_trace_tests::golden_local_delete	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)

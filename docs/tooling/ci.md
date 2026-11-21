@@ -717,6 +717,9 @@ later PR happened to fix it.
   held every time. No `builder` entries yet: the hosted runner holds the symlink privilege (no cell skipped itself), and
   no cell needed a second drive or a folder mount to pass where the builder passes it. The builder's own record stays
   `windows-test-failures.tsv`: its two cores time out where a hosted runner doesn't, so the two lists differ on purpose.
+  Since then (run 44944915665, 2026-11-21, after merging `main` at `ff908871f7`): 14,324 tests, 237 `fails` and one
+  `flaky`, as task 36 turned `delete::trash::tests::test_move_to_trash_sync_nonexistent` green. The same day's runs saw
+  `cmdr-operations` `scan_pause_tests::an_operations_own_scan_parks_too` pass on a retry (run 44944918371).
 - **Gotcha, the runner's TEMP is an 8.3 short path** (`C:\Users\RUNNER~1\AppData\Local\Temp`; the builder's `Admin` has
   no short form): a cell that types a path it built from `TEMP` and compares the answer with `AppTestDir::app_path`
   (long names) can fail here alone. It found a product gap: typed text holding a short name opens under its short
