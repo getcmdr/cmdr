@@ -373,8 +373,8 @@ from the computer. Nothing leaves the page.
   `/`-separated paths, folders before their contents, kinds, sizes, `modifiedMs`; no bytes), accepts the longest prefix
   the budget covers, creates its folders, and reserves its files' bytes. `file(batch, index, bytes)` lands one accepted
   file; bytes of another size (`SizeChanged`) or a volume refusal give the reservation back. A path with an empty, `.`,
-  or `..` name, or a leading `/`, is `BadPath`, checked by hand: `Path::components` drops a `.`, and `Path::is_absolute`
-  is always `false` in the browser.
+  or `..` name, or a leading `/`, is `BadPath`: it's read as a `RelativeAppPath` and joined under the staging folder by
+  the app path's own join (`Path::join` put a `\` there on Windows).
 - **Staging**: each drop gets a fresh `/.drops/<n>/` (hidden like a dotfile), so a drop never collides with itself or an
   earlier one; the page hands the staged top-level paths to the app as an OS drop, and the transfer dialog settles
   collisions with the destination.
@@ -400,6 +400,27 @@ from the computer. Nothing leaves the page.
 - Tests: `imports_test.rs` (plan, structure, the budget across drops, a changed size, bad paths, a staged file copying
   and counting in folder sizes like any other, and the sweep: a dismissed drop, an empty hand-off, the next drop, a
   move, a move that skipped its clash, a copy).
+
+## App paths
+
+The demo's one volume is POSIX on every host (its keys are `/`-separated app text), and a browser has no OS, so nothing
+here crosses at `to_native`.
+
+- **Text in**: a path arg or a `FileEntry.path` becomes an app path through `invoke.rs`'s `demo_path`, which parses as
+  POSIX even where the native tests run on Windows (`from_wire` reads only drives there). It normalizes as `Path`'s own
+  compare read the text (`//`, `.`, a trailing `/`), and refuses relative text and a `..` name, which the bridge rooted
+  at `/` or climbed by text: such a question finds nothing (pinned by `operations_host/commands_test.rs`'
+  `the_path_questions_find_nothing_at_text_that_names_no_app_path`). No pane spells either.
+- **Into the store's own helpers** (`import_folder`, `import_file`): `imports.rs`' `on_store`, the app text as the
+  `std::path` key the store takes.
+- **Asked through `cmdr-fs`**: the archive split (`archive_boundary_candidate_at`), the root echo (`root_echo_at`), the
+  box's anchoring (`anchor_at_root`, the desktop's `resolve_dest_path` with no `~`), and go-to's link walk
+  (`InMemoryVolume::canonical_app_path`).
+- **What still speaks `std::path`**: the engines' host seams (`ListingIndex`, `OperationIndex`, `OperationVolumes`,
+  `GoToHost`, the listing engine's `open_listing_paths` and `directory_changed`), so `folder_sizes.rs`, `search.rs`, and
+  `backend_listings.rs` still do `std::path` arithmetic over the values they hand in; they type with those seams (the
+  app-path plan's 10a and 10c). `DemoVolumes::find_by_root` keeps the one bridge call: the seam takes a `&Path` its only
+  caller makes with `as_std_legacy`.
 
 ## Where the demo differs from the app
 

@@ -221,6 +221,16 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
 - **10e, `cmdr-listing-wasm`**: 7.
 - **10c and 10d, the app**: 164 (10c the file system and listings half, 10d the rest; the 2 crash reporter timeouts go
   to #1232 instead).
+  - **10c, first step seen on the builder** (2026-11-21, PR #1322 at `ff3c3e0eab` and its base `main` at `9d40bcc77a`,
+    in `D:\src\cmdr-m6` with `CARGO_TARGET_DIR=D:\targets\m6`, through `run-on-desktop.sh`,
+    `--profile windows-baseline`, `cargo nextest run -p cmdr` filtered to the 11 directories, 1,236 tests): `main` 43
+    failed and 1 timed out, the branch 42 and 1; the one it turns green is
+    `listing_host::tests::foreign_path_test::a_listing_read_while_the_backend_is_replaced_lands_on_the_stored_spelling`,
+    and none is newly red. Of this note's 70 cells in these directories, 27 pass now (26 already on `main`) and 43 stay
+    red (the TSV's `rerun` column): S 28 (`about::` 13, the archive routing and `commands::` routed-write cells 11 over
+    `resolve`'s `&Path` seam, `favorites::` 2, `go_to_path::` 1, `listing_host::` 1), H 9 (`go_to_path::`, the
+    `resolve_typed` commit's), N 5 (`file_system::watcher*` native tempdirs), and 1 `about::` timeout. The step was the
+    mechanical half, so these wait on the routing seam, the behavior-change commits, and the watcher fixtures.
 - **Misfiled**: `cmdr-index retry::a_machine_that_stops_short_asks_for_another_go` inherited P, but its fixture is a
   native tempdir with a timing precondition, so it's N or unknown (still 10b).
 

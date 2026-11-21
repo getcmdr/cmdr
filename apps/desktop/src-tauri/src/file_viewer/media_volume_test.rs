@@ -1,11 +1,8 @@
 //! A picture or PDF on a volume renders like one on the local disk: sniffed through the
 //! volume, served by position, with no temp, and honest when the server goes quiet.
 
-use cmdr_fs::app_path::AppPath;
-use cmdr_fs::app_path::BridgedPath;
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic};
 use std::future::Future;
-use std::path::Path;
-use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -53,8 +50,8 @@ struct Counters {
 }
 
 struct OneFileVolume {
-    root: BridgedPath,
-    file: PathBuf,
+    root: AppPathBuf,
+    file: AppPathBuf,
     bytes: Arc<Vec<u8>>,
     /// What a stat and a reader say, when a test wants more than it stores.
     claimed_size: u64,
@@ -106,7 +103,7 @@ impl Volume for OneFileVolume {
     }
 
     fn root(&self) -> &AppPath {
-        self.root.app()
+        &self.root
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -134,13 +131,11 @@ impl Volume for OneFileVolume {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            if path != self.file {
-                return Err(VolumeError::NotFound(path.display().to_string()));
+            if *path != *self.file {
+                return Err(VolumeError::NotFound(path.as_str().to_string()));
             }
-            let name = path.file_name().map(|n| n.to_string_lossy().into_owned());
-            let mut entry = FileEntry::new(name.unwrap_or_default(), path.display().to_string(), false, false);
+            let name = path.file_name().unwrap_or_default().to_string();
+            let mut entry = FileEntry::new(name, path.as_str().to_string(), false, false);
             entry.size = Some(self.claimed_size);
             Ok(entry)
         })
@@ -151,19 +146,17 @@ impl Volume for OneFileVolume {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeRandomReader>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             if self.reads == Reads::DeadLink {
-                return Err(VolumeError::LinkTargetUnreachable(path.display().to_string()));
+                return Err(VolumeError::LinkTargetUnreachable(path.as_str().to_string()));
             }
             if self.reads == Reads::InUse {
-                return Err(VolumeError::FileInUse(path.display().to_string()));
+                return Err(VolumeError::FileInUse(path.as_str().to_string()));
             }
             if self.reads != Reads::Held {
                 return Err(VolumeError::NotSupported);
             }
-            if path != self.file {
-                return Err(VolumeError::NotFound(path.display().to_string()));
+            if *path != *self.file {
+                return Err(VolumeError::NotFound(path.as_str().to_string()));
             }
             Ok(Box::new(HeldReader {
                 bytes: Arc::clone(&self.bytes),
@@ -202,12 +195,16 @@ fn a_volume_claiming(
     claimed_size: u64,
     reads: Reads,
 ) -> (String, Arc<Vec<u8>>, Arc<Counters>) {
-    let root = PathBuf::from(format!("/Volumes/cmdr-test-media-{id}"));
-    let file = root.join(name);
+    let root = AppPath::from_normalized(&format!("/Volumes/cmdr-test-media-{id}"))
+        .expect("a canonical app path")
+        .to_owned();
+    let file = root
+        .join(AppName::from_app_spelling(name).expect("a plain name"))
+        .expect("a name under the root");
     let bytes = Arc::new(bytes);
     let counters = Arc::new(Counters::default());
     let volume = Arc::new(OneFileVolume {
-        root: BridgedPath::new(root),
+        root,
         file: file.clone(),
         bytes: Arc::clone(&bytes),
         claimed_size,
@@ -215,7 +212,7 @@ fn a_volume_claiming(
         counters: Arc::clone(&counters),
     });
     get_volume_manager().register(id, volume as Arc<dyn Volume>);
-    (file.display().to_string(), bytes, counters)
+    (file.as_str().to_string(), bytes, counters)
 }
 /// The reported bug (getcmdr/cmdr-reports#91): a HEIC on a share opened as text.
 #[test]

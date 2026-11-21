@@ -1,22 +1,22 @@
 crate	test	cluster	read	panic	rerun
-cmdr	about::history::tests::a_copy_off_another_volume_names_where_it_came_from	S	read	assertion `left == right` failed	
-cmdr	about::history::tests::a_move_on_the_same_volume_names_no_volume	S	read	assertion `left == right` failed	
-cmdr	about::history::tests::a_source_volume_that_is_not_connected_goes_unnamed	S	read	assertion `left == right` failed	
-cmdr	about::history::tests::an_item_in_the_trash_says_where_it_was_trashed_from	S	read	assertion `left == right` failed	
-cmdr	about::model::tests::a_path_the_gate_protects_leaves_name_level_facts_only	S	unread	assertion failed: open.get("contentsStayHome").is_none()	
-cmdr	about::tests::a_cancel_mid_way_stops_queued_jobs_and_leaves_no_late_events	S	unread	the slow job starts: Disconnected	
-cmdr	about::tests::a_container_is_never_looked_inside	S	unread	assertion failed: in_a_fixture_home(&outside, &home).plan.kinds().contains(&FactKind::Git)	
-cmdr	about::tests::a_file_with_no_download_record_says_so_as_a_routine_absence	S	unread	assertion failed: facts.iter().any(|fact|	
-cmdr	about::tests::a_modified_repo_file_answers_uncommitted_work_with_its_branch	S	unread	the git row lands known	
-cmdr	about::tests::a_row_past_its_budget_lands_as_timed_out_and_its_late_answer_drops	S	unread	the slow job started: Disconnected	
-cmdr	about::tests::a_slow_card_cant_starve_the_next_cards_rows	S	unread	a card's burst of rows	
-cmdr	about::tests::library_folders_answer_their_owner_through_the_card	S	unread	the owner row lands	
-cmdr	about::through_tests::a_share_that_stopped_answering_gets_its_card_at_once_and_says_so_once	timeout	read		
-cmdr	about::through_tests::an_archive_entry_names_its_archive_with_the_archives_own_record	S	unread	an entry's download row always answers	
-cmdr	about::verdict::tests::a_pictures_tags_and_text_ride_the_take_inside_the_fence	S	unread	assertion failed: gathered.plan.has(cmdr_about::fact::FactKind::ImageContents)	
-cmdr	about::verdict::tests::a_reopen_on_the_same_node_reuses_the_verdict	S	unread	assertion failed: sent(&updates,	
-cmdr	about::verdict::tests::a_verdict_streams_after_the_plan_with_its_given_line_first	S	unread	assertion failed: matches!(updates[given], AboutUpdate::VerdictGiven	
-cmdr	about::verdict::tests::holding_contents_back_keeps_the_look_and_the_pictures_text_home	S	unread	assertion failed: gathered.plan.has(cmdr_about::fact::FactKind::ImageContents)	
+cmdr	about::history::tests::a_copy_off_another_volume_names_where_it_came_from	S	read	assertion `left == right` failed	green@ff3c3e0eab
+cmdr	about::history::tests::a_move_on_the_same_volume_names_no_volume	S	read	assertion `left == right` failed	green@ff3c3e0eab
+cmdr	about::history::tests::a_source_volume_that_is_not_connected_goes_unnamed	S	read	assertion `left == right` failed	green@ff3c3e0eab
+cmdr	about::history::tests::an_item_in_the_trash_says_where_it_was_trashed_from	S	read	assertion `left == right` failed	green@ff3c3e0eab
+cmdr	about::model::tests::a_path_the_gate_protects_leaves_name_level_facts_only	S	unread	assertion failed: open.get("contentsStayHome").is_none()	red@ff3c3e0eab: S
+cmdr	about::tests::a_cancel_mid_way_stops_queued_jobs_and_leaves_no_late_events	S	unread	the slow job starts: Disconnected	red@ff3c3e0eab: S
+cmdr	about::tests::a_container_is_never_looked_inside	S	unread	assertion failed: in_a_fixture_home(&outside, &home).plan.kinds().contains(&FactKind::Git)	red@ff3c3e0eab: S
+cmdr	about::tests::a_file_with_no_download_record_says_so_as_a_routine_absence	S	unread	assertion failed: facts.iter().any(|fact|	red@ff3c3e0eab: S
+cmdr	about::tests::a_modified_repo_file_answers_uncommitted_work_with_its_branch	S	unread	the git row lands known	red@ff3c3e0eab: S
+cmdr	about::tests::a_row_past_its_budget_lands_as_timed_out_and_its_late_answer_drops	S	unread	the slow job started: Disconnected	red@ff3c3e0eab: S
+cmdr	about::tests::a_slow_card_cant_starve_the_next_cards_rows	S	unread	a card's burst of rows	red@ff3c3e0eab: S
+cmdr	about::tests::library_folders_answer_their_owner_through_the_card	S	unread	the owner row lands	red@ff3c3e0eab: S
+cmdr	about::through_tests::a_share_that_stopped_answering_gets_its_card_at_once_and_says_so_once	timeout	read		red@ff3c3e0eab: timeout
+cmdr	about::through_tests::an_archive_entry_names_its_archive_with_the_archives_own_record	S	unread	an entry's download row always answers	red@ff3c3e0eab: S
+cmdr	about::verdict::tests::a_pictures_tags_and_text_ride_the_take_inside_the_fence	S	unread	assertion failed: gathered.plan.has(cmdr_about::fact::FactKind::ImageContents)	red@ff3c3e0eab: S
+cmdr	about::verdict::tests::a_reopen_on_the_same_node_reuses_the_verdict	S	unread	assertion failed: sent(&updates,	red@ff3c3e0eab: S
+cmdr	about::verdict::tests::a_verdict_streams_after_the_plan_with_its_given_line_first	S	unread	assertion failed: matches!(updates[given], AboutUpdate::VerdictGiven	red@ff3c3e0eab: S
+cmdr	about::verdict::tests::holding_contents_back_keeps_the_look_and_the_pictures_text_home	S	unread	assertion failed: gathered.plan.has(cmdr_about::fact::FactKind::ImageContents)	red@ff3c3e0eab: S
 cmdr	adb::eject_test::ejecting_a_phone_retires_its_volume_keeps_its_row_and_the_next_dial_opens_a_new_one	S	unread	assertion `left == right` failed: precondition: a dialed phone's row carries its capabilities	
 cmdr	adb::volume_wiring::volume_wiring_test::a_pane_on_an_adb_path_lists_the_phone_through_the_listing_pipeline	S	read	the listing pipeline reads the phone; got Err(NotFound("\\sdcard"))	
 cmdr	adb::volume_wiring::volume_wiring_test::the_viewer_opens_a_text_file_on_a_dialed_phone	S	read	the phone's file opens: NotFound { path: "\\sdcard\\notes.txt" }	
@@ -30,14 +30,14 @@ cmdr	agent::line::tests::subject_tests::search_names_its_pattern_and_only_the_sc
 cmdr	agent::suggested_ops::tests::a_root_the_index_doesnt_hold_refuses_rather_than_matching_nothing	P	read	Err(NotOnVolume { volume_id: "root", path: "/Users/someone/Downloadz" })	
 cmdr	agent::suggested_ops::tests::the_drive_index_resolves_a_selector_over_a_real_index	P	read	the root is indexed: NotOnVolume { volume_id: "root", path: "/Users/someone/Downloads" }	
 cmdr	agent::wake::tests::coalesce::five_million_changes_in_one_folder_coalesce_to_one_exact_bundle	timeout	read		
-cmdr	commands::agent::suggested_ops_live::tests::only_a_renamed_op_has_a_landing_path	S	read	assertion `left == right` failed	
-cmdr	commands::file_system::volume_copy::destination_root_echo_test::a_server_path_typed_on_a_server_place_names_both_readings	S	read	assertion `left == right` failed	
-cmdr	commands::file_system::write_ops::tests::reject_if_routed_over_a_parent_flags_a_path_inside_a_zip	S	unread	archive-inner path must be refused: ()	
-cmdr	commands::file_system::write_ops::tests::scan_preview_routes_an_archive_source_to_the_archive_volume	S	unread	archive source volume	
-cmdr	commands::file_viewer::tests::write_range_rejects_a_destination_inside_an_archive	S	unread	expected DestinationIsReadOnly, got SessionNotFound { session_id: "no-such-session" }	
-cmdr	commands::servers::server_moves_test::moving_an_sftp_server_takes_its_entry_password_and_favorites_to_the_new_address	S	read	assertion `left == right` failed	
-cmdr	commands::servers::servers_test::saving_a_start_folder_under_the_root_stores_it_normalized	S	read	assertion `left == right` failed	
-cmdr	commands::volumes::tests::resolve_location_sftp_path_returns_the_saved_server_without_dialing	task-34	read	a saved server's path resolves to that server	
+cmdr	commands::agent::suggested_ops_live::tests::only_a_renamed_op_has_a_landing_path	S	read	assertion `left == right` failed	red@ff3c3e0eab: S
+cmdr	commands::file_system::volume_copy::destination_root_echo_test::a_server_path_typed_on_a_server_place_names_both_readings	S	read	assertion `left == right` failed	red@ff3c3e0eab: S
+cmdr	commands::file_system::write_ops::tests::reject_if_routed_over_a_parent_flags_a_path_inside_a_zip	S	unread	archive-inner path must be refused: ()	red@ff3c3e0eab: S
+cmdr	commands::file_system::write_ops::tests::scan_preview_routes_an_archive_source_to_the_archive_volume	S	unread	archive source volume	red@ff3c3e0eab: S
+cmdr	commands::file_viewer::tests::write_range_rejects_a_destination_inside_an_archive	S	unread	expected DestinationIsReadOnly, got SessionNotFound { session_id: "no-such-session" }	red@ff3c3e0eab: S
+cmdr	commands::servers::server_moves_test::moving_an_sftp_server_takes_its_entry_password_and_favorites_to_the_new_address	S	read	assertion `left == right` failed	green@ff3c3e0eab
+cmdr	commands::servers::servers_test::saving_a_start_folder_under_the_root_stores_it_normalized	S	read	assertion `left == right` failed	green@ff3c3e0eab
+cmdr	commands::volumes::tests::resolve_location_sftp_path_returns_the_saved_server_without_dialing	task-34	read	a saved server's path resolves to that server	green@ff3c3e0eab
 cmdr	crash_reporter::contain_tests::a_panic_outside_the_closure_is_still_reported	timeout	read		
 cmdr	crash_reporter::next_launch_tests::crash_file_stamps_keep_their_bytes_and_read_back	windows-only	read	assertion `left == right` failed	
 cmdr	crash_reporter::tests::a_background_panic_writes_its_report_dispatches_a_courier_and_leaves_the_app_running	timeout	read		
@@ -46,39 +46,39 @@ cmdr	data_wipe::plan::tests::a_production_mac_plans_every_folder_and_file_cmdr_k
 cmdr	data_wipe::plan::tests::an_e2e_run_nests_its_cache_and_logs_inside_the_data_dir	windows-only	read	index out of bounds: the len is 0 but the index is 0	
 cmdr	data_wipe::plan::tests::linux_plans_no_library_state	windows-only	read	assertion `left == right` failed	
 cmdr	data_wipe::plan::tests::the_security_event_log_goes_with_the_wipe	windows-only	read	/Users/someone\Library\Application Support\com.veszelovszki.cmdr\security-events.jsonl isn't inside any target	
-cmdr	favorites::target::tests::a_local_folder_is_stat_and_reads_yes_or_no	S	unread	assertion `left == right` failed	
-cmdr	favorites::target::tests::a_protected_folder_is_taken_on_trust_without_a_stat	S	unread	assertion `left == right` failed	
-cmdr	file_system::restic::overlay_tests::the_row_points_at_the_view_and_confirms_the_repo	S	read	assertion `left == right` failed	
-cmdr	file_system::volume::manager::archive_routing::tests::mount_id_for_path_skips_a_registered_archive_and_names_its_parent_mount	S	unread	assertion failed: manager.resolve("ext", &inner).await.is_routed()	
-cmdr	file_system::volume::manager::archive_routing::tests::path_is_inside_archive_confirms_a_local_inner_path_but_not_the_zip_itself	S	unread	assertion failed: manager.path_is_inside_archive("root", &zip.join("inner.txt")).await	
-cmdr	file_system::volume::manager::archive_routing::tests::path_is_inside_archive_confirms_a_remote_inner_path_through_the_parent	S	unread	a remote archive-inner path must be detected so the write reaches the edit driver	
-cmdr	file_system::volume::manager::archive_routing::tests::resolve_evicts_the_least_recently_used_archive_past_the_cap	S	unread	assertion `left == right` failed	
-cmdr	file_system::volume::manager::archive_routing::tests::resolve_routes_a_remote_zip_via_the_parents_ranged_reads	S	unread	a remote zip must route to an ArchiveVolume	
-cmdr	file_system::volume::manager::archive_routing::tests::resolve_routes_an_archive_inner_path_to_an_archive_volume	S	unread	assertion failed: resolved.is_routed()	
-cmdr	file_system::watcher_incremental_test::a_batch_publishes_removes_then_adds_then_modifies	N	read	the scratch dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	
-cmdr	file_system::watcher_incremental_test::a_child_renamed_away_leaves_the_listing	N	read	the scratch dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	
-cmdr	file_system::watcher_incremental_test::a_full_re_read_has_landed_when_it_returns	N	read	the scratch dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	
-cmdr	file_system::watcher_incremental_test::a_modify_keeps_the_finder_tags_the_cache_holds	N	read	the scratch dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	
-cmdr	file_system::watcher_incremental_test::a_replaced_watch_root_falls_back_to_a_full_re_read	N	read	the scratch dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	
-cmdr	file_system::watcher_incremental_test::a_rescan_falls_back_to_a_full_re_read	N	read	the scratch dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	
-cmdr	file_system::watcher_incremental_test::over_500_events_fall_back_to_a_full_re_read	N	read	the scratch dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	
-cmdr	file_system::watcher_incremental_test::root_metadata_and_grandchild_events_change_nothing	N	read	the scratch dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	
-cmdr	file_system::watcher_test::a_dotfile_write_reaches_a_pane_showing_dotfiles	N	read	the fresh dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	
-cmdr	file_system::watcher_test::a_dotfile_write_reaches_the_cache_but_not_a_pane_hiding_dotfiles	N	read	the fresh dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	
-cmdr	go_to_path::tests::deep_nonexistent_path_falls_back_to_nearest_ancestor	H	read	assertion `left == right` failed	
-cmdr	go_to_path::tests::dot_and_dotdot_are_lexically_normalized	H	read	assertion `left == right` failed	
-cmdr	go_to_path::tests::dotdot_above_the_root_answers_the_root	H	unread	assertion `left == right` failed	
-cmdr	go_to_path::tests::dotdot_past_a_nonexistent_middle_segment_normalizes_lexically	H	read	assertion `left == right` failed	
-cmdr	go_to_path::tests::existing_dir_resolves_to_directory	H	read	assertion `left == right` failed	
-cmdr	go_to_path::tests::existing_file_resolves_to_file_with_parent_and_name	H	read	assertion `left == right` failed	
-cmdr	go_to_path::tests::relative_input_joins_against_base_dir	H	read	assertion `left == right` failed	
-cmdr	go_to_path::tests::tilde_expands_to_home	H	read	assertion `left == right` failed	
-cmdr	go_to_path::tests::totally_nonexistent_absolute_path_falls_back_to_root	S	read	assertion `left == right` failed	
-cmdr	go_to_path::tests::typing_a_path_into_a_zip_enters_it_as_a_directory	H	read	assertion `left == right` failed	
+cmdr	favorites::target::tests::a_local_folder_is_stat_and_reads_yes_or_no	S	unread	assertion `left == right` failed	red@ff3c3e0eab: S
+cmdr	favorites::target::tests::a_protected_folder_is_taken_on_trust_without_a_stat	S	unread	assertion `left == right` failed	red@ff3c3e0eab: S
+cmdr	file_system::restic::overlay_tests::the_row_points_at_the_view_and_confirms_the_repo	S	read	assertion `left == right` failed	green@ff3c3e0eab
+cmdr	file_system::volume::manager::archive_routing::tests::mount_id_for_path_skips_a_registered_archive_and_names_its_parent_mount	S	unread	assertion failed: manager.resolve("ext", &inner).await.is_routed()	red@ff3c3e0eab: S
+cmdr	file_system::volume::manager::archive_routing::tests::path_is_inside_archive_confirms_a_local_inner_path_but_not_the_zip_itself	S	unread	assertion failed: manager.path_is_inside_archive("root", &zip.join("inner.txt")).await	red@ff3c3e0eab: S
+cmdr	file_system::volume::manager::archive_routing::tests::path_is_inside_archive_confirms_a_remote_inner_path_through_the_parent	S	unread	a remote archive-inner path must be detected so the write reaches the edit driver	red@ff3c3e0eab: S
+cmdr	file_system::volume::manager::archive_routing::tests::resolve_evicts_the_least_recently_used_archive_past_the_cap	S	unread	assertion `left == right` failed	red@ff3c3e0eab: S
+cmdr	file_system::volume::manager::archive_routing::tests::resolve_routes_a_remote_zip_via_the_parents_ranged_reads	S	unread	a remote zip must route to an ArchiveVolume	red@ff3c3e0eab: S
+cmdr	file_system::volume::manager::archive_routing::tests::resolve_routes_an_archive_inner_path_to_an_archive_volume	S	unread	assertion failed: resolved.is_routed()	red@ff3c3e0eab: S
+cmdr	file_system::watcher_incremental_test::a_batch_publishes_removes_then_adds_then_modifies	N	read	the scratch dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	red@ff3c3e0eab: N
+cmdr	file_system::watcher_incremental_test::a_child_renamed_away_leaves_the_listing	N	read	the scratch dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	red@ff3c3e0eab: N
+cmdr	file_system::watcher_incremental_test::a_full_re_read_has_landed_when_it_returns	N	read	the scratch dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	green@ff3c3e0eab
+cmdr	file_system::watcher_incremental_test::a_modify_keeps_the_finder_tags_the_cache_holds	N	read	the scratch dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	red@ff3c3e0eab: N
+cmdr	file_system::watcher_incremental_test::a_replaced_watch_root_falls_back_to_a_full_re_read	N	read	the scratch dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	green@ff3c3e0eab
+cmdr	file_system::watcher_incremental_test::a_rescan_falls_back_to_a_full_re_read	N	read	the scratch dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	green@ff3c3e0eab
+cmdr	file_system::watcher_incremental_test::over_500_events_fall_back_to_a_full_re_read	N	read	the scratch dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	green@ff3c3e0eab
+cmdr	file_system::watcher_incremental_test::root_metadata_and_grandchild_events_change_nothing	N	read	the scratch dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	green@ff3c3e0eab
+cmdr	file_system::watcher_test::a_dotfile_write_reaches_a_pane_showing_dotfiles	N	read	the fresh dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	red@ff3c3e0eab: N
+cmdr	file_system::watcher_test::a_dotfile_write_reaches_the_cache_but_not_a_pane_hiding_dotfiles	N	read	the fresh dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	red@ff3c3e0eab: N
+cmdr	go_to_path::tests::deep_nonexistent_path_falls_back_to_nearest_ancestor	H	read	assertion `left == right` failed	red@ff3c3e0eab: H
+cmdr	go_to_path::tests::dot_and_dotdot_are_lexically_normalized	H	read	assertion `left == right` failed	red@ff3c3e0eab: H
+cmdr	go_to_path::tests::dotdot_above_the_root_answers_the_root	H	unread	assertion `left == right` failed	red@ff3c3e0eab: H
+cmdr	go_to_path::tests::dotdot_past_a_nonexistent_middle_segment_normalizes_lexically	H	read	assertion `left == right` failed	red@ff3c3e0eab: H
+cmdr	go_to_path::tests::existing_dir_resolves_to_directory	H	read	assertion `left == right` failed	red@ff3c3e0eab: H
+cmdr	go_to_path::tests::existing_file_resolves_to_file_with_parent_and_name	H	read	assertion `left == right` failed	red@ff3c3e0eab: H
+cmdr	go_to_path::tests::relative_input_joins_against_base_dir	H	read	assertion `left == right` failed	red@ff3c3e0eab: H
+cmdr	go_to_path::tests::tilde_expands_to_home	H	read	assertion `left == right` failed	red@ff3c3e0eab: H
+cmdr	go_to_path::tests::totally_nonexistent_absolute_path_falls_back_to_root	S	read	assertion `left == right` failed	red@ff3c3e0eab: S
+cmdr	go_to_path::tests::typing_a_path_into_a_zip_enters_it_as_a_directory	H	read	assertion `left == right` failed	red@ff3c3e0eab: H
 cmdr	instance_lock::tests::a_lock_held_on_any_one_of_the_three_dirs_refuses_a_second_claim	product	read	assertion `left == right` failed	
 cmdr	instance_lock::tests::acquiring_stamps_our_pid_and_names_the_holder	product	read	assertion `left == right` failed	
-cmdr	listing_host::tests::archive_watch_integration_test::lru_eviction_releases_the_archive_and_its_watch	S	unread	assertion `left == right` failed: eviction must release the registry's Arc, leaving only the test's	
-cmdr	listing_host::tests::foreign_path_test::a_listing_read_while_the_backend_is_replaced_lands_on_the_stored_spelling	S	read	assertion `left == right` failed: entries carry the stored bytes	
+cmdr	listing_host::tests::archive_watch_integration_test::lru_eviction_releases_the_archive_and_its_watch	S	unread	assertion `left == right` failed: eviction must release the registry's Arc, leaving only the test's	red@ff3c3e0eab: S
+cmdr	listing_host::tests::foreign_path_test::a_listing_read_while_the_backend_is_replaced_lands_on_the_stored_spelling	S	read	assertion `left == right` failed: entries carry the stored bytes	green@ff3c3e0eab
 cmdr	location::resolve::tests::a_home_relative_path_resolves_to_root	task-34	read	the boot disk holds home: NoVolumeAtPath { requested: LocationInput { volume_id: None, path: "C:/Users/Admin/Downloads" }, nearby: [NearbyVolume { volume_id: "smb-192-168-50-10-445-testshare-test_user	
 cmdr	logging::rotating_file::tests::a_writer_rotated_away_by_another_reopens_the_live_file_instead_of_renaming_it	product	read	assertion `left == right` failed: A's file is where B rotated it	
 cmdr	menu::menu_items::menu_items_test::the_undo_trash_label_names_what_it_would_put_back	S	unread	assertion `left == right` failed	
@@ -126,19 +126,19 @@ cmdr	multi_rename::session_test::a_row_past_the_end_is_refused	N	read	the dir li
 cmdr	multi_rename::session_test::at_either_end_the_row_stays_and_the_preview_still_holds	N	read	the dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	
 cmdr	multi_rename::session_test::range_samples_refuse_a_token_that_isnt_a_range_and_wait_for_a_moved_rows_preview	N	read	the dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	
 cmdr	multi_rename::session_test::range_samples_say_what_a_range_takes_from_each_file_the_preview_lists	N	read	the dir lists: Custom { kind: InvalidInput, error: "not an absolute Windows app path (C:/… or //server/share/…)" }	
-cmdr	network::live_server_edit::live_server_edit_test::a_start_folder_alone_moves_the_landing_and_keeps_the_instance	S	read	assertion `left == right` failed	
-cmdr	network::live_server_edit::live_server_edit_test::a_wider_root_the_server_has_is_installed_and_announced	S	read	assertion `left == right` failed	
-cmdr	network::live_server_edit::live_server_edit_test::clearing_the_start_folder_lands_on_the_root	S	read	assertion `left == right` failed	
-cmdr	network::nfs_known_places::nfs_known_places_test::an_export_spelled_two_ways_is_one_entry	S	read	assertion `left == right` failed: stored canonical	
-cmdr	network::nfs_known_places::nfs_known_places_test::an_unnamed_server_reads_as_its_host_and_an_export_as_its_path	S	unread	assertion `left == right` failed	
-cmdr	network::nfs_known_places::nfs_known_places_test::resolved_params_save_the_split_and_the_settings	S	read	assertion `left == right` failed	
-cmdr	network::nfs_volume_wiring::nfs_volume_wiring_test::a_changed_start_folder_on_an_open_place_moves_the_live_volume_params	S	read	assertion `left == right` failed: the live volume answers the folder the place now lands in	
-cmdr	network::nfs_volume_wiring::nfs_volume_wiring_test::a_connect_registers_and_saves_under_the_resolved_export	S	read	assertion `left == right` failed	
-cmdr	network::nfs_volume_wiring::nfs_volume_wiring_test::an_edit_to_a_place_nobody_has_open_saves_without_dialing	S	read	assertion `left == right` failed: normalized	
-cmdr	network::saved_server_fields::saved_server_fields_test::a_connect_drops_a_saved_start_folder_the_root_no_longer_holds	S	read	assertion `left == right` failed	
-cmdr	network::saved_server_fields::saved_server_fields_test::a_relative_start_folder_is_read_from_the_server_root	S	read	assertion `left == right` failed	
-cmdr	network::saved_server_fields::saved_server_fields_test::a_start_folder_under_the_root_is_stored_normalized	S	read	assertion `left == right` failed	
-cmdr	network::smb_mount_gate::tests::a_lifted_requirement_lets_the_listing_through	N	read	lists through the mount: IoError { message: "not an absolute Windows app path (C:/… or //server/share/…)", raw_os_error: None }	
+cmdr	network::live_server_edit::live_server_edit_test::a_start_folder_alone_moves_the_landing_and_keeps_the_instance	S	read	assertion `left == right` failed	green@ff3c3e0eab
+cmdr	network::live_server_edit::live_server_edit_test::a_wider_root_the_server_has_is_installed_and_announced	S	read	assertion `left == right` failed	green@ff3c3e0eab
+cmdr	network::live_server_edit::live_server_edit_test::clearing_the_start_folder_lands_on_the_root	S	read	assertion `left == right` failed	green@ff3c3e0eab
+cmdr	network::nfs_known_places::nfs_known_places_test::an_export_spelled_two_ways_is_one_entry	S	read	assertion `left == right` failed: stored canonical	green@ff3c3e0eab
+cmdr	network::nfs_known_places::nfs_known_places_test::an_unnamed_server_reads_as_its_host_and_an_export_as_its_path	S	unread	assertion `left == right` failed	green@ff3c3e0eab
+cmdr	network::nfs_known_places::nfs_known_places_test::resolved_params_save_the_split_and_the_settings	S	read	assertion `left == right` failed	green@ff3c3e0eab
+cmdr	network::nfs_volume_wiring::nfs_volume_wiring_test::a_changed_start_folder_on_an_open_place_moves_the_live_volume_params	S	read	assertion `left == right` failed: the live volume answers the folder the place now lands in	green@ff3c3e0eab
+cmdr	network::nfs_volume_wiring::nfs_volume_wiring_test::a_connect_registers_and_saves_under_the_resolved_export	S	read	assertion `left == right` failed	green@ff3c3e0eab
+cmdr	network::nfs_volume_wiring::nfs_volume_wiring_test::an_edit_to_a_place_nobody_has_open_saves_without_dialing	S	read	assertion `left == right` failed: normalized	green@ff3c3e0eab
+cmdr	network::saved_server_fields::saved_server_fields_test::a_connect_drops_a_saved_start_folder_the_root_no_longer_holds	S	read	assertion `left == right` failed	green@ff3c3e0eab
+cmdr	network::saved_server_fields::saved_server_fields_test::a_relative_start_folder_is_read_from_the_server_root	S	read	assertion `left == right` failed	green@ff3c3e0eab
+cmdr	network::saved_server_fields::saved_server_fields_test::a_start_folder_under_the_root_is_stored_normalized	S	read	assertion `left == right` failed	green@ff3c3e0eab
+cmdr	network::smb_mount_gate::tests::a_lifted_requirement_lets_the_listing_through	N	read	lists through the mount: IoError { message: "not an absolute Windows app path (C:/… or //server/share/…)", raw_os_error: None }	green@ff3c3e0eab
 cmdr	priority::roots::tests::a_tab_on_another_volume_is_ignored	P	read	assertion `left == right` failed	
 cmdr	priority::roots::tests::only_favorites_on_an_os_path_become_priority_roots	P	read	assertion `left == right` failed: an unclaimed legacy entry with an absolute path is still a local folder	
 cmdr	priority::roots::tests::the_focused_pane_s_active_tab_leads_the_tab_order	P	read	assertion `left == right` failed	

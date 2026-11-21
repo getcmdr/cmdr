@@ -9,7 +9,7 @@
 //! macOS only; `tags_io_off_macos.rs` stands in under this name elsewhere.
 
 pub use super::tags_journal::TagWrites;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_operation_log::types::Initiator;
 
 use super::tags::{
@@ -83,6 +83,8 @@ struct VolumeGroup {
     volume_id: String,
     volume: Arc<dyn Volume>,
     paths: Vec<String>,
+    /// Each of `paths` in its app spelling, made once here and handed to every volume call.
+    apps: Vec<AppPathBuf>,
 }
 
 /// `paths` by the volume that stores their tags, and the ones nothing stores tags for.
@@ -93,6 +95,7 @@ async fn group_by_store(volume_id: Option<&str>, paths: Vec<String>) -> (Vec<Vol
     let mut nowhere = Vec::new();
     for path in paths {
         let row = Path::new(&path);
+        let app = AppPath::legacy_unchecked(row).into_owned();
         let parent = row.parent().map(Path::to_path_buf);
         let store = match by_parent.get(&parent) {
             Some(store) => store.clone(),
@@ -105,11 +108,15 @@ async fn group_by_store(volume_id: Option<&str>, paths: Vec<String>) -> (Vec<Vol
         match store {
             None => nowhere.push(path),
             Some((volume_id, volume)) => match groups.iter_mut().find(|group| Arc::ptr_eq(&group.volume, &volume)) {
-                Some(group) => group.paths.push(path),
+                Some(group) => {
+                    group.paths.push(path);
+                    group.apps.push(app);
+                }
                 None => groups.push(VolumeGroup {
                     volume_id,
                     volume,
                     paths: vec![path],
+                    apps: vec![app],
                 }),
             },
         }
@@ -140,18 +147,7 @@ fn wait_on(volume_id: Option<&str>, local: Duration) -> Duration {
 /// replaces unconditionally, so a dropped connection would blank every dot in the pane.
 /// A value that doesn't decode does show as none: there's nothing to display.
 async fn read_on_group(group: &VolumeGroup, mode: XattrReadMode) -> Vec<(String, Vec<TagRef>)> {
-    let wire: Vec<PathBuf> = group.paths.iter().map(PathBuf::from).collect();
-    let answers = group
-        .volume
-        .read_xattr_many(
-            &wire
-                .iter()
-                .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                .collect::<Vec<_>>(),
-            TAGS_XATTR,
-            mode,
-        )
-        .await;
+    let answers = group.volume.read_xattr_many(&group.apps, TAGS_XATTR, mode).await;
     group
         .paths
         .iter()
@@ -285,6 +281,8 @@ pub(crate) struct CurrentTags {
     volume_id: String,
     volume: Arc<dyn Volume>,
     pub(crate) path: String,
+    /// `path` in its app spelling, what the write addresses.
+    app: AppPathBuf,
     pub(crate) tags: Vec<TagRef>,
     /// The attribute as read, `None` for none: what a write journals as its before.
     raw: Option<Vec<u8>>,
@@ -304,19 +302,11 @@ pub(crate) async fn read_for_merge(volume_id: Option<&str>, paths: Vec<String>) 
         })
         .collect();
     for group in &groups {
-        let wire: Vec<PathBuf> = group.paths.iter().map(PathBuf::from).collect();
         let answers = group
             .volume
-            .read_xattr_many(
-                &wire
-                    .iter()
-                    .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                    .collect::<Vec<_>>(),
-                TAGS_XATTR,
-                XattrReadMode::Verified,
-            )
+            .read_xattr_many(&group.apps, TAGS_XATTR, XattrReadMode::Verified)
             .await;
-        for (path, answer) in group.paths.iter().cloned().zip(answers) {
+        for ((path, app), answer) in group.paths.iter().cloned().zip(group.apps.iter().cloned()).zip(answers) {
             let (tags, raw) = match answer {
                 Ok(Some(bytes)) => (parse_tags_plist_strict(&bytes), Some(bytes)),
                 Ok(None) => (Ok(Vec::new()), None),
@@ -327,6 +317,7 @@ pub(crate) async fn read_for_merge(volume_id: Option<&str>, paths: Vec<String>) 
                     volume_id: group.volume_id.clone(),
                     volume: group.volume.clone(),
                     path,
+                    app,
                     tags,
                     raw,
                 }),
@@ -361,7 +352,7 @@ async fn write_tags(
     };
     let bytes = encode_tags_plist(tags).map_err(|e| refused(VolumeError::from_io_at(&e, file.path)))?;
     file.volume
-        .write_xattr(&AppPath::legacy_unchecked(Path::new(file.path)), TAGS_XATTR, &bytes)
+        .write_xattr(file.app, TAGS_XATTR, &bytes)
         .await
         .map_err(refused)?;
     written.record(file.volume_id, file.path, before, bytes);
@@ -374,6 +365,7 @@ struct TagTarget<'a> {
     volume_id: &'a str,
     volume: &'a dyn Volume,
     path: &'a str,
+    app: &'a AppPath,
 }
 
 /// Writes `desired(tags)` to each file, skipping every file already there so it doesn't
@@ -390,6 +382,7 @@ pub(crate) async fn apply_merge(
         volume_id,
         volume,
         path,
+        app,
         tags,
         raw,
     } in current
@@ -400,6 +393,7 @@ pub(crate) async fn apply_merge(
                 volume_id: &volume_id,
                 volume: volume.as_ref(),
                 path: &path,
+                app: &app,
             };
             write_tags(target, raw.as_deref(), &new_tags, written).await?;
         }
@@ -430,19 +424,11 @@ pub(crate) async fn clear_tags(
         .collect();
     let mut cleared = Vec::new();
     for group in &groups {
-        let wire: Vec<PathBuf> = group.paths.iter().map(PathBuf::from).collect();
         let answers = group
             .volume
-            .read_xattr_many(
-                &wire
-                    .iter()
-                    .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                    .collect::<Vec<_>>(),
-                TAGS_XATTR,
-                XattrReadMode::Verified,
-            )
+            .read_xattr_many(&group.apps, TAGS_XATTR, XattrReadMode::Verified)
             .await;
-        for (path, answer) in group.paths.iter().zip(answers) {
+        for ((path, app), answer) in group.paths.iter().zip(&group.apps).zip(answers) {
             let before = match answer {
                 Ok(before) => before,
                 Err(e) => {
@@ -462,6 +448,7 @@ pub(crate) async fn clear_tags(
                     volume_id: &group.volume_id,
                     volume: group.volume.as_ref(),
                     path,
+                    app,
                 };
                 write_tags(target, before.as_deref(), &[], written).await?;
             }

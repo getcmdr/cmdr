@@ -16,9 +16,8 @@
 //! (`apps/desktop/src/lib/demo/webview.ts`). A card's last message is the
 //! channel's end, as Tauri sends one when the Rust side drops it.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, PathArithmetic as _};
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use cmdr_about::actions::{ActionCaps, Actions, RemoveBy, actions};
@@ -37,7 +36,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::events::EventSink;
-use crate::invoke::parse;
+use crate::invoke::{demo_path, parse};
 
 /// Every command [`DemoAbout::invoke`] answers, by its Tauri name.
 pub const ABOUT_COMMANDS: &[&str] = &["about_start", "about_cancel", "about_stop_verdict"];
@@ -124,9 +123,13 @@ impl DemoAbout {
     /// The card for `request`: `unavailable` alone, or `planned`, the verdict's
     /// `aiOff`, one `fact` per row, and `factsSettled`.
     async fn gather(&self, card: &Card<'_>, request: &AboutRequest) {
-        let path = request.path.as_path();
-        let entry = match self.volume.get_metadata(&AppPath::legacy_unchecked(path)).await {
-            Ok(entry) => entry,
+        // Text that names no app path names nothing the volume holds.
+        let entry = match demo_path(&request.path) {
+            Ok(path) => self.volume.get_metadata(&path).await.map(|entry| (path, entry)),
+            Err(_) => Err(VolumeError::NotFound(request.path.clone())),
+        };
+        let (path, entry) = match entry {
+            Ok(found) => found,
             Err(error) => {
                 card.send(&AboutUpdate::Unavailable {
                     why: unavailable_why(&error),
@@ -137,7 +140,7 @@ impl DemoAbout {
         let target = target_of(&entry);
         // The path's last name, as the desktop's plan reads it (`Path::extension`).
         let extension = (target == AboutTarget::File)
-            .then(|| path.extension().map(|e| e.to_string_lossy().into_owned()))
+            .then(|| path.extension().map(str::to_owned))
             .flatten();
         let caps = VolumeCaps {
             // The bytes are in memory: reading the first and last of them is free.
@@ -184,7 +187,7 @@ impl DemoAbout {
         for kind in planned.kinds() {
             let fact = match kind {
                 FactKind::Identity => AboutFact::Identity(Fact::Known(identity_of(&entry))),
-                FactKind::RealType => AboutFact::RealType(self.real_type_of(path, &entry, extension.as_deref()).await),
+                FactKind::RealType => AboutFact::RealType(self.real_type_of(&path, &entry, extension.as_deref()).await),
                 // `retain_kinds` kept only the rows above.
                 _ => AboutFact::unknown(kind, UnknownWhy::VolumeCantTell),
             };
@@ -203,22 +206,14 @@ impl DemoAbout {
 
     /// The real-type row: the file's first [`HEAD_BYTES`] and, past them, its last
     /// [`TAIL_BYTES`], sniffed against its extension, as the desktop's local job reads them.
-    async fn real_type_of(&self, path: &Path, entry: &FileEntry, extension: Option<&str>) -> Fact<RealType> {
+    async fn real_type_of(&self, path: &AppPath, entry: &FileEntry, extension: Option<&str>) -> Fact<RealType> {
         let len = entry.size.unwrap_or(0);
-        let head = match self
-            .volume
-            .read_range(&AppPath::legacy_unchecked(path), 0, HEAD_BYTES)
-            .await
-        {
+        let head = match self.volume.read_range(path, 0, HEAD_BYTES).await {
             Ok(head) => head,
             Err(error) => return RealType::by_name(extension, fact_why(&error)),
         };
         let tail = if len > HEAD_BYTES as u64 {
-            match self
-                .volume
-                .read_range(&AppPath::legacy_unchecked(path), len - TAIL_BYTES as u64, TAIL_BYTES)
-                .await
-            {
+            match self.volume.read_range(path, len - TAIL_BYTES as u64, TAIL_BYTES).await {
                 Ok(tail) => Some(tail),
                 Err(error) => return RealType::by_name(extension, fact_why(&error)),
             }
@@ -348,7 +343,7 @@ struct StartArgs {
 struct AboutRequest {
     request_id: String,
     /// As the pane holds it: the demo's volume is POSIX, so the wire text is the volume's path.
-    path: PathBuf,
+    path: String,
     // The demo has one volume, and plans from the volume's own answer, so neither the
     // pane's volume id nor its folder hint changes the card.
     #[serde(default)]

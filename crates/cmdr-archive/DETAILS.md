@@ -333,14 +333,15 @@ An `ArchiveVolume` is never constructed here directly in production — it's min
   holding an app path; the `std::path` forms stay untouched until their callers move. They're `pub(crate)` (tested here,
   `expect(dead_code)` outside tests) rather than `pub`: the crate's surface cap (`index-crate-isolation`) has no
   headroom, and raising it needs David's OK, so each turns `pub` with the consumer that switches to it (the host's
-  routing, the operations engine), as its old form goes. The typed split (`archive_boundary_candidate_at`) reads the
-  canonical twin's text left to right, root included, as the `std::path` split reads components, and reads each name as
-  its native text (`native_text`: a byte-escaped name is checked by its decoded bytes, so a name that isn't UTF-8 is
-  never an archive). The local confirm opens the archive through `native_of`. Agreement with the `std::path` split is
-  the same differential run's (every canonical generated path, 0 differences), with one deliberate exception set aside:
-  a match INSIDE the root (`sftp://box.zip/…`, a POSIX-host `//srv/share.zip/…` read as a UNC root) splits `None`, where
-  the `std::path` split answered the root text, which names no file, so its confirm answered `None` too. Pinned by
-  `boundary_test.rs`' `the_split_takes_the_first_archive_name_and_keeps_a_remote_root_spelled_exactly`.
+  routing, the operations engine), as its old form goes. The typed split (`cmdr_fs::archive_format`'s
+  `archive_boundary_candidate_at`, beside the `std::path` split, so the browser demo asks it too) reads the canonical
+  twin's text left to right, root included, as the `std::path` split reads components, and reads each name as its native
+  text (`archive_name_text`: a byte-escaped name is checked by its decoded bytes, so a name that isn't UTF-8 is never an
+  archive). The local confirm opens the archive through `native_of`. Agreement with the `std::path` split is the same
+  differential run's (every canonical generated path, 0 differences), with one deliberate exception set aside: a match
+  INSIDE the root (`sftp://box.zip/…`, a POSIX-host `//srv/share.zip/…` read as a UNC root) splits `None`, where the
+  `std::path` split answered the root text, which names no file, so its confirm answered `None` too. Pinned by
+  `archive_format.rs`' `the_typed_split_takes_the_first_archive_name_and_keeps_a_remote_root_spelled_exactly`.
 - **`SUPPORTED_ARCHIVE_EXTENSIONS` is the one source of truth** shared by `is_archive` and boundary detection; confirm's
   magic check carries a sibling signature per format.
 - **Write-routing reuses the same parent-aware confirm.** The write seams (delete / rename / create / copy-out-source)

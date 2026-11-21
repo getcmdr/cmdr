@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use super::{InMemoryEntry, InMemoryVolume};
+use crate::app_path::{AppPathBuf, PathFlavor};
 use crate::entry::FileEntry;
 use crate::ignore_poison::RwLockIgnorePoison;
 
@@ -102,6 +103,14 @@ impl InMemoryVolume {
         }
         // The root itself is always there; anything else was found on the way.
         Some(path_of_bytes(resolved))
+    }
+
+    /// [`Self::canonicalize`] answered as an app path: the store's keys are `/`-separated
+    /// app text, so the resolved key reads back as one, on every host. `None` also for a
+    /// resolved key that isn't UTF-8 text, which names no app path here.
+    pub fn canonical_app_path(&self, path: &Path) -> Option<AppPathBuf> {
+        let resolved = self.canonicalize(path)?.into_os_string().into_string().ok()?;
+        AppPathBuf::parse(&resolved, PathFlavor::Posix).ok()
     }
 }
 

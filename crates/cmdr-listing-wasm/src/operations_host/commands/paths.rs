@@ -1,7 +1,6 @@
 //! The path questions a write's dialogs ask (`commands/file_system/{path_checks,stat}.rs` in the
 //! app), answered by the volume itself, so they see every write the engine made.
 
-use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 
 use cmdr_fs::deadline::TimedOut;
@@ -9,7 +8,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use super::super::DemoOperations;
-use crate::invoke::{ok, parse};
+use crate::invoke::{demo_path, ok, parse};
 
 pub(super) const NAMES: &[&str] = &[
     "path_exists",
@@ -26,7 +25,11 @@ impl DemoOperations {
             "path_exists" | "destination_exists" => {
                 let a: PathExistsArgs = parse(command, args)?;
                 let here = a.volume_id.as_deref().is_none_or(|id| id == self.volume_id);
-                let exists = here && self.volume.exists(&AppPath::legacy_unchecked(Path::new(&a.path))).await;
+                // Text that names no app path names nothing the volume holds.
+                let exists = match demo_path(&a.path) {
+                    Ok(path) => here && self.volume.exists(&path).await,
+                    Err(_) => false,
+                };
                 ok(TimedOut {
                     data: exists,
                     timed_out: false,
@@ -35,12 +38,12 @@ impl DemoOperations {
             "destination_root_echo" => {
                 let a: RootEchoArgs = parse(command, args)?;
                 let echo = (a.dest_volume_id == self.volume_id)
-                    .then(|| cmdr_fs::volume::root_echo(&self.volume.root().as_std_legacy(), Path::new(&a.dest_path)))
+                    .then(|| cmdr_fs::volume::root_echo_at(self.volume.root(), Path::new(&a.dest_path)))
                     .flatten()
                     .map(|echo| RootEchoAnswer {
-                        root_folder: echo.root_folder.as_std_legacy().to_string_lossy().into_owned(),
-                        resolved: echo.resolved.as_std_legacy().to_string_lossy().into_owned(),
-                        stripped: echo.stripped.as_std_legacy().to_string_lossy().into_owned(),
+                        root_folder: echo.root_folder.into_string(),
+                        resolved: echo.resolved.into_string(),
+                        stripped: echo.stripped.into_string(),
                     });
                 ok(echo)
             }
@@ -50,13 +53,11 @@ impl DemoOperations {
                 let a: StatArgs = parse(command, args)?;
                 let mut kinds = Vec::with_capacity(a.paths.len());
                 for path in &a.paths {
-                    kinds.push(
-                        self.volume
-                            .get_metadata(&AppPath::legacy_unchecked(Path::new(path)))
-                            .await
-                            .ok()
-                            .map(|e| e.is_directory),
-                    );
+                    let Ok(path) = demo_path(path) else {
+                        kinds.push(None);
+                        continue;
+                    };
+                    kinds.push(self.volume.get_metadata(&path).await.ok().map(|e| e.is_directory));
                 }
                 ok(TimedOut {
                     data: kinds,

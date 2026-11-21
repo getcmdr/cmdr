@@ -1939,6 +1939,43 @@ included; the hidden couplings it found are why waves B and C differ from round 
 - **Test plan**: Windows: `cmdr-listing-wasm`'s 6 failures and 1 timeout (`cmdr-multi-rename` had none on the builder;
   review round 4). macOS/Linux: both suites, plus the wasm build.
 - **DONE**: bridge counts zero in both.
+- **Done** (2026-11-21, branch `worktree-agent-abb6a765db0075d73`, PR #1323; one agent, no helpers). Bridge calls in
+  `cmdr-listing-wasm` 15 → 1 (workspace 1,342 → 1,328), its `appTextToPath` 10 → 8 and `pathFromBareText` 14 → 10;
+  `cmdr-multi-rename` held none. No entry grew anywhere. Durable design: `crates/cmdr-listing-wasm/DETAILS.md` § "App
+  paths". What converted:
+  - **`cmdr-listing-wasm`**: a path arg or a `FileEntry.path` becomes an app path through `invoke.rs`'s `demo_path`
+    (POSIX on every host: the demo's volume is, and Windows' `from_wire` reads only drives), and every volume call takes
+    it typed: the path questions, About, the archive notice, the sweep, the claim, the staged drop (joined by the app
+    path's join, where `Path::join` put a `\` on Windows), and the box's write access (`anchor_at_root`). It has no OS,
+    so nothing crosses at `to_native`; the in-memory store's own `std::path` helpers take the app text (`on_store`).
+  - **`cmdr-fs`**, for the demo: the typed archive split (`archive_boundary_candidate_at`, moved from `cmdr-archive`'s
+    `pub(crate)` beside the `std::path` split, so `cmdr-archive`'s surface cap is untouched), `root_echo_at`, and
+    `InMemoryVolume::canonical_app_path` (go-to's link walk, read back typed).
+  - **`cmdr-multi-rename`**: nothing to convert. Its folder `dir` is a `std::path` value feeding only `std::path` seams
+    (`BulkRenameRow`, the write engine's `SourceFingerprint::capture_*`, `rename_place`), and `names_file.rs` writes to
+    the host's native `results_path`, so it holds no app path to cross. Typing `dir` alone would add a crossing per row.
+- **What still bridges, and who takes it**: `operations_host/volumes.rs`' `find_by_root` (1): `OperationVolumes`'s seam
+  takes a `&Path` its one caller (`fresh_compress.rs`) makes with `as_std_legacy`, so typing the seam (10a) drops both.
+  `BulkRenameRow` staying native forces no bridge call (see above); multi-rename's `dir` types with it in 10c/10d. The
+  crate's other `std::path` arithmetic (`folder_sizes.rs`, `search.rs`, `backend_listings.rs`) runs over values the
+  engines' host seams hand in (`ListingIndex`, `OperationIndex`, `GoToHost`, `open_listing_paths`, `directory_changed`),
+  and types with them (10a, 10c).
+- **Intended behavior changes** (input no pane spells): a path question about relative text or a path holding a `..`
+  name finds nothing (`path_exists`, `stat_paths_kinds`, About, the archive notice), where the bridge rooted it at `/`
+  or climbed by text; the box's write access for such text is `unknown`; the archive notice names a sloppily spelled
+  archive canonically (`/a.zip` for `//a.zip`, the same file). Pinned:
+  `the_path_questions_find_nothing_at_text_that_names_no_app_path` (red on `main`).
+- **Byte-exact evidence** (a throwaway differential on macOS, old bridge code against new over an in-memory fixture with
+  `.zip`, `.tar.gz`, `\`, `:`, NFC and NFD names): 185,644 generated texts (one to four names from 13, each with a `/`,
+  `//`, or no lead and an optional trailing `/`), ten answers each (exists, stat, extension, archive notice, write
+  access, root echo, claim, the drop's relative check and staged text, go-to's found kind) plus the sweep's held rows: 0
+  differ for canonical text; every difference is a `..` name (58,872), relative or empty text (12,657), or the archive
+  notice's spelling of non-canonical text (12,262). Suites on macOS: `cmdr-listing-wasm` 144, `cmdr-multi-rename` 143,
+  the moved split and the typed echo in `cmdr-fs`, `cmdr-archive`'s boundary tests, all green.
+- **Windows**: `pnpm check clippy-windows` green; no builder run (no Mami today). Expected green by cause:
+  `imports_test::a_dropped_folder_lands_staged_with_its_structure_and_bytes` (the staged join). The `folder_sizes_test`
+  (2 and the timeout) and `search_test` (2) cells stay red until their seams type (above); the viewer cell's cause is
+  unread.
 
 ### 10c. The app, part one: file system and listings
 
@@ -1965,6 +2002,68 @@ included; the hidden couplings it found are why waves B and C differ from round 
   suite and `desktop-e2e-linux` (it touches listings); pins (g) and (h) per entry point, an IPC delete of `/x/link/`
   removes the link and leaves the target's contents, and § "Typed and pasted `..`"'s cells.
 - **DONE**: bridge count zero in these directories.
+- **First step done** (2026-11-21, PR #1322, branch `worktree-agent-a4ca45328a62809bc`; the lead on the volume manager,
+  `listing_host/`, and `commands/`, one helper on `network/`, `about/`, `native_drag/`, `file_viewer/`, and
+  `favorites/`, one on the rest of `file_system/` and `volumes/`). The mechanical conversion only, a clean partial.
+  Bridge calls in the 11 directories 319 → 103 (the call-counting meter; `file_system/` 187 → 60, `network/` 51 → 12,
+  `listing_host/` 23 → 1, `commands/` 19 → 13, `file_viewer/` 13 → 4, `native_drag/` 10 → 5, `about/` 10 → 4, `volumes/`
+  5 → 3, `favorites/` 1 → 1), `appTextToPath` 12 → 11, `pathFromBareText` 179 → 151; workspace bridges 1,351 → 1,135. No
+  other directory's total rose, and no per-file entry grew. What converted:
+  - **The volume registry's mount roots** (`file_system/volume/manager/roots.rs`, `manager.rs`, `root_move.rs`): the
+    root set, rank, identity-conflict check, promotion, and every `Promoted { new_root }` are `AppPathBuf`;
+    `roots::same_root` is the one comparison (`AppPath`'s `==`, `Path`'s `==` by construction; the rank's tie is
+    `AppPath`'s `Ord`, `PathBuf`'s order by construction, a `..` included: the review's fix, after a name-text tie had
+    put `/Volumes/-a` before `/Volumes/..` and a canonical-twin arm had equated Windows `\\?\C:\x` with `C:\x`). The
+    OS-event entry points (`remove_root`, `move_root`, `find_by_root`) keep their native `&Path` and cross once at
+    `roots::mount_root_from_os` (`from_native_unicode`, a non-Unicode name staying a lossless bridge value);
+    `find_by_app_root`, `mark_root_stale`, and `would_keep_incumbent` take a root in hand. Durable design:
+    `apps/desktop/src-tauri/src/file_system/volume/DETAILS.md` § "A volume ID owns a set of mount roots".
+  - **Test doubles and fixtures** in these directories: `app_path!` / `from_normalized` for canonical text, and
+    `cmdr_fs::testing::AppTestDir` (re-exported from `crate::test_support`) for a scratch tree, so a cell hands a volume
+    `C:/…` on Windows where the native tempdir was refused. Cells handed relative text keep `std::path` on purpose.
+  - **Cross once per value** where a body crossed once per call, the same `legacy_unchecked` value made earlier, so
+    byte-exact by construction: `tags_io.rs` (each wire path once, at grouping), the SMB encryption gate's native root,
+    the macOS-mount handback's share root, the viewer's pull (`as_volume_calls_spell_it`), the drag-out file stream, the
+    About card's xattr read, and the snapshot archive route's view root.
+  - **The cells**: git and restic portal cells cross their tempdir once through `from_native_unicode` (the restic read
+    gate matches a typed path's `names()`); the in-memory, SMB scan and index, MTP oracle, tags, network wiring, About,
+    drag-out, and viewer cells are typed; the SMB gate's two tempdir cells use `AppTestDir` (their Windows tempdir
+    panics, expected green, not run on the builder).
+- **Byte-exact on macOS** (throwaway differential harnesses, old `Path` answers against the new; the lead's scratchpad):
+  root equality 2,000,000 generated pairs and the OS-event equality 2,000,000, 0 differ; the rank's tie-break over
+  103,583 equal-length pairs and the nested-mount log level over 2,000,000, every local difference holding a `..` name
+  (no mount root does), the rest mixed root kinds or `//` leads (#1309) one id never holds. The one other candidate for
+  typed arithmetic, `tag_store_for`'s longest-root fallback, measured 180,617 of 3,617,300 differing (every one a row
+  holding `..` or a `//` lead), so it keeps `Path`'s logic and its two bridges. Suites on macOS: the app 6,807, green.
+- **What stays, and where it goes**:
+  - **The IPC edges keep `legacy_unchecked`** (`commands/`'s `share_link`, `volume_copy`'s write probe, `path_checks`,
+    `suggested_ops`): today's answer for `/x/link/` and `/x/../y`. They switch to `from_wire` in the first
+    behavior-change commit (loud rule 1's second exception, pins (g) flipped, the lead's OK), which is also where
+    `path_checks.rs`'s `root_anchored` becomes `anchor_at_root` (#1314 item 2: `anchor_at_root` refuses `..` and drops a
+    trailing `/`, so it isn't mechanical). `go_to_path::resolve_with`'s `std::path` arithmetic (#1314 item 1) resolves
+    `..` lexically today; it goes typed with `resolve_typed` and `Volume::parent_for_dot_dot` in the second
+    behavior-change commit.
+  - **The routing seam**: `VolumeManager::resolve(volume_id, &Path)` and its `ResolvedVolume.path` built by
+    `legacy_unchecked` (archive, git, restic routes) is the next mechanical step; it takes most of the manager's
+    remaining bridges and the routing tests' with it. `mount_id_for_path` keeps `Path`'s `starts_with` on its caller's
+    text (a `..` included) until its callers (index routing, 10d's `inspect` tools) pass app paths.
+  - **The text exits** (`commands/importance.rs`, `media_index/`, `volume_copy`'s root echo:
+    `as_std_legacy() .to_string_lossy()`): an app path's own text differs for a Linux name that isn't UTF-8 while
+    `ESCAPES_LIVE` is false, so they wait for 10f's type-level gate, as in 10a.
+  - **Still 10c's, not started**: the listing host's `&Path` seams from MTP and SMB (`DirectoryChange` parent paths
+    through `cmdr-listing`'s `notify_directory_changed` and the index's `apply_smb_change`), `cmdr-listing`'s 16
+    crossings, `CoveredEntry.path`, and `listing.rs`'s `listings().location()` (a `PathBuf` from `cmdr-listing`).
+  - **Kept on purpose**: native crossings that hand a root on as OS text (`smb_direct_switch`, `smb_connect_directly`,
+    `smb_pane_upgrade`, the gate's `rerooted`), wire text turned into app paths in `about/through.rs` and
+    `native_drag/fulfillment.rs` (a direct wrap changes a name holding an escape-range code point, #1310, and the folder
+    walk's typed join answers differently on `/a/./b`), `live_server_edit::check`'s `Path` comparisons over
+    `RemoteRoot`'s bridged values (`RemoteRoot` goes typed first), the eject and `drive_release` mount-path text exits
+    (10f), and cells handed relative or empty text (git `.git/…`, in-memory `""`, share-relative media names, the
+    relative SFTP cells, a drag-out `..`, a favorite stored with a trailing `/`).
+- **Windows**: `pnpm check clippy-windows` and `clippy-linux` green. The builder, the app's cells in these 11
+  directories (1,236 tests): `main` 44 red → the branch 43, none newly red; of the baseline's 70 here, 27 pass and 43
+  stay red, waiting on the routing seam, the two behavior-change commits, and the watcher fixtures
+  (`docs/notes/windows-port/windows-test-failures.md` § "By milestone", the TSV's `rerun` column).
 
 ### 10d. The app, part two: operations host, tools, and the rest
 

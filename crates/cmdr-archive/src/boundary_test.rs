@@ -141,32 +141,7 @@ fn confirm_rejects_a_mislabeled_tar_gz() {
     assert!(confirm_archive_boundary_at(&at(&fake, "inner")).is_none());
 }
 
-// ---- The split itself (no I/O) ------------------------------------------
-
-#[test]
-fn the_split_takes_the_first_archive_name_and_keeps_a_remote_root_spelled_exactly() {
-    let split = |text: &str| {
-        archive_boundary_candidate_at(AppPath::from_normalized(text).expect("canonical"))
-            .map(|(archive, inner)| (archive.into_string(), inner.as_str().to_owned()))
-    };
-    let pair = |archive: &str, inner: &str| Some((archive.to_owned(), inner.to_owned()));
-
-    assert_eq!(split("/x/a.zip/b/c.txt"), pair("/x/a.zip", "b/c.txt"));
-    assert_eq!(split("/x/a.zip"), pair("/x/a.zip", ""));
-    // Leftmost wins: a nested archive is a plain inner entry.
-    assert_eq!(split("/x/a.zip/b.zip/c"), pair("/x/a.zip", "b.zip/c"));
-    assert_eq!(
-        split("sftp://test_user_1@testnas.local:22/srv/a.tar.gz/d"),
-        pair("sftp://test_user_1@testnas.local:22/srv/a.tar.gz", "d")
-    );
-    assert_eq!(split("/x/plain/folder"), None);
-    assert_eq!(split("/x/photo.gz/y"), None);
-    // An authority named like an archive is the first match, as the `std::path`
-    // form reads it, and names no file.
-    assert_eq!(split("sftp://box.zip/srv/a.zip/x"), None);
-    // A name that isn't valid UTF-8 natively is never an archive.
-    assert_eq!(split("/x/caf\u{10FEE9}.zip/y"), None);
-}
+// The split itself (no I/O) is `cmdr_fs::archive_format`'s, tested there.
 
 /// The `std::path` forms the host still calls, on the same fixtures.
 #[cfg(unix)]

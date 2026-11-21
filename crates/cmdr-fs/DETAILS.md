@@ -1334,7 +1334,8 @@ on our own. Why: the doubled folder can be real (a place rooted at `/home/test_u
 send that copy somewhere else. `root_echo(root, path)` answers both readings (`resolved`, server-side, and `stripped`,
 volume-relative) for the transfer dialog's warning and its "Use shorter path" button. It only fires for a scheme-shaped
 root with a folder below the server's `/`: a mounted root (`/Volumes/testshare`) is matched by `root_anchored`'s
-pass-through arm, and a root at `/` reads the same both ways. Folders match by whole components.
+pass-through arm, and a root at `/` reads the same both ways. Folders match by whole components. `root_echo_at` is the
+same rule over a volume's typed root, read by its text (the browser demo's caller).
 
 ## Extended attributes
 

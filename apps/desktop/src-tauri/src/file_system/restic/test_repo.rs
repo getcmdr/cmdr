@@ -172,11 +172,10 @@ impl ReadGate {
         self.held.load(Ordering::SeqCst)
     }
 
-    async fn pass(&self, path: &Path) {
+    async fn pass(&self, path: &AppPath) {
         let mut closed_on = self.closed_on.subscribe();
-        let gated = |closed_on: &Option<&'static str>| {
-            closed_on.is_some_and(|folder| path.components().any(|part| part.as_os_str() == folder))
-        };
+        let gated =
+            |closed_on: &Option<&'static str>| closed_on.is_some_and(|folder| path.names().any(|name| name == folder));
         if !gated(&closed_on.borrow_and_update()) {
             return;
         }
@@ -217,11 +216,8 @@ impl Volume for GatedDrive {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_app = path;
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             self.gate.pass(path).await;
-            self.inner.open_read_stream(path_app).await
+            self.inner.open_read_stream(path).await
         })
     }
 
@@ -232,11 +228,8 @@ impl Volume for GatedDrive {
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_app = path;
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             self.gate.pass(path).await;
-            self.inner.read_range(path_app, offset, len).await
+            self.inner.read_range(path, offset, len).await
         })
     }
 }

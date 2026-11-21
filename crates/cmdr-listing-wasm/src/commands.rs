@@ -6,12 +6,12 @@
 //! answer, `Err` what the promise rejects with (the command's serialized error,
 //! or a string for arguments that don't parse, as Tauri does).
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
-use cmdr_fs::archive_format::{archive_boundary_candidate, has_supported_archive_extension};
+use cmdr_fs::archive_format::{archive_boundary_candidate_at, has_supported_archive_extension};
 
 use cmdr_brief_columns::{
     BriefColumnsIpcError, BriefColumnsQuery, FontMetrics, FontMetricsError, FontMetricsStore,
@@ -36,7 +36,7 @@ use crate::folder_count::{self, FOLDER_COUNT_COMMANDS};
 use crate::folder_sizes::FolderSizes;
 use crate::go_to::{DemoGoTo, GO_TO_COMMANDS};
 use crate::imports::{DemoImports, IMPORT_BUDGET_BYTES, ImportWatch};
-use crate::invoke::{answer, ok, page_runtime, parse};
+use crate::invoke::{answer, demo_path, ok, page_runtime, parse};
 use crate::multi_rename::{DemoMultiRename, MULTI_RENAME_COMMANDS};
 use crate::operations_host::DemoOperations;
 use crate::search::{DemoSearch, SEARCH_COMMANDS};
@@ -260,12 +260,14 @@ impl Demo {
     /// has no archive route, so the listing that follows ends in the volume's
     /// own "that's a file", and the page says why. A folder that only carries an
     /// archive's name lists as the folder it is, and costs one metadata read.
-    async fn note_archive_refusal(&self, path: &Path) {
-        let Some((archive, _inner)) = archive_boundary_candidate(path) else {
+    async fn note_archive_refusal(&self, path: &str) {
+        let Some((archive, _inner)) = demo_path(path)
+            .ok()
+            .and_then(|path| archive_boundary_candidate_at(&path))
+        else {
             return;
         };
-        if matches!(self.volume.get_metadata(&AppPath::legacy_unchecked(&archive)).await, Ok(entry) if !entry.is_directory)
-        {
+        if matches!(self.volume.get_metadata(&archive).await, Ok(entry) if !entry.is_directory) {
             self.events
                 .send(ARCHIVE_REFUSED, ArchiveRefusedEvent { path: &archive });
         }
@@ -297,7 +299,7 @@ impl Demo {
         match command {
             "list_directory_start_streaming" => {
                 let a: StartArgs = parse(command, args)?;
-                self.note_archive_refusal(Path::new(&a.path)).await;
+                self.note_archive_refusal(&a.path).await;
                 l.start(ListingRequest {
                     id: ListingId::new(a.listing_id.clone()),
                     volume_id: a.volume_id,
@@ -514,7 +516,7 @@ impl Demo {
 
 /// A transfer command's sources, and whether it copies: what a drop's staging
 /// folder is claimed by (`imports.rs`). `None` for any other command.
-fn transfer_sources(command: &str, args: &Value) -> Option<(bool, Vec<PathBuf>)> {
+fn transfer_sources(command: &str, args: &Value) -> Option<(bool, Vec<AppPathBuf>)> {
     let (copy, key) = match command {
         "copy_between_volumes" => (true, "sourcePaths"),
         "move_between_volumes" => (false, "sourcePaths"),
@@ -524,14 +526,18 @@ fn transfer_sources(command: &str, args: &Value) -> Option<(bool, Vec<PathBuf>)>
     let sources = args.get(key)?.as_array()?;
     Some((
         copy,
-        sources.iter().filter_map(Value::as_str).map(PathBuf::from).collect(),
+        // A source naming no app path lies in no staging folder.
+        sources
+            .iter()
+            .filter_map(|source| demo_path(source.as_str()?).ok())
+            .collect(),
     ))
 }
 
 /// [`ARCHIVE_REFUSED`]'s payload.
 #[derive(Serialize)]
 struct ArchiveRefusedEvent<'a> {
-    path: &'a Path,
+    path: &'a AppPath,
 }
 
 /// `ListingStatus` and `StreamingListingStartResult` in the app: the answer is

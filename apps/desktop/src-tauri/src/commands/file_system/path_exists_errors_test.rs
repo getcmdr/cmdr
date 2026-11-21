@@ -5,13 +5,11 @@
 
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 
+use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
-use cmdr_fs::app_path::BridgedPath;
 use std::future::Future;
 use std::io;
 use std::os::unix::fs::PermissionsExt;
-use std::path::Path;
-use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 
@@ -77,7 +75,7 @@ async fn a_stat_the_os_refuses_is_couldnt_tell() {
 
 /// A remote volume (no local path) that refuses one folder and holds nothing else.
 struct RefusingVolume {
-    root: BridgedPath,
+    root: &'static AppPath,
 }
 
 impl Volume for RefusingVolume {
@@ -86,7 +84,7 @@ impl Volume for RefusingVolume {
     }
 
     fn root(&self) -> &AppPath {
-        self.root.app()
+        self.root
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -105,9 +103,7 @@ impl Volume for RefusingVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        let shown = path.to_string_lossy().into_owned();
+        let shown = path.as_str().to_owned();
         Box::pin(async move {
             if shown.ends_with("/private") {
                 Err(VolumeError::PermissionDenied {
@@ -127,7 +123,7 @@ impl Volume for RefusingVolume {
 async fn a_remote_refusal_is_couldnt_tell_and_only_not_found_is_gone() {
     let id = format!("path-exists-refusing-{}", uuid::Uuid::new_v4());
     let volume = RefusingVolume {
-        root: BridgedPath::new(PathBuf::from("/Volumes/refusing")),
+        root: app_path!("/Volumes/refusing"),
     };
     get_volume_manager().register(&id, Arc::new(volume) as Arc<dyn Volume>);
     let refused = path_exists(Some(id.clone()), "/Volumes/refusing/private".to_string()).await;

@@ -487,6 +487,33 @@ async fn the_path_questions_see_every_write() {
     assert_eq!(echo, Value::Null, "a volume rooted at `/` has no root to echo");
 }
 
+/// The path questions read the page's text as the app path it names: a sloppy spelling of a
+/// real path still finds it, and text naming no app path (relative, or holding a `..` whose
+/// meaning is the volume's, not the text's) finds nothing, where the bridge rooted it at `/`
+/// or climbed by text.
+#[tokio::test(flavor = "multi_thread")]
+async fn the_path_questions_find_nothing_at_text_that_names_no_app_path() {
+    let (demo, _events) = demo();
+    for (path, there) in [
+        ("/Users/you/a.txt", true),
+        ("//Users/you/./a.txt", true),
+        ("/Users/you/", true),
+        ("Users/you/a.txt", false),
+        ("/Users/you/gone/../a.txt", false),
+        ("", false),
+    ] {
+        let answer = call(&demo, "path_exists", json!({ "volumeId": "root", "path": path })).await;
+        assert_eq!(answer, json!({ "data": there, "timedOut": false }), "{path:?}");
+    }
+    let kinds = call(
+        &demo,
+        "stat_paths_kinds",
+        json!({ "paths": ["/Users/you/", "Users/you", "/Users/you/.."] }),
+    )
+    .await;
+    assert_eq!(kinds, json!({ "data": [true, null, null], "timedOut": false }));
+}
+
 /// The page's tree with only `free_bytes` of room left on the disk.
 fn demo_with_free_bytes(free_bytes: u64) -> (Demo, Arc<Collector>) {
     let tree: DemoTree = serde_json::from_value(json!({

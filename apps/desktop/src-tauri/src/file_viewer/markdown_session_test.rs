@@ -159,13 +159,13 @@ fn a_document_on_a_phone(id: &str) -> String {
     tauri::async_runtime::block_on(async {
         volume
             .create_file(
-                &AppPath::legacy_unchecked(Path::new(&document)),
+                AppPath::from_normalized(&document).expect("a canonical app path"),
                 b"# Todo\n\n![shot](../Pictures/shot.png)\n",
             )
             .await?;
         volume
             .create_file(
-                &AppPath::legacy_unchecked(Path::new(&format!("{root}/Pictures/shot.png"))),
+                AppPath::from_normalized(&format!("{root}/Pictures/shot.png")).expect("a canonical app path"),
                 PNG,
             )
             .await

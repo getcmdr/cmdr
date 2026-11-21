@@ -19,7 +19,6 @@
 //! runs in CI. `fixture-lane-coverage` fails on one that lacks it.
 
 use cmdr_fs::app_path::AppPath;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::file_system::volume::Volume;
@@ -98,17 +97,16 @@ async fn smb_integration_scan_uses_oracle_on_hit_skips_stat_pipeline() {
     vol.detach_session_for_test().await;
 
     let paths = [
-        PathBuf::from(format!("{}/a.bin", parent)),
-        PathBuf::from(format!("{}/b.bin", parent)),
+        AppPath::from_normalized(&format!("{parent}/a.bin"))
+            .expect("a canonical path")
+            .to_owned(),
+        AppPath::from_normalized(&format!("{parent}/b.bin"))
+            .expect("a canonical path")
+            .to_owned(),
     ];
 
     let result = vol
-        .scan_for_copy_batch(
-            &paths
-                .iter()
-                .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                .collect::<Vec<_>>(),
-        )
+        .scan_for_copy_batch(&paths)
         .await
         .expect("oracle-served batch scan should succeed with no SMB session");
 

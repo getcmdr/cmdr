@@ -2623,7 +2623,7 @@ pub use remote_paths::{
     server_of_path, sftp_app_root, webdav_app_root, without_s3_key_ids,
 };
 pub use retirement::{Retirement, Retires, SelfHandle};
-pub use root_echo::{RootEcho, root_echo};
+pub use root_echo::{RootEcho, root_echo, root_echo_at};
 pub use routed::{ResolvedVolume, RoutedKind};
 pub use scan_boundary::{ScanBoundary, stopped as scan_stopped};
 pub use scan_listing_clock::{ScanListingClock, ScanListingClockPause};

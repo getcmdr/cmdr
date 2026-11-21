@@ -12,12 +12,11 @@
 use cmdr_fs::app_path::{AppPath, AppPathBuf, RelativeAppPathBuf};
 use std::path::{Path, PathBuf};
 
-use cmdr_fs::archive_format::archive_boundary_candidate;
+use cmdr_fs::archive_format::{archive_boundary_candidate, archive_boundary_candidate_at};
 use cmdr_fs::volume::Volume;
 
 use super::boundary::{
-    ARCHIVE_MAGIC_PREFIX_LEN, archive_boundary_candidate_at, bytes_match_archive_magic, confirm_archive_boundary,
-    confirms_on_disk, format_at,
+    ARCHIVE_MAGIC_PREFIX_LEN, bytes_match_archive_magic, confirm_archive_boundary, confirms_on_disk, format_at,
 };
 
 /// The boundary confirm for a path on `parent`: the `(archive_path, inner_path)`

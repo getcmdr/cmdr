@@ -45,7 +45,7 @@
 //!   dir, so side-by-side dev/prod/worktree instances never reap each other's live
 //!   temps). The startup reaper removes any `.cmdr-viewer-*` subdir left by a crash.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{LazyLock, RwLock};
@@ -348,7 +348,7 @@ fn materialize_with(
     }
     tauri::async_runtime::block_on(pull_to_temp(
         volume,
-        resolved.path.as_std_legacy().into_owned(),
+        as_volume_calls_spell_it(&resolved.path),
         TempSpot::viewer(dir),
         cap,
         None,
@@ -421,7 +421,7 @@ fn extract_routed(
 /// which route it was.
 struct Route {
     volume: std::sync::Arc<dyn Volume>,
-    entry_path: PathBuf,
+    entry_path: AppPathBuf,
     kind: RoutedKind,
 }
 
@@ -443,9 +443,17 @@ fn resolve_route(requested: &Path, volume_id: &str) -> Option<Route> {
     let volume = resolved.volume?;
     Some(Route {
         volume,
-        entry_path: resolved.path.as_std_legacy().into_owned(),
+        entry_path: as_volume_calls_spell_it(&resolved.path),
         kind,
     })
+}
+
+/// `path` as the pull hands it to its volume: through the bridge and back, crossed once
+/// for both of the pull's calls. Not the identity for a text holding an escape-range
+/// code point (the bridge decodes it and re-escapes the bytes), so it stays until the
+/// resolver's answer reaches the volume as is.
+fn as_volume_calls_spell_it(path: &AppPath) -> AppPathBuf {
+    AppPath::legacy_unchecked(&path.as_std_legacy()).into_owned()
 }
 
 /// Streams one file to a fresh temp subdir in `spot`, refusing an oversize file
@@ -453,7 +461,7 @@ fn resolve_route(requested: &Path, volume_id: &str) -> Option<Route> {
 /// for a volume the OS can't open.
 async fn pull_to_temp(
     volume: std::sync::Arc<dyn Volume>,
-    entry_path: PathBuf,
+    entry_path: AppPathBuf,
     spot: TempSpot<'_>,
     cap: u64,
     routed: Option<RoutedKind>,
@@ -467,7 +475,7 @@ async fn pull_to_temp(
     // the portal's tree entry, a phone's or server's stat), never a decompression or
     // a content read, so the refusal lands BEFORE we create a temp or stream a byte.
     let meta = volume
-        .get_metadata(&AppPath::legacy_unchecked(&entry_path))
+        .get_metadata(&entry_path)
         .await
         .map_err(|e| map_volume_error(e, routed))?;
     if let Some(stopped) = stopped_error(open, cancel) {
@@ -527,7 +535,7 @@ async fn pull_to_temp(
 )]
 async fn stream_to_file(
     volume: &dyn Volume,
-    entry_path: &Path,
+    entry_path: &AppPath,
     temp_file: &Path,
     cap: u64,
     declared_size: Option<u64>,
@@ -539,7 +547,7 @@ async fn stream_to_file(
 
     open.record_pull(0, declared_size);
     let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(entry_path))
+        .open_read_stream(entry_path)
         .await
         .map_err(|e| map_volume_error(e, routed))?;
     let mut file = std::fs::File::create(temp_file)?;

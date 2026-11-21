@@ -2,17 +2,16 @@
 //! transfer asks (`commands/file_system/{write_ops,volume_copy}.rs` and
 //! `commands/volumes.rs`'s `get_volume_space` in the app).
 
-use cmdr_fs::app_path::AppPath;
 use std::path::PathBuf;
 use std::sync::Arc;
 
 use cmdr_fs::deadline::{Deadline, TimedOut};
-use cmdr_fs::volume::{SpaceInfo, WriteAccess};
+use cmdr_fs::volume::{SpaceInfo, WriteAccess, anchor_at_root};
 use cmdr_operation_log::types::{Initiator, OperationId};
 use cmdr_operations::{
     CONFLICT_CHECK_BUDGET, ConflictId, ConflictResolution, ConflictResolutionOutcome, HomeFolderAction,
     LockedSourcesAnswer, LockedSourcesAnswerOutcome, ScanPreviewPurpose, SourceItemInput, SourcesGoneAnswerOutcome,
-    TrashRoutingAnswer, VolumeCopyConfig, WriteOperationConfig, resolve_dest_path,
+    TrashRoutingAnswer, VolumeCopyConfig, WriteOperationConfig,
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -184,8 +183,12 @@ impl DemoOperations {
                 if a.dest_volume_id != self.volume_id {
                     return ok(WriteAccess::Unknown);
                 }
-                let dest = resolve_dest_path(&self.volume, a.dest_path);
-                ok(self.volume.write_access_at(&AppPath::legacy_unchecked(&dest)).await)
+                // The desktop's `resolve_dest_path` with no `~` to expand (the volume has no
+                // local path); a box naming no place on the volume has no known access.
+                match anchor_at_root(self.volume.root(), &a.dest_path) {
+                    Ok(dest) => ok(self.volume.write_access_at(&dest).await),
+                    Err(_) => ok(WriteAccess::Unknown),
+                }
             }
             "resolve_write_conflict" => {
                 let a: ResolveConflictArgs = parse(command, args)?;
