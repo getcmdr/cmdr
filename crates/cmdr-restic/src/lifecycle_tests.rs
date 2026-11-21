@@ -5,9 +5,9 @@
 
 use super::{KEYCHAIN_SERVICE, ResticRepos, Tuning};
 use crate::path::VIRTUAL_ENTRY_NAME;
-use crate::test_fixtures::{self, FixtureRepo};
+use crate::test_fixtures::{self, At, FixtureRepo, app};
 use crate::volume::ResticVolume;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::{TestDir, wait_until_async};
 use cmdr_fs::volume::host::VolumeHost;
@@ -19,7 +19,7 @@ use cmdr_fs::volume::{
     VolumeReadStream,
 };
 use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -41,12 +41,12 @@ fn at(secs: u64) -> SystemTime {
     UNIX_EPOCH + Duration::from_secs(secs)
 }
 
-fn view(root: &str) -> PathBuf {
-    Path::new(root).join(VIRTUAL_ENTRY_NAME)
+fn view(root: &str) -> AppPathBuf {
+    app(root).at(VIRTUAL_ENTRY_NAME)
 }
 
-fn latest(root: &str) -> PathBuf {
-    view(root).join("latest")
+fn latest(root: &str) -> AppPathBuf {
+    view(root).at("latest")
 }
 
 /// A parent over an in-memory repo whose index-file reads can be held at a gate
@@ -81,9 +81,9 @@ impl ScriptedParent {
         self.in_flight.load(Ordering::SeqCst)
     }
 
-    fn is_index_file(path: &Path) -> bool {
+    fn is_index_file(path: &AppPath) -> bool {
         path.parent()
-            .and_then(Path::file_name)
+            .and_then(PathArithmetic::file_name)
             .is_some_and(|dir| dir == "index")
     }
 }
@@ -107,16 +107,13 @@ impl Volume for ScriptedParent {
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_app = path;
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             if path.file_name().is_none_or(|name| name != self.gated_dir) {
-                return self.inner.list_directory(path_app, on_progress).await;
+                return self.inner.list_directory(path, on_progress).await;
             }
             self.gated_listings_started.fetch_add(1, Ordering::SeqCst);
             let mut gate = self.list_gate.clone();
             let _ = gate.wait_for(|open| *open).await;
-            let mut listed = self.inner.list_directory(path_app, on_progress).await;
+            let mut listed = self.inner.list_directory(path, on_progress).await;
             if self.hide_index_sizes
                 && let Ok(entries) = &mut listed
             {
@@ -150,20 +147,17 @@ impl Volume for ScriptedParent {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_app = path;
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             if !Self::is_index_file(path) {
                 if path
                     .parent()
-                    .and_then(Path::file_name)
+                    .and_then(PathArithmetic::file_name)
                     .is_some_and(|dir| dir == self.gated_dir)
                 {
                     self.gated_files_started.fetch_add(1, Ordering::SeqCst);
                     let mut gate = self.file_gate.clone();
                     let _ = gate.wait_for(|open| *open).await;
                 }
-                return self.inner.open_read_stream(path_app).await;
+                return self.inner.open_read_stream(path).await;
             }
             self.index_reads.fetch_add(1, Ordering::SeqCst);
             self.in_flight.fetch_add(1, Ordering::SeqCst);
@@ -172,7 +166,7 @@ impl Volume for ScriptedParent {
             // allowed-test-sleep: this fake parent IS a slow NAS; each wait is one
             // index file's round trip
             tokio::time::sleep(self.index_read_delay).await;
-            let stream = self.inner.open_read_stream(path_app).await;
+            let stream = self.inner.open_read_stream(path).await;
             self.in_flight.fetch_sub(1, Ordering::SeqCst);
             stream
         })
@@ -231,9 +225,9 @@ impl Rig {
             fixture.backup(&source, at(1_791_000_000 + i * 3_600));
         }
         let inner = Arc::new(InMemoryVolume::new("testshare"));
-        fixture.write_into(inner.as_ref(), Path::new(ROOT)).await;
+        fixture.write_into_at(inner.as_ref(), &app(ROOT)).await;
         if options.second_repo {
-            fixture.write_into(inner.as_ref(), Path::new(OTHER_ROOT)).await;
+            fixture.write_into_at(inner.as_ref(), &app(OTHER_ROOT)).await;
         }
         let index: Vec<(PathBuf, Vec<u8>)> = fixture
             .files()
@@ -290,21 +284,17 @@ impl Rig {
 
 fn view_of(hub: &Arc<ResticRepos>, parent: &Arc<ScriptedParent>, root: &str) -> ResticVolume {
     let parent: Arc<dyn Volume> = Arc::clone(parent) as Arc<dyn Volume>;
-    ResticVolume::new(Arc::clone(hub), VOLUME_ID, parent, PathBuf::from(root))
+    ResticVolume::new_at(Arc::clone(hub), VOLUME_ID, parent, app(root))
 }
 
 /// Lists `path` on a task of its own, the way a pane's read runs.
 fn spawn_listing(
     volume: &Arc<ResticVolume>,
-    path: PathBuf,
+    path: AppPathBuf,
     cancel: Option<CancellationToken>,
 ) -> tokio::task::JoinHandle<Result<Vec<FileEntry>, VolumeError>> {
     let volume = Arc::clone(volume);
-    tokio::spawn(async move {
-        volume
-            .list_directory_with_cancel(&AppPath::legacy_unchecked(&path), None, cancel.as_ref())
-            .await
-    })
+    tokio::spawn(async move { volume.list_directory_with_cancel(&path, None, cancel.as_ref()).await })
 }
 
 fn scope(root: &str) -> String {
@@ -447,7 +437,7 @@ async fn a_load_reports_its_bytes_as_it_reads() {
 
     let entries = rig
         .volume
-        .list_directory(&AppPath::legacy_unchecked(&latest(ROOT)), Some(&on_progress))
+        .list_directory(&latest(ROOT), Some(&on_progress))
         .await
         .expect("lists");
 
@@ -501,7 +491,7 @@ async fn an_index_bigger_than_the_window_loads_reading_each_file_once() {
     };
 
     rig.volume
-        .list_directory(&AppPath::legacy_unchecked(&latest(ROOT)), Some(&on_progress))
+        .list_directory(&latest(ROOT), Some(&on_progress))
         .await
         .expect("lists");
 
@@ -527,10 +517,7 @@ async fn an_index_listed_without_sizes_loads_reading_each_file_once() {
     })
     .await;
 
-    rig.volume
-        .list_directory(&AppPath::legacy_unchecked(&latest(ROOT)), None)
-        .await
-        .expect("lists");
+    rig.volume.list_directory(&latest(ROOT), None).await.expect("lists");
 
     assert_eq!(rig.parent.index_reads(), rig.index_files);
 }
@@ -558,21 +545,15 @@ async fn past_the_cap_the_least_recently_used_index_goes_and_its_password_stays(
     let other = view_of(&rig.hub, &rig.parent, OTHER_ROOT);
     assert!(test_fixtures::unlock(&other, PASSWORD).await);
 
-    rig.volume
-        .list_directory(&AppPath::legacy_unchecked(&latest(ROOT)), None)
-        .await
-        .expect("lists");
+    rig.volume.list_directory(&latest(ROOT), None).await.expect("lists");
     assert!(ResticRepos::is_indexed(&rig.volume.slot_for_tests()));
-    other
-        .list_directory(&AppPath::legacy_unchecked(&latest(OTHER_ROOT)), None)
-        .await
-        .expect("lists");
+    other.list_directory(&latest(OTHER_ROOT), None).await.expect("lists");
 
     assert!(!ResticRepos::is_indexed(&rig.volume.slot_for_tests()), "evicted");
     assert!(ResticRepos::is_indexed(&other.slot_for_tests()));
     let reads = rig.parent.index_reads();
     rig.volume
-        .list_directory(&AppPath::legacy_unchecked(&latest(ROOT)), None)
+        .list_directory(&latest(ROOT), None)
         .await
         .expect("lists again without a password prompt");
     assert_eq!(rig.parent.index_reads(), reads + rig.index_files, "reloaded");
@@ -592,16 +573,9 @@ async fn an_index_in_use_is_never_evicted() {
     let other = view_of(&rig.hub, &rig.parent, OTHER_ROOT);
     assert!(test_fixtures::unlock(&other, PASSWORD).await);
     let file = find_file(&rig.volume, latest(ROOT), "a.txt").await;
-    let stream = rig
-        .volume
-        .open_read_stream(&AppPath::legacy_unchecked(&file))
-        .await
-        .expect("opens");
+    let stream = rig.volume.open_read_stream(&file).await.expect("opens");
 
-    other
-        .list_directory(&AppPath::legacy_unchecked(&latest(OTHER_ROOT)), None)
-        .await
-        .expect("lists");
+    other.list_directory(&latest(OTHER_ROOT), None).await.expect("lists");
 
     assert!(
         ResticRepos::is_indexed(&rig.volume.slot_for_tests()),
@@ -627,10 +601,7 @@ async fn a_transfer_hold_keeps_the_index_past_the_idle_drop_and_another_repos_lo
     .await;
     let other = view_of(&rig.hub, &rig.parent, OTHER_ROOT);
     assert!(test_fixtures::unlock(&other, PASSWORD).await);
-    rig.volume
-        .list_directory(&AppPath::legacy_unchecked(&latest(ROOT)), None)
-        .await
-        .expect("lists");
+    rig.volume.list_directory(&latest(ROOT), None).await.expect("lists");
     let slot = rig.volume.slot_for_tests();
 
     let hold = rig
@@ -640,10 +611,7 @@ async fn a_transfer_hold_keeps_the_index_past_the_idle_drop_and_another_repos_lo
     // allowed-test-sleep: the idle period IS the subject: a copy paused this long
     // between files, holding no read stream
     tokio::time::sleep(Duration::from_millis(600)).await;
-    other
-        .list_directory(&AppPath::legacy_unchecked(&latest(OTHER_ROOT)), None)
-        .await
-        .expect("lists");
+    other.list_directory(&latest(OTHER_ROOT), None).await.expect("lists");
 
     assert!(
         ResticRepos::is_indexed(&slot),
@@ -668,15 +636,12 @@ async fn an_idle_index_is_dropped_and_its_password_kept() {
         ..RigOptions::default()
     })
     .await;
-    rig.volume
-        .list_directory(&AppPath::legacy_unchecked(&latest(ROOT)), None)
-        .await
-        .expect("lists");
+    rig.volume.list_directory(&latest(ROOT), None).await.expect("lists");
     let slot = rig.volume.slot_for_tests();
 
     wait_until_async(WITHIN, "the idle index is dropped", || !ResticRepos::is_indexed(&slot)).await;
     rig.volume
-        .list_directory(&AppPath::legacy_unchecked(&latest(ROOT)), None)
+        .list_directory(&latest(ROOT), None)
         .await
         .expect("lists again without a password prompt");
 }
@@ -694,10 +659,7 @@ async fn root_listings_dont_keep_an_idle_index_loaded() {
         ..RigOptions::default()
     })
     .await;
-    rig.volume
-        .list_directory(&AppPath::legacy_unchecked(&latest(ROOT)), None)
-        .await
-        .expect("lists");
+    rig.volume.list_directory(&latest(ROOT), None).await.expect("lists");
     let slot = rig.volume.slot_for_tests();
     assert!(ResticRepos::is_indexed(&slot));
 
@@ -708,7 +670,7 @@ async fn root_listings_dont_keep_an_idle_index_loaded() {
             "the index drops despite root listings"
         );
         rig.volume
-            .list_directory(&AppPath::legacy_unchecked(&view(ROOT)), None)
+            .list_directory(&view(ROOT), None)
             .await
             .expect("lists the root");
         // allowed-test-sleep: the pane's re-lists arrive over time
@@ -725,33 +687,27 @@ async fn a_new_snapshot_reloads_the_index_while_an_old_reader_finishes() {
     let fixture = FixtureRepo::init(PASSWORD);
     fixture.backup(&source, at(1_791_000_000));
     let parent = Arc::new(InMemoryVolume::new("testshare"));
-    fixture.write_into(parent.as_ref(), Path::new(ROOT)).await;
+    fixture.write_into_at(parent.as_ref(), &app(ROOT)).await;
     let hub = Arc::new(ResticRepos::new(VolumeHost::detached()));
-    let volume = ResticVolume::new(
+    let volume = ResticVolume::new_at(
         Arc::clone(&hub),
         VOLUME_ID,
         Arc::clone(&parent) as Arc<dyn Volume>,
-        PathBuf::from(ROOT),
+        app(ROOT),
     );
     assert!(test_fixtures::unlock(&volume, PASSWORD).await);
-    let old_snapshot = volume
-        .list_directory(&AppPath::legacy_unchecked(&view(ROOT)), None)
-        .await
-        .expect("lists")[0]
+    let old_snapshot = volume.list_directory(&view(ROOT), None).await.expect("lists")[0]
         .name
         .clone();
-    let old_file = find_file(&volume, view(ROOT).join(&old_snapshot), "a.txt").await;
-    let mut old_stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(&old_file))
-        .await
-        .expect("opens");
+    let old_file = find_file(&volume, view(ROOT).at(&old_snapshot), "a.txt").await;
+    let mut old_stream = volume.open_read_stream(&old_file).await.expect("opens");
     let first = old_stream.next_chunk().await.expect("a chunk").expect("reads");
 
     std::fs::write(source.join("a.txt"), b"newer").expect("change the source");
     fixture.backup(&source, at(1_792_000_000));
-    fixture.write_into(parent.as_ref(), Path::new(ROOT)).await;
+    fixture.write_into_at(parent.as_ref(), &app(ROOT)).await;
     let rows = volume
-        .list_directory(&AppPath::legacy_unchecked(&view(ROOT)), None)
+        .list_directory(&view(ROOT), None)
         .await
         .expect("refreshes the root");
     let new_snapshot = rows
@@ -759,11 +715,8 @@ async fn a_new_snapshot_reloads_the_index_while_an_old_reader_finishes() {
         .map(|row| row.name.clone())
         .find(|name| *name != old_snapshot && name != "latest")
         .expect("the new backup is listed");
-    let new_file = find_file(&volume, view(ROOT).join(&new_snapshot), "a.txt").await;
-    let mut new_stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(&new_file))
-        .await
-        .expect("opens");
+    let new_file = find_file(&volume, view(ROOT).at(&new_snapshot), "a.txt").await;
+    let mut new_stream = volume.open_read_stream(&new_file).await.expect("opens");
     assert_eq!(
         new_stream.next_chunk().await.expect("a chunk").expect("reads"),
         b"newer"
@@ -831,7 +784,7 @@ async fn a_snapshot_landing_during_a_refresh_shows_in_the_listing_that_asked_aft
     // The running refresh has one new snapshot file to read, and stands inside
     // that read: it has listed `snapshots/` already.
     rig.fixture.add_snapshot(at(1_798_000_000), "laptop");
-    rig.fixture.write_into(rig.parent.inner.as_ref(), Path::new(ROOT)).await;
+    rig.fixture.write_into_at(rig.parent.inner.as_ref(), &app(ROOT)).await;
     rig.file_gate.send_replace(false);
     let running = spawn_listing(&rig.volume, view(ROOT), None);
     wait_until_async(WITHIN, "the running refresh reads a new snapshot file", || {
@@ -841,7 +794,7 @@ async fn a_snapshot_landing_during_a_refresh_shows_in_the_listing_that_asked_aft
 
     // A backup lands after that listing, and the watch's re-list asks.
     rig.fixture.add_snapshot(at(1_799_000_000), "laptop");
-    rig.fixture.write_into(rig.parent.inner.as_ref(), Path::new(ROOT)).await;
+    rig.fixture.write_into_at(rig.parent.inner.as_ref(), &app(ROOT)).await;
     let slot = rig.volume.slot_for_tests();
     let landed = std::time::Instant::now();
     let asked_after = spawn_listing(&rig.volume, view(ROOT), None);
@@ -902,12 +855,8 @@ async fn a_refresh_after_a_cancelled_stuck_one_waits_for_it_instead_of_piling_up
 impl Rig {
     /// Deletes every file of the repo from the drive (the folders stay, empty).
     async fn delete_repo_files(&self) {
-        for (path, _) in self.fixture.files() {
-            self.parent
-                .inner
-                .delete(&AppPath::legacy_unchecked(&Path::new(ROOT).join(path)))
-                .await
-                .expect("rm");
+        for (path, _) in self.fixture.files_at(&app(ROOT)) {
+            self.parent.inner.delete(&path).await.expect("rm");
         }
     }
 }
@@ -917,17 +866,11 @@ impl Rig {
 #[tokio::test(flavor = "multi_thread")]
 async fn a_deleted_repo_answers_not_found_not_an_empty_list() {
     let rig = Rig::new(RigOptions::default()).await;
-    rig.volume
-        .list_directory(&AppPath::legacy_unchecked(&view(ROOT)), None)
-        .await
-        .expect("lists");
+    rig.volume.list_directory(&view(ROOT), None).await.expect("lists");
 
     rig.delete_repo_files().await;
 
-    let listing = rig
-        .volume
-        .list_directory(&AppPath::legacy_unchecked(&view(ROOT)), None)
-        .await;
+    let listing = rig.volume.list_directory(&view(ROOT), None).await;
     assert!(matches!(listing, Err(VolumeError::NotFound(_))), "got {listing:?}");
 }
 
@@ -938,19 +881,16 @@ async fn a_deleted_repo_answers_not_found_not_an_empty_list() {
 #[tokio::test(flavor = "multi_thread")]
 async fn a_repo_replaced_in_place_opens_again_and_lists_the_new_one() {
     let rig = Rig::new(RigOptions::default()).await;
-    rig.volume
-        .list_directory(&AppPath::legacy_unchecked(&view(ROOT)), None)
-        .await
-        .expect("lists");
+    rig.volume.list_directory(&view(ROOT), None).await.expect("lists");
 
     rig.delete_repo_files().await;
     let replacement = FixtureRepo::init(PASSWORD);
     replacement.add_snapshot(at(1_795_000_000), "test-host");
-    replacement.write_into(rig.parent.inner.as_ref(), Path::new(ROOT)).await;
+    replacement.write_into_at(rig.parent.inner.as_ref(), &app(ROOT)).await;
 
     let rows = rig
         .volume
-        .list_directory(&AppPath::legacy_unchecked(&view(ROOT)), None)
+        .list_directory(&view(ROOT), None)
         .await
         .expect("lists the new repo");
     assert_eq!(rows.len(), 2, "its one snapshot plus `latest`: {rows:?}");
@@ -958,19 +898,16 @@ async fn a_repo_replaced_in_place_opens_again_and_lists_the_new_one() {
 
 /// Walks down from `dir` to the folder holding `name` (a snapshot of a Mac
 /// starts at `/`), and answers that file's path.
-async fn find_file(volume: &ResticVolume, mut dir: PathBuf, name: &str) -> PathBuf {
+async fn find_file(volume: &ResticVolume, mut dir: AppPathBuf, name: &str) -> AppPathBuf {
     loop {
-        let entries = volume
-            .list_directory(&AppPath::legacy_unchecked(&dir), None)
-            .await
-            .expect("lists");
+        let entries = volume.list_directory(&dir, None).await.expect("lists");
         if entries.iter().any(|e| e.name == name) {
-            return dir.join(name);
+            return dir.at(name);
         }
         let [only] = entries.as_slice() else {
-            panic!("{} should hold one folder on the way down: {entries:?}", dir.display());
+            panic!("{dir:?} should hold one folder on the way down: {entries:?}");
         };
-        dir = dir.join(&only.name);
+        dir = dir.at(&only.name);
     }
 }
 
@@ -979,11 +916,7 @@ async fn find_file(volume: &ResticVolume, mut dir: PathBuf, name: &str) -> PathB
 async fn loading_the_index_never_writes_to_the_repo() {
     let rig = Rig::new(RigOptions::default()).await;
     let file = find_file(&rig.volume, latest(ROOT), "a.txt").await;
-    let mut stream = rig
-        .volume
-        .open_read_stream(&AppPath::legacy_unchecked(&file))
-        .await
-        .expect("opens");
+    let mut stream = rig.volume.open_read_stream(&file).await.expect("opens");
     while let Some(chunk) = stream.next_chunk().await {
         chunk.expect("reads");
     }

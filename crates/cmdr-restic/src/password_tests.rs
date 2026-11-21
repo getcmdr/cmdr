@@ -4,7 +4,6 @@
 //! `lifecycle_tests.rs`, sharing its rig.
 
 use super::*;
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::LockedContainer;
 
 // ── Passwords and the credential store ─────────────────────────────────────
@@ -51,11 +50,7 @@ async fn a_stored_password_opens_the_repo_without_asking() {
     let store = InMemoryCredentials::new().with_entry(KEYCHAIN_SERVICE, Some(&scope(ROOT)), &scope(ROOT), PASSWORD);
     let rig = locked_rig(Arc::new(store)).await;
 
-    let rows = rig
-        .volume
-        .list_directory(&AppPath::legacy_unchecked(&view(ROOT)), None)
-        .await
-        .expect("lists");
+    let rows = rig.volume.list_directory(&view(ROOT), None).await.expect("lists");
     assert_eq!(rows.len(), BACKUPS as usize + 1, "every snapshot plus `latest`");
 }
 
@@ -67,10 +62,7 @@ async fn a_store_miss_is_asked_once() {
     let rig = locked_rig(Arc::clone(&store) as Arc<dyn CredentialStore>).await;
 
     for _ in 0..3 {
-        let listing = rig
-            .volume
-            .list_directory(&AppPath::legacy_unchecked(&view(ROOT)), None)
-            .await;
+        let listing = rig.volume.list_directory(&view(ROOT), None).await;
         assert!(
             matches!(
                 listing,
@@ -91,10 +83,7 @@ async fn a_stored_password_that_stopped_working_asks_as_a_wrong_attempt() {
     let store = InMemoryCredentials::new().with_entry(KEYCHAIN_SERVICE, Some(&scope(ROOT)), &scope(ROOT), "stale");
     let rig = locked_rig(Arc::new(store)).await;
 
-    let listing = rig
-        .volume
-        .list_directory(&AppPath::legacy_unchecked(&view(ROOT)), None)
-        .await;
+    let listing = rig.volume.list_directory(&view(ROOT), None).await;
     assert!(
         matches!(
             listing,
@@ -130,12 +119,7 @@ async fn only_remember_password_files_a_verified_password() {
         .credentials(KEYCHAIN_SERVICE, Some(&scope(ROOT)))
         .expect("filed under the repo's scope");
     assert_eq!(filed.secret, PASSWORD);
-    assert!(
-        rig.volume
-            .list_directory(&AppPath::legacy_unchecked(&view(ROOT)), None)
-            .await
-            .is_ok()
-    );
+    assert!(rig.volume.list_directory(&view(ROOT), None).await.is_ok());
 }
 
 /// An unlock dropped mid-scrypt (the dialog's Cancel) keeps nothing, a wrong
@@ -154,9 +138,7 @@ async fn nothing_is_kept_or_filed_for_a_cancelled_unlock_a_wrong_password_or_rem
     assert!(store.credentials(KEYCHAIN_SERVICE, Some(&scope(ROOT))).is_none());
     assert!(
         matches!(
-            rig.volume
-                .list_directory(&AppPath::legacy_unchecked(&view(ROOT)), None)
-                .await,
+            rig.volume.list_directory(&view(ROOT), None).await,
             Err(VolumeError::NeedsPassword { .. })
         ),
         "a cancelled unlock keeps no password"
@@ -193,12 +175,7 @@ async fn an_unlock_dropped_while_another_open_runs_keeps_nothing() {
         matches!(answered, Ok(Ok(UnlockOutcome::Unlocked))),
         "the unlock commits without waiting on the other open, so no drop can land between keeping and answering: {answered:?}"
     );
-    assert!(
-        rig.volume
-            .list_directory(&AppPath::legacy_unchecked(&view(ROOT)), None)
-            .await
-            .is_ok()
-    );
+    assert!(rig.volume.list_directory(&view(ROOT), None).await.is_ok());
 }
 
 /// ❗ Forgetting the saved password locks the repo again EVERYWHERE: the store
@@ -211,7 +188,7 @@ async fn forgetting_the_saved_password_locks_the_repo_until_the_next_unlock() {
         Arc::new(InMemoryCredentials::new().with_entry(KEYCHAIN_SERVICE, Some(&scope(ROOT)), &scope(ROOT), PASSWORD));
     let rig = locked_rig(Arc::clone(&store) as Arc<dyn CredentialStore>).await;
     let file = find_file(&rig.volume, latest(ROOT), "a.txt").await;
-    let inside = file.parent().expect("a folder inside the snapshot").to_path_buf();
+    let inside = file.parent().expect("a folder inside the snapshot").to_owned();
     let locked = rig.volume.as_password_locked().expect("a repo is password-locked");
 
     assert_eq!(locked.forget_saved_password().await, PasswordForgotten::Everywhere);
@@ -221,7 +198,7 @@ async fn forgetting_the_saved_password_locks_the_repo_until_the_next_unlock() {
         "the store entry is gone"
     );
     for path in [view(ROOT), inside.clone()] {
-        let listing = rig.volume.list_directory(&AppPath::legacy_unchecked(&path), None).await;
+        let listing = rig.volume.list_directory(&path, None).await;
         assert!(
             matches!(
                 listing,
@@ -230,19 +207,13 @@ async fn forgetting_the_saved_password_locks_the_repo_until_the_next_unlock() {
                     wrong_attempt: false,
                 })
             ),
-            "{} asks again: {listing:?}",
-            path.display()
+            "{path:?} asks again: {listing:?}"
         );
     }
 
     let outcome = locked.unlock(PASSWORD.to_string()).await.expect("asks the repo");
     assert_eq!(outcome, UnlockOutcome::Unlocked);
-    assert!(
-        rig.volume
-            .list_directory(&AppPath::legacy_unchecked(&inside), None)
-            .await
-            .is_ok()
-    );
+    assert!(rig.volume.list_directory(&inside, None).await.is_ok());
 }
 
 /// A store that won't let go still leaves the repo locked for this session, and
@@ -257,16 +228,14 @@ async fn a_store_that_refuses_to_forget_still_locks_the_repo() {
     )));
     let rig = locked_rig(Arc::clone(&store) as Arc<dyn CredentialStore>).await;
     rig.volume
-        .list_directory(&AppPath::legacy_unchecked(&view(ROOT)), None)
+        .list_directory(&view(ROOT), None)
         .await
         .expect("opens with the stored password");
     let locked = rig.volume.as_password_locked().expect("a repo is password-locked");
 
     assert_eq!(locked.forget_saved_password().await, PasswordForgotten::StoreKeptIt);
     assert!(matches!(
-        rig.volume
-            .list_directory(&AppPath::legacy_unchecked(&view(ROOT)), None)
-            .await,
+        rig.volume.list_directory(&view(ROOT), None).await,
         Err(VolumeError::NeedsPassword {
             container: LockedContainer::ResticRepo,
             wrong_attempt: false,
@@ -342,10 +311,7 @@ async fn a_forget_answers_at_once_and_an_open_in_flight_keeps_nothing() {
 
     rig.list_gate.send_replace(true);
     let _ = listing.await.expect("task");
-    let after = rig
-        .volume
-        .list_directory(&AppPath::legacy_unchecked(&view(ROOT)), None)
-        .await;
+    let after = rig.volume.list_directory(&view(ROOT), None).await;
     assert!(
         matches!(
             after,
@@ -417,9 +383,7 @@ async fn an_unlock_in_flight_during_a_forget_keeps_and_files_nothing() {
         "nothing filed"
     );
     assert!(matches!(
-        rig.volume
-            .list_directory(&AppPath::legacy_unchecked(&view(ROOT)), None)
-            .await,
+        rig.volume.list_directory(&view(ROOT), None).await,
         Err(VolumeError::NeedsPassword {
             container: LockedContainer::ResticRepo,
             wrong_attempt: false,

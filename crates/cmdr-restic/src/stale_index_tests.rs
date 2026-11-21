@@ -8,12 +8,11 @@
 use super::ResticVolume;
 use crate::hub::ResticRepos;
 use crate::path::VIRTUAL_ENTRY_NAME;
-use crate::test_fixtures::{self, FixtureRepo};
-use cmdr_fs::app_path::AppPath;
+use crate::test_fixtures::{self, At, FixtureRepo, app};
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeError, VolumeReadStream};
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
 
@@ -32,7 +31,7 @@ struct Pruned {
     parent: Arc<InMemoryVolume>,
     volume: ResticVolume,
     /// The backed-up folder inside the snapshot.
-    folder: PathBuf,
+    folder: AppPathBuf,
 }
 
 impl Pruned {
@@ -44,14 +43,9 @@ impl Pruned {
         let fixture = FixtureRepo::init(PASSWORD);
         fixture.backup(&source, UNIX_EPOCH + Duration::from_secs(1_791_000_000));
         let parent = Arc::new(InMemoryVolume::new("testshare"));
-        fixture.write_into(parent.as_ref(), Path::new(ROOT)).await;
+        fixture.write_into_at(parent.as_ref(), &app(ROOT)).await;
         let hub = Arc::new(ResticRepos::new(VolumeHost::detached()));
-        let volume = ResticVolume::new(
-            hub,
-            "smb-testshare",
-            Arc::clone(&parent) as Arc<dyn Volume>,
-            PathBuf::from(ROOT),
-        );
+        let volume = ResticVolume::new_at(hub, "smb-testshare", Arc::clone(&parent) as Arc<dyn Volume>, app(ROOT));
         assert!(test_fixtures::unlock(&volume, PASSWORD).await);
         let folder = Self::find_source(&volume).await;
         Self {
@@ -65,27 +59,24 @@ impl Pruned {
 
     /// Walks down `latest` to the folder holding `a.txt` (a snapshot of a Mac
     /// starts at `/`), which loads the index.
-    async fn find_source(volume: &ResticVolume) -> PathBuf {
-        let mut dir = Path::new(ROOT).join(VIRTUAL_ENTRY_NAME).join("latest");
+    async fn find_source(volume: &ResticVolume) -> AppPathBuf {
+        let mut dir = app(ROOT).at(VIRTUAL_ENTRY_NAME).at("latest");
         loop {
-            let entries = volume
-                .list_directory(&AppPath::legacy_unchecked(&dir), None)
-                .await
-                .expect("lists");
+            let entries = volume.list_directory(&dir, None).await.expect("lists");
             if entries.iter().any(|e| e.name == "a.txt") {
                 return dir;
             }
             let [only] = entries.as_slice() else {
-                panic!("{} should hold one folder: {entries:?}", dir.display());
+                panic!("{dir:?} should hold one folder: {entries:?}");
             };
-            dir = dir.join(&only.name);
+            dir = dir.at(&only.name);
         }
     }
 
     /// Another machine runs `restic prune --repack-all`.
     async fn prune_elsewhere(&self) {
         self.fixture.repack_all();
-        self.fixture.sync_into(self.parent.as_ref(), Path::new(ROOT)).await;
+        self.fixture.sync_into_at(self.parent.as_ref(), &app(ROOT)).await;
     }
 
     fn index_loads(&self) -> u64 {
@@ -115,13 +106,13 @@ async fn after_a_prune_elsewhere_a_listing_and_a_read_reload_the_index_once() {
 
     let nested = rig
         .volume
-        .list_directory(&AppPath::legacy_unchecked(&rig.folder.join("nested")), None)
+        .list_directory(&rig.folder.at("nested"), None)
         .await
         .expect("a tree the stale index points into a deleted pack lists after a reload");
     assert_eq!(nested.iter().map(|e| e.name.as_str()).collect::<Vec<_>>(), ["b.bin"]);
     let mut stream = rig
         .volume
-        .open_read_stream(&AppPath::legacy_unchecked(&rig.folder.join("a.txt")))
+        .open_read_stream(&rig.folder.at("a.txt"))
         .await
         .expect("opens");
     assert_eq!(read_to_end(&mut stream).await.expect("reads"), b"hello");
@@ -134,7 +125,7 @@ async fn a_stream_opened_before_a_prune_elsewhere_reads_on_through_a_reload() {
     let rig = Pruned::new().await;
     let mut stream = rig
         .volume
-        .open_read_stream(&AppPath::legacy_unchecked(&rig.folder.join("nested/b.bin")))
+        .open_read_stream(&rig.folder.at("nested/b.bin"))
         .await
         .expect("opens");
 
@@ -151,7 +142,7 @@ async fn a_range_read_after_a_prune_elsewhere_reloads_the_index() {
 
     let bytes = rig
         .volume
-        .read_range(&AppPath::legacy_unchecked(&rig.folder.join("nested/b.bin")), 1_000, 10)
+        .read_range(&rig.folder.at("nested/b.bin"), 1_000, 10)
         .await
         .expect("reads after a reload");
     assert_eq!(bytes, big_bytes()[1_000..1_010]);
@@ -162,32 +153,23 @@ async fn a_range_read_after_a_prune_elsewhere_reloads_the_index() {
 #[tokio::test(flavor = "multi_thread")]
 async fn a_pack_missing_after_a_fresh_load_is_a_real_not_found() {
     let rig = Pruned::new().await;
-    let data = Path::new(ROOT).join("data");
-    for subdir in rig
-        .parent
-        .list_directory(&AppPath::legacy_unchecked(&data), None)
-        .await
-        .expect("lists")
-    {
+    let data = app(ROOT).at("data");
+    for subdir in rig.parent.list_directory(&data, None).await.expect("lists") {
         for pack in rig
             .parent
-            .list_directory(&AppPath::legacy_unchecked(&data.join(&subdir.name)), None)
+            .list_directory(&data.at(&subdir.name), None)
             .await
             .expect("lists")
         {
             rig.parent
-                .delete(&AppPath::legacy_unchecked(&data.join(&subdir.name).join(&pack.name)))
+                .delete(&data.at(&subdir.name).at(&pack.name))
                 .await
                 .expect("deletes");
         }
     }
 
     // The open reads the folder's tree (gone too), or the read the file's blob.
-    let read = match rig
-        .volume
-        .open_read_stream(&AppPath::legacy_unchecked(&rig.folder.join("a.txt")))
-        .await
-    {
+    let read = match rig.volume.open_read_stream(&rig.folder.at("a.txt")).await {
         Ok(mut stream) => read_to_end(&mut stream).await,
         Err(err) => Err(err),
     };

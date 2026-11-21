@@ -37,6 +37,8 @@ English a user reads. The app's half: `apps/desktop/src-tauri/src/file_system/re
 - **Mode is `& 0o777` of Go's `os.FileMode`**; names go through `Node::name()`, ❌ never the raw field.
 - **A hostile repo can't reach scrypt**: the adapter caps key count, size, and summed cost first.
 - **The heavy state is the hub's**, keyed by `(volume id, repo root)` as spelled; ❌ no `canonicalize`, ❌ no static.
+- **Paths are `AppPath`s, ❌ never `std::path`**: fixed names join with `path::child`; rows and errors spell through
+  `path::child_text` / `text_of`, which keep main's text byte for byte (DETAILS § "App paths").
 - The public surface is capped by `index-crate-isolation`; argue an addition in `DETAILS.md`.
 
 The view, the hub, the index lifecycle, the adapter, errors, naming, fixtures, and the capped surface: `DETAILS.md`.

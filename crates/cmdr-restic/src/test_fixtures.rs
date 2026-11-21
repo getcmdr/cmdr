@@ -10,8 +10,10 @@
 //! Never in a shipped build.
 
 use crate::ResticVolume;
+use crate::hub::bridged;
+use crate::path::child;
 use bytes::Bytes;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::volume::Volume;
 use rustic_core::jiff::Timestamp;
 use rustic_core::jiff::tz::TimeZone;
@@ -119,12 +121,9 @@ impl FixtureRepo {
     /// Every file of the repo, as (path relative to the repo folder, bytes), in
     /// restic's on-disk layout.
     pub fn files(&self) -> Vec<(PathBuf, Vec<u8>)> {
-        self.backend
-            .files
-            .read()
-            .expect("fixture lock")
-            .iter()
-            .map(|((tpe, id), bytes)| (layout_path(tpe, id), bytes.to_vec()))
+        self.layout()
+            .into_iter()
+            .map(|(names, bytes)| (names.iter().collect(), bytes))
             .collect()
     }
 
@@ -135,40 +134,36 @@ impl FixtureRepo {
     /// [`backup`](Self::backup) adds just the new ones: restic's files are named
     /// by their content, and the config never changes.
     pub async fn write_into(&self, volume: &dyn Volume, root: &Path) {
-        let mut dirs = vec![
-            root.to_path_buf(),
-            root.join("data"),
-            root.join("index"),
-            root.join("keys"),
-            root.join("locks"),
-            root.join("snapshots"),
-        ];
-        let files = self.files();
-        for (path, _) in &files {
-            if let Some(parent) = path
-                .parent()
-                .filter(|p| p.starts_with("data") && *p != Path::new("data"))
+        self.write_into_at(volume, &bridged(root)).await;
+    }
+
+    /// [`write_into`](Self::write_into) for a root the caller holds as an app
+    /// path.
+    pub async fn write_into_at(&self, volume: &dyn Volume, root: &AppPath) {
+        let mut dirs = vec![root.to_owned()];
+        for folder in ["data", "index", "keys", "locks", "snapshots"] {
+            dirs.push(child(root, folder));
+        }
+        let files = self.layout();
+        for (names, _) in &files {
+            if let [first, fan_out, _] = names.as_slice()
+                && first == "data"
             {
-                dirs.push(root.join(parent));
+                let dir = child(&child(root, first), fan_out);
+                if !dirs.contains(&dir) {
+                    dirs.push(dir);
+                }
             }
         }
-        dirs.sort();
-        dirs.dedup();
         for dir in dirs {
-            if !volume.exists(&AppPath::legacy_unchecked(&dir)).await {
-                volume
-                    .create_directory(&AppPath::legacy_unchecked(&dir))
-                    .await
-                    .expect("fixture folder");
+            if !volume.exists(&dir).await {
+                volume.create_directory(&dir).await.expect("fixture folder");
             }
         }
-        for (path, bytes) in files {
-            let path = root.join(path);
-            if !volume.exists(&AppPath::legacy_unchecked(&path)).await {
-                volume
-                    .create_file(&AppPath::legacy_unchecked(&path), &bytes)
-                    .await
-                    .expect("fixture file");
+        for (names, bytes) in files {
+            let path = under(root, &names);
+            if !volume.exists(&path).await {
+                volume.create_file(&path, &bytes).await.expect("fixture file");
             }
         }
     }
@@ -188,33 +183,97 @@ impl FixtureRepo {
     /// [`write_into`](Self::write_into), then deletes the pack and index files
     /// on `volume` the repo no longer has: what a prune leaves behind.
     pub async fn sync_into(&self, volume: &dyn Volume, root: &Path) {
-        self.write_into(volume, root).await;
-        let kept: Vec<PathBuf> = self.files().into_iter().map(|(path, _)| root.join(path)).collect();
-        let mut dirs = vec![root.join("index")];
-        let data = root.join("data");
-        for entry in volume
-            .list_directory(&AppPath::legacy_unchecked(&data), None)
-            .await
-            .expect("data/ lists")
-        {
-            dirs.push(data.join(entry.name));
+        self.sync_into_at(volume, &bridged(root)).await;
+    }
+
+    /// [`sync_into`](Self::sync_into) for a root the caller holds as an app
+    /// path.
+    pub async fn sync_into_at(&self, volume: &dyn Volume, root: &AppPath) {
+        self.write_into_at(volume, root).await;
+        let kept: Vec<AppPathBuf> = self.layout().iter().map(|(names, _)| under(root, names)).collect();
+        let mut dirs = vec![child(root, "index")];
+        let data = child(root, "data");
+        for entry in volume.list_directory(&data, None).await.expect("data/ lists") {
+            dirs.push(child(&data, &entry.name));
         }
         for dir in dirs {
-            for entry in volume
-                .list_directory(&AppPath::legacy_unchecked(&dir), None)
-                .await
-                .expect("a repo folder lists")
-            {
-                let path = dir.join(&entry.name);
+            for entry in volume.list_directory(&dir, None).await.expect("a repo folder lists") {
+                let path = child(&dir, &entry.name);
                 if !entry.is_directory && !kept.contains(&path) {
-                    volume
-                        .delete(&AppPath::legacy_unchecked(&path))
-                        .await
-                        .expect("a pruned file deletes");
+                    volume.delete(&path).await.expect("a pruned file deletes");
                 }
             }
         }
     }
+
+    /// Every file of the repo, as (its names below the repo folder, bytes), in
+    /// restic's on-disk layout.
+    fn layout(&self) -> Vec<(Vec<String>, Vec<u8>)> {
+        self.backend
+            .files
+            .read()
+            .expect("fixture lock")
+            .iter()
+            .map(|((tpe, id), bytes)| (layout_names(tpe, id), bytes.to_vec()))
+            .collect()
+    }
+}
+
+/// `names` joined under `root`, one plain name at a time.
+fn under(root: &AppPath, names: &[String]) -> AppPathBuf {
+    names.iter().fold(root.to_owned(), |at, name| child(&at, name))
+}
+
+#[cfg(test)]
+impl FixtureRepo {
+    /// [`files`](Self::files), each under `root` as an app path.
+    pub(crate) fn files_at(&self, root: &AppPath) -> Vec<(AppPathBuf, Vec<u8>)> {
+        self.layout()
+            .into_iter()
+            .map(|(names, bytes)| (under(root, &names), bytes))
+            .collect()
+    }
+}
+
+/// `rel` (`a/b.txt`: plain names joined by `/`) under `base`, by the app path's
+/// own join, so a test's path never takes the host's separator.
+#[cfg(test)]
+pub(crate) fn path_in(base: &AppPath, rel: &str) -> AppPathBuf {
+    rel.split('/').fold(base.to_owned(), |at, name| child(&at, name))
+}
+
+/// [`path_in`] as a method, so a cell reads `view().at("latest")`.
+#[cfg(test)]
+pub(crate) trait At {
+    /// `rel` (plain names joined by `/`) under this path.
+    fn at(&self, rel: impl AsRef<str>) -> AppPathBuf;
+}
+
+#[cfg(test)]
+impl At for AppPath {
+    fn at(&self, rel: impl AsRef<str>) -> AppPathBuf {
+        path_in(self, rel.as_ref())
+    }
+}
+
+/// A canonical app path written as a test constant (`/Volumes/testshare/…`).
+///
+/// # Panics
+///
+/// On text that isn't one: a cell names a real place.
+#[cfg(test)]
+pub(crate) fn app(text: &str) -> AppPathBuf {
+    AppPath::from_normalized(text)
+        .unwrap_or_else(|why| panic!("{text:?} is no canonical app path: {why}"))
+        .to_owned()
+}
+
+/// `path` as the `std::path` value `cmdr_fs::volume::conformance`'s assertions
+/// still take: the one bridge this crate's tests keep, until that suite speaks
+/// app paths.
+#[cfg(test)]
+pub(crate) fn std_path_of(path: &AppPath) -> PathBuf {
+    path.as_std_legacy().into_owned()
 }
 
 /// Tries `password` on the repo `volume` views, the way the host's unlock does:
@@ -247,12 +306,12 @@ fn zoned(time: SystemTime) -> rustic_core::jiff::Zoned {
         .to_zoned(TimeZone::UTC)
 }
 
-fn layout_path(dir: &str, id: &Id) -> PathBuf {
+fn layout_names(dir: &str, id: &Id) -> Vec<String> {
     let hex = id.to_hex();
     match dir {
-        "config" => PathBuf::from("config"),
-        "data" => PathBuf::from("data").join(&hex[..2]).join(&*hex),
-        _ => PathBuf::from(dir).join(&*hex),
+        "config" => vec!["config".to_owned()],
+        "data" => vec!["data".to_owned(), hex[..2].to_owned(), hex.to_string()],
+        _ => vec![dir.to_owned(), hex.to_string()],
     }
 }
 

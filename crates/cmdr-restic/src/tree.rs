@@ -5,13 +5,13 @@
 //! per folder. A name that isn't in the snapshot is `Ok(None)`, which the volume
 //! answers as `NotFound`, ❌ never a damaged-repo error.
 
+use crate::path::child_text;
 use crate::repo::{IndexedRepo, ResticError};
+use cmdr_fs::app_path::{AppNameBuf, AppPath};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::VolumeError;
 use rustic_core::TreeId;
 use rustic_core::repofile::{Node, NodeType, Tree};
-use std::ffi::{OsStr, OsString};
-use std::path::Path;
 
 /// The POSIX permission bits of a node's stored mode.
 ///
@@ -32,13 +32,20 @@ pub(crate) fn modified_secs(node: &Node) -> Option<u64> {
 
 /// The row a node lists as, inside the folder at `dir`.
 ///
-/// The name is read through `Node::name()` (rustic stores names escaped), and a
-/// name that isn't UTF-8 (a Linux machine's backup) lists lossily, the way the
-/// local volume lists one. A symlink is a row of its own, ❌ never followed.
-/// Devices, fifos, and sockets are plain rows with no bytes.
-pub(crate) fn entry_of(node: &Node, dir: &Path) -> FileEntry {
-    let name = node.name().to_string_lossy().into_owned();
-    let path = dir.join(&name).to_string_lossy().into_owned();
+/// The name is read through `Node::name()` (rustic stores names escaped) and
+/// crosses into app spelling at `from_native_os_unicode`. A name that isn't
+/// plain Unicode text (a Linux machine's backup) keeps today's lossy row, the
+/// way the local volume lists one, until escapes go live; so does one a hostile
+/// repo stores that isn't one plain name (`a/b`, `..`). A symlink is a row of
+/// its own, ❌ never followed. Devices, fifos, and sockets are plain rows with no
+/// bytes.
+pub(crate) fn entry_of(node: &Node, dir: &AppPath) -> FileEntry {
+    let stored = node.name();
+    let name = match AppNameBuf::from_native_os_unicode(&stored) {
+        Ok(name) => name.into_string(),
+        Err(_) => stored.to_string_lossy().into_owned(),
+    };
+    let path = child_text(dir, &name);
     let size = match node.node_type {
         NodeType::Dir => None,
         NodeType::File | NodeType::Symlink { .. } => Some(node.meta.size),
@@ -60,16 +67,16 @@ pub(crate) fn entry_of(node: &Node, dir: &Path) -> FileEntry {
 /// Matches the stored name exactly. A sibling whose name isn't UTF-8 lists under
 /// its lossy spelling, so when one lists as `name` too, the two are one row name
 /// for two files: the lookup answers `AmbiguousName` rather than guess.
-pub(crate) fn child<'t>(tree: &'t Tree, name: &OsStr, dir: &Path) -> Result<Option<&'t Node>, VolumeError> {
-    let found = tree.nodes.iter().find(|node| node.name() == name);
+pub(crate) fn child<'t>(tree: &'t Tree, name: &str, dir: &AppPath) -> Result<Option<&'t Node>, VolumeError> {
+    let found = tree.nodes.iter().find(|node| *node.name() == *name);
     let lossy_twin = || {
         tree.nodes.iter().any(|node| {
             let stored = node.name();
-            stored.to_str().is_none() && stored.to_string_lossy() == name.to_string_lossy()
+            stored.to_str().is_none() && stored.to_string_lossy() == name
         })
     };
     match found {
-        Some(_) if lossy_twin() => Err(VolumeError::AmbiguousName(dir.join(name).display().to_string())),
+        Some(_) if lossy_twin() => Err(VolumeError::AmbiguousName(child_text(dir, name))),
         found => Ok(found),
     }
 }
@@ -85,8 +92,8 @@ fn tree_at(repo: &IndexedRepo, id: TreeId) -> Result<Tree, ResticError> {
 pub(crate) fn node_at(
     repo: &IndexedRepo,
     root: TreeId,
-    inner: &[OsString],
-    path: &Path,
+    inner: &[String],
+    path: &AppPath,
 ) -> Result<Option<Node>, ResticError> {
     let Some((last, folders)) = inner.split_last() else {
         return Ok(None);
@@ -104,8 +111,8 @@ pub(crate) fn node_at(
 pub(crate) fn folder_tree(
     repo: &IndexedRepo,
     root: TreeId,
-    inner: &[OsString],
-    path: &Path,
+    inner: &[String],
+    path: &AppPath,
 ) -> Result<Option<Tree>, ResticError> {
     let mut tree = tree_at(repo, root)?;
     for name in inner {
