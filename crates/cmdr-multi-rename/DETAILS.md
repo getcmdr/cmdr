@@ -368,6 +368,11 @@ Ported from PR #386 (Jiri Slovacek), where it lived in `presets.rs`.
   pool the IPC commands' blocking work always ran on; the MCP tool passes its own `Handle::current()`.
 - **IPC-level deadlines stay in the hosts**: the desktop wraps each method in its `blocking_*` / `timeout_detached_*`
   budgets and the previews' `BlockingBudget`; a browser host calls the methods inline.
+- **The session's folder is a `std::path` value, and no bridge call**: `dir` (from the host's `open`) feeds only
+  `std::path` seams, `BulkRenameRow`'s `source` and `destination` (public, built here and by the app), the write
+  engine's `SourceFingerprint::capture_remote` / `capture_local`, and `rename_place`, so it types with them, ❌ never
+  alone (typing it alone adds a crossing per row). The Results file's path is the host's native `PathBuf`
+  (`results_path`), so `names_file.rs` holds no app path and crosses nothing.
 
 ## The public surface
 

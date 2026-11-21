@@ -84,19 +84,19 @@ fn a_trailing_slash_on_the_root_still_matches() {
 #[test]
 fn the_typed_root_echoes_as_its_text_does() {
     let root = crate::app_path::AppPath::from_normalized(SERVER_ROOT).expect("canonical");
-    for path in [
-        "/srv/data/photos",
-        "/srv/data",
-        "/photos",
-        "photos/2026",
-        "",
-        "/",
-        "/srv/data-1/x",
+    for typed in [
+        Path::new("/srv/data/photos"),
+        Path::new("/srv/data"),
+        Path::new("/photos"),
+        Path::new("photos/2026"),
+        Path::new(""),
+        Path::new("/"),
+        Path::new("/srv/data-1/x"),
     ] {
         assert_eq!(
-            super::root_echo_at(root, Path::new(path)),
-            root_echo(Path::new(SERVER_ROOT), Path::new(path)),
-            "{path:?}"
+            super::root_echo_at(root, typed),
+            root_echo(Path::new(SERVER_ROOT), typed),
+            "{typed:?}"
         );
     }
     let home = crate::app_path::AppPath::from_normalized("/").expect("canonical");

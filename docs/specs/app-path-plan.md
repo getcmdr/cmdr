@@ -1939,6 +1939,43 @@ included; the hidden couplings it found are why waves B and C differ from round 
 - **Test plan**: Windows: `cmdr-listing-wasm`'s 6 failures and 1 timeout (`cmdr-multi-rename` had none on the builder;
   review round 4). macOS/Linux: both suites, plus the wasm build.
 - **DONE**: bridge counts zero in both.
+- **Done** (2026-11-21, branch `worktree-agent-abb6a765db0075d73`; one agent, no helpers). Bridge calls in
+  `cmdr-listing-wasm` 15 → 1 (workspace 1,342 → 1,328), its `appTextToPath` 10 → 8 and `pathFromBareText` 14 → 10;
+  `cmdr-multi-rename` held none. No entry grew anywhere. Durable design: `crates/cmdr-listing-wasm/DETAILS.md` § "App
+  paths". What converted:
+  - **`cmdr-listing-wasm`**: a path arg or a `FileEntry.path` becomes an app path through `invoke.rs`'s `demo_path`
+    (POSIX on every host: the demo's volume is, and Windows' `from_wire` reads only drives), and every volume call takes
+    it typed: the path questions, About, the archive notice, the sweep, the claim, the staged drop (joined by the app
+    path's join, where `Path::join` put a `\` on Windows), and the box's write access (`anchor_at_root`). It has no OS,
+    so nothing crosses at `to_native`; the in-memory store's own `std::path` helpers take the app text (`on_store`).
+  - **`cmdr-fs`**, for the demo: the typed archive split (`archive_boundary_candidate_at`, moved from `cmdr-archive`'s
+    `pub(crate)` beside the `std::path` split, so `cmdr-archive`'s surface cap is untouched), `root_echo_at`, and
+    `InMemoryVolume::canonical_app_path` (go-to's link walk, read back typed).
+  - **`cmdr-multi-rename`**: nothing to convert. Its folder `dir` is a `std::path` value feeding only `std::path` seams
+    (`BulkRenameRow`, the write engine's `SourceFingerprint::capture_*`, `rename_place`), and `names_file.rs` writes to
+    the host's native `results_path`, so it holds no app path to cross. Typing `dir` alone would add a crossing per row.
+- **What still bridges, and who takes it**: `operations_host/volumes.rs`' `find_by_root` (1): `OperationVolumes`'s seam
+  takes a `&Path` its one caller (`fresh_compress.rs`) makes with `as_std_legacy`, so typing the seam (10a) drops both.
+  `BulkRenameRow` staying native forces no bridge call (see above); multi-rename's `dir` types with it in 10c/10d. The
+  crate's other `std::path` arithmetic (`folder_sizes.rs`, `search.rs`, `backend_listings.rs`) runs over values the
+  engines' host seams hand in (`ListingIndex`, `OperationIndex`, `GoToHost`, `open_listing_paths`, `directory_changed`),
+  and types with them (10a, 10c).
+- **Intended behavior changes** (input no pane spells): a path question about relative text or a path holding a `..`
+  name finds nothing (`path_exists`, `stat_paths_kinds`, About, the archive notice), where the bridge rooted it at `/`
+  or climbed by text; the box's write access for such text is `unknown`; the archive notice names a sloppily spelled
+  archive canonically (`/a.zip` for `//a.zip`, the same file). Pinned:
+  `the_path_questions_find_nothing_at_text_that_names_no_app_path` (red on `main`).
+- **Byte-exact evidence** (a throwaway differential on macOS, old bridge code against new over an in-memory fixture with
+  `.zip`, `.tar.gz`, `\`, `:`, NFC and NFD names): 185,644 generated texts (one to four names from 13, each with a `/`,
+  `//`, or no lead and an optional trailing `/`), ten answers each (exists, stat, extension, archive notice, write
+  access, root echo, claim, the drop's relative check and staged text, go-to's found kind) plus the sweep's held rows: 0
+  differ for canonical text; every difference is a `..` name (58,872), relative or empty text (12,657), or the archive
+  notice's spelling of non-canonical text (12,262). Suites on macOS: `cmdr-listing-wasm` 144, `cmdr-multi-rename` 143,
+  the moved split and the typed echo in `cmdr-fs`, `cmdr-archive`'s boundary tests, all green.
+- **Windows**: `pnpm check clippy-windows` green; no builder run (no Mami today). Expected green by cause:
+  `imports_test::a_dropped_folder_lands_staged_with_its_structure_and_bytes` (the staged join). The `folder_sizes_test`
+  (2 and the timeout) and `search_test` (2) cells stay red until their seams type (above); the viewer cell's cause is
+  unread.
 
 ### 10c. The app, part one: file system and listings
 

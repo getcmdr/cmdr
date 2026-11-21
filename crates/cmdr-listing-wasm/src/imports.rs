@@ -19,9 +19,9 @@
 //! Nothing here leaves the page: the bytes go from the browser's `File` into
 //! the volume's memory, gone on reload.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic as _, RelativeAppPath};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use cmdr_fs::rt::Runtime;
@@ -30,6 +30,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::events::EventSink;
+use crate::invoke::demo_path;
 
 /// How many bytes one visit may bring in, in all: 10 MB.
 pub const IMPORT_BUDGET_BYTES: u64 = 10_000_000;
@@ -125,7 +126,7 @@ impl From<VolumeError> for ImportError {
 
 /// A planned file still waiting for its bytes.
 struct Pending {
-    path: PathBuf,
+    path: AppPathBuf,
     size: u64,
     modified_secs: Option<u64>,
 }
@@ -199,7 +200,7 @@ impl DemoImports {
     /// folders in a fresh staging folder, and reserves its files' bytes. An
     /// earlier drop nobody took is swept first, so its room is free again.
     pub async fn plan(&self, items: &[ImportItem]) -> Result<ImportPlan, ImportError> {
-        let relative: Vec<PathBuf> = items
+        let relative: Vec<&RelativeAppPath> = items
             .iter()
             .map(|item| relative_path(&item.path))
             .collect::<Result<_, _>>()?;
@@ -236,20 +237,22 @@ impl DemoImports {
             Ok(()) | Err(VolumeError::AlreadyExists(_)) => {}
             Err(error) => return Err(self.abandon(batch, error).await),
         }
-        if let Err(error) = self.volume.import_folder(&staging, None).await {
+        if let Err(error) = self.volume.import_folder(on_store(&staging), None).await {
             return Err(self.abandon(batch, error).await);
         }
 
         let mut roots = Vec::new();
-        for (index, (item, path)) in items.iter().zip(&relative).take(accepted).enumerate() {
-            let staged = staging.join(path);
-            if path.components().count() == 1 {
-                roots.push(staged.display().to_string());
+        for (index, (item, path)) in items.iter().zip(relative).take(accepted).enumerate() {
+            let staged = staging
+                .join_relative(path)
+                .expect("a POSIX folder takes every relative tail (only a drive or UNC one refuses a `\\`)");
+            if path.names().count() == 1 {
+                roots.push(staged.as_str().to_owned());
             }
             let modified_secs = item.modified_ms.map(|ms| ms / 1000);
             match item.kind {
                 ImportKind::Folder => {
-                    if let Err(error) = self.volume.import_folder(&staged, modified_secs).await {
+                    if let Err(error) = self.volume.import_folder(on_store(&staged), modified_secs).await {
                         return Err(self.abandon(batch, error).await);
                     }
                 }
@@ -288,7 +291,7 @@ impl DemoImports {
             .ok_or(ImportError::UnknownItem)?;
         let landed = if bytes.len() as u64 == pending.size {
             self.volume
-                .import_file(&pending.path, bytes, pending.modified_secs)
+                .import_file(on_store(&pending.path), bytes, pending.modified_secs)
                 .await
                 .map_err(ImportError::from)
         } else {
@@ -342,7 +345,7 @@ impl DemoImports {
 
     /// A transfer command answered with `operation_id`, reading `sources`: every
     /// offered batch a source lies in is now that transfer's, swept at its end.
-    pub async fn claim(&self, operation_id: &str, copy: bool, sources: &[PathBuf]) {
+    pub async fn claim(&self, operation_id: &str, copy: bool, sources: &[AppPathBuf]) {
         let settled_already = {
             let mut state = self.state();
             let mut claimed = false;
@@ -434,18 +437,25 @@ impl DemoImports {
     async fn sweep(&self, batch: u64, copied: Option<u64>) -> u64 {
         drop_pending(&mut self.state(), batch);
         let staging = staging_of(batch);
-        let mut held: Vec<(PathBuf, bool, u64)> = self
+        // Every row's path is the store's own app text, so each one reads back.
+        let mut held: Vec<(AppPathBuf, bool, u64)> = self
             .volume
             .held_entries()
             .into_iter()
-            .map(|entry| (PathBuf::from(&entry.path), entry.is_directory, entry.size.unwrap_or(0)))
+            .filter_map(|entry| {
+                Some((
+                    demo_path(&entry.path).ok()?,
+                    entry.is_directory,
+                    entry.size.unwrap_or(0),
+                ))
+            })
             .filter(|(path, _, _)| path.starts_with(&staging))
             .collect();
         let still_staged: u64 = held.iter().filter(|(_, dir, _)| !dir).map(|(_, _, size)| size).sum();
         // Deepest first: the store refuses to delete a folder that holds something.
-        held.sort_by_key(|(path, _, _)| std::cmp::Reverse(path.components().count()));
+        held.sort_by_key(|(path, _, _)| std::cmp::Reverse(path.names().count()));
         for (path, _, _) in &held {
-            if let Err(error) = self.volume.delete(&AppPath::legacy_unchecked(path)).await {
+            if let Err(error) = self.volume.delete(path).await {
                 log::warn!(target: "imports", "couldn't clear a staged drop: {}", cmdr_fs::log_error::LogError(&error));
             }
         }
@@ -510,20 +520,23 @@ impl EventSink for ImportWatch {
 }
 
 /// The staging folder of `batch`.
-fn staging_of(batch: u64) -> PathBuf {
-    PathBuf::from(DROPS_ROOT).join(batch.to_string())
+fn staging_of(batch: u64) -> AppPathBuf {
+    demo_path(&format!("{DROPS_ROOT}/{batch}")).expect("`/.drops/<n>` is an app path")
 }
 
-/// `path` as a plain relative path, or [`ImportError::BadPath`].
-fn relative_path(path: &str) -> Result<PathBuf, ImportError> {
-    // Split by hand: `Path::components` drops a `.` silently, and `Path::is_absolute`
-    // is always `false` in the browser build.
-    let plain = path
-        .split('/')
-        .all(|name| !name.is_empty() && name != "." && name != ".." && !name.contains('\0'));
-    if plain {
-        Ok(PathBuf::from(path))
-    } else {
-        Err(ImportError::BadPath { path: path.to_string() })
+/// `path` as a plain relative path (each name plain: no empty, `.`, or `..` name, no
+/// NUL), or [`ImportError::BadPath`].
+fn relative_path(path: &str) -> Result<&RelativeAppPath, ImportError> {
+    let bad = || ImportError::BadPath { path: path.to_string() };
+    if path.is_empty() {
+        return Err(bad());
     }
+    RelativeAppPath::new(path).map_err(|_| bad())
+}
+
+/// `path` as the in-memory store's own `std::path` helpers (`import_folder`,
+/// `import_file`) take it: the store's keys are `/`-separated app text on every host
+/// (`InMemoryVolume::canonicalize`), so its text is the key. The demo has no OS to cross to.
+fn on_store(path: &AppPath) -> &Path {
+    Path::new(path.as_str())
 }
