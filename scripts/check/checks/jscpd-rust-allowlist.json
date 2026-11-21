@@ -87,10 +87,6 @@
     "crates/cmdr-sftp/src/volume/volume_impl.rs ↔ crates/cmdr-webdav/src/volume/volume_impl.rs": {
       "lines": 53,
       "reason": "`Volume` trait-method signatures, not logic: the listing and file-creation blocks, where every body is one line delegating to an inherent `*_impl`. The trait makes each backend spell the full signature out, so folding these takes a macro that emits trait methods: roughly 120 lines of macro to remove about 38 lines per backend, so the code gets no smaller, and every generated method goes invisible to `codegraph_search` and to go-to-definition. The behavior behind the signatures is already shared, in `cmdr_fs::volume` (`scan_walk`, `mkdir_all`, `patching`, `secret_store`) and `network::connect_wiring`. Revisit when a body stops being a one-line delegation, or when enough backends land that the macro pays for itself. The `Volume` trait's flip to app paths (#1225) grew it: each flipped method gained the same two-line bridge prelude (`let path_std = path.as_std_legacy(); let path: &Path = &path_std;`) or bridged argument, which made neighbouring trait methods token-identical across backends. Those go as each crate converts (milestones 5–10e)."
-    },
-    "crates/cmdr-adb/src/volume/volume_impl.rs ↔ crates/cmdr-archive/src/volume.rs": {
-      "lines": 9,
-      "reason": "`Volume` trait boilerplate the flip to app paths (#1225) made token-identical: `scan_for_copy_batch_with_boundary` delegating to `scan_walk::scan_trees` behind the same bridged `paths_std` prelude in both. Not new code: jscpd reported this fragment against `cmdr-webdav` until that crate moved to the typed `scan_trees_at`, and hands it to this pair now. The prelude goes when ADB and the archive volume convert to `scan_trees_at` too."
     }
   }
 }

@@ -75,6 +75,8 @@ pub mod watch;
 mod apple_double;
 mod boundary_on_parent;
 mod mutation;
+#[cfg(test)]
+mod testing;
 
 /// Fixture builders for archive tests: clean zips, hostile byte-patched variants,
 /// and encrypted zip / 7z archives, all built in memory with no blobs checked in.
@@ -92,7 +94,10 @@ pub use boundary::{
     confirm_archive_boundary, has_supported_archive_extension, path_crosses_archive_boundary, path_is_inside_archive,
     path_targets_archive_file,
 };
-pub use boundary_on_parent::{confirm_archive_boundary_on_parent, confirm_remote_archive_boundary};
+pub use boundary_on_parent::{
+    confirm_archive_boundary_on_parent, confirm_archive_boundary_on_parent_at, confirm_remote_archive_boundary,
+    confirm_remote_archive_boundary_at,
+};
 pub use read::{
     ArchiveByteSource, ArchiveEntryReader, ArchiveError, ArchiveFormat, ArchiveIndex, ArchiveIndexCache, ArchiveNode,
     BytesSource, DEFAULT_TAIL_CACHE_LEN, LocalFileSource, QuarantineReason, SanitizedName, SubtreeExtractReader,

@@ -9,7 +9,8 @@ browses, extracts, and **writes**; tar (every codec), 7z, and OOXML are **read-o
 
 ## Module map
 
-- `src/volume.rs` (+ `src/volume_streams.rs`, `src/volume_scan.rs`): the only `Volume`-trait code.
+- `src/volume.rs` (+ `src/volume_streams.rs`, `src/volume_scan.rs`, `src/volume_paths.rs`): the only `Volume`-trait
+  code.
 - `src/boundary.rs` (+ `src/boundary_on_parent.rs`): the SHARED boundary detector, magic, and local-or-remote confirm.
 - `src/apple_double.rs`: the AppleDouble sidecar codec (`__MACOSX/._x`), read on extract and written on compress.
 - `src/read/CLAUDE.md` (the reading engine: Zip Slip, DoS caps, sans-IO fsm, codecs), `src/mutation/CLAUDE.md` (the
@@ -25,7 +26,7 @@ browses, extracts, and **writes**; tar (every codec), 7z, and OOXML are **read-o
   the watch, `host.runtime()` for every spawn. ❌ No ambient runtime, clock, or timer (`clippy.toml` bans them), and
   never a static of your own. `crates/cmdr-fs/src/volume/host/CLAUDE.md`.
 - **❌ Never gate behavior on `cfg(test)`; use `any(test, feature = "testing")`.** `cfg(test)` is set only while THIS
-  crate builds its own test target, so a consumer's test build silently gets the production arm. Bitten three times.
+  crate builds its own test target, so a consumer's test build silently gets the production arm.
 
 ## Routing must-knows
 
@@ -44,13 +45,12 @@ browses, extracts, and **writes**; tar (every codec), 7z, and OOXML are **read-o
 ## `ArchiveVolume` must-knows (`src/volume.rs`)
 
 - **Read-only at this layer: every mutation method returns `NotSupported`**, `create_directory_all` included — it's
-  overridden because the trait default falsely answers `Ok` for a dir that already exists. Edits route path-based to the
-  mutator, never through these methods.
+  overridden because the trait default falsely answers `Ok` for a dir that already exists. Edits route to the mutator.
 - **`lane_key()`, `get_space_info()`, and `get_space_info_at()` delegate to the PARENT volume, never the archive** — the
   parent owns the serialization lane and the real disk cost (asked at the `.zip`'s own path, so an SD card answers for
   itself), and this dodges a false `available = 0` disk-full block.
+- **App-path arithmetic only; the `.zip` crosses to the OS once** (`native`). ❌ No `std::path` outside `std_view`.
 - **Local vs remote byte source is picked by `parent.supports_local_fs_access()`, NOT by whether the path opens
   locally** — a direct-SMB parent must read through the parent, never its possibly-hung OS mount.
 
-Depth, rationale, routing, remote-backed archives, and the capability flags: `DETAILS.md`. Read it before any
-non-trivial work here: editing, planning, reorganizing, or advising.
+Depth, rationale, routing, and remote-backed archives: `DETAILS.md`. Read it before any non-trivial work here.

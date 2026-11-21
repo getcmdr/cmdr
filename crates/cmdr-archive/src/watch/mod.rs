@@ -104,6 +104,10 @@ impl Drop for ArchiveContentWatch {
 /// `notify` refuses the path) — the caller then leaves `listing_watch_coverage`
 /// reporting `None`, so a listing never claims freshness it can't back.
 ///
+/// `archive_path` is the backing file's NATIVE path (what `notify` watches and
+/// its events carry); `shown_at` is the same file's APP path in the `std::path`
+/// spelling the listing seam still takes, the one the refresh names.
+///
 /// `parent_volume_id` is the archive's PARENT DRIVE id (the id the listing cache
 /// keys on); the refresh re-resolves `(parent_volume_id, inner_path)` back to this
 /// archive. `cache` is the volume's own `ArchiveIndexCache`, shared so the
@@ -111,11 +115,12 @@ impl Drop for ArchiveContentWatch {
 /// spawns onto and the listing seam the refresh goes through.
 pub(crate) fn start_watch(
     archive_path: PathBuf,
+    shown_at: PathBuf,
     parent_volume_id: String,
     cache: Arc<ArchiveIndexCache>,
     host: VolumeHost,
 ) -> Option<ArchiveContentWatch> {
-    let stream = arm_stream(archive_path, parent_volume_id, cache, host)?;
+    let stream = arm_stream(archive_path, shown_at, parent_volume_id, cache, host)?;
     ACTIVE_ARCHIVE_WATCHES.fetch_add(1, Ordering::SeqCst);
     Some(ArchiveContentWatch { stream })
 }
@@ -126,6 +131,7 @@ pub(crate) fn start_watch(
 /// `testing`, so rustdoc can't always resolve a link.)
 fn arm_stream(
     archive_path: PathBuf,
+    shown_at: PathBuf,
     parent_volume_id: String,
     cache: Arc<ArchiveIndexCache>,
     host: VolumeHost,
@@ -137,7 +143,7 @@ fn arm_stream(
             .is_some_and(Path::is_dir)
             .then_some(WatchStream::Scripted);
     }
-    arm_notify_stream(archive_path, parent_volume_id, cache, host).map(WatchStream::Notify)
+    arm_notify_stream(archive_path, shown_at, parent_volume_id, cache, host).map(WatchStream::Notify)
 }
 
 /// Archive paths whose content watch arms a real OS stream in a test build.
@@ -157,6 +163,7 @@ pub fn watch_for_real(archive_path: &Path) {
 /// archive's listings whenever a batch touches the archive file.
 fn arm_notify_stream(
     archive_path: PathBuf,
+    shown_at: PathBuf,
     parent_volume_id: String,
     cache: Arc<ArchiveIndexCache>,
     host: VolumeHost,
@@ -186,12 +193,10 @@ fn arm_notify_stream(
         // RESOLVES the app's runtime instead of inheriting an ambient one, so it
         // works from any thread (same rule as `file_system::watcher`).
         let volume_id = parent_volume_id.clone();
-        let archive_path = archive_path.clone();
+        let shown_at = shown_at.clone();
         let host = host.clone();
         host.runtime().spawn(async move {
-            host.listings()
-                .refresh_archive_listings(&volume_id, &archive_path)
-                .await;
+            host.listings().refresh_archive_listings(&volume_id, &shown_at).await;
         });
     })
     .map_err(|e| log::warn!("archive watch: failed to create debouncer: {e}"))

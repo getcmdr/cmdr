@@ -33,12 +33,10 @@
 //! land, a remote parent supplies bytes by implementing [`ArchiveByteSource`]
 //! over its ranged reads, with no change to the index/reader layer.
 
-use cmdr_fs::app_path::AppPath;
-use cmdr_fs::app_path::AppPathBuf;
-use cmdr_fs::app_path::BridgedPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf, NativeRefusal, PathArithmetic};
 use cmdr_fs::volume::Presence;
 use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 
@@ -59,8 +57,11 @@ use cmdr_fs::volume::{
     BatchScanResult, CopyScanResult, DirectoryCreation, LaneKey, ListingProgress, LockedContainer, PasswordLocked,
     ScanBoundary, SequentialExtract, SpaceInfo, UnlockOutcome, Volume, VolumeError, VolumeReadStream, WatchCoverage,
 };
+use paths::{entry_path, root_row_text};
 use streams::{ArchiveSequentialExtract, ArchiveVolumeReadStream, VolumeByteSource};
 
+#[path = "volume_paths.rs"]
+mod paths;
 #[path = "volume_scan.rs"]
 mod scan;
 #[path = "volume_streams.rs"]
@@ -87,7 +88,13 @@ pub struct ArchiveVolume {
     parent: Arc<dyn Volume>,
     /// Absolute path of the `.zip` on the parent volume. This is `root()`, and
     /// every inner entry's path joins under it.
-    archive_path: BridgedPath,
+    archive_path: AppPathBuf,
+    /// The `.zip`'s native spelling, for a LOCAL parent's fast path (the `std::fs`
+    /// stat, the `pread` source, the content watch): the local backing file
+    /// crosses to the OS here, once. A refusal (a scheme path, a Windows name the
+    /// OS can't hold) is kept and answered at the first local read, ❌ never a
+    /// fallback to the app text.
+    native: Result<PathBuf, NativeRefusal>,
     /// Which archive format (zip / tar+codec / 7z) — decided from the path at
     /// resolve time and threaded into every parse. Also drives the sequential
     /// access class ([`ArchiveFormat::is_sequential`]).
@@ -130,14 +137,41 @@ impl ArchiveVolume {
     /// (extension + magic) and picks the `format` before constructing one. A
     /// caller that only reads bytes (a test, a bench, a tool) passes
     /// [`VolumeHost::detached`], which answers everything with a no-op.
+    ///
+    /// `archive_path` is the `std::path` spelling today's callers hold: it stays
+    /// the native path the local fast path opens, exactly as given, and its app
+    /// spelling is the bridge's, so `root()` keeps its text. [`Self::new_at`] is
+    /// the typed form.
     pub fn new(parent: Arc<dyn Volume>, archive_path: PathBuf, format: ArchiveFormat, host: VolumeHost) -> Self {
         let name = archive_path
             .file_name()
             .map(|s| s.to_string_lossy().into_owned())
             .unwrap_or_default();
+        let app = AppPath::legacy_unchecked(&archive_path).into_owned();
+        Self::assemble(parent, app, Ok(archive_path), name, format, host)
+    }
+
+    /// [`Self::new`] for an app path: the archive at `archive_path` on `parent`.
+    /// A local parent's backing file crosses to the OS at
+    /// [`AppPath::to_native`].
+    pub fn new_at(parent: Arc<dyn Volume>, archive_path: AppPathBuf, format: ArchiveFormat, host: VolumeHost) -> Self {
+        let name = archive_path.file_name().unwrap_or_default().to_owned();
+        let native = crate::boundary::native_of(&archive_path);
+        Self::assemble(parent, archive_path, native, name, format, host)
+    }
+
+    fn assemble(
+        parent: Arc<dyn Volume>,
+        archive_path: AppPathBuf,
+        native: Result<PathBuf, NativeRefusal>,
+        name: String,
+        format: ArchiveFormat,
+        host: VolumeHost,
+    ) -> Self {
         Self {
             parent,
-            archive_path: BridgedPath::new(archive_path),
+            archive_path,
+            native,
             format,
             name,
             cache: Arc::new(ArchiveIndexCache::new()),
@@ -207,8 +241,12 @@ impl ArchiveVolume {
         if watch.is_some() {
             return;
         }
+        let Ok(native) = self.native.clone() else {
+            return;
+        };
         *watch = super::watch::start_watch(
-            self.archive_path.clone().into_path_buf(),
+            native,
+            std_view(&self.archive_path).into_owned(),
             parent_volume_id.to_string(),
             Arc::clone(&self.cache),
             self.host.clone(),
@@ -230,17 +268,22 @@ impl ArchiveVolume {
     /// Maps a path from the volume's namespace to the archive-inner path the
     /// index keys on (`/`-separated, no surrounding slashes, root is `""`).
     ///
-    /// Accepts the archive root itself (empty / `.`), an absolute path carrying
-    /// the archive-path prefix (`/path/to/foo.zip/dir` → `dir`), or an
-    /// already-inner relative path. The index re-trims slashes, so a rough
-    /// result is fine.
-    fn inner_path(&self, path: &Path) -> String {
-        if path.as_os_str().is_empty() || path == Path::new(".") {
-            return String::new();
-        }
-        let relative = path.strip_prefix(&self.archive_path).unwrap_or(path);
-        let slashed = relative.to_string_lossy().replace('\\', "/");
-        slashed.trim_matches('/').to_string()
+    /// The rule, and the spellings it accepts: `volume_paths.rs`.
+    fn inner_path(&self, path: &AppPath) -> String {
+        paths::inner_path(&self.archive_path, path)
+    }
+
+    /// The `.zip`'s native path, for the local fast path.
+    fn native_backing(&self) -> Result<PathBuf, VolumeError> {
+        self.native.clone().map_err(|why| VolumeError::IoError {
+            message: why.to_string().into(),
+            raw_os_error: None,
+        })
+    }
+
+    /// `NotFound` for the inner path `inner`, named under the archive.
+    fn not_found(&self, inner: &str) -> VolumeError {
+        VolumeError::NotFound(entry_path(&self.archive_path, inner).row_text())
     }
 
     /// Whether the parent stores the `.zip` on the local filesystem — a plain
@@ -260,10 +303,7 @@ impl ArchiveVolume {
     /// can't be `std::fs`-stat'd). Async because it does one metadata round-trip
     /// to the backend; the returned [`VolumeByteSource`] then reads ranges lazily.
     async fn open_remote_source(&self) -> Result<(u64, Option<i128>, Arc<dyn ArchiveByteSource>), VolumeError> {
-        let meta = self
-            .parent
-            .get_metadata(&AppPath::legacy_unchecked(&self.archive_path))
-            .await?;
+        let meta = self.parent.get_metadata(&self.archive_path).await?;
         let size = meta.size.unwrap_or(0);
         // `FileEntry::modified_at` is Unix SECONDS; widen to nanos for the cache
         // key. Second granularity is enough to catch an external edit (size also
@@ -271,7 +311,7 @@ impl ArchiveVolume {
         let mtime_nanos = meta.modified_at.map(|s| i128::from(s) * 1_000_000_000);
         let raw: Arc<dyn ArchiveByteSource> = Arc::new(VolumeByteSource::new(
             Arc::clone(&self.parent),
-            self.archive_path.clone().into_path_buf(),
+            self.archive_path.clone(),
             size,
             self.host.runtime(),
         ));
@@ -306,9 +346,10 @@ impl ArchiveVolume {
         let password = self.password_snapshot();
         let runtime = self.host.runtime();
         if self.parent_is_local() {
+            let native = self.native_backing()?;
             parse_blocking(&runtime, move || {
                 cache
-                    .index_for_local(&archive_path, format, password.as_deref().map(String::as_str))
+                    .index_for_local(&native, format, password.as_deref().map(String::as_str))
                     .map_err(to_volume_error)
             })
             .await
@@ -341,15 +382,15 @@ impl ArchiveVolume {
         let password = self.password_snapshot();
         let runtime = self.host.runtime();
         if self.parent_is_local() {
+            let native = self.native_backing()?;
             parse_blocking(
                 &runtime,
                 move || -> Result<(Arc<ArchiveIndex>, Arc<dyn ArchiveByteSource>), VolumeError> {
                     let index = cache
-                        .index_for_local(&archive_path, format, password.as_deref().map(String::as_str))
+                        .index_for_local(&native, format, password.as_deref().map(String::as_str))
                         .map_err(to_volume_error)?;
-                    let source: Arc<dyn ArchiveByteSource> = Arc::new(
-                        LocalFileSource::open(&archive_path).map_err(|e| VolumeError::from_io_at(&e, &archive_path))?,
-                    );
+                    let source: Arc<dyn ArchiveByteSource> =
+                        Arc::new(LocalFileSource::open(&native).map_err(|e| VolumeError::from_io_at(&e, &native))?);
                     Ok((index, source))
                 },
             )
@@ -387,8 +428,6 @@ impl ArchiveVolume {
         path: &'a AppPath,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         let inner = self.inner_path(path);
         Box::pin(async move {
             let (index, source) = self.load().await?;
@@ -451,7 +490,7 @@ impl Volume for ArchiveVolume {
     }
 
     fn root(&self) -> &AppPath {
-        self.archive_path.app()
+        &self.archive_path
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -470,19 +509,14 @@ impl Volume for ArchiveVolume {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         let inner = self.inner_path(path);
-        let archive_path = self.archive_path.clone();
         let volume_name = self.name.clone();
         Box::pin(async move {
             let index = self.index().await?;
-            let nodes = index
-                .list(&inner)
-                .ok_or_else(|| VolumeError::NotFound(archive_path.join(&inner).display().to_string()))?;
+            let nodes = index.list(&inner).ok_or_else(|| self.not_found(&inner))?;
             let entries: Vec<FileEntry> = nodes
                 .iter()
-                .map(|node| node_to_entry(&archive_path, &volume_name, node))
+                .map(|node| node_to_entry(&self.archive_path, &volume_name, node))
                 .collect();
 
             // One cumulative progress tick, as the trait asks (backends call
@@ -499,23 +533,16 @@ impl Volume for ArchiveVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         let inner = self.inner_path(path);
-        let archive_path = self.archive_path.clone();
         let volume_name = self.name.clone();
         Box::pin(async move {
             let index = self.index().await?;
-            let node = index
-                .get(&inner)
-                .ok_or_else(|| VolumeError::NotFound(archive_path.join(&inner).display().to_string()))?;
-            Ok(node_to_entry(&archive_path, &volume_name, &node))
+            let node = index.get(&inner).ok_or_else(|| self.not_found(&inner))?;
+            Ok(node_to_entry(&self.archive_path, &volume_name, &node))
         })
     }
 
     fn presence<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         let inner = self.inner_path(path);
         Box::pin(async move {
             // An archive that won't open (it needs a password, it doesn't parse,
@@ -534,15 +561,10 @@ impl Volume for ArchiveVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         let inner = self.inner_path(path);
-        let archive_path = self.archive_path.clone();
         Box::pin(async move {
             let index = self.index().await?;
-            index
-                .is_directory(&inner)
-                .ok_or_else(|| VolumeError::NotFound(archive_path.join(&inner).display().to_string()))
+            index.is_directory(&inner).ok_or_else(|| self.not_found(&inner))
         })
     }
 
@@ -609,8 +631,6 @@ impl Volume for ArchiveVolume {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             self.scan_subtree(path, cmdr_fs::mac_only_files::MacOnlyFiles::Include)
                 .await
         })
@@ -623,11 +643,7 @@ impl Volume for ArchiveVolume {
         paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
-            let paths: &[PathBuf] = &paths_std;
-            self.scan_batch(paths, boundary).await
-        })
+        Box::pin(async move { self.scan_batch(paths, boundary).await })
     }
 
     fn open_read_stream<'a>(
@@ -654,8 +670,6 @@ impl Volume for ArchiveVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn SequentialExtract>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         let inner = self.inner_path(path);
         let archive_path = self.archive_path.clone();
         Box::pin(async move {
@@ -670,10 +684,7 @@ impl Volume for ArchiveVolume {
                 password.as_deref().map(String::as_str),
                 &self.host.runtime(),
             );
-            Ok(
-                Box::new(ArchiveSequentialExtract::new(reader, archive_path.into_path_buf()))
-                    as Box<dyn SequentialExtract>,
-            )
+            Ok(Box::new(ArchiveSequentialExtract::new(reader, archive_path)) as Box<dyn SequentialExtract>)
         })
     }
 
@@ -685,8 +696,6 @@ impl Volume for ArchiveVolume {
         path: &'a AppPath,
         wanted: MetadataClasses,
     ) -> Pin<Box<dyn Future<Output = CarriedMetadata> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         let inner = self.inner_path(path);
         Box::pin(async move {
             if !wanted.contains(MetadataClasses::XATTRS) {
@@ -744,7 +753,7 @@ impl Volume for ArchiveVolume {
     /// The archive file itself, when the parent stores it locally (the same test
     /// that picks the `LocalFileSource` fast path, [`Self::parent_is_local`]).
     fn local_backing_file(&self) -> Option<&AppPath> {
-        self.parent_is_local().then_some(self.archive_path.app())
+        self.parent_is_local().then_some(&self.archive_path)
     }
 
     /// `false`: inner paths can't be stat'd or read via `std::fs` (they live
@@ -774,11 +783,7 @@ impl Volume for ArchiveVolume {
         &'a self,
         _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            self.parent
-                .get_space_info_at(&AppPath::legacy_unchecked(&self.archive_path))
-                .await
-        })
+        Box::pin(async move { self.parent.get_space_info_at(&self.archive_path).await })
     }
 
     /// Covered only while the content watch is genuinely live (established by
@@ -799,6 +804,22 @@ impl Volume for ArchiveVolume {
             .as_ref()
             .map_or(WatchCoverage::None, |live| live.coverage)
     }
+}
+
+/// `path`'s `std::path` spelling, for what still speaks it: the shapes the typed
+/// arithmetic doesn't take (`volume_paths.rs`), the transfer engine's
+/// `ScanRecorder`, and the listing seam the content watch refreshes. The
+/// transition bridge, one crossing for the whole volume; it goes once callers
+/// hand typed, canonical paths, escapes join as themselves, and those seams take
+/// app paths.
+fn std_view(path: &AppPath) -> std::borrow::Cow<'_, std::path::Path> {
+    path.as_std_legacy()
+}
+
+/// [`std_view`]'s way back: an entry path spelled by `Path::join`, as the app
+/// path a transfer keys on (what the listing row reads as). Goes with it.
+fn from_std_view(path: &std::path::Path) -> AppPathBuf {
+    AppPath::legacy_unchecked(path).into_owned()
 }
 
 /// Runs a blocking archive-parse closure on `runtime`'s blocking pool (the
@@ -830,11 +851,11 @@ where
 /// path under the archive path, so it renders transparently as
 /// `/path/to/foo.zip/inner`. The archive root (`""`) carries the archive's own
 /// name and path.
-fn node_to_entry(archive_path: &Path, volume_name: &str, node: &ArchiveNode) -> FileEntry {
+fn node_to_entry(archive_path: &AppPath, volume_name: &str, node: &ArchiveNode) -> FileEntry {
     let (name, full_path) = if node.path.is_empty() {
-        (volume_name.to_string(), archive_path.to_path_buf())
+        (volume_name.to_string(), root_row_text(archive_path))
     } else {
-        (node.name.clone(), archive_path.join(&node.path))
+        (node.name.clone(), entry_path(archive_path, &node.path).row_text())
     };
     FileEntry {
         size: node.size,
@@ -848,12 +869,7 @@ fn node_to_entry(archive_path: &Path, volume_name: &str, node: &ArchiveNode) -> 
         // umask on the word of an archive that said nothing.
         permissions: node.mode.unwrap_or(0),
         // The archive listing is complete in one pass — no deferred metadata.
-        ..FileEntry::new(
-            name,
-            full_path.to_string_lossy().into_owned(),
-            node.is_dir,
-            node.is_symlink,
-        )
+        ..FileEntry::new(name, full_path, node.is_dir, node.is_symlink)
     }
 }
 
@@ -924,7 +940,3 @@ mod volume_apple_double_test;
 #[cfg(test)]
 #[path = "volume_runtime_test.rs"]
 mod volume_runtime_test;
-
-#[cfg(test)]
-#[path = "volume_flip_guard_test.rs"]
-mod volume_flip_guard_test;

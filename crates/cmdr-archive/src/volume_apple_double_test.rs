@@ -2,14 +2,15 @@
 //! file's on its read stream (`VolumeReadStream::metadata`), a folder's through
 //! `Volume::folder_metadata`, on a local parent and through a remote one.
 
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use super::*;
 use crate::TarCodec;
 use crate::test_fixtures::{APPLE_DOUBLE_BSDTAR_TAR_GZ, APPLE_DOUBLE_DITTO_ZIP};
+use crate::testing::at;
+use cmdr_fs::app_path;
 use cmdr_fs::metadata::MetadataClasses;
-use cmdr_fs::testing::TestDir;
+use cmdr_fs::testing::AppTestDir;
 use cmdr_fs::volume::InMemoryVolume;
 
 const TAGS: &str = "com.apple.metadata:_kMDItemUserTags";
@@ -22,19 +23,18 @@ fn names(carried: &CarriedMetadata) -> Vec<String> {
         .collect()
 }
 
-/// The fixture on a local parent; the `TestDir` keeps it alive.
-fn local_volume(bytes: &[u8], file_name: &str, format: ArchiveFormat) -> (TestDir, ArchiveVolume) {
-    let dir = TestDir::new("archive-apple-double");
-    let path = dir.join(file_name);
-    std::fs::write(&path, bytes).expect("write the fixture");
+/// The fixture on a local parent; the `AppTestDir` keeps it alive.
+fn local_volume(bytes: &[u8], file_name: &str, format: ArchiveFormat) -> (AppTestDir, ArchiveVolume) {
+    let dir = AppTestDir::new("archive-apple-double");
+    std::fs::write(dir.native().join(file_name), bytes).expect("write the fixture");
     let parent = Arc::new(InMemoryVolume::new("parent").with_local_fs_access());
-    let volume = ArchiveVolume::new(parent, path, format, VolumeHost::detached());
+    let volume = ArchiveVolume::new_at(parent, at(dir.app_path(), file_name), format, VolumeHost::detached());
     (dir, volume)
 }
 
 async fn stream_xattrs(volume: &ArchiveVolume, inner: &str, wanted: MetadataClasses) -> Vec<String> {
     let stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(inner)))
+        .open_read_stream(&at(volume.root(), inner))
         .await
         .expect("the entry opens");
     names(&stream.metadata(wanted))
@@ -45,7 +45,7 @@ async fn a_finder_made_zip_carries_tags_on_files_and_folders() {
     let (_dir, volume) = local_volume(APPLE_DOUBLE_DITTO_ZIP, "tagged.zip", ArchiveFormat::Zip);
 
     let root = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .list_directory(&at(volume.root(), ""), None)
         .await
         .expect("lists");
     let listed: Vec<&str> = root.iter().map(|entry| entry.name.as_str()).collect();
@@ -68,18 +68,12 @@ async fn a_finder_made_zip_carries_tags_on_files_and_folders() {
     );
 
     let folder = volume
-        .folder_metadata(
-            &AppPath::legacy_unchecked(Path::new("tagged-dir")),
-            MetadataClasses::ALL,
-        )
+        .folder_metadata(&at(volume.root(), "tagged-dir"), MetadataClasses::ALL)
         .await;
     assert_eq!(names(&folder), vec![TAGS]);
     assert!(
         volume
-            .folder_metadata(
-                &AppPath::legacy_unchecked(Path::new("tagged-dir")),
-                MetadataClasses::MODE
-            )
+            .folder_metadata(&at(volume.root(), "tagged-dir"), MetadataClasses::MODE)
             .await
             .is_empty()
     );
@@ -87,7 +81,7 @@ async fn a_finder_made_zip_carries_tags_on_files_and_folders() {
     // The sidecars themselves never open as entries of their own.
     assert!(
         volume
-            .open_read_stream(&AppPath::legacy_unchecked(Path::new("__MACOSX/._tagged.txt")))
+            .open_read_stream(&at(volume.root(), "__MACOSX/._tagged.txt"))
             .await
             .is_err()
     );
@@ -96,14 +90,14 @@ async fn a_finder_made_zip_carries_tags_on_files_and_folders() {
 #[tokio::test]
 async fn a_remote_zip_reads_its_sidecars_through_the_parent() {
     let parent = Arc::new(InMemoryVolume::new("remote"));
-    let archive_path = PathBuf::from("/remote/tagged.zip");
+    let archive_path = app_path!("/remote/tagged.zip");
     parent
-        .create_file(&AppPath::legacy_unchecked(&archive_path), APPLE_DOUBLE_DITTO_ZIP)
+        .create_file(archive_path, APPLE_DOUBLE_DITTO_ZIP)
         .await
         .expect("load the zip into the parent");
-    let volume = ArchiveVolume::new(
+    let volume = ArchiveVolume::new_at(
         Arc::clone(&parent) as Arc<dyn Volume>,
-        archive_path,
+        archive_path.to_owned(),
         ArchiveFormat::Zip,
         VolumeHost::detached(),
     );
@@ -114,10 +108,7 @@ async fn a_remote_zip_reads_its_sidecars_through_the_parent() {
     assert_eq!(
         names(
             &volume
-                .folder_metadata(
-                    &AppPath::legacy_unchecked(Path::new("tagged-dir")),
-                    MetadataClasses::ALL
-                )
+                .folder_metadata(&at(volume.root(), "tagged-dir"), MetadataClasses::ALL)
                 .await
         ),
         vec![TAGS]
@@ -132,29 +123,21 @@ async fn a_macos_tar_carries_tags_through_the_one_pass_extract_and_on_folders() 
         ArchiveFormat::Tar(TarCodec::Gzip),
     );
     let mut extract = volume
-        .open_sequential_extract(&AppPath::legacy_unchecked(Path::new("")))
+        .open_sequential_extract(&at(volume.root(), ""))
         .await
         .expect("the extract opens");
     let mut tagged = Vec::new();
     while let Some(file) = extract.next_file().await.expect("next member") {
         let carried = extract.current_stream().metadata(MetadataClasses::ALL);
         if !carried.xattrs.is_empty() {
-            tagged.push(
-                file.source_path
-                    .as_std_legacy()
-                    .file_name()
-                    .map(|n| n.to_string_lossy().into_owned()),
-            );
+            tagged.push(file.source_path.file_name().map(str::to_owned));
         }
     }
     assert_eq!(tagged, vec![Some("tagged.txt".to_string())]);
     assert_eq!(
         names(
             &volume
-                .folder_metadata(
-                    &AppPath::legacy_unchecked(Path::new("tagged-dir")),
-                    MetadataClasses::ALL
-                )
+                .folder_metadata(&at(volume.root(), "tagged-dir"), MetadataClasses::ALL)
                 .await
         ),
         vec![TAGS]

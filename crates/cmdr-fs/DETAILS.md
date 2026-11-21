@@ -288,8 +288,9 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   `file_stem`, `with_file_name`, `join`, `starts_with`, `strip_prefix`, `relative_to`, `rebase`), ❌ never inherent: a
   value the flip typed would otherwise answer `x.file_name().is_some()` the typed way, silently, where `Path` answered
   before. Without the import it's E0599, which the codemod drops to `as_std_legacy()`. This module and its pins import
-  it; each crate imports it in its own conversion milestone, flipping its pins there. Pinned by `cmdr-archive`'s
-  `a_typed_root_has_no_path_shaped_arithmetic_in_reach`.
+  it; each crate imports it in its own conversion milestone, flipping its pins there. Pinned by
+  `src/app_path/arithmetic_is_opt_in_test.rs` (the call resolves to a probe trait, so an inherent method or an imported
+  trait fails the build).
 - **The transition bridge** (`legacy_unchecked`, `as_std_legacy`) lets the `Volume` trait take app paths while bodies
   still do `std::path` arithmetic. It never validates or normalizes, and it's lossless: a property test holds
   `legacy_unchecked(p).as_std_legacy()` to `p`'s exact `OsStr` bytes or units, ❌ never `Path ==`, which ignores a
