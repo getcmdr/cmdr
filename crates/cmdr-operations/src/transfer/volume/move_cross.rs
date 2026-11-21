@@ -43,7 +43,7 @@ use super::preflight::SourceFileFacts;
 use super::preflight::{SourceHint, scan_volume_sources, sources_in_tree_order};
 use super::refused_item::{RefusalSubject, has_no_content, skip_if_refused};
 use super::strategy::{copy_single_path, resolve_source_is_directory};
-use super::transfer_error::{PathRole, PathedVolumeError, WriteFailure, map_volume_error};
+use super::transfer_error::{PathRole, PathedVolumeError, WriteFailure, failed_native, map_volume_error};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
@@ -777,7 +777,7 @@ fn copy_phase_failed(e: PathedVolumeError, source_path: &Path, dest_item_path: &
     log::warn!(
         target: "move",
         "move_between_volumes: copy phase failed for {} on the {:?} (under {} -> {}): {}",
-        LogPrivate::path(&e.path),
+        LogPrivate::path(&*failed_native(&e.path)),
         e.role,
         LogPrivate::path(source_path),
         LogPrivate::path(dest_item_path),

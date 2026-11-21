@@ -491,9 +491,7 @@ async fn reap_remote_temps(
             .modified_at
             .is_some_and(|modified| now_secs.saturating_sub(modified) >= min_age_secs);
         let temp_path = dir.join(&entry.name);
-        if !old_enough
-            || in_flight_temps::is_recorded_on(state, parent_volume_id, &parent.root().as_std_legacy(), &temp_path)
-        {
+        if !old_enough || in_flight_temps::is_recorded_on(state, parent_volume_id, parent.root(), &temp_path) {
             continue;
         }
         if let Err(err) = parent.delete(&AppPath::legacy_unchecked(&temp_path)).await {

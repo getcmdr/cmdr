@@ -27,7 +27,7 @@ use super::super::super::types::{
 use super::super::super::unblocked_removal::{NodeKind, RemovalRefused, delete_clearing_blockers};
 use super::super::leftover_cleanup::{LeftBehind, finish_in_background};
 use super::super::recovered_name::KeptNewData;
-use super::transfer_error::{FailedAt as _, PathRole, PathedVolumeError};
+use super::transfer_error::{PathRole, PathedVolumeError, failed_native};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_error::LogError;
@@ -409,9 +409,9 @@ pub(super) async fn reap_stale_transfer_temps(
     // An operation that never named its destination volume can't ask: nothing
     // of its own was persisted, and its live temps are in its own state.
     let recorded_by_the_ledger = |path: &Path| {
-        state.dest_volume_id().is_some_and(|volume_id| {
-            in_flight_temps::is_recorded_on(state, volume_id, &volume.root().as_std_legacy(), path)
-        })
+        state
+            .dest_volume_id()
+            .is_some_and(|volume_id| in_flight_temps::is_recorded_on(state, volume_id, volume.root(), path))
     };
 
     let mut survivors = Vec::with_capacity(entries.len());
@@ -554,7 +554,7 @@ pub(super) async fn remove_tree(
     path: &AppPath,
     why: TreeRemoval,
 ) -> Result<(), PathedVolumeError> {
-    log::debug!(target: "delete", "remove_tree: {} ({why:?})", LogPrivate::path(&*path.failed_at()));
+    log::debug!(target: "delete", "remove_tree: {} ({why:?})", LogPrivate::path(&*failed_native(path)));
     remove_tree_inner(volume, path, why.side()).await.map(|_| ())
 }
 
@@ -606,7 +606,7 @@ async fn remove_tree_inner(
                 log::warn!(
                     target: "delete",
                     "remove_tree: couldn't delete {}: {}",
-                    LogPrivate::path(&e.path),
+                    LogPrivate::path(&*failed_native(&e.path)),
                     LogError(&e.error)
                 );
                 // The child is still there, so this directory isn't empty either.

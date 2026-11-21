@@ -78,7 +78,9 @@ pub(crate) use strategy::pull_path_to_local;
 pub(crate) use transfer_error::unregistered_volume_error;
 /// The one place a `VolumeError` becomes a typed `WriteOperationError`; the
 /// delete walker maps its own volume failures through it too.
-pub(crate) use transfer_error::{PathRole, map_failure_after_wait, map_finalize_failure, map_volume_error};
+pub(crate) use transfer_error::{
+    PathRole, failed_native, failed_path_text, map_failure_after_wait, map_finalize_failure, map_volume_error,
+};
 
 /// A both-local transfer's source as the native engines walk it: re-rooted on
 /// its volume's local path (`join`, so an absolute path wins over the root).

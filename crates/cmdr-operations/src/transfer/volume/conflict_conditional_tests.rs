@@ -4,6 +4,7 @@
 //! one-level-shallower rule every `*_tests.rs` in this directory follows.
 
 use super::*;
+use cmdr_fs::app_path;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::InMemoryVolume;
 use std::sync::Arc;
@@ -52,9 +53,9 @@ async fn volume_smaller_overwrites_when_dest_strictly_smaller_via_hints() {
     let resolved = reduce_volume_conditional_resolution(
         ConflictResolution::OverwriteSmaller,
         &src,
-        Path::new("/f.bin"),
+        app_path!("/f.bin"),
         &dst,
-        Path::new("/f.bin"),
+        (Path::new("/f.bin"), app_path!("/f.bin")),
         Some(1000),
         Some(500),
     )
@@ -71,9 +72,9 @@ async fn volume_smaller_skips_when_dest_equal_size() {
     let resolved = reduce_volume_conditional_resolution(
         ConflictResolution::OverwriteSmaller,
         &src,
-        Path::new("/f.bin"),
+        app_path!("/f.bin"),
         &dst,
-        Path::new("/f.bin"),
+        (Path::new("/f.bin"), app_path!("/f.bin")),
         Some(500),
         Some(500),
     )
@@ -94,9 +95,9 @@ async fn volume_smaller_skips_when_dest_larger() {
     let resolved = reduce_volume_conditional_resolution(
         ConflictResolution::OverwriteSmaller,
         &src,
-        Path::new("/f.bin"),
+        app_path!("/f.bin"),
         &dst,
-        Path::new("/f.bin"),
+        (Path::new("/f.bin"), app_path!("/f.bin")),
         Some(100),
         Some(9999),
     )
@@ -121,9 +122,9 @@ async fn volume_smaller_falls_back_to_get_metadata_when_hints_missing() {
     let resolved = reduce_volume_conditional_resolution(
         ConflictResolution::OverwriteSmaller,
         &src,
-        Path::new("/f.bin"),
+        app_path!("/f.bin"),
         &dst,
-        Path::new("/f.bin"),
+        (Path::new("/f.bin"), app_path!("/f.bin")),
         None,
         None,
     )
@@ -147,9 +148,9 @@ async fn volume_smaller_skips_when_dest_metadata_unavailable() {
     let resolved = reduce_volume_conditional_resolution(
         ConflictResolution::OverwriteSmaller,
         &src,
-        Path::new("/f.bin"),
+        app_path!("/f.bin"),
         &dst,
-        Path::new("/f.bin"),
+        (Path::new("/f.bin"), app_path!("/f.bin")),
         None,
         None,
     )
@@ -168,9 +169,9 @@ async fn volume_older_overwrites_when_dest_strictly_older() {
     let resolved = reduce_volume_conditional_resolution(
         ConflictResolution::OverwriteOlder,
         &src,
-        Path::new("/f.bin"),
+        app_path!("/f.bin"),
         &dst,
-        Path::new("/f.bin"),
+        (Path::new("/f.bin"), app_path!("/f.bin")),
         None,
         None,
     )
@@ -187,9 +188,9 @@ async fn volume_older_skips_when_dest_equal_mtime() {
     let resolved = reduce_volume_conditional_resolution(
         ConflictResolution::OverwriteOlder,
         &src,
-        Path::new("/f.bin"),
+        app_path!("/f.bin"),
         &dst,
-        Path::new("/f.bin"),
+        (Path::new("/f.bin"), app_path!("/f.bin")),
         None,
         None,
     )
@@ -206,9 +207,9 @@ async fn volume_older_skips_when_dest_strictly_newer() {
     let resolved = reduce_volume_conditional_resolution(
         ConflictResolution::OverwriteOlder,
         &src,
-        Path::new("/f.bin"),
+        app_path!("/f.bin"),
         &dst,
-        Path::new("/f.bin"),
+        (Path::new("/f.bin"), app_path!("/f.bin")),
         None,
         None,
     )
@@ -231,9 +232,9 @@ async fn volume_older_skips_when_source_mtime_unknown() {
     let resolved = reduce_volume_conditional_resolution(
         ConflictResolution::OverwriteOlder,
         &src,
-        Path::new("/f.bin"),
+        app_path!("/f.bin"),
         &dst,
-        Path::new("/f.bin"),
+        (Path::new("/f.bin"), app_path!("/f.bin")),
         None,
         None,
     )
@@ -254,9 +255,9 @@ async fn volume_older_skips_when_dest_mtime_unknown() {
     let resolved = reduce_volume_conditional_resolution(
         ConflictResolution::OverwriteOlder,
         &src,
-        Path::new("/f.bin"),
+        app_path!("/f.bin"),
         &dst,
-        Path::new("/f.bin"),
+        (Path::new("/f.bin"), app_path!("/f.bin")),
         None,
         None,
     )
@@ -285,9 +286,9 @@ async fn volume_non_conditional_variants_pass_through_unchanged() {
         let resolved = reduce_volume_conditional_resolution(
             v,
             &src,
-            Path::new("/f.bin"),
+            app_path!("/f.bin"),
             &dst,
-            Path::new("/f.bin"),
+            (Path::new("/f.bin"), app_path!("/f.bin")),
             Some(100),
             Some(100),
         )
@@ -307,9 +308,9 @@ async fn volume_smaller_ignores_mtime() {
     let resolved = reduce_volume_conditional_resolution(
         ConflictResolution::OverwriteSmaller,
         &src,
-        Path::new("/f.bin"),
+        app_path!("/f.bin"),
         &dst,
-        Path::new("/f.bin"),
+        (Path::new("/f.bin"), app_path!("/f.bin")),
         Some(1000),
         Some(100),
     )
@@ -327,9 +328,9 @@ async fn volume_older_ignores_size() {
     let resolved = reduce_volume_conditional_resolution(
         ConflictResolution::OverwriteOlder,
         &src,
-        Path::new("/f.bin"),
+        app_path!("/f.bin"),
         &dst,
-        Path::new("/f.bin"),
+        (Path::new("/f.bin"), app_path!("/f.bin")),
         None,
         None,
     )

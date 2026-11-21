@@ -6,6 +6,7 @@
 //! in its own module so both `volume::copy` and `volume::r#move` depend on it
 //! rather than on each other.
 
+use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 
 use cmdr_fs::app_path::{AppPath, AppPathBuf};
@@ -121,8 +122,9 @@ pub(crate) fn map_failure_after_wait(
 pub(crate) struct PathedVolumeError {
     /// The item that failed, as deep in the tree as the walker got, on the
     /// volume `role` names: a refused nested mkdir carries the DESTINATION
-    /// folder, a failed read the SOURCE file.
-    pub path: PathBuf,
+    /// folder, a failed read the SOURCE file. Its text leaves only through
+    /// [`failed_path_text`].
+    pub path: AppPathBuf,
     /// Which volume's call failed. Set by the constructor the failing call site
     /// picked (`AtPath::at_source` / `at_destination`, `from_landing`), ❌ never
     /// defaulted: a walker frame holds both paths, and only the call that failed
@@ -186,7 +188,7 @@ impl From<PathedVolumeError> for WriteFailure {
             Some(FailureCause::NameTooLong) => (None, true),
             None => (None, false),
         };
-        let path = e.path.display().to_string();
+        let path = failed_path_text(&e.path);
         let error = match (e.aftermath.map(|aftermath| *aftermath), lost) {
             (None, None) if too_long => WriteOperationError::NameTooLong { path },
             (Some(LandingAftermath::NewDataKeptAt(kept_at)), _) => WriteOperationError::NewDataKeptAt {
@@ -233,39 +235,54 @@ impl OutageFailure for PathedVolumeError {
 }
 
 /// A path a failure names: the engine's `std::path` values, or an app path a typed body
-/// holds. [`PathedVolumeError::path`] keeps the `std::path` spelling, because its text exits
-/// (`display()` into the error the user reads, the logs) must stay byte-exact on Linux names
-/// that aren't UTF-8, which an app path's own text can't reproduce until escapes go live.
+/// holds. [`PathedVolumeError::path`] is an app path; a `std::path` value crosses into it
+/// here, once, through the bridge (lossless: a Linux name that isn't UTF-8 keeps its exact
+/// bytes), so [`failed_path_text`] gives back exactly what `display()` gave.
 pub(crate) trait FailedAt {
     /// The path as the error carries it.
-    fn failed_at(&self) -> PathBuf;
+    fn failed_at(&self) -> AppPathBuf;
 }
 
+/// ❗ The one crossing a `std::path` failure takes into the error's app path. It goes once
+/// every body that fails holds an app path (the app-path plan's 10f, with [`failed_native`]).
 impl FailedAt for Path {
-    fn failed_at(&self) -> PathBuf {
-        self.to_path_buf()
+    fn failed_at(&self) -> AppPathBuf {
+        AppPath::legacy_unchecked(self).into_owned()
     }
 }
 
 impl FailedAt for PathBuf {
-    fn failed_at(&self) -> PathBuf {
-        self.clone()
+    fn failed_at(&self) -> AppPathBuf {
+        self.as_path().failed_at()
     }
 }
 
-/// ❗ The one crossing a typed body's failure takes back to `std::path` (lossless: the
-/// bridge's exact bytes). It goes once [`PathedVolumeError::path`] holds an app path, which
-/// waits on the escape gate (app-path plan, 10f).
 impl FailedAt for AppPath {
-    fn failed_at(&self) -> PathBuf {
-        self.as_std_legacy().into_owned()
+    fn failed_at(&self) -> AppPathBuf {
+        self.to_owned()
     }
 }
 
 impl FailedAt for AppPathBuf {
-    fn failed_at(&self) -> PathBuf {
-        self.as_app_path().failed_at()
+    fn failed_at(&self) -> AppPathBuf {
+        self.clone()
     }
+}
+
+/// ❗ A failure's one exit back to `std::path`: the exact bytes the error held when its path
+/// was a `std::path` (the bridge's round trip is lossless, a Linux name that isn't UTF-8
+/// included). Every text exit of a failure's path goes through here: the log's `LogPrivate`,
+/// a `Path ==` comparison that must keep `std::path`'s component rules, and
+/// [`failed_path_text`]. ❌ Never `as_str()` or `shown()` for those: an escaped name would
+/// read as its escape text, or with another count of U+FFFD. It goes in the app-path plan's
+/// 10f, once escapes are live and an app path's text is the person's.
+pub(crate) fn failed_native(path: &AppPath) -> Cow<'_, Path> {
+    path.as_std_legacy()
+}
+
+/// The path the person reads in the error, spelled exactly as `Path::display()` spelled it.
+pub(crate) fn failed_path_text(path: &AppPath) -> String {
+    failed_native(path).display().to_string()
 }
 
 /// The ways a `PathedVolumeError` comes to be, besides [`AtPath`].
@@ -302,7 +319,7 @@ impl PathedVolumeError {
         let too_long = matches!(failure.error, VolumeError::InvalidName(_))
             && leaf_bytes(dest_path) > cmdr_fs::staging::MAX_SCRATCH_NAME_BYTES;
         Self {
-            path: dest_path.to_path_buf(),
+            path: dest_path.failed_at(),
             role: PathRole::Destination,
             error: failure.error,
             aftermath: failure.aftermath.map(Box::new),
