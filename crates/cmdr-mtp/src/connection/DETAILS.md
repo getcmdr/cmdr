@@ -329,10 +329,11 @@ back as `/Documents\report-2.txt` and a device name holding `\` read as two (`cr
   and the caches stay out of it.
 - **The report URL** (`url_of`, `mtp://{device}/{storage}[/inner]`) joins the storage path's names under `storage_url`,
   the volume's root too.
-- **The host seams still take `&Path`**: `directory_changed`, `authoritative_listing`, `ScanBoundary::dir` / `file`, and
-  the `pub` `ResolvedMtpObject::path`. Each call crosses through `std_path_for_host`, the crate's one bridge call; its
-  doc names what retires each seam. The whole-device `FullRefresh` key (`mtp://{device}`) is a host key built as text,
-  never an app path.
+- **The host seams still take `&Path`**: `directory_changed`, `authoritative_listing`, and `ScanBoundary::dir` / `file`.
+  Each call crosses through `std_path_for_host`, the crate's one bridge call; its doc names what retires each seam. The
+  index feed's `ResolvedMtpObject::path` is the typed storage path itself (`AppPathBuf`), which the index splits by the
+  app path's own arithmetic. The whole-device `FullRefresh` key (`mtp://{device}`) is a host key built as text, never an
+  app path.
 - **Text that isn't valid Unicode keeps today's answer**: no device name holds an escape (`mtp-rs` hands over
   `String`s), and a device name with a literal escape-range code point lists under its literal text, as the rows did.
 

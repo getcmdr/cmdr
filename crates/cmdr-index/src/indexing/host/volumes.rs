@@ -109,9 +109,9 @@ impl MountPoint {
 /// One MTP object, resolved from the bare PTP handle a device change event carries.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ResolvedMtpObject {
-    /// Storage-relative path with a leading `/`, already in the index path space
-    /// (an MTP index is rooted at the storage root).
-    pub path: PathBuf,
+    /// Storage-relative path, a canonical app path under the POSIX `/` root, already
+    /// in the index path space (an MTP index is rooted at the storage root).
+    pub path: cmdr_fs::app_path::AppPathBuf,
     /// Whether the object is a directory.
     pub is_directory: bool,
     /// Logical size in bytes; `None` for directories.

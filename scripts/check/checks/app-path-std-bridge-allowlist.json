@@ -673,7 +673,6 @@
     "crates/cmdr-index/src/indexing/scanner/exclusions.rs": 1,
     "crates/cmdr-index/src/indexing/scanner/walker/bulk_read.rs": 1,
     "crates/cmdr-index/src/indexing/scanner/walker/tests.rs": 2,
-    "crates/cmdr-index/src/indexing/transports/mtp/watch/tests.rs": 1,
     "crates/cmdr-index/src/indexing/watch/event_loop/replay.rs": 1,
     "crates/cmdr-index/src/indexing/watch/event_loop/replay_cost_bench.rs": 1,
     "crates/cmdr-index/src/indexing/watch/event_loop/verification.rs": 1,
