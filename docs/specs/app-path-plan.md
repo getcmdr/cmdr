@@ -1476,12 +1476,13 @@ included; the hidden couplings it found are why waves B and C differ from round 
   the viewer's host seams (10d); archive's `ScanRecorder` crossing (10a); the test-only crossings into `std::path`
   fixtures (`conformance`, `InMemoryVolume::set_stat_failing`, 11).
 - **Found on the way, not fixed here**: restic can't browse a repo on a `scheme://` parent (`restic_route_candidates`
-  reads components, so `sftp://h/x` becomes `sftp:/h/x`); 10c's typed root fixes it. `cmdr-restic`'s `tree::child`
-  `AmbiguousName` error names the wrong path (kept byte-exact). ❗ On macOS `cmdr-fs`'s lenient reading of a bridge
-  value led by `//` with three or more names is a UNC root (`//a/b/c`: kind `Unc`, root `//a/b/`, parent `//a/b/`) while
-  `//a/b` reads as POSIX (root `/`), which disagrees with § "App paths"' "a leading `//` is a plain root" on POSIX
-  (verified on macOS 27 at this branch's tip, a throwaway example). Only bridge text reaches it; none of this
-  milestone's crossings makes such text. For milestone 11, or a `cmdr-fs` fix first.
+  reads components, so `sftp://h/x` becomes `sftp:/h/x`; #1308); 10c's typed root fixes it. `cmdr-restic`'s
+  `tree::child` `AmbiguousName` error names the wrong path (kept byte-exact). ❗ On macOS `cmdr-fs`'s lenient reading of
+  a bridge value led by `//` with three or more names is a UNC root (`//a/b/c`: kind `Unc`, root `//a/b/`, parent
+  `//a/b/`) while `//a/b` reads as POSIX (root `/`), which disagrees with § "App paths"' "a leading `//` is a plain
+  root" on POSIX (verified on macOS 27 at this branch's tip, a throwaway example). Only bridge text reaches it; none of
+  this milestone's crossings makes such text. Its fix needs a design call, since every Windows-arm test on a POSIX host
+  builds such a value: #1309.
 
 ### 9. `cmdr-local`
 
