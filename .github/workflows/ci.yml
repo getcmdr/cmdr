@@ -956,9 +956,9 @@ jobs:
   # `cmdr-fsevent-stream` member) was compiled, linted, and tested only on whichever Mac last ran
   # `pnpm check`. This lane asks the three questions Linux can't answer for that code: does it
   # lint clean, do its intra-doc links resolve, and do its tests pass. Everything platform-blind
-  # (the static scanners, rustfmt, notices, jscpd) stays in `desktop-rust` alone. Last, it runs
-  # module cycles, whose baseline is a macOS module graph (an ubuntu analysis drops the
-  # macOS-gated modules).
+  # (the static scanners, rustfmt, notices, jscpd) stays in `desktop-rust` alone. On a hosted
+  # runner only, it last runs module cycles, which `desktop-rust`'s `module-cycles` job measures
+  # for the macOS target on every run (the M1 skips it; the lane file says why).
   #
   # One job, deliberately: splitting the suite into a second macOS job saved ~5 min of wall
   # time, but the account runs at most five macOS jobs at once (of 20), and with several PRs

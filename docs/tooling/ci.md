@@ -545,12 +545,16 @@ only the newest run of a workflow on a commit, so a newer run without a green `C
 workflows don't shadow each other, as `codeql.yml` and `ci.yml` show. Evidence and what `pnpm land` does about it:
 `scripts/land/DETAILS.md` § Gotcha: GitHub reads only the newest run on a commit.
 
-Last, it runs `desktop-rust-module-cycles`, whose baseline is a macOS module graph (`scripts/check/checks/DETAILS.md` §
-"Rust module cycles"). The check analyzes for `aarch64-apple-darwin` on every host, so the Linux Rust lane's
-`module-cycles` job asks the same question on light runs too (verified: on ubuntu it measured the app crate at 884
-modules, as the Mac does, against 784 for a Linux target, and matched the baseline with no stale entry; run 44932475102,
-2026-11-21). It first installs the cargo-modules version the check pins; rust-cache carries `~/.cargo/bin`, so that
-multi-minute build runs only on a cold entry or a bump.
+`desktop-rust-module-cycles` measures a macOS module graph (`scripts/check/checks/DETAILS.md` § "Rust module cycles"),
+and the check analyzes for `aarch64-apple-darwin` on every host, so the Linux Rust lane's `module-cycles` job owns it on
+every PR run, light or land. Verified equivalent: the DOT cargo-modules printed on ubuntu was byte-identical to an M1's
+for all 33 library crates, the app crate included (run 44935394792 against a local run, cargo-modules 0.27.0,
+2026-11-21); against a Linux target the app crate has 784 modules instead of 884. Decision: the M1 skips it, saving ~3
+min of its time per landing; a hosted macOS run (the nightly, the release gate, a land while the M1 is busy) still runs
+it last, so a host drift shows there. The one way the two could part: a build script that can't run on Linux for the
+macOS target, whose `rustc-cfg` (like `cmdr_host`) would then gate modules out of the Linux graph. It first installs the
+cargo-modules version the check pins; rust-cache carries `~/.cargo/bin`, so that multi-minute build runs only on a cold
+entry or a bump.
 
 Why one job: a split-out tests job saved ~5 min of wall time, but the account runs at most five macOS jobs at once, and
 with several PRs in flight the second macOS job per run queued for longer than that (§ Build caching, Critical path).

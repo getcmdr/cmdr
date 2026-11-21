@@ -233,8 +233,8 @@ var AllChecks = []CheckDefinition{
 		DisplayName: "Rust module cycles",
 		App:         AppDesktop,
 		Tech:        "🦀 Rust",
-		// CI runs it in the Linux Rust lane's `module-cycles` job (light runs too) and in the
-		// macOS lane. The baseline is a macOS module graph, so the check always analyzes for
+		// CI runs it in the Linux Rust lane's `module-cycles` job (light runs too) and in a
+		// hosted macOS lane (the M1 skips it). The baseline is a macOS module graph, so the check always analyzes for
 		// `aarch64-apple-darwin` (`moduleCyclesTarget`), whatever the host.
 		// ~90 s across the library crates, most of it the app crate, and the
 		// thing it measures moves on the scale of a refactor rather than a commit.
