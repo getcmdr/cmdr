@@ -5,8 +5,7 @@
 //! both follow is `look_alike.rs`.
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
-use std::path::Path;
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic};
 use std::sync::Arc;
 
 use super::create::{create_directory_core_on, create_file_core_on};
@@ -29,6 +28,13 @@ async fn share(engine: &TestOperations, label: &str) -> (String, Arc<InMemoryVol
     volume.create_directory(app_path!("/dir")).await.unwrap();
     engine.volumes().register(&id, Arc::clone(&volume) as Arc<dyn Volume>);
     (id, volume)
+}
+
+/// `/dir/<name>`, the fixture folder's entry.
+fn in_dir(name: &str) -> AppPathBuf {
+    app_path!("/dir")
+        .join(AppName::from_app_spelling(name).expect("one name"))
+        .expect("joins")
 }
 
 async fn names_in(volume: &InMemoryVolume, dir: &str) -> Vec<String> {
@@ -64,14 +70,8 @@ async fn a_new_folder_and_a_new_file_go_out_composed() {
 async fn a_new_folder_or_file_is_refused_beside_its_look_alike() {
     let engine = TestOperations::new();
     let (id, volume) = share(&engine, "taken").await;
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&format!("/dir/{CAFE_NFD}"))), b"x")
-        .await
-        .unwrap();
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&format!("/dir/{FOTOK_NFD}"))))
-        .await
-        .unwrap();
+    volume.create_file(&in_dir(CAFE_NFD), b"x").await.unwrap();
+    volume.create_directory(&in_dir(FOTOK_NFD)).await.unwrap();
 
     let file = create_file_core_on(engine.host(), Some(id.clone()), "/dir", CAFE_NFC).await;
     let folder = create_directory_core_on(engine.host(), Some(id), "/dir", FOTOK_NFC).await;
@@ -108,13 +108,7 @@ async fn a_rename_onto_a_look_alike_is_refused_unless_forced_and_then_replaces_i
     let engine = TestOperations::new();
     let (id, volume) = share(&engine, "rename-taken").await;
     volume.create_file(app_path!("/dir/a.txt"), b"NEW").await.unwrap();
-    volume
-        .create_file(
-            &AppPath::legacy_unchecked(Path::new(&format!("/dir/{CAFE_NFD}"))),
-            b"OLD",
-        )
-        .await
-        .unwrap();
+    volume.create_file(&in_dir(CAFE_NFD), b"OLD").await.unwrap();
 
     let refused = engine
         .rename_managed(
@@ -156,10 +150,7 @@ async fn a_rename_onto_a_look_alike_is_refused_unless_forced_and_then_replaces_i
 async fn respelling_a_name_is_not_a_clash_with_itself() {
     let engine = TestOperations::new();
     let (id, volume) = share(&engine, "respell").await;
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&format!("/dir/{CAFE_NFD}"))), b"x")
-        .await
-        .unwrap();
+    volume.create_file(&in_dir(CAFE_NFD), b"x").await.unwrap();
 
     let validity = engine
         .check_rename_validity_impl("/dir".into(), CAFE_NFD.into(), CAFE_NFC.into(), id.clone())
@@ -187,10 +178,7 @@ async fn the_live_rename_check_reports_a_look_alike() {
     let engine = TestOperations::new();
     let (id, volume) = share(&engine, "validity").await;
     volume.create_file(app_path!("/dir/a.txt"), b"x").await.unwrap();
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&format!("/dir/{CAFE_NFD}"))), b"x")
-        .await
-        .unwrap();
+    volume.create_file(&in_dir(CAFE_NFD), b"x").await.unwrap();
 
     let validity = engine
         .check_rename_validity_impl("/dir".into(), "a.txt".into(), CAFE_NFC.into(), id)
@@ -209,10 +197,7 @@ async fn the_live_rename_check_reports_the_name_a_typed_one_composes_onto() {
     let engine = TestOperations::new();
     let (id, volume) = share(&engine, "validity-composed").await;
     volume.create_file(app_path!("/dir/a.txt"), b"x").await.unwrap();
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&format!("/dir/{CAFE_NFC}"))), b"x")
-        .await
-        .unwrap();
+    volume.create_file(&in_dir(CAFE_NFC), b"x").await.unwrap();
 
     let validity = engine
         .check_rename_validity_impl("/dir".into(), "a.txt".into(), CAFE_NFD.into(), id)

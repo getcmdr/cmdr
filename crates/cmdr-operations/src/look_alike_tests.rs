@@ -52,10 +52,7 @@ fn two_look_alikes_and_no_exact_name_is_several() {
 async fn a_byte_exact_volume_lists_to_find_the_look_alike() {
     let volume = InMemoryVolume::new("v");
     volume.create_directory(app_path!("/dir")).await.unwrap();
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new("/dir/caf\u{e9}.txt")), b"x")
-        .await
-        .unwrap();
+    volume.create_file(app_path!("/dir/caf\u{e9}.txt"), b"x").await.unwrap();
     match look_alike_in(&volume, Path::new("/dir"), "cafe\u{301}.txt").await {
         Ok(LookAlike::One(found)) => assert_eq!(found.path, "/dir/caf\u{e9}.txt"),
         other => panic!("expected the composed entry, got {other:?}"),

@@ -4,6 +4,7 @@
 
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
+use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -120,7 +121,7 @@ async fn a_rename_as_move_out_of_dot_git_refuses() {
         matches!(&result, Err(error) if is_read_only(error, ReadOnlySide::Source)),
         "{result:?}"
     );
-    assert!(drive.exists(&AppPath::legacy_unchecked(&from)).await);
+    assert!(drive.exists(&app(&from)).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -171,7 +172,7 @@ async fn an_instant_rename_under_dot_git_refuses() {
         ),
         "{result:?}"
     );
-    assert!(drive.exists(&AppPath::legacy_unchecked(&from)).await);
+    assert!(drive.exists(&app(&from)).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -250,12 +251,7 @@ async fn a_numbered_create_inside_an_archive_or_dot_git_refuses() {
             ),
             "{dir}: {result:?}"
         );
-        assert!(
-            !drive
-                .exists(&AppPath::legacy_unchecked(&Path::new(dir).join("pasted.txt")))
-                .await,
-            "{dir}"
-        );
+        assert!(!drive.exists(&app(&Path::new(dir).join("pasted.txt"))).await, "{dir}");
     }
 }
 
@@ -279,5 +275,11 @@ async fn a_delete_under_dot_git_refuses() {
         matches!(&result, Err(error) if is_read_only(error, ReadOnlySide::Source)),
         "{result:?}"
     );
-    assert!(drive.exists(&AppPath::legacy_unchecked(&doomed)).await);
+    assert!(drive.exists(&app(&doomed)).await);
+}
+
+/// A fixture's `std::path` value (a scratch dir, a path the engine's `PathBuf` starts
+/// take) as the app path it names, for the volume calls: the file's one crossing.
+fn app(path: &Path) -> Cow<'_, AppPath> {
+    AppPath::legacy_unchecked(path)
 }

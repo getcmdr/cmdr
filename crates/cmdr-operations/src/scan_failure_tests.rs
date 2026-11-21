@@ -57,22 +57,14 @@ impl Volume for VanishedVolume {
         path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            Err(VolumeError::NotFound(path.display().to_string()))
-        })
+        Box::pin(async move { Err(not_found(path)) })
     }
 
     fn get_metadata<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            Err(VolumeError::NotFound(path.display().to_string()))
-        })
+        Box::pin(async move { Err(not_found(path)) })
     }
 
     fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
@@ -83,22 +75,14 @@ impl Volume for VanishedVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            Err(VolumeError::NotFound(path.display().to_string()))
-        })
+        Box::pin(async move { Err(not_found(path)) })
     }
 
     fn scan_for_copy<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            Err(VolumeError::NotFound(path.display().to_string()))
-        })
+        Box::pin(async move { Err(not_found(path)) })
     }
 
     fn scan_for_copy_batch_with_boundary<'a>(
@@ -107,13 +91,16 @@ impl Volume for VanishedVolume {
         _boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let first = paths
+            Err(paths
                 .first()
-                .map(|p| p.as_std_legacy().display().to_string())
-                .unwrap_or_default();
-            Err(VolumeError::NotFound(first))
+                .map_or_else(|| VolumeError::NotFound(String::new()), |p| not_found(p)))
         })
     }
+}
+
+/// The refusal a missing `path` gets, naming it as `Path::display` did.
+fn not_found(path: &AppPath) -> VolumeError {
+    VolumeError::NotFound(path.as_std_legacy().display().to_string())
 }
 
 fn fresh_state() -> Arc<ScanPreviewState> {

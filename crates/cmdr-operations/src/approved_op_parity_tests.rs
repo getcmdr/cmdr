@@ -434,14 +434,11 @@ fn unique_lane(label: &str) -> String {
 }
 
 async fn seed(volume: &dyn cmdr_fs::volume::Volume, path: &str, bytes: &[u8]) {
-    let path = Path::new(path);
-    if volume.exists(&AppPath::legacy_unchecked(path)).await {
-        volume.delete(&AppPath::legacy_unchecked(path)).await.expect("clear");
+    let path = AppPath::from_normalized(path).expect("a canonical path");
+    if volume.exists(path).await {
+        volume.delete(path).await.expect("clear");
     }
-    volume
-        .create_file(&AppPath::legacy_unchecked(path), bytes)
-        .await
-        .expect("seed");
+    volume.create_file(path, bytes).await.expect("seed");
 }
 
 /// The whole chain, on the route an approved SMB or MTP group actually takes: a binding
