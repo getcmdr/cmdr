@@ -65,7 +65,7 @@ pub async fn execute_unlock<R: Runtime>(app: &AppHandle<R>, params: &Value) -> T
     // made with the dialog's checkbox.
     let outcome = unlock_within(
         &prompt.parent_volume_id,
-        std::path::Path::new(&prompt.archive_path),
+        &prompt.archive_path,
         password,
         false,
         &CancellationToken::new(),

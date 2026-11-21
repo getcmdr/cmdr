@@ -2236,6 +2236,10 @@
   "@fileExplorer.dragOut.partial": {
     "sourceHash": "9215226"
   },
+  "fileExplorer.drop.uncrossedPaths": "Cmdr не может прочитать, где находятся один или несколько перетянутых объектов, поэтому пропустил все, что вы перетянули. Попробуйте еще раз без этих объектов.",
+  "@fileExplorer.drop.uncrossedPaths": {
+    "sourceHash": "c4daabf"
+  },
   "fileExplorer.dropIn.sourceNameFromAppAndHost": "{name} из приложения {appName} ({host})",
   "@fileExplorer.dropIn.sourceNameFromAppAndHost": {
     "sourceHash": "94c2e01"

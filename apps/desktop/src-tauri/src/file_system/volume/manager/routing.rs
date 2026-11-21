@@ -15,6 +15,8 @@
 use super::super::{ResolvedVolume, RoutedKind};
 use super::VolumeManager;
 use super::restic_routing::ResticAnswer;
+use cmdr_fs::app_path::AppPath;
+use std::borrow::Cow;
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 
@@ -60,25 +62,39 @@ pub(super) enum ArchiveRoot {
 /// A place in a path where a route could take over, by the component it sits
 /// at. Lexical; each route confirms its own.
 enum Boundary {
-    /// A `.git/<category>` (the portal decides with no I/O).
-    GitPortal,
+    /// A `.git/<category>`, under the worktree root that holds it (the portal
+    /// decides with no I/O).
+    GitPortal(PathBuf),
     /// A `Browse snapshots` component, under the repo folder that holds it.
     Restic(PathBuf),
     /// The first archive-named component.
     Archive,
 }
 
+/// `path` as the `std::path` value the git and restic route candidates read
+/// (`cmdr_git::portal_route`, `cmdr_fs::restic_view`), which still speak
+/// `std::path`: the one crossing on the routing seam. The roots those candidates
+/// answer are what the portal and the snapshot view are built over, as before.
+/// Goes when both candidates take an app path (`cmdr-git`'s surface is capped,
+/// so that's David's call; `docs/specs/app-path-plan.md` § 10c's record).
+fn lexical_spelling(path: &AppPath) -> Cow<'_, Path> {
+    path.as_std_legacy()
+}
+
 /// Every route boundary in `path`, leftmost first: the order
-/// [`VolumeManager::resolve`] tries them in.
-fn boundaries(path: &Path) -> Vec<Boundary> {
+/// [`VolumeManager::resolve`] tries them in. The archive's place is read off
+/// the same `std::path` spelling as the other two, so the order counts one
+/// set of components.
+fn boundaries(path: &AppPath) -> Vec<Boundary> {
+    let lexical = lexical_spelling(path);
     let mut found: Vec<(usize, Boundary)> = Vec::new();
-    if let Some(worktree_root) = cmdr_git::portal_route(path) {
-        found.push((worktree_root.components().count(), Boundary::GitPortal));
+    if let Some(worktree_root) = cmdr_git::portal_route(&lexical) {
+        found.push((worktree_root.components().count(), Boundary::GitPortal(worktree_root)));
     }
-    for repo_root in super::restic_routing::restic_candidates(path) {
+    for repo_root in cmdr_fs::restic_view::restic_route_candidates(&lexical) {
         found.push((repo_root.components().count(), Boundary::Restic(repo_root)));
     }
-    if let Some((archive, _inner)) = cmdr_fs::archive_format::archive_boundary_candidate(path) {
+    if let Some((archive, _inner)) = cmdr_fs::archive_format::archive_boundary_candidate(&lexical) {
         found.push((archive.components().count().saturating_sub(1), Boundary::Archive));
     }
     // Two boundaries can't share a component: each is a different name.
@@ -113,7 +129,7 @@ impl VolumeManager {
     /// `volume.method(path)`. The sync-only
     /// [`resolve_local_only`](Self::resolve_local_only) exists for the one
     /// caller that can't `.await` (the write-op fresh-listing oracle).
-    pub async fn resolve(&self, volume_id: &str, path: &Path) -> ResolvedVolume {
+    pub async fn resolve(&self, volume_id: &str, path: &AppPath) -> ResolvedVolume {
         self.resolve_as(volume_id, path, ArchiveRoot::File).await
     }
 
@@ -124,15 +140,15 @@ impl VolumeManager {
     /// file (everything under `Browse snapshots` routes), so `resolve` keeps its
     /// root on the view, and only a listing enters it. A plain archive's root
     /// routes the same either way, since the gate already answers for it.
-    pub async fn resolve_to_list(&self, volume_id: &str, path: &Path) -> ResolvedVolume {
+    pub async fn resolve_to_list(&self, volume_id: &str, path: &AppPath) -> ResolvedVolume {
         self.resolve_as(volume_id, path, ArchiveRoot::Folder).await
     }
 
-    async fn resolve_as(&self, volume_id: &str, path: &Path, archive_root: ArchiveRoot) -> ResolvedVolume {
+    async fn resolve_as(&self, volume_id: &str, path: &AppPath, archive_root: ArchiveRoot) -> ResolvedVolume {
         let mut undecided = false;
         for boundary in boundaries(path) {
             let routed = match boundary {
-                Boundary::GitPortal => self.resolve_git_portal(volume_id, path),
+                Boundary::GitPortal(worktree_root) => self.resolve_git_portal(volume_id, worktree_root, path),
                 Boundary::Restic(repo_root) => match self.resolve_restic(volume_id, &repo_root, path).await {
                     ResticAnswer::Routed(routed) => Some(
                         self.inside_the_snapshot(volume_id, &repo_root, routed, path, archive_root)
@@ -157,7 +173,7 @@ impl VolumeManager {
             // may be a repo's read-only view.
             return ResolvedVolume::undecided(self.get(volume_id), path, RoutedKind::Restic);
         }
-        ResolvedVolume::passthrough(self.get(volume_id), path)
+        ResolvedVolume::passthrough_at(self.get(volume_id), path)
     }
 
     /// What serves a path the restic view `routed` took: an archive inside the
@@ -169,7 +185,7 @@ impl VolumeManager {
         volume_id: &str,
         repo_root: &Path,
         routed: ResolvedVolume,
-        path: &Path,
+        path: &AppPath,
         archive_root: ArchiveRoot,
     ) -> ResolvedVolume {
         let Some(view) = routed.volume.clone() else {
@@ -194,10 +210,10 @@ impl VolumeManager {
     /// walkers. That oracle declines a remote archive path and an unrouted path
     /// under a `Browse snapshots` component on its own, so a passthrough here
     /// only costs a re-read.
-    pub fn resolve_local_only(&self, volume_id: &str, path: &Path) -> ResolvedVolume {
+    pub fn resolve_local_only(&self, volume_id: &str, path: &AppPath) -> ResolvedVolume {
         for boundary in boundaries(path) {
             let routed = match boundary {
-                Boundary::GitPortal => self.resolve_git_portal(volume_id, path),
+                Boundary::GitPortal(worktree_root) => self.resolve_git_portal(volume_id, worktree_root, path),
                 Boundary::Restic(repo_root) => self.resolve_restic_from_memo(volume_id, &repo_root, path),
                 Boundary::Archive => {
                     Some(self.resolve_local_archive(volume_id, path)).filter(ResolvedVolume::is_routed)
@@ -207,7 +223,7 @@ impl VolumeManager {
                 return routed;
             }
         }
-        ResolvedVolume::passthrough(self.get(volume_id), path)
+        ResolvedVolume::passthrough_at(self.get(volume_id), path)
     }
 }
 

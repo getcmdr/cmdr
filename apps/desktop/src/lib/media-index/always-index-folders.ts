@@ -1,5 +1,5 @@
-// FE-owned media-index CHOSEN folders: the absolute OS folder paths the user picked for
-// image indexing. Persisted as a real JSON array in the sparse settings store (the Rust
+// FE-owned media-index CHOSEN folders: the absolute folder paths (app paths, `C:/Users/…` on
+// Windows) the user picked for image indexing. Persisted as a real JSON array in the sparse settings store (the Rust
 // loader reads `mediaIndex.alwaysIndexFolders` as `Vec<String>`) AND live-applied through
 // `media_index_set_always_index_folder`, both in one place so the persisted array and the
 // running scheduler config never drift.
@@ -20,7 +20,7 @@ import { persistThenApply } from './network-volume-prefs'
 
 const log = getAppLogger('media-index')
 
-/** The absolute OS folder paths chosen for image indexing, in the order they were added. */
+/** The absolute folder app paths chosen for image indexing, in the order they were added. */
 export function getChosenFolders(): string[] {
   return getSetting('mediaIndex.alwaysIndexFolders')
 }

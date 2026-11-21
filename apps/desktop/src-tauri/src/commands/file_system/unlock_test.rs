@@ -4,7 +4,6 @@
 
 use cmdr_fs::app_path::AppPath;
 use std::future::Future;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -230,7 +229,7 @@ async fn an_unlock_past_its_budget_times_out_and_keeps_nothing() {
     let cancel = tokio_util::sync::CancellationToken::new();
     let answer = unlock_within(
         &id,
-        Path::new("/repo"),
+        "/repo",
         "hunter2".to_string(),
         true,
         &cancel,
@@ -252,7 +251,7 @@ async fn a_cancelled_unlock_answers_cancelled_and_keeps_nothing() {
 
     let unlocking = unlock_within(
         &id,
-        Path::new("/repo"),
+        "/repo",
         "hunter2".to_string(),
         true,
         &cancel,
@@ -280,7 +279,7 @@ async fn a_cancel_right_after_the_answer_forgets_and_files_nothing() {
 
     let answer = unlock_within(
         &id,
-        Path::new("/repo"),
+        "/repo",
         "hunter2".to_string(),
         true,
         &cancel,

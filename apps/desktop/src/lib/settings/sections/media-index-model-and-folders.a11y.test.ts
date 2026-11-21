@@ -30,11 +30,28 @@ vi.mock('#lib/settings/index.js', async (importOriginal) => ({
   onSpecificSettingChange: () => () => {},
 }))
 
-vi.mock('#lib/tauri-commands/index.js', () => ({
+vi.mock('#lib/tauri-commands/index.js', async () => ({
   mediaIndexClipModelStatus: () => stubs.clipModelStatus(),
   mediaIndexDownloadClipModel: vi.fn(),
   mediaIndexDeleteClipModel: vi.fn(),
+  // The real door (#1311), over the mocked picker and a mocked backend crossing below.
+  pickOneAsAppPath: (
+    await vi.importActual<typeof import('#lib/tauri-commands/native-paths.js')>('#lib/tauri-commands/native-paths.js')
+  ).pickOneAsAppPath,
 }))
+
+// Windows' crossing, as the backend answers it (`commands/native_paths_test.rs` pins the real one).
+vi.mock('#lib/ipc/bindings.js', async (importOriginal) => {
+  const original = await importOriginal<typeof import('#lib/ipc/bindings.js')>()
+  return {
+    ...original,
+    commands: {
+      ...original.commands,
+      appPathsFromNative: (paths: string[]) =>
+        Promise.resolve(paths.map((path) => ({ kind: 'app', path: path.replaceAll('\\', '/') }))),
+    },
+  }
+})
 
 vi.mock('#lib/settings/reactive-settings.svelte.js', () => ({
   getFileSizeFormat: () => 'binary',
@@ -196,6 +213,15 @@ describe('MediaIndexChosenFolders', () => {
     addButton(target).click()
     await vi.waitFor(() => {
       expect(stubs.setFolderChosen).toHaveBeenCalledWith('/Users/test_user_10/Photos', true)
+    })
+  })
+
+  it('adds a folder picked on Windows by its app path, never the native `C:\\` text (#1311)', async () => {
+    stubs.openPicker.mockResolvedValue('C:\\Users\\test_user_10\\Photos')
+    const target = mountList()
+    addButton(target).click()
+    await vi.waitFor(() => {
+      expect(stubs.setFolderChosen).toHaveBeenCalledWith('C:/Users/test_user_10/Photos', true)
     })
   })
 

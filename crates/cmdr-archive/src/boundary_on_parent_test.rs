@@ -8,7 +8,7 @@ use cmdr_fs::testing::AppTestDir;
 
 use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeError};
 
-use super::{confirm_archive_boundary_on_parent_at, confirm_remote_archive_boundary_at};
+use super::{confirm_archive_boundary_on_parent, confirm_remote_archive_boundary};
 use crate::testing::at;
 
 const ZIP_BYTES: &[u8] = b"PK\x03\x04not-a-real-archive-body";
@@ -44,18 +44,12 @@ async fn a_local_parent_confirms_a_real_zip_and_its_inner_paths() {
     let parent = InMemoryVolume::new("Local").with_local_fs_access();
 
     assert_eq!(
-        confirm_archive_boundary_on_parent_at(&parent, &at(&zip, "docs/readme.txt")).await,
+        confirm_archive_boundary_on_parent(&parent, &at(&zip, "docs/readme.txt")).await,
         split(&zip, "docs/readme.txt")
     );
     // The archive file itself crosses with an empty inner path.
-    assert_eq!(
-        confirm_archive_boundary_on_parent_at(&parent, &zip).await,
-        split(&zip, "")
-    );
-    assert_eq!(
-        confirm_archive_boundary_on_parent_at(&parent, dir.app_path()).await,
-        None
-    );
+    assert_eq!(confirm_archive_boundary_on_parent(&parent, &zip).await, split(&zip, ""));
+    assert_eq!(confirm_archive_boundary_on_parent(&parent, dir.app_path()).await, None);
 }
 
 #[tokio::test]
@@ -66,11 +60,11 @@ async fn a_local_parent_declines_a_folder_named_like_an_archive_and_a_mislabeled
     let parent = InMemoryVolume::new("Local").with_local_fs_access();
 
     assert_eq!(
-        confirm_archive_boundary_on_parent_at(&parent, &at(dir.app_path(), "folder.zip/sub")).await,
+        confirm_archive_boundary_on_parent(&parent, &at(dir.app_path(), "folder.zip/sub")).await,
         None
     );
     assert_eq!(
-        confirm_archive_boundary_on_parent_at(&parent, &at(dir.app_path(), "notreally.zip/x")).await,
+        confirm_archive_boundary_on_parent(&parent, &at(dir.app_path(), "notreally.zip/x")).await,
         None
     );
 }
@@ -84,7 +78,7 @@ async fn a_local_parent_confirms_on_disk_never_through_its_own_io() {
     let parent = remote_volume_with(InMemoryVolume::new("Local").with_local_fs_access(), &zip, ZIP_BYTES).await;
 
     assert_eq!(
-        confirm_archive_boundary_on_parent_at(&parent, &at(&zip, "inner")).await,
+        confirm_archive_boundary_on_parent(&parent, &at(&zip, "inner")).await,
         None
     );
     assert!(
@@ -101,14 +95,11 @@ async fn a_remote_parent_confirms_a_zip_through_its_own_reads() {
     let parent = remote_parent_with(zip, ZIP_BYTES).await;
 
     assert_eq!(
-        confirm_archive_boundary_on_parent_at(&parent, &at(zip, "docs/readme.txt")).await,
+        confirm_archive_boundary_on_parent(&parent, &at(zip, "docs/readme.txt")).await,
         split(zip, "docs/readme.txt")
     );
-    assert_eq!(
-        confirm_archive_boundary_on_parent_at(&parent, zip).await,
-        split(zip, "")
-    );
-    assert!(confirm_remote_archive_boundary_at(&parent, zip).await);
+    assert_eq!(confirm_archive_boundary_on_parent(&parent, zip).await, split(zip, ""));
+    assert!(confirm_remote_archive_boundary(&parent, zip).await);
     // One tar block, so a plain tar's ustar magic at offset 257 is in reach.
     assert_eq!(parent.read_range_log().first(), Some(&(0, 512)));
 }
@@ -118,7 +109,7 @@ async fn a_path_with_no_archive_component_costs_the_parent_no_read() {
     let parent = remote_parent_with(app_path!("/device/plain.txt"), b"text").await;
 
     assert_eq!(
-        confirm_archive_boundary_on_parent_at(&parent, app_path!("/device/plain/dir")).await,
+        confirm_archive_boundary_on_parent(&parent, app_path!("/device/plain/dir")).await,
         None
     );
     assert!(parent.read_range_log().is_empty());
@@ -131,7 +122,7 @@ async fn a_remote_folder_named_like_an_archive_declines() {
     parent.create_directory(folder).await.expect("seed remote folder");
 
     assert_eq!(
-        confirm_archive_boundary_on_parent_at(&parent, &at(folder, "sub")).await,
+        confirm_archive_boundary_on_parent(&parent, &at(folder, "sub")).await,
         None
     );
 }
@@ -142,7 +133,7 @@ async fn a_mislabeled_remote_file_declines() {
     let parent = remote_parent_with(mislabeled, b"plain text, definitely not a zip").await;
 
     assert_eq!(
-        confirm_archive_boundary_on_parent_at(&parent, &at(mislabeled, "inner")).await,
+        confirm_archive_boundary_on_parent(&parent, &at(mislabeled, "inner")).await,
         None
     );
 }
@@ -152,7 +143,7 @@ async fn a_missing_remote_archive_declines() {
     let parent = InMemoryVolume::new("Remote");
 
     assert_eq!(
-        confirm_archive_boundary_on_parent_at(&parent, app_path!("/device/ghost.zip/inner")).await,
+        confirm_archive_boundary_on_parent(&parent, app_path!("/device/ghost.zip/inner")).await,
         None
     );
 }
@@ -168,11 +159,11 @@ async fn a_remote_confirm_checks_the_named_formats_magic() {
         .expect("seed fake tgz");
 
     assert_eq!(
-        confirm_archive_boundary_on_parent_at(&parent, &at(tgz, "d/f.txt")).await,
+        confirm_archive_boundary_on_parent(&parent, &at(tgz, "d/f.txt")).await,
         split(tgz, "d/f.txt")
     );
     assert_eq!(
-        confirm_archive_boundary_on_parent_at(&parent, zip_bytes_as_tgz).await,
+        confirm_archive_boundary_on_parent(&parent, zip_bytes_as_tgz).await,
         None
     );
 }
@@ -190,7 +181,7 @@ async fn a_remote_parent_without_ranged_reads_still_routes() {
     .await;
 
     assert_eq!(
-        confirm_archive_boundary_on_parent_at(&parent, &at(zip, "inner")).await,
+        confirm_archive_boundary_on_parent(&parent, &at(zip, "inner")).await,
         split(zip, "inner")
     );
 }
@@ -209,7 +200,7 @@ async fn a_transient_remote_sniff_fault_still_routes() {
     )
     .await;
 
-    assert!(confirm_remote_archive_boundary_at(&parent, zip).await);
+    assert!(confirm_remote_archive_boundary(&parent, zip).await);
 }
 
 #[tokio::test]
@@ -220,33 +211,7 @@ async fn a_remote_parent_confirms_through_its_own_io_never_on_disk() {
     let parent = InMemoryVolume::new("Remote");
 
     assert_eq!(
-        confirm_archive_boundary_on_parent_at(&parent, &at(&zip, "inner")).await,
+        confirm_archive_boundary_on_parent(&parent, &at(&zip, "inner")).await,
         None
     );
-}
-
-/// The `std::path` forms the host still calls answer what the typed ones do, on
-/// the same parents: a local confirm, a remote one, and the remote sniff alone.
-/// Unix only: they take the POSIX text those callers hand in.
-#[cfg(unix)]
-#[tokio::test]
-async fn the_std_path_forms_answer_as_the_typed_ones() {
-    use super::{confirm_archive_boundary_on_parent, confirm_remote_archive_boundary};
-    use std::path::{Path, PathBuf};
-
-    let (dir, _zip) = on_disk("bundle.zip", ZIP_BYTES);
-    let local = InMemoryVolume::new("Local").with_local_fs_access();
-    let on_disk_zip = dir.native().join("bundle.zip");
-    assert_eq!(
-        confirm_archive_boundary_on_parent(&local, &on_disk_zip.join("docs/readme.txt")).await,
-        Some((on_disk_zip.clone(), PathBuf::from("docs/readme.txt")))
-    );
-
-    let remote = remote_parent_with(app_path!("/device/bundle.zip"), ZIP_BYTES).await;
-    assert_eq!(
-        confirm_archive_boundary_on_parent(&remote, Path::new("/device/bundle.zip/a/b")).await,
-        Some((PathBuf::from("/device/bundle.zip"), PathBuf::from("a/b")))
-    );
-    assert!(confirm_remote_archive_boundary(&remote, Path::new("/device/bundle.zip")).await);
-    assert!(!confirm_remote_archive_boundary(&remote, Path::new("/device/ghost.zip")).await);
 }

@@ -472,7 +472,9 @@ async fn a_write_refuses_when_the_route_cant_decide() {
         }) as Arc<dyn Volume>,
     );
 
-    let resolved = get_volume_manager().resolve(&id, Path::new(IN_VIEW)).await;
+    let resolved = get_volume_manager()
+        .resolve(&id, AppPath::from_normalized(IN_VIEW).expect("a canonical view path"))
+        .await;
     assert_eq!(resolved.routed, None, "a read goes to the drive");
     assert_eq!(resolved.unconfirmed, Some(RoutedKind::Restic));
 

@@ -2240,6 +2240,10 @@
   "@fileExplorer.dragOut.partial": {
     "sourceHash": "9215226"
   },
+  "fileExplorer.drop.uncrossedPaths": "Cmdr kan inte läsa var ett eller flera av de släppta objekten finns, så Cmdr hoppade över allt du släppte. Försök igen utan de objekten.",
+  "@fileExplorer.drop.uncrossedPaths": {
+    "sourceHash": "c4daabf"
+  },
   "fileExplorer.dropIn.sourceNameFromAppAndHost": "{name} från {appName} ({host})",
   "@fileExplorer.dropIn.sourceNameFromAppAndHost": {
     "sourceHash": "94c2e01"

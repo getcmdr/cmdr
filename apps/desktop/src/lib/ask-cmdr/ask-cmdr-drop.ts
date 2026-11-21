@@ -10,26 +10,28 @@
  * only LOCAL (`'root'`) self-drags are supported; a Finder drop uses the payload paths
  * (genuine local absolute paths). Kinds are resolved backend-side from known pane state.
  *
- * The subscription glue (dynamic Tauri import + `onDragDropEvent`) is deliberately thin;
- * the hit-test, event dispatch, and path resolution are pure/injectable functions so the
- * meaningful branches are unit-testable without a webview. Loading the Tauri API is lazy
- * and every failure is swallowed, so mounting the composer outside a Tauri webview (unit
- * tests, SSR) is a no-op.
+ * The subscription glue (`onAppPathDragDrop`, which hands over app paths, never the OS's
+ * native `C:\…`) is deliberately thin; the hit-test, event dispatch, and path resolution are
+ * pure/injectable functions so the meaningful branches are unit-testable without a webview.
+ * Every subscription failure is swallowed, so mounting the composer outside a Tauri webview
+ * (unit tests, SSR) is a no-op.
  */
 
 import { getIsDraggingFromSelf, getSelfDragIdentity } from '#lib/file-explorer/drag/drag-drop.js'
 import { toViewportPosition } from '#lib/file-explorer/drag/drag-position.js'
-import { resolveAskCmdrAttachments, type AttachmentRef } from '#lib/tauri-commands/index.js'
+import { onAppPathDragDrop, resolveAskCmdrAttachments, type AttachmentRef } from '#lib/tauri-commands/index.js'
+import { addToast } from '#lib/ui/toast/index.js'
+import { tString } from '#lib/intl/messages.svelte.js'
 
 /** The local volume id; a pane on it round-trips genuine absolute paths. */
 const LOCAL_VOLUME_ID = 'root'
 
-/** A native drag-drop event payload, mirroring the Tauri webview shape (only the fields
- * this module reads). */
+/** A native drag-drop event with its paths crossed to app paths (`onAppPathDragDrop`), only
+ * the fields this module reads. `refused` counts a drop's paths no app path names. */
 export type DragDropPayload =
   | { type: 'enter'; paths: string[]; position: { x: number; y: number } }
   | { type: 'over'; position: { x: number; y: number } }
-  | { type: 'drop'; paths: string[]; position: { x: number; y: number } }
+  | { type: 'drop'; paths: string[]; refused?: number; position: { x: number; y: number } }
   | { type: 'leave' }
 
 /** The composer-side hooks a drag-drop event drives. */
@@ -62,7 +64,7 @@ export async function handleDragDropEvent(payload: DragDropPayload, handlers: Dr
     // 'drop'.
     handlers.onDragActive(false)
     if (!isWithinRect(payload.position, handlers.getRect())) return
-    handlers.onAttachments(await resolveDroppedPaths(payload.paths))
+    handlers.onAttachments(await resolveDroppedPaths(payload.paths, payload.refused))
   }
 }
 
@@ -77,9 +79,9 @@ export async function installComposerDrop(
 ): Promise<() => void> {
   const handlers: DropHandlers = { getRect, onDragActive, onAttachments }
   try {
-    const { getCurrentWebview } = await import('@tauri-apps/api/webview')
-    return await getCurrentWebview().onDragDropEvent((event) => {
-      void handleDragDropEvent(event.payload, handlers)
+    // The door crosses the OS's native `C:\…` to app paths before we see them (#1311).
+    return await onAppPathDragDrop((event) => {
+      void handleDragDropEvent(event, handlers)
     })
   } catch {
     return () => {}
@@ -87,13 +89,20 @@ export async function installComposerDrop(
 }
 
 /** Resolve a drop's paths into typed attachment refs, honoring the self-drag identity.
- * Exported for unit testing the branch logic (in-app local vs. virtual vs. Finder). */
-export async function resolveDroppedPaths(payloadPaths: string[]): Promise<AttachmentRef[]> {
+ * `payloadPaths` are app paths (crossed at the door); `refused` counts the ones no app path
+ * names. Exported for unit testing the branch logic (in-app local vs. virtual vs. Finder). */
+export async function resolveDroppedPaths(payloadPaths: string[], refused = 0): Promise<AttachmentRef[]> {
   const identity = getSelfDragIdentity()
   if (getIsDraggingFromSelf() && identity) {
     // Only local self-drags are trustworthy; virtual-volume paths mis-resolve.
     if (identity.sourceVolumeId !== LOCAL_VOLUME_ID) return []
     return resolveAskCmdrAttachments(identity.sourcePaths)
+  }
+  // An external drop with a path that didn't cross: attach nothing rather than fewer items
+  // than were dragged, and say so.
+  if (refused > 0) {
+    addToast(tString('fileExplorer.drop.uncrossedPaths'), { level: 'warn' })
+    return []
   }
   // Finder (external) drop: the payload paths are genuine local absolute paths.
   return payloadPaths.length > 0 ? resolveAskCmdrAttachments(payloadPaths) : []

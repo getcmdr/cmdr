@@ -25,7 +25,6 @@
 //! then picks up.
 
 use std::collections::HashMap;
-use std::path::Path;
 use std::sync::{LazyLock, Mutex};
 use std::time::Duration;
 
@@ -117,15 +116,7 @@ pub async fn unlock_container(
 ) -> Result<UnlockOutcome, UnlockError> {
     let cancel = claim_unlock(&unlock_id);
     let _in_flight = InFlightGuard(unlock_id);
-    unlock_within(
-        &parent_volume_id,
-        Path::new(&path),
-        password,
-        remember,
-        &cancel,
-        UNLOCK_BUDGET,
-    )
-    .await
+    unlock_within(&parent_volume_id, &path, password, remember, &cancel, UNLOCK_BUDGET).await
 }
 
 /// Drops the unlock the caller named: it answers `Cancelled` and keeps nothing,
@@ -147,7 +138,7 @@ pub async fn cancel_container_unlock(unlock_id: String) {
 #[tauri::command]
 #[specta::specta]
 pub async fn forget_container_password(parent_volume_id: String, path: String) -> Result<(), UnlockError> {
-    let volume = resolve(&parent_volume_id, Path::new(&path)).await?;
+    let volume = resolve(&parent_volume_id, &path).await?;
     volume
         .as_password_locked()
         .ok_or(UnlockError::NotLocked)?
@@ -168,7 +159,7 @@ pub async fn forget_saved_container_password(
     parent_volume_id: String,
     path: String,
 ) -> Result<PasswordForgotten, UnlockError> {
-    let volume = resolve(&parent_volume_id, Path::new(&path)).await?;
+    let volume = resolve(&parent_volume_id, &path).await?;
     if volume.as_password_locked().is_none() {
         return Err(UnlockError::NotLocked);
     }
@@ -197,7 +188,7 @@ pub async fn forget_saved_container_password(
 /// error, or a tool result can reach.
 pub(crate) async fn unlock_within(
     parent_volume_id: &str,
-    path: &Path,
+    path: &str,
     password: String,
     remember: bool,
     cancel: &CancellationToken,
@@ -240,9 +231,14 @@ pub(crate) async fn unlock_within(
     Ok(outcome)
 }
 
-async fn resolve(parent_volume_id: &str, path: &Path) -> Result<std::sync::Arc<dyn Volume>, UnlockError> {
+/// The volume serving `path`, sent text read at the command edge
+/// (`wire_path::on_volume`): a `..` or a relative path is refused, logged as the
+/// sender bug it is (the frontend and the MCP tool both send a prompt's path).
+async fn resolve(parent_volume_id: &str, path: &str) -> Result<std::sync::Arc<dyn Volume>, UnlockError> {
+    let path =
+        crate::commands::wire_path::on_volume(path).map_err(|refused| UnlockError::Volume { error: refused.into() })?;
     get_volume_manager()
-        .resolve(parent_volume_id, path)
+        .resolve(parent_volume_id, &path)
         .await
         .volume
         .ok_or_else(|| UnlockError::VolumeNotFound {

@@ -11,6 +11,12 @@ commands, and notable non-obvious placements.
 - **`home-folder.ts`**: `getHomeFolder`, the home folder as an app path, asked once and shared. Its own module so
   `src/test-setup.ts` stands one in for every suite. ❌ Never Tauri's `homeDir()`: its native `C:\Users\…` is no app
   path on Windows (#1292).
+- **`native-paths.ts`**: the one door from native path text to app text (#1311): `onAppPathDragDrop` (the webview's
+  drag-drop events, `enter` and `drop` paths crossed, events kept in OS order through one promise queue),
+  `pickOneAsAppPath` (`plugin-dialog`'s `open` for one item), and `chooseSaveTarget` (`save`, typed `cancelled` /
+  `chosen` / `refused`). All cross through `commands.appPathsFromNative` (`src-tauri/src/commands/native_paths.rs`); a
+  path no app path names comes back counted in `refused`, ❌ never as native text. `no-restricted-imports` sends new
+  callers here; an OS-only path (the adb binary, an SFTP key file, a macOS `.app`) opts out with a reasoned disable.
 - **`file-listing.ts`**: virtual-scroll listing API, the revision-checked selection reads `getSelectionSnapshot` (atomic
   selected paths and counts) and `getSelectionEntries` (full entries, for delete), the only way a selection's row
   numbers reach the backend (pane protocol in `../file-explorer/pane/DETAILS.md` § Compare directories), `getFileBeside`

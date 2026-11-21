@@ -600,13 +600,14 @@ registry lives below `commands/` rather than inside the chat command.
   composer toasts how many it left out (`askCmdr.composer.selectionCapped`); every ref rides into the next turn's
   context, so the cap protects the user's tokens. The chip row scrolls past `8lh`.
 - **Drag-onto-composer is a NATIVE webview drag, not HTML5** (`ask-cmdr-drop.ts`): a Cmdr pane drag is delivered through
-  `getCurrentWebview().onDragDropEvent`, so a DOM `ondrop` would never fire. The composer subscribes to that event and
-  hit-tests its own rect (via `toViewportPosition`, mirroring the pane drag-drop controller). For an in-app drag the
-  trustworthy source is the recorded self-drag identity (`getSelfDragIdentity`), not the pasteboard-round-tripped
-  payload paths; only LOCAL (`'root'`) self-drags are supported (virtual-volume paths mis-resolve). A Finder drop uses
-  the payload paths (genuine local absolute). Kinds are resolved backend-side (`ask_cmdr_resolve_attachments`) from
-  known pane state, defaulting to file. The Tauri APIs load lazily and swallow failures, so the composer still mounts
-  outside a Tauri webview (unit tests).
+  `getCurrentWebview().onDragDropEvent`, so a DOM `ondrop` would never fire. The composer subscribes to that event
+  through `onAppPathDragDrop` (paths arrive as app paths; a drop with one that didn't cross attaches nothing and toasts
+  `fileExplorer.drop.uncrossedPaths`, #1311) and hit-tests its own rect (via `toViewportPosition`, mirroring the pane
+  drag-drop controller). For an in-app drag the trustworthy source is the recorded self-drag identity
+  (`getSelfDragIdentity`), not the pasteboard-round-tripped payload paths; only LOCAL (`'root'`) self-drags are
+  supported (virtual-volume paths mis-resolve). A Finder drop uses the payload paths (genuine local absolute). Kinds are
+  resolved backend-side (`ask_cmdr_resolve_attachments`) from known pane state, defaulting to file. The Tauri APIs load
+  lazily and swallow failures, so the composer still mounts outside a Tauri webview (unit tests).
 - **A new chat handed an item from elsewhere** (`openNewChatWith(refs, draft)`, the "Tell me about this" card's
   "Continue in Ask Cmdr"): `openNewChat`'s fresh chat, the refs staged, and `draft` in `askCmdrState.composerDraft`,
   which the composer takes once into its text (unsent) and clears. ❌ Nothing is sent: the person's send is the egress

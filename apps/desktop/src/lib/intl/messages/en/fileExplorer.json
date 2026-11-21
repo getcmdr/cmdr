@@ -3351,6 +3351,10 @@
       "name": "the one item’s file or folder name, uncontrolled (any length, any language); only used when exactly one item didn’t arrive"
     }
   },
+  "fileExplorer.drop.uncrossedPaths": "Cmdr can’t read where one or more of the dropped items are, so it skipped the whole drop. Try again without those items.",
+  "@fileExplorer.drop.uncrossedPaths": {
+    "description": "Warning toast after the user dropped files or folders from another app (for example File Explorer or Finder) onto a pane or the Ask Cmdr box, and the system named at least one of them in a form Cmdr can’t read as a place on disk (a rare system-internal location, or a name with unusual characters). Nothing was copied, moved, or attached; the user can try again without the items Cmdr couldn’t read. One message covers a drop onto a file pane (no copy or move) and onto the Ask Cmdr box (no attachment), and any number of unreadable items, one or many. Avoid the words \"error\" and \"failed\". Keep \"Cmdr\" as is (the app’s name)."
+  },
   "fileExplorer.dropIn.sourceNameFromAppAndHost": "{name} from {appName} ({host})",
   "@fileExplorer.dropIn.sourceNameFromAppAndHost": {
     "description": "The source line of the Copy dialog after the user dropped a file from another app that doesn’t hand over real files (an image dragged out of Chrome or Safari, a Mail attachment). Cmdr received the file into a temporary folder, so instead of a folder path the line says what the file is and where it came from. Example: “cat.jpg from Google Chrome (example.com)”.",

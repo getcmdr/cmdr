@@ -2,7 +2,7 @@
 //! the platform's name and path limits, which names a folder's filesystem takes, and
 //! whether a path exists on its volume.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use tokio::time::Duration;
 
@@ -139,6 +139,18 @@ enum Spelling {
     AnyForm,
 }
 
+/// The volume serving a path probe's or the transfer box's text: routed through
+/// the registry (`resolve`, so an archive-inner path reaches the archive) when
+/// the text reads as an app path, else the volume registered under `volume_id`.
+/// Text that doesn't read as one (a `..`, a relative path) has no typed anchor
+/// either, so its probe answers "couldn't tell" whichever volume this names.
+pub(crate) async fn box_volume(volume_id: &str, text: &str) -> Option<std::sync::Arc<dyn cmdr_fs::volume::Volume>> {
+    match crate::commands::wire_path::read_on_volume(text) {
+        Ok(path) => get_volume_manager().resolve(volume_id, &path).await.volume,
+        Err(_) => get_volume_manager().get(volume_id),
+    }
+}
+
 async fn exists_on_volume(volume_id: Option<String>, path: String, spelling: Spelling) -> TimedOut<bool> {
     let volume_id = volume_id.unwrap_or_else(|| crate::volumes::local_volume_id_for_path(&path));
 
@@ -146,11 +158,7 @@ async fn exists_on_volume(volume_id: Option<String>, path: String, spelling: Spe
     let expanded_path = if volume_id == "root" { expand_tilde(&path) } else { path };
 
     // Resolve so an archive-inner path checks existence inside the `.zip`.
-    if let Some(volume) = get_volume_manager()
-        .resolve(&volume_id, Path::new(&expanded_path))
-        .await
-        .volume
-    {
+    if let Some(volume) = box_volume(&volume_id, &expanded_path).await {
         // On a remote volume an immediate `Absent` may be the session
         // dying (`clone_session` returns `Err`) rather than the path actually missing.
         // Snapshot whether this volume HAS a session, so the answer can be re-checked
@@ -166,22 +174,21 @@ async fn exists_on_volume(volume_id: Option<String>, path: String, spelling: Spe
         // what the volume accepts; without it a share answers "doesn't exist"
         // for every subfolder, and the dialog promises to create one that's
         // already there.
-        // The typed anchor drops a trailing `/`. A `..` (only a person types one into the
-        // box) or another volume's path has no anchor here, so it's "couldn't tell" until the
-        // typed-path resolver answers it (`wire_path::anchored`).
-        let Some(target) = crate::commands::wire_path::anchored(volume.root(), &expanded_path) else {
-            return TimedOut {
-                data: false,
-                timed_out: true,
-            };
-        };
-        let path_for_check = target.as_std_legacy().into_owned();
         // Detached, so a deadline never abandons an MTP transaction mid-flight
-        // (`crates/cmdr-fs/src/deadline/CLAUDE.md`). `Err(())` is "couldn't tell": the deadline, or
-        // a look-alike listing that failed.
+        // (`crates/cmdr-fs/src/deadline/CLAUDE.md`). `Err(())` is "couldn't tell": the deadline,
+        // a look-alike listing that failed, or a destination with no place on this volume.
         let probe = {
             let volume = std::sync::Arc::clone(&volume);
+            let volume_id = volume_id.clone();
             async move {
+                // The typed anchor drops a trailing `/`, and a `..` (only a person types one
+                // into the box) resolves the way the write's will, inside this probe's budget,
+                // its place asked of the volume serving it (`wire_path::probed_destination`).
+                let (volume, target) =
+                    crate::commands::wire_path::probed_destination(&volume_id, volume, &expanded_path)
+                        .await
+                        .map_err(|_| ())?;
+                let path_for_check = target.as_std_legacy().into_owned();
                 let exists = if volume.local_path().is_some() {
                     local_exists(path_for_check.clone()).await?
                 } else {

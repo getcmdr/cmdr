@@ -2240,6 +2240,10 @@
   "@fileExplorer.dragOut.partial": {
     "sourceHash": "9215226"
   },
+  "fileExplorer.drop.uncrossedPaths": "Cmdr không đọc được vị trí của một hoặc nhiều mục đã thả, nên đã bỏ qua toàn bộ lần thả này. Hãy thử lại mà không kèm những mục đó.",
+  "@fileExplorer.drop.uncrossedPaths": {
+    "sourceHash": "c4daabf"
+  },
   "fileExplorer.dropIn.sourceNameFromAppAndHost": "{name} từ {appName} ({host})",
   "@fileExplorer.dropIn.sourceNameFromAppAndHost": {
     "sourceHash": "94c2e01"
