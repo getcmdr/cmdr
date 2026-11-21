@@ -1,7 +1,7 @@
 name: Windows lane
 
-# The Windows lane, called by `ci.yml` (`desktop-rust-windows`) on every land run whose change
-# reaches what the Rust lanes compile, and in `CI OK`'s `needs`, so a Windows-only compile error
+# The Windows lane, called by `ci.yml` (`desktop-rust-windows`) on every PR run, light or land,
+# whose change reaches what the Rust lanes compile, and in `CI OK`'s `needs`, so a Windows-only compile error
 # or lint can't land, and neither can a Windows test regression. It answers three questions on
 # native `windows-latest` (MSVC, the target Cmdr will ship):
 #
@@ -114,7 +114,8 @@ jobs:
   # The Rust suites on native Windows, held against a known-failures list that may only shrink
   # (`scripts/windows-test-baseline/ci-known-failures.tsv`, read by its `ratchet` command): red on
   # a failure the list doesn't name, and red on a listed failure that passes now, until the list
-  # drops it (`ratchet -run <this run's id> -write`, committed in the same PR). Its own job, in
+  # drops it (the job's error prints the exact `ratchet -run <this run's id> -write` to run and
+  # commit in the same PR; the branch's light run shows it before any land). Its own job, in
   # parallel with clippy, so neither waits on the other's build. `docs/tooling/ci.md` § Windows lane.
   tests:
     name: Tests against the known-failures list
@@ -189,24 +190,35 @@ jobs:
           echo "cargo args: ${args[*]}"
           cargo test --no-run "${args[@]}"
 
-      # Never red by itself: the ratchet below reads the report and decides. The `builder`
-      # entries stay out of the run (the runner lacks what they need; the Windows builder runs
-      # them). `windows-baseline` keeps each pass's output, so a cell that skipped itself shows.
-      # The console names each failure on one line and prints no output: the known failures'
-      # panics would fill GitHub's log limit, and the report holds every one whole.
+      # Failing tests don't make this step red: the ratchet below reads the report and decides.
+      # Anything else nextest stops on (a test binary it couldn't list, a bad filter) does, since
+      # its report would be missing or partial. The `builder` entries stay out of the run (the
+      # runner lacks what they need; the Windows builder runs them). `windows-baseline` keeps each
+      # pass's output, so a cell that skipped itself shows. Two retries, so a timing cell a busy
+      # runner pushes past its cap passes on a retry, which the ratchet names as flaky without
+      # going red. The console names each failure on one line and prints no output: the known
+      # failures' panics would fill GitHub's log limit, and the report holds every one whole.
       - name: Run the tests
         id: run
         run: |
           mapfile -t args < <(./scripts/check/check.exe --print-host-cargo-args | tr -d '\r')
           filter="$(go -C scripts/windows-test-baseline run . ratchet -filter | tr -d '\r')"
           quiet=(--failure-output never --status-level fail --final-status-level none)
+          rm -f target/nextest/windows-baseline/junit.xml
           set +e
           if [ -n "$filter" ]; then
-            cargo nextest run "${args[@]}" --profile windows-baseline --no-fail-fast "${quiet[@]}" -E "$filter"
+            cargo nextest run "${args[@]}" --profile windows-baseline --no-fail-fast --retries 2 "${quiet[@]}" -E "$filter"
           else
-            cargo nextest run "${args[@]}" --profile windows-baseline --no-fail-fast "${quiet[@]}"
+            cargo nextest run "${args[@]}" --profile windows-baseline --no-fail-fast --retries 2 "${quiet[@]}"
           fi
-          echo "nextest exited $?"
+          code=$?
+          set -e
+          echo "nextest exited $code"
+          # 0: every test passed; 100: some failed, which is the ratchet's question.
+          if [ "$code" -ne 0 ] && [ "$code" -ne 100 ]; then
+            echo "::error title=nextest stopped before a full run::exit $code (not a test failure: a binary nextest couldn't list, a bad filterset, or a setup error), so there's no complete report to hold against the list. The log above says which."
+            exit 1
+          fi
 
       - name: Upload the test report
         if: ${{ !cancelled() && steps.run.outcome == 'success' }}

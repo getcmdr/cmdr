@@ -117,6 +117,9 @@ type verdict struct {
 	// Unlisted self-skips passed by skipping themselves (no symlink privilege, say), so CI doesn't cover them: the
 	// list must name them `builder`.
 	SelfSkipped []testID
+	// Flaky are unlisted tests that failed a try and passed on a retry: named loudly, never red, so a timing cell on a
+	// busy runner can't block a landing. Listed `fails` entries among them still count as failing.
+	Flaky []testID
 	// Ran and Failed count the run, for the summary.
 	Ran, Failed int
 }
@@ -130,12 +133,19 @@ func judge(entries []listEntry, r report) verdict {
 	for _, e := range entries {
 		listed[e.ID] = e
 	}
+	// A test that failed any try still fails, for a `fails` entry: a retry that passed doesn't fix it.
 	failing := map[testID]bool{}
 	v := verdict{Ran: len(r.Ran), Failed: len(r.Failures)}
 	for _, f := range r.Failures {
 		failing[f.ID] = true
 		if _, ok := listed[f.ID]; !ok {
 			v.Regressions = append(v.Regressions, f)
+		}
+	}
+	for _, id := range r.Flaky {
+		failing[id] = true
+		if _, ok := listed[id]; !ok {
+			v.Flaky = append(v.Flaky, id)
 		}
 	}
 	for _, e := range entries {
@@ -164,6 +174,7 @@ func judge(entries []listEntry, r report) verdict {
 	sortIDs(v.NowPassing)
 	sortIDs(v.Stale)
 	sortIDs(v.SelfSkipped)
+	sortIDs(v.Flaky)
 	return v
 }
 
@@ -225,10 +236,6 @@ func writeVerdict(w io.Writer, entries []listEntry, v verdict) {
 	}
 	fmt.Fprintf(w, "**Windows tests**: %s ran, %s failed. The list holds %d `fails`, %d `flaky`, and %d `builder` entries.\n\n",
 		thousands(v.Ran), thousands(v.Failed), counts[statusFails], counts[statusFlaky], counts[statusBuilder])
-	if v.clean() {
-		fmt.Fprintln(w, "Every failure is on the list, and every listed failure still fails.")
-		return
-	}
 	section := func(title, hint string, ids []testID) {
 		if len(ids) == 0 {
 			return
@@ -238,6 +245,11 @@ func writeVerdict(w io.Writer, entries []listEntry, v verdict) {
 			fmt.Fprintf(w, "- %s `%s`\n", id.Crate, id.Test)
 		}
 		fmt.Fprintln(w)
+	}
+	section("Passed on a retry", "Green, but each failed a try first: a race or a timing cap a busy runner reaches. Fix it, or list it as `flaky` with why it flips.", v.Flaky)
+	if v.clean() {
+		fmt.Fprintln(w, "Every failure is on the list, and every listed failure still fails.")
+		return
 	}
 	if len(v.Regressions) > 0 {
 		fmt.Fprintf(w, "### Newly failing (%d)\n\nFix them, or list them with a reason (`ratchet -write -add REASON`).\n\n", len(v.Regressions))
@@ -256,7 +268,40 @@ func writeVerdict(w io.Writer, entries []listEntry, v verdict) {
 	section("Listed as failing, passing now", "Tighten the list: `ratchet -write` drops them.", v.NowPassing)
 	section("Listed but didn't run", "Renamed, removed, or gated off: `ratchet -write` drops them.", v.Stale)
 	section("Passed by skipping themselves", "CI doesn't cover them; list them as `builder` with the missing capability as the reason.", v.SelfSkipped)
-	fmt.Fprintln(w, "Rewrite the list from this run: `go -C scripts/windows-test-baseline run . ratchet -run <run-id> -write` (`docs/tooling/ci.md` § Windows lane).")
+	fmt.Fprintf(w, "**The fix**: `%s`, then commit `scripts/windows-test-baseline/ci-known-failures.tsv` and push. %s (`docs/tooling/ci.md` § Windows lane).\n", rewriteCommand(v), rewriteHint(v))
+}
+
+// rewriteCommand is the one line that rewrites the list from this run: the run's own ID in CI, a placeholder elsewhere.
+func rewriteCommand(v verdict) string {
+	runID := os.Getenv("GITHUB_RUN_ID")
+	if runID == "" {
+		runID = "<run-id>"
+	}
+	cmd := "go -C scripts/windows-test-baseline run . ratchet -run " + runID + " -write"
+	if len(v.Regressions) > 0 || len(v.SelfSkipped) > 0 {
+		cmd += ` [-add "<reason>"]`
+	}
+	return cmd
+}
+
+func rewriteHint(v verdict) string {
+	if len(v.Regressions) == 0 && len(v.SelfSkipped) == 0 {
+		return "Only tightening is needed, which is free"
+	}
+	return "Without `-add` it only tightens, and the new failures stay red until fixed; `-add` lists them, which is loosening and needs David's OK"
+}
+
+// annotate prints the verdict's headline as GitHub workflow commands, so it shows on the run's page and in
+// `gh run view` without opening the log.
+func annotate(w io.Writer, v verdict) {
+	for _, id := range v.Flaky {
+		fmt.Fprintf(w, "::warning title=Windows test passed on a retry::%s %s\n", id.Crate, id.Test)
+	}
+	if v.clean() {
+		return
+	}
+	fmt.Fprintf(w, "::error title=Windows tests don't match the known-failures list::%d newly failing, %d listed but passing, %d listed but not run, %d skipped themselves. Fix: %s\n",
+		len(v.Regressions), len(v.NowPassing), len(v.Stale), len(v.SelfSkipped), rewriteCommand(v))
 }
 
 // runRatchet is `ratchet`: check a run against the list, or with `-write` rewrite the list from it; `-filter` prints
@@ -293,10 +338,16 @@ func runRatchet(args []string, out io.Writer) error {
 		return err
 	}
 	if *write {
+		if *runID != "" {
+			warnIfAnotherTree(*runID)
+		}
 		return rewriteList(out, *list, string(data), entries, r, *add)
 	}
 	v := judge(entries, r)
 	writeVerdict(out, entries, v)
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		annotate(out, v)
+	}
 	if *summary != "" {
 		if err := appendVerdict(*summary, entries, v); err != nil {
 			return err
@@ -368,6 +419,22 @@ func defaultListPath() string {
 		return "ci-known-failures.tsv"
 	}
 	return filepath.Join("scripts", "windows-test-baseline", "ci-known-failures.tsv")
+}
+
+// warnIfAnotherTree says so when the run tested a commit other than HEAD: a list rewritten from it drops the entries of
+// tests that run didn't have yet (a `main` merged in since), and the next run reports them as new failures.
+func warnIfAnotherTree(runID string) {
+	ran, err := exec.Command("gh", "run", "view", runID, "--repo", "getcmdr/cmdr", "--json", "headSha", "--jq", ".headSha").Output()
+	if err != nil {
+		return
+	}
+	head, err := exec.Command("git", "rev-parse", "HEAD").Output()
+	if err != nil {
+		return
+	}
+	if r, h := strings.TrimSpace(string(ran)), strings.TrimSpace(string(head)); r != h {
+		fmt.Fprintf(os.Stderr, "Heads-up: run %s tested %.10s, and HEAD is %.10s. If HEAD merged `main` since, entries for tests that run didn't have are dropped too; check the diff.\n", runID, r, h)
+	}
 }
 
 // downloadReport fetches a CI run's `windows-test-report` artifact into a temp dir and returns its JUnit path.

@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -109,5 +111,101 @@ func TestTheBuilderFilterLeavesOnlyBuilderEntriesOut(t *testing.T) {
 	}
 	if builderFilter([]listEntry{entry("a", statusFails)}) != "" {
 		t.Fatal("no builder entry, no filter")
+	}
+}
+
+// nextest's JUnit for a run with retries: a pass after a failed try carries `flakyFailure`, a failure on every try
+// carries `failure` plus a `rerunFailure` per retry.
+const retriedJUnit = `<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="nextest-run" tests="3" failures="1" errors="0">
+  <testsuite name="cmdr-index" tests="3" failures="1">
+    <testcase name="store::tests::flips" classname="cmdr-index"><flakyFailure message="timeout" type="test timeout"/><system-out>running 1 test</system-out></testcase>
+    <testcase name="store::tests::always" classname="cmdr-index"><failure message="boom" type="test failure"/><rerunFailure message="boom" type="test failure"/><rerunFailure message="boom" type="test failure"/></testcase>
+    <testcase name="store::tests::fine" classname="cmdr-index"/>
+  </testsuite>
+</testsuites>`
+
+func writeJUnit(t *testing.T, xml string) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "junit.xml")
+	if err := os.WriteFile(path, []byte(xml), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func TestARetriedRunReadsPassesOnARetryApartFromFailures(t *testing.T) {
+	r, err := readReport(writeJUnit(t, retriedJUnit))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(r.Failures) != 1 || r.Failures[0].ID.Test != "store::tests::always" {
+		t.Fatalf("failures: %+v", r.Failures)
+	}
+	if len(r.Flaky) != 1 || r.Flaky[0].Test != "store::tests::flips" {
+		t.Fatalf("flaky: %+v", r.Flaky)
+	}
+	if len(r.Ran) != 3 {
+		t.Fatalf("ran: %v", r.Ran)
+	}
+}
+
+func TestAListedFailureThatPassesOnARetryStillFails(t *testing.T) {
+	list := []listEntry{entry("a", statusFails)}
+	r := runOf(nil, nil, nil)
+	r.Ran[testID{"cmdr-fs", "a"}] = true
+	r.Flaky = []testID{{"cmdr-fs", "a"}}
+	if v := judge(list, r); !v.clean() {
+		t.Fatalf("a listed failure that failed once and then passed isn't fixed: %+v", v)
+	}
+}
+
+func TestAnUnlistedPassOnARetryIsNamedLoudlyButStaysGreen(t *testing.T) {
+	r := runOf([]string{"b"}, nil, nil)
+	r.Flaky = []testID{{"cmdr-fs", "b"}}
+	v := judge(nil, r)
+	if !v.clean() {
+		t.Fatalf("a pass on a retry must not block a landing: %+v", v)
+	}
+	if len(v.Flaky) != 1 || v.Flaky[0].Test != "b" {
+		t.Fatalf("flaky: %+v", v.Flaky)
+	}
+	var out bytes.Buffer
+	writeVerdict(&out, nil, v)
+	if !strings.Contains(out.String(), "Passed on a retry (1)") || !strings.Contains(out.String(), "cmdr-fs `b`") {
+		t.Fatalf("verdict:\n%s", out.String())
+	}
+	// A listed flaky entry that flipped is what the entry says, so it's not named again.
+	if v := judge([]listEntry{entry("b", statusFlaky)}, r); len(v.Flaky) != 0 {
+		t.Fatalf("flaky: %+v", v.Flaky)
+	}
+}
+
+func TestATestNamedTwiceInTheReportIsRefused(t *testing.T) {
+	twice := `<testsuites><testsuite name="cmdr-fs"><testcase name="a"/></testsuite><testsuite name="cmdr-fs::integration"><testcase name="a"/></testsuite></testsuites>`
+	if _, err := readReport(writeJUnit(t, twice)); err == nil {
+		t.Fatal("two binaries of one crate with one test name can't be told apart on the list: want an error")
+	}
+}
+
+func TestAMismatchNamesTheExactCommandForThisRun(t *testing.T) {
+	t.Setenv("GITHUB_RUN_ID", "44941795618")
+	v := judge([]listEntry{entry("fixed", statusFails)}, runOf([]string{"fixed"}, nil, nil))
+	var out bytes.Buffer
+	writeVerdict(&out, []listEntry{entry("fixed", statusFails)}, v)
+	if !strings.Contains(out.String(), "go -C scripts/windows-test-baseline run . ratchet -run 44941795618 -write") {
+		t.Fatalf("verdict:\n%s", out.String())
+	}
+}
+
+func TestAnEmptyOrMissingReportFails(t *testing.T) {
+	if _, err := loadRun(writeJUnit(t, `<testsuites name="nextest-run" tests="0"></testsuites>`), ""); err == nil {
+		t.Fatal("a report where nothing ran must fail")
+	}
+	if _, err := loadRun(filepath.Join(t.TempDir(), "absent.xml"), ""); err == nil {
+		t.Fatal("a missing report must fail")
+	}
+	if _, err := loadRun(writeJUnit(t, `<testsuites><testsuite name="cmdr"><testcase name="a">`), ""); err == nil {
+		t.Fatal("a truncated report must fail")
 	}
 }

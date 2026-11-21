@@ -214,12 +214,16 @@ type junitProblem struct {
 }
 
 type junitCase struct {
-	Name      string         `xml:"name,attr"`
-	Failures  []junitProblem `xml:"failure"`
-	Errors    []junitProblem `xml:"error"`
-	Skipped   *struct{}      `xml:"skipped"`
-	SystemOut string         `xml:"system-out"`
-	SystemErr string         `xml:"system-err"`
+	Name     string         `xml:"name,attr"`
+	Failures []junitProblem `xml:"failure"`
+	Errors   []junitProblem `xml:"error"`
+	// FlakyFailures are the failed tries of a test that passed on a retry (nextest's `retries`); a test that failed
+	// every try has `failure` plus a `rerunFailure` per retry, and reads as a failure.
+	FlakyFailures []junitProblem `xml:"flakyFailure"`
+	FlakyErrors   []junitProblem `xml:"flakyError"`
+	Skipped       *struct{}      `xml:"skipped"`
+	SystemOut     string         `xml:"system-out"`
+	SystemErr     string         `xml:"system-err"`
 }
 
 // testID names one test the way nextest does: its crate, and its path inside the binary.
@@ -242,6 +246,8 @@ type report struct {
 	// (`cmdr_fs::testing::SKIP_MARKER`). nextest has no runtime skip, so only the marker tells such a pass from a
 	// real one, and the report holds a pass's output only under the `windows-baseline` profile.
 	SelfSkipped []testID
+	// Flaky is every test that failed a try and then passed on a retry: green, but worth naming.
+	Flaky []testID
 }
 
 // skipMarker is `cmdr_fs::testing::SKIP_MARKER`: a line a cell prints when it skips itself.
@@ -274,9 +280,17 @@ func readReport(path string) (report, error) {
 				continue
 			}
 			id := testID{Crate: crate, Test: c.Name}
+			// The list names a test by crate and path, so two binaries of one crate (the lib and an
+			// integration test file) holding one test name would read as one entry.
+			if r.Ran[id] {
+				return report{}, fmt.Errorf("%s: %s `%s` runs in two of the crate's test binaries, so the known-failures list can't tell them apart: rename one", path, id.Crate, id.Test)
+			}
 			r.Ran[id] = true
 			problems := append(append([]junitProblem{}, c.Failures...), c.Errors...)
 			if len(problems) == 0 {
+				if len(c.FlakyFailures)+len(c.FlakyErrors) > 0 {
+					r.Flaky = append(r.Flaky, id)
+				}
 				if skippedItself(c.SystemOut + "\n" + c.SystemErr) {
 					r.SelfSkipped = append(r.SelfSkipped, id)
 				}

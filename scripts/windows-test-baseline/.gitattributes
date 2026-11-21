@@ -1,0 +1,6 @@
+# Two branches that each drop or add an entry next to the other's merge without a conflict:
+# `union` keeps both sides' lines. A line one side dropped can come back that way, and the ratchet
+# then names it (a `fails` entry that passes, or one listed twice), so a merge can't loosen the list
+# silently, except for a `builder` entry, which leaves its test out of the run (`docs/tooling/ci.md`
+# § Windows lane).
+ci-known-failures.tsv merge=union

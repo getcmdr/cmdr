@@ -680,11 +680,33 @@ later PR happened to fix it.
   shrink in the same PR), and on a cell that passed by skipping itself (CI doesn't cover it). Each entry has a status
   and a reason: `fails`, `flaky` (either outcome is fine; the reason says why it flips), or `builder` (left out of the
   hosted run through `ratchet -filter`, so the Windows builder covers it; the reason names what the runner lacks).
-- **Rewriting the list**: `go -C scripts/windows-test-baseline run . ratchet -run <run-id> -write` downloads that run's
-  `windows-test-report` artifact and drops every entry that passes or is gone (tightening is free, like every allowlist
-  here). Adding takes a reason: `-write -add "<reason>"` lists the run's new failures as `fails` and its self-skips as
-  `builder`; that's loosening, so it needs David's OK like any allowlist (`scripts/check/checks/DETAILS.md` § "Allowlist
-  consent"). A `flaky` entry is a hand edit with its reason.
+- **Retries and flakes**: nextest runs with `--retries 2`. A test that fails a try and then passes is green, and the
+  ratchet names it loudly (a `::warning` per test and a "Passed on a retry" section in the summary) so someone fixes it
+  or lists it `flaky`; it never blocks a landing. A `fails` entry that failed any try still counts as failing. Retries
+  cost little: the 238 known failures took 67 s of test time in all (run 44941795618), and the slowest passing cells
+  (7–8 s against the 8 s cap: the `cmdr-index` disconnect storms, `simultaneous_dispatches_spawn_exactly_one_reversal`)
+  are the ones a busy runner tips over.
+- **The run must be whole**: nextest exiting with anything but 0 or 100 (some tests failed) turns the step red before
+  the ratchet reads anything, since a binary nextest couldn't list or a bad filterset leaves a partial report. A build
+  failure stops the job at `cargo test --no-run`, a missing report fails the upload, and a report where nothing ran, a
+  truncated one, or one naming a test twice in a crate (a lib and an integration binary sharing a name; rename one)
+  fails the ratchet. A crashed test is its own failure, as nextest runs each in its own process. Doc tests don't run
+  (nextest doesn't run them), and an `#[ignore]`d test reads as not run, never as a self-skip.
+- **The loop, one round (an agent with a Rust PR)**: push (`pnpm land -no-wait`); the light run carries this lane. When
+  `tests` is red, its error (on the run page, and in what `pnpm land` prints for a red job) names the counts and the
+  exact command, `go -C scripts/windows-test-baseline run . ratchet -run <that run's id> -write`: run it, commit the
+  rewritten `ci-known-failures.tsv`, then land. It downloads the run's `windows-test-report` artifact, drops every
+  `fails` entry that passes now and every entry that no longer runs (a test you turned green, renamed, or deleted on
+  purpose), sorts the file, and warns when the run tested another commit than HEAD (after merging `main`, a test the run
+  didn't have would lose its entry). Tightening is free, like every allowlist here. Adding takes a reason:
+  `-write -add "<reason>"` lists the run's new failures as `fails` and its self-skips as `builder`; that's loosening, so
+  it needs David's OK like any allowlist (`scripts/check/checks/DETAILS.md` § "Allowlist consent"). A `flaky` entry is a
+  hand edit with its reason.
+- **Two PRs editing the list merge cleanly**: one sorted line per test, and
+  `scripts/windows-test-baseline/.gitattributes` merges it with `union`, so neighboring edits keep both sides' lines. A
+  line one side dropped can come back; the ratchet then names it (a passing `fails` entry, or a duplicate) and the same
+  one command fixes it. The one silent case is a resurrected `builder` entry, which leaves its test out of the run:
+  check the list's diff after a merge that touched one.
 - **What the list holds** (run 44938012136, 2026-11-21, `main` at `cca9cbea44`): 14,303 tests, 239 failures, 238 `fails`
   and one `flaky`. By crate: `cmdr-operations` 101, `cmdr` 81, `cmdr-index` 32, `cmdr-listing-wasm` 7, `cmdr-fs` 5,
   `cmdr-nfs` 4, `cmdr-adb` 3, one each in `cmdr-archive`, `cmdr-http`, `cmdr-listing`, `cmdr-local`,
@@ -696,9 +718,10 @@ later PR happened to fix it.
   no cell needed a second drive or a folder mount to pass where the builder passes it. The builder's own record stays
   `windows-test-failures.tsv`: its two cores time out where a hosted runner doesn't, so the two lists differ on purpose.
 - **Gotcha, the runner's TEMP is an 8.3 short path** (`C:\Users\RUNNER~1\AppData\Local\Temp`; the builder's `Admin` has
-  no short form): a cell that compares a path it built from `TEMP` against one the code canonicalized can fail here
-  alone (`go_to_path::tests::dotdot_past_a_nonexistent_middle_segment_is_no_link`, listed). It's a real case, since any
-  user whose name passes eight characters gets the same TEMP.
+  no short form): a cell that types a path it built from `TEMP` and compares the answer with `AppTestDir::app_path`
+  (long names) can fail here alone. It found a product gap: typed text holding a short name opens under its short
+  spelling (#1337; the five `go_to_path::tests` entries point there). Any user whose name passes eight characters has
+  that TEMP.
 - **What stays the builder's**: anything a hosted runner can't hold (a real second drive, folder mounts, a desktop
   session for the GUI, `run-on-desktop.sh`), a `builder` entry once one exists, and every run on Windows 10 22H2 (hosted
   is Windows Server 2025).
@@ -712,7 +735,14 @@ later PR happened to fix it.
   set by Svelte, E2E, and the Rust lanes, so it starts at t=0 and finishes well inside the critical path: about zero
   added landing time. A `cargo clippy --target x86_64-pc-windows-gnu` job on ubuntu would also be a cold whole-workspace
   build (no cache budget, § Build caching), so no faster, and it would lint mingw instead of the MSVC target we ship. It
-  costs one more job in the account's 20-job budget (§ Critical path); Windows minutes are free on a public repo.
+  costs one more job in the account's 20-job budget (§ Critical path); Windows minutes are free on a public repo. The
+  `tests` job runs beside `lane` from t=0: 17.6 min warm (run 44941795618), inside a land run's ~20 min critical path
+  (the Rust and macOS lanes), so about zero added landing time; cold (the first runs after a `Cargo.lock`, profile, or
+  toolchain change on `main`, until `warm-rust-windows-tests-cache` finishes) it takes ~30 min and sets the critical
+  path. It's a second job in that 20-job budget, on light runs too. Its ~1.0 GB entry pushes the repo past its 10 GB
+  budget (10.7 GB before it, `gh api repos/getcmdr/cmdr/actions/cache/usage`, 2026-11-21), and GitHub evicts the least
+  recently used entries: today that's old CodeQL traps and stale `tauri-apt` keys, next the website-demo Rust and wasm
+  entries (used once per website change), whose lane would then build cold.
 - **Before pushing: `pnpm check clippy-windows`** (`desktop-rust-clippy-windows`), the same clippy question for
   `x86_64-pc-windows-gnu` from a Mac, in the Linux lanes' Docker container (its image carries mingw-w64; ~2 min warm on
   the laptop). Run it when a change touches Rust that a `cfg(windows)`, `cfg(not(unix))`, or `target_os` gate hides from
