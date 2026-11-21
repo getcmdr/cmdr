@@ -2,11 +2,8 @@
 //! the volume's held random reader, jumps cost a bounded number of reads over ONE open,
 //! and a slow share answers a scrollbar drag inside the fetch deadline.
 
-use cmdr_fs::app_path::AppPath;
-use cmdr_fs::app_path::BridgedPath;
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic};
 use std::future::Future;
-use std::path::Path;
-use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
@@ -56,8 +53,8 @@ struct ShareState {
 
 /// A share holding one synthetic file, generated on read, so a 5 GiB file costs nothing.
 struct SyntheticShare {
-    root: BridgedPath,
-    file: PathBuf,
+    root: AppPathBuf,
+    file: AppPathBuf,
     os_visible: bool,
     state: Arc<ShareState>,
 }
@@ -110,7 +107,7 @@ impl Volume for SyntheticShare {
     }
 
     fn root(&self) -> &AppPath {
-        self.root.app()
+        &self.root
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -130,12 +127,10 @@ impl Volume for SyntheticShare {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            if path != self.file {
-                return Err(VolumeError::NotFound(path.display().to_string()));
+            if *path != *self.file {
+                return Err(VolumeError::NotFound(path.to_string()));
             }
-            let mut entry = FileEntry::new("big.log".to_string(), path.display().to_string(), false, false);
+            let mut entry = FileEntry::new("big.log".to_string(), path.to_string(), false, false);
             entry.size = Some(self.state.size.load(Ordering::SeqCst));
             Ok(entry)
         })
@@ -150,10 +145,8 @@ impl Volume for SyntheticShare {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeRandomReader>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            if path != self.file {
-                return Err(VolumeError::NotFound(path.display().to_string()));
+            if *path != *self.file {
+                return Err(VolumeError::NotFound(path.to_string()));
             }
             self.state.opens.fetch_add(1, Ordering::SeqCst);
             Ok(Box::new(SyntheticReader {
@@ -170,18 +163,22 @@ impl Volume for SyntheticShare {
 fn a_share(id: &str, size: u64, os_visible: bool) -> (String, Arc<SyntheticShare>, Arc<ShareState>) {
     // Under `/Volumes/` like a real share, and nowhere on disk: only the volume can
     // serve it, whether or not it claims an OS mount.
-    let root = PathBuf::from(format!("/Volumes/cmdr-test-share-{id}"));
-    let file = root.join("big.log");
+    let root = AppPath::from_normalized(&format!("/Volumes/cmdr-test-share-{id}"))
+        .expect("a canonical share root")
+        .to_owned();
+    let file = root
+        .join(AppName::from_app_spelling("big.log").expect("a name"))
+        .expect("the file joins");
     let state = Arc::new(ShareState::default());
     state.size.store(size, Ordering::SeqCst);
     let share = Arc::new(SyntheticShare {
-        root: BridgedPath::new(root),
+        root,
         file: file.clone(),
         os_visible,
         state: Arc::clone(&state),
     });
     test_volumes().register(id, Arc::clone(&share) as Arc<dyn Volume>);
-    (file.display().to_string(), share, state)
+    (file.to_string(), share, state)
 }
 
 /// The row number a synthetic row's text spells.
@@ -325,8 +322,11 @@ fn rereading_nearby_bytes_costs_no_round_trip() {
 #[test]
 fn a_missing_file_on_the_share_is_not_found() {
     let (_path, share, _state) = a_share("viewer-vsrc-missing", ROW_BYTES, false);
-    let missing = share.root.join("nope.log");
-    let result = viewer().open_session(&missing.display().to_string(), "viewer-vsrc-missing");
+    let missing = share
+        .root
+        .join(AppName::from_app_spelling("nope.log").expect("a name"))
+        .expect("the file joins");
+    let result = viewer().open_session(&missing.to_string(), "viewer-vsrc-missing");
     assert!(
         matches!(result, Err(ViewerError::NotFound { .. })),
         "got {:?}",

@@ -1,16 +1,17 @@
 //! Where a Markdown image's `src` points: beside the document on its volume, on the
 //! web, inline, or nowhere we'll load.
 
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 
 use super::markdown_images::{ImageTarget, resolve_image_src};
 
 fn resolve(src: &str) -> ImageTarget {
-    resolve_image_src(src, Path::new("/Users/a/proj/docs/README.md"), Path::new("/"))
+    resolve_image_src(src, Some(app_path!("/Users/a/proj/docs/README.md")), app_path!("/"))
 }
 
 fn local(path: &str) -> ImageTarget {
-    ImageTarget::Local(PathBuf::from(path))
+    ImageTarget::Local(AppPath::from_normalized(path).expect("a canonical path").to_owned())
 }
 
 #[test]
@@ -33,8 +34,8 @@ fn climbing_past_the_volume_root_stops_at_the_root() {
     assert_eq!(resolve("../../../../../../../etc/logo.png"), local("/etc/logo.png"));
     let on_share = resolve_image_src(
         "../../../../secret.png",
-        Path::new("/Volumes/share/docs/README.md"),
-        Path::new("/Volumes/share"),
+        Some(app_path!("/Volumes/share/docs/README.md")),
+        app_path!("/Volumes/share"),
     );
     assert_eq!(on_share, local("/Volumes/share/secret.png"));
 }
@@ -43,8 +44,8 @@ fn climbing_past_the_volume_root_stops_at_the_root() {
 fn a_document_on_a_phone_resolves_on_the_phone() {
     let target = resolve_image_src(
         "../Pictures/a.jpg",
-        Path::new("adb://R58M1/sdcard/Notes/todo.md"),
-        Path::new("adb://R58M1"),
+        Some(app_path!("adb://R58M1/sdcard/Notes/todo.md")),
+        app_path!("adb://R58M1/"),
     );
     assert_eq!(target, local("adb://R58M1/sdcard/Pictures/a.jpg"));
 }
@@ -52,7 +53,11 @@ fn a_document_on_a_phone_resolves_on_the_phone() {
 #[test]
 fn a_document_inside_an_archive_resolves_inside_it() {
     assert_eq!(
-        resolve_image_src("pics/a.png", Path::new("/Users/a/x.zip/docs/README.md"), Path::new("/")),
+        resolve_image_src(
+            "pics/a.png",
+            Some(app_path!("/Users/a/x.zip/docs/README.md")),
+            app_path!("/")
+        ),
         local("/Users/a/x.zip/docs/pics/a.png")
     );
 }
@@ -97,6 +102,24 @@ fn absolute_paths_and_other_schemes_are_blocked() {
 
 #[test]
 fn a_document_outside_its_volume_resolves_nothing() {
-    let target = resolve_image_src("a.png", Path::new("/elsewhere/README.md"), Path::new("/Volumes/share"));
+    let target = resolve_image_src(
+        "a.png",
+        Some(app_path!("/elsewhere/README.md")),
+        app_path!("/Volumes/share"),
+    );
     assert_eq!(target, ImageTarget::Blocked);
+}
+
+/// A decoded name that is no name loads nothing (`markdown_links_test.rs` has the why):
+/// `std::path` handed the host a path climbing past the root, or a name's raw bytes.
+#[test]
+fn a_decoded_name_that_is_no_name_loads_nothing() {
+    for src in [
+        "a%2F..%2F..%2F..%2Fsecret.png",
+        "bad%FF.png",
+        "x%00.png",
+        "%F4%8F%BB%A9.png",
+    ] {
+        assert_eq!(resolve(src), ImageTarget::Blocked, "{src:?}");
+    }
 }
