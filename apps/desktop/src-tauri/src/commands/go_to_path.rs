@@ -1,33 +1,24 @@
 //! IPC commands for the "Go to path" dialog.
 //!
 //! Thin pass-throughs over the `go_to_path` module. `resolve_go_to_path` touches
-//! the filesystem (`metadata` / `exists`), so it runs on the blocking pool with a
-//! timeout: a hung mount must never freeze IPC.
-
-use tokio::time::Duration;
+//! the filesystem (`metadata`, a `..`'s link read), so every one of those waits
+//! runs detached under ONE 2 s `Deadline` inside `go_to_path::resolve`: a hung
+//! mount must never freeze IPC.
 
 use crate::go_to_path::history::{MAX_RECENTS, RECENT_PATHS, RecentPathEntry};
 use crate::go_to_path::{self, GoToPathResolution};
-use cmdr_fs::deadline::{DeadlineError, blocking_typed_result_with_timeout};
-
-/// 2s matches the read timeout other filesystem-touching commands use.
-const RESOLVE_TIMEOUT: Duration = Duration::from_secs(2);
+use cmdr_fs::deadline::DeadlineError;
 
 /// Resolves a typed input against the focused pane's `base_dir`. Serves the
 /// live as-you-type warning, the actual jump, and the clipboard-prefill check.
 ///
-/// `go_to_path::resolve` always answers (an unreachable path is a `GoToPathResolution`
-/// variant, not an error), so a missed deadline is the only thing this can report.
+/// `go_to_path::resolve` always answers inside its deadline (an unreachable path or a
+/// volume that didn't answer is a `GoToPathResolution` variant, not an error), so this
+/// never reports `DeadlineError` today; the type stays for the wire.
 #[tauri::command]
 #[specta::specta]
 pub async fn resolve_go_to_path(input: String, base_dir: String) -> Result<GoToPathResolution, DeadlineError> {
-    blocking_typed_result_with_timeout(
-        RESOLVE_TIMEOUT,
-        || DeadlineError::TimedOut,
-        |detail| DeadlineError::Unexpected { detail },
-        move || Ok(go_to_path::resolve(&input, &base_dir)),
-    )
-    .await
+    Ok(go_to_path::resolve(&input, &base_dir).await)
 }
 
 /// Reads the persisted recent-path entries (newest first).

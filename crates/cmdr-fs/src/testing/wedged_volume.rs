@@ -83,6 +83,13 @@ impl Volume for WedgedVolume {
         never_answers!()
     }
 
+    fn parent_for_dot_dot<'a>(
+        &'a self,
+        _path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Result<AppPathBuf, VolumeError>> + Send + 'a>> {
+        never_answers!()
+    }
+
     fn read_range<'a>(
         &'a self,
         _path: &'a AppPath,

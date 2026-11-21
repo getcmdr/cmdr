@@ -1,314 +1,216 @@
-//! "Go to path" backend: pure path resolution plus the recents store.
+//! "Go to path" backend, and the app's typed-path resolver.
 //!
-//! The dialog lets the user type a path (absolute, `~`-rooted, or relative to
-//! the focused pane) and jump to it. All the path reasoning lives here so the
-//! frontend stays a thin presenter (AGENTS.md principle 3, "smart backend, thin
-//! frontend"). The IPC wrappers in `commands/go_to_path.rs` are pass-throughs.
+//! The dialog lets the user type a path (absolute, `~`-rooted, or relative to the
+//! focused pane) and jump to it. All the path reasoning lives here so the frontend
+//! stays a thin presenter (AGENTS.md principle 3, "smart backend, thin frontend").
+//! The IPC wrappers in `commands/go_to_path.rs` are pass-throughs.
 //!
-//! ## What `resolve` does
-//!
-//! 1. Expands a leading `~` via `crate::commands::file_system::expand_tilde`.
-//! 2. Joins a relative `input` against `base_dir` (the focused pane's path).
-//! 3. **Lexically** normalizes `.` / `..` components (see the no-canonicalize
-//!    decision below) without touching the disk.
-//! 4. Classifies the lexical path against the **local** filesystem into
-//!    [`GoToPathResolution`].
-//!
-//! `resolve` is a pure function (no `AppHandle`) so it's unit-testable over a
-//! `tempfile::tempdir()`. The async command wraps it in `blocking_with_timeout`.
-//!
-//! The steps themselves are `cmdr_fs::go_to_path::resolve_with`, which the browser
-//! demo's engine runs over its in-memory volume too; this module is the local disk
-//! as that function asks it (`LocalDisk`).
-//!
-//! ## Decision: backend owns resolution
-//!
-//! A single resolution path serves three callers (live as-you-type warning, the
-//! actual jump, the clipboard-prefill decision), so the preview and the action
-//! can never drift. The frontend switches on the returned enum variant and acts.
-//!
-//! ## Decision: no `canonicalize()`
-//!
-//! We normalize `.`/`..` lexically, not via `Path::canonicalize`. `canonicalize`
-//! requires the *whole* path to exist (it errors otherwise), which would break
-//! the nearest-ancestor case where the tail doesn't exist. It also resolves
-//! symlinks, silently rewriting the path we show and navigate to into something
-//! the user didn't type. Lexical normalization keeps the displayed path faithful
-//! to the input and lets nearest-ancestor work. `metadata()` (which *does* follow
-//! symlinks) only classifies the existing target as file vs. directory, so a
-//! symlinked directory navigates into the symlink path and the listing follows
-//! it - correct and intended.
-//!
-//! ## v1 limitations
-//!
-//! - **Relative paths on a non-local pane.** `base_dir` is the focused pane's
-//!   path; if that pane is on MTP/SMB, a relative input resolves against a
-//!   non-local base and the local-fs walk falls back to nearest-ancestor (often
-//!   `/`). Absolute and `~` paths always work. Accepted degraded behavior.
-//! - **Case-insensitive dedupe.** The recents store (see [`history`]) dedupes by
-//!   a raw resolved-path string compare, so on case-insensitive APFS
-//!   `/Users/x/Foo` and `/Users/x/foo` show as two entries. Worst case: a
-//!   duplicate-looking row. We don't `canonicalize()` (reasons above) to fix it.
+//! [`AppHost::resolve_typed`] is the ONE resolver for text a person or an agent typed: Go to
+//! path, the `cmdr` CLI's paths, deep links, and (10d) the MCP tools' path inputs. It
+//! runs `cmdr_fs::typed_path` over [`AppHost`]: the volume registry picks the volume
+//! holding a path and answers each `..` through `Volume::parent_for_dot_dot`, under a
+//! timeout, so a hung mount refuses instead of blocking. Decisions: `DETAILS.md`.
 
 pub mod history;
 
-use std::path::Path;
+use std::future::Future;
+use std::sync::Arc;
+use std::time::Duration;
 
-use cmdr_fs::go_to_path::{FoundKind, GoToHost, resolve_with};
-use cmdr_fs::volume::path_grammar::{self, PathFlavor};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathFlavor, PathKind};
+use cmdr_fs::deadline::{Deadline, timeout_detached_within};
+use cmdr_fs::go_to_path::{FoundKind, GoToHost};
+use cmdr_fs::typed_path::{TypedBy, TypedPath, TypedPathHost, TypedPathRefusal, resolve_typed_with};
+use cmdr_fs::volume::{DEFAULT_VOLUME_ID, Volume, VolumeError};
 
-use crate::commands::file_system::expand_tilde;
+use crate::file_system::volume::manager::get_volume_manager;
 
 /// The contract the dialog branches on, shared with the browser demo's engine:
 /// `cmdr_fs::go_to_path`, where the classification lives.
 pub use cmdr_fs::go_to_path::GoToPathResolution;
 
-/// The local disk, as `resolve_with` asks it.
-struct LocalDisk;
+/// One resolve's whole budget, every `..` and stat inside it sharing it (the 2 s read tier,
+/// `commands/CLAUDE.md`): the inner layer of the two-layer timeout, under the frontend's
+/// race, so the refusal is ours and typed.
+const RESOLVE_DEADLINE: Duration = Duration::from_secs(2);
 
-impl GoToHost for LocalDisk {
-    fn expand_tilde(&self, input: &str) -> String {
-        expand_tilde(input)
+/// Which volume holds a path: the registry in the app, a fixed volume in a test.
+type VolumeFor = dyn Fn(&AppPath) -> Option<Arc<dyn Volume>> + Send + Sync;
+
+/// The app as `cmdr_fs::typed_path` and `cmdr_fs::go_to_path` ask it, for ONE resolve.
+pub(crate) struct AppHost {
+    volume_for: Box<VolumeFor>,
+    deadline: Deadline,
+}
+
+impl AppHost {
+    /// Over the volume registry, with a fresh [`RESOLVE_DEADLINE`].
+    pub(crate) fn registry() -> Self {
+        Self::over(registry_volume_for, RESOLVE_DEADLINE)
     }
 
-    /// `metadata` follows symlinks, so a symlinked dir/file classifies as its target.
-    fn found(&self, path: &Path) -> Option<FoundKind> {
-        std::fs::metadata(path).ok().map(|meta| {
-            if meta.is_dir() {
+    /// Over `volume_for`, every answer inside `budget` from now.
+    pub(crate) fn over(
+        volume_for: impl Fn(&AppPath) -> Option<Arc<dyn Volume>> + Send + Sync + 'static,
+        budget: Duration,
+    ) -> Self {
+        Self {
+            volume_for: Box::new(volume_for),
+            deadline: Deadline::new(budget),
+        }
+    }
+
+    /// The volume holding `path`, or `NotConnected` when none is registered (a server
+    /// nobody connected): no volume to ask means no answer, ❌ never a lexical guess.
+    fn volume(&self, path: &AppPath) -> Result<Arc<dyn Volume>, VolumeError> {
+        (self.volume_for)(path).ok_or_else(|| VolumeError::NotConnected(path.to_string()))
+    }
+
+    /// `work` within what's left of the deadline. Detached on expiry (the MTP rule,
+    /// `cmdr_fs::deadline`): the caller gets `ConnectionTimeout` at once, and the work
+    /// runs on to its own end rather than being dropped mid-transaction.
+    async fn within<T: Send + 'static>(
+        &self,
+        work: impl Future<Output = Result<T, VolumeError>> + Send + 'static,
+    ) -> Result<T, VolumeError> {
+        timeout_detached_within(
+            &self.deadline,
+            || VolumeError::ConnectionTimeout("the volume didn't answer in time".into()),
+            |detail| VolumeError::IoError {
+                message: detail.into(),
+                raw_os_error: None,
+            },
+            work,
+        )
+        .await
+    }
+}
+
+/// The registered volume whose root holds `path`, the longest root winning (a mount
+/// inside another), routed volumes (archives, `.git` portals) skipped: they route over
+/// the disk that holds them. In memory, no syscall and no dial.
+fn registry_volume_for(path: &AppPath) -> Option<Arc<dyn Volume>> {
+    let manager = get_volume_manager();
+    let held = manager
+        .list_volumes_with_handles()
+        .into_iter()
+        .filter(|(_, volume)| !volume.routes_over_a_parent() && path.is_on_volume(volume.root()))
+        .max_by_key(|(_, volume)| volume.root().as_str().len())
+        .map(|(_, volume)| volume);
+    // A local path always has a disk: the boot volume, when no registered root is closer.
+    held.or_else(|| {
+        (path.kind() != PathKind::Scheme)
+            .then(|| manager.get(DEFAULT_VOLUME_ID))
+            .flatten()
+    })
+}
+
+impl TypedPathHost for AppHost {
+    fn flavor(&self) -> PathFlavor {
+        PathFlavor::HOST
+    }
+
+    fn expand_tilde(&self, text: &str) -> String {
+        cmdr_fs::tilde::expand_tilde(text)
+    }
+
+    async fn parent_for_dot_dot(&self, path: &AppPath) -> Result<AppPathBuf, VolumeError> {
+        let volume = self.volume(path)?;
+        let path = path.to_owned();
+        self.within(async move { volume.parent_for_dot_dot(&path).await }).await
+    }
+}
+
+impl GoToHost for AppHost {
+    /// A local path through `metadata` (follows links, so a link to a folder is a
+    /// folder), off the async thread; a remote one through its volume. Either within
+    /// the deadline, since a hung mount blocks `metadata` for minutes. A missed deadline,
+    /// or no volume to ask, is `Err` ("couldn't check"); a stat that answers with an
+    /// error (missing, refused) is nothing there, as it always was.
+    async fn found(&self, path: &AppPath) -> Result<Option<FoundKind>, VolumeError> {
+        let is_directory = match path.to_native() {
+            Ok(native) => {
+                self.within(async move {
+                    let stat = tokio::task::spawn_blocking(move || std::fs::metadata(native).map(|meta| meta.is_dir()));
+                    Ok(stat.await.ok().and_then(Result::ok))
+                })
+                .await?
+            }
+            Err(_) => {
+                let volume = self.volume(path)?;
+                let path = path.to_owned();
+                match self.within(async move { volume.is_directory(&path).await }).await {
+                    Ok(is_directory) => Some(is_directory),
+                    Err(
+                        err @ (VolumeError::ConnectionTimeout(_)
+                        | VolumeError::NotConnected(_)
+                        | VolumeError::DeviceDisconnected(_)
+                        | VolumeError::DeviceSessionReset(_)),
+                    ) => return Err(err),
+                    Err(_) => None,
+                }
+            }
+        };
+        Ok(is_directory.map(|is_directory| {
+            if is_directory {
                 FoundKind::Directory
             } else {
                 FoundKind::File
             }
-        })
+        }))
     }
 
-    /// The app-path spelling of a path the local OS reads (`C:/Users/test_user_1` on Windows; the path
-    /// itself on macOS and Linux), the one form a pane holds. A path the grammar can't read keeps its
-    /// native spelling.
-    fn app_spelling(&self, path: &Path) -> String {
-        path_grammar::app_spelling(&path.to_string_lossy(), PathFlavor::HOST)
-    }
-
-    /// A path that crosses into a supported archive is browsed as a folder, even though the inner
-    /// path (or the `.zip` file itself) isn't a real directory on disk, so typing it in the path
-    /// bar enters the archive. The boundary check confirms a real archive FILE + zip magic, so a
-    /// directory named `foo.zip` or a mislabeled file still classifies normally.
-    fn enters_archive(&self, path: &Path) -> bool {
-        cmdr_archive::path_crosses_archive_boundary(path)
+    /// A path that crosses into a supported archive is browsed as a folder, even though the
+    /// inner path (or the `.zip` file itself) isn't a real directory on disk, so typing it
+    /// in the path bar enters the archive. The boundary check confirms a real archive FILE +
+    /// zip magic, so a directory named `foo.zip` or a mislabeled file still classifies
+    /// normally. Local disks only.
+    async fn enters_archive(&self, path: &AppPath) -> bool {
+        let Ok(native) = path.to_native() else {
+            return false;
+        };
+        let check = self.within(async move {
+            let crosses = tokio::task::spawn_blocking(move || cmdr_archive::path_crosses_archive_boundary(&native));
+            Ok(crosses.await.unwrap_or(false))
+        });
+        matches!(check.await, Ok(true))
     }
 }
 
-/// Resolves a typed input against `base_dir` into a [`GoToPathResolution`].
-///
-/// Pure: no `AppHandle`, no IPC. The disk is only read via `metadata` for
-/// classification; the async command wraps this in `blocking_with_timeout`
-/// so a hung mount can't freeze IPC.
-pub fn resolve(input: &str, base_dir: &str) -> GoToPathResolution {
-    resolve_with(input, Path::new(base_dir), &LocalDisk)
+impl AppHost {
+    /// Resolves text a person or an agent typed (`by`) against `base` (the pane's folder,
+    /// for a relative input), every `..` answered by the volume holding the path: the one
+    /// door for Go to path, the CLI's paths, deep links, and the MCP tools' path inputs
+    /// (`AppHost::registry().resolve_typed(…)`). An agent's `..` above a root is
+    /// [`TypedPathRefusal::OffRoot`].
+    ///
+    /// # Errors
+    ///
+    /// [`TypedPathRefusal`], typed.
+    pub(crate) async fn resolve_typed(
+        &self,
+        text: &str,
+        base: Option<&AppPath>,
+        by: TypedBy,
+    ) -> Result<TypedPath, TypedPathRefusal> {
+        resolve_typed_with(text, base, by, self).await
+    }
 }
 
+/// Resolves the dialog's `input` against `base_dir` (the focused pane's path, as the
+/// frontend holds it) into a [`GoToPathResolution`]. A pane path that's no app path
+/// reads a relative input as nothing to go to.
+pub async fn resolve(input: &str, base_dir: &str) -> GoToPathResolution {
+    resolve_over(input, base_dir, &AppHost::registry()).await
+}
+
+async fn resolve_over(input: &str, base_dir: &str, host: &AppHost) -> GoToPathResolution {
+    let base = AppPathBuf::from_wire(base_dir).ok();
+    let typed = host.resolve_typed(input.trim(), base.as_deref(), TypedBy::Person).await;
+    cmdr_fs::go_to_path::answer(typed, host).await
+}
+
+#[cfg(test)]
+mod tests;
 #[cfg(test)]
 mod wire_shape_tests;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs;
-
-    #[test]
-    fn existing_dir_resolves_to_directory() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        let sub = dir.path().join("sub");
-        fs::create_dir(&sub).expect("create sub");
-
-        let res = resolve(&sub.to_string_lossy(), dir.path().to_str().unwrap());
-        assert_eq!(
-            res,
-            GoToPathResolution::Directory {
-                path: sub.to_string_lossy().to_string()
-            }
-        );
-    }
-
-    #[test]
-    fn typing_a_path_into_a_zip_enters_it_as_a_directory() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        let zip = dir.path().join("bundle.zip");
-        // A zip start-of-file signature is enough for the boundary magic check.
-        fs::write(&zip, b"PK\x03\x04rest-of-archive").expect("write zip");
-
-        // An inner path that doesn't exist on disk still enters the archive.
-        let inner = zip.join("docs");
-        let res = resolve(&inner.to_string_lossy(), dir.path().to_str().unwrap());
-        assert_eq!(
-            res,
-            GoToPathResolution::Directory {
-                path: inner.to_string_lossy().to_string()
-            }
-        );
-
-        // Typing the `.zip` path itself also enters it (lists the archive root).
-        let res_root = resolve(&zip.to_string_lossy(), dir.path().to_str().unwrap());
-        assert!(matches!(res_root, GoToPathResolution::Directory { .. }));
-    }
-
-    #[test]
-    fn a_directory_named_like_a_zip_does_not_enter_as_an_archive() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        let fake = dir.path().join("foo.zip");
-        fs::create_dir(&fake).expect("create dir named foo.zip");
-
-        // A non-existent child: the archive branch would wrongly return
-        // `Directory`; a real directory correctly falls to `NearestAncestor`.
-        let child = fake.join("ghost");
-        let res = resolve(&child.to_string_lossy(), dir.path().to_str().unwrap());
-        assert!(matches!(res, GoToPathResolution::NearestAncestor { .. }));
-    }
-
-    #[test]
-    fn existing_file_resolves_to_file_with_parent_and_name() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        let file = dir.path().join("notes.txt");
-        fs::write(&file, b"hi").expect("write file");
-
-        let res = resolve(&file.to_string_lossy(), dir.path().to_str().unwrap());
-        assert_eq!(
-            res,
-            GoToPathResolution::File {
-                path: file.to_string_lossy().to_string(),
-                parent_dir: dir.path().to_string_lossy().to_string(),
-                file_name: "notes.txt".to_string(),
-            }
-        );
-    }
-
-    #[test]
-    fn tilde_expands_to_home() {
-        // `~` alone expands to the home dir, which exists, so it resolves to a Directory.
-        let home = dirs::home_dir().expect("home dir");
-        let res = resolve("~", "/tmp");
-        assert_eq!(
-            res,
-            GoToPathResolution::Directory {
-                path: home.to_string_lossy().to_string()
-            }
-        );
-    }
-
-    #[test]
-    fn relative_input_joins_against_base_dir() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        let sub = dir.path().join("child");
-        fs::create_dir(&sub).expect("create child");
-
-        let res = resolve("child", dir.path().to_str().unwrap());
-        assert_eq!(
-            res,
-            GoToPathResolution::Directory {
-                path: sub.to_string_lossy().to_string()
-            }
-        );
-    }
-
-    #[test]
-    fn dot_and_dotdot_are_lexically_normalized() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        let a = dir.path().join("a");
-        let b = a.join("b");
-        fs::create_dir_all(&b).expect("create a/b");
-
-        // From base `a/b`, `./../.` should land back on `a`.
-        let res = resolve("./../.", b.to_str().unwrap());
-        assert_eq!(
-            res,
-            GoToPathResolution::Directory {
-                path: a.to_string_lossy().to_string()
-            }
-        );
-    }
-
-    #[test]
-    fn dotdot_past_a_nonexistent_middle_segment_normalizes_lexically() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        // `<dir>/nope/../` lexically normalizes to `<dir>`, which exists, even
-        // though `nope` never did. Canonicalize would have errored here; lexical
-        // normalization is exactly why we don't use it.
-        let input = dir.path().join("nope").join("..");
-        let res = resolve(&input.to_string_lossy(), "/tmp");
-        assert_eq!(
-            res,
-            GoToPathResolution::Directory {
-                path: dir.path().to_string_lossy().to_string()
-            }
-        );
-    }
-
-    #[test]
-    fn deep_nonexistent_path_falls_back_to_nearest_ancestor() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        let missing = dir.path().join("nope").join("a.txt");
-        let res = resolve(&missing.to_string_lossy(), "/tmp");
-        assert_eq!(
-            res,
-            GoToPathResolution::NearestAncestor {
-                requested: missing.to_string_lossy().to_string(),
-                ancestor_dir: dir.path().to_string_lossy().to_string(),
-            }
-        );
-    }
-
-    /// The answer is an app path, so a `..` above the root clamps there: a pane never holds `/..`.
-    #[test]
-    fn dotdot_above_the_root_answers_the_root() {
-        assert_eq!(
-            resolve("/..", "/tmp"),
-            GoToPathResolution::Directory { path: "/".to_string() }
-        );
-    }
-
-    #[test]
-    fn totally_nonexistent_absolute_path_falls_back_to_root() {
-        let res = resolve("/totally-nonexistent-xyz-123", "/tmp");
-        assert_eq!(
-            res,
-            GoToPathResolution::NearestAncestor {
-                requested: "/totally-nonexistent-xyz-123".to_string(),
-                ancestor_dir: "/".to_string(),
-            }
-        );
-    }
-
-    #[test]
-    fn empty_input_is_invalid() {
-        let res = resolve("", "/tmp");
-        assert!(matches!(res, GoToPathResolution::Invalid { .. }));
-    }
-
-    #[test]
-    fn whitespace_only_input_is_invalid() {
-        let res = resolve("   ", "/tmp");
-        assert!(matches!(res, GoToPathResolution::Invalid { .. }));
-    }
-
-    #[test]
-    fn resolution_serializes_with_camelcase_kind_and_fields() {
-        let res = GoToPathResolution::File {
-            path: "/Users/x/a.txt".to_string(),
-            parent_dir: "/Users/x".to_string(),
-            file_name: "a.txt".to_string(),
-        };
-        let json = serde_json::to_string(&res).unwrap();
-        assert!(json.contains("\"kind\":\"file\""), "got {json}");
-        assert!(json.contains("\"path\""), "got {json}");
-        assert!(json.contains("\"parentDir\""), "got {json}");
-        assert!(json.contains("\"fileName\""), "got {json}");
-
-        let ancestor = GoToPathResolution::NearestAncestor {
-            requested: "/tmp/nope".to_string(),
-            ancestor_dir: "/tmp".to_string(),
-        };
-        let json = serde_json::to_string(&ancestor).unwrap();
-        assert!(json.contains("\"kind\":\"nearestAncestor\""), "got {json}");
-        assert!(json.contains("\"ancestorDir\""), "got {json}");
-    }
-}

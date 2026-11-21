@@ -467,6 +467,12 @@ those into `NotSupported`. ❗ `ENOTSUP` and `EOPNOTSUPP` are one number on Linu
 values: a `matches!` pattern naming both doesn't compile on Linux. The copy scan counts a nested link, so totals agree
 with the preview and `scan_walk`.
 
+`parent_for_dot_dot` (Unix) answers a typed `..` as the kernel does: past a link, the TARGET's parent
+(`cmdr_fs::volume::dot_dot::parent_across_links`). It reads links anywhere on the machine (`to_native` then `readlink`),
+not under the volume's root alone, since a target can leave it. The Windows volume keeps the trait's lexical default on
+purpose: Win32 resolves `..` by text before the disk sees it, junctions and directory symlinks included (ran, the
+app-path plan's review round 3).
+
 ## Testing
 
 - `local_posix_test.rs`: real-FS cells (write ops, symlinks, copy, space info, the rename's degradation) on scratch

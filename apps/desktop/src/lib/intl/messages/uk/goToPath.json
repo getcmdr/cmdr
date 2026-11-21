@@ -31,6 +31,10 @@
   "@goToPath.dialog.ancestorHint": {
     "sourceHash": "e6eefca"
   },
+  "goToPath.dialog.throughLinkHint": "«..» стоїть після символічного посилання, тож цей шлях веде сюди: {dir}.",
+  "@goToPath.dialog.throughLinkHint": {
+    "sourceHash": "1a3b3e1"
+  },
   "goToPath.toast.landedOnAncestor": "Шляху <req>{requested}</req> не існує, тож відкрито найближчу папку: <land>{landed}</land>.",
   "@goToPath.toast.landedOnAncestor": {
     "sourceHash": "9af3d3a"

@@ -115,19 +115,19 @@ describe('goToPath handler', () => {
     }
 
     it('reports navigated when the pane accepts a directory', async () => {
-      okResolve({ kind: 'directory', path: '/tmp' })
+      okResolve({ kind: 'directory', path: '/tmp', crossedLink: false })
       await goToPath(makeExplorerStub(), '/tmp')
       expect(reported()).toEqual({ outcome: 'navigated' })
     })
 
     it('reports selected_file for a file target', async () => {
-      okResolve({ kind: 'file', path: '/tmp/a.txt', parentDir: '/tmp', fileName: 'a.txt' })
+      okResolve({ kind: 'file', path: '/tmp/a.txt', parentDir: '/tmp', fileName: 'a.txt', crossedLink: false })
       await goToPath(makeExplorerStub(), '/tmp/a.txt')
       expect(reported()).toEqual({ outcome: 'selected_file' })
     })
 
     it('reports refused when the pane declines', async () => {
-      okResolve({ kind: 'directory', path: '/tmp' })
+      okResolve({ kind: 'directory', path: '/tmp', crossedLink: false })
       navigateToDirMock.mockResolvedValue(false)
       await goToPath(makeExplorerStub(), '/tmp')
       expect(reported()).toEqual({ outcome: 'refused' })
@@ -149,11 +149,11 @@ describe('goToPath handler', () => {
     it('navigates to a saved place, and ❌ never asks the local resolver', async () => {
       const path = 'sftp://test_user_1@testnas.local:22/srv/data'
       readSchemeInputMock.mockResolvedValue({ kind: 'place', path, label: 'Testnas' })
-      actOnSchemeInputMock.mockResolvedValue({ kind: 'directory', path })
+      actOnSchemeInputMock.mockResolvedValue({ kind: 'directory', path, crossedLink: false })
 
       const outcome = await goToPath(makeExplorerStub(), path)
 
-      expect(outcome).toEqual({ kind: 'directory', path })
+      expect(outcome).toEqual({ kind: 'directory', path, crossedLink: false })
       expect(navigateToDirMock).toHaveBeenCalledWith(expect.anything(), 'left', { volumeId: 'root', path })
       expect(addRecentPathStateMock).toHaveBeenCalled()
       // ❗ `resolve_go_to_path` walks `std::fs::metadata`: given this it would
@@ -196,13 +196,13 @@ describe('goToPath handler', () => {
   })
 
   it('resolves against the focused pane path', async () => {
-    okResolve({ kind: 'directory', path: '/tmp' })
+    okResolve({ kind: 'directory', path: '/tmp', crossedLink: false })
     await goToPath(makeExplorerStub(), '/tmp')
     expect(resolveGoToPathMock).toHaveBeenCalledWith('/tmp', '/home/me')
   })
 
   it('directory → resolves the dir volume + navigateToDirInPane + records the dir', async () => {
-    okResolve({ kind: 'directory', path: '/tmp/here' })
+    okResolve({ kind: 'directory', path: '/tmp/here', crossedLink: false })
     await goToPath(makeExplorerStub(), '/tmp/here')
     expect(resolveLocationOrToastMock).toHaveBeenCalledWith('/tmp/here')
     expect(navigateToDirMock).toHaveBeenCalledWith(expect.anything(), 'left', { volumeId: 'root', path: '/tmp/here' })
@@ -211,7 +211,7 @@ describe('goToPath handler', () => {
   })
 
   it('file → resolves the parent volume + navigateToFileInPane + records the backend-authoritative path', async () => {
-    okResolve({ kind: 'file', path: '/tmp/a.txt', parentDir: '/tmp', fileName: 'a.txt' })
+    okResolve({ kind: 'file', path: '/tmp/a.txt', parentDir: '/tmp', fileName: 'a.txt', crossedLink: false })
     await goToPath(makeExplorerStub(), '/tmp/a.txt')
     expect(resolveLocationOrToastMock).toHaveBeenCalledWith('/tmp')
     expect(navigateToFileMock).toHaveBeenCalledWith(
@@ -232,7 +232,7 @@ describe('goToPath handler', () => {
   })
 
   it('unresolvable volume → no navigation, no recents (the shared helper owns the toast)', async () => {
-    okResolve({ kind: 'directory', path: '/Volumes/Gone/dir' })
+    okResolve({ kind: 'directory', path: '/Volumes/Gone/dir', crossedLink: false })
     resolveLocationOrToastMock.mockResolvedValue(null)
     await goToPath(makeExplorerStub(), '/Volumes/Gone/dir')
     expect(navigateToDirMock).not.toHaveBeenCalled()
@@ -243,14 +243,14 @@ describe('goToPath handler', () => {
   // A refused navigation left the pane where it was, so the path didn't work and isn't worth offering again.
   describe('a navigation the pane refused records no recent', () => {
     it('directory', async () => {
-      okResolve({ kind: 'directory', path: '/tmp/here' })
+      okResolve({ kind: 'directory', path: '/tmp/here', crossedLink: false })
       navigateToDirMock.mockResolvedValue(false)
       await goToPath(makeExplorerStub(), '/tmp/here')
       expect(addRecentPathStateMock).not.toHaveBeenCalled()
     })
 
     it('file', async () => {
-      okResolve({ kind: 'file', path: '/tmp/a.txt', parentDir: '/tmp', fileName: 'a.txt' })
+      okResolve({ kind: 'file', path: '/tmp/a.txt', parentDir: '/tmp', fileName: 'a.txt', crossedLink: false })
       navigateToFileMock.mockResolvedValue(false)
       await goToPath(makeExplorerStub(), '/tmp/a.txt')
       expect(addRecentPathStateMock).not.toHaveBeenCalled()
@@ -267,7 +267,7 @@ describe('goToPath handler', () => {
     it('a saved place', async () => {
       const path = 'sftp://test_user_1@testnas.local:22/srv/data'
       readSchemeInputMock.mockResolvedValue({ kind: 'place', path, label: 'Testnas' })
-      actOnSchemeInputMock.mockResolvedValue({ kind: 'directory', path })
+      actOnSchemeInputMock.mockResolvedValue({ kind: 'directory', path, crossedLink: false })
       navigateToDirMock.mockResolvedValue(false)
       await goToPath(makeExplorerStub(), path)
       expect(addRecentPathStateMock).not.toHaveBeenCalled()
@@ -344,8 +344,10 @@ describe('digitToRecentIndex', () => {
 
 describe('shouldPrefillClipboard', () => {
   it('is true for directory and file resolutions', () => {
-    expect(shouldPrefillClipboard({ kind: 'directory', path: '/x' })).toBe(true)
-    expect(shouldPrefillClipboard({ kind: 'file', path: '/x/a', parentDir: '/x', fileName: 'a' })).toBe(true)
+    expect(shouldPrefillClipboard({ kind: 'directory', path: '/x', crossedLink: false })).toBe(true)
+    expect(
+      shouldPrefillClipboard({ kind: 'file', path: '/x/a', parentDir: '/x', fileName: 'a', crossedLink: false }),
+    ).toBe(true)
   })
 
   it('is false for nearestAncestor and invalid resolutions', () => {

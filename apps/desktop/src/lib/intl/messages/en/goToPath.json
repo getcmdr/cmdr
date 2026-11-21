@@ -45,6 +45,13 @@
     "screenshot": "go-to-path.png",
     "screenshotNote": "The Go to folder dialog, pictured here. Your string belongs to a state this screenshot doesn’t show: its list of recent paths, or a hint under the field about the path you typed."
   },
+  "goToPath.dialog.throughLinkHint": "The “..” comes after a link, so this goes to {dir}.",
+  "@goToPath.dialog.throughLinkHint": {
+    "description": "Neutral info line under the input when the typed path has a “..” right after a symbolic link (an alias-like shortcut to another folder). The “..” then means the parent of the folder the link points to, as the Terminal's ls reads it, not the folder the link sits in, so the destination differs from what the text seems to say. Keep “..” as is; it's the literal text the person typed.",
+    "placeholders": {
+      "dir": "the folder or file the path really leads to (e.g. /Users/me/Projects/notes)"
+    }
+  },
   "goToPath.toast.landedOnAncestor": "<req>{requested}</req> doesn’t exist, so we took you to <land>{landed}</land>.",
   "@goToPath.toast.landedOnAncestor": {
     "description": "Toast shown after \"Go to folder\" navigated to the nearest existing folder because the typed path was missing. Both paths are wrapped in tags (<req></req> and <land></land>) that render them in a monospace font; keep the tags around each path placeholder.",

@@ -294,7 +294,7 @@ impl AppPathBuf {
 /// Explorer's address bar (and `GetFullPathNameW`) reads typed text. A drive token, the UNC
 /// server and share, and the `.` and `..` names stay as they are. Only
 /// [`AppPathBuf::from_person_typed`] calls it.
-fn explorer_trimmed(text: &str) -> Result<String, NotAnAppPath> {
+pub(crate) fn explorer_trimmed(text: &str) -> Result<String, NotAnAppPath> {
     let unc = text.starts_with("//");
     let mut out = String::with_capacity(text.len());
     for (i, name) in text.split('/').enumerate() {

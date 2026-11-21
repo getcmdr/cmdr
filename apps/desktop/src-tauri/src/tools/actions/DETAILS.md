@@ -278,7 +278,8 @@ when path-shaped). Both in `mod.rs`. Virtual paths (`mtp://…`) don't start wit
 
 `nav_to_path` refuses a path holding a `..` name, typed (`data.refusal: "dotDotName"`): a pane standing on one would
 carry the `..` into every row, and the command edge refuses each delete, trash, or move of such a row as a bug
-(`../../commands/DETAILS.md` § "Sent paths"). It lifts once the typed-path resolver answers an agent's `..`.
+(`../../commands/DETAILS.md` § "Sent paths"). It lifts in 10d, when the tool routes an agent's `..` through `AppHost::registry().resolve_typed(…, TypedBy::Agent)`
+(`apps/desktop/src-tauri/src/go_to_path/DETAILS.md`).
 
 ## Empty-operation fast-fail (`file_ops.rs`)
 

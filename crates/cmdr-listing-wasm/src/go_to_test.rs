@@ -52,7 +52,7 @@ async fn a_tilde_path_to_a_folder_navigates_into_it() {
     let demo = demo();
     assert_eq!(
         go(&demo, "~/Downloads", "/").await,
-        json!({ "kind": "directory", "path": "/Users/you/Downloads" })
+        json!({ "kind": "directory", "path": "/Users/you/Downloads", "crossedLink": false })
     );
 }
 
@@ -61,7 +61,7 @@ async fn a_file_names_its_folder_and_itself_relative_to_the_pane() {
     let demo = demo();
     assert_eq!(
         go(&demo, "notes.md", "/Users/you").await,
-        json!({ "kind": "file", "path": "/Users/you/notes.md", "parentDir": "/Users/you", "fileName": "notes.md" })
+        json!({ "kind": "file", "path": "/Users/you/notes.md", "parentDir": "/Users/you", "fileName": "notes.md", "crossedLink": false })
     );
 }
 
@@ -70,7 +70,7 @@ async fn a_link_to_a_folder_classifies_as_the_folder_on_the_link_path() {
     let demo = demo();
     assert_eq!(
         go(&demo, "~/Shortcut", "/").await,
-        json!({ "kind": "directory", "path": "/Users/you/Shortcut" })
+        json!({ "kind": "directory", "path": "/Users/you/Shortcut", "crossedLink": false })
     );
 }
 

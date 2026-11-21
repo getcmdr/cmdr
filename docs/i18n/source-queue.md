@@ -233,6 +233,9 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
 - `errors.write.linksNotSupported.message`: "didn't copy the link to {path}" also reads as "the link that points to
   {path}". "didn't put the link at {path}" would be unambiguous. Its "links" in the title and suggestion are symlinks,
   which the `link` concept caught; now key-scoped `notMatch` entries. (all)
+- `goToPath.dialog.throughLinkHint` says "a link", but its description means a symbolic link, so the `link` concept
+  (hyperlinks, DFS links) matched it; now a key-scoped `notMatch`, and every locale wrote its `symlink` ruling. The
+  English could say "symlink" (as the `rowKind.symlink` badge does) so the term check sees the right concept. (all)
 - `menu.view.showMenuBar` and `settings.appearance.menuBar.label` share English, so `term-consistency` forces one form,
   against the house split `menu.view.showHiddenFiles` has (nl `Toon` vs `tonen`, ru `Показать` vs `Показывать`). Both
   now use the settings form, which KDE's own `Show Menubar` item matches; split them with a reasoned allowlist entry if
@@ -437,3 +440,7 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   "the log" in `operationLog.skipReason.unreadablePath`, which means the operation log, so a key-scoped `notMatch` keeps
   it out. An `i18n:apply --lang all` reading every locale's latest run directory would make this one call. No script
   written. (all, unreadablePath batch)
+- A one-key batch for 13 locales: the guard refused a heredoc plus `cd` chain, a shell variable for the run directory,
+  and a read-only `for` loop of `jq` over `mechanics.json` files; 13 Write calls, two `&&` chains of `i18n:apply`, and
+  five chains of `i18n:check-locale` (one outran 120 s and went to the background). Same wish as above: `--lang all` on
+  `i18n:apply` and `i18n:check-locale`. No script written. (all, throughLinkHint batch)
