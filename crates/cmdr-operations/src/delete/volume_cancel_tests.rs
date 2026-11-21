@@ -12,10 +12,9 @@
 //! manual smoke test; these unit tests pin the wiring so the prompt-cancel behaviour
 //! is regression-safe.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, PathArithmetic};
 use cmdr_operation_log::types::OperationId;
 use std::future::Future;
-use std::path::Path;
 use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -145,21 +144,19 @@ impl Volume for CancellingVolume {
         // the scan recursion treats it as a folder and descends into the
         // simulated 500-entry listing below.
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            let path_str = path.to_string_lossy();
+            let path_str = path.as_str();
             if path_str == "/dir" || path_str == "dir" {
                 return Ok(make_file_entry("dir", "/", true));
             }
-            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+            let name = path.file_name().unwrap_or("");
             if name.is_empty() {
-                return Err(VolumeError::NotFound(path.display().to_string()));
+                return Err(VolumeError::NotFound(path_str.to_string()));
             }
             self.children
                 .iter()
                 .find(|e| e.name == name)
                 .cloned()
-                .ok_or_else(|| VolumeError::NotFound(path.display().to_string()))
+                .ok_or_else(|| VolumeError::NotFound(path_str.to_string()))
         })
     }
 
@@ -566,13 +563,11 @@ async fn volume_error_emits_write_settled_event() {
             path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
             Box::pin(async move {
-                let path_std = path.as_std_legacy();
-                let path: &Path = &path_std;
-                let path_str = path.to_string_lossy();
+                let path_str = path.as_str();
                 if path_str == "/dir" || path_str == "dir" {
                     return Ok(make_file_entry("dir", "/", true));
                 }
-                Err(VolumeError::NotFound(path.display().to_string()))
+                Err(VolumeError::NotFound(path_str.to_string()))
             })
         }
         fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {

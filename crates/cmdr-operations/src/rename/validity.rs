@@ -232,14 +232,12 @@ async fn rename_by_move(
 ) -> Option<(RenameByMove, Option<ScanCostFacts>)> {
     // Plain `get`: the drive's own rename cost (an in-zip rename is an archive edit).
     let volume = host.volumes().get(volume_id)?;
-    match volume.rename_work(&AppPath::legacy_unchecked(old_path)).await {
+    let old_path_app = AppPath::legacy_unchecked(old_path);
+    match volume.rename_work(&old_path_app).await {
         Ok(RenameWork::CopyThenDelete) => {}
         Ok(RenameWork::OneCall) | Err(_) => return None,
     }
-    let tally = match volume
-        .tally_subtree(&AppPath::legacy_unchecked(old_path), SMALL_RENAME_FILES)
-        .await
-    {
+    let tally = match volume.tally_subtree(&old_path_app, SMALL_RENAME_FILES).await {
         Ok(tally) => Some(tally),
         Err(e) => {
             log::debug!(target: "volume", "couldn't count what renaming {} carries: {e}", LogPrivate::path(old_path), e = LogError(&e));

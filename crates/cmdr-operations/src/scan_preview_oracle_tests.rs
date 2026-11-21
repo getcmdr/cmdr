@@ -245,9 +245,9 @@ async fn scan_preview_uses_authoritative_listing_for_top_level_files() {
     assert_eq!(result.aggregate.total_bytes, 6000);
     assert_eq!(result.per_path.len(), 3);
     // Order matches the caller's `sources` order, per BatchScanResult contract.
-    assert_eq!(*result.per_path[0].0.as_std_legacy(), PathBuf::from("/dcim/a.jpg"));
-    assert_eq!(*result.per_path[1].0.as_std_legacy(), PathBuf::from("/dcim/b.jpg"));
-    assert_eq!(*result.per_path[2].0.as_std_legacy(), PathBuf::from("/dcim/c.jpg"));
+    assert_eq!(result.per_path[0].0.as_str(), "/dcim/a.jpg");
+    assert_eq!(result.per_path[1].0.as_str(), "/dcim/b.jpg");
+    assert_eq!(result.per_path[2].0.as_str(), "/dcim/c.jpg");
 }
 
 /// Test 2: when `listing_watch_coverage` returns false (watcher dead), the oracle

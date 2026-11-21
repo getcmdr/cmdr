@@ -4,13 +4,12 @@
 //! look-alike) dropped, and the rest ordered into direct steps, case-only steps,
 //! and cycles. The hops themselves live in `bulk.rs`.
 
-use cmdr_fs::app_path::AppPath;
 use std::collections::{HashMap, HashSet};
 
 use super::super::super::look_alike::{ListedFolders, NewEntry, spelled_new_path};
 use super::super::super::source_binding::normalized_path;
 use super::super::same_local_file;
-use super::{BulkRenameOutcome, BulkRenameRow};
+use super::{BulkRenameOutcome, BulkRenameRow, RemoteEnds};
 use cmdr_fs::volume::host::listings::ListingHost;
 use cmdr_fs::volume::{Volume, VolumeError};
 
@@ -135,6 +134,7 @@ pub(super) fn settle_local_conflicts(rows: &[BulkRenameRow], active: &mut [bool]
 /// a pane shows is read from that pane's listing, the rest once each.
 pub(super) async fn settle_remote_conflicts(
     rows: &[BulkRenameRow],
+    ends: &[RemoteEnds],
     active: &mut [bool],
     outcomes: &mut [BulkRenameOutcome],
     listings: &dyn ListingHost,
@@ -146,7 +146,7 @@ pub(super) async fn settle_remote_conflicts(
         let mut changed = false;
         for index in rows_with_unclaimed_destination(rows, active) {
             let row = &rows[index];
-            let clash = match volume.get_metadata(&AppPath::legacy_unchecked(&row.destination)).await {
+            let clash = match volume.get_metadata(&ends[index].destination).await {
                 Ok(_) => Some(BulkRenameOutcome::Skipped),
                 Err(VolumeError::NotFound(_)) => {
                     match folders.place_new_entry(&row.destination, Some(&row.source)).await {

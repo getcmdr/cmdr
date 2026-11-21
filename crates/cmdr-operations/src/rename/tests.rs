@@ -4,7 +4,7 @@
 
 use super::*;
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::BridgedPath;
+use cmdr_fs::app_path::{BridgedPath, PathArithmetic};
 use std::fs;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -342,7 +342,7 @@ async fn copying_store(
     for n in 0..files {
         volume
             .create_file(
-                &AppPath::legacy_unchecked(&PathBuf::from(format!("/a/foo/f{n:03}.txt"))),
+                AppPath::from_normalized(&format!("/a/foo/f{n:03}.txt")).expect("canonical"),
                 b"xy",
             )
             .await
@@ -607,17 +607,14 @@ impl Volume for CaseFoldingVolume {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_app = path;
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            let (Some(dir), Some(asked)) = (path.parent(), path.file_name().and_then(|n| n.to_str())) else {
-                return self.inner.get_metadata(path_app).await;
+            let (Some(dir), Some(asked)) = (path.parent(), path.file_name()) else {
+                return self.inner.get_metadata(path).await;
             };
-            let entries = self.inner.list_directory(&AppPath::legacy_unchecked(dir), None).await?;
+            let entries = self.inner.list_directory(dir, None).await?;
             let found = entries
                 .into_iter()
                 .find(|entry| entry.name.eq_ignore_ascii_case(asked))
-                .ok_or_else(|| VolumeError::NotFound(path.display().to_string()))?;
+                .ok_or_else(|| VolumeError::NotFound(path.as_str().to_string()))?;
             Ok(FileEntry {
                 name: asked.to_string(),
                 ..found

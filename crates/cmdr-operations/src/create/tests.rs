@@ -8,7 +8,7 @@ use super::*;
 use crate::host::testing::PaneListings;
 use crate::testing::{TestOperationLog, TestOperations};
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::BridgedPath;
+use cmdr_fs::app_path::{AppName, BridgedPath, PathArithmetic};
 use std::fs;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -209,7 +209,11 @@ async fn create_on_a_share_takes_a_reserved_name_and_refuses_what_it_cant_store(
     }
     assert!(
         !share
-            .exists(&AppPath::legacy_unchecked(&Path::new("/docs").join(&long)))
+            .exists(
+                &app_path!("/docs")
+                    .join(AppName::from_app_spelling(&long).expect("one name"))
+                    .expect("joins")
+            )
             .await,
         "the long name landed"
     );
@@ -432,10 +436,8 @@ impl Volume for DeniedVolume {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             Err(VolumeError::PermissionDenied {
-                path: path.display().to_string(),
+                path: path.as_str().to_string(),
                 raw_os_error: None,
             })
         })
@@ -446,10 +448,8 @@ impl Volume for DeniedVolume {
         _content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             Err(VolumeError::PermissionDenied {
-                path: path.display().to_string(),
+                path: path.as_str().to_string(),
                 raw_os_error: None,
             })
         })

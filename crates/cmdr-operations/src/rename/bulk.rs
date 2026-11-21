@@ -6,7 +6,7 @@
 //! what order (spelling, conflicts, look-alikes, the step plan) is `bulk/plan.rs`.
 
 use super::super::state::IntentCell;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::future::Future;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -392,6 +392,7 @@ async fn bulk_rename_remote(
     let Some(volume) = host.volumes().get(volume_id) else {
         return BulkRenameRun::failed(rows.len(), "volume unavailable".to_string());
     };
+    let ends: Vec<RemoteEnds> = rows.iter().map(RemoteEnds::of).collect();
     let mut outcomes = vec![BulkRenameOutcome::Skipped; rows.len()];
     let mut active = Vec::with_capacity(rows.len());
     for row in rows {
@@ -399,6 +400,7 @@ async fn bulk_rename_remote(
     }
     settle_remote_conflicts(
         rows,
+        &ends,
         &mut active,
         &mut outcomes,
         host.listings(),
@@ -413,13 +415,27 @@ async fn bulk_rename_remote(
         }
         match step {
             RenamePlanStep::Direct(index) => {
-                rename_remote_direct(volume.as_ref(), &rows[index], &mut outcomes[index], recorder).await;
+                rename_remote_direct(
+                    volume.as_ref(),
+                    &rows[index],
+                    &ends[index],
+                    &mut outcomes[index],
+                    recorder,
+                )
+                .await;
             }
             RenamePlanStep::CaseOnly(index) => {
-                rename_remote_case_only(volume.as_ref(), &rows[index], &mut outcomes[index], recorder).await;
+                rename_remote_case_only(
+                    volume.as_ref(),
+                    &rows[index],
+                    &ends[index],
+                    &mut outcomes[index],
+                    recorder,
+                )
+                .await;
             }
             RenamePlanStep::Cycle(indices) => {
-                rename_remote_cycle(volume.as_ref(), rows, &indices, &mut outcomes, recorder).await;
+                rename_remote_cycle(volume.as_ref(), rows, &ends, &indices, &mut outcomes, recorder).await;
             }
         }
     }
@@ -565,9 +581,34 @@ fn restore_local_cycle(
     }
 }
 
+/// A row's two ends as app paths, for its volume calls: crossed once per row, while the
+/// rows (and the journal, the announcements, and the fingerprints they feed) carry
+/// `std::path` values.
+pub(super) struct RemoteEnds {
+    source: AppPathBuf,
+    pub(super) destination: AppPathBuf,
+}
+
+impl RemoteEnds {
+    fn of(row: &BulkRenameRow) -> Self {
+        Self {
+            source: AppPath::legacy_unchecked(&row.source).into_owned(),
+            destination: AppPath::legacy_unchecked(&row.destination).into_owned(),
+        }
+    }
+}
+
+/// A rotation's temporary name, both ways: the `std::path` value the journal and the
+/// announcements take, and the app path the volume calls take.
+struct Temporary {
+    path: PathBuf,
+    app: AppPathBuf,
+}
+
 async fn rename_remote_direct(
     volume: &dyn Volume,
     row: &BulkRenameRow,
+    ends: &RemoteEnds,
     outcome: &mut BulkRenameOutcome,
     recorder: &BulkRenameRecorder,
 ) {
@@ -575,22 +616,10 @@ async fn rename_remote_direct(
         return;
     }
     recorder.note_write(&row.source, &row.destination);
-    *outcome = if volume
-        .rename(
-            &AppPath::legacy_unchecked(&row.source),
-            &AppPath::legacy_unchecked(&row.destination),
-            false,
-        )
-        .await
-        .is_ok()
-    {
+    *outcome = if volume.rename(&ends.source, &ends.destination, false).await.is_ok() {
         recorder.record_hop(row, &row.source, &row.destination);
         BulkRenameOutcome::Done
-    } else if volume
-        .get_metadata(&AppPath::legacy_unchecked(&row.destination))
-        .await
-        .is_ok()
-    {
+    } else if volume.get_metadata(&ends.destination).await.is_ok() {
         BulkRenameOutcome::Skipped
     } else {
         BulkRenameOutcome::Failed
@@ -600,6 +629,7 @@ async fn rename_remote_direct(
 async fn rename_remote_case_only(
     volume: &dyn Volume,
     row: &BulkRenameRow,
+    ends: &RemoteEnds,
     outcome: &mut BulkRenameOutcome,
     recorder: &BulkRenameRecorder,
 ) {
@@ -610,48 +640,21 @@ async fn rename_remote_case_only(
         *outcome = BulkRenameOutcome::Failed;
         return;
     };
-    recorder.note_write(&row.source, &temporary);
-    if volume
-        .rename(
-            &AppPath::legacy_unchecked(&row.source),
-            &AppPath::legacy_unchecked(&temporary),
-            false,
-        )
-        .await
-        .is_err()
-    {
+    recorder.note_write(&row.source, &temporary.path);
+    if volume.rename(&ends.source, &temporary.app, false).await.is_err() {
         *outcome = BulkRenameOutcome::Failed;
         return;
     }
-    recorder.record_hop(row, &row.source, &temporary);
-    recorder.note_write(&temporary, &row.destination);
-    if volume
-        .rename(
-            &AppPath::legacy_unchecked(&temporary),
-            &AppPath::legacy_unchecked(&row.destination),
-            false,
-        )
-        .await
-        .is_ok()
-    {
-        recorder.record_hop(row, &temporary, &row.destination);
+    recorder.record_hop(row, &row.source, &temporary.path);
+    recorder.note_write(&temporary.path, &row.destination);
+    if volume.rename(&temporary.app, &ends.destination, false).await.is_ok() {
+        recorder.record_hop(row, &temporary.path, &row.destination);
         *outcome = BulkRenameOutcome::Done;
     } else {
-        recorder.note_write(&temporary, &row.source);
-        let destination_exists = volume
-            .get_metadata(&AppPath::legacy_unchecked(&row.destination))
-            .await
-            .is_ok();
-        if volume
-            .rename(
-                &AppPath::legacy_unchecked(&temporary),
-                &AppPath::legacy_unchecked(&row.source),
-                false,
-            )
-            .await
-            .is_ok()
-        {
-            recorder.record_hop(row, &temporary, &row.source);
+        recorder.note_write(&temporary.path, &row.source);
+        let destination_exists = volume.get_metadata(&ends.destination).await.is_ok();
+        if volume.rename(&temporary.app, &ends.source, false).await.is_ok() {
+            recorder.record_hop(row, &temporary.path, &row.source);
         }
         *outcome = if destination_exists {
             BulkRenameOutcome::Skipped
@@ -664,6 +667,7 @@ async fn rename_remote_case_only(
 async fn rename_remote_cycle(
     volume: &dyn Volume,
     rows: &[BulkRenameRow],
+    ends: &[RemoteEnds],
     indices: &[usize],
     outcomes: &mut [BulkRenameOutcome],
     recorder: &BulkRenameRecorder,
@@ -678,55 +682,39 @@ async fn rename_remote_cycle(
         outcomes[first] = BulkRenameOutcome::Failed;
         return;
     };
-    recorder.note_write(&rows[first].source, &temporary);
-    if volume
-        .rename(
-            &AppPath::legacy_unchecked(&rows[first].source),
-            &AppPath::legacy_unchecked(&temporary),
-            false,
-        )
-        .await
-        .is_err()
-    {
+    recorder.note_write(&rows[first].source, &temporary.path);
+    if volume.rename(&ends[first].source, &temporary.app, false).await.is_err() {
         outcomes[first] = BulkRenameOutcome::Failed;
         return;
     }
-    recorder.record_hop(&rows[first], &rows[first].source, &temporary);
+    recorder.record_hop(&rows[first], &rows[first].source, &temporary.path);
     let mut moved = Vec::with_capacity(indices.len() - 1);
     for index in indices.iter().skip(1).rev().copied() {
         let row = &rows[index];
         recorder.note_write(&row.source, &row.destination);
         if volume
-            .rename(
-                &AppPath::legacy_unchecked(&row.source),
-                &AppPath::legacy_unchecked(&row.destination),
-                false,
-            )
+            .rename(&ends[index].source, &ends[index].destination, false)
             .await
             .is_err()
         {
-            restore_remote_cycle(volume, rows, first, &temporary, &moved, recorder).await;
+            restore_remote_cycle(volume, rows, ends, first, &temporary, &moved, recorder).await;
             outcomes[index] = BulkRenameOutcome::Failed;
             return;
         }
         recorder.record_hop(row, &row.source, &row.destination);
         moved.push(index);
     }
-    recorder.note_write(&temporary, &rows[first].destination);
+    recorder.note_write(&temporary.path, &rows[first].destination);
     if volume
-        .rename(
-            &AppPath::legacy_unchecked(&temporary),
-            &AppPath::legacy_unchecked(&rows[first].destination),
-            false,
-        )
+        .rename(&temporary.app, &ends[first].destination, false)
         .await
         .is_err()
     {
-        restore_remote_cycle(volume, rows, first, &temporary, &moved, recorder).await;
+        restore_remote_cycle(volume, rows, ends, first, &temporary, &moved, recorder).await;
         outcomes[first] = BulkRenameOutcome::Failed;
         return;
     }
-    recorder.record_hop(&rows[first], &temporary, &rows[first].destination);
+    recorder.record_hop(&rows[first], &temporary.path, &rows[first].destination);
     for index in indices {
         outcomes[*index] = BulkRenameOutcome::Done;
     }
@@ -735,36 +723,25 @@ async fn rename_remote_cycle(
 async fn restore_remote_cycle(
     volume: &dyn Volume,
     rows: &[BulkRenameRow],
+    ends: &[RemoteEnds],
     first: usize,
-    temporary: &Path,
+    temporary: &Temporary,
     moved: &[usize],
     recorder: &BulkRenameRecorder,
 ) {
     for index in moved.iter().rev().copied() {
         recorder.note_write(&rows[index].destination, &rows[index].source);
         if volume
-            .rename(
-                &AppPath::legacy_unchecked(&rows[index].destination),
-                &AppPath::legacy_unchecked(&rows[index].source),
-                false,
-            )
+            .rename(&ends[index].destination, &ends[index].source, false)
             .await
             .is_ok()
         {
             recorder.record_hop(&rows[index], &rows[index].destination, &rows[index].source);
         }
     }
-    recorder.note_write(temporary, &rows[first].source);
-    if volume
-        .rename(
-            &AppPath::legacy_unchecked(temporary),
-            &AppPath::legacy_unchecked(&rows[first].source),
-            false,
-        )
-        .await
-        .is_ok()
-    {
-        recorder.record_hop(&rows[first], temporary, &rows[first].source);
+    recorder.note_write(&temporary.path, &rows[first].source);
+    if volume.rename(&temporary.app, &ends[first].source, false).await.is_ok() {
+        recorder.record_hop(&rows[first], &temporary.path, &rows[first].source);
     }
 }
 
@@ -779,16 +756,13 @@ fn unique_temporary_path(source: &Path, row_id: &str) -> Option<PathBuf> {
     None
 }
 
-async fn unique_remote_temporary_path(volume: &dyn Volume, source: &Path, row_id: &str) -> Option<PathBuf> {
+async fn unique_remote_temporary_path(volume: &dyn Volume, source: &Path, row_id: &str) -> Option<Temporary> {
     let parent = twin_path::folder_of(source)?;
     for _ in 0..16 {
-        let candidate = parent.join(format!(".cmdr-bulk-rename-{row_id}-{}", Uuid::new_v4()));
-        if volume
-            .get_metadata(&AppPath::legacy_unchecked(&candidate))
-            .await
-            .is_err()
-        {
-            return Some(candidate);
+        let path = parent.join(format!(".cmdr-bulk-rename-{row_id}-{}", Uuid::new_v4()));
+        let app = AppPath::legacy_unchecked(&path).into_owned();
+        if volume.get_metadata(&app).await.is_err() {
+            return Some(Temporary { path, app });
         }
     }
     None
