@@ -725,13 +725,23 @@ fn a_removable_stop_waits_for_the_start_it_cancelled() {
 /// Reserve `volume_id` as a local external drive mounted at `root`, the way a start
 /// does: the reservation reads the root's mount identity from whatever host is
 /// installed.
+/// A drive's mount point on this host: `/Volumes/<name>` on macOS and Linux, a folder on
+/// `D:` on Windows, whose app paths start at a drive.
+fn host_mount(name: &str) -> String {
+    if cmdr_fs::app_path::PathFlavor::HOST == cmdr_fs::app_path::PathFlavor::Windows {
+        format!("D:/Volumes/{name}")
+    } else {
+        format!("/Volumes/{name}")
+    }
+}
+
 fn reserve_a_drive(dir: &std::path::Path, volume_id: &str, root: &str, life: &str) -> VolumeWork {
     let db_path = dir.join(format!("{life}.db"));
     try_reserve_initializing_phase(
         volume_id,
         StartRequest::for_test_at(
             IndexVolumeKind::LocalExternal,
-            cmdr_fs::app_path::AppPathBuf::parse(root, cmdr_fs::app_path::PathFlavor::Posix).expect("an app path"),
+            cmdr_fs::app_path::AppPathBuf::parse(root, cmdr_fs::app_path::PathFlavor::HOST).expect("an app path"),
         ),
         IndexStore::open(&db_path).expect("store"),
         Arc::new(ReadPool::new(db_path.clone()).expect("pool")),
@@ -755,7 +765,8 @@ fn a_removable_stop_never_waits_on_a_drive_that_already_left() {
     let volumes = FakeVolumeProvider::shared();
     let _host = install_for_test(volumes.clone());
     let dir = tempfile::tempdir().expect("temp dir");
-    let (volume_id, root) = ("removable-vanished", "/Volumes/RemovableVanished");
+    let (volume_id, root) = ("removable-vanished", host_mount("RemovableVanished"));
+    let root = root.as_str();
 
     volumes.mount(root, MountIdentity::from_raw(41));
     let stuck = reserve_a_drive(dir.path(), volume_id, root, "first-life");
@@ -798,17 +809,18 @@ fn a_removable_stop_still_waits_on_a_drive_renamed_while_mounted() {
     let _host = install_for_test(volumes.clone());
     let dir = tempfile::tempdir().expect("temp dir");
     let volume_id = "removable-renamed";
+    let (old_name, new_name) = (host_mount("RemovableOldName"), host_mount("RemovableNewName"));
 
-    volumes.mount("/Volumes/RemovableOldName", MountIdentity::from_raw(43));
-    let stuck = reserve_a_drive(dir.path(), volume_id, "/Volumes/RemovableOldName", "renamed");
-    volumes.rename_mount("/Volumes/RemovableOldName", "/Volumes/RemovableNewName");
+    volumes.mount(&old_name, MountIdentity::from_raw(43));
+    let stuck = reserve_a_drive(dir.path(), volume_id, &old_name, "renamed");
+    volumes.rename_mount(&old_name, &new_name);
     assert_eq!(
         stop_removable_volume(volume_id, Duration::ZERO),
         RemovableStop::StillReleasing,
         "the drive is still mounted, so the start working on it still holds it"
     );
 
-    volumes.mark_unmounted("/Volumes/RemovableNewName");
+    volumes.mark_unmounted(&new_name);
     assert_eq!(
         stop_removable_volume(volume_id, Duration::ZERO),
         RemovableStop::NothingToStop,

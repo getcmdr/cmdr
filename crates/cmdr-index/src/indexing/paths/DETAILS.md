@@ -185,7 +185,11 @@ and `Path::file_name` split on one).
   for every canonical root. A root is the bridge's unnormalized text of what its registration got
   (`LocalPosixVolume::on_mount`), so a bridge-only shape (a trailing `/`, `//`, `.`) crosses as its canonical twin, the
   place the OS opens for that text; only a `..` refuses. A `None` there would send a local drive to the SMB gate, never
-  to be indexed. ❗ A `//`-led root of three names reads as UNC on POSIX (#1309) and refuses `WrongFlavor`.
+  to be indexed. ❗ A `//`-led root of three names reads as UNC on POSIX (#1309) and refuses `WrongFlavor`. On Windows
+  the root crosses PLAIN (`D:\src`, `\\nas\s`), verbatim only past what a plain path can spell: the host's mount answers
+  compare `Path`s, and a verbatim prefix equals no plain one, so with `to_native` a share classified as a local drive
+  and a drive's mount identity went unanswered (verified on Windows 10 22H2, the builder's `cmdr-index` suite,
+  2026-11-21).
 - **Row, text → app path**: `app_path_of` (`FileEntry.path`, a frontier root on a share). Borrowed when the text is
   canonical, which every backend's row is; else the canonical place it names; `None` for text naming no place, which no
   walk descends into. ❗ The respelling folds separators only: non-canonical text holding an escape-range code point is

@@ -46,8 +46,18 @@ pub(crate) fn stored_text(path: &AppPath) -> Cow<'_, str> {
 /// crosses as its canonical twin: a trailing `/`, `//`, or `.` folds to the place the OS
 /// opens for that text, where the local walker ran before the root was typed. ❌ Never a
 /// `None` for those: a local drive would fall through to the SMB gate and never index.
+///
+/// On Windows the PLAIN form (`D:\src`, `\\server\share`) when the root has one, the
+/// verbatim one (`\\?\D:\…`) only for a root past what a plain path can spell. The host's
+/// mount answers compare `Path`s, and a verbatim prefix never equals a plain one
+/// (`\\?\UNC\nas\s` is no child of `\\nas\s`), so a share classified as a local drive and
+/// a drive's mount identity went unanswered; every walked child's text inherits the
+/// root's form, and only the plain one takes `native_text`'s cheap respelling. `std::fs`
+/// adds the verbatim prefix itself for a long path under a plain root. macOS and Linux
+/// have no second form, so nothing changes there.
 pub(crate) fn native_root(root: &AppPath) -> Option<PathBuf> {
-    root.to_canonical().ok()?.to_native().ok()
+    let canonical = root.to_canonical().ok()?;
+    canonical.to_native_plain().or_else(|_| canonical.to_native()).ok()
 }
 
 /// Stored `text` (an absolute path the index holds, such as a frontier root on a share) as
@@ -158,9 +168,17 @@ fn note_kept_lossy(native: &OsStr) {
 /// for it (a Windows name holds no `/` or `\`), at the cost of one byte scan and, for a `\`
 /// path, one copy, where the full crossing (and `from_normalized`'s check) measured about
 /// 1 µs and 0.8 µs a path (macOS 27 proxy over 1,000,000 real paths spelled `D:\…`,
-/// 2026-11-21). `None` for any other shape (a verbatim `\\?\` or UNC lead, a lowercase
+/// 2026-11-21); a verbatim `\\?\` drive path is read the same. `None` for any other shape (a UNC lead, a lowercase
 /// drive, an empty, `.`, or `..` name), which takes the full crossing.
 fn plain_drive_text(text: &str) -> Option<Cow<'_, str>> {
+    // A verbatim drive path (`\\?\D:\x`, what `canonicalize` and a long root hand back)
+    // names the same place; NT reads its `/` as a name character, so one holding any takes
+    // the full crossing.
+    let text = match text.strip_prefix(r"\\?\") {
+        Some(rest) if rest.contains('/') => return None,
+        Some(rest) => rest,
+        None => text,
+    };
     let bytes = text.as_bytes();
     let [letter, b':', b'\\' | b'/', ..] = bytes else {
         return None;

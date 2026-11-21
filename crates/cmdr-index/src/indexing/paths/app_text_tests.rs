@@ -150,6 +150,11 @@ fn a_native_windows_path_is_stored_in_the_app_spelling() {
     ] {
         assert_eq!(native_text(Path::new(native)), text, "{native}");
     }
+    // A root crosses in its PLAIN form, which the host's mount answers compare against.
+    for (root, native) in [("D:/src", r"D:\src"), ("//testnas.local/s", r"\\testnas.local\s")] {
+        let root = AppPathBuf::parse(root, PathFlavor::Windows).expect("a canonical root");
+        assert_eq!(native_root(&root).expect("a local root").as_os_str(), native);
+    }
     let already = native_text(Path::new("D:/src/x"));
     assert!(matches!(already, Cow::Borrowed("D:/src/x")), "app spelling is borrowed");
 }
