@@ -25,6 +25,7 @@ use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::ConflictResolution;
 use cmdr_fs::app_path;
+use cmdr_fs::app_path::{AppName, AppPathBuf, PathArithmetic as _};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::WriteMode;
@@ -55,8 +56,8 @@ fn backend_fold(name: &str) -> String {
 /// wall-clock (which an in-memory volume can't show).
 struct RecordingDest {
     inner: Arc<InMemoryVolume>,
-    probed: std::sync::Mutex<Vec<PathBuf>>,
-    listed: std::sync::Mutex<Vec<PathBuf>>,
+    probed: std::sync::Mutex<Vec<AppPathBuf>>,
+    listed: std::sync::Mutex<Vec<AppPathBuf>>,
     /// When set, the driver-visible `list_directory` fails with this error. The
     /// fake's own internal name resolution keeps working, modelling a transient
     /// transport failure rather than a broken share.
@@ -94,8 +95,8 @@ impl RecordingDest {
         self.probed
             .lock_ignore_poison()
             .iter()
-            .filter(|p| p.parent() == Some(Path::new(dir)))
-            .map(|p| p.display().to_string())
+            .filter(|p| p.parent() == Some(AppPath::from_normalized(dir).expect("a canonical path")))
+            .map(|p| p.as_str().to_owned())
             .collect()
     }
 
@@ -103,32 +104,29 @@ impl RecordingDest {
         self.listed
             .lock_ignore_poison()
             .iter()
-            .filter(|p| p.as_path() == Path::new(dir))
+            .filter(|p| p.as_app_path() == AppPath::from_normalized(dir).expect("a canonical path"))
             .count()
     }
 
     /// Maps a requested path onto the name actually stored, the way a
     /// case-insensitive share does. An unmatched name is returned unchanged
     /// (that's a create).
-    async fn resolve(&self, path: &Path) -> PathBuf {
+    async fn resolve(&self, path: &AppPath) -> AppPathBuf {
         let (Some(parent), Some(name)) = (path.parent(), path.file_name()) else {
-            return path.to_path_buf();
+            return path.to_owned();
         };
-        let name = name.to_string_lossy();
-        let Ok(entries) = self
-            .inner
-            .list_directory(&AppPath::legacy_unchecked(parent), None)
-            .await
-        else {
-            return path.to_path_buf();
+        let Ok(entries) = self.inner.list_directory(parent, None).await else {
+            return path.to_owned();
         };
-        let folded = backend_fold(&name);
+        let folded = backend_fold(name);
         for entry in entries {
             if entry.name != name && backend_fold(&entry.name) == folded {
-                return parent.join(&entry.name);
+                return parent
+                    .join(AppName::from_app_spelling(&entry.name).expect("a listed name"))
+                    .expect("joins");
             }
         }
-        path.to_path_buf()
+        path.to_owned()
     }
 
     async fn read(&self, path: &str) -> Option<Vec<u8>> {
@@ -184,10 +182,7 @@ impl Volume for RecordingDest {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        let path_app = path;
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        self.listed.lock_ignore_poison().push(path.to_path_buf());
+        self.listed.lock_ignore_poison().push(path.to_owned());
         if let Some(message) = self.listing_failure {
             return Box::pin(async move {
                 Err(VolumeError::IoError {
@@ -196,29 +191,22 @@ impl Volume for RecordingDest {
                 })
             });
         }
-        self.inner.list_directory(path_app, on_progress)
+        self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        let path_app = path;
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        self.probed.lock_ignore_poison().push(path.to_path_buf());
+        self.probed.lock_ignore_poison().push(path.to_owned());
         Box::pin(async move {
-            let path_std = path_app.as_std_legacy();
-            let path: &Path = &path_std;
             let real = self.resolve(path).await;
-            self.inner.get_metadata(&AppPath::legacy_unchecked(&real)).await
+            self.inner.get_metadata(&real).await
         })
     }
     fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let real = self.resolve(path).await;
-            self.inner.exists(&AppPath::legacy_unchecked(&real)).await
+            self.inner.exists(&real).await
         })
     }
     fn is_directory<'a>(
@@ -226,10 +214,8 @@ impl Volume for RecordingDest {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let real = self.resolve(path).await;
-            self.inner.is_directory(&AppPath::legacy_unchecked(&real)).await
+            self.inner.is_directory(&real).await
         })
     }
     fn entry_kind<'a>(
@@ -237,10 +223,8 @@ impl Volume for RecordingDest {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::volume::EntryKind, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let real = self.resolve(path).await;
-            self.inner.entry_kind(&AppPath::legacy_unchecked(&real)).await
+            self.inner.entry_kind(&real).await
         })
     }
     fn create_directory<'a>(
@@ -261,18 +245,14 @@ impl Volume for RecordingDest {
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let real = self.resolve(path).await;
-            self.inner.create_file(&AppPath::legacy_unchecked(&real), content).await
+            self.inner.create_file(&real, content).await
         })
     }
     fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let real = self.resolve(path).await;
-            self.inner.delete(&AppPath::legacy_unchecked(&real)).await
+            self.inner.delete(&real).await
         })
     }
     fn rename<'a>(
@@ -282,19 +262,9 @@ impl Volume for RecordingDest {
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let from_std = from.as_std_legacy();
-            let from: &Path = &from_std;
-            let to_std = to.as_std_legacy();
-            let to: &Path = &to_std;
             let real_from = self.resolve(from).await;
             let real_to = self.resolve(to).await;
-            self.inner
-                .rename(
-                    &AppPath::legacy_unchecked(&real_from),
-                    &AppPath::legacy_unchecked(&real_to),
-                    force,
-                )
-                .await
+            self.inner.rename(&real_from, &real_to, force).await
         })
     }
     fn get_space_info<'a>(&'a self) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
@@ -311,10 +281,8 @@ impl Volume for RecordingDest {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let real = self.resolve(path).await;
-            self.inner.open_read_stream(&AppPath::legacy_unchecked(&real)).await
+            self.inner.open_read_stream(&real).await
         })
     }
     fn create_directory_errors_on_existing_dir(&self) -> bool {
@@ -329,17 +297,9 @@ impl Volume for RecordingDest {
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let dest_std = dest.as_std_legacy();
-            let dest: &Path = &dest_std;
             let real = self.resolve(dest).await;
             self.inner
-                .write_from_stream(
-                    &AppPath::legacy_unchecked(&real),
-                    WriteMode::CreateOrReplace,
-                    length,
-                    stream,
-                    on_progress,
-                )
+                .write_from_stream(&real, WriteMode::CreateOrReplace, length, stream, on_progress)
                 .await
         })
     }
@@ -504,7 +464,7 @@ async fn a_destination_name_differing_only_in_unicode_normalization_is_still_a_c
         .expect("seed the pre-existing destination");
     dest.inner
         .create_file(
-            &AppPath::legacy_unchecked(Path::new("/inbox/caf\u{e9}.txt")),
+            AppPath::from_normalized("/inbox/caf\u{e9}.txt").expect("a canonical path"),
             b"the user's own copy",
         )
         .await

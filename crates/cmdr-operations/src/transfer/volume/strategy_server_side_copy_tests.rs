@@ -137,9 +137,6 @@ impl Volume for ServerCopyVolume {
     ) -> Pin<Box<dyn Future<Output = Result<u64, VolumeError>> + Send + 'a>> {
         self.copies.fetch_add(1, Ordering::SeqCst);
         Box::pin(async move {
-            let to_app = to;
-            let to_std = to.as_std_legacy();
-            let to: &Path = &to_std;
             if !self.can_copy_itself {
                 return Err(VolumeError::NotSupported);
             }
@@ -148,11 +145,11 @@ impl Volume for ServerCopyVolume {
             // A conforming backend reports its own stop as `Cancelled`, the way
             // the chunk loop of a real `copy-data` does.
             if on_progress(0, size).is_break() {
-                return Err(VolumeError::Cancelled(to.display().to_string().into()));
+                return Err(VolumeError::Cancelled(to.as_str().to_owned().into()));
             }
             self.inner
                 .write_from_stream(
-                    to_app,
+                    to,
                     WriteMode::CreateOrReplace,
                     StreamLength::Known(size),
                     stream,
@@ -465,21 +462,21 @@ impl Volume for StorePlace {
         progress: &'a dyn ServerCopyProgress,
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let to_app = to;
-            let to_std = to.as_std_legacy();
-            let to: &Path = &to_std;
             let Some(peer) = self.same_account_peer(source) else {
                 return Err(VolumeError::NotSupported);
             };
-            self.copies.lock().expect("test lock").push((to.to_path_buf(), mode));
+            self.copies
+                .lock()
+                .expect("test lock")
+                .push((to.as_std_legacy().into_owned(), mode));
             if progress.checkpoint().await.is_break() {
-                return Err(VolumeError::Cancelled(to.display().to_string().into()));
+                return Err(VolumeError::Cancelled(to.as_str().to_owned().into()));
             }
             self.checkpointed.store(true, Ordering::SeqCst);
             let stream = peer.inner.open_read_stream(from).await?;
             let size = stream.total_size().known().expect("stored files have a known length");
             self.inner
-                .write_from_stream(to_app, mode, StreamLength::Known(size), stream, &|written| {
+                .write_from_stream(to, mode, StreamLength::Known(size), stream, &|written| {
                     progress.advanced(written.bytes_written, size)
                 })
                 .await
