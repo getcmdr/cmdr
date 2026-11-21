@@ -422,6 +422,13 @@ as the Vitest slices finish. Two land runs at once, or a land run beside a light
 light run is nearly as wide (no macOS or E2E), so several agents pushing Rust milestones at once queue too. If queueing
 eats the gain, shard Vitest three ways before anything else, since its slices are the shortest.
 
+What bounds that queue: a PR's runs share the `ci-pr-<n>` group with `cancel-in-progress`, so a newer push, and the
+`land` label's run, cancel that PR's older run (seen on PR #1328, 2026-11-21: each push cancelled the run before it). A
+cancelled job still runs its `if: always()` steps before the run ends, and the newer run waits `pending` until it does,
+so keep those steps short. Nothing ranks a land run above another PR's light run: GitHub starts queued jobs with no
+priority, so a land run beside several Rust light runs can wait on their slots. If that bites, the fix is a cap on Rust
+light runs (say, through a job-level `concurrency` group) that leaves land runs alone.
+
 ## CI upkeep
 
 `ci-upkeep.yml` holds the post-land cache jobs: `warm-e2e-linux-cache`, `warm-rust-cache`, `warm-rust-macos-cache`,
