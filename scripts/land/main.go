@@ -240,7 +240,7 @@ func landOnce(r runner, cfg config) error {
 		return err
 	}
 	if cfg.noWait {
-		say("CI runs the cheap lanes: %s\nThe Rust lanes and Linux E2E run when you land it: %s", pr.URL, cfg.command())
+		say("CI runs a light run (every lane but macOS and Linux E2E): %s\nThose two run when you land it: %s", pr.URL, cfg.command())
 		return nil
 	}
 	if err := askToLand(r, pr, head, started, cfg); err != nil {

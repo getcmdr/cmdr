@@ -16,7 +16,7 @@ nobody, admin included, lands a SHA without a green `CI OK`.
 - `pnpm land`: rebase if `origin/main` moved, push, open or reuse the PR, label it `land`, wait for `CI OK` (printing an
   ETA), land, sync `main`, and tidy up.
 - `pnpm land eta`: read-only. CI's load, typical run lengths, and HEAD's live ETA.
-- `pnpm land -no-wait`: drop the `land` label, push, open the PR, return. A light run: no Rust lanes, macOS, or E2E.
+- `pnpm land -no-wait`: drop the `land` label, push, open the PR, return. A light run: all lanes but macOS and E2E.
 - `pnpm land -squash [-m MESSAGE]`: squash first (default: every commit message, oldest first).
 - `pnpm land -record N`: land, then record contributor PR N as merged (`docs/guides/handling-prs.md`).
 - `pnpm land -merge`: never rebase, and stop on a conflict (the release merge-back).
