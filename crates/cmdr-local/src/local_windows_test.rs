@@ -302,11 +302,11 @@ async fn a_relative_bridge_path_lands_under_the_root_and_a_dot_dot_is_refused() 
     assert!(!test_dir.join("three.txt").exists());
 }
 
-/// A case-only rename's old spelling reads as gone to the watcher's stat, and the new one as the
-/// entry under its own name, while a plain stat still answers for either spelling.
+/// A case-only rename's old spelling reads as gone to the watcher's stat, though NTFS's own stat
+/// still answers for it, and the new one as the entry under its own name.
 #[test]
 fn a_case_only_rename_leaves_the_old_spelling_gone_for_the_watcher() {
-    use crate::reading::{get_single_entry, get_single_entry_as_named};
+    use crate::reading::get_single_entry;
 
     let test_dir = TestDir::new("win_case_rename");
     let root = app_root(&test_dir);
@@ -316,16 +316,13 @@ fn a_case_only_rename_leaves_the_old_spelling_gone_for_the_watcher() {
     let root = root.to_str().expect("unicode");
     let old = std::path::PathBuf::from(format!("{root}/a.txt"));
     let new = std::path::PathBuf::from(format!("{root}/A.txt"));
-    let err = get_single_entry_as_named(&old).expect_err("the old spelling isn't on disk");
+    assert!(std::fs::metadata(&old).is_ok(), "NTFS answers case-insensitively");
+    let err = get_single_entry(&old).expect_err("the old spelling isn't on disk");
     assert_eq!(err.kind(), std::io::ErrorKind::NotFound);
-    let entry = get_single_entry_as_named(&new).expect("the new spelling is");
+    let entry = get_single_entry(&new).expect("the new spelling is");
     assert_eq!(entry.name, "A.txt");
-    assert!(
-        get_single_entry(&old).is_ok(),
-        "a plain stat answers case-insensitively"
-    );
     assert_eq!(
-        get_single_entry_as_named(&test_dir.join("gone.txt"))
+        get_single_entry(&test_dir.join("gone.txt"))
             .expect_err("nothing there")
             .kind(),
         std::io::ErrorKind::NotFound

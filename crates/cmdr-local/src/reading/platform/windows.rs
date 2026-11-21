@@ -17,6 +17,7 @@ use cmdr_fs::entry::FileEntry;
 
 use super::super::{AddedAt, ListingDir, ListingTally, Pick, read_dir_entries};
 use super::OsFields;
+use crate::platform::local_windows::host_spelling;
 use crate::platform::local_windows::paths::{app_of, native_of};
 
 /// `FILE_ATTRIBUTE_HIDDEN`, what Explorer's "Hidden" checkbox sets.
@@ -36,7 +37,7 @@ pub(crate) fn text_child(_dir: &Path, _name: &str) -> Option<PathBuf> {
 
 /// `\\?\C:\x` (or `C:\x`) as the app path `C:/x` the listing cache keys on.
 pub(crate) fn app_spelling_of(os: &Path) -> Option<PathBuf> {
-    app_of(os).ok().map(|app| app.as_std_legacy().into_owned())
+    app_of(os).ok().map(|app| host_spelling(&app))
 }
 
 /// Asks the folder for the entry's own name (`FindFirstFileExW`, which reads the directory

@@ -134,6 +134,14 @@ fn root_app(root: &Path) -> AppPathBuf {
     app_of(root).unwrap_or_else(|_| AppPath::legacy_unchecked(root).into_owned())
 }
 
+/// The app path `app` as the `std::path` the listing host still takes for a folder (until it
+/// goes typed, app-path plan milestone 10c): the one crossing from this crate's Windows code
+/// to that seam, for the mutation patch, the watch coverage, and a watch's event paths
+/// (`reading::listing_spelling_of`).
+pub(crate) fn host_spelling(app: &AppPath) -> PathBuf {
+    app.as_std_legacy().into_owned()
+}
+
 /// Runs `body` on the blocking pool; a `Volume` method runs on its caller's runtime.
 async fn blocking<T: Send + 'static>(what: &'static str, body: impl FnOnce() -> T + Send + 'static) -> T {
     spawn_blocking(body)
@@ -260,7 +268,7 @@ impl Volume for LocalWindowsVolume {
                 Ok(at) => {
                     // The listing host hears of the folder by its app path; it still takes
                     // `std::path` for one, until the app's listing host goes typed (10c).
-                    let host_path = at.app.as_std_legacy().into_owned();
+                    let host_path = host_spelling(&at.app);
                     crate::mutation::patch_after_local_mutation(
                         self.host.listings(),
                         volume_id,
@@ -288,7 +296,7 @@ impl Volume for LocalWindowsVolume {
     /// (`C:/x`), as `notify_mutation` patches it. A path this volume can't place has no watch.
     fn listing_watch_coverage(&self, path: &AppPath) -> WatchCoverage {
         match self.locate(path) {
-            Ok(at) => self.host.listings().local_watch_coverage(&at.app.as_std_legacy()),
+            Ok(at) => self.host.listings().local_watch_coverage(&host_spelling(&at.app)),
             Err(_) => WatchCoverage::None,
         }
     }

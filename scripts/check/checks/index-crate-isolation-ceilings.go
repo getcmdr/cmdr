@@ -476,12 +476,16 @@ var surfaceGuardedCrates = []struct {
 		// on 2026-11-11 for `mounts` (`list`, `is_mount_point`), the one door to the
 		// mount table, so the write engine stops naming the OS; the per-OS modules
 		// stay public while the app's volume code still reads their records.
+		// Raised to 43 items on 2026-11-21 for `reading::watch_os_path` and
+		// `listing_spelling_of` (#1330): the listing watch's path crossing, down and
+		// back up, without which the Windows watch can't open a long path or match an
+		// event to a row. A type holding both counts its methods too, so it's no smaller.
 		// Item-by-item: `crates/cmdr-local/DETAILS.md` § "The public surface is capped".
 		Name: "cmdr-local",
 		Ceilings: surfaceCeilings{
 			RootPromises:   13,
 			PublicModules:  10,
-			SubsystemItems: 41,
+			SubsystemItems: 43,
 		},
 	},
 	{

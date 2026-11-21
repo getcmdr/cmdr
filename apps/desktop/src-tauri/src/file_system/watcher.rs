@@ -29,7 +29,7 @@ use cmdr_fs::volume::WatchCoverage;
 use cmdr_listing::ListingId;
 use cmdr_listing::host::{ListingObserver, OpenedListing};
 use cmdr_listing::{Listings, RefreshOutcome};
-use cmdr_local::reading::{get_single_entry_as_named, list_directory_core};
+use cmdr_local::reading::{get_single_entry, list_directory_core};
 
 #[cfg(target_os = "macos")]
 mod fsevents;
@@ -573,13 +573,13 @@ pub(super) fn handle_directory_change_incremental(listing_id: &str, changes: Vec
     }
 
     // Stat every path BEFORE handing the batch over: the engine takes its locks
-    // after, and a stat on a slow disk must not sit inside one. "As named", so on
-    // Windows a case-only rename's old spelling reads as gone instead of answering
-    // for the new one (`get_single_entry_as_named`; the plain stat on macOS and Linux).
+    // after, and a stat on a slow disk must not sit inside one. On Windows the stat
+    // reads a case-only rename's old spelling as gone rather than answering for the
+    // new name (`get_single_entry`'s doc).
     let children: Vec<(PathBuf, Option<FileEntry>)> = unique_paths
         .into_iter()
         .map(|path| {
-            let entry = get_single_entry_as_named(&path).ok();
+            let entry = get_single_entry(&path).ok();
             (path, entry)
         })
         .collect();

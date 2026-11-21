@@ -84,24 +84,28 @@ fn test_get_single_entry_directory() {
     assert!(entry.size.is_none());
 }
 
-/// On macOS and Linux the watcher's stat is the plain one, and a watch opens and reports the
-/// path as it is: the Windows crossing leaves these OSes' behavior alone.
+/// On macOS and Linux a watch opens and reports the path as it is: the Windows crossing
+/// (`watch_os_path`, `listing_spelling_of`) is the identity here.
 #[test]
-fn the_watchers_stat_and_paths_are_the_plain_ones_on_posix() {
-    use crate::reading::{get_single_entry_as_named, listing_spelling_of, watch_os_path};
+fn a_watch_path_crosses_as_itself_on_posix() {
+    use crate::reading::{listing_spelling_of, watch_os_path};
 
-    let temp_dir = TestDir::new("reading_as_named");
+    let temp_dir = TestDir::new("reading_watch_paths");
     let file = temp_dir.join("a.txt");
-    fs::write(&file, "x").unwrap();
-    let as_named = get_single_entry_as_named(&file).unwrap();
-    let plain = get_single_entry(&file).unwrap();
-    assert_eq!((as_named.name, as_named.path), (plain.name, plain.path));
-    assert_eq!(
-        get_single_entry_as_named(&temp_dir.join("gone")).unwrap_err().kind(),
-        std::io::ErrorKind::NotFound
-    );
     assert_eq!(watch_os_path(&temp_dir).unwrap(), temp_dir.to_path_buf());
     assert_eq!(listing_spelling_of(&file), file);
+}
+
+/// The Windows case check (`named_exactly`) leaves macOS's stat alone: on a case-insensitive
+/// APFS volume another spelling still answers, as it always has.
+#[cfg(target_os = "macos")]
+#[test]
+fn a_stat_on_macos_still_answers_for_another_spelling() {
+    let temp_dir = TestDir::new("reading_case_spelling");
+    fs::write(temp_dir.join("a.txt"), "x").unwrap();
+    if fs::metadata(temp_dir.join("A.TXT")).is_ok() {
+        assert!(get_single_entry(&temp_dir.join("A.TXT")).is_ok());
+    }
 }
 
 #[test]

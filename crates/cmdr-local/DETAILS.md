@@ -508,7 +508,7 @@ app-path plan's review round 3).
 
 ## The public surface is capped
 
-`index-crate-isolation` holds this crate to its measured surface (13 root promises, ten public modules, 41 items, no
+`index-crate-isolation` holds this crate to its measured surface (13 root promises, ten public modules, 43 items, no
 handle), with no headroom. A backend's API is the `Volume` trait, `cmdr-fs`'s promise, so everything counted serves an
 app read of a local disk that doesn't go through a volume:
 
@@ -517,7 +517,11 @@ app read of a local disk that doesn't go through a volume:
   (the app's single rename, which names the right path in its error).
 - **`reading`** (`list_directory_core`, `get_single_entry`; `list_directory_with`, `Lister`, and `added_at_by_path` are
   `testing`-gated, for the parity cells and `examples/listing_bench`) and **`mutation`**
-  (`patch_listing_after_local_mutation`): the watcher, `tags.rs`, and `create.rs`'s instant row.
+  (`patch_listing_after_local_mutation`): the watcher, `tags.rs`, and `create.rs`'s instant row. `watch_os_path` and
+  `listing_spelling_of` are the listing watch's path crossing, down and back up (the verbatim `\\?\` folder it opens on
+  Windows, the app spelling its events come back in; the identity elsewhere), added for the Windows watch (#1330).
+  `get_single_entry` answers `NotFound` for a Windows name the folder holds under another spelling
+  (`platform::named_exactly`), so a case-only rename's old name reads as gone to the watcher.
 - **`space`** (`get_space_info_for_path`, `get_volume_space`) and **`live_space`** (`live_volume_space`,
   `expect_space_change`): the index's tier-2 progress, the copy pre-flight, the IPC command, and the space poller.
 - **`mounts`** (`list`, `is_mount_point`): the one door to the mount table, per OS behind `mounts/platform/`, so the
