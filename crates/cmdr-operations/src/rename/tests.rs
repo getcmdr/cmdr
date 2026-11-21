@@ -4,7 +4,7 @@
 
 use super::*;
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::{BridgedPath, PathArithmetic};
+use cmdr_fs::app_path::PathArithmetic;
 use std::fs;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -174,7 +174,6 @@ async fn rename_managed_local_force_overwrites() {
 /// a test can observe the busy set mid-mutation. Everything else is a stub.
 struct BlockingVolume {
     name: String,
-    root: BridgedPath,
     started: Arc<tokio::sync::Notify>,
     release: Arc<tokio::sync::Notify>,
 }
@@ -184,7 +183,7 @@ impl Volume for BlockingVolume {
         &self.name
     }
     fn root(&self) -> &AppPath {
-        self.root.app()
+        app_path!("/")
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
@@ -235,7 +234,6 @@ async fn rename_managed_marks_nonroot_volume_busy_during_op() {
     let release = Arc::new(tokio::sync::Notify::new());
     let volume = Arc::new(BlockingVolume {
         name: volume_id.clone(),
-        root: BridgedPath::new(PathBuf::from("/")),
         started: Arc::clone(&started),
         release: Arc::clone(&release),
     });
