@@ -155,8 +155,12 @@ pub(super) async fn rename_merge_directory(
     // call, caught late below if it refuses.
     let dest_index = DestNameIndex::build(volume_list(ctx.volume, dest_dir).await?);
     let source_entries = volume_list(ctx.volume, source_dir).await?;
-    // The level in the volume's spelling, made once for every child's join.
-    let dest_dir_app = on_volume(dest_dir);
+    // The level in the volume's spelling, its canonical twin looked up once for
+    // every child's join (a bridge value would be re-read per child). The same place.
+    let dest_dir_bridged = on_volume(dest_dir);
+    let dest_dir_app = dest_dir_bridged
+        .to_canonical()
+        .unwrap_or(std::borrow::Cow::Borrowed(&*dest_dir_bridged));
 
     // Per-level decisions for children whose name hit the dest map. A
     // late-detected `AlreadyExists` (case-fold / TOCTOU) for one of these

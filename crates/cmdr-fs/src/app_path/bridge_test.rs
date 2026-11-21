@@ -273,3 +273,23 @@ fn a_listed_name_joins_as_the_bridge_spelled_the_path_join() {
         assert!(AppName::from_listed_text(refused).is_err(), "{refused:?}");
     }
 }
+
+/// On every host, a listed name reads as the bridge's own name door reads the same text
+/// (`AppNameBuf::from_native_os`), an escape-range code point of either alphabet included, so
+/// the walk's typed join and a `Path` join through the bridge spell one name.
+#[test]
+fn a_listed_name_spells_as_the_bridges_name_door_on_every_host() {
+    for listed in [
+        "x",
+        "caf\u{e9}.txt",
+        "cafe\u{301}.txt",
+        "caf\u{10FEE9}",
+        "\u{10E800}a",
+        "\u{10FE80}\u{10FEFF}",
+        "a b",
+    ] {
+        let name = AppName::from_listed_text(listed).expect("a plain name");
+        let door = AppNameBuf::from_native_os(std::ffi::OsStr::new(listed)).expect("a plain name");
+        assert_eq!(name.as_str(), door.as_str(), "{listed:?}");
+    }
+}

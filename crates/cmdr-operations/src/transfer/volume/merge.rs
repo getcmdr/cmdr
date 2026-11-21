@@ -738,6 +738,12 @@ async fn merge_level<'a>(
     // the host's announce, the listing seam): a borrow for UTF-8.
     let dest_path_std = std_of(dest_path_app);
     let dest_path: &Path = &dest_path_std;
+    // The folder every child joins under, its canonical twin looked up ONCE per
+    // level: a top-level bridge value (`C:\x` on Windows, `/a/./b`) would
+    // otherwise be re-read and rebuilt for each child's join. The same place.
+    let join_dir = dest_path_app
+        .to_canonical()
+        .unwrap_or(std::borrow::Cow::Borrowed(dest_path_app));
     state.scope().host().announce_on(&**dest_volume, dest_path);
     // Say what this task is doing before the first `.await` of the level. A
     // walk parks on listings, so a stack sample sees nothing and the dump would
@@ -955,14 +961,14 @@ async fn merge_level<'a>(
         let (child_dest, dest_hit) = pool
             .drive(where_it_lands(
                 dest_volume,
-                dest_path_app,
+                &join_dir,
                 &name,
                 dest_folder,
                 NewName::Respell,
             ))
             .await
             // The probe asked the destination, about the name the child would take.
-            .map_err(|e| match name.under(dest_path_app) {
+            .map_err(|e| match name.under(&join_dir) {
                 Ok(asked) => PathedVolumeError::new(PathRole::Destination, &asked, e),
                 Err(_) => PathedVolumeError::new(PathRole::Destination, dest_path, e),
             })?
@@ -981,9 +987,7 @@ async fn merge_level<'a>(
                 entry,
                 source: child_source,
                 // The place the asked name takes: it joined above, so it joins here.
-                dest: name
-                    .under(dest_path_app)
-                    .map_or_else(|_| dest_path.to_path_buf(), into_std),
+                dest: name.under(&join_dir).map_or_else(|_| dest_path.to_path_buf(), into_std),
                 node: child_row,
             };
             refuse_child(pool, merge, created, progress, source_volume, refused).await?;

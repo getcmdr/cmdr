@@ -457,7 +457,9 @@ impl AppName {
         if ESCAPES_LIVE {
             return Self::from_app_spelling(name).map(Cow::Borrowed).map_err(|_| refused());
         }
-        match escape::literal(name, Namer::HOST) {
+        // The bridge's own door for a name (what `legacy_unchecked` runs a joined `Path`
+        // through), so the two spellings can't drift: for valid text it's the literal form.
+        match platform::os_name_to_app(std::ffi::OsStr::new(name)) {
             Cow::Borrowed(plain) => Self::from_app_spelling(plain).map(Cow::Borrowed).map_err(|_| refused()),
             Cow::Owned(literal) => match Self::from_app_spelling(&literal) {
                 Ok(_) => Ok(Cow::Owned(AppNameBuf(literal))),
