@@ -31,6 +31,10 @@
   "@goToPath.dialog.ancestorHint": {
     "sourceHash": "e6eefca"
   },
+  "goToPath.dialog.throughLinkHint": "The “..” comes after a link, so this goes to {dir}.",
+  "@goToPath.dialog.throughLinkHint": {
+    "sourceHash": "1a3b3e1"
+  },
   "goToPath.toast.landedOnAncestor": "<req>{requested}</req> existiert nicht, daher haben wir dich zu <land>{landed}</land> gebracht.",
   "@goToPath.toast.landedOnAncestor": {
     "sourceHash": "9af3d3a"
