@@ -5,8 +5,7 @@
 //! `undo_tests.rs`) share ONE rig instead of growing parallel ones — and so neither
 //! file has to carry 200 lines of scaffolding.
 
-use cmdr_fs::app_path::AppPath;
-use cmdr_fs::app_path::BridgedPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use std::path::Path;
 use std::sync::Arc;
 
@@ -198,15 +197,17 @@ impl Rig {
                 .vm
                 .get(&unit.source_volume_id)
                 .expect("the source volume is registered");
-            if let Some(parent) = unit.source_path.parent() {
+            // The journal's row, read back as the app path it holds.
+            let source = AppPath::legacy_unchecked(&unit.source_path);
+            if let Some(parent) = source.parent() {
                 volume
-                    .create_directory_all(&AppPath::legacy_unchecked(parent))
+                    .create_directory_all(parent)
                     .await
                     .expect("the original's folder");
             }
             let size = unit.size.expect("a copy row records its size") as usize;
             volume
-                .create_file(&AppPath::legacy_unchecked(&unit.source_path), &vec![b'o'; size])
+                .create_file(&source, &vec![b'o'; size])
                 .await
                 .expect("the original");
         }
@@ -379,12 +380,10 @@ pub(super) fn blank_op_row() -> OperationRow {
 }
 
 pub(super) fn split(path: &str) -> (String, String) {
-    let p = Path::new(path);
+    let p = AppPath::from_normalized(path).expect("a canonical path");
     (
-        p.parent().map(|d| d.to_string_lossy().into_owned()).unwrap_or_default(),
-        p.file_name()
-            .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_default(),
+        p.parent().map(|d| d.as_str().to_owned()).unwrap_or_default(),
+        p.file_name().map(str::to_owned).unwrap_or_default(),
     )
 }
 
@@ -467,7 +466,6 @@ pub(super) async fn read(vol: &InMemoryVolume, path: &str) -> Vec<u8> {
 // ── A remote place whose root was narrowed ───────────────────────────────────
 
 use std::future::Future;
-use std::path::PathBuf;
 use std::pin::Pin;
 
 use cmdr_fs::volume::ListingProgress;
@@ -479,7 +477,7 @@ use cmdr_fs::volume::ListingProgress;
 /// holds, so on its own it can't stand in for that.
 pub(super) struct RootFenced {
     inner: Arc<InMemoryVolume>,
-    root: BridgedPath,
+    root: AppPathBuf,
 }
 
 impl RootFenced {
@@ -487,15 +485,15 @@ impl RootFenced {
     pub(super) fn over(inner: &Arc<InMemoryVolume>, root: &str) -> Arc<dyn Volume> {
         Arc::new(Self {
             inner: Arc::clone(inner),
-            root: BridgedPath::new(PathBuf::from(root)),
+            root: AppPath::from_normalized(root).expect("a canonical root").to_owned(),
         })
     }
 
-    fn fence(&self, path: &Path) -> Result<(), VolumeError> {
+    fn fence(&self, path: &AppPath) -> Result<(), VolumeError> {
         if path.starts_with(&self.root) {
             Ok(())
         } else {
-            Err(VolumeError::NotFound(path.to_string_lossy().into_owned()))
+            Err(VolumeError::NotFound(path.as_str().to_owned()))
         }
     }
 }
@@ -506,7 +504,7 @@ impl Volume for RootFenced {
     }
 
     fn root(&self) -> &AppPath {
-        self.root.app()
+        &self.root
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -519,11 +517,8 @@ impl Volume for RootFenced {
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_app = path;
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             self.fence(path)?;
-            self.inner.list_directory(path_app, on_progress).await
+            self.inner.list_directory(path, on_progress).await
         })
     }
 
@@ -532,11 +527,8 @@ impl Volume for RootFenced {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_app = path;
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             self.fence(path)?;
-            self.inner.get_metadata(path_app).await
+            self.inner.get_metadata(path).await
         })
     }
 
@@ -545,21 +537,15 @@ impl Volume for RootFenced {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_app = path;
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             self.fence(path)?;
-            self.inner.create_directory(path_app).await
+            self.inner.create_directory(path).await
         })
     }
 
     fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_app = path;
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             self.fence(path)?;
-            self.inner.delete(path_app).await
+            self.inner.delete(path).await
         })
     }
 
@@ -570,15 +556,9 @@ impl Volume for RootFenced {
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let to_app = to;
-            let to_std = to.as_std_legacy();
-            let to: &Path = &to_std;
-            let from_app = from;
-            let from_std = from.as_std_legacy();
-            let from: &Path = &from_std;
             self.fence(from)?;
             self.fence(to)?;
-            self.inner.rename(from_app, to_app, force).await
+            self.inner.rename(from, to, force).await
         })
     }
 }
