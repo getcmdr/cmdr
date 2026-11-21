@@ -494,8 +494,9 @@ async fn apply_child_decision(
         None => {
             // Ours to clear, so no longer the post-loop's to take back.
             ctx.state.claimed_names.release_placeholder(&write_path);
-            if ctx.volume.exists(&AppPath::legacy_unchecked(&write_path)).await {
-                match ctx.volume.delete(&AppPath::legacy_unchecked(&write_path)).await {
+            let placeholder = AppPath::legacy_unchecked(&write_path);
+            if ctx.volume.exists(&placeholder).await {
+                match ctx.volume.delete(&placeholder).await {
                     Ok(()) | Err(VolumeError::NotFound(_)) => {}
                     Err(e) => return Err(map_rename_error(&write_path, e)),
                 }

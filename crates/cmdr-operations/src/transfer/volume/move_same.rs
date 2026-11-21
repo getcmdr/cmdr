@@ -692,6 +692,9 @@ pub async fn move_within_same_volume_with_progress(
                     .dest_path
                     .expect("async driver always supplies dest_path")
                     .to_path_buf();
+                // Both item paths in the volume's spelling, made once for every call below.
+                let source_app = AppPath::legacy_unchecked(&source_path).into_owned();
+                let dest_item_app = AppPath::legacy_unchecked(&dest_item_path).into_owned();
                 Box::pin(async move {
                     // Source type from the top-level hint; falls back to the
                     // volume's `entry_kind` only when no hint reached us (a
@@ -744,7 +747,7 @@ pub async fn move_within_same_volume_with_progress(
                     // rename); anything else fails the item. A LINK at the
                     // destination is a leaf like any other, ❌ never merged
                     // through: the files would land in its target.
-                    let dest_item_is_dir = match volume.entry_kind(&AppPath::legacy_unchecked(&dest_item_path)).await {
+                    let dest_item_is_dir = match volume.entry_kind(&dest_item_app).await {
                         Ok(kind) => kind == EntryKind::Directory,
                         Err(VolumeError::NotFound(_)) => false,
                         Err(e) => {
@@ -800,10 +803,8 @@ pub async fn move_within_same_volume_with_progress(
                         // failure as "gone" on most backends, and "we couldn't
                         // look" is no evidence (`../../DETAILS.md` §
                         // "Per-source outcomes").
-                        let source_removed = matches!(
-                            volume.get_metadata(&AppPath::legacy_unchecked(&source_path)).await,
-                            Err(VolumeError::NotFound(_))
-                        );
+                        let source_removed =
+                            matches!(volume.get_metadata(&source_app).await, Err(VolumeError::NotFound(_)));
                         landed_whole(&state, &*events, &operation_id, &source_path, source_removed);
                         // A rename moves no bytes: the item counts 1 (driver's
                         // milestone), the byte axis stays at 0.
@@ -821,14 +822,7 @@ pub async fn move_within_same_volume_with_progress(
                     // under its `.cmdr-temp-<uuid>` aside waiting to hear whether
                     // the rename landed.
                     let displaced = displaced_dests.lock_ignore_poison().remove(&source_path);
-                    if let Err(e) = volume
-                        .rename(
-                            &AppPath::legacy_unchecked(&source_path),
-                            &AppPath::legacy_unchecked(&dest_item_path),
-                            false,
-                        )
-                        .await
-                    {
+                    if let Err(e) = volume.rename(&source_app, &dest_item_app, false).await {
                         let cause = map_volume_error(&source_path.display().to_string(), PathRole::Source, e);
                         let Some(displaced) = displaced else { return Err(cause) };
                         return Err(match displaced.restore(&volume).await {
