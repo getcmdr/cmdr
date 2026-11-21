@@ -18,7 +18,9 @@ use super::super::scratch_dir::ScratchDir;
 use super::super::state::{WriteOperationState, WriteSettledGuard};
 use super::super::transfer::left_in_source::LeftInSource;
 use super::super::transfer::volume::pull_path_to_local;
-use super::super::transfer::volume::{CarriedSource, stamp_source, sweep_carried_source};
+use super::super::transfer::volume::{
+    CarriedSource, failed_native, failed_path_text, stamp_source, sweep_carried_source,
+};
 use super::super::types::ReadOnlySide;
 use super::super::types::{
     ConflictResolution, TransferLeaves, WriteOperationError, WriteOperationStartResult, WriteOperationType,
@@ -209,7 +211,7 @@ impl MaterializedSources {
                 Err(e) => log::warn!(
                     target: "archive_edit",
                     "couldn't remove {} of moved source {}: {}",
-                    LogPrivate::path(&e.path),
+                    LogPrivate::path(&*failed_native(&e.path)),
                     LogPrivate::path(path),
                     LogError(&e.error)
                 ),
@@ -246,7 +248,7 @@ async fn materialize_sources(
         for src in source_paths {
             let stamped = stamp_source(source_volume, src).await.map_err(|e| {
                 EditError::Op(WriteOperationError::ReadError {
-                    path: e.path.display().to_string(),
+                    path: failed_path_text(&e.path),
                     message: cmdr_fs::error_detail::ErrorDetail::of(e.error),
                 })
             })?;

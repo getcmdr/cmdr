@@ -431,7 +431,7 @@ async fn remove_tree_reports_the_leaf_that_refused() {
         .expect_err("the leaf never deletes, so the sweep can't finish");
     assert_eq!(
         failure.path,
-        Path::new("/tree/nested/doomed.txt"),
+        *app_path!("/tree/nested/doomed.txt"),
         "the failure must carry the leaf that refused, not the tree root"
     );
 

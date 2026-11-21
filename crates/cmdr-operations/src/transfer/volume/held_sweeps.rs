@@ -26,7 +26,7 @@ use super::super::transfer_driver::emit_source_outcome;
 use super::displaced_destination::DisplacedLedger;
 use super::local_mounts::LocalMounts;
 use super::source_sweep::{CarriedSource, sweep_carried_source};
-use super::transfer_error::{PathRole, map_volume_error, source_not_removed};
+use super::transfer_error::{PathRole, failed_native, map_volume_error, source_not_removed};
 use crate::rt::Instant;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_error::LogError;
@@ -214,12 +214,12 @@ impl HeldSweeps {
             log::warn!(
                 target: "move",
                 "move_between_volumes: source delete failed for {} (under {}) after successful copy: {}",
-                LogPrivate::path(&e.path),
+                LogPrivate::path(&*failed_native(&e.path)),
                 LogPrivate::path(&held.source),
                 LogError(&e.error)
             );
             // ❗ The copy LANDED, so the move didn't fail: say so.
-            source_not_removed(&e.path, &held.landed, e.error)
+            source_not_removed(&failed_native(&e.path), &held.landed, e.error)
         })?;
         // "Already gone" reads the same for a file this move carried and for a
         // drive that left, so it's checked before the source reads as removed.

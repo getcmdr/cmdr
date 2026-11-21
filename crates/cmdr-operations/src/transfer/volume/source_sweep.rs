@@ -24,7 +24,7 @@
 //! reason a share that drops under the sweep re-runs it whole once it's back
 //! ([`sweep_carried_source`]), ❌ never one delete blind.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -32,7 +32,7 @@ use std::sync::Arc;
 use super::super::super::locked_sources::{LockedPlan, Unlocked};
 use super::super::super::state::WriteOperationState;
 use super::super::volume_outage::through_outages;
-use super::transfer_error::{AtPath, PathedVolumeError};
+use super::transfer_error::{AtPath, PathedVolumeError, failed_native};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
@@ -176,16 +176,21 @@ async fn sweep_level(
     let mut first_failure: Option<PathedVolumeError> = None;
     // The files this level clears, deleted together once the level is read:
     // one request per thousand on an object store (`Volume::delete_files`).
-    let mut doomed: Vec<PathBuf> = Vec::new();
+    // Each beside its volume spelling (`doomed_app`, `husk_app`), which the batch
+    // delete takes as one slice.
+    let (mut doomed, mut doomed_app): (Vec<PathBuf>, Vec<AppPathBuf>) = (Vec::new(), Vec::new());
     // Mac-only files the move left out: removed only once everything else here
     // went, so a folder that stays keeps the metadata describing it.
-    let mut husk: Vec<PathBuf> = Vec::new();
+    let (mut husk, mut husk_app): (Vec<PathBuf>, Vec<AppPathBuf>) = (Vec::new(), Vec::new());
     for entry in &entries {
         let path = PathBuf::from(&entry.path);
+        // The entry in the volume's spelling, made once for its stat, its
+        // delete, and the batch delete (a borrow until a batch keeps it).
+        let path_app = AppPath::legacy_unchecked(&path);
         let outcome = if skipped.contains(&path) {
             Ok(true)
         } else {
-            match kind_of(volume, entry, &path).await {
+            match kind_of(volume, entry, &path_app).await {
                 Err(e) => Err(e),
                 Ok(EntryKind::Directory) if ledger.walked_dirs.contains(&path) => {
                     Box::pin(sweep_level(volume, &path, ledger, skipped, locked, left)).await
@@ -193,11 +198,9 @@ async fn sweep_level(
                 // A link the move carried goes as the link, ❌ never through it:
                 // on a backend whose listing follows links the walk copied what
                 // it points at, and that target is not the user's selection.
-                Ok(EntryKind::Symlink) if ledger.carried(&path) => volume
-                    .delete(&AppPath::legacy_unchecked(&path))
-                    .await
-                    .at_source(&path)
-                    .map(|()| false),
+                Ok(EntryKind::Symlink) if ledger.carried(&path) => {
+                    volume.delete(&path_app).await.at_source(&*path_app).map(|()| false)
+                }
                 Ok(EntryKind::Directory | EntryKind::Symlink) => {
                     left.appeared += 1;
                     Ok(true)
@@ -206,6 +209,7 @@ async fn sweep_level(
                     // A Mac-only file the move left out (#314): this folder's
                     // own metadata, so it goes if the folder does.
                     None if ledger.mac_only.leaves_out_str(&entry.name, false) => {
+                        husk_app.push(path_app.into_owned());
                         husk.push(path);
                         Ok(false)
                     }
@@ -218,6 +222,7 @@ async fn sweep_level(
                         Ok(true)
                     }
                     Some(_) => {
+                        doomed_app.push(path_app.into_owned());
                         doomed.push(path);
                         Ok(false)
                     }
@@ -227,14 +232,7 @@ async fn sweep_level(
         note_outcome(outcome, &mut remains, &mut first_failure);
     }
     let unlocked: Vec<Unlocked> = doomed.iter().map(|path| locked.unlock(path)).collect();
-    let results = volume
-        .delete_files(
-            &doomed
-                .iter()
-                .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                .collect::<Vec<_>>(),
-        )
-        .await;
+    let results = volume.delete_files(&doomed_app).await;
     for ((path, result), unlocked) in doomed.iter().zip(results).zip(unlocked) {
         if result.is_ok() {
             unlocked.gone();
@@ -251,16 +249,7 @@ async fn sweep_level(
     // Everything the move carried is gone, so the folder goes too, and the
     // Mac-only files it held with it: ❌ never a husk folder in the source.
     if !husk.is_empty() {
-        for (path, result) in husk.iter().zip(
-            volume
-                .delete_files(
-                    &husk
-                        .iter()
-                        .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                        .collect::<Vec<_>>(),
-                )
-                .await,
-        ) {
+        for (path, result) in husk.iter().zip(volume.delete_files(&husk_app).await) {
             match result {
                 Ok(()) => {}
                 Err(VolumeError::NotFound(_)) => left.read_gone = true,
@@ -301,7 +290,7 @@ fn note_outcome(
             log::warn!(
                 target: "move",
                 "source sweep: couldn't remove {}: {}",
-                LogPrivate::path(&e.path),
+                LogPrivate::path(&*failed_native(&e.path)),
                 LogError(&e.error)
             );
             *remains = true;
@@ -347,7 +336,7 @@ pub(crate) async fn stamp_source(volume: &Arc<dyn Volume>, source: &Path) -> Res
             .at_source(&dir)?
         {
             let path = PathBuf::from(&entry.path);
-            match kind_of(volume, &entry, &path).await? {
+            match kind_of(volume, &entry, &AppPath::legacy_unchecked(&path)).await? {
                 EntryKind::Directory => pending.push(path),
                 EntryKind::File => ledger.record_carried_file(path, SourceStamp::of(&entry)),
                 // A link is never walked through (it could loop, and a move
@@ -417,7 +406,7 @@ async fn sweep_once(
             Err(e) => Err(e).at_source(source),
         },
         CarriedSource::File(before) => {
-            if file_is_unchanged(volume, source, *before).await? {
+            if file_is_unchanged(volume, &source_app, *before).await? {
                 let unlocked = locked.unlock(source);
                 let left = delete_top_level().await?;
                 unlocked.gone();
@@ -447,10 +436,10 @@ pub(super) async fn stamp_file(volume: &Arc<dyn Volume>, file: &Path) -> Option<
 /// already gone answers `true` and leaves the verdict to the delete.
 async fn file_is_unchanged(
     volume: &Arc<dyn Volume>,
-    file: &Path,
+    file: &AppPath,
     before: Option<SourceStamp>,
 ) -> Result<bool, PathedVolumeError> {
-    match volume.get_metadata(&AppPath::legacy_unchecked(file)).await {
+    match volume.get_metadata(file).await {
         Ok(now) => Ok(before == Some(SourceStamp::of(&now))),
         Err(VolumeError::NotFound(_)) => Ok(true),
         Err(e) => Err(e).at_source(file),
@@ -461,12 +450,9 @@ async fn file_is_unchanged(
 /// that might be a directory or a link asks `Volume::entry_kind`, because on some
 /// backends a listing's `is_directory` is true for a link to a folder
 /// (`../DETAILS.md` § "Symlinks are opaque to a move").
-async fn kind_of(volume: &Arc<dyn Volume>, entry: &FileEntry, path: &Path) -> Result<EntryKind, PathedVolumeError> {
+async fn kind_of(volume: &Arc<dyn Volume>, entry: &FileEntry, path: &AppPath) -> Result<EntryKind, PathedVolumeError> {
     if entry.is_directory || entry.is_symlink {
-        volume
-            .entry_kind(&AppPath::legacy_unchecked(path))
-            .await
-            .at_source(path)
+        volume.entry_kind(path).await.at_source(path)
     } else {
         Ok(EntryKind::File)
     }
