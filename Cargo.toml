@@ -36,7 +36,7 @@ members = [
   "crates/index-query",
   "crates/operation-log-dump",
 ]
-exclude = ["benchmarks/smb", "vendor/rc-zip", "vendor/rustic_core", "vendor/tauri-plugin-store"]
+exclude = ["benchmarks/smb", "vendor/notify", "vendor/rc-zip", "vendor/rustic_core", "vendor/tauri-plugin-store"]
 resolver = "2"
 
 # Third-party crates we patch, each identical to its crates.io release apart from the fix, which
@@ -51,6 +51,10 @@ rustic_core = { path = "vendor/rustic_core" }
 # can't leave `settings.json`, `shortcuts.json`, or `license.json` truncated (#461), and it
 # refuses to save over a store file that didn't load (#506).
 tauri-plugin-store = { path = "vendor/tauri-plugin-store" }
+# On Windows, a `ReadDirectoryChangesW` overflow or a deleted watch root reaches the handler
+# (a `Flag::Rescan` event, a `Remove` of the root), where 8.2.2 dropped both silently (#1128,
+# #1330). notify 9.0 ships the same fix; drop this with that bump.
+notify = { path = "vendor/notify" }
 
 # Optimized builds cross crate boundaries. Cargo's default (`lto = false`,
 # `codegen-units = 16`) inlines only `#[inline]` and generic functions between
