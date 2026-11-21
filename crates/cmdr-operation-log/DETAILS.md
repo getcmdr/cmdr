@@ -123,7 +123,7 @@ holds an op's `StoredPathReading` (read once per run) and the host's namer per v
 undo acts on exactly what its checks read; or `Refused { unit, reason }`, the row with its stored text, which the loop
 records as skipped with `reason` and ❌ never acts on (no pause, pace, or deepest-first turn; it still credits the bar).
 
-- **A stored path no app path takes** (a `..` name, a NUL, anything `from_wire` refuses) is
+- **A stored path no app path takes** (a `..` name, a NUL, anything `AppPathBuf::parse` refuses) is
   `SkipReason::UnreadablePath`. No operation Cmdr journals writes one (the journal interns every folder from a root, so
   relative text can't reach a row); it guards a damaged or hand-edited log. Why skip, not migrate or rewrite: the
   theoretical case gets the cheapest safe answer, and the stored row stays the evidence. A live root a rebase lands on
@@ -133,8 +133,12 @@ records as skipped with `reason` and ❌ never acts on (no pause, pace, or deepe
   every other text spells the same through either namer, so a row on a volume nobody registered reads exactly as it did.
   An unknown volume for text that needs one is the planner's "can't tell", `SkipReason::Failed` (the verdict an
   unregistered volume gets at the act), ❌ never a guessed namer.
-- **A POSIX `/` row on Windows** (the in-memory volume's) reads through `AppPath::from_normalized`, which keeps it valid
-  there as the engine does, after `from_wire` refuses it as `WrongFlavor`.
+- **On Windows a row reads by its own shape** (`StoredPathReading::app_path_as`, which a cell runs under either host's
+  rules). A drive or UNC row reads `\` as a separator, as Win32 did when the engine acted: `local_split` stores
+  `to_string_lossy` of a `PathBuf` that `Path::join` built, so every row below a copied folder's top holds one
+  (`C:/src\sub\a.txt`), and a name on a Windows disk can't. Refusing those (`Backslash`) would turn every folder copy's
+  undo partial. A POSIX `/` row (the in-memory volume's, a POSIX server's) reads by POSIX rules, its `\` a name
+  character. On macOS and Linux every row reads POSIX, byte for byte as before.
 - **The books keep the journal's spelling**: the inverse op's rows, a skip's example name, the progress line, the
   dispatch summary, and the folder sweep's depth all read `rollback/target.rs`' `StoredPath` (a typed path decodes each
   escape back to the literal text it stood for), split by `std::path` exactly as every row was made.

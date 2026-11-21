@@ -10,7 +10,9 @@
 //! which sort by time as text, so an op at or below the mark is older. No row changes shape,
 //! so no migration (the plan's loud rule 4).
 
-use cmdr_fs::app_path::{AppPath, AppPathBuf, Namer, NotAnAppPath, is_escape};
+use std::borrow::Cow;
+
+use cmdr_fs::app_path::{AppPathBuf, Namer, NotAnAppPath, PathFlavor, is_escape, is_scheme_url};
 use rusqlite::{Connection, OptionalExtension};
 
 use super::OperationLogStoreError;
@@ -44,19 +46,40 @@ impl StoredPathReading {
         text: &str,
         namer: impl FnOnce() -> Option<Namer>,
     ) -> Result<AppPathBuf, StoredPathRefusal> {
-        match self {
-            StoredPathReading::Literal if text.chars().any(is_escape) => {
-                let namer = namer().ok_or(StoredPathRefusal::UnknownNamer)?;
-                Ok(AppPathBuf::from_literal_store(text, namer)?)
-            }
-            StoredPathReading::Literal | StoredPathReading::Live => match AppPathBuf::from_wire(text) {
-                // A POSIX `/` path on Windows: canonical, it's the in-memory volume's, which
-                // `from_normalized` keeps valid there as the engine does (on macOS and Linux
-                // this refuses the same drive or UNC shape `from_wire` refused).
-                Err(NotAnAppPath::WrongFlavor) => Ok(AppPath::from_normalized(text)?.to_owned()),
-                read => Ok(read?),
-            },
+        self.app_path_as(text, namer, PathFlavor::HOST)
+    }
+
+    /// [`Self::app_path`] under `host`'s rules, so a cell runs a Windows journal's rows on
+    /// every OS.
+    ///
+    /// On a Windows host a row's text reads by its own shape, as the engine's `PathBuf`
+    /// meant it when it was journaled (`local_split` is `to_string_lossy` of it):
+    /// - **A drive or UNC row**: `\` separates, as Win32 reads it. `Path::join` writes `\`
+    ///   there, so every row below a copied folder's top holds one (`C:/src\sub\a.txt`),
+    ///   and no name on a Windows disk can.
+    /// - **A POSIX `/` row** (the in-memory volume's, a POSIX server's): POSIX rules, so a `\`
+    ///   stays the name character it is on that server.
+    ///
+    /// On macOS and Linux every row reads POSIX, `\` a name character, as it always did.
+    pub(crate) fn app_path_as(
+        self,
+        text: &str,
+        namer: impl FnOnce() -> Option<Namer>,
+        host: PathFlavor,
+    ) -> Result<AppPathBuf, StoredPathRefusal> {
+        let posix_shaped = text.starts_with('/') && !text.starts_with("//");
+        let flavor = if posix_shaped { PathFlavor::Posix } else { host };
+        if self == StoredPathReading::Literal && text.chars().any(is_escape) {
+            let namer = namer().ok_or(StoredPathRefusal::UnknownNamer)?;
+            // Every escape-range code point literal, and on Windows a drive's `\` a separator.
+            return Ok(AppPathBuf::from_external_text(text, flavor, namer)?);
         }
+        let separated = if flavor == PathFlavor::Windows && !is_scheme_url(text) {
+            Cow::Owned(text.replace('\\', "/"))
+        } else {
+            Cow::Borrowed(text)
+        };
+        Ok(AppPathBuf::parse(&separated, flavor)?)
     }
 }
 
@@ -184,5 +207,64 @@ mod tests {
         let native = literal.to_native().expect("a local path");
         let held = native.to_str().expect("valid text");
         assert!(held.ends_with("\u{10FEC3}\u{10FEA9}.txt"), "{held:?}");
+    }
+
+    fn read_as(reading: StoredPathReading, text: &str, host: PathFlavor) -> Result<String, StoredPathRefusal> {
+        reading
+            .app_path_as(text, || Some(Namer::Units), host)
+            .map(|path| path.as_str().to_owned())
+    }
+
+    /// A Windows journal's row below a copied folder's top holds `\`: `Path::join` wrote it
+    /// between the bridged `C:/src` and each name, and Win32 read it as a separator. The undo
+    /// reads it the same way, ❌ never refuses it (a refused row is a partial undo).
+    #[test]
+    fn a_windows_drive_row_reads_its_backslashes_as_separators() {
+        for reading in [StoredPathReading::Literal, StoredPathReading::Live] {
+            let windows = |text| read_as(reading, text, PathFlavor::Windows);
+            assert_eq!(windows(r"C:/src\sub\a.txt").as_deref(), Ok("C:/src/sub/a.txt"));
+            assert_eq!(windows(r"c:\src\a.txt").as_deref(), Ok("C:/src/a.txt"));
+            assert_eq!(
+                windows(r"//test_server/share/dir\a.txt").as_deref(),
+                Ok("//test_server/share/dir/a.txt")
+            );
+            // A POSIX row on a Windows host (the in-memory volume, a POSIX server) keeps its
+            // `\` as the name character it is there, as does a scheme row.
+            assert_eq!(windows(r"/srv/a\b.txt").as_deref(), Ok(r"/srv/a\b.txt"));
+            assert_eq!(
+                windows(r"sftp://test_user_1@testnas.local:22/a\b").as_deref(),
+                Ok(r"sftp://test_user_1@testnas.local:22/a\b")
+            );
+            // A literal escape-range code point in a drive row still reads literal.
+            let literal = windows("C:/src\\caf\u{10FEE9}.txt").expect("reads");
+            assert!(literal.starts_with("C:/src/caf"), "{literal:?}");
+        }
+    }
+
+    /// On macOS and Linux `\` and `:` are name characters, and the row reads byte for byte.
+    #[test]
+    fn a_posix_row_keeps_its_backslashes_and_colons() {
+        for text in [
+            r"/Users/test_user_1/a\b.txt",
+            "/Users/test_user_1/C:/x",
+            "/Users/test_user_1/cafe\u{301}.txt",
+            "/Users/test_user_1/caf\u{e9}.txt",
+            "/Users/test_user_1/trailing. ",
+            "/Users/test_user_1/trailing.",
+            "/Users/test_user_1/\u{fffd}.bin",
+            r"/adb:/12345678/sdcard\x/y",
+            "adb://12345678/sdcard/a.jpg",
+            "sftp://test_user_1@testnas.local:22/home/a b.txt",
+            "smb://testnas.local/share/a:b.txt",
+        ] {
+            assert_eq!(
+                read_as(StoredPathReading::Literal, text, PathFlavor::Posix).as_deref(),
+                Ok(text)
+            );
+        }
+        assert!(matches!(
+            read_as(StoredPathReading::Literal, "/a/../b", PathFlavor::Posix),
+            Err(StoredPathRefusal::NotAnAppPath(NotAnAppPath::DotName))
+        ));
     }
 }
