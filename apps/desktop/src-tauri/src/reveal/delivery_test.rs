@@ -376,3 +376,30 @@ fn info_plist_claims_every_item_so_a_sandboxed_app_can_reveal() {
         "any other rank offers Cmdr in every file's Open With menu"
     );
 }
+
+/// A revealed path with a `..` lands where the disk says: past a link, beside its TARGET.
+/// Paths with none pass untouched (the deep-link and Finder shapes), and a `..` whose
+/// volume can't be asked drops that path with a typed reason, ❌ never a lexical guess.
+#[tokio::test]
+async fn a_dot_dot_in_a_revealed_path_is_answered_by_the_disk() {
+    crate::file_system::volume::manager::get_volume_manager().register_if_absent(
+        "root",
+        std::sync::Arc::new(cmdr_local::LocalVolume::local_folder(
+            "Test root",
+            "/",
+            crate::volume_host::host(),
+        )),
+    );
+    let dir = crate::test_support::TestDir::new("reveal_dot_dot");
+    std::fs::create_dir_all(dir.join("real/inner")).expect("mkdir");
+    std::fs::create_dir_all(dir.join("x")).expect("mkdir");
+    std::os::unix::fs::symlink("../real/inner", dir.join("x/link")).expect("link");
+
+    let (resolved, refused) = resolve_dot_dots(vec![dir.join("x/link/../y.txt"), dir.join("x/plain/./z")]).await;
+    assert_eq!(resolved, vec![dir.join("real/y.txt"), dir.join("x/plain/./z")]);
+    assert_eq!(refused, None);
+
+    let (resolved, refused) = resolve_dot_dots(vec![p("sftp://h:22/a/../b")]).await;
+    assert!(resolved.is_empty());
+    assert_eq!(refused, Some(RevealNotShownReason::NotAnswering));
+}

@@ -2,7 +2,7 @@
 use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::volume::Presence;
 use cmdr_fs::volume::dot_dot::{LinkFuture, LinkReader, parent_across_links};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{EntryKind, ListingProgress, SpaceInfo, VolumeError};
@@ -24,8 +24,8 @@ impl LinkReader for SftpVolume {
         Box::pin(self.read_link_target_impl(path))
     }
 
-    fn absolute_target(&self, target: &Path) -> Option<AppPathBuf> {
-        self.root.to_app(target.to_str()?).ok()
+    fn absolute_target(&self, target: &str) -> Option<AppPathBuf> {
+        self.root.to_app(target).ok()
     }
 }
 

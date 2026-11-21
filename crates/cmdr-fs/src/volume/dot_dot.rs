@@ -14,6 +14,7 @@
 //!
 //! Design and the cells: `docs/specs/app-path-plan.md` § "Typed and pasted `..`".
 
+use std::ffi::OsStr;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -38,9 +39,9 @@ pub trait LinkReader: Sync {
     /// there. A missing path answers `NotFound` or `Ok(None)`; both read as "no link".
     fn read_link<'a>(&'a self, path: &'a AppPath) -> LinkFuture<'a>;
 
-    /// The app path of an absolute target (with no `..` in it), or `None` when it
-    /// names nothing this volume's app paths can spell.
-    fn absolute_target(&self, target: &Path) -> Option<AppPathBuf>;
+    /// The app path of an absolute target's native text (with no `..` in it), or
+    /// `None` when it names nothing this volume's app paths can spell.
+    fn absolute_target(&self, target: &str) -> Option<AppPathBuf>;
 }
 
 /// The lexical parent: the folder holding `path`, or `path` itself at a root. The
@@ -105,65 +106,37 @@ async fn target_path(
     target: &Path,
     hops: &mut u32,
 ) -> Result<AppPathBuf, VolumeError> {
-    // POSIX bytes split on `/` alone, on every host: a link is only followed on a POSIX disk or
-    // an SFTP server, where a `\` is part of a name.
-    let bytes = target_bytes(target);
-    let names: Vec<&[u8]> = bytes.split(|b| *b == b'/').collect();
-    let (mut at, rest) = if bytes.first() == Some(&b'/') {
+    // Plain Unicode text only, as every crossing makes until escapes go live (#1225's 10f): a
+    // target that isn't is refused, ❌ never spelled lossily. Split on `/` alone, on every host:
+    // a link is only followed on a POSIX disk or an SFTP server, where a `\` is part of a name.
+    let text = target.to_str().ok_or_else(|| unspellable(target))?;
+    let parts: Vec<&str> = text.split('/').collect();
+    let (mut at, rest) = if text.starts_with('/') {
         // The leading run with no `..`, spelled as the backend spells it; the rest walks.
-        let split = names.iter().position(|name| *name == b"..").unwrap_or(names.len());
-        let head_len = names[..split]
+        let split = parts.iter().position(|part| *part == "..").unwrap_or(parts.len());
+        let head_len = parts[..split]
             .iter()
-            .map(|name| name.len() + 1)
+            .map(|part| part.len() + 1)
             .sum::<usize>()
             .saturating_sub(1);
-        let head = path_of(&bytes[..head_len.max(1)]).ok_or_else(|| unspellable(target))?;
-        let start = reader.absolute_target(&head).ok_or_else(|| unspellable(target))?;
-        (start, &names[split..])
+        let start = reader
+            .absolute_target(&text[..head_len.max(1)])
+            .ok_or_else(|| unspellable(target))?;
+        (start, &parts[split..])
     } else {
-        (lexical_parent(link), &names[..])
+        (lexical_parent(link), &parts[..])
     };
-    for name in rest {
-        match *name {
-            b"" | b"." => {}
-            b".." => at = parent_of(reader, at, hops).await?,
-            name => {
-                let name = AppNameBuf::from_native_bytes(name).map_err(|_| unspellable(target))?;
-                at = at.join(name.as_app_name()).map_err(|_| unspellable(target))?;
+    for part in rest {
+        match *part {
+            "" | "." => {}
+            ".." => at = parent_of(reader, at, hops).await?,
+            part => {
+                let child = AppNameBuf::from_native_os_unicode(OsStr::new(part)).map_err(|_| unspellable(target))?;
+                at = at.join(child.as_app_name()).map_err(|_| unspellable(target))?;
             }
         }
     }
     Ok(at)
-}
-
-/// A link target's bytes: the OS's own on Unix, the text elsewhere (only an SFTP
-/// server's target reaches here off Unix, and the backend decoded it from UTF-8).
-fn target_bytes(target: &Path) -> std::borrow::Cow<'_, [u8]> {
-    #[cfg(unix)]
-    {
-        use std::os::unix::ffi::OsStrExt;
-        std::borrow::Cow::Borrowed(target.as_os_str().as_bytes())
-    }
-    #[cfg(not(unix))]
-    {
-        match target.to_string_lossy() {
-            std::borrow::Cow::Borrowed(text) => std::borrow::Cow::Borrowed(text.as_bytes()),
-            std::borrow::Cow::Owned(text) => std::borrow::Cow::Owned(text.into_bytes()),
-        }
-    }
-}
-
-/// The bytes back as a path, the inverse of [`target_bytes`].
-fn path_of(bytes: &[u8]) -> Option<PathBuf> {
-    #[cfg(unix)]
-    {
-        use std::os::unix::ffi::OsStrExt;
-        Some(PathBuf::from(std::ffi::OsStr::from_bytes(bytes)))
-    }
-    #[cfg(not(unix))]
-    {
-        std::str::from_utf8(bytes).ok().map(PathBuf::from)
-    }
 }
 
 fn link_loop() -> VolumeError {

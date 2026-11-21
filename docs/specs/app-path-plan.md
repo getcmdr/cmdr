@@ -2065,9 +2065,8 @@ included; the hidden couplings it found are why waves B and C differ from round 
     `suggested_ops`): today's answer for `/x/link/` and `/x/../y`. They switch to `from_wire` in the first
     behavior-change commit (loud rule 1's second exception, pins (g) flipped, the lead's OK), which is also where
     `path_checks.rs`'s `root_anchored` becomes `anchor_at_root` (#1314 item 2: `anchor_at_root` refuses `..` and drops a
-    trailing `/`, so it isn't mechanical). `go_to_path::resolve_with`'s `std::path` arithmetic (#1314 item 1) resolves
-    `..` lexically today; it goes typed with `resolve_typed` and `Volume::parent_for_dot_dot` in the second
-    behavior-change commit.
+    trailing `/`, so it isn't mechanical). `go_to_path::resolve_with`'s `std::path` arithmetic (#1314 item 1) went typed
+    in the second behavior-change step (below).
   - **The routing seam**: `VolumeManager::resolve(volume_id, &Path)` and its `ResolvedVolume.path` built by
     `legacy_unchecked` (archive, git, restic routes) is the next mechanical step; it takes most of the manager's
     remaining bridges and the routing tests' with it. `mount_id_for_path` keeps `Path`'s `starts_with` on its caller's
@@ -2089,6 +2088,38 @@ included; the hidden couplings it found are why waves B and C differ from round 
   directories (1,236 tests): `main` 44 red → the branch 43, none newly red; of the baseline's 70 here, 27 pass and 43
   stay red, waiting on the routing seam, the two behavior-change commits, and the watcher fixtures
   (`docs/notes/windows-port/windows-test-failures.md` § "By milestone", the TSV's `rerun` column).
+- **Second behavior-change step done** (2026-11-21, David's OK the same day; branch `worktree-agent-a6e246efe235deaa9`):
+  § "Typed and pasted `..`" landed, loud rule 1's second exception, pin (g) flipped for go-to.
+  - **The trait method**: `Volume::parent_for_dot_dot`, lexical by default (`cmdr_fs::volume::dot_dot::lexical_parent`).
+    `cmdr-local`'s Unix volume and `cmdr-sftp` override it with `dot_dot::parent_across_links` over a `LinkReader`
+    (local: `readlink` machine-wide; SFTP: `LSTAT` + `READLINK`, a target off the root refused). It follows a target
+    that is itself a link and walks a relative target's own `..`s the same way (40 hops, then refused). A missing name,
+    or one under a file (`ENOTDIR`), is no link; any other read failure is refused. Windows, SMB, S3, MTP, ADB,
+    archives, virtual volumes, and `InMemoryVolume` keep the default.
+  - **The resolver**: `cmdr_fs::typed_path::resolve_typed_with(text, base, by: TypedBy, host)`, `TypedBy` = `Person`
+    (address bar and go-to: `~`, Explorer's trailing-dot trim on Windows), `PersonViaCommandLine` (CLI, deep links: no
+    `~`, literal names), `Agent` (`~`, literal, `OffRoot` above a root). The head before the first `..` parses with
+    `from_external_text`; each later name joins through `AppNameBuf::from_typed`; `TypedPath.crossed_link` says when a
+    volume's answer differed from the lexical one. The app's host is `go_to_path::AppHost` (the registry's longest root,
+    routed volumes skipped, the boot volume as a local fallback; every stat and `..` detached under ONE 2 s `Deadline`);
+    `AppHost::registry().resolve_typed(…)` is the door 10d's MCP inputs take.
+  - **The callers**: go-to (`cmdr_fs::go_to_path` now classifies an `AppPath` over an async `GoToHost: TypedPathHost`,
+    the browser demo too; `GoToPathResolution::{Directory, File}` gained `crossedLink`, and the dialog's preview names
+    the real destination in the `info` tone, new key `goToPath.dialog.throughLinkHint`, English only). The CLI: the
+    script now makes paths absolute by text, steps a relative path's leading `..`s up from `pwd`, and hands any other
+    `..` on (the parser no longer refuses one); `reveal::delivery::resolve_dot_dots` answers it at delivery, after
+    `setup`. Deep links (`file://`) never carry a `..` (URL parsing removes dot segments) and pass the same door
+    untouched. A path with no `..` resolves exactly as before on macOS and Linux.
+  - **Cells**: `typed_path_test.rs` (every spec example over a link table: `/x/link/../y`, `../y` from inside `/x/link`,
+    `C:/x/link/../y` and `C:\x\link\..\y` under Windows rules, `sftp://h:22/a/link/../b`, the missing prefix, above the
+    root for a person, the CLI, and an agent, a timeout), `dot_dot_test.rs` (the walk), `cmdr-local`'s
+    `local_posix_link_test.rs::dot_dot` and `cmdr-sftp`'s `dot_dot_test.rs` (a Docker cell plus a no-session refusal) on
+    real links, and the app's `go_to_path/{tests,wire_shape_tests}.rs` (pin (g) flipped: a `..` after a folder link
+    lands on `real/y`; a hung mount refuses through `WedgedVolume` within the deadline; no volume refuses),
+    `cli/script_tests.rs` and `reveal/delivery_test.rs`. Bridge: `go_to_path/mod.rs`'s entry gone (1 → 0); no file grew.
+  - **Left for 10d**: the MCP tools' path inputs call `AppHost::registry().resolve_typed(text, base, TypedBy::Agent)`
+    and turn `TypedPathRefusal` (`OffRoot`, `Unanswered`, …) into typed tool errors. The new key needs the translator
+    pass before landing (`i18n-coverage` fails it in CI).
 
 ### 10d. The app, part two: operations host, tools, and the rest
 

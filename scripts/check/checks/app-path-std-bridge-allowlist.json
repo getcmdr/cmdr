@@ -433,7 +433,6 @@
     "apps/desktop/src-tauri/src/file_viewer/materialize.rs": 1,
     "apps/desktop/src-tauri/src/file_viewer/materialize_test.rs": 3,
     "apps/desktop/src-tauri/src/file_viewer/smb_open_test.rs": 1,
-    "apps/desktop/src-tauri/src/go_to_path/mod.rs": 1,
     "apps/desktop/src-tauri/src/icons/mod.rs": 2,
     "apps/desktop/src-tauri/src/icons/platform/linux.rs": 1,
     "apps/desktop/src-tauri/src/icons/platform/macos/mod.rs": 1,

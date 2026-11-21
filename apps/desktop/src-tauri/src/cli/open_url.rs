@@ -9,7 +9,7 @@
 //! Whatever arrives here is still untrusted input: it can only ever become a navigation, and it is
 //! validated hard before it gets that far.
 
-use std::path::{Component, PathBuf};
+use std::path::PathBuf;
 
 use tauri::Url;
 
@@ -50,7 +50,7 @@ pub(crate) enum CliUrlRefusal {
     NoPaths,
     /// More than [`MAX_PATHS`].
     TooManyPaths(usize),
-    /// A path that's relative, holds a `..`, a NUL, or is absurdly long.
+    /// A path that's relative, holds a NUL, or is absurdly long.
     BadPath(String),
     /// `pane` given twice, or set to something other than `left` / `right`.
     BadPane(String),
@@ -118,14 +118,13 @@ pub(crate) fn parse_cli_url(url: &Url) -> Result<CliOpen, CliUrlRefusal> {
     })
 }
 
-/// An absolute path with no `..`, no NUL, and a sane length. The script resolves every path
-/// before sending it, so anything else didn't come from the script.
+/// An absolute path with no NUL and a sane length. The script makes every path absolute
+/// before sending it, so anything else didn't come from the script. A `..` stays: the
+/// script hands on any `..` after a name as typed, and delivery asks the disk what it
+/// means (`reveal::delivery`'s `resolve_dot_dots`).
 fn validate_path(raw: &str) -> Result<PathBuf, CliUrlRefusal> {
     let path = PathBuf::from(raw);
-    let ok = raw.len() <= MAX_PATH_BYTES
-        && !raw.contains('\0')
-        && path.is_absolute()
-        && !path.components().any(|part| part == Component::ParentDir);
+    let ok = raw.len() <= MAX_PATH_BYTES && !raw.contains('\0') && path.is_absolute();
     if ok {
         Ok(path)
     } else {
@@ -212,11 +211,19 @@ mod tests {
     }
 
     #[test]
-    fn relative_parent_and_nul_paths_are_refused() {
-        for raw in ["tmp%2Fa", "%2Ftmp%2F..%2Fetc", "%2Ftmp%00x", ""] {
+    fn relative_and_nul_paths_are_refused() {
+        for raw in ["tmp%2Fa", "..%2Fa", "%2Ftmp%00x", ""] {
             let url = format!("cmdr-cli://open?path={raw}");
             assert!(matches!(parse(&url), Err(CliUrlRefusal::BadPath(_))), "{url}");
         }
+    }
+
+    /// A `..` after a name passes as typed: delivery asks the disk what it means (beside a
+    /// link's target, as `ls` reads it), ❌ never the parser by its text.
+    #[test]
+    fn a_dot_dot_after_a_name_passes_as_typed() {
+        let open = parse("cmdr-cli://open?path=%2Ftmp%2Flink%2F..%2Fetc").expect("accepted");
+        assert_eq!(open.paths, vec![PathBuf::from("/tmp/link/../etc")]);
     }
 
     #[test]

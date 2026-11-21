@@ -1,14 +1,16 @@
 # Go to path (backend)
 
 Backend for the "Go to folder" dialog (⌘G): the user types a path and jumps to it in the focused pane. Owns all path
-reasoning plus the recent-paths store; the IPC layer (`commands/go_to_path.rs`) is a thin pass-through.
+reasoning plus the recent-paths store; the IPC layer (`commands/go_to_path.rs`) is a thin pass-through. Also the app's
+ONE typed-path resolver, `AppHost::resolve_typed`, for every text a person or an agent types.
 
 ## Module map
 
-- **`mod.rs`**: pure `resolve(input, base_dir) -> GoToPathResolution` over the local disk (`LocalDisk`: `~`, `metadata`,
-  the archive boundary) + unit tests. The rules (`~` expansion, relative-to-`base_dir` join, lexical `.`/`..`
-  normalization, nearest-ancestor walk, dir/file classify) and the type are `cmdr_fs::go_to_path`, shared with the
-  browser demo's engine (`crates/cmdr-listing-wasm/src/go_to.rs`)
+- **`mod.rs`**: `AppHost` (the registry picks the volume holding a path; every stat and `..` runs detached under one
+  2 s `Deadline`), `AppHost::resolve_typed` (go-to, the CLI's paths, deep links via `reveal::delivery`, and 10d's MCP
+  inputs), and `resolve(input, base_dir) -> GoToPathResolution`. The rules are `cmdr_fs::typed_path` (`~`, the pane's
+  folder, each `..`) and `cmdr_fs::go_to_path` (classify), shared with the browser demo
+  (`crates/cmdr-listing-wasm/src/go_to.rs`). Cells: `tests.rs`, `wire_shape_tests.rs` (the symlink pins).
 - **`history.rs`**: the `RecentPathEntry` shape and `RECENT_PATHS`, a `crate::recents` list keyed on the resolved path
   with a fixed cap
 
@@ -17,20 +19,23 @@ Decision rationale and v1 limitations: `DETAILS.md`.
 ## Must-knows
 
 - **`GoToPathResolution` is the contract; never classify by string-matching the `reason` message** (AGENTS.md
-  § no-error-string-match). Four variants: `Directory { path }`, `File { path, parentDir, fileName }`,
-  `NearestAncestor { requested, ancestorDir }`, `Invalid { reason }`. The `File` variant carries the canonical
-  normalized full `path` (the frontend records it into recents verbatim, no client-side reconstruction) plus `parentDir`
-  / `fileName` (drive navigate-to-parent + select). The tagged-enum serde attrs (`tag = "kind"`,
-  `rename_all = "camelCase"`, `rename_all_fields = "camelCase"`) are required so the tag and struct-variant fields ship
-  camelCase through tauri-specta (enforced by `ipc-enum-camelcase`).
-- **Lexical `.`/`..` normalization, never `Path::canonicalize`.** `canonicalize` requires the whole path to exist (it
-  errors otherwise), breaking the nearest-ancestor case, and it resolves symlinks, silently rewriting the path shown and
-  navigated to. Lexical keeps the displayed path faithful to the input. `metadata()` still follows symlinks for the
-  file-vs-dir classify, so a symlinked dir navigates into the symlink path and the listing follows it (intended).
-- **`resolve_go_to_path` is async + `blocking_with_timeout` (2s)** because `metadata`/`exists` can block on a hung
-  NFS/SMB mount (AGENTS.md § Platform constraints).
+  § no-error-string-match). Four variants: `Directory { path, crossedLink }`, `File { path, parentDir, fileName,
+  crossedLink }`, `NearestAncestor { requested, ancestorDir }`, `Invalid { reason }`. `File.path` is recorded into
+  recents verbatim. The tagged-enum serde attrs (`tag = "kind"`, `rename_all = "camelCase"`,
+  `rename_all_fields = "camelCase"`) are required (`ipc-enum-camelcase`).
+- **Faithful by default; one link resolved only where a `..` crosses it, ❌ never `Path::canonicalize`.** A relative
+  input's leading `..`s go up from the pane by text (the `..` row's way); every other `..` asks the volume
+  (`Volume::parent_for_dot_dot`), so `/x/link/../y` lands beside the link's TARGET, where `ls` lands, and
+  `crossedLink` makes the preview say so. `canonicalize` needs the whole path to exist (breaking nearest-ancestor) and
+  rewrites every link in the path. A missing name is no link. Spec: `docs/specs/app-path-plan.md` § "Typed and pasted
+  `..`".
+- **A volume that can't answer refuses, ❌ never a lexical guess**: a hung mount or an unregistered server is
+  `Invalid` (go-to), a dropped path (CLI), or a typed `TypedPathRefusal::Unanswered` (agent). An agent's `..` above a
+  root is `OffRoot`; a person's clamps.
+- **Time out through `AppHost::within` (`cmdr_fs::deadline`), ❌ never a bare `tokio::time::timeout`**: it detaches,
+  so an MTP stat isn't dropped mid-transaction. The frontend's `withTimeout` is the second layer.
 - **Recents keys on the resolved target, not the raw input.** Entry `{ id, timestamp, path }` where `path` is the dir,
   file path, or nearest ancestor we actually jumped to; the dedupe key IS that string, so a re-jump moves the row to the
   top. Cap is the const `MAX_RECENTS = 10` (not a setting), passed per call: the dialog shows up to 10 via digit keys
-  1-9, 0. The file, quarantine, and locking are `crate::recents` (`apps/desktop/src-tauri/src/recents/CLAUDE.md`). Populated only by manual
-  dialog jumps (frontend convention, not enforced here).
+  1-9, 0. The file, quarantine, and locking are `crate::recents` (`apps/desktop/src-tauri/src/recents/CLAUDE.md`).
+  Populated only by manual dialog jumps (frontend convention, not enforced here).

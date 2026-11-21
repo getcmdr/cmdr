@@ -3,7 +3,7 @@
 #
 # Shipped inside the app at Cmdr.app/Contents/Resources/bin/cmdr and put on PATH either by
 # Homebrew's cask (`binary` stanza) or by the app menu's "Install 'cmdr' command" (a symlink
-# in /usr/local/bin). It resolves every path itself, then hands Cmdr one
+# in /usr/local/bin). It makes every path absolute itself, then hands Cmdr one
 # `cmdr-cli://open?...` URL through `open -a <this very bundle>`, so the copy of Cmdr that
 # shipped this script is the one that answers.
 #
@@ -72,21 +72,38 @@ urlencode() {
     printf '%s' "$1" | od -An -v -tx1 | tr -d ' \n' | sed 's/\(..\)/%\1/g'
 }
 
-# Print the absolute path of $1, keeping symlinks as typed. Returns 1 if it doesn't exist.
+# Print the absolute path of $1 as typed, keeping symlinks: empty and `.` names dropped, a
+# relative path's leading `..`s stepping up from the shell's folder by text (as `cd ..`
+# does), and every other `..` kept. Only the disk knows what that one means (past a link,
+# the link target's parent, where `ls` lands), so Cmdr asks it. Returns 1 if nothing is there.
 absolute() {
-    if [ -d "$1" ]; then
-        (cd -- "$1" 2>/dev/null && pwd)
-        return
-    fi
     if [ ! -e "$1" ] && [ ! -L "$1" ]; then
         return 1
     fi
-    parent=$(cd -- "$(dirname -- "$1")" 2>/dev/null && pwd) || return 1
-    name=$(basename -- "$1")
-    case $parent in
-        /) printf '/%s\n' "$name" ;;
-        *) printf '%s/%s\n' "$parent" "$name" ;;
+    case $1 in
+        /*) out=; leading= ;;
+        *) out=$(pwd); leading=1 ;;
     esac
+    [ "$out" = / ] && out=
+    rest=$1
+    while [ -n "$rest" ]; do
+        case $rest in
+            */*) name=${rest%%/*}; rest=${rest#*/} ;;
+            *) name=$rest; rest= ;;
+        esac
+        case $name in
+            '' | .) ;;
+            ..)
+                if [ -n "$leading" ]; then
+                    out=${out%/*}
+                else
+                    out=$out/..
+                fi
+                ;;
+            *) leading=; out=$out/$name ;;
+        esac
+    done
+    printf '%s\n' "${out:-/}"
 }
 
 pane=

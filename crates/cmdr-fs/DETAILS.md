@@ -113,18 +113,21 @@ the next section.
   span pass reads too; `LogDetail` for external OS/server/CLI text as one Debug-quoted, 1 KiB-capped field, and
   `LoggedText` for our own; `log_error`, the `LogError` a path-carrying error logs through, `error_detail`, the message
   field that keeps its cause typed for it, and `log_json`, a value's JSON with its fields marked; § "Marked log
-  values"), `tcc_paths`, `ignore_poison`, `pluralize`, `go_to_path` (the "Go to path" dialog's classification over a
-  host's stat, `resolve_with`, shared by the desktop's local disk and the browser demo's engine; its `..` step is
-  lexical and crate-private until #1225's volume-aware step replaces it through `GoToHost`), `tilde` (`expand_tilde`,
-  for a path a person typed on THIS machine; on Windows it answers an app path through the path grammar and takes `~\`
-  too, `expand_tilde_with` tests each flavor everywhere), `twin_path` (a same-named twin's row path: `folder_of` past
-  its pick, and `shown`, the one rule that takes a pick out of anything a person reads;
-  `crates/cmdr-mtp/src/connection/DETAILS.md` § "Same-named siblings"), `byte_size` (`format_size`, the IEC byte count
-  log lines and model-facing answers read), `thread_qos/` (macOS's `QOS_CLASS_UTILITY`, Windows' below-normal priority
-  under EcoQoS, nothing on Linux; why each, and the rule that no thread a UI-facing thread waits on is lowered (Windows
-  has no priority inheritance for user-mode locks), in its module docs), `thread_cpu/`, `process_cpu/`,
-  `process_memory`, `utility_pool.rs` (`UtilityPool`, a keep-alive pool of `Utility`-QoS threads, so background work
-  that comes in streams, like index walks, reuses threads instead of creating one per job).
+  values"), `tcc_paths`, `ignore_poison`, `pluralize`, `typed_path` (`resolve_typed_with`: text a person or an agent
+  typed, turned into an app path with each `..` answered by the volume through `TypedPathHost`; a relative input's
+  leading `..`s go up by text; docs/specs/app-path-plan.md § "Typed and pasted `..`"), `go_to_path` (the "Go to path"
+  dialog's classification over a `GoToHost`'s stat, shared by the desktop and the browser demo's engine),
+  `volume::dot_dot` (`Volume::parent_for_dot_dot`'s lexical default and `parent_across_links`, the link-following body
+  the local POSIX disk and SFTP override it with), `tilde` (`expand_tilde`, for a path a person typed on THIS machine;
+  on Windows it answers an app path through the path grammar and takes `~\` too, `expand_tilde_with` tests each flavor
+  everywhere), `twin_path` (a same-named twin's row path: `folder_of` past its pick, and `shown`, the one rule that
+  takes a pick out of anything a person reads; `crates/cmdr-mtp/src/connection/DETAILS.md` § "Same-named siblings"),
+  `byte_size` (`format_size`, the IEC byte count log lines and model-facing answers read), `thread_qos/` (macOS's
+  `QOS_CLASS_UTILITY`, Windows' below-normal priority under EcoQoS, nothing on Linux; why each, and the rule that no
+  thread a UI-facing thread waits on is lowered (Windows has no priority inheritance for user-mode locks), in its module
+  docs), `thread_cpu/`, `process_cpu/`, `process_memory`, `utility_pool.rs` (`UtilityPool`, a keep-alive pool of
+  `Utility`-QoS threads, so background work that comes in streams, like index walks, reuses threads instead of creating
+  one per job).
 - `attr_buf.rs` (macOS): the packed record decoder every `getattrlist` / `getattrlistbulk` caller shares. § "`attr_buf`:
   the packed attribute layout".
 - `mapped_file_faults/`: the SIGBUS recovery that turns a read of a mapped file whose disk went away into zeros, and the

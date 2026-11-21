@@ -74,6 +74,23 @@ fn relative_paths_resolve_without_dot_dot() {
     assert_eq!(open.paths, vec![logical(&dir)]);
 }
 
+/// A `..` after a name reaches the app as typed, so the app can ask the disk (past a link it's
+/// the link TARGET's parent, where `ls` lands): the script's text math would land beside the
+/// link instead. A leading `..` still steps up from the shell's folder, as `cd ..` does.
+#[cfg(unix)]
+#[test]
+fn a_dot_dot_after_a_name_is_handed_on_as_typed() {
+    let dir = TestDir::new("cli_script_dot_dot");
+    std::fs::create_dir_all(dir.join("real/inner")).expect("mkdir");
+    std::fs::create_dir_all(dir.join("real/y")).expect("mkdir");
+    std::fs::create_dir(dir.join("x")).expect("mkdir");
+    std::os::unix::fs::symlink("../real/inner", dir.join("x/link")).expect("link");
+    let (open, _) = open_in(&dir, &["x/link/../y"]);
+    assert_eq!(open.paths, vec![logical(&dir).join("x/link/../y")]);
+    let (open, _) = open_in(&dir.join("x"), &["../x/./link//../y"]);
+    assert_eq!(open.paths, vec![logical(&dir).join("x/link/../y")]);
+}
+
 #[test]
 fn the_flags_pick_the_pane_and_the_tab() {
     let dir = TestDir::new("cli_script_flags");

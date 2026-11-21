@@ -36,9 +36,16 @@ the pane move. A plain open-documents event can't carry the pane or the tab; a U
 Cmdr in other ways anyway. A registered scheme would let any web page fire it (browsers ask first, but still).
 
 **The URL is still treated as untrusted** (`open_url.rs`): only host `open` with no path, port, user, or fragment;
-`path` repeats (1–10,000, each absolute, no `..`, no NUL, at most 4 KiB); `pane` is `left` or `right`; `tab` is `new`;
+`path` repeats (1–10,000, each absolute, no NUL, at most 4 KiB); `pane` is `left` or `right`; `tab` is `new`;
 `pane` / `tab` at most once. Unknown parameters are ignored, so an app a version behind a freshly updated script still
 opens the path. The only thing a valid URL can do is move a pane.
+
+**A `..` in a path** (#1225, 10c). The script makes each path absolute by text and keeps symlinks as typed: empty and
+`.` names go, a relative path's LEADING `..`s step up from the shell's `pwd` (as `cd ..` does), and every other `..`
+is handed on as typed. The app answers that one at delivery (`reveal::delivery`'s `resolve_dot_dots`, through
+`go_to_path::AppHost::resolve_typed`): past a symlink it's the link TARGET's parent, where `ls` (and the script's own
+`-e` existence check) lands. The script used to `cd` there, which reads `..` by text and so landed beside the link.
+A path with no `..` reaches the app exactly as before.
 
 **Encoding.** The script percent-encodes every byte (`od` + `sed`): wasteful, but nothing (`+`, `&`, `#`, `%`, UTF-8)
 can change meaning on the way, and `query_pairs` decodes it back. `script_tests.rs` pins the round trip on a filename

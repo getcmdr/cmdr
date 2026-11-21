@@ -2,7 +2,7 @@
 //! `cmdr-local`'s and `cmdr-sftp`'s.
 
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use super::*;
 use crate::app_path::AppPathBuf;
@@ -44,8 +44,8 @@ impl LinkReader for Links {
         })
     }
 
-    fn absolute_target(&self, target: &Path) -> Option<AppPathBuf> {
-        AppPathBuf::parse(target.to_str()?, crate::app_path::PathFlavor::Posix).ok()
+    fn absolute_target(&self, target: &str) -> Option<AppPathBuf> {
+        AppPathBuf::parse(target, crate::app_path::PathFlavor::Posix).ok()
     }
 }
 

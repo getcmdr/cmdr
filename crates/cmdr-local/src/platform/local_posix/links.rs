@@ -70,7 +70,7 @@ impl LinkReader for MachineLinks {
         })
     }
 
-    fn absolute_target(&self, target: &Path) -> Option<AppPathBuf> {
-        AppPathBuf::from_native(target).ok()
+    fn absolute_target(&self, target: &str) -> Option<AppPathBuf> {
+        AppPathBuf::from_native_unicode(Path::new(target)).ok()
     }
 }

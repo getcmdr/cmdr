@@ -59,8 +59,8 @@
      *
      * ❗ Two tones, because two outcomes: `warning` is the nearest-ancestor case,
      * where the box does NOT name what the user will land on. `info` is a server
-     * address, where it does. Painting the second one yellow tells a person the
-     * good outcome is a problem.
+     * address, or a `..` past a link (the path exists; the line only says where it
+     * really leads). Painting those yellow tells a person the good outcome is a problem.
      */
     let hint = $state<{ text: string; tone: 'warning' | 'info' } | null>(null)
     let isGoing = $state(false)
@@ -75,9 +75,9 @@
 
     /**
      * Resolve the current box value for the live preview only. Sets the
-     * nearest-ancestor warning, the neutral server-address line, or nothing at
-     * all for directory/file/invalid. Wrapped in `withTimeout` so a hung mount
-     * never blocks.
+     * nearest-ancestor warning, the neutral server-address or through-a-link line,
+     * or nothing at all for a plain directory/file/invalid. Wrapped in
+     * `withTimeout` so a hung mount never blocks.
      */
     async function previewResolve(value: string): Promise<void> {
         const trimmed = value.trim()
@@ -99,10 +99,19 @@
         // A later keystroke may have changed the box while we awaited; only
         // apply if the value we resolved is still current.
         if (value !== inputValue) return
-        hint =
-            resolution?.kind === 'nearestAncestor'
-                ? { text: tString('goToPath.dialog.ancestorHint', { dir: pathParam(resolution.ancestorDir) }), tone: 'warning' }
-                : null
+        hint = hintFor(resolution)
+    }
+
+    /** The preview line a resolution earns: where a path that doesn't exist leads instead, or
+     * where a `..` past a link really leads (the box's text alone would say otherwise). */
+    function hintFor(resolution: GoToPathResolution | null): { text: string; tone: 'warning' | 'info' } | null {
+        if (resolution?.kind === 'nearestAncestor') {
+            return { text: tString('goToPath.dialog.ancestorHint', { dir: pathParam(resolution.ancestorDir) }), tone: 'warning' }
+        }
+        if ((resolution?.kind === 'directory' || resolution?.kind === 'file') && resolution.crossedLink) {
+            return { text: tString('goToPath.dialog.throughLinkHint', { dir: pathParam(resolution.path) }), tone: 'info' }
+        }
+        return null
     }
 
     /** Reads the live box value. A function so the TS literal-narrowing across

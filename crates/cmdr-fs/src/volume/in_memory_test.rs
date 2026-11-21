@@ -1018,18 +1018,18 @@ fn canonicalize_resolves_links_like_realpath() {
 
     // The typed answer is the same key, read back as an app path.
     for asked in [
-        Path::new("/real/inner"),
-        Path::new("/abs/inner"),
-        Path::new("/real/rel"),
-        Path::new("/hop/inner/"),
-        Path::new("/abs/inner/.."),
-        Path::new("/"),
-        Path::new("/abs/missing"),
+        "/real/inner",
+        "/abs/inner",
+        "/real/rel",
+        "/hop/inner",
+        "/",
+        "/abs/missing",
     ] {
+        let typed = AppPath::from_normalized(asked).expect("a canonical test path");
         assert_eq!(
-            volume.canonical_app_path(asked).map(AppPathBuf::into_string),
+            volume.canonical_app_path(typed).map(AppPathBuf::into_string),
             volume
-                .canonicalize(asked)
+                .canonicalize(Path::new(asked))
                 .map(|p| p.to_str().expect("UTF-8 text").to_owned()),
             "{asked:?}"
         );

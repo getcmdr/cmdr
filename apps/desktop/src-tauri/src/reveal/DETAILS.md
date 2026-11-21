@@ -112,15 +112,21 @@ All of this is `delivery.rs`, which is macOS-only like the rest of the mechanism
    hidden page WebKit throttles, so raising late would slow the very round trip the move waits on.
 3. Park the requests in `PendingReveals`, and deliver them right away if the frontend has drained at least once.
    Delivery is one task per batch, moving the pane request by request, so two can't race for the same pane.
-4. `plan_moves` decides the pane moves, then each gets its tab through `crate::tools::open_tab_in_pane` if it wants one,
+4. `resolve_dot_dots` answers any `..` a path holds as the disk does (`go_to_path::AppHost::resolve_typed`, a person's
+   command line: past a symlink, the link TARGET's parent, where `ls` lands; #1225). Only the `cmdr` script sends one
+   (`cli/DETAILS.md`): a `file://` URL can't, since URL parsing removes dot segments first. It runs here, at delivery,
+   because a cold-launch URL arrives before `setup` has registered a volume to ask. A `..` no volume answers in time
+   drops its path, ❌ never a guess by the text; when nothing is left, one `RevealNotShown` says why. A path with no
+   `..` passes untouched.
+5. `plan_moves` decides the pane moves, then each gets its tab through `crate::tools::open_tab_in_pane` if it wants one,
    and `crate::tools::go_to_in_pane` makes it.
-5. After a move landed, for a Finder request, while the key is ours, `RevealDelivered` goes out. **Decision: after the
+6. After a move landed, for a Finder request, while the key is ours, `RevealDelivered` goes out. **Decision: after the
    move, ❌ never before it, ❌ never for a terminal open, and ❌ never for a folder that came through some other
    door.** The frontend spends a once-ever "Show in Finder now lands here" notice on the
    first one it sees (`apps/desktop/src/lib/reveal/DETAILS.md`); a reveal onto a dead mount, an unreadable path, or a
    `cmdr` typed in a terminal (which says nothing about Finder) must not be what spends it. It carries no payload: the
    paths are already crossing over `mcp-nav-to-path`, and a second copy would be a second thing that can disagree.
-6. Anything that didn't show goes out as ONE `RevealNotShown` per batch (the first miss), for every origin, and the
+7. Anything that didn't show goes out as ONE `RevealNotShown` per batch (the first miss), for every origin, and the
    frontend words it as a toast naming the item (`apps/desktop/src/lib/reveal/reveal-not-shown-notice.ts`). Its typed
    reason comes from where the delivery stopped:
    - `notAnswering`: the folder probe outlived its 2 s deadline, or the pane reported the folder stalled

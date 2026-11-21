@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use super::{InMemoryEntry, InMemoryVolume};
-use crate::app_path::{AppPathBuf, PathFlavor};
+use crate::app_path::{AppPath, AppPathBuf, PathFlavor};
 use crate::entry::FileEntry;
 use crate::ignore_poison::RwLockIgnorePoison;
 
@@ -60,14 +60,18 @@ impl InMemoryVolume {
     /// with it). It works on the paths' encoded bytes, so a name that isn't UTF-8 resolves
     /// by its exact bytes, ❌ never a lossy spelling that names no row (or a sibling).
     pub fn canonicalize(&self, path: &Path) -> Option<PathBuf> {
-        let entries = self.entries.read_ignore_poison();
         let normalized = self.normalize(path);
+        self.canonical_bytes(normalized.as_os_str().as_encoded_bytes())
+    }
+
+    /// The walk behind [`Self::canonicalize`], from a normalized key's bytes.
+    fn canonical_bytes(&self, normalized: &[u8]) -> Option<PathBuf> {
+        let entries = self.entries.read_ignore_poison();
         let mut pending: Vec<Vec<u8>> = Vec::new();
-        let push_reversed = |pending: &mut Vec<Vec<u8>>, path: &Path| {
-            let bytes = path.as_os_str().as_encoded_bytes();
+        let push_reversed = |pending: &mut Vec<Vec<u8>>, bytes: &[u8]| {
             pending.extend(bytes.split(|&b| b == b'/').rev().map(<[u8]>::to_vec));
         };
-        push_reversed(&mut pending, &normalized);
+        push_reversed(&mut pending, normalized);
         let mut resolved: Vec<u8> = b"/".to_vec();
         let mut hops = 0;
         while let Some(part) = pending.pop() {
@@ -96,7 +100,7 @@ impl InMemoryVolume {
                     if target.as_os_str().as_encoded_bytes().first() == Some(&b'/') {
                         resolved = b"/".to_vec();
                     }
-                    push_reversed(&mut pending, target);
+                    push_reversed(&mut pending, target.as_os_str().as_encoded_bytes());
                 }
                 None => resolved = next.into_os_string().into_encoded_bytes(),
             }
@@ -105,11 +109,16 @@ impl InMemoryVolume {
         Some(path_of_bytes(resolved))
     }
 
-    /// [`Self::canonicalize`] answered as an app path: the store's keys are `/`-separated
-    /// app text, so the resolved key reads back as one, on every host. `None` also for a
-    /// resolved key that isn't UTF-8 text, which names no app path here.
-    pub fn canonical_app_path(&self, path: &Path) -> Option<AppPathBuf> {
-        let resolved = self.canonicalize(path)?.into_os_string().into_string().ok()?;
+    /// [`Self::canonicalize`] for an app path, answered as one: the store's keys are
+    /// `/`-separated app text, so a canonical app path is its own key and the resolved key
+    /// reads back as an app path, on every host. `None` also for a resolved key that isn't
+    /// UTF-8 text, which names no app path here.
+    pub fn canonical_app_path(&self, path: &AppPath) -> Option<AppPathBuf> {
+        let resolved = self
+            .canonical_bytes(path.as_str().as_bytes())?
+            .into_os_string()
+            .into_string()
+            .ok()?;
         AppPathBuf::parse(&resolved, PathFlavor::Posix).ok()
     }
 }
