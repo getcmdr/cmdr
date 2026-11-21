@@ -22,6 +22,7 @@ use cmdr_fs::deadline::{DeadlineError, blocking_with_timeout, timeout_detached_t
 use cmdr_operation_log::types::{Initiator, OperationId};
 
 use super::expand_tilde;
+use crate::commands::wire_path;
 use crate::file_system::volume::manager::path_routes_over_its_parent;
 
 /// Picks the source volume for a scan preview.
@@ -219,22 +220,48 @@ fn expand_parent(volume_id: Option<&str>, parent_path: &str) -> String {
 // ============================================================================
 
 /// Turns a same-`root` move request into backend arguments: tilde-expanded
-/// paths and the default config. A transfer that touches a routed namespace on
-/// either end doesn't belong on the local fast path (a copy out of a zip or a
-/// snapshot routes through `copy_between_volumes`; writing INTO either is
-/// read-only), so it is refused here.
+/// paths read at the edge (`wire_path`: a `..` source refuses the move), the
+/// destination anchored on the boot volume, and the default config. A transfer
+/// that touches a routed namespace on either end doesn't belong on the local
+/// fast path (a copy out of a zip or a snapshot routes through
+/// `copy_between_volumes`; writing INTO either is read-only), so it is refused
+/// here.
 fn local_transfer_request(
     sources: &[String],
     destination: &str,
     config: Option<WriteOperationConfig>,
 ) -> Result<(Vec<PathBuf>, PathBuf, WriteOperationConfig), WriteOperationError> {
-    let sources: Vec<PathBuf> = sources.iter().map(|s| PathBuf::from(expand_tilde(s))).collect();
-    let destination = PathBuf::from(expand_tilde(destination));
+    let sources = tilde_expanded_checked(sources)?;
+    let destination = same_root_destination(destination);
     // Twice, so the refusal names the half that actually refused rather than
     // whichever path the loop happened to reach first.
     reject_if_routed_over_a_parent(sources.iter(), ReadOnlySide::Source)?;
     reject_if_routed_over_a_parent(std::iter::once(&destination), ReadOnlySide::Destination)?;
     Ok((sources, destination, config.unwrap_or_default()))
+}
+
+/// Sources a local start takes: each tilde expanded, then read at the command edge.
+fn tilde_expanded_checked(sources: &[String]) -> Result<Vec<PathBuf>, WriteOperationError> {
+    let expanded: Vec<String> = sources.iter().map(|s| expand_tilde(s)).collect();
+    Ok(wire_path::checked_all(expanded.iter().map(String::as_str))?)
+}
+
+/// A same-`root` move's destination, the Move dialog's VOLUME-RELATIVE box text, anchored
+/// on the boot volume's root the way a copy anchors its own (`resolve_dest_path`): on
+/// Windows that root is `C:/`, so `/Users/x` is `C:/Users/x`, which the engine takes; on
+/// macOS and Linux it's `/`, and the path is the one sent. With no boot volume registered
+/// (a test), the text as sent, tilde expanded. A `..` in it is the person's, so it stays
+/// for the OS to resolve, as a copy's does.
+fn same_root_destination(text: &str) -> PathBuf {
+    same_root_destination_on(get_volume_manager().get(cmdr_fs::volume::DEFAULT_VOLUME_ID), text)
+}
+
+/// [`same_root_destination`] on a given boot volume.
+fn same_root_destination_on(root: Option<Arc<dyn Volume>>, text: &str) -> PathBuf {
+    match root {
+        Some(root) => cmdr_operations::resolve_dest_path(&root, text.to_owned()),
+        None => PathBuf::from(expand_tilde(text)),
+    }
 }
 
 /// Uses rename() for same-filesystem (instant), copy+delete for cross-filesystem.
@@ -248,13 +275,24 @@ pub async fn move_files(
     config: Option<WriteOperationConfig>,
     initiator: Initiator,
 ) -> Result<WriteOperationStartResult, WriteOperationError> {
+    let events: Arc<dyn OperationEventSink> = Arc::new(TauriEventSink::new(app));
+    move_files_with(events, sources, destination, config, initiator).await
+}
+
+/// [`move_files`] with the sink passed in.
+async fn move_files_with(
+    events: Arc<dyn OperationEventSink>,
+    sources: Vec<String>,
+    destination: String,
+    config: Option<WriteOperationConfig>,
+    initiator: Initiator,
+) -> Result<WriteOperationStartResult, WriteOperationError> {
     // Before `install` there is no engine to start on: refuse, never write.
     let engine = operations().map_err(refuse_not_installed)?;
     let (sources, destination, config) = local_transfer_request(&sources, &destination, config)?;
 
     // Same-`root` local move (the FE uses `move_between_volumes` whenever the
     // source and destination volumes differ), so no ejectable volume here.
-    let events: Arc<dyn OperationEventSink> = Arc::new(TauriEventSink::new(app));
     engine
         .move_files_start(
             events,
@@ -284,20 +322,33 @@ pub async fn delete_files(
     config: Option<WriteOperationConfig>,
     initiator: Initiator,
 ) -> Result<WriteOperationStartResult, WriteOperationError> {
+    let events: Arc<dyn OperationEventSink> = Arc::new(TauriEventSink::new(app));
+    delete_files_with(events, sources, volume_id, config, initiator).await
+}
+
+/// [`delete_files`] with the sink passed in.
+async fn delete_files_with(
+    events: Arc<dyn OperationEventSink>,
+    sources: Vec<String>,
+    volume_id: Option<String>,
+    config: Option<WriteOperationConfig>,
+    initiator: Initiator,
+) -> Result<WriteOperationStartResult, WriteOperationError> {
     // Before `install` there is no engine to start on: refuse, never write.
     let engine = operations().map_err(refuse_not_installed)?;
     let is_local = volume_id.as_deref().unwrap_or("root") == "root";
-    let sources: Vec<PathBuf> = if is_local {
-        sources.iter().map(|s| PathBuf::from(expand_tilde(s))).collect()
+    // Read at the command edge (`wire_path`): `x/link/` names the link, and a `..`
+    // refuses the whole delete before anything goes.
+    let sources = if is_local {
+        tilde_expanded_checked(&sources)?
     } else {
-        sources.iter().map(PathBuf::from).collect()
+        wire_path::checked_all(sources.iter().map(String::as_str))?
     };
     let config = config.unwrap_or_default();
 
     // Deleting an entry INSIDE an archive routes to the managed archive-edit
     // driver inside `delete_files_start` (a `{ delete }` changeset), so no
     // rejection here. The `.zip` file itself deletes on the normal path.
-    let events: Arc<dyn OperationEventSink> = Arc::new(TauriEventSink::new(app));
     engine
         .delete_files_start(events, sources, config, volume_id, initiator, None)
         .await
@@ -338,7 +389,7 @@ pub async fn trash_files(
 ) -> Result<WriteOperationStartResult, WriteOperationError> {
     // Before `install` there is no engine to start on: refuse, never write.
     let engine = operations().map_err(refuse_not_installed)?;
-    let sources: Vec<PathBuf> = sources.iter().map(|s| PathBuf::from(expand_tilde(s))).collect();
+    let sources = tilde_expanded_checked(&sources)?;
     let config = config.unwrap_or_default();
 
     // Trashing an entry inside a routed namespace is a mutation of the thing that
@@ -508,6 +559,14 @@ pub fn answer_locked_sources(operation_id: String, answer: LockedSourcesAnswer) 
 #[cfg(test)]
 #[path = "write_ops_restic_test.rs"]
 mod write_ops_restic_test;
+
+#[cfg(test)]
+#[path = "write_ops_wire_path_test.rs"]
+mod write_ops_wire_path_test;
+
+#[cfg(test)]
+#[path = "write_ops_destination_test.rs"]
+mod write_ops_destination_test;
 
 #[cfg(test)]
 mod tests {

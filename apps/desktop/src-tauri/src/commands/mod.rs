@@ -65,6 +65,8 @@ pub mod volumes;
 pub mod webdav;
 pub mod whats_new;
 pub mod window_ordering;
+// The command edge's door for a path the frontend sends (`from_wire`).
+pub(crate) mod wire_path;
 
 #[cfg(test)]
 mod wire_shape_tests;

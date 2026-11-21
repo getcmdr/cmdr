@@ -276,6 +276,10 @@ its reply is allowed to mean (`parse_mcp_response`, `parse_operation_start_respo
 `expand_user_path(s)` for optional or conditional sites (the `dialog` tool's optional `path`, the `await` tool's `value`
 when path-shaped). Both in `mod.rs`. Virtual paths (`mtp://…`) don't start with `~`, so expansion is a no-op for them.
 
+`nav_to_path` refuses a path holding a `..` name, typed (`data.refusal: "dotDotName"`): a pane standing on one would
+carry the `..` into every row, and the command edge refuses each delete, trash, or move of such a row as a bug
+(`../../commands/DETAILS.md` § "Sent paths"). It lifts once the typed-path resolver answers an agent's `..`.
+
 ## Empty-operation fast-fail (`file_ops.rs`)
 
 `empty_operation_error` (pure, unit-tested), for `delete` and `compress`, mirrors the FE fallback semantics: a selection

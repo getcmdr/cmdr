@@ -497,6 +497,48 @@ server, where unreachable, timed out, refused, an unreadable answer, and a reque
 is; a command with failures of its own nests it (`ErrorReportSendError::Server`). The frontend renders every variant
 from the message catalog: `docs/guides/error-handling.md`.
 
+### Sent paths
+
+A path the frontend sends is read as an app path at the command edge, `wire_path.rs`, through
+`AppPathBuf::from_wire` (`docs/specs/app-path-plan.md` § "Normalization"):
+
+- **A trailing `/`, a repeated `/`, and a `.` name go.** POSIX resolves `x/link/` THROUGH a symlink, so a stat named
+  the target and a delete emptied it. Rows never carry one (`join` builds them), so only odd senders see a change.
+- **A `..` name is refused, typed, and logged as a bug** (`log_error!`): the OS reads `x/link/../y` as the link
+  target's sibling, and only a volume answers that. Every sender of these paths builds them from a row or a pane's own
+  path; text a person or an agent types resolves first (go-to-path's typed-path resolver). A write start answers the
+  generic `IoError` ("Couldn't delete the file", the path in the technical details), a volume call `VolumeError::IoError`,
+  and the drag-and-drop stat an unknown kind. No new copy: it's a bug-class event.
+- **An engine start's sources are checked, then handed on as sent** (`checked`): every write start drops a trailing
+  `/` itself (`crates/cmdr-operations/src/wire_paths.rs`), so the engine sees the bytes it always did, and the start
+  still takes `PathBuf`s until 10d. Text that's no app path (relative, empty) keeps today's answer there.
+- **A volume call takes the typed path** (`on_volume`), a POSIX `/x` on Windows read as volume-relative; text that names
+  no place is refused like a `..`. `read_on_volume` is the same without the bug report, for an agent's stored text.
+- **While escapes aren't live, an escape-range code point is literal** (`from_literal_store`), so a path crosses byte
+  for byte.
+- **The transfer dialog's destination box is person-typed and VOLUME-RELATIVE.** Its probes (`path_exists` /
+  `destination_exists`, `destination_write_access`) anchor through the typed `anchor_at_root` (`anchored`): `/photos`
+  on a share is under its root. A `..` there (or another volume's path) has no typed anchor, so the probe answers
+  "couldn't tell", with no bug report, until the typed-path resolver takes that text. The writes themselves and
+  `get_name_rules` anchor through `cmdr_operations::resolve_dest_path`, which leaves a `..` to the OS: on Windows the
+  boot volume's `C:/` takes the Move dialog's `/Users/x` as `C:/Users/x` (`move_files` once handed the engine the bare
+  `/Users/x`, which its `from_wire` refused as "a path shaped for another OS"). The other same-root commands (delete,
+  trash, rename, create, compress) take row or pane paths, never the box.
+- **A pane never stands on a `..`**, or every row under it would carry one and each delete, trash, or move from it
+  would refuse as a bug: the listing start takes its path as sent, so the senders that can hold a `..` are closed
+  before a pane takes one. The CLI refuses it (`cli/open_url.rs`), go-to-path resolves it, and the MCP `nav_to_path`
+  tool refuses it typed (`data.refusal: "dotDotName"`, `tools/actions/nav.rs`) until the typed-path resolver answers an
+  agent's `..`. A tab persisted on a `..` path before that refusal still lists, and its rows' writes refuse.
+- **`move_files`' destination on macOS and Linux** is the one sent for every absolute path (the root is `/`); a relative
+  or empty one now anchors on `/` as a copy's does (`foo` is `/foo`, as the dialog's own validation already read it),
+  where it used to reach the engine relative.
+- **Which edges read this way**: `delete_files`, `trash_files`, `move_to_trash` (the single trash, its refusal
+  `MutationError::Unexpected`), and `move_files` (sources), `stat_paths_kinds`,
+  `share_link`, the agent's destination check (`suggested_ops`, no bug report: a stored agent proposal can hold a `..`),
+  and the two destination probes. The listing start, the create commands, rename, the pre-checks
+  (`check_home_folder_guard`, `trash_routing_for_paths`), the scan preview, and the volume transfers take the text as
+  sent: rows, pane paths, or typed text, and a listing of `x/link/` lists the target's rows under `x/link` either way.
+
 **JSON for all Tauri IPC, not binary (MessagePack/Protobuf).** Benchmarked with real directory listings: MessagePack is
 34-58% SLOWER than JSON despite being 17-19% smaller. Tauri serializes `Vec<u8>` as a JSON array of numbers, so binary
 data gets wrapped in JSON anyway, negating size benefits and adding decode overhead. See

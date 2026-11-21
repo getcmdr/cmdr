@@ -19,8 +19,6 @@
 //! Ops are read a PAGE at a time and counted with `COUNT(*)`: a group of 60 000 is legitimate,
 //! so nothing here loads a group to describe it.
 
-use cmdr_fs::app_path::AppPath;
-use std::path::Path;
 use std::time::Duration;
 
 use cmdr_fs::deadline::{io_budget, timeout_detached_typed};
@@ -522,16 +520,26 @@ async fn destination_state(group: &ProposalGroup) -> DestinationState {
             }
         };
     };
+    // An agent's text, read at the command edge: a `..` in it is what only its volume
+    // answers (the typed-path resolver's job where the proposal is made), so it gets no
+    // guess here, and no bug report per card render either.
+    let destination = match crate::commands::wire_path::read_on_volume(&destination) {
+        Ok(path) => path,
+        Err(why) => {
+            log::warn!(
+                target: "agent::suggested_ops",
+                "group {}: the destination names no place to check ({why})",
+                group.id
+            );
+            return DestinationState::Unknown;
+        }
+    };
     let budget = io_budget(volume.connection_state(), DESTINATION_CHECK_TIMEOUT);
     let answer = timeout_detached_typed(
         budget,
         || DestinationGap::TimedOut,
         DestinationGap::Panicked,
-        async move {
-            Ok(volume
-                .get_metadata(&AppPath::legacy_unchecked(Path::new(&destination)))
-                .await)
-        },
+        async move { Ok(volume.get_metadata(&destination).await) },
     )
     .await;
     match answer {
