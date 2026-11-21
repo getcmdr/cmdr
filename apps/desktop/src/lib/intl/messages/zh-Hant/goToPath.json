@@ -31,6 +31,10 @@
   "@goToPath.dialog.ancestorHint": {
     "sourceHash": "e6eefca"
   },
+  "goToPath.dialog.throughLinkHint": "「..」接在符號連結後面，所以這個路徑會通往 {dir}。",
+  "@goToPath.dialog.throughLinkHint": {
+    "sourceHash": "1a3b3e1"
+  },
   "goToPath.toast.landedOnAncestor": "<req>{requested}</req> 不存在，所以我們帶你前往了 <land>{landed}</land>。",
   "@goToPath.toast.landedOnAncestor": {
     "sourceHash": "9af3d3a"

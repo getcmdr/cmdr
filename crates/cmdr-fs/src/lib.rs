@@ -91,6 +91,7 @@ pub mod thread_cpu;
 pub mod thread_qos;
 pub mod tilde;
 pub mod twin_path;
+pub mod typed_path;
 pub mod utility_pool;
 pub mod validation;
 pub mod volume;

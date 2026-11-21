@@ -551,6 +551,15 @@ holds it to that.
 **Cost**: two requests where a naive rename spends one, on every staged write that lands. ❗ Measured against the
 alternative, that is the price of the promise rather than an oversight.
 
+## A typed `..`
+
+`parent_for_dot_dot` answers a `..` the way the server's own path resolution does: past a symlink, the link TARGET's
+parent (`cmdr_fs::volume::dot_dot::parent_across_links`; the app asks it for text a person or an agent typed, #1225).
+One `LSTAT` per name asked (`read_link_target_impl`'s first step) and one `READLINK` per link followed. A target off
+this volume's root can't be spelled as an app path, so it's refused, ❌ never anchored (the path rule above); so is a
+`..` asked with no session (nobody to ask, so no lexical guess). Pinned by `volume/dot_dot_test.rs` (a Docker cell over
+stock OpenSSH, plus an offline one).
+
 ## Crate hazards
 
 Read these before writing byte-path code.

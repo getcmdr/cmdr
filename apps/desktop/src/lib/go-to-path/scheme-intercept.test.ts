@@ -223,6 +223,7 @@ describe('actOnSchemeInput: what the jump does', () => {
     ).toEqual({
       kind: 'directory',
       path: APP_ROOT,
+      crossedLink: false,
     })
     expect(currentSignInRequest()).toBeNull()
   })

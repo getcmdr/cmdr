@@ -4114,8 +4114,9 @@ export const commands = {
    *  Resolves a typed input against the focused pane's `base_dir`. Serves the
    *  live as-you-type warning, the actual jump, and the clipboard-prefill check.
    *
-   *  `go_to_path::resolve` always answers (an unreachable path is a `GoToPathResolution`
-   *  variant, not an error), so a missed deadline is the only thing this can report.
+   *  `go_to_path::resolve` always answers inside its deadline (an unreachable path or a
+   *  volume that didn't answer is a `GoToPathResolution` variant, not an error), so this
+   *  never reports `DeadlineError` today; the type stays for the wire.
    */
   resolveGoToPath: (input: string, baseDir: string) =>
     typedError<GoToPathResolution, DeadlineError>(__TAURI_INVOKE('resolve_go_to_path', { input, baseDir })),
@@ -11731,6 +11732,11 @@ export type GoToPathResolution =
       kind: 'directory'
       // The folder, as an app path.
       path: string
+      /**
+       *  Whether a `..` in the input crossed a symlink, so `path` isn't what the text
+       *  reads as by itself: the preview line shows `path` then.
+       */
+      crossedLink: boolean
     }
   /**
    *  The resolved path is an existing file. `path` is the canonical normalized
@@ -11745,10 +11751,12 @@ export type GoToPathResolution =
       parentDir: string
       // Its name.
       fileName: string
+      // As [`Self::Directory`]'s.
+      crossedLink: boolean
     }
   /**
    *  The resolved path doesn't exist. `ancestor_dir` is the nearest existing
-   *  ancestor (worst case `/`). Navigate there and fire an INFO toast.
+   *  ancestor (worst case the root). Navigate there and fire an INFO toast.
    */
   | {
       kind: 'nearestAncestor'
@@ -11757,7 +11765,10 @@ export type GoToPathResolution =
       // The closest folder above it that exists.
       ancestorDir: string
     }
-  // Defensive: the input was empty or couldn't be turned into a path.
+  /**
+   *  The input was empty or leads nowhere (no app path, or a volume that couldn't say
+   *  what a `..` means there in time).
+   */
   | {
       kind: 'invalid'
       // Why, for the log only.

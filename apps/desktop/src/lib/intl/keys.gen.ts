@@ -3217,6 +3217,7 @@ export type MessageKey =
   | 'goToPath.dialog.recentsAriaLabel'
   | 'goToPath.dialog.removeFromList'
   | 'goToPath.dialog.snapshotNotAPath'
+  | 'goToPath.dialog.throughLinkHint'
   | 'goToPath.dialog.title'
   | 'goToPath.toast.landedOnAncestor'
   | 'goToPath.toast.pressToGoBack'

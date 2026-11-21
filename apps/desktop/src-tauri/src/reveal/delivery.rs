@@ -18,6 +18,8 @@ use std::time::Duration;
 use tauri::{AppHandle, Manager, Runtime, Wry};
 use tauri_specta::Event;
 
+use cmdr_fs::typed_path::{TypedBy, TypedPathRefusal};
+
 use crate::cli::open_url::{SCHEME as CLI_SCHEME, parse_cli_url};
 use crate::ignore_poison::IgnorePoison;
 use crate::tools::{GoToFailure, GoToTarget, PaneChoice};
@@ -366,8 +368,62 @@ pub(super) fn spawn_delivery<R: Runtime>(app: &AppHandle<R>, requests: Vec<Revea
     });
 }
 
+/// Every path in `paths` that holds a `..` name, answered as the disk answers it: a `..`
+/// after a link is the link TARGET's parent, where `ls` lands (`go_to_path::AppHost::resolve_typed`,
+/// read as a person's command line: a `..` above `/` stays at `/`). A path with no `..`
+/// passes through untouched. The `cmdr` script hands a `..` on as typed (after stepping a
+/// relative path's leading ones up from the shell's folder by text, as `cd ..` does); a
+/// `file://` URL never carries one, since URL parsing removes dot segments first.
+///
+/// Runs at delivery, not on arrival: a cold-launch URL arrives before `setup` has
+/// registered a volume to ask. A path whose `..` can't be answered (a hung mount, a name no
+/// path holds) is dropped, ❌ never guessed by its text; the caller says so when nothing is
+/// left.
+async fn resolve_dot_dots(paths: Vec<PathBuf>) -> (Vec<PathBuf>, Option<RevealNotShownReason>) {
+    let mut resolved = Vec::with_capacity(paths.len());
+    let mut refused = None;
+    for path in paths {
+        if !path.components().any(|part| part == std::path::Component::ParentDir) {
+            resolved.push(path);
+            continue;
+        }
+        let answer = match path.to_str() {
+            Some(text) => crate::go_to_path::AppHost::registry()
+                .resolve_typed(text, None, TypedBy::PersonViaCommandLine)
+                .await
+                .map_err(|refusal| match refusal {
+                    TypedPathRefusal::Unanswered(_) => RevealNotShownReason::NotAnswering,
+                    _ => RevealNotShownReason::FolderNotOpened,
+                }),
+            None => Err(RevealNotShownReason::FolderNotOpened),
+        };
+        match answer.and_then(|typed| {
+            typed
+                .path
+                .to_native()
+                .map_err(|_| RevealNotShownReason::FolderNotOpened)
+        }) {
+            Ok(native) => resolved.push(native),
+            Err(reason) => {
+                log::warn!(target: "reveal", "Couldn't resolve a `..` in a revealed path: {reason:?}");
+                refused.get_or_insert(reason);
+            }
+        }
+    }
+    (resolved, refused)
+}
+
 /// Move a pane onto one request's paths.
-async fn deliver<R: Runtime>(app: &AppHandle<R>, request: RevealRequest) {
+async fn deliver<R: Runtime>(app: &AppHandle<R>, mut request: RevealRequest) {
+    let asked = std::mem::take(&mut request.paths);
+    let (resolved, refused) = resolve_dot_dots(asked.clone()).await;
+    if resolved.is_empty() {
+        if let Some(not_shown) = not_shown_for_paths(&asked, refused.unwrap_or(RevealNotShownReason::FolderNotOpened)) {
+            announce_not_shown(app, not_shown);
+        }
+        return;
+    }
+    request.paths = resolved;
     let requested = request.paths.len();
     let (pane, origin) = (request.target.pane, request.origin);
     log::info!(target: "reveal", "{origin:?} reveal: {requested} path(s) to show");

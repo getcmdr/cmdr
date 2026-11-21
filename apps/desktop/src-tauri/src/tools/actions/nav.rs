@@ -384,9 +384,10 @@ pub(crate) async fn go_to_in_pane<R: Runtime>(
 ///
 /// The pane would list what the OS makes of it (`x/link/..` is the link TARGET's parent),
 /// and every row under that pane would carry the `..`, which a delete, trash, or move
-/// refuses at the command edge (`commands/wire_path.rs`). Until the typed-path resolver
-/// answers an agent's `..` (`docs/specs/app-path-plan.md` § "Typed and pasted `..`"), the
-/// agent sends the folder's own path.
+/// refuses at the command edge (`commands/wire_path.rs`). Until 10d routes an agent's `..`
+/// through `AppHost::registry().resolve_typed(…, TypedBy::Agent)`
+/// (`docs/specs/app-path-plan.md` § "Typed and pasted `..`"), the agent sends the folder's
+/// own path.
 fn refuse_dot_dot_name(path: &str) -> Result<(), ToolError> {
     if !crate::commands::wire_path::has_dot_dot_name(path) {
         return Ok(());

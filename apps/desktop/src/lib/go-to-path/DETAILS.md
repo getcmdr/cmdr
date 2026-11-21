@@ -36,9 +36,11 @@ On any successful jump (directory/file/ancestor) the RESOLVED target is recorded
 refused jump records nothing (and the ancestor jump shows no "landed on" toast), so recents never offer a path that
 didn't work.
 
-While typing, a debounced (`RESOLVE_DEBOUNCE_MS`, wrapped in `withTimeout`) resolve drives the live inline warning below
-the box for the `nearestAncestor` case only. The same `resolve_go_to_path` command serves both the live preview and the
-actual jump (one source of truth, no drift).
+While typing, a debounced (`RESOLVE_DEBOUNCE_MS`, wrapped in `withTimeout`) resolve drives the live line below the box:
+the `warning` for a `nearestAncestor`, and an `info` line naming the real destination when a `directory` or `file`
+carries `crossedLink` (a `..` right after a symlink lands beside the link's target, where `ls` lands, so the box's text
+alone would mislead; the backend decides, `src-tauri/src/go_to_path/DETAILS.md`). Nothing for a plain hit. The same
+`resolve_go_to_path` command serves both the live preview and the actual jump (one source of truth, no drift).
 
 ## Pure helpers (unit-tested)
 

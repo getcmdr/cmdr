@@ -3,17 +3,16 @@
 //! the local disk), plus the dialog's recent paths, in memory by `cmdr-recents`'
 //! rules, as `commands/go_to_path.rs` and `go_to_path/history.rs` answer them.
 
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use cmdr_fs::go_to_path::{FoundKind, GoToHost, resolve_with};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathFlavor};
+use cmdr_fs::go_to_path::{FoundKind, GoToHost, resolve as resolve_go_to};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::tilde::expand_tilde_with;
-use cmdr_fs::volume::path_grammar::{self, PathFlavor};
-use cmdr_fs::volume::{InMemoryVolume, Volume};
+use cmdr_fs::typed_path::TypedPathHost;
+use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeError};
 use cmdr_recents::RecentItem;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -84,67 +83,43 @@ impl DemoGoTo {
         }
     }
 
-    /// The desktop's resolution over the volume. The classifier asks synchronously and
-    /// the volume answers asynchronously, so a first pass with nothing found collects
-    /// every path the classifier could ask (the target and each ancestor), those are
-    /// read, and the second pass classifies over the answers.
-    async fn resolve(&self, input: &str, base_dir: &Path) -> cmdr_fs::go_to_path::GoToPathResolution {
-        let asked = Asked {
-            home: self.home.as_deref(),
-            found: HashMap::new(),
-            paths: Mutex::new(Vec::new()),
+    /// The desktop's resolution over the volume. A pane folder that's no app path reads
+    /// a relative input as nothing to go to, as the desktop does.
+    async fn resolve(&self, input: &str, base_dir: &str) -> cmdr_fs::go_to_path::GoToPathResolution {
+        let base = AppPathBuf::parse(base_dir, PathFlavor::Posix).ok();
+        resolve_go_to(input, base.as_deref(), self).await
+    }
+}
+
+impl TypedPathHost for DemoGoTo {
+    fn flavor(&self) -> PathFlavor {
+        PathFlavor::Posix
+    }
+
+    fn expand_tilde(&self, text: &str) -> String {
+        expand_tilde_with(text, self.home.as_deref(), PathFlavor::Posix)
+    }
+
+    /// The in-memory volume's own answer: its default, the lexical parent.
+    async fn parent_for_dot_dot(&self, path: &AppPath) -> Result<AppPathBuf, VolumeError> {
+        self.store.parent_for_dot_dot(path).await
+    }
+}
+
+impl GoToHost for DemoGoTo {
+    /// What's at `path`, following links as the desktop's `metadata` does. An in-memory
+    /// volume always answers, so this is never "couldn't check".
+    async fn found(&self, path: &AppPath) -> Result<Option<FoundKind>, VolumeError> {
+        let Some(target) = self.store.canonical_app_path(path) else {
+            return Ok(None);
         };
-        resolve_with(input, base_dir, &asked);
-        let mut found = HashMap::new();
-        for path in asked.paths.into_inner().unwrap_or_default() {
-            if found.contains_key(&path) {
-                continue;
+        Ok(self.store.get_metadata(&target).await.ok().map(|entry| {
+            if entry.is_directory {
+                FoundKind::Directory
+            } else {
+                FoundKind::File
             }
-            let kind = self.found(&path).await;
-            found.insert(path, kind);
-        }
-        resolve_with(
-            input,
-            base_dir,
-            &Asked {
-                home: self.home.as_deref(),
-                found,
-                paths: Mutex::new(Vec::new()),
-            },
-        )
-    }
-
-    /// What's at `path`, following links as the desktop's `metadata` does.
-    async fn found(&self, path: &Path) -> Option<FoundKind> {
-        let target = self.store.canonical_app_path(path)?;
-        let entry = self.store.get_metadata(&target).await.ok()?;
-        Some(if entry.is_directory {
-            FoundKind::Directory
-        } else {
-            FoundKind::File
-        })
-    }
-}
-
-/// The volume as the classifier sees it: the answers read so far, and every path asked.
-struct Asked<'a> {
-    home: Option<&'a str>,
-    found: HashMap<PathBuf, Option<FoundKind>>,
-    paths: Mutex<Vec<PathBuf>>,
-}
-
-impl GoToHost for Asked<'_> {
-    fn expand_tilde(&self, input: &str) -> String {
-        expand_tilde_with(input, self.home, PathFlavor::Posix)
-    }
-
-    fn found(&self, path: &Path) -> Option<FoundKind> {
-        self.paths.lock_ignore_poison().push(path.to_path_buf());
-        self.found.get(path).copied().flatten()
-    }
-
-    fn app_spelling(&self, path: &Path) -> String {
-        path_grammar::app_spelling(&path.to_string_lossy(), PathFlavor::Posix)
+        }))
     }
 }
 
@@ -177,8 +152,8 @@ impl RecentItem for RecentPathEntry {
 #[serde(rename_all = "camelCase")]
 struct ResolveArgs {
     input: String,
-    /// The pane's folder on the one volume, which speaks `std::path`.
-    base_dir: PathBuf,
+    /// The pane's folder, as an app path.
+    base_dir: String,
 }
 
 #[derive(Deserialize)]

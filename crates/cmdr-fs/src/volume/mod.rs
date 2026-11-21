@@ -385,6 +385,24 @@ pub trait Volume: Send + Sync {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
 
+    /// What `<path>/..` names on this volume, for a `..` typed or pasted after a
+    /// name (`/x/link/../y`; the app's typed-path resolver asks it once per such
+    /// `..`, at the input boundary).
+    ///
+    /// Default: the lexical parent ([`dot_dot::lexical_parent`]), right for every
+    /// backend with no links, and for Windows, where Win32 resolves `..` by text
+    /// before the filesystem sees it. A backend whose OS resolves `..` physically
+    /// (the local POSIX disk, SFTP) overrides it with
+    /// [`dot_dot::parent_across_links`]: the link TARGET's parent when the last name
+    /// is a symlink. ❗ A name that doesn't exist is no link, so a typed path with a
+    /// missing folder still reaches its nearest existing ancestor.
+    fn parent_for_dot_dot<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Result<AppPathBuf, VolumeError>> + Send + 'a>> {
+        Box::pin(async move { Ok(dot_dot::lexical_parent(path)) })
+    }
+
     /// Whether this backend knows how to make a symlink at all. A cheap gate, so a
     /// copy onto a share with no links pays no round trip to find out; the
     /// filesystem under `path` still has the last word (a local exFAT drive refuses),
@@ -2531,6 +2549,7 @@ mod child_name;
 mod connection;
 mod connection_cell;
 mod connection_reporter;
+pub mod dot_dot;
 mod entry_kind;
 mod error;
 pub mod http_session;

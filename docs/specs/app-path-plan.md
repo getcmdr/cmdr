@@ -2062,8 +2062,8 @@ included; the hidden couplings it found are why waves B and C differ from round 
   holding `..` or a `//` lead), so it keeps `Path`'s logic and its two bridges. Suites on macOS: the app 6,807, green.
 - **What stays, and where it goes**:
   - **The IPC edges** switched to `from_wire` in the first behavior-change commit (below). `go_to_path::resolve_with`'s
-    `std::path` arithmetic (#1314 item 1) resolves `..` lexically today; it goes typed with `resolve_typed` and
-    `Volume::parent_for_dot_dot` in the second behavior-change commit.
+    `std::path` arithmetic (#1314 item 1) went typed with `resolve_typed` and `Volume::parent_for_dot_dot` in the second
+    behavior-change step (below).
   - **The routing seam**: `VolumeManager::resolve(volume_id, &Path)` and its `ResolvedVolume.path` built by
     `legacy_unchecked` (archive, git, restic routes) is the next mechanical step; it takes most of the manager's
     remaining bridges and the routing tests' with it. `mount_id_for_path` keeps `Path`'s `starts_with` on its caller's
@@ -2106,13 +2106,14 @@ included; the hidden couplings it found are why waves B and C differ from round 
     bridge back to the start's `PathBuf` in a file with no budget, and would refuse a typed `..` the copy accepts), and
     so does `get_name_rules` for the boot volume. The other same-root commands (delete, trash, rename, create, compress)
     take row or pane paths, never the dialog's box, so they had no gap.
-  - **Kept, waiting on `resolve_typed`**: a `..` in a person-typed destination: the writes keep today's `std::path`
-    `root_anchored` (the OS resolves it), and the probes answer "couldn't tell" (no typed anchor), since refusing it
-    would refuse what a person typed. The listing start, the create commands, rename, the pre-checks, the scan preview,
-    and the volume transfers (whose engine starts already drop a trailing `/`) take the text as sent: their senders are
-    rows, pane paths, or typed text, and a listing of `x/link/` lists the target's rows under `x/link` either way. The
-    `cmdr-local`, delete-engine, MCP, and go-to-path pins (g) stay: they pin the volume's and the engine's own answers,
-    or belong to 10d and the second commit.
+  - **Next, now that `resolve_typed` exists** (second step, below): a `..` in a person-typed destination. The writes
+    keep `std::path`'s `root_anchored` (the OS resolves it), and the probes answer "couldn't tell" (no typed anchor),
+    since refusing it would refuse what a person typed; the next step resolves it through
+    `AppHost::registry().resolve_typed(…, TypedBy::Person)` before the anchor. The listing start, the create commands,
+    rename, the pre-checks, the scan preview, and the volume transfers (whose engine starts already drop a trailing `/`)
+    take the text as sent: their senders are rows, pane paths, or typed text, and a listing of `x/link/` lists the
+    target's rows under `x/link` either way. The `cmdr-local`, delete-engine, and MCP pins (g) stay: they pin the
+    volume's and the engine's own answers, or belong to 10d (the go-to pin flipped in the second step).
   - **Review round** (2026-11-21): the single trash (`move_to_trash`) reads its path at the edge too, and its engine
     body (`trash_single_journaled`) drops a trailing `/` like every other start (the OS trashed the link either way; its
     `lstat` journaled the target's subtree). The MCP `nav_to_path` refuses a `..` typed, so no pane stands on one (rows
@@ -2126,6 +2127,45 @@ included; the hidden couplings it found are why waves B and C differ from round 
   directories (1,236 tests): `main` 44 red → the branch 43, none newly red; of the baseline's 70 here, 27 pass and 43
   stay red, waiting on the routing seam, the two behavior-change commits, and the watcher fixtures
   (`docs/notes/windows-port/windows-test-failures.md` § "By milestone", the TSV's `rerun` column).
+- **Second behavior-change step done** (2026-11-21, David's OK the same day; branch `worktree-agent-a6e246efe235deaa9`):
+  § "Typed and pasted `..`" landed, loud rule 1's second exception, pin (g) flipped for go-to.
+  - **The trait method**: `Volume::parent_for_dot_dot`, lexical by default (`cmdr_fs::volume::dot_dot::lexical_parent`).
+    `cmdr-local`'s Unix volume and `cmdr-sftp` override it with `dot_dot::parent_across_links` over a `LinkReader`
+    (local: `readlink` machine-wide; SFTP: `LSTAT` + `READLINK`, a target off the root refused). It follows a target
+    that is itself a link and walks a relative target's own `..`s the same way (40 hops, then refused). A missing name,
+    or one under a file (`ENOTDIR`), is no link; any other read failure is refused. Windows, SMB, S3, MTP, ADB,
+    archives, virtual volumes, and `InMemoryVolume` keep the default.
+  - **The resolver**: `cmdr_fs::typed_path::resolve_typed_with(text, base, by: TypedBy, host)`, `TypedBy` = `Person`
+    (address bar and go-to: `~`, Explorer's trailing-dot trim on Windows), `PersonViaCommandLine` (CLI, deep links: no
+    `~`, literal names), `Agent` (`~`, literal, `OffRoot` above a root). The head before the first `..` parses with
+    `from_external_text`; each later name joins through `AppNameBuf::from_typed`; `TypedPath.crossed_link` says when a
+    volume's answer differed from the lexical one. The app's host is `go_to_path::AppHost` (the registry's longest root,
+    routed volumes skipped, the boot volume as a local fallback; every stat and `..` detached under ONE 2 s `Deadline`);
+    `AppHost::registry().resolve_typed(…)` is the door 10d's MCP inputs take.
+  - **The callers**: go-to (`cmdr_fs::go_to_path` now classifies an `AppPath` over an async `GoToHost: TypedPathHost`,
+    the browser demo too; `GoToPathResolution::{Directory, File}` gained `crossedLink`, and the dialog's preview names
+    the real destination in the `info` tone, new key `goToPath.dialog.throughLinkHint`, translated in all 13 languages).
+    The CLI: the script now makes paths absolute by text, steps a relative path's leading `..`s up from `pwd`, and hands
+    any other `..` on (the parser no longer refuses one); `reveal::delivery::resolve_dot_dots` answers it at delivery,
+    after `setup`. Deep links (`file://`) never carry a `..` (URL parsing removes dot segments) and pass the same door
+    untouched. A path with no `..` resolves exactly as before on macOS and Linux.
+  - **Cells**: `typed_path_test.rs` (every spec example over a link table: `/x/link/../y`, `../y` from inside `/x/link`,
+    `C:/x/link/../y` and `C:\x\link\..\y` under Windows rules, `sftp://h:22/a/link/../b`, the missing prefix, above the
+    root for a person, the CLI, and an agent, a timeout), `dot_dot_test.rs` (the walk), `cmdr-local`'s
+    `local_posix_link_test.rs::dot_dot` and `cmdr-sftp`'s `dot_dot_test.rs` (a Docker cell plus a no-session refusal) on
+    real links, and the app's `go_to_path/{tests,wire_shape_tests}.rs` (pin (g) flipped: a `..` after a folder link
+    lands on `real/y`; a hung mount refuses through `WedgedVolume` within the deadline; no volume refuses),
+    `cli/script_tests.rs` and `reveal/delivery_test.rs`. Bridge: `go_to_path/mod.rs`'s entry gone (1 → 0); no file grew.
+  - **Review round** (same branch): `GoToHost::found` tells "couldn't check" (`Err`) from "nothing there", so a hung
+    mount is `Invalid` instead of a nearest-ancestor walk to the root; the script's existence check runs on its result,
+    so `cmdr ../sibling` from a linked folder finds what `cd` finds.
+  - **Left for 10d**: the MCP tools' path inputs call `AppHost::registry().resolve_typed(text, base, TypedBy::Agent)`
+    and turn `TypedPathRefusal` (`OffRoot`, `Unanswered`, …) into typed tool errors. ❗ `OffRoot` is a TEXT check (a
+    `..` at an app-path root); it says nothing about where the answer lands. `/allowed/link/..` with `link -> /etc/x`
+    resolves to `/etc` with `crossed_link: true` and no refusal, and the resolved path's own last name may be a link
+    too. Any allowed-roots rule 10d enforces must check the RESOLVED place (its canonical form, links included), ❌
+    never the typed text. The MCP `nav_to_path` refuses a `..` today (first commit's review round); 10d replaces that
+    refusal with this door, so an agent's `..` lands where the volume says, never on a pane path holding one.
 
 ### 10d. The app, part two: operations host, tools, and the rest
 

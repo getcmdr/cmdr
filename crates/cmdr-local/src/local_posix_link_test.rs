@@ -42,3 +42,54 @@ async fn test_read_link_target_of_something_missing_is_not_found() {
         Err(VolumeError::NotFound(_))
     ));
 }
+
+/// What `<path>/..` names: the cells of `docs/specs/app-path-plan.md` § "Typed and pasted `..`"
+/// on a real disk. `x/link -> ../real/dir`, `x/abs -> <dir>/real/dir`, and a plain folder `x/plain`.
+mod dot_dot {
+    use super::*;
+    use cmdr_fs::app_path::AppPathBuf;
+    use cmdr_fs::testing::AppTestDir;
+
+    fn tree() -> AppTestDir {
+        let dir = AppTestDir::new("dot_dot");
+        let root = dir.native();
+        std::fs::create_dir_all(root.join("real/dir")).unwrap();
+        std::fs::create_dir_all(root.join("x/plain")).unwrap();
+        cmdr_fs::testing::symlink("../real/dir", root.join("x/link")).unwrap();
+        cmdr_fs::testing::symlink(root.join("real/dir"), root.join("x/abs")).unwrap();
+        dir
+    }
+
+    fn at(dir: &AppTestDir, rel: &str) -> AppPathBuf {
+        AppPathBuf::from_native(&dir.native().join(rel)).unwrap()
+    }
+
+    async fn up(dir: &AppTestDir, rel: &str) -> AppPathBuf {
+        let volume = LocalPosixVolume::local_folder_at("Test", dir.app_path().to_owned(), VolumeHost::detached());
+        volume.parent_for_dot_dot(&at(dir, rel)).await.expect("answers")
+    }
+
+    #[tokio::test]
+    async fn a_link_answers_its_targets_parent_as_the_kernel_does() {
+        let dir = tree();
+        assert_eq!(up(&dir, "x/link").await, at(&dir, "real"));
+        assert_eq!(up(&dir, "x/abs").await, at(&dir, "real"));
+        // What the kernel says: `x/link/..` holds `real`'s children.
+        assert!(dir.native().join("x/link/../dir").is_dir());
+    }
+
+    #[tokio::test]
+    async fn a_plain_folder_and_a_missing_name_answer_the_lexical_parent() {
+        let dir = tree();
+        assert_eq!(up(&dir, "x/plain").await, at(&dir, "x"));
+        assert_eq!(up(&dir, "x/nope").await, at(&dir, "x"));
+        assert_eq!(up(&dir, "x/nope/deeper").await, at(&dir, "x/nope"));
+    }
+
+    #[tokio::test]
+    async fn a_name_under_a_file_is_no_link() {
+        let dir = tree();
+        std::fs::write(dir.native().join("x/file.txt"), b"x").unwrap();
+        assert_eq!(up(&dir, "x/file.txt/sub").await, at(&dir, "x/file.txt"));
+    }
+}

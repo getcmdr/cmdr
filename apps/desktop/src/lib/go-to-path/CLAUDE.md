@@ -37,8 +37,8 @@ on it.
   `Go to folder…` menu item carries ⌘G as an accelerator AND `command-registry` binds ⌘G, so both fire on macOS.
 - **The ancestor toast's back hint is a live `nav.back` chip** (`ShortcutChip commandId`), and the line goes away when
   the command is unbound. Feature code never reads the binding as text (`cmdr/no-raw-shortcut-text`).
-- **Anything that isn't a scheme input is local**, so a relative input on a non-local pane falls back to
-  nearest-ancestor (often `/`).
+- **Anything that isn't a scheme input goes to the backend resolver**, relative input included: a relative input on a
+  remote pane resolves under the pane's folder there. A `crossedLink` hit earns the `info` line naming where it leads.
 
 Architecture, navigation semantics, decisions, and the manual smoke checklist: `DETAILS.md`. Read it before any
 non-trivial work here: editing, planning, reorganizing, or advising.

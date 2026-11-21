@@ -603,6 +603,13 @@ impl Volume for LocalPosixVolume {
         Box::pin(self.read_link_target_impl(path))
     }
 
+    fn parent_for_dot_dot<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Result<AppPathBuf, VolumeError>> + Send + 'a>> {
+        Box::pin(self.parent_for_dot_dot_impl(path))
+    }
+
     fn can_hold_links(&self) -> bool {
         true
     }

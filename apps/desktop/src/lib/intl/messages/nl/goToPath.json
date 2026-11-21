@@ -31,6 +31,10 @@
   "@goToPath.dialog.ancestorHint": {
     "sourceHash": "e6eefca"
   },
+  "goToPath.dialog.throughLinkHint": "De ‘..’ staat na een symbolische koppeling, dus dit pad gaat naar {dir}.",
+  "@goToPath.dialog.throughLinkHint": {
+    "sourceHash": "1a3b3e1"
+  },
   "goToPath.toast.landedOnAncestor": "<req>{requested}</req> bestaat niet, dus we brachten je naar <land>{landed}</land>.",
   "@goToPath.toast.landedOnAncestor": {
     "sourceHash": "9af3d3a"

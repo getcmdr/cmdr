@@ -66,7 +66,7 @@ function goMock(resolution: GoToPathResolution): ReturnType<typeof vi.fn<GoFn>> 
 }
 
 function setup(overrides: { baseDir?: string; onGo?: ReturnType<typeof vi.fn<GoFn>>; onCancel?: () => void } = {}) {
-  const onGo = overrides.onGo ?? goMock({ kind: 'directory', path: '/x' })
+  const onGo = overrides.onGo ?? goMock({ kind: 'directory', path: '/x', crossedLink: false })
   const onCancel = overrides.onCancel ?? vi.fn()
   const target = document.createElement('div')
   document.body.appendChild(target)
@@ -126,7 +126,7 @@ describe('GoToPathDialog', () => {
 
   it('clicking a recent row jumps and closes the dialog', async () => {
     getRecentPathsListMock.mockReturnValue([{ id: 'a', path: '/recent/one', timestamp: 1 }])
-    const onGo = goMock({ kind: 'directory', path: '/recent/one' })
+    const onGo = goMock({ kind: 'directory', path: '/recent/one', crossedLink: false })
     const { target, onCancel, cleanup } = setup({ onGo })
     await tick()
     const row = target.querySelector('.recent-main') as HTMLButtonElement
@@ -143,7 +143,7 @@ describe('GoToPathDialog', () => {
       { id: 'a', path: '/first', timestamp: 1 },
       { id: 'b', path: '/second', timestamp: 2 },
     ])
-    const onGo = goMock({ kind: 'directory', path: '/second' })
+    const onGo = goMock({ kind: 'directory', path: '/second', crossedLink: false })
     const { target, cleanup } = setup({ onGo })
     await tick()
     const input = target.querySelector('input') as HTMLInputElement
@@ -156,7 +156,7 @@ describe('GoToPathDialog', () => {
 
   it('a digit with text in the box is ordinary input (no jump)', async () => {
     getRecentPathsListMock.mockReturnValue([{ id: 'a', path: '/first', timestamp: 1 }])
-    const onGo = goMock({ kind: 'directory', path: '/x' })
+    const onGo = goMock({ kind: 'directory', path: '/x', crossedLink: false })
     const { target, cleanup } = setup({ onGo })
     await tick()
     const input = target.querySelector('input') as HTMLInputElement
@@ -171,7 +171,7 @@ describe('GoToPathDialog', () => {
 
   it('the remove button removes the entry without jumping', async () => {
     getRecentPathsListMock.mockReturnValue([{ id: 'a', path: '/first', timestamp: 1 }])
-    const onGo = goMock({ kind: 'directory', path: '/x' })
+    const onGo = goMock({ kind: 'directory', path: '/x', crossedLink: false })
     const { target, cleanup } = setup({ onGo })
     await tick()
     const removeButton = target.querySelector('.remove-button') as HTMLButtonElement
@@ -184,7 +184,7 @@ describe('GoToPathDialog', () => {
 
   it('the remove button is keyboard-reachable and operable', async () => {
     getRecentPathsListMock.mockReturnValue([{ id: 'a', path: '/first', timestamp: 1 }])
-    const onGo = goMock({ kind: 'directory', path: '/x' })
+    const onGo = goMock({ kind: 'directory', path: '/x', crossedLink: false })
     const { target, cleanup } = setup({ onGo })
     await tick()
     const removeButton = target.querySelector('.remove-button') as HTMLButtonElement
@@ -204,7 +204,7 @@ describe('GoToPathDialog', () => {
   })
 
   it('Enter confirms: jumps and closes on a directory outcome', async () => {
-    const onGo = goMock({ kind: 'directory', path: '/typed' })
+    const onGo = goMock({ kind: 'directory', path: '/typed', crossedLink: false })
     const { target, onCancel, cleanup } = setup({ onGo })
     await tick()
     const input = target.querySelector('input') as HTMLInputElement
@@ -262,7 +262,10 @@ describe('GoToPathDialog', () => {
 
   it('prefills the box from a clipboard path that resolves to a real target', async () => {
     readClipboardTextMock.mockResolvedValue('/Users/me/Documents')
-    resolveGoToPathMock.mockResolvedValue({ status: 'ok', data: { kind: 'directory', path: '/Users/me/Documents' } })
+    resolveGoToPathMock.mockResolvedValue({
+      status: 'ok',
+      data: { kind: 'directory', path: '/Users/me/Documents', crossedLink: false },
+    })
     const { target, cleanup } = setup()
     await flush()
     const input = target.querySelector('input') as HTMLInputElement
@@ -317,6 +320,36 @@ describe('GoToPathDialog', () => {
     input.dispatchEvent(new Event('input', { bubbles: true }))
     await waitForPreview(() => {
       expect(target.querySelector('#go-to-path-hint')?.classList.contains('warning')).toBe(true)
+    })
+    cleanup()
+  })
+
+  /** A `..` past a link leads beside the link's target, so the box's text alone misleads:
+   * the line names where it really goes, neutrally (the path exists). A plain hit says nothing. */
+  it('names where a `..` past a link really leads, and stays quiet for a plain folder', async () => {
+    readSchemeInputMock.mockResolvedValue(null)
+    resolveGoToPathMock.mockResolvedValue({
+      status: 'ok',
+      data: { kind: 'directory', path: '/real/y', crossedLink: true },
+    })
+    const { target, cleanup } = setup()
+    await flush()
+    const input = target.querySelector('input') as HTMLInputElement
+    input.value = '/x/link/../y'
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+    await waitForPreview(() => {
+      expect(target.querySelector('#go-to-path-hint')?.textContent).toContain('/real/y')
+    })
+    expect(target.querySelector('#go-to-path-hint')?.classList.contains('warning')).toBe(false)
+
+    resolveGoToPathMock.mockResolvedValue({
+      status: 'ok',
+      data: { kind: 'directory', path: '/x/y', crossedLink: false },
+    })
+    input.value = '/x/y'
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+    await waitForPreview(() => {
+      expect(target.querySelector('#go-to-path-hint')).toBeNull()
     })
     cleanup()
   })
