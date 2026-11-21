@@ -555,6 +555,8 @@ fn rewrite_a_dotfile_beside_a_visible_file(
     hold_diffs(listing.engine(), listing.id());
 
     std::fs::write(&dotfile, b"ls\ncd ~\n").expect("scratch dir is writable");
+    // In the app spelling `translate` hands the handler (`C:/…` on Windows, the path itself elsewhere).
+    let dotfile = cmdr_local::reading::listing_spelling_of(&dotfile);
     handle_directory_change_incremental(listing.id(), vec![ListingChange::Content(dotfile)]);
     (scratch, listing)
 }
