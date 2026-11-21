@@ -1418,10 +1418,15 @@ included; the hidden couplings it found are why waves B and C differ from round 
   - **MTP's session layer is typed too**: storage paths are canonical app paths under a POSIX `/` (one door,
     `connection/storage_path.rs`), so the path ↔ handle and listing caches key one object by one value. That is what
     `host_seam_test`'s mutation count and `same_name_test`'s twin rename were: `Path::join` wrote `\` on Windows.
-  - **Escape-range text stays literal until escapes go live** (`RemoteRoot::to_remote`'s rule), in all three. ❗ For
-    10f: the bridge escapes a literal escape-range code point into four byte escapes, so a bridged value holding one now
-    reaches the server as escape text where `as_std_legacy` decoded it back (the same is true of milestone 6's backends
-    since it landed). No real name holds plane-16 private use; 10f's live escapes make the two spellings one.
+  - **Escape-range text stays literal until escapes go live** (`RemoteRoot::to_remote`'s rule) in SMB and ADB; MTP
+    decodes it for lookups and new names (`device_name`, `device_spelling`). ❗ For 10f, and a regression from `main`
+    before milestone 6 (verified with a probe, review round): the app's only constructor is `legacy_unchecked`, which
+    escapes a literal escape-range code point into four byte escapes, so an app-origin value holding one reaches SFTP,
+    WebDAV, S3, NFS (since 6 landed), SMB, and ADB as escape text (`NotFound`), where `as_std_legacy` decoded it back;
+    MTP's `listing_path` and report URLs carry the literal text, which the bridge reads as other bytes. Milestone 6's
+    review flipped `to_remote` to literal on the premise that a row's text reaches a volume as is, which the app never
+    does today. Fail-closed, and no real name holds plane-16 private use. #1310 holds the fix (one escaping door for
+    listed names, decoding at every `to_remote`) and its pins.
 - **Byte-exact evidence** (throwaway differential harnesses against today's `std::path` code on macOS, kept in the
   lead's scratchpad): SMB 5,075,828 cases (wire path, share file name, the walk's listing round trip, patch parent and
   name, the walk's child join), 0 differences; ADB 33,146,552 (device path, row paths and names, patch paths, `root()`),
@@ -1434,9 +1439,11 @@ included; the hidden couplings it found are why waves B and C differ from round 
   miss). Docker: `rust-integration-tests` scoped to `cmdr-smb` and `cmdr-adb` green (two cells starved under load passed
   alone).
 - **Intended behavior changes** (each red first): MTP, an object a device names `..`, ``, `.`, or `a/b` lists no row (it
-  listed `("..", "/Documents/..")`, a path naming the folder's parent), and a tree delete of a folder holding one
-  refuses as `DirectoryNotEmpty`. SMB's walk refuses such a listed name as `InvalidName`, as the shared walk does (no
-  SMB server lists one).
+  listed `("..", "/Documents/..")`, a path naming the folder's parent), and a folder holding only such objects, which
+  lists empty, refuses its delete as `HoldsUnlistedItems` (S3's refusal for its unlisted keys, review round; a tree
+  delete takes what a path names first), ❌ never deleting the unlisted object. On `main` such a child's delete answered
+  `ObjectNotFound` (`Path::file_name` of the joined path never matched), so no object was ever deleted through it either
+  way. SMB's walk refuses such a listed name as `InvalidName`, as the shared walk does (no SMB server lists one).
 - **What still bridges, and who takes it**: SMB's mount root (`MountAnchor.mount_path`, a native OS mount point, held as
   `BridgedPath`), `rerooted` (the registry promotes between native mount points), the watcher (its paths are
   listing-host keys), `mutation::listing_key` and `scan::for_boundary` (the listing host and the `ScanRecorder`), and
@@ -1444,16 +1451,20 @@ included; the hidden couplings it found are why waves B and C differ from round 
   `BridgedPath` (the bare `adb://<serial>` text, which only the bridge holds) and one conformance cell that hands in a
   `..` (11). MTP's `connection::std_path_for_host`, every `&Path` host-seam call (the listing host, `ScanBoundary`,
   `ResolvedMtpObject.path`): ❗ a new per-file entry (`connection/mod.rs`, 0 → 1) that replaces 61 calls over 12 files,
-  the one budget line that grew. The app's `UnverifiedSmbMount` (`network/smb_mount_gate.rs`) is the app's: its
-  crossings are into the volume manager's `std::path` API (10c).
+  the one budget line that grew (the check's own rewrite reproduces it, review round). It goes with its last seam: the
+  listing host's `directory_changed` / `authoritative_listing` (10c), `ScanBoundary`'s `ScanRecorder` (10a), and
+  `ResolvedMtpObject.path`, which `cmdr-index`'s host reads (10b). The app's `UnverifiedSmbMount`
+  (`network/smb_mount_gate.rs`) is the app's: its crossings are into the volume manager's `std::path` API (10c).
 - **Landmines checked**: smb2 maps `\` and the other forbidden characters to the private-use area and back, so a listed
   `a\b 12:00.txt` reaches it intact (pinned, `paths_test`). smb2 today REFUSES a name with an unpaired surrogate: every
   UTF-16 name decode is `String::from_utf16` mapped to `invalid_data`, so one such entry fails the whole listing (and a
   watcher batch). Filed as vdavid/smb2#47 for 10f's unit escapes. The UNC root fold waits for Windows direct sessions,
   which don't exist: a mapped drive stays on the OS mount.
-- **Surfaced, not fixed** (MTP, older than this work): `resolve_handle_to_path` caches a resolved twin's leaf under the
-  shared name, so the shared name can resolve to one twin, against the #523 rule; a create or upload whose name holds an
-  escape gets no listing patch (the pane re-lists).
+- **Fixed in the review round** (MTP): `resolve_handle_to_path` cached a walked leaf under the shared name, so an
+  `ObjectAdded` twin took the name and the existing row's delete reached the newcomer, against the #523 rule
+  (`PathHandleCache::learn_resolved`, `a_handle_walk_never_ties_a_shared_name_to_one_twin`); a create, upload, or rename
+  whose name needs an escape got no listing patch
+  (`host_seam_test::a_new_object_whose_name_needs_an_escape_patches_its_pane`).
 - **Windows**: no builder run (another agent held it). `clippy-windows` green; the CI Windows lane (compile only) on the
   PR. The 66 cells this milestone owns (`cmdr-adb` 51, `cmdr-smb` 13, `cmdr-mtp` 2) are path-shaped and expected green;
   a builder run confirms them.
@@ -1740,7 +1751,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
   (Linux bytes, Windows unpaired surrogates) losslessly, `FileEntry.name == path.file_name()`, with the frontend's name
   sinks (`shownName`, `nativeNameLength`) and the Linux DOM catch-all, which is loud rule 1's first exception (milestone
   9's text on it moves here, its pins (f) flip here); SFTP's byte escapes (6); SMB's unit escapes if `smb2` hands up a
-  lone surrogate (7); NFS's choice (6).
+  lone surrogate (7); NFS's choice (6). ❗ First, #1310: a literal escape-range name reaches the remote and device
+  backends escaped from the app and literal from their own listings, so one door must make the two spellings one before
+  any producer goes live.
 - **Gate**: the type-level gate's two commits are in and clippy is green with them; `app-path-std-bridge`'s
   `appTextToPath` and `pathFromBareText` budgets are empty (the tripwire refuses a production escape producer
   otherwise); and 10a–10e are landed.

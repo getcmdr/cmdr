@@ -123,6 +123,16 @@ pub enum MtpConnectionError {
         /// The directory that still has children.
         path: String,
     },
+    /// A folder refused its delete because what it still holds sits under names no
+    /// path can address (`..`, ``, `.`, or holding `/`), which list no row, so the
+    /// folder looks empty. Nothing was deleted, and ❌ never deleted for the person:
+    /// those objects are real, and only the device's own tools can name them.
+    HoldsUnlistedItems {
+        /// The device this is about.
+        device_id: String,
+        /// The folder that looks empty.
+        path: String,
+    },
     /// The cached parent-folder handle was rejected by the device during an
     /// upload's `SendObjectInfo` (the device re-keyed its object handles since
     /// the folder was last listed). The cache has been refreshed; the caller
@@ -233,6 +243,10 @@ impl ErrorLogText for MtpConnectionError {
             }
             Self::DirectoryNotEmpty { device_id, path } => {
                 write!(out, "Folder still has contents on {device_id}: ")?;
+                out.value(LogPrivate::dir_path(path))
+            }
+            Self::HoldsUnlistedItems { device_id, path } => {
+                write!(out, "Folder holds only objects no path can address on {device_id}: ")?;
                 out.value(LogPrivate::dir_path(path))
             }
             Self::StaleParentHandle { device_id, dest_folder } => {

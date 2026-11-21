@@ -140,3 +140,59 @@ async fn tree_scope_still_removes_a_whole_subtree() {
 
     device.teardown(test_connection_manager()).await;
 }
+
+/// ❗ A folder whose only child the device names `a/b` (or `..`, ``, `.`) lists empty,
+/// since such a child is no row, so its refusal says it holds items Cmdr can't show,
+/// ❌ never a bare "still has contents" that contradicts the empty pane. A tree delete
+/// takes every child a path names, keeps the unlisted one, and refuses the same way.
+/// Nothing unlisted is ever deleted: it's a real object only the device's tools name.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_folder_holding_only_an_unlisted_object_refuses_its_delete_as_holding_it() {
+    let _guard = device_lock().await;
+    let fixture = crate::virtual_device::setup_virtual_mtp_device();
+    let solo = fixture.root().join("internal/Solo");
+    std::fs::create_dir_all(&solo).expect("the fixture folder");
+    std::fs::write(solo.join("hidden.txt"), "x").expect("the fixture file");
+    std::fs::write(solo.join("plain.txt"), "y").expect("the fixture file");
+    let manager = test_connection_manager();
+    let device = crate::testing::connect_fixture(manager, fixture).await;
+    let entries = manager
+        .list_directory(&device.id, device.storage_id, "/Solo")
+        .await
+        .expect("list Solo");
+    let hidden = entries
+        .iter()
+        .find(|entry| entry.name == "hidden.txt")
+        .and_then(|entry| entry.inode)
+        .expect("the fixture holds hidden.txt");
+    manager
+        .report_object_as_for_test(&device.id, mtp_rs::ObjectHandle(hidden), "a/b")
+        .await;
+
+    // Mixed: the tree delete takes `plain.txt`, keeps the unlisted one, and refuses.
+    let tree = manager
+        .delete_object(&device.id, device.storage_id, "/Solo", MtpDeleteScope::Tree)
+        .await;
+    assert!(
+        matches!(&tree, Err(MtpConnectionError::HoldsUnlistedItems { path, .. }) if path == "/Solo"),
+        "got {tree:?}"
+    );
+    assert!(!solo.join("plain.txt").exists(), "a child a path names goes");
+    assert!(solo.join("hidden.txt").exists(), "❌ never the unlisted object");
+
+    // Now holding only the unlisted object: `Volume::delete` refuses, typed.
+    let volume = volume_for(manager, &device, None).await;
+    let listed = volume
+        .list_directory(app_path!("/Solo"), None)
+        .await
+        .expect("list Solo");
+    assert!(listed.is_empty(), "the folder looks empty: {listed:?}");
+    let refused = volume.delete(app_path!("/Solo")).await;
+    assert!(
+        matches!(&refused, Err(VolumeError::HoldsUnlistedItems(path)) if path == "/Solo"),
+        "got {refused:?}"
+    );
+    assert!(solo.join("hidden.txt").exists(), "a refused delete destroys nothing");
+
+    device.teardown(manager).await;
+}

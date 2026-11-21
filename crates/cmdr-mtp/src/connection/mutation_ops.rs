@@ -17,7 +17,7 @@ use mtp_rs::{CancelToken, ObjectHandle, ObjectInfo, Storage, StorageId};
 use std::future::Future;
 
 use super::errors::MtpConnectionError;
-use super::storage_path::{child_and_text, folder_or_root, storage_path, storage_path_on};
+use super::storage_path::{child, child_and_text, folder_or_root, storage_path, storage_path_on};
 use super::{MtpConnectionManager, MtpObjectInfo, acquire_device_lock, twins};
 use cmdr_fs::app_path::{AppPath, PathArithmetic};
 use cmdr_fs::log_private::LogPrivate;
@@ -51,7 +51,8 @@ fn is_the_object_at(info: &ObjectInfo, path: &AppPath, parent: ObjectHandle) -> 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MtpDeleteScope {
     /// One file, or one **empty** directory. A directory that still has
-    /// children is refused with [`MtpConnectionError::DirectoryNotEmpty`] and
+    /// children is refused with [`MtpConnectionError::DirectoryNotEmpty`] (or
+    /// [`MtpConnectionError::HoldsUnlistedItems`] when no child lists a row) and
     /// nothing is deleted.
     SingleNode,
     /// The whole subtree, children first. Nothing in the app calls it: every
@@ -196,13 +197,38 @@ impl MtpConnectionManager {
             // makes the 950-entry `/DCIM/Camera` listing bail at the next
             // per-handle USB boundary instead of running all 950 GetObjectInfo
             // roundtrips to completion.
-            let children = storage
+            let mut children = storage
                 .list_objects_with_cancel(Some(object_handle), cancel)
                 .await
                 .map_err(|e| self.map_device_error(e, device_id))?;
+            for child_info in &mut children {
+                self.as_reported(device_id, child_info);
+            }
 
             drop(storage);
             drop(device);
+
+            // A child no path can address (`a/b`, `..`) lists no row
+            // (`directory_ops::entry_for_object`), so a folder holding only such
+            // children looks empty: its refusal says so, ❌ never a bare "still has
+            // contents" that contradicts the pane.
+            let parent_path = storage_path_on(device_id, object_path)?;
+            let unlisted = || MtpConnectionError::HoldsUnlistedItems {
+                device_id: device_id.to_string(),
+                path: parent_path.as_str().to_string(),
+            };
+            if scope == MtpDeleteScope::SingleNode
+                && !children.is_empty()
+                && children
+                    .iter()
+                    .all(|child_info| child(&parent_path, &child_info.filename).is_none())
+            {
+                debug!(
+                    "MTP delete refused (folder holds only unlisted objects): {}",
+                    LogPrivate::dir_path(object_path)
+                );
+                return Err(unlisted());
+            }
 
             if scope == MtpDeleteScope::SingleNode && !children.is_empty() {
                 // Refuse, and delete nothing — including the path-cache
@@ -224,7 +250,7 @@ impl MtpConnectionManager {
 
             // Recursively delete children. The token is checked between
             // iterations and inside each child's own list/delete USB call.
-            let parent_path = storage_path_on(device_id, object_path)?;
+            let mut holds_unlisted = false;
             for child_info in children {
                 if let Some(t) = cancel
                     && t.is_cancelled()
@@ -235,14 +261,12 @@ impl MtpConnectionManager {
                     });
                 }
 
-                // A child no path can address (`a/b`, `..`) can't be deleted by path,
-                // so the folder holding it isn't empty: ❌ never a joined path, which
-                // would name another object.
+                // A child no path can address (`a/b`, `..`) can't be deleted by path:
+                // ❌ never a joined path, which would name another object. The rest
+                // go, and the folder, now looking empty, refuses as holding it.
                 let (Some(child_path), child_path_str) = child_and_text(&parent_path, &child_info.filename) else {
-                    return Err(MtpConnectionError::DirectoryNotEmpty {
-                        device_id: device_id.to_string(),
-                        path: object_path.to_string(),
-                    });
+                    holds_unlisted = true;
+                    continue;
                 };
 
                 // Cache the child handle for the recursive call
@@ -258,6 +282,9 @@ impl MtpConnectionManager {
 
                 // Use Box::pin for recursive async call
                 Box::pin(self.delete_object_with_cancel(device_id, storage_id, &child_path_str, scope, cancel)).await?;
+            }
+            if holds_unlisted {
+                return Err(unlisted());
             }
 
             // Re-acquire device and storage lock to delete the now-empty folder

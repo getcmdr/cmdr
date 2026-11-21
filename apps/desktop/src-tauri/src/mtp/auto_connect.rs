@@ -211,6 +211,7 @@ pub(super) fn is_worth_retrying(error: &MtpConnectionError) -> bool {
         | MtpConnectionError::ObjectNotFound { .. }
         | MtpConnectionError::AmbiguousName { .. }
         | MtpConnectionError::DirectoryNotEmpty { .. }
+        | MtpConnectionError::HoldsUnlistedItems { .. }
         | MtpConnectionError::StaleParentHandle { .. }
         | MtpConnectionError::NameTooLong { .. }
         | MtpConnectionError::Other { .. } => false,

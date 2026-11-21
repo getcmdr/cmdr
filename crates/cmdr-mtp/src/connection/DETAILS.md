@@ -318,8 +318,13 @@ back as `/Documents\report-2.txt` and a device name holding `\` read as two (`cr
 - **A listed name joins through `child`** (`AppName::from_app_spelling`). An object the device names `..`, ``, `.`, or
   with a `/` lists no row (`directory_ops::entry_for_object`, a debug line per object): its row's path would have named
   the folder's parent, the folder itself, or another folder's object, so a delete of that row reached something nobody
-  picked. A tree delete of a folder holding one refuses as `DirectoryNotEmpty`, and the handle walk resolves such a
-  chain to nothing (a blanket refresh). Pinned by `same_name_test::an_object_no_path_can_address_lists_no_row`.
+  picked. A folder holding only such objects lists empty, so its delete refuses as `HoldsUnlistedItems` (→
+  `VolumeError::HoldsUnlistedItems`, S3's refusal for its unlisted keys), ❌ never a bare `DirectoryNotEmpty` that
+  contradicts the empty pane; a tree delete takes every child a path names, keeps the unlisted ones, and refuses the
+  same way. ❌ Nothing unlisted is ever deleted: it's a real object only the device's own tools name. The handle walk
+  resolves such a chain to nothing (a blanket refresh). Pinned by
+  `same_name_test::an_object_no_path_can_address_lists_no_row` and
+  `delete_test::a_folder_holding_only_an_unlisted_object_refuses_its_delete_as_holding_it`.
 - **A new name the device took that no path can address** (a rename to `a/b`) still reports its text (`child_and_text`),
   and the caches stay out of it.
 - **The report URL** (`url_of`, `mtp://{device}/{storage}[/inner]`) joins the storage path's names under `storage_url`,
@@ -352,6 +357,11 @@ row two's file (#523).
   entry points at the row, so an event finds it), and marks the shared name `same_named` (no forward entry, nothing
   beneath it). A row path whose twin has since gone still reaches its object while the shared name now resolves to that
   very handle, so a row a pane hasn't re-read yet keeps working.
+- **A handle walk never ties a shared name to one twin.** `resolve_handle_to_path` spells a twin by the name it shares,
+  so it records what it found through `PathHandleCache::learn_resolved`: a path the cache ties to a pair stays
+  same-named, and one tied to another handle loses its entry (two objects answer to it now; the next op re-lists), ❌
+  never pointing at the walked handle, or a row meaning the first object would act on the newcomer. Pinned by
+  `cache::path_handle_cache_tests::a_handle_walk_never_ties_a_shared_name_to_one_twin`.
 - **Only the name alone is refused.** A path with no row behind it (an MCP call, a typed path) that names the shared
   name answers `MtpConnectionError::AmbiguousName` and touches nothing. `MtpVolume` maps it to
   `VolumeError::DuplicateName`, its own variant (not SMB's look-alike `AmbiguousName`) so the person reads the device's

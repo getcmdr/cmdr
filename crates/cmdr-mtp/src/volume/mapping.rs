@@ -58,6 +58,8 @@ pub(super) fn map_mtp_error(e: MtpConnectionError) -> VolumeError {
         MtpConnectionError::DirectoryNotEmpty { .. } => {
             VolumeError::io_of_class(ErrorDetail::of(e), OsErrorClass::NotEmpty)
         }
+        // It lists empty, so "still has contents" would contradict the pane.
+        MtpConnectionError::HoldsUnlistedItems { path, .. } => VolumeError::HoldsUnlistedItems(path),
         _ => VolumeError::IoError {
             message: ErrorDetail::of(e),
             raw_os_error: None,
