@@ -24,6 +24,8 @@
 //! volume to notify after an in-zip edit, not an engine).
 
 use cmdr_fs::app_path::AppPath;
+use std::borrow::Cow;
+use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -76,12 +78,12 @@ impl Rig {
         engine.volumes().register(mem_id, Arc::clone(&mem) as Arc<dyn Volume>);
         for (name, bytes) in [("a.txt", b"aaa".as_slice()), ("b.txt", b"bbbb".as_slice())] {
             std::fs::write(disk.path().join(name), bytes).expect("a disk file");
-            mem.create_file(&AppPath::legacy_unchecked(&mem_root.path().join(name)), bytes)
+            mem.create_file(&app(&mem_root.path().join(name)), bytes)
                 .await
                 .expect("a mem file");
         }
         std::fs::create_dir(disk.path().join("out")).expect("disk out");
-        mem.create_directory(&AppPath::legacy_unchecked(&mem_root.path().join("out")))
+        mem.create_directory(&app(&mem_root.path().join("out")))
             .await
             .expect("mem out");
         Self {
@@ -104,7 +106,7 @@ impl Rig {
     /// Where `rel` exists after the op: on disk under the id's base, in memory, or both.
     async fn where_is(&self, volume_id: &str, rel: &str) -> (bool, bool) {
         let path = self.base(volume_id).join(rel);
-        (path.exists(), self.mem.exists(&AppPath::legacy_unchecked(&path)).await)
+        (path.exists(), self.mem.exists(&app(&path)).await)
     }
 
     /// Which engine left `rel` behind (`gone = false`) or took it away (`gone = true`).
@@ -207,13 +209,7 @@ async fn delete(volume_id: &str) -> Ran {
     // The other side's copy of the file is still there.
     let (on_disk, in_memory) = rig.where_is(volume_id, "a.txt").await;
     match volume_id {
-        "root" => assert!(
-            !on_disk
-                && rig
-                    .mem
-                    .exists(&AppPath::legacy_unchecked(&rig.mem_root.path().join("a.txt")))
-                    .await
-        ),
+        "root" => assert!(!on_disk && rig.mem.exists(&app(&rig.mem_root.path().join("a.txt"))).await),
         _ => assert!(!in_memory && rig.disk.path().join("a.txt").exists()),
     }
     rig.ran(volume_id, "a.txt", true).await
@@ -414,8 +410,11 @@ async fn trash_with_no_local_disk_refuses_like_a_volume_without_one() {
         ),
         "{refused:?}"
     );
-    assert!(
-        rig.mem.exists(&AppPath::legacy_unchecked(&file)).await,
-        "the file stays"
-    );
+    assert!(rig.mem.exists(&app(&file)).await, "the file stays");
+}
+
+/// A fixture's `std::path` value (a scratch dir, a path the engine's `PathBuf` starts
+/// take) as the app path it names, for the volume calls: the file's one crossing.
+fn app(path: &Path) -> Cow<'_, AppPath> {
+    AppPath::legacy_unchecked(path)
 }

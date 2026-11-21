@@ -3,6 +3,7 @@
 //! they give. Split out of `in_flight_sweep.rs`, which holds the rules.
 
 use cmdr_fs::app_path::AppPath;
+use std::borrow::Cow;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -65,6 +66,13 @@ pub(super) enum Renaming {
     Refused,
 }
 
+/// A ledger path as the app path a volume surface takes. The ledger keeps the paths it
+/// recorded as `std::path` values (they're native on the local surface), so a volume
+/// surface reads each back here, losslessly: the module's one crossing.
+fn on_volume(path: &Path) -> Cow<'_, AppPath> {
+    AppPath::legacy_unchecked(path)
+}
+
 impl Surface {
     pub(super) async fn standing_at(&self, path: &Path) -> Standing {
         match self {
@@ -77,7 +85,7 @@ impl Surface {
                     Standing::Unknown
                 }
             },
-            Self::Volume(volume) => match volume.get_metadata(&AppPath::legacy_unchecked(path)).await {
+            Self::Volume(volume) => match volume.get_metadata(&on_volume(path)).await {
                 Ok(entry) if entry.is_directory || entry.is_symlink => Standing::Other,
                 // A backend that can't say how big a file is can't prove a
                 // replacement finished, so the aside is kept.
@@ -101,7 +109,7 @@ impl Surface {
                     Removal::Refused
                 }
             },
-            Self::Volume(volume) => match volume.delete(&AppPath::legacy_unchecked(path)).await {
+            Self::Volume(volume) => match volume.delete(&on_volume(path)).await {
                 Ok(()) => Removal::Removed,
                 Err(VolumeError::NotFound(_)) => Removal::AlreadyGone,
                 Err(e) => {
@@ -179,10 +187,7 @@ impl Surface {
             },
             // `force = false` is the backends' no-clobber rename, the same one
             // `displaced_destination` leans on.
-            Self::Volume(volume) => match volume
-                .rename(&AppPath::legacy_unchecked(from), &AppPath::legacy_unchecked(to), false)
-                .await
-            {
+            Self::Volume(volume) => match volume.rename(&on_volume(from), &on_volume(to), false).await {
                 Ok(()) => Renaming::Renamed,
                 Err(VolumeError::AlreadyExists(_)) => Renaming::Occupied,
                 Err(e) => {

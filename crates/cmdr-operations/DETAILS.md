@@ -681,6 +681,15 @@ branch.
 
 **All blocking work in `spawn_blocking`.** Never call blocking I/O on the async executor.
 
+**App paths meet `std::path` at one named helper per module** (#1225, while the starts, the in-flight ledger, and the
+landed paths still carry `PathBuf`s). A module that reads a `PathBuf` it was handed as the app path a volume takes does
+it through one documented helper (`on_volume`, `on_dest`), and one that hands a volume's root or an app path to
+`std::path` code, a native check, or a `Path::display` text does it through another (`std_root`, `in_ledger`,
+`shown_root`, `std_seam_path`), never an ad hoc bridge call per site. Each goes when its module's inputs become app
+paths. The rollback executor's `InverseAct` already carries the planner's app paths, so `rollback.rs` crosses only for
+the callees that still speak `std::path` (the blocker clearing, the staged cross-volume move, the listings seam, which
+keeps `Path::parent` as its key).
+
 **`OperationIntent` state machine.** Replaces the old `cancelled: AtomicBool` + `skip_rollback: AtomicBool` pair with a
 single atomic-backed enum, held in an `IntentCell`: `Running → RollingBack` (user clicks Rollback), `Running → Stopped`
 (user clicks Cancel or teardown), `RollingBack → Stopped` (user cancels the rollback). `Stopped` is terminal.

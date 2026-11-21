@@ -3,7 +3,7 @@
 //! volumes, `src` and `dst`), shared by every host; the local engine's world is
 //! the native test's own (`golden_trace_tests.rs`).
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath, PathArithmetic};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -81,35 +81,20 @@ impl World for VolumeWorld {
     }
     async fn seed(&self, dest_out: bool) {
         let v = &self.src;
-        v.create_file(&AppPath::legacy_unchecked(Path::new("/a.txt")), b"aaa")
-            .await
-            .expect("a");
-        v.create_file(&AppPath::legacy_unchecked(Path::new("/b.txt")), b"bbbb")
-            .await
-            .expect("b");
-        v.create_file(&AppPath::legacy_unchecked(Path::new("/c.txt")), b"ccccc")
-            .await
-            .expect("c");
-        v.create_directory(&AppPath::legacy_unchecked(Path::new("/docs")))
-            .await
-            .expect("docs");
-        v.create_file(&AppPath::legacy_unchecked(Path::new("/docs/note.md")), b"# note")
-            .await
-            .expect("note");
-        v.create_directory(&AppPath::legacy_unchecked(Path::new("/out")))
-            .await
-            .expect("out");
+        v.create_file(at("/a.txt"), b"aaa").await.expect("a");
+        v.create_file(at("/b.txt"), b"bbbb").await.expect("b");
+        v.create_file(at("/c.txt"), b"ccccc").await.expect("c");
+        v.create_directory(at("/docs")).await.expect("docs");
+        v.create_file(at("/docs/note.md"), b"# note").await.expect("note");
+        v.create_directory(at("/out")).await.expect("out");
         if dest_out {
-            self.dst
-                .create_directory(&AppPath::legacy_unchecked(Path::new("/out")))
-                .await
-                .expect("out");
+            self.dst.create_directory(at("/out")).await.expect("out");
         }
     }
     async fn occupy(&self, name: &str, bytes: &'static [u8]) {
-        let path = Path::new("/out").join(name);
+        let name = AppName::from_app_spelling(name).expect("a plain name");
         self.dst
-            .create_file(&AppPath::legacy_unchecked(&path), bytes)
+            .create_file(&at("/out").join(name).expect("joins"), bytes)
             .await
             .expect("taken");
     }
@@ -133,6 +118,12 @@ impl World for VolumeWorld {
     fn folder(&self) -> String {
         "/".into()
     }
+}
+
+/// A canonical app path literal. Not `app_path!`: the `golden` feature builds this without
+/// `cmdr-fs`'s `testing`.
+fn at(text: &'static str) -> &'static AppPath {
+    AppPath::from_normalized(text).expect("a canonical app path literal")
 }
 
 /// One golden scenario.

@@ -76,7 +76,7 @@ async fn remove_file_if_unchanged(
             let removed = runner
                 .perform(InverseAct::RemoveFile {
                     volume: &volume,
-                    path: &path,
+                    path: &app,
                 })
                 .await;
             removal_verdict(removed, &*volume, &app)
@@ -162,7 +162,7 @@ async fn remove_dir_if_empty(
             let removed = runner
                 .perform(InverseAct::RemoveDir {
                     volume: &volume,
-                    path: &path,
+                    path: &app,
                 })
                 .await;
             removal_verdict(removed, &*volume, &app)
@@ -275,9 +275,9 @@ async fn restore_move(volumes: &dyn VolumeLookup, runner: &dyn RollbackRunner, u
     match runner
         .perform(InverseAct::Restore {
             from: &from_volume,
-            from_path,
+            from_path: &from_app,
             to: &to_volume,
-            to_path,
+            to_path: &to_app,
             same_volume,
             force,
         })

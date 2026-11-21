@@ -13,7 +13,6 @@
 //! The implementation lives in `cmdr_operations::rollback`.
 
 use std::future::Future;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
@@ -21,6 +20,7 @@ use std::time::Duration;
 use super::super::store::RollbackUnit;
 use super::super::types::EntryType;
 use super::removal_target;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::app_paths::RootMove;
 use cmdr_fs::volume::{Volume, VolumeError};
 
@@ -55,7 +55,7 @@ pub enum InverseAct<'a> {
         /// The volume the file is on.
         volume: &'a Arc<dyn Volume>,
         /// The file.
-        path: &'a Path,
+        path: &'a AppPath,
     },
     /// Delete the directory the operation created at `path` — verified still
     /// empty, so this never needs to recurse.
@@ -63,7 +63,7 @@ pub enum InverseAct<'a> {
         /// The volume the directory is on.
         volume: &'a Arc<dyn Volume>,
         /// The directory.
-        path: &'a Path,
+        path: &'a AppPath,
     },
     /// Move one entry back where it started (move / trash / rename undo). The
     /// target was verified clear, so this never overwrites.
@@ -71,11 +71,11 @@ pub enum InverseAct<'a> {
         /// Where the item sits now.
         from: &'a Arc<dyn Volume>,
         /// Its path there.
-        from_path: &'a Path,
+        from_path: &'a AppPath,
         /// Where it belongs.
         to: &'a Arc<dyn Volume>,
         /// Its path there.
-        to_path: &'a Path,
+        to_path: &'a AppPath,
         /// One volume ⇒ a rename; two ⇒ a staged per-file transfer, which is what
         /// buys mid-file cancel and byte progress.
         same_volume: bool,
@@ -93,7 +93,7 @@ pub enum InverseAct<'a> {
         /// The volume the file is on.
         volume: &'a Arc<dyn Volume>,
         /// The file.
-        path: &'a Path,
+        path: &'a AppPath,
         /// The attribute.
         name: &'a str,
         /// The value to put back.

@@ -11,6 +11,7 @@
 //! keeps the checks a row from before identities gets.
 
 use cmdr_fs::app_path::AppPath;
+use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap};
 use std::ffi::OsStr;
 use std::fs::Metadata;
@@ -112,7 +113,7 @@ impl LandedReadBack {
             vec![landed]
         };
         for path in paths {
-            if let Ok(Some(node)) = dest.node_identity(&AppPath::legacy_unchecked(path)).await {
+            if let Ok(Some(node)) = dest.node_identity(&on_dest(path)).await {
                 nodes.insert(path.to_path_buf(), node);
             }
         }
@@ -128,7 +129,7 @@ impl LandedReadBack {
         let mut times = HashMap::new();
         if !source_is_dir {
             if let Some(secs) = dest
-                .get_metadata(&AppPath::legacy_unchecked(landed))
+                .get_metadata(&on_dest(landed))
                 .await
                 .ok()
                 .and_then(|entry| entry.modified_at)
@@ -150,7 +151,7 @@ impl LandedReadBack {
             }
         }
         for (folder, wanted) in by_folder {
-            let Ok(entries) = dest.list_directory(&AppPath::legacy_unchecked(folder), None).await else {
+            let Ok(entries) = dest.list_directory(&on_dest(folder), None).await else {
                 continue;
             };
             for entry in &entries {
@@ -181,6 +182,13 @@ impl LandedReadBack {
     pub(crate) fn node(&self, path: &Path) -> Option<NodeIdentity> {
         self.nodes.get(path).copied()
     }
+}
+
+/// A landed path as the app path the destination volume takes. The transfer hands its
+/// landed paths over as `std::path` values (the journal's rows are built from them), so
+/// each volume read crosses here, losslessly: the module's one crossing.
+fn on_dest(path: &Path) -> Cow<'_, AppPath> {
+    AppPath::legacy_unchecked(path)
 }
 
 /// Whether `dest` is a local disk whose filesystem keeps a lasting node identity

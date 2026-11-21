@@ -15,6 +15,7 @@
 
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
+use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -96,7 +97,7 @@ async fn volume_copy_journals_under_the_real_volume_ids_not_root() {
         source as Arc<dyn Volume>,
         &[std::path::PathBuf::from("/a.txt"), std::path::PathBuf::from("/b.txt")],
         dest as Arc<dyn Volume>,
-        std::path::Path::new("/"),
+        Path::new("/"),
         &VolumeCopyConfig::default(),
     )
     .await
@@ -169,7 +170,7 @@ async fn overwriting_volume_copy_finalizes_not_rollbackable() {
         source as Arc<dyn Volume>,
         &[std::path::PathBuf::from("/dup.txt")],
         dest as Arc<dyn Volume>,
-        std::path::Path::new("/"),
+        Path::new("/"),
         &cfg,
     )
     .await
@@ -222,7 +223,7 @@ async fn cross_volume_move_journals_per_leaf_move_rows() {
             std::path::PathBuf::from("/two.txt"),
         ],
         dest as Arc<dyn Volume>,
-        std::path::Path::new("/"),
+        Path::new("/"),
         &VolumeCopyConfig::default(),
     )
     .await
@@ -353,14 +354,14 @@ impl VolumeLoop {
 
     async fn mkdir(&self, path: &str) {
         self.source
-            .create_directory(&AppPath::legacy_unchecked(std::path::Path::new(path)))
+            .create_directory(canon(path))
             .await
             .unwrap_or_else(|e| panic!("mkdir {path}: {e:?}"));
     }
 
     async fn put(&self, path: &str, contents: &[u8]) {
         self.source
-            .create_file(&AppPath::legacy_unchecked(std::path::Path::new(path)), contents)
+            .create_file(canon(path), contents)
             .await
             .unwrap_or_else(|e| panic!("seed {path}: {e:?}"));
     }
@@ -368,7 +369,7 @@ impl VolumeLoop {
     /// [`Self::put`], last modified at `secs`, like a file not saved this minute.
     async fn put_dated(&self, path: &str, contents: &[u8], secs: u64) {
         self.put(path, contents).await;
-        self.source.set_modified_at(std::path::Path::new(path), Some(secs));
+        self.source.set_modified_at(Path::new(path), Some(secs));
     }
 
     /// Run the real cross-volume copy body to completion, bracketed by the
@@ -431,7 +432,7 @@ impl VolumeLoop {
             Arc::clone(&self.source) as Arc<dyn Volume>,
             &paths,
             Arc::clone(&self.dest) as Arc<dyn Volume>,
-            std::path::Path::new("/"),
+            Path::new("/"),
             &VolumeCopyConfig {
                 progress_interval_ms: 0,
                 ..VolumeCopyConfig::default()
@@ -487,11 +488,7 @@ impl VolumeLoop {
         let mut out = Vec::new();
         let mut stack = vec![root.to_string()];
         while let Some(dir) = stack.pop() {
-            let Ok(entries) = self
-                .dest
-                .list_directory(&AppPath::legacy_unchecked(std::path::Path::new(&dir)), None)
-                .await
-            else {
+            let Ok(entries) = self.dest.list_directory(canon(&dir), None).await else {
                 continue;
             };
             for e in entries {
@@ -710,23 +707,18 @@ async fn an_interrupted_volume_folder_copy_journals_every_child_it_finished() {
 /// length but different bytes and a later modified time: a VM disk image, a SQLite
 /// database, a re-saved document.
 async fn edit_in_place_keeping_its_length(dest: &InMemoryVolume, path: &str, bytes: &[u8]) {
-    let path = std::path::Path::new(path);
-    let landed = dest
-        .get_metadata(&AppPath::legacy_unchecked(path))
-        .await
-        .expect("the copy landed");
+    let at = canon(path);
+    let landed = dest.get_metadata(at).await.expect("the copy landed");
     assert_eq!(landed.size, Some(bytes.len() as u64), "the edit keeps the length");
-    dest.delete(&AppPath::legacy_unchecked(path)).await.expect("delete");
-    dest.create_file(&AppPath::legacy_unchecked(path), bytes)
-        .await
-        .expect("rewrite");
-    dest.set_modified_at(path, landed.modified_at.map(|secs| secs + 3_600));
+    dest.delete(at).await.expect("delete");
+    dest.create_file(at, bytes).await.expect("rewrite");
+    dest.set_modified_at(Path::new(path), landed.modified_at.map(|secs| secs + 3_600));
 }
 
 /// Every FILE row of `op_id` records the landed file's OWN modified time, read back
 /// from the destination, so a reversal verifies size AND mtime. Size alone passed a
 /// same-length edit and deleted it with the user's changes.
-async fn assert_file_rows_carry_their_landed_mtime(db: &std::path::Path, op_id: &str, dest: &dyn Volume, files: usize) {
+async fn assert_file_rows_carry_their_landed_mtime(db: &Path, op_id: &str, dest: &dyn Volume, files: usize) {
     let conn = open_read_connection(db).expect("read conn");
     let detail = cmdr_operation_log::query::get_operation(&conn, op_id, 1_000, 0)
         .expect("read detail")
@@ -739,10 +731,7 @@ async fn assert_file_rows_carry_their_landed_mtime(db: &std::path::Path, op_id: 
     assert_eq!(rows.len(), files, "{rows:?}");
     for row in rows {
         let at = row.dest_path.clone().expect("a transfer row names its destination");
-        let landed = dest
-            .get_metadata(&AppPath::legacy_unchecked(std::path::Path::new(&at)))
-            .await
-            .expect("landed");
+        let landed = dest.get_metadata(canon(&at)).await.expect("landed");
         let landed_mtime = landed.modified_at.map(|secs| secs as i64);
         assert!(landed_mtime.is_some(), "the double reports an mtime for {at}");
         assert_eq!(row.mtime, landed_mtime, "the row must record the landed mtime of {at}");
@@ -894,10 +883,10 @@ async fn undoing_a_copy_removes_the_links_it_landed() {
     fixture.put("/album/a.jpg", b"aaa").await;
     fixture
         .source
-        .plant_symlink(std::path::Path::new("/album/nested"), std::path::Path::new("a.jpg"));
+        .plant_symlink(Path::new("/album/nested"), Path::new("a.jpg"));
     fixture
         .source
-        .plant_symlink(std::path::Path::new("/alone"), std::path::Path::new("/anywhere"));
+        .plant_symlink(Path::new("/alone"), Path::new("/anywhere"));
     fixture.copy(&["/album", "/alone"]).await;
     assert_eq!(
         fixture
@@ -906,7 +895,7 @@ async fn undoing_a_copy_removes_the_links_it_landed() {
             .await
             .expect("the link landed")
             .as_deref(),
-        Some(std::path::Path::new("/anywhere"))
+        Some(Path::new("/anywhere"))
     );
     let dests = fixture.journaled_dests(EntryType::File);
     assert!(dests.contains(&"/alone".to_string()), "{dests:?}");
@@ -916,4 +905,9 @@ async fn undoing_a_copy_removes_the_links_it_landed() {
 
     assert_eq!(report.skipped, 0, "{report:?}");
     assert_eq!(fixture.dest_files_under("/").await, Vec::<String>::new());
+}
+
+/// A canonical app path the test spells as text.
+fn canon(path: &str) -> &AppPath {
+    AppPath::from_normalized(path).expect("a canonical path")
 }

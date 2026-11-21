@@ -44,7 +44,6 @@ fn the_throttle_holds_frames_back_but_never_the_one_that_lands_on_the_total() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_same_volume_restore_that_renames_by_copy_goes_back_by_copy() {
     use cmdr_fs::volume::{InMemoryVolume, Volume};
-    use std::path::Path;
 
     let volume: Arc<dyn Volume> = Arc::new(
         InMemoryVolume::new("Bucket")
@@ -64,9 +63,9 @@ async fn a_same_volume_restore_that_renames_by_copy_goes_back_by_copy() {
         .runner()
         .perform(InverseAct::Restore {
             from: &volume,
-            from_path: Path::new("/moved/big.mov"),
+            from_path: app_path!("/moved/big.mov"),
             to: &volume,
-            to_path: Path::new("/home/big.mov"),
+            to_path: app_path!("/home/big.mov"),
             same_volume: true,
             force: false,
         })

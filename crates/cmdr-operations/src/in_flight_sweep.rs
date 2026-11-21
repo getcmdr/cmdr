@@ -48,6 +48,7 @@
 //! roots at `/` in its own namespace, so guessing from the path is how a sweep
 //! points `remove_file` at the user's Mac.
 
+use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -56,6 +57,7 @@ use crate::host::EngineHost;
 use crate::transfer_sides::root_is_listed;
 use crate::types::{KeptLeftover, LeftoversKeptEvent};
 use crate::unique_name::{NameCandidates, RESCUE_NAME_ATTEMPTS, recovered_sibling};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::log_private::LogPrivate;
 
 /// Settles the records an earlier run left that the local filesystem can answer
@@ -286,11 +288,18 @@ async fn settle_legacy(host: &EngineHost, temp: &RecordedTemp) -> Outcome {
                 return Outcome::Deferred;
             };
             Surface::Volume(volume)
-                .remove_temp(&resolved.path.as_std_legacy())
+                .remove_temp(&in_ledger(&resolved.path))
                 .await
                 .into_outcome()
         }
     }
+}
+
+/// An app path as the `std::path` value the sweep's records and surfaces speak (native on
+/// the local surface, the stored text on a volume one), losslessly: the module's one
+/// crossing, until the ledger's volume records carry app paths.
+fn in_ledger(path: &AppPath) -> Cow<'_, Path> {
+    path.as_std_legacy()
 }
 
 /// Whether a legacy record really names a staged partial.
@@ -369,7 +378,7 @@ async fn locate(host: &EngineHost, item: &TrackedItem) -> Located {
             let Some(volume) = host.volumes().get(volume_id) else {
                 return Located::Unreachable;
             };
-            let root = volume.root().as_std_legacy().to_path_buf();
+            let root = in_ledger(volume.root()).into_owned();
             // The registry can be a step ahead of the mount table on a drive
             // that is leaving again. An unreadable table is not evidence of
             // leaving, so only a definite "gone" holds the record back.
@@ -395,7 +404,7 @@ async fn locate(host: &EngineHost, item: &TrackedItem) -> Located {
             let drive_name = Some(volume.name().to_string());
             Located::At {
                 surface: Surface::Volume(volume),
-                path: resolved.path.as_std_legacy().into_owned(),
+                path: in_ledger(&resolved.path).into_owned(),
                 destination,
                 drive_name,
             }

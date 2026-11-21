@@ -6,7 +6,10 @@
 //! round trip on a share, so it comes from the starter
 //! ([`ItemKinds`]) or not at all.
 
+use std::borrow::Cow;
 use std::path::{Path, PathBuf};
+
+use cmdr_fs::app_path::AppPath;
 
 use super::manager::{OperationItems, OperationSummaryText};
 use super::types::ItemKinds;
@@ -95,14 +98,21 @@ pub(crate) fn local_location(path: &Path) -> String {
 pub(crate) fn volume_location(volume: &dyn cmdr_fs::volume::Volume, path: &Path) -> String {
     if volume
         .local_path()
-        .is_some_and(|root| *root.as_std_legacy() == *Path::new("/"))
+        .is_some_and(|root| *as_shown_path(&root) == *Path::new("/"))
     {
         return local_location(path);
     }
     if let Some(home) = volume.stands_in_for_own_disk() {
-        return tildify(path, Some(&home.as_std_legacy()));
+        return tildify(path, Some(&as_shown_path(home)));
     }
-    location_on(volume.name(), &volume.root().as_std_legacy(), path)
+    location_on(volume.name(), &as_shown_path(volume.root()), path)
+}
+
+/// A volume's root or home as the `Path` the location text is built from: the summary's
+/// paths are still `std::path` values, so the roots it measures them against cross here,
+/// losslessly, and the text comes out as `Path::display` always made it.
+fn as_shown_path(path: &AppPath) -> Cow<'_, Path> {
+    path.as_std_legacy()
 }
 
 fn tildify(path: &Path, home: Option<&Path>) -> String {

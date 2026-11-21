@@ -243,7 +243,7 @@ impl crate::Operations {
             |detail| VolumeScanError::Unexpected { detail },
             async move {
                 volume
-                    .scan_for_conflicts(&source_items, &AppPath::legacy_unchecked(&dest_path))
+                    .scan_for_conflicts(&source_items, &on_volume(&dest_path))
                     .await
                     .map_err(|error| VolumeScanError::Volume { error })
             },
@@ -347,10 +347,7 @@ async fn stat_source_paths(
     let (mut stats, unanswered) = stats_from_watched_panes(listings, source_volume_id, paths);
     let stated: Vec<(PathBuf, FileEntry)> = stream::iter(unanswered)
         .map(|path| async move {
-            let entry = source_volume
-                .get_metadata(&AppPath::legacy_unchecked(&path))
-                .await
-                .ok()?;
+            let entry = source_volume.get_metadata(&on_volume(&path)).await.ok()?;
             Some((path, entry))
         })
         .buffer_unordered(SOURCE_STAT_CONCURRENCY)
@@ -479,6 +476,12 @@ pub struct SourceItemInput {
     /// dir-vs-dir collision the FE can classify as a silent merge.
     #[serde(default)]
     pub is_directory: bool,
+}
+
+/// A path the pre-flight holds as a `std::path` value (the sources and destination it is
+/// handed) as the app path a volume takes, losslessly: the one crossing here.
+fn on_volume(path: &Path) -> std::borrow::Cow<'_, AppPath> {
+    AppPath::legacy_unchecked(path)
 }
 
 #[cfg(test)]
