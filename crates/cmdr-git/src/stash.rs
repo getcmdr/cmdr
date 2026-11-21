@@ -27,7 +27,9 @@ use std::process::{Command, Stdio};
 
 use cmdr_fs::entry::FileEntry;
 
+use crate::path::Cat;
 use crate::repo::RepoHandle;
+use crate::row_path::RowPath;
 use cmdr_fs::git_meta::GitEntryMeta;
 use cmdr_fs::volume::git_error::{FriendlyGitError, FriendlyGitErrorKind};
 
@@ -39,7 +41,7 @@ use cmdr_fs::volume::git_error::{FriendlyGitError, FriendlyGitErrorKind};
 /// `git -C <repo_root>` directly; the caller resolves `repo_root` from
 /// the same `discover_repo` cache so there's no redundant lookup.
 pub fn list_stashes(repo_root: &Path) -> Result<Vec<FileEntry>, FriendlyGitError> {
-    let parent = repo_root.join(".git").join("stash");
+    let parent = RowPath::category_of(repo_root, Cat::Stash);
     let output = Command::new("git")
         .arg("-C")
         .arg(repo_root)
@@ -71,9 +73,11 @@ pub fn list_stashes(repo_root: &Path) -> Result<Vec<FileEntry>, FriendlyGitError
         };
 
         let segment = idx.to_string();
-        let entry_path = parent.join(&segment);
+        let entry_path = parent
+            .child(&segment)
+            .unwrap_or_else(|| unreachable!("a stash index is one plain name"));
         let display = format!("stash@{{{}}}: {}", idx, subject);
-        let mut fe = FileEntry::new(display, entry_path.to_string_lossy().into_owned(), true, false);
+        let mut fe = FileEntry::new(display, entry_path.into_text(), true, false);
         fe.icon_id = "git:fork".into();
         fe.permissions = 0o755;
         let secs = time_str.parse::<u64>().ok();

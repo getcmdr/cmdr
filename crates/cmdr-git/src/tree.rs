@@ -8,7 +8,7 @@
 //! this snapshot", which the portal turns into `VolumeError::NotFound`, while
 //! `Err` is reserved for a repo that couldn't answer at all.
 
-use std::path::Path;
+use crate::row_path::RowPath;
 
 use gix::object::tree::EntryKind;
 
@@ -33,7 +33,7 @@ pub fn list_tree(
     handle: &RepoHandle,
     commit_id: gix::ObjectId,
     sub_path: &str,
-    display_parent: &Path,
+    display_parent: &RowPath,
 ) -> Lookup<Vec<FileEntry>> {
     let repo = handle.to_thread_local();
     let Some(tree) = resolve_tree_at(&repo, commit_id, sub_path)? else {
@@ -53,7 +53,11 @@ pub fn list_tree(
             entry.map_err(|e| FriendlyGitError::with_source(FriendlyGitErrorKind::CorruptRepo, e.to_string(), e))?;
         let name = entry.filename().to_string();
         let kind = entry.mode().kind();
-        let display_path = display_parent.join(&name).to_string_lossy().into_owned();
+        // A name that is no name (`..`, an empty one) is a hostile repo's: no row, since a
+        // copy or delete of it would act on another folder.
+        let Some(display_path) = display_parent.child(&name).map(RowPath::into_text) else {
+            continue;
+        };
         let mut fe = FileEntry::new(
             name.clone(),
             display_path,
@@ -100,19 +104,11 @@ pub fn get_tree_entry(
     handle: &RepoHandle,
     commit_id: gix::ObjectId,
     sub_path: &str,
-    display_path: &Path,
+    display_path: &RowPath,
 ) -> Lookup<FileEntry> {
     let repo = handle.to_thread_local();
     if sub_path.is_empty() {
-        let mut fe = FileEntry::new(
-            display_path
-                .file_name()
-                .map(|s| s.to_string_lossy().into_owned())
-                .unwrap_or_default(),
-            display_path.to_string_lossy().into_owned(),
-            true,
-            false,
-        );
+        let mut fe = FileEntry::new(display_path.file_name(), display_path.clone().into_text(), true, false);
         fe.permissions = 0o755;
         fe.icon_id = "dir".to_string();
         return Ok(Some(fe));
@@ -127,20 +123,20 @@ pub fn get_tree_entry(
 
     // Use peel_to_entry_by_path so any intermediate trees walk via the same gix path.
     let Some(entry) = tree
-        .peel_to_entry_by_path(Path::new(sub_path))
+        .peel_to_entry(tree_names(sub_path))
         .map_err(|e| FriendlyGitError::with_source(FriendlyGitErrorKind::CorruptRepo, e.to_string(), e))?
     else {
         return Ok(None);
     };
 
     let kind = entry.mode().kind();
-    let name = display_path
-        .file_name()
-        .map(|s| s.to_string_lossy().into_owned())
-        .unwrap_or_else(|| sub_path.split('/').next_back().unwrap_or("").to_string());
+    let mut name = display_path.file_name();
+    if name.is_empty() {
+        name = sub_path.split('/').next_back().unwrap_or("").to_string();
+    }
     let mut fe = FileEntry::new(
         name,
-        display_path.to_string_lossy().into_owned(),
+        display_path.clone().into_text(),
         matches!(kind, EntryKind::Tree),
         matches!(kind, EntryKind::Link),
     );
@@ -200,7 +196,7 @@ pub(crate) fn resolve_tree_at<'r>(
         return Ok(Some(tree));
     }
     let Some(entry) = tree
-        .peel_to_entry_by_path(Path::new(sub_path))
+        .peel_to_entry(tree_names(sub_path))
         .map_err(|e| FriendlyGitError::with_source(FriendlyGitErrorKind::CorruptRepo, e.to_string(), e))?
     else {
         return Ok(None);
@@ -253,7 +249,7 @@ pub fn lookup_blob(handle: &RepoHandle, commit_id: gix::ObjectId, sub_path: &str
         .tree()
         .map_err(|e| FriendlyGitError::with_source(FriendlyGitErrorKind::CorruptRepo, e.to_string(), e))?;
     let Some(entry) = tree
-        .peel_to_entry_by_path(Path::new(sub_path))
+        .peel_to_entry(tree_names(sub_path))
         .map_err(|e| FriendlyGitError::with_source(FriendlyGitErrorKind::CorruptRepo, e.to_string(), e))?
     else {
         return Ok(None);
@@ -316,8 +312,31 @@ fn pick_icon_id(fe: &FileEntry) -> String {
     if fe.is_directory {
         return "dir".into();
     }
-    if let Some(ext) = Path::new(&fe.name).extension() {
-        return format!("ext:{}", ext.to_string_lossy().to_lowercase());
+    if let Some(ext) = extension_of(&fe.name) {
+        return format!("ext:{}", ext.to_lowercase());
     }
     "file".into()
+}
+
+/// A tree entry name's extension, by `Path::extension`'s rule for one POSIX name: the
+/// text after the last `.`, unless that dot leads the name (`.bashrc` has none) or the
+/// name is `..`. A tree name is one name on every OS, so a `\` in it is just a character.
+pub(crate) fn extension_of(name: &str) -> Option<&str> {
+    if name == ".." {
+        return None;
+    }
+    let (stem, extension) = name.rsplit_once('.')?;
+    (!stem.is_empty()).then_some(extension)
+}
+
+/// The names of a `/`-separated path inside a tree, as gix's `peel_to_entry` walks them:
+/// what `Path::components` read from it on macOS and Linux (an empty name and a `.` past
+/// the first drop), with `/` as the only separator on every OS, since a tree name may
+/// hold a `\`.
+pub(crate) fn tree_names(sub_path: &str) -> impl Iterator<Item = &[u8]> {
+    sub_path
+        .split('/')
+        .enumerate()
+        .filter(|(at, name)| !name.is_empty() && (*at == 0 || *name != "."))
+        .map(|(_, name)| name.as_bytes())
 }

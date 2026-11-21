@@ -161,7 +161,8 @@ fn a_filled_in_commit_row_carries_files_changed() {
     let (dir, _f) = build_simple_repo("column_meta", 2);
     let (handle, root) = discover_repo(&dir).unwrap();
     let walked = git_log::list_commits(&handle, &root, &git_log::WalkControl::default()).unwrap();
-    let entries = git_log::commit_rows_with_counts(&handle, &root, &[std::path::PathBuf::from(&walked[0].path)]);
+    let row = cmdr_fs::app_path::AppPathBuf::from_wire(&walked[0].path).expect("a row path is an app path");
+    let entries = git_log::commit_rows_with_counts(&handle, &root, &[row]);
     let top = &entries[0];
     let n = top.size.expect("files-changed size set");
     assert!(n >= 1, "at least one file changed in the second commit");
@@ -266,14 +267,15 @@ fn submodule_listing_names_the_pinned_commit() {
 fn snapshot_files_borrow_commit_date() {
     let (dir, _f) = build_simple_repo("column_meta", 1);
     let (handle, root) = discover_repo(&dir).unwrap();
-    let p = root.join(".git").join("branches").join("main");
+    let p = crate::test_fixtures::portal_path(&root, "branches/main");
+    let display = crate::test_fixtures::row_at(&root, "branches/main");
     let (virt, _, _) = classify(&p).expect("classify branch tip");
     assert!(matches!(virt, VirtualGitPath::Ref(Cat::Branches, _)));
 
     let commit = virtual_listing::resolve_ref_commit(&handle, Cat::Branches, "main")
         .unwrap()
         .expect("main exists");
-    let entries = crate::tree::list_tree(&handle, commit, "", &p)
+    let entries = crate::tree::list_tree(&handle, commit, "", &display)
         .unwrap()
         .expect("the snapshot root is there");
     for fe in &entries {
@@ -307,11 +309,11 @@ fn snapshot_dirs_carry_recursive_bytes() {
     );
 
     let (handle, root) = discover_repo(&dir).unwrap();
-    let p = root.join(".git").join("branches").join("main");
+    let display = crate::test_fixtures::row_at(&root, "branches/main");
     let commit = virtual_listing::resolve_ref_commit(&handle, Cat::Branches, "main")
         .unwrap()
         .expect("main exists");
-    let entries = crate::tree::list_tree(&handle, commit, "", &p)
+    let entries = crate::tree::list_tree(&handle, commit, "", &display)
         .unwrap()
         .expect("the snapshot root is there");
     let scripts = entries.iter().find(|e| e.name == "scripts").unwrap();

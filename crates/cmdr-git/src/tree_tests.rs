@@ -25,7 +25,7 @@ fn list_tree_at_main_includes_dirs_and_files() {
     let commit = virtual_listing::resolve_ref_commit(&handle, Cat::Branches, "main")
         .unwrap()
         .expect("main exists");
-    let display = root.join(".git").join("branches").join("main");
+    let display = crate::test_fixtures::row_at(&root, "branches/main");
     let entries = tree::list_tree(&handle, commit, "", &display)
         .unwrap()
         .expect("the snapshot root is there");
@@ -46,7 +46,7 @@ fn list_tree_preserves_executable_bit() {
     let commit = virtual_listing::resolve_ref_commit(&handle, Cat::Branches, "main")
         .unwrap()
         .expect("main exists");
-    let display = root.join(".git").join("branches").join("main").join("scripts");
+    let display = crate::test_fixtures::row_at(&root, "branches/main/scripts");
     let entries = tree::list_tree(&handle, commit, "scripts", &display)
         .unwrap()
         .expect("scripts/ is there");
@@ -91,4 +91,40 @@ async fn blob_stream_drains_to_full_blob() {
     }
     assert_eq!(drained, bytes);
     cleanup(&dir);
+}
+
+/// A tree name's extension, the icon's key, is `Path::extension`'s answer for one POSIX
+/// name on every OS (a `\` is a character of the name).
+#[test]
+fn a_tree_names_extension_is_read_as_one_posix_name() {
+    for (name, expected) in [
+        ("a.txt", Some("txt")),
+        ("a.b.c", Some("c")),
+        (".bashrc", None),
+        (".a.b", Some("b")),
+        ("a.", Some("")),
+        ("...", Some("")),
+        ("..", None),
+        (".", None),
+        ("README", None),
+        ("a\\b.c", Some("c")),
+        ("x\\y", None),
+    ] {
+        assert_eq!(tree::extension_of(name), expected, "{name:?}");
+    }
+}
+
+/// A path inside a tree walks by `/` alone, as `Path::components` read it on macOS
+/// and Linux: an empty name and a `.` past the first drop, and a `\` stays in its name.
+#[test]
+fn a_tree_path_walks_by_slash_alone() {
+    let names = |sub: &str| {
+        tree::tree_names(sub)
+            .map(|name| String::from_utf8_lossy(name).into_owned())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(names("src/lib.rs"), ["src", "lib.rs"]);
+    assert_eq!(names("a//b/./c/"), ["a", "b", "c"]);
+    assert_eq!(names("a\\b/c"), ["a\\b", "c"]);
+    assert!(names("").is_empty());
 }

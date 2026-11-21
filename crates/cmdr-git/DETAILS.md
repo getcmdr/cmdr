@@ -353,6 +353,34 @@ listing.
 - **Every `gix` call runs on `VolumeHost::runtime().spawn_blocking`**, ❌ never on the caller's async worker: a listing
   of a big repo is a blocking walk.
 
+### Portal paths are app paths; only the repo on the disk is native
+
+The portal's paths are app paths (`crates/cmdr-fs/DETAILS.md` § "App paths"), and gix's are native, so each crosses at
+one named place:
+
+- **In**: `classify_in` takes the `&AppPath` a `Volume` method got and splits it at its first `.git` by the app path's
+  own names (`path::split_app_at_dot_git`); only the worktree root crosses down (`to_native`) for gix's `discover`. A
+  `..` before the `.git` resolves nothing (`None`, so `NotFound`): the `std::path` split dropped it and asked gix about
+  another folder. Only a transition-bridge value can spell one.
+- **Out**: gix answers the canonical worktree root natively, and every row is app-path arithmetic below its `.git`
+  (`row_path::RowPath`, crossing once per listing with `from_native_unicode`), so on Windows a row reads
+  `C:/x/.git/branches/main` where `PathBuf::join` wrote `C:\x\…`. A name that is no name (`..`, an empty one, a `/` in a
+  tree name, a NUL: only a hostile repo lists one) is no row, logged at debug; `PathBuf::join` had made the parent
+  (`main/..`) or replaced the whole path (`/abs`). A root that isn't Unicode text (Linux bytes) keeps its rows' lossy
+  text (`RowPath::Lossy`) until escapes go live. A row's `redirectToPath` (a linked worktree, a submodule) crosses the
+  same way (`row_path::redirect_text`).
+- **Tree paths walk by `/` alone** (`tree::tree_names`, gix's `peel_to_entry`), and a tree name's extension is
+  `tree::extension_of`: both `Path`'s answers for POSIX text, on every OS, since a tree name may hold a `\`.
+- **Measured against the `std::path` mapping** (2026-11-21, 8,565 generated cases: the split, `root()`, every row and
+  redirect under 19 roots, the count pass's filter): no difference for a canonical root and real names. The ones left
+  are the refusals above, non-canonical native text (`/x//r`, a trailing `/`; gix and the host canonicalize first), and
+  a root holding an escape-range code point, whose commit rows get no counts.
+- **What still crosses the bridge** (`volume::host_app_path`, `legacy_unchecked`, the crate's one call): the host's
+  `std::path` values, a commit row's path for `GitPortal::commit_rows_with_counts` and a portal root that isn't Unicode
+  text in `GitPortalVolume::new`. `portal_route` keeps its `std::path` split, since the app's routing orders route
+  boundaries by that root's `components()`. All three go when the app's git wiring and routing speak app paths. No typed
+  twin sits beside them: the capped surface takes no item without a caller (§ "The public surface is capped").
+
 ### `GitPortal`: the value that owns the mutable state
 
 `GitPortal` (`portal.rs`) holds the `RepoCache`, the per-repo watcher registry, the `GitStateSink` that registry reports

@@ -14,8 +14,6 @@
 //! cell plus tooltip. The numeric `size` keeps a within-category sort key so the user can still
 //! sort by Size and get a useful order; cross-category Size sorting is meaningless on purpose.
 
-use std::path::Path;
-
 use gix::ObjectId;
 use gix::object::tree::EntryKind;
 
@@ -173,7 +171,7 @@ pub fn recursive_tree_size(repo: &gix::Repository, commit_id: ObjectId, sub_path
     let tree = if sub_path.is_empty() {
         tree
     } else {
-        let entry = tree.peel_to_entry_by_path(Path::new(sub_path)).ok()??;
+        let entry = tree.peel_to_entry(crate::tree::tree_names(sub_path)).ok()??;
         if !matches!(entry.mode().kind(), EntryKind::Tree) {
             return None;
         }
