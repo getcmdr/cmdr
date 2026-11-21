@@ -236,6 +236,10 @@
   "@operationLog.skipReason.locked": {
     "sourceHash": "39e4c78"
   },
+  "operationLog.skipReason.unreadablePath": "Cmdr không xác định được chính xác vị trí của mục này từ nhật ký thao tác, nên giữ nguyên mục này.",
+  "@operationLog.skipReason.unreadablePath": {
+    "sourceHash": "9fc06ef"
+  },
   "operationLog.summary.canceled": "{summary}, sau đó đã hủy (dự kiến: {plannedText})",
   "@operationLog.summary.canceled": {
     "sourceHash": "9a27d89"

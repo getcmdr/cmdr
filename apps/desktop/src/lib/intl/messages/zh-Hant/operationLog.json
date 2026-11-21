@@ -235,6 +235,10 @@
   "@operationLog.skipReason.locked": {
     "sourceHash": "39e4c78"
   },
+  "operationLog.skipReason.unreadablePath": "Cmdr 無法從操作記錄確定這個項目的確切位置，所以讓它維持原樣。",
+  "@operationLog.skipReason.unreadablePath": {
+    "sourceHash": "9fc06ef"
+  },
   "operationLog.summary.canceled": "{summary}，隨後已取消（原計畫 {plannedText} 個）",
   "@operationLog.summary.canceled": {
     "sourceHash": "9a27d89"

@@ -236,6 +236,10 @@
   "@operationLog.skipReason.locked": {
     "sourceHash": "39e4c78"
   },
+  "operationLog.skipReason.unreadablePath": "A Cmdr a műveletnaplóból nem tudta pontosan megállapítani, hol van ez az elem, ezért nem nyúlt hozzá.",
+  "@operationLog.skipReason.unreadablePath": {
+    "sourceHash": "9fc06ef"
+  },
   "operationLog.summary.canceled": "{summary}, majd megszakítva (tervezett: {plannedText})",
   "@operationLog.summary.canceled": {
     "sourceHash": "9a27d89"

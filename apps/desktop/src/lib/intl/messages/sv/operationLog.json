@@ -237,6 +237,10 @@
   "@operationLog.skipReason.locked": {
     "sourceHash": "39e4c78"
   },
+  "operationLog.skipReason.unreadablePath": "Cmdr kunde inte se i åtgärdsloggen exakt var det här objektet ligger, så Cmdr lät det vara.",
+  "@operationLog.skipReason.unreadablePath": {
+    "sourceHash": "9fc06ef"
+  },
   "operationLog.summary.canceled": "{summary} och avbröts sedan (planerat: {plannedText})",
   "@operationLog.summary.canceled": {
     "sourceHash": "9a27d89"
