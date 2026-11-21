@@ -35,6 +35,10 @@ is the canonical owner of `IndexPathSpace` and the read-side path transforms.
 - `routing.rs` — asked by volume id (the read side): `volume_id_for_local_path` (path → owning volume),
   `index_read_path[_pure]` + `mtp_index_relative_path`, `exclusion_scope_for_volume`.
 - `path_space.rs` — `IndexPathSpace`, the space the local scan / reconcile / live pipeline holds.
+- `app_text.rs` — the ONE set of crossings between a volume's app path and the index: `stored_text` (the text stores and
+  strips compare, byte for byte the old lossy spelling), `native_root` (`None` for `mtp://`/`adb://`), `app_path_of`
+  (stored text back to an app path for a trait walk), `local_path` (stored text to the local walker). ❌ No
+  `PathBuf::from(entry.path)` or `Path::join` on a share's path: `DETAILS.md` § "App paths at the edges".
 - `path_prefix.rs` — component-aware absolute-path prefix tests (`/a/bc` is never a child of `/a/b`): the predicates
   (`is_strict_descendant`, `is_at_or_under`) and their lookup forms for a keyed collection (`self_and_ancestors`,
   `descendant_range_prefix`), plus `compute_parent_path`, `collect_ancestor_paths`, and `with_ancestor_closure` (origins

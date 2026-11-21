@@ -20,7 +20,7 @@
 //! between the two, which belongs on the side that can build both halves.
 
 use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 
 use cmdr_fs::volume::{Volume, smb_volume_id};
@@ -142,7 +142,7 @@ async fn smb_integration_volume_scan_indexes_share() {
     let cancelled = tokio_util::sync::CancellationToken::new();
     let summary = scan_volume_via_trait(
         Arc::clone(&vol),
-        PathBuf::from(&base),
+        cmdr_fs::app_path::AppPathBuf::parse(&base, cmdr_fs::app_path::PathFlavor::Posix).expect("an app path"),
         writer.clone(),
         progress(),
         cancelled,
@@ -221,7 +221,7 @@ async fn smb_integration_volume_scan_via_connection_pool() {
     let cancelled = tokio_util::sync::CancellationToken::new();
     let summary = scan_volume_via_trait(
         Arc::clone(&vol),
-        PathBuf::from(&base),
+        cmdr_fs::app_path::AppPathBuf::parse(&base, cmdr_fs::app_path::PathFlavor::Posix).expect("an app path"),
         writer.clone(),
         progress(),
         cancelled,
@@ -285,7 +285,7 @@ async fn smb_integration_watch_event_updates_index() {
     let cancelled = tokio_util::sync::CancellationToken::new();
     scan_volume_via_trait(
         Arc::clone(&vol),
-        PathBuf::from(&base),
+        cmdr_fs::app_path::AppPathBuf::parse(&base, cmdr_fs::app_path::PathFlavor::Posix).expect("an app path"),
         writer.clone(),
         progress(),
         cancelled,
@@ -421,7 +421,7 @@ async fn smb_integration_enrich_listing_shows_sizes() {
     let cancelled = tokio_util::sync::CancellationToken::new();
     scan_volume_via_trait(
         Arc::clone(&vol),
-        PathBuf::from(&base),
+        cmdr_fs::app_path::AppPathBuf::parse(&base, cmdr_fs::app_path::PathFlavor::Posix).expect("an app path"),
         writer.clone(),
         progress(),
         cancelled,

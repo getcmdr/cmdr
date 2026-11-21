@@ -263,7 +263,7 @@ async fn the_drive_index_walk_never_records_the_view() {
     let writer = IndexWriter::spawn(&db_path, cmdr_index::NoopEventSink::shared()).expect("writer");
     scan_volume_via_trait(
         share,
-        PathBuf::from("/share"),
+        cmdr_fs::app_path!("/share").to_owned(),
         writer.clone(),
         Arc::new(ScanProgress::new()),
         tokio_util::sync::CancellationToken::new(),
