@@ -1,0 +1,269 @@
+{
+  "$comment": "OS-gated test files and test modules that had no reason comment when `desktop-rust-os-test-gate-reason` landed (2026-11-21). It only shrinks: a local run drops an entry once its gate says why (a comment on the gate line or right above it) or is gone. Adding one needs David's OK (scripts/check/checks/DETAILS.md § Allowlist consent); give the gate its reason instead.",
+  "gates": {
+    "apps/desktop/src-tauri/src/about/place.rs#tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/ai/process.rs#tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/crash_reporter/tests.rs#signal_tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/file_system/cloud_actions.rs#tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/file_system/get_info.rs#tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/file_system/git/arming_tests.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/file_system/git/overlay_tests.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/file_system/git/walker_exposure_tests.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/file_system/mod.rs#tags_io_integration_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/file_system/mod.rs#watcher_fsevents_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/file_system/mod.rs#watcher_notify_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/file_system/restic/mod.rs#test_repo": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/file_system/restic/snapshot_watch_tests.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/file_system/volume/mod.rs#mtp_scan_oracle_tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/file_system/volume/mod.rs#smb_index_scan_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/file_system/volume/mod.rs#smb_scan_oracle_tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/listing_host/tests/lifecycle_order_test.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/notifications.rs#tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#network_look_alike_test_support": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#network_move_drift_test_support": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#network_safety_test_support": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#network_semantics_test_support": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#nfs_transfer_integration_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#nfs_transfer_safety_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#nfs_transfer_semantics_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#s3_live_engine_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#s3_rename_integration_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#s3_transfer_integration_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#s3_transfer_safety_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#s3_transfer_semantics_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#sftp_look_alike_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#sftp_test_support": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#sftp_transfer_integration_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#sftp_transfer_safety_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#sftp_transfer_semantics_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#smb_look_alike_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#smb_outage_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#smb_soak_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#smb_stream_write_integration_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#smb_stress_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#smb_transfer_safety_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#smb_transfer_semantics_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#smb_xattrs_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#webdav_look_alike_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#webdav_pause_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#webdav_refusal_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#webdav_refusing_proxy_test_support": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#webdav_test_support": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#webdav_transfer_integration_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#webdav_transfer_safety_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#webdav_transfer_semantics_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/operations_host/backend_suites/mod.rs#webdav_wire_cost_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/quit/relaunch.rs#tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "apps/desktop/src-tauri/src/tools/actions/tags.rs#tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-archive/src/mutation/mutator.rs#mutator_apple_double_test": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-fs/src/metadata/mod.rs#linux_characterization_tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-fs/src/process_cpu/platform/mod.rs#live_tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-fs/src/process_memory/mod.rs#tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-fs/src/volume/path_order_pin_test.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-index/src/importance/last_used.rs#tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-index/src/indexing/scanner/non_utf8_names_tests.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-index/src/indexing/watch/watcher/journal.rs#tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-local/src/list_alloc_ceiling_test.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-local/src/local_posix_conformance_test.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-local/src/local_posix_durability_test.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-local/src/local_posix_link_test.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-local/src/local_posix_names_test.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-local/src/local_posix_resume_test.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-local/src/local_posix_test.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-local/src/local_windows_conformance_test.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-local/src/local_windows_names_test.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-local/src/local_windows_test.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-local/src/reading_parity_test.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-local/src/reading_test.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-local/src/space.rs#tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-operations/src/delete/volume_symlink_tests.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-operations/src/mount_boundary.rs#test_support": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-operations/src/non_utf8_name_tests.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-operations/src/rollback/planner_tests.rs#blocked_items_tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-operations/src/testing/trash_cleanup.rs#tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-operations/src/transfer/copy/copy_dest_link_tests.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-operations/src/transfer/volume/hidden_link_backend_tests.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-operations/src/transfer/volume/hostile_names_tests.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-operations/src/transfer/volume/link_following_backend_tests.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-operations/src/transfer/volume/rename_merge_symlink_tests.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-operations/src/transfer/volume/repeated_name_tests.rs": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-operations/src/validation.rs#path_exists_or_is_symlink_tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    },
+    "crates/cmdr-operations/src/validation.rs#refusing_folder_tests": {
+      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
+    }
+  }
+}

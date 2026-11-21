@@ -10,7 +10,27 @@ import (
 // handleOneShotFlags answers the flags that do one job against the repo and exit,
 // before any check runs. One call in `main`, so its complexity stays put.
 func handleOneShotFlags(flags *cliFlags, rootDir string) bool {
-	return handlePrintRustTestScopeFlag(flags, rootDir) || handleEnsureE2EBinaryFlag(flags, rootDir)
+	return handlePrintRustTestScopeFlag(flags, rootDir) || handlePrintHostCargoArgsFlag(flags, rootDir) ||
+		handleEnsureE2EBinaryFlag(flags, rootDir)
+}
+
+// handlePrintHostCargoArgsFlag answers `--print-host-cargo-args`: the package
+// selection and features `HostCargoLaneArgs` gives every host cargo lane, one
+// argument per line, so a CI step that calls cargo itself (the Windows test job)
+// asks cargo what the check lanes ask, without restating it.
+func handlePrintHostCargoArgsFlag(flags *cliFlags, rootDir string) bool {
+	if !flags.printHostCargoArgs {
+		return false
+	}
+	args, err := checks.HostCargoLaneArgs(rootDir)
+	if err != nil {
+		printError("Error: %v", err)
+		os.Exit(1)
+	}
+	for _, arg := range args {
+		fmt.Println(arg)
+	}
+	return true
 }
 
 // handlePrintRustTestScopeFlag answers `--print-rust-test-scope <base-ref>`: it

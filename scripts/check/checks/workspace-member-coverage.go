@@ -40,6 +40,7 @@ var rustScannerJurisdictions = map[string]ScannerJurisdiction{
 	"desktop-rust-lock-poison":            {Kinds: []MemberKind{KindApp, KindTool}},
 	"desktop-rust-app-path-std-bridge":    {Kinds: []MemberKind{KindApp, KindTool}},
 	"desktop-rust-platform-cfg-placement": {Kinds: []MemberKind{KindApp, KindTool}},
+	"desktop-rust-os-test-gate-reason":    {Kinds: []MemberKind{KindApp, KindTool}},
 	"desktop-rust-log-private-values":     {Kinds: []MemberKind{KindApp, KindTool}},
 	"desktop-rust-error-string-match":     {Kinds: []MemberKind{KindApp, KindTool}},
 	"desktop-rust-test-sleep":             {Kinds: []MemberKind{KindApp, KindTool}},
