@@ -806,8 +806,12 @@ where every lane the change needs runs or skips as a verified marker (§ Lane ma
   which a fork's author lacks, and a re-run keeps its payload, so it keeps its mode. Asking only ever adds lanes, so no
   fork-controlled input can turn a light run into a passing one. A fork PR's run executes the fork's own workflow, which
   the approval rule for outside contributors guards (§ The light lane).
-- **Any other label** also starts a `labeled` run. It checks nothing (`verified` is set), names its gate `CI light`, and
-  sits in a concurrency group of its own, so it can't cancel the PR's real run.
+- **Any other label** also starts a `labeled` run. It checks nothing (`verified` is set), sits in a concurrency group of
+  its own, so it can't cancel the PR's real run, and is titled `Light: checks nothing (the <label> label): <PR title>`
+  with its gate named `CI label only` (`changes`' `ignored` output). Why: a PR opened with `claude-created` starts one,
+  and when its gate was `CI light` too, it went green in a minute beside the real light run's red one and read as the
+  verdict (PR #1326, 2026-11-21). The title keeps the `Light: ` prefix, so `pnpm land` never waits on it, and the ETA
+  skips it (`isLabelRun`).
 - **`run-name` titles a light run `Light: <PR title>`** (other runs keep GitHub's default, which an empty `run-name`
   falls back to), so `pnpm land` waits only on land runs (`scripts/land/DETAILS.md` § Decision: ask for a land run). It
   mirrors the `mode` step; drift there can only make `land` wait on the wrong run, never land on one.
@@ -821,9 +825,6 @@ where every lane the change needs runs or skips as a verified marker (§ Lane ma
   install that `warm-rust-cache` removes, 7.5 the analysis). Free on this public repo, but each takes slots from the
   account's 20-job concurrency budget (§ Build caching, Critical path). Docs-only pushes stay cheap: the Rust filters
   exclude `CLAUDE.md` and `DETAILS.md`.
-- **Read the right `CI light`**: a PR opened with `claude-created` also starts that label's do-nothing run, whose
-  `CI light` goes green in a minute beside the real light run's (PR #1326, 2026-11-21: the real one was red on
-  `svelte-check` while the label's was green). Judge a light run by the run that ran lanes.
 
 ## Branch protection
 

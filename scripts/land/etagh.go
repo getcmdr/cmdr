@@ -53,7 +53,8 @@ func pickHistoryRuns(runs []workflowRun) []workflowRun {
 	var picked []workflowRun
 	land, light := 0, 0
 	for _, run := range runs {
-		if run.RunAttempt > 1 {
+		// A label's do-nothing run is green in a minute and would pass for a light run's length.
+		if run.RunAttempt > 1 || run.isLabelRun() {
 			continue
 		}
 		switch {

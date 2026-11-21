@@ -2,13 +2,16 @@ name: CI
 
 # A light run (a PR push nobody asked to land yet) is titled `Light: <PR title>`, so `pnpm land`
 # can tell it from a land run on the same head before either finishes; every other run keeps
-# GitHub's default title (an empty `run-name` falls back to it). The condition mirrors `changes`'
+# GitHub's default title (an empty `run-name` falls back to it). A run some other label started
+# (it checks nothing) is `Light: checks nothing (the <label> label): <PR title>`: still a light
+# run to `land`, and plainly not the light run to judge. The condition mirrors `changes`'
 # `mode` step; drift only makes `land` wait on the wrong run, never land one: the gate's name
 # comes from `mode` alone (`docs/tooling/ci.md` § Light runs and land runs).
 run-name: >-
-  ${{ github.event_name == 'pull_request' && ((github.event.action == 'labeled' && github.event.label.name != 'land') ||
-  (!contains(github.event.pull_request.labels.*.name, 'land') && github.event.pull_request.user.type != 'Bot')) &&
-  format('Light: {0}', github.event.pull_request.title) || '' }}
+  ${{ github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name != 'land' &&
+  format('Light: checks nothing (the {0} label): {1}', github.event.label.name, github.event.pull_request.title) ||
+  github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'land') &&
+  github.event.pull_request.user.type != 'Bot' && format('Light: {0}', github.event.pull_request.title) || '' }}
 
 on:
   workflow_dispatch:
@@ -100,6 +103,9 @@ jobs:
       # run runs the macOS and E2E lanes and names its gate `CI OK`; a light run's gate is `CI light`,
       # which `main`'s ruleset doesn't accept (`mode` step).
       land: ${{ steps.mode.outputs.land }}
+      # A run some other label started (`mode` step): it checks nothing, so its gate reports
+      # `CI label only`, never a `CI light` that could pass for the real light run beside it.
+      ignored: ${{ steps.mode.outputs.ignored }}
       # The hosted Rust lanes (Linux, fixtures, Windows) run on light runs too, so a branch push
       # sees clippy, the tests, module cycles, and the Windows compile before anyone asks to land;
       # their green markers then let the land run on the same tree skip them. Only the macOS lane
@@ -212,7 +218,7 @@ jobs:
         run: |
           if [[ "$IGNORED" == "true" ]]; then
             echo "verified=true" >>"$GITHUB_OUTPUT"
-            echo "An unrelated label started this run, so every lane skips; its gate reports 'CI light'."
+            echo "An unrelated label started this run, so every lane skips; its gate reports 'CI label only'."
             exit 0
           fi
           green_ci_ok() {
@@ -1229,11 +1235,15 @@ jobs:
   # - Its name is `CI OK` only on a land run (`changes`' `mode`; every non-PR event is one). A
   #   light run skipped the macOS and E2E lanes because nobody asked to land, so its gate is `CI light`:
   #   green when the lanes that ran passed, and never the check `main` requires. A failed
-  #   `changes` on a pull request names it `CI light` too, red either way. The name is never
+  #   `changes` on a pull request names it `CI light` too, red either way. A run some other
+  #   label started checks nothing, so its gate is `CI label only`: a green `CI light` there
+  #   sat beside a red real light run and read as the verdict (PR #1326). The name is never
   #   `CI OK` on a skipped job, since this job never skips (`always()`).
   # `docs/tooling/ci.md` § Branch protection.
   ci-ok:
-    name: ${{ (github.event_name != 'pull_request' || needs.changes.outputs.land == 'true') && 'CI OK' || 'CI light' }}
+    name:
+      ${{ (github.event_name != 'pull_request' || needs.changes.outputs.land == 'true') && 'CI OK' ||
+      needs.changes.outputs.ignored == 'true' && 'CI label only' || 'CI light' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs:
@@ -1290,7 +1300,9 @@ jobs:
             exit 1
           fi
           echo "All jobs passed or were skipped by change detection"
-          if [[ "$EVENT" == "pull_request" && "$(jq -r '.changes.outputs.land' <<<"$NEEDS")" != "true" ]]; then
+          if [[ "$(jq -r '.changes.outputs.ignored' <<<"$NEEDS")" == "true" ]]; then
+            echo "A run another label started: it checks nothing, so this gate is 'CI label only'. Judge the PR by its light or land run."
+          elif [[ "$EVENT" == "pull_request" && "$(jq -r '.changes.outputs.land' <<<"$NEEDS")" != "true" ]]; then
             echo "A light run: the macOS lane and Linux E2E wait for 'pnpm land', so this gate is 'CI light', never the 'CI OK' main requires."
           fi
 

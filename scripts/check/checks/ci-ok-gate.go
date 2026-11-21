@@ -14,11 +14,16 @@ const ciOKJobID = "ci-ok"
 // event is one) reports `CI OK`; a light run, which skipped the macOS and E2E lanes because nobody asked
 // to land, reports `CI light`, a check `main`'s ruleset doesn't accept. GitHub names a job's check
 // run when the job is queued, after its `needs` finish, so the name is always the evaluated one
-// (`docs/tooling/ci.md` § Light runs and land runs).
-const ciOKGateName = "${{ (github.event_name != 'pull_request' || needs.changes.outputs.land == 'true') && 'CI OK' || 'CI light' }}"
+// (`docs/tooling/ci.md` § Light runs and land runs). A run some other label started checks
+// nothing and reports `CI label only`, so its green gate can't pass for the real light run's
+// `CI light` beside it (PR #1326 read that way).
+const ciOKGateName = "${{ (github.event_name != 'pull_request' || needs.changes.outputs.land == 'true') && 'CI OK' || needs.changes.outputs.ignored == 'true' && 'CI label only' || 'CI light' }}"
 
 // ciOKLandOutput is `changes`' `land` output, which the gate's name reads.
 const ciOKLandOutput = "${{ steps.mode.outputs.land }}"
+
+// ciOKIgnoredOutput is `changes`' `ignored` output, which names a label run's gate.
+const ciOKIgnoredOutput = "${{ steps.mode.outputs.ignored }}"
 
 // ciOKGateExempt names the ci.yml jobs `ci-ok` deliberately doesn't wait for, each with
 // its reason. Everything else must be in its `needs`.
@@ -76,11 +81,7 @@ func validateCIOKGate(ciYml string) []string {
 			"ci.yml: `%s`'s name must be exactly %q (has %q): a light run skips the macOS and E2E lanes, so it must never report the `CI OK` main requires",
 			ciOKJobID, ciOKGateName, name))
 	}
-	if land := jobOutputs(jobs["changes"])["land"]; land != ciOKLandOutput {
-		violations = append(violations, fmt.Sprintf(
-			"ci.yml: `changes` output `land` must be exactly %q (has %q): it names the gate `CI OK`, so only the `mode` step may decide it",
-			ciOKLandOutput, land))
-	}
+	violations = append(violations, validateGateNameOutputs(jobOutputs(jobs["changes"]))...)
 	if cond := jobScalar(gate, "if"); cond != "always()" && cond != "${{ always() }}" {
 		violations = append(violations, fmt.Sprintf(
 			"ci.yml: `%s` must run with `if: always()` (has %q); a skipped required check counts as passing",
@@ -90,6 +91,23 @@ func validateCIOKGate(ciYml string) []string {
 		violations = append(violations, fmt.Sprintf(
 			"ci.yml: the `pull_request` trigger has `%s`, so a PR outside it never reports `CI OK` and the required check hangs; gate jobs with the `changes` filter instead",
 			key))
+	}
+	return violations
+}
+
+// validateGateNameOutputs pins the `changes` outputs the gate's name reads to the `mode` step.
+func validateGateNameOutputs(outputs map[string]string) []string {
+	var violations []string
+	pins := []struct{ key, want, names string }{
+		{"land", ciOKLandOutput, "the gate `CI OK`"},
+		{"ignored", ciOKIgnoredOutput, "a label run's gate `CI label only`"},
+	}
+	for _, pin := range pins {
+		if got := outputs[pin.key]; got != pin.want {
+			violations = append(violations, fmt.Sprintf(
+				"ci.yml: `changes` output `%s` must be exactly %q (has %q): it names %s, so only the `mode` step may decide it",
+				pin.key, pin.want, got, pin.names))
+		}
 	}
 	return violations
 }
