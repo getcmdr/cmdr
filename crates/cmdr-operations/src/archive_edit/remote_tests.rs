@@ -185,6 +185,82 @@ async fn remote_edit_reaps_a_stale_temp_for_the_same_archive() {
     assert!(back.contains_key("added.txt"), "the edit committed");
 }
 
+/// A parent whose listing of `/device` also names a stale-looking "temp" that isn't one
+/// plain name, the way only a hostile or broken server lists one, and that records every
+/// delete it's asked for.
+struct HostileTempListing {
+    inner: Arc<InMemoryVolume>,
+    deletes: std::sync::Mutex<Vec<String>>,
+}
+
+impl Volume for HostileTempListing {
+    crate::forward_volume_methods!(
+        inner => name, root, lane_key, connection_state, connection_generation, attempt_reconnect,
+        get_metadata, exists, is_directory, create_file, create_directory, create_directory_all,
+        apply_metadata, metadata_caps, folder_metadata, clear_blockers, rename, get_space_info, local_path,
+        supports_streaming, supports_unknown_length_writes, supports_export, supports_local_fs_access,
+        operations_are_local, max_concurrent_ops, create_directory_errors_on_existing_dir, scan_for_copy,
+        scan_for_copy_batch, scan_for_conflicts, open_read_stream, write_from_stream, write_is_single_shot,
+        publishes_writes_whole,
+    );
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn list_directory<'a>(
+        &'a self,
+        path: &'a AppPath,
+        on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>> {
+        Box::pin(async move {
+            let mut entries = self.inner.list_directory(path, on_progress).await?;
+            if path.as_str() == "/device" {
+                let mut hostile = entries
+                    .iter()
+                    .find(|e| e.name == "bundle.zip")
+                    .cloned()
+                    .expect("the archive lists");
+                hostile.name = "bundle.zip.cmdr-tmp-0000stale/../../victim.txt".to_owned();
+                hostile.path = format!("/device/{}", hostile.name);
+                hostile.modified_at = Some(now_secs() - 48 * 60 * 60);
+                entries.push(hostile);
+            }
+            Ok(entries)
+        })
+    }
+
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        use cmdr_fs::ignore_poison::IgnorePoison as _;
+        self.deletes.lock_ignore_poison().push(path.as_str().to_owned());
+        self.inner.delete(path)
+    }
+}
+
+#[tokio::test]
+async fn the_temp_reap_never_deletes_a_listed_name_that_isnt_one_plain_name() {
+    // A share that lists `bundle.zip.cmdr-tmp-…/../../victim.txt` in the archive's folder
+    // must not get a delete for it: joined onto the folder, it names a file outside it,
+    // and a server resolves the `..`.
+    let archive_path = PathBuf::from("/device/bundle.zip");
+    let inner = remote_parent_with_zip(&archive_path, &build_zip(&[("keep.txt", b"keep me")])).await;
+    let parent = Arc::new(HostileTempListing {
+        inner,
+        deletes: std::sync::Mutex::new(Vec::new()),
+    });
+
+    assert!(
+        run_add_edit(parent.clone() as Arc<dyn Volume>, archive_path.clone()).await,
+        "the remote edit should commit"
+    );
+
+    let deletes = parent.deletes.lock().expect("test lock").clone();
+    assert!(
+        deletes.iter().all(|path| !path.contains("..")),
+        "no delete may leave the archive's folder, got: {deletes:?}"
+    );
+}
+
 #[tokio::test]
 async fn remote_edit_keeps_a_fresh_temp_for_the_same_archive() {
     // A temp with a recent mtime models a live concurrent upload from ANOTHER Cmdr

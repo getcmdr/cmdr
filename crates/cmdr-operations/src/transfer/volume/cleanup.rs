@@ -10,7 +10,7 @@
 //! from reaching a recursive delete: on the cleanup path there isn't one in
 //! scope. `DETAILS.md` § "Three ways to delete, and who may use each".
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
@@ -420,8 +420,11 @@ pub(super) async fn reap_stale_transfer_temps(
             && entry
                 .modified_at
                 .is_some_and(|modified| now_secs.saturating_sub(modified) >= min_age_secs);
+        // ❗ A listed name is the server's word: one that isn't one plain name
+        // (`<temp>/../../x`) joins onto a path outside `dir`, so it's never reaped.
+        let is_one_name = AppName::from_app_spelling(&entry.name).is_ok();
         let temp_path = dir.join(&entry.name);
-        if !is_stale_temp || recorded_by_the_ledger(&temp_path) {
+        if !is_stale_temp || !is_one_name || recorded_by_the_ledger(&temp_path) {
             survivors.push(entry);
             continue;
         }

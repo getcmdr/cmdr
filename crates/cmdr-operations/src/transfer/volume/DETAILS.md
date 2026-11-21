@@ -830,6 +830,10 @@ item the way any unusable name does.
   bad filename, a folder listed as `..`, and the symlink-then-folder trick: a copy never merges a source folder through
   a link already at the destination, under every policy) and a drag-out cell in
   `apps/desktop/src-tauri/src/native_drag/fulfillment_test.rs`.
+- A DESTINATION listing is the server's word too. The stale-temp reaps (`cleanup.rs::reap_stale_transfer_temps`, and the
+  remote zip edit's `archive_edit/remote.rs::reap_remote_temps`) delete by `dir.join(name)`, so a listed "temp" that
+  isn't one plain name (`<temp>/../../x`, which a server resolves) is never reaped (`AppName::from_app_spelling`).
+  Pinned by `cleanup_tests.rs`' and `remote_tests.rs`' `*_never_deletes_a_listed_name_that_isnt_one_plain_name`.
 
 ### A source listing one name twice
 

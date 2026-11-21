@@ -815,3 +815,69 @@ async fn the_stale_temp_reap_skips_what_the_ledger_records_however_old_it_looks(
         "and what the reap kept is still in the listing it hands back: {names:?}"
     );
 }
+
+/// A destination whose listing also names a stale-looking temp that isn't one plain name
+/// (only a hostile or broken server lists one), and that records every delete it's asked for.
+struct HostileTempListing {
+    inner: Arc<InMemoryVolume>,
+    deletes: std::sync::Mutex<Vec<String>>,
+}
+
+impl Volume for HostileTempListing {
+    crate::forward_volume_methods!(inner => name, root, get_metadata, exists, is_directory);
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn list_directory<'a>(
+        &'a self,
+        path: &'a AppPath,
+        on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
+    ) -> std::pin::Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        Box::pin(async move {
+            let mut entries = self.inner.list_directory(path, on_progress).await?;
+            let mut hostile = entries.first().cloned().expect("the seeded temp lists");
+            hostile.name = "photo.jpg.cmdr-tmp-1111/../../victim.txt".to_owned();
+            hostile.path = format!("/album/{}", hostile.name);
+            entries.push(hostile);
+            Ok(entries)
+        })
+    }
+
+    fn delete<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> std::pin::Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        self.deletes.lock_ignore_poison().push(path.as_str().to_owned());
+        self.inner.delete(path)
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn the_stale_temp_reap_never_deletes_a_listed_name_that_isnt_one_plain_name() {
+    // Joined onto the folder, `<temp>/../../victim.txt` names a file outside it, and a
+    // server resolves the `..`: the reap leaves it alone and still reaps the real leftover.
+    let engine = TestOperations::new();
+    let inner = Arc::new(InMemoryVolume::new("nas"));
+    inner.create_directory(app_path!("/album")).await.unwrap();
+    inner
+        .create_file(app_path!("/album/orphan.mov.cmdr-tmp-3333"), b"bytes")
+        .await
+        .unwrap();
+    inner.set_modified_at(Path::new("/album/orphan.mov.cmdr-tmp-3333"), Some(1));
+    let volume = Arc::new(HostileTempListing {
+        inner,
+        deletes: std::sync::Mutex::new(Vec::new()),
+    });
+    let dest: Arc<dyn Volume> = Arc::clone(&volume) as Arc<dyn Volume>;
+
+    reap_stale_transfer_temps(&make_state(&engine), &dest, Path::new("/album")).await;
+
+    let deletes = volume.deletes.lock_ignore_poison().clone();
+    assert_eq!(
+        deletes,
+        vec!["/album/orphan.mov.cmdr-tmp-3333".to_owned()],
+        "only the real leftover goes, ❌ never a path outside the folder"
+    );
+}

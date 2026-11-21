@@ -37,7 +37,7 @@
 //! intact (the local temp and any partial remote temp are cleaned up). Pinned by
 //! `remote_tests` and `remote_outage_tests`.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath};
 use std::ops::ControlFlow;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -477,6 +477,11 @@ async fn reap_remote_temps(
 
     for entry in entries {
         if entry.is_directory || !entry.name.starts_with(&prefix) {
+            continue;
+        }
+        // ❗ A listed name is the server's word: one that isn't one plain name
+        // (`<temp>/../../x`) joins onto a path outside `dir`, so it's never reaped.
+        if AppName::from_app_spelling(&entry.name).is_err() {
             continue;
         }
         // Spare anything without a confirmably-old mtime: an unknown mtime, or one
