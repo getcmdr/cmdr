@@ -301,3 +301,31 @@ async fn a_relative_bridge_path_lands_under_the_root_and_a_dot_dot_is_refused() 
     assert!(refused.is_err(), "{refused:?}");
     assert!(!test_dir.join("three.txt").exists());
 }
+
+/// A local drive carries a listing watch (#1330), and its coverage is the host's answer for the
+/// folder in the app spelling the listing cache keys on (`C:/…`, never `\\?\C:\…`): the
+/// watcher decided it at arm time from the drive kind.
+#[test]
+fn a_local_drive_watches_its_listings_and_asks_the_host_in_the_app_spelling() {
+    use cmdr_fs::volume::WatchCoverage;
+    use cmdr_fs::volume::host::VolumeHost;
+    use cmdr_fs::volume::host::listings::RecordingListings;
+    use std::sync::Arc;
+
+    let test_dir = TestDir::new("win_watch_coverage");
+    let shown = app_root(&test_dir.join("shown"));
+    let listings = RecordingListings::new().with_local_watch_coverage(shown, WatchCoverage::EveryWriter);
+    let host = VolumeHost::builder().listings(Arc::new(listings)).build();
+    let root = cmdr_fs::app_path::AppPathBuf::from_native_unicode(&test_dir).expect("the test folder is an app path");
+    let volume = crate::LocalWindowsVolume::local_folder_at("Test", root, host);
+
+    assert!(volume.can_watch_listings());
+    assert_eq!(
+        volume.listing_watch_coverage(&at(&volume, "shown")),
+        WatchCoverage::EveryWriter
+    );
+    assert_eq!(
+        volume.listing_watch_coverage(&at(&volume, "elsewhere")),
+        WatchCoverage::None
+    );
+}

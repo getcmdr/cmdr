@@ -23,7 +23,7 @@ use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{
     EntryKind, ListingProgress, MountClass, MutationEvent, Presence, ScanConflict, SourceItemInfo, SpaceInfo,
-    SupportedDates, Volume, VolumeError,
+    SupportedDates, Volume, VolumeError, WatchCoverage,
 };
 use tokio::task::spawn_blocking;
 
@@ -275,6 +275,22 @@ impl Volume for LocalWindowsVolume {
                 ),
             }
         })
+    }
+
+    /// A drive or share folder is on disk, so the app's `ReadDirectoryChangesW` watch arms on
+    /// it (`file_system/watcher/notify_stream.rs`). What it covers is decided there, per drive
+    /// kind, when it arms (`watcher.rs::coverage_for_watched_path`).
+    fn can_watch_listings(&self) -> bool {
+        true
+    }
+
+    /// The host's answer for the folder, asked in the app spelling the listing cache keys on
+    /// (`C:/x`), as `notify_mutation` patches it. A path this volume can't place has no watch.
+    fn listing_watch_coverage(&self, path: &AppPath) -> WatchCoverage {
+        match self.locate(path) {
+            Ok(at) => self.host.listings().local_watch_coverage(&at.app.as_std_legacy()),
+            Err(_) => WatchCoverage::None,
+        }
     }
 
     fn local_path(&self) -> Option<AppPathBuf> {

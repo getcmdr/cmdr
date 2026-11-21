@@ -78,6 +78,16 @@ pub fn probe_mount_for_path(path: &std::path::Path) -> MountProbe {
     const DRIVE_REMOVABLE: u32 = 2;
     const DRIVE_FIXED: u32 = 3;
 
+    /// The NUL-terminated root (`Q:\`) of the drive letter `path` starts with, in either
+    /// spelling or verbatim (`Q:\x`, `Q:/x`, `\\?\Q:\x`); `None` for a UNC path.
+    fn drive_letter_root(path: &Path) -> Option<Vec<u16>> {
+        let text = path.to_str()?;
+        let text = text.strip_prefix(r"\\?\").unwrap_or(text);
+        let mut chars = text.chars();
+        let letter = chars.next().filter(char::is_ascii_alphabetic)?;
+        (chars.next() == Some(':')).then(|| format!("{letter}:\\").encode_utf16().chain(Some(0)).collect())
+    }
+
     /// The filesystem name of the local volume holding `path`, `None` for a network or
     /// optical drive, or when Windows can't say.
     fn local_filesystem_name(path: &Path) -> Option<String> {
@@ -87,7 +97,11 @@ pub fn probe_mount_for_path(path: &std::path::Path) -> MountProbe {
         let root_len = u32::try_from(root.len()).ok()?;
         // SAFETY: `wide` is NUL-terminated and `root` holds `root_len` units.
         if unsafe { GetVolumePathNameW(wide.as_ptr(), root.as_mut_ptr(), root_len) } == 0 {
-            return None;
+            // A `subst` drive has no volume path (`ERROR_INVALID_PARAMETER`), yet its letter
+            // answers `GetDriveTypeW` and `GetVolumeInformationW` as its target drive does
+            // (`DRIVE_FIXED`, `NTFS`, verified on Windows 10 22H2 with `subst Q:` over a `C:`
+            // folder, 2026-11-21), so the letter's root stands in.
+            root = drive_letter_root(path)?;
         }
         // SAFETY: `root` is the NUL-terminated root `GetVolumePathNameW` wrote.
         let drive_type = unsafe { GetDriveTypeW(root.as_ptr()) };
@@ -120,6 +134,21 @@ pub fn probe_mount_for_path(path: &std::path::Path) -> MountProbe {
     MountProbe {
         info: FilesystemInfo::from_raw_type(local_filesystem_name(path)),
         source: None,
+    }
+}
+
+#[cfg(all(test, target_os = "windows"))]
+mod windows_tests {
+    use super::*;
+    use std::path::Path;
+
+    /// A listing watch's coverage asks this of the folder in every spelling it may hold.
+    #[test]
+    fn a_folder_on_the_system_drive_probes_local_in_every_spelling() {
+        let windows = std::env::var("SystemRoot").expect("SystemRoot is set on Windows");
+        assert!(!path_is_on_network_mount(Path::new(&windows)));
+        assert!(!path_is_on_network_mount(Path::new(&windows.replace('\\', "/"))));
+        assert!(!path_is_on_network_mount(Path::new(&format!(r"\\?\{windows}"))));
     }
 }
 
