@@ -149,7 +149,7 @@ async fn errored_listing_is_not_marked() {
     );
     let vol: Arc<dyn Volume> = Arc::new(FailingListVolume {
         inner,
-        fail_path: PathBuf::from("/bad"),
+        fail_path: cmdr_fs::app_path!("/bad").to_owned(),
     });
 
     let cancelled = CancellationToken::new();

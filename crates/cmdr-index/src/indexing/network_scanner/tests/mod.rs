@@ -16,6 +16,7 @@ use crate::indexing::network_scanner::scan_pace::{FULL_LISTING_BUDGET, ScanPacer
 use crate::indexing::scanner::ScanProgress;
 use crate::indexing::store::{EntryRow, IndexStore, ROOT_ID, resolve_path};
 use crate::indexing::writer::{AggSource, IndexWriter, WriteMessage};
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{InMemoryVolume, ListingProgress, VolumeError};
 use rusqlite::Connection;
@@ -49,7 +50,7 @@ pub(super) fn entry(name: &str, path: &str, is_dir: bool, size: Option<u64>) -> 
 /// skip-and-continue, distinct from a typed `DeviceDisconnected` (terminal).
 struct FailingListVolume {
     inner: InMemoryVolume,
-    fail_path: PathBuf,
+    fail_path: AppPathBuf,
 }
 
 type ListFut<'a, T> = Pin<Box<dyn Future<Output = Result<T, VolumeError>> + Send + 'a>>;
@@ -69,10 +70,7 @@ impl Volume for FailingListVolume {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> ListFut<'a, Vec<FileEntry>> {
-        let path_app = path;
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        if path == self.fail_path {
+        if *path == self.fail_path {
             return Box::pin(async {
                 Err(VolumeError::PermissionDenied {
                     path: "test: subdir listing failed".into(),
@@ -80,7 +78,7 @@ impl Volume for FailingListVolume {
                 })
             });
         }
-        self.inner.list_directory(path_app, on_progress)
+        self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(&'a self, path: &'a AppPath) -> ListFut<'a, FileEntry> {
         self.inner.get_metadata(path)
@@ -229,10 +227,7 @@ impl Volume for RootFailsVolume {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> ListFut<'a, Vec<FileEntry>> {
-        let path_app = path;
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        if path == Path::new("/") {
+        if path == cmdr_fs::app_path!("/") {
             return Box::pin(async {
                 Err(VolumeError::PermissionDenied {
                     path: "test: root listing denied".into(),
@@ -240,7 +235,7 @@ impl Volume for RootFailsVolume {
                 })
             });
         }
-        self.inner.list_directory(path_app, on_progress)
+        self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(&'a self, path: &'a AppPath) -> ListFut<'a, FileEntry> {
         self.inner.get_metadata(path)

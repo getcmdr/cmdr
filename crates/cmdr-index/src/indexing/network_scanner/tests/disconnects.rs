@@ -153,7 +153,7 @@ async fn isolated_transient_failure_does_not_trip_backstop() {
     );
     let vol: Arc<dyn Volume> = Arc::new(FailingListVolume {
         inner,
-        fail_path: PathBuf::from("/bad"),
+        fail_path: cmdr_fs::app_path!("/bad").to_owned(),
     });
 
     let cancelled = CancellationToken::new();
