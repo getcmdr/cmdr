@@ -553,8 +553,8 @@ A path the frontend sends is read as an app path at the command edge, `wire_path
   where it used to reach the engine relative.
 - **Which edges read this way**: `delete_files`, `trash_files`, `move_to_trash` (the single trash, its refusal
   `MutationError::Unexpected`), and `move_files` (sources), `stat_paths_kinds`,
-  `share_link`, the agent's destination check (`suggested_ops`, no bug report: a stored agent proposal can hold a `..`),
-  and the three destination probes; the transfer box's destination at every start and the conflict scan (above). The
+  `share_link`, and the three destination probes (the agent's destination check reads the store's typed
+  `ProposalGroup.destination`, `agent/store/proposals/mod.rs::typed_place`); the transfer box's destination at every start and the conflict scan (above). The
   listing start, the create commands, rename, the pre-checks (`check_home_folder_guard`, `trash_routing_for_paths`),
   the scan preview's sources, and the volume transfers' sources take the text as sent: rows, pane paths, or typed text, and a listing of `x/link/` lists the target's rows under `x/link` either way.
 

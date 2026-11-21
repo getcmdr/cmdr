@@ -43,7 +43,10 @@ fn re_proposing_a_pending_group_replaces_its_ops() {
     assert_eq!(ops[0].source_path, "/Users/someone/Downloads/inv.pdf");
     let group = get_group(&conn, group_id).expect("read").expect("exists");
     assert_eq!(group.verb, ProposalVerb::Move);
-    assert_eq!(group.destination.as_deref(), Some("/Users/someone/Documents/Invoices"));
+    assert_eq!(
+        group.destination.as_ref().map(|p| p.as_str()),
+        Some("/Users/someone/Documents/Invoices")
+    );
 }
 
 /// A re-propose TEARS UP the acceptance record. Without this, a preflight taken against the

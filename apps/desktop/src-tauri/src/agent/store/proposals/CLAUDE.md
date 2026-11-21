@@ -39,7 +39,7 @@ one executor call, an **op** (`proposal_ops`) is one path that may be a whole di
   success leaves a cancelled group to read `interrupted` next launch. Per-op statuses carry the rest.
 - **`WritableDestination` stops a group being built to write where a ROUTE serves**: inside an archive, or inside a
   repo's `.git` trees. Those take no bound write, and the engine's refusal would fire AFTER the user approved. Refusing
-  here costs the agent a retry and the user nothing.
+  here costs the agent a retry and the user nothing. It types it too.
 - **A deselected op keeps its ROW** (`OpStatus::Excluded`). The decision record says what was offered, not only what ran.
 - **A server group has zero ops and its own claim.** Its draft is written in the group's own transaction and fails
   closed on read; the revision is its binding. Neither claim takes the other's kind (`NotAFileGroup` /

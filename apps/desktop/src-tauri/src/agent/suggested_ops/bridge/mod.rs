@@ -419,7 +419,7 @@ async fn start_for(
                 .destination
                 .clone()
                 .ok_or(ApprovalRefusal::TargetMissing { verb: group.verb })?;
-            let rows = rename_rows(&parent, ops, &expected)?;
+            let rows = rename_rows(parent.as_str(), ops, &expected)?;
             // Routed: where a rename copies (an S3 folder), the batch runs as one move.
             engine
                 .start_renames(events, group.source_volume_id.clone(), rows, Initiator::Agent)
@@ -535,7 +535,8 @@ async fn capture_expected_sources(volume: &dyn Volume, sources: &[PathBuf]) -> E
 /// The target a destination-binding verb stored, as the routed entry points take it.
 fn target_of(group: &ProposalGroup) -> Result<(String, String), ApprovalRefusal> {
     match (group.destination.clone(), group.destination_volume_id.clone()) {
-        (Some(path), Some(volume)) => Ok((path, volume)),
+        // The routed entry points take the app path's text, as a click's call sends it.
+        (Some(path), Some(volume)) => Ok((path.into_string(), volume)),
         _ => Err(ApprovalRefusal::TargetMissing { verb: group.verb }),
     }
 }

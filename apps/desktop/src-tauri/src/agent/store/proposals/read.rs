@@ -11,6 +11,7 @@
 //! claim path deliberately doesn't call it (`claim.rs` streams instead), and a test pins
 //! that.
 
+use cmdr_fs::app_path::AppPathBuf;
 use rusqlite::{Connection, OptionalExtension, params};
 
 use super::super::AgentStoreError;
@@ -265,6 +266,22 @@ pub(super) fn read_sidecar(conn: &Connection, group_id: i64) -> Result<ServerPro
     })
 }
 
+/// A stored destination, read as the app path it was written as ([`super::typed_place`]). A
+/// row an older build wrote with a `..` in it names no place without its volume's answer,
+/// which nothing can ask now: it reads as no destination, so its approval refuses as
+/// `TargetMissing`, ❌ never a lexical guess.
+fn typed_destination(group_id: i64, stored: Option<String>) -> Option<AppPathBuf> {
+    let text = stored?;
+    let typed = super::typed_place(&text);
+    if typed.is_none() {
+        log::warn!(
+            target: "agent::store",
+            "group {group_id}: its stored destination names no place, so it reads as none"
+        );
+    }
+    typed
+}
+
 fn map_group_row(row: &rusqlite::Row<'_>) -> Result<ProposalGroup, AgentStoreError> {
     Ok(ProposalGroup {
         id: row.get(0)?,
@@ -273,7 +290,7 @@ fn map_group_row(row: &rusqlite::Row<'_>) -> Result<ProposalGroup, AgentStoreErr
         verb: decode_token("proposals.verb", row.get(3)?, ProposalVerb::from_token)?,
         status: decode_token("proposals.status", row.get(4)?, ProposalStatus::from_token)?,
         source_volume_id: row.get(5)?,
-        destination: row.get(6)?,
+        destination: typed_destination(row.get(0)?, row.get(6)?),
         destination_volume_id: row.get(7)?,
         reversible: decode_token("proposals.reversible", row.get(8)?, Reversibility::from_token)?,
         display_name: row.get(9)?,

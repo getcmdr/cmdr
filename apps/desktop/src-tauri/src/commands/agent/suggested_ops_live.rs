@@ -3,9 +3,9 @@
 //! touches the source volume per row; the deadline and the shared stat budget live in
 //! `agent/suggested_ops/facts.rs`.
 
-use std::path::Path;
 use std::sync::Arc;
 
+use cmdr_fs::app_path::PathArithmetic;
 use cmdr_fs::deadline::Deadline;
 use serde::Serialize;
 use tauri::AppHandle;
@@ -154,7 +154,10 @@ fn landing_path(group: &ProposalGroup, op: &ProposalOp) -> Option<String> {
         _ => return None,
     }
     let folder = group.destination.as_deref()?;
-    Some(Path::new(folder).join(name).display().to_string())
+    // A bare name, checked when the proposal was made (`validate_destination_name`), so the
+    // typed join only refuses what never got stored.
+    let name = cmdr_fs::app_path::AppName::from_app_spelling(name).ok()?;
+    Some(folder.join(name).ok()?.into_string())
 }
 
 /// Stat every renamed op's landing path, under the same deadline as the sources. The target
@@ -322,7 +325,7 @@ mod tests {
             verb: ProposalVerb::Move,
             status: crate::agent::types::ProposalStatus::Pending,
             source_volume_id: "root".into(),
-            destination: Some("/documents/invoices".into()),
+            destination: crate::agent::store::proposals::typed_place("/documents/invoices"),
             destination_volume_id: Some("testshare".into()),
             reversible: crate::agent::types::Reversibility::RestoreMove,
             display_name: "invoices".into(),

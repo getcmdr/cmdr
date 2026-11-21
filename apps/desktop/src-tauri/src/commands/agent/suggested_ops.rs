@@ -21,6 +21,7 @@
 
 use std::time::Duration;
 
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::deadline::{io_budget, timeout_detached_typed};
 use cmdr_fs::log_error::LogError;
 use serde::Serialize;
@@ -436,7 +437,7 @@ fn to_group_view(
         rationale: group.rationale,
         source_volume_id: group.source_volume_id,
         source_volume_name: facts.source_volume_name,
-        destination: group.destination,
+        destination: group.destination.map(AppPathBuf::into_string),
         destination_volume_name: facts.destination_volume_name,
         destination_volume_id,
         source_folder: group.source_folder,
@@ -520,20 +521,8 @@ async fn destination_state(group: &ProposalGroup) -> DestinationState {
             }
         };
     };
-    // An agent's text, read at the command edge: a `..` in it is what only its volume
-    // answers (the typed-path resolver's job where the proposal is made), so it gets no
-    // guess here, and no bug report per card render either.
-    let destination = match crate::commands::wire_path::read_on_volume(&destination) {
-        Ok(path) => path,
-        Err(why) => {
-            log::warn!(
-                target: "agent::suggested_ops",
-                "group {}: the destination names no place to check ({why})",
-                group.id
-            );
-            return DestinationState::Unknown;
-        }
-    };
+    // Already the app path the store typed (`typed_place`), its `..`s answered by the MCP
+    // path door when the proposal was made, so it goes to the volume as is.
     let budget = io_budget(volume.connection_state(), DESTINATION_CHECK_TIMEOUT);
     let answer = timeout_detached_typed(
         budget,
