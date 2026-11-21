@@ -205,8 +205,10 @@ pub fn same_device(a: &Metadata, b: &Metadata) -> Sameness {
 }
 
 /// The device the node at `path` lives on, links followed, read by path: the one device
-/// reader that answers on Windows, where it opens a handle (the volume serial). `None` when
-/// `path` can't be read or the OS gives no device.
+/// reader that answers on Windows, where it opens a handle and names the volume by its
+/// mount manager GUID, or a share by server and share (❗ there, compare it only with another
+/// `device_at`: a [`FileId`]'s device is the volume serial, which a share and the server's
+/// own disk share). `None` when `path` can't be read or the OS gives no device.
 pub fn device_at(path: &Path) -> Option<DeviceId> {
     #[cfg(any(test, feature = "testing"))]
     if platform::file_id_at(path, Follow::Links)

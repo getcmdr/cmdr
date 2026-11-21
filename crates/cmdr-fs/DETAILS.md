@@ -437,12 +437,18 @@ content in one call), and `leaf_validation`'s identity read. `FileId::read_at` k
 guard that must tell "not there" (`NotFound`) from "there, but no id" answers in one read: the copy's per-file guard
 runs on every file, and a re-stat to tell the two apart doubled its syscalls on a fresh copy. The `Metadata` callers
 (walk dedup, the journal's `NodeIdentity`) still answer `None` on Windows; each moves to the path reader as its Windows
-task needs it. The device has its own path reader, `device_at` / `same_device_at`, the volume serial from the same
-handle reads `FileId::at` makes (so the two agree); `cmdr-operations`' `is_same_filesystem` asks it when `Metadata`
-can't say, which is what lets a same-drive move on Windows rename in place. A cloned disk can share its source's serial,
-so "same device" there is a hint a rename's own cross-volume refusal (`ERROR_NOT_SAME_DEVICE`) still checks. Unix pays
-one `stat` per read, the same as before. (Verified on Windows 10 22H2 build 19045, NTFS,
+task needs it. The device has its own path reader, `device_at` / `same_device_at`; `cmdr-operations`'
+`is_same_filesystem` asks it when `Metadata` can't say, which is what lets a same-drive move on Windows rename in place.
+Unix pays one `stat` per read, the same as before. (Verified on Windows 10 22H2 build 19045, NTFS,
 `cargo nextest run -p cmdr-fs file_identity`, 2026-11-21.)
+
+**Decision**: on Windows `device_at` names the volume by its mount manager GUID (`GetFinalPathNameByHandleW`,
+`VOLUME_NAME_GUID`), or a file on a share by its server and share; ❌ never the volume serial a `FileId` carries.
+**Why**: a share shows the serial of the server's disk under it, so `C:\…` and `\\localhost\C$\…` (or two shares on one
+server disk) read as one device, and the move that then renames fails `ERROR_NOT_SAME_DEVICE` where a copy would have
+landed; a cloned disk keeps its source's serial too. So a Windows `device_at` compares only with another `device_at`.
+(Verified on Windows 10 22H2, `ssh mami`, PowerShell P/Invoke, 2026-11-21: both read serial `7C409CAE409C709E`,
+`MoveFileExW` between them failed with 17, and `VOLUME_NAME_GUID` answered `ERROR_PATH_NOT_FOUND` on the share.)
 
 **Decision**: a two-read comparison answers `Sameness` (`Same`, `Different`, `Unknown`), ❌ never a bare `bool`.
 **Why**: the stubs this replaced answered "don't know" as "not the same file", which on a platform without ids switched

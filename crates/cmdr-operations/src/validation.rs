@@ -468,7 +468,7 @@ pub(super) fn is_symlink_loop(path: &Path, visited: &HashSet<PathBuf>) -> bool {
 /// Whether two paths are known to be on the same filesystem (one device id). A device
 /// the OS can't name answers `false`, so a move takes copy-then-delete rather than a
 /// rename that might cross volumes. Windows' `Metadata` carries no device, so there the
-/// answer comes from the by-path reader (`same_device_at`, the volume serial).
+/// answer comes from the by-path reader (`same_device_at`: the volume's GUID, or a share).
 pub(crate) fn is_same_filesystem(source: &Path, destination: &Path) -> std::io::Result<bool> {
     let source_meta = fs::metadata(source)?;
     let dest_meta = fs::metadata(destination)?;

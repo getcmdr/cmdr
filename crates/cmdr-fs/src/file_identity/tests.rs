@@ -152,6 +152,8 @@ mod by_path {
 
         assert!(device_at(&file).is_some(), "a local file has a device");
         assert_eq!(same_device_at(&file, &folder), Sameness::Same);
+        // Windows keys `device_at` by the volume's GUID or share, not the serial a `FileId` holds.
+        #[cfg(unix)]
         assert_eq!(device_at(&file), FileId::at(&file, Follow::Links).map(FileId::device));
         assert_eq!(same_device_at(&file, &dir.path().join("missing")), Sameness::Unknown);
     }
