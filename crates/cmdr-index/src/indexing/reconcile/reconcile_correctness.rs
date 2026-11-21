@@ -20,6 +20,7 @@
 
 #[cfg(test)]
 mod tests {
+    use crate::indexing::paths::app_text::native_text;
     use std::collections::HashSet;
     use std::path::{Path, PathBuf};
     use std::sync::atomic::Ordering;
@@ -95,7 +96,7 @@ mod tests {
     }
 
     fn norm(p: &Path) -> String {
-        firmlinks::normalize_path(&p.to_string_lossy())
+        firmlinks::normalize_path(&native_text(p))
     }
 
     fn resolve(h: &Harness, p: &Path) -> Option<i64> {

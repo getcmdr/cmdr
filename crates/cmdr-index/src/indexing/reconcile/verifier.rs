@@ -3,6 +3,7 @@
 //! After each directory navigation, compares disk reality against the index DB
 //! and corrects any drift. Runs asynchronously, deduplicated and debounced.
 
+use crate::indexing::paths::app_text::native_name;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::{LazyLock, Mutex};
@@ -281,7 +282,7 @@ async fn verify_and_correct(
                         continue;
                     }
                 };
-                let name = dir_entry.file_name().to_string_lossy().to_string();
+                let name = native_name(&dir_entry.file_name()).into_owned();
                 let metadata = match std::fs::symlink_metadata(dir_entry.path()) {
                     Ok(m) => m,
                     Err(e) => {

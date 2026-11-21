@@ -16,6 +16,7 @@
 //! on/off switch, and the device a search walk must not leave. Either verdict
 //! means no row at all, not just no descent.
 
+use crate::indexing::paths::app_text::native_text;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -760,7 +761,7 @@ fn run_scan(
             resolve_scan_root(&conn, "/", true).map_err(|e| ScanError::WriterSend(e.to_string()))?
         } else {
             let index_root = space
-                .index_relative(&root.to_string_lossy())
+                .index_relative(&native_text(root))
                 .ok_or_else(|| ScanError::OutsideIndex(root.to_path_buf()))?;
             resolve_scan_root(&conn, &index_root, false).map_err(|e| ScanError::WriterSend(e.to_string()))?
         };
@@ -924,6 +925,13 @@ fn run_scan(
         pluralize(snap.dirs_found, "dir"),
         start.elapsed().as_millis()
     );
+    let kept_lossy = crate::indexing::paths::app_text::names_kept_lossy();
+    if kept_lossy > 0 {
+        log::info!(
+            "Scanner: {} in this process kept a lossy spelling, since the app path can't hold them yet",
+            pluralize(kept_lossy, "name")
+        );
+    }
 
     Ok(ScanOutcome {
         summary: ScanSummary {

@@ -3,6 +3,7 @@
 //! and re-asked against every walk still holding ground.
 
 use super::*;
+use crate::indexing::paths::app_text::native_text;
 
 /// The refusal keeps its promise: a rescan asked for while a walk holds ground is
 /// REMEMBERED, and the walk's own ending runs it.
@@ -212,7 +213,7 @@ fn a_rescan_asked_for_during_a_scan_runs_when_that_scan_ends() {
 
     // The ground a full scan holds for as long as it runs: the whole volume,
     // taken the way `start_scan` takes it.
-    let volume_root = drive.tree.path().to_string_lossy().to_string();
+    let volume_root = native_text(drive.tree.path()).to_string();
     let scanning = Claim::take(drive.volume_id, vec![volume_root], Holder::Rewriting);
 
     assert_eq!(
@@ -254,7 +255,7 @@ fn clicking_rescan_five_times_during_a_scan_queues_one_walk() {
     drive.cover(&drive.path("scope"));
     drive.mark_scan_completed();
 
-    let volume_root = drive.tree.path().to_string_lossy().to_string();
+    let volume_root = native_text(drive.tree.path()).to_string();
     let scanning = Claim::take(drive.volume_id, vec![volume_root], Holder::Rewriting);
 
     for _ in 0..5 {

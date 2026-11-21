@@ -52,6 +52,7 @@
 //! made registering a wide frontier quadratic
 //! (`docs/notes/branch-set-cost-2026-08-15.md`).
 
+use crate::indexing::paths::app_text::native_text;
 use std::collections::{BTreeMap, HashMap};
 use std::ops::Bound;
 use std::path::Path;
@@ -503,7 +504,7 @@ impl BranchWatch {
 
     /// Whether a walk is covering `path` (or the branch it sits in) right now.
     pub(crate) fn is_being_walked(&self, path: &Path) -> bool {
-        let path = path.to_string_lossy();
+        let path = native_text(path);
         let state = self.state.lock_ignore_poison();
         state.holding(&path).any(|branch| branch.walks > 0)
     }
@@ -532,7 +533,7 @@ impl BranchWatch {
     /// ground nobody asked for, on a drive whose owner may have indexing turned
     /// off entirely.
     pub(crate) fn covers(&self, anchor: &Path) -> bool {
-        let path = anchor.to_string_lossy();
+        let path = native_text(anchor);
         let state = self.state.lock_ignore_poison();
         state.deepest_containing(&path).is_some()
     }

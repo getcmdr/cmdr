@@ -46,6 +46,7 @@
 //!
 //! Depth, and why each of those is what it is: `../DETAILS.md`.
 
+use crate::indexing::paths::app_text::native_text;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -524,7 +525,7 @@ impl Machine {
         self.events.emit(IndexEvent::CoveragePhaseStarted {
             volume_id: self.volume_id.clone(),
             phase: phase.kind,
-            root: phase.path.to_string_lossy().into_owned(),
+            root: native_text(&phase.path).into_owned(),
         });
     }
 
@@ -724,7 +725,7 @@ impl Machine {
 
     /// What a scope still needs walked, in this volume's own space.
     fn frontier_under(&self, path: &Path) -> Vec<String> {
-        let absolute = self.space.absolute(&path.to_string_lossy());
+        let absolute = self.space.absolute(&native_text(path));
         let Some(index_path) = self.space.index_relative(&absolute) else {
             return Vec::new();
         };
@@ -752,7 +753,7 @@ impl Machine {
         let Some(deferred_root) = self.deferred_home_folder() else {
             return (frontier, Vec::new());
         };
-        let deferred_root = deferred_root.to_string_lossy().into_owned();
+        let deferred_root = native_text(&deferred_root).into_owned();
         frontier
             .into_iter()
             .partition(|root| !crate::indexing::paths::path_prefix::is_at_or_under(root, &deferred_root))

@@ -3,6 +3,7 @@
 //! of the ones that don't. The pure decision is tested in `cost_budget.rs`.
 
 use super::*;
+use crate::indexing::paths::app_text::native_text;
 
 /// A reader over the real filesystem that spends `slow` on every path containing
 /// `marker`. The deterministic stand-in for a pathological subtree: the walk sees
@@ -12,7 +13,7 @@ fn scripted_reader(marker: &'static str, slow: Duration) -> GuardedReader {
     GuardedReader::with_read_fn(
         Duration::from_secs(5),
         Arc::new(move |p: &Path| {
-            if p.to_string_lossy().contains(marker) {
+            if native_text(p).contains(marker) {
                 // allowed-test-sleep: this reader fakes a pathological subtree's read cost, which is
                 // what the cost budget measures to decide the branch is too expensive to keep reading
                 std::thread::sleep(slow);

@@ -14,6 +14,8 @@ use std::sync::Arc;
 use super::rename::rename_test_tempdir;
 use super::rename::{insert_path_chain, rename_test_setup};
 use crate::indexing::events::{IndexEvent, RecordingSink};
+#[cfg(unix)]
+use crate::indexing::paths::app_text::native_text;
 use crate::indexing::reconcile::reconciler::EventReconciler;
 #[cfg(unix)]
 use crate::indexing::store::ROOT_ID;
@@ -147,7 +149,7 @@ fn a_rename_only_batch_still_reports_a_rename() {
     assert_ne!(parent_id, ROOT_ID, "the rename's parent is a real folder");
 
     let mut pending_events: HashMap<String, watcher::FsChangeEvent> = HashMap::new();
-    let new_path = new_dir_path.to_string_lossy().to_string();
+    let new_path = native_text(&new_dir_path).to_string();
     pending_events.insert(new_path.clone(), make_event(&new_path, 300, renamed_dir()));
 
     let mut reconciler = EventReconciler::new();
@@ -157,7 +159,7 @@ fn a_rename_only_batch_still_reports_a_rename() {
     assert_eq!(rollups.len(), 1, "the matched rename is still reported");
     assert_eq!(
         rollups[0].folder,
-        fs_root.path().to_string_lossy(),
+        native_text(fs_root.path()),
         "a directory's own event counts in its PARENT"
     );
     assert_eq!(rollups[0].renamed, 1);

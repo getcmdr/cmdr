@@ -5,6 +5,7 @@
 //! and `an_event_that_lands_mid_walk_is_not_lost`: the first is the promise
 //! Decision 9 makes, the second is the failure nobody would notice.
 
+use crate::indexing::paths::app_text::native_text;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
@@ -63,7 +64,7 @@ impl Fixture {
     fn seed_chain(&self, path: &Path) -> i64 {
         let conn = IndexStore::open_write_connection(&self.db_path).expect("write connection");
         let mut parent_id = ROOT_ID;
-        for component in path.to_string_lossy().split('/').filter(|c| !c.is_empty()) {
+        for component in native_text(path).split('/').filter(|c| !c.is_empty()) {
             parent_id = match IndexStore::resolve_component(&conn, parent_id, component) {
                 Ok(Some(id)) => id,
                 _ => IndexStore::insert_entry_v2(&conn, parent_id, component, true, false, None, None, None, None)
@@ -76,7 +77,7 @@ impl Fixture {
     }
 
     fn path(&self, relative: &str) -> String {
-        self.tree.path().join(relative).to_string_lossy().to_string()
+        native_text(&self.tree.path().join(relative)).to_string()
     }
 
     /// Create a directory (with its chain seeded into the index) and a file in
@@ -87,7 +88,7 @@ impl Fixture {
         self.seed_chain(&dir);
         let file = dir.join(name);
         std::fs::write(&file, "contents").expect("write file");
-        file.to_string_lossy().to_string()
+        native_text(&file).to_string()
     }
 
     fn is_indexed(&self, path: &str) -> bool {

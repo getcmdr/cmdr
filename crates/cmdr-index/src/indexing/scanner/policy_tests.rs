@@ -8,6 +8,7 @@
 //! search of a folder holding a mounted drive would write that drive's rows into
 //! this volume's index.
 
+use crate::indexing::paths::app_text::native_text;
 use std::path::{Path, PathBuf};
 
 use super::test_fixtures::{ensure_path_in_db, scan_test_tempdir, setup_writer};
@@ -46,7 +47,7 @@ impl Tree {
     /// Whether the index holds a row for this path at all.
     fn has_row(&self, relative: &str) -> bool {
         let conn = IndexStore::open_read_connection(&self.db_path).expect("read connection");
-        resolve_path(&conn, &self.path(relative).to_string_lossy())
+        resolve_path(&conn, &native_text(&self.path(relative)))
             .expect("resolve")
             .is_some()
     }
@@ -55,7 +56,7 @@ impl Tree {
     /// walk wrote.
     fn rows(&self) -> Vec<String> {
         let conn = IndexStore::open_read_connection(&self.db_path).expect("read connection");
-        let root_id = resolve_path(&conn, &self.dir.path().to_string_lossy())
+        let root_id = resolve_path(&conn, &native_text(self.dir.path()))
             .expect("resolve")
             .expect("the tree root is seeded");
         let mut out = Vec::new();

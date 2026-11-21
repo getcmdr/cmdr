@@ -41,6 +41,7 @@
 
 use super::super::{IndexWriter, WriteMessage};
 use super::throttle::RescanThrottle;
+use crate::indexing::paths::app_text::native_text;
 use crate::indexing::paths::path_prefix::collect_ancestor_paths;
 use crate::indexing::read::pending_sizes;
 use cmdr_fs::ignore_poison::IgnorePoison;
@@ -61,7 +62,7 @@ use std::time::Duration;
 /// has no tracker (indexing stopped).
 pub(super) fn hold_rescan(volume_id: &str, root: &Path) {
     if let Some(tracker) = pending_sizes::get_pending_sizes_for(volume_id) {
-        tracker.hold(&root.to_string_lossy());
+        tracker.hold(&native_text(root));
     }
 }
 
@@ -83,9 +84,9 @@ pub(super) fn adopt_picked_holds(volume_id: &str, picked: &Path, dropped: &[Path
     let Some(tracker) = pending_sizes::get_pending_sizes_for(volume_id) else {
         return;
     };
-    tracker.hold(&picked.to_string_lossy());
+    tracker.hold(&native_text(picked));
     for d in dropped {
-        tracker.release(&d.to_string_lossy());
+        tracker.release(&native_text(d));
     }
 }
 
@@ -109,7 +110,7 @@ pub(super) fn reconcile_with_eligibility(
         if active == Some(root) {
             continue;
         }
-        let root_str = root.to_string_lossy();
+        let root_str = native_text(root);
         if throttle.is_eligible(root, now) {
             tracker.hold(&root_str);
         } else {
@@ -136,7 +137,7 @@ pub(super) fn release_rescan_hold(
         return;
     }
     if let Some(tracker) = pending_sizes::get_pending_sizes_for(volume_id) {
-        tracker.release(&root.to_string_lossy());
+        tracker.release(&native_text(root));
     }
 }
 
@@ -158,7 +159,7 @@ pub(super) fn release_and_emit_completion(
     writer: &IndexWriter,
 ) {
     release_rescan_hold(volume_id, root, pending_rescans, throttle, now);
-    let root_str = root.to_string_lossy().to_string();
+    let root_str = native_text(root).to_string();
     let mut paths = vec![root_str.clone()];
     paths.extend(collect_ancestor_paths(&root_str));
     let _ = writer.send(WriteMessage::EmitDirUpdated(paths));
@@ -261,7 +262,7 @@ mod tests {
             "the anchor is still queued: it walks again when its window elapses"
         );
         assert!(
-            !instance.tracker.is_pending(&anchor.to_string_lossy()),
+            !instance.tracker.is_pending(&native_text(&anchor)),
             "a resting anchor has no writes in flight, so it holds no hourglass"
         );
         assert!(
@@ -299,11 +300,11 @@ mod tests {
             "the anchor is still queued: it walks once it has settled"
         );
         assert!(
-            !instance.tracker.is_pending(&anchor.to_string_lossy()),
+            !instance.tracker.is_pending(&native_text(&anchor)),
             "a settling anchor has no writes in flight, so it holds no hourglass"
         );
         assert!(
-            !instance.tracker.is_pending(&staging.path().to_string_lossy()),
+            !instance.tracker.is_pending(&native_text(staging.path())),
             "and no ancestor reads as 'size updating' either"
         );
         writer.shutdown();
@@ -330,11 +331,11 @@ mod tests {
         reconciler.queue_must_scan_sub_dirs(anchor.clone(), &writer);
 
         assert!(
-            instance.tracker.is_pending(&anchor.to_string_lossy()),
+            instance.tracker.is_pending(&native_text(&anchor)),
             "an established anchor's walk is imminent, so it holds"
         );
         assert!(
-            instance.tracker.is_pending(&established.path().to_string_lossy()),
+            instance.tracker.is_pending(&native_text(established.path())),
             "and its ancestors read as 'size updating', which is honest here"
         );
         writer.shutdown();
@@ -360,7 +361,7 @@ mod tests {
         reconciler.queue_must_scan_sub_dirs(anchor.clone(), &writer);
 
         assert!(
-            instance.tracker.is_pending(&anchor.to_string_lossy()),
+            instance.tracker.is_pending(&native_text(&anchor)),
             "no birthtime must not stall the anchor: it holds and walks as before"
         );
         writer.shutdown();
@@ -410,7 +411,7 @@ mod tests {
         reconciler.queue_must_scan_sub_dirs(anchor.clone(), &writer);
 
         assert!(
-            instance.tracker.is_pending(&anchor.to_string_lossy()),
+            instance.tracker.is_pending(&native_text(&anchor)),
             "a never-walked anchor is eligible, so its imminent walk holds the hourglass"
         );
         assert!(
@@ -480,7 +481,7 @@ mod tests {
         reconciler.sweep_rescan_throttle(&writer);
 
         assert!(
-            instance.tracker.is_pending(&anchor.to_string_lossy()),
+            instance.tracker.is_pending(&native_text(&anchor)),
             "the walk is writing; its hold must survive a re-queue plus a sweep"
         );
         writer.shutdown();

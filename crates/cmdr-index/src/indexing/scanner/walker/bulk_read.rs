@@ -297,6 +297,7 @@ impl Drop for DirFd {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::indexing::paths::app_text::native_name;
     use std::collections::HashMap;
 
     /// The load-bearing safety net: every field the bulk reader parses must equal
@@ -336,7 +337,7 @@ mod tests {
 
         let by_name: HashMap<String, &RawDirEntry> = entries
             .iter()
-            .map(|e| (e.path.file_name().unwrap().to_string_lossy().into_owned(), e))
+            .map(|e| (native_name(e.path.file_name().unwrap()).into_owned(), e))
             .collect();
 
         for (name, entry) in &by_name {

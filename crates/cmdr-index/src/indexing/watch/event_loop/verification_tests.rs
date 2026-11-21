@@ -13,6 +13,7 @@
 //! A `#[path]` child of `verification.rs`, so `super::` here is `verification`.
 
 use super::*;
+use crate::indexing::paths::app_text::{native_name, native_text};
 use crate::indexing::read::enrichment::{
     READ_POOL_TEST_MUTEX, ReadPool, install_read_pool as install_pool_for, uninstall_read_pool,
 };
@@ -75,7 +76,7 @@ fn a_parent_that_cannot_be_listed_sweeps_none_of_its_children() {
     // stats as absent for a reason that says nothing about the child.
     fs::remove_dir_all(&gone).unwrap();
 
-    let affected: HashSet<String> = [gone.to_string_lossy().to_string()].into_iter().collect();
+    let affected: HashSet<String> = [native_text(&gone).to_string()].into_iter().collect();
     verify_affected_dirs_with(&affected, &writer, 100);
     writer.flush_blocking().unwrap();
 
@@ -107,7 +108,7 @@ fn a_parent_that_lists_still_sweeps_a_child_that_went_away() {
 
     fs::remove_file(live.join("removed")).unwrap();
 
-    let affected: HashSet<String> = [live.to_string_lossy().to_string()].into_iter().collect();
+    let affected: HashSet<String> = [native_text(&live).to_string()].into_iter().collect();
     verify_affected_dirs_with(&affected, &writer, 100);
     writer.flush_blocking().unwrap();
 
@@ -124,7 +125,7 @@ fn a_parent_that_lists_still_sweeps_a_child_that_went_away() {
 /// Insert the directory chain for `path` and return the deepest dir's id.
 fn ensure_path_in_db(db_path: &Path, path: &Path, writer: &IndexWriter) -> i64 {
     let conn = IndexStore::open_write_connection(db_path).unwrap();
-    let path_str = path.to_string_lossy();
+    let path_str = native_text(path);
     let mut parent_id = ROOT_ID;
     for component in path_str.split('/').filter(|c| !c.is_empty()) {
         parent_id = match IndexStore::resolve_component(&conn, parent_id, component) {
@@ -146,7 +147,7 @@ fn insert_children_from_disk(writer: &IndexWriter, parent_id: i64, dir_path: &Pa
         let snap = metadata::extract_metadata(&meta, is_dir, is_symlink);
         let _ = writer.send(WriteMessage::UpsertEntryV2 {
             parent_id,
-            name: entry.file_name().to_string_lossy().to_string(),
+            name: native_name(&entry.file_name()).into_owned(),
             is_directory: is_dir,
             is_symlink,
             logical_size: snap.logical_size,
@@ -199,7 +200,7 @@ fn an_over_threshold_dir_is_declined_while_a_normal_dir_is_still_diffed() {
     fs::write(normal.join("new-in-normal"), "x").unwrap();
     fs::remove_file(normal.join("p")).unwrap();
 
-    let affected: HashSet<String> = [huge.to_string_lossy().to_string(), normal.to_string_lossy().to_string()]
+    let affected: HashSet<String> = [native_text(&huge).to_string(), native_text(&normal).to_string()]
         .into_iter()
         .collect();
     // Threshold 3: `huge` has 5 index children (over), `normal` has 2 (under).
@@ -265,12 +266,9 @@ fn a_dir_thats_small_in_the_db_but_huge_on_disk_is_truncated_not_fully_diffed() 
     fs::write(normal.join("new-in-normal"), "x").unwrap();
 
     let before = DEBUG_STATS.verify_truncated_dirs.load(Ordering::Relaxed);
-    let affected: HashSet<String> = [
-        sparse.to_string_lossy().to_string(),
-        normal.to_string_lossy().to_string(),
-    ]
-    .into_iter()
-    .collect();
+    let affected: HashSet<String> = [native_text(&sparse).to_string(), native_text(&normal).to_string()]
+        .into_iter()
+        .collect();
     verify_affected_dirs_with(&affected, &writer, 3);
     writer.flush_blocking().unwrap();
 
@@ -368,7 +366,7 @@ fn a_declined_dir_leaves_its_epoch_and_every_ancestor_epoch_untouched() {
     fs::write(huge.join("new-in-huge"), "x").unwrap();
     fs::remove_file(huge.join("a")).unwrap();
 
-    let affected: HashSet<String> = std::iter::once(huge.to_string_lossy().to_string()).collect();
+    let affected: HashSet<String> = std::iter::once(native_text(&huge).to_string()).collect();
     verify_affected_dirs_with(&affected, &writer, 3);
     writer.flush_blocking().unwrap();
 
@@ -406,7 +404,7 @@ fn a_declined_dir_is_counted_on_the_debug_surface() {
     install_read_pool(&db_path);
 
     let before = DEBUG_STATS.verify_declined_dirs.load(Ordering::Relaxed);
-    let affected: HashSet<String> = std::iter::once(root.path().to_string_lossy().to_string()).collect();
+    let affected: HashSet<String> = std::iter::once(native_text(root.path()).to_string()).collect();
     verify_affected_dirs_with(&affected, &writer, 3);
 
     assert!(

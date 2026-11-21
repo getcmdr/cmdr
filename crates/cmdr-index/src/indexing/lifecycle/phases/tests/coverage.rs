@@ -4,6 +4,7 @@
 //! out while the machine has work.
 
 use super::*;
+use crate::indexing::paths::app_text::native_text;
 
 /// **The one that makes every other test here meaningful.** A phased start never
 /// goes through `start_scan`, so nothing else writes the exclusion-policy stamp —
@@ -57,7 +58,7 @@ fn frontier_excludes_covered_ground_after_a_stitch() {
         &["covered/inside", "untouched/inside"],
         &["covered/one.txt", "loose.txt"],
     );
-    let root = t.root().to_string_lossy().to_string();
+    let root = native_text(t.root()).to_string();
 
     // A priority phase covers one child of the tree root.
     t.seed_chain(&t.tree.path().join("covered"));
@@ -96,7 +97,7 @@ fn a_stitched_directory_lists_its_files_not_only_its_subdirectories() {
     stitch::directory(&t.space, &t.writer, t.root(), &t.work());
 
     assert_eq!(
-        t.indexed_children(&t.root().to_string_lossy()),
+        t.indexed_children(&native_text(t.root())),
         vec!["one.txt".to_string(), "sub".to_string(), "two.txt".to_string()],
         "a stitched directory's rows are its whole listing, files included"
     );

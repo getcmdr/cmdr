@@ -15,6 +15,7 @@ use super::walker::{DirTask, DirVisitor, RawDirEntry, RawFileType, WalkReadError
 use super::{CoveredEntry, EmitPacer, EntrySender, MARK_CHUNK, ScanError, ScanProgress, WalkPolicy};
 use crate::indexing::events::{Diagnostic, IndexErrorReport, IndexEvent};
 use crate::indexing::metadata;
+use crate::indexing::paths::app_text::{native_name, native_text};
 use crate::indexing::store::{EntryRow, UnreadableCause};
 use crate::indexing::writer::{IndexWriter, WriteMessage};
 use cmdr_fs::firmlinks;
@@ -307,7 +308,7 @@ impl DirVisitor for InsertVisitor {
 
         let mut subdirs = Vec::new();
         for child in children {
-            let path_str = child.path.to_string_lossy();
+            let path_str = native_text(&child.path);
 
             // The structural exclusion policy, when this walk runs it: which rules
             // apply comes from the volume KIND (`BootDisk` for the `/`-rooted boot
@@ -393,7 +394,7 @@ impl DirVisitor for InsertVisitor {
             let name = child
                 .path
                 .file_name()
-                .map(|n| n.to_string_lossy().to_string())
+                .map(|n| native_name(n).into_owned())
                 .unwrap_or_default();
 
             if is_dir {

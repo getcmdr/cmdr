@@ -4,6 +4,7 @@
 //! two-phase DB-vs-disk reconcile. Root-scoped (boot disk only), so it stays on
 //! `BootDisk` / `ROOT_VOLUME_ID`.
 
+use crate::indexing::paths::app_text::{native_name, native_text};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::atomic::Ordering;
@@ -411,10 +412,10 @@ fn verify_affected_dirs_with(affected_paths: &HashSet<String>, writer: &IndexWri
             }
 
             let child_path = dir_entry.path();
-            let child_path_str = child_path.to_string_lossy().to_string();
+            let child_path_str = native_text(&child_path).to_string();
             let normalized = firmlinks::normalize_path(&child_path_str);
 
-            let name = dir_entry.file_name().to_string_lossy().to_string();
+            let name = native_name(&dir_entry.file_name()).into_owned();
             if db_child_names.contains(&store::normalize_for_comparison(&name)) {
                 continue;
             }

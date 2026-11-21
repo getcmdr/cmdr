@@ -6,6 +6,7 @@
 //! (`process_live_batch`, `mark_pending_and_drain`) and the shared primitives
 //! (`merge_fs_events`, `open_read_conn_with_retry`) from the parent module.
 
+use crate::indexing::paths::app_text::native_text;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -270,7 +271,7 @@ pub(in crate::indexing) async fn run_replay_event_loop(
             }
             send_replay_deletes(event_deletes, &work, &writer);
             if let Some(anchor) = escalation {
-                defer_replay_rescan(&mut pending_rescans, anchor.to_string_lossy().to_string());
+                defer_replay_rescan(&mut pending_rescans, native_text(&anchor).to_string());
             }
             last_event_id = event.event_id;
             event_count += 1;
@@ -751,7 +752,7 @@ pub(super) fn flush_replay_batch(
             }
         }
         if let Some(anchor) = escalation {
-            defer_replay_rescan(pending_rescans, anchor.to_string_lossy().to_string());
+            defer_replay_rescan(pending_rescans, native_text(&anchor).to_string());
         }
         if let Some(commits) = commits.as_deref_mut() {
             commits.note_processed();

@@ -21,6 +21,7 @@
 //! explicitly where used.
 
 use super::*;
+use crate::indexing::paths::app_text::native_name;
 
 mod activity;
 mod creations;
@@ -56,7 +57,7 @@ fn every_live_loop_publishes_its_changed_dirs() {
     fn collect(dir: &Path, prefix: &str, out: &mut Vec<(String, std::path::PathBuf)>) {
         for entry in std::fs::read_dir(dir).expect("event_loop dir") {
             let path = entry.expect("dir entry").path();
-            let name = path.file_name().expect("filename").to_string_lossy().to_string();
+            let name = native_name(path.file_name().expect("filename")).into_owned();
             let rel = if prefix.is_empty() {
                 name.clone()
             } else {

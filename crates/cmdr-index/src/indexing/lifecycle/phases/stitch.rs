@@ -36,6 +36,7 @@
 //! an unreadable directory listed would claim a listing it never made — which
 //! `min_subtree_epoch` then absorbs all the way up to `/`.
 
+use crate::indexing::paths::app_text::native_text;
 use std::path::Path;
 
 use cmdr_fs::log_private::LogPrivate;
@@ -74,7 +75,7 @@ pub(super) fn directory(space: &IndexPathSpace, writer: &IndexWriter, dir: &Path
             )
         })
         .ok()?;
-    let absolute = space.absolute(&dir.to_string_lossy());
+    let absolute = space.absolute(&native_text(dir));
     let id = resolve(space, &conn, &absolute)?;
     // Already listed by a walk, or by an earlier phase's stitch. Re-listing it
     // would cost a `readdir` to write the same rows, and the walk that covered it

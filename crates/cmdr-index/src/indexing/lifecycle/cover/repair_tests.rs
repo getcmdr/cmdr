@@ -10,6 +10,7 @@
 use super::ground::{RootOutcome, repair_non_virgin};
 use super::test_support::{Fixture, drain};
 use super::*;
+use crate::indexing::paths::app_text::native_text;
 use crate::indexing::writer::WriteMessage;
 
 /// A frontier node the index already holds rows under is repaired by the serial
@@ -97,7 +98,7 @@ fn a_repaired_frontier_node_reports_the_rows_it_wrote() {
     let (entries, outcome) = drain(start(f.context(), vec![f.path("F")], CoverageDimension::Listing));
     f.writer.flush_blocking().expect("flush");
 
-    let mut emitted: Vec<String> = entries.iter().map(|e| e.path.to_string_lossy().to_string()).collect();
+    let mut emitted: Vec<String> = entries.iter().map(|e| native_text(&e.path).to_string()).collect();
     emitted.sort();
     assert_eq!(
         emitted,

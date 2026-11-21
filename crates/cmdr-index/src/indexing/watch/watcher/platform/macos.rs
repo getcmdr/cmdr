@@ -3,6 +3,7 @@
 //! it at no cost per directory, so a branch-watched volume watches its root too, and the loop's
 //! `WatchScope` decides which events belong to covered ground.
 
+use crate::indexing::paths::app_text::native_text;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -206,7 +207,7 @@ impl Drop for FsEventsBackend {
 #[cfg(target_os = "macos")]
 fn parse_fsevent(event: &Event) -> FsChangeEvent {
     FsChangeEvent {
-        path: event.path.to_string_lossy().to_string(),
+        path: native_text(&event.path).to_string(),
         event_id: event.id,
         flags: FsEventFlags {
             must_scan_sub_dirs: event.flags.contains(StreamFlags::MUST_SCAN_SUBDIRS),

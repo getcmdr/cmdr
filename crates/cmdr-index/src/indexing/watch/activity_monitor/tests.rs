@@ -1,6 +1,7 @@
 //! The tap's own guard (every live-batch driver builds a real activity observer), the
 //! documented flags priority, and what one folded batch reports.
 
+use crate::indexing::paths::app_text::native_name;
 use std::sync::Arc;
 
 use super::*;
@@ -190,7 +191,7 @@ fn every_live_loop_owns_a_real_activity_tap() {
     fn collect(dir: &std::path::Path, prefix: &str, out: &mut Vec<(String, std::path::PathBuf)>) {
         for entry in std::fs::read_dir(dir).expect("event_loop dir") {
             let path = entry.expect("dir entry").path();
-            let name = path.file_name().expect("filename").to_string_lossy().to_string();
+            let name = native_name(path.file_name().expect("filename")).into_owned();
             let rel = if prefix.is_empty() {
                 name.clone()
             } else {

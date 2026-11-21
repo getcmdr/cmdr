@@ -23,6 +23,7 @@
 //!
 //! ❌ An unrecorded change is invisible here, as a dropped event would be.
 
+use crate::indexing::paths::app_text::native_text;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Condvar, Mutex, PoisonError};
@@ -94,7 +95,7 @@ pub(super) fn watcher(
                 last_event_id.store(event.event_id, Ordering::Relaxed);
             }
             let _ = journal_tx.send(FsChangeEvent {
-                path: root.to_string_lossy().into_owned(),
+                path: native_text(root).into_owned(),
                 event_id: next_event_id(),
                 flags: FsEventFlags {
                     history_done: true,
@@ -190,7 +191,7 @@ struct Listener {
 /// root holds it hears it now, and a later start replays it from an older id.
 pub(crate) fn record_created_file(path: &Path) {
     let event = FsChangeEvent {
-        path: path.to_string_lossy().into_owned(),
+        path: native_text(path).into_owned(),
         event_id: next_event_id(),
         flags: FsEventFlags {
             item_created: true,

@@ -7,6 +7,7 @@
 //! all, driven through the public handle) is `cold_drive_tests.rs`; the
 //! `Volume`-trait half is `network_tests.rs`.
 
+use crate::indexing::paths::app_text::native_text;
 use std::path::Path;
 
 use super::ground::Ground;
@@ -42,7 +43,7 @@ fn a_walk_emits_what_it_writes() {
     assert_eq!(outcome.dirs_found, 1, "deep/ is the only directory among them");
     assert_eq!(entries.len(), 3, "every written entry reaches the consumer");
 
-    let mut emitted: Vec<String> = entries.iter().map(|e| e.path.to_string_lossy().to_string()).collect();
+    let mut emitted: Vec<String> = entries.iter().map(|e| native_text(&e.path).to_string()).collect();
     emitted.sort();
     assert_eq!(
         emitted,
@@ -109,7 +110,7 @@ fn a_frontier_path_with_no_row_is_materialized_and_walked() {
     f.writer.flush_blocking().expect("flush");
 
     assert_eq!(outcome.roots_covered, 1, "the walk reached ground it had no row for");
-    let mut emitted: Vec<String> = entries.iter().map(|e| e.path.to_string_lossy().to_string()).collect();
+    let mut emitted: Vec<String> = entries.iter().map(|e| native_text(&e.path).to_string()).collect();
     emitted.sort();
     assert_eq!(
         emitted,

@@ -2,6 +2,7 @@
 //! updates, nested discovery, type changes, and the coverage epochs it stamps.
 
 use super::*;
+use crate::indexing::paths::app_text::native_text;
 
 // ── MustScanSubDirs uses reconcile, not destructive reinsert ──
 
@@ -22,12 +23,10 @@ fn must_scan_sub_dirs_preserves_existing_children() {
     std::fs::write(sub_dir.join("child2.txt"), "bbb").unwrap();
 
     // Populate DB with the directory tree matching disk
-    ensure_path_in_db(&db_path, &sub_dir.to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(&sub_dir), &writer);
     {
         let wconn = IndexStore::open_write_connection(&db_path).unwrap();
-        let sub_id = store::resolve_path(&wconn, &sub_dir.to_string_lossy())
-            .unwrap()
-            .unwrap();
+        let sub_id = store::resolve_path(&wconn, &native_text(&sub_dir)).unwrap().unwrap();
 
         let meta1 = std::fs::symlink_metadata(sub_dir.join("child1.txt")).unwrap();
         let snap1 = extract_metadata(&meta1, false, false);
@@ -73,7 +72,7 @@ fn must_scan_sub_dirs_preserves_existing_children() {
 
     // Verify all children are still in the DB
     let store = IndexStore::open(&db_path).unwrap();
-    let sub_id = store::resolve_path(store.read_conn(), &sub_dir.to_string_lossy())
+    let sub_id = store::resolve_path(store.read_conn(), &native_text(&sub_dir))
         .unwrap()
         .unwrap();
     let children = store.list_children(sub_id).unwrap();
@@ -94,7 +93,7 @@ fn reconcile_new_file() {
     let file_path = test_dir.path().join("new_file.txt");
     std::fs::write(&file_path, "hello reconcile").unwrap();
 
-    ensure_path_in_db(&db_path, &test_dir.path().to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(test_dir.path()), &writer);
 
     let work = VolumeWork::for_test(ROOT_VOLUME_ID);
     let result = reconcile_subtree(test_dir.path(), &IndexPathSpace::root(), &conn, &writer, &work, None);
@@ -107,7 +106,7 @@ fn reconcile_new_file() {
     writer.shutdown();
 
     let store = IndexStore::open(&db_path).unwrap();
-    let parent_str = test_dir.path().to_string_lossy().to_string();
+    let parent_str = native_text(test_dir.path()).to_string();
     let parent_id = store::resolve_path(store.read_conn(), &parent_str).unwrap().unwrap();
     let entries = store.list_children(parent_id).unwrap();
     assert_eq!(entries.len(), 1);
@@ -123,10 +122,10 @@ fn reconcile_deleted_file() {
     let test_dir = non_excluded_tempdir();
 
     // Insert the test dir and a file entry into the DB, but don't create the file on disk
-    ensure_path_in_db(&db_path, &test_dir.path().to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(test_dir.path()), &writer);
     {
         let wconn = IndexStore::open_write_connection(&db_path).unwrap();
-        let parent_str = test_dir.path().to_string_lossy().to_string();
+        let parent_str = native_text(test_dir.path()).to_string();
         let parent_id = store::resolve_path(&wconn, &parent_str).unwrap().unwrap();
         IndexStore::insert_entry_v2(
             &wconn,
@@ -153,7 +152,7 @@ fn reconcile_deleted_file() {
     writer.shutdown();
 
     let store = IndexStore::open(&db_path).unwrap();
-    let parent_str = test_dir.path().to_string_lossy().to_string();
+    let parent_str = native_text(test_dir.path()).to_string();
     let parent_id = store::resolve_path(store.read_conn(), &parent_str).unwrap().unwrap();
     let entries = store.list_children(parent_id).unwrap();
     assert!(entries.is_empty(), "ghost entry should be removed from DB");
@@ -169,14 +168,14 @@ fn reconcile_unchanged() {
     std::fs::write(&file_path, "no changes").unwrap();
 
     // Insert the directory into the DB
-    ensure_path_in_db(&db_path, &test_dir.path().to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(test_dir.path()), &writer);
 
     // Get the file's actual metadata and insert a matching DB entry
     let meta = std::fs::symlink_metadata(&file_path).unwrap();
     let snap = extract_metadata(&meta, false, false);
     {
         let wconn = IndexStore::open_write_connection(&db_path).unwrap();
-        let parent_str = test_dir.path().to_string_lossy().to_string();
+        let parent_str = native_text(test_dir.path()).to_string();
         let parent_id = store::resolve_path(&wconn, &parent_str).unwrap().unwrap();
         IndexStore::insert_entry_v2(
             &wconn,
@@ -212,12 +211,12 @@ fn reconcile_modified_file() {
     let file_path = test_dir.path().join("changed.txt");
     std::fs::write(&file_path, "original content").unwrap();
 
-    ensure_path_in_db(&db_path, &test_dir.path().to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(test_dir.path()), &writer);
 
     // Insert DB entry with stale metadata (different size)
     {
         let wconn = IndexStore::open_write_connection(&db_path).unwrap();
-        let parent_str = test_dir.path().to_string_lossy().to_string();
+        let parent_str = native_text(test_dir.path()).to_string();
         let parent_id = store::resolve_path(&wconn, &parent_str).unwrap().unwrap();
         IndexStore::insert_entry_v2(
             &wconn,
@@ -246,7 +245,7 @@ fn reconcile_modified_file() {
 
     // Verify the DB entry was updated with real metadata
     let store = IndexStore::open(&db_path).unwrap();
-    let parent_str = test_dir.path().to_string_lossy().to_string();
+    let parent_str = native_text(test_dir.path()).to_string();
     let parent_id = store::resolve_path(store.read_conn(), &parent_str).unwrap().unwrap();
     let entries = store.list_children(parent_id).unwrap();
     assert_eq!(entries.len(), 1);
@@ -272,7 +271,7 @@ fn reconcile_subtree_new_nested_dir_with_child() {
     std::fs::write(new_dir.join("child.txt"), "nested child").unwrap();
 
     // DB only knows about /parent/; new_dir and child.txt are unknown
-    ensure_path_in_db(&db_path, &parent.to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(&parent), &writer);
 
     let work = VolumeWork::for_test(ROOT_VOLUME_ID);
     let result = reconcile_subtree(&parent, &IndexPathSpace::root(), &conn, &writer, &work, None);
@@ -286,7 +285,7 @@ fn reconcile_subtree_new_nested_dir_with_child() {
 
     // Verify both entries exist with correct parent relationships
     let store = IndexStore::open(&db_path).unwrap();
-    let parent_id = store::resolve_path(store.read_conn(), &parent.to_string_lossy())
+    let parent_id = store::resolve_path(store.read_conn(), &native_text(&parent))
         .unwrap()
         .unwrap();
     let parent_children = store.list_children(parent_id).unwrap();
@@ -294,7 +293,7 @@ fn reconcile_subtree_new_nested_dir_with_child() {
     assert_eq!(parent_children[0].name, "new_dir");
     assert!(parent_children[0].is_directory);
 
-    let new_dir_id = store::resolve_path(store.read_conn(), &new_dir.to_string_lossy())
+    let new_dir_id = store::resolve_path(store.read_conn(), &native_text(&new_dir))
         .unwrap()
         .unwrap();
     let new_dir_children = store.list_children(new_dir_id).unwrap();
@@ -323,10 +322,10 @@ fn reconcile_subtree_dir_replaced_by_file() {
     std::fs::write(parent.join("item"), "I am a file now").unwrap();
 
     // DB: /parent/item/ is a directory with a child
-    ensure_path_in_db(&db_path, &parent.to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(&parent), &writer);
     {
         let wconn = IndexStore::open_write_connection(&db_path).unwrap();
-        let parent_id = store::resolve_path(&wconn, &parent.to_string_lossy()).unwrap().unwrap();
+        let parent_id = store::resolve_path(&wconn, &native_text(&parent)).unwrap().unwrap();
         let item_id =
             IndexStore::insert_entry_v2(&wconn, parent_id, "item", true, false, None, None, None, None).unwrap();
         IndexStore::insert_entry_v2(
@@ -357,7 +356,7 @@ fn reconcile_subtree_dir_replaced_by_file() {
     writer.shutdown();
 
     let store = IndexStore::open(&db_path).unwrap();
-    let parent_id = store::resolve_path(store.read_conn(), &parent.to_string_lossy())
+    let parent_id = store::resolve_path(store.read_conn(), &native_text(&parent))
         .unwrap()
         .unwrap();
     let children = store.list_children(parent_id).unwrap();
@@ -394,7 +393,7 @@ fn reconcile_subtree_deep_nested_dirs() {
     std::fs::write(dir_c.join("file.txt"), "deep content").unwrap();
 
     // DB only knows about /root_dir/; everything inside is new
-    ensure_path_in_db(&db_path, &root_dir.to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(&root_dir), &writer);
 
     let work = VolumeWork::for_test(ROOT_VOLUME_ID);
     let result = reconcile_subtree(&root_dir, &IndexPathSpace::root(), &conn, &writer, &work, None);
@@ -409,7 +408,7 @@ fn reconcile_subtree_deep_nested_dirs() {
     // Verify the full path chain exists with correct parent->child relationships
     let store = IndexStore::open(&db_path).unwrap();
 
-    let root_id = store::resolve_path(store.read_conn(), &root_dir.to_string_lossy())
+    let root_id = store::resolve_path(store.read_conn(), &native_text(&root_dir))
         .unwrap()
         .unwrap();
     let root_children = store.list_children(root_id).unwrap();
@@ -417,7 +416,7 @@ fn reconcile_subtree_deep_nested_dirs() {
     assert_eq!(root_children[0].name, "a");
     assert!(root_children[0].is_directory);
 
-    let a_id = store::resolve_path(store.read_conn(), &dir_a.to_string_lossy())
+    let a_id = store::resolve_path(store.read_conn(), &native_text(&dir_a))
         .unwrap()
         .unwrap();
     let a_children = store.list_children(a_id).unwrap();
@@ -425,7 +424,7 @@ fn reconcile_subtree_deep_nested_dirs() {
     assert_eq!(a_children[0].name, "b");
     assert!(a_children[0].is_directory);
 
-    let b_id = store::resolve_path(store.read_conn(), &dir_b.to_string_lossy())
+    let b_id = store::resolve_path(store.read_conn(), &native_text(&dir_b))
         .unwrap()
         .unwrap();
     let b_children = store.list_children(b_id).unwrap();
@@ -433,7 +432,7 @@ fn reconcile_subtree_deep_nested_dirs() {
     assert_eq!(b_children[0].name, "c");
     assert!(b_children[0].is_directory);
 
-    let c_id = store::resolve_path(store.read_conn(), &dir_c.to_string_lossy())
+    let c_id = store::resolve_path(store.read_conn(), &native_text(&dir_c))
         .unwrap()
         .unwrap();
     let c_children = store.list_children(c_id).unwrap();
@@ -463,7 +462,7 @@ fn reconcile_subtree_indexes_new_directory_not_in_db() {
     // Only the PARENT is in the DB; the new directory itself is NOT.
     // This simulates what happens when FSEvents fires must_scan_sub_dirs
     // for a newly copied/created directory.
-    ensure_path_in_db(&db_path, &test_dir.path().to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(test_dir.path()), &writer);
 
     let work = VolumeWork::for_test(ROOT_VOLUME_ID);
     let result = reconcile_subtree(&new_dir, &IndexPathSpace::root(), &conn, &writer, &work, None);
@@ -482,7 +481,7 @@ fn reconcile_subtree_indexes_new_directory_not_in_db() {
 
     // Verify the children are in the DB
     let store = IndexStore::open(&db_path).unwrap();
-    let new_dir_id = store::resolve_path(store.read_conn(), &new_dir.to_string_lossy())
+    let new_dir_id = store::resolve_path(store.read_conn(), &native_text(&new_dir))
         .unwrap()
         .expect("new directory should be in the DB after reconcile");
     let children = store.list_children(new_dir_id).unwrap();
@@ -514,7 +513,7 @@ fn reconcile_subtree_marks_listed_dirs_at_current_epoch() {
     std::fs::create_dir(new_dir.join("empty")).unwrap();
 
     // Only the parent of `tree` is in the DB (mimics must_scan_sub_dirs).
-    ensure_path_in_db(&db_path, &test_dir.path().to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(test_dir.path()), &writer);
 
     let work = VolumeWork::for_test(ROOT_VOLUME_ID);
     reconcile_subtree(&new_dir, &IndexPathSpace::root(), &conn, &writer, &work, None).unwrap();
@@ -524,7 +523,7 @@ fn reconcile_subtree_marks_listed_dirs_at_current_epoch() {
     let store = IndexStore::open(&db_path).unwrap();
     let rconn = store.read_conn();
     let resolve = |p: &Path| {
-        store::resolve_path(rconn, &p.to_string_lossy())
+        store::resolve_path(rconn, &native_text(p))
             .unwrap()
             .unwrap_or_else(|| panic!("{} should be in DB", p.display()))
     };

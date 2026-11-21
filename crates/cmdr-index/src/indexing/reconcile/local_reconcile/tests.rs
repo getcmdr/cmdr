@@ -1,3 +1,4 @@
+use crate::indexing::paths::app_text::native_text;
 use std::path::{Path, PathBuf};
 
 use rusqlite::Connection;
@@ -45,7 +46,7 @@ fn tree_root() -> tempfile::TempDir {
 }
 
 fn norm(p: &Path) -> String {
-    firmlinks::normalize_path(&p.to_string_lossy())
+    firmlinks::normalize_path(&native_text(p))
 }
 
 fn conn(h: &Harness) -> Connection {
@@ -698,7 +699,7 @@ fn reconcile_resolves_mount_rooted_root_via_strip() {
     // (the sentinel from `setup`) IS the mount.
     let mount = tree_root();
     let rp = mount.path();
-    let mount_root = rp.to_string_lossy().to_string();
+    let mount_root = native_text(rp).to_string();
 
     std::fs::create_dir_all(rp.join("a/deep")).unwrap();
     std::fs::write(rp.join("a/f1.txt"), vec![b'x'; 10]).unwrap();
@@ -764,7 +765,7 @@ fn reconcile_vanished_root_surfaces_root_unlistable_not_empty_root() {
     let missing = scratch.join("vanished-root");
     assert!(!missing.exists(), "precondition: the mount root must be absent");
 
-    let space = IndexPathSpace::mount_rooted(missing.to_string_lossy().to_string());
+    let space = IndexPathSpace::mount_rooted(native_text(&missing).to_string());
     let result = run_reconcile_in(&h, &missing, space.clone(), production_tools(space), false);
     assert!(
         matches!(result, Err(ScanError::RootUnlistable)),

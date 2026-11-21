@@ -6,6 +6,7 @@
 //! shared primitives (`merge_fs_events`, `open_read_conn_with_retry`, the
 //! flush-interval constants) live in the parent `event_loop` module.
 
+use crate::indexing::paths::app_text::native_text;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -664,7 +665,7 @@ fn process_live_batch_blocking(
             // delete inside a surviving folder contributes nothing at all, because
             // every per-file event it produced is about to be dropped in favour of
             // the rescan.
-            observers.activity().record_storm_anchor(&anchor.to_string_lossy());
+            observers.activity().record_storm_anchor(&native_text(&anchor));
             reconciler.queue_must_scan_sub_dirs(anchor, writer);
         }
 

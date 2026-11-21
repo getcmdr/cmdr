@@ -20,6 +20,7 @@
 //! complete index would push the 24-hour sweep window forward every launch, which
 //! is the mirror of the bug the sweep ledger exists to prevent.
 
+use crate::indexing::paths::app_text::native_text;
 use std::sync::atomic::Ordering;
 
 use rusqlite::Connection;
@@ -93,7 +94,7 @@ fn home_is_covered_now(machine: &Machine) -> bool {
     }
     let deferred = machine
         .deferred_home_folder()
-        .map(|path| path.to_string_lossy().into_owned());
+        .map(|path| native_text(&path).into_owned());
     machine.frontier_under(&home).iter().all(|root| {
         deferred
             .as_deref()

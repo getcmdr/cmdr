@@ -5,6 +5,7 @@
 //! and the full-tree `local_reconcile` rescan — so the two share one definition of
 //! what belongs in a listing and one set of exclusion gates.
 
+use crate::indexing::paths::app_text::{native_name, native_text};
 use std::path::Path;
 
 use cmdr_fs::log_private::LogPrivate;
@@ -63,7 +64,7 @@ pub(crate) fn child_is_absent(err: &std::io::Error) -> bool {
 ///   Skipping here keeps fresh and reconcile in lock-step.
 fn child_is_indexable(dir_path: &Path, name: &str, space: &IndexPathSpace) -> bool {
     let child_path = dir_path.join(name);
-    let child_path_str = child_path.to_string_lossy();
+    let child_path_str = native_text(&child_path);
     // The canonical absolute child path (firmlink-normalized only for the boot
     // disk); the scope comes from the volume kind so a mount-rooted drive skips
     // only junk basenames, not its own `/Volumes/X` subtree.
@@ -129,7 +130,7 @@ fn bulk_children(dir_path: &Path, space: &IndexPathSpace, read: scanner::BulkDir
         let name = entry
             .path
             .file_name()
-            .map(|n| n.to_string_lossy().to_string())
+            .map(|n| native_name(n).into_owned())
             .unwrap_or_default();
         if !child_is_indexable(dir_path, &name, space) {
             continue;
@@ -204,7 +205,7 @@ pub(super) fn read_fs_children_via_read_dir(dir_path: &Path, space: &IndexPathSp
                 continue;
             }
         };
-        let name = entry.file_name().to_string_lossy().to_string();
+        let name = native_name(&entry.file_name()).into_owned();
         if !child_is_indexable(dir_path, &name, space) {
             continue;
         }

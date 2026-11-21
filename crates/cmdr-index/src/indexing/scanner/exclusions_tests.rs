@@ -3,6 +3,7 @@
 //! stamp that re-arms an index when the policy's contents change.
 
 use super::*;
+use crate::indexing::paths::app_text::native_text;
 
 /// Every external-mount prefix MUST also be a boot-disk exclusion prefix.
 /// That's the invariant read routing rests on: a path under one of these is a
@@ -107,7 +108,7 @@ fn a_folder_named_dev_at_a_mount_root_is_not_mistaken_for_a_pseudo_filesystem() 
 #[test]
 fn the_unix_root_probe_needs_all_three_real_directories() {
     let dir = tempfile::tempdir().expect("temp dir");
-    let root = dir.path().to_string_lossy().into_owned();
+    let root = native_text(dir.path()).into_owned();
 
     std::fs::create_dir(dir.path().join("dev")).expect("create dev");
     assert!(!has_pseudo_fs_trio(&root), "`dev` alone is just a folder name");

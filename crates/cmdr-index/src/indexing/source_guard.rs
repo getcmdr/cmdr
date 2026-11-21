@@ -14,6 +14,7 @@
 //! in a type. Reach for this only when the regression is "a new site appeared", which no type
 //! can see.
 
+use crate::indexing::paths::app_text::native_name;
 use std::path::{Path, PathBuf};
 
 /// Every non-test `.rs` file under `src/indexing`, as `(path relative to `indexing`, absolute path)`.
@@ -24,7 +25,7 @@ pub(crate) fn indexing_sources() -> Vec<(String, PathBuf)> {
     fn collect(dir: &Path, prefix: &str, out: &mut Vec<(String, PathBuf)>) {
         for entry in std::fs::read_dir(dir).expect("an indexing dir") {
             let path = entry.expect("dir entry").path();
-            let name = path.file_name().expect("filename").to_string_lossy().to_string();
+            let name = native_name(path.file_name().expect("filename")).into_owned();
             let rel = if prefix.is_empty() {
                 name.clone()
             } else {

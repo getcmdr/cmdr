@@ -3,6 +3,7 @@
 //! the size throttle that collapses rapid rewrites.
 
 use super::*;
+use crate::indexing::paths::app_text::native_text;
 
 // ── Event processing tests ───────────────────────────────────────
 
@@ -54,7 +55,7 @@ fn events_under_a_mount_inside_the_boot_tree_are_skipped() {
 
     let (writer, _dir, conn) = setup_test_writer();
     for path in [mount.clone(), mount.join("theirs.txt")] {
-        let event = make_event(&path.to_string_lossy(), 1, created_file_flags());
+        let event = make_event(&native_text(&path), 1, created_file_flags());
         let result = process_fs_event(&event, &IndexPathSpace::root(), &conn, &writer, None, &mut None);
         assert!(result.is_none(), "{} is on the mount", path.display());
     }
@@ -91,16 +92,16 @@ fn a_change_reports_only_the_dir_whose_listing_changed() {
     std::fs::write(&file_path, "hello").unwrap();
 
     let db_path = dir.path().join("test-reconciler.db");
-    ensure_path_in_db(&db_path, &deep.to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(&deep), &writer);
 
     let space = IndexPathSpace::root();
-    let event = make_event(&file_path.to_string_lossy(), 80, created_file_flags());
+    let event = make_event(&native_text(&file_path), 80, created_file_flags());
     let origins = process_fs_event(&event, &space, &conn, &writer, None, &mut None).expect("the event is processed");
     writer.shutdown();
 
     assert_eq!(
         origins,
-        vec![space.absolute(&deep.to_string_lossy())],
+        vec![space.absolute(&native_text(&deep))],
         "only the file's own directory changed its listing; its ancestors did not"
     );
 }
@@ -117,9 +118,9 @@ fn process_file_creation_writes_entry() {
     // Pre-populate DB with the parent directory chain so resolve_path works.
     // In production, the full scan populates all directories before live events.
     let db_path = dir.path().join("test-reconciler.db");
-    ensure_path_in_db(&db_path, &test_dir.path().to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(test_dir.path()), &writer);
 
-    let event = make_event(&file_path.to_string_lossy(), 50, created_file_flags());
+    let event = make_event(&native_text(&file_path), 50, created_file_flags());
 
     let result = process_fs_event(&event, &IndexPathSpace::root(), &conn, &writer, None, &mut None);
     assert!(result.is_some());
@@ -129,7 +130,7 @@ fn process_file_creation_writes_entry() {
 
     // Verify the entry was written to DB
     let store = IndexStore::open(&db_path).unwrap();
-    let parent = test_dir.path().to_string_lossy().to_string();
+    let parent = native_text(test_dir.path()).to_string();
     let parent_id = store::resolve_path(store.read_conn(), &parent).unwrap().unwrap();
     let entries = store.list_children(parent_id).unwrap();
     assert_eq!(entries.len(), 1);
@@ -185,9 +186,9 @@ fn process_dir_creation_writes_entry_and_propagates() {
 
     // Pre-populate DB with the parent directory chain
     let db_path = dir.path().join("test-reconciler.db");
-    ensure_path_in_db(&db_path, &test_dir.path().to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(test_dir.path()), &writer);
 
-    let event = make_event(&new_dir.to_string_lossy(), 70, created_dir_flags());
+    let event = make_event(&native_text(&new_dir), 70, created_dir_flags());
 
     let result = process_fs_event(&event, &IndexPathSpace::root(), &conn, &writer, None, &mut None);
     assert!(result.is_some());
@@ -200,7 +201,7 @@ fn process_dir_creation_writes_entry_and_propagates() {
     writer.shutdown();
 
     let store = IndexStore::open(&db_path).unwrap();
-    let parent = test_dir.path().to_string_lossy().to_string();
+    let parent = native_text(test_dir.path()).to_string();
     let parent_id = store::resolve_path(store.read_conn(), &parent).unwrap().unwrap();
     let entries = store.list_children(parent_id).unwrap();
     assert_eq!(entries.len(), 1);
@@ -274,10 +275,10 @@ fn removal_event_for_existing_path_upserts_instead_of_deleting() {
     std::fs::write(&real_file, "I exist!").unwrap();
 
     // Pre-populate DB with the parent directory chain + the file
-    ensure_path_in_db(&db_path, &test_dir.path().to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(test_dir.path()), &writer);
     {
         let wconn = IndexStore::open_write_connection(&db_path).unwrap();
-        let parent_id = store::resolve_path(&wconn, &test_dir.path().to_string_lossy())
+        let parent_id = store::resolve_path(&wconn, &native_text(test_dir.path()))
             .unwrap()
             .unwrap();
         IndexStore::insert_entry_v2(
@@ -295,7 +296,7 @@ fn removal_event_for_existing_path_upserts_instead_of_deleting() {
     }
 
     // Send a removal event even though the file exists on disk
-    let event = make_event(&real_file.to_string_lossy(), 99, removed_file_flags());
+    let event = make_event(&native_text(&real_file), 99, removed_file_flags());
     process_fs_event(&event, &IndexPathSpace::root(), &conn, &writer, None, &mut None);
 
     writer.flush_blocking().unwrap();
@@ -303,7 +304,7 @@ fn removal_event_for_existing_path_upserts_instead_of_deleting() {
 
     // The file should still be in the DB (upserted, not deleted)
     let store = IndexStore::open(&db_path).unwrap();
-    let parent_id = store::resolve_path(store.read_conn(), &test_dir.path().to_string_lossy())
+    let parent_id = store::resolve_path(store.read_conn(), &native_text(test_dir.path()))
         .unwrap()
         .unwrap();
     let children = store.list_children(parent_id).unwrap();
@@ -330,10 +331,10 @@ fn atomic_swap_event_upserts_existing_file() {
     let file_path = test_dir.path().join("swapped.txt");
     std::fs::write(&file_path, "new content after swap").unwrap();
 
-    ensure_path_in_db(&db_path, &test_dir.path().to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(test_dir.path()), &writer);
     {
         let wconn = IndexStore::open_write_connection(&db_path).unwrap();
-        let parent_id = store::resolve_path(&wconn, &test_dir.path().to_string_lossy())
+        let parent_id = store::resolve_path(&wconn, &native_text(test_dir.path()))
             .unwrap()
             .unwrap();
         IndexStore::insert_entry_v2(
@@ -357,7 +358,7 @@ fn atomic_swap_event_upserts_existing_file() {
         item_is_file: true,
         ..Default::default()
     };
-    let event = make_event(&file_path.to_string_lossy(), 120, flags);
+    let event = make_event(&native_text(&file_path), 120, flags);
     let result = process_fs_event(&event, &IndexPathSpace::root(), &conn, &writer, None, &mut None);
     assert!(result.is_some());
 
@@ -366,7 +367,7 @@ fn atomic_swap_event_upserts_existing_file() {
 
     // The file should still be in the DB (upserted, not deleted)
     let store = IndexStore::open(&db_path).unwrap();
-    let parent_id = store::resolve_path(store.read_conn(), &test_dir.path().to_string_lossy())
+    let parent_id = store::resolve_path(store.read_conn(), &native_text(test_dir.path()))
         .unwrap()
         .unwrap();
     let children = store.list_children(parent_id).unwrap();
@@ -391,12 +392,10 @@ fn removal_event_for_existing_directory_upserts_not_deletes() {
     std::fs::write(target_dir.join("precious.txt"), "don't delete me").unwrap();
 
     // Populate DB with the directory tree
-    ensure_path_in_db(&db_path, &target_dir.to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(&target_dir), &writer);
     {
         let wconn = IndexStore::open_write_connection(&db_path).unwrap();
-        let dir_id = store::resolve_path(&wconn, &target_dir.to_string_lossy())
-            .unwrap()
-            .unwrap();
+        let dir_id = store::resolve_path(&wconn, &native_text(&target_dir)).unwrap().unwrap();
         IndexStore::insert_entry_v2(
             &wconn,
             dir_id,
@@ -417,7 +416,7 @@ fn removal_event_for_existing_directory_upserts_not_deletes() {
         item_is_dir: true,
         ..Default::default()
     };
-    let event = make_event(&target_dir.to_string_lossy(), 150, flags);
+    let event = make_event(&native_text(&target_dir), 150, flags);
     let result = process_fs_event(&event, &IndexPathSpace::root(), &conn, &writer, None, &mut None);
     assert!(result.is_some());
 
@@ -426,7 +425,7 @@ fn removal_event_for_existing_directory_upserts_not_deletes() {
 
     // The directory should still be in the DB
     let store = IndexStore::open(&db_path).unwrap();
-    let parent_id = store::resolve_path(store.read_conn(), &test_dir.path().to_string_lossy())
+    let parent_id = store::resolve_path(store.read_conn(), &native_text(test_dir.path()))
         .unwrap()
         .unwrap();
     let parent_children = store.list_children(parent_id).unwrap();
@@ -439,7 +438,7 @@ fn removal_event_for_existing_directory_upserts_not_deletes() {
     assert!(parent_children[0].is_directory);
 
     // The child should also still be in the DB (no subtree wipe)
-    let dir_id = store::resolve_path(store.read_conn(), &target_dir.to_string_lossy())
+    let dir_id = store::resolve_path(store.read_conn(), &native_text(&target_dir))
         .unwrap()
         .unwrap();
     let dir_children = store.list_children(dir_id).unwrap();
@@ -469,7 +468,7 @@ fn live_create_under_mount_rooted_index_resolves_via_strip() {
     // `ROOT_ID` by its mount-relative name — NOT the absolute path chain a `/`-rooted
     // index would seed.
     let mount = non_excluded_tempdir();
-    let mount_root = mount.path().to_string_lossy().to_string();
+    let mount_root = native_text(mount.path()).to_string();
     let sub_id = {
         let wconn = IndexStore::open_write_connection(&db_path).unwrap();
         let id = IndexStore::insert_entry_v2(&wconn, ROOT_ID, "sub", true, false, None, None, None, None).unwrap();
@@ -482,7 +481,7 @@ fn live_create_under_mount_rooted_index_resolves_via_strip() {
     std::fs::create_dir(mount.path().join("sub")).unwrap();
     let file_path = mount.path().join("sub/new.txt");
     std::fs::write(&file_path, "hello mount").unwrap();
-    let event = make_event(&file_path.to_string_lossy(), 50, created_file_flags());
+    let event = make_event(&native_text(&file_path), 50, created_file_flags());
 
     // `root` space (pre-strip): the absolute parent `<mount>/sub` is walked from
     // `ROOT_ID` (which holds only "sub") and misses, so the create is dropped.
@@ -520,7 +519,7 @@ fn live_delete_under_mount_rooted_index_resolves_via_strip() {
     let db_path = dir.path().join("test-reconciler.db");
 
     let mount = non_excluded_tempdir();
-    let mount_root = mount.path().to_string_lossy().to_string();
+    let mount_root = native_text(mount.path()).to_string();
     let (sub_id, _gone_id) = {
         let wconn = IndexStore::open_write_connection(&db_path).unwrap();
         let sub = IndexStore::insert_entry_v2(&wconn, ROOT_ID, "sub", true, false, None, None, None, None).unwrap();
@@ -534,7 +533,7 @@ fn live_delete_under_mount_rooted_index_resolves_via_strip() {
     // The file is truly gone on disk (never created under the mount), so a removal
     // event should delete the row — but only once the path resolves.
     let gone_abs = mount.path().join("sub/gone.txt");
-    let event = make_event(&gone_abs.to_string_lossy(), 60, removed_file_flags());
+    let event = make_event(&native_text(&gone_abs), 60, removed_file_flags());
 
     // `root` space misses the mount-absolute path, so the stale row survives.
     process_fs_event(&event, &IndexPathSpace::root(), &conn, &writer, None, &mut None);
@@ -590,7 +589,7 @@ fn live_throttle_collapses_rapid_rewrites_and_trailing_flushes_last_size() {
     let db_path = dir.path().join("test-reconciler.db");
 
     let test_dir = non_excluded_tempdir();
-    let parent = test_dir.path().to_string_lossy().to_string();
+    let parent = native_text(test_dir.path()).to_string();
     let file = test_dir.path().join("hot.log");
     ensure_path_in_db(&db_path, &parent, &writer);
 
@@ -598,7 +597,7 @@ fn live_throttle_collapses_rapid_rewrites_and_trailing_flushes_last_size() {
     let mut reconciler = EventReconciler::new_with_throttle_window(window);
     reconciler.switch_to_live();
     let mut pending = HashSet::<String>::new();
-    let path_str = file.to_string_lossy().to_string();
+    let path_str = native_text(&file).to_string();
 
     // Leading edge: first change applies immediately (a normal one-off edit).
     std::fs::write(&file, vec![b'x'; 1_000]).unwrap();
@@ -666,14 +665,14 @@ fn live_throttle_significant_jump_applies_immediately() {
     let db_path = dir.path().join("test-reconciler.db");
 
     let test_dir = non_excluded_tempdir();
-    let parent = test_dir.path().to_string_lossy().to_string();
+    let parent = native_text(test_dir.path()).to_string();
     let file = test_dir.path().join("grow.bin");
     ensure_path_in_db(&db_path, &parent, &writer);
 
     let mut reconciler = EventReconciler::new_with_throttle_window(Duration::from_secs(60));
     reconciler.switch_to_live();
     let mut pending = HashSet::<String>::new();
-    let path_str = file.to_string_lossy().to_string();
+    let path_str = native_text(&file).to_string();
 
     // Leading edge at 1 KB.
     std::fs::write(&file, vec![b'x'; 1_000]).unwrap();
@@ -723,7 +722,7 @@ async fn a_folder_created_live_gets_walked_and_reads_exact() {
     let db_path = dir.path().join("test-reconciler.db");
     let base = non_excluded_tempdir();
     let space = IndexPathSpace::root();
-    ensure_path_in_db(&db_path, &space.absolute(&base.path().to_string_lossy()), &writer);
+    ensure_path_in_db(&db_path, &space.absolute(&native_text(base.path())), &writer);
 
     let mut reconciler = EventReconciler::new();
     reconciler.switch_to_live();
@@ -733,7 +732,7 @@ async fn a_folder_created_live_gets_walked_and_reads_exact() {
     // Batch 1: the folder alone, as `mkdir` reports it.
     let tree = base.path().join("tree");
     std::fs::create_dir(&tree).unwrap();
-    let created_dir = make_event(&tree.to_string_lossy(), 1, created_dir_flags());
+    let created_dir = make_event(&native_text(&tree), 1, created_dir_flags());
     reconciler.process_live_event(&created_dir, &conn, &writer, &mut origins);
     reconciler.flush_deletes(&writer);
     writer.flush_blocking().unwrap();
@@ -741,7 +740,7 @@ async fn a_folder_created_live_gets_walked_and_reads_exact() {
     // Batch 2: its contents, each under a parent the index now holds.
     let file = tree.join("file.bin");
     std::fs::write(&file, vec![0u8; 4096]).unwrap();
-    let created_file = make_event(&file.to_string_lossy(), 2, created_file_flags());
+    let created_file = make_event(&native_text(&file), 2, created_file_flags());
     reconciler.process_live_event(&created_file, &conn, &writer, &mut origins);
     reconciler.flush_deletes(&writer);
     writer.flush_blocking().unwrap();
@@ -752,7 +751,7 @@ async fn a_folder_created_live_gets_walked_and_reads_exact() {
     .await;
     crate::indexing::writer::tests::settle_the_writer(&writer);
 
-    let tree_id = store::resolve_path(&conn, &space.absolute(&tree.to_string_lossy()))
+    let tree_id = store::resolve_path(&conn, &space.absolute(&native_text(&tree)))
         .unwrap()
         .expect("the folder is indexed");
     let listed = IndexStore::get_listed_epoch_by_id(&conn, tree_id).unwrap().unwrap_or(0);
@@ -778,7 +777,7 @@ async fn a_file_indexed_while_a_walk_holds_its_listing_stays_indexed() {
     let db_path = dir.path().join("test-reconciler.db");
     let base = non_excluded_tempdir();
     let space = IndexPathSpace::root();
-    ensure_path_in_db(&db_path, &space.absolute(&base.path().to_string_lossy()), &writer);
+    ensure_path_in_db(&db_path, &space.absolute(&native_text(base.path())), &writer);
 
     let mut reconciler = EventReconciler::new();
     reconciler.switch_to_live();
@@ -787,8 +786,8 @@ async fn a_file_indexed_while_a_walk_holds_its_listing_stays_indexed() {
 
     let tree = base.path().join("tree");
     std::fs::create_dir(&tree).unwrap();
-    let gate = rescan::gate::GateHandle::arm_after_listing(Path::new(&space.absolute(&tree.to_string_lossy())));
-    let created_dir = make_event(&tree.to_string_lossy(), 1, created_dir_flags());
+    let gate = rescan::gate::GateHandle::arm_after_listing(Path::new(&space.absolute(&native_text(&tree))));
+    let created_dir = make_event(&native_text(&tree), 1, created_dir_flags());
     reconciler.process_live_event(&created_dir, &conn, &writer, &mut origins);
     writer.flush_blocking().unwrap();
     assert!(
@@ -798,7 +797,7 @@ async fn a_file_indexed_while_a_walk_holds_its_listing_stays_indexed() {
 
     let file = tree.join("file.bin");
     std::fs::write(&file, vec![0u8; 4096]).unwrap();
-    let created_file = make_event(&file.to_string_lossy(), 2, created_file_flags());
+    let created_file = make_event(&native_text(&file), 2, created_file_flags());
     reconciler.process_live_event(&created_file, &conn, &writer, &mut origins);
     writer.flush_blocking().unwrap();
 
@@ -810,12 +809,12 @@ async fn a_file_indexed_while_a_walk_holds_its_listing_stays_indexed() {
     crate::indexing::writer::tests::settle_the_writer(&writer);
 
     assert!(
-        store::resolve_path(&conn, &space.absolute(&file.to_string_lossy()))
+        store::resolve_path(&conn, &space.absolute(&native_text(&file)))
             .unwrap()
             .is_some(),
         "a file on disk stays indexed"
     );
-    let tree_id = store::resolve_path(&conn, &space.absolute(&tree.to_string_lossy()))
+    let tree_id = store::resolve_path(&conn, &space.absolute(&native_text(&tree)))
         .unwrap()
         .expect("the folder is indexed");
     let stats = IndexStore::get_dir_stats_by_id(&conn, tree_id)

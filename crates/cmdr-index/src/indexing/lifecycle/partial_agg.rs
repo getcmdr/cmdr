@@ -8,6 +8,7 @@
 //! caller.
 
 use crate::indexing::host::policy::OpenListing;
+use crate::indexing::paths::app_text::native_text;
 use cmdr_fs::firmlinks;
 
 /// How many 500 ms progress ticks between partial-aggregation passes.
@@ -81,7 +82,7 @@ pub(crate) fn collect_hot_paths(listings: &[OpenListing], scanned_volume_id: &st
         if listing.volume_id != scanned_volume_id || !listing.path.is_absolute() {
             continue;
         }
-        let normalized = firmlinks::normalize_path(&listing.path.to_string_lossy());
+        let normalized = firmlinks::normalize_path(&native_text(&listing.path));
         if seen.insert(normalized.clone()) {
             out.push(normalized);
         }

@@ -10,9 +10,12 @@
 //! At 10f it becomes the root's own text.
 
 use std::borrow::Cow;
-use std::path::PathBuf;
+use std::ffi::OsStr;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf, NotAnAppPath, PathFlavor};
+use cmdr_fs::log_private::LogPrivate;
 
 /// The text the index stores and compares for `path`: its own text, or, for one holding an
 /// escape, the lossy spelling of the native name it stands for, as the index stored it
@@ -64,7 +67,7 @@ pub(crate) fn app_path_of(text: &str) -> Option<Cow<'_, AppPath>> {
     match AppPath::from_normalized(text) {
         Ok(path) => Some(Cow::Borrowed(path)),
         Err(_) if text.chars().any(cmdr_fs::app_path::is_escape) => None,
-        Err(_) => cmdr_fs::app_path::AppPathBuf::from_wire(text).ok().map(Cow::Owned),
+        Err(_) => AppPathBuf::from_wire(text).ok().map(Cow::Owned),
     }
 }
 
@@ -72,8 +75,95 @@ pub(crate) fn app_path_of(text: &str) -> Option<Cow<'_, AppPath>> {
 /// local walker opens: the one crossing for text the local pipeline put in the index, which
 /// it spelled from the OS's own names (lossy where a name isn't Unicode text, as the index
 /// always has), so on macOS and Linux it opens what it names.
-pub(crate) fn local_path(text: &str) -> &std::path::Path {
-    std::path::Path::new(text)
+pub(crate) fn local_path(text: &str) -> &Path {
+    Path::new(text)
+}
+
+/// The text the index stores and compares for a NATIVE path its local pipeline holds (a
+/// walked child, a watcher event, a scan or rescan root): the one crossing up from the OS,
+/// through [`AppPathBuf::from_native_unicode`], so on Windows `D:\x` is stored as the app
+/// spelling `D:/x` the rest of the index (roots, strips, `resolve_path`) splits on `/`.
+///
+/// Borrowed, with no allocation, when the native text already IS that spelling: on macOS
+/// and Linux every path whose names are Unicode text (the native text of such a path is its
+/// app text, and a non-canonical shape such as a trailing `/` is kept as spelled, as the
+/// index always stored it), on Windows a path already spelled with `/`. That's every path
+/// the hot walk loop sees on macOS, so the scan pays one byte scan per entry and nothing
+/// more.
+///
+/// A name the app path can't hold yet (not Unicode text, or a literal escape-range code
+/// point; `cmdr_fs::app_path::ESCAPES_LIVE` is still false) keeps today's lossy spelling and
+/// is COUNTED ([`names_kept_lossy`]), ❌ never dropped: the row stays, as it always has. At
+/// milestone 10f this becomes `from_native`, which escapes it. A path `from_native` refuses
+/// (relative, a `..`) is kept as spelled too: the pipeline only meets those from a caller's
+/// own literal, and the text is what it always stored.
+pub(crate) fn native_text(native: &Path) -> Cow<'_, str> {
+    if let Some(text) = native.to_str()
+        && already_app_text(text)
+    {
+        return Cow::Borrowed(text);
+    }
+    match AppPathBuf::from_native_unicode(native) {
+        Ok(app) if PathFlavor::HOST == PathFlavor::Windows => Cow::Owned(app.into_string()),
+        // POSIX: the native text of a Unicode path is its app text, so only a shape the
+        // fast path declined for an escape-range code point reaches here, and that one
+        // `from_native_unicode` refuses. Kept as spelled either way.
+        Ok(_) => native.to_string_lossy(),
+        Err(NotAnAppPath::NotUnicode) => {
+            note_kept_lossy(native.as_os_str());
+            native.to_string_lossy()
+        }
+        Err(_) => native.to_string_lossy(),
+    }
+}
+
+/// The text the index stores for a NATIVE name (a walked child's `file_name()`): the name's
+/// own text, borrowed, when it is Unicode text holding no escape-range code point (what
+/// [`cmdr_fs::app_path::AppNameBuf::from_native_os_unicode`] accepts, and with no
+/// allocation); else today's lossy spelling, counted as [`native_text`] counts it.
+pub(crate) fn native_name(name: &OsStr) -> Cow<'_, str> {
+    if let Some(text) = name.to_str()
+        && !holds_escape(text)
+    {
+        return Cow::Borrowed(text);
+    }
+    note_kept_lossy(name);
+    name.to_string_lossy()
+}
+
+/// How many native names the local pipeline met that the app path can't hold yet and kept
+/// in today's lossy spelling, in this process. A diagnostic, read by the scan's end log.
+pub(crate) fn names_kept_lossy() -> u64 {
+    KEPT_LOSSY.load(Ordering::Relaxed)
+}
+
+static KEPT_LOSSY: AtomicU64 = AtomicU64::new(0);
+
+fn note_kept_lossy(native: &OsStr) {
+    if KEPT_LOSSY.fetch_add(1, Ordering::Relaxed) == 0 {
+        log::info!(
+            "Index: {} isn't plain Unicode text, so its row keeps the lossy spelling (counted, not dropped)",
+            LogPrivate::path(Path::new(native))
+        );
+    }
+}
+
+/// Whether native `text` is already the app spelling the index stores.
+fn already_app_text(text: &str) -> bool {
+    if holds_escape(text) {
+        return false;
+    }
+    if PathFlavor::HOST == PathFlavor::Windows {
+        AppPath::from_normalized(text).is_ok()
+    } else {
+        true
+    }
+}
+
+/// Whether `text` holds an escape-range code point. Every one is in plane 16, whose UTF-8
+/// starts with `0xF4`, so nearly every path answers from one byte scan.
+fn holds_escape(text: &str) -> bool {
+    text.as_bytes().contains(&0xF4) && text.chars().any(cmdr_fs::app_path::is_escape)
 }
 
 #[cfg(test)]

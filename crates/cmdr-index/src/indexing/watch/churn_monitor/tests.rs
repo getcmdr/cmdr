@@ -2,6 +2,7 @@
 //! no filesystem, no app, no real time.
 
 use super::*;
+use crate::indexing::paths::app_text::native_name;
 
 fn monitor(now: Instant) -> ChurnMonitor {
     ChurnMonitor::new(Duration::from_secs(30), DEFAULT_TOP_N, now)
@@ -228,7 +229,7 @@ fn every_live_loop_owns_a_real_churn_observer() {
     fn collect(dir: &std::path::Path, prefix: &str, out: &mut Vec<(String, std::path::PathBuf)>) {
         for entry in std::fs::read_dir(dir).expect("event_loop dir") {
             let path = entry.expect("dir entry").path();
-            let name = path.file_name().expect("filename").to_string_lossy().to_string();
+            let name = native_name(path.file_name().expect("filename")).into_owned();
             let rel = if prefix.is_empty() {
                 name.clone()
             } else {

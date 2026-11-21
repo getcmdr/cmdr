@@ -14,6 +14,7 @@
 
 use super::test_support::{Gone, RefusesToList, Share, StopsAnswering, Tree, app_path, drain};
 use super::{CoverOutcome, CoverWalk, CoveredEntry};
+use crate::indexing::paths::app_text::native_text;
 use tokio_util::sync::CancellationToken;
 
 /// The tree every give-up test walks: one directory that won't list, a sibling
@@ -172,7 +173,7 @@ fn a_frontier_root_that_will_not_list_covers_nothing() {
     );
     // The folder's own row is materialized before anything is listed, so it goes
     // out; its CONTENTS are what the refusal costs.
-    let emitted: Vec<String> = entries.iter().map(|e| e.path.to_string_lossy().to_string()).collect();
+    let emitted: Vec<String> = entries.iter().map(|e| native_text(&e.path).to_string()).collect();
     assert_eq!(emitted, std::slice::from_ref(&scope), "and nothing inside it was read");
     let covered = share.coverage(&scope);
     assert_eq!(

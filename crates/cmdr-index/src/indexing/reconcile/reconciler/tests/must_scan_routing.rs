@@ -4,6 +4,7 @@
 
 use super::*;
 use crate::indexing::hold::{self, HoldKind};
+use crate::indexing::paths::app_text::native_text;
 
 #[tokio::test]
 async fn must_scan_sub_dirs_queued() {
@@ -227,7 +228,7 @@ async fn missing_parent_creation_escalates_to_highest_missing_dir() {
     let file = deep.join("file.txt");
     std::fs::write(&file, b"hi").expect("write file");
 
-    let base_abs = space.absolute(&base.path().to_string_lossy());
+    let base_abs = space.absolute(&native_text(base.path()));
     ensure_path_in_db(&db_path, &base_abs, &writer);
 
     let mut reconciler = EventReconciler::new();
@@ -235,7 +236,7 @@ async fn missing_parent_creation_escalates_to_highest_missing_dir() {
     // Keep the queued anchor visible in the set (don't spawn a rescan).
     reconciler.rescan_active.store(true, Ordering::Relaxed);
 
-    let file_abs = space.absolute(&file.to_string_lossy());
+    let file_abs = space.absolute(&native_text(&file));
     let event = make_event(&file_abs, 1, created_file_flags());
     let mut pending = HashSet::new();
     reconciler.process_live_event(&event, &conn, &writer, &mut pending);
@@ -263,11 +264,11 @@ fn reconcile_subtree_missing_chain_escalates() {
     let base = non_excluded_tempdir();
     let deep = base.path().join("mid").join("leaf");
     std::fs::create_dir_all(&deep).expect("create deep dirs");
-    let base_abs = space.absolute(&base.path().to_string_lossy());
+    let base_abs = space.absolute(&native_text(base.path()));
     ensure_path_in_db(&db_path, &base_abs, &writer);
 
     let work = VolumeWork::for_test(ROOT_VOLUME_ID);
-    let leaf_abs = space.absolute(&deep.to_string_lossy());
+    let leaf_abs = space.absolute(&native_text(&deep));
     let summary = reconcile_subtree(Path::new(&leaf_abs), &space, &conn, &writer, &work, None).expect("reconcile ok");
     assert_eq!(
         summary.escalation,
@@ -288,7 +289,7 @@ fn escalation_anchor_stops_at_a_file_parent() {
     let space = IndexPathSpace::root();
 
     let base = non_excluded_tempdir();
-    let base_abs = space.absolute(&base.path().to_string_lossy());
+    let base_abs = space.absolute(&native_text(base.path()));
     ensure_path_in_db(&db_path, &base_abs, &writer);
     // Insert "mid" as a FILE under base.
     {
@@ -360,11 +361,7 @@ async fn a_subtree_rescan_holds_its_volume_until_its_walk_is_done() {
         .expect("temp tree");
     let anchor = tree.path().join("anchor");
     std::fs::create_dir_all(anchor.join("inner")).expect("dirs");
-    ensure_path_in_db(
-        &dir.path().join("test-reconciler.db"),
-        &anchor.to_string_lossy(),
-        &writer,
-    );
+    ensure_path_in_db(&dir.path().join("test-reconciler.db"), &native_text(&anchor), &writer);
     let gate = rescan::gate::GateHandle::arm(&anchor);
     let volume = VolumeWork::for_test(volume_id);
     let mut reconciler = EventReconciler::new_for(
@@ -817,7 +814,7 @@ async fn a_deep_must_scan_buffered_during_a_scan_walks_on_the_drain() {
 
     // Never created, so the settle delay has no young directory to hold back.
     let anchor = dir.path().join("never-created");
-    reconciler.buffer_event(make_event(&anchor.to_string_lossy(), 5, must_scan_dir_flags()));
+    reconciler.buffer_event(make_event(&native_text(&anchor), 5, must_scan_dir_flags()));
     reconciler.replay(0, &conn, &writer, &mut |_| {}).unwrap();
     assert!(reconciler.rescan_scopes().is_empty(), "nothing is queued mid-replay");
 
@@ -829,7 +826,7 @@ async fn a_deep_must_scan_buffered_during_a_scan_walks_on_the_drain() {
         "a deep anchor never rescans the whole volume"
     );
     // The path the loop works in: firmlink-normalized on a Mac (`/private/var/…`).
-    let queued = PathBuf::from(IndexPathSpace::root().absolute(&anchor.to_string_lossy()));
+    let queued = PathBuf::from(IndexPathSpace::root().absolute(&native_text(&anchor)));
     assert_eq!(reconciler.rescan_scopes(), vec![queued], "it walks on the drain");
 
     writer.shutdown();

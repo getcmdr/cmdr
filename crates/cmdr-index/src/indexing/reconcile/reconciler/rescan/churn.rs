@@ -13,6 +13,7 @@
 //! logger, a clock, or a filesystem. The impure part is the three thin fns at the
 //! bottom, which own the global, the clock, and the `log::info!`.
 
+use crate::indexing::paths::app_text::native_text;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::pluralize::pluralize_grouped;
 use std::collections::HashMap;
@@ -239,7 +240,7 @@ impl RescanChurnWindow {
             .anchors
             .iter()
             .map(|(path, tally)| TopAnchor {
-                path: path.to_string_lossy().into_owned(),
+                path: native_text(path).into_owned(),
                 walks: tally.walks,
                 cost: tally.cost,
                 cpu: tally.cpu,

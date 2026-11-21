@@ -14,6 +14,7 @@
 
 use super::test_fixtures::{ensure_path_in_db, scan_test_tempdir, setup_writer};
 use super::*;
+use crate::indexing::paths::app_text::native_text;
 use crate::indexing::store::{self, IndexStore};
 use crate::indexing::writer::tests::settle_the_writer;
 use std::fs;
@@ -40,7 +41,7 @@ fn parent_size_after_a_maps_aggregate(walk: impl FnOnce(&Path, &IndexWriter)) ->
     settle_the_writer(&writer);
 
     let conn = IndexStore::open_read_connection(&db_path).unwrap();
-    let parent_id = store::resolve_path(&conn, &dir.path().to_string_lossy())
+    let parent_id = store::resolve_path(&conn, &native_text(dir.path()))
         .unwrap()
         .expect("the parent row exists");
     let size = IndexStore::get_dir_stats_by_id(&conn, parent_id)

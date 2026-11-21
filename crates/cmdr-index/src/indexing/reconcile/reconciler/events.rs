@@ -4,6 +4,7 @@
 //! stats the target, resolves to integer entry ids, and sends the integer-keyed
 //! write messages.
 
+use crate::indexing::paths::app_text::native_name;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
@@ -434,7 +435,7 @@ fn handle_creation_or_modification(
     let is_symlink = metadata.is_symlink();
     let name = path
         .file_name()
-        .map(|n| n.to_string_lossy().to_string())
+        .map(|n| native_name(n).into_owned())
         .unwrap_or_default();
 
     let snap = extract_metadata(&metadata, is_dir, is_symlink);

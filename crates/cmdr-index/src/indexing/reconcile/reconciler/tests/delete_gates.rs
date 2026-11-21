@@ -10,6 +10,7 @@ use super::*;
 use crate::indexing::hold::VolumeWork;
 use crate::indexing::host::volumes::{FakeVolumeProvider, MountIdentity, VolumeProvider, install_for_test};
 use crate::indexing::metadata::MetadataSnapshot;
+use crate::indexing::paths::app_text::native_text;
 use std::sync::Arc;
 
 /// The filesystem the drive in these tests is.
@@ -68,7 +69,7 @@ fn reconcile_after_a_removal(volume_id: &str, pull_the_drive: bool) -> Vec<Strin
     std::fs::write(root.join("gone.txt"), b"gone").expect("write gone.txt");
 
     let (writer, _db_dir, conn) = setup_test_writer();
-    let root_str = root.to_string_lossy().to_string();
+    let root_str = native_text(root).to_string();
     ensure_path_in_db(&writer.db_path(), &root_str, &writer);
     let drive = mount_a_drive(volume_id);
     let space = IndexPathSpace::root();
@@ -186,7 +187,7 @@ fn live_removal_after_a_deletion(volume_id: &str, pull_the_drive: bool) -> Vec<S
 
     let (writer, db_dir, conn) = setup_test_writer();
     let db_path = db_dir.path().join("test-reconciler.db");
-    let root_str = root.to_string_lossy().to_string();
+    let root_str = native_text(root).to_string();
     ensure_path_in_db(&db_path, &root_str, &writer);
     {
         let wconn = IndexStore::open_write_connection(&db_path).expect("write connection");
@@ -214,7 +215,7 @@ fn live_removal_after_a_deletion(volume_id: &str, pull_the_drive: bool) -> Vec<S
         drive.provider.mark_unmounted(DRIVE_MOUNT_POINT);
     }
 
-    let event = make_event(&doomed.to_string_lossy(), 7, removed_file_flags());
+    let event = make_event(&native_text(&doomed), 7, removed_file_flags());
     let mut origins = HashSet::new();
     reconciler.process_live_event(&event, &conn, &writer, &mut origins);
     reconciler.flush_deletes(&writer);

@@ -3,6 +3,7 @@
 
 use super::rename::{insert_path_chain, rename_test_setup, rename_test_tempdir, run_live_batch};
 use super::*;
+use crate::indexing::paths::app_text::native_text;
 use std::collections::HashMap;
 
 use crate::indexing::reconcile::reconciler::EventReconciler;
@@ -27,7 +28,7 @@ fn created_dir() -> watcher::FsEventFlags {
 fn a_tree_created_in_one_batch_lands_every_level() {
     let (writer, db_path, _db_dir) = rename_test_setup();
     let base = rename_test_tempdir();
-    let base_abs = IndexPathSpace::root().absolute(&base.path().to_string_lossy());
+    let base_abs = IndexPathSpace::root().absolute(&native_text(base.path()));
     insert_path_chain(&db_path, Path::new(&base_abs), &writer);
     std::fs::create_dir_all(base.path().join("tree/a/b")).unwrap();
 

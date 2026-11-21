@@ -2,6 +2,7 @@
 //! re-upserts every deduped row on every pass forever.
 
 use super::*;
+use crate::indexing::paths::app_text::native_text;
 
 // ── Hardlink dedup: the diff must agree with the writer ────────
 //
@@ -45,7 +46,7 @@ fn reconcile_deduped_hardlink_writes_nothing_on_a_repeat_pass() {
     let db_path = dir.path().join("test-reconciler.db");
 
     let test_dir = non_excluded_tempdir();
-    let parent = test_dir.path().to_string_lossy().to_string();
+    let parent = native_text(test_dir.path()).to_string();
     write_hardlinked_file(test_dir.path(), "payload.bin", "shared bytes", 2);
     ensure_path_in_db(&db_path, &parent, &writer);
 
@@ -91,7 +92,7 @@ fn reconcile_deduped_hardlink_with_a_new_mtime_is_written() {
     let db_path = dir.path().join("test-reconciler.db");
 
     let test_dir = non_excluded_tempdir();
-    let parent = test_dir.path().to_string_lossy().to_string();
+    let parent = native_text(test_dir.path()).to_string();
     write_hardlinked_file(test_dir.path(), "payload.bin", "shared bytes", 2);
     ensure_path_in_db(&db_path, &parent, &writer);
 
@@ -137,7 +138,7 @@ fn reconcile_restores_the_size_when_a_hardlink_drops_to_one_link() {
     let db_path = dir.path().join("test-reconciler.db");
 
     let test_dir = non_excluded_tempdir();
-    let parent = test_dir.path().to_string_lossy().to_string();
+    let parent = native_text(test_dir.path()).to_string();
     write_hardlinked_file(test_dir.path(), "payload.bin", "shared bytes", 2);
     ensure_path_in_db(&db_path, &parent, &writer);
 
@@ -173,7 +174,7 @@ fn reconcile_sized_hardlink_still_compares_on_size() {
     let db_path = dir.path().join("test-reconciler.db");
 
     let test_dir = non_excluded_tempdir();
-    let parent = test_dir.path().to_string_lossy().to_string();
+    let parent = native_text(test_dir.path()).to_string();
     let path = write_hardlinked_file(test_dir.path(), "payload.bin", "shared bytes", 2);
     ensure_path_in_db(&db_path, &parent, &writer);
 

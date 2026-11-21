@@ -39,6 +39,7 @@ use super::{
 use crate::indexing::DEBUG_STATS;
 use crate::indexing::hold::HoldKind;
 use crate::indexing::lifecycle::manager;
+use crate::indexing::paths::app_text::native_text;
 use crate::indexing::paths::path_prefix;
 use crate::indexing::store::IndexStore;
 use cmdr_fs::ignore_poison::IgnorePoison;
@@ -105,7 +106,7 @@ impl EventReconciler {
     /// - **Deep/narrow** anchor otherwise: the throttled `reconcile_subtree` drain,
     ///   which is exactly what it's good at.
     pub(in crate::indexing) fn route_must_scan_sub_dirs(&mut self, path: PathBuf, writer: &IndexWriter) {
-        match route::classify(path_prefix::depth(&path.to_string_lossy())) {
+        match route::classify(path_prefix::depth(&native_text(&path))) {
             RescanRoute::Scanner => self.route_to_visible_sweep(path, writer, SweepReason::ShallowAnchor),
             RescanRoute::Reconcile => {
                 if self.anchor_cardinality_is_high(&path) {
@@ -159,7 +160,7 @@ impl EventReconciler {
     /// mount-rooted external drive keeps the short cooldown. See
     /// `route::SHALLOW_RESCAN_MIN_INTERVAL` for the measurements.
     fn route_to_visible_sweep(&mut self, anchor: PathBuf, writer: &IndexWriter, reason: SweepReason) {
-        DEBUG_STATS.record_must_scan(&anchor.to_string_lossy());
+        DEBUG_STATS.record_must_scan(&native_text(&anchor));
         let (action, record) = route::decide_shallow_anchor(
             &self.volume_id,
             now_unix(),
@@ -231,7 +232,7 @@ impl EventReconciler {
             );
             return;
         }
-        DEBUG_STATS.record_must_scan(&path.to_string_lossy());
+        DEBUG_STATS.record_must_scan(&native_text(&path));
         // Stat the anchor for its birthtime BEFORE it's queued or held: a subtree
         // created seconds ago is still being written (an updater unpacking a
         // bundle), and walking it indexes rows for data that's usually deleted
@@ -444,15 +445,15 @@ pub(super) fn pick_and_collapse_rescan(
     let picked = pending
         .iter()
         .filter(|p| throttle.is_eligible(p, now))
-        .min_by_key(|p| path_prefix::depth(&p.to_string_lossy()))
+        .min_by_key(|p| path_prefix::depth(&native_text(p)))
         .cloned()?;
-    let picked_str = picked.to_string_lossy().to_string();
+    let picked_str = native_text(&picked).to_string();
     let dropped: Vec<PathBuf> = pending
         .iter()
-        .filter(|q| **q != picked && path_prefix::is_strict_descendant(&q.to_string_lossy(), &picked_str))
+        .filter(|q| **q != picked && path_prefix::is_strict_descendant(&native_text(q), &picked_str))
         .cloned()
         .collect();
-    pending.retain(|q| *q != picked && !path_prefix::is_strict_descendant(&q.to_string_lossy(), &picked_str));
+    pending.retain(|q| *q != picked && !path_prefix::is_strict_descendant(&native_text(q), &picked_str));
     Some((picked, dropped))
 }
 

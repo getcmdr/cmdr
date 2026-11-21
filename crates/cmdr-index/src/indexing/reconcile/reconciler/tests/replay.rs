@@ -1,6 +1,7 @@
 //! Buffering events while the scan runs, and replaying them once it finishes.
 
 use super::*;
+use crate::indexing::paths::app_text::native_text;
 
 // ── Reconciler buffer/replay tests ───────────────────────────────
 
@@ -55,11 +56,11 @@ fn replay_skips_events_at_or_before_scan_start() {
     let test_dir = non_excluded_tempdir();
     let file_path = test_dir.path().join("old.txt");
     std::fs::write(&file_path, "old").unwrap();
-    ensure_path_in_db(&db_path, &test_dir.path().to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(test_dir.path()), &writer);
 
     let mut reconciler = EventReconciler::new();
-    reconciler.buffer_event(make_event(&file_path.to_string_lossy(), 5, created_file_flags()));
-    reconciler.buffer_event(make_event(&file_path.to_string_lossy(), 10, created_file_flags()));
+    reconciler.buffer_event(make_event(&native_text(&file_path), 5, created_file_flags()));
+    reconciler.buffer_event(make_event(&native_text(&file_path), 10, created_file_flags()));
 
     let mut callback_called = false;
     let result = reconciler
@@ -75,7 +76,7 @@ fn replay_skips_events_at_or_before_scan_start() {
 
     // Nothing written to DB
     let store = IndexStore::open(&db_path).unwrap();
-    let parent_id = store::resolve_path(store.read_conn(), &test_dir.path().to_string_lossy())
+    let parent_id = store::resolve_path(store.read_conn(), &native_text(test_dir.path()))
         .unwrap()
         .unwrap();
     let children = store.list_children(parent_id).unwrap();
@@ -90,10 +91,10 @@ fn replay_processes_events_after_scan_start() {
     let test_dir = non_excluded_tempdir();
     let file_path = test_dir.path().join("new.txt");
     std::fs::write(&file_path, "new content").unwrap();
-    ensure_path_in_db(&db_path, &test_dir.path().to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(test_dir.path()), &writer);
 
     let mut reconciler = EventReconciler::new();
-    reconciler.buffer_event(make_event(&file_path.to_string_lossy(), 20, created_file_flags()));
+    reconciler.buffer_event(make_event(&native_text(&file_path), 20, created_file_flags()));
 
     let result = reconciler.replay(10, &conn, &writer, &mut |_| {}).unwrap();
 
@@ -103,7 +104,7 @@ fn replay_processes_events_after_scan_start() {
     assert_eq!(result, 20);
 
     let store = IndexStore::open(&db_path).unwrap();
-    let parent_id = store::resolve_path(store.read_conn(), &test_dir.path().to_string_lossy())
+    let parent_id = store::resolve_path(store.read_conn(), &native_text(test_dir.path()))
         .unwrap()
         .unwrap();
     let children = store.list_children(parent_id).unwrap();
@@ -121,11 +122,11 @@ fn replay_sends_update_last_event_id() {
     let file_b = test_dir.path().join("b.txt");
     std::fs::write(&file_a, "a").unwrap();
     std::fs::write(&file_b, "b").unwrap();
-    ensure_path_in_db(&db_path, &test_dir.path().to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(test_dir.path()), &writer);
 
     let mut reconciler = EventReconciler::new();
-    reconciler.buffer_event(make_event(&file_a.to_string_lossy(), 15, created_file_flags()));
-    reconciler.buffer_event(make_event(&file_b.to_string_lossy(), 25, created_file_flags()));
+    reconciler.buffer_event(make_event(&native_text(&file_a), 15, created_file_flags()));
+    reconciler.buffer_event(make_event(&native_text(&file_b), 25, created_file_flags()));
 
     let result = reconciler.replay(10, &conn, &writer, &mut |_| {}).unwrap();
 
@@ -149,10 +150,10 @@ fn replay_calls_callback_with_affected_paths() {
     let test_dir = non_excluded_tempdir();
     let file_path = test_dir.path().join("notify.txt");
     std::fs::write(&file_path, "hi").unwrap();
-    ensure_path_in_db(&db_path, &test_dir.path().to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(test_dir.path()), &writer);
 
     let mut reconciler = EventReconciler::new();
-    reconciler.buffer_event(make_event(&file_path.to_string_lossy(), 20, created_file_flags()));
+    reconciler.buffer_event(make_event(&native_text(&file_path), 20, created_file_flags()));
 
     let mut notified_paths: Vec<String> = Vec::new();
     reconciler
@@ -165,7 +166,7 @@ fn replay_calls_callback_with_affected_paths() {
 
     assert!(!notified_paths.is_empty());
     // The parent directory should appear in affected paths
-    let parent = test_dir.path().to_string_lossy().to_string();
+    let parent = native_text(test_dir.path()).to_string();
     assert!(
         notified_paths.iter().any(|p| p == &parent),
         "expected parent dir in affected paths, got: {notified_paths:?}"
@@ -198,11 +199,11 @@ fn replay_all_events_before_scan_start_returns_unchanged() {
     let test_dir = non_excluded_tempdir();
     let file_path = test_dir.path().join("stale.txt");
     std::fs::write(&file_path, "stale").unwrap();
-    ensure_path_in_db(&db_path, &test_dir.path().to_string_lossy(), &writer);
+    ensure_path_in_db(&db_path, &native_text(test_dir.path()), &writer);
 
     let mut reconciler = EventReconciler::new();
-    reconciler.buffer_event(make_event(&file_path.to_string_lossy(), 3, created_file_flags()));
-    reconciler.buffer_event(make_event(&file_path.to_string_lossy(), 7, modified_file_flags()));
+    reconciler.buffer_event(make_event(&native_text(&file_path), 3, created_file_flags()));
+    reconciler.buffer_event(make_event(&native_text(&file_path), 7, modified_file_flags()));
 
     let mut callback_called = false;
     let result = reconciler

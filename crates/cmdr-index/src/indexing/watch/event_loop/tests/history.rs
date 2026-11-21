@@ -3,6 +3,7 @@
 
 use super::*;
 use crate::indexing::hold::{HoldKind, VolumeWork};
+use crate::indexing::paths::app_text::native_text;
 use crate::indexing::reconcile::reconciler::EventReconciler;
 use crate::indexing::watch::branches::{self, WatchScope};
 use crate::indexing::writer::IndexWriter;
@@ -55,7 +56,7 @@ async fn epochs_after_first_event(name: &str, history_check: Option<u64>, first_
     let gone = dir.path().join("never-existed.txt");
     watcher
         .send(make_event(
-            &gone.to_string_lossy(),
+            &native_text(&gone),
             first_event_id,
             watcher::FsEventFlags {
                 item_modified: true,

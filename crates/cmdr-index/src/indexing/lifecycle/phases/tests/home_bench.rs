@@ -2,6 +2,7 @@
 //! than a test.
 
 use super::*;
+use crate::indexing::paths::app_text::native_text;
 
 /// What covering a REAL home folder costs, and when the early signal fires inside
 /// that. `#[ignore]`d: it walks the machine's actual `$HOME` (into a temp index),
@@ -118,7 +119,7 @@ fn frontier_len(db_path: &Path, home: &Path) -> u64 {
     let Ok(conn) = IndexStore::open_read_connection(db_path) else {
         return 0;
     };
-    let home = home.to_string_lossy();
+    let home = native_text(home);
     coverage_for_scope(
         &conn,
         "/",

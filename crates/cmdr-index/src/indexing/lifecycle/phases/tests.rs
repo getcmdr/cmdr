@@ -1,5 +1,6 @@
 //! What the phase machine has to get right, over a real temp tree.
 
+use crate::indexing::paths::app_text::native_text;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
 
@@ -68,7 +69,7 @@ impl Tree {
     /// about what happens BELOW it, so the chain above is scaffolding.
     fn seed_chain(&self, path: &Path) -> i64 {
         let conn = IndexStore::open_write_connection(&self.db_path).expect("write connection");
-        let path_str = path.to_string_lossy();
+        let path_str = native_text(path);
         let mut parent_id = ROOT_ID;
         for component in path_str.split('/').filter(|c| !c.is_empty()) {
             parent_id = match IndexStore::resolve_component(&conn, parent_id, component) {
@@ -94,7 +95,7 @@ impl Tree {
     }
 
     fn path(&self, relative: &str) -> String {
-        self.tree.path().join(relative).to_string_lossy().to_string()
+        native_text(&self.tree.path().join(relative)).to_string()
     }
 
     fn make(&self, dirs: &[&str], files: &[&str]) {
@@ -465,7 +466,7 @@ impl Drive {
     }
 
     fn path(&self, relative: &str) -> String {
-        self.tree.path().join(relative).to_string_lossy().to_string()
+        native_text(&self.tree.path().join(relative)).to_string()
     }
 
     fn db_path(&self) -> PathBuf {

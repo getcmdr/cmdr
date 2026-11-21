@@ -9,6 +9,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use crate::indexing::IndexPathSpace;
+use crate::indexing::paths::app_text::{native_name, native_text};
 use crate::indexing::read::enrichment::{self, ReadPool};
 use crate::indexing::reconcile::reconciler::{self, EventReconciler};
 use crate::indexing::store::{EntryRow, IndexStore, ROOT_ID};
@@ -718,7 +719,7 @@ fn mixed_storm_reaches_consistent_fixed_point() {
         entries.push(EntryRow {
             id,
             parent_id,
-            name: c.as_os_str().to_string_lossy().to_string(),
+            name: native_name(c.as_os_str()).into_owned(),
             is_directory: true,
             is_symlink: false,
             logical_size: None,
@@ -779,7 +780,7 @@ fn mixed_storm_reaches_consistent_fixed_point() {
     let new_keep_file = keep.join("k_new.dat");
     std::fs::write(&new_keep_file, b"zz").unwrap();
 
-    let root_str = canonical_root.to_string_lossy().to_string();
+    let root_str = native_text(&canonical_root).to_string();
 
     // Build ONE batch mixing: the bulk removal storm (all files + the bulk rmdir),
     // a modify + create under keep, and a must_scan_sub_dirs on keep (the
@@ -816,7 +817,7 @@ fn mixed_storm_reaches_consistent_fixed_point() {
         },
     );
     ev += 1;
-    let new_keep_path = new_keep_file.to_string_lossy().to_string();
+    let new_keep_path = native_text(&new_keep_file).to_string();
     batch.insert(
         new_keep_path.clone(),
         FsChangeEvent {
@@ -990,7 +991,7 @@ fn test_listings_complete_under_reconciler_load_and_rapid_navigation() {
     let mut components: Vec<String> = Vec::new();
     for c in canonical_root.components().skip(1) {
         // skip the root `/`
-        components.push(c.as_os_str().to_string_lossy().to_string());
+        components.push(native_name(c.as_os_str()).into_owned());
     }
     for c in &components {
         let id = next_id;
@@ -1086,7 +1087,7 @@ fn test_listings_complete_under_reconciler_load_and_rapid_navigation() {
             let stop = Arc::clone(&stop_storm);
             let events_fired = Arc::clone(&events_fired);
             let db_path = db_path.clone();
-            let root_str = canonical_root.to_string_lossy().to_string();
+            let root_str = native_text(&canonical_root).to_string();
             std::thread::spawn(move || {
                 let conn = match IndexStore::open_read_connection(&db_path) {
                     Ok(c) => c,
@@ -1209,14 +1210,14 @@ fn test_listings_complete_under_reconciler_load_and_rapid_navigation() {
                 let mut entries: Vec<FileEntry> = dir_entries
                     .iter()
                     .map(|e| {
-                        let name = e.file_name().to_string_lossy().to_string();
+                        let name = native_name(&e.file_name()).into_owned();
                         let p = e.path();
                         let is_dir = p.is_dir();
-                        FileEntry::new(name, p.to_string_lossy().to_string(), is_dir, false)
+                        FileEntry::new(name, native_text(&p).to_string(), is_dir, false)
                     })
                     .collect();
                 // 2) enrich -- this is the dominant cost when the index is contended.
-                let parent_path = path.to_string_lossy().to_string();
+                let parent_path = native_text(&path).to_string();
                 let enrich_start = Instant::now();
                 let _ = pool.with_conn(|conn| enrichment::enrich_via_parent_id_on(&mut entries, conn, &parent_path, 1));
                 let enrich_ms = enrich_start.elapsed().as_millis();

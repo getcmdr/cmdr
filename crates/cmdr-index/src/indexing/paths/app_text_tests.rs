@@ -93,3 +93,57 @@ fn stored_text_reads_back_as_its_own_place_or_none_never_a_look_alike() {
     assert!(app_path_of("/Volumes/s/x\u{10FEC3}\u{10FEA9}").is_none());
     assert!(app_path_of("/Volumes/s/../x").is_none());
 }
+
+#[cfg(unix)]
+#[test]
+fn a_native_unicode_path_is_its_own_text_borrowed_in_both_unicode_forms() {
+    // `é` precomposed (NFC) and decomposed (NFD): APFS keeps whichever the name was made
+    // with, and the index stores those bytes untouched.
+    for text in [
+        "/Users/test_user_1/caf\u{e9}.txt",
+        "/Users/test_user_1/cafe\u{301}.txt",
+        "/",
+        "/Volumes/NAS share/a b",
+        // Shapes the OS opens but an app path folds: kept as spelled, as always stored.
+        "/Volumes/X/",
+        "/a//b",
+        "relative/x",
+    ] {
+        let got = native_text(Path::new(text));
+        assert_eq!(got, text);
+        assert!(matches!(got, Cow::Borrowed(_)), "{text} is borrowed");
+    }
+    let name = native_name(OsStr::new("cafe\u{301}"));
+    assert_eq!(name, "cafe\u{301}");
+    assert!(matches!(name, Cow::Borrowed(_)));
+}
+
+#[cfg(unix)]
+#[test]
+fn a_native_name_the_app_path_cant_hold_keeps_its_lossy_row_and_is_counted() {
+    use std::os::unix::ffi::OsStrExt;
+    let before = names_kept_lossy();
+    let bytes = OsStr::from_bytes(b"/Volumes/caf\xe9");
+    assert_eq!(native_text(Path::new(bytes)), "/Volumes/caf\u{FFFD}");
+    assert_eq!(native_name(OsStr::from_bytes(b"caf\xe9")), "caf\u{FFFD}");
+    // A literal escape-range code point is Unicode text the app path would escape: kept.
+    let literal = "/Volumes/x\u{10FEE9}";
+    assert_eq!(native_text(Path::new(literal)), literal);
+    assert!(names_kept_lossy() >= before + 3, "each one is counted");
+}
+
+#[cfg(windows)]
+#[test]
+fn a_native_windows_path_is_stored_in_the_app_spelling() {
+    for (native, text) in [
+        (r"D:\src\cmdr\x", "D:/src/cmdr/x"),
+        (r"D:\src/cmdr\x", "D:/src/cmdr/x"),
+        (r"\\?\D:\src\x", "D:/src/x"),
+        (r"C:\", "C:/"),
+        (r"\\testnas.local\share\x", "//testnas.local/share/x"),
+    ] {
+        assert_eq!(native_text(Path::new(native)), text, "{native}");
+    }
+    let already = native_text(Path::new("D:/src/x"));
+    assert!(matches!(already, Cow::Borrowed("D:/src/x")), "app spelling is borrowed");
+}

@@ -5,6 +5,7 @@
 //! Split out so `tests.rs` (the walker's own behavior) and `convergence_tests.rs`
 //! (what a cancelled walk leaves behind) build their trees the same way.
 
+use crate::indexing::paths::app_text::native_text;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
@@ -56,7 +57,7 @@ pub(super) fn setup_writer() -> (IndexWriter, PathBuf, tempfile::TempDir) {
 /// Also syncs the writer's shared `next_id` counter with the DB.
 pub(super) fn ensure_path_in_db(db_path: &Path, path: &Path, writer: &IndexWriter) {
     let conn = IndexStore::open_write_connection(db_path).unwrap();
-    let path_str = path.to_string_lossy();
+    let path_str = native_text(path);
     let components: Vec<&str> = path_str.split('/').filter(|c| !c.is_empty()).collect();
     let mut parent_id = ROOT_ID;
     for component in components {

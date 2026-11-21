@@ -4,6 +4,7 @@
 use super::test_fixtures::{create_test_tree, ensure_path_in_db, scan_test_tempdir, setup_writer};
 use super::*;
 use crate::indexing::hold;
+use crate::indexing::paths::app_text::native_text;
 use crate::indexing::store::{self, IndexStore, ROOT_ID, ScanContext};
 use cmdr_fs::firmlinks;
 use std::fs;
@@ -38,7 +39,7 @@ fn rebuild_a_root_that_went_away() -> Vec<String> {
     ensure_path_in_db(&db_path, &sub, &writer);
     let space = IndexPathSpace::root();
     let work = VolumeWork::for_test("rebuild-gate-test");
-    let sub_str = sub.to_string_lossy().to_string();
+    let sub_str = native_text(&sub).to_string();
 
     scan_subtree(&sub, &space, &writer, &work).expect("the first rebuild walks");
     writer.flush_blocking().unwrap();
@@ -89,7 +90,7 @@ fn a_rebuild_of_a_readable_root_still_drops_what_is_gone() {
     ensure_path_in_db(&db_path, &sub, &writer);
     let space = IndexPathSpace::root();
     let work = VolumeWork::for_test("rebuild-gate-test");
-    let sub_str = sub.to_string_lossy().to_string();
+    let sub_str = native_text(&sub).to_string();
 
     scan_subtree(&sub, &space, &writer, &work).expect("the first rebuild walks");
     writer.flush_blocking().unwrap();
@@ -452,7 +453,7 @@ fn scan_subtree_only() {
     // Children should be listed under that ID, not ROOT_ID.
     let store = IndexStore::open(&db_path).unwrap();
     let conn = store.read_conn();
-    let subtree_id = store::resolve_path(conn, &subtree_root.to_string_lossy())
+    let subtree_id = store::resolve_path(conn, &native_text(&subtree_root))
         .unwrap()
         .expect("subtree root should be in DB");
     let children = store.list_children(subtree_id).unwrap();
@@ -493,7 +494,7 @@ fn a_subtree_scan_cancelled_before_it_reads_destroys_nothing() {
     let subtree_id = {
         let store = IndexStore::open(&db_path).unwrap();
         let conn = store.read_conn();
-        let id = store::resolve_path(conn, &subtree_root.to_string_lossy())
+        let id = store::resolve_path(conn, &native_text(&subtree_root))
             .unwrap()
             .expect("subtree root indexed");
         assert!(

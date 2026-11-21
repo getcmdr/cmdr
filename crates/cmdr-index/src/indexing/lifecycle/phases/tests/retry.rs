@@ -8,6 +8,7 @@
 //! live reconciler writes for a folder somebody just created — present, and listed
 //! by nobody, which is frontier by the descent rule.
 
+use crate::indexing::paths::app_text::native_text;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -228,7 +229,7 @@ impl CreatesAFolderAfterEveryWalk {
         };
         // The volume root, which the stitch listed on its way to the first phase
         // root, so a folder under it lands on ground the index already claims.
-        let Some(parent_id) = id_of(&writer, tree, &tree.to_string_lossy()) else {
+        let Some(parent_id) = id_of(&writer, tree, &native_text(tree)) else {
             return;
         };
         let id = writer.next_id().fetch_add(1, Ordering::Relaxed);
@@ -310,7 +311,7 @@ impl EventSink for AsksForARetryMidRun {
 /// — off the writer's own database, since the sink has no fixture to ask.
 fn id_of(writer: &IndexWriter, tree: &Path, path: &str) -> Option<i64> {
     let conn = IndexStore::open_read_connection(&writer.db_path()).ok()?;
-    let space = IndexPathSpace::mount_rooted(tree.join("").to_string_lossy().into_owned());
+    let space = IndexPathSpace::mount_rooted(native_text(&tree.join("")).into_owned());
     let relative = space.index_relative(path)?;
     crate::indexing::store::resolve_path(&conn, &relative).ok().flatten()
 }

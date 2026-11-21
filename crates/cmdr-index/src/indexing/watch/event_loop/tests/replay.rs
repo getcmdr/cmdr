@@ -1,6 +1,7 @@
 //! The cold-start replay's own exits: whatever way it ends, it leaves the writer
 //! committing.
 
+use crate::indexing::paths::app_text::native_text;
 use std::sync::Arc;
 
 use super::*;
@@ -54,7 +55,7 @@ async fn a_replay_that_falls_back_over_budget_leaves_the_writer_committing() {
     let created = dir.path().join("created.txt");
     watcher
         .send(make_event(
-            &created.to_string_lossy(),
+            &native_text(&created),
             SINCE + 1,
             watcher::FsEventFlags {
                 item_created: true,

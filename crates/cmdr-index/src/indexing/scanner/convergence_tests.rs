@@ -10,6 +10,7 @@
 //! 2. A walk never removes a row it did not write, so an interrupted walk can
 //!    only ever leave the index better-informed than it found it.
 
+use crate::indexing::paths::app_text::native_text;
 use std::path::{Path, PathBuf};
 
 use super::test_fixtures::{self, MockChild, MockTree, dir, file, setup_writer};
@@ -51,7 +52,7 @@ fn seed_chain(db_path: &Path, path: &Path, writer: &IndexWriter) -> i64 {
         &exclusion_policy_fingerprint(ExclusionTier::BootDisk),
     )
     .expect("stamp policy");
-    crate::indexing::store::resolve_path(&conn, &path.to_string_lossy())
+    crate::indexing::store::resolve_path(&conn, &native_text(path))
         .expect("resolve")
         .expect("seeded path")
 }
@@ -134,9 +135,9 @@ fn a_cancelled_walk_leaves_durable_partial_coverage() {
     writer.flush_blocking().expect("flush");
     writer.shutdown();
 
-    let a_str = a.to_string_lossy().to_string();
-    let b_str = b.to_string_lossy().to_string();
-    let c_str = c.to_string_lossy().to_string();
+    let a_str = native_text(&a).to_string();
+    let b_str = native_text(&b).to_string();
+    let c_str = native_text(&c).to_string();
 
     let (a_listed, a_min) = coverage_columns(&db_path, &a_str);
     let (b_listed, b_min) = coverage_columns(&db_path, &b_str);
@@ -227,7 +228,7 @@ fn a_folder_the_walk_cannot_read_stops_re_entering_the_frontier() {
 
     let conn = IndexStore::open_read_connection(&db_path).expect("read connection");
     let unreadable_flag = |path: &Path| {
-        let id = crate::indexing::store::resolve_path(&conn, &path.to_string_lossy())
+        let id = crate::indexing::store::resolve_path(&conn, &native_text(path))
             .expect("resolve")
             .expect("row");
         IndexStore::get_unreadable_cause_by_id(&conn, id)
@@ -263,8 +264,8 @@ fn a_folder_the_walk_cannot_read_stops_re_entering_the_frontier() {
 
     let mut map = coverage_for_scope(
         &conn,
-        &a.to_string_lossy(),
-        &a.to_string_lossy(),
+        &native_text(&a),
+        &native_text(&a),
         ExclusionTier::BootDisk,
         CoverageDimension::Listing,
     )
@@ -278,11 +279,11 @@ fn a_folder_the_walk_cannot_read_stops_re_entering_the_frontier() {
         "nothing is offered to the next walk: every folder here was either read or recorded, got {:?}",
         map.frontier
     );
-    let (mut fixable, mut off_limits) = (Vec::new(), vec![root_only.to_string_lossy().to_string()]);
+    let (mut fixable, mut off_limits) = (Vec::new(), vec![native_text(&root_only).to_string()]);
     if tcc == UnreadableCause::Denied {
-        fixable.push(denied.to_string_lossy().to_string());
+        fixable.push(native_text(&denied).to_string());
     } else {
-        off_limits.push(denied.to_string_lossy().to_string());
+        off_limits.push(native_text(&denied).to_string());
         off_limits.sort();
     }
     assert_eq!(
@@ -292,7 +293,7 @@ fn a_folder_the_walk_cannot_read_stops_re_entering_the_frontier() {
     assert_eq!(map.off_limits, off_limits, "each refusal in its own list");
     assert_eq!(
         map.abandoned,
-        vec![flaky.to_string_lossy().to_string()],
+        vec![native_text(&flaky).to_string()],
         "❌ never in `permission_denied`: offering Full Disk Access for a dead mount is advice that does nothing"
     );
 }
@@ -355,7 +356,7 @@ fn walk_a_wedged_dir_while(drive_is_there: bool) -> (Result<ScanSummary, ScanErr
     writer.shutdown();
 
     let conn = IndexStore::open_read_connection(&db_path).expect("read connection");
-    let cause = crate::indexing::store::resolve_path(&conn, &wedged.to_string_lossy())
+    let cause = crate::indexing::store::resolve_path(&conn, &native_text(&wedged))
         .expect("resolve")
         .and_then(|id| IndexStore::get_unreadable_cause_by_id(&conn, id).expect("cause"))
         .flatten();
@@ -427,7 +428,7 @@ fn marking_abandoned_ground_costs_no_coverage() {
     let conn = IndexStore::open_read_connection(&db_path).expect("read connection");
     let epoch = IndexStore::read_current_epoch(&conn).expect("epoch");
     let row = |path: &Path| {
-        let id = crate::indexing::store::resolve_path(&conn, &path.to_string_lossy())
+        let id = crate::indexing::store::resolve_path(&conn, &native_text(path))
             .expect("resolve")
             .expect("row");
         let listed: u64 = conn
@@ -457,14 +458,14 @@ fn marking_abandoned_ground_costs_no_coverage() {
 
     let map = coverage_for_scope(
         &conn,
-        &a.to_string_lossy(),
-        &a.to_string_lossy(),
+        &native_text(&a),
+        &native_text(&a),
         ExclusionTier::BootDisk,
         CoverageDimension::Listing,
     )
     .expect("coverage");
     assert!(map.frontier.is_empty(), "nothing to re-walk, got {:?}", map.frontier);
-    assert_eq!(map.abandoned, vec![wedged.to_string_lossy().to_string()]);
+    assert_eq!(map.abandoned, vec![native_text(&wedged).to_string()]);
 }
 
 // ── 2. A walk never removes a row it did not write ───────────────────
@@ -494,7 +495,7 @@ fn a_frontier_node_can_hold_a_listed_descendant() {
         .send(WriteMessage::UpsertEntryV2 {
             parent_id: crate::indexing::store::resolve_path(
                 &IndexStore::open_read_connection(&db_path).unwrap(),
-                &f.to_string_lossy(),
+                &native_text(&f),
             )
             .unwrap()
             .unwrap(),
@@ -518,13 +519,13 @@ fn a_frontier_node_can_hold_a_listed_descendant() {
     writer.flush_blocking().expect("flush");
     writer.shutdown();
 
-    let (f_listed, _) = coverage_columns(&db_path, &f.to_string_lossy());
-    let (g_listed, _) = coverage_columns(&db_path, &g.to_string_lossy());
+    let (f_listed, _) = coverage_columns(&db_path, &native_text(&f));
+    let (g_listed, _) = coverage_columns(&db_path, &native_text(&g));
     assert_eq!(f_listed, 0, "F was never listed, so a search sees it as frontier");
     assert!(g_listed > 0, "G was walked, so the index genuinely knows its contents");
     assert_eq!(
-        frontier(&db_path, &f.to_string_lossy()),
-        vec![f.to_string_lossy().to_string()],
+        frontier(&db_path, &native_text(&f)),
+        vec![native_text(&f).to_string()],
         "the frontier cuts at F and never looks below it, which is what puts G in the blast radius"
     );
 }
@@ -552,12 +553,10 @@ fn covering_a_frontier_node_never_removes_a_row_it_did_not_write() {
     let g = f.join("G");
     seed_chain(&db_path, &f, &writer);
 
-    let f_id = crate::indexing::store::resolve_path(
-        &IndexStore::open_read_connection(&db_path).unwrap(),
-        &f.to_string_lossy(),
-    )
-    .unwrap()
-    .unwrap();
+    let f_id =
+        crate::indexing::store::resolve_path(&IndexStore::open_read_connection(&db_path).unwrap(), &native_text(&f))
+            .unwrap()
+            .unwrap();
     writer
         .send(WriteMessage::UpsertEntryV2 {
             parent_id: f_id,
@@ -579,7 +578,7 @@ fn covering_a_frontier_node_never_removes_a_row_it_did_not_write() {
     cover_subtree_with_reader(&g, &IndexPathSpace::root(), &writer, None, &work, reader, None).expect("walk G");
     writer.flush_blocking().expect("flush");
 
-    let g_rows_before = child_ids(&db_path, &g.to_string_lossy());
+    let g_rows_before = child_ids(&db_path, &native_text(&g));
     assert_eq!(g_rows_before.len(), 10, "precondition: G's ten files are in the index");
 
     // Now cover F, the frontier node above it. G is unreadable this time round,
@@ -600,11 +599,11 @@ fn covering_a_frontier_node_never_removes_a_row_it_did_not_write() {
         "F isn't virgin ground, so the add-only walk must refuse it, got {outcome:?}"
     );
     assert_eq!(
-        child_ids(&db_path, &g.to_string_lossy()),
+        child_ids(&db_path, &native_text(&g)),
         g_rows_before,
         "covering F must leave every row it did not write exactly where it was"
     );
-    let (g_listed, _) = coverage_columns(&db_path, &g.to_string_lossy());
+    let (g_listed, _) = coverage_columns(&db_path, &native_text(&g));
     assert!(
         g_listed > 0,
         "and G must keep the coverage an earlier pass earned for it"

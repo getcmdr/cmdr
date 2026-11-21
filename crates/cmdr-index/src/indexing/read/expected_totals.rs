@@ -8,6 +8,7 @@
 //! Returns `None` if the index isn't covering all sources: partial totals
 //! would be misleading.
 
+use crate::indexing::paths::app_text::native_text;
 use std::path::{Path, PathBuf};
 
 use rusqlite::Connection;
@@ -55,7 +56,7 @@ pub(crate) fn sum_expected_totals(conn: &Connection, sources: &[PathBuf]) -> Opt
 }
 
 fn per_source_contribution(conn: &Connection, source: &Path) -> Option<ExpectedTotals> {
-    let normalized = firmlinks::normalize_path(&source.to_string_lossy());
+    let normalized = firmlinks::normalize_path(&native_text(source));
     let entry_id = store::resolve_path(conn, &normalized).ok().flatten()?;
     let entry: EntryRow = IndexStore::get_entry_by_id(conn, entry_id).ok().flatten()?;
 

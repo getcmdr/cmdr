@@ -19,6 +19,7 @@
 //!
 //! [`VolumeProvider::mount_points`]: crate::indexing::host::volumes::VolumeProvider::mount_points
 
+use crate::indexing::paths::app_text::native_text;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, OnceLock, RwLock};
 use std::time::{Duration, Instant};
@@ -70,7 +71,7 @@ impl BootTreeMounts {
             .into_iter()
             .filter(|mount| BOOT_TREE_CUT.cuts(mount))
             .filter_map(|mount| {
-                let raw = mount.path.to_string_lossy();
+                let raw = native_text(&mount.path);
                 let trimmed = raw.trim_end_matches('/');
                 if trimmed.is_empty() {
                     return None; // `/`, the boot disk itself

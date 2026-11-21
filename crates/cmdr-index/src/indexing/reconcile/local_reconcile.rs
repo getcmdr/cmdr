@@ -45,6 +45,7 @@
 //! `ComputeAllAggregates`) runs IN-THREAD, exactly as `scan_volume` does its
 //! marks + aggregate before the thread joins.
 
+use crate::indexing::paths::app_text::native_text;
 use std::collections::{HashSet, VecDeque};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -427,7 +428,7 @@ fn run_local_reconcile(
     // strip is applied at `resolve_abs`, while `root_str` stays absolute for the FS
     // walk below. Resolving it (rather than hardcoding `ROOT_ID`) also lets the
     // walker be exercised from any root in tests.
-    let root_str = space.absolute(&root.to_string_lossy());
+    let root_str = space.absolute(&native_text(root));
     let root_id = match space
         .resolve_abs(&conn, &root_str)
         .map_err(|e| ScanError::WriterSend(e.to_string()))?

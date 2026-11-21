@@ -2,6 +2,7 @@
 //! and the `process_live_batch` end-to-end rename, plus their shared fixtures.
 
 use super::*;
+use crate::indexing::paths::app_text::native_text;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::atomic::Ordering;
@@ -38,7 +39,7 @@ pub(super) fn rename_test_setup() -> (IndexWriter, PathBuf, tempfile::TempDir) {
 /// dir's entry_id. Mirrors `verifier::tests::ensure_path_in_db`.
 pub(super) fn insert_path_chain(db_path: &Path, path: &Path, writer: &IndexWriter) -> i64 {
     let conn = IndexStore::open_write_connection(db_path).unwrap();
-    let path_str = path.to_string_lossy();
+    let path_str = native_text(path);
     let components: Vec<&str> = path_str.split('/').filter(|c| !c.is_empty()).collect();
     let mut parent_id = ROOT_ID;
     for component in components {
@@ -313,8 +314,8 @@ fn detect_renames_by_inode_same_parent_uses_move_and_preserves_stats() {
     };
 
     let mut events = vec![(
-        new_dir_path.to_string_lossy().to_string(),
-        renamed_event(&new_dir_path.to_string_lossy(), 100),
+        native_text(&new_dir_path).to_string(),
+        renamed_event(&native_text(&new_dir_path), 100),
     )];
     let mut pending_paths = HashSet::new();
     let mut max_event_id = 0u64;
@@ -332,12 +333,12 @@ fn detect_renames_by_inode_same_parent_uses_move_and_preserves_stats() {
 
     assert_eq!(
         handled,
-        vec![new_dir_path.to_string_lossy().to_string()],
+        vec![native_text(&new_dir_path).to_string()],
         "should detect the rename, emit one MoveEntryV2, and hand the matched path back"
     );
     assert_eq!(events.len(), 0, "matched event should be removed from the batch");
     assert_eq!(max_event_id, 100);
-    assert!(pending_paths.contains(&fs_root.path().to_string_lossy().to_string()));
+    assert!(pending_paths.contains(&native_text(fs_root.path()).to_string()));
 
     let read_conn = IndexStore::open_write_connection(&db_path).unwrap();
     let entry = IndexStore::get_entry_by_id(&read_conn, foo_id).unwrap().unwrap();
@@ -419,8 +420,8 @@ fn detect_renames_by_inode_cross_parent_propagates_deltas() {
     drop(conn);
 
     let mut events = vec![(
-        new_dir_path.to_string_lossy().to_string(),
-        renamed_event(&new_dir_path.to_string_lossy(), 200),
+        native_text(&new_dir_path).to_string(),
+        renamed_event(&native_text(&new_dir_path), 200),
     )];
     let mut pending_paths = HashSet::new();
     let mut max_event_id = 0u64;
@@ -478,8 +479,8 @@ fn detect_renames_by_inode_never_moves_a_row_under_itself() {
     };
 
     let mut events = vec![(
-        child.to_string_lossy().to_string(),
-        renamed_event(&child.to_string_lossy(), 300),
+        native_text(&child).to_string(),
+        renamed_event(&native_text(&child), 300),
     )];
     let mut pending_paths = HashSet::new();
     let mut max_event_id = 0u64;
@@ -522,8 +523,8 @@ fn detect_renames_by_inode_no_match_keeps_event() {
     drop(conn);
 
     let mut events = vec![(
-        new_dir_path.to_string_lossy().to_string(),
-        renamed_event(&new_dir_path.to_string_lossy(), 50),
+        native_text(&new_dir_path).to_string(),
+        renamed_event(&native_text(&new_dir_path), 50),
     )];
     let mut pending_paths = HashSet::new();
     let mut max_event_id = 0u64;
@@ -586,8 +587,8 @@ fn inode_reuse_is_never_a_false_move_when_inodes_are_nulled() {
                 .unwrap();
         }
         let mut events = vec![(
-            reused_path.to_string_lossy().to_string(),
-            renamed_event(&reused_path.to_string_lossy(), 100),
+            native_text(&reused_path).to_string(),
+            renamed_event(&native_text(&reused_path), 100),
         )];
         let mut pending_paths = HashSet::new();
         let mut max_event_id = 0u64;
@@ -640,7 +641,7 @@ fn detect_renames_by_inode_ignores_non_renamed_events() {
 
     // Non-renamed event (item_modified): the pre-pass must ignore it.
     let modified = make_event(
-        &new_dir_path.to_string_lossy(),
+        &native_text(&new_dir_path),
         42,
         watcher::FsEventFlags {
             item_modified: true,
@@ -648,7 +649,7 @@ fn detect_renames_by_inode_ignores_non_renamed_events() {
             ..Default::default()
         },
     );
-    let mut events = vec![(new_dir_path.to_string_lossy().to_string(), modified)];
+    let mut events = vec![(native_text(&new_dir_path).to_string(), modified)];
     let mut pending_paths = HashSet::new();
     let mut max_event_id = 0u64;
 
@@ -746,8 +747,8 @@ fn process_live_batch_rename_preserves_dir_stats_and_old_path_no_ops() {
     // Build the batch the way the live loop would: HashMap keyed by
     // path, both halves of the rename pair present.
     let mut pending_events: HashMap<String, watcher::FsChangeEvent> = HashMap::new();
-    let new_path_str = new_dir_path.to_string_lossy().to_string();
-    let old_path_str = fs_root.path().join("Foo").to_string_lossy().to_string();
+    let new_path_str = native_text(&new_dir_path).to_string();
+    let old_path_str = native_text(&fs_root.path().join("Foo")).to_string();
     pending_events.insert(new_path_str.clone(), renamed_event(&new_path_str, 200));
     pending_events.insert(old_path_str.clone(), renamed_event(&old_path_str, 201));
 

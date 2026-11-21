@@ -4,6 +4,7 @@
 //! journal position land together at a drain, nothing past it does, and a replay
 //! that resumes from there ends with every change applied once.
 
+use crate::indexing::paths::app_text::native_text;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
@@ -49,7 +50,7 @@ impl Fixture {
     }
 
     fn space(&self) -> IndexPathSpace {
-        IndexPathSpace::mount_rooted(self.mount.path().to_string_lossy().into_owned())
+        IndexPathSpace::mount_rooted(native_text(self.mount.path()).into_owned())
     }
 
     fn path(&self, name: &str) -> PathBuf {
@@ -81,7 +82,7 @@ impl Fixture {
 
     fn is_indexed(&self, name: &str) -> bool {
         self.space()
-            .resolve_abs(&self.reader(), &self.path(name).to_string_lossy())
+            .resolve_abs(&self.reader(), &native_text(&self.path(name)))
             .expect("readable")
             .is_some()
     }
@@ -109,7 +110,7 @@ impl Fixture {
                 work: work.clone(),
                 ground: cover::Claim::take(
                     volume_id,
-                    vec![self.mount.path().to_string_lossy().into_owned()],
+                    vec![native_text(self.mount.path()).into_owned()],
                     cover::Holder::Rewriting,
                 ),
                 budget,
@@ -140,7 +141,7 @@ impl Replay {
         self.sender
             .as_ref()
             .expect("the stream is open")
-            .send(make_event(&path.to_string_lossy(), event_id, flags))
+            .send(make_event(&native_text(path), event_id, flags))
             .expect("send");
     }
 

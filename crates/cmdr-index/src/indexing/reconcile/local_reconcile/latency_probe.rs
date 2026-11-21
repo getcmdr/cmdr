@@ -14,6 +14,7 @@
 //! call, so the whole engine is unit-testable without a filesystem or a running
 //! app.
 
+use crate::indexing::paths::app_text::native_text;
 use std::path::Path;
 use std::time::{Duration, Instant};
 
@@ -167,7 +168,7 @@ impl LatencyProbe {
     /// Record one directory read, then emit a rollup if the period elapsed.
     pub(super) fn record(&mut self, path: &Path, dur: Duration, timed_out: bool, now: Instant) {
         self.buckets[bucket_index(dur)] += 1;
-        let path_str = path.to_string_lossy();
+        let path_str = native_text(path);
         if self.is_synthetic(&path_str) {
             self.synthetic.record(dur, timed_out);
         } else {
@@ -252,7 +253,7 @@ fn default_synthetic_roots() -> Vec<String> {
     };
     SYNTHETIC_SUFFIXES
         .iter()
-        .map(|suffix| home.join(suffix).to_string_lossy().to_string())
+        .map(|suffix| native_text(&home.join(suffix)).to_string())
         .collect()
 }
 

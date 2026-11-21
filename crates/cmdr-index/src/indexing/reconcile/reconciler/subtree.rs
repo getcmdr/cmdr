@@ -5,6 +5,7 @@
 //! `FullRefresh`) and the cover walk's repair path. Safe to interrupt at any point:
 //! the DB is never left in a partially-deleted state.
 
+use crate::indexing::paths::app_text::{native_name, native_text};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
@@ -138,7 +139,7 @@ pub(in crate::indexing) fn reconcile_subtree(
     // The absolute path in this volume's world (firmlink-normalized for the boot
     // disk, raw for a mount-rooted drive); the mount-relative strip is applied only
     // at the `resolve_abs` argument, so `root_str` stays absolute for the FS reads.
-    let root_str = space.absolute(&root.to_string_lossy());
+    let root_str = space.absolute(&native_text(root));
     let root_id = match space.resolve_abs(conn, &root_str) {
         Ok(Some(id)) => id,
         Ok(None) => {
@@ -229,7 +230,7 @@ pub(in crate::indexing) fn reconcile_subtree(
 
             let name = root
                 .file_name()
-                .map(|n| n.to_string_lossy().to_string())
+                .map(|n| native_name(n).into_owned())
                 .unwrap_or_default();
             let snap = extract_metadata(&metadata, metadata.is_dir(), metadata.is_symlink());
             let _ = writer.send(WriteMessage::UpsertEntryV2 {
@@ -325,7 +326,7 @@ pub(in crate::indexing) fn reconcile_subtree(
         // We successfully listed this dir's direct contents (an empty listing
         // still counts). Stamp it at the current epoch after the walk.
         listed_dir_ids.push(dir_id);
-        if space.absolute(&dir_path.to_string_lossy()) == space.volume_root_string() {
+        if space.absolute(&native_text(&dir_path)) == space.volume_root_string() {
             // The volume ROOT listed, which is half of what clears the delete
             // generation; the presence read below is the other half.
             deletes::root_listed(work.volume_id());
@@ -394,7 +395,7 @@ pub(in crate::indexing) fn reconcile_subtree(
                 log::warn!("reconcile_subtree: flush failed: {e}");
             }
             for new_dir in new_dir_paths.drain(..) {
-                let path_str = space.absolute(&new_dir.to_string_lossy());
+                let path_str = space.absolute(&native_text(&new_dir));
                 if let Ok(Some(id)) = space.resolve_abs(conn, &path_str) {
                     queue.push_back((new_dir, id));
                 }

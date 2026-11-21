@@ -7,6 +7,7 @@
 //! ever ran). `tests.rs` next door drives the same walk over an index that already
 //! exists.
 
+use crate::indexing::paths::app_text::native_text;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -130,7 +131,7 @@ impl ColdDrive {
     }
 
     fn path(&self, relative: &str) -> String {
-        self.tree.path().join(relative).to_string_lossy().to_string()
+        native_text(&self.tree.path().join(relative)).to_string()
     }
 
     /// This drive's index database, whether or not anything has created it yet.

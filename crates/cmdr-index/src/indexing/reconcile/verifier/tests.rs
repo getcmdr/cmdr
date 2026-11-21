@@ -2,6 +2,7 @@
 
 use super::*;
 use crate::indexing::hold::{self, HoldKind, Release};
+use crate::indexing::paths::app_text::{native_name, native_text};
 use crate::indexing::read::enrichment::{
     READ_POOL_TEST_MUTEX, ReadPool, install_read_pool as install_pool_for, uninstall_read_pool,
 };
@@ -65,7 +66,7 @@ fn remove_read_pool() {
 /// Also syncs the writer's shared `next_id` counter with the DB.
 fn ensure_path_in_db(db_path: &Path, path: &Path, writer: &IndexWriter) -> i64 {
     let conn = IndexStore::open_write_connection(db_path).unwrap();
-    let path_str = path.to_string_lossy();
+    let path_str = native_text(path);
     let components: Vec<&str> = path_str.split('/').filter(|c| !c.is_empty()).collect();
     let mut parent_id = ROOT_ID;
     for component in components {
@@ -85,7 +86,7 @@ fn ensure_path_in_db(db_path: &Path, path: &Path, writer: &IndexWriter) -> i64 {
 /// Insert children under a parent_id matching what's on disk.
 fn insert_children_from_disk(writer: &IndexWriter, parent_id: i64, dir_path: &Path) {
     for entry in fs::read_dir(dir_path).unwrap().flatten() {
-        let name = entry.file_name().to_string_lossy().to_string();
+        let name = native_name(&entry.file_name()).into_owned();
         let metadata = fs::symlink_metadata(entry.path()).unwrap();
         let is_dir = metadata.is_dir();
         let is_symlink = metadata.is_symlink();
@@ -111,7 +112,7 @@ fn insert_children_from_disk(writer: &IndexWriter, parent_id: i64, dir_path: &Pa
 async fn verify_root(dir: &Path, writer: &IndexWriter) -> Vec<String> {
     verify_and_correct(
         crate::ROOT_VOLUME_ID,
-        &dir.to_string_lossy(),
+        &native_text(dir),
         &IndexPathSpace::root(),
         writer,
         &VolumeWork::for_test(crate::ROOT_VOLUME_ID),
@@ -393,11 +394,11 @@ fn verify_corrects_a_mount_rooted_volumes_own_index() {
     // A new file appears after indexing.
     fs::write(sub.join("new_file.txt"), "new content").unwrap();
 
-    let space = IndexPathSpace::mount_rooted(mount.path().to_string_lossy().into_owned());
+    let space = IndexPathSpace::mount_rooted(native_text(mount.path()).into_owned());
     let rt = tokio::runtime::Runtime::new().unwrap();
     let paths = rt.block_on(verify_and_correct(
         VOLUME,
-        &sub.to_string_lossy(),
+        &native_text(&sub),
         &space,
         &writer,
         &VolumeWork::for_test(crate::ROOT_VOLUME_ID),
@@ -440,11 +441,11 @@ fn verify_scans_a_new_directory_into_a_mount_rooted_volumes_index() {
     fs::create_dir(&new_dir).unwrap();
     fs::write(new_dir.join("inside.txt"), "inside").unwrap();
 
-    let space = IndexPathSpace::mount_rooted(mount.path().to_string_lossy().into_owned());
+    let space = IndexPathSpace::mount_rooted(native_text(mount.path()).into_owned());
     let rt = tokio::runtime::Runtime::new().unwrap();
     let paths = rt.block_on(verify_and_correct(
         VOLUME,
-        &sub.to_string_lossy(),
+        &native_text(&sub),
         &space,
         &writer,
         &VolumeWork::for_test(crate::ROOT_VOLUME_ID),
@@ -464,7 +465,7 @@ fn verify_scans_a_new_directory_into_a_mount_rooted_volumes_index() {
 
     assert!(new_dir_row.is_directory);
     assert!(
-        paths.iter().any(|p| p == &new_dir.to_string_lossy()),
+        paths.iter().any(|p| p == &native_text(&new_dir)),
         "the affected set carries the new dir's ABSOLUTE path (it feeds FS reads and the FE emit), got {paths:?}",
     );
     assert!(
@@ -691,7 +692,7 @@ fn a_verification_holds_its_volume_until_its_walk_is_done() {
 
     maybe_verify(
         crate::ROOT_VOLUME_ID.to_string(),
-        fs_root.path().to_string_lossy().into_owned(),
+        native_text(fs_root.path()).into_owned(),
         IndexPathSpace::root(),
         writer.clone(),
         crate::NoopEventSink::shared(),
@@ -747,7 +748,7 @@ fn a_listing_of_ground_a_walk_is_covering_writes_nothing() {
             work: VolumeWork::for_test(crate::ROOT_VOLUME_ID),
             branches: crate::indexing::watch::branches::live_for(crate::ROOT_VOLUME_ID),
         },
-        vec![fs_root.path().join("claimed").to_string_lossy().into_owned()],
+        vec![native_text(&fs_root.path().join("claimed")).into_owned()],
         crate::indexing::read::coverage::CoverageDimension::Listing,
     );
 

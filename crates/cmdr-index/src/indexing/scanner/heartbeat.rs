@@ -15,6 +15,7 @@
 //! a consumer clones the one counter it reads and keeps reading it after the walk
 //! handle has moved to another thread.
 
+use crate::indexing::paths::app_text::native_text;
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
@@ -55,7 +56,7 @@ impl WalkHeartbeat {
     /// A directory's read is about to start.
     pub(crate) fn entering(&self, path: &Path) {
         self.dirs_scanned.fetch_add(1, Ordering::Relaxed);
-        *self.current.lock_ignore_poison() = Some(path.to_string_lossy().into_owned());
+        *self.current.lock_ignore_poison() = Some(native_text(path).into_owned());
     }
 
     /// [`Self::entering`] for a cover walk's folder, named by its app path, which it read

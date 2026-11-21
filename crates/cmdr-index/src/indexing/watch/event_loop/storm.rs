@@ -14,6 +14,7 @@
 //! read the reconciler's active-rescan scopes, drop + re-queue) lives in
 //! `event_loop::process_live_batch`.
 
+use crate::indexing::paths::app_text::native_text;
 use crate::indexing::paths::path_prefix;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -131,7 +132,7 @@ fn child_under<'a>(path: &'a str, ancestor: &str) -> Option<&'a str> {
 pub(super) fn scope_to_requeue<'a>(removal_path: &str, scopes: &'a [PathBuf]) -> Option<&'a PathBuf> {
     scopes
         .iter()
-        .find(|s| path_prefix::is_strict_descendant(removal_path, &s.to_string_lossy()))
+        .find(|s| path_prefix::is_strict_descendant(removal_path, &native_text(s)))
 }
 
 #[cfg(test)]
@@ -145,7 +146,7 @@ mod tests {
     fn anchor_paths(removals: &[&str]) -> Vec<String> {
         detect_storm_anchors(removals)
             .into_iter()
-            .map(|a| a.path.to_string_lossy().into_owned())
+            .map(|a| native_text(&a.path).into_owned())
             .collect()
     }
 

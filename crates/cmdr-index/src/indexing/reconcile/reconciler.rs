@@ -24,6 +24,7 @@
 //! [`subtree`] walks a subtree through those two, [`events`] turns one FSEvent into
 //! writes, and [`finish`] ends a full-rescan walk.
 
+use crate::indexing::paths::app_text::native_text;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
@@ -598,7 +599,7 @@ impl EventReconciler {
 /// event paths are, so the prefix comparison lines up. This is purely a
 /// "don't throttle" flag — it reads no new metadata, so adds no TCC surface.
 fn resolve_downloads_prefix() -> Option<String> {
-    dirs::download_dir().map(|p| firmlinks::normalize_path(&p.to_string_lossy()))
+    dirs::download_dir().map(|p| firmlinks::normalize_path(&native_text(&p)))
 }
 
 // ── Tests ────────────────────────────────────────────────────────────

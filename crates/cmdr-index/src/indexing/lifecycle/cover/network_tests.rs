@@ -10,6 +10,7 @@
 //! What the walk does with a directory it COULDN'T read is a design of its own on
 //! this half, and lives in `network_give_up_tests.rs`.
 
+use crate::indexing::paths::app_text::native_text;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
@@ -55,7 +56,7 @@ fn a_walk_over_a_share_covers_the_folder_it_was_pointed_at() {
     );
     assert_eq!(outcome.dirs_found, 2, "scope/ and inner/");
 
-    let mut emitted: Vec<String> = entries.iter().map(|e| e.path.to_string_lossy().to_string()).collect();
+    let mut emitted: Vec<String> = entries.iter().map(|e| native_text(&e.path).to_string()).collect();
     emitted.sort();
     assert_eq!(
         emitted,
@@ -394,7 +395,7 @@ fn a_walk_over_ground_an_earlier_walk_touched_keeps_its_rows() {
         "the rows this walk did not write keep their ids"
     );
     assert_eq!(share.child_ids(&share.path("F")).len(), 2, "G, plus the new sibling");
-    let emitted: Vec<String> = entries.iter().map(|e| e.path.to_string_lossy().to_string()).collect();
+    let emitted: Vec<String> = entries.iter().map(|e| native_text(&e.path).to_string()).collect();
     assert_eq!(
         emitted,
         [share.path("F/new.txt")],
@@ -504,7 +505,7 @@ fn a_same_name_sibling_keeps_the_first_row_rather_than_orphaning_a_subtree() {
         outcome.entries_found, 3,
         "the frontier root, dup/ once, and its child once"
     );
-    let mut emitted: Vec<String> = entries.iter().map(|e| e.path.to_string_lossy().to_string()).collect();
+    let mut emitted: Vec<String> = entries.iter().map(|e| native_text(&e.path).to_string()).collect();
     emitted.sort();
     assert_eq!(
         emitted,
@@ -558,7 +559,7 @@ fn a_nas_system_dir_is_indexed_but_never_walked_into() {
         outcome.entries_found, 3,
         "the frontier root, real.txt, and the snapshot dir's own row"
     );
-    let emitted: Vec<String> = entries.iter().map(|e| e.path.to_string_lossy().to_string()).collect();
+    let emitted: Vec<String> = entries.iter().map(|e| native_text(&e.path).to_string()).collect();
     assert!(
         !emitted.iter().any(|p| p.contains("huge.bin")),
         "nothing inside the snapshot tree was walked: {emitted:?}"
@@ -604,7 +605,7 @@ fn a_frontier_rooted_at_a_nas_system_dir_is_refused_rather_than_walked() {
     // The directory itself is a row like any other — an indexed NAS holds one for
     // it too, and a search that matches its name finds it — so it reaches the
     // consumer. What must not is anything INSIDE it.
-    let emitted: Vec<String> = entries.iter().map(|e| e.path.to_string_lossy().to_string()).collect();
+    let emitted: Vec<String> = entries.iter().map(|e| native_text(&e.path).to_string()).collect();
     assert_eq!(
         emitted,
         std::slice::from_ref(&snapshot),
@@ -730,7 +731,7 @@ fn a_walk_over_a_phone_covers_the_folder_it_was_pointed_at() {
 
     assert!(!outcome.cancelled);
     assert_eq!(outcome.entries_found, 3, "DCIM/ itself, Camera/, and the photo in it");
-    let mut emitted: Vec<String> = entries.iter().map(|e| e.path.to_string_lossy().to_string()).collect();
+    let mut emitted: Vec<String> = entries.iter().map(|e| native_text(&e.path).to_string()).collect();
     emitted.sort();
     assert_eq!(
         emitted,

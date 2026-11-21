@@ -382,9 +382,7 @@ fn translate_notify_event(
 /// native form (the watched `C:/` joined with `\` names), and the index holds app paths
 /// (`C:/Windows/x`, plan D1); on Linux the path passes through byte for byte.
 fn event_path(path: &Path) -> String {
-    cmdr_fs::volume::path_grammar::host_app_path(path.to_path_buf())
-        .to_string_lossy()
-        .into_owned()
+    crate::indexing::paths::app_text::native_text(path).into_owned()
 }
 
 /// Classify the first path in the list as file, dir, or symlink.

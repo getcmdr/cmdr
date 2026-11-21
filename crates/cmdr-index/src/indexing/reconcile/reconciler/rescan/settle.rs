@@ -79,6 +79,7 @@ fn remaining_settle(age: Duration, delay: Duration) -> Option<Duration> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::indexing::paths::app_text::native_text;
     use crate::indexing::reconcile::reconciler::tests::{ensure_path_in_db, non_excluded_tempdir, setup_test_writer};
 
     /// The case that pays for this module: a directory created a moment ago waits
@@ -153,7 +154,7 @@ mod tests {
         let anchor = test_dir.path().join("update.a1b2c3");
         std::fs::create_dir(&anchor).expect("create the ephemeral dir");
         // The parent is indexed (as after a scan); the ephemeral subtree never was.
-        ensure_path_in_db(&db_path, &test_dir.path().to_string_lossy(), &writer);
+        ensure_path_in_db(&db_path, &native_text(test_dir.path()), &writer);
         // ...and the updater deletes it while the anchor is still settling.
         std::fs::remove_dir_all(&anchor).expect("the updater cleans up");
 
