@@ -1969,15 +1969,15 @@
   "@errors.write.folderHoldsUnlistedItems.suggestion": {
     "sourceHash": "b3e259b"
   },
-  "errors.write.cantTellIfSameFile.title": "This might be the file you’re copying",
+  "errors.write.cantTellIfSameFile.title": "Este pode ser o arquivo que você está copiando",
   "@errors.write.cantTellIfSameFile.title": {
     "sourceHash": "80f2303"
   },
-  "errors.write.cantTellIfSameFile.message": "This drive doesn’t say whether {path} is the very file you’re copying, reached another way. Replacing it could have erased your original, so Cmdr stopped the copy here and left that file as it was.",
+  "errors.write.cantTellIfSameFile.message": "Este disco não informa se {path} é o mesmo arquivo que você está copiando, acessado por outro caminho. Substituir esse arquivo poderia ter apagado o seu original, então o Cmdr parou a cópia aqui e deixou o arquivo como estava.",
   "@errors.write.cantTellIfSameFile.message": {
     "sourceHash": "358ef5a"
   },
-  "errors.write.cantTellIfSameFile.suggestion": "If you’re sure they’re two different files, delete the one at the destination and copy again. Or copy to another folder, or keep both files under different names.",
+  "errors.write.cantTellIfSameFile.suggestion": "Se tiver certeza de que são dois arquivos diferentes, apague o que está no destino e copie de novo. Ou copie para outra pasta, ou mantenha os dois arquivos com nomes diferentes.",
   "@errors.write.cantTellIfSameFile.suggestion": {
     "sourceHash": "c5c76a7"
   },

@@ -1969,15 +1969,15 @@
   "@errors.write.folderHoldsUnlistedItems.suggestion": {
     "sourceHash": "b3e259b"
   },
-  "errors.write.cantTellIfSameFile.title": "This might be the file you’re copying",
+  "errors.write.cantTellIfSameFile.title": "Đây có thể chính là tệp bạn đang sao chép",
   "@errors.write.cantTellIfSameFile.title": {
     "sourceHash": "80f2303"
   },
-  "errors.write.cantTellIfSameFile.message": "This drive doesn’t say whether {path} is the very file you’re copying, reached another way. Replacing it could have erased your original, so Cmdr stopped the copy here and left that file as it was.",
+  "errors.write.cantTellIfSameFile.message": "Ổ đĩa này không cho biết {path} có phải chính là tệp bạn đang sao chép hay không, chỉ là được truy cập theo một đường khác. Nếu thay thế, bản gốc của bạn có thể đã bị xóa mất, nên Cmdr đã dừng sao chép tại đây và để nguyên tệp đó.",
   "@errors.write.cantTellIfSameFile.message": {
     "sourceHash": "358ef5a"
   },
-  "errors.write.cantTellIfSameFile.suggestion": "If you’re sure they’re two different files, delete the one at the destination and copy again. Or copy to another folder, or keep both files under different names.",
+  "errors.write.cantTellIfSameFile.suggestion": "Nếu bạn chắc chắn đó là hai tệp khác nhau, hãy xóa tệp ở đích rồi sao chép lại. Hoặc sao chép vào một thư mục khác, hoặc giữ cả hai tệp với tên khác nhau.",
   "@errors.write.cantTellIfSameFile.suggestion": {
     "sourceHash": "c5c76a7"
   },
