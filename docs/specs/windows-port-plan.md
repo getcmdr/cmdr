@@ -613,11 +613,12 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     **Started** (2026-11-18): `cmdr-operations` builds and passes clippy on the Windows builder. Real: the write probe
     (`local_disk/platform/windows.rs`, tested on NTFS), free space, the folder volume, and file and directory syncs that
     open the way `FlushFileBuffers` needs (`cmdr_fs::durable::{open_to_sync, open_dir_to_sync}`). A copy takes the
-    chunked loop. Left, in data-safety order: the local engine taking app paths at `rename_local_exclusive` (#1225,
-    planned in `docs/specs/app-path-plan.md`: today every local copy and move refuses at its landing), a Windows file id
-    and mount table so a folder delete or move isn't refused as a mount (`file_identity`, task 35's mount arm), the
-    `Unknown`-identity rule above, the `CopyFileExW` arm, the Recycle Bin, read-only as Locked, and sharing violations
-    as a typed refusal. Stubs: § "Windows build state".
+    chunked loop. A local copy lands on the real desktop, Overwrite included (2026-11-21, PR #1304,
+    `docs/notes/windows-port/build-progress.md`). Left, in data-safety order: the rest of the local engine's app paths
+    (#1225, `docs/specs/app-path-plan.md` milestone 10a), a mount table so a folder delete, move, or folder Overwrite
+    isn't refused as a mount (task 35's mount arm), the rest of the `Unknown`-identity rule above, the `CopyFileExW`
+    arm, the Recycle Bin, read-only as Locked, and sharing violations as a typed refusal. Stubs: § "Windows build
+    state".
 
 37. [S] Windows. Cloud Files placeholders (OneDrive and friends: sync badges, cloud trash) and Mark of the Web on
     extract (`cmdr-operations` + `cmdr-archive`). Needs 36.
