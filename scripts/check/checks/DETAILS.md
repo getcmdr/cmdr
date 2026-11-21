@@ -196,7 +196,9 @@ is broken — verify against the main clone first, where the answer is not clone
 4. Add a test file if the check has non-trivial logic (`{app}-{name}_test.go`).
 5. If the check grows an allowlist or an opt-out comment, wire staleness detection from day one (see § Allowlist
    shrink-wrap): dead entries must auto-remove or fail, and orphaned opt-out comments must fail. Reuse
-   `directiveTracker` / `writeJSONAllowlist`.
+   `directiveTracker` / `writeJSONAllowlist`. An entry type with its own `MarshalJSON` marshals through
+   `marshalUnescaped`, ❌ never `json.Marshal`: the writer's `SetEscapeHTML(false)` doesn't reach inside a `Marshaler`'s
+   bytes, so a reason's `<`, `>`, `&` came back as `<` on every rewrite.
 6. **Wire it into CI**: add a workflow step in `.github/workflows/ci.yml` (or `slow-checks.yml` for slow/nightly
    checks), or set a `NotInCI` reason on the definition. The `ci-coverage` check fails the suite until you do one or the
    other — there's no third option of "registered but runs nowhere".
