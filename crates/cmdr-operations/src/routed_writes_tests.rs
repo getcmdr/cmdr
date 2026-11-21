@@ -3,7 +3,7 @@
 //! leaves the drive untouched (#463).
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath, PathArithmetic};
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -251,7 +251,17 @@ async fn a_numbered_create_inside_an_archive_or_dot_git_refuses() {
             ),
             "{dir}: {result:?}"
         );
-        assert!(!drive.exists(&app(&Path::new(dir).join("pasted.txt"))).await, "{dir}");
+        assert!(
+            !drive
+                .exists(
+                    &AppPath::from_normalized(dir)
+                        .expect("a canonical path")
+                        .join(AppName::from_app_spelling("pasted.txt").expect("one name"))
+                        .expect("joins")
+                )
+                .await,
+            "{dir}"
+        );
     }
 }
 

@@ -117,8 +117,8 @@ stored path into an app path with `StoredPathReading::app_path`, which for `Lite
 Every reader that turns a stored path into a typed path goes through it; a `from_wire` of a stored row skips the mark.
 Its first reader is the rollback planner, once `RollbackUnit` carries app paths built in `rollback_unit_of` (where the
 op id and the stored text are), the plan's milestone 10a, before escapes go live. Until then the planner crosses once,
-`rollback/target.rs`' `app_path_of` over the unit's `PathBuf`, which is the identity while no escape exists. Tag writes
-journal here too (`OpKind::Tag`), so they're covered.
+`rollback/target.rs`' `app_path_of` over the unit's `PathBuf`, which is the identity while no escape exists, and hands
+those same app paths to the runner's `InverseAct`. Tag writes journal here too (`OpKind::Tag`), so they're covered.
 
 ## Case folding, not a collation
 

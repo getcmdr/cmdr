@@ -6,7 +6,7 @@ use super::{Deadline, SourceItemInput, VolumeScanError, merge_source_types_from_
 use crate::host::testing::PaneListings;
 use crate::testing::TestOperations;
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath, PathArithmetic};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::WedgedVolume;
 use cmdr_fs::volume::Volume;
@@ -294,7 +294,13 @@ async fn a_source_from_a_case_differing_folder_is_still_a_conflict() {
             .await
             .expect("create dir");
         volume
-            .create_file(&AppPath::legacy_unchecked(&Path::new(dir).join("photo.jpg")), b"pixels")
+            .create_file(
+                &AppPath::from_normalized(dir)
+                    .expect("a canonical path")
+                    .join(AppName::from_app_spelling("photo.jpg").expect("one name"))
+                    .expect("joins"),
+                b"pixels",
+            )
             .await
             .expect("create file");
     }
