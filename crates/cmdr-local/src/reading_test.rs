@@ -84,6 +84,26 @@ fn test_get_single_entry_directory() {
     assert!(entry.size.is_none());
 }
 
+/// On macOS and Linux the watcher's stat is the plain one, and a watch opens and reports the
+/// path as it is: the Windows crossing leaves these OSes' behavior alone.
+#[test]
+fn the_watchers_stat_and_paths_are_the_plain_ones_on_posix() {
+    use crate::reading::{get_single_entry_as_named, listing_spelling_of, watch_os_path};
+
+    let temp_dir = TestDir::new("reading_as_named");
+    let file = temp_dir.join("a.txt");
+    fs::write(&file, "x").unwrap();
+    let as_named = get_single_entry_as_named(&file).unwrap();
+    let plain = get_single_entry(&file).unwrap();
+    assert_eq!((as_named.name, as_named.path), (plain.name, plain.path));
+    assert_eq!(
+        get_single_entry_as_named(&temp_dir.join("gone")).unwrap_err().kind(),
+        std::io::ErrorKind::NotFound
+    );
+    assert_eq!(watch_os_path(&temp_dir).unwrap(), temp_dir.to_path_buf());
+    assert_eq!(listing_spelling_of(&file), file);
+}
+
 #[test]
 fn test_get_single_entry_nonexistent() {
     let result = get_single_entry(std::path::Path::new("/definitely_does_not_exist_12345"));

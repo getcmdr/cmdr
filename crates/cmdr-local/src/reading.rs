@@ -17,7 +17,7 @@ mod row;
 use std::borrow::Cow;
 use std::collections::HashSet;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::time::Duration;
@@ -411,6 +411,34 @@ pub(crate) fn minimal_row(row: Row, is_symlink: bool, dot_hidden: &HashSet<Strin
 pub fn get_single_entry(path: &Path) -> Result<FileEntry, std::io::Error> {
     let (os, app) = located(path)?;
     single_entry(&os, Row::of(&os, app.as_deref()))
+}
+
+/// [`get_single_entry`], or `NotFound` when the folder holds the entry under another spelling
+/// of its name: what a change watch asks of a path it heard about. On Windows a stat of `a.txt`
+/// answers for `A.txt`, so a case-only rename's old name would otherwise read as still there
+/// and the listing would keep both rows. One more call on Windows (the folder's own name for
+/// it); none on macOS and Linux, where this is `get_single_entry`.
+pub fn get_single_entry_as_named(path: &Path) -> Result<FileEntry, std::io::Error> {
+    let (os, app) = located(path)?;
+    if !platform::named_exactly(&os)? {
+        return Err(std::io::ErrorKind::NotFound.into());
+    }
+    single_entry(&os, Row::of(&os, app.as_deref()))
+}
+
+/// The path a change watch on the folder `path` opens: `path` itself on macOS and Linux, and on
+/// Windows its verbatim `\\?\` form, so a folder past `MAX_PATH` arms like any other.
+/// [`listing_spelling_of`] turns the watch's event paths back.
+pub fn watch_os_path(path: &Path) -> Result<PathBuf, std::io::Error> {
+    let (os, _) = located(path)?;
+    Ok(os.into_owned())
+}
+
+/// A path a change watch reported, in the app spelling listings and rows carry (`C:/x/a.txt`
+/// for `\\?\C:\x\a.txt` on Windows); unchanged on macOS and Linux, and wherever no app path
+/// fits it.
+pub fn listing_spelling_of(os_path: &Path) -> PathBuf {
+    platform::app_spelling_of(os_path).unwrap_or_else(|| os_path.to_path_buf())
 }
 
 /// [`get_single_entry`] of the OS path `os`, as `row`.

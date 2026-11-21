@@ -8,7 +8,8 @@
 //!
 //! The OS half is per platform: `watcher/fsevents.rs` (macOS, our `cmdr-fsevent-stream`
 //! fork, which passes lost-history signals anchored above the folder through) and
-//! `watcher/notify_stream.rs` (elsewhere, `notify`'s inotify). Both speak `ListingChange`.
+//! `watcher/notify_stream.rs` (elsewhere: `notify`'s inotify on Linux, its
+//! `ReadDirectoryChangesW` on Windows). Both speak `ListingChange`.
 
 #[cfg(test)]
 use crate::ignore_poison::IgnorePoison;
@@ -28,7 +29,7 @@ use cmdr_fs::volume::WatchCoverage;
 use cmdr_listing::ListingId;
 use cmdr_listing::host::{ListingObserver, OpenedListing};
 use cmdr_listing::{Listings, RefreshOutcome};
-use cmdr_local::reading::{get_single_entry, list_directory_core};
+use cmdr_local::reading::{get_single_entry_as_named, list_directory_core};
 
 #[cfg(target_os = "macos")]
 mod fsevents;
@@ -237,15 +238,25 @@ fn arm_os_stream(listing_id: &str, path: &Path) -> Result<WatchStream, String> {
     return notify_stream::arm(path, debounce, deliver).map(WatchStream::Notify);
 }
 
-/// What an FSEvents watch on `path` can actually see.
+/// What an OS watch on `path` can actually see.
 ///
 /// A network mount answers [`WatchCoverage::ThisMachineOnly`]: FSEvents is a
 /// local-VFS notifier, so it reports this machine's writes through the mount and
 /// nothing another client does to the share. The pane still updates from the
 /// user's own work, which is why the watch is worth arming at all; the oracle
 /// just can't treat that cache as a substitute for reading the directory.
+///
+/// On Windows the probe is `GetDriveTypeW` (`filesystem_kind.rs`): a fixed or removable
+/// drive, or a `subst` letter over one, is `EveryWriter`, since every writer goes through
+/// this machine's filesystem driver, which is what `ReadDirectoryChangesW` hears. A mapped
+/// drive or UNC share is `ThisMachineOnly`: the server forwards other clients' changes only
+/// if it implements SMB change notify (a Windows server does, verified over
+/// `\\localhost\C$`; a NAS may not), so it's no ground for skipping a read. Asked of the
+/// OS path, so a folder past `MAX_PATH` still probes. Evidence: `file_system/DETAILS.md`
+/// § "Windows listing watches".
 fn coverage_for_watched_path(path: &Path) -> WatchCoverage {
-    if cmdr_local::filesystem_kind::path_is_on_network_mount(path) {
+    let os_path = cmdr_local::reading::watch_os_path(path).unwrap_or_else(|_| path.to_path_buf());
+    if cmdr_local::filesystem_kind::path_is_on_network_mount(&os_path) {
         WatchCoverage::ThisMachineOnly
     } else {
         WatchCoverage::EveryWriter
@@ -562,11 +573,13 @@ pub(super) fn handle_directory_change_incremental(listing_id: &str, changes: Vec
     }
 
     // Stat every path BEFORE handing the batch over: the engine takes its locks
-    // after, and a stat on a slow disk must not sit inside one.
+    // after, and a stat on a slow disk must not sit inside one. "As named", so on
+    // Windows a case-only rename's old spelling reads as gone instead of answering
+    // for the new one (`get_single_entry_as_named`; the plain stat on macOS and Linux).
     let children: Vec<(PathBuf, Option<FileEntry>)> = unique_paths
         .into_iter()
         .map(|path| {
-            let entry = get_single_entry(&path).ok();
+            let entry = get_single_entry_as_named(&path).ok();
             (path, entry)
         })
         .collect();

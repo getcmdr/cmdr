@@ -69,3 +69,38 @@ fn any_other_and_rescan_flagged_events_are_rescans() {
 
     assert_eq!(changes, vec![ListingChange::Rescan; 3]);
 }
+
+/// On Windows the watch opens the verbatim `\\?\` folder, so its events arrive verbatim; they
+/// leave `translate` in the app spelling the listing and its rows key on, a rename's two halves
+/// and the root's own removal included (#1330).
+#[cfg(target_os = "windows")]
+#[test]
+fn windows_event_paths_cross_back_to_the_app_spelling() {
+    let changes = translate(vec![
+        event(EventKind::Create(CreateKind::Any), &[r"\\?\C:\d\a.txt"]),
+        event(
+            EventKind::Modify(ModifyKind::Name(RenameMode::From)),
+            &[r"\\?\C:\d\b.txt"],
+        ),
+        event(
+            EventKind::Modify(ModifyKind::Name(RenameMode::To)),
+            &[r"\\?\C:\d\B.txt"],
+        ),
+        event(EventKind::Remove(RemoveKind::Folder), &[r"\\?\C:\d"]),
+        event(
+            EventKind::Modify(ModifyKind::Any),
+            &[r"\\?\UNC\testnas.local\share\d\c.txt"],
+        ),
+    ]);
+
+    assert_eq!(
+        changes,
+        vec![
+            structural("C:/d/a.txt"),
+            structural("C:/d/b.txt"),
+            structural("C:/d/B.txt"),
+            structural("C:/d"),
+            ListingChange::Content(PathBuf::from("//testnas.local/share/d/c.txt")),
+        ]
+    );
+}

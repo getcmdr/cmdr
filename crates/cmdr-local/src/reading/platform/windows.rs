@@ -34,6 +34,58 @@ pub(crate) fn text_child(_dir: &Path, _name: &str) -> Option<PathBuf> {
     None
 }
 
+/// `\\?\C:\x` (or `C:\x`) as the app path `C:/x` the listing cache keys on.
+pub(crate) fn app_spelling_of(os: &Path) -> Option<PathBuf> {
+    app_of(os).ok().map(|app| app.as_std_legacy().into_owned())
+}
+
+/// Asks the folder for the entry's own name (`FindFirstFileExW`, which reads the directory
+/// entry, not the file), so a case-only rename's old spelling reads as gone. A path with no last
+/// name (a drive root) is trivially itself.
+///
+/// An 8.3 short name answers `false` too: its entry's name is the long one. That's the
+/// conservative side for a watcher (the row isn't added under the short spelling), and
+/// `ReadDirectoryChangesW` reports the name an operation used, which is the long one for every
+/// program that doesn't type a short name.
+pub(crate) fn named_exactly(os: &Path) -> io::Result<bool> {
+    use std::os::windows::ffi::OsStrExt as _;
+    use windows_sys::Win32::Foundation::INVALID_HANDLE_VALUE;
+    use windows_sys::Win32::Storage::FileSystem::{
+        FindClose, FindExInfoBasic, FindExSearchNameMatch, FindFirstFileExW, WIN32_FIND_DATAW,
+    };
+
+    let Some(name) = os.file_name() else {
+        return Ok(true);
+    };
+    let wide: Vec<u16> = os.as_os_str().encode_wide().chain(Some(0)).collect();
+    // SAFETY: `WIN32_FIND_DATAW` is plain old data (integers and fixed arrays), so all-zero is
+    // a valid value for the call to overwrite.
+    let mut found: WIN32_FIND_DATAW = unsafe { std::mem::zeroed() };
+    // SAFETY: `wide` is NUL-terminated, `found` is the `WIN32_FIND_DATAW` that
+    // `FindExInfoBasic` fills, and the filter and flags are the documented "none" values.
+    let handle = unsafe {
+        FindFirstFileExW(
+            wide.as_ptr(),
+            FindExInfoBasic,
+            (&raw mut found).cast(),
+            FindExSearchNameMatch,
+            std::ptr::null(),
+            0,
+        )
+    };
+    if handle == INVALID_HANDLE_VALUE {
+        return Err(io::Error::last_os_error());
+    }
+    // SAFETY: `handle` is the live search handle `FindFirstFileExW` just returned.
+    unsafe { FindClose(handle) };
+    let len = found
+        .cFileName
+        .iter()
+        .position(|&unit| unit == 0)
+        .unwrap_or(found.cFileName.len());
+    Ok(found.cFileName[..len].iter().copied().eq(name.encode_wide()))
+}
+
 pub(crate) fn lstat(path: &Path) -> io::Result<Metadata> {
     fs::symlink_metadata(path)
 }
