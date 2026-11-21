@@ -2,8 +2,8 @@ name: Windows lane
 
 # The Windows lane, called by `ci.yml` (`desktop-rust-windows`) on every land run whose change
 # reaches what the Rust lanes compile, and in `CI OK`'s `needs`, so a Windows-only compile error
-# or lint can't land. It answers two questions on native `windows-latest` (MSVC, the target
-# Cmdr will ship):
+# or lint can't land, and neither can a Windows test regression. It answers three questions on
+# native `windows-latest` (MSVC, the target Cmdr will ship):
 #
 #   1. Does the workspace compile and pass clippy there? `desktop-rust-clippy` selects every
 #      member whose `platforms` allows Windows, which is all of them but the macOS-only
@@ -12,6 +12,8 @@ name: Windows lane
 #      checks them in one `cargo check --keep-going` and publishes a per-member break report to
 #      the job summary and as the `windows-break-report` artifact. It never fails on a break,
 #      and with every member declared it has nothing to report.
+#   3. Do the Rust suites fail only where the known-failures list says? The `tests` job, in
+#      parallel with the other two.
 #
 # Before pushing, `pnpm check clippy-windows` asks question 1 from a Mac (a mingw cross-lint in
 # the Linux container). A branch can also run this lane by hand:
@@ -109,12 +111,125 @@ jobs:
           path: ${{ runner.temp }}/windows-breaks/
           if-no-files-found: warn
 
-  # The lane's marker, once `lane` passed (`scripts/lane-markers/DETAILS.md`). A hand-run
-  # dispatch has no key, so it saves none.
+  # The Rust suites on native Windows, held against a known-failures list that may only shrink
+  # (`scripts/windows-test-baseline/ci-known-failures.tsv`, read by its `ratchet` command): red on
+  # a failure the list doesn't name, and red on a listed failure that passes now, until the list
+  # drops it (`ratchet -run <this run's id> -write`, committed in the same PR). Its own job, in
+  # parallel with clippy, so neither waits on the other's build. `docs/tooling/ci.md` § Windows lane.
+  tests:
+    name: Tests against the known-failures list
+    runs-on: windows-latest
+    timeout-minutes: 75
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # As in `lane` above.
+      - name: Keep the tree's line endings, allow long paths
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.longpaths true
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # Defender scans every file cargo writes, which roughly doubles a cold Windows build. The
+      # runner is thrown away after the job.
+      - name: Turn off Defender's real-time scan for the build
+        shell: pwsh
+        run: Set-MpPreference -DisableRealtimeMonitoring $true
+
+      - name: Install Go with mise
+        uses: ./.github/actions/install-mise
+        with:
+          install_args: go
+          cache_save: ${{ github.ref == 'refs/heads/main' }}
+
+      # As in `lane`, minus clippy: the test build needs the bare toolchain.
+      - name: Install the pinned Rust toolchain
+        run: |
+          channel=$(sed -n 's/^channel = "\(.*\)"$/\1/p' rust-toolchain.toml)
+          if [ -z "$channel" ]; then
+            echo "::error::Couldn't read the pinned channel from rust-toolchain.toml."
+            exit 1
+          fi
+          rustup toolchain install "$channel" --profile minimal
+          echo "RUSTUP_TOOLCHAIN=$channel" >>"$GITHUB_ENV"
+          RUSTUP_TOOLCHAIN="$channel" rustc -vV
+
+      - name: Build check tool
+        working-directory: ./scripts/check
+        run: go build -o check.exe .
+
+      # Restore only: the cargo registry, `~/.cargo/bin` (cargo-nextest), and the dependencies'
+      # slice of `target/`. `ci-upkeep.yml`'s `warm-rust-windows-tests-cache` is the entry's one
+      # writer, from a clean `target/` on `main`, and its steps up to here must match these, or
+      # the key differs (`docs/tooling/ci.md` § Windows lane).
+      - name: Restore the dependency build cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: desktop-rust-windows-tests
+          save-if: false
+
+      # The check runner owns the pin and prints it here.
+      - name: Install cargo-nextest (pinned)
+        run: |
+          nextest="$(./scripts/check/check.exe --print-nextest-version)"
+          if [ "$(cargo nextest --version 2>/dev/null | head -1 | cut -d' ' -f2)" != "$nextest" ]; then
+            cargo install cargo-nextest --version "$nextest" --locked --force
+          fi
+
+      # The package selection and features every host cargo lane passes, from the check runner,
+      # so this job builds what `desktop-rust-tests` would on a Windows host. Built apart from
+      # the run so the log tells build time from test time.
+      - name: Build the test binaries
+        run: |
+          mapfile -t args < <(./scripts/check/check.exe --print-host-cargo-args | tr -d '\r')
+          echo "cargo args: ${args[*]}"
+          cargo test --no-run "${args[@]}"
+
+      # Never red by itself: the ratchet below reads the report and decides. The `builder`
+      # entries stay out of the run (the runner lacks what they need; the Windows builder runs
+      # them). `windows-baseline` keeps each pass's output, so a cell that skipped itself shows.
+      # The console names each failure on one line and prints no output: the known failures'
+      # panics would fill GitHub's log limit, and the report holds every one whole.
+      - name: Run the tests
+        id: run
+        run: |
+          mapfile -t args < <(./scripts/check/check.exe --print-host-cargo-args | tr -d '\r')
+          filter="$(go -C scripts/windows-test-baseline run . ratchet -filter | tr -d '\r')"
+          quiet=(--failure-output never --status-level fail --final-status-level none)
+          set +e
+          if [ -n "$filter" ]; then
+            cargo nextest run "${args[@]}" --profile windows-baseline --no-fail-fast "${quiet[@]}" -E "$filter"
+          else
+            cargo nextest run "${args[@]}" --profile windows-baseline --no-fail-fast "${quiet[@]}"
+          fi
+          echo "nextest exited $?"
+
+      - name: Upload the test report
+        if: ${{ !cancelled() && steps.run.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: windows-test-report
+          path: target/nextest/windows-baseline/junit.xml
+          if-no-files-found: error
+
+      - name: Hold the run against the known-failures list
+        if: ${{ !cancelled() && steps.run.outcome == 'success' }}
+        run: >-
+          go -C scripts/windows-test-baseline run . ratchet -junit
+          "$GITHUB_WORKSPACE/target/nextest/windows-baseline/junit.xml" -summary "$GITHUB_STEP_SUMMARY"
+
+  # The lane's marker, once `lane` and `tests` passed (`scripts/lane-markers/DETAILS.md`). A
+  # hand-run dispatch has no key, so it saves none.
   marker:
     name: Lane marker
-    needs: [lane]
-    if: ${{ !cancelled() && needs.lane.result == 'success' && inputs.marker-key != '' }}
+    needs: [lane, tests]
+    if: >-
+      ${{ !cancelled() && needs.lane.result == 'success' && needs.tests.result == 'success' && inputs.marker-key != ''
+      }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
