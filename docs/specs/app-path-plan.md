@@ -1939,7 +1939,7 @@ included; the hidden couplings it found are why waves B and C differ from round 
 - **Test plan**: Windows: `cmdr-listing-wasm`'s 6 failures and 1 timeout (`cmdr-multi-rename` had none on the builder;
   review round 4). macOS/Linux: both suites, plus the wasm build.
 - **DONE**: bridge counts zero in both.
-- **Done** (2026-11-21, branch `worktree-agent-abb6a765db0075d73`; one agent, no helpers). Bridge calls in
+- **Done** (2026-11-21, branch `worktree-agent-abb6a765db0075d73`, PR #1323; one agent, no helpers). Bridge calls in
   `cmdr-listing-wasm` 15 → 1 (workspace 1,342 → 1,328), its `appTextToPath` 10 → 8 and `pathFromBareText` 14 → 10;
   `cmdr-multi-rename` held none. No entry grew anywhere. Durable design: `crates/cmdr-listing-wasm/DETAILS.md` § "App
   paths". What converted:
