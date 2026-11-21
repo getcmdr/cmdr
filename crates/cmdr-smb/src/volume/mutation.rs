@@ -10,19 +10,22 @@
 
 use super::SmbVolume;
 use super::dfs_links::{link_bare_stat, link_delete};
+use super::paths::{parent_and_row_name, row_name};
 use super::session::SessionLease;
 use super::state::SessionGeneration;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::PathArithmetic;
+use cmdr_fs::app_path::{AppNameBuf, AppPath, ListedFolder, Namer};
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::{MutationEvent, Volume, VolumeError};
 use log::{debug, warn};
+use std::borrow::Cow;
 use std::path::Path;
 
 impl SmbVolume {
     /// Writes `content` to a file that must not already exist, then tells the
     /// panes about it.
-    pub(super) async fn create_file_impl(&self, path: &Path, content: &[u8]) -> Result<(), VolumeError> {
+    pub(super) async fn create_file_impl(&self, path: &AppPath, content: &[u8]) -> Result<(), VolumeError> {
         let smb_path = self.to_smb_path(path)?;
         let data = content.to_vec();
 
@@ -62,7 +65,7 @@ impl SmbVolume {
     }
 
     /// Creates a directory, then tells the panes about it.
-    pub(super) async fn create_directory_impl(&self, path: &Path) -> Result<(), VolumeError> {
+    pub(super) async fn create_directory_impl(&self, path: &AppPath) -> Result<(), VolumeError> {
         let smb_path = self.to_smb_path(path)?;
 
         debug!(
@@ -96,7 +99,7 @@ impl SmbVolume {
     /// them) on a file or folder, by path, in one CREATE + SET_INFO + CLOSE
     /// frame, then tells the panes about it. What `times` leaves unset stays
     /// the server's own.
-    pub(super) async fn set_basic_info_impl(&self, path: &Path, times: smb2::FileTimes) -> Result<(), VolumeError> {
+    pub(super) async fn set_basic_info_impl(&self, path: &AppPath, times: smb2::FileTimes) -> Result<(), VolumeError> {
         let smb_path = self.to_smb_path(path)?;
 
         debug!(
@@ -122,21 +125,17 @@ impl SmbVolume {
             self.handle_smb_result("set_times", &smb_path, generation, result)?;
         }
 
-        if let (Some(parent), Some(name)) = (path.parent(), path.file_name())
+        if let Some((parent, name)) = parent_and_row_name(path)
             && let Some(parent_display) = self.display_path_for(parent)
         {
-            self.notify_mutation(
-                &self.inner.volume_id,
-                &AppPath::legacy_unchecked(&parent_display),
-                MutationEvent::Modified(name.to_string_lossy().to_string()),
-            )
-            .await;
+            self.notify_mutation(&self.inner.volume_id, &parent_display, MutationEvent::Modified(name))
+                .await;
         }
         Ok(())
     }
 
     /// Deletes a file or an empty directory, then tells the panes about it.
-    pub(super) async fn delete_impl(&self, path: &Path) -> Result<(), VolumeError> {
+    pub(super) async fn delete_impl(&self, path: &AppPath) -> Result<(), VolumeError> {
         let smb_path = self.to_smb_path(path)?;
 
         debug!(
@@ -181,22 +180,18 @@ impl SmbVolume {
             self.delete_apple_double_sidecar(&tree, &conn, &smb_path).await;
         }
 
-        if let (Some(parent), Some(name)) = (path.parent(), path.file_name())
+        if let Some((parent, name)) = parent_and_row_name(path)
             && let Some(parent_display) = self.display_path_for(parent)
         {
-            self.notify_mutation(
-                &self.inner.volume_id,
-                &AppPath::legacy_unchecked(&parent_display),
-                MutationEvent::Deleted(name.to_string_lossy().to_string()),
-            )
-            .await;
+            self.notify_mutation(&self.inner.volume_id, &parent_display, MutationEvent::Deleted(name))
+                .await;
         }
         Ok(())
     }
 
     /// Renames or moves an entry, replacing what's at the destination when
     /// `force`, then tells the panes about both ends.
-    pub(super) async fn rename_impl(&self, from: &Path, to: &Path, force: bool) -> Result<(), VolumeError> {
+    pub(super) async fn rename_impl(&self, from: &AppPath, to: &AppPath, force: bool) -> Result<(), VolumeError> {
         let smb_from = self.to_smb_path(from)?;
         let smb_to = self.to_smb_path(to)?;
 
@@ -361,41 +356,34 @@ impl SmbVolume {
 
     /// The one listing-cache patch a create leaves behind. A path that doesn't
     /// convert skips it: the write already succeeded.
-    async fn notify_created(&self, path: &Path) {
-        if let (Some(parent), Some(name)) = (path.parent(), path.file_name())
+    async fn notify_created(&self, path: &AppPath) {
+        if let Some((parent, name)) = parent_and_row_name(path)
             && let Some(parent_display) = self.display_path_for(parent)
         {
-            self.notify_mutation(
-                &self.inner.volume_id,
-                &AppPath::legacy_unchecked(&parent_display),
-                MutationEvent::Created(name.to_string_lossy().to_string()),
-            )
-            .await;
+            self.notify_mutation(&self.inner.volume_id, &parent_display, MutationEvent::Created(name))
+                .await;
         }
     }
 
     /// The listing-cache patches a rename leaves behind: one `Renamed` when both
     /// ends share a parent, otherwise a `Deleted` at the source and a `Created`
     /// at the destination. Still one call per changed DIRECTORY, never per entry.
-    async fn notify_renamed(&self, from: &Path, to: &Path) {
-        let (Some(from_parent), Some(from_name)) = (from.parent(), from.file_name()) else {
+    async fn notify_renamed(&self, from: &AppPath, to: &AppPath) {
+        let Some((from_parent, from_name)) = parent_and_row_name(from) else {
             return;
         };
         let Some(from_parent_display) = self.display_path_for(from_parent) else {
             return;
         };
-        let to_name = to
-            .file_name()
-            .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_default();
+        let to_name = to.file_name().map(row_name).unwrap_or_default();
 
         if from.parent() == to.parent() {
             // Same-directory rename
             self.notify_mutation(
                 &self.inner.volume_id,
-                &AppPath::legacy_unchecked(&from_parent_display),
+                &from_parent_display,
                 MutationEvent::Renamed {
-                    from: from_name.to_string_lossy().to_string(),
+                    from: from_name,
                     to: to_name,
                 },
             )
@@ -404,14 +392,14 @@ impl SmbVolume {
             // Cross-directory move: remove from source, add in dest
             self.notify_mutation(
                 &self.inner.volume_id,
-                &AppPath::legacy_unchecked(&from_parent_display),
-                MutationEvent::Deleted(from_name.to_string_lossy().to_string()),
+                &from_parent_display,
+                MutationEvent::Deleted(from_name),
             )
             .await;
             if let Some(to_parent_display) = to.parent().and_then(|p| self.display_path_for(p)) {
                 self.notify_mutation(
                     &self.inner.volume_id,
-                    &AppPath::legacy_unchecked(&to_parent_display),
+                    &to_parent_display,
                     MutationEvent::Created(to_name),
                 )
                 .await;
@@ -421,17 +409,20 @@ impl SmbVolume {
 
     /// Patches the cached listing of ONE directory to match a mutation that has
     /// already landed on the share.
-    pub(super) async fn notify_mutation_impl(&self, parent_path: &Path, mutation: MutationEvent) {
+    pub(super) async fn notify_mutation_impl(&self, parent_path: &AppPath, mutation: MutationEvent) {
         use cmdr_fs::volume::DirectoryChange;
 
         // One call per MUTATION, never per entry: the host walks every cached
         // listing on the volume, so a per-entry caller turns one directory into
         // a quadratic sweep.
         let listings = self.inner.host().listings();
+        let listing = listing_key(parent_path);
 
         match mutation {
             MutationEvent::Created(ref name) | MutationEvent::Modified(ref name) => {
-                let entry_path = parent_path.join(name);
+                let Some(entry_path) = child_of(parent_path, name) else {
+                    return;
+                };
                 match self.get_metadata_impl(&entry_path).await {
                     Ok(entry) => {
                         let change = if matches!(mutation, MutationEvent::Created(_)) {
@@ -439,27 +430,29 @@ impl SmbVolume {
                         } else {
                             DirectoryChange::Modified(entry)
                         };
-                        listings.directory_changed(&self.inner.volume_id, parent_path, change);
+                        listings.directory_changed(&self.inner.volume_id, &listing, change);
                     }
                     Err(e) => {
                         warn!(
                             "SmbVolume::notify_mutation: couldn't stat path={:?}: {}",
-                            LogPrivate::path(&entry_path),
+                            LogPrivate::path(entry_path.as_str()),
                             LogError(&e)
                         );
                     }
                 }
             }
             MutationEvent::Deleted(name) => {
-                listings.directory_changed(&self.inner.volume_id, parent_path, DirectoryChange::Removed(name));
+                listings.directory_changed(&self.inner.volume_id, &listing, DirectoryChange::Removed(name));
             }
             MutationEvent::Renamed { from, to } => {
-                let new_path = parent_path.join(&to);
+                let Some(new_path) = child_of(parent_path, &to) else {
+                    return;
+                };
                 match self.get_metadata_impl(&new_path).await {
                     Ok(entry) => {
                         listings.directory_changed(
                             &self.inner.volume_id,
-                            parent_path,
+                            &listing,
                             DirectoryChange::Renamed {
                                 old_name: from,
                                 new_entry: entry,
@@ -469,7 +462,7 @@ impl SmbVolume {
                     Err(e) => {
                         warn!(
                             "SmbVolume::notify_mutation: couldn't stat renamed entry path={:?}: {}",
-                            LogPrivate::path(&new_path),
+                            LogPrivate::path(new_path.as_str()),
                             LogError(&e)
                         );
                     }
@@ -477,6 +470,22 @@ impl SmbVolume {
             }
         }
     }
+}
+
+/// `name` (a row's name, so an escape-range code point in it is literal) under
+/// `parent`, by `ListedFolder`'s join (a bridge parent with no canonical twin joins
+/// as `Path::join` did). `None`, so no patch, for a name that isn't one plain name:
+/// the mutation already landed, and a patch is a courtesy.
+fn child_of(parent: &AppPath, name: &str) -> Option<cmdr_fs::app_path::AppPathBuf> {
+    let name = AppNameBuf::from_typed(name, Namer::HOST).ok()?;
+    ListedFolder::new(parent).join(&name).ok()
+}
+
+/// The `std::path` value the app's listing host files a listing under. ❗ This
+/// crate's one crossing to it: the host keys listings by `std::path` until it
+/// speaks app paths, and the bridge hands back the exact native bytes.
+pub(super) fn listing_key(path: &AppPath) -> Cow<'_, Path> {
+    path.as_std_legacy()
 }
 
 /// Whether two share paths name the same entry on a case-insensitive share.

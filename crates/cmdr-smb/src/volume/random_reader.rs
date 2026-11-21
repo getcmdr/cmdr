@@ -8,8 +8,8 @@
 //! has proved it's still the version the reader was reading. A file that changed
 //! meanwhile is `SourceChanged`, from then on.
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -224,7 +224,7 @@ impl SmbVolume {
     /// caller's until it closes it.
     pub(super) async fn open_random_reader_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
     ) -> Result<Box<dyn VolumeRandomReader>, VolumeError> {
         let smb_path = self.to_smb_path(path)?;
         debug!(

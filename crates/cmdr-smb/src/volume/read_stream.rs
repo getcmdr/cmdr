@@ -11,12 +11,12 @@ use super::resume::Reattach;
 use super::session::{LeaseOn, TransferLease};
 use super::state::{RanOn, ends_the_session};
 use super::{SmbVolume, SmbVolumeInner};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::metadata::{CarriedMetadata, MetadataAsk, MetadataClasses, UserFlags};
 use cmdr_fs::volume::{ChannelReadStream, SourceVersion, StreamLength, VolumeError, VolumeReadStream};
 use log::{debug, info, warn};
 use smb2::client::stream::{DownloadCheckpoint, FileDownload, FileVersion, resume_file_download};
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 
@@ -205,7 +205,7 @@ impl SmbVolume {
     /// (`copy_xattrs.rs`).
     pub(super) async fn open_read_stream_for_copy_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         size_hint: Option<u64>,
         ask: MetadataAsk,
     ) -> Result<Box<dyn VolumeReadStream>, VolumeError> {
@@ -217,7 +217,7 @@ impl SmbVolume {
     /// delegator in `volume_impl`, with `XattrAsk::Nothing`).
     pub(super) async fn open_read_stream_with_hint_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         size_hint: Option<u64>,
         xattrs: XattrAsk,
     ) -> Result<Box<dyn VolumeReadStream>, VolumeError> {
@@ -347,7 +347,7 @@ impl SmbVolume {
     /// one from a compound read (which records none), can't be carried on.
     pub(super) async fn resume_read_stream_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         version: &SourceVersion,
         offset: u64,
     ) -> Result<Box<dyn VolumeReadStream>, VolumeError> {

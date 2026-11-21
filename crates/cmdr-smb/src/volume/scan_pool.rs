@@ -63,7 +63,6 @@ use cmdr_fs::volume::{Volume, VolumeError, VolumeReadStream};
 use smb2::client::tree::Tree;
 use smb2::types::SessionId;
 use smb2::{DirectoryReader, SmbClient};
-use std::path::Path;
 use std::sync::Arc;
 
 /// How many EXTRA sessions a scan opens. Four is the benchmarked sweet spot: the
@@ -496,7 +495,7 @@ impl SmbVolume {
     /// sibling member; surfaces a genuine per-directory error unchanged.
     pub(super) async fn list_directory_for_scan_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         cancel: Option<&tokio_util::sync::CancellationToken>,
     ) -> Result<Vec<FileEntry>, VolumeError> {
         let pool = { self.inner.scan_pool.read().await.clone() };
@@ -575,7 +574,7 @@ impl SmbVolume {
     /// machinery and connection-state signaling) owns streaming.
     pub(super) async fn open_read_stream_for_scan_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         size_hint: Option<u64>,
     ) -> Result<Box<dyn VolumeReadStream>, VolumeError> {
         if let Some(size) = size_hint
@@ -653,7 +652,7 @@ impl SmbVolume {
                 }
             }
         }
-        Volume::open_read_stream_with_hint(self, &AppPath::legacy_unchecked(path), size_hint).await
+        Volume::open_read_stream_with_hint(self, path, size_hint).await
     }
 }
 

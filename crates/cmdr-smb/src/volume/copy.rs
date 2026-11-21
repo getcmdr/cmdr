@@ -26,7 +26,6 @@
 
 use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
-use std::path::Path;
 use std::pin::Pin;
 
 use cmdr_fs::log_private::LogPrivate;
@@ -61,8 +60,8 @@ impl SmbVolume {
     /// backend quietly doing its own would take the file outside all three.
     pub(super) async fn copy_on_server_impl(
         &self,
-        from: &Path,
-        to: &Path,
+        from: &AppPath,
+        to: &AppPath,
         progress: &dyn ServerCopyProgress,
     ) -> Result<StreamWritten, VolumeError> {
         let smb_from = self.to_smb_path(from)?;
@@ -125,15 +124,11 @@ impl SmbVolume {
         let copied = copied?;
 
         // Patch the listing cache from local knowledge, as a streamed write does.
-        if let (Some(parent), Some(name)) = (to.parent(), to.file_name())
+        if let Some((parent, name)) = super::paths::parent_and_row_name(to)
             && let Some(parent_display) = self.display_path_for(parent)
         {
-            self.notify_mutation(
-                &self.inner.volume_id,
-                &AppPath::legacy_unchecked(&parent_display),
-                MutationEvent::Created(name.to_string_lossy().to_string()),
-            )
-            .await;
+            self.notify_mutation(&self.inner.volume_id, &parent_display, MutationEvent::Created(name))
+                .await;
         }
         Ok(copied)
     }

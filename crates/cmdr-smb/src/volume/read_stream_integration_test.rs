@@ -16,7 +16,6 @@
 
 use super::test_support::*;
 use super::*;
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::StreamLength;
 
 /// A read stream's CLOSE travels on the transfer session while a delete and a
@@ -34,32 +33,21 @@ async fn smb_integration_a_file_deleted_right_after_its_read_is_gone_from_the_li
     let vol = Arc::new(make_docker_volume().await);
     let root = test_dir_name();
     ensure_clean(&vol, &root).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&root)))
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &root)).await.unwrap();
 
     let mut loops = Vec::new();
     for reader in 0..16 {
         let vol = Arc::clone(&vol);
         let dir = format!("{root}/reader-{reader}");
         loops.push(tokio::spawn(async move {
-            vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
-                .await
-                .unwrap();
+            vol.create_directory(&app_at(vol.root(), &dir)).await.unwrap();
             let path = format!("{dir}/page.png");
             for round in 0..200 {
-                vol.create_file(&AppPath::legacy_unchecked(Path::new(&path)), b"page")
-                    .await
-                    .unwrap();
-                let read = drain(
-                    vol.open_read_stream(&AppPath::legacy_unchecked(Path::new(&path)))
-                        .await
-                        .unwrap(),
-                )
-                .await;
+                vol.create_file(&app_at(vol.root(), &path), b"page").await.unwrap();
+                let read = drain(vol.open_read_stream(&app_at(vol.root(), &path)).await.unwrap()).await;
                 assert_eq!(read, b"page");
-                vol.delete(&AppPath::legacy_unchecked(Path::new(&path))).await.unwrap();
-                let listed = vol.list_directory_impl(Path::new(&dir)).await.unwrap();
+                vol.delete(&app_at(vol.root(), &path)).await.unwrap();
+                let listed = vol.list_directory_impl(&app_at(vol.root(), &dir)).await.unwrap();
                 assert!(
                     listed.is_empty(),
                     "{dir}, round {round}: {} entries after the delete",
@@ -81,20 +69,15 @@ async fn smb_integration_open_read_stream() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+    vol.create_directory(&app_at(vol.root(), &dir)).await.unwrap();
+
+    let data = b"streaming read test content";
+    vol.create_file(&app_at(vol.root(), &format!("{}/read.txt", dir)), data)
         .await
         .unwrap();
 
-    let data = b"streaming read test content";
-    vol.create_file(
-        &AppPath::legacy_unchecked(Path::new(&format!("{}/read.txt", dir))),
-        data,
-    )
-    .await
-    .unwrap();
-
     let mut stream = vol
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&format!("{}/read.txt", dir))))
+        .open_read_stream(&app_at(vol.root(), &format!("{}/read.txt", dir)))
         .await
         .unwrap();
     assert_eq!(stream.total_size(), StreamLength::Known(data.len() as u64));
@@ -122,24 +105,17 @@ async fn smb_integration_open_read_stream_large_file_spans_many_chunks() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &dir)).await.unwrap();
 
     let size = 20 * 1024 * 1024;
     let data: Vec<u8> = (0..size).map(|i| (i % 251) as u8).collect();
     let smb_path = format!("{}/big-stream.bin", dir);
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&smb_path)), &data)
-        .await
-        .unwrap();
+    vol.create_file(&app_at(vol.root(), &smb_path), &data).await.unwrap();
 
     // Hash chunks as they arrive so a 20 MB mismatch produces a single
     // 32-byte hex pair instead of a 20 MB `Vec<u8>` diff. Also avoids
     // the 20 MB reassembly allocation.
-    let mut stream = vol
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&smb_path)))
-        .await
-        .unwrap();
+    let mut stream = vol.open_read_stream(&app_at(vol.root(), &smb_path)).await.unwrap();
     assert_eq!(stream.total_size(), StreamLength::Known(size as u64));
 
     let mut hasher = blake3::Hasher::new();
@@ -178,23 +154,16 @@ async fn smb_integration_read_stream_large_file_multi_chunk() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &dir)).await.unwrap();
 
     let size = 20 * 1024 * 1024;
     let data: Vec<u8> = (0..size).map(|i| ((i * 7) % 251) as u8).collect();
     let smb_path = format!("{}/export-large.bin", dir);
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&smb_path)), &data)
-        .await
-        .unwrap();
+    vol.create_file(&app_at(vol.root(), &smb_path), &data).await.unwrap();
 
     // Hash chunks as they arrive (see the sibling large-file test for
     // why we avoid `assert_eq!` on 20 MB `Vec<u8>`s).
-    let mut stream = vol
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&smb_path)))
-        .await
-        .unwrap();
+    let mut stream = vol.open_read_stream(&app_at(vol.root(), &smb_path)).await.unwrap();
     assert_eq!(stream.total_size(), StreamLength::Known(size as u64));
 
     let mut chunks_seen = 0usize;
@@ -229,30 +198,20 @@ async fn smb_integration_open_read_stream_cancel_by_drop() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &dir)).await.unwrap();
 
     let data = vec![0xAA; 2 * 1024 * 1024]; // 2 MB
     let smb_path = format!("{}/cancel-me.bin", dir);
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&smb_path)), &data)
-        .await
-        .unwrap();
+    vol.create_file(&app_at(vol.root(), &smb_path), &data).await.unwrap();
 
-    let mut stream = vol
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&smb_path)))
-        .await
-        .unwrap();
+    let mut stream = vol.open_read_stream(&app_at(vol.root(), &smb_path)).await.unwrap();
     // Read exactly one chunk then drop
     let _first = stream.next_chunk().await.unwrap().unwrap();
     drop(stream);
 
     // Subsequent op on the volume should succeed; the producer task
     // must have released the session mutex on cancel.
-    let entries = vol
-        .list_directory(&AppPath::legacy_unchecked(Path::new(&dir)), None)
-        .await
-        .unwrap();
+    let entries = vol.list_directory(&app_at(vol.root(), &dir), None).await.unwrap();
     assert!(entries.iter().any(|e| e.name == "cancel-me.bin"));
 
     ensure_clean(&vol, &dir).await;
@@ -275,20 +234,16 @@ async fn smb_integration_a_file_that_grew_since_the_scan_is_never_read_truncated
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &dir)).await.unwrap();
 
     let data: Vec<u8> = (0..=255u8).cycle().take(256 * 1024).collect();
     let path = format!("{}/grown.bin", dir);
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&path)), &data)
-        .await
-        .unwrap();
+    vol.create_file(&app_at(vol.root(), &path), &data).await.unwrap();
 
     // The hint is what the scan saw; the file on the server is four times that.
     let stale_hint = (data.len() / 4) as u64;
     let stream = vol
-        .open_read_stream_with_hint(&AppPath::legacy_unchecked(Path::new(&path)), Some(stale_hint))
+        .open_read_stream_with_hint(&app_at(vol.root(), &path), Some(stale_hint))
         .await
         .unwrap();
     let got = drain(stream).await;
@@ -312,19 +267,15 @@ async fn smb_integration_a_file_that_shrank_since_the_scan_is_read_in_full() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &dir)).await.unwrap();
 
     let data: Vec<u8> = (0..=255u8).cycle().take(64 * 1024).collect();
     let path = format!("{}/shrunk.bin", dir);
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&path)), &data)
-        .await
-        .unwrap();
+    vol.create_file(&app_at(vol.root(), &path), &data).await.unwrap();
 
     let stale_hint = (data.len() * 4) as u64;
     let stream = vol
-        .open_read_stream_with_hint(&AppPath::legacy_unchecked(Path::new(&path)), Some(stale_hint))
+        .open_read_stream_with_hint(&app_at(vol.root(), &path), Some(stale_hint))
         .await
         .unwrap();
     let got = drain(stream).await;
@@ -345,21 +296,14 @@ async fn smb_integration_random_reader_serves_positioned_reads_over_one_handle()
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &dir)).await.unwrap();
 
     let size = 3 * 1024 * 1024 + 17;
     let data: Vec<u8> = (0..size).map(|i| (i % 251) as u8).collect();
     let smb_path = format!("{}/random.bin", dir);
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&smb_path)), &data)
-        .await
-        .unwrap();
+    vol.create_file(&app_at(vol.root(), &smb_path), &data).await.unwrap();
 
-    let reader = vol
-        .open_random_reader(&AppPath::legacy_unchecked(Path::new(&smb_path)))
-        .await
-        .unwrap();
+    let reader = vol.open_random_reader(&app_at(vol.root(), &smb_path)).await.unwrap();
     assert_eq!(reader.size(), size as u64);
     for offset in [0usize, size / 2, size - 100, 1] {
         let got = reader.read_at(offset as u64, 64 * 1024).await.unwrap();
@@ -369,9 +313,7 @@ async fn smb_integration_random_reader_serves_positioned_reads_over_one_handle()
     assert!(reader.read_at(size as u64, 10).await.unwrap().is_empty());
     reader.close().await.unwrap();
 
-    let refused = vol
-        .open_random_reader(&AppPath::legacy_unchecked(Path::new(&dir)))
-        .await;
+    let refused = vol.open_random_reader(&app_at(vol.root(), &dir)).await;
     assert!(
         matches!(refused, Err(VolumeError::IsADirectory(_))),
         "got {:?}",

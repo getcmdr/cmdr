@@ -11,7 +11,6 @@
 use super::test_support::*;
 use super::*;
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
 
 #[tokio::test]
 #[ignore = "Requires Docker SMB containers (./apps/desktop/test/smb-servers/start.sh)"]
@@ -51,7 +50,7 @@ async fn smb_integration_attempt_reconnect_rebuilds_session() {
     // 5. Verify hot-path ops work again.
     let vol = make_docker_volume().await;
     assert_eq!(vol.session_state(), ConnectionState::Direct);
-    assert!(vol.list_directory_impl(Path::new("")).await.is_ok());
+    assert!(vol.list_directory_impl(&app_at(vol.root(), "")).await.is_ok());
 
     // Simulate "the server hung up": drop the smb2 session and flip state.
     // We don't need to actually break the network; `attempt_reconnect`'s
@@ -61,7 +60,7 @@ async fn smb_integration_attempt_reconnect_rebuilds_session() {
     assert_eq!(vol.session_state(), ConnectionState::Disconnected);
 
     // Hot-path op should fail: clone_session refuses while Disconnected.
-    let result = vol.list_directory_impl(Path::new("")).await;
+    let result = vol.list_directory_impl(&app_at(vol.root(), "")).await;
     assert!(
         matches!(result, Err(VolumeError::DeviceDisconnected(_))),
         "expected DeviceDisconnected before reconnect, got {:?}",
@@ -84,7 +83,7 @@ async fn smb_integration_attempt_reconnect_rebuilds_session() {
 
     // And hot-path ops should work again.
     let entries = vol
-        .list_directory_impl(Path::new(""))
+        .list_directory_impl(&app_at(vol.root(), ""))
         .await
         .expect("list_directory should succeed after reconnect");
     assert!(entries.iter().all(|e| e.name != "." && e.name != ".."));
@@ -128,7 +127,7 @@ async fn smb_integration_reconnect_repoints_the_liveness_reading() {
         smb2::Liveness::Disconnected,
         "the reading must follow the rebuilt session, not the one it replaced"
     );
-    vol.list_directory_impl(Path::new(""))
+    vol.list_directory_impl(&app_at(vol.root(), ""))
         .await
         .expect("the rebuilt session works");
 }
@@ -160,7 +159,7 @@ async fn smb_integration_a_connection_the_server_closed_while_idle_comes_back_on
     assert!(dead.is_disconnected());
     assert_eq!(vol.session_state(), ConnectionState::Direct, "nothing has noticed yet");
 
-    vol.list_directory_impl(Path::new(""))
+    vol.list_directory_impl(&app_at(vol.root(), ""))
         .await
         .expect("the next use reconnects in place and answers");
     assert_eq!(vol.session_state(), ConnectionState::Direct);
@@ -200,7 +199,7 @@ async fn smb_integration_an_idle_closed_connection_that_cannot_come_back_marks_t
         .connection()
         .mark_dead();
 
-    assert!(vol.list_directory_impl(Path::new("")).await.is_err());
+    assert!(vol.list_directory_impl(&app_at(vol.root(), "")).await.is_err());
     assert_eq!(vol.session_state(), ConnectionState::Disconnected);
     assert_eq!(
         events
@@ -257,13 +256,13 @@ async fn smb_integration_scan_pool_opens_lists_and_closes() {
     // Seed a private directory with two known files, isolated from parallel tests.
     let dir = share_path(&test_dir_name());
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+    vol.create_directory(&app_at(vol.root(), &dir))
         .await
         .expect("create test dir");
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/a.txt"))), b"hello")
+    vol.create_file(&app_at(vol.root(), &format!("{dir}/a.txt")), b"hello")
         .await
         .expect("create a.txt");
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/b.txt"))), b"hi")
+    vol.create_file(&app_at(vol.root(), &format!("{dir}/b.txt")), b"hi")
         .await
         .expect("create b.txt");
 
@@ -283,11 +282,11 @@ async fn smb_integration_scan_pool_opens_lists_and_closes() {
     // the two files, matching the main-session listing. Drives the pool acquire +
     // listing path end to end.
     let via_pool = vol
-        .list_directory_for_scan_impl(Path::new(&dir), None)
+        .list_directory_for_scan_impl(&app_at(vol.root(), &dir), None)
         .await
         .expect("listing the seeded dir through the pool should succeed");
     let via_main = vol
-        .list_directory_impl(Path::new(&dir))
+        .list_directory_impl(&app_at(vol.root(), &dir))
         .await
         .expect("listing the seeded dir through the main session should succeed");
     assert_eq!(names(via_pool.clone()), vec!["a.txt", "b.txt"], "pool sees both files");
@@ -306,7 +305,7 @@ async fn smb_integration_scan_pool_opens_lists_and_closes() {
     // With the pool closed, a scan listing falls back to the main session and
     // still returns the same contents.
     let via_fallback = vol
-        .list_directory_for_scan_impl(Path::new(&dir), None)
+        .list_directory_for_scan_impl(&app_at(vol.root(), &dir), None)
         .await
         .expect("scan listing falls back to the main session once the pool is closed");
     assert_eq!(
@@ -388,14 +387,14 @@ async fn smb_integration_superseded_volume_still_serves_its_holders() {
     // What an in-flight operation holds across the swap.
     let held = Arc::clone(&vol);
     assert!(
-        held.list_directory_impl(Path::new("")).await.is_ok(),
+        held.list_directory_impl(&app_at(vol.root(), "")).await.is_ok(),
         "sanity: the session works before the swap"
     );
 
     vol.on_superseded();
 
     assert!(
-        held.list_directory_impl(Path::new("")).await.is_ok(),
+        held.list_directory_impl(&app_at(vol.root(), "")).await.is_ok(),
         "a superseded volume must keep serving its holders: an upgrade is not a disconnect"
     );
     assert_eq!(
@@ -424,7 +423,7 @@ async fn smb_integration_superseded_volume_still_serves_its_holders() {
         .expect("on_unmount runs on a blocking thread");
     assert!(
         matches!(
-            held.list_directory_impl(Path::new("")).await,
+            held.list_directory_impl(&app_at(vol.root(), "")).await,
             Err(VolumeError::DeviceDisconnected(_))
         ),
         "an actual unmount still drops the session"
@@ -457,7 +456,7 @@ async fn smb_integration_superseded_volume_reconnects_without_reclaiming_the_id(
         .expect("a retired volume still rebuilds for the operation holding it");
     assert_eq!(vol.session_state(), ConnectionState::Direct);
     assert!(
-        vol.list_directory_impl(Path::new("")).await.is_ok(),
+        vol.list_directory_impl(&app_at(vol.root(), "")).await.is_ok(),
         "the holder's work continues on the rebuilt session"
     );
     assert!(
@@ -546,7 +545,7 @@ async fn smb_integration_mount_unmount_cycles_leave_no_sockets_behind() {
 
     for _ in 0..CYCLES {
         let vol = make_docker_volume().await;
-        vol.list_directory_impl(Path::new(""))
+        vol.list_directory_impl(&app_at(vol.root(), ""))
             .await
             .expect("the fresh mount lists its root");
         vol.begin_scan_session().await;

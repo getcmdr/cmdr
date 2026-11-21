@@ -6,11 +6,11 @@
 use super::SmbVolume;
 use super::dfs_links::{LinkCall, is_behind_dfs_link};
 use super::session::SessionLease;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::volume::{VolumeError, XattrAnswer, XattrReadMode};
 use log::debug;
 use smb2::SmbClient;
 use smb2::client::tree::Tree;
-use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
 
 /// [`SmbVolume::or_through_link`]'s `op` for one xattr read, after a batch item
@@ -57,7 +57,7 @@ impl SmbVolume {
     /// DFS link. Every failure goes through the funnel with its lease's generation.
     pub(super) async fn read_xattr_many_impl(
         &self,
-        paths: &[PathBuf],
+        paths: &[AppPathBuf],
         name: &str,
         mode: XattrReadMode,
     ) -> Vec<XattrAnswer> {
@@ -100,7 +100,7 @@ impl SmbVolume {
         results
     }
 
-    pub(super) async fn write_xattr_impl(&self, path: &Path, name: &str, value: &[u8]) -> Result<(), VolumeError> {
+    pub(super) async fn write_xattr_impl(&self, path: &AppPath, name: &str, value: &[u8]) -> Result<(), VolumeError> {
         let smb_path = self.to_smb_path(path)?;
         let SessionLease {
             tree,
@@ -121,7 +121,7 @@ impl SmbVolume {
         self.answer_for_the_store("write_xattr", &smb_path, generation, answer)
     }
 
-    pub(super) async fn remove_xattr_impl(&self, path: &Path, name: &str) -> Result<(), VolumeError> {
+    pub(super) async fn remove_xattr_impl(&self, path: &AppPath, name: &str) -> Result<(), VolumeError> {
         let smb_path = self.to_smb_path(path)?;
         let SessionLease {
             tree,

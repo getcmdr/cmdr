@@ -10,13 +10,12 @@
 use super::test_support::*;
 use super::*;
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::metadata::{CarriedMetadata, ClassOutcome, MetadataClasses, Unblock, UserFlags};
 use cmdr_fs::volume::{InMemoryVolume, StreamLength, WriteMode};
 
 /// The flags the share's read stream reports for `path`: the copy's own read.
 async fn read_flags(vol: &SmbVolume, path: &str) -> UserFlags {
-    vol.open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+    vol.open_read_stream(&app_at(vol.root(), path))
         .await
         .unwrap_or_else(|e| panic!("open {path}: {e:?}"))
         .metadata(MetadataClasses::FLAGS)
@@ -37,7 +36,7 @@ async fn write_carrying(vol: &SmbVolume, dest: &str, bytes: Vec<u8>, flags: User
     );
     let stream = source.open_read_stream(app_path!("/src.bin")).await.unwrap();
     vol.write_from_stream(
-        &AppPath::legacy_unchecked(Path::new(dest)),
+        &app_at(vol.root(), dest),
         WriteMode::CreateNew,
         StreamLength::Known(size),
         stream,
@@ -57,9 +56,7 @@ async fn smb_integration_a_write_keeps_hidden_and_leaves_locked_for_the_landing(
     let vol = make_docker_volume().await;
     let base = test_dir_name();
     ensure_clean(&vol, &base).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &base)).await.unwrap();
     let max_write = vol.negotiated_max_write().await.expect("negotiated params");
     let big = (max_write + 64 * 1024) as usize;
     assert!(
@@ -96,26 +93,18 @@ async fn smb_integration_locked_lands_after_the_rename_and_a_reversal_can_still_
     let vol = make_docker_volume().await;
     let base = test_dir_name();
     ensure_clean(&vol, &base).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &base)).await.unwrap();
     let file = format!("{base}/locked.txt");
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&file)), b"locked")
-        .await
-        .unwrap();
+    vol.create_file(&app_at(vol.root(), &file), b"locked").await.unwrap();
     let folder = format!("{base}/locked-folder");
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&folder)))
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &folder)).await.unwrap();
     let set = CarriedMetadata {
         flags: UserFlags::HIDDEN | UserFlags::LOCKED,
         ..CarriedMetadata::default()
     };
 
     for path in [&file, &folder] {
-        let report = vol
-            .apply_metadata(&AppPath::legacy_unchecked(Path::new(path)), &set, None)
-            .await;
+        let report = vol.apply_metadata(&app_at(vol.root(), path), &set, None).await;
         assert_eq!(report.flags, ClassOutcome::Kept, "{path}: {report:?}");
     }
     assert_eq!(read_flags(&vol, &file).await, UserFlags::HIDDEN | UserFlags::LOCKED);
@@ -123,22 +112,14 @@ async fn smb_integration_locked_lands_after_the_rename_and_a_reversal_can_still_
     // landing because a staged temp wearing it couldn't be REMOVED (a cancel,
     // a failed landing), not renamed.
     let renamed = format!("{base}/locked-renamed.txt");
-    vol.rename(
-        &AppPath::legacy_unchecked(Path::new(&file)),
-        &AppPath::legacy_unchecked(Path::new(&renamed)),
-        false,
-    )
-    .await
-    .expect("a Read-only file renames");
-    vol.rename(
-        &AppPath::legacy_unchecked(Path::new(&renamed)),
-        &AppPath::legacy_unchecked(Path::new(&file)),
-        false,
-    )
-    .await
-    .expect("and back");
+    vol.rename(&app_at(vol.root(), &file), &app_at(vol.root(), &renamed), false)
+        .await
+        .expect("a Read-only file renames");
+    vol.rename(&app_at(vol.root(), &renamed), &app_at(vol.root(), &file), false)
+        .await
+        .expect("and back");
     assert_eq!(
-        vol.folder_metadata(&AppPath::legacy_unchecked(Path::new(&folder)), MetadataClasses::FLAGS)
+        vol.folder_metadata(&app_at(vol.root(), &folder), MetadataClasses::FLAGS)
             .await
             .flags,
         UserFlags::HIDDEN | UserFlags::LOCKED,
@@ -146,24 +127,21 @@ async fn smb_integration_locked_lands_after_the_rename_and_a_reversal_can_still_
     );
 
     for path in [&file, &folder] {
-        let refused = vol.delete(&AppPath::legacy_unchecked(Path::new(path))).await;
+        let refused = vol.delete(&app_at(vol.root(), path)).await;
         assert!(
             matches!(refused, Err(VolumeError::PermissionDenied { .. })),
             "{path}: a Read-only item refuses its removal as a permission refusal; got {refused:?}"
         );
         assert!(
-            matches!(
-                vol.clear_blockers(&AppPath::legacy_unchecked(Path::new(path))).await,
-                Unblock::Cleared(_)
-            ),
+            matches!(vol.clear_blockers(&app_at(vol.root(), path)).await, Unblock::Cleared(_)),
             "{path}: Read-only clears"
         );
-        vol.delete(&AppPath::legacy_unchecked(Path::new(path)))
+        vol.delete(&app_at(vol.root(), path))
             .await
             .unwrap_or_else(|e| panic!("{path}: removable once cleared: {e:?}"));
     }
     assert_eq!(
-        vol.clear_blockers(&AppPath::legacy_unchecked(Path::new(&base))).await,
+        vol.clear_blockers(&app_at(vol.root(), &base)).await,
         Unblock::NothingToClear,
         "a plain folder has nothing to clear"
     );
@@ -180,15 +158,14 @@ async fn smb_integration_a_dotfile_is_hidden_by_its_name_not_a_flag() {
     let vol = make_docker_volume().await;
     let base = test_dir_name();
     ensure_clean(&vol, &base).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &base)).await.unwrap();
     let dotfile = format!("{base}/.profile");
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&dotfile)), b"dot")
-        .await
-        .unwrap();
+    vol.create_file(&app_at(vol.root(), &dotfile), b"dot").await.unwrap();
     assert!(
-        vol.attributes_impl(Path::new(&dotfile)).await.unwrap().is_hidden(),
+        vol.attributes_impl(&app_at(vol.root(), &dotfile))
+            .await
+            .unwrap()
+            .is_hidden(),
         "fixture precondition: the server marks a dotfile Hidden"
     );
 

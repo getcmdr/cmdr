@@ -5,36 +5,30 @@
 
 use super::*;
 use crate::volume::test_support::*;
+use cmdr_fs::app_path;
 use cmdr_fs::volume::Volume;
 
 #[test]
 fn to_smb_path_empty() {
     let vol = make_test_volume();
-    assert_eq!(vol.to_smb_path(Path::new("")).unwrap(), "");
-    assert_eq!(vol.to_smb_path(Path::new("/")).unwrap(), "");
-    assert_eq!(vol.to_smb_path(Path::new(".")).unwrap(), "");
+    assert_eq!(vol.smb_path_of("").unwrap(), "");
+    assert_eq!(vol.smb_path_of("/").unwrap(), "");
+    assert_eq!(vol.smb_path_of(".").unwrap(), "");
 }
 
 #[test]
 fn to_smb_path_relative() {
     let vol = make_test_volume();
-    assert_eq!(vol.to_smb_path(Path::new("Documents")).unwrap(), "Documents");
-    assert_eq!(
-        vol.to_smb_path(Path::new("Documents/report.pdf")).unwrap(),
-        "Documents/report.pdf"
-    );
+    assert_eq!(vol.smb_path_of("Documents").unwrap(), "Documents");
+    assert_eq!(vol.smb_path_of("Documents/report.pdf").unwrap(), "Documents/report.pdf");
 }
 
 #[test]
 fn to_smb_path_absolute_under_mount() {
     let vol = make_test_volume();
+    assert_eq!(vol.smb_path_of("/Volumes/TestShare/Documents").unwrap(), "Documents");
     assert_eq!(
-        vol.to_smb_path(Path::new("/Volumes/TestShare/Documents")).unwrap(),
-        "Documents"
-    );
-    assert_eq!(
-        vol.to_smb_path(Path::new("/Volumes/TestShare/Documents/report.pdf"))
-            .unwrap(),
+        vol.smb_path_of("/Volumes/TestShare/Documents/report.pdf").unwrap(),
         "Documents/report.pdf"
     );
 }
@@ -42,7 +36,7 @@ fn to_smb_path_absolute_under_mount() {
 #[test]
 fn to_smb_path_mount_root() {
     let vol = make_test_volume();
-    assert_eq!(vol.to_smb_path(Path::new("/Volumes/TestShare")).unwrap(), "");
+    assert_eq!(vol.smb_path_of("/Volumes/TestShare").unwrap(), "");
 }
 
 #[test]
@@ -53,11 +47,11 @@ fn to_smb_path_rejects_a_sibling_mount_that_merely_shares_a_name_prefix() {
     // on the share. Matching whole path components is the only safe compare.
     let vol = make_test_volume();
     assert!(matches!(
-        vol.to_smb_path(Path::new("/Volumes/TestShare-1/Documents")),
+        vol.smb_path_of("/Volumes/TestShare-1/Documents"),
         Err(VolumeError::NotFound(_))
     ));
     assert!(matches!(
-        vol.to_smb_path(Path::new("/Volumes/TestShareX")),
+        vol.smb_path_of("/Volumes/TestShareX"),
         Err(VolumeError::NotFound(_))
     ));
 }
@@ -69,7 +63,7 @@ fn a_root_anchored_dialog_destination_reaches_the_share() {
     // mount, on purpose. Anchoring at the IPC boundary is what closes that gap:
     // a move into an SMB subfolder died in 2 ms without it (ERR-XCP5Q).
     let vol = make_test_volume();
-    let anchored = cmdr_fs::volume::root_anchored(&vol.root().as_std_legacy(), Path::new("/test_photos/test footage"));
+    let anchored = cmdr_fs::volume::anchor_at_root(vol.root(), "/test_photos/test footage").expect("on this volume");
     assert_eq!(
         vol.to_smb_path(&anchored).unwrap(),
         "test_photos/test footage",
@@ -85,7 +79,7 @@ fn to_smb_path_rejects_a_path_outside_the_mount() {
     let vol = make_test_volume();
     for outside in ["/Volumes/Other/x", "/Users/test_user_3/notes.txt", "/Volumes"] {
         assert!(
-            matches!(vol.to_smb_path(Path::new(outside)), Err(VolumeError::NotFound(_))),
+            matches!(vol.smb_path_of(outside), Err(VolumeError::NotFound(_))),
             "{outside} is not on this share"
         );
     }
@@ -119,13 +113,11 @@ fn to_display_path_with_subpath() {
 fn an_anchored_mount_joins_its_share_root_onto_the_wire_path() {
     let vol = make_test_volume_anchored("example.com", "/Volumes/SYSVOL/example.com");
     assert_eq!(
-        vol.to_smb_path(Path::new("/Volumes/SYSVOL/example.com/Policies"))
-            .unwrap(),
+        vol.smb_path_of("/Volumes/SYSVOL/example.com/Policies").unwrap(),
         "example.com/Policies"
     );
     assert_eq!(
-        vol.to_smb_path(Path::new("/Volumes/SYSVOL/example.com/Policies/GPT.INI"))
-            .unwrap(),
+        vol.smb_path_of("/Volumes/SYSVOL/example.com/Policies/GPT.INI").unwrap(),
         "example.com/Policies/GPT.INI"
     );
 }
@@ -135,12 +127,9 @@ fn an_anchored_mount_root_is_the_share_root_itself() {
     // The mount root is not the share root: asking for "" would list the whole
     // share instead of the directory the pane is actually showing.
     let vol = make_test_volume_anchored("example.com", "/Volumes/SYSVOL/example.com");
-    assert_eq!(
-        vol.to_smb_path(Path::new("/Volumes/SYSVOL/example.com")).unwrap(),
-        "example.com"
-    );
-    assert_eq!(vol.to_smb_path(Path::new("/")).unwrap(), "example.com");
-    assert_eq!(vol.to_smb_path(Path::new("")).unwrap(), "example.com");
+    assert_eq!(vol.smb_path_of("/Volumes/SYSVOL/example.com").unwrap(), "example.com");
+    assert_eq!(vol.smb_path_of("/").unwrap(), "example.com");
+    assert_eq!(vol.smb_path_of("").unwrap(), "example.com");
 }
 
 #[test]
@@ -148,10 +137,7 @@ fn an_anchored_mount_joins_relative_paths_too() {
     // The trait contract's relative form is relative to the VOLUME root, which on
     // an anchored mount is already inside the share.
     let vol = make_test_volume_anchored("photos/2026", "/Volumes/2026");
-    assert_eq!(
-        vol.to_smb_path(Path::new("June/IMG_1.jpg")).unwrap(),
-        "photos/2026/June/IMG_1.jpg"
-    );
+    assert_eq!(vol.smb_path_of("June/IMG_1.jpg").unwrap(), "photos/2026/June/IMG_1.jpg");
 }
 
 #[test]
@@ -165,7 +151,7 @@ fn an_anchored_mount_still_rejects_a_path_outside_its_mount() {
         "/Users/test_user_13/notes.txt",
     ] {
         assert!(
-            matches!(vol.to_smb_path(Path::new(outside)), Err(VolumeError::NotFound(_))),
+            matches!(vol.smb_path_of(outside), Err(VolumeError::NotFound(_))),
             "{outside} is not on this mount"
         );
     }
@@ -189,7 +175,7 @@ fn the_two_directions_round_trip_on_an_anchored_mount() {
     // is watching and the pane goes stale after a write that worked.
     let vol = make_test_volume_anchored("photos/2026", "/Volumes/2026");
     for display in ["/Volumes/2026", "/Volumes/2026/June", "/Volumes/2026/June/IMG_1.jpg"] {
-        let wire = vol.to_smb_path(Path::new(display)).expect("on this mount");
+        let wire = vol.smb_path_of(display).expect("on this mount");
         assert_eq!(vol.to_display_path(&wire), display, "round trip through {wire}");
     }
 }
@@ -220,10 +206,9 @@ const MIXED_FORM: &str = "fot\u{f3}k/retusa\u{301}lt.jpg";
 #[test]
 fn a_mixed_form_path_reaches_the_wire_byte_for_byte() {
     let vol = make_test_volume();
-    assert_eq!(vol.to_smb_path(Path::new(MIXED_FORM)).unwrap(), MIXED_FORM);
+    assert_eq!(vol.smb_path_of(MIXED_FORM).unwrap(), MIXED_FORM);
     assert_eq!(
-        vol.to_smb_path(&Path::new("/Volumes/TestShare").join(MIXED_FORM))
-            .unwrap(),
+        vol.smb_path_of(&format!("/Volumes/TestShare/{MIXED_FORM}")).unwrap(),
         MIXED_FORM
     );
 }
@@ -231,7 +216,7 @@ fn a_mixed_form_path_reaches_the_wire_byte_for_byte() {
 #[test]
 fn a_mixed_form_path_round_trips_through_display_unchanged() {
     let vol = make_test_volume();
-    let display = vol.to_display_path(&vol.to_smb_path(Path::new(MIXED_FORM)).unwrap());
+    let display = vol.to_display_path(&vol.smb_path_of(MIXED_FORM).unwrap());
     assert_eq!(display, format!("/Volumes/TestShare/{MIXED_FORM}"));
 }
 
@@ -239,7 +224,76 @@ fn a_mixed_form_path_round_trips_through_display_unchanged() {
 fn an_anchored_mount_keeps_the_bytes_below_its_anchor() {
     let vol = make_test_volume_anchored("team", "/Volumes/team");
     assert_eq!(
-        vol.to_smb_path(&Path::new("/Volumes/team").join(MIXED_FORM)).unwrap(),
+        vol.smb_path_of(&format!("/Volumes/team/{MIXED_FORM}")).unwrap(),
         format!("team/{MIXED_FORM}")
+    );
+}
+
+// ── Names hold `\` and `:` on every host ──────────────────────────────────────
+//
+// smb2 maps the characters Windows forbids in a name into the private-use area and
+// back, so a Finder-saved `a\b 12:00.txt` lists with them. `std::path` on Windows
+// would split it at the `\` and read a `C:` name as a drive; the app path reads it
+// by its own bytes, so these run the same on every OS.
+
+#[test]
+fn a_backslash_or_a_colon_stays_inside_one_share_name() {
+    let vol = make_test_volume();
+    assert_eq!(
+        vol.to_smb_path(app_path!("/Volumes/TestShare/Notes/a\\b 12:00.txt"))
+            .unwrap(),
+        "Notes/a\\b 12:00.txt"
+    );
+    assert_eq!(smb_file_name("Notes/a\\b 12:00.txt"), Some("a\\b 12:00.txt"));
+    let (parent, name) =
+        parent_and_row_name(app_path!("/Volumes/TestShare/Notes/a\\b 12:00.txt")).expect("a parent and a name");
+    assert_eq!(name, "a\\b 12:00.txt");
+    assert_eq!(
+        vol.display_path_for(parent).expect("on this share").as_str(),
+        "/Volumes/TestShare/Notes"
+    );
+}
+
+#[test]
+fn a_share_paths_last_name_is_what_posix_reads() {
+    // The answers `Path::file_name` gives on macOS and Linux, read by `/` alone.
+    for (smb_path, want) in [
+        ("a/b", Some("b")),
+        ("a/b/", Some("b")),
+        ("a/b/.", Some("b")),
+        ("a/..", None),
+        (".", None),
+        ("", None),
+        ("b", Some("b")),
+    ] {
+        assert_eq!(smb_file_name(smb_path), want, "{smb_path:?}");
+    }
+}
+
+#[test]
+fn a_patch_path_is_the_typed_place_under_the_mount_root() {
+    let vol = make_test_volume_anchored("example.com", "/Volumes/SYSVOL/example.com");
+    let typed = |smb: &str| vol.app_path_of(smb).map(|p| p.as_str().to_string());
+    assert_eq!(typed("example.com").as_deref(), Some("/Volumes/SYSVOL/example.com"));
+    assert_eq!(
+        typed("example.com/Policies/GPT.INI").as_deref(),
+        Some("/Volumes/SYSVOL/example.com/Policies/GPT.INI")
+    );
+    // `Path`'s components drop empty and `.` names; a `..` names no listing a pane holds.
+    assert_eq!(
+        typed("example.com/a//./b").as_deref(),
+        Some("/Volumes/SYSVOL/example.com/a/b")
+    );
+    assert_eq!(typed("example.com/a/../b"), None);
+}
+
+#[test]
+fn until_escapes_go_live_an_escape_range_name_reaches_the_server_as_its_literal_text() {
+    // `RemoteRoot::to_remote`'s rule: decoding `caf\u{10FEC3}\u{10FEA9}` would address `café`.
+    let vol = make_test_volume();
+    let literal = "caf\u{10FEC3}\u{10FEA9}";
+    assert_eq!(
+        vol.smb_path_of(&format!("/Volumes/TestShare/{literal}")).unwrap(),
+        literal
     );
 }

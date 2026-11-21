@@ -7,14 +7,18 @@ use super::SmbVolume;
 use super::dfs_links::link_stat;
 use super::links::stat_through_link;
 use super::mapping::{filetime_to_unix_secs, map_smb_error};
+use super::mutation::listing_key;
 use super::session::SessionLease;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppNameBuf, AppPath, AppPathBuf, ListedFolder, Namer, PathArithmetic, is_escape};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_private::LogPrivate;
-use cmdr_fs::volume::scan_walk::{conflicts_against, fold_batch};
-use cmdr_fs::volume::{BatchScanResult, CopyScanResult, ScanBoundary, ScanConflict, SourceItemInfo, VolumeError};
+use cmdr_fs::volume::scan_walk::{conflicts_against, fold_batch_at};
+use cmdr_fs::volume::{
+    BatchScanResult, CopyScanResult, NotAChildName, ScanBoundary, ScanConflict, SourceItemInfo, VolumeError,
+};
 use log::{debug, warn};
-use std::path::{Path, PathBuf};
+use std::borrow::Cow;
+use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 
@@ -42,7 +46,7 @@ impl SmbVolume {
     pub(super) fn scan_recursive<'a>(
         &'a self,
         smb_path: &'a str,
-        caller_path: &'a Path,
+        caller_path: &'a AppPath,
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -75,7 +79,7 @@ impl SmbVolume {
                 // The lease is inside the read: a share that dropped fails it
                 // too, and a run after the wait takes the new session's.
                 let info = boundary
-                    .through_outages(caller_path, || async {
+                    .through_outages(&for_boundary(caller_path), || async {
                         let SessionLease {
                             tree,
                             mut conn,
@@ -100,20 +104,25 @@ impl SmbVolume {
                     result.total_bytes = info.size;
                     result.dedup_bytes = info.size;
                     result.top_level_is_directory = false;
-                    boundary.file(caller_path, info.size).await?;
+                    boundary.file(&for_boundary(caller_path), info.size).await?;
                     return Ok(result);
                 }
             }
 
             // It's a directory: list and recurse
             result.dir_count += 1;
-            boundary.dir(caller_path).await?;
-            let display_path = self.to_display_path(smb_path);
+            boundary.dir(&for_boundary(caller_path)).await?;
+            // The listing asks for the folder by the path its display spelling
+            // converts back to, as every pane listing does.
+            let listed_smb = self.smb_path_of(&self.to_display_path(smb_path))?;
             // A listing a dropped share cut off runs again once the scan's
             // owner has waited it out; nothing below counts until it answers.
             let entries = boundary
-                .through_outages(caller_path, || self.list_directory_impl(Path::new(&display_path)))
+                .through_outages(&for_boundary(caller_path), || {
+                    self.list_smb_directory(&listed_smb, None, None)
+                })
                 .await?;
+            let folder = ListedFolder::new(caller_path);
 
             for entry in &entries {
                 // A Mac-only file the transfer leaves out is no part of it (#314).
@@ -126,7 +135,7 @@ impl SmbVolume {
                     format!("{}/{}", smb_path, entry.name)
                 };
 
-                let child_caller = caller_path.join(&entry.name);
+                let child_caller = child_of(&folder, &entry.name)?;
                 if entry.is_directory {
                     let sub = self.scan_recursive(&child_smb, &child_caller, boundary).await?;
                     result.file_count += sub.file_count;
@@ -137,7 +146,9 @@ impl SmbVolume {
                     result.file_count += 1;
                     result.total_bytes += entry.size.unwrap_or(0);
                     result.dedup_bytes += entry.size.unwrap_or(0);
-                    boundary.file(&child_caller, entry.size.unwrap_or(0)).await?;
+                    boundary
+                        .file(&for_boundary(&child_caller), entry.size.unwrap_or(0))
+                        .await?;
                 }
             }
 
@@ -148,7 +159,7 @@ impl SmbVolume {
     /// Inherent body for the `scan_for_copy` trait method (thin delegator in `volume_impl`).
     pub(super) fn scan_for_copy_impl<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             let smb_path = self.to_smb_path(path)?;
@@ -170,7 +181,7 @@ impl SmbVolume {
     /// Inherent body for the `scan_for_copy_batch` trait method (thin delegator in `volume_impl`).
     pub(super) fn scan_for_copy_batch_impl<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -200,7 +211,7 @@ impl SmbVolume {
                 let scan = self.scan_recursive(&smb_path, &paths[0], boundary).await?;
                 return Ok(BatchScanResult {
                     aggregate: scan.clone(),
-                    per_path: vec![(AppPath::legacy_unchecked(&paths[0].clone()).into_owned(), scan)],
+                    per_path: vec![(paths[0].clone(), scan)],
                     files: None,
                 });
             }
@@ -222,9 +233,9 @@ impl SmbVolume {
                 // Cache oracle lookups so two paths sharing a parent only pay
                 // one cache scan + clone. Value: indexed-by-name view over the
                 // cached entries, or None if the oracle missed for this parent.
-                let mut parent_cache: HashMap<PathBuf, Option<Vec<FileEntry>>> = HashMap::new();
+                let mut parent_cache: HashMap<Cow<'_, Path>, Option<Vec<FileEntry>>> = HashMap::new();
                 for (idx, path) in paths.iter().enumerate() {
-                    let original_parent = path.parent().unwrap_or(Path::new("")).to_path_buf();
+                    let original_parent = path.parent().map_or(Cow::Borrowed(Path::new("")), listing_key);
                     let entries = parent_cache.entry(original_parent.clone()).or_insert_with(|| {
                         self.inner
                             .host()
@@ -237,7 +248,9 @@ impl SmbVolume {
                         continue;
                     };
 
-                    let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+                    // A name holding an escape has no row text to match (it was not
+                    // valid text natively): a real stat answers for it instead.
+                    let Some(name) = path.file_name().filter(|name| !name.chars().any(is_escape)) else {
                         leftover_indices.push(idx);
                         continue;
                     };
@@ -267,7 +280,7 @@ impl SmbVolume {
                             top_level_modified_at: entry.modified_at,
                             top_level_created_at: entry.created_at,
                         });
-                        boundary.file(path, entry.size.unwrap_or(0)).await?;
+                        boundary.file(&for_boundary(path), entry.size.unwrap_or(0)).await?;
                     }
                 }
 
@@ -295,7 +308,7 @@ impl SmbVolume {
                         )
                     })
                     .collect();
-                return Ok(fold_batch(per_path));
+                return Ok(fold_batch_at(per_path));
             }
 
             // Pre-compute SMB paths so the pipelined stats can borrow strings
@@ -320,7 +333,7 @@ impl SmbVolume {
             // run after the wait sends every stat again on the new session.
             let first_leftover = &paths[smb_paths[0].0];
             let outcomes = boundary
-                .through_outages(first_leftover, || self.stat_leftovers(&smb_paths))
+                .through_outages(&for_boundary(first_leftover), || self.stat_leftovers(&smb_paths))
                 .await?;
 
             // `per_path_results` is already shaped to the input length and
@@ -362,7 +375,7 @@ impl SmbVolume {
             }
 
             for (idx, size) in files_from_stats {
-                boundary.file(&paths[idx], size).await?;
+                boundary.file(&for_boundary(&paths[idx]), size).await?;
             }
 
             // Recurse sequentially into each discovered directory. Per-dir
@@ -395,7 +408,7 @@ impl SmbVolume {
                 })
                 .collect();
 
-            Ok(fold_batch(per_path))
+            Ok(fold_batch_at(per_path))
         })
     }
 
@@ -481,7 +494,7 @@ impl SmbVolume {
     pub(super) fn scan_for_conflicts_impl<'a>(
         &'a self,
         source_items: &'a [SourceItemInfo],
-        dest_path: &'a Path,
+        dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             // The listing is this backend's own (cache-aware); the matching is
@@ -499,4 +512,21 @@ impl SmbVolume {
             Ok(conflicts_against(source_items, &entries))
         })
     }
+}
+
+/// `name`, listed in `folder`, as the child the walk reports to the boundary:
+/// [`ListedFolder`]'s join, the shared walk's rule, so a share path never gains a
+/// Windows `\`. A name that isn't one plain name fails the walk as `InvalidName`
+/// (no SMB server lists one), ❌ never a join that lands somewhere else.
+fn child_of(folder: &ListedFolder<'_>, name: &str) -> Result<AppPathBuf, VolumeError> {
+    let refused = || VolumeError::from(NotAChildName(name.to_string()));
+    let typed = AppNameBuf::from_typed(name, Namer::HOST).map_err(|_| refused())?;
+    folder.join(&typed).map_err(|_| refused())
+}
+
+/// The spelling the boundary's progress, recorder, and outage judge take: they
+/// still speak `std::path` (they live in the engines), and the bridge hands back
+/// the exact native bytes. ❗ This file's one crossing.
+fn for_boundary(path: &AppPath) -> Cow<'_, Path> {
+    path.as_std_legacy()
 }

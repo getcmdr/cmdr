@@ -5,7 +5,6 @@
 
 use super::test_support::*;
 use super::*;
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::metadata::{CarriedMetadata, MetadataAsk, MetadataClasses, Xattr};
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{StreamLength, Volume, VolumeReadStream, WriteMode, XattrReadMode, conformance};
@@ -103,11 +102,7 @@ fn length_for(size: usize) -> StreamLength {
 
 async fn tags_of(volume: &SmbVolume, path: &str) -> Option<Vec<u8>> {
     volume
-        .read_xattr_many(
-            &[AppPath::legacy_unchecked(&PathBuf::from(path)).into_owned()],
-            TAGS,
-            XattrReadMode::Verified,
-        )
+        .read_xattr_many(&[app_at(volume.root(), path)], TAGS, XattrReadMode::Verified)
         .await
         .pop()
         .expect("one answer")
@@ -133,16 +128,13 @@ async fn smb_integration_the_landing_rename_keeps_a_copys_xattrs() {
     let volume = fruit_volume().await;
     let base = test_dir_name();
     ensure_clean(&volume, &base).await;
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
-        .await
-        .unwrap();
+    volume.create_directory(&app_at(volume.root(), &base)).await.unwrap();
     for (name, size) in [("small.txt", 10), ("large.bin", 2 * 1024 * 1024)] {
         let temp = format!("{base}/{name}.cmdr-tmp-xattrs");
         let landed = format!("{base}/{name}");
         let written = volume
             .write_from_stream(
-                &AppPath::legacy_unchecked(Path::new(&temp)),
+                &app_at(volume.root(), &temp),
                 WriteMode::CreateNew,
                 length_for(size),
                 Box::new(TaggedSource::new(size)),
@@ -152,11 +144,7 @@ async fn smb_integration_the_landing_rename_keeps_a_copys_xattrs() {
             .unwrap();
         assert!(written.refused().is_empty(), "{name}: {:?}", written.refused());
         volume
-            .rename(
-                &AppPath::legacy_unchecked(Path::new(&temp)),
-                &AppPath::legacy_unchecked(Path::new(&landed)),
-                false,
-            )
+            .rename(&app_at(volume.root(), &temp), &app_at(volume.root(), &landed), false)
             .await
             .unwrap();
         assert_eq!(
@@ -178,18 +166,12 @@ async fn smb_integration_a_plain_file_read_for_a_copy_costs_no_extra_frame() {
     let vol = fruit_counting_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &dir)).await.unwrap();
     let plain = format!("{dir}/plain.txt");
     let tagged = format!("{dir}/tagged.txt");
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&plain)), b"plain")
-        .await
-        .unwrap();
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&tagged)), b"tagged")
-        .await
-        .unwrap();
-    vol.write_xattr(&AppPath::legacy_unchecked(Path::new(&tagged)), TAGS, b"tags")
+    vol.create_file(&app_at(vol.root(), &plain), b"plain").await.unwrap();
+    vol.create_file(&app_at(vol.root(), &tagged), b"tagged").await.unwrap();
+    vol.write_xattr(&app_at(vol.root(), &tagged), TAGS, b"tags")
         .await
         .unwrap();
     let keeps = MetadataAsk {
@@ -200,7 +182,7 @@ async fn smb_integration_a_plain_file_read_for_a_copy_costs_no_extra_frame() {
     let cost = async |path: &str, size: u64, ask: MetadataAsk| {
         let (requests, compounds) = request_counts(&vol).await;
         let stream = vol
-            .open_read_stream_for_copy(&AppPath::legacy_unchecked(Path::new(path)), Some(size), ask)
+            .open_read_stream_for_copy(&app_at(vol.root(), path), Some(size), ask)
             .await
             .unwrap();
         let xattrs = stream.metadata(MetadataClasses::XATTRS).xattrs;
@@ -233,14 +215,11 @@ async fn smb_integration_a_share_without_streams_claims_no_xattrs_and_still_copi
     assert_eq!(volume.metadata_caps(), SmbVolume::METADATA_CAPS);
     let base = test_dir_name();
     ensure_clean(&volume, &base).await;
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
-        .await
-        .unwrap();
+    volume.create_directory(&app_at(volume.root(), &base)).await.unwrap();
     let path = format!("{base}/tagged.txt");
     let written = volume
         .write_from_stream(
-            &AppPath::legacy_unchecked(Path::new(&path)),
+            &app_at(volume.root(), &path),
             WriteMode::CreateNew,
             StreamLength::Known(10),
             Box::new(TaggedSource::new(10)),
@@ -251,7 +230,7 @@ async fn smb_integration_a_share_without_streams_claims_no_xattrs_and_still_copi
     assert_eq!(written.bytes, 10);
     let ask = MetadataAsk::for_copy(volume.metadata_caps(), cmdr_fs::metadata::MetadataCaps::ALL);
     let stream = volume
-        .open_read_stream_for_copy(&AppPath::legacy_unchecked(Path::new(&path)), Some(10), ask)
+        .open_read_stream_for_copy(&app_at(volume.root(), &path), Some(10), ask)
         .await
         .unwrap();
     assert!(stream.metadata(MetadataClasses::ALL).xattrs.is_empty());
@@ -269,15 +248,12 @@ async fn smb_integration_a_refused_xattr_is_a_reported_loss_and_never_a_failed_c
     volume.inner.stores_xattrs.store(true, Ordering::Relaxed);
     let base = test_dir_name();
     ensure_clean(&volume, &base).await;
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
-        .await
-        .unwrap();
+    volume.create_directory(&app_at(volume.root(), &base)).await.unwrap();
     for (name, size) in [("small.txt", 10), ("large.bin", 2 * 1024 * 1024)] {
         let path = format!("{base}/{name}");
         let written = volume
             .write_from_stream(
-                &AppPath::legacy_unchecked(Path::new(&path)),
+                &app_at(volume.root(), &path),
                 WriteMode::CreateNew,
                 length_for(size),
                 Box::new(TaggedSource::new(size)),
@@ -288,11 +264,7 @@ async fn smb_integration_a_refused_xattr_is_a_reported_loss_and_never_a_failed_c
         assert_eq!(written.bytes, size as u64, "{name}");
         assert_eq!(written.refused(), MetadataClasses::XATTRS, "{name}");
         assert_eq!(
-            volume
-                .get_metadata(&AppPath::legacy_unchecked(Path::new(&path)))
-                .await
-                .unwrap()
-                .size,
+            volume.get_metadata(&app_at(volume.root(), &path)).await.unwrap().size,
             Some(size as u64),
             "{name}"
         );
@@ -309,22 +281,19 @@ async fn smb_integration_a_server_side_copy_carries_the_streams_copychunk_leaves
     let volume = fruit_volume().await;
     let base = test_dir_name();
     ensure_clean(&volume, &base).await;
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
-        .await
-        .unwrap();
+    volume.create_directory(&app_at(volume.root(), &base)).await.unwrap();
     let tagged = format!("{base}/tagged.txt");
     let plain = format!("{base}/plain.txt");
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&tagged)), b"tagged bytes")
+        .create_file(&app_at(volume.root(), &tagged), b"tagged bytes")
         .await
         .unwrap();
     volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&plain)), b"plain bytes")
+        .create_file(&app_at(volume.root(), &plain), b"plain bytes")
         .await
         .unwrap();
     volume
-        .write_xattr(&AppPath::legacy_unchecked(Path::new(&tagged)), TAGS, b"tags")
+        .write_xattr(&app_at(volume.root(), &tagged), TAGS, b"tags")
         .await
         .unwrap();
 
@@ -333,17 +302,15 @@ async fn smb_integration_a_server_side_copy_carries_the_streams_copychunk_leaves
         (&plain, format!("{base}/plain copy.txt")),
     ] {
         let copied = volume
-            .copy_within(
-                &AppPath::legacy_unchecked(Path::new(from)),
-                &AppPath::legacy_unchecked(Path::new(&to)),
-                &|_, _| std::ops::ControlFlow::Continue(()),
-            )
+            .copy_within(&app_at(volume.root(), from), &app_at(volume.root(), &to), &|_, _| {
+                std::ops::ControlFlow::Continue(())
+            })
             .await
             .unwrap_or_else(|e| panic!("the fixture copies on the server: {e:?}"));
         assert_eq!(
             copied,
             volume
-                .get_metadata(&AppPath::legacy_unchecked(Path::new(from)))
+                .get_metadata(&app_at(volume.root(), from))
                 .await
                 .unwrap()
                 .size

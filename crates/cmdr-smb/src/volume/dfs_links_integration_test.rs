@@ -22,7 +22,6 @@
 use super::session_build::TEST_DFS_TARGET_OVERRIDES;
 use super::test_support::*;
 use super::*;
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::host::listings::{ListingHost, RecordingListings};
 use cmdr_fs::volume::{DirectoryChange, StreamLength, WriteMode};
@@ -91,7 +90,7 @@ async fn upload(vol: &SmbVolume, path: &str, bytes: Vec<u8>, mode: WriteMode) {
     let len = bytes.len() as u64;
     let written = vol
         .write_from_stream(
-            &AppPath::legacy_unchecked(Path::new(path)),
+            &app_at(vol.root(), path),
             mode,
             StreamLength::Known(len),
             inline_read_stream(bytes),
@@ -127,23 +126,19 @@ async fn smb_dfs_a_dead_link_target_refuses_the_path_and_leaves_the_share_up() {
     .await
     .expect("the share itself connects");
 
-    let refused = vol
-        .list_directory(&AppPath::legacy_unchecked(Path::new("data")), None)
-        .await;
+    let refused = vol.list_directory(&app_at(vol.root(), "data"), None).await;
     assert!(
         matches!(refused, Err(VolumeError::LinkTargetUnreachable(_))),
         "a listing behind the dead link refuses that path: {refused:?}"
     );
-    let stat = vol
-        .get_metadata(&AppPath::legacy_unchecked(Path::new("data/hello.txt")))
-        .await;
+    let stat = vol.get_metadata(&app_at(vol.root(), "data/hello.txt")).await;
     assert!(
         matches!(stat, Err(VolumeError::LinkTargetUnreachable(_))),
         "so does a stat: {stat:?}"
     );
 
     assert_eq!(vol.inner.state.state(), ConnectionState::Direct, "the share stays up");
-    vol.list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+    vol.list_directory(&app_at(vol.root(), ""), None)
         .await
         .expect("a path outside the link still answers");
 }
@@ -198,61 +193,55 @@ async fn smb_dfs_a_link_to_another_host_hears_nothing_without_consent() {
     let server = "localhost";
 
     assert_needs_consent(
-        vol.list_directory(&AppPath::legacy_unchecked(Path::new("data")), None)
-            .await,
+        vol.list_directory(&app_at(vol.root(), "data"), None).await,
         server,
         "a listing",
     );
     assert_needs_consent(
-        vol.get_metadata(&AppPath::legacy_unchecked(Path::new("data/hello.txt")))
-            .await,
+        vol.get_metadata(&app_at(vol.root(), "data/hello.txt")).await,
         server,
         "a stat",
     );
     assert_needs_consent(
-        vol.is_directory(&AppPath::legacy_unchecked(Path::new("data/subdir")))
-            .await,
+        vol.is_directory(&app_at(vol.root(), "data/subdir")).await,
         server,
         "is_directory",
     );
     assert_needs_consent(
-        vol.entry_kind(&AppPath::legacy_unchecked(Path::new("data/subdir")))
-            .await,
+        vol.entry_kind(&app_at(vol.root(), "data/subdir")).await,
         server,
         "entry_kind",
     );
     assert!(
-        !vol.exists(&AppPath::legacy_unchecked(Path::new("data/hello.txt")))
-            .await,
+        !vol.exists(&app_at(vol.root(), "data/hello.txt")).await,
         "exists can't say yes"
     );
     assert_needs_consent(
-        vol.attributes_impl(Path::new("data/hello.txt")).await,
+        vol.attributes_impl(&app_at(vol.root(), "data/hello.txt")).await,
         server,
         "attributes",
     );
     assert_needs_consent(
-        vol.read_range(&AppPath::legacy_unchecked(Path::new("data/hello.txt")), 0, 4)
-            .await,
+        vol.read_range(&app_at(vol.root(), "data/hello.txt"), 0, 4).await,
         server,
         "read_range",
     );
     assert_needs_consent(
-        vol.open_random_reader(&AppPath::legacy_unchecked(Path::new("data/hello.txt")))
+        vol.open_random_reader(&app_at(vol.root(), "data/hello.txt"))
             .await
             .map(|_| ()),
         server,
         "a random reader",
     );
     assert_needs_consent(
-        vol.open_read_stream(&AppPath::legacy_unchecked(Path::new("data/hello.txt")))
+        vol.open_read_stream(&app_at(vol.root(), "data/hello.txt"))
             .await
             .map(|_| ()),
         server,
         "a streamed read",
     );
     assert_needs_consent(
-        vol.open_read_stream_with_hint(&AppPath::legacy_unchecked(Path::new("data/hello.txt")), Some(23))
+        vol.open_read_stream_with_hint(&app_at(vol.root(), "data/hello.txt"), Some(23))
             .await
             .map(|_| ()),
         server,
@@ -260,7 +249,7 @@ async fn smb_dfs_a_link_to_another_host_hears_nothing_without_consent() {
     );
     assert_needs_consent(
         vol.write_from_stream(
-            &AppPath::legacy_unchecked(Path::new("data/upload.bin")),
+            &app_at(vol.root(), "data/upload.bin"),
             WriteMode::CreateNew,
             StreamLength::Known(5 * 1024 * 1024),
             inline_read_stream(payload(5 * 1024 * 1024)),
@@ -272,27 +261,24 @@ async fn smb_dfs_a_link_to_another_host_hears_nothing_without_consent() {
         "a streamed upload",
     );
     assert_needs_consent(
-        vol.create_file(&AppPath::legacy_unchecked(Path::new("data/small.bin")), b"hi")
-            .await,
+        vol.create_file(&app_at(vol.root(), "data/small.bin"), b"hi").await,
         server,
         "a one-frame create",
     );
     assert_needs_consent(
-        vol.create_directory(&AppPath::legacy_unchecked(Path::new("data/new")))
-            .await,
+        vol.create_directory(&app_at(vol.root(), "data/new")).await,
         server,
         "a mkdir",
     );
     assert_needs_consent(
-        vol.delete(&AppPath::legacy_unchecked(Path::new("data/hello.txt")))
-            .await,
+        vol.delete(&app_at(vol.root(), "data/hello.txt")).await,
         server,
         "a delete",
     );
     assert_needs_consent(
         vol.rename(
-            &AppPath::legacy_unchecked(Path::new("data/hello.txt")),
-            &AppPath::legacy_unchecked(Path::new("data/other.txt")),
+            &app_at(vol.root(), "data/hello.txt"),
+            &app_at(vol.root(), "data/other.txt"),
             false,
         )
         .await,
@@ -300,8 +286,7 @@ async fn smb_dfs_a_link_to_another_host_hears_nothing_without_consent() {
         "a rename",
     );
     assert_needs_consent(
-        vol.scan_for_copy(&AppPath::legacy_unchecked(Path::new("data/subdir")))
-            .await,
+        vol.scan_for_copy(&app_at(vol.root(), "data/subdir")).await,
         server,
         "a copy scan",
     );
@@ -309,16 +294,13 @@ async fn smb_dfs_a_link_to_another_host_hears_nothing_without_consent() {
     vol.begin_scan_session().await;
     let listed = vol
         .list_directory_for_scan(
-            &AppPath::legacy_unchecked(Path::new("data/subdir")),
+            &app_at(vol.root(), "data/subdir"),
             None,
             &cmdr_fs::volume::ScanListingClock::start(),
         )
         .await;
     let prefetched = vol
-        .open_read_stream_for_scan(
-            &AppPath::legacy_unchecked(Path::new("data/subdir/nested.txt")),
-            Some(12),
-        )
+        .open_read_stream_for_scan(&app_at(vol.root(), "data/subdir/nested.txt"), Some(12))
         .await
         .map(|_| ());
     vol.end_scan_session().await;
@@ -326,14 +308,13 @@ async fn smb_dfs_a_link_to_another_host_hears_nothing_without_consent() {
     assert_needs_consent(prefetched, server, "an enrichment prefetch");
 
     assert!(
-        vol.watch_listing(&AppPath::legacy_unchecked(Path::new("data/subdir")))
-            .is_none(),
+        vol.watch_listing(&app_at(vol.root(), "data/subdir")).is_none(),
         "no link was followed, so nothing starts a watch there"
     );
 
     assert_eq!(accepted.load(Ordering::SeqCst), 0, "the other host heard nothing");
     assert_eq!(vol.inner.state.state(), ConnectionState::Direct, "the share stays up");
-    vol.list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+    vol.list_directory(&app_at(vol.root(), ""), None)
         .await
         .expect("a path outside the link still answers");
 }
@@ -347,21 +328,20 @@ async fn smb_dfs_a_link_to_another_host_stops_when_consent_is_forgotten() {
         return;
     }
     let vol = dfs_volume().await;
-    vol.list_directory(&AppPath::legacy_unchecked(Path::new("data")), None)
+    vol.list_directory(&app_at(vol.root(), "data"), None)
         .await
         .expect("allowed");
 
     assert!(crate::LinkConsents::forget("127.0.0.1", "smb-dfs-target"));
     assert_needs_consent(
-        vol.list_directory(&AppPath::legacy_unchecked(Path::new("data")), None)
-            .await,
+        vol.list_directory(&app_at(vol.root(), "data"), None).await,
         "127.0.0.1",
         "a known link, forgotten",
     );
     assert_eq!(vol.inner.state.state(), ConnectionState::Direct, "the share stays up");
 
     assert!(crate::LinkConsents::allow("127.0.0.1", "smb-dfs-target"));
-    vol.list_directory(&AppPath::legacy_unchecked(Path::new("data")), None)
+    vol.list_directory(&app_at(vol.root(), "data"), None)
         .await
         .expect("allowed again");
 }
@@ -376,7 +356,7 @@ async fn smb_dfs_a_file_behind_a_link_downloads_streamed_and_hinted() {
     let expected = b"Hello from DFS target!\n".to_vec();
 
     let streamed = drain(
-        vol.open_read_stream(&AppPath::legacy_unchecked(Path::new("data/hello.txt")))
+        vol.open_read_stream(&app_at(vol.root(), "data/hello.txt"))
             .await
             .unwrap(),
     )
@@ -387,12 +367,9 @@ async fn smb_dfs_a_file_behind_a_link_downloads_streamed_and_hinted() {
     );
 
     let hinted = drain(
-        vol.open_read_stream_with_hint(
-            &AppPath::legacy_unchecked(Path::new("data/hello.txt")),
-            Some(expected.len() as u64),
-        )
-        .await
-        .unwrap(),
+        vol.open_read_stream_with_hint(&app_at(vol.root(), "data/hello.txt"), Some(expected.len() as u64))
+            .await
+            .unwrap(),
     )
     .await;
     assert_eq!(
@@ -409,9 +386,7 @@ async fn smb_dfs_uploads_through_a_link_land_on_the_target_streamed_and_single_f
     }
     let vol = dfs_volume().await;
     let folder = run_folder();
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&folder)))
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &folder)).await.unwrap();
     let big_path = &format!("{folder}/big.bin");
     let small_path = &format!("{folder}/small.bin");
 
@@ -422,24 +397,14 @@ async fn smb_dfs_uploads_through_a_link_land_on_the_target_streamed_and_single_f
     let small = payload(4096);
     upload(&vol, small_path, small.clone(), WriteMode::CreateOrReplace).await;
 
-    let big_back = drain(
-        vol.open_read_stream(&AppPath::legacy_unchecked(Path::new(big_path)))
-            .await
-            .unwrap(),
-    )
-    .await;
+    let big_back = drain(vol.open_read_stream(&app_at(vol.root(), big_path)).await.unwrap()).await;
     assert_eq!(big_back.len(), big.len());
     assert!(big_back == big, "the streamed upload reads back byte for byte");
-    let small_back = drain(
-        vol.open_read_stream(&AppPath::legacy_unchecked(Path::new(small_path)))
-            .await
-            .unwrap(),
-    )
-    .await;
+    let small_back = drain(vol.open_read_stream(&app_at(vol.root(), small_path)).await.unwrap()).await;
     assert_eq!(small_back, small, "the one-frame upload reads back byte for byte");
 
     for path in [big_path, small_path, &folder] {
-        vol.delete(&AppPath::legacy_unchecked(Path::new(path))).await.unwrap();
+        vol.delete(&app_at(vol.root(), path)).await.unwrap();
     }
 }
 
@@ -466,10 +431,7 @@ async fn smb_dfs_a_folder_behind_a_link_lists() {
     }
     let vol = dfs_volume().await;
 
-    let top = vol
-        .list_directory(&AppPath::legacy_unchecked(Path::new("data")), None)
-        .await
-        .unwrap();
+    let top = vol.list_directory(&app_at(vol.root(), "data"), None).await.unwrap();
     let top_names = names(&top);
     assert!(
         top_names.contains(&"hello.txt".to_string()) && top_names.contains(&"subdir".to_string()),
@@ -484,7 +446,7 @@ async fn smb_dfs_a_folder_behind_a_link_lists() {
     );
 
     let nested = vol
-        .list_directory(&AppPath::legacy_unchecked(Path::new("data/subdir")), None)
+        .list_directory(&app_at(vol.root(), "data/subdir"), None)
         .await
         .unwrap();
     assert_eq!(
@@ -502,56 +464,47 @@ async fn smb_dfs_stats_behind_a_link_describe_the_target() {
     }
     let vol = dfs_volume().await;
 
-    let file = vol
-        .get_metadata(&AppPath::legacy_unchecked(Path::new("data/hello.txt")))
-        .await
-        .unwrap();
+    let file = vol.get_metadata(&app_at(vol.root(), "data/hello.txt")).await.unwrap();
     assert_eq!((file.is_directory, file.size), (false, Some(23)), "get_metadata");
     assert!(
-        vol.is_directory(&AppPath::legacy_unchecked(Path::new("data/subdir")))
-            .await
-            .unwrap(),
+        vol.is_directory(&app_at(vol.root(), "data/subdir")).await.unwrap(),
         "is_directory"
     );
     assert!(
-        !vol.is_directory(&AppPath::legacy_unchecked(Path::new("data/hello.txt")))
-            .await
-            .unwrap(),
+        !vol.is_directory(&app_at(vol.root(), "data/hello.txt")).await.unwrap(),
         "is_directory on a file"
     );
     assert!(
-        vol.exists(&AppPath::legacy_unchecked(Path::new("data/subdir/nested.txt")))
-            .await,
+        vol.exists(&app_at(vol.root(), "data/subdir/nested.txt")).await,
         "exists"
     );
     assert!(
-        !vol.exists(&AppPath::legacy_unchecked(Path::new("data/no-such-file.txt")))
-            .await,
+        !vol.exists(&app_at(vol.root(), "data/no-such-file.txt")).await,
         "exists on a miss"
     );
     assert!(matches!(
-        vol.get_metadata(&AppPath::legacy_unchecked(Path::new("data/no-such-file.txt")))
-            .await,
+        vol.get_metadata(&app_at(vol.root(), "data/no-such-file.txt")).await,
         Err(VolumeError::NotFound(_))
     ));
     assert_eq!(
-        vol.entry_kind(&AppPath::legacy_unchecked(Path::new("data/subdir")))
-            .await
-            .unwrap(),
+        vol.entry_kind(&app_at(vol.root(), "data/subdir")).await.unwrap(),
         cmdr_fs::volume::EntryKind::Directory,
         "entry_kind"
     );
-    let attributes = vol.attributes_impl(Path::new("data/hello.txt")).await.unwrap();
+    let attributes = vol
+        .attributes_impl(&app_at(vol.root(), "data/hello.txt"))
+        .await
+        .unwrap();
     assert!(!attributes.contains(smb2::FileAttributes::DIRECTORY), "attributes");
     assert_eq!(
-        vol.read_range(&AppPath::legacy_unchecked(Path::new("data/hello.txt")), 6, 4)
+        vol.read_range(&app_at(vol.root(), "data/hello.txt"), 6, 4)
             .await
             .unwrap(),
         b"from".to_vec(),
         "read_range"
     );
     let reader = vol
-        .open_random_reader(&AppPath::legacy_unchecked(Path::new("data/hello.txt")))
+        .open_random_reader(&app_at(vol.root(), "data/hello.txt"))
         .await
         .unwrap();
     assert_eq!(reader.size(), 23, "open_random_reader");
@@ -565,17 +518,11 @@ async fn smb_dfs_a_copy_scan_walks_behind_a_link() {
     }
     let vol = dfs_volume().await;
 
-    let scan = vol
-        .scan_for_copy(&AppPath::legacy_unchecked(Path::new("data/subdir")))
-        .await
-        .unwrap();
+    let scan = vol.scan_for_copy(&app_at(vol.root(), "data/subdir")).await.unwrap();
     assert_eq!((scan.file_count, scan.total_bytes), (1, 12), "a folder behind the link");
 
     let batch = vol
-        .scan_for_copy_batch(&[
-            AppPath::legacy_unchecked(&PathBuf::from("data/hello.txt")).into_owned(),
-            AppPath::legacy_unchecked(&PathBuf::from("data/subdir")).into_owned(),
-        ])
+        .scan_for_copy_batch(&[app_at(vol.root(), "data/hello.txt"), app_at(vol.root(), "data/subdir")])
         .await
         .unwrap();
     assert_eq!(
@@ -596,61 +543,36 @@ async fn smb_dfs_mutations_behind_a_link_land_on_the_target() {
     let file = format!("{folder}/note.txt");
     let renamed = format!("{folder}/renamed.txt");
 
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&folder)))
-        .await
-        .unwrap();
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&file)), b"hi")
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &folder)).await.unwrap();
+    vol.create_file(&app_at(vol.root(), &file), b"hi").await.unwrap();
     assert!(
         matches!(
-            vol.create_file(&AppPath::legacy_unchecked(Path::new(&file)), b"again")
-                .await,
+            vol.create_file(&app_at(vol.root(), &file), b"again").await,
             Err(VolumeError::AlreadyExists(_))
         ),
         "create_file still refuses to clobber through the link"
     );
-    vol.rename(
-        &AppPath::legacy_unchecked(Path::new(&file)),
-        &AppPath::legacy_unchecked(Path::new(&renamed)),
-        false,
-    )
-    .await
-    .unwrap();
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&file)), b"second")
+    vol.rename(&app_at(vol.root(), &file), &app_at(vol.root(), &renamed), false)
         .await
         .unwrap();
-    vol.rename(
-        &AppPath::legacy_unchecked(Path::new(&file)),
-        &AppPath::legacy_unchecked(Path::new(&renamed)),
-        true,
-    )
-    .await
-    .unwrap();
+    vol.create_file(&app_at(vol.root(), &file), b"second").await.unwrap();
+    vol.rename(&app_at(vol.root(), &file), &app_at(vol.root(), &renamed), true)
+        .await
+        .unwrap();
     assert_eq!(
-        vol.read_range(&AppPath::legacy_unchecked(Path::new(&renamed)), 0, 6)
-            .await
-            .unwrap(),
+        vol.read_range(&app_at(vol.root(), &renamed), 0, 6).await.unwrap(),
         b"second".to_vec(),
         "the forced rename swapped the new file in"
     );
     assert_eq!(
-        names(
-            &vol.list_directory(&AppPath::legacy_unchecked(Path::new(&folder)), None)
-                .await
-                .unwrap()
-        ),
+        names(&vol.list_directory(&app_at(vol.root(), &folder), None).await.unwrap()),
         vec!["renamed.txt".to_string()]
     );
 
-    vol.delete(&AppPath::legacy_unchecked(Path::new(&renamed)))
-        .await
-        .unwrap();
-    vol.delete(&AppPath::legacy_unchecked(Path::new(&folder)))
-        .await
-        .unwrap();
+    vol.delete(&app_at(vol.root(), &renamed)).await.unwrap();
+    vol.delete(&app_at(vol.root(), &folder)).await.unwrap();
     assert!(
-        !vol.exists(&AppPath::legacy_unchecked(Path::new(&folder))).await,
+        !vol.exists(&app_at(vol.root(), &folder)).await,
         "the folder is gone from the target"
     );
 }
@@ -666,19 +588,14 @@ async fn smb_dfs_a_call_under_a_known_link_skips_the_refused_round_trip() {
         return;
     }
     let vol = dfs_volume().await;
-    vol.list_directory(&AppPath::legacy_unchecked(Path::new("data")), None)
-        .await
-        .unwrap();
+    vol.list_directory(&app_at(vol.root(), "data"), None).await.unwrap();
     // A watcher's stats would land in the count (`make_counting_volume`).
     drop(vol.inner.watcher_cancel.lock_ignore_poison().take());
 
     let before = request_counts(&vol).await;
-    let file = vol
-        .get_metadata(&AppPath::legacy_unchecked(Path::new("data/hello.txt")))
-        .await
-        .unwrap();
+    let file = vol.get_metadata(&app_at(vol.root(), "data/hello.txt")).await.unwrap();
     let nested = vol
-        .list_directory(&AppPath::legacy_unchecked(Path::new("data/subdir")), None)
+        .list_directory(&app_at(vol.root(), "data/subdir"), None)
         .await
         .unwrap();
     let after = request_counts(&vol).await;
@@ -707,57 +624,32 @@ async fn smb_dfs_a_move_between_folders_behind_a_link_lands() {
     let inner = format!("{folder}/inner");
     let file = format!("{folder}/moved.txt");
     let moved = format!("{inner}/moved.txt");
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&folder)))
-        .await
-        .unwrap();
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&inner)))
-        .await
-        .unwrap();
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&file)), b"first")
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &folder)).await.unwrap();
+    vol.create_directory(&app_at(vol.root(), &inner)).await.unwrap();
+    vol.create_file(&app_at(vol.root(), &file), b"first").await.unwrap();
 
-    vol.rename(
-        &AppPath::legacy_unchecked(Path::new(&file)),
-        &AppPath::legacy_unchecked(Path::new(&moved)),
-        false,
-    )
-    .await
-    .unwrap_or_else(|e| panic!("a move inside the link lands: {e:?}"));
-    assert!(
-        !vol.exists(&AppPath::legacy_unchecked(Path::new(&file))).await,
-        "the source is gone"
-    );
+    vol.rename(&app_at(vol.root(), &file), &app_at(vol.root(), &moved), false)
+        .await
+        .unwrap_or_else(|e| panic!("a move inside the link lands: {e:?}"));
+    assert!(!vol.exists(&app_at(vol.root(), &file)).await, "the source is gone");
     assert_eq!(
-        vol.read_range(&AppPath::legacy_unchecked(Path::new(&moved)), 0, 5)
-            .await
-            .unwrap(),
+        vol.read_range(&app_at(vol.root(), &moved), 0, 5).await.unwrap(),
         b"first".to_vec()
     );
 
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&file)), b"again")
+    vol.create_file(&app_at(vol.root(), &file), b"again").await.unwrap();
+    vol.rename(&app_at(vol.root(), &file), &app_at(vol.root(), &moved), true)
         .await
-        .unwrap();
-    vol.rename(
-        &AppPath::legacy_unchecked(Path::new(&file)),
-        &AppPath::legacy_unchecked(Path::new(&moved)),
-        true,
-    )
-    .await
-    .unwrap_or_else(|e| panic!("a forced move inside the link replaces: {e:?}"));
+        .unwrap_or_else(|e| panic!("a forced move inside the link replaces: {e:?}"));
     assert_eq!(
-        vol.read_range(&AppPath::legacy_unchecked(Path::new(&moved)), 0, 5)
-            .await
-            .unwrap(),
+        vol.read_range(&app_at(vol.root(), &moved), 0, 5).await.unwrap(),
         b"again".to_vec(),
         "the forced move swapped the new file in"
     );
 
-    vol.delete(&AppPath::legacy_unchecked(Path::new(&moved))).await.unwrap();
-    vol.delete(&AppPath::legacy_unchecked(Path::new(&inner))).await.unwrap();
-    vol.delete(&AppPath::legacy_unchecked(Path::new(&folder)))
-        .await
-        .unwrap();
+    vol.delete(&app_at(vol.root(), &moved)).await.unwrap();
+    vol.delete(&app_at(vol.root(), &inner)).await.unwrap();
+    vol.delete(&app_at(vol.root(), &folder)).await.unwrap();
 }
 
 #[tokio::test]
@@ -769,7 +661,7 @@ async fn smb_dfs_a_foreign_spelling_behind_a_link_resolves() {
     let vol = dfs_volume().await;
     // Exact already: nothing to correct.
     assert_eq!(
-        vol.find_stored_spelling(&AppPath::legacy_unchecked(Path::new("data/subdir/nested.txt")), None)
+        vol.find_stored_spelling(&app_at(vol.root(), "data/subdir/nested.txt"), None)
             .await
             .unwrap(),
         None
@@ -790,16 +682,13 @@ async fn smb_dfs_the_index_scan_pool_lists_behind_a_link() {
     );
     let listed = vol
         .list_directory_for_scan(
-            &AppPath::legacy_unchecked(Path::new("data/subdir")),
+            &app_at(vol.root(), "data/subdir"),
             None,
             &cmdr_fs::volume::ScanListingClock::start(),
         )
         .await;
     let prefetched = vol
-        .open_read_stream_for_scan(
-            &AppPath::legacy_unchecked(Path::new("data/subdir/nested.txt")),
-            Some(12),
-        )
+        .open_read_stream_for_scan(&app_at(vol.root(), "data/subdir/nested.txt"), Some(12))
         .await;
     vol.end_scan_session().await;
     assert_eq!(names(&listed.unwrap()), vec!["nested.txt".to_string()]);
@@ -821,23 +710,23 @@ async fn smb_dfs_a_listing_behind_a_link_claims_no_watch() {
     }
     let vol = dfs_volume().await;
     assert_eq!(
-        vol.listing_watch_coverage(&AppPath::legacy_unchecked(Path::new(""))),
+        vol.listing_watch_coverage(&app_at(vol.root(), "")),
         WatchCoverage::EveryWriter
     );
-    vol.list_directory(&AppPath::legacy_unchecked(Path::new("data/subdir")), None)
+    vol.list_directory(&app_at(vol.root(), "data/subdir"), None)
         .await
         .unwrap();
     assert_eq!(
-        vol.listing_watch_coverage(&AppPath::legacy_unchecked(Path::new("data/subdir"))),
+        vol.listing_watch_coverage(&app_at(vol.root(), "data/subdir")),
         WatchCoverage::None
     );
     assert_eq!(
-        vol.listing_watch_coverage(&AppPath::legacy_unchecked(Path::new("data/subdir/deeper"))),
+        vol.listing_watch_coverage(&app_at(vol.root(), "data/subdir/deeper")),
         WatchCoverage::None,
         "below a followed path too"
     );
     assert_eq!(
-        vol.listing_watch_coverage(&AppPath::legacy_unchecked(Path::new(""))),
+        vol.listing_watch_coverage(&app_at(vol.root(), "")),
         WatchCoverage::EveryWriter,
         "the share itself stays watched"
     );
@@ -861,20 +750,18 @@ async fn smb_dfs_a_shown_folder_behind_a_link_hears_another_clients_change() {
     let other_client = dfs_volume().await;
     let folder = run_folder();
     other_client
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&folder)))
+        .create_directory(&app_at(vol.root(), &folder))
         .await
         .unwrap();
 
     // The pane's read, which follows the link, then what the listing engine
     // asks for while the listing is open.
-    vol.list_directory(&AppPath::legacy_unchecked(Path::new(&folder)), None)
-        .await
-        .unwrap();
+    vol.list_directory(&app_at(vol.root(), &folder), None).await.unwrap();
     let hold = vol
-        .watch_listing(&AppPath::legacy_unchecked(Path::new(&folder)))
+        .watch_listing(&app_at(vol.root(), &folder))
         .expect("a listing behind a link keeps a watch on it");
     cmdr_fs::testing::wait_until_async(Duration::from_secs(10), "the link watch is live", || {
-        vol.listing_watch_coverage(&AppPath::legacy_unchecked(Path::new(&folder))) == WatchCoverage::EveryWriter
+        vol.listing_watch_coverage(&app_at(vol.root(), &folder)) == WatchCoverage::EveryWriter
     })
     .await;
 
@@ -883,10 +770,7 @@ async fn smb_dfs_a_shown_folder_behind_a_link_hears_another_clients_change() {
     let pane_path = Path::new(TEST_MOUNT_ROOT).join(&folder);
     let name = "from-another-client.txt";
     other_client
-        .create_file(
-            &AppPath::legacy_unchecked(Path::new(&format!("{folder}/{name}"))),
-            b"outside",
-        )
+        .create_file(&app_at(vol.root(), &format!("{folder}/{name}")), b"outside")
         .await
         .unwrap();
     cmdr_fs::testing::wait_until_async(
@@ -902,19 +786,16 @@ async fn smb_dfs_a_shown_folder_behind_a_link_hears_another_clients_change() {
 
     drop(hold);
     assert_eq!(
-        vol.listing_watch_coverage(&AppPath::legacy_unchecked(Path::new(&folder))),
+        vol.listing_watch_coverage(&app_at(vol.root(), &folder)),
         WatchCoverage::None,
         "with no listing behind the link left, nothing watches it"
     );
 
     other_client
-        .delete(&AppPath::legacy_unchecked(Path::new(&format!("{folder}/{name}"))))
+        .delete(&app_at(vol.root(), &format!("{folder}/{name}")))
         .await
         .unwrap();
-    other_client
-        .delete(&AppPath::legacy_unchecked(Path::new(&folder)))
-        .await
-        .unwrap();
+    other_client.delete(&app_at(vol.root(), &folder)).await.unwrap();
 }
 
 #[tokio::test]
@@ -926,8 +807,8 @@ async fn smb_dfs_a_server_side_copy_through_a_link_asks_the_caller_to_stream() {
     let vol = dfs_volume().await;
     let result = Volume::copy_within(
         &vol,
-        &AppPath::legacy_unchecked(Path::new("data/hello.txt")),
-        &AppPath::legacy_unchecked(Path::new("data/never.txt")),
+        &app_at(vol.root(), "data/hello.txt"),
+        &app_at(vol.root(), "data/never.txt"),
         &|_, _| std::ops::ControlFlow::Continue(()),
     )
     .await;
@@ -954,7 +835,7 @@ async fn smb_dfs_a_held_reader_behind_a_link_reopens_after_the_target_drops() {
     let vol = dfs_volume_reaching_the_target_at(&format!("127.0.0.1:{}", proxy.port()), host).await;
 
     let reader = vol
-        .open_random_reader(&AppPath::legacy_unchecked(Path::new("data/hello.txt")))
+        .open_random_reader(&app_at(vol.root(), "data/hello.txt"))
         .await
         .unwrap();
     assert_eq!(reader.read_at(6, 4).await.unwrap(), b"from".to_vec());
@@ -987,17 +868,12 @@ async fn smb_dfs_a_download_behind_a_link_resumes_after_the_target_drops() {
     let proxy = black_hole_proxy::BlackHoleProxy::start(target_port).await;
     let vol = dfs_volume_reaching_the_target_at(&format!("127.0.0.1:{}", proxy.port()), VolumeHost::detached()).await;
     let folder = run_folder();
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&folder)))
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &folder)).await.unwrap();
     let path = format!("{folder}/big.bin");
     let big = payload(32 * 1024 * 1024);
     upload(&vol, &path, big.clone(), WriteMode::CreateOrReplace).await;
 
-    let mut stream = vol
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&path)))
-        .await
-        .unwrap();
+    let mut stream = vol.open_read_stream(&app_at(vol.root(), &path)).await.unwrap();
     let mut got = stream.next_chunk().await.unwrap().unwrap();
     let before = proxy.connections();
     proxy.cut();
@@ -1008,8 +884,6 @@ async fn smb_dfs_a_download_behind_a_link_resumes_after_the_target_drops() {
     assert_eq!(got.len(), big.len());
     assert!(got == big, "the resumed download reads back byte for byte");
 
-    vol.delete(&AppPath::legacy_unchecked(Path::new(&path))).await.unwrap();
-    vol.delete(&AppPath::legacy_unchecked(Path::new(&folder)))
-        .await
-        .unwrap();
+    vol.delete(&app_at(vol.root(), &path)).await.unwrap();
+    vol.delete(&app_at(vol.root(), &folder)).await.unwrap();
 }

@@ -12,14 +12,12 @@
 //! ([`Sidecars::seen`]). Until then a delete sends what it always did.
 
 use super::SmbVolume;
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::{MutationEvent, Volume};
 use log::{debug, warn};
 use smb2::client::{Connection, Tree};
 use std::collections::VecDeque;
-use std::path::Path;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -180,17 +178,11 @@ impl SmbVolume {
 
     /// The pane patch for a deleted sidecar: one `Deleted` in its folder.
     async fn notify_sidecar_deleted(&self, sidecar: &str) {
-        let display = self.to_display_path(sidecar);
-        let path = Path::new(&display);
-        if let (Some(parent), Some(name)) = (path.parent(), path.file_name())
-            && let Some(parent_display) = self.display_path_for(parent)
+        if let Some(path) = self.app_path_of(sidecar)
+            && let Some((parent, name)) = super::paths::parent_and_row_name(&path)
         {
-            self.notify_mutation(
-                &self.inner.volume_id,
-                &AppPath::legacy_unchecked(&parent_display),
-                MutationEvent::Deleted(name.to_string_lossy().to_string()),
-            )
-            .await;
+            self.notify_mutation(&self.inner.volume_id, parent, MutationEvent::Deleted(name))
+                .await;
         }
     }
 }

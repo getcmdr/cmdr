@@ -74,7 +74,9 @@ async fn smb_integration_a_temp_the_dropped_session_held_open_is_deletable_right
         .expect("the reconnect comes up through the proxy");
     assert_eq!(vol.session_state(), ConnectionState::Direct);
 
-    let deleted = vol.delete_impl(&PathBuf::from(MOUNT_ROOT).join(&name)).await;
+    let deleted = vol
+        .delete_impl(&app_at(vol.root(), &format!("{MOUNT_ROOT}/{name}")))
+        .await;
     assert!(
         deleted.is_ok(),
         "the temp the dropped session held open must go on the first try after the reconnect, got {deleted:?}"

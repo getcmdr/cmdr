@@ -6,7 +6,7 @@
 
 use super::test_support::*;
 use super::*;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPathBuf, PathFlavor};
 use cmdr_fs::volume::Volume;
 
 /// A small AppleDouble file: the magic, version 2, filler, no entries.
@@ -26,21 +26,18 @@ async fn qnap_like_volume() -> SmbVolume {
 async fn seeded(volume: &SmbVolume, files: &[(&str, &[u8])]) -> String {
     let base = test_dir_name();
     ensure_clean(volume, &base).await;
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
-        .await
-        .unwrap();
+    volume.create_directory(&app_at(volume.root(), &base)).await.unwrap();
     for (name, bytes) in files {
         volume
-            .create_file(&AppPath::legacy_unchecked(Path::new(&format!("{base}/{name}"))), bytes)
+            .create_file(&app_at(volume.root(), &format!("{base}/{name}")), bytes)
             .await
             .unwrap();
     }
     base
 }
 
-fn exists_at(base: &str, name: &str) -> PathBuf {
-    PathBuf::from(format!("{base}/{name}"))
+fn exists_at(base: &str, name: &str) -> AppPathBuf {
+    AppPathBuf::parse(&share_path(&format!("{base}/{name}")), PathFlavor::Posix).expect("a share path")
 }
 
 #[tokio::test]
@@ -60,29 +57,19 @@ async fn smb_integration_a_delete_takes_its_apple_double_sidecar_and_keeps_a_use
     .await;
     // The pane's listing is what shows the share keeps sidecars.
     volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(&base)), None)
+        .list_directory(&app_at(volume.root(), &base), None)
         .await
         .unwrap();
 
-    volume
-        .delete(&AppPath::legacy_unchecked(&exists_at(&base, "photo.jpg")))
-        .await
-        .unwrap();
-    volume
-        .delete(&AppPath::legacy_unchecked(&exists_at(&base, "notes")))
-        .await
-        .unwrap();
+    volume.delete(&exists_at(&base, "photo.jpg")).await.unwrap();
+    volume.delete(&exists_at(&base, "notes")).await.unwrap();
 
     assert!(
-        !volume
-            .exists(&AppPath::legacy_unchecked(&exists_at(&base, "._photo.jpg")))
-            .await,
+        !volume.exists(&exists_at(&base, "._photo.jpg")).await,
         "the sidecar went"
     );
     assert!(
-        volume
-            .exists(&AppPath::legacy_unchecked(&exists_at(&base, "._notes")))
-            .await,
+        volume.exists(&exists_at(&base, "._notes")).await,
         "a `._` file that isn't AppleDouble stays"
     );
     ensure_clean(&volume, &base).await;
@@ -105,34 +92,17 @@ async fn smb_integration_a_folder_and_a_large_fork_take_their_sidecars() {
         ],
     )
     .await;
+    volume.create_directory(&exists_at(&base, "Folder")).await.unwrap();
     volume
-        .create_directory(&AppPath::legacy_unchecked(&exists_at(&base, "Folder")))
-        .await
-        .unwrap();
-    volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(&base)), None)
+        .list_directory(&app_at(volume.root(), &base), None)
         .await
         .unwrap();
 
-    volume
-        .delete(&AppPath::legacy_unchecked(&exists_at(&base, "Folder")))
-        .await
-        .unwrap();
-    volume
-        .delete(&AppPath::legacy_unchecked(&exists_at(&base, "big.psd")))
-        .await
-        .unwrap();
+    volume.delete(&exists_at(&base, "Folder")).await.unwrap();
+    volume.delete(&exists_at(&base, "big.psd")).await.unwrap();
 
-    assert!(
-        !volume
-            .exists(&AppPath::legacy_unchecked(&exists_at(&base, "._Folder")))
-            .await
-    );
-    assert!(
-        !volume
-            .exists(&AppPath::legacy_unchecked(&exists_at(&base, "._big.psd")))
-            .await
-    );
+    assert!(!volume.exists(&exists_at(&base, "._Folder")).await);
+    assert!(!volume.exists(&exists_at(&base, "._big.psd")).await);
     ensure_clean(&volume, &base).await;
 }
 
@@ -144,29 +114,24 @@ async fn smb_integration_a_walks_later_delete_of_a_taken_sidecar_is_done() {
     let volume = qnap_like_volume().await;
     let base = seeded(&volume, &[("a.txt", b"a"), ("._a.txt", &apple_double_bytes())]).await;
     volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(&base)), None)
+        .list_directory(&app_at(volume.root(), &base), None)
         .await
         .unwrap();
 
+    volume.delete(&exists_at(&base, "a.txt")).await.unwrap();
     volume
-        .delete(&AppPath::legacy_unchecked(&exists_at(&base, "a.txt")))
-        .await
-        .unwrap();
-    volume
-        .delete(&AppPath::legacy_unchecked(&exists_at(&base, "._a.txt")))
+        .delete(&exists_at(&base, "._a.txt"))
         .await
         .expect("the sidecar the first delete took reads as deleted");
     assert!(
         matches!(
-            volume
-                .delete(&AppPath::legacy_unchecked(&exists_at(&base, "._a.txt")))
-                .await,
+            volume.delete(&exists_at(&base, "._a.txt")).await,
             Err(VolumeError::NotFound(_))
         ),
         "only once: a third delete is an ordinary missing file"
     );
     volume
-        .delete(&AppPath::legacy_unchecked(Path::new(&base)))
+        .delete(&app_at(volume.root(), &base))
         .await
         .expect("the folder is empty");
 }
@@ -180,20 +145,13 @@ async fn smb_integration_a_share_without_streams_keeps_its_sidecars() {
     assert!(!volume.stores_xattrs(), "the guest fixture has no streams");
     let base = seeded(&volume, &[("a.txt", b"a"), ("._a.txt", &apple_double_bytes())]).await;
     volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(&base)), None)
+        .list_directory(&app_at(volume.root(), &base), None)
         .await
         .unwrap();
 
-    volume
-        .delete(&AppPath::legacy_unchecked(&exists_at(&base, "a.txt")))
-        .await
-        .unwrap();
+    volume.delete(&exists_at(&base, "a.txt")).await.unwrap();
 
-    assert!(
-        volume
-            .exists(&AppPath::legacy_unchecked(&exists_at(&base, "._a.txt")))
-            .await
-    );
+    assert!(volume.exists(&exists_at(&base, "._a.txt")).await);
     ensure_clean(&volume, &base).await;
 }
 
@@ -208,10 +166,7 @@ async fn smb_integration_a_delete_probes_only_on_a_share_that_shows_sidecars() {
 
     let delete_cost = async |name: &str| {
         let before = request_counts(&volume).await;
-        volume
-            .delete(&AppPath::legacy_unchecked(&exists_at(&base, name)))
-            .await
-            .unwrap();
+        volume.delete(&exists_at(&base, name)).await.unwrap();
         let after = request_counts(&volume).await;
         (after.1 - before.1, after.0 - before.0)
     };

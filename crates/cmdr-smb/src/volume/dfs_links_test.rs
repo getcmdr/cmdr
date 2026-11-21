@@ -5,8 +5,6 @@
 use super::*;
 use crate::volume::test_support::*;
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
-use std::path::Path;
 
 #[test]
 fn a_followed_path_covers_itself_and_what_is_below_it_by_whole_components() {
@@ -38,15 +36,15 @@ fn a_listing_behind_a_followed_link_claims_no_watch() {
 
     assert_eq!(vol.listing_watch_coverage(app_path!("/")), WatchCoverage::EveryWriter);
     assert_eq!(
-        vol.listing_watch_coverage(&AppPath::legacy_unchecked(Path::new("data"))),
+        vol.listing_watch_coverage(&app_at(vol.root(), "data")),
         WatchCoverage::None
     );
     assert_eq!(
-        vol.listing_watch_coverage(&AppPath::legacy_unchecked(Path::new("data/sub"))),
+        vol.listing_watch_coverage(&app_at(vol.root(), "data/sub")),
         WatchCoverage::None
     );
     assert_eq!(
-        vol.listing_watch_coverage(&AppPath::legacy_unchecked(Path::new("database"))),
+        vol.listing_watch_coverage(&app_at(vol.root(), "database")),
         WatchCoverage::EveryWriter
     );
 }

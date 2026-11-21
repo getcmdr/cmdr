@@ -10,6 +10,7 @@
 use super::SmbVolume;
 use super::session::SessionLease;
 use super::state::{RanOn, ends_the_session};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::metadata::{CarriedMetadata, ClassOutcome, MetadataAsk, MetadataClasses, Xattr};
@@ -18,7 +19,6 @@ use log::{debug, warn};
 use smb2::StreamInfo;
 use smb2::client::{Connection, Tree};
 use std::ffi::OsString;
-use std::path::Path;
 
 /// The xattr macOS stamps on every file a process writes. `CarriedMetadata`
 /// never carries it (a copy can't set it), so a read doesn't spend a READ on it.
@@ -228,7 +228,7 @@ impl SmbVolume {
     /// A folder's xattrs, for a copy whose destination keeps them: a stream
     /// listing, then one overlapped read of what it names. A folder behind a
     /// DFS link, or one that can't be listed, reports none.
-    pub(super) async fn folder_xattrs(&self, path: &Path) -> Vec<Xattr> {
+    pub(super) async fn folder_xattrs(&self, path: &AppPath) -> Vec<Xattr> {
         let read = async {
             let smb_path = self.to_smb_path(path)?;
             let SessionLease {
@@ -244,7 +244,7 @@ impl SmbVolume {
         read.await.unwrap_or_else(|e| {
             debug!(
                 "SmbVolume::folder_metadata: {} reports no xattrs: {e}",
-                LogPrivate::dir_path(path),
+                LogPrivate::dir_path(path.as_str()),
                 e = LogError(&e)
             );
             Vec::new()
@@ -256,7 +256,7 @@ impl SmbVolume {
     /// fresh temp, `apply_metadata` may reach a path someone just deleted, and
     /// a stream write would create it). Overlapped, so a folder's few cost
     /// about two round trips together.
-    pub(super) async fn apply_xattrs_by_path(&self, path: &Path, carried: &CarriedMetadata) -> ClassOutcome {
+    pub(super) async fn apply_xattrs_by_path(&self, path: &AppPath, carried: &CarriedMetadata) -> ClassOutcome {
         let lease = async {
             let smb_path = self.to_smb_path(path)?;
             let lease = self.clone_session().await?;
@@ -267,7 +267,7 @@ impl SmbVolume {
             Err(e) => {
                 warn!(
                     "SmbVolume::apply_metadata: {} keeps no xattrs: {e}",
-                    LogPrivate::path(path),
+                    LogPrivate::path(path.as_str()),
                     e = LogError(&e)
                 );
                 return ClassOutcome::Refused;
@@ -298,7 +298,7 @@ impl SmbVolume {
                 Err(e) => {
                     warn!(
                         "SmbVolume::apply_metadata: {} doesn't keep an xattr: {e}",
-                        LogPrivate::path(path)
+                        LogPrivate::path(path.as_str())
                     );
                     // Through the funnel, so a dead session still counts.
                     let _ = self.handle_smb_result("apply_metadata(xattrs)", &smb_path, generation, Err::<(), _>(e));

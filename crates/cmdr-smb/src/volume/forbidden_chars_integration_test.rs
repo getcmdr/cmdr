@@ -60,23 +60,23 @@ async fn make_unicode_volume() -> SmbVolume {
 }
 
 /// Reads a whole file through `open_read_stream`.
-async fn read_all(vol: &SmbVolume, path: &Path) -> Vec<u8> {
+async fn read_all(vol: &SmbVolume, path: &AppPath) -> Vec<u8> {
     let stream = vol
-        .open_read_stream(&AppPath::legacy_unchecked(path))
+        .open_read_stream(path)
         .await
-        .unwrap_or_else(|e| panic!("opening {} for reading: {e:?}", path.display()));
+        .unwrap_or_else(|e| panic!("opening {path} for reading: {e:?}"));
     drain(stream).await
 }
 
 /// The entry named exactly `name` in `dir`'s listing.
-async fn listed(vol: &SmbVolume, dir: &Path, name: &str) -> FileEntry {
+async fn listed(vol: &SmbVolume, dir: &AppPath, name: &str) -> FileEntry {
     let entries = vol
         .list_directory_impl(dir)
         .await
-        .unwrap_or_else(|e| panic!("listing {}: {e:?}", dir.display()));
+        .unwrap_or_else(|e| panic!("listing {dir}: {e:?}"));
     entries.iter().find(|e| e.name == name).cloned().unwrap_or_else(|| {
         let names: Vec<&str> = entries.iter().map(|e| e.name.as_str()).collect();
-        panic!("{name:?} must be listed in {}; got {names:?}", dir.display())
+        panic!("{name:?} must be listed in {dir}; got {names:?}")
     })
 }
 
@@ -87,19 +87,20 @@ async fn listed(vol: &SmbVolume, dir: &Path, name: &str) -> FileEntry {
 async fn forbidden_characters_list_as_the_characters_themselves() {
     let vol = make_unicode_volume().await;
     let root = PathBuf::from(TEST_MOUNT_ROOT);
+    let root_app = app_at(vol.root(), TEST_MOUNT_ROOT);
 
     for (name, content) in FIXTURE_FILES {
-        let entry = listed(&vol, &root, name).await;
+        let entry = listed(&vol, &root_app, name).await;
         assert!(!entry.is_directory, "{name:?} is a file");
         assert_eq!(entry.size, Some(content.len() as u64), "size of {name:?}");
         assert_eq!(entry.path, root.join(name).to_string_lossy(), "path of {name:?}");
     }
-    let dir = listed(&vol, &root, FIXTURE_DIR).await;
+    let dir = listed(&vol, &root_app, FIXTURE_DIR).await;
     assert!(dir.is_directory, "{FIXTURE_DIR:?} is a directory");
-    listed(&vol, Path::new(&dir.path), FIXTURE_NESTED.0).await;
+    listed(&vol, &app_at(vol.root(), &dir.path), FIXTURE_NESTED.0).await;
 
     let pua: Vec<String> = vol
-        .list_directory_impl(&root)
+        .list_directory_impl(&root_app)
         .await
         .expect("listing the share root")
         .into_iter()
@@ -115,20 +116,20 @@ async fn forbidden_characters_list_as_the_characters_themselves() {
 #[ignore = "Requires Docker SMB containers (./apps/desktop/test/smb-servers/start.sh)"]
 async fn forbidden_character_names_open_and_read() {
     let vol = make_unicode_volume().await;
-    let root = PathBuf::from(TEST_MOUNT_ROOT);
+    let root = app_at(vol.root(), TEST_MOUNT_ROOT);
 
     for (name, content) in FIXTURE_FILES {
-        let path = PathBuf::from(listed(&vol, &root, name).await.path);
+        let path = app_at(vol.root(), &listed(&vol, &root, name).await.path);
         let metadata = vol
-            .get_metadata(&AppPath::legacy_unchecked(&path))
+            .get_metadata(&path)
             .await
             .unwrap_or_else(|e| panic!("metadata of {name:?}: {e:?}"));
         assert_eq!(metadata.size, Some(content.len() as u64), "metadata size of {name:?}");
         assert_eq!(read_all(&vol, &path).await, *content, "content of {name:?}");
     }
 
-    let dir = PathBuf::from(listed(&vol, &root, FIXTURE_DIR).await.path);
-    let nested = PathBuf::from(listed(&vol, &dir, FIXTURE_NESTED.0).await.path);
+    let dir = app_at(vol.root(), &listed(&vol, &root, FIXTURE_DIR).await.path);
+    let nested = app_at(vol.root(), &listed(&vol, &dir, FIXTURE_NESTED.0).await.path);
     assert_eq!(read_all(&vol, &nested).await, FIXTURE_NESTED.1);
 }
 
@@ -143,22 +144,20 @@ async fn a_forbidden_character_name_cmdr_writes_round_trips() {
     let vol = make_unicode_volume().await;
     let top = test_dir_name();
     ensure_clean(&vol, &top).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&top)))
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &top)).await.unwrap();
 
-    let dest = PathBuf::from(share_path(&top)).join(NAME);
+    let dest = app_at(vol.root(), &format!("{}/{NAME}", share_path(&top)));
     let no_progress = &|_: StreamWriteProgress| std::ops::ControlFlow::Continue(());
     let written = vol
         .write_from_stream(
-            &AppPath::legacy_unchecked(&dest),
+            &dest,
             cmdr_fs::volume::WriteMode::CreateOrReplace,
             StreamLength::Known(PAYLOAD.len() as u64),
             inline_read_stream(PAYLOAD.to_vec()),
             no_progress,
         )
         .await;
-    let listed_back = vol.list_directory_impl(&PathBuf::from(share_path(&top))).await;
+    let listed_back = vol.list_directory_impl(&app_at(vol.root(), &share_path(&top))).await;
     let read_back = match &written {
         Ok(_) => Some(read_all(&vol, &dest).await),
         Err(_) => None,

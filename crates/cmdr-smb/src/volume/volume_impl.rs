@@ -27,7 +27,7 @@ use cmdr_fs::volume::{
 };
 use cmdr_fs::volume::{ListingProgress, ListingWatch, Presence, Retirement};
 use log::debug;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::pin::Pin;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
@@ -89,6 +89,9 @@ impl Volume for SmbVolume {
     /// so the overlap is transient by construction. `DETAILS.md` § "Re-rooting
     /// a share".
     fn rerooted(&self, new_root: &AppPath) -> Option<std::sync::Arc<dyn Volume>> {
+        // The registry promotes between OS mount points, which this share keys and
+        // re-addresses natively (`MountAnchor`): the one crossing until the
+        // registry and `MountAnchor` speak app paths.
         let new_root_std = new_root.as_std_legacy();
         let new_root: &Path = &new_root_std;
         Some(std::sync::Arc::new(self.instance_at_root(new_root)?) as std::sync::Arc<dyn Volume>)
@@ -110,11 +113,7 @@ impl Volume for SmbVolume {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.list_directory_with_cancel_impl(path, on_progress, None).await
-        })
+        Box::pin(async move { self.list_directory_with_cancel_impl(path, on_progress, None).await })
     }
 
     /// One server batch at a time: `on_progress` ticks per batch and `cancel`
@@ -125,11 +124,7 @@ impl Volume for SmbVolume {
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&'a tokio_util::sync::CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.list_directory_with_cancel_impl(path, on_progress, cancel).await
-        })
+        Box::pin(async move { self.list_directory_with_cancel_impl(path, on_progress, cancel).await })
     }
 
     /// Draws from the per-scan connection pool when one is active (`scan_pool.rs`), and stops between
@@ -140,11 +135,7 @@ impl Volume for SmbVolume {
         cancel: Option<&'a tokio_util::sync::CancellationToken>,
         _clock: &'a cmdr_fs::volume::ScanListingClock,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.list_directory_for_scan_impl(path, cancel).await
-        })
+        Box::pin(async move { self.list_directory_for_scan_impl(path, cancel).await })
     }
 
     /// Walks a foreign path down against real listings, component by component
@@ -156,13 +147,7 @@ impl Volume for SmbVolume {
         path: &'a AppPath,
         cancel: Option<&'a tokio_util::sync::CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Option<AppPathBuf>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.find_stored_spelling_impl(path, cancel)
-                .await
-                .map(|found| found.map(|stored| AppPath::legacy_unchecked(&stored).into_owned()))
-        })
+        Box::pin(async move { self.find_stored_spelling_impl(path, cancel).await })
     }
 
     fn begin_scan_session<'a>(&'a self) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
@@ -195,22 +180,14 @@ impl Volume for SmbVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.get_metadata_impl(path).await
-        })
+        Box::pin(async move { self.get_metadata_impl(path).await })
     }
 
     /// Kept rather than taken from the trait default: `presence_impl` is a raw
     /// `stat` rather than the full `FileEntry` build `get_metadata` does, and
     /// the share root answers with no round trip at all.
     fn presence<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.presence_impl(path).await
-        })
+        Box::pin(async move { self.presence_impl(path).await })
     }
 
     /// Kept for the same reason as [`presence`](Self::presence): a raw `stat`, and a
@@ -219,11 +196,7 @@ impl Volume for SmbVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.is_directory_impl(path).await
-        })
+        Box::pin(async move { self.is_directory_impl(path).await })
     }
 
     /// A bare `stat`, one round trip: the trait default goes through
@@ -234,11 +207,7 @@ impl Volume for SmbVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<EntryKind, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.entry_kind_impl(path).await
-        })
+        Box::pin(async move { self.entry_kind_impl(path).await })
     }
 
     /// Whether the share has named streams, which is what an xattr is here. A plain
@@ -254,11 +223,7 @@ impl Volume for SmbVolume {
         name: &'a str,
         mode: XattrReadMode,
     ) -> Pin<Box<dyn Future<Output = Vec<XattrAnswer>> + Send + 'a>> {
-        Box::pin(async move {
-            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
-            let paths: &[PathBuf] = &paths_std;
-            self.read_xattr_many_impl(paths, name, mode).await
-        })
+        Box::pin(async move { self.read_xattr_many_impl(paths, name, mode).await })
     }
 
     fn write_xattr<'a>(
@@ -267,11 +232,7 @@ impl Volume for SmbVolume {
         name: &'a str,
         value: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.write_xattr_impl(path, name, value).await
-        })
+        Box::pin(async move { self.write_xattr_impl(path, name, value).await })
     }
 
     fn remove_xattr<'a>(
@@ -279,11 +240,7 @@ impl Volume for SmbVolume {
         path: &'a AppPath,
         name: &'a str,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.remove_xattr_impl(path, name).await
-        })
+        Box::pin(async move { self.remove_xattr_impl(path, name).await })
     }
 
     fn can_watch_listings(&self) -> bool {
@@ -388,8 +345,6 @@ impl Volume for SmbVolume {
     }
 
     fn listing_watch_coverage(&self, path: &AppPath) -> WatchCoverage {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         if let Some(behind_a_link) = self.link_watch_coverage(path) {
             return behind_a_link;
         }
@@ -409,8 +364,6 @@ impl Volume for SmbVolume {
     }
 
     fn watch_listing(&self, path: &AppPath) -> Option<ListingWatch> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         self.hold_link_watch(path)
     }
 
@@ -420,11 +373,7 @@ impl Volume for SmbVolume {
         parent_path: &'a AppPath,
         mutation: MutationEvent,
     ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
-        Box::pin(async move {
-            let parent_path_std = parent_path.as_std_legacy();
-            let parent_path: &Path = &parent_path_std;
-            self.notify_mutation_impl(parent_path, mutation).await
-        })
+        Box::pin(async move { self.notify_mutation_impl(parent_path, mutation).await })
     }
 
     fn get_space_info<'a>(&'a self) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
@@ -440,22 +389,14 @@ impl Volume for SmbVolume {
         path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.create_file_impl(path, content).await
-        })
+        Box::pin(async move { self.create_file_impl(path, content).await })
     }
 
     fn create_directory<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.create_directory_impl(path).await
-        })
+        Box::pin(async move { self.create_directory_impl(path).await })
     }
 
     /// The creation and modification dates and Hidden and Locked, in the one
@@ -466,11 +407,7 @@ impl Volume for SmbVolume {
         carried: &'a CarriedMetadata,
         modified: Option<std::time::SystemTime>,
     ) -> Pin<Box<dyn Future<Output = MetadataReport> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.apply_metadata_impl(path, carried, modified).await
-        })
+        Box::pin(async move { self.apply_metadata_impl(path, carried, modified).await })
     }
 
     /// A folder's Hidden and Locked: one `stat` round trip (`attributes.rs`).
@@ -479,29 +416,17 @@ impl Volume for SmbVolume {
         path: &'a AppPath,
         wanted: MetadataClasses,
     ) -> Pin<Box<dyn Future<Output = CarriedMetadata> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.folder_metadata_impl(path, wanted).await
-        })
+        Box::pin(async move { self.folder_metadata_impl(path, wanted).await })
     }
 
     /// Clears `READONLY`, for a reversal whose removal was refused
     /// (`attributes.rs`).
     fn clear_blockers<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Unblock> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.clear_blockers_impl(path).await
-        })
+        Box::pin(async move { self.clear_blockers_impl(path).await })
     }
 
     fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.delete_impl(path).await
-        })
+        Box::pin(async move { self.delete_impl(path).await })
     }
 
     fn rename<'a>(
@@ -510,13 +435,7 @@ impl Volume for SmbVolume {
         to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let to_std = to.as_std_legacy();
-            let to: &Path = &to_std;
-            let from_std = from.as_std_legacy();
-            let from: &Path = &from_std;
-            self.rename_impl(from, to, force).await
-        })
+        Box::pin(async move { self.rename_impl(from, to, force).await })
     }
 
     /// A share is writable as a BACKEND: every mutation method above is really
@@ -554,11 +473,7 @@ impl Volume for SmbVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.scan_for_copy_impl(path).await
-        })
+        Box::pin(async move { self.scan_for_copy_impl(path).await })
     }
 
     /// The scan preview's entry point. Reporting as the walk goes is what keeps
@@ -571,11 +486,7 @@ impl Volume for SmbVolume {
         paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
-            let paths: &[PathBuf] = &paths_std;
-            self.scan_for_copy_batch_impl(paths, boundary).await
-        })
+        Box::pin(async move { self.scan_for_copy_batch_impl(paths, boundary).await })
     }
 
     fn scan_for_conflicts<'a>(
@@ -583,11 +494,7 @@ impl Volume for SmbVolume {
         source_items: &'a [SourceItemInfo],
         dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let dest_path_std = dest_path.as_std_legacy();
-            let dest_path: &Path = &dest_path_std;
-            self.scan_for_conflicts_impl(source_items, dest_path).await
-        })
+        Box::pin(async move { self.scan_for_conflicts_impl(source_items, dest_path).await })
     }
 
     fn supports_streaming(&self) -> bool {
@@ -611,10 +518,6 @@ impl Volume for SmbVolume {
         on_progress: &'a (dyn Fn(u64, u64) -> std::ops::ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<u64, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let to_std = to.as_std_legacy();
-            let to: &Path = &to_std;
-            let from_std = from.as_std_legacy();
-            let from: &Path = &from_std;
             self.copy_on_server_impl(from, to, &ProgressOnly(on_progress))
                 .await
                 .map(|written| written.bytes)
@@ -632,10 +535,6 @@ impl Volume for SmbVolume {
         progress: &'a dyn ServerCopyProgress,
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let to_std = to.as_std_legacy();
-            let to: &Path = &to_std;
-            let from_std = from.as_std_legacy();
-            let from: &Path = &from_std;
             if mode.refuses_occupied() || !self.may_copy_on_server_from(source) {
                 return Err(VolumeError::NotSupported);
             }
@@ -687,8 +586,6 @@ impl Volume for SmbVolume {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let smb_path = self.to_smb_path(path)?;
 
             debug!(
@@ -712,8 +609,6 @@ impl Volume for SmbVolume {
         size_hint: Option<u64>,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             self.open_read_stream_with_hint_impl(path, size_hint, super::copy_xattrs::XattrAsk::Nothing)
                 .await
         })
@@ -727,11 +622,7 @@ impl Volume for SmbVolume {
         size_hint: Option<u64>,
         ask: cmdr_fs::metadata::MetadataAsk,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.open_read_stream_for_copy_impl(path, size_hint, ask).await
-        })
+        Box::pin(async move { self.open_read_stream_for_copy_impl(path, size_hint, ask).await })
     }
 
     /// The streaming download again from `offset`, once smb2 proves the file
@@ -742,11 +633,7 @@ impl Volume for SmbVolume {
         version: &'a cmdr_fs::volume::SourceVersion,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.resume_read_stream_impl(path, version, offset).await
-        })
+        Box::pin(async move { self.resume_read_stream_impl(path, version, offset).await })
     }
 
     fn open_read_stream_for_scan<'a>(
@@ -756,11 +643,7 @@ impl Volume for SmbVolume {
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         // Background bulk reads (media enrichment prefetch) draw small hinted files
         // from the scan-connection pool when one is active; see `scan_pool.rs`.
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.open_read_stream_for_scan_impl(path, size_hint).await
-        })
+        Box::pin(async move { self.open_read_stream_for_scan_impl(path, size_hint).await })
     }
 
     fn read_range<'a>(
@@ -770,8 +653,6 @@ impl Volume for SmbVolume {
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             if len == 0 {
                 return Ok(Vec::new());
             }
@@ -814,11 +695,7 @@ impl Volume for SmbVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeRandomReader>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.open_random_reader_impl(path).await
-        })
+        Box::pin(async move { self.open_random_reader_impl(path).await })
     }
 
     /// A write that fits one compound CREATE+WRITE+FLUSH+CLOSE frame is
@@ -842,8 +719,6 @@ impl Volume for SmbVolume {
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let dest_std = dest.as_std_legacy();
-            let dest: &Path = &dest_std;
             self.write_from_stream_impl(dest, mode, length, stream, on_progress)
                 .await
         })
@@ -865,8 +740,6 @@ impl Volume for SmbVolume {
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let target_std = target.as_std_legacy();
-            let target: &Path = &target_std;
             self.continue_write_from_stream_impl(target, at, length, stream, on_progress)
                 .await
         })

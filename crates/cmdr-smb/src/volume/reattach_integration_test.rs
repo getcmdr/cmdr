@@ -13,7 +13,6 @@
 use super::black_hole_proxy::BlackHoleProxy;
 use super::test_support::*;
 use super::*;
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::StreamLength;
 
 /// Bytes whose value depends on their offset, so a skipped or doubled span
@@ -25,14 +24,10 @@ fn patterned(len: usize) -> Vec<u8> {
 async fn seeded(vol: &SmbVolume, len: usize) -> (String, Vec<u8>) {
     let dir = test_dir_name();
     ensure_clean(vol, &dir).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &dir)).await.unwrap();
     let path = format!("{dir}/held.bin");
     let data = patterned(len);
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&path)), &data)
-        .await
-        .unwrap();
+    vol.create_file(&app_at(vol.root(), &path), &data).await.unwrap();
     (path, data)
 }
 
@@ -69,10 +64,7 @@ async fn smb_integration_a_held_reader_carries_on_after_its_connection_drops() {
     let proxy = BlackHoleProxy::start(guest_port()).await;
     let vol = make_docker_volume_through(proxy.port(), VolumeHost::detached()).await;
     let (path, data) = seeded(&vol, 1024 * 1024).await;
-    let reader = vol
-        .open_random_reader(&AppPath::legacy_unchecked(Path::new(&path)))
-        .await
-        .unwrap();
+    let reader = vol.open_random_reader(&app_at(vol.root(), &path)).await.unwrap();
     assert_eq!(reader.read_at(0, 4096).await.unwrap(), data[..4096]);
 
     // The network goes quiet with no FIN, so the server keeps the old open.
@@ -96,10 +88,7 @@ async fn smb_integration_a_held_reader_carries_on_after_its_connection_drops() {
 async fn smb_integration_concurrent_reads_on_a_dead_handle_all_carry_on() {
     let vol = make_docker_volume().await;
     let (path, data) = seeded(&vol, 1024 * 1024).await;
-    let reader = vol
-        .open_random_reader(&AppPath::legacy_unchecked(Path::new(&path)))
-        .await
-        .unwrap();
+    let reader = vol.open_random_reader(&app_at(vol.root(), &path)).await.unwrap();
     drop_the_main_connection(&vol).await;
 
     let reads = (0..8u64).map(|i| reader.read_at(i * 64 * 1024, 64 * 1024));
@@ -119,10 +108,7 @@ async fn smb_integration_concurrent_reads_on_a_dead_handle_all_carry_on() {
 async fn smb_integration_a_held_reader_refuses_a_file_rewritten_while_it_was_away() {
     let vol = make_docker_volume().await;
     let (path, data) = seeded(&vol, 256 * 1024).await;
-    let reader = vol
-        .open_random_reader(&AppPath::legacy_unchecked(Path::new(&path)))
-        .await
-        .unwrap();
+    let reader = vol.open_random_reader(&app_at(vol.root(), &path)).await.unwrap();
     assert_eq!(reader.read_at(0, 4096).await.unwrap(), data[..4096]);
 
     drop_the_main_connection(&vol).await;
@@ -146,10 +132,7 @@ async fn smb_integration_a_held_reader_refuses_a_file_rewritten_while_it_was_awa
 async fn smb_integration_a_download_resumes_after_its_connection_drops_with_no_byte_lost_or_doubled() {
     let vol = make_docker_volume().await;
     let (path, data) = seeded(&vol, 32 * 1024 * 1024).await;
-    let mut stream = vol
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&path)))
-        .await
-        .unwrap();
+    let mut stream = vol.open_read_stream(&app_at(vol.root(), &path)).await.unwrap();
     let mut got = stream.next_chunk().await.unwrap().unwrap();
 
     // The download rides the transfer session; its connection goes.
@@ -177,10 +160,7 @@ async fn smb_integration_a_download_refuses_a_file_rewritten_while_it_was_away()
     let proxy = BlackHoleProxy::start(guest_port()).await;
     let vol = make_docker_volume_through(proxy.port(), VolumeHost::detached()).await;
     let (path, _) = seeded(&vol, 32 * 1024 * 1024).await;
-    let mut stream = vol
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&path)))
-        .await
-        .unwrap();
+    let mut stream = vol.open_read_stream(&app_at(vol.root(), &path)).await.unwrap();
     stream.next_chunk().await.unwrap().unwrap();
 
     // Both of the share's connections go, and nothing new gets through yet.
@@ -217,10 +197,7 @@ async fn smb_integration_a_download_refuses_a_file_rewritten_while_it_was_away()
 async fn smb_integration_a_download_resumes_from_an_offset_on_its_named_version() {
     let vol = make_docker_volume().await;
     let (path, data) = seeded(&vol, 4 * 1024 * 1024).await;
-    let first = vol
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&path)))
-        .await
-        .unwrap();
+    let first = vol.open_read_stream(&app_at(vol.root(), &path)).await.unwrap();
     let version = first
         .source_version()
         .expect("a streamed SMB download names its version");
@@ -228,7 +205,7 @@ async fn smb_integration_a_download_resumes_from_an_offset_on_its_named_version(
 
     let offset = 1_500_000;
     let mut rest = vol
-        .resume_read_stream(&AppPath::legacy_unchecked(Path::new(&path)), &version, offset)
+        .resume_read_stream(&app_at(vol.root(), &path), &version, offset)
         .await
         .expect("the same file resumes");
     assert_eq!(
@@ -251,10 +228,7 @@ async fn smb_integration_a_download_resumes_from_an_offset_on_its_named_version(
 async fn smb_integration_a_resume_refuses_a_file_rewritten_since() {
     let vol = make_docker_volume().await;
     let (path, _) = seeded(&vol, 4 * 1024 * 1024).await;
-    let first = vol
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&path)))
-        .await
-        .unwrap();
+    let first = vol.open_read_stream(&app_at(vol.root(), &path)).await.unwrap();
     let version = first
         .source_version()
         .expect("a streamed SMB download names its version");
@@ -262,7 +236,7 @@ async fn smb_integration_a_resume_refuses_a_file_rewritten_since() {
     rewrite(&path, b"a different file").await;
 
     match vol
-        .resume_read_stream(&AppPath::legacy_unchecked(Path::new(&path)), &version, 1_000)
+        .resume_read_stream(&app_at(vol.root(), &path), &version, 1_000)
         .await
     {
         Err(VolumeError::SourceChanged(_)) => {}

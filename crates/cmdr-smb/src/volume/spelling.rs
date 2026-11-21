@@ -17,13 +17,14 @@
 use super::SmbVolume;
 use super::dfs_links::link_bare_stat;
 use super::session::SessionLease;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::VolumeError;
 use log::debug;
 use smb2::types::status::NtStatus;
 use std::collections::{HashMap, VecDeque};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 
@@ -183,9 +184,9 @@ impl SmbVolume {
     /// Checks `cancel` between round trips; one listing is a single call.
     pub(super) async fn find_stored_spelling_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         cancel: Option<&CancellationToken>,
-    ) -> Result<Option<PathBuf>, VolumeError> {
+    ) -> Result<Option<AppPathBuf>, VolumeError> {
         let smb_path = self.to_smb_path(path)?;
         let given: Vec<&str> = smb_path.split('/').filter(|c| !c.is_empty()).collect();
         // The anchor is where this mount sits, not a name anyone typed.
@@ -208,7 +209,7 @@ impl SmbVolume {
             let index = match self.probe(&comps, floor, cancel).await? {
                 Probe::Opens => {
                     let corrected = last_fix.is_some();
-                    return Ok(corrected.then(|| PathBuf::from(self.to_display_path(&comps.join("/")))));
+                    return Ok(corrected.then(|| self.app_path_of(&comps.join("/"))).flatten());
                 }
                 Probe::MissingAt(index) => index,
             };
@@ -252,7 +253,7 @@ impl SmbVolume {
                 // round trips. Nothing to correct, so the caller's answer stands.
                 ComponentMatch::Exact | ComponentMatch::Absent => return Ok(None),
                 ComponentMatch::Ambiguous => {
-                    return Err(VolumeError::AmbiguousName(path.to_string_lossy().into_owned()));
+                    return Err(VolumeError::AmbiguousName(path.as_str().to_string()));
                 }
             }
         }

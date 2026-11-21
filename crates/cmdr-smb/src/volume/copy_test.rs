@@ -10,7 +10,6 @@
 use super::super::SmbVolume;
 use super::super::test_support::*;
 use super::COPY_SLICE_BYTES;
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::conformance::{BIRTH_SECS, SOURCE_DATE_SECS};
 use cmdr_fs::volume::{ServerCopyProgress, WriteMode};
@@ -29,9 +28,7 @@ async fn volume_with_scratch() -> (SmbVolume, String) {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
-        .await
-        .unwrap();
+    vol.create_directory(&app_at(vol.root(), &dir)).await.unwrap();
     (vol, dir)
 }
 
@@ -43,11 +40,9 @@ fn payload(len: usize) -> Vec<u8> {
 
 /// `copy_within` without a progress hook.
 async fn copy(vol: &SmbVolume, from: &str, to: &str) -> Result<u64, VolumeError> {
-    vol.copy_within(
-        &AppPath::legacy_unchecked(Path::new(from)),
-        &AppPath::legacy_unchecked(Path::new(to)),
-        &|_, _| ControlFlow::Continue(()),
-    )
+    vol.copy_within(&app_at(vol.root(), from), &app_at(vol.root(), to), &|_, _| {
+        ControlFlow::Continue(())
+    })
     .await
 }
 
@@ -128,15 +123,13 @@ async fn smb_integration_copy_within_lands_byte_for_byte() {
     let (vol, dir) = volume_with_scratch().await;
     let bytes = payload(PAYLOAD);
     let (from, to) = (format!("{dir}/source.bin"), format!("{dir}/copy.bin"));
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&from)), &bytes)
-        .await
-        .unwrap();
+    vol.create_file(&app_at(vol.root(), &from), &bytes).await.unwrap();
 
     let copied = copy(&vol, &from, &to).await.expect("Samba does server-side copy");
 
     assert_eq!(copied, PAYLOAD as u64);
     assert_eq!(
-        hash_volume_file(&vol, Path::new(&to)).await,
+        hash_volume_file_at(&vol, &app_at(vol.root(), &to)).await,
         hash_bytes(&bytes),
         "the server-side copy must hold exactly the source's bytes"
     );
@@ -149,19 +142,15 @@ async fn smb_integration_copy_within_lands_byte_for_byte() {
 async fn smb_integration_copy_within_reports_progress_up_to_the_whole_file() {
     let (vol, dir) = volume_with_scratch().await;
     let (from, to) = (format!("{dir}/source.bin"), format!("{dir}/copy.bin"));
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&from)), &payload(PAYLOAD))
+    vol.create_file(&app_at(vol.root(), &from), &payload(PAYLOAD))
         .await
         .unwrap();
 
     let seen: Mutex<Vec<(u64, u64)>> = Mutex::new(Vec::new());
-    vol.copy_within(
-        &AppPath::legacy_unchecked(Path::new(&from)),
-        &AppPath::legacy_unchecked(Path::new(&to)),
-        &|done, total| {
-            seen.lock_ignore_poison().push((done, total));
-            ControlFlow::Continue(())
-        },
-    )
+    vol.copy_within(&app_at(vol.root(), &from), &app_at(vol.root(), &to), &|done, total| {
+        seen.lock_ignore_poison().push((done, total));
+        ControlFlow::Continue(())
+    })
     .await
     .unwrap();
 
@@ -184,24 +173,23 @@ async fn smb_integration_copy_within_cancel_leaves_nothing_behind() {
     let (vol, dir) = volume_with_scratch().await;
     let bytes = payload(PAYLOAD);
     let (from, to) = (format!("{dir}/source.bin"), format!("{dir}/copy.bin"));
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&from)), &bytes)
-        .await
-        .unwrap();
+    vol.create_file(&app_at(vol.root(), &from), &bytes).await.unwrap();
 
     let result = vol
-        .copy_within(
-            &AppPath::legacy_unchecked(Path::new(&from)),
-            &AppPath::legacy_unchecked(Path::new(&to)),
-            &|_, _| ControlFlow::Break(()),
-        )
+        .copy_within(&app_at(vol.root(), &from), &app_at(vol.root(), &to), &|_, _| {
+            ControlFlow::Break(())
+        })
         .await;
 
     assert!(matches!(result, Err(VolumeError::Cancelled(_))), "{result:?}");
     assert!(
-        !vol.exists(&AppPath::legacy_unchecked(Path::new(&to))).await,
+        !vol.exists(&app_at(vol.root(), &to)).await,
         "a canceled copy must not leave its partial"
     );
-    assert_eq!(hash_volume_file(&vol, Path::new(&from)).await, hash_bytes(&bytes));
+    assert_eq!(
+        hash_volume_file_at(&vol, &app_at(vol.root(), &from)).await,
+        hash_bytes(&bytes)
+    );
     ensure_clean(&vol, &dir).await;
 }
 
@@ -212,7 +200,7 @@ async fn smb_integration_copy_within_cancel_leaves_nothing_behind() {
 async fn smb_integration_copy_on_server_checks_in_before_every_slice() {
     let (vol, dir) = volume_with_scratch().await;
     let (from, to) = (format!("{dir}/source.bin"), format!("{dir}/copy.bin"));
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&from)), &payload(PAYLOAD))
+    vol.create_file(&app_at(vol.root(), &from), &payload(PAYLOAD))
         .await
         .unwrap();
 
@@ -222,8 +210,8 @@ async fn smb_integration_copy_on_server_checks_in_before_every_slice() {
     };
     vol.copy_on_server(
         &vol,
-        &AppPath::legacy_unchecked(Path::new(&from)),
-        &AppPath::legacy_unchecked(Path::new(&to)),
+        &app_at(vol.root(), &from),
+        &app_at(vol.root(), &to),
         WriteMode::CreateOrReplace,
         &all_the_way,
     )
@@ -243,15 +231,15 @@ async fn smb_integration_copy_on_server_checks_in_before_every_slice() {
     let result = vol
         .copy_on_server(
             &vol,
-            &AppPath::legacy_unchecked(Path::new(&from)),
-            &AppPath::legacy_unchecked(Path::new(&second)),
+            &app_at(vol.root(), &from),
+            &app_at(vol.root(), &second),
             WriteMode::CreateOrReplace,
             &stopped,
         )
         .await;
     assert!(matches!(result, Err(VolumeError::Cancelled(_))), "{result:?}");
     assert!(
-        !vol.exists(&AppPath::legacy_unchecked(Path::new(&second))).await,
+        !vol.exists(&app_at(vol.root(), &second)).await,
         "a stop at a checkpoint must not leave its partial"
     );
     ensure_clean(&vol, &dir).await;
@@ -264,24 +252,14 @@ async fn smb_integration_copy_on_server_checks_in_before_every_slice() {
 async fn smb_integration_copy_within_replaces_a_longer_destination_whole() {
     let (vol, dir) = volume_with_scratch().await;
     let (from, to) = (format!("{dir}/short.txt"), format!("{dir}/long.txt"));
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&from)), b"short")
+    vol.create_file(&app_at(vol.root(), &from), b"short").await.unwrap();
+    vol.create_file(&app_at(vol.root(), &to), b"a much longer file that was here first")
         .await
         .unwrap();
-    vol.create_file(
-        &AppPath::legacy_unchecked(Path::new(&to)),
-        b"a much longer file that was here first",
-    )
-    .await
-    .unwrap();
 
     copy(&vol, &from, &to).await.unwrap();
 
-    assert_eq!(
-        vol.read_range(&AppPath::legacy_unchecked(Path::new(&to)), 0, 64)
-            .await
-            .unwrap(),
-        b"short"
-    );
+    assert_eq!(vol.read_range(&app_at(vol.root(), &to), 0, 64).await.unwrap(), b"short");
     ensure_clean(&vol, &dir).await;
 }
 
@@ -292,32 +270,20 @@ async fn smb_integration_copy_within_replaces_a_longer_destination_whole() {
 async fn smb_integration_copy_within_copies_an_empty_file() {
     let (vol, dir) = volume_with_scratch().await;
     let (from, to) = (format!("{dir}/empty.txt"), format!("{dir}/copy.txt"));
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&from)), b"")
-        .await
-        .unwrap();
+    vol.create_file(&app_at(vol.root(), &from), b"").await.unwrap();
 
     let seen: Mutex<Vec<(u64, u64)>> = Mutex::new(Vec::new());
     let copied = vol
-        .copy_within(
-            &AppPath::legacy_unchecked(Path::new(&from)),
-            &AppPath::legacy_unchecked(Path::new(&to)),
-            &|done, total| {
-                seen.lock_ignore_poison().push((done, total));
-                ControlFlow::Continue(())
-            },
-        )
+        .copy_within(&app_at(vol.root(), &from), &app_at(vol.root(), &to), &|done, total| {
+            seen.lock_ignore_poison().push((done, total));
+            ControlFlow::Continue(())
+        })
         .await
         .unwrap();
 
     assert_eq!(copied, 0);
     assert_eq!(*seen.lock_ignore_poison(), vec![(0, 0)]);
-    assert_eq!(
-        vol.get_metadata(&AppPath::legacy_unchecked(Path::new(&to)))
-            .await
-            .unwrap()
-            .size,
-        Some(0)
-    );
+    assert_eq!(vol.get_metadata(&app_at(vol.root(), &to)).await.unwrap().size, Some(0));
     ensure_clean(&vol, &dir).await;
 }
 
@@ -328,12 +294,12 @@ async fn smb_integration_copy_within_copies_an_empty_file() {
 async fn smb_integration_copy_within_keeps_the_source_dates() {
     let (vol, dir) = volume_with_scratch().await;
     let (from, to) = (format!("{dir}/aged.txt"), format!("{dir}/copy.txt"));
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&from)), b"bytes from 2021")
+    vol.create_file(&app_at(vol.root(), &from), b"bytes from 2021")
         .await
         .unwrap();
     let at = |secs| std::time::UNIX_EPOCH + Duration::from_secs(secs);
     vol.set_basic_info_impl(
-        Path::new(&from),
+        &app_at(vol.root(), &from),
         smb2::FileTimes::new()
             .set_modified(at(SOURCE_DATE_SECS))
             .set_created(at(BIRTH_SECS)),
@@ -343,10 +309,7 @@ async fn smb_integration_copy_within_keeps_the_source_dates() {
 
     copy(&vol, &from, &to).await.unwrap();
 
-    let landed = vol
-        .get_metadata(&AppPath::legacy_unchecked(Path::new(&to)))
-        .await
-        .unwrap();
+    let landed = vol.get_metadata(&app_at(vol.root(), &to)).await.unwrap();
     assert_eq!(
         landed.modified_at,
         Some(SOURCE_DATE_SECS),
@@ -367,7 +330,7 @@ async fn smb_integration_copy_within_keeps_the_source_dates() {
 async fn smb_integration_copy_within_matches_what_is_offered() {
     let (vol, dir) = volume_with_scratch().await;
     let from = format!("{dir}/original.txt");
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&from)), b"copied on the server")
+    vol.create_file(&app_at(vol.root(), &from), b"copied on the server")
         .await
         .unwrap();
 

@@ -13,13 +13,13 @@ use super::stamping::{source_times, stamped};
 use super::state::RanOn;
 use super::write_carries::{CarriedForWrite, ClosedWriter, WriteCarries};
 use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::PathArithmetic;
 use cmdr_fs::error_detail::ErrorDetail;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::metadata::{MetadataClasses, Xattr};
 use cmdr_fs::pluralize::pluralize_grouped;
 use cmdr_fs::volume::{MutationEvent, StreamLength, StreamWritten, Volume, VolumeError, VolumeReadStream, WriteMode};
 use log::debug;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 
@@ -99,10 +99,8 @@ fn source_broke_its_length(smb_path: &str, got: u64, declared: u64) -> VolumeErr
 
 /// Whether `dest` is one of Cmdr's scratch names (a `.cmdr-tmp-*` staging
 /// temp), which a partial write can never make look like the user's file.
-fn is_scratch_name(dest: &Path) -> bool {
-    dest.file_name()
-        .and_then(|name| name.to_str())
-        .is_some_and(cmdr_fs::staging::is_staging_temp_name)
+fn is_scratch_name(dest: &AppPath) -> bool {
+    dest.file_name().is_some_and(cmdr_fs::staging::is_staging_temp_name)
 }
 
 /// Whether a compound write failed AFTER the server had created the file.
@@ -322,20 +320,16 @@ impl SmbVolume {
     /// just-copied files until the user navigated away and back.
     pub(super) async fn written(
         &self,
-        dest: &Path,
+        dest: &AppPath,
         closed: ClosedWriter,
         carried: &CarriedForWrite,
         modified_at: Option<std::time::SystemTime>,
     ) -> StreamWritten {
-        if let (Some(parent), Some(name)) = (dest.parent(), dest.file_name())
+        if let Some((parent, name)) = super::paths::parent_and_row_name(dest)
             && let Some(parent_display) = self.display_path_for(parent)
         {
-            self.notify_mutation(
-                &self.inner.volume_id,
-                &AppPath::legacy_unchecked(&parent_display),
-                MutationEvent::Created(name.to_string_lossy().to_string()),
-            )
-            .await;
+            self.notify_mutation(&self.inner.volume_id, &parent_display, MutationEvent::Created(name))
+                .await;
         }
         stamped(
             closed.confirmed,
@@ -361,7 +355,7 @@ impl SmbVolume {
     /// Inherent body for the `write_from_stream` trait method (thin delegator in `volume_impl`).
     pub(super) fn write_from_stream_impl<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,

@@ -26,6 +26,7 @@
 //!   so the fresh-listing oracle reads again. A listing that opens later starts
 //!   a watch that gave up again.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -162,7 +163,7 @@ impl SmbVolume {
     /// `Volume::listing_watch_coverage` for a path behind a DFS link, or
     /// `None` when it sits behind none. The link's target never reports to the
     /// share's watch, so only the link's own covers it, while it's live.
-    pub(super) fn link_watch_coverage(&self, path: &Path) -> Option<WatchCoverage> {
+    pub(super) fn link_watch_coverage(&self, path: &AppPath) -> Option<WatchCoverage> {
         let smb_path = self.to_smb_path(path).ok()?;
         if !self.inner.link_paths.covers(&smb_path) {
             return None;
@@ -177,7 +178,7 @@ impl SmbVolume {
     /// `Volume::watch_listing`: a hold on the watch of the DFS link `path` sits
     /// behind, or `None` when it sits behind none (the share's own watch covers
     /// it). Cheap: the watch arms on a task of its own.
-    pub(super) fn hold_link_watch(&self, path: &Path) -> Option<ListingWatch> {
+    pub(super) fn hold_link_watch(&self, path: &AppPath) -> Option<ListingWatch> {
         let inner = &self.inner;
         if inner.is_retired() || inner.unmounted.load(Ordering::Relaxed) {
             return None;

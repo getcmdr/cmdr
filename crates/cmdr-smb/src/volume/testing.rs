@@ -17,7 +17,7 @@
 //! Gated behind the `testing` feature, so it exists in dev targets and in no
 //! shipped build. See `DETAILS.md` § "Which side a test lives on".
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic, PathFlavor};
 use std::path::Path;
 use std::sync::atomic::Ordering;
 
@@ -149,25 +149,48 @@ pub fn test_dir_name() -> String {
     format!("cmdr-test-{pid}-{ts}-{n}")
 }
 
+/// `text` as the app path a test hands a volume: relative text under its `root`
+/// (how a pane spells a file on the share, since a typed path is absolute), absolute
+/// text as it is. Names split on `/` alone, so a `\` or `:` stays in its name.
+pub fn app_at(root: &AppPath, text: &str) -> AppPathBuf {
+    let mut path = if text.starts_with('/') {
+        AppPathBuf::parse("/", PathFlavor::Posix).expect("`/` is a root")
+    } else {
+        root.to_canonical().expect("the volume root is a place").into_owned()
+    };
+    for name in text.split('/').filter(|name| !name.is_empty()) {
+        let name = AppName::from_app_spelling(name).unwrap_or_else(|e| panic!("{name:?} is one name: {e:?}"));
+        path = path.join(name).unwrap_or_else(|e| panic!("{name:?} joins: {e:?}"));
+    }
+    path
+}
+
 /// Ensures a test directory is clean before use (deletes recursively if it exists).
 pub async fn ensure_clean(vol: &SmbVolume, dir: &str) {
-    if vol.exists(&AppPath::legacy_unchecked(Path::new(dir))).await {
+    ensure_clean_at(vol, &app_at(vol.root(), dir)).await;
+}
+
+/// [`ensure_clean`] for an app path.
+async fn ensure_clean_at(vol: &SmbVolume, dir: &AppPath) {
+    if vol.exists(dir).await {
         // Delete contents recursively
-        if let Ok(entries) = vol
-            .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
-            .await
-        {
+        if let Ok(entries) = vol.list_directory(dir, None).await {
             for entry in entries {
-                let child = format!("{}/{}", dir, entry.name);
+                let Some(child) = AppName::from_app_spelling(&entry.name)
+                    .ok()
+                    .and_then(|name| dir.join(name).ok())
+                else {
+                    continue;
+                };
                 // A link goes as the one entry it is, never through it.
                 if entry.is_directory && !entry.is_symlink {
-                    Box::pin(ensure_clean(vol, &child)).await;
+                    Box::pin(ensure_clean_at(vol, &child)).await;
                 } else {
-                    let _ = vol.delete(&AppPath::legacy_unchecked(Path::new(&child))).await;
+                    let _ = vol.delete(&child).await;
                 }
             }
         }
-        let _ = vol.delete(&AppPath::legacy_unchecked(Path::new(dir))).await;
+        let _ = vol.delete(dir).await;
     }
 }
 
@@ -192,8 +215,13 @@ pub fn hash_bytes(data: &[u8]) -> [u8; 32] {
 /// unreadable megabyte-sized diff). The hex-formatted hash in the assertion
 /// message is what's actionable on failure.
 pub async fn hash_volume_file(volume: &dyn Volume, path: &Path) -> [u8; 32] {
+    hash_volume_file_at(volume, &AppPath::legacy_unchecked(path)).await
+}
+
+/// [`hash_volume_file`] for an app path.
+pub async fn hash_volume_file_at(volume: &dyn Volume, path: &AppPath) -> [u8; 32] {
     let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(path))
+        .open_read_stream(path)
         .await
         .expect("open read stream for hashing");
     let mut hasher = blake3::Hasher::new();
@@ -221,17 +249,28 @@ pub async fn cleanup_test_prefix(vol: &SmbVolume, mount_path: &Path, unique_pref
         unique_prefix_smb.starts_with(TEST_PREFIX_ROOT),
         "cleanup_test_prefix: refusing to clean a prefix outside {TEST_PREFIX_ROOT:?}: {unique_prefix_smb:?}"
     );
-    let dir_abs = mount_path.join(unique_prefix_smb.trim_start_matches('/'));
-    let rel_of = |abs: &Path| -> String {
-        abs.to_string_lossy()
-            .strip_prefix(mount_path.to_string_lossy().as_ref())
-            .map(|s| s.trim_start_matches('/').to_string())
-            .unwrap_or_else(|| abs.to_string_lossy().to_string())
+    // The caller's mount root, the one crossing: every path below is the app path's own join.
+    let mount = AppPath::legacy_unchecked(mount_path);
+    let mount = mount.to_canonical().expect("the mount root is a place");
+    let mut dir = mount.clone().into_owned();
+    for name in unique_prefix_smb.split('/').filter(|name| !name.is_empty()) {
+        dir = dir
+            .join(AppName::from_app_spelling(name).expect("a prefix name"))
+            .expect("the prefix joins");
+    }
+    let rel_of = |abs: &AppPath| -> String {
+        abs.strip_prefix(&mount)
+            .map_or_else(|| abs.as_str().to_string(), |rel| rel.as_str().to_string())
     };
-    match vol.list_directory(&AppPath::legacy_unchecked(&dir_abs), None).await {
+    match vol.list_directory(&dir, None).await {
         Ok(entries) => {
             for entry in entries {
-                let abs = dir_abs.join(&entry.name);
+                let Some(abs) = AppName::from_app_spelling(&entry.name)
+                    .ok()
+                    .and_then(|name| dir.join(name).ok())
+                else {
+                    continue;
+                };
                 let rel = rel_of(&abs);
                 if !rel.starts_with(TEST_PREFIX_ROOT) {
                     log::warn!(
@@ -240,7 +279,7 @@ pub async fn cleanup_test_prefix(vol: &SmbVolume, mount_path: &Path, unique_pref
                     );
                     continue;
                 }
-                if let Err(e) = vol.delete(&AppPath::legacy_unchecked(&abs)).await {
+                if let Err(e) = vol.delete(&abs).await {
                     log::warn!(
                         "cleanup_test_prefix: failed to delete {}: {e:?}",
                         LogPrivate::path(&rel)
@@ -250,12 +289,12 @@ pub async fn cleanup_test_prefix(vol: &SmbVolume, mount_path: &Path, unique_pref
         }
         Err(e) => log::warn!(
             "cleanup_test_prefix: list_directory failed for {:?}: {e:?}",
-            LogPrivate::dir_path(&dir_abs)
+            LogPrivate::dir_path(dir.as_str())
         ),
     }
-    let rel_dir = rel_of(&dir_abs);
+    let rel_dir = rel_of(&dir);
     if rel_dir.starts_with(TEST_PREFIX_ROOT)
-        && let Err(e) = vol.delete(&AppPath::legacy_unchecked(&dir_abs)).await
+        && let Err(e) = vol.delete(&dir).await
     {
         log::warn!(
             "cleanup_test_prefix: failed to delete prefix dir {}: {e:?}",

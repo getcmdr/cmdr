@@ -26,7 +26,7 @@ fn name_returns_share_name() {
 #[test]
 fn root_returns_mount_path() {
     let vol = make_test_volume();
-    assert_eq!(vol.root().as_std_legacy(), Path::new("/Volumes/TestShare"));
+    assert_eq!(vol.root().as_str(), "/Volumes/TestShare");
 }
 
 /// macOS mounts one share at several roots (`/Volumes/testshare` AND
@@ -43,11 +43,11 @@ fn rerooting_addresses_the_new_mount_over_the_same_session() {
         .rerooted(app_path!("/Volumes/TestShare-1"))
         .expect("a direct SMB share re-roots: its session doesn't ride the OS mount");
 
-    assert_eq!(promoted.root().as_std_legacy(), Path::new("/Volumes/TestShare-1"));
+    assert_eq!(promoted.root().as_str(), "/Volumes/TestShare-1");
     assert_eq!(promoted.name(), "TestShare", "the display name survives a promotion");
     assert_eq!(
-        vol.root().as_std_legacy(),
-        Path::new("/Volumes/TestShare"),
+        vol.root().as_str(),
+        "/Volumes/TestShare",
         "the replaced instance keeps serving in-flight work at the root it was handed"
     );
 
@@ -85,13 +85,13 @@ fn a_rerooted_share_translates_paths_under_its_new_mount() {
 
     assert_eq!(
         promoted_smb
-            .to_smb_path(Path::new("/Volumes/TestShare-1/Documents/report.pdf"))
+            .to_smb_path(&app_at(vol.root(), "/Volumes/TestShare-1/Documents/report.pdf"))
             .expect("a path inside the new mount"),
         "Documents/report.pdf"
     );
     assert!(
         matches!(
-            promoted_smb.to_smb_path(Path::new("/Volumes/TestShare/Documents/report.pdf")),
+            promoted_smb.to_smb_path(&app_at(vol.root(), "/Volumes/TestShare/Documents/report.pdf")),
             Err(VolumeError::NotFound(_))
         ),
         "the old mount isn't this instance's root any more"
@@ -362,7 +362,7 @@ fn a_promotion_uses_the_anchor_recorded_for_the_target_root() {
     assert_eq!(promoted.share_root, "", "the target root sits at the share root");
     assert_eq!(
         promoted
-            .to_smb_path(Path::new("/Volumes/SYSVOL/example.com/Policies"))
+            .to_smb_path(&app_at(vol.root(), "/Volumes/SYSVOL/example.com/Policies"))
             .expect("a path inside the new mount"),
         "example.com/Policies",
         "carrying the old anchor over would have asked for example.com/example.com/Policies"

@@ -12,6 +12,7 @@ use super::SmbVolume;
 use super::dfs_links::link_bare_stat;
 use super::mapping::{attributes_of, user_flags_of};
 use super::session::SessionLease;
+use cmdr_fs::app_path::{AppPath, PathArithmetic};
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::metadata::{
@@ -19,13 +20,12 @@ use cmdr_fs::metadata::{
 };
 use cmdr_fs::volume::VolumeError;
 use log::{debug, warn};
-use std::path::Path;
 
 impl SmbVolume {
     /// The DOS attributes of the file or folder at `path`: one `stat` round
     /// trip. What a folder's flags and a reversal's unlock ask; a FILE a copy
     /// reads reports its own off the read's CREATE response instead.
-    pub(super) async fn attributes_impl(&self, path: &Path) -> Result<smb2::FileAttributes, VolumeError> {
+    pub(super) async fn attributes_impl(&self, path: &AppPath) -> Result<smb2::FileAttributes, VolumeError> {
         let smb_path = self.to_smb_path(path)?;
         let SessionLease {
             tree,
@@ -49,7 +49,7 @@ impl SmbVolume {
     /// A share has no mode.
     pub(super) async fn apply_metadata_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         carried: &CarriedMetadata,
         modified: Option<std::time::SystemTime>,
     ) -> MetadataReport {
@@ -76,7 +76,7 @@ impl SmbVolume {
             Err(e) => {
                 warn!(
                     "SmbVolume::apply_metadata: {} keeps the server's dates and attributes, not the source's: {e}",
-                    LogPrivate::path(path),
+                    LogPrivate::path(path.as_str()),
                     e = LogError(&e)
                 );
                 ClassOutcome::Refused
@@ -100,7 +100,7 @@ impl SmbVolume {
     /// flags, `folder_metadata.rs` in the app), and the xattrs in a stream
     /// listing plus one overlapped read of what it names, on a share that has
     /// them.
-    pub(super) async fn folder_metadata_impl(&self, path: &Path, wanted: MetadataClasses) -> CarriedMetadata {
+    pub(super) async fn folder_metadata_impl(&self, path: &AppPath, wanted: MetadataClasses) -> CarriedMetadata {
         let xattrs = match wanted.contains(MetadataClasses::XATTRS) && self.stores_xattrs() {
             true => self.folder_xattrs(path).await,
             false => Vec::new(),
@@ -111,13 +111,13 @@ impl SmbVolume {
         }
     }
 
-    async fn folder_flags(&self, path: &Path, wanted: MetadataClasses) -> CarriedMetadata {
+    async fn folder_flags(&self, path: &AppPath, wanted: MetadataClasses) -> CarriedMetadata {
         if !wanted.contains(MetadataClasses::FLAGS) {
             return CarriedMetadata::default();
         }
         match self.attributes_impl(path).await {
             Ok(attributes) => {
-                let name = path.file_name().map(|name| name.to_string_lossy()).unwrap_or_default();
+                let name = path.file_name().map(super::paths::row_name).unwrap_or_default();
                 CarriedMetadata {
                     flags: user_flags_of(attributes, &name),
                     ..CarriedMetadata::default()
@@ -126,7 +126,7 @@ impl SmbVolume {
             Err(e) => {
                 debug!(
                     "SmbVolume::folder_metadata: {} reports no flags: {e}",
-                    LogPrivate::dir_path(path),
+                    LogPrivate::dir_path(path.as_str()),
                     e = LogError(&e)
                 );
                 CarriedMetadata::default()
@@ -137,14 +137,14 @@ impl SmbVolume {
     /// Clears `READONLY`, the one attribute that refuses a removal
     /// (`STATUS_CANNOT_DELETE`), keeping the rest: a `stat` and a SET_INFO
     /// compound, spent only after a reversal's removal was refused.
-    pub(super) async fn clear_blockers_impl(&self, path: &Path) -> Unblock {
+    pub(super) async fn clear_blockers_impl(&self, path: &AppPath) -> Unblock {
         let attributes = match self.attributes_impl(path).await {
             Ok(attributes) if attributes.is_readonly() => attributes,
             Ok(_) => return Unblock::NothingToClear,
             Err(e) => {
                 debug!(
                     "SmbVolume::clear_blockers: {} can't be read: {e}",
-                    LogPrivate::path(path),
+                    LogPrivate::path(path.as_str()),
                     e = LogError(&e)
                 );
                 return Unblock::NothingToClear;
@@ -159,7 +159,7 @@ impl SmbVolume {
             Err(e) => {
                 warn!(
                     "SmbVolume::clear_blockers: {} stays Read-only: {e}",
-                    LogPrivate::path(path),
+                    LogPrivate::path(path.as_str()),
                     e = LogError(&e)
                 );
                 Unblock::Refused

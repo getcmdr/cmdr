@@ -13,6 +13,7 @@ use super::SmbVolume;
 use super::session::TransferLease;
 use super::state::RanOn;
 use super::write_carries::{ClosedWriter, WriteCarries};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::{StreamLength, StreamWriteProgress, StreamWritten, VolumeError, VolumeReadStream};
@@ -21,7 +22,6 @@ use smb2::client::stream::FileWriter;
 use smb2::pack::FileTime;
 use std::collections::HashMap;
 use std::ops::ControlFlow;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -333,7 +333,7 @@ impl SmbVolume {
     /// answers keeps the checkpoint for the next try.
     pub(super) fn continue_write_from_stream_impl<'a>(
         &'a self,
-        target: &'a Path,
+        target: &'a AppPath,
         at: u64,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,

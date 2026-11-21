@@ -10,14 +10,15 @@ use super::apple_double::Sidecars;
 use super::dfs_links::{link_bare_stat, link_stat};
 use super::links::stat_through_link;
 use super::mapping::{directory_entry_to_file_entry, file_info_to_file_entry, fs_info_to_space_info, stat_presence};
+use super::paths::smb_file_name;
 use super::session::SessionLease;
 use super::{SmbVolume, slow_calls};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::{EntryKind, ListingProgress, Presence, SpaceInfo, VolumeError};
 use log::{debug, trace};
 use smb2::DirectoryReader;
-use std::path::Path;
 use std::time::Duration;
 use tokio::runtime::Handle;
 use tokio_util::sync::CancellationToken;
@@ -100,7 +101,7 @@ pub(super) async fn read_listing(
 impl SmbVolume {
     /// Shared async implementation of list_directory used by both the trait method
     /// and internal helpers (which need to call it without going through the trait).
-    pub(super) async fn list_directory_impl(&self, path: &Path) -> Result<Vec<FileEntry>, VolumeError> {
+    pub(super) async fn list_directory_impl(&self, path: &AppPath) -> Result<Vec<FileEntry>, VolumeError> {
         self.list_directory_with_cancel_impl(path, None, None).await
     }
 
@@ -109,22 +110,32 @@ impl SmbVolume {
     /// `VolumeError::Cancelled`.
     pub(super) async fn list_directory_with_cancel_impl(
         &self,
-        path: &Path,
+        path: &AppPath,
         on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&CancellationToken>,
     ) -> Result<Vec<FileEntry>, VolumeError> {
         let smb_path = self.to_smb_path(path)?;
-        let display_path = self.to_display_path(&smb_path);
+        self.list_smb_directory(&smb_path, on_progress, cancel).await
+    }
+
+    /// [`Self::list_directory_with_cancel_impl`] for a share-relative path this
+    /// volume already converted (a walk's next level).
+    pub(super) async fn list_smb_directory(
+        &self,
+        smb_path: &str,
+        on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
+        cancel: Option<&CancellationToken>,
+    ) -> Result<Vec<FileEntry>, VolumeError> {
+        let display_path = self.to_display_path(smb_path);
 
         // TRACE, not DEBUG: this fires per listing for both the live pane and the index
         // scan, and was ~9% of normal file-log volume. The scan's own progress signal is
         // the throttled `network_scanner: scanning…` DEBUG heartbeat. Bump back with
         // `RUST_LOG=cmdr_smb::volume=trace` when chasing a listing bug.
         trace!(
-            "SmbVolume::list_directory: share={:?}, input={:?}, smb_path={:?}",
+            "SmbVolume::list_directory: share={:?}, smb_path={:?}",
             LogPrivate::volume(&self.inner.share_name),
-            LogPrivate::dir_path(path),
-            LogPrivate::dir_path(&smb_path)
+            LogPrivate::dir_path(smb_path)
         );
 
         let start = std::time::Instant::now();
@@ -133,8 +144,8 @@ impl SmbVolume {
         let opened = self
             .or_through_link(
                 generation,
-                &smb_path,
-                tree.open_directory_reader(conn, &smb_path),
+                smb_path,
+                tree.open_directory_reader(conn, smb_path),
                 |client, tree, path| Box::pin(client.open_directory_reader(tree, path)),
             )
             .await;
@@ -159,7 +170,7 @@ impl SmbVolume {
             Err(ListingStop::Cancelled) => {
                 return Err(VolumeError::Cancelled("Listing cancelled".into()));
             }
-            Err(ListingStop::Smb(e)) => return self.handle_smb_result("list_directory", &smb_path, generation, Err(e)),
+            Err(ListingStop::Smb(e)) => return self.handle_smb_result("list_directory", smb_path, generation, Err(e)),
         };
 
         trace!(
@@ -174,13 +185,13 @@ impl SmbVolume {
     /// One `stat` round trip, mapped to a `FileEntry`. The share root is
     /// synthesized rather than asked for: it has no parent directory to list it
     /// out of.
-    pub(super) async fn get_metadata_impl(&self, path: &Path) -> Result<FileEntry, VolumeError> {
+    pub(super) async fn get_metadata_impl(&self, path: &AppPath) -> Result<FileEntry, VolumeError> {
         let smb_path = self.to_smb_path(path)?;
 
         debug!(
             "SmbVolume::get_metadata: share={:?}, input={:?}, smb_path={:?}",
             LogPrivate::volume(&self.inner.share_name),
-            LogPrivate::path(path),
+            LogPrivate::path(path.as_str()),
             LogPrivate::path(&smb_path)
         );
 
@@ -231,10 +242,7 @@ impl SmbVolume {
             break self.handle_smb_result("get_metadata", &smb_path, generation, r)?;
         };
 
-        let name = Path::new(&smb_path)
-            .file_name()
-            .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_else(|| smb_path.clone());
+        let name = smb_file_name(&smb_path).map_or_else(|| smb_path.clone(), str::to_string);
         let display_path = self.to_display_path(&smb_path);
         self.inner.sidecars.note_name(&name);
 
@@ -244,7 +252,7 @@ impl SmbVolume {
     /// Whether `path` is there, from one bare `stat`. A path off this share is
     /// `Absent` (nothing is there ON THIS VOLUME, the question asked); a session
     /// that won't clone, or a refusal, is `Unknown` (`mapping::stat_presence`).
-    pub(super) async fn presence_impl(&self, path: &Path) -> Presence {
+    pub(super) async fn presence_impl(&self, path: &AppPath) -> Presence {
         let Ok(smb_path) = self.to_smb_path(path) else {
             return Presence::Absent;
         };
@@ -270,7 +278,7 @@ impl SmbVolume {
     }
 
     /// One `stat` round trip, reduced to the directory bit.
-    pub(super) async fn is_directory_impl(&self, path: &Path) -> Result<bool, VolumeError> {
+    pub(super) async fn is_directory_impl(&self, path: &AppPath) -> Result<bool, VolumeError> {
         let smb_path = self.to_smb_path(path)?;
         if smb_path.is_empty() {
             return Ok(true); // Root is always a directory
@@ -303,7 +311,7 @@ impl SmbVolume {
     /// answer here, and following one costs two more round trips. The delete
     /// walk asks this of every folder before it descends, since Samba's listings
     /// never mark a link (`DETAILS.md` § "Junctions and symlinks").
-    pub(super) async fn entry_kind_impl(&self, path: &Path) -> Result<EntryKind, VolumeError> {
+    pub(super) async fn entry_kind_impl(&self, path: &AppPath) -> Result<EntryKind, VolumeError> {
         let smb_path = self.to_smb_path(path)?;
         if smb_path.is_empty() {
             return Ok(EntryKind::Directory);

@@ -4,15 +4,20 @@
 //! Every session-touching method starts here, so a wrong answer sends a real
 //! request to a real, wrong place. The rules that guard against that are on
 //! [`SmbVolume::to_smb_path`].
+//!
+//! App paths and share paths are both `/`-separated text, read here by their own
+//! bytes on every host: a `\` or a `:` is part of a name, ❌ never a `std::path`
+//! separator or drive (on Windows `Path` would split `a\b` and read `C:` as a drive).
+
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic, shown_name, unescape_bytes};
+use cmdr_fs::volume::VolumeError;
 
 use super::SmbVolume;
-use cmdr_fs::volume::VolumeError;
-use std::path::{Path, PathBuf};
 
 impl SmbVolume {
-    /// Converts a volume-relative path to the SMB relative path string.
+    /// Converts an app path on this volume to the SMB relative path string.
     ///
-    /// The frontend sends paths relative to the volume root (which is the mount path).
+    /// The frontend sends paths under the volume root (which is the mount path).
     /// smb2 expects paths relative to the SHARE root with `/` separators, and the
     /// two are the same place only when this mount sits at the share root: an
     /// anchored mount (a DFS sub-mount, a subdirectory mount) has the volume root
@@ -32,25 +37,35 @@ impl SmbVolume {
     /// matched by whole COMPONENTS: every way of guessing an answer here put a
     /// real request at a real, wrong place. Both, and what each caller does with
     /// the error: `backends/DETAILS.md` § "Per-backend decisions".
-    pub(super) fn to_smb_path(&self, path: &Path) -> Result<String, VolumeError> {
-        let path_str = path.to_string_lossy();
+    ///
+    /// ❗ Until escapes go live (`cmdr_fs::app_path::ESCAPES_LIVE`), an escape-range
+    /// code point is literal text and goes to the server as its own UTF-8 bytes,
+    /// as `RemoteRoot::to_remote` sends it.
+    pub(super) fn to_smb_path(&self, path: &AppPath) -> Result<String, VolumeError> {
+        self.smb_path_of(path.as_str())
+    }
 
+    /// [`Self::to_smb_path`] over an app path's text, which a transition-bridge value
+    /// spells as its caller did: relative, `.`, `//`, or with a trailing `/`. Read
+    /// the way POSIX `Path` reads it, so every spelling a caller sends today reaches
+    /// the server as it did.
+    pub(super) fn smb_path_of(&self, text: &str) -> Result<String, VolumeError> {
         // Empty, `.`, and `/` all mean the volume root, which is where this mount
         // is anchored inside the share.
-        if path_str.is_empty() || path_str == "/" || path_str == "." {
+        if text.is_empty() || text == "/" || text == "." {
             return Ok(self.share_root.clone());
         }
 
-        // Relative paths are what the trait contract asks for, and they're relative
-        // to the VOLUME root, so they get the anchor too.
-        if !path.is_absolute() {
-            return Ok(self.under_share_root(&path_str));
+        // Relative paths are relative to the VOLUME root, so they get the anchor
+        // too, spelled as they came.
+        if !text.starts_with('/') {
+            return Ok(self.under_share_root(text));
         }
 
         // Absolute (the frontend does send these): must be inside the mount.
-        match path.strip_prefix(&self.mount_path) {
-            Ok(relative) => Ok(self.under_share_root(&relative.to_string_lossy())),
-            Err(_) => Err(VolumeError::NotFound(path_str.into_owned())),
+        match below_mount_root(text, self.mount_path.app().as_str()) {
+            Some(relative) => Ok(self.under_share_root(relative)),
+            None => Err(VolumeError::NotFound(text.to_string())),
         }
     }
 
@@ -65,16 +80,32 @@ impl SmbVolume {
         }
     }
 
-    /// The absolute display path for `path`'s own location on this share, or
-    /// `None` when `path` isn't on this share at all.
+    /// The app path for `path`'s own location on this share, or `None` when `path`
+    /// isn't on this share at all.
     ///
     /// For the post-mutation listing-cache patches: the mutation has already
     /// succeeded by the time they run, so a path that doesn't convert must skip
     /// the notification rather than turn a done write into a reported failure.
-    pub(super) fn display_path_for(&self, path: &Path) -> Option<PathBuf> {
-        self.to_smb_path(path)
-            .ok()
-            .map(|smb_path| PathBuf::from(self.to_display_path(&smb_path)))
+    /// That includes a mount-relative `..` a bridge value can spell: it names no
+    /// listing a pane holds.
+    pub(super) fn display_path_for(&self, path: &AppPath) -> Option<AppPathBuf> {
+        let smb_path = self.to_smb_path(path).ok()?;
+        self.app_path_of(&smb_path)
+    }
+
+    /// The typed app path for a share-relative SMB path: [`Self::to_display_path`]'s
+    /// place, built by the app path's own join under the mount root, so a name
+    /// holding `\` or `:` stays one name on every host. Empty and `.` names drop, as
+    /// `Path`'s components drop them; `None` for a `..`.
+    pub(super) fn app_path_of(&self, smb_path: &str) -> Option<AppPathBuf> {
+        let mut path = self.mount_path.app().to_canonical().ok()?.into_owned();
+        for name in self.below_share_root(smb_path).split('/') {
+            if name.is_empty() || name == "." {
+                continue;
+            }
+            path = path.join(AppName::from_app_spelling(name).ok()?).ok()?;
+        }
+        Some(path)
     }
 
     /// Returns the full absolute path for a share-relative SMB path (under the
@@ -88,6 +119,9 @@ impl SmbVolume {
     /// Callers pass a path this instance's `to_smb_path` produced, so it's always
     /// under the anchor. One that isn't stays under the mount root unchanged,
     /// which is what an unanchored mount does with every path anyway.
+    ///
+    /// The text a listing row carries, so the mount root reads as the OS spells it
+    /// (`to_string_lossy`), as every row did before app paths.
     pub(super) fn to_display_path(&self, smb_path: &str) -> String {
         let mount_relative = self.below_share_root(smb_path);
         if mount_relative.is_empty() {
@@ -100,6 +134,101 @@ impl SmbVolume {
     /// A share-relative path re-expressed relative to this mount's anchor.
     fn below_share_root<'a>(&self, smb_path: &'a str) -> &'a str {
         below_share_root(&self.share_root, smb_path).unwrap_or(smb_path)
+    }
+}
+
+/// The names below a rooted `text` once `mount_root`'s are stripped off, as
+/// `Path::strip_prefix` answers on POSIX: matched by whole components (`//` and
+/// `.` names don't count), and what's left spelled as `text` spells it, its own
+/// leading and trailing `/` and `.` names trimmed. `None` when `text` isn't under
+/// `mount_root`.
+///
+/// Byte-identical to `Path::strip_prefix(...).to_string_lossy()` on macOS and
+/// Linux for every `/`-led text (the module's tests pin the shapes), and the same
+/// on Windows, where `Path` would split on `\` too.
+fn below_mount_root<'a>(text: &'a str, mount_root: &str) -> Option<&'a str> {
+    let mut rest = text;
+    for want in posix_names(mount_root) {
+        let (name, after) = next_name(rest)?;
+        if name != want {
+            return None;
+        }
+        rest = after;
+    }
+    Some(trim_dot_names(rest))
+}
+
+/// `text`'s names as POSIX `Path::components` reads a rooted path: split on `/`,
+/// the empty and `.` names gone.
+fn posix_names(text: &str) -> impl Iterator<Item = &str> {
+    text.split('/').filter(|name| !name.is_empty() && *name != ".")
+}
+
+/// The next name in `text` (empty and `.` names skipped) and what follows it.
+fn next_name(text: &str) -> Option<(&str, &str)> {
+    let mut rest = text;
+    loop {
+        let rest_trimmed = rest.trim_start_matches('/');
+        if rest_trimmed.is_empty() {
+            return None;
+        }
+        let (name, after) = rest_trimmed.split_once('/').unwrap_or((rest_trimmed, ""));
+        if name != "." {
+            return Some((name, after));
+        }
+        rest = after;
+    }
+}
+
+/// `text` with its leading and trailing separators and `.` names trimmed, as
+/// `Components::as_path` trims a path's remainder.
+fn trim_dot_names(text: &str) -> &str {
+    let mut start = text;
+    loop {
+        let trimmed = start.trim_start_matches('/');
+        match trimmed.strip_prefix('.') {
+            Some(after) if after.is_empty() || after.starts_with('/') => start = after,
+            _ => {
+                start = trimmed;
+                break;
+            }
+        }
+    }
+    let mut end = start;
+    loop {
+        let trimmed = end.trim_end_matches('/');
+        match trimmed.strip_suffix('.') {
+            Some(before) if before.is_empty() || before.ends_with('/') => end = before,
+            _ => return trimmed,
+        }
+    }
+}
+
+/// The last name of a share path, split on `/` alone (a `\` is part of a name),
+/// as POSIX `Path::file_name` answers: trailing `/` and `.` names skipped, and
+/// `None` for a `..` or no name at all.
+pub(super) fn smb_file_name(smb_path: &str) -> Option<&str> {
+    match smb_path.rsplit('/').find(|name| !name.is_empty() && *name != ".") {
+        Some("..") | None => None,
+        found => found,
+    }
+}
+
+/// `path`'s parent and its last name as a listing row spells it, for a
+/// listing-cache patch: split by the app path's own arithmetic, so a name holding
+/// `\` stays one name on every host. The name is the native name's text, lossy
+/// for an escape, the spelling this backend's rows carry.
+pub(super) fn parent_and_row_name(path: &AppPath) -> Option<(&AppPath, String)> {
+    Some((path.parent()?, row_name(path.file_name()?)))
+}
+
+/// An app path's name as a listing row spells it: the native name's text, lossy
+/// for an escape (`patching`'s rule, so every backend's patches name rows alike).
+pub(super) fn row_name(name: &str) -> String {
+    match unescape_bytes(name) {
+        Ok(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
+        // A unit escape (an unpaired surrogate on Windows): what a person reads.
+        Err(_) => shown_name(name).into_owned(),
     }
 }
 

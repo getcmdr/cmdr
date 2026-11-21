@@ -4,7 +4,6 @@
 
 use super::test_support::*;
 use super::*;
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{Volume, VolumeError, XattrReadMode, conformance};
 
@@ -32,25 +31,15 @@ async fn fruit_volume() -> SmbVolume {
     .unwrap_or_else(|e| panic!("Failed to connect to smb-consumer-fruit on 127.0.0.1:{port}. Is it running? ({e:?})"))
 }
 
-fn one(paths: &str) -> Vec<PathBuf> {
-    vec![PathBuf::from(paths)]
-}
-
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 #[ignore = "Requires Docker SMB containers (./apps/desktop/test/smb-servers/start.sh)"]
 async fn smb_integration_xattrs_keep_the_shared_contract() {
     let volume = fruit_volume().await;
     let base = test_dir_name();
     ensure_clean(&volume, &base).await;
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
-        .await
-        .unwrap();
+    volume.create_directory(&app_at(volume.root(), &base)).await.unwrap();
     let file = format!("{base}/plain.txt");
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&file)), b"x")
-        .await
-        .unwrap();
+    volume.create_file(&app_at(volume.root(), &file), b"x").await.unwrap();
 
     conformance::assert_xattrs_keep_their_promises(&volume, Path::new(&file), Path::new(&format!("{base}/gone.txt")))
         .await;
@@ -66,45 +55,21 @@ async fn smb_integration_a_finder_tag_reads_back_through_a_batch() {
     let volume = fruit_volume().await;
     let base = test_dir_name();
     ensure_clean(&volume, &base).await;
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
-        .await
-        .unwrap();
+    volume.create_directory(&app_at(volume.root(), &base)).await.unwrap();
 
     let folder = format!("{base}/folder");
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&folder)))
-        .await
-        .unwrap();
-    let mut paths = vec![PathBuf::from(&folder)];
+    volume.create_directory(&app_at(volume.root(), &folder)).await.unwrap();
+    let mut paths = vec![app_at(volume.root(), &folder)];
     for i in 0..40 {
         let file = format!("{base}/file-{i}.txt");
-        volume
-            .create_file(&AppPath::legacy_unchecked(Path::new(&file)), b"x")
-            .await
-            .unwrap();
-        paths.push(PathBuf::from(file));
+        volume.create_file(&app_at(volume.root(), &file), b"x").await.unwrap();
+        paths.push(app_at(volume.root(), &file));
     }
-    volume
-        .write_xattr(&AppPath::legacy_unchecked(&paths[0]), TAGS, RED)
-        .await
-        .unwrap();
-    volume
-        .write_xattr(&AppPath::legacy_unchecked(&paths[7]), TAGS, RED)
-        .await
-        .unwrap();
+    volume.write_xattr(&paths[0], TAGS, RED).await.unwrap();
+    volume.write_xattr(&paths[7], TAGS, RED).await.unwrap();
 
     for mode in [XattrReadMode::Verified, XattrReadMode::AssumePathsExist] {
-        let answers = volume
-            .read_xattr_many(
-                &paths
-                    .iter()
-                    .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                    .collect::<Vec<_>>(),
-                TAGS,
-                mode,
-            )
-            .await;
+        let answers = volume.read_xattr_many(&paths, TAGS, mode).await;
         assert_eq!(answers.len(), paths.len());
         for (index, answer) in answers.iter().enumerate() {
             let expected = (index == 0 || index == 7).then_some(RED);
@@ -122,32 +87,19 @@ async fn smb_integration_tags_work_with_the_mount_gone() {
     let volume = fruit_volume().await;
     let base = test_dir_name();
     ensure_clean(&volume, &base).await;
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
-        .await
-        .unwrap();
+    volume.create_directory(&app_at(volume.root(), &base)).await.unwrap();
     let file = format!("{base}/f.txt");
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&file)), b"x")
-        .await
-        .unwrap();
+    volume.create_file(&app_at(volume.root(), &file), b"x").await.unwrap();
 
     volume.note_root_mount_gone();
     assert!(!volume.paths_are_os_visible(), "fixture precondition: no mount");
 
     volume
-        .write_xattr(&AppPath::legacy_unchecked(Path::new(&file)), TAGS, RED)
+        .write_xattr(&app_at(volume.root(), &file), TAGS, RED)
         .await
         .unwrap();
     let answer = volume
-        .read_xattr_many(
-            &one(&file)
-                .iter()
-                .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                .collect::<Vec<_>>(),
-            TAGS,
-            XattrReadMode::Verified,
-        )
+        .read_xattr_many(&[app_at(volume.root(), &file)], TAGS, XattrReadMode::Verified)
         .await
         .pop()
         .unwrap();
@@ -164,35 +116,20 @@ async fn smb_integration_a_server_without_streams_says_so() {
     let volume = make_docker_volume().await;
     let base = test_dir_name();
     ensure_clean(&volume, &base).await;
-    volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
-        .await
-        .unwrap();
+    volume.create_directory(&app_at(volume.root(), &base)).await.unwrap();
     let file = format!("{base}/f.txt");
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&file)), b"x")
-        .await
-        .unwrap();
+    volume.create_file(&app_at(volume.root(), &file), b"x").await.unwrap();
 
     assert!(!volume.supports_xattrs(), "the plain fixture reports no named streams");
     assert!(!volume.capabilities().can_store_xattrs, "and the menu hears it");
     let answer = volume
-        .read_xattr_many(
-            &one(&file)
-                .iter()
-                .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                .collect::<Vec<_>>(),
-            TAGS,
-            XattrReadMode::Verified,
-        )
+        .read_xattr_many(&[app_at(volume.root(), &file)], TAGS, XattrReadMode::Verified)
         .await
         .pop()
         .unwrap();
     assert_eq!(answer.unwrap(), None);
     assert!(matches!(
-        volume
-            .write_xattr(&AppPath::legacy_unchecked(Path::new(&file)), TAGS, RED)
-            .await,
+        volume.write_xattr(&app_at(volume.root(), &file), TAGS, RED).await,
         Err(VolumeError::NotSupported)
     ));
 
@@ -228,15 +165,9 @@ async fn smb_integration_another_clients_tag_reaches_the_listing_host() {
 
     let base = test_dir_name();
     ensure_clean(&other, &base).await;
-    other
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
-        .await
-        .unwrap();
+    other.create_directory(&app_at(other.root(), &base)).await.unwrap();
     let file = format!("{base}/f.txt");
-    other
-        .create_file(&AppPath::legacy_unchecked(Path::new(&file)), b"x")
-        .await
-        .unwrap();
+    other.create_file(&app_at(other.root(), &file), b"x").await.unwrap();
 
     let expected = Path::new(mount).join(&file);
     // Over and over, because the watch may arm after the first write and nothing says when.
@@ -246,7 +177,7 @@ async fn smb_integration_another_clients_tag_reaches_the_listing_host() {
         tokio::spawn(async move {
             loop {
                 other
-                    .write_xattr(&AppPath::legacy_unchecked(Path::new(&file)), TAGS, RED)
+                    .write_xattr(&app_at(other.root(), &file), TAGS, RED)
                     .await
                     .unwrap();
                 // allowed-test-sleep: paces the repeated outside write, past the watcher's 200 ms debounce or no batch ever closes; the wait below is the probe
