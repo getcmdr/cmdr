@@ -429,10 +429,13 @@ asks `GetFileInformationByHandleEx(FileIdInfo)`, falling back to `GetFileInforma
 the filesystem refuses that class (its module docs hold the details, the zero-id rule among them). With `Metadata`-only
 ids, every Windows pair read `Unknown`, so an Overwrite onto an existing file skipped silently as "the same file"
 (#1291). Data guards that hold a path ask the path reader: `cmdr-operations`' `may_be_same_file` / `file_sameness` and
-`SourceFingerprint::capture_local`. The `Metadata` callers (walk dedup, device checks, the journal's `NodeIdentity`)
-still answer `None` on Windows; each moves to the path reader as its Windows task needs it. Unix pays one `stat` per
-read, the same as before. (Verified on Windows 10 22H2 build 19045, NTFS, `cargo nextest run -p cmdr-fs file_identity`,
-2026-11-21.)
+`SourceFingerprint::capture_local` (which takes the id from its own `stat` where that carries one, so Unix reads id and
+content in one call), and `leaf_validation`'s identity read. `FileId::read_at` keeps the failed read's `io::Error`, so a
+guard that must tell "not there" (`NotFound`) from "there, but no id" answers in one read: the copy's per-file guard
+runs on every file, and a re-stat to tell the two apart doubled its syscalls on a fresh copy. The `Metadata` callers
+(walk dedup, device checks, the journal's `NodeIdentity`) still answer `None` on Windows; each moves to the path reader
+as its Windows task needs it. Unix pays one `stat` per read, the same as before. (Verified on Windows 10 22H2 build
+19045, NTFS, `cargo nextest run -p cmdr-fs file_identity`, 2026-11-21.)
 
 **Decision**: a two-read comparison answers `Sameness` (`Same`, `Different`, `Unknown`), ❌ never a bare `bool`.
 **Why**: the stubs this replaced answered "don't know" as "not the same file", which on a platform without ids switched

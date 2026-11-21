@@ -79,12 +79,20 @@ impl FileId {
     /// opens a handle (`DETAILS.md` § "File identity"). `None` when `path` can't be read or
     /// the filesystem gives no usable id (a network redirector answering zero).
     pub fn at(path: &Path, follow: Follow) -> Option<Self> {
+        Self::read_at(path, follow).ok().flatten()
+    }
+
+    /// [`FileId::at`] with the failed read kept: `Err` when `path` can't be read (its kind
+    /// tells a missing path from an unreadable one), `Ok(None)` when it can but the
+    /// filesystem gives no usable id. One read either way, so a guard that must tell "not
+    /// there" from "can't tell" asks this ❌ rather than re-reading the path.
+    pub fn read_at(path: &Path, follow: Follow) -> std::io::Result<Option<Self>> {
         let id = platform::file_id_at(path, follow)?;
         #[cfg(any(test, feature = "testing"))]
-        if hidden::hides(id) {
-            return None;
+        if id.is_some_and(hidden::hides) {
+            return Ok(None);
         }
-        Some(id)
+        Ok(id)
     }
 
     /// The device the node lives on.

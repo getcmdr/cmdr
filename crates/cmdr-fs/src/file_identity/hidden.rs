@@ -29,7 +29,7 @@ pub fn hide_identity_of(paths: &[&Path]) -> HiddenIdentities {
     for path in paths {
         // By path, so a Windows id (which no `Metadata` carries) hides too.
         for follow in [Follow::NotLinks, Follow::Links] {
-            if let Some(id) = platform::file_id_at(path, follow) {
+            if let Ok(Some(id)) = platform::file_id_at(path, follow) {
                 ids.push(id);
             }
         }

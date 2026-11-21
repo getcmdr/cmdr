@@ -4,7 +4,7 @@
 //! guard, writability and disk-space checks, same-file / same-filesystem inode
 //! comparisons, path/name length limits, and symlink-loop detection.
 
-use cmdr_fs::file_identity::{Sameness, same_device, same_node_at};
+use cmdr_fs::file_identity::{FileId, Follow, Sameness, same_device};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -363,14 +363,30 @@ pub(crate) fn may_be_same_file(source: &Path, destination: &Path) -> bool {
 }
 
 /// Whether `source` and `destination` (links followed) are one file, `None` when either
-/// isn't there. Read by PATH (`same_node_at`), the one reader Windows answers (#1291).
+/// isn't there. Read by PATH (`FileId::read_at`), the one reader Windows answers (#1291).
 /// `Unknown` is two existing paths the OS can't tell apart.
+///
+/// Asked once per file on every copy, so it costs what the `fs::metadata` pair it replaced
+/// did: the destination first, since on a fresh copy it's absent and that one failed read
+/// settles it. Only a read that fails for another reason (Windows refusing the handle)
+/// pays a second look.
 pub(crate) fn file_sameness(source: &Path, destination: &Path) -> Option<Sameness> {
-    match same_node_at(source, destination) {
-        Sameness::Unknown => {
-            (fs::metadata(source).is_ok() && fs::metadata(destination).is_ok()).then_some(Sameness::Unknown)
-        }
-        known => Some(known),
+    let destination = present_id(destination)?;
+    let source = present_id(source)?;
+    Some(match (source, destination) {
+        (Some(source), Some(destination)) if source == destination => Sameness::Same,
+        (Some(_), Some(_)) => Sameness::Different,
+        _ => Sameness::Unknown,
+    })
+}
+
+/// `None` when nothing stands at `path` (or it can't be stat'd at all), `Some(None)` when
+/// something does but its id can't be read.
+fn present_id(path: &Path) -> Option<Option<FileId>> {
+    match FileId::read_at(path, Follow::Links) {
+        Ok(id) => Some(id),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(_) => fs::metadata(path).is_ok().then_some(None),
     }
 }
 

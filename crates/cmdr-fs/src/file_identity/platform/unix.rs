@@ -6,12 +6,12 @@ use std::path::Path;
 
 use super::super::{DeviceId, FileId, Follow};
 
-pub(crate) fn file_id_at(path: &Path, follow: Follow) -> Option<FileId> {
+pub(crate) fn file_id_at(path: &Path, follow: Follow) -> std::io::Result<Option<FileId>> {
     let metadata = match follow {
-        Follow::Links => std::fs::metadata(path),
-        Follow::NotLinks => std::fs::symlink_metadata(path),
+        Follow::Links => std::fs::metadata(path)?,
+        Follow::NotLinks => std::fs::symlink_metadata(path)?,
     };
-    file_id(&metadata.ok()?)
+    Ok(file_id(&metadata))
 }
 
 pub(crate) fn file_id(metadata: &Metadata) -> Option<FileId> {

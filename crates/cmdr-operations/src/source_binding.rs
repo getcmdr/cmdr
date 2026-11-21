@@ -118,8 +118,9 @@ impl SourceFingerprint {
             }
         };
         Some(Self::Local {
-            // By path, the one reader Windows answers (no `Metadata` carries an id there).
-            id: FileId::at(path, Follow::NotLinks),
+            // From the stat above where it carries the id (Unix: no second read, so id and
+            // content describe one node), else by path, the one reader Windows answers.
+            id: FileId::of(&metadata).or_else(|| FileId::at(path, Follow::NotLinks)),
             content,
         })
     }

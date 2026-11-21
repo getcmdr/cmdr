@@ -35,23 +35,24 @@ pub(crate) fn file_id(_metadata: &Metadata) -> Option<FileId> {
     None
 }
 
-pub(crate) fn file_id_at(path: &Path, follow: Follow) -> Option<FileId> {
+pub(crate) fn file_id_at(path: &Path, follow: Follow) -> std::io::Result<Option<FileId>> {
     let flags = match follow {
         Follow::Links => FILE_FLAG_BACKUP_SEMANTICS,
         Follow::NotLinks => FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
     };
+    // An open that fails (missing, access denied) is the `Err`: the caller tells a missing
+    // path from one it couldn't open by the error's kind.
     let file = OpenOptions::new()
         .access_mode(FILE_READ_ATTRIBUTES)
         .share_mode(FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE)
         .custom_flags(flags)
-        .open(path)
-        .ok()?;
+        .open(path)?;
     let handle: HANDLE = file.as_raw_handle();
-    match id_info(handle) {
+    Ok(match id_info(handle) {
         Ok(id) => id,
         Err(code) if refuses_the_class(code) => file_index(handle),
         Err(_) => None,
-    }
+    })
 }
 
 /// `FileIdInfo`'s answer: `Ok(None)` for a zero or invalid id, `Err` with the Win32 code

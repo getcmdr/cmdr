@@ -5,7 +5,6 @@
 
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use cmdr_fs::name_fold::fold_name;
@@ -291,7 +290,7 @@ fn folded(path: &Path) -> String {
 /// `path`'s file id, following symlinks the way [`crate::validation::may_be_same_file`] does;
 /// `None` when it doesn't exist or the OS gives no id, which leaves the name rules alone.
 fn file_id(path: &Path) -> Option<FileId> {
-    fs::metadata(path).ok().as_ref().and_then(FileId::of)
+    FileId::at(path, cmdr_fs::file_identity::Follow::Links)
 }
 
 /// Refuses per-source names on a route that can't honour them: an archive

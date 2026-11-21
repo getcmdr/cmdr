@@ -354,7 +354,7 @@ export const DIALOG_GALLERY_ENTRIES: DialogGalleryEntry[] = [
       { id: 'file_in_use', label: 'File open somewhere else (SMB)' },
       { id: 'source_in_cold_storage', label: 'Archived source (S3 Glacier)' },
       { id: 'folder_holds_unlisted_items', label: 'Folder keeps unlistable keys (S3)' },
-      { id: 'cant_tell_if_same_file', label: 'Overwrite onto a file with no id (Windows)' },
+      { id: 'cant_tell_if_same_file', label: 'Overwrite that might hit its own source (Windows share)' },
       { id: 'source_changed', label: 'Source changed mid-copy (S3)' },
       { id: 'mounted_volume_inside', label: 'Delete reaches a mounted drive' },
       { id: 'mounted_volume_inside-copy', label: 'Overwrite reaches a mounted drive' },

@@ -2927,13 +2927,13 @@
     "description": "Recovery suggestion for the same dialog. Plain text. \"Storage provider’s console\" means the provider's website or admin tool (for example the AWS console). \"Another S3 tool\" means any other program that talks to S3-compatible storage (for example the AWS command-line tool), which can name those items where Cmdr can't. Keep \"S3\" as is."
   },
   "errors.write.cantTellIfSameFile.title": "This might be the file you’re copying",
-  "errors.write.cantTellIfSameFile.message": "Cmdr can’t tell whether {path} is the file you’re copying under another name, so it didn’t overwrite it. Replacing it could have erased your original.",
-  "errors.write.cantTellIfSameFile.suggestion": "Copy it under another name, or remove the file that’s there yourself if you’re sure it’s a different one, then try again.",
+  "errors.write.cantTellIfSameFile.message": "This drive doesn’t say whether {path} is the very file you’re copying, reached another way. Replacing it could have erased your original, so Cmdr stopped the copy here and left that file as it was.",
+  "errors.write.cantTellIfSameFile.suggestion": "If you’re sure they’re two different files, delete the one at the destination and copy again. Or copy to another folder, or keep both files under different names.",
   "@errors.write.cantTellIfSameFile.title": {
     "description": "Title of the error dialog when a copy was about to replace an existing file, but the system couldn't say whether that file and the one being copied are the same file reached two ways (for example through a link or a network share). Plain text."
   },
   "@errors.write.cantTellIfSameFile.message": {
-    "description": "Body of the same dialog. Plain text. Explains that Cmdr stopped instead of replacing the existing file: if the two were really one file, replacing it would have destroyed the original. \"Under another name\" means the same file reached through a different path.",
+    "description": "Body of the same dialog. Plain text. Explains that the drive (often a network share) gives no way to tell two files apart, so Cmdr stopped the whole copy at this file instead of replacing it: if the two were really one file reached by two paths, replacing it would have destroyed the original. Files copied before this one stay copied.",
     "placeholders": {
       "path": {
         "description": "The full path of the existing file the copy would have replaced, inserted verbatim. Do not translate or reformat it."
@@ -2941,7 +2941,7 @@
     }
   },
   "@errors.write.cantTellIfSameFile.suggestion": {
-    "description": "Recovery suggestion for the same dialog. Plain text. Two ways forward: copy under a different name, or delete the existing file by hand first when the person knows it's a different file."
+    "description": "Recovery suggestion for the same dialog. Plain text. Three ways forward: delete the existing file by hand first when the person knows it's a different file, copy into a different folder, or keep both files (the copy's option that gives the new file a different name)."
   },
   "errors.write.mountedVolumeInside.title": "A mounted drive is in the way",
   "errors.write.mountedVolumeInside.message.delete": "A drive or server is mounted at {mountPoint}, and deleting there would erase everything on it. Cmdr stopped before deleting anything.",
