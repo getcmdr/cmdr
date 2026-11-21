@@ -54,6 +54,9 @@ export {
 // Streaming-listing event payload types, from the typed-events bindings via `file-listing.ts`.
 export type { CompareDirectoriesMode, CompareDirectoriesResult } from './file-listing'
 export { getHomeFolder } from './home-folder'
+// Native path text (drops, pickers) crossed to app text: the one door (#1311).
+export { onAppPathDragDrop, pickOneAsAppPath, chooseSaveTarget } from './native-paths'
+export type { AppPathDragDropEvent } from './native-paths'
 export type {
   ListingOpeningEvent,
   ListingStalledEvent,

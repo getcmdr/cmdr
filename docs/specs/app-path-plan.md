@@ -2125,6 +2125,12 @@ included; the hidden couplings it found are why waves B and C differ from round 
   directories (1,236 tests): `main` 44 red → the branch 43, none newly red; of the baseline's 70 here, 27 pass and 43
   stay red, waiting on the routing seam, the two behavior-change commits, and the watcher fixtures
   (`docs/notes/windows-port/windows-test-failures.md` § "By milestone", the TSV's `rerun` column).
+- **#1311 done**: drops and app-path picks cross one native-to-app door, `commands/native_paths.rs`'s
+  `app_paths_from_native` (`from_native_unicode`, a typed `Refused` per path), behind the frontend's
+  `tauri-commands/native-paths.ts` (`onAppPathDragDrop`, `pickOneAsAppPath`, `chooseSaveTarget`); the pane drop, the Ask
+  Cmdr drop, the media index's chosen folder, and the viewer's Save as take app paths. The adb binary, the SFTP key
+  file, and the macOS `.app` picker stay native (only the OS reads them). `no-restricted-imports` names the webview's
+  `getCurrentWebview` and `plugin-dialog`'s `open` / `save`. No bridge call added.
 - **Second behavior-change step done** (2026-11-21, David's OK the same day; branch `worktree-agent-a6e246efe235deaa9`):
   § "Typed and pasted `..`" landed, loud rule 1's second exception, pin (g) flipped for go-to.
   - **The trait method**: `Volume::parent_for_dot_dot`, lexical by default (`cmdr_fs::volume::dot_dot::lexical_parent`).

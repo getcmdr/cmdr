@@ -2,11 +2,12 @@ import {
   onDragImageSize,
   getHomeFolder,
   onDragModifiers,
+  onAppPathDragDrop,
   setSelfDragResolvedOperation,
   type UnlistenFn,
 } from '#lib/tauri-commands/index.js'
-import { getCurrentWebview } from '@tauri-apps/api/webview'
 import { toCanonical } from '#lib/path/canonical.js'
+import { tString } from '#lib/intl/messages.svelte.js'
 import { toViewportPosition } from '../drag/drag-position'
 import {
   getIsDraggingFromSelf,
@@ -601,6 +602,17 @@ export function createDragDropController(deps: DragDropControllerDeps) {
     )
   }
 
+  /** An external drop holding a path no app path names (#1311): left whole and the person told,
+   * ❌ never a transfer of the rest, which would quietly copy fewer items than were dragged. */
+  function refuseUncrossedDrop(itemCount: number) {
+    clearDropTargets()
+    stopDragAutoScroll()
+    hideOverlay()
+    stopModifierTracking()
+    reportDropReceived('external', 'nothingUsable', 'copy', itemCount)
+    addToast(tString('fileExplorer.drop.uncrossedPaths'), { level: 'warn' })
+  }
+
   /**
    * An external drop that carried no paths. A promise drop (a browser image) hands
    * its target to `promiseDrops`, which opens the Copy dialog once the files land
@@ -690,11 +702,12 @@ export function createDragDropController(deps: DragDropControllerDeps) {
       }
     })
 
-    // Register drag-and-drop target handler for external and pane-to-pane drops
-    unlistenDragDrop = await getCurrentWebview().onDragDropEvent((event) => {
-      const { type } = event.payload
+    // Register drag-and-drop target handler for external and pane-to-pane drops.
+    // Its `paths` arrive as app paths: the OS's native `C:\…` crosses at the door (#1311).
+    unlistenDragDrop = await onAppPathDragDrop((event) => {
+      const { type } = event
       if (type === 'enter') {
-        const paths = event.payload.paths
+        const paths = event.paths
         // Re-entry detection: if not currently flagged as self-drag but
         // fingerprint matches, restore the flag before any highlight logic
         if (!getIsDraggingFromSelf() && matchesSelfDragFingerprint(paths)) {
@@ -705,13 +718,18 @@ export function createDragDropController(deps: DragDropControllerDeps) {
           storeSelfDragFingerprint(paths)
         }
         currentDragSourcePaths = paths
-        handleDragEnter(paths, toViewportPosition(event.payload.position))
+        handleDragEnter(paths, toViewportPosition(event.position))
       } else if (type === 'over') {
-        handleDragOver(toViewportPosition(event.payload.position))
+        handleDragOver(toViewportPosition(event.position))
       } else if (type === 'drop') {
         // `handleDrop` consumes the recorded self-drag identity (if any) while
-        // the self-drag flag is still set, BEFORE the resets below clear it.
-        handleDrop(event.payload.paths, toViewportPosition(event.payload.position))
+        // the self-drag flag is still set, BEFORE the resets below clear it. Only an
+        // external drop's paths can fail to cross (a self-drag's come from app state).
+        if (event.refused > 0 && !getIsDraggingFromSelf()) {
+          refuseUncrossedDrop(event.paths.length + event.refused)
+        } else {
+          handleDrop(event.paths, toViewportPosition(event.position))
+        }
         resetDraggingFromSelf()
         clearSelfDragFingerprint()
         // Terminal: a new drag re-records its own identity. Cleared here (not on

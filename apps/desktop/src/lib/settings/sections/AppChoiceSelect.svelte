@@ -18,6 +18,7 @@
      * Rationale: `DETAILS.md` § "Rows that pick an app".
      */
     import { onMount } from 'svelte'
+    // eslint-disable-next-line no-restricted-imports -- OS-only: a macOS `.app` bundle the OS launches, never an app path a pane or index compares.
     import { open as openAppPicker } from '@tauri-apps/plugin-dialog'
     import Select from '#lib/ui/Select.svelte'
     import { getSetting, setSetting, onSpecificSettingChange } from '#lib/settings/index.js'

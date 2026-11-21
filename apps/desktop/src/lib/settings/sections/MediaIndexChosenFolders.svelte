@@ -21,13 +21,12 @@
      * match root), which is honest rather than wrong.
      */
     import { onMount } from 'svelte'
-    import { open as openFolderPicker } from '@tauri-apps/plugin-dialog'
     import { tString } from '#lib/intl/messages.svelte.js'
     import { onSpecificSettingChange } from '#lib/settings/index.js'
     import { getChosenFolders, isFolderChosen, setFolderChosen } from '#lib/media-index/always-index-folders.js'
     import { getAppLogger } from '#lib/logging/logger.js'
     import { ROOT_VOLUME_ID } from '#lib/indexing/index.js'
-    import { mediaIndexFolderCoverage, type FolderCoverage } from '#lib/tauri-commands/index.js'
+    import { mediaIndexFolderCoverage, pickOneAsAppPath, type FolderCoverage } from '#lib/tauri-commands/index.js'
     import { getFolderCoverageBadge } from '#lib/file-explorer/views/file-list-utils.js'
     import Button from '#lib/ui/Button.svelte'
     import Icon from '#lib/ui/Icon.svelte'
@@ -70,15 +69,17 @@
     })
 
     async function handleAdd(): Promise<void> {
-        let picked: string | string[] | null
+        let picked: string | null
         try {
-            picked = await openFolderPicker({ directory: true, multiple: false })
+            // An app path (`C:/Users/…` on Windows): the chosen folders are compared against
+            // the index's app paths, so the OS's native `C:\Users\…` crosses at the door (#1311).
+            picked = await pickOneAsAppPath({ directory: true })
         } catch (err) {
             log.warn('The folder picker did not open: {err}', { err })
             return
         }
-        // The user cancelled, or picked something we can't resolve to one path.
-        if (typeof picked !== 'string') return
+        // The user cancelled, or picked a place no app path names.
+        if (picked === null) return
         // Adding the same folder twice would be a no-op backend-side (it's a set) but would
         // show a duplicate row, so drop it here.
         if (isFolderChosen(picked)) return

@@ -554,6 +554,14 @@ A path the frontend sends is read as an app path at the command edge, `wire_path
   listing start, the create commands, rename, the pre-checks (`check_home_folder_guard`, `trash_routing_for_paths`),
   the scan preview's sources, and the volume transfers' sources take the text as sent: rows, pane paths, or typed text, and a listing of `x/link/` lists the target's rows under `x/link` either way.
 
+**Native text the OS handed the WEBVIEW crosses at `native_paths.rs`** (`app_paths_from_native`, #1311): a drop's
+`paths` and a folder picker's or Save panel's answer are the OS's spelling (`C:\Users\…` on Windows), so the frontend's
+door (`src/lib/tauri-commands/native-paths.ts`) sends them here before anything compares or stores them. The crossing is
+`AppPathBuf::from_native_unicode` (no escape made); a path no app path names answers `Refused`, warned with the path as
+`LogPrivate`, and the caller says so. macOS and Linux answer the text sent. Pure text, no I/O, so no deadline; async
+only to keep a big drop off the main thread. What stays native on purpose: the adb binary and an SFTP key file (only the
+OS reads them, and a person types the same native text into those fields), and the macOS `.app` picker.
+
 **JSON for all Tauri IPC, not binary (MessagePack/Protobuf).** Benchmarked with real directory listings: MessagePack is
 34-58% SLOWER than JSON despite being 17-19% smaller. Tauri serializes `Vec<u8>` as a JSON array of numbers, so binary
 data gets wrapped in JSON anyway, negating size benefits and adding decode overhead. See

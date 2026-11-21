@@ -21,6 +21,19 @@ const { addToast, showSavePanel } = vi.hoisted(() => ({
 }))
 vi.mock('#lib/ui/toast/toast-store.svelte.js', () => ({ addToast }))
 vi.mock('@tauri-apps/plugin-dialog', () => ({ save: showSavePanel }))
+// Windows' crossing, as the backend answers it (`commands/native_paths_test.rs` pins the real one):
+// the Save panel's answer crosses the door (#1311) before the save sees it.
+vi.mock('#lib/ipc/bindings.js', async (importOriginal) => {
+  const original = await importOriginal<typeof import('#lib/ipc/bindings.js')>()
+  return {
+    ...original,
+    commands: {
+      ...original.commands,
+      appPathsFromNative: (paths: string[]) =>
+        Promise.resolve(paths.map((path) => ({ kind: 'app', path: path.replaceAll('\\', '/') }))),
+    },
+  }
+})
 
 const writeText = vi.fn<(text: string) => Promise<void>>()
 
@@ -88,6 +101,28 @@ describe('the "saved" toast', () => {
 
     await orchestrator.handleSaveAs()
 
+    expect(addToast).toHaveBeenCalledWith(tString('viewer.saveAs.saved', { name: 'notes.selection.txt' }), {
+      level: 'info',
+    })
+  })
+
+  it('saves to the app path of a Windows Save panel answer and names its file (#1311)', async () => {
+    showSavePanel.mockResolvedValue('C:\\Users\\someone\\notes.selection.txt')
+    const saveAs = vi.fn<(path: string) => Promise<SaveResult>>(() =>
+      Promise.resolve({ ok: true, savedAs: { kind: 'utf8' } }),
+    )
+    const copy = {
+      busy: false,
+      inFlightReadId: null,
+      runCopy: () => Promise.resolve<CopyOutcome>({ kind: 'empty' }),
+      cancelInFlight: () => Promise.resolve(),
+      saveAs,
+    }
+    const orchestrator = createViewerCopyOrchestrator({ copy, getFileName: () => 'notes.txt' })
+
+    await orchestrator.handleSaveAs()
+
+    expect(saveAs).toHaveBeenCalledWith('C:/Users/someone/notes.selection.txt')
     expect(addToast).toHaveBeenCalledWith(tString('viewer.saveAs.saved', { name: 'notes.selection.txt' }), {
       level: 'info',
     })

@@ -8,13 +8,38 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { AttachmentRef } from '#lib/tauri-commands/index.js'
 import type { SelfDragIdentity } from '#lib/file-explorer/drag/drag-drop.js'
+import { tString } from '#lib/intl/messages.svelte.js'
 
 const resolveMock = vi.fn<(paths: string[]) => Promise<AttachmentRef[]>>()
 const state = { isSelf: false, identity: null as SelfDragIdentity | null }
-
-vi.mock('#lib/tauri-commands/index.js', () => ({
-  resolveAskCmdrAttachments: (paths: string[]) => resolveMock(paths),
+const { addToast, dragDropHandlerRef } = vi.hoisted(() => ({
+  addToast: vi.fn(),
+  dragDropHandlerRef: { current: null as ((event: { payload: unknown }) => void) | null },
 }))
+
+vi.mock('#lib/tauri-commands/index.js', async () => ({
+  resolveAskCmdrAttachments: (paths: string[]) => resolveMock(paths),
+  // The real door, over a mocked webview and a mocked backend crossing below.
+  onAppPathDragDrop: (
+    await vi.importActual<typeof import('#lib/tauri-commands/native-paths.js')>('#lib/tauri-commands/native-paths.js')
+  ).onAppPathDragDrop,
+}))
+// Windows' crossing, as the backend answers it (`commands/native_paths_test.rs` pins the real one).
+vi.mock('#lib/ipc/bindings.js', () => ({
+  commands: {
+    appPathsFromNative: (paths: string[]) =>
+      Promise.resolve(paths.map((path) => ({ kind: 'app', path: path.replaceAll('\\', '/') }))),
+  },
+}))
+vi.mock('@tauri-apps/api/webview', () => ({
+  getCurrentWebview: () => ({
+    onDragDropEvent: (handler: (event: { payload: unknown }) => void) => {
+      dragDropHandlerRef.current = handler
+      return Promise.resolve(() => {})
+    },
+  }),
+}))
+vi.mock('#lib/ui/toast/index.js', () => ({ addToast }))
 vi.mock('#lib/file-explorer/drag/drag-drop.js', () => ({
   getIsDraggingFromSelf: () => state.isSelf,
   getSelfDragIdentity: () => state.identity,
@@ -152,6 +177,13 @@ describe('resolveDroppedPaths', () => {
     expect(refs.map((r) => r.path)).toEqual(['/Users/d/from-finder.pdf'])
   })
 
+  it('an external drop with a path that had no app path attaches nothing, and says so', async () => {
+    const refs = await resolveDroppedPaths(['C:/Users/d/a.pdf'], 1)
+    expect(resolveMock).not.toHaveBeenCalled()
+    expect(refs).toEqual([])
+    expect(addToast).toHaveBeenCalledWith(tString('fileExplorer.drop.uncrossedPaths'), { level: 'warn' })
+  })
+
   it('an empty external drop resolves to nothing', async () => {
     const refs = await resolveDroppedPaths([])
     expect(resolveMock).not.toHaveBeenCalled()
@@ -170,5 +202,17 @@ describe('installComposerDrop', () => {
     expect(() => {
       unlisten()
     }).not.toThrow()
+  })
+
+  it('attaches an Explorer drop by its app paths, never the native `C:\\` text (#1311)', async () => {
+    const h = handlers()
+    await installComposerDrop(h.getRect, h.onDragActive, h.onAttachments)
+    dragDropHandlerRef.current?.({
+      payload: { type: 'drop', paths: ['C:\\Users\\test_user_1\\report.pdf'], position: { x: 150, y: 150 } },
+    })
+    await vi.waitFor(() => {
+      expect(h.attached).toHaveLength(1)
+    })
+    expect(resolveMock).toHaveBeenCalledWith(['C:/Users/test_user_1/report.pdf'])
   })
 })

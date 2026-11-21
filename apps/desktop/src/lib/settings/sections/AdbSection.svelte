@@ -13,6 +13,7 @@
      * additionally awaits that push before asking the backend about the new path.
      */
     import { onMount } from 'svelte'
+    // eslint-disable-next-line no-restricted-imports -- OS-only: the adb binary the backend spawns. It stays native (`C:\…\adb.exe` on Windows), the same text a person types into this field.
     import { open } from '@tauri-apps/plugin-dialog'
     import SettingsSection from '../components/SettingsSection.svelte'
     import SettingRow from '../components/SettingRow.svelte'

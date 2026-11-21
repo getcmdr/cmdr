@@ -128,6 +128,22 @@ const nativeFolderGetters = {
     "These answer the OS's native spelling (`C:\\Users\\…` on Windows), which is no app path. Use `getHomeFolder` from `#lib/tauri-commands` and app-path arithmetic, or a backend command.",
 }
 
+/** Tauri APIs that hand the webview native path text: drops and picker answers (#1311). */
+const nativePathSources = [
+  {
+    name: '@tauri-apps/api/webview',
+    importNames: ['getCurrentWebview'],
+    message:
+      "Its `onDragDropEvent` paths are the OS's native spelling (`C:\\Users\\…` on Windows), which is no app path. Use `onAppPathDragDrop` from `#lib/tauri-commands`.",
+  },
+  {
+    name: '@tauri-apps/plugin-dialog',
+    importNames: ['open', 'save'],
+    message:
+      "A picked path is the OS's native spelling (`C:\\Users\\…` on Windows), which is no app path. Use `pickOneAsAppPath` / `chooseSaveTarget` from `#lib/tauri-commands`; a path only an OS API reads (a binary to run, a key file) may opt out with a reasoned eslint-disable.",
+  },
+]
+
 const unusedVarsRule = ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }]
 
 // Shared non-type-aware rules used across TS and Svelte-runes file sections.
@@ -288,11 +304,12 @@ export default tseslint.config(
     // Tauri's folder getters answer the OS's native spelling (`C:\Users\…` on
     // Windows), which the frontend's app-path grammar refuses (#1292). A folder the
     // frontend reasons about comes from the backend as an app path. The ones that only
-    // feed an OS API (`tempDir`, `appLogDir`) stay allowed.
+    // feed an OS API (`tempDir`, `appLogDir`) stay allowed. Drops and pickers hand over
+    // native text too, so they cross at `#lib/tauri-commands`'s door (#1311).
     files: ['src/**/*.{ts,svelte.ts,svelte}'],
     ignores: ['src/**/*.test.ts'],
     rules: {
-      'no-restricted-imports': ['error', { paths: [nativeFolderGetters] }],
+      'no-restricted-imports': ['error', { paths: [nativeFolderGetters, ...nativePathSources] }],
     },
   },
   {
@@ -306,6 +323,7 @@ export default tseslint.config(
         {
           paths: [
             nativeFolderGetters,
+            ...nativePathSources,
             {
               name: '#lib/ui/TextInput.svelte',
               message:
