@@ -2272,6 +2272,13 @@ export const commands = {
    *  never a create; see [`trash_dir_for_path`].
    */
   getTrashDir: (path: string) => typedError<string | null, MutationError>(__TAURI_INVOKE('get_trash_dir', { path })),
+  /**
+   *  Opens the trash of `path`'s drive in the OS's own file manager, where that trash is a view
+   *  no pane lists (Windows' Recycle Bin, in File Explorer): `NoView` elsewhere and on a drive
+   *  with no bin, so "Go to trash" navigates a pane (`get_trash_dir`) or says there's none. A
+   *  few Win32 calls, under the 2 s read tier.
+   */
+  openTrashView: (path: string) => typedError<TrashView, MutationError>(__TAURI_INVOKE('open_trash_view', { path })),
   // Returns the current restricted-paths snapshot (sorted, absolute paths).
   getRestrictedPaths: () => __TAURI_INVOKE<string[]>('get_restricted_paths'),
   /**
@@ -23588,6 +23595,16 @@ export type TrashRoutingAnswer = {
    */
   folderMayHoldOnlineOnly: boolean
 }
+
+// What [`open_trash_view`] did.
+export type TrashView =
+  // The OS's file manager opened the trash in a window of its own.
+  | 'opened'
+  /**
+   *  No such view of this trash: a pane goes to its folder instead (`get_trash_dir`), or
+   *  the drive keeps no trash.
+   */
+  | 'noView'
 
 // How a backfill ended.
 export type TreeBackfillEnd =

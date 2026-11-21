@@ -831,7 +831,14 @@ export type {
 } from './mtp'
 
 // Rename
-export { checkRenamePermission, checkRenameValidity, getTrashDir, moveToTrash, renameFile } from './rename'
+export {
+  checkRenamePermission,
+  checkRenameValidity,
+  getTrashDir,
+  moveToTrash,
+  openTrashView,
+  renameFile,
+} from './rename'
 export type { RenameConflictFileInfo, RenameValidityResult } from './rename'
 export type { MutationWaitOptions } from './mutation-reply'
 

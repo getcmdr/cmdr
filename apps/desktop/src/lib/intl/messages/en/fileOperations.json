@@ -67,7 +67,7 @@
   },
   "fileOperations.trash.goToTrashAction": "{platform, select, windows {Go to Recycle Bin} other {Go to trash}}",
   "@fileOperations.trash.goToTrashAction": {
-    "description": "Button on the toast that appears right after files are moved to the trash. Pressing it opens the trash folder in the file pane, with the cursor on the item that was just moved there. In each branch, name that OS’s trash the way it does: the Trash on macOS and Linux, the Recycle Bin on Windows (with no article, like File Explorer’s \"Empty Recycle Bin\"). Short control label; the toast is narrow, so keep it to one or two words."
+    "description": "Button on the toast that appears right after files are moved to the trash. Pressing it opens the trash folder in the file pane, with the cursor on the item that was just moved there; on Windows it opens the Recycle Bin in File Explorer. In each branch, name that OS’s trash the way it does: the Trash on macOS and Linux, the Recycle Bin on Windows (with no article, like File Explorer’s \"Empty Recycle Bin\"). Short control label; the toast is narrow, so keep it to one or two words."
   },
   "fileOperations.trash.undoing": "Putting them back…",
   "@fileOperations.trash.undoing": {

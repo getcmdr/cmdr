@@ -50,11 +50,12 @@ xattr = "1"
 # `getfsstat`, and the `st_flags` bits a listing reads.
 libc = "0.2"
 
-# The Windows half (`LocalWindowsVolume`): `MoveFileExW` for the no-replace rename and
-# `GetDiskFreeSpaceExW` for space. The version `cmdr-fs` already uses, so no second copy
-# enters the graph.
+# The Windows half (`LocalWindowsVolume`): `MoveFileExW` for the no-replace rename,
+# `GetDiskFreeSpaceExW` for space, and the drive and Explorer-setting reads behind "does
+# this drive keep a Recycle Bin" (`recycle_bin.rs`). The version `cmdr-fs` already uses, so
+# no second copy enters the graph.
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = ["Win32_Storage_FileSystem"] }
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_Registry"] }
 
 # NSURL resource values: volume space (important-usage, purgeable counted), the
 # volume names and ejectability `volumes/` enriches with, and a file's added and

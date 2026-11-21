@@ -127,16 +127,6 @@ pub enum WindowsDriveKind {
     Subst,
 }
 
-impl WindowsDriveKind {
-    /// Whether Windows keeps a Recycle Bin here: a fixed disk only. On every other kind the
-    /// Shell deletes for good, so the switcher row says "no trash" and a delete asks first.
-    /// (The Recycle Bin arm vetoes such a delete anyway, `cmdr-operations`'
-    /// `delete/trash/platform/windows/`.)
-    pub fn has_recycle_bin(self) -> bool {
-        matches!(self, Self::Fixed)
-    }
-}
-
 /// One volume root Windows lists right now, with the id [`windows_volume_id`] gave it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WindowsDrive {

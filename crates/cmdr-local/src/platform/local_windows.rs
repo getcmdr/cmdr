@@ -7,6 +7,7 @@
 //! symlink, xattrs, a write-access probe, and a stream are "not supported" rather than a guess.
 
 pub(crate) mod paths;
+pub mod recycle_bin;
 pub(crate) mod rename;
 
 use std::borrow::Cow;
@@ -457,12 +458,12 @@ impl Volume for LocalWindowsVolume {
         Some(self.mount)
     }
 
-    /// A local disk's Recycle Bin, a share's none: the mount class's answer, as on POSIX. A
-    /// removable or `subst` drive still answers yes here (its class is `LocalDisk`); the
-    /// switcher row says no for it (`WindowsDriveKind::has_recycle_bin`), and the Recycle Bin
-    /// arm refuses rather than delete for good.
+    /// Whether the drive under the root keeps a Recycle Bin, the ONE answer the volume list and
+    /// the Recycle Bin arm's refusal read too (`recycle_bin.rs`): a removable or `subst`
+    /// drive, or a bin turned off, says no though its mount class is `LocalDisk`. A share's
+    /// class says no first, with no call to the drive.
     fn has_trash(&self) -> bool {
-        self.mount.has_trash()
+        self.mount.has_trash() && recycle_bin::has_recycle_bin_at(&self.root)
     }
 
     fn supported_dates<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = SupportedDates> + Send + 'a>> {

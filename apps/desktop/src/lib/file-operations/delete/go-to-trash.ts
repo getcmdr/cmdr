@@ -5,6 +5,8 @@
  * macOS keeps one trash per VOLUME, so there is no single directory to open. Both
  * entries below resolve the right one through `getTrashDir`, which asks Cocoa the
  * same question the trash move asked (`crates/cmdr-operations/src/delete/trash.rs`).
+ * Windows' Recycle Bin is no folder a pane can list, so both first ask
+ * `openTrashView`, which opens it in File Explorer when the drive keeps one.
  *
  * The two entries differ in what they know:
  *
@@ -16,7 +18,7 @@
  *   journal holds the OS's own answer, de-duplicated name and all.
  */
 
-import { getTrashDir, getOperationLogDetail } from '#lib/tauri-commands/index.js'
+import { getTrashDir, getOperationLogDetail, openTrashView } from '#lib/tauri-commands/index.js'
 import { whenOperationSettled } from '../settled-operations'
 import {
   resolveLocationOrToast,
@@ -56,7 +58,28 @@ export async function goToTrash(explorer: PaneRevealAPI | undefined): Promise<vo
     return
   }
   const { path } = explorer.getPaneLocation(explorer.getFocusedPane())
+  if (await openedAsSystemView(path)) return
   await openTrashDirFor(explorer, path)
+}
+
+/**
+ * Where the OS draws the trash itself instead of keeping it in a folder a pane can list
+ * (Windows' Recycle Bin, one Shell view of every drive's bin), it opens there, in the OS's
+ * file manager. `true` when that settled it: opened, or a failure already said so. `false`
+ * where a pane goes to a trash folder instead, or there's no trash, which the pane path
+ * answers (`openTrashDirFor`).
+ */
+async function openedAsSystemView(path: string): Promise<boolean> {
+  try {
+    return (await openTrashView(path)) === 'opened'
+  } catch (error) {
+    log.info("Couldn't open the trash view for {path}: {reason}", {
+      path,
+      reason: asMutationError(error)?.type ?? error,
+    })
+    addToast(tString('fileExplorer.navigation.locationUnreachableToast'), { level: 'info', id: NO_TRASH_TOAST_ID })
+    return true
+  }
 }
 
 /**
@@ -76,6 +99,9 @@ export async function goToTrashedItems(
     log.debug('goToTrashedItems: no explorer; skipping (HMR or pre-mount)')
     return
   }
+  // A Recycle Bin item's recorded place is a `$R…` name in `$Recycle.Bin`, which no pane
+  // should land on: the bin opens as the OS shows it.
+  if (await openedAsSystemView(fromPath)) return
 
   const landed = await firstTrashedItemPath(operationId)
   if (!landed) {
