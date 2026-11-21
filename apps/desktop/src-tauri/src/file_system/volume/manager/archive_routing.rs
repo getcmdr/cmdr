@@ -110,9 +110,13 @@ impl VolumeManager {
         path: &Path,
         archive_root: ArchiveRoot,
     ) -> Option<ResolvedVolume> {
-        let (zip_path, inner) = archive_boundary_candidates(path).find(|(zip, _)| {
-            zip.starts_with(&*view.root().as_std_legacy()) && zip.as_path() != &*view.root().as_std_legacy()
-        })?;
+        // Crossed once for every candidate: the candidates are `Path` values until
+        // `resolve` takes an app path.
+        let (zip_path, inner) = {
+            let view_root = view.root().as_std_legacy();
+            archive_boundary_candidates(path)
+                .find(|(zip, _)| zip.starts_with(&*view_root) && zip.as_path() != &*view_root)
+        }?;
         if inner.as_os_str().is_empty() && archive_root == ArchiveRoot::File {
             return None;
         }
