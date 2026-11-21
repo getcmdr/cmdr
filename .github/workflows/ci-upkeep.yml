@@ -312,6 +312,87 @@ jobs:
             cargo install cargo-modules --version "$modules" --locked
           fi
 
+  # The `desktop-rust-windows-tests` entry, which the Windows lane's `tests` job restores: the
+  # cargo registry, `~/.cargo/bin` (cargo-nextest), and the dependencies' slice of `target/`. Its
+  # one writer, like `warm-rust-macos-cache`: on an exact hit it only looks; on a miss it builds
+  # the test binaries from a clean `target/` and installs the pinned nextest. A miss comes with each
+  # `Cargo.lock`, profile, or toolchain change, and costs ~20 min of a free Windows runner.
+  warm-rust-windows-tests-cache:
+    name: Warm Rust build cache (Windows tests)
+    runs-on: windows-latest
+    timeout-minutes: 60
+    if: >-
+      github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    cache-mode: write
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # Must match the `tests` job's steps in `windows-lane.yml` up to the cache.
+      - name: Keep the tree's line endings, allow long paths
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.longpaths true
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Switch to the commit CI ran
+        uses: ./.github/actions/checkout-main-commit
+        with:
+          sha: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Turn off Defender's real-time scan for the build
+        shell: pwsh
+        run: Set-MpPreference -DisableRealtimeMonitoring $true
+
+      - name: Install Go with mise
+        uses: ./.github/actions/install-mise
+        with:
+          install_args: go
+
+      - name: Install the pinned Rust toolchain
+        run: |
+          channel=$(sed -n 's/^channel = "\(.*\)"$/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal
+          echo "RUSTUP_TOOLCHAIN=$channel" >>"$GITHUB_ENV"
+
+      - name: Cache the dependency build
+        id: cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: desktop-rust-windows-tests
+          save-if: true
+
+      # As in `warm-rust-cache`: a miss restored the newest older entry, and building on it would
+      # carry its stale artifacts into the new save.
+      - name: Start the new entry from a clean target
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: rm -rf target
+
+      - name: Build check tool
+        if: steps.cache.outputs.cache-hit != 'true'
+        working-directory: ./scripts/check
+        run: go build -o check.exe .
+
+      - name: Install cargo-nextest (pinned)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          nextest="$(./scripts/check/check.exe --print-nextest-version)"
+          if [ "$(cargo nextest --version 2>/dev/null | head -1 | cut -d' ' -f2)" != "$nextest" ]; then
+            cargo install cargo-nextest --version "$nextest" --locked --force
+          fi
+
+      - name: Build the test binaries
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          mapfile -t args < <(./scripts/check/check.exe --print-host-cargo-args | tr -d '\r')
+          cargo test --no-run "${args[@]}"
+
   # ===========================================
   # Keep the light lane's caches warm on main
   # ===========================================
@@ -438,7 +519,8 @@ jobs:
     name: Drop superseded build caches
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [warm-e2e-linux-cache, warm-rust-cache, warm-rust-macos-cache, warm-light-cache]
+    needs:
+      [warm-e2e-linux-cache, warm-rust-cache, warm-rust-macos-cache, warm-rust-windows-tests-cache, warm-light-cache]
     if: >-
       always() && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' &&
       github.event.workflow_run.head_repository.full_name == github.repository

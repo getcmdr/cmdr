@@ -9,7 +9,7 @@ How the GitHub workflows fit together, and the invariants that keep them honest.
 | ----------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `ci.yml`                      | PRs, pushes to main, nightly, manual    | Main suite: change detection, one `uses:` job per lane (§ Lane files), the deploy, and `CI OK`       |
 | `<lane>-lane.yml`             | Called by `ci.yml`                      | One lane's steps each: `rust`, `rust-fixtures`, `macos`, `windows`, `svelte`, `e2e-linux`, and so on |
-| `windows-lane.yml`            | Called by `ci.yml`, manual              | Required on land runs that touch Rust: Windows clippy (native MSVC), plus a break report. § Windows  |
+| `windows-lane.yml`            | Called by `ci.yml`, manual              | Required on land runs that touch Rust: Windows clippy and the Rust suites (native MSVC). § Windows   |
 | `ci-upkeep.yml`               | CI finished on a `main` push            | Warms `main`'s build caches, then drops superseded ones. § CI upkeep                                 |
 | `slow-checks.yml`             | Nightly (3 AM UTC), manual              | osv-scanner, cargo-deny/udeps, govulncheck, website Docker build, 30-min SMB soak                    |
 | `advisories.yml`              | Daily (4:17 AM UTC), manual             | osv-scanner (every lockfile) and cargo-deny (no compile): new advisories surface in a day            |
@@ -627,11 +627,12 @@ The CI failure history that motivated it: `docs/notes/ci-health-2026-10.md`.
 
 ## Windows lane
 
-`windows-lane.yml`, one job on `windows-latest` plus a marker job, called by `ci.yml`'s `desktop-rust-windows` and in
-`CI OK`'s `needs`: no land that touches Rust merges unless the workspace compiles and passes clippy for Windows. Cmdr
-doesn't ship for Windows yet (`docs/specs/windows-port-plan.md`), but the port lands on `main` daily, and every other
-lane builds for Linux or macOS, so `cfg(windows)` code is compiled nowhere else. Native (MSVC, the target Cmdr will
-ship), since a cross-check from Linux stalls on any build script that needs MSVC's `cl.exe`.
+`windows-lane.yml`, two jobs on `windows-latest` (`lane`: clippy and the break report; `tests`: the Rust suites) plus a
+marker job, called by `ci.yml`'s `desktop-rust-windows` and in `CI OK`'s `needs`: no land that touches Rust merges
+unless the workspace compiles, passes clippy, and fails no test beyond its known-failures list on Windows. Cmdr doesn't
+ship for Windows yet (`docs/specs/windows-port-plan.md`), but the port lands on `main` daily, and every other lane
+builds for Linux or macOS, so `cfg(windows)` code is compiled nowhere else. Native (MSVC, the target Cmdr will ship),
+since a cross-check from Linux stalls on any build script that needs MSVC's `cl.exe`.
 
 Why it gates (2026-11-19): while the lane ran only after a land, PR #1270 landed a Windows-only `unused_mut` in a
 `cmdr-operations` test (an error under `-D warnings` on Windows alone), and `main`'s Windows lane stayed red until a
@@ -657,6 +658,36 @@ later PR happened to fix it.
   host, `CMDR_WINDOWS_BREAKS_TARGET=x86_64-pc-windows-gnu pnpm check windows-breaks` gives the same report from a mingw
   cross-check (`apt-get install mingw-w64`, `rustup target add x86_64-pc-windows-gnu`). On a Mac, zig stands in for
   mingw's C compiler and `AWS_LC_SYS_PREBUILT_NASM=1` for NASM; that recipe's in the progress log above.
+- **The tests (`tests`, the lane's other red)**: `cargo nextest run --profile windows-baseline` over what
+  `check.exe --print-host-cargo-args` prints (`HostCargoLaneArgs`: every member but `cmdr-fsevent-stream`, with
+  `cmdr/virtual-mtp`, the app crate included), then `scripts/windows-test-baseline`'s `ratchet` holds the JUnit report
+  against `scripts/windows-test-baseline/ci-known-failures.tsv` and writes its verdict to the job summary. Red on a
+  failure the list doesn't name (a regression), on a `fails` entry that passes now or no longer runs (the list must
+  shrink in the same PR), and on a cell that passed by skipping itself (CI doesn't cover it). Each entry has a status
+  and a reason: `fails`, `flaky` (either outcome is fine; the reason says why it flips), or `builder` (left out of the
+  hosted run through `ratchet -filter`, so the Windows builder covers it; the reason names what the runner lacks).
+- **Rewriting the list**: `go -C scripts/windows-test-baseline run . ratchet -run <run-id> -write` downloads that run's
+  `windows-test-report` artifact and drops every entry that passes or is gone (tightening is free, like every allowlist
+  here). Adding takes a reason: `-write -add "<reason>"` lists the run's new failures as `fails` and its self-skips as
+  `builder`; that's loosening, so it needs David's OK like any allowlist (`scripts/check/checks/DETAILS.md` § "Allowlist
+  consent"). A `flaky` entry is a hand edit with its reason.
+- **What the list holds** (run 44938012136, 2026-11-21, `main` at `cca9cbea44`): 14,303 tests, 239 failures, 238 `fails`
+  and one `flaky`. By crate: `cmdr-operations` 101, `cmdr` 81, `cmdr-index` 32, `cmdr-listing-wasm` 7, `cmdr-fs` 5,
+  `cmdr-nfs` 4, `cmdr-adb` 3, one each in `cmdr-archive`, `cmdr-http`, `cmdr-listing`, `cmdr-local`,
+  `cmdr-operation-log`, and `cmdr-s3`. By cause, read the way the builder's are (`windows-test-failures.md`): the app
+  path clusters S 87, P 54, and H 23 (#1225), #1226 32, task 35 12, Windows-only expectations eight, task 34 five, Linux
+  errnos five, timeouts five, unread five, and three product gaps. Of four runs over two trees, one cell differed: a
+  `cmdr-index` subtree delete that times out at the 8 s cap three times in four, now `flaky`; the other four timeouts
+  held every time. No `builder` entries yet: the hosted runner holds the symlink privilege (no cell skipped itself), and
+  no cell needed a second drive or a folder mount to pass where the builder passes it. The builder's own record stays
+  `windows-test-failures.tsv`: its two cores time out where a hosted runner doesn't, so the two lists differ on purpose.
+- **Gotcha, the runner's TEMP is an 8.3 short path** (`C:\Users\RUNNER~1\AppData\Local\Temp`; the builder's `Admin` has
+  no short form): a cell that compares a path it built from `TEMP` against one the code canonicalized can fail here
+  alone (`go_to_path::tests::dotdot_past_a_nonexistent_middle_segment_is_no_link`, listed). It's a real case, since any
+  user whose name passes eight characters gets the same TEMP.
+- **What stays the builder's**: anything a hosted runner can't hold (a real second drive, folder mounts, a desktop
+  session for the GUI, `run-on-desktop.sh`), a `builder` entry once one exists, and every run on Windows 10 22H2 (hosted
+  is Windows Server 2025).
 - **When it runs**: a land run (§ Light runs and land runs) whose change matches the `rust-windows` filter (the Rust
   lanes' shared `rust-inputs` plus the lane file), and every full run (the nightly, the release gate's `run_all`). A
   light run skips it like the other heavy lanes, and a lane marker skips it when its exact inputs already passed. By
@@ -683,11 +714,18 @@ later PR happened to fix it.
     rustfmt, and rust-analyzer are never downloaded. `pinned-rust-toolchain` isn't used: it exists to keep rust-cache
     keys stable, and this lane has no Rust cache.
   - `core.autocrlf false` and `core.longpaths true` before the checkout, so the tree's bytes match every other OS's.
-  - No Rust cache, on purpose: the repo sits near its 10 GB budget (§ Build caching), a Windows `target/` would be one
-    more multi-GB entry, and the cold build already fits under the critical path. Revisit if the lane outgrows it.
-- **What's next**: retire the break report (`windowsPending` is empty, so it has nothing left to report), then
-  `desktop-rust-tests` on Windows, which isn't green yet: the app's suite there and the crates' failure clusters (#1225
-  app paths, #1226, #1232) are in the build log, and the frontend half is in
+  - `lane` has no Rust cache, on purpose: its cold clippy fits under the critical path, and a clippy entry would be one
+    more ~1 GB in a repo near its 10 GB budget (§ Build caching).
+  - `tests` restores one, `desktop-rust-windows-tests` (~1.0 GB: the registry, `~/.cargo/bin` with cargo-nextest, and
+    the dependencies' build), and never saves it: `ci-upkeep.yml`'s `warm-rust-windows-tests-cache` is its one writer,
+    from a clean `target/` on `main`, like the macOS entry. Its steps up to the cache must match the job's, or the key
+    (rustc plus the `RUST*`/`CARGO*` env) differs and the job builds cold.
+  - Defender's real-time scan is off for the job (`Set-MpPreference`), since it scans every file cargo writes.
+  - The console prints one line per failing test and no output (`--failure-output never`): the known failures' panics
+    filled GitHub's log limit on the first run, and the JUnit report (the `windows-test-report` artifact) holds each one
+    whole.
+- **What's next**: retire the break report (`windowsPending` is empty, so it has nothing left to report), and shrink the
+  known-failures list as the app path milestones (#1225) and tasks 34 and 35 land. The frontend half is in
   `docs/notes/windows-port/frontend-build-audit.md` § "3. CI, check runner, release".
 - **Windows 10 on real hardware: `ssh mami`**, a 2-core laptop on Windows 10 22H2 with MSVC. Read
   `~/projects-git/vdavid/infra/mami-laptop/CLAUDE.md` first: the `D:` build drive needs unlocking, and the toolchain and

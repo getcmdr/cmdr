@@ -13,6 +13,13 @@ fixture trees, see `../guides/generating-test-files.md`.
 Standard. Faster than `cargo test`. Run a single test by name: `cd apps/desktop/src-tauri && cargo nextest run <name>`.
 Run all: through the checker: `pnpm check rust-tests`. Don't run raw `cargo test` (see AGENTS.md).
 
+### `scripts/windows-test-baseline` (Windows runs against a list)
+
+Reads a nextest JUnit report from a Windows run. `ratchet` is CI's: it holds the Windows lane's run against
+`ci-known-failures.tsv` and rewrites the list from a run (`ratchet -run <run-id> -write`); `render`, `diff`, `explain`,
+and `tsv` are the builder's, for `docs/notes/windows-port/windows-test-failures.md`. The lane and the list's rules:
+`docs/tooling/ci.md` § Windows lane.
+
 ### `pnpm check disk-images` (real APFS and HFS+ disk images)
 
 The opt-in macOS lane for tests that need a real removable volume: the `cmdr_fs::testing::disk_images` harness's own

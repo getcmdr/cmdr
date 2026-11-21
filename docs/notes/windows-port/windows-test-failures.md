@@ -14,6 +14,12 @@ failures "cause unread" (their output names no cause), and this note reads them.
   hand-kept sixth column, `rerun`: the latest builder run that re-ran the cell, as `green@<commit>` or
   `red@<commit>: <cause>`, empty where none has. The raw log and JUnit report stay on the builder
   (`D:\logs\triage\run2.log`, `main-junit.xml`).
+- **What CI covers now, and what stays here**: since 2026-11-21 the Windows lane's `tests` job runs the whole
+  workspace's suites on every Rust-touching land against its own known-failures list,
+  `scripts/windows-test-baseline/ci-known-failures.tsv` (`docs/tooling/ci.md` § Windows lane). That list is the hosted
+  runner's and this `.tsv` is the builder's: they differ on purpose (two cores time out where four don't, Windows 10
+  22H2 against Server 2025). The builder keeps what a hosted runner can't do: a real second drive, folder mounts, the
+  desktop session, and every `builder` entry on the CI list.
 - **How the causes were read**: the tool's classifier reads each failure's output (its rules now cover every cluster
   below); a failure whose output names nothing takes its nearest classified sibling's cluster and is marked `unread`.
   For the unread ones, one or two per module were read by hand against the test's source (§ "Read by hand").

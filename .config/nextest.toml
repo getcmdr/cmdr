@@ -768,12 +768,14 @@ inherits = "default"
 success-output = "immediate-final"
 # In CI, fail fast to save time
 fail-fast = true
-# JUnit report for CI integration
+# JUnit report for CI integration. nextest reads `path` relative to the profile's store dir
+# (`target/nextest/<profile>/`), so a bare file name lands at `target/nextest/ci/junit.xml`;
+# a `target/...` path here nests a second `target/nextest/ci/` inside it.
 [profile.ci.junit]
-path = "target/nextest/ci/junit.xml"
+path = "junit.xml"
 
 [profile.default.junit]
-path = "target/nextest/default/junit.xml"
+path = "junit.xml"
 
 [profile.windows-baseline]
 # The Windows builder's whole-workspace run for `scripts/windows-test-baseline`. A cell
@@ -783,5 +785,5 @@ path = "target/nextest/default/junit.xml"
 inherits = "default"
 fail-fast = false
 [profile.windows-baseline.junit]
-path = "target/nextest/windows-baseline/junit.xml"
+path = "junit.xml"
 store-success-output = true

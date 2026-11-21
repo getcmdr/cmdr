@@ -61,6 +61,8 @@ type cliFlags struct {
 	printNextest      bool   // print the pinned cargo-nextest version (used by CI) and exit
 	// print the CMDR_RUST_TEST_SCOPE value for the change since this ref ("-": paths on stdin) and exit
 	printRustTestScope string
+	// print the host cargo lanes' package selection and features (`HostCargoLaneArgs`) and exit
+	printHostCargoArgs bool
 	// ensure the E2E binary is built from the current tree, print its path, and exit
 	ensureE2EBinary bool
 }
@@ -321,6 +323,7 @@ func parseFlags(args []string) (*cliFlags, error) {
 		printCargoModules = fs.Bool("print-cargo-modules-version", false, "Print the pinned cargo-modules version module-cycles runs on, and exit")
 		printNextest      = fs.Bool("print-nextest-version", false, "Print the pinned cargo-nextest version the test lanes run on, and exit")
 		printRustScope    = fs.String("print-rust-test-scope", "", "Print the Rust test scope (CMDR_RUST_TEST_SCOPE) for the change since this ref, or for the paths on stdin with -, and exit")
+		printHostArgs     = fs.Bool("print-host-cargo-args", false, "Print the package selection and features every host cargo lane passes, one argument per line, and exit")
 		ensureE2E         = fs.Bool("ensure-e2e-binary", false, "Build the E2E binary unless the one on disk matches this tree, print its path, and exit")
 		help              = fs.Bool("help", false, "Show help message")
 		h                 = fs.Bool("h", false, "Show help message")
@@ -375,6 +378,7 @@ func parseFlags(args []string) (*cliFlags, error) {
 		printCargoModules:  *printCargoModules,
 		printNextest:       *printNextest,
 		printRustTestScope: *printRustScope,
+		printHostCargoArgs: *printHostArgs,
 
 		ensureE2EBinary: *ensureE2E,
 	}
@@ -702,7 +706,8 @@ func showUsage() {
 	fmt.Println("    --print-cargo-modules-version  Print the pinned cargo-modules version module-cycles runs on, and exit")
 	fmt.Println("    --print-nextest-version  Print the pinned cargo-nextest version the test lanes run on, and exit")
 	fmt.Println("    --print-rust-test-scope REF  Print which crates' Rust tests the change since REF can affect (- reads paths from stdin), and exit")
-	fmt.Println("    --ensure-e2e-binary      Build the E2E binary unless the one on disk matches this tree, print its path, and exit")
+	fmt.Println("    --print-host-cargo-args  Print the package selection and features every host cargo lane passes, one per line, and exit")
+	fmt.Println("    --ensure-e2e-binary     Build the E2E binary unless the one on disk matches this tree, print its path, and exit")
 	fmt.Println("    -h, --help               Show this help message")
 	fmt.Println()
 	fmt.Println("If nothing is named, runs all non-slow checks for all apps.")

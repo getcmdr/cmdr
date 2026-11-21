@@ -8,6 +8,8 @@
 //	go -C scripts/windows-test-baseline run . diff -baseline docs/notes/windows-port/app-path-baseline.md -junit FILE
 //	go -C scripts/windows-test-baseline run . explain -junit FILE [-crate NAME]   # each failure, its cluster, and its panic lines
 //	go -C scripts/windows-test-baseline run . tsv -junit FILE > OUT.tsv           # one line per failure, machine-readable
+//	go -C scripts/windows-test-baseline run . ratchet -junit FILE | -run RUN_ID [-write [-add REASON]]  # CI's known-failures list (ratchet.go)
+//	go -C scripts/windows-test-baseline run . ratchet -filter                    # the nextest filterset leaving the builder entries out
 //
 // Why JUnit and not the console: PowerShell wraps console output at its window width and some logs come out UTF-16,
 // so test names and panic messages had to be stitched back together from the earlier logs. The JUnit report holds each
@@ -31,7 +33,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: windows-test-baseline render|diff|explain|tsv [flags]")
+		fmt.Fprintln(os.Stderr, "usage: windows-test-baseline render|diff|explain|tsv|ratchet [flags]")
 		os.Exit(2)
 	}
 	var err error
@@ -44,8 +46,10 @@ func main() {
 		err = runExplain(os.Args[2:], os.Stdout)
 	case "tsv":
 		err = runTSV(os.Args[2:], os.Stdout)
+	case "ratchet":
+		err = runRatchet(os.Args[2:], os.Stdout)
 	default:
-		err = fmt.Errorf("unknown command %q (want render, diff, explain, or tsv)", os.Args[1])
+		err = fmt.Errorf("unknown command %q (want render, diff, explain, tsv, or ratchet)", os.Args[1])
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
