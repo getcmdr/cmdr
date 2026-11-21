@@ -142,10 +142,7 @@ async fn feed_remote(
         if cancellation.is_requested() {
             return Err(FreshZipError::Cancelled.into());
         }
-        let mut stream = match source_volume
-            .open_read_stream(&AppPath::legacy_unchecked(&feed.path))
-            .await
-        {
+        let mut stream = match source_volume.open_read_stream(&feed.path).await {
             Ok(stream) => stream,
             Err(error) => return Err(source_failed(&feed, error, &cancellation).await),
         };

@@ -231,6 +231,15 @@ reaped, fresh spared, other-archive ignored, delete-failure doesn't fail the edi
   folders first, by the name the zip holds; the walk sorts every listed level the same way before pushing it. A renamed
   duplicate therefore sorts by its new name (`report (1).txt` before `report.txt`).
 
+  **The walk speaks app paths** (`fresh_plan.rs`): each selected item crosses from the caller's `PathBuf` once, in
+  `settle_tops`, and every child joins its folder by the scan walk's rule (`cmdr_fs::app_path::ListedFolder`), so a
+  remote child never gains a host separator, and a selection spelled `/src//sub` lists its children canonically
+  (`/src/sub/d`). A listed name that isn't one plain name (`..`, `a/b`, empty) fails the plan as a read error on the
+  folder that listed it, ❌ never a join: `Path::join` re-listed the parent, or packed a different subtree under this
+  folder's name (`fresh_plan_walk_tests.rs`). The walk's `std::path` helpers (the outage wait, error text, the progress
+  readout, a local entry's file) still take the bridge's exact bytes, one `as_std_legacy` per entry, until they speak
+  the type.
+
   **The compress's tree rows come from the producer's ticks** (`fresh_rows.rs::CompressRows`): entries are written one
   at a time in plan order and every tick says how many are finished, so the entry in flight is always the
   `entries_done`th and its bytes are the source bytes read since the one before it ended. `produce` stays free of any

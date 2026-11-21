@@ -3,6 +3,7 @@
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use cmdr_fs::app_path;
+use cmdr_fs::app_path::{PathArithmetic, PathFlavor};
 use std::future::Future;
 
 use super::*;
@@ -66,7 +67,7 @@ async fn planning_a_remote_tree_stats_only_the_selected_items() {
     for index in 0..20 {
         inner
             .create_file(
-                &AppPath::legacy_unchecked(&PathBuf::from(format!("/tree/sub/f{index}.txt"))),
+                &AppPathBuf::parse(&format!("/tree/sub/f{index}.txt"), PathFlavor::Posix).expect("an app path"),
                 b"x",
             )
             .await
@@ -109,10 +110,12 @@ struct LinkFollowingStat {
 }
 
 impl LinkFollowingStat {
-    fn target(path: &Path) -> PathBuf {
-        match path.strip_prefix("/link") {
-            Ok(rest) => Path::new("/target").join(rest),
-            Err(_) => path.to_path_buf(),
+    fn target(path: &AppPath) -> AppPathBuf {
+        match path.strip_prefix(app_path!("/link")) {
+            Some(rest) => app_path!("/target")
+                .join_relative(&rest)
+                .expect("a path under the target"),
+            None => path.to_owned(),
         }
     }
 }
@@ -129,26 +132,14 @@ impl Volume for LinkFollowingStat {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.inner
-                .list_directory(&AppPath::legacy_unchecked(&Self::target(path)), on_progress)
-                .await
-        })
+        Box::pin(async move { self.inner.list_directory(&Self::target(path), on_progress).await })
     }
 
     fn get_metadata<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.inner
-                .get_metadata(&AppPath::legacy_unchecked(&Self::target(path)))
-                .await
-        })
+        Box::pin(async move { self.inner.get_metadata(&Self::target(path)).await })
     }
 
     fn entry_kind<'a>(
@@ -156,13 +147,10 @@ impl Volume for LinkFollowingStat {
         path: &'a AppPath,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<EntryKind, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_app = path;
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            if path == Path::new("/link") {
+            if path == app_path!("/link") {
                 Ok(EntryKind::Symlink)
             } else {
-                self.inner.entry_kind(path_app).await
+                self.inner.entry_kind(path).await
             }
         })
     }
@@ -392,23 +380,22 @@ impl Volume for ReversedListing {
 async fn the_plan_lists_the_selection_in_tree_order() {
     let engine = TestOperations::new();
     let inner = InMemoryVolume::new("remote");
-    for dir in ["/src", "/src/a", "/src/a/sub", "/src/b"] {
-        inner
-            .create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
-            .await
-            .expect("mkdir");
+    for dir in [
+        app_path!("/src"),
+        app_path!("/src/a"),
+        app_path!("/src/a/sub"),
+        app_path!("/src/b"),
+    ] {
+        inner.create_directory(dir).await.expect("mkdir");
     }
     for file in [
-        "/src/a/zzz.txt",
-        "/src/a/sub/mmm.txt",
-        "/src/b/aaa.txt",
-        "/src/Y.txt",
-        "/src/z.txt",
+        app_path!("/src/a/zzz.txt"),
+        app_path!("/src/a/sub/mmm.txt"),
+        app_path!("/src/b/aaa.txt"),
+        app_path!("/src/Y.txt"),
+        app_path!("/src/z.txt"),
     ] {
-        inner
-            .create_file(&AppPath::legacy_unchecked(Path::new(file)), b"x")
-            .await
-            .expect("seed");
+        inner.create_file(file, b"x").await.expect("seed");
     }
     let source: Arc<dyn Volume> = Arc::new(ReversedListing { inner });
     let state = Arc::new(engine.new_operation_state(Duration::ZERO));

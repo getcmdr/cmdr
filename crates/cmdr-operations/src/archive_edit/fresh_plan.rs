@@ -1,6 +1,6 @@
 //! Fresh-ZIP source planning and source/destination identity checks.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppNameBuf, AppPath, AppPathBuf, ListedFolder, Namer};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -18,11 +18,12 @@ use super::edit_error::EditError;
 use super::fresh_zip::{FreshZipEntry, FreshZipSource, RemoteZipFeeder, remote_source_bridge};
 use super::outage_wait::read_through_outages;
 use cmdr_fs::entry::FileEntry;
+use cmdr_fs::error_detail::ErrorDetail;
 use cmdr_fs::rt::Runtime as Handle;
 use cmdr_fs::volume::{EntryKind, Volume, VolumeError};
 
 pub(super) struct RemoteFeed {
-    pub(super) path: PathBuf,
+    pub(super) path: AppPathBuf,
     pub(super) entry_name: String,
     pub(super) feeder: RemoteZipFeeder,
 }
@@ -64,7 +65,7 @@ pub(super) enum PlannedSource {
     Local(PathBuf),
     Bytes(Vec<u8>),
     /// A file on the plan's (remote) source volume.
-    Remote(PathBuf),
+    Remote(AppPathBuf),
 }
 
 impl FreshPlan {
@@ -192,12 +193,21 @@ async fn plan_sources_with_context(
     let (tops, mut skipped) = settle_tops(source, source_paths, conflict, state, conflict_context).await?;
     // Found-so-far tallies for the scan readout only.
     let (mut files, mut dirs) = (0usize, 0usize);
-    let local_root = source.supports_local_fs_access().then(|| source.local_path()).flatten();
+    // A local source's entries are read through `std::fs`, so its root is the
+    // native path a relative selection (a bridge value) resolves under.
+    let local_root = source
+        .supports_local_fs_access()
+        .then(|| source.local_path())
+        .flatten()
+        .map(|root| root.as_std_legacy().into_owned());
     let order = TreeOrder::active(state.scope().host());
 
     for (top, top_name, top_meta) in tops {
         let mut stack = vec![(top, top_name, top_meta)];
         while let Some((path, inner, meta)) = stack.pop() {
+            // The spelling the walk's `std::path` helpers (the outage wait, its
+            // error text, the progress readout, a local entry's file) read.
+            let path_std = path.as_std_legacy();
             if state.stop_or_park_async().await {
                 return Err(EditError::Cancelled);
             }
@@ -221,29 +231,22 @@ async fn plan_sources_with_context(
                     // which the producer writes as a sidecar; no bytes.
                     source: local_root.as_ref().map_or_else(
                         || PlannedSource::Bytes(Vec::new()),
-                        |root| {
-                            PlannedSource::Local(if path.is_absolute() {
-                                path.clone()
-                            } else {
-                                root.as_std_legacy().join(&path)
-                            })
-                        },
+                        |root| PlannedSource::Local(local_file(root, &path_std)),
                     ),
                     size: 0,
                     is_directory: true,
                     modified,
                     unix_mode,
                 });
-                let path_app = AppPath::legacy_unchecked(&path);
                 // A listing the dropped share cut off runs again once it's
                 // back; its children join the plan only after it answers.
                 let mut children =
-                    read_through_outages(state, source, &path, announce.as_ref(), volume_read_error, || {
-                        source.list_directory(&path_app, None)
+                    read_through_outages(state, source, &path_std, announce.as_ref(), volume_read_error, || {
+                        source.list_directory(&path, None)
                     })
                     .await?;
                 dirs += 1;
-                report(on_progress, files, dirs, source_bytes, &path);
+                report(on_progress, files, dirs, source_bytes, &path_std);
                 // A Mac-only file the person asked to leave out never enters
                 // the plan, so it's neither packed nor counted (#314).
                 children.retain(|child| {
@@ -255,24 +258,21 @@ async fn plan_sources_with_context(
                     (child.is_directory && !child.is_symlink, child.name.as_str())
                 });
                 // Reversed onto the stack, so the first in tree order pops first.
+                let folder = ListedFolder::new(&path);
                 for child in children.into_iter().rev() {
                     let child_inner = format!("{inner}/{}", child.name);
-                    stack.push((path.join(&child.name), child_inner, child));
+                    stack.push((child_of(&folder, &path_std, &child.name)?, child_inner, child));
                 }
             } else {
                 let size = meta.size.ok_or_else(|| {
                     EditError::Op(WriteOperationError::ReadError {
-                        path: path.display().to_string(),
+                        path: path_std.display().to_string(),
                         message: "the source did not report its size".into(),
                     })
                 })?;
                 source_bytes = source_bytes.saturating_add(size);
                 let entry_source = if let Some(root) = &local_root {
-                    PlannedSource::Local(if path.is_absolute() {
-                        path.clone()
-                    } else {
-                        root.as_std_legacy().join(&path)
-                    })
+                    PlannedSource::Local(local_file(root, &path_std))
                 } else {
                     PlannedSource::Remote(path.clone())
                 };
@@ -285,7 +285,13 @@ async fn plan_sources_with_context(
                     unix_mode,
                 });
                 files += 1;
-                report(on_progress, files, dirs, source_bytes, path.parent().unwrap_or(&path));
+                report(
+                    on_progress,
+                    files,
+                    dirs,
+                    source_bytes,
+                    path_std.parent().unwrap_or(&path_std),
+                );
             }
         }
     }
@@ -309,21 +315,26 @@ async fn settle_tops(
     conflict: ConflictResolution,
     state: &Arc<WriteOperationState>,
     conflict_context: Option<PlanConflictContext<'_>>,
-) -> Result<(Vec<(PathBuf, String, FileEntry)>, usize), EditError> {
-    let mut tops: Vec<(PathBuf, String, FileEntry)> = Vec::new();
+) -> Result<(Vec<(AppPathBuf, String, FileEntry)>, usize), EditError> {
+    let mut tops: Vec<(AppPathBuf, String, FileEntry)> = Vec::new();
     let mut skipped = 0usize;
     let announce = conflict_context.map(PlanConflictContext::announce);
-    let mut top_names = HashMap::<String, PathBuf>::new();
+    // Each planned top name's first item: its path as the caller spelled it
+    // (for error text) and as the app path the volume is asked about.
+    let mut top_names = HashMap::<String, (PathBuf, AppPathBuf)>::new();
     let mut duplicate_latch = None;
     for top in source_paths {
         if state.stop_or_park_async().await {
             return Err(EditError::Cancelled);
         }
+        // The selection crosses into app paths here, once per item; the walk
+        // below it is typed.
+        let top_app = AppPath::legacy_unchecked(top).into_owned();
         let Some(mut top_name) = top.file_name().map(|name| name.to_string_lossy().into_owned()) else {
             skipped += 1;
             continue;
         };
-        if let Some(first) = top_names.get(&top_name).cloned() {
+        if let Some((first, first_app)) = top_names.get(&top_name).cloned() {
             let resolution = if let Some(latched) = duplicate_latch {
                 latched
             } else if conflict == ConflictResolution::Stop {
@@ -334,7 +345,8 @@ async fn settle_tops(
                         second: top.display().to_string(),
                     }));
                 };
-                let response = prompt_duplicate_source(source, top, &first, &top_name, state, context).await?;
+                let response =
+                    prompt_duplicate_source(source, (top, &top_app), &first_app, &top_name, state, context).await?;
                 if response.apply_to_all {
                     duplicate_latch = Some(response.resolution);
                 }
@@ -342,7 +354,7 @@ async fn settle_tops(
             } else {
                 conflict
             };
-            let resolution = reduce_duplicate_conditional(source, top, &first, resolution).await;
+            let resolution = reduce_duplicate_conditional(source, &top_app, &first_app, resolution).await;
             match resolution {
                 ConflictResolution::Skip
                 | ConflictResolution::OverwriteSmaller
@@ -369,8 +381,7 @@ async fn settle_tops(
             skipped += 1;
             continue;
         }
-        top_names.insert(top_name.clone(), top.clone());
-        let top_app = AppPath::legacy_unchecked(top);
+        top_names.insert(top_name.clone(), (top.clone(), top_app.clone()));
         // A selected link is skipped like a nested one. Asked with `entry_kind`
         // (an `lstat`), ❌ never read off `get_metadata`: SFTP's `stat` follows
         // the link and reports its target.
@@ -382,15 +393,42 @@ async fn settle_tops(
             skipped += 1;
             continue;
         }
-        let top_app = AppPath::legacy_unchecked(top);
         let top_meta = read_through_outages(state, source, top, announce.as_ref(), volume_read_error, || {
             source.get_metadata(&top_app)
         })
         .await?;
-        tops.push((top.clone(), top_name, top_meta));
+        tops.push((top_app, top_name, top_meta));
     }
     TreeOrder::active(state.scope().host()).sort(&mut tops, |(_, name, meta)| (meta.is_directory, name.as_str()));
     Ok((tops, skipped))
+}
+
+/// `name`, listed in `dir` (its join decided once per level in `folder`), as
+/// the child the walk goes on with: the scan walk's rule (`ListedFolder`), so a
+/// listed name is literal text, as the bridge reads it, and a folder the
+/// caller spelled with no canonical twin (a relative selection) joins as
+/// `Path::join` did.
+///
+/// ❗ A name that isn't one plain name (`..`, a `/`, empty) fails the plan,
+/// ❌ never a join: `Path::join` of `..` re-listed the parent, and of `a/b` packed
+/// a different subtree under this folder's name.
+fn child_of(folder: &ListedFolder<'_>, dir: &Path, name: &str) -> Result<AppPathBuf, EditError> {
+    let refused = || {
+        let name = cmdr_fs::volume::NotAChildName(name.to_string());
+        volume_read_error(dir, VolumeError::InvalidName(ErrorDetail::of(name)))
+    };
+    let typed = AppNameBuf::from_typed(name, Namer::HOST).map_err(|_| refused())?;
+    folder.join(&typed).map_err(|_| refused())
+}
+
+/// The local file a planned entry reads: `path` itself, or under the source's
+/// native `root` for a relative selection.
+fn local_file(root: &Path, path: &Path) -> PathBuf {
+    if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        root.join(path)
+    }
 }
 
 /// A symlink (never followed: its target may be an ancestor, or elsewhere in the
@@ -418,16 +456,18 @@ fn report(on_progress: Option<PlanProgressObserver<'_>>, files: usize, dirs: usi
     }
 }
 
+/// Asks the person about a top name the selection repeats. `incoming` is the
+/// later item, as the caller spelled it (the prompt's text) and as its app path.
 async fn prompt_duplicate_source(
     source: &Arc<dyn Volume>,
-    incoming: &Path,
-    existing: &Path,
+    (incoming, incoming_app): (&Path, &AppPath),
+    existing: &AppPath,
     name: &str,
     state: &Arc<WriteOperationState>,
     context: PlanConflictContext<'_>,
 ) -> Result<super::super::state::ConflictResolutionResponse, EditError> {
-    let incoming_meta = source.get_metadata(&AppPath::legacy_unchecked(incoming)).await.ok();
-    let existing_meta = source.get_metadata(&AppPath::legacy_unchecked(existing)).await.ok();
+    let incoming_meta = source.get_metadata(incoming_app).await.ok();
+    let existing_meta = source.get_metadata(existing).await.ok();
     let source_size = incoming_meta.as_ref().and_then(|meta| meta.size);
     let destination_size = existing_meta.as_ref().and_then(|meta| meta.size);
     let source_modified = incoming_meta
@@ -475,14 +515,12 @@ async fn prompt_duplicate_source(
 
 async fn reduce_duplicate_conditional(
     source: &Arc<dyn Volume>,
-    incoming: &Path,
-    existing: &Path,
+    incoming: &AppPath,
+    existing: &AppPath,
     resolution: ConflictResolution,
 ) -> ConflictResolution {
-    let (Ok(incoming), Ok(existing)) = (
-        source.get_metadata(&AppPath::legacy_unchecked(incoming)).await,
-        source.get_metadata(&AppPath::legacy_unchecked(existing)).await,
-    ) else {
+    let (Ok(incoming), Ok(existing)) = (source.get_metadata(incoming).await, source.get_metadata(existing).await)
+    else {
         return match resolution {
             ConflictResolution::OverwriteSmaller | ConflictResolution::OverwriteOlder => ConflictResolution::Skip,
             other => other,
@@ -501,14 +539,9 @@ async fn reduce_duplicate_conditional(
     }
 }
 
-fn unique_top_name(name: &str, planned: &HashMap<String, PathBuf>) -> String {
-    let path = Path::new(name);
-    let stem = path.file_stem().and_then(|part| part.to_str()).unwrap_or(name);
-    let extension = path
-        .extension()
-        .and_then(|part| part.to_str())
-        .map(|part| format!(".{part}"))
-        .unwrap_or_default();
+fn unique_top_name<V>(name: &str, planned: &HashMap<String, V>) -> String {
+    let (stem, extension) = split_extension(name);
+    let extension = extension.map(|part| format!(".{part}")).unwrap_or_default();
     for suffix in 1..=9999 {
         let candidate = format!("{stem} ({suffix}){extension}");
         if !planned.contains_key(&candidate) {
@@ -516,6 +549,19 @@ fn unique_top_name(name: &str, planned: &HashMap<String, PathBuf>) -> String {
         }
     }
     format!("{stem} ({}){extension}", uuid::Uuid::new_v4())
+}
+
+/// A top name's stem and extension, split as `Path::file_stem` and
+/// `Path::extension` split one name: at the last `.`, unless that's its first
+/// character (`.bashrc` has no extension) or the name is `..`.
+fn split_extension(name: &str) -> (&str, Option<&str>) {
+    if name == ".." {
+        return (name, None);
+    }
+    match name.rsplit_once('.') {
+        Some(("", _)) | None => (name, None),
+        Some((stem, extension)) => (stem, Some(extension)),
+    }
 }
 
 pub(super) async fn validate_aliases(
@@ -582,7 +628,7 @@ pub(super) async fn validate_aliases(
 fn volume_read_error(path: &Path, error: VolumeError) -> EditError {
     EditError::Op(WriteOperationError::ReadError {
         path: path.display().to_string(),
-        message: cmdr_fs::error_detail::ErrorDetail::of(error),
+        message: ErrorDetail::of(error),
     })
 }
 
@@ -593,3 +639,7 @@ mod tests;
 #[cfg(test)]
 #[path = "fresh_plan_outage_tests.rs"]
 mod outage_tests;
+
+#[cfg(test)]
+#[path = "fresh_plan_walk_tests.rs"]
+mod walk_tests;
