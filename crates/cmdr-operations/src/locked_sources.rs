@@ -358,10 +358,9 @@ pub(crate) async fn plan_locked_on_volume(
     let Some(root) = source_volume.local_path() else {
         return Some(LockedPlan::none());
     };
-    let roots: Vec<PathBuf> = sources
-        .iter()
-        .map(|source| root_anchored(&root.as_std_legacy(), source))
-        .collect();
+    // The local walk and the plan speak `std::path`: the root crosses once, natively.
+    let root = root.as_std_legacy().into_owned();
+    let roots: Vec<PathBuf> = sources.iter().map(|source| root_anchored(&root, source)).collect();
     let walking = Arc::clone(state);
     let scan = state
         .scope()
@@ -372,7 +371,7 @@ pub(crate) async fn plan_locked_on_volume(
         .unwrap_or_default();
     plan_locked_async(events, operation_id, WriteOperationType::Move, state, scan)
         .await
-        .map(|plan| plan.anchored_at(root.as_std_legacy().into_owned()))
+        .map(|plan| plan.anchored_at(root))
 }
 
 enum Asked {

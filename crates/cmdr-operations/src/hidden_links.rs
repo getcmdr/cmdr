@@ -29,16 +29,20 @@ pub(crate) fn listed_folder_may_be_a_link(volume: &dyn Volume, entry: &FileEntry
 /// folder, so the entries read exactly as a link-marking backend lists them.
 /// One `entry_kind` per listed folder there, none anywhere else.
 pub(crate) async fn list_marking_hidden_links(volume: &dyn Volume, dir: &Path) -> Result<Vec<FileEntry>, VolumeError> {
-    let mut entries = volume.list_directory(&AppPath::legacy_unchecked(dir), None).await?;
+    let mut entries = volume.list_directory(&on_volume(dir), None).await?;
     for entry in entries.iter_mut() {
         if listed_folder_may_be_a_link(volume, entry)
-            && volume
-                .entry_kind(&AppPath::legacy_unchecked(Path::new(&entry.path)))
-                .await?
-                == EntryKind::Symlink
+            && volume.entry_kind(&on_volume(Path::new(&entry.path))).await? == EntryKind::Symlink
         {
             entry.is_symlink = true;
         }
     }
     Ok(entries)
+}
+
+/// A folder or a listed row as the app path the volume takes: the merges hand their folders
+/// over as `std::path` values, and a row's path is read back the same way, losslessly. The
+/// one crossing here.
+fn on_volume(path: &Path) -> std::borrow::Cow<'_, AppPath> {
+    AppPath::legacy_unchecked(path)
 }

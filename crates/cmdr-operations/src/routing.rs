@@ -19,6 +19,7 @@
 //! every function takes an `Arc<dyn OperationEventSink>` and the commands are thin
 //! wrappers that build one and pass it in.
 
+use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -31,6 +32,7 @@ use super::target_names::{NotAName, TargetNames};
 use super::transfer::volume::{PathRole, native_roots, on_local_root, unregistered_volume_error};
 use super::types::{HomeFolderAction, ReadOnlySide, VolumeCopyConfig, WriteOperationError, WriteOperationStartResult};
 use super::wire_paths::{named_as_given, owned_without_trailing_separators, text_without_trailing_separators};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::RoutedKind;
 use cmdr_fs::volume::Volume;
 use cmdr_operation_log::types::Initiator;
@@ -55,7 +57,7 @@ pub fn resolve_dest_path(dest_volume: &Arc<dyn Volume>, dest_path: String) -> Pa
     } else {
         dest_path
     };
-    cmdr_fs::volume::root_anchored(&dest_volume.root().as_std_legacy(), Path::new(&expanded))
+    cmdr_fs::volume::root_anchored(&std_root(dest_volume.root()), Path::new(&expanded))
 }
 
 /// The folder a transfer's sources land in, as its engine takes it: a zip's
@@ -124,8 +126,8 @@ pub(crate) fn transfer_would_land_on_its_source(
 ) -> bool {
     match (source_volume.local_path(), dest_volume.local_path()) {
         (Some(source_root), Some(dest_root)) => super::validation::may_be_same_file(
-            &source_root.as_std_legacy().join(source_path),
-            &cmdr_fs::volume::root_anchored(&dest_root.as_std_legacy(), dest_path),
+            &std_root(&source_root).join(source_path),
+            &cmdr_fs::volume::root_anchored(&std_root(&dest_root), dest_path),
         ),
         _ => super::transfer::volume::is_the_same_item(source_volume, source_path, dest_volume, dest_path),
     }
@@ -153,10 +155,7 @@ impl crate::Operations {
         for path in paths {
             let serving = if !manager.routes_over_its_parent(path) {
                 None
-            } else if let Some(route) = routes_met
-                .iter()
-                .find(|route| path.starts_with(route.root().as_std_legacy()))
-            {
+            } else if let Some(route) = routes_met.iter().find(|route| path.starts_with(std_root(route.root()))) {
                 Some(Arc::clone(route))
             } else {
                 let resolved = manager.resolve(volume_id, path).await;
@@ -224,6 +223,18 @@ impl crate::Operations {
     }
 }
 
+/// A volume's root as the `Path` this module's `std::path` arithmetic and the native
+/// checks take: the sources and the destination still arrive as `PathBuf`s, so a root
+/// crosses here to meet them, losslessly. The module's one crossing into `std::path`.
+fn std_root(root: &AppPath) -> Cow<'_, Path> {
+    root.as_std_legacy()
+}
+
+/// A volume's root as a refusal names it: the `Path::display` text it always gave.
+fn shown_root(root: &AppPath) -> String {
+    root.as_std_legacy().display().to_string()
+}
+
 /// Refuses a MOVE whose sources sit on a read-only routed volume that has no
 /// delete to give: a copy out would run, and then the source half of the move
 /// could never happen. Refusing before anything starts is the honest outcome,
@@ -236,7 +247,7 @@ impl crate::Operations {
 /// that was fine.
 fn source_cannot_give_up_its_files(source_volume: &Arc<dyn Volume>) -> WriteOperationError {
     WriteOperationError::ReadOnlyDevice {
-        path: source_volume.root().as_std_legacy().display().to_string(),
+        path: shown_root(source_volume.root()),
         device_name: Some(source_volume.name().to_string()),
         side: ReadOnlySide::Source,
     }
@@ -251,7 +262,7 @@ fn source_cannot_give_up_its_files(source_volume: &Arc<dyn Volume>) -> WriteOper
 /// which really does write.
 fn destination_takes_no_writes(dest_volume: &Arc<dyn Volume>) -> WriteOperationError {
     WriteOperationError::ReadOnlyDevice {
-        path: dest_volume.root().as_std_legacy().display().to_string(),
+        path: shown_root(dest_volume.root()),
         device_name: Some(dest_volume.name().to_string()),
         side: ReadOnlySide::Destination,
     }

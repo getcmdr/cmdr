@@ -128,7 +128,7 @@ impl SourceFingerprint {
     /// Reads a remote source's identity now, through the volume that owns it.
     /// `None` when the backend can't stat it.
     pub async fn capture_remote(volume: &dyn Volume, path: &Path) -> Option<Self> {
-        let metadata = volume.get_metadata(&AppPath::legacy_unchecked(path)).await.ok()?;
+        let metadata = volume.get_metadata(&on_volume(path)).await.ok()?;
         let content = if metadata.is_directory {
             RemoteContent::Directory
         } else {
@@ -310,7 +310,7 @@ impl ExpectedSources {
                 // One extra round trip, and only for a source that already
                 // mismatched: the difference between "changed" and "gone" is what
                 // decides whether every stale search snapshot may drop its row.
-                let gone = !volume.exists(&AppPath::legacy_unchecked(source)).await;
+                let gone = !volume.exists(&on_volume(source)).await;
                 announce_skip(events, operation_id, source, gone);
             }
         }
@@ -443,6 +443,12 @@ fn announce_empty_batch(
         "operation {operation_id} has nothing left to do: all {skipped} source(s) were skipped"
     );
     events.emit_complete(WriteCompleteEvent::all_skipped(operation_id, operation_type, skipped));
+}
+
+/// A source the binding holds as a `std::path` value (the routed starts take `PathBuf`s) as
+/// the app path its volume takes, losslessly: the one crossing here.
+fn on_volume(path: &Path) -> std::borrow::Cow<'_, AppPath> {
+    AppPath::legacy_unchecked(path)
 }
 
 #[cfg(test)]
