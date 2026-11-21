@@ -13,11 +13,13 @@ use tokio::sync::{Mutex, broadcast};
 use mtp_rs::ObjectHandle;
 
 use super::cache::{EVENT_DEBOUNCE_MS, EventDebouncer};
-use super::{MtpConnectionManager, normalize_mtp_path, twins};
+use super::storage_path::{folder_or_root, url_of};
+use super::{MtpConnectionManager, std_path_for_host};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::ignore_poison::RwLockIgnorePoison;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::DirectoryChange;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 impl MtpConnectionManager {
     /// Starts the event polling loop for a connected device.
@@ -253,8 +255,7 @@ impl MtpConnectionManager {
                         // The directory that changed is the object's parent (the
                         // folder whose listing shows it). A root-level object's
                         // parent is the storage root, "/".
-                        let affected_dir =
-                            twins::folder_of(&object_path).map_or_else(|| PathBuf::from("/"), Path::to_path_buf);
+                        let affected_dir = folder_or_root(&object_path).to_owned();
                         if manager.refresh_directory(&device_id, storage_id, &affected_dir) {
                             // A pane shows that directory and its re-read is under
                             // way; done.
@@ -293,14 +294,16 @@ impl MtpConnectionManager {
     ///
     /// Goes through the same debouncer as the whole-device path so a burst of
     /// resolved events still collapses to one re-read per window.
-    fn refresh_directory(self: &Arc<Self>, device_id: &str, storage_id: u32, affected_dir: &Path) -> bool {
+    fn refresh_directory(self: &Arc<Self>, device_id: &str, storage_id: u32, affected_dir: &AppPath) -> bool {
         let volume_id = cmdr_fs::volume::mtp_ids::mtp_volume_id(device_id, storage_id);
-        let listing_path = listing_path_for(device_id, storage_id, affected_dir);
+        let Some(listing_path) = url_of(device_id, storage_id, affected_dir) else {
+            return false;
+        };
 
         if self
             .host()
             .listings()
-            .authoritative_listing(&volume_id, &listing_path)
+            .authoritative_listing(&volume_id, &std_path_for_host(&listing_path))
             .is_none()
         {
             return false;
@@ -317,7 +320,7 @@ impl MtpConnectionManager {
                     "MTP targeted refresh: DEBOUNCED for {}:{} dir={}, trailing emit already pending",
                     device_id,
                     storage_id,
-                    LogPrivate::dir_path(affected_dir)
+                    LogPrivate::dir_path(affected_dir.as_str())
                 );
                 return false;
             }
@@ -325,10 +328,10 @@ impl MtpConnectionManager {
                 "MTP targeted refresh: DEBOUNCED for {}:{} dir={}, scheduling trailing emit",
                 device_id,
                 storage_id,
-                LogPrivate::dir_path(affected_dir)
+                LogPrivate::dir_path(affected_dir.as_str())
             );
             let device_id = device_id.to_string();
-            let affected_dir = affected_dir.to_path_buf();
+            let affected_dir = affected_dir.to_owned();
             let manager = Arc::clone(self);
             self.host().runtime().spawn(async move {
                 tokio::time::sleep(Duration::from_millis(EVENT_DEBOUNCE_MS + 50)).await;
@@ -344,11 +347,11 @@ impl MtpConnectionManager {
             "MTP targeted refresh: re-reading {}:{} dir={}",
             device_id,
             storage_id,
-            LogPrivate::dir_path(affected_dir)
+            LogPrivate::dir_path(affected_dir.as_str())
         );
 
         let device_id = device_id.to_string();
-        let affected_dir = affected_dir.to_path_buf();
+        let affected_dir = affected_dir.to_owned();
         let manager = Arc::clone(self);
         self.host().runtime().spawn(async move {
             manager.publish_directory(&device_id, storage_id, &affected_dir).await;
@@ -363,16 +366,18 @@ impl MtpConnectionManager {
     /// one call, and the host does the sorting and the diffing (a device answers
     /// in object-handle order, so a diff computed against that order carries
     /// indices pointing at the wrong rows in a pane sorted any other way).
-    async fn publish_directory(&self, device_id: &str, storage_id: u32, dir: &Path) {
-        let inner = dir.to_string_lossy().trim_start_matches('/').to_string();
+    async fn publish_directory(&self, device_id: &str, storage_id: u32, dir: &AppPath) {
+        let inner = dir.as_str().trim_start_matches('/');
+        let Some(listing_path) = url_of(device_id, storage_id, dir) else {
+            return;
+        };
 
         // ❗ Before the re-read, or the 5-second listing cache answers with
         // exactly the entries the event says are out of date. It keys on the
-        // normalized inner path (`/Documents`), not the pane's URL.
-        self.invalidate_listing_cache(device_id, storage_id, &normalize_mtp_path(&inner))
-            .await;
+        // storage path (`/Documents`), not the pane's URL.
+        self.invalidate_listing_cache(device_id, storage_id, dir).await;
 
-        let entries = match self.list_directory(device_id, storage_id, &inner).await {
+        let entries = match self.list_directory(device_id, storage_id, inner).await {
             Ok(entries) => entries,
             Err(e) => {
                 debug!("MTP refresh: couldn't re-read directory {}: {:?}, skipping", inner, e);
@@ -382,7 +387,7 @@ impl MtpConnectionManager {
 
         self.host().listings().directory_changed(
             &cmdr_fs::volume::mtp_ids::mtp_volume_id(device_id, storage_id),
-            &listing_path_for(device_id, storage_id, dir),
+            &std_path_for_host(&listing_path),
             DirectoryChange::Replaced(entries),
         );
     }
@@ -465,45 +470,38 @@ impl MtpConnectionManager {
     }
 }
 
-/// The path the event loop reports `dir` on `(device_id, storage_id)` at: the
-/// storage URL, `mtp://{device}/{storage}[/inner]`, the same spelling
-/// `MtpVolume::notify_mutation` reports under.
-///
-/// A pane may hold the folder at that URL or at its inner path; the app's
-/// listing cache folds both onto `MtpVolume::listing_path`, so either matches.
-/// `dir` is the resolver's output (`/DCIM/Camera`, or `/` for the storage root).
-fn listing_path_for(device_id: &str, storage_id: u32, dir: &Path) -> PathBuf {
-    let root = PathBuf::from(format!("mtp://{device_id}/{storage_id}"));
-    let inner = dir.to_string_lossy().trim_start_matches('/').to_string();
-    if inner.is_empty() { root } else { root.join(inner) }
-}
-
 #[cfg(test)]
 mod tests {
-    use std::path::{Path, PathBuf};
+    use std::path::PathBuf;
     use std::sync::Arc;
     use std::time::Duration;
 
+    use cmdr_fs::app_path::{AppPath, AppPathBuf};
     use cmdr_fs::volume::DirectoryChange;
     use cmdr_fs::volume::host::listings::RecordingListings;
 
     use super::super::MtpConnectionManager;
-    use super::listing_path_for;
+    use super::super::storage_path::{folder_or_root, storage_path, url_of};
     use cmdr_fs::testing::wait_until_async;
+
+    fn dir(text: &str) -> AppPathBuf {
+        storage_path(text).expect("a storage path")
+    }
+
+    fn listing_path_for(device_id: &str, storage_id: u32, dir: &AppPath) -> String {
+        url_of(device_id, storage_id, dir).expect("a storage URL").into_string()
+    }
 
     #[test]
     fn a_storage_root_listing_path_has_no_inner_segment() {
-        assert_eq!(
-            listing_path_for("mtp-0-1", 65_537, Path::new("/")),
-            PathBuf::from("mtp://mtp-0-1/65537")
-        );
+        assert_eq!(listing_path_for("mtp-0-1", 65_537, &dir("/")), "mtp://mtp-0-1/65537");
     }
 
     #[test]
     fn an_inner_directory_hangs_off_the_storage_root() {
         assert_eq!(
-            listing_path_for("mtp-0-1", 65_537, Path::new("/DCIM/Camera")),
-            PathBuf::from("mtp://mtp-0-1/65537/DCIM/Camera")
+            listing_path_for("mtp-0-1", 65_537, &dir("/DCIM/Camera")),
+            "mtp://mtp-0-1/65537/DCIM/Camera"
         );
     }
 
@@ -512,12 +510,12 @@ mod tests {
     /// folds onto `MtpVolume::listing_path`.
     #[test]
     fn a_resolved_object_targets_the_url_its_pane_is_cached_under() {
-        let resolved = PathBuf::from("/DCIM/IMG.jpg");
-        let affected_dir = resolved.parent().map_or_else(|| PathBuf::from("/"), Path::to_path_buf);
-        assert_eq!(affected_dir, PathBuf::from("/DCIM"));
+        let resolved = dir("/DCIM/IMG.jpg");
+        let affected_dir = folder_or_root(&resolved);
+        assert_eq!(affected_dir.as_str(), "/DCIM");
         assert_eq!(
-            listing_path_for("mtp-0-1", 65_537, &affected_dir),
-            PathBuf::from("mtp://mtp-0-1/65537/DCIM"),
+            listing_path_for("mtp-0-1", 65_537, affected_dir),
+            "mtp://mtp-0-1/65537/DCIM",
         );
     }
 
@@ -526,13 +524,10 @@ mod tests {
     /// equal to what navigation cached.
     #[test]
     fn a_root_level_object_targets_the_storage_root_pane() {
-        let resolved = PathBuf::from("/Download");
-        let affected_dir = resolved.parent().map_or_else(|| PathBuf::from("/"), Path::to_path_buf);
-        assert_eq!(affected_dir, PathBuf::from("/"));
-        assert_eq!(
-            listing_path_for("mtp-0-1", 65_537, &affected_dir),
-            PathBuf::from("mtp://mtp-0-1/65537"),
-        );
+        let resolved = dir("/Download");
+        let affected_dir = folder_or_root(&resolved);
+        assert_eq!(affected_dir.as_str(), "/");
+        assert_eq!(listing_path_for("mtp-0-1", 65_537, affected_dir), "mtp://mtp-0-1/65537",);
     }
 
     /// A manager whose only real seam is `listings`, so a refresh can be observed
@@ -609,7 +604,7 @@ mod tests {
         let manager = manager_reporting_to(Arc::clone(&listings));
 
         assert!(
-            !manager.refresh_directory("mtp-unshown", 65_537, Path::new("/DCIM")),
+            !manager.refresh_directory("mtp-unshown", 65_537, &dir("/DCIM")),
             "an unshown directory must send the caller on to the next storage"
         );
         assert_eq!(listings.change_count(), 0);
@@ -620,8 +615,8 @@ mod tests {
     #[test]
     fn a_device_id_containing_a_colon_survives_verbatim() {
         assert_eq!(
-            listing_path_for("mtp-R5CT:123", 65_537, Path::new("/Music")),
-            PathBuf::from("mtp://mtp-R5CT:123/65537/Music"),
+            listing_path_for("mtp-R5CT:123", 65_537, &dir("/Music")),
+            "mtp://mtp-R5CT:123/65537/Music",
         );
     }
 }

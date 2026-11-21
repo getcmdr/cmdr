@@ -13,7 +13,7 @@ use super::testing::test_connection_manager as connection_manager;
 use crate::virtual_device::{
     VirtualDeviceFixture, setup_virtual_mtp_device, unregister_virtual_mtp_device, virtual_device_test_lock,
 };
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 const REPORT: &str = "Quarterly report: Q4 2025 placeholder content.\n";
 
@@ -48,11 +48,11 @@ async fn device_with_a_reused_handle() -> Device {
         .await
         .expect("list Documents should succeed");
     let report = connection_manager()
-        .cached_handle_for_path(&id, storage_id, Path::new("/Documents/report.txt"))
+        .cached_handle_for_path(&id, storage_id, "/Documents/report.txt")
         .await
         .expect("the listing cached report.txt");
     connection_manager()
-        .plant_cached_handle(&id, storage_id, Path::new("/Documents/notes.txt"), report)
+        .plant_cached_handle(&id, storage_id, "/Documents/notes.txt", report)
         .await;
     Device {
         id,

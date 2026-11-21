@@ -15,10 +15,11 @@
 use log::{debug, warn};
 use mtp_rs::{CancelToken, ObjectHandle, ObjectInfo, Storage, StorageId};
 use std::future::Future;
-use std::path::Path;
 
 use super::errors::MtpConnectionError;
-use super::{MtpConnectionManager, MtpObjectInfo, acquire_device_lock, normalize_mtp_path, twins};
+use super::storage_path::{child_and_text, folder_or_root, storage_path, storage_path_on};
+use super::{MtpConnectionManager, MtpObjectInfo, acquire_device_lock, twins};
+use cmdr_fs::app_path::{AppPath, PathArithmetic};
 use cmdr_fs::log_private::LogPrivate;
 
 /// What one attempt at a path-addressed mutation found.
@@ -33,7 +34,7 @@ enum Attempt<T> {
 /// `parent`: its name is the path's last component and its parent is that
 /// folder. A root child may report `ObjectHandle::ALL` as its parent (the
 /// Android root quirk `handle_resolver.rs` also accepts).
-fn is_the_object_at(info: &ObjectInfo, path: &Path, parent: ObjectHandle) -> bool {
+fn is_the_object_at(info: &ObjectInfo, path: &AppPath, parent: ObjectHandle) -> bool {
     let named_so = path.file_name().is_some_and(|name| name == info.filename.as_str());
     let filed_so = info.parent == parent || (parent == ObjectHandle::ROOT && info.parent == ObjectHandle::ALL);
     named_so && filed_so
@@ -135,7 +136,7 @@ impl MtpConnectionManager {
         .await?;
 
         // Remove from path cache
-        let object_path_normalized = normalize_mtp_path(object_path);
+        let object_path_normalized = storage_path_on(device_id, object_path)?;
         {
             let devices = self.devices.lock().await;
             if let Some(entry) = devices.get(device_id)
@@ -223,7 +224,7 @@ impl MtpConnectionManager {
 
             // Recursively delete children. The token is checked between
             // iterations and inside each child's own list/delete USB call.
-            let parent_path = normalize_mtp_path(object_path);
+            let parent_path = storage_path_on(device_id, object_path)?;
             for child_info in children {
                 if let Some(t) = cancel
                     && t.is_cancelled()
@@ -234,8 +235,15 @@ impl MtpConnectionManager {
                     });
                 }
 
-                let child_path = parent_path.join(&child_info.filename);
-                let child_path_str = child_path.to_string_lossy().to_string();
+                // A child no path can address (`a/b`, `..`) can't be deleted by path,
+                // so the folder holding it isn't empty: ❌ never a joined path, which
+                // would name another object.
+                let (Some(child_path), child_path_str) = child_and_text(&parent_path, &child_info.filename) else {
+                    return Err(MtpConnectionError::DirectoryNotEmpty {
+                        device_id: device_id.to_string(),
+                        path: object_path.to_string(),
+                    });
+                };
 
                 // Cache the child handle for the recursive call
                 {
@@ -293,17 +301,17 @@ impl MtpConnectionManager {
         if let Attempt::Done(done) = attempt().await? {
             return Ok(done);
         }
-        let path = normalize_mtp_path(object_path);
+        let path = storage_path_on(device_id, object_path)?;
         warn!(
             "MTP on {device_id}:{storage_id}: the cached handle for {} points at another object; resolving it afresh",
-            LogPrivate::path(&path)
+            LogPrivate::path(path.as_str())
         );
         self.forget_stale_path(device_id, storage_id, &path).await;
         match attempt().await? {
             Attempt::Done(done) => Ok(done),
             Attempt::StaleHandle => Err(MtpConnectionError::ObjectNotFound {
                 device_id: device_id.to_string(),
-                path: path.to_string_lossy().into_owned(),
+                path: path.as_str().to_string(),
             }),
         }
     }
@@ -316,11 +324,8 @@ impl MtpConnectionManager {
         object_path: &str,
     ) -> Result<(ObjectHandle, ObjectHandle), MtpConnectionError> {
         let object = self.resolve_path_to_handle(device_id, storage_id, object_path).await?;
-        let path = normalize_mtp_path(object_path);
-        let parent = twins::folder_of(&path)
-            .unwrap_or(Path::new("/"))
-            .to_string_lossy()
-            .into_owned();
+        let path = storage_path_on(device_id, object_path)?;
+        let parent = folder_or_root(&path).as_str().to_string();
         let parent = self.resolve_path_to_handle(device_id, storage_id, &parent).await?;
         Ok((object, parent))
     }
@@ -342,8 +347,9 @@ impl MtpConnectionManager {
             Err(e) => return Err(self.map_device_error(e, device_id)),
         };
         self.as_reported(device_id, &mut info);
-        let path = normalize_mtp_path(object_path);
-        Ok(is_the_object_at(&info, &path, parent).then_some(info))
+        Ok(storage_path(object_path)
+            .is_some_and(|path| is_the_object_at(&info, &path, parent))
+            .then_some(info))
     }
 
     /// Creates a new folder on the MTP device.
@@ -400,8 +406,8 @@ impl MtpConnectionManager {
         drop(device);
 
         // Build the new folder path
-        let new_path = normalize_mtp_path(parent_path).join(folder_name);
-        let new_path_str = new_path.to_string_lossy().to_string();
+        let parent_path_normalized = storage_path_on(device_id, parent_path)?;
+        let (new_path, new_path_str) = child_and_text(&parent_path_normalized, folder_name);
 
         // Update path cache
         {
@@ -410,12 +416,13 @@ impl MtpConnectionManager {
                 && let Ok(mut cache_map) = entry.path_cache.write()
             {
                 let storage_cache = cache_map.entry(storage_id).or_default();
-                storage_cache.insert(new_path.clone(), new_handle);
+                if let Some(new_path) = new_path {
+                    storage_cache.insert(new_path, new_handle);
+                }
             }
         }
 
         // Invalidate the parent directory's listing cache
-        let parent_path_normalized = normalize_mtp_path(parent_path);
         self.invalidate_listing_cache(device_id, storage_id, &parent_path_normalized)
             .await;
 
@@ -465,10 +472,9 @@ impl MtpConnectionManager {
         let old_size = object_info.size;
 
         // Update path cache
-        let old_path = normalize_mtp_path(object_path);
-        let parent = twins::folder_of(&old_path).unwrap_or(Path::new("/"));
-        let new_path = parent.join(new_name);
-        let new_path_str = new_path.to_string_lossy().to_string();
+        let old_path = storage_path_on(device_id, object_path)?;
+        let parent = folder_or_root(&old_path);
+        let (new_path, new_path_str) = child_and_text(parent, new_name);
 
         {
             let devices = self.devices.lock().await;
@@ -477,7 +483,9 @@ impl MtpConnectionManager {
                 && let Some(storage_cache) = cache_map.get_mut(&storage_id)
             {
                 storage_cache.remove_path(&old_path);
-                storage_cache.insert(new_path.clone(), object_handle);
+                if let Some(new_path) = new_path {
+                    storage_cache.insert(new_path, object_handle);
+                }
             }
         }
 
@@ -578,9 +586,9 @@ impl MtpConnectionManager {
         match move_result {
             Ok(()) => {
                 // Move succeeded
-                let old_path = normalize_mtp_path(object_path);
-                let new_path = normalize_mtp_path(new_parent_path).join(&object_name);
-                let new_path_str = new_path.to_string_lossy().to_string();
+                let old_path = storage_path_on(device_id, object_path)?;
+                let new_parent = storage_path_on(device_id, new_parent_path)?;
+                let (new_path, new_path_str) = child_and_text(&new_parent, &object_name);
 
                 // Update path cache
                 {
@@ -590,17 +598,18 @@ impl MtpConnectionManager {
                         && let Some(storage_cache) = cache_map.get_mut(&storage_id)
                     {
                         storage_cache.remove_path(&old_path);
-                        storage_cache.insert(new_path.clone(), object_handle);
+                        if let Some(new_path) = new_path {
+                            storage_cache.insert(new_path, object_handle);
+                        }
                     }
                 }
 
                 // Invalidate listing cache for both old and new parent directories
-                let old_parent = twins::folder_of(&old_path).unwrap_or(Path::new("/"));
+                let old_parent = folder_or_root(&old_path);
                 self.invalidate_listing_cache(device_id, storage_id, old_parent).await;
                 if is_dir {
                     self.invalidate_listing_subtree(device_id, storage_id, &old_path).await;
                 }
-                let new_parent = normalize_mtp_path(new_parent_path);
                 self.invalidate_listing_cache(device_id, storage_id, &new_parent).await;
 
                 debug!(

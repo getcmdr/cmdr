@@ -6,8 +6,6 @@
 //! asserted by connecting one and taking it away again.
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
-use std::path::Path;
 use std::sync::Arc;
 
 use cmdr_fs::volume::{IndexWalk, Volume, WatchCoverage};
@@ -124,7 +122,7 @@ async fn an_index_walk_descends_every_folder_an_mtp_phone_lists() {
     for folder in folders {
         assert!(!folder.is_symlink, "{} is not a link", folder.path);
         assert_eq!(
-            volume.index_walk(&AppPath::legacy_unchecked(Path::new(&folder.path)), folder.is_symlink),
+            volume.index_walk(&crate::volume::test_paths::row(&folder.path), folder.is_symlink),
             IndexWalk::Descend,
             "{} is walked",
             folder.path

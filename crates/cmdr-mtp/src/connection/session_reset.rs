@@ -271,7 +271,6 @@ mod device_tests {
         VirtualDeviceFixture, setup_virtual_mtp_device, unregister_virtual_mtp_device, virtual_device_test_lock,
     };
     use cmdr_fs::testing::wait_until_async;
-    use std::path::Path;
 
     struct Device {
         id: String,
@@ -323,7 +322,7 @@ mod device_tests {
 
         assert!(
             connection_manager()
-                .cached_handle_for_path(&device.id, device.storage_id, Path::new("/DCIM"))
+                .cached_handle_for_path(&device.id, device.storage_id, "/DCIM")
                 .await
                 .is_some(),
             "the primed listing must have cached a handle to begin with",
@@ -340,7 +339,7 @@ mod device_tests {
         );
         assert!(
             connection_manager()
-                .cached_handle_for_path(&device.id, device.storage_id, Path::new("/DCIM"))
+                .cached_handle_for_path(&device.id, device.storage_id, "/DCIM")
                 .await
                 .is_none(),
             "handles don't survive a reset, so the path cache must be cleared",
@@ -448,7 +447,7 @@ mod device_tests {
         );
         assert!(
             connection_manager()
-                .cached_handle_for_path(&device.id, device.storage_id, Path::new("/DCIM"))
+                .cached_handle_for_path(&device.id, device.storage_id, "/DCIM")
                 .await
                 .is_none(),
             "handles don't survive a reset, so the reopened session must start with empty caches",

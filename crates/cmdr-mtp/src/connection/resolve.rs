@@ -5,12 +5,13 @@
 use log::debug;
 use mtp_rs::ObjectHandle;
 use std::future::Future;
-use std::path::{Path, PathBuf};
 use std::pin::Pin;
 
 use super::cache::Cached;
 use super::errors::MtpConnectionError;
-use super::{MtpConnectionManager, normalize_mtp_path, twins};
+use super::storage_path::{folder_or_root, storage_path_on};
+use super::{MtpConnectionManager, twins};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 
@@ -30,30 +31,24 @@ impl MtpConnectionManager {
     /// with a single re-list of `/`. Best-effort: a failed re-list is logged and
     /// the walk stops; the caller's retry then fails cleanly with a
     /// destination-correct error rather than looping.
-    pub(super) async fn refresh_dir_handle(&self, device_id: &str, storage_id: u32, dir: &Path) {
-        let dir = normalize_mtp_path(dir.to_string_lossy().as_ref());
+    pub(super) async fn refresh_dir_handle(&self, device_id: &str, storage_id: u32, dir: &AppPath) {
         // Ancestors root-first, excluding `dir` itself: ["/", "/a", ...] up to
         // and including `parent(dir)`. Listing `parent(dir)` refreshes `dir`'s
         // own handle.
         // A twin's pick segment names no folder of its own, so it's stepped over:
         // listing the folder above it refreshes the twin's handle.
-        let mut ancestors: Vec<PathBuf> = dir
-            .ancestors()
-            .skip(1)
+        let mut ancestors: Vec<AppPathBuf> = std::iter::successors(dir.parent(), |folder| folder.parent())
             .filter(|ancestor| twins::picked_folder(ancestor).is_none())
-            .map(Path::to_path_buf)
+            .map(AppPath::to_owned)
             .collect();
         ancestors.reverse();
         for ancestor in ancestors {
             self.invalidate_listing_cache(device_id, storage_id, &ancestor).await;
-            if let Err(e) = self
-                .list_directory(device_id, storage_id, &ancestor.to_string_lossy())
-                .await
-            {
+            if let Err(e) = self.list_directory(device_id, storage_id, ancestor.as_str()).await {
                 debug!(
                     "refresh_dir_handle: re-list of {} failed while healing handle for {}: {}",
-                    LogPrivate::dir_path(&ancestor),
-                    LogPrivate::dir_path(&dir),
+                    LogPrivate::dir_path(ancestor.as_str()),
+                    LogPrivate::dir_path(dir.as_str()),
                     LogError(&e)
                 );
                 return;
@@ -92,8 +87,8 @@ impl MtpConnectionManager {
         path: &'a str,
     ) -> Pin<Box<dyn Future<Output = Result<ObjectHandle, MtpConnectionError>> + Send + 'a>> {
         Box::pin(async move {
-            let path = normalize_mtp_path(path);
-            if path.as_os_str() == "/" {
+            let path = storage_path_on(device_id, path)?;
+            if path.is_root() {
                 return Ok(ObjectHandle::ROOT);
             }
 
@@ -101,18 +96,15 @@ impl MtpConnectionManager {
                 return Ok(handle);
             }
 
-            let parent = twins::folder_of(&path)
-                .unwrap_or(Path::new("/"))
-                .to_string_lossy()
-                .to_string();
+            let parent = folder_or_root(&path).as_str().to_string();
             debug!(
                 "MTP resolve: {} isn't cached on {device_id}:{storage_id}, listing {} to find it",
-                LogPrivate::path(&path),
+                LogPrivate::path(path.as_str()),
                 LogPrivate::dir_path(&parent)
             );
             let not_found = || MtpConnectionError::ObjectNotFound {
                 device_id: device_id.to_string(),
-                path: path.to_string_lossy().to_string(),
+                path: path.as_str().to_string(),
             };
             match self.list_directory(device_id, storage_id, &parent).await {
                 Ok(_) => {}
@@ -128,7 +120,7 @@ impl MtpConnectionManager {
 
     /// Forgets a cached `path` whose handle turned out to name another object,
     /// and its folder's cached listing, so the next resolve lists afresh.
-    pub(super) async fn forget_stale_path(&self, device_id: &str, storage_id: u32, path: &Path) {
+    pub(super) async fn forget_stale_path(&self, device_id: &str, storage_id: u32, path: &AppPath) {
         use cmdr_fs::ignore_poison::RwLockIgnorePoison;
 
         {
@@ -167,7 +159,7 @@ impl MtpConnectionManager {
         &self,
         device_id: &str,
         storage_id: u32,
-        path: &Path,
+        path: &AppPath,
     ) -> Result<Option<ObjectHandle>, MtpConnectionError> {
         use cmdr_fs::ignore_poison::RwLockIgnorePoison;
 
@@ -183,7 +175,7 @@ impl MtpConnectionManager {
             Some(Cached::Handle(handle)) => Ok(Some(handle)),
             Some(Cached::SameNamed) => Err(MtpConnectionError::AmbiguousName {
                 device_id: device_id.to_string(),
-                path: path.to_string_lossy().into_owned(),
+                path: path.as_str().to_string(),
             }),
             None => Ok(None),
         }

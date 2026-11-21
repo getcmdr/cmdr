@@ -54,6 +54,7 @@ mod session_reset;
 /// A cached handle that no longer names the object at its path.
 #[cfg(all(test, feature = "virtual-device"))]
 mod stale_handle_test;
+pub(crate) mod storage_path;
 /// The manager and the recording registrar this crate's own device cells drive.
 #[cfg(test)]
 pub(crate) mod testing;
@@ -80,13 +81,13 @@ pub use mutation_ops::MtpDeleteScope;
 use scheduler::{DevicePriorityGate, ForegroundGuard};
 pub use volume_registrar::MtpVolumeRegistrar;
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::host::VolumeHost;
 use log::{debug, error, info, warn};
 use mtp_rs::{MtpDevice, MtpDeviceBuilder};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock, Weak};
 use std::time::Duration;
 use tokio::sync::{Mutex, broadcast};
@@ -945,7 +946,7 @@ impl MtpConnectionManager {
         device_id: &str,
         storage_id: u32,
         handle: mtp_rs::ObjectHandle,
-    ) -> Option<PathBuf> {
+    ) -> Option<cmdr_fs::app_path::AppPathBuf> {
         let devices = self.devices.lock().await;
         devices
             .get(device_id)?
@@ -960,14 +961,16 @@ impl MtpConnectionManager {
 
     /// Test-only: the FORWARD (`path_to_handle`) side, for tests that need an
     /// object's handle without re-listing (a re-list would repopulate BOTH
-    /// directions and mask exactly the desync under test).
+    /// directions and mask exactly the desync under test). `path` is storage path
+    /// text, as every session call takes one.
     #[cfg(all(test, feature = "virtual-device"))]
     pub(crate) async fn cached_handle_for_path(
         &self,
         device_id: &str,
         storage_id: u32,
-        path: &Path,
+        path: &str,
     ) -> Option<mtp_rs::ObjectHandle> {
+        let path = storage_path::storage_path(path)?;
         let devices = self.devices.lock().await;
         devices
             .get(device_id)?
@@ -976,7 +979,7 @@ impl MtpConnectionManager {
             .ok()?
             .get(&storage_id)?
             .path_to_handle
-            .get(path)
+            .get(&path)
             .copied()
     }
 
@@ -988,9 +991,10 @@ impl MtpConnectionManager {
         &self,
         device_id: &str,
         storage_id: u32,
-        path: &Path,
+        path: &str,
         handle: mtp_rs::ObjectHandle,
     ) {
+        let path = storage_path::storage_path(path).expect("a storage path");
         let devices = self.devices.lock().await;
         let entry = devices.get(device_id).expect("a connected device");
         entry
@@ -999,7 +1003,7 @@ impl MtpConnectionManager {
             .expect("an unpoisoned path cache")
             .entry(storage_id)
             .or_default()
-            .insert(path.to_path_buf(), handle);
+            .insert(path, handle);
     }
 
     /// Test-only: how many `GetStorageInfo` round trips the bounded-read path has
@@ -1242,17 +1246,17 @@ async fn get_storages(device: &MtpDevice, device_supports_write: bool) -> Result
     Ok(storages)
 }
 
-/// Normalizes an MTP path.
+/// `path` as the `std::path` value the host seams still take, byte for byte. ❗ The crate's
+/// one crossing, and every `&Path` seam call goes through it: all path arithmetic here is
+/// the app path's own, and only the finished value crosses. It goes when the last of these
+/// takes app paths (`docs/specs/app-path-plan.md`, issue #1225):
 ///
-/// Ensures the path starts with "/" and handles empty/relative paths.
-fn normalize_mtp_path(path: &str) -> PathBuf {
-    if path.is_empty() || path == "." {
-        PathBuf::from("/")
-    } else if !path.starts_with('/') {
-        PathBuf::from("/").join(path)
-    } else {
-        PathBuf::from(path)
-    }
+/// - `ListingHost::directory_changed` and `authoritative_listing`: when the app's listing
+///   host converts (milestone 10c).
+/// - `ScanBoundary::dir` and `file`, whose `ScanRecorder` lives in the engines (10a).
+/// - [`ResolvedMtpObject::path`], a `pub` field the app's index feed reads (10c/10d).
+pub(crate) fn std_path_for_host(path: &AppPath) -> std::borrow::Cow<'_, std::path::Path> {
+    path.as_std_legacy()
 }
 
 /// Generates icon ID for MTP files.
@@ -1260,8 +1264,8 @@ fn get_mtp_icon_id(is_dir: bool, filename: &str) -> String {
     if is_dir {
         return "dir".to_string();
     }
-    if let Some(ext) = Path::new(filename).extension() {
-        return format!("ext:{}", ext.to_string_lossy().to_lowercase());
+    if let Some(ext) = storage_path::extension_of(filename) {
+        return format!("ext:{}", ext.to_lowercase());
     }
     "file".to_string()
 }

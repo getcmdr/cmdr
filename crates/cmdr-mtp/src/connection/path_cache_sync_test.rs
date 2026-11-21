@@ -18,7 +18,6 @@ use crate::virtual_device::{
     VirtualDeviceFixture, setup_virtual_mtp_device, unregister_virtual_mtp_device, virtual_device_test_lock,
 };
 use mtp_rs::ObjectHandle;
-use std::path::{Path, PathBuf};
 
 /// A connected virtual device, torn down (disconnect + unregister) by `teardown`.
 struct Device {
@@ -61,10 +60,8 @@ async fn teardown(device: Device) {
     unregister_virtual_mtp_device(device.fixture.location_id);
 }
 
-async fn reverse_entry(device: &Device, handle: ObjectHandle) -> Option<PathBuf> {
-    connection_manager()
-        .cached_path_for_handle(&device.id, device.storage_id, handle)
-        .await
+async fn reverse_entry(device: &Device, handle: ObjectHandle) -> Option<String> {
+    reverse_entry_on(&device.id, device.storage_id, handle).await
 }
 
 /// `create_folder` caches the new folder's handle, and must cache it BOTH ways:
@@ -83,7 +80,7 @@ async fn create_folder_records_the_handle_in_both_directions() {
 
     assert_eq!(
         reverse_entry(&device, handle).await.as_deref(),
-        Some(Path::new("/new-folder")),
+        Some("/new-folder"),
         "a created folder must be resolvable handle → path, not only path → handle"
     );
 
@@ -106,7 +103,7 @@ async fn rename_moves_the_reverse_entry_to_the_new_path() {
 
     assert_eq!(
         reverse_entry(&device, handle).await.as_deref(),
-        Some(Path::new("/Photos")),
+        Some("/Photos"),
         "a renamed object's reverse entry must point at the new path"
     );
 
@@ -133,7 +130,7 @@ async fn move_updates_the_reverse_entry_to_the_new_parent() {
 
     assert_eq!(
         reverse_entry(&device, handle).await.as_deref(),
-        Some(Path::new("/Music/notes.txt")),
+        Some("/Music/notes.txt"),
         "a moved object's reverse entry must point at the new parent"
     );
 
@@ -165,7 +162,7 @@ async fn upload_records_the_new_object_in_both_directions() {
 
     // Read the handle off the FORWARD map, not a fresh listing: a re-list writes
     // both directions and would mask the desync under test.
-    let uploaded = Path::new("/Documents/uploaded.txt");
+    let uploaded = "/Documents/uploaded.txt";
     let handle = connection_manager()
         .cached_handle_for_path(&device.id, device.storage_id, uploaded)
         .await
@@ -195,7 +192,7 @@ async fn delete_clears_the_reverse_entry_too() {
         .await
         .expect("list Documents should succeed");
     let handle = connection_manager()
-        .cached_handle_for_path(&device.id, device.storage_id, Path::new("/Documents/notes.txt"))
+        .cached_handle_for_path(&device.id, device.storage_id, "/Documents/notes.txt")
         .await
         .expect("the listed file should be in the forward cache");
 
@@ -238,7 +235,7 @@ async fn a_tree_delete_caches_each_child_in_both_directions() {
         "the read-only storage must refuse the child's delete, got {refused:?}"
     );
 
-    let child = Path::new("/photos/sunset.jpg");
+    let child = "/photos/sunset.jpg";
     let handle = connection_manager()
         .cached_handle_for_path(&device.id, readonly, child)
         .await
@@ -252,8 +249,9 @@ async fn a_tree_delete_caches_each_child_in_both_directions() {
     device.teardown(connection_manager()).await;
 }
 
-async fn reverse_entry_on(device_id: &str, storage_id: u32, handle: ObjectHandle) -> Option<PathBuf> {
+async fn reverse_entry_on(device_id: &str, storage_id: u32, handle: ObjectHandle) -> Option<String> {
     connection_manager()
         .cached_path_for_handle(device_id, storage_id, handle)
         .await
+        .map(cmdr_fs::app_path::AppPathBuf::into_string)
 }

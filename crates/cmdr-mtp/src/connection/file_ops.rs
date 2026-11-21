@@ -9,14 +9,14 @@ use mtp_rs::{
 
 use super::dates::{mtp_datetime_from_system_time, system_time_from_mtp_datetime};
 use std::collections::HashMap;
-use std::path::Path;
 use std::sync::{Arc, RwLock};
 use std::time::SystemTime;
 use tokio::sync::{Mutex, OwnedMutexGuard};
 
 use super::errors::{MtpConnectionError, is_stale_handle_rejection};
 use super::scheduler::{DevicePriorityGate, ReadHold};
-use super::{MtpConnectionManager, acquire_device_lock, acquire_device_lock_owned, normalize_mtp_path};
+use super::storage_path::{child_and_text, storage_path_on};
+use super::{MtpConnectionManager, acquire_device_lock, acquire_device_lock_owned};
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::rt::Runtime;
 
@@ -493,11 +493,13 @@ impl MtpConnectionManager {
         // nested `refresh_dir_handle` re-list, which takes its own guard).
         let _fg = self.foreground_guard(device_id).await;
 
+        let dest_folder_path = storage_path_on(device_id, dest_folder)?;
+        let (new_path, dest_text) = child_and_text(&dest_folder_path, filename);
         debug!(
             "MTP upload_from_stream: device={}, storage={}, dest={}, size={}",
             device_id,
             storage_id,
-            LogPrivate::file_path(&Path::new(dest_folder).join(filename)),
+            LogPrivate::file_path(&dest_text),
             size,
         );
 
@@ -553,18 +555,18 @@ impl MtpConnectionManager {
                     // device just disconnected, this fails and the partial
                     // lingers (recognizable, nothing we can do with a dead
                     // device) — we log and move on.
-                    let dest = Path::new(dest_folder).join(filename);
+                    let dest = &dest_text;
                     if let Err(delete_err) = storage.delete(partial).await {
                         log::warn!(
                             target: "mtp_upload",
                             "Failed to delete partial object after upload error (device={device_id}, dest={}): {delete_err}",
-                            LogPrivate::file_path(&dest)
+                            LogPrivate::file_path(dest)
                         );
                     } else {
                         log::debug!(
                             target: "mtp_upload",
                             "Deleted partial object after upload error (device={device_id}, dest={})",
-                            LogPrivate::file_path(&dest)
+                            LogPrivate::file_path(dest)
                         );
                     }
                 }
@@ -590,11 +592,10 @@ impl MtpConnectionManager {
                         LogPrivate::dir_path(dest_folder),
                         LogPrivate::file_name(filename)
                     );
-                    self.refresh_dir_handle(device_id, storage_id, Path::new(dest_folder))
-                        .await;
+                    self.refresh_dir_handle(device_id, storage_id, &dest_folder_path).await;
                     return Err(MtpConnectionError::StaleParentHandle {
                         device_id: device_id.to_string(),
-                        dest_folder: normalize_mtp_path(dest_folder).to_string_lossy().to_string(),
+                        dest_folder: dest_folder_path.as_str().to_string(),
                     });
                 }
 
@@ -618,26 +619,26 @@ impl MtpConnectionManager {
         drop(device);
 
         // Update path cache
-        let new_path = normalize_mtp_path(dest_folder).join(filename);
         {
             let devices = self.devices.lock().await;
             if let Some(entry) = devices.get(device_id)
                 && let Ok(mut cache_map) = entry.path_cache.write()
             {
                 let storage_cache = cache_map.entry(storage_id).or_default();
-                storage_cache.insert(new_path.clone(), new_handle);
+                if let Some(new_path) = new_path {
+                    storage_cache.insert(new_path, new_handle);
+                }
             }
         }
 
         // Invalidate the parent directory's listing cache
-        let dest_folder_path = normalize_mtp_path(dest_folder);
         self.invalidate_listing_cache(device_id, storage_id, &dest_folder_path)
             .await;
 
         debug!(
             "MTP upload_from_stream complete: {} bytes to {}",
             size,
-            LogPrivate::file_path(&new_path)
+            LogPrivate::file_path(&dest_text)
         );
 
         Ok(size)

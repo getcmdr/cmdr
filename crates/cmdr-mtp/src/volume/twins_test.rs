@@ -6,8 +6,7 @@
 //! its own name and a cell reads which object an op hit off the disk.
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::PathArithmetic;
 
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{Volume, VolumeError};
@@ -16,6 +15,7 @@ use crate::testing::{
     ConnectedDevice, connect_virtual_device, device_lock, make_twins, test_connection_manager, volume_for,
 };
 use crate::volume::MtpVolume;
+use crate::volume::test_paths::{child, row};
 
 const NOTES: &str = "Meeting notes: discuss MTP E2E test strategy.\n";
 const REPORT: &str = "Quarterly report: Q4 2025 placeholder content.\n";
@@ -59,7 +59,7 @@ async fn a_twin_row_stats_as_its_own_object_and_the_shared_name_stats_as_taken()
 
     let stat = |path: String| {
         let volume = &volume;
-        async move { volume.get_metadata(&AppPath::legacy_unchecked(Path::new(&path))).await }
+        async move { volume.get_metadata(&row(&path)).await }
     };
     let notes_stat = stat(notes.path.clone()).await.expect("row one stats");
     let report_stat = stat(report.path.clone()).await.expect("row two stats");
@@ -72,14 +72,14 @@ async fn a_twin_row_stats_as_its_own_object_and_the_shared_name_stats_as_taken()
         (report.inode, Some(REPORT.len() as u64))
     );
 
-    let shared = Path::new("/Documents/notes.txt");
-    let outcome = volume.get_metadata(&AppPath::legacy_unchecked(shared)).await;
+    let shared = app_path!("/Documents/notes.txt");
+    let outcome = volume.get_metadata(shared).await;
     assert!(
         matches!(&outcome, Err(VolumeError::DuplicateName(_))),
         "the name alone names no one object, got {outcome:?}"
     );
     assert!(
-        volume.exists(&AppPath::legacy_unchecked(shared)).await,
+        volume.exists(shared).await,
         "a name two items hold is taken, so nothing may land on it unasked"
     );
 
@@ -91,14 +91,9 @@ async fn a_copy_scan_of_both_twin_rows_counts_each_object() {
     let _guard = device_lock().await;
     let (device, volume, notes, report) = twins_on_a_volume().await;
 
-    let paths = [PathBuf::from(&notes.path), PathBuf::from(&report.path)];
+    let paths = [row(&notes.path), row(&report.path)];
     let scan = volume
-        .scan_for_copy_batch(
-            &paths
-                .iter()
-                .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                .collect::<Vec<_>>(),
-        )
+        .scan_for_copy_batch(&paths)
         .await
         .expect("the scan should succeed");
 
@@ -116,11 +111,7 @@ async fn renaming_a_twin_row_through_the_volume_renames_that_object() {
 
     // The rename editor names the target after the pane's folder.
     volume
-        .rename(
-            &AppPath::legacy_unchecked(Path::new(&report.path)),
-            app_path!("/Documents/report-2.txt"),
-            false,
-        )
+        .rename(&row(&report.path), app_path!("/Documents/report-2.txt"), false)
         .await
         .expect("renaming row two should succeed");
 
@@ -136,7 +127,7 @@ async fn deleting_a_twin_row_through_the_volume_deletes_that_object() {
     let (device, volume, notes, _report) = twins_on_a_volume().await;
 
     volume
-        .delete(&AppPath::legacy_unchecked(Path::new(&notes.path)))
+        .delete(&row(&notes.path))
         .await
         .expect("deleting row one should succeed");
 
@@ -157,18 +148,10 @@ async fn a_rename_spelled_under_a_twins_pick_still_sees_a_taken_name() {
         .create_directory(app_path!("/Documents/taken"))
         .await
         .expect("making the clashing folder");
-    let under_the_pick = Path::new(&report.path)
-        .parent()
-        .expect("a row has a parent")
-        .join("taken");
+    let report_row = row(&report.path);
+    let under_the_pick = child(report_row.parent().expect("a row has a parent"), "taken");
 
-    let outcome = volume
-        .rename(
-            &AppPath::legacy_unchecked(Path::new(&report.path)),
-            &AppPath::legacy_unchecked(&under_the_pick),
-            false,
-        )
-        .await;
+    let outcome = volume.rename(&report_row, &under_the_pick, false).await;
 
     assert!(
         matches!(&outcome, Err(VolumeError::AlreadyExists(_))),

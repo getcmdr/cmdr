@@ -1,17 +1,17 @@
 //! MTP directory listing and path resolution.
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use log::{debug, error, info};
 use mtp_rs::{CancelToken, ListingItem, ObjectHandle, StorageId};
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Instant;
 
 use super::cache::{CachedListing, LISTING_CACHE_TTL_SECS};
 use super::errors::MtpConnectionError;
 use super::events::MtpDeviceEvent;
+use super::storage_path::{self, storage_path_on};
 use super::{
-    MtpConnectionManager, MtpDisconnectReason, acquire_device_lock, convert_mtp_datetime, get_mtp_icon_id,
-    normalize_mtp_path, twins,
+    MtpConnectionManager, MtpDisconnectReason, acquire_device_lock, convert_mtp_datetime, get_mtp_icon_id, twins,
 };
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::RwLockIgnorePoison;
@@ -219,7 +219,7 @@ impl MtpConnectionManager {
         cancel: Option<&CancelToken>,
         clock: &ScanListingClock,
     ) -> Result<Vec<FileEntry>, MtpConnectionError> {
-        let parent_path = normalize_mtp_path(path);
+        let parent_path = storage_path_on(device_id, path)?;
 
         // The scan walks top-down, so each dir was listed via its parent first
         // and resolves from the cache; a miss means it went away mid-walk.
@@ -267,7 +267,7 @@ impl MtpConnectionManager {
 
         let total = listing.total();
         let mut entries = Vec::with_capacity(total);
-        let mut cache_updates: Vec<(PathBuf, ObjectHandle)> = Vec::new();
+        let mut cache_updates: Vec<(AppPathBuf, ObjectHandle)> = Vec::new();
 
         // Units 1..n: fetch metadata in bounded batches, releasing the lock and
         // yielding to foreground between each.
@@ -289,9 +289,10 @@ impl MtpConnectionManager {
                 match listing.next().await {
                     Some(Ok(ListingItem::Object(mut info))) => {
                         self.as_reported(device_id, &mut info);
-                        let (entry, cache_update) = entry_for_object(&parent_path, &info);
-                        entries.push(entry);
-                        cache_updates.push(cache_update);
+                        if let Some((entry, cache_update)) = entry_for_object(&parent_path, &info) {
+                            entries.push(entry);
+                            cache_updates.push(cache_update);
+                        }
                     }
                     Some(Ok(ListingItem::Skipped(skipped))) => {
                         // The device listed this handle and then wouldn't describe
@@ -353,7 +354,7 @@ impl MtpConnectionManager {
         cancel: Option<&CancelToken>,
     ) -> Result<Vec<FileEntry>, MtpConnectionError> {
         // Normalize the path for building child paths
-        let parent_path = normalize_mtp_path(path);
+        let parent_path = storage_path_on(device_id, path)?;
 
         if let Some(entries) = self
             .fresh_cached_listing(request_id, device_id, storage_id, &parent_path)
@@ -513,7 +514,7 @@ impl MtpConnectionManager {
         on_progress: &(dyn Fn(cmdr_fs::volume::ListingProgress) + Sync),
         cancel: Option<&CancelToken>,
     ) -> Result<Vec<FileEntry>, MtpConnectionError> {
-        let parent_path = normalize_mtp_path(path);
+        let parent_path = storage_path_on(device_id, path)?;
 
         if let Some(entries) = self
             .fresh_cached_listing(request_id, device_id, storage_id, &parent_path)
@@ -577,7 +578,7 @@ impl MtpConnectionManager {
         // Fetch metadata per handle with progress reporting
         let metadata_start = Instant::now();
         let mut entries = Vec::with_capacity(total);
-        let mut cache_updates: Vec<(PathBuf, ObjectHandle)> = Vec::new();
+        let mut cache_updates: Vec<(AppPathBuf, ObjectHandle)> = Vec::new();
         // Running tally for the progress callback. Tracked separately from
         // `entries.len()` so dirs / file-bytes / file-count are all available
         // to the FE mid-stream (the Volume trait progress callback takes a
@@ -610,7 +611,9 @@ impl MtpConnectionManager {
             };
 
             self.as_reported(device_id, &mut info);
-            let (entry, cache_update) = entry_for_object(&parent_path, &info);
+            let Some((entry, cache_update)) = entry_for_object(&parent_path, &info) else {
+                continue;
+            };
             let is_dir = entry.is_directory;
             entries.push(entry);
             cache_updates.push(cache_update);
@@ -670,7 +673,7 @@ impl MtpConnectionManager {
         request_id: u64,
         device_id: &str,
         storage_id: u32,
-        dir: &Path,
+        dir: &AppPath,
     ) -> Option<Vec<FileEntry>> {
         use cmdr_fs::ignore_poison::RwLockIgnorePoison;
 
@@ -682,7 +685,7 @@ impl MtpConnectionManager {
         else {
             debug!(
                 "MTP list_directory [req#{request_id}]: cache MISS for path={}",
-                LogPrivate::dir_path(dir)
+                LogPrivate::dir_path(dir.as_str())
             );
             return None;
         };
@@ -710,9 +713,9 @@ impl MtpConnectionManager {
         request_id: u64,
         device_id: &str,
         storage_id: u32,
-        parent_path: PathBuf,
+        parent_path: AppPathBuf,
         mut entries: Vec<FileEntry>,
-        mut cache_updates: Vec<(PathBuf, ObjectHandle)>,
+        mut cache_updates: Vec<(AppPathBuf, ObjectHandle)>,
         call_start: Instant,
     ) -> Vec<FileEntry> {
         // Same-named siblings get a row path each, so every op on a row reaches
@@ -816,7 +819,7 @@ impl MtpConnectionManager {
 
     /// Invalidates the listing cache for a specific directory.
     /// Call this after any operation that modifies the directory contents.
-    pub(super) async fn invalidate_listing_cache(&self, device_id: &str, storage_id: u32, dir_path: &Path) {
+    pub(super) async fn invalidate_listing_cache(&self, device_id: &str, storage_id: u32, dir_path: &AppPath) {
         let devices = self.devices.lock().await;
         if let Some(entry) = devices.get(device_id)
             && let Ok(mut cache_map) = entry.listing_cache.write()
@@ -825,7 +828,7 @@ impl MtpConnectionManager {
         {
             debug!(
                 "Invalidated listing cache for {} on device {}",
-                LogPrivate::dir_path(dir_path),
+                LogPrivate::dir_path(dir_path.as_str()),
                 device_id
             );
         }
@@ -836,7 +839,7 @@ impl MtpConnectionManager {
     /// that no longer holds those items, and a folder later arriving at that
     /// path (the same one, moved back by an undo) would otherwise be answered
     /// from them, with handles the device may no longer know.
-    pub(super) async fn invalidate_listing_subtree(&self, device_id: &str, storage_id: u32, old_path: &Path) {
+    pub(super) async fn invalidate_listing_subtree(&self, device_id: &str, storage_id: u32, old_path: &AppPath) {
         let devices = self.devices.lock().await;
         let Some(entry) = devices.get(device_id) else { return };
         // Recover a poisoned cache rather than skip: skipping is exactly the stale
@@ -928,9 +931,24 @@ fn scan_cancelled(device_id: &str) -> MtpConnectionError {
 
 /// One listed object as the pane sees it, plus the path-cache update that lets a
 /// later op resolve it: the one place every listing path builds its rows.
-fn entry_for_object(parent_path: &Path, info: &mtp_rs::ObjectInfo) -> (FileEntry, (PathBuf, ObjectHandle)) {
+///
+/// `None` for an object whose name isn't one plain name (empty, `.`, `..`, holding `/`
+/// or a NUL): its row's path would name the folder itself, its parent, or another
+/// object, so a delete of it would act on something nobody picked. Logged, and left
+/// out.
+fn entry_for_object(
+    parent_path: &AppPath,
+    info: &mtp_rs::ObjectInfo,
+) -> Option<(FileEntry, (AppPathBuf, ObjectHandle))> {
     let is_dir = info.is_folder();
-    let child_path = parent_path.join(&info.filename);
+    let Some(child_path) = storage_path::child(parent_path, &info.filename) else {
+        debug!(
+            "MTP listing: {} lists an object named {} that no path can address, left out",
+            LogPrivate::dir_path(parent_path.as_str()),
+            LogPrivate::name(&info.filename)
+        );
+        return None;
+    };
     let entry = FileEntry {
         size: if is_dir { None } else { Some(info.size) },
         modified_at: info.modified.and_then(convert_mtp_datetime),
@@ -941,28 +959,24 @@ fn entry_for_object(parent_path: &Path, info: &mtp_rs::ObjectInfo) -> (FileEntry
         // entry; `ObjectRemoved{handle}` then resolves via `find_entry_by_inode`
         // even though the object is already gone.
         inode: Some(info.handle.0),
-        ..FileEntry::new(
-            info.filename.clone(),
-            child_path.to_string_lossy().to_string(),
-            is_dir,
-            false,
-        )
+        ..FileEntry::new(info.filename.clone(), child_path.as_str().to_string(), is_dir, false)
     };
-    (entry, (child_path, info.handle))
+    Some((entry, (child_path, info.handle)))
 }
 
 /// Converts a list of `ObjectInfo` into `FileEntry` values and path-to-handle cache updates.
 fn convert_object_infos(
-    parent_path: &Path,
+    parent_path: &AppPath,
     object_infos: &[mtp_rs::ObjectInfo],
-) -> (Vec<FileEntry>, Vec<(PathBuf, ObjectHandle)>) {
+) -> (Vec<FileEntry>, Vec<(AppPathBuf, ObjectHandle)>) {
     let mut entries = Vec::with_capacity(object_infos.len());
     let mut cache_updates = Vec::with_capacity(object_infos.len());
 
     for info in object_infos {
-        let (entry, cache_update) = entry_for_object(parent_path, info);
-        entries.push(entry);
-        cache_updates.push(cache_update);
+        if let Some((entry, cache_update)) = entry_for_object(parent_path, info) {
+            entries.push(entry);
+            cache_updates.push(cache_update);
+        }
     }
 
     (entries, cache_updates)

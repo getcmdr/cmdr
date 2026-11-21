@@ -2,13 +2,13 @@
 //! trait impl can't span files, and the MTP surface is large enough that the
 //! rest of the backend would disappear behind it.
 
-use super::MtpVolume;
 use super::cancel::MtpCancelBridge;
 use super::mapping::map_mtp_error;
 use super::streams::{MtpReadStream, mtp_read_pacing, volume_read_stream_to_chunk_stream};
-use crate::connection::{MtpConnectionError, MtpDeleteScope, UploadedFile, twins};
-use cmdr_fs::app_path::AppPath;
-use cmdr_fs::app_path::AppPathBuf;
+use super::{MtpVolume, device_text};
+use crate::connection::storage_path::{folder_or_root, storage_path};
+use crate::connection::{MtpConnectionError, MtpDeleteScope, UploadedFile, std_path_for_host, twins};
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, ListedFolder, PathArithmetic};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
@@ -19,7 +19,6 @@ use cmdr_fs::volume::{
 };
 use log::debug;
 use std::future::Future;
-use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
@@ -34,7 +33,7 @@ impl Volume for MtpVolume {
     }
 
     fn root(&self) -> &AppPath {
-        self.root.app()
+        &self.root
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -63,8 +62,6 @@ impl Volume for MtpVolume {
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             #[cfg(any(test, feature = "testing"))]
             super::testing::bump_list_directory_call_count();
 
@@ -77,7 +74,7 @@ impl Volume for MtpVolume {
                 "MtpVolume::list_directory: device={}, storage={}, input_path={}, mtp_path={}, cancel={}",
                 self.device_id,
                 self.storage_id,
-                LogPrivate::dir_path(path),
+                LogPrivate::dir_path(path.as_str()),
                 LogPrivate::dir_path(&mtp_path),
                 cancel_ref.is_some()
             );
@@ -123,8 +120,6 @@ impl Volume for MtpVolume {
         clock: &'a cmdr_fs::volume::ScanListingClock,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let mtp_path = self.to_mtp_path(path);
             let bridge = MtpCancelBridge::open(self.manager.host(), cancel);
 
@@ -149,47 +144,36 @@ impl Volume for MtpVolume {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             // MTP has no single-file stat: list the parent directory and find the entry.
-            let path_str = path.to_string_lossy();
+            let path_str = device_text(path);
+            let root_entry = || FileEntry::new(self.name.clone(), self.root.as_str().to_string(), true, false);
             if path_str.is_empty() || path_str == "/" || path_str == "." {
                 // Root: synthesize a directory entry
-                return Ok(FileEntry::new(
-                    self.name.clone(),
-                    self.root.display().to_string(),
-                    true,
-                    false,
-                ));
+                return Ok(root_entry());
             }
 
             let Some(parent) = twins::folder_of(path) else {
-                return Ok(FileEntry::new(
-                    self.name.clone(),
-                    self.root.display().to_string(),
-                    true,
-                    false,
-                ));
+                return Ok(root_entry());
             };
 
-            let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
-                return Err(VolumeError::NotFound(path.display().to_string()));
+            let Some(name) = path.file_name() else {
+                return Err(VolumeError::NotFound(path_str.into_owned()));
             };
 
-            let entries = self.list_directory(&AppPath::legacy_unchecked(parent), None).await?;
+            let entries = self.list_directory(parent, None).await?;
             // A twin's row path picks its object by handle; a plain name two
             // items share names neither (`connection/twins.rs`).
             if let Some(pick) = twins::pick_in(path) {
                 return entries
                     .into_iter()
                     .find(|e| e.name == name && e.inode == Some(pick.0))
-                    .ok_or_else(|| VolumeError::NotFound(path.display().to_string()));
+                    .ok_or_else(|| VolumeError::NotFound(path_str.into_owned()));
             }
             let mut named = entries.into_iter().filter(|e| e.name == name);
             match (named.next(), named.next()) {
                 (Some(entry), None) => Ok(entry),
-                (Some(_), Some(_)) => Err(VolumeError::DuplicateName(path.display().to_string())),
-                (None, _) => Err(VolumeError::NotFound(path.display().to_string())),
+                (Some(_), Some(_)) => Err(VolumeError::DuplicateName(path_str.into_owned())),
+                (None, _) => Err(VolumeError::NotFound(path_str.into_owned())),
             }
         })
     }
@@ -248,9 +232,8 @@ impl Volume for MtpVolume {
     /// the pre-flight oracle ask with. `notify_mutation` and the event loop report
     /// at the `mtp://` URL, and the volume switcher opens it; both fold onto this.
     fn listing_path(&self, path: &AppPath) -> AppPathBuf {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        AppPath::legacy_unchecked(&Path::new("/").join(self.to_mtp_path(path))).into_owned()
+        // A `..` name has no storage path; the path itself then keys a listing nothing holds.
+        self.storage_path_of(path).unwrap_or_else(|| path.to_owned())
     }
 
     fn notify_mutation<'a>(
@@ -260,8 +243,6 @@ impl Volume for MtpVolume {
         mutation: MutationEvent,
     ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
         Box::pin(async move {
-            let parent_path_std = parent_path.as_std_legacy();
-            let parent_path: &Path = &parent_path_std;
             use cmdr_fs::volume::DirectoryChange;
 
             let listings = self.manager.host().listings();
@@ -269,21 +250,36 @@ impl Volume for MtpVolume {
             // twin: the by-name patches below can't tell it from its sibling, so
             // the folder is re-read instead.
             if let Some(folder) = twins::picked_folder(parent_path) {
-                listings.directory_changed(&self.volume_id, &self.to_url_path(folder), DirectoryChange::FullRefresh);
+                if let Some(folder_url) = self.to_url_path(folder) {
+                    listings.directory_changed(
+                        &self.volume_id,
+                        &std_path_for_host(&folder_url),
+                        DirectoryChange::FullRefresh,
+                    );
+                }
                 return;
             }
             // Normalize once so every branch (incl. get_metadata's parent
             // lookup) sees the canonical absolute MTP URL. Callers happily
             // hand us either form depending on which layer they came from.
-            let parent_url = self.to_url_path(parent_path);
-            let parent_ref = parent_url.as_path();
+            let Some(parent_url) = self.to_url_path(parent_path) else {
+                return;
+            };
+            let parent_ref = &std_path_for_host(&parent_url);
+            // A child joins as the folder joins (`ListedFolder`): typed under a canonical
+            // one, so a name holding `\` stays one name on Windows.
+            let in_parent = |name: &str| {
+                AppName::from_app_spelling(name)
+                    .ok()
+                    .and_then(|name| ListedFolder::new(&parent_url).join(name).ok())
+            };
             // MTP's get_metadata lists the parent dir to find the entry, which is expensive
             // but correct. The MTP event loop (connection/event_loop.rs) also handles
             // change notifications, so this is belt-and-suspenders for self-mutations.
             match mutation {
                 MutationEvent::Created(ref name) | MutationEvent::Modified(ref name) => {
-                    let entry_path = parent_ref.join(name);
-                    match self.get_metadata(&AppPath::legacy_unchecked(&entry_path)).await {
+                    let Some(entry_path) = in_parent(name) else { return };
+                    match self.get_metadata(&entry_path).await {
                         Ok(entry) => {
                             let change = if matches!(mutation, MutationEvent::Created(_)) {
                                 DirectoryChange::Added(entry)
@@ -295,7 +291,7 @@ impl Volume for MtpVolume {
                         Err(e) => {
                             debug!(
                                 "MtpVolume::notify_mutation: couldn't stat {}: {}",
-                                LogPrivate::path(&entry_path),
+                                LogPrivate::path(entry_path.as_str()),
                                 LogError(&e)
                             );
                         }
@@ -305,8 +301,8 @@ impl Volume for MtpVolume {
                     listings.directory_changed(&self.volume_id, parent_ref, DirectoryChange::Removed(name));
                 }
                 MutationEvent::Renamed { from, to } => {
-                    let new_path = parent_ref.join(&to);
-                    match self.get_metadata(&AppPath::legacy_unchecked(&new_path)).await {
+                    let Some(new_path) = in_parent(&to) else { return };
+                    match self.get_metadata(&new_path).await {
                         Ok(entry) => {
                             listings.directory_changed(
                                 &self.volume_id,
@@ -320,7 +316,7 @@ impl Volume for MtpVolume {
                         Err(e) => {
                             debug!(
                                 "MtpVolume::notify_mutation: couldn't stat renamed entry {}: {}",
-                                LogPrivate::path(&new_path),
+                                LogPrivate::path(new_path.as_str()),
                                 LogError(&e)
                             );
                         }
@@ -343,10 +339,8 @@ impl Volume for MtpVolume {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             // A new name: a pick on it means nothing (see `rename`).
-            let path = cmdr_fs::twin_path::unpicked(path);
+            let path = cmdr_fs::twin_path::unpicked_app(path);
             let path = path.as_ref();
             let Some(parent) = twins::folder_of(path) else {
                 return Err(VolumeError::IoError {
@@ -354,7 +348,7 @@ impl Volume for MtpVolume {
                     raw_os_error: None,
                 });
             };
-            let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+            let Some(name) = path.file_name() else {
                 return Err(VolumeError::IoError {
                     message: "Invalid directory name".into(),
                     raw_os_error: None,
@@ -370,12 +364,8 @@ impl Volume for MtpVolume {
                 .map(|_| ())
                 .map_err(map_mtp_error)?;
 
-            self.notify_mutation(
-                &self.volume_id,
-                &AppPath::legacy_unchecked(parent),
-                MutationEvent::Created(name.to_string()),
-            )
-            .await;
+            self.notify_mutation(&self.volume_id, parent, MutationEvent::Created(name.to_string()))
+                .await;
             Ok(())
         })
     }
@@ -390,8 +380,6 @@ impl Volume for MtpVolume {
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let mtp_path = self.to_mtp_path(path);
 
             let bridge = MtpCancelBridge::open(self.manager.host(), cancel);
@@ -413,12 +401,8 @@ impl Volume for MtpVolume {
             // A twin's row path hands its pick to `notify_mutation` as the parent,
             // which re-reads the folder rather than dropping a row by name.
             if let (Some(parent), Some(name)) = (path.parent(), path.file_name()) {
-                self.notify_mutation(
-                    &self.volume_id,
-                    &AppPath::legacy_unchecked(parent),
-                    MutationEvent::Deleted(name.to_string_lossy().to_string()),
-                )
-                .await;
+                self.notify_mutation(&self.volume_id, parent, MutationEvent::Deleted(name.to_string()))
+                    .await;
             }
             Ok(())
         })
@@ -431,10 +415,6 @@ impl Volume for MtpVolume {
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let from_std = from.as_std_legacy();
-            let from: &Path = &from_std;
-            let to_std = to.as_std_legacy();
-            let to: &Path = &to_std;
             // The no-clobber refusal, and it can only be check-then-act: MTP has
             // no operation that CLAIMS a name. `SetObjectPropValue` and
             // `MoveObject` take no exclusive flag, PTP has no collision response
@@ -447,34 +427,29 @@ impl Volume for MtpVolume {
             // A destination is a NEW name in its folder, so a twin's pick on it
             // (`Path::parent` of a row, joined with the new name) means nothing:
             // the check and the rename both take the plain spelling.
-            let to = cmdr_fs::twin_path::unpicked(to);
+            let to = cmdr_fs::twin_path::unpicked_app(to);
             let to = to.as_ref();
-            if !force && self.exists(&AppPath::legacy_unchecked(to)).await {
-                return Err(VolumeError::AlreadyExists(to.display().to_string()));
+            if !force && self.exists(to).await {
+                return Err(VolumeError::AlreadyExists(device_text(to).into_owned()));
             }
 
+            // Both ends as storage paths, split on `/` alone; a `..` name has none.
+            let invalid = |message: &str| VolumeError::IoError {
+                message: message.into(),
+                raw_os_error: None,
+            };
             let from_mtp = self.to_mtp_path(from);
             let to_mtp = self.to_mtp_path(to);
+            let from_storage = storage_path(&from_mtp).ok_or_else(|| invalid("Invalid source path"))?;
+            let to_storage = storage_path(&to_mtp).ok_or_else(|| invalid("Invalid destination path"))?;
 
-            let from_parent = twins::folder_of(Path::new(&from_mtp)).unwrap_or(Path::new(""));
-            let to_parent = twins::folder_of(Path::new(&to_mtp)).unwrap_or(Path::new(""));
-            let same_parent = from_parent == to_parent;
+            let to_parent = folder_or_root(&to_storage);
+            let same_parent = folder_or_root(&from_storage) == to_parent;
 
-            let from_name = Path::new(&from_mtp)
+            let from_name = from_storage.file_name().ok_or_else(|| invalid("Invalid source path"))?;
+            let to_name = to_storage
                 .file_name()
-                .and_then(|n| n.to_str())
-                .ok_or_else(|| VolumeError::IoError {
-                    message: "Invalid source path".into(),
-                    raw_os_error: None,
-                })?;
-            let to_name =
-                Path::new(&to_mtp)
-                    .file_name()
-                    .and_then(|n| n.to_str())
-                    .ok_or_else(|| VolumeError::IoError {
-                        message: "Invalid destination path".into(),
-                        raw_os_error: None,
-                    })?;
+                .ok_or_else(|| invalid("Invalid destination path"))?;
             let same_name = from_name == to_name;
 
             if same_parent {
@@ -490,7 +465,7 @@ impl Volume for MtpVolume {
                 if let Some(from_parent_path) = from.parent() {
                     self.notify_mutation(
                         &self.volume_id,
-                        &AppPath::legacy_unchecked(from_parent_path),
+                        from_parent_path,
                         MutationEvent::Renamed {
                             from: from_name.to_string(),
                             to: to_name.to_string(),
@@ -507,18 +482,21 @@ impl Volume for MtpVolume {
                 // the item is renamed where it is first, and moves under a name
                 // the destination doesn't hold. `DETAILS.md` § "A move that also
                 // renames".
-                let to_parent_str = to_parent.to_string_lossy().to_string();
+                let to_parent_str = to_parent.as_str();
                 let old_name_taken_there = !same_name
                     && match to.parent() {
-                        Some(folder) => self.exists(&AppPath::legacy_unchecked(&folder.join(from_name))).await,
+                        Some(folder) => match super::move_rename::sibling(folder, from_name) {
+                            Some(sibling) => self.exists(&sibling).await,
+                            None => true,
+                        },
                         None => false,
                     };
                 if old_name_taken_there {
-                    self.rename_then_move(from, &from_mtp, from_name, &to_parent_str, to_name)
+                    self.rename_then_move(from, &from_storage, from_name, to_parent_str, to_name)
                         .await?;
                 } else {
                     self.manager
-                        .move_object(&self.device_id, self.storage_id, &from_mtp, &to_parent_str)
+                        .move_object(&self.device_id, self.storage_id, &from_mtp, to_parent_str)
                         .await
                         .map(|_| ())
                         .map_err(map_mtp_error)?;
@@ -527,7 +505,7 @@ impl Volume for MtpVolume {
                             .rename_object(
                                 &self.device_id,
                                 self.storage_id,
-                                &super::move_rename::child_of(&to_parent_str, from_name),
+                                &super::move_rename::child_of(to_parent_str, from_name),
                                 to_name,
                             )
                             .await
@@ -540,7 +518,7 @@ impl Volume for MtpVolume {
                 if let Some(from_parent_path) = from.parent() {
                     self.notify_mutation(
                         &self.volume_id,
-                        &AppPath::legacy_unchecked(from_parent_path),
+                        from_parent_path,
                         MutationEvent::Deleted(from_name.to_string()),
                     )
                     .await;
@@ -548,7 +526,7 @@ impl Volume for MtpVolume {
                 if let Some(to_parent_path) = to.parent() {
                     self.notify_mutation(
                         &self.volume_id,
-                        &AppPath::legacy_unchecked(to_parent_path),
+                        to_parent_path,
                         MutationEvent::Created(to_name.to_string()),
                     )
                     .await;
@@ -582,11 +560,7 @@ impl Volume for MtpVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.scan_for_copy_impl(path).await
-        })
+        Box::pin(async move { self.scan_for_copy_impl(path).await })
     }
 
     fn scan_for_copy_batch_with_boundary<'a>(
@@ -594,11 +568,7 @@ impl Volume for MtpVolume {
         paths: &'a [AppPathBuf],
         boundary: &'a cmdr_fs::volume::ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
-            let paths: &[PathBuf] = &paths_std;
-            self.scan_for_copy_batch_with_boundary_impl(paths, boundary).await
-        })
+        Box::pin(async move { self.scan_for_copy_batch_with_boundary_impl(paths, boundary).await })
     }
 
     fn scan_for_conflicts<'a>(
@@ -606,11 +576,7 @@ impl Volume for MtpVolume {
         source_items: &'a [SourceItemInfo],
         dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move {
-            let dest_path_std = dest_path.as_std_legacy();
-            let dest_path: &Path = &dest_path_std;
-            self.scan_for_conflicts_impl(source_items, dest_path).await
-        })
+        Box::pin(async move { self.scan_for_conflicts_impl(source_items, dest_path).await })
     }
 
     fn space_poll_interval(&self) -> Option<std::time::Duration> {
@@ -689,8 +655,6 @@ impl Volume for MtpVolume {
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             let mtp_path = self.to_mtp_path(path);
 
             // The pacing (`mtp_read_pacing()`, small fixed windows in tests) and the
@@ -719,8 +683,6 @@ impl Volume for MtpVolume {
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
             if len == 0 {
                 return Ok(Vec::new());
             }
@@ -808,20 +770,17 @@ impl Volume for MtpVolume {
         };
         Box::pin(async move {
             let dest_app = dest;
-            let dest_std = dest.as_std_legacy();
-            let dest: &Path = &dest_std;
             let report_progress =
                 |bytes_written, _| on_progress(StreamWriteProgress::new(bytes_written, StreamLength::Known(size)));
             // A new name: a pick on it means nothing (see `rename`).
-            let dest = cmdr_fs::twin_path::unpicked(dest);
+            let dest = cmdr_fs::twin_path::unpicked_app(dest);
             let dest = dest.as_ref();
             if mode.refuses_occupied() && self.exists(dest_app).await {
-                return Err(VolumeError::AlreadyExists(dest.display().to_string()));
+                return Err(VolumeError::AlreadyExists(device_text(dest).into_owned()));
             }
             let dest_folder = twins::folder_of(dest).map(|p| self.to_mtp_path(p)).unwrap_or_default();
             let filename = dest
                 .file_name()
-                .and_then(|n| n.to_str())
                 .ok_or_else(|| VolumeError::IoError {
                     message: "Invalid filename".into(),
                     raw_os_error: None,
@@ -854,12 +813,8 @@ impl Volume for MtpVolume {
             // all), so without this the cache would only catch up on the
             // next manual refresh.
             if let Some(parent) = twins::folder_of(dest) {
-                self.notify_mutation(
-                    &self.volume_id,
-                    &AppPath::legacy_unchecked(parent),
-                    MutationEvent::Created(filename),
-                )
-                .await;
+                self.notify_mutation(&self.volume_id, parent, MutationEvent::Created(filename))
+                    .await;
             }
             // MTP keeps no metadata beyond the date `SendObjectInfo` carries.
             Ok(StreamWritten::nothing_refused(bytes_written))

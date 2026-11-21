@@ -2,8 +2,7 @@
 //! the item's OLD name: renamed where it is first, then moved, so the move never
 //! meets a name it would replace. `DETAILS.md` § "A move that also renames".
 
-use cmdr_fs::app_path::AppPath;
-use std::path::Path;
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, ListedFolder, PathArithmetic};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use cmdr_fs::log_private::LogPrivate;
@@ -11,10 +10,11 @@ use cmdr_fs::volume::{Volume, VolumeError};
 
 use super::MtpVolume;
 use super::mapping::map_mtp_error;
-use crate::connection::twins;
+use crate::connection::storage_path::folder_or_root;
 
 impl MtpVolume {
-    /// Moves `from` into the folder `to_parent` (device paths) as `to_name`,
+    /// Moves `from` (at `from_storage` on the device) into the folder `to_parent` (a
+    /// storage path) as `to_name`,
     /// renaming before the move. Where the item starts may hold `to_name` too, so
     /// it then takes an interim name neither folder holds, and the last step
     /// gives it `to_name`.
@@ -23,19 +23,17 @@ impl MtpVolume {
     /// refused move leaves the item exactly as it was.
     pub(super) async fn rename_then_move(
         &self,
-        from: &Path,
-        from_mtp: &str,
+        from: &AppPath,
+        from_storage: &AppPath,
         from_name: &str,
         to_parent: &str,
         to_name: &str,
     ) -> Result<(), VolumeError> {
-        let from_parent = twins::folder_of(Path::new(from_mtp))
-            .unwrap_or(Path::new(""))
-            .to_string_lossy()
-            .into_owned();
-        let source_folder = cmdr_fs::twin_path::unpicked(from).parent().map(Path::to_path_buf);
-        let new_name_taken_here = match &source_folder {
-            Some(folder) => self.exists(&AppPath::legacy_unchecked(&folder.join(to_name))).await,
+        let from_mtp = from_storage.as_str();
+        let from_parent = folder_or_root(from_storage).as_str();
+        let source_folder = cmdr_fs::twin_path::unpicked_app(from).parent().map(AppPath::to_owned);
+        let new_name_taken_here = match source_folder.as_deref().and_then(|folder| sibling(folder, to_name)) {
+            Some(taken) => self.exists(&taken).await,
             None => true,
         };
         let interim = if new_name_taken_here {
@@ -48,7 +46,7 @@ impl MtpVolume {
             .rename_object(&self.device_id, self.storage_id, from_mtp, &interim)
             .await
             .map_err(map_mtp_error)?;
-        let renamed = child_of(&from_parent, &interim);
+        let renamed = child_of(from_parent, &interim);
         if let Err(moving) = self
             .manager
             .move_object(&self.device_id, self.storage_id, &renamed, to_parent)
@@ -61,7 +59,7 @@ impl MtpVolume {
             {
                 log::warn!(
                     "MTP rename_then_move: the move failed and the old name couldn't be put back, so {} stays as {}: {back:?}",
-                    LogPrivate::path(from),
+                    LogPrivate::path(from.as_str()),
                     LogPrivate::name(&interim),
                 );
             }
@@ -80,6 +78,15 @@ impl MtpVolume {
         }
         Ok(())
     }
+}
+
+/// `name` (a name the storage path already split off, so one plain name) beside the
+/// other items in the app folder `folder`, joined as that folder joins (`ListedFolder`).
+/// `None` only for a name a drive or UNC folder can't take, which no MTP path is.
+pub(super) fn sibling(folder: &AppPath, name: &str) -> Option<AppPathBuf> {
+    ListedFolder::new(folder)
+        .join(AppName::from_app_spelling(name).ok()?)
+        .ok()
 }
 
 /// `name` in the device folder `folder`, as the session layer spells a path.

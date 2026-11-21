@@ -1,9 +1,9 @@
 //! Caching structures for MTP path resolution and directory listings,
 //! plus event debouncing for directory change notifications.
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use mtp_rs::ObjectHandle;
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 use std::time::{Duration, Instant};
 
@@ -37,16 +37,16 @@ use super::twins;
 #[derive(Default)]
 pub(super) struct PathHandleCache {
     /// Maps virtual path -> MTP object handle.
-    pub(super) path_to_handle: HashMap<PathBuf, ObjectHandle>,
+    pub(super) path_to_handle: HashMap<AppPathBuf, ObjectHandle>,
     /// Maps MTP object handle -> virtual path. The reverse of `path_to_handle`,
     /// kept in lockstep with it. A same-named sibling's handle maps to the path
     /// it shares, so a change event for it still refreshes the right folder.
-    pub(super) handle_to_path: HashMap<ObjectHandle, PathBuf>,
+    pub(super) handle_to_path: HashMap<ObjectHandle, AppPathBuf>,
     /// Maps a folder's path -> the cached paths directly inside it.
-    children: HashMap<PathBuf, HashSet<PathBuf>>,
+    children: HashMap<AppPathBuf, HashSet<AppPathBuf>>,
     /// Maps a name more than one sibling answered to in its folder's last
     /// listing (the path they share) -> their handles.
-    same_named: HashMap<PathBuf, Vec<ObjectHandle>>,
+    same_named: HashMap<AppPathBuf, Vec<ObjectHandle>>,
 }
 
 /// What the path cache knows about one path.
@@ -64,7 +64,7 @@ impl PathHandleCache {
     /// A twin's row path whose twin has since gone (renamed, deleted) still
     /// reaches its object while the name it shared now resolves to that very
     /// handle, so a row a pane hasn't re-read yet keeps working.
-    pub(super) fn lookup(&self, path: &Path) -> Option<Cached> {
+    pub(super) fn lookup(&self, path: &AppPath) -> Option<Cached> {
         if self.same_named.contains_key(path) {
             return Some(Cached::SameNamed);
         }
@@ -81,15 +81,12 @@ impl PathHandleCache {
     /// reverse map can't fall out of sync. A path that held a DIFFERENT handle,
     /// or several, was another object, so what's cached under it goes: those
     /// children were that object's.
-    pub(super) fn insert(&mut self, path: PathBuf, handle: ObjectHandle) {
+    pub(super) fn insert(&mut self, path: AppPathBuf, handle: ObjectHandle) {
         if self.same_named.contains_key(&path) || self.path_to_handle.get(&path).is_some_and(|old| *old != handle) {
             self.remove_path(&path);
         }
         if let Some(parent) = twins::folder_of(&path) {
-            self.children
-                .entry(parent.to_path_buf())
-                .or_default()
-                .insert(path.clone());
+            self.children.entry(parent.to_owned()).or_default().insert(path.clone());
         }
         self.path_to_handle.insert(path.clone(), handle);
         self.handle_to_path.insert(handle, path);
@@ -104,7 +101,7 @@ impl PathHandleCache {
     /// that's gone or renamed no longer holds what was cached under its old path,
     /// and a new folder taking the name would otherwise resolve its children to
     /// the old handles.
-    pub(super) fn remove_path(&mut self, path: &Path) {
+    pub(super) fn remove_path(&mut self, path: &AppPath) {
         if let Some(handle) = self.path_to_handle.remove(path) {
             // Only if the reverse entry still points AT this path: a rename
             // re-inserts the handle under its new path, and that newer mapping
@@ -134,15 +131,15 @@ impl PathHandleCache {
     /// since have given to another object. A name more than one child answers
     /// to is recorded as same-named, resolving to none of them; a twin's own row
     /// path (`twins.rs`) resolves to its object, and marks the name it shares.
-    pub(super) fn record_listing(&mut self, parent: &Path, listed: Vec<(PathBuf, ObjectHandle)>) {
-        let fresh: HashSet<&Path> = listed.iter().map(|(path, _)| path.as_path()).collect();
-        let gone: Vec<PathBuf> = self
+    pub(super) fn record_listing(&mut self, parent: &AppPath, listed: Vec<(AppPathBuf, ObjectHandle)>) {
+        let fresh: HashSet<&AppPath> = listed.iter().map(|(path, _)| path.as_app_path()).collect();
+        let gone: Vec<AppPathBuf> = self
             .children
             .get(parent)
             .map(|cached| {
                 cached
                     .iter()
-                    .filter(|p| !fresh.contains(p.as_path()))
+                    .filter(|p| !fresh.contains(p.as_app_path()))
                     .cloned()
                     .collect()
             })
@@ -150,8 +147,8 @@ impl PathHandleCache {
         for path in gone {
             self.remove_path(&path);
         }
-        let mut by_path: HashMap<PathBuf, Vec<ObjectHandle>> = HashMap::with_capacity(listed.len());
-        let mut twins_by_name: HashMap<PathBuf, Vec<ObjectHandle>> = HashMap::new();
+        let mut by_path: HashMap<AppPathBuf, Vec<ObjectHandle>> = HashMap::with_capacity(listed.len());
+        let mut twins_by_name: HashMap<AppPathBuf, Vec<ObjectHandle>> = HashMap::new();
         for (path, handle) in listed {
             if twins::pick_in(&path).is_some() {
                 twins_by_name.entry(twins::shared_path(&path)).or_default().push(handle);
@@ -172,11 +169,11 @@ impl PathHandleCache {
     /// Records `shared` as the name `handles` share, each already cached under
     /// its own row path: no forward entry, nothing cached beneath it, and the
     /// twins' reverse entries left pointing at their rows.
-    fn mark_shared(&mut self, shared: PathBuf, handles: Vec<ObjectHandle>) {
+    fn mark_shared(&mut self, shared: AppPathBuf, handles: Vec<ObjectHandle>) {
         self.remove_path(&shared);
         if let Some(parent) = twins::folder_of(&shared) {
             self.children
-                .entry(parent.to_path_buf())
+                .entry(parent.to_owned())
                 .or_default()
                 .insert(shared.clone());
         }
@@ -185,13 +182,10 @@ impl PathHandleCache {
 
     /// Records `path` as a name all of `handles` answer to: no forward entry,
     /// a reverse entry per twin, and nothing cached beneath it.
-    fn record_same_named(&mut self, path: PathBuf, handles: Vec<ObjectHandle>) {
+    fn record_same_named(&mut self, path: AppPathBuf, handles: Vec<ObjectHandle>) {
         self.remove_path(&path);
         if let Some(parent) = twins::folder_of(&path) {
-            self.children
-                .entry(parent.to_path_buf())
-                .or_default()
-                .insert(path.clone());
+            self.children.entry(parent.to_owned()).or_default().insert(path.clone());
         }
         for handle in &handles {
             self.handle_to_path.insert(*handle, path.clone());
@@ -217,7 +211,7 @@ impl PathHandleCache {
 #[derive(Default)]
 pub(super) struct ListingCache {
     /// Maps directory path -> cached file entries.
-    pub(super) listings: HashMap<PathBuf, CachedListing>,
+    pub(super) listings: HashMap<AppPathBuf, CachedListing>,
 }
 
 /// A cached directory listing with timestamp for invalidation.
@@ -311,8 +305,8 @@ impl EventDebouncer {
 
     /// The coalescing key for a targeted (per-folder) refresh. A NUL can't occur
     /// in a device id or a path, so the two parts can't run together.
-    pub(super) fn targeted_key(device_id: &str, affected_dir: &Path) -> String {
-        format!("{device_id}\0{}", affected_dir.display())
+    pub(super) fn targeted_key(device_id: &str, affected_dir: &AppPath) -> String {
+        format!("{device_id}\0{}", affected_dir.as_str())
     }
 
     /// Clears the debounce state for a device (called on disconnect).
@@ -331,19 +325,22 @@ impl EventDebouncer {
 
 #[cfg(test)]
 mod path_handle_cache_tests {
-    use std::ffi::OsStr;
-    use std::path::{Path, PathBuf};
-
+    use cmdr_fs::app_path::AppPathBuf;
     use mtp_rs::ObjectHandle;
 
+    use super::super::storage_path::{storage_path, storage_root};
     use super::{Cached, PathHandleCache};
 
-    fn at(path: &str, handle: u64) -> (PathBuf, ObjectHandle) {
-        (PathBuf::from(path), ObjectHandle(handle))
+    fn path(text: &str) -> AppPathBuf {
+        storage_path(text).expect("a storage path")
     }
 
-    fn handle_of(cache: &PathHandleCache, path: &str) -> Option<u64> {
-        cache.path_to_handle.get(Path::new(path)).map(|h| h.0)
+    fn at(text: &str, handle: u64) -> (AppPathBuf, ObjectHandle) {
+        (path(text), ObjectHandle(handle))
+    }
+
+    fn handle_of(cache: &PathHandleCache, text: &str) -> Option<u64> {
+        cache.path_to_handle.get(path(text).as_app_path()).map(|h| h.0)
     }
 
     /// ❗ Regression anchor (#524): a name the folder no longer holds kept its
@@ -352,10 +349,10 @@ mod path_handle_cache_tests {
     #[test]
     fn a_fresh_listing_forgets_the_children_it_no_longer_names_and_their_subtrees() {
         let mut cache = PathHandleCache::default();
-        cache.record_listing(Path::new("/"), vec![at("/DCIM", 1), at("/gone.txt", 2)]);
-        cache.record_listing(Path::new("/DCIM"), vec![at("/DCIM/a.jpg", 3)]);
+        cache.record_listing(storage_root(), vec![at("/DCIM", 1), at("/gone.txt", 2)]);
+        cache.record_listing(&path("/DCIM"), vec![at("/DCIM/a.jpg", 3)]);
 
-        cache.record_listing(Path::new("/"), vec![at("/Music", 4)]);
+        cache.record_listing(storage_root(), vec![at("/Music", 4)]);
 
         assert_eq!(handle_of(&cache, "/gone.txt"), None);
         assert_eq!(handle_of(&cache, "/DCIM"), None);
@@ -371,10 +368,10 @@ mod path_handle_cache_tests {
     #[test]
     fn a_folder_listed_under_a_new_handle_drops_what_was_cached_under_the_old_one() {
         let mut cache = PathHandleCache::default();
-        cache.record_listing(Path::new("/"), vec![at("/DCIM", 1)]);
-        cache.record_listing(Path::new("/DCIM"), vec![at("/DCIM/a.jpg", 3)]);
+        cache.record_listing(storage_root(), vec![at("/DCIM", 1)]);
+        cache.record_listing(&path("/DCIM"), vec![at("/DCIM/a.jpg", 3)]);
 
-        cache.record_listing(Path::new("/"), vec![at("/DCIM", 9)]);
+        cache.record_listing(storage_root(), vec![at("/DCIM", 9)]);
 
         assert_eq!(handle_of(&cache, "/DCIM"), Some(9));
         assert_eq!(
@@ -389,26 +386,23 @@ mod path_handle_cache_tests {
     #[test]
     fn same_named_siblings_resolve_to_neither_until_a_listing_names_one() {
         let mut cache = PathHandleCache::default();
-        cache.record_listing(Path::new("/"), vec![at("/IMG_1.JPG", 1), at("/IMG_1.JPG", 2)]);
+        cache.record_listing(storage_root(), vec![at("/IMG_1.JPG", 1), at("/IMG_1.JPG", 2)]);
 
-        assert_eq!(cache.lookup(Path::new("/IMG_1.JPG")), Some(Cached::SameNamed));
+        assert_eq!(cache.lookup(&path("/IMG_1.JPG")), Some(Cached::SameNamed));
         assert_eq!(
-            cache.handle_to_path.get(&ObjectHandle(1)).map(PathBuf::as_path),
-            Some(Path::new("/IMG_1.JPG")),
+            cache.handle_to_path.get(&ObjectHandle(1)).map(AppPathBuf::as_app_path),
+            Some(path("/IMG_1.JPG").as_app_path()),
             "an event for either twin still finds its folder"
         );
 
-        cache.record_listing(Path::new("/"), vec![at("/IMG_1.JPG", 2)]);
-        assert_eq!(
-            cache.lookup(Path::new("/IMG_1.JPG")),
-            Some(Cached::Handle(ObjectHandle(2)))
-        );
+        cache.record_listing(storage_root(), vec![at("/IMG_1.JPG", 2)]);
+        assert_eq!(cache.lookup(&path("/IMG_1.JPG")), Some(Cached::Handle(ObjectHandle(2))));
         assert!(!cache.handle_to_path.contains_key(&ObjectHandle(1)));
 
-        cache.record_listing(Path::new("/"), vec![at("/IMG_1.JPG", 3), at("/IMG_1.JPG", 4)]);
-        cache.record_listing(Path::new("/"), vec![]);
+        cache.record_listing(storage_root(), vec![at("/IMG_1.JPG", 3), at("/IMG_1.JPG", 4)]);
+        cache.record_listing(storage_root(), vec![]);
         assert_eq!(
-            cache.lookup(Path::new("/IMG_1.JPG")),
+            cache.lookup(&path("/IMG_1.JPG")),
             None,
             "a listing without the name ends it"
         );
@@ -419,16 +413,18 @@ mod path_handle_cache_tests {
     /// the name they share, given alone, reaches neither.
     #[test]
     fn each_twin_row_resolves_to_its_own_object_and_the_shared_name_to_neither() {
-        let row = |handle| super::twins::picked(Path::new("/"), ObjectHandle(handle), OsStr::new("IMG_1.JPG"));
+        let row = |handle| {
+            super::super::twins::picked(storage_root(), ObjectHandle(handle), "IMG_1.JPG").expect("a twin row")
+        };
         let mut cache = PathHandleCache::default();
         cache.record_listing(
-            Path::new("/"),
+            storage_root(),
             vec![(row(1), ObjectHandle(1)), (row(2), ObjectHandle(2))],
         );
 
         assert_eq!(cache.lookup(&row(1)), Some(Cached::Handle(ObjectHandle(1))));
         assert_eq!(cache.lookup(&row(2)), Some(Cached::Handle(ObjectHandle(2))));
-        assert_eq!(cache.lookup(Path::new("/IMG_1.JPG")), Some(Cached::SameNamed));
+        assert_eq!(cache.lookup(&path("/IMG_1.JPG")), Some(Cached::SameNamed));
         assert_eq!(
             cache.handle_to_path.get(&ObjectHandle(1)),
             Some(&row(1)),
@@ -437,19 +433,16 @@ mod path_handle_cache_tests {
 
         // Twin one is renamed away: row two still reaches its object, which the
         // name alone now names too, and row one reaches nothing.
-        cache.record_listing(Path::new("/"), vec![at("/IMG_1.JPG", 2), at("/IMG_2.JPG", 1)]);
+        cache.record_listing(storage_root(), vec![at("/IMG_1.JPG", 2), at("/IMG_2.JPG", 1)]);
         assert_eq!(cache.lookup(&row(2)), Some(Cached::Handle(ObjectHandle(2))));
         assert_eq!(cache.lookup(&row(1)), None);
-        assert_eq!(
-            cache.lookup(Path::new("/IMG_1.JPG")),
-            Some(Cached::Handle(ObjectHandle(2)))
-        );
+        assert_eq!(cache.lookup(&path("/IMG_1.JPG")), Some(Cached::Handle(ObjectHandle(2))));
     }
 
     #[test]
     fn a_removed_handle_stops_resolving_its_path() {
         let mut cache = PathHandleCache::default();
-        cache.record_listing(Path::new("/"), vec![at("/a.txt", 1), at("/b.txt", 2)]);
+        cache.record_listing(storage_root(), vec![at("/a.txt", 1), at("/b.txt", 2)]);
 
         cache.forget_handle(ObjectHandle(1));
 

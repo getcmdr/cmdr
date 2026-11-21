@@ -1,11 +1,11 @@
 //! Bulk and recursive MTP operations (scan, recursive download/upload).
 
-use std::path::Path;
-
 use log::debug;
 
 use super::errors::MtpConnectionError;
-use super::{MtpConnectionManager, normalize_mtp_path, twins};
+use super::storage_path::{storage_path, storage_root};
+use super::{MtpConnectionManager, std_path_for_host, twins};
+use cmdr_fs::app_path::{AppName, AppPath, ListedFolder};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
@@ -57,11 +57,13 @@ impl MtpConnectionManager {
         path: &str,
         stop: &ScanStop,
     ) -> Result<CopyScanResult, MtpConnectionError> {
+        // A silent boundary records nothing, so the path it's handed is only a name.
+        let caller_path = storage_path(path).unwrap_or_else(|| storage_root().to_owned());
         self.scan_for_copy_with_boundary(
             device_id,
             storage_id,
             path,
-            Path::new(path),
+            &caller_path,
             &ScanBoundary::silent().stopping_at(stop.clone()),
         )
         .await
@@ -77,7 +79,7 @@ impl MtpConnectionManager {
         device_id: &str,
         storage_id: u32,
         path: &str,
-        caller_path: &Path,
+        caller_path: &AppPath,
         boundary: &ScanBoundary<'_>,
     ) -> Result<CopyScanResult, MtpConnectionError> {
         debug!(
@@ -93,7 +95,10 @@ impl MtpConnectionManager {
         match self.list_directory(device_id, storage_id, path).await {
             Ok(entries) if !entries.is_empty() => {
                 // Directory with contents: recurse using entries directly
-                boundary.dir(caller_path).await.map_err(|_| scan_cancelled(device_id))?;
+                boundary
+                    .dir(&std_path_for_host(caller_path))
+                    .await
+                    .map_err(|_| scan_cancelled(device_id))?;
                 let mut result = self
                     .scan_entries_recursive(device_id, storage_id, entries, caller_path, boundary)
                     .await?;
@@ -107,13 +112,16 @@ impl MtpConnectionManager {
                 boundary.check().await.map_err(|_| scan_cancelled(device_id))?;
                 if let Some(result) = self.try_scan_as_file(device_id, storage_id, path).await {
                     boundary
-                        .file(caller_path, result.total_bytes)
+                        .file(&std_path_for_host(caller_path), result.total_bytes)
                         .await
                         .map_err(|_| scan_cancelled(device_id))?;
                     return Ok(result);
                 }
                 // Empty directory
-                boundary.dir(caller_path).await.map_err(|_| scan_cancelled(device_id))?;
+                boundary
+                    .dir(&std_path_for_host(caller_path))
+                    .await
+                    .map_err(|_| scan_cancelled(device_id))?;
                 Ok(CopyScanResult {
                     file_count: 0,
                     dir_count: 1,
@@ -137,7 +145,7 @@ impl MtpConnectionManager {
                 );
                 if let Some(result) = self.try_scan_as_file(device_id, storage_id, path).await {
                     boundary
-                        .file(caller_path, result.total_bytes)
+                        .file(&std_path_for_host(caller_path), result.total_bytes)
                         .await
                         .map_err(|_| scan_cancelled(device_id))?;
                     return Ok(result);
@@ -161,9 +169,12 @@ impl MtpConnectionManager {
         device_id: &str,
         storage_id: u32,
         entries: Vec<FileEntry>,
-        caller_dir: &Path,
+        caller_dir: &AppPath,
         boundary: &ScanBoundary<'_>,
     ) -> Result<CopyScanResult, MtpConnectionError> {
+        // Joined as the caller's folder joins (`ListedFolder`): typed under a canonical
+        // one, so a name holding `\` stays one name on Windows.
+        let caller_folder = ListedFolder::new(caller_dir);
         let mut file_count = 0usize;
         let mut dir_count = 0usize;
         let mut total_bytes = 0u64;
@@ -176,10 +187,16 @@ impl MtpConnectionManager {
             if boundary.leaves_out(&entry.name, entry.is_directory) {
                 continue;
             }
-            let caller_child = caller_dir.join(&entry.name);
+            // A listed row's name is one plain name (`directory_ops::entry_for_object`).
+            let Some(caller_child) = AppName::from_app_spelling(&entry.name)
+                .ok()
+                .and_then(|name| caller_folder.join(name).ok())
+            else {
+                continue;
+            };
             if entry.is_directory {
                 boundary
-                    .dir(&caller_child)
+                    .dir(&std_path_for_host(&caller_child))
                     .await
                     .map_err(|_| scan_cancelled(device_id))?;
                 dir_count += 1;
@@ -196,7 +213,7 @@ impl MtpConnectionManager {
                 }
             } else {
                 boundary
-                    .file(&caller_child, entry.size.unwrap_or(0))
+                    .file(&std_path_for_host(&caller_child), entry.size.unwrap_or(0))
                     .await
                     .map_err(|_| scan_cancelled(device_id))?;
                 file_count += 1;
@@ -229,16 +246,13 @@ impl MtpConnectionManager {
     /// Helper to check if a path is a file by listing its parent directory.
     /// Returns Some(CopyScanResult) if path is a file, None otherwise.
     async fn try_scan_as_file(&self, device_id: &str, storage_id: u32, path: &str) -> Option<CopyScanResult> {
-        let path_buf = normalize_mtp_path(path);
+        let path_buf = storage_path(path)?;
         let parent = twins::folder_of(&path_buf)?;
 
-        let parent_entries = self
-            .list_directory(device_id, storage_id, &parent.to_string_lossy())
-            .await
-            .ok()?;
+        let parent_entries = self.list_directory(device_id, storage_id, parent.as_str()).await.ok()?;
 
         // By path, not name: a twin's row path is the one entry that's its object.
-        let entry = parent_entries.iter().find(|e| Path::new(&e.path) == path_buf)?;
+        let entry = parent_entries.iter().find(|e| e.path == path_buf.as_str())?;
 
         if entry.is_directory {
             // It's a directory, not a file. Let caller handle it.

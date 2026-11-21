@@ -8,13 +8,13 @@
 //! renamed onto the new name.
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 
 use cmdr_fs::volume::Volume;
 
 use crate::testing::{connect_fixture, device_lock, test_connection_manager, volume_for};
 use crate::virtual_device::setup_virtual_mtp_device;
+use crate::volume::test_paths::{child, row};
 
 const NOTES: &str = "Meeting notes: discuss MTP E2E test strategy.\n";
 
@@ -65,7 +65,7 @@ async fn a_rename_to_a_name_too_long_for_mtp_is_refused_as_an_invalid_name() {
     let refused = volume
         .rename(
             app_path!("/Documents/notes.txt"),
-            &AppPath::legacy_unchecked(Path::new(&format!("/Documents/{long}"))),
+            &child(app_path!("/Documents"), &long),
             false,
         )
         .await;
@@ -93,9 +93,7 @@ async fn a_rename_to_a_name_too_long_for_mtp_is_refused_as_an_invalid_name() {
 }
 
 async fn read(volume: &crate::volume::MtpVolume, path: &str) -> Result<Vec<u8>, cmdr_fs::volume::VolumeError> {
-    let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
-        .await?;
+    let mut stream = volume.open_read_stream(&row(path)).await?;
     let mut bytes = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         bytes.extend(chunk?);

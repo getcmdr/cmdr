@@ -9,8 +9,9 @@
 
 use super::MtpVolume;
 use super::mapping::map_mtp_error;
-use crate::connection::twins;
-use cmdr_fs::app_path::AppPath;
+use crate::connection::storage_path::{storage_path, storage_root};
+use crate::connection::{std_path_for_host, twins};
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::volume::scan_walk::conflicts_against;
 use cmdr_fs::volume::{
     BatchScanResult, CopyScanResult, ScanBoundary, ScanConflict, SourceItemInfo, Volume, VolumeError,
@@ -20,7 +21,6 @@ use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_private::LogPrivate;
 use log::debug;
 use std::future::Future;
-use std::path::{Path, PathBuf};
 use std::pin::Pin;
 
 #[cfg(all(test, feature = "virtual-device"))]
@@ -30,7 +30,7 @@ mod scan_test;
 impl MtpVolume {
     pub(super) fn scan_for_copy_impl<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             let mtp_path = self.to_mtp_path(path);
@@ -52,7 +52,7 @@ impl MtpVolume {
     /// Reuse the connection walk with the batch's cumulative progress and stop.
     fn scan_subtree_with_stop<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -79,7 +79,7 @@ impl MtpVolume {
     /// including their recursive contents, on both oracle hits and cold listings.
     pub(super) fn scan_for_copy_batch_with_boundary_impl<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -108,22 +108,24 @@ impl MtpVolume {
             //     Stored so we don't call `to_mtp_path` twice per group.
             // DEFAULT-OK: a group with no children and no resolved paths is what it is
             // for the one statement between its creation and its first insert.
-            #[derive(Default)]
+            //   - `mtp_parent` is a storage path (`/DCIM/Camera`), which lists as itself.
             struct ParentGroup<'p> {
-                original_parent: PathBuf,
-                mtp_parent: String,
-                children: Vec<&'p PathBuf>,
+                original_parent: AppPathBuf,
+                mtp_parent: AppPathBuf,
+                children: Vec<&'p AppPathBuf>,
             }
-            let mut groups: std::collections::HashMap<PathBuf, ParentGroup<'a>> = std::collections::HashMap::new();
+            let mut groups: std::collections::HashMap<AppPathBuf, ParentGroup<'a>> = std::collections::HashMap::new();
             for path in paths {
                 // The folder holding it, stepping over a twin's pick
-                // (`connection/twins.rs`).
-                let original_parent = twins::folder_of(path).unwrap_or(Path::new("")).to_path_buf();
+                // (`connection/twins.rs`); a root keys the group under itself.
+                let original_parent = twins::folder_of(path).unwrap_or(path).to_owned();
                 let entry = groups.entry(original_parent.clone()).or_insert_with(|| {
-                    let mtp_path = self.to_mtp_path(path);
-                    let mtp_parent = twins::folder_of(Path::new(&mtp_path))
-                        .map(|p| p.to_string_lossy().to_string())
-                        .unwrap_or_default();
+                    let mtp_parent = self
+                        .storage_path_of(path)
+                        .as_deref()
+                        .and_then(twins::folder_of)
+                        .unwrap_or(storage_root())
+                        .to_owned();
                     ParentGroup {
                         original_parent,
                         mtp_parent,
@@ -141,7 +143,7 @@ impl MtpVolume {
 
             // Stage per-path results in a map so the final per_path vec
             // preserves the caller's input order.
-            let mut per_path_results: std::collections::HashMap<PathBuf, CopyScanResult> =
+            let mut per_path_results: std::collections::HashMap<AppPathBuf, CopyScanResult> =
                 std::collections::HashMap::with_capacity(paths.len());
 
             let mut aggregate = CopyScanResult {
@@ -172,23 +174,20 @@ impl MtpVolume {
                     .manager
                     .host()
                     .listings()
-                    .authoritative_listing(&self.volume_id, &group.original_parent);
+                    .authoritative_listing(&self.volume_id, &std_path_for_host(&group.original_parent));
 
                 // One cold listing per parent, without reporting its siblings.
                 let entries = match cached {
                     Some(entries) => {
                         debug!(
                             "MtpVolume::scan_for_copy_batch: oracle hit for parent {} ({} cached entries, {} selected children)",
-                            LogPrivate::dir_path(&group.original_parent),
+                            LogPrivate::dir_path(group.original_parent.as_str()),
                             entries.len(),
                             group.children.len()
                         );
                         entries
                     }
-                    None => {
-                        self.list_directory(&AppPath::legacy_unchecked(Path::new(&group.mtp_parent)), None)
-                            .await?
-                    }
+                    None => self.list_directory(&group.mtp_parent, None).await?,
                 };
 
                 // Index entries by path so each child lookup is O(1). A naive
@@ -197,14 +196,20 @@ impl MtpVolume {
                 // single parent listing into ~225M string comparisons (~10 s
                 // stall in the scan preview). By path, not name: a twin's row
                 // path is the one entry that's its object.
-                let entries_by_path: std::collections::HashMap<&Path, &FileEntry> =
-                    entries.iter().map(|e| (Path::new(e.path.as_str()), e)).collect();
+                // Keyed by storage path, so a row and a selection spelling one path
+                // differently (a trailing `/`) still meet.
+                let entries_by_path: std::collections::HashMap<AppPathBuf, &FileEntry> = entries
+                    .iter()
+                    .filter_map(|e| Some((storage_path(&e.path)?, e)))
+                    .collect();
 
                 for child_path in &group.children {
                     boundary.check().await?;
-                    let listed_as = Path::new("/").join(self.to_mtp_path(child_path));
+                    let Some(listed_as) = self.storage_path_of(child_path) else {
+                        continue;
+                    };
 
-                    if let Some(entry) = entries_by_path.get(listed_as.as_path()).copied() {
+                    if let Some(entry) = entries_by_path.get(&listed_as).copied() {
                         if entry.is_directory {
                             let mut scan = self.scan_subtree_with_stop(child_path, boundary).await?;
                             // The parent listing in hand carries the folder's
@@ -218,7 +223,7 @@ impl MtpVolume {
                             per_path_results.insert((*child_path).clone(), scan);
                         } else {
                             let size = entry.size.unwrap_or(0);
-                            boundary.file(child_path, size).await?;
+                            boundary.file(&std_path_for_host(child_path), size).await?;
                             aggregate.file_count += 1;
                             aggregate.total_bytes += size;
                             aggregate.dedup_bytes += size;
@@ -241,11 +246,7 @@ impl MtpVolume {
 
             let per_path = paths
                 .iter()
-                .filter_map(|p| {
-                    per_path_results
-                        .remove(p)
-                        .map(|r| (AppPath::legacy_unchecked(p).into_owned(), r))
-                })
+                .filter_map(|p| per_path_results.remove(p).map(|r| (p.clone(), r)))
                 .collect();
 
             Ok(BatchScanResult {
@@ -259,13 +260,13 @@ impl MtpVolume {
     pub(super) fn scan_for_conflicts_impl<'a>(
         &'a self,
         source_items: &'a [SourceItemInfo],
-        dest_path: &'a Path,
+        dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             // The listing is this backend's own (it goes through the listing
             // cache); the matching is the shared one, so every backend hands a
             // conflict dialog the same shape.
-            let entries = match self.list_directory(&AppPath::legacy_unchecked(dest_path), None).await {
+            let entries = match self.list_directory(dest_path, None).await {
                 Ok(entries) => entries,
                 // ❗ The trait's contract: a destination the paste is about to
                 // create holds nothing, so nothing clashes. The listing's own
@@ -275,7 +276,7 @@ impl MtpVolume {
                 // failed for its own reason, or the parent can't be read either)
                 // stays the caller's to see.
                 Err(e) => {
-                    return match self.get_metadata(&AppPath::legacy_unchecked(dest_path)).await {
+                    return match self.get_metadata(dest_path).await {
                         Err(VolumeError::NotFound(_)) => Ok(Vec::new()),
                         _ => Err(e),
                     };
