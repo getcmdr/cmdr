@@ -372,7 +372,12 @@ mod an_open_listing_inside_the_zip {
             engine.volumes().register(&parent, Arc::clone(&volume));
             // The listing engine resolves the pane's archive path through the app's registry.
             get_volume_manager().register(&parent, volume);
-            assert!(get_volume_manager().resolve(&parent, &path).await.is_routed());
+            assert!(
+                get_volume_manager()
+                    .resolve(&parent, &crate::test_support::native_app_path(&path))
+                    .await
+                    .is_routed()
+            );
             let names: Vec<_> = entries
                 .iter()
                 .map(|(name, _)| {

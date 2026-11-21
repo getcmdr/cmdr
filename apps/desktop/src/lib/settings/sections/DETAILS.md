@@ -176,10 +176,12 @@ sections compose).
   narrowing deletes nothing): `crates/cmdr-index/src/media_index/DETAILS.md` § The indexing scope.
 - **`MediaIndexChosenFolders.svelte`**: the add/remove list bound to `mediaIndex.alwaysIndexFolders`, via
   `#lib/media-index/always-index-folders.ts` (persist + IPC together, like the other media-index prefs). Adding uses the
-  native folder picker (`@tauri-apps/plugin-dialog`'s `open({ directory: true })`, which needs `dialog:allow-open` in
-  the settings window's capability) — an absolute path is the only thing the backend matches on, so there's no free-text
-  field. Deliberately shows NO per-folder progress: there's no cheap per-folder count backend-side (it would mean a
-  `media.db` prefix scan per folder per poll), so progress stays a per-drive line rather than a faked per-row one.
+  native folder picker through `pickOneAsAppPath` (`@tauri-apps/plugin-dialog`'s `open({ directory: true })`, which
+  needs `dialog:allow-open` in the settings window's capability) — an absolute path is the only thing the backend
+  matches on, so there's no free-text field. The pick is an APP path (`C:/Users/…` on Windows, #1311), like the folders
+  a pane adds: the OS's native `C:\Users\…` would never match the index. Deliberately shows NO per-folder progress:
+  there's no cheap per-folder count backend-side (it would mean a `media.db` prefix scan per folder per poll), so
+  progress stays a per-drive line rather than a faked per-row one.
 - **`MediaIndexImportanceSlider.svelte`** / **`MediaIndexReclaim.svelte`** / **`MediaIndexNetworkVolumes.svelte`**: the
   three self-contained image-indexing controls `ImageIndexingSection` composes — the importance-threshold slider with
   its live coverage preview and honest wait lines (`waitingForDriveIndex` off `qualifyingCount === null` AND
@@ -210,13 +212,14 @@ sections compose).
 - **`AdbSection.svelte`**: `File systems > Android (ADB)`: one unlabeled `SectionCard` holding the
   `fileOperations.adbEnabled` switch, a Status row (`getAdbInstallStatus`, "Found at {path}" or "Not found", plus a
   quiet line saying whether phones are being watched for), a Re-check button, the `fileOperations.adbBinaryPath` field
-  with a Browse button (`@tauri-apps/plugin-dialog`'s `open`, permitted by `capabilities/settings.json`), and, only
-  while `adb` is missing, a `CopyBox` carrying `brew install android-platform-tools`. ❗ `recheckAdbInstall` runs ONE
-  call per click and is re-entrancy guarded, ❌ never on mount and ❌ never polled: it is the only path allowed to retry
-  `adb start-server`. Mount reads `getAdbInstallStatus`, which looks nothing up. A Browse pick re-checks too, ❌ not
-  reads: the path only takes effect once the tracker restarts under it, so a status read there would answer about the
-  OLD binary, and choosing a file is exactly the human action the re-check budget is per. Both settings live-apply
-  together through `#lib/adb/adb-settings.ts`; this section only writes them.
+  with a Browse button (`@tauri-apps/plugin-dialog`'s `open`, permitted by `capabilities/settings.json`; the pick stays
+  NATIVE text, `C:\…\adb.exe` on Windows, since only the OS runs it, #1311), and, only while `adb` is missing, a
+  `CopyBox` carrying `brew install android-platform-tools`. ❗ `recheckAdbInstall` runs ONE call per click and is
+  re-entrancy guarded, ❌ never on mount and ❌ never polled: it is the only path allowed to retry `adb start-server`.
+  Mount reads `getAdbInstallStatus`, which looks nothing up. A Browse pick re-checks too, ❌ not reads: the path only
+  takes effect once the tracker restarts under it, so a status read there would answer about the OLD binary, and
+  choosing a file is exactly the human action the re-check budget is per. Both settings live-apply together through
+  `#lib/adb/adb-settings.ts`; this section only writes them.
 - **`GitSection.svelte`**: `File systems > Git`: one unlabeled `SectionCard`, gated via `anyVisible(shouldShow, ...)`
 - **`ViewerSection.svelte`**: `Viewer`: one unlabeled `SectionCard`, gated via `anyVisible(shouldShow, ...)`
 - **`KeyboardShortcutsSection.svelte`**: `Keyboard shortcuts`: special (non-registry) section, renders the shortcut

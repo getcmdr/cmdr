@@ -91,6 +91,14 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   setSelfDragResolvedOperation: setSelfDragResolvedOperationSpy,
   statPathsKinds: statPathsKindsSpy,
   storedSpellings: storedSpellingsSpy,
+  // The drop door (`native-paths.ts`, pinned in its own suite) hands app paths over; here
+  // the test fires them already crossed, with a `refused` count of 0 unless it names one.
+  onAppPathDragDrop: vi.fn((handler: (event: DragDropPayload & { refused?: number }) => void) => {
+    dragDropHandlerRef.current = ({ payload }) => {
+      handler(payload.type === 'enter' || payload.type === 'drop' ? { refused: 0, ...payload } : payload)
+    }
+    return Promise.resolve(vi.fn())
+  }),
   // `resolvePathVolume` is the controller's default fallback. Tests that want it
   // to fire inject a per-test spy via `create(..., resolvePathVolume)`; this stub
   // keeps the import resolvable for the default path (no registered-root miss in
@@ -120,15 +128,6 @@ vi.mock('#lib/ui/toast/index.js', () => ({ addToast: addToastSpy }))
 // the gate's own behavior (which dialogs block, the toast, the MCP reply) is
 // pinned in `operation-start-gate.test.ts`.
 vi.mock('./operation-start-gate', () => ({ operationStartIsBlocked: operationStartIsBlockedSpy }))
-
-vi.mock('@tauri-apps/api/webview', () => ({
-  getCurrentWebview: () => ({
-    onDragDropEvent: vi.fn((handler: (event: { payload: DragDropPayload }) => void) => {
-      dragDropHandlerRef.current = handler
-      return Promise.resolve(vi.fn())
-    }),
-  }),
-}))
 
 vi.mock('../drag/drag-position', () => ({ toViewportPosition: (p: { x: number; y: number }) => p }))
 

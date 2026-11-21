@@ -2247,6 +2247,10 @@
   "@fileExplorer.dragOut.partial": {
     "sourceHash": "9215226"
   },
+  "fileExplorer.drop.uncrossedPaths": "Cmdr ne peut pas lire l’emplacement d’un ou plusieurs des éléments déposés, et a donc ignoré tout ce que vous avez déposé. Réessayez sans ces éléments.",
+  "@fileExplorer.drop.uncrossedPaths": {
+    "sourceHash": "c4daabf"
+  },
   "fileExplorer.dropIn.sourceNameFromAppAndHost": "{name} depuis {appName} ({host})",
   "@fileExplorer.dropIn.sourceNameFromAppAndHost": {
     "sourceHash": "94c2e01"

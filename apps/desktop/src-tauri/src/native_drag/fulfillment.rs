@@ -109,14 +109,14 @@ pub trait VolumeResolver: Send + Sync {
     /// named: inside a `.zip`, or inside a repo's virtual `.git` trees. Resolving
     /// by id alone hands back the parent drive, whose `open_read_stream` then
     /// meets a path with no inode and the promise fails on the drop.
-    fn resolve(&self, volume_id: &str, source_path: &Path) -> Option<std::sync::Arc<dyn Volume>>;
+    fn resolve(&self, volume_id: &str, source_path: &AppPath) -> Option<std::sync::Arc<dyn Volume>>;
 }
 
 /// Production resolver: the global `VolumeManager`.
 pub struct RegistryResolver;
 
 impl VolumeResolver for RegistryResolver {
-    fn resolve(&self, volume_id: &str, source_path: &Path) -> Option<std::sync::Arc<dyn Volume>> {
+    fn resolve(&self, volume_id: &str, source_path: &AppPath) -> Option<std::sync::Arc<dyn Volume>> {
         let manager = crate::file_system::volume::manager::get_volume_manager();
         // `resolve_local_only` is the SYNC sibling that routes a local `.zip` and a
         // repo's `.git` snapshots; the async `resolve` would need this trait to be
@@ -188,7 +188,10 @@ pub(crate) async fn fulfill_with_resolver(
     source_path: &Path,
     dest_path: &Path,
 ) -> Result<FulfillOutcome, FulfillError> {
-    let Some(volume) = resolver.resolve(source_volume_id, source_path) else {
+    // The drag's source is the `std::path` value the drag session carries: crossed
+    // once, for the route and the kind question both.
+    let source = AppPath::legacy_unchecked(source_path);
+    let Some(volume) = resolver.resolve(source_volume_id, &source) else {
         // The source vanished between drag-start and fulfillment.
         let err = VolumeError::DeviceDisconnected(format!("Volume '{source_volume_id}' is no longer available").into());
         return Err(FulfillError::from_volume_error(&err, dest_path));
@@ -211,7 +214,7 @@ pub(crate) async fn fulfill_with_resolver(
     );
 
     let is_dir = volume
-        .is_directory(&AppPath::legacy_unchecked(source_path))
+        .is_directory(&source)
         .await
         .map_err(|e| FulfillError::from_volume_error(&e, dest_path))?;
 

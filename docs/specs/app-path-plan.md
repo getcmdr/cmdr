@@ -2065,9 +2065,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
     `std::path` arithmetic (#1314 item 1) went typed with `resolve_typed` and `Volume::parent_for_dot_dot` in the second
     behavior-change step (below).
   - **The routing seam**: `VolumeManager::resolve(volume_id, &Path)` and its `ResolvedVolume.path` built by
-    `legacy_unchecked` (archive, git, restic routes) is the next mechanical step; it takes most of the manager's
-    remaining bridges and the routing tests' with it. `mount_id_for_path` keeps `Path`'s `starts_with` on its caller's
-    text (a `..` included) until its callers (index routing, 10d's `inspect` tools) pass app paths.
+    `legacy_unchecked` (archive, git, restic routes) went typed (below, "The routing seam went typed").
+    `mount_id_for_path` keeps `Path`'s `starts_with` on its caller's text (a `..` included) until its callers (index
+    routing, 10d's `inspect` tools) pass app paths.
   - **The text exits** (`commands/importance.rs`, `media_index/`, `volume_copy`'s root echo:
     `as_std_legacy() .to_string_lossy()`): an app path's own text differs for a Linux name that isn't UTF-8 while
     `ESCAPES_LIVE` is false, so they wait for 10f's type-level gate, as in 10a.
@@ -2106,14 +2106,12 @@ included; the hidden couplings it found are why waves B and C differ from round 
     bridge back to the start's `PathBuf` in a file with no budget, and would refuse a typed `..` the copy accepts), and
     so does `get_name_rules` for the boot volume. The other same-root commands (delete, trash, rename, create, compress)
     take row or pane paths, never the dialog's box, so they had no gap.
-  - **Next, now that `resolve_typed` exists** (second step, below): a `..` in a person-typed destination. The writes
-    keep `std::path`'s `root_anchored` (the OS resolves it), and the probes answer "couldn't tell" (no typed anchor),
-    since refusing it would refuse what a person typed; the next step resolves it through
-    `AppHost::registry().resolve_typed(…, TypedBy::Person)` before the anchor. The listing start, the create commands,
-    rename, the pre-checks, the scan preview, and the volume transfers (whose engine starts already drop a trailing `/`)
-    take the text as sent: their senders are rows, pane paths, or typed text, and a listing of `x/link/` lists the
-    target's rows under `x/link` either way. The `cmdr-local`, delete-engine, and MCP pins (g) stay: they pin the
-    volume's and the engine's own answers, or belong to 10d (the go-to pin flipped in the second step).
+  - **A `..` in a person-typed destination**: resolved before the anchor since the second step ("Transfer box `..`
+    done", below). The listing start, the create commands, rename, the pre-checks, the scan preview, and the volume
+    transfers (whose engine starts already drop a trailing `/`) take the text as sent: their senders are rows, pane
+    paths, or typed text, and a listing of `x/link/` lists the target's rows under `x/link` either way. The
+    `cmdr-local`, delete-engine, and MCP pins (g) stay: they pin the volume's and the engine's own answers, or belong to
+    10d (the go-to pin flipped in the second step).
   - **Review round** (2026-11-21): the single trash (`move_to_trash`) reads its path at the edge too, and its engine
     body (`trash_single_journaled`) drops a trailing `/` like every other start (the OS trashed the link either way; its
     `lstat` journaled the target's subtree). The MCP `nav_to_path` refuses a `..` typed, so no pane stands on one (rows
@@ -2127,6 +2125,12 @@ included; the hidden couplings it found are why waves B and C differ from round 
   directories (1,236 tests): `main` 44 red → the branch 43, none newly red; of the baseline's 70 here, 27 pass and 43
   stay red, waiting on the routing seam, the two behavior-change commits, and the watcher fixtures
   (`docs/notes/windows-port/windows-test-failures.md` § "By milestone", the TSV's `rerun` column).
+- **#1311 done**: drops and app-path picks cross one native-to-app door, `commands/native_paths.rs`'s
+  `app_paths_from_native` (`from_native_unicode`, a typed `Refused` per path), behind the frontend's
+  `tauri-commands/native-paths.ts` (`onAppPathDragDrop`, `pickOneAsAppPath`, `chooseSaveTarget`); the pane drop, the Ask
+  Cmdr drop, the media index's chosen folder, and the viewer's Save as take app paths. The adb binary, the SFTP key
+  file, and the macOS `.app` picker stay native (only the OS reads them). `no-restricted-imports` names the webview's
+  `getCurrentWebview` and `plugin-dialog`'s `open` / `save`. No bridge call added.
 - **Second behavior-change step done** (2026-11-21, David's OK the same day; branch `worktree-agent-a6e246efe235deaa9`):
   § "Typed and pasted `..`" landed, loud rule 1's second exception, pin (g) flipped for go-to.
   - **The trait method**: `Volume::parent_for_dot_dot`, lexical by default (`cmdr_fs::volume::dot_dot::lexical_parent`).
@@ -2159,6 +2163,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
   - **Review round** (same branch): `GoToHost::found` tells "couldn't check" (`Err`) from "nothing there", so a hung
     mount is `Invalid` instead of a nearest-ancestor walk to the root; the script's existence check runs on its result,
     so `cmdr ../sibling` from a linked folder finds what `cd` finds.
+  - **Transfer box `..` done** (2026-11-21): the probes, the conflict scan, and the copy/move/compress starts resolve it
+    at the edge (`commands/wire_path.rs::destination`, over `AppHost::on_volume`), the frontend folds only a relative
+    input's leading `..`s; durable design `apps/desktop/src-tauri/src/commands/DETAILS.md` § "Sent paths".
   - **Left for 10d**: the MCP tools' path inputs call `AppHost::registry().resolve_typed(text, base, TypedBy::Agent)`
     and turn `TypedPathRefusal` (`OffRoot`, `Unanswered`, …) into typed tool errors. ❗ `OffRoot` is a TEXT check (a
     `..` at an app-path root); it says nothing about where the answer lands. `/allowed/link/..` with `link -> /etc/x`
@@ -2166,6 +2173,42 @@ included; the hidden couplings it found are why waves B and C differ from round 
     too. Any allowed-roots rule 10d enforces must check the RESOLVED place (its canonical form, links included), ❌
     never the typed text. The MCP `nav_to_path` refuses a `..` today (first commit's review round); 10d replaces that
     refusal with this door, so an agent's `..` lands where the volume says, never on a pane path holding one.
+- **The routing seam went typed** (2026-11-21, branch `worktree-agent-a47eecf73006454cd`). `VolumeManager::resolve`,
+  `resolve_to_list`, `resolve_local_only`, and the two archive predicates take `&AppPath`; `ResolvedVolume.path` is the
+  caller's app path (`ResolvedVolume::passthrough_at`; the `&Path` `passthrough` stays for the engines' host traits).
+  The archive route confirms and mints typed (`cmdr_archive::confirm_archive_boundary_on_parent`,
+  `confirm_remote_archive_boundary`, `confirm_archive_boundary_at`, `ArchiveVolume::new_at`; the `std::path` forms of
+  the three confirms left the crate's surface, and `index-crate-isolation`'s `SubsystemItems` rose 32 → 33 for `new_at`,
+  as `crates/cmdr-archive/DETAILS.md` foresaw). An archive inside a snapshot is found by
+  `archive_routing::archive_below` (typed ancestors under the view's root). The archive registry id hashes the native
+  canonical file (`to_native`), or the app text for a scheme path; `forget_archive_index` crosses the engine's `&Path`
+  once and lands on the same id (pinned). Archive routing cells are typed over `AppTestDir`, so the 11 Windows S cells
+  over `resolve`'s seam (`archive_routing::tests::*`, `archive_watch_integration_test`) read `C:/…`.
+  - **Byte-exact on macOS and Linux for real input**: the git and restic candidates read the same `std::path` spelling
+    as before (`routing::lexical_spelling`, one crossing), so the boundaries' order is unchanged; the archive split is
+    `archive_boundary_candidate_at`, which agrees with the `std::path` split on every canonical path
+    (`crates/cmdr-archive/DETAILS.md`'s differential run). The viewer's `as_volume_calls_spell_it` (bridge out and back)
+    folded into one crossing of the request, the identity it already was.
+  - **Callers that read wire text now read it typed at the edge**: `stat_paths_kinds`' route (`wire_path::app_path`),
+    the unlock commands and the MCP `unlock` tool (`wire_path::on_volume`: a `..` or relative path refuses as
+    `UnlockError::Volume`), the probes' volume pick (`path_checks::box_volume`: `read_on_volume`, else the volume by
+    id), and `resolve_location`'s archive split (`confirm_archive_boundary_at`, then `to_native`).
+  - **Crossings added at seams, one named helper each** (the lead's rule for this refactor: each listed with who removes
+    it): `routing::lexical_spelling` (until `cmdr_git::portal_route` and `cmdr_fs::restic_view` take app paths;
+    `cmdr-git`'s surface is capped, David's call), `listing_host/volumes.rs::listing_path` (step 3 below, the listing
+    engine's paths), `operations_host/volumes.rs::engine_path` and `wire_path::checked_as_app_path` (10d, the write
+    engine's host trait and starts), `about/through.rs::row_as_app_path` (10f, with `through.rs`'s rows, #1310), and
+    10d's `inspect/archive.rs::agent_text_as_app_path`, `multi_rename/app_host.rs::rename_dir_as_app_path`,
+    `listing_index_sizes/count/mod.rs::counted_dir_as_app_path`. Bridge calls workspace-wide 1,105 → 1,102 (the route
+    files: `archive_routing.rs` 8 → 2, `restic_routing.rs` and `boundary_on_parent.rs` gone).
+  - `path_routes_over_its_parent` (the lexical gate) keeps `&Path`; its callers hold `std::path` values today.
+  - **Windows not run on the builder this step** (it was busy): the routing cells are expected green, the TSV's `rerun`
+    column still says `red@ff3c3e0eab`. `clippy-windows` is green.
+  - **Not started, still 10c's**: the listing host's MTP and SMB `&Path` seams (`ListingHost::directory_changed`, a
+    `cmdr-fs` host trait every backend crate calls: `cmdr-smb`, `cmdr-mtp`, `cmdr-nfs`, `cmdr-local`, `cmdr-fs`'s
+    patching, the browser host), `cmdr-listing`'s crossings with `ListingVolumes` (typing its `resolve` needs the
+    engine's listing locations typed first, or `streaming.rs` gains a second crossing), and `CoveredEntry.path`
+    (`cmdr-index`'s, read by 10d's `search/`).
 
 ### 10d. The app, part two: operations host, tools, and the rest
 

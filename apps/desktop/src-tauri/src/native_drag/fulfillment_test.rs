@@ -12,7 +12,7 @@ use std::sync::Arc;
 struct FixedResolver(Option<Arc<dyn Volume>>);
 
 impl VolumeResolver for FixedResolver {
-    fn resolve(&self, _volume_id: &str, _source_path: &Path) -> Option<Arc<dyn Volume>> {
+    fn resolve(&self, _volume_id: &str, _source_path: &cmdr_fs::app_path::AppPath) -> Option<Arc<dyn Volume>> {
         self.0.clone()
     }
 }

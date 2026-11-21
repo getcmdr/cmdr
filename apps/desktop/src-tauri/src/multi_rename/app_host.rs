@@ -26,6 +26,13 @@ use crate::file_system::git::wiring::portal_serves;
 use crate::file_system::volume::io_budget_for_volume;
 use crate::file_system::volume::manager::{get_volume_manager, path_routes_over_its_parent};
 
+/// A rename's folder as the routing seam reads it: the engine hands a `std::path`
+/// value, crossed through the bridge byte for byte. Goes when
+/// `MultiRenameHost::rename_place` takes an app path (milestone 10d).
+fn rename_dir_as_app_path(dir: &Path) -> cmdr_fs::app_path::AppPathBuf {
+    cmdr_fs::app_path::AppPath::legacy_unchecked(dir).into_owned()
+}
+
 /// The app's one Multi-Rename engine, over the app's listing engine and host, on
 /// Tauri's runtime (the pool the IPC commands' blocking work ran on before the
 /// engine held one). A `LazyLock`, not a slot `setup()` fills: the app's unit tests
@@ -155,7 +162,9 @@ impl MultiRenameHost for AppHost {
         ready: &'a [PreviewRow],
     ) -> BoxFuture<'a, RenamePlace> {
         Box::pin(async move {
-            let resolved = get_volume_manager().resolve(volume_id, dir).await;
+            let resolved = get_volume_manager()
+                .resolve(volume_id, &rename_dir_as_app_path(dir))
+                .await;
             let routed = resolved.routed.map(ReadOnlyPlace::from).or_else(|| {
                 ready.iter().find_map(|row| {
                     [&row.old_name, &row.new_name]

@@ -37,11 +37,18 @@ impl VolumeManager {
     /// portal off there is no route, so a `.git/branches` path is an ordinary
     /// directory on the parent volume (usually missing), which is exactly what
     /// the user asked to see.
-    pub(super) fn resolve_git_portal(&self, volume_id: &str, path: &Path) -> Option<ResolvedVolume> {
+    ///
+    /// `repo_root` is the worktree root the dispatcher's lexical candidate
+    /// (`cmdr_git::portal_route`) found in `path`.
+    pub(super) fn resolve_git_portal(
+        &self,
+        volume_id: &str,
+        repo_root: PathBuf,
+        path: &AppPath,
+    ) -> Option<ResolvedVolume> {
         if !git::wiring::is_virtual_portal_enabled() {
             return None;
         }
-        let repo_root = cmdr_git::portal_route(path)?;
         // The requested volume physically holds the repo, so it's the portal's
         // parent (shared lane key and space info).
         let parent = self.get(volume_id)?;
@@ -58,7 +65,7 @@ impl VolumeManager {
 
     /// Registers (or reuses) the portal volume for `repo_root`, bumps the LRU,
     /// and returns it resolved.
-    fn register_git_portal(&self, parent: Arc<dyn Volume>, repo_root: PathBuf, path: &Path) -> ResolvedVolume {
+    fn register_git_portal(&self, parent: Arc<dyn Volume>, repo_root: PathBuf, path: &AppPath) -> ResolvedVolume {
         // Canonical, so two spellings of one repo (`/tmp/x` and `/private/tmp/x`
         // on macOS, a symlinked checkout) share a single registration rather
         // than fighting over the ID.
@@ -75,14 +82,14 @@ impl VolumeManager {
         match self.get(&portal_id) {
             Some(volume) => ResolvedVolume {
                 volume: Some(volume),
-                path: AppPath::legacy_unchecked(path).into_owned(),
+                path: path.to_owned(),
                 routed: Some(RoutedKind::GitPortal),
                 unconfirmed: None,
             },
             // Registered then evicted before we could read it back (only
             // reachable under a pathologically small cap). Fall back to the
             // parent volume.
-            None => ResolvedVolume::passthrough(Some(parent), path),
+            None => ResolvedVolume::passthrough_at(Some(parent), path),
         }
     }
 
@@ -116,6 +123,7 @@ fn git_portal_volume_id(repo_root: &Path) -> String {
 #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, `libc`, or `std::os::unix` (windows-port plan).
 mod tests {
     use super::*;
+    use crate::test_support::native_app_path as app;
     use cmdr_fs::app_path::AppPath;
     use cmdr_git::test_fixtures::{Fixture, cleanup, temp_dir};
     use cmdr_local::LocalVolume;
@@ -150,7 +158,7 @@ mod tests {
 
         for category in ["branches", "tags", "commits", "stash", "worktrees", "submodules"] {
             let path = dir.join(".git").join(category);
-            let resolved = manager.resolve("root", &path).await;
+            let resolved = manager.resolve("root", &app(&path)).await;
             assert_eq!(
                 resolved.routed,
                 Some(RoutedKind::GitPortal),
@@ -166,7 +174,10 @@ mod tests {
 
         // And so does a path deep inside a snapshot.
         let deep = dir.join(".git/branches/feature/foo/README.md");
-        assert_eq!(manager.resolve("root", &deep).await.routed, Some(RoutedKind::GitPortal));
+        assert_eq!(
+            manager.resolve("root", &app(&deep)).await.routed,
+            Some(RoutedKind::GitPortal)
+        );
 
         cleanup(&dir);
     }
@@ -185,7 +196,7 @@ mod tests {
             dir.join(".git/objects"),
             dir.join("README.md"),
         ] {
-            let resolved = manager.resolve("root", &path).await;
+            let resolved = manager.resolve("root", &app(&path)).await;
             assert_eq!(resolved.routed, None, "{} must stay on the parent", path.display());
             assert_eq!(resolved.volume.expect("parent volume").name(), "Root");
         }
@@ -205,7 +216,7 @@ mod tests {
         let path = dir.join(".git/branches");
 
         git::wiring::set_virtual_portal_enabled(false);
-        let resolved = manager.resolve("root", &path).await;
+        let resolved = manager.resolve("root", &app(&path)).await;
         assert_eq!(resolved.routed, None);
         let parent = resolved.volume.expect("parent volume");
         assert_eq!(parent.name(), "Root");
@@ -218,7 +229,10 @@ mod tests {
         );
 
         git::wiring::set_virtual_portal_enabled(true);
-        assert_eq!(manager.resolve("root", &path).await.routed, Some(RoutedKind::GitPortal));
+        assert_eq!(
+            manager.resolve("root", &app(&path)).await.routed,
+            Some(RoutedKind::GitPortal)
+        );
 
         cleanup(&dir);
     }
@@ -240,7 +254,7 @@ mod tests {
         git::wiring::set_virtual_portal_enabled(true);
 
         let resolved = manager
-            .resolve("share", Path::new("/mnt/share/repo/.git/branches"))
+            .resolve("share", &app(Path::new("/mnt/share/repo/.git/branches")))
             .await;
         assert_eq!(resolved.routed, None);
         assert_eq!(resolved.volume.expect("the share itself").name(), "Share");
@@ -257,7 +271,7 @@ mod tests {
         let mut inner_fixture = Fixture::init(inner.clone());
         inner_fixture.commit_file("lib.rs", b"inner\n", "initial");
 
-        let resolved = manager.resolve("root", &inner.join(".git/branches/main")).await;
+        let resolved = manager.resolve("root", &app(inner.join(".git/branches/main"))).await;
         assert_eq!(resolved.routed, Some(RoutedKind::GitPortal));
         assert_eq!(
             *resolved.volume.expect("portal volume").root().as_std_legacy(),
@@ -277,7 +291,7 @@ mod tests {
         let zip = dir.join("bundle.zip");
         std::fs::write(&zip, b"PK\x03\x04not-a-real-archive-body").expect("write zip magic");
 
-        let resolved = manager.resolve("root", &zip.join("inner.txt")).await;
+        let resolved = manager.resolve("root", &app(zip.join("inner.txt"))).await;
         assert_eq!(resolved.routed, Some(RoutedKind::Archive));
 
         cleanup(&dir);
@@ -289,12 +303,12 @@ mod tests {
         let (dir, manager) = manager_over_a_repo("shared");
 
         let first = manager
-            .resolve("root", &dir.join(".git/branches"))
+            .resolve("root", &app(dir.join(".git/branches")))
             .await
             .volume
             .expect("first");
         let second = manager
-            .resolve("root", &dir.join(".git/tags"))
+            .resolve("root", &app(dir.join(".git/tags")))
             .await
             .volume
             .expect("second");
@@ -319,7 +333,7 @@ mod tests {
                 "root",
                 Arc::new(LocalVolume::local_folder("Root", &dir, crate::volume_host::host())),
             );
-            manager.resolve("root", &dir.join(".git/branches")).await;
+            manager.resolve("root", &app(dir.join(".git/branches"))).await;
             repos.push(dir);
         }
 
@@ -333,7 +347,10 @@ mod tests {
             Arc::new(LocalVolume::local_folder("Root", &repos[0], crate::volume_host::host())),
         );
         assert_eq!(
-            manager.resolve("root", &repos[0].join(".git/branches")).await.routed,
+            manager
+                .resolve("root", &app(repos[0].join(".git/branches")))
+                .await
+                .routed,
             Some(RoutedKind::GitPortal)
         );
         assert!(manager.get(&oldest).is_some(), "re-visiting re-registers it");
@@ -362,7 +379,7 @@ mod tests {
 
         let virtual_path = dir.join(".git/branches/main");
         assert_eq!(
-            manager.resolve("ext", &virtual_path).await.routed,
+            manager.resolve("ext", &app(&virtual_path)).await.routed,
             Some(RoutedKind::GitPortal)
         );
         assert_eq!(

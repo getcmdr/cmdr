@@ -197,11 +197,16 @@ async fn resolve_path_to_volume(path: String, fs_timeout: Duration) -> (Option<V
     // inherited from one resolver's failure mode — a stat-based fast path on Linux would
     // otherwise start returning `None` here with nothing to catch it.
     let result = blocking_with_timeout_flag(fs_timeout, None, move || {
-        let fs_path = match cmdr_archive::confirm_archive_boundary(std::path::Path::new(&path)) {
-            Some((zip_path, _inner)) => zip_path,
-            None => std::path::PathBuf::from(&path),
-        };
-        crate::volumes::resolve_path_volume_fast(&fs_path.to_string_lossy())
+        // The archive's own file, read as the OS spells it; text that's no app path (or
+        // holds a `..`) has no archive to split off and goes as sent.
+        let archive_file = crate::commands::wire_path::read_on_volume(&path)
+            .ok()
+            .and_then(|app_path| cmdr_archive::confirm_archive_boundary_at(&app_path))
+            .and_then(|(zip_path, _inner)| zip_path.to_native().ok());
+        match archive_file {
+            Some(zip_path) => crate::volumes::resolve_path_volume_fast(&zip_path.to_string_lossy()),
+            None => crate::volumes::resolve_path_volume_fast(&path),
+        }
     })
     .await;
     (result.data, result.timed_out)

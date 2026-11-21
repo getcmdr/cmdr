@@ -91,7 +91,7 @@ impl Repo {
 
     async fn view(&self) -> Arc<dyn Volume> {
         get_volume_manager()
-            .resolve(&self.volume_id, &self.view_root())
+            .resolve(&self.volume_id, &crate::test_support::native_app_path(self.view_root()))
             .await
             .volume
             .expect("the route serves the repo's view")

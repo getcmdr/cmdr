@@ -113,6 +113,8 @@ export const appAnswers = {
     automation: 'Automation',
   }),
   getHomeFolder: () => DEMO_HOME,
+  // The demo is POSIX: a native path is its own app text, as on macOS.
+  appPathsFromNative: (payload) => (payload.paths as string[]).map((path) => ({ kind: 'app' as const, path })),
   getPathLimits: () => ({ name: { max: 255, unit: 'utf16Units' }, path: { max: 1023, unit: 'bytes' } }),
   // The demo's one volume is in memory, which takes what POSIX takes.
   getNameRules: () => ({

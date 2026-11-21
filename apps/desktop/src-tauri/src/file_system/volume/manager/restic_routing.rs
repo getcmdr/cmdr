@@ -15,7 +15,7 @@ use crate::file_system::volume::{ResolvedVolume, RoutedKind};
 use crate::ignore_poison::IgnorePoison;
 use cmdr_fs::app_path::AppPath;
 use std::collections::{HashMap, VecDeque};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::{Arc, Weak};
 
 /// Max number of `ResticVolume`s kept registered at once. A view is cheap (the
@@ -57,7 +57,7 @@ impl VolumeManager {
     /// A miss in the hub's memo costs ONE bounded listing of `repo_root` on the
     /// parent, remembered both ways, so a real folder named `Browse snapshots`
     /// outside a repo pays it once, not per call.
-    pub(super) async fn resolve_restic(&self, volume_id: &str, repo_root: &Path, path: &Path) -> ResticAnswer {
+    pub(super) async fn resolve_restic(&self, volume_id: &str, repo_root: &Path, path: &AppPath) -> ResticAnswer {
         let Some(parent) = self.get(volume_id) else {
             return ResticAnswer::PassOn;
         };
@@ -82,7 +82,7 @@ impl VolumeManager {
         &self,
         volume_id: &str,
         repo_root: &Path,
-        path: &Path,
+        path: &AppPath,
     ) -> Option<ResolvedVolume> {
         if wiring::repos().serves_confirmed(volume_id, repo_root) != Some(true) {
             return None;
@@ -102,7 +102,7 @@ impl VolumeManager {
         volume_id: &str,
         parent: Arc<dyn Volume>,
         repo_root: &Path,
-        path: &Path,
+        path: &AppPath,
     ) -> ResolvedVolume {
         let view_id = restic_volume_id(volume_id, repo_root);
         let current = {
@@ -132,13 +132,13 @@ impl VolumeManager {
         match self.get(&view_id) {
             Some(volume) => ResolvedVolume {
                 volume: Some(volume),
-                path: AppPath::legacy_unchecked(path).into_owned(),
+                path: path.to_owned(),
                 routed: Some(RoutedKind::Restic),
                 unconfirmed: None,
             },
             // Registered then evicted before we could read it back (only
             // reachable under a pathologically small cap).
-            None => ResolvedVolume::passthrough(Some(parent), path),
+            None => ResolvedVolume::passthrough_at(Some(parent), path),
         }
     }
 
@@ -170,12 +170,6 @@ pub(super) fn restic_volume_id(volume_id: &str, repo_root: &Path) -> String {
     volume_id.hash(&mut hasher);
     repo_root.hash(&mut hasher);
     format!("restic-{:016x}", hasher.finish())
-}
-
-/// The repo roots `path` could browse into, left to right. Re-exported so the
-/// dispatcher reads one name.
-pub(super) fn restic_candidates(path: &Path) -> Vec<PathBuf> {
-    cmdr_fs::restic_view::restic_route_candidates(path).collect()
 }
 
 #[cfg(test)]

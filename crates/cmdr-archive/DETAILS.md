@@ -85,12 +85,12 @@ for a bridge caller also accepts an already-inner relative path and an empty pat
 own filename and path.
 
 - **Two constructors** (Decision/Why: the wave-B rule, no `pub` signature change while other crates call it):
-  `ArchiveVolume::new_at(parent, AppPathBuf, …)` is the typed one (crate-internal for now: the crate's surface cap has
-  no headroom, so it turns `pub` when its first outside caller does), and `ArchiveVolume::new(parent, PathBuf, …)` stays
-  for today's callers (`cmdr-operations`' tests, the app's `archive_routing.rs`): it keeps the `PathBuf` as the native
-  backing file exactly as given and takes its app spelling through the bridge, so `root()` and every row keep their text
-  (pinned by `the_std_path_constructor_keeps_its_spelling_and_takes_relative_inner_paths`). It goes when those callers
-  switch (the operations engine and the app's conversions).
+  `ArchiveVolume::new_at(parent, AppPathBuf, …)` is the typed one, `pub` since the app's routing seam went typed (10c;
+  the surface ceiling rose by this one item), and `ArchiveVolume::new(parent, PathBuf, …)` stays for the `std::path`
+  callers (`cmdr-operations`' `fresh_validate` and tests, the app's backend suites): it keeps the `PathBuf` as the
+  native backing file exactly as given and takes its app spelling through the bridge, so `root()` and every row keep
+  their text (pinned by `the_std_path_constructor_keeps_its_spelling_and_takes_relative_inner_paths`). It goes when
+  those callers switch (the operations engine, 10d's suites).
 - **The local backing file crosses to the OS once**, at construction (`native`, from `AppPath::to_native` through
   `boundary::native_of`; a browser build answers `NotLocal`): the `std::fs` stat and `pread` source of the local fast
   path and the content watch's `notify` arm read it. A refusal is kept and answered at the first local read, ❌ never a
@@ -105,15 +105,14 @@ own filename and path.
   callers' conversions), `std_view` and its way back `from_std_view` (the bridge shapes above, plus two seams that still
   speak `std::path`: the transfer engine's `ScanRecorder`, `record_subtree`'s one crossing, and the listing host's
   `refresh_archive_listings`, which the content watch names the archive to; they go when those seams take app paths and
-  the bridge is deleted), `confirm_remote_archive_boundary`'s one crossing into its typed form (the app's routing), and
-  `volume_test.rs`' two relative-spelling cells (the bridge's deletion turns them into refusal pins).
-  `ArchiveNode::modified` is Unix seconds, matching `FileEntry` (a negative timestamp is dropped), and it's the only
-  date a member carries (`supported_dates` keeps the trait's Modified-only default). `FileEntry` has no `encrypted`
-  field, so `index()` is `pub`: a host caller that must name encryption (the Ask Cmdr `inspect_file` tool) queries the
-  same cached `ArchiveIndex` the listing maps from (`get` / `list` / `has_encrypted_entries`, keyed by the inner path
-  `archive_boundary_candidate` splits off), so the two never disagree. For 7z the per-entry flag is derived from the
-  entry's block: an `AES256_SHA256` coder in its chain (`sevenz.rs`); an entry with no block (a directory, an empty
-  file) is never flagged.
+  the bridge is deleted), and `volume_test.rs`' two relative-spelling cells (the bridge's deletion turns them into
+  refusal pins). `ArchiveNode::modified` is Unix seconds, matching `FileEntry` (a negative timestamp is dropped), and
+  it's the only date a member carries (`supported_dates` keeps the trait's Modified-only default). `FileEntry` has no
+  `encrypted` field, so `index()` is `pub`: a host caller that must name encryption (the Ask Cmdr `inspect_file` tool)
+  queries the same cached `ArchiveIndex` the listing maps from (`get` / `list` / `has_encrypted_entries`, keyed by the
+  inner path `archive_boundary_candidate` splits off), so the two never disagree. For 7z the per-entry flag is derived
+  from the entry's block: an `AES256_SHA256` coder in its chain (`sevenz.rs`); an entry with no block (a directory, an
+  empty file) is never flagged.
 
 **Streaming reads.** `open_read_stream` / `open_read_stream_at_offset` parse the index (cached) and open the byte source
 on `spawn_blocking`, then wrap `ArchiveEntryReader` as an `ArchiveVolumeReadStream`. A compressed entry has no random
@@ -327,21 +326,22 @@ An `ArchiveVolume` is never constructed here directly in production — it's min
     `RemoteRoot::to_remote_path`), and `sftp:/a` and `sftp://a` have identical components. Only the frontend, which does
     string arithmetic on the path, could see the difference. ❗ That also means a `PathBuf` assertion can't defend the
     spelling — a regression test has to compare `to_str()`.
-- **Typed forms sit beside the `std::path` ones**
-  (`boundary::{confirm_archive_boundary_at, path_crosses_archive_boundary_at, path_is_inside_archive_at, path_targets_archive_file_at}`,
-  and `boundary_on_parent::{confirm_archive_boundary_on_parent_at, confirm_remote_archive_boundary_at}`), for callers
-  holding an app path; the `std::path` forms stay untouched until their callers move. They're `pub(crate)` (tested here,
-  `expect(dead_code)` outside tests) rather than `pub`: the crate's surface cap (`index-crate-isolation`) has no
-  headroom, and raising it needs David's OK, so each turns `pub` with the consumer that switches to it (the host's
-  routing, the operations engine), as its old form goes. The typed split (`cmdr_fs::archive_format`'s
-  `archive_boundary_candidate_at`, beside the `std::path` split, so the browser demo asks it too) reads the canonical
-  twin's text left to right, root included, as the `std::path` split reads components, and reads each name as its native
-  text (`archive_name_text`: a byte-escaped name is checked by its decoded bytes, so a name that isn't UTF-8 is never an
-  archive). The local confirm opens the archive through `native_of`. Agreement with the `std::path` split is the same
-  differential run's (every canonical generated path, 0 differences), with one deliberate exception set aside: a match
-  INSIDE the root (`sftp://box.zip/…`, a POSIX-host `//srv/share.zip/…` read as a UNC root) splits `None`, where the
-  `std::path` split answered the root text, which names no file, so its confirm answered `None` too. Pinned by
-  `archive_format.rs`' `the_typed_split_takes_the_first_archive_name_and_keeps_a_remote_root_spelled_exactly`.
+- **The host's routing confirms typed**: `confirm_archive_boundary_on_parent`, `confirm_remote_archive_boundary`, and
+  `confirm_archive_boundary_at` (the sync local confirm, for `resolve_local_only` and the location resolver) take app
+  paths, and `ArchiveVolume::new_at` is the constructor the route mints with; the `std::path` forms of those three are
+  gone from the surface. The other typed forms (`path_crosses_archive_boundary_at`, `path_is_inside_archive_at`,
+  `path_targets_archive_file_at`) stay `pub(crate)` beside their `std::path` twins (tested here, `expect(dead_code)`
+  outside tests): the crate's surface cap (`index-crate-isolation`) has no headroom, so each turns `pub` with the
+  consumer that switches to it (the operations engine), as its old form goes. The typed split
+  (`cmdr_fs::archive_format`'s `archive_boundary_candidate_at`, beside the `std::path` split, so the browser demo asks
+  it too) reads the canonical twin's text left to right, root included, as the `std::path` split reads components, and
+  reads each name as its native text (`archive_name_text`: a byte-escaped name is checked by its decoded bytes, so a
+  name that isn't UTF-8 is never an archive). The local confirm opens the archive through `native_of`. Agreement with
+  the `std::path` split is the same differential run's (every canonical generated path, 0 differences), with one
+  deliberate exception set aside: a match INSIDE the root (`sftp://box.zip/…`, a POSIX-host `//srv/share.zip/…` read as
+  a UNC root) splits `None`, where the `std::path` split answered the root text, which names no file, so its confirm
+  answered `None` too. Pinned by `archive_format.rs`'
+  `the_typed_split_takes_the_first_archive_name_and_keeps_a_remote_root_spelled_exactly`.
 - **`SUPPORTED_ARCHIVE_EXTENSIONS` is the one source of truth** shared by `is_archive` and boundary detection; confirm's
   magic check carries a sibling signature per format.
 - **Write-routing reuses the same parent-aware confirm.** The write seams (delete / rename / create / copy-out-source)

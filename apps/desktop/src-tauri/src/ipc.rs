@@ -156,6 +156,7 @@ macro_rules! ipc_command_manifest {
                     crate::commands::file_system::resort_listing,
                     crate::commands::file_system::get_path_limits,
                     crate::commands::file_system::get_home_folder,
+                    crate::commands::native_paths::app_paths_from_native,
                     crate::commands::file_system::get_name_rules,
                     crate::commands::file_system::enrich_tags,
                     crate::commands::file_system::enrich_packages,

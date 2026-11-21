@@ -930,7 +930,8 @@ jobs:
   # `docs/tooling/ci.md` § Lane files.
 
   # Linux: the platform-blind scanners, clippy, rustdoc, and the suite, plus the browser engines
-  # for wasm on the nightly run only (the release pipeline builds them for every release).
+  # for wasm whenever the change reaches them, and unscoped on the nightly (`build-wasm`).
+  # `docs/tooling/ci.md` § Browser engines for wasm.
   desktop-rust:
     name: Desktop (Rust)
     needs: changes

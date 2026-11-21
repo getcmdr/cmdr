@@ -87,8 +87,9 @@ filter. In `ci.yml`: `changes` plans (`lanes` output), each lane's `if:` adds
 `!fromJSON(needs.changes.outputs.lanes)['<id>'].verified` and passes its `.key` as `marker-key`, `e2e-base-image`
 follows the E2E lane's verdict, and `CI OK` runs `lane-markers verify` after its jq gate. In each lane file, the
 `lane-marker` action saves the key in a `marker` job that `needs` every other job of the lane, so one green job can't
-vouch for another. macOS's `finder-extension`, the Rust lane's `wasm`, and the website lane's `demo-suite` run only on
-demand, so their `marker` takes a skip only when the job wasn't asked for.
+vouch for another. macOS's `finder-extension` and the website lane's `demo-suite` run only on demand, so their `marker`
+takes a skip only when the job wasn't asked for. The Rust lane's `wasm` always runs and skips only its own build steps
+(§ Browser engines for wasm).
 
 A PR run hashes `refs/pull/N/merge`, the PR merged with the current `main`. So a follow-up push skips a lane only while
 `main` hasn't moved any of that lane's inputs since the run that passed; a land that touched them makes a new tree and
@@ -105,6 +106,21 @@ barely moved, since `cmdr` is in nearly every scope and its build dominates; PR 
 and `run_all` never set it and test everything. Every uncertainty widens to `all`. How the scope is computed and why
 it's safe: `scripts/check/checks/DETAILS.md` § "The Rust test scope". Its tests keep the Rust lane filters and the
 scope's rule table in step (every path the scope says a test reads starts a Rust lane).
+
+### Browser engines for wasm
+
+`rust-lane.yml`'s `wasm` job builds the browser demo's engines for `wasm32` (`desktop-rust-listing-wasm`, with its Node
+smoke run and golden traces, and `desktop-rust-viewer-wasm`) whenever the change can reach them. On a pull request it
+runs the same `rust-test-scope` action and builds each engine whose package (`cmdr-listing-wasm`, `cmdr-viewer`) is in
+the scope, or both on `all`; a push, a dispatch, and the nightly (`build-wasm`) build both. The scope is the changed
+crates plus every member depending on them over every edge kind and target, read from `cargo metadata`, so it's a
+superset of the engine's real wasm closure with no path list to drift. The job always runs (about a minute of setup) and
+skips its build steps when neither engine is reached, so the lane's `marker` requires it green.
+
+- **Why**: the `rust` filter starts this lane on any `crates/**` change, but the job used to run on the nightly only,
+  and the website lane's `website-demo` filter watches only the demo's own sources. PR #1329 (`2e5a98eee3`) made
+  `cmdr-operations` call the native-only trash seam from `rollback.rs`, its land run was green, and the wasm break first
+  showed in another branch's demo build (run 44947772760, 2026-11-21).
 
 ## The registry ↔ CI contract (`ci-coverage`)
 
@@ -403,8 +419,8 @@ runners, aiming at ~12 min:
   min each: ~2 of setup, ~3 of tests), expected ~12–13 min, now the floor (`apps/desktop/test/e2e-linux/DETAILS.md` §
   CI: build once, test in three slices).
 - **Rust**: the nextest filter coverage (2.7 min, compiling every test binary even when the PR's test scope is narrow)
-  moved to a sibling job, and the wasm builds (~3.8 min) left the land path for the release and the nightly
-  (`apps/website/DETAILS.md` § Browser demo). Expected ~10–11 min, since the suite now compiles its own test binaries.
+  moved to a sibling job, and the wasm builds (~3.8 min) moved to a sibling job that builds only when the change reaches
+  an engine (§ Browser engines for wasm). Expected ~10–11 min, since the suite now compiles its own test binaries.
 - **Fixtures**: the Nextcloud cells (3.2 min) became a sibling job, which compiles its own test build on the shared
   entry; expected ~11 min for the Docker fixtures job.
 - **macOS**: ~7 min on a warm M1 slot, 32–46 min hosted (as of 2026-11-05, § The M1 runner). It stays one job on
@@ -467,16 +483,16 @@ a `run_all` dispatch, so every lane runs, lane markers and the Rust test scope a
 run, and `CI OK` reds any skipped lane. A `main` tree no single run tested (two PRs that each passed alone, then landed
 as `verified` pushes; a scoped PR run that never reached a crate a landed PR broke; a scope rule that missed a read) is
 caught within a day instead of at the next release's gate. Its lanes save fresh markers and Rust caches into `main`'s
-scope, which seeds every PR. It's also the one CI run that builds the browser demo's engines for wasm (`rust-lane.yml`'s
-`wasm` job, `build-wasm`), which no land does: a host-only dep reaching the engine shows the next morning, not in the
-release's `demo` job (`apps/website/DETAILS.md` § Browser demo); it saves the `website-demo` Rust cache and the wasm
-toolchain cache that job restores. Likewise the website lane's `demo-suite` job (`demo-suite` input) builds the demo
-from `main` and runs the full demo suite (`website-demo-e2e`), which other runs do only when their change touches the
-demo's own sources (`ci.yml`'s `website-demo` filter: `lib/demo/`, `crates/cmdr-listing-wasm`, the demo specs and build
-scripts). The rest smoke-test the released demo image only, since its tests can't know features `main` added after that
-release. It doesn't deploy: the deploy jobs run on pushes and dispatches only. A red one reaches David the way a red
-`main` push does: through the digest (§ How a red `main` reaches David). A schedule rather than a dispatch from another
-workflow: dispatching needs `actions: write`, which Scorecard's Token-Permissions flags.
+scope, which seeds every PR. It builds the browser demo's engines for wasm unconditionally (`rust-lane.yml`'s `wasm`
+job, `build-wasm`; a PR builds them only when its scope reaches them, § Browser engines for wasm), and saves the
+`website-demo` Rust cache and the wasm toolchain cache that job and the release's `demo` job restore. Likewise the
+website lane's `demo-suite` job (`demo-suite` input) builds the demo from `main` and runs the full demo suite
+(`website-demo-e2e`), which other runs do only when their change touches the demo's own sources (`ci.yml`'s
+`website-demo` filter: `lib/demo/`, `crates/cmdr-listing-wasm`, the demo specs and build scripts). The rest smoke-test
+the released demo image only, since its tests can't know features `main` added after that release. It doesn't deploy:
+the deploy jobs run on pushes and dispatches only. A red one reaches David the way a red `main` push does: through the
+digest (§ How a red `main` reaches David). A schedule rather than a dispatch from another workflow: dispatching needs
+`actions: write`, which Scorecard's Token-Permissions flags.
 
 ### How a red `main` reaches David
 

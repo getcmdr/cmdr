@@ -49,6 +49,13 @@ impl AppHost {
         Self::over(registry_volume_for, RESOLVE_DEADLINE)
     }
 
+    /// Over ONE volume, every `..` its answer, with a fresh [`RESOLVE_DEADLINE`]: for text
+    /// whose volume the caller already picked, like the transfer dialog's destination box,
+    /// where the volume that will do the write is the one that says what its `..` means.
+    pub(crate) fn on_volume(volume: Arc<dyn Volume>) -> Self {
+        Self::over(move |_| Some(Arc::clone(&volume)), RESOLVE_DEADLINE)
+    }
+
     /// Over `volume_for`, every answer inside `budget` from now.
     pub(crate) fn over(
         volume_for: impl Fn(&AppPath) -> Option<Arc<dyn Volume>> + Send + Sync + 'static,

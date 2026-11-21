@@ -5,10 +5,12 @@
 
 use super::*;
 use crate::file_system::volume::{InMemoryVolume, VolumeError};
+use crate::test_support::native_app_path as app;
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::ListingProgress;
 use std::future::Future;
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -101,7 +103,7 @@ async fn the_row_and_every_path_below_it_route_to_the_view() {
         Path::new(VIEW).join("latest"),
         Path::new(VIEW).join("2026-10-12 21.00.03 (a1b2c3d4)/Users/me/notes.txt"),
     ] {
-        let resolved = manager.resolve("restic-routes-below", &path).await;
+        let resolved = manager.resolve("restic-routes-below", &app(&path)).await;
         assert_eq!(resolved.routed, Some(RoutedKind::Restic), "{}", path.display());
         // The path travels through untouched; the view classifies it itself.
         assert_eq!(*resolved.path.as_std_legacy(), path);
@@ -124,7 +126,7 @@ async fn the_repo_folder_and_its_real_files_stay_on_the_parent() {
         Path::new(REPO).join("snapshots"),
         Path::new(REPO).join("data/ab"),
     ] {
-        let resolved = manager.resolve("restic-real-files", &path).await;
+        let resolved = manager.resolve("restic-real-files", &app(&path)).await;
         assert_eq!(resolved.routed, None, "{} stays on the parent", path.display());
         assert_eq!(resolved.volume.expect("parent").name(), "testshare");
     }
@@ -145,7 +147,7 @@ async fn a_non_repo_browse_snapshots_folder_passes_through_for_one_listing() {
     manager.register("restic-non-repo", Arc::clone(&parent) as Arc<dyn Volume>);
 
     for _ in 0..5 {
-        let resolved = manager.resolve("restic-non-repo", &real.join("x.jpg")).await;
+        let resolved = manager.resolve("restic-non-repo", &app(real.join("x.jpg"))).await;
         assert_eq!(resolved.routed, None);
         assert_eq!(resolved.volume.expect("parent").name(), "testshare");
     }
@@ -159,7 +161,7 @@ async fn a_repo_the_overlay_met_routes_with_no_confirm_listing() {
     let (manager, parent) = manager_over_a_repo("restic-overlay-seeded").await;
     wiring::repos().overlay_row("restic-overlay-seeded", Path::new(REPO));
 
-    let resolved = manager.resolve("restic-overlay-seeded", Path::new(VIEW)).await;
+    let resolved = manager.resolve("restic-overlay-seeded", &app(Path::new(VIEW))).await;
     assert_eq!(resolved.routed, Some(RoutedKind::Restic));
     assert_eq!(parent.listings(), 0);
 }
@@ -173,7 +175,7 @@ async fn a_cold_repo_costs_one_confirm_listing() {
     for _ in 0..3 {
         assert_eq!(
             manager
-                .resolve("restic-cold", &Path::new(VIEW).join("latest"))
+                .resolve("restic-cold", &app(Path::new(VIEW).join("latest")))
                 .await
                 .routed,
             Some(RoutedKind::Restic)
@@ -189,12 +191,15 @@ async fn resolve_local_only_routes_on_the_memo_and_never_lists() {
     let (manager, parent) = manager_over_a_repo("restic-local-only").await;
     let inside = Path::new(VIEW).join("latest");
 
-    assert_eq!(manager.resolve_local_only("restic-local-only", &inside).routed, None);
+    assert_eq!(
+        manager.resolve_local_only("restic-local-only", &app(&inside)).routed,
+        None
+    );
     assert_eq!(parent.listings(), 0, "no confirm listing on the sync path");
 
     wiring::repos().overlay_row("restic-local-only", Path::new(REPO));
     assert_eq!(
-        manager.resolve_local_only("restic-local-only", &inside).routed,
+        manager.resolve_local_only("restic-local-only", &app(&inside)).routed,
         Some(RoutedKind::Restic)
     );
 }
@@ -208,7 +213,7 @@ async fn an_unconfirmed_zip_inside_a_snapshot_stays_with_the_view() {
     let path = Path::new(VIEW).join("latest/Users/me/bundle.zip/readme.txt");
 
     assert_eq!(
-        manager.resolve("restic-zip-inside", &path).await.routed,
+        manager.resolve("restic-zip-inside", &app(&path)).await.routed,
         Some(RoutedKind::Restic)
     );
 }
@@ -224,7 +229,7 @@ async fn a_repo_inside_a_real_folder_named_like_an_archive_still_routes() {
     manager.register("restic-zip-folder", Arc::new(inner));
 
     let resolved = manager
-        .resolve("restic-zip-folder", &repo.join("Browse snapshots/latest"))
+        .resolve("restic-zip-folder", &app(repo.join("Browse snapshots/latest")))
         .await;
     assert_eq!(resolved.routed, Some(RoutedKind::Restic));
 }
@@ -240,7 +245,7 @@ async fn a_repo_below_a_non_repo_browse_snapshots_folder_still_routes() {
     manager.register("restic-nested-name", Arc::new(inner));
 
     let resolved = manager
-        .resolve("restic-nested-name", &repo.join("Browse snapshots/latest"))
+        .resolve("restic-nested-name", &app(repo.join("Browse snapshots/latest")))
         .await;
     assert_eq!(resolved.routed, Some(RoutedKind::Restic));
     assert_eq!(
@@ -255,14 +260,16 @@ async fn a_repo_below_a_non_repo_browse_snapshots_folder_still_routes() {
 async fn a_routed_volume_is_never_a_restic_parent() {
     let (manager, _parent) = manager_over_a_repo("restic-nested-view").await;
     let view = manager
-        .resolve("restic-nested-view", Path::new(VIEW))
+        .resolve("restic-nested-view", &app(Path::new(VIEW)))
         .await
         .volume
         .expect("the view");
     assert!(view.routes_over_a_parent());
     manager.register("restic-nested-view-inner", Arc::clone(&view));
     let inner_repo_view = Path::new(VIEW).join("latest/backups/repo/Browse snapshots");
-    let resolved = manager.resolve("restic-nested-view-inner", &inner_repo_view).await;
+    let resolved = manager
+        .resolve("restic-nested-view-inner", &app(&inner_repo_view))
+        .await;
     assert_eq!(resolved.routed, None, "no view is minted over a view");
 }
 
@@ -291,7 +298,7 @@ async fn a_git_portal_path_inside_a_snapshot_belongs_to_the_view() {
 
     let path = repo.join("Browse snapshots/latest/proj/.git/branches/main");
     assert_eq!(
-        manager.resolve("restic-git-inside", &path).await.routed,
+        manager.resolve("restic-git-inside", &app(&path)).await.routed,
         Some(RoutedKind::Restic)
     );
 }
@@ -316,7 +323,10 @@ async fn a_restic_path_inside_a_git_snapshot_belongs_to_the_portal() {
     wiring::repos().overlay_row("restic-inside-git", &backed_up_repo);
 
     let resolved = manager
-        .resolve("restic-inside-git", &backed_up_repo.join("Browse snapshots/latest"))
+        .resolve(
+            "restic-inside-git",
+            &app(backed_up_repo.join("Browse snapshots/latest")),
+        )
         .await;
     assert_eq!(resolved.routed, Some(RoutedKind::GitPortal));
 
@@ -328,12 +338,12 @@ async fn a_restic_path_inside_a_git_snapshot_belongs_to_the_portal() {
 async fn two_paths_in_one_repo_share_one_view() {
     let (manager, _parent) = manager_over_a_repo("restic-shared").await;
     let first = manager
-        .resolve("restic-shared", Path::new(VIEW))
+        .resolve("restic-shared", &app(Path::new(VIEW)))
         .await
         .volume
         .expect("first");
     let second = manager
-        .resolve("restic-shared", &Path::new(VIEW).join("latest"))
+        .resolve("restic-shared", &app(Path::new(VIEW).join("latest")))
         .await
         .volume
         .expect("second");
@@ -346,7 +356,7 @@ async fn two_paths_in_one_repo_share_one_view() {
 async fn a_replaced_parent_gets_a_new_view() {
     let (manager, _parent) = manager_over_a_repo("restic-replaced").await;
     let before = manager
-        .resolve("restic-replaced", Path::new(VIEW))
+        .resolve("restic-replaced", &app(Path::new(VIEW)))
         .await
         .volume
         .expect("before");
@@ -356,7 +366,7 @@ async fn a_replaced_parent_gets_a_new_view() {
     manager.force_register("restic-replaced", Arc::new(reconnected));
 
     let after = manager
-        .resolve("restic-replaced", Path::new(VIEW))
+        .resolve("restic-replaced", &app(Path::new(VIEW)))
         .await
         .volume
         .expect("after");
@@ -366,7 +376,7 @@ async fn a_replaced_parent_gets_a_new_view() {
     );
 
     let again = manager
-        .resolve("restic-replaced", Path::new(VIEW))
+        .resolve("restic-replaced", &app(Path::new(VIEW)))
         .await
         .volume
         .expect("again");
@@ -388,14 +398,16 @@ async fn the_lru_caps_how_many_views_stay_registered() {
     manager.register("restic-lru", Arc::new(inner));
 
     for repo in &repos {
-        let resolved = manager.resolve("restic-lru", &repo.join("Browse snapshots")).await;
+        let resolved = manager.resolve("restic-lru", &app(repo.join("Browse snapshots"))).await;
         assert_eq!(resolved.routed, Some(RoutedKind::Restic));
     }
     assert_eq!(manager.count(), 1 + RESTIC_LRU_CAP);
     let oldest = restic_volume_id("restic-lru", &repos[0]);
     assert!(manager.get(&oldest).is_none());
 
-    manager.resolve("restic-lru", &repos[0].join("Browse snapshots")).await;
+    manager
+        .resolve("restic-lru", &app(repos[0].join("Browse snapshots")))
+        .await;
     assert!(manager.get(&oldest).is_some(), "re-visiting re-registers it");
 }
 
@@ -410,7 +422,7 @@ async fn mount_id_for_path_names_the_parent_not_the_view() {
 
     let inside = Path::new(VIEW).join("latest/Users/me");
     assert_eq!(
-        manager.resolve("testshare", &inside).await.routed,
+        manager.resolve("testshare", &app(&inside)).await.routed,
         Some(RoutedKind::Restic)
     );
     assert_eq!(
@@ -444,7 +456,7 @@ async fn entering_the_row_lists_the_snapshots() {
     let manager = VolumeManager::new();
     manager.register("restic-end-to-end", Arc::new(inner));
 
-    let resolved = manager.resolve("restic-end-to-end", Path::new(VIEW)).await;
+    let resolved = manager.resolve("restic-end-to-end", &app(Path::new(VIEW))).await;
     assert_eq!(resolved.routed, Some(RoutedKind::Restic));
     let volume = resolved.volume.expect("the view");
     let view = volume
@@ -488,7 +500,7 @@ async fn a_zip_inside_a_snapshot_browses_as_an_archive_over_the_view() {
     let manager = VolumeManager::new();
     manager.register("restic-zip-browse", Arc::new(inner));
     let view = manager
-        .resolve("restic-zip-browse", Path::new(VIEW))
+        .resolve("restic-zip-browse", &app(Path::new(VIEW)))
         .await
         .volume
         .expect("the view");
@@ -505,7 +517,7 @@ async fn a_zip_inside_a_snapshot_browses_as_an_archive_over_the_view() {
 
     // Acting ON the zip (copy it out, view it, drag it) gets the backup's file;
     // only a listing enters it.
-    let file = manager.resolve("restic-zip-browse", &zip).await;
+    let file = manager.resolve("restic-zip-browse", &app(&zip)).await;
     assert_eq!(
         file.routed,
         Some(RoutedKind::Restic),
@@ -518,14 +530,14 @@ async fn a_zip_inside_a_snapshot_browses_as_an_archive_over_the_view() {
         .expect("the backed-up zip");
     assert!(!meta.is_directory);
     assert_eq!(meta.size, Some(zip_bytes.len() as u64));
-    let entered = manager.resolve_to_list("restic-zip-browse", &zip).await;
+    let entered = manager.resolve_to_list("restic-zip-browse", &app(&zip)).await;
     assert_eq!(
         entered.routed,
         Some(RoutedKind::ArchiveInSnapshot),
         "a listing enters it"
     );
 
-    let inside = manager.resolve("restic-zip-browse", &zip.join("docs")).await;
+    let inside = manager.resolve("restic-zip-browse", &app(zip.join("docs"))).await;
     assert_eq!(inside.routed, Some(RoutedKind::ArchiveInSnapshot));
     assert_eq!(
         *inside.path.as_std_legacy(),

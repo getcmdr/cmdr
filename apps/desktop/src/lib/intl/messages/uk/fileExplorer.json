@@ -2236,6 +2236,10 @@
   "@fileExplorer.dragOut.partial": {
     "sourceHash": "9215226"
   },
+  "fileExplorer.drop.uncrossedPaths": "Cmdr не може прочитати, де розташовані один або кілька перетягнутих елементів, тому пропустив усе, що ви перетягнули. Спробуйте ще раз без цих елементів.",
+  "@fileExplorer.drop.uncrossedPaths": {
+    "sourceHash": "c4daabf"
+  },
   "fileExplorer.dropIn.sourceNameFromAppAndHost": "{name} з програми {appName} ({host})",
   "@fileExplorer.dropIn.sourceNameFromAppAndHost": {
     "sourceHash": "94c2e01"

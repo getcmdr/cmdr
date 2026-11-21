@@ -55,8 +55,9 @@ Per-file inventory for the route. Locate symbols via `codegraph_search`; this is
   rect; `ensureVisibleOffset` nudges a line just into view for keyboard extension. Different coordinate spaces, see §
   "Keyboard motion model".
 - Copy: **`viewer-copy.ts`** (pure silent/confirm/refuse policy + thresholds), **`viewer-copy.svelte.ts`**
-  (`createViewerCopy` + `createViewerCopyOrchestrator`). Autoscroll: **`viewer-autoscroll.ts`** (curve) +
-  **`.svelte.ts`** (RAF controller).
+  (`createViewerCopy` + `createViewerCopyOrchestrator`; Save as asks `chooseSaveTarget`, so the panel's answer is an app
+  path, `C:/…` on Windows, which the routed-destination check and the toast's file name read, #1311). Autoscroll:
+  **`viewer-autoscroll.ts`** (curve) + **`.svelte.ts`** (RAF controller).
 - Media: **`media-view.ts`** (pure helpers incl. `mediaUrl(token)`, the ONE `cmdr-media://localhost/` origin, + zoom
   math), **`viewer-media.svelte.ts`** (`createViewerMedia`: state, `isMedia`/`mediaSrc`, `lastMediaKind`, switch
   triggers), **`MediaImageView` / `MediaPdfView`** (inline `<img>` / `<embed>`), **`MediaMarkdownView`** (the formatted

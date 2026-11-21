@@ -380,7 +380,12 @@ describe('complete copy targets', () => {
     ['/tmp/copy.txt', '/tmp', 'copy.txt'],
     ['folder/copy.txt', '/Users/test/folder', 'copy.txt'],
     ['../copy.txt', '/Users', 'copy.txt'],
-    ['./folder/../copy.txt', '/Users/test', 'copy.txt'],
+    ['./../../copy.txt', '/', 'copy.txt'],
+    ['../../../copy.txt', '/', 'copy.txt'],
+    // A `..` after a name is the backend's: across a link the OS lands beside its target.
+    ['./folder/../copy.txt', '/Users/test/folder/..', 'copy.txt'],
+    ['/x/link/../dst/copy.txt', '/x/link/../dst', 'copy.txt'],
+    ['../link/../copy.txt', '/Users/link/..', 'copy.txt'],
     ['~/copy.txt', '/Users/home', 'copy.txt'],
     ['/copy.txt', '/', 'copy.txt'],
   ])('resolves %s to its exact parent and filename', (entered, parent, name) => {

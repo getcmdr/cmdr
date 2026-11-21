@@ -309,26 +309,48 @@ export function resolveTransferFilename(
 
 /**
  * `~/` expands from home; a local app path (`/…`, and on Windows `C:/…` or `//server/share/…`)
- * or a volume-relative `/…` stands; anything else resolves from the source folder.
+ * or a volume-relative `/…` stands; anything else resolves from the source folder, its LEADING
+ * `.` and `..` stepping up from that folder by text, clamped at its root, the way the pane's `..`
+ * row does. Every later `..` stays in the text: across a symlink the OS reads `x/link/../y` as
+ * the link target's sibling, so only the backend, asking the volume, says where it lands
+ * (`commands/wire_path.rs::destination`).
  */
 function toAbsoluteTarget(entered: string, sourceFolder: string, homePath: string): string {
   const expanded = entered.startsWith('~/') && homePath ? joinPath(homePath, entered.slice(2)) : entered
-  return expanded.startsWith('/') || isLocalPath(expanded) ? expanded : joinPath(sourceFolder, expanded)
+  if (expanded.startsWith('/') || isLocalPath(expanded)) return expanded
+  const names = expanded.split('/')
+  let folder = sourceFolder
+  while (names.length > 1 && (names[0] === '.' || names[0] === '..' || names[0] === '')) {
+    if (names.shift() === '..') folder = folderAbove(folder)
+  }
+  return joinPath(folder, names.join('/'))
+}
+
+/** The folder holding `folder` by text, or `folder` itself at its root. */
+function folderAbove(folder: string): string {
+  const volumeRelative = folder.startsWith('/') && !folder.startsWith('//')
+  const parsed = parsePath(folder) ?? (volumeRelative ? parsePath(folder, 'posix') : null)
+  if (parsed?.root == null || parsed.names === null || parsed.names.length === 0) return folder
+  return parsed.root + parsed.names.slice(0, -1).join('/')
 }
 
 /**
- * Collapse `.` / `..` (clamped at the root, so dot segments can't obscure a destination
- * inside the source subtree) and split off the leaf. The root survives: `C:/`, `//nas/share/`,
- * or `/`. A volume-relative `/…` on Windows (`/DCIM` on a phone) splits on its own `/`;
- * `//nas` without a share names no folder at all.
+ * Drop empty and `.` names and split off the leaf, keeping each `..` for the backend to resolve
+ * (see `toAbsoluteTarget`). The root survives: `C:/`, `//nas/share/`, or `/`. A volume-relative
+ * `/…` on Windows (`/DCIM` on a phone) splits on its own `/`; `//nas` without a share names no
+ * folder at all.
  */
 function splitNormalizedPath(absolute: string): { parent: string; name: string } | null {
   const volumeRelative = absolute.startsWith('/') && !absolute.startsWith('//')
   const parsed = parsePath(absolute) ?? (volumeRelative ? parsePath(absolute, 'posix') : null)
   if (parsed?.root == null || parsed.names === null) return null
-  const names = [...parsed.names]
+  // The root's own spelling is the grammar's (`c:` → `C:/`); the names after it are as typed.
+  const names = absolute
+    .slice(Math.min(parsed.root.length, absolute.length))
+    .split('/')
+    .filter((name) => name !== '' && name !== '.')
   const name = names.pop()
-  return name ? { parent: parsed.root + names.join('/'), name } : null
+  return name && name !== '..' ? { parent: parsed.root + names.join('/'), name } : null
 }
 
 /** Keep the target folder when switching between folder and filename modes. */

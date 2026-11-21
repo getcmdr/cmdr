@@ -148,6 +148,14 @@ and each is capped by an LRU of its own; `ResolvedVolume.routed` says which one 
   `GitPortalVolume` maps `/…/.git/branches/main/src` through `git::path::classify_in`, and the `ResticVolume`
   classifies `/…/Browse snapshots/latest/…` itself. Adoption sites read `resolved.path`, so the "path unchanged"
   contract lives in one place.
+- **The seam speaks app paths.** `resolve`, `resolve_to_list`, `resolve_local_only`, and the two archive predicates
+  take an `&AppPath`, and the archive route confirms, splits, and mints typed (`cmdr_archive`'s typed confirms,
+  `ArchiveVolume::new_at`), so a Windows pane's `C:/…/a.zip/x` routes where its native `C:\…` text never split. The
+  git and restic candidates (`cmdr_git::portal_route`, `cmdr_fs::restic_view`) still read `std::path`, so
+  `routing.rs`'s `lexical_spelling` crosses once for them, and the boundaries' left-to-right order counts that one
+  spelling's components. Callers still holding a `std::path` value cross at one named helper each, beside the seam that
+  hands it over (the engines' host traits in `listing_host/volumes.rs` and `operations_host/volumes.rs`, the viewer's
+  `requested_on_volume`, `wire_path::checked_as_app_path`); the plan's 10c record lists who removes each.
 - **Most readers ask `is_routed()`, not the kind.** Skipping drive-index enrich/verify follows from being routed at
   all: no kind's paths are real FS paths. A write path asks `RoutedKind::takes_writes` / `can_give_up_files`, which
   match exhaustively, so the next routed kind has to answer them (only an archive takes writes, through its edit

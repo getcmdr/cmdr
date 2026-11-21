@@ -159,13 +159,18 @@ live here:
 
 A single-item Copy/Move target always includes the destination leaf, prefilled with the original name. Absolute local
 paths name the exact location, including the mount root; an absolute remote path names a location within the selected
-volume. Relative paths resolve from the source folder and volume, including nested paths and `..`; `~/` resolves from
-the local home directory. `resolveTransferFilename` splits and normalizes the path through the grammar
-(`#lib/path/grammar`), and `transfer-target.ts` selects the effective volume. On Windows a typed `\` separates like `/`
-(`typedSeparators`), and a drive or share path (`D:\backup\x`, `\\nas\share\x`) is absolute and always this machine's,
-whatever volume is picked, so its root survives the split; `\\nas` with no share is refused with its own message
-(`validateShareNamed`, #1118). Empty leaves and final `.` / `..` components cannot confirm. A folder copy names the
-copied or moved folder itself. Multiple selections still target a directory, preserving each selected item's name.
+volume. Relative paths resolve from the source folder and volume, including nested paths; their LEADING `..`s step up
+from the source folder by text (clamped at its root), as the pane's `..` row does; `~/` resolves from the local home
+directory. `resolveTransferFilename` splits the path through the grammar (`#lib/path/grammar`), and `transfer-target.ts`
+selects the effective volume. **Every other `..` (after a name: `/x/link/../dst/name`) stays in the text the dialog
+sends**, ❌ never folded here: across a symlink the OS reads it as the link target's sibling, so the backend resolves it
+on the destination volume for every probe and start alike (`commands/DETAILS.md` § "Sent paths"). The "already in this
+location" warning and the rename-in-place routing compare text, so a `..` after a name leaves both to the backend. On
+Windows a typed `\` separates like `/` (`typedSeparators`), and a drive or share path (`D:\backup\x`, `\\nas\share\x`)
+is absolute and always this machine's, whatever volume is picked, so its root survives the split; `\\nas` with no share
+is refused with its own message (`validateShareNamed`, #1118). Empty leaves and final `.` / `..` components cannot
+confirm. A folder copy names the copied or moved folder itself. Multiple selections still target a directory, preserving
+each selected item's name.
 
 **A trailing slash means "into this folder"**: `/Users/me/Documents/` keeps the item's own name inside `Documents`.
 Without it the last segment is always the new name, so a pasted folder path would rename the item after that folder: a

@@ -35,8 +35,9 @@ themselves; the index subsystems are the reverse, since they can't carry `tauri:
   (`cmdr_operations::resolve_dest_path`, `path_exists`): handing `/photos` to a share unanchored breaks the write
   before any I/O. `../file_system/volume/CLAUDE.md`.
 - **A sent path is read at `wire_path.rs`** (`from_wire`): a trailing `/` goes (`x/link/` names the link), and a `..`
-  from a pane or row is refused typed and logged as a bug. The transfer box's text is person-typed: it anchors
-  (`anchored`, `resolve_dest_path`), never refused. `DETAILS.md` § "Sent paths".
+  from a pane or row is refused typed and logged as a bug. The transfer box's text is person-typed: it anchors, and a
+  `..` in it resolves on its volume (`destination`) for every probe and start alike, never refused as a bug.
+  `DETAILS.md` § "Sent paths".
 - **The create core errors on an unregistered volume; ❌ NO `std::fs` fallback** (it would carry no timeout). An
   unregistered id means an unmount race. Unit tests use `ensure_root_volume()`, ❌ never `init_volume_manager`.
 - **Platform-gate at the module level in `mod.rs`, ❌ not per-function**, so an unsupported command isn't registered.

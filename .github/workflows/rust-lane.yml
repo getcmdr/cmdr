@@ -2,14 +2,14 @@ name: Rust lane
 
 # The Linux Rust lane, called by `ci.yml` (`desktop-rust`): the platform-blind scanners, clippy,
 # rustdoc, and the suite, plus the nextest filter coverage, module cycles, the Kani proofs, the Shuttle
-# interleavings, and (nightly only) the browser engines for wasm in parallel jobs of their own.
+# interleavings, and the browser engines for wasm (when the change reaches them) in parallel jobs of their own.
 # Its own file so an edit here reruns this lane alone (the `rust` filter in `ci.yml` lists it).
 # `docs/tooling/ci.md` § Lane files.
 on:
   workflow_call:
     inputs:
       build-wasm:
-        description: Whether to build the browser demo's engines for wasm (the nightly full run)
+        description: Build both browser engines for wasm without scoping (the nightly full run)
         type: boolean
         required: true
       marker-key:
@@ -360,21 +360,27 @@ jobs:
       - name: Check Rust module cycles
         run: ./scripts/check/check --check desktop-rust-module-cycles --ci
 
-  # The browser demo's engines for wasm32, on the nightly full run only (`build-wasm`): the
-  # listing engine with its Node smoke run and golden traces, and the viewer core. The release
-  # pipeline builds both before it publishes a demo (its `demo` job), so a land never waits on
-  # them, and the nightly makes a host-only dep or a `std` clock reaching the engine surface the
-  # next morning instead of on release day. Its own small rust-cache entry (the one the release's
-  # demo build restores), not `desktop-rust`'s native tree. `apps/website/DETAILS.md` § Browser demo.
+  # The browser demo's engines for wasm32: the listing engine with its Node smoke run and golden
+  # traces, and the viewer core. Each builds when the change can reach it: on a pull request, when
+  # the Rust test scope (the changed crates plus every member depending on them, read from
+  # `cargo metadata`, so no path list to keep) holds `cmdr-listing-wasm` or `cmdr-viewer`, and
+  # always on a push, a dispatch, and the nightly (`build-wasm`), which test everything. A crate
+  # the engine reaches fails here, not first in another branch's demo build (PR #1329's
+  # `cmdr-operations` call into the native-only trash seam, 2026-11-21). The job itself always
+  # runs; an unaffected change skips its build steps (~1 min of setup). Its own small rust-cache
+  # entry (the one the release's demo build restores), not `desktop-rust`'s native tree.
+  # `docs/tooling/ci.md` § Browser engines for wasm.
   wasm:
     name: Browser engines for wasm
-    if: inputs.build-wasm
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
+      # Two commits, for the Rust test scope (as in `lane`).
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 2
 
       - name: Install mise
         uses: ./.github/actions/install-mise
@@ -387,8 +393,34 @@ jobs:
       - name: Keep only the pinned Rust toolchain
         uses: ./.github/actions/pinned-rust-toolchain
 
+      - name: Build check tool
+        run: go build -o check .
+        working-directory: ./scripts/check
+
+      - name: Scope to the crates this change can affect
+        if: github.event_name == 'pull_request' && !inputs.build-wasm
+        uses: ./.github/actions/rust-test-scope
+
+      # No scope (a push, a dispatch, the nightly) or `all` builds both engines.
+      - name: Pick the engines this change can reach
+        id: reach
+        shell: bash
+        run: |
+          scope=" ${CMDR_RUST_TEST_SCOPE:-all} "
+          for pair in listing:cmdr-listing-wasm viewer:cmdr-viewer; do
+            name=${pair%%:*} pkg=${pair#*:}
+            if [[ "$scope" == *" all "* || "$scope" == *" $pkg "* ]]; then
+              echo "$name=true" >>"$GITHUB_OUTPUT"
+              echo "Building $pkg for wasm."
+            else
+              echo "$name=false" >>"$GITHUB_OUTPUT"
+              echo "Skipping $pkg: nothing it depends on changed."
+            fi
+          done
+
       # `wasm-bindgen-cli` installs into `~/.cargo/bin`, which this entry keeps.
       - name: Cache Rust build
+        if: steps.reach.outputs.listing == 'true' || steps.reach.outputs.viewer == 'true'
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           shared-key: website-demo
@@ -397,18 +429,17 @@ jobs:
 
       # The C toolchain that compiles SQLite for wasm32, from its own cache.
       - name: Install the wasm C toolchain
+        if: steps.reach.outputs.listing == 'true' || steps.reach.outputs.viewer == 'true'
         uses: ./.github/actions/wasm-toolchain
         with:
           save-cache: ${{ env.SAVE_RUST_CACHE }}
 
-      - name: Build check tool
-        run: go build -o check .
-        working-directory: ./scripts/check
-
       - name: Build the listing engine for wasm
+        if: steps.reach.outputs.listing == 'true'
         run: ./scripts/check/check --check desktop-rust-listing-wasm --ci
 
       - name: Build the viewer core for wasm
+        if: steps.reach.outputs.viewer == 'true'
         run: ./scripts/check/check --check desktop-rust-viewer-wasm --ci
 
   # Every `#[kani::proof]`, one `cargo kani` per crate. On the landing path because a proof can
@@ -481,14 +512,14 @@ jobs:
         run: ./scripts/check/check --check desktop-rust-shuttle --ci
 
   # The lane's marker, once EVERY job passed, so one green job can't vouch for another
-  # (`scripts/lane-markers/DETAILS.md`). `wasm` may skip, but only when it wasn't asked for.
+  # (`scripts/lane-markers/DETAILS.md`). `wasm` always runs, skipping only its own build steps.
   marker:
     name: Lane marker
     needs: [lane, nextest-filters, module-cycles, wasm, kani, shuttle]
     if: >-
       !cancelled() && needs.lane.result == 'success' && needs.nextest-filters.result == 'success' &&
       needs.module-cycles.result == 'success' && needs.kani.result == 'success' && needs.shuttle.result == 'success' &&
-      (needs.wasm.result == 'success' || (needs.wasm.result == 'skipped' && !inputs.build-wasm))
+      needs.wasm.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 5
 

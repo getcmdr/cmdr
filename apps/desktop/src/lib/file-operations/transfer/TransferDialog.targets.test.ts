@@ -89,6 +89,9 @@ describe('complete single-copy target', () => {
       ['../new.txt', '/Users', 'new.txt', 'root'],
       ['/Volumes/External/copies/new.txt', '/copies', 'new.txt', 'ext'],
       ['~/new.txt', '/Users/test', 'new.txt', 'root'],
+      // A `..` after a name reaches the backend as typed: across a link it lands beside the
+      // link's target, which only the volume knows.
+      ['/x/link/../dst/new.txt', '/x/link/../dst', 'new.txt', 'root'],
     ]) {
       const onConfirm = vi.fn<ConfirmFn>()
       const target = mountDialog({ operationType, sourcePaths: ['/Users/test/notes.txt'], onConfirm })
@@ -228,7 +231,9 @@ it.each(['copy', 'move'] as const)('warns and disables %s for the identical sour
   const target = mountDialog({ operationType, sourcePaths: ['/Users/test/notes.txt'], onConfirm })
   await flushMicrotasks()
   const input = pathInput(target)
-  for (const entered of ['/Users/test/notes.txt', 'notes.txt', './copies/../notes.txt']) {
+  // ❌ Not `./copies/../notes.txt`: when `copies` is a link, that's beside its target, another
+  // folder. Where a `..` after a name leads is the backend's answer.
+  for (const entered of ['/Users/test/notes.txt', 'notes.txt', './notes.txt']) {
     input.value = entered
     input.dispatchEvent(new Event('input', { bubbles: true }))
     await tick()

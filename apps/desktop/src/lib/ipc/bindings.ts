@@ -629,6 +629,12 @@ export const commands = {
    */
   getHomeFolder: () => __TAURI_INVOKE<string | null>('get_home_folder'),
   /**
+   *  The app paths for `paths`, native text the OS handed the webview, one answer per path in
+   *  the order sent. Pure text work, no I/O: async so a 50,000-file drop parses off the main
+   *  thread.
+   */
+  appPathsFromNative: (paths: string[]) => __TAURI_INVOKE<NativePathCrossing[]>('app_paths_from_native', { paths }),
+  /**
    *  Which names the filesystem holding `dir` on `volume_id` takes
    *  (`cmdr_operations::Operations::name_rules_at`), for the rename editor's and the
    *  New folder dialog's keystroke checks (asked once per editor), and the transfer
@@ -16144,6 +16150,21 @@ export type NamedLeavesRefusal =
    *  into a zip, move out of one). `path` is the destination.
    */
   | 'routeCannotName'
+
+// One native path's answer.
+export type NativePathCrossing =
+  // The app path naming the same place.
+  | {
+      kind: 'app'
+      // The app text (`C:/Users/x/a.txt`, `//server/share/x`, `/Users/x/a.txt`).
+      path: string
+    }
+  /**
+   *  No app path names this text: a device namespace (`\\?\Volume{…}`), a relative or
+   *  drive-relative path, or a name that would need an escape. The caller leaves it out
+   *  and says so; ❌ it never sends the native text on as if it were app text.
+   */
+  | { kind: 'refused' }
 
 export type NegotiatedSummaryDto = {
   dialect: string
