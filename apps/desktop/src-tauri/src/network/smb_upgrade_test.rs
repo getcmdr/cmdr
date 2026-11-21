@@ -7,7 +7,6 @@
 
 use super::*;
 use cmdr_fs::app_path;
-use std::path::Path;
 use std::time::Duration;
 
 /// What the OS records about an ordinary mount of `share`, at the share root.
