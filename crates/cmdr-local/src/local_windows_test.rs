@@ -150,6 +150,63 @@ async fn a_forced_rename_onto_a_read_only_file_is_all_or_nothing() {
     let _ = std::fs::set_permissions(&locked, permissions);
 }
 
+fn set_read_only(path: &std::path::Path, read_only: bool) {
+    let mut permissions = std::fs::metadata(path).expect("stat").permissions();
+    #[allow(
+        clippy::permissions_set_readonly_false,
+        reason = "Windows has one read-only bit; clearing it lets TestDir clean up"
+    )]
+    permissions.set_readonly(read_only);
+    std::fs::set_permissions(path, permissions).expect("set the attribute");
+}
+
+/// A read-only file is Windows' Locked: `delete` refuses it the way macOS's `unlink` refuses
+/// a Locked file, where `std::fs::remove_file` alone would delete it. `clear_blockers` (a
+/// consented move's unlock, a reversal's retry) clears it, and the retry deletes. A folder's
+/// read-only bit is Explorer's customization marker, so there's nothing to clear on one.
+#[tokio::test]
+async fn a_delete_refuses_a_read_only_file_until_its_blockers_are_cleared() {
+    let test_dir = TestDir::new("win_delete_read_only");
+    let volume = volume_at(&test_dir);
+    volume
+        .create_file(&at(&volume, "frozen.txt"), b"keep me")
+        .await
+        .expect("create");
+    volume
+        .create_directory(&at(&volume, "customized"))
+        .await
+        .expect("mkdir");
+    let frozen = test_dir.join("frozen.txt");
+    set_read_only(&frozen, true);
+    set_read_only(&test_dir.join("customized"), true);
+
+    let refused = volume
+        .delete(&at(&volume, "frozen.txt"))
+        .await
+        .expect_err("a read-only file refuses its delete");
+    assert!(
+        matches!(refused, VolumeError::PermissionDenied { .. }),
+        "got {refused:?}"
+    );
+    assert_eq!(std::fs::read(&frozen).expect("read"), b"keep me");
+
+    assert!(matches!(
+        volume.clear_blockers(&at(&volume, "frozen.txt")).await,
+        cmdr_fs::metadata::Unblock::Cleared(_)
+    ));
+    volume
+        .delete(&at(&volume, "frozen.txt"))
+        .await
+        .expect("cleared, it goes");
+    assert!(!frozen.exists());
+    assert_eq!(
+        volume.clear_blockers(&at(&volume, "customized")).await,
+        cmdr_fs::metadata::Unblock::NothingToClear,
+        "a folder's marker isn't a lock"
+    );
+    set_read_only(&test_dir.join("customized"), false);
+}
+
 /// A tree whose paths pass `MAX_PATH` (260): creating, listing, stat'ing, renaming, and
 /// deleting all reach it through the `\\?\` form.
 #[tokio::test]

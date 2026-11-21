@@ -366,7 +366,10 @@ nearly every method and hide which answers are real.
   `local_windows_test.rs`, 2026-11-18).
 - **Delete** picks `RemoveDirectoryW` by the entry's own `FILE_ATTRIBUTE_DIRECTORY`, so a directory symlink or junction
   goes as the link, its target untouched, broken or not (verified on Windows 10 22H2, NTFS, for a junction in
-  `local_windows_test.rs`, 2026-11-18; a directory symlink is unverified).
+  `local_windows_test.rs`, 2026-11-18; a directory symlink is unverified). A read-only FILE (Windows' Locked) refuses
+  as `PermissionDenied` before any call, standing in for macOS's `EPERM`: `std::fs::remove_file` would delete it,
+  so a move's sweep would take an original nobody agreed to (#1331). `clear_blockers` clears the attribute for a
+  consented move or a reversal's retry (`crates/cmdr-operations/DETAILS.md` § "Moving Locked items").
 - **The reader** is `reading.rs` with a Windows arm (`src/reading/platform/windows.rs`): `read_dir`, no added date,
   `FILE_ATTRIBUTE_HIDDEN` as `is_hidden`. `reading/platform/` is the reader's seam on every OS now (how a caller's
   native path is located, the per-entry stat, the lister pick, the single-entry finish); the listing loop and the

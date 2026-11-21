@@ -2420,6 +2420,16 @@ then stopped in Phase 4 with every original kept: the files in both places and a
   at the destination and the reversal reports it (nothing lost). A move INTO a zip (`archive_edit/copy_into.rs`) sweeps
   with an empty plan, so a Locked original stays and the move reports it. A `0500` folder still refuses its children's
   removal on a cross-drive move after its lock is lifted: a mode, which no Locked answer covers.
+- **Windows (#1331)**: a FILE's read-only attribute is Locked (`removal_lock`, cleared and put back by `clear_blockers`
+  / `apply_landed`), the same attribute a permanent delete and an Overwrite refuse as `FileLocked`
+  (`local_disk::locked_against_removal`). A folder's read-only bit is Explorer's customization marker, so it's never
+  asked about; Windows has no system-locked kind. Decision: ask the same question as macOS even though Windows itself
+  renames a read-only file and `std::fs::remove_file` deletes one, since both would carry a lock off with no word. With
+  the OS refusing nothing, the local cross-drive sweep (`move_op/source_sweep.rs`' `remove_landed_file`) and
+  `LocalWindowsVolume::delete` refuse a read-only file still wearing the attribute (it had no consent, since Move anyway
+  cleared it just before), standing in for macOS's `EPERM`. Gap: a cross-drive Move anyway lands the copy without the
+  attribute, since a Windows copy carries no file attributes yet (windows-port plan task 36's `CopyFileExW` arm). Pinned
+  by `src/transfer/move_read_only_windows_tests.rs`.
 - **Observable and answerable by an agent**: `cmdr://state` renders the parked question as `pendingLockedSources`, and
   `queue_move_locked` (`DevOnly`, since it clears the lock) and the `queue` tool's `skip_locked` answer it.
 - `OperationEventSink::emit_locked_sources` defaults to a no-op; a wrapping sink forwards it (`SinkDecorator` does by
