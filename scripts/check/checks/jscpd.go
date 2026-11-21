@@ -161,7 +161,7 @@ type jscpdPairLimitObject struct {
 }
 
 func (l jscpdPairLimit) MarshalJSON() ([]byte, error) {
-	return json.Marshal(jscpdPairLimitObject(l))
+	return marshalUnescaped(jscpdPairLimitObject(l))
 }
 
 func (l *jscpdPairLimit) UnmarshalJSON(data []byte) error {

@@ -163,16 +163,31 @@ The volume is device-anchored, the same shape MTP has, and every answer below fo
   `constructAdbPath` spell it that way. The device's whole `/` hangs under it: `adb://R58M1/sdcard/DCIM` is
   `/sdcard/DCIM`.
 - **Paths**: `volume/paths.rs` is the one translation, through `cmdr_fs::volume::remote_paths::RemoteRoot` (shared with
-  SFTP and WebDAV): `to_device_path` going down, `to_app_path` coming back. Every `FileEntry.path` a listing or stat
+  SFTP and WebDAV): `to_device_path` going down, `app_text_of` coming back. Every `FileEntry.path` a listing or stat
   hands out, and every listing-cache patch path, carries the prefix, because a pane passes an entry's path straight back
   and a scheme-free `/sdcard/x` resolves to the Mac's boot disk. For the same reason a bare device-absolute path is
-  refused rather than anchored: the app sites that take a volume-relative path (a transfer dialog's `/sdcard`) run it
-  through `root_anchored` against `Volume::root` first, which lands it on `adb://<serial>/sdcard`, idempotently for a
-  pane's already-prefixed path. ❌ Never anchor an out-of-root path; refuse it. `RemoteRoot` absorbs a `..` at `/`,
-  which is right for a server rooted deeper but silent on a volume whose root IS `/`, so `paths.rs` counts the climb
-  first and refuses `adb://<serial>/sdcard/../../etc`. Internally the device path is what the wire, the shell, and an
-  error from the device carry; ❗ `probe` and `follow` take it directly, since handing one back through
-  `get_metadata_impl` would be a bare path that the translation refuses.
+  refused rather than anchored: the app sites that take a volume-relative path (a transfer dialog's `/sdcard`) anchor it
+  against `Volume::root` first (`anchor_at_root`, or `root_anchored` for a `std::path` caller), which lands it on
+  `adb://<serial>/sdcard`, idempotently for a pane's already-prefixed path. ❌ Never anchor an out-of-root path; refuse
+  it. `RemoteRoot` absorbs a `..` at `/`, which is right for a server rooted deeper but silent on a volume whose root IS
+  `/`, so `paths.rs` counts the climb first and refuses `adb://<serial>/sdcard/../../etc` (a typed app path holds no
+  `..`, so only a transition-bridge value can carry one; the count reads its text the way a POSIX `Path` does).
+  Internally the device path is what the wire, the shell, and an error from the device carry; ❗ `probe` and `follow`
+  take it directly, since handing one back through `get_metadata_impl` would be a bare path that the translation
+  refuses.
+- **The bodies speak app paths** (`cmdr_fs::app_path`, issue #1225): every `Volume`, `ScanSource`, and `PatchSource`
+  body and helper takes `&AppPath`, translated by `RemoteRoot::to_remote`, and the device side is POSIX text split on
+  `/` alone (`device_file_name`, `join_device_path`), so a `\` or `:` a phone lists stays part of a name on a Windows
+  host (a `std::path` join there sent the device `\sdcard\…`, refused with `EROFS`). ❗ Two spellings are deliberately
+  NOT the typed canonical one: `Volume::root` keeps the bare `adb://<serial>` (a `BridgedPath`, the one bridge left in
+  the bodies, since the canonical root is `adb://<serial>/`), and every row's `FileEntry.path` keeps `RemoteRoot`'s own
+  text (`app_text_of`), byte for byte what the wire carried before. The typed `to_app` answers only the listing patcher
+  (`display_path_for`), and at the device's `/` it answers `root()` itself, so the listing host hears the root folder by
+  the spelling a pane holds. A device path whose text the app path can't hold yet still gets its row and only loses its
+  patch (the pane re-lists). The walk and the patches go through `cmdr-fs`'s typed twins (`scan_*_at`, `patch_*_at`).
+  Tests name files through `volume::testing::fixture_app_path` and `child`; `fixture_path` stays the `std::path` form
+  the app's ADB suites call. What the volume does with relative or `..` TEXT is `paths_test.rs`'s, through
+  `RemoteRoot`'s `std::path` form plus this volume's own climb count.
 - **Copies keep the source's date and mode** (the contract: `crates/cmdr-operations/src/transfer/volume/DETAILS.md` §
   "Copies keep the source's metadata"). A read stream reports the mtime of the `STAT`/`STA2` its open already does
   (`SyncStat::modified_at`, `None` before 1970 to match the listing); a push hands the stream's date to `DONE`, which

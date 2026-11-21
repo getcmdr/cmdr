@@ -79,7 +79,7 @@ type claudeMdWordLimitJSON struct {
 }
 
 func (l claudeMdWordLimit) MarshalJSON() ([]byte, error) {
-	return json.Marshal(claudeMdWordLimitJSON(l))
+	return marshalUnescaped(claudeMdWordLimitJSON(l))
 }
 
 // UnmarshalJSON also accepts a bare number, which parses to a reasonless entry

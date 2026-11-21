@@ -5,12 +5,12 @@
 //! entry: the host walks every cached listing on the volume. The rules and the
 //! created / deleted / renamed shapes: `cmdr_fs::volume::patching`.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::path::{Path, PathBuf};
 
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::host::listings::ListingHost;
-use cmdr_fs::volume::patching::{PatchSource, patch_created, patch_deleted, patch_renamed};
+use cmdr_fs::volume::patching::{PatchSource, patch_created_at, patch_deleted_at, patch_renamed_at};
 use cmdr_fs::volume::scan_walk::Walking;
 
 use super::AdbVolume;
@@ -25,32 +25,32 @@ impl PatchSource for AdbVolume {
     }
 
     fn patch_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
-        Box::pin(async move {
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            self.get_metadata_impl(path).await
-        })
+        Box::pin(self.get_metadata_impl(path))
     }
 
     fn patch_display_path(&self, path: &Path) -> Option<PathBuf> {
+        self.display_path_for_std(path)
+    }
+
+    fn patch_app_path(&self, path: &AppPath) -> Option<AppPathBuf> {
         self.display_path_for(path)
     }
 }
 
 impl AdbVolume {
     /// The one patch a create leaves behind.
-    pub(super) async fn notify_created(&self, path: &Path) {
-        patch_created(self, path).await;
+    pub(super) async fn notify_created(&self, path: &AppPath) {
+        patch_created_at(self, path).await;
     }
 
     /// The same for a delete.
-    pub(super) async fn notify_deleted(&self, path: &Path) {
-        patch_deleted(self, path).await;
+    pub(super) async fn notify_deleted(&self, path: &AppPath) {
+        patch_deleted_at(self, path).await;
     }
 
     /// One `Renamed` when both ends share a parent, otherwise a `Deleted` at the
     /// source and a `Created` at the destination.
-    pub(super) async fn notify_renamed(&self, from: &Path, to: &Path) {
-        patch_renamed(self, from, to).await;
+    pub(super) async fn notify_renamed(&self, from: &AppPath, to: &AppPath) {
+        patch_renamed_at(self, from, to).await;
     }
 }

@@ -69,10 +69,10 @@ func (e *e2eDurationEntry) UnmarshalJSON(data []byte) error {
 
 func (e e2eDurationEntry) MarshalJSON() ([]byte, error) {
 	if e.MaxMs == 0 {
-		return json.Marshal(e.Reason)
+		return marshalUnescaped(e.Reason)
 	}
 	type rawEntry e2eDurationEntry
-	return json.Marshal(rawEntry(e))
+	return marshalUnescaped(rawEntry(e))
 }
 
 // e2eDurationAllowlist is the on-disk shape of e2e-duration-allowlist.json.

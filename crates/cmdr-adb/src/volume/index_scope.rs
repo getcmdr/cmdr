@@ -16,7 +16,7 @@
 //! `/storage/emulated/0/…` shows no folder sizes, by design: indexing both
 //! spellings would count every file twice.
 
-use std::path::Path;
+use cmdr_fs::app_path::AppPath;
 
 use cmdr_fs::volume::IndexWalk;
 
@@ -37,7 +37,7 @@ const STORAGE_ALIASES: [&str; 2] = ["emulated", "self"];
 impl AdbVolume {
     /// [`Volume::index_walk`](cmdr_fs::volume::Volume::index_walk) for this phone.
     /// A path this volume can't translate (another phone's) is nothing to walk.
-    pub(super) fn index_walk_impl(&self, dir: &Path, is_symlink: bool) -> IndexWalk {
+    pub(super) fn index_walk_impl(&self, dir: &AppPath, is_symlink: bool) -> IndexWalk {
         match self.to_device_path(dir) {
             Ok(device) => index_walk_for_device_path(&device, is_symlink),
             Err(_) => IndexWalk::RowOnly,

@@ -173,7 +173,7 @@ type fileLengthLimitJSON struct {
 }
 
 func (l fileLengthLimit) MarshalJSON() ([]byte, error) {
-	return json.Marshal(fileLengthLimitJSON(l))
+	return marshalUnescaped(fileLengthLimitJSON(l))
 }
 
 // UnmarshalJSON also accepts a bare number (`"path/to/x.rs": 903`). That form

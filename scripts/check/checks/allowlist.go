@@ -36,6 +36,20 @@ func writeJSONAllowlist(path string, v any) error {
 	return nil
 }
 
+// marshalUnescaped is `json.Marshal` without HTML escaping, for an allowlist entry's
+// own `MarshalJSON`. The writer's `SetEscapeHTML(false)` doesn't reach inside a
+// `Marshaler`'s bytes, so an entry type marshalling with `json.Marshal` turned every
+// `<`, `>`, and `&` in its reason into `\u003c` and friends on each rewrite.
+func marshalUnescaped(v any) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(v); err != nil {
+		return nil, err
+	}
+	return bytes.TrimSuffix(buf.Bytes(), []byte("\n")), nil
+}
+
 // reformatWithOxfmt runs oxfmt on a single just-rewritten file so the JSON
 // style (collapsed short objects, print width) matches what the formatter
 // enforces, instead of leaving an intermediate Go-marshaled shape for the
