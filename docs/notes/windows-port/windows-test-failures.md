@@ -192,6 +192,18 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
   (`is_same_filesystem` reads the device by path). The TSV's task-35 rows still red, each with its cause in `rerun`: the
   ledger's four (node identity from `Metadata`), four golden traces and one folder-delete journal row (path spelling,
   N), and one trash cell (Recycle Bin, task 36).
+- **Task 36's delete** (2026-11-21, the warm pair, elevated, `--profile windows-baseline`, branch on `main`
+  `98e2c50409`, at `700ac5bdb0`'s code but for its path-crossing touch-ups):
+  `-p cmdr-fs -p cmdr-local -p cmdr-operations`, 2,805 tests, 110 red, 14 skipped (against 112 on the mount-table branch
+  above). The trash cell turned green (`test_move_to_trash_sync_nonexistent`), and the 12 new Windows cells
+  (`delete/trash/platform/windows/windows_tests.rs`, `local_disk/platform/windows_tests.rs`: the Recycle Bin, the no-bin
+  veto through `\\localhost\C$`, `InUse`, read-only as Locked on delete and Overwrite, `FileInUse` on Overwrite) pass
+  with none self-skipped. Of the TSV's 299 rows for these crates, 204 pass. 15 red cells aren't in the TSV, none in
+  delete, trash, or Overwrite: `cmdr-fs`'s `go_to_path::tests` 5, `app_path::bridge_test` 2, and three `volume::` path
+  cells (#1225, S), `cmdr-operations`'s three `refused_class_tests` "native join refuses" cells (S),
+  `the_temp_reap_never_deletes_a_listed_name_that_isnt_one_plain_name` (born red, above), and
+  `an_overwrite_with_a_link_lands_the_link_and_leaves_no_temp` (`LinksNotSupported`, the engine's Windows `symlink`
+  stub, task 35).
 - **10a, `cmdr-operations`**: 229.
 - **10b, `cmdr-index`**: 133, the 48 cold-drive timeouts among them. Seen on the builder (2026-11-21, the warm pair
   `D:\src\cmdr-m6` + `D:\targets\m6`, elevated through `run-on-desktop.sh`, `--profile windows-baseline`,

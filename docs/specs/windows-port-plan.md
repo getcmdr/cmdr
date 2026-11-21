@@ -235,15 +235,14 @@ owns its real body. Remove a line when its body lands.
 - `cmdr_local::reading` Windows arm (`reading/platform/windows.rs`), task 35: no allocation size, mode `0`, no owner or
   group; only `FILE_ATTRIBUTE_HIDDEN` is real.
 - `cmdr_operations::local_disk` Windows arm (`local_disk/platform/windows.rs`), tasks 35 and 36: `set_mode` and
-  `symlink` refuse as unsupported (a copied link fails its item; a copied folder's mode narrowing is skipped), nothing
-  reads as locked (`is_locked_item`, so a refusal never gets the "uncheck Locked" advice), and there's no
-  purgeable-space figure. Real: the write probe (`FILE_WRITE_DATA` open), free space (`GetDiskFreeSpaceExW`), and the
-  folder volume (`LocalWindowsVolume`).
+  `symlink` refuse as unsupported (a copied link fails its item; a copied folder's mode narrowing is skipped), and
+  there's no purgeable-space figure. Real: the write probe (`FILE_WRITE_DATA` open), free space (`GetDiskFreeSpaceExW`),
+  the folder volume (`LocalWindowsVolume`), and a read-only file as Locked (`is_locked_item`, `locked_against_removal`).
 - `cmdr_operations` local copy strategy on Windows (`transfer/copy_strategy.rs`), task 36: every file takes the chunked
   loop (cancellable, live progress, staged). No `CopyFileExW` yet, so a copy carries no attributes or alternate data
   streams (Mark of the Web included), and gets no ReFS block clone or SMB copy offload.
-- `cmdr_operations` trash on Windows (`delete/trash.rs`), task 36: `move_to_trash_sync` refuses with the typed
-  `TrashNotSupported`, and `trash_dir_for_path` answers `None`; no Recycle Bin yet.
+- `cmdr_operations` trash on Windows (`delete/trash/platform/windows/`), task 36: the Recycle Bin is real;
+  `trash_dir_for_path` answers `None` (the bin is a Shell folder no pane lists), so "Go to trash" has nowhere to go.
 - `cmdr_operations::delete::cloud_trash::metadata_is_online_only` on Windows, task 37: never online-only, the cautious
   branch, so a Cloud Files placeholder trashes (and hydrates) like any file.
 - `cmdr_operations` extract quarantine on Windows (`transfer/volume/extract_quarantine.rs`), task 37: an extract carries
@@ -624,8 +623,19 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     `docs/notes/windows-port/build-progress.md`). Left, in data-safety order: the rest of the local engine's app paths
     (#1225, `docs/specs/app-path-plan.md` milestone 10a; a same-drive move's destination reaches `move_files`
     unanchored, `docs/notes/windows-port/real-windows-check-2026-11-19.md` problem 7), the rest of the
-    `Unknown`-identity rule above, the `CopyFileExW` arm, the Recycle Bin, read-only as Locked, and sharing violations
-    as a typed refusal. Stubs: § "Windows build state".
+    `Unknown`-identity rule above, and the `CopyFileExW` arm. Stubs: § "Windows build state". **Delete done**
+    (2026-11-21): the Recycle Bin (`delete/trash/platform/windows/`, `IFileOperation` one item per call, a progress-sink
+    veto so a drive with no bin refuses as `NoTrashForVolume` and never deletes for good, the `$R…` item journaled so
+    the trash undo renames it back and drops its `$I` record; `delete/DETAILS.md` § "Windows: the Recycle Bin"), the
+    switcher's `supports_trash` from `WindowsDriveKind::has_recycle_bin` (fixed disks only), read-only as Locked (a
+    permanent delete and an Overwrite refuse a read-only file as `FileLocked`, since `std::fs::remove_file` deletes
+    through it: `local_disk::locked_against_removal`), and a sharing or lock violation on trash as
+    `TrashRefusalKind::InUse` with a Retry (a permanent delete already refused as `FileInUse`). On the desktop:
+    `docs/notes/windows-port/real-windows-check-2026-11-19.md` § "Task 36's delete on the desktop". Left of delete: a
+    non-system drive's permanent delete runs the volume walker (`LocalWindowsVolume::delete`), which still deletes a
+    read-only file (no typed Locked `VolumeError` yet); `removal_lock` / `clear_blockers` don't read read-only (a move
+    asks no Locked consent, and a cross-drive move deletes a read-only original); "Go to trash" has no folder; the
+    volume's `has_trash` says yes on a removable drive (its class is `LocalDisk`; the row and the veto both say no).
 
 37. [S] Windows. Cloud Files placeholders (OneDrive and friends: sync badges, cloud trash) and Mark of the Web on
     extract (`cmdr-operations` + `cmdr-archive`). Needs 36.

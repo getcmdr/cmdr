@@ -312,9 +312,9 @@ is one, comes from sizes computed before the batch started, never from the trash
 - **Some taken, some refused** → `write-complete` with `refused: Some(TrashRefusedItems { item_count, reason })`, the
   same `strongest_refusal`, so the mixed ending explains itself exactly as the total one does.
 
-**A permission refusal is narrowed by the item, at the refusal** (`trash.rs::refine_permission_refusal`). Each of these
-comes back as the same 513 a TCC-protected spot does, so the `NSError` can't tell them apart, but the item and where it
-sits can, asked in this order:
+**A permission refusal is narrowed by the item, at the refusal** (`trash/platform/macos.rs::refine_permission_refusal`).
+Each of these comes back as the same 513 a TCC-protected spot does, so the `NSError` can't tell them apart, but the item
+and where it sits can, asked in this order:
 
 - **A lock flag** (`uchg`, `schg`, append-only) → `Locked`.
 - **A parent failing `access(W_OK)`** → `FolderNotWritable`.
@@ -328,8 +328,8 @@ sits can, asked in this order:
 (verified on macOS 27.0 with `trashItemAtURL`: a `chflags uchg` file and a file in a `0555` folder, 2026-10-14; a
 root-owned file hard-linked into `/private/tmp`, and a file on a disk image whose `.Trashes/501` is `0500`, both 513
 over `NSOSStatusErrorDomain -5000`, 2026-11-10.) Rank in `strongest_refusal`: `NotPermitted` (may be a grant away),
-`Locked`, `FolderNotWritable`, `OwnedByAnotherUser`, `TrashNotWritable`, `NoTrashForVolume`, `Other`. Regression
-anchors: ERR-JQK62, ERR-KKQHK.
+`Locked`, `FolderNotWritable`, `OwnedByAnotherUser`, `TrashNotWritable`, `InUse` (Windows), `NoTrashForVolume`, `Other`.
+Regression anchors: ERR-JQK62, ERR-KKQHK.
 
 **The refusal's `detail` carries the `NSError` codes**, underlying chain included (`error_codes`:
 `[NSCocoaErrorDomain 513 < NSOSStatusErrorDomain -5000]`), after the OS's sentence. The sentence is identical across
@@ -378,6 +378,39 @@ puts a file.
 
 `None` stays the ordinary answer for a volume with no trash (FAT32, SMB) and on non-macOS, so callers say "nowhere to
 go" rather than reporting something went wrong.
+
+## Windows: the Recycle Bin (`trash/platform/windows/`)
+
+One `IFileOperation::DeleteItem` per top-level item, on the caller's worker thread in a single-threaded COM apartment it
+enters and leaves (`shell.rs`), with `FOF_NO_UI | FOF_ALLOWUNDO | FOFX_RECYCLEONDELETE | FOFX_EARLYFAILURE`.
+`IFileOperation` over `SHFileOperationW` because Microsoft replaced the latter with it in Vista, and only it hands back
+the in-trash item (`PostDeleteItem`'s `psiNewlyCreated`). Cancel and progress stay the batch loop's, between items,
+exactly as on macOS: a same-drive recycle is one rename, so a folder costs one call.
+
+- **❗ The Shell DELETES what it can't recycle**, silently under `FOF_NO_UI` (a share, a USB stick, a `subst` letter, a
+  bin that's full, turned off, or too small for the item). So the progress sink's `PreDeleteItem` refuses every delete
+  announced without `TSF_DELETE_RECYCLE_IF_POSSIBLE`, which cancels it before anything is touched, and that refusal is
+  `NoTrashForVolume`: the item stays, and the dialog offers the permanent delete with its own consent. ❌ Never
+  `FOF_WANTNUKEWARNING` instead: it raises the Shell's own dialog. ❌ Never drop the veto because the switcher row says
+  "no trash" for those drives (`WindowsDriveKind::has_recycle_bin`): a full or turned-off bin on a fixed disk is the
+  same silent delete.
+- **The in-trash location is the Shell's `$R…` item** (`C:\$Recycle.Bin\<SID>\$RAB12CD.txt`), returned in the app
+  spelling and journaled as the trash row's dest like macOS's, so the trash undo is the same one rename back. The bin
+  lists an item by its `$I…` record beside it (original path, size, date), so a restore then deletes that record
+  (`forget_restored`, called by the rollback runner after a same-volume restore rename; a no-op off Windows and for any
+  other path), or Explorer would list an entry whose item is gone. A restore by hand in Explorer is Explorer's own and
+  needs nothing from us.
+- **Refusals are read from the Shell's `HRESULT`**, ❌ never its words: a sharing or lock violation (the Win32 codes or
+  `COPYENGINE_E_SHARING_VIOLATION_SRC`) is `InUse`, which the dialog words with a Retry (closing the item elsewhere is
+  the fix), an access refusal `NotPermitted`, the rest `Other`. The `detail` carries the `HRESULT`.
+- **A read-only file recycles**: Windows moves one like any other, so it isn't Locked here (only the permanent delete
+  and an Overwrite refuse it, `local_disk::locked_against_removal`).
+- **`trash_dir_for_path` answers `None`**: the Recycle Bin is a Shell folder with no path a pane can list, so "Go to
+  trash" has nowhere to go yet.
+- (verified on Windows 10 22H2, NTFS, `windows_tests.rs` on the builder and the running app, 2026-11-21: a file and a
+  folder on `C:` land as `$R…` items with their bytes, a file another program holds unshared refuses as `InUse` and
+  stays, a file through `\\localhost\C$` (no bin) is vetoed and stays, and a restore by rename plus `forget_restored`
+  takes the entry out of the bin.)
 
 ## A trash of online-only cloud content becomes a delete (`cloud_trash.rs`)
 
