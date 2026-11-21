@@ -31,8 +31,8 @@ use std::os::windows::io::AsRawHandle as _;
 use std::path::{Path, PathBuf};
 
 use windows_sys::Win32::Foundation::{
-    ERROR_BAD_PATHNAME, ERROR_FILE_NOT_FOUND, ERROR_INVALID_NAME, ERROR_INVALID_PARAMETER, ERROR_NOT_A_REPARSE_POINT,
-    ERROR_PATH_NOT_FOUND, INVALID_HANDLE_VALUE,
+    ERROR_BAD_PATHNAME, ERROR_FILE_NOT_FOUND, ERROR_INVALID_NAME, ERROR_INVALID_PARAMETER, ERROR_MORE_DATA,
+    ERROR_NO_MORE_FILES, ERROR_NOT_A_REPARSE_POINT, ERROR_PATH_NOT_FOUND, INVALID_HANDLE_VALUE,
 };
 use windows_sys::Win32::Storage::FileSystem::{
     FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT, FILE_NAME_NORMALIZED, FILE_READ_ATTRIBUTES,
@@ -131,8 +131,11 @@ fn drive_letters() -> Option<Vec<char>> {
 }
 
 /// Every place a volume the mount manager knows is mounted (`D:\`, `C:\Mnt\Data\`), from the
-/// GUID sweep; `None` when the sweep wouldn't start. A mapped or `subst` drive is no volume
-/// here: [`drive_letters`] has those.
+/// GUID sweep; `None` when the sweep wouldn't start or stopped short. A mapped or `subst`
+/// drive is no volume here: [`drive_letters`] has those.
+///
+/// ❗ A partial sweep is `None`, ❌ never the volumes read so far: a missed folder mount is
+/// exactly the one an Overwrite would empty.
 fn mount_paths() -> Option<Vec<String>> {
     let mut out = Vec::new();
     let mut name = [0u16; GUID_PATH_LEN];
@@ -141,23 +144,28 @@ fn mount_paths() -> Option<Vec<String>> {
     if handle == INVALID_HANDLE_VALUE {
         return None;
     }
-    loop {
-        out.extend(volume_path_names(&name));
+    let complete = loop {
+        let Some(paths) = volume_path_names(&name) else {
+            break false;
+        };
+        out.extend(paths);
         // SAFETY: `handle` came from `FindFirstVolumeW`; `name` holds `GUID_PATH_LEN` units.
         if unsafe { FindNextVolumeW(handle, name.as_mut_ptr(), GUID_PATH_LEN as u32) } == 0 {
-            break;
+            let code = std::io::Error::last_os_error().raw_os_error();
+            break code.and_then(|code| u32::try_from(code).ok()) == Some(ERROR_NO_MORE_FILES);
         }
-    }
-    // SAFETY: `handle` came from `FindFirstVolumeW` and is closed once, here.
+    };
+    // SAFETY: `handle` came from `FindFirstVolumeW` and is closed once, here, on every path.
     unsafe { FindVolumeClose(handle) };
-    Some(out)
+    complete.then_some(out)
 }
 
-/// Every path the volume GUID path in `name` is mounted at (`C:\`, `C:\Mnt\Data\`).
-fn volume_path_names(name: &[u16]) -> Vec<String> {
+/// Every path the volume GUID path in `name` is mounted at (`C:\`, `C:\Mnt\Data\`; none for
+/// a volume mounted nowhere), or `None` when Windows wouldn't say.
+fn volume_path_names(name: &[u16]) -> Option<Vec<String>> {
     let mut buffer = vec![0u16; 1024];
     let mut needed = 0u32;
-    for _ in 0..2 {
+    for _ in 0..3 {
         // SAFETY: `name` is NUL-terminated (the buffer `FindFirstVolumeW` filled), `buffer`
         // holds its length in units, and `needed` is a valid out pointer.
         let ok = unsafe {
@@ -170,18 +178,22 @@ fn volume_path_names(name: &[u16]) -> Vec<String> {
         };
         if ok != 0 {
             let end = (needed as usize).min(buffer.len());
-            return String::from_utf16_lossy(&buffer[..end])
-                .split('\0')
-                .filter(|path| !path.is_empty())
-                .map(str::to_string)
-                .collect();
+            return Some(
+                String::from_utf16_lossy(&buffer[..end])
+                    .split('\0')
+                    .filter(|path| !path.is_empty())
+                    .map(str::to_string)
+                    .collect(),
+            );
         }
-        if needed as usize <= buffer.len() {
-            break;
+        let code = std::io::Error::last_os_error().raw_os_error();
+        let more = code.and_then(|code| u32::try_from(code).ok()) == Some(ERROR_MORE_DATA);
+        if !more || needed as usize <= buffer.len() {
+            return None;
         }
         buffer = vec![0u16; needed as usize];
     }
-    Vec::new()
+    None
 }
 
 /// The folder mount `path` (`C:\mnt\data\`) as `std::fs::canonicalize` would spell the folder

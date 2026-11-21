@@ -389,6 +389,12 @@ nearly every method and hide which answers are real.
   folder and let an Overwrite empty the volume. `is_mount_point` normalizes instead, since its callers pass a volume
   root in app spelling (`C:/`) as often as a resolved one.
 
+  **Decision**: a sweep that stops short (`FindNextVolumeW` failing with anything but `ERROR_NO_MORE_FILES`, or a
+  volume's `GetVolumePathNamesForVolumeNameW` failing past its `ERROR_MORE_DATA` retry) makes the whole table `None`.
+  **Why**: the volumes read so far would miss a folder mount, the one an Overwrite would empty; `None` is the guards'
+  "refuse". Every volume on mami answered, the EFI and recovery partitions (no paths) and an empty optical drive
+  included (PowerShell P/Invoke, 2026-11-21).
+
   **Decision**: a network path is never a local mount (`Some(false)`), and a bare share root can't say (`None`).
   **Why**: a share can't hold a volume mount point, and asking would be a round trip to a server that may be dead;
   `None` keeps the engine's "drive left" answer from firing on a share it can't see.
