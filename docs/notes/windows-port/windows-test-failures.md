@@ -162,6 +162,18 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
     `link_landing_tests::an_overwrite_of_a_folder_with_a_refused_link_puts_the_folder_back`,
     `cross_type_policy_tests::a_move_under_overwrite_all_never_deletes_a_file_a_folder_landed_on`, and
     `move_op::tests::a_same_fs_merge_that_skipped_a_child_reports_the_source_still_there`.
+  - Rerun once PR #1304 landed on `main` beside milestones 7 and 8 (2026-11-21, `75bea9d35c`, same pair and command,
+    elevated): 2,729 tests, 168 failed (`cmdr-fs` 10, `cmdr-operations` 158), against the PR's 172. No cell newly red.
+    Of this note's 299 `cmdr-operations` cells, 148 pass and 151 stay red (the TSV's `rerun` column); the seven red
+    cells the TSV lacks are all named above: the three `refused_class_tests::*_native_join_refuses` (10a), the
+    `link_landing_tests` link overwrite (`LinksNotSupported`, task 35), and the PR's three task-35 mount-arm cells.
+  - `cmdr-fs`'s 10 (red at the PR's head `c282d13d96` too, so not the PR's; written after this note's run, so not in the
+    TSV): POSIX expectations on a Windows host. A relative bridge value joins with `\` (`app_path::bridge_test`'s two,
+    `rel/dir\x` for `rel/dir/x`; `patching_test::a_parent_with_no_canonical_twin_still_patches_its_child` the same way,
+    0 patches for 2), `go_to_path::tests`' five resolve `/home` as `\home` through `std::path`,
+    `remote_paths_test::a_path_anchored_by_the_app_still_lands_where_the_pane_says` anchors nothing, and
+    `root_anchored_path_test::typed::drive_and_unc_roots_anchor_by_their_own_rules` refuses `//testnas.local/Share` as
+    not canonical. Not milestone 7's or 8's; unowned so far.
 - **10a, `cmdr-operations`**: 229.
 - **10b, `cmdr-index`**: 133, the 48 cold-drive timeouts among them.
 - **10e, `cmdr-listing-wasm`**: 7.
