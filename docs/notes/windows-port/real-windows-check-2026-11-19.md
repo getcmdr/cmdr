@@ -155,3 +155,34 @@ and `cmdr://state`. Fixtures under `C:\Users\Admin\w35` and `D:\w35-dst`, remove
 - Seen, not chased: `nav_to_path` to `D:/w35-dst` from a `C:` pane timed out its 2 s existence check (with the index
   walking `C:` on both cores); `select_volume` first, then `nav_to_path`, landed. A pending clash spells its destination
   `C:/Users/Admin/w35/ow-dst\report` (#1225's mixed separators).
+
+## Task 36's delete on the desktop (2026-11-21)
+
+Driven the same way as task 35's above (Cmdr's MCP server, `CMDR_MCP_DIRECT_MODE=1`, requests sent on the builder
+itself), fixtures under `C:\Users\Admin\w36`, a file held open by a PowerShell process that opened it with no sharing.
+Every fixture and every item this run put in the Recycle Bin is gone again; nothing else in the bin was touched.
+
+- **Before, on `main` at `98e2c50409`**: a trash of a file and of a folder both refused ("this platform has no Trash",
+  `trash_refused` with reason `other`), items kept. A permanent delete of a file and of a folder worked. A permanent
+  delete of a READ-ONLY file deleted it with no word (`std::fs::remove_file` clears the attribute). A permanent delete
+  of a file held open refused as `file_in_use`.
+- **After, PR #1329 merged with `main` at `d6130c29b8`** (a debug build, 12 min warm):
+  - Pass: a trash of a file, then of two folders: all three in the Recycle Bin as the Shell lists it
+    (`Shell.Application` namespace 10), each with its original location `C:\Users\Admin\w36`.
+  - Pass: a restore by hand, the Shell's own Restore verb on one folder: back in place with its file's bytes. (The Shell
+    left that folder's `$I` record behind, which the bin no longer lists.)
+  - Pass: the app's undo of the two-folder trash (`operations_rollback`): `rolledBack` for both (the restored one
+    counted as already back), the other folder back with its bytes and its `$I` record gone.
+  - Pass: a permanent delete of a file and a folder.
+  - Pass: a permanent delete of a read-only file refuses as `file_locked` and the file stays; a trash of one recycles.
+  - Pass: a permanent delete of a held file refuses as `file_in_use`; a trash of one refuses as `trash_refused` with
+    reason `inUse` (the Shell's `HRESULT 0x80270027`), the file kept.
+  - Pass (PR #1327): a folder moved within `C:` through the Move dialog renamed in place: the same file id
+    (`fsutil file queryfileid`), its two files' bytes intact, the source gone. Every delete above ran from a normal pane
+    row after that PR's `..` refusal.
+  - Not seen on screen: the dialogs' wording, since an elevated Task Manager sits on top of the desktop. The error types
+    are what the dialog words (`errors.write.fileLocked`'s Windows suggestion, `trashRefused.*.inUse`).
+  - Not tested in the app: a drive with no Recycle Bin (no USB stick or share on the builder); `windows_tests.rs`'s
+    `\\localhost\C$` cell covers the veto.
+  - Seen, not chased: two folders PowerShell made in the listed folder never appeared in the left pane until it was
+    navigated away and back (a watcher miss on Windows).

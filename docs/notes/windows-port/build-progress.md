@@ -432,3 +432,10 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   the engine by an unanchored destination (`real-windows-check-2026-11-19.md` § "Task 35's mount table on the desktop").
   Gotcha: `nav_to_path` across drives can time out its 2 s existence check while the index walks `C:`; `select_volume`
   first, then `nav_to_path`, lands. `cmdr-m6` is back on `origin/main`, clean.
+- **2026-11-21, task 36's delete** (PR #1329; the warm pair, `CARGO_BUILD_JOBS=2`, suites elevated through
+  `run-on-desktop.sh`; a debug app build 12 min warm): the Recycle Bin, read-only as Locked, and "in use" on trash and
+  Overwrite. `cargo nextest run -p cmdr-fs -p cmdr-local -p cmdr-operations --profile windows-baseline`: 2,805 tests,
+  110 red, none in delete, trash, or Overwrite (`windows-test-failures.md` § "By milestone"). On the desktop:
+  `real-windows-check-2026-11-19.md` § "Task 36's delete on the desktop". Gotchas: an SSH session's child processes die
+  with it, so a build or a held-file fixture runs through `run-on-desktop.sh`; nextest output carries `\r`, so strip it
+  before comparing names with the TSV. `cmdr-m6` is back on `origin/main`, clean.
