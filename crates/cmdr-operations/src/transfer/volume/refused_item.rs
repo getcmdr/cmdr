@@ -14,7 +14,7 @@ use std::path::Path;
 use super::super::super::refused_name::{RefusedItem, RefusedNameAnswer, ask_async, refusal_reason};
 use super::super::super::types::RefusedNameReason;
 use super::merge_ctx::MergeCtx;
-use super::transfer_error::{PathRole, PathedVolumeError};
+use super::transfer_error::{PathRole, PathedVolumeError, failed_native};
 use cmdr_fs::volume::VolumeError;
 
 /// The item whose name may have been refused, as its owner knows it.
@@ -59,7 +59,7 @@ pub(super) async fn skip_if_refused(
 
 /// Whether `error` is the destination refusing `subject`'s own name, and why.
 pub(super) fn refused_here(subject: &RefusalSubject<'_>, error: &PathedVolumeError) -> Option<RefusedNameReason> {
-    if error.role != PathRole::Destination || error.path != subject.dest {
+    if error.role != PathRole::Destination || *failed_native(&error.path) != *subject.dest {
         return None;
     }
     refusal_reason(&error.clone().into_write_error())

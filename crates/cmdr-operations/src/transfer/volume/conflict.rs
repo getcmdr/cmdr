@@ -119,12 +119,16 @@ pub(super) async fn resolve_volume_conflict(
     // recursively deletes the user's destination folder. A guessed `false` on
     // the DESTINATION reaches the same arm's bare `delete`. An unanswerable
     // stat fails the item instead.
+    //
+    // Both sides in their volume's spelling, made once for every stat this
+    // conflict asks (a borrow, no copy, for any name that's valid UTF-8).
+    let (source_app, dest_app) = (
+        AppPath::legacy_unchecked(source_path),
+        AppPath::legacy_unchecked(dest_path),
+    );
     let source_is_directory = match source_is_directory_hint {
         Some(is_dir) => is_dir,
-        None => source_volume
-            .is_directory(&AppPath::legacy_unchecked(source_path))
-            .await
-            .at_source(source_path)?,
+        None => source_volume.is_directory(&source_app).await.at_source(source_path)?,
     };
 
     // A source that would land on ITSELF is a request to DUPLICATE it, never a
@@ -227,9 +231,9 @@ pub(super) async fn resolve_volume_conflict(
                 let effective = reduce_volume_conditional_resolution(
                     saved,
                     source_volume,
-                    source_path,
+                    &source_app,
                     dest_volume,
-                    dest_path,
+                    (dest_path, &dest_app),
                     source_size_hint,
                     dest_size_hint,
                 )
@@ -264,15 +268,12 @@ pub(super) async fn resolve_volume_conflict(
             // policies. Each is bounded by the time the user takes to click,
             // so the cost is invisible.
             let source_modified: Option<i64> = source_volume
-                .get_metadata(&AppPath::legacy_unchecked(source_path))
+                .get_metadata(&source_app)
                 .await
                 .ok()
                 .and_then(|m| m.modified_at)
                 .map(|s| s as i64);
-            let destination_meta = dest_volume
-                .get_metadata(&AppPath::legacy_unchecked(dest_path))
-                .await
-                .ok();
+            let destination_meta = dest_volume.get_metadata(&dest_app).await.ok();
             let destination_modified: Option<i64> =
                 destination_meta.as_ref().and_then(|m| m.modified_at).map(|s| s as i64);
 
@@ -376,9 +377,9 @@ pub(super) async fn resolve_volume_conflict(
                     let effective = reduce_volume_conditional_resolution(
                         answered,
                         source_volume,
-                        source_path,
+                        &source_app,
                         dest_volume,
-                        dest_path,
+                        (dest_path, &dest_app),
                         source_size,
                         dest_size,
                     )
@@ -429,9 +430,9 @@ pub(super) async fn resolve_volume_conflict(
             let effective = reduce_volume_conditional_resolution(
                 resolution,
                 source_volume,
-                source_path,
+                &source_app,
                 dest_volume,
-                dest_path,
+                (dest_path, &dest_app),
                 source_size_hint,
                 dest_size_hint,
             )
@@ -460,29 +461,27 @@ pub(super) async fn resolve_volume_conflict(
 /// to `Skip`. Volume backends may not always populate `modified_at` (SMB
 /// servers vary, MTP usually does); in that case `OverwriteOlder` skips,
 /// which is the safe default.
+///
+/// `dest` is the destination twice: the engine's path the logs name, and the
+/// same path in the volume's spelling for its stats (the caller made it once).
 async fn reduce_volume_conditional_resolution(
     resolution: ConflictResolution,
     source_volume: &Arc<dyn Volume>,
-    source_path: &Path,
+    source_app: &AppPath,
     dest_volume: &Arc<dyn Volume>,
-    dest_path: &Path,
+    (dest_path, dest_app): (&Path, &AppPath),
     source_size_hint: Option<u64>,
     dest_size_hint: Option<u64>,
 ) -> ConflictResolution {
-    // Both sides in their volume's spelling, made once for whichever stats the policy needs.
-    let (source_app, dest_app) = (
-        AppPath::legacy_unchecked(source_path),
-        AppPath::legacy_unchecked(dest_path),
-    );
     match resolution {
         ConflictResolution::OverwriteSmaller => {
             let src_size = match source_size_hint {
                 Some(s) => Some(s),
-                None => source_volume.get_metadata(&source_app).await.ok().and_then(|m| m.size),
+                None => source_volume.get_metadata(source_app).await.ok().and_then(|m| m.size),
             };
             let dst_size = match dest_size_hint {
                 Some(s) => Some(s),
-                None => dest_volume.get_metadata(&dest_app).await.ok().and_then(|m| m.size),
+                None => dest_volume.get_metadata(dest_app).await.ok().and_then(|m| m.size),
             };
             match (src_size, dst_size) {
                 (Some(src), Some(dst)) if dst < src => ConflictResolution::Overwrite,
@@ -507,12 +506,12 @@ async fn reduce_volume_conditional_resolution(
         }
         ConflictResolution::OverwriteOlder => {
             let src_t = source_volume
-                .get_metadata(&source_app)
+                .get_metadata(source_app)
                 .await
                 .ok()
                 .and_then(|m| m.modified_at);
             let dst_t = dest_volume
-                .get_metadata(&dest_app)
+                .get_metadata(dest_app)
                 .await
                 .ok()
                 .and_then(|m| m.modified_at);
