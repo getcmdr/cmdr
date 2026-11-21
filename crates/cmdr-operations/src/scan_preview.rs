@@ -64,7 +64,7 @@ mod volume;
 
 #[cfg(not(target_family = "wasm"))]
 pub(super) use local::run_scan_preview;
-#[cfg(all(test, unix))]
+#[cfg(test)]
 pub(super) use volume::count_selected_links_as_links;
 pub(super) use volume::entry_in_parent_listing;
 #[cfg(test)]

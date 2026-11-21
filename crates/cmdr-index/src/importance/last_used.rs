@@ -168,6 +168,7 @@ mod macos {
     }
 }
 
+// Spotlight's `kMDItemLastUsedDate` sample is macOS-only; elsewhere `sample_last_used` is an empty stub
 #[cfg(all(test, target_os = "macos"))]
 mod tests {
     use std::sync::{Arc, Mutex};

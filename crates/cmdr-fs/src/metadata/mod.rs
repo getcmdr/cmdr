@@ -322,5 +322,6 @@ fn note_helper_call() {
 #[cfg(test)]
 mod tests;
 
+// Pins what Linux answers per metadata class (POSIX modes); `tests.rs` is the macOS half.
 #[cfg(all(test, target_os = "linux"))]
 mod linux_characterization_tests;

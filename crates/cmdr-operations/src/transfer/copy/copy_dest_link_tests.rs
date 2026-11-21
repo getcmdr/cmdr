@@ -11,8 +11,6 @@
 //! The destination ITSELF, and anything above it, may be a link: the person
 //! navigated there, so that is the folder they picked.
 
-#![cfg(unix)]
-
 use super::super::conflict_responder_test_support::ConflictResponderSink;
 use super::*;
 use crate::event_sinks::CollectorEventSink;

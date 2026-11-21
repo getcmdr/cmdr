@@ -6,7 +6,7 @@
 //! that crate.
 
 mod analytics_tests;
-#[cfg(target_os = "macos")]
+#[cfg(target_os = "macos")] // BSD file flags (Locked) and `deny delete` ACLs
 mod blocked_items_tests;
 mod case_twin_tests;
 mod control_tests;

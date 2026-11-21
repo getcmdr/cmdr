@@ -1,18 +1,16 @@
 //! The volume engines (the moves, and the merge walk every copy runs) on a
 //! backend whose `is_directory` FOLLOWS a link.
 //!
-//! `LocalPosixVolume` answers `is_directory` with an `lstat`, so a suite on it
+//! `LocalVolume` answers `is_directory` with an `lstat`, so a suite on it
 //! can't see what an ADB phone or an SFTP server does: their stat follows the
 //! link, and a link to a folder answers "directory". Anything that recursed on
 //! that answer walked into the link's target and deleted or wrote there, a
 //! folder the user never selected (#140). `Volume::entry_kind` is the question
 //! that can't be fooled, and these cells pin that every recursing site asks it.
 //!
-//! The rig is a real `LocalPosixVolume` over a tempdir (real links, real
+//! The rig is a real `LocalVolume` over a tempdir (real links, real
 //! `rename`), behind a wrapper that keeps the trait's DEFAULT `is_directory` and
 //! `entry_kind`, the two answers a stat-following backend gets.
-
-#![cfg(unix)]
 
 use super::super::conflict_responder_test_support::ConflictResponderSink;
 use super::copy::copy_volumes_with_progress;
@@ -34,18 +32,18 @@ use cmdr_fs::volume::{
     BatchScanResult, CopyScanResult, InMemoryVolume, ListingProgress, ScanBoundary, SpaceInfo, StreamLength,
     StreamWriteProgress, StreamWritten, Volume, VolumeError, VolumeReadStream, WriteMode,
 };
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
 use tempfile::TempDir;
 
-/// A `LocalPosixVolume` minus its `lstat`-based `is_directory` and `entry_kind`
+/// A `LocalVolume` minus its `lstat`-based `is_directory` and `entry_kind`
 /// overrides: both fall to the trait defaults, which read `get_metadata`, whose
 /// `is_directory` is true for a link to a folder (with `is_symlink` beside it).
 struct LinkFollowingVolume {
-    inner: LocalPosixVolume,
+    inner: LocalVolume,
     /// `Some((name, target))` stages a race: the moment `name` is renamed away
     /// (a conflict resolution setting it aside), a link to `target` takes the
     /// freed name, as another writer could between the resolver and the landing.
@@ -168,7 +166,7 @@ impl Volume for LinkFollowingVolume {
 fn following_volume() -> (Arc<dyn Volume>, TempDir) {
     let dir = TempDir::new().unwrap();
     let volume: Arc<dyn Volume> = Arc::new(LinkFollowingVolume {
-        inner: LocalPosixVolume::local_folder("V", dir.path().to_path_buf(), crate::host::testing::pane_order_host()),
+        inner: LocalVolume::local_folder("V", dir.path().to_path_buf(), crate::host::testing::pane_order_host()),
         link_takes_freed_name: None,
         shared_scan_walk: false,
     });
@@ -186,7 +184,7 @@ async fn a_copied_folder_holding_a_dir_link_ends_with_every_tree_row_done() {
     let dir = TempDir::new().unwrap();
     let root = dir.path();
     let source: Arc<dyn Volume> = Arc::new(LinkFollowingVolume {
-        inner: LocalPosixVolume::local_folder("V", root.to_path_buf(), crate::host::testing::pane_order_host()),
+        inner: LocalVolume::local_folder("V", root.to_path_buf(), crate::host::testing::pane_order_host()),
         link_takes_freed_name: None,
         shared_scan_walk: true,
     });
@@ -228,7 +226,7 @@ async fn a_link_racing_into_a_freed_name_is_never_merged_into() {
     let dir = TempDir::new().unwrap();
     let root = dir.path();
     let volume: Arc<dyn Volume> = Arc::new(LinkFollowingVolume {
-        inner: LocalPosixVolume::local_folder("V", root.to_path_buf(), crate::host::testing::pane_order_host()),
+        inner: LocalVolume::local_folder("V", root.to_path_buf(), crate::host::testing::pane_order_host()),
         link_takes_freed_name: Some((PathBuf::from("dst/album/thing"), root.join("outside/target"))),
         shared_scan_walk: false,
     });
@@ -409,14 +407,14 @@ async fn a_same_volume_move_onto_a_dir_link_never_lands_in_the_target() {
     assert!(is_link(root, "dst/album"), "the destination link is untouched");
 }
 
-// The same two moves on a PLAIN `LocalPosixVolume` (an `lstat` backend), plus
+// The same two moves on a PLAIN `LocalVolume` (an `lstat` backend), plus
 // the stamp-then-sweep pair an into-zip move uses, on both kinds of backend. A
 // move's source sweep deletes a LEDGER (`source_sweep.rs`), and a link in it is a
 // leaf: the link goes, nothing under it is re-listed or deleted.
 
 fn plain_volume() -> (Arc<dyn Volume>, TempDir) {
     let dir = TempDir::new().unwrap();
-    let volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "V",
         dir.path().to_path_buf(),
         crate::host::testing::pane_order_host(),

@@ -76,6 +76,7 @@ pub fn journal_uuid(_root: &std::path::Path) -> Option<String> {
     None
 }
 
+// The real FSEvents journal (`fseventsd`); other OSes answer a constant stub
 #[cfg(all(test, target_os = "macos"))]
 mod tests {
     use super::*;

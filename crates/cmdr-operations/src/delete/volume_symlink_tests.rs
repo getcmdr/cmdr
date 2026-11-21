@@ -3,12 +3,10 @@
 //! child listing, the parent pane's listing, the backend's own stat, and a
 //! cached scan preview.
 //!
-//! The rig is a real `LocalPosixVolume` over a tempdir (real links), behind a
+//! The rig is a real `LocalVolume` over a tempdir (real links), behind a
 //! wrapper that can answer `is_directory` the way a link-FOLLOWING backend does
 //! (ADB, SFTP), can list a link as the folder it points to the way a Samba
 //! share does (#613), and can let a pane's listing vouch for a folder.
-
-#![cfg(unix)]
 
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::app_path::AppPathBuf;
@@ -32,16 +30,16 @@ use cmdr_fs::volume::{
     WatchCoverage,
 };
 use cmdr_listing::testing::{TestListing, TestListingGuard};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use tempfile::TempDir;
 
-/// A `LocalPosixVolume` that can answer `is_directory` by FOLLOWING a link (the
+/// A `LocalVolume` that can answer `is_directory` by FOLLOWING a link (the
 /// trait default over `get_metadata`, as ADB and SFTP do) and can report every
 /// listing as watcher-fresh, so a pane's cached listing answers for it. With
 /// `hides_links` it plays a Samba share: an SMB volume whose listings never mark
 /// a link, while its `entry_kind` (a stat) does.
 struct LinkRig {
-    inner: LocalPosixVolume,
+    inner: LocalVolume,
     follows_links: bool,
     watched: bool,
     hides_links: bool,
@@ -170,11 +168,7 @@ impl Tree {
 
     fn rig(&self, follows_links: bool, watched: bool, hides_links: bool) -> Arc<LinkRig> {
         Arc::new(LinkRig {
-            inner: LocalPosixVolume::local_folder(
-                "V",
-                self.root().to_path_buf(),
-                crate::host::testing::pane_order_host(),
-            ),
+            inner: LocalVolume::local_folder("V", self.root().to_path_buf(), crate::host::testing::pane_order_host()),
             follows_links,
             watched,
             hides_links,

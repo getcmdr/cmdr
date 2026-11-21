@@ -479,7 +479,7 @@ pub(crate) fn is_same_filesystem(source: &Path, destination: &Path) -> std::io::
     Ok(sameness == Sameness::Same)
 }
 
-#[cfg(all(test, unix))]
+#[cfg(all(test, unix))] // POSIX permission bits lock the folder
 mod refusing_folder_tests {
     //! What ERR-4TEMD needed and didn't get: a refusal that names the folder that
     //! actually said no.
@@ -627,7 +627,7 @@ mod refusing_folder_tests {
     }
 }
 
-#[cfg(all(test, unix))]
+#[cfg(test)]
 mod path_exists_or_is_symlink_tests {
     //! Regression for the medium-severity audit finding: the regular-file
     //! copy branch (and both move-op branches) used `Path::exists()` for

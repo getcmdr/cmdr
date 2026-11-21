@@ -15,8 +15,6 @@
 //! Runs on the real `LocalVolume` rig (`rename_merge_test_support.rs`), the
 //! only one where a symlink is a symlink.
 
-#![cfg(unix)]
-
 use super::super::conflict_responder_test_support::ConflictResponderSink;
 use super::move_same::move_within_same_volume_with_progress;
 use super::rename_merge_test_support::{exists, local_volume, make_state, mkdir, read, write_file};
