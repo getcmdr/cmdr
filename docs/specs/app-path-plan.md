@@ -1402,6 +1402,66 @@ included; the hidden couplings it found are why waves B and C differ from round 
   are paths too), `cmdr-smb` 13 (the anchored-mount prefix arithmetic over `/Volumes/…`), `cmdr-mtp` 1 (plus
   `host_seam_test`'s mutation count, to diagnose: it may not be a path).
 - **DONE**: bridge counts zero; Windows suites green.
+- **Done** (2026-11-21, branch `worktree-agent-a82b4cda924d76541`, PR #1302; the lead on SMB, one helper each on ADB and
+  MTP): every `Volume`, `ScanSource`, and `PatchSource` body and crate helper takes `&AppPath`, server and device paths
+  are `/`-split text, and nothing reads an app path through `std::path` but the named crossings below. Bridge calls 854
+  → 13 (SMB 691 → 10, ADB 102 → 2, MTP 61 → 1), `appTextToPath` 12 → 0, `pathFromBareText` 249 → 6 (SMB 3, ADB 3: the
+  adb binary's native path). The durable design: `crates/cmdr-smb/DETAILS.md` § Decisions, `crates/cmdr-adb/DETAILS.md`,
+  `crates/cmdr-mtp/src/connection/DETAILS.md`. Decisions:
+  - **Row and root text stay today's** (milestone 6's rule): SMB rows keep `to_display_path`'s text, ADB's root the bare
+    `adb://<serial>` (a typed root would be `adb://<serial>/`, and a pane compares the root by string), MTP's rows their
+    storage URL text. Only the listing-cache patches are typed.
+  - **SMB reads paths by their text**: `smb_path_of` keeps the root aliases, a bridge value's relative text, and
+    `Path::strip_prefix`'s whole-component match and remainder trim, byte for byte; a share path's name splits on `/`
+    alone (`smb_file_name`). The copy-scan walk joins by `ListedFolder` (the shared walk's rule, `InvalidName` for a
+    name that isn't one plain name).
+  - **MTP's session layer is typed too**: storage paths are canonical app paths under a POSIX `/` (one door,
+    `connection/storage_path.rs`), so the path ↔ handle and listing caches key one object by one value. That is what
+    `host_seam_test`'s mutation count and `same_name_test`'s twin rename were: `Path::join` wrote `\` on Windows.
+  - **Escape-range text stays literal until escapes go live** (`RemoteRoot::to_remote`'s rule), in all three. ❗ For
+    10f: the bridge escapes a literal escape-range code point into four byte escapes, so a bridged value holding one now
+    reaches the server as escape text where `as_std_legacy` decoded it back (the same is true of milestone 6's backends
+    since it landed). No real name holds plane-16 private use; 10f's live escapes make the two spellings one.
+- **Byte-exact evidence** (throwaway differential harnesses against today's `std::path` code on macOS, kept in the
+  lead's scratchpad): SMB 5,075,828 cases (wire path, share file name, the walk's listing round trip, patch parent and
+  name, the walk's child join), 0 differences; ADB 33,146,552 (device path, row paths and names, patch paths, `root()`),
+  0; MTP 9,274,006, with 8,222 differences on canonical input, all in three classes: a device name holding a literal
+  escape-range code point (8,151: the listing path and notify URLs now carry the row's literal text, where the bridge
+  re-escaped it; the 10f note above), another device's URL handed to this storage's volume (69, never in practice), and
+  the storage root as an object (2: its parent `mtp://mtp-0-1/` against `mtp://mtp-0-1`, the same listing). Bridge-only
+  input (`//`, `/./`, a trailing `/`, `..`) now answers the canonical place, the same one by components; SMB's patch
+  parents differ in spelling only there (and a pane's listing key is canonical, so the patch lands where it used to
+  miss). Docker: `rust-integration-tests` scoped to `cmdr-smb` and `cmdr-adb` green (two cells starved under load passed
+  alone).
+- **Intended behavior changes** (each red first): MTP, an object a device names `..`, ``, `.`, or `a/b` lists no row (it
+  listed `("..", "/Documents/..")`, a path naming the folder's parent), and a tree delete of a folder holding one
+  refuses as `DirectoryNotEmpty`. SMB's walk refuses such a listed name as `InvalidName`, as the shared walk does (no
+  SMB server lists one).
+- **What still bridges, and who takes it**: SMB's mount root (`MountAnchor.mount_path`, a native OS mount point, held as
+  `BridgedPath`), `rerooted` (the registry promotes between native mount points), the watcher (its paths are
+  listing-host keys), `mutation::listing_key` and `scan::for_boundary` (the listing host and the `ScanRecorder`), and
+  `testing`'s `std::path` forms the app's suites call (`hash_volume_file`, `cleanup_test_prefix`): 10c/10d. ADB's root
+  `BridgedPath` (the bare `adb://<serial>` text, which only the bridge holds) and one conformance cell that hands in a
+  `..` (11). MTP's `connection::std_path_for_host`, every `&Path` host-seam call (the listing host, `ScanBoundary`,
+  `ResolvedMtpObject.path`): ❗ a new per-file entry (`connection/mod.rs`, 0 → 1) that replaces 61 calls over 12 files,
+  the one budget line that grew. The app's `UnverifiedSmbMount` (`network/smb_mount_gate.rs`) is the app's: its
+  crossings are into the volume manager's `std::path` API (10c).
+- **Landmines checked**: smb2 maps `\` and the other forbidden characters to the private-use area and back, so a listed
+  `a\b 12:00.txt` reaches it intact (pinned, `paths_test`). smb2 today REFUSES a name with an unpaired surrogate: every
+  UTF-16 name decode is `String::from_utf16` mapped to `invalid_data`, so one such entry fails the whole listing (and a
+  watcher batch). Filed as vdavid/smb2#47 for 10f's unit escapes. The UNC root fold waits for Windows direct sessions,
+  which don't exist: a mapped drive stays on the OS mount.
+- **Surfaced, not fixed** (MTP, older than this work): `resolve_handle_to_path` caches a resolved twin's leaf under the
+  shared name, so the shared name can resolve to one twin, against the #523 rule; a create or upload whose name holds an
+  escape gets no listing patch (the pane re-lists).
+- **Windows**: no builder run (another agent held it). `clippy-windows` green; the CI Windows lane (compile only) on the
+  PR. The 66 cells this milestone owns (`cmdr-adb` 51, `cmdr-smb` 13, `cmdr-mtp` 2) are path-shaped and expected green;
+  a builder run confirms them.
+- **Verified**: nextest `cmdr-smb`, `cmdr-adb`, `cmdr-mtp` 615 passed (190 Docker skipped); clippy `-D warnings`
+  (workspace `pnpm check clippy`, the crates with `--all-features`); `pnpm check --fast`, `app-path-std-bridge`,
+  `file-length`, `jscpd-rust` (three new trait-boilerplate pairs, each with its reason, the backends' bodies now
+  token-identical without their preludes: `cmdr-mtp` ↔ `cmdr-smb` `volume_impl.rs` 19 lines, `cmdr-adb` ↔ `cmdr-webdav`
+  `volume_impl.rs` 108, `cmdr-adb` ↔ `cmdr-sftp` `mutation.rs` 21; the ADB ↔ archive pair went).
 
 ### 8. Virtual volumes and leaf crates
 

@@ -94,7 +94,8 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
   `mutation_test::delete_removes_a_file_an_empty_folder_and_a_link_but_never_recurses` (an NFS status mapped to Win32's
   145 where Linux's `ENOTEMPTY` 41 is expected; the baseline saw it fail earlier, on a path), and `cmdr-s3`'s
   `nanoseconds_survive_and_trailing_zeros_drop` (100 ns `SystemTime`). `apply_metadata_dates_and_modes_a_folder` passes.
-- **7, device backends**: 66 (`cmdr-adb` 51, `cmdr-smb` 13, `cmdr-mtp` 2).
+- **7, device backends**: 66 (`cmdr-adb` 51, `cmdr-smb` 13, `cmdr-mtp` 2). Converted 2026-11-21 (PR #1302), no builder
+  run yet: expected green.
 - **8, virtual volumes and leaf crates**: 72 (`cmdr-restic` 45 with its 5 hub timeouts, `cmdr-viewer` 13, `cmdr-archive`
   9, `cmdr-operation-log` 3, `cmdr-listing` 2).
 - **9, `cmdr-local`**: none of its own; it's the native crossing 10a–10d wait on. Done (2026-11-19, in `D:\src\cmdr-m9`,
