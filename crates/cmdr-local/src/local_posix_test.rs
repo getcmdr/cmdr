@@ -1,102 +1,20 @@
-//! Tests for LocalPosixVolume.
+//! `LocalPosixVolume`'s own cells: its `os_path` crossing and the bridge shapes it still
+//! takes, Finder's `/.hidden`, POSIX symlinks and hardlinks, modes and the sealed system
+//! volume, a host keyed by native paths, and the no-replace rename's degradation (errnos
+//! injected). The cells every OS shares are in `local_volume_test.rs`.
 
-#![cfg(unix)]
+#![cfg(unix)] // POSIX internals: `os_path`, symlinks, hardlinks, modes, errnos
 
 use super::*;
 use crate::test_support::at;
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
-use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::testing::TestDir;
-use cmdr_fs::volume::MountClass;
-use cmdr_fs::volume::WriteMode;
 use cmdr_fs::volume::host::VolumeHost;
-use cmdr_fs::volume::{ListingProgress, StreamLength, UnwritableReason, WriteAccess};
-use cmdr_fs::volume::{MutationEvent, SourceItemInfo, SpaceInfo, Volume, VolumeError, WatchCoverage};
+use cmdr_fs::volume::{MutationEvent, UnwritableReason, Volume, WatchCoverage, WriteAccess};
 use std::path::Path;
 
-#[test]
-fn test_new_creates_volume_with_correct_name_and_root() {
-    let volume = LocalPosixVolume::local_folder("Test Volume", "/tmp", VolumeHost::detached());
-    assert_eq!(volume.name(), "Test Volume");
-    assert_eq!(volume.root().as_str(), "/tmp");
-}
-
-// ── Whether a drive index can serve it, by the mount it sits on ───────
-
-#[test]
-fn a_folder_on_a_local_disk_can_be_indexed() {
-    assert!(
-        LocalPosixVolume::local_folder("Macintosh HD", "/", VolumeHost::detached())
-            .capabilities()
-            .can_be_indexed
-    );
-    assert!(
-        LocalPosixVolume::on_mount(
-            "Backup",
-            "/Volumes/Backup",
-            MountClass::LocalDisk,
-            VolumeHost::detached()
-        )
-        .capabilities()
-        .can_be_indexed
-    );
-}
-
-#[test]
-fn an_os_mounted_smb_share_can_be_indexed_because_the_gate_upgrades_it() {
-    assert!(
-        LocalPosixVolume::on_mount(
-            "testshare",
-            "/Volumes/testshare",
-            MountClass::SmbShare,
-            VolumeHost::detached()
-        )
-        .capabilities()
-        .can_be_indexed
-    );
-}
-
-/// Regression anchor (follow-up to `ERR-JUCNB`): an NFS, AFP, Finder-WebDAV, or
-/// FUSE mount was offered "Turn on indexing", and the enable could only be
-/// refused, because the capability answered per backend while the router
-/// answered per mount. The capability is the answer the switcher, the
-/// first-connect prompt, search, and `start_volume`'s door all read.
-#[test]
-fn a_mount_on_any_other_network_filesystem_cant_be_indexed() {
-    let volume = LocalPosixVolume::on_mount(
-        "export",
-        "/Volumes/export",
-        MountClass::OtherNetwork,
-        VolumeHost::detached(),
-    );
-    assert!(!volume.capabilities().can_be_indexed);
-}
-
-/// Trash goes through the OS on raw paths, and the OS keeps a Trash only on a local disk: on a
-/// network mount it refuses every item and deletes nothing (#747).
-#[test]
-fn only_a_local_disk_keeps_a_trash() {
-    let on = |mount| LocalPosixVolume::on_mount("v", "/Volumes/v", mount, VolumeHost::detached());
-    assert!(LocalPosixVolume::local_folder("Macintosh HD", "/", VolumeHost::detached()).has_trash());
-    assert!(on(MountClass::LocalDisk).has_trash());
-    assert!(!on(MountClass::SmbShare).has_trash());
-    assert!(!on(MountClass::OtherNetwork).has_trash());
-}
-
-#[test]
-fn a_rerooted_volume_keeps_its_mount_class() {
-    let volume = LocalPosixVolume::on_mount(
-        "export",
-        "/Volumes/export",
-        MountClass::OtherNetwork,
-        VolumeHost::detached(),
-    );
-    let moved = volume
-        .rerooted(app_path!("/Volumes/export-1"))
-        .expect("a local volume re-roots");
-    assert!(!moved.capabilities().can_be_indexed);
-}
+// ── The `os_path` crossing, and the bridge shapes it takes ────────────
 
 #[test]
 fn test_resolve_empty_path_returns_root() {
@@ -142,34 +60,6 @@ async fn test_exists_returns_true_for_root() {
     assert!(volume.exists(&AppPath::legacy_unchecked(Path::new("."))).await);
 }
 
-#[tokio::test]
-async fn test_exists_returns_false_for_nonexistent() {
-    let volume = LocalPosixVolume::local_folder("Test", "/tmp", VolumeHost::detached());
-    assert!(!volume.exists(&at(&volume, "definitely_does_not_exist_12345")).await);
-}
-
-#[tokio::test]
-async fn test_list_directory_returns_entries() {
-    // Use /tmp which should exist and have some contents on any POSIX system
-    let volume = LocalPosixVolume::local_folder("Temp", "/tmp", VolumeHost::detached());
-    let result = volume.list_directory(&at(&volume, ""), None).await;
-
-    // Should succeed (even if empty)
-    assert!(result.is_ok());
-}
-
-#[tokio::test]
-async fn test_list_directory_nonexistent_returns_error() {
-    let volume = LocalPosixVolume::local_folder("Test", "/definitely_does_not_exist_12345", VolumeHost::detached());
-    let result = volume.list_directory(&at(&volume, ""), None).await;
-
-    assert!(result.is_err());
-    match result.unwrap_err() {
-        VolumeError::NotFound(_) | VolumeError::IoError { .. } => (),
-        other => panic!("Expected NotFound or IoError, got: {:?}", other),
-    }
-}
-
 /// Finder's legacy `/.hidden` file only means anything at a volume's root: the
 /// same name one level down is an ordinary, visible entry. `list_directory`
 /// decides "is this a root listing" by comparing the resolved path against
@@ -204,175 +94,6 @@ async fn test_dot_hidden_file_hides_a_name_at_the_volume_root_only() {
     assert!(
         !sub_secret.is_hidden,
         "/.hidden only applies at a volume root, not a directory under it"
-    );
-}
-
-#[tokio::test]
-async fn test_get_metadata_returns_entry() {
-    let volume = LocalPosixVolume::local_folder("Temp", "/tmp", VolumeHost::detached());
-    // /tmp itself exists on any POSIX system
-    let result = volume.get_metadata(&at(&volume, "")).await;
-
-    assert!(result.is_ok());
-    let entry = result.unwrap();
-    assert!(entry.is_directory);
-}
-
-#[tokio::test]
-async fn test_get_metadata_nonexistent_returns_error() {
-    let volume = LocalPosixVolume::local_folder("Test", "/tmp", VolumeHost::detached());
-    let result = volume
-        .get_metadata(&at(&volume, "definitely_does_not_exist_12345"))
-        .await;
-
-    assert!(result.is_err());
-}
-
-#[test]
-fn test_can_watch_listings_returns_true() {
-    let volume = LocalPosixVolume::local_folder("Test", "/tmp", VolumeHost::detached());
-    assert!(volume.can_watch_listings());
-}
-
-#[test]
-fn test_supports_streaming_returns_true() {
-    // Since Phase 4, LocalPosixVolume exposes open_read_stream and
-    // write_from_stream so cross-volume copies can pipe through it.
-    let volume = LocalPosixVolume::local_folder("Test", "/tmp", VolumeHost::detached());
-    assert!(volume.supports_streaming());
-}
-
-#[tokio::test]
-async fn test_write_operations() {
-    use std::fs;
-
-    // Create a temp directory for this test
-    let test_dir = TestDir::new("write_ops_test");
-
-    let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
-
-    // Test create_file
-    let result = volume.create_file(&at(&volume, "test.txt"), b"hello world").await;
-    assert!(result.is_ok());
-    assert!(test_dir.join("test.txt").exists());
-    assert_eq!(fs::read_to_string(test_dir.join("test.txt")).unwrap(), "hello world");
-
-    // Test create_directory
-    let result = volume.create_directory(&at(&volume, "subdir")).await;
-    assert!(result.is_ok());
-    assert!(test_dir.join("subdir").is_dir());
-
-    // Test delete file
-    let result = volume.delete(&at(&volume, "test.txt")).await;
-    assert!(result.is_ok());
-    assert!(!test_dir.join("test.txt").exists());
-
-    // Test delete directory
-    let result = volume.delete(&at(&volume, "subdir")).await;
-    assert!(result.is_ok());
-    assert!(!test_dir.join("subdir").exists());
-
-    // Test rename (force=false, no conflict)
-    volume.create_file(&at(&volume, "old.txt"), b"content").await.unwrap();
-    let result = volume
-        .rename(&at(&volume, "old.txt"), &at(&volume, "new.txt"), false)
-        .await;
-    assert!(result.is_ok());
-    assert!(!test_dir.join("old.txt").exists());
-    assert!(test_dir.join("new.txt").exists());
-}
-
-#[tokio::test]
-async fn test_rename_conflict_no_force() {
-    let test_dir = TestDir::new("rename_conflict_test");
-
-    let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
-    volume.create_file(&at(&volume, "source.txt"), b"source").await.unwrap();
-    volume.create_file(&at(&volume, "target.txt"), b"target").await.unwrap();
-
-    let result = volume
-        .rename(&at(&volume, "source.txt"), &at(&volume, "target.txt"), false)
-        .await;
-    assert!(matches!(result, Err(VolumeError::AlreadyExists(_))));
-    // Both files still intact
-    assert!(test_dir.join("source.txt").exists());
-    assert!(test_dir.join("target.txt").exists());
-}
-
-/// The node a folder is survives a rename (what a trip into the Trash is), and a new
-/// folder under the freed name is a different one: the check a trash undo makes.
-#[tokio::test]
-async fn node_identity_follows_the_folder_not_its_name() {
-    let test_dir = TestDir::new("node_identity_test");
-    let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
-    volume.create_directory(&at(&volume, "Invoices")).await.unwrap();
-    let original = volume.node_identity(&at(&volume, "Invoices")).await.unwrap();
-    assert!(original.is_some(), "APFS and ext4 keep a birth time");
-
-    volume
-        .rename(&at(&volume, "Invoices"), &at(&volume, "Trashed"), false)
-        .await
-        .unwrap();
-    assert_eq!(volume.node_identity(&at(&volume, "Trashed")).await.unwrap(), original);
-
-    volume.create_directory(&at(&volume, "Invoices")).await.unwrap();
-    assert_ne!(volume.node_identity(&at(&volume, "Invoices")).await.unwrap(), original);
-    assert!(matches!(
-        volume.node_identity(&at(&volume, "missing")).await,
-        Err(VolumeError::NotFound(_))
-    ));
-}
-
-#[tokio::test]
-async fn test_rename_force_overwrites() {
-    use std::fs;
-
-    let test_dir = TestDir::new("rename_force_test");
-
-    let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
-    volume
-        .create_file(&at(&volume, "source.txt"), b"new content")
-        .await
-        .unwrap();
-    volume
-        .create_file(&at(&volume, "target.txt"), b"old content")
-        .await
-        .unwrap();
-
-    let result = volume
-        .rename(&at(&volume, "source.txt"), &at(&volume, "target.txt"), true)
-        .await;
-    assert!(result.is_ok());
-    assert!(!test_dir.join("source.txt").exists());
-    assert_eq!(fs::read_to_string(test_dir.join("target.txt")).unwrap(), "new content");
-}
-
-#[tokio::test]
-async fn test_create_file_does_not_clobber_existing() {
-    // Regression for the high-severity audit finding: `create_file` is a
-    // no-overwrite contract; the IPC layer maps `AlreadyExists` to a friendly
-    // "file already exists" error. Switching to a truncating write here loses
-    // the user's data when the listing-cache pre-check race fails.
-    use std::fs;
-
-    let test_dir = TestDir::new("create_file_no_clobber_test");
-
-    let volume = LocalPosixVolume::local_folder("Test", &*test_dir, VolumeHost::detached());
-    let target = test_dir.join("notes.txt");
-
-    fs::write(&target, "important user data").unwrap();
-
-    let result = volume.create_file(&at(&volume, "notes.txt"), b"").await;
-
-    assert!(
-        matches!(result, Err(VolumeError::AlreadyExists(_))),
-        "expected AlreadyExists, got {:?}",
-        result
-    );
-    assert_eq!(
-        fs::read_to_string(&target).unwrap(),
-        "important user data",
-        "original file contents must survive a colliding create_file"
     );
 }
 
@@ -452,54 +173,6 @@ async fn test_broken_symlink_still_exists() {
 // Copy operation tests
 // ============================================================================
 
-#[test]
-fn test_supports_export_returns_true() {
-    let volume = LocalPosixVolume::local_folder("Test", "/tmp", VolumeHost::detached());
-    assert!(volume.supports_export());
-}
-
-#[tokio::test]
-async fn test_scan_for_copy_single_file() {
-    use std::fs;
-
-    let test_dir = TestDir::new("scan_copy_file_test");
-
-    // Create a single file with known content
-    fs::write(test_dir.join("test.txt"), "Hello, World!").unwrap();
-
-    let volume = LocalPosixVolume::local_folder("Test", test_dir.to_str().unwrap(), VolumeHost::detached());
-    let result = volume.scan_for_copy(&at(&volume, "test.txt")).await.unwrap();
-
-    assert_eq!(result.file_count, 1);
-    assert_eq!(result.dir_count, 0);
-    assert_eq!(result.total_bytes, 13); // "Hello, World!" is 13 bytes
-}
-
-#[tokio::test]
-async fn test_scan_for_copy_directory() {
-    use std::fs;
-
-    let test_dir = TestDir::new("scan_copy_dir_test");
-
-    // Create directory structure
-    let subdir = test_dir.join("mydir");
-    fs::create_dir(&subdir).unwrap();
-    fs::write(subdir.join("file1.txt"), "123").unwrap();
-    fs::write(subdir.join("file2.txt"), "456789").unwrap();
-    let nested = subdir.join("nested");
-    fs::create_dir(&nested).unwrap();
-    fs::write(nested.join("file3.txt"), "A").unwrap();
-
-    let volume = LocalPosixVolume::local_folder("Test", test_dir.to_str().unwrap(), VolumeHost::detached());
-    let result = volume.scan_for_copy(&at(&volume, "mydir")).await.unwrap();
-
-    assert_eq!(result.file_count, 3);
-    assert_eq!(result.dir_count, 1); // Just the nested dir (root not counted)
-    assert_eq!(result.total_bytes, 10); // 3 + 6 + 1
-    // No hardlinks: dedup'd source size equals the write footprint.
-    assert_eq!(result.dedup_bytes, 10);
-}
-
 /// The blocking walk records every entry it counts, named under the paths the
 /// caller passed (volume-relative here), never the resolved absolute ones.
 #[tokio::test]
@@ -542,44 +215,6 @@ async fn a_batch_scan_records_every_entry_under_the_callers_paths() {
     );
 }
 
-/// The shared stop assertions, over the backend that serves every OS-mounted
-/// network share.
-///
-/// ❗ This is the `/Volumes/<share>` case, and it is the one that hurts most: a
-/// `readdir` on a NAS that has spun its disks down takes seconds and a subtree
-/// takes minutes, all of it inside one `spawn_blocking`. The boundary here is per
-/// entry, through the blocking twin that parks the pool thread.
-#[tokio::test]
-async fn a_batch_scan_stops_when_it_is_told_to() {
-    use std::fs;
-
-    let test_dir = TestDir::new("scan_stop_told");
-    let tree = test_dir.join("tree");
-    fs::create_dir(&tree).unwrap();
-    fs::write(tree.join("a.txt"), "a").unwrap();
-    fs::write(tree.join("b.txt"), "bb").unwrap();
-
-    let volume = LocalPosixVolume::local_folder("Test", test_dir.to_str().unwrap(), VolumeHost::detached());
-    cmdr_fs::volume::conformance::assert_batch_scan_stops_when_told(&volume, Path::new("tree")).await;
-}
-
-#[tokio::test]
-async fn a_batch_scan_asks_its_boundary_inside_the_walk() {
-    use std::fs;
-
-    let test_dir = TestDir::new("scan_stop_per_entry");
-    let tree = test_dir.join("tree");
-    fs::create_dir(&tree).unwrap();
-    fs::write(tree.join("a.txt"), "a").unwrap();
-    fs::write(tree.join("b.txt"), "bb").unwrap();
-    let nested = tree.join("nested");
-    fs::create_dir(&nested).unwrap();
-    fs::write(nested.join("c.txt"), "ccc").unwrap();
-
-    let volume = LocalPosixVolume::local_folder("Test", test_dir.to_str().unwrap(), VolumeHost::detached());
-    cmdr_fs::volume::conformance::assert_batch_scan_asks_inside_the_walk(&volume, Path::new("tree"), 4).await;
-}
-
 /// A tree where one 1 KiB inode is shared by three hardlinks plus one
 /// standalone 4 KiB file. `total_bytes` is the cross-volume write footprint
 /// (every link materializes separately at the destination): 3 * 1024 + 4096
@@ -612,192 +247,6 @@ async fn test_scan_for_copy_dedupes_hardlinks_for_source_size_only() {
         result.dedup_bytes, 5120,
         "source size counts each inode once, matching `du`"
     );
-}
-
-#[tokio::test]
-async fn test_open_read_stream_single_file() {
-    use std::fs;
-
-    let src_dir = TestDir::new("read_stream_src_test");
-
-    fs::write(src_dir.join("source.txt"), "Test content").unwrap();
-
-    let volume = LocalPosixVolume::local_folder("Test", src_dir.to_str().unwrap(), VolumeHost::detached());
-    let mut stream = volume.open_read_stream(&at(&volume, "source.txt")).await.unwrap();
-    assert_eq!(stream.total_size(), StreamLength::Known(12));
-
-    let mut content = Vec::new();
-    while let Some(chunk) = stream.next_chunk().await {
-        content.extend_from_slice(&chunk.unwrap());
-    }
-    assert_eq!(content, b"Test content");
-}
-
-/// A destination that stores modification times (S3's `x-amz-meta-mtime`)
-/// reads the source's off the stream, so the local stream has to carry the
-/// file's own, to the nanosecond the filesystem kept.
-#[tokio::test]
-async fn test_open_read_stream_reports_the_file_mtime() {
-    use std::fs;
-
-    let src_dir = TestDir::new("read_stream_mtime_test");
-    let path = src_dir.join("dated.txt");
-    fs::write(&path, "dated").unwrap();
-    let mtime = std::time::SystemTime::UNIX_EPOCH + std::time::Duration::new(1_354_040_105, 123_456_000);
-    fs::File::options()
-        .write(true)
-        .open(&path)
-        .unwrap()
-        .set_modified(mtime)
-        .unwrap();
-
-    let volume = LocalPosixVolume::local_folder("Test", src_dir.to_str().unwrap(), VolumeHost::detached());
-    let stream = volume.open_read_stream(&at(&volume, "dated.txt")).await.unwrap();
-    assert_eq!(stream.modified_at(), Some(mtime));
-}
-
-#[tokio::test]
-async fn test_open_read_stream_rejects_directory() {
-    use std::fs;
-
-    let src_dir = TestDir::new("read_stream_dir_test");
-
-    // Create a nested dir so we can attempt to stream it.
-    fs::create_dir(src_dir.join("sourcedir")).unwrap();
-
-    let volume = LocalPosixVolume::local_folder("Test", src_dir.to_str().unwrap(), VolumeHost::detached());
-    let result = volume.open_read_stream(&at(&volume, "sourcedir")).await;
-    assert!(result.is_err(), "streaming a directory should fail");
-}
-
-#[tokio::test]
-async fn test_write_from_stream_creates_file() {
-    use cmdr_fs::volume::InMemoryVolume;
-    use std::fs;
-
-    let vol_dir = TestDir::new("write_from_stream_test");
-
-    // Source: an in-memory file that we stream into LocalPosix.
-    let source = InMemoryVolume::new("Source");
-    source
-        .create_file(app_path!("/local.txt"), b"Imported content")
-        .await
-        .unwrap();
-
-    let stream = source.open_read_stream(app_path!("/local.txt")).await.unwrap();
-    let size = stream.total_size();
-    let volume = LocalPosixVolume::local_folder("Test", vol_dir.to_str().unwrap(), VolumeHost::detached());
-    let bytes = volume
-        .write_from_stream(
-            &at(&volume, "imported.txt"),
-            WriteMode::CreateOrReplace,
-            size,
-            stream,
-            &|_| std::ops::ControlFlow::Continue(()),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(bytes.bytes, 16); // "Imported content" is 16 bytes
-    assert_eq!(
-        fs::read_to_string(vol_dir.join("imported.txt")).unwrap(),
-        "Imported content"
-    );
-}
-
-#[tokio::test]
-async fn test_scan_for_conflicts_no_conflicts() {
-    let test_dir = TestDir::new("conflicts_none_test");
-
-    let volume = LocalPosixVolume::local_folder("Test", test_dir.to_str().unwrap(), VolumeHost::detached());
-
-    let source_items = vec![
-        SourceItemInfo {
-            name: "newfile.txt".to_string(),
-            size: 100,
-            modified: None,
-            is_directory: false,
-        },
-        SourceItemInfo {
-            name: "another.txt".to_string(),
-            size: 200,
-            modified: None,
-            is_directory: false,
-        },
-    ];
-
-    let conflicts = volume
-        .scan_for_conflicts(&source_items, &at(&volume, ""))
-        .await
-        .unwrap();
-    assert!(conflicts.is_empty());
-}
-
-#[tokio::test]
-async fn test_scan_for_conflicts_with_conflicts() {
-    use std::fs;
-
-    let test_dir = TestDir::new("conflicts_some_test");
-
-    // Create existing files
-    fs::write(test_dir.join("existing.txt"), "Old content").unwrap();
-    fs::write(test_dir.join("another.txt"), "Another old").unwrap();
-
-    let volume = LocalPosixVolume::local_folder("Test", test_dir.to_str().unwrap(), VolumeHost::detached());
-
-    let source_items = vec![
-        SourceItemInfo {
-            name: "existing.txt".to_string(),
-            size: 100,
-            modified: Some(1_700_000_000),
-            is_directory: false,
-        },
-        SourceItemInfo {
-            name: "newfile.txt".to_string(),
-            size: 200,
-            modified: None,
-            is_directory: false,
-        },
-        SourceItemInfo {
-            name: "another.txt".to_string(),
-            size: 300,
-            modified: Some(1_700_000_000),
-            is_directory: false,
-        },
-    ];
-
-    let conflicts = volume
-        .scan_for_conflicts(&source_items, &at(&volume, ""))
-        .await
-        .unwrap();
-    assert_eq!(conflicts.len(), 2);
-
-    // Verify conflict info
-    let existing_conflict = conflicts.iter().find(|c| c.source_path == "existing.txt").unwrap();
-    assert_eq!(existing_conflict.source_size, 100);
-    assert_eq!(existing_conflict.dest_size, 11); // "Old content" is 11 bytes
-    assert_eq!(existing_conflict.source_modified, Some(1_700_000_000));
-}
-
-#[tokio::test]
-async fn test_get_space_info() {
-    // Test against /tmp which should exist on any POSIX system
-    let volume = LocalPosixVolume::local_folder("Test", "/tmp", VolumeHost::detached());
-    let space = volume.get_space_info().await.unwrap();
-
-    // Basic sanity checks. A mounted filesystem always has a ceiling, so the
-    // reading is always `Bounded`.
-    let SpaceInfo::Bounded {
-        total_bytes,
-        available_bytes,
-        used_bytes,
-    } = space
-    else {
-        panic!("a local filesystem always has a capacity, got {space:?}");
-    };
-    assert!(total_bytes > 0);
-    assert!(available_bytes <= total_bytes);
-    assert!(used_bytes <= total_bytes);
 }
 
 #[tokio::test]
@@ -891,67 +340,6 @@ fn a_local_volume_asks_its_host_about_the_absolute_path() {
     );
 }
 
-/// The streaming listing UI renders "Loaded N files..." off these ticks, so a local
-/// listing that never calls `on_progress` leaves a big folder on "Opening folder…"
-/// for its entire read.
-///
-/// The ticks are sampled on a timer, so the read holds after its first entry
-/// until a tick lands: under load the async side can otherwise wake only after a
-/// fast read is done, and see no tick at all (#755).
-#[tokio::test]
-async fn listing_a_local_directory_reports_progress_while_it_reads() {
-    const COUNT: usize = 500;
-    let dir = TestDir::new("local_listing_progress");
-    for i in 0..COUNT {
-        std::fs::write(dir.join(format!("file_{i:05}.txt")), b"x").expect("writing a scratch file succeeds");
-    }
-
-    let (tick_seen, first_tick) = std::sync::mpsc::channel::<()>();
-    let first_tick = std::sync::Mutex::new(Some(first_tick));
-    let hold_until_a_tick: reading::ListingHook = std::sync::Arc::new(move || {
-        // Only the first entry holds; a bulk re-list counting from zero again doesn't.
-        if let Some(first_tick) = first_tick.lock_ignore_poison().take() {
-            // A safety net for a broken wiring, never the thing the test waits on.
-            let _ = first_tick.recv_timeout(std::time::Duration::from_secs(30));
-        }
-    });
-    let volume =
-        LocalPosixVolume::local_folder("Test", &*dir, VolumeHost::detached()).with_listing_hook(hold_until_a_tick);
-    let ticks: std::sync::Mutex<Vec<ListingProgress>> = std::sync::Mutex::new(Vec::new());
-    let on_progress = |p: ListingProgress| {
-        ticks.lock_ignore_poison().push(p);
-        let _ = tick_seen.send(());
-    };
-
-    let entries = volume
-        .list_directory(&at(&volume, ""), Some(&on_progress))
-        .await
-        .expect("listing the scratch dir succeeds");
-    assert_eq!(entries.len(), COUNT);
-
-    let ticks = ticks.lock_ignore_poison();
-    assert!(
-        !ticks.is_empty(),
-        "expected a progress tick while the read was held after its first entry"
-    );
-    for tick in ticks.iter() {
-        assert!(
-            tick.entries() > 0,
-            "a tick with nothing read yet would render 'Loaded 0 files...'"
-        );
-        assert!(
-            tick.entries() <= COUNT,
-            "a tick counted more than the folder holds: {} of {COUNT}",
-            tick.entries()
-        );
-    }
-    assert!(
-        ticks.windows(2).all(|w| w[0].entries() <= w[1].entries()),
-        "counts must climb, never go backwards: {:?}",
-        ticks.iter().map(ListingProgress::entries).collect::<Vec<_>>()
-    );
-}
-
 /// A folder this user can write into is writable, and a folder a copy would
 /// create answers for the nearest one that exists.
 #[tokio::test]
@@ -1014,7 +402,7 @@ async fn write_access_on_the_sealed_system_volume_is_read_only() {
 #[cfg(target_os = "macos")]
 #[tokio::test]
 async fn a_stream_onto_a_read_only_filesystem_is_read_only() {
-    use cmdr_fs::volume::InMemoryVolume;
+    use cmdr_fs::volume::{InMemoryVolume, VolumeError, WriteMode};
 
     let source = InMemoryVolume::new("Source");
     source

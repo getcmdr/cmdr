@@ -82,21 +82,19 @@ pub use rename::rename_volume_error;
 #[cfg(test)]
 mod list_alloc_ceiling_test;
 #[cfg(test)]
-mod local_posix_conformance_test;
+mod local_conformance_test;
+#[cfg(test)]
+mod local_names_test;
 #[cfg(test)]
 mod local_posix_durability_test;
 #[cfg(test)]
 mod local_posix_link_test;
 #[cfg(test)]
-mod local_posix_names_test;
-#[cfg(test)]
 mod local_posix_resume_test;
 #[cfg(test)]
 mod local_posix_test;
 #[cfg(test)]
-mod local_windows_conformance_test;
-#[cfg(test)]
-mod local_windows_names_test;
+mod local_volume_test;
 #[cfg(test)]
 mod local_windows_test;
 #[cfg(test)]
