@@ -424,6 +424,13 @@ pub(super) async fn reap_stale_transfer_temps(
         // ❗ A listed name is the server's word: one that isn't one plain name
         // (`<temp>/../../x`) joins onto a path outside `dir`, so it's never reaped.
         let is_one_name = AppName::from_app_spelling(&entry.name).is_ok();
+        if is_stale_temp && !is_one_name {
+            log::debug!(
+                target: "copy",
+                "reap_stale_transfer_temps: leaving a listed temp that isn't one plain name: {}",
+                LogPrivate::name(&entry.name)
+            );
+        }
         let temp_path = dir.join(&entry.name);
         if !is_stale_temp || !is_one_name || recorded_by_the_ledger(&temp_path) {
             survivors.push(entry);

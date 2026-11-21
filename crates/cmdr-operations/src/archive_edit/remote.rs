@@ -482,6 +482,7 @@ async fn reap_remote_temps(
         // ❗ A listed name is the server's word: one that isn't one plain name
         // (`<temp>/../../x`) joins onto a path outside `dir`, so it's never reaped.
         if AppName::from_app_spelling(&entry.name).is_err() {
+            log::debug!(target: "archive_remote_edit", "leaving a listed temp that isn't one plain name: {}", LogPrivate::name(&entry.name));
             continue;
         }
         // Spare anything without a confirmably-old mtime: an unknown mtime, or one
