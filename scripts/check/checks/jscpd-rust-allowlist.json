@@ -32,6 +32,10 @@
       "lines": 17,
       "reason": "Two contract cases' shared fixture setup (assert the folder is absent, create it, write one file into it): the trait's flip to app paths (#1225) bridged each `Volume` call (`&AppPath::legacy_unchecked(dir)`), and rustfmt's longer lines made the two setups token-identical. The bridges go when `cmdr-fs` speaks app paths internally (milestone 5); if the setup still matches then, extract it into a conformance helper."
     },
+    "crates/cmdr-git/src/volume.rs ↔ crates/cmdr-restic/src/volume.rs": {
+      "lines": 21,
+      "reason": "`Volume` trait boilerplate shared by the two routed read-only views (`GitPortalVolume`, `ResticVolume`): `scan_for_copy` and `scan_for_copy_batch_with_boundary`, each a one-line delegation to `cmdr_fs::volume::scan_walk`'s typed walk, then the `routes_over_a_parent() == true` capability flag under the same section banner. Same trade as the backend `volume_impl.rs` pairs: folding them takes a macro that emits trait methods, which costs more lines than it removes and hides them from `codegraph_search` and go-to-definition. Revisit when a body stops being a one-line delegation."
+    },
     "crates/cmdr-index/src/importance/writer.rs ↔ crates/cmdr-index/src/media_index/writer/maintenance.rs": {
       "lines": 11,
       "reason": "TODO: `run_wal_checkpoint` in `importance/writer.rs` and in `media_index/writer/maintenance.rs` are identical apart from the `log::` target, down to the 250 ms busy timeout, the restore to 5000 ms, and the four-arm match on the returned `(busy, log_size, checkpointed)` row; the media copy's own doc comment says it mirrors the importance one. Add a crate-private `crates/cmdr-index/src/sqlite_wal.rs` beside `fingerprint.rs` exposing `pub(crate) fn checkpoint_truncate(conn: &Connection, log_target: &'static str)`, and leave each writer a one-line call plus its own doc comment about why its workload needs the truncate. `indexing/writer/maintenance.rs`'s `handle_wal_checkpoint` stays separate: it carries a busy handler and an `IndexFailureSignal`, so it is a different function that happens to run the same pragma."
