@@ -42,7 +42,7 @@
 //! single-shot-ness, ❌ NEVER by smallness: the destination is asked
 //! (`Volume::write_is_single_shot`), the caller never guesses from a size.
 
-use cmdr_fs::app_path::{AppPath, AppPathBuf};
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -52,6 +52,7 @@ use super::super::state::WriteOperationState;
 use super::leftover_cleanup::{LeftBehind, finish_in_background};
 #[cfg(test)]
 use super::recovered_name::FinalizeFailure;
+use super::staged_paths::{Spelled, Temp};
 use super::transfer_probe::{TaskPhase, set_task_phase};
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
@@ -495,59 +496,6 @@ impl StagedWrite {
 
     fn retire_temp(&self, temp: &Path) {
         in_flight_temps::retire_temp(&self.state, home_of(self.home_volume.as_deref()), temp);
-    }
-}
-
-/// A staged write's `.cmdr-tmp-*`: the guard that owns it, and its spelling
-/// for the destination volume, made once with it. Every volume call on the
-/// temp addresses [`app`](Self::app); the ledgers and the logs read
-/// [`path`](Self::path), so their text stays byte-exact.
-pub(super) struct Temp {
-    guard: StagingTemp,
-    app: AppPathBuf,
-}
-
-impl Temp {
-    pub(super) fn new(guard: StagingTemp) -> Self {
-        let app = AppPath::legacy_unchecked(guard.path()).into_owned();
-        Self { guard, app }
-    }
-
-    /// The temp as the ledgers and the logs spell it.
-    pub(super) fn path(&self) -> &Path {
-        self.guard.path()
-    }
-
-    /// The temp as its volume addresses it.
-    pub(super) fn app(&self) -> &AppPath {
-        &self.app
-    }
-}
-
-/// A path a staged write addresses on its volume, in both spellings made once:
-/// the `std::path` one for the ledgers, the logs, and the errors (its text
-/// exits, byte-exact on a name that isn't UTF-8), the app one for every volume
-/// call.
-#[derive(Debug, Clone)]
-pub(super) struct Spelled {
-    path: PathBuf,
-    app: AppPathBuf,
-}
-
-impl Spelled {
-    pub(super) fn new(path: &Path) -> Self {
-        Self {
-            path: path.to_path_buf(),
-            app: AppPath::legacy_unchecked(path).into_owned(),
-        }
-    }
-
-    pub(super) fn path(&self) -> &Path {
-        &self.path
-    }
-
-    pub(super) fn app(&self) -> &AppPath {
-        &self.app
     }
 }
 

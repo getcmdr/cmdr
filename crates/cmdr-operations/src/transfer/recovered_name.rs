@@ -29,7 +29,7 @@ use std::path::{Path, PathBuf};
 use super::super::state::WriteOperationState;
 use super::super::types::{StagedLeftoverFate, StagedLeftovers, WriteOperationError};
 use super::super::unique_name::{NameCandidates, RESCUE_NAME_ATTEMPTS, recovered_sibling};
-use super::staged_write::{Spelled, Temp};
+use super::staged_paths::{Spelled, Temp};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;

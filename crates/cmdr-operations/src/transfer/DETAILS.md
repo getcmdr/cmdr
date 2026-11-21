@@ -1372,14 +1372,15 @@ cut-off landing's settle in `staged_write_landing_cut_off.rs`; the generated-fil
 `staged_write_cut_off_tests.rs` beside it). Its write sites: `stream_pipe_file`, the sequential extractor, and the
 server-side copy here, plus a fresh compress and a remote zip edit's swap in `../archive_edit/`.
 
-**Two spellings, made once** (issue #1225): a staged write holds its temp as `staged_write::Temp` and its final name as
-`staged_write::Spelled`, each carrying the `std::path` value AND its app path, crossed once when the write begins. Every
-volume call in the landing, the aside swap, the cut-off settle, and the publish addresses the app path; the ledgers
-(`in_flight_temps`), the logs, `kept_landings`, and `FinalizeFailure`'s rescued path read the `std::path` one, so their
-text stays byte-exact on a Linux name that isn't UTF-8. `StagedWrite::target_app` is the write target's app path for the
-writers in `volume/` and `../archive_edit/`. What still crosses per call: a held aside (`DisplacedDestination` answers
-`std::path`), the ` (recovered)` candidates (`unique_name` does `std::path` arithmetic), and `LandingSource`'s and
-`settle_unanswered_create`'s paths (their callers hold `std::path`).
+**Two spellings, made once** (issue #1225): a staged write holds its temp as `Temp` and its final name as `Spelled`
+(both in the leaf `staged_paths.rs`, because `recovered_name.rs` names them too, and importing them from `staged_write`
+closes a cycle through `volume::displaced_destination`), each carrying the `std::path` value AND its app path, crossed
+once when the write begins. Every volume call in the landing, the aside swap, the cut-off settle, and the publish
+addresses the app path; the ledgers (`in_flight_temps`), the logs, `kept_landings`, and `FinalizeFailure`'s rescued path
+read the `std::path` one, so their text stays byte-exact on a Linux name that isn't UTF-8. `StagedWrite::target_app` is
+the write target's app path for the writers in `volume/` and `../archive_edit/`. What still crosses per call: a held
+aside (`DisplacedDestination` answers `std::path`), the ` (recovered)` candidates (`unique_name` does `std::path`
+arithmetic), and `LandingSource`'s and `settle_unanswered_create`'s paths (their callers hold `std::path`).
 
 **Why**: the conflict layer only staged a file→file Overwrite. A NEW file has no conflict, so it streamed straight to
 the destination path — and a transfer killed mid-stream left a truncated file wearing the user's real filename, which is

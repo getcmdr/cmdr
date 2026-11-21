@@ -254,7 +254,7 @@
     "crates/cmdr-operations/src/transfer/outage_volume_test_support_impl.rs": 10,
     "crates/cmdr-operations/src/transfer/real_image.rs": 1,
     "crates/cmdr-operations/src/transfer/recovered_name.rs": 3,
-    "crates/cmdr-operations/src/transfer/staged_write.rs": 2,
+    "crates/cmdr-operations/src/transfer/staged_paths.rs": 2,
     "crates/cmdr-operations/src/transfer/volume/cleanup.rs": 7,
     "crates/cmdr-operations/src/transfer/volume/cleanup_tests.rs": 19,
     "crates/cmdr-operations/src/transfer/volume/conflict.rs": 6,

@@ -29,6 +29,7 @@ pub(super) mod move_op;
 mod named_destination;
 pub(super) mod recovered_name;
 pub(super) mod retry;
+mod staged_paths;
 pub(super) mod staged_write;
 pub(super) mod transfer_driver;
 pub(super) mod transfer_probe;
