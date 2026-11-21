@@ -187,45 +187,6 @@
     "crates/cmdr-index/src/indexing/watch/watcher/journal.rs#tests": {
       "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
     },
-    "crates/cmdr-local/src/list_alloc_ceiling_test.rs": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "crates/cmdr-local/src/local_posix_conformance_test.rs": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "crates/cmdr-local/src/local_posix_durability_test.rs": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "crates/cmdr-local/src/local_posix_link_test.rs": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "crates/cmdr-local/src/local_posix_names_test.rs": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "crates/cmdr-local/src/local_posix_resume_test.rs": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "crates/cmdr-local/src/local_posix_test.rs": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "crates/cmdr-local/src/local_windows_conformance_test.rs": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "crates/cmdr-local/src/local_windows_names_test.rs": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "crates/cmdr-local/src/local_windows_test.rs": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "crates/cmdr-local/src/reading_parity_test.rs": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "crates/cmdr-local/src/reading_test.rs": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
-    "crates/cmdr-local/src/space.rs#tests": {
-      "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
-    },
     "crates/cmdr-operations/src/delete/volume_symlink_tests.rs": {
       "reason": "Predates the rule; give the gate a one-line reason and a local run drops this entry"
     },

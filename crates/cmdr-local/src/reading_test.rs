@@ -1,6 +1,5 @@
-//! Tests for the local reader: `std::fs` listing, single-entry stat, and `FileEntry` construction.
-
-#![cfg(unix)]
+//! Tests for the local reader: `std::fs` listing, single-entry stat, and `FileEntry` construction,
+//! on every OS.
 
 use crate::reading::{AddedAt, entry_from_lstat, get_single_entry, list_directory_core, withhold_unclaimed_dates};
 use cmdr_fs::entry::FileEntry;
@@ -25,13 +24,15 @@ fn test_list_directory_core_returns_core_entries() {
     assert!(!entries.is_empty());
     let file_entry = entries.iter().find(|e| e.name == "core_test.txt").unwrap();
 
-    // Core metadata should be present
+    // Core metadata should be present. The owner is the POSIX uid's name; Windows reads no
+    // owner yet (a SID's account name, task 35).
     assert!(!file_entry.name.is_empty());
     assert!(!file_entry.path.is_empty());
+    #[cfg(unix)]
     assert!(!file_entry.owner.is_empty());
 
     // The added date comes with the listing on APFS (the scratch dir's
-    // filesystem), never on Linux.
+    // filesystem), never on Linux or Windows.
     assert_eq!(file_entry.added_at.is_some(), cfg!(target_os = "macos"));
 }
 
@@ -86,7 +87,8 @@ fn test_get_single_entry_directory() {
 
 #[test]
 fn test_get_single_entry_nonexistent() {
-    let result = get_single_entry(std::path::Path::new("/definitely_does_not_exist_12345"));
+    let temp_dir = TestDir::new("single_missing_test");
+    let result = get_single_entry(&temp_dir.join("definitely_does_not_exist_12345"));
     assert!(result.is_err());
 }
 

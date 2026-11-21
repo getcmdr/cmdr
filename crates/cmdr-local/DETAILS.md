@@ -349,8 +349,7 @@ are pinned to one signature across both.
 (modes, xattrs, inodes, errnos, `std::os::unix`, or the POSIX-only `barriers_issued`, `barriers`,
 `with_barrier_interval`, `with_sidecar_probe`) names the sibling (app-path plan, decided 2026-11-18). **Why**: a
 consumer that names an OS can't build on the other one, and the sibling's name is the marker that a site really is
-POSIX-only. A `#![cfg(unix)]` test file that names only `LocalVolume` is still gated today: its cells hand native
-tempdirs where app paths belong (#1225), and the milestone that converts its crate un-gates it.
+POSIX-only. The same holds for this crate's tests: a cell over `LocalVolume` runs on every OS (§ "Testing").
 
 **Decision**: siblings, ❌ not Windows arms inside the POSIX volume (windows-port plan, task 35). **Why**: the POSIX
 volume is `lstat`, kernel rename flags, modes, xattrs, and `fsync` through and through, and a Windows one is `\\?\`
@@ -401,9 +400,10 @@ nearly every method and hide which answers are real.
 
 What's real and what's stubbed, by name: the windows-port plan, § "Windows build state" and task 35's entry. Every
 capability not yet real keeps the trait's conservative default (streams, copy scan, symlink creation, xattrs, metadata,
-the write-access probe), so nothing answers by guessing. `local_windows_conformance_test.rs` runs the shared conformance
-cells on the builder, each not-yet-kept one `#[ignore]`d with the piece of task 35 that owns it; its link cells build
-junctions with `mklink /J`, which needs no privilege.
+the write-access probe), so nothing answers by guessing. `local_conformance_test.rs` and `local_volume_test.rs` run on
+Windows too, each cell the Windows volume can't keep yet ignored there (`cfg_attr(target_os = "windows", ignore = …)`)
+with what it lacks; their folder-link cells build a junction there (`local_conformance_test::link_to_folder`,
+`mklink /J`, which needs no privilege).
 
 ## App paths in and out
 
@@ -435,8 +435,8 @@ cross to the OS once per call. The design: `docs/specs/app-path-plan.md` milesto
   mutation's re-stat, a conflict probe) whose joined path holds an escape takes today's text join, ❌ never the escape
   decoded. **Why**: a path made from a native `caf\xe9` holds an escape, and `get_metadata` or a mutation patch that
   spelled its row with it put the escape on the wire before 10f, a second row beside the listing's lossy one for the
-  same file (pinned by `local_posix_names_test.rs`, which uses a literal plane-16 name on macOS, where APFS refuses
-  non-UTF-8).
+  same file (pinned by `local_names_test.rs`'s `posix_tests`, which uses a literal plane-16 name on macOS, where APFS
+  refuses non-UTF-8).
 - **The `&Path` entry points** (`list_directory_core`, `get_single_entry`, `rename_local_exclusive`,
   `patch_listing_after_local_mutation`, space, the old constructors) take a NATIVE path. On Windows either spelling
   crosses up through `from_native_unicode` (`C:\x`, `C:/x`, `\\?\C:\x`), and the old constructors expand 8.3 short names
@@ -475,22 +475,30 @@ app-path plan's review round 3).
 
 ## Testing
 
-- `local_posix_test.rs`: real-FS cells (write ops, symlinks, copy, space info, the rename's degradation) on scratch
-  dirs, against a detached or recording host.
-- `local_windows_conformance_test.rs`, `local_windows_test.rs`, and `local_windows_names_test.rs` (Windows only, the
-  builder): the shared conformance cells, the Windows volume's hostile cells (§ "The Windows sibling"), and the names
-  Win32's plain paths misread (`dup.`, `con.txt`, `a:b`, unpaired surrogates; § "App paths in and out").
-- `local_posix_names_test.rs` (macOS, Linux): a name whose app spelling holds an escape answers one row text whichever
-  reader built it (listing, `get_metadata`, a mutation patch), and the conflict scan's per-item refusal.
+- **Every OS by default.** A cell over `LocalVolume` builds its folder with `AppTestDir` and its volume with
+  `test_support::volume_at`, and runs on macOS, Linux, and Windows; a cell the Windows volume can't keep yet is
+  `cfg_attr(target_os = "windows", ignore = …)` with what it lacks (streams, copy scan, metadata, node identity, links,
+  xattrs), a named debt that turns on when the capability lands. Only a file or module that needs a POSIX or Win32
+  feature is gated, with the reason on the gate.
+- `local_conformance_test.rs` (every OS): the shared `cmdr_fs::volume::conformance` assertions, the way every crate
+  backend keeps its own. The roster and what each defends: `crates/cmdr-fs/DETAILS.md` § "The shared assertions in
+  `volume::conformance`".
+- `local_volume_test.rs` (every OS): what the volume declares (indexing, Trash, by mount), write ops and their refusals,
+  listing and stat'ing, the conflict scan, the copy scan and streams, space, and listing progress.
+- `local_names_test.rs`: the conflict scan's per-item refusal (every OS); `posix_tests`, a name whose app spelling holds
+  an escape answering one row text whichever reader built it (listing, `get_metadata`, a mutation patch); `win32_tests`,
+  the names Win32's plain paths misread (`dup.`, `con.txt`, `a:b`, unpaired surrogates; § "App paths in and out").
+- `local_posix_test.rs` (macOS, Linux): the POSIX volume's own cells (`os_path` and the bridge shapes, `/.hidden`,
+  symlinks, hardlinks, modes, the host keyed by native paths, the rename's degradation). `local_windows_test.rs`
+  (Windows): the Windows volume's hostile cells (§ "The Windows sibling"). `local_posix_durability_test.rs`,
+  `local_posix_link_test.rs`, and `local_posix_resume_test.rs` (macOS, Linux): barriers, links and `..`, and resumes
+  keyed by inode.
 - `src/platform/anchor_test.rs` and `src/platform/short_names_test.rs` (every OS): the Windows anchoring table and the
   short-name gate, as pure logic.
 - `test_support::at(volume, "a/b")`: a cell's typed path under its volume's root, the same on every OS. A cell that
   hands in a bridge value on purpose (a relative path, a root alias) pins a caller's shape that goes with the bridge.
-- `local_posix_conformance_test.rs`: the shared `cmdr_fs::volume::conformance` assertions this backend can run, the way
-  every crate backend keeps its own. The roster and what each defends: `crates/cmdr-fs/DETAILS.md` § "The shared
-  assertions in `volume::conformance`".
-- `reading_test.rs`: the reader on its own; the inline `tests` modules in `space.rs`, `live_space.rs`, `mount_table.rs`,
-  and `linux_mounts.rs` pin the probes.
+- `reading_test.rs` (every OS): the reader on its own; the inline `tests` modules in `space.rs` (every OS, plus macOS's
+  `nsurl_tests`), `live_space.rs`, `mount_table.rs`, and `linux_mounts.rs` pin the probes.
 - `reading_parity_test.rs`: what the listers yield, field for field, each listed entry equal to its `get_single_entry`
   re-stat (every field, `added_at` included, through `Debug`). Each field a write path acts on also gets a cell against
   `lstat` itself, since parity alone can't see both readers going wrong together. Every cell runs once per entry of

@@ -2,7 +2,7 @@
 //! `flush_writes`: each file handed to the drive as it lands, one device barrier
 //! for all of them at the close (#1145).
 
-#![cfg(unix)]
+#![cfg(unix)] // the POSIX volume's `fsync` and its device barriers
 
 use super::*;
 use crate::test_support::at;
