@@ -404,7 +404,7 @@ const (
 )
 
 // lightRunPrefix starts a light run's title (`ci.yml`'s `run-name`): a PR run nobody asked to land,
-// which skips the heavy lanes and reports `CI light`, never `CI OK`.
+// which skips the macOS and Linux E2E lanes and reports `CI light`, never `CI OK`.
 const lightRunPrefix = "Light: "
 
 // isLightRun tells a light run from a land run before either finishes. A title that lies only

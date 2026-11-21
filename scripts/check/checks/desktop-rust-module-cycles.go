@@ -50,7 +50,17 @@ func CargoModulesVersion() string { return cargoModulesVersion }
 // See `DETAILS.md` § "Rust module cycles" for the five traps behind those choices.
 var moduleCyclesFlags = []string{
 	"--no-fns", "--no-types", "--no-traits", "--no-owns", "--no-externs", "--no-sysroot",
+	"--target", moduleCyclesTarget,
 }
+
+// moduleCyclesTarget is the platform the baseline's module graph is measured for, on every host:
+// `cfg(target_os = "macos")` modules are part of the graph (`drag_image_detection` and
+// `drag_image_swap` are a tangle), so a host-default analysis on ubuntu would drop them and
+// disagree with the baseline for reasons that have nothing to do with coupling. Naming the target
+// lets CI's Linux Rust lane measure the macOS graph too. On an Apple Silicon Mac the output is
+// byte-identical to the host default (cargo-modules 0.27.0, `cmdr` crate, DOT compared with `cmp`,
+// 2026-11-21).
+const moduleCyclesTarget = "aarch64-apple-darwin"
 
 var (
 	// moduleDotEdgeRe matches `"a" -> "b" [...]`, one `use` dependency.

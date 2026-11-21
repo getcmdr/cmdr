@@ -97,22 +97,20 @@ jobs:
       same-tree: ${{ steps.same-tree.outputs.same-tree }}
       # A land run: every event but a pull request, and a pull request that `pnpm land` asked to
       # land (the `land` label) or a bot opened (Renovate automerges on green `CI OK`). Only a land
-      # run runs the heavy lanes and names its gate `CI OK`; a light run's gate is `CI light`,
+      # run runs the macOS and E2E lanes and names its gate `CI OK`; a light run's gate is `CI light`,
       # which `main`'s ruleset doesn't accept (`mode` step).
       land: ${{ steps.mode.outputs.land }}
-      # The heavy lanes (the four Rust lanes and Linux E2E) run on a land run only.
-      rust:
-        ${{ steps.verified.outputs.verified != 'true' && steps.mode.outputs.land == 'true' && steps.filter.outputs.rust
-        || 'false' }}
-      rust-fixtures:
-        ${{ steps.verified.outputs.verified != 'true' && steps.mode.outputs.land == 'true' &&
-        steps.filter.outputs.rust-fixtures || 'false' }}
+      # The hosted Rust lanes (Linux, fixtures, Windows) run on light runs too, so a branch push
+      # sees clippy, the tests, module cycles, and the Windows compile before anyone asks to land;
+      # their green markers then let the land run on the same tree skip them. Only the macOS lane
+      # (David's M1, which he works next to) and Linux E2E (a full app build, usually the critical
+      # path) wait for a land run.
+      rust: ${{ steps.verified.outputs.verified != 'true' && steps.filter.outputs.rust || 'false' }}
+      rust-fixtures: ${{ steps.verified.outputs.verified != 'true' && steps.filter.outputs.rust-fixtures || 'false' }}
       rust-macos:
         ${{ steps.verified.outputs.verified != 'true' && steps.mode.outputs.land == 'true' &&
         steps.filter.outputs.rust-macos || 'false' }}
-      rust-windows:
-        ${{ steps.verified.outputs.verified != 'true' && steps.mode.outputs.land == 'true' &&
-        steps.filter.outputs.rust-windows || 'false' }}
+      rust-windows: ${{ steps.verified.outputs.verified != 'true' && steps.filter.outputs.rust-windows || 'false' }}
       svelte: ${{ steps.verified.outputs.verified != 'true' && steps.filter.outputs.svelte || 'false' }}
       desktop:
         ${{ steps.verified.outputs.verified != 'true' && steps.mode.outputs.land == 'true' &&
@@ -149,7 +147,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      # Light run or land run. A pull request runs light (the cheap lanes, gate `CI light`) until
+      # Light run or land run. A pull request runs light (every lane but macOS and E2E, gate `CI light`) until
       # `pnpm land` asks to land it by adding the `land` label; then that run, any re-run of it, and
       # every later push while the label stays run as a land run (every lane the change needs, gate
       # `CI OK`). Everything here is the event payload GitHub writes: only someone with triage
@@ -180,7 +178,7 @@ jobs:
             land=true
             echo "A bot's PR, which lands on green CI by itself: a land run."
           else
-            echo "Nobody asked to land this PR yet: a light run. The Rust lanes and Linux E2E wait for 'pnpm land', and the gate reports 'CI light', which main doesn't accept."
+            echo "Nobody asked to land this PR yet: a light run. The macOS lane and Linux E2E wait for 'pnpm land', and the gate reports 'CI light', which main doesn't accept."
           fi
           echo "land=$land" >>"$GITHUB_OUTPUT"
           echo "ignored=$ignored" >>"$GITHUB_OUTPUT"
@@ -1229,7 +1227,7 @@ jobs:
   #   has moved past this commit, because a newer push replaced it in the lane's shared group
   #   and that run checks this code too. Any failed lookup keeps it red.
   # - Its name is `CI OK` only on a land run (`changes`' `mode`; every non-PR event is one). A
-  #   light run skipped the heavy lanes because nobody asked to land, so its gate is `CI light`:
+  #   light run skipped the macOS and E2E lanes because nobody asked to land, so its gate is `CI light`:
   #   green when the lanes that ran passed, and never the check `main` requires. A failed
   #   `changes` on a pull request names it `CI light` too, red either way. The name is never
   #   `CI OK` on a skipped job, since this job never skips (`always()`).
@@ -1293,7 +1291,7 @@ jobs:
           fi
           echo "All jobs passed or were skipped by change detection"
           if [[ "$EVENT" == "pull_request" && "$(jq -r '.changes.outputs.land' <<<"$NEEDS")" != "true" ]]; then
-            echo "A light run: the Rust lanes and Linux E2E wait for 'pnpm land', so this gate is 'CI light', never the 'CI OK' main requires."
+            echo "A light run: the macOS lane and Linux E2E wait for 'pnpm land', so this gate is 'CI light', never the 'CI OK' main requires."
           fi
 
       # A change by the Cmdr M1 agents GitHub App (the headless slow-checks fixer) that touches a

@@ -11,7 +11,7 @@ import (
 const ciOKJobID = "ci-ok"
 
 // ciOKGateName is the gate's `name:`. Only a land run (`changes`' `land` output; every non-PR
-// event is one) reports `CI OK`; a light run, which skipped the heavy lanes because nobody asked
+// event is one) reports `CI OK`; a light run, which skipped the macOS and E2E lanes because nobody asked
 // to land, reports `CI light`, a check `main`'s ruleset doesn't accept. GitHub names a job's check
 // run when the job is queued, after its `needs` finish, so the name is always the evaluated one
 // (`docs/tooling/ci.md` § Light runs and land runs).
@@ -73,7 +73,7 @@ func validateCIOKGate(ciYml string) []string {
 
 	if name := jobScalar(gate, "name"); name != ciOKGateName {
 		violations = append(violations, fmt.Sprintf(
-			"ci.yml: `%s`'s name must be exactly %q (has %q): a light run skips the heavy lanes, so it must never report the `CI OK` main requires",
+			"ci.yml: `%s`'s name must be exactly %q (has %q): a light run skips the macOS and E2E lanes, so it must never report the `CI OK` main requires",
 			ciOKJobID, ciOKGateName, name))
 	}
 	if land := jobOutputs(jobs["changes"])["land"]; land != ciOKLandOutput {

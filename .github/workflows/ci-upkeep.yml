@@ -210,6 +210,15 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: ./scripts/check/check --check desktop-rust-cargo-machete --ci
 
+      # Into `~/.cargo/bin`, which the entry carries, for the Rust lane's `module-cycles` job.
+      - name: Install cargo-modules (pinned)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          version="$(./scripts/check/check --print-cargo-modules-version)"
+          if [ "$(cargo-modules --version 2>/dev/null)" != "cargo-modules $version" ]; then
+            cargo install cargo-modules --version "$version" --locked
+          fi
+
       - name: Build for clippy
         if: steps.cache.outputs.cache-hit != 'true'
         run: ./scripts/check/check --check desktop-rust-clippy --ci

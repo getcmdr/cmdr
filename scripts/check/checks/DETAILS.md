@@ -2018,11 +2018,11 @@ and the doc build re-documented 72 workspace units and 0 third-party.
 
 ## Rust module cycles
 
-`module-cycles` (`IsSlow`, fails, app scope `desktop`, `Tech: Rust`, and in CI on the macOS job) is what stops a
-subsystem re-welding itself to another one unobserved, which had already happened twice before anything measured it. A
-component that spans SUBSYSTEMS says no module in it can be understood or changed alone, and it blocks a crate
-extraction outright, since a crate cannot import the app crate's facade. That is the whole reason this was ever
-measured.
+`module-cycles` (`IsSlow`, fails, app scope `desktop`, `Tech: Rust`, and in CI on the Linux Rust lane's `module-cycles`
+job and the macOS job, both analyzing for `aarch64-apple-darwin`) is what stops a subsystem re-welding itself to another
+one unobserved, which had already happened twice before anything measured it. A component that spans SUBSYSTEMS says no
+module in it can be understood or changed alone, and it blocks a crate extraction outright, since a crate cannot import
+the app crate's facade. That is the whole reason this was ever measured.
 
 The measurement is
 `cargo modules dependencies --lib --package <p> --no-fns --no-types --no-traits --no-owns --no-externs --no-sysroot` per
