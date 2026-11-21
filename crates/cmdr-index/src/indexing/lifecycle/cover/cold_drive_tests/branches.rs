@@ -104,7 +104,7 @@ fn a_walk_that_finishes_while_the_manager_is_detached_still_releases_its_branch(
     let branch = vec![scope.clone()];
     crate::indexing::lifecycle::state::start_indexing_for(
         drive.volume_id,
-        drive.tree.path().to_path_buf(),
+        cmdr_fs::app_path::AppPathBuf::from_native_unicode(drive.tree.path()).expect("a Unicode tempdir"),
         IndexVolumeKind::LocalExternal,
         true,
         crate::indexing::lifecycle::state::Activation::WriterOnly,
@@ -251,7 +251,7 @@ fn a_branch_comes_back_when_the_volume_does() {
 
     crate::indexing::lifecycle::state::start_indexing_for(
         drive.volume_id,
-        drive.tree.path().to_path_buf(),
+        cmdr_fs::app_path::AppPathBuf::from_native_unicode(drive.tree.path()).expect("a Unicode tempdir"),
         IndexVolumeKind::LocalExternal,
         true,
         crate::indexing::lifecycle::state::Activation::WriterOnly,

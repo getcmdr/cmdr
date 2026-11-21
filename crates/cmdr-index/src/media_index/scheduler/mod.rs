@@ -526,7 +526,7 @@ impl MediaScheduler {
             log::debug!(target: "media_index", "network enrichment skips '{volume_id}': volume not registered");
             return Ok(PassOutcome::Done(0));
         };
-        let mount_root = volume.root().as_std_legacy().to_string_lossy().into_owned();
+        let mount_root = crate::indexing::paths::app_text::stored_text(volume.root()).into_owned();
         let Some(pool) = crate::indexing::get_read_pool_for(volume_id) else {
             return Ok(PassOutcome::Done(0));
         };

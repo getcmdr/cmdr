@@ -110,7 +110,7 @@ async fn scan_through_the_park(at_the_park: AtThePark) -> Observed {
     let events = Arc::new(RecordingSink::new());
     let mut manager = IndexManager::new_for_kind(
         VOLUME_ID.to_string(),
-        root.clone(),
+        cmdr_fs::app_path::AppPathBuf::from_native_unicode(&root).expect("a Unicode tempdir"),
         db_path.clone(),
         IndexVolumeKind::LocalExternal,
         true,
@@ -262,7 +262,7 @@ async fn a_walker_worker_parked_on_a_real_drive_holds_it_after_the_manager_is_go
     let events = Arc::new(RecordingSink::new());
     let mut manager = IndexManager::new_for_kind(
         VOLUME_ID.to_string(),
-        root.clone(),
+        cmdr_fs::app_path::AppPathBuf::from_native_unicode(&root).expect("a Unicode tempdir"),
         data.path().join(format!("index-{VOLUME_ID}.db")),
         IndexVolumeKind::LocalExternal,
         true,

@@ -27,14 +27,13 @@
 //! it goes.
 
 use std::collections::HashMap;
-use std::path::PathBuf;
 
 use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use mtp_rs::{ObjectHandle, StorageId};
 
 use super::errors::MtpConnectionError;
 use super::storage_path::{child, storage_root};
-use super::{MtpConnectionManager, acquire_device_lock, std_path_for_host};
+use super::{MtpConnectionManager, acquire_device_lock};
 
 /// Upper bound on how many parent hops the walk will follow before giving up.
 /// Real MTP trees are shallow (a handful of levels); this only exists to bound a
@@ -48,8 +47,9 @@ const MAX_WALK_DEPTH: usize = 256;
 /// the caller (it's the event's handle), so it isn't repeated here.
 #[derive(Debug, Clone)]
 pub struct ResolvedMtpObject {
-    /// Full storage-relative path (leading `/`).
-    pub path: PathBuf,
+    /// Full storage-relative path: a canonical app path under the POSIX `/` root
+    /// (`/DCIM/IMG.jpg`, `/` for the storage root), split by its own arithmetic.
+    pub path: AppPathBuf,
     /// Whether the object is a folder, which decides the row the index writes.
     pub is_directory: bool,
     /// Logical size in bytes (`None` for directories).
@@ -282,7 +282,7 @@ impl MtpConnectionManager {
 
         let is_directory = info.is_folder();
         Ok(ResolvedMtpObject {
-            path: std_path_for_host(&path).into_owned(),
+            path,
             is_directory,
             size: if is_directory { None } else { Some(info.size) },
             modified_at: info.modified.and_then(super::convert_mtp_datetime),

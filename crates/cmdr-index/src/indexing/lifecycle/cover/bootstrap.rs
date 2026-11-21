@@ -13,8 +13,9 @@
 //! covered off the back of one walked folder.
 
 use cmdr_fs::log_error::{ErrorLogText, ErrorText, write_plain};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::log_private::LogPrivate;
 use tokio_util::sync::CancellationToken;
 
@@ -110,7 +111,7 @@ pub(crate) fn context_for_walk(
     let volume = walkable_volume(volume_id)?;
     log::info!(
         "Cover: '{volume_id}' has no index; standing one up at {} ({:?}) for the walk to fill in",
-        LogPrivate::dir_path(&volume.root),
+        LogPrivate::dir_path(volume.root.as_str()),
         volume.kind,
     );
     state::start_indexing_for(
@@ -138,7 +139,7 @@ pub(crate) fn context_for_walk(
 
 /// What the bootstrap needs to know about a volume before it can index it.
 pub(super) struct WalkableVolume {
-    root: PathBuf,
+    root: AppPathBuf,
     pub(super) kind: IndexVolumeKind,
     inodes_trustworthy: bool,
 }
@@ -158,9 +159,10 @@ pub(super) struct WalkableVolume {
 /// minutes, and refusing it outright would make a search of it silently wrong.
 pub(super) fn walkable_volume(volume_id: &str) -> Result<WalkableVolume, NoCoverContext> {
     if volume_id == ROOT_VOLUME_ID {
-        // The boot disk is APFS, so its inodes are trustworthy.
+        // The boot disk is APFS (NTFS on Windows), so its inodes are trustworthy. Rooted
+        // where `start_indexing` roots it: `/`, or the system drive on Windows.
         return Ok(WalkableVolume {
-            root: PathBuf::from("/"),
+            root: state::boot_root().map_err(NoCoverContext::Failed)?,
             kind: IndexVolumeKind::Local,
             inodes_trustworthy: true,
         });
@@ -173,7 +175,7 @@ fn classify_external(volume_id: &str) -> Result<WalkableVolume, NoCoverContext> 
 
     let volumes = crate::indexing::host::volumes::current();
     let volume = volumes.get(volume_id).ok_or(NoCoverContext::NotMounted)?;
-    let root = volume.root().as_std_legacy().to_path_buf();
+    let root = volume.root().to_owned();
     // Trait-scanned volumes store trait-provided values in the `inode` column (MTP
     // puts PTP object handles there) and never run the local inode-keyed rename
     // pre-pass, so their inode identity counts as trustworthy.
@@ -200,7 +202,10 @@ fn classify_external(volume_id: &str) -> Result<WalkableVolume, NoCoverContext> 
     if !volume.supports_local_fs_access() {
         return Ok(via_trait(IndexVolumeKind::Smb));
     }
-    let facts = probe_mount(&root);
+    let Some(native_root) = crate::indexing::paths::app_text::native_root(&root) else {
+        return Ok(via_trait(IndexVolumeKind::Smb));
+    };
+    let facts = probe_mount(&native_root);
     if !routes_to_local_external(volume.backend_kind(), facts.is_network) {
         return Ok(via_trait(IndexVolumeKind::Smb));
     }
@@ -258,14 +263,14 @@ pub(super) enum NotWalkable {
     /// A component isn't a readable directory on disk: it was deleted between the
     /// coverage answer and the walk, or it's a symlink (which the index stores but
     /// never descends into).
-    NotADirectoryOnDisk(PathBuf),
+    NotADirectoryOnDisk(String),
     /// The index holds a FILE row where the chain needs a directory — a stale
     /// file→dir type change. Parenting rows under it would orphan them, so the
     /// walk declines and leaves the repair to the reconcile that heals type
     /// changes.
-    FileRowInTheChain(PathBuf),
+    FileRowInTheChain(String),
     /// The walk upserted a folder's row, flushed, and still couldn't read it back.
-    AbsentAfterUpsert(PathBuf),
+    AbsentAfterUpsert(String),
     /// The store wouldn't answer. Log-only.
     Store(String),
 }
@@ -329,8 +334,8 @@ pub(super) enum RootRow {
 /// whatever scope asked for this walk (the frontier is cut inside the scope, so
 /// the shallowest node it can name is the scope root itself), and a caller that
 /// reported them would answer with folders nobody searched.
-pub(super) fn ensure_walkable(context: &CoverContext, ground: &Ground, root: &Path) -> Result<RootRow, NotWalkable> {
-    let absolute = context.space.absolute(&root.to_string_lossy());
+pub(super) fn ensure_walkable(context: &CoverContext, ground: &Ground, root: &str) -> Result<RootRow, NotWalkable> {
+    let absolute = context.space.absolute(root);
     let index_relative = context
         .space
         .index_relative(&absolute)
@@ -349,12 +354,12 @@ pub(super) fn ensure_walkable(context: &CoverContext, ground: &Ground, root: &Pa
     // walk has to create carries the real directory's metadata rather than a
     // placeholder. It starts at the volume root, which is what `ROOT_ID` means:
     // `/` for the boot disk, the mount point for every other kind.
-    let mut on_disk = PathBuf::from(context.space.volume_root_string());
+    let mut on_disk = context.space.volume_root_string();
     let mut parent_id = ROOT_ID;
     let mut root_row = RootRow::Existing;
     let mut components = index_relative.split('/').filter(|c| !c.is_empty()).peekable();
     while let Some(component) = components.next() {
-        on_disk.push(component);
+        push_name(&mut on_disk, component);
         let is_root = components.peek().is_none();
         parent_id = match IndexStore::resolve_component(&conn, parent_id, component)
             .map_err(|e| NotWalkable::Store(e.to_string()))?
@@ -375,6 +380,16 @@ pub(super) fn ensure_walkable(context: &CoverContext, ground: &Ground, root: &Pa
         };
     }
     Ok(root_row)
+}
+
+/// `name` joined onto `path`, the way `PathBuf::push` joined one plain name onto a POSIX
+/// path: a `/` between them unless `path` is empty or already ends in one (the `/` root, a
+/// `scheme://host/` root). `/` alone on every host, so a share's path never gains a `\`.
+fn push_name(path: &mut String, name: &str) {
+    if !path.is_empty() && !path.ends_with('/') {
+        path.push('/');
+    }
+    path.push_str(name);
 }
 
 /// Whether an existing row is a directory. A missing row here is a row deleted
@@ -399,11 +414,11 @@ fn create_directory_row(
     conn: &rusqlite::Connection,
     parent_id: i64,
     name: &str,
-    on_disk: &Path,
+    on_disk: &str,
 ) -> Result<(i64, MetadataSnapshot), NotWalkable> {
     let snapshot = ground
         .stat_directory(on_disk)
-        .ok_or_else(|| NotWalkable::NotADirectoryOnDisk(on_disk.to_path_buf()))?;
+        .ok_or_else(|| NotWalkable::NotADirectoryOnDisk(on_disk.to_string()))?;
     context
         .writer
         .send(WriteMessage::UpsertEntryV2 {
@@ -424,6 +439,6 @@ fn create_directory_row(
         .map_err(|e| NotWalkable::Store(e.to_string()))?;
     let id = IndexStore::resolve_component(conn, parent_id, name)
         .map_err(|e| NotWalkable::Store(e.to_string()))?
-        .ok_or_else(|| NotWalkable::AbsentAfterUpsert(on_disk.to_path_buf()))?;
+        .ok_or_else(|| NotWalkable::AbsentAfterUpsert(on_disk.to_string()))?;
     Ok((id, snapshot))
 }

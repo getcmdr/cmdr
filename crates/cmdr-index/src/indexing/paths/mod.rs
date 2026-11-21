@@ -9,10 +9,13 @@
 //!   never a child of `/a/b`), shared by rescan ancestor-collapse and
 //!   removal-storm coalescing, plus the parent / ancestor-chain arithmetic the
 //!   live-event and size-refresh paths run on.
+//! - [`app_text`]: the crossings from a volume's app path (its root, a listed row) to the
+//!   text the index stores and the native path its local pipeline opens, and back.
 //!
 //! Firmlink and `/private`-symlink normalization to the canonical form the index
 //! stores lives one layer down, in `cmdr_fs::firmlinks`.
 
+pub(crate) mod app_text;
 pub(crate) mod path_prefix;
 pub(crate) mod path_space;
 pub(crate) mod routing;

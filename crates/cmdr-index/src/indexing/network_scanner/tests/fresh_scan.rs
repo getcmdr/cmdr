@@ -32,7 +32,7 @@ async fn a_fresh_walk_never_descends_a_symlinked_directory() {
 
     let summary = scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         CancellationToken::new(),
@@ -58,6 +58,74 @@ async fn a_fresh_walk_never_descends_a_symlinked_directory() {
         summary.total_entries, 3,
         "real/, real/b.jpg, and the link: the file counted once"
     );
+}
+
+/// A folder whose listed text holds escape-range code points that aren't a canonical
+/// escape (here the two byte escapes of `é`'s UTF-8) is indexed as a row and never walked:
+/// reading that text as an app path respells it to `/xé`, a DIFFERENT folder, whose
+/// children would land under the literal folder's row (#1310's look-alike).
+#[tokio::test]
+async fn a_fresh_walk_never_lists_a_look_alike_for_a_folder_spelled_with_escape_code_points() {
+    use crate::indexing::writer::IndexWriter;
+
+    let dir = tempfile::tempdir().expect("temp dir");
+    let db_path = dir.path().join("vol-scan-look-alike.db");
+    let _store = IndexStore::open(&db_path).expect("open store");
+    let writer = IndexWriter::spawn(&db_path, crate::NoopEventSink::shared()).expect("spawn writer");
+
+    let literal = "x\u{10FEC3}\u{10FEA9}";
+    let vol: Arc<dyn Volume> = Arc::new(InMemoryVolume::with_entries(
+        "Test",
+        vec![
+            entry(literal, &format!("/{literal}"), true, None),
+            entry("x\u{e9}", "/x\u{e9}", true, None),
+            entry("secret.txt", "/x\u{e9}/secret.txt", false, Some(3)),
+        ],
+    ));
+
+    scan_volume_via_trait(
+        vol,
+        cmdr_fs::app_path!("/").to_owned(),
+        writer.clone(),
+        progress(),
+        CancellationToken::new(),
+        ScanPacer::unpaced(),
+    )
+    .await
+    .expect("scan should complete");
+    writer.flush().await.expect("flush");
+    writer.shutdown();
+
+    let store = IndexStore::open(&db_path).expect("reopen");
+    let root_children = store.list_children(ROOT_ID).expect("list root");
+    let literal_row = root_children
+        .iter()
+        .find(|e| e.name == literal)
+        .expect("the folder keeps its own row");
+    assert!(
+        store.list_children(literal_row.id).expect("list it").is_empty(),
+        "`xé`'s children never land under the look-alike's row"
+    );
+}
+
+/// A cover root is read from the index's own text, so it resolves by that text: a row
+/// named with a literal escape-range code point is found, ❌ never looked up through
+/// `app_text::stored_text`, which reads the code point as an escape and spells U+FFFD.
+#[test]
+fn a_cover_root_resolves_by_the_text_the_index_holds_for_it() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let db_path = dir.path().join("cover-root-text.db");
+    let store = IndexStore::open(&db_path).expect("open store");
+    let conn = IndexStore::open_write_connection(&db_path).expect("write connection");
+    let name = "x\u{10FEFF}";
+    let id = IndexStore::insert_entry_v2(&conn, ROOT_ID, name, true, false, None, None, None, None).expect("row");
+    let space = crate::indexing::IndexPathSpace::mount_rooted("/Volumes/share");
+    let stored = format!("/Volumes/share/{name}");
+    let root = crate::indexing::paths::app_text::app_path_of(&stored).expect("the row's own text");
+
+    let resolved = cover_scan::resolve_root_id(store.read_conn(), &space, &root).expect("resolves");
+
+    assert_eq!(resolved, id);
 }
 
 /// Walk a small in-memory tree over the `Volume` trait and assert the index
@@ -91,7 +159,7 @@ async fn scans_in_memory_tree_into_index() {
     let cancelled = CancellationToken::new();
     let summary = scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -149,13 +217,13 @@ async fn errored_listing_is_not_marked() {
     );
     let vol: Arc<dyn Volume> = Arc::new(FailingListVolume {
         inner,
-        fail_path: PathBuf::from("/bad"),
+        fail_path: cmdr_fs::app_path!("/bad").to_owned(),
     });
 
     let cancelled = CancellationToken::new();
     scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -223,7 +291,7 @@ async fn walk_lists_directories_concurrently() {
     let cancelled = CancellationToken::new();
     scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -265,7 +333,7 @@ async fn empty_root_fresh_scan_does_not_complete() {
     let cancelled = CancellationToken::new();
     let result = scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -306,7 +374,7 @@ async fn failed_root_listing_does_not_complete() {
     let cancelled = CancellationToken::new();
     let result = scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -343,7 +411,7 @@ async fn honors_cancellation_before_first_listing() {
     cancelled.cancel();
     let result = scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,

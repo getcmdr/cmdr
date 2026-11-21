@@ -68,7 +68,7 @@ fn manager_for(
 ) -> IndexManager {
     IndexManager::new_for_kind(
         volume_id.to_string(),
-        root.to_path_buf(),
+        cmdr_fs::app_path::AppPathBuf::from_native_unicode(root).expect("a Unicode tempdir"),
         data_dir.join(format!("index-{volume_id}.db")),
         // A mount-rooted local drive: the guarded walker, scoped to the fixture
         // root rather than to `/`.

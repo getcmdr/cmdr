@@ -48,7 +48,6 @@
 //!   stale row is safe. (FSEvents' `item_removed`, on a local disk where a stat is
 //!   cheap, DOES stat-verify; SMB intentionally doesn't.)
 
-use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{LazyLock, Mutex};
@@ -339,11 +338,15 @@ fn apply_one_change(volume_id: &str, writer: &IndexWriter, parent_path: &Path, c
     // A tree the volume keeps out of its index walks (a phone's `/data`) takes no
     // live patch either, or a write there would put back rows no walk produces:
     // the same rule the NAS system-dir gate in `resolve_change` keeps.
-    if volume.index_walk(&AppPath::legacy_unchecked(parent_path), false) == cmdr_fs::volume::IndexWalk::RowOnly {
+    // The watcher hands the folder over as a `std::path` carrying the share's app text
+    // (its listing-host key), so its text is what names it to the volume.
+    let parent_abs = parent_path.to_string_lossy();
+    if crate::indexing::paths::app_text::app_path_of(&parent_abs)
+        .is_some_and(|parent| volume.index_walk(&parent, false) == cmdr_fs::volume::IndexWalk::RowOnly)
+    {
         return;
     }
-    let mount_root = volume.root().as_std_legacy().to_string_lossy().into_owned();
-    let parent_abs = parent_path.to_string_lossy();
+    let mount_root = crate::indexing::paths::app_text::stored_text(volume.root());
     let parent_rel = match index_relative_path(&mount_root, &parent_abs) {
         Some(p) => p,
         None => {
@@ -351,7 +354,7 @@ fn apply_one_change(volume_id: &str, writer: &IndexWriter, parent_path: &Path, c
                 target: "indexing::transports::smb::watch",
                 "change parent {parent_abs} not under mount root {mount_root}, skipping",
                 parent_abs = LogPrivate::dir_path(&*parent_abs),
-                mount_root = LogPrivate::dir_path(&mount_root),
+                mount_root = LogPrivate::dir_path(&*mount_root),
             );
             return;
         }

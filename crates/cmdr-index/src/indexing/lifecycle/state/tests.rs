@@ -729,7 +729,10 @@ fn reserve_a_drive(dir: &std::path::Path, volume_id: &str, root: &str, life: &st
     let db_path = dir.join(format!("{life}.db"));
     try_reserve_initializing_phase(
         volume_id,
-        StartRequest::for_test_at(IndexVolumeKind::LocalExternal, root),
+        StartRequest::for_test_at(
+            IndexVolumeKind::LocalExternal,
+            cmdr_fs::app_path::AppPathBuf::parse(root, cmdr_fs::app_path::PathFlavor::Posix).expect("an app path"),
+        ),
         IndexStore::open(&db_path).expect("store"),
         Arc::new(ReadPool::new(db_path.clone()).expect("pool")),
         Arc::new(PendingSizes::new()),

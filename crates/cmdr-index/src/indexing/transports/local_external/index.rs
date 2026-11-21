@@ -23,7 +23,7 @@
 //! Classification is by typed facts (the backend kind, the network-fs flag),
 //! never a volume-id or path substring.
 
-use std::path::PathBuf;
+use cmdr_fs::app_path::AppPathBuf;
 
 use crate::indexing::host::volumes::MountFacts;
 use crate::indexing::lifecycle::state;
@@ -77,7 +77,7 @@ enum Classified {
     /// resolved from the mount's `FilesystemKind` (`false` for FAT/exFAT, whose
     /// derived inodes must not drive the rename pre-pass) and threaded to the scan.
     LocalExternal {
-        mount_root: PathBuf,
+        mount_root: AppPathBuf,
         inodes_trustworthy: bool,
     },
     /// Route to the SMB gate (network mount, smb2 session, or unresolved).
@@ -96,10 +96,13 @@ async fn classify(volume_id: &str) -> Classified {
         // report the typed `NotConnected` refusal.
         return Classified::FallThrough;
     };
-    let mount_root = volume.root().as_std_legacy().to_path_buf();
+    let mount_root = volume.root().to_owned();
     let backend = volume.backend_kind();
 
-    let probe_root = mount_root.clone();
+    // A root with no native crossing is no mount to probe: unprobeable, so it falls through.
+    let Some(probe_root) = crate::indexing::paths::app_text::native_root(&mount_root) else {
+        return Classified::FallThrough;
+    };
     let facts = match tokio::time::timeout(
         FS_PROBE_TIMEOUT,
         tokio::task::spawn_blocking(move || crate::indexing::host::volumes::current().mount_facts(&probe_root)),
@@ -231,7 +234,11 @@ mod tests {
                 mount_root,
                 inodes_trustworthy,
             } => {
-                assert_eq!(mount_root, mount, "resolves to the registered mount root");
+                assert_eq!(
+                    mount_root.as_str(),
+                    mount.to_str().expect("a UTF-8 literal"),
+                    "resolves to the registered mount root"
+                );
                 // A local drive keeps stable inodes, so the rename pre-pass may
                 // trust them (FAT/exFAT is the case that wouldn't).
                 assert!(inodes_trustworthy, "a local mount has trustworthy inodes");

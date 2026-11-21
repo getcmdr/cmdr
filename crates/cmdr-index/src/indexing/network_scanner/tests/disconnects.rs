@@ -35,7 +35,7 @@ async fn disconnect_mid_walk_stops_promptly_and_returns_typed_error() {
     let cancelled = CancellationToken::new();
     let result = scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -96,7 +96,7 @@ async fn consecutive_untyped_failures_trip_the_backstop() {
     let cancelled = CancellationToken::new();
     let result = scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -153,13 +153,13 @@ async fn isolated_transient_failure_does_not_trip_backstop() {
     );
     let vol: Arc<dyn Volume> = Arc::new(FailingListVolume {
         inner,
-        fail_path: PathBuf::from("/bad"),
+        fail_path: cmdr_fs::app_path!("/bad").to_owned(),
     });
 
     let cancelled = CancellationToken::new();
     scan_volume_via_trait(
         vol,
-        PathBuf::from("/"),
+        cmdr_fs::app_path!("/").to_owned(),
         writer.clone(),
         progress(),
         cancelled,
@@ -191,7 +191,7 @@ fn terminal_disconnect_classification() {
     );
     // Non-disconnect terminations are NOT kept as honest partials.
     assert!(
-        !VolumeScanError::Timeout(PathBuf::from("/wedged")).is_terminal_disconnect(),
+        !VolumeScanError::Timeout(cmdr_fs::app_path!("/wedged").to_owned()).is_terminal_disconnect(),
         "a timeout is discarded, not kept"
     );
     assert!(
@@ -224,7 +224,7 @@ fn a_logged_scan_error_marks_every_path_it_carries() {
     use cmdr_fs::log_error::LogError;
     use cmdr_fs::log_private::{CLOSER, LogKind, RESERVED};
 
-    let timeout = VolumeScanError::Timeout(PathBuf::from("Trips/Lake House"));
+    let timeout = VolumeScanError::Timeout(cmdr_fs::app_path!("/Trips/Lake House").to_owned());
     let backstop = VolumeScanError::ConsecutiveFailures {
         count: CONSECUTIVE_FAILURE_ABORT,
         last: Box::new(VolumeScanError::Volume(VolumeError::NotFound(
@@ -233,7 +233,7 @@ fn a_logged_scan_error_marks_every_path_it_carries() {
     };
     let logged = LogError(&timeout).to_string();
     assert!(
-        logged.contains(&format!("{}Trips/Lake House{CLOSER}", LogKind::DirPath.opener())),
+        logged.contains(&format!("{}/Trips/Lake House{CLOSER}", LogKind::DirPath.opener())),
         "{logged:?}"
     );
     let logged = LogError(&backstop).to_string();

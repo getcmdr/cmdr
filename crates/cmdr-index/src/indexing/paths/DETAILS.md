@@ -166,3 +166,40 @@ on the real directory's `(parent_id, name_folded)` slot) lives with the exclusio
 Absolute-path prefix checks that respect path components, so `/a/bc` is never treated as a child of `/a/b`. Shared by
 the rescan ancestor-collapse and removal-storm coalescing (owned by `../reconcile/DETAILS.md` and
 `../watch/DETAILS.md`), and by `index_read_path`'s deepest-hot-path selection.
+
+## App paths at the edges (`app_text.rs`)
+
+The index takes each volume's root, and walks a share or a phone, by the typed app path the `Volume` names
+(`cmdr_fs::app_path`; `crates/cmdr-fs/DETAILS.md` § "App paths"). Inside, it keeps the TEXT it always kept: stores, path
+spaces, claims, and exclusion scopes compare strings. `app_text.rs` holds every crossing between the two, so no body
+does `std::path` arithmetic on a share's path (on Windows `Path::join` put a `\` into `sftp://…` and `/Volumes/…` text,
+and `Path::file_name` split on one).
+
+- **Root, app path → text**: `stored_text`. A root's own text, or, for a root the transition bridge escaped (a mount
+  point that isn't Unicode text; no escape is live before `cmdr_fs::app_path::ESCAPES_LIVE`), the lossy spelling the
+  index always stored: byte for byte `as_std_legacy().to_string_lossy()` (verified on macOS 27, 2,000,000 generated
+  roots, 0 differences, a throwaway harness, 2026-11-21).
+- **Root, app path → native**: `native_root`, once per `IndexManager` (`../lifecycle/manager/root.rs`: `root_text`,
+  `local_root`). `None` for a root no OS opens (`mtp://`, `adb://`): those volumes never run the local pipeline, so the
+  space and mount questions are skipped where they used to ask `statvfs` about `mtp://…` and log a warning. Byte-exact
+  for every canonical root. A root is the bridge's unnormalized text of what its registration got
+  (`LocalPosixVolume::on_mount`), so a bridge-only shape (a trailing `/`, `//`, `.`) crosses as its canonical twin, the
+  place the OS opens for that text; only a `..` refuses. A `None` there would send a local drive to the SMB gate, never
+  to be indexed. ❗ A `//`-led root of three names reads as UNC on POSIX (#1309) and refuses `WrongFlavor`.
+- **Row, text → app path**: `app_path_of` (`FileEntry.path`, a frontier root on a share). Borrowed when the text is
+  canonical, which every backend's row is; else the canonical place it names; `None` for text naming no place, which no
+  walk descends into. ❗ The respelling folds separators only: non-canonical text holding an escape-range code point is
+  `None`, since canonicalizing escapes respells a name (two byte escapes of `é`'s UTF-8 become `é`) and a walk would
+  list a look-alike folder's children under the row (pinned by
+  `a_fresh_walk_never_lists_a_look_alike_for_a_folder_spelled_with_escape_code_points`). A cover root came from stored
+  text, so its row lookup reads the app path's own text, ❌ never `stored_text`, which is for a volume's root. The same
+  text the bridge handed the volume for every canonical row but one class: a name holding a literal escape-range code
+  point, which the bridge re-escaped and the typed path keeps as the row spelled it (#1310, settled with the escape's
+  landing).
+- **Child, folder + listed name**: `network_scanner::child_of`, the app path's own join. A name that isn't one plain
+  name (`..`, empty, `a/b`) gives `None`, and the folder is indexed as a row, never descended: the reconcile walk used
+  to ask the volume to list `dir/..`.
+- **Stored text → local walker**: `local_path`, `Path::new` over text the local pipeline spelled from the OS's own
+  names. The local scanner, reconciler, and watcher stay native inside; their native → stored-text edge
+  (`to_string_lossy`, about 100 sites) is what's left for Windows, where it spells `D:\x` where the index wants `D:/x`
+  (#1232).

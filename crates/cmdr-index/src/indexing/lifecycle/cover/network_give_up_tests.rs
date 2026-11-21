@@ -12,7 +12,7 @@
 //! The rest of the trait-walk suite is `network_tests.rs`, and the harness both
 //! run on is `test_support.rs`.
 
-use super::test_support::{Gone, RefusesToList, Share, StopsAnswering, Tree, drain};
+use super::test_support::{Gone, RefusesToList, Share, StopsAnswering, Tree, app_path, drain};
 use super::{CoverOutcome, CoverWalk, CoveredEntry};
 use tokio_util::sync::CancellationToken;
 
@@ -509,7 +509,7 @@ fn the_failure_backstop_tripping_in_one_root_spares_the_roots_behind_it() {
 
     let paid = backend.listings_since(mark);
     assert!(
-        !paid.contains(&std::path::PathBuf::from(&b)) && !paid.contains(&std::path::PathBuf::from(&c)),
+        !paid.contains(&app_path(&b)) && !paid.contains(&app_path(&c)),
         "the walk had already concluded the share is gone, so it asked neither of the roots behind it: {paid:?}"
     );
     assert_eq!(outcome.roots_covered, 0, "it gave up on the share, not on a folder");
