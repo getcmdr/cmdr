@@ -22,7 +22,7 @@ Copy and move across every volume backend. File map: `DETAILS.md` § Files. Shar
 - **Skip the dest pre-check ONLY for a dir THIS op created** (`DirectoryCreation::Created`), ❌ never one that looks
   empty. Every name asks `landing.rs`, and an unanswerable probe fails the item. § "Look-alike names and new-name
   spelling".
-- **A listed name joins a destination ONLY as a `ChildName`**, ❌ never a raw `join` (`../x` escapes). § "Listed names
+- **A listed name joins ONLY as a `landing.rs::ListedName`**, ❌ never a raw `join` (`../x` escapes). § "Listed names
   are untrusted".
 
 ## Staging and cleanup

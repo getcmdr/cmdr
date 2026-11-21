@@ -435,6 +435,37 @@ impl AppName {
         }
     }
 
+    /// A name a listing row carries (`FileEntry.name`), for a walk that joins it under a
+    /// folder while escapes aren't live ([`ESCAPES_LIVE`]): no row holds a live escape yet, so
+    /// an escape-range code point in it is LITERAL text, spelled through this host's units
+    /// exactly as [`AppPath::legacy_unchecked`] spells it inside a joined `Path`. So
+    /// `ListedFolder::new(&legacy_unchecked(dir)).join(&from_listed_text(name)?)` names what
+    /// `legacy_unchecked(&dir.join(name))` named, byte for byte. Borrowed when the name holds
+    /// no escape-range code point (nearly every name). Once escapes are live this is
+    /// [`Self::from_app_spelling`].
+    ///
+    /// # Errors
+    ///
+    /// [`NotAChildName`] for what `ChildName` refuses on every OS: the empty name, `.`, `..`,
+    /// a `/`, or any NUL (a listed name is never a pick). It carries the name as listed, the
+    /// text `ChildName`'s refusal carried.
+    pub fn from_listed_text(name: &str) -> Result<Cow<'_, AppName>, NotAChildName> {
+        let refused = || NotAChildName(name.to_owned());
+        if name.contains('\0') {
+            return Err(refused());
+        }
+        if ESCAPES_LIVE {
+            return Self::from_app_spelling(name).map(Cow::Borrowed).map_err(|_| refused());
+        }
+        match escape::literal(name, Namer::HOST) {
+            Cow::Borrowed(plain) => Self::from_app_spelling(plain).map(Cow::Borrowed).map_err(|_| refused()),
+            Cow::Owned(literal) => match Self::from_app_spelling(&literal) {
+                Ok(_) => Ok(Cow::Owned(AppNameBuf(literal))),
+                Err(_) => Err(refused()),
+            },
+        }
+    }
+
     /// The text.
     pub fn as_str(&self) -> &str {
         &self.0

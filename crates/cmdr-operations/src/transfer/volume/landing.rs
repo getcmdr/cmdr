@@ -14,9 +14,15 @@
 //! - **Only a free name gets respelled** ([`Volume::spell_new_name`]): an entry
 //!   that exists is only ever addressed by its stored bytes.
 //!
-//! `DETAILS.md` § "Look-alike names and new-name spelling".
+//! A listed name joins its folder as a typed app path ([`ListedName`], the
+//! app path's own join), and this module holds the walk's crossings back to
+//! `std::path` ([`on_volume`], [`std_of`], [`into_std`]) for the bodies that
+//! still take it. `DETAILS.md` § "Look-alike names and new-name spelling" and
+//! § "Listed names are untrusted".
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, ListedFolder};
+use std::borrow::Cow;
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -29,26 +35,116 @@ use super::super::transfer_probe::{DriverPhase, OperationProbe};
 use super::super::volume_outage::through_outages;
 use super::transfer_error::{AtPath, WriteFailure};
 use cmdr_fs::entry::FileEntry;
-use cmdr_fs::volume::{ChildName, Volume, VolumeError};
+use cmdr_fs::volume::{ChildName, NotAChildName, Volume, VolumeError};
 
 /// Where a name lands.
 pub(super) enum Landing {
     /// Nothing holds the name: write a new entry at this path, already spelled
     /// for the destination.
-    Free(PathBuf),
+    Free(AppPathBuf),
     /// `entry` holds the name, at `path`, its OWN spelling, which may differ
     /// from the source's.
-    Taken { path: PathBuf, entry: Box<FileEntry> },
+    Taken { path: AppPathBuf, entry: Box<FileEntry> },
 }
 
 impl Landing {
     /// The path to write, and what sits there if anything.
-    pub(super) fn into_parts(self) -> (PathBuf, Option<FileEntry>) {
+    pub(super) fn into_parts(self) -> (AppPathBuf, Option<FileEntry>) {
         match self {
             Self::Free(path) => (path, None),
             Self::Taken { path, entry } => (path, Some(*entry)),
         }
     }
+
+    /// [`Self::into_parts`], the path in the `std::path` spelling the engine's
+    /// bodies still take ([`into_std`]).
+    pub(super) fn into_std_parts(self) -> (PathBuf, Option<FileEntry>) {
+        let (path, entry) = self.into_parts();
+        (into_std(path), entry)
+    }
+}
+
+/// One listed name, checked as one plain name before anything joins it: the
+/// text its listing spelled (what the destination's name index and the
+/// look-alike rules compare), and the app spelling the typed join takes.
+///
+/// ❗ A SOURCE listing comes from whoever answers it, and a hostile server or
+/// device can list `../x` or `/x`: this is the one way such a name reaches a
+/// destination path, so it lands inside the folder or is refused
+/// (`VolumeError::InvalidName`), ❌ never joined raw.
+pub(super) struct ListedName<'a> {
+    /// The text as listed, `None` for a native name that isn't UTF-8.
+    text: Option<&'a str>,
+    app: Cow<'a, AppName>,
+}
+
+impl<'a> ListedName<'a> {
+    /// A name off a listing row (`FileEntry.name`).
+    ///
+    /// ❗ Also refused where `ChildName` refuses it on this host: on Windows a
+    /// name holding `\` or `:` (a POSIX server's `a\b`, `12:00 notes`). The
+    /// typed join keeps such a name whole, but the bodies past it still take
+    /// `std::path` ([`into_std`]), whose `parent` and `file_name` would split
+    /// it there, and a child joined under the wrong folder is a write nobody
+    /// picked. Goes once those bodies take app paths (the plan's 10a); on macOS
+    /// and Linux it refuses nothing the plain-name check doesn't.
+    pub(super) fn new(text: &'a str) -> Result<Self, NotAChildName> {
+        ChildName::new(text)?;
+        Ok(Self {
+            text: Some(text),
+            app: AppName::from_listed_text(text)?,
+        })
+    }
+
+    /// The last name of a `std::path` the driver hands in (a top-level
+    /// destination), refused as `ChildName` refuses it on this host: `native`
+    /// as the driver spelled it, and `app` the same name in the bridge's
+    /// spelling of the whole path ([`on_volume`]), so the two name one file.
+    fn native(native: &'a OsStr, app: &'a str) -> Result<Self, NotAChildName> {
+        ChildName::new(native)?;
+        Ok(Self {
+            text: native.to_str(),
+            app: Cow::Borrowed(AppName::from_app_spelling(app)?),
+        })
+    }
+
+    /// `dir/<name>`, the typed join, for a caller that names the place the
+    /// child would take (a refusal's question, a failure's path).
+    pub(super) fn under(&self, dir: &AppPath) -> Result<AppPathBuf, VolumeError> {
+        join_under(&ListedFolder::new(dir), &self.app)
+    }
+}
+
+/// `name` in `dir`. The join refuses only on Windows: a drive or UNC folder
+/// takes no name holding `\` (a POSIX server's `a\b`), which is the destination
+/// refusing that name, per item.
+fn join_under(dir: &ListedFolder<'_>, name: &AppName) -> Result<AppPathBuf, VolumeError> {
+    dir.join(name)
+        .map_err(|_| VolumeError::from(NotAChildName(name.shown().into_owned())))
+}
+
+/// A `std::path` value the driver hands in, in the volume's spelling: the
+/// bridge's lossless door in, ONE named crossing for this module and the walk.
+pub(super) fn on_volume(path: &Path) -> Cow<'_, AppPath> {
+    AppPath::legacy_unchecked(path)
+}
+
+/// An app path in the `std::path` spelling the engine's bodies still take (the
+/// exact native bytes back, the bridge's way out): ONE named crossing for this
+/// module and the walk, until those bodies take app paths.
+pub(super) fn std_of(path: &AppPath) -> Cow<'_, Path> {
+    path.as_std_legacy()
+}
+
+/// [`std_of`], owned, reusing the app path's buffer when the two spellings are
+/// one (every name that's valid UTF-8 text holding no escape-range code
+/// point), so a child's path costs the one allocation its join already made.
+pub(super) fn into_std(path: AppPathBuf) -> PathBuf {
+    let respelled = match std_of(&path) {
+        Cow::Borrowed(_) => None,
+        Cow::Owned(native) => Some(native),
+    };
+    respelled.unwrap_or_else(|| PathBuf::from(path.into_string()))
 }
 
 /// What the caller already knows about the destination folder.
@@ -133,13 +229,15 @@ async fn name_at_destination(
     }
     // Pathed, so a share that stays gone is worded as the lost connection it is.
     let landing = through_outages(state, &[dest_volume], || async move {
-        probe_one_name(dest_volume, dest, new_name).await.at_destination(dest)
+        landing_at(dest_volume, dest, DestFolder::Unlisted, new_name)
+            .await
+            .at_destination(dest)
     })
     .await;
     match landing.map_err(|e| WriteFailure::from(e).error)? {
-        Landing::Free(path) => Ok(NameAtDest::Free(path)),
+        Landing::Free(path) => Ok(NameAtDest::Free(into_std(path))),
         Landing::Taken { path, entry } => Ok(NameAtDest::Taken {
-            path,
+            path: into_std(path),
             size: entry.size.unwrap_or(0),
         }),
     }
@@ -152,23 +250,34 @@ pub(super) fn destination_refuses(state: &WriteOperationState, dest: &Path) -> b
         .is_some_and(|name| state.destination_names.refuses(name))
 }
 
-/// One look at what the destination holds at `dest`, for [`name_at_destination`].
-async fn probe_one_name(dest_volume: &Arc<dyn Volume>, dest: &Path, new_name: NewName) -> Result<Landing, VolumeError> {
-    match (dest.parent(), dest.file_name()) {
-        (Some(dir), Some(name)) => match ChildName::new(name) {
-            Ok(name) => where_it_lands(dest_volume, dir, name, DestFolder::Unlisted, new_name).await,
-            Err(not_a_name) => Err(not_a_name.into()),
-        },
-        // A source with no name of its own lands on the destination folder
-        // itself, which no listing of a parent describes.
-        _ => match dest_volume.get_metadata(&AppPath::legacy_unchecked(dest)).await {
-            Ok(entry) => Ok(Landing::Taken {
-                path: dest.to_path_buf(),
-                entry: Box::new(entry),
-            }),
-            Err(VolumeError::NotFound(_)) => Ok(Landing::Free(dest.to_path_buf())),
-            Err(e) => Err(e),
-        },
+/// Where a TOP-LEVEL destination path the driver hands in lands: its last name
+/// under its parent through [`where_it_lands`], or, for a source with no name
+/// of its own, the destination folder itself, which no listing of a parent
+/// describes (one probe, unless this operation made it).
+pub(super) async fn landing_at(
+    dest_volume: &Arc<dyn Volume>,
+    dest: &Path,
+    folder: DestFolder<'_>,
+    new_name: NewName,
+) -> Result<Landing, VolumeError> {
+    // Split the way the driver's `Path` splits it (a leading `//` is no UNC root
+    // on macOS or Linux), each half in the bridge's spelling.
+    if let (Some(dir), Some(native)) = (dest.parent(), dest.file_name()) {
+        let spelled = on_volume(Path::new(native));
+        let name = ListedName::native(native, spelled.as_str())?;
+        return where_it_lands(dest_volume, &on_volume(dir), &name, folder, new_name).await;
+    }
+    let dest = on_volume(dest);
+    if matches!(folder, DestFolder::CreatedByUs) {
+        return Ok(Landing::Free(dest.into_owned()));
+    }
+    match dest_volume.get_metadata(&dest).await {
+        Ok(entry) => Ok(Landing::Taken {
+            path: dest.into_owned(),
+            entry: Box::new(entry),
+        }),
+        Err(VolumeError::NotFound(_)) => Ok(Landing::Free(dest.into_owned())),
+        Err(e) => Err(e),
     }
 }
 
@@ -180,40 +289,44 @@ async fn probe_one_name(dest_volume: &Arc<dyn Volume>, dest: &Path, new_name: Ne
 /// answer, and fails the item: ❌ never "nothing is there", which hands the
 /// name to a fresh write whose landing clears what the probe was asked about.
 ///
-/// ❗ `name` is a [`ChildName`] because it usually comes off a SOURCE listing,
+/// ❗ `name` is a [`ListedName`] because it usually comes off a SOURCE listing,
 /// which a hostile server or device writes: a raw `../x` or `/x` joined here
 /// would land outside `dest_dir`. A look-alike's stored name, read off the
 /// DESTINATION's listing, passes the same check before it's joined.
 pub(super) async fn where_it_lands(
     dest_volume: &Arc<dyn Volume>,
-    dest_dir: &Path,
-    name: ChildName<'_>,
+    dest_dir: &AppPath,
+    name: &ListedName<'_>,
     folder: DestFolder<'_>,
     new_name: NewName,
 ) -> Result<Landing, VolumeError> {
-    let asked = name.under(dest_dir);
-    let free = || {
-        let spelled = match (new_name, name.to_str()) {
-            (NewName::Respell, Some(name)) => dest_dir.join(dest_volume.spell_new_name(name).as_ref()),
-            _ => asked.clone(),
+    let under = ListedFolder::new(dest_dir);
+    let asked = join_under(&under, &name.app)?;
+    let free = |asked: AppPathBuf| -> Result<Landing, VolumeError> {
+        let spelled = match (new_name, name.text) {
+            (NewName::Respell, Some(text)) => match dest_volume.spell_new_name(text) {
+                Cow::Borrowed(same) if same == text => asked,
+                spelled => join_under(&under, &AppName::from_listed_text(&spelled)?)?,
+            },
+            _ => asked,
         };
-        Landing::Free(spelled)
+        Ok(Landing::Free(spelled))
     };
     let look_alike_at = |entry: Box<FileEntry>| -> Result<Landing, VolumeError> {
         Ok(Landing::Taken {
-            path: ChildName::new(&entry.name)?.under(dest_dir),
+            path: join_under(&under, &AppName::from_listed_text(&entry.name)?)?,
             entry,
         })
     };
-    let ambiguous = || VolumeError::AmbiguousName(asked.display().to_string());
+    let ambiguous = |asked: &AppPath| VolumeError::AmbiguousName(std_of(asked).display().to_string());
 
     let may_be_a_look_alike = match folder {
-        DestFolder::CreatedByUs => return Ok(free()),
-        DestFolder::Listed(index) => match index.lookup(Some(name.as_os_str())) {
-            DestLookup::Absent => return Ok(free()),
+        DestFolder::CreatedByUs => return free(asked),
+        DestFolder::Listed(index) => match index.lookup(name.text) {
+            DestLookup::Absent => return free(asked),
             DestLookup::Present(entry) => return Ok(Landing::Taken { path: asked, entry }),
             DestLookup::LookAlike(entry) => return look_alike_at(entry),
-            DestLookup::Ambiguous => return Err(ambiguous()),
+            DestLookup::Ambiguous => return Err(ambiguous(&asked)),
             // The listing already ruled out a look-alike; only a case-only match
             // (or an alias it can't enumerate) is left for the backend to call.
             DestLookup::Unknown => false,
@@ -221,19 +334,19 @@ pub(super) async fn where_it_lands(
         DestFolder::Unlisted => true,
     };
 
-    match dest_volume.get_metadata(&AppPath::legacy_unchecked(&asked)).await {
+    match dest_volume.get_metadata(&asked).await {
         Ok(entry) => Ok(Landing::Taken {
             path: asked,
             entry: Box::new(entry),
         }),
         Err(VolumeError::NotFound(_)) => {
-            let Some(text) = name.to_str().filter(|_| may_be_a_look_alike) else {
-                return Ok(free());
+            let Some(text) = name.text.filter(|_| may_be_a_look_alike) else {
+                return free(asked);
             };
-            match look_alike_in(dest_volume.as_ref(), dest_dir, text).await? {
-                LookAlike::None => Ok(free()),
+            match look_alike_in(dest_volume.as_ref(), &std_of(dest_dir), text).await? {
+                LookAlike::None => free(asked),
                 LookAlike::One(entry) => look_alike_at(entry),
-                LookAlike::Several => Err(ambiguous()),
+                LookAlike::Several => Err(ambiguous(&asked)),
             }
         }
         Err(e) => Err(e),

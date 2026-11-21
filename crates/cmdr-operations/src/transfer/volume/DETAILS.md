@@ -489,11 +489,11 @@ specific to volumes:
   `copy_volumes_with_progress`'s bulk-skip prelude would drop them all and the duplicate would silently do nothing. The
   prelude excludes them (`is_the_same_item`, the resolver's own question), the same exclusion the local engine makes.
 - **No `dir_remap` equivalent is needed, and that asymmetry with the local engine is the point.** `merge_level` threads
-  `dest_path` down through its OWN recursion (`child_dest = dest_path.join(&entry.name)`; it's `merge_level` that
-  recurses, not its caller `copy_directory_streaming`, which only sets up the leaf pool), so renaming the top-level
-  destination carries the whole subtree with it for free. The local engine can't: `FileInfo::dest_path()` recomputes
-  `destination.join(relative)` from the original relative path on every call, which is why it needs `dir_remap`'s
-  longest-mapped-ancestor rewrite.
+  `dest_path` down through its OWN recursion (`child_dest` is the level's typed join of the entry's name; it's
+  `merge_level` that recurses, not its caller `copy_directory_streaming`, which only sets up the leaf pool), so renaming
+  the top-level destination carries the whole subtree with it for free. The local engine can't: `FileInfo::dest_path()`
+  recomputes `destination.join(relative)` from the original relative path on every call, which is why it needs
+  `dir_remap`'s longest-mapped-ancestor rewrite.
 
 **The move drops the item rather than renaming it**, in `move_same.rs` before the driver runs, so no engine below can
 represent the case. Only the same-volume path can reach one at all: `move_between_volumes` routes `Arc::ptr_eq` there
@@ -812,20 +812,30 @@ which the backend resolves the way it will resolve the write.
 
 A source listing comes from whoever answers it: an SMB, SFTP, WebDAV, or S3 server, an MTP or ADB device, an archive. A
 hostile one can list `../x` or `/x`, and `dest_dir.join(name)` would then write outside the folder the user dropped
-onto. So a listed name reaches a destination path ONLY as a `cmdr_fs::volume::ChildName`, proven to be one plain path
-component (not empty, `.`, or `..`, no `/`, no NUL). A refusal is the typed `VolumeError::InvalidName`, which fails that
-item the way any unusable name does.
+onto. So a listed name reaches a destination path ONLY as a `landing.rs::ListedName`, proven to be one plain name (not
+empty, `.`, or `..`, no `/`, no NUL) and joined by the app path's own join (`cmdr_fs::app_path::ListedFolder`). A
+refusal is the typed `VolumeError::InvalidName`, which fails that item the way any unusable name does.
 
-- `landing.rs::where_it_lands` takes a `ChildName`, so the merge walk, the concurrent top-level copy, and the top-level
-  pre-check all validate before joining; the same-volume rename-merge and the native drag-out fulfillment
-  (`apps/desktop/src-tauri/src/native_drag/fulfillment.rs`) do too. One check under every backend, so a new backend
-  can't forget it.
-- On Windows `ChildName` also refuses `\` and `:`, which a POSIX server's name can hold (`12:00 notes`): the native join
-  would split it into a subfolder or a stream. Such a name isn't hostile, so it's the destination refusing it on this
-  host, asked per item like any refused name (`crate::name_rules::DestinationNames::native_join_refuses`, checked in
-  `merge_level` BEFORE `ChildName`, and through `refuses` at the top level), ❌ never the whole transfer ending. Always
-  `false` on macOS and Linux. Pinned on every OS by `refused_class_tests.rs`' `*_native_join_refuses` cells, which
-  preset Windows' join. `docs/specs/app-path-plan.md`'s milestone 10a replaces it with the app-path join.
+- `landing.rs::where_it_lands` takes a `ListedName` and the folder as an `&AppPath`, and answers an app path, so the
+  merge walk (which holds its destination typed from `copy_directory_streaming` down), the concurrent top-level copy,
+  and the top-level pre-check (`landing_at`, shared by both drivers) all validate before joining; the same-volume
+  rename-merge does too, and the native drag-out fulfillment (`apps/desktop/src-tauri/src/native_drag/fulfillment.rs`)
+  through `ChildName`. One check under every backend, so a new backend can't forget it.
+- **The typed join is byte-exact with the `Path` join it replaced**, for every canonical folder: a row's name is app
+  text read with escapes not live (`AppName::from_listed_text`: a literal escape-range code point is spelled the way the
+  bridge spells it inside a joined `Path`), and `ListedFolder` joins it. A bridge folder folds to its canonical place
+  (`//`, `/./`, a leading `//` on macOS and Linux), the same file. The walk's crossings back to `std::path` for the
+  bodies that still take it are `landing.rs`'s `on_volume`, `std_of`, and `into_std` (the join's own buffer, no copy,
+  when the two spellings are one). Evidence: `docs/specs/app-path-plan.md` § 10a, third pass.
+- On Windows `ListedName` also refuses `\` and `:` (through `ChildName`), which a POSIX server's name can hold
+  (`12:00 notes`): the typed join keeps such a name whole, but the bodies past the join still take `std::path`, whose
+  `parent` and `file_name` would split it into a subfolder or a stream. Such a name isn't hostile, so it's the
+  destination refusing it on this host, asked per item like any refused name
+  (`crate::name_rules::DestinationNames::native_join_refuses`, checked in `merge_level` BEFORE the join, and through
+  `refuses` at the top level), ❌ never the whole transfer ending. Always `false` on macOS and Linux. Pinned on every OS
+  by `refused_class_tests.rs`' `*_native_join_refuses` cells, which preset Windows' join. Both go once the leaf bodies
+  (`copy_leaf`, `stream_pipe_file`, the staged write, `CreatedPaths`) take app paths: `docs/specs/app-path-plan.md` §
+  10a.
 - `InMemoryVolume::set_reported_name` models a source that lists a hostile name. Pinned by `hostile_names_tests.rs` (a
   bad filename, a folder listed as `..`, and the symlink-then-folder trick: a copy never merges a source folder through
   a link already at the destination, under every policy) and a drag-out cell in

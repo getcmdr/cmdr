@@ -13,7 +13,6 @@
 //! borrowed context already holds every input they need — the volumes, the
 //! policy, the destination index, the preflight hints, and the shared counters.
 
-use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
@@ -24,14 +23,13 @@ use super::super::volume_outage::through_outages;
 use super::conflict::{ResolvedConflict, resolve_volume_conflict};
 use super::copy_concurrent::ConcurrentCopy;
 use super::copy_concurrent_task::CopyTask;
-use super::landing::{DestFolder, Landing, NewName, where_it_lands};
+use super::landing::{DestFolder, Landing, NewName, landing_at, on_volume};
 use super::merge_ctx::MergeProbe;
 use super::preflight::SourceFileFacts;
 use super::strategy::{Replaces, resolve_source_is_directory};
 use super::transfer_error::{AtPath, PathRole, PathedVolumeError, WriteFailure, map_volume_error};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_private::LogPrivate;
-use cmdr_fs::volume::{ChildName, VolumeError};
 
 impl ConcurrentCopy<'_> {
     /// Works out what (if anything) the driver should spawn for one top-level
@@ -103,7 +101,7 @@ impl ConcurrentCopy<'_> {
             .existing_dest_entry(source_index, &dest_item_path)
             .await
             .map_err(WriteFailure::from)?
-            .into_parts();
+            .into_std_parts();
         // The entry that's THERE, in its own spelling, or the new name spelled
         // for the destination.
         dest_item_path = landing_path;
@@ -251,25 +249,6 @@ impl ConcurrentCopy<'_> {
                 None => DestFolder::Unlisted,
             }
         };
-        let (Some(dest_dir), Some(name)) = (dest_item_path.parent(), dest_item_path.file_name()) else {
-            // A source with no name of its own lands on the destination folder
-            // itself, which no listing describes.
-            if matches!(folder, DestFolder::CreatedByUs) {
-                return Ok(Landing::Free(dest_item_path.to_path_buf()));
-            }
-            return match self
-                .dest_volume
-                .get_metadata(&AppPath::legacy_unchecked(dest_item_path))
-                .await
-            {
-                Ok(entry) => Ok(Landing::Taken {
-                    path: dest_item_path.to_path_buf(),
-                    entry: Box::new(entry),
-                }),
-                Err(VolumeError::NotFound(_)) => Ok(Landing::Free(dest_item_path.to_path_buf())),
-                Err(e) => Err(e).at_destination(dest_item_path),
-            };
-        };
         // Record the pre-check BEFORE awaiting it. In the 2026-07-31 incident
         // this destination `get_metadata` was the driver's last log line and
         // nothing said whether it returned, so a dump has to be able to name it
@@ -289,16 +268,15 @@ impl ConcurrentCopy<'_> {
         // A refused name skips the probe and the resolver (`landing.rs::
         // name_at_destination` says why); its copy refuses it before writing.
         if super::landing::destination_refuses(self.state, dest_item_path) {
-            return Ok(Landing::Free(dest_item_path.to_path_buf()));
+            return Ok(Landing::Free(on_volume(dest_item_path).into_owned()));
         }
-        let name = ChildName::new(name)
-            .map_err(VolumeError::from)
-            .at_destination(dest_item_path)?;
         // A share that drops under the probe is waited for, and the probe asks
         // again: it only reads (`../volume_outage.rs`). Pathed, so a share that
-        // stays gone is worded as the lost connection it is.
+        // stays gone is worded as the lost connection it is. A source with no
+        // name of its own lands on the destination folder itself, which no
+        // listing describes (`landing_at`).
         through_outages(self.state, &[&self.dest_volume], || async move {
-            where_it_lands(&self.dest_volume, dest_dir, name, folder, NewName::Respell)
+            landing_at(&self.dest_volume, dest_item_path, folder, NewName::Respell)
                 .await
                 .at_destination(dest_item_path)
         })

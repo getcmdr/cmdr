@@ -165,9 +165,12 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   `FileEntry.name`, its escapes live); `AppNameBuf::from_native_os(&OsStr)` (and `from_native_bytes` /
   `from_native_units`) takes a name a native API holds, escaping what isn't valid text and a literal escape code point
   as literal; `from_typed(text, namer)` takes typed text; `into_string` hands a listing its row name with no copy.
-  `volume::ChildName` (over `&OsStr`) is the `std::path` world's name and has NO app-path join: reading its text as app
-  spelling respells nothing today but would, once escapes exist, turn a live escape into a literal one and land a copy
-  of `caf\xE9.txt` under a different name. The wrong combination has no API.
+  `AppName::from_listed_text(&str)` is the walks' door while escapes aren't live (`ESCAPES_LIVE`): a row's name with any
+  escape-range code point read as literal, exactly the spelling the bridge gave the same name inside a joined `Path`
+  (pinned by `bridge_test.rs::a_listed_name_joins_as_the_bridge_spelled_the_path_join`), and `from_app_spelling` once
+  they are. `volume::ChildName` (over `&OsStr`) is the `std::path` world's name and has NO app-path join: reading its
+  text as app spelling respells nothing today but would, once escapes exist, turn a live escape into a literal one and
+  land a copy of `caf\xE9.txt` under a different name. The wrong combination has no API.
 - **Canonical form**: no empty, `.`, or `..` name, no trailing `/` except the root's own; every root ends in `/` (`/`,
   `C:/`, `//server/share/`, `scheme://authority/`). The drive letter is uppercased; nothing else is folded, and the
   Unicode form is never touched (NFC and NFD `café` are two values). `parse` normalizes into it, `from_normalized` takes

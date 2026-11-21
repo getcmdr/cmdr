@@ -245,3 +245,31 @@ fn a_twin_row_under_a_bridge_folder_unpicks_as_the_path_form_does() {
         assert_eq!(unpicked_app(&twin).as_str(), format!("{folder}/IMG_1.JPG"), "{folder}");
     }
 }
+
+/// A listed row's name joins under a canonical folder to exactly what the bridge made of the
+/// `Path` join, a literal escape-range code point included (escapes aren't live, so the row
+/// holds it as text), and refuses what `ChildName` refused.
+#[test]
+#[cfg(unix)]
+fn a_listed_name_joins_as_the_bridge_spelled_the_path_join() {
+    let names = [
+        "x",
+        "caf\u{e9}.txt",
+        "caf\u{10FEE9}",
+        "\u{10E800}a",
+        "a b",
+        "12:00 notes",
+    ];
+    for folder in ["/", "/top", "sftp://u@h:22/", "sftp://u@h:22/srv"] {
+        for listed in names {
+            let native = AppPath::legacy_unchecked(&Path::new(folder).join(listed)).into_owned();
+            let name = AppName::from_listed_text(listed).expect("a plain name");
+            let joined = ListedFolder::new(&bridge(folder)).join(&name).expect("joins");
+            assert_eq!(joined.as_str(), native.as_str(), "{folder:?} {listed:?}");
+        }
+    }
+    assert!(matches!(AppName::from_listed_text("x"), Ok(Cow::Borrowed(_))));
+    for refused in ["", ".", "..", "a/b", "a\0b"] {
+        assert!(AppName::from_listed_text(refused).is_err(), "{refused:?}");
+    }
+}

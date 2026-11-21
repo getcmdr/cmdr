@@ -41,7 +41,7 @@ use super::super::transfer_probe::{CURRENT_TASK_PROBE, TaskPhase, TaskProbeHandl
 use super::super::volume_outage::through_outages;
 use super::conflict::{ResolvedConflict, resolve_volume_conflict};
 use super::folder_metadata::{FolderMetadata, SourceFolderDates};
-use super::landing::{DestFolder, NewName, where_it_lands};
+use super::landing::{DestFolder, ListedName, NewName, into_std, on_volume, std_of, where_it_lands};
 use super::merge_ctx::{CreatedPaths, FileWindow, MergeCtx, MergeProbe};
 use super::naming::take_back_reservation;
 use super::preflight::SourceFileFacts;
@@ -54,7 +54,7 @@ use super::transfer_error::{AtPath, PathRole, PathedVolumeError};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
-use cmdr_fs::volume::{ChildName, DirectoryCreation, Volume, VolumeError};
+use cmdr_fs::volume::{DirectoryCreation, Volume, VolumeError};
 
 /// What one leaf file's copy reports back to the walker.
 type LeafResult = Result<LeafEnd, PathedVolumeError>;
@@ -562,10 +562,7 @@ async fn skip_if_folder_refused(
         return Err(error);
     }
     pool.drive(skip_if_refused(ctx, &subject, error)).await?;
-    let (files, bytes) = match pool
-        .drive(source_volume.scan_for_copy(&AppPath::legacy_unchecked(folder.source)))
-        .await
-    {
+    let (files, bytes) = match pool.drive(source_volume.scan_for_copy(&on_volume(folder.source))).await {
         Ok(scan) => (scan.file_count, scan.total_bytes),
         // The skip stands either way; only its count is short.
         Err(e) => {
@@ -658,11 +655,13 @@ pub(super) async fn copy_directory_streaming(
         merge.map_or_else(FileWindow::serial, |ctx| ctx.window.clone()),
         merge.and_then(|ctx| ctx.probe.clone()),
     );
+    // The walk holds its destination as an app path from here down, every
+    // child joined typed (`landing.rs::ListedName`).
     let walked = merge_level(
         source_volume,
         source_path,
         dest_volume,
-        dest_path,
+        &on_volume(dest_path),
         state,
         created,
         progress,
@@ -718,7 +717,9 @@ async fn merge_level<'a>(
     source_volume: &'a Arc<dyn Volume>,
     source_path: &Path,
     dest_volume: &'a Arc<dyn Volume>,
-    dest_path: &Path,
+    // The level in the destination's spelling: what its stat, its creates, and
+    // every child's typed join read.
+    dest_path_app: &AppPath,
     state: &'a Arc<WriteOperationState>,
     created: &'a CreatedPaths,
     progress: &'a Arc<SourceProgress>,
@@ -729,6 +730,10 @@ async fn merge_level<'a>(
     // `None`, or what the tree makes of a child, changes nothing below.
     folder: Option<NodeId>,
 ) -> Result<DirectoryCreation, PathedVolumeError> {
+    // The same level for the bodies that still take `std::path` (the ledger,
+    // the host's announce, the listing seam): a borrow for UTF-8.
+    let dest_path_std = std_of(dest_path_app);
+    let dest_path: &Path = &dest_path_std;
     state.scope().host().announce_on(&**dest_volume, dest_path);
     // Say what this task is doing before the first `.await` of the level. A
     // walk parks on listings, so a stack sample sees nothing and the dump would
@@ -775,9 +780,6 @@ async fn merge_level<'a>(
     // that landed before the drop answers `AlreadyExists` the second time, which
     // reads as "there" (`../volume_outage.rs`, ❗ only for calls that are safe to
     // run twice).
-    // The level in the destination's spelling, made once for its stat and its creates.
-    let dest_path_owned = AppPath::legacy_unchecked(dest_path);
-    let dest_path_app: &AppPath = &dest_path_owned;
     let level = pool
         .drive(through_outages(
             state,
@@ -853,7 +855,7 @@ async fn merge_level<'a>(
                     Ok((dest_index, made_here))
                 };
 
-                let source_path_app = AppPath::legacy_unchecked(source_path);
+                let source_path_app = on_volume(source_path);
                 let (dest_index, entries) = if legs_may_overlap {
                     tokio::join!(dest_prepare, source_volume.list_directory_as_source(&source_path_app))
                 } else {
@@ -927,7 +929,7 @@ async fn merge_level<'a>(
         // A name a POSIX server holds whole but this host's native join can't
         // keep one name (Windows: `12:00 notes`, `a\b`) is the destination
         // refusing it here, asked per item, ❌ never a hostile listing that ends
-        // the transfer. Checked before `ChildName`, which refuses it on Windows.
+        // the transfer. Checked before the typed join, which keeps it whole.
         // `DestinationNames` says why; false on macOS and Linux.
         if state.destination_names.native_join_refuses(entry.name.as_str()) {
             let child_row = tree_level.child(&entry.name, merges_as_a_directory(entry), entry.size.unwrap_or(0));
@@ -943,20 +945,23 @@ async fn merge_level<'a>(
         }
         // ❗ The source's listing named this child, and a hostile server or
         // device can name it `../x` or `/x`: ❌ never join it raw.
-        let name = ChildName::new(&entry.name)
+        let name = ListedName::new(&entry.name)
             .map_err(VolumeError::from)
             .at_source(&child_source)?;
         let (child_dest, dest_hit) = pool
             .drive(where_it_lands(
                 dest_volume,
-                dest_path,
-                name,
+                dest_path_app,
+                &name,
                 dest_folder,
                 NewName::Respell,
             ))
             .await
             // The probe asked the destination, about the name the child would take.
-            .map_err(|e| PathedVolumeError::new(PathRole::Destination, &name.under(dest_path), e))?
+            .map_err(|e| match name.under(dest_path_app) {
+                Ok(asked) => PathedVolumeError::new(PathRole::Destination, &asked, e),
+                Err(_) => PathedVolumeError::new(PathRole::Destination, dest_path, e),
+            })?
             .into_parts();
         let dest_hit = dest_hit.as_ref();
         // The scan's kind, which counts a link as one entry even where this
@@ -967,11 +972,14 @@ async fn merge_level<'a>(
         // for it: a driver that strips it (vfat's trailing period) would land it
         // on a sibling, or merge a folder into one
         // (`crate::name_rules::DestinationNames`). Asked like a landing's refusal.
-        if state.destination_names.refuses(name.as_os_str()) {
+        if state.destination_names.refuses(std::ffi::OsStr::new(&entry.name)) {
             let refused = RefusedChild {
                 entry,
                 source: child_source,
-                dest: name.under(dest_path),
+                // The place the asked name takes: it joined above, so it joins here.
+                dest: name
+                    .under(dest_path_app)
+                    .map_or_else(|_| dest_path.to_path_buf(), into_std),
                 node: child_row,
             };
             refuse_child(pool, merge, created, progress, source_volume, refused).await?;
@@ -1037,7 +1045,7 @@ async fn merge_level<'a>(
                     Err(e) => {
                         let folder = RefusedFolder {
                             source: &child_source,
-                            dest: &child_dest,
+                            dest: &std_of(&child_dest),
                             node: child_row,
                         };
                         skip_if_folder_refused(pool, merge, created, progress, source_volume, &folder, e).await?;
@@ -1046,7 +1054,7 @@ async fn merge_level<'a>(
                 };
                 if level == DirectoryCreation::Created {
                     pool.folders
-                        .note_filled(child_dest, child_source, SourceFolderDates::of_entry(entry));
+                        .note_filled(into_std(child_dest), child_source, SourceFolderDates::of_entry(entry));
                 }
                 continue;
             }
@@ -1056,6 +1064,9 @@ async fn merge_level<'a>(
         // a same-named dest LEAF (a file or a link: a type mismatch). If there's
         // a dest hit and we have merge context, route it through the file-policy
         // resolver.
+        // From here the child is a leaf (or a renamed folder root), for bodies that
+        // still take `std::path`: the join's own buffer when the spellings are one.
+        let child_dest = into_std(child_dest);
         let mut write_dest = child_dest.clone();
         let mut replaces = Replaces::Nothing;
         // Nothing has resolved a conflict for this child yet, so the name it is
@@ -1131,7 +1142,7 @@ async fn merge_level<'a>(
                 source_volume,
                 &child_source,
                 dest_volume,
-                &write_dest,
+                &on_volume(&write_dest),
                 state,
                 created,
                 progress,

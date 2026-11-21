@@ -67,10 +67,11 @@ use super::super::super::types::{RecoveredOriginal, VolumeCopyConfig, WriteOpera
 use super::super::dest_name_index::{DestLookup, DestNameIndex};
 use super::conflict::{ResolvedConflict, resolve_volume_conflict};
 use super::displaced_destination::{DisplacedDestination, displace_destination};
+use super::landing::{ListedName, into_std, on_volume};
 use super::strategy::Replaces;
 use super::transfer_error::{PathRole, map_volume_error};
 use cmdr_fs::entry::FileEntry;
-use cmdr_fs::volume::{ChildName, EntryKind, Volume, VolumeError};
+use cmdr_fs::volume::{EntryKind, Volume, VolumeError};
 
 /// Context threaded through the recursive rename-merge so each level can resolve
 /// its clashing children through the same file-policy machinery the top-level
@@ -154,6 +155,8 @@ pub(super) async fn rename_merge_directory(
     // call, caught late below if it refuses.
     let dest_index = DestNameIndex::build(volume_list(ctx.volume, dest_dir).await?);
     let source_entries = volume_list(ctx.volume, source_dir).await?;
+    // The level in the volume's spelling, made once for every child's join.
+    let dest_dir_app = on_volume(dest_dir);
 
     // Per-level decisions for children whose name hit the dest map. A
     // late-detected `AlreadyExists` (case-fold / TOCTOU) for one of these
@@ -177,22 +180,26 @@ pub(super) async fn rename_merge_directory(
         let child_source = PathBuf::from(&entry.path);
         // ❗ Listed names are the server's word: ❌ never join one raw, or `../x`
         // renames the entry out of the folder being merged.
-        let name = ChildName::new(&entry.name).map_err(|e| map_rename_error(&child_source, e.into()))?;
+        let under = |name: &str| {
+            ListedName::new(name)
+                .map_err(VolumeError::from)
+                .and_then(|name| name.under(&dest_dir_app))
+                .map(into_std)
+                .map_err(|e| map_rename_error(&child_source, e))
+        };
+        let asked = under(&entry.name)?;
         // A look-alike is a hit on the entry that's there, addressed by ITS
         // name from here on. A move keeps the name it moves, so a free name is
         // never respelled.
-        let (child_dest, dest_hit) = match dest_index.lookup(Some(name.as_os_str())) {
-            DestLookup::Present(hit) => (name.under(dest_dir), Some(*hit)),
-            DestLookup::LookAlike(hit) => {
-                let stored = ChildName::new(&hit.name).map_err(|e| map_rename_error(&child_source, e.into()))?;
-                (stored.under(dest_dir), Some(*hit))
-            }
+        let (child_dest, dest_hit) = match dest_index.lookup(Some(&entry.name)) {
+            DestLookup::Present(hit) => (asked, Some(*hit)),
+            DestLookup::LookAlike(hit) => (under(&hit.name)?, Some(*hit)),
             DestLookup::Ambiguous => {
                 return Err(WriteOperationError::DestinationExists {
-                    path: name.under(dest_dir).display().to_string(),
+                    path: asked.display().to_string(),
                 });
             }
-            DestLookup::Absent | DestLookup::Unknown => (name.under(dest_dir), None),
+            DestLookup::Absent | DestLookup::Unknown => (asked, None),
         };
         let dest_hit = dest_hit.as_ref();
 

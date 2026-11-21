@@ -16,7 +16,6 @@
 //! pre-check from one listing".
 
 use std::collections::HashMap;
-use std::ffi::OsStr;
 
 use cmdr_fs::name_fold::fold_name;
 
@@ -81,13 +80,11 @@ impl DestNameIndex {
 
     /// Answers whether `name` is already taken at the destination.
     ///
-    /// `None` (a source path with no final component) is [`DestLookup::Unknown`]:
-    /// the destination that copy targets is the directory itself, which this
-    /// index doesn't describe.
-    pub(super) fn lookup(&self, name: Option<&OsStr>) -> DestLookup {
-        // A non-UTF-8 name can't be folded the way the backend would, so it
-        // isn't ours to answer.
-        let Some(name) = name.and_then(OsStr::to_str) else {
+    /// `name` is the text as listed. `None` is [`DestLookup::Unknown`]: a native
+    /// name that isn't UTF-8 can't be folded the way the backend would, so it
+    /// isn't ours to answer.
+    pub(super) fn lookup(&self, name: Option<&str>) -> DestLookup {
+        let Some(name) = name else {
             return DestLookup::Unknown;
         };
         if let Some(bucket) = self.by_folded.get(&fold(name)) {

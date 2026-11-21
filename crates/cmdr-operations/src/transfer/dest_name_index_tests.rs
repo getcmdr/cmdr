@@ -17,7 +17,7 @@ fn listing(names: &[&str]) -> DestNameIndex {
 }
 
 fn lookup(index: &DestNameIndex, name: &str) -> DestLookup {
-    index.lookup(Some(OsStr::new(name)))
+    index.lookup(Some(name))
 }
 
 #[test]
