@@ -338,18 +338,13 @@ fn job(kind: FactKind, through: Through, sub_jobs: SubJobs) -> Option<Job<AboutF
 /// local read is: a value past the cap reaches the decoder as an oversized
 /// buffer, which it reads as unparseable.
 fn download_through(asked: &Asked, path: &Path) -> Fact<Download> {
-    let paths = [path.to_path_buf()];
+    let paths = [AppPath::legacy_unchecked(path).into_owned()];
     let mut failed = None;
     let fact = platform::download_record(&mut |name| {
         let answers = asked.ask(
-            asked.volume.read_xattr_many(
-                &paths
-                    .iter()
-                    .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                    .collect::<Vec<_>>(),
-                name,
-                XattrReadMode::AssumePathsExist,
-            ),
+            asked
+                .volume
+                .read_xattr_many(&paths, name, XattrReadMode::AssumePathsExist),
         );
         match answers.into_iter().next() {
             Some(Ok(Some(value))) if value.len() > MAX_XATTR_BYTES => Some(vec![0; MAX_XATTR_BYTES + 1]),

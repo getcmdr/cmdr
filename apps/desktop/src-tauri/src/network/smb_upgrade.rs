@@ -611,11 +611,12 @@ pub(crate) async fn return_to_os_mount(volume_id: &str) -> bool {
         return false;
     }
     // Behind the encryption gate while "Always require SMB encryption" is on.
-    let os_mount = crate::network::smb_mount_gate::os_mount_volume(current.name(), &current.root().as_std_legacy());
+    let mount_root = current.root().as_std_legacy();
+    let os_mount = crate::network::smb_mount_gate::os_mount_volume(current.name(), &mount_root);
     register_replacing_predecessor(volume_id, os_mount).await;
     log::info!(
         "Handed {volume_id} back to the macOS mount at {}",
-        LogPrivate::dir_path(&*current.root().as_std_legacy())
+        LogPrivate::dir_path(&*mount_root)
     );
     true
 }
