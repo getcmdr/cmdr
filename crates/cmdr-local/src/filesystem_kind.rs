@@ -137,7 +137,7 @@ pub fn probe_mount_for_path(path: &std::path::Path) -> MountProbe {
     }
 }
 
-#[cfg(all(test, target_os = "windows"))]
+#[cfg(all(test, target_os = "windows"))] // A Windows drive and `GetDriveTypeW`, the probe's Windows arm.
 mod windows_tests {
     use super::*;
     use std::path::Path;

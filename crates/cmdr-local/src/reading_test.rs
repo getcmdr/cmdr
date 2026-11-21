@@ -98,7 +98,7 @@ fn a_watch_path_crosses_as_itself_on_posix() {
 
 /// The Windows case check (`named_exactly`) leaves macOS's stat alone: on a case-insensitive
 /// APFS volume another spelling still answers, as it always has.
-#[cfg(target_os = "macos")]
+#[cfg(target_os = "macos")] // APFS is case-insensitive by default; a Linux disk usually isn't.
 #[test]
 fn a_stat_on_macos_still_answers_for_another_spelling() {
     let temp_dir = TestDir::new("reading_case_spelling");

@@ -73,7 +73,7 @@ fn any_other_and_rescan_flagged_events_are_rescans() {
 /// On Windows the watch opens the verbatim `\\?\` folder, so its events arrive verbatim; they
 /// leave `translate` in the app spelling the listing and its rows key on, a rename's two halves
 /// and the root's own removal included (#1330).
-#[cfg(target_os = "windows")]
+#[cfg(target_os = "windows")] // Verbatim `\\?\` and drive-letter paths only parse as native paths on Windows.
 #[test]
 fn windows_event_paths_cross_back_to_the_app_spelling() {
     let changes = translate(vec![
