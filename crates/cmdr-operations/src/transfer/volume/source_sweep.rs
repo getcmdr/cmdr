@@ -160,7 +160,9 @@ async fn sweep_level(
     let opened = locked.unlock(dir);
     // As the copy walk listed it: a sidecar it left behind travels with its
     // owner, which the kernel removes with the owner.
-    let entries = match volume.list_directory_as_source(&AppPath::legacy_unchecked(dir)).await {
+    // The folder in the volume's spelling, made once for its listing and its delete.
+    let dir_app = AppPath::legacy_unchecked(dir);
+    let entries = match volume.list_directory_as_source(&dir_app).await {
         Ok(entries) => entries,
         // Gone already: whoever removed it, nothing of it is left to protect.
         Err(VolumeError::NotFound(_)) => {
@@ -268,7 +270,7 @@ async fn sweep_level(
     }
     // ❗ As a folder, never `delete`: once such a folder's last file goes, a
     // plain delete finds only a file of its name, which the move never copied.
-    match volume.delete_directory(&AppPath::legacy_unchecked(dir), None).await {
+    match volume.delete_directory(&dir_app, None).await {
         // A folder that only existed through what was in it (an object
         // store's prefix with no marker) went with its last file.
         Ok(()) => {
@@ -396,8 +398,10 @@ async fn sweep_once(
     locked: &LockedPlan,
     after_a_wait: bool,
 ) -> Result<FolderLeftovers, PathedVolumeError> {
+    // The source in the volume's spelling, made once for its stat and its delete.
+    let source_app = AppPath::legacy_unchecked(source);
     let delete_top_level = || async {
-        match volume.delete(&AppPath::legacy_unchecked(source)).await {
+        match volume.delete(&source_app).await {
             Err(VolumeError::NotFound(_)) if after_a_wait => Ok(FolderLeftovers {
                 read_gone: true,
                 ..FolderLeftovers::default()
@@ -406,7 +410,7 @@ async fn sweep_once(
         }
     };
     match carried {
-        CarriedSource::Folder(ledger) => match volume.entry_kind(&AppPath::legacy_unchecked(source)).await {
+        CarriedSource::Folder(ledger) => match volume.entry_kind(&source_app).await {
             // A selected link the walk followed: the link goes, its target stays.
             Ok(EntryKind::Symlink) => delete_top_level().await,
             Ok(_) | Err(VolumeError::NotFound(_)) => sweep_moved_folder(volume, source, ledger, skipped, locked).await,

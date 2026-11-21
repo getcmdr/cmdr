@@ -469,23 +469,20 @@ async fn reduce_volume_conditional_resolution(
     source_size_hint: Option<u64>,
     dest_size_hint: Option<u64>,
 ) -> ConflictResolution {
+    // Both sides in their volume's spelling, made once for whichever stats the policy needs.
+    let (source_app, dest_app) = (
+        AppPath::legacy_unchecked(source_path),
+        AppPath::legacy_unchecked(dest_path),
+    );
     match resolution {
         ConflictResolution::OverwriteSmaller => {
             let src_size = match source_size_hint {
                 Some(s) => Some(s),
-                None => source_volume
-                    .get_metadata(&AppPath::legacy_unchecked(source_path))
-                    .await
-                    .ok()
-                    .and_then(|m| m.size),
+                None => source_volume.get_metadata(&source_app).await.ok().and_then(|m| m.size),
             };
             let dst_size = match dest_size_hint {
                 Some(s) => Some(s),
-                None => dest_volume
-                    .get_metadata(&AppPath::legacy_unchecked(dest_path))
-                    .await
-                    .ok()
-                    .and_then(|m| m.size),
+                None => dest_volume.get_metadata(&dest_app).await.ok().and_then(|m| m.size),
             };
             match (src_size, dst_size) {
                 (Some(src), Some(dst)) if dst < src => ConflictResolution::Overwrite,
@@ -510,12 +507,12 @@ async fn reduce_volume_conditional_resolution(
         }
         ConflictResolution::OverwriteOlder => {
             let src_t = source_volume
-                .get_metadata(&AppPath::legacy_unchecked(source_path))
+                .get_metadata(&source_app)
                 .await
                 .ok()
                 .and_then(|m| m.modified_at);
             let dst_t = dest_volume
-                .get_metadata(&AppPath::legacy_unchecked(dest_path))
+                .get_metadata(&dest_app)
                 .await
                 .ok()
                 .and_then(|m| m.modified_at);

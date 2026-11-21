@@ -179,17 +179,15 @@ const QUARANTINE_XATTR: &str = "com.apple.quarantine";
 /// instead of inheriting the first one's answer.
 #[cfg(target_os = "macos")]
 fn archive_quarantine(state: &WriteOperationState, source_volume: &Arc<dyn Volume>) -> Option<Vec<u8>> {
-    let archive = source_volume.local_backing_file()?;
-    let (read_for, value) = state.extract_quarantine.get_or_init(|| {
-        (
-            archive.as_std_legacy().to_path_buf(),
-            read_quarantine(&archive.as_std_legacy()),
-        )
-    });
-    if *read_for == *archive.as_std_legacy() {
+    // The local `.zip`, crossed to `std::path` once: the xattr read is native.
+    let archive = source_volume.local_backing_file()?.as_std_legacy().into_owned();
+    let (read_for, value) = state
+        .extract_quarantine
+        .get_or_init(|| (archive.clone(), read_quarantine(&archive)));
+    if *read_for == archive {
         value.clone()
     } else {
-        read_quarantine(&archive.as_std_legacy())
+        read_quarantine(&archive)
     }
 }
 

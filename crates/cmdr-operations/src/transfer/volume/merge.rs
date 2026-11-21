@@ -775,6 +775,9 @@ async fn merge_level<'a>(
     // that landed before the drop answers `AlreadyExists` the second time, which
     // reads as "there" (`../volume_outage.rs`, ❗ only for calls that are safe to
     // run twice).
+    // The level in the destination's spelling, made once for its stat and its creates.
+    let dest_path_owned = AppPath::legacy_unchecked(dest_path);
+    let dest_path_app: &AppPath = &dest_path_owned;
     let level = pool
         .drive(through_outages(
             state,
@@ -785,10 +788,7 @@ async fn merge_level<'a>(
                     // ❌ never the `NotSupported` "treat as fresh" case below.
                     let mut made_here = false;
                     let level_pre_existed = if backend_create_directory_detects_collisions(dest_volume) {
-                        match dest_volume
-                            .create_directory(&AppPath::legacy_unchecked(dest_path))
-                            .await
-                        {
+                        match dest_volume.create_directory(dest_path_app).await {
                             Ok(()) => {
                                 created.record_dir(dest_path.to_path_buf());
                                 // Made here, so it is the extract's to quarantine, now rather than
@@ -814,13 +814,10 @@ async fn merge_level<'a>(
                         }
                     } else {
                         // Untrusted-collision backend (MTP): pre-check existence.
-                        if dest_volume.exists(&AppPath::legacy_unchecked(dest_path)).await {
+                        if dest_volume.exists(dest_path_app).await {
                             true
                         } else {
-                            match dest_volume
-                                .create_directory(&AppPath::legacy_unchecked(dest_path))
-                                .await
-                            {
+                            match dest_volume.create_directory(dest_path_app).await {
                                 Ok(()) => {
                                     created.record_dir(dest_path.to_path_buf());
                                     // Made here, so it is the extract's to quarantine, now rather than
@@ -856,15 +853,13 @@ async fn merge_level<'a>(
                     Ok((dest_index, made_here))
                 };
 
+                let source_path_app = AppPath::legacy_unchecked(source_path);
                 let (dest_index, entries) = if legs_may_overlap {
-                    let source_path_app = AppPath::legacy_unchecked(source_path);
                     tokio::join!(dest_prepare, source_volume.list_directory_as_source(&source_path_app))
                 } else {
                     (
                         dest_prepare.await,
-                        source_volume
-                            .list_directory_as_source(&AppPath::legacy_unchecked(source_path))
-                            .await,
+                        source_volume.list_directory_as_source(&source_path_app).await,
                     )
                 };
                 // Each leg's failure is its own volume's: a share that won't create the
