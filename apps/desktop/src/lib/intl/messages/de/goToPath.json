@@ -31,7 +31,7 @@
   "@goToPath.dialog.ancestorHint": {
     "sourceHash": "e6eefca"
   },
-  "goToPath.dialog.throughLinkHint": "The “..” comes after a link, so this goes to {dir}.",
+  "goToPath.dialog.throughLinkHint": "Das „..“ folgt auf eine symbolische Verknüpfung, daher führt dieser Pfad zu {dir}.",
   "@goToPath.dialog.throughLinkHint": {
     "sourceHash": "1a3b3e1"
   },

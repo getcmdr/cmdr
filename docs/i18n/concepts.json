@@ -2186,6 +2186,10 @@
       {
         "key": "errors.write.linksNotSupported.suggestion",
         "why": "\"the link\" here is the symbolic link the message names (the symlink concept)"
+      },
+      {
+        "key": "goToPath.dialog.throughLinkHint",
+        "why": "\"a link\" here is the symbolic link the \"..\" follows (the symlink concept), shortened in prose"
       }
     ],
     "note": "The DFS sense (a folder in an SMB share that points to another server: `*.linkTargetUnreachable`, `*.linkNeedsConsent`, the SMB link sign-ins) shares the word: Windows and Samba call it a DFS link. A filesystem symlink is the `symlink` concept.",

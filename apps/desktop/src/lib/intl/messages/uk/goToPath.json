@@ -31,7 +31,7 @@
   "@goToPath.dialog.ancestorHint": {
     "sourceHash": "e6eefca"
   },
-  "goToPath.dialog.throughLinkHint": "The “..” comes after a link, so this goes to {dir}.",
+  "goToPath.dialog.throughLinkHint": "«..» стоїть після символічного посилання, тож цей шлях веде сюди: {dir}.",
   "@goToPath.dialog.throughLinkHint": {
     "sourceHash": "1a3b3e1"
   },
