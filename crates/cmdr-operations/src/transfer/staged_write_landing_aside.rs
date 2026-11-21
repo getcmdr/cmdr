@@ -5,7 +5,7 @@
 //! [`Landing`] and rescue rules it shares, and whose cut-off settle
 //! (`staged_write_landing_cut_off.rs`) calls its resume and give-up steps.
 
-use cmdr_fs::app_path::{AppPath, AppPathBuf};
+use cmdr_fs::app_path::AppPathBuf;
 use std::sync::Arc;
 
 use super::super::super::super::in_flight_temps;
@@ -19,11 +19,9 @@ use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::{Volume, VolumeError};
 
-/// The one crossing of a held aside's path to its volume's spelling:
-/// [`DisplacedDestination`] answers it as a `std::path` value (its ledgers'
-/// and logs' spelling).
+/// A held aside's path in its volume's spelling, made once by [`DisplacedDestination`].
 fn aside_on_volume(aside: &DisplacedDestination) -> AppPathBuf {
-    AppPath::legacy_unchecked(aside.aside_path()).into_owned()
+    aside.aside_app().to_owned()
 }
 
 impl Landing {

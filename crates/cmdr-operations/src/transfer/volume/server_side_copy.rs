@@ -97,7 +97,7 @@ pub(super) async fn try_server_side_copy(
         on_file_progress,
     };
     let source_path_app = AppPath::legacy_unchecked(source_path);
-    let target_app = AppPath::legacy_unchecked(staged.target());
+    let target_app = staged.target_app();
 
     // The quit deadline rides the same `select!` it rides for a streamed write.
     // Nothing is cleaned up on that arm: the delete would go back through a
@@ -109,7 +109,7 @@ pub(super) async fn try_server_side_copy(
         result = dest_volume.copy_on_server(
             source_volume.as_ref(),
             &source_path_app,
-            &target_app,
+            target_app,
             staged.write_mode(),
             &progress,
         ) => result,

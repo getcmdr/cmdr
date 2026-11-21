@@ -263,6 +263,11 @@ impl DisplacedDestination {
         self.aside.path()
     }
 
+    /// [`aside_path`](Self::aside_path) as the volume addresses it.
+    pub(crate) fn aside_app(&self) -> &AppPath {
+        &self.aside_app
+    }
+
     /// Nothing was set aside after all: its record goes, so nothing is claimed
     /// to be on disk that isn't.
     pub(crate) fn forget(self) {

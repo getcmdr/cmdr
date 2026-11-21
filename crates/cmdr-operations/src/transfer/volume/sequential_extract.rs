@@ -186,13 +186,7 @@ pub(super) async fn extract_sequential_subtree(
         let leaf = progress.begin_leaf(planned.row);
         let on_chunk = |progress: cmdr_fs::volume::StreamWriteProgress| leaf.on_chunk(progress.bytes_written);
         let written = dest_volume
-            .write_from_stream(
-                &AppPath::legacy_unchecked(staged.target()),
-                staged.write_mode(),
-                length,
-                stream,
-                &on_chunk,
-            )
+            .write_from_stream(staged.target_app(), staged.write_mode(), length, stream, &on_chunk)
             .await;
         let written = match written {
             Ok(written) => written,

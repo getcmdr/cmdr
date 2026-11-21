@@ -320,13 +320,6 @@ impl StagedWrite {
 
     /// [`target`](Self::target) as the destination volume addresses it, made
     /// once with the write.
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "the cross-volume writers still address `target()`; each drops its bridge onto this as it converts"
-        )
-    )]
     pub(crate) fn target_app(&self) -> &AppPath {
         self.temp.as_ref().map_or(self.final_path.app(), Temp::app)
     }

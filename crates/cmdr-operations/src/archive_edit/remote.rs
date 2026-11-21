@@ -343,7 +343,7 @@ async fn upload_archive(
 
     let written = match parent
         .write_from_stream(
-            &AppPath::legacy_unchecked(staged.target()),
+            staged.target_app(),
             staged.write_mode(),
             cmdr_fs::volume::StreamLength::Known(size),
             stream,

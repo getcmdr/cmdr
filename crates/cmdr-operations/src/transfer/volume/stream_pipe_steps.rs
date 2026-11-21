@@ -441,10 +441,10 @@ impl FileRun<'_> {
             on_file_progress(progress.bytes_written, size)
         };
         let started_on = StartedOn::now(&[source_volume, dest_volume]);
-        let target_app = AppPath::legacy_unchecked(staged.target());
+        let target_app = staged.target_app();
         let write_fut = match at {
-            0 => dest_volume.write_from_stream(&target_app, staged.write_mode(), length, stream, &write_progress),
-            at => dest_volume.continue_write_from_stream(&target_app, at, length, stream, &write_progress),
+            0 => dest_volume.write_from_stream(target_app, staged.write_mode(), length, stream, &write_progress),
+            at => dest_volume.continue_write_from_stream(target_app, at, length, stream, &write_progress),
         };
         let outcome = tokio::select! {
             biased;
@@ -538,13 +538,13 @@ impl FileRun<'_> {
         let staging = resolve_staging(self.staging, dest_volume.publishes_writes_whole());
         let staged = StagedWrite::begin(state, &**dest_volume, self.announced_dest, staging);
         let started_on = StartedOn::now(&[self.source_volume, dest_volume]);
-        let target_app = AppPath::legacy_unchecked(staged.target());
+        let target_app = staged.target_app();
         let made = tokio::select! {
             biased;
             () = state.backend_abort.cancelled() => {
                 return Err(hard_abort_error(dest_path)).at_destination(dest_path).map_err(Stop::Over);
             }
-            made = dest_volume.create_symlink(&target_app, target) => made,
+            made = dest_volume.create_symlink(target_app, target) => made,
         };
         match made {
             Ok(()) => Ok(Written {

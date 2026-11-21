@@ -161,9 +161,7 @@ async fn prove_it_holds_links(state: &Arc<WriteOperationState>, dest_volume: &Ar
     let final_name = folder.join("link-probe");
     let announced = state.scope().host().announce_on(&**dest_volume, &final_name);
     let staged = StagedWrite::begin(state, &**dest_volume, announced, WriteStaging::Stage);
-    let made = dest_volume
-        .create_symlink(&AppPath::legacy_unchecked(staged.target()), Path::new("."))
-        .await;
+    let made = dest_volume.create_symlink(staged.target_app(), Path::new(".")).await;
     staged.abandon(dest_volume).await;
     if let Err(e) = &made {
         log::debug!(
