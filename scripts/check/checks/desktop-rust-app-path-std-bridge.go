@@ -152,9 +152,11 @@ func RunAppPathStdBridge(ctx *CheckContext) (CheckResult, error) {
 	return Success(okMsg), nil
 }
 
-// classify files one line under each of the scan's three lists it belongs to.
+// classify files one line under each of the scan's lists it belongs to. The bridge list gets
+// one site per CALL, so two calls on a line count two and rustfmt splitting that line never
+// moves the count (#1317); the two tripwires stay per line.
 func (scan *appPathScan) classify(line string, site appPathStdBridgeSite, testFile bool) {
-	if appPathStdBridgePattern.MatchString(line) {
+	for range appPathStdBridgePattern.FindAllStringSubmatchIndex(line, -1) {
 		scan.bridge = append(scan.bridge, site)
 	}
 	member := false

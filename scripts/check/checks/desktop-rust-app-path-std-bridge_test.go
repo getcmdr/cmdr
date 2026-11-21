@@ -98,6 +98,29 @@ func TestAppPathStdBridge_ABudgetPassesAndShrinksToTheCount(t *testing.T) {
 	}
 }
 
+// Regression anchor for #1317: the meter counted bridge LINES, so a line holding two calls
+// counted one, and rustfmt splitting it pushed the file over a budget taken before the split.
+func TestAppPathStdBridge_CountsEveryCallOnALine(t *testing.T) {
+	packed := "fn f(x: &Path, y: &Path) { let (a, b) = (AppPath::legacy_unchecked(x), AppPath::legacy_unchecked(y)); }\n"
+	split := "fn f(x: &Path, y: &Path) {\n    let (a, b) = (\n        AppPath::legacy_unchecked(x),\n        AppPath::legacy_unchecked(y),\n    );\n}\n"
+	for name, body := range map[string]string{"packed": packed, "split": split} {
+		t.Run(name, func(t *testing.T) {
+			_, written, err := runAppPathStdBridgeOn(t, map[string]string{"volume/x.rs": body},
+				map[string]int{"apps/desktop/src-tauri/src/volume/x.rs": 5})
+			if err != nil {
+				t.Fatalf("a budgeted file must pass, got %v", err)
+			}
+			var list appPathStdBridgeAllowlist
+			if err := json.Unmarshal([]byte(written), &list); err != nil {
+				t.Fatalf("the rewritten allowlist parses: %v", err)
+			}
+			if got := list.Files["apps/desktop/src-tauri/src/volume/x.rs"]; got != 2 {
+				t.Errorf("two calls count two however the line is wrapped, got %d", got)
+			}
+		})
+	}
+}
+
 func TestAppPathStdBridge_FlagsAppTextTurnedIntoAStdPath(t *testing.T) {
 	for name, body := range map[string]string{
 		"path":       "fn f(entry: &FileEntry) { let p = Path::new(&entry.path); }\n",
