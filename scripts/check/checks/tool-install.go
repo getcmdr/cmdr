@@ -175,7 +175,7 @@ const NextestVersion = "0.9.136"
 func EnsureCargoNextest() error {
 	if CommandExists("cargo-nextest") {
 		output, _ := exec.Command("cargo", "nextest", "--version").Output()
-		if nextestVersionIs(string(output), NextestVersion) {
+		if cargoToolVersionIs(string(output), "cargo-nextest", NextestVersion) {
 			return nil
 		}
 	}
@@ -187,12 +187,13 @@ func EnsureCargoNextest() error {
 	return nil
 }
 
-// nextestVersionIs says whether `cargo nextest --version` output names exactly want. Its
-// first line reads `cargo-nextest 0.9.136 (1d5bf1ec9 2026-05-16)`.
-func nextestVersionIs(output, want string) bool {
+// cargoToolVersionIs says whether a cargo subcommand's `--version` output names exactly tool
+// at version want. Its first line reads `cargo-nextest 0.9.136 (1d5bf1ec9 2026-05-16)` or
+// `cargo-deny 0.19.6`.
+func cargoToolVersionIs(output, tool, want string) bool {
 	firstLine, _, _ := strings.Cut(output, "\n")
 	fields := strings.Fields(firstLine)
-	return len(fields) >= 2 && fields[0] == "cargo-nextest" && fields[1] == want
+	return len(fields) >= 2 && fields[0] == tool && fields[1] == want
 }
 
 // GoToolsBinPath is where the pinned Go analyzers live, alongside the check cache in the one

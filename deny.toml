@@ -19,6 +19,10 @@ version = 2
 # Vulnerabilities are NOT scoped this way: every RUSTSEC vuln in the macOS graph,
 # transitive or not, still fails this check.
 unmaintained = "workspace"
+# The same scope for "unsound" notices (cargo-deny's default since 0.19, written
+# out so it's visible). A transitive unsound crate still surfaces in OSV-Scanner,
+# which ignores it in `osv-scanner.toml` with its reason and an expiry.
+unsound = "workspace"
 ignore = [
   # The Marvin attack: `rsa`'s private-key operations aren't constant-time, so an
   # observer who can time them may eventually recover the key. No patched version
