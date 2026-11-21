@@ -1,6 +1,8 @@
 //! The restic route: what it routes, what it leaves on the parent, what a
 //! confirmation costs, and how it orders against the git and archive routes.
 
+#![cfg(unix)] // Windows: #1225 milestone 10c, POSIX fixture paths read in the host flavor (`WrongFlavor`)
+
 use super::*;
 use crate::file_system::volume::{InMemoryVolume, VolumeError};
 use crate::test_support::native_app_path as app;

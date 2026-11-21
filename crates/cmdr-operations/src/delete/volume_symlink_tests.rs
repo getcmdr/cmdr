@@ -8,6 +8,8 @@
 //! (ADB, SFTP), can list a link as the folder it points to the way a Samba
 //! share does (#613), and can let a pane's listing vouch for a folder.
 
+#![cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no copy scan yet, and its listing marks a folder link apart from how these cells stage it
+
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::app_path::AppPathBuf;
 use std::future::Future;

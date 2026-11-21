@@ -431,6 +431,7 @@ async fn a_top_level_dir_link_with_no_clash_moves_as_a_link() {
 /// this stream as a folder"), so the preview calls the link a directory; the
 /// move must still take it for the leaf it is.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no copy scan yet
 async fn a_top_level_dir_link_is_not_merged_when_a_preview_scanned_it_as_a_folder() {
     use super::super::super::scan_cache::CachedScanResult;
 

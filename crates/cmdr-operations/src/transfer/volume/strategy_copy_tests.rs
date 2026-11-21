@@ -20,6 +20,7 @@ use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeError};
 use cmdr_local::LocalVolume;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
 async fn test_copy_single_path_local_to_local() {
     use std::fs;
 

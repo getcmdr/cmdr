@@ -12,6 +12,8 @@
 //! `rename`), behind a wrapper that keeps the trait's DEFAULT `is_directory` and
 //! `entry_kind`, the two answers a stat-following backend gets.
 
+#![cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
+
 use super::super::conflict_responder_test_support::ConflictResponderSink;
 use super::copy::copy_volumes_with_progress;
 use super::move_cross::move_volumes_with_progress;

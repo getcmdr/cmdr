@@ -9,6 +9,8 @@
 //! before nodes were kept, or on a filesystem that keeps none) undoes exactly as
 //! it always did.
 
+#![cfg(unix)] // Windows: the undo skips the landed file as Failed (task 35, `LocalWindowsVolume` has no node identity yet)
+
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;

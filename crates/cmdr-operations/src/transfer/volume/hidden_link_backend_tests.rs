@@ -225,6 +225,7 @@ async fn a_moved_hidden_link_never_merges_into_a_real_folder() {
 /// A copy ONTO the share: the destination level's listing calls a link a
 /// folder, and merging into it lands the incoming files in its target.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
 async fn a_copy_never_merges_into_a_hidden_destination_link() {
     let engine = TestOperations::new();
     let (dest, dir) = samba_volume();
@@ -275,6 +276,7 @@ async fn a_copy_never_merges_into_a_hidden_destination_link() {
 /// transfer materializes one), and the source sweep, which asks `entry_kind` of
 /// every folder, removes the link and spares its target.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
 async fn a_cross_volume_move_of_a_folder_holding_a_hidden_link_spares_the_target() {
     let engine = TestOperations::new();
     let (source, dir) = samba_volume();

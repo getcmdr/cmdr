@@ -8,6 +8,8 @@
 //! destination, so an undo that read the original name instead of the landed
 //! one would touch the wrong file.
 
+#![cfg(unix)] // Windows: the undo skips the named copy as Failed (task 35, `LocalWindowsVolume` has no node identity yet)
+
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};

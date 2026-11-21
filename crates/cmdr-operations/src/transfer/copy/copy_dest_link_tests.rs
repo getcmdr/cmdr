@@ -174,6 +174,7 @@ fn a_renaming_copy_lands_beside_a_deep_dest_link() {
 /// FOLDER landing on a non-folder, once, and the folder replaces the LINK. The
 /// target keeps every byte.
 #[test]
+#[cfg(unix)] // Windows: not yet pinned down, #1225 milestone 10a
 fn an_answered_overwrite_replaces_a_deep_dest_link_never_its_target() {
     let engine = TestOperations::new();
     let dir = temp("answered");

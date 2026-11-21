@@ -863,7 +863,7 @@ after the merge walk has descended about 16 levels through it (verified 2026-10-
 `copy_selected_link_tests.rs`; nothing landed).
 
 Pinned by `volume/rename_merge_symlink_tests.rs` (the top-level cells, including the one arriving through a preview) and
-`volume/link_following_backend_tests.rs`, which runs the move engines on a `LocalPosixVolume` stripped of its `lstat`
+`volume/link_following_backend_tests.rs`, which runs the move engines on a `LocalVolume` stripped of its `lstat`
 overrides so `is_directory` follows links the way a phone's does.
 
 **A DESTINATION link is a leaf to a copy too, at every level** (#294). The mirror above holds for both copy engines: an
