@@ -2,6 +2,7 @@
 //! TDD'd with a real red), dir interning, and case folding. The full
 //! open→write→read round-trip through the writer lives in `writer.rs` tests.
 
+use cmdr_fs::app_path::PathFlavor;
 use rusqlite::Transaction;
 
 use super::migrations::read_schema_version;
@@ -462,9 +463,15 @@ fn a_trailing_or_doubled_slash_never_reaches_a_row_and_dots_are_names() {
     let conn = open_write_connection(&operation_log_db_path(dir.path())).expect("write conn");
 
     let plain = intern_dir(&conn, "vol", "/a/b").expect("intern");
-    for spelling in ["/a/b/", "/a//b", "//a/b", "/a/b//"] {
+    for spelling in ["/a/b/", "/a//b", "/a/b//"] {
         assert_eq!(intern_dir(&conn, "vol", spelling).expect("intern"), plain, "{spelling}");
     }
+    // A leading `//` is the `/` root on macOS and Linux; on Windows it's a UNC share
+    // (`a_drive_or_unc_path_is_one_root_name_on_windows`).
+    assert_eq!(
+        intern_dir_as(&conn, "vol", "//a/b", PathFlavor::Posix).expect("intern"),
+        plain
+    );
     assert_eq!(reconstruct_dir_path(&conn, plain).expect("path"), "/a/b");
 
     let remote = intern_dir(&conn, "vol", "sftp://h:22/srv").expect("intern");
@@ -476,18 +483,63 @@ fn a_trailing_or_doubled_slash_never_reaches_a_row_and_dots_are_names() {
     assert_eq!(reconstruct_dir_path(&conn, dotted).expect("path"), "/a/./b/../c");
 }
 
-/// ❗ Today's answer for the two Windows root shapes, pinned as the bug it is: the
-/// store knows only `/` and a `scheme://authority` head, so a drive path comes back
-/// under `/` and a UNC path loses its leading `//`, both paths a rollback would hand
-/// to a volume that never held them. Rooting a drive and a UNC share as ONE name
-/// each (like a scheme root) flips both; POSIX rows keep their bytes. #1225.
+/// On Windows a drive (`C:/`) and a UNC share (`//srv/share/`) are each ONE name in the
+/// chain, like a scheme root, so a rollback hands the volume the path the operation
+/// acted on. Split on `/` like the rest, `C:/x/y` came back as `/C:/x/y` and
+/// `//srv/share/x` as `/srv/share/x`, paths no Windows volume holds. Pure SQL, so it runs
+/// on every OS through the Windows rules.
 #[test]
-fn a_drive_or_unc_path_reconstructs_under_the_posix_root_today() {
+fn a_drive_or_unc_path_is_one_root_name_on_windows() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let conn = open_write_connection(&operation_log_db_path(dir.path())).expect("write conn");
+    let intern = |path: &str| intern_dir_as(&conn, "vol", path, PathFlavor::Windows).expect("intern");
+    let find = |path: &str| find_dir_as(&conn, "vol", path, PathFlavor::Windows).expect("find");
+    let path_of = |id: i64| reconstruct_dir_path(&conn, id).expect("path");
+
+    for path in ["C:/x/y", "C:/", "//srv/share/x", "//srv/share/", "sftp://h:22/srv"] {
+        let id = intern(path);
+        assert_eq!(path_of(id), path);
+        assert_eq!(find(path), Some(id), "{path}");
+    }
+    // The leaf joins under the root without a second `/`, and with `/` alone.
+    assert_eq!(join_leaf_text("C:/", "a.txt"), "C:/a.txt");
+    assert_eq!(join_leaf_text("C:/x", "a.txt"), "C:/x/a.txt");
+    assert_eq!(join_leaf_text("//srv/share/", "a.txt"), "//srv/share/a.txt");
+
+    // The spellings of one root share its row: the drive letter in canonical case, a
+    // trailing `/` dropped, and a one-letter scheme read as the drive it is.
+    let x = intern("C:/x");
+    for spelling in ["c:/x", "C:/x/", "C://x", "C:"] {
+        let expected = if spelling == "C:" { intern("C:/") } else { x };
+        assert_eq!(intern(spelling), expected, "{spelling}");
+    }
+    // The root is one row: two folders under it are siblings of each other, and two
+    // shares on one server are two roots.
+    assert_eq!(
+        path_of(intern("//srv/other/x")),
+        "//srv/other/x",
+        "a second share is its own root"
+    );
+    assert_ne!(intern("//srv/share/x"), intern("//srv/other/x"));
+
+    // A POSIX-kind path on a Windows host keeps the `/` root, and a folder NAMED `C:`
+    // under it is a name, never the drive: two rows, two paths.
+    let named = intern("/C:/x");
+    assert_eq!(path_of(named), "/C:/x");
+    assert_ne!(named, x);
+    // A `//` head missing its share isn't a UNC root: it splits as before.
+    assert_eq!(path_of(intern("//srv")), "/srv");
+}
+
+/// On macOS and Linux neither Windows shape is a root, so their rows keep the bytes
+/// they always had (`C:/x/y` is relative text there, `//srv` the `/` root).
+#[test]
+fn a_drive_or_unc_path_keeps_the_posix_root_on_macos_and_linux() {
     let dir = tempfile::tempdir().expect("temp dir");
     let conn = open_write_connection(&operation_log_db_path(dir.path())).expect("write conn");
 
-    let drive = intern_dir(&conn, "vol", "C:/x/y").expect("intern");
+    let drive = intern_dir_as(&conn, "vol", "C:/x/y", PathFlavor::Posix).expect("intern");
     assert_eq!(reconstruct_dir_path(&conn, drive).expect("path"), "/C:/x/y");
-    let unc = intern_dir(&conn, "vol", "//srv/share/x").expect("intern");
+    let unc = intern_dir_as(&conn, "vol", "//srv/share/x", PathFlavor::Posix).expect("intern");
     assert_eq!(reconstruct_dir_path(&conn, unc).expect("path"), "/srv/share/x");
 }
