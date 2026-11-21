@@ -1704,6 +1704,56 @@ included; the hidden couplings it found are why waves B and C differ from round 
   task 35's `file_identity`); `delete::trash`'s missing-path cell (no Recycle Bin yet); and `archive_edit::fresh_zip`'s
   Unix mode bits. macOS/Linux: full suite, `transfer_benchmarks` before/after.
 - **DONE**: bridge count zero in `cmdr-operations`; a local copy and move land on the builder's NTFS.
+- **First pass done** (2026-11-21, branch `worktree-agent-ae2be2908d00b0d4c`, PR #1313; the lead on the tests and
+  `transfer/volume/`, helpers on the delete, rename, create, and scan-preview engines, `archive_edit/`, the staged
+  writes, and the top-level files with the rollback executor). A clean partial, not the whole milestone. Bridge calls
+  981 → 478, `appTextToPath` 28 → 26, `pathFromBareText` 236 → 118; no other crate's budget rose. What it is:
+  - **Cross once per value**, where a body crossed once per call: a struct holds its paths' app spelling made once
+    (`DisplacedDestination::new`, `StagedWrite`'s `Temp` and `Spelled`, with `target_app()`), a walk step crosses its
+    folder once, and the delete, rename, create, and remote-bulk engines cross each row once. Every volume call gets the
+    same `legacy_unchecked` value as before, made earlier, so these are byte-exact by construction.
+  - **Typed test doubles and fixtures**: canonical literals are `app_path!`, runtime canonical text
+    `AppPath::from_normalized` (it panics on a non-canonical one, so no cell silently tests another path); doubles that
+    fold or record do it on the typed path. Doubles and cells handed RELATIVE or `..` text keep `std::path` on purpose:
+    they pin what the engine does with bridge text, and the typed `join` refuses a relative folder.
+  - **The failure seam**: `PathedVolumeError` and `AtPath` take any `FailedAt` path; an app path crosses back through
+    one named impl (`transfer/volume/DETAILS.md` § "Naming the item that failed").
+- **Why it stops here**: the engine's shared vocabulary (`PathedVolumeError`, the created ledger, probes,
+  `in_flight_temps`, `StagingTemp`, the journal and listing-host seams) holds `std::path`, and its text exits
+  (`display()`, `to_string_lossy()`) can't be reproduced from an app path's text for a Linux name that isn't UTF-8 while
+  `ESCAPES_LIVE` is false. Typing those types is the next pass; until then every further conversion only moves a
+  crossing. So the plan's typed joins (`AppPath::join` with an `AppName` in `merge.rs`, `rename_merge.rs`, `landing.rs`,
+  `copy_concurrent_source.rs`), the deletion of `native_join_refuses`, `walk_cached_entries` from `from_normalized`, the
+  `rename_local_exclusive` switch (bulk rename's `BulkRenameRow` is public, built by the app and `cmdr-multi-rename`),
+  `wire_paths`' deletion (the starts take `PathBuf` from the app until 10c/10d), the `ScanRecorder` callbacks, the typed
+  `RollbackUnit` built through the escape mark's `StoredPathReading` (`InverseAct` already carries the planner's app
+  paths), and the un-gating of milestone 2's `#![cfg(unix)]` files are all still 10a's.
+- **Grown entries** (approved by the lead, 2026-11-21: a text exit or a native crossing, through one named helper): one,
+  `transfer/volume/transfer_error.rs` 0 → 1 (`impl FailedAt for AppPath`, the failure's text exit; goes in 10f, once
+  `PathedVolumeError` holds an app path). Two numbers were set by hand to their files' real counts after a run ratcheted
+  them before rustfmt split a line (`conflict.rs` 6, `interrupted_landing.rs` 3, both at or below `main`'s).
+- **Intended behavior changes** (each pinned, seen red first, for input no real operation produces): the batch scan
+  preview keeps a result per source that differs only in a bare scheme root (`sftp:`, `sftp://`), where the second
+  overwrote the first; a fresh-compress plan fails as a read error on its folder for a listed child named `a/b`, `..`,
+  or empty (it packed a different subtree or re-listed the parent), and a selection spelled `/src//sub` lists its
+  children as `/src/sub/d` (the same files).
+- **Fixed on the way**: the two stale-temp reaps (`cleanup.rs::reap_stale_transfer_temps` and the remote zip edit's
+  `reap_remote_temps`) deleted `dir.join(name)` for a listed "temp" that wasn't one plain name, so a hostile server's
+  `<temp>/../../victim.txt` aimed a delete outside the folder; such a name is never reaped now (both cells red first).
+  Filed: #1316 (a Rename-on-conflict or ` (recovered)` name spells a non-UTF-8 Linux name lossily).
+- **Byte-exact evidence** (throwaway differential harnesses on macOS, old code against new): the scan preview's app-path
+  result keys 24,048,000 cases, differing only in the bare-scheme-root class above; the compress plan's typed walk
+  6,191,797 (top joins, odd shapes, deeper levels, stem and extension splits), differing only in `//` and `/./` tops and
+  the non-plain-name refusals; the rollback restore's typed `parent` 224,876, differing only for text no journal row
+  holds (a `//` lead with three or more names, #1309's class; relative `C:/` text; a scheme item directly under its root
+  answering `sftp://h/` for `sftp://h`, which `RemoteRoot` reads as the same server root), and its root fence 12,145, 0;
+  the failure seam's `failed_at` 2,000,000 generated byte paths (non-UTF-8 and escape-range text included), 0 in bytes
+  and in `display()`. Everything else is the same `legacy_unchecked` value made earlier. Suites on macOS:
+  `cmdr-operations` + `cmdr-operation-log` 2,789, `cmdr-multi-rename`, `cmdr-listing-wasm` 461, the app 6,807, all
+  green.
+- **Windows**: `pnpm check clippy-windows` and `clippy-linux` green; the CI Windows lane (compile only) green on the PR.
+  No builder run today (no `ssh mami`), so the clusters this pass touches are expected green by their causes, not run.
+  `transfer_benchmarks` not run (no M1 run this round); the pass adds at most one owned path per moved item.
 
 ### 10b. `cmdr-index`
 
