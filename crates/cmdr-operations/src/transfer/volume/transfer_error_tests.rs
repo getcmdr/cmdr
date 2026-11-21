@@ -674,3 +674,31 @@ fn a_destination_refusing_a_name_over_every_limit_says_too_long() {
         "got {error:?}"
     );
 }
+
+/// A failure's `std::path` crosses into the error's app path and leaves with its exact bytes,
+/// and the person reads what `Path::display()` read: a Linux name that isn't UTF-8, a real
+/// name holding a LITERAL escape-range code point (the bridge escapes it on the way in, so an
+/// `as_str()` exit would name a different file), and a trailing `/` (`Path ==` ignores it).
+#[test]
+fn a_failed_path_leaves_with_the_bytes_it_came_in_with() {
+    use std::ffi::OsStr;
+    use std::os::unix::ffi::OsStrExt;
+    for bytes in [
+        &b"/share/caf\xe9/report.txt"[..],
+        "/share/\u{10FEE9}name.txt".as_bytes(),
+        &b"/share/dir/"[..],
+    ] {
+        let native = Path::new(OsStr::from_bytes(bytes));
+        let error = PathedVolumeError::new(PathRole::Source, native, VolumeError::FileInUse("held".into()));
+        assert_eq!(
+            failed_native(&error.path).as_os_str().as_bytes(),
+            bytes,
+            "bytes of {native:?}"
+        );
+        let shown = native.display().to_string();
+        assert!(
+            matches!(&WriteFailure::from(error).error, WriteOperationError::FileInUse { path } if *path == shown),
+            "the person reads {shown:?}"
+        );
+    }
+}

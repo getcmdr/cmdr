@@ -244,7 +244,7 @@ pub(crate) trait FailedAt {
 }
 
 /// ❗ The one crossing a `std::path` failure takes into the error's app path. It goes once
-/// every body that fails holds an app path (the app-path plan's 10a).
+/// every body that fails holds an app path (the app-path plan's 10f, with [`failed_native`]).
 impl FailedAt for Path {
     fn failed_at(&self) -> AppPathBuf {
         AppPath::legacy_unchecked(self).into_owned()
