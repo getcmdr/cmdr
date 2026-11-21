@@ -547,8 +547,10 @@ workflows don't shadow each other, as `codeql.yml` and `ci.yml` show. Evidence a
 
 Last, it runs `desktop-rust-module-cycles`, whose baseline is a macOS module graph (`scripts/check/checks/DETAILS.md` §
 "Rust module cycles"). The check analyzes for `aarch64-apple-darwin` on every host, so the Linux Rust lane's
-`module-cycles` job asks the same question on light runs too. It first installs the cargo-modules version the check
-pins; rust-cache carries `~/.cargo/bin`, so that multi-minute build runs only on a cold entry or a bump.
+`module-cycles` job asks the same question on light runs too (verified: on ubuntu it measured the app crate at 884
+modules, as the Mac does, against 784 for a Linux target, and matched the baseline with no stale entry; run 44932475102,
+2026-11-21). It first installs the cargo-modules version the check pins; rust-cache carries `~/.cargo/bin`, so that
+multi-minute build runs only on a cold entry or a bump.
 
 Why one job: a split-out tests job saved ~5 min of wall time, but the account runs at most five macOS jobs at once, and
 with several PRs in flight the second macOS job per run queued for longer than that (§ Build caching, Critical path).
@@ -813,10 +815,12 @@ where every lane the change needs runs or skips as a verified marker (§ Lane ma
   (`scripts/check/checks/ci-ok-gate.go`).
 - **Cost of the trade**: a light run runs no macOS build or E2E, so a macOS-only slip or an E2E failure shows at land
   time instead of at the milestone. Linux clippy and tests, module cycles, and the Windows compile run light since
-  2026-11-21 (David: "CI is free"), after PR #1313 met a module cycle 20+ min into a landing. A Rust-touching push costs
-  roughly 75 hosted job-minutes (Rust lane ~45 across its five jobs, fixtures ~15, Windows ~10, all in parallel, ~25 min
-  wall), free on this public repo, but each takes slots from the account's 20-job concurrency budget (§ Build caching,
-  Critical path). Docs-only pushes stay cheap: the Rust filters exclude `CLAUDE.md` and `DETAILS.md`.
+  2026-11-21 (David: "CI is free"), after PR #1313 met a module cycle 20+ min into a landing. A Rust-touching push adds
+  about 70 hosted job-minutes (PR #1328's light run 44932475102, 2026-11-21: Rust lane 43 across its six jobs, fixtures
+  18, Windows 7.5) and finished in 16.5 min wall, set by `module-cycles` (13 min cold: 4 of them the cargo-modules
+  install that `warm-rust-cache` removes, 7.5 the analysis). Free on this public repo, but each takes slots from the
+  account's 20-job concurrency budget (§ Build caching, Critical path). Docs-only pushes stay cheap: the Rust filters
+  exclude `CLAUDE.md` and `DETAILS.md`.
 - **Read the right `CI light`**: a PR opened with `claude-created` also starts that label's do-nothing run, whose
   `CI light` goes green in a minute beside the real light run's (PR #1326, 2026-11-21: the real one was red on
   `svelte-check` while the label's was green). Judge a light run by the run that ran lanes.
