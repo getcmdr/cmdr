@@ -693,7 +693,11 @@ pub(super) async fn copy_directory_streaming(
     // failed or cancelled subtree returned above and dates nothing.
     let mut folders = std::mem::take(&mut pool.folders);
     if root == DirectoryCreation::Created {
-        folders.note_filled(dest_path.to_path_buf(), source_path.to_path_buf(), source_dates);
+        folders.note_filled(
+            on_volume(dest_path).into_owned(),
+            source_path.to_path_buf(),
+            source_dates,
+        );
     }
     match plan {
         // PLAN MODE wrote no file yet: the data pass dates the folders once its
@@ -799,7 +803,7 @@ async fn merge_level<'a>(
                                     state,
                                     source_volume,
                                     dest_volume,
-                                    dest_path,
+                                    dest_path_app,
                                 )
                                 .await;
                                 made_here = true;
@@ -828,7 +832,7 @@ async fn merge_level<'a>(
                                         state,
                                         source_volume,
                                         dest_volume,
-                                        dest_path,
+                                        dest_path_app,
                                     )
                                     .await;
                                     made_here = true;
@@ -1054,7 +1058,7 @@ async fn merge_level<'a>(
                 };
                 if level == DirectoryCreation::Created {
                     pool.folders
-                        .note_filled(into_std(child_dest), child_source, SourceFolderDates::of_entry(entry));
+                        .note_filled(child_dest, child_source, SourceFolderDates::of_entry(entry));
                 }
                 continue;
             }
@@ -1153,8 +1157,11 @@ async fn merge_level<'a>(
             ))
             .await?;
             if level == DirectoryCreation::Created {
-                pool.folders
-                    .note_filled(write_dest, child_source, SourceFolderDates::of_entry(entry));
+                pool.folders.note_filled(
+                    on_volume(&write_dest).into_owned(),
+                    child_source,
+                    SourceFolderDates::of_entry(entry),
+                );
             }
             continue;
         }

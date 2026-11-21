@@ -67,7 +67,7 @@ use super::super::super::types::{RecoveredOriginal, VolumeCopyConfig, WriteOpera
 use super::super::dest_name_index::{DestLookup, DestNameIndex};
 use super::conflict::{ResolvedConflict, resolve_volume_conflict};
 use super::displaced_destination::{DisplacedDestination, displace_destination};
-use super::landing::{ListedName, into_std, on_volume};
+use super::landing::{ListedName, on_volume, std_of};
 use super::strategy::Replaces;
 use super::transfer_error::{PathRole, map_volume_error};
 use cmdr_fs::entry::FileEntry;
@@ -184,7 +184,6 @@ pub(super) async fn rename_merge_directory(
             ListedName::new(name)
                 .map_err(VolumeError::from)
                 .and_then(|name| name.under(&dest_dir_app))
-                .map(into_std)
                 .map_err(|e| map_rename_error(&child_source, e))
         };
         let asked = under(&entry.name)?;
@@ -196,12 +195,16 @@ pub(super) async fn rename_merge_directory(
             DestLookup::LookAlike(hit) => (under(&hit.name)?, Some(*hit)),
             DestLookup::Ambiguous => {
                 return Err(WriteOperationError::DestinationExists {
-                    path: asked.display().to_string(),
+                    path: std_of(&asked).display().to_string(),
                 });
             }
             DestLookup::Absent | DestLookup::Unknown => (asked, None),
         };
         let dest_hit = dest_hit.as_ref();
+        // The same child for the bodies that still take `std::path`: a borrow for UTF-8.
+        let child_dest_app = child_dest;
+        let child_dest_std = std_of(&child_dest_app);
+        let child_dest: &Path = &child_dest_std;
 
         if merges_as_a_directory(entry) && dest_hit.is_some_and(merges_as_a_directory) {
             // Real dir vs real dir: always merge, never prompt. Recurse. A
@@ -229,11 +232,7 @@ pub(super) async fn rename_merge_directory(
         note_both_halves(&child_source, &child_dest);
         match ctx
             .volume
-            .rename(
-                &AppPath::legacy_unchecked(&child_source),
-                &AppPath::legacy_unchecked(&child_dest),
-                false,
-            )
+            .rename(&on_volume(&child_source), &child_dest_app, false)
             .await
         {
             Ok(()) => {}
@@ -259,11 +258,7 @@ pub(super) async fn rename_merge_directory(
     // skipped / errored / unmoved child fails benignly and survives, and so do
     // its ancestors. Never deletes a source dir while content remains, and
     // never a file of its name (`Volume::delete_directory`).
-    match ctx
-        .volume
-        .delete_directory(&AppPath::legacy_unchecked(source_dir), None)
-        .await
-    {
+    match ctx.volume.delete_directory(&on_volume(source_dir), None).await {
         Ok(()) | Err(VolumeError::NotFound(_)) => {}
         Err(_non_empty_or_other) => {
             // Non-empty (children left behind) or a transient backend error:

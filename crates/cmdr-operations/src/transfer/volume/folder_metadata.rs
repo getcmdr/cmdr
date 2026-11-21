@@ -26,7 +26,7 @@
 //! cancelled subtree. A quarantine a SIDECAR carries is replaced by the
 //! archive's here, so this pass never undoes that one.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
@@ -37,6 +37,7 @@ use cmdr_fs::metadata::{CarriedMetadata, ClassOutcome, MetadataClasses};
 use super::super::super::metadata_losses::FolderLosses;
 use super::super::super::state::WriteOperationState;
 use super::super::volume_outage::{OutageEnd, StartedOn, wait_after_shortfall};
+use super::landing::std_of;
 use cmdr_fs::volume::Volume;
 
 /// A source folder's own dates (Unix seconds), as the listing entry or the
@@ -62,7 +63,7 @@ impl SourceFolderDates {
 /// One folder the walk created: where it landed, the source folder it came
 /// from, and that folder's dates.
 struct FilledFolder {
-    dest: PathBuf,
+    dest: AppPathBuf,
     source: PathBuf,
     dates: SourceFolderDates,
 }
@@ -80,7 +81,7 @@ pub(super) struct FolderMetadata {
 impl FolderMetadata {
     /// A folder the walk created at `dest` from the source folder `source` and
     /// has just finished filling.
-    pub(super) fn note_filled(&mut self, dest: PathBuf, source: PathBuf, dates: SourceFolderDates) {
+    pub(super) fn note_filled(&mut self, dest: AppPathBuf, source: PathBuf, dates: SourceFolderDates) {
         self.folders.push(FilledFolder { dest, source, dates });
     }
 
@@ -298,10 +299,8 @@ async fn stamp_one(dest_volume: &Arc<dyn Volume>, folder: &FilledFolder, carried
             flags: ClassOutcome::Absent,
         };
     }
-    let dest = folder.dest.as_path();
-    let report = dest_volume
-        .apply_metadata(&AppPath::legacy_unchecked(dest), &carried, modified)
-        .await;
+    let dest: &AppPath = &folder.dest;
+    let report = dest_volume.apply_metadata(dest, &carried, modified).await;
     if report.holds_none() {
         return Stamped::HeldNone;
     }
@@ -309,7 +308,7 @@ async fn stamp_one(dest_volume: &Arc<dyn Volume>, folder: &FilledFolder, carried
         log::warn!(
             target: "transfer",
             "folder metadata: {} keeps some of the copy's own, the destination refused the source's: {report:?}",
-            LogPrivate::dir_path(dest)
+            LogPrivate::dir_path(&*std_of(dest))
         );
     }
     Stamped::Answered {

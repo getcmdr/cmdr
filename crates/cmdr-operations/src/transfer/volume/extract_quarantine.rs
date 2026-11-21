@@ -43,6 +43,7 @@ use cmdr_fs::metadata::{CarriedMetadata, MetadataClasses, Xattr};
 use cmdr_fs::volume::ScanStop;
 
 use super::super::super::state::WriteOperationState;
+use super::landing::std_of;
 use cmdr_fs::volume::{StreamLength, Volume, VolumeError, VolumeReadStream};
 
 /// Wraps `stream` so its xattrs carry the archive's quarantine, when
@@ -72,7 +73,7 @@ pub(super) async fn quarantine_created_folder(
     state: &WriteOperationState,
     source_volume: &Arc<dyn Volume>,
     dest_volume: &Arc<dyn Volume>,
-    created: &Path,
+    created: &AppPath,
 ) {
     let Some(value) = archive_quarantine(state, source_volume) else {
         return;
@@ -84,14 +85,12 @@ pub(super) async fn quarantine_created_folder(
         }],
         ..CarriedMetadata::default()
     };
-    let report = dest_volume
-        .apply_metadata(&AppPath::legacy_unchecked(created), &carried, None)
-        .await;
+    let report = dest_volume.apply_metadata(created, &carried, None).await;
     if report.any_refused() {
         log::debug!(
             target: "copy",
             "extract quarantine: couldn't set it on {}; the folder is there either way",
-            LogPrivate::dir_path(created),
+            LogPrivate::dir_path(&*std_of(created)),
         );
     }
 }
