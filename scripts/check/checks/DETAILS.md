@@ -2881,9 +2881,12 @@ stops at undefined behavior, and its first run found some (`crates/cmdr-fs/DETAI
 **Decision**: `cargo-deny` checks advisories over the macOS graph only; `osv-scanner` sweeps every lockfile. **Why**:
 Tauri's Linux GTK3 stack carries unmaintained-crate advisories no macOS build links, which once got the whole advisory
 lane commented out and hid real vulnerabilities with it. `deny.toml` pins `[graph] targets` to the two macOS triples we
-release and sets `unmaintained = "workspace"`, so any RUSTSEC vulnerability in a shipped crate fails at any depth while
-transitive unmaintained noise doesn't. `osv-scanner` reads every tracked lockfile (Rust, npm, Go, Python): a hit there
-but not in deny means "real, but nothing we ship links it". See `deny.toml` and `docs/maintenance.md`.
+release and sets `unmaintained = "workspace"` and `unsound = "workspace"`, so any RUSTSEC vulnerability in a shipped
+crate fails at any depth while transitive unmaintained and unsound notices don't (osv-scanner still reports those, so
+they're ignored there one by one, with a reason). The check reinstalls its pinned cargo-deny (`cargoDenyVersion`) when
+the one on PATH differs: a dev machine's older 0.18.9 predates the `unsound` scope and flagged transitive notices CI
+never saw (`heapless` 0.8.0, 2026-11-21). `osv-scanner` reads every tracked lockfile (Rust, npm, Go, Python): a hit
+there but not in deny means "real, but nothing we ship links it". See `deny.toml` and `docs/maintenance.md`.
 
 **Decision**: `osv-scanner` replaced `cargo-audit`. **Why**: OpenSSF Scorecard's Vulnerabilities check is osv-scanner
 over every lockfile, honoring each directory's `osv-scanner.toml`, while cargo-audit read the root `Cargo.lock` alone.

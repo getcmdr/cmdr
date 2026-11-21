@@ -28,12 +28,8 @@ func RunCargoDeny(ctx *CheckContext) (CheckResult, error) {
 		return Skipped("no deny.toml"), nil
 	}
 
-	// Check if cargo-deny is installed
-	if !CommandExists("cargo-deny") {
-		installCmd := exec.Command("cargo", "install", "cargo-deny", "--version", "0.19.6", "--locked")
-		if _, err := RunCommand(installCmd, true); err != nil {
-			return CheckResult{}, fmt.Errorf("failed to install cargo-deny: %w", err)
-		}
+	if err := ensureCargoDeny(); err != nil {
+		return CheckResult{}, err
 	}
 
 	// `advisories` is in the set: `deny.toml` scopes the graph to the macOS targets we
@@ -70,6 +66,31 @@ func RunCargoDeny(ctx *CheckContext) (CheckResult, error) {
 	return vulnVerdict("cargo-deny", blockingLines,
 		"Upgrade past the fix, or, if it can't reach what we ship, ignore it with a reason in deny.toml.",
 		pending, "Advisories, licenses, and deps OK")
+}
+
+// cargoDenyVersion is the cargo-deny every run uses. It lives in this file because
+// `.github/workflows/advisories.yml` keys its tool cache on this file's hash, so a bump
+// here reinstalls there too.
+const cargoDenyVersion = "0.19.6"
+
+// ensureCargoDeny installs cargo-deny at cargoDenyVersion unless that exact version is
+// already on PATH. Any other version gets replaced: checking only for presence let a dev
+// machine keep 0.18.9 while CI ran the pin, and 0.18.9 predates `[advisories] unsound`
+// (0.19.0, default `workspace`), so local runs flagged transitive unsound advisories CI
+// never sees (the `heapless` 0.8.0 set, 2026-11-21).
+func ensureCargoDeny() error {
+	if CommandExists("cargo-deny") {
+		output, _ := exec.Command("cargo", "deny", "--version").Output()
+		if cargoToolVersionIs(string(output), "cargo-deny", cargoDenyVersion) {
+			return nil
+		}
+	}
+	// `--force`, so a different installed version gets replaced instead of refused.
+	installCmd := exec.Command("cargo", "install", "cargo-deny", "--version", cargoDenyVersion, "--locked", "--force")
+	if _, err := RunCommand(installCmd, true); err != nil {
+		return fmt.Errorf("failed to install cargo-deny: %w", err)
+	}
+	return nil
 }
 
 type cargoDenyLine struct {

@@ -17,6 +17,64 @@ reason = "rsa (Marvin attack: private-key timing side channel, no patched versio
 id = "GHSA-qwgh-2vcv-g2f7"
 reason = "block-buffer (a panic inside the caller's block callback, caught with catch_unwind, can leave the buffer's cursor corrupt). Fixed in 0.12.1, which we use; the 0.10.4 copy under digest 0.10 (md-5, sha1, sha2 0.10) has no fixed release on its line. Not exploitable here: the only callbacks digest 0.10 passes are the hashes' own fixed compression functions, which don't panic on any input, so no input can trigger it. Goes away when md-5, sha1, and sha2 0.10's dependents move to digest 0.11 (`cargo tree -i block-buffer@0.10.4 -e normal --target aarch64-apple-darwin`, 2026-10-27)."
 
+# Nine "unsound" notices on heapless 0.8.0, one block per ID since OSV-Scanner takes one ID per
+# entry. All dead code in our build: the only path is cmdr-git -> gix 0.90.0 -> gix-hash and
+# gix-packetline -> faster-hex 0.10.1, which uses heapless only under `#[cfg(not(feature =
+# "alloc"))]` (src/encode.rs). gix-hash turns on faster-hex's `std`, which turns on `alloc`, so
+# that code never compiles; heapless sits in the graph only because faster-hex declares it as a
+# `cfg(not(feature = "alloc"))` target dependency, which Cargo can't evaluate (verified with the
+# faster-hex 0.10.1 registry source and `cargo tree -e features -i faster-hex`, 2026-11-21).
+# cargo-deny doesn't flag these: its `unsound = "workspace"` scope skips transitive crates.
+# Upstream fix: gitoxide PR #3221 (faster-hex 2.0, no old heapless), merged 2026-11-20, not
+# released yet. Adopt the first gix release that carries it the day it ships, without the usual
+# three-day wait (David's call, 2026-11-21), and drop all nine in the same change. `ignoreUntil`
+# makes the lane fail again if that hasn't happened by then.
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0574"
+ignoreUntil = 2026-12-22
+reason = "heapless 0.8.0 (unsound): dead code under faster-hex's alloc feature, reached only via gix. Fixed upstream in gitoxide #3221; remove with the first gix release that carries it. Full reasoning above."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0575"
+ignoreUntil = 2026-12-22
+reason = "heapless 0.8.0 (unsound): dead code under faster-hex's alloc feature, reached only via gix. Fixed upstream in gitoxide #3221; remove with the first gix release that carries it. Full reasoning above."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0576"
+ignoreUntil = 2026-12-22
+reason = "heapless 0.8.0 (unsound): dead code under faster-hex's alloc feature, reached only via gix. Fixed upstream in gitoxide #3221; remove with the first gix release that carries it. Full reasoning above."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0577"
+ignoreUntil = 2026-12-22
+reason = "heapless 0.8.0 (unsound): dead code under faster-hex's alloc feature, reached only via gix. Fixed upstream in gitoxide #3221; remove with the first gix release that carries it. Full reasoning above."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0578"
+ignoreUntil = 2026-12-22
+reason = "heapless 0.8.0 (unsound): dead code under faster-hex's alloc feature, reached only via gix. Fixed upstream in gitoxide #3221; remove with the first gix release that carries it. Full reasoning above."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0579"
+ignoreUntil = 2026-12-22
+reason = "heapless 0.8.0 (unsound): dead code under faster-hex's alloc feature, reached only via gix. Fixed upstream in gitoxide #3221; remove with the first gix release that carries it. Full reasoning above."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0580"
+ignoreUntil = 2026-12-22
+reason = "heapless 0.8.0 (unsound): dead code under faster-hex's alloc feature, reached only via gix. Fixed upstream in gitoxide #3221; remove with the first gix release that carries it. Full reasoning above."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0581"
+ignoreUntil = 2026-12-22
+reason = "heapless 0.8.0 (unsound): dead code under faster-hex's alloc feature, reached only via gix. Fixed upstream in gitoxide #3221; remove with the first gix release that carries it. Full reasoning above."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0582"
+ignoreUntil = 2026-12-22
+reason = "heapless 0.8.0 (unsound): dead code under faster-hex's alloc feature, reached only via gix. Fixed upstream in gitoxide #3221; remove with the first gix release that carries it. Full reasoning above."
+
 [[IgnoredVulns]]
 id = "RUSTSEC-2026-0192"
 reason = "ttf-parser is unmaintained (notice only, no known vulnerability): pulled in by lopdf 0.42 under pdf-extract (the AI agent's PDF text reader), whose latest release still pins lopdf ^0.42. lopdf 0.45 swapped it for skrifa, so this goes away when pdf-extract moves up."
