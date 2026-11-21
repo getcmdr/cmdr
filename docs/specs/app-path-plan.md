@@ -1465,9 +1465,12 @@ included; the hidden couplings it found are why waves B and C differ from round 
   (`PathHandleCache::learn_resolved`, `a_handle_walk_never_ties_a_shared_name_to_one_twin`); a create, upload, or rename
   whose name needs an escape got no listing patch
   (`host_seam_test::a_new_object_whose_name_needs_an_escape_patches_its_pane`).
-- **Windows**: no builder run (another agent held it). `clippy-windows` green; the CI Windows lane (compile only) on the
-  PR. The 66 cells this milestone owns (`cmdr-adb` 51, `cmdr-smb` 13, `cmdr-mtp` 2) are path-shaped and expected green;
-  a builder run confirms them.
+- **Windows**: `clippy-windows` green; the CI Windows lane (compile only) on the PR. On the builder afterwards
+  (2026-11-21, `main` at `97befe7c07`, `docs/notes/windows-port/windows-test-failures.md` § "By milestone"): 64 of the
+  66 cells this milestone owns are green (`cmdr-smb` 13 → 0, `cmdr-mtp` 2 → 0, `cmdr-adb` 52 → 3). The two path cells
+  left, `conformance_test::create_directory_all_{refuses_a_file_in_the_way,goes_through_a_link_to_a_folder}`, are the
+  shared conformance assertions' `std::path` join (`notes.txt\inside`), milestone 11's; the third is the Linux errno
+  cell, owned elsewhere.
 - **Verified**: nextest `cmdr-smb`, `cmdr-adb`, `cmdr-mtp` 615 passed (190 Docker skipped); clippy `-D warnings`
   (workspace `pnpm check clippy`, the crates with `--all-features`); `pnpm check --fast`, `app-path-std-bridge`,
   `file-length`, `jscpd-rust` (three new trait-boilerplate pairs, each with its reason, the backends' bodies now
@@ -1537,10 +1540,14 @@ included; the hidden couplings it found are why waves B and C differ from round 
     twin it tested.
   - Git: a tree name that is no name (`..`, empty, NUL) makes no row (it became the parent folder or `/abs`).
   - Restic: a parent `data/` listing's name that isn't one plain name is skipped, never joined.
-- **Windows**: `pnpm check clippy-windows` green on the merged branch; the builder wasn't free, so the named clusters
-  are expected green by their causes, not yet run: `cmdr-archive` 9 (its two zip-creator cells aren't paths),
-  `cmdr-restic` every non-`symlink` cell (the hub timeouts included), `cmdr-viewer` 12 (the 13th is the deleted pin),
-  `cmdr-git` 1 (un-ignored), `cmdr-operation-log` 3, `cmdr-listing` 1 (`stall_test`'s `/`-is-a-local-disk cell stays).
+- **Windows**: `pnpm check clippy-windows` green on the merged branch. On the builder afterwards (2026-11-21, `main` at
+  `97befe7c07`, `docs/notes/windows-port/windows-test-failures.md` § "By milestone"), green: `cmdr-archive` 11 → 0 (the
+  zip-creator pair too), `cmdr-git` 136 of 136 (the un-ignored cell passes), `cmdr-operation-log` 3 → 0, `cmdr-listing`
+  3 → 1 (`stall_test`, as expected), `cmdr-restic` 67 → 1, `cmdr-viewer` 13 → 1 → 0. The viewer's last cell was its
+  test's: the wire pins opened files by native text, which `from_wire` refuses, so a Markdown picture read `blocked`
+  (fixed in the test, `26e751e85c`; 402 of 402 after). Restic's last,
+  `read_stream::tests::the_chunks_come_out_in_order`, has no path cause left: it passes alone and runs past the 8 s cap
+  under parallel load on the 2-core box.
 - **What still bridges, and who takes it**: the listing engine's 16 crossings and the archive host routing's (10c); the
   rollback planner's one (`RollbackUnit` and `InverseAct` carry `PathBuf` for `cmdr-operations`, 10a, which also builds
   the typed unit through the escape mark's `StoredPathReading`, before 10f); restic's and git's host seams (10c/10d);

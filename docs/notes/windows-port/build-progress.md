@@ -411,3 +411,7 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
     path too ("… is already in this location"); `~/W1291-SRC`, the source under another case, passed the dialog and the
     engine's identity read it as the same folder, so it duplicated to `W1291-SRC (1)` with the source untouched (the
     self-collision rule). Everything the run added is gone; `cmdr-m6` is back on `origin/main`.
+- **2026-11-21, app-path milestones 7 and 8 on the builder** (`main` at `97befe7c07`, the warm pair `D:\src\cmdr-m6` +
+  `D:\targets\m6`, 9 min warm for nine crates): 2,095 tests, 6 red where `windows-test-failures.tsv` had 164; per crate
+  and per cause in `docs/notes/windows-port/windows-test-failures.md` § "By milestone". Elevated through
+  `run-on-desktop.sh --elevated`, a run holds the symlink privilege, so nothing skipped itself.
