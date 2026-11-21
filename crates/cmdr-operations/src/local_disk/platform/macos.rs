@@ -46,6 +46,12 @@ pub(crate) fn is_locked_item(path: &Path) -> bool {
     std::fs::symlink_metadata(path).is_ok_and(|meta| meta.st_flags() & LOCKS != 0)
 }
 
+/// macOS refuses a Locked item's unlink and rename itself (`EPERM`), and that refusal
+/// keeps its own flow, so nothing is refused up front here.
+pub(crate) fn locked_against_removal(_path: &Path) -> bool {
+    false
+}
+
 /// `NSURLVolumeAvailableCapacityForImportantUsageKey`: free space including
 /// what macOS purges on demand, matching Finder and the status bar.
 pub(crate) fn important_free_bytes(path: &Path) -> Option<u64> {

@@ -43,6 +43,7 @@ const _: fn(&Path) -> WriteProbe = write_probe;
 const _: fn(&Path) -> Option<u64> = free_bytes;
 const _: fn(&Path) -> Option<u64> = important_free_bytes;
 const _: fn(&Path) -> bool = is_locked_item;
+const _: fn(&Path) -> bool = locked_against_removal;
 const _: fn(&str, PathBuf, VolumeHost) -> Arc<dyn Volume> = folder_volume;
 
 /// `mkdir(dir, mode)`; off POSIX the mode is dropped.
@@ -58,6 +59,12 @@ pub(crate) use imp::important_free_bytes;
 /// Whether `path` itself carries a lock flag: a fact about the item, never a guess
 /// from a path or a message.
 pub(crate) use imp::is_locked_item;
+/// Whether `path` wears a lock the OS would otherwise walk past, so a permanent delete
+/// or an Overwrite refuses it up front as `FileLocked` (the Locked advice): Windows'
+/// read-only attribute on a FILE, which `std::fs::remove_file` deletes through and a
+/// rename carries aside. `false` on macOS and Linux, whose locks the OS refuses itself
+/// (their refusal keeps its own wording). One `lstat`, asked per file, Windows only.
+pub(crate) use imp::locked_against_removal;
 /// The permission bits of `permissions` (`st_mode`); off POSIX, `0o444` or `0o644`
 /// by the read-only flag.
 pub(crate) use imp::mode_of;

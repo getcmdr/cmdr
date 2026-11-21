@@ -11,6 +11,11 @@ pub(crate) fn is_locked_item(_path: &Path) -> bool {
     false
 }
 
+/// Linux refuses its own locks (`chattr +i`), so nothing needs refusing up front.
+pub(crate) fn locked_against_removal(_path: &Path) -> bool {
+    false
+}
+
 /// Linux has no purgeable space, so `statvfs` is the whole answer.
 pub(crate) fn important_free_bytes(_path: &Path) -> Option<u64> {
     None

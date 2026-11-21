@@ -141,6 +141,13 @@ pub(crate) fn delete_files_with_progress_inner(
         // future "deleted from Downloads" event source wouldn't surprise us.
         // No-ops outside ~/Downloads.
         state.scope().host().announce(&file_info.path);
+        // A lock the OS would delete through (Windows' read-only file) stops the delete
+        // here, as Locked, the way the OS's own refusal stops it on macOS.
+        if crate::local_disk::locked_against_removal(&file_info.path) {
+            return Err(WriteOperationError::FileLocked {
+                path: file_info.path.display().to_string(),
+            });
+        }
         match fs::remove_file(&file_info.path) {
             // Journal the deleted leaf so "when did I delete dog.jpg" is searchable.
             // Delete is never rollbackable (the op finalizes `permanent_delete`), so

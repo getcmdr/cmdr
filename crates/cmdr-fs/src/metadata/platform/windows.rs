@@ -2,8 +2,10 @@
 //! and a handle opened with backup semantics reaches a folder or a link's own entry). Every
 //! other class answers "this destination can't hold it" until its Windows body exists: the mode
 //! as the read-only attribute, xattrs as alternate data streams, the DACL, Hidden and Locked as
-//! file attributes, and read-only as a removal blocker (Windows refuses to delete a read-only
-//! file, so the removal fails safe rather than losing data). The windows-port plan's tasks 35
+//! file attributes, and read-only as a removal blocker. ❗ `std::fs::remove_file` deletes a
+//! read-only file on Windows (it clears the attribute on the way), so nothing here keeps one:
+//! the user's own delete and Overwrite refuse it up front as Locked instead
+//! (`cmdr-operations`' `local_disk::locked_against_removal`). The windows-port plan's tasks 35
 //! and 36 own those bodies (`docs/specs/windows-port-plan.md` § "Windows build state").
 
 use std::ffi::OsString;

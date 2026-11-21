@@ -135,6 +135,13 @@ where
 {
     let dest = dest.path();
     replacing.then(|| refuse_a_mount_inside(dest)).transpose()?; // step 4 removes a replaced folder as a tree
+    // A Locked destination the OS would let step 2 carry aside (Windows' read-only file)
+    // stays, refused before a byte is written, as macOS's own rename refusal keeps one.
+    if replacing && crate::local_disk::locked_against_removal(dest) {
+        return Err(WriteOperationError::FileLocked {
+            path: dest.display().to_string(),
+        });
+    }
     // The temp's guard lives to the end of this function (and the aside's too,
     // when there is one), keeping the scratch out of the pane for as long as
     // it's on disk. One uuid covers both, so a crash leftover reads as two

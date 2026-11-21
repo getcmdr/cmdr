@@ -22,6 +22,7 @@ use cmdr_fs::volume::{MutationEvent, Volume, VolumeError};
 /// below.
 pub(crate) mod platform;
 
+pub(crate) use platform::locked_against_removal;
 #[cfg(target_os = "macos")]
 pub(crate) use platform::{BsdFlags, bsd_flags, read_xattr};
 pub(crate) use platform::{

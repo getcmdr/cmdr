@@ -79,10 +79,20 @@ pub(crate) fn important_free_bytes(_path: &Path) -> Option<u64> {
     None
 }
 
-/// The read-only attribute as Locked is task 36's (`clear_blockers`); until then
-/// nothing counts as locked, which only changes which advice a refusal gives.
-pub(crate) fn is_locked_item(_path: &Path) -> bool {
-    false
+/// The read-only attribute on a FILE is Windows' Locked: Explorer's "Read-only" box,
+/// which the delete and Overwrite paths refuse as `FileLocked` ([`locked_against_removal`]).
+/// ❗ A folder's read-only bit isn't a lock: Explorer sets it to mark a customized
+/// folder (`desktop.ini`), and nothing honors it as one. Never follows a link.
+pub(crate) fn is_locked_item(path: &Path) -> bool {
+    std::fs::symlink_metadata(path).is_ok_and(|meta| meta.is_file() && meta.permissions().readonly())
+}
+
+/// A read-only file: `std::fs::remove_file` deletes it anyway (it clears the
+/// attribute on the way, verified on Windows 10 22H2 with Rust 1.100, a permanent
+/// delete in the running app, 2026-11-21), and an Overwrite's rename carries it
+/// aside, so only an up-front ask keeps the lock.
+pub(crate) fn locked_against_removal(path: &Path) -> bool {
+    is_locked_item(path)
 }
 
 pub(crate) fn folder_volume(name: &str, root: PathBuf, host: VolumeHost) -> Arc<dyn Volume> {
