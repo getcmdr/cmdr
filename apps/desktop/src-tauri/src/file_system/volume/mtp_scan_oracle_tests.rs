@@ -19,7 +19,7 @@
 
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 
 use crate::file_system::volume::manager::get_volume_manager;
@@ -128,20 +128,14 @@ async fn mtp_scan_uses_oracle_on_hit_skips_list_directory() {
     );
 
     let paths = [
-        PathBuf::from("/DCIM/a.jpg"),
-        PathBuf::from("/DCIM/b.jpg"),
-        PathBuf::from("/DCIM/c.jpg"),
+        app_path!("/DCIM/a.jpg").to_owned(),
+        app_path!("/DCIM/b.jpg").to_owned(),
+        app_path!("/DCIM/c.jpg").to_owned(),
     ];
 
     testing::reset_list_directory_call_count();
     let result = vol
-        .scan_for_copy_batch_with_boundary(
-            &paths
-                .iter()
-                .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                .collect::<Vec<_>>(),
-            &ScanBoundary::silent(),
-        )
+        .scan_for_copy_batch_with_boundary(&paths, &ScanBoundary::silent())
         .await
         .expect("oracle-served batch scan");
 
@@ -210,22 +204,16 @@ async fn mtp_scan_cold_cache_still_uses_parent_grouping() {
     // 100-photo-pick should produce one parent listing, not 100), 2 under
     // /DCIM. Total: 6 input paths, 2 unique parents.
     let paths = [
-        PathBuf::from("/Documents/report.txt"),
-        PathBuf::from("/Documents/notes.txt"),
-        PathBuf::from("/Documents/report.txt"),
-        PathBuf::from("/Documents/notes.txt"),
-        PathBuf::from("/DCIM/photo-001.jpg"),
-        PathBuf::from("/DCIM/photo-001.jpg"),
+        app_path!("/Documents/report.txt").to_owned(),
+        app_path!("/Documents/notes.txt").to_owned(),
+        app_path!("/Documents/report.txt").to_owned(),
+        app_path!("/Documents/notes.txt").to_owned(),
+        app_path!("/DCIM/photo-001.jpg").to_owned(),
+        app_path!("/DCIM/photo-001.jpg").to_owned(),
     ];
 
     let result = vol
-        .scan_for_copy_batch_with_boundary(
-            &paths
-                .iter()
-                .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                .collect::<Vec<_>>(),
-            &ScanBoundary::silent(),
-        )
+        .scan_for_copy_batch_with_boundary(&paths, &ScanBoundary::silent())
         .await
         .expect("cold batch scan");
 
@@ -235,7 +223,7 @@ async fn mtp_scan_cold_cache_still_uses_parent_grouping() {
         "expected exactly 2 MtpVolume::list_directory calls (one per unique parent)"
     );
     // Sanity: every unique input resolved.
-    let unique_inputs: std::collections::HashSet<&Path> = paths.iter().map(|p| p.as_path()).collect();
+    let unique_inputs: std::collections::HashSet<&AppPath> = paths.iter().map(|p| &**p).collect();
     assert_eq!(
         result.per_path.len(),
         unique_inputs.len(),

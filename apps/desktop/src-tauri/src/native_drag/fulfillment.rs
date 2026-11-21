@@ -248,14 +248,11 @@ async fn fulfill_file(volume: &dyn Volume, source_path: &Path, dest_path: &Path)
 /// The happy-path stream of one file: open the source reader, write it to the
 /// destination, no cleanup (the caller owns cleanup on error).
 async fn stream_one_file(volume: &dyn Volume, source_path: &Path, dest_path: &Path) -> Result<(), FulfillError> {
-    let size_hint = volume
-        .get_metadata(&AppPath::legacy_unchecked(source_path))
-        .await
-        .ok()
-        .and_then(|m| m.size);
+    let source = AppPath::legacy_unchecked(source_path);
+    let size_hint = volume.get_metadata(&source).await.ok().and_then(|m| m.size);
 
     let stream: Box<dyn VolumeReadStream> = volume
-        .open_read_stream(&AppPath::legacy_unchecked(source_path))
+        .open_read_stream(&source)
         .await
         .map_err(|e| FulfillError::from_volume_error(&e, dest_path))?;
     let size = match size_hint {

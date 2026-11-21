@@ -106,7 +106,7 @@ pub(crate) fn handle_volume_unmounted(volume_path: &str) {
             log::info!(
                 target: "cmdr_lib::volumes",
                 "{volume_path} unmounted, but volume {id} is still mounted at {}; promoted it to that root.",
-                LogPrivate::dir_path(&new_root),
+                LogPrivate::dir_path(new_root.as_str()),
                 volume_path = LogPrivate::dir_path(volume_path),
             );
             // A local drive's index read the gone root itself, so it restarts at the
@@ -485,8 +485,8 @@ mod tests {
             .get(volume_id)
             .expect("a live sibling mount keeps the volume registered");
         assert_eq!(
-            &*promoted.root().as_std_legacy(),
-            std::path::Path::new(second),
+            promoted.root(),
+            cmdr_fs::app_path::AppPath::from_normalized(second).expect("a canonical root"),
             "the surviving mount becomes the active root"
         );
 

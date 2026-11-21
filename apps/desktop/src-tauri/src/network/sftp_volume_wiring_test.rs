@@ -541,15 +541,15 @@ async fn sftp_integration_widening_a_connected_root_applies_live_over_the_same_s
     let wide = manager.get(&volume_id).expect("still registered");
     let wide_root = app_path(&params, FIXTURE_ROOT);
     assert_eq!(
-        &*wide.root().as_std_legacy(),
-        Path::new(&wide_root),
+        wide.root(),
+        AppPath::from_normalized(&wide_root).expect("a canonical app path"),
         "the registry serves the wider root"
     );
     assert!(
-        wide.exists(&AppPath::legacy_unchecked(Path::new(&app_path(
-            &params,
-            &format!("{FIXTURE_ROOT}/hello.txt")
-        ))))
+        wide.exists(
+            AppPath::from_normalized(&app_path(&params, &format!("{FIXTURE_ROOT}/hello.txt")))
+                .expect("a canonical app path")
+        )
         .await,
         "a file only the wider root covers lists through the live session"
     );
@@ -572,9 +572,12 @@ async fn sftp_integration_widening_a_connected_root_applies_live_over_the_same_s
 
     sftp.simulate_session_loss().await;
     assert!(
-        wide.list_directory(&AppPath::legacy_unchecked(Path::new(&wide_root)), None)
-            .await
-            .is_err(),
+        wide.list_directory(
+            AppPath::from_normalized(&wide_root).expect("a canonical app path"),
+            None
+        )
+        .await
+        .is_err(),
         "an operation is what notices the loss and starts the loop"
     );
     cmdr_fs::testing::wait_until_async(
@@ -584,9 +587,12 @@ async fn sftp_integration_widening_a_connected_root_applies_live_over_the_same_s
     )
     .await;
     assert!(
-        wide.list_directory(&AppPath::legacy_unchecked(Path::new(&wide_root)), None)
-            .await
-            .is_ok(),
+        wide.list_directory(
+            AppPath::from_normalized(&wide_root).expect("a canonical app path"),
+            None
+        )
+        .await
+        .is_ok(),
         "the redialed session serves the wider root"
     );
 
@@ -619,12 +625,8 @@ async fn sftp_integration_a_connected_root_the_server_lacks_is_refused_and_write
     );
     let manager = crate::file_system::volume::manager::get_volume_manager();
     assert_eq!(
-        &*manager
-            .get(&volume_id)
-            .expect("still registered")
-            .root()
-            .as_std_legacy(),
-        Path::new(&app_path(&params, FIXTURE_ROOT))
+        manager.get(&volume_id).expect("still registered").root(),
+        AppPath::from_normalized(&app_path(&params, FIXTURE_ROOT)).expect("a canonical app path")
     );
 
     sftp_volume_wiring::disconnect(&volume_id).await;

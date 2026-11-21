@@ -264,8 +264,10 @@ fn a_volume_the_os_cant_open(id: &str, content: &[u8]) -> String {
     let root = format!("mtp://{id}/1");
     let volume = InMemoryVolume::new("Phone").with_root(&root);
     let path = format!("{root}/notes.txt");
-    tauri::async_runtime::block_on(volume.create_file(&AppPath::legacy_unchecked(Path::new(&path)), content))
-        .expect("seed the file");
+    tauri::async_runtime::block_on(
+        volume.create_file(AppPath::from_normalized(&path).expect("a canonical app path"), content),
+    )
+    .expect("seed the file");
     assert!(
         !volume.paths_are_os_visible(),
         "the fixture must model a volume the OS can't open"
@@ -455,7 +457,7 @@ fn a_slow_phone(id: &str) -> (String, Arc<AtomicUsize>, Arc<AtomicBool>) {
         .with_read_chunk_delay(CHUNK_DELAY);
     let path = format!("{root}/big.log");
     tauri::async_runtime::block_on(inner.create_file(
-        &AppPath::legacy_unchecked(Path::new(&path)),
+        AppPath::from_normalized(&path).expect("a canonical app path"),
         &vec![b'x'; PHONE_FILE_LEN],
     ))
     .expect("seed the file");

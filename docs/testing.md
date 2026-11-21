@@ -232,6 +232,9 @@ let volume = LocalPosixVolume::new("Test", &dir);
   thread id to it; the random suffix already covers uniqueness, and a hand-rolled one only makes the name longer.
 - It derefs to `Path` **and** implements `AsRef<Path>`, so `dir.join(…)`, `dir.to_string_lossy()`, and a generic
   `impl AsRef<Path>` parameter all work. Both impls are load-bearing; the type's doc comment says why.
+- **Handing the directory to a volume, an index, or any API that takes an app path?** Use `AppTestDir` (same module,
+  also re-exported by `crate::test_support`): `app_path()` is the app spelling (`C:/Users/…` on Windows, where the
+  native `C:\Users\…` is refused), `native()` the path for the test's own `std::fs` setup.
 
 ❌ **Never build a fixture path from a compile-time constant** (`std::env::temp_dir().join("cmdr_list_test")`). That
 path is shared by every process on the machine, and it costs three ways:

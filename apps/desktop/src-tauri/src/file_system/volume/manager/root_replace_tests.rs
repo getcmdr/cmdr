@@ -2,7 +2,7 @@
 //! it was connected.
 
 use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::AppPathBuf;
 use std::sync::{Arc, Mutex};
 
 use super::RootReplacement;
@@ -14,6 +14,11 @@ use crate::ignore_poison::IgnorePoison;
 const ID: &str = "sftp-testnas.local-22-test_user_1";
 const NARROW: &str = "sftp://test_user_1@testnas.local:22/srv/data/tmp";
 const WIDE: &str = "sftp://test_user_1@testnas.local:22/srv/data";
+
+/// A test root as the app path it is.
+fn at(root: &str) -> &AppPath {
+    AppPath::from_normalized(root).expect("a canonical test root")
+}
 
 /// A registry serving `ID` at `root`, the volume's retirement reader, and the
 /// volume itself so a cell can build its successor the way the wiring does.
@@ -33,9 +38,7 @@ fn serving(volume: &Arc<RetiringVolume>) -> Arc<dyn Volume> {
 /// The successor a live edit builds: another instance sharing the incumbent's
 /// state, at another root.
 fn successor(volume: &RetiringVolume, root: &str) -> Arc<dyn Volume> {
-    volume
-        .rerooted(&AppPath::legacy_unchecked(Path::new(root)))
-        .expect("a RetiringVolume always re-roots")
+    volume.rerooted(at(root)).expect("a RetiringVolume always re-roots")
 }
 
 /// The case plain `register` refuses: a different root under a taken id. Here
@@ -50,15 +53,12 @@ fn a_replaced_root_is_the_active_one() {
         panic!("the id is registered, so the replace must happen");
     };
     assert_eq!(
-        &*previous.root().as_std_legacy(),
-        Path::new(NARROW),
+        previous.root().as_str(),
+        NARROW,
         "it hands back the instance it replaced"
     );
-    assert_eq!(
-        &*manager.get(ID).expect("still registered").root().as_std_legacy(),
-        Path::new(WIDE)
-    );
-    assert_eq!(manager.known_roots(ID), vec![PathBuf::from(WIDE)]);
+    assert_eq!(manager.get(ID).expect("still registered").root().as_str(), WIDE);
+    assert_eq!(manager.known_roots(ID), vec![at(WIDE).to_owned()]);
 }
 
 /// ❗ The old root leaves the root set, so a lookup by root or by path stops
@@ -71,11 +71,11 @@ fn the_old_root_stops_resolving_after_a_replace() {
     let _ = manager.replace_root_in_place(ID, &serving(&volume), successor(&volume, NARROW));
 
     assert!(
-        manager.find_by_root(Path::new(WIDE)).is_none(),
+        manager.find_by_app_root(at(WIDE)).is_none(),
         "the old root is no longer a root of this volume"
     );
     assert_eq!(
-        manager.find_by_root(Path::new(NARROW)).map(|(id, _)| id),
+        manager.find_by_app_root(at(NARROW)).map(|(id, _)| id),
         Some(ID.to_string())
     );
     assert_eq!(
@@ -106,7 +106,7 @@ fn replacing_a_root_in_place_retires_nobody() {
 #[test]
 fn a_replace_announces_the_volume_like_register_does() {
     let (manager, volume, _) = connected_at(NARROW);
-    let heard = Arc::new(Mutex::new(Vec::<(String, Option<PathBuf>)>::new()));
+    let heard = Arc::new(Mutex::new(Vec::<(String, Option<AppPathBuf>)>::new()));
     let recorder = Arc::clone(&heard);
     let registry = Arc::new(manager);
     let asked = Arc::downgrade(&registry);
@@ -114,7 +114,7 @@ fn a_replace_announces_the_volume_like_register_does() {
         let root = asked
             .upgrade()
             .and_then(|registry| registry.get(id))
-            .map(|volume| volume.root().as_std_legacy().to_path_buf());
+            .map(|volume| volume.root().to_owned());
         recorder.lock_ignore_poison().push((id.to_string(), root));
     });
 
@@ -122,7 +122,7 @@ fn a_replace_announces_the_volume_like_register_does() {
 
     assert_eq!(
         heard.lock_ignore_poison().clone(),
-        vec![(ID.to_string(), Some(PathBuf::from(WIDE)))]
+        vec![(ID.to_string(), Some(at(WIDE).to_owned()))]
     );
 }
 
@@ -144,7 +144,7 @@ fn a_replace_against_an_instance_a_reconnect_displaced_replaces_nothing() {
     assert!(matches!(outcome, RootReplacement::Superseded));
     let served = manager.get(ID).expect("still registered");
     assert!(Arc::ptr_eq(&served, &serving(&fresh)), "the reconnected instance stays");
-    assert_eq!(manager.known_roots(ID), vec![PathBuf::from(NARROW)]);
+    assert_eq!(manager.known_roots(ID), vec![at(NARROW).to_owned()]);
     assert_eq!(*heard.lock_ignore_poison(), 0, "nothing arrived");
 }
 

@@ -6,6 +6,7 @@
 
 use super::Volume;
 use crate::ignore_poison::RwLockIgnorePoison;
+use cmdr_fs::app_path::{AppPath, PathArithmetic};
 use cmdr_fs::log_private::LogPrivate;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::Path;
@@ -117,15 +118,16 @@ const ROOT_RECORDED_RESOLUTION: &str =
 /// exception is [`identity_conflict_level`]'s nested case, which can only be a
 /// double mount.
 fn report_identity_conflict(id: &str, existing: &Arc<dyn Volume>, incoming: &Arc<dyn Volume>, resolution: &str) {
-    if !is_identity_conflict(&existing.root().as_std_legacy(), &incoming.root().as_std_legacy()) {
+    let (existing, incoming) = (existing.root(), incoming.root());
+    if !is_identity_conflict(existing, incoming) {
         return;
     }
     log::log!(
         target: "cmdr_lib::file_system::volume",
-        identity_conflict_level(&existing.root().as_std_legacy(), &incoming.root().as_std_legacy()),
+        identity_conflict_level(existing, incoming),
         "Two different mount roots ({} and {}) claim volume ID {id}; {resolution}, so the two share per-volume state. Expected only for a cloned volume or a doubly-mounted filesystem.",
-        LogPrivate::dir_path(&*existing.root().as_std_legacy()),
-        LogPrivate::dir_path(&*incoming.root().as_std_legacy()),
+        LogPrivate::dir_path(existing.as_str()),
+        LogPrivate::dir_path(incoming.as_str()),
     );
 }
 
@@ -136,7 +138,7 @@ fn report_identity_conflict(id: &str, existing: &Arc<dyn Volume>, incoming: &Arc
 /// `/System/Volumes/Update` and its `mnt1` snapshot mount during an OS update
 /// (seen 10 times in a week of dev logs, 2026-11-03). That's routine, so it logs at
 /// info. Two sibling roots stay a warning, since one of them could be a clone.
-fn identity_conflict_level(existing_root: &Path, incoming_root: &Path) -> log::Level {
+fn identity_conflict_level(existing_root: &AppPath, incoming_root: &AppPath) -> log::Level {
     if existing_root.starts_with(incoming_root) || incoming_root.starts_with(existing_root) {
         log::Level::Info
     } else {
@@ -146,8 +148,8 @@ fn identity_conflict_level(existing_root: &Path, incoming_root: &Path) -> log::L
 
 /// Whether re-registering `id` means two DIFFERENT mounts, rather than the same
 /// mount changing backends (which is routine: that's the SMB upgrade).
-fn is_identity_conflict(existing_root: &Path, incoming_root: &Path) -> bool {
-    existing_root != incoming_root
+fn is_identity_conflict(existing_root: &AppPath, incoming_root: &AppPath) -> bool {
+    !roots::same_root(existing_root, incoming_root)
 }
 
 impl VolumeManager {
@@ -254,8 +256,8 @@ impl VolumeManager {
         let mut volumes = self.volumes.write_ignore_poison();
         if let Some(existing) = volumes.get_mut(id) {
             report_identity_conflict(id, &existing.volume, &volume, ROOT_RECORDED_RESOLUTION);
-            if is_identity_conflict(&existing.volume.root().as_std_legacy(), &volume.root().as_std_legacy()) {
-                existing.record_root(&volume.root().as_std_legacy());
+            if is_identity_conflict(existing.volume.root(), volume.root()) {
+                existing.record_root(volume.root());
                 return true;
             }
             existing.replace_volume(volume);
@@ -292,11 +294,11 @@ impl VolumeManager {
     /// sees its own changes.
     ///
     /// [`register`]: Self::register
-    pub fn would_keep_incumbent(&self, id: &str, root: &Path) -> bool {
+    pub fn would_keep_incumbent(&self, id: &str, root: &AppPath) -> bool {
         self.volumes
             .read_ignore_poison()
             .get(id)
-            .is_some_and(|entry| is_identity_conflict(&entry.volume.root().as_std_legacy(), root))
+            .is_some_and(|entry| is_identity_conflict(entry.volume.root(), root))
     }
 
     /// Registers a volume only if no volume with this ID exists yet.
@@ -313,9 +315,8 @@ impl VolumeManager {
             Entry::Occupied(mut existing) => {
                 let entry = existing.get_mut();
                 report_identity_conflict(id, &entry.volume, &volume, ROOT_RECORDED_RESOLUTION);
-                let conflict =
-                    is_identity_conflict(&entry.volume.root().as_std_legacy(), &volume.root().as_std_legacy());
-                entry.record_root(&volume.root().as_std_legacy());
+                let conflict = is_identity_conflict(entry.volume.root(), volume.root());
+                entry.record_root(volume.root());
                 (false, conflict)
             }
             Entry::Vacant(e) => {
@@ -372,7 +373,15 @@ impl VolumeManager {
     ///
     /// The returned volume is the entry's ACTIVE one, which for a fallback-root
     /// hit is rooted somewhere else. Callers that care compare `volume.root()`.
+    ///
+    /// Takes the native mount path the OS reported (an unmount event, a disk's mount
+    /// point); [`Self::find_by_app_root`] is the same lookup for an app path in hand.
     pub fn find_by_root(&self, root: &Path) -> Option<(String, Arc<dyn Volume>)> {
+        self.find_by_app_root(&roots::mount_root_from_os(root))
+    }
+
+    /// [`Self::find_by_root`] for a root already an app path (a volume's own `root()`).
+    pub fn find_by_app_root(&self, root: &AppPath) -> Option<(String, Arc<dyn Volume>)> {
         self.volumes
             .read_ignore_poison()
             .iter()

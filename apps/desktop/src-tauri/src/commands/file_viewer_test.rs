@@ -34,7 +34,7 @@ async fn a_phone_sending_slowly(id: &str, len: usize, delay: Duration) -> String
     let path = format!("{root}/big.log");
     volume
         .create_file(
-            &AppPath::legacy_unchecked(std::path::Path::new(&path)),
+            AppPath::from_normalized(&path).expect("a canonical phone path"),
             &vec![b'x'; len],
         )
         .await
