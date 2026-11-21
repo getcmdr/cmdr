@@ -1996,8 +1996,10 @@ included; the hidden couplings it found are why waves B and C differ from round 
     `RemoteRoot`'s bridged values (`RemoteRoot` goes typed first), the eject and `drive_release` mount-path text exits
     (10f), and cells handed relative or empty text (git `.git/…`, in-memory `""`, share-relative media names, the
     relative SFTP cells, a drag-out `..`, a favorite stored with a trailing `/`).
-- **Windows**: `pnpm check clippy-windows` and `clippy-linux` green; no builder run this step (time), so the cells this
-  step touches (the SMB gate's tempdir pair, the manager's root cells) are expected green by their causes, not run.
+- **Windows**: `pnpm check clippy-windows` and `clippy-linux` green. The builder, the app's cells in these 11
+  directories (1,236 tests): `main` 44 red → the branch 43, none newly red; of the baseline's 70 here, 27 pass and 43
+  stay red, waiting on the routing seam, the two behavior-change commits, and the watcher fixtures
+  (`docs/notes/windows-port/windows-test-failures.md` § "By milestone", the TSV's `rerun` column).
 
 ### 10d. The app, part two: operations host, tools, and the rest
 
