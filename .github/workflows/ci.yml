@@ -434,6 +434,10 @@ jobs:
             rust-windows:
               - *rust-inputs
               - '.github/workflows/windows-lane.yml'
+              # The `tests` job's ratchet and its known-failures list: a list edit alone must
+              # rerun the job, or a loosened list could land on an older green marker.
+              - 'scripts/windows-test-baseline/**'
+              - '!scripts/windows-test-baseline/**/*_test.go'
             # Gates the macOS lane's Finder extension compile, about a minute on a cold runner,
             # so it runs only when something it builds or runs changed (and on `run_all`).
             finder-extension:

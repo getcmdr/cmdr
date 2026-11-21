@@ -528,6 +528,17 @@ var AllChecks = []CheckDefinition{
 		Run:         RunPlatformCfgPlacement,
 	},
 	{
+		ID:          "desktop-rust-os-test-gate-reason",
+		Nickname:    "os-test-gate-reason",
+		DisplayName: "OS-gated tests say why",
+		App:         AppDesktop,
+		Tech:        "🦀 Rust",
+		DependsOn:   nil,
+		IsFast:      true,
+		Inputs:      inputs(rustScanInputs(KindApp, KindTool), runnerDataInputs("os-test-gate-reason-allowlist.json")),
+		Run:         RunOSTestGateReason,
+	},
+	{
 		ID:          "tools-module-boundary",
 		DisplayName: "the tool layer's boundary",
 		App:         AppDesktop,

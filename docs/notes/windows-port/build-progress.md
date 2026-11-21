@@ -419,11 +419,14 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   through `run-on-desktop.sh`; about 10 min for the first warm build, 2–3 min per incremental run of
   `cargo nextest run -p cmdr-index --profile windows-baseline`): `cmdr-index` 192 red on `main` (`a24de3dd99`) → 31 at
   `cf872d40f0`, causes in `windows-test-failures.md` § "By milestone". Gotchas: the `windows-baseline` JUnit report
-  lands under the checkout (`D:\src\cmdr-m6\target\nextest\windows-baseline\target\nextest\windows-baseline\junit.xml`),
-  not under `CARGO_TARGET_DIR`; a nextest filter holding `|` breaks a `.cmd` job (pass test names as positional
-  arguments instead); and a failing proptest writes `proptest-regressions/` into the checkout, which goes before handing
-  the pair back (the directory also holds tracked files, so restore it with `git checkout --` after). `cmdr-m6` is back
-  on `origin/main`, clean.
+  landed under the checkout
+  (`D:\src\cmdr-m6\target\nextest\windows-baseline\target\nextest\windows-baseline\junit.xml`), not under
+  `CARGO_TARGET_DIR`: nextest's store dir is the checkout's `target\nextest`, whatever the target dir, and it reads a
+  profile's `junit.path` relative to that; since 2026-11-21 the path is a bare `junit.xml`, so the report is
+  `D:\src\cmdr-m6\target\nextest\windows-baseline\junit.xml`; a nextest filter holding `|` breaks a `.cmd` job (pass
+  test names as positional arguments instead); and a failing proptest writes `proptest-regressions/` into the checkout,
+  which goes before handing the pair back (the directory also holds tracked files, so restore it with `git checkout --`
+  after). `cmdr-m6` is back on `origin/main`, clean.
 - **2026-11-21, task 35's mount table** (the warm pair, `CARGO_BUILD_JOBS=2`, suites elevated through
   `run-on-desktop.sh`): `cargo nextest run -p cmdr-fs -p cmdr-operations` 149 red on `main` (`ea4e561e0a`), 112 with
   `cmdr-local` added on the branch (`45d5fcee5c`), none newly red (`windows-test-failures.md` § "By milestone"); a debug
