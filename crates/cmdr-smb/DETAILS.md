@@ -1499,6 +1499,31 @@ parent path didn't convert. The Docker integration tests address the fixture sha
 absolute under `TEST_MOUNT_ROOT`; ❌ never a bare `format!("/{name}")`, which reads as a real absolute path somewhere
 else entirely.
 
+**Decision**: every body and helper takes `&AppPath`, and paths are read by their own `/`-separated text, ❌ never
+`std::path` (#1225) **Why**: on Windows `Path` calls `/Volumes/x/a` relative, splits a Finder-saved `a\b` at the `\`,
+and reads a `C:` name as a drive, so a share path went to the wrong place there. What each piece does:
+
+- `to_smb_path` is `smb_path_of` over the app path's text: the root aliases (`""`, `.`, `/`), relative text under the
+  anchor as spelled (a transition-bridge value can still be relative), and an absolute path's names below the mount root
+  matched by whole components (`//` and `.` names don't count), the rest trimmed as `Components::as_path` trims it. Byte
+  for byte `Path::strip_prefix`'s answer on macOS and Linux (a differential harness compared 5,075,828 cases with none
+  differing, 2026-11-21); the relative and alias pins in `paths_test.rs` go through `smb_path_of` directly.
+- Until escapes go live (`cmdr_fs::app_path::ESCAPES_LIVE`), an escape-range code point goes out as its own UTF-8 bytes,
+  `RemoteRoot::to_remote`'s rule: decoding it would address a look-alike (`caf\u{10FEC3}\u{10FEA9}` would reach `café`).
+- A listing row's `path` keeps `to_display_path`'s text (the mount root as the OS spells it), so panes see the same
+  bytes as before. The listing-cache patches are typed: `display_path_for` / `app_path_of` join the share path's names
+  onto the mount root by the app path's own join (empty and `.` names drop, a `..` is no patch), the name is the row's
+  text (`paths::row_name`, `patching`'s rule), and the listing host, which keys listings by `std::path`, is crossed once
+  (`mutation::listing_key`).
+- The copy-scan walk reports to its `ScanBoundary` under typed caller paths joined by `ListedFolder`, the shared walk's
+  rule, crossing once (`scan::for_boundary`); a listed name that isn't one plain name fails it as `InvalidName`.
+- What still bridges: the mount root (`MountAnchor.mount_path` is a native OS mount point, held as a `BridgedPath` and
+  answered by `root()`), `rerooted` (the registry promotes between native mount points), the watcher (its paths are
+  listing-host keys, until the host speaks app paths), and `testing`'s `std::path` forms the app's suites call
+  (`hash_volume_file`, `cleanup_test_prefix`; tests here use `testing::app_at` and `hash_volume_file_at`). The UNC root
+  fold the plan names (`strip_volume_prefix`) waits for Windows direct sessions, which don't exist yet: on Windows a
+  mapped drive stays on the OS mount.
+
 **Decision**: `map_smb_error` maps `ErrorKind::InvalidName` to its own `VolumeError::InvalidName`, never the `IoError`
 catch-all **Why**: `STATUS_OBJECT_NAME_INVALID` means the server refused the NAME, so it never looked for the file and
 the identical request can only fail the identical way. As an `IoError` it inherited the wrong behavior: the dialog would

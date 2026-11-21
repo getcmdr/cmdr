@@ -47,8 +47,8 @@ keychain, mounts, and human-facing words stay in the app's `network/`.
 - **A link is `is_link()`, ❌ never the `REPARSE_POINT` bit** (dedup and cloud files carry it; DETAILS § "Junctions and
   symlinks").
 - **Path conversion matches whole COMPONENTS both ways** (`to_smb_path` / `to_display_path` join and strip
-  `share_root`). ❌ Build a volume through `MountAnchor`, never a bare mount path (ERR-48RZX: it addresses the share's
-  top).
+  `share_root`), on the app path's `/`-text, ❌ never `std::path` (DETAILS § Decisions). ❌ Build a volume through
+  `MountAnchor`, never a bare mount path (ERR-48RZX: it addresses the share's top).
 - **SMB names are opaque bytes** (ERR-VETBX): ❌ never normalize a share path, wire or watcher key (a `\` in a watcher
   filename is NAME). A foreign path gets exact only via `find_stored_spelling`, ❌ never a fold inside an operation (a
   delete could hit a look-alike). New names compose in the app's write layer, ❌ never here.
