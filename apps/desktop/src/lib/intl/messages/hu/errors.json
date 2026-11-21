@@ -1669,6 +1669,10 @@
   "@errors.write.trashRefused.message.noTrashForVolume": {
     "sourceHash": "07e7834"
   },
+  "errors.write.trashRefused.message.inUse": "Egy másik appban meg van nyitva a kiválasztott elemek közül {count} darab, ezért ezek a helyükön maradtak.",
+  "@errors.write.trashRefused.message.inUse": {
+    "sourceHash": "133593e"
+  },
   "errors.write.trashRefused.message.other": "{platform, select, macos {A macOS a kiválasztott elemek közül {count} darabot nem helyezett a Kukába.} windows {A Windows a kiválasztott elemek közül {count} darabot nem helyezett a Lomtárba.} other {A Cmdr a kiválasztott elemek közül {count} darabot nem tudott a Kukába helyezni.}}",
   "@errors.write.trashRefused.message.other": {
     "sourceHash": "cdd735e"
@@ -1704,6 +1708,10 @@
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": "{platform, select, windows {Néhány helyen nincs saját Lomtár, például a felhős mappákban és a legtöbb hálózati meghajtón. Az elemeket viszont törölheted a Végleges törlés paranccsal.} other {Néhány helyen nincs saját Kuka, például a felhős mappákban és a legtöbb hálózati meghajtón. Az elemeket viszont törölheted a Végleges törlés paranccsal.}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": {
     "sourceHash": "d582f73"
+  },
+  "errors.write.trashRefused.suggestion.inUse": "Zárd be őket abban az appban, majd próbáld újra.",
+  "@errors.write.trashRefused.suggestion.inUse": {
+    "sourceHash": "5254176"
   },
   "errors.write.trashRefused.suggestion.other": "{platform, select, macos {Nézd meg lent a technikai részleteket, hogy mit jelzett a macOS.} windows {Nézd meg lent a technikai részleteket, hogy mit jelzett a Windows.} other {Nézd meg lent a technikai részleteket a pontos okért.}}",
   "@errors.write.trashRefused.suggestion.other": {

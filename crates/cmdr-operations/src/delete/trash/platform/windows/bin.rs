@@ -74,7 +74,7 @@ pub(super) fn verdict(plain: &Path, size: Option<u64>) -> Bin {
     let Some(size) = size else {
         return Bin::Takes;
     };
-    // At the limit still recycles, a byte past it doesn't (verified on Windows 10 22H2:
+    // At the limit still recycles, past it doesn't (verified on Windows 10 22H2:
     // a 5,831 MiB file into a 5,831 MB bin landed, one 1 MiB bigger was deleted for good).
     match limit_bytes(&root, &settings) {
         Some(limit) if size <= limit => Bin::Takes,

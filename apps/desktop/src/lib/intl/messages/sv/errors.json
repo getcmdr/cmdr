@@ -1669,6 +1669,10 @@
   "@errors.write.trashRefused.message.noTrashForVolume": {
     "sourceHash": "07e7834"
   },
+  "errors.write.trashRefused.message.inUse": "En annan app har {count} av objekten du valde öppna, så de stannade där de var.",
+  "@errors.write.trashRefused.message.inUse": {
+    "sourceHash": "133593e"
+  },
   "errors.write.trashRefused.message.other": "{platform, select, macos {macOS flyttade inte {count} av objekten du valde till papperskorgen.} windows {Windows flyttade inte {count} av objekten du valde till Papperskorgen.} other {Cmdr kunde inte flytta {count} av objekten du valde till papperskorgen.}}",
   "@errors.write.trashRefused.message.other": {
     "sourceHash": "cdd735e"
@@ -1704,6 +1708,10 @@
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": "{platform, select, windows {Vissa ställen kan inte använda Papperskorgen, till exempel molnmappar och de flesta nätverksenheter. Du kan ändå radera objekten med kommandot Radera permanent.} other {Vissa ställen har ingen egen papperskorg, till exempel molnmappar och de flesta nätverksenheter. Du kan ändå radera objekten med kommandot Radera permanent.}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": {
     "sourceHash": "d582f73"
+  },
+  "errors.write.trashRefused.suggestion.inUse": "Stäng dem i den appen och försök sedan igen.",
+  "@errors.write.trashRefused.suggestion.inUse": {
+    "sourceHash": "5254176"
   },
   "errors.write.trashRefused.suggestion.other": "{platform, select, macos {Kolla de tekniska detaljerna nedan för vad macOS rapporterade.} windows {Kolla de tekniska detaljerna nedan för vad Windows rapporterade.} other {Kolla de tekniska detaljerna nedan för den exakta orsaken.}}",
   "@errors.write.trashRefused.suggestion.other": {

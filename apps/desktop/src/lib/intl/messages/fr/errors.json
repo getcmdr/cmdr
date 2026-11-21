@@ -1669,6 +1669,10 @@
   "@errors.write.trashRefused.message.noTrashForVolume": {
     "sourceHash": "07e7834"
   },
+  "errors.write.trashRefused.message.inUse": "Cmdr a laissé en place {count} des éléments que vous avez choisis, car ils sont ouverts dans une autre app.",
+  "@errors.write.trashRefused.message.inUse": {
+    "sourceHash": "133593e"
+  },
   "errors.write.trashRefused.message.other": "{platform, select, macos {macOS n’a pas voulu placer {count} des éléments que vous avez choisis dans la corbeille.} windows {Windows n’a pas voulu déplacer {count} des éléments que vous avez choisis vers la Corbeille.} other {Cmdr n’a pas pu placer {count} des éléments que vous avez choisis dans la corbeille.}}",
   "@errors.write.trashRefused.message.other": {
     "sourceHash": "cdd735e"
@@ -1704,6 +1708,10 @@
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": "{platform, select, windows {Certains emplacements n’ont pas de Corbeille propre, notamment les dossiers cloud et la plupart des lecteurs réseau. Vous pouvez quand même supprimer les éléments avec la commande « Supprimer définitivement ».} other {Certains emplacements n’ont pas de corbeille propre, notamment les dossiers cloud et la plupart des disques réseau. Vous pouvez quand même supprimer les éléments avec la commande « Supprimer définitivement ».}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": {
     "sourceHash": "d582f73"
+  },
+  "errors.write.trashRefused.suggestion.inUse": "Fermez-les dans cette app, puis réessayez.",
+  "@errors.write.trashRefused.suggestion.inUse": {
+    "sourceHash": "5254176"
   },
   "errors.write.trashRefused.suggestion.other": "{platform, select, macos {Consultez les détails techniques ci-dessous pour voir ce que macOS a signalé.} windows {Consultez les détails techniques ci-dessous pour voir ce que Windows a signalé.} other {Consultez les détails techniques ci-dessous pour connaître la raison exacte.}}",
   "@errors.write.trashRefused.suggestion.other": {

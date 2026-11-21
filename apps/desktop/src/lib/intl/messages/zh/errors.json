@@ -1668,6 +1668,10 @@
   "@errors.write.trashRefused.message.noTrashForVolume": {
     "sourceHash": "07e7834"
   },
+  "errors.write.trashRefused.message.inUse": "你选中的项目里有 {count} 个，另一个 App 正开着它们，所以它们留在了原处。",
+  "@errors.write.trashRefused.message.inUse": {
+    "sourceHash": "133593e"
+  },
   "errors.write.trashRefused.message.other": "{platform, select, macos {你选中的项目里有 {count} 个，macOS 没有移到废纸篓。} windows {你选中的项目里有 {count} 个，Windows 没有移到回收站。} other {你选中的项目里有 {count} 个，Cmdr 没能移到回收站。}}",
   "@errors.write.trashRefused.message.other": {
     "sourceHash": "cdd735e"
@@ -1703,6 +1707,10 @@
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": "{platform, select, windows {有些位置没有自己的回收站，比如云端文件夹和大多数网络驱动器。你还是可以用“彻底删除”命令把这些项目删掉。} other {有些位置没有自己的废纸篓，比如云端文件夹和大多数网络驱动器。你还是可以用“彻底删除”命令把这些项目删掉。}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": {
     "sourceHash": "d582f73"
+  },
+  "errors.write.trashRefused.suggestion.inUse": "请在那个 App 里关掉它们，然后再试一次。",
+  "@errors.write.trashRefused.suggestion.inUse": {
+    "sourceHash": "5254176"
   },
   "errors.write.trashRefused.suggestion.other": "{platform, select, macos {查看下方的技术详情，看看 macOS 报告了什么。} windows {查看下方的技术详情，看看 Windows 报告了什么。} other {查看下方的技术详情，看看具体原因。}}",
   "@errors.write.trashRefused.suggestion.other": {

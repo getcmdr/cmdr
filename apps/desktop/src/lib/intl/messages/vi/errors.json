@@ -1669,6 +1669,10 @@
   "@errors.write.trashRefused.message.noTrashForVolume": {
     "sourceHash": "07e7834"
   },
+  "errors.write.trashRefused.message.inUse": "Một ứng dụng khác đang mở {count} trong số các mục bạn đã chọn, nên các mục đó vẫn nằm nguyên chỗ cũ.",
+  "@errors.write.trashRefused.message.inUse": {
+    "sourceHash": "133593e"
+  },
   "errors.write.trashRefused.message.other": "{platform, select, macos {macOS không chuyển {count} trong số các mục bạn đã chọn vào thùng rác.} windows {Windows không chuyển {count} trong số các mục bạn đã chọn vào Thùng rác.} other {Cmdr không chuyển được {count} trong số các mục bạn đã chọn vào thùng rác.}}",
   "@errors.write.trashRefused.message.other": {
     "sourceHash": "cdd735e"
@@ -1704,6 +1708,10 @@
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": "{platform, select, windows {Một số nơi không có Thùng rác riêng, trong đó có các thư mục đám mây và hầu hết ổ đĩa mạng. Bạn vẫn có thể xóa các mục này bằng lệnh Xóa vĩnh viễn.} other {Một số nơi không có thùng rác riêng, trong đó có các thư mục đám mây và hầu hết ổ đĩa mạng. Bạn vẫn có thể xóa các mục này bằng lệnh Xóa vĩnh viễn.}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": {
     "sourceHash": "d582f73"
+  },
+  "errors.write.trashRefused.suggestion.inUse": "Hãy đóng chúng trong ứng dụng đó, rồi thử lại.",
+  "@errors.write.trashRefused.suggestion.inUse": {
+    "sourceHash": "5254176"
   },
   "errors.write.trashRefused.suggestion.other": "{platform, select, macos {Hãy xem chi tiết kỹ thuật bên dưới để biết macOS báo gì.} windows {Hãy xem chi tiết kỹ thuật bên dưới để biết Windows báo gì.} other {Hãy xem chi tiết kỹ thuật bên dưới để biết lý do chính xác.}}",
   "@errors.write.trashRefused.suggestion.other": {

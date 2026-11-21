@@ -1669,6 +1669,10 @@
   "@errors.write.trashRefused.message.noTrashForVolume": {
     "sourceHash": "07e7834"
   },
+  "errors.write.trashRefused.message.inUse": "Cmdr ha dejado en su sitio {count} de los elementos que has elegido porque otra app los tiene abiertos.",
+  "@errors.write.trashRefused.message.inUse": {
+    "sourceHash": "133593e"
+  },
   "errors.write.trashRefused.message.other": "{platform, select, macos {macOS no ha movido a la papelera {count} de los elementos que has elegido.} windows {Windows no ha movido a la Papelera de reciclaje {count} de los elementos que has elegido.} other {Cmdr no ha podido mover a la papelera {count} de los elementos que has elegido.}}",
   "@errors.write.trashRefused.message.other": {
     "sourceHash": "cdd735e"
@@ -1704,6 +1708,10 @@
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": "{platform, select, windows {Algunos sitios no tienen Papelera de reciclaje propia, como las carpetas en la nube y la mayoría de las unidades de red. Aun así puedes eliminar los elementos con el comando Eliminar permanentemente.} other {Algunos sitios no tienen papelera propia, como las carpetas en la nube y la mayoría de las unidades de red. Aun así puedes eliminar los elementos con el comando Eliminar permanentemente.}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": {
     "sourceHash": "d582f73"
+  },
+  "errors.write.trashRefused.suggestion.inUse": "Ciérralos en esa app y vuelve a intentarlo.",
+  "@errors.write.trashRefused.suggestion.inUse": {
+    "sourceHash": "5254176"
   },
   "errors.write.trashRefused.suggestion.other": "{platform, select, macos {Revisa los detalles técnicos de abajo para ver lo que ha informado macOS.} windows {Revisa los detalles técnicos de abajo para ver lo que ha informado Windows.} other {Revisa los detalles técnicos de abajo para ver el motivo exacto.}}",
   "@errors.write.trashRefused.suggestion.other": {

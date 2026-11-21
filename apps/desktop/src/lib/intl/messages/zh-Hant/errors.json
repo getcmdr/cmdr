@@ -1669,6 +1669,10 @@
   "@errors.write.trashRefused.message.noTrashForVolume": {
     "sourceHash": "07e7834"
   },
+  "errors.write.trashRefused.message.inUse": "你選的項目裡有 {count} 個，另一個 App 正開著它們，所以它們留在原處。",
+  "@errors.write.trashRefused.message.inUse": {
+    "sourceHash": "133593e"
+  },
   "errors.write.trashRefused.message.other": "{platform, select, macos {你選的項目裡有 {count} 個，macOS 沒有移至垃圾桶。} windows {你選的項目裡有 {count} 個，Windows 沒有移到資源回收筒。} other {你選的項目裡有 {count} 個，Cmdr 無法移至垃圾桶。}}",
   "@errors.write.trashRefused.message.other": {
     "sourceHash": "cdd735e"
@@ -1704,6 +1708,10 @@
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": "{platform, select, windows {有些位置沒有自己的資源回收筒，像是雲端資料夾和大多數網路磁碟機。你還是可以用「永久刪除」指令把這些項目刪除。} other {有些位置沒有自己的垃圾桶，像是雲端資料夾和大多數網路磁碟機。你還是可以用「永久刪除」指令把這些項目刪除。}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": {
     "sourceHash": "d582f73"
+  },
+  "errors.write.trashRefused.suggestion.inUse": "請在那個 App 裡關掉它們，然後再試一次。",
+  "@errors.write.trashRefused.suggestion.inUse": {
+    "sourceHash": "5254176"
   },
   "errors.write.trashRefused.suggestion.other": "{platform, select, macos {看看下方的技術詳細資訊，裡面有 macOS 回報的內容。} windows {看看下方的技術詳細資訊，裡面有 Windows 回報的內容。} other {看看下方的技術詳細資訊，裡面有確切的原因。}}",
   "@errors.write.trashRefused.suggestion.other": {

@@ -515,6 +515,10 @@
   "@errors.write.trashRefused.message.noTrashForVolume": {
     "sourceHash": "4b56093"
   },
+  "errors.write.trashRefused.message.inUse": "Cmdr dejó en su lugar {count} de los elementos que elegiste porque otra app los tiene abiertos.",
+  "@errors.write.trashRefused.message.inUse": {
+    "sourceHash": "4c4a2a7"
+  },
   "errors.write.trashRefused.message.other": "{platform, select, macos {macOS no movió al basurero {count} de los elementos que elegiste.} windows {Windows no movió a la Papelera de reciclaje {count} de los elementos que elegiste.} other {Cmdr no pudo mover al basurero {count} de los elementos que elegiste.}}",
   "@errors.write.trashRefused.message.other": {
     "sourceHash": "55d0fe7"

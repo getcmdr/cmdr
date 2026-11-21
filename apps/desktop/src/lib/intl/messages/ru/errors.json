@@ -1669,6 +1669,10 @@
   "@errors.write.trashRefused.message.noTrashForVolume": {
     "sourceHash": "07e7834"
   },
+  "errors.write.trashRefused.message.inUse": "Выделенные объекты открыты в другом приложении, поэтому они остались на месте (объектов: {count}).",
+  "@errors.write.trashRefused.message.inUse": {
+    "sourceHash": "133593e"
+  },
   "errors.write.trashRefused.message.other": "{platform, select, macos {macOS не переместила выделенные объекты в Корзину (объектов: {count}).} windows {Windows не переместила выделенные объекты в Корзину (объектов: {count}).} other {Cmdr не удалось переместить выделенные объекты в Корзину (объектов: {count}).}}",
   "@errors.write.trashRefused.message.other": {
     "sourceHash": "cdd735e"
@@ -1704,6 +1708,10 @@
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": "{platform, select, windows {В некоторых местах нет своей Корзины, в том числе в облачных папках и на большинстве сетевых дисков. Объекты все равно можно удалить командой «Удалить безвозвратно».} other {В некоторых местах нет своей Корзины, в том числе в облачных папках и на большинстве сетевых дисков. Объекты все равно можно удалить командой «Удалить безвозвратно».}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": {
     "sourceHash": "d582f73"
+  },
+  "errors.write.trashRefused.suggestion.inUse": "Закройте их в этом приложении и повторите попытку.",
+  "@errors.write.trashRefused.suggestion.inUse": {
+    "sourceHash": "5254176"
   },
   "errors.write.trashRefused.suggestion.other": "{platform, select, macos {Посмотрите, что сообщила macOS, в разделе «Технические подробности» ниже.} windows {Посмотрите, что сообщила Windows, в разделе «Технические подробности» ниже.} other {Проверьте точную причину в разделе «Технические подробности» ниже.}}",
   "@errors.write.trashRefused.suggestion.other": {

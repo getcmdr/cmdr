@@ -1669,6 +1669,10 @@
   "@errors.write.trashRefused.message.noTrashForVolume": {
     "sourceHash": "07e7834"
   },
+  "errors.write.trashRefused.message.inUse": "Вибрані елементи (кількість: {count}) відкрито в іншій програмі, тож вони лишилися на місці.",
+  "@errors.write.trashRefused.message.inUse": {
+    "sourceHash": "133593e"
+  },
   "errors.write.trashRefused.message.other": "{platform, select, macos {macOS не перемістила вибрані елементи (кількість: {count}) у Смітник.} windows {Windows не перемістила вибрані елементи (кількість: {count}) у Кошик.} other {Cmdr не вдалося перемістити вибрані елементи (кількість: {count}) у Смітник.}}",
   "@errors.write.trashRefused.message.other": {
     "sourceHash": "cdd735e"
@@ -1704,6 +1708,10 @@
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": "{platform, select, windows {Деякі місця не мають власного Кошика, зокрема хмарні папки й більшість мережевих дисків. Ви все одно можете видалити ці елементи командою «Видалити остаточно».} other {Деякі місця не мають власного Смітника, зокрема хмарні папки й більшість мережевих дисків. Ви все одно можете видалити ці елементи командою «Видалити остаточно».}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": {
     "sourceHash": "d582f73"
+  },
+  "errors.write.trashRefused.suggestion.inUse": "Закрийте їх у цій програмі, а тоді спробуйте ще раз.",
+  "@errors.write.trashRefused.suggestion.inUse": {
+    "sourceHash": "5254176"
   },
   "errors.write.trashRefused.suggestion.other": "{platform, select, macos {Перевірте розділ «Технічні деталі» нижче: там видно, що саме повідомила macOS.} windows {Перевірте розділ «Технічні деталі» нижче: там видно, що саме повідомила Windows.} other {Перевірте розділ «Технічні деталі» нижче: там видно точну причину.}}",
   "@errors.write.trashRefused.suggestion.other": {

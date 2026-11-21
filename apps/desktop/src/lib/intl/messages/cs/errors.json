@@ -1669,6 +1669,10 @@
   "@errors.write.trashRefused.message.noTrashForVolume": {
     "sourceHash": "07e7834"
   },
+  "errors.write.trashRefused.message.inUse": "Jiná aplikace má otevřeno {count} z vybraných položek, takže zůstaly na místě.",
+  "@errors.write.trashRefused.message.inUse": {
+    "sourceHash": "133593e"
+  },
   "errors.write.trashRefused.message.other": "{platform, select, macos {Vybrané položky, které macOS odmítl přesunout do koše: {count}.} windows {Vybrané položky, které systém Windows odmítl přesunout do koše: {count}.} other {Vybrané položky, které Cmdr nedokázal přesunout do koše: {count}.}}",
   "@errors.write.trashRefused.message.other": {
     "sourceHash": "cdd735e"
@@ -1704,6 +1708,10 @@
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": "{platform, select, windows {Některá místa nemají vlastní koš, třeba cloudové složky a většina síťových disků. Pořád můžete položky smazat příkazem „Smazat trvale“.} other {Některá místa nemají vlastní koš, třeba cloudové složky a většina síťových disků. Pořád můžete položky smazat příkazem „Smazat trvale“.}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": {
     "sourceHash": "d582f73"
+  },
+  "errors.write.trashRefused.suggestion.inUse": "Zavřete je v té aplikaci a zkuste to znovu.",
+  "@errors.write.trashRefused.suggestion.inUse": {
+    "sourceHash": "5254176"
   },
   "errors.write.trashRefused.suggestion.other": "{platform, select, macos {Zkontrolujte níže v technických podrobnostech, co macOS nahlásil.} windows {Zkontrolujte níže v technických podrobnostech, co systém Windows nahlásil.} other {Zkontrolujte níže v technických podrobnostech přesný důvod.}}",
   "@errors.write.trashRefused.suggestion.other": {

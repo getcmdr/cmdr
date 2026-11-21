@@ -1669,6 +1669,10 @@
   "@errors.write.trashRefused.message.noTrashForVolume": {
     "sourceHash": "07e7834"
   },
+  "errors.write.trashRefused.message.inUse": "O Cmdr deixou no lugar {count} dos itens que você escolheu, porque eles estão abertos em outro app.",
+  "@errors.write.trashRefused.message.inUse": {
+    "sourceHash": "133593e"
+  },
   "errors.write.trashRefused.message.other": "{platform, select, macos {O macOS não moveu para o Lixo {count} dos itens que você escolheu.} windows {O Windows não moveu para a Lixeira {count} dos itens que você escolheu.} other {O Cmdr não conseguiu mover para a Lixeira {count} dos itens que você escolheu.}}",
   "@errors.write.trashRefused.message.other": {
     "sourceHash": "cdd735e"
@@ -1704,6 +1708,10 @@
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": "{platform, select, windows {Alguns lugares não têm uma Lixeira própria, entre eles as pastas na nuvem e a maioria das unidades de rede. Você ainda pode apagar os itens com o comando “Apagar permanentemente”.} other {Alguns lugares não têm um Lixo próprio, entre eles as pastas na nuvem e a maioria dos discos de rede. Você ainda pode apagar os itens com o comando “Apagar permanentemente”.}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": {
     "sourceHash": "d582f73"
+  },
+  "errors.write.trashRefused.suggestion.inUse": "Feche os itens nesse app, depois tente de novo.",
+  "@errors.write.trashRefused.suggestion.inUse": {
+    "sourceHash": "5254176"
   },
   "errors.write.trashRefused.suggestion.other": "{platform, select, macos {Veja os detalhes técnicos abaixo para saber o que o macOS informou.} windows {Veja os detalhes técnicos abaixo para saber o que o Windows informou.} other {Veja os detalhes técnicos abaixo para saber o motivo exato.}}",
   "@errors.write.trashRefused.suggestion.other": {

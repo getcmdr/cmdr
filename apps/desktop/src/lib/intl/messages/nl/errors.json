@@ -1669,6 +1669,10 @@
   "@errors.write.trashRefused.message.noTrashForVolume": {
     "sourceHash": "07e7834"
   },
+  "errors.write.trashRefused.message.inUse": "Cmdr liet {count} van de onderdelen die je koos staan, want een andere app heeft ze open.",
+  "@errors.write.trashRefused.message.inUse": {
+    "sourceHash": "133593e"
+  },
   "errors.write.trashRefused.message.other": "{platform, select, macos {macOS verplaatste {count} van de onderdelen die je koos niet naar de prullenmand.} windows {Windows verplaatste {count} van de onderdelen die je koos niet naar de prullenbak.} other {Cmdr kon {count} van de onderdelen die je koos niet naar de prullenbak verplaatsen.}}",
   "@errors.write.trashRefused.message.other": {
     "sourceHash": "cdd735e"
@@ -1704,6 +1708,10 @@
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": "{platform, select, windows {Sommige plekken hebben geen eigen prullenbak, waaronder cloudmappen en de meeste netwerkschijven. Je kunt de onderdelen wel verwijderen met de opdracht ‘Verwijder definitief’.} other {Sommige plekken hebben geen eigen prullenmand, waaronder cloudmappen en de meeste netwerkschijven. Je kunt de onderdelen wel verwijderen met de opdracht ‘Verwijder definitief’.}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithoutKey": {
     "sourceHash": "d582f73"
+  },
+  "errors.write.trashRefused.suggestion.inUse": "Sluit ze in die app en probeer het daarna opnieuw.",
+  "@errors.write.trashRefused.suggestion.inUse": {
+    "sourceHash": "5254176"
   },
   "errors.write.trashRefused.suggestion.other": "{platform, select, macos {Bekijk de technische details hieronder voor wat macOS meldde.} windows {Bekijk de technische details hieronder voor wat Windows meldde.} other {Bekijk de technische details hieronder voor de precieze reden.}}",
   "@errors.write.trashRefused.suggestion.other": {

@@ -248,6 +248,12 @@ Translators log here every script they wrote and every workaround they needed (t
 after each wave. Two locales logging the same kind of script is a missing tool: build it or fix the brief, then delete
 the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
 
+- `i18n:apply` and `i18n:check-locale` refuse `--lang all` even for a `--lang all` brief, so a two-key, 13-locale batch
+  took 13 apply calls, 13 check calls (about 60 s each, so chained checks spill into the background), and 13 Write calls
+  for the values files (a shell function writing them was refused). An `i18n:apply --lang all` reading each run dir's
+  `values.json`, and a multi-locale `check-locale`, would cut this to two calls. The `es` check also only flags a needed
+  `es-419` fork after the fact; the brief could pre-list which `es` forms would need one. (all, `trashRefused.*.inUse`
+  batch)
 - The worktree guard refused a plain shell `for` loop over `node scripts/i18n-values.ts --lang $l` (no git in it), so
   per-locale reads need `--lang all` or one call per locale. (all locales, per-OS settings-window batch)
 - The same guard refused a `for` loop over `i18n:pile` and a `W=…` variable before `i18n:check-locale`; a `--lang all`
