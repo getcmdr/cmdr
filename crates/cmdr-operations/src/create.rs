@@ -458,9 +458,10 @@ async fn create_entry_core_on(
         // outside ~/Downloads.
         host.announce(&new_path);
 
+        let new_path_app = AppPath::legacy_unchecked(&new_path);
         let created = match kind {
-            CreatedKind::Folder => volume.create_directory(&AppPath::legacy_unchecked(&new_path)).await,
-            CreatedKind::EmptyFile => volume.create_file(&AppPath::legacy_unchecked(&new_path), b"").await,
+            CreatedKind::Folder => volume.create_directory(&new_path_app).await,
+            CreatedKind::EmptyFile => volume.create_file(&new_path_app, b"").await,
         };
         created.map_err(|e| named_conflict_or_volume(e, name))?;
 

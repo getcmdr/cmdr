@@ -122,9 +122,11 @@ pub(super) async fn scan_volume_recursive(
     // one, probe (`top_level_entry`, a read, so safe to re-run after an
     // outage), which on MTP lists the parent dir, so we avoid it whenever the
     // oracle can answer.
+    // The one crossing for `path`: the walk carries `std::path` values until it's typed.
+    let path_app = AppPath::legacy_unchecked(path);
     let probed = match hint {
         Some(listed) => listed,
-        None => read_through_outages(volume, state, || top_level_entry(volume.as_ref(), path))
+        None => read_through_outages(volume, state, || top_level_entry_at(volume.as_ref(), &path_app))
             .await
             .map_err(|stop| stop.into_error(path))?,
     };
@@ -180,7 +182,6 @@ pub(super) async fn scan_volume_recursive(
                 0,
             );
         };
-        let path_app = AppPath::legacy_unchecked(path);
 
         // Oracle-first: if this directory is watcher-backed in the listing cache,
         // reuse the cached entries and skip the volume round-trip entirely.
@@ -305,7 +306,7 @@ pub(super) async fn scan_volume_recursive(
             path: path.to_path_buf(),
             progress_bytes: 0,
             is_dir: false,
-            listed: listed_top_level(volume.as_ref(), path, probed).await,
+            listed: listed_top_level(volume.as_ref(), &path_app, probed).await,
         });
     }
 
@@ -369,19 +370,18 @@ pub(super) fn listed_in_parent_listing(
 ///
 /// [`BackendKind::has_symlinks`]: cmdr_fs::volume::BackendKind::has_symlinks
 pub(super) async fn top_level_entry(volume: &dyn Volume, path: &Path) -> Result<Listed, VolumeError> {
+    top_level_entry_at(volume, &AppPath::legacy_unchecked(path)).await
+}
+
+/// [`top_level_entry`] for an app path.
+async fn top_level_entry_at(volume: &dyn Volume, path: &AppPath) -> Result<Listed, VolumeError> {
     if volume.backend_kind().has_symlinks() {
-        return volume
-            .entry_kind(&AppPath::legacy_unchecked(path))
-            .await
-            .map(|kind| Listed { kind, size: None });
+        return volume.entry_kind(path).await.map(|kind| Listed { kind, size: None });
     }
-    volume
-        .get_metadata(&AppPath::legacy_unchecked(path))
-        .await
-        .map(|entry| Listed {
-            kind: EntryKind::of(&entry),
-            size: if entry.is_directory { None } else { entry.size },
-        })
+    volume.get_metadata(path).await.map(|entry| Listed {
+        kind: EntryKind::of(&entry),
+        size: if entry.is_directory { None } else { entry.size },
+    })
 }
 
 /// What a top-level file or link is, for a delete re-run after an outage to
@@ -390,11 +390,11 @@ pub(super) async fn top_level_entry(volume: &dyn Volume, path: &Path) -> Result<
 /// with a session: no other volume is ever waited for, so nothing would read
 /// it. Best effort: an unanswered stat leaves the size unknown, and a re-run
 /// then leaves the file rather than delete it unproven.
-async fn listed_top_level(volume: &dyn Volume, path: &Path, probed: Listed) -> Listed {
+async fn listed_top_level(volume: &dyn Volume, path: &AppPath, probed: Listed) -> Listed {
     if probed.kind != EntryKind::File || probed.size.is_some() || volume.connection_state().is_none() {
         return probed;
     }
-    match volume.get_metadata(&AppPath::legacy_unchecked(path)).await {
+    match volume.get_metadata(path).await {
         Ok(entry) => Listed {
             kind: EntryKind::of(&entry),
             size: entry.size,

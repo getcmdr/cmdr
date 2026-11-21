@@ -211,12 +211,14 @@ async fn rename_managed_inner(
             None => to,
         }
     };
+    // The volume calls' one crossing for `from`, until the rename's paths are typed.
+    let from_app = AppPath::legacy_unchecked(&from).into_owned();
     // ❗ An entry whose rename isn't one call here (an object store's folder or
     // big file) never reaches `Volume::rename`: it starts a background move,
     // with progress and cancel, and this answers once that has started, the
     // way an in-zip rename does.
     if !on_local_disk && let Some(volume) = manager.get(&volume_id) {
-        match volume.rename_work(&AppPath::legacy_unchecked(&from)).await {
+        match volume.rename_work(&from_app).await {
             Ok(RenameWork::OneCall) => {}
             Ok(RenameWork::CopyThenDelete) => {
                 return (
@@ -252,15 +254,11 @@ async fn rename_managed_inner(
             // A failed probe journals no kind, size, or mtime: the row reads as a
             // file and its undo skips as unverifiable, the fail-safe answer. It
             // reaches no destructive branch.
-            Some(v) => v
-                .get_metadata(&AppPath::legacy_unchecked(&from))
-                .await
-                .ok()
-                .map(|entry| VolumeSnapshot {
-                    is_dir: entry.is_directory,
-                    size: entry.size.map(|s| s as i64),
-                    mtime: entry.modified_at.map(|m| m as i64),
-                }),
+            Some(v) => v.get_metadata(&from_app).await.ok().map(|entry| VolumeSnapshot {
+                is_dir: entry.is_directory,
+                size: entry.size.map(|s| s as i64),
+                mtime: entry.modified_at.map(|m| m as i64),
+            }),
             None => None,
         }
     };
@@ -305,11 +303,7 @@ async fn rename_managed_inner(
                 // the live validation the user just saw; everything else rides as the
                 // volume's own typed answer.
                 volume
-                    .rename(
-                        &AppPath::legacy_unchecked(&from),
-                        &AppPath::legacy_unchecked(&to),
-                        force,
-                    )
+                    .rename(&from_app, &AppPath::legacy_unchecked(&to), force)
                     .await
                     .map_err(|e| match e {
                         cmdr_fs::volume::VolumeError::AlreadyExists(_) => {
@@ -618,12 +612,13 @@ async fn notify_rename_in_listing(host: &host::EngineHost, volume_id: &str, from
     };
 
     if let (Some(from_parent), Some(from_name), Some(to_name)) = (from.parent(), from.file_name(), to.file_name()) {
+        let from_parent_app = AppPath::legacy_unchecked(from_parent);
         if from.parent() == to.parent() {
             // Same-directory rename
             volume
                 .notify_mutation(
                     volume_id,
-                    &AppPath::legacy_unchecked(from_parent),
+                    &from_parent_app,
                     MutationEvent::Renamed {
                         from: from_name.to_string_lossy().to_string(),
                         to: to_name.to_string_lossy().to_string(),
@@ -635,7 +630,7 @@ async fn notify_rename_in_listing(host: &host::EngineHost, volume_id: &str, from
             volume
                 .notify_mutation(
                     volume_id,
-                    &AppPath::legacy_unchecked(from_parent),
+                    &from_parent_app,
                     MutationEvent::Deleted(from_name.to_string_lossy().to_string()),
                 )
                 .await;

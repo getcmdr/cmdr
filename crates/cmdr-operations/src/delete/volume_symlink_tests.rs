@@ -370,15 +370,7 @@ async fn a_delete_preview_counts_a_selected_link_a_pane_lists_as_a_folder_as_one
     panes.show_volume(&vid, volume.clone() as Arc<dyn Volume>);
     let _listing = pane_shows_hidden_link(&panes, &volume, &vid, "dir").await;
     let sources = [tree.root().join("dir/link")];
-    let mut batch = volume
-        .scan_for_copy_batch(
-            &sources
-                .iter()
-                .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                .collect::<Vec<_>>(),
-        )
-        .await
-        .expect("scan");
+    let mut batch = volume.scan_for_copy_batch(&app_paths(&sources)).await.expect("scan");
 
     count_selected_links_as_links(panes.as_ref(), volume.as_ref(), &vid, &mut batch).await;
 
@@ -422,15 +414,7 @@ async fn a_selected_folder_link_with_a_cold_preview_goes_as_a_link() {
     let volume = tree.volume(false, false);
     engine.volumes().register(&vid, volume.clone() as Arc<dyn Volume>);
     let sources = vec![PathBuf::from("dir/link")];
-    let batch = volume
-        .scan_for_copy_batch(
-            &sources
-                .iter()
-                .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                .collect::<Vec<_>>(),
-        )
-        .await
-        .expect("scan");
+    let batch = volume.scan_for_copy_batch(&app_paths(&sources)).await.expect("scan");
     assert!(
         batch.per_path[0].1.top_level_is_directory,
         "precondition: the backend's scan follows the selected link"
@@ -467,15 +451,7 @@ async fn a_delete_preview_counts_a_selected_folder_link_as_one_leaf() {
     let vid = unique("preview_count");
     let volume = tree.volume(false, false);
     let sources = [PathBuf::from("dir/link"), PathBuf::from("dir/plain.txt")];
-    let mut batch = volume
-        .scan_for_copy_batch(
-            &sources
-                .iter()
-                .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                .collect::<Vec<_>>(),
-        )
-        .await
-        .expect("scan");
+    let mut batch = volume.scan_for_copy_batch(&app_paths(&sources)).await.expect("scan");
     assert_eq!(
         batch.aggregate.total_bytes, 9,
         "precondition: the scan counted keep.txt behind the link"
@@ -488,4 +464,12 @@ async fn a_delete_preview_counts_a_selected_folder_link_as_one_leaf() {
     assert_eq!((link.file_count, link.dir_count, link.total_bytes), (1, 0, 0));
     assert_eq!(batch.aggregate.file_count, 2, "the link and plain.txt");
     assert_eq!(batch.aggregate.total_bytes, 5, "only plain.txt's bytes");
+}
+
+/// `sources` as the app paths a volume's batch scan takes.
+fn app_paths(sources: &[PathBuf]) -> Vec<AppPathBuf> {
+    sources
+        .iter()
+        .map(|p| AppPath::legacy_unchecked(p).into_owned())
+        .collect()
 }

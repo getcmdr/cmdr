@@ -10,8 +10,8 @@
 //! `operations_host/backend_suites/smb_look_alike_test.rs`.
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppName, AppPathBuf, PathArithmetic};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
@@ -50,11 +50,15 @@ async fn volume(engine: &TestOperations, label: &str, composes: bool) -> (String
     (id, volume)
 }
 
+/// `/dir/<name>`, the fixture folder's entry.
+fn in_dir(name: &str) -> AppPathBuf {
+    app_path!("/dir")
+        .join(AppName::from_app_spelling(name).expect("one name"))
+        .expect("joins")
+}
+
 async fn file(volume: &InMemoryVolume, name: &str, bytes: &[u8]) {
-    volume
-        .create_file(&AppPath::legacy_unchecked(Path::new(&format!("/dir/{name}"))), bytes)
-        .await
-        .unwrap();
+    volume.create_file(&in_dir(name), bytes).await.unwrap();
 }
 
 async fn row(volume: &InMemoryVolume, source: &str, destination: &str) -> BulkRenameRow {
@@ -103,10 +107,7 @@ async fn names_in(volume: &InMemoryVolume) -> Vec<String> {
 }
 
 async fn read(volume: &InMemoryVolume, name: &str) -> Vec<u8> {
-    let mut stream = volume
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&format!("/dir/{name}"))))
-        .await
-        .unwrap();
+    let mut stream = volume.open_read_stream(&in_dir(name)).await.unwrap();
     let mut out = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         out.extend_from_slice(&chunk);

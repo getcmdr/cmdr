@@ -62,12 +62,14 @@ pub(super) async fn delete_clearing_blockers(
     path: &Path,
     kind: NodeKind,
 ) -> Result<(), RemovalRefused> {
-    let refused = match remove(volume, path, kind).await {
+    // The volume calls' one crossing, until the callers' paths are typed.
+    let path_app = AppPath::legacy_unchecked(path);
+    let refused = match remove(volume, &path_app, kind).await {
         Err(e @ VolumeError::PermissionDenied { .. }) => e,
         other => return Ok(other?),
     };
-    let refused = match volume.clear_blockers(&AppPath::legacy_unchecked(path)).await {
-        Unblock::Cleared(_) => match remove(volume, path, kind).await {
+    let refused = match volume.clear_blockers(&path_app).await {
+        Unblock::Cleared(_) => match remove(volume, &path_app, kind).await {
             Err(e @ VolumeError::PermissionDenied { .. }) => e,
             other => return Ok(other?),
         },
@@ -81,7 +83,7 @@ pub(super) async fn delete_clearing_blockers(
     // A few syscalls, but on a mounted share each one can block: off the runtime.
     match runtime.spawn_blocking(move || open_parent_folder(&local)).await {
         Ok(ParentOpening::Opened(folder)) => {
-            let deleted = remove(volume, path, kind).await;
+            let deleted = remove(volume, &path_app, kind).await;
             // Dropping it closes it too, so even a failed join puts it back.
             if let Ok(report) = runtime.spawn_blocking(move || folder.close()).await
                 && report.any_refused()
@@ -96,9 +98,9 @@ pub(super) async fn delete_clearing_blockers(
 }
 
 /// One removal attempt of `path` as the `kind` it is.
-async fn remove(volume: &Arc<dyn Volume>, path: &Path, kind: NodeKind) -> Result<(), VolumeError> {
+async fn remove(volume: &Arc<dyn Volume>, path: &AppPath, kind: NodeKind) -> Result<(), VolumeError> {
     match kind {
-        NodeKind::File => volume.delete(&AppPath::legacy_unchecked(path)).await,
-        NodeKind::Directory => volume.delete_directory(&AppPath::legacy_unchecked(path), None).await,
+        NodeKind::File => volume.delete(path).await,
+        NodeKind::Directory => volume.delete_directory(path, None).await,
     }
 }

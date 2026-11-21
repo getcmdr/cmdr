@@ -2,7 +2,7 @@
 //! `Volume`), with the fresh-listing oracle in front of the backend's own
 //! batch scan. The contract it owes: the parent module.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -304,9 +304,15 @@ pub(crate) async fn run_oracle_aware_batch_scan(
     // each group. The merged result puts the per-path entries back in original
     // input order (callers downstream don't currently depend on order, but it
     // matches `BatchScanResult::per_path`'s documented contract).
-    let mut groups: HashMap<PathBuf, Vec<PathBuf>> = HashMap::new();
+    // Each source's app path, for the volume calls and the result, crossed once. A group
+    // holds its sources' indices into both.
+    let sources_app: Vec<AppPathBuf> = sources
+        .iter()
+        .map(|source| AppPath::legacy_unchecked(source).into_owned())
+        .collect();
+    let mut groups: HashMap<PathBuf, Vec<usize>> = HashMap::new();
     let mut group_order: Vec<PathBuf> = Vec::new();
-    for source in sources {
+    for (index, source) in sources.iter().enumerate() {
         let parent = source
             .parent()
             .map(|p| p.to_path_buf())
@@ -314,7 +320,7 @@ pub(crate) async fn run_oracle_aware_batch_scan(
         if !groups.contains_key(&parent) {
             group_order.push(parent.clone());
         }
-        groups.entry(parent).or_default().push(source.clone());
+        groups.entry(parent).or_default().push(index);
     }
 
     let mut aggregate = CopyScanResult {
@@ -327,7 +333,7 @@ pub(crate) async fn run_oracle_aware_batch_scan(
         top_level_modified_at: None,
         top_level_created_at: None,
     };
-    let mut per_path_unordered: HashMap<PathBuf, CopyScanResult> = HashMap::new();
+    let mut per_path_unordered: HashMap<AppPathBuf, CopyScanResult> = HashMap::new();
     // Every file's size and date, for a cost estimate, while every group came
     // back with them (a backend that keeps files, walked cold). One group that
     // didn't makes the whole list partial, and a partial list would price low.
@@ -376,7 +382,8 @@ pub(crate) async fn run_oracle_aware_batch_scan(
                 })
                 .collect();
 
-            for source in paths_in_group {
+            for &index in paths_in_group {
+                let (source, source_app) = (&sources[index], &sources_app[index]);
                 let name = source
                     .file_name()
                     .map(|n| n.to_string_lossy().to_string())
@@ -385,7 +392,7 @@ pub(crate) async fn run_oracle_aware_batch_scan(
                     // Cache doesn't know this child. Could be a stale selection
                     // (entry deleted out-of-band) or a name encoding mismatch.
                     // Either way, fall through to a real stat for safety.
-                    let scan = volume.scan_for_copy(&AppPath::legacy_unchecked(source)).await?;
+                    let scan = volume.scan_for_copy(source_app).await?;
                     if let Some(recorder) = &recorder {
                         recorder.subtree(source, &scan);
                     }
@@ -393,7 +400,7 @@ pub(crate) async fn run_oracle_aware_batch_scan(
                     aggregate.dir_count += scan.dir_count;
                     aggregate.total_bytes += scan.total_bytes;
                     aggregate.dedup_bytes += scan.dedup_bytes;
-                    per_path_unordered.insert(source.clone(), scan);
+                    per_path_unordered.insert(source_app.clone(), scan);
                     on_progress(ListingProgress {
                         files: aggregate.file_count,
                         dirs: aggregate.dir_count,
@@ -446,7 +453,7 @@ pub(crate) async fn run_oracle_aware_batch_scan(
                     aggregate.total_bytes += subtree.total_bytes;
                     aggregate.dedup_bytes += subtree.dedup_bytes;
                     per_path_unordered.insert(
-                        source.clone(),
+                        source_app.clone(),
                         CopyScanResult {
                             file_count: subtree.file_count,
                             dir_count: subtree.dir_count,
@@ -473,7 +480,7 @@ pub(crate) async fn run_oracle_aware_batch_scan(
                     aggregate.total_bytes += size;
                     aggregate.dedup_bytes += dedup_contribution;
                     per_path_unordered.insert(
-                        source.clone(),
+                        source_app.clone(),
                         CopyScanResult {
                             file_count: 1,
                             dir_count: 0,
@@ -539,7 +546,7 @@ pub(crate) async fn run_oracle_aware_batch_scan(
                 .scan_for_copy_batch_with_boundary(
                     &paths_in_group
                         .iter()
-                        .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                        .map(|&index| sources_app[index].clone())
                         .collect::<Vec<_>>(),
                     &group_boundary,
                 )
@@ -549,7 +556,7 @@ pub(crate) async fn run_oracle_aware_batch_scan(
             aggregate.total_bytes += group_result.aggregate.total_bytes;
             aggregate.dedup_bytes += group_result.aggregate.dedup_bytes;
             for (path, scan) in group_result.per_path {
-                per_path_unordered.insert(path.as_std_legacy().into_owned(), scan);
+                per_path_unordered.insert(path, scan);
             }
             files = match (files, group_result.files) {
                 (Some(mut so_far), Some(more)) => {
@@ -563,13 +570,9 @@ pub(crate) async fn run_oracle_aware_batch_scan(
 
     // Rebuild per_path in caller's original source order. Missing entries
     // (shouldn't happen, but be defensive) are skipped silently.
-    let per_path: Vec<_> = sources
-        .iter()
-        .filter_map(|src| {
-            per_path_unordered
-                .remove(src)
-                .map(|scan| (AppPath::legacy_unchecked(src).into_owned(), scan))
-        })
+    let per_path: Vec<_> = sources_app
+        .into_iter()
+        .filter_map(|src| per_path_unordered.remove(&src).map(|scan| (src, scan)))
         .collect();
 
     Ok(BatchScanResult {
