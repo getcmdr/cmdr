@@ -28,7 +28,11 @@ same local-vs-remote predicate the archive backend uses for its byte source). Wh
   `tokio::time::timeout` ⇒ a hung transport is a `Disconnected` pause, never a wedge.
 - The mount root still comes from `host::volumes::current().get(volume_id).root()` — the same source
   `indexing::paths::routing::index_read_path` uses for its read-side mount strip — and `Volume` impls accept
-  mount-absolute display paths, so the os-joined path feeds both fetchers unchanged.
+  mount-absolute display paths, so the os-joined path feeds both fetchers unchanged. `VolumeByteFetcher` reads that text
+  as one typed app path (`mount_absolute_app_path`: escape-range code points literal, through the host's namer, so the
+  volume gets the text the bridge gave it; the host grammar first, then POSIX for a `/` root on Windows). Text that is
+  no app path (empty, relative, a `..` name, a NUL) is a per-file `Unreadable` skip; `//`, `.`, and a trailing `/` fold
+  to the canonical place. Pinned by `fetch/tests.rs`' `volume_fetch_reads_the_joined_text_as_one_app_path`.
 
 **Per-file errors never pause the pass (the second M1 defect).** Only a TYPED transport loss pauses
 (`VolumeError::DeviceDisconnected`/`ConnectionTimeout` on the direct path; a transport-loss errno set or the read
