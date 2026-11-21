@@ -1123,7 +1123,7 @@ included; the hidden couplings it found are why waves B and C differ from round 
   - **The codemod makes it boring** (review round 2). The flip is three artifacts, all on the branch:
     1. The hand-written trait change in `cmdr-fs` (`volume/mod.rs`, the in-process types beside it, and `cmdr-fs`'s own
        impls and tests), by the lead. Small and read in full.
-    2. `scripts/app-path-flip/` (Go, deleted by milestone 5): a compiler-driven fixpoint. It runs
+    2. The codemod (Go; removed with milestone 8, last in the tree at `4fcd2231d0`): a compiler-driven fixpoint. It runs
        `cargo check -p <crate> --all-targets --message-format=json`, and rewrites only the spans rustc points at, by
        error code: `E0053` on a `Volume` impl method (the param or return type: `&Path`→`&AppPath`,
        `&[PathBuf]`→`&[AppPathBuf]`, `PathBuf`→`AppPathBuf` with `.into_owned()` on the returned bridge), plus the body
@@ -1194,8 +1194,8 @@ included; the hidden couplings it found are why waves B and C differ from round 
        status or the lead's session), schedule it outside the nightly agent window, regenerate on the current `main`,
        run the full gate (below), and land. About two CI cycles, a few hours. No `pnpm land` of any other Rust-touching
        branch inside it.
-    3. After it lands, a branch that was in flight rebases and runs the same codemod (`scripts/app-path-flip/` stays
-       until milestone 5 for exactly this), then its own residue by hand.
+    3. After it lands, a branch that was in flight rebases and runs the same codemod (it stayed in the tree for exactly
+       this), then its own residue by hand.
   - **Rollback**: everything the gate runs, it runs BEFORE landing, so there's no post-land window to wait out. If
     something red shows up after the land, `git revert -m 1` the merge while it's still the tip (clean); once other work
     is on top, fix forward with a pin.
@@ -1208,9 +1208,10 @@ included; the hidden couplings it found are why waves B and C differ from round 
   flips either way is a finding).
 - **DONE**: no `Volume` method names `Path` except link targets; every impl compiles on all three OSes; bridge counts
   recorded per file; the audit reproduces and `residue.patch` is read and empty of logic.
-- **Tier 0 done** (2026-11-18, branch `worktree-agent-a6403541e656ed355`): artifact 1 (`cmdr-fs`), artifact 2
-  (`scripts/app-path-flip/`), and `cmdr-archive` as the worked example; the tier agents' runbook is
-  `docs/notes/windows-port/app-path-flip-handoff.md`. Where the code differed from this plan:
+- **Tier 0 done** (2026-11-18, branch `worktree-agent-a6403541e656ed355`): artifact 1 (`cmdr-fs`), artifact 2 (the
+  codemod), and `cmdr-archive` as the worked example; the tier agents' runbook was a handoff note in
+  `docs/notes/windows-port/`, removed with the codemod (both last at `4fcd2231d0`). Where the code differed from this
+  plan:
   - `local_path` flips to `Option<AppPathBuf>` (it's the volume's root, an app path); `read_link_target`'s answer and
     `create_symlink`'s `target` stay `Path`. "`CopyScanResult`'s `source_path`" is `ExtractedFile.source_path`.
   - The helpers beside the trait (`fold_batch`, `tally_by_listing`, `ScanBoundary::subtree`, `root_echo`,
@@ -1245,7 +1246,7 @@ included; the hidden couplings it found are why waves B and C differ from round 
   `to_app_path -> Option<AppPathBuf>`); `normalize_remote_path` stops using `Path::components` (server paths are POSIX,
   so a `/`-only normalizer); `app_paths.rs` folds into `AppPath` methods; `root_anchored` takes a wire string and
   returns `AppPathBuf` (callers with a typed path drop it); `scan_walk`, `patching`, `ids`, `twin_path`, `child_name`,
-  `in_memory` (root, overrides, link resolution) convert. All `cmdr-fs` bridges go. Delete `scripts/app-path-flip/` (its
+  `in_memory` (root, overrides, link resolution) convert. All `cmdr-fs` bridges go. Delete the codemod (its
   in-flight-branch window is over). ❗ `RemoteRoot` and `root_anchored` are `pub` and every backend calls them: per the
   wave-B rule, add the typed forms beside the old and leave the backends' calls to 6, 7, and 8.
 - **Intentions**: the shared vocabulary every backend builds on is correct on Windows.
@@ -1287,8 +1288,7 @@ included; the hidden couplings it found are why waves B and C differ from round 
   - `tally_by_listing`, `mkdir_all`, `root_echo`, `routed`: they read `FileEntry.path` text (10f).
   - `app_paths.rs`: its string helpers are right on Windows already and `AppPath` has the typed answers (`strip_prefix`,
     `rebase`, `is_on_volume`); it goes when its callers move (8: `cmdr-operation-log`, 10a, 10c/10d: the app).
-- **`scripts/app-path-flip/`** is removed once the open PRs that still merge `main` through its codemod have landed; the
-  lead triggers that.
+- **The codemod** stayed until no open PR merged `main` through it, and went with milestone 8, its handoff note too.
 - The three pin files' `#1225` comments stay: they pin `std::path`'s own answers, Unix-only by design.
 
 ### 6. Network backends: SFTP, WebDAV, S3, NFS
