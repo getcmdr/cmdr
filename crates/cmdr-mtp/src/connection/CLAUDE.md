@@ -10,7 +10,7 @@ The MTP session layer: opens devices, owns the per-device tokio task, exposes ty
   (`MtpDeviceEvents`), `volume_registrar.rs`, `session_reset.rs`, `connect_gate.rs` (single-flight `connect()`).
 - Ops: `directory_ops.rs` (listings), `twins.rs` (same-named rows), `resolve.rs` (path → handle), `bulk_ops.rs` (copy
   pre-scan), `handle_resolver.rs` (handle → path), `event_loop.rs` (per-device poll, feeding pane AND index),
-  `file_ops.rs` (reads, uploads), `mutation_ops.rs` (delete, create, rename, move).
+  `file_ops.rs` (reads, uploads), `mutation_ops.rs` (delete, create, rename, move), `storage_path.rs` (paths).
 
 ## Must-knows
 
@@ -29,9 +29,9 @@ The MTP session layer: opens devices, owns the per-device tokio task, exposes ty
 - **The caches lie in specific ways.** `resolve_path_to_handle()` heals a miss by re-listing parents, else answers a
   typed `ObjectNotFound`; ❌ never call it holding the device lock. `PathHandleCache` is bidirectional: write via
   `insert` / `remove_path` / `record_listing`, ❌ never `path_to_handle`. A destructive op checks the handle's
-  `ObjectInfo` against the path first (`mutation_ops.rs` module docs). Twins get a row path each; a path's folder is
-  `twins::folder_of`, ❌ never `Path::parent`; the shared name alone is `AmbiguousName`. `ListingCache`'s 5 s TTL
-  survives mutations; invalidate for read-after-write.
+  `ObjectInfo` against the path first (`mutation_ops.rs` module docs). Paths are typed (`storage_path.rs`, ❌ never
+  `std::path`); a twin's folder is `twins::folder_of`; the shared name alone is `AmbiguousName`. `ListingCache`'s 5 s
+  TTL survives mutations; invalidate for read-after-write.
 - **A batch copy scan shares its `ScanBoundary` with `bulk_ops.rs`**, consulting the stop per entry and BEFORE each
   child listing. Plain `scan_for_copy` uses a silent boundary. Selected-source progress: `../../DETAILS.md`.
 - **A suppressed event must win `EventDebouncer::claim_trailing` before re-emitting**: one per burst, never one per
