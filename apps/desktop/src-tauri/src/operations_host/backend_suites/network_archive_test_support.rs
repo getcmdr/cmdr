@@ -162,13 +162,16 @@ pub(super) async fn a_zip_inner_path_on_the_server_routes_as_inside_the_archive(
 
     assert!(
         get_volume_manager()
-            .path_is_inside_archive(&registered.id, &zip_path.join("dir/drop.txt"))
+            .path_is_inside_archive(
+                &registered.id,
+                &crate::test_support::native_app_path(zip_path.join("dir/drop.txt"))
+            )
             .await,
         "a zip-inner path on the server must route to the archive-edit driver"
     );
     assert!(
         !get_volume_manager()
-            .path_is_inside_archive(&registered.id, &zip_path)
+            .path_is_inside_archive(&registered.id, &crate::test_support::native_app_path(&zip_path))
             .await,
         "the `.zip` itself is a plain file, not archive-inner"
     );

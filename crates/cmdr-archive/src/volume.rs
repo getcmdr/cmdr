@@ -154,19 +154,7 @@ impl ArchiveVolume {
     /// [`Self::new`] for an app path: the archive at `archive_path` on `parent`.
     /// A local parent's backing file crosses to the OS at
     /// [`AppPath::to_native`].
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "the typed constructor the host switches to when its routing speaks app paths"
-        )
-    )]
-    pub(crate) fn new_at(
-        parent: Arc<dyn Volume>,
-        archive_path: AppPathBuf,
-        format: ArchiveFormat,
-        host: VolumeHost,
-    ) -> Self {
+    pub fn new_at(parent: Arc<dyn Volume>, archive_path: AppPathBuf, format: ArchiveFormat, host: VolumeHost) -> Self {
         let name = archive_path.file_name().unwrap_or_default().to_owned();
         let native = crate::boundary::native_of(&archive_path);
         Self::assemble(parent, archive_path, native, name, format, host)

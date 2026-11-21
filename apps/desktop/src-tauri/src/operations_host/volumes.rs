@@ -15,6 +15,14 @@ use crate::file_system::volume::manager::{get_volume_manager, path_routes_over_i
 use crate::unregistered_volumes::{Unregistered, why_unregistered};
 use cmdr_operations::host::{OperationVolumes, UnregisteredVolume, VolumeAnswer};
 
+/// A path the write engine asks about, as the routing seam reads it. The
+/// engine's routing questions (`OperationVolumes`) still hand `std::path`
+/// values, so they cross here once, through the bridge, byte for byte. Goes when
+/// that seam takes app paths (milestone 10d).
+fn engine_path(path: &Path) -> std::borrow::Cow<'_, cmdr_fs::app_path::AppPath> {
+    cmdr_fs::app_path::AppPath::legacy_unchecked(path)
+}
+
 /// The app's `VolumeManager`, plus `unregistered_volumes` for an id it doesn't
 /// hold.
 pub(crate) struct AppOperationVolumes;
@@ -33,7 +41,7 @@ impl VolumeLookup for AppOperationVolumes {
 
 impl OperationVolumes for AppOperationVolumes {
     fn resolve<'a>(&'a self, volume_id: &'a str, path: &'a Path) -> VolumeAnswer<'a, ResolvedVolume> {
-        Box::pin(get_volume_manager().resolve(volume_id, path))
+        Box::pin(async move { get_volume_manager().resolve(volume_id, &engine_path(path)).await })
     }
 
     fn routes_over_its_parent(&self, path: &Path) -> bool {
@@ -41,11 +49,19 @@ impl OperationVolumes for AppOperationVolumes {
     }
 
     fn path_is_inside_archive<'a>(&'a self, volume_id: &'a str, path: &'a Path) -> VolumeAnswer<'a, bool> {
-        Box::pin(get_volume_manager().path_is_inside_archive(volume_id, path))
+        Box::pin(async move {
+            get_volume_manager()
+                .path_is_inside_archive(volume_id, &engine_path(path))
+                .await
+        })
     }
 
     fn path_crosses_archive_boundary<'a>(&'a self, volume_id: &'a str, path: &'a Path) -> VolumeAnswer<'a, bool> {
-        Box::pin(get_volume_manager().path_crosses_archive_boundary(volume_id, path))
+        Box::pin(async move {
+            get_volume_manager()
+                .path_crosses_archive_boundary(volume_id, &engine_path(path))
+                .await
+        })
     }
 
     fn find_by_root(&self, root: &Path) -> Option<(String, Arc<dyn Volume>)> {
@@ -95,7 +111,11 @@ mod tests {
         let path = PathBuf::from("/a/plain/file.txt");
         let resolved = volumes.resolve(volume_id, &path).await;
         assert!(resolved.volume.as_ref().is_some_and(|v| Arc::ptr_eq(v, &volume)));
-        assert_eq!(*resolved.path.as_std_legacy(), path);
+        assert_eq!(
+            resolved.path.as_str(),
+            "/a/plain/file.txt",
+            "the path comes back as sent"
+        );
         assert!(!resolved.is_routed());
         assert!(!volumes.routes_over_its_parent(&path));
 

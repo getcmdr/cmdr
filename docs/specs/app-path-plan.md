@@ -2065,9 +2065,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
     `std::path` arithmetic (#1314 item 1) went typed with `resolve_typed` and `Volume::parent_for_dot_dot` in the second
     behavior-change step (below).
   - **The routing seam**: `VolumeManager::resolve(volume_id, &Path)` and its `ResolvedVolume.path` built by
-    `legacy_unchecked` (archive, git, restic routes) is the next mechanical step; it takes most of the manager's
-    remaining bridges and the routing tests' with it. `mount_id_for_path` keeps `Path`'s `starts_with` on its caller's
-    text (a `..` included) until its callers (index routing, 10d's `inspect` tools) pass app paths.
+    `legacy_unchecked` (archive, git, restic routes) went typed (below, "The routing seam went typed").
+    `mount_id_for_path` keeps `Path`'s `starts_with` on its caller's text (a `..` included) until its callers (index
+    routing, 10d's `inspect` tools) pass app paths.
   - **The text exits** (`commands/importance.rs`, `media_index/`, `volume_copy`'s root echo:
     `as_std_legacy() .to_string_lossy()`): an app path's own text differs for a Linux name that isn't UTF-8 while
     `ESCAPES_LIVE` is false, so they wait for 10f's type-level gate, as in 10a.
@@ -2166,6 +2166,35 @@ included; the hidden couplings it found are why waves B and C differ from round 
     too. Any allowed-roots rule 10d enforces must check the RESOLVED place (its canonical form, links included), ❌
     never the typed text. The MCP `nav_to_path` refuses a `..` today (first commit's review round); 10d replaces that
     refusal with this door, so an agent's `..` lands where the volume says, never on a pane path holding one.
+- **The routing seam went typed** (2026-11-21, branch `worktree-agent-a47eecf73006454cd`). `VolumeManager::resolve`,
+  `resolve_to_list`, `resolve_local_only`, and the two archive predicates take `&AppPath`; `ResolvedVolume.path` is the
+  caller's app path (`ResolvedVolume::passthrough_at`; the `&Path` `passthrough` stays for the engines' host traits).
+  The archive route confirms and mints typed (`cmdr_archive::confirm_archive_boundary_on_parent`,
+  `confirm_remote_archive_boundary`, `confirm_archive_boundary_at`, `ArchiveVolume::new_at`; the `std::path` forms of
+  the three confirms left the crate's surface, and `index-crate-isolation`'s `SubsystemItems` rose 32 → 33 for `new_at`,
+  as `crates/cmdr-archive/DETAILS.md` foresaw). An archive inside a snapshot is found by
+  `archive_routing::archive_below` (typed ancestors under the view's root). The archive registry id hashes the native
+  canonical file (`to_native`), or the app text for a scheme path; `forget_archive_index` crosses the engine's `&Path`
+  once and lands on the same id (pinned). Archive routing cells are typed over `AppTestDir`, so the 11 Windows S cells
+  over `resolve`'s seam (`archive_routing::tests::*`, `archive_watch_integration_test`) read `C:/…`.
+  - **Byte-exact on macOS and Linux for real input**: the git and restic candidates read the same `std::path` spelling
+    as before (`routing::lexical_spelling`, one crossing), so the boundaries' order is unchanged; the archive split is
+    `archive_boundary_candidate_at`, which agrees with the `std::path` split on every canonical path
+    (`crates/cmdr-archive/DETAILS.md`'s differential run). The viewer's `as_volume_calls_spell_it` (bridge out and back)
+    folded into one crossing of the request, the identity it already was.
+  - **Callers that read wire text now read it typed at the edge**: `stat_paths_kinds`' route (`wire_path::app_path`),
+    the unlock commands and the MCP `unlock` tool (`wire_path::on_volume`: a `..` or relative path refuses as
+    `UnlockError::Volume`), the probes' volume pick (`path_checks::box_volume`: `read_on_volume`, else the volume by
+    id), and `resolve_location`'s archive split (`confirm_archive_boundary_at`, then `to_native`).
+  - **Crossings added at seams, one named helper each** (the lead's rule for this refactor: each listed with who removes
+    it): `routing::lexical_spelling` (until `cmdr_git::portal_route` and `cmdr_fs::restic_view` take app paths;
+    `cmdr-git`'s surface is capped, David's call), `listing_host/volumes.rs::listing_path` (step 3 below, the listing
+    engine's paths), `operations_host/volumes.rs::engine_path` and `wire_path::checked_as_app_path` (10d, the write
+    engine's host trait and starts), `about/through.rs::row_as_app_path` (10f, with `through.rs`'s rows, #1310), and
+    10d's `inspect/archive.rs::agent_text_as_app_path`, `multi_rename/app_host.rs::rename_dir_as_app_path`,
+    `listing_index_sizes/count/mod.rs::counted_dir_as_app_path`. Bridge calls workspace-wide 1,105 → 1,102 (the route
+    files: `archive_routing.rs` 8 → 2, `restic_routing.rs` and `boundary_on_parent.rs` gone).
+  - `path_routes_over_its_parent` (the lexical gate) keeps `&Path`; its callers hold `std::path` values today.
 
 ### 10d. The app, part two: operations host, tools, and the rest
 

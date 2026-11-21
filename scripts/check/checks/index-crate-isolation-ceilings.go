@@ -337,7 +337,9 @@ var surfaceGuardedCrates = []struct {
 		//     included (`boundary`, 7 of the root promises),
 		//   - the reading core the host's archive-edit driver and file viewer parse
 		//     and stream through (`read`, 23 of them),
-		//   - `ArchiveVolume` itself, plus `mutator` and `active_watch_count`.
+		//   - `ArchiveVolume` itself (with both constructors: `new_at`, the typed one the
+		//     host routes with since 10c, beside `new`, which goes with its last
+		//     `std::path` caller), plus `mutator` and `active_watch_count`.
 		//
 		// Four public modules is the whole module tree a host can name a path into:
 		// `boundary`, `read`, `volume`, `watch`. `mutation` is private and reaches the
@@ -347,7 +349,7 @@ var surfaceGuardedCrates = []struct {
 		Ceilings: surfaceCeilings{
 			RootPromises:   33,
 			PublicModules:  4,
-			SubsystemItems: 32,
+			SubsystemItems: 33,
 		},
 	},
 	{

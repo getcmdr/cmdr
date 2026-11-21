@@ -118,10 +118,16 @@ pub(crate) async fn backed_up_drive(tag: &str, files: &[SourceFile], no_bytes: &
 }
 
 impl BackedUpDrive {
+    /// The repo's `Browse snapshots` row, its scratch dir crossed once.
+    pub(crate) fn view_path(&self) -> cmdr_fs::app_path::AppPathBuf {
+        cmdr_fs::app_path::AppPathBuf::from_native_unicode(&self.repo.join(VIRTUAL_ENTRY_NAME))
+            .expect("a scratch dir has a Unicode name")
+    }
+
     /// The view the route serves for this repo.
     pub(crate) async fn view(&self) -> Arc<dyn Volume> {
         get_volume_manager()
-            .resolve(&self.volume_id, &self.repo.join(VIRTUAL_ENTRY_NAME))
+            .resolve(&self.volume_id, &self.view_path())
             .await
             .volume
             .expect("the route serves the repo's view")

@@ -2,7 +2,7 @@
 //! the platform's name and path limits, which names a folder's filesystem takes, and
 //! whether a path exists on its volume.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use tokio::time::Duration;
 
@@ -139,6 +139,18 @@ enum Spelling {
     AnyForm,
 }
 
+/// The volume serving a path probe's or the transfer box's text: routed through
+/// the registry (`resolve`, so an archive-inner path reaches the archive) when
+/// the text reads as an app path, else the volume registered under `volume_id`.
+/// Text that doesn't read as one (a `..`, a relative path) has no typed anchor
+/// either, so its probe answers "couldn't tell" whichever volume this names.
+pub(crate) async fn box_volume(volume_id: &str, text: &str) -> Option<std::sync::Arc<dyn cmdr_fs::volume::Volume>> {
+    match crate::commands::wire_path::read_on_volume(text) {
+        Ok(path) => get_volume_manager().resolve(volume_id, &path).await.volume,
+        Err(_) => get_volume_manager().get(volume_id),
+    }
+}
+
 async fn exists_on_volume(volume_id: Option<String>, path: String, spelling: Spelling) -> TimedOut<bool> {
     let volume_id = volume_id.unwrap_or_else(|| crate::volumes::local_volume_id_for_path(&path));
 
@@ -146,11 +158,7 @@ async fn exists_on_volume(volume_id: Option<String>, path: String, spelling: Spe
     let expanded_path = if volume_id == "root" { expand_tilde(&path) } else { path };
 
     // Resolve so an archive-inner path checks existence inside the `.zip`.
-    if let Some(volume) = get_volume_manager()
-        .resolve(&volume_id, Path::new(&expanded_path))
-        .await
-        .volume
-    {
+    if let Some(volume) = box_volume(&volume_id, &expanded_path).await {
         // On a remote volume an immediate `Absent` may be the session
         // dying (`clone_session` returns `Err`) rather than the path actually missing.
         // Snapshot whether this volume HAS a session, so the answer can be re-checked

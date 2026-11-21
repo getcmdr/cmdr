@@ -453,9 +453,14 @@ pub async fn set_listing_name_filter(
 /// cache entry, or a watcher that admits it misses writes.
 async fn watcher_backed_listing_path(listing_id: &str) -> Option<PathBuf> {
     let (volume_id, path) = listings().location(&ListingId::new(listing_id))?;
-    let volume = get_volume_manager().resolve(&volume_id, &path).await.volume?;
-    let watcher_sees_every_writer = volume.local_path().is_none()
-        && volume.listing_watch_coverage(&AppPath::legacy_unchecked(&path)) == WatchCoverage::EveryWriter;
+    // The engine keeps a listing's location as a `PathBuf`: crossed once, for the
+    // route and the watch question both.
+    let resolved = get_volume_manager()
+        .resolve(&volume_id, &AppPath::legacy_unchecked(&path))
+        .await;
+    let volume = resolved.volume?;
+    let watcher_sees_every_writer =
+        volume.local_path().is_none() && volume.listing_watch_coverage(&resolved.path) == WatchCoverage::EveryWriter;
     watcher_sees_every_writer.then_some(path)
 }
 

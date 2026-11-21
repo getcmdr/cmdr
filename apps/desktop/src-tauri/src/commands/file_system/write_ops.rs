@@ -57,7 +57,7 @@ async fn scan_preview_source_volume(
         // A deadline here degrades to the parent volume below, which reaches a
         // terminal outcome the ordinary way.
         let owned_id = volume_id.to_string();
-        let owned_source = first_source.expect("candidate implies a source").clone();
+        let owned_source = wire_path::checked_as_app_path(first_source.expect("candidate implies a source"));
         let resolved = timeout_detached_typed(
             Duration::from_secs(15),
             || DeadlineError::TimedOut,

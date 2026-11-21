@@ -95,21 +95,30 @@ pub struct ResolvedVolume {
 
 impl ResolvedVolume {
     /// An unrouted resolve: the requested volume (if any), path unchanged.
-    pub fn passthrough(volume: Option<Arc<dyn Volume>>, path: &Path) -> Self {
+    pub fn passthrough_at(volume: Option<Arc<dyn Volume>>, path: &AppPath) -> Self {
         Self {
             volume,
-            path: AppPath::legacy_unchecked(path).into_owned(),
+            path: path.to_owned(),
             routed: None,
             unconfirmed: None,
         }
     }
 
+    /// [`passthrough_at`](Self::passthrough_at) for a host seam that still hands
+    /// a `std::path` value (the write engine's and the browser build's
+    /// `OperationVolumes`, the listing engine's test doubles): the path crosses
+    /// through the bridge, byte for byte. Goes when those seams take app paths
+    /// (milestone 10d).
+    pub fn passthrough(volume: Option<Arc<dyn Volume>>, path: &Path) -> Self {
+        Self::passthrough_at(volume, &AppPath::legacy_unchecked(path))
+    }
+
     /// A passthrough over a path where the `kind` route couldn't decide: reads
     /// go to the drive, writes refuse ([`unconfirmed`](Self::unconfirmed)).
-    pub fn undecided(volume: Option<Arc<dyn Volume>>, path: &Path, kind: RoutedKind) -> Self {
+    pub fn undecided(volume: Option<Arc<dyn Volume>>, path: &AppPath, kind: RoutedKind) -> Self {
         Self {
             unconfirmed: Some(kind),
-            ..Self::passthrough(volume, path)
+            ..Self::passthrough_at(volume, path)
         }
     }
 

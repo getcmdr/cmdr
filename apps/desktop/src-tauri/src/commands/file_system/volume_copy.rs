@@ -16,7 +16,6 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::time::Duration;
 
-use crate::file_system::volume::manager::get_volume_manager;
 use cmdr_fs::deadline::{Deadline, timeout_detached_typed};
 use cmdr_operation_log::types::Initiator;
 
@@ -197,11 +196,7 @@ pub async fn compress_files(
 pub async fn destination_write_access(dest_volume_id: String, dest_path: String) -> cmdr_fs::volume::WriteAccess {
     use cmdr_fs::volume::WriteAccess;
 
-    let Some(dest_volume) = get_volume_manager()
-        .resolve(&dest_volume_id, Path::new(&dest_path))
-        .await
-        .volume
-    else {
+    let Some(dest_volume) = super::path_checks::box_volume(&dest_volume_id, &dest_path).await else {
         return WriteAccess::Unknown;
     };
     // `resolve_dest_path`'s anchor, typed: a local `~` expands, and a trailing `/` goes.
@@ -247,10 +242,7 @@ pub struct DestinationRootEcho {
 #[tauri::command]
 #[specta::specta]
 pub async fn destination_root_echo(dest_volume_id: String, dest_path: String) -> Option<DestinationRootEcho> {
-    let dest_volume = get_volume_manager()
-        .resolve(&dest_volume_id, Path::new(&dest_path))
-        .await
-        .volume?;
+    let dest_volume = super::path_checks::box_volume(&dest_volume_id, &dest_path).await?;
     let echo = cmdr_fs::volume::root_echo(&dest_volume.root().as_std_legacy(), Path::new(&dest_path))?;
     Some(DestinationRootEcho {
         root_folder: echo.root_folder.as_std_legacy().to_string_lossy().into_owned(),

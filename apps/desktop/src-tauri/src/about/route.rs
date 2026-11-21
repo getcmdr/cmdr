@@ -482,7 +482,7 @@ async fn routed_on_pool(drive: &Asked, path: &str) -> Routed {
     let path = path.to_string();
     super::pool::submit(Box::new(move || {
         crate::file_system::framework_pool::note_activity("resolve the route", "probe");
-        let resolved = runtime.block_on(get_volume_manager().resolve(&volume_id, Path::new(&path)));
+        let resolved = runtime.block_on(get_volume_manager().resolve(&volume_id, &through::row_as_app_path(&path)));
         let routed = match (resolved.routed, resolved.volume) {
             (Some(routed), Some(volume)) => Routed::View {
                 routed,
