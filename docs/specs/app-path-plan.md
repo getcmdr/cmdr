@@ -2196,6 +2196,13 @@ included; the hidden couplings it found are why waves B and C differ from round 
     `listing_index_sizes/count/mod.rs::counted_dir_as_app_path`. Bridge calls workspace-wide 1,105 → 1,102 (the route
     files: `archive_routing.rs` 8 → 2, `restic_routing.rs` and `boundary_on_parent.rs` gone).
   - `path_routes_over_its_parent` (the lexical gate) keeps `&Path`; its callers hold `std::path` values today.
+  - **Windows not run on the builder this step** (it was busy): the routing cells are expected green, the TSV's `rerun`
+    column still says `red@ff3c3e0eab`. `clippy-windows` is green.
+  - **Not started, still 10c's**: the listing host's MTP and SMB `&Path` seams (`ListingHost::directory_changed`, a
+    `cmdr-fs` host trait every backend crate calls: `cmdr-smb`, `cmdr-mtp`, `cmdr-nfs`, `cmdr-local`, `cmdr-fs`'s
+    patching, the browser host), `cmdr-listing`'s crossings with `ListingVolumes` (typing its `resolve` needs the
+    engine's listing locations typed first, or `streaming.rs` gains a second crossing), and `CoveredEntry.path`
+    (`cmdr-index`'s, read by 10d's `search/`).
 
 ### 10d. The app, part two: operations host, tools, and the rest
 
