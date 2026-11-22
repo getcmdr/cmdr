@@ -195,6 +195,76 @@ async fn a_write_through_a_link_onto_another_volume_is_refused_with_where_it_lea
     );
 }
 
+/// A volume registered under a root that sits behind a link (`/tmp/x` is `/private/tmp/x` on
+/// macOS; a `subst` drive or a mapped share on Windows) still holds its own folders: the
+/// physical place is compared against the root's OWN physical place, never its spelling.
+/// And a link from it onto a volume nested inside that physical root still refuses.
+#[tokio::test]
+async fn a_volume_behind_a_link_aliased_root_holds_its_own_writes() {
+    if skip_without_symlinks() {
+        return;
+    }
+    let (dir, a, _b) = linked_volumes("agent_path_aliased_root");
+    let native = fs::canonicalize(dir.native()).expect("canonical");
+    symlink(native.join("a"), native.join("alias")).expect("alias");
+    fs::create_dir_all(native.join("a").join("nested")).expect("a/nested");
+    symlink(
+        native.join("a").join("nested"),
+        native.join("a").join("real").join("to_nested"),
+    )
+    .expect("to_nested");
+    let alias = at(&AppPathBuf::from_native(&native).expect("an app path"), "alias");
+    let nested = at(&a, "nested");
+    let host = two_volumes(&alias, &nested);
+
+    let real = at(&alias, "real/new");
+    assert_eq!(
+        door(real.as_str(), Use::WriteTarget, &host)
+            .await
+            .expect("on the aliased volume"),
+        real.as_str()
+    );
+    assert_eq!(
+        door(at(&alias, "real").as_str(), Use::WriteSource, &host)
+            .await
+            .expect("a source there"),
+        at(&alias, "real").as_str()
+    );
+    // Off it through `link`, onto `b` (the disk's, here): refused.
+    let refusal = door(at(&alias, "link/x").as_str(), Use::WriteTarget, &host)
+        .await
+        .expect_err("onto b");
+    assert_eq!(refusal.token(), "pathLeadsOffVolume");
+    // Onto the volume nested in its physical root: refused, with where it leads.
+    match door(at(&alias, "real/to_nested/x").as_str(), Use::WriteTarget, &host).await {
+        Err(Refusal::LeadsOffVolume { resolved }) => assert_eq!(resolved, at(&nested, "x")),
+        other => panic!("expected a refusal, got {other:?}"),
+    }
+}
+
+/// A physical place under a name that isn't Unicode compares by its nearest Unicode ancestor,
+/// so a link onto another volume's raw-byte folder can't pass as "nothing to compare".
+#[test]
+fn a_non_unicode_physical_name_compares_by_its_nearest_unicode_ancestor() {
+    #[cfg(unix)]
+    let (raw, ancestor) = {
+        use std::os::unix::ffi::OsStrExt;
+        (
+            PathBuf::from(std::ffi::OsStr::from_bytes(b"/vol/b/caf\xff/deeper")),
+            "/vol/b",
+        )
+    };
+    #[cfg(windows)]
+    let (raw, ancestor) = {
+        use std::os::windows::ffi::OsStringExt;
+        let mut path = PathBuf::from("C:\\vol\\b");
+        path.push(std::ffi::OsString::from_wide(&[0x63, 0xD800]));
+        path.push("deeper");
+        (path, "C:/vol/b")
+    };
+    assert_eq!(physical_app_path(&raw).expect("an ancestor").as_str(), ancestor);
+}
+
 fn local_fact(id: &str, root: &AppPath) -> VolumeFact {
     VolumeFact {
         id: id.to_string(),
@@ -297,6 +367,37 @@ async fn a_scope_resolves_its_paths_and_keeps_its_patterns() {
     assert_eq!(typed["scope"], json!(format!("{base}/y, !node_modules, !{base}/y/z")));
 }
 
+/// The door splits a scope as the search parser does (quotes, `\,`), so no `..` hides in a part
+/// it misreads, and it re-spells each part so the parser reads back what the door resolved, a
+/// comma in a name included.
+#[tokio::test]
+async fn a_scope_reads_quotes_and_escapes_as_the_search_parser_does() {
+    let dir = AppTestDir::new("agent_path_scope_quoted");
+    let base = dir.app_path().as_str();
+    let cases = [
+        (
+            format!("{base}/a\\,b/../c"),
+            vec![format!("{base}/c")],
+            Vec::<String>::new(),
+        ),
+        (format!("\"{base}/x,y/../z\""), vec![format!("{base}/z")], Vec::new()),
+        (
+            format!("'{base}/p,q/./r', !~backup"),
+            vec![format!("{base}/p,q/r")],
+            vec!["~backup".to_string()],
+        ),
+    ];
+    for (scope, includes, excludes) in cases {
+        let params = json!({ "scope": scope });
+        let typed = typed_params_over(fields("search"), &params, &disk())
+            .await
+            .unwrap_or_else(|err| panic!("{scope}: {err:?}"));
+        let read = cmdr_search::query::parse_scope(typed["scope"].as_str().expect("a scope"), None);
+        assert_eq!(read.include_paths, includes, "{scope}");
+        assert_eq!(read.exclude_patterns, excludes, "{scope}");
+    }
+}
+
 #[tokio::test]
 async fn await_reads_its_value_as_a_path_only_for_the_path_condition() {
     let dir = AppTestDir::new("agent_path_await");
@@ -346,6 +447,17 @@ fn path_shaped_pointers(schema: &Value, at: &str, out: &mut Vec<String>) {
     }
     if let Some(items) = schema.get("items") {
         path_shaped_pointers(items, &format!("{at}/*"), out);
+    }
+    // A branch of a composed schema describes the same value, so its properties sit at `at`.
+    for key in ["oneOf", "anyOf", "allOf"] {
+        for branch in schema.get(key).and_then(Value::as_array).into_iter().flatten() {
+            path_shaped_pointers(branch, at, out);
+        }
+    }
+    // A free-form object's values have no name the door could declare: a schema holding one
+    // fails here, so a path can't hide under a key nobody wrote down.
+    if let Some(open) = schema.get("additionalProperties").filter(|value| value.is_object()) {
+        out.push(format!("{at}/<additionalProperties: {open}>"));
     }
 }
 

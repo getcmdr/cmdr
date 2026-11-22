@@ -270,32 +270,47 @@ fn concrete_pointers(params: &Value, pattern: &str) -> Vec<String> {
     found
 }
 
-/// A scope string with each absolute part resolved; patterns and the `!` marks stay.
+/// A scope string with each absolute part resolved; patterns and the `!` marks stay. Split and
+/// re-spelled by the search parser's own rules (`cmdr_search::query`: quotes, `\` escapes), so
+/// a `..` can't hide in a quoted or escaped part, and a resolved name holding a `,` reads back
+/// as one part.
 async fn typed_scope(text: &str, host: &AppHost, pointer: &str) -> Result<String, ToolError> {
+    use cmdr_search::query::{escape_scope_value, parse_scope, split_scope_segments};
     let mut parts = Vec::new();
-    for part in text.split(',') {
-        let leading = &part[..part.len() - part.trim_start().len()];
-        let trimmed = part.trim();
+    for segment in split_scope_segments(text) {
+        let trimmed = segment.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
         let (mark, body) = match trimmed.strip_prefix('!') {
             Some(body) => ("!", body.trim_start()),
             None => ("", trimmed),
         };
-        if !looks_absolute(body) {
-            parts.push(part.to_string());
-            continue;
-        }
-        let typed = agent_path(body, Use::Read, host)
-            .await
-            .map_err(|refusal| refusal.into_error(pointer, body))?;
-        parts.push(format!("{leading}{mark}{typed}"));
+        let typed = if looks_absolute(body) {
+            agent_path(body, Use::Read, host)
+                .await
+                .map_err(|refusal| refusal.into_error(pointer, body))?
+        } else {
+            body.to_string()
+        };
+        parts.push(format!("{mark}{}", escape_scope_value(&typed)));
     }
-    Ok(parts.join(","))
+    let typed = parts.join(", ");
+    // Unchanged in meaning: hand the agent's own spelling on.
+    let (before, after) = (parse_scope(text, None), parse_scope(&typed, None));
+    if before.include_paths == after.include_paths && before.exclude_patterns == after.exclude_patterns {
+        return Ok(text.to_string());
+    }
+    Ok(typed)
 }
 
-/// Whether a scope part is a path rather than a pattern: `/…`, `~`, a scheme, or a drive.
+/// Whether a scope part is a path rather than a pattern: `/…`, `~` or `~/…`, a scheme, or a
+/// drive. A `~name` is a pattern, as the search reads a bare name. (The search parser has
+/// already read every `\` as an escape, so no `~\…` reaches here.)
 fn looks_absolute(text: &str) -> bool {
     text.starts_with('/')
-        || text.starts_with('~')
+        || text == "~"
+        || text.starts_with("~/")
         || text.starts_with('\\')
         || is_scheme_url(text)
         || (text.len() >= 2 && text.as_bytes()[1] == b':' && text.as_bytes()[0].is_ascii_alphabetic())
@@ -345,25 +360,46 @@ fn posix_shaped(text: &str) -> bool {
 
 /// The physical place of `path` when it sits on another volume than its text does, else
 /// `None`. Only a local path has a physical place to read here: a scheme path's links are
-/// its server's, and SFTP's `..` already refuses a target off its root. Both places are
-/// matched against the registry's roots by text, which holds because a mount root is the
-/// OS's canonical spelling (so `/tmp/x`, physically `/private/tmp/x`, is the boot disk's
-/// either way).
+/// its server's, and SFTP's `..` already refuses a target off its root.
+///
+/// Same volume when the registry's roots holding both places match by text, or when the
+/// physical place sits under the text volume's OWN physical root with no other registered
+/// root nested between: a root registered behind a link (`/tmp/x` is `/private/tmp/x` on
+/// macOS; a `subst` drive or a mapped share, which `canonicalize` spells `\\?\UNC\…`, on
+/// Windows) then still holds its own folders, and a link onto a volume mounted inside it
+/// still refuses. Fails closed: a walk that can't finish (its task gone, the deadline
+/// passed) is `Unanswered`.
 async fn off_volume(path: &AppPath, follow_last: bool, host: &AppHost) -> Result<Option<AppPathBuf>, Refusal> {
     let Ok(native) = path.to_native() else {
         return Ok(None);
     };
-    let physical = host
+    let text_root = host.root_holding(path);
+    let root_native = text_root.as_deref().and_then(|root| root.to_native().ok());
+    let unanswered = |err: VolumeError| Refusal::Typed(TypedPathRefusal::Unanswered(err));
+    let (physical, physical_root) = host
         .within(async move {
-            let walk = tokio::task::spawn_blocking(move || physical_native(&native, follow_last));
-            Ok(walk.await.ok().flatten())
+            let walk = tokio::task::spawn_blocking(move || {
+                let root = root_native.and_then(|root| std::fs::canonicalize(root).ok());
+                (physical_native(&native, follow_last), root)
+            });
+            walk.await.map_err(|err| VolumeError::IoError {
+                message: format!("the link walk stopped: {err}").into(),
+                raw_os_error: None,
+            })
         })
         .await
-        .map_err(|err: VolumeError| Refusal::Typed(TypedPathRefusal::Unanswered(err)))?;
+        .map_err(unanswered)?;
     let Some(physical) = physical.and_then(|p| physical_app_path(&p)) else {
         return Ok(None);
     };
-    if host.root_holding(&physical) == host.root_holding(path) {
+    let held_by = host.root_holding(&physical);
+    if held_by == text_root {
+        return Ok(None);
+    }
+    if let Some(physical_root) = physical_root.and_then(|p| physical_app_path(&p))
+        && physical.is_on_volume(&physical_root)
+        && !held_by.is_some_and(|held| held != physical_root && held.is_on_volume(&physical_root))
+    {
         return Ok(None);
     }
     Ok(Some(physical))
@@ -395,9 +431,22 @@ fn physical_native(native: &Path, follow_last: bool) -> Option<PathBuf> {
     Some(physical)
 }
 
-/// A physical native path as an app path, for the comparison only. `None` for a name that
-/// isn't Unicode: no comparison, so no refusal.
+/// A physical native path as an app path, for the comparison only. A name that isn't Unicode
+/// (a share's or an ext4 disk's raw bytes) has no app spelling while escapes aren't live, so
+/// its nearest Unicode ancestor stands in: every registered root is an app path, so the
+/// volume holding that ancestor is the one holding the place, and a link onto another
+/// volume's non-Unicode folder can't pass as "no comparison".
 fn physical_app_path(physical: &Path) -> Option<AppPathBuf> {
+    let mut place = physical;
+    loop {
+        if let Some(found) = unicode_app_path(place) {
+            return Some(found);
+        }
+        place = place.parent()?;
+    }
+}
+
+fn unicode_app_path(physical: &Path) -> Option<AppPathBuf> {
     let mut names = Vec::new();
     let mut base = physical;
     // A verbatim root (`\\?\C:\`) parses whole; its names join one by one.

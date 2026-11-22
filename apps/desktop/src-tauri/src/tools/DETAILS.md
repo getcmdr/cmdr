@@ -258,9 +258,13 @@ or a handler reads it. Handlers keep reading strings; the strings are the resolv
   registered volume than the text: the review would otherwise show one disk while the write lands on another. Reads
   follow links as the OS does; the content gate realpaths on its own (§ The sensitive-content gate). Local paths only:
   a scheme path's links are its server's, and SFTP's `..` refuses a target off its root already. The comparison
-  matches registry roots by text, which holds because mount roots are canonical.
-- **Which fields** is `fields(tool)`: JSON pointers with `*` over arrays, plus a scope string (comma-separated, `!`
-  excludes, only absolute parts resolved) and `await`'s `value` under `condition: "path"`.
+  is by volume: the same registry root holds both places, or the physical place sits under the text volume's OWN
+  physical root with no other registered root nested between (a root registered behind a link, `/tmp/x` on macOS, a
+  `subst` drive or a mapped share on Windows, still holds its own folders). A non-Unicode physical name compares by
+  its nearest Unicode ancestor, and a walk that can't finish refuses `pathUnanswered`.
+- **Which fields** is `fields(tool)`: JSON pointers with `*` over arrays, plus a scope string (split and re-spelled by the search parser's own rules,
+  `cmdr_search::query::split_scope_segments` and `escape_scope_value`, so a quoted or `\,`-escaped part can't hide a
+  `..`; `!` excludes; only absolute parts resolved, a `~name` staying a pattern) and `await`'s `value` under `condition: "path"`.
   `every_path_shaped_schema_property_is_a_declared_field` walks every schema for `path`, `paths`, `sourcePath`,
   `under`, `scope`, and `parent`, so a new one is declared or listed as no app path with why (the memory tools' jailed
   relative path, `eject`'s enum, `propose_server`'s remote root). Cells: `agent_path_tests.rs`, real links over
