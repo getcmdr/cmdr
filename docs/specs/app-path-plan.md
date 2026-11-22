@@ -2252,11 +2252,30 @@ included; the hidden couplings it found are why waves B and C differ from round 
     approval refuses `TargetMissing`). While `ESCAPES_LIVE` is false a destination holding an escape-range code point is
     refused at creation (the starts read it back as a `PathBuf`); 10f lifts it.
   - Bridge: `inspect/archive.rs::agent_text_as_app_path` gone (the route reads the resolved text as an app path).
-  - **Not done, still 10d's**: `operations_host/`'s engine seams (`engine_path`, `wire_path::checked_as_app_path`: the
-    write engine's host trait and starts still take `PathBuf`s), `multi_rename/app_host.rs::rename_dir_as_app_path`,
-    `listing_index_sizes/count/`, `search/`, `services_menu/`, the Windows `multi_rename/` cells, and `read_resource`'s
-    `cmdr://importance?path=` query (a resource URI the door doesn't parse). The Linux non-UTF-8 `unaddressable` /
-    `AmbiguousName` cells wait for 10f's producers.
+  - The Linux non-UTF-8 `unaddressable` / `AmbiguousName` cells wait for 10f's producers.
+- **Second step done** (2026-11-22, branch `worktree-agent-af2ac782e654b358b`):
+  - **The scan preview's route** reads its first source through `wire_path::app_path`; `checked_as_app_path` is gone.
+  - **`cmdr://importance?path=` and `&under=`** pass the door (`resources/importance.rs::typed_query` over
+    `agent_path::read_path`, a refusal the tools' typed error via `ResourceError::Path`); the resource's own `$HOME`
+    tilde is gone (the door spells home as the app path, which the Windows cell needed).
+  - **#1354, two of five**: a review re-runs the door's `WriteTarget` walk per render (`write_lands_off_volume`) and the
+    card names `destinationLandsOn` (disclosure, never an execution refusal); an escape-range destination refuses
+    `destinationNameUnsupported` (`UnwritableDestination`), no longer the archive message.
+  - **`listing_index_sizes/count/measure.rs`** types both seams (the local root crosses at `to_native_plain`, the volume
+    scan parses the row text with `from_literal_store` / POSIX); `search/`'s test bridges are typed.
+  - Bridge calls workspace-wide 1,100 → 1,091; the app's 351.
+  - **Left, and why**: `operations_host/volumes.rs::engine_path` stays: `OperationVolumes` is `cmdr-operations`' trait
+    and its ~15 engine callers hold `PathBuf`s (sources, temps, ledger rows), so typing it moves the crossing into the
+    engine and grows the total; it goes with the engine's starts (`move_files_start` and friends taking app paths), a
+    `cmdr-operations` effort. `multi_rename/app_host.rs::rename_dir_as_app_path` and
+    `listing_index_sizes/count/mod.rs::counted_dir_as_app_path` read `cmdr-listing`'s `PathBuf` location (10c's
+    `listings().location()` leftover). `search/volumes.rs`'s and `tools/connect.rs`'s `to_string_lossy` text exits are
+    10f's. `services_menu/` carries app text in `PathBuf`s from `menu/`'s `MenuState.context.paths` to the pasteboard
+    (an OS exit): it types with `menu/`. The Windows `multi_rename/` "dir lists" cells pass on the hosted lane already
+    (none in `ci-known-failures.tsv`); `tools::actions::multi_rename::…a_proposal_stages…` (cluster S) stays. #1337
+    stays open: it needs a `TypedPathHost` long-name step inside the resolve deadline, a placement call.
+  - **The DONE line is not met**: 351 app bridge calls remain, 242 in `operations_host/` (the backend suites, which also
+    hold the WebDAV and NFS `scratch_dir` twins' last callers), 52 `file_system/`, 12 `network/`.
 
 ### 10f. The escape lands
 
