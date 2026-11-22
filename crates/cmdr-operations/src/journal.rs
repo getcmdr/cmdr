@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
 #[cfg(not(target_family = "wasm"))]
-use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
+use cmdr_fs::app_path::{AppPathBuf, PathArithmetic};
 use cmdr_fs::app_path::{PathFlavor, is_scheme_url};
 use cmdr_fs::volume::{DEFAULT_VOLUME_ID, LandedModified, NodeIdentity};
 use cmdr_operation_log::capture::FinalizeInputs;
@@ -143,7 +143,7 @@ fn separated(path: &Path) -> std::borrow::Cow<'_, Path> {
 /// A native end's app split, or `None` for one the non-escaping door refuses.
 #[cfg(not(target_family = "wasm"))]
 fn native_split(path: &Path) -> Option<(String, String)> {
-    AppPathBuf::from_native_unicode(path).ok().map(|app| app_split(&app))
+    AppPathBuf::from_native_unicode(path).ok().map(app_split)
 }
 
 /// The browser build has no native paths: its every volume is in memory or remote.
@@ -152,11 +152,18 @@ fn native_split(_path: &Path) -> Option<(String, String)> {
     None
 }
 
-/// [`journal_split`] for an end already typed.
+/// [`journal_split`] for an end already typed. The folder text reuses the path's own
+/// buffer (its parent is a prefix of it), so a row costs the two allocations the
+/// `std::path` split always did: this runs once per journaled item.
 #[cfg(not(target_family = "wasm"))]
-fn app_split(path: &AppPath) -> (String, String) {
+fn app_split(path: AppPathBuf) -> (String, String) {
     let name = path.file_name().unwrap_or_default().to_owned();
-    let dir = path.parent().map(|p| p.as_str().to_owned()).unwrap_or_default();
+    let dir_len = path.parent().map(|parent| {
+        debug_assert!(path.as_str().starts_with(parent.as_str()), "a parent is a prefix");
+        parent.as_str().len()
+    });
+    let mut dir = path.into_string();
+    dir.truncate(dir_len.unwrap_or(0));
     (dir, name)
 }
 

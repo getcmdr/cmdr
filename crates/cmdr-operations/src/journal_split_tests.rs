@@ -37,6 +37,10 @@ fn every_posix_row_stores_what_it_always_did() {
         "sftp://testnas.local",
         "mtp://12345678/65537/DCIM/a.jpg",
         "/name with a colon: 12:00.txt",
+        r"/x/a\b.txt",
+        r"/x\y/a.txt",
+        "/x/a/..",
+        "/x/a/.",
     ];
     for text in corpus {
         let path = Path::new(text);
@@ -47,13 +51,30 @@ fn every_posix_row_stores_what_it_always_did() {
         );
     }
     // Byte for byte, not only as interned, for the plain shapes every real row has.
-    for text in ["/Users/test_user_1/a.txt", "/a.txt", "/", "/x/caf\u{10FEE9}.txt"] {
+    for text in [
+        "/Users/test_user_1/a.txt",
+        "/a.txt",
+        "/",
+        "/x/caf\u{10FEE9}.txt",
+        "/trailing/slash/",
+        "/a/../b.txt",
+    ] {
         assert_eq!(
             journal_split(Path::new(text)),
             bridge_split(Path::new(text)),
             "{text:?}"
         );
     }
+}
+
+/// On macOS and Linux a `\` is a name character, so a name holding one stays one name,
+/// byte for byte as every shipped row stored it.
+#[cfg(unix)] // on Windows `\` separates
+#[test]
+fn a_posix_name_holding_a_backslash_stays_one_name() {
+    let path = Path::new(r"/x\y/a\b.txt");
+    assert_eq!(journal_split(path), (r"/x\y".to_owned(), r"a\b.txt".to_owned()));
+    assert_eq!(journal_split(path), bridge_split(path));
 }
 
 /// A Linux name that isn't UTF-8 keeps today's lossy row until 10f escapes it.

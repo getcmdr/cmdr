@@ -51,6 +51,11 @@ enum Route {
     /// volume's root holds the other's paths, as two drives don't.
     CopyAcrossLocal,
     MoveAcrossLocal,
+    /// From the local disk onto a second local volume mounted UNDER `root` (a Mac's
+    /// `/` onto `/Volumes/USB`): `root` reaches both ends, the shape every shipped
+    /// macOS and Linux row has.
+    CopyOntoMountedLocal,
+    MoveOntoMountedLocal,
 }
 
 const ROUTES: [Route; 7] = [
@@ -65,7 +70,10 @@ const ROUTES: [Route; 7] = [
 
 impl Route {
     fn moves(self) -> bool {
-        !matches!(self, Route::CopyAcross | Route::CopyUp | Route::CopyAcrossLocal)
+        !matches!(
+            self,
+            Route::CopyAcross | Route::CopyUp | Route::CopyAcrossLocal | Route::CopyOntoMountedLocal
+        )
     }
 }
 
@@ -136,7 +144,10 @@ impl Rig {
             Route::MoveWithin | Route::MoveWithinByCopy => (Arc::clone(&mem), "mem", mem, "mem"),
             Route::CopyUp | Route::MoveUp => (local, "root", mem, "mem"),
             Route::MoveWithinLocal => (Arc::clone(&local), "root", local, "root"),
-            Route::CopyAcrossLocal | Route::MoveAcrossLocal => (local, "root", Arc::clone(&usb), "usb"),
+            Route::CopyAcrossLocal
+            | Route::MoveAcrossLocal
+            | Route::CopyOntoMountedLocal
+            | Route::MoveOntoMountedLocal => (local, "root", Arc::clone(&usb), "usb"),
         };
         let local_source = source.local_path().is_some();
         let local_dest = dest.local_path().is_some();
@@ -788,6 +799,47 @@ async fn a_transfer_onto_a_second_local_volume_journals_each_end_under_its_own_v
             read_all(&rig.source, &report).await,
             b"report",
             "{route:?}: the original"
+        );
+    }
+}
+
+/// The shipped macOS and Linux shape: `root` reaches both ends (`/` onto
+/// `/Volumes/USB`), so every row, a folder's created dirs included, stays `root`'s
+/// as it always was, and only the header names the second volume (which the undo
+/// gate then asks for: a drive that left refuses the undo, `VolumeUnavailable`).
+/// An older build reads both: the header's ids are the two volumes any cross-volume
+/// copy always named, and the rows are the `root` rows it always wrote.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_transfer_onto_a_volume_mounted_under_root_keeps_every_row_on_root() {
+    use cmdr_operation_log::store::{open_read_connection, read_operation, read_typed_rollback_units};
+    for route in [Route::CopyOntoMountedLocal, Route::MoveOntoMountedLocal] {
+        let rig = Rig::new(route).await;
+        let report = rig.file("report.pdf", b"report").await;
+        rig.file("photos/sub/a.jpg", b"a").await;
+        let photos = rig.src_dir.join("photos");
+        let op_id = rig
+            .run(vec![report.clone(), photos.clone()], TransferLeaves::default())
+            .await;
+
+        let conn = open_read_connection(rig.log.db()).expect("read conn");
+        let header = read_operation(&conn, &op_id).expect("read").expect("journaled");
+        assert_eq!(header.source_volume_id.as_deref(), Some("root"), "{route:?}");
+        assert_eq!(header.dest_volume_id.as_deref(), Some("usb"), "{route:?}");
+        let units = read_typed_rollback_units(&conn, &op_id, i64::MAX, 100).expect("units");
+        assert!(units.len() >= 2, "{route:?}: the file and the folder: {units:?}");
+        for unit in &units {
+            assert_eq!(unit.source_volume_id, "root", "{route:?}: {unit:?}");
+            assert_eq!(unit.dest_volume_id.as_deref(), Some("root"), "{route:?}: {unit:?}");
+        }
+        drop(conn);
+
+        rig.undo(&op_id).await;
+        assert!(rig.dest_names().await.is_empty(), "{route:?}: the landing is gone");
+        assert_eq!(read_all(&rig.source, &report).await, b"report", "{route:?}");
+        assert_eq!(
+            read_all(&rig.source, &photos.join("sub/a.jpg")).await,
+            b"a",
+            "{route:?}"
         );
     }
 }
