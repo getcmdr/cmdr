@@ -63,8 +63,9 @@ use crate::agent::types::{ProposalStatus, ProposalVerb, Reversibility};
 use crate::location::Location;
 
 /// The app path a stored destination's text names, as [`WritableDestination::new`] writes it
-/// and [`ProposalGroup::destination`] reads it back: this host's flavor, or a POSIX `/x` (a
-/// share's or a phone's path on Windows). `None` for a `..` (the MCP path door answers those
+/// and [`ProposalGroup::destination`] reads it back: this host's flavor, a POSIX `/x` (a
+/// share's or a phone's path on Windows), or this host's native spelling (`C:\x`, what a
+/// `Path`'s text is on Windows). `None` for a `..` (the MCP path door answers those
 /// before a group is built) and for text that's no app path.
 ///
 /// Also `None`, while escapes aren't live (`ESCAPES_LIVE`), for text holding an escape-range
@@ -77,6 +78,10 @@ pub(crate) fn typed_place(text: &str) -> Option<AppPathBuf> {
     }
     AppPathBuf::from_wire(text)
         .or_else(|_| AppPathBuf::parse(text, PathFlavor::Posix))
+        // This host's native spelling: a rename group's parent is a `Path`'s text
+        // (`tools/actions/multi_rename.rs`), `C:\x` on Windows, which no app-path grammar
+        // reads. Without it every such approval refused as `TargetMissing` there.
+        .or_else(|_| AppPathBuf::from_native_unicode(std::path::Path::new(text)))
         .ok()
 }
 
