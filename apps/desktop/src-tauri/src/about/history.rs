@@ -78,10 +78,11 @@ pub(crate) fn cmdr_operation_naming(
 
 /// What the log says about the node at `path`, and the volume id its row is under.
 ///
-/// The local engine journals every path the OS can see under the local disk's id,
-/// whichever volume the pane showed it on, and the volume engine under the
-/// destination volume's own, so an item not on the local disk is asked about
-/// under both.
+/// The local engine journals a row under the volume whose root holds both its
+/// ends (`cmdr-operations`' `OpScope::local_ids_for`), so a copy onto a drive
+/// from the Mac's boot disk lands under the local disk's id, and the volume
+/// engine under the destination volume's own. An item not on the local disk is
+/// asked about under both.
 fn read(
     history: &History,
     path: &Path,

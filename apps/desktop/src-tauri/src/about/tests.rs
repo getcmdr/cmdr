@@ -691,6 +691,14 @@ async fn a_cancel_before_the_plan_sends_nothing() {
 
 // ── Cmdr's own history ──────────────────────────────────────────────────────
 
+/// The one local volume, rooted at the test's folder, that both panes of
+/// [`copy_with_cmdr`] show and that [`with_history`] asks about, as two panes on
+/// one disk and a card for an item on it do. The local engine journals a row
+/// under the volume whose root holds both its ends, so a card asking under
+/// another volume's id than the copy ran on would find nothing.
+#[cfg(target_os = "macos")]
+const HISTORY_DISK: &str = "about-history-disk";
+
 /// Copies `source` into `into` through the engine's real copy path, journaling
 /// into `log`, and waits until the copy settled and its rows are on disk.
 #[cfg(target_os = "macos")]
@@ -716,10 +724,10 @@ async fn copy_with_cmdr(
     cmdr_operations::testing::copy_between_volumes(
         &engine,
         Arc::clone(&events) as Arc<dyn cmdr_operations::OperationEventSink>,
-        "about-history-source".to_string(),
+        HISTORY_DISK.to_string(),
         disk(),
         vec![source.to_path_buf()],
-        "about-history-dest".to_string(),
+        HISTORY_DISK.to_string(),
         disk(),
         into.to_path_buf(),
         cmdr_operations::VolumeCopyConfig::default(),
@@ -748,7 +756,7 @@ fn with_history(path: &std::path::Path, log: &cmdr_operations::testing::TestOper
         Sources {
             history: Some(super::history::History {
                 db: log.db().to_path_buf(),
-                volume_id: cmdr_fs::volume::DEFAULT_VOLUME_ID.to_string(),
+                volume_id: HISTORY_DISK.to_string(),
             }),
             ..Sources::none()
         },
