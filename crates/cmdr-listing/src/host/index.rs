@@ -1,6 +1,6 @@
 //! What the drive index knows about the rows a listing holds.
 
-use std::path::Path;
+use cmdr_fs::app_path::AppPath;
 
 use cmdr_fs::entry::FileEntry;
 
@@ -20,7 +20,7 @@ pub trait ListingIndex: Send + Sync {
 
     /// A pane just listed `path` on `volume_id`; the index may compare the listing
     /// with what it holds and schedule a fix.
-    fn verify_directory(&self, volume_id: &str, path: &Path);
+    fn verify_directory(&self, volume_id: &str, path: &AppPath);
 }
 
 /// No index: nothing enriched, nothing verified.
@@ -28,5 +28,5 @@ pub struct NoIndex;
 
 impl ListingIndex for NoIndex {
     fn enrich(&self, _volume_id: &str, _entries: &mut [FileEntry]) {}
-    fn verify_directory(&self, _volume_id: &str, _path: &Path) {}
+    fn verify_directory(&self, _volume_id: &str, _path: &AppPath) {}
 }

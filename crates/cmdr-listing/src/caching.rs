@@ -1,6 +1,6 @@
 //! Directory listing cache for on-demand virtual scrolling.
 
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 
@@ -19,7 +19,7 @@ pub struct ListingSummary {
     /// The volume it reads through.
     pub volume_id: String,
     /// The directory, in the volume's spelling.
-    pub path: PathBuf,
+    pub path: std::path::PathBuf,
     /// How many entries it holds, hidden ones included.
     pub entry_count: usize,
     /// How long ago it was opened.
@@ -39,7 +39,7 @@ impl Inner {
             .map(|(id, listing)| ListingSummary {
                 listing_id: ListingId::new(id.clone()),
                 volume_id: listing.volume_id.clone(),
-                path: listing.path.as_path().to_path_buf(),
+                path: crate::cached_listing::to_host_seam(listing.path.as_path()),
                 entry_count: listing.entries().len(),
                 age_ms: now.saturating_duration_since(listing.created_at).as_millis(),
             })
@@ -59,7 +59,11 @@ impl Inner {
     /// Returns each match's listing id: typically none (no pane showing that
     /// dir), one, or two (both panes showing the same dir). Ids only, since the
     /// listing is the one holder of its sort.
-    pub(crate) fn find_listings_for_path_on_volume(&self, volume_id: Option<&str>, parent_path: &Path) -> Vec<String> {
+    pub(crate) fn find_listings_for_path_on_volume(
+        &self,
+        volume_id: Option<&str>,
+        parent_path: &AppPath,
+    ) -> Vec<String> {
         let key = volume_id.map(|vid| (vid, self.listing_path(vid, parent_path)));
         let cache = self.cache.read_ignore_poison();
 
@@ -77,7 +81,7 @@ impl Inner {
     ///
     /// Unlike `try_get_authoritative_listing`, this doesn't require a watcher: SMB, MTP, and
     /// other virtual panes still have a UI listing cache. No filesystem call happens here.
-    pub(crate) fn get_cached_listing(&self, volume_id: &str, path: &Path) -> Option<Vec<FileEntry>> {
+    pub(crate) fn get_cached_listing(&self, volume_id: &str, path: &AppPath) -> Option<Vec<FileEntry>> {
         let key = self.listing_path(volume_id, path);
         let cache = self.cache.read_ignore_poison();
         let listing = cache
@@ -93,13 +97,13 @@ impl Inner {
     /// Used by `FullRefresh` when the SMB watcher emits `STATUS_NOTIFY_ENUM_DIR` for
     /// the share root but no listing matches that exact path (the user may be browsing
     /// a subdirectory).
-    pub(crate) fn find_listings_on_volume(&self, volume_id: &str) -> Vec<(String, PathBuf)> {
+    pub(crate) fn find_listings_on_volume(&self, volume_id: &str) -> Vec<(String, AppPathBuf)> {
         let cache = self.cache.read_ignore_poison();
 
         cache
             .iter()
             .filter(|(_, listing)| listing.volume_id == volume_id)
-            .map(|(id, listing)| (id.clone(), listing.path.as_path().to_path_buf()))
+            .map(|(id, listing)| (id.clone(), listing.path.as_path().to_owned()))
             .collect()
     }
 
@@ -107,11 +111,11 @@ impl Inner {
     ///
     /// Used by `refresh_listing` so the short-circuit check can ask the volume
     /// `listing_watch_coverage(path)` without two separate cache reads.
-    pub(crate) fn get_listing_volume_id_and_path(&self, listing_id: &str) -> Option<(String, PathBuf)> {
+    pub(crate) fn get_listing_volume_id_and_path(&self, listing_id: &str) -> Option<(String, AppPathBuf)> {
         let cache = self.cache.read_ignore_poison();
         cache
             .get(listing_id)
-            .map(|listing| (listing.volume_id.clone(), listing.path.as_path().to_path_buf()))
+            .map(|listing| (listing.volume_id.clone(), listing.path.as_path().to_owned()))
     }
 
     /// Applies a directory change on a volume to the panes showing it.
@@ -130,7 +134,7 @@ impl Inner {
     pub(crate) fn notify_directory_changed(
         self: &Arc<Self>,
         volume_id: &str,
-        parent_path: &Path,
+        parent_path: &AppPath,
         change: DirectoryChange,
     ) {
         let listings = self.find_listings_for_path_on_volume(Some(volume_id), parent_path);
@@ -183,7 +187,7 @@ impl Inner {
                     }
                     // An overlay applies here, and this arm can't wait on it: re-read
                     // the directory the way a `FullRefresh` does, which decorates.
-                    None => self.spawn_full_refresh(volume_id.to_string(), parent_path.to_path_buf(), listings),
+                    None => self.spawn_full_refresh(volume_id.to_string(), parent_path.to_owned(), listings),
                 }
             }
             DirectoryChange::FullRefresh => {
@@ -196,7 +200,7 @@ impl Inner {
                         self.spawn_full_refresh(volume_id.to_string(), path, vec![lid]);
                     }
                 } else {
-                    self.spawn_full_refresh(volume_id.to_string(), parent_path.to_path_buf(), listings);
+                    self.spawn_full_refresh(volume_id.to_string(), parent_path.to_owned(), listings);
                 }
             }
         }

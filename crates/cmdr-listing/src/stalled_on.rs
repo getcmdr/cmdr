@@ -3,6 +3,8 @@
 //! "server" or "drive" when the mount proves it. `DETAILS.md` § "Stalled listings".
 
 use std::path::{Path, PathBuf};
+
+use cmdr_fs::app_path::AppPath;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -28,11 +30,17 @@ pub(crate) async fn stalled_on(
     runtime: &Runtime,
     mounts: Arc<dyn MountTable>,
     volume: &Arc<dyn Volume>,
-    path: &Path,
+    path: &AppPath,
 ) -> StalledOn {
     if let Some(answer) = stalled_on_backend(volume.backend_kind()) {
         return answer;
     }
+    // Past the backend split, the path is a filesystem one: the mount table is
+    // the OS's, so it reads the native spelling. A path with none can't be named.
+    let Some(native) = path.native_if_any() else {
+        return StalledOn::Unknown;
+    };
+    let path = native.as_path();
     let lexical = stalled_on_mount_of(mounts.as_ref(), path);
     if lexical != StalledOn::Drive {
         return lexical;

@@ -8,7 +8,6 @@ use crate::RowSpan;
 use cmdr_fs::app_path::AppPath;
 use std::collections::VecDeque;
 use std::future::Future;
-use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::mpsc::{Receiver, Sender, channel};
@@ -64,7 +63,7 @@ impl ListingIndex for ScriptedIndex {
         }
     }
 
-    fn verify_directory(&self, _volume_id: &str, _path: &Path) {}
+    fn verify_directory(&self, _volume_id: &str, _path: &AppPath) {}
 }
 
 /// The test's handles on a held call: wait for it, then let it go.
@@ -117,15 +116,15 @@ impl ListingVolumes for OneVolume {
     fn resolve<'a>(
         &'a self,
         volume_id: &'a str,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = ResolvedVolume> + Send + 'a>> {
         Box::pin(async move { self.resolve_local_only(volume_id, path) })
     }
 
-    fn resolve_local_only(&self, _volume_id: &str, path: &Path) -> ResolvedVolume {
+    fn resolve_local_only(&self, _volume_id: &str, path: &AppPath) -> ResolvedVolume {
         ResolvedVolume {
             volume: Some(Arc::clone(&self.volume)),
-            path: AppPath::legacy_unchecked(path).into_owned(),
+            path: path.to_owned(),
             routed: self.routed,
             unconfirmed: None,
         }
@@ -134,7 +133,7 @@ impl ListingVolumes for OneVolume {
     fn unregistered<'a>(
         &'a self,
         _volume_id: &'a str,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Unregistered> + Send + 'a>> {
         Box::pin(async { Unregistered::Gone })
     }
@@ -166,7 +165,7 @@ async fn engine_with(index: Arc<ScriptedIndex>, routed: Option<RoutedKind>) -> L
     let listing = CachedListing::new(
         &engine.inner,
         "sized".to_string(),
-        PathBuf::from(DIR),
+        crate::testing::app(DIR).to_owned(),
         Prepared::for_test(vec![folder], OverlayRows::Recounted(0)),
         true,
         SortColumn::Name,

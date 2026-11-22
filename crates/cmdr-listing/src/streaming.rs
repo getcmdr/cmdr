@@ -4,7 +4,7 @@
 //! The read runs on the host's runtime and reports through the `ListingEvents`
 //! seam (`host/`); the host turns those facts into what the pane sees.
 
-use std::path::Path;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 
@@ -102,7 +102,7 @@ pub struct ListingRequest {
     /// The volume to read through.
     pub volume_id: String,
     /// The directory, as the pane spelled it.
-    pub path: std::path::PathBuf,
+    pub path: AppPathBuf,
     /// Whether the pane shows hidden files.
     pub include_hidden: bool,
     /// The pane's sort column.
@@ -152,7 +152,7 @@ pub(crate) fn report_failure(
     events: &dyn ListingEvents,
     listing_id: &str,
     volume_id: &str,
-    path: &Path,
+    path: &AppPath,
     result: Result<(), VolumeError>,
 ) {
     if let Err(error) = result {
@@ -160,7 +160,7 @@ pub(crate) fn report_failure(
             &ListingId::new(listing_id),
             ListingEnd::Failed {
                 volume_id: volume_id.to_string(),
-                path: path.to_path_buf(),
+                path: path.to_owned(),
                 error,
             },
         );
@@ -206,7 +206,7 @@ impl Inner {
             sort_order,
             dir_sort_mode,
         } = request;
-        let (listing_id, volume_id, path) = (listing_id.as_str(), volume_id.as_str(), path.as_path());
+        let (listing_id, volume_id, path) = (listing_id.as_str(), volume_id.as_str(), &**path);
         let (include_hidden, sort_by, sort_order, dir_sort_mode) =
             (*include_hidden, *sort_by, *sort_order, *dir_sort_mode);
 
@@ -215,14 +215,14 @@ impl Inner {
             "read_directory_with_progress: listing_id={}, volume_id={}, path={}",
             listing_id,
             volume_id,
-            LogPrivate::dir_path(path)
+            LogPrivate::dir_path(path.as_str())
         );
 
         let events = &self.events;
         let id = ListingId::new(listing_id);
         let cancelled = || ListingEnd::Cancelled {
             volume_id: volume_id.to_string(),
-            path: path.to_path_buf(),
+            path: path.to_owned(),
         };
 
         // Emit opening event - this is the slow part for network folders
@@ -251,8 +251,8 @@ impl Inner {
             // as an unmount race is.
             None => match self.volumes.unregistered(volume_id, path).await {
                 Unregistered::Adopted(adopted) => adopted,
-                Unregistered::NotConnected => return Err(VolumeError::NotConnected(path.display().to_string())),
-                Unregistered::Gone => return Err(VolumeError::NotFound(path.display().to_string())),
+                Unregistered::NotConnected => return Err(VolumeError::NotConnected(path.as_str().to_string())),
+                Unregistered::Gone => return Err(VolumeError::NotFound(path.as_str().to_string())),
             },
         };
         // Read directory entries via Volume abstraction. Each read runs in its own
@@ -304,7 +304,7 @@ impl Inner {
             path: listed_path,
             entries,
         } = listed;
-        let path = listed_path.as_path();
+        let path: &AppPath = &listed_path;
         let read_dir_time = crate::rt::since(read_start);
         benchmark::log_event_value("read_dir COMPLETE, entries", entries.len());
 
@@ -342,7 +342,7 @@ impl Inner {
         let mut listing = CachedListing::new(
             self,
             volume_id.to_string(),
-            path.to_path_buf(),
+            path.to_owned(),
             entries,
             include_hidden,
             sort_by,
@@ -362,7 +362,7 @@ impl Inner {
         // entry (listDirectoryEnd would try to remove before the entry exists, then this
         // insert would add it permanently).
         let cache_write_start = crate::rt::now();
-        let cached_path = listing.path.as_path().to_path_buf();
+        let cached_path = listing.path.as_path().to_owned();
         // The row count comes off the listing's own map, so the number the frontend
         // sizes its scroller with is produced by the same filter every later fetch
         // goes through — including the scratch-file half a plain dotfile count misses.
@@ -403,13 +403,13 @@ impl Inner {
         // Volume root for the event (the FE uses it to decide "at volume root"). For
         // an archive this is the `.zip` path, so the FE breadcrumb renders
         // `…/foo.zip/inner` and treats the archive root as the volume root.
-        let volume_root = volume.root().as_std_legacy().to_path_buf();
+        let volume_root = volume.root().to_owned();
         // An empty listing AT the volume root is what macOS TCC makes of a hidden
         // volume (iCloud Drive without Full Disk Access); the host decides whether
         // that reads as a hint instead of a blank pane. "Empty" means the READ found
         // nothing: a root holding only hidden items shows no rows, but those items
         // prove the read saw the folder (`hidden_count` is counted exactly then).
-        let empty_at_volume_root = total_count == 0 && hidden_count == 0 && volume_root == path;
+        let empty_at_volume_root = total_count == 0 && hidden_count == 0 && *volume_root == *path;
 
         // Emit completion event
         let emit_t = crate::rt::now();
@@ -417,7 +417,7 @@ impl Inner {
             &id,
             ListingEnd::Complete {
                 volume_id: volume_id.to_string(),
-                path: asked_path.to_path_buf(),
+                path: asked_path.to_owned(),
                 total_count,
                 hidden_count,
                 volume_root,
@@ -437,7 +437,7 @@ impl Inner {
             listing_done_level(read_dir_time),
             "listing_done listing_id={} path={} entries={} read_dir_ms={} sort_ms={} cache_write_ms={} enrich_ms={} watcher_start_ms={} to_complete_emit_ms={} total_ms={}",
             listing_id,
-            LogPrivate::dir_path(path),
+            LogPrivate::dir_path(path.as_str()),
             entries_count_for_log,
             read_dir_time.as_millis(),
             sort_ms,

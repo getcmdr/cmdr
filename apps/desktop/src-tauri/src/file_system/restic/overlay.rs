@@ -7,7 +7,7 @@
 //! contribution instead, and no walker ever sees it.
 //! `volume/DETAILS.md` § "Architecture".
 
-use std::path::Path;
+use cmdr_fs::app_path::AppPath;
 use std::sync::Arc;
 
 use crate::file_system::volume::Volume;
@@ -38,14 +38,14 @@ impl ListingOverlay for ResticOverlay {
     /// unrouted volume qualifies (local, SMB, SFTP, a phone), since the repo is
     /// read through `Volume`; ❌ never a routed one, so a repo backed up inside a
     /// snapshot or zipped in an archive doesn't nest a second view.
-    fn applies_to(&self, volume: &dyn Volume, _path: &Path, entries: &[FileEntry]) -> bool {
+    fn applies_to(&self, volume: &dyn Volume, _path: &AppPath, entries: &[FileEntry]) -> bool {
         !volume.routes_over_a_parent() && entries.len() <= wiring::MAX_REPO_ROOT_ENTRIES && is_restic_repo(entries)
     }
 
     /// The one row. Building it also confirms the repo in the hub's memo, keyed
     /// by the same `(volume id, folder)` the route looks up, so entering the
     /// row costs no confirmation listing.
-    fn extra_entries(&self, volume_id: &str, _volume: &dyn Volume, path: &Path) -> Vec<FileEntry> {
-        vec![wiring::repos().overlay_row(volume_id, path)]
+    fn extra_entries(&self, volume_id: &str, _volume: &dyn Volume, path: &AppPath) -> Vec<FileEntry> {
+        vec![wiring::repos().overlay_row_at(volume_id, path)]
     }
 }

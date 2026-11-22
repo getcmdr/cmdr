@@ -2210,6 +2210,22 @@ included; the hidden couplings it found are why waves B and C differ from round 
     engine's listing locations typed first, or `streaming.rs` gains a second crossing), and `CoveredEntry.path`
     (`cmdr-index`'s, read by 10d's `search/`).
 
+- **The listing engine went typed inside** (2026-11-22, branch `worktree-agent-ae4e56b258767a21d`): `ListingPath`,
+  `ListingRequest.path` (read at the IPC edge with `wire_path::on_volume`: a trailing `/` goes, a `..` refuses the
+  start), `ListingEnd`, the engine's own seams (`ListingVolumes`, `ListingOverlay`, `ListingIndex`, `respelled`,
+  `OpenedListing`), `stored_spellings`, and `entries_as_stored`. `listing_host/volumes.rs::listing_path` and
+  `cmdr-listing`'s per-call bridges are gone; the stalled-on wording and the permission arm cross `to_native` past their
+  splits (`cmdr_fs::volume::friendly_error::listing_error_at`, `enrich_with_provider_at`,
+  `listing_error_for_restricted_empty_root_at`). Durable design: `crates/cmdr-listing/DETAILS.md` § "App paths at the
+  engine's edge".
+  - **Not done, and why**: `cmdr_fs`'s `ListingHost` and the `Listings` methods behind it (`directory_changed`,
+    `authoritative_listing`, `cached_entries`, `listings_for_path_on_volume`, `location`, `open_listing_paths`,
+    `refresh_archive_listings`) keep `std::path` at one crossing (`cached_listing.rs::{from_host_seam, to_host_seam}`):
+    typing them puts a crossing in each of `cmdr-operations`' oracle callers (`scan_walker`, `scan_oracle`,
+    `conflict_preflight`, `look_alike`, `scan_preview/volume`, `delete/volume_scan`, `archive_edit/engine`) and in
+    multi-rename's `name_rules_at`, so it lands with the write engine's typed starts (10d). `CoveredEntry.path`,
+    `rename_dir_as_app_path`, and `counted_dir_as_app_path` wait on the same step.
+
 ### 10d. The app, part two: operations host, tools, and the rest
 
 - **Size**: M. After 10c (review round 2: it calls 10c's `file_system/` helpers and `resolve_typed`); it may start on a

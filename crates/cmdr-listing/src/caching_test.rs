@@ -1,11 +1,11 @@
 //! Tests for listing cache helpers.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use super::Listings;
 use super::caching::DirectoryChange;
 use super::diff::PaneRows;
-use super::testing::{TestEngine, TestListing, TestListingGuard};
+use super::testing::{TestEngine, TestListing, TestListingGuard, app, app_text};
 use cmdr_fs::entry::{FileEntry, TagRef};
 use cmdr_fs::testing::unique_test_id;
 use cmdr_sort::{DirectorySortMode, SortColumn, SortOrder};
@@ -91,7 +91,7 @@ fn test_find_listings_for_path_zero_matches() {
     let engine = TestEngine::new();
     let results = engine
         .inner
-        .find_listings_for_path_on_volume(None, &PathBuf::from("/nonexistent/path"));
+        .find_listings_for_path_on_volume(None, cmdr_fs::app_path!("/nonexistent/path"));
     assert!(results.is_empty());
 }
 
@@ -109,9 +109,7 @@ fn test_find_listings_for_path_one_match() {
         vec![],
     );
 
-    let results = engine
-        .inner
-        .find_listings_for_path_on_volume(None, &PathBuf::from(&path));
+    let results = engine.inner.find_listings_for_path_on_volume(None, app(&path));
     assert_eq!(results.len(), 1);
     assert_eq!(results, [listing.id()]);
 }
@@ -140,9 +138,7 @@ fn test_find_listings_for_path_two_matches() {
         vec![],
     );
 
-    let results = engine
-        .inner
-        .find_listings_for_path_on_volume(None, &PathBuf::from(&path));
+    let results = engine.inner.find_listings_for_path_on_volume(None, app(&path));
     assert_eq!(results.len(), 2);
 
     // Both IDs should be present (order unspecified since HashMap is unordered)
@@ -315,7 +311,7 @@ fn a_directory_change_patches_a_listing_in_a_process_with_no_app_handle() {
 
     engine.inner.notify_directory_changed(
         &volume_id,
-        Path::new("/test"),
+        cmdr_fs::app_path!("/test"),
         DirectoryChange::Added(make_entry("b.txt", false, Some(2))),
     );
 
@@ -462,7 +458,7 @@ fn notify_removed_drops_inner_mtp_entry_via_url_path() {
     let listing = insert_mtp_style_listing(&engine, "mtp_notify_removed");
     listing.engine().inner.notify_directory_changed(
         "mtp-dev:65537",
-        Path::new("mtp://mtp-dev/65537/Documents"),
+        app("mtp://mtp-dev/65537/Documents"),
         DirectoryChange::Removed("notes.txt".to_string()),
     );
     assert_eq!(
@@ -566,23 +562,17 @@ fn test_find_listings_for_path_on_volume_filters_by_volume() {
     );
 
     // Filter by "root": only the root listing.
-    let results = engine
-        .inner
-        .find_listings_for_path_on_volume(Some("root"), &PathBuf::from(&path));
+    let results = engine.inner.find_listings_for_path_on_volume(Some("root"), app(&path));
     assert_eq!(results.len(), 1);
     assert_eq!(results, [listing1.id()]);
 
     // Filter by the SMB volume: only the SMB listing.
-    let results = engine
-        .inner
-        .find_listings_for_path_on_volume(Some(&smb), &PathBuf::from(&path));
+    let results = engine.inner.find_listings_for_path_on_volume(Some(&smb), app(&path));
     assert_eq!(results.len(), 1);
     assert_eq!(results, [listing2.id()]);
 
     // No filter: both.
-    let results = engine
-        .inner
-        .find_listings_for_path_on_volume(None, &PathBuf::from(&path));
+    let results = engine.inner.find_listings_for_path_on_volume(None, app(&path));
     assert_eq!(results.len(), 2);
 }
 
@@ -603,7 +593,7 @@ fn test_find_listings_for_path_on_volume_no_match() {
 
     let results = engine
         .inner
-        .find_listings_for_path_on_volume(Some("smb-nas"), &PathBuf::from(&path));
+        .find_listings_for_path_on_volume(Some("smb-nas"), app(&path));
     assert!(results.is_empty());
 }
 
@@ -664,10 +654,10 @@ fn test_find_listings_on_volume_returns_all_volume_listings() {
 
     // Verify the paths are returned correctly
     let listing1 = results.iter().find(|(id, ..)| id == listing1.id()).unwrap();
-    assert_eq!(listing1.1, PathBuf::from("/mnt/share/docs"));
+    assert_eq!(listing1.1, cmdr_fs::app_path!("/mnt/share/docs").to_owned());
 
     let listing2 = results.iter().find(|(id, ..)| id == listing2.id()).unwrap();
-    assert_eq!(listing2.1, PathBuf::from("/mnt/share/photos"));
+    assert_eq!(listing2.1, cmdr_fs::app_path!("/mnt/share/photos").to_owned());
 }
 
 #[test]
@@ -825,7 +815,7 @@ fn spawn_full_refresh_survives_a_thread_with_no_tokio_runtime() {
     let handle = std::thread::spawn(move || {
         inner.spawn_full_refresh(
             "no-such-volume".to_string(),
-            PathBuf::from("/test/spawn_full_refresh"),
+            app_text("/test/spawn_full_refresh"),
             vec!["sfr_listing".to_string()],
         );
     });
@@ -858,7 +848,7 @@ async fn a_slow_refresh_cannot_overwrite_the_listing_a_newer_one_already_wrote()
     use std::time::Duration;
 
     let volume_id = unique_test_id("refresh-order-vol");
-    let dir = PathBuf::from(format!("/test/{}", unique_test_id("refresh-order-dir")));
+    let dir = app_text(&format!("/test/{}", unique_test_id("refresh-order-dir")));
 
     let mid_write = vec![make_entry("alpha", true, None)];
     let complete = vec![
@@ -881,7 +871,7 @@ async fn a_slow_refresh_cannot_overwrite_the_listing_a_newer_one_already_wrote()
 
     let listing = TestListing::new()
         .volume(&volume_id)
-        .path(dir.clone())
+        .path(dir.as_str())
         .entries(mid_write.clone())
         .insert(&engine, "refresh-order");
 
@@ -926,7 +916,7 @@ async fn a_storm_of_refreshes_costs_two_reads_of_the_directory_not_one_per_event
     use std::time::Duration;
 
     let volume_id = unique_test_id("refresh-storm-vol");
-    let dir = PathBuf::from(format!("/test/{}", unique_test_id("refresh-storm-dir")));
+    let dir = app_text(&format!("/test/{}", unique_test_id("refresh-storm-dir")));
     let settled = vec![make_entry("alpha", true, None), make_entry("bravo", true, None)];
 
     // Six scripted reads available; a slow first one guarantees the rest pile up.
@@ -949,7 +939,7 @@ async fn a_storm_of_refreshes_costs_two_reads_of_the_directory_not_one_per_event
 
     let listing = TestListing::new()
         .volume(&volume_id)
-        .path(dir.clone())
+        .path(dir.as_str())
         .entries(Vec::new())
         .insert(&engine, "refresh-storm");
     let listings = vec![listing.id().to_string()];

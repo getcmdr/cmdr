@@ -9,6 +9,8 @@
 
 use std::path::{Path, PathBuf};
 
+use crate::app_path::AppPath;
+
 /// The name of the folder a pane shows inside a repo, and the path component
 /// every snapshot path runs through: `<repo>/Browse snapshots/latest/…`.
 ///
@@ -25,6 +27,13 @@ pub const VIRTUAL_ENTRY_NAME: &str = "Browse snapshots";
 /// routes.
 pub fn restic_route(path: &Path) -> Option<PathBuf> {
     restic_route_candidates(path).next()
+}
+
+/// Whether an app path runs through the view: [`restic_route`]'s `is_some`,
+/// asked by name, for a caller holding an [`AppPath`] (the listing engine's
+/// fresh-listing oracle). Lexical, so a candidate, ❗ not a verdict.
+pub fn runs_through_view(path: &AppPath) -> bool {
+    path.names().any(|name| name == VIRTUAL_ENTRY_NAME)
 }
 
 /// Every folder in `path` that holds a [`VIRTUAL_ENTRY_NAME`] component, left
@@ -56,6 +65,15 @@ mod tests {
         assert_eq!(restic_route(Path::new("/r/browse snapshots/latest")), None);
         assert_eq!(restic_route(Path::new("/r/Browse snapshots.txt")), None);
         assert_eq!(restic_route(Path::new("/")), None);
+    }
+
+    #[test]
+    fn an_app_path_runs_through_the_view_by_whole_name() {
+        assert!(runs_through_view(crate::app_path!("/r/Browse snapshots/latest")));
+        assert!(runs_through_view(crate::app_path!("/r/Browse snapshots")));
+        assert!(!runs_through_view(crate::app_path!("/r/browse snapshots/latest")));
+        assert!(!runs_through_view(crate::app_path!("/r/Browse snapshots.txt")));
+        assert!(!runs_through_view(crate::app_path!("/")));
     }
 
     #[test]

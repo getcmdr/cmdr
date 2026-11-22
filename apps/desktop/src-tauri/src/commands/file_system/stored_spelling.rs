@@ -10,6 +10,7 @@
 
 use tokio::time::Duration;
 
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::deadline::TimedOut;
 
 /// A resolve is a stat plus, on a miss, a parent listing per wrong component. A
@@ -30,16 +31,32 @@ pub async fn stored_spellings(volume_id: String, paths: Vec<String>) -> TimedOut
             timed_out: false,
         };
     };
-    let paths = paths
+    // Each sent path read typed at the edge; text that's no app path (or holds a
+    // `..`) has no other spelling to find and goes back as given.
+    let typed: Vec<Option<AppPathBuf>> = paths
         .iter()
-        .map(|path| crate::commands::wire_path::as_sent_std_path(path))
+        .map(|path| crate::commands::wire_path::app_path(path).ok().flatten())
         .collect();
-    let resolve = cmdr_listing::stored_spellings(volume.as_ref(), paths);
+    let asked: Vec<AppPathBuf> = typed.iter().flatten().cloned().collect();
+    let resolve = cmdr_listing::stored_spellings(volume.as_ref(), asked);
     match tokio::time::timeout(STORED_SPELLINGS_TIMEOUT, resolve).await {
-        Ok(stored) => TimedOut {
-            data: stored.into_iter().map(|p| p.to_string_lossy().into_owned()).collect(),
-            timed_out: false,
-        },
+        Ok(stored) => {
+            let mut stored = stored.into_iter();
+            let data = as_given
+                .into_iter()
+                .zip(typed)
+                .map(|(given, typed)| match typed {
+                    // One answer per typed path, in order; a path with no other
+                    // spelling stays exactly as sent.
+                    Some(typed) => match stored.next() {
+                        Some(spelling) if spelling != typed => spelling.into_string(),
+                        _ => given,
+                    },
+                    None => given,
+                })
+                .collect();
+            TimedOut { data, timed_out: false }
+        }
         Err(_) => TimedOut {
             data: as_given,
             timed_out: true,

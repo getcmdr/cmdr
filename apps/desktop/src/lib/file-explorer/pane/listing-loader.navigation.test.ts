@@ -338,3 +338,17 @@ describe("createListingLoader — a Back / Forward landing restores its entry's 
     expect(state.cursorIndex).toBe(2)
   })
 })
+
+describe('createListingLoader — a pane path holding a `..`', () => {
+  it('lands on the folder the `..` climbed out of, never a start the backend refuses', async () => {
+    // The backend refuses a `..` in a pane path (`wire_path::on_volume`), so a stored tab
+    // or history entry holding one would otherwise leave a dead pane showing the refusal.
+    const { loader, state } = makeHarness({ volumeId: 'root' })
+    await loader.loadDirectory({ path: '/a/b/../c' })
+    await vi.waitFor(() => {
+      expect(h.listDirectoryStart).toHaveBeenCalledTimes(1)
+    })
+    expect(h.listDirectoryStart.mock.calls[0][1]).toBe('/a/b')
+    expect(state.currentPath).toBe('/a/b')
+  })
+})

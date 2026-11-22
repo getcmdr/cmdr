@@ -64,7 +64,7 @@ async fn a_decorated_listing_of_the_repo_shows_the_row() {
         crate::listing_host::listings(),
         "walker-decorated",
         &volume,
-        &repo,
+        &app(&repo),
         &mut entries,
     )
     .await;
@@ -169,7 +169,7 @@ async fn the_listing_oracle_declines_a_decorated_repo_listing() {
         crate::listing_host::listings(),
         crate::file_system::volume::DEFAULT_VOLUME_ID,
         &volume,
-        &repo,
+        &app(&repo),
         &mut cached,
     )
     .await;
@@ -177,7 +177,7 @@ async fn the_listing_oracle_declines_a_decorated_repo_listing() {
 
     let _guard = TestListing::new()
         .volume(crate::file_system::volume::DEFAULT_VOLUME_ID)
-        .path(repo.clone())
+        .path(app(&repo).as_str())
         .entries(cached)
         .overlay_rows(added)
         .insert(crate::listing_host::listings(), "restic_oracle_decorated");
@@ -208,7 +208,7 @@ async fn the_listing_oracle_declines_an_unrouted_path_under_the_row() {
     );
     let _guard = TestListing::new()
         .volume(volume_id)
-        .path(inside.clone())
+        .path(app(&inside).as_str())
         .entries(vec![FileEntry::new(
             "Users".to_string(),
             inside.join("Users").to_string_lossy().into_owned(),
@@ -288,7 +288,7 @@ async fn folder_size_counting_skips_the_row_unless_asked_for_it() {
         crate::listing_host::listings(),
         "walker-count",
         &volume,
-        &repo,
+        &app(&repo),
         &mut entries,
     )
     .await;
@@ -297,7 +297,7 @@ async fn folder_size_counting_skips_the_row_unless_asked_for_it() {
 
     let listing = TestListing::new()
         .volume("walker-count")
-        .path(repo.clone())
+        .path(app(&repo).as_str())
         .entries(entries)
         .overlay_rows(added)
         .insert(crate::listing_host::listings(), "restic_count_plan");

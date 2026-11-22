@@ -42,7 +42,7 @@ pub(super) fn folder(tag: &str, names: &[&str]) -> (TestDir, TestListingGuard) {
     }
     let listing = TestListing::new()
         .volume("root")
-        .path(dir.to_path_buf())
+        .path(crate::test_support::native_app_path(&dir).as_str())
         .entries(list_directory_core(&dir, &crate::listing_host::backends::AppListings).expect("the dir lists"))
         .insert(crate::listing_host::listings(), tag);
     (dir, listing)
@@ -398,7 +398,7 @@ async fn a_batch_holding_a_dot_git_category_row_is_refused_as_read_only() {
     std::fs::write(dot_git.join("description"), b"x").expect("a real file beside it");
     let listing = TestListing::new()
         .volume("root")
-        .path(dot_git.clone())
+        .path(crate::test_support::native_app_path(&dot_git).as_str())
         .entries(list_directory_core(&dot_git, &crate::listing_host::backends::AppListings).expect("the dir lists"))
         .insert(crate::listing_host::listings(), "multi-rename-dot-git");
     crate::file_system::git::wiring::set_virtual_portal_enabled(true);
@@ -440,7 +440,7 @@ async fn a_batch_holding_a_dot_git_category_row_is_refused_as_read_only() {
 fn listing_on(volume_id: &str, dir: &Path, tag: &str) -> TestListingGuard {
     TestListing::new()
         .volume(volume_id)
-        .path(dir.to_path_buf())
+        .path(crate::test_support::native_app_path(dir).as_str())
         .entries(list_directory_core(dir, &crate::listing_host::backends::AppListings).expect("the dir lists"))
         .insert(crate::listing_host::listings(), tag)
 }

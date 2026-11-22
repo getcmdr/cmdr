@@ -30,9 +30,16 @@ use cmdr_listing::ListingId;
 use cmdr_listing::testing::{TestListingGuard, read_to_end, request};
 
 async fn stream(listing_id: &str, volume_id: &str, path: &Path) {
-    read_to_end(listings(), &request(listing_id, volume_id, path))
-        .await
-        .expect("the volume lists");
+    read_to_end(
+        listings(),
+        &request(
+            listing_id,
+            volume_id,
+            crate::test_support::native_app_path(path).as_str(),
+        ),
+    )
+    .await
+    .expect("the volume lists");
 }
 
 /// Whether a watch is registered for `listing_id`.

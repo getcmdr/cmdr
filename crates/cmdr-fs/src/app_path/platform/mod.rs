@@ -16,6 +16,7 @@ const _: PathFlavor = HOST_FLAVOR;
 const _: Namer = HOST_NAMER;
 const _: fn(&OsStr) -> Cow<'_, str> = os_name_to_app;
 const _: fn(&str) -> Cow<'_, OsStr> = app_to_os;
+const _: fn(&super::AppPath) -> Option<std::path::PathBuf> = super::AppPath::native_if_any;
 #[cfg(cmdr_host)]
 const _: fn(&super::AppPath) -> Result<std::path::PathBuf, super::NativeRefusal> = super::AppPath::to_native;
 #[cfg(cmdr_host)]

@@ -7,7 +7,7 @@
 //! TCC bookkeeping call, and an entry in the MCP ring. Cmdr's answer is
 //! `TauriListingEvents`, in the app's `listing_host::events`.
 
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 
 use cmdr_fs::volume::{ListingProgress, VolumeError};
 use serde::{Deserialize, Serialize};
@@ -24,18 +24,18 @@ pub enum ListingEnd {
         /// The volume the pane asked for, which keys the listing.
         volume_id: String,
         /// The directory as its volume spells it: the path the listing is keyed on.
-        path: PathBuf,
+        path: AppPathBuf,
         /// How many rows the pane shows, from the same filter every later fetch uses.
         total_count: usize,
         /// How many hidden items revealing hidden files would add, counted only
         /// when `total_count` is zero (`CachedListing::hidden_count`).
         hidden_count: usize,
         /// The serving volume's root. For a path inside an archive, the archive file.
-        volume_root: PathBuf,
+        volume_root: AppPathBuf,
         /// The volume's own spelling of the directory, when it differs from what the
         /// pane asked for; `None` for a path that listed as given. The real bytes:
         /// how the pane is told is the host's.
-        stored_path: Option<PathBuf>,
+        stored_path: Option<AppPathBuf>,
         /// The read found nothing at all AT its volume's root (no rows and no hidden
         /// items), which on some volumes means the OS hid the contents (iCloud Drive
         /// without Full Disk Access).
@@ -49,14 +49,14 @@ pub enum ListingEnd {
         /// The volume the pane asked for.
         volume_id: String,
         /// The directory as the pane asked for it.
-        path: PathBuf,
+        path: AppPathBuf,
     },
     /// The read failed. Nothing was cached.
     Failed {
         /// The volume the pane asked for.
         volume_id: String,
         /// The directory as the pane asked for it.
-        path: PathBuf,
+        path: AppPathBuf,
         /// What the volume answered.
         error: VolumeError,
     },
@@ -73,7 +73,7 @@ impl ListingEnd {
     }
 
     /// The directory the listing was for.
-    pub fn path(&self) -> &Path {
+    pub fn path(&self) -> &AppPath {
         match self {
             Self::Complete { path, .. } | Self::Cancelled { path, .. } | Self::Failed { path, .. } => path,
         }
@@ -121,7 +121,7 @@ pub trait ListingEvents: Send + Sync {
 
     /// The listing now shows its directory under the volume's own spelling,
     /// `path`, which the pane adopts.
-    fn respelled(&self, id: &ListingId, path: &Path);
+    fn respelled(&self, id: &ListingId, path: &AppPath);
 }
 
 /// Drops every report: the events of an engine nobody watches.
@@ -134,5 +134,5 @@ impl ListingEvents for NoEvents {
     fn read_complete(&self, _id: &ListingId, _total: usize) {}
     fn finished(&self, _id: &ListingId, _end: ListingEnd) {}
     fn diff(&self, _id: &ListingId, _batches: Vec<DirectoryDiffBatch>) {}
-    fn respelled(&self, _id: &ListingId, _path: &Path) {}
+    fn respelled(&self, _id: &ListingId, _path: &AppPath) {}
 }

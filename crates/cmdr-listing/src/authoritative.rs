@@ -3,7 +3,6 @@
 
 use crate::rt::Instant;
 use cmdr_fs::app_path::AppPath;
-use std::path::Path;
 use std::sync::atomic::Ordering;
 
 use cmdr_fs::ignore_poison::RwLockIgnorePoison;
@@ -48,7 +47,7 @@ impl Inner {
     /// `sequence`, ties broken by the latest `created_at`. Both listings receive watcher
     /// events, so they're equally fresh; the tiebreaker is just to keep the result
     /// stable across calls.
-    pub(crate) fn try_get_authoritative_listing(&self, volume_id: &str, path: &Path) -> Option<Vec<FileEntry>> {
+    pub(crate) fn try_get_authoritative_listing(&self, volume_id: &str, path: &AppPath) -> Option<Vec<FileEntry>> {
         // Step 1: find all listings on this (volume_id, path) and pick the most-recently-updated
         // one (highest sequence, ties broken by latest created_at). Read the entries out
         // under the cache lock and drop the lock before crossing any async / volume boundary.
@@ -105,7 +104,7 @@ impl Inner {
         // archive boundary.
         if resolved.routed != Some(RoutedKind::Archive)
             && !volume.supports_local_fs_access()
-            && cmdr_fs::archive_format::archive_boundary_candidate(path).is_some()
+            && cmdr_fs::archive_format::archive_boundary_candidate_at(path).is_some()
         {
             return None;
         }
@@ -114,7 +113,7 @@ impl Inner {
         // the hub's memo, so a path under a `Browse snapshots` component that came
         // back unrouted is a view listing its parent's coverage says nothing about
         // (or a real folder of that name, where declining costs one re-read).
-        if resolved.routed != Some(RoutedKind::Restic) && cmdr_fs::restic_view::restic_route(path).is_some() {
+        if resolved.routed != Some(RoutedKind::Restic) && cmdr_fs::restic_view::runs_through_view(path) {
             return None;
         }
 
@@ -122,7 +121,7 @@ impl Inner {
         // watch that can't see other writers (an OS-mounted share), so the cache may
         // be missing entries nobody told us about — exactly the case where handing
         // these to a delete walker or a copy scan does damage. Pay the re-read.
-        match volume.listing_watch_coverage(&AppPath::legacy_unchecked(path)) {
+        match volume.listing_watch_coverage(path) {
             WatchCoverage::EveryWriter => Some(entries),
             WatchCoverage::ThisMachineOnly | WatchCoverage::None => None,
         }

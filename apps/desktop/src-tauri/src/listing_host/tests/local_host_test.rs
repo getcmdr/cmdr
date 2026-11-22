@@ -32,7 +32,7 @@ fn test_listing_watch_coverage_flips_with_watcher_lifecycle() {
 
     // Seed a listing in the cache (the watcher reads its path via the listing cache).
     let listing = TestListing::new()
-        .path(&path)
+        .path(crate::test_support::native_app_path(&path).as_str())
         .insert(crate::listing_host::listings(), "listing-is-watched");
 
     // Listing exists but no watcher: still `None` (the race-window contract).
@@ -98,7 +98,7 @@ async fn a_local_mutation_patches_the_pane_showing_its_folder() {
     let volume = volume_at(&dir);
     let listing = TestListing::new()
         .volume(&volume_id)
-        .path(dir.native())
+        .path(dir.app_path().as_str())
         .entries(Vec::new())
         .insert(crate::listing_host::listings(), "local-notify");
 

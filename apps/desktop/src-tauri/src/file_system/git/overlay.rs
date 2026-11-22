@@ -7,10 +7,11 @@
 //! so the six rows reach the pane as a [`ListingOverlay`] contribution instead,
 //! and no walker ever sees them. `volume/DETAILS.md` § "Architecture".
 
-use std::path::Path;
+use cmdr_fs::app_path::{AppPath, PathArithmetic};
 use std::sync::Arc;
 
 use crate::file_system::volume::Volume;
+use crate::file_system::volume::manager::lexical_spelling;
 use cmdr_fs::entry::FileEntry;
 use cmdr_listing::host::ListingOverlay;
 
@@ -41,16 +42,16 @@ impl ListingOverlay for GitPortalOverlay {
     /// directory. The categories under it still route
     /// (`<linked>/.git/branches` and deeper resolve through the gitlink), so
     /// only the `.git/` landing listing is missing there.
-    fn applies_to(&self, volume: &dyn Volume, path: &Path, _entries: &[FileEntry]) -> bool {
+    fn applies_to(&self, volume: &dyn Volume, path: &AppPath, _entries: &[FileEntry]) -> bool {
         wiring::is_virtual_portal_enabled()
             && wiring::volume_holds_real_repos(volume)
             && path.file_name().is_some_and(|name| name == ".git")
     }
 
-    fn extra_entries(&self, _volume_id: &str, _volume: &dyn Volume, path: &Path) -> Vec<FileEntry> {
+    fn extra_entries(&self, _volume_id: &str, _volume: &dyn Volume, path: &AppPath) -> Vec<FileEntry> {
         let Some(worktree_root) = path.parent() else {
             return Vec::new();
         };
-        wiring::portal().category_rows(worktree_root)
+        wiring::portal().category_rows(&lexical_spelling(worktree_root))
     }
 }

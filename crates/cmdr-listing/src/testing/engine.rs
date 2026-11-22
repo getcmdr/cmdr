@@ -4,6 +4,16 @@ use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
+
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
+
+/// Canonical app text as an owned app path, for a test helper's `&str` input.
+/// Panics on non-canonical text.
+pub fn app_text(text: &str) -> AppPathBuf {
+    AppPath::from_normalized(text)
+        .unwrap_or_else(|why| panic!("{text:?} is no canonical app path: {why}"))
+        .to_owned()
+}
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
@@ -112,12 +122,15 @@ pub async fn read_to_end(engine: &Listings, request: &ListingRequest) -> Result<
 
 /// A request for `path` on `volume_id` under `id`, hidden files shown, sorted
 /// Name / Ascending / LikeFiles. Set a field to change one.
-pub fn request(id: &str, volume_id: &str, path: impl Into<PathBuf>) -> ListingRequest {
+///
+/// `path` is canonical app text (`/`, `/dir`); anything else panics, so a
+/// cell can't silently list a different path.
+pub fn request(id: &str, volume_id: &str, path: &str) -> ListingRequest {
     use crate::{DirectorySortMode, ListingId, SortColumn, SortOrder};
     ListingRequest {
         id: ListingId::new(id),
         volume_id: volume_id.to_string(),
-        path: path.into(),
+        path: app_text(path),
         include_hidden: true,
         sort_by: SortColumn::Name,
         sort_order: SortOrder::Ascending,
@@ -181,10 +194,10 @@ pub fn publish_replacement(
 /// One `FullRefresh` of `path` on `volume_id`, as a watcher event drives it,
 /// landing on `listing_id` (sorted the listing's own way), awaited to its end:
 /// what a refresh does to a listing, without waiting on a spawn.
-pub async fn full_refresh(engine: &Listings, volume_id: &str, path: &Path, listing_id: &str) {
+pub async fn full_refresh(engine: &Listings, volume_id: &str, path: &AppPath, listing_id: &str) {
     engine
         .inner
-        .notify_full_refresh(volume_id.to_string(), path.to_path_buf(), vec![listing_id.to_string()])
+        .notify_full_refresh(volume_id.to_string(), path.to_owned(), vec![listing_id.to_string()])
         .await;
 }
 
@@ -195,7 +208,7 @@ pub async fn decorate(
     engine: &Listings,
     volume_id: &str,
     volume: &Arc<dyn Volume>,
-    path: &Path,
+    path: &AppPath,
     entries: &mut Vec<cmdr_fs::entry::FileEntry>,
 ) -> usize {
     engine.inner.decorate(volume_id, volume, path, entries).await
@@ -322,19 +335,19 @@ impl ListingVolumes for FakeVolumes {
     fn resolve<'a>(
         &'a self,
         volume_id: &'a str,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = ResolvedVolume> + Send + 'a>> {
         Box::pin(async move { self.resolve_local_only(volume_id, path) })
     }
 
-    fn resolve_local_only(&self, volume_id: &str, path: &Path) -> ResolvedVolume {
-        ResolvedVolume::passthrough(self.get(volume_id), path)
+    fn resolve_local_only(&self, volume_id: &str, path: &AppPath) -> ResolvedVolume {
+        ResolvedVolume::passthrough_at(self.get(volume_id), path)
     }
 
     fn unregistered<'a>(
         &'a self,
         volume_id: &'a str,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Unregistered> + Send + 'a>> {
         let not_connected = self.not_connected.lock_ignore_poison().contains(volume_id);
         Box::pin(async move {

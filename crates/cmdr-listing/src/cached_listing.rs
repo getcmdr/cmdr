@@ -7,7 +7,8 @@
 //! queue is `diff_emitter.rs`, and the orphan reaper is `orphan_reaper.rs`.
 
 use crate::rt::Instant;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -78,33 +79,40 @@ impl Inner {
 /// never reached that pane and the user acted on files already gone (ERR-QW42X,
 /// ERR-46A6B). So every stored listing and every lookup builds its path through
 /// [`ListingPath::on_volume`], which asks the volume (`Volume::listing_path`).
-/// ❌ No `From<PathBuf>` and no `PartialEq<Path>`: a raw path can't be stored or
-/// compared without passing through it.
+/// ❌ No `From<AppPathBuf>` and no `PartialEq<AppPath>`: a raw path can't be
+/// stored or compared without passing through it.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct ListingPath(PathBuf);
+pub(crate) struct ListingPath(AppPathBuf);
 
 impl ListingPath {
     /// `path` in the spelling `volume_id`'s volume keys listings under; verbatim
     /// when `volumes` serves nothing under that id.
     ///
     /// ❗ Call it before taking the cache: it asks the host's volume seam.
-    pub(crate) fn on_volume(volumes: &dyn ListingVolumes, volume_id: &str, path: &Path) -> Self {
+    pub(crate) fn on_volume(volumes: &dyn ListingVolumes, volume_id: &str, path: &AppPath) -> Self {
         let volume = volumes.get(volume_id);
-        Self(volume.map_or_else(
-            || path.to_path_buf(),
-            |volume| {
-                volume
-                    .listing_path(&AppPath::legacy_unchecked(path))
-                    .as_std_legacy()
-                    .into_owned()
-            },
-        ))
+        Self(volume.map_or_else(|| path.to_owned(), |volume| volume.listing_path(path)))
     }
 
     /// The canonical spelling, for a re-read or a log line.
-    pub(crate) fn as_path(&self) -> &Path {
+    pub(crate) fn as_path(&self) -> &AppPath {
         &self.0
     }
+}
+
+/// A path the backends' listing seam (`cmdr_fs::volume::host::ListingHost`) hands
+/// the engine as `std::path`, as the app path the engine keys listings on, byte
+/// for byte. ❗ The engine's one way in from that seam: it speaks `std::path`
+/// until the write engine's oracle callers (`cmdr-operations`) hold app paths, and
+/// every `&Path` entry point (`directory_changed`, `authoritative_listing`,
+/// `refresh_archive_listings`, `listings_for_local_path`) crosses here.
+pub(crate) fn from_host_seam(path: &Path) -> Cow<'_, AppPath> {
+    AppPath::legacy_unchecked(path)
+}
+
+/// [`from_host_seam`]'s way back out, for `open_listing_paths`' answer.
+pub(crate) fn to_host_seam(path: &AppPath) -> PathBuf {
+    path.as_std_legacy().into_owned()
 }
 
 /// Cached directory listing for on-demand virtual scrolling.
@@ -207,7 +215,7 @@ impl CachedListing {
     pub(crate) fn new(
         engine: &Inner,
         volume_id: String,
-        path: PathBuf,
+        path: AppPathBuf,
         prepared: Prepared,
         include_hidden: bool,
         sort_by: SortColumn,

@@ -17,8 +17,7 @@
 //! over whatever the engine holds, between the enrich and the sort, on every
 //! read that builds or replaces a listing.
 
-use std::path::Path;
-
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::Volume;
 
@@ -39,11 +38,11 @@ pub trait ListingOverlay: Send + Sync + 'static {
     /// a length check. The expensive half is
     /// [`extra_entries`](Self::extra_entries), which only runs when this
     /// answered `true`.
-    fn applies_to(&self, volume: &dyn Volume, path: &Path, entries: &[FileEntry]) -> bool;
+    fn applies_to(&self, volume: &dyn Volume, path: &AppPath, entries: &[FileEntry]) -> bool;
 
     /// The rows to fold in. Runs on the blocking pool, so it may open a
     /// repository or hit the disk. `volume_id` is the id the listing was read
     /// under, the same one a later `resolve` of a path below sees, so a
     /// contributor can key what it learns here the way its route looks it up.
-    fn extra_entries(&self, volume_id: &str, volume: &dyn Volume, path: &Path) -> Vec<FileEntry>;
+    fn extra_entries(&self, volume_id: &str, volume: &dyn Volume, path: &AppPath) -> Vec<FileEntry>;
 }

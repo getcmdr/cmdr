@@ -21,8 +21,7 @@
 //! paths that came out of a listing, and there a miss means the directory is
 //! gone: resolving it could hand the walker a look-alike twin.
 
-use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 
 use tokio_util::sync::CancellationToken;
 
@@ -36,15 +35,15 @@ use cmdr_fs::volume::{ListingProgress, Volume, VolumeError};
 /// A directory listing, and the path it lists as its volume spells it.
 pub(crate) struct Listed {
     /// `path` as asked, or the volume's own spelling when that one missed.
-    pub path: PathBuf,
+    pub path: AppPathBuf,
     pub entries: Vec<FileEntry>,
 }
 
 impl Listed {
     /// The volume's spelling when it differs from what was asked, for the
     /// frontend to adopt; `None` for the common case, a path that listed as given.
-    pub(crate) fn stored_spelling_of(&self, asked: &Path) -> Option<PathBuf> {
-        (self.path != asked).then(|| self.path.clone())
+    pub(crate) fn stored_spelling_of(&self, asked: &AppPath) -> Option<AppPathBuf> {
+        (*self.path != *asked).then(|| self.path.clone())
     }
 }
 
@@ -56,39 +55,30 @@ impl Listed {
 /// shows that parent), then the listing itself. `cancel` reaches both.
 pub(crate) async fn list_as_stored(
     volume: &dyn Volume,
-    path: &Path,
+    path: &AppPath,
     on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
     cancel: Option<&CancellationToken>,
 ) -> Result<Listed, VolumeError> {
-    let missed = match volume
-        .list_directory_with_cancel(&AppPath::legacy_unchecked(path), on_progress, cancel)
-        .await
-    {
+    let missed = match volume.list_directory_with_cancel(path, on_progress, cancel).await {
         Ok(entries) => {
             return Ok(Listed {
-                path: path.to_path_buf(),
+                path: path.to_owned(),
                 entries,
             });
         }
         Err(e @ VolumeError::NotFound(_)) => e,
         Err(e) => return Err(e),
     };
-    let Some(stored) = volume
-        .find_stored_spelling(&AppPath::legacy_unchecked(path), cancel)
-        .await?
-    else {
+    let Some(stored) = volume.find_stored_spelling(path, cancel).await? else {
         return Err(missed);
     };
     log::debug!(
         "list_as_stored: {} is stored as {}",
-        LogPrivate::dir_path(path),
-        LogPrivate::dir_path(&*stored.as_std_legacy())
+        LogPrivate::dir_path(path.as_str()),
+        LogPrivate::dir_path(stored.as_str())
     );
     let entries = volume.list_directory_with_cancel(&stored, on_progress, cancel).await?;
-    Ok(Listed {
-        path: stored.as_std_legacy().into_owned(),
-        entries,
-    })
+    Ok(Listed { path: stored, entries })
 }
 
 /// The entries of the folder at `path`, opened the way a pane opens a typed
@@ -101,7 +91,7 @@ pub(crate) async fn list_as_stored(
 /// the error of the resolve or of the second listing.
 pub async fn entries_as_stored(
     volume: &dyn Volume,
-    path: &Path,
+    path: &AppPath,
     cancel: Option<&CancellationToken>,
 ) -> Result<Vec<FileEntry>, VolumeError> {
     list_as_stored(volume, path, None, cancel)
@@ -122,30 +112,27 @@ pub async fn entries_as_stored(
 /// An all-ASCII path is never asked about: it has one Unicode form, and the kernel
 /// mount keeps the server's case, so these paths can only differ in form. That
 /// keeps a drop of a thousand plain names from costing a thousand round trips.
-pub async fn stored_spellings(volume: &dyn Volume, paths: Vec<PathBuf>) -> Vec<PathBuf> {
+pub async fn stored_spellings(volume: &dyn Volume, paths: Vec<AppPathBuf>) -> Vec<AppPathBuf> {
     let mut stored = Vec::with_capacity(paths.len());
     for path in paths {
-        if path.as_os_str().is_ascii() {
+        if path.as_str().is_ascii() {
             stored.push(path);
             continue;
         }
-        match volume
-            .find_stored_spelling(&AppPath::legacy_unchecked(&path), None)
-            .await
-        {
+        match volume.find_stored_spelling(&path, None).await {
             Ok(Some(spelling)) => {
                 log::debug!(
                     "stored_spellings: {} is stored as {}",
-                    LogPrivate::path(&path),
-                    LogPrivate::path(&*spelling.as_std_legacy())
+                    LogPrivate::path(path.as_str()),
+                    LogPrivate::path(spelling.as_str())
                 );
-                stored.push(spelling.as_std_legacy().into_owned());
+                stored.push(spelling);
             }
             Ok(None) => stored.push(path),
             Err(e) => {
                 log::debug!(
                     "stored_spellings: keeping {} as given: {}",
-                    LogPrivate::path(&path),
+                    LogPrivate::path(path.as_str()),
                     LogError(&e)
                 );
                 stored.push(path);
@@ -192,25 +179,25 @@ impl Inner {
         self: &std::sync::Arc<Self>,
         volume_id: &str,
         listing_id: &str,
-        path: &Path,
+        path: &AppPath,
         read_by: &std::sync::Arc<dyn Volume>,
     ) {
         let serving = self.volumes.get(volume_id);
         if serving.is_some_and(|serving| !std::sync::Arc::ptr_eq(&serving, read_by)) {
             log::debug!(
                 "listing {listing_id} was read by a backend replaced mid-read; re-reading {}",
-                LogPrivate::dir_path(path)
+                LogPrivate::dir_path(path.as_str())
             );
             // A strong handle: the respell ends.
             let engine = std::sync::Arc::clone(self);
-            let (volume_id, listing_id, path) = (volume_id.to_string(), listing_id.to_string(), path.to_path_buf());
+            let (volume_id, listing_id, path) = (volume_id.to_string(), listing_id.to_string(), path.to_owned());
             self.runtime
                 .spawn(async move { engine.respell_listing(volume_id, listing_id, path).await });
         }
     }
 
     /// One listing's respell; `pub(super)` so a test can await it directly.
-    pub(crate) async fn respell_listing(&self, volume_id: String, listing_id: String, path: PathBuf) {
+    pub(crate) async fn respell_listing(&self, volume_id: String, listing_id: String, path: AppPathBuf) {
         let _turn = self.refresh_turn(&volume_id, &path).await;
         let resolved = self.volumes.resolve(&volume_id, &path).await;
         let is_routed = resolved.is_routed();
@@ -224,7 +211,7 @@ impl Inner {
                 // The pane keeps what it has; its next navigation or refresh asks again.
                 log::debug!(
                     "respell_listing: couldn't re-read {}: {}",
-                    LogPrivate::dir_path(&path),
+                    LogPrivate::dir_path(path.as_str()),
                     LogError(&e)
                 );
                 return;
@@ -248,7 +235,7 @@ impl Inner {
 
     /// Moves `listing_id` to `stored`, the same directory in its volume's spelling,
     /// and tells its pane. A no-op when the pane closed meanwhile.
-    fn rekey_listing(&self, listing_id: &str, volume_id: &str, stored: &Path) {
+    fn rekey_listing(&self, listing_id: &str, volume_id: &str, stored: &AppPath) {
         use cmdr_fs::ignore_poison::RwLockIgnorePoison;
 
         // Built before taking the cache: it reads the volume registry.

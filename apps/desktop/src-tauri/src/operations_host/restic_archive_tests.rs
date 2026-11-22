@@ -15,7 +15,7 @@ use std::time::Duration;
 
 use crate::file_system::restic::test_repo::{BackedUpDrive, SourceFile, backed_up_drive};
 use crate::file_system::volume::manager::get_volume_manager;
-use crate::test_support::isolate_secrets;
+use crate::test_support::{isolate_secrets, native_app_path};
 use cmdr_archive::test_fixtures::{build_encrypted_7z, build_zip, deflated, dir, stored};
 use cmdr_fs::volume::{LockedContainer, RoutedKind, Volume, VolumeError};
 use cmdr_listing::host::ListingVolumes;
@@ -113,7 +113,7 @@ async fn a_pane_enters_the_zip_and_lists_its_insides() {
     let (drive, zip) = drive_with_a_zip("restic-archive-list").await;
 
     let seam = crate::listing_host::volumes::AppVolumes;
-    let entered = seam.resolve(&drive.volume_id, &zip).await;
+    let entered = seam.resolve(&drive.volume_id, &native_app_path(&zip)).await;
     assert_eq!(entered.routed, Some(RoutedKind::ArchiveInSnapshot));
     let archive = entered.volume.expect("the archive");
     let mut names: Vec<String> = archive
@@ -126,7 +126,7 @@ async fn a_pane_enters_the_zip_and_lists_its_insides() {
     names.sort();
     assert_eq!(names, ["docs", "readme.txt"]);
 
-    let inside = seam.resolve(&drive.volume_id, &zip.join("docs")).await;
+    let inside = seam.resolve(&drive.volume_id, &native_app_path(zip.join("docs"))).await;
     let docs = inside
         .volume
         .expect("the archive")
@@ -155,7 +155,7 @@ async fn a_locked_7z_in_a_snapshot_asks_for_the_archive_password() {
     let sevenz = drive.backed_up.join("locked.7z");
 
     let entered = crate::listing_host::volumes::AppVolumes
-        .resolve(&drive.volume_id, &sevenz)
+        .resolve(&drive.volume_id, &native_app_path(&sevenz))
         .await;
     assert_eq!(entered.routed, Some(RoutedKind::ArchiveInSnapshot));
     let listed = entered
@@ -286,7 +286,7 @@ async fn writes_into_the_zip_and_a_move_out_refuse_before_anything_moves() {
 
     // The snapshot still holds the zip it held.
     let archive = get_volume_manager()
-        .resolve_to_list(&drive.volume_id, &crate::test_support::native_app_path(&zip))
+        .resolve_to_list(&drive.volume_id, &native_app_path(&zip))
         .await
         .volume
         .expect("the archive");

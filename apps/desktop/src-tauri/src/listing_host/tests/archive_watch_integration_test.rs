@@ -84,7 +84,7 @@ fn stub_entry(archive_path: &Path, inner_name: &str) -> FileEntry {
 fn seed_listing(tag: &str, volume_id: &str, path: &Path, entries: Vec<FileEntry>) -> TestListingGuard {
     TestListing::new()
         .volume(volume_id)
-        .path(path)
+        .path(crate::test_support::native_app_path(path).as_str())
         .entries(entries)
         .insert(crate::listing_host::listings(), tag)
 }

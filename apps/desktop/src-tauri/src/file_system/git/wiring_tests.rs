@@ -245,22 +245,25 @@ fn a_report_selects_every_open_virtual_listing_for_the_repo() {
     let listings = [
         TestListing::new()
             .volume(DEFAULT_VOLUME_ID)
-            .path(branches.clone())
+            .path(crate::test_support::native_app_path(&branches).as_str())
             .insert(crate::listing_host::listings(), "wiring-refresh-branches"),
         TestListing::new()
             .volume(DEFAULT_VOLUME_ID)
-            .path(commits.clone())
+            .path(crate::test_support::native_app_path(&commits).as_str())
             .insert(crate::listing_host::listings(), "wiring-refresh-commits"),
         TestListing::new()
             .volume(DEFAULT_VOLUME_ID)
-            .path(dot_git.clone())
+            .path(crate::test_support::native_app_path(&dot_git).as_str())
             .insert(crate::listing_host::listings(), "wiring-refresh-dot-git"),
     ];
 
     let selected = super::wiring::listings_a_repo_change_re_reads(&root);
     for path in [&branches, &commits, &dot_git] {
         assert!(
-            selected.iter().any(|(_, listed)| listed == path),
+            // The engine hands a listing's location as its app text in a `PathBuf`.
+            selected
+                .iter()
+                .any(|(_, listed)| listed.to_str() == Some(crate::test_support::native_app_path(path).as_str())),
             "{} is what a ref change re-reads: {selected:?}",
             path.display()
         );
@@ -306,7 +309,7 @@ fn a_listing_reached_through_a_symlink_is_still_the_repos() {
     let through_link = link.join(".git").join("branches");
     let _listing = TestListing::new()
         .volume(DEFAULT_VOLUME_ID)
-        .path(through_link.clone())
+        .path(crate::test_support::native_app_path(&through_link).as_str())
         .insert(crate::listing_host::listings(), "wiring-symlinked-branches");
 
     let selected = super::wiring::listings_a_repo_change_re_reads(&root);

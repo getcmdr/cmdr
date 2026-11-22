@@ -6,11 +6,10 @@
 //! per-directory turnstile still bounds a storm to two reads; it just isn't what
 //! orders a ⌘R against a `FullRefresh` any more, since the ⌘R never queues on it.
 
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::app_path::AppPathBuf;
+use cmdr_fs::app_path::{AppName, AppPath, PathArithmetic};
 use std::collections::VecDeque;
 use std::future::Future;
-use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -29,10 +28,12 @@ use super::Listings;
 use super::testing::{TestEngine, TestListing};
 use cmdr_fs::testing::wait_until_async;
 
-fn entry(dir: &Path, name: &str) -> FileEntry {
+fn entry(dir: &AppPath, name: &str) -> FileEntry {
     FileEntry::new(
         name.to_string(),
-        dir.join(name).to_string_lossy().into_owned(),
+        dir.join(AppName::from_app_spelling(name).expect("one plain name"))
+            .expect("joins")
+            .into_string(),
         false,
         false,
     )
@@ -153,9 +154,9 @@ impl Volume for GatedListVolume {
 }
 
 /// An engine with a fresh volume id and directory, the volume registered under it.
-fn register(tag: &str, script: Vec<Read>) -> (TestEngine, String, PathBuf, Arc<GatedListVolume>) {
+fn register(tag: &str, script: Vec<Read>) -> (TestEngine, String, AppPathBuf, Arc<GatedListVolume>) {
     let volume_id = unique_test_id(&format!("{tag}-vol"));
-    let dir = PathBuf::from(format!("/test/{}", unique_test_id(&format!("{tag}-dir"))));
+    let dir = super::testing::app_text(&format!("/test/{}", unique_test_id(&format!("{tag}-dir"))));
     let volume = Arc::new(GatedListVolume::new(script));
     let engine = TestEngine::builder()
         .volume(&volume_id, Arc::clone(&volume) as Arc<dyn Volume>)
@@ -164,9 +165,14 @@ fn register(tag: &str, script: Vec<Read>) -> (TestEngine, String, PathBuf, Arc<G
 }
 
 /// `engine`'s `FullRefresh` of `dir` for `listing_id`, on a task of its own.
-fn spawn_full_refresh(engine: &Listings, volume_id: &str, dir: &Path, listing_id: &str) -> tokio::task::JoinHandle<()> {
+fn spawn_full_refresh(
+    engine: &Listings,
+    volume_id: &str,
+    dir: &AppPath,
+    listing_id: &str,
+) -> tokio::task::JoinHandle<()> {
     let inner = Arc::clone(&engine.inner);
-    let (volume_id, dir, listings) = (volume_id.to_string(), dir.to_path_buf(), sort_of(listing_id));
+    let (volume_id, dir, listings) = (volume_id.to_string(), dir.to_owned(), sort_of(listing_id));
     tokio::spawn(async move { inner.notify_full_refresh(volume_id, dir, listings).await })
 }
 
@@ -179,12 +185,12 @@ fn sort_of(id: &str) -> Vec<String> {
 }
 
 /// Whether a `FullRefresh` of `dir` is queued behind the running one.
-fn refresh_queued(engine: &Listings, volume_id: &str, dir: &Path) -> bool {
+fn refresh_queued(engine: &Listings, volume_id: &str, dir: &AppPath) -> bool {
     engine
         .inner
         .refresh_slots
         .read_ignore_poison()
-        .get(&(volume_id.to_string(), dir.to_path_buf()))
+        .get(&(volume_id.to_string(), dir.to_owned()))
         .is_some_and(|slot| slot.queued.load(Ordering::Acquire))
 }
 
@@ -212,7 +218,7 @@ async fn a_slow_full_refresh_cannot_land_over_a_newer_refresh() {
     }
     let listing = TestListing::new()
         .volume(&volume_id)
-        .path(dir.clone())
+        .path(dir.as_str())
         .entries(mid_write)
         .insert(&engine, "gen-slow-first");
 
@@ -256,7 +262,7 @@ async fn a_queued_full_refresh_still_lands_after_a_refresh_that_published_while_
     }
     let listing = TestListing::new()
         .volume(&volume_id)
-        .path(dir.clone())
+        .path(dir.as_str())
         .entries(Vec::new())
         .insert(&engine, "gen-queued");
 

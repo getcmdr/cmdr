@@ -123,11 +123,10 @@ async fn test_list_directory_start_with_volume_caches_entries() {
     use cmdr_fs::entry::FileEntry;
     use cmdr_fs::volume::InMemoryVolume;
     use cmdr_sort::{DirectorySortMode, SortColumn, SortOrder};
-    use std::path::PathBuf;
     use std::sync::Arc;
 
     let volume_id = format!("test-vol-ldswv-{}", uuid::Uuid::new_v4());
-    let dir_path = PathBuf::from("/testdir");
+    let dir_path = cmdr_fs::app_path!("/testdir");
 
     // Create volume with three files
     let volume = Arc::new(InMemoryVolume::with_entries(
@@ -163,7 +162,7 @@ async fn test_list_directory_start_with_volume_caches_entries() {
         .inner
         .list_directory_start_with_volume(
             &volume_id,
-            &dir_path,
+            dir_path,
             true,
             SortColumn::Name,
             SortOrder::Ascending,
@@ -188,7 +187,7 @@ async fn test_list_directory_start_with_volume_caches_entries() {
     assert!(names.iter().any(|n| n == "r.txt"));
     listing.with_listing(|cached| {
         assert_eq!(cached.volume_id, volume_id);
-        assert_eq!(cached.path.as_path(), std::path::Path::new(&dir_path));
+        assert_eq!(cached.path.as_path(), dir_path);
     });
 }
 
@@ -197,13 +196,12 @@ async fn test_list_directory_start_with_volume_caches_entries() {
 async fn test_list_directory_start_with_volume_unknown_volume() {
     use crate::testing::TestEngine;
     use cmdr_sort::{DirectorySortMode, SortColumn, SortOrder};
-    use std::path::PathBuf;
 
     let result = TestEngine::new()
         .inner
         .list_directory_start_with_volume(
             "nonexistent-volume-id",
-            &PathBuf::from("/some/path"),
+            cmdr_fs::app_path!("/some/path"),
             true,
             SortColumn::Name,
             SortOrder::Ascending,

@@ -93,8 +93,8 @@ pub use streaming::ListingRequest;
 pub use visible_rows::VisibleRows;
 
 use crate::rt::Instant;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, RwLock, Weak};
 
@@ -151,7 +151,7 @@ pub(crate) struct Inner {
     /// Committed diff batches waiting for their coalesced flush.
     diffs: Arc<DiffQueue>,
     /// Per-directory refresh turnstiles (`refresh.rs`).
-    refresh_slots: RwLock<HashMap<(String, PathBuf), RefreshSlot>>,
+    refresh_slots: RwLock<HashMap<(String, AppPathBuf), RefreshSlot>>,
     /// The last read generation handed out (`reread.rs`).
     read_generations: AtomicU64,
     /// Every volume's listing reads, and which of them are hung (`stall.rs`).
@@ -179,7 +179,7 @@ impl Inner {
     /// `path` in the spelling `volume_id`'s volume keys listings under.
     ///
     /// ❗ Call it before taking the cache: it asks the host's volume seam.
-    pub(crate) fn listing_path(&self, volume_id: &str, path: &std::path::Path) -> ListingPath {
+    pub(crate) fn listing_path(&self, volume_id: &str, path: &AppPath) -> ListingPath {
         ListingPath::on_volume(self.volumes.as_ref(), volume_id, path)
     }
 

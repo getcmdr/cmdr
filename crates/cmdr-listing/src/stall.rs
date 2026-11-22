@@ -8,8 +8,8 @@
 //! threads one volume can pin. Why each rule is what it is: `DETAILS.md` §
 //! "Stalled listings".
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -27,7 +27,7 @@ use crate::stalled_on::StalledOn;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
-use cmdr_fs::volume::friendly_error::{ErrorCategory, listing_error_from_volume_error};
+use cmdr_fs::volume::friendly_error::{ErrorCategory, listing_error_at};
 use cmdr_fs::volume::{BackendKind, ListingPhase, ListingProgress, Volume, VolumeError};
 
 /// When a listing counts as stalled, and how it retries once it has.
@@ -289,7 +289,7 @@ pub(crate) struct ListingRead<'a> {
     pub listing_id: &'a str,
     pub volume_id: &'a str,
     pub volume: &'a Arc<dyn Volume>,
-    pub path: &'a Path,
+    pub path: &'a AppPath,
     pub cancel: &'a CancellationToken,
 }
 
@@ -434,15 +434,15 @@ async fn sleep_until_opt(at: Option<Instant>) {
 
 /// Whether retrying might help, by the same typed classification the pane renders
 /// from (`ErrorCategory::Transient`).
-fn is_transient(error: &VolumeError, path: &Path) -> bool {
-    listing_error_from_volume_error(error, path).category == ErrorCategory::Transient
+fn is_transient(error: &VolumeError, path: &AppPath) -> bool {
+    listing_error_at(error, path).category == ErrorCategory::Transient
 }
 
 /// One read, in its own task so a cancel or a sibling's answer detaches it.
 fn spawn_read(read: &ListingRead<'_>, slot: ReadSlot, beat: Arc<Beat>, cancel: CancellationToken) -> AttemptFuture {
     let read_id = slot.read_id;
     let volume = Arc::clone(read.volume);
-    let path: PathBuf = read.path.to_path_buf();
+    let path: AppPathBuf = read.path.to_owned();
     let report_progress = Arc::clone(&read.on_progress);
     let listing_id = read.listing_id.to_string();
     let task = read.runtime.spawn(async move {
@@ -456,7 +456,7 @@ fn spawn_read(read: &ListingRead<'_>, slot: ReadSlot, beat: Arc<Beat>, cancel: C
             target: "stall_probe::listing_task",
             "task started: listing_id={}, path={}",
             listing_id,
-            LogPrivate::dir_path(&path),
+            LogPrivate::dir_path(path.as_str()),
         );
         // The slot rides here, so it frees when THIS read ends, however long after
         // the listing gave up on it.

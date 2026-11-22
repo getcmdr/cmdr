@@ -9,6 +9,7 @@ import { describe, expect, it, onTestFinished } from 'vitest'
 import { withPlatform } from '#lib/platform/test-platform.js'
 import {
   basenameInVolume,
+  beforeFirstDotDot,
   fromUserInput,
   hostPathFlavor,
   isLocalPath,
@@ -90,6 +91,24 @@ describe('hostPathFlavor', () => {
     onTestFinished(withPlatform('macos'))
     expect(parentInVolume('C:/Users')).toBeNull()
     expect(shownPath('C:/Users')).toBe('C:/Users')
+  })
+})
+
+describe('beforeFirstDotDot', () => {
+  it.each([
+    ['/a/b', 'posix', '/a/b'],
+    ['/a/b/../c', 'posix', '/a/b'],
+    ['/a/../../c', 'posix', '/a'],
+    ['/..', 'posix', '/'],
+    ['/../x', 'posix', '/'],
+    ['C:/x/../y', 'windows', 'C:/x'],
+    ['C:/..', 'windows', 'C:/'],
+    ['//server/share/../x', 'windows', '//server/share/'],
+    ['sftp://test_user_1@testnas.local:22/a/../b', 'posix', 'sftp://test_user_1@testnas.local:22/a'],
+    ['sftp://test_user_1@testnas.local:22/..', 'posix', 'sftp://test_user_1@testnas.local:22/'],
+    ['/a/..b/c', 'posix', '/a/..b/c'],
+  ] as const)('%s (%s) = %s', (path, flavor, cut) => {
+    expect(beforeFirstDotDot(path, flavor)).toBe(cut)
   })
 })
 

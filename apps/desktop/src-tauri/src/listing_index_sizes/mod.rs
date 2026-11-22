@@ -114,7 +114,7 @@ impl ListingObserver for IndexSizeListings {
         // The stored spelling is the volume's one spelling of the folder, the one the cache keys on.
         let listing = OpenListing {
             volume_id: opened.volume_id.to_string(),
-            index_dir: cmdr_fs::firmlinks::normalize_path(&opened.stored_path.to_string_lossy()),
+            index_dir: cmdr_fs::firmlinks::normalize_path(opened.stored_path.as_str()),
         };
         OPEN.lock_ignore_poison().insert(listing_id.to_string(), listing);
     }

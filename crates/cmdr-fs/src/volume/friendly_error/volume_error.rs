@@ -8,7 +8,9 @@
 //! - `FriendlyGit(_)` carries a typed `FriendlyGitErrorKind` from the git module, which rides as
 //!   the `Git` reason so the FE renders git copy from its parallel git factory
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+use crate::app_path::AppPath;
 
 use super::errno::listing_error_from_class;
 use super::{ErrorCategory, ListingError, ListingErrorReason, kinds};
@@ -98,14 +100,27 @@ pub fn archive_needs_password_listing_error(container: LockedContainer, wrong_at
 /// denial on a mounted share came from the file server, and sending the user to System
 /// Settings would have them hunt for a permission they already hold. Everything else
 /// is ordinary filesystem permissions.
-fn permission_denied_listing_error(path: &Path, path_display: &str, raw: String) -> ListingError {
+///
+/// `native` crosses the path to the OS only once the text-only remote split
+/// ruled out a phone, server, or object store: the TCC and mount probes are
+/// local questions. `None` (an app path with no native spelling) is ordinary
+/// filesystem permissions.
+fn permission_denied_listing_error(
+    path_display: &str,
+    raw: String,
+    native: &dyn Fn() -> Option<PathBuf>,
+) -> ListingError {
     match crate::volume::refuser_of_path(path_display) {
         Some(RemoteRefuser::Phone) => kinds::phone_refused(raw),
         Some(RemoteRefuser::Server) => kinds::server_refused(raw),
         Some(RemoteRefuser::ObjectStore) => kinds::object_store_refused(path_display, raw),
-        None if crate::tcc_paths::tcc_denial_is_plausible(path) => kinds::tcc_restricted(path_display, raw),
-        None if crate::tcc_paths::is_network_volume_path(path) => kinds::remote_permission_denied(path_display, raw),
-        None => kinds::permission_denied(path_display, raw),
+        None => match native() {
+            Some(path) if crate::tcc_paths::tcc_denial_is_plausible(&path) => kinds::tcc_restricted(path_display, raw),
+            Some(path) if crate::tcc_paths::is_network_volume_path(&path) => {
+                kinds::remote_permission_denied(path_display, raw)
+            }
+            _ => kinds::permission_denied(path_display, raw),
+        },
     }
 }
 
@@ -117,7 +132,17 @@ fn permission_denied_listing_error(path: &Path, path_display: &str, raw: String)
 /// failure keeps its own kind instead of being swallowed by the generic I/O
 /// fallback.
 pub fn listing_error_from_volume_error(err: &VolumeError, path: &Path) -> ListingError {
-    let path_display = path.display().to_string();
+    classify(err, path.display().to_string(), &|| Some(path.to_path_buf()))
+}
+
+/// [`listing_error_from_volume_error`] for an app path: the reasons carry its
+/// app text, and only the permission arm's local probes cross it to the OS
+/// (`to_native`), after the remote split.
+pub fn listing_error_at(err: &VolumeError, path: &AppPath) -> ListingError {
+    classify(err, path.as_str().to_string(), &|| path.native_if_any())
+}
+
+fn classify(err: &VolumeError, path_display: String, native: &dyn Fn() -> Option<PathBuf>) -> ListingError {
     let raw = err.to_string();
 
     match err {
@@ -133,7 +158,7 @@ pub fn listing_error_from_volume_error(err: &VolumeError, path: &Path) -> Listin
             }
         }
         VolumeError::NotFound(_) => kinds::not_found(&path_display, raw),
-        VolumeError::PermissionDenied { .. } => permission_denied_listing_error(path, &path_display, raw),
+        VolumeError::PermissionDenied { .. } => permission_denied_listing_error(&path_display, raw, native),
         VolumeError::AlreadyExists(_) => kinds::already_exists(&path_display, raw),
         VolumeError::NotSupported => kinds::not_supported(raw),
         VolumeError::DeviceDisconnected(_) => kinds::device_disconnected(&path_display, raw),
@@ -210,7 +235,12 @@ pub fn listing_error_from_volume_error(err: &VolumeError, path: &Path) -> Listin
         VolumeError::IoError {
             raw_os_error: Some(errno),
             ..
-        } => listing_error_from_class(crate::os_error::OsErrorClass::of_code(*errno), *errno, path, err),
+        } => listing_error_from_class(
+            crate::os_error::OsErrorClass::of_code(*errno),
+            *errno,
+            &path_display,
+            err,
+        ),
         VolumeError::IoError {
             raw_os_error: None,
             message,

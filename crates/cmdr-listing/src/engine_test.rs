@@ -2,7 +2,6 @@
 //! background work, and dropping one lets it go.
 
 use crate::RowSpan;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use cmdr_fs::entry::FileEntry;
@@ -26,7 +25,7 @@ fn insert_listing(engine: &Listings, listing_id: &str) {
     let listing = CachedListing::new(
         inner,
         "root".to_string(),
-        PathBuf::from(DIR),
+        super::testing::app(DIR).to_owned(),
         Prepared::for_test(vec![entry("a.txt")], OverlayRows::Recounted(0)),
         true,
         SortColumn::Name,

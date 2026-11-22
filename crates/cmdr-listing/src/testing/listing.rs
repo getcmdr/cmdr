@@ -1,7 +1,7 @@
 //! A listing a test puts straight into an engine's cache, and the handle that
 //! reads it back and ends it.
 
-use std::path::PathBuf;
+use cmdr_fs::app_path::AppPathBuf;
 use std::sync::atomic::Ordering;
 
 use cmdr_fs::entry::FileEntry;
@@ -101,7 +101,7 @@ impl Drop for TestListingGuard {
 /// tests set it explicitly.
 pub struct TestListing {
     volume_id: String,
-    path: PathBuf,
+    path: AppPathBuf,
     sort_by: SortColumn,
     sort_order: SortOrder,
     directory_sort_mode: DirectorySortMode,
@@ -125,7 +125,7 @@ impl TestListing {
     pub fn new() -> Self {
         Self {
             volume_id: "root".to_string(),
-            path: PathBuf::from("/test"),
+            path: super::app_text("/test"),
             sort_by: SortColumn::Name,
             sort_order: SortOrder::Ascending,
             directory_sort_mode: DirectorySortMode::LikeFiles,
@@ -144,9 +144,10 @@ impl TestListing {
         self
     }
 
-    /// The directory the listing shows.
-    pub fn path(mut self, path: impl Into<PathBuf>) -> Self {
-        self.path = path.into();
+    /// The directory the listing shows: canonical app text, an app path, or a
+    /// native path (a scratch dir) crossed with `from_native_unicode`.
+    pub fn path(mut self, path: impl ListingAt) -> Self {
+        self.path = path.listing_at();
         self
     }
 
@@ -221,5 +222,60 @@ impl TestListing {
         listing.last_accessed_ms.store(last_accessed_ms, Ordering::Relaxed);
         inner.cache.write_ignore_poison().insert(listing_id.clone(), listing);
         TestListingGuard::adopt(engine, listing_id)
+    }
+}
+
+/// A directory a [`TestListing`] can show, in any of the spellings a test holds.
+pub trait ListingAt {
+    /// The app path the listing is keyed on. Panics on a value that names none.
+    fn listing_at(self) -> AppPathBuf;
+}
+
+impl ListingAt for &str {
+    fn listing_at(self) -> AppPathBuf {
+        super::app_text(self)
+    }
+}
+
+impl ListingAt for &String {
+    fn listing_at(self) -> AppPathBuf {
+        self.clone().listing_at()
+    }
+}
+
+impl ListingAt for &cmdr_fs::app_path::AppPath {
+    fn listing_at(self) -> AppPathBuf {
+        self.to_owned()
+    }
+}
+
+impl ListingAt for AppPathBuf {
+    fn listing_at(self) -> AppPathBuf {
+        self
+    }
+}
+
+/// Owned text: canonical app text, else a native path's text (`dir.display()` of a
+/// scratch dir, which on Windows isn't app text).
+impl ListingAt for String {
+    fn listing_at(self) -> AppPathBuf {
+        match cmdr_fs::app_path::AppPath::from_normalized(&self) {
+            Ok(app) => app.to_owned(),
+            Err(_) => std::path::PathBuf::from(self).listing_at(),
+        }
+    }
+}
+
+/// A native path, as a scratch dir hands it: the app path it spells.
+impl ListingAt for &std::path::Path {
+    fn listing_at(self) -> AppPathBuf {
+        AppPathBuf::from_native_unicode(self).unwrap_or_else(|why| panic!("{} has no app path: {why}", self.display()))
+    }
+}
+
+/// [`ListingAt`] for `&Path`, owned.
+impl ListingAt for std::path::PathBuf {
+    fn listing_at(self) -> AppPathBuf {
+        self.as_path().listing_at()
     }
 }

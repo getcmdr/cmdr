@@ -248,7 +248,7 @@ async fn a_drop_anchored_at_the_volume_root_rereads_the_listing() {
     // An unregistered volume id, so the re-read takes the `std::fs` fallback.
     let listing = TestListing::new()
         .volume(&unique_test_id("fsevents-drop-rereads-vol"))
-        .path(dir.clone())
+        .path(crate::test_support::native_app_path(&dir).as_str())
         .entries(list_directory_core(&dir, &crate::listing_host::backends::AppListings).expect("the dir lists"))
         .insert(crate::listing_host::listings(), "fsevents-drop-rereads");
     // The move nobody heard about.

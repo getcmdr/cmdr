@@ -40,7 +40,7 @@ fn structural(path: &Path) -> ListingChange {
 fn listing_of(dir: &Path, tag: &str) -> TestListingGuard {
     TestListing::new()
         .volume(&unique_test_id(&format!("{tag}-vol")))
-        .path(dir.to_path_buf())
+        .path(crate::test_support::native_app_path(dir).as_str())
         .entries(list_directory_core(dir, &crate::listing_host::backends::AppListings).expect("the scratch dir lists"))
         .insert(crate::listing_host::listings(), tag)
 }
@@ -96,7 +96,7 @@ fn a_modify_keeps_the_finder_tags_the_cache_holds() {
     }];
     let listing = TestListing::new()
         .volume(&unique_test_id("watch-modify-tags-vol"))
-        .path(scratch.to_path_buf())
+        .path(crate::test_support::native_app_path(&scratch).as_str())
         .entries(entries)
         .insert(crate::listing_host::listings(), "watch-modify-tags");
 

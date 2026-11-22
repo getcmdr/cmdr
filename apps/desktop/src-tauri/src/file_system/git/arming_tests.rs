@@ -64,9 +64,16 @@ impl Repo {
     /// Opens `path` the way a pane does, answering the listing id to close with.
     async fn open(&self, path: &Path) -> String {
         let listing_id = uuid::Uuid::new_v4().to_string();
-        read_to_end(listings(), &request(&listing_id, &self.volume_id, path))
-            .await
-            .expect("the pane opens the listing");
+        read_to_end(
+            listings(),
+            &request(
+                &listing_id,
+                &self.volume_id,
+                crate::test_support::native_app_path(path).as_str(),
+            ),
+        )
+        .await
+        .expect("the pane opens the listing");
         listing_id
     }
 

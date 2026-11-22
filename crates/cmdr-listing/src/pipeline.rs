@@ -8,9 +8,8 @@
 //! `Prepared` to store. Without that, a refresh that forgot them would strip a
 //! repo's six portal rows out of an open `.git/` pane.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use crate::rt::Runtime;
@@ -117,7 +116,7 @@ impl Inner {
         &self,
         read_by: ReadBy<'_>,
         volume_id: &str,
-        path: &Path,
+        path: &AppPath,
         mut entries: Vec<FileEntry>,
     ) -> Prepared {
         match read_by {
@@ -126,7 +125,7 @@ impl Inner {
                     self.index.enrich(volume_id, &mut entries);
                 }
                 let overlay_rows = OverlayRows::Recounted(self.decorate(volume_id, volume, path, &mut entries).await);
-                let dates = ListedDates::Claimed(volume.supported_dates(&AppPath::legacy_unchecked(path)).await);
+                let dates = ListedDates::Claimed(volume.supported_dates(path).await);
                 Prepared {
                     entries,
                     overlay_rows,
@@ -158,7 +157,7 @@ impl Inner {
     pub(crate) fn prepare_handed_over(
         &self,
         volume_id: &str,
-        path: &Path,
+        path: &AppPath,
         mut entries: Vec<FileEntry>,
     ) -> Option<Prepared> {
         // Asked outside every engine lock: the volume seam reads the host's
@@ -183,7 +182,7 @@ impl Inner {
     fn applicable_overlays(
         &self,
         volume: &dyn Volume,
-        path: &Path,
+        path: &AppPath,
         entries: &[FileEntry],
     ) -> Vec<Arc<dyn ListingOverlay>> {
         self.overlays()
@@ -207,7 +206,7 @@ impl Inner {
         &self,
         volume_id: &str,
         volume: &Arc<dyn Volume>,
-        path: &Path,
+        path: &AppPath,
         entries: &mut Vec<FileEntry>,
     ) -> usize {
         let applicable = self.applicable_overlays(volume.as_ref(), path, entries);
@@ -220,7 +219,7 @@ impl Inner {
             applicable,
             volume_id.to_string(),
             Arc::clone(volume),
-            path.to_path_buf(),
+            path.to_owned(),
         )
         .await;
         if contributed.is_empty() {
@@ -248,7 +247,7 @@ async fn gather(
     overlays: Vec<Arc<dyn ListingOverlay>>,
     volume_id: String,
     volume: Arc<dyn Volume>,
-    path: PathBuf,
+    path: AppPathBuf,
 ) -> Vec<FileEntry> {
     runtime
         .spawn_blocking(move || {

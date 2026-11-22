@@ -3,6 +3,8 @@
 
 use std::path::Path;
 
+use crate::cached_listing::from_host_seam;
+
 use cmdr_fs::entry::TagRef;
 use cmdr_fs::volume::DirectoryChange;
 
@@ -30,7 +32,8 @@ impl Listings {
     /// Panes only: the host applies the change to its other subsystems (an
     /// index, file badges) BEFORE calling this, so the enrich here sees them.
     pub fn directory_changed(&self, volume_id: &str, parent_path: &Path, change: DirectoryChange) {
-        self.inner.notify_directory_changed(volume_id, parent_path, change);
+        self.inner
+            .notify_directory_changed(volume_id, &from_host_seam(parent_path), change);
     }
 
     /// Writes what a deferred, visible-row pass read for `id`'s rows, by path,
@@ -69,6 +72,8 @@ impl Listings {
 
     /// Fully re-reads every listing at or inside `archive_path` on `volume_id`.
     pub async fn refresh_archive_listings(&self, volume_id: &str, archive_path: &Path) {
-        self.inner.refresh_archive_listings(volume_id, archive_path).await;
+        self.inner
+            .refresh_archive_listings(volume_id, &from_host_seam(archive_path))
+            .await;
     }
 }
