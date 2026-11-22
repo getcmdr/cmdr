@@ -71,3 +71,58 @@ describe('a Windows destination', () => {
     expect(target('D:\\backup\\')).toMatchObject({ name: 'notes.txt', fullPath: 'D:/backup/notes.txt' })
   })
 })
+
+/**
+ * #1384: a share path stays on its share, end to end. The destination used to be
+ * picked among LOCAL-kind rows only, so a share (a mapped drive's row is a network
+ * one, and a share nobody mapped has no row at all) fell back to the boot drive, and
+ * the off-volume path collapsed to its root: `C:/`.
+ */
+describe('a Windows destination on a share', () => {
+  beforeEach(() => {
+    onTestFinished(withPlatform('windows'))
+  })
+
+  const shareId = 'smb-testnas-local-445-media'
+  const mapped: VolumeInfo = {
+    id: shareId,
+    name: 'media (\\\\testnas.local) (Z:)',
+    path: 'Z:/',
+    category: 'network',
+    fsType: 'smbfs',
+    isEjectable: false,
+  }
+
+  function onShare(enteredPath: string, selectedVolumeId: string, list: VolumeInfo[]) {
+    return resolveTransferTarget({
+      enteredPath,
+      sourceFolderPath: 'C:/Users/test_user_1',
+      sourcePath: 'C:/Users/test_user_1/notes.txt',
+      sourceVolumeId: 'root',
+      selectedVolumeId,
+      volumes: list,
+      homePath: 'C:/Users/test_user_1',
+    })
+  }
+
+  it('keeps a share nobody mapped (no row) as the volume, its UNC path whole', () => {
+    expect(onShare('//testnas.local/media/dst/', shareId, volumes)).toMatchObject({
+      volumeId: shareId,
+      fullPath: '//testnas.local/media/dst/notes.txt',
+    })
+  })
+
+  it('lands a mapped drive path on the mapped drive, never on the boot drive', () => {
+    expect(onShare('Z:\\dst\\', 'root', [...volumes, mapped])).toMatchObject({
+      volumeId: shareId,
+      path: '/dst',
+      fullPath: 'Z:/dst/notes.txt',
+    })
+  })
+
+  it('never hangs a path no listed volume holds off the boot drive root', () => {
+    const resolved = onShare('F:/x/', 'root', volumes)
+    expect(resolved?.fullPath).toBe('F:/x/notes.txt')
+    expect(resolved?.path).toBe('F:/x')
+  })
+})

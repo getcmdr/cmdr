@@ -168,7 +168,12 @@ on the destination volume for every probe and start alike (`commands/DETAILS.md`
 location" warning and the rename-in-place routing compare text, so a `..` after a name leaves both to the backend. On
 Windows a typed `\` separates like `/` (`typedSeparators`), and a drive or share path (`D:\backup\x`, `\\nas\share\x`)
 is absolute and always this machine's, whatever volume is picked, so its root survives the split; `\\nas` with no share
-is refused with its own message (`validateShareNamed`, #1118). Empty leaves and final `.` / `..` components cannot
+is refused with its own message (`validateShareNamed`, #1118). **Such a path's volume is the listed one whose root holds
+it, a share's row included** (a mapped drive's row is a `network` one, read off the row by `volumeKindOf`); a share
+nobody mapped has no row, so the picked volume (the destination pane's share) stays. ❌ Never fall back to the boot
+drive and hang the path off its root: `toVolumeRelativePath` keeps a drive or share path off the volume WHOLE, and the
+backend refuses it as another volume's. #1384: a copy into `\\localhost\C$\…\dst` targeted `C:/`, because only
+local-kind rows qualified and the off-volume path collapsed to `/`. Empty leaves and final `.` / `..` components cannot
 confirm. A folder copy names the copied or moved folder itself. Multiple selections still target a directory, preserving
 each selected item's name.
 

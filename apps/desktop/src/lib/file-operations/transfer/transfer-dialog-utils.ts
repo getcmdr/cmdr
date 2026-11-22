@@ -197,6 +197,11 @@ export function toVolumeRelativePath(fullPath: string, volumePath: string): stri
   // eslint-disable-next-line cmdr/no-raw-path-arithmetic -- a root's trailing slash is trimmed so the volume-relative rest keeps its leading `/` (`C:/Users` → `/Users`)
   const root = volumePath.endsWith('/') ? volumePath.slice(0, -1) : volumePath
   if (isPathOnVolume(fullPath, root)) return fullPath.slice(root.length) || '/'
+  // A drive or share path names its own root, so off this volume it stays whole and the
+  // backend refuses it as another volume's (#1384: collapsed to `/`, a share folder read as
+  // the boot drive's root, `C:/`).
+  const kind = parsePath(fullPath)?.kind
+  if (kind === 'drive' || kind === 'unc') return fullPath
   // A non-local volume whose caller already spelled the path volume-relative
   // ("/DCIM" against "mtp://device/storage"). Another volume's URL is not ours,
   // and echoing it into the box would just fail the absolute-path check.

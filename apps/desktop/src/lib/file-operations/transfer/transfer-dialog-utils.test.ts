@@ -278,6 +278,17 @@ describe('toVolumeRelativePath', () => {
     expect(toVolumeRelativePath('/some/path', '/Volumes/USB')).toBe('/')
   })
 
+  // #1384: a drive or share path names its own root, so off this volume it stays whole
+  // (the backend refuses it as another volume's). Collapsed to `/`, a share folder read
+  // as the boot drive's root.
+  it('keeps a drive or share path off this volume whole', () => {
+    onTestFinished(withPlatform('windows'))
+    expect(toVolumeRelativePath('//localhost/C$/Users/test_user_1/dst', 'C:/')).toBe(
+      '//localhost/C$/Users/test_user_1/dst',
+    )
+    expect(toVolumeRelativePath('D:/backup', 'C:/')).toBe('D:/backup')
+  })
+
   // A remote volume's root is `<prefix><server-side root>`, so one rooted at `/`
   // (the default for SFTP, WebDAV, and ADB) spells itself WITH a trailing slash.
   // Slicing that off by raw length ate the separator and handed the dialog
