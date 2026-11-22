@@ -102,7 +102,7 @@ most entangled one, with archive, MTP, and local POSIX checked for anything SMB 
   reader's order, once per directory: its callers (the engine's walkers, the rollback planner, the watcher's fallback
   re-read) take a listing's order as is, and only the listing engine re-sorts. The default orders by name bytes, since
   `cmdr-fs` can't name the collator without putting ICU on every backend's build path. Pinned by
-  `local_posix_host_test::a_local_listing_comes_back_in_the_panes_name_order`.
+  `local_host_test::a_local_listing_comes_back_in_the_panes_name_order`.
 
 **`DirectoryChange::Replaced` is the variant a device backend reports.** It carries the directory's new contents, so the
 host sorts them the way each pane sorts, diffs, and patches. `FullRefresh` asks the host to do the read instead; report

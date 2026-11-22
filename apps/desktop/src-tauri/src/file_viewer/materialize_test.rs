@@ -1,7 +1,5 @@
 //! Tests for preview-in-zip temp-extraction (`materialize`).
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
-
 use cmdr_fs::app_path::AppPath;
 use std::io::Write as _;
 use std::path::Path;
@@ -24,14 +22,18 @@ static SERIAL: Mutex<()> = Mutex::new(());
 
 /// Registers a real local-FS "root" volume so `resolve("root", …)` finds a parent for
 /// the on-demand `ArchiveVolume`. Idempotent; mirrors the pattern in `commands/rename.rs`.
+/// Rooted at the scratch folder's filesystem root (`/`, or its drive on Windows), as the
+/// real `root` volume is.
 fn ensure_root_volume() {
     use crate::file_system::volume::manager::get_volume_manager;
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
+    let scratch = cmdr_fs::testing::scratch_root();
+    let fs_root = scratch.ancestors().last().expect("an absolute path has a root");
     get_volume_manager().register_if_absent(
         "root",
-        Arc::new(LocalPosixVolume::local_folder(
+        Arc::new(LocalVolume::local_folder(
             "Test root",
-            "/",
+            fs_root,
             crate::volume_host::host(),
         )),
     );

@@ -1,14 +1,15 @@
-//! `LocalPosixVolume` against the app's real host: the pane listing cache, the
-//! panes' collator, and the FSEvents watcher. The backend's own cells, which
-//! drive a detached or recording host, are in `crates/cmdr-local/src/local_posix_test.rs`.
+//! This OS's `LocalVolume` against the app's real host: the pane listing cache, the
+//! panes' collator, and the OS watcher. The backend's own cells, which drive a detached
+//! or recording host, are in `crates/cmdr-local/src/local_volume_test.rs`.
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
-
-use crate::test_support::{AppTestDir, TestDir};
-use cmdr_fs::app_path::AppPath;
+use crate::test_support::AppTestDir;
 use cmdr_fs::volume::{MutationEvent, Volume, WatchCoverage};
-use cmdr_local::LocalPosixVolume;
-use std::path::Path;
+use cmdr_local::LocalVolume;
+
+/// This OS's local volume over `dir`, on the app's real host.
+fn volume_at(dir: &AppTestDir) -> LocalVolume {
+    LocalVolume::local_folder_at("Test", dir.app_path().to_owned(), crate::volume_host::host())
+}
 
 /// `listing_watch_coverage` follows the watcher lifecycle: `None` before a listing
 /// opens, covered after `start_watching` succeeds, `None` again after `stop_watching`.
@@ -20,7 +21,7 @@ fn test_listing_watch_coverage_flips_with_watcher_lifecycle() {
     let test_dir = AppTestDir::new("listing_watch_coverage");
     let path = test_dir.native().to_path_buf();
     let app = test_dir.app_path();
-    let volume = LocalPosixVolume::local_folder("Test", &path, crate::volume_host::host());
+    let volume = volume_at(&test_dir);
 
     // No listing yet, no watcher: no coverage.
     assert_eq!(
@@ -42,7 +43,7 @@ fn test_listing_watch_coverage_flips_with_watcher_lifecycle() {
     );
 
     // Start the watcher: now covered. A temp dir is local disk, so every writer
-    // reaches FSEvents (a network mount would report `ThisMachineOnly` here).
+    // reaches the OS watcher (a network mount would report `ThisMachineOnly` here).
     start_watching(listing.id(), &path).expect("start_watching should succeed on a real temp dir");
     assert_eq!(
         volume.listing_watch_coverage(app),
@@ -65,15 +66,15 @@ fn test_listing_watch_coverage_flips_with_watcher_lifecycle() {
 /// only the listing engine re-sorts.
 #[tokio::test]
 async fn a_local_listing_comes_back_in_the_panes_name_order() {
-    let dir = TestDir::new("local_posix_listing_order");
+    let dir = AppTestDir::new("local_listing_order");
     for name in ["file10.txt", "b.txt", "File2.txt", "A.txt"] {
-        std::fs::write(dir.join(name), b"x").expect("writing a scratch file");
+        std::fs::write(dir.native().join(name), b"x").expect("writing a scratch file");
     }
-    std::fs::create_dir(dir.join("c-folder")).expect("making a folder");
+    std::fs::create_dir(dir.native().join("c-folder")).expect("making a folder");
 
-    let volume = LocalPosixVolume::local_folder("Test", &*dir, crate::volume_host::host());
+    let volume = volume_at(&dir);
     let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .list_directory(dir.app_path(), None)
         .await
         .expect("listing the scratch dir");
 
@@ -92,14 +93,14 @@ async fn a_local_mutation_patches_the_pane_showing_its_folder() {
     use cmdr_fs::testing::unique_test_id;
     use cmdr_listing::testing::TestListing;
 
-    let dir = AppTestDir::new("local_posix_notify_mutation");
-    let volume_id = unique_test_id("local-posix-notify");
-    let volume = LocalPosixVolume::local_folder("Test", dir.native(), crate::volume_host::host());
+    let dir = AppTestDir::new("local_notify_mutation");
+    let volume_id = unique_test_id("local-notify");
+    let volume = volume_at(&dir);
     let listing = TestListing::new()
         .volume(&volume_id)
         .path(dir.native())
         .entries(Vec::new())
-        .insert(crate::listing_host::listings(), "local-posix-notify");
+        .insert(crate::listing_host::listings(), "local-notify");
 
     std::fs::write(dir.native().join("landed.txt"), b"x").expect("writing the new file");
     volume
