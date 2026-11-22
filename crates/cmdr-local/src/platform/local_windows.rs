@@ -761,9 +761,9 @@ impl Volume for LocalWindowsVolume {
         Box::pin(blocking("get_space_info", move || get_space_info_for_path(&root?.os)))
     }
 
-    /// The volume's read-only flag and a `FILE_ADD_FILE` open of the nearest folder at or
-    /// above `path` that exists (`write_access.rs`); a path this volume can't place is
-    /// `Unknown`.
+    /// The volume's read-only flag and an `AccessCheck` of `FILE_ADD_FILE` against the DACL of
+    /// the nearest folder at or above `path` that exists (`write_access.rs`); a path this
+    /// volume can't place is `Unknown`, and so is a DACL refusal on a share.
     fn write_access_at<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = WriteAccess> + Send + 'a>> {
         let at = self.locate(path);
         Box::pin(blocking("write_access_at", move || match at {

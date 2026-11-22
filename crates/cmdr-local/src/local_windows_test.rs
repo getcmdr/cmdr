@@ -381,7 +381,9 @@ async fn a_symlink_is_a_folder_link_exactly_when_its_target_is_a_folder() {
 
     for (link, target, folder) in [
         ("to-folder", "real", true),
-        ("to-file", "real\\keep.txt", false),
+        // A relative target carried from macOS or Linux spells its separators `/`.
+        ("to-file", "real/keep.txt", false),
+        ("to-file-native", "real\\keep.txt", false),
         ("to-nothing", "gone", false),
     ] {
         volume
@@ -389,16 +391,23 @@ async fn a_symlink_is_a_folder_link_exactly_when_its_target_is_a_folder() {
             .await
             .unwrap_or_else(|e| panic!("{link}: {e:?}"));
         assert_eq!(link_is_folder(link), folder, "{link}");
+        let read = volume
+            .read_link_target(&at(&volume, link))
+            .await
+            .expect("reads")
+            .expect("a link");
         assert_eq!(
-            volume.read_link_target(&at(&volume, link)).await.expect("reads"),
-            Some(std::path::PathBuf::from(target)),
-            "the target of {link} reads back verbatim"
+            read.as_os_str(),
+            target.replace('\\', "/").as_str(),
+            "{link}'s relative target reads back with `/`, so it resolves on macOS and Linux too"
         );
     }
-    assert_eq!(
-        std::fs::read(test_dir.native().join("to-file")).expect("the file link resolves"),
-        b"keep"
-    );
+    for link in ["to-file", "to-file-native"] {
+        assert_eq!(
+            std::fs::read(test_dir.native().join(link)).unwrap_or_else(|e| panic!("the link {link} must open: {e}")),
+            b"keep"
+        );
+    }
 
     volume.delete(&at(&volume, "to-folder")).await.expect("delete the link");
     assert!(std::fs::symlink_metadata(test_dir.native().join("to-folder")).is_err());

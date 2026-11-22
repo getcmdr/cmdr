@@ -56,10 +56,11 @@ pub(crate) fn reparse_kind_at(os: &Path) -> io::Result<ReparseKind> {
 /// The target of the link at `os`, as stored: `Ok(None)` for anything but a symlink or a
 /// junction (a placeholder or an alias included), `NotSupported` for a link Win32 can't read
 /// (a WSL symlink). A junction's target is absolute, spelled as `std` hands it back
-/// (`C:\x`, the NT `\??\` prefix dropped).
+/// (`C:\x`, the NT `\??\` prefix dropped); a relative target comes back with `/`
+/// (`carried_spelling`).
 pub(crate) fn read_link_at(os: &Path) -> io::Result<Result<Option<PathBuf>, VolumeError>> {
     match reparse_kind_at(os)? {
-        ReparseKind::Symlink | ReparseKind::Junction => Ok(Ok(Some(std::fs::read_link(os)?))),
+        ReparseKind::Symlink | ReparseKind::Junction => Ok(Ok(Some(carried_spelling(std::fs::read_link(os)?)))),
         ReparseKind::OtherLink(tag) => {
             log::debug!(target: "local_windows", "read_link_target: a link with reparse tag {tag:#x} reads as unsupported");
             Ok(Err(VolumeError::NotSupported))
@@ -68,16 +69,62 @@ pub(crate) fn read_link_at(os: &Path) -> io::Result<Result<Option<PathBuf>, Volu
     }
 }
 
-/// Makes `link` a symlink holding `target` verbatim: a folder link when the target, read
+/// Makes `link` a symlink holding `target` verbatim but for its separators (`stored_spelling`;
+/// `read_link_at` hands a relative one back with `/`): a folder link when the target, read
 /// against the link's folder, is a folder now, a file link otherwise (a target that's missing
 /// included), the rule `cmdr_fs::testing::symlink` follows too. An occupied `link` is refused
 /// by the OS itself (`ERROR_ALREADY_EXISTS`).
 pub(crate) fn create_symlink_at(link: &Path, target: &Path) -> io::Result<()> {
-    if target_is_folder(link, target) {
-        std::os::windows::fs::symlink_dir(target, link)
+    let target = stored_spelling(target);
+    if target_is_folder(link, &target) {
+        std::os::windows::fs::symlink_dir(&target, link)
     } else {
-        std::os::windows::fs::symlink_file(target, link)
+        std::os::windows::fs::symlink_file(&target, link)
     }
+}
+
+/// A target as the link stores it: every `/` a `\`. **Why**: Windows resolves a link's content
+/// with `\` alone, so a relative `../lib/x` carried from macOS or Linux would land a link that
+/// opens nothing (Go's `os.Symlink` converts the same way, "'/' does not work in link's
+/// content", and so does Git for Windows). Only the separator changes; the target is still
+/// never resolved or rebased.
+fn stored_spelling(target: &Path) -> PathBuf {
+    use std::os::windows::ffi::{OsStrExt as _, OsStringExt as _};
+    let wide: Vec<u16> = target
+        .as_os_str()
+        .encode_wide()
+        .map(|unit| {
+            if unit == u16::from(b'/') {
+                u16::from(b'\\')
+            } else {
+                unit
+            }
+        })
+        .collect();
+    PathBuf::from(std::ffi::OsString::from_wide(&wide))
+}
+
+/// A stored target as the volume hands it out: a RELATIVE (or rooted, drive-less) target with
+/// `/` separators, so a link carried to macOS or Linux resolves there, and a target with a
+/// prefix (`C:\x`, `\\server\share`, a junction's `\\?\`) exactly as stored, since only Windows
+/// can open it and a verbatim prefix must keep its `\`.
+fn carried_spelling(target: PathBuf) -> PathBuf {
+    use std::os::windows::ffi::{OsStrExt as _, OsStringExt as _};
+    if matches!(target.components().next(), Some(Component::Prefix(_))) {
+        return target;
+    }
+    let wide: Vec<u16> = target
+        .as_os_str()
+        .encode_wide()
+        .map(|unit| {
+            if unit == u16::from(b'\\') {
+                u16::from(b'/')
+            } else {
+                unit
+            }
+        })
+        .collect();
+    PathBuf::from(std::ffi::OsString::from_wide(&wide))
 }
 
 /// Whether `target` names a folder, read the way Windows resolves a relative link: against the

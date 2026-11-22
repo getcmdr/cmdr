@@ -11,20 +11,24 @@
 //! answered `Writable` for a folder whose DACL denied everyone `FILE_ADD_FILE` on the hosted
 //! runner (GitHub's `windows-latest`, PR #1374's first run, 2026-11-22). `AccessCheck` reads the
 //! DACL alone, as a plain create does. A folder's read-only attribute isn't consulted: it's
-//! Explorer's customization marker, and NTFS doesn't enforce it.
+//! Explorer's customization marker, and NTFS doesn't enforce it. ❗ On a share, a DACL refusal
+//! reads as `Unknown` (`write_verdict`): the server's DACL names its own accounts.
 
 use std::fs::File;
 use std::os::windows::ffi::OsStrExt as _;
 use std::os::windows::fs::OpenOptionsExt as _;
-use std::path::Path;
+use std::path::{Component, Path, Prefix};
 
 use cmdr_fs::volume::WriteAccess;
 use windows_sys::Win32::Foundation::{CloseHandle, HANDLE};
 
-use super::super::write_verdict::write_verdict;
+use super::super::write_verdict::{Probed, write_verdict};
 
 /// `FILE_READ_ONLY_VOLUME` in `GetVolumeInformationByHandleW`'s flags.
 const FILE_READ_ONLY_VOLUME: u32 = 0x0008_0000;
+/// `GetDriveTypeW`'s answer for a mapped network drive (`WindowsProgramming`'s constant, a
+/// feature this crate doesn't otherwise need).
+const DRIVE_REMOTE: u32 = 4;
 
 /// The verdict for the nearest folder at or above `path` (the OS's path) that exists, since a
 /// copy creates the rest. `Unknown` when none can be found or read.
@@ -32,8 +36,29 @@ pub(crate) fn write_access_at(path: &Path) -> WriteAccess {
     let Some(folder) = path.ancestors().find(|ancestor| ancestor.is_dir()) else {
         return WriteAccess::Unknown;
     };
-    let read_only_volume = volume_flags(folder).is_some_and(|flags| flags & FILE_READ_ONLY_VOLUME != 0);
-    write_verdict(read_only_volume, may_add_file(folder))
+    write_verdict(Probed {
+        read_only_volume: volume_flags(folder).is_some_and(|flags| flags & FILE_READ_ONLY_VOLUME != 0),
+        may_add_file: may_add_file(folder),
+        on_a_share: on_a_share(folder),
+    })
+}
+
+/// Whether `folder` is on a share: a UNC path (`\\?\UNC\server\share`, `\\server\share`), or a
+/// drive letter Windows maps to one.
+fn on_a_share(folder: &Path) -> bool {
+    use windows_sys::Win32::Storage::FileSystem::GetDriveTypeW;
+    let Some(Component::Prefix(prefix)) = folder.components().next() else {
+        return false;
+    };
+    match prefix.kind() {
+        Prefix::UNC(..) | Prefix::VerbatimUNC(..) => true,
+        Prefix::Disk(letter) | Prefix::VerbatimDisk(letter) => {
+            let root: Vec<u16> = [u16::from(letter), u16::from(b':'), u16::from(b'\\'), 0].into();
+            // SAFETY: `root` is a NUL-terminated drive root (`C:\`) that outlives the call.
+            unsafe { GetDriveTypeW(root.as_ptr()) == DRIVE_REMOTE }
+        }
+        Prefix::Verbatim(_) | Prefix::DeviceNS(_) => false,
+    }
 }
 
 /// The filesystem flags of the volume `folder` sits on, or `None` when Windows can't say.

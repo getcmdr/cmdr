@@ -377,8 +377,14 @@ nearly every method and hide which answers are real.
   execution alias, or a deduplicated file is the item itself (`Ok(None)`); another surrogate (a WSL symlink) is
   `NotSupported`. `std`'s `is_symlink` rests on the same bit, so a listing and this never disagree. `create_symlink`
   makes a FOLDER link when the target, read against the link's folder with `..` by text (a `\\?\` path never
-  normalizes), is a folder now, and a file link otherwise, a missing target included; the target is stored verbatim, `/`
-  included. **Decision**: no privilege to make links (`ERROR_PRIVILEGE_NOT_HELD`: no Developer Mode, not elevated) and a
+  normalizes), is a folder now, and a file link otherwise, a missing target included. **Decision**: the target is stored
+  verbatim but for its separators, every `/` a `\`, and a relative (or drive-less rooted) target reads back with `/`; a
+  target with a prefix (`C:\x`, `\\server\share`, `\\?\`) reads back as stored. **Why**: Windows resolves a link's
+  content with `\` alone, so a relative `../lib/x` carried from macOS or Linux would land a link that opens nothing
+  (Go's `os.Symlink` and Git for Windows convert the same way), and a `..\lib\x` carried the other way opens nothing
+  there; only the separator moves, never the target's meaning
+  (`local_windows_test::a_symlink_is_a_folder_link_exactly_when_its_target_is_a_folder` opens a link made from a `/`
+  target). **Decision**: no privilege to make links (`ERROR_PRIVILEGE_NOT_HELD`: no Developer Mode, not elevated) and a
   filesystem without them (`ERROR_NOT_SUPPORTED`, `ERROR_INVALID_FUNCTION`) answer `NotSupported`, which the engine
   reports as `LinksNotSupported`; ❌ never elevate, and ❌ never fall back to a junction. **Why**: a junction is a
   different thing (folders only, absolute targets, resolved by the server on a share), so a copy that quietly made one
@@ -457,12 +463,18 @@ nearly every method and hide which answers are real.
   folder that exists: the volume's `FILE_READ_ONLY_VOLUME` flag (`GetVolumeInformationByHandleW`) and whether the
   folder's DACL grants this process's token `FILE_ADD_FILE` (`AccessCheck`). What the two mean together is
   `src/platform/write_verdict.rs`, pure and pinned on every OS: a read-only volume is `ReadOnlyFilesystem`, a refusal
-  `NoPermission`, a descriptor or token nobody could read `Unknown`. **Decision**: `AccessCheck`, ❌ not an open asking
-  for `FILE_ADD_FILE`. **Why**: a folder opens only with backup semantics, which a token with `SeBackupPrivilege`
-  enabled gets past whatever the DACL says, while the copy's own creates are refused: the open answered `Writable` for a
-  folder denying everyone `FILE_ADD_FILE` on GitHub's hosted runner (PR #1374, 2026-11-22). The engine's own
-  `local_disk::write_probe` still opens that way (#1377). A folder's read-only attribute is never consulted (Explorer's
-  marker, which NTFS doesn't enforce).
+  `NoPermission`, a descriptor or token nobody could read `Unknown`. ❗ On a share (a UNC path, or a drive letter
+  `GetDriveTypeW` calls `DRIVE_REMOTE`) a refusal is `Unknown` too: the server's DACL names the server's accounts (a
+  NAS's own users, Samba's `S-1-22-*` unix SIDs), which a local token never holds, so `AccessCheck` would refuse a
+  folder the server lets this user write and the pre-flight would block a legitimate copy. A grant still counts, and the
+  probe errs toward "writable" everywhere: a wrong yes costs only the copy's own typed refusal later, a wrong no blocks
+  the copy. It reads no mandatory label (an integrity-level refusal answers `Writable`), and a UAC-filtered admin
+  token's deny-only Administrators SID is honored as `AccessCheck` honors it. **Decision**: `AccessCheck`, ❌ not an
+  open asking for `FILE_ADD_FILE`. **Why**: a folder opens only with backup semantics, which a token with
+  `SeBackupPrivilege` enabled gets past whatever the DACL says, while the copy's own creates are refused: the open
+  answered `Writable` for a folder denying everyone `FILE_ADD_FILE` on GitHub's hosted runner (PR #1374, 2026-11-22).
+  The engine's own `local_disk::write_probe` still opens that way (#1377). A folder's read-only attribute is never
+  consulted (Explorer's marker, which NTFS doesn't enforce).
 - **Decision**: no xattrs yet (`supports_xattrs` false), ❌ not alternate data streams as they are. **Why**: the
   contract doesn't map onto streams cleanly (#1375): an xattr name holds `:`, which a stream name can't, so it needs the
   same private-use mapping macOS's SMB client and Samba's `fruit` use or a tag reads as another attribute over SMB;
