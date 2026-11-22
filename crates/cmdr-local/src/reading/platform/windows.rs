@@ -131,8 +131,8 @@ pub(crate) fn read_entries(
 
 /// Every entry off the directory's own records: `read_dir` is `FindFirstFileExW` with basic
 /// info, whose find data holds each entry's attributes, reparse tag, size, and three dates, the
-/// fields an `lstat` here would read, so `DirEntry::metadata` costs no call. Measured on the
-/// hosted runner's NTFS at about 35 times faster than an `lstat` per entry for 20,000 files
+/// fields an `lstat` here would read, so `DirEntry::metadata` costs no call. A listing of 20,000
+/// files on the hosted runner's NTFS took a third of the time an `lstat` per entry took
 /// (`docs/notes/windows-port/windows-lister-2026-11.md`). ❗ A directory record can lag a file
 /// another program holds open for writing (its size and last-write time catch up when that
 /// handle closes, as Explorer shows too); the watcher's re-stat of a changed entry

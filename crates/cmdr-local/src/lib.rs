@@ -85,8 +85,6 @@ pub use rename::rename_volume_error;
 #[cfg(test)]
 mod list_alloc_ceiling_test;
 #[cfg(test)]
-mod lister_measurement_test;
-#[cfg(test)]
 mod local_conformance_test;
 #[cfg(test)]
 mod local_flags_test;

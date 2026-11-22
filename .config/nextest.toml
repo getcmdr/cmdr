@@ -103,13 +103,6 @@ s3-fixture = { max-threads = 4 }
 nextcloud-fixture = { max-threads = 1 }
 
 [[profile.default.overrides]]
-# TEMPORARY: task 35's Windows lister measurement (20,000 files, five listers, seven rounds),
-# gone with its cell once the numbers are recorded.
-# allowed-unmatched-nextest-filter: windows-only, Win32 directory enumeration
-filter = 'test(lister_measurement_test::)'
-slow-timeout = { period = "600s", terminate-after = 1 }
-
-[[profile.default.overrides]]
 # Disk-image fixtures: hdiutil create+attach+detach plus, for the FSEvents
 # probes, a 15 s internal wait for real live delivery — all past the global 8 s
 # cap. 30 s matches the harness runner's per-call SIGKILL deadline, so a

@@ -18,7 +18,7 @@ measurably faster than the one `LocalWindowsVolume` shipped with, which read `re
 
 ## Numbers
 
-Run 1 (CI run 45008311254, 2026-11-22), the shipped reader before the change:
+Run 1 (CI run 45008311254, 2026-11-22), the reader before the change:
 
 - The reader, `read_dir` plus an `lstat` per entry, `FileEntry` rows: 631 ms.
 - `read_dir` plus `symlink_metadata` per entry, no rows: 347 ms.
@@ -26,9 +26,21 @@ Run 1 (CI run 45008311254, 2026-11-22), the shipped reader before the change:
 - `FindFirstFileExW`, basic info, no flags: 7.4 ms.
 - `FindFirstFileExW`, basic info, `FIND_FIRST_EX_LARGE_FETCH`: 9.3 ms.
 
+Run 2 (CI run 45010557898, 2026-11-22), the reader after the change, against the forced stat-per-entry lister:
+
+- The reader off the find data (`find_data_entries`), `FileEntry` rows: 246 ms.
+- The forced `Lister::ReadDir` (an `lstat` per entry), `FileEntry` rows: 732 ms.
+- The bare loops again: 417 ms with `symlink_metadata` per entry, 10.3 ms with `DirEntry::metadata`, 7.5 ms for
+  `FindFirstFileExW` without flags, 9.9 ms with `FIND_FIRST_EX_LARGE_FETCH`.
+
+The cell that took them, `crates/cmdr-local/src/lister_measurement_test.rs`, landed and left with PR #1374 (its commits
+say "TEMPORARY, price the Windows listers"); bring it back from git for a re-run.
+
 ## What it says
 
-- **The stat per entry is the cost**, about 35 times the enumeration itself. `std::fs::read_dir` on Windows already is
+- **A listing is about three times faster end to end** (246 ms against 732 ms for 20,000 rows). What's left is building
+  the rows themselves (about 12 µs each: the app-path join, the icon id, the entry), not the disk.
+- **The stat per entry was the cost**, about 40 times the enumeration itself. `std::fs::read_dir` on Windows already is
   `FindFirstFileExW` with basic info (`library/std/src/sys/fs/windows.rs`, Rust 1.100), and `DirEntry::metadata` hands
   back the find data it read, so dropping the per-entry stat gets almost the whole win with no Win32 code of our own.
 - **`FIND_FIRST_EX_LARGE_FETCH` buys nothing measurable** at 20,000 entries on a local NTFS disk (9.3 ms against 7.4 ms

@@ -584,12 +584,12 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     folder symlinks made without elevating (`NotSupported` without Developer Mode); `write_access_at` reads the volume's
     read-only flag and the DACL. Decided against: owner names (no consumer, a SID per entry) and, for now, ADS-backed
     xattrs (#1375). **The lister done** (2026-11-22): rows come off `read_dir`'s own find data (`std`'s
-    `FindFirstFileExW`, basic info) with no stat per entry, about 35 times less work on 20,000 files, and
-    `FIND_FIRST_EX_LARGE_FETCH` bought nothing (`docs/notes/windows-port/windows-lister-2026-11.md`). Left: the engine's
-    own Windows `symlink` stub in `cmdr-operations` (#1376), and registering a volume per drive (with 34). The ignored
-    conformance cells in `local_conformance_test.rs` are the checklist. App paths in and out of both local volumes (one
-    crossing per OS through `AppPath::to_native`): `docs/specs/app-path-plan.md`. File identity is real by PATH
-    (2026-11-21, #1291, PR #1304): `cmdr_fs::file_identity::FileId::at` / `same_node_at` open a handle and read
+    `FindFirstFileExW`, basic info) with no stat per entry, a listing of 20,000 files three times faster (246 ms against
+    732), and `FIND_FIRST_EX_LARGE_FETCH` bought nothing (`docs/notes/windows-port/windows-lister-2026-11.md`). Left:
+    the engine's own Windows `symlink` stub in `cmdr-operations` (#1376), and registering a volume per drive (with 34).
+    The ignored conformance cells in `local_conformance_test.rs` are the checklist. App paths in and out of both local
+    volumes (one crossing per OS through `AppPath::to_native`): `docs/specs/app-path-plan.md`. File identity is real by
+    PATH (2026-11-21, #1291, PR #1304): `cmdr_fs::file_identity::FileId::at` / `same_node_at` open a handle and read
     `FileIdInfo` (`file_identity/platform/windows.rs`), which the copy's same-file guards and the source binding ask;
     the `Metadata` readers (`device_of`, `link_count`, walk dedup, the journal's `NodeIdentity`) still answer `None` and
     move over as each consumer needs it. The mount table is real (2026-11-21, `cmdr_local::mounts`' Windows arm): drive
