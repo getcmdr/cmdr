@@ -167,10 +167,11 @@ async fn zz_temporary_price_the_refresh_small() {
     price(1_000).await;
 }
 
-/// TEMPORARY, as above: 20,000 files, its own cell for the 8 s cap.
+/// TEMPORARY, as above: 5,000 files, past the cap, in its own cell for the 8 s cap (writing
+/// 20,000 took longer than that alone: about 0.5 s per 1,000).
 #[tokio::test]
 async fn zz_temporary_price_the_refresh_big() {
-    price(20_000).await;
+    price(5_000).await;
 }
 
 #[expect(clippy::print_stdout, reason = "a measurement prints its measurements")]

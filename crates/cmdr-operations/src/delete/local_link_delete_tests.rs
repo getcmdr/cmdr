@@ -65,57 +65,43 @@ async fn delete_permanently(sources: Vec<PathBuf>) -> Vec<String> {
         .collect()
 }
 
-/// Makes a folder link at `link` pointing at `target`, answering whether this machine could.
-type MakeLink = fn(target: &Path, link: &Path) -> bool;
+/// Makes a folder link at `link` pointing at `target`.
+type MakeLink = fn(target: &Path, link: &Path);
 
-/// The folder-link shapes a delete meets on this OS. A Windows symlink needs Developer Mode or
-/// an elevated token (the hosted runner has the latter); a junction needs neither.
+/// The folder links a delete meets on this OS: a folder symlink everywhere, and on Windows a
+/// junction too. Without the right to make a symlink (Windows without Developer Mode or an
+/// elevated token; the hosted runner has it) the symlink shape is left out, saying so.
 fn folder_link_shapes() -> Vec<(&'static str, MakeLink)> {
+    let mut shapes: Vec<(&'static str, MakeLink)> = Vec::new();
     #[cfg(windows)]
-    {
-        vec![("junction", junction as MakeLink), ("folder symlink", folder_symlink)]
+    shapes.push(("junction", junction));
+    if !cmdr_fs::testing::skip_without_symlinks() {
+        shapes.push(("folder symlink", folder_symlink));
     }
-    #[cfg(unix)]
-    {
-        vec![("folder symlink", posix_symlink as MakeLink)]
-    }
+    shapes
 }
 
-#[cfg(unix)]
-fn posix_symlink(target: &Path, link: &Path) -> bool {
-    cmdr_fs::testing::symlink(target, link).is_ok()
+fn folder_symlink(target: &Path, link: &Path) {
+    cmdr_fs::testing::symlink(target, link).expect("make a folder symlink");
 }
 
 #[cfg(windows)]
-fn junction(target: &Path, link: &Path) -> bool {
-    mklink("/J", target, link)
-}
-
-#[cfg(windows)]
-fn folder_symlink(target: &Path, link: &Path) -> bool {
-    mklink("/D", target, link)
-}
-
-#[cfg(windows)]
-fn mklink(kind: &str, target: &Path, link: &Path) -> bool {
-    std::process::Command::new("cmd")
-        .args(["/C", "mklink", kind])
+fn junction(target: &Path, link: &Path) {
+    let made = std::process::Command::new("cmd")
+        .args(["/C", "mklink", "/J"])
         .arg(link)
         .arg(target)
         .output()
-        .is_ok_and(|out| out.status.success())
+        .is_ok_and(|out| out.status.success());
+    assert!(made, "mklink /J {}", link.display());
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-#[expect(clippy::print_stderr, reason = "a skip says why")]
 async fn a_selected_folder_link_deletes_as_the_link_and_keeps_its_target() {
     for (shape, make) in folder_link_shapes() {
         let dir = drive(&format!("local_link_delete_top_{}", shape.replace(' ', "_")));
         let link = dir.join("project/data");
-        if !make(&dir.join("photos"), &link) {
-            eprintln!("{}couldn't make a {shape} here", cmdr_fs::testing::SKIP_MARKER);
-            return;
-        }
+        make(&dir.join("photos"), &link);
 
         let errors = delete_permanently(vec![link.clone()]).await;
 
@@ -128,14 +114,10 @@ async fn a_selected_folder_link_deletes_as_the_link_and_keeps_its_target() {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-#[expect(clippy::print_stderr, reason = "a skip says why")]
 async fn a_folder_holding_a_folder_link_deletes_without_walking_into_it() {
     for (shape, make) in folder_link_shapes() {
         let dir = drive(&format!("local_link_delete_nested_{}", shape.replace(' ', "_")));
-        if !make(&dir.join("photos"), &dir.join("project/data")) {
-            eprintln!("{}couldn't make a {shape} here", cmdr_fs::testing::SKIP_MARKER);
-            return;
-        }
+        make(&dir.join("photos"), &dir.join("project/data"));
 
         let errors = delete_permanently(vec![dir.join("project")]).await;
 
