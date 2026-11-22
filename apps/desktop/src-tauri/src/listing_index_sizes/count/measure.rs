@@ -96,9 +96,10 @@ pub(super) fn start(
 /// POSIX `/x` (a share's or a phone's path on Windows). Its escape-range code points stay
 /// literal while no producer makes a live one, so a row's path reaches the volume byte for
 /// byte. Text that names no folder is unreadable, as a folder the volume can't open is.
-fn folder_on_volume(folder: &str) -> Result<AppPathBuf, MeasureError> {
+pub(super) fn folder_on_volume(folder: &str) -> Result<AppPathBuf, MeasureError> {
     AppPathBuf::from_literal_store(folder, Namer::HOST)
-        .or_else(|_| AppPathBuf::parse(folder, PathFlavor::Posix))
+        // The listed-text door, so a POSIX row's escape-range code point stays literal too.
+        .or_else(|_| AppPathBuf::from_listed_text(folder, PathFlavor::Posix))
         .map_err(|why| MeasureError::Unreadable(why.to_string()))
 }
 
