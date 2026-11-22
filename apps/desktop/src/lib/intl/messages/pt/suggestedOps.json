@@ -212,6 +212,10 @@
   "@suggestedOps.folderWillBeCreatedTooltip": {
     "sourceHash": "2d28b7c"
   },
+  "suggestedOps.destinationLandsOn": "Um link envia os arquivos para outro disco: {path}",
+  "@suggestedOps.destinationLandsOn": {
+    "sourceHash": "d35d382"
+  },
   "suggestedOps.destinationUnknown": "O Cmdr não conseguiu verificar a pasta de destino",
   "@suggestedOps.destinationUnknown": {
     "sourceHash": "dc78d1d"

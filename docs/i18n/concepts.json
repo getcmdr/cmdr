@@ -3521,7 +3521,15 @@
     "en": "Send",
     "match": ["send", "sends", "sending", "sent"],
     "note": "A button, a dialog title, and a verb in prose can take different forms.",
-    "notMatch": ["whoever sent it", "start sending", "sent to the background"],
+    "notMatch": [
+      "whoever sent it",
+      "start sending",
+      "sent to the background",
+      {
+        "key": "suggestedOps.destinationLandsOn",
+        "why": "“A link sends the files to another drive” means the symlink leads them there, not sending a report or data to the developer or an AI provider"
+      }
+    ],
     "sense": "Sending a report, feedback, or data to the developer or an AI provider."
   },
   "server": {

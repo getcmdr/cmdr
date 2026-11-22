@@ -212,6 +212,10 @@
   "@suggestedOps.folderWillBeCreatedTooltip": {
     "sourceHash": "2d28b7c"
   },
+  "suggestedOps.destinationLandsOn": "Odkaz pošle soubory na jiný disk: {path}",
+  "@suggestedOps.destinationLandsOn": {
+    "sourceHash": "d35d382"
+  },
   "suggestedOps.destinationUnknown": "Cmdr nedokázal zkontrolovat cílovou složku",
   "@suggestedOps.destinationUnknown": {
     "sourceHash": "dc78d1d"

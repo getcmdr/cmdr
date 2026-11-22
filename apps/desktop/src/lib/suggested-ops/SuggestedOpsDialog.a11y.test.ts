@@ -330,7 +330,7 @@ describe('disclosure', () => {
     seed({ destinationLandsOn: '/Volumes/Other/inbox' })
     const host = mountDialog()
 
-    expect(host.textContent).toContain('Through a link, the files go to /Volumes/Other/inbox on another drive')
+    expect(host.textContent).toContain('A link sends the files to another drive: /Volumes/Other/inbox')
   })
 
   it('marks a group a pattern produced', () => {

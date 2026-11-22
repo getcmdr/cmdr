@@ -65,7 +65,7 @@ into what runs, in one place. Approve sends the `runsAs` the review showed, and 
 the drive still agree (`apps/desktop/src-tauri/src/agent/suggested_ops/DETAILS.md` § What the review reads beside the
 agent's words).
 
-**What's about the destination sits beside it.** "Through a link, the files go to … on another drive" (a `link` glyph;
+**What's about the destination sits beside it.** "A link sends the files to another drive: …" (a `link` glyph;
 `destinationLandsOn`, re-checked at every read: `apps/desktop/src-tauri/src/tools/DETAILS.md` § "An agent's path"),
 "Cmdr will create this folder" (after a `folder-plus` glyph), "The target isn't connected", and "Cmdr couldn't check the
 target folder" follow the target path in the `To` row rather than crowding the header's pills.

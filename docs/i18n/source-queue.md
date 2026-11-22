@@ -243,6 +243,9 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
 - `errors.write.cantTellIfSameFile.message` is a plain value saying "This drive", but cs, fr, and pt rule a Windows form
   for drive (`jednotka`, `lecteur`, `unidade`), so Windows readers get the macOS word. Make it per-OS, or accept the
   macOS word in plain `errors.write.*` values as a family rule. (cs, fr, pt)
+- `suggestedOps.destinationLandsOn` says "A link" for a symlink, so it hits the `link` concept (web/DFS sense) and not
+  `symlink`; every locale used its short link word (as `aboutThis.what.symlink` does). Its "sends" also hit `send`
+  (reports to the developer), now kept out by a key-scoped `notMatch`. Consider a short-form `symlink` match. (all)
 
 ## Process feedback
 
@@ -451,3 +454,6 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   windows branches, which beat a pile lookup; the brief's translation memory could list a key's same-concept per-OS
   siblings (here, every windows branch quoting the attribute) so nobody greps catalogs for them. No script written.
   (all, lockedSources read-only batch)
+- Same pattern again: 13 Write calls, 13 applies, 13 checks; a `W=…` path variable and a heredoc writing the concepts
+  patch were refused by the worktree guard, so each needed full literal paths. The concepts patch went into the cs run
+  dir, since the brief names no shared one. No script written. (all, `destinationLandsOn` batch)
