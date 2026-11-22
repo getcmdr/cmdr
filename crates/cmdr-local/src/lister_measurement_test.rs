@@ -88,7 +88,7 @@ fn zz_temporary_price_the_windows_listers() {
     for i in 0..FILES {
         std::fs::write(dir.join(format!("file_{i:05}.txt")), b"x").expect("write");
     }
-    println!("MEASURE fixture: {FILES} files in {:?}", started.elapsed());
+    println!("MEASURE fixture: {FILES} files in {:?}", started.elapsed()); // allowed-pluralize-noun: a constant past one
     const LARGE_FETCH: u32 = 2;
     let methods: [Method<'_>; 5] = [
         ("current (read_dir + lstat per entry, FileEntry)", &current),
@@ -110,6 +110,6 @@ fn zz_temporary_price_the_windows_listers() {
         }
     }
     for ((name, _), runs) in methods.iter().zip(times) {
-        println!("MEASURE {name}: median {:?} over {ROUNDS} runs", median(runs));
+        println!("MEASURE {name}: median {:?} over {ROUNDS} runs", median(runs)); // allowed-pluralize-noun: a constant past one
     }
 }
