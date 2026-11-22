@@ -340,19 +340,6 @@ fn a_local_volume_asks_its_host_about_the_absolute_path() {
     );
 }
 
-/// A folder this user can write into is writable, and a folder a copy would
-/// create answers for the nearest one that exists.
-#[tokio::test]
-async fn write_access_of_a_writable_folder_and_of_one_a_copy_would_create() {
-    let dir = TestDir::new("local_posix_write_access");
-    let volume = LocalPosixVolume::local_folder("Test", &*dir, VolumeHost::detached());
-    assert_eq!(volume.write_access_at(app_path!("/")).await, WriteAccess::Writable);
-    assert_eq!(
-        volume.write_access_at(app_path!("/new/deeper")).await,
-        WriteAccess::Writable
-    );
-}
-
 /// A folder whose mode takes write permission away answers `NoPermission`, which
 /// `access(W_OK)`'s errno tells apart from a read-only filesystem.
 #[tokio::test]

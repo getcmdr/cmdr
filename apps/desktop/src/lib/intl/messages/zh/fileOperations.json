@@ -879,9 +879,9 @@
   "@fileOperations.lockedSources.title": {
     "sourceHash": "28b2287"
   },
-  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, other {你要移动的项目中有 {countText} 个是只读的。仍要移动，还是跳过并移动其余项目？}}} other {{count, plural, other {你要移动的项目中有 {countText} 个已锁定。Cmdr 可以只在移动时解锁，到了新位置再重新锁定。}}}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, other {你要移动的项目中有 {countText} 个是只读的。Cmdr 可以只在移动时取消只读，到了新位置再重新设为只读。}}} other {{count, plural, other {你要移动的项目中有 {countText} 个已锁定。Cmdr 可以只在移动时解锁，到了新位置再重新锁定。}}}}",
   "@fileOperations.lockedSources.message": {
-    "sourceHash": "b2f056d"
+    "sourceHash": "ee469fc"
   },
   "fileOperations.lockedSources.moreItems": "{count, plural, other {另有 {countText} 个项目}}",
   "@fileOperations.lockedSources.moreItems": {

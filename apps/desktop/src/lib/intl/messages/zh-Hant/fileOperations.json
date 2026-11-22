@@ -879,9 +879,9 @@
   "@fileOperations.lockedSources.title": {
     "sourceHash": "28b2287"
   },
-  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, other {你要移動的項目中有 {countText} 個是唯讀的。仍要移動，還是略過並移動其餘項目？}}} other {{count, plural, other {你要移動的項目中有 {countText} 個已鎖定。Cmdr 可以只在移動時解鎖，到了新位置再重新鎖定。}}}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, other {你要移動的項目中有 {countText} 個是唯讀的。Cmdr 可以只在移動時取消唯讀，到了新位置再重新設為唯讀。}}} other {{count, plural, other {你要移動的項目中有 {countText} 個已鎖定。Cmdr 可以只在移動時解鎖，到了新位置再重新鎖定。}}}}",
   "@fileOperations.lockedSources.message": {
-    "sourceHash": "b2f056d"
+    "sourceHash": "ee469fc"
   },
   "fileOperations.lockedSources.moreItems": "{count, plural, other {另外還有 {countText} 個項目}}",
   "@fileOperations.lockedSources.moreItems": {

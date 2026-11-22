@@ -28,6 +28,8 @@ Some notes here are load-bearing rather than historical. Those are grouped below
 
 **Dated records:**
 
+- `windows-port/windows-lister-2026-11.md`: the Windows lister priced on the hosted runner's NTFS, find data against a
+  stat per entry, and why `FIND_FIRST_EX_LARGE_FETCH` stayed out.
 - `windows-port/real-windows-check-2026-11-19.md`: the first run of the in-page menus, WebView2's browser keys, and the
   Windows look on a real Windows 10 desktop, one line per check with its evidence, and the open problems by severity.
 - `ci-gate-review-2026-11-05.md`: the adversarial review of the per-lane CI (lane markers, Rust test scope, runner

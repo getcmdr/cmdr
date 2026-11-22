@@ -1,5 +1,6 @@
-//! Windows: a file's owner is a SID, never a numeric uid or gid, so no number names anyone here.
-//! The owner column's Windows answer (the SID's account name) is the windows-port plan's task 35.
+//! Windows: a file's owner is a SID, never a numeric uid or gid, so no number names anyone here,
+//! and the local reader leaves the owner empty there (`cmdr-local`'s `reading/platform/windows.rs`
+//! says why).
 
 pub(crate) fn user_name_of(_uid: u32) -> Option<String> {
     None

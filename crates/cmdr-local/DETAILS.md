@@ -365,19 +365,46 @@ nearly every method and hide which answers are real.
   `local_windows_test.rs`, 2026-11-18).
 - **Delete** picks `RemoveDirectoryW` by the entry's own `FILE_ATTRIBUTE_DIRECTORY`, so a directory symlink or junction
   goes as the link, its target untouched, broken or not (verified on Windows 10 22H2, NTFS, for a junction in
-  `local_windows_test.rs`, 2026-11-18; a directory symlink is unverified). A read-only FILE (Windows' Locked) refuses as
-  `PermissionDenied` before any call, standing in for macOS's `EPERM`: `std::fs::remove_file` would delete it, so a
-  move's sweep would take an original nobody agreed to (#1331). `clear_blockers` clears the attribute for a consented
-  move or a reversal's retry (`crates/cmdr-operations/DETAILS.md` § "Moving Locked items").
+  `local_windows_test.rs`, 2026-11-18; a directory symlink by
+  `local_windows_test::a_symlink_is_a_folder_link_exactly_when_its_target_is_a_folder`). A read-only FILE (Windows'
+  Locked) refuses as `PermissionDenied` before any call, standing in for macOS's `EPERM`: `std::fs::remove_file` would
+  delete it, so a move's sweep would take an original nobody agreed to (#1331). `clear_blockers` clears the attribute
+  for a consented move or a reversal's retry (`crates/cmdr-operations/DETAILS.md` § "Moving Locked items").
+- **Links** (`src/platform/local_windows/links.rs`): `read_link_target` reads the entry's reparse tag
+  (`FileAttributeTagInfo` on a handle that opens the reparse point itself) and tells links from the rest by Windows' own
+  rule, the tag's name-surrogate bit (`src/platform/reparse.rs`, pure, pinned on every OS): a symlink and a junction
+  read their target through `std::fs::read_link` (a junction's absolute, `\??\` dropped); a OneDrive placeholder, an app
+  execution alias, or a deduplicated file is the item itself (`Ok(None)`); another surrogate (a WSL symlink) is
+  `NotSupported`. `std`'s `is_symlink` rests on the same bit, so a listing and this never disagree. `create_symlink`
+  makes a FOLDER link when the target, read against the link's folder with `..` by text (a `\\?\` path never
+  normalizes), is a folder now, and a file link otherwise, a missing target included. **Decision**: the target is stored
+  verbatim but for its separators, every `/` a `\`, and a relative (or drive-less rooted) target reads back with `/`; a
+  target with a prefix (`C:\x`, `\\server\share`, `\\?\`) reads back as stored. **Why**: Windows resolves a link's
+  content with `\` alone, so a relative `../lib/x` carried from macOS or Linux would land a link that opens nothing
+  (Go's `os.Symlink` and Git for Windows convert the same way), and a `..\lib\x` carried the other way opens nothing
+  there; only the separator moves, never the target's meaning
+  (`local_windows_test::a_symlink_is_a_folder_link_exactly_when_its_target_is_a_folder` opens a link made from a `/`
+  target). **Decision**: no privilege to make links (`ERROR_PRIVILEGE_NOT_HELD`: no Developer Mode, not elevated) and a
+  filesystem without them (`ERROR_NOT_SUPPORTED`, `ERROR_INVALID_FUNCTION`) answer `NotSupported`, which the engine
+  reports as `LinksNotSupported`; ❌ never elevate, and ❌ never fall back to a junction. **Why**: a junction is a
+  different thing (folders only, absolute targets, resolved by the server on a share), so a copy that quietly made one
+  would land something other than what the source holds. An access refusal stays a permission refusal.
 - **`has_trash`** reads `recycle_bin.rs`, the ONE "does this drive keep a Recycle Bin" answer (a fixed disk Windows
   names a volume GUID for, its bin not turned off), which the app's switcher row and the Recycle Bin arm's refusal read
   too, so the three can't disagree (#1332). A share's mount class says no first, with no call to it; the rest reads live
   (no disk I/O), so an Explorer setting counts at the next question. Its size limit, per item, is
   `DriveBin::limit_bytes`.
-- **The reader** is `reading.rs` with a Windows arm (`src/reading/platform/windows.rs`): `read_dir`, no added date,
+- **The reader** is `reading.rs` with a Windows arm (`src/reading/platform/windows.rs`): no added date,
   `FILE_ATTRIBUTE_HIDDEN` as `is_hidden`. `reading/platform/` is the reader's seam on every OS now (how a caller's
   native path is located, the per-entry stat, the lister pick, the single-entry finish); the listing loop and the
-  entry's shape stay shared.
+  entry's shape stay shared. **Decision**: a Windows listing builds its rows off `read_dir`'s own find data
+  (`find_data_entries`: `std`'s `read_dir` is `FindFirstFileExW` with basic info, and `DirEntry::metadata` is the record
+  it read), ❌ no `lstat` per entry, and ❌ no hand-rolled `FindFirstFileExW` loop. **Why**: the stat per entry was
+  nearly all of a listing's cost, while `FIND_FIRST_EX_LARGE_FETCH` bought nothing measurable on local NTFS
+  (`docs/notes/windows-port/windows-lister-2026-11.md`). The forced `Lister::ReadDir` keeps the stat per entry, and
+  `reading_test::the_production_lister_agrees_with_an_lstat_per_entry` holds the two to the same rows. ❗ A directory
+  record can lag a file another program holds open for writing (its size and date catch up when that handle closes, as
+  Explorer shows); the watcher's re-stat reads the live answer.
 - **Space** is `GetDiskFreeSpaceExW` (`src/space/platform/windows.rs`), beside `statvfs` for macOS and Linux.
 - **The filesystem kind** is `GetVolumePathNameW` plus `GetVolumeInformationW` (`filesystem_kind.rs`,
   `probe_mount_for_path`'s Windows arm), for a fixed or removable drive only (`GetDriveTypeW`): a mapped network drive
@@ -422,13 +449,49 @@ nearly every method and hide which answers are real.
   atomic replacing rename, so a second stage here would cost a rename per file and protect nothing.
 - **Node identity** (`node_identity`) is `FileId::read_at` (the link itself) plus the creation time, as
   `NodeIdentity::of` builds it from an `lstat`: NTFS's 64-bit file reference fits, a ReFS 128-bit id answers `None`.
+- **Metadata** (`apply_metadata`, `folder_metadata`, `metadata_caps`) is the POSIX volume's own body, shared:
+  `src/item_metadata.rs`, over `cmdr_fs::metadata`'s Windows arm. The caps claim the creation date and the flags on
+  files and folders: a FILE's read-only attribute is Locked and the hidden attribute is Hidden, read off the source's
+  stat (`flags_of`) and put on after the landing in one `SetFileAttributesW` (`add_flags`), the same flags the move's
+  Locked question and `clear_blockers` speak. So a copy, and a cross-drive Move anyway, lands a read-only file read-only
+  (#1352), on both engines (the local one reads `CarriedMetadata::of_local_file`, the volume one `apply_metadata`).
+  **Decision**: the attributes ride as user flags, ❌ not as a mode. **Why**: they are what Finder's Hidden and Locked
+  are on macOS, so a copy between the two OSes (over SMB too, `cmdr-smb`'s `user_flags_of`) keeps them by the classes
+  the engine already carries, and a POSIX mode's `0444` has no honest Windows reading for a folder (its read-only bit is
+  Explorer's customization marker). The mode and xattrs stay `NotApplicable`; append-only and no-dump have no attribute.
+- **Write access** (`write_access_at`, `src/platform/local_windows/write_access.rs`) asks two things of the nearest
+  folder that exists: the volume's `FILE_READ_ONLY_VOLUME` flag (`GetVolumeInformationByHandleW`) and whether the
+  folder's DACL grants this process's token `FILE_ADD_FILE` (`AccessCheck`). What the two mean together is
+  `src/platform/write_verdict.rs`, pure and pinned on every OS: a read-only volume is `ReadOnlyFilesystem`, a refusal
+  `NoPermission`, a descriptor or token nobody could read `Unknown`. ❗ On a share (a UNC path, or a drive letter
+  `GetDriveTypeW` calls `DRIVE_REMOTE`) a refusal is `Unknown` too: the server's DACL names the server's accounts (a
+  NAS's own users, Samba's `S-1-22-*` unix SIDs), which a local token never holds, so `AccessCheck` would refuse a
+  folder the server lets this user write and the pre-flight would block a legitimate copy. A grant still counts, and the
+  probe errs toward "writable" everywhere: a wrong yes costs only the copy's own typed refusal later, a wrong no blocks
+  the copy. It reads no mandatory label (an integrity-level refusal answers `Writable`), and a UAC-filtered admin
+  token's deny-only Administrators SID is honored as `AccessCheck` honors it. **Decision**: `AccessCheck`, ❌ not an
+  open asking for `FILE_ADD_FILE`. **Why**: a folder opens only with backup semantics, which a token with
+  `SeBackupPrivilege` enabled gets past whatever the DACL says, while the copy's own creates are refused: the open
+  answered `Writable` for a folder denying everyone `FILE_ADD_FILE` on GitHub's hosted runner (PR #1374, 2026-11-22).
+  The engine's own `local_disk::write_probe` still opens that way (#1377). A folder's read-only attribute is never
+  consulted (Explorer's marker, which NTFS doesn't enforce).
+- **Decision**: no xattrs yet (`supports_xattrs` false), ❌ not alternate data streams as they are. **Why**: the
+  contract doesn't map onto streams cleanly (#1375): an xattr name holds `:`, which a stream name can't, so it needs the
+  same private-use mapping macOS's SMB client and Samba's `fruit` use or a tag reads as another attribute over SMB;
+  writing a stream bumps the file's last-write time, where `setxattr` doesn't, so tagging would change Modified; a
+  file's stream list mixes in `Zone.Identifier` (Mark of the Web, tasks 36 and 37) and other apps' streams; FAT and
+  exFAT hold none, while `supports_xattrs` is one backend-wide answer; and `link:stream` follows a link.
+- **Decision**: no owner name on Windows (`FileEntry::owner` stays empty, its "unknown"). **Why**: a Windows owner is a
+  SID in each entry's security descriptor, a handle open per entry, about doubling a listing's cost, and nothing shows
+  `FileEntry::owner` on any OS today (the About card's owner is the app that made a file). Reading it only on a single
+  entry would make a watcher's re-stat row disagree with the listed one. When a surface wants it, it reads one item's
+  owner on demand.
 
 What's real and what's stubbed, by name: the windows-port plan, § "Windows build state" and task 35's entry. Every
-capability not yet real keeps the trait's conservative default (symlink creation, xattrs, metadata, the write-access
-probe), so nothing answers by guessing. `local_conformance_test.rs` and `local_volume_test.rs` run on Windows too, each
-cell the Windows volume can't keep yet ignored there (`cfg_attr(target_os = "windows", ignore = …)`) with what it lacks;
-their folder-link cells build a junction there (`local_conformance_test::link_to_folder`, `mklink /J`, which needs no
-privilege).
+capability not yet real keeps the trait's conservative default (xattrs), so nothing answers by guessing.
+`local_conformance_test.rs` and `local_volume_test.rs` run on Windows too, each cell the Windows volume can't keep yet
+ignored there (`cfg_attr(target_os = "windows", ignore = …)`) with what it lacks; their folder-link cells build a
+junction there (`local_conformance_test::link_to_folder`, `mklink /J`, which needs no privilege).
 
 ## App paths in and out
 

@@ -495,3 +495,17 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   engines (the local copy and the extract), no temp left. Gotcha: an SSH command running past about three minutes is
   moved to the background by the harness, so wait in loops shorter than that. Fixtures under `C:\Users\Admin\r1367` and
   `D:\r1367` are gone. `cmdr-m6` is back on `origin/main`, clean.
+- **2026-11-22, task 35's metadata, links, write probe, and lister** (PR #1374; proven on CI's hosted Windows `tests`
+  job only, no builder or desktop this time): read-only and hidden ride as the Locked and Hidden flags (`flags_of`,
+  `add_flags`), so a copy and a cross-drive Move anyway keep them (#1352, the `move_read_only_windows_tests` cell
+  flipped); `LocalWindowsVolume` gains `apply_metadata`, `folder_metadata`, and caps through the shared
+  `item_metadata.rs`; links read and made (reparse tags told apart, file vs folder symlinks, `NotSupported` without the
+  privilege); `write_access_at`; and a lister off `read_dir`'s find data, 246 ms against 732 for 20,000 files
+  (`windows-lister-2026-11.md`). Runs: 45006264826 (two new failures), 45008311254 (one), 45010557898 green, the list
+  unchanged at 162 entries (nothing listed went green); four task 35 cells un-gated (three conformance cells, plus the
+  nine restic walker cells' file gate), one left ignored under #1375. Gotchas: the hosted runner's token holds
+  `SeBackupPrivilege` enabled, so a folder opened with backup semantics and `FILE_ADD_FILE` opens whatever the DACL says
+  (the probe asks `AccessCheck` now; the engine's `write_probe` still opens, #1377); nextest's 8 s cap ends a
+  measurement cell before it prints, so give one a `slow-timeout` override, and its output survives in the junit report
+  only (`store-success-output`, artifact `windows-test-report`). Decided against: owner names, ADS xattrs (#1375). Left
+  for the engine: its Windows `symlink` stub (#1376).

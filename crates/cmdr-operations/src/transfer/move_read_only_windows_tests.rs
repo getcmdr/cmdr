@@ -179,9 +179,9 @@ fn a_same_drive_move_of_a_read_only_folder_asks_nothing() {
 }
 
 /// Asked before anything is copied; on Move anyway the sweep clears the original right
-/// before deleting it. ❗ The copy lands without the attribute: a Windows copy carries no file
-/// attributes yet (the `CopyFileExW` arm, windows-port plan task 36). That flips this cell's
-/// last assertion; macOS's copy lands Locked.
+/// before deleting it. The copy lands read-only again, as macOS's lands Locked: the copy reads
+/// the attribute off its source as Locked and puts it back after the landing (#1352,
+/// `cmdr_fs::metadata`'s Windows arm).
 #[test]
 fn a_cross_drive_move_asks_before_copying_and_move_anyway_takes_the_read_only_original() {
     let fixture = Fixture::new();
@@ -219,7 +219,7 @@ fn a_cross_drive_move_asks_before_copying_and_move_anyway_takes_the_read_only_or
     );
     let landed = fixture.dst.join("frozen.txt");
     assert_eq!(std::fs::read(&landed).expect("read"), b"keep me");
-    assert!(!is_read_only(&landed), "today's copy carries no attributes (see above)");
+    assert!(is_read_only(&landed), "and is read-only again where it landed (#1352)");
     fixture.release();
 }
 

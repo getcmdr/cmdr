@@ -2431,9 +2431,9 @@ then stopped in Phase 4 with every original kept: the files in both places and a
   renames a read-only file and `std::fs::remove_file` deletes one, since both would carry a lock off with no word. With
   the OS refusing nothing, the local cross-drive sweep (`move_op/source_sweep.rs`' `remove_landed_file`) and
   `LocalWindowsVolume::delete` refuse a read-only file still wearing the attribute (it had no consent, since Move anyway
-  cleared it just before), standing in for macOS's `EPERM`. Gap: a cross-drive Move anyway lands the copy without the
-  attribute, since a Windows copy carries no file attributes yet (windows-port plan task 36's `CopyFileExW` arm). Pinned
-  by `src/transfer/move_read_only_windows_tests.rs`.
+  cleared it just before), standing in for macOS's `EPERM`. A cross-drive Move anyway lands the copy read-only again, as
+  macOS's lands Locked: a copy carries the attribute as the Locked flag (#1352, `crates/cmdr-local/DETAILS.md` § "The
+  Windows sibling"). Pinned by `src/transfer/move_read_only_windows_tests.rs`.
 - **Observable and answerable by an agent**: `cmdr://state` renders the parked question as `pendingLockedSources`, and
   `queue_move_locked` (`DevOnly`, since it clears the lock) and the `queue` tool's `skip_locked` answer it.
 - `OperationEventSink::emit_locked_sources` defaults to a no-op; a wrapping sink forwards it (`SinkDecorator` does by

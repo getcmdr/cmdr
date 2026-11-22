@@ -1,18 +1,18 @@
 //! Windows: dates are real (`std` sets birth, mtime, and atime in one `SetFileInformationByHandle`,
-//! and a handle opened with backup semantics reaches a folder or a link's own entry), and so is
-//! a FILE's read-only attribute as Locked: the removal lock a move asks about
-//! (`removal_lock`), what `clear_blockers` clears, and what `add_flags` puts back where the move
-//! landed it. Every other class answers "this destination can't hold it" until its Windows body
-//! exists: the mode as the read-only attribute, xattrs as alternate data streams, the DACL, and
-//! Hidden, and a copy carries no read-only yet (`flags_of` reads none). ❗
-//! `std::fs::remove_file` deletes a read-only file on Windows (it clears the attribute on the
-//! way), so the user's own delete and Overwrite refuse it up front as Locked
-//! (`cmdr-operations`' `local_disk::locked_against_removal`). The windows-port plan's tasks 35
-//! and 36 own the rest (`docs/specs/windows-port-plan.md` § "Windows build state").
+//! and a handle opened with backup semantics reaches a folder or a link's own entry), and so are
+//! the two attributes a copy carries as user flags (`windows_attributes.rs`): a FILE's read-only
+//! attribute as Locked, and the hidden attribute as Hidden. A copy reads them off its source
+//! (`flags_of`) and puts them back where the item lands (`add_flags`, after the landing rename,
+//! like every flag); Locked is also the removal lock a move asks about (`removal_lock`) and what
+//! `clear_blockers` clears. The mode, xattrs (alternate data streams: `cmdr-local`'s
+//! `DETAILS.md` § "The Windows sibling"), and the DACL answer "this destination can't hold it".
+//! ❗ `std::fs::remove_file` deletes a read-only file on Windows (it clears the attribute on the
+//! way), so the user's own delete and Overwrite refuse it up front as Locked (`cmdr-operations`'
+//! `local_disk::locked_against_removal`).
 
 use std::ffi::OsString;
 use std::fs::{File, Metadata, OpenOptions};
-use std::os::windows::fs::{FileTimesExt as _, OpenOptionsExt as _};
+use std::os::windows::fs::{FileTimesExt as _, MetadataExt as _, OpenOptionsExt as _};
 use std::path::Path;
 use std::time::SystemTime;
 
@@ -24,6 +24,7 @@ use super::super::{
     ClassOutcome, LandedMetadata, MetadataCaps, MetadataClasses, ParentOpening, RemovalLock, StagedItem, StagedTimes,
     Unblock, UserFlags, Xattr,
 };
+use super::windows_attributes::{attributes_adding, flags_of_attributes, settable_flags};
 use crate::log_private::LogPrivate;
 use crate::os_error::OsErrorClass;
 
@@ -48,7 +49,7 @@ pub(crate) fn probe_umask() -> u32 {
     super::super::mode::FALLBACK_UMASK
 }
 
-/// No xattr is carried until alternate data streams back them (task 35).
+/// No xattr is carried until alternate data streams back them (#1375).
 pub(crate) fn carries_xattr(_name: &OsString) -> bool {
     false
 }
@@ -81,29 +82,50 @@ pub(crate) fn write_acl(_path: &Path, acl: &Acl) -> ClassOutcome {
     match acl.0 {}
 }
 
-pub(crate) fn flags_of(_meta: &Metadata) -> UserFlags {
-    UserFlags::NONE
+/// Locked (a FILE's read-only attribute) and Hidden, off the stat a copy already holds.
+pub(crate) fn flags_of(meta: &Metadata) -> UserFlags {
+    flags_of_attributes(meta.file_attributes(), meta.is_file())
 }
 
-/// Only Locked has a Windows body: the read-only attribute on a FILE. It goes back on where a
-/// move put an item it unlocked (`apply_landed`); a folder's read-only bit isn't a lock, so a
-/// folder answers `NotApplicable`, as does every other flag.
+/// Adds Hidden (on anything) and Locked (on a FILE, as its read-only attribute) to what the
+/// item wears, in one `SetFileAttributesW`, never through a link. It runs after the landing
+/// rename, where a move puts back what it unlocked and a copy puts what its source wore. An
+/// item that can take none of `flags` (a folder asked for Locked; append-only, no-dump; a link)
+/// answers `NotApplicable`.
 pub(crate) fn add_flags(path: &Path, flags: UserFlags) -> ClassOutcome {
-    if !flags.contains(UserFlags::LOCKED) {
-        return ClassOutcome::NotApplicable;
-    }
     let native = native_spelling(path);
     let path = native.as_deref().unwrap_or(path);
-    match std::fs::symlink_metadata(path) {
-        Ok(meta) if meta.is_file() => match set_read_only(path, meta.permissions(), true) {
-            Ok(()) => ClassOutcome::Kept,
-            Err(e) => {
-                log::debug!(target: "metadata", "couldn't set read-only on {}: {e}", LogPrivate::path(path));
-                ClassOutcome::Refused
-            }
-        },
-        _ => ClassOutcome::NotApplicable,
+    let meta = match std::fs::symlink_metadata(path) {
+        Ok(meta) if !meta.is_symlink() => meta,
+        _ => return ClassOutcome::NotApplicable,
+    };
+    if settable_flags(flags, meta.is_file()).is_empty() {
+        return ClassOutcome::NotApplicable;
     }
+    let attributes = meta.file_attributes();
+    let wanted = attributes_adding(attributes, flags, meta.is_file());
+    if wanted == attributes {
+        return ClassOutcome::Kept;
+    }
+    match set_attributes(path, wanted) {
+        Ok(()) => ClassOutcome::Kept,
+        Err(e) => {
+            log::debug!(target: "metadata", "couldn't set the attributes on {}: {e}", LogPrivate::path(path));
+            ClassOutcome::Refused
+        }
+    }
+}
+
+/// `SetFileAttributesW` on `path` (the verbatim spelling, so past `MAX_PATH` too).
+fn set_attributes(path: &Path, attributes: u32) -> std::io::Result<()> {
+    use std::os::windows::ffi::OsStrExt as _;
+    use windows_sys::Win32::Storage::FileSystem::SetFileAttributesW;
+    let wide: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
+    // SAFETY: `wide` is a NUL-terminated UTF-16 path that outlives the call, which only reads it.
+    if unsafe { SetFileAttributesW(wide.as_ptr(), attributes) } == 0 {
+        return Err(std::io::Error::last_os_error());
+    }
+    Ok(())
 }
 
 /// Clears a FILE's read-only attribute, Windows' Locked (`removal_lock`), and hands back
@@ -167,11 +189,13 @@ pub(crate) fn open_parent_folder(_child: &Path) -> ParentOpening {
     ParentOpening::NothingToOpen
 }
 
-/// Only the dates are kept so far; the birth date is reported off the open's metadata.
+/// The dates and the flags (Locked as a file's read-only attribute, and Hidden), each reported
+/// off the open's metadata. The flags go on after the landing (`staged_flags` empty), as on
+/// macOS: a read-only temp would refuse the replacing rename an Overwrite lands it with.
 pub const LOCAL_DISK_CAPS: MetadataCaps = MetadataCaps {
-    stores: MetadataClasses::CREATED,
-    reports: MetadataClasses::CREATED,
-    folder_stores: MetadataClasses::CREATED,
+    stores: MetadataClasses::CREATED.union(MetadataClasses::FLAGS),
+    reports: MetadataClasses::CREATED.union(MetadataClasses::FLAGS),
+    folder_stores: MetadataClasses::CREATED.union(MetadataClasses::FLAGS),
     folder_dates: true,
     staged_flags: UserFlags::NONE,
 };

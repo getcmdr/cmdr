@@ -12,6 +12,35 @@ use std::fs;
 // Tests for list_directory_core
 // ============================================================================
 
+/// What production lists (bulk on APFS, `read_dir` on Linux, the find data on Windows) equals,
+/// field for field, the `read_dir` lister's one `lstat` per entry, over a file, a folder, a
+/// hidden file, and (where this machine may make one) a link to each.
+#[test]
+fn the_production_lister_agrees_with_an_lstat_per_entry() {
+    let dir = TestDir::new("lister_agreement");
+    fs::write(dir.join("plain.txt"), "content").unwrap();
+    fs::write(dir.join(".dotted"), "x").unwrap();
+    fs::create_dir(dir.join("folder")).unwrap();
+    if cmdr_fs::testing::can_create_symlinks() {
+        cmdr_fs::testing::symlink(dir.join("plain.txt"), dir.join("to-file")).unwrap();
+        cmdr_fs::testing::symlink(dir.join("folder"), dir.join("to-folder")).unwrap();
+    }
+    let listings = VolumeHost::detached();
+    let by_name = |mut entries: Vec<FileEntry>| {
+        entries.sort_by(|a, b| a.name.cmp(&b.name));
+        entries
+    };
+
+    let production = by_name(list_directory_core(&dir, listings.listings()).unwrap());
+    let per_entry = by_name(
+        crate::reading::list_directory_with(&dir, false, listings.listings(), crate::reading::Lister::ReadDir).unwrap(),
+    );
+
+    // Every field, through `Debug` (as `reading_parity_test.rs` compares): `FileEntry` has no `Eq`.
+    assert_eq!(format!("{production:#?}"), format!("{per_entry:#?}"));
+    assert!(production.len() >= 3, "{production:?}");
+}
+
 #[test]
 fn test_list_directory_core_returns_core_entries() {
     let temp_dir = TestDir::new("core_test");
@@ -25,7 +54,7 @@ fn test_list_directory_core_returns_core_entries() {
     let file_entry = entries.iter().find(|e| e.name == "core_test.txt").unwrap();
 
     // Core metadata should be present. The owner is the POSIX uid's name; Windows reads no
-    // owner yet (a SID's account name, task 35).
+    // owner (a SID per entry, `reading/platform/windows.rs`).
     assert!(!file_entry.name.is_empty());
     assert!(!file_entry.path.is_empty());
     #[cfg(unix)]

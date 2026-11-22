@@ -72,6 +72,7 @@ pub mod space;
 pub mod statfs;
 
 mod copy_scan;
+mod item_metadata;
 mod platform;
 mod rename;
 mod streams;
@@ -85,6 +86,8 @@ pub use rename::rename_volume_error;
 mod list_alloc_ceiling_test;
 #[cfg(test)]
 mod local_conformance_test;
+#[cfg(test)]
+mod local_flags_test;
 #[cfg(test)]
 mod local_names_test;
 #[cfg(test)]

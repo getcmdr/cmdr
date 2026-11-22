@@ -457,3 +457,7 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
 - Same pattern again: 13 Write calls, 13 applies, 13 checks; a `W=…` path variable and a heredoc writing the concepts
   patch were refused by the worktree guard, so each needed full literal paths. The concepts patch went into the cs run
   dir, since the brief names no shared one. No script written. (all, `destinationLandsOn` batch)
+- Same pattern for a one-key windows-branch reword (`lockedSources.message`): a shell function writing 13 values files
+  and a `W=…` path variable before `i18n:check-locale` were refused, so 13 Write calls and full literal paths; a
+  five-locale check chain outran 120 s into the background. The brief's "No concept yet" listed `make` and `land`,
+  everyday verbs with nothing to mine; only `writable` was worth a pile lookup. No script written. (all)

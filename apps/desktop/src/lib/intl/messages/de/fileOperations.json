@@ -882,9 +882,9 @@
   "@fileOperations.lockedSources.title": {
     "sourceHash": "28b2287"
   },
-  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, one {{countText} Objekt, das du bewegst, ist schreibgeschützt. Trotzdem bewegen oder überspringen und den Rest bewegen?} other {{countText} Objekte, die du bewegst, sind schreibgeschützt. Trotzdem bewegen oder überspringen und den Rest bewegen?}}} other {{count, plural, one {{countText} Objekt, das du bewegst, ist geschützt. Cmdr kann den Schutz nur für das Bewegen aufheben und das Objekt am neuen Ort wieder schützen.} other {{countText} Objekte, die du bewegst, sind geschützt. Cmdr kann den Schutz nur für das Bewegen aufheben und die Objekte am neuen Ort wieder schützen.}}}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, one {{countText} Objekt, das du bewegst, ist schreibgeschützt. Cmdr kann den Schreibschutz nur für das Bewegen aufheben und ihn am neuen Ort wieder aktivieren.} other {{countText} Objekte, die du bewegst, sind schreibgeschützt. Cmdr kann den Schreibschutz nur für das Bewegen aufheben und ihn am neuen Ort wieder aktivieren.}}} other {{count, plural, one {{countText} Objekt, das du bewegst, ist geschützt. Cmdr kann den Schutz nur für das Bewegen aufheben und das Objekt am neuen Ort wieder schützen.} other {{countText} Objekte, die du bewegst, sind geschützt. Cmdr kann den Schutz nur für das Bewegen aufheben und die Objekte am neuen Ort wieder schützen.}}}}",
   "@fileOperations.lockedSources.message": {
-    "sourceHash": "b2f056d"
+    "sourceHash": "ee469fc"
   },
   "fileOperations.lockedSources.moreItems": "und {countText} {count, plural, one {weiteres Objekt} other {weitere Objekte}}",
   "@fileOperations.lockedSources.moreItems": {
