@@ -11,6 +11,7 @@
 //! (`operations_host::test_engine`): the portal's routing lives in the app's
 //! volume registry, which a test's fake registry doesn't route through.
 
+use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -67,9 +68,9 @@ fn mode_of(path: &Path) -> u32 {
         & 0o777
 }
 
-async fn read_dest_file(dest: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
+async fn read_dest_file(dest: &Arc<dyn Volume>, path: &AppPath) -> Vec<u8> {
     let mut stream = dest
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .open_read_stream(path)
         .await
         .unwrap_or_else(|e| panic!("dest missing {path}: {e:?}"));
     let mut out = Vec::new();
@@ -122,9 +123,9 @@ async fn a_copy_out_of_a_snapshot_carries_a_file_and_a_folder_byte_for_byte() {
     .await;
     assert!(result.is_ok(), "a copy out of a snapshot should succeed: {result:?}");
 
-    assert_eq!(read_dest_file(&dest, "/readme.txt").await, b"hello");
-    assert_eq!(read_dest_file(&dest, "/docs/a.txt").await, b"aaa");
-    assert_eq!(read_dest_file(&dest, "/docs/b.txt").await, b"bbb");
+    assert_eq!(read_dest_file(&dest, app_path!("/readme.txt")).await, b"hello");
+    assert_eq!(read_dest_file(&dest, app_path!("/docs/a.txt")).await, b"aaa");
+    assert_eq!(read_dest_file(&dest, app_path!("/docs/b.txt")).await, b"bbb");
 
     let complete = events.complete.lock().unwrap();
     assert_eq!(complete.len(), 1, "one completion event");

@@ -17,6 +17,7 @@ use cmdr_local::LocalVolume;
 use cmdr_operations::{ConflictResolution, VolumeCopyConfig};
 
 use super::network_transfer_test_support::start_copy_on;
+use crate::commands::wire_path::as_sent_std_path;
 use crate::mtp::test_support::{connect_virtual_device, device_lock, make_twins, teardown, volume_for};
 use crate::operations_host::app_engine;
 use crate::test_support::TestDir;
@@ -94,7 +95,8 @@ async fn copying_both_selected_twin_rows_off_a_device_keeps_both() {
         .expect("listing Documents should succeed")
         .into_iter()
         .filter(|entry| entry.name == "notes.txt")
-        .map(|entry| PathBuf::from(entry.path))
+        // The engine's starts take a row's text as a `PathBuf` until they take app paths.
+        .map(|entry| as_sent_std_path(&entry.path))
         .collect();
     assert_eq!(rows.len(), 2, "both twins list");
 
@@ -161,7 +163,7 @@ async fn twin_rows(volume: &dyn Volume, handles: (u64, u64)) -> (PathBuf, PathBu
         entries
             .iter()
             .find(|entry| entry.inode == Some(handle))
-            .map(|entry| PathBuf::from(&entry.path))
+            .map(|entry| as_sent_std_path(&entry.path))
             .expect("each twin lists as its own row")
     };
     (row(handles.0), row(handles.1))

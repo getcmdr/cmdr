@@ -380,7 +380,12 @@ async fn a_restore_onto_a_destination_with_no_links_counts_each_as_a_skip() {
 
     for (tag, source_path, skips, lands) in [
         ("selected", drive.backed_up.join("alone"), 1, None),
-        ("nested", drive.backed_up.join("docs"), 1, Some("/inbox/docs/a.txt")),
+        (
+            "nested",
+            drive.backed_up.join("docs"),
+            1,
+            Some(app_path!("/inbox/docs/a.txt")),
+        ),
     ] {
         let sources = vec![source_path];
         let (source, _route) = engine
@@ -402,10 +407,7 @@ async fn a_restore_onto_a_destination_with_no_links_counts_each_as_a_skip() {
         assert!(result.is_ok(), "{tag}: {result:?}");
         assert_eq!(events.complete.lock().expect("events")[0].files_skipped, skips, "{tag}");
         if let Some(landed) = lands {
-            assert!(
-                dest.exists(&AppPath::legacy_unchecked(Path::new(landed))).await,
-                "{tag}"
-            );
+            assert!(dest.exists(landed).await, "{tag}");
         }
     }
     assert!(!dest.exists(app_path!("/inbox/alone")).await);
