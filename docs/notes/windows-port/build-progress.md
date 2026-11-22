@@ -484,3 +484,14 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   `routing::tests::a_local_destination_still_expands_the_home_shortcut` fails there and nowhere else. Fixtures under
   `C:\Users\Admin\t35`, `C:\Users\Admin\t35z`, `D:\t35-dst`, and `D:\t35` are gone. `cmdr-m6` is back on `origin/main`,
   clean.
+- **2026-11-22, PR #1367's review** (the warm pair, two debug app builds about 13 min each, driven by Cmdr's MCP
+  server): #1369's cause was the transfer dialog's volume-relative destination (`/Users/…/box.zip` on `root`) reaching
+  the zip route unanchored, so nothing confirmed; fixed in `routing.rs` (`anchored_destination`), and a copy into a zip
+  on `C:` and on `D:` (reached by `select_volume` or by `nav_to_path` alone) lands. A same-length rewrite in place with
+  its date put back resumed a read on Windows (red on the builder, `local_volume_test`); the version now reads the
+  handle's id and `ChangeTime`. Cancel midway leaves nothing: a 3 GiB copy `D:` → `C:` (local engine), a 3 GiB compress
+  onto `C:`, and a 1 GiB extract from a zip on `D:` onto `C:` (the streamed write). An overwrite whose source read fails
+  midway (a byte-range lock held by another process, `ERROR_LOCK_VIOLATION` 33) keeps the old file byte for byte on both
+  engines (the local copy and the extract), no temp left. Gotcha: an SSH command running past about three minutes is
+  moved to the background by the harness, so wait in loops shorter than that. Fixtures under `C:\Users\Admin\r1367` and
+  `D:\r1367` are gone. `cmdr-m6` is back on `origin/main`, clean.
