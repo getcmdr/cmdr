@@ -155,7 +155,7 @@ and each is capped by an LRU of its own; `ResolvedVolume.routed` says which one 
   `routing.rs`'s `lexical_spelling` crosses once for them, and the boundaries' left-to-right order counts that one
   spelling's components. Callers still holding a `std::path` value cross at one named helper each, beside the seam that
   hands it over (the engines' host traits in `listing_host/volumes.rs` and `operations_host/volumes.rs`, the viewer's
-  `requested_on_volume`, `wire_path::checked_as_app_path`); the plan's 10c record lists who removes each.
+  `requested_on_volume`); the plan's 10c record lists who removes each.
 - **Most readers ask `is_routed()`, not the kind.** Skipping drive-index enrich/verify follows from being routed at
   all: no kind's paths are real FS paths. A write path asks `RoutedKind::takes_writes` / `can_give_up_files`, which
   match exhaustively, so the next routed kind has to answer them (only an archive takes writes, through its edit
