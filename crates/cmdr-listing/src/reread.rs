@@ -106,7 +106,10 @@ impl Inner {
         };
 
         let generation = self.next_read_generation();
-        let entries = match volume.list_directory(&path, None).await {
+        // A re-read comes because someone thinks the cache is stale, so it asks the
+        // volume's refresh listing, which reads past a lag the plain one tolerates
+        // (`Volume::list_directory_for_refresh`).
+        let entries = match volume.list_directory_for_refresh(&path).await {
             Ok(entries) => entries,
             Err(VolumeError::NotFound(_)) => return RefreshOutcome::DirectoryGone(path),
             Err(VolumeError::PermissionDenied { .. }) => return RefreshOutcome::Skipped,

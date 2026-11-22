@@ -13,7 +13,9 @@ mod links;
 mod scan;
 mod xattrs;
 
-use crate::reading::{ListingDir, ListingTally, Named, Row, list_reporting_progress, single_entry, supported_dates_of};
+use crate::reading::{
+    ListingDir, ListingTally, Named, Pick, Row, list_reporting_progress, single_entry, supported_dates_of,
+};
 use crate::rename_volume_error;
 use crate::space::{get_space_info_for_path, live_space_info_for_path};
 use cmdr_fs::app_path::AppPath;
@@ -356,6 +358,47 @@ impl LocalPosixVolume {
     /// What local disk keeps of a copy routed through the volume engine
     /// ([`cmdr_fs::metadata::LOCAL_DISK_CAPS`], per OS beside the classes it describes).
     pub const METADATA_CAPS: MetadataCaps = cmdr_fs::metadata::LOCAL_DISK_CAPS;
+
+    /// Both listings' body: `list_directory`'s with `Pick::ByFilesystem`, the refresh's with
+    /// `Pick::Refresh`.
+    fn list_through<'a>(
+        &'a self,
+        path: &'a AppPath,
+        on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
+        pick: Pick,
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        #[cfg(feature = "playwright-e2e")]
+        {
+            let mut injected = self.injected_error.lock_ignore_poison();
+            if let Some(errno) = injected.take() {
+                return Box::pin(async move {
+                    Err(VolumeError::IoError {
+                        message: format!("Injected error for testing (os error {})", errno).into(),
+                        raw_os_error: Some(errno),
+                    })
+                });
+            }
+        }
+        let dir = self.listing_dir(path);
+        // The one place Cmdr knows a directory IS a volume root, not merely
+        // somewhere under one: `/.hidden` (`read_dot_hidden_names`) means nothing
+        // anywhere else, so this is threaded through rather than re-derived below.
+        let is_volume_root = dir.os() == self.root_os;
+        #[cfg(any(test, feature = "testing"))]
+        let tally = Arc::new(ListingTally::with_hook(self.listing_hook.clone()));
+        #[cfg(not(any(test, feature = "testing")))]
+        let tally = Arc::new(ListingTally::default());
+        let named = Named::new(dir.os().to_string_lossy().into_owned());
+        Box::pin(list_reporting_progress(
+            dir,
+            named,
+            is_volume_root,
+            self.host.clone(),
+            tally,
+            on_progress,
+            pick,
+        ))
+    }
 }
 
 impl Volume for LocalPosixVolume {
@@ -390,36 +433,15 @@ impl Volume for LocalPosixVolume {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        #[cfg(feature = "playwright-e2e")]
-        {
-            let mut injected = self.injected_error.lock_ignore_poison();
-            if let Some(errno) = injected.take() {
-                return Box::pin(async move {
-                    Err(VolumeError::IoError {
-                        message: format!("Injected error for testing (os error {})", errno).into(),
-                        raw_os_error: Some(errno),
-                    })
-                });
-            }
-        }
-        let dir = self.listing_dir(path);
-        // The one place Cmdr knows a directory IS a volume root, not merely
-        // somewhere under one: `/.hidden` (`read_dot_hidden_names`) means nothing
-        // anywhere else, so this is threaded through rather than re-derived below.
-        let is_volume_root = dir.os() == self.root_os;
-        #[cfg(any(test, feature = "testing"))]
-        let tally = Arc::new(ListingTally::with_hook(self.listing_hook.clone()));
-        #[cfg(not(any(test, feature = "testing")))]
-        let tally = Arc::new(ListingTally::default());
-        let named = Named::new(dir.os().to_string_lossy().into_owned());
-        Box::pin(list_reporting_progress(
-            dir,
-            named,
-            is_volume_root,
-            self.host.clone(),
-            tally,
-            on_progress,
-        ))
+        self.list_through(path, on_progress, Pick::ByFilesystem)
+    }
+
+    /// The same listing: a POSIX lister reads each entry's own record, so nothing lags.
+    fn list_directory_for_refresh<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        self.list_through(path, None, Pick::Refresh)
     }
 
     fn list_directory_as_source<'a>(

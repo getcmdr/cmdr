@@ -403,8 +403,20 @@ nearly every method and hide which answers are real.
   nearly all of a listing's cost, while `FIND_FIRST_EX_LARGE_FETCH` bought nothing measurable on local NTFS
   (`docs/notes/windows-port/windows-lister-2026-11.md`). The forced `Lister::ReadDir` keeps the stat per entry, and
   `reading_test::the_production_lister_agrees_with_an_lstat_per_entry` holds the two to the same rows. ❗ A directory
-  record can lag a file another program holds open for writing (its size and date catch up when that handle closes, as
-  Explorer shows); the watcher's re-stat reads the live answer.
+  record lags a file another program holds open for writing: its size and date catch up when that handle closes, as
+  Explorer shows, and NTFS sends no change notification meanwhile, so the watcher hears nothing either (#1387).
+- **A refresh reads past that lag** (`Volume::list_directory_for_refresh`, which every full re-read of an open listing
+  asks: ⌘R, the MCP `refresh`, a watcher rescan, a write op's top-up). **Decision**: the listing keeps the find data; a
+  refresh (`Pick::Refresh`, `refresh_entries`) re-reads by handle every entry of a folder up to `REFRESH_RESTAT_CAP`
+  (1,000) entries, through the `read_dir` lister, and in a bigger folder the 1,000 files with the newest find-data
+  modified time. A single-entry stat (`get_single_entry`, the watcher's) is by handle already. **Why**: "re-read what
+  changed since the last listing" can't work, because the lagging record doesn't change and no event names the file. A
+  file being written was last recorded when its writer opened it or first grew it, so it ranks among the newest; the cap
+  holds the extra stats to about 20 ms in any folder. Gap: in a folder past the cap where more than 1,000 files were
+  written after the open one, that file keeps its recorded size until its writer closes it.
+  `src/reading/platform/windows_refresh_test.rs` holds a real open, appended file to both paths; the numbers are in
+  `docs/notes/windows-port/windows-lister-2026-11.md`. macOS and Linux list a refresh as they list anything (a bulk
+  record or an `lstat` is the entry's own, live).
 - **Space** is `GetDiskFreeSpaceExW` (`src/space/platform/windows.rs`), beside `statvfs` for macOS and Linux.
 - **The filesystem kind** is `GetVolumePathNameW` plus `GetVolumeInformationW` (`filesystem_kind.rs`,
   `probe_mount_for_path`'s Windows arm), for a fixed or removable drive only (`GetDriveTypeW`): a mapped network drive

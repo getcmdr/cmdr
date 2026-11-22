@@ -69,11 +69,13 @@ It returns a `Prepared`, which nothing else can build, and `CachedListing::new` 
 nothing else, so a read path that skips the overlays doesn't compile. Five paths go through it, each pinned by
 `overlay_read_paths_test.rs`: the streaming read, the test-only sync start (`operations.rs`), a backend's `FullRefresh`
 (`refresh.rs`'s `notify_full_refresh_locked`), a backend swap's re-read (`foreign_path::respell_listing`), and the
-watcher's full re-read, also ⌘R (`Listings::refresh`, `reread.rs`). Its `std::fs` fallback, with no volume to decorate
-through, keeps the count the listing had (`OverlayRows::Unchanged`). A device backend's `Replaced` hand-over is
-synchronous and can't wait on the overlays' blocking gather, so it asks only their zero-I/O `applies_to`, over the
-handed-over entries (`Inner::prepare_handed_over`): none applies (every device backend today) and it records zero
-contributed rows; one applies and the arm drops the backend's entries and re-reads the directory as a `FullRefresh`
+watcher's full re-read, also ⌘R (`Listings::refresh`, `reread.rs`, which lists through
+`Volume::list_directory_for_refresh`: a re-read comes because the cache may be stale, so a backend whose cheap listing
+can lag reads past it there, `crates/cmdr-local/DETAILS.md` § "The Windows sibling"). Its `std::fs` fallback, with no
+volume to decorate through, keeps the count the listing had (`OverlayRows::Unchanged`). A device backend's `Replaced`
+hand-over is synchronous and can't wait on the overlays' blocking gather, so it asks only their zero-I/O `applies_to`,
+over the handed-over entries (`Inner::prepare_handed_over`): none applies (every device backend today) and it records
+zero contributed rows; one applies and the arm drops the backend's entries and re-reads the directory as a `FullRefresh`
 does.
 
 Today's one contributor is the git portal, which puts the six virtual category rows into a repo's `.git/` listing.

@@ -124,7 +124,9 @@ fn read_entries_with(
     let eligible = fd_is_bulk_eligible(&dir);
     let added = if eligible { AddedAt::Fetch } else { AddedAt::Skip };
     let use_bulk = match pick {
-        Pick::ByFilesystem => eligible,
+        // A bulk record is the entry's own attributes, as live as an `lstat`, so a
+        // refresh lists the same way.
+        Pick::ByFilesystem | Pick::Refresh => eligible,
         #[cfg(any(test, feature = "testing"))]
         Pick::Forced(lister) => lister == super::Lister::Bulk,
     };

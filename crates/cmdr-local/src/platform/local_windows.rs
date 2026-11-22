@@ -37,11 +37,13 @@ use cmdr_fs::volume::{
 use tokio::task::spawn_blocking;
 
 use super::anchor::anchor_under;
-use crate::reading::{ListingDir, ListingTally, Named, Row, list_reporting_progress, single_entry, supported_dates_of};
+use crate::reading::{
+    ListingDir, ListingTally, Named, Pick, Row, list_reporting_progress, single_entry, supported_dates_of,
+};
 use crate::space::{get_space_info_for_path, live_space_info_for_path};
+pub use links::remove_leaf;
 use paths::{app_of, native_of, not_an_app_path};
 use rename::rename_native_exclusive;
-pub use links::remove_leaf;
 pub use rename::{rename_local_exclusive, rename_local_exclusive_at};
 
 /// A volume backed by a local Windows filesystem (NTFS, ReFS, FAT, exFAT), rooted at a drive
@@ -201,6 +203,38 @@ async fn blocking<T: Send + 'static>(what: &'static str, body: impl FnOnce() -> 
         .unwrap_or_else(|_| panic!("spawn_blocking {what} closure doesn't panic and the task is uncancelable"))
 }
 
+impl LocalWindowsVolume {
+    /// Both listings' body: `list_directory`'s with `Pick::ByFilesystem`, the refresh's with
+    /// `Pick::Refresh`.
+    fn list_through<'a>(
+        &'a self,
+        path: &'a AppPath,
+        on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
+        pick: Pick,
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        let at = match self.located(path) {
+            Ok(at) => at,
+            Err(e) => return Box::pin(async move { Err(e) }),
+        };
+        let is_volume_root = at.app == self.root;
+        #[cfg(any(test, feature = "testing"))]
+        let tally = Arc::new(ListingTally::with_hook(self.listing_hook.clone()));
+        #[cfg(not(any(test, feature = "testing")))]
+        let tally = Arc::new(ListingTally::default());
+        let named = Named::new(at.app.as_str().to_owned());
+        let dir = ListingDir::new(Cow::Owned(at.os), Some(Cow::Owned(at.app)));
+        Box::pin(list_reporting_progress(
+            dir,
+            named,
+            is_volume_root,
+            self.host.clone(),
+            tally,
+            on_progress,
+            pick,
+        ))
+    }
+}
+
 impl Volume for LocalWindowsVolume {
     fn name(&self) -> &str {
         &self.name
@@ -231,25 +265,17 @@ impl Volume for LocalWindowsVolume {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        let at = match self.located(path) {
-            Ok(at) => at,
-            Err(e) => return Box::pin(async move { Err(e) }),
-        };
-        let is_volume_root = at.app == self.root;
-        #[cfg(any(test, feature = "testing"))]
-        let tally = Arc::new(ListingTally::with_hook(self.listing_hook.clone()));
-        #[cfg(not(any(test, feature = "testing")))]
-        let tally = Arc::new(ListingTally::default());
-        let named = Named::new(at.app.as_str().to_owned());
-        let dir = ListingDir::new(Cow::Owned(at.os), Some(Cow::Owned(at.app)));
-        Box::pin(list_reporting_progress(
-            dir,
-            named,
-            is_volume_root,
-            self.host.clone(),
-            tally,
-            on_progress,
-        ))
+        self.list_through(path, on_progress, Pick::ByFilesystem)
+    }
+
+    /// The listing, with the files whose find data may lag re-read by handle (#1387): every
+    /// entry's in a small folder, the most recently written files' in a big one
+    /// (`reading/platform/windows.rs`, `refresh_entries`).
+    fn list_directory_for_refresh<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        self.list_through(path, None, Pick::Refresh)
     }
 
     fn get_metadata<'a>(

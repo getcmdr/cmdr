@@ -87,8 +87,9 @@ pub(crate) fn list_directory_core_with_tally(
     tally: &ListingTally,
     is_volume_root: bool,
     listings: &dyn ListingHost,
+    pick: Pick,
 ) -> Result<Vec<FileEntry>, std::io::Error> {
-    list_directory_core_impl(dir, Some(tally), is_volume_root, listings, Pick::ByFilesystem)
+    list_directory_core_impl(dir, Some(tally), is_volume_root, listings, pick)
 }
 
 /// How often a local listing samples its running tally and reports progress.
@@ -110,6 +111,9 @@ const PROGRESS_SAMPLE_INTERVAL: Duration = if crate::TEST_FAST_PATHS {
 /// lister. Instead the lister publishes into `tally` and this side samples it on a timer,
 /// leaving the callback on the async task that owns it. Without this the pane sits on
 /// "Opening folder…" for a big folder's whole read. `DETAILS.md` § "The local reader".
+///
+/// `pick` is `Pick::ByFilesystem` for a listing, `Pick::Refresh` for a re-read
+/// (`Volume::list_directory_for_refresh`).
 pub(crate) async fn list_reporting_progress(
     dir: ListingDir<'static>,
     named: Named,
@@ -117,10 +121,11 @@ pub(crate) async fn list_reporting_progress(
     host: VolumeHost,
     tally: Arc<ListingTally>,
     on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
+    pick: Pick,
 ) -> Result<Vec<FileEntry>, VolumeError> {
     let tally_for_listing = Arc::clone(&tally);
     let listing = tokio::task::spawn_blocking(move || {
-        list_directory_core_with_tally(&dir, &tally_for_listing, is_volume_root, host.listings())
+        list_directory_core_with_tally(&dir, &tally_for_listing, is_volume_root, host.listings(), pick)
             .map_err(|e| named.error(&e))
     });
     report_while(listing, PROGRESS_SAMPLE_INTERVAL, || tally.snapshot(), on_progress)
@@ -177,6 +182,12 @@ pub fn added_at_by_path(path: &Path) -> Option<u64> {
 pub(crate) enum Pick {
     /// Production: bulk on APFS and HFS+, `read_dir` on everything else.
     ByFilesystem,
+    /// Production, for a re-read the caller thinks may be stale
+    /// (`Volume::list_directory_for_refresh`). macOS and Linux list as
+    /// `ByFilesystem` does, since their listers read each entry's own record. Windows
+    /// re-reads by handle the files its find data may hold at an old size
+    /// (`reading/platform/windows.rs`, `refresh_entries`).
+    Refresh,
     /// A test or the benchmark.
     #[cfg(any(test, feature = "testing"))]
     Forced(Lister),

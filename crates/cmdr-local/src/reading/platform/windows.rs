@@ -114,29 +114,30 @@ pub(crate) fn os_fields(metadata: &Metadata) -> OsFields {
     }
 }
 
-/// The find-data lister, unless a test or the benchmark forces the `lstat` one.
+/// The find-data lister; a refresh's re-read by handle (`refresh_entries`); or the `lstat`
+/// one, when a test or the benchmark forces it.
 pub(crate) fn read_entries(
     dir: &ListingDir<'_>,
     dot_hidden: &HashSet<String>,
     tally: Option<&ListingTally>,
     pick: Pick,
 ) -> io::Result<Vec<FileEntry>> {
-    #[cfg(any(test, feature = "testing"))]
-    if matches!(pick, Pick::Forced(super::super::Lister::ReadDir)) {
-        return read_dir_entries(dir, dot_hidden, tally, AddedAt::Skip);
+    match pick {
+        Pick::ByFilesystem => find_data_entries(dir, dot_hidden, tally),
+        Pick::Refresh => refresh_entries(dir, dot_hidden, tally),
+        #[cfg(any(test, feature = "testing"))]
+        Pick::Forced(super::super::Lister::ReadDir) => read_dir_entries(dir, dot_hidden, tally, AddedAt::Skip),
     }
-    let _ = pick;
-    find_data_entries(dir, dot_hidden, tally)
 }
 
 /// Every entry off the directory's own records: `read_dir` is `FindFirstFileExW` with basic
 /// info, whose find data holds each entry's attributes, reparse tag, size, and three dates, the
 /// fields an `lstat` here would read, so `DirEntry::metadata` costs no call. A listing of 20,000
 /// files on the hosted runner's NTFS took a third of the time an `lstat` per entry took
-/// (`docs/notes/windows-port/windows-lister-2026-11.md`). ❗ A directory record can lag a file
-/// another program holds open for writing (its size and last-write time catch up when that
-/// handle closes, as Explorer shows too); the watcher's re-stat of a changed entry
-/// (`get_single_entry`) reads the live answer.
+/// (`docs/notes/windows-port/windows-lister-2026-11.md`). ❗ A directory record lags a file
+/// another program holds open for writing: its size and last-write time catch up when that
+/// handle closes, as Explorer shows too, and no change notification fires meanwhile. A refresh
+/// reads past it (`refresh_entries`).
 fn find_data_entries(
     dir: &ListingDir<'_>,
     dot_hidden: &HashSet<String>,
@@ -145,25 +146,92 @@ fn find_data_entries(
     let dir_entries: Vec<_> = read_dir(dir.os())?.collect();
     let mut entries = Vec::with_capacity(dir_entries.len());
     for entry in dir_entries {
-        let entry = entry?;
-        let (entry_path, row) = dir.child(&entry.file_name());
-        // `metadata` can't fail on Windows (it's the find data already read); a failure would
-        // still list the entry, through its own `lstat`.
-        let file_entry = match entry.metadata() {
-            Ok(metadata) => super::super::entry_from_metadata(&entry_path, row, &metadata, dot_hidden),
-            Err(_) => {
-                super::super::entry_from_lstat(&entry_path, row, dot_hidden, AddedAt::Skip).unwrap_or_else(|row| {
-                    let is_symlink = entry.file_type().is_ok_and(|ft| ft.is_symlink());
-                    super::super::minimal_row(row, is_symlink, dot_hidden)
-                })
-            }
-        };
+        let file_entry = find_data_row(dir, &entry?, dot_hidden);
         if let Some(tally) = tally {
             tally.record(&file_entry);
         }
         entries.push(file_entry);
     }
     Ok(entries)
+}
+
+/// One entry's row off its find data.
+fn find_data_row(dir: &ListingDir<'_>, entry: &fs::DirEntry, dot_hidden: &HashSet<String>) -> FileEntry {
+    let (entry_path, row) = dir.child(&entry.file_name());
+    // `metadata` can't fail on Windows (it's the find data already read); a failure would
+    // still list the entry, through its own `lstat`.
+    match entry.metadata() {
+        Ok(metadata) => super::super::entry_from_metadata(&entry_path, row, &metadata, dot_hidden),
+        Err(_) => super::super::entry_from_lstat(&entry_path, row, dot_hidden, AddedAt::Skip).unwrap_or_else(|row| {
+            let is_symlink = entry.file_type().is_ok_and(|ft| ft.is_symlink());
+            super::super::minimal_row(row, is_symlink, dot_hidden)
+        }),
+    }
+}
+
+/// How many entries a refresh re-reads by handle, at most: every entry of a folder up to this
+/// size, else this many of its files, the most recently written first. About 20 ms of stats on
+/// the hosted runner's NTFS (an `lstat` there costs 17–21 µs,
+/// `docs/notes/windows-port/windows-lister-2026-11.md`), so a refresh of any folder stays
+/// within that of its listing.
+const REFRESH_RESTAT_CAP: usize = 1_000;
+
+/// A refresh's listing (#1387): what a listing gives, except that the entries whose find data
+/// can lag (`find_data_entries`) are re-read by handle, so a file another program is writing
+/// shows its live size and modified time.
+///
+/// - **A folder of up to [`REFRESH_RESTAT_CAP`] entries**: every entry by its own `lstat`
+///   (`read_dir_entries`), the lister Windows used before the find data.
+/// - **A bigger one**: its find data, then the [`REFRESH_RESTAT_CAP`] files with the newest
+///   find-data modified time re-read. Bounded, so a refresh of a huge folder stays fast. A file
+///   being written was last recorded when its writer opened it or first grew it, so it ranks
+///   among the folder's newest unless more than that many files were written since; such a
+///   file keeps its recorded size until its writer closes it or the watcher hears it.
+///
+/// Why not "re-read what changed since the last listing": the lagging record doesn't change,
+/// and NTFS sends no change notification for it, so neither signal names the file.
+fn refresh_entries(
+    dir: &ListingDir<'_>,
+    dot_hidden: &HashSet<String>,
+    tally: Option<&ListingTally>,
+) -> io::Result<Vec<FileEntry>> {
+    // Counting the names is one enumeration with no rows built: about 4% of a find-data
+    // listing (10 ms of 246 for 20,000 files).
+    if read_dir(dir.os())?.take(REFRESH_RESTAT_CAP + 1).count() <= REFRESH_RESTAT_CAP {
+        return read_dir_entries(dir, dot_hidden, tally, AddedAt::Skip);
+    }
+    let dir_entries = read_dir(dir.os())?.collect::<io::Result<Vec<_>>>()?;
+    let mut rows: Vec<FileEntry> = dir_entries
+        .iter()
+        .map(|entry| find_data_row(dir, entry, dot_hidden))
+        .collect();
+    for index in newest_files(&rows, REFRESH_RESTAT_CAP) {
+        let (entry_path, row) = dir.child(&dir_entries[index].file_name());
+        // A file gone or unreadable since its find data keeps that row.
+        if let Ok(fresh) = super::super::entry_from_lstat(&entry_path, row, dot_hidden, AddedAt::Skip) {
+            rows[index] = fresh;
+        }
+    }
+    if let Some(tally) = tally {
+        for row in &rows {
+            tally.record(row);
+        }
+    }
+    Ok(rows)
+}
+
+/// The indices of `rows`' plain files (no folder, no link) with the newest modified time, at
+/// most `cap` of them, in no order. A folder's or a link's find data is the item itself, which
+/// a writer doesn't hold open.
+fn newest_files(rows: &[FileEntry], cap: usize) -> Vec<usize> {
+    let mut files: Vec<usize> = (0..rows.len())
+        .filter(|&i| !rows[i].is_directory && !rows[i].is_symlink)
+        .collect();
+    if files.len() > cap {
+        files.select_nth_unstable_by_key(cap, |&i| std::cmp::Reverse(rows[i].modified_at));
+        files.truncate(cap);
+    }
+    files
 }
 
 /// NTFS and ReFS record a birth time for every entry, so a re-stat already equals its row.
@@ -179,3 +247,7 @@ pub(crate) fn added_is_supported(_dir: &Path) -> bool {
 pub(crate) fn added_at_by_path(_path: &Path) -> Option<u64> {
     None
 }
+
+#[cfg(test)]
+#[path = "windows_refresh_test.rs"]
+mod refresh_test;

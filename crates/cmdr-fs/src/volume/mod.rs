@@ -184,6 +184,22 @@ pub trait Volume: Send + Sync {
         self.list_directory(path, on_progress)
     }
 
+    /// Lists `path` for a full re-read of an open listing (⌘R, the MCP `refresh`, a watcher
+    /// rescan, a write op's top-up): each comes because the caller thinks the cache may be
+    /// stale. Same entries as [`list_directory`](Self::list_directory), except where the
+    /// backend's cheap listing can lag what the entry itself says; there it asks the entries
+    /// most likely to lag. Today that's the Windows local disk, whose directory records hold a
+    /// file another program has open for writing at its old size and modified time until that
+    /// handle closes (#1387, `crates/cmdr-local/DETAILS.md` § "The Windows sibling").
+    ///
+    /// Default: the plain listing, no progress.
+    fn list_directory_for_refresh<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        self.list_directory(path, None)
+    }
+
     /// Lists `path` the way a transfer reads it as its SOURCE: the plain listing
     /// minus entries the filesystem keeps FOR a sibling, which travel as that
     /// sibling's metadata rather than as items of their own. Today that's the
