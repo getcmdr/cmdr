@@ -6,8 +6,6 @@
 //! attempt is provably still in flight when the cancel lands: a fake that
 //! answers would race the cancel and the cell would pass for the wrong reason.
 
-use std::path::Path;
-
 use tokio::net::TcpListener;
 
 use cmdr_adb::AdbEndpoint;
@@ -328,7 +326,7 @@ async fn a_pane_on_an_adb_path_lists_the_phone_through_the_listing_pipeline() {
     let engine = crate::listing_host::engine_reporting_to(Arc::clone(&sink) as Arc<dyn ListingEvents>);
     let listing = TestListingGuard::adopt(&engine, unique_test_id("adb-pane-listing"));
     let pane_path = format!("adb://{SERIAL}/sdcard");
-    let outcome = read_to_end(&engine, &request(listing.id(), &volume_id, Path::new(&pane_path))).await;
+    let outcome = read_to_end(&engine, &request(listing.id(), &volume_id, &pane_path)).await;
     assert!(outcome.is_ok(), "the listing pipeline reads the phone; got {outcome:?}");
     assert!(sink.failed.lock().unwrap().is_empty(), "no listing error was emitted");
 
@@ -404,11 +402,7 @@ async fn listing_a_listed_phone_nobody_dialed_says_it_is_not_connected() {
     let pane_path = format!("adb://{SERIAL}/sdcard");
     let outcome = read_to_end(
         engine,
-        &request(
-            listing.id(),
-            &cmdr_fs::volume::adb_volume_id(SERIAL),
-            Path::new(&pane_path),
-        ),
+        &request(listing.id(), &cmdr_fs::volume::adb_volume_id(SERIAL), &pane_path),
     )
     .await;
 

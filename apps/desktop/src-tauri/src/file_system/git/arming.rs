@@ -23,6 +23,7 @@ use cmdr_listing::host::{ListingObserver, OpenedListing};
 
 use super::wiring;
 use crate::file_system::volume::Volume;
+use crate::file_system::volume::manager::lexical_spelling;
 
 /// The repository each open listing holds a subscriber on.
 ///
@@ -46,7 +47,7 @@ impl ListingObserver for GitPortalListings {
     }
 
     fn listing_opened(&self, opened: &OpenedListing<'_>) {
-        let Some(worktree_root) = repo_a_listing_watches(opened.volume, opened.path) else {
+        let Some(worktree_root) = repo_a_listing_watches(opened.volume, &lexical_spelling(opened.path)) else {
             return;
         };
         arm_detached(opened.id.to_string(), worktree_root);

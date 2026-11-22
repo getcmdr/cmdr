@@ -79,12 +79,13 @@ pub fn app_path_routes_over_its_parent(path: &AppPath) -> bool {
 }
 
 /// `path` as the `std::path` value the git and restic route candidates read
-/// (`cmdr_git::portal_route`, `cmdr_fs::restic_view`), which still speak
+/// (`cmdr_git::portal_route`, `cmdr_fs::restic_view`) and the git portal's
+/// overlay rows (`Portal::category_rows`), which still speak
 /// `std::path`: the one crossing on the routing seam. The roots those candidates
 /// answer are what the portal and the snapshot view are built over, as before.
 /// Goes when both candidates take an app path (`cmdr-git`'s surface is capped,
 /// so that's David's call; `docs/specs/app-path-plan.md` § 10c's record).
-fn lexical_spelling(path: &AppPath) -> Cow<'_, Path> {
+pub(crate) fn lexical_spelling(path: &AppPath) -> Cow<'_, Path> {
     path.as_std_legacy()
 }
 

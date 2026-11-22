@@ -12,7 +12,6 @@
 
 use cmdr_fs::app_path::AppPath;
 use std::future::Future;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -83,7 +82,7 @@ async fn a_synchronously_started_listing_tells_its_observers_it_opened() {
         .inner
         .list_directory_start_with_volume(
             "lifecycle-sync-vol",
-            Path::new("/"),
+            cmdr_fs::app_path!("/"),
             true,
             SortColumn::Name,
             SortOrder::Ascending,

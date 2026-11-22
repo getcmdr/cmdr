@@ -9,8 +9,6 @@
 //! Each arm emits a typed `reason` + params; the user-facing words live on the
 //! frontend (`src/lib/error-messages/listing-error-messages.ts`).
 
-use std::path::Path;
-
 #[cfg(target_os = "macos")]
 use super::ErrorActionKind;
 use super::{ErrorCategory, ListingError, ListingErrorReason};
@@ -23,10 +21,10 @@ use crate::volume::VolumeError;
 pub(super) fn listing_error_from_class(
     class: OsErrorClass,
     errno: i32,
-    path: &Path,
+    path_display: &str,
     _err: &VolumeError,
 ) -> ListingError {
-    let path_display = path.display().to_string();
+    let path_display = path_display.to_string();
     let raw_detail = format!("{} (os error {})", errno_name(class), errno);
 
     // Helper: a transient errno with no path param and no special action.
@@ -145,14 +143,14 @@ pub(super) fn listing_error_from_class(
 pub(super) fn listing_error_from_class(
     class: OsErrorClass,
     _errno: i32,
-    path: &Path,
+    path_display: &str,
     err: &VolumeError,
 ) -> ListingError {
     let transient = match class {
         OsErrorClass::Interrupted => Some(ListingErrorReason::Interrupted),
         OsErrorClass::OutOfMemory => Some(ListingErrorReason::NotEnoughMemory),
         OsErrorClass::Busy => Some(ListingErrorReason::ResourceBusy {
-            path: path.display().to_string(),
+            path: path_display.to_string(),
         }),
         OsErrorClass::WouldBlock => Some(ListingErrorReason::TemporarilyUnavailable),
         OsErrorClass::NetworkDown => Some(ListingErrorReason::NetworkDown),
@@ -167,7 +165,7 @@ pub(super) fn listing_error_from_class(
         None => (
             ErrorCategory::Serious,
             ListingErrorReason::CouldntReadUnknown {
-                path: path.display().to_string(),
+                path: path_display.to_string(),
             },
         ),
     };

@@ -12,7 +12,7 @@
 
 mod platform;
 
-use std::path::Path;
+use cmdr_fs::app_path::PathArithmetic;
 
 use cmdr_fs::file_extension::needs_package_lookup;
 use cmdr_listing::ListingId;
@@ -33,10 +33,11 @@ pub(crate) fn lookup_candidates(paths: Vec<String>) -> Vec<String> {
     paths
         .into_iter()
         .filter(|path| {
-            Path::new(path)
-                .file_name()
-                .and_then(|name| name.to_str())
-                .is_some_and(needs_package_lookup)
+            // A row's path is app text: its last name by the app path's own split.
+            matches!(
+                crate::commands::wire_path::app_path(path),
+                Ok(Some(path)) if path.file_name().is_some_and(needs_package_lookup)
+            )
         })
         .collect()
 }

@@ -7,7 +7,7 @@
 //! or a string for arguments that don't parse, as Tauri does).
 
 use cmdr_fs::app_path::{AppPath, AppPathBuf};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -260,11 +260,8 @@ impl Demo {
     /// has no archive route, so the listing that follows ends in the volume's
     /// own "that's a file", and the page says why. A folder that only carries an
     /// archive's name lists as the folder it is, and costs one metadata read.
-    async fn note_archive_refusal(&self, path: &str) {
-        let Some((archive, _inner)) = demo_path(path)
-            .ok()
-            .and_then(|path| archive_boundary_candidate_at(&path))
-        else {
+    async fn note_archive_refusal(&self, path: &AppPath) {
+        let Some((archive, _inner)) = archive_boundary_candidate_at(path) else {
             return;
         };
         if matches!(self.volume.get_metadata(&archive).await, Ok(entry) if !entry.is_directory) {
@@ -299,11 +296,15 @@ impl Demo {
         match command {
             "list_directory_start_streaming" => {
                 let a: StartArgs = parse(command, args)?;
-                self.note_archive_refusal(&a.path).await;
+                // Text that names no app path is an argument that doesn't parse, rejected as
+                // Tauri rejects one.
+                let path = demo_path(&a.path)
+                    .map_err(|e| Value::String(format!("invalid args for command `{command}`: {e}")))?;
+                self.note_archive_refusal(&path).await;
                 l.start(ListingRequest {
                     id: ListingId::new(a.listing_id.clone()),
                     volume_id: a.volume_id,
-                    path: PathBuf::from(a.path),
+                    path,
                     include_hidden: a.include_hidden,
                     sort_by: a.sort_by,
                     sort_order: a.sort_order,
@@ -500,7 +501,7 @@ impl Demo {
     async fn refresh(&self, listing_id: String) -> TimedOut<()> {
         let id = ListingId::new(listing_id.clone());
         if let RefreshOutcome::DirectoryGone(path) = self.listings.refresh(&id).await {
-            let path = path.to_string_lossy().into_owned();
+            let path = path.into_string();
             let event = ListingPathEvent {
                 listing_id: &listing_id,
                 path,
@@ -569,19 +570,19 @@ impl ListingVolumes for OneVolume {
     fn resolve<'a>(
         &'a self,
         volume_id: &'a str,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> std::pin::Pin<Box<dyn Future<Output = ResolvedVolume> + Send + 'a>> {
         Box::pin(async move { self.resolve_local_only(volume_id, path) })
     }
 
-    fn resolve_local_only(&self, volume_id: &str, path: &Path) -> ResolvedVolume {
-        ResolvedVolume::passthrough(self.get(volume_id), path)
+    fn resolve_local_only(&self, volume_id: &str, path: &AppPath) -> ResolvedVolume {
+        ResolvedVolume::passthrough_at(self.get(volume_id), path)
     }
 
     fn unregistered<'a>(
         &'a self,
         _volume_id: &'a str,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> std::pin::Pin<Box<dyn Future<Output = Unregistered> + Send + 'a>> {
         Box::pin(async { Unregistered::Gone })
     }

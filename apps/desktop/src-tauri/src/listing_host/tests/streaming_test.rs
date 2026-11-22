@@ -5,7 +5,6 @@
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
 use std::future::Future;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -54,7 +53,14 @@ async fn a_local_directory_read_emits_progress_events() {
     let state = engine.streaming_state();
 
     let result = engine
-        .read_with(&state, &request(listing.id(), volume_id, Path::new("")))
+        .read_with(
+            &state,
+            &request(
+                listing.id(),
+                volume_id,
+                crate::test_support::native_app_path(&dir).as_str(),
+            ),
+        )
         .await;
     assert!(result.is_ok(), "listing the scratch dir succeeds: {:?}", result.err());
 

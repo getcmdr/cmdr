@@ -19,6 +19,18 @@ use super::{ErrorActionKind, ErrorCategory, ListingError, ListingErrorReason};
 /// Returns `None` when no hint is warranted (any non-recognized volume, or any
 /// non-root path).
 pub fn listing_error_for_restricted_empty_root(volume_id: &str, path: &Path) -> Option<ListingError> {
+    restricted_empty_root(volume_id, &path.display().to_string())
+}
+
+/// [`listing_error_for_restricted_empty_root`] for an app path.
+pub fn listing_error_for_restricted_empty_root_at(
+    volume_id: &str,
+    path: &crate::app_path::AppPath,
+) -> Option<ListingError> {
+    restricted_empty_root(volume_id, path.as_str())
+}
+
+fn restricted_empty_root(volume_id: &str, path_display: &str) -> Option<ListingError> {
     // Match the literal volume ID: the constant lives in the app
     // (`apps/desktop/src-tauri/src/volumes/mod.rs`), which this crate sits below and
     // can't import from. Kept in sync with `volumes::ICLOUD_VOLUME_ID`.
@@ -29,7 +41,7 @@ pub fn listing_error_for_restricted_empty_root(volume_id: &str, path: &Path) -> 
             provider: None,
             action_kind: Some(ErrorActionKind::OpenPrivacySettings),
             retry_hint: true,
-            raw_detail: format!("volume={volume_id}, path={}, entries=0", path.display()),
+            raw_detail: format!("volume={volume_id}, path={path_display}, entries=0"),
         })
     } else {
         None

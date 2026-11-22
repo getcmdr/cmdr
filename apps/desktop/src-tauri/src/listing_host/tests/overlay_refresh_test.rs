@@ -54,17 +54,17 @@ async fn a_full_refresh_of_dot_git_tracks_what_the_overlay_contributes() {
 
     // A pane's listing as the first read left it: real entries plus the six.
     let mut entries = volume.list_directory(&dot_git_app, None).await.expect("listing .git");
-    let added = decorate(listings(), "root", &volume, &dot_git, &mut entries).await;
+    let added = decorate(listings(), "root", &volume, &dot_git_app, &mut entries).await;
     assert_eq!(added, 6);
     let listing = TestListing::new()
         .volume(&volume_id)
-        .path(dot_git.clone())
+        .path(dot_git_app.as_str())
         .entries(entries)
         .overlay_rows(added)
         .insert(listings(), "overlay-refresh");
 
     // What the FSEvents watch on `.git/` drives after any `.git/*` write.
-    refresh(&volume_id, &dot_git, listing.id()).await;
+    refresh(&volume_id, &dot_git_app, listing.id()).await;
 
     let names = listing.entry_names();
     assert!(names.iter().any(|n| n == "HEAD"), "real entries survive: {names:?}");
@@ -82,7 +82,7 @@ async fn a_full_refresh_of_dot_git_tracks_what_the_overlay_contributes() {
     // Portal off: the same refresh leaves the directory and nothing else, and
     // clears the flag so a delete walker may reuse the listing again.
     crate::file_system::git::wiring::set_virtual_portal_enabled(false);
-    refresh(&volume_id, &dot_git, listing.id()).await;
+    refresh(&volume_id, &dot_git_app, listing.id()).await;
     crate::file_system::git::wiring::set_virtual_portal_enabled(true);
 
     let names = listing.entry_names();
@@ -99,7 +99,7 @@ async fn a_full_refresh_of_dot_git_tracks_what_the_overlay_contributes() {
 }
 
 /// One watcher-driven `FullRefresh` of `path`, landing on `listing_id`.
-async fn refresh(volume_id: &str, path: &std::path::Path, listing_id: &str) {
+async fn refresh(volume_id: &str, path: &cmdr_fs::app_path::AppPath, listing_id: &str) {
     full_refresh(listings(), volume_id, path, listing_id).await;
 }
 
@@ -120,11 +120,11 @@ async fn a_listing_refresh_of_dot_git_keeps_the_portal_rows() {
     get_volume_manager().register(&volume_id, Arc::clone(&volume));
 
     let mut entries = volume.list_directory(&dot_git_app, None).await.expect("listing .git");
-    let added = decorate(listings(), "root", &volume, &dot_git, &mut entries).await;
+    let added = decorate(listings(), "root", &volume, &dot_git_app, &mut entries).await;
     assert_eq!(added, 6);
     let listing = TestListing::new()
         .volume(&volume_id)
-        .path(dot_git.clone())
+        .path(dot_git_app.as_str())
         .entries(entries)
         .overlay_rows(added)
         .insert(listings(), "overlay-listing-refresh");

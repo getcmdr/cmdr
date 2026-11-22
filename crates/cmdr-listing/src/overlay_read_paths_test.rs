@@ -12,12 +12,11 @@
 //! The overlay is a `StaticOverlay` marker, which decorates only a volume with
 //! its name. What the git portal decides is `file_system/git/overlay_tests.rs`.
 
-use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
 use super::caching::DirectoryChange;
-use super::testing::{StaticOverlay, TestEngine, TestListing, TestListingGuard, request};
+use super::testing::{StaticOverlay, TestEngine, TestListing, TestListingGuard, app_text, request};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::{unique_test_id, wait_until_async};
 use cmdr_fs::volume::InMemoryVolume;
@@ -95,7 +94,7 @@ async fn the_streaming_read_folds_in_overlay_rows() {
         .engine
         .read_with(
             &volume.engine.streaming_state(),
-            &request(listing.id(), &volume.id, Path::new("/")),
+            &request(listing.id(), &volume.id, "/"),
         )
         .await
         .expect("the marker volume lists");
@@ -111,7 +110,7 @@ async fn a_full_refresh_folds_in_overlay_rows() {
     volume
         .engine
         .inner
-        .notify_full_refresh(volume.id.clone(), "/".into(), vec![listing.id().to_string()])
+        .notify_full_refresh(volume.id.clone(), app_text("/"), vec![listing.id().to_string()])
         .await;
 
     assert_decorated(&listing);
@@ -125,7 +124,7 @@ async fn the_respell_re_read_folds_in_overlay_rows() {
     volume
         .engine
         .inner
-        .respell_listing(volume.id.clone(), listing.id().to_string(), "/".into())
+        .respell_listing(volume.id.clone(), listing.id().to_string(), app_text("/"))
         .await;
 
     assert_decorated(&listing);
@@ -152,7 +151,7 @@ async fn the_synchronous_start_folds_in_overlay_rows() {
         .inner
         .list_directory_start_with_volume(
             &volume.id,
-            Path::new("/"),
+            cmdr_fs::app_path!("/"),
             true,
             SortColumn::Name,
             SortOrder::Ascending,
@@ -180,7 +179,7 @@ fn a_replaced_hand_over_records_zero_overlay_rows() {
 
     engine.inner.notify_directory_changed(
         &volume_id,
-        Path::new("/"),
+        cmdr_fs::app_path!("/"),
         DirectoryChange::Replaced(vec![entry("a.txt"), entry("b.txt")]),
     );
 
@@ -202,7 +201,7 @@ async fn a_replaced_hand_over_on_a_decorated_volume_re_reads_with_the_overlays()
 
     volume.engine.inner.notify_directory_changed(
         &volume.id,
-        Path::new("/"),
+        cmdr_fs::app_path!("/"),
         DirectoryChange::Replaced(vec![entry("a.txt"), entry("from-the-backend.txt")]),
     );
 

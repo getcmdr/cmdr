@@ -16,11 +16,11 @@ mod volumes;
 #[cfg(test)]
 pub(crate) use engine::replace_entries;
 pub use engine::{
-    FakeMountTable, FakeVolumes, FixedLocale, RecordingLeases, TestEngine, TestEngineBuilder, collator_for, decorate,
-    full_refresh, hold_diffs, pending_changes, publish_replacement, read_to_end, request,
+    FakeMountTable, FakeVolumes, FixedLocale, RecordingLeases, TestEngine, TestEngineBuilder, app_text, collator_for,
+    decorate, full_refresh, hold_diffs, pending_changes, publish_replacement, read_to_end, request,
 };
 pub use events::RecordingEvents;
-pub use listing::{TestListing, TestListingGuard};
+pub use listing::{ListingAt, TestListing, TestListingGuard};
 pub use observers::{Heard, RecordingObserver, StaticOverlay};
 pub use volumes::{ScriptedListVolume, SpelledVolume, WatchCoverageVolume};
 

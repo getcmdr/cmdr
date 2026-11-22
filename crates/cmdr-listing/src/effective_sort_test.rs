@@ -5,7 +5,6 @@
 //! suite is the cache: the first read, resort, the hidden-files toggle, and a
 //! re-read whose volume now records the date.
 
-use std::path::Path;
 use std::sync::Arc;
 
 use cmdr_fs::entry::FileEntry;
@@ -156,7 +155,7 @@ async fn a_reread_that_gains_the_date_publishes_the_new_effective_column() {
     engine
         .volumes
         .register("swapped", volume(SupportedDates::ALL, one_row()));
-    full_refresh(&engine, "swapped", Path::new("/"), listing.id()).await;
+    full_refresh(&engine, "swapped", cmdr_fs::app_path!("/"), listing.id()).await;
 
     let batches = engine.inner.diffs.pending_batches(listing.id());
     assert_eq!(batches.len(), 1, "one batch for the moved column: {batches:?}");
@@ -165,7 +164,7 @@ async fn a_reread_that_gains_the_date_publishes_the_new_effective_column() {
     listing.with_listing(|cached| assert_eq!(cached.effective().column(), SortColumn::Added));
 
     // The same dates again: nothing moved, nothing to say.
-    full_refresh(&engine, "swapped", Path::new("/"), listing.id()).await;
+    full_refresh(&engine, "swapped", cmdr_fs::app_path!("/"), listing.id()).await;
     assert_eq!(engine.inner.diffs.pending_batches(listing.id()).len(), 1);
 }
 
@@ -181,7 +180,7 @@ async fn a_reread_that_loses_the_date_resorts_by_modified() {
     engine
         .volumes
         .register("downgraded", volume(SupportedDates::NONE, downloads()));
-    full_refresh(&engine, "downgraded", Path::new("/"), listing.id()).await;
+    full_refresh(&engine, "downgraded", cmdr_fs::app_path!("/"), listing.id()).await;
 
     assert_eq!(
         listing.entry_names(),

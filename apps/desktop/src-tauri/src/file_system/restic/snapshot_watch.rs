@@ -38,7 +38,7 @@ use notify_debouncer_full::notify::{self, RecommendedWatcher, RecursiveMode, eve
 use notify_debouncer_full::{DebounceEventResult, Debouncer, NoCache, new_debouncer_opt};
 
 use super::wiring;
-use crate::file_system::volume::manager::get_volume_manager;
+use crate::file_system::volume::manager::{get_volume_manager, lexical_spelling};
 use crate::ignore_poison::IgnorePoison;
 use crate::listing_host::listings;
 
@@ -120,7 +120,8 @@ impl ListingObserver for SnapshotWatch {
     }
 
     fn listing_opened(&self, opened: &OpenedListing<'_>) {
-        let Some(repo_root) = repo_a_listing_watches(opened.volume_id, opened.volume, opened.path) else {
+        let Some(repo_root) = repo_a_listing_watches(opened.volume_id, opened.volume, &lexical_spelling(opened.path))
+        else {
             return;
         };
         hold(

@@ -166,11 +166,10 @@ async fn test_handle_directory_change_refreshes_from_volume() {
     use crate::file_system::volume::manager::get_volume_manager;
     use crate::file_system::watcher::handle_directory_change;
     use cmdr_listing::testing::TestListing;
-    use std::path::PathBuf;
     use std::sync::Arc;
 
     let volume_id = format!("test-vol-hdc-{}", uuid::Uuid::new_v4());
-    let dir_path = PathBuf::from("/testdir");
+    let dir_path = app_path!("/testdir");
 
     // Create volume with files X and Y (paths must match dir_path)
     let volume = Arc::new(InMemoryVolume::with_entries(
@@ -187,7 +186,7 @@ async fn test_handle_directory_change_refreshes_from_volume() {
     // Insert stale cache with only X
     let listing = TestListing::new()
         .volume(&volume_id)
-        .path(&dir_path)
+        .path(dir_path.as_str())
         .entries(vec![make_entry_in("x.txt", "/testdir", Some(100))])
         .insert(crate::listing_host::listings(), "watcher-hdc");
 
@@ -211,11 +210,10 @@ async fn test_handle_directory_change_detects_new_entries() {
     use crate::file_system::volume::manager::get_volume_manager;
     use crate::file_system::watcher::handle_directory_change;
     use cmdr_listing::testing::TestListing;
-    use std::path::PathBuf;
     use std::sync::Arc;
 
     let volume_id = format!("test-vol-new-{}", uuid::Uuid::new_v4());
-    let dir_path = PathBuf::from("/testdir");
+    let dir_path = app_path!("/testdir");
 
     // Create volume with file A initially (paths must match dir_path)
     let volume = Arc::new(InMemoryVolume::with_entries(
@@ -228,7 +226,7 @@ async fn test_handle_directory_change_detects_new_entries() {
     // Cache reflects current state (A only)
     let listing = TestListing::new()
         .volume(&volume_id)
-        .path(&dir_path)
+        .path(dir_path.as_str())
         .entries(vec![make_entry_in("a.txt", "/testdir", Some(100))])
         .insert(crate::listing_host::listings(), "watcher-new-entries");
 
@@ -289,7 +287,7 @@ fn entries_that_went_with_a_replaced_watch_root_leave_the_listing() {
     // whatever else the shared volume registry holds.
     let listing = TestListing::new()
         .volume(&unique_test_id("watch-root-replaced-vol"))
-        .path(&watched)
+        .path(crate::test_support::native_app_path(&watched).as_str())
         .entries(
             list_directory_core(&watched, &crate::listing_host::backends::AppListings).expect("the fresh dir lists"),
         )
@@ -352,7 +350,7 @@ fn a_detached_arm_attaches_the_watch() {
     std::fs::create_dir(&watched).expect("scratch dir is writable");
 
     let listing = TestListing::new()
-        .path(&watched)
+        .path(crate::test_support::native_app_path(&watched).as_str())
         .insert(crate::listing_host::listings(), "detached-arm-attaches");
     assert!(!is_watching(listing.id()), "nothing should be watching before the arm");
 
@@ -430,7 +428,7 @@ fn a_detached_arm_rereads_a_change_that_landed_while_it_was_in_flight() {
     // `list_directory_core` fallback, a real readdir.
     let listing = TestListing::new()
         .volume(&unique_test_id("arm-in-flight-vol"))
-        .path(&watched)
+        .path(crate::test_support::native_app_path(&watched).as_str())
         .entries(
             list_directory_core(&watched, &crate::listing_host::backends::AppListings).expect("the fresh dir lists"),
         )
@@ -546,7 +544,7 @@ fn rewrite_a_dotfile_beside_a_visible_file(
     // An unregistered volume id, so the index enrich and the volume registry stay out of it.
     let listing = TestListing::new()
         .volume(&unique_test_id(&format!("{tag}-vol")))
-        .path(scratch.to_path_buf())
+        .path(crate::test_support::native_app_path(&scratch).as_str())
         .include_hidden(hidden)
         .entries(
             list_directory_core(&scratch, &crate::listing_host::backends::AppListings).expect("the fresh dir lists"),

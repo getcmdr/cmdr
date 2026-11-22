@@ -1,6 +1,6 @@
 //! A recording observer and a fixed overlay, the fakes for the two list seams.
 
-use std::path::Path;
+use cmdr_fs::app_path::{AppName, AppPath, PathArithmetic};
 use std::sync::{Arc, Mutex, OnceLock, Weak};
 
 use cmdr_fs::entry::FileEntry;
@@ -112,14 +112,16 @@ impl ListingOverlay for StaticOverlay {
         "static"
     }
 
-    fn applies_to(&self, volume: &dyn Volume, _path: &Path, _entries: &[FileEntry]) -> bool {
+    fn applies_to(&self, volume: &dyn Volume, _path: &AppPath, _entries: &[FileEntry]) -> bool {
         volume.name() == self.volume_name
     }
 
-    fn extra_entries(&self, _volume_id: &str, _volume: &dyn Volume, path: &Path) -> Vec<FileEntry> {
+    fn extra_entries(&self, _volume_id: &str, _volume: &dyn Volume, path: &AppPath) -> Vec<FileEntry> {
         vec![FileEntry::new(
             self.row.clone(),
-            path.join(&self.row).to_string_lossy().into_owned(),
+            path.join(AppName::from_app_spelling(&self.row).expect("a plain row name"))
+                .expect("a joinable folder")
+                .into_string(),
             true,
             false,
         )]

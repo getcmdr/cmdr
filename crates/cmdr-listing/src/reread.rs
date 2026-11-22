@@ -21,8 +21,8 @@
 //! carry the older state, since bumping would drop every re-read during a busy
 //! burst. `DETAILS.md` § "Read generations".
 
-use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
+use std::path::PathBuf;
 use std::sync::atomic::Ordering;
 
 use cmdr_fs::entry::FileEntry;
@@ -44,7 +44,7 @@ pub enum RefreshOutcome {
     Superseded,
     /// The directory itself is gone (`NotFound`). The host tells the pane and
     /// stops whatever watches it. Carries the listing's path.
-    DirectoryGone(PathBuf),
+    DirectoryGone(AppPathBuf),
     /// Nothing serves the listing's volume id any more. The host may read the
     /// directory itself: [`begin_read`](super::Listings::begin_read), then
     /// [`refresh_from_entries`](super::Listings::refresh_from_entries).
@@ -62,7 +62,7 @@ pub enum RefreshOutcome {
 pub struct ReadTicket {
     id: ListingId,
     volume_id: String,
-    path: PathBuf,
+    path: AppPathBuf,
     generation: ReadGeneration,
 }
 
@@ -79,7 +79,7 @@ impl ReadGeneration {
 
 impl ReadTicket {
     /// The directory to read, in the listing's spelling.
-    pub fn path(&self) -> &Path {
+    pub fn path(&self) -> &AppPath {
         &self.path
     }
 }
@@ -106,7 +106,7 @@ impl Inner {
         };
 
         let generation = self.next_read_generation();
-        let entries = match volume.list_directory(&AppPath::legacy_unchecked(&path), None).await {
+        let entries = match volume.list_directory(&path, None).await {
             Ok(entries) => entries,
             Err(VolumeError::NotFound(_)) => return RefreshOutcome::DirectoryGone(path),
             Err(VolumeError::PermissionDenied { .. }) => return RefreshOutcome::Skipped,

@@ -5,11 +5,10 @@
 
 #[cfg(test)]
 use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-#[cfg(test)]
-use std::path::Path;
-use std::path::PathBuf;
+
 use std::sync::atomic::Ordering;
 #[cfg(test)]
 use uuid::Uuid;
@@ -48,7 +47,7 @@ impl Inner {
     pub(crate) async fn list_directory_start_with_volume(
         &self,
         volume_id: &str,
-        path: &Path,
+        path: &AppPath,
         include_hidden: bool,
         sort_by: SortColumn,
         sort_order: SortOrder,
@@ -56,7 +55,7 @@ impl Inner {
     ) -> Result<ListingStartResult, std::io::Error> {
         // Reset benchmark epoch for this navigation
         benchmark::reset_epoch();
-        benchmark::log_event_value("list_directory_start CALLED", path.display());
+        benchmark::log_event_value("list_directory_start CALLED", path.as_str());
 
         // Resolve the volume, routing a `.zip`-crossing path to its read-only
         // `ArchiveVolume`. The cache keeps the FE-provided `volume_id` (parent drive);
@@ -73,10 +72,7 @@ impl Inner {
         // Use the Volume trait to list the directory. A refused read is the error
         // and nothing else: the streaming path's `ListingEvents::finished` is where
         // the host hears about a failure (and moves a volume off a dead mount).
-        let all_entries = volume
-            .list_directory(&AppPath::legacy_unchecked(path), None)
-            .await
-            .map_err(std::io::Error::other)?;
+        let all_entries = volume.list_directory(path, None).await.map_err(std::io::Error::other)?;
         benchmark::log_event_value("volume.list_directory COMPLETE, entries", all_entries.len());
 
         // Generate listing ID
@@ -103,7 +99,7 @@ impl Inner {
         let mut listing = CachedListing::new(
             self,
             volume_id.to_string(),
-            path.to_path_buf(),
+            path.to_owned(),
             all_entries,
             include_hidden,
             sort_by,
@@ -112,7 +108,7 @@ impl Inner {
         );
         listing.sort_rows(&self.collator());
         let total_count = listing.rows(include_hidden).len();
-        let cached_path = listing.path.as_path().to_path_buf();
+        let cached_path = listing.path.as_path().to_owned();
         self.cache.write_ignore_poison().insert(listing_id.clone(), listing);
 
         // Whatever a subsystem keeps alive while a pane shows this directory: in
@@ -420,7 +416,7 @@ impl Inner {
                     index,
                     listing_id,
                     rows.len(),
-                    LogPrivate::dir_path(listing.path.as_path())
+                    LogPrivate::dir_path(listing.path.as_path().as_str())
                 );
             }
             result
@@ -722,15 +718,15 @@ impl Inner {
     /// What a backend with nothing to subscribe to polls: one question per
     /// directory a pane shows. Paths only, so nothing clones an open
     /// directory's entries to answer it.
-    pub(crate) fn listing_paths_on_volume(&self, volume_id: &str) -> Vec<PathBuf> {
+    pub(crate) fn listing_paths_on_volume(&self, volume_id: &str) -> Vec<AppPathBuf> {
         // Recover rather than answer empty, for the reason above: an empty
         // answer reads as "nothing is shown", which stops the poller.
         let cache = self.cache.read_ignore_poison();
 
-        let mut paths: Vec<PathBuf> = cache
+        let mut paths: Vec<AppPathBuf> = cache
             .values()
             .filter(|listing| listing.volume_id == volume_id)
-            .map(|listing| listing.path.as_path().to_path_buf())
+            .map(|listing| listing.path.as_path().to_owned())
             .collect();
         paths.sort_unstable();
         paths.dedup();

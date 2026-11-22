@@ -114,10 +114,15 @@ pub async fn list_directory_start_streaming(
     } else {
         path.clone()
     };
+    // The pane's path, read at the edge (`wire_path`): a trailing `/` goes, a
+    // POSIX `/x` reads as the volume-relative path it is on a phone or a share, and
+    // a `..` (no pane stands on one) is refused as the sender bug it is.
+    let path = crate::commands::wire_path::on_volume(&expanded_path)
+        .map_err(|refused| format!("{}: {}", refused.path, refused.why))?;
     listings().start(ListingRequest {
         id: ListingId::new(listing_id.clone()),
         volume_id,
-        path: PathBuf::from(&expanded_path),
+        path,
         include_hidden,
         sort_by,
         sort_order,
@@ -453,8 +458,8 @@ pub async fn set_listing_name_filter(
 /// cache entry, or a watcher that admits it misses writes.
 async fn watcher_backed_listing_path(listing_id: &str) -> Option<PathBuf> {
     let (volume_id, path) = listings().location(&ListingId::new(listing_id))?;
-    // The engine keeps a listing's location as a `PathBuf`: crossed once, for the
-    // route and the watch question both.
+    // The engine hands a listing's location as a `PathBuf` (`Listings::location`):
+    // crossed once, for the route and the watch question both.
     let resolved = get_volume_manager()
         .resolve(&volume_id, &AppPath::legacy_unchecked(&path))
         .await;

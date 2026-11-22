@@ -303,7 +303,7 @@ mod media {
         let entries = list_directory_core(&dir, &crate::listing_host::backends::AppListings).expect("the dir lists");
         let listing = TestListing::new()
             .volume("root")
-            .path(dir.to_path_buf())
+            .path(crate::test_support::native_app_path(&dir).as_str())
             .entries(entries.clone())
             .insert(crate::listing_host::listings(), tag);
         (dir, entries, listing)
@@ -620,7 +620,7 @@ mod media {
         let entries = list_directory_core(&folder, &crate::listing_host::backends::AppListings).expect("the dir lists");
         let listing = TestListing::new()
             .volume("root")
-            .path(folder.clone())
+            .path(crate::test_support::native_app_path(&folder).as_str())
             .entries(entries.clone())
             .insert(crate::listing_host::listings(), tag);
         (folder, entries, listing)

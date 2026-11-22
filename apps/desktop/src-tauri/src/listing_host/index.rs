@@ -1,7 +1,6 @@
 //! The drive index, answering what the listing engine asks of it.
 
-use std::path::Path;
-
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 
 use cmdr_listing::host::ListingIndex;
@@ -16,7 +15,7 @@ impl ListingIndex for AppListingIndex {
         crate::index_host::index().enrich(volume_id, entries);
     }
 
-    fn verify_directory(&self, volume_id: &str, path: &Path) {
-        crate::index_host::index().verify_directory(volume_id, &path.to_string_lossy());
+    fn verify_directory(&self, volume_id: &str, path: &AppPath) {
+        crate::index_host::index().verify_directory(volume_id, path.as_str());
     }
 }

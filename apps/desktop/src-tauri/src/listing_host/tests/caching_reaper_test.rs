@@ -19,7 +19,7 @@ fn reaper_evicts_stale_listing_and_its_watcher_together() {
     // A real directory, since `start_watching` refuses a path the OS would.
     let dir = tempfile::tempdir().unwrap();
     let listing = TestListing::new()
-        .path(dir.path())
+        .path(crate::test_support::native_app_path(dir.path()).as_str())
         .last_accessed_ms(0)
         .insert(listings(), "orphan");
     start_watching(listing.id(), dir.path()).expect("start_watching should succeed on a real dir");

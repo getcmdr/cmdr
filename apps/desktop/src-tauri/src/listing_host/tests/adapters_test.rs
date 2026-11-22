@@ -5,7 +5,6 @@
 //! the mount table's is `listing_host/mounts.rs`. What the FSEvents watch, as the
 //! first observer, hears relative to the cache is `lifecycle_order_test.rs`'s.
 
-use std::path::Path;
 use std::sync::Arc;
 
 use crate::file_system::volume::manager::get_volume_manager;
@@ -25,16 +24,18 @@ async fn app_volumes_answer_from_the_volume_registry() {
     get_volume_manager().register(&volume_id, Arc::new(InMemoryVolume::new("Adapter")) as Arc<dyn Volume>);
 
     assert!(AppVolumes.get(&volume_id).is_some(), "a registered volume serves");
-    let resolved = AppVolumes.resolve_local_only(&volume_id, Path::new("/folder"));
+    let resolved = AppVolumes.resolve_local_only(&volume_id, cmdr_fs::app_path!("/folder"));
     assert!(resolved.volume.is_some() && !resolved.is_routed());
-    let resolved = AppVolumes.resolve(&volume_id, Path::new("/folder")).await;
+    let resolved = AppVolumes.resolve(&volume_id, cmdr_fs::app_path!("/folder")).await;
     assert!(resolved.volume.is_some() && !resolved.is_routed());
 
     get_volume_manager().unregister(&volume_id);
     assert!(AppVolumes.get(&volume_id).is_none());
     assert!(
         matches!(
-            AppVolumes.unregistered(&volume_id, Path::new("/no/such/mount")).await,
+            AppVolumes
+                .unregistered(&volume_id, cmdr_fs::app_path!("/no/such/mount"))
+                .await,
             Unregistered::Gone
         ),
         "an id nothing serves and nothing explains is gone"
@@ -52,7 +53,7 @@ fn the_app_index_leaves_a_volume_it_never_indexed_alone() {
     ];
 
     AppListingIndex.enrich(&volume_id, &mut entries);
-    AppListingIndex.verify_directory(&volume_id, Path::new("/"));
+    AppListingIndex.verify_directory(&volume_id, cmdr_fs::app_path!("/"));
 
     assert!(
         entries

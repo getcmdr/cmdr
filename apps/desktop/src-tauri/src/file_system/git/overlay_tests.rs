@@ -9,6 +9,8 @@
 #![cfg(test)]
 
 use cmdr_fs::app_path::AppPathBuf;
+
+use crate::test_support::native_app_path;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -39,13 +41,8 @@ async fn a_dot_git_that_is_not_this_repos_gitdir_gets_no_rows() {
     std::fs::create_dir_all(&stray).expect("make the placeholder");
 
     let volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder("Test", &dir, crate::volume_host::host()));
-    let mut entries = volume
-        .list_directory(
-            &AppPathBuf::from_native_unicode(&stray).expect("a scratch folder is an app path"),
-            None,
-        )
-        .await
-        .expect("listing it");
+    let stray = AppPathBuf::from_native_unicode(&stray).expect("a scratch folder is an app path");
+    let mut entries = volume.list_directory(&stray, None).await.expect("listing it");
     assert_eq!(
         cmdr_listing::testing::decorate(crate::listing_host::listings(), "root", &volume, &stray, &mut entries).await,
         0,
@@ -55,13 +52,8 @@ async fn a_dot_git_that_is_not_this_repos_gitdir_gets_no_rows() {
     // The repo's own `.git` still gets them, so the check isn't just refusing
     // everything.
     let real = dir.join(".git");
-    let mut real_entries = volume
-        .list_directory(
-            &AppPathBuf::from_native_unicode(&real).expect("a scratch folder is an app path"),
-            None,
-        )
-        .await
-        .expect("listing .git");
+    let real = AppPathBuf::from_native_unicode(&real).expect("a scratch folder is an app path");
+    let mut real_entries = volume.list_directory(&real, None).await.expect("listing .git");
     assert_eq!(
         cmdr_listing::testing::decorate(
             crate::listing_host::listings(),
@@ -91,7 +83,7 @@ fn a_volume_with_no_local_path_never_gets_the_portal() {
     assert!(!super::wiring::volume_holds_real_repos(&remote));
 
     let overlay = GitPortalOverlay;
-    let dot_git = Path::new("/anywhere/repo/.git");
+    let dot_git = cmdr_fs::app_path!("/anywhere/repo/.git");
     assert!(overlay.applies_to(&local, dot_git, &[]));
     assert!(!overlay.applies_to(&remote, dot_git, &[]));
 }
@@ -104,7 +96,7 @@ fn only_the_dot_git_directory_itself_is_claimed() {
     let volume = LocalVolume::local_folder("Local", Path::new("/"), crate::volume_host::host());
     let overlay = GitPortalOverlay;
 
-    assert!(overlay.applies_to(&volume, Path::new("/repo/.git"), &[]));
+    assert!(overlay.applies_to(&volume, cmdr_fs::app_path!("/repo/.git"), &[]));
     for other in [
         "/repo",
         "/repo/.git/refs",
@@ -112,7 +104,10 @@ fn only_the_dot_git_directory_itself_is_claimed() {
         "/repo/src",
         "/repo/.github",
     ] {
-        assert!(!overlay.applies_to(&volume, Path::new(other), &[]), "{other}");
+        assert!(
+            !overlay.applies_to(&volume, &cmdr_listing::testing::app_text(other), &[]),
+            "{other}"
+        );
     }
 }
 
@@ -134,15 +129,15 @@ fn the_toggle_refresh_reaches_a_dot_git_pane_with_no_repo_subscription() {
     );
     let at_dot_git = TestListing::new()
         .volume("local-external-1234")
-        .path(dot_git.clone())
+        .path(native_app_path(&dot_git).as_str())
         .insert(crate::listing_host::listings(), "git-toggle-dot-git");
     let inside = TestListing::new()
         .volume("root")
-        .path(dot_git.join("branches"))
+        .path(native_app_path(dot_git.join("branches")).as_str())
         .insert(crate::listing_host::listings(), "git-toggle-inside");
     let elsewhere = TestListing::new()
         .volume("root")
-        .path(dir.join("src"))
+        .path(native_app_path(dir.join("src")).as_str())
         .insert(crate::listing_host::listings(), "git-toggle-elsewhere");
 
     let targeted = super::wiring::listings_inside_a_dot_git();
@@ -176,11 +171,11 @@ fn the_refresh_reaches_a_portal_listing_on_a_non_default_volume() {
 
     let on_external = TestListing::new()
         .volume("local-external-1234")
-        .path(dot_git.join("branches"))
+        .path(native_app_path(dot_git.join("branches")).as_str())
         .insert(crate::listing_host::listings(), "git-refresh-external");
     let elsewhere = TestListing::new()
         .volume("local-external-1234")
-        .path(dir.join("src"))
+        .path(native_app_path(dir.join("src")).as_str())
         .insert(crate::listing_host::listings(), "git-refresh-elsewhere");
 
     let targeted = super::wiring::listings_a_repo_change_re_reads(&root);
@@ -212,7 +207,10 @@ fn the_toggle_silences_both_portal_seams() {
 
     super::wiring::set_virtual_portal_enabled(true);
     assert!(super::wiring::is_virtual_portal_enabled());
-    assert!(overlay.applies_to(&volume, &dot_git, &[]), "the overlay claims .git/");
+    assert!(
+        overlay.applies_to(&volume, &native_app_path(&dot_git), &[]),
+        "the overlay claims .git/"
+    );
     assert!(
         cmdr_git::portal_route(&dot_git.join("branches")).is_some(),
         "the route claims .git/branches"
@@ -221,7 +219,7 @@ fn the_toggle_silences_both_portal_seams() {
     super::wiring::set_virtual_portal_enabled(false);
     assert!(!super::wiring::is_virtual_portal_enabled());
     assert!(
-        !overlay.applies_to(&volume, &dot_git, &[]),
+        !overlay.applies_to(&volume, &native_app_path(&dot_git), &[]),
         "with the portal off, .git/ is whatever is on disk"
     );
 

@@ -10,9 +10,8 @@
 //! policy behind the `ListingEvents` seam kept every reaction.
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::future::Future;
-use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
@@ -36,8 +35,8 @@ use cmdr_listing::{DirectoryDiffBatch, ListingId, StalledOn};
 enum Effect {
     /// The MCP ring got an entry, with this typed reason.
     RecentError(String),
-    RecordDenial(PathBuf),
-    ClearRestricted(PathBuf),
+    RecordDenial(AppPathBuf),
+    ClearRestricted(AppPathBuf),
     NoteRootFailure(String),
 }
 
@@ -57,7 +56,7 @@ impl ListingEndEffects for Arc<RecordingEffects> {
         &self,
         _listing_id: &str,
         _volume_id: &str,
-        _path: &Path,
+        _path: &AppPath,
         _message: &str,
         error: &ListingError,
     ) {
@@ -66,16 +65,16 @@ impl ListingEndEffects for Arc<RecordingEffects> {
             .push(Effect::RecentError(format!("{:?}", error.reason)));
     }
 
-    fn record_denial(&self, path: &Path) {
+    fn record_denial(&self, path: &AppPath) {
         self.calls
             .lock_ignore_poison()
-            .push(Effect::RecordDenial(path.to_path_buf()));
+            .push(Effect::RecordDenial(path.to_owned()));
     }
 
-    fn clear_restricted(&self, path: &Path) {
+    fn clear_restricted(&self, path: &AppPath) {
         self.calls
             .lock_ignore_poison()
-            .push(Effect::ClearRestricted(path.to_path_buf()));
+            .push(Effect::ClearRestricted(path.to_owned()));
     }
 
     fn note_root_failure(&self, volume_id: &str, _error: &VolumeError) {
@@ -141,10 +140,10 @@ impl App {
 
     /// Runs one streaming listing of `path` on `volume_id` through the spawned
     /// task's two steps, given the read's state.
-    async fn run(&self, volume_id: &str, path: &Path, state: Arc<StreamingListingState>) -> Ended {
+    async fn run(&self, volume_id: &str, path: &AppPath, state: Arc<StreamingListingState>) -> Ended {
         let listing = TestListingGuard::adopt(&self.engine, unique_test_id("reaction"));
         self.engine
-            .read_as_task(&state, &request(listing.id(), volume_id, path))
+            .read_as_task(&state, &request(listing.id(), volume_id, path.as_str()))
             .await;
         let errors: Vec<Option<ListingError>> = self
             .wire
@@ -166,7 +165,7 @@ impl App {
 
 /// Runs one listing of `path` on `volume` through a fresh app engine, given a
 /// way to set up the read's state.
-async fn run_listing(volume: &Registered, path: &Path, setup: impl FnOnce(&StreamingListingState)) -> Ended {
+async fn run_listing(volume: &Registered, path: &AppPath, setup: impl FnOnce(&StreamingListingState)) -> Ended {
     let app = App::serving(volume);
     let state = app.state();
     setup(&state);
@@ -197,11 +196,13 @@ fn refused_with(tag: &str, error: VolumeError) -> Registered {
 }
 
 /// A path inside a Dropbox folder, which provider detection reads lexically.
-fn cloud_path(name: &str) -> PathBuf {
-    dirs::home_dir()
-        .expect("a test runner has a home directory")
-        .join("Library/CloudStorage/Dropbox-seam-pins")
-        .join(name)
+fn cloud_path(name: &str) -> AppPathBuf {
+    crate::test_support::native_app_path(
+        dirs::home_dir()
+            .expect("a test runner has a home directory")
+            .join("Library/CloudStorage/Dropbox-seam-pins")
+            .join(name),
+    )
 }
 
 fn reason_of(ended: &Ended) -> String {
@@ -221,10 +222,10 @@ async fn a_listing_that_lands_completes_and_clears_its_path_from_the_restricted_
         "reaction-ok",
         Arc::new(InMemoryVolume::with_entries("Ok", vec![entry("a.txt")])),
     );
-    let ended = run_listing(&volume, Path::new("/"), as_is).await;
+    let ended = run_listing(&volume, app_path!("/"), as_is).await;
 
     assert_eq!(ended.events, ["opening", "read_complete", "complete"]);
-    assert_eq!(ended.effects, [Effect::ClearRestricted(PathBuf::from("/"))]);
+    assert_eq!(ended.effects, [Effect::ClearRestricted(app_path!("/").to_owned())]);
     assert!(ended.analytics.is_empty(), "no error, no analytics");
     assert!(ended.listing.is_cached());
 }
@@ -235,9 +236,9 @@ async fn a_listing_that_lands_completes_and_clears_its_path_from_the_restricted_
 
 /// Every cancel ends `Ok`, so the task clears the path from the restricted set
 /// exactly as a success does, and nothing reaches the error bookkeeping.
-fn assert_cancelled(ended: &Ended, events: &[&str], path: &Path) {
+fn assert_cancelled(ended: &Ended, events: &[&str], path: &AppPath) {
     assert_eq!(ended.events, events);
-    assert_eq!(ended.effects, [Effect::ClearRestricted(path.to_path_buf())]);
+    assert_eq!(ended.effects, [Effect::ClearRestricted(path.to_owned())]);
     assert!(ended.analytics.is_empty());
     assert!(!ended.listing.is_cached(), "a cancelled read never lands in the cache");
 }
@@ -248,9 +249,9 @@ async fn a_cancel_before_the_read_ends_the_listing_unread() {
         "reaction-cancel-before",
         Arc::new(InMemoryVolume::with_entries("Before", vec![entry("a.txt")])),
     );
-    let ended = run_listing(&volume, Path::new("/"), |state| state.cancel.cancel()).await;
+    let ended = run_listing(&volume, app_path!("/"), |state| state.cancel.cancel()).await;
 
-    assert_cancelled(&ended, &["opening", "cancelled"], Path::new("/"));
+    assert_cancelled(&ended, &["opening", "cancelled"], app_path!("/"));
 }
 
 /// A volume whose read waits until the listing is cancelled, and says when it
@@ -333,7 +334,7 @@ async fn a_cancel_during_the_read_ends_the_listing_without_waiting_for_it() {
         let app = Arc::clone(&app);
         let volume_id = volume.0.clone();
         let state = Arc::clone(&state);
-        tokio::spawn(async move { app.run(&volume_id, Path::new("/"), state).await })
+        tokio::spawn(async move { app.run(&volume_id, app_path!("/"), state).await })
     };
     wait_until_async(Duration::from_secs(10), "the read to start", || {
         started.load(Ordering::SeqCst)
@@ -342,7 +343,7 @@ async fn a_cancel_during_the_read_ends_the_listing_without_waiting_for_it() {
     state.cancel.cancel();
     let ended = run.await.expect("the listing task doesn't panic");
 
-    assert_cancelled(&ended, &["opening", "cancelled"], Path::new("/"));
+    assert_cancelled(&ended, &["opening", "cancelled"], app_path!("/"));
 }
 
 /// Cancels the listing the moment the read reports complete: after the read,
@@ -375,7 +376,7 @@ impl ListingEvents for CancelOnReadComplete {
     fn diff(&self, id: &ListingId, batches: Vec<DirectoryDiffBatch>) {
         self.inner.diff(id, batches);
     }
-    fn respelled(&self, id: &ListingId, path: &Path) {
+    fn respelled(&self, id: &ListingId, path: &AppPath) {
         self.inner.respelled(id, path);
     }
 }
@@ -396,11 +397,11 @@ async fn a_cancel_after_the_read_ends_the_listing_before_it_is_cached() {
     let state = app.state();
     let _ = cancel.set(state.cancel.clone());
 
-    let ended = app.run(&volume.0, Path::new("/"), state).await;
+    let ended = app.run(&volume.0, app_path!("/"), state).await;
     let (collector, effects, listing) = (&app.wire, &app.effects, &ended.listing);
 
     assert_eq!(collector.sequence(), ["opening", "read_complete", "cancelled"]);
-    assert_eq!(effects.calls(), [Effect::ClearRestricted(PathBuf::from("/"))]);
+    assert_eq!(effects.calls(), [Effect::ClearRestricted(app_path!("/").to_owned())]);
     assert!(!listing.is_cached(), "a cancelled read never lands in the cache");
 }
 
@@ -416,7 +417,7 @@ impl ListingOverlay for CancelAtDecorate {
         "cancel-at-decorate"
     }
 
-    fn applies_to(&self, volume: &dyn Volume, _path: &Path, _entries: &[FileEntry]) -> bool {
+    fn applies_to(&self, volume: &dyn Volume, _path: &AppPath, _entries: &[FileEntry]) -> bool {
         if volume.name() == self.volume_name
             && let Some(cancel) = self.cancel.get()
         {
@@ -425,7 +426,7 @@ impl ListingOverlay for CancelAtDecorate {
         false
     }
 
-    fn extra_entries(&self, _volume_id: &str, _volume: &dyn Volume, _path: &Path) -> Vec<FileEntry> {
+    fn extra_entries(&self, _volume_id: &str, _volume: &dyn Volume, _path: &AppPath) -> Vec<FileEntry> {
         Vec::new()
     }
 }
@@ -450,9 +451,9 @@ async fn a_cancel_at_the_cache_insert_leaves_nothing_cached() {
     let state = app.state();
     let _ = cancel.set(state.cancel.clone());
 
-    let ended = app.run(&volume.0, Path::new("/"), state).await;
+    let ended = app.run(&volume.0, app_path!("/"), state).await;
 
-    assert_cancelled(&ended, &["opening", "read_complete", "cancelled"], Path::new("/"));
+    assert_cancelled(&ended, &["opening", "read_complete", "cancelled"], app_path!("/"));
 }
 
 // ============================================================================
@@ -462,7 +463,7 @@ async fn a_cancel_at_the_cache_insert_leaves_nothing_cached() {
 #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_permission_denied_listing_records_the_denial() {
-    let path = Path::new("/denied");
+    let path = app_path!("/denied");
     let volume = refused_with(
         "reaction-denied",
         VolumeError::PermissionDenied {
@@ -478,7 +479,7 @@ async fn a_permission_denied_listing_records_the_denial() {
     assert_eq!(
         ended.effects,
         [
-            Effect::RecordDenial(path.to_path_buf()),
+            Effect::RecordDenial(path.to_owned()),
             Effect::NoteRootFailure(volume.0.clone()),
             Effect::RecentError(reason),
         ]
@@ -534,7 +535,7 @@ async fn a_damaged_archive_reads_as_unreadable() {
     std::fs::write(&archive, b"not a zip at all").expect("scratch dir is writable");
     let volume = refused_with("reaction-damaged", VolumeError::NotSupported);
 
-    let ended = run_listing(&volume, &archive, as_is).await;
+    let ended = run_listing(&volume, &crate::test_support::native_app_path(&archive), as_is).await;
 
     assert_eq!(ended.events, ["opening", "error"]);
     assert!(
@@ -611,7 +612,7 @@ async fn an_empty_icloud_root_reads_as_restricted_yet_clears_the_path() {
         Arc::new(InMemoryVolume::new("iCloud Drive")),
     );
 
-    let ended = run_listing(&volume, Path::new("/"), as_is).await;
+    let ended = run_listing(&volume, app_path!("/"), as_is).await;
 
     assert_eq!(ended.events, ["opening", "read_complete", "error"]);
     assert!(
@@ -629,7 +630,7 @@ async fn an_empty_icloud_root_reads_as_restricted_yet_clears_the_path() {
         ended.effects,
         [
             Effect::RecentError(reason_of(&ended)),
-            Effect::ClearRestricted(PathBuf::from("/")),
+            Effect::ClearRestricted(app_path!("/").to_owned()),
         ],
         "the restricted root goes into the MCP ring once, before the path clears"
     );

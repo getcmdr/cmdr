@@ -18,3 +18,10 @@ pub(crate) fn app_to_os(text: &str) -> Cow<'_, OsStr> {
     // Nothing here reads a disk, so an escape has no byte to stand for: the text stays.
     Cow::Borrowed(OsStr::new(text))
 }
+
+impl super::super::AppPath {
+    /// No path has a native spelling in the browser: `None`, always.
+    pub fn native_if_any(&self) -> Option<std::path::PathBuf> {
+        None
+    }
+}

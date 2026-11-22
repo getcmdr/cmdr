@@ -386,10 +386,14 @@ fn io_miss(error: &std::io::Error, place: &Path, policy: &GatePolicy) -> LiveMis
 }
 
 /// A listing's error as a live miss. Typed on the variant, never its message.
-fn volume_miss(error: &VolumeError, path: &Path, policy: &GatePolicy, local_fs: bool) -> LiveMiss {
+/// `path` is the folder's native path, `None` where it has none (a provider's
+/// URL): only a local folder's denial can be the OS's privacy gate.
+fn volume_miss(error: &VolumeError, path: Option<&Path>, policy: &GatePolicy, local_fs: bool) -> LiveMiss {
     match error {
         VolumeError::NotFound(_) | VolumeError::NotADirectory(_) => LiveMiss::NotFound,
-        VolumeError::PermissionDenied { .. } if local_fs && (policy.denial_is_privacy)(path) => {
+        VolumeError::PermissionDenied { .. }
+            if local_fs && path.is_some_and(|path| (policy.denial_is_privacy)(path)) =>
+        {
             LiveMiss::NeedsDiskAccess(PrivacyGate::Refused)
         }
         VolumeError::PermissionDenied { .. } => LiveMiss::PermissionDenied,
@@ -517,18 +521,23 @@ pub(crate) async fn read_live(
     if stop.is_cancelled() {
         return Err(LiveMiss::Cancelled);
     }
-    // The listing engine reads the folder as `std::path` text until its locations are typed.
-    let path = crate::commands::wire_path::as_sent_std_path(&path);
-    let error = match cmdr_listing::entries_as_stored(volume.as_ref(), &path, Some(&stop)).await {
+    // The folder as the volume takes it, read typed; text that names no place is
+    // no folder to list.
+    let Ok(folder) = crate::commands::wire_path::read_on_volume(&path) else {
+        return Err(LiveMiss::NotFound);
+    };
+    let error = match cmdr_listing::entries_as_stored(volume.as_ref(), &folder, Some(&stop)).await {
         Ok(entries) => return Ok(entries),
         Err(error) => error,
     };
+    // A privacy question is the OS's, asked of a local folder's native path only.
+    let native = local_fs.then(|| folder.to_native().ok()).flatten();
     if !(local_fs && matches!(error, VolumeError::PermissionDenied { .. })) {
-        return Err(volume_miss(&error, &path, &policy, local_fs));
+        return Err(volume_miss(&error, native.as_deref(), &policy, local_fs));
     }
     // Telling a privacy refusal from the folder's own permissions reads the
     // gate's anchor: a blocking call.
-    let miss = tauri::async_runtime::spawn_blocking(move || volume_miss(&error, &path, &policy, true))
+    let miss = tauri::async_runtime::spawn_blocking(move || volume_miss(&error, native.as_deref(), &policy, true))
         .await
         .unwrap_or(LiveMiss::Unreachable(Stall::Failed));
     Err(miss)

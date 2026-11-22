@@ -1,6 +1,6 @@
 //! The events fake: every report the engine makes, recorded.
 
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::sync::Mutex;
 
 use cmdr_fs::ignore_poison::IgnorePoison;
@@ -31,7 +31,7 @@ pub struct RecordingEvents {
     /// Per completed listing, the hidden items it reported its empty pane hides.
     pub hidden_counts: Mutex<Vec<(String, usize)>>,
     /// Per completed listing, the stored spelling it reported (`None` = as asked).
-    pub stored_paths: Mutex<Vec<(String, Option<PathBuf>)>>,
+    pub stored_paths: Mutex<Vec<(String, Option<AppPathBuf>)>>,
     /// Per completed listing, whether it came back empty at its volume's root.
     pub empty_at_volume_root: Mutex<Vec<(String, bool)>>,
     /// Per completed listing, the column its rows are ordered by.
@@ -128,10 +128,10 @@ impl ListingEvents for RecordingEvents {
         self.diffs.lock_ignore_poison().push((id.to_string(), batches));
     }
 
-    fn respelled(&self, id: &ListingId, path: &Path) {
+    fn respelled(&self, id: &ListingId, path: &AppPath) {
         self.note("respelled");
         self.respelled
             .lock_ignore_poison()
-            .push((id.to_string(), path.to_string_lossy().into_owned()));
+            .push((id.to_string(), path.as_str().to_owned()));
     }
 }

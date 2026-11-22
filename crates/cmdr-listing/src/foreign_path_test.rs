@@ -1,6 +1,6 @@
 //! `list_as_stored` against a byte-exact volume that knows a foreign spelling.
 
-use std::path::{Path, PathBuf};
+use crate::testing::{app, app_text};
 
 use super::*;
 use crate::testing::SpelledVolume;
@@ -13,10 +13,7 @@ const FOREIGN: &str = "/foto\u{301}k";
 
 async fn album() -> InMemoryVolume {
     let volume = InMemoryVolume::new("Share");
-    volume
-        .create_directory(crate::testing::app(STORED))
-        .await
-        .expect("seed the album");
+    volume.create_directory(app(STORED)).await.expect("seed the album");
     volume
         .create_file(&crate::testing::app_child(STORED, "photo.jpg"), b"jpeg")
         .await
@@ -28,12 +25,12 @@ async fn album() -> InMemoryVolume {
 async fn a_path_that_lists_as_given_never_asks_for_another_spelling() {
     let volume = SpelledVolume::new(album().await);
 
-    let listed = list_as_stored(&volume, Path::new(STORED), None, None)
+    let listed = list_as_stored(&volume, app(STORED), None, None)
         .await
         .expect("the stored spelling lists");
 
-    assert_eq!(listed.path, Path::new(STORED));
-    assert_eq!(listed.stored_spelling_of(Path::new(STORED)), None);
+    assert_eq!(listed.path.as_app_path(), app(STORED));
+    assert_eq!(listed.stored_spelling_of(app(STORED)), None);
     assert_eq!(volume.resolves(), 0, "the happy path costs nothing extra");
 }
 
@@ -43,15 +40,12 @@ async fn a_path_that_lists_as_given_never_asks_for_another_spelling() {
 async fn a_foreign_spelling_lists_the_stored_directory_under_its_stored_path() {
     let volume = SpelledVolume::new(album().await).resolving(FOREIGN, Ok(Some(STORED)));
 
-    let listed = list_as_stored(&volume, Path::new(FOREIGN), None, None)
+    let listed = list_as_stored(&volume, app(FOREIGN), None, None)
         .await
         .expect("the foreign spelling resolves and lists");
 
-    assert_eq!(listed.path, Path::new(STORED));
-    assert_eq!(
-        listed.stored_spelling_of(Path::new(FOREIGN)).as_deref(),
-        Some(Path::new(STORED))
-    );
+    assert_eq!(listed.path.as_app_path(), app(STORED));
+    assert_eq!(listed.stored_spelling_of(app(FOREIGN)).as_deref(), Some(app(STORED)));
     let child = &listed.entries.first().expect("the photo is listed").path;
     assert!(
         child.starts_with(STORED),
@@ -65,7 +59,7 @@ async fn a_foreign_spelling_lists_the_stored_directory_under_its_stored_path() {
 async fn a_miss_with_no_other_spelling_keeps_its_not_found() {
     let volume = SpelledVolume::new(album().await);
 
-    let result = list_as_stored(&volume, Path::new("/gone"), None, None).await;
+    let result = list_as_stored(&volume, cmdr_fs::app_path!("/gone"), None, None).await;
 
     assert!(
         matches!(result, Err(VolumeError::NotFound(_))),
@@ -81,7 +75,7 @@ async fn a_look_alike_refusal_reaches_the_pane() {
     let volume =
         SpelledVolume::new(album().await).resolving(FOREIGN, Err(VolumeError::AmbiguousName(FOREIGN.to_string())));
 
-    let result = list_as_stored(&volume, Path::new(FOREIGN), None, None).await;
+    let result = list_as_stored(&volume, app(FOREIGN), None, None).await;
 
     assert!(
         matches!(result, Err(VolumeError::AmbiguousName(_))),
@@ -113,14 +107,14 @@ async fn a_backend_swap_respells_an_open_listing_and_its_entries() {
 
     engine
         .inner
-        .respell_listing(volume_id.clone(), listing.id().to_string(), FOREIGN.into())
+        .respell_listing(volume_id.clone(), listing.id().to_string(), app_text(FOREIGN))
         .await;
     let found_by_server_bytes = engine
         .inner
-        .find_listings_for_path_on_volume(Some(&volume_id), Path::new(STORED));
+        .find_listings_for_path_on_volume(Some(&volume_id), app(STORED));
 
     listing.with_listing(|cached| {
-        assert_eq!(cached.path.as_path(), Path::new(STORED));
+        assert_eq!(cached.path.as_path(), app(STORED));
         let paths: Vec<&str> = cached.entries().iter().map(|e| e.path.as_str()).collect();
         assert_eq!(
             paths,
@@ -145,7 +139,7 @@ async fn a_refusal_other_than_a_miss_is_not_resolved() {
             raw_os_error: None,
         });
 
-    let result = list_as_stored(&volume, Path::new(FOREIGN), None, None).await;
+    let result = list_as_stored(&volume, app(FOREIGN), None, None).await;
 
     assert!(
         matches!(result, Err(VolumeError::PermissionDenied { .. })),
@@ -164,9 +158,9 @@ async fn a_leaf_from_outside_cmdr_takes_the_stored_spelling() {
     let stored_leaf = format!("{STORED}/r\u{e9}sz.jpg");
     let volume = SpelledVolume::new(album().await).resolving(&foreign_leaf, Ok(Some(&stored_leaf)));
 
-    let paths = stored_spellings(&volume, vec![PathBuf::from(&foreign_leaf)]).await;
+    let paths = stored_spellings(&volume, vec![app(&foreign_leaf).to_owned()]).await;
 
-    assert_eq!(paths, vec![PathBuf::from(stored_leaf)]);
+    assert_eq!(paths, vec![app(&stored_leaf).to_owned()]);
 }
 
 /// An all-ASCII path can't differ in Unicode form, and the kernel mount keeps
@@ -177,9 +171,22 @@ async fn an_exact_or_ascii_leaf_stays_as_given() {
     let volume = SpelledVolume::new(album().await);
     let exact = format!("{STORED}/photo.jpg");
 
-    let paths = stored_spellings(&volume, vec![PathBuf::from("/plain/photo.jpg"), PathBuf::from(&exact)]).await;
+    let paths = stored_spellings(
+        &volume,
+        vec![
+            cmdr_fs::app_path!("/plain/photo.jpg").to_owned(),
+            app(&exact).to_owned(),
+        ],
+    )
+    .await;
 
-    assert_eq!(paths, vec![PathBuf::from("/plain/photo.jpg"), PathBuf::from(exact)]);
+    assert_eq!(
+        paths,
+        vec![
+            cmdr_fs::app_path!("/plain/photo.jpg").to_owned(),
+            app(&exact).to_owned()
+        ]
+    );
     assert_eq!(volume.resolves(), 1, "only the accented path asks the volume");
 }
 
@@ -192,7 +199,7 @@ async fn a_look_alike_leaf_is_never_guessed() {
     let volume = SpelledVolume::new(album().await)
         .resolving(&foreign_leaf, Err(VolumeError::AmbiguousName(foreign_leaf.clone())));
 
-    let paths = stored_spellings(&volume, vec![PathBuf::from(&foreign_leaf)]).await;
+    let paths = stored_spellings(&volume, vec![app(&foreign_leaf).to_owned()]).await;
 
-    assert_eq!(paths, vec![PathBuf::from(foreign_leaf)]);
+    assert_eq!(paths, vec![app(&foreign_leaf).to_owned()]);
 }

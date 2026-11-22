@@ -50,6 +50,12 @@ impl AppPath {
     pub fn to_native_plain(&self) -> Result<PathBuf, NativeRefusal> {
         Ok(PathBuf::from(OsString::from_wide(&self.to_native_windows_plain()?)))
     }
+
+    /// [`AppPath::to_native`], or `None` where there's no native path: for a caller
+    /// that also builds for the browser, where no path has one.
+    pub fn native_if_any(&self) -> Option<PathBuf> {
+        self.to_native().ok()
+    }
 }
 
 impl AppPathBuf {

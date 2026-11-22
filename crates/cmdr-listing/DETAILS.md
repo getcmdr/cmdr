@@ -782,14 +782,23 @@ without full re-reads. Callers outside the crate reach them through `Listings`' 
 
 ## App paths at the engine's edge
 
-The `Volume` trait speaks app paths (`crates/cmdr-fs/DETAILS.md` § "App paths"); this engine's own API, its `host`
-seams, `ListingPath`, and its read results still carry `std::path` values holding app text, since the app's listing host
-calls them that way. So each volume call crosses once, through the transition bridge (`legacy_unchecked` going in,
-`as_std_legacy` coming back: the foreign-spelling resolve, `listing_path`, the root a read reports), and nothing in the
-engine does `std::path` arithmetic on a listed name: a removal matches by name (`mutate::last_name`), never by
-`parent.join(name)`. Those crossings go when the app's listing host speaks app paths and the API turns typed (the plan's
-milestone 10c, `docs/specs/app-path-plan.md`). Tests build volume paths with `testing::app` / `app_child` (the app
-path's own join), never `Path::join`, which adds `\` on Windows.
+The `Volume` trait speaks app paths (`crates/cmdr-fs/DETAILS.md` § "App paths"), and so does the engine inside:
+`ListingPath`, the cache keys, the refresh turnstiles, every volume call, `ListingRequest.path`, `ListingEnd`'s paths,
+`ReadTicket`, `RefreshOutcome::DirectoryGone`, and the engine's own seams (`ListingVolumes`, `ListingOverlay`,
+`ListingIndex::verify_directory`, `ListingEvents::respelled`, `OpenedListing`). The OS-facing seams stay native:
+`MountTable::mount_of` (the stalled-on wording crosses with `to_native` past the backend split) and `observe_children`
+(the app's OS watcher).
+
+The `Listings` methods the backends' `cmdr_fs` `ListingHost` and the write engine's oracle callers reach
+(`directory_changed`, `authoritative_listing`, `cached_entries`, `listings_for_path_on_volume`,
+`listings_for_local_path`, `refresh_archive_listings`, `location`, `open_listing_paths`, `ListingSummary.path`) keep
+`std::path` at their edge and cross once, in `cached_listing.rs` (`from_host_seam` / `to_host_seam`, the bridge).
+**Why:** typing them moves the crossing into `cmdr-operations`' engine (its scan walkers, pre-flights, and
+`name_rules_at` hold `PathBuf`s) and into every backend's `ListingHost` call, which grows the bridge total; they go
+typed with the write engine's starts (the plan's milestone 10d, `docs/specs/app-path-plan.md`). Nothing in the engine
+does `std::path` arithmetic on a listed name: a removal matches by name (`mutate::last_name`), never by
+`parent.join(name)`. Tests build volume paths with `testing::app` / `app_child` / `app_text` (the app path's own join),
+never `Path::join`, which adds `\` on Windows.
 
 ## One spelling per directory (`ListingPath`)
 

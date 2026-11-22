@@ -392,7 +392,7 @@ mod an_open_listing_inside_the_zip {
                 .collect();
             let listing = TestListing::new()
                 .volume(&parent)
-                .path(&path)
+                .path(crate::test_support::native_app_path(&path).as_str())
                 .entries(names)
                 .insert(crate::listing_host::listings(), tag);
             Self {

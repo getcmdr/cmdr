@@ -162,7 +162,7 @@ async fn listing_a_saved_server_nobody_connected_says_it_is_not_connected() {
         &request(
             listing.id(),
             &cmdr_fs::volume::sftp_volume_id(host, 2222, "test_user_1"),
-            std::path::Path::new(&pane_path),
+            &pane_path,
         ),
     )
     .await;

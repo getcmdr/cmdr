@@ -13,14 +13,14 @@
 //! payloads go out through a [`ListingWire`] (`AppHandle` in the app, a collector
 //! in tests), the bookkeeping through [`ListingEndEffects`].
 
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 
 use serde::{Deserialize, Serialize};
 use tauri_specta::Event;
 
 use cmdr_fs::volume::friendly_error::{
-    ListingError, archive_needs_password_listing_error, archive_unreadable_listing_error, enrich_with_provider,
-    listing_error_for_restricted_empty_root, listing_error_from_volume_error,
+    ListingError, archive_needs_password_listing_error, archive_unreadable_listing_error, enrich_with_provider_at,
+    listing_error_at, listing_error_for_restricted_empty_root_at,
 };
 use cmdr_fs::volume::{ListingPhase, ListingProgress, VolumeError};
 use cmdr_listing::ListingId;
@@ -159,7 +159,7 @@ pub(crate) trait ListingWire: Send + Sync {
     fn emit_error(&self, listing_id: &str, message: String, error: Option<ListingError>);
     fn emit_cancelled(&self, listing_id: &str);
     fn emit_diff(&self, listing_id: &str, batches: Vec<DirectoryDiffBatch>);
-    fn emit_respelled(&self, listing_id: &str, path: &Path);
+    fn emit_respelled(&self, listing_id: &str, path: &AppPath);
 }
 
 impl ListingWire for tauri::AppHandle {
@@ -231,10 +231,10 @@ impl ListingWire for tauri::AppHandle {
         }
     }
 
-    fn emit_respelled(&self, listing_id: &str, path: &Path) {
+    fn emit_respelled(&self, listing_id: &str, path: &AppPath) {
         let event = ListingRespelledEvent {
             listing_id: listing_id.to_string(),
-            path: path.to_string_lossy().into_owned(),
+            path: path.as_str().to_owned(),
         };
         if let Err(e) = event.emit(self) {
             // allowed-log-private: Tauri's emit error, which names no path
@@ -261,11 +261,18 @@ pub(crate) fn error_analytics_category(error: Option<&ListingError>) -> Option<S
 /// answers with [`AppListingEndEffects`]; a test records the calls.
 pub(crate) trait ListingEndEffects: Send + Sync {
     /// Records a failed listing into the MCP recent-errors ring.
-    fn record_recent_error(&self, listing_id: &str, volume_id: &str, path: &Path, message: &str, error: &ListingError);
+    fn record_recent_error(
+        &self,
+        listing_id: &str,
+        volume_id: &str,
+        path: &AppPath,
+        message: &str,
+        error: &ListingError,
+    );
     /// Records a `PermissionDenied` path as possibly TCC-restricted.
-    fn record_denial(&self, path: &Path);
+    fn record_denial(&self, path: &AppPath);
     /// Drops `path` from the TCC-restricted set.
-    fn clear_restricted(&self, path: &Path);
+    fn clear_restricted(&self, path: &AppPath);
     /// Hands a listing's error to the volume's stale-mount check.
     fn note_root_failure(&self, volume_id: &str, error: &VolumeError);
 }
@@ -274,16 +281,30 @@ pub(crate) trait ListingEndEffects: Send + Sync {
 pub(crate) struct AppListingEndEffects;
 
 impl ListingEndEffects for AppListingEndEffects {
-    fn record_recent_error(&self, listing_id: &str, volume_id: &str, path: &Path, message: &str, error: &ListingError) {
-        crate::ui_state::listing_errors::record(listing_id, volume_id, &path.to_string_lossy(), message, Some(error));
+    fn record_recent_error(
+        &self,
+        listing_id: &str,
+        volume_id: &str,
+        path: &AppPath,
+        message: &str,
+        error: &ListingError,
+    ) {
+        crate::ui_state::listing_errors::record(listing_id, volume_id, path.as_str(), message, Some(error));
     }
 
-    fn record_denial(&self, path: &Path) {
-        crate::restricted_paths::record_denial(path);
+    // The TCC-restricted set is the OS's, keyed by native paths: a path with no
+    // native spelling (a server URL) is never TCC-gated, so it has nothing to
+    // record or clear.
+    fn record_denial(&self, path: &AppPath) {
+        if let Ok(native) = path.to_native() {
+            crate::restricted_paths::record_denial(native);
+        }
     }
 
-    fn clear_restricted(&self, path: &Path) {
-        crate::restricted_paths::clear_path(path);
+    fn clear_restricted(&self, path: &AppPath) {
+        if let Ok(native) = path.to_native() {
+            crate::restricted_paths::clear_path(native);
+        }
     }
 
     fn note_root_failure(&self, volume_id: &str, error: &VolumeError) {
@@ -325,7 +346,7 @@ impl<W: ListingWire, E: ListingEndEffects> TauriListingEvents<W, E> {
         // of a blank pane. Real "I have zero files at the volume root" is rare enough
         // that this hint is acceptable noise, and the FE shows a "Try again" button.
         if end.empty_at_volume_root
-            && let Some(listing_error) = listing_error_for_restricted_empty_root(end.volume_id, end.listed_path)
+            && let Some(listing_error) = listing_error_for_restricted_empty_root_at(end.volume_id, end.listed_path)
         {
             let message = listing_error.raw_detail.clone();
             self.effects
@@ -337,15 +358,15 @@ impl<W: ListingWire, E: ListingEndEffects> TauriListingEvents<W, E> {
             listing_id: listing_id.to_string(),
             total_count: end.total_count,
             hidden_count: end.hidden_count,
-            volume_root: end.volume_root.to_string_lossy().to_string(),
-            stored_path: end.stored_path.map(|path| path.to_string_lossy().into_owned()),
+            volume_root: end.volume_root.as_str().to_owned(),
+            stored_path: end.stored_path.map(AppPathBuf::into_string),
             effective_sort_by: end.effective_sort_by,
         });
     }
 
     /// A failed read: classified into a `listing-error`, with the app bookkeeping
     /// around it.
-    fn failed(&self, listing_id: &str, volume_id: &str, path: &Path, e: VolumeError) {
+    fn failed(&self, listing_id: &str, volume_id: &str, path: &AppPath, e: VolumeError) {
         // A failed `.zip` browse — the archive is damaged, encrypted, an
         // unsupported format, or a file with an archive extension that isn't
         // really an archive — collapses to `NotSupported`/`IoError` at the
@@ -362,13 +383,11 @@ impl<W: ListingWire, E: ListingEndEffects> TauriListingEvents<W, E> {
             // even list; the FE renders a password prompt, not an error pane.
             // Skip provider enrichment (no cloud suggestion on a password prompt).
             archive_needs_password_listing_error(container, wrong_attempt)
-        } else if matches!(e, VolumeError::NotSupported | VolumeError::IoError { .. })
-            && cmdr_archive::path_targets_archive_file(path)
-        {
+        } else if matches!(e, VolumeError::NotSupported | VolumeError::IoError { .. }) && targets_archive_file(path) {
             archive_unreadable_listing_error()
         } else {
-            let mut generic = listing_error_from_volume_error(&e, path);
-            enrich_with_provider(&mut generic, path);
+            let mut generic = listing_error_at(&e, path);
+            enrich_with_provider_at(&mut generic, path);
             generic
         };
         if matches!(&e, VolumeError::PermissionDenied { .. }) {
@@ -397,15 +416,29 @@ impl<W: ListingWire, E: ListingEndEffects> TauriListingEvents<W, E> {
     }
 }
 
+/// Whether a failed listing's `path` crosses into an archive FILE (the part
+/// before the boundary exists and is a regular file), as
+/// `cmdr_archive::path_targets_archive_file` answers it: the split by the app
+/// path's own text, then one stat of the archive's native file. A server URL has
+/// no native file, so it answers no, as the stat of its text did.
+fn targets_archive_file(path: &AppPath) -> bool {
+    let Some((archive, _inner)) = cmdr_fs::archive_format::archive_boundary_candidate_at(path) else {
+        return false;
+    };
+    archive
+        .to_native()
+        .is_ok_and(|native| std::fs::metadata(native).is_ok_and(|meta| meta.is_file()))
+}
+
 /// The parts of a [`ListingEnd::Complete`] the wire needs.
 struct Completed<'a> {
     volume_id: &'a str,
     /// The directory as listed: the stored spelling when there was one.
-    listed_path: &'a Path,
+    listed_path: &'a AppPath,
     total_count: usize,
     hidden_count: usize,
-    volume_root: &'a Path,
-    stored_path: Option<PathBuf>,
+    volume_root: &'a AppPath,
+    stored_path: Option<AppPathBuf>,
     empty_at_volume_root: bool,
     effective_sort_by: SortColumn,
 }
@@ -440,7 +473,7 @@ impl<W: ListingWire, E: ListingEndEffects> ListingEvents for TauriListingEvents<
                 empty_at_volume_root,
                 effective_sort_by,
             } => {
-                let listed_path = stored_path.as_deref().unwrap_or(&path).to_path_buf();
+                let listed_path = stored_path.as_deref().unwrap_or(&path).to_owned();
                 self.complete(
                     listing_id,
                     Completed {
@@ -473,7 +506,7 @@ impl<W: ListingWire, E: ListingEndEffects> ListingEvents for TauriListingEvents<
         self.wire.emit_diff(id.as_str(), batches);
     }
 
-    fn respelled(&self, id: &ListingId, path: &Path) {
+    fn respelled(&self, id: &ListingId, path: &AppPath) {
         self.wire.emit_respelled(id.as_str(), path);
     }
 }
@@ -540,7 +573,7 @@ impl ListingWire for std::sync::Arc<WireCollector> {
     fn emit_diff(&self, _listing_id: &str, _batches: Vec<DirectoryDiffBatch>) {
         self.note("diff");
     }
-    fn emit_respelled(&self, _listing_id: &str, _path: &Path) {
+    fn emit_respelled(&self, _listing_id: &str, _path: &AppPath) {
         self.note("respelled");
     }
 }

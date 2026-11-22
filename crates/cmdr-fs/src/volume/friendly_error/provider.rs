@@ -102,6 +102,15 @@ pub fn enrich_with_provider(error: &mut ListingError, path: &Path) {
     }
 }
 
+/// [`enrich_with_provider`] for an app path: detection reads the native path
+/// (its mount and `statfs`), so a path with no native spelling (a server URL,
+/// the browser build) names no provider.
+pub fn enrich_with_provider_at(error: &mut ListingError, path: &crate::app_path::AppPath) {
+    if let Some(native) = path.native_if_any() {
+        enrich_with_provider(error, &native);
+    }
+}
+
 /// Which provider serves the mount at `mount_root`, if any: the same detection
 /// the friendly-error enrichment runs, for callers that want the identity rather
 /// than a message.

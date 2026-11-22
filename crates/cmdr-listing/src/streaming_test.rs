@@ -5,7 +5,6 @@
 
 use cmdr_fs::app_path::AppPath;
 use std::future::Future;
-use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -53,9 +52,7 @@ async fn test_streaming_list_populates_cache() {
 
     let state = engine.streaming_state();
 
-    let result = engine
-        .read_with(&state, &request(listing.id(), volume_id, Path::new("/")))
-        .await;
+    let result = engine.read_with(&state, &request(listing.id(), volume_id, "/")).await;
 
     assert!(result.is_ok(), "Expected Ok, got {:?}", result);
 
@@ -86,9 +83,7 @@ async fn test_streaming_list_emits_opening_and_complete() {
     let sink = &engine.events;
     let state = engine.streaming_state();
 
-    let result = engine
-        .read_with(&state, &request(listing.id(), volume_id, Path::new("/")))
-        .await;
+    let result = engine.read_with(&state, &request(listing.id(), volume_id, "/")).await;
 
     assert!(result.is_ok());
 
@@ -122,9 +117,7 @@ async fn test_streaming_list_cancellation() {
     // Set cancelled BEFORE calling
     state.cancel.cancel();
 
-    let result = engine
-        .read_with(&state, &request(listing.id(), volume_id, Path::new("/")))
-        .await;
+    let result = engine.read_with(&state, &request(listing.id(), volume_id, "/")).await;
 
     assert!(result.is_ok());
 
@@ -148,9 +141,7 @@ async fn test_streaming_list_volume_not_found() {
 
     let state = engine.streaming_state();
 
-    let result = engine
-        .read_with(&state, &request(listing.id(), volume_id, Path::new("/")))
-        .await;
+    let result = engine.read_with(&state, &request(listing.id(), volume_id, "/")).await;
 
     match result {
         Err(VolumeError::NotFound(path)) => assert_eq!(path, "/", "NotFound carries the listed path"),
@@ -185,9 +176,7 @@ async fn test_streaming_list_empty_directory() {
     let sink = &engine.events;
     let state = engine.streaming_state();
 
-    let result = engine
-        .read_with(&state, &request(listing.id(), volume_id, Path::new("/")))
-        .await;
+    let result = engine.read_with(&state, &request(listing.id(), volume_id, "/")).await;
 
     assert!(result.is_ok());
 
@@ -224,21 +213,22 @@ async fn a_foreign_spelling_lands_the_listing_on_the_stored_path() {
 
     let sink = &engine.events;
     let result = engine
-        .read_with(
-            &engine.streaming_state(),
-            &request(listing.id(), volume_id, Path::new(foreign)),
-        )
+        .read_with(&engine.streaming_state(), &request(listing.id(), volume_id, foreign))
         .await;
 
     assert!(result.is_ok(), "the foreign spelling must list, got {result:?}");
     listing.with_listing(|cached| {
-        assert_eq!(cached.path.as_path(), Path::new(stored), "keyed under the stored bytes");
+        assert_eq!(
+            cached.path.as_path(),
+            crate::testing::app(stored),
+            "keyed under the stored bytes"
+        );
         assert!(cached.entries()[0].path.starts_with(stored));
     });
     let stored_paths = sink.stored_paths.lock().unwrap();
     assert_eq!(
         *stored_paths,
-        vec![(listing.id().to_string(), Some(PathBuf::from(stored)))],
+        vec![(listing.id().to_string(), Some(crate::testing::app(stored).to_owned()))],
         "the pane must learn the stored spelling"
     );
 }
@@ -389,11 +379,7 @@ async fn test_cancel_unwinds_the_listing_instead_of_aborting_it() {
         let state = Arc::clone(&state);
         let volume_id = volume_id.clone();
         let listing_id = listing.id().to_string();
-        tokio::spawn(async move {
-            engine
-                .read_with(&state, &request(&listing_id, &volume_id, Path::new("/")))
-                .await
-        })
+        tokio::spawn(async move { engine.read_with(&state, &request(&listing_id, &volume_id, "/")).await })
     };
 
     wait_until_async(FLAG_FLIPS_WITHIN, "the listing to start before we cancel it", || {
@@ -448,11 +434,7 @@ async fn a_listing_holds_a_foreground_lease_for_its_whole_duration() {
         let state = Arc::clone(&state);
         let volume_id = volume_id.clone();
         let listing_id = listing.id().to_string();
-        tokio::spawn(async move {
-            engine
-                .read_with(&state, &request(&listing_id, &volume_id, Path::new("/")))
-                .await
-        })
+        tokio::spawn(async move { engine.read_with(&state, &request(&listing_id, &volume_id, "/")).await })
     };
 
     wait_until_async(FLAG_FLIPS_WITHIN, "the listing to reach the backend", || {
@@ -492,9 +474,7 @@ async fn a_listing_that_fails_gives_its_lease_back() {
     let listing = TestListingGuard::adopt(&engine, unique_test_id("streaming-lease-error"));
 
     let state = engine.streaming_state();
-    let result = engine
-        .read_with(&state, &request(listing.id(), volume_id, Path::new("/")))
-        .await;
+    let result = engine.read_with(&state, &request(listing.id(), volume_id, "/")).await;
 
     assert!(result.is_err(), "an unregistered volume can't be listed");
     assert_eq!(engine.leases.held(), 0);
@@ -517,11 +497,7 @@ async fn two_concurrent_listings_on_one_volume_both_have_to_finish() {
     let spawn_listing = |listing_id: String, state: Arc<StreamingListingState>| {
         let volume_id = volume_id.clone();
         let engine = Listings::clone(&engine);
-        tokio::spawn(async move {
-            engine
-                .read_with(&state, &request(&listing_id, &volume_id, Path::new("/")))
-                .await
-        })
+        tokio::spawn(async move { engine.read_with(&state, &request(&listing_id, &volume_id, "/")).await })
     };
 
     let left_state = engine.streaming_state();
@@ -567,11 +543,7 @@ async fn dropping_the_listing_task_mid_flight_gives_the_lease_back() {
         let engine = Listings::clone(&engine);
         let volume_id = volume_id.clone();
         let listing_id = listing.id().to_string();
-        tokio::spawn(async move {
-            engine
-                .read_with(&state, &request(&listing_id, &volume_id, Path::new("/")))
-                .await
-        })
+        tokio::spawn(async move { engine.read_with(&state, &request(&listing_id, &volume_id, "/")).await })
     };
 
     wait_until_async(FLAG_FLIPS_WITHIN, "the listing to reach the backend", || {

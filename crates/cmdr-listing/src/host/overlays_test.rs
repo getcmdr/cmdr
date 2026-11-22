@@ -2,11 +2,11 @@
 //! zero-contributor fast path. What the GIT contributor decides is pinned
 //! beside it in `file_system/git/overlay_tests.rs`.
 
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic};
 use std::sync::Arc;
 
 use super::overlays::ListingOverlay;
-use crate::testing::{TestEngine, decorate};
+use crate::testing::{TestEngine, app_text, decorate};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
 
@@ -14,7 +14,7 @@ use cmdr_fs::volume::{InMemoryVolume, Volume};
 /// whatever directory it was pointed at.
 struct FixedRows {
     id: &'static str,
-    at: PathBuf,
+    at: AppPathBuf,
     names: Vec<&'static str>,
 }
 
@@ -23,17 +23,19 @@ impl ListingOverlay for FixedRows {
         self.id
     }
 
-    fn applies_to(&self, _volume: &dyn Volume, path: &Path, _entries: &[FileEntry]) -> bool {
-        path == self.at
+    fn applies_to(&self, _volume: &dyn Volume, path: &AppPath, _entries: &[FileEntry]) -> bool {
+        *path == *self.at
     }
 
-    fn extra_entries(&self, _volume_id: &str, _volume: &dyn Volume, path: &Path) -> Vec<FileEntry> {
+    fn extra_entries(&self, _volume_id: &str, _volume: &dyn Volume, path: &AppPath) -> Vec<FileEntry> {
         self.names
             .iter()
             .map(|name| {
                 FileEntry::new(
                     (*name).to_string(),
-                    path.join(name).to_string_lossy().into_owned(),
+                    path.join(AppName::from_app_spelling(name).expect("one plain name"))
+                        .expect("joins")
+                        .into_string(),
                     true,
                     false,
                 )
@@ -53,7 +55,7 @@ fn a_volume() -> Arc<dyn Volume> {
 /// `decorate` folds a contributor's rows in and reports how many it added.
 #[tokio::test]
 async fn a_contributor_adds_its_rows_to_the_listing() {
-    let at = PathBuf::from("/overlay/adds");
+    let at = app_text("/overlay/adds");
     let engine = TestEngine::builder()
         .overlay(Arc::new(FixedRows {
             id: "test-adds",
@@ -75,7 +77,7 @@ async fn a_contributor_adds_its_rows_to_the_listing() {
 /// the listing never carries two rows called `branches`.
 #[tokio::test]
 async fn a_contributed_row_shadows_a_real_one_of_the_same_name() {
-    let at = PathBuf::from("/overlay/shadows");
+    let at = app_text("/overlay/shadows");
     let engine = TestEngine::builder()
         .overlay(Arc::new(FixedRows {
             id: "test-shadows",
@@ -105,7 +107,7 @@ async fn a_directory_no_contributor_claims_is_left_alone() {
         &engine,
         "test",
         &a_volume(),
-        Path::new("/overlay/untouched"),
+        cmdr_fs::app_path!("/overlay/untouched"),
         &mut entries,
     )
     .await;
@@ -130,14 +132,16 @@ impl ListingOverlay for MarkerInEntries {
         "test-marker-in-entries"
     }
 
-    fn applies_to(&self, _volume: &dyn Volume, _path: &Path, entries: &[FileEntry]) -> bool {
+    fn applies_to(&self, _volume: &dyn Volume, _path: &AppPath, entries: &[FileEntry]) -> bool {
         entries.iter().any(|entry| entry.name == MARKER)
     }
 
-    fn extra_entries(&self, _volume_id: &str, _volume: &dyn Volume, path: &Path) -> Vec<FileEntry> {
+    fn extra_entries(&self, _volume_id: &str, _volume: &dyn Volume, path: &AppPath) -> Vec<FileEntry> {
         vec![FileEntry::new(
             MARKER_ROW.to_string(),
-            path.join(MARKER_ROW).to_string_lossy().into_owned(),
+            path.join(AppName::from_app_spelling(MARKER_ROW).expect("one plain name"))
+                .expect("joins")
+                .into_string(),
             true,
             false,
         )]
@@ -154,7 +158,7 @@ fn marker_engine() -> TestEngine {
 async fn a_contributor_that_reads_entries_applies_when_the_marker_is_there() {
     let engine = marker_engine();
     let mut entries = vec![real_row(MARKER), real_row("data")];
-    let added = decorate(&engine, "test", &a_volume(), Path::new("/repo"), &mut entries).await;
+    let added = decorate(&engine, "test", &a_volume(), cmdr_fs::app_path!("/repo"), &mut entries).await;
 
     assert_eq!(added, 1);
     assert!(entries.iter().any(|e| e.name == MARKER_ROW), "{entries:?}");
@@ -166,7 +170,7 @@ async fn a_contributor_that_reads_entries_applies_when_the_marker_is_there() {
 async fn a_contributor_that_reads_entries_stays_out_without_the_marker() {
     let engine = marker_engine();
     let mut entries = vec![real_row("data"), real_row("index")];
-    let added = decorate(&engine, "test", &a_volume(), Path::new("/repo"), &mut entries).await;
+    let added = decorate(&engine, "test", &a_volume(), cmdr_fs::app_path!("/repo"), &mut entries).await;
 
     assert_eq!(added, 0);
     assert_eq!(entries.len(), 2);
@@ -182,7 +186,7 @@ fn a_handed_over_listing_holding_the_marker_asks_for_a_re_read() {
         .overlay(Arc::new(MarkerInEntries))
         .volume(volume_id, a_volume())
         .build();
-    let path = Path::new("/repo");
+    let path = cmdr_fs::app_path!("/repo");
 
     let with_marker = vec![real_row(MARKER), real_row("data")];
     assert!(
@@ -202,7 +206,7 @@ fn a_handed_over_listing_holding_the_marker_asks_for_a_re_read() {
 /// contribute one set of rows two times.
 #[tokio::test]
 async fn a_contributor_registered_twice_only_counts_once() {
-    let at = PathBuf::from("/overlay/twice");
+    let at = app_text("/overlay/twice");
     let mut builder = TestEngine::builder();
     for _ in 0..2 {
         builder = builder.overlay(Arc::new(FixedRows {

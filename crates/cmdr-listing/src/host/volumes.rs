@@ -5,8 +5,8 @@
 //! answers routing for reading, and sharing a trait would couple two crates
 //! through methods neither needs.
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 
@@ -36,12 +36,12 @@ pub trait ListingVolumes: Send + Sync {
     fn resolve<'a>(
         &'a self,
         volume_id: &'a str,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = ResolvedVolume> + Send + 'a>>;
 
     /// [`resolve`](Self::resolve) without any route that would need I/O, for the
     /// synchronous fresh-listing oracle.
-    fn resolve_local_only(&self, volume_id: &str, path: &Path) -> ResolvedVolume;
+    fn resolve_local_only(&self, volume_id: &str, path: &AppPath) -> ResolvedVolume;
 
     /// Nothing serves `volume_id`; asks once whether the mount under `path` can
     /// be adopted and, if not, why it's missing. One question, so the engine
@@ -49,7 +49,7 @@ pub trait ListingVolumes: Send + Sync {
     fn unregistered<'a>(
         &'a self,
         volume_id: &'a str,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Unregistered> + Send + 'a>>;
 }
 
@@ -64,19 +64,19 @@ impl ListingVolumes for NoVolumes {
     fn resolve<'a>(
         &'a self,
         volume_id: &'a str,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = ResolvedVolume> + Send + 'a>> {
         Box::pin(async move { self.resolve_local_only(volume_id, path) })
     }
 
-    fn resolve_local_only(&self, _volume_id: &str, path: &Path) -> ResolvedVolume {
-        ResolvedVolume::passthrough(None, path)
+    fn resolve_local_only(&self, _volume_id: &str, path: &AppPath) -> ResolvedVolume {
+        ResolvedVolume::passthrough_at(None, path)
     }
 
     fn unregistered<'a>(
         &'a self,
         _volume_id: &'a str,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Unregistered> + Send + 'a>> {
         Box::pin(async { Unregistered::Gone })
     }

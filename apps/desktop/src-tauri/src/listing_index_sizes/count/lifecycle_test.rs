@@ -174,7 +174,7 @@ async fn unreadable_and_quickly_cancelled_retries_preserve_a_manual_partial() {
     let dir = crate::test_support::TestDir::new("count-manual-unreadable");
     let missing_path = dir.join("missing").to_string_lossy().to_string();
     let listing = TestListing::new()
-        .path(dir.to_path_buf())
+        .path(crate::test_support::native_app_path(&dir).as_str())
         .entries(vec![FileEntry::new(
             "missing".to_string(),
             missing_path.clone(),

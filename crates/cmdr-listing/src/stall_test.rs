@@ -10,7 +10,6 @@
 use cmdr_fs::app_path::AppPath;
 use std::collections::VecDeque;
 use std::future::Future;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -227,11 +226,7 @@ impl Rig {
             let state = Arc::clone(&state);
             let volume_id = self.volume_id.clone();
             let listing_id = listing_id.to_string();
-            tokio::spawn(async move {
-                engine
-                    .read_with(&state, &request(&listing_id, &volume_id, Path::new("/")))
-                    .await
-            })
+            tokio::spawn(async move { engine.read_with(&state, &request(&listing_id, &volume_id, "/")).await })
         };
         (state, task)
     }
@@ -501,9 +496,7 @@ async fn list_slow_but_steady(tick: fn(usize) -> ListingProgress, name: &str) ->
             policy: TEST_POLICY,
             reads: Arc::new(HungReads::new()),
         }));
-        let result = engine
-            .read_with(&state, &request(listing.id(), &volume_id, Path::new("/")))
-            .await;
+        let result = engine.read_with(&state, &request(listing.id(), &volume_id, "/")).await;
         assert!(result.is_ok(), "got {result:?}");
     }
     engine

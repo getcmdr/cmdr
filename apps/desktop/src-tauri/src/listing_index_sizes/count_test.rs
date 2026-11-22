@@ -190,7 +190,7 @@ async fn a_folder_the_disk_cant_read_goes_back_to_what_it_showed_and_is_reported
     let ghost = root.join("ghost").to_string_lossy().to_string();
     let photos = root.join("photos").to_string_lossy().to_string();
     let listing = TestListing::new()
-        .path(root.clone())
+        .path(crate::test_support::native_app_path(&root).as_str())
         .include_hidden(false)
         .entries(vec![
             FileEntry {

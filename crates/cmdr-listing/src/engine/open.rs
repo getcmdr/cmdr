@@ -12,7 +12,7 @@ impl Listings {
     /// the end arrive through the host's `ListingEvents`.
     pub fn start(&self, request: ListingRequest) {
         cmdr_fs::benchmark::reset_epoch();
-        cmdr_fs::benchmark::log_event_value("list_directory_start_streaming CALLED", request.path.display());
+        cmdr_fs::benchmark::log_event_value("list_directory_start_streaming CALLED", request.path.as_str());
         self.inner.start_streaming_listing(request);
         cmdr_fs::benchmark::log_event("list_directory_start_streaming RETURNING");
     }

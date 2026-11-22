@@ -39,6 +39,7 @@ pub use root_move::RootMove;
 pub use root_replace::RootReplacement;
 use roots::Registration;
 pub use roots::{RootRemoval, StaleRootOutcome, is_stale_mount};
+pub(crate) use routing::lexical_spelling;
 pub use routing::{app_path_routes_over_its_parent, path_routes_over_its_parent};
 
 #[cfg(test)]

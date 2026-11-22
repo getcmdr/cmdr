@@ -11,7 +11,6 @@
 //! (`ListingsBuilder::observer`).
 
 use cmdr_fs::app_path::AppPath;
-use std::path::Path;
 
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::Volume;
@@ -29,9 +28,9 @@ pub struct OpenedListing<'a> {
     /// The volume that served the read (for a routed path, the routed one).
     pub volume: &'a dyn Volume,
     /// The directory as the read listed it.
-    pub path: &'a Path,
+    pub path: &'a AppPath,
     /// The directory in the volume's listing spelling, the one the cache keys on.
-    pub stored_path: &'a Path,
+    pub stored_path: &'a AppPath,
     /// The engine that opened it, for [`Self::still_open`].
     pub(crate) engine: &'a Inner,
 }
@@ -93,7 +92,7 @@ impl Inner {
     /// the listing's life. A close racing this open may already have run, so
     /// the hold is kept only while the listing is still in the cache.
     fn keep_volume_watch(&self, opened: &OpenedListing<'_>) {
-        let Some(hold) = opened.volume.watch_listing(&AppPath::legacy_unchecked(opened.path)) else {
+        let Some(hold) = opened.volume.watch_listing(opened.path) else {
             return;
         };
         let replaced = self

@@ -9,11 +9,11 @@
 //! readings (no archives here), the MCP error ring, the TCC-restricted set, the
 //! stale-mount check, and analytics. None has a browser counterpart.
 
-use std::path::Path;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::sync::Arc;
 
 use cmdr_fs::volume::friendly_error::{
-    ListingError, enrich_with_provider, listing_error_for_restricted_empty_root, listing_error_from_volume_error,
+    ListingError, enrich_with_provider_at, listing_error_at, listing_error_for_restricted_empty_root_at,
 };
 use cmdr_fs::volume::{ListingPhase, ListingProgress, VolumeError};
 use cmdr_listing::host::{ListingEnd, ListingEvents};
@@ -112,9 +112,9 @@ impl DemoEvents {
         }
     }
 
-    fn failed(&self, listing_id: &str, path: &Path, error: &VolumeError) {
-        let mut listing_error = listing_error_from_volume_error(error, path);
-        enrich_with_provider(&mut listing_error, path);
+    fn failed(&self, listing_id: &str, path: &AppPath, error: &VolumeError) {
+        let mut listing_error = listing_error_at(error, path);
+        enrich_with_provider_at(&mut listing_error, path);
         self.send(
             "listing-error",
             ListingErrorEvent {
@@ -184,7 +184,7 @@ impl ListingEvents for DemoEvents {
             } => {
                 let listed_path = stored_path.as_deref().unwrap_or(&path);
                 if empty_at_volume_root
-                    && let Some(listing_error) = listing_error_for_restricted_empty_root(&volume_id, listed_path)
+                    && let Some(listing_error) = listing_error_for_restricted_empty_root_at(&volume_id, listed_path)
                 {
                     let message = listing_error.raw_detail.clone();
                     let error = Some(listing_error);
@@ -204,8 +204,8 @@ impl ListingEvents for DemoEvents {
                         listing_id,
                         total_count,
                         hidden_count,
-                        volume_root: volume_root.to_string_lossy().into_owned(),
-                        stored_path: stored_path.map(|p| p.to_string_lossy().into_owned()),
+                        volume_root: volume_root.into_string(),
+                        stored_path: stored_path.map(AppPathBuf::into_string),
                         effective_sort_by,
                     },
                 );
@@ -225,8 +225,8 @@ impl ListingEvents for DemoEvents {
         );
     }
 
-    fn respelled(&self, id: &ListingId, path: &Path) {
-        let path = path.to_string_lossy().into_owned();
+    fn respelled(&self, id: &ListingId, path: &AppPath) {
+        let path = path.as_str().to_string();
         self.send(
             "listing-respelled",
             ListingPathEvent {

@@ -18,6 +18,8 @@ use cmdr_fs::entry::FileEntry;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
+
+use cmdr_fs::app_path::AppPath;
 use std::sync::{Arc, LazyLock, RwLock};
 use std::time::{Duration, SystemTime};
 use tauri::AppHandle;
@@ -477,8 +479,13 @@ impl ListingObserver for WatchedListings {
     /// snapshot's and an archive's paths aren't on disk, so the OS stream has
     /// nothing to arm on), which keeps every virtual path out by type.
     fn listing_opened(&self, opened: &OpenedListing<'_>) {
-        if opened.volume.can_watch_listings() {
-            start_watching_detached(opened.id.as_str(), opened.path);
+        // Past `can_watch_listings`, the listing is on a disk the OS watches, so its
+        // path crosses to the native one the OS stream arms on (the plain form on
+        // Windows: the reader's `located` takes either spelling).
+        if opened.volume.can_watch_listings()
+            && let Ok(native) = opened.path.to_native_plain()
+        {
+            start_watching_detached(opened.id.as_str(), &native);
         }
     }
 
@@ -659,12 +666,17 @@ async fn reread_with_std_fs(listings: &Listings, id: &ListingId) {
     let Some(ticket) = listings.begin_read(id) else {
         return;
     };
-    match list_directory_core(ticket.path(), &crate::listing_host::backends::AppListings) {
+    // `std::fs` reads native paths: a listing with none (a server URL whose volume
+    // is gone) has nothing to read here, and waits for its volume to come back.
+    let Ok(native) = ticket.path().to_native_plain() else {
+        return;
+    };
+    match list_directory_core(&native, &crate::listing_host::backends::AppListings) {
         Ok(entries) => {
             listings.refresh_from_entries(ticket, entries).await;
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            let path = ticket.path().to_path_buf();
+            let path = ticket.path().to_owned();
             directory_deleted(id.as_str(), &path);
         }
         Err(e) => {
@@ -676,16 +688,16 @@ async fn reread_with_std_fs(listings: &Listings, id: &ListingId) {
 }
 
 /// The watched directory itself is gone: tell the pane, and stop watching it.
-fn directory_deleted(listing_id: &str, path: &Path) {
+fn directory_deleted(listing_id: &str, path: &AppPath) {
     log::info!(
         "Watcher: Directory deleted, notifying frontend: {}",
-        LogPrivate::dir_path(path)
+        LogPrivate::dir_path(path.as_str())
     );
     let app_handle = { WATCHER_MANAGER.read_ignore_poison().app_handle.clone() };
     if let Some(app) = &app_handle {
         let event = DirectoryDeletedEvent {
             listing_id: listing_id.to_string(),
-            path: path.to_string_lossy().to_string(),
+            path: path.as_str().to_owned(),
         };
         if let Err(emit_err) = event.emit(app) {
             log::warn!("Watcher: Failed to emit directory-deleted event: {}", emit_err);

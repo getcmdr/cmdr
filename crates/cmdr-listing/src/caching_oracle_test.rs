@@ -4,11 +4,10 @@
 //! (`testing`), which is what lets all three be tested without a real change
 //! watch.
 
-use std::path::Path;
 use std::sync::Arc;
 
 use super::Listings;
-use super::testing::{TestEngine, TestListing, TestListingGuard, WatchCoverageVolume};
+use super::testing::{TestEngine, TestListing, TestListingGuard, WatchCoverageVolume, app};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::unique_test_id;
 use cmdr_fs::volume::{Volume, WatchCoverage};
@@ -56,7 +55,7 @@ fn try_get_authoritative_listing_hit_when_volume_reports_every_writer() {
     let entries = vec![make_test_entry("a.txt"), make_test_entry("b.txt")];
     let _lid = insert_listing_with_sequence(&engine, "listing", &vid, path, entries.clone(), 0);
 
-    let result = engine.inner.try_get_authoritative_listing(&vid, Path::new(path));
+    let result = engine.inner.try_get_authoritative_listing(&vid, app(path));
     assert!(result.is_some(), "expected Some(entries) on watched listing");
     let returned = result.unwrap();
     assert_eq!(returned.len(), entries.len());
@@ -76,7 +75,7 @@ fn try_get_authoritative_listing_miss_when_volume_reports_no_coverage() {
     let entries = vec![make_test_entry("a.txt")];
     let _lid = insert_listing_with_sequence(&engine, "listing", &vid, path, entries, 0);
 
-    let result = engine.inner.try_get_authoritative_listing(&vid, Path::new(path));
+    let result = engine.inner.try_get_authoritative_listing(&vid, app(path));
     assert!(result.is_none(), "expected None when watcher is dead");
 }
 
@@ -101,7 +100,7 @@ fn try_get_authoritative_listing_miss_when_watch_sees_only_this_machine() {
 
     let _lid = insert_listing_with_sequence(&engine, "listing", &vid, path, vec![make_test_entry("a.txt")], 0);
 
-    let result = engine.inner.try_get_authoritative_listing(&vid, Path::new(path));
+    let result = engine.inner.try_get_authoritative_listing(&vid, app(path));
     assert!(
         result.is_none(),
         "a watch blind to other writers must not substitute for a read"
@@ -117,7 +116,7 @@ fn try_get_authoritative_listing_miss_when_no_listing_exists() {
 
     let result = engine
         .inner
-        .try_get_authoritative_listing(&vid, Path::new("/oracle/nothing_here"));
+        .try_get_authoritative_listing(&vid, cmdr_fs::app_path!("/oracle/nothing_here"));
     assert!(result.is_none(), "expected None when no listing matches");
 }
 
@@ -130,7 +129,7 @@ fn try_get_authoritative_listing_miss_when_volume_not_registered() {
     // Listing exists in cache, but no volume is registered for this ID.
     let _lid = insert_listing_with_sequence(&engine, "listing", &vid, path, vec![make_test_entry("a.txt")], 0);
 
-    let result = engine.inner.try_get_authoritative_listing(&vid, Path::new(path));
+    let result = engine.inner.try_get_authoritative_listing(&vid, app(path));
     assert!(result.is_none(), "expected None when volume isn't registered");
 }
 
@@ -149,7 +148,7 @@ fn try_get_authoritative_listing_picks_highest_sequence() {
     let _lid_lo = insert_listing_with_sequence(&engine, "listing", &vid, path, vec![make_test_entry("low.txt")], 1);
     let _lid_hi = insert_listing_with_sequence(&engine, "listing", &vid, path, vec![make_test_entry("high.txt")], 9);
 
-    let result = engine.inner.try_get_authoritative_listing(&vid, Path::new(path));
+    let result = engine.inner.try_get_authoritative_listing(&vid, app(path));
     assert!(result.is_some());
     let returned = result.unwrap();
     assert_eq!(returned.len(), 1);
@@ -174,7 +173,7 @@ fn try_get_authoritative_listing_miss_for_start_streaming_watcher_gap() {
 
     let _lid = insert_listing_with_sequence(&engine, "listing", &vid, path, vec![make_test_entry("a.txt")], 0);
 
-    let result = engine.inner.try_get_authoritative_listing(&vid, Path::new(path));
+    let result = engine.inner.try_get_authoritative_listing(&vid, app(path));
     assert!(result.is_none(), "expected None during the streaming->watcher gap");
 }
 
@@ -192,19 +191,9 @@ fn try_get_authoritative_listing_reflects_flip_to_unwatched() {
 
     let _lid = insert_listing_with_sequence(&engine, "listing", &vid, path, vec![make_test_entry("x.txt")], 0);
 
-    assert!(
-        engine
-            .inner
-            .try_get_authoritative_listing(&vid, Path::new(path))
-            .is_some()
-    );
+    assert!(engine.inner.try_get_authoritative_listing(&vid, app(path)).is_some());
     vol.set_coverage(WatchCoverage::None);
-    assert!(
-        engine
-            .inner
-            .try_get_authoritative_listing(&vid, Path::new(path))
-            .is_none()
-    );
+    assert!(engine.inner.try_get_authoritative_listing(&vid, app(path)).is_none());
 }
 
 /// A poller asks which directories a volume's panes show: each once however
@@ -223,7 +212,7 @@ fn open_listing_paths_answers_each_shown_directory_on_the_volume_once() {
 
     assert_eq!(
         engine.open_listing_paths(&vid),
-        [Path::new("/shown/a"), Path::new("/shown/b")],
+        [std::path::Path::new("/shown/a"), std::path::Path::new("/shown/b")],
         "two panes on one directory answer once, and another volume's pane not at all"
     );
 

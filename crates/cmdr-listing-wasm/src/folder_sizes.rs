@@ -180,7 +180,13 @@ impl FolderSizes {
                 .iter()
                 .filter_map(|f| Some((f.path.clone(), f.stats.as_ref()?.index_sizes())))
                 .collect();
-            for id in listings.listings_for_path_on_volume(volume_id, &open) {
+            // The panes at `open` on THIS volume, asked through the engine's `std::path`
+            // edge, which `open_listing_paths` answers on too.
+            let on_volume = listings
+                .listings_for_local_path(&open)
+                .into_iter()
+                .filter(|id| listings.location(id).is_some_and(|(at, _)| at == volume_id));
+            for id in on_volume {
                 // Into the cache BEFORE the event, so the status bar's re-read sees it.
                 let _ = listings.update_index_sizes(&id, &written);
                 let event = ListingIndexSizesChanged {
@@ -296,7 +302,7 @@ impl ListingIndex for FolderSizes {
     }
 
     /// Nothing to verify: the fold is the store.
-    fn verify_directory(&self, _volume_id: &str, _path: &Path) {}
+    fn verify_directory(&self, _volume_id: &str, _path: &cmdr_fs::app_path::AppPath) {}
 }
 
 impl OperationIndex for FolderSizes {
