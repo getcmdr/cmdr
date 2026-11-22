@@ -222,6 +222,29 @@ impl crate::Operations {
             None => manager.get(volume_id).map(|v| (v, None)),
         }
     }
+
+    /// The one volume a batch's sources read through ([`Self::resolve_source_volume`]),
+    /// and which route it is: refused whole when the batch straddles a route boundary
+    /// ([`Self::source_on_another_volume`]), or when nothing is registered under
+    /// `volume_id`.
+    async fn one_source_volume(
+        &self,
+        volume_id: &str,
+        sources: &[AppPathBuf],
+    ) -> Result<(Arc<dyn Volume>, Option<RoutedKind>), WriteOperationError> {
+        if let Some(path) = self.source_on_another_volume(volume_id, sources).await {
+            return Err(WriteOperationError::SourcesSpanVolumes {
+                path: failed_path_text(&path),
+            });
+        }
+        match self
+            .resolve_source_volume(volume_id, sources.first().map(|p| &**p))
+            .await
+        {
+            Some(found) => Ok(found),
+            None => Err(source_volume_missing(self.host(), volume_id, sources).await),
+        }
+    }
 }
 
 /// A volume's root as the `Path` this module's `std::path` arithmetic and the native
@@ -331,17 +354,7 @@ impl crate::Operations {
         // batch to its `ArchiveVolume` (extract-out), a snapshot path to the repo's
         // `GitPortalVolume` (copy out of `.git/branches/<name>/…`). Both then read
         // through the cross-volume engine.
-        if let Some(path) = self.source_on_another_volume(&source_volume_id, &source_paths).await {
-            return Err(WriteOperationError::SourcesSpanVolumes {
-                path: failed_path_text(&path),
-            });
-        }
-        let Some((source_volume, _source_route)) = self
-            .resolve_source_volume(&source_volume_id, source_paths.first().map(|p| &**p))
-            .await
-        else {
-            return Err(source_volume_missing(self.host(), &source_volume_id, &source_paths).await);
-        };
+        let (source_volume, _source_route) = self.one_source_volume(&source_volume_id, &source_paths).await?;
         // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
         let source_paths = engine_paths(&source_paths);
 
@@ -434,17 +447,7 @@ impl crate::Operations {
         // engine, then a batch `{ delete }` archive rewrite once the extract lands).
         // A snapshot source (git or restic) has no delete to pair with the copy,
         // so it's refused below rather than routed anywhere.
-        if let Some(path) = self.source_on_another_volume(&source_volume_id, &typed_sources).await {
-            return Err(WriteOperationError::SourcesSpanVolumes {
-                path: failed_path_text(&path),
-            });
-        }
-        let Some((source_volume, source_route)) = self
-            .resolve_source_volume(&source_volume_id, typed_sources.first().map(|p| &**p))
-            .await
-        else {
-            return Err(source_volume_missing(self.host(), &source_volume_id, &typed_sources).await);
-        };
+        let (source_volume, source_route) = self.one_source_volume(&source_volume_id, &typed_sources).await?;
 
         // A snapshot can be copied out of, never moved out of: `.git/branches/…` has
         // no file to remove once the copy lands, and neither has a restic
@@ -725,17 +728,7 @@ impl crate::Operations {
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
         // Route a routed source batch to its read-only volume, so compressing reads
         // through it: from inside a `.zip`, or from a repo's snapshots.
-        if let Some(path) = self.source_on_another_volume(&source_volume_id, &source_paths).await {
-            return Err(WriteOperationError::SourcesSpanVolumes {
-                path: failed_path_text(&path),
-            });
-        }
-        let Some((source_volume, _source_route)) = self
-            .resolve_source_volume(&source_volume_id, source_paths.first().map(|p| &**p))
-            .await
-        else {
-            return Err(source_volume_missing(self.host(), &source_volume_id, &source_paths).await);
-        };
+        let (source_volume, _source_route) = self.one_source_volume(&source_volume_id, &source_paths).await?;
 
         // A new `.zip` resolves to its PARENT drive (nothing routes through an archive
         // that does not exist). `compress_start` owns staging and publication there.
