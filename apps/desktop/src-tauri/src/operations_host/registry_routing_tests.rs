@@ -73,6 +73,7 @@ fn create_test_dir(name: &str) -> TestDir {
 // ============================================================================
 
 #[tokio::test]
+#[cfg(unix)] // Windows: #1225 milestone 10c, a native `C:\…\a.zip\entry` path doesn't route into the archive
 async fn resolve_source_treats_the_zip_file_itself_as_a_plain_file() {
     use crate::file_system::volume::manager::test_support::TestVolumeRegistration;
     use cmdr_local::LocalVolume;
@@ -250,6 +251,7 @@ async fn a_copy_from_an_id_nothing_knows_reads_as_a_source_no_longer_connected()
 // ============================================================================
 
 #[tokio::test]
+#[cfg(unix)] // Windows: #1225 milestone 10c, a native `C:\…\a.zip\entry` path doesn't route into the archive
 async fn rename_managed_routes_an_in_archive_rename_to_the_edit_driver() {
     // Routing detection is parent-aware (`VolumeManager::path_is_inside_archive`),
     // so it needs a registered local `"root"` volume to confirm the boundary — as
@@ -309,6 +311,7 @@ async fn rename_managed_routes_an_in_archive_rename_to_the_edit_driver() {
 // ============================================================================
 
 #[tokio::test]
+#[cfg(unix)] // Windows: #1225 milestone 10c, a native `C:\…\a.zip\entry` path doesn't route into the archive
 async fn archive_inner_exists_detects_a_duplicate_in_a_remote_archive() {
     // The mkdir/mkfile duplicate pre-check must see entries inside a REMOTE archive
     // (through the parent volume), not fail open by attempting a local file open.
@@ -454,6 +457,7 @@ mod an_open_listing_inside_the_zip {
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    #[cfg(unix)] // Windows: #1225 milestone 10c, a native `C:\…\a.zip\entry` path doesn't route into the archive
     async fn drops_a_file_deleted_inside_it() {
         let engine = TestOperations::with(|builder| builder.volume_host(crate::volume_host::host()));
         let zip = OpenZip::new(

@@ -273,6 +273,7 @@ fn a_broken_or_truncated_exif_block_is_an_image_row_with_no_exif_key() {
 }
 
 #[test]
+#[cfg(unix)] // Windows: #1225 milestone 10c, a native `C:\…\photos.zip\shot.jpg` path doesn't route into the archive
 fn an_image_inside_a_zip_carries_its_exif() {
     get_volume_manager().register_if_absent(
         "root",

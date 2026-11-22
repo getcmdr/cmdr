@@ -88,6 +88,7 @@ fn test_get_single_entry_directory() {
 /// On macOS and Linux a watch opens and reports the path as it is: the Windows crossing
 /// (`watch_os_path`, `listing_spelling_of`) is the identity here.
 #[test]
+#[cfg(unix)] // POSIX: the watch path is the identity here; `local_windows_test.rs` pins the `\\?\` crossing
 fn a_watch_path_crosses_as_itself_on_posix() {
     use crate::reading::{listing_spelling_of, watch_os_path};
 
