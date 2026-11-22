@@ -594,6 +594,24 @@ async fn the_query_paths_pass_the_agent_path_door() {
     assert_eq!(data["field"], "path");
 }
 
+/// `&under=` on a named share's store is that store's share-relative path, ❌ never a boot-disk
+/// place: it reads as POSIX text on every OS (no `C:` drive, no `~` from this disk's home), and
+/// a `..`, with no volume there to answer it, is refused naming `under`.
+#[tokio::test]
+async fn under_on_a_named_store_reads_as_that_stores_path() {
+    let q = typed_query(Some("top=5&volume=smb-test&under=/documents/"), &no_volumes())
+        .await
+        .expect("a store path");
+    assert_eq!(q.get("under").map(String::as_str), Some("/documents"));
+
+    for under in ["/documents/../photos", "~/documents", "documents"] {
+        let refused = typed_query(Some(&format!("top=5&volume=smb-test&under={under}")), &no_volumes())
+            .await
+            .expect_err(under);
+        assert_eq!(refused.data.expect("typed data")["field"], "under", "{under}");
+    }
+}
+
 /// A folder that scores low but non-floored (neutral class, stale, monoculture-ish).
 pub(crate) fn low_score_signals() -> FolderSignals {
     let mut s = FolderSignals::neutral();

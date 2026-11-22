@@ -600,14 +600,26 @@ fn scope_label(scope: RankedScope<'_>) -> String {
 /// the query key. A store row is keyed by its resolved place, so the raw text would read a
 /// wrong row.
 ///
+/// With `&volume=` naming a store other than the boot disk's, `under` is THAT store's path
+/// (share-relative, `/documents`, readable while the volume is offline), so it's no local
+/// place for this disk to answer: it reads as a POSIX store path, a `..` or `~` refused typed,
+/// ❌ never resolved against the boot disk, where a local `/documents` link would retarget it.
+///
 /// # Errors
 ///
 /// The door's refusal.
 pub(crate) async fn typed_query(query: Option<&str>, host: &AppHost) -> Result<Query, ToolError> {
     let mut q = super::parse_query(query);
+    let on_other_store = q
+        .get("volume")
+        .is_some_and(|volume| !volume.is_empty() && volume != cmdr_index::ROOT_VOLUME_ID);
     for key in ["path", "under"] {
         if let Some(text) = q.get(key).filter(|text| !text.is_empty()).cloned() {
-            let typed = read_path(key, &text, host).await?;
+            let typed = if key == "under" && on_other_store {
+                crate::tools::agent_path::store_path(key, &text)?
+            } else {
+                read_path(key, &text, host).await?
+            };
             q.insert(key.to_string(), typed);
         }
     }
