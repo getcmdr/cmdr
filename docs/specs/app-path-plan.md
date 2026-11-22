@@ -2279,6 +2279,30 @@ included; the hidden couplings it found are why waves B and C differ from round 
   `appTextToPath` and `pathFromBareText` budgets are empty (the tripwire refuses a production escape producer
   otherwise); and 10a–10e are landed.
 - **DONE**: #1236 closes; the escape gate's budget stays empty for good (the check keeps refusing a new site).
+- **Groundwork done** (2026-11-22, branch `worktree-agent-a4a94e12db1c258a8`; one agent): #1310's door and the
+  per-volume namer, ahead of the type-level gate. The design: `crates/cmdr-fs/DETAILS.md` § "App paths" (the listed
+  escape-range bullet). In short:
+  - **One spelling of a listed escape-range name**: a backend's own listing text enters typed only through the
+    listed-text door (`AppName::from_listed_text`, the new `AppPathBuf::from_listed_text`), the bridge's and the wire's
+    spelling of the same text, and every remote and device backend reads app text back through
+    `cmdr_fs::app_path::listed_text`, its exact inverse (`RemoteRoot::to_remote` for SFTP, WebDAV, S3, NFS, and ADB;
+    SMB's `to_smb_path`; MTP's `device_name`; patch row names through `listed_row_name`). `RemoteRoot::to_app` and SMB's
+    `app_path_of` build through the door; MTP's `listing_path`, report URLs (`url_of`), pre-scan children, and
+    `move_rename::sibling` respell the session layer's literal storage text.
+  - **Behavior changes**: a name listed with an escape-range code point opens, deletes, and patches on SFTP, WebDAV, S3,
+    NFS, SMB, and ADB (it answered `NotFound`), and an MTP folder holding one reports at the URL its pane keys on. App
+    text no listed name escapes to (a live escape from a non-UTF-8 local name joined onto a server, both alphabets, a
+    non-literal look-alike) is refused there (`None` / `NotFound`), where it went to the server as its code points' own
+    bytes, a file literally named with the escape. `RemoteRoot::new`'s typed root still refuses escape-range text (S3's
+    connect refusal stands).
+  - **The namer**: `Volume::namer` (default `BackendKind::namer`), which `VolumeLookup::namer` asks; `BackendKind::Mtp`
+    is units (PTP strings, and what `typed_path`'s scheme rule already picked), and an archive volume answers its
+    format's (`ArchiveFormat::namer`: a 7z units, zip and tar bytes).
+  - **Left**: MTP's index feed (`ResolvedMtpObject::path`) still hands the literal storage path over typed, and MTP's
+    `notify_mutation` reads a `Created`/`Renamed` name as app spelling (its own producers send typed names);
+    `MutationEvent`'s names have no stated spelling. Both before 10f's producers: #1355. #1309 (a `//` lead) and #1337
+    (Windows short names) stayed out: the first changes the bridge's byte-exact round trip, a design call; the second is
+    the app's typed-path resolver, other code.
 
 ### 11. Close
 

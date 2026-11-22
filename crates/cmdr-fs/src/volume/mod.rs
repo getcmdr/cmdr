@@ -943,6 +943,14 @@ pub trait Volume: Send + Sync {
         BackendKind::Local
     }
 
+    /// How this volume's native API spells names, which picks the escape alphabet a path on
+    /// it takes. Defaults to the backend's ([`BackendKind::namer`]); a backend whose volumes
+    /// differ answers per volume (an archive: a 7z names in UTF-16, a zip or tar in bytes).
+    /// The operation log reads a pre-escape row through it (`VolumeLookup::namer`).
+    fn namer(&self) -> crate::app_path::Namer {
+        self.backend_kind().namer()
+    }
+
     /// What a "Sign in" affordance on this volume may ask for, **right now**.
     ///
     /// Asked when the affordance renders, which is after this volume reported

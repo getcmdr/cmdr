@@ -327,8 +327,9 @@ back as `/Documents\report-2.txt` and a device name holding `\` read as two (`cr
   `delete_test::a_folder_holding_only_an_unlisted_object_refuses_its_delete_as_holding_it`.
 - **A new name the device took that no path can address** (a rename to `a/b`) still reports its text (`child_and_text`),
   and the caches stay out of it.
-- **The report URL** (`url_of`, `mtp://{device}/{storage}[/inner]`) joins the storage path's names under `storage_url`,
-  the volume's root too.
+- **The report URL** (`url_of`, `mtp://{device}/{storage}[/inner]`) is the storage path's text under `storage_url`, the
+  volume's root too, through the listed-text door (`AppPathBuf::from_listed_text`): a storage path holds the device's
+  literal text, and the URL is what the host keys a pane by, in the app's spelling of the row (#1310).
 - **The host seams still take `&Path`**: `directory_changed`, `authoritative_listing`, and `ScanBoundary::dir` / `file`.
   Each call crosses through `std_path_for_host`, the crate's one bridge call; its doc names what retires each seam. The
   index feed's `ResolvedMtpObject::path` is the typed storage path itself (`AppPathBuf`), which the index splits by the
@@ -336,6 +337,10 @@ back as `/Documents\report-2.txt` and a device name holding `\` read as two (`cr
   app path.
 - **Text that isn't valid Unicode keeps today's answer**: no device name holds an escape (`mtp-rs` hands over
   `String`s), and a device name with a literal escape-range code point lists under its literal text, as the rows did.
+  Storage paths hold that literal text too (`child` reads a device name as app spelling, so a name whose escape-range
+  code points aren't canonical escapes, `caf\u{10FEC3}\u{10FEA9}`, has no path and no row). Every exit to the app
+  respells it (`url_of`, `listing_path`, a pre-scan child, `move_rename::sibling`), ❗ except the index feed's
+  `ResolvedMtpObject::path`, which hands the literal storage path over typed (#1310's class, left for 10f).
 
 ## Same-named siblings
 

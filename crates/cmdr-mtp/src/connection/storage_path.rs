@@ -79,11 +79,16 @@ pub(crate) fn storage_url(device_id: &str, storage_id: u32) -> Option<AppPathBuf
         .map(AppPath::to_owned)
 }
 
-/// `dir` (a storage path) at its storage's URL: `mtp://{device}/{storage}[/inner]`.
+/// `dir` (a storage path) at its storage's URL, `mtp://{device}/{storage}[/inner]`, in app
+/// spelling: a storage path holds the device's literal text, and the URL is what the host
+/// keys a pane by, so a name holding an escape-range code point goes through the
+/// listed-text door, as the app spells that folder's row (#1310).
 pub(crate) fn url_of(device_id: &str, storage_id: u32, dir: &AppPath) -> Option<AppPathBuf> {
-    storage_url(device_id, storage_id)?
-        .join_relative(&dir.strip_prefix(storage_root())?)
-        .ok()
+    let url = storage_url(device_id, storage_id)?;
+    if dir.is_root() {
+        return Some(url);
+    }
+    AppPathBuf::from_listed_text(&format!("{}{}", url.as_str(), dir.as_str()), PathFlavor::Posix).ok()
 }
 
 /// The folder holding `path`, stepping over a twin's pick, and the storage root for the
@@ -141,6 +146,34 @@ mod tests {
         for name in ["", ".", "..", "a/b", "a\0b"] {
             assert_eq!(child(&folder, name), None, "{name:?}");
         }
+    }
+
+    /// #1310: a folder the device names with an escape-range code point is reported at the
+    /// URL the app holds for its row (the wire's spelling of the row text, which the bridge
+    /// spells alike), ❌ never the literal text read as an escape (another name's bytes).
+    #[test]
+    fn a_report_url_spells_a_listed_escape_range_name_as_the_app_does() {
+        use cmdr_fs::app_path::Namer;
+        for name in ["x\u{10FEFF}", "\u{10E800}a"] {
+            let dir = child(storage_root(), name).expect("a storage path");
+            let url = url_of("mtp-0-1", 65537, &dir).expect("a URL");
+            let row = format!("mtp://mtp-0-1/65537/{name}");
+            assert_eq!(
+                url,
+                AppPathBuf::from_literal_store(&row, Namer::HOST).expect("an app path"),
+                "{name:?}"
+            );
+            assert_eq!(
+                cmdr_fs::app_path::listed_text(url.as_str()).as_deref(),
+                Some(row.as_str())
+            );
+        }
+        assert_eq!(
+            url_of("mtp-0-1", 65537, storage_root())
+                .map(AppPathBuf::into_string)
+                .as_deref(),
+            Some("mtp://mtp-0-1/65537")
+        );
     }
 
     #[test]

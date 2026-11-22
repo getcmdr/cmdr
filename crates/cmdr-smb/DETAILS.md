@@ -1508,8 +1508,11 @@ and reads a `C:` name as a drive, so a share path went to the wrong place there.
   matched by whole components (`//` and `.` names don't count), the rest trimmed as `Components::as_path` trims it. Byte
   for byte `Path::strip_prefix`'s answer on macOS and Linux (a differential harness compared 5,075,828 cases with none
   differing, 2026-11-21); the relative and alias pins in `paths_test.rs` go through `smb_path_of` directly.
-- Until escapes go live (`cmdr_fs::app_path::ESCAPES_LIVE`), an escape-range code point goes out as its own UTF-8 bytes,
-  `RemoteRoot::to_remote`'s rule: decoding it would address a look-alike (`caf\u{10FEC3}\u{10FEA9}` would reach `café`).
+- Until escapes go live (`cmdr_fs::app_path::ESCAPES_LIVE`), `to_smb_path` reads app text through `listed_text` and
+  `app_path_of` builds names through `AppName::from_listed_text`, `RemoteRoot::to_remote`'s rule (#1310,
+  `crates/cmdr-fs/DETAILS.md` § "App paths"): a name listed with an escape-range code point reaches the server as
+  listed, and a live escape is `NotFound`. `smb_path_of` takes LISTED text (the scan's re-list of a row's display path
+  passes that straight in).
 - A listing row's `path` keeps `to_display_path`'s text (the mount root as the OS spells it), so panes see the same
   bytes as before. The listing-cache patches are typed: `display_path_for` / `app_path_of` join the share path's names
   onto the mount root by the app path's own join (empty and `.` names drop, a `..` is no patch), the name is the row's

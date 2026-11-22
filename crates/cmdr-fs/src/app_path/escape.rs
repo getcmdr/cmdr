@@ -244,6 +244,55 @@ pub fn canonical_name(text: &str) -> Result<Cow<'_, str>, EscapeRefusal> {
     })
 }
 
+/// The text a server or a device lists for app text, while escapes aren't live
+/// ([`super::ESCAPES_LIVE`]): the exact inverse of the one escaping door a listed name
+/// takes into an app path ([`AppName::from_listed_text`](super::AppName::from_listed_text),
+/// [`AppPathBuf::from_listed_text`](super::AppPathBuf::from_listed_text), and the bridge's
+/// [`AppPath::legacy_unchecked`](super::AppPath::legacy_unchecked), which all spell a
+/// literal escape-range code point as its own units' escapes). So a name listed as
+/// `x\u{10FEFF}` reaches the server as `x\u{10FEFF}` whichever door the app's value came
+/// through. Borrowed when there's no escape (nearly every path).
+///
+/// Either alphabet decodes (the bridge escapes through the host's units, the operation log's
+/// rows through the volume's namer), and the text must be exactly what that alphabet's
+/// literal spelling of the answer is. `None`, so the caller refuses, for text no door makes:
+/// both alphabets at once, escapes that decode to no text (a live escape: no producer makes
+/// one yet), or escapes that aren't the literal spelling of what they decode to
+/// (`caf\u{10FEC3}\u{10FEA9}` would reach `café`, a look-alike: a value that skipped the door).
+///
+/// ❗ Until escapes go live only: 10f decodes each backend's own alphabet instead.
+pub fn listed_text(text: &str) -> Option<Cow<'_, str>> {
+    let (mut bytes, mut units) = (false, false);
+    for c in text.chars() {
+        bytes |= byte_of(c).is_some();
+        units |= unit_of(c).is_some();
+    }
+    let (decoded, namer) = match (bytes, units) {
+        (false, false) => return Some(Cow::Borrowed(text)),
+        (true, true) => return None,
+        (true, false) => (
+            String::from_utf8(unescape_bytes(text).ok()?.into_owned()).ok()?,
+            Namer::Bytes,
+        ),
+        (false, true) => (String::from_utf16(&unescape_units(text).ok()?).ok()?, Namer::Units),
+    };
+    (literal(&decoded, namer) == text).then_some(Cow::Owned(decoded))
+}
+
+/// The name a listing row carries for an app path's name (what a listing-cache patch
+/// matches rows by): [`listed_text`], or for text no listed name escapes to, the native
+/// name's lossy text (a unit escape's U+FFFD), the spelling such a row always had.
+pub fn listed_row_name(name: &str) -> Cow<'_, str> {
+    if let Some(text) = listed_text(name) {
+        return text;
+    }
+    match unescape_bytes(name) {
+        Ok(bytes) => Cow::Owned(String::from_utf8_lossy(&bytes).into_owned()),
+        // A unit escape (an unpaired surrogate on Windows): what a person reads.
+        Err(_) => shown_name(name),
+    }
+}
+
 /// `text` as a person reads it: every escape as U+FFFD, the replacement character the lossy
 /// spelling always showed. Any text, since a plane-16 escape never means anything in prose.
 /// Borrowed when there's none.

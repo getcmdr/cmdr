@@ -63,6 +63,10 @@ the source's metadata"). It maps the archive-native core (`ArchiveIndex` / `Arch
 `ArchiveError`) onto `FileEntry` / `VolumeReadStream` / `VolumeError`, and holds an `Arc<dyn Volume>` **parent** (the
 volume physically storing the `.zip`), the archive path, the display name, and an `Arc<ArchiveIndexCache>`.
 
+**The namer is the format's, not the kind's**: `Volume::namer` answers `ArchiveFormat::namer` (a 7z stores UTF-16 names,
+a zip or tar bytes), where `BackendKind::Archive` alone would say bytes for all three. The operation log reads a
+pre-escape row on this volume through it.
+
 **The parent seam.** Two answers a read-only archive can't give itself come from the parent:
 
 - `lane_key()` returns `parent.lane_key()` — archive work must share the physical device's serialization lane (a zip on

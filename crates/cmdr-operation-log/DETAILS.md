@@ -128,16 +128,15 @@ records as skipped with `reason` and ❌ never acts on (no pause, pace, or deepe
   relative text can't reach a row); it guards a damaged or hand-edited log. Why skip, not migrate or rewrite: the
   theoretical case gets the cheapest safe answer, and the stored row stays the evidence. A live root a rebase lands on
   that can't hold the names refuses the unit the same way (`rollback/live_roots.rs`).
-- **The namer comes from `VolumeLookup::namer`** (default: the registered volume's `BackendKind::namer` in `cmdr-fs`: a
-  local disk is the host's, SMB units, the rest bytes), asked only for literal text holding an escape-range code point:
+- **The namer comes from `VolumeLookup::namer`** (default: the registered volume's own `Volume::namer` in `cmdr-fs`,
+  which defaults to `BackendKind::namer`: a local disk is the host's, SMB and MTP units, the rest bytes; an archive
+  volume answers per format, a 7z's UTF-16 as units), asked only for literal text holding an escape-range code point:
   every other text spells the same through either namer, so a row on a volume nobody registered reads exactly as it did.
   An unknown volume for text that needs one is the planner's "can't tell", `SkipReason::Failed` (the verdict an
   unregistered volume gets at the act), ❌ never a guessed namer. While escapes aren't live a wrong namer changes
-  nothing that matters: no backend decodes an escape yet (#1310), so a literal escape-range row reaches the server as
-  escape text and answers `NotFound` through either alphabet. ❗ Before 10f flips `ESCAPES_LIVE`, the namer must equal
-  the alphabet each backend's own decoder uses, decided per VOLUME: by kind it's wrong for a 7z archive (UTF-16 names
-  inside an `Archive` volume, whose zip and tar siblings are bytes) and possibly MTP (PTP strings are UTF-16), so
-  `Volume` should answer it beside `backend_kind`.
+  nothing that matters: the backends read app text through `cmdr_fs::app_path::listed_text` (#1310), which decodes
+  either alphabet's literal spelling, so a literal escape-range row reaches its server as the row held it. Once 10f
+  flips `ESCAPES_LIVE`, each backend decodes its own alphabet, which is what `Volume::namer` names.
 - **On Windows a row reads by its own shape** (`StoredPathReading::app_path_as`, which a cell runs under either host's
   rules). A drive or UNC row reads `\` as a separator, as Win32 did when the engine acted: `local_split` stores
   `to_string_lossy` of a `PathBuf` that `Path::join` built, so every row below a copied folder's top holds one
@@ -153,8 +152,8 @@ records as skipped with `reason` and ❌ never acts on (no pause, pace, or deepe
   (908,891) is byte-exact in its act path, inverse-row split, skip name, sweep depth, in-place test, and root rebase;
   non-canonical text (`/./`, `//`, a trailing `/`, which no journal row holds) names the same place respelled; every
   `..` or NUL row is refused. With SMB's units namer, only text holding a literal escape-range code point differs (unit
-  escapes where the host bridge spelled byte escapes); while escapes aren't live, no SMB name holding one addressed its
-  file either way (`to_smb_path` sends app text raw).
+  escapes where the host bridge spelled byte escapes); since #1310's door, `to_smb_path` decodes either spelling back to
+  the row's text (`listed_text`), so both address the file.
 
 ## Case folding, not a collation
 

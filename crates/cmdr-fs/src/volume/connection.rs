@@ -151,19 +151,20 @@ pub enum BackendKind {
 impl BackendKind {
     /// How this backend's native API spells names, which picks the escape alphabet a
     /// path on it takes ([`Namer`](crate::app_path::Namer)): a local disk is the host's,
-    /// SMB speaks UTF-16 units, and every other backend raw bytes or UTF-8 text. The
-    /// operation log reads a pre-escape row's path through it
-    /// (`AppPathBuf::from_literal_store`).
+    /// SMB and MTP (PTP strings) speak UTF-16 units, and every other backend raw bytes or
+    /// UTF-8 text. An archive answers bytes here, its zip and tar's; a 7z volume says
+    /// otherwise through `Volume::namer`, the per-volume answer callers ask. Agrees with
+    /// what a typed path's scheme picks (`typed_path`'s `namer_of`). The operation log reads a
+    /// pre-escape row's path through it (`AppPathBuf::from_literal_store`).
     pub const fn namer(self) -> crate::app_path::Namer {
         use crate::app_path::Namer;
         match self {
             BackendKind::Local => Namer::HOST,
-            BackendKind::Smb => Namer::Units,
+            BackendKind::Smb | BackendKind::Mtp => Namer::Units,
             BackendKind::Sftp
             | BackendKind::Webdav
             | BackendKind::S3
             | BackendKind::Nfs
-            | BackendKind::Mtp
             | BackendKind::Adb
             | BackendKind::Archive
             | BackendKind::GitPortal

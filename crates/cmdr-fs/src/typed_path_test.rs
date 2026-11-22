@@ -8,6 +8,25 @@ use std::sync::Mutex;
 use super::*;
 use crate::ignore_poison::IgnorePoison;
 
+/// The namer a typed path's scheme picks is the one its backend answers, so typed text
+/// escapes through the alphabet the volume it lands on reads a stored row by.
+#[test]
+fn a_schemes_namer_is_its_backends() {
+    use crate::volume::BackendKind;
+    for (text, kind) in [
+        ("smb://h/s/x", BackendKind::Smb),
+        ("mtp://mtp-0-1/65537/x", BackendKind::Mtp),
+        ("sftp://u@h:22/x", BackendKind::Sftp),
+        ("webdav://u@h:80/x", BackendKind::Webdav),
+        ("s3://k@h:443/b/x", BackendKind::S3),
+        ("nfs://h:2049/e/x", BackendKind::Nfs),
+        ("adb://serial/x", BackendKind::Adb),
+    ] {
+        assert_eq!(namer_of(text), kind.namer(), "{text}");
+    }
+    assert_eq!(namer_of("/x"), BackendKind::Local.namer());
+}
+
 /// `links` maps a link's app path to what `<link>/..` is on that volume; a path under
 /// `/hung` never answers in time; every other `..` is lexical.
 struct Fake {
