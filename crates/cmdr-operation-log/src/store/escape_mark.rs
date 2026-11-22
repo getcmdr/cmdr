@@ -53,10 +53,11 @@ impl StoredPathReading {
     /// every OS.
     ///
     /// On a Windows host a row's text reads by its own shape, as the engine's `PathBuf`
-    /// meant it when it was journaled (`local_split` is `to_string_lossy` of it):
+    /// meant it when it was journaled (the engine's `journal_split`: a native end as its app
+    /// text, any other as `to_string_lossy` of the `PathBuf`):
     /// - **A drive or UNC row**: `\` separates, as Win32 reads it. `Path::join` writes `\`
-    ///   there, so every row below a copied folder's top holds one (`C:/src\sub\a.txt`),
-    ///   and no name on a Windows disk can.
+    ///   there, so a row the engine didn't journal as app text can hold one
+    ///   (`C:/src\sub\a.txt`), and no name on a Windows disk can.
     /// - **A POSIX `/` row** (the in-memory volume's, a POSIX server's): POSIX rules, so a `\`
     ///   stays the name character it is on that server.
     ///

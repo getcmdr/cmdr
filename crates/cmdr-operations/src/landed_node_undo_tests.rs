@@ -21,8 +21,6 @@ use super::types::WriteOperationConfig;
 use crate::host::testing::FakeVolumes;
 use crate::rollback::Reversal;
 use crate::testing::{TestOperationLog, TestOperations};
-use cmdr_fs::volume::Volume;
-use cmdr_local::LocalVolume;
 use cmdr_operation_log::rollback::{RollbackReport, execute_rollback, rollback_operation};
 use cmdr_operation_log::store::{open_read_connection, read_typed_rollback_units};
 use cmdr_operation_log::types::{ExecutionStatus, Initiator, OpKind, RollbackState, SkipReason};
@@ -47,14 +45,7 @@ impl UndoRig {
     fn new() -> Self {
         let log = TestOperationLog::new("landed-node-undo");
         let vm = FakeVolumes::default();
-        vm.register(
-            "root",
-            Arc::new(LocalVolume::local_folder(
-                "Test root",
-                "/",
-                crate::host::testing::pane_order_host(),
-            )) as Arc<dyn Volume>,
-        );
+        vm.register("root", crate::host::testing::scratch_disk_root());
         UndoRig {
             engine: TestOperations::journaling_into(&log),
             log,
@@ -138,10 +129,6 @@ fn skipped_for_drift(report: &RollbackReport) -> bool {
         && report.final_state == RollbackState::PartiallyRolledBack
 }
 
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "not pinned down (#1351): on Windows the undo skips the item as Failed, the same shape as the bulk-rename undo there; likely #1225 milestone 10a's native journal ends"
-)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn undoing_a_copy_removes_the_file_it_landed() {
     for rows in [Rows::WithNode, Rows::WithoutNode] {
@@ -188,10 +175,6 @@ async fn undoing_a_copy_keeps_a_same_looking_file_saved_over_it_once_rows_name_t
 
 /// ❗ The behavior every row written before keeps: size and date are all it can
 /// check, so the same replacement is removed as the copy.
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "not pinned down (#1351): on Windows the undo skips the item as Failed, the same shape as the bulk-rename undo there; likely #1225 milestone 10a's native journal ends"
-)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn undoing_a_copy_whose_row_names_no_node_removes_what_matches_its_snapshot_as_before() {
     let rig = UndoRig::new();
@@ -233,10 +216,6 @@ async fn undoing_a_move_leaves_a_same_looking_file_saved_over_the_moved_one() {
     assert!(!source.exists(), "nothing went back to the source");
 }
 
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "not pinned down (#1351): on Windows the undo skips the item as Failed, the same shape as the bulk-rename undo there; likely #1225 milestone 10a's native journal ends"
-)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn undoing_a_move_takes_back_the_file_it_moved() {
     let rig = UndoRig::new();

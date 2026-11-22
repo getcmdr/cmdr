@@ -46,6 +46,11 @@ enum Route {
     /// Within the local volume through `start_volume_move`, which runs on the
     /// volume engine (`Volume::rename`), not the native move.
     MoveWithinLocal,
+    /// From one local volume onto a second (Windows' `C:` onto `D:`): both local,
+    /// so the native engines run it. Here `root` is a folder of its own, so neither
+    /// volume's root holds the other's paths, as two drives don't.
+    CopyAcrossLocal,
+    MoveAcrossLocal,
 }
 
 const ROUTES: [Route; 7] = [
@@ -60,7 +65,7 @@ const ROUTES: [Route; 7] = [
 
 impl Route {
     fn moves(self) -> bool {
-        !matches!(self, Route::CopyAcross | Route::CopyUp)
+        !matches!(self, Route::CopyAcross | Route::CopyUp | Route::CopyAcrossLocal)
     }
 }
 
@@ -97,11 +102,18 @@ impl Rig {
         let log = TestOperationLog::new("named-leaves-volume");
         let engine = TestOperations::journaling_into(&log);
         let tmp = TestDir::new("named_leaves_volume");
-        let local: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
-            "Test root",
-            "/",
-            crate::host::testing::pane_order_host(),
-        ));
+        let across_local = matches!(route, Route::CopyAcrossLocal | Route::MoveAcrossLocal);
+        let local: Arc<dyn Volume> = if across_local {
+            let disk = tmp.join("disk");
+            std::fs::create_dir_all(&disk).expect("the first local volume's root");
+            Arc::new(cmdr_local::LocalVolume::local_folder(
+                "Disk",
+                disk,
+                crate::host::testing::pane_order_host(),
+            ))
+        } else {
+            crate::host::testing::scratch_disk_root()
+        };
         engine.volumes().register("root", Arc::clone(&local));
         let mem: Arc<dyn Volume> = Arc::new(match route {
             // An object store's double: no rename, and every write publishes whole.
@@ -111,20 +123,33 @@ impl Rig {
         let other: Arc<dyn Volume> = Arc::new(in_memory("Other", lane));
         engine.volumes().register("mem", Arc::clone(&mem));
         engine.volumes().register("other", Arc::clone(&other));
+        let usb_root = tmp.join("usb");
+        std::fs::create_dir_all(&usb_root).expect("the second local volume's root");
+        let usb: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
+            "USB",
+            usb_root,
+            crate::host::testing::pane_order_host(),
+        ));
+        engine.volumes().register("usb", Arc::clone(&usb));
         let (source, source_id, dest, dest_id) = match route {
             Route::CopyAcross | Route::MoveAcross => (mem, "mem", other, "other"),
             Route::MoveWithin | Route::MoveWithinByCopy => (Arc::clone(&mem), "mem", mem, "mem"),
             Route::CopyUp | Route::MoveUp => (local, "root", mem, "mem"),
             Route::MoveWithinLocal => (Arc::clone(&local), "root", local, "root"),
+            Route::CopyAcrossLocal | Route::MoveAcrossLocal => (local, "root", Arc::clone(&usb), "usb"),
         };
         let local_source = source.local_path().is_some();
         let local_dest = dest.local_path().is_some();
-        let src_dir = if local_source {
+        let src_dir = if across_local {
+            tmp.join("disk/src")
+        } else if local_source {
             tmp.join("src")
         } else {
             PathBuf::from("/src")
         };
-        let dest_dir = if local_dest {
+        let dest_dir = if dest_id == "usb" {
+            tmp.join("usb/dst")
+        } else if local_dest {
             tmp.join("dst")
         } else {
             PathBuf::from("/dst")
@@ -684,10 +709,6 @@ async fn a_name_with_a_bidi_override_or_a_zero_width_joiner_refuses() {
 /// One undo takes back the whole named transfer on every volume route: a copy's
 /// named copies go (and only they: a bystander under an ORIGINAL name stays), a
 /// move's items go home under their original names.
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "not pinned down (#1351): on Windows the undo skips the local copies as UnverifiablePrecondition; likely #1225 milestone 10a's native journal ends"
-)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn undoing_a_transfer_naming_each_item_restores_every_original() {
     for route in ROUTES {
@@ -733,6 +754,41 @@ async fn undoing_a_transfer_naming_each_item_restores_every_original() {
                 );
             }
         }
+    }
+}
+
+/// A both-local transfer between two volumes runs on the native engines, and each
+/// row names the volume its end is on: the source under `root`, the landing under
+/// the second volume, and one undo takes it all back. On Windows `root` is the
+/// system drive alone, so a `D:` landing journaled under it was a path no undo could
+/// reach (#1351).
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_transfer_onto_a_second_local_volume_journals_each_end_under_its_own_volume() {
+    use cmdr_operation_log::store::{open_read_connection, read_operation, read_typed_rollback_units};
+    for route in [Route::CopyAcrossLocal, Route::MoveAcrossLocal] {
+        let rig = Rig::new(route).await;
+        let report = rig.file("report.pdf", b"report").await;
+        let op_id = rig.run(vec![report.clone()], TransferLeaves::default()).await;
+
+        let conn = open_read_connection(rig.log.db()).expect("read conn");
+        let header = read_operation(&conn, &op_id).expect("read").expect("journaled");
+        assert_eq!(header.source_volume_id.as_deref(), Some("root"), "{route:?}");
+        assert_eq!(header.dest_volume_id.as_deref(), Some("usb"), "{route:?}");
+        let units = read_typed_rollback_units(&conn, &op_id, i64::MAX, 100).expect("units");
+        assert!(!units.is_empty(), "{route:?}: the landing is journaled");
+        for unit in &units {
+            assert_eq!(unit.source_volume_id, "root", "{route:?}: {unit:?}");
+            assert_eq!(unit.dest_volume_id.as_deref(), Some("usb"), "{route:?}: {unit:?}");
+        }
+        drop(conn);
+
+        rig.undo(&op_id).await;
+        assert!(rig.dest_names().await.is_empty(), "{route:?}: the landing is gone");
+        assert_eq!(
+            read_all(&rig.source, &report).await,
+            b"report",
+            "{route:?}: the original"
+        );
     }
 }
 

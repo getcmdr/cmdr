@@ -11,6 +11,7 @@ use std::fs::Metadata;
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic, is_scheme_url};
 use cmdr_fs::volume::{DEFAULT_VOLUME_ID, LandedModified, NodeIdentity};
 use cmdr_operation_log::capture::FinalizeInputs;
 use cmdr_operation_log::types::RowRole;
@@ -97,10 +98,46 @@ pub(super) fn mtime_secs(meta: &Metadata) -> Option<i64> {
         .map(|d| d.as_secs() as i64)
 }
 
-/// Split a local absolute path into (parent dir string, leaf name) for the
-/// journal. The parent path is stored verbatim (interning walks it); a path with
-/// no filename yields empty strings.
-fn local_split(path: &Path) -> (String, String) {
+/// Split one end of a row into the (folder text, name) the journal stores: the APP
+/// path's folder and last name, so a Windows drive row reads `C:/Users/x` (the store
+/// interns by `/`, `cmdr-operation-log`'s `store/dirs.rs`), ❌ never the native
+/// `C:\Users\x`, which interned as one name under `/` and read back as
+/// `/C:\Users\x`, a path no volume answers (#1351). A path with no last name yields
+/// empty strings.
+///
+/// The engine's ends are still `std::path` values, so each crosses here once, through
+/// the non-escaping door (`from_native_unicode`). One it refuses keeps the text it
+/// always had ([`bridge_split`]), counted on nothing because nothing changes for it:
+/// a name that isn't Unicode text (10f escapes it), an escape-range code point, a
+/// relative or `..` path, and a remote volume's `sftp://…` or, on Windows, POSIX
+/// `/device/…` text, which isn't a native path. On macOS and Linux an absolute
+/// Unicode path's app text IS its native text, so those rows keep every byte
+/// (`journal_split_tests.rs`).
+fn journal_split(path: &Path) -> (String, String) {
+    // A remote volume's `scheme://` text is no native path: the native door would read a
+    // Windows `\` in one of its names as a separator.
+    if path.to_str().is_some_and(is_scheme_url) {
+        return bridge_split(path);
+    }
+    match AppPathBuf::from_native_unicode(path) {
+        Ok(app) => app_split(&app),
+        Err(_) => bridge_split(path),
+    }
+}
+
+/// [`journal_split`] for an end already typed.
+fn app_split(path: &AppPath) -> (String, String) {
+    let name = path.file_name().unwrap_or_default().to_owned();
+    let dir = path.parent().map(|p| p.as_str().to_owned()).unwrap_or_default();
+    (dir, name)
+}
+
+#[cfg(test)]
+#[path = "journal_split_tests.rs"]
+mod journal_split_tests;
+
+/// The split every row had before ends were typed: `std::path`'s, as lossy text.
+fn bridge_split(path: &Path) -> (String, String) {
     let name = path
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
@@ -130,8 +167,12 @@ pub(super) fn open_local_op(
         op_id: op_id.into(),
         kind,
         initiator,
-        source_volume_id: Some(DEFAULT_VOLUME_ID.to_string()),
-        dest_volume_id: dest_volume_id.map(str::to_string),
+        source_volume_id: Some(scope.local_header_ids().0.to_string()),
+        // A both-local transfer between two volumes names its destination's.
+        dest_volume_id: dest_volume_id.map(|id| match id {
+            DEFAULT_VOLUME_ID => scope.local_header_ids().1.to_string(),
+            other => other.to_string(),
+        }),
         item_count,
         started_at: now_secs(),
         rolls_back_op_id: None,
@@ -186,9 +227,9 @@ pub(super) fn record_local_leaf(
         scope,
         entry_type,
         RowRole::RollbackUnit,
-        DEFAULT_VOLUME_ID,
+        scope.local_ids_for(source, dest).0,
         source,
-        dest.map(|d| (DEFAULT_VOLUME_ID, d)),
+        dest.map(|d| (scope.local_ids_for(source, Some(d)).1, d)),
         size,
         mtime,
         overwrote,
@@ -379,10 +420,10 @@ fn record_row(
     outcome: ItemOutcome,
     dest_identity: Option<NodeIdentity>,
 ) {
-    let (source_dir, source_name) = local_split(source);
+    let (source_dir, source_name) = journal_split(source);
     let (dest_volume_id, dest_dir, dest_name) = match dest {
         Some((vol, d)) => {
-            let (dd, dn) = local_split(d);
+            let (dd, dn) = journal_split(d);
             (Some(vol.to_string()), Some(dd), Some(dn))
         }
         None => (None, None, None),
@@ -415,7 +456,9 @@ fn record_row(
 /// created path is both source and dest (a copy's rollback removes the dest dir
 /// when empty; search matches its name).
 pub(super) fn record_created_dirs(scope: &OpScope, dirs: &[PathBuf]) {
-    record_created_dirs_on(scope, DEFAULT_VOLUME_ID, dirs);
+    for dir in dirs {
+        record_created_dirs_on(scope, scope.local_ids_for(dir, Some(dir)).1, std::slice::from_ref(dir));
+    }
 }
 
 /// The volume-aware sibling of [`record_created_dirs`]: the created dirs live on
@@ -645,7 +688,7 @@ pub(super) fn record_compress_archive(
     mtime: Option<i64>,
     net_new: bool,
 ) {
-    let (dir, name) = local_split(archive);
+    let (dir, name) = journal_split(archive);
     journal_record_items(
         scope,
         vec![JournalItem {

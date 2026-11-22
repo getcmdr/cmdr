@@ -10,6 +10,7 @@
 //! ❌ A missing scope never falls back to a detached log or another engine's:
 //! that silently drops undo rows.
 
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use cmdr_operation_log::writer::OpenOperation;
@@ -34,6 +35,10 @@ pub(crate) struct OpScope {
     /// decided once from the destination's filesystem
     /// ([`Self::records_landed_nodes`]).
     landed_nodes: OnceLock<bool>,
+    /// The two volumes a LOCAL-engine transfer runs between, each id with its
+    /// root, set once by a both-local transfer between two volumes
+    /// ([`Self::journal_local_sides`]); unset, every end is the local disk's `root`.
+    local_sides: OnceLock<[(String, PathBuf); 2]>,
     /// Holds this operation's next safe-overwrite between its two renames,
     /// once its test arms it.
     #[cfg(test)]
@@ -59,6 +64,7 @@ impl OpScope {
             operation_log,
             journal: OnceLock::new(),
             landed_nodes: OnceLock::new(),
+            local_sides: OnceLock::new(),
             #[cfg(test)]
             aside_park: Default::default(),
             #[cfg(test)]
@@ -97,6 +103,47 @@ impl OpScope {
         });
         if !opened_now {
             log::warn!(target: "operation_log", "an operation opened its journal twice; keeping the first");
+        }
+    }
+
+    /// Journal this local-engine transfer's rows under the volumes it runs between,
+    /// `source` and `destination` (each an id and its root): a both-local transfer
+    /// between two volumes (a Mac and its USB drive, Windows' `C:` and `D:`) runs on
+    /// the local engine, and a row must name a volume that reaches it. On Windows
+    /// `root` is the system drive alone, so a `D:` row under it is a path no undo can
+    /// reach (#1351). Call it before the journal opens; a second call keeps the first.
+    pub(super) fn journal_local_sides(&self, source: (&str, &Path), destination: (&str, &Path)) {
+        let _ = self.local_sides.set([
+            (source.0.to_owned(), source.1.to_path_buf()),
+            (destination.0.to_owned(), destination.1.to_path_buf()),
+        ]);
+    }
+
+    /// The volume ids a local-engine row's two ends journal under. ONE volume when
+    /// one side's root holds both ends: the source's first, so a Mac's `root` (`/`)
+    /// keeps naming every row it always named, and a same-disk rename stays one
+    /// volume's rename for its undo. Otherwise each end under its own side (a copy
+    /// from `C:` to `D:`). With no sides, both are `root`.
+    pub(super) fn local_ids_for(&self, source: &Path, dest: Option<&Path>) -> (&str, &str) {
+        let Some([(source_id, source_root), (dest_id, dest_root)]) = self.local_sides.get() else {
+            return (cmdr_fs::volume::DEFAULT_VOLUME_ID, cmdr_fs::volume::DEFAULT_VOLUME_ID);
+        };
+        let holds_both = |root: &Path| source.starts_with(root) && dest.is_none_or(|d| d.starts_with(root));
+        if holds_both(source_root) {
+            (source_id, source_id)
+        } else if holds_both(dest_root) {
+            (dest_id, dest_id)
+        } else {
+            (source_id, dest_id)
+        }
+    }
+
+    /// The volume ids this operation's journal header names: the two sides' ids,
+    /// or `root` for both with none.
+    pub(super) fn local_header_ids(&self) -> (&str, &str) {
+        match self.local_sides.get() {
+            Some([(source_id, _), (dest_id, _)]) => (source_id, dest_id),
+            None => (cmdr_fs::volume::DEFAULT_VOLUME_ID, cmdr_fs::volume::DEFAULT_VOLUME_ID),
         }
     }
 

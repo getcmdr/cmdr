@@ -145,6 +145,15 @@ impl Operations {
                     WriteOperationType::Copy | WriteOperationType::Move => Some(cmdr_fs::volume::DEFAULT_VOLUME_ID),
                     _ => None,
                 };
+                if let (Some(sides), Some(_)) = (&state.sides, dest_volume_id) {
+                    use super::types::TransferRole;
+                    let (source, destination) =
+                        (sides.side(TransferRole::Source), sides.side(TransferRole::Destination));
+                    state.scope().journal_local_sides(
+                        (&source.volume_id, &source.root),
+                        (&destination.volume_id, &destination.root),
+                    );
+                }
                 journal::open_local_op(
                     state.scope(),
                     op_id.as_str(),

@@ -27,17 +27,18 @@ use cmdr_operation_log::types::{EntryType, ExecutionStatus, Initiator, OpKind, R
 struct Shape {
     entry_type: EntryType,
     row_role: RowRole,
-    source: (String, PathBuf),
-    dest: Option<(String, PathBuf)>,
+    source: (String, String),
+    dest: Option<(String, String)>,
     size: Option<i64>,
 }
 
-fn side(conn: &rusqlite::Connection, dir_id: i64, name: &str) -> (String, PathBuf) {
+fn side(conn: &rusqlite::Connection, dir_id: i64, name: &str) -> (String, String) {
     let volume: String = conn
         .query_row("SELECT volume_id FROM dirs WHERE dir_id = ?1", [dir_id], |r| r.get(0))
         .expect("dir volume");
     let dir = reconstruct_dir_path(conn, dir_id).expect("dir path");
-    (volume, Path::new(&dir).join(name))
+    let sep = if dir.ends_with('/') { "" } else { "/" };
+    (volume, format!("{dir}{sep}{name}"))
 }
 
 /// Every row of `op_id`, in `seq` order, resolved.
@@ -63,8 +64,10 @@ fn created_in_place(s: &Shape) -> bool {
     s.dest.as_ref() == Some(&s.source)
 }
 
-fn local(path: PathBuf) -> (String, PathBuf) {
-    ("root".to_string(), path)
+/// A local path as its row stores it: its app text (`journal::journal_split`).
+fn local(path: PathBuf) -> (String, String) {
+    let app = app_path::AppPathBuf::from_native_unicode(&path).expect("a fixture path is plain Unicode text");
+    ("root".to_string(), app.into_string())
 }
 
 fn journaled() -> (TestOperations, TestOperationLog) {
@@ -188,8 +191,8 @@ fn a_copy_journals_no_row_for_a_file_it_skipped_or_a_folder_it_found() {
     assert_eq!(
         paths,
         vec![
-            (EntryType::Dir, dst.join("src/sub")),
-            (EntryType::File, dst.join("src/sub/b.txt")),
+            (EntryType::Dir, local(dst.join("src/sub")).1),
+            (EntryType::File, local(dst.join("src/sub/b.txt")).1),
         ],
         "{rows:#?}"
     );
@@ -239,7 +242,7 @@ async fn a_cross_volume_folder_move_journals_like_a_copy() {
     .expect("volume move");
     journal::finalize_op(st.scope(), OpKind::Move, ExecutionStatus::Done);
 
-    let on = |vol: &str, p: &str| (vol.to_string(), PathBuf::from(p));
+    let on = |vol: &str, p: &str| (vol.to_string(), p.to_string());
     let rows = shapes(log.db(), "op");
     assert!(rows.iter().all(|r| r.row_role == RowRole::RollbackUnit), "{rows:#?}");
     let mut files: Vec<_> = rows
@@ -489,6 +492,7 @@ mod folder_units {
         assert_eq!(units[0].entry_type, EntryType::Dir);
         assert_eq!(units[0].source, local(src.clone()));
         let (trash_vol, in_trash) = units[0].dest.clone().expect("macOS reports the in-Trash path");
+        let in_trash = PathBuf::from(in_trash);
         assert_eq!(trash_vol, "root");
         assert!(in_trash.components().any(|c| c.as_os_str() == ".Trash"), "{in_trash:?}");
         let mut leaves: Vec<_> = rows

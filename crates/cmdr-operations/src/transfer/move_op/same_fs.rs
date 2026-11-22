@@ -284,9 +284,9 @@ pub(super) fn move_with_rename(
             if let Some(buffered) = &buffered_leaves {
                 journal_search::persist_and_note(
                     state.scope(),
-                    cmdr_fs::volume::DEFAULT_VOLUME_ID,
+                    state.scope().local_ids_for(source, Some(&landed_path)).0,
                     source,
-                    cmdr_fs::volume::DEFAULT_VOLUME_ID,
+                    state.scope().local_ids_for(source, Some(&landed_path)).1,
                     Some(&landed_path),
                     buffered,
                 );

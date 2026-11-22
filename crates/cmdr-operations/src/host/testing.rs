@@ -306,6 +306,21 @@ pub fn pane_order_host() -> VolumeHost {
         .build()
 }
 
+/// The local disk as a test's `root` volume: a `LocalVolume` at the filesystem root
+/// holding the test scratch space (`cmdr_fs::testing::scratch_root`): `/` on macOS and
+/// Linux, its drive on Windows, where a bare `/` is drive-relative and refuses every
+/// `C:/…` path a journal row reads back as. So a fixture's absolute paths resolve as
+/// they do on the app's `root`.
+pub fn scratch_disk_root() -> Arc<dyn Volume> {
+    let scratch = cmdr_fs::testing::scratch_root();
+    let root = scratch.ancestors().last().unwrap_or(&scratch).to_path_buf();
+    Arc::new(cmdr_local::LocalVolume::local_folder(
+        "Test root",
+        root,
+        pane_order_host(),
+    ))
+}
+
 /// [`pane_order_host`]'s listings, for a walk a test hands listings directly
 /// (`WalkContext::listings`).
 pub static PANE_ORDER_LISTINGS: PaneOrderListings = PaneOrderListings::new();

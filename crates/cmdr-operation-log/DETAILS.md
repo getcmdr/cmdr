@@ -138,11 +138,17 @@ records as skipped with `reason` and ❌ never acts on (no pause, pace, or deepe
   either alphabet's literal spelling, so a literal escape-range row reaches its server as the row held it. Once 10f
   flips `ESCAPES_LIVE`, each backend decodes its own alphabet, which is what `Volume::namer` names.
 - **On Windows a row reads by its own shape** (`StoredPathReading::app_path_as`, which a cell runs under either host's
-  rules). A drive or UNC row reads `\` as a separator, as Win32 did when the engine acted: `local_split` stores
-  `to_string_lossy` of a `PathBuf` that `Path::join` built, so every row below a copied folder's top holds one
-  (`C:/src\sub\a.txt`), and a name on a Windows disk can't. Refusing those (`Backslash`) would turn every folder copy's
-  undo partial. A POSIX `/` row (the in-memory volume's, a POSIX server's) reads by POSIX rules, its `\` a name
-  character. On macOS and Linux every row reads POSIX, byte for byte as before.
+  rules). A drive or UNC row reads `\` as a separator, as Win32 did when the engine acted: the engine journals an end
+  that isn't a native path (a remote volume's text) as `std::path` split it, `to_string_lossy` of a `PathBuf` that
+  `Path::join` built, so such a row can hold one (`C:/src\sub\a.txt`), and a name on a Windows disk can't. Refusing
+  those (`Backslash`) would turn every folder copy's undo partial. A POSIX `/` row (the in-memory volume's, a POSIX
+  server's) reads by POSIX rules, its `\` a name character. On macOS and Linux every row reads POSIX, byte for byte as
+  before.
+- **The writer stores app text, `/` between names** (`cmdr-operations`' `journal::journal_split`): a native end crosses
+  up through `from_native_unicode`, so a Windows drive row stores `C:/Users/x`. The dir interning (`store/dirs.rs`)
+  splits by `/` only: a native `C:\Users\x` interned as ONE name under `/` and read back as `/C:\Users\x`, a
+  POSIX-shaped path no Windows volume answers, so every local undo there skipped as `Failed` (#1351, reproduced on Mami,
+  Windows 10 22H2 NTFS, 2026-11-22). macOS and Linux rows keep their bytes (pinned by `journal_split_tests.rs`).
 - **The books keep the journal's spelling**: the inverse op's rows, a skip's example name, the progress line, the
   dispatch summary, and the folder sweep's depth all read `rollback/target.rs`' `StoredPath` (a typed path decodes each
   escape back to the literal text it stood for), split by `std::path` exactly as every row was made.

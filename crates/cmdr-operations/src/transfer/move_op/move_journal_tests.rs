@@ -11,8 +11,6 @@
 //! The same-volume (`Volume::rename`) half of the merge-move story lives in
 //! `volume/rename_merge_tests.rs`, next to that path's rig.
 
-#![cfg(unix)] // Windows: the journal rows and their reversal miss the final paths, #1225 milestone 10a
-
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -26,8 +24,6 @@ use crate::rollback::Reversal;
 use crate::testing::{TestOperationLog, TestOperations};
 use crate::types::{ConflictResolution, WriteOperationConfig};
 use crate::{journal, journal_search};
-use cmdr_fs::volume::Volume;
-use cmdr_local::LocalVolume;
 use cmdr_operation_log::query::{OperationItemView, get_operation};
 use cmdr_operation_log::rollback::{RollbackRefusal, RollbackReport, execute_rollback, rollback_operation};
 use cmdr_operation_log::store::{OperationRow, open_read_connection, read_operation};
@@ -52,16 +48,7 @@ impl MoveLoop {
         let engine = TestOperations::journaling_into(&log);
 
         let vm = FakeVolumes::default();
-        // Rooted at `/` so the fixture's absolute paths resolve, matching how the
-        // real `root` volume is registered.
-        vm.register(
-            "root",
-            Arc::new(LocalVolume::local_folder(
-                "Test root",
-                "/",
-                crate::host::testing::pane_order_host(),
-            )) as Arc<dyn Volume>,
-        );
+        vm.register("root", crate::host::testing::scratch_disk_root());
 
         MoveLoop {
             engine,
@@ -209,6 +196,13 @@ fn install_canned_leaves(names: &[&str]) {
     });
 }
 
+/// The app text a journal row stores for the native `path` (`journal::journal_split`).
+fn app_text(path: &Path) -> String {
+    cmdr_fs::app_path::AppPathBuf::from_native_unicode(path)
+        .expect("a fixture path is plain Unicode text")
+        .into_string()
+}
+
 /// The destination path a moved item's row names.
 fn dest_of(item: &OperationItemView) -> &str {
     item.dest_path.as_deref().expect("a moved item names a destination")
@@ -323,7 +317,7 @@ async fn a_move_that_landed_aside_reverses_its_own_file_and_leaves_the_other_alo
     assert_eq!(items.len(), 1, "one top-level row, got {items:?}");
     assert_eq!(
         dest_of(&items[0]),
-        fixture.path("dst").join(&landed).to_string_lossy(),
+        app_text(&fixture.path("dst").join(&landed)),
         "the row names where the file landed, not the name that was taken"
     );
 
@@ -382,7 +376,7 @@ async fn a_move_that_landed_aside_rebases_its_search_leaves_onto_the_landed_path
         .expect("the subtree's leaf is recorded for search");
     assert_eq!(
         dest_of(leaf),
-        fixture.path("dst").join(&landed).join("deep.txt").to_string_lossy(),
+        app_text(&fixture.path("dst").join(&landed).join("deep.txt")),
         "a search leaf points at where its file actually is"
     );
 }
@@ -413,7 +407,7 @@ async fn a_cross_fs_move_records_final_paths_and_really_puts_the_file_back() {
     assert_eq!(items.len(), 1, "one leaf row, got {items:?}");
     assert_eq!(
         dest_of(&items[0]),
-        fixture.path("dst/notes.txt").to_string_lossy(),
+        app_text(&fixture.path("dst/notes.txt")),
         "the row names the final destination, never the staging directory"
     );
 
@@ -456,7 +450,7 @@ async fn a_cross_fs_move_records_the_node_that_ends_up_at_the_final_path() {
     let units = read_typed_rollback_units(&conn, &fixture.op_id, i64::MAX, 100).expect("units");
     let unit = units
         .iter()
-        .find(|unit| unit.dest_path.as_ref().map(|p| p.as_str()) == landed.to_str())
+        .find(|unit| unit.dest_path.as_ref().map(|p| p.as_str()) == Some(app_text(&landed).as_str()))
         .expect("the file's row names its final path");
     let expected = crate::local_disk::keeps_node_identity(&landed)
         .then(|| NodeIdentity::of(&std::fs::symlink_metadata(&landed).expect("landed")))
