@@ -101,3 +101,28 @@ fn a_windows_native_end_stores_its_app_text() {
         assert_eq!(journal_split(path), expected, "{native:?}");
     }
 }
+
+/// On Windows a volume engine's POSIX path was joined by `std::path` with `\`, which no
+/// name there holds (`ChildName` refuses one), so it stores `/`-separated: a POSIX
+/// server's undo would read `/photos\sub` as one folder name. Elsewhere `\` stays a
+/// name character.
+#[test]
+fn a_volume_path_joined_with_backslashes_on_windows_stores_its_folders() {
+    for (text, dir, name) in [
+        (r"/photos\sub\b.txt", "/photos/sub", "b.txt"),
+        (r"/photos/sub\b.txt", "/photos/sub", "b.txt"),
+        (
+            r"sftp://testnas.local/share\d\a.txt",
+            "sftp://testnas.local/share/d",
+            "a.txt",
+        ),
+    ] {
+        let path = Path::new(text);
+        let expected = if cfg!(windows) {
+            (dir.to_owned(), name.to_owned())
+        } else {
+            bridge_split(path)
+        };
+        assert_eq!(journal_split(path), expected, "{text:?}");
+    }
+}

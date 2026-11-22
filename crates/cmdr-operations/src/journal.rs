@@ -11,9 +11,9 @@ use std::fs::Metadata;
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
-use cmdr_fs::app_path::is_scheme_url;
 #[cfg(not(target_family = "wasm"))]
 use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
+use cmdr_fs::app_path::{PathFlavor, is_scheme_url};
 use cmdr_fs::volume::{DEFAULT_VOLUME_ID, LandedModified, NodeIdentity};
 use cmdr_operation_log::capture::FinalizeInputs;
 use cmdr_operation_log::types::RowRole;
@@ -116,12 +116,28 @@ pub(super) fn mtime_secs(meta: &Metadata) -> Option<i64> {
 /// Unicode path's app text IS its native text, so those rows keep every byte
 /// (`journal_split_tests.rs`).
 fn journal_split(path: &Path) -> (String, String) {
-    // A remote volume's `scheme://` text is no native path: the native door would read a
-    // Windows `\` in one of its names as a separator.
-    if path.to_str().is_some_and(is_scheme_url) {
-        return bridge_split(path);
+    // A remote volume's `scheme://` text is no native path.
+    if !path.to_str().is_some_and(is_scheme_url)
+        && let Some(split) = native_split(path)
+    {
+        return split;
     }
-    native_split(path).unwrap_or_else(|| bridge_split(path))
+    bridge_split(&separated(path))
+}
+
+/// A volume engine's bridge path as `/`-separated text. On Windows `std::path` joined its
+/// names with `\`, and no name in such a path holds one (the engine refuses that name per
+/// item, `ChildName`), so every `\` separates: a cross-volume move's `/photos\sub\b.txt`
+/// stores under `/photos/sub`, ❌ never a folder named `photos\sub`, which a POSIX server's
+/// undo would read as one name. Elsewhere `\` is a name character, as every POSIX row
+/// always read it.
+fn separated(path: &Path) -> std::borrow::Cow<'_, Path> {
+    match path.to_str() {
+        Some(text) if PathFlavor::HOST == PathFlavor::Windows && text.contains('\\') => {
+            std::borrow::Cow::Owned(PathBuf::from(text.replace('\\', "/")))
+        }
+        _ => std::borrow::Cow::Borrowed(path),
+    }
 }
 
 /// A native end's app split, or `None` for one the non-escaping door refuses.
