@@ -24,14 +24,16 @@ use cmdr_fs::testing::unique_test_id;
 use cmdr_listing::DiffChangeType;
 use cmdr_listing::testing::{TestListing, TestListingGuard};
 use cmdr_listing::testing::{hold_diffs, pending_changes};
-use cmdr_local::reading::list_directory_core;
+use cmdr_local::reading::{list_directory_core, listing_spelling_of};
 
+/// Changes in the app spelling `translate` hands the handler: `C:/…` for a Windows tempdir's
+/// `C:\…` (the cache's rows key on it), the path itself on macOS and Linux.
 fn content_change(path: &Path) -> ListingChange {
-    ListingChange::Content(path.to_path_buf())
+    ListingChange::Content(listing_spelling_of(path))
 }
 
 fn structural(path: &Path) -> ListingChange {
-    ListingChange::Structural(path.to_path_buf())
+    ListingChange::Structural(listing_spelling_of(path))
 }
 
 /// A pane's listing of `dir` as `std::fs` sees it now, on an unregistered volume.

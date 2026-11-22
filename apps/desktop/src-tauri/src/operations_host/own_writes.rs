@@ -1,6 +1,8 @@
 //! The write engine's own-write announces, answered by the downloads watcher's
 //! ignore set, so a file Cmdr lands in `~/Downloads` never reads as a new
-//! download.
+//! download, and by the listing watches at or below the path whose OS handle
+//! pins the folders above it (Windows'), which let go first, since NTFS refuses
+//! to rename a folder above an open one (#1340, `file_system/watcher/release.rs`).
 
 use std::path::Path;
 
@@ -13,6 +15,8 @@ pub(super) struct AppOwnWrites;
 impl OwnWrites for AppOwnWrites {
     fn announce(&self, path: &Path) {
         crate::downloads::note_pending_write_for_cmdr(path);
+        // A backend whose watch pins nothing (FSEvents, inotify) finds no watch to release.
+        crate::file_system::watcher::release_watches_at_or_below(path);
     }
 }
 

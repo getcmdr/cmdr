@@ -17,7 +17,7 @@ mod row;
 use std::borrow::Cow;
 use std::collections::HashSet;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::time::Duration;
@@ -408,9 +408,37 @@ pub(crate) fn minimal_row(row: Row, is_symlink: bool, dot_hidden: &HashSet<Strin
 ///
 /// `path` is a native path (on Windows either spelling, `C:\x` or the app path's `C:/x`); the
 /// entry carries its app path.
+///
+/// `NotFound` when the folder holds the entry under another spelling of its last name. A
+/// Windows stat of `a.txt` answers for `A.txt`, so a case-only rename's old name would read as
+/// still there, and the watcher, which stats every name it hears about, would keep both rows
+/// (#1330). That costs one more call on Windows (the folder's own name for the entry); none on
+/// macOS and Linux, whose stat answers for the name as given.
 pub fn get_single_entry(path: &Path) -> Result<FileEntry, std::io::Error> {
     let (os, app) = located(path)?;
+    if !platform::named_exactly(&os)? {
+        return Err(std::io::ErrorKind::NotFound.into());
+    }
     single_entry(&os, Row::of(&os, app.as_deref()))
+}
+
+/// The path an OS change watch on the folder `folder` opens: `folder` itself on macOS and
+/// Linux, and on Windows its verbatim `\\?\` form, so a folder past `MAX_PATH` arms like any
+/// other. [`listing_spelling_of`] turns the watch's event paths back.
+///
+/// # Errors
+///
+/// The reader's typed refusal of a path no OS call opens.
+pub fn watch_os_path(folder: &Path) -> Result<PathBuf, std::io::Error> {
+    let (os, _) = located(folder)?;
+    Ok(os.into_owned())
+}
+
+/// A path an OS change watch reported, in the app spelling the listing and its rows key on
+/// (`C:/x/a.txt` for `\\?\C:\x\a.txt` on Windows); unchanged on macOS and Linux, and wherever
+/// no app path fits it.
+pub fn listing_spelling_of(os_path: &Path) -> PathBuf {
+    platform::app_spelling_of(os_path).unwrap_or_else(|| os_path.to_path_buf())
 }
 
 /// [`get_single_entry`] of the OS path `os`, as `row`.

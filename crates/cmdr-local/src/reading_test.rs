@@ -85,6 +85,30 @@ fn test_get_single_entry_directory() {
     assert!(entry.size.is_none());
 }
 
+/// On macOS and Linux a watch opens and reports the path as it is: the Windows crossing
+/// (`watch_os_path`, `listing_spelling_of`) is the identity here.
+#[test]
+fn a_watch_path_crosses_as_itself_on_posix() {
+    use crate::reading::{listing_spelling_of, watch_os_path};
+
+    let temp_dir = TestDir::new("reading_watch_paths");
+    let file = temp_dir.join("a.txt");
+    assert_eq!(watch_os_path(&temp_dir).unwrap(), temp_dir.to_path_buf());
+    assert_eq!(listing_spelling_of(&file), file);
+}
+
+/// The Windows case check (`named_exactly`) leaves macOS's stat alone: on a case-insensitive
+/// APFS volume another spelling still answers, as it always has.
+#[cfg(target_os = "macos")] // APFS is case-insensitive by default; a Linux disk usually isn't.
+#[test]
+fn a_stat_on_macos_still_answers_for_another_spelling() {
+    let temp_dir = TestDir::new("reading_case_spelling");
+    fs::write(temp_dir.join("a.txt"), "x").unwrap();
+    if fs::metadata(temp_dir.join("A.TXT")).is_ok() {
+        assert!(get_single_entry(&temp_dir.join("A.TXT")).is_ok());
+    }
+}
+
 #[test]
 fn test_get_single_entry_nonexistent() {
     let temp_dir = TestDir::new("single_missing_test");
