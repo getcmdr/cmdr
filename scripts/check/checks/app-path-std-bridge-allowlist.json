@@ -4,6 +4,7 @@
     "apps/desktop/src-tauri/src/about/through.rs": 5,
     "apps/desktop/src-tauri/src/agent/suggested_ops/facts.rs": 1,
     "apps/desktop/src-tauri/src/commands/file_system/listing.rs": 1,
+    "apps/desktop/src-tauri/src/commands/file_system/path_checks.rs": 1,
     "apps/desktop/src-tauri/src/commands/file_system/volume_copy.rs": 3,
     "apps/desktop/src-tauri/src/commands/importance.rs": 1,
     "apps/desktop/src-tauri/src/commands/media_index/mod.rs": 1,

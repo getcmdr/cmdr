@@ -188,9 +188,11 @@ async fn exists_on_volume(volume_id: Option<String>, path: String, spelling: Spe
                     crate::commands::wire_path::probed_destination(&volume_id, volume, &expanded_path)
                         .await
                         .map_err(|_| ())?;
-                let path_for_check = target.to_native().map_err(|_| ())?;
+                // The look-alike check below is the write engine's, over a VOLUME path in
+                // `std::path` (10d types it); the local `lstat` crosses to the native file.
+                let path_for_check = target.as_std_legacy().into_owned();
                 let exists = if volume.local_path().is_some() {
-                    local_exists(path_for_check.clone()).await?
+                    local_exists(target.to_native().map_err(|_| ())?).await?
                 } else {
                     // `presence`, ❌ never `exists`: a refusal (a share folder this
                     // account may not read) is "couldn't tell", and `exists` folds
