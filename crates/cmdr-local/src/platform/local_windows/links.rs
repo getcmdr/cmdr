@@ -129,9 +129,13 @@ fn carried_spelling(target: PathBuf) -> PathBuf {
 
 /// The Windows arm of `crate::remove_leaf`: the entry at `path` itself, by its own attributes
 /// (`remove_leaf_of`). `path` in either spelling (`C:\x`, `C:/x`); it goes through its verbatim
-/// form, so a path past `MAX_PATH` removes too.
+/// form, so a path past `MAX_PATH` removes too. A path with no app spelling (a name that isn't
+/// Unicode text) is removed as given, the way the walker's `remove_file` always took it: a
+/// leaf the walk found is never refused for its spelling.
 pub fn remove_leaf(path: &Path) -> io::Result<()> {
-    let os = super::paths::app_of(path).and_then(|app| super::paths::native_of(&app))?;
+    let os = super::paths::app_of(path)
+        .and_then(|app| super::paths::native_of(&app))
+        .unwrap_or_else(|_| path.to_path_buf());
     remove_leaf_of(&os, &std::fs::symlink_metadata(&os)?)
 }
 
