@@ -33,6 +33,10 @@ pub(crate) fn symlink(target: &Path, link: &Path) -> std::io::Result<()> {
     std::os::unix::fs::symlink(target, link)
 }
 
+pub(crate) fn remove_leaf(path: &Path) -> std::io::Result<()> {
+    cmdr_local::remove_leaf(path)
+}
+
 /// `access(path, W_OK)`, which evaluates ACLs as well as the mode bits on macOS.
 pub(crate) fn write_probe(path: &Path) -> WriteProbe {
     use std::ffi::CString;

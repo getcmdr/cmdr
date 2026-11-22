@@ -57,6 +57,7 @@ use local_posix as imp;
 use local_windows as imp;
 
 const _: fn(&Path, &Path) -> io::Result<()> = rename_local_exclusive;
+const _: fn(&Path) -> io::Result<()> = remove_leaf;
 const _: fn(&AppPath, &AppPath) -> io::Result<()> = rename_local_exclusive_at;
 
 // The constructors every `LocalVolume` caller uses, with one signature on every OS, so a
@@ -94,3 +95,13 @@ pub use imp::rename_local_exclusive;
 /// `InvalidInput` (or `InvalidFilename` for a name Windows can't store) carrying the typed
 /// refusal of a path no OS call opens, else what the rename answers.
 pub use imp::rename_local_exclusive_at;
+
+/// Removes the entry at the native `path` itself, a leaf a delete walk found: a file, or a
+/// link, never followed. A folder link goes as the link and keeps its target's contents: on
+/// macOS and Linux it's a symlink, which `unlink` takes; on Windows a junction or a folder
+/// symlink, which only `RemoveDirectoryW` takes (#1386).
+///
+/// # Errors
+///
+/// What the removal answers, `NotFound` for a leaf already gone.
+pub use imp::remove_leaf;

@@ -3,7 +3,7 @@
 use std::path::Path;
 
 pub(crate) use super::unix::{
-    create_dir_with_mode, folder_volume, free_bytes, mode_of, set_mode, symlink, with_mode, write_probe,
+    create_dir_with_mode, folder_volume, free_bytes, mode_of, remove_leaf, set_mode, symlink, with_mode, write_probe,
 };
 
 /// Linux's immutable attribute (`chattr +i`) isn't read yet, so nothing counts as locked.

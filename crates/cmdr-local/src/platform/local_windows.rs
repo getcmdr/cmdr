@@ -41,6 +41,7 @@ use crate::reading::{ListingDir, ListingTally, Named, Row, list_reporting_progre
 use crate::space::{get_space_info_for_path, live_space_info_for_path};
 use paths::{app_of, native_of, not_an_app_path};
 use rename::rename_native_exclusive;
+pub use links::remove_leaf;
 pub use rename::{rename_local_exclusive, rename_local_exclusive_at};
 
 /// A volume backed by a local Windows filesystem (NTFS, ReFS, FAT, exFAT), rooted at a drive
@@ -525,17 +526,8 @@ impl Volume for LocalWindowsVolume {
                 const ERROR_ACCESS_DENIED: i32 = 5;
                 return Err(at.error(&io::Error::from_raw_os_error(ERROR_ACCESS_DENIED)));
             }
-            // A directory symlink or junction carries `FILE_ATTRIBUTE_DIRECTORY` on the link
-            // itself, and only `RemoveDirectoryW` removes it: that takes the link, never its
-            // target's contents, and works for a broken one too.
-            use std::os::windows::fs::MetadataExt as _;
-            const FILE_ATTRIBUTE_DIRECTORY: u32 = 0x10;
-            let result = if metadata.file_attributes() & FILE_ATTRIBUTE_DIRECTORY != 0 {
-                std::fs::remove_dir(&at.os)
-            } else {
-                std::fs::remove_file(&at.os)
-            };
-            result.map_err(|e| {
+            // A folder link goes through `RemoveDirectoryW`, as the link (`remove_leaf_of`).
+            links::remove_leaf_of(&at.os, &metadata).map_err(|e| {
                 log::warn!(
                     target: "local_windows",
                     "delete: {} failed: {e} (kind={:?}, os error={:?})",

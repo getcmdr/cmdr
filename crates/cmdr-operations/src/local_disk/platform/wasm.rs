@@ -29,6 +29,10 @@ pub(crate) fn symlink(_target: &Path, _link: &Path) -> std::io::Result<()> {
     Err(no_local_disk())
 }
 
+pub(crate) fn remove_leaf(_path: &Path) -> std::io::Result<()> {
+    Err(no_local_disk())
+}
+
 pub(crate) fn write_probe(_path: &Path) -> WriteProbe {
     WriteProbe::Unknown
 }

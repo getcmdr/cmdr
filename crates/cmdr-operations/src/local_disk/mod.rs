@@ -26,8 +26,8 @@ pub(crate) use platform::{ASKS_ABOUT_LOCKS, locked_against_removal};
 #[cfg(target_os = "macos")]
 pub(crate) use platform::{BsdFlags, bsd_flags, read_xattr};
 pub(crate) use platform::{
-    WriteProbe, create_dir_with_mode, free_bytes, important_free_bytes, is_locked_item, mode_of, set_mode, with_mode,
-    write_probe,
+    WriteProbe, create_dir_with_mode, free_bytes, important_free_bytes, is_locked_item, mode_of, remove_leaf, set_mode,
+    with_mode, write_probe,
 };
 
 /// `rename(2)` that fails with `AlreadyExists` instead of clobbering `destination`

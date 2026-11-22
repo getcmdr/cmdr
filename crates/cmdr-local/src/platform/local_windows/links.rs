@@ -127,6 +127,30 @@ fn carried_spelling(target: PathBuf) -> PathBuf {
     PathBuf::from(std::ffi::OsString::from_wide(&wide))
 }
 
+/// The Windows arm of `crate::remove_leaf`: the entry at `path` itself, by its own attributes
+/// (`remove_leaf_of`). `path` in either spelling (`C:\x`, `C:/x`); it goes through its verbatim
+/// form, so a path past `MAX_PATH` removes too.
+pub fn remove_leaf(path: &Path) -> io::Result<()> {
+    let os = super::paths::app_of(path).and_then(|app| super::paths::native_of(&app))?;
+    remove_leaf_of(&os, &std::fs::symlink_metadata(&os)?)
+}
+
+/// Removes the entry at the OS path `os` itself, never what it points at. A folder link (a
+/// junction, a folder symlink) carries `FILE_ATTRIBUTE_DIRECTORY` on the link itself, and only
+/// `RemoveDirectoryW` removes it: that takes the link and never its target's contents, and
+/// works on a broken one too. `DeleteFileW` refuses one with `ERROR_ACCESS_DENIED`, which once
+/// made a permanent delete of a junction fail as "Access is denied" (#1386). Anything else is
+/// a file, a file symlink included.
+pub(crate) fn remove_leaf_of(os: &Path, metadata: &std::fs::Metadata) -> io::Result<()> {
+    use std::os::windows::fs::MetadataExt as _;
+    use windows_sys::Win32::Storage::FileSystem::FILE_ATTRIBUTE_DIRECTORY;
+    if metadata.file_attributes() & FILE_ATTRIBUTE_DIRECTORY != 0 {
+        std::fs::remove_dir(os)
+    } else {
+        std::fs::remove_file(os)
+    }
+}
+
 /// Whether `target` names a folder, read the way Windows resolves a relative link: against the
 /// link's own folder, `..` by text. Lexical on purpose: `link` is a verbatim `\\?\` path, which
 /// Win32 never normalizes, so a plain join would keep a literal `..`.

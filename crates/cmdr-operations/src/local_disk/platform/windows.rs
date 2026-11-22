@@ -37,6 +37,12 @@ pub(crate) fn symlink(_target: &Path, _link: &Path) -> std::io::Result<()> {
     Err(std::io::Error::from(std::io::ErrorKind::Unsupported))
 }
 
+/// A folder link (a junction, a folder symlink) goes through `RemoveDirectoryW`, as the link
+/// (`cmdr_local::remove_leaf`, #1386).
+pub(crate) fn remove_leaf(path: &Path) -> std::io::Result<()> {
+    cmdr_local::remove_leaf(path)
+}
+
 /// `access(W_OK)`'s Windows twin: open `path` asking for `FILE_WRITE_DATA` (on a
 /// folder the same bit is `FILE_ADD_FILE`, the right to create an entry in it), and
 /// close it again. The open runs the real access check (the DACL, and the

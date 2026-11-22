@@ -148,7 +148,9 @@ pub(crate) fn delete_files_with_progress_inner(
                 path: file_info.path.display().to_string(),
             });
         }
-        match fs::remove_file(&file_info.path) {
+        // A leaf is a file or a link, the link removed as itself: a Windows folder link
+        // needs `RemoveDirectoryW`, which `remove_file` isn't (#1386).
+        match crate::local_disk::remove_leaf(&file_info.path) {
             // Journal the deleted leaf so "when did I delete dog.jpg" is searchable.
             // Delete is never rollbackable (the op finalizes `permanent_delete`), so
             // these rows exist purely for search — one per leaf, deliberately.

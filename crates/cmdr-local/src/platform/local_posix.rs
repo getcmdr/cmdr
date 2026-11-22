@@ -50,6 +50,12 @@ pub fn rename_local_exclusive(source: &Path, destination: &Path) -> io::Result<(
     rename_exclusive_with(source, destination, rename_exclusive_syscall)
 }
 
+/// The POSIX arm of `crate::remove_leaf`: `unlink`, which removes a symlink itself, a link to
+/// a folder included.
+pub fn remove_leaf(path: &Path) -> io::Result<()> {
+    std::fs::remove_file(path)
+}
+
 /// The POSIX arm of `crate::rename_local_exclusive_at`: each app path's bytes, each escape
 /// decoded.
 pub fn rename_local_exclusive_at(source: &AppPath, destination: &AppPath) -> io::Result<()> {

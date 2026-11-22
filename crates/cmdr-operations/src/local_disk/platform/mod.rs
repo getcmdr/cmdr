@@ -39,6 +39,7 @@ const _: fn(&Path, u32) -> std::io::Result<()> = set_mode;
 const _: fn(&Path, u32) -> std::io::Result<()> = create_dir_with_mode;
 const _: fn(&mut std::fs::OpenOptions, u32) -> &mut std::fs::OpenOptions = with_mode;
 const _: fn(&Path, &Path) -> std::io::Result<()> = symlink;
+const _: fn(&Path) -> std::io::Result<()> = remove_leaf;
 const _: fn(&Path) -> WriteProbe = write_probe;
 const _: fn(&Path) -> Option<u64> = free_bytes;
 const _: fn(&Path) -> Option<u64> = important_free_bytes;
@@ -72,6 +73,9 @@ pub(crate) use imp::locked_against_removal;
 /// The permission bits of `permissions` (`st_mode`); off POSIX, `0o444` or `0o644`
 /// by the read-only flag.
 pub(crate) use imp::mode_of;
+/// Removes a leaf a local delete walk found, itself: a file, or a link never followed. A
+/// folder link goes as the link, its target's contents kept (`cmdr_local::remove_leaf`).
+pub(crate) use imp::remove_leaf;
 /// `chmod(path, mode)`.
 pub(crate) use imp::set_mode;
 /// `symlink(target, link)`.
