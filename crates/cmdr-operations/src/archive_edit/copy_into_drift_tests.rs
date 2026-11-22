@@ -119,7 +119,7 @@ async fn move_into(
 /// file that appeared while the move ran exist only in the source, so both stay;
 /// an untouched original still goes.
 #[tokio::test]
-#[cfg(unix)] // Windows: not yet pinned down, #1225 milestone 10a
+#[cfg(unix)] // Windows: not yet pinned down (#1351)
 async fn a_remote_source_keeps_what_changed_or_appeared_during_a_move_into_a_zip() {
     let engine = TestOperations::new();
     let tmp = tempfile::tempdir().expect("tempdir");
