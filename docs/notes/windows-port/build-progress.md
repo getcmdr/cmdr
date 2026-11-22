@@ -452,3 +452,8 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   crate's trace (`notify`) never reaches it, and a small standalone harness against `vendor/notify` was the quicker
   probe; a `.cmd` job that runs `pnpm` needs `call`, or the job's last line never runs; a job started with
   `Invoke-CimMethod Win32_Process Create` outlives the SSH session. `cmdr-m6` is back on `origin/main`, clean.
+- **2026-11-22, PR #1349's move of read-only files and "Go to Recycle Bin"** (the warm pair, `CARGO_BUILD_JOBS=2`,
+  `pnpm tauri build --debug --no-bundle` 14m 31s warm through `run-on-desktop.sh`): on the desktop,
+  `real-windows-check-2026-11-19.md` § "PR #1349 on the desktop". Gotcha: with the drive index on, the app held about
+  550 threads while it walked `C:` and every 2 s volume read timed out (#1353), so the run set `indexing.enabled: false`
+  in its own `CMDR_DATA_DIR`'s `settings.json`. `cmdr-m6` is back on `origin/main`, clean.

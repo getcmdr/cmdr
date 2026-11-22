@@ -840,9 +840,9 @@
   "@commands.fileGoToTrash.label": {
     "sourceHash": "687dada"
   },
-  "commands.fileGoToTrash.description": "{platform, select, windows {Abre a Lixeira da unidade em que você está navegando} other {Abre o Lixo do disco em que você está navegando}}",
+  "commands.fileGoToTrash.description": "{platform, select, windows {Abre a Lixeira no Explorador de Arquivos} other {Abre o Lixo do disco em que você está navegando}}",
   "@commands.fileGoToTrash.description": {
-    "sourceHash": "e4789d0"
+    "sourceHash": "c914053"
   },
   "commands.dialogConfirm.label": "Confirmar caixa de diálogo na tela",
   "@commands.dialogConfirm.label": {

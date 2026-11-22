@@ -1023,12 +1023,12 @@
   },
   "commands.fileGoToTrash.label": "{platform, select, windows {Go to Recycle Bin} other {Go to trash}}",
   "@commands.fileGoToTrash.label": {
-    "description": "Command name that opens the trash folder in the file pane, so the user can look at what they have thrown away. Appears in the command palette. Each branch names its own OS's trash: the Trash on macOS and Linux, the Recycle Bin on Windows (in the name Windows gives it in your language). VERB phrase. The screenshot shows the macOS wording.",
+    "description": "Command name that opens the trash, so the user can look at what they have thrown away: the trash folder in the file pane on macOS and Linux, the Recycle Bin in File Explorer on Windows. Appears in the command palette. Each branch names its own OS's trash: the Trash on macOS and Linux, the Recycle Bin on Windows (in the name Windows gives it in your language). VERB phrase. The screenshot shows the macOS wording.",
     "screenshot": "settings-keyboard-shortcuts.png"
   },
-  "commands.fileGoToTrash.description": "{platform, select, windows {Opens the Recycle Bin of the drive you’re browsing} other {Opens the trash of the drive you’re browsing}}",
+  "commands.fileGoToTrash.description": "{platform, select, windows {Opens the Recycle Bin in File Explorer} other {Opens the trash of the drive you’re browsing}}",
   "@commands.fileGoToTrash.description": {
-    "description": "One-line explanation under the \"Go to trash\" command name in the command palette. It says which trash opens, because each drive keeps its own: the one belonging to the drive shown in the active pane, not a single system-wide trash. The Windows branch names the Recycle Bin, Windows' own word for it. Sentence case, no full stop."
+    "description": "One-line explanation under the \"Go to trash\" command name in the command palette. It says where the trash opens. On macOS and Linux each drive keeps its own, so the other branch names the one belonging to the drive shown in the active pane, which opens in the file pane. On Windows the Recycle Bin is one place for every drive that only File Explorer shows, so the Windows branch says it opens there; use the names Windows gives the Recycle Bin and File Explorer in your language. Sentence case, no full stop."
   },
   "commands.dialogConfirm.label": "Confirm the dialog on screen",
   "@commands.dialogConfirm.label": {

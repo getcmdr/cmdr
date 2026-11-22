@@ -458,7 +458,18 @@ fn changed_since_copy(original: &LandedOriginal) -> Result<bool, WriteOperationE
 /// gone is a success: something else removed it, and the destination has it —
 /// unless the drive holding it has left, where the same `NotFound` means the
 /// mount is gone and the file is fine.
+///
+/// A lock the OS would unlink through (Windows' read-only file,
+/// `local_disk::locked_against_removal`) stops the sweep as `FileLocked`, the way
+/// macOS's `unlink` refuses a Locked file: a Move anyway already cleared it right
+/// before this call, so one still wearing it had no consent (it turned read-only
+/// after the question), and it stays beside its copy.
 fn remove_landed_file(path: &Path, drive: &SourceDrive<'_>) -> Result<(), WriteOperationError> {
+    if crate::local_disk::locked_against_removal(path) {
+        return Err(WriteOperationError::FileLocked {
+            path: path.display().to_string(),
+        });
+    }
     match fs::remove_file(path) {
         Ok(()) => Ok(()),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => match drive.left(path) {

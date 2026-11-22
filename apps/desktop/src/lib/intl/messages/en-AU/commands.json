@@ -23,9 +23,9 @@
   "@commands.fileGoToTrash.label": {
     "sourceHash": "687dada"
   },
-  "commands.fileGoToTrash.description": "{platform, select, windows {Opens the Recycle Bin of the drive you’re browsing} other {Opens the Bin of the drive you’re browsing}}",
+  "commands.fileGoToTrash.description": "{platform, select, windows {Opens the Recycle Bin in File Explorer} other {Opens the Bin of the drive you’re browsing}}",
   "@commands.fileGoToTrash.description": {
-    "sourceHash": "e4789d0"
+    "sourceHash": "c914053"
   },
   "commands.tagsToggleGrey.label": "Toggle grey tag",
   "@commands.tagsToggleGrey.label": {

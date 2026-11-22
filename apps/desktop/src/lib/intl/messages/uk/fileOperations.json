@@ -876,13 +876,13 @@
   "@fileOperations.alreadyGone.neverShowAgain": {
     "sourceHash": "c9e19cb"
   },
-  "fileOperations.lockedSources.title": "Перемістити замкнені елементи?",
+  "fileOperations.lockedSources.title": "{platform, select, windows {Перемістити елементи лише для читання?} other {Перемістити замкнені елементи?}}",
   "@fileOperations.lockedSources.title": {
-    "sourceHash": "69c0785"
+    "sourceHash": "28b2287"
   },
-  "fileOperations.lockedSources.message": "{count, plural, one {{countText} елемент, який ви переміщуєте, замкнений. Cmdr може відімкнути його лише на час переміщення й знову замкнути на новому місці.} few {{countText} елементи, які ви переміщуєте, замкнені. Cmdr може відімкнути їх лише на час переміщення й знову замкнути на новому місці.} many {{countText} елементів, які ви переміщуєте, замкнені. Cmdr може відімкнути їх лише на час переміщення й знову замкнути на новому місці.} other {{countText} елемента, які ви переміщуєте, замкнені. Cmdr може відімкнути їх лише на час переміщення й знову замкнути на новому місці.}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, one {{countText} елемент, який ви переміщуєте, доступний лише для читання. Усе одно перемістити його чи пропустити й перемістити решту?} few {{countText} елементи, які ви переміщуєте, доступні лише для читання. Усе одно перемістити їх чи пропустити й перемістити решту?} many {{countText} елементів, які ви переміщуєте, доступні лише для читання. Усе одно перемістити їх чи пропустити й перемістити решту?} other {{countText} елемента, які ви переміщуєте, доступні лише для читання. Усе одно перемістити їх чи пропустити й перемістити решту?}}} other {{count, plural, one {{countText} елемент, який ви переміщуєте, замкнений. Cmdr може відімкнути його лише на час переміщення й знову замкнути на новому місці.} few {{countText} елементи, які ви переміщуєте, замкнені. Cmdr може відімкнути їх лише на час переміщення й знову замкнути на новому місці.} many {{countText} елементів, які ви переміщуєте, замкнені. Cmdr може відімкнути їх лише на час переміщення й знову замкнути на новому місці.} other {{countText} елемента, які ви переміщуєте, замкнені. Cmdr може відімкнути їх лише на час переміщення й знову замкнути на новому місці.}}}}",
   "@fileOperations.lockedSources.message": {
-    "sourceHash": "a82868b"
+    "sourceHash": "b2f056d"
   },
   "fileOperations.lockedSources.moreItems": "{count, plural, one {і ще {countText} елемент} few {і ще {countText} елементи} many {і ще {countText} елементів} other {і ще {countText} елемента}}",
   "@fileOperations.lockedSources.moreItems": {
@@ -892,13 +892,13 @@
   "@fileOperations.lockedSources.moveAnyway": {
     "sourceHash": "c3d9351"
   },
-  "fileOperations.lockedSources.skip": "Пропустити замкнені елементи",
+  "fileOperations.lockedSources.skip": "{platform, select, windows {Пропустити елементи лише для читання} other {Пропустити замкнені елементи}}",
   "@fileOperations.lockedSources.skip": {
-    "sourceHash": "e70b85a"
+    "sourceHash": "2fd312f"
   },
-  "fileOperations.lockedSources.heldToast": "Переміщення потребує вашої відповіді щодо замкнених елементів. Запитання зʼявиться, щойно закриється відкрите діалогове вікно.",
+  "fileOperations.lockedSources.heldToast": "{platform, select, windows {Переміщення потребує вашої відповіді щодо елементів лише для читання. Запитання зʼявиться, щойно закриється відкрите діалогове вікно.} other {Переміщення потребує вашої відповіді щодо замкнених елементів. Запитання зʼявиться, щойно закриється відкрите діалогове вікно.}}",
   "@fileOperations.lockedSources.heldToast": {
-    "sourceHash": "c76d27a"
+    "sourceHash": "4764e05"
   },
   "fileOperations.transferProgress.progressBytes": "Байти",
   "@fileOperations.transferProgress.progressBytes": {

@@ -31,6 +31,10 @@ mod short_names;
 pub use local_posix::LocalPosixVolume;
 #[cfg(target_os = "windows")]
 pub use local_windows::LocalWindowsVolume;
+/// Whether a Windows drive keeps a Recycle Bin: the one answer the volume's `has_trash`, the
+/// app's switcher row, and the Recycle Bin arm's refusal read (`local_windows/recycle_bin.rs`).
+#[cfg(target_os = "windows")]
+pub use local_windows::recycle_bin;
 
 /// This machine's local disk as a `Volume`: `LocalPosixVolume` on macOS and Linux. When to
 /// name it and when the sibling: the module doc.

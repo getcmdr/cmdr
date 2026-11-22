@@ -1,12 +1,14 @@
 //! Windows: dates are real (`std` sets birth, mtime, and atime in one `SetFileInformationByHandle`,
-//! and a handle opened with backup semantics reaches a folder or a link's own entry). Every
-//! other class answers "this destination can't hold it" until its Windows body exists: the mode
-//! as the read-only attribute, xattrs as alternate data streams, the DACL, Hidden and Locked as
-//! file attributes, and read-only as a removal blocker. ❗ `std::fs::remove_file` deletes a
-//! read-only file on Windows (it clears the attribute on the way), so nothing here keeps one:
-//! the user's own delete and Overwrite refuse it up front as Locked instead
+//! and a handle opened with backup semantics reaches a folder or a link's own entry), and so is
+//! a FILE's read-only attribute as Locked: the removal lock a move asks about
+//! (`removal_lock`), what `clear_blockers` clears, and what `add_flags` puts back where the move
+//! landed it. Every other class answers "this destination can't hold it" until its Windows body
+//! exists: the mode as the read-only attribute, xattrs as alternate data streams, the DACL, and
+//! Hidden, and a copy carries no read-only yet (`flags_of` reads none). ❗
+//! `std::fs::remove_file` deletes a read-only file on Windows (it clears the attribute on the
+//! way), so the user's own delete and Overwrite refuse it up front as Locked
 //! (`cmdr-operations`' `local_disk::locked_against_removal`). The windows-port plan's tasks 35
-//! and 36 own those bodies (`docs/specs/windows-port-plan.md` § "Windows build state").
+//! and 36 own the rest (`docs/specs/windows-port-plan.md` § "Windows build state").
 
 use std::ffi::OsString;
 use std::fs::{File, Metadata, OpenOptions};
@@ -19,9 +21,10 @@ use windows_sys::Win32::Storage::FileSystem::{
 };
 
 use super::super::{
-    ClassOutcome, MetadataCaps, MetadataClasses, ParentOpening, RemovalLock, StagedItem, StagedTimes, Unblock,
-    UserFlags, Xattr,
+    ClassOutcome, LandedMetadata, MetadataCaps, MetadataClasses, ParentOpening, RemovalLock, StagedItem, StagedTimes,
+    Unblock, UserFlags, Xattr,
 };
+use crate::log_private::LogPrivate;
 use crate::os_error::OsErrorClass;
 
 /// No ACL is read yet (the DACL is task 36's), so no code path can hold one.
@@ -82,16 +85,82 @@ pub(crate) fn flags_of(_meta: &Metadata) -> UserFlags {
     UserFlags::NONE
 }
 
-pub(crate) fn add_flags(_path: &Path, _flags: UserFlags) -> ClassOutcome {
-    ClassOutcome::NotApplicable
+/// Only Locked has a Windows body: the read-only attribute on a FILE. It goes back on where a
+/// move put an item it unlocked (`apply_landed`); a folder's read-only bit isn't a lock, so a
+/// folder answers `NotApplicable`, as does every other flag.
+pub(crate) fn add_flags(path: &Path, flags: UserFlags) -> ClassOutcome {
+    if !flags.contains(UserFlags::LOCKED) {
+        return ClassOutcome::NotApplicable;
+    }
+    let native = native_spelling(path);
+    let path = native.as_deref().unwrap_or(path);
+    match std::fs::symlink_metadata(path) {
+        Ok(meta) if meta.is_file() => match set_read_only(path, meta.permissions(), true) {
+            Ok(()) => ClassOutcome::Kept,
+            Err(e) => {
+                log::debug!(target: "metadata", "couldn't set read-only on {}: {e}", LogPrivate::path(path));
+                ClassOutcome::Refused
+            }
+        },
+        _ => ClassOutcome::NotApplicable,
+    }
 }
 
-pub(crate) fn clear_blockers(_path: &Path) -> Unblock {
-    Unblock::NothingToClear
+/// Clears a FILE's read-only attribute, Windows' Locked (`removal_lock`), and hands back
+/// `LOCKED` so the caller puts it back where the item lands. Never follows a link (a link's
+/// own entry isn't a file here).
+pub(crate) fn clear_blockers(path: &Path) -> Unblock {
+    super::super::note_helper_call();
+    let native = native_spelling(path);
+    let path = native.as_deref().unwrap_or(path);
+    let Ok(meta) = std::fs::symlink_metadata(path) else {
+        return Unblock::NothingToClear;
+    };
+    if !is_locked_file(&meta) {
+        return Unblock::NothingToClear;
+    }
+    match set_read_only(path, meta.permissions(), false) {
+        Ok(()) => Unblock::Cleared(LandedMetadata::default().with_flags(UserFlags::LOCKED)),
+        Err(e) => {
+            log::debug!(target: "metadata", "couldn't clear read-only on {}: {e}", LogPrivate::path(path));
+            Unblock::Refused
+        }
+    }
 }
 
-pub(crate) fn removal_lock(_path: &Path) -> RemovalLock {
-    RemovalLock::Free
+/// The read-only attribute on a FILE is Windows' Locked (Explorer's "Read-only" box), so a
+/// move asks before carrying one off, as it asks for Finder's Locked. ❗ It's a consent rule,
+/// not an OS refusal: Windows renames a read-only file, and `std::fs::remove_file` deletes
+/// one (verified on Windows 10 22H2 with Rust 1.100, 2026-11-21). ❗ A folder's read-only bit
+/// isn't a lock: Explorer sets it to mark a customized folder (`desktop.ini`), and nothing
+/// honors it as one. Windows has no system-locked kind a process can't clear.
+pub(crate) fn removal_lock(path: &Path) -> RemovalLock {
+    let native = native_spelling(path);
+    match std::fs::symlink_metadata(native.as_deref().unwrap_or(path)) {
+        Ok(meta) if is_locked_file(&meta) => RemovalLock::Locked,
+        _ => RemovalLock::Free,
+    }
+}
+
+fn is_locked_file(meta: &Metadata) -> bool {
+    meta.is_file() && meta.permissions().readonly()
+}
+
+/// `path` in its verbatim spelling, so a path past `MAX_PATH` or in the app spelling (`D:/x`,
+/// what a volume walk carries) reaches the item itself. `None`: `path` as given.
+fn native_spelling(path: &Path) -> Option<std::path::PathBuf> {
+    crate::app_path::AppPathBuf::from_native_unicode(path)
+        .ok()
+        .and_then(|app| app.to_native().ok())
+}
+
+fn set_read_only(path: &Path, mut permissions: std::fs::Permissions, read_only: bool) -> std::io::Result<()> {
+    #[allow(
+        clippy::permissions_set_readonly_false,
+        reason = "on Windows this only sets or clears the read-only attribute"
+    )]
+    permissions.set_readonly(read_only);
+    std::fs::set_permissions(path, permissions)
 }
 
 pub(crate) fn open_parent_folder(_child: &Path) -> ParentOpening {
@@ -134,3 +203,7 @@ pub(crate) fn set_dates(item: StagedItem<'_>, created: Option<SystemTime>, times
 pub(crate) fn is_unsupported(e: &std::io::Error) -> bool {
     OsErrorClass::of_io(e) == Some(OsErrorClass::Unsupported)
 }
+
+#[cfg(test)]
+#[path = "windows_tests.rs"]
+mod tests;

@@ -392,20 +392,23 @@ is one rename, so a folder costs one call.
 - **❗ The Shell DELETES what it can't recycle**, silently under `FOF_NO_UI` (a share, a USB stick, a `subst` letter, a
   bin turned off, an item past the bin's size limit). Three walls stop it, each refusing as `NoTrashForVolume`: the item
   stays, and the dialog offers the permanent delete with its own consent.
-  - **`bin.rs`, before the Shell**: a drive that isn't a fixed disk (`GetDriveTypeW`), one Windows names no volume GUID
-    for, a bin turned off (`NukeOnDelete`, the `NoRecycleFiles` policy), and a FILE past the bin's limit (Explorer's
-    per-drive `MaxCapacity` in MiB under `HKCU\…\Explorer\BitBucket\Volume\{GUID}`, or the `RecycleBinSize` policy's
-    percentage, the smaller; 5% of the drive when neither is written, at or below Windows' own starting size). ❗ The
-    sink can't catch that file: the Shell announces it WITH `TSF_DELETE_RECYCLE_IF_POSSIBLE`, deletes it for good, and
-    reports `PostDeleteItem` success (`0x00270008`) with no new item. A bin that's merely full takes the item (it trims
-    old ones later), so only the limit matters.
+  - **`bin.rs`, before the Shell**: a drive that keeps no bin, and a FILE past the bin's limit. Whether a drive keeps
+    one is `cmdr_local::recycle_bin`, the ONE answer the volume's `has_trash` and the switcher row's `supports_trash`
+    read too, so the UI never offers a bin the refusal then denies (#1332): a fixed disk (`GetDriveTypeW`) Windows names
+    a volume GUID for (a `subst` letter has none), its bin not turned off (`NukeOnDelete`, the `NoRecycleFiles` policy).
+    Read live, so a setting changed in Explorer counts at the next question. The limit is Explorer's per-drive
+    `MaxCapacity` in MiB under `HKCU\…\Explorer\BitBucket\Volume\{GUID}`, or the `RecycleBinSize` policy's percentage,
+    the smaller; 5% of the drive when neither is written, at or below Windows' own starting size. ❗ The sink can't
+    catch that file: the Shell announces it WITH `TSF_DELETE_RECYCLE_IF_POSSIBLE`, deletes it for good, and reports
+    `PostDeleteItem` success (`0x00270008`) with no new item. A bin that's merely full takes the item (it trims old ones
+    later), so only the limit matters.
   - **The sink's `PreDeleteItem`**: a delete announced without `TSF_DELETE_RECYCLE_IF_POSSIBLE`, which cancels it before
     anything is touched (Microsoft's documented contract for an error from it).
   - **The sink again: any announcement past the first.** One item recycles as one move, so a second means the Shell fell
     back to a folder's children: it does for a folder that can't move whole (past the limit in total, even when each
     file fits), answering the folder `COPYENGINE_S_NOT_HANDLED` and announcing each child for good.
   - ❌ Never `FOF_WANTNUKEWARNING` instead: it raises the Shell's own dialog. ❌ Never drop a wall because another one
-    or the switcher row ("no trash", `WindowsDriveKind::has_recycle_bin`) seems to cover it.
+    or the switcher row ("no trash", the same `cmdr_local::recycle_bin` answer) seems to cover it.
   - A success with no bin item still logs an error (`trash` target): it's how the Shell reports a delete for good it
     chose, so a case none of the walls knows reaches a report.
   - (verified on Windows 10 22H2, NTFS, `C:` with a 5,831 MB bin, sparse files, `windows_tests.rs` on the builder,
@@ -425,8 +428,13 @@ is one rename, so a folder costs one call.
   the fix), an access refusal `NotPermitted`, the rest `Other`. The `detail` carries the `HRESULT`.
 - **A read-only file recycles**: Windows moves one like any other, so it isn't Locked here (only the permanent delete
   and an Overwrite refuse it, `local_disk::locked_against_removal`).
-- **`trash_dir_for_path` answers `None`**: the Recycle Bin is a Shell folder with no path a pane can list, so "Go to
-  trash" has nowhere to go yet.
+- **"Go to Recycle Bin" opens File Explorer** (the app's `open_trash_view`, in
+  `apps/desktop/src-tauri/src/commands/file_actions/platform/windows.rs`: `ShellExecuteExW` with
+  `FOLDERID_RecycleBinFolder`'s ID list), and `trash_dir_for_path` answers `None`. Decision (#1332): the bin is one
+  Shell view of every drive's `$R…` items, whose names and places only the `$I…` records hold, so no folder a pane lists
+  is it; a virtual listing of the records would be a second Recycle Bin to keep in step with the Shell's. The frontend
+  asks `open_trash_view` first (macOS and Linux answer `NoView` with no I/O), so the toast never lands a pane on a `$R…`
+  name either. A drive with no bin answers `NoView`, and the pane path says there's no trash.
 - (verified on Windows 10 22H2, NTFS, `windows_tests.rs` on the builder and the running app, 2026-11-21: a file and a
   folder on `C:` land as `$R…` items with their bytes, a file another program holds unshared refuses as `InUse` and
   stays, so does a folder holding one, a junction recycles as the link and its target stays, a file through

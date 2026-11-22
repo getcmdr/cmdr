@@ -193,3 +193,25 @@ Every fixture and every item this run put in the Recycle Bin is gone again; noth
   program holds unshared refused whole, a junction recycled as the link with its target kept, and a permanent delete on
   a drive's volume walk (every drive but the boot one) now refuses a read-only file as `file_locked` too. Every item
   these runs put in the bin is gone again.
+
+## PR #1349 on the desktop (2026-11-22)
+
+A debug build of `ce19cd766e` in `D:\src\cmdr-m6`, driven the same way as task 35's above (Cmdr's MCP server over
+`ssh -L`, `CMDR_MCP_DIRECT_MODE=1`), plus `keybd_event`-style keys and one `mouse_event` click through
+`run-on-desktop.sh`. Fixtures under `C:\Users\Admin\r1349` and `D:\r1349-dst`, removed after, with the two items this
+run put in the Recycle Bin (nothing else was in it).
+
+- Pass: a same-drive move of a read-only file asks "Move read-only items?" before anything moves; Move anyway moves it,
+  still `ReadOnly` where it lands; Skip keeps it in place, still read-only, and moves the rest.
+- Pass: a read-only folder moves within `C:` with no question.
+- Pass: a `C:` → `D:` move asks before anything reaches `D:` (the destination folder empty while it waits); Move anyway
+  removes the original. The landed copy isn't read-only (#1352).
+- Pass: "Go to Recycle Bin" from the trash toast and from the command palette opens File Explorer's Recycle Bin with the
+  trashed items; neither pane moves.
+- Pass: on a `subst` drive (`S:` → `C:\Users\Admin\r1349`, made in Admin's session and removed after) F8 opens on
+  "Delete permanently" with "This volume doesn't have a Recycle Bin", and "Go to Recycle Bin" says "This drive doesn't
+  have a Recycle Bin". On `\\localhost\C$` (a share nobody mapped, so no volume row) the delete dialog opens on the
+  Recycle Bin by the frontend's optimistic default (`snapshot-source-volume.ts`), and the trash refuses as
+  `trash_refused` with the file kept; "Go to Recycle Bin" says there's none.
+- Not tested: a USB stick (none on the builder), a folder-mounted volume and a drive whose bin is turned off (both
+  system changes).

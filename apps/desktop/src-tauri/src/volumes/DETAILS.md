@@ -65,6 +65,9 @@ table's pure rules (`covering_drive`, `display_name`) are `cmdr_fs::volume::wind
   upgrades it to a direct session; its index and mount class come from the generic local paths. Its row's `fs_type` is
   `NETWORK_FS_TYPE` (`smbfs`), which is exactly what the Windows `is_smb_fs_type` / `is_network_fs_type` answer for,
   so `cmdr://state` and `list_volumes` read it as `kind: smb` and a drive as `kind: local`.
+- **`supports_trash`** is `cmdr_local::recycle_bin`'s answer for the row's root (a fixed disk with a volume GUID and its
+  bin on), the same one the volume's `has_trash` and the Recycle Bin's refusal read, so the delete dialog never offers a
+  bin the trash then refuses (#1332). A share's row says no with no call to it.
 - **Names** read like Explorer's This PC (`build (D:)`, `D:` with no label, `media (\\server) (Z:)`); words around
   them are the frontend's. An empty optical drive or card reader lists nothing until media is in.
 - **A path that moved roots** (a stick back on another letter) follows its disk through `location/last_roots.rs`: the

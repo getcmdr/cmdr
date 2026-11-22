@@ -16,6 +16,7 @@ import { MutationFailure } from '#lib/file-operations/mutation-error.js'
 
 const {
   getTrashDir,
+  openTrashView,
   getOperationLogDetail,
   whenOperationSettled,
   resolveLocationOrToast,
@@ -24,6 +25,7 @@ const {
   addToast,
 } = vi.hoisted(() => ({
   getTrashDir: vi.fn<(path: string) => Promise<string | null>>(),
+  openTrashView: vi.fn<(path: string) => Promise<'opened' | 'noView'>>(),
   // `limit` and `offset` are both numbers, so they go in as a rest param rather
   // than a confusable positional pair (`cmdr/no-confusable-callback-params`); the
   // assertions only ever read the id.
@@ -35,7 +37,7 @@ const {
   addToast: vi.fn<(message: string, options?: ToastOptions) => string>(),
 }))
 
-vi.mock('#lib/tauri-commands/index.js', () => ({ getTrashDir, getOperationLogDetail }))
+vi.mock('#lib/tauri-commands/index.js', () => ({ getTrashDir, openTrashView, getOperationLogDetail }))
 vi.mock('../settled-operations', () => ({ whenOperationSettled }))
 vi.mock('#lib/file-explorer/navigation/navigate-and-select.js', () => ({
   resolveLocationOrToast,
@@ -72,6 +74,47 @@ beforeEach(() => {
   whenOperationSettled.mockResolvedValue(true)
   resolveLocationOrToast.mockResolvedValue(TRASH_LOCATION)
   getTrashDir.mockResolvedValue('/Users/me/.Trash')
+  // macOS and Linux: a trash a pane lists, so no system view to open.
+  openTrashView.mockResolvedValue('noView')
+})
+
+/**
+ * Windows' Recycle Bin is a Shell view of every drive's bin, no folder a pane lists: it
+ * opens in File Explorer, and no pane moves.
+ */
+describe('a trash the OS shows itself', () => {
+  it('opens there from the command, and no pane goes anywhere', async () => {
+    openTrashView.mockResolvedValue('opened')
+    await goToTrash(explorerStub())
+
+    expect(openTrashView).toHaveBeenCalledWith('/Users/me/Documents')
+    expect(getTrashDir).not.toHaveBeenCalled()
+    expect(navigateToDirInBestPane).not.toHaveBeenCalled()
+    expect(addToast).not.toHaveBeenCalled()
+  })
+
+  it("opens there from the toast, never landing a pane on the bin's own item names", async () => {
+    openTrashView.mockResolvedValue('opened')
+    getOperationLogDetail.mockResolvedValue(detail([trashedItem('C:/$Recycle.Bin/S-1-5-21-0/$RAB12CD.txt')]))
+
+    await goToTrashedItems(explorerStub(), 'op-1', 'C:/Users/test_user_1/Documents')
+
+    expect(openTrashView).toHaveBeenCalledWith('C:/Users/test_user_1/Documents')
+    expect(getOperationLogDetail).not.toHaveBeenCalled()
+    expect(revealFileInBestPane).not.toHaveBeenCalled()
+  })
+
+  it("says the place can't be reached when the view doesn't open, and never throws", async () => {
+    openTrashView.mockRejectedValue(new MutationFailure({ type: 'timedOut' }))
+
+    await expect(goToTrash(explorerStub())).resolves.toBeUndefined()
+
+    expect(getTrashDir).not.toHaveBeenCalled()
+    expect(addToast).toHaveBeenCalledWith(
+      'fileExplorer.navigation.locationUnreachableToast',
+      expect.objectContaining({ level: 'info' }),
+    )
+  })
 })
 
 describe('goToTrash', () => {

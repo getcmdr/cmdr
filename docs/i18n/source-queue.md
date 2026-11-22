@@ -444,3 +444,10 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   and a read-only `for` loop of `jq` over `mechanics.json` files; 13 Write calls, two `&&` chains of `i18n:apply`, and
   five chains of `i18n:check-locale` (one outran 120 s and went to the background). Same wish as above: `--lang all` on
   `i18n:apply` and `i18n:check-locale`. No script written. (all, throughLinkHint batch)
+- A five-key batch for 13 locales: same pattern again (13 Write calls, `&&` chains of `i18n:apply` and
+  `i18n:check-locale`, one chain moved to the background past 120 s; the guard refused a `mkdir` + heredoc chain and a
+  run-directory variable). The `es-419` fork's values file went into the `es` run directory, since the brief names none
+  for overlays. The Windows "Read-only" checkbox per language came from the shipped `errors.write.fileLocked.suggestion`
+  windows branches, which beat a pile lookup; the brief's translation memory could list a key's same-concept per-OS
+  siblings (here, every windows branch quoting the attribute) so nobody greps catalogs for them. No script written.
+  (all, lockedSources read-only batch)

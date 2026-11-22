@@ -86,6 +86,7 @@ export const notInDemo = {
   clearExtensionIconCache: OS_SHELL,
   clearDirectoryIconCache: OS_SHELL,
   getTrashDir: OS_SHELL,
+  openTrashView: OS_SHELL,
   releasePromiseDrop: OS_SHELL,
   listTerminalApps: OS_SHELL,
   openTerminalHere: OS_SHELL,

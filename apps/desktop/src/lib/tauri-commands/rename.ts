@@ -1,6 +1,6 @@
 // Rename-related Tauri command wrappers
 
-import { commands, type Initiator, type RenameByMove, type ValidationError } from '#lib/ipc/bindings.js'
+import { commands, type Initiator, type RenameByMove, type TrashView, type ValidationError } from '#lib/ipc/bindings.js'
 import { throwMutationError } from '#lib/file-operations/mutation-error.js'
 import { awaitMutation, type MutationWaitOptions } from './mutation-reply'
 
@@ -77,6 +77,17 @@ export async function moveToTrash(path: string, initiator: Initiator): Promise<v
  */
 export async function getTrashDir(path: string): Promise<string | null> {
   const res = await commands.getTrashDir(path)
+  if (res.status === 'error') throwMutationError(res.error)
+  return res.data
+}
+
+/**
+ * Opens the trash of `path`'s volume in the OS's own file manager, where that trash is a
+ * view no pane can list (Windows' Recycle Bin opens in File Explorer). `'noView'` where a
+ * pane goes to a folder instead (`getTrashDir`), or the drive keeps no trash.
+ */
+export async function openTrashView(path: string): Promise<TrashView> {
+  const res = await commands.openTrashView(path)
   if (res.status === 'error') throwMutationError(res.error)
   return res.data
 }

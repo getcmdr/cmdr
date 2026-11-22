@@ -840,9 +840,9 @@
   "@commands.fileGoToTrash.label": {
     "sourceHash": "687dada"
   },
-  "commands.fileGoToTrash.description": "{platform, select, windows {打开你正在浏览的驱动器上的回收站} other {打开你正在浏览的驱动器上的废纸篓}}",
+  "commands.fileGoToTrash.description": "{platform, select, windows {在文件资源管理器中打开回收站} other {打开你正在浏览的驱动器上的废纸篓}}",
   "@commands.fileGoToTrash.description": {
-    "sourceHash": "e4789d0"
+    "sourceHash": "c914053"
   },
   "commands.dialogConfirm.label": "确认屏幕上的对话框",
   "@commands.dialogConfirm.label": {

@@ -69,6 +69,9 @@ pub(crate) mod liveness_test_support;
 mod metadata_matrix_tests;
 #[cfg(test)]
 mod move_integration_test;
+/// A local move of a read-only file on Windows, the platform's Locked (#1331).
+#[cfg(all(test, windows))]
+mod move_read_only_windows_tests;
 #[cfg(test)]
 mod named_leaves_engine_tests;
 #[cfg(test)]

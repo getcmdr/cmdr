@@ -321,7 +321,7 @@ Per-file function inventory and decision rationale. `CLAUDE.md` holds the must-k
   `set_focus`, which tao makes a silent no-op on a minimized or hidden window, so a minimized queue window used to
   ignore every click on the corner chip (verified in the tao 0.37.1 source of its macOS `set_focus`, from
   ERR-APXNK, 2026-10-24).
-- **`file_actions.rs`**: direct file actions from the palette / menus: `reveal_in_file_manager`, `get_info`, `open_in_editor`,
+- **`file_actions.rs`**: direct file actions from the palette / menus: `reveal_in_file_manager`, `open_trash_view` (Windows' Recycle Bin opens in File Explorer, a typed `TrashView`; `noView` elsewhere, `crates/cmdr-operations/src/delete/DETAILS.md` § "Windows: the Recycle Bin"), `get_info`, `open_in_editor`,
   `copy_to_clipboard`, and `cloud_make_available_offline` / `cloud_remove_download` (iCloud Drive download/eviction via
   `FileManager` ubiquity APIs; see `file_system/cloud_actions.rs`). `google_drive_links(path)` returns a Drive item's
   `viewUrl` plus its `geminiUrl` (absent for folders) or `None`, backing the three Drive menu items from ONE
@@ -338,7 +338,7 @@ Per-file function inventory and decision rationale. `CLAUDE.md` holds the must-k
   Beside it sits the macOS-only `list_text_editors(app_choice)` (2 s, `TimedOut`). `open_path(path, volume_id)` is the
   default-app open, async on every platform and passing through to `../file_system/default_app.rs`, answering a typed
   `OpenPathError`. `open_path`, `open_in_editor`,
-  `open_terminal_here`, and `reveal_in_file_manager` all record into `crate::open_mock` instead of launching under
+  `open_terminal_here`, `reveal_in_file_manager`, and `open_trash_view` all record into `crate::open_mock` instead of launching under
   `playwright-e2e`, so a suite run leaves no orphan windows, and `get_info` skips Finder there too: Finder takes the
   front position, which blanks capture shots.
 - **`child_window_state.rs`**: also `show_child_window(label)` and `close_child_window(label)`, pass-throughs to

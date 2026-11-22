@@ -14,6 +14,13 @@ const GET_INFO_TIMEOUT: Duration = Duration::from_secs(5);
 /// lookup in front of it and the name read behind it.
 const OPEN_IN_EDITOR_TIMEOUT: Duration = Duration::from_secs(5);
 
+/// A volume's Trash is a folder a pane lists (`get_trash_dir`), so there's no view to open.
+pub(crate) fn open_trash_view(
+    _path: &cmdr_fs::app_path::AppPath,
+) -> Result<super::TrashView, cmdr_operations::MutationError> {
+    Ok(super::TrashView::NoView)
+}
+
 /// Reveals `path` in Finder. The E2E build records it instead: Finder would take the front
 /// position and write a `.DS_Store` into the fixture tree.
 pub(crate) fn reveal_in_file_manager(path: String) -> Result<(), String> {

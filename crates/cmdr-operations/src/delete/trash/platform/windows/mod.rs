@@ -6,9 +6,10 @@
 //! `FOF_NO_UI`. Three walls, each refusing as `NoTrashForVolume` (the item stays, and
 //! the UI offers the permanent delete it asks consent for):
 //!
-//! - `bin.rs`, before the Shell: a drive that isn't a fixed disk, a bin turned off, and a
-//!   FILE past the bin's size limit, which the Shell announces as a recycle and then
-//!   deletes for good, so the sink can't see it.
+//! - `bin.rs`, before the Shell: a drive that keeps no bin (`cmdr_local::recycle_bin`, the
+//!   answer the volume's `has_trash` and the volume list read too), and a FILE past the
+//!   bin's size limit, which the Shell announces as a recycle and then deletes for good,
+//!   so the sink can't see it.
 //! - `shell.rs`'s sink: every delete announced without `TSF_DELETE_RECYCLE_IF_POSSIBLE`,
 //!   and any delete past the first (the Shell fell back to a folder's children, which
 //!   it does when the folder can't move whole).
@@ -94,7 +95,8 @@ pub fn move_to_trash_sync(path: &Path) -> Result<Option<PathBuf>, MutationError>
 }
 
 /// `None`: the Recycle Bin is a Shell folder with no path a pane can list (its
-/// `$Recycle.Bin\<SID>` folder shows only the `$R` and `$I` names).
+/// `$Recycle.Bin\<SID>` folder shows only the `$R` and `$I` names), so "Go to Recycle
+/// Bin" opens it in File Explorer instead (the app's `open_trash_view`).
 pub fn trash_dir_for_path(_path: &Path) -> Option<PathBuf> {
     None
 }

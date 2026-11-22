@@ -17,6 +17,13 @@ pub(crate) fn reveal_in_file_manager(path: String) -> Result<(), String> {
     Ok(())
 }
 
+/// No trash view of its own to open: the XDG trash has no single folder answer either.
+pub(crate) fn open_trash_view(
+    _path: &cmdr_fs::app_path::AppPath,
+) -> Result<super::TrashView, cmdr_operations::MutationError> {
+    Ok(super::TrashView::NoView)
+}
+
 /// No Get Info window; a no-op.
 pub(crate) async fn get_info(_path: String) -> Result<(), GetInfoError> {
     Ok(())

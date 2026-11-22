@@ -718,7 +718,9 @@ macOS 27.0, APFS, with a C helper replaying each syscall sequence, 2026-10-11).
   cleared so a landing can put it back. `SF_*` flags answer `Refused`: only root can clear them. `removal_lock` is the
   look before either: whether an item wears the user's lock (`uchg`/`uappnd`, or a deny entry for `delete` /
   `delete_child` that isn't `only_inherit`), the system's (`SF_*`), or neither. A move asks it of what it will take
-  away, so it can ask the person before any byte moves (`crates/cmdr-operations/DETAILS.md` § "Moving Locked items").
+  away, so it can ask the person before any byte moves (`crates/cmdr-operations/DETAILS.md` § "Moving Locked items"). On
+  Windows the three answer for a FILE's read-only attribute (Locked; `add_flags` puts it back), and a folder's read-only
+  bit, Explorer's customization marker, is never a lock.
 - **The `remove_*_clearing_blockers` helpers clear only after a refusal.** One removal, then on `PermissionDenied` one
   clear and one retry, then `open_parent_folder` and one more, so an ordinary item costs exactly its removal. Opening
   the folder covers a child of a copied folder that wears Locked, `deny delete_child`, or `0500`: it clears and adds

@@ -840,9 +840,9 @@
   "@commands.fileGoToTrash.label": {
     "sourceHash": "687dada"
   },
-  "commands.fileGoToTrash.description": "{platform, select, windows {Megnyitja annak a meghajtónak a Lomtárát, amelyet éppen böngészel} other {Megnyitja annak a meghajtónak a Kukáját, amelyet éppen böngészel}}",
+  "commands.fileGoToTrash.description": "{platform, select, windows {Megnyitja a Lomtárat a Fájlkezelőben} other {Megnyitja annak a meghajtónak a Kukáját, amelyet éppen böngészel}}",
   "@commands.fileGoToTrash.description": {
-    "sourceHash": "e4789d0"
+    "sourceHash": "c914053"
   },
   "commands.dialogConfirm.label": "Képernyőn megjelenő párbeszédablak megerősítése",
   "@commands.dialogConfirm.label": {

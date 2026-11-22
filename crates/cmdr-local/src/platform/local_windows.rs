@@ -7,6 +7,7 @@
 //! symlink, xattrs, a write-access probe, and a stream are "not supported" rather than a guess.
 
 pub(crate) mod paths;
+pub mod recycle_bin;
 pub(crate) mod rename;
 
 use std::borrow::Cow;
@@ -20,6 +21,7 @@ use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, NotAnAppPath, PathArithmet
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
+use cmdr_fs::metadata::Unblock;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{
     EntryKind, ListingProgress, MountClass, MutationEvent, Presence, ScanConflict, SourceItemInfo, SpaceInfo,
@@ -337,11 +339,32 @@ impl Volume for LocalWindowsVolume {
         }))
     }
 
+    /// A FILE's read-only attribute (Windows' Locked) as `clear_blockers` clears it, never
+    /// through a link. Only a reversal or a consented move asks (`Volume::clear_blockers`).
+    fn clear_blockers<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Unblock> + Send + 'a>> {
+        let at = self.locate(path);
+        Box::pin(blocking("clear_blockers", move || match at {
+            Ok(at) => cmdr_fs::metadata::clear_blockers(&at.os),
+            Err(_) => Unblock::NothingToClear,
+        }))
+    }
+
+    /// ❗ A read-only FILE refuses as `PermissionDenied` (`ERROR_ACCESS_DENIED`), the way
+    /// macOS's `unlink` refuses a Locked one: `std::fs::remove_file` would delete it anyway
+    /// (it clears the attribute on the way, verified on Windows 10 22H2 with Rust 1.100,
+    /// 2026-11-21), so a move's source sweep would take a read-only original nobody agreed
+    /// to. What the person agreed to unlock is cleared before this call; what Cmdr made goes
+    /// through `clear_blockers` and a retry. A folder's read-only bit is Explorer's
+    /// customization marker, never a lock.
     fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         let at = self.located(path);
         Box::pin(blocking("delete", move || {
             let at = at?;
             let metadata = std::fs::symlink_metadata(&at.os).map_err(|e| at.error(&e))?;
+            if metadata.is_file() && metadata.permissions().readonly() {
+                const ERROR_ACCESS_DENIED: i32 = 5;
+                return Err(at.error(&io::Error::from_raw_os_error(ERROR_ACCESS_DENIED)));
+            }
             // A directory symlink or junction carries `FILE_ATTRIBUTE_DIRECTORY` on the link
             // itself, and only `RemoveDirectoryW` removes it: that takes the link, never its
             // target's contents, and works for a broken one too.
@@ -459,12 +482,12 @@ impl Volume for LocalWindowsVolume {
         Some(self.mount)
     }
 
-    /// A local disk's Recycle Bin, a share's none: the mount class's answer, as on POSIX. A
-    /// removable or `subst` drive still answers yes here (its class is `LocalDisk`); the
-    /// switcher row says no for it (`WindowsDriveKind::has_recycle_bin`), and the Recycle Bin
-    /// arm refuses rather than delete for good.
+    /// Whether the drive under the root keeps a Recycle Bin, the ONE answer the volume list and
+    /// the Recycle Bin arm's refusal read too (`recycle_bin.rs`): a removable or `subst`
+    /// drive, or a bin turned off, says no though its mount class is `LocalDisk`. A share's
+    /// class says no first, with no call to the drive.
     fn has_trash(&self) -> bool {
-        self.mount.has_trash()
+        self.mount.has_trash() && recycle_bin::has_recycle_bin_at(&self.root)
     }
 
     fn supported_dates<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = SupportedDates> + Send + 'a>> {

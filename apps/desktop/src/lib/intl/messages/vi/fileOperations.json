@@ -876,13 +876,13 @@
   "@fileOperations.alreadyGone.neverShowAgain": {
     "sourceHash": "c9e19cb"
   },
-  "fileOperations.lockedSources.title": "Di chuyển các mục bị khóa?",
+  "fileOperations.lockedSources.title": "{platform, select, windows {Di chuyển các mục chỉ đọc?} other {Di chuyển các mục bị khóa?}}",
   "@fileOperations.lockedSources.title": {
-    "sourceHash": "69c0785"
+    "sourceHash": "28b2287"
   },
-  "fileOperations.lockedSources.message": "{count, plural, other {{countText} mục bạn đang di chuyển bị khóa. Cmdr có thể mở khóa chỉ trong lúc di chuyển, rồi khóa lại ở nơi mới.}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, other {{countText} mục bạn đang di chuyển ở chế độ chỉ đọc. Vẫn di chuyển, hay bỏ qua và di chuyển các mục còn lại?}}} other {{count, plural, other {{countText} mục bạn đang di chuyển bị khóa. Cmdr có thể mở khóa chỉ trong lúc di chuyển, rồi khóa lại ở nơi mới.}}}}",
   "@fileOperations.lockedSources.message": {
-    "sourceHash": "a82868b"
+    "sourceHash": "b2f056d"
   },
   "fileOperations.lockedSources.moreItems": "{count, plural, other {và thêm {countText} mục nữa}}",
   "@fileOperations.lockedSources.moreItems": {
@@ -892,13 +892,13 @@
   "@fileOperations.lockedSources.moveAnyway": {
     "sourceHash": "c3d9351"
   },
-  "fileOperations.lockedSources.skip": "Bỏ qua các mục bị khóa",
+  "fileOperations.lockedSources.skip": "{platform, select, windows {Bỏ qua các mục chỉ đọc} other {Bỏ qua các mục bị khóa}}",
   "@fileOperations.lockedSources.skip": {
-    "sourceHash": "e70b85a"
+    "sourceHash": "2fd312f"
   },
-  "fileOperations.lockedSources.heldToast": "Một lần di chuyển có câu hỏi cho bạn về các mục bị khóa. Bạn sẽ thấy câu hỏi ngay khi hộp thoại đang mở đóng lại.",
+  "fileOperations.lockedSources.heldToast": "{platform, select, windows {Một lần di chuyển có câu hỏi cho bạn về các mục chỉ đọc. Bạn sẽ thấy câu hỏi ngay khi hộp thoại đang mở đóng lại.} other {Một lần di chuyển có câu hỏi cho bạn về các mục bị khóa. Bạn sẽ thấy câu hỏi ngay khi hộp thoại đang mở đóng lại.}}",
   "@fileOperations.lockedSources.heldToast": {
-    "sourceHash": "c76d27a"
+    "sourceHash": "4764e05"
   },
   "fileOperations.transferProgress.progressBytes": "Byte",
   "@fileOperations.transferProgress.progressBytes": {

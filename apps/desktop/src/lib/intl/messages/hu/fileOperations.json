@@ -877,13 +877,13 @@
   "@fileOperations.alreadyGone.neverShowAgain": {
     "sourceHash": "c9e19cb"
   },
-  "fileOperations.lockedSources.title": "Áthelyezed a zárolt elemeket?",
+  "fileOperations.lockedSources.title": "{platform, select, windows {Áthelyezed az írásvédett elemeket?} other {Áthelyezed a zárolt elemeket?}}",
   "@fileOperations.lockedSources.title": {
-    "sourceHash": "69c0785"
+    "sourceHash": "28b2287"
   },
-  "fileOperations.lockedSources.message": "{count, plural, one {{countText} elem, amelyet áthelyezel, zárolva van. A Cmdr feloldhatja a zárolását, de csak az áthelyezés idejére: az új helyén újra zárolja.} other {{countText} elem, amelyet áthelyezel, zárolva van. A Cmdr feloldhatja a zárolásukat, de csak az áthelyezés idejére: az új helyükön újra zárolja őket.}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, one {{countText} elem, amelyet áthelyezel, írásvédett. Mindenképp áthelyezed, vagy átugrod, és áthelyezed a többit?} other {{countText} elem, amelyet áthelyezel, írásvédett. Mindenképp áthelyezed őket, vagy átugrod őket, és áthelyezed a többit?}}} other {{count, plural, one {{countText} elem, amelyet áthelyezel, zárolva van. A Cmdr feloldhatja a zárolását, de csak az áthelyezés idejére: az új helyén újra zárolja.} other {{countText} elem, amelyet áthelyezel, zárolva van. A Cmdr feloldhatja a zárolásukat, de csak az áthelyezés idejére: az új helyükön újra zárolja őket.}}}}",
   "@fileOperations.lockedSources.message": {
-    "sourceHash": "a82868b"
+    "sourceHash": "b2f056d"
   },
   "fileOperations.lockedSources.moreItems": "{count, plural, one {és {countText} további elem} other {és {countText} további elem}}",
   "@fileOperations.lockedSources.moreItems": {
@@ -893,13 +893,13 @@
   "@fileOperations.lockedSources.moveAnyway": {
     "sourceHash": "c3d9351"
   },
-  "fileOperations.lockedSources.skip": "Zárolt elemek átugrása",
+  "fileOperations.lockedSources.skip": "{platform, select, windows {Írásvédett elemek átugrása} other {Zárolt elemek átugrása}}",
   "@fileOperations.lockedSources.skip": {
-    "sourceHash": "e70b85a"
+    "sourceHash": "2fd312f"
   },
-  "fileOperations.lockedSources.heldToast": "Egy áthelyezésnek kérdése van hozzád a zárolt elemekkel kapcsolatban. Látni fogod, amint bezárul a nyitott párbeszédablak.",
+  "fileOperations.lockedSources.heldToast": "{platform, select, windows {Egy áthelyezésnek kérdése van hozzád az írásvédett elemekkel kapcsolatban. Látni fogod, amint bezárul a nyitott párbeszédablak.} other {Egy áthelyezésnek kérdése van hozzád a zárolt elemekkel kapcsolatban. Látni fogod, amint bezárul a nyitott párbeszédablak.}}",
   "@fileOperations.lockedSources.heldToast": {
-    "sourceHash": "c76d27a"
+    "sourceHash": "4764e05"
   },
   "fileOperations.transferProgress.progressBytes": "Bájtok",
   "@fileOperations.transferProgress.progressBytes": {

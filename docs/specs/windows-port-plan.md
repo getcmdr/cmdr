@@ -205,8 +205,9 @@ Honest stubs: Windows arms that compile and answer "unsupported", "unknown", or 
 owns its real body. Remove a line when its body lands.
 
 - `cmdr_fs::metadata` (`metadata/platform/windows.rs`), tasks 35 and 36: mode as the read-only attribute, xattrs as
-  alternate data streams, the DACL, Hidden and Locked as attributes, and read-only as a removal blocker all answer
-  `NotApplicable` or `Free`; only dates are real.
+  alternate data streams, the DACL, and Hidden as an attribute answer `NotApplicable`, and a copy carries no read-only
+  (`flags_of` reads none). Real: dates, and a FILE's read-only as the Locked a move asks about (`removal_lock`,
+  `clear_blockers`, and `add_flags` putting it back, #1331).
 - `cmdr_fs::entry` owner and group names (`entry/platform/windows.rs`), task 35: always `None`, since a Windows owner is
   a SID, not a uid.
 - `cmdr_fs::file_provider` (`file_provider/platform/windows.rs`), task 37: no File Provider marker; Cloud Files
@@ -241,8 +242,6 @@ owns its real body. Remove a line when its body lands.
 - `cmdr_operations` local copy strategy on Windows (`transfer/copy_strategy.rs`), task 36: every file takes the chunked
   loop (cancellable, live progress, staged). No `CopyFileExW` yet, so a copy carries no attributes or alternate data
   streams (Mark of the Web included), and gets no ReFS block clone or SMB copy offload.
-- `cmdr_operations` trash on Windows (`delete/trash/platform/windows/`), task 36: the Recycle Bin is real;
-  `trash_dir_for_path` answers `None` (the bin is a Shell folder no pane lists), so "Go to trash" has nowhere to go.
 - `cmdr_operations::delete::cloud_trash::metadata_is_online_only` on Windows, task 37: never online-only, the cautious
   branch, so a Cloud Files placeholder trashes (and hydrates) like any file.
 - `cmdr_operations` extract quarantine on Windows (`transfer/volume/extract_quarantine.rs`), task 37: an extract carries
@@ -635,15 +634,18 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     (2026-11-21): the Recycle Bin (`delete/trash/platform/windows/`, `IFileOperation` one item per call, a progress-sink
     veto plus an up-front check of the drive and the bin's size limit (`bin.rs`) so an item no bin takes refuses as
     `NoTrashForVolume` and never deletes for good, the `$R…` item journaled so the trash undo renames it back and drops
-    its `$I` record; `delete/DETAILS.md` § "Windows: the Recycle Bin"), the switcher's `supports_trash` from
-    `WindowsDriveKind::has_recycle_bin` (fixed disks only), read-only as Locked (a permanent delete on any drive and an
-    Overwrite refuse a read-only file as `FileLocked`, since `std::fs::remove_file` deletes through it:
-    `local_disk::locked_against_removal`), and a sharing or lock violation on trash as `TrashRefusalKind::InUse` with a
-    Retry (a permanent delete already refused as `FileInUse`). On the desktop:
-    `docs/notes/windows-port/real-windows-check-2026-11-19.md` § "Task 36's delete on the desktop". Left of delete: a
-    move asks no Locked consent for a read-only file and a cross-drive move deletes a read-only original (#1331); "Go to
-    trash" has no folder, and the volume's `has_trash` says yes on a removable drive (#1332). Seen beside it: no listing
-    watch on a Windows drive (#1330, task 35's, now done).
+    its `$I` record; `delete/DETAILS.md` § "Windows: the Recycle Bin"), the switcher's `supports_trash`, the volume's
+    `has_trash`, and `bin.rs`'s refusal from one answer (`cmdr_local::recycle_bin`: a fixed disk with a volume GUID and
+    its bin on, #1332), read-only as Locked (a permanent delete on any drive and an Overwrite refuse a read-only file as
+    `FileLocked`, since `std::fs::remove_file` deletes through it: `local_disk::locked_against_removal`), and a sharing
+    or lock violation on trash as `TrashRefusalKind::InUse` with a Retry (a permanent delete already refused as
+    `FileInUse`). On the desktop: `docs/notes/windows-port/real-windows-check-2026-11-19.md` § "Task 36's delete on the
+    desktop". A move of a read-only file asks the Locked question, same-drive and cross-drive, and the cross-drive sweep
+    and `LocalWindowsVolume::delete` refuse a read-only original nobody agreed to (#1331,
+    `crates/cmdr-operations/DETAILS.md` § "Moving Locked items"); a cross-drive Move anyway still lands the copy without
+    the attribute until the `CopyFileExW` arm (#1352). "Go to Recycle Bin" opens the bin in File Explorer (the app's
+    `open_trash_view`, #1332; `delete/DETAILS.md` § "Windows: the Recycle Bin"). Seen beside it: no listing watch on a
+    Windows drive (#1330, task 35's, now done).
 
 37. [S] Windows. Cloud Files placeholders (OneDrive and friends: sync badges, cloud trash) and Mark of the Web on
     extract (`cmdr-operations` + `cmdr-archive`). Needs 36.

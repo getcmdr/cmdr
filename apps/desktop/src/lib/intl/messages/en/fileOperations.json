@@ -67,7 +67,7 @@
   },
   "fileOperations.trash.goToTrashAction": "{platform, select, windows {Go to Recycle Bin} other {Go to trash}}",
   "@fileOperations.trash.goToTrashAction": {
-    "description": "Button on the toast that appears right after files are moved to the trash. Pressing it opens the trash folder in the file pane, with the cursor on the item that was just moved there. In each branch, name that OS’s trash the way it does: the Trash on macOS and Linux, the Recycle Bin on Windows (with no article, like File Explorer’s \"Empty Recycle Bin\"). Short control label; the toast is narrow, so keep it to one or two words."
+    "description": "Button on the toast that appears right after files are moved to the trash. Pressing it opens the trash folder in the file pane, with the cursor on the item that was just moved there; on Windows it opens the Recycle Bin in File Explorer. In each branch, name that OS’s trash the way it does: the Trash on macOS and Linux, the Recycle Bin on Windows (with no article, like File Explorer’s \"Empty Recycle Bin\"). Short control label; the toast is narrow, so keep it to one or two words."
   },
   "fileOperations.trash.undoing": "Putting them back…",
   "@fileOperations.trash.undoing": {
@@ -1378,14 +1378,14 @@
   "@fileOperations.alreadyGone.neverShowAgain": {
     "description": "Button on the “already gone” toast (fileOperations.alreadyGone.one / .many) that closes it and turns that toast off for good. The person can turn it back on in Settings > Advanced (settings.fileOperations.showAlreadyGoneToast.label). Keep it short: it sits on a small button."
   },
-  "fileOperations.lockedSources.title": "Move locked items?",
+  "fileOperations.lockedSources.title": "{platform, select, windows {Move read-only items?} other {Move locked items?}}",
   "@fileOperations.lockedSources.title": {
-    "description": "Title of a prompt that appears when the user moves files or folders and some of them are Locked (the macOS Finder setting in Get Info that stops a file from being changed, renamed, or deleted), or have permissions that forbid deleting them. A move has to take the original away, which a Locked item refuses, so Cmdr asks before it moves anything. \"Locked\" should match the word the language's macOS Finder uses for that checkbox.",
+    "description": "Title of a prompt that appears when the user moves files or folders and some of them are Locked (the macOS Finder setting in Get Info that stops a file from being changed, renamed, or deleted), or have permissions that forbid deleting them. A move has to take the original away, which a Locked item refuses, so Cmdr asks before it moves anything. \"Locked\" should match the word the language's macOS Finder uses for that checkbox. On Windows the same question asks about read-only FILES (File Explorer’s “Read-only” checkbox in a file’s Properties; a read-only folder never counts), so the windows branch says “read-only”, in the word Windows uses for that checkbox in your language.",
     "screenshot": "locked-sources-one.png"
   },
-  "fileOperations.lockedSources.message": "{count, plural, one {{countText} item you’re moving is locked. Cmdr can unlock it just for the move and lock it again where it lands.} other {{countText} items you’re moving are locked. Cmdr can unlock them just for the move and lock them again where they land.}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, one {{countText} item you’re moving is read-only. Move it anyway, or skip it and move the rest?} other {{countText} items you’re moving are read-only. Move them anyway, or skip them and move the rest?}}} other {{count, plural, one {{countText} item you’re moving is locked. Cmdr can unlock it just for the move and lock it again where it lands.} other {{countText} items you’re moving are locked. Cmdr can unlock them just for the move and lock them again where they land.}}}}",
   "@fileOperations.lockedSources.message": {
-    "description": "Body of the fileOperations.lockedSources.title prompt. Says how many of the items being moved are Locked (the macOS Finder setting that stops a file from being changed or deleted), and what moving them anyway does: they're unlocked only for the move itself, and end up Locked again in their new place, exactly as the user had them. A list of the Locked items' names follows below it. \"Items\" covers both files and folders.",
+    "description": "Body of the fileOperations.lockedSources.title prompt. Says how many of the items being moved are Locked (the macOS Finder setting that stops a file from being changed or deleted), and what moving them anyway does: they're unlocked only for the move itself, and end up Locked again in their new place, exactly as the user had them. A list of the Locked items' names follows below it. \"Items\" covers both files and folders. On Windows the same question asks about read-only FILES (File Explorer’s “Read-only” checkbox in a file’s Properties; a read-only folder never counts), so the windows branch says “read-only”, in the word Windows uses for that checkbox in your language. The windows branch deliberately promises nothing about the items staying read-only where they land (a move to another drive doesn’t keep the attribute yet); it only offers the two answers its buttons give.",
     "placeholders": {
       "countText": "how many items are Locked, ready to drop into the sentence (for example 3)",
       "count": "the same number, used only to pick singular or plural"
@@ -1406,14 +1406,14 @@
     "description": "Main button of the fileOperations.lockedSources.title prompt. Moves the Locked items too: Cmdr unlocks each one right before moving it and locks it again in its new place. Short button label; a verb phrase.",
     "screenshot": "locked-sources-one.png"
   },
-  "fileOperations.lockedSources.skip": "Skip locked items",
+  "fileOperations.lockedSources.skip": "{platform, select, windows {Skip read-only items} other {Skip locked items}}",
   "@fileOperations.lockedSources.skip": {
-    "description": "Second button of the fileOperations.lockedSources.title prompt. Leaves the Locked items exactly where they are, still Locked, and moves everything else. Its neighbours are \"Move anyway\" and a plain Cancel, which stops the whole move. Short button label; a verb phrase.",
+    "description": "Second button of the fileOperations.lockedSources.title prompt. Leaves the Locked items exactly where they are, still Locked, and moves everything else. Its neighbours are \"Move anyway\" and a plain Cancel, which stops the whole move. Short button label; a verb phrase. On Windows the same question asks about read-only FILES (File Explorer’s “Read-only” checkbox in a file’s Properties; a read-only folder never counts), so the windows branch says “read-only”, in the word Windows uses for that checkbox in your language.",
     "screenshot": "locked-sources-one.png"
   },
-  "fileOperations.lockedSources.heldToast": "A move has a question for you about locked items. You’ll see it as soon as the open dialog closes.",
+  "fileOperations.lockedSources.heldToast": "{platform, select, windows {A move has a question for you about read-only items. You’ll see it as soon as the open dialog closes.} other {A move has a question for you about locked items. You’ll see it as soon as the open dialog closes.}}",
   "@fileOperations.lockedSources.heldToast": {
-    "description": "Quiet toast shown when a move needs to ask the fileOperations.lockedSources.title question, but the user is in another dialog right now. The question waits and appears by itself the moment that dialog closes, so the user doesn't need to do anything; the toast only says why it isn't up yet. \"Locked\" is the macOS Finder setting that stops a file from being changed or deleted."
+    "description": "Quiet toast shown when a move needs to ask the fileOperations.lockedSources.title question, but the user is in another dialog right now. The question waits and appears by itself the moment that dialog closes, so the user doesn't need to do anything; the toast only says why it isn't up yet. \"Locked\" is the macOS Finder setting that stops a file from being changed or deleted. On Windows the same question asks about read-only FILES (File Explorer’s “Read-only” checkbox in a file’s Properties; a read-only folder never counts), so the windows branch says “read-only”, in the word Windows uses for that checkbox in your language."
   },
   "fileOperations.transferProgress.progressBytes": "Bytes",
   "@fileOperations.transferProgress.progressBytes": {

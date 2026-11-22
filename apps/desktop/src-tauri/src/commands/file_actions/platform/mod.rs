@@ -1,5 +1,5 @@
-//! How each OS reveals a file, shows its Get Info window, and opens it in a text editor. A
-//! platform seam (`docs/guides/platform-seams.md`).
+//! How each OS reveals a file, opens its trash where the trash is a view of the OS's own, shows
+//! its Get Info window, and opens it in a text editor. A platform seam (`docs/guides/platform-seams.md`).
 
 use std::future::Future;
 
@@ -12,6 +12,28 @@ use crate::file_system::text_editor::{EditorOpenReport, OpenInEditorError};
 mod imp;
 
 const _: fn(String) -> Result<(), String> = reveal_in_file_manager;
+const _: fn(&cmdr_fs::app_path::AppPath) -> Result<TrashView, cmdr_operations::MutationError> = open_trash_view;
+
+/// What [`open_trash_view`] did.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub enum TrashView {
+    /// The OS's file manager opened the trash in a window of its own.
+    #[cfg_attr(
+        any(target_os = "macos", target_os = "linux"),
+        allow(dead_code, reason = "only Windows' Recycle Bin is a view of the OS's own")
+    )]
+    Opened,
+    /// No such view of this trash: a pane goes to its folder instead (`get_trash_dir`), or
+    /// the drive keeps no trash.
+    NoView,
+}
+
+/// "Go to trash" where the trash is a view the OS draws rather than a folder a pane lists:
+/// Windows' Recycle Bin, one Shell view of every drive's bin, opens in File Explorer when
+/// `path`'s drive keeps one. [`TrashView::NoView`] on macOS and Linux, with no I/O.
+pub(super) use imp::open_trash_view;
+
 // An `async fn` doesn't coerce to a fn pointer, so these pins name each one's arguments and the
 // output its future resolves to.
 const _: fn() = || {

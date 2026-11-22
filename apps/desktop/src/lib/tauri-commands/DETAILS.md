@@ -71,7 +71,8 @@ commands, and notable non-obvious placements.
   mirror.
 - **`write-operations.ts`**: copy/move/delete, conflict resolution, scan preview. (Size/duration formatting moved to
   `#lib/units`.)
-- **`rename.ts`**: `checkRenamePermission`, `checkRenameValidity`, `renameFile`, `moveToTrash`.
+- **`rename.ts`**: `checkRenamePermission`, `checkRenameValidity`, `renameFile`, `moveToTrash`, `getTrashDir`, and
+  `openTrashView` (the trash where the OS shows it itself: Windows' Recycle Bin).
 - **`mutation-reply.ts`**: `awaitMutation` (behind `renameFile`, `createDirectory`, `createFile`) and
   `awaitClipboardPaste` (behind `pasteClipboardAsFile`, which also carries the created file). Those commands answer
   `stillRunning` past their deadline, and this waits for the matching `mutation-settled` event, so the promise resolves

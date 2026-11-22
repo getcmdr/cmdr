@@ -840,9 +840,9 @@
   "@commands.fileGoToTrash.label": {
     "sourceHash": "687dada"
   },
-  "commands.fileGoToTrash.description": "{platform, select, windows {Öppnar Papperskorgen på enheten du bläddrar i} other {Öppnar papperskorgen på enheten du bläddrar i}}",
+  "commands.fileGoToTrash.description": "{platform, select, windows {Öppnar Papperskorgen i Utforskaren} other {Öppnar papperskorgen på enheten du bläddrar i}}",
   "@commands.fileGoToTrash.description": {
-    "sourceHash": "e4789d0"
+    "sourceHash": "c914053"
   },
   "commands.dialogConfirm.label": "Bekräfta dialogen på skärmen",
   "@commands.dialogConfirm.label": {

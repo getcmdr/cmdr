@@ -204,6 +204,12 @@ an item in the trash on purpose, because a rollback never overwrites.
   journal and lands the cursor on the item, falling back to the volume trash when no location was recorded or the
   journal read throws.
 
+Both first ask `openTrashView` (`open_trash_view`): where the OS draws the trash itself, no folder a pane lists, it
+opens there. Today that's Windows' Recycle Bin, opened in File Explorer when the drive keeps one; macOS and Linux answer
+`noView` with no I/O and take the pane path above. Asked first in the toast too, since the journaled place of a Recycle
+Bin item is a `$R…` name in `$Recycle.Bin`, nothing a pane should land on (#1332, the decision:
+`crates/cmdr-operations/src/delete/DETAILS.md` § "Windows: the Recycle Bin").
+
 Neither entry throws. The toast calls `goToTrashedItems` with `void`, so a rejection would escape as an unhandled one
 and auto-send an error report for what is usually a slow drive: `get_trash_dir` answers `MutationError::TimedOut` after
 2 s. A failed trash lookup shows the shared `locationUnreachableToast` and logs at info.

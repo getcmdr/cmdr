@@ -50,6 +50,38 @@ pub fn reveal_in_file_manager(path: String) -> Result<(), String> {
     platform::reveal_in_file_manager(path)
 }
 
+pub use platform::TrashView;
+
+/// Opens the trash of `path`'s drive in the OS's own file manager, where that trash is a view
+/// no pane lists (Windows' Recycle Bin, in File Explorer): `NoView` elsewhere and on a drive
+/// with no bin, so "Go to trash" navigates a pane (`get_trash_dir`) or says there's none. A
+/// few Win32 calls, under the 2 s read tier.
+#[tauri::command]
+#[specta::specta]
+pub async fn open_trash_view(path: String) -> Result<TrashView, cmdr_operations::MutationError> {
+    use cmdr_operations::MutationError;
+
+    // The pane's path, as the app spells it; text that's no app path has no trash to show.
+    let Ok(Some(path)) = super::wire_path::app_path(&path) else {
+        return Ok(TrashView::NoView);
+    };
+    cmdr_fs::deadline::timeout_detached_typed(
+        Duration::from_secs(2),
+        || MutationError::TimedOut,
+        |detail| MutationError::Unexpected { detail: detail.into() },
+        async move {
+            tokio::task::spawn_blocking(move || platform::open_trash_view(&path))
+                .await
+                .unwrap_or_else(|join_err| {
+                    Err(MutationError::Unexpected {
+                        detail: format!("the trash view didn't open: {join_err}").into(),
+                    })
+                })
+        },
+    )
+    .await
+}
+
 /// Opens the OS's Get Info window for a file, or says why it won't (`file_system::get_info`).
 /// A no-op where the OS has no such window.
 #[tauri::command]

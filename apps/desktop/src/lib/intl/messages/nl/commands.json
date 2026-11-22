@@ -842,9 +842,9 @@
   "@commands.fileGoToTrash.label": {
     "sourceHash": "687dada"
   },
-  "commands.fileGoToTrash.description": "{platform, select, windows {Opent de prullenbak van de schijf die je bekijkt} other {Opent de prullenmand van de schijf die je bekijkt}}",
+  "commands.fileGoToTrash.description": "{platform, select, windows {Opent de prullenbak in Verkenner} other {Opent de prullenmand van de schijf die je bekijkt}}",
   "@commands.fileGoToTrash.description": {
-    "sourceHash": "e4789d0"
+    "sourceHash": "c914053"
   },
   "commands.dialogConfirm.label": "Bevestig dialoogvenster op het scherm",
   "@commands.dialogConfirm.label": {

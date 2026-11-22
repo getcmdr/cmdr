@@ -16,6 +16,7 @@ use std::time::{Duration, Instant};
 
 use crate::ignore_poison::IgnorePoison;
 use crate::volumes::{DEFAULT_VOLUME_ID, LocationCategory, LocationInfo, NetworkMount, SmbMountInfo, VolumeInfo};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::path_grammar::{self, PathFlavor, PathKind, app_spelling};
 use cmdr_fs::volume::windows_volume_ids::{WindowsDrive, WindowsDriveKind, covering_drive};
 use cmdr_fs::volume::{MountClass, SpaceInfo, Volume, path_volume_id};
@@ -156,8 +157,14 @@ fn drive_row(drive: &WindowsDrive) -> LocationInfo {
             drive.fs_type.clone()
         },
         mount_is_read_only: drive.read_only,
-        // Only a fixed disk keeps a Recycle Bin; elsewhere a delete is for good, so it asks.
-        supports_trash: drive.kind.has_recycle_bin(),
+        // The drive's own answer, the one its volume's `has_trash` and the Recycle Bin's refusal
+        // read too (`cmdr_local::recycle_bin`): a fixed disk with its bin on. Elsewhere a delete is
+        // for good, so it asks. A share says no with no call to it.
+        supports_trash: !is_share
+            && AppPath::from_normalized(&drive.root)
+                .ok()
+                .and_then(|root| root.to_native_plain().ok())
+                .is_some_and(|root| cmdr_local::recycle_bin::drive_bin(&root).is_some()),
         ..row(&drive.id, &drive.display_name(), Path::new(&drive.root), category)
     }
 }

@@ -248,6 +248,7 @@ macro_rules! ipc_command_manifest {
                     crate::commands::multi_rename::save_multi_rename_last_settings,
                     crate::commands::rename::move_to_trash,
                     crate::commands::rename::get_trash_dir,
+                    crate::commands::file_actions::open_trash_view,
                     crate::commands::restricted_paths::get_restricted_paths,
                     crate::commands::child_window_state::get_child_window_rect,
                     crate::commands::child_window_state::set_child_window_rect,

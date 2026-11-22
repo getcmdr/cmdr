@@ -62,8 +62,9 @@ pub use staged::apply_staged;
 // per-OS arms answer in, so a door there would make it and `platform/` import each other.
 
 /// Clears `path`'s own `uchg`/`uappnd` and strips its ACL, flags first because
-/// `uchg` refuses an ACL write. Never follows a symlink. On Linux there's never
-/// anything to clear (`blockers.rs`' module docs).
+/// `uchg` refuses an ACL write. Never follows a symlink. On Windows it clears a
+/// FILE's read-only attribute, Windows' Locked; on Linux there's never anything to
+/// clear (`blockers.rs`' module docs).
 pub fn clear_blockers(path: &Path) -> Unblock {
     platform::clear_blockers(path)
 }
@@ -72,8 +73,10 @@ pub fn clear_blockers(path: &Path) -> Unblock {
 /// System flags win over the user's lock: an item wearing both can't move
 /// either way. A deny entry that only reaches the item's future children
 /// (`only_inherit`) doesn't count, and neither does an ACL that can't be read:
-/// the move then meets the refusal where it would have anyway. Always
-/// [`RemovalLock::Free`] off macOS (`blockers.rs`' module docs).
+/// the move then meets the refusal where it would have anyway. On Windows a
+/// FILE's read-only attribute is [`RemovalLock::Locked`] (a folder's is Explorer's
+/// customization marker, so never); always [`RemovalLock::Free`] on Linux
+/// (`blockers.rs`' module docs).
 pub fn removal_lock(path: &Path) -> RemovalLock {
     platform::removal_lock(path)
 }

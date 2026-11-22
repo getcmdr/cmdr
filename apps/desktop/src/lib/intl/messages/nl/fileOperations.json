@@ -877,13 +877,13 @@
   "@fileOperations.alreadyGone.neverShowAgain": {
     "sourceHash": "c9e19cb"
   },
-  "fileOperations.lockedSources.title": "Beveiligde onderdelen verplaatsen?",
+  "fileOperations.lockedSources.title": "{platform, select, windows {Alleen-lezenonderdelen verplaatsen?} other {Beveiligde onderdelen verplaatsen?}}",
   "@fileOperations.lockedSources.title": {
-    "sourceHash": "69c0785"
+    "sourceHash": "28b2287"
   },
-  "fileOperations.lockedSources.message": "{count, plural, one {{countText} onderdeel dat je verplaatst, is beveiligd. Cmdr kan de beveiliging alleen voor het verplaatsen opheffen en het onderdeel op de nieuwe plek weer beveiligen.} other {{countText} onderdelen die je verplaatst, zijn beveiligd. Cmdr kan de beveiliging alleen voor het verplaatsen opheffen en de onderdelen op de nieuwe plek weer beveiligen.}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, one {{countText} onderdeel dat je verplaatst, is alleen-lezen. Toch verplaatsen, of overslaan en de rest verplaatsen?} other {{countText} onderdelen die je verplaatst, zijn alleen-lezen. Toch verplaatsen, of overslaan en de rest verplaatsen?}}} other {{count, plural, one {{countText} onderdeel dat je verplaatst, is beveiligd. Cmdr kan de beveiliging alleen voor het verplaatsen opheffen en het onderdeel op de nieuwe plek weer beveiligen.} other {{countText} onderdelen die je verplaatst, zijn beveiligd. Cmdr kan de beveiliging alleen voor het verplaatsen opheffen en de onderdelen op de nieuwe plek weer beveiligen.}}}}",
   "@fileOperations.lockedSources.message": {
-    "sourceHash": "a82868b"
+    "sourceHash": "b2f056d"
   },
   "fileOperations.lockedSources.moreItems": "{count, plural, one {en nog {countText} onderdeel} other {en nog {countText} onderdelen}}",
   "@fileOperations.lockedSources.moreItems": {
@@ -893,13 +893,13 @@
   "@fileOperations.lockedSources.moveAnyway": {
     "sourceHash": "c3d9351"
   },
-  "fileOperations.lockedSources.skip": "Sla beveiligde onderdelen over",
+  "fileOperations.lockedSources.skip": "{platform, select, windows {Sla alleen-lezenonderdelen over} other {Sla beveiligde onderdelen over}}",
   "@fileOperations.lockedSources.skip": {
-    "sourceHash": "e70b85a"
+    "sourceHash": "2fd312f"
   },
-  "fileOperations.lockedSources.heldToast": "Er is een vraag voor je over het verplaatsen van beveiligde onderdelen. Je ziet de vraag zodra het geopende venster sluit.",
+  "fileOperations.lockedSources.heldToast": "{platform, select, windows {Er is een vraag voor je over het verplaatsen van alleen-lezenonderdelen. Je ziet de vraag zodra het geopende venster sluit.} other {Er is een vraag voor je over het verplaatsen van beveiligde onderdelen. Je ziet de vraag zodra het geopende venster sluit.}}",
   "@fileOperations.lockedSources.heldToast": {
-    "sourceHash": "c76d27a"
+    "sourceHash": "4764e05"
   },
   "fileOperations.transferProgress.progressBytes": "Bytes",
   "@fileOperations.transferProgress.progressBytes": {

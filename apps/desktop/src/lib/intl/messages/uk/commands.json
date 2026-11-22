@@ -840,9 +840,9 @@
   "@commands.fileGoToTrash.label": {
     "sourceHash": "687dada"
   },
-  "commands.fileGoToTrash.description": "{platform, select, windows {Відкриває Кошик диска, який ви переглядаєте} other {Відкриває Смітник диска, який ви переглядаєте}}",
+  "commands.fileGoToTrash.description": "{platform, select, windows {Відкриває Кошик у Провіднику} other {Відкриває Смітник диска, який ви переглядаєте}}",
   "@commands.fileGoToTrash.description": {
-    "sourceHash": "e4789d0"
+    "sourceHash": "c914053"
   },
   "commands.dialogConfirm.label": "Підтвердити діалогове вікно на екрані",
   "@commands.dialogConfirm.label": {

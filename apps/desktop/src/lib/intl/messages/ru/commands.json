@@ -840,9 +840,9 @@
   "@commands.fileGoToTrash.label": {
     "sourceHash": "687dada"
   },
-  "commands.fileGoToTrash.description": "{platform, select, windows {Открыть Корзину просматриваемого диска} other {Открыть Корзину просматриваемого диска}}",
+  "commands.fileGoToTrash.description": "{platform, select, windows {Открыть Корзину в Проводнике} other {Открыть Корзину просматриваемого диска}}",
   "@commands.fileGoToTrash.description": {
-    "sourceHash": "e4789d0"
+    "sourceHash": "c914053"
   },
   "commands.dialogConfirm.label": "Подтвердить диалог на экране",
   "@commands.dialogConfirm.label": {
