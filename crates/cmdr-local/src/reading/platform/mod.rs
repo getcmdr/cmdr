@@ -45,6 +45,8 @@ const _: fn(&Path) -> io::Result<ReadDir> = read_dir;
 pub(crate) type Located<'a> = (Cow<'a, Path>, Option<AppPathBuf>);
 const _: fn(&Path) -> io::Result<Located<'_>> = located;
 const _: fn(&Path, &str) -> Option<PathBuf> = text_child;
+const _: fn(&Path) -> Option<PathBuf> = app_spelling_of;
+const _: fn(&Path) -> io::Result<bool> = named_exactly;
 const _: fn(&Metadata) -> OsFields = os_fields;
 const _: fn(&Metadata) -> u32 = mode_of;
 /// `read_entries`' shape: the folder, its `/.hidden` names, the tally, and who picks the lister.
@@ -60,6 +62,15 @@ const _: fn(&Path) -> Option<u64> = added_at_by_path;
 /// differs from today's text of the OS path (`None` on macOS and Linux, where it doesn't).
 /// On Windows either spelling (`C:\x`, `C:/x`) crosses through `from_native_unicode`.
 pub(crate) use imp::located;
+
+/// The app spelling of a path the OS handed back (a change watch's event path), where it
+/// differs from the OS path's text: `C:/x` for `\\?\C:\x` on Windows, `None` on macOS and Linux.
+pub(crate) use imp::app_spelling_of;
+
+/// Whether the entry at the OS path `os` is on disk under exactly that last name. On Windows
+/// a stat of `a.txt` also answers for `A.txt`, so this asks the folder for the name it holds;
+/// macOS and Linux answer `true` without a syscall, as their stat always did.
+pub(crate) use imp::named_exactly;
 
 /// The child `name` of the OS folder `dir` by the name's TEXT, the join every row took before
 /// app paths: on macOS and Linux `dir.join(name)`, its escapes undecoded. Windows has none (its

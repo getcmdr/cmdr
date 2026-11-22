@@ -29,6 +29,16 @@ pub(crate) fn located(path: &Path) -> io::Result<super::Located<'_>> {
     Ok((Cow::Borrowed(path), None))
 }
 
+/// The OS path's text is already the app path's, so there's no other spelling.
+pub(crate) fn app_spelling_of(_os: &Path) -> Option<PathBuf> {
+    None
+}
+
+/// Not asked: the stat answers for the name as given, as it always has here.
+pub(crate) fn named_exactly(_os: &Path) -> io::Result<bool> {
+    Ok(true)
+}
+
 pub(crate) fn text_child(dir: &Path, name: &str) -> Option<PathBuf> {
     Some(dir.join(name))
 }

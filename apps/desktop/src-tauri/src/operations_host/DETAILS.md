@@ -131,6 +131,11 @@ called beside a syscall on every file landing, so it stays one prefix-checked in
 announce reaches the hook. The engine's own announce order is pinned against its seam, in
 `crates/cmdr-operations/src/own_write_announce_tests.rs`.
 
+Each announce also goes to `watcher::release_watches_at_or_below`: a Windows listing watch on the announced folder or
+below it closes its handle first, since NTFS refuses to rename a folder above an open one (#1340). An announce with no
+such watch costs a read lock and a prefix compare per open listing; FSEvents and inotify watches never match.
+`file_system/DETAILS.md` § "Windows listing watches".
+
 ## The drive index (`index.rs`)
 
 `AppOperationIndex` answers `OperationIndex` from `index_host::index()`, reached per call (the index is built in
