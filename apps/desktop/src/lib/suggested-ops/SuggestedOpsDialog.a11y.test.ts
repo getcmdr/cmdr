@@ -132,6 +132,7 @@ function group(overrides: Record<string, unknown> = {}) {
     reversible: 'restoreMove',
     runsAs: null,
     destinationState: 'exists',
+    destinationLandsOn: null,
     liveOpCount: 3,
     totalOpCount: 3,
     fromSelector: false,
@@ -323,6 +324,13 @@ describe('disclosure', () => {
     const host = mountDialog()
 
     expect(host.textContent).toContain('Cmdr couldn’t check the target folder')
+  })
+
+  it('names where the files really go when a link leads the target onto another drive', () => {
+    seed({ destinationLandsOn: '/Volumes/Other/inbox' })
+    const host = mountDialog()
+
+    expect(host.textContent).toContain('Through a link, the files go to /Volumes/Other/inbox on another drive')
   })
 
   it('marks a group a pattern produced', () => {
@@ -535,6 +543,7 @@ describe('a server card', () => {
     destination: null,
     destinationVolumeName: null,
     destinationState: 'notApplicable',
+    destinationLandsOn: null,
     sourceFolder: null,
     liveOpCount: 0,
     totalOpCount: 0,

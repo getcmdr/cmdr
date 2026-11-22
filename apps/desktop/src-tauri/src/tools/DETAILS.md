@@ -262,6 +262,10 @@ or a handler reads it. Handlers keep reading strings; the strings are the resolv
   physical root with no other registered root nested between (a root registered behind a link, `/tmp/x` on macOS, a
   `subst` drive or a mapped share on Windows, still holds its own folders). A non-Unicode physical name compares by
   its nearest Unicode ancestor, and a walk that can't finish refuses `pathUnanswered`.
+- **A review re-checks a stored destination** (#1354): a link can appear under it while the group waits, so the review
+  read (`commands/agent/suggested_ops.rs::destination_lands_on`, every render) re-runs the `WriteTarget` walk through
+  `write_lands_off_volume` and the card names `destinationLandsOn`, where the files really go. Disclosed, ❌ never
+  refused at approval: an approved group runs as if the person started it (`agent/suggested_ops/CLAUDE.md`).
 - **Which fields** is `fields(tool)`: JSON pointers with `*` over arrays, plus a scope string (split and re-spelled by the search parser's own rules,
   `cmdr_search::query::split_scope_segments` and `escape_scope_value`, so a quoted or `\,`-escaped part can't hide a
   `..`; `!` excludes; only absolute parts resolved, a `~name` staying a pattern) and `await`'s `value` under `condition: "path"`.

@@ -365,6 +365,16 @@ pub(crate) async fn agent_path(text: &str, using: Use, host: &AppHost) -> Result
     Ok(typed.path.into_string())
 }
 
+/// Where a write INTO `path` really lands when a link leads it onto another volume than its
+/// text names, else `None`: the [`Use::WriteTarget`] check a proposal passed at creation,
+/// re-run each time its review renders, since a link can appear under a destination while the
+/// group waits. Disclosure only: ❌ never a refusal at execution, where an approved group runs
+/// as if the person had started it (`agent/suggested_ops/CLAUDE.md`). `None` too when the walk
+/// can't finish; the card's own check says what it couldn't tell.
+pub(crate) async fn write_lands_off_volume(path: &AppPath, host: &AppHost) -> Option<AppPathBuf> {
+    off_volume(path, true, host).await.ok().flatten()
+}
+
 /// `/x` but not `//server` or a scheme.
 fn posix_shaped(text: &str) -> bool {
     text.starts_with('/') && !text.starts_with("//")

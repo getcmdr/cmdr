@@ -126,6 +126,7 @@ fn group(id: i64, set_id: i64, verb: ProposalVerb) -> GroupSummary {
 fn facts(destination_state: DestinationState) -> GroupReadFacts {
     GroupReadFacts {
         destination_state,
+        destination_lands_on: None,
         source_volume_name: None,
         destination_volume_name: None,
         runs_as: None,
@@ -317,6 +318,7 @@ fn a_group_view_carries_every_fact_the_user_judges_it_by() {
         group(7, 2, ProposalVerb::Move),
         GroupReadFacts {
             destination_state: DestinationState::WillBeCreated,
+            destination_lands_on: Some("/Volumes/Other/inbox".into()),
             source_volume_name: Some("Macintosh HD".into()),
             destination_volume_name: Some("Macintosh HD".into()),
             runs_as: Some(RunsAs::PermanentDelete),
@@ -333,6 +335,7 @@ fn a_group_view_carries_every_fact_the_user_judges_it_by() {
     assert_eq!(view.source_volume_id, "root");
     assert_eq!(view.destination.as_deref(), Some("/Users/someone/Documents/Invoices"));
     assert_eq!(view.destination_volume_name.as_deref(), Some("Macintosh HD"));
+    assert_eq!(view.destination_lands_on.as_deref(), Some("/Volumes/Other/inbox"));
     assert_eq!(view.source_volume_name.as_deref(), Some("Macintosh HD"));
     assert_eq!(
         view.destination_volume_id.as_deref(),

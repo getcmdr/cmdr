@@ -139,6 +139,10 @@ pub struct SuggestedGroupView {
     pub runs_as: Option<RunsAs>,
     /// Whether that destination is already there, and so whether approving creates it.
     pub destination_state: DestinationState,
+    /// Where a write into `destination` really lands, when a link leads it onto another volume than
+    /// its text names. Checked at every read, since a link can appear under it while the group
+    /// waits; disclosed, ❌ never refused at approval. `None` when it lands where it says.
+    pub destination_lands_on: Option<String>,
     /// Ops in the live set: what would run.
     pub live_op_count: u64,
     /// Every op row the group has, including the ones a previous review deselected.
@@ -223,8 +227,10 @@ pub async fn suggested_ops_list(app: AppHandle) -> Result<Vec<SuggestedSweepView
     // The destination checks touch the filesystem, so they run OUTSIDE the database read, all
     // at once, each under its own deadline: one unresponsive mount costs one row's certainty
     // and the list one budget, never N of them back to back.
-    let states =
-        futures_util::future::join_all(summaries.iter().map(|(summary, _)| destination_state(&summary.group))).await;
+    let checks = futures_util::future::join_all(summaries.iter().map(|(summary, _)| async {
+        futures_util::join!(destination_state(&summary.group), destination_lands_on(&summary.group))
+    }))
+    .await;
     let manager = crate::file_system::volume::manager::get_volume_manager();
     // In memory, ❌ never the network, and only when a server card is there to describe.
     let saved = summaries
@@ -233,9 +239,9 @@ pub async fn suggested_ops_list(app: AppHandle) -> Result<Vec<SuggestedSweepView
         .then(|| SavedServers::now(&app));
     let rows = summaries
         .into_iter()
-        .zip(states)
-        .map(|((summary, sweep), destination_state)| {
-            let facts = read_facts(
+        .zip(checks)
+        .map(|((summary, sweep), (destination_state, lands_on))| {
+            let mut facts = read_facts(
                 &summary.group,
                 VolumeFacts {
                     registered: &|id| manager.get(id),
@@ -243,6 +249,7 @@ pub async fn suggested_ops_list(app: AppHandle) -> Result<Vec<SuggestedSweepView
                 },
                 destination_state,
             );
+            facts.destination_lands_on = lands_on;
             let server = summary
                 .server
                 .as_ref()
@@ -258,6 +265,7 @@ pub async fn suggested_ops_list(app: AppHandle) -> Result<Vec<SuggestedSweepView
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct GroupReadFacts {
     destination_state: DestinationState,
+    destination_lands_on: Option<String>,
     source_volume_name: Option<String>,
     destination_volume_name: Option<String>,
     runs_as: Option<RunsAs>,
@@ -293,6 +301,7 @@ fn read_facts(group: &ProposalGroup, volumes: VolumeFacts<'_>, destination_state
     let source = (volumes.registered)(&group.source_volume_id);
     GroupReadFacts {
         destination_state,
+        destination_lands_on: None,
         source_volume_name: name_of(&group.source_volume_id),
         destination_volume_name: destination_volume_id_of(group).and_then(name_of),
         runs_as: runs_as(group.verb, source.as_deref()),
@@ -444,6 +453,7 @@ fn to_group_view(
         reversible: group.reversible,
         runs_as: facts.runs_as,
         destination_state: facts.destination_state,
+        destination_lands_on: facts.destination_lands_on,
         live_op_count: summary.live_op_count,
         total_op_count: summary.total_op_count,
         from_selector: group.selector.is_some(),
@@ -560,6 +570,27 @@ async fn destination_state(group: &ProposalGroup) -> DestinationState {
             DestinationState::Unknown
         }
     }
+}
+
+/// The place a write into the group's destination really lands, when a link leads it off the
+/// volume its text names (`tools/agent_path.rs::write_lands_off_volume`), for every verb whose
+/// card shows a destination. A rename's parent is where its rows already are, so it's not asked.
+async fn destination_lands_on(group: &ProposalGroup) -> Option<String> {
+    if matches!(
+        group.verb,
+        ProposalVerb::Rename | ProposalVerb::Trash | ProposalVerb::Delete
+    ) {
+        return None;
+    }
+    let destination = group.destination.as_ref()?;
+    let lands_on =
+        crate::tools::agent_path::write_lands_off_volume(destination, &crate::go_to_path::AppHost::registry()).await?;
+    log::info!(
+        target: "agent::suggested_ops",
+        "group {}: its destination leads through a link onto another volume",
+        group.id
+    );
+    Some(lands_on.into_string())
 }
 
 /// Why the destination check gave no answer. Only ever logged.
