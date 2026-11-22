@@ -21,6 +21,37 @@ use super::super::{FsChangeEvent, FsEventFlags, WatcherBackend, WatcherError};
 /// No journal to replay: a restart rescans.
 pub(crate) const SUPPORTS_EVENT_REPLAY: bool = false;
 
+/// Whether a branch-watched volume is watched at its ROOT, one recursive watch whatever the
+/// branches, or branch by branch.
+///
+/// - **Windows: the root.** A recursive `ReadDirectoryChangesW` is one directory handle and one
+///   pending read for a whole subtree, so the volume root costs what any branch costs. A watch
+///   per branch cost a handle, a semaphore, and a read buffer each, nested watches each
+///   reported the same change, and every open handle kept the user from renaming any folder
+///   above it; a phased index of `C:` reached about 16,000 of them on its second launch (#1353).
+/// - **Linux: the branches.** inotify's recursive mode costs one watch per DIRECTORY against
+///   `max_user_watches`, so the root would spend the machine's budget on ground we don't answer
+///   for ([`NotifyBackend::start_branches`]).
+const WATCHES_VOLUME_ROOT: bool = cfg!(target_os = "windows");
+
+/// The OS API under `notify` here, for the log.
+const OS_API: &str = if cfg!(target_os = "windows") {
+    "ReadDirectoryChangesW"
+} else {
+    "inotify"
+};
+
+/// What a branch-watched volume arms watches on: its root where one recursive watch is cheap
+/// ([`WATCHES_VOLUME_ROOT`]), else each branch. The loop's `WatchScope` keeps events outside the
+/// branches out of the index either way, as it does for FSEvents on macOS.
+fn roots_to_watch(volume_root: &Path, branches: &[PathBuf], watches_volume_root: bool) -> Vec<PathBuf> {
+    if watches_volume_root {
+        vec![volume_root.to_path_buf()]
+    } else {
+        branches.to_vec()
+    }
+}
+
 /// Start watching `root`; `since_when` is ignored (no journal replay).
 pub(crate) fn start(
     root: &Path,
@@ -68,30 +99,31 @@ pub(crate) struct NotifyBackend {
     /// The roots the OS accepted a watch on, which is the ground an overflow puts
     /// in doubt. Shared with the forward task, and grown by `watch_branch`.
     watched_roots: WatchedRoots,
+    /// Branches `watch_branch` was asked for that aren't registered yet.
+    pending: Arc<PendingWatches>,
     /// Task that reads notify events from the channel and forwards them.
     forward_task: Option<tokio::task::JoinHandle<()>>,
 }
 
 impl NotifyBackend {
-    /// Watch a volume the way a branch-watched volume has to be watched here: the
-    /// covered `branches` themselves, not the volume root.
+    /// Watch a volume the way a branch-watched volume has to be watched here: on
+    /// Linux the covered `branches` themselves, on Windows the volume root
+    /// ([`WATCHES_VOLUME_ROOT`]).
     ///
-    /// ❌ Don't copy macOS's shape and watch `_volume_root` instead. `notify`'s
-    /// recursive mode registers ONE inotify watch per directory against
-    /// `max_user_watches` (8,192 by default on many distributions), so watching a
-    /// whole drive to then discard most of its events would spend the machine's
-    /// watch budget on ground we don't answer for — and fail outright on a big
-    /// tree. FSEvents has no such cost, which is why the two platforms differ here
-    /// and nowhere else in this file.
+    /// ❌ Don't copy macOS's shape on Linux. `notify`'s recursive inotify mode
+    /// registers ONE watch per directory against `max_user_watches` (8,192 by
+    /// default on many distributions), so watching a whole drive to then discard
+    /// most of its events would spend the machine's watch budget on ground we
+    /// don't answer for — and fail outright on a big tree.
     fn start_branches(
-        _volume_root: &Path,
+        volume_root: &Path,
         branches: &[PathBuf],
         _since_when: u64,
         event_sender: mpsc::UnboundedSender<FsChangeEvent>,
     ) -> Result<Self, WatcherError> {
         use notify::Watcher;
 
-        let roots = branches;
+        let roots = &roots_to_watch(volume_root, branches, WATCHES_VOLUME_ROOT);
         let running = Arc::new(AtomicBool::new(true));
         let event_counter = Arc::new(AtomicU64::new(1));
 
@@ -127,7 +159,7 @@ impl NotifyBackend {
         // is then unfalsifiable from a log alone (CI run 33909203247).
         let root_count = roots.len().max(1);
         log::info!(
-            "Watcher: started on {root_count} path(s) (inotify, recursive): {}",
+            "Watcher: started on {root_count} path(s) ({OS_API}, recursive): {}",
             std::fmt::from_fn(|f| {
                 for (i, root) in roots.iter().enumerate() {
                     if i > 0 {
@@ -175,31 +207,46 @@ impl NotifyBackend {
             event_counter,
             watcher,
             watched_roots,
+            pending: Arc::default(),
             forward_task: Some(forward_task),
         })
     }
 }
 
 impl WatcherBackend for NotifyBackend {
-    /// Also watch `branch`, on a watcher that's already running.
+    /// Also watch `branch`, on a watcher that's already running. A no-op where the
+    /// volume root's watch already carries it ([`WATCHES_VOLUME_ROOT`]).
     ///
     /// The registration walks the branch adding one inotify watch per directory,
     /// which is slow enough on a big tree to matter, so it runs on a blocking task
     /// rather than on the caller's thread (a search's, holding the index
-    /// registry's lock). The window that opens is the one between asking and
-    /// landing; the branch is being WALKED across it, and its events buffer until
-    /// the walk ends either way.
+    /// registry's lock). ONE task drains every branch asked for meanwhile
+    /// ([`PendingWatches`]): a task per branch parked a blocking-pool thread per
+    /// branch on the watcher's lock, and a phased index asks for thousands, which
+    /// filled the runtime's pool and timed out every other blocking read in the
+    /// app (#1353). The window that opens is the one between asking and landing;
+    /// the branch is being WALKED across it, and its events buffer until the walk
+    /// ends either way.
     fn watch_branch(&self, branch: &Path) {
+        if WATCHES_VOLUME_ROOT || !self.pending.push(branch.to_path_buf()) {
+            return;
+        }
         let watcher = Arc::clone(&self.watcher);
         let watched_roots = Arc::clone(&self.watched_roots);
-        let branch = branch.to_path_buf();
+        let pending = Arc::clone(&self.pending);
+        let running = Arc::clone(&self.running);
         crate::indexing::host::runtime::spawn(async move {
-            let _ = tokio::task::spawn_blocking(move || match watch_one(&watcher, &branch) {
-                Ok(()) => {
-                    note_watched(&watched_roots, &branch);
-                    log::info!("Watcher: now watching branch {}", LogPrivate::dir_path(&branch));
+            let _ = tokio::task::spawn_blocking(move || {
+                let mut drain = pending.drain();
+                while let Some(branch) = drain.next(&running) {
+                    match watch_one(&watcher, &branch) {
+                        Ok(()) => {
+                            note_watched(&watched_roots, &branch);
+                            log::info!("Watcher: now watching branch {}", LogPrivate::dir_path(&branch));
+                        }
+                        Err(e) => log::warn!("Watcher: can't watch {}: {e}", LogPrivate::dir_path(&branch)),
+                    }
                 }
-                Err(e) => log::warn!("Watcher: can't watch {}: {e}", LogPrivate::dir_path(&branch)),
             })
             .await;
         });
@@ -257,6 +304,77 @@ fn watch_one(watcher: &std::sync::Mutex<notify::RecommendedWatcher>, root: &Path
         })
 }
 
+/// Branches waiting for their watch, and whether a task is already draining them, so a
+/// burst of `watch_branch` calls holds ONE blocking-pool thread, however long it is.
+// DEFAULT-OK: an empty queue with no drain running is how every watcher starts.
+#[derive(Default)]
+struct PendingWatches {
+    state: std::sync::Mutex<Pending>,
+}
+
+// DEFAULT-OK: as above.
+#[derive(Default)]
+struct Pending {
+    queue: std::collections::VecDeque<PathBuf>,
+    draining: bool,
+}
+
+impl PendingWatches {
+    /// Queue `branch`. True when no drain is running, so the caller must start one
+    /// ([`Self::drain`]).
+    fn push(&self, branch: PathBuf) -> bool {
+        let mut state = self.state.lock_ignore_poison();
+        state.queue.push_back(branch);
+        !std::mem::replace(&mut state.draining, true)
+    }
+
+    /// The one drain a `push` that returned true asked for.
+    fn drain(&self) -> Drain<'_> {
+        Drain {
+            pending: self,
+            ended: false,
+        }
+    }
+}
+
+/// The running drain. However it ends (the queue ran dry, the watcher stopped, or a
+/// registration panicked), the mark goes with it, so the next `push` starts a new one:
+/// a mark left up would make every later branch wait for a drain that's gone.
+struct Drain<'a> {
+    pending: &'a PendingWatches,
+    /// `next` already took the mark down, under the lock that found the queue empty. A
+    /// second take-down on drop could clear the mark of a NEWER drain a `push` started
+    /// since, and let a third run beside it.
+    ended: bool,
+}
+
+impl Drain<'_> {
+    /// The next branch to register, or `None`, which ends the drain under the same lock
+    /// that found the queue empty: a `push` that lands after it starts a new drain, one
+    /// that lands before it is drained here. A stopped watcher (`running` false) drops
+    /// what's left, since nobody reads its events.
+    fn next(&mut self, running: &AtomicBool) -> Option<PathBuf> {
+        let mut state = self.pending.state.lock_ignore_poison();
+        if !running.load(Ordering::Relaxed) {
+            state.queue.clear();
+        }
+        let next = state.queue.pop_front();
+        if next.is_none() {
+            state.draining = false;
+            self.ended = true;
+        }
+        next
+    }
+}
+
+impl Drop for Drain<'_> {
+    fn drop(&mut self) {
+        if !self.ended {
+            self.pending.state.lock_ignore_poison().draining = false;
+        }
+    }
+}
+
 /// The roots a running watcher holds a watch on.
 type WatchedRoots = Arc<std::sync::Mutex<Vec<PathBuf>>>;
 
@@ -284,11 +402,15 @@ fn note_watched(watched_roots: &WatchedRoots, root: &Path) {
 ///
 /// - **inotify**: `IN_Q_OVERFLOW` arrives as `EventKind::Other` with `Flag::Rescan`.
 ///   The kernel queues one per overflow episode, however many events it dropped.
-/// - **`ReadDirectoryChangesW`**: never. `notify` ignores the completion's byte
-///   count, so a notification that overflowed its 16 KiB buffer (zero bytes, meaning
-///   "enumerate the directory yourself") reads as an empty batch. Nothing here can
-///   see it, so a Windows index can still drift after a burst (#1128). The flag is
-///   `notify`'s contract for every backend, so this handles it the day Windows sets it.
+/// - **`ReadDirectoryChangesW`**: a zero-byte completion or `ERROR_NOTIFY_ENUM_DIR`
+///   (its 64 KiB buffer overflowed: "enumerate the directory yourself") arrives as
+///   `EventKind::Other` with `Flag::Rescan`, through the vendored `notify`'s patch
+///   (`vendor/notify/CMDR-PATCH.md`, #1128). With the volume root the only watch
+///   there, its anchor is the root, which the branch scope re-anchors to EVERY branch:
+///   one overflow re-walks all walked ground, once per branch's throttle window. The
+///   buffer is what keeps that rarer (a burst of about 3,800 files overflowed 16 KiB and
+///   not 64 KiB on an idle builder, though 64 KiB too while an index walk held both
+///   cores, 2026-11-22; `watch/DETAILS.md` § "When the OS drops events").
 fn rescan_anchors(watched_roots: &[PathBuf], counter: &AtomicU64) -> Vec<FsChangeEvent> {
     log::info!(
         "Watcher: the system dropped file change events (its queue overflowed), so {} will be rescanned",
@@ -469,6 +591,123 @@ mod tests {
         let results = translate_notify_event(overflow_event(), &AtomicU64::new(1), &roots);
 
         assert_eq!(results.len(), 2);
+    }
+
+    /// #1353: a phased index of `C:` armed one `ReadDirectoryChangesW` per walked
+    /// branch, about 16,000 on its second launch. Windows watches the volume root once.
+    #[test]
+    fn a_branch_watched_volume_arms_its_root_where_a_recursive_watch_is_cheap() {
+        let root = PathBuf::from("/vol");
+        let branches = vec![PathBuf::from("/vol/a"), PathBuf::from("/vol/b/c")];
+
+        assert_eq!(roots_to_watch(&root, &branches, true), vec![root.clone()]);
+        assert_eq!(roots_to_watch(&root, &branches, false), branches);
+        assert_eq!(WATCHES_VOLUME_ROOT, cfg!(target_os = "windows"));
+    }
+
+    /// #1353: a task per `watch_branch` parked a blocking-pool thread per branch.
+    #[test]
+    fn a_burst_of_branches_starts_one_drain() {
+        let pending = PendingWatches::default();
+
+        assert!(pending.push(PathBuf::from("/a")), "the first branch starts the drain");
+        assert!(!pending.push(PathBuf::from("/b")), "the running drain takes the second");
+        assert!(!pending.push(PathBuf::from("/c")));
+
+        let running = AtomicBool::new(true);
+        let mut drain = pending.drain();
+        let drained: Vec<String> = std::iter::from_fn(|| drain.next(&running))
+            .map(|branch| branch.to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(drained, ["/a", "/b", "/c"]);
+        assert!(
+            pending.push(PathBuf::from("/d")),
+            "once the drain found the queue empty, the next branch starts a new one"
+        );
+    }
+
+    /// The handoff between a drain finding the queue empty and a `push` racing it: every
+    /// branch pushed from many threads is registered exactly once, and no drain is left
+    /// marked running with work queued behind it (a lost wakeup would strand a branch
+    /// unwatched for the session).
+    #[test]
+    fn branches_pushed_from_many_threads_are_each_drained_exactly_once() {
+        use std::collections::HashMap;
+        use std::sync::Mutex;
+
+        const THREADS: usize = 8;
+        const PER_THREAD: usize = 500;
+        let pending = Arc::new(PendingWatches::default());
+        let running = Arc::new(AtomicBool::new(true));
+        let seen = Arc::new(Mutex::new(HashMap::<PathBuf, usize>::new()));
+        let drains = Arc::new(Mutex::new(Vec::new()));
+
+        let pushers: Vec<_> = (0..THREADS)
+            .map(|t| {
+                let (pending, running, seen, drains) = (
+                    Arc::clone(&pending),
+                    Arc::clone(&running),
+                    Arc::clone(&seen),
+                    Arc::clone(&drains),
+                );
+                std::thread::spawn(move || {
+                    for i in 0..PER_THREAD {
+                        if !pending.push(PathBuf::from(format!("/t{t}/b{i}"))) {
+                            continue;
+                        }
+                        let (pending, running, seen) = (Arc::clone(&pending), Arc::clone(&running), Arc::clone(&seen));
+                        drains.lock_ignore_poison().push(std::thread::spawn(move || {
+                            let mut drain = pending.drain();
+                            while let Some(branch) = drain.next(&running) {
+                                *seen.lock_ignore_poison().entry(branch).or_default() += 1;
+                            }
+                        }));
+                    }
+                })
+            })
+            .collect();
+        for pusher in pushers {
+            pusher.join().unwrap();
+        }
+        for drain in std::mem::take(&mut *drains.lock_ignore_poison()) {
+            drain.join().unwrap();
+        }
+
+        let seen = seen.lock_ignore_poison();
+        assert_eq!(seen.len(), THREADS * PER_THREAD, "every branch registered");
+        assert!(seen.values().all(|&count| count == 1), "and none twice");
+        assert!(pending.push(PathBuf::from("/after")), "no drain is left marked running");
+    }
+
+    /// A registration that panics ends its drain, ❌ never the next branch's watch: the
+    /// mark has to come down with it.
+    #[test]
+    fn a_drain_that_panics_lets_the_next_branch_start_a_new_one() {
+        let pending = PendingWatches::default();
+        assert!(pending.push(PathBuf::from("/a")));
+        assert!(!pending.push(PathBuf::from("/b")));
+
+        let unwound = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let mut drain = pending.drain();
+            let _ = drain.next(&AtomicBool::new(true));
+            panic!("notify panicked registering /a");
+        }));
+
+        assert!(unwound.is_err());
+        assert!(pending.push(PathBuf::from("/c")), "the panicked drain's mark came down");
+    }
+
+    /// A watcher that stopped drops what its drain still holds: nobody reads its events.
+    #[test]
+    fn a_stopped_watcher_drains_nothing_more() {
+        let pending = PendingWatches::default();
+        assert!(pending.push(PathBuf::from("/a")));
+        assert!(!pending.push(PathBuf::from("/b")));
+
+        let mut drain = pending.drain();
+        assert_eq!(drain.next(&AtomicBool::new(false)), None);
+        drop(drain);
+        assert!(pending.push(PathBuf::from("/c")), "and the next push starts afresh");
     }
 
     #[test]

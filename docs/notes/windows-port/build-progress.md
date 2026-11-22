@@ -457,6 +457,17 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   `real-windows-check-2026-11-19.md` § "PR #1349 on the desktop". Gotcha: with the drive index on, the app held about
   550 threads while it walked `C:` and every 2 s volume read timed out (#1353), so the run set `indexing.enabled: false`
   in its own `CMDR_DATA_DIR`'s `settings.json`. `cmdr-m6` is back on `origin/main`, clean.
+- **2026-11-22, the index watcher's thread flood** (#1353; the warm pair, `CARGO_BUILD_JOBS=2`, a debug
+  `pnpm tauri build --debug --no-bundle` 12m 51s warm; the app run with `CMDR_DATA_DIR` under `C:\Users\Admin` and
+  indexing on, sampled every 20–25 s with `Get-Process` and MCP `list_volumes`): before, a first launch armed about
+  6,000 per-branch `ReadDirectoryChangesW` watches (12,000 handles, 50–120 threads); the SECOND launch on that index
+  reached 33,000 handles and 550 threads about four minutes in, and `list_volumes` lost `D:` (tokio's 512-thread
+  blocking pool full of `watch_branch` tasks). After (one root watch): 530–580 handles and 39–54 threads across both
+  launches, every `list_volumes` complete in about 1 s, and a file made under `C:\Users\Admin` reached the index.
+  Gotchas: an earlier run with the data dir on `D:` never flooded, so reproduce on `C:`; and NTFS lists a file another
+  process is appending to at a stale size (`cmdr.log` read 0 bytes for its first minutes while holding 3,490 lines,
+  #1359), so read a log's content, never its listed size. The `nav_to_path` timeout in the task 35 mount-table entry was
+  most likely this flood. `cmdr-m6` is back on `origin/main`, clean.
 - **2026-11-22, task 35's streams, copy scan, and node identity** (PR #1367; the warm pair, `CARGO_BUILD_JOBS=2`; a
   debug app build 12m 44s warm): `LocalWindowsVolume` shares the POSIX volume's stream and copy-scan bodies
   (`crates/cmdr-local/DETAILS.md` § "The Windows sibling") and answers `node_identity`, and the copy ledger's node falls

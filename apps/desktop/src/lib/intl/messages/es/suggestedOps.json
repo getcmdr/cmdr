@@ -212,6 +212,10 @@
   "@suggestedOps.folderWillBeCreatedTooltip": {
     "sourceHash": "2d28b7c"
   },
+  "suggestedOps.destinationLandsOn": "Un enlace envía los archivos a otra unidad: {path}",
+  "@suggestedOps.destinationLandsOn": {
+    "sourceHash": "d35d382"
+  },
   "suggestedOps.destinationUnknown": "Cmdr no ha podido comprobar la carpeta de destino",
   "@suggestedOps.destinationUnknown": {
     "sourceHash": "dc78d1d"

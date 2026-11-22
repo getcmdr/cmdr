@@ -212,6 +212,10 @@
   "@suggestedOps.folderWillBeCreatedTooltip": {
     "sourceHash": "2d28b7c"
   },
+  "suggestedOps.destinationLandsOn": "有個連結會把檔案送到另一個磁碟機：{path}",
+  "@suggestedOps.destinationLandsOn": {
+    "sourceHash": "d35d382"
+  },
   "suggestedOps.destinationUnknown": "Cmdr 無法確認目標資料夾",
   "@suggestedOps.destinationUnknown": {
     "sourceHash": "dc78d1d"

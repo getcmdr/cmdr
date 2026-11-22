@@ -336,11 +336,11 @@ pub async fn read_resource<R: Runtime>(app: &tauri::AppHandle<R>, uri: &str) -> 
         }
         "cmdr://importance" => {
             let data_dir = crate::config::resolved_app_data_dir(app).map_err(ResourceError::Unavailable)?;
+            let q = importance::typed_query(query, &crate::go_to_path::AppHost::registry())
+                .await
+                .map_err(ResourceError::Path)?;
             let now = indexing::now_unix_seconds();
-            (
-                importance::build_importance_resource(&data_dir, query, now),
-                "text/plain",
-            )
+            (importance::build_importance_resource(&data_dir, &q, now), "text/plain")
         }
         "cmdr://settings" => {
             // The webview builds this one, and a wake can catch it asleep or gone.

@@ -27,6 +27,7 @@ const groupNamed = (groupId: number, displayName: string) => ({
   reversible: 'restoreMove',
   runsAs: null,
   destinationState: 'exists',
+  destinationLandsOn: null,
   liveOpCount: 3,
   totalOpCount: 3,
   fromSelector: false,

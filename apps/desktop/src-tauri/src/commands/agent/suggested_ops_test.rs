@@ -126,6 +126,7 @@ fn group(id: i64, set_id: i64, verb: ProposalVerb) -> GroupSummary {
 fn facts(destination_state: DestinationState) -> GroupReadFacts {
     GroupReadFacts {
         destination_state,
+        destination_lands_on: None,
         source_volume_name: None,
         destination_volume_name: None,
         runs_as: None,
@@ -317,6 +318,7 @@ fn a_group_view_carries_every_fact_the_user_judges_it_by() {
         group(7, 2, ProposalVerb::Move),
         GroupReadFacts {
             destination_state: DestinationState::WillBeCreated,
+            destination_lands_on: Some("/Volumes/Other/inbox".into()),
             source_volume_name: Some("Macintosh HD".into()),
             destination_volume_name: Some("Macintosh HD".into()),
             runs_as: Some(RunsAs::PermanentDelete),
@@ -333,6 +335,7 @@ fn a_group_view_carries_every_fact_the_user_judges_it_by() {
     assert_eq!(view.source_volume_id, "root");
     assert_eq!(view.destination.as_deref(), Some("/Users/someone/Documents/Invoices"));
     assert_eq!(view.destination_volume_name.as_deref(), Some("Macintosh HD"));
+    assert_eq!(view.destination_lands_on.as_deref(), Some("/Volumes/Other/inbox"));
     assert_eq!(view.source_volume_name.as_deref(), Some("Macintosh HD"));
     assert_eq!(
         view.destination_volume_id.as_deref(),
@@ -588,4 +591,32 @@ fn the_source_volume_is_named_even_before_anyone_connects_it() {
     assert_eq!(name(&group).as_deref(), Some("archive on 192.168.1.5"));
     group.source_volume_id = "nothing-knows-this".into();
     assert_eq!(name(&group), None);
+}
+
+/// A link walk that couldn't finish (a hung mount) reads as "couldn't check", whatever the
+/// destination check said, ❌ never as landing on the drive the card names; a walk that did
+/// finish leaves the destination's own state as it was (#1354).
+#[test]
+fn a_link_walk_that_couldnt_finish_reads_as_unknown() {
+    assert_eq!(
+        with_landing(DestinationState::Exists, Landing::Unchecked),
+        (DestinationState::Unknown, None)
+    );
+    assert_eq!(
+        with_landing(DestinationState::NotApplicable, Landing::Unchecked),
+        (DestinationState::Unknown, None),
+        "a compress card shows a destination too"
+    );
+    assert_eq!(
+        with_landing(DestinationState::Exists, Landing::AsNamed),
+        (DestinationState::Exists, None)
+    );
+    let elsewhere = AppPathBuf::parse("/Volumes/Other/inbox", app_path::PathFlavor::Posix).expect("an app path");
+    assert_eq!(
+        with_landing(DestinationState::WillBeCreated, Landing::OffVolume(elsewhere)),
+        (
+            DestinationState::WillBeCreated,
+            Some("/Volumes/Other/inbox".to_string())
+        )
+    );
 }

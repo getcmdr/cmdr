@@ -262,6 +262,12 @@ or a handler reads it. Handlers keep reading strings; the strings are the resolv
   physical root with no other registered root nested between (a root registered behind a link, `/tmp/x` on macOS, a
   `subst` drive or a mapped share on Windows, still holds its own folders). A non-Unicode physical name compares by
   its nearest Unicode ancestor, and a walk that can't finish refuses `pathUnanswered`.
+- **A review re-checks a stored destination** (#1354): a link can appear under it while the group waits, so the review
+  read (`commands/agent/suggested_ops.rs::destination_lands_on`, every render) re-runs the `WriteTarget` walk through
+  `write_lands_off_volume` and the card names `destinationLandsOn`, where the files really go. Disclosed, ❌ never
+  refused at approval: an approved group runs as if the person started it (`agent/suggested_ops/CLAUDE.md`). A walk
+  past the host's 2 s deadline (a hung mount) is `Landing::Unchecked`, which the card shows as `destinationState:
+  unknown` ("couldn't check"), ❌ never as landing where its text says.
 - **Which fields** is `fields(tool)`: JSON pointers with `*` over arrays, plus a scope string (split and re-spelled by the search parser's own rules,
   `cmdr_search::query::split_scope_segments` and `escape_scope_value`, so a quoted or `\,`-escaped part can't hide a
   `..`; `!` excludes; only absolute parts resolved, a `~name` staying a pattern) and `await`'s `value` under `condition: "path"`.
@@ -269,8 +275,9 @@ or a handler reads it. Handlers keep reading strings; the strings are the resolv
   `under`, `scope`, and `parent`, so a new one is declared or listed as no app path with why (the memory tools' jailed
   relative path, `eject`'s enum, `propose_server`'s remote root). Cells: `agent_path_tests.rs`, real links over
   `AppTestDir` on every OS.
-- **Not covered**: `read_resource`'s `cmdr://importance?path=` query (a resource URI, read by text against the
-  importance store).
+- **A resource query passes it too**: `cmdr://importance`'s `path` and `under` go through `read_path` (the
+  `Use::Read` door) in `resources/importance.rs::typed_query`, so a refusal is the same typed tool error, `field`
+  naming the query key.
 
 ## The access classes
 

@@ -5839,6 +5839,7 @@ export type MessageKey =
   | 'suggestedOps.columnSize'
   | 'suggestedOps.decisionNotRecorded'
   | 'suggestedOps.description'
+  | 'suggestedOps.destinationLandsOn'
   | 'suggestedOps.destinationNotConnected'
   | 'suggestedOps.destinationNotConnectedTooltip'
   | 'suggestedOps.destinationUnknown'

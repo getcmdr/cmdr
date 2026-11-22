@@ -31,7 +31,7 @@
 //! `SMB_CONSUMER_UNICODE_PORT=11484`, then
 //! `cargo nextest run -E 'test(smb_integration_a_live_search)' --run-ignored only`.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPathBuf, PathFlavor};
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
@@ -103,33 +103,30 @@ impl Share {
         };
         share
             .volume
-            .create_directory(&AppPath::legacy_unchecked(&share.path(&share.top)))
+            .create_directory(&share.path(&share.top))
             .await
             .expect("the scratch folder");
         share
             .volume
-            .create_directory(&AppPath::legacy_unchecked(&share.folder(NFC_FOLDER)))
+            .create_directory(&share.folder(NFC_FOLDER))
             .await
             .expect("the NFC folder");
         share
             .volume
-            .create_file(
-                &AppPath::legacy_unchecked(&share.folder(NFC_FOLDER).join(FILE)),
-                b"a receipt",
-            )
+            .create_file(&share.path(&format!("{}/{NFC_FOLDER}/{FILE}", share.top)), b"a receipt")
             .await
             .expect("the file inside it");
         share
     }
 
-    /// An absolute path under the mount root.
-    fn path(&self, relative: &str) -> std::path::PathBuf {
-        Path::new(&self.mount_root).join(relative)
+    /// An absolute path under the mount root, as the volume takes it (the share's POSIX spelling).
+    fn path(&self, relative: &str) -> AppPathBuf {
+        AppPathBuf::parse(&format!("{}/{relative}", self.mount_root), PathFlavor::Posix).expect("a share path")
     }
 
     /// `folder` inside the scratch folder, as an absolute path.
-    fn folder(&self, folder: &str) -> std::path::PathBuf {
-        self.path(&self.top).join(folder)
+    fn folder(&self, folder: &str) -> AppPathBuf {
+        self.path(&format!("{}/{folder}", self.top))
     }
 
     async fn clean_up(&self) {
@@ -176,7 +173,7 @@ async fn smb_integration_a_live_search_scoped_to_an_accented_folder_finds_its_fi
     let data = tempfile::tempdir().expect("index data dir");
     let (index, _installed, _search_data) = install_index(data.path());
     let share = Share::connect().await;
-    let scope = share.folder(NFC_FOLDER).to_string_lossy().into_owned();
+    let scope = share.folder(NFC_FOLDER).into_string();
 
     assert_eq!(
         crate::search::index_source::path_namespace(&share.volume_id),
@@ -226,19 +223,13 @@ async fn smb_integration_a_live_search_scoped_to_the_nfd_spelling_names_the_fold
     let data = tempfile::tempdir().expect("index data dir");
     let (index, _installed, _search_data) = install_index(data.path());
     let share = Share::connect().await;
-    let nfd_scope = share.folder(NFD_FOLDER).to_string_lossy().into_owned();
+    let nfd_scope = share.folder(NFD_FOLDER).into_string();
 
     // The precondition the whole cell rests on: this Samba matches names by their
     // bytes, so the NFD spelling isn't there. If an image bump ever made Samba
     // fold Unicode forms, this is where it says so.
-    let nfd_exists = share
-        .volume
-        .exists(&AppPath::legacy_unchecked(Path::new(&nfd_scope)))
-        .await;
-    let nfc_exists = share
-        .volume
-        .exists(&AppPath::legacy_unchecked(&share.folder(NFC_FOLDER)))
-        .await;
+    let nfd_exists = share.volume.exists(&share.folder(NFD_FOLDER)).await;
+    let nfc_exists = share.volume.exists(&share.folder(NFC_FOLDER)).await;
     let answer = search(nfd_scope.clone(), "faktura").await;
     share.clean_up().await;
 

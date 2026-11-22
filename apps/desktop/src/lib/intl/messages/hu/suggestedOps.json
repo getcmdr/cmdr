@@ -212,6 +212,10 @@
   "@suggestedOps.folderWillBeCreatedTooltip": {
     "sourceHash": "2d28b7c"
   },
+  "suggestedOps.destinationLandsOn": "Egy link másik meghajtóra küldi a fájlokat: {path}",
+  "@suggestedOps.destinationLandsOn": {
+    "sourceHash": "d35d382"
+  },
   "suggestedOps.destinationUnknown": "A Cmdr nem tudta ellenőrizni a célmappát",
   "@suggestedOps.destinationUnknown": {
     "sourceHash": "dc78d1d"

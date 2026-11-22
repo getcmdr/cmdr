@@ -105,6 +105,7 @@ function group(groupId: number, liveOpCount: number, overrides: Record<string, u
     destinationVolumeName: 'Macintosh HD',
     reversible: 'restoreMove',
     destinationState: 'willBeCreated',
+    destinationLandsOn: null,
     liveOpCount,
     totalOpCount: liveOpCount,
     fromSelector: false,

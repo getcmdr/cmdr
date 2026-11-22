@@ -36,6 +36,7 @@ vi.mock('#lib/tauri-commands/index.js', async (importOriginal) => ({
             reversible: 'restoreMove',
             runsAs: null,
             destinationState: 'exists',
+            destinationLandsOn: null,
             liveOpCount: 3,
             totalOpCount: 3,
             fromSelector: false,

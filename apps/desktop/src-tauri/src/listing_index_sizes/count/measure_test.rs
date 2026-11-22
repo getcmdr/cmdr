@@ -7,7 +7,7 @@ use std::sync::Arc;
 use tokio::time::Instant;
 
 use super::jobs::{self, Joined};
-use super::measure::{Live, MeasureError, walk_local};
+use super::measure::{Live, MeasureError, folder_on_volume, walk_local};
 use crate::test_support::TestDir;
 
 fn fresh_job(tag: &str) -> Arc<jobs::Job> {
@@ -78,4 +78,22 @@ fn a_folder_that_isnt_there_is_unreadable_and_a_stop_stops() {
         walk_local(&dir.join("x"), &stopped, &Live::default()),
         Err(MeasureError::Stopped)
     );
+}
+
+/// A row's folder text reaches its volume through the listed-text door on every OS: a POSIX
+/// share path (the fallback on Windows) keeps an escape-range code point literal, so the walk
+/// names the folder the row listed, and a `..` names no folder.
+#[test]
+fn a_rows_folder_text_reads_back_as_listed() {
+    let escape = char::from_u32(0x10_FEC3).expect("a private-use code point");
+    let listed = format!("/share/caf{escape}");
+    let folder = folder_on_volume(&listed).expect("a share path");
+    assert_eq!(
+        cmdr_fs::app_path::listed_text(folder.as_str()).as_deref(),
+        Some(listed.as_str())
+    );
+    assert!(matches!(
+        folder_on_volume("/share/../x"),
+        Err(MeasureError::Unreadable(_))
+    ));
 }
