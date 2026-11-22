@@ -25,7 +25,7 @@ use cmdr_fs::entry::FileEntry;
 use cmdr_fs::file_identity::{FileId, Follow};
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
-use cmdr_fs::metadata::Unblock;
+use cmdr_fs::metadata::{CarriedMetadata, MetadataCaps, MetadataClasses, MetadataReport, Unblock};
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{
     BatchScanResult, CopyScanResult, EntryKind, ListingProgress, MountClass, MutationEvent, NodeIdentity, Presence,
@@ -414,6 +414,56 @@ impl Volume for LocalWindowsVolume {
             Ok(at) => cmdr_fs::metadata::clear_blockers(&at.os),
             Err(_) => Unblock::NothingToClear,
         }))
+    }
+
+    /// A folder's Hidden attribute (its read-only bit is Explorer's customization marker, so
+    /// never Locked), the one class a folder reports beyond its listing entry here
+    /// (`crate::item_metadata`, shared with the POSIX sibling).
+    fn folder_metadata<'a>(
+        &'a self,
+        path: &'a AppPath,
+        wanted: MetadataClasses,
+    ) -> Pin<Box<dyn Future<Output = CarriedMetadata> + Send + 'a>> {
+        let at = self.locate(path);
+        Box::pin(async move {
+            let Ok(at) = at else {
+                return CarriedMetadata::default();
+            };
+            if wanted
+                .intersection(MetadataClasses::XATTRS | MetadataClasses::FLAGS)
+                .is_empty()
+            {
+                return CarriedMetadata::default();
+            }
+            blocking("folder_metadata", move || {
+                crate::item_metadata::folder_metadata_at(&at.os, wanted)
+            })
+            .await
+        })
+    }
+
+    /// The dates in one `SetFileInformationByHandle`, then Hidden and a file's Locked (its
+    /// read-only attribute) in one `SetFileAttributesW`, last. A mode or an xattr answers
+    /// `NotApplicable` (`cmdr_fs::metadata`'s Windows arm).
+    fn apply_metadata<'a>(
+        &'a self,
+        path: &'a AppPath,
+        carried: &'a CarriedMetadata,
+        modified: Option<std::time::SystemTime>,
+    ) -> Pin<Box<dyn Future<Output = MetadataReport> + Send + 'a>> {
+        let at = self.locate(path);
+        let carried = carried.clone();
+        Box::pin(blocking("apply_metadata", move || match at {
+            Ok(at) => crate::item_metadata::apply_metadata_at(&at.os, &carried, modified),
+            // A path this volume can't place holds nothing it was handed.
+            Err(_) => MetadataReport::none_applicable(&carried, modified),
+        }))
+    }
+
+    /// [`cmdr_fs::metadata::LOCAL_DISK_CAPS`]: birth dates and the two attributes a copy
+    /// carries as flags, on files and folders.
+    fn metadata_caps(&self) -> MetadataCaps {
+        cmdr_fs::metadata::LOCAL_DISK_CAPS
     }
 
     /// ❗ A read-only FILE refuses as `PermissionDenied` (`ERROR_ACCESS_DENIED`), the way

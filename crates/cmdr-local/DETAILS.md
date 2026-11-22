@@ -422,12 +422,22 @@ nearly every method and hide which answers are real.
   atomic replacing rename, so a second stage here would cost a rename per file and protect nothing.
 - **Node identity** (`node_identity`) is `FileId::read_at` (the link itself) plus the creation time, as
   `NodeIdentity::of` builds it from an `lstat`: NTFS's 64-bit file reference fits, a ReFS 128-bit id answers `None`.
+- **Metadata** (`apply_metadata`, `folder_metadata`, `metadata_caps`) is the POSIX volume's own body, shared:
+  `src/item_metadata.rs`, over `cmdr_fs::metadata`'s Windows arm. The caps claim the creation date and the flags on
+  files and folders: a FILE's read-only attribute is Locked and the hidden attribute is Hidden, read off the source's
+  stat (`flags_of`) and put on after the landing in one `SetFileAttributesW` (`add_flags`), the same flags the move's
+  Locked question and `clear_blockers` speak. So a copy, and a cross-drive Move anyway, lands a read-only file read-only
+  (#1352), on both engines (the local one reads `CarriedMetadata::of_local_file`, the volume one `apply_metadata`).
+  **Decision**: the attributes ride as user flags, ❌ not as a mode. **Why**: they are what Finder's Hidden and Locked
+  are on macOS, so a copy between the two OSes (over SMB too, `cmdr-smb`'s `user_flags_of`) keeps them by the classes
+  the engine already carries, and a POSIX mode's `0444` has no honest Windows reading for a folder (its read-only bit is
+  Explorer's customization marker). The mode and xattrs stay `NotApplicable`; append-only and no-dump have no attribute.
 
 What's real and what's stubbed, by name: the windows-port plan, § "Windows build state" and task 35's entry. Every
-capability not yet real keeps the trait's conservative default (symlink creation, xattrs, metadata, the write-access
-probe), so nothing answers by guessing. `local_conformance_test.rs` and `local_volume_test.rs` run on Windows too, each
-cell the Windows volume can't keep yet ignored there (`cfg_attr(target_os = "windows", ignore = …)`) with what it lacks;
-their folder-link cells build a junction there (`local_conformance_test::link_to_folder`, `mklink /J`, which needs no
+capability not yet real keeps the trait's conservative default (symlink creation, xattrs, the write-access probe), so
+nothing answers by guessing. `local_conformance_test.rs` and `local_volume_test.rs` run on Windows too, each cell the
+Windows volume can't keep yet ignored there (`cfg_attr(target_os = "windows", ignore = …)`) with what it lacks; their
+folder-link cells build a junction there (`local_conformance_test::link_to_folder`, `mklink /J`, which needs no
 privilege).
 
 ## App paths in and out

@@ -97,20 +97,60 @@ fn a_plain_file_and_a_read_only_folder_have_nothing_to_clear() {
     set_read_only(&folder, false);
 }
 
+fn is_hidden(path: &Path) -> bool {
+    use std::os::windows::fs::MetadataExt as _;
+    std::fs::symlink_metadata(path)
+        .expect("the fixture exists")
+        .file_attributes()
+        & 0x2
+        != 0
+}
+
 #[test]
-fn only_locked_on_a_file_is_put_on() {
+fn locked_goes_on_a_file_and_hidden_on_anything() {
     let dir = tempfile::tempdir().unwrap();
     let file = dir.path().join("plain.txt");
     std::fs::write(&file, b"x").unwrap();
     let folder = dir.path().join("folder");
     std::fs::create_dir(&folder).unwrap();
 
-    assert_eq!(add_flags(&file, UserFlags::HIDDEN), ClassOutcome::NotApplicable);
-    assert!(!is_read_only(&file));
+    assert_eq!(add_flags(&file, UserFlags::HIDDEN), ClassOutcome::Kept);
+    assert!(is_hidden(&file) && !is_read_only(&file), "Hidden alone, nothing more");
     assert_eq!(add_flags(&folder, UserFlags::LOCKED), ClassOutcome::NotApplicable);
     assert!(!is_read_only(&folder), "a folder never takes it as a lock");
+    assert_eq!(
+        add_flags(&folder, UserFlags::HIDDEN | UserFlags::LOCKED),
+        ClassOutcome::Kept
+    );
+    assert!(is_hidden(&folder) && !is_read_only(&folder));
+    assert_eq!(add_flags(&file, UserFlags::NO_DUMP), ClassOutcome::NotApplicable);
     let set = LandedMetadata::default().with_flags(UserFlags::LOCKED);
     assert!(!apply_landed(&file, &set).any_refused());
-    assert!(is_read_only(&file));
+    assert!(is_read_only(&file) && is_hidden(&file), "added to what it wore");
     set_read_only(&file, false);
+}
+
+/// What a copy reads off its source: the file's read-only and hidden attributes, and a
+/// folder's hidden one (its read-only bit is no lock).
+#[test]
+fn a_copy_reads_locked_and_hidden_off_the_source() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("frozen.txt");
+    std::fs::write(&file, b"x").unwrap();
+    let folder = dir.path().join("customized");
+    std::fs::create_dir(&folder).unwrap();
+    assert_eq!(super::flags_of(&std::fs::metadata(&file).unwrap()), UserFlags::NONE);
+
+    set_read_only(&file, true);
+    assert_eq!(add_flags(&file, UserFlags::HIDDEN), ClassOutcome::Kept);
+    set_read_only(&folder, true);
+    assert_eq!(add_flags(&folder, UserFlags::HIDDEN), ClassOutcome::Kept);
+
+    assert_eq!(
+        super::flags_of(&std::fs::metadata(&file).unwrap()),
+        UserFlags::LOCKED | UserFlags::HIDDEN
+    );
+    assert_eq!(super::flags_of(&std::fs::metadata(&folder).unwrap()), UserFlags::HIDDEN);
+    set_read_only(&file, false);
+    set_read_only(&folder, false);
 }

@@ -195,10 +195,6 @@ async fn listing_dates_honor_the_shared_claim_contract() {
 
 /// A copy onto local disk dates the folders it created, once their contents landed.
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, metadata: LocalWindowsVolume has no apply_metadata yet"
-)]
 async fn apply_metadata_honors_the_shared_folder_date_contract() {
     let test_dir = AppTestDir::new("folder_date_conformance_test");
     let volume = volume_at(&test_dir);
@@ -207,12 +203,8 @@ async fn apply_metadata_honors_the_shared_folder_date_contract() {
 }
 
 /// Local disk keeps and reports what its caps claim, on a file and on a folder: the creation
-/// date (macOS only: Linux can't set a birth time) and the mode.
+/// date (macOS and Windows: Linux can't set a birth time) and the mode (macOS and Linux).
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, metadata: no metadata caps or apply_metadata yet"
-)]
 async fn local_disk_honors_the_shared_metadata_contract() {
     let test_dir = AppTestDir::new("metadata_conformance_test");
     let volume = volume_at(&test_dir);

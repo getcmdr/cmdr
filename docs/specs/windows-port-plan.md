@@ -204,10 +204,10 @@ keys, and look (tasks 34, 60, 62, 63, 67), with its open problems:
 Honest stubs: Windows arms that compile and answer "unsupported", "unknown", or nothing, each waiting for the task that
 owns its real body. Remove a line when its body lands.
 
-- `cmdr_fs::metadata` (`metadata/platform/windows.rs`), tasks 35 and 36: mode as the read-only attribute, xattrs as
-  alternate data streams, the DACL, and Hidden as an attribute answer `NotApplicable`, and a copy carries no read-only
-  (`flags_of` reads none). Real: dates, and a FILE's read-only as the Locked a move asks about (`removal_lock`,
-  `clear_blockers`, and `add_flags` putting it back, #1331).
+- `cmdr_fs::metadata` (`metadata/platform/windows.rs`), tasks 35 and 36: the mode, xattrs as alternate data streams, and
+  the DACL answer `NotApplicable`. Real: dates, and the read-only (a FILE's, as Locked) and hidden attributes as user
+  flags a copy reads and puts back (`flags_of`, `add_flags`; #1352), the Locked a move asks about included
+  (`removal_lock`, `clear_blockers`, #1331).
 - `cmdr_fs::entry` owner and group names (`entry/platform/windows.rs`), task 35: always `None`, since a Windows owner is
   a SID, not a uid.
 - `cmdr_fs::file_provider` (`file_provider/platform/windows.rs`), task 37: no File Provider marker; Cloud Files
@@ -229,10 +229,10 @@ owns its real body. Remove a line when its body lands.
 - `cmdr-sftp` agent (`transport/platform/windows.rs`), task 46: asks the OpenSSH agent's pipe (or `SSH_AUTH_SOCK`),
   never Pageant.
 - `cmdr_local::LocalWindowsVolume` (`platform/local_windows.rs`), task 35: no `create_symlink` / `read_link_target`
-  (`can_hold_links` false), no ADS-backed xattrs, no `apply_metadata` or metadata caps, no `write_access_at`, and no
-  `FindFirstFileExW` lister. Each keeps the trait's conservative default, and each conformance cell it can't pass yet is
-  `#[ignore]`d with its piece (`local_conformance_test.rs`). Real since 2026-11-22: streams, the copy scan, and
-  `node_identity` (`crates/cmdr-local/DETAILS.md` § "The Windows sibling").
+  (`can_hold_links` false), no ADS-backed xattrs, no `write_access_at`, and no `FindFirstFileExW` lister. Each keeps the
+  trait's conservative default, and each conformance cell it can't pass yet is `#[ignore]`d with its piece
+  (`local_conformance_test.rs`). Real since 2026-11-22: streams, the copy scan, `node_identity`, and metadata (dates,
+  read-only and hidden as flags, the caps; `crates/cmdr-local/DETAILS.md` § "The Windows sibling").
 - `cmdr_local::reading` Windows arm (`reading/platform/windows.rs`), task 35: no allocation size, mode `0`, no owner or
   group; only `FILE_ATTRIBUTE_HIDDEN` is real.
 - `cmdr_operations::local_disk` Windows arm (`local_disk/platform/windows.rs`), tasks 35 and 36: `set_mode` and
@@ -240,8 +240,9 @@ owns its real body. Remove a line when its body lands.
   there's no purgeable-space figure. Real: the write probe (`FILE_WRITE_DATA` open), free space (`GetDiskFreeSpaceExW`),
   the folder volume (`LocalWindowsVolume`), and a read-only file as Locked (`is_locked_item`, `locked_against_removal`).
 - `cmdr_operations` local copy strategy on Windows (`transfer/copy_strategy.rs`), task 36: every file takes the chunked
-  loop (cancellable, live progress, staged). No `CopyFileExW` yet, so a copy carries no attributes or alternate data
-  streams (Mark of the Web included), and gets no ReFS block clone or SMB copy offload.
+  loop (cancellable, live progress, staged). No `CopyFileExW` yet, so a copy carries no attributes beyond read-only and
+  hidden (the flags, `cmdr_fs::metadata`) and no alternate data streams (Mark of the Web included), and gets no ReFS
+  block clone or SMB copy offload.
 - `cmdr_operations::delete::cloud_trash::metadata_is_online_only` on Windows, task 37: never online-only, the cautious
   branch, so a Cloud Files placeholder trashes (and hydrates) like any file.
 - `cmdr_operations` extract quarantine on Windows (`transfer/volume/extract_quarantine.rs`), task 37: an extract carries
@@ -644,10 +645,10 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     `FileInUse`). On the desktop: `docs/notes/windows-port/real-windows-check-2026-11-19.md` § "Task 36's delete on the
     desktop". A move of a read-only file asks the Locked question, same-drive and cross-drive, and the cross-drive sweep
     and `LocalWindowsVolume::delete` refuse a read-only original nobody agreed to (#1331,
-    `crates/cmdr-operations/DETAILS.md` § "Moving Locked items"); a cross-drive Move anyway still lands the copy without
-    the attribute until the `CopyFileExW` arm (#1352). "Go to Recycle Bin" opens the bin in File Explorer (the app's
-    `open_trash_view`, #1332; `delete/DETAILS.md` § "Windows: the Recycle Bin"). Seen beside it: no listing watch on a
-    Windows drive (#1330, task 35's, now done).
+    `crates/cmdr-operations/DETAILS.md` § "Moving Locked items"); a cross-drive Move anyway lands the copy read-only
+    again (#1352, task 35's metadata). "Go to Recycle Bin" opens the bin in File Explorer (the app's `open_trash_view`,
+    #1332; `delete/DETAILS.md` § "Windows: the Recycle Bin"). Seen beside it: no listing watch on a Windows drive
+    (#1330, task 35's, now done).
 
 37. [S] Windows. Cloud Files placeholders (OneDrive and friends: sync badges, cloud trash) and Mark of the Web on
     extract (`cmdr-operations` + `cmdr-archive`). Needs 36.

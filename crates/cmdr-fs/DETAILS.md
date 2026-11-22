@@ -728,6 +728,11 @@ macOS 27.0, APFS, with a C helper replaying each syscall sequence, 2026-10-11).
   away, so it can ask the person before any byte moves (`crates/cmdr-operations/DETAILS.md` § "Moving Locked items"). On
   Windows the three answer for a FILE's read-only attribute (Locked; `add_flags` puts it back), and a folder's read-only
   bit, Explorer's customization marker, is never a lock.
+- **Windows' flags are two attributes** (`src/metadata/platform/windows_attributes.rs`, pure arithmetic every OS's tests
+  pin): a FILE's read-only attribute is Locked and the hidden attribute is Hidden, on files and folders. `flags_of`
+  reads them off the source's stat, so a copy carries them like Finder's (#1352), and `add_flags` adds them in one
+  `SetFileAttributesW`, keeping what the item wears and leaving the filesystem's own bits (directory, reparse point,
+  cloud placeholder) out of the write. Append-only and no-dump have no attribute and answer `NotApplicable`.
 - **The `remove_*_clearing_blockers` helpers clear only after a refusal.** One removal, then on `PermissionDenied` one
   clear and one retry, then `open_parent_folder` and one more, so an ordinary item costs exactly its removal. Opening
   the folder covers a child of a copied folder that wears Locked, `deny delete_child`, or `0500`: it clears and adds

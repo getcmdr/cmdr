@@ -1,15 +1,15 @@
 //! Local POSIX file system volume implementation.
 //!
 //! The struct, the rename primitive, and the query/mutation half of
-//! `impl Volume` live here. The two concerns big enough to read on their own sit
-//! beside it, the way the MTP backend splits: `scan` (the copy-scan family) and
-//! `metadata` (a landed item's metadata). Byte movement in and out of a file is
-//! `crate::streams`, shared with the Windows sibling. A trait impl can't span
+//! `impl Volume` live here. The concerns big enough to read on their own sit
+//! beside it, the way the MTP backend splits: `scan` (the copy-scan family),
+//! `links`, and `xattrs`. Byte movement in and out of a file is `crate::streams`,
+//! and a landed item's metadata `crate::item_metadata`, both shared with the
+//! Windows sibling. A trait impl can't span
 //! files, so those methods stay here as one-line delegations to the bodies over
 //! there.
 
 mod links;
-mod metadata;
 mod scan;
 mod xattrs;
 
@@ -678,19 +678,15 @@ impl Volume for LocalPosixVolume {
     ) -> Pin<Box<dyn Future<Output = CarriedMetadata> + Send + 'a>> {
         let abs_path = self.os_path(path);
         Box::pin(async move {
-            let wanted = wanted.intersection(MetadataClasses::XATTRS | MetadataClasses::FLAGS);
-            if wanted.is_empty() {
+            if wanted
+                .intersection(MetadataClasses::XATTRS | MetadataClasses::FLAGS)
+                .is_empty()
+            {
                 return CarriedMetadata::default();
             }
-            spawn_blocking(move || match std::fs::symlink_metadata(&abs_path) {
-                Ok(meta) if meta.is_dir() && wanted.contains(MetadataClasses::XATTRS) => {
-                    CarriedMetadata::of_local_dir(&abs_path, &meta).restricted_to(wanted)
-                }
-                Ok(meta) if meta.is_dir() => CarriedMetadata::of_local_stat(&meta).restricted_to(wanted),
-                _ => CarriedMetadata::default(),
-            })
-            .await
-            .expect("spawn_blocking folder_metadata closure doesn't panic and the task is uncancelable")
+            spawn_blocking(move || crate::item_metadata::folder_metadata_at(&abs_path, wanted))
+                .await
+                .expect("spawn_blocking folder_metadata closure doesn't panic and the task is uncancelable")
         })
     }
 
@@ -706,7 +702,7 @@ impl Volume for LocalPosixVolume {
         let abs_path = self.os_path(path);
         let carried = carried.clone();
         Box::pin(async move {
-            spawn_blocking(move || metadata::apply_metadata_at(&abs_path, &carried, modified))
+            spawn_blocking(move || crate::item_metadata::apply_metadata_at(&abs_path, &carried, modified))
                 .await
                 .expect("spawn_blocking apply_metadata closure doesn't panic and the task is uncancelable")
         })
