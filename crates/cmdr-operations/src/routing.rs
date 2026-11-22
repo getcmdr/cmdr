@@ -36,6 +36,7 @@ use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::RoutedKind;
 use cmdr_fs::volume::Volume;
 use cmdr_operation_log::types::Initiator;
+use destination::ResolvedDestination;
 
 /// Turns the destination a caller sent into the path the destination volume
 /// accepts: home shortcut expanded (local only), then anchored at the volume's
@@ -58,25 +59,6 @@ pub fn resolve_dest_path(dest_volume: &Arc<dyn Volume>, dest_path: String) -> Pa
         dest_path
     };
     cmdr_fs::volume::root_anchored(&std_root(dest_volume.root()), Path::new(&expanded))
-}
-
-/// A transfer's destination as the routes read it: [`resolve_dest_path`] on its volume
-/// when that volume is registered, else the text as sent (the resolve then answers the
-/// missing volume).
-///
-/// ❗ Anchored BEFORE the resolve: the transfer dialog's box is volume-relative, and a
-/// `.zip` boundary is confirmed by the place the path names, so `/z/box.zip` on a drive
-/// rooted at `C:/` (or a Mac volume at `/Volumes/USB`) confirmed nothing and a copy
-/// into the zip fell through to the local engine as `destination_not_a_folder` (#1369).
-/// On a root at `/` the two spellings coincide, which is why only Windows showed it.
-fn anchored_destination(volumes: &dyn host::OperationVolumes, dest_volume_id: &str, dest_path: String) -> String {
-    let Some(volume) = volumes.get(dest_volume_id) else {
-        return dest_path;
-    };
-    resolve_dest_path(&volume, dest_path.clone())
-        .into_os_string()
-        .into_string()
-        .unwrap_or(dest_path)
 }
 
 /// The folder a transfer's sources land in, as its engine takes it: a zip's
@@ -361,23 +343,15 @@ impl crate::Operations {
             return Err(source_volume_missing(self.host(), &source_volume_id, &source_paths).await);
         };
 
-        // Resolve the destination. A `.zip`-crossing dest routes the whole copy to
-        // the managed archive-edit driver (one `{ add }` changeset).
-        let dest_path = anchored_destination(self.host().volumes(), &dest_volume_id, dest_path);
-        let dest_resolved = self
-            .host()
-            .volumes()
-            .resolve(&dest_volume_id, Path::new(&dest_path))
-            .await;
-        let Some(dest_volume) = dest_resolved.volume else {
-            return Err(dest_volume_missing(self.host(), &dest_volume_id, &dest_path).await);
-        };
+        // A `.zip`-crossing dest routes the whole copy to the managed archive-edit
+        // driver (one `{ add }` changeset).
+        let ResolvedDestination {
+            volume: dest_volume,
+            routed: dest_routed,
+            path: dest_path,
+        } = self.resolve_destination(&dest_volume_id, dest_path).await?;
 
-        if dest_resolved.routed.is_some_and(|kind| !kind.takes_writes()) {
-            return Err(destination_takes_no_writes(&dest_volume));
-        }
-
-        let into_zip = dest_resolved.routed == Some(RoutedKind::Archive);
+        let into_zip = dest_routed == Some(RoutedKind::Archive);
         if into_zip && expected_sources.is_some() {
             return Err(route_cannot_hold_a_binding("copy into a zip"));
         }
@@ -475,19 +449,11 @@ impl crate::Operations {
             return Err(source_cannot_give_up_its_files(&source_volume));
         }
 
-        let dest_path = anchored_destination(self.host().volumes(), &dest_volume_id, dest_path);
-        let dest_resolved = self
-            .host()
-            .volumes()
-            .resolve(&dest_volume_id, Path::new(&dest_path))
-            .await;
-        let Some(dest_volume) = dest_resolved.volume else {
-            return Err(dest_volume_missing(self.host(), &dest_volume_id, &dest_path).await);
-        };
-
-        if dest_resolved.routed.is_some_and(|kind| !kind.takes_writes()) {
-            return Err(destination_takes_no_writes(&dest_volume));
-        }
+        let ResolvedDestination {
+            volume: dest_volume,
+            routed: dest_routed,
+            path: dest_path,
+        } = self.resolve_destination(&dest_volume_id, dest_path).await?;
 
         // Move OUT of a zip. Takes precedence over the dest-archive branch: a
         // zip→zip move extracts out first (the dest-archive case degrades to a copy
@@ -495,7 +461,7 @@ impl crate::Operations {
         let out_of_zip = source_route == Some(RoutedKind::Archive);
         // A move INTO a zip routes to the managed edit driver as one `{ add }`
         // changeset; the local sources are deleted after the commit (move invariant).
-        let into_zip = !out_of_zip && dest_resolved.routed == Some(RoutedKind::Archive);
+        let into_zip = !out_of_zip && dest_routed == Some(RoutedKind::Archive);
         if out_of_zip && expected_sources.is_some() {
             return Err(route_cannot_hold_a_binding("move out of a zip"));
         }
@@ -794,6 +760,7 @@ impl crate::Operations {
     }
 }
 
+mod destination;
 mod retry;
 #[cfg(test)]
 mod tests;

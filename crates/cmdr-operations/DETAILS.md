@@ -2267,7 +2267,7 @@ only by duplicating it.
   dropdown beside it) while a pane sends the absolute path it displays; `root_anchored` is idempotent, so neither caller
   has to know which it holds. Skipping it is what made a 360 GB move into an SMB subfolder fail instantly (ERR-XCP5Q):
   `SmbVolume` read `/photos` as a path outside its mount and answered `NotFound`. A copy or move anchors BEFORE its
-  destination resolve (`anchored_destination`), since a `.zip` boundary is confirmed at the place the path names:
+  destination resolve (`routing::destination`), since a `.zip` boundary is confirmed at the place the path names:
   unanchored, `/z/box.zip` on a drive rooted at `C:/` (or a folder volume below `/`) confirmed nothing, and a copy into
   the zip fell through to the local engine as `destination_not_a_folder` (#1369;
   `routing::tests::a_volume_relative_destination_still_routes_into_its_zip`).

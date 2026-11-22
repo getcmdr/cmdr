@@ -544,7 +544,7 @@
     "crates/cmdr-operations/src/rename/validity.rs": 3,
     "crates/cmdr-operations/src/rollback/planner_tests/test_support.rs": 1,
     "crates/cmdr-operations/src/routed_writes_tests.rs": 1,
-    "crates/cmdr-operations/src/routing.rs": 4,
+    "crates/cmdr-operations/src/routing.rs": 2,
     "crates/cmdr-operations/src/scan_cache.rs": 2,
     "crates/cmdr-operations/src/scan_cache_tests.rs": 1,
     "crates/cmdr-operations/src/scan_failure_tests.rs": 3,
