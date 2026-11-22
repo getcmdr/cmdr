@@ -2266,7 +2266,11 @@ only by duplicating it.
   folder name) and then root-anchors. The transfer dialog's box is volume-relative (`/photos`, with the volume in a
   dropdown beside it) while a pane sends the absolute path it displays; `root_anchored` is idempotent, so neither caller
   has to know which it holds. Skipping it is what made a 360 GB move into an SMB subfolder fail instantly (ERR-XCP5Q):
-  `SmbVolume` read `/photos` as a path outside its mount and answered `NotFound`.
+  `SmbVolume` read `/photos` as a path outside its mount and answered `NotFound`. A copy or move anchors BEFORE its
+  destination resolve (`anchored_destination`), since a `.zip` boundary is confirmed at the place the path names:
+  unanchored, `/z/box.zip` on a drive rooted at `C:/` (or a folder volume below `/`) confirmed nothing, and a copy into
+  the zip fell through to the local engine as `destination_not_a_folder` (#1369;
+  `routing::tests::a_volume_relative_destination_still_routes_into_its_zip`).
 - **`start_volume_copy` / `start_volume_move` / `start_volume_compress`** are the three entry points. Between them they
   cover the plain cross-volume engine, copy/move INTO a zip (one `{ add }` changeset), move OUT of one (the compound
   extract-then-delete op), and compress (seed an empty archive, then copy into it). Each takes an injected
