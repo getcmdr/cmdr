@@ -121,7 +121,9 @@ async fn a_private_key_in_a_plain_folder_is_logged_with_its_reason() {
     let dir = TestDir::new("inspect-key-logged");
     let copy = write(&dir, "backup.txt", key(3));
 
-    run(&json!({ "paths": [copy.to_str().unwrap()] })).await.unwrap();
+    run(&json!({ "paths": [crate::test_support::native_app_path(&copy).as_str()] }))
+        .await
+        .unwrap();
 
     assert_eq!(
         capture.events(),

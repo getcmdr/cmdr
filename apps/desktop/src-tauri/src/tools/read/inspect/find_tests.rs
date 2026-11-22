@@ -404,7 +404,7 @@ async fn one_find_searches_every_text_path_in_the_call_and_leaves_other_kinds_al
 
     let paths: Vec<String> = [a, b, c, png]
         .iter()
-        .map(|p| p.to_string_lossy().into_owned())
+        .map(|p| crate::test_support::native_app_path(p).into_string())
         .collect();
     let result = run(&json!({ "paths": paths, "find": { "query": "tenant" } }))
         .await
