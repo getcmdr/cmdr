@@ -324,13 +324,21 @@ async fn a_source_that_vanished_before_preflight_is_left_out_of_the_binding() {
     assert!(kept.is_none());
 }
 
-/// Registers the local-FS "root" volume the bridge resolves a group's sources through.
+/// Registers the local-FS "root" volume the bridge resolves a group's sources through, rooted
+/// at the scratch folder's filesystem root (`/`, or its drive on Windows, where `/` is a
+/// drive-relative path), as the real `root` volume is.
 fn ensure_root_volume() {
     use crate::file_system::volume::manager::get_volume_manager;
     use cmdr_local::LocalVolume;
+    let scratch = cmdr_fs::testing::scratch_root();
+    let fs_root = scratch.ancestors().last().expect("an absolute path has a root");
     get_volume_manager().register_if_absent(
         "root",
-        Arc::new(LocalVolume::local_folder("Test root", "/", crate::volume_host::host())),
+        Arc::new(LocalVolume::local_folder(
+            "Test root",
+            fs_root,
+            crate::volume_host::host(),
+        )),
     );
 }
 
@@ -340,7 +348,11 @@ fn vanished_rename_group(dir: &TestDir) -> (Connection, Connection, i64) {
     let db_path = dir.join("main.db");
     let conn = open_write_connection(&db_path).expect("open");
     let set_id = create_sweep(&conn, &NewSweep::default(), 100).expect("sweep");
-    let parent = dir.join("shots").display().to_string();
+    // A stored place is an app path (`C:/Users/…` on Windows), as the tool that proposes it
+    // writes one.
+    let parent = app_path::AppPathBuf::from_native(&dir.join("shots"))
+        .expect("a scratch dir is an app path")
+        .into_string();
     let group_id = create_group(
         &conn,
         set_id,
@@ -847,7 +859,9 @@ async fn an_approved_named_move_lands_each_file_under_its_name() {
             intent: GroupIntent::Move {
                 destination: crate::agent::store::proposals::WritableDestination::new(crate::location::Location {
                     volume_id: "root".to_string(),
-                    path: paid.display().to_string(),
+                    path: app_path::AppPathBuf::from_native(&paid)
+                        .expect("a scratch dir is an app path")
+                        .into_string(),
                 })
                 .expect("an ordinary folder"),
                 sources: vec![

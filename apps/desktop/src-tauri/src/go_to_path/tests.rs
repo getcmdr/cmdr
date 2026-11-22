@@ -27,8 +27,18 @@ pub(super) async fn go(input: &str, base: &AppPath) -> GoToPathResolution {
     resolve_over(input, base.as_str(), &disk()).await
 }
 
+/// `path` as a person types or pastes it: spelled the way `TEMP` spells the scratch root,
+/// so on a Windows `TEMP` holding an 8.3 short name (`C:\Users\RUNNER~1\…`, the hosted CI
+/// runner's) the cells here type that short spelling, which listings never show. That's
+/// #1337's case, and these cells fail on it until typed text is spelled long; elsewhere
+/// the two spellings are one.
 fn native(path: &Path) -> String {
-    path.to_string_lossy().into_owned()
+    let typed = match path.strip_prefix(cmdr_fs::testing::scratch_root()) {
+        // allowed-fixed-temp-dir: no fixture here, only the OS's own spelling of the scratch root
+        Ok(rest) => std::env::temp_dir().join(rest),
+        Err(_) => path.to_path_buf(),
+    };
+    typed.to_string_lossy().into_owned()
 }
 
 fn app(dir: &AppTestDir, rel: &str) -> String {

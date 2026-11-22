@@ -220,3 +220,15 @@ fn no_spawn_async_sync_in_the_engine() {
         "found references to the deleted global-sync helper (spawn_async_sync) in: {hits:?}"
     );
 }
+
+/// `cmdr_fs::testing`'s load-time hook reaches a CONSUMER's test binary: a bare
+/// `tempfile::tempdir()` here is spelled long on Windows, where CI's `TEMP` is
+/// `C:\Users\RUNNER~1\…`. Elsewhere there are no short names, and this holds trivially.
+#[test]
+fn a_bare_tempdir_in_this_crates_tests_is_spelled_long() {
+    let bare = tempfile::tempdir().expect("tempdir");
+    assert_eq!(
+        cmdr_fs::testing::long_path(bare.path()).expect("long name"),
+        bare.path()
+    );
+}

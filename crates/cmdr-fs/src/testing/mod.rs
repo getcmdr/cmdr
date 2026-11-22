@@ -98,16 +98,18 @@ use std::time::{Duration, Instant};
 pub struct TestDir(tempfile::TempDir);
 
 impl TestDir {
-    /// Creates an empty scratch directory, named after `label` for readability.
+    /// Creates an empty scratch directory under [`scratch_root`], named after `label` for
+    /// readability.
     #[track_caller]
     pub fn new(label: &str) -> Self {
-        Self(
-            tempfile::Builder::new()
-                .prefix(&format!("cmdr_{label}_"))
-                .tempdir()
-                .expect("failed to create a test scratch directory"),
-        )
+        Self::new_in(label, &scratch_root())
     }
+}
+
+/// Off a host (the browser build) there are no short names: the temp folder as is.
+#[cfg(not(cmdr_host))]
+pub fn scratch_root() -> std::path::PathBuf {
+    std::env::temp_dir()
 }
 
 impl TestDir {
@@ -432,6 +434,17 @@ mod tests {
         std::fs::write(dir.join("leftover.txt"), b"x").expect("write");
         drop(dir);
         assert!(!path.exists(), "a dropped TestDir must leave nothing behind");
+    }
+
+    /// On Windows CI `TEMP` is `C:\Users\RUNNER~1\…`: both doors hand out the long spelling
+    /// a volume would list. Elsewhere there are no short names, and this holds trivially.
+    #[cfg(cmdr_host)]
+    #[test]
+    fn scratch_dirs_and_bare_tempdirs_are_spelled_long() {
+        let dir = TestDir::new("long_spelling");
+        assert_eq!(long_path(&dir).expect("long name"), dir.to_path_buf());
+        let bare = tempfile::tempdir().expect("tempdir");
+        assert_eq!(long_path(bare.path()).expect("long name"), bare.path());
     }
 
     #[test]

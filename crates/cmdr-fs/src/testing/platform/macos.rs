@@ -1,3 +1,3 @@
 //! The POSIX fixtures, shared with the other Unix.
 
-pub use super::unix::{can_create_symlinks, is_root, long_path, symlink};
+pub use super::unix::{can_create_symlinks, is_root, long_path, scratch_root, symlink};

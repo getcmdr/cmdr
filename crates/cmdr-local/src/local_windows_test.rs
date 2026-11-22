@@ -396,3 +396,28 @@ fn a_local_drive_watches_its_listings_and_asks_the_host_in_the_app_spelling() {
         WatchCoverage::None
     );
 }
+
+/// A folder handed over the way `TEMP` spells it (`C:\Users\RUNNER~1\…` on the hosted CI
+/// runner): the volume roots at its long spelling, the one its own listing answers. Test
+/// scratch space is spelled long everywhere else (`cmdr_fs::testing::scratch_root`), so this
+/// is the cell that keeps a real short root reaching `short_names::long_root` on a real disk.
+/// On a `TEMP` with no short name, both spellings are one and it holds trivially.
+#[tokio::test]
+async fn a_root_handed_over_as_temp_spells_it_roots_at_the_long_spelling() {
+    use cmdr_fs::volume::host::VolumeHost;
+
+    let test_dir = AppTestDir::new("win_short_temp_root");
+    std::fs::write(test_dir.native().join("inside.txt"), b"x").expect("write");
+    let rest = test_dir
+        .native()
+        .strip_prefix(cmdr_fs::testing::scratch_root())
+        .expect("a scratch dir sits under the scratch root");
+    // allowed-fixed-temp-dir: no fixture here, only the OS's own spelling of the scratch root
+    let as_temp_spells_it = std::env::temp_dir().join(rest);
+
+    let volume = crate::LocalWindowsVolume::local_folder("Test", as_temp_spells_it, VolumeHost::detached());
+
+    assert_eq!(volume.root(), test_dir.app_path());
+    let listed = volume.list_directory(&at(&volume, ""), None).await.expect("list");
+    assert!(listed.iter().any(|e| e.name == "inside.txt"), "got {listed:?}");
+}

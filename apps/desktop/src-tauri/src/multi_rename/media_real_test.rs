@@ -3,8 +3,6 @@
 //! then rendered by the preview. `media_test.rs` pins the loader with a stand-in
 //! reader; this proves the real path behind it fits together.
 
-#![cfg(unix)] // Windows: the media names come out wrong, not yet pinned down (#1351)
-
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -22,11 +20,19 @@ use super::session::MultiRenamePreview;
 use crate::file_system::volume::manager::get_volume_manager;
 use crate::test_support::{TestDir, wait_until_async};
 
-/// Registers the real local disk as `root`, the volume a listing of a scratch dir names.
+/// Registers the real local disk as `root`, the volume a listing of a scratch dir names:
+/// rooted at the scratch folder's filesystem root (`/`, or its drive on Windows, where `/`
+/// is a drive-relative path), as the real `root` volume is.
 fn ensure_root_volume() {
+    let scratch = cmdr_fs::testing::scratch_root();
+    let fs_root = scratch.ancestors().last().expect("an absolute path has a root");
     get_volume_manager().register_if_absent(
         "root",
-        Arc::new(LocalVolume::local_folder("Test root", "/", crate::volume_host::host())),
+        Arc::new(LocalVolume::local_folder(
+            "Test root",
+            fs_root,
+            crate::volume_host::host(),
+        )),
     );
 }
 
@@ -73,6 +79,7 @@ fn masked(name_mask: &str) -> MultiRenameSpec {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `read_range` yet, so the media read answers `Unreadable`
 async fn photos_movies_and_songs_on_the_local_disk_name_themselves() {
     ensure_root_volume();
     let (_dir, listing) = folder(
