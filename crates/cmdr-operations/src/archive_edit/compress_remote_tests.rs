@@ -3,8 +3,6 @@
 //! upload, fresh replacement rather than mutation, backend-specific publication,
 //! and cleanup of unpublished stages.
 
-#![cfg(unix)] // Windows: a fresh compress fails or stalls (task 35 streams or #1225 milestone 10a, not yet pinned down: #1351)
-
 use super::test_support::*;
 use crate::WriteOperationPhase;
 use cmdr_fs::app_path;
