@@ -259,12 +259,11 @@ async fn a_relative_bridge_path_lands_under_the_root_and_a_dot_dot_is_refused() 
 fn a_case_only_rename_leaves_the_old_spelling_gone_for_the_watcher() {
     use crate::reading::get_single_entry;
 
-    let test_dir = TestDir::new("win_case_rename");
-    let root = app_root(&test_dir);
-    std::fs::write(test_dir.join("a.txt"), b"x").expect("write");
-    std::fs::rename(test_dir.join("a.txt"), test_dir.join("A.txt")).expect("case-only rename");
+    let test_dir = AppTestDir::new("win_case_rename");
+    std::fs::write(test_dir.native().join("a.txt"), b"x").expect("write");
+    std::fs::rename(test_dir.native().join("a.txt"), test_dir.native().join("A.txt")).expect("case-only rename");
 
-    let root = root.to_str().expect("unicode");
+    let root = test_dir.app_path().as_str();
     let old = std::path::PathBuf::from(format!("{root}/a.txt"));
     let new = std::path::PathBuf::from(format!("{root}/A.txt"));
     assert!(std::fs::metadata(&old).is_ok(), "NTFS answers case-insensitively");
@@ -273,7 +272,7 @@ fn a_case_only_rename_leaves_the_old_spelling_gone_for_the_watcher() {
     let entry = get_single_entry(&new).expect("the new spelling is");
     assert_eq!(entry.name, "A.txt");
     assert_eq!(
-        get_single_entry(&test_dir.join("gone.txt"))
+        get_single_entry(&test_dir.native().join("gone.txt"))
             .expect_err("nothing there")
             .kind(),
         std::io::ErrorKind::NotFound
@@ -300,8 +299,8 @@ fn a_watch_opens_the_verbatim_path_and_its_events_read_back_in_the_app_spelling(
         PathBuf::from("//testnas.local/share/x/a.txt")
     );
 
-    let test_dir = TestDir::new("win_watch_long");
-    let mut long = app_root(&test_dir).to_str().expect("unicode").to_owned();
+    let test_dir = AppTestDir::new("win_watch_long");
+    let mut long = test_dir.app_path().as_str().to_owned();
     while long.len() < 300 {
         long.push_str("/a-folder-name-of-forty-characters-123456");
     }
@@ -324,12 +323,11 @@ fn a_local_drive_watches_its_listings_and_asks_the_host_in_the_app_spelling() {
     use cmdr_fs::volume::host::listings::RecordingListings;
     use std::sync::Arc;
 
-    let test_dir = TestDir::new("win_watch_coverage");
-    let shown = app_root(&test_dir.join("shown"));
+    let test_dir = AppTestDir::new("win_watch_coverage");
+    let shown = std::path::PathBuf::from(format!("{}/shown", test_dir.app_path().as_str()));
     let listings = RecordingListings::new().with_local_watch_coverage(shown, WatchCoverage::EveryWriter);
     let host = VolumeHost::builder().listings(Arc::new(listings)).build();
-    let root = cmdr_fs::app_path::AppPathBuf::from_native_unicode(&test_dir).expect("the test folder is an app path");
-    let volume = crate::LocalWindowsVolume::local_folder_at("Test", root, host);
+    let volume = crate::LocalWindowsVolume::local_folder_at("Test", test_dir.app_path().to_owned(), host);
 
     assert!(volume.can_watch_listings());
     assert_eq!(

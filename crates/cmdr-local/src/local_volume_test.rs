@@ -81,10 +81,6 @@ fn a_rerooted_volume_keeps_its_mount_class() {
 }
 
 #[test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "the Windows watcher isn't wired to LocalWindowsVolume yet"
-)]
 fn a_local_volume_watches_its_listings() {
     let dir = AppTestDir::new("can_watch");
     assert!(volume_at(&dir).can_watch_listings());
