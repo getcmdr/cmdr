@@ -37,6 +37,7 @@ use crate::agent::suggested_ops::facts::{RunsAs, runs_as};
 use crate::agent::suggested_ops::server::{SavedServers, ServerProposalView, server_card};
 use crate::agent::types::{OpStatus, ProposalStatus, ProposalVerb, Reversibility};
 use crate::file_system::volume::{Volume, VolumeError};
+use crate::tools::agent_path::Landing;
 use cmdr_operations::{RenameStartError, WriteOperationError};
 /// Why a suggested-ops read or answer didn't happen.
 ///
@@ -240,7 +241,8 @@ pub async fn suggested_ops_list(app: AppHandle) -> Result<Vec<SuggestedSweepView
     let rows = summaries
         .into_iter()
         .zip(checks)
-        .map(|((summary, sweep), (destination_state, lands_on))| {
+        .map(|((summary, sweep), (destination_state, landing))| {
+            let (destination_state, lands_on) = with_landing(destination_state, landing);
             let mut facts = read_facts(
                 &summary.group,
                 VolumeFacts {
@@ -575,22 +577,44 @@ async fn destination_state(group: &ProposalGroup) -> DestinationState {
 /// The place a write into the group's destination really lands, when a link leads it off the
 /// volume its text names (`tools/agent_path.rs::write_lands_off_volume`), for every verb whose
 /// card shows a destination. A rename's parent is where its rows already are, so it's not asked.
-async fn destination_lands_on(group: &ProposalGroup) -> Option<String> {
+/// Bounded by the registry host's own resolve deadline, its blocking walk off the async threads.
+async fn destination_lands_on(group: &ProposalGroup) -> Landing {
     if matches!(
         group.verb,
         ProposalVerb::Rename | ProposalVerb::Trash | ProposalVerb::Delete
     ) {
-        return None;
+        return Landing::AsNamed;
     }
-    let destination = group.destination.as_ref()?;
-    let lands_on =
-        crate::tools::agent_path::write_lands_off_volume(destination, &crate::go_to_path::AppHost::registry()).await?;
-    log::info!(
-        target: "agent::suggested_ops",
-        "group {}: its destination leads through a link onto another volume",
-        group.id
-    );
-    Some(lands_on.into_string())
+    let Some(destination) = group.destination.as_ref() else {
+        return Landing::AsNamed;
+    };
+    let landing =
+        crate::tools::agent_path::write_lands_off_volume(destination, &crate::go_to_path::AppHost::registry()).await;
+    match &landing {
+        Landing::AsNamed => {}
+        Landing::OffVolume(_) => log::info!(
+            target: "agent::suggested_ops",
+            "group {}: its destination leads through a link onto another volume",
+            group.id
+        ),
+        Landing::Unchecked => log::debug!(
+            target: "agent::suggested_ops",
+            "group {}: the link walk under its destination didn't finish in time",
+            group.id
+        ),
+    }
+    landing
+}
+
+/// The destination's state and where it really lands, from both checks. A link walk that didn't
+/// finish leaves where the files land unknown, as a destination check past its deadline does:
+/// the card says it couldn't check, ❌ never the drive its text names.
+fn with_landing(destination_state: DestinationState, landing: Landing) -> (DestinationState, Option<String>) {
+    match landing {
+        Landing::AsNamed => (destination_state, None),
+        Landing::OffVolume(physical) => (destination_state, Some(physical.into_string())),
+        Landing::Unchecked => (DestinationState::Unknown, None),
+    }
 }
 
 /// Why the destination check gave no answer. Only ever logged.

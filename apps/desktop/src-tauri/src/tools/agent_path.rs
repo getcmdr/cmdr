@@ -328,6 +328,24 @@ pub(crate) async fn read_path(key: &str, text: &str, host: &AppHost) -> Result<S
         .map_err(|refusal| refusal.into_error(key, text))
 }
 
+/// One volume-relative store path a VIEW reads (`cmdr://importance`'s `under` on a named
+/// share's store, `key` naming it): POSIX text, lexical, since no live volume may be there to
+/// ask. A `..` has no volume to answer it, so it refuses, as does a `~` or a relative path.
+///
+/// # Errors
+///
+/// [`Refusal`], as a tool error naming `key`.
+pub(crate) fn store_path(key: &str, text: &str) -> Result<String, ToolError> {
+    let parsed = if crate::commands::wire_path::has_dot_dot_name(text) {
+        Err(NotAnAppPath::DotName)
+    } else {
+        AppPathBuf::parse(text, PathFlavor::Posix)
+    };
+    parsed
+        .map(AppPathBuf::into_string)
+        .map_err(|why| Refusal::Typed(TypedPathRefusal::NotAPath(why)).into_error(key, text))
+}
+
 /// One agent path, resolved: the app path's text the tool takes.
 ///
 /// # Errors
@@ -369,10 +387,26 @@ pub(crate) async fn agent_path(text: &str, using: Use, host: &AppHost) -> Result
 /// text names, else `None`: the [`Use::WriteTarget`] check a proposal passed at creation,
 /// re-run each time its review renders, since a link can appear under a destination while the
 /// group waits. Disclosure only: ❌ never a refusal at execution, where an approved group runs
-/// as if the person had started it (`agent/suggested_ops/CLAUDE.md`). `None` too when the walk
-/// can't finish; the card's own check says what it couldn't tell.
-pub(crate) async fn write_lands_off_volume(path: &AppPath, host: &AppHost) -> Option<AppPathBuf> {
-    off_volume(path, true, host).await.ok().flatten()
+/// as if the person had started it (`agent/suggested_ops/CLAUDE.md`). A walk that can't finish
+/// (a hung mount past the host's deadline) is [`Landing::Unchecked`], ❌ never "lands as named":
+/// silence there would read as the drive the card names.
+pub(crate) async fn write_lands_off_volume(path: &AppPath, host: &AppHost) -> Landing {
+    match off_volume(path, true, host).await {
+        Ok(None) => Landing::AsNamed,
+        Ok(Some(physical)) => Landing::OffVolume(physical),
+        Err(_) => Landing::Unchecked,
+    }
+}
+
+/// Where a write into a destination lands ([`write_lands_off_volume`]).
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum Landing {
+    /// On the volume its text names (or no local place to walk: a server's links are its own).
+    AsNamed,
+    /// A link leads it onto another volume: this place.
+    OffVolume(AppPathBuf),
+    /// The walk didn't finish, so where it lands is unknown.
+    Unchecked,
 }
 
 /// `/x` but not `//server` or a scheme.

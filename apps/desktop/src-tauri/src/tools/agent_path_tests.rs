@@ -207,9 +207,20 @@ async fn a_review_names_where_a_destination_behind_a_link_really_lands() {
     let host = two_volumes(&a, &b);
     assert_eq!(
         write_lands_off_volume(&at(&a, "link/new"), &host).await,
-        Some(at(&b, "target/new"))
+        Landing::OffVolume(at(&b, "target/new"))
     );
-    assert_eq!(write_lands_off_volume(&at(&a, "real"), &host).await, None);
+    assert_eq!(write_lands_off_volume(&at(&a, "real"), &host).await, Landing::AsNamed);
+}
+
+/// A walk past its deadline (a hung mount) says it couldn't check, ❌ never "lands as named",
+/// which the card would read as the drive its text names.
+#[tokio::test]
+async fn a_destination_walk_past_its_deadline_is_unchecked() {
+    let dir = AppTestDir::new("agent_path_lands_unchecked");
+    let root = dir.app_path().to_owned();
+    let volume = local_at(&root);
+    let host = AppHost::over(move |_| Some(Arc::clone(&volume)), Duration::ZERO);
+    assert_eq!(write_lands_off_volume(&at(&root, "x"), &host).await, Landing::Unchecked);
 }
 
 /// A volume registered under a root that sits behind a link (`/tmp/x` is `/private/tmp/x` on

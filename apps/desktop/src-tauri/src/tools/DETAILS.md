@@ -265,7 +265,9 @@ or a handler reads it. Handlers keep reading strings; the strings are the resolv
 - **A review re-checks a stored destination** (#1354): a link can appear under it while the group waits, so the review
   read (`commands/agent/suggested_ops.rs::destination_lands_on`, every render) re-runs the `WriteTarget` walk through
   `write_lands_off_volume` and the card names `destinationLandsOn`, where the files really go. Disclosed, ❌ never
-  refused at approval: an approved group runs as if the person started it (`agent/suggested_ops/CLAUDE.md`).
+  refused at approval: an approved group runs as if the person started it (`agent/suggested_ops/CLAUDE.md`). A walk
+  past the host's 2 s deadline (a hung mount) is `Landing::Unchecked`, which the card shows as `destinationState:
+  unknown` ("couldn't check"), ❌ never as landing where its text says.
 - **Which fields** is `fields(tool)`: JSON pointers with `*` over arrays, plus a scope string (split and re-spelled by the search parser's own rules,
   `cmdr_search::query::split_scope_segments` and `escape_scope_value`, so a quoted or `\,`-escaped part can't hide a
   `..`; `!` excludes; only absolute parts resolved, a `~name` staying a pattern) and `await`'s `value` under `condition: "path"`.

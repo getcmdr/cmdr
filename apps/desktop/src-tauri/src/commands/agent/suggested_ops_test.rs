@@ -592,3 +592,31 @@ fn the_source_volume_is_named_even_before_anyone_connects_it() {
     group.source_volume_id = "nothing-knows-this".into();
     assert_eq!(name(&group), None);
 }
+
+/// A link walk that couldn't finish (a hung mount) reads as "couldn't check", whatever the
+/// destination check said, ❌ never as landing on the drive the card names; a walk that did
+/// finish leaves the destination's own state as it was (#1354).
+#[test]
+fn a_link_walk_that_couldnt_finish_reads_as_unknown() {
+    assert_eq!(
+        with_landing(DestinationState::Exists, Landing::Unchecked),
+        (DestinationState::Unknown, None)
+    );
+    assert_eq!(
+        with_landing(DestinationState::NotApplicable, Landing::Unchecked),
+        (DestinationState::Unknown, None),
+        "a compress card shows a destination too"
+    );
+    assert_eq!(
+        with_landing(DestinationState::Exists, Landing::AsNamed),
+        (DestinationState::Exists, None)
+    );
+    let elsewhere = AppPathBuf::parse("/Volumes/Other/inbox", app_path::PathFlavor::Posix).expect("an app path");
+    assert_eq!(
+        with_landing(DestinationState::WillBeCreated, Landing::OffVolume(elsewhere)),
+        (
+            DestinationState::WillBeCreated,
+            Some("/Volumes/Other/inbox".to_string())
+        )
+    );
+}
