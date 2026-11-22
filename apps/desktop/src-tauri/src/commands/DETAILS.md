@@ -518,6 +518,17 @@ A path the frontend sends is read as an app path at the command edge, `wire_path
   the probes pick their volume through `path_checks::box_volume` (`resolve` on the text's `read_on_volume` reading,
   else the volume by id); `stat_paths_kinds` routes a route-served path through `app_path`. A write start's checked
   `PathBuf` crosses back for the scan preview's route at `checked_as_app_path`, until the starts take app paths (10d).
+- **An OS integration takes the native file** (`native`: `app_path`, then `to_native`): Finder's Get Info, the
+  editor and terminal launches, iCloud's download and eviction, Google Drive links, the clipboard's file URLs, the
+  context menu's services and facts, the git chip, the viewer's Save as, the media thumbnail, a favorite's mount
+  lookup. Text with no native file (a `..`, relative text, a scheme path) is refused typed (`NoNativePath`), and each
+  command answers it as "nothing to open there" in its own vocabulary: the terminal's `NotALocalPath`, an empty link,
+  a clipboard without that row. ❌ Never a `Path::new` of wire text: on Windows it isn't the native spelling.
+- **The route gate reads the app path too** (`routes_over_its_parent`, over `app_path_routes_over_its_parent`): no
+  route serves text that's no app path.
+- **A `std::path` API that reads the text lexically gets it as sent** (`as_sent_std_path`, `pre_check_rows`): the
+  write pre-checks, `get_name_rules`, the stored-spelling lookup, and `root_echo`. Byte for byte; it goes as each
+  engine's entry points take app paths.
 - **While escapes aren't live, an escape-range code point is literal** (`from_literal_store`), so a path crosses byte
   for byte.
 - **The transfer dialog's destination box is person-typed and VOLUME-RELATIVE.** Its probes (`path_exists` /

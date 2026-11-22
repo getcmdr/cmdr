@@ -1,6 +1,7 @@
 //! The command edge's door: what a wire path becomes, and what it refuses.
 
 use super::*;
+use cmdr_fs::app_path::{AppName, PathArithmetic};
 
 /// The app path a volume call gets for `text`, as text.
 fn typed(text: &str) -> String {
@@ -141,4 +142,37 @@ fn a_volume_relative_destination_lands_on_a_drive_root() {
 
 fn anchored_text(root: &AppPath, text: &str) -> String {
     anchored(root, text).expect("anchors").as_str().to_owned()
+}
+
+/// The OS integrations' door: a row's app path crosses to the native file it names (the
+/// trailing `/` gone, so `x/link/` names the link), and text naming no local file is refused
+/// typed, so no shell, framework, or clipboard ever gets it.
+#[test]
+fn a_row_crosses_to_its_native_file_and_text_with_none_is_refused() {
+    let dir = crate::test_support::AppTestDir::new("wire_native");
+    let row = dir
+        .app_path()
+        .join(AppName::from_app_spelling("a b.txt").expect("a name"))
+        .expect("joins");
+    let file = row.to_native().expect("a scratch file has a native path");
+    assert_eq!(native(row.as_str()), Ok(file.clone()));
+    assert_eq!(native(&format!("{}/", row.as_str())), Ok(file));
+    assert_eq!(native(&format!("{}/../y", row.as_str())), Err(NoNativePath::Refused));
+    assert_eq!(native("relative/x"), Err(NoNativePath::NotAnAppPath));
+    assert_eq!(native(""), Err(NoNativePath::NotAnAppPath));
+    assert_eq!(native("sftp://test.local:22/x"), Err(NoNativePath::NotLocal));
+}
+
+/// The route gate over wire text: an archive's inner path routes, the `.zip` itself and text
+/// that's no app path don't.
+#[test]
+fn only_an_app_path_a_route_serves_routes_over_its_parent() {
+    let dir = crate::test_support::AppTestDir::new("wire_routes");
+    let zip = dir
+        .app_path()
+        .join(AppName::from_app_spelling("a.zip").expect("a name"))
+        .expect("joins");
+    assert!(routes_over_its_parent(&format!("{}/inner.txt", zip.as_str())));
+    assert!(!routes_over_its_parent(zip.as_str()));
+    assert!(!routes_over_its_parent("relative/a.zip/inner.txt"));
 }

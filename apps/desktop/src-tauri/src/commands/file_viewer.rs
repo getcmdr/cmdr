@@ -484,12 +484,17 @@ pub async fn viewer_write_range_to_file(
     // `std::fs` errno the user can make nothing of. Saving over the `.zip` file
     // itself is a normal overwrite (allowed); only a path INSIDE one is refused.
     // Typed error, the same gate the write-path guards use.
-    if crate::file_system::volume::manager::path_routes_over_its_parent(std::path::Path::new(
-        &crate::commands::file_system::expand_tilde(&dest_path),
-    )) {
+    // The Save panel hands an app path, crossed to the native file once here.
+    let dest =
+        crate::commands::wire_path::native(&crate::commands::file_system::expand_tilde(&dest_path)).map_err(|why| {
+            ViewerError::Io {
+                message: format!("the destination has no native path: {why:?}").into(),
+            }
+        })?;
+    if crate::file_system::volume::manager::path_routes_over_its_parent(&dest) {
         return Err(ViewerError::DestinationIsReadOnly);
     }
-    write_range_watched(session_id, read_id, anchor, focus, dest_path, SAVE_STALL_LIMIT).await
+    write_range_watched(session_id, read_id, anchor, focus, dest, SAVE_STALL_LIMIT).await
 }
 
 /// Runs one save, watched for stalls. `stall_limit` is a parameter so tests drive it.
@@ -498,7 +503,7 @@ async fn write_range_watched(
     read_id: u64,
     anchor: RangeEnd,
     focus: RangeEnd,
-    dest_path: String,
+    dest: std::path::PathBuf,
     stall_limit: Duration,
 ) -> Result<file_viewer::SavedAs, ViewerError> {
     let progress = Arc::new(file_viewer::SaveProgress::new());
@@ -515,16 +520,7 @@ async fn write_range_watched(
         |message| ViewerError::Io {
             message: message.into(),
         },
-        move || {
-            file_viewer::app_viewer().write_range_to_file(
-                &session_id,
-                read_id,
-                anchor,
-                focus,
-                std::path::Path::new(&dest_path),
-                &progress,
-            )
-        },
+        move || file_viewer::app_viewer().write_range_to_file(&session_id, read_id, anchor, focus, &dest, &progress),
     )
     .await
 }

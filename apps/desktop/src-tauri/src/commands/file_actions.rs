@@ -206,7 +206,11 @@ pub async fn open_terminal_here(
             crate::log_error!(target: "file_actions", "open_terminal_here panicked: {detail}");
             OpenTerminalError::TimedOut
         },
-        move || crate::file_system::terminal::open_terminal_here(&volume_id, std::path::Path::new(&path), &app_choice),
+        move || match crate::commands::wire_path::native(&path) {
+            Ok(dir) => crate::file_system::terminal::open_terminal_here(&volume_id, &dir, &app_choice),
+            // No folder a shell can `cd` into, as an MTP or ADB pane answers.
+            Err(_) => Ok(OpenTerminalOutcome::NotALocalPath),
+        },
     )
     .await
 }
@@ -235,7 +239,11 @@ pub fn terminal_app_display_name(app_choice: String) -> Option<String> {
 #[cfg(target_os = "macos")]
 pub async fn default_app_name(path: String) -> Option<String> {
     blocking_with_timeout_flag(DEFAULT_APP_NAME_TIMEOUT, None, move || {
-        let ext = std::path::Path::new(&path).extension()?.to_str()?.to_owned();
+        let ext = crate::commands::wire_path::native(&path)
+            .ok()?
+            .extension()?
+            .to_str()?
+            .to_owned();
         let app_path = crate::macos_icons::default_app_path_for_extension(&ext)?;
         Some(crate::file_system::open_with::read_app_display_name(&app_path))
     })
@@ -262,7 +270,10 @@ pub fn copy_to_clipboard<R: Runtime>(app: AppHandle<R>, text: String) -> Result<
 #[specta::specta]
 pub async fn google_drive_links(path: String) -> Result<Option<DriveItemLinks>, String> {
     let work = tokio::task::spawn_blocking(move || {
-        let path = std::path::PathBuf::from(path);
+        // A path with no native form names no Drive item: no link, as for any other.
+        let Ok(path) = crate::commands::wire_path::native(&path) else {
+            return None;
+        };
         let is_directory = path.is_dir();
         crate::file_system::google_drive::item_links(&path, is_directory)
     });
@@ -284,9 +295,9 @@ pub async fn cloud_make_available_offline(path: String) -> Result<(), String> {
     // 30s timeout like every other fs-touching command: a wedged File Provider
     // extension can hang the blocking call indefinitely. The download request is
     // fire-and-forget server-side, so releasing the IPC on timeout is correct.
-    let work = tokio::task::spawn_blocking(move || {
-        crate::file_system::cloud_actions::request_download(std::path::Path::new(&path))
-    });
+    // A path with no native form is in no iCloud Drive, which the check below says.
+    let native = crate::commands::wire_path::native(&path).unwrap_or_default();
+    let work = tokio::task::spawn_blocking(move || crate::file_system::cloud_actions::request_download(&native));
     match tokio::time::timeout(Duration::from_secs(30), work).await {
         Ok(joined) => joined.map_err(|e| e.to_string())?,
         Err(_elapsed) => Err("Timed out reaching iCloud — give it another try".to_string()),
@@ -300,8 +311,9 @@ pub async fn cloud_make_available_offline(path: String) -> Result<(), String> {
 pub async fn cloud_remove_download(path: String) -> Result<(), String> {
     // 30s timeout: same hung-File-Provider risk as `cloud_make_available_offline`.
     // Eviction is fire-and-forget server-side, so releasing the IPC on timeout is fine.
-    let work =
-        tokio::task::spawn_blocking(move || crate::file_system::cloud_actions::evict_item(std::path::Path::new(&path)));
+    // As above: an empty path is in no iCloud Drive.
+    let native = crate::commands::wire_path::native(&path).unwrap_or_default();
+    let work = tokio::task::spawn_blocking(move || crate::file_system::cloud_actions::evict_item(&native));
     match tokio::time::timeout(Duration::from_secs(30), work).await {
         Ok(joined) => joined.map_err(|e| e.to_string())?,
         Err(_elapsed) => Err("Timed out reaching iCloud — give it another try".to_string()),

@@ -19,6 +19,15 @@ pub struct ClipboardReadResult {
     is_directory: Vec<Option<bool>>,
 }
 
+/// The rows as file URLs name them, each crossed to its native path at the edge. A row with no
+/// native form (a phone, a server path) is nothing another app reads off the clipboard, so
+/// it's left out, and the count says what went on.
+fn native_rows(rows: &[String]) -> Vec<PathBuf> {
+    rows.iter()
+        .filter_map(|row| crate::commands::wire_path::native(row).ok())
+        .collect()
+}
+
 /// Writes the given paths to the system clipboard and clears any cut state.
 ///
 /// Paths by value, never row numbers: the frontend resolves a pane's selection
@@ -27,7 +36,7 @@ pub struct ClipboardReadResult {
 #[tauri::command]
 #[specta::specta]
 pub async fn copy_paths_to_clipboard(app: tauri::AppHandle, paths: Vec<String>) -> Result<usize, String> {
-    let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
+    let paths = native_rows(&paths);
 
     if paths.is_empty() {
         return Err("No files to copy".to_string());
@@ -46,7 +55,7 @@ pub async fn copy_paths_to_clipboard(app: tauri::AppHandle, paths: Vec<String>) 
 #[tauri::command]
 #[specta::specta]
 pub async fn cut_paths_to_clipboard(app: tauri::AppHandle, paths: Vec<String>) -> Result<usize, String> {
-    let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
+    let paths = native_rows(&paths);
 
     if paths.is_empty() {
         return Err("No files to cut".to_string());

@@ -371,11 +371,7 @@ pub fn check_home_folder_guard(
 ) -> Option<WriteOperationError> {
     let engine = operations().ok()?;
     let volume_id = volume_id.unwrap_or_else(|| "root".to_string());
-    let sources: Vec<PathBuf> = if volume_id == "root" {
-        sources.iter().map(|s| PathBuf::from(expand_tilde(s))).collect()
-    } else {
-        sources.iter().map(PathBuf::from).collect()
-    };
+    let sources = wire_path::pre_check_rows(&sources, volume_id == "root");
     engine.home_folder_guard(&volume_id, &sources, action)
 }
 
@@ -467,12 +463,7 @@ pub async fn start_scan_preview(
     let volume_id = source_volume_id.unwrap_or_else(|| "root".to_string());
     let is_local = volume_id == "root";
 
-    // Only expand tilde for local paths
-    let sources: Vec<PathBuf> = if is_local {
-        sources.iter().map(|s| PathBuf::from(expand_tilde(s))).collect()
-    } else {
-        sources.iter().map(PathBuf::from).collect()
-    };
+    let sources = wire_path::pre_check_rows(&sources, is_local);
 
     let source_volume = scan_preview_source_volume(&volume_id, sources.first()).await?;
 

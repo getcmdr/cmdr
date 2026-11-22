@@ -4,7 +4,6 @@
 //! wrapped with `blocking_with_timeout` so a hung NFS / SMB / FUSE mount can
 //! never freeze the IPC thread.
 
-use std::path::PathBuf;
 use std::time::Duration;
 
 use cmdr_listing::ListingId;
@@ -35,8 +34,8 @@ const GIT_SUBSCRIBE_TIMEOUT: Duration = Duration::from_secs(2);
 #[specta::specta]
 pub async fn get_git_repo_info(path: String) -> TimedOut<Option<RepoInfo>> {
     blocking_with_timeout_flag(GIT_REPO_INFO_TIMEOUT, None, move || {
-        let path_buf = PathBuf::from(&path);
-        let (handle, root) = portal().discover(&path_buf).ok()?;
+        let native = crate::commands::wire_path::native(&path).ok()?;
+        let (handle, root) = portal().discover(&native).ok()?;
         repo_info(&handle, &root).ok()
     })
     .await
@@ -58,9 +57,11 @@ pub async fn subscribe_git_state(repo_root: String) -> Result<RepoInfo, GitSubsc
         || GitSubscribeError::TimedOut,
         |detail| GitSubscribeError::Unexpected { detail },
         move || {
-            let path = PathBuf::from(&repo_root);
+            let root = crate::commands::wire_path::native(&repo_root).map_err(|why| GitSubscribeError::Unexpected {
+                detail: format!("the repo root has no native path: {why:?}"),
+            })?;
             portal()
-                .subscribe_state(&path)
+                .subscribe_state(&root)
                 .map_err(|error| GitSubscribeError::Git { error })
         },
     )
@@ -97,8 +98,10 @@ pub enum GitSubscribeError {
 #[specta::specta]
 pub async fn unsubscribe_git_state(repo_root: String) {
     let _ = tokio::task::spawn_blocking(move || {
-        let path = PathBuf::from(&repo_root);
-        portal().unsubscribe_state(&path);
+        // A root with no native path was never subscribed.
+        if let Ok(root) = crate::commands::wire_path::native(&repo_root) {
+            portal().unsubscribe_state(&root);
+        }
     })
     .await;
 }
@@ -111,8 +114,12 @@ pub async fn unsubscribe_git_state(repo_root: String) {
 #[specta::specta]
 pub async fn get_git_status_for_paths(repo_root: String, dir: String) -> TimedOut<Vec<EntryStatus>> {
     blocking_with_timeout_flag(GIT_STATUS_TIMEOUT, Vec::new(), move || {
-        let root = PathBuf::from(&repo_root);
-        let scope = PathBuf::from(&dir);
+        let (Ok(root), Ok(scope)) = (
+            crate::commands::wire_path::native(&repo_root),
+            crate::commands::wire_path::native(&dir),
+        ) else {
+            return Vec::new();
+        };
         let (handle, _root) = match portal().discover(&root) {
             Ok(v) => v,
             Err(_) => return Vec::new(),

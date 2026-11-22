@@ -19,13 +19,6 @@
 //! (iCloud Drive). For Dropbox/GDrive/OneDrive items the menu items don't appear;
 //! the user has to use the provider's own client (or Finder).
 use std::path::Path;
-#[cfg(target_os = "macos")]
-use std::path::PathBuf;
-
-#[cfg(target_os = "macos")]
-fn home_dir() -> Option<PathBuf> {
-    std::env::var_os("HOME").map(PathBuf::from)
-}
 
 /// Returns true only for paths inside iCloud Drive, the location where
 /// `FileManager.evictUbiquitousItem` / `startDownloadingUbiquitousItem` work.
@@ -35,7 +28,7 @@ fn home_dir() -> Option<PathBuf> {
 /// (`cmdr_fs::cloud_provider`).
 #[cfg(target_os = "macos")]
 pub fn is_in_icloud_drive(path: &Path) -> bool {
-    let Some(home) = home_dir() else {
+    let Some(home) = dirs::home_dir() else {
         return false;
     };
     cmdr_fs::cloud_provider::locate(&home, path).is_some_and(|found| found.provider.supports_eviction())
@@ -140,6 +133,7 @@ pub fn request_download(_path: &Path) -> Result<(), String> {
 mod tests {
     use super::*;
     use cmdr_fs::cloud_provider::ICLOUD_DRIVE_SUBPATH;
+    use std::path::PathBuf;
 
     /// The real home directory, which is what `is_in_icloud_drive` resolves.
     ///

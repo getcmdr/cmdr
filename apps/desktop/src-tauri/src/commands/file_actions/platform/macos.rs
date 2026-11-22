@@ -44,7 +44,11 @@ pub(crate) async fn get_info(path: String) -> Result<(), GetInfoError> {
             crate::log_error!(target: "file_actions", "get_info panicked: {detail}");
             GetInfoError::TimedOut
         },
-        move || crate::file_system::get_info::open_get_info(std::path::Path::new(&path)),
+        // A path with no native form has no Finder window to ask for: nothing launches.
+        move || match crate::commands::wire_path::native(&path) {
+            Ok(native) => crate::file_system::get_info::open_get_info(&native),
+            Err(_) => Err(GetInfoError::LaunchRefused { errno: None }),
+        },
     )
     .await
 }
@@ -63,12 +67,12 @@ pub(crate) async fn open_in_editor(
             crate::log_error!(target: "file_actions", "open_in_editor panicked: {detail}");
             OpenInEditorError::TimedOut
         },
-        move || {
-            crate::file_system::text_editor::open_in_editor(
-                std::path::Path::new(&path),
-                &app_choice,
-                ask_about_other_editors,
-            )
+        // A path with no native form has no file an editor opens: nothing launches.
+        move || match crate::commands::wire_path::native(&path) {
+            Ok(native) => {
+                crate::file_system::text_editor::open_in_editor(&native, &app_choice, ask_about_other_editors)
+            }
+            Err(_) => Err(OpenInEditorError::LaunchRefused { errno: None }),
         },
     )
     .await
