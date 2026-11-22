@@ -101,12 +101,14 @@ fn a_renamed_top_level_item_is_recorded_with_the_identity_it_kept() {
     fs::write(&source, vec![1u8; 4096]).unwrap();
     let before = WrittenIdentity::at_local_path(&source);
 
+    // The engine's order: the source's stat before the rename, recorded once it landed.
+    let source_stat = fs::symlink_metadata(&source).ok();
+    fs::rename(&source, dst_dir.join("clip.mov")).unwrap();
     let mut move_tx = MoveTransaction::new();
     move_tx.record(
         source.clone(),
-        WrittenFile::local_stat(dst_dir.join("clip.mov"), fs::symlink_metadata(&source).ok().as_ref()),
+        WrittenFile::local_stat(dst_dir.join("clip.mov"), source_stat.as_ref()),
     );
-    fs::rename(&source, dst_dir.join("clip.mov")).unwrap();
 
     let landed = &move_tx.renamed_items().next().expect("one recorded rename").landed;
     assert_eq!(

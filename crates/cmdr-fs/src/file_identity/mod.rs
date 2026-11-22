@@ -95,6 +95,18 @@ impl FileId {
         Ok(id)
     }
 
+    /// The node an open `file` names, read through its own handle: never a second open by
+    /// path, so a file swapped in at the name after `file` was opened can't answer for it.
+    /// `None` where the filesystem gives no usable id.
+    pub fn of_open(file: &std::fs::File) -> Option<Self> {
+        let id = platform::file_id_of_open(file)?;
+        #[cfg(any(test, feature = "testing"))]
+        if hidden::hides(id) {
+            return None;
+        }
+        Some(id)
+    }
+
     /// The device the node lives on.
     pub fn device(self) -> DeviceId {
         self.device

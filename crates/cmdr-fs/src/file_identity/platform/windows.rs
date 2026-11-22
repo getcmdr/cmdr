@@ -41,14 +41,20 @@ pub(crate) fn file_id_at(path: &Path, follow: Follow) -> std::io::Result<Option<
     // An open that fails (missing, access denied) is the `Err`: the caller tells a missing
     // path from one it couldn't open by the error's kind.
     let file = open_for_id(path, follow)?;
+    Ok(file_id_of_open(&file))
+}
+
+/// The node an open handle names, with no second open by path (so nothing swapped in at the
+/// name between the caller's open and this read can answer for it).
+pub(crate) fn file_id_of_open(file: &std::fs::File) -> Option<FileId> {
     let handle: HANDLE = file.as_raw_handle();
-    Ok(match id_info(handle) {
+    match id_info(handle) {
         Ok(info) => usable(info.VolumeSerialNumber, u128::from_le_bytes(info.FileId.Identifier)),
         Err(code) if refuses_the_class(code) => {
             file_index(handle).and_then(|info| usable(u64::from(info.dwVolumeSerialNumber), index_of(&info)))
         }
         Err(_) => None,
-    })
+    }
 }
 
 /// The volume a path's node lives on, links followed: its mount manager GUID

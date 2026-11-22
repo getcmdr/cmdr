@@ -215,7 +215,7 @@ fn restore_moved_item(item: &MovedItem) -> ItemResult {
     // hold against an entry that appears after this stat.
     let mut force = false;
     if let Ok(occupant) = fs::symlink_metadata(&item.original_source) {
-        if occupant_is_the_item_itself(item, &occupant) {
+        if occupant_is_the_item_itself(item, &item.original_source, &occupant) {
             force = true;
         } else {
             log::info!(
@@ -279,8 +279,8 @@ fn restore_rename(landed: &Path, original_source: &Path, force: bool) -> ItemRes
 ///
 /// The recorded node id is the right side to compare: the recheck above just
 /// proved the entry still at the landed path carries it.
-fn occupant_is_the_item_itself(item: &MovedItem, occupant: &fs::Metadata) -> bool {
-    match (item.landed.identity.node(), WrittenIdentity::node_of_stat(occupant)) {
+fn occupant_is_the_item_itself(item: &MovedItem, at: &Path, occupant: &fs::Metadata) -> bool {
+    match (item.landed.identity.node(), WrittenIdentity::node_of_stat(at, occupant)) {
         (Some(recorded), Some(live)) => recorded == live,
         // Nothing to compare, so nothing is proven — and an unproven restore that
         // might overwrite is one we don't make.

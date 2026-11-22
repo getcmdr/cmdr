@@ -71,8 +71,10 @@ pub mod space;
 #[cfg(target_os = "macos")]
 pub mod statfs;
 
+mod copy_scan;
 mod platform;
 mod rename;
+mod streams;
 
 // This OS's local volume (`LocalPosixVolume` or `LocalWindowsVolume`) and the no-replace
 // rename; `platform/mod.rs` picks them.

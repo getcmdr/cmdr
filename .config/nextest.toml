@@ -279,6 +279,17 @@ filter = 'test(indexing::lifecycle::state::tests::disconnect_storm_two_volumes_n
 slow-timeout = { period = "20s", terminate-after = 1 }
 
 [[profile.default.overrides]]
+# Two named-leaf sweeps that build a fresh engine and temp tree per cell: 7 volume
+# routes × 5 leaves (the bidi one) or × every policy (the clash one), 35-odd rigs in
+# one test. macOS runs them in 0.4 and 1.2 s; Windows' temp-folder setup and teardown
+# is the cost there: 1.7 and 4.9 s on the 2-core builder (2026-11-22), past 8 s on the
+# hosted runner (all three tries, run 44990303757). Windows only, so the cap still
+# bites a wedge everywhere else.
+platform = 'cfg(windows)'
+filter = 'test(named_leaves_volume_tests::a_clash_at_a_renamed_leaf_meets_the_policy_at_the_renamed_path) + test(named_leaves_volume_tests::a_name_with_a_bidi_override_or_a_zero_width_joiner_refuses)'
+slow-timeout = { period = "30s", terminate-after = 1 }
+
+[[profile.default.overrides]]
 # The two kick tests that wait on a REAL spawned enrichment pass (tauri runtime →
 # blocking pool → SQLite → media writer thread → poll). Their in-test
 # `PASS_LANDS_WITHIN` wait is 10 s (saturation headroom; see its doc — and

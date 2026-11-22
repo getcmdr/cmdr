@@ -95,6 +95,23 @@ mod by_path {
         assert_eq!(a.map(FileId::device), c.map(FileId::device), "one folder, one volume");
     }
 
+    /// An open handle names the node it opened, even once another file took its name.
+    #[test]
+    fn an_open_file_names_the_node_it_opened_after_a_swap() {
+        let dir = tempfile::tempdir().unwrap();
+        let (path, aside) = (dir.path().join("a.txt"), dir.path().join("aside.txt"));
+        fs::write(&path, b"x").unwrap();
+        let file = fs::File::open(&path).unwrap();
+        let opened = FileId::at(&path, Follow::Links);
+        assert!(opened.is_some());
+        assert_eq!(FileId::of_open(&file), opened);
+
+        fs::rename(&path, &aside).unwrap();
+        fs::write(&path, b"y").unwrap();
+        assert_ne!(FileId::at(&path, Follow::Links), opened, "a new file at the name");
+        assert_eq!(FileId::of_open(&file), opened, "the handle still names the first");
+    }
+
     #[test]
     fn a_folder_has_an_id_of_its_own() {
         let dir = tempfile::tempdir().unwrap();

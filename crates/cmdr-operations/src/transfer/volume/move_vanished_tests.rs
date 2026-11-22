@@ -6,8 +6,6 @@
 //! thread-local, so these run on a current-thread runtime: every question the
 //! sweeps ask then comes from the test's own thread.
 
-#![cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
-
 use cmdr_fs::app_path;
 use std::cell::Cell;
 use std::rc::Rc;

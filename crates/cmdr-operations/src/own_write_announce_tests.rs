@@ -459,7 +459,6 @@ async fn an_archive_edit_announces_its_temp_then_the_archive_it_replaces() {
 /// zip it publishes and the temp it streams into, so compressing into
 /// `~/Downloads` never toasts Cmdr's own output.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-#[cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
 async fn a_fresh_compress_announces_its_zip_and_temp_before_they_exist() {
     let rig = Rig::new("announce_fresh_compress");
     fs::write(rig.join("src/a.txt"), b"a").expect("source");
@@ -499,7 +498,6 @@ async fn a_fresh_compress_announces_its_zip_and_temp_before_they_exist() {
 
 /// The volume engine landing on a local disk (`StagedWrite::begin` over `EngineHost::announce_on`).
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-#[cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
 async fn a_volume_copy_onto_a_local_disk_announces_its_destination_and_temp() {
     let rig = Rig::new("announce_volume_copy");
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));

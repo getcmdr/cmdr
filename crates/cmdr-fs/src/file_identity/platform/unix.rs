@@ -14,6 +14,10 @@ pub(crate) fn file_id_at(path: &Path, follow: Follow) -> std::io::Result<Option<
     Ok(file_id(&metadata))
 }
 
+pub(crate) fn file_id_of_open(file: &std::fs::File) -> Option<FileId> {
+    file_id(&file.metadata().ok()?)
+}
+
 pub(crate) fn file_id(metadata: &Metadata) -> Option<FileId> {
     Some(FileId::from_parts(
         DeviceId::from_raw(metadata.dev()),

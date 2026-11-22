@@ -9,8 +9,6 @@
 //! directory". These cells run the REAL local walk, publish it the way the
 //! dialog does, and copy through it.
 
-#![cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
-
 use crate::testing::TestOperations;
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::testing::symlink;

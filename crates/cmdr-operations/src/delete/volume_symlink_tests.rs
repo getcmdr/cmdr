@@ -8,8 +8,6 @@
 //! (ADB, SFTP), can list a link as the folder it points to the way a Samba
 //! share does (#613), and can let a pane's listing vouch for a folder.
 
-#![cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no copy scan yet, and its listing marks a folder link apart from how these cells stage it
-
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::app_path::AppPathBuf;
 use std::future::Future;
@@ -151,7 +149,9 @@ impl Tree {
         std::fs::create_dir_all(root.join("outside")).expect("outside");
         std::fs::write(root.join("dir/plain.txt"), b"PLAIN").expect("plain");
         std::fs::write(root.join("outside/keep.txt"), b"KEEP").expect("keep");
-        cmdr_fs::testing::symlink("../outside", root.join("dir/link")).expect("link");
+        // Joined, so the target holds this OS's separator: a Windows link whose relative
+        // target reads `../outside` fails every open through it (`ERROR_INVALID_NAME`, 123).
+        cmdr_fs::testing::symlink(Path::new("..").join("outside"), root.join("dir/link")).expect("link");
         Self { dir }
     }
 

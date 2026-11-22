@@ -459,10 +459,12 @@ content in one call), and `leaf_validation`'s identity read. `FileId::read_at` k
 guard that must tell "not there" (`NotFound`) from "there, but no id" answers in one read: the copy's per-file guard
 runs on every file, and a re-stat to tell the two apart doubled its syscalls on a fresh copy. The `Metadata` callers
 (walk dedup, the journal's `NodeIdentity`) still answer `None` on Windows; each moves to the path reader as its Windows
-task needs it. The device has its own path reader, `device_at` / `same_device_at`; `cmdr-operations`'
-`is_same_filesystem` asks it when `Metadata` can't say, which is what lets a same-drive move on Windows rename in place.
-Unix pays one `stat` per read, the same as before. (Verified on Windows 10 22H2 build 19045, NTFS,
-`cargo nextest run -p cmdr-fs file_identity`, 2026-11-21.)
+task needs it. A third reader, `FileId::of_open(&file)`, asks an already open handle (Unix: its `fstat`), for a caller
+whose answer must describe the file it holds open, never whatever took the name since: a resumed read's source version
+(`cmdr-local`'s `streams/platform/`). The device has its own path reader, `device_at` / `same_device_at`;
+`cmdr-operations`' `is_same_filesystem` asks it when `Metadata` can't say, which is what lets a same-drive move on
+Windows rename in place. Unix pays one `stat` per read, the same as before. (Verified on Windows 10 22H2 build 19045,
+NTFS, `cargo nextest run -p cmdr-fs file_identity`, 2026-11-21.)
 
 **Decision**: on Windows `device_at` names the volume by its mount manager GUID (`GetFinalPathNameByHandleW`,
 `VOLUME_NAME_GUID`), or a file on a share by its server and share; ❌ never the volume serial a `FileId` carries.

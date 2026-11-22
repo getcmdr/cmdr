@@ -87,10 +87,6 @@ fn a_local_volume_watches_its_listings() {
 }
 
 #[test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, streams: LocalWindowsVolume has no read or write stream yet"
-)]
 fn a_local_volume_streams_and_exports() {
     // Cross-volume copies pipe through `open_read_stream` and `write_from_stream`.
     let dir = AppTestDir::new("streams_and_exports");
@@ -268,10 +264,6 @@ async fn create_file_does_not_clobber_an_existing_file() {
 /// The node a folder is survives a rename (what a trip into the Trash is), and a new folder
 /// under the freed name is a different one: the check a trash undo makes.
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "LocalWindowsVolume has no node identity yet (the Recycle Bin undo's check)"
-)]
 async fn node_identity_follows_the_folder_not_its_name() {
     let test_dir = AppTestDir::new("node_identity_test");
     let volume = volume_at(&test_dir);
@@ -296,10 +288,6 @@ async fn node_identity_follows_the_folder_not_its_name() {
 // ── Copy: the scan and the streams ────────────────────────────────────
 
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, copy scan: LocalWindowsVolume keeps the trait's default"
-)]
 async fn a_copy_scan_of_one_file_counts_its_bytes() {
     let test_dir = AppTestDir::new("scan_copy_file_test");
     std::fs::write(test_dir.native().join("test.txt"), "Hello, World!").unwrap();
@@ -313,10 +301,6 @@ async fn a_copy_scan_of_one_file_counts_its_bytes() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, copy scan: LocalWindowsVolume keeps the trait's default"
-)]
 async fn a_copy_scan_of_a_folder_counts_its_tree() {
     use std::fs;
 
@@ -345,10 +329,6 @@ async fn a_copy_scan_of_a_folder_counts_its_tree() {
 /// one `spawn_blocking`. The boundary here is per entry, through the blocking twin that parks
 /// the pool thread.
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, copy scan: LocalWindowsVolume keeps the trait's default"
-)]
 async fn a_batch_scan_stops_when_it_is_told_to() {
     let test_dir = AppTestDir::new("scan_stop_told");
     let tree = test_dir.native().join("tree");
@@ -361,10 +341,6 @@ async fn a_batch_scan_stops_when_it_is_told_to() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, copy scan: LocalWindowsVolume keeps the trait's default"
-)]
 async fn a_batch_scan_asks_its_boundary_inside_the_walk() {
     let test_dir = AppTestDir::new("scan_stop_per_entry");
     let tree = test_dir.native().join("tree");
@@ -379,10 +355,6 @@ async fn a_batch_scan_asks_its_boundary_inside_the_walk() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, streams: LocalWindowsVolume has no read stream yet"
-)]
 async fn a_read_stream_hands_out_the_files_bytes() {
     let test_dir = AppTestDir::new("read_stream_src_test");
     std::fs::write(test_dir.native().join("source.txt"), "Test content").unwrap();
@@ -401,10 +373,6 @@ async fn a_read_stream_hands_out_the_files_bytes() {
 /// off the stream, so the local stream has to carry the file's own, to the nanosecond the
 /// filesystem kept.
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, streams: LocalWindowsVolume has no read stream yet"
-)]
 async fn a_read_stream_reports_the_files_mtime() {
     let test_dir = AppTestDir::new("read_stream_mtime_test");
     let path = test_dir.native().join("dated.txt");
@@ -422,11 +390,59 @@ async fn a_read_stream_reports_the_files_mtime() {
     assert_eq!(stream.modified_at(), Some(mtime));
 }
 
+/// A resumed read refuses a file rewritten in place since its first read, even at the same
+/// length with its last-write time put back: the bytes before the offset came from the old
+/// version, so carrying on would splice two versions into one copy. POSIX catches it by the
+/// change time; Windows by `FILE_BASIC_INFO.ChangeTime`, read off the open handle.
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, streams: LocalWindowsVolume has no read stream yet"
-)]
+async fn a_resumed_read_refuses_a_same_length_rewrite_with_its_date_put_back() {
+    let test_dir = AppTestDir::new("resume_rewrite_in_place_test");
+    let path = test_dir.native().join("f.bin");
+    let data: Vec<u8> = (0..200_000u32).map(|i| (i % 251) as u8).collect();
+    std::fs::write(&path, &data).unwrap();
+    let mtime = std::time::SystemTime::UNIX_EPOCH + std::time::Duration::new(1_354_040_105, 0);
+    std::fs::File::options()
+        .write(true)
+        .open(&path)
+        .unwrap()
+        .set_modified(mtime)
+        .unwrap();
+    let volume = volume_at(&test_dir);
+
+    let first = volume.open_read_stream(&at(&volume, "f.bin")).await.unwrap();
+    let version = first.source_version().expect("a local file names its version");
+    drop(first);
+    assert!(
+        volume
+            .resume_read_stream(&at(&volume, "f.bin"), &version, 70_000)
+            .await
+            .is_ok(),
+        "the untouched file resumes"
+    );
+
+    // A change time has a clock tick's resolution (about 16 ms on Windows); make sure the
+    // rewrite lands on a later one.
+    // allowed-test-sleep: the subject is the clock tick a change time is stamped with
+    std::thread::sleep(std::time::Duration::from_millis(50));
+    {
+        use std::io::{Seek, Write};
+        let mut file = std::fs::File::options().write(true).open(&path).unwrap();
+        file.seek(std::io::SeekFrom::Start(10)).unwrap();
+        file.write_all(b"another version").unwrap();
+        file.set_modified(mtime).unwrap();
+    }
+    assert_eq!(std::fs::metadata(&path).unwrap().len(), data.len() as u64);
+    assert_eq!(std::fs::metadata(&path).unwrap().modified().unwrap(), mtime);
+
+    let resumed = volume.resume_read_stream(&at(&volume, "f.bin"), &version, 70_000).await;
+    assert!(
+        matches!(resumed, Err(VolumeError::SourceChanged(_))),
+        "a rewrite in place must refuse the resume, got {:?}",
+        resumed.map(|_| ())
+    );
+}
+
+#[tokio::test]
 async fn a_read_stream_of_a_folder_is_refused() {
     let test_dir = AppTestDir::new("read_stream_dir_test");
     std::fs::create_dir(test_dir.native().join("sourcedir")).unwrap();
@@ -437,10 +453,6 @@ async fn a_read_stream_of_a_folder_is_refused() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, streams: LocalWindowsVolume has no write_from_stream yet"
-)]
 async fn a_write_from_stream_creates_the_file() {
     use cmdr_fs::app_path;
     use cmdr_fs::volume::InMemoryVolume;

@@ -119,7 +119,6 @@ async fn move_into(
 /// file that appeared while the move ran exist only in the source, so both stay;
 /// an untouched original still goes.
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: the remote source is pulled into a local scratch folder through `LocalWindowsVolume`, which has no write streams yet, so the edit never runs
 async fn a_remote_source_keeps_what_changed_or_appeared_during_a_move_into_a_zip() {
     let engine = TestOperations::new();
     let tmp = tempfile::tempdir().expect("tempdir");

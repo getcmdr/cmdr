@@ -468,3 +468,30 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   process is appending to at a stale size (`cmdr.log` read 0 bytes for its first minutes while holding 3,490 lines,
   #1359), so read a log's content, never its listed size. The `nav_to_path` timeout in the task 35 mount-table entry was
   most likely this flood. `cmdr-m6` is back on `origin/main`, clean.
+- **2026-11-22, task 35's streams, copy scan, and node identity** (PR #1367; the warm pair, `CARGO_BUILD_JOBS=2`; a
+  debug app build 12m 44s warm): `LocalWindowsVolume` shares the POSIX volume's stream and copy-scan bodies
+  (`crates/cmdr-local/DETAILS.md` § "The Windows sibling") and answers `node_identity`, and the copy ledger's node falls
+  back to `FileId::at`. Suites on the builder: `cmdr-local` 100 of 100 (14 cells un-gated); `cmdr-operations` +
+  `cmdr-local` 2,186 tests, the about 115 un-gated cells green but eight, re-gated with what they showed (five undo
+  cells skip as `Failed` / `UnverifiablePrecondition`, two hit #1225's `\`). CI run 44990303757: 50 known failures pass
+  now (every task 35 entry, the `archive_edit::remote` cells, the ledger and reversal cells), the list down from 224 to
+  174; two named-leaf sweeps ran past the 8 s cap there (35 rigs each), so they get 30 s on Windows. On the desktop,
+  driven by Cmdr's MCP server (`CMDR_MCP_DIRECT_MODE=1`): a folder compressed to `D:` lands whole with no temp left; an
+  extract from a zip on `D:` to `C:` lands with its dates; cancelling a 3 GiB copy `C:` → `D:` and a 3 GiB compress onto
+  `D:` midway leaves no partial or temp. Copying a file INTO a zip fails before writing on either drive: it routes to
+  the local engine (`destination_not_a_folder`, #1369). Gotchas: `scp` doesn't work to the builder (upload a script as
+  base64 through PowerShell's `WriteAllBytes`); a job started with `Invoke-CimMethod` has no `HOME`, so
+  `routing::tests::a_local_destination_still_expands_the_home_shortcut` fails there and nowhere else. Fixtures under
+  `C:\Users\Admin\t35`, `C:\Users\Admin\t35z`, `D:\t35-dst`, and `D:\t35` are gone. `cmdr-m6` is back on `origin/main`,
+  clean.
+- **2026-11-22, PR #1367's review** (the warm pair, two debug app builds about 13 min each, driven by Cmdr's MCP
+  server): #1369's cause was the transfer dialog's volume-relative destination (`/Users/…/box.zip` on `root`) reaching
+  the zip route unanchored, so nothing confirmed; fixed in `routing.rs` (`anchored_destination`), and a copy into a zip
+  on `C:` and on `D:` (reached by `select_volume` or by `nav_to_path` alone) lands. A same-length rewrite in place with
+  its date put back resumed a read on Windows (red on the builder, `local_volume_test`); the version now reads the
+  handle's id and `ChangeTime`. Cancel midway leaves nothing: a 3 GiB copy `D:` → `C:` (local engine), a 3 GiB compress
+  onto `C:`, and a 1 GiB extract from a zip on `D:` onto `C:` (the streamed write). An overwrite whose source read fails
+  midway (a byte-range lock held by another process, `ERROR_LOCK_VIOLATION` 33) keeps the old file byte for byte on both
+  engines (the local copy and the extract), no temp left. Gotcha: an SSH command running past about three minutes is
+  moved to the background by the harness, so wait in loops shorter than that. Fixtures under `C:\Users\Admin\r1367` and
+  `D:\r1367` are gone. `cmdr-m6` is back on `origin/main`, clean.

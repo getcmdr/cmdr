@@ -60,10 +60,10 @@ written); it waits in the tracker (`DeviceBarriers::note_unconfirmed`), and the 
 move keeps its source. It used to be logged and nothing else, which on Linux or a network mount, where no barrier
 follows, let a move delete sources over it. The directory syncs stay best-effort (logged under
 `target: "write_durability"`), and a refused barrier is an `IoError` naming the item it went through. Shared tracker,
-shared answers: a refused sync answers whichever operation flushes next (`streams.rs::flush_writes_impl`). The sync
-stays per file here, unlike the local engine's, which waits for the pass: this engine's copies run concurrently and
-overlap their syncs, and a pass that took them over measured slower. Non-local backends keep the default `Ok`:
-durability there is the device's or server's concern once it answered. The rule and its measurements:
+shared answers: a refused sync answers whichever operation flushes next (`streams.rs::flush_writes`). The sync stays per
+file here, unlike the local engine's, which waits for the pass: this engine's copies run concurrently and overlap their
+syncs, and a pass that took them over measured slower. Non-local backends keep the default `Ok`: durability there is the
+device's or server's concern once it answered. The rule and its measurements:
 `crates/cmdr-operations/src/transfer/DETAILS.md` § Durability. Pinned by `local_posix_durability_test.rs` (content
 through the finish path, no barrier until `flush_writes` and then one, and a refused sync failing the flush).
 Unknown-length writes take the same path.
@@ -406,12 +406,29 @@ nearly every method and hide which answers are real.
   **Why**: a share can't hold a volume mount point, and asking would be a round trip to a server that may be dead;
   `None` keeps the engine's "drive left" answer from firing on a share it can't see.
 
+- **Streams and the copy scan are the POSIX volume's own bodies**, shared: `src/streams.rs` (read stream, ranged and
+  resumed reads, the durable streamed write) and `src/copy_scan.rs` (the walk and the batch), each taking the OS path a
+  sibling crossed to once. `streams/platform/` holds what differs: a resume's version (Windows: the serial and file id
+  off the open handle, `FileId::of_open`, length, last-write and creation ticks, and `FILE_BASIC_INFO.ChangeTime`, which
+  moves on any write, a last-write time put back included, so a same-length rewrite in place refuses the resume as
+  POSIX's `ctime` does; `local_volume_test::a_resumed_read_refuses_a_same_length_rewrite_with_its_date_put_back`. FAT
+  and exFAT answer a zero change time, so there the last-write time is the whole check), `read_at` vs `seek_read`, the
+  owner-only create mode (POSIX only), and the path an error names (the app path on Windows, never `\\?\`). A Windows
+  write syncs with `FlushFileBuffers` per file through the volume's own `DeviceBarriers`; a cancel closes the handle
+  before removing the partial, since Windows won't delete an open file. The recorder names a walked entry in the app
+  spelling (`app_spelling_below`), never `Path::join`'s `\`.
+- **Decision**: `CreateOrReplace` writes in place on Windows too, ❌ no temp inside the backend. **Why**: the trait's
+  contract (`WriteMode::CreateOrReplace`): the engine always stages a user's file under a temp and lands it with the
+  atomic replacing rename, so a second stage here would cost a rename per file and protect nothing.
+- **Node identity** (`node_identity`) is `FileId::read_at` (the link itself) plus the creation time, as
+  `NodeIdentity::of` builds it from an `lstat`: NTFS's 64-bit file reference fits, a ReFS 128-bit id answers `None`.
+
 What's real and what's stubbed, by name: the windows-port plan, § "Windows build state" and task 35's entry. Every
-capability not yet real keeps the trait's conservative default (streams, copy scan, symlink creation, xattrs, metadata,
-the write-access probe), so nothing answers by guessing. `local_conformance_test.rs` and `local_volume_test.rs` run on
-Windows too, each cell the Windows volume can't keep yet ignored there (`cfg_attr(target_os = "windows", ignore = …)`)
-with what it lacks; their folder-link cells build a junction there (`local_conformance_test::link_to_folder`,
-`mklink /J`, which needs no privilege).
+capability not yet real keeps the trait's conservative default (symlink creation, xattrs, metadata, the write-access
+probe), so nothing answers by guessing. `local_conformance_test.rs` and `local_volume_test.rs` run on Windows too, each
+cell the Windows volume can't keep yet ignored there (`cfg_attr(target_os = "windows", ignore = …)`) with what it lacks;
+their folder-link cells build a junction there (`local_conformance_test::link_to_folder`, `mklink /J`, which needs no
+privilege).
 
 ## App paths in and out
 
@@ -485,9 +502,9 @@ app-path plan's review round 3).
 
 - **Every OS by default.** A cell over `LocalVolume` builds its folder with `AppTestDir` and its volume with
   `test_support::volume_at`, and runs on macOS, Linux, and Windows; a cell the Windows volume can't keep yet is
-  `cfg_attr(target_os = "windows", ignore = …)` with what it lacks (streams, copy scan, metadata, node identity, links,
-  xattrs), a named debt that turns on when the capability lands. Only a file or module that needs a POSIX or Win32
-  feature is gated, with the reason on the gate.
+  `cfg_attr(target_os = "windows", ignore = …)` with what it lacks (metadata, links, xattrs), a named debt that turns on
+  when the capability lands. Only a file or module that needs a POSIX or Win32 feature is gated, with the reason on the
+  gate.
 - `local_conformance_test.rs` (every OS): the shared `cmdr_fs::volume::conformance` assertions, the way every crate
   backend keeps its own. The roster and what each defends: `crates/cmdr-fs/DETAILS.md` § "The shared assertions in
   `volume::conformance`".

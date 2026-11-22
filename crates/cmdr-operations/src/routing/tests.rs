@@ -87,3 +87,80 @@ fn a_volume_that_isnt_connected_yet_maps_to_the_side_that_asked() {
         WriteOperationError::SourceNotConnected { .. }
     ));
 }
+
+/// A copy and a move into a `.zip` on a volume rooted BELOW `/` route to the archive
+/// driver when the destination arrives volume-relative, as the transfer dialog's box
+/// sends it: the routes read the anchored path (#1369). Before, `/box.zip/sub` on a
+/// drive rooted at `C:/` confirmed no zip and fell through to the local engine,
+/// which refused the zip as `destination_not_a_folder`. The per-source leaf refusal
+/// is the probe: only the archive route says `RouteCannotName`.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_volume_relative_destination_still_routes_into_its_zip() {
+    use crate::event_sinks::{CollectorEventSink, OperationEventSink};
+    use crate::testing::TestOperations;
+    use crate::types::{NamedLeavesRefusal, TransferLeaves, VolumeCopyConfig, WriteOperationError};
+    use cmdr_fs::testing::TestDir;
+    use cmdr_fs::volume::RoutedKind;
+    use cmdr_operation_log::types::Initiator;
+
+    let tmp = TestDir::new("routing_relative_zip");
+    let source = tmp.join("src").join("a.txt");
+    std::fs::create_dir_all(tmp.join("src")).expect("src");
+    std::fs::write(&source, b"a").expect("source");
+    let engine = TestOperations::new();
+    let stick = crate::local_disk::folder_volume("Stick", tmp.to_path_buf(), crate::host::testing::pane_order_host());
+    engine.volumes().register("stick", stick);
+    let zip: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("box.zip"));
+    engine.volumes().route(tmp.join("box.zip"), RoutedKind::Archive, zip);
+
+    for moves in [false, true] {
+        let config = VolumeCopyConfig {
+            leaves: TransferLeaves::per_source([(source.clone(), "renamed.txt".to_string())]),
+            ..VolumeCopyConfig::default()
+        };
+        let events: Arc<dyn OperationEventSink> = Arc::new(CollectorEventSink::new());
+        let (from, to, dest) = ("stick".to_string(), "stick".to_string(), "/box.zip/sub".to_string());
+        let result = if moves {
+            engine
+                .start_volume_move(
+                    events,
+                    from,
+                    vec![source.clone()],
+                    to,
+                    dest,
+                    config,
+                    Initiator::User,
+                    None,
+                )
+                .await
+        } else {
+            engine
+                .start_volume_copy(
+                    events,
+                    from,
+                    vec![source.clone()],
+                    to,
+                    dest,
+                    config,
+                    Initiator::User,
+                    None,
+                )
+                .await
+        };
+        assert!(
+            matches!(
+                &result,
+                Err(WriteOperationError::NamedLeavesRefused {
+                    reason: NamedLeavesRefusal::RouteCannotName,
+                    ..
+                })
+            ),
+            "moves={moves}: the zip route answers, got {result:?}"
+        );
+    }
+    assert!(source.exists(), "nothing moved");
+    assert!(
+        !tmp.join("box.zip").exists(),
+        "nothing landed on the drive at the zip's name"
+    );
+}

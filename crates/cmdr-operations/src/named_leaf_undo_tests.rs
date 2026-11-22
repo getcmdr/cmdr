@@ -8,8 +8,6 @@
 //! destination, so an undo that read the original name instead of the landed
 //! one would touch the wrong file.
 
-#![cfg(unix)] // Windows: the undo skips the named copy as Failed (task 35, `LocalWindowsVolume` has no node identity yet)
-
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
@@ -79,6 +77,10 @@ async fn read(volume: &InMemoryVolume, path: &str) -> Vec<u8> {
         .unwrap_or_else(|e| panic!("read {path}: {e:?}"))
 }
 
+#[cfg_attr(
+    target_os = "windows",
+    ignore = "not pinned down (#1351): on Windows the undo skips the item as Failed, the same shape as the bulk-rename undo there; likely #1225 milestone 10a's native journal ends"
+)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn undoing_a_named_local_copy_deletes_exactly_the_named_copy() {
     for folder in [false, true] {
@@ -143,6 +145,10 @@ async fn undoing_a_named_local_copy_deletes_exactly_the_named_copy() {
 /// A copy naming each item (a renamed file, a renamed folder, one keeping its
 /// name) undoes as one operation, deleting exactly the copies it made, under
 /// whichever name each landed.
+#[cfg_attr(
+    target_os = "windows",
+    ignore = "not pinned down (#1351): on Windows the undo skips the item as Failed, the same shape as the bulk-rename undo there; likely #1225 milestone 10a's native journal ends"
+)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn undoing_a_copy_naming_each_item_deletes_exactly_its_copies() {
     let rig = UndoRig::new();

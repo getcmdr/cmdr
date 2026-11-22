@@ -29,7 +29,7 @@
       "reason": "`Volume` trait-method signatures delegating in one line, in five blocks: `list_directory*`, the read path (`open_read_stream*`, `read_range`), the write path's `create_*`, `delete` / `rename`, and `notify_mutation` beside the three `scan_for_*`. Every body is `self.noting(self.*_impl(..))` or a call straight into `cmdr_fs::volume` (`patching`, `scan_walk`). The app-path conversion (#1225) removed ADB's bridge preludes, which had kept the bodies apart since WebDAV converted. Same trade as the `cmdr-sftp` ↔ `cmdr-webdav` entry: a macro emitting trait methods costs more lines than it removes and hides every one from `codegraph_search` and go-to-definition. Revisit when a body stops being a one-line delegation, or when enough backends land that the macro pays for itself."
     },
     "crates/cmdr-fs/src/metadata/platform/wasm.rs ↔ crates/cmdr-fs/src/metadata/platform/windows.rs": {
-      "lines": 51,
+      "lines": 35,
       "reason": "TODO: windows-port plan tasks 35 and 36. Windows' metadata arm is honest stubs today (no mode, xattrs, ACL, flags, or removal blockers: `NotApplicable`, `Free`, empty), which read line for line like the browser build's arm, whose answers are final. Each stub gets its real Windows body in those tasks (the read-only attribute, alternate data streams, the DACL, Hidden and Locked as attributes), and the pair stops matching one class at a time. Sharing a \"no metadata\" module now would tie a final answer to a placeholder and be undone class by class."
     },
     "crates/cmdr-fs/src/volume/conformance/metadata.rs ↔ crates/cmdr-fs/src/volume/conformance/modification_date.rs": {

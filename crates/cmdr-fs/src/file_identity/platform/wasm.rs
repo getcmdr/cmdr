@@ -13,6 +13,10 @@ pub(crate) fn file_id_at(_path: &Path, _follow: Follow) -> std::io::Result<Optio
     Ok(None)
 }
 
+pub(crate) fn file_id_of_open(_file: &std::fs::File) -> Option<FileId> {
+    None
+}
+
 pub(crate) fn device_of(_metadata: &Metadata) -> Option<DeviceId> {
     None
 }

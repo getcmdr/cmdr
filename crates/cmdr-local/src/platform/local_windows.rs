@@ -1,10 +1,12 @@
 //! The local disk on Windows: a drive (`C:/`) or a UNC share (`//server/share/`), one volume
 //! each (plan D1), over `std::fs` through each path's `\\?\` form (`paths.rs`).
 //!
-//! The sibling of `LocalPosixVolume`, not a Windows arm inside it. What's real and
-//! what's waiting is listed by name in the windows-port plan, § "Windows build state", and each
-//! capability this volume doesn't answer yet keeps the trait's conservative default: a copy, a
-//! symlink, xattrs, a write-access probe, and a stream are "not supported" rather than a guess.
+//! The sibling of `LocalPosixVolume`, not a Windows arm inside it. Byte movement (the read
+//! stream, ranged reads, the durable streamed write) is `crate::streams`, shared with it.
+//! What's real and what's waiting is listed by name in the windows-port plan, § "Windows build
+//! state", and each capability this volume doesn't answer yet keeps the trait's conservative
+//! default: a symlink, xattrs, metadata, and a write-access probe are "not supported" rather
+//! than a guess.
 
 pub(crate) mod paths;
 pub mod recycle_bin;
@@ -18,14 +20,17 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, NotAnAppPath, PathArithmetic, is_escape};
+use cmdr_fs::durable::DeviceBarriers;
 use cmdr_fs::entry::FileEntry;
+use cmdr_fs::file_identity::{FileId, Follow};
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::metadata::Unblock;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{
-    EntryKind, ListingProgress, MountClass, MutationEvent, Presence, ScanConflict, SourceItemInfo, SpaceInfo,
-    SupportedDates, Volume, VolumeError, WatchCoverage,
+    BatchScanResult, CopyScanResult, EntryKind, ListingProgress, MountClass, MutationEvent, NodeIdentity, Presence,
+    ScanBoundary, ScanConflict, SourceItemInfo, SourceVersion, SpaceInfo, StreamLength, StreamWriteProgress,
+    StreamWritten, SupportedDates, Volume, VolumeError, VolumeReadStream, WatchCoverage, WriteMode,
 };
 use tokio::task::spawn_blocking;
 
@@ -48,6 +53,11 @@ pub struct LocalWindowsVolume {
     /// its listings come back in. ❗ A required argument, never a default (as for
     /// `LocalPosixVolume`).
     host: VolumeHost,
+    /// The syncs this volume's finished writes still owe, run on an interval and by
+    /// [`Volume::flush_writes`] (`crate::streams`). Shared with the blocking threads each
+    /// write syncs on. `FlushFileBuffers` empties the drive's cache itself, so no device
+    /// barrier follows it here.
+    barriers: Arc<DeviceBarriers>,
     /// Handed to every `list_directory` tally: see [`Self::with_listing_hook`].
     #[cfg(any(test, feature = "testing"))]
     listing_hook: Option<crate::reading::ListingHook>,
@@ -94,6 +104,7 @@ impl LocalWindowsVolume {
             root,
             mount,
             host,
+            barriers: Arc::new(DeviceBarriers::new()),
             #[cfg(any(test, feature = "testing"))]
             listing_hook: None,
         }
@@ -128,6 +139,42 @@ impl LocalWindowsVolume {
         self.locate(path)
             .map_err(|e| Named::new(path.as_str().to_owned()).error(&e))
     }
+
+    /// One source's walk for the shared copy scan (`crate::copy_scan`): its `\\?\` path, the
+    /// caller's app spelling for the recorder, and the real sidecar rule (Windows keeps
+    /// none, so it never matches).
+    fn subtree(&self, path: &AppPath) -> Result<crate::copy_scan::Subtree, VolumeError> {
+        let at = self.located(path)?;
+        Ok(crate::copy_scan::Subtree {
+            os: at.os,
+            as_called: host_spelling(path),
+            spell_below: app_spelling_below,
+            sidecars: cmdr_fs::apple_double::SidecarRule::new(),
+        })
+    }
+}
+
+/// The [`NodeIdentity`] a file id and a creation time make, as `NodeIdentity::of` builds one
+/// from an `lstat` on POSIX: `None` without either, for an id past 64 bits, or for a time
+/// before 1970.
+fn node_identity_of(id: Option<FileId>, born: Option<std::time::SystemTime>) -> Option<NodeIdentity> {
+    let inode = id?.node_u64()?;
+    let born = born?.duration_since(std::time::UNIX_EPOCH).ok()?;
+    Some(NodeIdentity {
+        inode,
+        birth_nanos: i64::try_from(born.as_nanos()).ok()?,
+    })
+}
+
+/// An entry below a scanned path, named for the recorder in the app spelling: the caller's
+/// `C:/x` with each native component joined by `/`, never `Path::join`'s `\`.
+fn app_spelling_below(as_called: &Path, below: &Path) -> PathBuf {
+    let mut text = as_called.to_string_lossy().trim_end_matches('/').to_owned();
+    for part in below.components() {
+        text.push('/');
+        text.push_str(&part.as_os_str().to_string_lossy());
+    }
+    PathBuf::from(text)
 }
 
 /// The app path of an old-form constructor's native root; a root that isn't one keeps its
@@ -256,6 +303,26 @@ impl Volume for LocalWindowsVolume {
             } else {
                 EntryKind::File
             })
+        }))
+    }
+
+    /// The node at `path`, the link itself when it's one: its file id through a handle
+    /// (`FileId::read_at`, the NTFS file reference, whose sequence number moves when a record
+    /// is reused) and its creation time. `Ok(None)` where the id doesn't fit the 64 bits a
+    /// `NodeIdentity` keeps (a ReFS id) or the filesystem keeps no creation time.
+    fn node_identity<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Result<Option<NodeIdentity>, VolumeError>> + Send + 'a>> {
+        let at = self.located(path);
+        Box::pin(blocking("node_identity", move || {
+            let at = at?;
+            let born = std::fs::symlink_metadata(&at.os)
+                .map_err(|e| at.error(&e))?
+                .created()
+                .ok();
+            let id = FileId::read_at(&at.os, Follow::NotLinks).map_err(|e| at.error(&e))?;
+            Ok(node_identity_of(id, born))
         }))
     }
 
@@ -397,6 +464,7 @@ impl Volume for LocalWindowsVolume {
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         let ends = self.located(from).and_then(|from| Ok((from, self.located(to)?)));
+        let barriers = Arc::clone(&self.barriers);
         Box::pin(blocking("rename", move || {
             let (from, to) = ends?;
             if !force && from.app != to.app {
@@ -408,7 +476,11 @@ impl Volume for LocalWindowsVolume {
                 // `crate::rename_volume_error`'s rule: the destination is what's taken.
                 io::ErrorKind::AlreadyExists | io::ErrorKind::DirectoryNotEmpty => to.error(&e),
                 _ => from.error(&e),
-            })
+            })?;
+            // A sync failure noted under the temp's name follows it, so the flush names the
+            // file the user sees.
+            barriers.note_renamed(&from.os, &to.os);
+            Ok(())
         }))
     }
 
@@ -467,6 +539,133 @@ impl Volume for LocalWindowsVolume {
 
     fn is_writable(&self) -> bool {
         true
+    }
+
+    fn scan_for_copy<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
+        match self.subtree(path) {
+            Ok(subtree) => crate::copy_scan::scan_subtree(
+                subtree,
+                cmdr_fs::volume::ScanStop::none(),
+                None,
+                cmdr_fs::mac_only_files::MacOnlyFiles::Include,
+            ),
+            Err(e) => Box::pin(async move { Err(e) }),
+        }
+    }
+
+    /// ❗ Overridden so the walk gets the stop, as on POSIX: one source can be a whole
+    /// mapped share, minutes of reads with nothing in between.
+    fn scan_for_copy_batch_with_boundary<'a>(
+        &'a self,
+        paths: &'a [AppPathBuf],
+        boundary: &'a ScanBoundary<'a>,
+    ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
+        crate::copy_scan::scan_batch(paths, boundary, |path| self.subtree(path))
+    }
+
+    fn supports_streaming(&self) -> bool {
+        true
+    }
+
+    fn supports_unknown_length_writes(&self) -> bool {
+        true
+    }
+
+    fn supports_export(&self) -> bool {
+        true
+    }
+
+    fn open_read_stream<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
+        match self.located(path) {
+            Ok(at) => crate::streams::open_read_stream(at.os),
+            Err(e) => Box::pin(async move { Err(e) }),
+        }
+    }
+
+    fn read_range<'a>(
+        &'a self,
+        path: &'a AppPath,
+        offset: u64,
+        len: usize,
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
+        match self.located(path) {
+            Ok(at) => crate::streams::read_range(at.os, offset, len),
+            Err(e) => Box::pin(async move { Err(e) }),
+        }
+    }
+
+    fn resume_read_stream<'a>(
+        &'a self,
+        path: &'a AppPath,
+        version: &'a SourceVersion,
+        offset: u64,
+    ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
+        match self.located(path) {
+            Ok(at) => crate::streams::resume_read_stream(at.os, version, offset),
+            Err(e) => Box::pin(async move { Err(e) }),
+        }
+    }
+
+    /// In place, as on POSIX: `CreateOrReplace` truncates the name it's handed, since the
+    /// engine always stages a user's file under a temp and lands it with the atomic
+    /// replacing rename (`WriteMode::CreateOrReplace`). `CreateNew` is `CREATE_NEW`, refused
+    /// atomically by the filesystem.
+    fn write_from_stream<'a>(
+        &'a self,
+        dest: &'a AppPath,
+        mode: WriteMode,
+        length: StreamLength,
+        stream: Box<dyn VolumeReadStream>,
+        on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
+    ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
+        match self.located(dest) {
+            Ok(at) => crate::streams::stream_into(
+                at.os,
+                Arc::clone(&self.barriers),
+                crate::streams::Opening::Fresh(mode),
+                length,
+                stream,
+                on_progress,
+            ),
+            Err(e) => Box::pin(async move { Err(e) }),
+        }
+    }
+
+    fn flush_writes(&self) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + '_>> {
+        crate::streams::flush_writes(Arc::clone(&self.barriers))
+    }
+
+    /// A local write lands its chunks in order with `write_all`, so its progress count is a
+    /// prefix of the file, and a failed write leaves it.
+    fn continues_writes(&self) -> bool {
+        true
+    }
+
+    fn continue_write_from_stream<'a>(
+        &'a self,
+        target: &'a AppPath,
+        at: u64,
+        length: StreamLength,
+        stream: Box<dyn VolumeReadStream>,
+        on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
+    ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
+        match self.located(target) {
+            Ok(located) => crate::streams::stream_into(
+                located.os,
+                Arc::clone(&self.barriers),
+                crate::streams::Opening::Continue(at),
+                length,
+                stream,
+                on_progress,
+            ),
+            Err(e) => Box::pin(async move { Err(e) }),
+        }
     }
 
     /// A forced rename is `std::fs::rename`, which replaces in one filesystem step

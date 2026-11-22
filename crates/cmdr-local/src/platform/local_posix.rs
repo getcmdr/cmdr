@@ -3,13 +3,14 @@
 //! The struct, the rename primitive, and the query/mutation half of
 //! `impl Volume` live here. The two concerns big enough to read on their own sit
 //! beside it, the way the MTP backend splits: `scan` (the copy-scan family) and
-//! `streams` (byte movement in and out of a file). A trait impl can't span
-//! files, so those methods stay here as one-line delegations to inherent bodies
-//! over there.
+//! `metadata` (a landed item's metadata). Byte movement in and out of a file is
+//! `crate::streams`, shared with the Windows sibling. A trait impl can't span
+//! files, so those methods stay here as one-line delegations to the bodies over
+//! there.
 
 mod links;
+mod metadata;
 mod scan;
-mod streams;
 mod xattrs;
 
 use crate::reading::{ListingDir, ListingTally, Named, Row, list_reporting_progress, single_entry, supported_dates_of};
@@ -196,7 +197,7 @@ pub struct LocalPosixVolume {
     /// panes stale after every local copy.
     host: VolumeHost,
     /// The device barriers this volume's finished writes still owe, run on an
-    /// interval and by [`Volume::flush_writes`] (`local_posix/streams.rs`).
+    /// interval and by [`Volume::flush_writes`] (`crate::streams`).
     /// Shared with the blocking threads each write syncs on.
     barriers: Arc<cmdr_fs::durable::DeviceBarriers>,
     /// Handed to every `list_directory` tally: see [`Self::with_listing_hook`].
@@ -705,7 +706,7 @@ impl Volume for LocalPosixVolume {
         let abs_path = self.os_path(path);
         let carried = carried.clone();
         Box::pin(async move {
-            spawn_blocking(move || streams::apply_metadata_at(&abs_path, &carried, modified))
+            spawn_blocking(move || metadata::apply_metadata_at(&abs_path, &carried, modified))
                 .await
                 .expect("spawn_blocking apply_metadata closure doesn't panic and the task is uncancelable")
         })
@@ -828,15 +829,15 @@ impl Volume for LocalPosixVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        self.scan_subtree(
-            path,
+        crate::copy_scan::scan_subtree(
+            self.subtree(path),
             cmdr_fs::volume::ScanStop::none(),
             None,
             cmdr_fs::mac_only_files::MacOnlyFiles::Include,
         )
     }
 
-    /// ❗ Overridden so `scan_subtree` gets the stop. The trait default loops
+    /// ❗ Overridden so the walk gets the stop. The trait default loops
     /// `scan_for_copy` per path, which asks only BETWEEN paths — and one path here
     /// can be a whole mounted share: `/Volumes/testshare` over a sleeping NAS is
     /// minutes of `readdir` with nothing in between, which is precisely the scan
@@ -846,7 +847,7 @@ impl Volume for LocalPosixVolume {
         paths: &'a [AppPathBuf],
         boundary: &'a cmdr_fs::volume::ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::volume::BatchScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move { self.scan_for_copy_batch_with_boundary_impl(paths, boundary).await })
+        crate::copy_scan::scan_batch(paths, boundary, |path| Ok(self.subtree(path)))
     }
 
     fn supports_streaming(&self) -> bool {
@@ -895,7 +896,7 @@ impl Volume for LocalPosixVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
-        self.open_read_stream_impl(path)
+        crate::streams::open_read_stream(self.os_path(path))
     }
 
     fn read_range<'a>(
@@ -904,7 +905,7 @@ impl Volume for LocalPosixVolume {
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
-        self.read_range_impl(path, offset, len)
+        crate::streams::read_range(self.os_path(path), offset, len)
     }
 
     fn write_from_stream<'a>(
@@ -915,11 +916,18 @@ impl Volume for LocalPosixVolume {
         stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
-        self.write_from_stream_impl(dest, mode, length, stream, on_progress)
+        crate::streams::stream_into(
+            self.os_path(dest),
+            Arc::clone(&self.barriers),
+            crate::streams::Opening::Fresh(mode),
+            length,
+            stream,
+            on_progress,
+        )
     }
 
     fn flush_writes(&self) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + '_>> {
-        self.flush_writes_impl()
+        crate::streams::flush_writes(Arc::clone(&self.barriers))
     }
 
     fn resume_read_stream<'a>(
@@ -928,7 +936,7 @@ impl Volume for LocalPosixVolume {
         version: &'a cmdr_fs::volume::SourceVersion,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
-        self.resume_read_stream_impl(path, version, offset)
+        crate::streams::resume_read_stream(self.os_path(path), version, offset)
     }
 
     /// A local write lands its chunks in order with `write_all`, so its
@@ -945,7 +953,14 @@ impl Volume for LocalPosixVolume {
         stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
-        self.continue_write_from_stream_impl(target, at, length, stream, on_progress)
+        crate::streams::stream_into(
+            self.os_path(target),
+            Arc::clone(&self.barriers),
+            crate::streams::Opening::Continue(at),
+            length,
+            stream,
+            on_progress,
+        )
     }
 
     fn scan_for_conflicts<'a>(

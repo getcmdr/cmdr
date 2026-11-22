@@ -9,8 +9,6 @@
 //! before nodes were kept, or on a filesystem that keeps none) undoes exactly as
 //! it always did.
 
-#![cfg(unix)] // Windows: the undo skips the landed file as Failed (task 35, `LocalWindowsVolume` has no node identity yet)
-
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
@@ -140,6 +138,10 @@ fn skipped_for_drift(report: &RollbackReport) -> bool {
         && report.final_state == RollbackState::PartiallyRolledBack
 }
 
+#[cfg_attr(
+    target_os = "windows",
+    ignore = "not pinned down (#1351): on Windows the undo skips the item as Failed, the same shape as the bulk-rename undo there; likely #1225 milestone 10a's native journal ends"
+)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn undoing_a_copy_removes_the_file_it_landed() {
     for rows in [Rows::WithNode, Rows::WithoutNode] {
@@ -186,6 +188,10 @@ async fn undoing_a_copy_keeps_a_same_looking_file_saved_over_it_once_rows_name_t
 
 /// ❗ The behavior every row written before keeps: size and date are all it can
 /// check, so the same replacement is removed as the copy.
+#[cfg_attr(
+    target_os = "windows",
+    ignore = "not pinned down (#1351): on Windows the undo skips the item as Failed, the same shape as the bulk-rename undo there; likely #1225 milestone 10a's native journal ends"
+)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn undoing_a_copy_whose_row_names_no_node_removes_what_matches_its_snapshot_as_before() {
     let rig = UndoRig::new();
@@ -227,6 +233,10 @@ async fn undoing_a_move_leaves_a_same_looking_file_saved_over_the_moved_one() {
     assert!(!source.exists(), "nothing went back to the source");
 }
 
+#[cfg_attr(
+    target_os = "windows",
+    ignore = "not pinned down (#1351): on Windows the undo skips the item as Failed, the same shape as the bulk-rename undo there; likely #1225 milestone 10a's native journal ends"
+)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn undoing_a_move_takes_back_the_file_it_moved() {
     let rig = UndoRig::new();

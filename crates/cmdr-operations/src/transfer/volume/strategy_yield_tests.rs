@@ -17,8 +17,6 @@
 //! that does NOT opt into foreground-yield never yields, and that a yield-capable
 //! source with nothing pending never self-yields.
 
-#![cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
-
 use super::super::transfer_error::PathedVolumeError;
 use super::test_support::{
     AutoYieldTuningGuard, NeverPendingYieldSource, PARK_WINDOW, REL_CHUNK, REL_TOTAL, RelLog, ReleasingSource,
