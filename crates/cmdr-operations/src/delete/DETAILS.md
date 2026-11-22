@@ -43,6 +43,11 @@ per top-level folder with a cold parent. A delete-purpose preview recounts a sel
 (`count_selected_links_as_links`), so the dialog's count describes the delete, but the walker's own answer is what
 protects the target.
 
+The local walker removes each leaf through `local_disk::remove_leaf` (`cmdr_local::remove_leaf`), one rule with
+`LocalWindowsVolume::delete`: on Windows a folder link (a junction, a folder symlink) wears `FILE_ATTRIBUTE_DIRECTORY`
+itself, so it goes through `RemoveDirectoryW`, which takes the link and never its target's contents; `DeleteFileW`
+answered "Access is denied" for one (#1386). Elsewhere it's `unlink`. `local_link_delete_tests.rs` pins it on every OS.
+
 A child's `EntryKind::of` is only as good as the listing under it. Where a listing can list a link as the folder it
 points to (`BackendKind::listings_mark_links` is `false`: SMB, since Samba never marks a Unix symlink), the walker asks
 `Volume::entry_kind` of every listed folder before descending it, ONE round trip per folder (SMB's is a bare compound
