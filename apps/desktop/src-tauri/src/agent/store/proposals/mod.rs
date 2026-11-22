@@ -97,28 +97,46 @@ pub(crate) fn typed_place(text: &str) -> Option<AppPathBuf> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WritableDestination(Location);
 
+/// Why a place can't be a group's destination ([`WritableDestination::new`]), each its own
+/// refusal for the agent.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UnwritableDestination {
+    /// A ROUTE serves it: inside an archive, or inside a repo's virtual `.git` trees.
+    Routed,
+    /// While escapes aren't live, its text holds an escape-range code point ([`typed_place`]).
+    EscapeRangeName,
+    /// Its text names no app path (relative, or holding a `..`).
+    NotAPath,
+}
+
 impl WritableDestination {
-    /// The destination, or `None` when a ROUTE serves it: inside an archive, or
-    /// inside a repo's virtual `.git` trees. Neither takes a write, so a proposal
-    /// aimed there is one the user would approve and the backend would then refuse.
+    /// The destination, or [`UnwritableDestination::Routed`] when a ROUTE serves it: inside
+    /// an archive, or inside a repo's virtual `.git` trees. Neither takes a write, so a
+    /// proposal aimed there is one the user would approve and the backend would then refuse.
     ///
     /// No I/O, and deliberately permissive at the one edge that matters: the
     /// archive FILE itself is a perfectly good compress target and an ordinary file
     /// to copy, so only a path continuing INSIDE one is refused.
     /// `path_routes_over_its_parent` draws that line already.
     ///
-    /// Also `None` for a path no app path is made of ([`typed_place`]), so every stored
+    /// Also refused for a path no app path is made of ([`typed_place`]), so every stored
     /// destination reads back typed; the path it keeps is that app path's own text.
-    pub fn new(location: Location) -> Option<Self> {
-        let typed = typed_place(&location.path)?;
-        let routed =
-            crate::file_system::volume::manager::path_routes_over_its_parent(std::path::Path::new(&location.path));
-        (!routed).then(|| {
-            Self(Location {
-                volume_id: location.volume_id,
-                path: typed.into_string(),
-            })
-        })
+    ///
+    /// # Errors
+    ///
+    /// [`UnwritableDestination`].
+    pub fn new(location: Location) -> Result<Self, UnwritableDestination> {
+        if !ESCAPES_LIVE && location.path.chars().any(is_escape) {
+            return Err(UnwritableDestination::EscapeRangeName);
+        }
+        let typed = typed_place(&location.path).ok_or(UnwritableDestination::NotAPath)?;
+        if crate::file_system::volume::manager::path_routes_over_its_parent(std::path::Path::new(&location.path)) {
+            return Err(UnwritableDestination::Routed);
+        }
+        Ok(Self(Location {
+            volume_id: location.volume_id,
+            path: typed.into_string(),
+        }))
     }
 
     /// The location it wraps.

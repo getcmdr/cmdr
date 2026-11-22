@@ -17,14 +17,14 @@ fn at(path: &str) -> Location {
 
 #[test]
 fn an_ordinary_folder_is_a_writable_destination() {
-    assert!(WritableDestination::new(at("/Users/someone/Documents/Invoices")).is_some());
+    assert!(WritableDestination::new(at("/Users/someone/Documents/Invoices")).is_ok());
 }
 
 /// The compress target IS an archive, and that is the point of compress. Only a path that
 /// continues INSIDE one is refused.
 #[test]
 fn the_archive_file_itself_is_a_writable_destination() {
-    assert!(WritableDestination::new(at("/Users/someone/Desktop/backup.zip")).is_some());
+    assert!(WritableDestination::new(at("/Users/someone/Desktop/backup.zip")).is_ok());
 }
 
 #[test]
@@ -35,7 +35,7 @@ fn a_path_inside_an_archive_cannot_be_a_destination() {
         "/Users/someone/Desktop/archive.tar.gz/inside",
     ] {
         assert!(
-            WritableDestination::new(at(inside)).is_none(),
+            WritableDestination::new(at(inside)) == Err(UnwritableDestination::Routed),
             // allowed-pluralize-noun: "continues" is the verb here, not a plural noun.
             "{inside} continues inside an archive, so no group may write there"
         );
@@ -47,7 +47,7 @@ fn a_path_inside_an_archive_cannot_be_a_destination() {
 /// routing must agree, or the fence fires on a group the proposal layer allowed.
 #[test]
 fn the_constraint_matches_where_the_routing_splits() {
-    assert!(WritableDestination::new(at("/Users/someone/backup.zip/a/b/c")).is_none());
+    assert!(WritableDestination::new(at("/Users/someone/backup.zip/a/b/c")) == Err(UnwritableDestination::Routed));
 }
 
 /// A repo's virtual `.git` trees take no writes either, and for the same reason:
@@ -62,14 +62,14 @@ fn a_path_inside_a_repos_history_cannot_be_a_destination() {
         "/Users/someone/code/cmdr/.git/stash/0",
     ] {
         assert!(
-            WritableDestination::new(at(inside)).is_none(),
+            WritableDestination::new(at(inside)) == Err(UnwritableDestination::Routed),
             "{inside} is the portal's, so no group may write there"
         );
     }
 
     // The real entries under `.git/` are ordinary local files and stay writable.
-    assert!(WritableDestination::new(at("/Users/someone/code/cmdr/.git")).is_some());
-    assert!(WritableDestination::new(at("/Users/someone/code/cmdr/.git/hooks")).is_some());
+    assert!(WritableDestination::new(at("/Users/someone/code/cmdr/.git")).is_ok());
+    assert!(WritableDestination::new(at("/Users/someone/code/cmdr/.git/hooks")).is_ok());
 }
 
 /// A stored destination is its app path's own text, and reads back typed: a trailing `/`
@@ -79,13 +79,27 @@ fn a_destination_is_stored_as_its_app_path() {
     let destination = WritableDestination::new(at("/Users/someone/Documents/Invoices/")).expect("writable");
     assert_eq!(destination.location().path, "/Users/someone/Documents/Invoices");
     assert!(
-        WritableDestination::new(at("Documents/Invoices")).is_none(),
+        WritableDestination::new(at("Documents/Invoices")) == Err(UnwritableDestination::NotAPath),
         "a relative path names no place"
     );
     assert!(
-        WritableDestination::new(at("/Users/someone/x/../Invoices")).is_none(),
+        WritableDestination::new(at("/Users/someone/x/../Invoices")) == Err(UnwritableDestination::NotAPath),
         "a `..` is the MCP path door's to answer, before a group is built"
     );
+}
+
+/// While escapes aren't live, a destination whose name holds an escape-range code point has
+/// no typed spelling the starts read back as the same folder: refused with its OWN reason,
+/// not the archive one.
+#[test]
+fn an_escape_range_destination_is_refused_as_such() {
+    let escape = char::from_u32(0x10_FEC3).expect("a private-use code point");
+    let refused = WritableDestination::new(at(&format!("/Users/someone/caf{escape}")));
+    if ESCAPES_LIVE {
+        assert!(refused.is_ok());
+    } else {
+        assert_eq!(refused, Err(UnwritableDestination::EscapeRangeName));
+    }
 }
 
 /// A row an older build stored with a `..` names no place without its volume's answer: it

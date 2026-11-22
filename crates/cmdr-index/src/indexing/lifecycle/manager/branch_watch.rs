@@ -33,7 +33,7 @@ use crate::indexing::watch::watcher::{self, DriveWatcher, FsChangeEvent};
 use crate::indexing::writer::{IndexWriter, WriteMessage};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_error::LogError;
-use cmdr_fs::pluralize::pluralize;
+use cmdr_fs::pluralize::pluralize_with;
 
 /// A manager's "a branch watch start is in flight" mark, cleared when the start
 /// ends however it ends: installed, refused, failed, or unwound.
@@ -245,7 +245,7 @@ impl IndexManager {
         log::info!(
             "Branch watch: '{}' is watching {} (since_event_id={since_event_id})",
             self.volume_id,
-            pluralize(paths.len() as u64, "walked branch"),
+            pluralize_with(paths.len() as u64, "walked branch", "walked branches"),
         );
 
         let space = self.path_space();

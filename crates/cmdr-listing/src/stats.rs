@@ -49,6 +49,21 @@ impl Inner {
     }
 }
 
+/// An entry's content and on-disk sizes as the sums count them: a folder's recursive
+/// sizes, a file's own. An entry with no on-disk size (every file on Windows, a network
+/// share's files) counts its content size there, the fallback its row shows
+/// (`getDisplaySize`). Counting nothing left a physical sum covering only some entries,
+/// which the "smart" size then picked over the whole content sum: "16 bytes of 7 bytes
+/// (229%) selected".
+fn sizes_of(entry: &cmdr_fs::entry::FileEntry) -> (Option<u64>, Option<u64>) {
+    let (logical, physical) = if entry.is_directory {
+        (entry.recursive_size, entry.recursive_physical_size)
+    } else {
+        (entry.size, entry.physical_size)
+    };
+    (logical, physical.or(logical))
+}
+
 /// The counting half of `get_listing_stats`, over one snapshot of the pane's rows.
 fn listing_stats(visible: VisibleRows<'_>, selected_indices: Option<&[usize]>) -> ListingStats {
     // Calculate totals
@@ -60,21 +75,12 @@ fn listing_stats(visible: VisibleRows<'_>, selected_indices: Option<&[usize]>) -
     for entry in visible.iter() {
         if entry.is_directory {
             total_dirs += 1;
-            if let Some(size) = entry.recursive_size {
-                total_size += size;
-            }
-            if let Some(size) = entry.recursive_physical_size {
-                total_physical_size += size;
-            }
         } else {
             total_files += 1;
-            if let Some(size) = entry.size {
-                total_size += size;
-            }
-            if let Some(size) = entry.physical_size {
-                total_physical_size += size;
-            }
         }
+        let (logical, physical) = sizes_of(entry);
+        total_size += logical.unwrap_or(0);
+        total_physical_size += physical.unwrap_or(0);
     }
 
     // Calculate selection stats if indices provided
@@ -89,21 +95,12 @@ fn listing_stats(visible: VisibleRows<'_>, selected_indices: Option<&[usize]>) -
             if let Some(entry) = visible.get(idx) {
                 if entry.is_directory {
                     sel_dirs += 1;
-                    if let Some(size) = entry.recursive_size {
-                        sel_size += size;
-                    }
-                    if let Some(size) = entry.recursive_physical_size {
-                        sel_physical_size += size;
-                    }
                 } else {
                     sel_files += 1;
-                    if let Some(size) = entry.size {
-                        sel_size += size;
-                    }
-                    if let Some(size) = entry.physical_size {
-                        sel_physical_size += size;
-                    }
                 }
+                let (logical, physical) = sizes_of(entry);
+                sel_size += logical.unwrap_or(0);
+                sel_physical_size += physical.unwrap_or(0);
             }
         }
 

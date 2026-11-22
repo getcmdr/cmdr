@@ -94,8 +94,9 @@ impl DriveWatcher {
     }
 
     /// Watch a volume whose index a search walk built, covering `branches`. FSEvents watches
-    /// `volume_root` (free per directory, and it replays the whole journal); `notify` watches
-    /// each branch (a watch per directory against the OS's budget). Either way the loop's
+    /// `volume_root` (free per directory, and it replays the whole journal), and so does
+    /// `ReadDirectoryChangesW` (one handle per recursive watch); inotify watches each branch
+    /// (a watch per directory against the OS's budget). Either way the loop's
     /// [`WatchScope`](super::branches::WatchScope) decides which events belong to covered ground.
     pub fn start_branches(
         volume_root: &Path,

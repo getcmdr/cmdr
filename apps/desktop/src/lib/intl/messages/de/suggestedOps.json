@@ -212,6 +212,10 @@
   "@suggestedOps.folderWillBeCreatedTooltip": {
     "sourceHash": "2d28b7c"
   },
+  "suggestedOps.destinationLandsOn": "Ein Link schickt die Dateien auf ein anderes Laufwerk: {path}",
+  "@suggestedOps.destinationLandsOn": {
+    "sourceHash": "d35d382"
+  },
   "suggestedOps.destinationUnknown": "Cmdr konnte den Zielordner nicht prüfen",
   "@suggestedOps.destinationUnknown": {
     "sourceHash": "dc78d1d"

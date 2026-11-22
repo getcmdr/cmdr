@@ -137,13 +137,6 @@ pub(crate) fn checked(text: &str) -> Result<PathBuf, WirePathRefused> {
     Ok(PathBuf::from(text))
 }
 
-/// A [`checked`] source as the routing seam reads it (the scan preview's route): the
-/// engine's starts take the `PathBuf` back, so this crosses it through the bridge, byte
-/// for byte. Goes when the starts take app paths (milestone 10d).
-pub(crate) fn checked_as_app_path(source: &std::path::Path) -> AppPathBuf {
-    AppPath::legacy_unchecked(source).into_owned()
-}
-
 /// Text a `std::path` API reads LEXICALLY, handed on as sent with no `..` check: the write
 /// engine's pre-checks and the transfer box's text (which [`destination`] answers where a
 /// `..` matters), the listing engine's stored-spelling lookup, `root_echo`, and the git chip's

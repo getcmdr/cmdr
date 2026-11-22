@@ -22575,6 +22575,12 @@ export type SuggestedGroupView = {
   runsAs: RunsAs | null
   // Whether that destination is already there, and so whether approving creates it.
   destinationState: DestinationState
+  /**
+   *  Where a write into `destination` really lands, when a link leads it onto another volume than
+   *  its text names. Checked at every read, since a link can appear under it while the group
+   *  waits; disclosed, ❌ never refused at approval. `None` when it lands where it says.
+   */
+  destinationLandsOn: string | null
   // Ops in the live set: what would run.
   liveOpCount: number
   // Every op row the group has, including the ones a previous review deselected.

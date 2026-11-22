@@ -45,11 +45,12 @@ async fn scan_preview_source_volume(
     volume_id: &str,
     first_source: Option<&PathBuf>,
 ) -> Result<Option<Arc<dyn Volume>>, ScanPreviewRefusal> {
-    // The `.zip` file itself is scanned as a plain file (one entry), never its
-    // contents, which is why the gate asks about a path INSIDE a route rather
-    // than about a `.zip` component.
-    let is_routed_candidate = first_source.is_some_and(|first| path_routes_over_its_parent(first));
-    let routed_source = if is_routed_candidate {
+    // The `.zip` file itself is scanned as a plain file (one entry), never its contents, which is why the gate
+    // asks about a path INSIDE a route. The route reads the text's app path (no app path: the parent).
+    let routed_path = first_source
+        .filter(|f| path_routes_over_its_parent(f))
+        .and_then(|f| wire_path::app_path(f.to_str()?).ok()?);
+    let routed_source = if let Some(owned_source) = routed_path {
         // Bounded, because confirming a REMOTE archive boundary is real network
         // I/O and this runs BEFORE the preview exists — so the scan watchdog,
         // which bounds everything after, cannot cover it, and a wedged share
@@ -57,7 +58,6 @@ async fn scan_preview_source_volume(
         // A deadline here degrades to the parent volume below, which reaches a
         // terminal outcome the ordinary way.
         let owned_id = volume_id.to_string();
-        let owned_source = wire_path::checked_as_app_path(first_source.expect("candidate implies a source"));
         let resolved = timeout_detached_typed(
             Duration::from_secs(15),
             || DeadlineError::TimedOut,
@@ -635,9 +635,9 @@ mod tests {
         use crate::file_system::volume::InMemoryVolume;
         use crate::file_system::volume::manager::test_support::TestVolumeRegistration;
 
-        let dir = tempfile::tempdir().expect("tempdir");
-        let zip = dir.path().join("bundle.zip");
-        std::fs::write(&zip, b"PK\x03\x04rest").expect("write zip magic");
+        let dir = crate::test_support::AppTestDir::new("scan_preview_route");
+        std::fs::write(dir.native().join("bundle.zip"), b"PK\x03\x04rest").expect("write zip magic");
+        let sent = |name: &str| format!("{}/{name}", dir.app_path().as_str()); // a row's text, `C:/…` on Windows
 
         // resolve needs the parent drive registered to build the ArchiveVolume.
         // The `.zip` is a real temp file, so the parent is LOCAL (std::fs confirm).
@@ -650,15 +650,15 @@ mod tests {
         // An archive-inner source resolves to the ArchiveVolume (its root() is the
         // `.zip`), so the preview scans INSIDE the zip instead of via `std::fs`
         // (which would find 0 files and stall extract-out).
-        let inner = zip.join("inner.txt");
+        let inner = PathBuf::from(sent("bundle.zip/inner.txt"));
         let source = scan_preview_source_volume("root", Some(&inner))
             .await
             .expect("an archive source is never refused")
             .expect("archive source volume");
-        assert_eq!(source.root().as_str(), zip.to_str().expect("a UTF-8 scratch path"));
+        assert_eq!(source.root().as_str(), sent("bundle.zip"));
 
         // A plain local source stays `None` — the `std::fs` fast path.
-        let plain = dir.path().join("plain.txt");
+        let plain = PathBuf::from(sent("plain.txt"));
         assert!(matches!(
             scan_preview_source_volume("root", Some(&plain)).await,
             Ok(None)

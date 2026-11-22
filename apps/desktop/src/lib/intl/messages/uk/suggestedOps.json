@@ -212,6 +212,10 @@
   "@suggestedOps.folderWillBeCreatedTooltip": {
     "sourceHash": "2d28b7c"
   },
+  "suggestedOps.destinationLandsOn": "Через посилання файли опиняться на іншому диску: {path}",
+  "@suggestedOps.destinationLandsOn": {
+    "sourceHash": "d35d382"
+  },
   "suggestedOps.destinationUnknown": "Cmdr не вдалося перевірити цільову папку",
   "@suggestedOps.destinationUnknown": {
     "sourceHash": "dc78d1d"

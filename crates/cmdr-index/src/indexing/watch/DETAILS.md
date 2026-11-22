@@ -248,7 +248,7 @@ branches are exactly as stale as its scanned index, which loads Stale on every l
 change-notify translator (`../transports/smb/`) writes through the volume's writer unfiltered, so a cover walk on a
 share races it the way a local walk used to race the local loop.
 
-## Platform split: why Linux watches branches and macOS watches the volume
+## Platform split: why Linux watches branches and macOS and Windows watch the volume
 
 `DriveWatcher` is one struct over a `WatcherBackend` the OS picks in `watcher/platform/`: `macos.rs` (FSEvents, and a
 test root on the scripted fake journal, `watcher/fake_journal.rs`), and `notify_backend.rs`, which Linux and Windows
@@ -259,11 +259,31 @@ On macOS a branch watch is one FSEvents stream over the VOLUME ROOT plus the sco
 per directory below its root, and rooting it at the volume is what makes `sinceWhen` replay the whole journal — a branch
 added last session would otherwise have no history to replay. `watch_branch` is a no-op.
 
+On Windows a branch watch is one recursive `ReadDirectoryChangesW` over the VOLUME ROOT, and `watch_branch` is a no-op,
+as on macOS (`WATCHES_VOLUME_ROOT` in `watcher/platform/notify_backend.rs`). A recursive watch is one directory handle
+and one pending read for its whole subtree, so the root costs what any branch costs. A watch per branch was the cause of
+#1353: a phased index of `C:` walks thousands of branches, so a second launch on that index armed about 16,000 watches
+(33,000 handles), a change under nested watches was reported by each, every `watch_branch` parked a blocking-pool thread
+on the watcher's lock until the pool hit tokio's 512-thread cap (550 threads in all), and every other blocking read in
+the app (the 2 s volume reads) queued behind them and timed out (verified on Windows 10 22H2, the builder, 2026-11-22).
+The open handles also refuse renaming any folder ABOVE a watched one ("Access is denied", same machine and day, a plain
+`CreateFileW` the way `notify` opens a watch); a handle on the volume root blocks nothing the user can rename.
+
+What the root costs instead: the whole drive's churn reaches the loop, and the scope discards what's outside the
+branches with one map lookup per path component (`BranchWatch::admit`). Cmdr's own database and log writes land inside
+walked ground when the data dir does; the per-file live throttle bounds that loop to one write per file per minute, as
+on macOS (`../reconcile/reconciler/throttle.rs`). An overflow re-walks every branch (§ "When the OS drops events" below;
+the USN journal that would say where is #1364). A read error ends the one watch silently, and its handle vetoes "Safely
+remove" (#1363).
+
 On Linux `notify`'s recursive mode registers ONE inotify watch per directory against `max_user_watches` (8,192 by
 default on many distributions), so `start_branches` watches the covered branches themselves and `watch_branch` adds each
 new one to the RUNNING watcher (which `notify` supports, so no stream restart per walk). The registration walks the
 branch adding watches, slow enough on a big tree to matter, so it runs on a blocking task rather than on the search
-thread holding the registry lock. The window that opens is one the branch is being WALKED across, and its events buffer
+thread holding the registry lock: ONE task, draining every branch asked for while it runs (`PendingWatches`), ❌ never a
+task per branch, which is what filled the blocking pool on Windows. The drain's "running" mark comes down however the
+drain ends (a panic too, through `Drain`'s drop), else every later branch would wait on a drain that's gone; a stopped
+watcher drops what's still queued. The window that opens is one the branch is being WALKED across, and its events buffer
 until the walk ends either way. ❌ Don't unify these by watching the volume root on Linux: it spends the machine's watch
 budget on ground we don't answer for, and fails outright on a big tree.
 
@@ -287,10 +307,16 @@ storm bounds and its own status, and the first one already has both.
   ones are counted into the drive's tooltip until the next sweep. A branch-watched volume queues each branch on the
   throttled single-flight drain. A burst of overflows merges to one anchor per root per flush, since the loop dedups by
   path. This backend used to skip the event as a non-mutation, so the index drifted with no log line (#1105).
-- **`ReadDirectoryChangesW`**: nothing reaches us. `notify` ignores the completion's byte count, so a notification that
-  overflowed its 16 KiB buffer reads as an empty batch (#1128). The translation handles `Flag::Rescan` from any backend,
-  so it works the day `notify` sets it on Windows. (All three verified against the source of `notify` 8.2.1, the locked
-  version, 2026-11-12.)
+- **`ReadDirectoryChangesW`**: a read that overflowed its buffer completes with zero bytes or `ERROR_NOTIFY_ENUM_DIR`,
+  which the vendored `notify` turns into `Flag::Rescan` (`vendor/notify/CMDR-PATCH.md`, #1128). Its one watch is the
+  volume root, so the anchor is the root, re-anchored onto every branch on a branch-watched volume: one overflow
+  re-walks all walked ground, each branch at most once per its throttle window. The 64 KiB buffer is what keeps that
+  rarer: a burst of about 3,800 files copied and deleted on `C:` overflowed 16 KiB and not 64 KiB, and an idle `C:`
+  carried 0.2 events/s (Windows 10 22H2, the builder, two `FileSystemWatcher`s side by side, 2026-11-22). In the app
+  with an index walk holding both cores, the same burst overflowed 64 KiB three times in 2 s, merged into one round: 25
+  branch reconciles, 172 ms (19 walked branches; it scales with walked ground; same machine and day, debug build of
+  `b5eb63c64f`). The USN journal is the fix that removes it (#1364). (FSEvents and inotify verified against the source
+  of `notify` 8.2.1, 2026-11-12.)
 
 ❌ Don't route an OS overflow through `overflow_flag`. That flag means OUR bridge dropped events (the FSEvents channel);
 the `notify` bridge is unbounded and never sets it. Its recovery is a whole-volume rescan with no window, which a tree

@@ -24,7 +24,9 @@ use super::names::{check_transfer_names, own_names, plain_name};
 use super::place::GroupPlacer;
 pub(super) use super::problem::GroupProblem;
 use super::problem::PlaceField;
-use crate::agent::store::proposals::{GroupIntent, NewOp, NewRename, TransferOp, WritableDestination};
+use crate::agent::store::proposals::{
+    GroupIntent, NewOp, NewRename, TransferOp, UnwritableDestination, WritableDestination,
+};
 use crate::agent::suggested_ops::{OpSelector, SleepingIndex};
 use crate::agent::types::ProposalVerb;
 use crate::file_system::volume::Volume;
@@ -531,7 +533,11 @@ fn explicit_naming(
 /// A destination a group may be built with, or the refusal that says why not. Asked of the
 /// PLACED path, so a re-addressed destination is checked where it will really write.
 fn writable(location: Location) -> Result<WritableDestination, GroupProblem> {
-    WritableDestination::new(location).ok_or(GroupProblem::DestinationTakesNoWrites)
+    WritableDestination::new(location).map_err(|why| match why {
+        UnwritableDestination::Routed => GroupProblem::DestinationTakesNoWrites,
+        UnwritableDestination::EscapeRangeName => GroupProblem::DestinationNameUnsupported,
+        UnwritableDestination::NotAPath => GroupProblem::DestinationNotAPath,
+    })
 }
 
 /// Pair a verb with the target its executor binds: the per-verb executor table

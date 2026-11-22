@@ -39,7 +39,16 @@ use windows_sys::Win32::System::Threading::{
 };
 use windows_sys::Win32::System::IO::{CancelIo, OVERLAPPED};
 
-const BUF_SIZE: u32 = 16384;
+// CMDR-PATCH: 64 KiB, as in notify 9.0 (8.2.2 read 16 KiB). One recursive watch over a whole
+// drive overflowed 16 KiB on a burst of about 3,800 files copied and deleted, where 64 KiB held
+// (#1353's review, the builder, 2026-11-22). 64 KiB is also the most a network share accepts.
+const BUF_SIZE: u32 = 65536;
+
+// CMDR-PATCH: the read buffer lives on the heap, DWORD-aligned as `ReadDirectoryChangesW`
+// requires (a `[u8; N]` field only happened to be), backported from notify 9.0's `read_buffer`.
+fn read_buffer() -> Box<[u32]> {
+    vec![0; BUF_SIZE as usize / std::mem::size_of::<u32>()].into_boxed_slice()
+}
 
 #[derive(Clone)]
 struct ReadData {
@@ -52,7 +61,7 @@ struct ReadData {
 
 struct ReadDirectoryRequest {
     event_handler: Arc<Mutex<dyn EventHandler>>,
-    buffer: [u8; BUF_SIZE as usize],
+    buffer: Box<[u32]>,
     handle: HANDLE,
     data: ReadData,
     action_tx: Sender<Action>,
@@ -292,7 +301,7 @@ fn start_read(
     let request = Box::new(ReadDirectoryRequest {
         event_handler,
         handle,
-        buffer: [0u8; BUF_SIZE as usize],
+        buffer: read_buffer(),
         data: rd.clone(),
         action_tx,
     });
@@ -453,7 +462,7 @@ unsafe extern "system" fn handle_event(
     // The FILE_NOTIFY_INFORMATION struct has a variable length due to the variable length
     // string as its last member. Each struct contains an offset for getting the next entry in
     // the buffer.
-    let mut cur_offset: *const u8 = request.buffer.as_ptr();
+    let mut cur_offset: *const u8 = request.buffer.as_ptr() as *const u8;
     // In Wine, FILE_NOTIFY_INFORMATION structs are packed placed in the buffer;
     // they are aligned to 16bit (WCHAR) boundary instead of 32bit required by FILE_NOTIFY_INFORMATION.
     // Hence, we need to use `read_unaligned` here to avoid UB.
@@ -734,7 +743,7 @@ pub mod tests {
         let event_handler: Arc<Mutex<dyn crate::EventHandler>> = Arc::new(Mutex::new(event_tx));
         let mut request = Box::new(super::ReadDirectoryRequest {
             event_handler,
-            buffer: [0u8; super::BUF_SIZE as usize],
+            buffer: super::read_buffer(),
             handle: INVALID_HANDLE_VALUE,
             data: super::ReadData {
                 dir: PathBuf::from(r"C:\watched"),

@@ -212,6 +212,10 @@
   "@suggestedOps.folderWillBeCreatedTooltip": {
     "sourceHash": "2d28b7c"
   },
+  "suggestedOps.destinationLandsOn": "Een link stuurt de bestanden naar een andere schijf: {path}",
+  "@suggestedOps.destinationLandsOn": {
+    "sourceHash": "d35d382"
+  },
   "suggestedOps.destinationUnknown": "Cmdr kon de doelmap niet controleren",
   "@suggestedOps.destinationUnknown": {
     "sourceHash": "dc78d1d"

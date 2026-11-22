@@ -516,8 +516,8 @@ A path the frontend sends is read as an app path at the command edge, `wire_path
   no place is refused like a `..`. `read_on_volume` is the same without the bug report, for an agent's stored text.
   The unlock commands (and the MCP `unlock` tool) read their container path through `on_volume` before the route;
   the probes pick their volume through `path_checks::box_volume` (`resolve` on the text's `read_on_volume` reading,
-  else the volume by id); `stat_paths_kinds` routes a route-served path through `app_path`. A write start's checked
-  `PathBuf` crosses back for the scan preview's route at `checked_as_app_path`, until the starts take app paths (10d).
+  else the volume by id); `stat_paths_kinds` routes a route-served path through `app_path`. The scan preview's route
+  reads its first source through `app_path` too (text that is no app path scans through the parent).
 - **An OS integration takes the native file** (`native`: `app_path`, then `to_native`): Finder's Get Info, the
   editor and terminal launches, iCloud's download and eviction, Google Drive links, the clipboard's file URLs, the
   context menu's services and facts, the git chip, the viewer's Save as, the media thumbnail, a favorite's mount

@@ -212,6 +212,10 @@
   "@suggestedOps.folderWillBeCreatedTooltip": {
     "sourceHash": "2d28b7c"
   },
+  "suggestedOps.destinationLandsOn": "Một liên kết đưa các tệp sang ổ đĩa khác: {path}",
+  "@suggestedOps.destinationLandsOn": {
+    "sourceHash": "d35d382"
+  },
   "suggestedOps.destinationUnknown": "Cmdr không kiểm tra được thư mục đích",
   "@suggestedOps.destinationUnknown": {
     "sourceHash": "dc78d1d"
