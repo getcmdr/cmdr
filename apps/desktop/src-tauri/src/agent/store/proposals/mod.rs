@@ -81,7 +81,15 @@ pub(crate) fn typed_place(text: &str) -> Option<AppPathBuf> {
         // This host's native spelling: a rename group's parent is a `Path`'s text
         // (`tools/actions/multi_rename.rs`), `C:\x` on Windows, which no app-path grammar
         // reads. Without it every such approval refused as `TargetMissing` there.
-        .or_else(|_| AppPathBuf::from_native_unicode(std::path::Path::new(text)))
+        // ❗ A `..` stays refused here too: the Windows native crossing folds it lexically,
+        // which by text can name another folder across a link.
+        .or_else(|refusal| {
+            let native = std::path::Path::new(text);
+            if native.components().any(|c| c == std::path::Component::ParentDir) {
+                return Err(refusal);
+            }
+            AppPathBuf::from_native_unicode(native)
+        })
         .ok()
 }
 
