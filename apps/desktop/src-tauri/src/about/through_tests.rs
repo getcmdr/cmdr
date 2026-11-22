@@ -454,6 +454,7 @@ async fn an_item_the_share_no_longer_holds_says_it_is_gone() {
 
 // ── An archive's entry ──────────────────────────────────────────────────────
 
+#[cfg(unix)] // Windows keeps no download record (no xattrs), so its plan has no download row to name the archive in.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn an_archive_entry_names_its_archive_with_the_archives_own_record() {
     let dir = TestDir::new("about-archive-entry");

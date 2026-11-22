@@ -565,16 +565,12 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, source: Pi
     // `MenuState.context.open_with_apps` and call the launch helper directly.
     #[cfg(target_os = "macos")]
     if let Some(bundle_id) = id.strip_prefix(super::open_with::OPEN_WITH_ID_PREFIX) {
-        use std::path::PathBuf;
+        use crate::app_text::as_std_path_text;
 
         let menu_state = app.state::<MenuState<tauri::Wry>>();
         let ctx = menu_state.context.lock_ignore_poison();
         let app_path = ctx.open_with_apps.get(bundle_id).cloned();
-        let paths: Vec<PathBuf> = ctx
-            .paths
-            .iter()
-            .map(|row| crate::app_text::as_std_path_text(row))
-            .collect();
+        let paths: Vec<_> = ctx.paths.iter().map(|row| as_std_path_text(row)).collect();
         let listing_id = ctx.listing_id.clone();
         drop(ctx);
 
@@ -591,16 +587,12 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, source: Pi
     // === Open with → Other… : show NSOpenPanel, then launch ===
     #[cfg(target_os = "macos")]
     if id == super::open_with::OPEN_WITH_OTHER_ID {
+        use crate::app_text::as_std_path_text;
         use crate::file_system::open_with::pick_app_via_open_panel;
-        use std::path::PathBuf;
 
         let menu_state = app.state::<MenuState<tauri::Wry>>();
         let ctx = menu_state.context.lock_ignore_poison();
-        let paths: Vec<PathBuf> = ctx
-            .paths
-            .iter()
-            .map(|row| crate::app_text::as_std_path_text(row))
-            .collect();
+        let paths: Vec<_> = ctx.paths.iter().map(|row| as_std_path_text(row)).collect();
         let listing_id = ctx.listing_id.clone();
         drop(ctx);
 

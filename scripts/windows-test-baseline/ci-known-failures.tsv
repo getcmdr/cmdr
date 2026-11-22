@@ -35,10 +35,6 @@ cmdr	data_wipe::plan::tests::linux_plans_no_library_state	fails	a Windows-only e
 cmdr	data_wipe::plan::tests::the_security_event_log_goes_with_the_wipe	fails	a Windows-only expectation the test does not hold yet (windows-test-failures.md)
 cmdr	favorites::target::tests::a_local_folder_is_stat_and_reads_yes_or_no	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	favorites::target::tests::a_protected_folder_is_taken_on_trust_without_a_stat	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
-cmdr	go_to_path::tests::deep_nonexistent_path_falls_back_to_nearest_ancestor	fails	#1337: a typed path holding an 8.3 short name (the runner TEMP is RUNNER~1) answers in its short spelling, where listings and the expectation use the long one
-cmdr	go_to_path::tests::dotdot_past_a_nonexistent_middle_segment_is_no_link	fails	#1337: a typed path holding an 8.3 short name (the runner TEMP is RUNNER~1) answers in its short spelling, where listings and the expectation use the long one
-cmdr	go_to_path::tests::existing_dir_resolves_to_directory	fails	#1337: a typed path holding an 8.3 short name (the runner TEMP is RUNNER~1) answers in its short spelling, where listings and the expectation use the long one
-cmdr	go_to_path::tests::existing_file_resolves_to_file_with_parent_and_name	fails	#1337: a typed path holding an 8.3 short name (the runner TEMP is RUNNER~1) answers in its short spelling, where listings and the expectation use the long one
 cmdr	go_to_path::tests::typing_a_path_into_a_zip_enters_it_as_a_directory	fails	#1337: a typed path holding an 8.3 short name (the runner TEMP is RUNNER~1) answers in its short spelling, where listings and the expectation use the long one
 cmdr	instance_lock::tests::a_lock_held_on_any_one_of_the_three_dirs_refuses_a_second_claim	fails	a product gap on Windows (windows-test-failures.md)
 cmdr	instance_lock::tests::acquiring_stamps_our_pid_and_names_the_holder	fails	a product gap on Windows (windows-test-failures.md)

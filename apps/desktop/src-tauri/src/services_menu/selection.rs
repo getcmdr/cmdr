@@ -18,6 +18,8 @@ use std::sync::RwLock;
 
 use cmdr_fs::ignore_poison::RwLockIgnorePoison;
 
+use crate::app_text::as_std_path_text;
+
 /// Where a pane's selected rows live.
 ///
 /// Two shapes because Cmdr has two kinds of pane: one whose rows live in the
@@ -134,15 +136,9 @@ pub fn resolve() -> Vec<PathBuf> {
                 indices,
                 *sequence,
             )
-            .map(|snapshot| {
-                snapshot
-                    .paths
-                    .iter()
-                    .map(|row| crate::app_text::as_std_path_text(row))
-                    .collect()
-            })
+            .map(|snapshot| snapshot.paths.iter().map(|row| as_std_path_text(row)).collect())
             .unwrap_or_default(),
-        SelectedRows::Paths { paths } => paths.iter().map(|row| crate::app_text::as_std_path_text(row)).collect(),
+        SelectedRows::Paths { paths } => paths.iter().map(|row| as_std_path_text(row)).collect(),
     })
 }
 
@@ -203,7 +199,7 @@ mod tests {
             SelectedRows::Listing { indices, .. } => {
                 indices.iter().map(|i| PathBuf::from(format!("/dir/{i}.txt"))).collect()
             }
-            SelectedRows::Paths { paths } => paths.iter().map(|row| crate::app_text::as_std_path_text(row)).collect(),
+            SelectedRows::Paths { paths } => paths.iter().map(|row| as_std_path_text(row)).collect(),
         }
     }
 

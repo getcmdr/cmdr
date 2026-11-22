@@ -181,7 +181,9 @@ impl GoToHost for AppHost {
     /// zip magic, so a directory named `foo.zip` or a mislabeled file still classifies
     /// normally. Local disks only.
     async fn enters_archive(&self, path: &AppPath) -> bool {
-        let Ok(native) = path.to_native() else {
+        // The plain form where one names the file (no `\\?\` on Windows), as the app's other
+        // OS reads of a person's path take it.
+        let Ok(native) = path.to_native_plain().or_else(|_| path.to_native()) else {
             return false;
         };
         let check = self.within(async move {

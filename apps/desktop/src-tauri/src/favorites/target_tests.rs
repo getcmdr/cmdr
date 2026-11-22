@@ -4,10 +4,15 @@ fn never_asked(path: &Path) -> bool {
     panic!("discovery must not stat {path:?}")
 }
 
+/// A local favorite on this host: a drive path on Windows, where `/Users/…` is no local folder.
+fn local(rest: &str) -> String {
+    format!("{}{rest}", if cfg!(windows) { "C:" } else { "" })
+}
+
 #[test]
 fn a_local_folder_is_stat_and_reads_yes_or_no() {
-    assert_eq!(on_disk("/Users/me/Docs", Probe::Stat, |_| true), OnDisk::Yes);
-    assert_eq!(on_disk("/Users/me/Gone", Probe::Stat, |_| false), OnDisk::No);
+    assert_eq!(on_disk(&local("/Users/me/Docs"), Probe::Stat, |_| true), OnDisk::Yes);
+    assert_eq!(on_disk(&local("/Users/me/Gone"), Probe::Stat, |_| false), OnDisk::No);
 }
 
 /// ❗ The hung-mount guard: one dead share must not cost the whole listing its 2 s budget.
@@ -23,7 +28,7 @@ fn a_folder_on_a_network_mount_is_never_stat() {
 #[test]
 fn a_protected_folder_is_taken_on_trust_without_a_stat() {
     assert_eq!(
-        on_disk("/Users/me/Desktop", Probe::TakenOnTrust, never_asked),
+        on_disk(&local("/Users/me/Desktop"), Probe::TakenOnTrust, never_asked),
         OnDisk::Assumed
     );
 }

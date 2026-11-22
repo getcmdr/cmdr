@@ -1,7 +1,7 @@
 //! The non-macOS watch's `notify` half (`watcher/notify_stream.rs`): how a debounced
 //! inotify batch becomes `ListingChange`s.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::Instant;
 
 use notify_debouncer_full::DebouncedEvent;
