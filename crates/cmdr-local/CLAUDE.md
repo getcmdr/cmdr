@@ -7,10 +7,9 @@ alias `LocalVolume`; only OS-dependent code names a sibling (`platform/mod.rs`).
 ## Module map
 
 - **platform/** picks the volume per OS family: **local_posix.rs** with **local_posix/** (`scan`, `links`, `xattrs`,
-  one-line delegations), **local_windows.rs** with **local_windows/** (`paths`, the `\\?\` crossing; `rename`), and
-  **anchor.rs** (where a Windows caller's path lands), **short_names.rs** (when a Windows root reads the disk for 8.3
-  names). **streams.rs**, **copy_scan.rs**, and **item_metadata.rs**: both siblings' byte movement, copy scan, and
-  landed metadata.
+  one-line delegations), **local_windows.rs** with **local_windows/** (`paths`, the `\\?\` crossing; `rename`, `links`,
+  `scan`), and the pure Windows rules **anchor.rs**, **reparse.rs**, **short_names.rs**. **streams.rs**,
+  **copy_scan.rs**, and **item_metadata.rs**: both siblings' byte movement, copy scan, and landed metadata.
 - **reading.rs** (the local reader; the watcher and `tags.rs` read through it) with **reading/row.rs** (row paths) and
   **reading/bulk.rs** (macOS `getattrlistbulk`), **mutation.rs** (a mutation's listing patch), **space.rs** +
   **live_space.rs**, the OS probes (**filesystem_kind.rs**, **mount_table.rs**, **statfs.rs**, **nsurl.rs**,

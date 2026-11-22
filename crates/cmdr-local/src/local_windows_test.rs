@@ -1,7 +1,7 @@
 //! `LocalWindowsVolume`'s own cells, run on real NTFS: the hostile cases the data-safety rule
 //! asks of a rename that only Windows has (a name another program holds open, a read-only
-//! file, a path past `MAX_PATH`), the hidden attribute, a junction, and a
-//! relative bridge path spelled with `\`.
+//! file, a path past `MAX_PATH`), the hidden attribute, junctions and file vs folder symlinks,
+//! and a relative bridge path spelled with `\`.
 //! The cells every OS shares are in `local_volume_test.rs`.
 
 #![cfg(target_os = "windows")] // Win32 share modes, attributes, `MAX_PATH`, and junctions
@@ -278,6 +278,94 @@ async fn a_folder_symlink_deletes_as_the_link_and_keeps_the_target() {
     assert_eq!(
         std::fs::read(test_dir.native().join("real/keep.txt")).expect("read"),
         b"keep"
+    );
+}
+
+/// A junction is a link to the volume: its target reads back (absolute, `std`'s spelling), it
+/// kinds as a link, and a plain file and folder read as no link.
+#[tokio::test]
+async fn a_junction_reads_its_target_and_kinds_as_a_link() {
+    let test_dir = AppTestDir::new("win_junction_target");
+    let volume = volume_at(&test_dir);
+    volume.create_directory(&at(&volume, "real")).await.expect("mkdir");
+    volume
+        .create_file(&at(&volume, "plain.txt"), b"x")
+        .await
+        .expect("create");
+    junction(test_dir.native(), "link", "real");
+
+    let target = volume
+        .read_link_target(&at(&volume, "link"))
+        .await
+        .expect("a junction reads")
+        .expect("a junction is a link");
+    assert_eq!(
+        std::fs::canonicalize(&target).expect("the target resolves"),
+        std::fs::canonicalize(test_dir.native().join("real")).expect("the folder resolves"),
+        "{target:?}"
+    );
+    assert_eq!(
+        volume.entry_kind(&at(&volume, "link")).await.expect("kind"),
+        cmdr_fs::volume::EntryKind::Symlink
+    );
+    for plain in ["real", "plain.txt"] {
+        assert_eq!(
+            volume.read_link_target(&at(&volume, plain)).await.expect("answers"),
+            None,
+            "{plain} is no link"
+        );
+    }
+}
+
+/// The volume makes a FOLDER link for a target that's a folder (so Explorer and `cd` enter
+/// it) and a file link otherwise, and a delete takes the folder link alone.
+#[tokio::test]
+async fn a_symlink_is_a_folder_link_exactly_when_its_target_is_a_folder() {
+    if cmdr_fs::testing::skip_without_symlinks() {
+        return;
+    }
+    use std::os::windows::fs::MetadataExt as _;
+    const FILE_ATTRIBUTE_DIRECTORY: u32 = 0x10;
+    let test_dir = AppTestDir::new("win_symlink_kinds");
+    let volume = volume_at(&test_dir);
+    volume.create_directory(&at(&volume, "real")).await.expect("mkdir");
+    volume
+        .create_file(&at(&volume, "real/keep.txt"), b"keep")
+        .await
+        .expect("create");
+    let link_is_folder = |name: &str| {
+        let meta = std::fs::symlink_metadata(test_dir.native().join(name)).expect("the link is there");
+        assert!(meta.is_symlink(), "{name} is a link");
+        meta.file_attributes() & FILE_ATTRIBUTE_DIRECTORY != 0
+    };
+
+    for (link, target, folder) in [
+        ("to-folder", "real", true),
+        ("to-file", "real\\keep.txt", false),
+        ("to-nothing", "gone", false),
+    ] {
+        volume
+            .create_symlink(&at(&volume, link), std::path::Path::new(target))
+            .await
+            .unwrap_or_else(|e| panic!("{link}: {e:?}"));
+        assert_eq!(link_is_folder(link), folder, "{link}");
+        assert_eq!(
+            volume.read_link_target(&at(&volume, link)).await.expect("reads"),
+            Some(std::path::PathBuf::from(target)),
+            "the target of {link} reads back verbatim"
+        );
+    }
+    assert_eq!(
+        std::fs::read(test_dir.native().join("to-file")).expect("the file link resolves"),
+        b"keep"
+    );
+
+    volume.delete(&at(&volume, "to-folder")).await.expect("delete the link");
+    assert!(std::fs::symlink_metadata(test_dir.native().join("to-folder")).is_err());
+    assert_eq!(
+        std::fs::read(test_dir.native().join("real/keep.txt")).expect("read"),
+        b"keep",
+        "the target folder keeps its contents"
     );
 }
 

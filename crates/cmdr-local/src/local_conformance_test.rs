@@ -417,12 +417,13 @@ async fn conflict_scan_honors_the_shared_missing_destination_contract() {
     conformance::assert_conflict_scan_reads_a_missing_destination_as_empty(&volume, Path::new("not-created-yet")).await;
 }
 
+/// On Windows the volume makes the link itself, which takes Developer Mode or an elevated
+/// shell.
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, symlinks and junctions: can_hold_links is false until file vs dir symlinks land"
-)]
 async fn a_link_lands_verbatim() {
+    if cmdr_fs::testing::skip_without_symlinks() {
+        return;
+    }
     let dir = AppTestDir::new("conformance-link-landing");
     let volume = volume_at(&dir);
     conformance::assert_a_link_lands_verbatim(&volume, Path::new("/")).await;

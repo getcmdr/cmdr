@@ -8,9 +8,11 @@
 //! default: a symlink, xattrs, metadata, and a write-access probe are "not supported" rather
 //! than a guess.
 
+pub(crate) mod links;
 pub(crate) mod paths;
 pub mod recycle_bin;
 pub(crate) mod rename;
+mod scan;
 
 use std::borrow::Cow;
 use std::future::Future;
@@ -19,11 +21,10 @@ use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
 
-use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, NotAnAppPath, PathArithmetic, is_escape};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, NotAnAppPath, is_escape};
 use cmdr_fs::durable::DeviceBarriers;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::file_identity::{FileId, Follow};
-use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::metadata::{CarriedMetadata, MetadataCaps, MetadataClasses, MetadataReport, Unblock};
 use cmdr_fs::volume::host::VolumeHost;
@@ -374,6 +375,47 @@ impl Volume for LocalWindowsVolume {
         Some(self.root.clone())
     }
 
+    /// A symlink's or a junction's target as stored (`links.rs`); a cloud placeholder or an
+    /// app execution alias is the item itself, so `Ok(None)`.
+    fn read_link_target<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Result<Option<PathBuf>, VolumeError>> + Send + 'a>> {
+        let at = self.located(path);
+        Box::pin(blocking("read_link_target", move || {
+            let at = at?;
+            links::read_link_at(&at.os).unwrap_or_else(|e| Err(at.error(&e)))
+        }))
+    }
+
+    /// The trait's gate; the drive has the last word (`create_symlink` answers `NotSupported`
+    /// without Developer Mode, or on FAT and exFAT).
+    fn can_hold_links(&self) -> bool {
+        true
+    }
+
+    /// A file or folder symlink by what `target` names now (`links.rs`), stored verbatim.
+    /// ❗ Never elevates: no privilege to make links is `NotSupported`, a typed "this drive
+    /// holds no links", which the engine reports as `LinksNotSupported`.
+    fn create_symlink<'a>(
+        &'a self,
+        path: &'a AppPath,
+        target: &'a Path,
+    ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let at = self.located(path);
+        let target = target.to_path_buf();
+        Box::pin(blocking("create_symlink", move || {
+            let at = at?;
+            links::create_symlink_at(&at.os, &target).map_err(|e| {
+                if links::holds_no_links(e.raw_os_error()) {
+                    VolumeError::NotSupported
+                } else {
+                    at.error(&e)
+                }
+            })
+        }))
+    }
+
     fn create_file<'a>(
         &'a self,
         path: &'a AppPath,
@@ -534,8 +576,7 @@ impl Volume for LocalWindowsVolume {
         }))
     }
 
-    /// The same per-name probe as `LocalPosixVolume`'s: a name is a conflict when something
-    /// answers a stat there (a link followed), so a missing destination folder reads empty.
+    /// The same per-name probe as `LocalPosixVolume`'s (`scan.rs`).
     fn scan_for_conflicts<'a>(
         &'a self,
         source_items: &'a [SourceItemInfo],
@@ -544,46 +585,7 @@ impl Volume for LocalWindowsVolume {
         let dest = self.located(dest_path);
         let source_items = source_items.to_vec();
         Box::pin(blocking("scan_for_conflicts", move || {
-            let dest = dest?;
-            let mut conflicts = Vec::new();
-            for item in &source_items {
-                // An item whose name names no child of the destination can't collide: it's
-                // refused typed, alone, and logged (a conflict carries no per-item error),
-                // and the batch's other items are still checked, as on POSIX.
-                let dest_file = match AppName::from_app_spelling(&item.name) {
-                    Ok(name) => dest
-                        .app
-                        .join(name)
-                        .map_err(|why| VolumeError::InvalidName(why.to_string().into())),
-                    Err(refused) => Err(VolumeError::from(refused)),
-                };
-                let dest_file = match dest_file {
-                    Ok(dest_file) => dest_file,
-                    Err(refused) => {
-                        log::warn!("scan_for_conflicts: skipping a source name: {}", LogError(&refused));
-                        continue;
-                    }
-                };
-                let Ok(meta) = native_of(&dest_file).and_then(std::fs::metadata) else {
-                    continue;
-                };
-                let dest_modified = meta
-                    .modified()
-                    .ok()
-                    .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-                    .and_then(|d| i64::try_from(d.as_secs()).ok());
-                conflicts.push(ScanConflict {
-                    source_path: item.name.clone(),
-                    dest_path: dest_file.into_string(),
-                    source_size: item.size,
-                    dest_size: meta.len(),
-                    source_modified: item.modified,
-                    dest_modified,
-                    source_is_directory: item.is_directory,
-                    dest_is_directory: meta.is_dir(),
-                });
-            }
-            Ok(conflicts)
+            Ok(scan::conflicts_under(&dest?.app, &source_items))
         }))
     }
 

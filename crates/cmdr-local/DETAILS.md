@@ -365,10 +365,25 @@ nearly every method and hide which answers are real.
   `local_windows_test.rs`, 2026-11-18).
 - **Delete** picks `RemoveDirectoryW` by the entry's own `FILE_ATTRIBUTE_DIRECTORY`, so a directory symlink or junction
   goes as the link, its target untouched, broken or not (verified on Windows 10 22H2, NTFS, for a junction in
-  `local_windows_test.rs`, 2026-11-18; a directory symlink is unverified). A read-only FILE (Windows' Locked) refuses as
-  `PermissionDenied` before any call, standing in for macOS's `EPERM`: `std::fs::remove_file` would delete it, so a
-  move's sweep would take an original nobody agreed to (#1331). `clear_blockers` clears the attribute for a consented
-  move or a reversal's retry (`crates/cmdr-operations/DETAILS.md` § "Moving Locked items").
+  `local_windows_test.rs`, 2026-11-18; a directory symlink by
+  `local_windows_test::a_symlink_is_a_folder_link_exactly_when_its_target_is_a_folder`).
+- **Links** (`src/platform/local_windows/links.rs`): `read_link_target` reads the entry's reparse tag
+  (`FileAttributeTagInfo` on a handle that opens the reparse point itself) and tells links from the rest by Windows' own
+  rule, the tag's name-surrogate bit (`src/platform/reparse.rs`, pure, pinned on every OS): a symlink and a junction
+  read their target through `std::fs::read_link` (a junction's absolute, `\??\` dropped); a OneDrive placeholder, an app
+  execution alias, or a deduplicated file is the item itself (`Ok(None)`); another surrogate (a WSL symlink) is
+  `NotSupported`. `std`'s `is_symlink` rests on the same bit, so a listing and this never disagree. `create_symlink`
+  makes a FOLDER link when the target, read against the link's folder with `..` by text (a `\\?\` path never
+  normalizes), is a folder now, and a file link otherwise, a missing target included; the target is stored verbatim, `/`
+  included. **Decision**: no privilege to make links (`ERROR_PRIVILEGE_NOT_HELD`: no Developer Mode, not elevated) and a
+  filesystem without them (`ERROR_NOT_SUPPORTED`, `ERROR_INVALID_FUNCTION`) answer `NotSupported`, which the engine
+  reports as `LinksNotSupported`; ❌ never elevate, and ❌ never fall back to a junction. **Why**: a junction is a
+  different thing (folders only, absolute targets, resolved by the server on a share), so a copy that quietly made one
+  would land something other than what the source holds. An access refusal stays a permission refusal. A read-only FILE
+  (Windows' Locked) refuses as `PermissionDenied` before any call, standing in for macOS's `EPERM`:
+  `std::fs::remove_file` would delete it, so a move's sweep would take an original nobody agreed to (#1331).
+  `clear_blockers` clears the attribute for a consented move or a reversal's retry (`crates/cmdr-operations/DETAILS.md`
+  § "Moving Locked items").
 - **`has_trash`** reads `recycle_bin.rs`, the ONE "does this drive keep a Recycle Bin" answer (a fixed disk Windows
   names a volume GUID for, its bin not turned off), which the app's switcher row and the Recycle Bin arm's refusal read
   too, so the three can't disagree (#1332). A share's mount class says no first, with no call to it; the rest reads live
@@ -434,11 +449,10 @@ nearly every method and hide which answers are real.
   Explorer's customization marker). The mode and xattrs stay `NotApplicable`; append-only and no-dump have no attribute.
 
 What's real and what's stubbed, by name: the windows-port plan, § "Windows build state" and task 35's entry. Every
-capability not yet real keeps the trait's conservative default (symlink creation, xattrs, the write-access probe), so
-nothing answers by guessing. `local_conformance_test.rs` and `local_volume_test.rs` run on Windows too, each cell the
-Windows volume can't keep yet ignored there (`cfg_attr(target_os = "windows", ignore = …)`) with what it lacks; their
-folder-link cells build a junction there (`local_conformance_test::link_to_folder`, `mklink /J`, which needs no
-privilege).
+capability not yet real keeps the trait's conservative default (xattrs, the write-access probe), so nothing answers by
+guessing. `local_conformance_test.rs` and `local_volume_test.rs` run on Windows too, each cell the Windows volume can't
+keep yet ignored there (`cfg_attr(target_os = "windows", ignore = …)`) with what it lacks; their folder-link cells build
+a junction there (`local_conformance_test::link_to_folder`, `mklink /J`, which needs no privilege).
 
 ## App paths in and out
 

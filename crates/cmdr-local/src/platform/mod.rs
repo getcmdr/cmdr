@@ -25,6 +25,9 @@ mod anchor;
 pub(crate) mod local_posix;
 #[cfg(target_os = "windows")]
 pub(crate) mod local_windows;
+// Compiled into every OS's tests, so the reparse-tag rule is pinned everywhere.
+#[cfg(any(target_os = "windows", test))]
+mod reparse;
 mod short_names;
 
 #[cfg(unix)]

@@ -228,11 +228,12 @@ owns its real body. Remove a line when its body lands.
   `GetThreadTimes`, so the index writer and rescan lines carry thread CPU there.
 - `cmdr-sftp` agent (`transport/platform/windows.rs`), task 46: asks the OpenSSH agent's pipe (or `SSH_AUTH_SOCK`),
   never Pageant.
-- `cmdr_local::LocalWindowsVolume` (`platform/local_windows.rs`), task 35: no `create_symlink` / `read_link_target`
-  (`can_hold_links` false), no ADS-backed xattrs, no `write_access_at`, and no `FindFirstFileExW` lister. Each keeps the
-  trait's conservative default, and each conformance cell it can't pass yet is `#[ignore]`d with its piece
-  (`local_conformance_test.rs`). Real since 2026-11-22: streams, the copy scan, `node_identity`, and metadata (dates,
-  read-only and hidden as flags, the caps; `crates/cmdr-local/DETAILS.md` § "The Windows sibling").
+- `cmdr_local::LocalWindowsVolume` (`platform/local_windows.rs`), task 35: no ADS-backed xattrs, no `write_access_at`,
+  and no `FindFirstFileExW` lister. Each keeps the trait's conservative default, and each conformance cell it can't pass
+  yet is `#[ignore]`d with its piece (`local_conformance_test.rs`). Real since 2026-11-22: streams, the copy scan,
+  `node_identity`, metadata (dates, read-only and hidden as flags, the caps), and links (symlink and junction targets,
+  reparse tags told apart, file vs folder symlinks made without elevating; `crates/cmdr-local/DETAILS.md` § "The Windows
+  sibling").
 - `cmdr_local::reading` Windows arm (`reading/platform/windows.rs`), task 35: no allocation size, mode `0`, no owner or
   group; only `FILE_ATTRIBUTE_HIDDEN` is real.
 - `cmdr_operations::local_disk` Windows arm (`local_disk/platform/windows.rs`), tasks 35 and 36: `set_mode` and
