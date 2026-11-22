@@ -11,9 +11,7 @@
 //! stragglers on a dead mount can't pile up pool threads behind the user's back, and, being that
 //! mount's own permits, can't starve a stat on any other volume.
 
-use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
-use std::path::Path;
 use std::sync::{Arc, LazyLock, Mutex};
 use std::time::Duration;
 
@@ -141,9 +139,12 @@ async fn stat_one(budget: Arc<Semaphore>, volume: Arc<dyn Volume>, path: String,
             if tokio::time::Instant::now() >= give_up_at {
                 return SourceStat::Unknown;
             }
-            runtime.block_on(async move {
-                classify(volume.get_metadata(&AppPath::legacy_unchecked(Path::new(&path))).await)
-            })
+            // A stored source that names no app path has nothing to stat: unknown, ❌ never
+            // missing (the stat didn't say so).
+            let Ok(path) = crate::commands::wire_path::read_on_volume(&path) else {
+                return SourceStat::Unknown;
+            };
+            runtime.block_on(async move { classify(volume.get_metadata(&path).await) })
         })
         .await
         .map_err(|e| StatGap::Panicked(e.to_string()))
@@ -225,6 +226,7 @@ mod tests {
     use cmdr_fs::app_path;
     use cmdr_fs::app_path::AppPath;
     use cmdr_fs::volume::InMemoryVolume;
+    use std::path::Path;
 
     /// A volume that keeps a Trash, as `LocalPosixVolume` on a local disk does.
     struct LocalDisk(InMemoryVolume);

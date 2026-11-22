@@ -15,8 +15,6 @@ mod subject;
 #[cfg(test)]
 mod tests;
 
-use std::path::Path;
-
 use serde::Serialize;
 
 pub use outcome::outcome_of;
@@ -53,7 +51,9 @@ impl LinePath {
     /// The model's (or a result's) `path`, `~` already expanded.
     pub fn of(path: &str) -> Self {
         let text = bounded(path);
-        let linkable = text == path && Path::new(path).is_absolute();
+        // A place this host can go to: an absolute app path in its own flavor, not a server's URL.
+        let linkable = text == path
+            && crate::app_text::parse(path).is_ok_and(|place| place.kind() != cmdr_fs::app_path::PathKind::Scheme);
         Self { text, linkable }
     }
 

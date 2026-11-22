@@ -247,10 +247,9 @@ pub async fn execute_rename<R: Runtime>(app: &AppHandle<R>, ctx: &ToolCtx, param
     }
     let (_pane, state) = target_pane_state(app, params)?;
     let (current_name, from_path) = resolve_rename_target(&state, name_param)?;
-    let parent = std::path::Path::new(&from_path)
-        .parent()
-        .ok_or_else(|| ToolError::internal(format!("Couldn't derive the parent of {from_path}")))?;
-    let to_path = parent.join(&new_name).to_string_lossy().into_owned();
+    let to_path = renamed_path(&from_path, &new_name).ok_or_else(|| {
+        ToolError::invalid_params(format!("'{new_name}' can't be one name in the folder of {from_path}."))
+    })?;
     refuse_portal_rename(&from_path, &to_path)?;
 
     let payload = json!({ "pane": pane, "name": current_name, "newName": new_name });
@@ -271,15 +270,26 @@ fn already_editing(mut refusal: ToolError) -> ToolError {
     refusal
 }
 
+/// `new_name` beside `from`, by the app path's own join (a `Path` join gave `C:/x\b` on
+/// Windows). `None` at a root, for text that's no app path, and for a name the folder can't
+/// hold as one name.
+fn renamed_path(from: &str, new_name: &str) -> Option<String> {
+    use cmdr_fs::app_path::{AppName, PathArithmetic};
+    let from = crate::commands::wire_path::read_on_volume(from).ok()?;
+    let name = AppName::from_app_spelling(new_name).ok()?;
+    Some(from.parent()?.join(name).ok()?.into_string())
+}
+
 /// Refuses a rename a person's F2 refuses: one whose source or
 /// target the `.git` portal serves. That's every row of a read-only portal pane
 /// (`.git/worktrees/`), and a `.git/` listing's category rows, which stand in for
 /// git's real `worktrees/` and `branches/` folders at the same path. The engine
 /// refuses these too; this answers first, in the agent's terms.
 pub(super) fn refuse_portal_rename(from: &str, to: &str) -> Result<(), ToolError> {
+    use crate::commands::wire_path::as_sent_std_path;
     use crate::file_system::git::wiring::portal_serves;
 
-    if portal_serves(std::path::Path::new(from)) || portal_serves(std::path::Path::new(to)) {
+    if portal_serves(&as_sent_std_path(from)) || portal_serves(&as_sent_std_path(to)) {
         return Err(ToolError::invalid_params(format!(
             "Can't rename '{from}': it's in the read-only git portal (branches, tags, commits, stash, worktrees, and submodules are snapshots, and a person can't rename them either)"
         )));

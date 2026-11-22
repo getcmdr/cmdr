@@ -404,9 +404,7 @@ pub(crate) fn is_virtual_path(path: &str) -> bool {
 /// `Path::exists()` on a dead network mount can block indefinitely, and an MCP handler
 /// must never do un-timed filesystem I/O (same contract as `cmdr_fs::deadline`).
 async fn validate_path_exists(path: &str) -> Result<(), ToolError> {
-    if is_virtual_path(path)
-        || crate::file_system::volume::manager::path_routes_over_its_parent(std::path::Path::new(path))
-    {
+    if is_virtual_path(path) || crate::app_text::routes_over_its_parent(path) {
         return Ok(());
     }
     let owned = path.to_string();

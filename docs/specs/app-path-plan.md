@@ -2276,6 +2276,23 @@ included; the hidden couplings it found are why waves B and C differ from round 
     stays open: it needs a `TypedPathHost` long-name step inside the resolve deadline, a placement call.
   - **The DONE line is not met**: 351 app bridge calls remain, 242 in `operations_host/` (the backend suites, which also
     hold the WebDAV and NFS `scratch_dir` twins' last callers), 52 `file_system/`, 12 `network/`.
+- **Third step done** (2026-11-22, branch `worktree-agent-a48144939a26577f5`, stacked on #1365's branch):
+  - **An agent's rename proposals join by the app path** (`multi_rename`'s tool, `propose/rename`'s plan and preflight,
+    the spine's `shared_parent`, the `rename` tool's target): a Windows drive folder's rows read `C:/x/a.jpg` (four
+    Windows known failures gone); a name a folder can't hold as one name refuses typed. Design:
+    `apps/desktop/src-tauri/src/tools/DETAILS.md` § "An agent's path".
+  - Every `tools/` and `agent/` `appTextToPath` site is gone; an engine that still keys by `std::path` text takes the
+    text at `wire_path::as_sent_std_path`.
+  - **Left, and why**: the backend suites' bridge calls (about 220) and their `pathFromBareText` sites wait on the write
+    engine's starts taking app paths: every suite holds its sources as `PathBuf` for those starts, so typing a suite
+    first moves each crossing to an `as_std_legacy` beside the start. Same for `operations_host/volumes.rs::engine_path`
+    and `agent/suggested_ops/bridge/` (its `op_ids` key and rows are the starts' `PathBuf`s). `tools/sensitive.rs`'s
+    realpath gate and `tools/read/inspect/` (the viewer's archive seam) cross at a typed native door that fails closed
+    on a `..`, a call for their owners. `agent/store/migrations.rs` is a shipped step, ❌ not edited.
+    `agent/chat/runtime/cmdr_md.rs` reads an env var's native path (true native, a `pathFromBareText` false positive).
+    Issue #1351's `/C:\…` journal rows weren't reproduced off Windows: the journal's `local_split` stores whatever the
+    engine's `PathBuf` holds, and the reader (`escape_mark.rs::app_path_as`) already reads a drive row's `\`; the fix is
+    the engine journaling typed ends, with the starts.
 
 ### 10f. The escape lands
 
