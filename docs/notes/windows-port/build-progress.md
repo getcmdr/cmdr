@@ -509,3 +509,12 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   measurement cell before it prints, so give one a `slow-timeout` override, and its output survives in the junit report
   only (`store-success-output`, artifact `windows-test-report`). Decided against: owner names, ADS xattrs (#1375). Left
   for the engine: its Windows `symlink` stub (#1376).
+- **2026-11-22, PR #1374 on the desktop** (the warm pair, `CARGO_BUILD_JOBS=2`, a debug app build 13m 25s warm, driven
+  by Cmdr's MCP server): `real-windows-check-2026-11-19.md` § "PR #1374 and the day's PRs on the desktop". The app
+  didn't build from `main`: `cmdr-local`'s `read_dir_entries` is dead on Windows without the `testing` feature, which
+  the workspace-wide CI clippy unifies on (#1382). Read-only and hidden copies, the Locked question, the no-permission
+  pre-flight, the big folder, and the sweep pass; the unmapped-share copy (#1384), a folder mount's subfolders (#1385),
+  a permanent delete of a junction (#1386), and a growing file's size (#1387) fail. Gotchas: `run-on-desktop.sh --keys`
+  types into whatever holds the foreground (an elevated Task Manager here), never necessarily the `--window`; and an
+  `icacls (W)` deny includes `SYNCHRONIZE`, so a deny-writes fixture wants `(WD,AD)` alone. Fixtures, the mount point,
+  and the run's Recycle Bin item are gone; `cmdr-m6` is back on `origin/main`, clean.
