@@ -93,7 +93,8 @@ fn a_destination_is_stored_as_its_app_path() {
 /// every such Windows approval refused as `TargetMissing`.
 #[test]
 fn a_destination_in_the_hosts_native_spelling_is_its_app_path() {
-    let native = std::env::temp_dir().join("cmdr-proposal-destination").join("paid");
+    let dir = crate::test_support::TestDir::new("proposal_native_destination");
+    let native = dir.join("paid");
     let app = cmdr_fs::app_path::AppPathBuf::from_native_unicode(&native).expect("a Unicode temp path");
     let destination = WritableDestination::new(at(&native.display().to_string())).expect("writable");
     assert_eq!(destination.location().path, app.as_str());
