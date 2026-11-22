@@ -227,11 +227,12 @@ owns its real body. Remove a line when its body lands.
 - `cmdr-sftp` agent (`transport/platform/windows.rs`), task 46: asks the OpenSSH agent's pipe (or `SSH_AUTH_SOCK`),
   never Pageant.
 - `cmdr_local::LocalWindowsVolume` (`platform/local_windows.rs`), task 35: no ADS-backed xattrs (the contract doesn't
-  map onto streams cleanly: #1375) and no `FindFirstFileExW` lister. Each keeps the trait's conservative default, and
-  each conformance cell it can't pass yet is `#[ignore]`d with its piece (`local_conformance_test.rs`). Real since
-  2026-11-22: streams, the copy scan, `node_identity`, metadata (dates, read-only and hidden as flags, the caps), and
-  links (symlink and junction targets, reparse tags told apart, file vs folder symlinks made without elevating), and
-  `write_access_at` (the volume's read-only flag and the DACL; `crates/cmdr-local/DETAILS.md` § "The Windows sibling").
+  map onto streams cleanly: #1375). It keeps the trait's conservative default, and each conformance cell it can't pass
+  yet is `#[ignore]`d with its piece (`local_conformance_test.rs`). Real since 2026-11-22: streams, the copy scan,
+  `node_identity`, metadata (dates, read-only and hidden as flags, the caps), and links (symlink and junction targets,
+  reparse tags told apart, file vs folder symlinks made without elevating), and `write_access_at` (the volume's
+  read-only flag and the DACL), and a lister off `read_dir`'s find data (`crates/cmdr-local/DETAILS.md` § "The Windows
+  sibling").
 - `cmdr_local::reading` Windows arm (`reading/platform/windows.rs`), task 35: no allocation size and mode `0`; only
   `FILE_ATTRIBUTE_HIDDEN` is real. No owner or group by decision (a SID per entry, and nothing shows the owner yet:
   `crates/cmdr-local/DETAILS.md` § "The Windows sibling").
@@ -582,19 +583,21 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     targets read, reparse tags told apart (a OneDrive placeholder or an app execution alias is the item), and file vs
     folder symlinks made without elevating (`NotSupported` without Developer Mode); `write_access_at` reads the volume's
     read-only flag and the DACL. Decided against: owner names (no consumer, a SID per entry) and, for now, ADS-backed
-    xattrs (#1375). Left: the `FindFirstFileExW` lister (being measured), the engine's own Windows `symlink` stub in
-    `cmdr-operations` (#1376), and registering a volume per drive (with 34). The ignored conformance cells in
-    `local_conformance_test.rs` are the checklist. App paths in and out of both local volumes (one crossing per OS
-    through `AppPath::to_native`): `docs/specs/app-path-plan.md`. File identity is real by PATH (2026-11-21, #1291, PR
-    #1304): `cmdr_fs::file_identity::FileId::at` / `same_node_at` open a handle and read `FileIdInfo`
-    (`file_identity/platform/windows.rs`), which the copy's same-file guards and the source binding ask; the `Metadata`
-    readers (`device_of`, `link_count`, walk dedup, the journal's `NodeIdentity`) still answer `None` and move over as
-    each consumer needs it. The mount table is real (2026-11-21, `cmdr_local::mounts`' Windows arm): drive letters and
-    folder mounts, "is this a mount point" by `GetVolumeNameForVolumeMountPointW` (a junction is none), the app's drive
-    list reading the same table; and the device reads by path (`file_identity::device_at`, the volume serial), so a
-    same-drive move renames. So a move and a folder Overwrite are refused as `MountedVolumeInside` only over a real
-    mount; on the desktop a move onto another drive and a folder Overwrite land (unverified on a real folder mount,
-    which would take a `mountvol` change). Left of the mount half: the ledger's and journal's node identity from
+    xattrs (#1375). **The lister done** (2026-11-22): rows come off `read_dir`'s own find data (`std`'s
+    `FindFirstFileExW`, basic info) with no stat per entry, about 35 times less work on 20,000 files, and
+    `FIND_FIRST_EX_LARGE_FETCH` bought nothing (`docs/notes/windows-port/windows-lister-2026-11.md`). Left: the engine's
+    own Windows `symlink` stub in `cmdr-operations` (#1376), and registering a volume per drive (with 34). The ignored
+    conformance cells in `local_conformance_test.rs` are the checklist. App paths in and out of both local volumes (one
+    crossing per OS through `AppPath::to_native`): `docs/specs/app-path-plan.md`. File identity is real by PATH
+    (2026-11-21, #1291, PR #1304): `cmdr_fs::file_identity::FileId::at` / `same_node_at` open a handle and read
+    `FileIdInfo` (`file_identity/platform/windows.rs`), which the copy's same-file guards and the source binding ask;
+    the `Metadata` readers (`device_of`, `link_count`, walk dedup, the journal's `NodeIdentity`) still answer `None` and
+    move over as each consumer needs it. The mount table is real (2026-11-21, `cmdr_local::mounts`' Windows arm): drive
+    letters and folder mounts, "is this a mount point" by `GetVolumeNameForVolumeMountPointW` (a junction is none), the
+    app's drive list reading the same table; and the device reads by path (`file_identity::device_at`, the volume
+    serial), so a same-drive move renames. So a move and a folder Overwrite are refused as `MountedVolumeInside` only
+    over a real mount; on the desktop a move onto another drive and a folder Overwrite land (unverified on a real folder
+    mount, which would take a `mountvol` change). Left of the mount half: the ledger's and journal's node identity from
     `Metadata` (the ledger records `Unverifiable` on Windows), and the app's `live_volume_space`, `mount_identity_at`,
     and `network_mount_under` arms. Bugs it owns: the six `cmdr-operations` cells that fail on Windows on `main`
     (`docs/notes/windows-port/windows-test-failures.md` § "By milestone", item 9). ❗ The engine's Windows `symlink`

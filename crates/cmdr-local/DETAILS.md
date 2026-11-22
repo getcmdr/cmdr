@@ -388,10 +388,17 @@ nearly every method and hide which answers are real.
   too, so the three can't disagree (#1332). A share's mount class says no first, with no call to it; the rest reads live
   (no disk I/O), so an Explorer setting counts at the next question. Its size limit, per item, is
   `DriveBin::limit_bytes`.
-- **The reader** is `reading.rs` with a Windows arm (`src/reading/platform/windows.rs`): `read_dir`, no added date,
+- **The reader** is `reading.rs` with a Windows arm (`src/reading/platform/windows.rs`): no added date,
   `FILE_ATTRIBUTE_HIDDEN` as `is_hidden`. `reading/platform/` is the reader's seam on every OS now (how a caller's
   native path is located, the per-entry stat, the lister pick, the single-entry finish); the listing loop and the
-  entry's shape stay shared.
+  entry's shape stay shared. **Decision**: a Windows listing builds its rows off `read_dir`'s own find data
+  (`find_data_entries`: `std`'s `read_dir` is `FindFirstFileExW` with basic info, and `DirEntry::metadata` is the record
+  it read), ❌ no `lstat` per entry, and ❌ no hand-rolled `FindFirstFileExW` loop. **Why**: the stat per entry was
+  nearly all of a listing's cost, while `FIND_FIRST_EX_LARGE_FETCH` bought nothing measurable on local NTFS
+  (`docs/notes/windows-port/windows-lister-2026-11.md`). The forced `Lister::ReadDir` keeps the stat per entry, and
+  `reading_test::the_production_lister_agrees_with_an_lstat_per_entry` holds the two to the same rows. ❗ A directory
+  record can lag a file another program holds open for writing (its size and date catch up when that handle closes, as
+  Explorer shows); the watcher's re-stat reads the live answer.
 - **Space** is `GetDiskFreeSpaceExW` (`src/space/platform/windows.rs`), beside `statvfs` for macOS and Linux.
 - **The filesystem kind** is `GetVolumePathNameW` plus `GetVolumeInformationW` (`filesystem_kind.rs`,
   `probe_mount_for_path`'s Windows arm), for a fixed or removable drive only (`GetDriveTypeW`): a mapped network drive

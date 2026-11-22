@@ -19,6 +19,17 @@ fn current(dir: &Path) -> usize {
         .len()
 }
 
+fn forced_lstat(dir: &Path) -> usize {
+    crate::reading::list_directory_with(
+        dir,
+        false,
+        VolumeHost::detached().listings(),
+        crate::reading::Lister::ReadDir,
+    )
+    .expect("lists")
+    .len()
+}
+
 fn read_dir_lstat(dir: &Path) -> usize {
     let mut count = 0;
     for entry in std::fs::read_dir(dir).expect("lists") {
@@ -90,8 +101,9 @@ fn zz_temporary_price_the_windows_listers() {
     }
     println!("MEASURE fixture: {FILES} files in {:?}", started.elapsed()); // allowed-pluralize-noun: a constant past one
     const LARGE_FETCH: u32 = 2;
-    let methods: [Method<'_>; 5] = [
-        ("current (read_dir + lstat per entry, FileEntry)", &current),
+    let methods: [Method<'_>; 6] = [
+        ("production lister (find data, FileEntry)", &current),
+        ("forced read_dir lister (lstat per entry, FileEntry)", &forced_lstat),
         ("read_dir + symlink_metadata per entry", &read_dir_lstat),
         ("read_dir + DirEntry::metadata (find data)", &read_dir_entry_metadata),
         ("FindFirstFileExW basic", &|d| find_first(d, 0)),

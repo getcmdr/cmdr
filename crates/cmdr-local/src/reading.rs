@@ -137,7 +137,8 @@ pub enum Lister {
     /// production has (a doubtful stream still re-lists through `read_dir`).
     #[cfg(target_os = "macos")]
     Bulk,
-    /// `read_dir` plus one `lstat` per entry, what a bulk stream falls back to.
+    /// `read_dir` plus one `lstat` per entry, what a bulk stream falls back to, and what
+    /// Windows' find-data lister is held to (`reading/platform/windows.rs`).
     ReadDir,
 }
 
