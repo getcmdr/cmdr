@@ -49,7 +49,7 @@ pub(crate) fn probe_umask() -> u32 {
     super::super::mode::FALLBACK_UMASK
 }
 
-/// No xattr is carried until alternate data streams back them (task 35).
+/// No xattr is carried until alternate data streams back them (#1375).
 pub(crate) fn carries_xattr(_name: &OsString) -> bool {
     false
 }

@@ -453,6 +453,12 @@ nearly every method and hide which answers are real.
   volume or `ERROR_WRITE_PROTECT` is `ReadOnlyFilesystem`, `ERROR_ACCESS_DENIED` is `NoPermission`, anything else (a
   sharing violation, a dead share) `Unknown`. A folder's read-only attribute is never consulted (Explorer's marker,
   which NTFS doesn't enforce).
+- **Decision**: no xattrs yet (`supports_xattrs` false), ❌ not alternate data streams as they are. **Why**: the
+  contract doesn't map onto streams cleanly (#1375): an xattr name holds `:`, which a stream name can't, so it needs the
+  same private-use mapping macOS's SMB client and Samba's `fruit` use or a tag reads as another attribute over SMB;
+  writing a stream bumps the file's last-write time, where `setxattr` doesn't, so tagging would change Modified; a
+  file's stream list mixes in `Zone.Identifier` (Mark of the Web, tasks 36 and 37) and other apps' streams; FAT and
+  exFAT hold none, while `supports_xattrs` is one backend-wide answer; and `link:stream` follows a link.
 - **Decision**: no owner name on Windows (`FileEntry::owner` stays empty, its "unknown"). **Why**: a Windows owner is a
   SID in each entry's security descriptor, a handle open per entry, about doubling a listing's cost, and nothing shows
   `FileEntry::owner` on any OS today (the About card's owner is the app that made a file). Reading it only on a single

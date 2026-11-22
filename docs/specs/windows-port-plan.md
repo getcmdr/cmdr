@@ -204,10 +204,10 @@ keys, and look (tasks 34, 60, 62, 63, 67), with its open problems:
 Honest stubs: Windows arms that compile and answer "unsupported", "unknown", or nothing, each waiting for the task that
 owns its real body. Remove a line when its body lands.
 
-- `cmdr_fs::metadata` (`metadata/platform/windows.rs`), tasks 35 and 36: the mode, xattrs as alternate data streams, and
-  the DACL answer `NotApplicable`. Real: dates, and the read-only (a FILE's, as Locked) and hidden attributes as user
-  flags a copy reads and puts back (`flags_of`, `add_flags`; #1352), the Locked a move asks about included
-  (`removal_lock`, `clear_blockers`, #1331).
+- `cmdr_fs::metadata` (`metadata/platform/windows.rs`), tasks 35 and 36: the mode, xattrs as alternate data streams
+  (#1375), and the DACL answer `NotApplicable`. Real: dates, and the read-only (a FILE's, as Locked) and hidden
+  attributes as user flags a copy reads and puts back (`flags_of`, `add_flags`; #1352), the Locked a move asks about
+  included (`removal_lock`, `clear_blockers`, #1331).
 - `cmdr_fs::file_provider` (`file_provider/platform/windows.rs`), task 37: no File Provider marker; Cloud Files
   placeholders are read their own way.
 - `cmdr_fs::mapped_file_faults` (`mapped_file_faults/platform/windows.rs`), task 47: recovers nothing, so a read of a
@@ -226,12 +226,12 @@ owns its real body. Remove a line when its body lands.
   `GetThreadTimes`, so the index writer and rescan lines carry thread CPU there.
 - `cmdr-sftp` agent (`transport/platform/windows.rs`), task 46: asks the OpenSSH agent's pipe (or `SSH_AUTH_SOCK`),
   never Pageant.
-- `cmdr_local::LocalWindowsVolume` (`platform/local_windows.rs`), task 35: no ADS-backed xattrs and no
-  `FindFirstFileExW` lister. Each keeps the trait's conservative default, and each conformance cell it can't pass yet is
-  `#[ignore]`d with its piece (`local_conformance_test.rs`). Real since 2026-11-22: streams, the copy scan,
-  `node_identity`, metadata (dates, read-only and hidden as flags, the caps), and links (symlink and junction targets,
-  reparse tags told apart, file vs folder symlinks made without elevating), and `write_access_at` (the volume's
-  read-only flag and the DACL; `crates/cmdr-local/DETAILS.md` § "The Windows sibling").
+- `cmdr_local::LocalWindowsVolume` (`platform/local_windows.rs`), task 35: no ADS-backed xattrs (the contract doesn't
+  map onto streams cleanly: #1375) and no `FindFirstFileExW` lister. Each keeps the trait's conservative default, and
+  each conformance cell it can't pass yet is `#[ignore]`d with its piece (`local_conformance_test.rs`). Real since
+  2026-11-22: streams, the copy scan, `node_identity`, metadata (dates, read-only and hidden as flags, the caps), and
+  links (symlink and junction targets, reparse tags told apart, file vs folder symlinks made without elevating), and
+  `write_access_at` (the volume's read-only flag and the DACL; `crates/cmdr-local/DETAILS.md` § "The Windows sibling").
 - `cmdr_local::reading` Windows arm (`reading/platform/windows.rs`), task 35: no allocation size and mode `0`; only
   `FILE_ATTRIBUTE_HIDDEN` is real. No owner or group by decision (a SID per entry, and nothing shows the owner yet:
   `crates/cmdr-local/DETAILS.md` § "The Windows sibling").

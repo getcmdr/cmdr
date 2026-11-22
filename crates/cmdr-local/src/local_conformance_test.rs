@@ -434,7 +434,7 @@ async fn a_link_lands_verbatim() {
 #[tokio::test]
 #[cfg_attr(
     target_os = "windows",
-    ignore = "task 35, ADS-backed xattrs: supports_xattrs is false until alternate data streams back them"
+    ignore = "#1375: supports_xattrs is false until alternate data streams back them"
 )]
 async fn xattrs_keep_the_shared_contract() {
     let test_dir = AppTestDir::new("xattrs_contract_test");
