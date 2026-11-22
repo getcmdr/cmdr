@@ -7,6 +7,7 @@
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::{ResolvedVolume, Volume};
 use cmdr_operation_log::rollback::VolumeLookup;
@@ -72,11 +73,11 @@ impl OperationVolumes for DemoVolumes {
         Box::pin(async { false })
     }
 
-    fn find_by_root(&self, root: &Path) -> Option<(String, Arc<dyn Volume>)> {
+    fn find_by_root(&self, root: &AppPath) -> Option<(String, Arc<dyn Volume>)> {
         self.volumes
             .lock_ignore_poison()
             .iter()
-            .find(|(_, volume)| *volume.root().as_std_legacy() == *root)
+            .find(|(_, volume)| volume.root() == root)
             .map(|(id, volume)| (id.clone(), Arc::clone(volume)))
     }
 

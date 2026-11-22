@@ -11,6 +11,7 @@ use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::{ResolvedVolume, Volume};
 use cmdr_operation_log::rollback::VolumeLookup;
 
@@ -44,7 +45,7 @@ pub trait OperationVolumes: VolumeLookup {
     fn path_crosses_archive_boundary<'a>(&'a self, volume_id: &'a str, path: &'a Path) -> VolumeAnswer<'a, bool>;
 
     /// The registered volume one of whose mount roots is `root`, with its id.
-    fn find_by_root(&self, root: &Path) -> Option<(String, Arc<dyn Volume>)>;
+    fn find_by_root(&self, root: &AppPath) -> Option<(String, Arc<dyn Volume>)>;
 
     /// Drops the parsed index of the archive at `archive_path`, so the next read
     /// sees an edit the engine just committed.
@@ -138,7 +139,7 @@ impl OperationVolumes for NoOperationVolumes {
         Box::pin(async { false })
     }
 
-    fn find_by_root(&self, _root: &Path) -> Option<(String, Arc<dyn Volume>)> {
+    fn find_by_root(&self, _root: &AppPath) -> Option<(String, Arc<dyn Volume>)> {
         None
     }
 

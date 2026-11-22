@@ -124,7 +124,7 @@ pub(super) async fn start(
     let registered_source = engine
         .host()
         .volumes()
-        .find_by_root(&source_volume.root().as_std_legacy())
+        .find_by_root(source_volume.root())
         .filter(|(_, registered)| {
             registered.root() == source_volume.root() && registered.lane_key() == source_volume.lane_key()
         });

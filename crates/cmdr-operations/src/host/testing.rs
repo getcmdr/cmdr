@@ -210,11 +210,11 @@ impl OperationVolumes for FakeVolumes {
     fn path_crosses_archive_boundary<'a>(&'a self, _volume_id: &'a str, _path: &'a Path) -> VolumeAnswer<'a, bool> {
         Box::pin(async { false })
     }
-    fn find_by_root(&self, root: &Path) -> Option<(String, Arc<dyn Volume>)> {
+    fn find_by_root(&self, root: &AppPath) -> Option<(String, Arc<dyn Volume>)> {
         self.volumes
             .lock_ignore_poison()
             .iter()
-            .find(|(_, volume)| *volume.root().as_std_legacy() == *root)
+            .find(|(_, volume)| volume.root() == root)
             .map(|(id, volume)| (id.clone(), Arc::clone(volume)))
     }
     fn forget_archive_index(&self, _archive_path: &Path) {}

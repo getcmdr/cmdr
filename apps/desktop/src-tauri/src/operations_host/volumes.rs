@@ -8,6 +8,7 @@
 use std::path::Path;
 use std::sync::Arc;
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::{ResolvedVolume, Volume};
 use cmdr_operation_log::rollback::VolumeLookup;
 
@@ -19,8 +20,8 @@ use cmdr_operations::host::{OperationVolumes, UnregisteredVolume, VolumeAnswer};
 /// engine's routing questions (`OperationVolumes`) still hand `std::path`
 /// values, so they cross here once, through the bridge, byte for byte. Goes when
 /// that seam takes app paths (milestone 10d).
-fn engine_path(path: &Path) -> std::borrow::Cow<'_, cmdr_fs::app_path::AppPath> {
-    cmdr_fs::app_path::AppPath::legacy_unchecked(path)
+fn engine_path(path: &Path) -> std::borrow::Cow<'_, AppPath> {
+    AppPath::legacy_unchecked(path)
 }
 
 /// The app's `VolumeManager`, plus `unregistered_volumes` for an id it doesn't
@@ -64,8 +65,8 @@ impl OperationVolumes for AppOperationVolumes {
         })
     }
 
-    fn find_by_root(&self, root: &Path) -> Option<(String, Arc<dyn Volume>)> {
-        get_volume_manager().find_by_root(root)
+    fn find_by_root(&self, root: &AppPath) -> Option<(String, Arc<dyn Volume>)> {
+        get_volume_manager().find_by_app_root(root)
     }
 
     fn forget_archive_index(&self, archive_path: &Path) {
