@@ -81,7 +81,7 @@ pub(crate) fn handle_volume_unmounted(volume_path: &str) {
     // path-derived ID would miss the SMB volume we care about. See
     // `VolumeManager::remove_root`.
     let manager = crate::file_system::volume::manager::get_volume_manager();
-    match manager.remove_root(std::path::Path::new(volume_path)) {
+    match manager.remove_root(crate::volumes::os_mount_path(volume_path)) {
         RootRemoval::Unregistered { id, volume } => {
             // The last mount of this filesystem is gone, so the volume really is
             // leaving. `on_unmount` lets an `SmbVolume` disconnect its session.
@@ -171,9 +171,12 @@ pub(crate) fn handle_volume_will_unmount(volume_path: &str) {
     // also matches a FALLBACK root, and a volume losing one of its spare mounts
     // keeps working — stopping its index then would be a wedge risk traded for a
     // needless rescan — so act only when the ACTIVE root is the one going away.
-    if let Some((id, volume)) =
-        crate::file_system::volume::manager::get_volume_manager().find_by_root(std::path::Path::new(volume_path))
-        && &*volume.root().as_std_legacy() == std::path::Path::new(volume_path)
+    if let Some((id, volume)) = crate::file_system::volume::manager::get_volume_manager()
+        .find_by_root(crate::volumes::os_mount_path(volume_path))
+        && volume
+            .root()
+            .to_native()
+            .is_ok_and(|root| root == crate::volumes::os_mount_path(volume_path))
     {
         stop_local_external_index_off_main(id);
     }
@@ -331,7 +334,7 @@ pub(crate) fn handle_volume_renamed(old_path: &str, new_path: &str) {
     );
     let manager = crate::file_system::volume::manager::get_volume_manager();
     let keeps_its_id = manager
-        .find_by_root(std::path::Path::new(old_path))
+        .find_by_root(crate::volumes::os_mount_path(old_path))
         .is_some_and(|(id, _)| super::volume_id_for_mount(new_path) == id);
     if !keeps_its_id {
         handle_volume_unmounted(old_path);
@@ -339,7 +342,10 @@ pub(crate) fn handle_volume_renamed(old_path: &str, new_path: &str) {
         return;
     }
 
-    match manager.move_root(std::path::Path::new(old_path), std::path::Path::new(new_path)) {
+    match manager.move_root(
+        crate::volumes::os_mount_path(old_path),
+        crate::volumes::os_mount_path(new_path),
+    ) {
         RootMove::Moved { id } => {
             crate::volume_broadcast::emit_volume_root_changed(VolumeRootChanged {
                 volume_id: id.clone(),

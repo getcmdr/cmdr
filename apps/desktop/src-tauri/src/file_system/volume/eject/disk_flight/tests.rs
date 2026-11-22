@@ -11,7 +11,7 @@ fn mounted(path: &str, whole_unit: u32) -> MountedVolume {
         bsd_name: format!("disk{whole_unit}s1"),
         whole_unit,
         volume_uuid: None,
-        path: PathBuf::from(path),
+        path: crate::volumes::os_mount_path(path).to_path_buf(),
     }
 }
 

@@ -408,7 +408,7 @@ fn mount_under_picks_the_deepest_whole_component_mount() {
         ),
         mount("/Volumes/testshare-1", "exfat", "/dev/disk6s1", false),
     ];
-    let fs_type = |path: &str| mount_under(&mounts, Path::new(path)).map(|m| m.fs_type.as_str());
+    let fs_type = |path: &str| mount_under(&mounts, crate::volumes::os_mount_path(path)).map(|m| m.fs_type.as_str());
     assert_eq!(fs_type("/Volumes/testshare/photos/2024"), Some("smbfs"));
     assert_eq!(fs_type("/Volumes/testshare"), Some("smbfs"));
     // A sibling whose name extends the share's is its own mount, not the share's subfolder.
@@ -432,7 +432,7 @@ fn network_mount_in_names_the_share_and_skips_local_disks() {
         mount("/Volumes/testshare/nested", "nfs", "192.0.2.10:/export", false),
         mount("/Volumes/testshare-1", "exfat", "/dev/disk6s1", false),
     ];
-    let network = |path: &str| network_mount_in(&mounts, Path::new(path));
+    let network = |path: &str| network_mount_in(&mounts, crate::volumes::os_mount_path(path));
 
     let share = network("/Volumes/testshare/photos").expect("a folder on the share is on a network mount");
     assert_eq!(share.mount_point, "/Volumes/testshare");

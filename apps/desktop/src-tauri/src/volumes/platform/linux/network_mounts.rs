@@ -2,8 +2,6 @@
 //! `/run/user/<uid>/gvfs/`, which never reaches the mount table. Apart from `smb.rs`, which only
 //! parses, so the parser needn't know how a volume ID is minted.
 
-use std::path::Path;
-
 use super::ids::volume_id_for_mount;
 use super::smb::parse_gvfs_smb_dirname;
 use super::{LocationCategory, LocationInfo};
@@ -47,8 +45,8 @@ pub(super) fn gvfs_share_location(path: String, share: String) -> LocationInfo {
 pub(super) fn get_network_mounts() -> Vec<LocationInfo> {
     // SAFETY: `getuid` reads the process's real UID; always safe, no args or pointers.
     let uid = unsafe { libc::getuid() };
-    let gvfs_dir = format!("/run/user/{}/gvfs", uid);
-    let gvfs_path = Path::new(&gvfs_dir);
+    let gvfs_dir = format!("/run/user/{uid}/gvfs");
+    let gvfs_path = crate::volumes::os_mount_path(&gvfs_dir);
 
     if !gvfs_path.is_dir() {
         return Vec::new();

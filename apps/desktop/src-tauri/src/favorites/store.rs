@@ -64,6 +64,22 @@ pub struct Favorite {
     pub volume: Option<FavoriteVolume>,
 }
 
+impl Favorite {
+    /// The folder as this OS names it, for a mount lookup, a stat, or the local walker: the
+    /// stored path read as an app path (its escape-range code points literal while escapes
+    /// aren't live, a trailing `/` dropped) and crossed once through `to_native`. `None` for a
+    /// favorite on a server or a phone (a scheme path) and for text that's no app path here.
+    pub(crate) fn native_path(&self) -> Option<PathBuf> {
+        use cmdr_fs::app_path::{AppPathBuf, ESCAPES_LIVE, Namer};
+        let stored = if ESCAPES_LIVE {
+            AppPathBuf::from_wire(&self.path)
+        } else {
+            AppPathBuf::from_literal_store(&self.path, Namer::HOST)
+        };
+        stored.ok()?.to_native().ok()
+    }
+}
+
 /// Which volume a favorite's folder lives on, as it was when last seen live.
 ///
 /// ❗ The id is the identity, exactly as a tab's `volumeId` is: a saved share or server and its

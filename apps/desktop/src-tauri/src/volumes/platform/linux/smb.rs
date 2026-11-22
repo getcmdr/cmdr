@@ -5,7 +5,6 @@
 //! side into `Network` locations.
 
 use super::{LocationInfo, SmbMountInfo, linux_mounts};
-use std::path::Path;
 
 /// Enriches discovered locations with what only the registered `Volume` knows:
 /// its capability surface and how live its session is.
@@ -39,7 +38,7 @@ pub fn enrich_from_volume_registry(volumes: &mut [LocationInfo]) {
 /// not the mount.
 pub fn get_smb_mount_info(mount_path: &str) -> Option<SmbMountInfo> {
     if gvfs_share_root(mount_path) == Some(mount_path) {
-        let dirname = Path::new(mount_path).file_name()?.to_str()?;
+        let dirname = crate::volumes::os_mount_path(mount_path).file_name()?.to_str()?;
         let gvfs = parse_gvfs_smb_dirname(dirname)?;
         return Some(SmbMountInfo {
             server: gvfs.server,

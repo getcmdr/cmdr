@@ -1,12 +1,12 @@
 # Volumes
 
-Volume and location discovery, plus live mount/unmount watching: one model for every OS, behind a platform seam.
-Distinct from `file_system/volume/` (the `Volume` trait, `VolumeManager`). This doc covers the seam and the macOS arm;
+Volume and location discovery, plus live mount watching: one model for every OS behind a seam.
+Distinct from `file_system/volume/` (the `Volume` trait, `VolumeManager`). Here: the seam and the macOS arm;
 Linux's: `platform/linux/CLAUDE.md`.
 
 ## Module map
 
-`model.rs`: the published model. `platform/mod.rs`: the pinned fn set. `platform/macos/`: `mod.rs` (orchestrators),
+`model.rs`: the published model. `mount_text.rs`: mount text to `Path`. `platform/mod.rs`: the pinned fn set. `platform/macos/`: `mod.rs` (orchestrators),
 `ids.rs`, `fs_type.rs` (non-blocking `statfs`), `nsurl.rs` (blocking enrichment), `mounts.rs` (`getfsstat` rows),
 `smb.rs`, `cloud.rs`, `disk_image.rs`, `watcher.rs` + `lifecycle.rs` (the `NSWorkspace` observer), `disk_units.rs`,
 `unmount_approver/`. `platform/unix.rs`: the POSIX local volume. `platform/windows/`: the drive table (DETAILS §

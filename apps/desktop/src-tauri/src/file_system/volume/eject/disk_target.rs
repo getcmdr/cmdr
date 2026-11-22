@@ -67,8 +67,8 @@ pub(super) enum Resolution {
 /// `statfs` and no `realpath`: `DADiskCreateFromVolumePath` makes both, so a disk
 /// image backed by a file on a hung share would block resolution for good.
 pub(super) fn resolve(mount_path: &str) -> Resolution {
-    let Some(bsd_name) = disk_units::bsd_name_at(std::path::Path::new(mount_path)) else {
-        return if cmdr_local::mounts::is_mount_point(std::path::Path::new(mount_path)) == Some(false) {
+    let Some(bsd_name) = disk_units::bsd_name_at(crate::volumes::os_mount_path(mount_path)) else {
+        return if cmdr_local::mounts::is_mount_point(crate::volumes::os_mount_path(mount_path)) == Some(false) {
             Resolution::Gone
         } else {
             Resolution::NoDisk
