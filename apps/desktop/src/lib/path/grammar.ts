@@ -172,6 +172,30 @@ export function lastName(path: string, flavor: PathFlavor = hostPathFlavor()): s
   return path.slice(path.lastIndexOf('/') + 1)
 }
 
+/**
+ * `path` cut before its first `..` name (`/a/b/../c` → `/a/b`), or `path` itself when it holds
+ * none. Never shorter than its root: `/..` → `/`, `C:/..` → `C:/`, `sftp://h:22/..` → `sftp://h:22/`.
+ *
+ * Why cut, not fold: the OS reads `b/..` as the parent of `b`'s link TARGET, so a lexical fold can
+ * name another folder; only a volume answers a `..`, and the backend refuses one in a pane's path
+ * (`commands/wire_path.rs`). The folder the `..` climbed out of is a real place every spelling agrees on.
+ */
+export function beforeFirstDotDot(path: string, flavor: PathFlavor = hostPathFlavor()): string {
+  const names = path.split('/')
+  const at = names.indexOf('..')
+  if (at === -1) return path
+  const kept = names.slice(0, at).join('/')
+  const scheme = SCHEME.exec(path)
+  const floor = scheme ? schemeRoot(path, scheme[0].length) : rootOf(path, flavor)
+  return floor !== null && kept.length < floor.length ? floor : kept
+}
+
+/** A scheme URL's authority with its `/` (`sftp://h:22/`), `start` being where the authority begins. */
+function schemeRoot(path: string, start: number): string {
+  const slash = path.indexOf('/', start)
+  return slash === -1 ? `${path}/` : path.slice(0, slash + 1)
+}
+
 /** `name` (one name, or several joined by `/`) inside the folder `base`. A root already ends in `/`. */
 export function joinPath(base: string, name: string): string {
   return base.endsWith('/') ? base + name : `${base}/${name}`

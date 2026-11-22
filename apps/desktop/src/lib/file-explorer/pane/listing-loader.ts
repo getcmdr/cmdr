@@ -70,7 +70,7 @@ import type { VolumeCapabilities } from './volume-capabilities'
 import * as benchmark from '#lib/benchmark.js'
 import { isEventForCurrentLoad } from './listing-token'
 import { trackLiveListing, untrackLiveListing } from './listing-liveness'
-import { lastName } from '#lib/path/grammar.js'
+import { beforeFirstDotDot, lastName } from '#lib/path/grammar.js'
 
 const log = getAppLogger('fileExplorer')
 
@@ -373,7 +373,25 @@ export function createListingLoader(deps: ListingLoaderDeps): ListingLoader {
     void loadDirectory({ path: target })
   }
 
-  async function loadDirectory({ path, selectName }: LoadDirectoryArgs) {
+  /**
+   * The backend refuses a pane path holding a `..` (`commands/wire_path.rs`), so one that slipped
+   * in (a tab or history entry an older build stored) lands on the folder the `..` climbed out
+   * of, ❌ never a dead pane showing the refusal. Answers whether it redirected.
+   */
+  function landedBeforeDotDot(path: string): boolean {
+    const climbedFrom = beforeFirstDotDot(path)
+    if (climbedFrom === path || beforeFirstDotDot(climbedFrom) !== climbedFrom) return false
+    log.warn('A pane path held a `..`, landing on the folder before it: {path}', { path: climbedFrom })
+    landOnFallback(climbedFrom)
+    return true
+  }
+
+  async function loadDirectory(args: LoadDirectoryArgs) {
+    if (landedBeforeDotDot(args.path)) return
+    await loadDirectoryAt(args)
+  }
+
+  async function loadDirectoryAt({ path, selectName }: LoadDirectoryArgs) {
     // Cancel any active rename when navigating
     deps.renameCancel()
     cancelClickToRename()
