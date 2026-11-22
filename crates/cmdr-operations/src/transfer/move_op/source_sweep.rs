@@ -65,14 +65,16 @@ impl SourceStamp {
     /// symlink describes itself. `None` when the stat fails, which the sweep
     /// reads as unprovable and keeps.
     pub(super) fn read(path: &Path) -> Option<Self> {
-        fs::symlink_metadata(path).ok().map(|metadata| Self::of(&metadata))
+        fs::symlink_metadata(path)
+            .ok()
+            .map(|metadata| Self::of(path, &metadata))
     }
 
-    fn of(metadata: &fs::Metadata) -> Self {
+    fn of(path: &Path, metadata: &fs::Metadata) -> Self {
         Self {
             size: metadata.len(),
             modified: metadata.modified().ok(),
-            node: WrittenIdentity::node_of_stat(metadata),
+            node: WrittenIdentity::node_of_stat(path, metadata),
         }
     }
 }
@@ -447,7 +449,7 @@ fn remove_landed(
 /// rather than the whole copy.
 fn changed_since_copy(original: &LandedOriginal) -> Result<bool, WriteOperationError> {
     match fs::symlink_metadata(&original.path) {
-        Ok(metadata) => Ok(original.stamp != Some(SourceStamp::of(&metadata))),
+        Ok(metadata) => Ok(original.stamp != Some(SourceStamp::of(&original.path, &metadata))),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(false),
         Err(e) => Err(e).with_path(&original.path),
     }

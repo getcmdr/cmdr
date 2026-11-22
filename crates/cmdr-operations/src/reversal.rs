@@ -109,14 +109,14 @@ pub(crate) fn recheck_local(file: &WrittenFile) -> Recheck {
             );
             Recheck::Skip(SkipReason::UnverifiablePrecondition)
         }
-        WrittenIdentity::LocalDir { node } => match WrittenIdentity::node_of_stat(&live) {
+        WrittenIdentity::LocalDir { node } => match WrittenIdentity::node_of_stat(&file.path, &live) {
             // A directory's own size shifts as children come and go, so the node
             // id is the whole check.
             Some(live_node) if live_node == *node => Recheck::Act,
             Some(_) => Recheck::Skip(SkipReason::Drift),
             None => Recheck::Skip(SkipReason::UnverifiablePrecondition),
         },
-        WrittenIdentity::LocalFile { size, node } => match WrittenIdentity::node_of_stat(&live) {
+        WrittenIdentity::LocalFile { size, node } => match WrittenIdentity::node_of_stat(&file.path, &live) {
             Some(live_node) if live_node != *node => Recheck::Skip(SkipReason::Drift),
             Some(_) => Recheck::of(verify_snapshot(Some(*size as i64), None, Some(live.len()), None)),
             None => Recheck::Skip(SkipReason::UnverifiablePrecondition),

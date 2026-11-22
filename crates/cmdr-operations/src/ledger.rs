@@ -13,11 +13,10 @@
 //! in-flight ledgers record".
 
 use std::fs::Metadata;
-#[cfg(test)]
 use std::path::Path;
 use std::path::PathBuf;
 
-use cmdr_fs::file_identity::FileId;
+use cmdr_fs::file_identity::{FileId, Follow};
 
 use cmdr_fs::volume::LandedModified;
 
@@ -66,8 +65,8 @@ impl WrittenFile {
     /// entry exactly.
     pub(crate) fn local_stat(path: PathBuf, meta: Option<&Metadata>) -> Self {
         Self {
+            identity: WrittenIdentity::of_stat(&path, meta),
             path,
-            identity: WrittenIdentity::of_stat(meta),
             landed_modified: LandedModified::Unknown,
         }
     }
@@ -138,15 +137,15 @@ pub(crate) enum WrittenIdentity {
 }
 
 impl WrittenIdentity {
-    /// The identity of a local entry the caller already stat'd with
-    /// `symlink_metadata`. `None` means the stat failed, which is the only
+    /// The identity of the local entry at `path`, which the caller already stat'd
+    /// with `symlink_metadata`. `None` means the stat failed, which is the only
     /// honest route to [`WrittenIdentity::Unverifiable`].
-    pub(crate) fn of_stat(meta: Option<&Metadata>) -> Self {
+    pub(crate) fn of_stat(path: &Path, meta: Option<&Metadata>) -> Self {
         let Some(meta) = meta else {
             return Self::Unverifiable;
         };
-        // No node id off Unix, and size alone isn't an identity worth deleting on.
-        let Some(node) = Self::node_of_stat(meta) else {
+        // No node id, no identity: size alone isn't one worth deleting on.
+        let Some(node) = Self::node_of_stat(path, meta) else {
             return Self::Unverifiable;
         };
         if meta.is_dir() {
@@ -161,7 +160,7 @@ impl WrittenIdentity {
     /// must stat the same way, or a copied link that dangles reads as absent.
     #[cfg(test)]
     pub(crate) fn at_local_path(path: &Path) -> Self {
-        Self::of_stat(std::fs::symlink_metadata(path).ok().as_ref())
+        Self::of_stat(path, std::fs::symlink_metadata(path).ok().as_ref())
     }
 
     /// The node id this entry was recorded with, if it carries one. `None`
@@ -174,10 +173,15 @@ impl WrittenIdentity {
         }
     }
 
-    /// The node id of an entry the caller already stat'd. `None` where the OS's
-    /// metadata carries none.
-    pub(crate) fn node_of_stat(meta: &Metadata) -> Option<NodeId> {
-        FileId::of(meta).map(NodeId)
+    /// The node id of the entry at `path`, which the caller already stat'd with
+    /// `symlink_metadata`: off `meta` where the OS's metadata carries one (POSIX's
+    /// `st_dev`/`st_ino`, no extra call), else read through a handle at `path`, the
+    /// link itself (Windows' volume serial and file id, `FileId::at`). `None` where
+    /// neither answers.
+    pub(crate) fn node_of_stat(path: &Path, meta: &Metadata) -> Option<NodeId> {
+        FileId::of(meta)
+            .or_else(|| FileId::at(path, Follow::NotLinks))
+            .map(NodeId)
     }
 
     /// The size this entry was recorded with, for the journal row that mirrors
