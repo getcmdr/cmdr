@@ -37,8 +37,10 @@ fn every_posix_row_stores_what_it_always_did() {
         "sftp://testnas.local",
         "mtp://12345678/65537/DCIM/a.jpg",
         "/name with a colon: 12:00.txt",
+        // A `\` in a NAME, as the store interns it: one name on POSIX, and on Windows
+        // `std::path` split it off as the leaf already. (A `\` in a FOLDER is where
+        // Windows rows change on purpose: `a_volume_path_joined_with_backslashes_…`.)
         r"/x/a\b.txt",
-        r"/x\y/a.txt",
         "/x/a/..",
         "/x/a/.",
     ];
