@@ -2273,7 +2273,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
     format's (`ArchiveFormat::namer`: a 7z units, zip and tar bytes).
   - **Left**: MTP's index feed (`ResolvedMtpObject::path`) still hands the literal storage path over typed, and MTP's
     `notify_mutation` reads a `Created`/`Renamed` name as app spelling (its own producers send typed names);
-    `MutationEvent`'s names have no stated spelling. Both wait for 10f.
+    `MutationEvent`'s names have no stated spelling. Both before 10f's producers: #1355. #1309 (a `//` lead) and #1337
+    (Windows short names) stayed out: the first changes the bridge's byte-exact round trip, a design call; the second is
+    the app's typed-path resolver, other code.
 
 ### 11. Close
 
