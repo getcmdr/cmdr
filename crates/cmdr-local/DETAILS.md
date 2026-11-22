@@ -366,7 +366,10 @@ nearly every method and hide which answers are real.
 - **Delete** picks `RemoveDirectoryW` by the entry's own `FILE_ATTRIBUTE_DIRECTORY`, so a directory symlink or junction
   goes as the link, its target untouched, broken or not (verified on Windows 10 22H2, NTFS, for a junction in
   `local_windows_test.rs`, 2026-11-18; a directory symlink by
-  `local_windows_test::a_symlink_is_a_folder_link_exactly_when_its_target_is_a_folder`).
+  `local_windows_test::a_symlink_is_a_folder_link_exactly_when_its_target_is_a_folder`). A read-only FILE (Windows'
+  Locked) refuses as `PermissionDenied` before any call, standing in for macOS's `EPERM`: `std::fs::remove_file` would
+  delete it, so a move's sweep would take an original nobody agreed to (#1331). `clear_blockers` clears the attribute
+  for a consented move or a reversal's retry (`crates/cmdr-operations/DETAILS.md` § "Moving Locked items").
 - **Links** (`src/platform/local_windows/links.rs`): `read_link_target` reads the entry's reparse tag
   (`FileAttributeTagInfo` on a handle that opens the reparse point itself) and tells links from the rest by Windows' own
   rule, the tag's name-surrogate bit (`src/platform/reparse.rs`, pure, pinned on every OS): a symlink and a junction
@@ -379,11 +382,7 @@ nearly every method and hide which answers are real.
   filesystem without them (`ERROR_NOT_SUPPORTED`, `ERROR_INVALID_FUNCTION`) answer `NotSupported`, which the engine
   reports as `LinksNotSupported`; ❌ never elevate, and ❌ never fall back to a junction. **Why**: a junction is a
   different thing (folders only, absolute targets, resolved by the server on a share), so a copy that quietly made one
-  would land something other than what the source holds. An access refusal stays a permission refusal. A read-only FILE
-  (Windows' Locked) refuses as `PermissionDenied` before any call, standing in for macOS's `EPERM`:
-  `std::fs::remove_file` would delete it, so a move's sweep would take an original nobody agreed to (#1331).
-  `clear_blockers` clears the attribute for a consented move or a reversal's retry (`crates/cmdr-operations/DETAILS.md`
-  § "Moving Locked items").
+  would land something other than what the source holds. An access refusal stays a permission refusal.
 - **`has_trash`** reads `recycle_bin.rs`, the ONE "does this drive keep a Recycle Bin" answer (a fixed disk Windows
   names a volume GUID for, its bin not turned off), which the app's switcher row and the Recycle Bin arm's refusal read
   too, so the three can't disagree (#1332). A share's mount class says no first, with no call to it; the rest reads live
@@ -447,12 +446,24 @@ nearly every method and hide which answers are real.
   are on macOS, so a copy between the two OSes (over SMB too, `cmdr-smb`'s `user_flags_of`) keeps them by the classes
   the engine already carries, and a POSIX mode's `0444` has no honest Windows reading for a folder (its read-only bit is
   Explorer's customization marker). The mode and xattrs stay `NotApplicable`; append-only and no-dump have no attribute.
+- **Write access** (`write_access_at`, `src/platform/local_windows/write_access.rs`) asks two things of the nearest
+  folder that exists: the volume's `FILE_READ_ONLY_VOLUME` flag (`GetVolumeInformationByHandleW`) and an open asking for
+  `FILE_ADD_FILE`, which runs the DACL check and writes nothing (the engine's own `local_disk::write_probe` opens the
+  same way). What the two mean together is `src/platform/write_verdict.rs`, pure and pinned on every OS: a read-only
+  volume or `ERROR_WRITE_PROTECT` is `ReadOnlyFilesystem`, `ERROR_ACCESS_DENIED` is `NoPermission`, anything else (a
+  sharing violation, a dead share) `Unknown`. A folder's read-only attribute is never consulted (Explorer's marker,
+  which NTFS doesn't enforce).
+- **Decision**: no owner name on Windows (`FileEntry::owner` stays empty, its "unknown"). **Why**: a Windows owner is a
+  SID in each entry's security descriptor, a handle open per entry, about doubling a listing's cost, and nothing shows
+  `FileEntry::owner` on any OS today (the About card's owner is the app that made a file). Reading it only on a single
+  entry would make a watcher's re-stat row disagree with the listed one. When a surface wants it, it reads one item's
+  owner on demand.
 
 What's real and what's stubbed, by name: the windows-port plan, § "Windows build state" and task 35's entry. Every
-capability not yet real keeps the trait's conservative default (xattrs, the write-access probe), so nothing answers by
-guessing. `local_conformance_test.rs` and `local_volume_test.rs` run on Windows too, each cell the Windows volume can't
-keep yet ignored there (`cfg_attr(target_os = "windows", ignore = …)`) with what it lacks; their folder-link cells build
-a junction there (`local_conformance_test::link_to_folder`, `mklink /J`, which needs no privilege).
+capability not yet real keeps the trait's conservative default (xattrs), so nothing answers by guessing.
+`local_conformance_test.rs` and `local_volume_test.rs` run on Windows too, each cell the Windows volume can't keep yet
+ignored there (`cfg_attr(target_os = "windows", ignore = …)`) with what it lacks; their folder-link cells build a
+junction there (`local_conformance_test::link_to_folder`, `mklink /J`, which needs no privilege).
 
 ## App paths in and out
 

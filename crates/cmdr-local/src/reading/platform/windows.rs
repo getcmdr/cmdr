@@ -2,9 +2,12 @@
 //! `MAX_PATH` lists like any other, and its rows carry app paths (`C:/Users/test_user_1`,
 //! plan D1). Always `read_dir`; no added date.
 //!
-//! Honest stubs, each owned by task 35 (windows-port plan, § "Windows build state"): no
-//! allocation size (`FileStandardInfo.AllocationSize`), no mode (`0`, the "no permission
-//! concept" value), and no owner (a SID's account name). Only `FILE_ATTRIBUTE_HIDDEN` is real.
+//! Honest stubs (windows-port plan, § "Windows build state"): no allocation size
+//! (`FileStandardInfo.AllocationSize`) and no mode (`0`, the "no permission concept" value).
+//! Only `FILE_ATTRIBUTE_HIDDEN` is real. No owner either, by decision: a Windows owner is a SID
+//! read from each entry's security descriptor (a handle per entry, about doubling a listing's
+//! cost), and nothing shows `FileEntry::owner` yet (`crates/cmdr-local/DETAILS.md` § "The
+//! Windows sibling").
 
 use std::borrow::Cow;
 use std::collections::HashSet;

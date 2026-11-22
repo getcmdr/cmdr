@@ -29,6 +29,9 @@ pub(crate) mod local_windows;
 #[cfg(any(target_os = "windows", test))]
 mod reparse;
 mod short_names;
+// Compiled into every OS's tests, as `reparse`.
+#[cfg(any(target_os = "windows", test))]
+mod write_verdict;
 
 #[cfg(unix)]
 pub use local_posix::LocalPosixVolume;

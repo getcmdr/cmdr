@@ -281,6 +281,46 @@ async fn a_folder_symlink_deletes_as_the_link_and_keeps_the_target() {
     );
 }
 
+/// A folder whose DACL denies everyone `FILE_ADD_FILE` (`icacls /deny *S-1-1-0:(WD)`, which binds
+/// an administrator too) answers `NoPermission`; a folder wearing the read-only attribute (Explorer's
+/// customization marker) stays writable.
+#[tokio::test]
+async fn write_access_reads_the_dacl_and_ignores_a_folders_read_only_bit() {
+    use cmdr_fs::volume::{UnwritableReason, WriteAccess};
+    let test_dir = AppTestDir::new("win_write_access");
+    let volume = volume_at(&test_dir);
+    volume.create_directory(&at(&volume, "denied")).await.expect("mkdir");
+    volume
+        .create_directory(&at(&volume, "customized"))
+        .await
+        .expect("mkdir");
+    let denied = test_dir.native().join("denied");
+    let icacls = |args: &[&str]| {
+        let status = std::process::Command::new("icacls")
+            .arg(&denied)
+            .args(args)
+            .stdout(std::process::Stdio::null())
+            .status()
+            .expect("run icacls");
+        assert!(status.success(), "icacls {args:?}");
+    };
+    icacls(&["/deny", "*S-1-1-0:(WD)"]);
+    set_read_only(&test_dir.native().join("customized"), true);
+
+    let denied_access = volume.write_access_at(&at(&volume, "denied")).await;
+    let customized_access = volume.write_access_at(&at(&volume, "customized")).await;
+    icacls(&["/remove:d", "*S-1-1-0"]);
+    set_read_only(&test_dir.native().join("customized"), false);
+
+    assert_eq!(
+        denied_access,
+        WriteAccess::Unwritable {
+            reason: UnwritableReason::NoPermission
+        }
+    );
+    assert_eq!(customized_access, WriteAccess::Writable);
+}
+
 /// A junction is a link to the volume: its target reads back (absolute, `std`'s spelling), it
 /// kinds as a link, and a plain file and folder read as no link.
 #[tokio::test]

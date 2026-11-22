@@ -25,7 +25,7 @@ fn test_list_directory_core_returns_core_entries() {
     let file_entry = entries.iter().find(|e| e.name == "core_test.txt").unwrap();
 
     // Core metadata should be present. The owner is the POSIX uid's name; Windows reads no
-    // owner yet (a SID's account name, task 35).
+    // owner (a SID per entry, `reading/platform/windows.rs`).
     assert!(!file_entry.name.is_empty());
     assert!(!file_entry.path.is_empty());
     #[cfg(unix)]

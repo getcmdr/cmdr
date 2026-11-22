@@ -13,6 +13,7 @@ pub(crate) mod paths;
 pub mod recycle_bin;
 pub(crate) mod rename;
 mod scan;
+mod write_access;
 
 use std::borrow::Cow;
 use std::future::Future;
@@ -31,7 +32,7 @@ use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{
     BatchScanResult, CopyScanResult, EntryKind, ListingProgress, MountClass, MutationEvent, NodeIdentity, Presence,
     ScanBoundary, ScanConflict, SourceItemInfo, SourceVersion, SpaceInfo, StreamLength, StreamWriteProgress,
-    StreamWritten, SupportedDates, Volume, VolumeError, VolumeReadStream, WatchCoverage, WriteMode,
+    StreamWritten, SupportedDates, Volume, VolumeError, VolumeReadStream, WatchCoverage, WriteAccess, WriteMode,
 };
 use tokio::task::spawn_blocking;
 
@@ -758,6 +759,17 @@ impl Volume for LocalWindowsVolume {
     fn get_space_info<'a>(&'a self) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
         let root = self.located(&self.root);
         Box::pin(blocking("get_space_info", move || get_space_info_for_path(&root?.os)))
+    }
+
+    /// The volume's read-only flag and a `FILE_ADD_FILE` open of the nearest folder at or
+    /// above `path` that exists (`write_access.rs`); a path this volume can't place is
+    /// `Unknown`.
+    fn write_access_at<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = WriteAccess> + Send + 'a>> {
+        let at = self.locate(path);
+        Box::pin(blocking("write_access_at", move || match at {
+            Ok(at) => write_access::write_access_at(&at.os),
+            Err(_) => WriteAccess::Unknown,
+        }))
     }
 
     fn get_live_space_info<'a>(&'a self) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {

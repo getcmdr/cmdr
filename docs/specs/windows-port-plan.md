@@ -208,8 +208,6 @@ owns its real body. Remove a line when its body lands.
   the DACL answer `NotApplicable`. Real: dates, and the read-only (a FILE's, as Locked) and hidden attributes as user
   flags a copy reads and puts back (`flags_of`, `add_flags`; #1352), the Locked a move asks about included
   (`removal_lock`, `clear_blockers`, #1331).
-- `cmdr_fs::entry` owner and group names (`entry/platform/windows.rs`), task 35: always `None`, since a Windows owner is
-  a SID, not a uid.
 - `cmdr_fs::file_provider` (`file_provider/platform/windows.rs`), task 37: no File Provider marker; Cloud Files
   placeholders are read their own way.
 - `cmdr_fs::mapped_file_faults` (`mapped_file_faults/platform/windows.rs`), task 47: recovers nothing, so a read of a
@@ -228,14 +226,15 @@ owns its real body. Remove a line when its body lands.
   `GetThreadTimes`, so the index writer and rescan lines carry thread CPU there.
 - `cmdr-sftp` agent (`transport/platform/windows.rs`), task 46: asks the OpenSSH agent's pipe (or `SSH_AUTH_SOCK`),
   never Pageant.
-- `cmdr_local::LocalWindowsVolume` (`platform/local_windows.rs`), task 35: no ADS-backed xattrs, no `write_access_at`,
-  and no `FindFirstFileExW` lister. Each keeps the trait's conservative default, and each conformance cell it can't pass
-  yet is `#[ignore]`d with its piece (`local_conformance_test.rs`). Real since 2026-11-22: streams, the copy scan,
+- `cmdr_local::LocalWindowsVolume` (`platform/local_windows.rs`), task 35: no ADS-backed xattrs and no
+  `FindFirstFileExW` lister. Each keeps the trait's conservative default, and each conformance cell it can't pass yet is
+  `#[ignore]`d with its piece (`local_conformance_test.rs`). Real since 2026-11-22: streams, the copy scan,
   `node_identity`, metadata (dates, read-only and hidden as flags, the caps), and links (symlink and junction targets,
-  reparse tags told apart, file vs folder symlinks made without elevating; `crates/cmdr-local/DETAILS.md` § "The Windows
-  sibling").
-- `cmdr_local::reading` Windows arm (`reading/platform/windows.rs`), task 35: no allocation size, mode `0`, no owner or
-  group; only `FILE_ATTRIBUTE_HIDDEN` is real.
+  reparse tags told apart, file vs folder symlinks made without elevating), and `write_access_at` (the volume's
+  read-only flag and the DACL; `crates/cmdr-local/DETAILS.md` § "The Windows sibling").
+- `cmdr_local::reading` Windows arm (`reading/platform/windows.rs`), task 35: no allocation size and mode `0`; only
+  `FILE_ATTRIBUTE_HIDDEN` is real. No owner or group by decision (a SID per entry, and nothing shows the owner yet:
+  `crates/cmdr-local/DETAILS.md` § "The Windows sibling").
 - `cmdr_operations::local_disk` Windows arm (`local_disk/platform/windows.rs`), tasks 35 and 36: `set_mode` and
   `symlink` refuse as unsupported (a copied link fails its item; a copied folder's mode narrowing is skipped), and
   there's no purgeable-space figure. Real: the write probe (`FILE_WRITE_DATA` open), free space (`GetDiskFreeSpaceExW`),
