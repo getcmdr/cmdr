@@ -254,3 +254,22 @@ Cmdr's window was moved beside it for screenshots.
   two files compress to a zip on `D:` and extract back to `C:` with their bytes; the volume list reads `C:`,
   `build (D:)`, and Servers with `C:` indexing; a same-drive move's undo puts the file back. "Go to Recycle Bin" not
   re-run (keys sent through `run-on-desktop.sh` went to Task Manager, which held the foreground).
+
+## PR #1389's share and folder-mount fixes on the desktop (2026-11-22)
+
+A debug build of `16ba1be9ed` in `D:\src\cmdr-m6` (13m 44s warm, #1382's two dead-code items allowed locally, then
+reverted), driven by Cmdr's MCP server over `ssh -L` (`CMDR_MCP_DIRECT_MODE=1`), indexing on. Fixtures under
+`C:\Users\Admin\r1389` and `D:\r1389`, removed after. `D:` mounted a second time at `C:\Users\Admin\r1389\dmount`
+(`mountvol`, David's one approved change, 15:17:02–15:18:15, removed with `mountvol /D`).
+
+- Pass (#1384): a copy of `C:\…\src\share-src.txt` into a pane on `\\localhost\C$\Users\Admin\r1389\dst` (a share nobody
+  mapped) opens with no "no permission" line and Copy live, the box reading
+  `//localhost/C$/Users/Admin/r1389/dst/share-src.txt`; confirmed, it lands in `…\r1389\dst` with its bytes, nothing at
+  `C:\share-src.txt`. The log reads `dest=//localhost/C$/` (it read `dest=C:/` before).
+- Pass (#1385): `list_volumes` reads `C:`, `build (D:)` once, and Servers. `nav_to_path` to `…\dmount\r1389\same` lands
+  with the tab, path, and `volumeId: root` agreeing; Enter on `dmount`, then `r1389`, then `same` (`open_under_cursor`)
+  does too. F5 from the other pane offers `C:/Users/Admin/r1389/dmount/r1389/same/s.txt`, and the file lands in
+  `D:\r1389\same`.
+- Seen, not chased: the picker reads "Choose…" for the unmapped share (it has no row), and "C:" with `C:`'s free space
+  for the folder below the mount. After the share copy, a toast said Cmdr couldn't confirm the copies were fully written
+  to `//localhost/C$` (the durability barrier on a share).
