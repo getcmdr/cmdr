@@ -503,7 +503,8 @@ its prerequisites; tasks without any can start any time. Order within a phase is
     - **Making Windows downloads public** (after task 52 ships the files): add `windows` to `PUBLIC_DOWNLOAD_OSES` and
       deploy, then task 32 links `/download/latest/windows/x86_64`. Not in this task: the website's
       `getcmdr.com/download/latest/<os>/<arch>` nginx redirect (task 32), an OS on `install_summary` (new installs and
-      retention by OS), and per-OS wording in the privacy policy (it still says "macOS version"). Needs 30.
+      retention by OS). The privacy policy's per-OS wording landed separately (2026-11-22: Credential Manager, the
+      `MachineGuid` device hash, panic-only crash reports, "OS version"), public at once. Needs 30.
 32. [S] Win. Website download page for three OSes (the Linux plan's Part 3, built once). **Done** (not landed or
     deployed at writing; David reviews copy and design later, screenshots of every state from the build). One gate,
     `offeredPlatforms` in `apps/website/src/lib/download-platforms.ts`: an OS is offered when `PUBLIC_DOWNLOAD_OSES`
@@ -665,7 +666,8 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       credential left behind, when the same test binary runs as SYSTEM from a scheduled task. The other two failures are
       the pid cells below.
     - The Windows half of `/trust` is drafted, hidden until a release carries a Windows download
-      (`apps/website/DETAILS.md` § Patterns, "Copy for an OS that hasn't shipped"); David reviews its copy.
+      (`apps/website/DETAILS.md` § Patterns, "Copy for an OS that hasn't shipped"). David approved the copy
+      (2026-11-22); the Store bullet is out until task 57 settles the Store facts.
     - The Group Policy template (2026-11-18): `rymd.admx` + `cmdr.admx` and their en-US ADMLs in
       `apps/desktop/packaging/group-policy/`, generated from `managed_policy/policies.json` by `scripts/group-policy/`
       and held to it by `desktop-group-policy-fresh`. Schema-valid under libxml2 and .NET (on mami, from a temp folder);

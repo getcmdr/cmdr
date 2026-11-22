@@ -1368,8 +1368,11 @@ and its uninstall entry. It names the build; provenance and the updater signatur
 Each step is David's, in order. Nothing here needs a certificate or a secret beyond the updater key the `release`
 environment already holds.
 
-1. **Open the Partner Center account** as Rymdskottkärra AB, a company account (free, per D3):
-   <https://partner.microsoft.com/dashboard/registration>. Microsoft verifies the company, which can take days.
+1. **Open the Partner Center account** as Rymdskottkärra AB, a company account (free, per D3): start at
+   <https://storedeveloper.microsoft.com/> (Get started › Company account), Microsoft's only supported entry for company
+   onboarding; Partner Center's own registration page opens the legacy flow (verified on storedeveloper.microsoft.com
+   and Microsoft Learn "Steps to open a developer account", read 2026-11-22). Microsoft verifies the company, which can
+   take days. What to have at hand, the steps, and where companies get stuck: #1348.
 2. **Reserve the app name** "Cmdr" in Partner Center › Apps and games › New product › MSIX or PWA app.
 3. **Copy the product identity** from that product's Product management › Product identity into
    `apps/desktop/packaging/msix/identity.json`'s `release` block: `Package/Identity/Name` into `name`,
