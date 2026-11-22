@@ -6,8 +6,6 @@
 //! where, a clash at a renamed leaf, every refusal, a source pruned after
 //! admission, and undo. The native engines' half is `named_leaves_tests.rs`.
 
-#![cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
-
 use cmdr_fs::app_path::AppPath;
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};

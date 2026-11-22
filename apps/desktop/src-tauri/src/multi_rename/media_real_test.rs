@@ -79,7 +79,6 @@ fn masked(name_mask: &str) -> MultiRenameSpec {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `read_range` yet, so the media read answers `Unreadable`
 async fn photos_movies_and_songs_on_the_local_disk_name_themselves() {
     ensure_root_volume();
     let (_dir, listing) = folder(

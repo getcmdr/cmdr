@@ -16,8 +16,6 @@
 //!   double records every open and counts any (now-unexpected) `cancel_and_release`,
 //!   so no real device is needed. Includes a no-pause sanity case.
 
-#![cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
-
 use super::super::transfer_error::PathedVolumeError;
 use super::test_support::{
     REL_CHUNK, REL_TOTAL, RelLog, ReleasingSource, SLOW_CHUNK_COUNT, SLOW_CHUNK_SIZE, SlowSource, make_state,

@@ -62,7 +62,6 @@ async fn sibling_names(parent: &dyn Volume, archive_path: &Path) -> Vec<String> 
 }
 
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn compress_onto_a_remote_parent_spools_then_packs_local_files() {
     let engine = TestOperations::new();
     let payload = vec![b'z'; 128 * 1024];
@@ -185,7 +184,6 @@ async fn compress_onto_a_remote_parent_spools_then_packs_local_files() {
 }
 
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn cancel_during_remote_close_does_not_publish_or_complete() {
     let engine = TestOperations::new();
     let (_src_tmp, source_volume) = local_source_with(&[("one.txt", &[b'x'; 4096])]);
@@ -246,7 +244,6 @@ async fn cancel_during_remote_close_does_not_publish_or_complete() {
 }
 
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn compress_onto_a_remote_parent_overwrites_an_existing_zip_with_a_fresh_archive() {
     let engine = TestOperations::new();
     // The target already holds a zip on the remote. Compress-overwrite REPLACES it
@@ -299,7 +296,6 @@ async fn compress_onto_a_remote_parent_overwrites_an_existing_zip_with_a_fresh_a
 }
 
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn a_publication_refusal_recovers_and_names_the_displaced_original() {
     let engine = TestOperations::new();
     let (_src_tmp, source_volume) = local_source_with(&[("new.txt", b"brand new")]);
@@ -355,7 +351,6 @@ async fn a_publication_refusal_recovers_and_names_the_displaced_original() {
 }
 
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn compress_onto_an_mtp_style_remote_parent_spools_and_packs() {
     let engine = TestOperations::new();
     // An MTP-shaped parent allows same-name siblings, so its swap is
@@ -406,7 +401,6 @@ async fn compress_onto_an_mtp_style_remote_parent_spools_and_packs() {
 }
 
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn a_remote_source_streams_into_a_direct_local_archive() {
     let engine = TestOperations::new();
     let (_, source) = register_remote_source(&engine, &[("folder/remote.bin", &[b'r'; 192 * 1024])]).await;
@@ -441,7 +435,6 @@ async fn a_remote_source_streams_into_a_direct_local_archive() {
 }
 
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn same_device_mtp_source_finishes_spooling_before_the_upload_path() {
     use cmdr_fs::volume::BackendKind;
 
@@ -560,7 +553,6 @@ async fn names_in_share(parent: &dyn Volume) -> Vec<String> {
 }
 
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn a_new_archive_on_a_share_is_named_composed() {
     let engine = TestOperations::new();
     let (parent_id, parent) = register_share(&engine, None).await;
@@ -581,7 +573,6 @@ async fn a_new_archive_on_a_share_is_named_composed() {
 /// about (`destination_exists` counts a look-alike), so it's replaced IN PLACE:
 /// one archive, under the share's own spelling, ❌ never a twin beside it.
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn a_compress_onto_a_look_alike_of_an_existing_archive_replaces_it_in_place() {
     let engine = TestOperations::new();
     let (parent_id, parent) = register_share(&engine, Some(CAFE_ZIP_NFD)).await;
@@ -606,7 +597,6 @@ async fn a_compress_onto_a_look_alike_of_an_existing_archive_replaces_it_in_plac
 /// The mirror case: the target composes onto a name the share holds exactly.
 /// Same entry, same answer: replaced in place, still one archive.
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn a_compress_whose_composed_name_the_share_holds_replaces_that_archive() {
     let engine = TestOperations::new();
     let (parent_id, parent) = register_share(&engine, Some(CAFE_ZIP_NFC)).await;
@@ -664,7 +654,6 @@ async fn a_compress_two_stored_archives_fit_is_refused_and_leaves_both_alone() {
 /// The exact stored spelling is the name the dialog warned about: it's replaced
 /// in place, under its own bytes, as it always was.
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn a_compress_onto_the_exact_stored_spelling_still_replaces_it_in_place() {
     let engine = TestOperations::new();
     let (parent_id, parent) = register_share(&engine, Some(CAFE_ZIP_NFD)).await;

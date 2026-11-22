@@ -6,7 +6,6 @@ use cmdr_operation_log::types::OperationId;
 
 /// End-to-end: compress two local files into a new ZIP and read both entries back.
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn compress_start_packs_local_files_into_a_new_zip() {
     use cmdr_local::LocalVolume;
 
@@ -143,7 +142,6 @@ async fn compress_start_packs_local_files_into_a_new_zip() {
 }
 
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn a_name_taken_after_start_is_not_replaced_or_reported_complete() {
     use cmdr_local::LocalVolume;
 
@@ -193,7 +191,6 @@ async fn a_name_taken_after_start_is_not_replaced_or_reported_complete() {
 }
 
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn stop_policy_prompts_for_duplicate_source_names_and_honors_overwrite() {
     use cmdr_local::LocalVolume;
 
@@ -249,7 +246,6 @@ async fn stop_policy_prompts_for_duplicate_source_names_and_honors_overwrite() {
 }
 
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn an_existing_local_archive_stays_byte_exact_until_publication() {
     use cmdr_local::LocalVolume;
 
@@ -427,7 +423,6 @@ async fn compress_refuses_a_read_only_destination_without_touching_its_bytes() {
 /// item, and computes `rollbackable` eligibility — proving the subkind came from
 /// the driver, not the op type.
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn compress_journals_subkind_and_net_new_from_the_driver() {
     use cmdr_local::LocalVolume;
     use cmdr_operation_log::store::{open_read_connection, read_operation, read_operation_items};
@@ -510,7 +505,6 @@ async fn compress_journals_subkind_and_net_new_from_the_driver() {
 /// it named the archive's volume on both sides and counted zero items and bytes,
 /// so a Mac-to-phone compress read as a phone-to-phone one that packed nothing.
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn compress_journals_the_source_volume_and_what_it_packed() {
     use cmdr_local::LocalVolume;
     use cmdr_operation_log::store::{open_read_connection, read_operation};
@@ -576,7 +570,6 @@ async fn compress_journals_the_source_volume_and_what_it_packed() {
 /// Compressing a whole folder packs its subtree under the folder name — the common
 /// "compress the directory under the cursor" case.
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn compress_start_packs_a_directory_subtree() {
     use cmdr_local::LocalVolume;
 
@@ -701,7 +694,6 @@ async fn compress_payload_at(
 /// back to the crate default and the two sizes would match. Deterministic for a
 /// fixed payload, so `<` is not flaky.
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn compress_level_9_is_smaller_than_level_1() {
     let engine = TestOperations::new();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -721,7 +713,6 @@ async fn compress_level_9_is_smaller_than_level_1() {
 /// The default (`None`) is byte-stable with today's behavior: it maps to the crate
 /// default level 6, so an unset level and an explicit 6 produce the same stored size.
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn compress_default_none_matches_explicit_level_6() {
     let engine = TestOperations::new();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -742,7 +733,6 @@ async fn compress_default_none_matches_explicit_level_6() {
 /// wild value (a bad config, an MCP `set_setting` with a huge number) still
 /// produces a valid archive, sized as the nearest in-range level.
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn compress_out_of_range_level_clamps_instead_of_failing() {
     let engine = TestOperations::new();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -768,7 +758,6 @@ async fn compress_out_of_range_level_clamps_instead_of_failing() {
 
 /// A bug while building the compress's tree costs the tree, never the zip.
 #[tokio::test]
-#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn a_tree_that_fails_to_build_leaves_the_compress_as_it_would_run_without_one() {
     use crate::transfer_tree::test_support::TREE_BUG_NAME;
     use cmdr_local::LocalVolume;
