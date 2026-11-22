@@ -310,7 +310,7 @@ mod media {
     }
 
     /// A scratch folder's native path as the app path a pane shows it at.
-    fn app(dir: &Path) -> AppPathBuf {
+    fn as_app(dir: &Path) -> AppPathBuf {
         AppPathBuf::from_native_unicode(dir).expect("a scratch folder is plain text")
     }
 
@@ -399,7 +399,7 @@ mod media {
         let sheet = read_sheet(&listing, loader(&Calls::default(), facts)).await;
 
         let media = read_media(
-            &app(&dir),
+            &as_app(&dir),
             &names(&entries),
             &entries,
             &[],
@@ -460,7 +460,7 @@ mod media {
 
         let calls = Calls::default();
         let media = read_media(
-            &app(&dir),
+            &as_app(&dir),
             &names(&entries),
             &entries,
             &open,
@@ -496,7 +496,7 @@ mod media {
         let (dir, entries, _listing) = folder("mcp-rename-media-cap", &FILES);
         let calls = Calls::default();
 
-        let err = read_media(&app(&dir), &names(&entries), &entries, &[], loader(&calls, facts), 3)
+        let err = read_media(&as_app(&dir), &names(&entries), &entries, &[], loader(&calls, facts), 3)
             .await
             .err()
             .expect("four media files, a cap of three");
@@ -523,7 +523,7 @@ mod media {
         });
         let names = vec!["slow.jpg".to_string()];
 
-        let folder = app(&dir);
+        let folder = as_app(&dir);
         let call = read_media(&folder, &names, &entries, &[], slow, MAX_MEDIA_READS);
         let timed_out = tokio::time::timeout(Duration::from_millis(200), call).await;
 
@@ -549,7 +549,7 @@ mod media {
         let refused = RefusedReads::default();
 
         let media = read_media(
-            &app(&dir),
+            &as_app(&dir),
             &names(&entries),
             &entries,
             &[],
@@ -587,7 +587,7 @@ mod media {
         let refused = RefusedReads::default();
 
         let media = read_media(
-            &app(&dir),
+            &as_app(&dir),
             &names(&entries),
             &entries,
             &open,
@@ -645,7 +645,7 @@ mod media {
         let refused = RefusedReads::default();
 
         let media = read_media(
-            &app(&folder),
+            &as_app(&folder),
             &names(&entries),
             &entries,
             &[],
@@ -686,7 +686,7 @@ mod media {
         let refused = RefusedReads::default();
 
         read_media(
-            &app(&dir),
+            &as_app(&dir),
             &wanted,
             &entries,
             &[],
@@ -713,7 +713,7 @@ mod media {
         let refused = RefusedReads::default();
 
         let media = read_media(
-            &app(&folder),
+            &as_app(&folder),
             &names(&entries),
             &entries,
             &open,
@@ -768,7 +768,7 @@ mod media {
         };
 
         read_media(
-            &app(&dir),
+            &as_app(&dir),
             &wanted,
             &entries,
             &[],
@@ -797,13 +797,13 @@ mod media {
         let app = tauri::test::mock_app();
         let store = PaneStateStore::new();
         store.set_left(PaneState {
-            path: dir.to_string_lossy().into_owned(),
+            path: as_app(&dir).into_string(),
             volume_id: Some("root".to_string()),
             files: ["photo.jpg", "song.mp3"]
                 .iter()
                 .map(|name| PaneFileEntry {
                     name: name.to_string(),
-                    path: dir.join(name).to_string_lossy().into_owned(),
+                    path: as_app(&dir.join(name)).into_string(),
                     ..PaneFileEntry::default()
                 })
                 .collect(),

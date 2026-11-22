@@ -415,7 +415,10 @@ impl Volume for UndecidedDrive {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        if path.as_str() == REPO {
+        // ❗ By `Path` equality, which reads `\` as a separator on Windows: the restic route's
+        // probe spells the repo root through `std::path` there (`\share\…`), so app text equality
+        // missed it on the Windows lane. Goes when the route's probe speaks app paths.
+        if *path.as_std_legacy() == *Path::new(REPO) {
             return Box::pin(async {
                 Err(VolumeError::IoError {
                     message: "the NAS didn't answer".into(),

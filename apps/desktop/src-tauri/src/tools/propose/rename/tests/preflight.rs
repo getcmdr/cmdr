@@ -39,6 +39,13 @@ fn cycle_warnings_mark_only_closed_dependency_components() {
 /// A staged row with the evidence a real one always carries. Preflight and the store
 /// don't read evidence (the tool boundary already checked it), so a filename source
 /// keeps these fixtures about the thing under test.
+/// A scratch file's native path as the app path a stored row holds (`C:/…` on Windows).
+fn app_text(path: &std::path::Path) -> String {
+    cmdr_fs::app_path::AppPathBuf::from_native_unicode(path)
+        .expect("a scratch path is plain text")
+        .into_string()
+}
+
 fn proposal_row(row_id: &str, source_path: &str, destination_name: &str) -> RenameProposalRow {
     RenameProposalRow {
         row_id: row_id.into(),
@@ -94,11 +101,7 @@ fn local_preflight_blocks_a_source_that_no_longer_exists() {
         proposal_id: "proposal".into(),
         revision: 0,
         volume_id: "root".into(),
-        rows: vec![proposal_row(
-            "row",
-            missing.to_str().expect("UTF-8 temp path"),
-            "renamed.png",
-        )],
+        rows: vec![proposal_row("row", &app_text(&missing), "renamed.png")],
     };
 
     let outcome = preflight_local(&proposal, &["row".into()], &CheckTally::default(), NameRules::POSIX)
@@ -121,7 +124,7 @@ fn the_folders_name_rules_block_or_warn_per_row() {
     let file = |name: &str| {
         let path = temp.path().join(name);
         std::fs::write(&path, b"x").expect("a source file");
-        path.to_str().expect("UTF-8 temp path").to_string()
+        app_text(&path)
     };
     let proposal = RenameProposal {
         proposal_id: "proposal".into(),

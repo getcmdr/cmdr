@@ -27,7 +27,6 @@ cmdr	agent::suggested_ops::tests::a_root_the_index_doesnt_hold_refuses_rather_th
 cmdr	agent::suggested_ops::tests::the_drive_index_resolves_a_selector_over_a_real_index	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	commands::file_system::volume_copy::destination_root_echo_test::a_server_path_typed_on_a_server_place_names_both_readings	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr	commands::file_system::write_ops::tests::reject_if_routed_over_a_parent_flags_a_path_inside_a_zip	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
-cmdr	commands::file_viewer::tests::write_range_rejects_a_destination_inside_an_archive	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr	crash_reporter::next_launch_tests::crash_file_stamps_keep_their_bytes_and_read_back	fails	a Windows-only expectation the test does not hold yet (windows-test-failures.md)
 cmdr	data_wipe::plan::tests::a_library_target_must_carry_the_identifier	fails	a Windows-only expectation the test does not hold yet (windows-test-failures.md)
 cmdr	data_wipe::plan::tests::a_production_mac_plans_every_folder_and_file_cmdr_keeps	fails	a Windows-only expectation the test does not hold yet (windows-test-failures.md)
