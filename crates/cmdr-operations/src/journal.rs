@@ -11,7 +11,9 @@ use std::fs::Metadata;
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
-use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic, is_scheme_url};
+use cmdr_fs::app_path::is_scheme_url;
+#[cfg(not(target_family = "wasm"))]
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use cmdr_fs::volume::{DEFAULT_VOLUME_ID, LandedModified, NodeIdentity};
 use cmdr_operation_log::capture::FinalizeInputs;
 use cmdr_operation_log::types::RowRole;
@@ -119,13 +121,23 @@ fn journal_split(path: &Path) -> (String, String) {
     if path.to_str().is_some_and(is_scheme_url) {
         return bridge_split(path);
     }
-    match AppPathBuf::from_native_unicode(path) {
-        Ok(app) => app_split(&app),
-        Err(_) => bridge_split(path),
-    }
+    native_split(path).unwrap_or_else(|| bridge_split(path))
+}
+
+/// A native end's app split, or `None` for one the non-escaping door refuses.
+#[cfg(not(target_family = "wasm"))]
+fn native_split(path: &Path) -> Option<(String, String)> {
+    AppPathBuf::from_native_unicode(path).ok().map(|app| app_split(&app))
+}
+
+/// The browser build has no native paths: its every volume is in memory or remote.
+#[cfg(target_family = "wasm")]
+fn native_split(_path: &Path) -> Option<(String, String)> {
+    None
 }
 
 /// [`journal_split`] for an end already typed.
+#[cfg(not(target_family = "wasm"))]
 fn app_split(path: &AppPath) -> (String, String) {
     let name = path.file_name().unwrap_or_default().to_owned();
     let dir = path.parent().map(|p| p.as_str().to_owned()).unwrap_or_default();
