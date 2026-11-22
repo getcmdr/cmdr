@@ -1378,15 +1378,19 @@ return-point bookkeeping. `navigate.ts` re-exports the names callers use, so the
   `correctionGen` (the old `volumeChangeGeneration`, shared by both panes) is the other half. The drop-foreign-listings
   policy (next note) is what drops a genuinely stale listing.
 
-**A path on the pane's volume but off the root the pane knows for it never takes the in-place arm.** One volume can be
-reached at a path its row doesn't name (a share mounted twice on macOS, `/Volumes/testshare-1`, collapses to the
-shortest root; a Linux bind mount). In place, that listing landed and `commitPathFromListing` then dropped it as
-foreign, so the pane showed the new folder while its tab, and every operation reading it (the transfer dialog's
-destination), held the old one (#1385, seen on Windows with a folder mount, whose backend half is `volumes/DETAILS.md` §
-"Windows: a volume per drive"). So `navigateInPlace` hands such a path to the switch arm, which commits the volume and
-the path together, and a drop of a landing the FilePane is SHOWING (`sendBackFromForeignLanding`: a FilePane-internal
-step, Enter on a row, below such a root) sends the pane back to its tab's folder: ❌ never a pane showing a folder its
-tab doesn't hold.
+**A tab never holds a path its volume row's root doesn't hold** (`navigate.ts::homedOnItsRow`). One volume can be
+reached at a path its row doesn't name: a share mounted twice on macOS (`/Volumes/testshare-1`) carries the share's id
+while the row reads the shortest root, and on Windows a folder mount once did (#1385, whose backend half is
+`volumes/DETAILS.md` § "Windows: a volume per drive"). In place, that listing landed and `commitPathFromListing` dropped
+it as foreign, so the pane showed the new folder while its tab held the old one; committed as the pair, every operation
+read the path against the row's root and aimed a copy at the wrong folder (`toVolumeRelativePath`, and the backend's
+`anchor_at_root` hanging a POSIX path off the root). So a `{ goTo }` whose OS path is off its OS-path volume's row goes
+on the listed volume holding it (`volume-holding.ts`: the boot disk reaches the second mount as a folder), and stays as
+asked only when its volume has no row (a share nobody mapped) or no listed root holds it; a server's or a phone's
+mismatched pair is left to the refusals. Two backstops stay: the in-place arm hands an off-root path to the switch arm
+(a no-row volume), and a dropped landing the FilePane is SHOWING on the tab's own volume (`sendBackFromForeignLanding`)
+sends the pane back to its tab's folder. ❌ Never a send-back while the FilePane still shows another volume: in the
+stale-listing-after-volume-switch race its props haven't caught up, and the switch's own load brings it to the tab.
 
 **Don't add `cd`-style heuristics in `commitPathFromListing`.** Stale `onPathChange` from a slow listing is dropped by
 the drop-foreign-listings policy in `navigate.ts::commitPathFromListing` (`smb://` prefix for `network`,

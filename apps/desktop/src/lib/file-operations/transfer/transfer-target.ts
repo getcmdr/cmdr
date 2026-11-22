@@ -1,6 +1,7 @@
 /** Resolve the complete single-item Copy/Move target before preflight or dispatch. */
 import type { VolumeInfo } from '#lib/file-explorer/types.js'
-import { capabilitiesForPane, paneRowsAreOsVisible, volumeKindOf } from '#lib/file-explorer/pane/volume-capabilities.js'
+import { capabilitiesForPane } from '#lib/file-explorer/pane/volume-capabilities.js'
+import { listedOsVolumeHolding } from '#lib/file-explorer/pane/volume-holding.js'
 import { isPathOnVolume } from '#lib/path/canonical.js'
 import { isLocalPath, parsePath, typedSeparators } from '#lib/path/grammar.js'
 import { DEFAULT_VOLUME_ID } from '#lib/tauri-commands/index.js'
@@ -25,22 +26,6 @@ function readEntered(enteredPath: string): { entered: string; relative: boolean;
   const onThisMachine = kind === 'drive' || kind === 'unc'
   const relative = !entered.startsWith('/') && !entered.startsWith('~/') && !onThisMachine
   return { entered, relative, onThisMachine }
-}
-
-/**
- * The listed volume whose root holds `parent`, the longest root winning, among the volumes
- * whose rows are OS paths: local drives AND shares (a mapped drive's row is a network one).
- * Read off the row itself, so a share never passes for "not this machine's" (#1384).
- */
-function localVolumeHolding(parent: string, volumes: VolumeInfo[]): string | undefined {
-  return volumes
-    .filter(
-      (v) =>
-        v.category !== 'favorite' &&
-        paneRowsAreOsVisible(volumeKindOf(v.id, v.fsType, v.category)) &&
-        isPathOnVolume(parent, v.path),
-    )
-    .sort((a, b) => b.path.length - a.path.length)[0]?.id
 }
 
 /**
@@ -82,7 +67,7 @@ export function resolveTransferTarget(args: {
     : entered.startsWith('~/') || onThisMachine || capabilitiesForPane(selectedVolumeId, selectedRoot).kind === 'local'
   let volumeId = relative ? sourceVolumeId : selectedVolumeId
   if (localTarget)
-    volumeId = localVolumeHolding(named.parent, volumes) ?? fallbackVolume(named.parent, volumeId, volumes)
+    volumeId = listedOsVolumeHolding(named.parent, volumes)?.id ?? fallbackVolume(named.parent, volumeId, volumes)
   const root = volumeRoot(volumes, volumeId)
   const path = parentForVolume(named.parent, root, localTarget)
   // A drive or share path off every listed root stays whole (`toVolumeRelativePath`).

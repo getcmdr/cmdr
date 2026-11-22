@@ -27,6 +27,18 @@ pub fn get_space_info_for_path(path: &Path) -> Result<SpaceInfo, VolumeError> {
     get_space_info_statvfs(path)
 }
 
+/// [`get_space_info_for_path`] for the nearest folder at or above `path` that exists: the
+/// filesystem a copy into `path` lands on, which below a mount inside the volume (a folder
+/// mount on Windows, a share's second mount on macOS) isn't the root's (#1385). A copy
+/// creates the rest of the path. `NotSupported` ("can't tell") when no ancestor is a folder.
+pub(crate) fn space_info_at_nearest_folder(path: &Path) -> Result<SpaceInfo, VolumeError> {
+    let folder = path
+        .ancestors()
+        .find(|ancestor| ancestor.is_dir())
+        .ok_or(VolumeError::NotSupported)?;
+    get_space_info_for_path(folder)
+}
+
 /// [`get_space_info_for_path`] for a readout that polls: on macOS the same figure, mostly at
 /// `statfs` cost (`live_space::live_volume_space`). Linux's `statvfs` is already that cheap.
 pub(crate) fn live_space_info_for_path(path: &Path) -> Result<SpaceInfo, VolumeError> {

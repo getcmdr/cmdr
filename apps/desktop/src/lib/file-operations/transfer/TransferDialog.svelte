@@ -58,6 +58,7 @@
         shouldShowHardlinkNote,
         splitPathLeaf,
         toVolumeRelativePath,
+        volumePickerItems,
     } from './transfer-dialog-utils'
     import { getPathValidationError, formatSpaceInfo } from './transfer-dialog-logic'
     import { createTransferScanState } from './transfer-scan-state.svelte'
@@ -169,8 +170,10 @@
         sourcePaths,
         sourceFolderPath,
     )
+    // A destination with no place on its volume stays an empty box (`toVolumeRelativePath`).
+    const initialFolder = toVolumeRelativePath(destinationPath, initialVolumePath)
     let editedPath = $state(
-        newName === undefined ? initialFolderOrTarget : joinPathLeaf(toVolumeRelativePath(destinationPath, initialVolumePath), newName),
+        newName === undefined ? initialFolderOrTarget : initialFolder === '' ? '' : joinPathLeaf(initialFolder, newName),
     )
     /** Rename mode's path box, split back into the folder it lands in and the new name. */
     const renameTarget = $derived(splitPathLeaf(editedPath))
@@ -231,7 +234,6 @@
         volumes.filter((v) => v.category !== 'favorite' && v.category !== 'network' && !isStillConnecting(v)),
     )
 
-    const volumeItems = $derived<SelectItem[]>(actualVolumes.map((v) => ({ value: v.id, label: v.name })))
 
     const singleTransfer = $derived(!isRenameMode && activeOperationType !== 'compress' && sourcePaths.length === 1)
     const namedTarget = $derived(singleTransfer ? resolveTransferTarget({
@@ -239,6 +241,9 @@
     }) : null)
     const targetVolumeId = $derived(namedTarget?.volumeId ?? selectedVolumeId)
     const selectedVolume = $derived(actualVolumes.find((v) => v.id === targetVolumeId))
+    const volumeItems = $derived<SelectItem[]>(
+        volumePickerItems(actualVolumes, volumes, { volumeId: targetVolumeId, path: namedTarget?.fullPath ?? editedPath }),
+    )
     const targetPath = $derived(isRenameMode ? renameTarget.folder : (namedTarget?.path ?? editedPath))
     // Which names the destination takes and warns about, for the leaf checks and the
     // upfront "won't work on Windows" line. A compress's target is the zip, so its folder

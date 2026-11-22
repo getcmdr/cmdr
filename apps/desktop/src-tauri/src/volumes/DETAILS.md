@@ -64,8 +64,11 @@ tested on every OS.
   second `D:` row with `D:`'s id. Explorer reads the same way: This PC lists `build (D:)` once, and the folder mount
   shows as a folder (with a drive icon) of `C:`, its address bar staying `C:\…\dmount\…` below it. What still knows
   it's a mount: the write engine's guards (`cmdr_local::mounts::list` keeps every folder mount), and a local move into or
-  out of it renames or copies by the volume GUIDs the two paths reach (`is_same_filesystem`), never by volume id. Space for a folder there is asked of the
-  path (`get_volume_space`), so it's the mounted volume's.
+  out of it renames or copies by the volume GUIDs the two paths reach (`is_same_filesystem`), never by volume id. The transfer pre-flight asks space of the
+  destination folder (`get_space_info_at`, `crates/cmdr-local/DETAILS.md` § "Local volume space"), so it's the mounted
+  volume's; the pane's readout still shows `C:`'s (the space poller is per volume). The drive index doesn't walk into
+  the folder: a mount point is a name-surrogate reparse point, so `std` reads it as a link and the walker lists it as
+  one (`cmdr_local::platform::reparse`).
 
 - **The drive table** (`platform/windows/drives.rs::enumerate`): the letters and folder mounts from the mount table the
   write engine's guards read too (`cmdr_local::mounts::list`: `GetLogicalDriveStringsW` and the `FindFirstVolumeW`

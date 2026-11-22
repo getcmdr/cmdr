@@ -137,6 +137,7 @@ import {
 } from '../navigation/navigation-history'
 import { isSnapshotPath } from '../navigation/real-folder-history'
 import { isPathOnVolume } from '#lib/path/canonical.js'
+import { isLocalPath } from '#lib/path/grammar.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 import { getAppLogger } from '#lib/logging/logger.js'
 import type { Location } from '#lib/tauri-commands/index.js'
@@ -426,8 +427,9 @@ export function navigate(intent: NavigateIntent, deps: NavigateDeps): NavigateRe
  * callers, which keep the always-switch `{ selectVolume }` arm precisely because
  * they pass the CURRENT volume id to re-select it.
  */
-function navigateToLocation(deps: NavigateDeps, intent: NavigateIntent, location: Location): NavigateResult {
+function navigateToLocation(deps: NavigateDeps, intent: NavigateIntent, asked: Location): NavigateResult {
   const { pane } = intent
+  const location = homedOnItsRow(deps, asked)
   // A share inside the Network volume has no path to navigate to (see the refusal).
   if (location.path.startsWith(NETWORK_VOLUME_PATH) && location.path !== NETWORK_VOLUME_PATH) {
     return { status: 'refused', reason: SMB_PATH_REFUSAL }
@@ -653,6 +655,34 @@ export function commitPathFromListing(deps: NavigateDeps, pane: 'left' | 'right'
   return true
 }
 
+/**
+ * `location` on a volume whose listed root holds its path. A resolver can name a volume
+ * for a path below a root its row doesn't show (macOS's second mount of a share,
+ * `/Volumes/testshare-1`, carries the share's id while the row reads `/Volumes/testshare`),
+ * and a tab holding that pair splits: every operation reads the path against the row's
+ * root, so `toVolumeRelativePath` and the backend's `anchor_at_root` aimed a copy at the
+ * wrong folder (#1385). Such a path goes on the listed volume holding it (the boot disk
+ * reaches the second mount as a folder), and stays as asked when no listed root holds it
+ * or its volume has no row (a share nobody mapped, whose root the list doesn't know).
+ * ❌ Never weaken this to trust the pair: the drop policy and the transfer target both
+ * read a tab's path against its row's root.
+ */
+function homedOnItsRow(deps: NavigateDeps, location: Location): Location {
+  const { volumeId, path } = location
+  const root = deps.getVolumePathById(volumeId)
+  // OS paths on an OS-path volume only: a server's or a phone's mismatched pair is a caller's
+  // mix-up the refusals below answer (`validateServerNavigation`), ❌ never re-homed.
+  if (root === undefined || !isLocalPath(root) || !isLocalPath(path) || isPathOnVolume(path, root)) return location
+  const holder = deps.getVolumeIdHolding(path)
+  if (holder === undefined) return location
+  log.info('A path off its volume row goes on the volume holding it: {path} on {holder}, not {volumeId}', {
+    path,
+    holder,
+    volumeId,
+  })
+  return { ...location, volumeId: holder }
+}
+
 /** Whether `path` sits under the root the pane knows for its (real) volume. */
 function onPaneRoot(deps: NavigateDeps, pane: 'left' | 'right', path: string): boolean {
   const volumeId = deps.getPaneVolumeId(pane)
@@ -671,6 +701,10 @@ function sendBackFromForeignLanding(deps: NavigateDeps, pane: 'left' | 'right', 
   const paneRef = deps.getPaneRef(pane)
   const held = deps.getPanePath(pane)
   if (paneRef?.getCurrentPath() !== path || held === path) return
+  // A FilePane that hasn't taken a just-committed volume switch yet shows the OLD volume's
+  // folder: the switch's own load brings it to the tab, and a send-back from here would
+  // list the new volume's path against the old volume.
+  if (paneRef.getVolumeId() !== deps.getPaneVolumeId(pane)) return
   log.warn('A listing landed off its volume root; the pane goes back to {held}: {path}', { held, path })
   void paneRef.navigateToPath(held)
 }

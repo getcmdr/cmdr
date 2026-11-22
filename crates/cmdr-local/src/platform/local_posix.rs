@@ -15,7 +15,7 @@ mod xattrs;
 
 use crate::reading::{ListingDir, ListingTally, Named, Row, list_reporting_progress, single_entry, supported_dates_of};
 use crate::rename_volume_error;
-use crate::space::{get_space_info_for_path, live_space_info_for_path};
+use crate::space::{get_space_info_for_path, live_space_info_for_path, space_info_at_nearest_folder};
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::app_path::PathArithmetic;
@@ -973,6 +973,20 @@ impl Volume for LocalPosixVolume {
             spawn_blocking(move || get_space_info_for_path(&root))
                 .await
                 .expect("spawn_blocking get_space_info closure doesn't panic and the task is uncancelable")
+        })
+    }
+
+    /// The filesystem the folder at `path` (or the nearest one above it) is on, which below
+    /// another mount isn't the root's (`space_info_at_nearest_folder`).
+    fn get_space_info_at<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
+        let target = self.os_path(path);
+        Box::pin(async move {
+            spawn_blocking(move || space_info_at_nearest_folder(&target))
+                .await
+                .expect("spawn_blocking get_space_info_at closure doesn't panic and the task is uncancelable")
         })
     }
 

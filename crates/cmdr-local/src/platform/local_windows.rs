@@ -38,7 +38,7 @@ use tokio::task::spawn_blocking;
 
 use super::anchor::anchor_under;
 use crate::reading::{ListingDir, ListingTally, Named, Row, list_reporting_progress, single_entry, supported_dates_of};
-use crate::space::{get_space_info_for_path, live_space_info_for_path};
+use crate::space::{get_space_info_for_path, live_space_info_for_path, space_info_at_nearest_folder};
 use paths::{app_of, native_of, not_an_app_path};
 use rename::rename_native_exclusive;
 pub use rename::{rename_local_exclusive, rename_local_exclusive_at};
@@ -759,6 +759,19 @@ impl Volume for LocalWindowsVolume {
     fn get_space_info<'a>(&'a self) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
         let root = self.located(&self.root);
         Box::pin(blocking("get_space_info", move || get_space_info_for_path(&root?.os)))
+    }
+
+    /// The volume the folder at `path` (or the nearest one above it) is on: below a folder
+    /// mount that's the mounted volume, ❌ never the root's (#1385). `GetDiskFreeSpaceExW`
+    /// follows the mount point (`space_info_at_nearest_folder`).
+    fn get_space_info_at<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
+        let at = self.located(path);
+        Box::pin(blocking("get_space_info_at", move || {
+            space_info_at_nearest_folder(&at?.os)
+        }))
     }
 
     /// The volume's read-only flag and an `AccessCheck` of `FILE_ADD_FILE` against the DACL of

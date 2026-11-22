@@ -5,6 +5,7 @@ import { resolveTransferFilename, initialEditedPath, editedPathAfterOperationCha
 import { describe, it, expect, beforeAll, afterAll, beforeEach, onTestFinished } from 'vitest'
 import { _setLocaleForTests } from '#lib/intl/locale.js'
 import { withPlatform } from '#lib/platform/test-platform.js'
+import type { VolumeInfo } from '#lib/file-explorer/types.js'
 import {
   conflictTitle,
   containingFolder,
@@ -17,6 +18,7 @@ import {
   toBackendIndices,
   toBackendCursorIndex,
   toVolumeRelativePath,
+  volumePickerItems,
 } from './transfer-dialog-utils'
 
 // Pin the base locale so `generateTitle`'s catalog-resolved copy is the
@@ -274,8 +276,12 @@ describe('toVolumeRelativePath', () => {
     expect(toVolumeRelativePath('/Volumes/USB', '/Volumes/USB')).toBe('/')
   })
 
-  it('returns / when path does not match volume', () => {
-    expect(toVolumeRelativePath('/some/path', '/Volumes/USB')).toBe('/')
+  // A path off the volume has no spelling on it. `/` read as the volume's root, and the
+  // whole POSIX path as a folder below it (`anchor_at_root`): either put the copy in the
+  // wrong folder, so the box stays empty and refuses to confirm.
+  it('gives no place for a POSIX path off the volume, never its root', () => {
+    expect(toVolumeRelativePath('/some/path', '/Volumes/USB')).toBe('')
+    expect(toVolumeRelativePath('/Volumes/testshare-1/docs', '/Volumes/testshare')).toBe('')
   })
 
   // #1384: a drive or share path names its own root, so off this volume it stays whole
@@ -321,7 +327,7 @@ describe('toVolumeRelativePath', () => {
   // borrow this one's root and yields `-1/photos`, which is neither absolute nor
   // on the volume the copy would target.
   it('refuses a sibling whose name merely starts with the volume name', () => {
-    expect(toVolumeRelativePath('/Volumes/USB-1/photos', '/Volumes/USB')).toBe('/')
+    expect(toVolumeRelativePath('/Volumes/USB-1/photos', '/Volumes/USB')).toBe('')
   })
 
   it('refuses a sibling server-side root that merely starts with this one', () => {
@@ -330,15 +336,15 @@ describe('toVolumeRelativePath', () => {
         'sftp://test_user_1@testnas.local:22/srv/data-1/photos',
         'sftp://test_user_1@testnas.local:22/srv/data',
       ),
-    ).toBe('/')
+    ).toBe('')
   })
 
   it('passes through a path the caller already spelled volume-relative', () => {
     expect(toVolumeRelativePath('/DCIM', 'mtp://dev/65537')).toBe('/DCIM')
   })
 
-  it('returns / for another device URL rather than echoing it into the box', () => {
-    expect(toVolumeRelativePath('mtp://other/1/DCIM', 'mtp://dev/65537')).toBe('/')
+  it('gives no place for another device URL, neither echoing it nor the device root', () => {
+    expect(toVolumeRelativePath('mtp://other/1/DCIM', 'mtp://dev/65537')).toBe('')
   })
 })
 
@@ -384,6 +390,14 @@ describe('complete copy targets', () => {
     expect(
       initialEditedPath(operationType, '/DCIM', 'mtp://phone/storage', ['/Users/test/photo.jpg'], '/Users/test'),
     ).toBe('/DCIM/photo.jpg')
+  })
+
+  // A destination off its volume prefills an empty box, never the item at the volume's
+  // root (`/photo.jpg` on the phone would land there on Enter).
+  it('prefills nothing for a destination with no place on its volume', () => {
+    const offDevice = 'mtp://other/1/DCIM'
+    expect(initialEditedPath('copy', offDevice, 'mtp://phone/storage', ['/Users/test/a.jpg'], '/Users/test')).toBe('')
+    expect(initialEditedPath('copy', offDevice, 'mtp://phone/storage', ['/a.jpg', '/b.jpg'], '/')).toBe('')
   })
 
   it.each([
@@ -550,5 +564,40 @@ describe('conflictTitle', () => {
     expect(conflictTitle({})).toBe('File already exists')
     expect(conflictTitle({ refusedName: 'tooLong' })).toBe('Name too long for the destination')
     expect(conflictTitle({ refusedName: 'notAllowed' })).toBe('Name not allowed at the destination')
+  })
+})
+
+/** #1384: the picker names the volume the copy goes to, even one it can't offer. */
+describe('volumePickerItems', () => {
+  const c: VolumeInfo = {
+    id: 'root',
+    name: 'Local Disk (C:)',
+    path: 'C:/',
+    category: 'main_volume',
+    isEjectable: false,
+  }
+  const z: VolumeInfo = { id: 'smb-z', name: 'media (Z:)', path: 'Z:/', category: 'network', isEjectable: false }
+
+  it('lists the pickable volumes alone when the target is one of them', () => {
+    expect(volumePickerItems([c], [c, z], { volumeId: 'root', path: 'C:/x' })).toEqual([
+      { value: 'root', label: 'Local Disk (C:)' },
+    ])
+  })
+
+  it('adds a share row the picker leaves out when the copy goes there', () => {
+    expect(volumePickerItems([c], [c, z], { volumeId: 'smb-z', path: 'Z:/x' })).toContainEqual({
+      value: 'smb-z',
+      label: 'media (Z:)',
+    })
+  })
+
+  it('names a share nobody mapped by its root', () => {
+    onTestFinished(withPlatform('windows'))
+    const items = volumePickerItems([c], [c], { volumeId: 'smb-localhost', path: '//localhost/C$/Users/x/a.txt' })
+    expect(items).toContainEqual({ value: 'smb-localhost', label: '//localhost/C$' })
+  })
+
+  it('adds nothing it has no name for', () => {
+    expect(volumePickerItems([c], [c], { volumeId: 'gone', path: '/x' })).toHaveLength(1)
   })
 })
