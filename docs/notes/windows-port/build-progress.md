@@ -442,3 +442,8 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   `real-windows-check-2026-11-19.md` § "Task 36's delete on the desktop". Gotchas: an SSH session's child processes die
   with it, so a build or a held-file fixture runs through `run-on-desktop.sh`; nextest output carries `\r`, so strip it
   before comparing names with the TSV. `cmdr-m6` is back on `origin/main`, clean.
+- **2026-11-22, PR #1349's move of read-only files and "Go to Recycle Bin"** (the warm pair, `CARGO_BUILD_JOBS=2`,
+  `pnpm tauri build --debug --no-bundle` 14m 31s warm through `run-on-desktop.sh`): on the desktop,
+  `real-windows-check-2026-11-19.md` § "PR #1349 on the desktop". Gotcha: with the drive index on, the app held about
+  550 threads while it walked `C:` and every 2 s volume read timed out (#1353), so the run set `indexing.enabled: false`
+  in its own `CMDR_DATA_DIR`'s `settings.json`. `cmdr-m6` is back on `origin/main`, clean.
