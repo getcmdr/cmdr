@@ -8,8 +8,6 @@
 //! pane through `crates/cmdr-listing/src/host/overlays.rs`, and every other
 //! reader lists through `Volume`, which doesn't hold it.
 
-#![cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet, nor a copy scan
-
 use cmdr_fs::app_path::AppPathBuf;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
