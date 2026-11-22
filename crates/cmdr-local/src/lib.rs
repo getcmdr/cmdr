@@ -71,6 +71,7 @@ pub mod space;
 #[cfg(target_os = "macos")]
 pub mod statfs;
 
+mod copy_scan;
 mod platform;
 mod rename;
 mod streams;

@@ -36,14 +36,13 @@ log = "0.4"
 # `spawn_blocking` for every `std::fs` call a `Volume` method makes, so a slow
 # disk never stalls the async executor. `rt` only: the backend builds no runtime.
 tokio = { version = "1", features = ["rt"] }
+# The copy scan's subtree walk (`copy_scan.rs`), both local volumes'.
+walkdir = "2"
 
 # The POSIX half: this backend is a Unix one (`LocalPosixVolume`), and neither
 # builds for Windows the way it's used here (`xattr` imports `std::os::unix`
 # unconditionally; every `libc` call is a POSIX one).
 [target.'cfg(unix)'.dependencies]
-# The copy scan's subtree walk (`LocalPosixVolume::scan_subtree`). Unix until the Windows
-# volume grows its copy scan (task 35).
-walkdir = "2"
 # Reading and writing extended attributes for `Volume`'s xattr methods (Finder tags).
 xattr = "1"
 # The no-replace rename (`renamex_np` / `renameat2`), `statvfs`, `statfs`,

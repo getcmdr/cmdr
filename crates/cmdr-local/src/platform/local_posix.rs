@@ -829,15 +829,15 @@ impl Volume for LocalPosixVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        self.scan_subtree(
-            path,
+        crate::copy_scan::scan_subtree(
+            self.subtree(path),
             cmdr_fs::volume::ScanStop::none(),
             None,
             cmdr_fs::mac_only_files::MacOnlyFiles::Include,
         )
     }
 
-    /// ❗ Overridden so `scan_subtree` gets the stop. The trait default loops
+    /// ❗ Overridden so the walk gets the stop. The trait default loops
     /// `scan_for_copy` per path, which asks only BETWEEN paths — and one path here
     /// can be a whole mounted share: `/Volumes/testshare` over a sleeping NAS is
     /// minutes of `readdir` with nothing in between, which is precisely the scan
@@ -847,7 +847,7 @@ impl Volume for LocalPosixVolume {
         paths: &'a [AppPathBuf],
         boundary: &'a cmdr_fs::volume::ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::volume::BatchScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(async move { self.scan_for_copy_batch_with_boundary_impl(paths, boundary).await })
+        crate::copy_scan::scan_batch(paths, boundary, |path| Ok(self.subtree(path)))
     }
 
     fn supports_streaming(&self) -> bool {

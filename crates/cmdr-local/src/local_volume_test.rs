@@ -264,10 +264,6 @@ async fn create_file_does_not_clobber_an_existing_file() {
 /// The node a folder is survives a rename (what a trip into the Trash is), and a new folder
 /// under the freed name is a different one: the check a trash undo makes.
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "LocalWindowsVolume has no node identity yet (the Recycle Bin undo's check)"
-)]
 async fn node_identity_follows_the_folder_not_its_name() {
     let test_dir = AppTestDir::new("node_identity_test");
     let volume = volume_at(&test_dir);
@@ -292,10 +288,6 @@ async fn node_identity_follows_the_folder_not_its_name() {
 // ── Copy: the scan and the streams ────────────────────────────────────
 
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, copy scan: LocalWindowsVolume keeps the trait's default"
-)]
 async fn a_copy_scan_of_one_file_counts_its_bytes() {
     let test_dir = AppTestDir::new("scan_copy_file_test");
     std::fs::write(test_dir.native().join("test.txt"), "Hello, World!").unwrap();
@@ -309,10 +301,6 @@ async fn a_copy_scan_of_one_file_counts_its_bytes() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, copy scan: LocalWindowsVolume keeps the trait's default"
-)]
 async fn a_copy_scan_of_a_folder_counts_its_tree() {
     use std::fs;
 
@@ -341,10 +329,6 @@ async fn a_copy_scan_of_a_folder_counts_its_tree() {
 /// one `spawn_blocking`. The boundary here is per entry, through the blocking twin that parks
 /// the pool thread.
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, copy scan: LocalWindowsVolume keeps the trait's default"
-)]
 async fn a_batch_scan_stops_when_it_is_told_to() {
     let test_dir = AppTestDir::new("scan_stop_told");
     let tree = test_dir.native().join("tree");
@@ -357,10 +341,6 @@ async fn a_batch_scan_stops_when_it_is_told_to() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, copy scan: LocalWindowsVolume keeps the trait's default"
-)]
 async fn a_batch_scan_asks_its_boundary_inside_the_walk() {
     let test_dir = AppTestDir::new("scan_stop_per_entry");
     let tree = test_dir.native().join("tree");
