@@ -215,7 +215,7 @@ mod tests {
         std::fs::write(keys.join("id_ed25519"), "x").expect("write the key");
         let link = dir.as_ref().join("keys");
         std::os::unix::fs::symlink(&keys, &link).expect("link to it");
-        let through_link = link.join("id_ed25519").to_string_lossy().into_owned();
+        let through_link = crate::test_support::native_app_path(link.join("id_ed25519")).into_string();
 
         assert_eq!(
             gate(&through_link, GateReach::FollowLocalLinks).protected(),

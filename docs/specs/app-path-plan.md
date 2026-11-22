@@ -2356,6 +2356,18 @@ included; the hidden couplings it found are why waves B and C differ from round 
     (Windows short names) stayed out: the first changes the bridge's byte-exact round trip, a design call; the second is
     the app's typed-path resolver, other code.
 
+- **The app's text budgets, swept toward the gate** (2026-11-22, branch `worktree-agent-a69e767ef6bf51251`, on #1373):
+  the app's `appTextToPath` 5 → 1 and `pathFromBareText` 156 → 57 (bridge calls 327 → 313). Native text crosses at named
+  doors: `src/native_text.rs` (`os_path`, `os_path_buf`, `env_path`: env vars, settings naming a binary or key file, a
+  process's executable, test fixture literals) and `volumes::os_mount_path` (the per-OS mount lookups). App text reads
+  through `app_text` (`parse_on_volume` for any volume's text, `as_std_path_text` for an engine keyed by `std::path`
+  text). The About card is typed at its edge (`Through.path`, `Probe.native`, the OS reads on `&Path`; `through.rs`'s
+  bridges gone), `mount_id_for_path` places by `is_on_volume`, and go-to spells a Windows 8.3 short name long inside the
+  resolve deadline (#1337). Left and owned: `operations_host/` (the write engine's starts), the listing host seam's
+  tests (`listing_host/backends.rs`, the seam is still `std::path`), `tools/sensitive.rs` (#1371),
+  `agent/store/migrations.rs` (shipped), `tags_io` (10f), `agent/suggested_ops/bridge/decorator.rs` (the starts'
+  `PathBuf` keys), `native_drag/fulfillment.rs` (kept, #1310).
+
 ### 11. Close
 
 - **Size**: S.

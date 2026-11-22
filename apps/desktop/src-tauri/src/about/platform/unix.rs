@@ -2,7 +2,9 @@
 //! that never takes more than its cap.
 
 use std::ffi::CString;
+use std::os::unix::ffi::OsStrExt;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
+use std::path::Path;
 
 use cmdr_about::fact::{Fact, UnknownWhy};
 use cmdr_about::provenance::Download;
@@ -64,7 +66,7 @@ pub(crate) fn why_of_errno(errno: i32) -> UnknownWhy {
 /// refused says why (as `through::download_through` does for a volume's reads),
 /// unless the other xattr answered: ❌ a refusal is never "no download record".
 pub(crate) fn download_with<S: XattrSyscalls>(
-    path: &str,
+    path: &Path,
     cap: usize,
     record: fn(super::ReadXattr<'_>) -> Fact<Download>,
 ) -> Fact<Download> {
@@ -93,8 +95,8 @@ pub(crate) trait XattrSyscalls {
 }
 
 /// Reads `name` on `path`, refusing anything over `cap` before reading a byte of it.
-pub(crate) fn read_capped<S: XattrSyscalls>(path: &str, name: &str, cap: usize) -> XattrRead {
-    let (Ok(path), Ok(name)) = (CString::new(path), CString::new(name)) else {
+pub(crate) fn read_capped<S: XattrSyscalls>(path: &Path, name: &str, cap: usize) -> XattrRead {
+    let (Ok(path), Ok(name)) = (CString::new(path.as_os_str().as_bytes()), CString::new(name)) else {
         return XattrRead::Failed(libc::EINVAL);
     };
     let size = match S::size(&path, &name) {
@@ -155,19 +157,19 @@ mod tests {
     #[test]
     fn a_refused_read_says_why_and_never_no_record() {
         assert_eq!(
-            download_with::<Refusing<{ libc::EACCES }>>("/x", 64, record),
+            download_with::<Refusing<{ libc::EACCES }>>(Path::new("/x"), 64, record),
             Fact::unknown(UnknownWhy::PermissionDenied)
         );
         assert_eq!(
-            download_with::<Refusing<{ libc::EIO }>>("/x", 64, record),
+            download_with::<Refusing<{ libc::EIO }>>(Path::new("/x"), 64, record),
             Fact::unknown(UnknownWhy::Unreachable)
         );
         assert_eq!(
-            download_with::<Refusing<{ libc::ENOENT }>>("/x", 64, record),
+            download_with::<Refusing<{ libc::ENOENT }>>(Path::new("/x"), 64, record),
             Fact::unknown(UnknownWhy::NotFound)
         );
         assert_eq!(
-            download_with::<Refusing<-1>>("/x", 64, record),
+            download_with::<Refusing<-1>>(Path::new("/x"), 64, record),
             Fact::unknown(UnknownWhy::NoRecord),
             "an item with no such xattr has no record"
         );

@@ -4,7 +4,7 @@
 
 mod workspace;
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use image::DynamicImage;
 use objc2::rc::autoreleasepool;
@@ -54,7 +54,8 @@ pub(crate) fn fetch_path_icons(paths: Vec<String>) -> PathIcons {
                                 // calls accumulate otherwise) on these threads, which
                                 // lack AppKit's autorelease pool.
                                 autoreleasepool(|_| {
-                                    let data_url = fetch_icon_for_path(&PathBuf::from(&path));
+                                    let data_url = crate::app_text::native_plain(&path)
+                                        .and_then(|native| fetch_icon_for_path(&native));
                                     (format!("path:{}", path), data_url)
                                 })
                             })

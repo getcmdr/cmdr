@@ -159,14 +159,14 @@ impl FavoriteTarget {
 ///
 /// A scheme path (`sftp://…`, `mtp://…`) is never stat'd: it isn't an OS path at all.
 pub(crate) fn on_disk(path: &str, probe: Probe, exists: impl FnOnce(&Path) -> bool) -> OnDisk {
-    let path = Path::new(path);
-    if !path.is_absolute() {
+    // The stored app path's native folder: text with none (a server's, a phone's) is no OS path.
+    let Some(path) = crate::app_text::native_plain(path) else {
         return OnDisk::Unchecked;
-    }
+    };
     match probe {
         Probe::NetworkMount => OnDisk::Unchecked,
         Probe::TakenOnTrust => OnDisk::Assumed,
-        Probe::Stat if exists(path) => OnDisk::Yes,
+        Probe::Stat if exists(&path) => OnDisk::Yes,
         Probe::Stat => OnDisk::No,
     }
 }

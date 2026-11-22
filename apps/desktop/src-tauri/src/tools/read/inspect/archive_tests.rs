@@ -437,13 +437,13 @@ fn a_file_on_a_connected_remote_volume_is_inspected_through_its_stream() {
     let path = format!("{root}/notes.txt");
     let volume = InMemoryVolume::new("Remote device").with_root(root);
     tauri::async_runtime::block_on(volume.create_file(
-        &AppPath::legacy_unchecked(Path::new(&path)),
+        &crate::app_text::parse_on_volume(&path).expect("an app path"),
         b"from the phone\nsecond line\n",
     ))
     .expect("seed remote file");
     let _registration = TestVolumeRegistration::install("inspect-file-remote", Arc::new(volume));
 
-    let row = inspect(Path::new(&path));
+    let row = inspect(&crate::app_text::as_std_path_text(&path));
 
     let text = match &file_of(&row).content {
         Content::Text(text) => text,

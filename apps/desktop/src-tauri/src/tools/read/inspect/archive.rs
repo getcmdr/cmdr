@@ -101,7 +101,8 @@ pub(super) fn route_archive_path(
     cancel: &AtomicBool,
     extract: ExtractFn,
 ) -> Routed {
-    let p = Path::new(path);
+    // The viewer and archive seams below still key by `std::path` text.
+    let p: &Path = &crate::app_text::as_std_path_text(path);
     // The one inner-path parser (`boundary.rs`): the archive file, and the path inside it
     // (empty for the archive itself), which is also the index key.
     let Some((archive_path, inner)) = archive_boundary_candidate(p) else {
@@ -163,7 +164,8 @@ fn inspect_archive_path(
         volume_id,
     } = at;
     let owned = path.to_string();
-    let p = Path::new(path);
+    // The viewer and archive seams below still key by `std::path` text.
+    let p: &Path = &crate::app_text::as_std_path_text(path);
     let index = match tauri::async_runtime::block_on(archive.index()) {
         Ok(index) => index,
         Err(e) => return status_for_volume(owned, e),

@@ -98,11 +98,11 @@ pub(crate) struct Sources {
 #[derive(Clone, Copy)]
 pub(crate) struct OsReads {
     /// Spotlight's use record.
-    pub(crate) last_opened: fn(&str) -> Fact<Usage>,
+    pub(crate) last_opened: fn(&Path) -> Fact<Usage>,
     /// LaunchServices' default app.
-    pub(crate) default_app: fn(&str) -> Fact<AppRef>,
+    pub(crate) default_app: fn(&Path) -> Fact<AppRef>,
     /// The code signature.
-    pub(crate) signature: fn(&str, AboutTarget, Option<&str>) -> Fact<Signature>,
+    pub(crate) signature: fn(&Path, AboutTarget, Option<&str>) -> Fact<Signature>,
 }
 
 impl OsReads {
@@ -173,6 +173,9 @@ pub(crate) fn local_jobs(
 fn job(kind: FactKind, path: String, probe: &Probe, sources: &Sources, sub_jobs: SubJobs) -> Option<Job<AboutFact>> {
     let target = probe.target;
     let extension = probe.extension.clone();
+    // The rows that read the item itself read its native file; the stores keyed by the app
+    // path (the operation log, the owner's path rules) read `path`.
+    let native = probe.native.clone();
     let os = sources.os;
     // Each job names its call first, so a worker that never comes back says which
     // one it's stuck in (`pool::submit`). The kind, ❌ never the path.
@@ -183,27 +186,27 @@ fn job(kind: FactKind, path: String, probe: &Probe, sources: &Sources, sub_jobs:
         }
         FactKind::RealType => Box::new(move || {
             note_activity("read the first and last bytes", "realType");
-            AboutFact::RealType(real_type_of(&path, extension.as_deref()))
+            AboutFact::RealType(real_type_of(&native, extension.as_deref()))
         }),
         FactKind::Bundle => Box::new(move || {
             note_activity("read Info.plist", "bundle");
-            AboutFact::Bundle(bundle_of(Path::new(&path), target))
+            AboutFact::Bundle(bundle_of(&native, target))
         }),
         FactKind::Signature => Box::new(move || {
             note_activity("read the code signature", "signature");
-            AboutFact::Signature((os.signature)(&path, target, extension.as_deref()))
+            AboutFact::Signature((os.signature)(&native, target, extension.as_deref()))
         }),
         FactKind::Download => Box::new(move || {
             note_activity("getxattr", "download");
-            AboutFact::Download(platform::download(&path))
+            AboutFact::Download(platform::download(&native))
         }),
         FactKind::LastOpened => Box::new(move || {
             note_activity("MDItemCopyAttribute", "lastOpened");
-            AboutFact::LastOpened((os.last_opened)(&path))
+            AboutFact::LastOpened((os.last_opened)(&native))
         }),
         FactKind::DefaultApp => Box::new(move || {
             note_activity("URLForApplicationToOpenURL", "defaultApp");
-            AboutFact::DefaultApp((os.default_app)(&path))
+            AboutFact::DefaultApp((os.default_app)(&native))
         }),
         FactKind::CmdrOperation => {
             let history = sources.history.clone()?;
@@ -221,7 +224,7 @@ fn job(kind: FactKind, path: String, probe: &Probe, sources: &Sources, sub_jobs:
         FactKind::Git => {
             let repo = probe.repo.clone();
             let is_folder = is_folder_like(target);
-            Box::new(move || AboutFact::Git(git_fact(&repo, Path::new(&path), is_folder, &sub_jobs)))
+            Box::new(move || AboutFact::Git(git_fact(&repo, &native, is_folder, &sub_jobs)))
         }
         FactKind::RecursiveSize => {
             let place = sources.index.clone()?;
@@ -251,7 +254,7 @@ fn job(kind: FactKind, path: String, probe: &Probe, sources: &Sources, sub_jobs:
                 // The app's own id, from its `Info.plist`: the bundle row reads the
                 // same small file, and the two jobs don't wait on each other. A
                 // description Cmdr couldn't read says why, ❌ never "no record".
-                let bundle_id = match bundle_of(Path::new(&path), target) {
+                let bundle_id = match bundle_of(&native, target) {
                     Fact::Known(bundle) => bundle.bundle_id,
                     Fact::Unknown(unknown) => return AboutFact::AppData(Fact::unknown(unknown.why())),
                     Fact::NotApplicable(_) | Fact::Pending => None,
@@ -281,8 +284,8 @@ fn job(kind: FactKind, path: String, probe: &Probe, sources: &Sources, sub_jobs:
 /// The file's first [`HEAD_BYTES`] and, when it's longer, its last
 /// [`TAIL_BYTES`] (a disk image is told by its trailer), against its extension.
 /// A read that failed leaves the name's claim, saying why the bytes went unread.
-pub(crate) fn real_type_of(path: &str, extension: Option<&str>) -> Fact<RealType> {
-    match read_head_and_tail(Path::new(path)) {
+pub(crate) fn real_type_of(path: &Path, extension: Option<&str>) -> Fact<RealType> {
+    match read_head_and_tail(path) {
         Ok((head, tail)) => Fact::Known(real_type(&head, tail.as_deref(), extension)),
         Err(error) => RealType::by_name(extension, why_of_io(&error)),
     }

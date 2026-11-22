@@ -1,5 +1,4 @@
 use super::*;
-use cmdr_fs::app_path::AppPath;
 
 fn store_with(paths: &[(&str, &str)]) -> FavoritesStore {
     FavoritesStore {
@@ -732,8 +731,10 @@ async fn a_stored_favorite_with_a_trailing_slash_lists_like_the_plain_path() {
     let list = |path: String| {
         let volume = &volume;
         async move {
+            // As the pane hands it over: read at the IPC edge, the trailing `/` dropped.
+            let at = crate::app_text::parse(&path).expect("an app path");
             let mut rows: Vec<String> = volume
-                .list_directory(&AppPath::legacy_unchecked(Path::new(&path)), None)
+                .list_directory(&at, None)
                 .await
                 .expect("lists")
                 .into_iter()

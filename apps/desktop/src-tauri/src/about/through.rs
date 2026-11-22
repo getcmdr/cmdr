@@ -12,7 +12,7 @@
 //! The index rows (a folder's size, what's inside, its importance) read
 //! databases only, so they answer even when the volume doesn't.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, Mutex};
@@ -39,14 +39,6 @@ use crate::ignore_poison::IgnorePoison;
 /// returns keeps its thread; past this many the volume counts as not answering,
 /// and the next card says so at once instead of stranding another thread.
 pub(crate) const MAX_STUCK_PER_VOLUME: usize = 2;
-
-/// A card's row text as an app path, crossed the way this module's rows cross
-/// (the bridge, byte for byte): a direct wrap would change a name holding an
-/// escape-range code point (#1310). The route's resolve reads it too. Goes with
-/// the rows' crossings, once the card's wire carries app paths (milestone 10f).
-pub(super) fn row_as_app_path(path: &str) -> cmdr_fs::app_path::AppPathBuf {
-    AppPath::legacy_unchecked(Path::new(path)).into_owned()
-}
 
 /// Calls out per volume id, counted from their start to their real end.
 #[derive(Default)]
@@ -120,9 +112,9 @@ pub(crate) enum DownloadFrom {
 #[derive(Clone)]
 pub(crate) enum ArchiveRecord {
     /// The archive sits on a local disk: read its xattrs here.
-    Local { archive_path: String },
+    Local { archive_path: PathBuf },
     /// The archive sits on a volume that reads xattrs itself.
-    Volume { volume: Asked, archive_path: PathBuf },
+    Volume { volume: Asked, archive_path: AppPathBuf },
     /// The archive sits where no record can be read.
     None,
 }
@@ -131,7 +123,8 @@ pub(crate) enum ArchiveRecord {
 #[derive(Clone)]
 pub(crate) struct Through {
     pub(crate) asked: Asked,
-    pub(crate) path: PathBuf,
+    /// The item, as its volume (or a view) takes it.
+    pub(crate) path: AppPathBuf,
     /// The item's download row's source, when the plan has one.
     pub(crate) download: Option<DownloadFrom>,
     /// The item's place in the drive index, when the index covers its volume.
@@ -158,21 +151,21 @@ impl SnapshotPath {
     /// or tag's is the shortest run of components the portal knows as a ref
     /// (git forbids a ref whose name is another ref's folder, so the shortest is
     /// the only one).
-    fn ref_name(&self, asked: &Asked) -> Option<String> {
+    ///
+    /// `item` is the card's path, `<repo>/.git/<category>/` then [`Self::after`]: each
+    /// candidate is one of its folders, named by stepping up from it, so the portal is asked
+    /// in the path's own spelling.
+    fn ref_name(&self, asked: &Asked, item: &AppPath) -> Option<String> {
         use cmdr_about::payload::SnapshotKind;
         match self.kind {
             SnapshotKind::Commit | SnapshotKind::Stash => self.after.first().cloned(),
-            SnapshotKind::Branch | SnapshotKind::Tag => {
-                let category = self.repo_root.join(".git").join(category_segment(self.kind));
-                (1..=self.after.len()).find_map(|taken| {
-                    let name = self.after[..taken].join("/");
-                    let candidate = category.join(&name);
-                    asked
-                        .ask(asked.volume.get_metadata(&AppPath::legacy_unchecked(&candidate)))
-                        .ok()
-                        .map(|_| name)
-                })
-            }
+            SnapshotKind::Branch | SnapshotKind::Tag => (1..=self.after.len()).find_map(|taken| {
+                let candidate = (taken..self.after.len()).try_fold(item, |path, _| path.parent())?;
+                asked
+                    .ask(asked.volume.get_metadata(candidate))
+                    .ok()
+                    .map(|_| self.after[..taken].join("/"))
+            }),
         }
     }
 }
@@ -187,6 +180,30 @@ pub(crate) fn category_segment(kind: cmdr_about::payload::SnapshotKind) -> &'sta
         SnapshotKind::Commit => "commits",
         SnapshotKind::Stash => "stash",
     }
+}
+
+/// Which part of git's history a portal path names, off the path alone:
+/// `<repo>/.git/<category>/<name>/…`. The category words are the portal's own
+/// (`cmdr_git`'s `Cat::as_segment`); a test pins them against a real portal. `path` is
+/// the `std::path` spelling `cmdr_git::portal_route` reads.
+pub(crate) fn snapshot_of(path: &Path) -> Option<SnapshotPath> {
+    use cmdr_about::payload::SnapshotKind;
+    let repo_root = cmdr_git::portal_route(path)?;
+    let mut rest = path.strip_prefix(repo_root.join(".git")).ok()?.components();
+    let category = rest.next()?.as_os_str().to_str()?.to_string();
+    let kind = [
+        SnapshotKind::Branch,
+        SnapshotKind::Tag,
+        SnapshotKind::Commit,
+        SnapshotKind::Stash,
+    ]
+    .into_iter()
+    .find(|kind| category_segment(*kind) == category)?;
+    let after: Vec<String> = rest
+        .map(|component| component.as_os_str().to_string_lossy().into_owned())
+        .collect();
+    // The category's own folder names no snapshot.
+    (!after.is_empty()).then_some(SnapshotPath { repo_root, kind, after })
 }
 
 /// The kinds [`jobs`] answers for `through`: a planned row outside it has no job,
@@ -248,7 +265,7 @@ fn job(kind: FactKind, through: Through, sub_jobs: SubJobs) -> Option<Job<AboutF
                 through
                     .asked
                     .volume
-                    .get_metadata(&AppPath::legacy_unchecked(&through.path)),
+                    .get_metadata(&through.path),
             );
             AboutFact::Identity(identity_answer(answer))
         }),
@@ -277,11 +294,11 @@ fn job(kind: FactKind, through: Through, sub_jobs: SubJobs) -> Option<Job<AboutF
                     through
                         .asked
                         .volume
-                        .get_metadata(&AppPath::legacy_unchecked(&through.path)),
+                        .get_metadata(&through.path),
                 );
                 AboutFact::GitSnapshot(match entry {
                     Err(error) => Fact::unknown(why_of(&error)),
-                    Ok(entry) => match snapshot.ref_name(&through.asked) {
+                    Ok(entry) => match snapshot.ref_name(&through.asked, &through.path) {
                         Some(name) => Fact::Known(GitSnapshot {
                             repo_root: ItemText::new(&snapshot.repo_root.to_string_lossy()),
                             kind: snapshot.kind,
@@ -327,8 +344,8 @@ fn job(kind: FactKind, through: Through, sub_jobs: SubJobs) -> Option<Job<AboutF
         // the name's claim, worded as one. The plan has this row only when the
         // name claims a kind.
         FactKind::RealType => Box::new(move || {
-            let extension = through.path.extension().map(|extension| extension.to_string_lossy());
-            AboutFact::RealType(RealType::by_name(extension.as_deref(), UnknownWhy::VolumeCantTell))
+            let extension = through.path.extension();
+            AboutFact::RealType(RealType::by_name(extension, UnknownWhy::VolumeCantTell))
         }),
         FactKind::Bundle
         | FactKind::Signature
@@ -345,8 +362,8 @@ fn job(kind: FactKind, through: Through, sub_jobs: SubJobs) -> Option<Job<AboutF
 /// The OS's download record, read through `asked`'s own xattr call, capped as a
 /// local read is: a value past the cap reaches the decoder as an oversized
 /// buffer, which it reads as unparseable.
-fn download_through(asked: &Asked, path: &Path) -> Fact<Download> {
-    let paths = [AppPath::legacy_unchecked(path).into_owned()];
+fn download_through(asked: &Asked, path: &AppPath) -> Fact<Download> {
+    let paths = [path.to_owned()];
     let mut failed = None;
     let fact = platform::download_record(&mut |name| {
         let answers = asked.ask(

@@ -6,6 +6,7 @@ use cmdr_about::digest::FolderClass;
 use cmdr_about::owner::OwnerPlace;
 use cmdr_index::store::{DirStatsById, IndexStore, ROOT_ID};
 use rusqlite::Connection;
+use std::path::Path;
 
 use super::*;
 use crate::test_support::TestDir;

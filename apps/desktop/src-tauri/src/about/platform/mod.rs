@@ -38,11 +38,11 @@ pub(crate) struct StatExtras {
 
 const _: fn() -> OsCaps = os_caps;
 const _: fn(&std::fs::Metadata) -> StatExtras = stat_extras;
-const _: fn(&str) -> Fact<Download> = download;
+const _: fn(&std::path::Path) -> Fact<Download> = download;
 const _: fn(ReadXattr<'_>) -> Fact<Download> = download_record;
-const _: fn(&str) -> Fact<Usage> = last_opened;
-const _: fn(&str) -> Fact<AppRef> = default_app;
-const _: fn(&str, AboutTarget, Option<&str>) -> Fact<Signature> = signature;
+const _: fn(&std::path::Path) -> Fact<Usage> = last_opened;
+const _: fn(&std::path::Path) -> Fact<AppRef> = default_app;
+const _: fn(&std::path::Path, AboutTarget, Option<&str>) -> Fact<Signature> = signature;
 const _: fn() -> Vec<KnownApp> = installed_apps;
 const _: fn(&str) -> Option<KnownApp> = app_with_id;
 const _: fn(&str) -> Result<Vec<String>, UnknownWhy> = receipts;

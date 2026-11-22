@@ -584,7 +584,7 @@ fn disambiguated_mount_path(target: MountTarget<'_>, hosts: &[NetworkHost]) -> O
 
     let share = target.share;
     let default_path = format!("/Volumes/{}", share);
-    if !std::path::Path::new(&default_path).exists() {
+    if !crate::volumes::os_mount_path(&default_path).exists() {
         return None; // Default path is free
     }
 

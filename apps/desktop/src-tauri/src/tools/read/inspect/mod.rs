@@ -515,7 +515,8 @@ pub(crate) fn inspect_path_with(path: &str, ask: &TextAsk, cancel: &AtomicBool, 
         return row;
     }
 
-    let p = Path::new(path);
+    // The viewer and archive seams below still key by `std::path` text.
+    let p: &Path = &crate::app_text::as_std_path_text(path);
     if let Some(row) = inspect_routed_path(&owned, p, &volume_id, ask, cancel, extract) {
         return row;
     }

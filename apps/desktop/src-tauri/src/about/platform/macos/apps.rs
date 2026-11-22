@@ -36,13 +36,13 @@ static SCAN: LazyLock<Mutex<Option<Scan>>> = LazyLock::new(|| Mutex::new(None));
 /// volume's: a backup disk's or a mounted disk image's app isn't installed.
 fn app_folders() -> Vec<PathBuf> {
     let mut folders: Vec<PathBuf> = [
-        "/Applications",
-        "/Applications/Utilities",
-        "/System/Applications",
-        "/System/Applications/Utilities",
+        Path::new("/Applications"),
+        Path::new("/Applications/Utilities"),
+        Path::new("/System/Applications"),
+        Path::new("/System/Applications/Utilities"),
     ]
     .into_iter()
-    .map(PathBuf::from)
+    .map(Path::to_path_buf)
     .collect();
     if let Some(home) = dirs::home_dir() {
         folders.push(home.join("Applications"));

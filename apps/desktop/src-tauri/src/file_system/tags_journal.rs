@@ -69,19 +69,22 @@ impl TagWrites {
             .filter(|file| file.change.before != file.change.after)
             .enumerate()
             .map(|(seq, file)| {
-                let path = std::path::Path::new(&file.path);
+                use cmdr_fs::app_path::PathArithmetic;
+                // The row's folder and name as the journal keeps an app path.
+                let path = crate::app_text::parse_on_volume(&file.path).ok();
+                let path = path.as_deref();
                 JournalItem {
                     seq: seq as i64,
                     entry_type: EntryType::File,
                     row_role: RowRole::RollbackUnit,
                     source_volume_id: file.volume_id,
                     source_dir: path
-                        .parent()
-                        .map(|dir| dir.to_string_lossy().into_owned())
+                        .and_then(PathArithmetic::parent)
+                        .map(|dir| dir.as_str().to_owned())
                         .unwrap_or_default(),
                     source_name: path
-                        .file_name()
-                        .map(|name| name.to_string_lossy().into_owned())
+                        .and_then(PathArithmetic::file_name)
+                        .map(str::to_owned)
                         .unwrap_or_default(),
                     dest_volume_id: None,
                     dest_dir: None,

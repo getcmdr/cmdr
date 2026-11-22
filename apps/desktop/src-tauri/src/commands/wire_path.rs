@@ -145,7 +145,7 @@ pub(crate) fn checked(text: &str) -> Result<PathBuf, WirePathRefused> {
 /// byte; it goes as each engine's entry points take app paths (`cmdr-listing`'s with its typed
 /// listing locations, the write engine's in milestone 10d). ❌ Not for a path the OS opens: that's [`native`].
 pub(crate) fn as_sent_std_path(text: &str) -> PathBuf {
-    PathBuf::from(text)
+    crate::app_text::as_std_path_text(text)
 }
 
 /// A write pre-check's rows (the home-folder guard, the scan preview) as its engine call takes
@@ -378,10 +378,7 @@ fn parsed(text: &str) -> Result<AppPathBuf, NotAnAppPath> {
 /// Text holding an escape-range code point has no literal POSIX spelling to read here, so
 /// it's refused as one this door doesn't read.
 fn parsed_posix(text: &str) -> Result<AppPathBuf, NotAnAppPath> {
-    if !ESCAPES_LIVE && text.chars().any(is_escape) {
-        return Err(NotAnAppPath::WrongFlavor);
-    }
-    AppPathBuf::parse(text, PathFlavor::Posix)
+    crate::app_text::parse_posix(text)
 }
 
 /// Whether one of `text`'s names is `..` (`/`-separated, and `\` too on Windows). `..x`

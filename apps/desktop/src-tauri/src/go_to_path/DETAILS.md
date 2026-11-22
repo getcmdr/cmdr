@@ -29,6 +29,15 @@ Depth and rationale. `CLAUDE.md` holds the must-knows; the decision rationale an
   `~\Documents`, or `\\server\share` comes back as `C:/Users/test_user_1/…` or `//server/share/`, and a person's names
   lose their trailing dots and spaces as Explorer's address bar drops them (`from_person_typed`'s rule). `~` expands per
   the grammar (`cmdr_fs::tilde`, #1109).
+- **A Windows 8.3 short name is spelled long** (#1337): a typed or pasted `C:\Users\LONGNA~1\…` would open under its
+  short spelling while every listing, the index, watchers, and favorites name the folder by its long one.
+  `AppHost::resolve_typed` ends with `spelled_long`: for a local path holding a `~` on a Windows host only, the longest
+  EXISTING prefix goes through `GetLongPathNameW` (`cmdr_fs::app_path::expand_short_names`, which refuses a missing
+  path) and the missing tail stays as typed (`long_names.rs`). It runs on the blocking pool inside the resolve's own
+  deadline, since the call reads every folder on the way and can wait out a dead share; a miss keeps the typed
+  spelling, which still opens the same folder. Every typed-path caller (go-to, the CLI, deep links, the MCP tools)
+  gets it. Cells: `long_names_test.rs` (a scripted expander, every OS) and the hosted Windows lane's `go_to_path`
+  cells (the runner's TEMP is `C:\Users\RUNNER~1\…`).
 - **The volume comes from the registry, in memory**: the longest registered root holding the path, routed volumes
   (archives, `.git` portals) skipped, the boot volume for a local path no closer root holds. No syscall and no dial; a
   scheme path whose server isn't registered has nobody to ask, so a `..` there refuses.

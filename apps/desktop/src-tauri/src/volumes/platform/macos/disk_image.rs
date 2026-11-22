@@ -33,7 +33,6 @@ pub fn is_disk_image_mount(path: &str) -> bool {
     use core_foundation::string::{CFString, CFStringRef};
     use core_foundation::url::{CFURL, CFURLRef};
     use std::ffi::c_void;
-    use std::path::Path;
 
     #[link(name = "DiskArbitration", kind = "framework")]
     unsafe extern "C" {
@@ -50,7 +49,7 @@ pub fn is_disk_image_mount(path: &str) -> bool {
         fn CFDictionaryGetValue(dict: *const c_void, key: *const c_void) -> *const c_void;
     }
 
-    let Some(url) = CFURL::from_path(Path::new(path), true) else {
+    let Some(url) = CFURL::from_path(crate::volumes::os_mount_path(path), true) else {
         return false;
     };
 

@@ -350,8 +350,8 @@ fn a_background_panic_writes_its_report_dispatches_a_courier_and_leaves_the_app_
         "a_background_panic_writes_its_report_dispatches_a_courier_and_leaves_the_app_running"
     );
 
-    if let Ok(dir) = std::env::var(PANIC_CHILD_DIR_ENV) {
-        panic_hook_child(Path::new(&dir));
+    if let Some(dir) = crate::native_text::env_path(PANIC_CHILD_DIR_ENV) {
+        panic_hook_child(&dir);
         return;
     }
 

@@ -8,7 +8,6 @@
 //! process's argument domain is what works: AppKit logs "Finder replacement  not found" and
 //! does a real Finder reveal, file selected. `DETAILS.md` § "Cmdr's own Show in Finder".
 
-use std::path::Path;
 use std::sync::Once;
 
 use objc2::runtime::{AnyObject, ProtocolObject};
@@ -68,7 +67,7 @@ pub fn reveal_in_finder(path: &str) -> Result<(), String> {
             log::debug!(
                 target: "reveal",
                 "Showed {} in Finder",
-                cmdr_fs::log_private::LogPrivate::path(Path::new(&path).to_str().unwrap_or_default())
+                cmdr_fs::log_private::LogPrivate::path(&path)
             );
         })
         .map(|_| ())

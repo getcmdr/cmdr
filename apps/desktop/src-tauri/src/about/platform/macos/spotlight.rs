@@ -30,9 +30,13 @@ unsafe extern "C" {
     fn MDItemCopyAttribute(item: MdItemRef, name: CFStringRef) -> CFTypeRef;
 }
 
-pub(crate) fn last_opened(path: &str) -> Fact<Usage> {
+pub(crate) fn last_opened(path: &std::path::Path) -> Fact<Usage> {
+    // Spotlight takes the path as text: a name that isn't Unicode has no record it could name.
+    let Some(text) = path.to_str() else {
+        return Fact::unknown(UnknownWhy::NoRecord);
+    };
     objc2::rc::autoreleasepool(|_| {
-        let cf_path = CFString::new(path);
+        let cf_path = CFString::new(text);
         // SAFETY: `cf_path` is live for the call; a null allocator is the default.
         let item = unsafe { MDItemCreate(std::ptr::null(), cf_path.as_concrete_TypeRef()) };
         if item.is_null() {
@@ -64,7 +68,7 @@ pub(crate) fn last_opened(path: &str) -> Fact<Usage> {
 }
 
 /// The item's own modification date, which tells a save's stamp from an open.
-fn modified(path: &str) -> Option<i64> {
+fn modified(path: &std::path::Path) -> Option<i64> {
     let modified = std::fs::symlink_metadata(path).ok()?.modified().ok()?;
     let seconds = modified.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs();
     i64::try_from(seconds).ok()
@@ -90,7 +94,7 @@ mod tests {
         let dir = crate::test_support::TestDir::new("about-spotlight");
         let file = dir.as_ref().join("notes.txt");
         std::fs::write(&file, "hello").expect("write the fixture");
-        let fact = last_opened(&file.to_string_lossy());
+        let fact = last_opened(&file);
         assert!(
             matches!(&fact, Fact::Unknown(unknown) if unknown.why() == UnknownWhy::NoRecord),
             "{fact:?}"

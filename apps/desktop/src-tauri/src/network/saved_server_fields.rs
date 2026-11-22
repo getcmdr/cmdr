@@ -13,9 +13,8 @@
 //! only repeats the server's own address is cleared on load
 //! ([`spells_own_address`]).
 
-use std::path::Path;
 
-use cmdr_fs::volume::remote_paths::normalize_remote_path;
+use cmdr_fs::volume::remote_paths::normalize_remote_text;
 use serde::{Deserialize, Serialize};
 
 /// A start folder that isn't its server's remote root or under it.
@@ -95,7 +94,7 @@ pub enum SavedServerOutcome {
 /// The start folder as a store keeps it, or a refusal when it sits outside
 /// `remote_root`.
 ///
-/// Both paths go through `normalize_remote_path`, the spelling `RemoteRoot`
+/// Both paths go through `normalize_remote_text`, the spelling `RemoteRoot`
 /// gives a root (`.` and `..` resolved, a relative path read from `/`), before
 /// they're compared. An empty start folder and the root itself both mean "the
 /// root" and come back as `None`, so one landing has one spelling in the store.
@@ -106,14 +105,15 @@ pub fn start_folder_under_root(
     let Some(start_folder) = start_folder.filter(|folder| !folder.trim().is_empty()) else {
         return Ok(None);
     };
-    let root = normalize_remote_path(Path::new(remote_root));
-    let folder = normalize_remote_path(Path::new(start_folder));
+    // Server paths, POSIX whatever the host: their text, never this OS's `Path`.
+    let root = normalize_remote_text(remote_root);
+    let folder = normalize_remote_text(start_folder);
     if folder == root {
         return Ok(None);
     }
-    // `Path::starts_with` compares whole components, which is the whole point.
-    if folder.starts_with(&root) {
-        Ok(Some(folder.to_string_lossy().into_owned()))
+    // Whole names, which is the whole point: `/data` doesn't hold `/database`.
+    if folder.starts_with(&format!("{}/", root.trim_end_matches('/'))) {
+        Ok(Some(folder))
     } else {
         Err(StartFolderOutsideRoot)
     }

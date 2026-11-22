@@ -13,6 +13,7 @@
 //! timeout, so a hung mount refuses instead of blocking. Decisions: `DETAILS.md`.
 
 pub mod history;
+mod long_names;
 
 use std::future::Future;
 use std::sync::Arc;
@@ -207,7 +208,34 @@ impl AppHost {
         base: Option<&AppPath>,
         by: TypedBy,
     ) -> Result<TypedPath, TypedPathRefusal> {
-        resolve_typed_with(text, base, by, self).await
+        let typed = resolve_typed_with(text, base, by, self).await?;
+        Ok(self.spelled_long(typed).await)
+    }
+
+    /// `typed` with a Windows 8.3 short name (`LONGNA~1`) in its existing part spelled long,
+    /// as listings name it (#1337), within what's left of the deadline. Only a local path
+    /// holding a `~` is asked: `GetLongPathNameW` reads every folder on the way, so it can
+    /// wait out a dead share. Any miss (the deadline, a name that isn't Unicode) keeps the
+    /// typed spelling, which still opens the same folder.
+    async fn spelled_long(&self, typed: TypedPath) -> TypedPath {
+        if PathFlavor::HOST != PathFlavor::Windows || !typed.path.as_str().contains('~') {
+            return typed;
+        }
+        let Ok(native) = typed.path.to_native_plain() else {
+            return typed;
+        };
+        let long = self
+            .within(async move {
+                let spelled = tokio::task::spawn_blocking(move || {
+                    long_names::long_spelling(&native, cmdr_fs::app_path::expand_short_names)
+                });
+                Ok(spelled.await.ok().flatten())
+            })
+            .await;
+        match long.ok().flatten().map(|long| AppPathBuf::from_native_unicode(&long)) {
+            Some(Ok(path)) => TypedPath { path, ..typed },
+            _ => typed,
+        }
     }
 }
 

@@ -184,14 +184,14 @@ fn bench_real_index() {
     let load = t.elapsed();
     eprintln!("\n{db}\n  arena load: {} entries in {load:.2?}", index.len());
 
-    let weights = match std::env::var("CMDR_SEARCH_BENCH_IMPORTANCE_DB") {
-        Ok(path) => {
+    let weights = match crate::native_text::env_path("CMDR_SEARCH_BENCH_IMPORTANCE_DB") {
+        Some(path) => {
             let t = Instant::now();
             let w = load_weights_from(&path);
             eprintln!("  importance map: {} folders in {:.2?}", w.len(), t.elapsed());
             w
         }
-        Err(_) => ImportanceWeights::empty(),
+        None => ImportanceWeights::empty(),
     };
     eprintln!();
 
@@ -385,9 +385,9 @@ fn bench_query_allocations() {
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(9);
-    let weights = std::env::var("CMDR_SEARCH_BENCH_IMPORTANCE_DB")
+    let weights = crate::native_text::env_path("CMDR_SEARCH_BENCH_IMPORTANCE_DB")
         .map(|path| load_weights_from(&path))
-        .unwrap_or_else(|_| ImportanceWeights::empty());
+        .unwrap_or_else(ImportanceWeights::empty);
 
     let pool = ReadPool::new(db.clone().into()).expect("open index DB");
     let index = load_search_index(&pool, &AtomicBool::new(false)).expect("load index");
@@ -555,9 +555,9 @@ fn bench_arena_bytes() {
 
 /// Load an importance weight map straight from an `importance-*.db` file (the
 /// bench reads a path, while production reads a data dir + volume id).
-fn load_weights_from(path: &str) -> ImportanceWeights {
+fn load_weights_from(path: &std::path::Path) -> ImportanceWeights {
     let mut weights = ImportanceWeights::empty();
-    let Ok(conn) = crate::sqlite_util::open_read_only(std::path::Path::new(path)) else {
+    let Ok(conn) = crate::sqlite_util::open_read_only(path) else {
         return weights;
     };
     let Ok(mut stmt) = conn.prepare("SELECT path, score FROM weights WHERE score > 0") else {
@@ -594,7 +594,7 @@ fn load_weights_from(path: &str) -> ImportanceWeights {
 fn bench_weight_reload() {
     use std::sync::Arc;
 
-    let Ok(db) = std::env::var("CMDR_SEARCH_BENCH_IMPORTANCE_DB") else {
+    let Some(db) = crate::native_text::env_path("CMDR_SEARCH_BENCH_IMPORTANCE_DB") else {
         eprintln!("set CMDR_SEARCH_BENCH_IMPORTANCE_DB to an importance-*.db path");
         return;
     };
@@ -608,7 +608,8 @@ fn bench_weight_reload() {
         reload_runs.push(t.elapsed());
     }
     eprintln!(
-        "\n{db}\n  {} scored folders\n  full reload: {:.2?} / {:.2?} / {:.2?}",
+        "\n{}\n  {} scored folders\n  full reload: {:.2?} / {:.2?} / {:.2?}",
+        db.display(),
         weights.len(),
         reload_runs[0],
         reload_runs[1],

@@ -16,7 +16,7 @@ fn event(kind: EventKind, paths: &[&str]) -> DebouncedEvent {
     DebouncedEvent::new(
         Event {
             kind,
-            paths: paths.iter().map(PathBuf::from).collect(),
+            paths: paths.iter().map(|path| crate::native_text::os_path(path).to_path_buf()).collect(),
             attrs: Default::default(),
         },
         Instant::now(),
@@ -24,7 +24,7 @@ fn event(kind: EventKind, paths: &[&str]) -> DebouncedEvent {
 }
 
 fn structural(path: &str) -> ListingChange {
-    ListingChange::Structural(Path::new(path).to_path_buf())
+    ListingChange::Structural(crate::native_text::os_path(path).to_path_buf())
 }
 
 #[test]

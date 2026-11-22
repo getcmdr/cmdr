@@ -12,6 +12,7 @@ ONE typed-path resolver, `AppHost::resolve_typed`, for every text a person or an
   `commands/wire_path.rs`), and `resolve(input, base_dir) -> GoToPathResolution`. The rules are `cmdr_fs::typed_path` (`~`, the pane's
   folder, each `..`) and `cmdr_fs::go_to_path` (classify), shared with the browser demo
   (`crates/cmdr-listing-wasm/src/go_to.rs`). Cells: `tests.rs`, `wire_shape_tests.rs` (the symlink pins).
+- **`long_names.rs`**: a typed path's Windows 8.3 short names spelled long (#1337), inside the resolve's deadline.
 - **`history.rs`**: the `RecentPathEntry` shape and `RECENT_PATHS`, a `crate::recents` list keyed on the resolved path
   with a fixed cap
 

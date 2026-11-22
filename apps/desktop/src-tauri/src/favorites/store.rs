@@ -159,11 +159,7 @@ fn new_id() -> String {
 /// Derives a display label from a path: the last component, falling back to the full path when there
 /// isn't one (for example `/`).
 fn name_from_path(path: &str) -> String {
-    Path::new(path)
-        .file_name()
-        .map(|n| n.to_string_lossy().to_string())
-        .filter(|n| !n.is_empty())
-        .unwrap_or_else(|| path.to_string())
+    crate::app_text::last_name(path).unwrap_or_else(|| path.to_string())
 }
 
 /// Normalizes a path for dedup comparison: strips a single trailing separator (but never the root

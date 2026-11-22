@@ -338,7 +338,7 @@ mod tests {
         // Writable again, so the scratch dir can clean itself up.
         std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700)).unwrap();
         assert!(
-            Path::new(path).starts_with(&stuck_parent),
+            crate::native_text::os_path(path).starts_with(&stuck_parent),
             "{path} should point at where the logs are"
         );
     }

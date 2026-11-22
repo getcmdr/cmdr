@@ -8,7 +8,8 @@
 //! before the volume is asked anything, so a dead share still gets its card at
 //! once.
 
-use std::path::Path;
+
+use cmdr_fs::app_path::{AppPath, PathArithmetic};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -16,7 +17,6 @@ use cmdr_about::actions::{ActionCaps, RemoveBy};
 use cmdr_about::card::{AboutFact, OsCaps, PlanInput, VolumeCaps, VolumeLimit, plan};
 use cmdr_about::fact::{AboutTarget, FactKind, UnknownWhy};
 use cmdr_about::owner::OwnerQuestion;
-use cmdr_about::payload::SnapshotKind;
 use cmdr_about::text::ItemText;
 use cmdr_fs::file_extension::is_listed_package;
 use cmdr_fs::volume::{RoutedKind, Volume};
@@ -31,7 +31,7 @@ use super::owner::AppSource;
 use super::platform;
 use super::probe::{Probe, probe};
 use super::session::{Gathered, ItemReach, PROBE_BUDGET, SubJobs, Watch};
-use super::through::{self, ArchiveRecord, Asked, DownloadFrom, STUCK, SnapshotPath, Through};
+use super::through::{self, ArchiveRecord, Asked, DownloadFrom, STUCK, Through};
 use crate::file_system::volume::manager::get_volume_manager;
 use crate::location::Location;
 use crate::location::miss::{LocationMissResult, MissToken, volume_not_connected};
@@ -226,7 +226,12 @@ pub(crate) async fn gather_for(request: &AboutRequest, started: Started) -> Resu
     let resolved = resolve(&facts, &input).map_err(NoCard::unplaced)?;
     let location = resolved.location.clone();
     let path = location.path.clone();
-    let drive = get_volume_manager().get(&location.volume_id);
+    // The item as an app path on whatever volume holds it, read once here: every call
+    // through a volume takes it. Text that names no place (relative, a `..`) has no item.
+    let Ok(item) = crate::app_text::parse_on_volume(&path) else {
+        return Err(NoCard::on(&location, AboutUnavailable::NotFound));
+    };
+    let drive =get_volume_manager().get(&location.volume_id);
     let os_visible = drive.as_ref().is_some_and(|volume| volume.paths_are_os_visible());
     let drive_way = reach(resolved.kind, resolved.live && drive.is_some(), os_visible);
     let Some(drive) = drive.filter(|_| drive_way != Way::Offline) else {
@@ -254,7 +259,7 @@ pub(crate) async fn gather_for(request: &AboutRequest, started: Started) -> Resu
     // Before the route's confirm, which reads the drive.
     if started == Started::ByCmdr && drive_way != Way::Local {
         let is_directory = is_directory(request, &resolved).await;
-        let gathered = through_gathered(drive_way, is_directory, &resolved, asked_drive, None)
+        let gathered = through_gathered(drive_way, is_directory, &resolved, &item, asked_drive, None)
             .answered_without_the_volume(UnknownWhy::RefusedInBackground);
         return Ok(placed(gathered, Asking::RefusedInBackground));
     }
@@ -264,7 +269,7 @@ pub(crate) async fn gather_for(request: &AboutRequest, started: Started) -> Resu
     if started == Started::ByCmdr && drive_way == Way::Local && reaches_a_share_off_the_executor(&path).await {
         log::debug!(target: "about", "a background card's path links into a share; not asking it");
         let is_directory = is_directory(request, &resolved).await;
-        let gathered = through_gathered(Way::OsMountedShare, is_directory, &resolved, asked_drive, None)
+        let gathered = through_gathered(Way::OsMountedShare, is_directory, &resolved, &item, asked_drive, None)
             .answered_without_the_volume(UnknownWhy::RefusedInBackground);
         return Ok(placed(gathered, Asking::RefusedInBackground));
     }
@@ -272,7 +277,7 @@ pub(crate) async fn gather_for(request: &AboutRequest, started: Started) -> Resu
     // A path into an archive or git's history is a route's view, whatever drive
     // holds it. The lexical gate costs nothing; the route confirms on the pool.
     if crate::app_text::routes_over_its_parent(&path) {
-        match routed_on_pool(&asked_drive, &path).await {
+        match routed_on_pool(&asked_drive, &item).await {
             Routed::View {
                 routed,
                 volume,
@@ -287,6 +292,7 @@ pub(crate) async fn gather_for(request: &AboutRequest, started: Started) -> Resu
                     view_of(routed),
                     is_directory,
                     &resolved,
+                    &item,
                     view,
                     Some(Drive {
                         way: drive_way,
@@ -308,7 +314,7 @@ pub(crate) async fn gather_for(request: &AboutRequest, started: Started) -> Resu
             Routed::NoAnswer => {
                 let is_directory = is_directory(request, &resolved).await;
                 let gathered =
-                    through_gathered(drive_way, is_directory, &resolved, asked_drive.clone(), None).silenced();
+                    through_gathered(drive_way, is_directory, &resolved, &item, asked_drive.clone(), None).silenced();
                 return Ok(placed(gathered, Asking::TheVolume));
             }
         }
@@ -321,7 +327,7 @@ pub(crate) async fn gather_for(request: &AboutRequest, started: Started) -> Resu
             .map_err(|why| NoCard::on(&location, why))?,
         _ => {
             let is_directory = is_directory(request, &resolved).await;
-            through_gathered(drive_way, is_directory, &resolved, asked_drive, None)
+            through_gathered(drive_way, is_directory, &resolved, &item, asked_drive, None)
         }
     };
     // A volume already known not to answer gets no actions: a reveal or a delete
@@ -475,19 +481,19 @@ enum Routed {
 /// Asks the volume manager which volume serves `path`, on the about pool: a
 /// route's confirm can stat the drive, and on a share that stopped answering that
 /// waits as long as the share does.
-async fn routed_on_pool(drive: &Asked, path: &str) -> Routed {
+async fn routed_on_pool(drive: &Asked, item: &AppPath) -> Routed {
     let (answer, waiting) = tokio::sync::oneshot::channel();
     let runtime = drive.runtime.clone();
     let volume_id = drive.stuck_id.clone();
-    let path = path.to_string();
+    let item = item.to_owned();
     super::pool::submit(Box::new(move || {
         crate::file_system::framework_pool::note_activity("resolve the route", "probe");
-        let resolved = runtime.block_on(get_volume_manager().resolve(&volume_id, &through::row_as_app_path(&path)));
+        let resolved = runtime.block_on(get_volume_manager().resolve(&volume_id, &item));
         let routed = match (resolved.routed, resolved.volume) {
             (Some(routed), Some(volume)) => Routed::View {
                 routed,
                 volume,
-                archive_on_local_disk: super::place::its_archive_sits_on_a_local_disk(&path),
+                archive_on_local_disk: super::place::its_archive_sits_on_a_local_disk(item.as_str()),
             },
             _ => Routed::Passthrough,
         };
@@ -635,28 +641,29 @@ pub(crate) fn through_gathered(
     way: Way,
     is_directory: bool,
     resolved: &ResolvedLocation,
+    item: &AppPath,
     asked: Asked,
     drive: Option<Drive<'_>>,
 ) -> Gathered {
     let path = resolved.location.path.clone();
-    let name = crate::app_text::last_name(&path).unwrap_or_else(|| path.clone());
+    let name = item.file_name().map_or_else(|| path.clone(), str::to_owned);
     let index_covers = resolved.index.live && matches!(way, Way::OsMountedShare | Way::Server);
     // The image index covers a local disk and an SMB share the person opted in
     // (`media_index`); a share's picture reads its database, never the share.
     let images = resolved.kind == VolumeKind::Smb && matches!(way, Way::OsMountedShare | Way::Server);
     let download = match way {
         Way::OsMountedShare if asked.volume.supports_xattrs() => Some(DownloadFrom::Volume),
-        Way::Archive => archive_download(&path, drive),
+        Way::Archive => archive_download(item, drive),
         _ => None,
     };
     let through = Through {
         asked: asked.clone(),
-        path: path.clone().into(),
+        path: item.to_owned(),
         download,
         index: index_covers.then(|| index_place(resolved, &path)),
         image: images.then(|| image_place(resolved, &path)).flatten(),
         snapshot: (way == Way::GitHistory)
-            .then(|| snapshot_of(Path::new(&path)))
+            .then(|| through::snapshot_of(&crate::app_text::as_std_path_text(item.as_str())))
             .flatten(),
     };
     let caps = VolumeCaps {
@@ -680,7 +687,7 @@ pub(crate) fn through_plan(way: Way, name: &str, is_directory: bool, caps: &Volu
         hinted_target(name, is_directory)
     };
     let extension = (target != AboutTarget::Folder)
-        .then(|| Path::new(name).extension().map(|e| e.to_string_lossy().into_owned()))
+        .then(|| through.path.extension().map(str::to_owned))
         .flatten();
     let mut plan = plan(PlanInput {
         target,
@@ -748,17 +755,19 @@ impl Gathered {
 /// An archive entry's download row: the archive's name, and where its own record
 /// can be read. ❌ No filesystem call here (it runs on the executor): whether the
 /// archive sits on a local disk came from the route's pool job.
-fn archive_download(path: &str, drive: Option<Drive<'_>>) -> Option<DownloadFrom> {
-    let (archive_path, _inner) = cmdr_fs::archive_format::archive_boundary_candidate(Path::new(path))?;
-    let archive = ItemText::new(&archive_path.file_name()?.to_string_lossy());
+fn archive_download(item: &AppPath, drive: Option<Drive<'_>>) -> Option<DownloadFrom> {
+    let (archive_path, _inner) = cmdr_fs::archive_format::archive_boundary_candidate_at(item)?;
+    let archive = ItemText::new(archive_path.file_name()?);
     let record = match drive {
-        // A symlink in its parents into a share isn't local.
+        // A symlink in its parents into a share isn't local. The record is the archive
+        // file's own xattrs, read where the OS keeps them.
         Some(Drive {
             way: Way::Local,
             archive_on_local_disk: true,
             ..
-        }) => ArchiveRecord::Local {
-            archive_path: archive_path.to_string_lossy().into_owned(),
+        }) => match archive_path.to_native_plain().or_else(|_| archive_path.to_native()) {
+            Ok(archive_path) => ArchiveRecord::Local { archive_path },
+            Err(_) => ArchiveRecord::None,
         },
         Some(Drive {
             way: Way::OsMountedShare,
@@ -771,26 +780,4 @@ fn archive_download(path: &str, drive: Option<Drive<'_>>) -> Option<DownloadFrom
         _ => ArchiveRecord::None,
     };
     Some(DownloadFrom::Archive { archive, record })
-}
-
-/// Which part of git's history a portal path names, off the path alone:
-/// `<repo>/.git/<category>/<name>/…`. The category words are the portal's own
-/// (`cmdr_git`'s `Cat::as_segment`); a test pins them against a real portal.
-pub(crate) fn snapshot_of(path: &Path) -> Option<SnapshotPath> {
-    let repo_root = cmdr_git::portal_route(path)?;
-    let mut rest = path.strip_prefix(repo_root.join(".git")).ok()?.components();
-    let category = rest.next()?.as_os_str().to_str()?.to_string();
-    let kind = [
-        SnapshotKind::Branch,
-        SnapshotKind::Tag,
-        SnapshotKind::Commit,
-        SnapshotKind::Stash,
-    ]
-    .into_iter()
-    .find(|kind| through::category_segment(*kind) == category)?;
-    let after: Vec<String> = rest
-        .map(|component| component.as_os_str().to_string_lossy().into_owned())
-        .collect();
-    // The category's own folder names no snapshot.
-    (!after.is_empty()).then_some(SnapshotPath { repo_root, kind, after })
 }

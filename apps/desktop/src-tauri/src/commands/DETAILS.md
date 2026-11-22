@@ -530,9 +530,17 @@ A path the frontend sends is read as an app path at the command edge, `wire_path
   route serves text that's no app path.
 - **One reading of app text for every layer**: `apps/desktop/src-tauri/src/app_text.rs` (`parse`, `native`, `routes_over_its_parent`) is what
   `wire_path` reads through, and what the subsystems that get rows as `String`s use below the command edge (the sync
-  badges' cache, a favorite's folder, the About card's local walk and route gate), ❌ never a `Path::new` of a row.
-- **A `std::path` API that reads the text lexically gets it as sent** (`as_sent_std_path`, `pre_check_rows`): the
-  write pre-checks, `get_name_rules`, the stored-spelling lookup, `root_echo`, and the git chip's `repo_root` (Gotcha:
+  badges' cache, a favorite's folder, the About card's probe and route, the icons, the Dock menu's names), ❌ never a
+  `Path::new` of a row. `parse_on_volume` reads text that may be ANY volume's (a journal row, a card's place, an index
+  row): host flavor, else POSIX, so a phone's `/DCIM/x` reads on Windows too. `last_name` reads through it.
+- **Native text has its own doors**: `apps/desktop/src-tauri/src/native_text.rs` (`os_path`, `os_path_buf`,
+  `env_path`) for a path the OS or the environment spelled (an env var, a settings value naming a binary or key file, a
+  process's executable, a test's native fixture literal), and `volumes::os_mount_path` for mount-table text. ❌ Neither
+  takes app text.
+- **A `std::path` API that reads the text lexically gets it as sent** (`as_sent_std_path` at the edge, `app_text::as_std_path_text`
+  below it, `pre_check_rows`): the write pre-checks, `get_name_rules`, the stored-spelling lookup, `root_echo`, the git
+  portal's rows (commit counts, the About card's snapshot), the operation log's lookup, the inspect tool's viewer and
+  archive seams, the menu's and Services' rows, and the git chip's `repo_root` (Gotcha:
   that's NATIVE text `RepoInfo` reported, `\\?\C:\…` on Windows, so `native` refused it and the chip went dark; Why:
   the frontend hands back the root it was given). Byte for byte; it goes as each
   engine's entry points take app paths.

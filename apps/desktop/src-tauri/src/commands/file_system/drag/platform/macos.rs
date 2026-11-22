@@ -62,12 +62,16 @@ pub(crate) fn start_drag(
     icon_path: String,
     source_volume_id: Option<String>,
 ) -> Result<(), String> {
-    let path_bufs: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
+    // Rows as sent: `native_drag` still keys a session by `std::path` text (file URLs for a local
+    // one, the volume's own reads for a promise), byte for byte the pane's rows.
+    let path_bufs: Vec<PathBuf> = paths.iter().map(|row| crate::commands::wire_path::as_sent_std_path(row)).collect();
     if path_bufs.is_empty() {
         return Err("No valid files to drag".to_string());
     }
     let locality = session_locality(&path_bufs, source_volume_id.as_deref());
-    run_drag_on_main_thread(&app, path_bufs, PathBuf::from(icon_path), locality, source_volume_id)
+    // The drag image the frontend wrote into the OS temp folder: native text.
+    let icon = crate::native_text::os_path_buf(icon_path);
+    run_drag_on_main_thread(&app, path_bufs, icon, locality, source_volume_id)
 }
 
 /// Hops to the AppKit main thread, builds the drag session, and returns synchronously.

@@ -80,7 +80,7 @@ impl RotatingFile {
     fn sibling(&self, n: usize) -> PathBuf {
         let mut name = self.path.as_os_str().to_owned();
         name.push(format!(".{n}"));
-        PathBuf::from(name)
+        crate::native_text::os_path_buf(name)
     }
 
     /// Shift every file one slot older, dropping the oldest, and leave the live slot empty for

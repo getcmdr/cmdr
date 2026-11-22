@@ -6,7 +6,7 @@
 //! the mount does.
 
 use std::io::ErrorKind;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use cmdr_about::fact::{AboutTarget, Fact};
 use cmdr_about::owner::{OwnerPlace, OwnerQuestion};
@@ -22,6 +22,8 @@ use super::platform;
 /// What the probe learned.
 #[derive(Debug, Clone)]
 pub(crate) struct Probe {
+    /// The native file the card's app path names, crossed once here: every local job reads it.
+    pub(crate) native: PathBuf,
     pub(crate) target: AboutTarget,
     /// The name's last extension, without its dot. `None` for a folder, whose
     /// dot is part of its name.
@@ -46,7 +48,12 @@ pub(crate) struct Probe {
 /// Looks at `path`, which the resolver placed on a local volume. `home`: the
 /// person's home folder, whose app containers the probe never looks inside.
 pub(crate) fn probe(path: &str, home: Option<&str>) -> Result<Probe, AboutUnavailable> {
-    let fs_path = Path::new(path);
+    // The resolver placed it on a local volume, so its app path has a native file; text with
+    // none (a sender bug) has nothing here to describe.
+    let Some(native) = crate::app_text::native_plain(path) else {
+        return Err(AboutUnavailable::NotFound);
+    };
+    let fs_path = native.as_path();
     let metadata = match std::fs::symlink_metadata(fs_path) {
         Ok(metadata) => metadata,
         Err(error) => return Err(unavailable(&error)),
@@ -63,7 +70,7 @@ pub(crate) fn probe(path: &str, home: Option<&str>) -> Result<Probe, AboutUnavai
     let on_local_disk = super::place::sits_on_a_local_disk(path);
     Ok(Probe {
         target,
-        extension: (target != AboutTarget::Folder).then(|| extension_of(&name)).flatten(),
+        extension: (target != AboutTarget::Folder).then(|| extension_of(fs_path)).flatten(),
         is_executable: metadata.is_file() && extras.executable,
         contents_local: !extras.online_only,
         on_local_disk,
@@ -76,6 +83,7 @@ pub(crate) fn probe(path: &str, home: Option<&str>) -> Result<Probe, AboutUnavai
         } else {
             RepoAround::None
         },
+        native,
     })
 }
 
@@ -102,10 +110,8 @@ pub(crate) fn sealed(path: &str, home: &str) -> bool {
         })
 }
 
-fn extension_of(name: &str) -> Option<String> {
-    Path::new(name)
-        .extension()
-        .map(|extension| extension.to_string_lossy().into_owned())
+fn extension_of(path: &Path) -> Option<String> {
+    path.extension().map(|extension| extension.to_string_lossy().into_owned())
 }
 
 fn unavailable(error: &std::io::Error) -> AboutUnavailable {
@@ -133,7 +139,7 @@ fn target_of(path: &Path, name: &str, metadata: &std::fs::Metadata, sealed: bool
     if !is_package {
         return AboutTarget::Folder;
     }
-    let is_app = extension_of(name).is_some_and(|extension| extension.eq_ignore_ascii_case("app"));
+    let is_app = extension_of(path).is_some_and(|extension| extension.eq_ignore_ascii_case("app"));
     if is_app {
         AboutTarget::AppBundle
     } else {

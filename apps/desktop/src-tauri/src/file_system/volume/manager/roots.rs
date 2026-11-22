@@ -325,8 +325,11 @@ impl VolumeManager {
     ///
     /// In-memory (one `RwLock<HashMap>` read, no syscall), so it's safe on the
     /// enrichment / dir-stats hot path.
+    ///
+    /// `path` is app text on any volume (`app_text::parse_on_volume`); text that names no
+    /// place (relative, a `..`, which the typed-path door answers first) belongs to none.
     pub fn mount_id_for_path(&self, path: &str) -> Option<String> {
-        let target = Path::new(path);
+        let target = crate::app_text::parse_on_volume(path).ok()?;
         self.volumes
             .read_ignore_poison()
             .iter()
@@ -335,11 +338,10 @@ impl VolumeManager {
             // volume is registered a moment before it enters its LRU, and a
             // concurrent caller must not see it in that gap.
             .filter(|(_, v)| !v.routes_over_a_parent())
-            // `Path`'s component-wise `starts_with` on the caller's text, `..` and all,
-            // until this takes an app path (the tools' `..` resolution decides that).
+            // Whole names, as `registry_volume_for` (`go_to_path`) places a typed path.
             .filter_map(|(id, v)| {
-                let root = v.root().as_std_legacy();
-                (root != Path::new("/") && target.starts_with(&root)).then(|| (id, root.as_os_str().len()))
+                let root = v.root();
+                (root.as_str() != "/" && target.is_on_volume(root)).then(|| (id, root.as_str().len()))
             })
             .max_by_key(|(_, len)| *len)
             .map(|(id, _)| id.clone())

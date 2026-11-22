@@ -600,10 +600,10 @@ fn stopped_error(open: &PendingOpen, cancel: Option<&AtomicBool>) -> Option<View
 /// Empty or separator-bearing names fall back to a fixed name (the subdir already
 /// guarantees uniqueness; this only affects the viewer's displayed title + extension).
 fn temp_basename(entry_name: &str) -> String {
-    let candidate = Path::new(entry_name).file_name().and_then(|n| n.to_str()).unwrap_or("");
-    if candidate.is_empty() {
-        "preview".to_string()
+    // A listed name, read as the one name it must be (no `/`, `.`, `..`, or NUL).
+    if cmdr_fs::app_path::AppName::from_listed_text(entry_name).is_ok() {
+        entry_name.to_string()
     } else {
-        candidate.to_string()
+        "preview".to_string()
     }
 }

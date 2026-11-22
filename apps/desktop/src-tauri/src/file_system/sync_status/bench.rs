@@ -33,7 +33,7 @@
 
 use super::{SERVICE, SyncKnowledge, probe};
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
@@ -54,11 +54,12 @@ struct Sample {
     answered: usize,
 }
 
-fn bench_dir() -> Option<String> {
-    std::env::var("CMDR_SYNC_STATUS_BENCH_DIR").ok()
+fn bench_dir() -> Option<PathBuf> {
+    crate::native_text::env_path("CMDR_SYNC_STATUS_BENCH_DIR")
 }
 
-fn paths_in(dir: &str) -> Vec<String> {
+/// The folder's files as a pane's rows spell them (app text), which is what the service takes.
+fn paths_in(dir: &Path) -> Vec<String> {
     let mut paths: Vec<String> = std::fs::read_dir(dir)
         .expect("bench dir is readable")
         .filter_map(|entry| entry.ok())
@@ -114,7 +115,7 @@ fn live_thread_count() -> usize {
 
 /// The shape this module had before the pool-and-cache rework: a fresh fan-out per
 /// call, no cache, and no deadline that the work itself honours.
-fn legacy_fan_out(paths: &[String], threads_spawned: &Arc<AtomicUsize>) -> HashMap<String, SyncKnowledge> {
+fn legacy_fan_out(paths: &[String], threads_spawned: &Arc<AtomicUsize>) -> HashMap<String, Option<SyncKnowledge>> {
     const LEGACY_STACK_SIZE: usize = 8 * 1024 * 1024;
     if paths.is_empty() {
         return HashMap::new();
@@ -136,7 +137,8 @@ fn legacy_fan_out(paths: &[String], threads_spawned: &Arc<AtomicUsize>) -> HashM
                         chunk
                             .into_iter()
                             .map(|path| {
-                                let status = probe::sync_status_for(Path::new(&path));
+                                // A row read off its native file, as the service reads one.
+                                let status = crate::app_text::native(&path).map(|native| probe::sync_status_for(&native));
                                 (path, status)
                             })
                             .collect::<Vec<_>>()
@@ -229,9 +231,10 @@ async fn bench_steady_pane() {
         return;
     };
     let all = paths_in(&dir);
+    let shown = dir.display();
     let visible: Vec<String> = all.iter().take(VISIBLE_ROWS).cloned().collect();
     eprintln!(
-        "\nsync-status bench: {} files in {dir}, {} visible rows, {} threads live",
+        "\nsync-status bench: {} files in {shown}, {} visible rows, {} threads live",
         all.len(),
         visible.len(),
         live_thread_count()
@@ -253,22 +256,25 @@ async fn bench_steady_pane() {
 #[test]
 #[ignore = "measurement, not an assertion: run it with --nocapture when re-tuning"]
 fn bench_outside_a_domain() {
-    let dir = bench_dir().unwrap_or_else(|| "/usr/bin".to_string());
+    let dir = bench_dir().unwrap_or_else(|| PathBuf::from("/usr/bin"));
     let all = paths_in(&dir);
+    let shown = dir.display();
     if all.is_empty() {
-        eprintln!("skipped: no files in {dir}");
+        eprintln!("skipped: no files in {shown}");
         return;
     }
 
+    // Read off their native files before the clock starts: the probe's cost is the number.
+    let natives: Vec<PathBuf> = all.iter().filter_map(|path| crate::app_text::native(path)).collect();
     let per_path = |domains: &cmdr_fs::file_provider::FileProviderDomains| {
         let started = Instant::now();
-        for path in &all {
-            let _ = probe::knowledge_for(Path::new(path), domains);
+        for native in &natives {
+            let _ = probe::knowledge_for(native, domains);
         }
         started.elapsed() / u32::try_from(all.len()).unwrap_or(1)
     };
 
-    let root = Path::new(&dir).canonicalize().expect("canonical bench dir");
+    let root = dir.canonicalize().expect("canonical bench dir");
     // The "before" side: a scripted domain root above the folder forces every path
     // down the full `stat` + `NSURL` path, which is what every path used to cost.
     let forced = cmdr_fs::file_provider::FileProviderDomains::with_domain_roots(vec![root], Duration::from_secs(600));
@@ -277,15 +283,15 @@ fn bench_outside_a_domain() {
     // the number by leaving the syscall out.
     let real = cmdr_fs::file_provider::FileProviderDomains::new(Duration::from_secs(600));
     assert_eq!(
-        real.membership_of_dir(Path::new(&dir)),
+        real.membership_of_dir(&dir),
         cmdr_fs::file_provider::DomainMembership::Outside,
-        "this bench needs an ordinary folder; {dir} is in a domain or the marker isn't vouched for here"
+        "this bench needs an ordinary folder; {shown} is in a domain or the marker isn't vouched for here"
     );
 
     // Full path first, so the page cache can't favour the number we're advertising.
     let full = per_path(&forced);
     let skipped = per_path(&real);
-    eprintln!("\n  outside a domain, {} files in {dir}", all.len());
+    eprintln!("\n  outside a domain, {} files in {shown}", all.len());
     eprintln!("    full probe (stat + NSURL)   {full:>9.2?} per path");
     eprintln!("    structural shortcut         {skipped:>9.2?} per path");
 }
@@ -299,8 +305,9 @@ async fn bench_cold_sweep() {
         return;
     };
     let all = paths_in(&dir);
+    let shown = dir.display();
     eprintln!(
-        "\nsync-status bench: {} files in {dir}, {} threads live",
+        "\nsync-status bench: {} files in {shown}, {} threads live",
         all.len(),
         live_thread_count()
     );

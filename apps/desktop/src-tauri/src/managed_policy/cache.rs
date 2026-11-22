@@ -105,10 +105,10 @@ pub fn init(app: &AppHandle) {
         crate::security_log::on_policy_applied(None, &policy);
     }
     #[cfg(any(debug_assertions, feature = "playwright-e2e", test))]
-    if let Some(path) = std::env::var_os(OVERRIDE_ENV) {
+    if let Some(path) = crate::native_text::env_path(OVERRIDE_ENV) {
         // The file stands in for the whole managed layer, so its own watch is the trigger that
         // matters; the OS ones below only re-read the same file.
-        super::override_watch::start(std::path::PathBuf::from(path));
+        super::override_watch::start(path);
     }
     super::platform::start_refresh_triggers();
 }
@@ -146,9 +146,9 @@ fn summary(policy: &ManagedPolicy) -> String {
 
 fn read_configured_source() -> Parsed {
     #[cfg(any(debug_assertions, feature = "playwright-e2e", test))]
-    if let Some(path) = std::env::var_os(OVERRIDE_ENV) {
+    if let Some(path) = crate::native_text::env_path(OVERRIDE_ENV) {
         log::debug!(target: "managed_policy", "Reading the managed policy from {OVERRIDE_ENV}");
-        return keys::parse(&super::source::PlistFileSource::read(std::path::Path::new(&path)));
+        return keys::parse(&super::source::PlistFileSource::read(&path));
     }
     keys::parse(&*super::platform::system_source())
 }

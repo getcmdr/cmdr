@@ -121,7 +121,7 @@ pub(super) fn assert_well_formed(updates: &[AboutUpdate]) {
 }
 
 fn local(path: &std::path::Path) -> Gathered {
-    let path = path.to_string_lossy().into_owned();
+    let path = crate::test_support::native_app_path(path).into_string();
     let probed = probe(&path, None).expect("the fixture is there");
     local_gathered(
         &path,
@@ -262,7 +262,7 @@ async fn a_hard_linked_file_counts_its_other_name() {
     let file = dir.as_ref().join("a.txt");
     std::fs::write(&file, "shared").expect("write the fixture");
     std::fs::hard_link(&file, dir.as_ref().join("b.txt")).expect("link it");
-    let probed = probe(&file.to_string_lossy(), None).expect("the fixture is there");
+    let probed = probe(crate::test_support::native_app_path(&file).as_str(), None).expect("the fixture is there");
     let Fact::Known(identity) = probed.identity else {
         panic!("identity is known");
     };
@@ -275,7 +275,7 @@ fn a_missing_path_is_unavailable_not_a_card_of_unknowns() {
     let dir = TestDir::new("about-missing");
     let missing = dir.as_ref().join("gone.txt");
     assert_eq!(
-        probe(&missing.to_string_lossy(), None).map(|_| ()),
+        probe(crate::test_support::native_app_path(&missing).as_str(), None).map(|_| ()),
         Err(super::event::AboutUnavailable::NotFound)
     );
 }
@@ -289,14 +289,14 @@ fn a_symlink_is_about_the_link_and_reads_nothing_through_it() {
     std::os::unix::fs::symlink("/nowhere/at/all", &link).expect("make the link");
     #[cfg(unix)]
     {
-        let probed = probe(&link.to_string_lossy(), None).expect("a dangling link is still there");
+        let probed = probe(crate::test_support::native_app_path(&link).as_str(), None).expect("a dangling link is still there");
         assert_eq!(probed.target, AboutTarget::Symlink);
         let Fact::Known(identity) = &probed.identity else {
             panic!("identity is known");
         };
         assert_eq!(identity.symlink_target, Some(ItemText::new("/nowhere/at/all")));
         let gathered = local_gathered(
-            &link.to_string_lossy(),
+            crate::test_support::native_app_path(&link).as_str(),
             probed,
             ItemText::new("Macintosh HD"),
             macos(),
@@ -321,7 +321,7 @@ fn a_link_into_a_mount_that_isnt_a_local_disk_is_described_as_a_link() {
     let dir = TestDir::new("about-link-off-disk");
     let link = dir.as_ref().join("nas");
     std::os::unix::fs::symlink(elsewhere, &link).expect("make the link");
-    let path = link.to_string_lossy();
+    let path = crate::test_support::native_app_path(&link).into_string();
     let probed = probe(&path, None).expect("the link is there");
     assert_eq!(probed.target, AboutTarget::Symlink);
     assert!(probed.on_local_disk, "a link lives where its parent lives");
@@ -329,7 +329,7 @@ fn a_link_into_a_mount_that_isnt_a_local_disk_is_described_as_a_link() {
         super::place::reaches_a_share(&path),
         "reading through it reaches the other mount"
     );
-    assert!(!super::place::reaches_a_share(&dir.as_ref().to_string_lossy()));
+    assert!(!super::place::reaches_a_share(crate::test_support::native_app_path(dir.as_ref()).as_str()));
 }
 
 /// ❗ A read that failed says why: a file gone mid-gather is `NotFound` and an
@@ -344,11 +344,11 @@ fn a_read_that_failed_says_why_and_never_unparseable() {
     // The name still claims a kind, so the row keeps it, saying why the bytes
     // went unread; a name with no claim leaves the reason alone.
     assert_eq!(
-        super::jobs::real_type_of(&gone.to_string_lossy(), Some("dmg")),
+        super::jobs::real_type_of(&gone, Some("dmg")),
         cmdr_about::sniff::RealType::by_name(Some("dmg"), UnknownWhy::NotFound)
     );
     assert_eq!(
-        super::jobs::real_type_of(&dir.as_ref().join("gone.xyz").to_string_lossy(), Some("xyz")),
+        super::jobs::real_type_of(&dir.as_ref().join("gone.xyz"), Some("xyz")),
         Fact::unknown(UnknownWhy::NotFound)
     );
 
@@ -408,10 +408,10 @@ fn a_local_looking_path_on_a_network_mount_runs_no_local_job() {
     let dir = TestDir::new("about-through-a-link");
     let file = dir.as_ref().join("on-the-share.txt");
     std::fs::write(&file, "x").expect("write the fixture");
-    let mut probed = probe(&file.to_string_lossy(), None).expect("the fixture is there");
+    let mut probed = probe(crate::test_support::native_app_path(&file).as_str(), None).expect("the fixture is there");
     probed.on_local_disk = false;
     let gathered = local_gathered(
-        &file.to_string_lossy(),
+        crate::test_support::native_app_path(&file).as_str(),
         probed,
         ItemText::new("Macintosh HD"),
         macos(),
@@ -432,6 +432,7 @@ fn a_local_looking_path_on_a_network_mount_runs_no_local_job() {
 #[test]
 fn an_online_only_file_reads_none_of_its_bytes() {
     let probed = Probe {
+        native: std::path::PathBuf::from("/Users/someone/Library/CloudStorage/x.dmg"),
         target: AboutTarget::File,
         extension: Some("dmg".to_string()),
         is_executable: false,
@@ -583,7 +584,7 @@ async fn a_cancel_that_beats_its_start_makes_the_start_send_nothing() {
     super::commands::start(
         super::event::AboutRequest {
             request_id,
-            path: file.to_string_lossy().into_owned(),
+            path: crate::test_support::native_app_path(&file).into_string(),
             volume_id: None,
             is_directory: Some(false),
         },
@@ -631,7 +632,7 @@ async fn the_facts_dont_wait_for_the_verdicts_gate() {
     super::commands::start(
         super::event::AboutRequest {
             request_id: "about-test-gate-held".to_string(),
-            path: folder.to_string_lossy().into_owned(),
+            path: crate::test_support::native_app_path(&folder).into_string(),
             volume_id: None,
             is_directory: Some(true),
         },
@@ -738,7 +739,7 @@ async fn copy_with_cmdr(
 
 #[cfg(target_os = "macos")]
 fn with_history(path: &std::path::Path, log: &cmdr_operations::testing::TestOperationLog) -> Gathered {
-    let path = path.to_string_lossy().into_owned();
+    let path = crate::test_support::native_app_path(path).into_string();
     let probed = probe(&path, None).expect("the fixture is there");
     local_gathered(
         &path,
@@ -843,8 +844,8 @@ fn fake_installed_apps() -> Vec<cmdr_about::owner::KnownApp> {
 /// A card for `path` whose owner is asked against `home`, a fixture home, with a
 /// fake list of installed apps: ❌ never the real `~/Library`.
 fn in_a_fixture_home(path: &std::path::Path, home: &std::path::Path) -> Gathered {
-    let path = path.to_string_lossy().into_owned();
-    let probed = probe(&path, Some(&home.to_string_lossy())).expect("the fixture is there");
+    let path = crate::test_support::native_app_path(path).into_string();
+    let probed = probe(&path, Some(crate::test_support::native_app_path(home).as_str())).expect("the fixture is there");
     local_gathered(
         &path,
         probed,
@@ -853,7 +854,7 @@ fn in_a_fixture_home(path: &std::path::Path, home: &std::path::Path) -> Gathered
         Sources {
             owner: cmdr_about::owner::OwnerQuestion::of(
                 &path,
-                &home.to_string_lossy(),
+                crate::test_support::native_app_path(home).as_str(),
                 cmdr_about::owner::DiskLayout::Mac,
             ),
             apps: super::owner::AppSource {

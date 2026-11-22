@@ -5,7 +5,7 @@
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::app_path::AppPathBuf;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -24,7 +24,8 @@ use tokio::sync::Semaphore;
 use super::event::AboutUpdate;
 use cmdr_about::actions::{ActionCaps, RemoveBy};
 
-use super::route::{Way, action_caps, caps_for, hinted_target, snapshot_of, through_plan};
+use super::route::{Way, action_caps, caps_for, hinted_target, through_plan};
+use super::through::snapshot_of;
 use super::session::{Timing, Watch};
 use super::tests::{LONG, assert_well_formed, gather};
 use super::through::{ArchiveRecord, Asked, DownloadFrom, MAX_STUCK_PER_VOLUME, STUCK, Through, category_segment};
@@ -113,7 +114,7 @@ fn asked(volume: Arc<dyn Volume>, stuck_id: &str) -> Asked {
 fn through(asked: Asked, path: &str, download: Option<DownloadFrom>) -> Through {
     Through {
         asked,
-        path: PathBuf::from(path),
+        path: crate::app_text::parse_on_volume(path).expect("an app path"),
         download,
         index: None,
         image: None,
@@ -458,7 +459,9 @@ async fn an_archive_entry_names_its_archive_with_the_archives_own_record() {
     let dir = TestDir::new("about-archive-entry");
     let zip = dir.as_ref().join("Photos.zip");
     std::fs::write(&zip, b"PK\x03\x04").expect("write the archive");
-    let inner = format!("{}/a.jpg", zip.display());
+    // The entry as the archive view keys it: under the archive file's app path.
+    let zip_app = AppPathBuf::from_native_unicode(&zip).expect("a Unicode fixture path");
+    let inner = format!("{}/a.jpg", zip_app.as_str());
     let mut entry = FileEntry::new("a.jpg".into(), inner.clone(), false, false);
     entry.size = Some(1_000);
     let archive = Arc::new(InMemoryVolume::with_entries("Photos.zip", vec![entry]));
@@ -474,7 +477,7 @@ async fn an_archive_entry_names_its_archive_with_the_archives_own_record() {
             Some(DownloadFrom::Archive {
                 archive: ItemText::new("Photos.zip"),
                 record: ArchiveRecord::Local {
-                    archive_path: zip.to_string_lossy().into_owned(),
+                    archive_path: zip.clone(),
                 },
             }),
         ),

@@ -382,7 +382,7 @@ mod tests {
         }
 
         fn with_file(self, path: &str) -> Self {
-            self.entries.borrow_mut().insert(PathBuf::from(path), PathEntry::Other);
+            self.entries.borrow_mut().insert(crate::native_text::os_path(path).to_path_buf(), PathEntry::Other);
             self
         }
 
@@ -392,7 +392,7 @@ mod tests {
         }
 
         fn link_at(&self, path: &str) -> PathEntry {
-            self.entry(Path::new(path))
+            self.entry(crate::native_text::os_path(path))
         }
     }
 

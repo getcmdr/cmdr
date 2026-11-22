@@ -7,7 +7,6 @@
 //! Settings pane's mount-time belt-and-braces re-check has a typed entry
 //! point.
 
-use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
@@ -99,11 +98,11 @@ pub async fn go_to_latest_download() -> Result<LatestDownload, GoToLatestError> 
         return Err(GoToLatestError::WatcherUnavailable);
     };
 
-    let parent_dir = PathBuf::from(&path)
+    let parent_dir = path
         .parent()
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_default();
-    let file_name = PathBuf::from(&path)
+    let file_name = path
         .file_name()
         .map(|n| n.to_string_lossy().to_string())
         .unwrap_or_default();

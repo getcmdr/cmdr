@@ -116,7 +116,7 @@ pub(crate) fn list_locations() -> Vec<LocationInfo> {
         locations.push(row(
             DEFAULT_VOLUME_ID,
             &system_root,
-            Path::new(&system_root),
+            crate::volumes::os_mount_path(&system_root),
             LocationCategory::MainVolume,
         ));
     }

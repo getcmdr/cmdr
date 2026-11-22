@@ -25,7 +25,7 @@ pub fn record(path: String) {
         "[mock] external open recorded (not launched): {path}",
         path = cmdr_fs::log_private::LogPrivate::path(&path)
     );
-    OPENED.lock_ignore_poison().push(PathBuf::from(path));
+    OPENED.lock_ignore_poison().push(crate::native_text::os_path_buf(path));
 }
 
 /// Returns the paths opened so far, oldest first.

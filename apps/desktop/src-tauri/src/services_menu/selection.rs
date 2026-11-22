@@ -134,9 +134,9 @@ pub fn resolve() -> Vec<PathBuf> {
                 indices,
                 *sequence,
             )
-            .map(|snapshot| snapshot.paths.into_iter().map(PathBuf::from).collect())
+            .map(|snapshot| snapshot.paths.iter().map(|row| crate::app_text::as_std_path_text(row)).collect())
             .unwrap_or_default(),
-        SelectedRows::Paths { paths } => paths.iter().map(PathBuf::from).collect(),
+        SelectedRows::Paths { paths } => paths.iter().map(|row| crate::app_text::as_std_path_text(row)).collect(),
     })
 }
 
@@ -197,7 +197,7 @@ mod tests {
             SelectedRows::Listing { indices, .. } => {
                 indices.iter().map(|i| PathBuf::from(format!("/dir/{i}.txt"))).collect()
             }
-            SelectedRows::Paths { paths } => paths.iter().map(PathBuf::from).collect(),
+            SelectedRows::Paths { paths } => paths.iter().map(|row| crate::app_text::as_std_path_text(row)).collect(),
         }
     }
 

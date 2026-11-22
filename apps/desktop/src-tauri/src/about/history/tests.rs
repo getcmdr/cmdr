@@ -1,7 +1,6 @@
 //! What the card says of the log's answer: the operation's kind and starter in
 //! the card's words, where the item came from, and every way of not knowing.
 
-use std::path::Path;
 
 use cmdr_about::fact::{Fact, UnknownWhy};
 use cmdr_about::provenance::{CmdrOperation, LandedBy, StartedBy};
@@ -62,11 +61,13 @@ impl Journal {
         (dest_volume, dest): (&str, &str),
         landed: Option<NodeIdentity>,
     ) {
-        let split = |path: &str| {
-            let path = Path::new(path);
+        // A journal row's folder and name, as the engine journals an app path.
+        let split = |text: &str| {
+            use cmdr_fs::app_path::PathArithmetic;
+            let path = crate::app_text::parse_on_volume(text).expect("an app path");
             (
-                path.parent().expect("a folder").to_string_lossy().into_owned(),
-                path.file_name().expect("a name").to_string_lossy().into_owned(),
+                path.parent().expect("a folder").as_str().to_owned(),
+                path.file_name().expect("a name").to_owned(),
             )
         };
         let (source_dir, source_name) = split(source);

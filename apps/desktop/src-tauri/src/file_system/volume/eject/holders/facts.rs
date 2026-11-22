@@ -528,7 +528,7 @@ mod platform {
     /// The executable behind `pid`, `None` when the process has gone or isn't visible.
     /// The walk's own `proc_pidpath` wrapper, so one reading serves both.
     pub(super) fn executable_path(pid: u32) -> Option<PathBuf> {
-        super::super::scan::executable_path(pid).map(PathBuf::from)
+        super::super::scan::executable_path(pid)
     }
 }
 

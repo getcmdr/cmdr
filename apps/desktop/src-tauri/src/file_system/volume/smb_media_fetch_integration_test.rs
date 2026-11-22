@@ -10,7 +10,6 @@
 //! their fixture wiring.
 
 use crate::operations_host::backend_suites::smb_test_support::*;
-use cmdr_fs::app_path::AppPath;
 
 use cmdr_index::media_index::network::fetch::os_join;
 use cmdr_index::media_index::testing::{ByteFetcher, FetchError, VolumeByteFetcher};
@@ -31,7 +30,7 @@ async fn smb_integration_media_fetch_reads_bytes_via_direct_session() {
     // several chunks on the streaming path.
     let name = format!("{}.jpg", test_dir_name());
     let content: Vec<u8> = (0..192 * 1024).map(|i| (i % 251) as u8).collect();
-    vol.create_file(&AppPath::legacy_unchecked(Path::new(&name)), &content)
+    vol.create_file(&app_at(vol.root(), &name), &content)
         .await
         .expect("seed the share");
 
@@ -59,9 +58,7 @@ async fn smb_integration_media_fetch_reads_bytes_via_direct_session() {
         "unhinted (streaming) fetch must return the exact bytes"
     );
 
-    vol.delete(&AppPath::legacy_unchecked(Path::new(&name)))
-        .await
-        .expect("cleanup");
+    vol.delete(&app_at(vol.root(), &name)).await.expect("cleanup");
 }
 
 /// Typed classification over the real transport: a missing file is `NotFound`
@@ -103,7 +100,7 @@ async fn smb_integration_media_fetch_parallel_reads_over_the_scan_pool() {
     for i in 0..6 {
         let name = format!("{base}-{i}.jpg");
         let content: Vec<u8> = (0..8 * 1024).map(|b| ((b + i * 37) % 249) as u8).collect();
-        vol.create_file(&AppPath::legacy_unchecked(Path::new(&name)), &content)
+        vol.create_file(&app_at(vol.root(), &name), &content)
             .await
             .expect("seed");
         names.push((name, content));
@@ -149,8 +146,6 @@ async fn smb_integration_media_fetch_parallel_reads_over_the_scan_pool() {
     vol.end_scan_session().await;
 
     for (name, _) in &names {
-        vol.delete(&AppPath::legacy_unchecked(Path::new(name)))
-            .await
-            .expect("cleanup");
+        vol.delete(&app_at(vol.root(), name)).await.expect("cleanup");
     }
 }
