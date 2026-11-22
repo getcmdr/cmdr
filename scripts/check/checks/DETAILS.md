@@ -1401,7 +1401,9 @@ Who stays out, and why it's not an oversight:
   fingerprints, so running it either way left the test build at 0.7 s / 0 crates. (It also means the `virtual-mtp` code
   is compiled by the test lane and linted by nothing.
   `cargo clippy --workspace --all-targets --features cmdr/virtual-mtp` passes clean today, so closing that is available
-  whenever someone wants it.)
+  whenever someone wants it.) Its second pass, the app alone with default features (`shippedAppClippyArgs`), is a
+  different feature set on purpose, and lands beside the first without evicting it (`docs/tooling/ci.md` § The shipped
+  app's own build).
 - **`desktop-rust-tests-linux`** builds on its per-worktree Docker volume, and deliberately omits the feature: that lane
   is already tight against the 8 s per-test cap on a slower VM, and MTP's virtual-device coverage doesn't differ by
   platform.
@@ -1858,13 +1860,13 @@ image and build into one per-worktree volume (`desktop-rust-linux-container.go`)
 changed. Order: `clippy` → `clippy-linux` → `rust-tests-linux`.
 
 `desktop-rust-clippy-windows` (`clippy-windows`) rides the same image and volume to ask the Windows lane's question
-(clippy, `--all-targets`, `-D warnings`, every member declared for Windows) for `x86_64-pc-windows-gnu`, cross-compiled
-with mingw-w64, which the image carries (plus NASM, the Rust target, and a `Windows.h` link for `usearch`'s capitalized
-include, since Linux's disk is case-sensitive). The Windows units land under `x86_64-pc-windows-gnu/`, which the sweep
-never touches; the lane records no stream, so a sweep drops its host-side units (build scripts, proc macros), which only
-costs their rebuild. A cold run took ~2 min on a warm volume on the laptop, image build included (2026-11-19). It runs
-after `clippy-linux` (same build-directory lock). When to run it and why CI gates on the native lane:
-`docs/tooling/ci.md` § Windows lane.
+(clippy, `--all-targets`, `-D warnings`, every member declared for Windows, then the app as it ships) for
+`x86_64-pc-windows-gnu`, cross-compiled with mingw-w64, which the image carries (plus NASM, the Rust target, and a
+`Windows.h` link for `usearch`'s capitalized include, since Linux's disk is case-sensitive). The Windows units land
+under `x86_64-pc-windows-gnu/`, which the sweep never touches; the lane records no stream, so a sweep drops its
+host-side units (build scripts, proc macros), which only costs their rebuild. A cold run took ~2 min on a warm volume on
+the laptop, image build included (2026-11-19). It runs after `clippy-linux` (same build-directory lock). When to run it
+and why CI gates on the native lane: `docs/tooling/ci.md` § Windows lane.
 
 - **The image is the provisioning**: `cmdr-rust-linux:<sha256[0..12]>` of the rendered Dockerfile plus
   `rust-toolchain.toml`, built on a miss and the older tags pruned (the E2E lane's `cmdr-e2e-base:<hash>` pattern). It

@@ -60,3 +60,31 @@ func TestClippySuccessCountsCheckingLinesFromJSONRuns(t *testing.T) {
 		t.Errorf("counted %d crates, want 2", got)
 	}
 }
+
+// The shipped-app pass asks what a release build compiles (#1382): the app package alone,
+// default features, no test targets (their dev-dependencies turn `testing` on below), and
+// warnings denied. The workspace pass's union of features hid dead code in `cmdr-local`.
+func TestShippedAppClippyLintsTheAppAsItShips(t *testing.T) {
+	got := strings.Join(shippedAppClippyArgs(), " ")
+	if want := "clippy --locked --package " + appPackage + " -- -D warnings"; got != want {
+		t.Errorf("the shipped-app clippy is %q, want %q", got, want)
+	}
+	for _, banned := range []string{"--all-targets", "--workspace", "--features", "--all-features", "--fix", "--tests"} {
+		if strings.Contains(got, banned) {
+			t.Errorf("the shipped-app clippy must not pass %s: %q", banned, got)
+		}
+	}
+	cross := strings.Join(windowsShippedAppClippyArgs(), " ")
+	if want := "clippy --locked --package " + appPackage + " --target " + windowsCrossTarget + " -- -D warnings"; cross != want {
+		t.Errorf("the Windows cross-lint's shipped-app clippy is %q, want %q", cross, want)
+	}
+	for _, tree := range rustMemberTrees {
+		if tree.Pkg == appPackage {
+			if tree.Glob != "apps/desktop/src-tauri/**" {
+				t.Errorf("appPackage %q is %s, not the desktop app", appPackage, tree.Glob)
+			}
+			return
+		}
+	}
+	t.Errorf("appPackage %q is no workspace member", appPackage)
+}

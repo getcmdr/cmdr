@@ -540,6 +540,25 @@ Gotchas:
   which is this one. If this job starts compiling cold again despite the cron, check `gh cache list` and consider
   dropping this cache (the per-push one is far more valuable).
 
+## The shipped app's own build
+
+`desktop-rust-clippy` runs a second pass after its workspace one: `cargo clippy --locked --package cmdr -- -D warnings`
+(`shippedAppClippyArgs` in `scripts/check/checks/desktop-rust-clippy.go`), the app alone with its default features, its
+lib and bins only. It runs wherever the check runs: the Linux lane, the macOS lane, the Windows lane, and every local
+`pnpm check clippy`. `pnpm check clippy-windows` asks it too, cross-targeted.
+
+- **Why the workspace pass can't ask it**: cargo unifies features across the selection, and `--all-targets` builds test
+  targets, whose dev-dependencies turn `testing` on in every crate below them. Code only a `testing` build uses reads as
+  used there and as dead in the app a release compiles. So `main` stopped building the Windows app on `unused = "deny"`
+  (`cmdr-local`'s `read_dir_entries`, #1382) while every lane stayed green, and the real-Windows check found it.
+- **What it costs**: on a warm build directory it's free (0.5 s on the laptop, 2026-11-22), and the two passes don't
+  evict each other: a `--fresh` re-run of both took 1.7 s. Cold, it re-checks only the members whose feature set
+  differs, plus the app; third-party crates come warm from the workspace pass.
+- **Never `--fix`**: what it finds is code the tests use and the app doesn't, which wants a gate
+  (`#[cfg(any(..., test, feature = "testing"))]`), a removal, or a real use. ❌ Never an `allow`.
+- **Proof it bites** (2026-11-22): on `main`'s `01407cb5d7`, `pnpm check clippy-windows` went red on this pass alone
+  (`unused import: read_dir_entries`, `function read_dir_entries is never used`), its workspace pass green.
+
 ## macOS lane (`desktop-rust-macos`)
 
 Every other `ci.yml` job runs on ubuntu, so code under `cfg(target_os = "macos")` used to be compiled only on whichever
@@ -679,7 +698,8 @@ later PR happened to fix it.
   on the Windows 10 22H2 builder (MSVC), and `cmdr-index`, `index-query`, `cmdr-local`, `cmdr-operations`,
   `cmdr-multi-rename`, `cmdr-restic`, and `cmdr-listing-wasm` the same day, and the app (`cmdr`) last, after
   `cargo clippy -p cmdr --all-targets -D warnings` passed on the builder: `windowsPending` is empty, so every member
-  must compile. Milestones and the builder's test runs: `docs/notes/windows-port/build-progress.md`.
+  must compile. Milestones and the builder's test runs: `docs/notes/windows-port/build-progress.md`. The same step also
+  lints the app as it ships, alone and without `testing` (§ The shipped app's own build).
 - **The break report (never red)**: `desktop-rust-windows-breaks` runs one `cargo check --keep-going --all-targets` over
   every other member that builds on Linux, and classifies each: compiles (ready to join), fails (its error count and
   first errors), or blocked (the failing crates in its dependency closure, ours or third-party, a failed build script

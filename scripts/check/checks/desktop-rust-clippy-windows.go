@@ -55,6 +55,11 @@ func RunClippyWindows(ctx *CheckContext) (CheckResult, error) {
 		return CheckResult{}, fmt.Errorf("clippy found issues on Windows (%s)%s\n%s",
 			windowsCrossTarget, env.buildNote(), indentOutput(trimCargoProgress(output)))
 	}
+	// Then the app as it ships, like the native lane's `desktop-rust-clippy` (#1382).
+	if appOutput, err := dockerExec(container, containerCargoScript(windowsShippedAppClippyArgs()...)); err != nil {
+		return CheckResult{}, fmt.Errorf("the app as it ships (`-p %s`, default features, no tests) has clippy issues on Windows (%s)%s\n%s",
+			appPackage, windowsCrossTarget, env.buildNote(), indentOutput(trimCargoProgress(appOutput)))
+	}
 	result := clippySuccess(output, " on Windows ("+windowsCrossTarget+")")
 	result.Message += env.buildNote()
 	return result, nil
@@ -66,4 +71,9 @@ func RunClippyWindows(ctx *CheckContext) (CheckResult, error) {
 func windowsClippyArgs(selection []string) []string {
 	args := append([]string{"clippy", "--locked", "--all-targets", "--target", windowsCrossTarget}, selection...)
 	return append(args, "--", "-D", "warnings")
+}
+
+// windowsShippedAppClippyArgs is `shippedAppClippyArgs`, cross-targeted.
+func windowsShippedAppClippyArgs() []string {
+	return shippedAppClippyArgs("--target", windowsCrossTarget)
 }

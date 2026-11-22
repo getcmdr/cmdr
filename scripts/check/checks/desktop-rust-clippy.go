@@ -88,7 +88,44 @@ func RunClippy(ctx *CheckContext) (CheckResult, error) {
 		}
 	}
 
+	if err := clippyShippedApp(ctx.RootDir); err != nil {
+		return CheckResult{}, err
+	}
 	return clippySuccess(output, ""), nil
+}
+
+// appPackage is the desktop app's cargo package, the one a release build compiles.
+const appPackage = "cmdr"
+
+// shippedAppClippyArgs lints the app the way a release build compiles it: the app package
+// alone, its default features, lib and bins only, warnings denied. The workspace pass above
+// can't ask this. Feature unification gives every member the union of what any selected
+// member asks for, and `--all-targets` builds test targets, whose dev-dependencies turn
+// `testing` on in every crate below them. So code that only a `testing` build uses reads as
+// used there and as dead in the shipped app: `main` stopped building the Windows app on
+// `unused = "deny"` while every lane stayed green (#1382, `cmdr-local`'s `read_dir_entries`).
+// No `--all-targets` here on purpose, for the same reason. Pure, so the shape is testable.
+func shippedAppClippyArgs(extra ...string) []string {
+	args := append([]string{"clippy", "--locked", "--package", appPackage}, extra...)
+	return append(args, "--", "-D", "warnings")
+}
+
+// clippyShippedApp runs `shippedAppClippyArgs` on this host, after the workspace pass, so
+// third-party crates whose features match come warm out of that pass's build directory and
+// only the members whose feature set differs (the ones with a `testing` feature, and what's
+// above them) re-check. It reports and never fixes: what it finds is code the `testing`
+// build uses and the app doesn't, which wants a gate or a removal, never a machine fix.
+// `docs/tooling/ci.md` § "The shipped app's own build".
+func clippyShippedApp(rootDir string) error {
+	cmd := exec.Command("cargo", shippedAppClippyArgs("--message-format=json")...)
+	cmd.Dir = rootDir
+	rawOutput, err := RunCommand(cmd, true)
+	if err != nil {
+		output, _ := parseClippyJSON(rawOutput)
+		return fmt.Errorf("the app as it ships (`-p %s`, default features, no tests) has clippy issues the workspace pass can't see\n%s",
+			appPackage, indentOutput(output))
+	}
+	return nil
 }
 
 var (
