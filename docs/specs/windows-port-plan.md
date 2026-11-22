@@ -236,9 +236,10 @@ owns its real body. Remove a line when its body lands.
   `FILE_ATTRIBUTE_HIDDEN` is real. No owner or group by decision (a SID per entry, and nothing shows the owner yet:
   `crates/cmdr-local/DETAILS.md` § "The Windows sibling").
 - `cmdr_operations::local_disk` Windows arm (`local_disk/platform/windows.rs`), tasks 35 and 36: `set_mode` and
-  `symlink` refuse as unsupported (a copied link fails its item; a copied folder's mode narrowing is skipped), and
-  there's no purgeable-space figure. Real: the write probe (`FILE_WRITE_DATA` open), free space (`GetDiskFreeSpaceExW`),
-  the folder volume (`LocalWindowsVolume`), and a read-only file as Locked (`is_locked_item`, `locked_against_removal`).
+  `symlink` refuse as unsupported (a copied link fails its item, #1376; a copied folder's mode narrowing is skipped),
+  and there's no purgeable-space figure. Real: the write probe (`FILE_WRITE_DATA` open), free space
+  (`GetDiskFreeSpaceExW`), the folder volume (`LocalWindowsVolume`), and a read-only file as Locked (`is_locked_item`,
+  `locked_against_removal`).
 - `cmdr_operations` local copy strategy on Windows (`transfer/copy_strategy.rs`), task 36: every file takes the chunked
   loop (cancellable, live progress, staged). No `CopyFileExW` yet, so a copy carries no attributes beyond read-only and
   hidden (the flags, `cmdr_fs::metadata`) and no alternate data streams (Mark of the Web included), and gets no ReFS
@@ -576,9 +577,13 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     (`GetDiskFreeSpaceExW`), with hostile cells on real NTFS (a taken name, a file another program holds open, a
     read-only file, a path past `MAX_PATH`, a junction). **Streams, copy scan, and node identity done** (2026-11-22):
     both local volumes share `cmdr-local`'s `streams.rs` and `copy_scan.rs`, and the copy ledger's node falls back to
-    `FileId::at`. Left, in data-safety order: metadata (dates, attributes, caps, `apply_metadata`), symlink creation
-    (file vs dir) and reparse tags, ADS-backed xattrs, the write-access probe, the mount table and filesystem type, the
-    `FindFirstFileExW` lister, and registering a volume per drive (with 34). The ignored conformance cells in
+    `FileId::at`. **Metadata, links, and the write-access probe done** (2026-11-22, PR #1374): read-only and hidden ride
+    as the Locked and Hidden flags, so a copy and a cross-drive Move anyway keep them (#1352); symlink and junction
+    targets read, reparse tags told apart (a OneDrive placeholder or an app execution alias is the item), and file vs
+    folder symlinks made without elevating (`NotSupported` without Developer Mode); `write_access_at` reads the volume's
+    read-only flag and the DACL. Decided against: owner names (no consumer, a SID per entry) and, for now, ADS-backed
+    xattrs (#1375). Left: the `FindFirstFileExW` lister (being measured), the engine's own Windows `symlink` stub in
+    `cmdr-operations` (#1376), and registering a volume per drive (with 34). The ignored conformance cells in
     `local_conformance_test.rs` are the checklist. App paths in and out of both local volumes (one crossing per OS
     through `AppPath::to_native`): `docs/specs/app-path-plan.md`. File identity is real by PATH (2026-11-21, #1291, PR
     #1304): `cmdr_fs::file_identity::FileId::at` / `same_node_at` open a handle and read `FileIdInfo`

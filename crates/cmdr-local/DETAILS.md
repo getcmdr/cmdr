@@ -447,12 +447,15 @@ nearly every method and hide which answers are real.
   the engine already carries, and a POSIX mode's `0444` has no honest Windows reading for a folder (its read-only bit is
   Explorer's customization marker). The mode and xattrs stay `NotApplicable`; append-only and no-dump have no attribute.
 - **Write access** (`write_access_at`, `src/platform/local_windows/write_access.rs`) asks two things of the nearest
-  folder that exists: the volume's `FILE_READ_ONLY_VOLUME` flag (`GetVolumeInformationByHandleW`) and an open asking for
-  `FILE_ADD_FILE`, which runs the DACL check and writes nothing (the engine's own `local_disk::write_probe` opens the
-  same way). What the two mean together is `src/platform/write_verdict.rs`, pure and pinned on every OS: a read-only
-  volume or `ERROR_WRITE_PROTECT` is `ReadOnlyFilesystem`, `ERROR_ACCESS_DENIED` is `NoPermission`, anything else (a
-  sharing violation, a dead share) `Unknown`. A folder's read-only attribute is never consulted (Explorer's marker,
-  which NTFS doesn't enforce).
+  folder that exists: the volume's `FILE_READ_ONLY_VOLUME` flag (`GetVolumeInformationByHandleW`) and whether the
+  folder's DACL grants this process's token `FILE_ADD_FILE` (`AccessCheck`). What the two mean together is
+  `src/platform/write_verdict.rs`, pure and pinned on every OS: a read-only volume is `ReadOnlyFilesystem`, a refusal
+  `NoPermission`, a descriptor or token nobody could read `Unknown`. **Decision**: `AccessCheck`, ❌ not an open asking
+  for `FILE_ADD_FILE`. **Why**: a folder opens only with backup semantics, which a token with `SeBackupPrivilege`
+  enabled gets past whatever the DACL says, while the copy's own creates are refused: the open answered `Writable` for a
+  folder denying everyone `FILE_ADD_FILE` on GitHub's hosted runner (PR #1374, 2026-11-22). The engine's own
+  `local_disk::write_probe` still opens that way (#1377). A folder's read-only attribute is never consulted (Explorer's
+  marker, which NTFS doesn't enforce).
 - **Decision**: no xattrs yet (`supports_xattrs` false), ❌ not alternate data streams as they are. **Why**: the
   contract doesn't map onto streams cleanly (#1375): an xattr name holds `:`, which a stream name can't, so it needs the
   same private-use mapping macOS's SMB client and Samba's `fruit` use or a tag reads as another attribute over SMB;

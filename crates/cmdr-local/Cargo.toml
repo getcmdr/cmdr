@@ -54,7 +54,13 @@ libc = "0.2"
 # this drive keep a Recycle Bin" (`recycle_bin.rs`). The version `cmdr-fs` already uses, so
 # no second copy enters the graph.
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_Registry"] }
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_Storage_FileSystem",
+  "Win32_System_Registry",
+  "Win32_System_Threading",
+] }
 
 # NSURL resource values: volume space (important-usage, purgeable counted), the
 # volume names and ejectability `volumes/` enriches with, and a file's added and
