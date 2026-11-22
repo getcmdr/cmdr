@@ -31,6 +31,13 @@ pub(crate) fn routes_over_its_parent(text: &str) -> bool {
     parse(text).is_ok_and(|path| crate::file_system::volume::manager::app_path_routes_over_its_parent(&path))
 }
 
+/// The last name of the app path `text` spells, `None` at a root and for text that's no
+/// app path.
+pub(crate) fn last_name(text: &str) -> Option<String> {
+    use cmdr_fs::app_path::PathArithmetic;
+    parse(text).ok()?.file_name().map(str::to_owned)
+}
+
 /// The native file `text` names: [`parse`], then `to_native`. `None` for text that's no app
 /// path and for an app path this OS's files don't hold (a scheme path).
 pub(crate) fn native(text: &str) -> Option<PathBuf> {

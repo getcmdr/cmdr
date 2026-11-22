@@ -38,7 +38,6 @@ use crate::location::miss::{LocationMissResult, MissToken, volume_not_connected}
 use crate::location::resolve::{LocationInput, LocationMiss, ResolvedLocation, VolumeFacts, resolve};
 use crate::location::store_path::to_store_path;
 use crate::tools::resources::volumes::VolumeKind;
-use cmdr_fs::app_path::PathArithmetic;
 
 /// The id a search-results pane gives its rows' volume. Its rows are real files on
 /// whatever drive holds them, so the card places the bare path instead (the
@@ -640,10 +639,7 @@ pub(crate) fn through_gathered(
     drive: Option<Drive<'_>>,
 ) -> Gathered {
     let path = resolved.location.path.clone();
-    let name = crate::app_text::parse(&path)
-        .ok()
-        .and_then(|p| p.file_name().map(str::to_owned));
-    let name = name.unwrap_or_else(|| path.clone());
+    let name = crate::app_text::last_name(&path).unwrap_or_else(|| path.clone());
     let index_covers = resolved.index.live && matches!(way, Way::OsMountedShare | Way::Server);
     // The image index covers a local disk and an SMB share the person opted in
     // (`media_index`); a share's picture reads its database, never the share.
