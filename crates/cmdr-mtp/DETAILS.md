@@ -81,16 +81,17 @@ Every `Volume` body takes the trait's `&AppPath` with no bridge (`crates/cmdr-fs
   spelling a row carries, and the relative or empty text a `std::path` caller still sends all reduce to the storage path
   the session layer takes (`src/connection/DETAILS.md` § "Storage paths are app paths"). An escape in that text (a Linux
   name joined onto a phone path) reads as its bytes' lossy text, the old answer (`device_spelling`).
-- **A name compared with a listing, or handed the device as a new name, is the device's spelling** (`device_name`): a
-  literal escape-range code point the bridge escaped decodes back to itself, and a name whose bytes aren't text is
-  refused, ❌ never its lossy look-alike. Pinned by
+- **A name compared with a listing, or handed the device as a new name, is the device's spelling** (`device_name`,
+  through `cmdr_fs::app_path::listed_text`): a literal escape-range code point the app escaped decodes back to itself,
+  and a name whose bytes aren't text is refused, ❌ never its lossy look-alike. Pinned by
   `volume_impl_test::a_name_holding_an_escape_range_code_point_stats_by_the_devices_spelling`.
 - **`root()`, `listing_path`, the reported URLs, and every row's `FileEntry.path` keep today's text** for every
   canonical input. A non-canonical spelling (`//`, `/./`) answers the canonical one, naming the same object, and a `..`
-  name answers `ObjectNotFound` (or keys a listing nothing holds). One case where the text changed: a device name
-  holding a literal escape-range code point (U+10E800–U+10EFFF, U+10FE80–U+10FEFF) gives `listing_path` and the report
-  URL the literal text its row always carried, where the bridge re-escaped it; that waits on the escape gate
-  (`ESCAPES_LIVE`).
+  name answers `ObjectNotFound` (or keys a listing nothing holds). A device name holding a literal escape-range code
+  point (U+10E800–U+10EFFF, U+10FE80–U+10FEFF) gives `listing_path` and the report URL the app's spelling of its row
+  (the listed-text door, `app_spelling_of` and `url_of`, #1310), the value the wire and the bridge make of that row's
+  text; the session layer's storage paths keep the device's literal text inside. Pinned by
+  `storage_path::tests::a_report_url_spells_a_listed_escape_range_name_as_the_app_does`.
 - Tests build typed paths: `app_path!`, `volume/test_paths.rs` (`row` for a listed row's path, `child`), and
   `mtp_path_of_text` for the relative text pins.
 

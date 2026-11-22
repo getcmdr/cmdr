@@ -68,7 +68,7 @@ pub use streams::volume_read_stream_to_chunk_stream;
 
 use crate::connection::MtpConnectionManager;
 use crate::connection::storage_path::{storage_path, storage_url, url_of};
-use cmdr_fs::app_path::{AppPath, AppPathBuf, PathFlavor, unescape_bytes};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathFlavor, listed_row_name, listed_text};
 use std::borrow::Cow;
 use std::sync::Arc;
 
@@ -195,27 +195,27 @@ fn device_text(path: &AppPath) -> Cow<'_, str> {
     device_spelling(path.as_str())
 }
 
-/// One name as a device spells it, or `None` for a name whose native bytes aren't text
-/// (a Linux name joined onto a phone path): ❌ never its lossy spelling, which could
-/// match a sibling the device really lists as `caf\u{FFFD}.txt`. What a lookup by name,
-/// a new folder's name, or an upload's name takes.
+/// One name as a device spells it (`listed_text`, the inverse of the listed-name door,
+/// #1310), or `None` for a name no device lists (a Linux name that isn't text, joined onto
+/// a phone path): ❌ never its lossy spelling, which could match a sibling the device
+/// really lists as `caf\u{FFFD}.txt`. What a lookup by name, a new folder's name, or an
+/// upload's name takes.
 fn device_name(name: &str) -> Option<Cow<'_, str>> {
-    match unescape_bytes(name).ok()? {
-        Cow::Borrowed(_) => Some(Cow::Borrowed(name)),
-        Cow::Owned(bytes) => String::from_utf8(bytes).ok().map(Cow::Owned),
-    }
+    listed_text(name)
 }
 
-/// App text (a path, or one name) as a device spells it: an escape (a name no device
-/// spelled, joined in from a Linux disk, or a literal escape-range code point the bridge
-/// escaped) as the native bytes' lossy text, the text a `std::path` view of it gave. A
-/// name compared with a listing's `FileEntry.name` goes through here, since a device
-/// lists the literal spelling.
+/// App text (a path, or one name) as a device spells it: a literal escape-range code
+/// point the app escaped as the device lists it, and an escape no device spelled (joined in
+/// from a Linux disk) as the native bytes' lossy text, the text a `std::path` view of it
+/// gave (`listed_row_name`). A name compared with a listing's `FileEntry.name` goes through
+/// here, since a device lists the literal spelling.
 fn device_spelling(text: &str) -> Cow<'_, str> {
-    match unescape_bytes(text) {
-        Ok(Cow::Borrowed(_)) => Cow::Borrowed(text),
-        Ok(Cow::Owned(bytes)) => Cow::Owned(String::from_utf8_lossy(&bytes).into_owned()),
-        // A unit escape (an unpaired surrogate on Windows): what a person reads.
-        Err(_) => cmdr_fs::app_path::shown_name(text),
-    }
+    listed_row_name(text)
+}
+
+/// A storage path (the session layer's literal text, `/DCIM/x`) as the app spells it, so a
+/// device name holding an escape-range code point is the value the app hands back for its
+/// row (#1310). `None` for text no app path holds.
+fn app_spelling_of(storage_path: &AppPath) -> Option<AppPathBuf> {
+    AppPathBuf::from_listed_text(storage_path.as_str(), PathFlavor::Posix).ok()
 }

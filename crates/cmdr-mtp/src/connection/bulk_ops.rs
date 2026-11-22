@@ -187,10 +187,11 @@ impl MtpConnectionManager {
             if boundary.leaves_out(&entry.name, entry.is_directory) {
                 continue;
             }
-            // A listed row's name is one plain name (`directory_ops::entry_for_object`).
-            let Some(caller_child) = AppName::from_app_spelling(&entry.name)
+            // A listed row's name is one plain name (`directory_ops::entry_for_object`),
+            // spelled as the app spells its row (the listed-name door, #1310).
+            let Some(caller_child) = AppName::from_listed_text(&entry.name)
                 .ok()
-                .and_then(|name| caller_folder.join(name).ok())
+                .and_then(|name| caller_folder.join(&name).ok())
             else {
                 continue;
             };

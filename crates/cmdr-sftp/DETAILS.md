@@ -942,10 +942,12 @@ translated by `RemoteRoot::to_remote`, and the server side is POSIX text split o
 spellings are deliberately NOT the typed canonical one: `Volume::root` and every row's `FileEntry.path` keep
 `RemoteRoot`'s own text (`app_root`, `to_app_path`), byte for byte what the wire carried before, so a root or row never
 changes spelling under a pane that compares by string. The typed `to_app` answers only the listing patcher
-(`display_path_for`), whose matches are component-wise. A server path whose text the app path can't hold yet (a NUL, an
-escape-range code point) still gets its row, and only loses its patch (the pane re-lists). Tests name files through the
-root (`testing::app_at`), since a typed path is absolute; what the volume does with relative TEXT a `std::path` caller
-still sends is `paths_test.rs`'s, through `RemoteRoot`'s `std::path` form, the same rules.
+(`display_path_for`), whose matches are component-wise. A server path no app path holds (a NUL) still gets its row, and
+only loses its patch (the pane re-lists). An escape-range code point in a server name goes through the listed-text door
+both ways (#1310, `crates/cmdr-fs/DETAILS.md` § "App paths"): its row's text stays literal, and its patch and every
+request name it as listed. Tests name files through the root (`testing::app_at`), since a typed path is absolute; what
+the volume does with relative TEXT a `std::path` caller still sends is `paths_test.rs`'s, through `RemoteRoot`'s
+`std::path` form, the same rules.
 
 Resolution is lexical — no round trip, no symlink following. The question is "did the caller address something outside
 this volume", which is about the path they wrote rather than about what it resolves to, and asking the server would be

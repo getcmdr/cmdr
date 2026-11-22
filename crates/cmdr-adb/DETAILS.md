@@ -183,11 +183,12 @@ The volume is device-anchored, the same shape MTP has, and every answer below fo
   the bodies, since the canonical root is `adb://<serial>/`), and every row's `FileEntry.path` keeps `RemoteRoot`'s own
   text (`app_text_of`), byte for byte what the wire carried before. The typed `to_app` answers only the listing patcher
   (`display_path_for`), and at the device's `/` it answers `root()` itself, so the listing host hears the root folder by
-  the spelling a pane holds. A device path whose text the app path can't hold yet still gets its row and only loses its
-  patch (the pane re-lists). The walk and the patches go through `cmdr-fs`'s typed twins (`scan_*_at`, `patch_*_at`).
-  Tests name files through `volume::testing::fixture_app_path` and `child`; `fixture_path` stays the `std::path` form
-  the app's ADB suites call. What the volume does with relative or `..` TEXT is `paths_test.rs`'s, through
-  `RemoteRoot`'s `std::path` form plus this volume's own climb count.
+  the spelling a pane holds. A device path no app path holds (a NUL) still gets its row and only loses its patch (the
+  pane re-lists); one holding an escape-range code point goes through the listed-text door both ways (#1310,
+  `crates/cmdr-fs/DETAILS.md` § "App paths"). The walk and the patches go through `cmdr-fs`'s typed twins (`scan_*_at`,
+  `patch_*_at`). Tests name files through `volume::testing::fixture_app_path` and `child`; `fixture_path` stays the
+  `std::path` form the app's ADB suites call. What the volume does with relative or `..` TEXT is `paths_test.rs`'s,
+  through `RemoteRoot`'s `std::path` form plus this volume's own climb count.
 - **Copies keep the source's date and mode** (the contract: `crates/cmdr-operations/src/transfer/volume/DETAILS.md` §
   "Copies keep the source's metadata"). A read stream reports the mtime of the `STAT`/`STA2` its open already does
   (`SyncStat::modified_at`, `None` before 1970 to match the listing); a push hands the stream's date to `DONE`, which

@@ -46,7 +46,7 @@ impl SftpVolume {
     ///
     /// A refusal becomes "no patch to make": a listing-cache patch is a
     /// courtesy, and ❌ must never fail a mutation that already landed. That
-    /// includes a server path whose text needs an escape (`NotAppText`): the pane
+    /// includes a server path no app path holds (`NotAppText`, a NUL): the pane
     /// re-lists it.
     pub(super) fn display_path_for(&self, path: &AppPath) -> Option<AppPathBuf> {
         self.root

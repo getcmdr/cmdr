@@ -174,6 +174,20 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   they are. `volume::ChildName` (over `&OsStr`) is the `std::path` world's name and has NO app-path join: reading its
   text as app spelling respells nothing today but would, once escapes exist, turn a live escape into a literal one and
   land a copy of `caf\xE9.txt` under a different name. The wrong combination has no API.
+- **A listed escape-range name has one spelling both ways while escapes aren't live** (#1310, Decision/Why): a backend's
+  own listing text (a server path, a device's storage path) enters typed only through the listed-text door
+  (`AppName::from_listed_text`, `AppPathBuf::from_listed_text`), which escapes a literal escape-range code point through
+  the host's units, the spelling the bridge (`legacy_unchecked`) and the wire (`from_literal_store`) give the same row
+  text. Every remote and device backend reads app text back through `listed_text`, the exact inverse
+  (`RemoteRoot::to_remote`, SMB's `to_smb_path`, MTP's `device_name`; patch row names through `listed_row_name`), so a
+  name listed as `x\u{10FEFF}` reaches its server as listed. Why: the two spellings used to meet at the volume (the
+  app's escaped, the backend's own joins literal) and the server answered `NotFound`. `listed_text` decodes either
+  alphabet (the operation log escapes a row through the VOLUME's namer) and refuses, `None`, what no door makes: a live
+  escape (sent as its code points' bytes it would create a file literally named with the escape), both alphabets, or
+  non-literal escapes (`caf\u{10FEC3}\u{10FEA9}` decoded is the look-alike `café`). Pinned by
+  `bridge_test.rs::a_listed_path_spells_as_the_bridge_and_the_wire_and_reads_back_as_listed`, `remote_paths_test`'s
+  `a_listed_escape_range_name_reaches_the_server_as_listed_through_every_door`, and a cell per backend. 10f replaces
+  both doors with each backend's own alphabet.
 - **Canonical form**: no empty, `.`, or `..` name, no trailing `/` except the root's own; every root ends in `/` (`/`,
   `C:/`, `//server/share/`, `scheme://authority/`). The drive letter is uppercased; nothing else is folded, and the
   Unicode form is never touched (NFC and NFD `café` are two values). `parse` normalizes into it, `from_normalized` takes

@@ -172,7 +172,7 @@ impl S3Volume {
     }
 
     /// [`Self::row_path`] as a typed app path, for the listing patcher; `None`
-    /// also for a server name the typed path can't hold yet.
+    /// also for a server name no typed path holds (a NUL).
     pub(super) fn app_path_of(&self, remote: &str) -> Option<AppPathBuf> {
         self.root.to_app(remote).ok()
     }

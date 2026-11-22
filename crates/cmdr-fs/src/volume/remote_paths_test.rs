@@ -515,12 +515,53 @@ fn only_a_slash_separates_a_server_path_on_every_host() {
     assert_eq!(normalize_remote_path(Path::new("srv\\x")), Path::new("/srv\\x"));
 }
 
-/// ❗ Until escapes go live (`app_path::ESCAPES_LIVE`), an escape-range code point in an
-/// app path is LITERAL text, the way every row a backend listed spells it: it reaches the
-/// server as those same UTF-8 bytes, the bytes the `std::path` door sends. Decoding it
-/// would send a different name: `caf\u{10FEC3}\u{10FEA9}` would reach `café`, a sibling.
+/// #1310: a name a server lists with an escape-range code point (`x\u{10FEFF}`, which the
+/// row carries as is) reaches the server as that same text, whichever door the app's value
+/// came through: the wire's (`from_literal_store`, what a command reads a row's path by; the
+/// bridge spells the same, `app_path::tests`), or the volume's own [`RemoteRoot::to_app`] (a
+/// patch, a link target), and a walk child of it, named likewise, too.
 #[test]
-fn until_escapes_go_live_an_escape_range_name_reaches_the_server_as_its_literal_text() {
+fn a_listed_escape_range_name_reaches_the_server_as_listed_through_every_door() {
+    use crate::app_path::{AppName, ListedFolder, Namer};
+    let root = rooted_at("/srv/data");
+    for name in [
+        "x\u{10FEFF}",
+        "x\u{10FE80}",
+        "x\u{10E800}",
+        "\u{10EFFF}\u{10FEC3}\u{10FEA9}",
+    ] {
+        let listed = format!("/srv/data/{name}");
+        let row = format!("{PREFIX}{listed}");
+        let sent = AppPathBuf::from_literal_store(&row, Namer::HOST).expect("an app path");
+        assert_eq!(
+            root.to_remote(&sent).as_deref(),
+            Some(listed.as_str()),
+            "{name:?}: wire"
+        );
+        assert_eq!(
+            root.to_remote(&sent),
+            root.to_remote_path(Path::new(&row)),
+            "{name:?}: the typed door sends what the `std::path` one sends"
+        );
+        let own = root.to_app(&listed).expect("an app path");
+        assert_eq!(own, sent, "{name:?}: the volume's own spelling is the wire's");
+        let child = ListedFolder::new(&own)
+            .join(&AppName::from_listed_text(name).expect("a name"))
+            .expect("a child");
+        assert_eq!(
+            root.to_remote(&child).as_deref(),
+            Some(format!("{listed}/{name}").as_str()),
+            "{name:?}: walk child"
+        );
+    }
+}
+
+/// App text no listed name escapes to (a live escape: a native name that isn't text) is
+/// refused, ❌ never sent as its code points' own bytes, a file literally named with the
+/// escape. (A look-alike, `caf\u{10FEC3}\u{10FEA9}` for `café`, isn't canonical, so no app
+/// path holds one; `listed_text` refuses it too.)
+#[test]
+fn app_text_no_listed_name_escapes_to_is_refused() {
     let root = rooted_at("/srv/data");
     for name in [
         crate::app_path::escape_bytes(b"caf\xe9.txt").into_owned(),
@@ -528,35 +569,18 @@ fn until_escapes_go_live_an_escape_range_name_reaches_the_server_as_its_literal_
         "x\u{10FEFF}".to_string(),
     ] {
         let text = format!("{PREFIX}/srv/data/{name}");
-        let literal = format!("/srv/data/{name}");
-        assert_eq!(
-            root.to_remote(app(&text)).as_deref(),
-            Some(literal.as_str()),
-            "{name:?}"
-        );
-        assert_eq!(
-            root.to_remote(app(&text)),
-            root.to_remote_path(Path::new(&text)),
-            "{name:?}: the typed door sends what the `std::path` one sends"
-        );
+        assert_eq!(root.to_remote(app(&text)), None, "{name:?}");
     }
 }
 
-/// A server answer the app path can't hold as it stands is a typed refusal the caller
-/// keeps the old spelling for, ❌ never an entry it drops.
+/// A server answer no app path holds is a typed refusal the caller keeps the old spelling
+/// for, ❌ never an entry it drops.
 #[test]
-fn a_server_answer_needing_an_escape_is_a_typed_refusal() {
+fn a_server_answer_no_app_path_holds_is_a_typed_refusal() {
     let root = rooted_at("/srv/data");
-    assert_eq!(
-        root.to_app("/srv/data/x\u{10FEE9}"),
-        Err(RemoteAppRefusal::NotAppText(NotAnAppPath::NotUnicode))
-    );
     assert_eq!(
         root.to_app("/srv/data/a\0b"),
         Err(RemoteAppRefusal::NotAppText(NotAnAppPath::Nul))
     );
-    assert!(
-        root.to_app_path("/srv/data/x\u{10FEE9}").is_some(),
-        "the old spelling stays"
-    );
+    assert!(root.to_app_path("/srv/data/a\0b").is_some(), "the old spelling stays");
 }

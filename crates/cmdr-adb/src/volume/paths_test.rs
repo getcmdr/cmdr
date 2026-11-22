@@ -165,3 +165,16 @@ fn joining_never_doubles_the_root_slash() {
     assert_eq!(join_device_path("/", "sdcard"), "/sdcard");
     assert_eq!(join_device_path("/sdcard", "DCIM"), "/sdcard/DCIM");
 }
+
+/// #1310: a name the device lists with an escape-range code point is reached as listed: the
+/// row's text through the app's door (the listed-text one, which the wire and the bridge
+/// spell alike), and what the listing-cache patcher spells comes back the same value.
+#[test]
+fn a_listed_escape_range_name_reaches_the_device_as_listed() {
+    let volume = detached_volume();
+    let listed = "/sdcard/x\u{10FEFF}/caf\u{10FEC3}\u{10FEA9}";
+    let row = volume.app_text_of(listed).expect("a row");
+    let sent = AppPathBuf::from_listed_text(&row, PathFlavor::Posix).expect("an app path");
+    assert_eq!(volume.to_device_path(&sent).unwrap(), listed);
+    assert_eq!(volume.display_path_for(&sent), Some(sent.clone()));
+}

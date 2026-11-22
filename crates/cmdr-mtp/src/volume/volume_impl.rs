@@ -5,7 +5,7 @@
 use super::cancel::MtpCancelBridge;
 use super::mapping::map_mtp_error;
 use super::streams::{MtpReadStream, mtp_read_pacing, volume_read_stream_to_chunk_stream};
-use super::{MtpVolume, device_name, device_spelling, device_text};
+use super::{MtpVolume, app_spelling_of, device_name, device_spelling, device_text};
 use crate::connection::storage_path::{folder_or_root, storage_path};
 use crate::connection::{MtpConnectionError, MtpDeleteScope, UploadedFile, std_path_for_host, twins};
 use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, ListedFolder, PathArithmetic};
@@ -232,8 +232,12 @@ impl Volume for MtpVolume {
     /// the pre-flight oracle ask with. `notify_mutation` and the event loop report
     /// at the `mtp://` URL, and the volume switcher opens it; both fold onto this.
     fn listing_path(&self, path: &AppPath) -> AppPathBuf {
-        // A `..` name has no storage path; the path itself then keys a listing nothing holds.
-        self.storage_path_of(path).unwrap_or_else(|| path.to_owned())
+        // In app spelling (#1310): a pane keys a folder whose device name holds an
+        // escape-range code point by the value the app made of its row's text. A `..` name
+        // has no storage path; the path itself then keys a listing nothing holds.
+        self.storage_path_of(path)
+            .and_then(|storage| app_spelling_of(&storage))
+            .unwrap_or_else(|| path.to_owned())
     }
 
     fn notify_mutation<'a>(
