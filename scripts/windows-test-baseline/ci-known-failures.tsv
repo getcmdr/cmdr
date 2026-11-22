@@ -25,7 +25,6 @@ cmdr	agent::line::tests::subject_tests::a_memory_path_is_a_place_only_when_it_la
 cmdr	agent::line::tests::subject_tests::only_an_absolute_whole_path_is_a_place_to_go	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	agent::suggested_ops::tests::a_root_the_index_doesnt_hold_refuses_rather_than_matching_nothing	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	agent::suggested_ops::tests::the_drive_index_resolves_a_selector_over_a_real_index	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
-cmdr	commands::agent::suggested_ops_live::tests::only_a_renamed_op_has_a_landing_path	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr	commands::file_system::volume_copy::destination_root_echo_test::a_server_path_typed_on_a_server_place_names_both_readings	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr	commands::file_system::write_ops::tests::reject_if_routed_over_a_parent_flags_a_path_inside_a_zip	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr	commands::file_system::write_ops::tests::scan_preview_routes_an_archive_source_to_the_archive_volume	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
