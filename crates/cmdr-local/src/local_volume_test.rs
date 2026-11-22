@@ -614,3 +614,21 @@ async fn listing_a_local_directory_reports_progress_while_it_reads() {
         ticks.iter().map(ListingProgress::entries).collect::<Vec<_>>()
     );
 }
+
+// ── Write access ───────────────────────────────────────────────────────
+
+/// A folder this user can write into is writable, and a folder a copy would create answers
+/// for the nearest one that exists.
+#[tokio::test]
+async fn write_access_of_a_writable_folder_and_of_one_a_copy_would_create() {
+    let dir = AppTestDir::new("local_write_access");
+    let volume = volume_at(&dir);
+    assert_eq!(
+        volume.write_access_at(&at(&volume, "")).await,
+        cmdr_fs::volume::WriteAccess::Writable
+    );
+    assert_eq!(
+        volume.write_access_at(&at(&volume, "new/deeper")).await,
+        cmdr_fs::volume::WriteAccess::Writable
+    );
+}

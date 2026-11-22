@@ -204,12 +204,10 @@ keys, and look (tasks 34, 60, 62, 63, 67), with its open problems:
 Honest stubs: Windows arms that compile and answer "unsupported", "unknown", or nothing, each waiting for the task that
 owns its real body. Remove a line when its body lands.
 
-- `cmdr_fs::metadata` (`metadata/platform/windows.rs`), tasks 35 and 36: mode as the read-only attribute, xattrs as
-  alternate data streams, the DACL, and Hidden as an attribute answer `NotApplicable`, and a copy carries no read-only
-  (`flags_of` reads none). Real: dates, and a FILE's read-only as the Locked a move asks about (`removal_lock`,
-  `clear_blockers`, and `add_flags` putting it back, #1331).
-- `cmdr_fs::entry` owner and group names (`entry/platform/windows.rs`), task 35: always `None`, since a Windows owner is
-  a SID, not a uid.
+- `cmdr_fs::metadata` (`metadata/platform/windows.rs`), tasks 35 and 36: the mode, xattrs as alternate data streams
+  (#1375), and the DACL answer `NotApplicable`. Real: dates, and the read-only (a FILE's, as Locked) and hidden
+  attributes as user flags a copy reads and puts back (`flags_of`, `add_flags`; #1352), the Locked a move asks about
+  included (`removal_lock`, `clear_blockers`, #1331).
 - `cmdr_fs::file_provider` (`file_provider/platform/windows.rs`), task 37: no File Provider marker; Cloud Files
   placeholders are read their own way.
 - `cmdr_fs::mapped_file_faults` (`mapped_file_faults/platform/windows.rs`), task 47: recovers nothing, so a read of a
@@ -228,20 +226,25 @@ owns its real body. Remove a line when its body lands.
   `GetThreadTimes`, so the index writer and rescan lines carry thread CPU there.
 - `cmdr-sftp` agent (`transport/platform/windows.rs`), task 46: asks the OpenSSH agent's pipe (or `SSH_AUTH_SOCK`),
   never Pageant.
-- `cmdr_local::LocalWindowsVolume` (`platform/local_windows.rs`), task 35: no `create_symlink` / `read_link_target`
-  (`can_hold_links` false), no ADS-backed xattrs, no `apply_metadata` or metadata caps, no `write_access_at`, and no
-  `FindFirstFileExW` lister. Each keeps the trait's conservative default, and each conformance cell it can't pass yet is
-  `#[ignore]`d with its piece (`local_conformance_test.rs`). Real since 2026-11-22: streams, the copy scan, and
-  `node_identity` (`crates/cmdr-local/DETAILS.md` § "The Windows sibling").
-- `cmdr_local::reading` Windows arm (`reading/platform/windows.rs`), task 35: no allocation size, mode `0`, no owner or
-  group; only `FILE_ATTRIBUTE_HIDDEN` is real.
+- `cmdr_local::LocalWindowsVolume` (`platform/local_windows.rs`), task 35: no ADS-backed xattrs (the contract doesn't
+  map onto streams cleanly: #1375). It keeps the trait's conservative default, and each conformance cell it can't pass
+  yet is `#[ignore]`d with its piece (`local_conformance_test.rs`). Real since 2026-11-22: streams, the copy scan,
+  `node_identity`, metadata (dates, read-only and hidden as flags, the caps), and links (symlink and junction targets,
+  reparse tags told apart, file vs folder symlinks made without elevating), and `write_access_at` (the volume's
+  read-only flag and the DACL), and a lister off `read_dir`'s find data (`crates/cmdr-local/DETAILS.md` § "The Windows
+  sibling").
+- `cmdr_local::reading` Windows arm (`reading/platform/windows.rs`), task 35: no allocation size and mode `0`; only
+  `FILE_ATTRIBUTE_HIDDEN` is real. No owner or group by decision (a SID per entry, and nothing shows the owner yet:
+  `crates/cmdr-local/DETAILS.md` § "The Windows sibling").
 - `cmdr_operations::local_disk` Windows arm (`local_disk/platform/windows.rs`), tasks 35 and 36: `set_mode` and
-  `symlink` refuse as unsupported (a copied link fails its item; a copied folder's mode narrowing is skipped), and
-  there's no purgeable-space figure. Real: the write probe (`FILE_WRITE_DATA` open), free space (`GetDiskFreeSpaceExW`),
-  the folder volume (`LocalWindowsVolume`), and a read-only file as Locked (`is_locked_item`, `locked_against_removal`).
+  `symlink` refuse as unsupported (a copied link fails its item, #1376; a copied folder's mode narrowing is skipped),
+  and there's no purgeable-space figure. Real: the write probe (`FILE_WRITE_DATA` open), free space
+  (`GetDiskFreeSpaceExW`), the folder volume (`LocalWindowsVolume`), and a read-only file as Locked (`is_locked_item`,
+  `locked_against_removal`).
 - `cmdr_operations` local copy strategy on Windows (`transfer/copy_strategy.rs`), task 36: every file takes the chunked
-  loop (cancellable, live progress, staged). No `CopyFileExW` yet, so a copy carries no attributes or alternate data
-  streams (Mark of the Web included), and gets no ReFS block clone or SMB copy offload.
+  loop (cancellable, live progress, staged). No `CopyFileExW` yet, so a copy carries no attributes beyond read-only and
+  hidden (the flags, `cmdr_fs::metadata`) and no alternate data streams (Mark of the Web included), and gets no ReFS
+  block clone or SMB copy offload.
 - `cmdr_operations::delete::cloud_trash::metadata_is_online_only` on Windows, task 37: never online-only, the cautious
   branch, so a Cloud Files placeholder trashes (and hydrates) like any file.
 - `cmdr_operations` extract quarantine on Windows (`transfer/volume/extract_quarantine.rs`), task 37: an extract carries
@@ -575,20 +578,26 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     (`GetDiskFreeSpaceExW`), with hostile cells on real NTFS (a taken name, a file another program holds open, a
     read-only file, a path past `MAX_PATH`, a junction). **Streams, copy scan, and node identity done** (2026-11-22):
     both local volumes share `cmdr-local`'s `streams.rs` and `copy_scan.rs`, and the copy ledger's node falls back to
-    `FileId::at`. Left, in data-safety order: metadata (dates, attributes, caps, `apply_metadata`), symlink creation
-    (file vs dir) and reparse tags, ADS-backed xattrs, the write-access probe, the mount table and filesystem type, the
-    `FindFirstFileExW` lister, and registering a volume per drive (with 34). The ignored conformance cells in
-    `local_conformance_test.rs` are the checklist. App paths in and out of both local volumes (one crossing per OS
-    through `AppPath::to_native`): `docs/specs/app-path-plan.md`. File identity is real by PATH (2026-11-21, #1291, PR
-    #1304): `cmdr_fs::file_identity::FileId::at` / `same_node_at` open a handle and read `FileIdInfo`
-    (`file_identity/platform/windows.rs`), which the copy's same-file guards and the source binding ask; the `Metadata`
-    readers (`device_of`, `link_count`, walk dedup, the journal's `NodeIdentity`) still answer `None` and move over as
-    each consumer needs it. The mount table is real (2026-11-21, `cmdr_local::mounts`' Windows arm): drive letters and
-    folder mounts, "is this a mount point" by `GetVolumeNameForVolumeMountPointW` (a junction is none), the app's drive
-    list reading the same table; and the device reads by path (`file_identity::device_at`, the volume serial), so a
-    same-drive move renames. So a move and a folder Overwrite are refused as `MountedVolumeInside` only over a real
-    mount; on the desktop a move onto another drive and a folder Overwrite land (unverified on a real folder mount,
-    which would take a `mountvol` change). Left of the mount half: the ledger's and journal's node identity from
+    `FileId::at`. **Metadata, links, and the write-access probe done** (2026-11-22, PR #1374): read-only and hidden ride
+    as the Locked and Hidden flags, so a copy and a cross-drive Move anyway keep them (#1352); symlink and junction
+    targets read, reparse tags told apart (a OneDrive placeholder or an app execution alias is the item), and file vs
+    folder symlinks made without elevating (`NotSupported` without Developer Mode); `write_access_at` reads the volume's
+    read-only flag and the DACL. Decided against: owner names (no consumer, a SID per entry) and, for now, ADS-backed
+    xattrs (#1375). **The lister done** (2026-11-22): rows come off `read_dir`'s own find data (`std`'s
+    `FindFirstFileExW`, basic info) with no stat per entry, a listing of 20,000 files three times faster (246 ms against
+    732), and `FIND_FIRST_EX_LARGE_FETCH` bought nothing (`docs/notes/windows-port/windows-lister-2026-11.md`). Left:
+    the engine's own Windows `symlink` stub in `cmdr-operations` (#1376), and registering a volume per drive (with 34).
+    The ignored conformance cells in `local_conformance_test.rs` are the checklist. App paths in and out of both local
+    volumes (one crossing per OS through `AppPath::to_native`): `docs/specs/app-path-plan.md`. File identity is real by
+    PATH (2026-11-21, #1291, PR #1304): `cmdr_fs::file_identity::FileId::at` / `same_node_at` open a handle and read
+    `FileIdInfo` (`file_identity/platform/windows.rs`), which the copy's same-file guards and the source binding ask;
+    the `Metadata` readers (`device_of`, `link_count`, walk dedup, the journal's `NodeIdentity`) still answer `None` and
+    move over as each consumer needs it. The mount table is real (2026-11-21, `cmdr_local::mounts`' Windows arm): drive
+    letters and folder mounts, "is this a mount point" by `GetVolumeNameForVolumeMountPointW` (a junction is none), the
+    app's drive list reading the same table; and the device reads by path (`file_identity::device_at`, the volume
+    serial), so a same-drive move renames. So a move and a folder Overwrite are refused as `MountedVolumeInside` only
+    over a real mount; on the desktop a move onto another drive and a folder Overwrite land (unverified on a real folder
+    mount, which would take a `mountvol` change). Left of the mount half: the ledger's and journal's node identity from
     `Metadata` (the ledger records `Unverifiable` on Windows), and the app's `live_volume_space`, `mount_identity_at`,
     and `network_mount_under` arms. Bugs it owns: the six `cmdr-operations` cells that fail on Windows on `main`
     (`docs/notes/windows-port/windows-test-failures.md` § "By milestone", item 9). ❗ The engine's Windows `symlink`
@@ -644,10 +653,10 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     `FileInUse`). On the desktop: `docs/notes/windows-port/real-windows-check-2026-11-19.md` § "Task 36's delete on the
     desktop". A move of a read-only file asks the Locked question, same-drive and cross-drive, and the cross-drive sweep
     and `LocalWindowsVolume::delete` refuse a read-only original nobody agreed to (#1331,
-    `crates/cmdr-operations/DETAILS.md` § "Moving Locked items"); a cross-drive Move anyway still lands the copy without
-    the attribute until the `CopyFileExW` arm (#1352). "Go to Recycle Bin" opens the bin in File Explorer (the app's
-    `open_trash_view`, #1332; `delete/DETAILS.md` § "Windows: the Recycle Bin"). Seen beside it: no listing watch on a
-    Windows drive (#1330, task 35's, now done).
+    `crates/cmdr-operations/DETAILS.md` § "Moving Locked items"); a cross-drive Move anyway lands the copy read-only
+    again (#1352, task 35's metadata). "Go to Recycle Bin" opens the bin in File Explorer (the app's `open_trash_view`,
+    #1332; `delete/DETAILS.md` § "Windows: the Recycle Bin"). Seen beside it: no listing watch on a Windows drive
+    (#1330, task 35's, now done).
 
 37. [S] Windows. Cloud Files placeholders (OneDrive and friends: sync badges, cloud trash) and Mark of the Web on
     extract (`cmdr-operations` + `cmdr-archive`). Needs 36.

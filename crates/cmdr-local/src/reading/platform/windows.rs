@@ -1,10 +1,14 @@
-//! Windows: the reader stats through each path's verbatim `\\?\` form, so a path past
+//! Windows: the reader reads through each path's verbatim `\\?\` form, so a path past
 //! `MAX_PATH` lists like any other, and its rows carry app paths (`C:/Users/test_user_1`,
-//! plan D1). Always `read_dir`; no added date.
+//! plan D1). A listing's rows come off `read_dir`'s find data, with no call per entry
+//! (`find_data_entries`); a single entry stats. No added date.
 //!
-//! Honest stubs, each owned by task 35 (windows-port plan, § "Windows build state"): no
-//! allocation size (`FileStandardInfo.AllocationSize`), no mode (`0`, the "no permission
-//! concept" value), and no owner (a SID's account name). Only `FILE_ATTRIBUTE_HIDDEN` is real.
+//! Honest stubs (windows-port plan, § "Windows build state"): no allocation size
+//! (`FileStandardInfo.AllocationSize`) and no mode (`0`, the "no permission concept" value).
+//! Only `FILE_ATTRIBUTE_HIDDEN` is real. No owner either, by decision: a Windows owner is a SID
+//! read from each entry's security descriptor (a handle per entry, the very call the find-data
+//! lister saves), and nothing shows `FileEntry::owner` yet (`crates/cmdr-local/DETAILS.md` §
+//! "The Windows sibling").
 
 use std::borrow::Cow;
 use std::collections::HashSet;
@@ -110,14 +114,56 @@ pub(crate) fn os_fields(metadata: &Metadata) -> OsFields {
     }
 }
 
+/// The find-data lister, unless a test or the benchmark forces the `lstat` one.
 pub(crate) fn read_entries(
     dir: &ListingDir<'_>,
     dot_hidden: &HashSet<String>,
     tally: Option<&ListingTally>,
     pick: Pick,
 ) -> io::Result<Vec<FileEntry>> {
+    #[cfg(any(test, feature = "testing"))]
+    if matches!(pick, Pick::Forced(super::super::Lister::ReadDir)) {
+        return read_dir_entries(dir, dot_hidden, tally, AddedAt::Skip);
+    }
     let _ = pick;
-    read_dir_entries(dir, dot_hidden, tally, AddedAt::Skip)
+    find_data_entries(dir, dot_hidden, tally)
+}
+
+/// Every entry off the directory's own records: `read_dir` is `FindFirstFileExW` with basic
+/// info, whose find data holds each entry's attributes, reparse tag, size, and three dates, the
+/// fields an `lstat` here would read, so `DirEntry::metadata` costs no call. A listing of 20,000
+/// files on the hosted runner's NTFS took a third of the time an `lstat` per entry took
+/// (`docs/notes/windows-port/windows-lister-2026-11.md`). ❗ A directory record can lag a file
+/// another program holds open for writing (its size and last-write time catch up when that
+/// handle closes, as Explorer shows too); the watcher's re-stat of a changed entry
+/// (`get_single_entry`) reads the live answer.
+fn find_data_entries(
+    dir: &ListingDir<'_>,
+    dot_hidden: &HashSet<String>,
+    tally: Option<&ListingTally>,
+) -> io::Result<Vec<FileEntry>> {
+    let dir_entries: Vec<_> = read_dir(dir.os())?.collect();
+    let mut entries = Vec::with_capacity(dir_entries.len());
+    for entry in dir_entries {
+        let entry = entry?;
+        let (entry_path, row) = dir.child(&entry.file_name());
+        // `metadata` can't fail on Windows (it's the find data already read); a failure would
+        // still list the entry, through its own `lstat`.
+        let file_entry = match entry.metadata() {
+            Ok(metadata) => super::super::entry_from_metadata(&entry_path, row, &metadata, dot_hidden),
+            Err(_) => {
+                super::super::entry_from_lstat(&entry_path, row, dot_hidden, AddedAt::Skip).unwrap_or_else(|row| {
+                    let is_symlink = entry.file_type().is_ok_and(|ft| ft.is_symlink());
+                    super::super::minimal_row(row, is_symlink, dot_hidden)
+                })
+            }
+        };
+        if let Some(tally) = tally {
+            tally.record(&file_entry);
+        }
+        entries.push(file_entry);
+    }
+    Ok(entries)
 }
 
 /// NTFS and ReFS record a birth time for every entry, so a re-stat already equals its row.

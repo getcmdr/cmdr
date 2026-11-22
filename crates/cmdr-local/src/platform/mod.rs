@@ -25,7 +25,13 @@ mod anchor;
 pub(crate) mod local_posix;
 #[cfg(target_os = "windows")]
 pub(crate) mod local_windows;
+// Compiled into every OS's tests, so the reparse-tag rule is pinned everywhere.
+#[cfg(any(target_os = "windows", test))]
+mod reparse;
 mod short_names;
+// Compiled into every OS's tests, as `reparse`.
+#[cfg(any(target_os = "windows", test))]
+mod write_verdict;
 
 #[cfg(unix)]
 pub use local_posix::LocalPosixVolume;

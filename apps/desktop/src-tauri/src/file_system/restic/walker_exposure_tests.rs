@@ -8,8 +8,6 @@
 //! pane through `crates/cmdr-listing/src/host/overlays.rs`, and every other
 //! reader lists through `Volume`, which doesn't hold it.
 
-#![cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet, nor a copy scan
-
 use cmdr_fs::app_path::AppPathBuf;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -293,7 +291,13 @@ async fn folder_size_counting_skips_the_row_unless_asked_for_it() {
     )
     .await;
     assert_eq!(added, 1);
-    let row = repo.join(VIRTUAL_ENTRY_NAME).to_string_lossy().into_owned();
+    // The row's path as the listing spells it (`C:/…` on Windows), ❌ never `Path::join`'s `\`.
+    let row = entries
+        .iter()
+        .find(|entry| entry.name == VIRTUAL_ENTRY_NAME)
+        .expect("the decorated listing holds the row")
+        .path
+        .clone();
 
     let listing = TestListing::new()
         .volume("walker-count")

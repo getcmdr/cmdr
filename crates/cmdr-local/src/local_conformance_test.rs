@@ -195,10 +195,6 @@ async fn listing_dates_honor_the_shared_claim_contract() {
 
 /// A copy onto local disk dates the folders it created, once their contents landed.
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, metadata: LocalWindowsVolume has no apply_metadata yet"
-)]
 async fn apply_metadata_honors_the_shared_folder_date_contract() {
     let test_dir = AppTestDir::new("folder_date_conformance_test");
     let volume = volume_at(&test_dir);
@@ -207,12 +203,8 @@ async fn apply_metadata_honors_the_shared_folder_date_contract() {
 }
 
 /// Local disk keeps and reports what its caps claim, on a file and on a folder: the creation
-/// date (macOS only: Linux can't set a birth time) and the mode.
+/// date (macOS and Windows: Linux can't set a birth time) and the mode (macOS and Linux).
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, metadata: no metadata caps or apply_metadata yet"
-)]
 async fn local_disk_honors_the_shared_metadata_contract() {
     let test_dir = AppTestDir::new("metadata_conformance_test");
     let volume = volume_at(&test_dir);
@@ -425,12 +417,13 @@ async fn conflict_scan_honors_the_shared_missing_destination_contract() {
     conformance::assert_conflict_scan_reads_a_missing_destination_as_empty(&volume, Path::new("not-created-yet")).await;
 }
 
+/// On Windows the volume makes the link itself, which takes Developer Mode or an elevated
+/// shell.
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, symlinks and junctions: can_hold_links is false until file vs dir symlinks land"
-)]
 async fn a_link_lands_verbatim() {
+    if cmdr_fs::testing::skip_without_symlinks() {
+        return;
+    }
     let dir = AppTestDir::new("conformance-link-landing");
     let volume = volume_at(&dir);
     conformance::assert_a_link_lands_verbatim(&volume, Path::new("/")).await;
@@ -441,7 +434,7 @@ async fn a_link_lands_verbatim() {
 #[tokio::test]
 #[cfg_attr(
     target_os = "windows",
-    ignore = "task 35, ADS-backed xattrs: supports_xattrs is false until alternate data streams back them"
+    ignore = "#1375: supports_xattrs is false until alternate data streams back them"
 )]
 async fn xattrs_keep_the_shared_contract() {
     let test_dir = AppTestDir::new("xattrs_contract_test");

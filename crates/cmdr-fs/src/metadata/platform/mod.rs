@@ -3,8 +3,8 @@
 //! go on in, and what each outcome means, stay in the class modules above (`staged.rs`,
 //! `mod.rs`'s `apply_landed`, `blockers.rs`); everything here answers one class on one item.
 //!
-//! Windows has no arm bodies yet (`windows.rs`): a Windows build fails here, at each class it
-//! still has to answer, rather than inheriting another OS's.
+//! Each OS answers every class itself (`windows.rs` included): a build fails here at a class an
+//! arm doesn't answer, rather than inheriting another OS's.
 
 use std::ffi::OsString;
 use std::fs::{File, Metadata};
@@ -19,6 +19,10 @@ mod unix;
 
 #[cfg(any(target_os = "linux", target_family = "wasm"))]
 mod std_dates;
+
+// Compiled into every OS's test run, so the attribute arithmetic is pinned everywhere.
+#[cfg(any(target_os = "windows", test))]
+mod windows_attributes;
 
 #[cfg_attr(target_os = "macos", path = "macos.rs")]
 #[cfg_attr(target_os = "linux", path = "linux.rs")]
