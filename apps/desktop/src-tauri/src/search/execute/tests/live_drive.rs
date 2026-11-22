@@ -78,7 +78,7 @@ pub(super) fn drive_entries(root: &str) -> Vec<FileEntry> {
 /// otherwise over before anything else can observe it.
 pub(super) struct GatedDrive {
     inner: InMemoryVolume,
-    gate: std::path::PathBuf,
+    gate: String,
     reached: std::sync::atomic::AtomicBool,
     released: tokio::sync::Notify,
 }
@@ -87,7 +87,7 @@ impl GatedDrive {
     pub(super) fn new(root: &str, gate: &str) -> Self {
         Self {
             inner: InMemoryVolume::with_entries("Live search", drive_entries(root)).with_root(root),
-            gate: std::path::PathBuf::from(gate),
+            gate: gate.to_string(),
             reached: std::sync::atomic::AtomicBool::new(false),
             released: tokio::sync::Notify::new(),
         }
@@ -126,14 +126,11 @@ impl Volume for GatedDrive {
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Fut<'a, Result<Vec<FileEntry>, cmdr_fs::volume::VolumeError>> {
         Box::pin(async move {
-            let path_app = path;
-            let path_std = path.as_std_legacy();
-            let path: &Path = &path_std;
-            if path == self.gate {
+            if path.as_str() == self.gate {
                 self.reached.store(true, std::sync::atomic::Ordering::SeqCst);
                 self.released.notified().await;
             }
-            self.inner.list_directory(path_app, on_progress).await
+            self.inner.list_directory(path, on_progress).await
         })
     }
     fn get_metadata<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<FileEntry, cmdr_fs::volume::VolumeError>> {
