@@ -180,7 +180,7 @@ whole POSIX path (`anchor_at_root` hangs it off the root): both copy into the wr
 picks the volume**: the picker, the probes, and the conflict scan re-run per keystroke against a volume id, and the
 volume list (`listedOsVolumeHolding`, shared with navigation) answers synchronously; the backend still has the last
 word, since `anchor_at_root` refuses every drive, share, or scheme path off the volume it's sent with. What only the
-backend knows (a share's UNC spelling is its mapped drive's volume, a macOS share's second mount) is #1390. Empty leaves
+backend knows (a share's UNC spelling is its mapped drive's volume, a macOS share's second mount) is #1391. Empty leaves
 and final `.` / `..` components cannot confirm. A folder copy names the copied or moved folder itself. Multiple
 selections still target a directory, preserving each selected item's name.
 

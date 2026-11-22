@@ -66,7 +66,7 @@ tested on every OS.
   it's a mount: the write engine's guards (`cmdr_local::mounts::list` keeps every folder mount), and a local move into or
   out of it renames or copies by the volume GUIDs the two paths reach (`is_same_filesystem`), never by volume id. The transfer pre-flight asks space of the
   destination folder (`get_space_info_at`, `crates/cmdr-local/DETAILS.md` § "Local volume space"), so it's the mounted
-  volume's; the pane's readout still shows `C:`'s (the space poller is per volume). The drive index doesn't walk into
+  volume's; the pane's readout still shows `C:`'s (the space poller is per volume, #1392). The drive index doesn't walk into
   the folder: a mount point is a name-surrogate reparse point, so `std` reads it as a link and the walker lists it as
   one (`cmdr_local::platform::reparse`).
 
