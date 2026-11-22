@@ -291,6 +291,34 @@ fn a_plain_path_is_a_full_path_with_no_empty_or_dot_segments() {
     }
 }
 
+/// A Windows drive folder's rows (`C:/x/a.png`, the spelling a pane and `multi_rename` hold)
+/// are plain under the Windows flavor, so a plan over a local Windows folder isn't refused
+/// row by row. A `\` is a separator to Win32, so a drive path holding one isn't plain, and a
+/// drive path means nothing under POSIX. Run on every OS through the flavor.
+#[test]
+fn a_drive_folders_row_is_plain_under_the_windows_flavor_only() {
+    use super::super::rows::is_plain_path_in;
+    use cmdr_fs::app_path::PathFlavor;
+    for plain in ["C:/a.png", "C:/shots/a.png", "/shots/a.png"] {
+        assert!(is_plain_path_in(plain, PathFlavor::Windows), "{plain}");
+    }
+    for not_plain in [
+        "C:/",
+        "C:/shots/",
+        "C:/shots//a.png",
+        "C:/shots/./a.png",
+        "C:/shots/../a.png",
+        "C:/shots\\a.png",
+        "C:/shots/a\\..\\b.png",
+        "c:/shots/a.png",
+        "C:shots/a.png",
+        "C:\\shots\\a.png",
+    ] {
+        assert!(!is_plain_path_in(not_plain, PathFlavor::Windows), "{not_plain}");
+    }
+    assert!(!is_plain_path_in("C:/shots/a.png", PathFlavor::Posix));
+}
+
 /// A volume id Cmdr doesn't know, a path off the named volume, and a share that isn't
 /// connected each refuse in the read tools' miss shape, so the model gets the same next moves
 /// (`list_volumes`, `nearby`) it would from `list_dir`.

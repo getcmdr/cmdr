@@ -124,14 +124,33 @@ pub(super) fn own_problem(source_path: &str, volume_id: &str, destination_name: 
 /// segment, each of which would let the plan's one-folder check compare one folder spelled two
 /// ways, or a name that isn't the file's.
 pub(super) fn is_plain_path(path: &str) -> bool {
+    is_plain_path_in(path, cmdr_fs::app_path::PathFlavor::HOST)
+}
+
+/// [`is_plain_path`] under `flavor`: on Windows a drive folder's row (`C:/a/b.png`, the
+/// spelling a pane holds) is plain too, with no `\` in its names (Win32 reads one as a
+/// separator). A UNC row isn't, yet: refused, ❌ never misread.
+pub(super) fn is_plain_path_in(path: &str, flavor: cmdr_fs::app_path::PathFlavor) -> bool {
     let rest = match path.split_once("://") {
         Some((scheme, rest)) if !scheme.is_empty() && !scheme.contains('/') => rest,
-        _ => match path.strip_prefix('/') {
+        _ => match path.strip_prefix('/').or_else(|| drive_names(path, flavor)) {
             Some(rest) => rest,
             None => return false,
         },
     };
     !rest.is_empty() && rest.split('/').all(|segment| !matches!(segment, "" | "." | ".."))
+}
+
+/// The names under a canonical drive root (`C:/`, uppercase as a pane spells it) under the
+/// Windows flavor; `None` for any other text or flavor, and for names holding a `\`.
+fn drive_names(path: &str, flavor: cmdr_fs::app_path::PathFlavor) -> Option<&str> {
+    if flavor != cmdr_fs::app_path::PathFlavor::Windows {
+        return None;
+    }
+    let bytes = path.as_bytes();
+    let drive = bytes.len() >= 3 && bytes[0].is_ascii_uppercase() && bytes[1] == b':' && bytes[2] == b'/';
+    let rest = path.get(3..).filter(|_| drive)?;
+    (!rest.contains('\\')).then_some(rest)
 }
 
 /// What the model reads as `rowsRejected`: every rejected row, grouped by problem so 40 rows on

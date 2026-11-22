@@ -80,8 +80,8 @@ it. The user's review, preflight's live re-check, and apply's re-check are the s
 `plan.rs::check_plan` (behind `build_draft`, which only supplies the app's volume facts, ledger, and volumes) runs, in
 order:
 
-1. **Each row on its own** (`rows.rs::own_problem`, no I/O): a plain full path (`rows.rs::is_plain_path`: no relative
-   path, no empty, `.`, or `..` segment, so one folder can't be spelled two ways past the one-folder check), not inside
+1. **Each row on its own** (`rows.rs::own_problem`, no I/O): a plain full path (`rows.rs::is_plain_path`: `/a/b`, a scheme URL, or
+   on Windows a drive row `C:/a/b` with no `\`; no relative path, no empty, `.`, or `..` segment, so one folder can't be spelled two ways past the one-folder check), not inside
    an archive, a repo's history, or a backup's snapshots, and a valid new name.
 2. **Across rows**: one `volumeId`, one folder, no repeated source, no repeated name. The volume and folder are the ones
    MOST rows name (`rows.rs::most_common`), so one stray row is the one refused, ❌ not the 39 that agree. A repeated
