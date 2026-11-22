@@ -15,10 +15,10 @@ so the pass splits by whether a bump changes a live host:
   `go build ./...` and `go test ./...` in that module); the OpenTofu providers (`tofu init -upgrade` per root after its
   `source env.sh`, and only keep a bump whose `tofu plan` still says "No changes"); and the Ansible collections in each
   `requirements.yml` (install, then `--check` the playbook). Never `tofu apply`, and never run a playbook for real.
-- **Report only, don't edit**: container images in the compose files, and anything else a deploy puts on a host. List
-  each image with a newer release past the gate (current → available, and anything in its release notes that needs
-  care). An image that floats (`latest`, a bare major like `redis:8-alpine`, or no digest) gets a line saying so, since
-  it can change under us on any recreate.
+- **Bump, deploy, and verify**: container images in the compose files, per infra's `docs/container-upgrades.md`. It says
+  which images get bumped (patch and minor releases, plus pinning floating tags to their running digest), which stay
+  report-only (database majors, Home Assistant, mailcow, anything needing a manual step), and how to deploy, verify, and
+  roll back. One service at a time; a failed one is reverted and reported, and the pass carries on.
 
 Run unattended, start to finish, without asking David anything. He's reading the result, not supervising the run.
 
@@ -29,8 +29,8 @@ Run unattended, start to finish, without asking David anything. He's reading the
    `weekly-upgrades` worktree there, runs every command as `(cd <its worktree> && ...)` (a bare `cd` or `EnterWorktree`
    would move the whole session), runs the repo's own checks, lands on that repo's `main`, and tears its worktree down.
    The siblings land on green GitHub CI. Infra has no land script and no CI gate, so its agent fast-forwards its `main`
-   per the global lifecycle and pushes. No releases, no crates.io publishes, no deploys. A repo with nothing to do
-   reports that in one line.
+   per the global lifecycle and pushes. No releases and no crates.io publishes. The only deploys are infra's image
+   bumps, each pushed to infra's `main` before it's deployed. A repo with nothing to do reports that in one line.
 3. **Do the Cmdr pass** per the guide: dashboard for the list, npm (`ncu -u`, `pnpm install`, `pnpm dedupe`), Cargo
    (`cargo outdated -w`, then per-crate `Cargo.toml` edit + `cargo update -p <crate> --precise <version>`, 3-day window
    enforced by hand against crates.io), fix the breakage, `pnpm check third-party-notices`, the checks per the guide,
@@ -45,8 +45,8 @@ Run unattended, start to finish, without asking David anything. He's reading the
 7. **Report** in about ten lines for Cmdr plus two or three per sibling repo: what moved (counts per ecosystem, and name
    anything interesting), what broke and how you fixed it, what you held back and why, one line per vendored crate
    (dropped, re-vendored, or what still blocks dropping it; guide step 3), and whether the slow lane (Cmdr) and GitHub
-   CI (siblings) went green. For infra: what it bumped and landed, then the image list (available upgrades and floating
-   tags), which David decides on and deploys.
+   CI (siblings) went green. For infra: what it bumped and landed, each image it deployed (old → new, verified how),
+   anything it rolled back and why, and the report-only list (current → available, and what needs David's decision).
 
 **When it's a quiet week**, say so in two lines and stop. An empty dashboard is a fine outcome; don't manufacture work.
 
