@@ -103,3 +103,20 @@ fn each_unix_names_its_own_numbers() {
         OsErrorClass::OperationNotSupported
     );
 }
+
+/// A Windows share answers a folder's flush with `ERROR_INVALID_FUNCTION` (verified on
+/// Windows 10 22H2 against `\\localhost\C$`, 2026-11-22): a sync the filesystem doesn't
+/// offer, so the copy's durability pass counts it as done instead of warning that the
+/// copies may not be written.
+#[cfg(windows)]
+#[test]
+fn a_share_refusing_a_folder_flush_is_a_sync_it_does_not_offer() {
+    let refused = std::io::Error::from_raw_os_error(1);
+    assert_eq!(OsErrorClass::of_io(&refused), Some(OsErrorClass::Unsupported));
+    assert!(crate::durable::is_sync_unsupported(&refused));
+    assert_eq!(
+        OsErrorClass::Unsupported.host_code(),
+        Some(50),
+        "ERROR_NOT_SUPPORTED stays the class's code"
+    );
+}

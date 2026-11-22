@@ -523,3 +523,8 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   the desktop". `main` still needed #1382's two local allows. Gotcha: `[IO.File]::ReadAllText` over SSH resolves a
   relative path against `C:\Users\Admin`, not PowerShell's location, so give it an absolute one. Fixtures and the mount
   point are gone; `cmdr-m6` is back on `origin/main`, clean.
+- **2026-11-22, PR #1389's review fixes on the desktop** (the warm pair, `CARGO_BUILD_JOBS=2`, a debug app build 12m 0s
+  warm, driven by Cmdr's MCP server over `ssh -L`): `real-windows-check-2026-11-19.md` § "PR #1389's review fixes on the
+  desktop". Gotcha: an always-on-top Task Manager covered the dialogs, so the run moved Cmdr's own window aside
+  (`MoveWindow` from a desktop job) rather than touch it. Fixtures, the mount point, and the run's Recycle Bin item are
+  gone; `cmdr-m6` is back on `origin/main`, clean.
