@@ -16,6 +16,7 @@ mod imp;
 
 const _: fn(&Metadata) -> Option<FileId> = file_id;
 const _: fn(&Path, Follow) -> std::io::Result<Option<FileId>> = file_id_at;
+const _: fn(&std::fs::File) -> Option<FileId> = file_id_of_open;
 const _: fn(&Metadata) -> Option<DeviceId> = device_of;
 const _: fn(&Path) -> Option<DeviceId> = device_at;
 const _: fn(&Metadata) -> Option<u64> = link_count;
@@ -26,6 +27,10 @@ pub(super) use imp::file_id;
 /// The node at a path, read by path: `Err` when the path can't be opened or read (its kind
 /// tells a missing path apart), `Ok(None)` when it can but carries no usable id.
 pub(super) use imp::file_id_at;
+
+/// The node an open file names, read through its handle (no open by path), or `None` where
+/// it gives no usable id.
+pub(super) use imp::file_id_of_open;
 
 /// The device `metadata`'s node lives on, or `None` where this OS's metadata doesn't say.
 pub(super) use imp::device_of;

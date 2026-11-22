@@ -390,6 +390,58 @@ async fn a_read_stream_reports_the_files_mtime() {
     assert_eq!(stream.modified_at(), Some(mtime));
 }
 
+/// A resumed read refuses a file rewritten in place since its first read, even at the same
+/// length with its last-write time put back: the bytes before the offset came from the old
+/// version, so carrying on would splice two versions into one copy. POSIX catches it by the
+/// change time; Windows by `FILE_BASIC_INFO.ChangeTime`, read off the open handle.
+#[tokio::test]
+async fn a_resumed_read_refuses_a_same_length_rewrite_with_its_date_put_back() {
+    let test_dir = AppTestDir::new("resume_rewrite_in_place_test");
+    let path = test_dir.native().join("f.bin");
+    let data: Vec<u8> = (0..200_000u32).map(|i| (i % 251) as u8).collect();
+    std::fs::write(&path, &data).unwrap();
+    let mtime = std::time::SystemTime::UNIX_EPOCH + std::time::Duration::new(1_354_040_105, 0);
+    std::fs::File::options()
+        .write(true)
+        .open(&path)
+        .unwrap()
+        .set_modified(mtime)
+        .unwrap();
+    let volume = volume_at(&test_dir);
+
+    let first = volume.open_read_stream(&at(&volume, "f.bin")).await.unwrap();
+    let version = first.source_version().expect("a local file names its version");
+    drop(first);
+    assert!(
+        volume
+            .resume_read_stream(&at(&volume, "f.bin"), &version, 70_000)
+            .await
+            .is_ok(),
+        "the untouched file resumes"
+    );
+
+    // A change time has a clock tick's resolution (about 16 ms on Windows); make sure the
+    // rewrite lands on a later one.
+    // allowed-test-sleep: the subject is the clock tick a change time is stamped with
+    std::thread::sleep(std::time::Duration::from_millis(50));
+    {
+        use std::io::{Seek, Write};
+        let mut file = std::fs::File::options().write(true).open(&path).unwrap();
+        file.seek(std::io::SeekFrom::Start(10)).unwrap();
+        file.write_all(b"another version").unwrap();
+        file.set_modified(mtime).unwrap();
+    }
+    assert_eq!(std::fs::metadata(&path).unwrap().len(), data.len() as u64);
+    assert_eq!(std::fs::metadata(&path).unwrap().modified().unwrap(), mtime);
+
+    let resumed = volume.resume_read_stream(&at(&volume, "f.bin"), &version, 70_000).await;
+    assert!(
+        matches!(resumed, Err(VolumeError::SourceChanged(_))),
+        "a rewrite in place must refuse the resume, got {:?}",
+        resumed.map(|_| ())
+    );
+}
+
 #[tokio::test]
 async fn a_read_stream_of_a_folder_is_refused() {
     let test_dir = AppTestDir::new("read_stream_dir_test");

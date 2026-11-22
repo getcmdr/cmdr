@@ -408,12 +408,15 @@ nearly every method and hide which answers are real.
 
 - **Streams and the copy scan are the POSIX volume's own bodies**, shared: `src/streams.rs` (read stream, ranged and
   resumed reads, the durable streamed write) and `src/copy_scan.rs` (the walk and the batch), each taking the OS path a
-  sibling crossed to once. `streams/platform/` holds what differs: a resume's version (Windows: `FileId::at`'s serial
-  and file id, length, last-write and creation ticks, since stable std has no change time there), `read_at` vs
-  `seek_read`, the owner-only create mode (POSIX only), and the path an error names (the app path on Windows, never
-  `\\?\`). A Windows write syncs with `FlushFileBuffers` per file through the volume's own `DeviceBarriers`; a cancel
-  closes the handle before removing the partial, since Windows won't delete an open file. The recorder names a walked
-  entry in the app spelling (`app_spelling_below`), never `Path::join`'s `\`.
+  sibling crossed to once. `streams/platform/` holds what differs: a resume's version (Windows: the serial and file id
+  off the open handle, `FileId::of_open`, length, last-write and creation ticks, and `FILE_BASIC_INFO.ChangeTime`, which
+  moves on any write, a last-write time put back included, so a same-length rewrite in place refuses the resume as
+  POSIX's `ctime` does; `local_volume_test::a_resumed_read_refuses_a_same_length_rewrite_with_its_date_put_back`. FAT
+  and exFAT answer a zero change time, so there the last-write time is the whole check), `read_at` vs `seek_read`, the
+  owner-only create mode (POSIX only), and the path an error names (the app path on Windows, never `\\?\`). A Windows
+  write syncs with `FlushFileBuffers` per file through the volume's own `DeviceBarriers`; a cancel closes the handle
+  before removing the partial, since Windows won't delete an open file. The recorder names a walked entry in the app
+  spelling (`app_spelling_below`), never `Path::join`'s `\`.
 - **Decision**: `CreateOrReplace` writes in place on Windows too, ❌ no temp inside the backend. **Why**: the trait's
   contract (`WriteMode::CreateOrReplace`): the engine always stages a user's file under a temp and lands it with the
   atomic replacing rename, so a second stage here would cost a rename per file and protect nothing.
