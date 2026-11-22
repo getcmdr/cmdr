@@ -33,6 +33,11 @@ fn drive(name: &str) -> TestDir {
     dir
 }
 
+/// `dir/project/data`, joined per component: `mklink` refuses a path holding a `/`.
+fn link_in(dir: &Path) -> PathBuf {
+    dir.join("project").join("data")
+}
+
 fn photos_intact(dir: &Path) -> bool {
     std::fs::read(dir.join("photos/keep.jpg")).is_ok_and(|bytes| bytes == b"the only copy")
 }
@@ -100,7 +105,7 @@ fn junction(target: &Path, link: &Path) {
 async fn a_selected_folder_link_deletes_as_the_link_and_keeps_its_target() {
     for (shape, make) in folder_link_shapes() {
         let dir = drive(&format!("local_link_delete_top_{}", shape.replace(' ', "_")));
-        let link = dir.join("project/data");
+        let link = link_in(&dir);
         make(&dir.join("photos"), &link);
 
         let errors = delete_permanently(vec![link.clone()]).await;
@@ -117,7 +122,7 @@ async fn a_selected_folder_link_deletes_as_the_link_and_keeps_its_target() {
 async fn a_folder_holding_a_folder_link_deletes_without_walking_into_it() {
     for (shape, make) in folder_link_shapes() {
         let dir = drive(&format!("local_link_delete_nested_{}", shape.replace(' ', "_")));
-        make(&dir.join("photos"), &dir.join("project/data"));
+        make(&dir.join("photos"), &link_in(&dir));
 
         let errors = delete_permanently(vec![dir.join("project")]).await;
 

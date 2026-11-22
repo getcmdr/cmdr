@@ -170,10 +170,9 @@ fn find_data_row(dir: &ListingDir<'_>, entry: &fs::DirEntry, dot_hidden: &HashSe
 }
 
 /// How many entries a refresh re-reads by handle, at most: every entry of a folder up to this
-/// size, else this many of its files, the most recently written first. About 20 ms of stats on
-/// the hosted runner's NTFS (an `lstat` there costs 17–21 µs,
-/// `docs/notes/windows-port/windows-lister-2026-11.md`), so a refresh of any folder stays
-/// within that of its listing.
+/// size, else this many of its files, the most recently written first. So a refresh costs at
+/// most about 50–70 ms more than its listing in any folder (a debug build on the hosted
+/// runner's NTFS, `docs/notes/windows-port/windows-lister-2026-11.md`).
 const REFRESH_RESTAT_CAP: usize = 1_000;
 
 /// A refresh's listing (#1387): what a listing gives, except that the entries whose find data
@@ -195,8 +194,8 @@ fn refresh_entries(
     dot_hidden: &HashSet<String>,
     tally: Option<&ListingTally>,
 ) -> io::Result<Vec<FileEntry>> {
-    // Counting the names is one enumeration with no rows built: about 4% of a find-data
-    // listing (10 ms of 246 for 20,000 files).
+    // Counting the names is one enumeration with no rows built, and stops past the cap: a
+    // bare `read_dir` loop over 20,000 files took 10 ms against the listing's 246.
     if read_dir(dir.os())?.take(REFRESH_RESTAT_CAP + 1).count() <= REFRESH_RESTAT_CAP {
         return read_dir_entries(dir, dot_hidden, tally, AddedAt::Skip);
     }

@@ -47,5 +47,26 @@ say "TEMPORARY, price the Windows listers"); bring it back from git for a re-run
   without it, within the noise of the rest), so the reader keeps `std`'s loop. It may matter on a share, where each
   `FindNextFileW` batch is a round trip; unmeasured.
 - **The find data can lag**: NTFS updates a directory record's size and last-write time for a file another program holds
-  open for writing when that handle closes (Explorer lists the same stale size). The watcher re-stats a changed entry
-  (`get_single_entry`), which reads the live answer.
+  open for writing when that handle closes (Explorer lists the same stale size), and sends no change notification
+  meanwhile. A refresh reads past it (below); a single-entry stat (`get_single_entry`) is by handle already.
+
+## The refresh's price (#1387)
+
+The refresh decision and its rule: `crates/cmdr-local/DETAILS.md` § "The Windows sibling" (`refresh_entries` in
+`crates/cmdr-local/src/reading/platform/windows.rs`: every entry by handle up to 1,000 entries, else find data plus the
+1,000 newest files by handle).
+
+Measured on PR #1390's light run (CI run 45034794319, 2026-11-22), hosted `windows-latest`, NTFS, Defender's real-time
+scan off, in the `tests` job's debug test build, through two temporary nextest cells (`zz_temporary_price_the_refresh_*`
+in `windows_refresh_test.rs`, removed once these numbers were in). One-byte files, one warm-up round, then the median of
+five, the listing and the refresh interleaved:
+
+- **The lag itself**: a file opened with `FILE_SHARE_READ`, 10,000 bytes written, then 50,000 more, its handle still
+  open: the listing (find data) said 0 bytes, the live size was 60,000.
+- **1,000 files** (at the cap, so every entry by handle): listing 15.5 ms, refresh 63 ms.
+- **5,000 files** (past the cap: the count pass, find data, 1,000 re-reads): listing 83 ms, refresh 154 ms.
+- Run 45032102842 before it, 1,000 files: listing 14.8 ms, refresh 52 ms. A 20,000-file fixture didn't fit the 8 s cap
+  (writing it takes about 0.5 s per 1,000), so the big cell priced 5,000.
+
+What it says: a refresh costs a bounded 50–70 ms over its listing in a debug build, whatever the folder's size, and the
+listing itself is untouched.

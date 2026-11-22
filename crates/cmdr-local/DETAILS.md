@@ -412,11 +412,11 @@ nearly every method and hide which answers are real.
   modified time. A single-entry stat (`get_single_entry`, the watcher's) is by handle already. **Why**: "re-read what
   changed since the last listing" can't work, because the lagging record doesn't change and no event names the file. A
   file being written was last recorded when its writer opened it or first grew it, so it ranks among the newest; the cap
-  holds the extra stats to about 20 ms in any folder. Gap: in a folder past the cap where more than 1,000 files were
-  written after the open one, that file keeps its recorded size until its writer closes it.
-  `src/reading/platform/windows_refresh_test.rs` holds a real open, appended file to both paths; the numbers are in
-  `docs/notes/windows-port/windows-lister-2026-11.md`. macOS and Linux list a refresh as they list anything (a bulk
-  record or an `lstat` is the entry's own, live).
+  holds a refresh to about 50–70 ms over its listing in any folder (a debug build on the hosted runner). Gap: in a
+  folder past the cap where more than 1,000 files were written after the open one, that file keeps its recorded size
+  until its writer closes it. `src/reading/platform/windows_refresh_test.rs` holds a real open, appended file to both
+  paths; the numbers are in `docs/notes/windows-port/windows-lister-2026-11.md`. macOS and Linux list a refresh as they
+  list anything (a bulk record or an `lstat` is the entry's own, live).
 - **Space** is `GetDiskFreeSpaceExW` (`src/space/platform/windows.rs`), beside `statvfs` for macOS and Linux.
 - **The filesystem kind** is `GetVolumePathNameW` plus `GetVolumeInformationW` (`filesystem_kind.rs`,
   `probe_mount_for_path`'s Windows arm), for a fixed or removable drive only (`GetDriveTypeW`): a mapped network drive
