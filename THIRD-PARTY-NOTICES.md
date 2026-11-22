@@ -3451,7 +3451,7 @@ express Statement of Purpose.
 
 Covers: notify 8.2.2
 
-Text from: `LICENSE-CC0`
+Text from: `vendor/notify/LICENSE-CC0`
 
 ```text
 Creative Commons CC0 1.0 Universal

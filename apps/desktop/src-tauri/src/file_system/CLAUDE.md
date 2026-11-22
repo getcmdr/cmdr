@@ -29,12 +29,13 @@ Sync status, volume management, and file watching. The engines are crates: listi
   - A `Structural` change on the ROOT re-reads; ❌ not a root `Content` change (every child change bumps its mtime).
   - macOS uses `cmdr-fsevent-stream`, ❌ never `notify`: it dropped lost-history flags anchored ABOVE the folder.
     § "Lost history".
+  - A Windows watch blocks renames above its folder; Cmdr's writes release it (`watcher/release.rs`).
   - Test builds arm no OS stream unless `watch_for_real`. § "Tests arm no OS stream".
   - A re-sorted row is one `DiffChangeType::Move`, ❌ never a remove plus an add (cursor and selection ride along by
     identity). § "Reordered rows".
 - **A watch on an OS-mounted network share is `WatchCoverage::ThisMachineOnly`, never `EveryWriter`** (FSEvents on
-  `smbfs` sees this machine's writes only). ❌ Don't refuse to arm it over that; what it must not do is let a delete
-  walker or copy scan skip a read. `volume/DETAILS.md` § "Trait capability model".
+  `smbfs` sees this machine's writes only). Arm it anyway, but it must never let a delete walker or copy scan skip a
+  read. `volume/DETAILS.md` § "Trait capability model".
 - **"Open terminal here" asks `NSWorkspace` per known app, ❌ never scans `/Applications`**; recipes are a pure
   `launch_argv`. New terminals need a sourced, dated `KNOWN_TERMINALS` entry. § "Open terminal here".
 - **F4's editors come from LaunchServices' editor-ROLE plain-text query** (`text_editor.rs`): ❌ never the UTI crate

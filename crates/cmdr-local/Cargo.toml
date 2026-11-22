@@ -54,7 +54,7 @@ libc = "0.2"
 # `GetDiskFreeSpaceExW` for space. The version `cmdr-fs` already uses, so no second copy
 # enters the graph.
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = ["Win32_Storage_FileSystem"] }
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Storage_FileSystem"] }
 
 # NSURL resource values: volume space (important-usage, purgeable counted), the
 # volume names and ejectability `volumes/` enriches with, and a file's added and

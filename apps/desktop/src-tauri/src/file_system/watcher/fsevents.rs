@@ -29,6 +29,18 @@ pub(super) struct ListingStream {
     pump: tauri::async_runtime::JoinHandle<()>,
 }
 
+impl super::OsWatch for ListingStream {
+    /// FSEvents watches by path from `fseventsd`, holding nothing open on the folder.
+    fn pins_ancestors(&self) -> bool {
+        false
+    }
+
+    /// Dropping already waits for the run loop to stop.
+    fn close_now(self: Box<Self>) {
+        drop(self);
+    }
+}
+
 impl Drop for ListingStream {
     fn drop(&mut self) {
         // Blocks until the stream's run loop thread exits (it waits for the loop to go
