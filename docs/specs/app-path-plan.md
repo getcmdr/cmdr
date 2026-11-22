@@ -1855,6 +1855,22 @@ included; the hidden couplings it found are why waves B and C differ from round 
   fixture, which its siblings share. Bridge calls 1,340 → 1,339.
 - **Windows, open**: a stored row with `\` in a drive path is refused (`Backslash`); whether today's Windows journal
   writes `\` (its `local_split` is `to_string_lossy` of a native `PathBuf`) wasn't checked on a builder (no Mami run).
+- **Fifth pass done** (2026-11-22, branch `worktree-agent-adc8491d52ad6eb0e`, PR #1378): the journal's ends. Reproduced
+  #1351 on Mami first. Two causes, both fixed: (1) `local_split` stored native `C:\Users\x`, which the dir interning
+  (split by `/`) kept as ONE name under `/`, read back as `/C:\Users\x`; `journal::journal_split` now stores app text (a
+  native end through `from_native_unicode`, the rest as before, and on Windows a volume path's `std::path` `\` as `/`).
+  (2) The local engine journaled every row under `root`, the system drive alone on Windows, so a `C:` → `D:` move's undo
+  failed per item; `OpScope::local_ids_for` names a volume that reaches each end. macOS and Linux rows keep their bytes
+  (`journal_split_tests.rs`, plus a 2,000,000-path differential). Un-gated: `move_journal_tests`, the bulk-rename undo
+  cell, and #1367's five undo cells; four `journal_row_shape_tests` left the known-failures list. On Mami's desktop (a
+  debug build, driven over MCP): a `C:` → `D:` move of a file and a folder and its undo, a bulk rename and its undo, and
+  a compress onto `D:` and its undo all restore. `OperationVolumes::find_by_root` takes the app path. Bridge calls in
+  this pass 1,068 → 1,065; `transfer_benchmarks`' journaled copy unchanged (p = 0.64).
+- **Left after the fifth pass**: the engine's starts and the rest of `OperationVolumes` (`resolve`,
+  `routes_over_its_parent`, `path_is_inside_archive`, `path_crosses_archive_boundary`, `forget_archive_index`) still
+  take `PathBuf`; typing the seam alone adds a crossing at each of its ~10 engine callers, so it goes with the starts.
+  Then the backend suites, `suggested_ops/bridge/`, and the WebDAV/NFS `scratch_dir` twins (10d), and the `ListingHost`
+  std-path seam that #1373 left (its oracle callers here hold `PathBuf`s).
 
 ### 10b. `cmdr-index`
 
