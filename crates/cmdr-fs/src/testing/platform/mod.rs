@@ -16,6 +16,7 @@ const _: fn(&'static Path, &'static Path) -> io::Result<()> = symlink::<&'static
 const _: fn() -> bool = is_root;
 const _: fn() -> bool = can_create_symlinks;
 const _: fn(&Path) -> io::Result<std::path::PathBuf> = long_path;
+const _: fn() -> std::path::PathBuf = scratch_root;
 
 /// Creates a symlink at `link` pointing at `target`, which may be relative (to `link`'s
 /// folder) and may not exist. Windows keeps file and folder links apart, so there the
@@ -55,6 +56,22 @@ pub fn skip_without_symlinks() -> bool {
 /// `path` with every 8.3 short name spelled long, the spelling a listing shows. Windows
 /// only has short names (`GetLongPathNameW`); elsewhere it's `path` as is.
 pub use imp::long_path;
+
+/// The folder every test's scratch space goes in: the OS temp folder, with every 8.3 short
+/// name spelled long on Windows ([`long_path`]).
+///
+/// Why: a Windows `TEMP` under an account name past eight characters reads
+/// `C:\Users\RUNNER~1\…` (the hosted CI runner's does), while a Windows volume spells every
+/// path it answers long, so a test comparing a path it built from `TEMP` with one a volume
+/// reported fails on the spelling alone, hiding whatever it means to check. A cell that
+/// pins how the PRODUCT reads a short name types one on purpose (the Go to path cells,
+/// #1337).
+///
+/// `TestDir` creates under it, and on Windows a load-time hook points `tempfile`'s default
+/// folder at it too, so a bare `tempfile::tempdir()` in a test binary that links this
+/// module (any test build with the `testing` feature) lands there. `std::env::temp_dir()`
+/// itself keeps the OS's spelling.
+pub use imp::scratch_root;
 
 /// A named pipe (FIFO) at `path`, the special file a walk must neither read nor copy.
 /// Unix-only: Windows has no FIFO on disk.

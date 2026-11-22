@@ -24,6 +24,11 @@ pub fn long_path(path: &Path) -> io::Result<std::path::PathBuf> {
     Ok(path.to_path_buf())
 }
 
+/// See the re-export in `mod.rs`: the temp folder as is, with no short names to spell.
+pub fn scratch_root() -> std::path::PathBuf {
+    std::env::temp_dir()
+}
+
 /// See the re-export in `mod.rs`.
 pub fn make_fifo(path: &Path) -> io::Result<()> {
     use std::os::unix::ffi::OsStrExt as _;

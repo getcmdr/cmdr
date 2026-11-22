@@ -7,7 +7,7 @@
 //!
 //! ## What lives here
 //!
-//! - [`temp_dir`]: a per-test unique directory under `std::env::temp_dir()`,
+//! - [`temp_dir`]: a per-test unique directory under `cmdr_fs::testing::scratch_root()`,
 //!   KEPT on panic so a failure can be inspected. [`cleanup`] is the
 //!   best-effort removal a passing test ends with.
 //! - [`Fixture`]: a `gix::Repository` plus the operations a suite needs — write
@@ -84,8 +84,8 @@ pub fn make_executable(path: &Path) {
     );
 }
 
-/// Creates a fresh per-process temp directory under `std::env::temp_dir()`.
-/// The path includes the module prefix, the supplied name, the PID, and a
+/// Creates a fresh per-process temp directory under `cmdr_fs::testing::scratch_root()`
+/// (the OS temp folder, spelled long on Windows, the way a volume lists it). The path includes the module prefix, the supplied name, the PID, and a
 /// nanosecond timestamp, so concurrent test invocations don't collide.
 pub fn temp_dir(module_prefix: &str, name: &str) -> PathBuf {
     // The counter is load-bearing, ❌ not decoration: the clock behind
@@ -94,10 +94,10 @@ pub fn temp_dir(module_prefix: &str, name: &str) -> PathBuf {
     // `remove_dir_all` below then wipes a repo another test is mid-way through
     // building, which surfaces as an unrelated `commit_as: MustNotExist` panic.
     static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-    // allowed-fixed-temp-dir: the PID, counter, and nanosecond stamp below already
-    // make this unique per process and per run, and `Fixture` deliberately KEEPS the
-    // directory on panic for post-mortem inspection, which `TestDir`'s drop would undo
-    let dir = std::env::temp_dir().join(format!(
+    // Not a `TestDir`: `Fixture` deliberately KEEPS the directory on panic for
+    // post-mortem inspection, which `TestDir`'s drop would undo; the PID, counter, and
+    // nanosecond stamp below make it unique per process and per run.
+    let dir = cmdr_fs::testing::scratch_root().join(format!(
         "cmdr_git_{}_{}_{}_{}_{}",
         module_prefix,
         name,
