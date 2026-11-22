@@ -151,9 +151,6 @@ pub async fn open_path(path: String, volume_id: Option<String>) -> Result<(), Op
 #[cfg(feature = "playwright-e2e")]
 pub fn e2e_opened_paths() -> Vec<String> {
     crate::open_mock::snapshot()
-        .into_iter()
-        .map(|p| p.to_string_lossy().into_owned())
-        .collect()
 }
 
 /// E2E: reset the recorded open requests between tests.

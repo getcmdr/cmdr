@@ -24,10 +24,8 @@ pub(crate) fn os_path_buf(value: impl Into<OsString>) -> PathBuf {
 }
 
 /// The native path the environment variable `name` holds, `None` when it's unset or empty.
-#[cfg_attr(
-    not(any(debug_assertions, test, feature = "playwright-e2e")),
-    allow(dead_code, reason = "the overrides it reads are dev, test, and E2E only")
-)]
+/// Built where its readers are (dev, test, and E2E overrides): a release build has none.
+#[cfg(any(debug_assertions, test, feature = "playwright-e2e"))]
 pub(crate) fn env_path(name: &str) -> Option<PathBuf> {
     std::env::var_os(name)
         .filter(|value| !value.is_empty())

@@ -253,7 +253,8 @@ fn favorite_location(
     };
     let on_disk = on_disk(&favorite.path, probe, exists);
     let icon = match on_disk {
-        OnDisk::Yes => get_icon_for_path(&favorite.path),
+        // The stored app path's native folder, crossed once above (`native`).
+        OnDisk::Yes => native.as_deref().and_then(nsurl::get_icon_for_native),
         // Not on trust: an NSWorkspace icon read is one of the calls the FDA gate holds back.
         OnDisk::Assumed | OnDisk::No | OnDisk::Unchecked => None,
     };

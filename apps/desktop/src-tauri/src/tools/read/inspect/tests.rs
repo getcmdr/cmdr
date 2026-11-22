@@ -58,10 +58,14 @@ fn content_of(row: &FileRow) -> &Content {
     &file_of(row).content
 }
 
-/// The checked-in encoding fixtures the viewer's own tests use.
+/// The checked-in encoding fixtures the viewer's own tests use, spelled with no `..` as the
+/// dispatch's path door hands a tool its path (`tools/agent_path.rs`).
 fn fixture(name: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../test/fixtures/encodings")
+    let src_tauri = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    src_tauri
+        .parent()
+        .expect("src-tauri sits in the desktop app")
+        .join("test/fixtures/encodings")
         .join(name)
 }
 

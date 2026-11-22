@@ -195,10 +195,15 @@ fn other_item<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<MenuItem<R>> {
 /// share whose macOS mount is gone (`OpenWithNotOnThisMac`): `listing_id` is the pane's
 /// listing the menu went up over, which names that volume.
 #[cfg(target_os = "macos")]
-pub(super) fn launch_with<R: Runtime>(app: &AppHandle<R>, paths: Vec<PathBuf>, app_path: PathBuf, listing_id: &str) {
+pub(super) fn launch_with<R: Runtime>(app: &AppHandle<R>, rows: &[String], app_path: PathBuf, listing_id: &str) {
     use crate::file_system::default_app::listing_paths_reach_other_apps;
     use crate::file_system::open_with::open_paths_with;
     use crate::file_viewer::open_with_extract;
+
+    // The menu's rows are app text a pane sent, and another app opens them: each crosses to its
+    // native file here. A row with none (a phone's, a server's) drops out, and the pane's volume
+    // check below says why nothing launched.
+    let paths: Vec<PathBuf> = rows.iter().filter_map(|row| crate::app_text::native(row)).collect();
 
     if !open_with_extract::any_needs_extraction(&paths) {
         if !listing_paths_reach_other_apps(listing_id) {
@@ -207,6 +212,10 @@ pub(super) fn launch_with<R: Runtime>(app: &AppHandle<R>, paths: Vec<PathBuf>, a
                 LogPrivate::path(&app_path)
             );
             announce_not_on_this_mac(app, &app_path);
+            return;
+        }
+        if paths.is_empty() {
+            log::warn!("Open with {}: no row has a file here", LogPrivate::path(&app_path));
             return;
         }
         if let Err(e) = open_paths_with(&paths, &app_path) {

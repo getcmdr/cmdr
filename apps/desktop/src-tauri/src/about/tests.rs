@@ -1063,3 +1063,34 @@ async fn a_slow_card_cant_starve_the_next_cards_rows() {
     );
     drop(release_tx);
 }
+
+/// Text that names no place (a `..`, which the typed-path door answers before a card is asked
+/// for) has no item to describe: `NotFound`, ❌ never a card of the spelling's guess.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume` as the boot disk.
+#[tokio::test]
+async fn a_path_that_names_no_place_gets_no_card() {
+    crate::file_system::volume::manager::get_volume_manager().register_if_absent(
+        "root",
+        Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+            "Test root",
+            "/",
+            crate::volume_host::host(),
+        )),
+    );
+    let dir = TestDir::new("about-dotdot");
+    let request = super::event::AboutRequest {
+        request_id: "about-test-dotdot".to_string(),
+        path: format!(
+            "{}/sub/../notes.txt",
+            crate::test_support::native_app_path(dir.as_ref()).as_str()
+        ),
+        volume_id: None,
+        is_directory: Some(false),
+    };
+    let answer = super::route::gather_for(&request, super::route::Started::ByPerson).await;
+    assert!(
+        matches!(&answer, Err(no_card) if no_card.why == super::event::AboutUnavailable::NotFound),
+        "{:?}",
+        answer.as_ref().err().map(|no_card| no_card.why)
+    );
+}

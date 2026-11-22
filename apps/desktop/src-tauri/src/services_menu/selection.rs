@@ -18,7 +18,11 @@ use std::sync::RwLock;
 
 use cmdr_fs::ignore_poison::RwLockIgnorePoison;
 
-use crate::app_text::as_std_path_text;
+/// A pane's rows (app text) as the native files a service receives as file URLs. A row with
+/// no native file (a phone's, a server's) has nothing to hand over and drops out.
+fn native_rows(rows: &[String]) -> Vec<PathBuf> {
+    rows.iter().filter_map(|row| crate::app_text::native(row)).collect()
+}
 
 /// Where a pane's selected rows live.
 ///
@@ -136,9 +140,9 @@ pub fn resolve() -> Vec<PathBuf> {
                 indices,
                 *sequence,
             )
-            .map(|snapshot| snapshot.paths.iter().map(|row| as_std_path_text(row)).collect())
+            .map(|snapshot| native_rows(&snapshot.paths))
             .unwrap_or_default(),
-        SelectedRows::Paths { paths } => paths.iter().map(|row| as_std_path_text(row)).collect(),
+        SelectedRows::Paths { paths } => native_rows(paths),
     })
 }
 
@@ -199,7 +203,7 @@ mod tests {
             SelectedRows::Listing { indices, .. } => {
                 indices.iter().map(|i| PathBuf::from(format!("/dir/{i}.txt"))).collect()
             }
-            SelectedRows::Paths { paths } => paths.iter().map(|row| as_std_path_text(row)).collect(),
+            SelectedRows::Paths { paths } => native_rows(paths),
         }
     }
 

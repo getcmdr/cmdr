@@ -111,8 +111,15 @@ pub(crate) fn rgba_to_png(rgba: &[u8], width: u32, height: u32) -> Option<Vec<u8
 /// Gets icon for a path as base64 data URL.
 /// Public API for use by volumes module.
 pub fn get_icon_for_path(path: &str) -> Option<String> {
-    // The volumes module's rows: a mount point or a place the OS spelled.
-    fetch_icon_for_path(crate::volumes::os_mount_path(path))
+    // The volumes module's mount rows: a mount point or a place the OS spelled. A favorite's
+    // folder is app text and comes through `get_icon_for_native`.
+    get_icon_for_native(crate::volumes::os_mount_path(path))
+}
+
+/// [`get_icon_for_path`] for a native path, one already crossed from app text included (a
+/// favorite's folder).
+pub(crate) fn get_icon_for_native(path: &std::path::Path) -> Option<String> {
+    fetch_icon_for_path(path)
 }
 
 /// Gets the sample file path to use for fetching an icon by ID.

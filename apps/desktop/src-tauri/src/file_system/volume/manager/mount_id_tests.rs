@@ -48,6 +48,30 @@ fn mount_id_for_path_returns_longest_non_root_ancestor() {
     assert_eq!(manager.mount_id_for_path("/Volumes/XY/z"), None);
     // A boot-disk path matches only `root` (skipped) → None.
     assert_eq!(manager.mount_id_for_path("/Users/me"), None);
+    // A sent trailing `/` names the same place.
+    assert_eq!(manager.mount_id_for_path("/Volumes/X/sub/").as_deref(), Some("ext"));
+}
+
+/// Whole names, read as an app path: text that names no place (a `..`, which the typed-path
+/// door answers before anything asks here, or relative text) belongs to no mount, so a
+/// `/Volumes/X/../Y` can't be placed on `X` by its spelling alone.
+#[test]
+fn mount_id_for_path_places_no_text_that_names_no_place() {
+    use cmdr_local::LocalVolume;
+
+    let manager = VolumeManager::new();
+    manager.register(
+        "ext",
+        Arc::new(LocalVolume::local_folder(
+            "Ext",
+            "/Volumes/X",
+            crate::volume_host::host(),
+        )),
+    );
+
+    assert_eq!(manager.mount_id_for_path("/Volumes/X/../Y/z"), None);
+    assert_eq!(manager.mount_id_for_path("Volumes/X/z"), None);
+    assert_eq!(manager.mount_id_for_path(""), None);
 }
 
 /// The steal this rule prevents: a routed volume's root is a path INSIDE a

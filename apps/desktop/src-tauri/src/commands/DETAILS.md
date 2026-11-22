@@ -540,7 +540,8 @@ A path the frontend sends is read as an app path at the command edge, `wire_path
 - **A `std::path` API that reads the text lexically gets it as sent** (`as_sent_std_path` at the edge, `app_text::as_std_path_text`
   below it, `pre_check_rows`): the write pre-checks, `get_name_rules`, the stored-spelling lookup, `root_echo`, the git
   portal's rows (commit counts, the About card's snapshot), the operation log's lookup, the inspect tool's viewer and
-  archive seams, the menu's and Services' rows, and the git chip's `repo_root` (Gotcha:
+  archive seams, a promise drag's rows, and the git chip's `repo_root` (❌ never rows another app or the OS opens:
+  Open with, Services, a local drag, and the inspect tool's plain read cross through `app_text::native`) (Gotcha:
   that's NATIVE text `RepoInfo` reported, `\\?\C:\…` on Windows, so `native` refused it and the chip went dark; Why:
   the frontend hands back the root it was given). Byte for byte; it goes as each
   engine's entry points take app paths.

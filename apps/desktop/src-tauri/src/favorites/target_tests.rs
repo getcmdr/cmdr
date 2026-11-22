@@ -44,6 +44,15 @@ fn a_scheme_path_is_never_stat() {
     }
 }
 
+/// A stored path with no native folder (relative text, a `..`) is no OS path: nothing stats it.
+#[test]
+fn text_with_no_native_folder_is_never_stat() {
+    for path in ["Users/me/Docs".to_string(), local("/Users/me/../Docs")] {
+        let path = path.as_str();
+        assert_eq!(on_disk(path, Probe::Stat, never_asked), OnDisk::Unchecked, "{path}");
+    }
+}
+
 #[test]
 fn discovery_seeds_the_target_from_the_store() {
     let stored = FavoriteVolume {

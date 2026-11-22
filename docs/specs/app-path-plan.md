@@ -2367,6 +2367,17 @@ included; the hidden couplings it found are why waves B and C differ from round 
   tests (`listing_host/backends.rs`, the seam is still `std::path`), `tools/sensitive.rs` (#1371),
   `agent/store/migrations.rs` (shipped), `tags_io` (10f), `agent/suggested_ops/bridge/decorator.rs` (the starts'
   `PathBuf` keys), `native_drag/fulfillment.rs` (kept, #1310).
+- **10f retires every `app_text::as_std_path_text` use first** (app text byte for byte into an engine keyed by
+  `std::path` text; the escape gate can't see these, so they're listed here, and none may hand its value to the OS):
+  `file_system/git/commit_counts.rs` (two: the portal's rows), `listing_index_sizes/count/mod.rs` (the view-row check),
+  `about/route.rs` (the snapshot's portal read), `about/history.rs` (the operation log's lookup),
+  `tools/read/inspect/mod.rs` (the routed and materialize seams; its plain read crosses through `app_text::native`),
+  `tools/read/inspect/archive.rs` (two: the archive seam, whose `std::fs::metadata` of the archive file is that seam's
+  own crossing), `commands/wire_path.rs` (`as_sent_std_path`, which `commands/file_system/drag/platform/macos.rs` uses
+  for a promise drag's rows, #1310), and the cells `tools/read/inspect/archive_tests.rs`,
+  `file_viewer/materialize_test.rs` (three), `search/live/tests.rs`, and `search/live/walked_tests.rs`. The review on
+  #1379 moved Open with, Services, a local drag's file URLs, the inspect tool's plain read, and a favorite's icon off
+  these and the mount door onto `app_text::native`, and `open_mock` records text with no crossing at all.
 
 ### 11. Close
 
