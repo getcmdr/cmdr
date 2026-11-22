@@ -60,10 +60,10 @@ written); it waits in the tracker (`DeviceBarriers::note_unconfirmed`), and the 
 move keeps its source. It used to be logged and nothing else, which on Linux or a network mount, where no barrier
 follows, let a move delete sources over it. The directory syncs stay best-effort (logged under
 `target: "write_durability"`), and a refused barrier is an `IoError` naming the item it went through. Shared tracker,
-shared answers: a refused sync answers whichever operation flushes next (`streams.rs::flush_writes_impl`). The sync
-stays per file here, unlike the local engine's, which waits for the pass: this engine's copies run concurrently and
-overlap their syncs, and a pass that took them over measured slower. Non-local backends keep the default `Ok`:
-durability there is the device's or server's concern once it answered. The rule and its measurements:
+shared answers: a refused sync answers whichever operation flushes next (`streams.rs::flush_writes`). The sync stays per
+file here, unlike the local engine's, which waits for the pass: this engine's copies run concurrently and overlap their
+syncs, and a pass that took them over measured slower. Non-local backends keep the default `Ok`: durability there is the
+device's or server's concern once it answered. The rule and its measurements:
 `crates/cmdr-operations/src/transfer/DETAILS.md` § Durability. Pinned by `local_posix_durability_test.rs` (content
 through the finish path, no barrier until `flush_writes` and then one, and a refused sync failing the flush).
 Unknown-length writes take the same path.

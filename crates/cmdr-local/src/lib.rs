@@ -73,6 +73,7 @@ pub mod statfs;
 
 mod platform;
 mod rename;
+mod streams;
 
 // This OS's local volume (`LocalPosixVolume` or `LocalWindowsVolume`) and the no-replace
 // rename; `platform/mod.rs` picks them.

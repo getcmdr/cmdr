@@ -87,10 +87,6 @@ fn a_local_volume_watches_its_listings() {
 }
 
 #[test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, streams: LocalWindowsVolume has no read or write stream yet"
-)]
 fn a_local_volume_streams_and_exports() {
     // Cross-volume copies pipe through `open_read_stream` and `write_from_stream`.
     let dir = AppTestDir::new("streams_and_exports");
@@ -379,10 +375,6 @@ async fn a_batch_scan_asks_its_boundary_inside_the_walk() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, streams: LocalWindowsVolume has no read stream yet"
-)]
 async fn a_read_stream_hands_out_the_files_bytes() {
     let test_dir = AppTestDir::new("read_stream_src_test");
     std::fs::write(test_dir.native().join("source.txt"), "Test content").unwrap();
@@ -401,10 +393,6 @@ async fn a_read_stream_hands_out_the_files_bytes() {
 /// off the stream, so the local stream has to carry the file's own, to the nanosecond the
 /// filesystem kept.
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, streams: LocalWindowsVolume has no read stream yet"
-)]
 async fn a_read_stream_reports_the_files_mtime() {
     let test_dir = AppTestDir::new("read_stream_mtime_test");
     let path = test_dir.native().join("dated.txt");
@@ -423,10 +411,6 @@ async fn a_read_stream_reports_the_files_mtime() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, streams: LocalWindowsVolume has no read stream yet"
-)]
 async fn a_read_stream_of_a_folder_is_refused() {
     let test_dir = AppTestDir::new("read_stream_dir_test");
     std::fs::create_dir(test_dir.native().join("sourcedir")).unwrap();
@@ -437,10 +421,6 @@ async fn a_read_stream_of_a_folder_is_refused() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, streams: LocalWindowsVolume has no write_from_stream yet"
-)]
 async fn a_write_from_stream_creates_the_file() {
     use cmdr_fs::app_path;
     use cmdr_fs::volume::InMemoryVolume;

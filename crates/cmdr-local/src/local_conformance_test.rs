@@ -123,10 +123,6 @@ async fn create_file_honors_the_shared_no_clobber_contract() {
 /// The shared `write_from_stream(CreateNew)` no-clobber assertion, earned with
 /// `OpenOptions::create_new(true)` (`O_EXCL`).
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, streams: LocalWindowsVolume has no write_from_stream yet"
-)]
 async fn write_from_stream_create_new_honors_the_shared_no_clobber_contract() {
     let test_dir = AppTestDir::new("write_create_new_conformance_test");
     let volume = volume_at(&test_dir);
@@ -149,10 +145,6 @@ async fn write_from_stream_create_new_honors_the_shared_no_clobber_contract() {
 /// through `write_from_stream`, so this is the cell that keeps a phone's photos dated when
 /// they land in `~/Pictures`.
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, streams: LocalWindowsVolume has no read or write stream yet"
-)]
 async fn a_copy_keeps_the_source_date_per_the_shared_contract() {
     let test_dir = AppTestDir::new("dated_write_conformance_test");
     let volume = volume_at(&test_dir);
@@ -219,7 +211,7 @@ async fn apply_metadata_honors_the_shared_folder_date_contract() {
 #[tokio::test]
 #[cfg_attr(
     target_os = "windows",
-    ignore = "task 35, metadata and streams: no metadata caps, apply_metadata, or streams yet"
+    ignore = "task 35, metadata: no metadata caps or apply_metadata yet"
 )]
 async fn local_disk_honors_the_shared_metadata_contract() {
     let test_dir = AppTestDir::new("metadata_conformance_test");
@@ -231,10 +223,6 @@ async fn local_disk_honors_the_shared_metadata_contract() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, streams: LocalWindowsVolume has no write_from_stream yet"
-)]
 async fn unknown_write_streams_all_bytes_and_reports_the_accepted_count() {
     let test_dir = AppTestDir::new("unknown_write_conformance_test");
     let volume = volume_at(&test_dir);
@@ -381,10 +369,6 @@ async fn is_writable_honors_the_shared_declaration_contract() {
 /// The shared export-handshake assertion: a volume that streams its bytes must say
 /// `supports_export()`.
 #[tokio::test]
-#[cfg_attr(
-    target_os = "windows",
-    ignore = "task 35, streams: LocalWindowsVolume has no read stream yet, so no export"
-)]
 async fn export_honors_the_shared_handshake_contract() {
     let test_dir = AppTestDir::new("export_handshake_conformance_test");
     let volume = volume_at(&test_dir);
