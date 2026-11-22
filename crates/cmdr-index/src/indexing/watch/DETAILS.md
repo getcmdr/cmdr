@@ -311,9 +311,12 @@ storm bounds and its own status, and the first one already has both.
   which the vendored `notify` turns into `Flag::Rescan` (`vendor/notify/CMDR-PATCH.md`, #1128). Its one watch is the
   volume root, so the anchor is the root, re-anchored onto every branch on a branch-watched volume: one overflow
   re-walks all walked ground, each branch at most once per its throttle window. The 64 KiB buffer is what keeps that
-  rare: a burst of about 3,800 files copied and deleted on `C:` overflowed 16 KiB and not 64 KiB, and an idle `C:`
-  carried 0.2 events/s (verified on Windows 10 22H2, the builder, two `FileSystemWatcher`s side by side, 2026-11-22).
-  (FSEvents and inotify verified against the source of `notify` 8.2.1, 2026-11-12.)
+  rarer: a burst of about 3,800 files copied and deleted on `C:` overflowed 16 KiB and not 64 KiB, and an idle `C:`
+  carried 0.2 events/s (Windows 10 22H2, the builder, two `FileSystemWatcher`s side by side, 2026-11-22). In the app
+  with an index walk holding both cores, the same burst overflowed 64 KiB three times in 2 s, merged into one round: 25
+  branch reconciles, 172 ms (19 walked branches; it scales with walked ground; same machine and day, debug build of
+  `b5eb63c64f`). The USN journal is the fix that removes it (#1364). (FSEvents and inotify verified against the source
+  of `notify` 8.2.1, 2026-11-12.)
 
 ❌ Don't route an OS overflow through `overflow_flag`. That flag means OUR bridge dropped events (the FSEvents channel);
 the `notify` bridge is unbounded and never sets it. Its recovery is a whole-volume rescan with no window, which a tree

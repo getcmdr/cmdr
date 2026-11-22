@@ -36,7 +36,9 @@ so inotify and FSEvents builds are the release's code.
   also the most a network share accepts, so the listing watch on a share keeps working. Measured on the builder
   (Windows 10 22H2, NTFS, 2026-11-22, two `FileSystemWatcher`s on `C:\` with the same notify filter side by side):
   idle `C:` carried 0.2 events/s with no overflow at either size; copying and deleting 3,827 files (about 23,000
-  events in 6 s) overflowed 16 KiB once and 64 KiB never, and so did a 2,671-file burst.
+  events in 6 s) overflowed 16 KiB once and 64 KiB never, and so did a 2,671-file burst. Under load it's not enough on
+  its own: in the app, with a drive-index walk holding both cores, the same 3,827-file burst overflowed 64 KiB three
+  times in 2 s (the index merged them into one rescan round, #1364).
 
 Verified on Windows 10 22H2 (NTFS, the builder, 2026-11-21) with a standalone program that arms a
 `notify-debouncer-full` watch the way the app does: a flood of 20,000 files from four threads reported `Rescan` twice

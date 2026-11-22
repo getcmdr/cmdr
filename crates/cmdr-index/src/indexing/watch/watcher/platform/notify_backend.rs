@@ -408,8 +408,9 @@ fn note_watched(watched_roots: &WatchedRoots, root: &Path) {
 ///   (`vendor/notify/CMDR-PATCH.md`, #1128). With the volume root the only watch
 ///   there, its anchor is the root, which the branch scope re-anchors to EVERY branch:
 ///   one overflow re-walks all walked ground, once per branch's throttle window. The
-///   buffer is what keeps that rare (a burst of about 3,800 files overflowed 16 KiB and
-///   not 64 KiB on the builder, 2026-11-22).
+///   buffer is what keeps that rarer (a burst of about 3,800 files overflowed 16 KiB and
+///   not 64 KiB on an idle builder, though 64 KiB too while an index walk held both
+///   cores, 2026-11-22; `watch/DETAILS.md` § "When the OS drops events").
 fn rescan_anchors(watched_roots: &[PathBuf], counter: &AtomicU64) -> Vec<FsChangeEvent> {
     log::info!(
         "Watcher: the system dropped file change events (its queue overflowed), so {} will be rescanned",
