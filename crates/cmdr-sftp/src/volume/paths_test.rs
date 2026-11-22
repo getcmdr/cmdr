@@ -179,3 +179,16 @@ fn a_path_to_an_existing_entry_keeps_its_exact_bytes() {
         "/srv/data/fo\u{301}to\u{301}k/cafe\u{301}.jpg"
     );
 }
+
+/// #1310: a name the server lists with an escape-range code point reaches it as listed: the
+/// row's text through the app's door (the listed-text one, which the wire and the bridge
+/// spell alike), and what the listing-cache patcher spells comes back the same value.
+#[test]
+fn a_listed_escape_range_name_reaches_the_server_as_listed() {
+    let vol = make_test_volume();
+    let listed = "/srv/data/x\u{10FEFF}/caf\u{10FEC3}\u{10FEA9}";
+    let row = vol.app_text_of(listed).expect("a row");
+    let sent = AppPathBuf::from_listed_text(&row, PathFlavor::Posix).expect("an app path");
+    assert_eq!(vol.to_remote_path(&sent).unwrap(), listed);
+    assert_eq!(vol.display_path_for(&sent), Some(sent.clone()));
+}

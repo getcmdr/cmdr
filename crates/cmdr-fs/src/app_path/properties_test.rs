@@ -119,6 +119,39 @@ proptest! {
         prop_assert_eq!(a == b, escape_units(&a) == escape_units(&b));
     }
 
+    /// #1310's door: `listed_text` gives back exactly what a backend listed, through either
+    /// alphabet's literal spelling and through the path door (`from_listed_text`, which the
+    /// wire's `from_literal_store` spells alike), separators and all.
+    #[test]
+    fn listed_text_inverts_the_listing_door(names in prop::collection::vec(name().prop_filter("one name", |n| !n.is_empty() && n != "." && n != ".."), 0..4)) {
+        let listed = format!("sftp://u@h:22/{}", names.join("/"));
+        for namer in [Namer::Bytes, Namer::Units] {
+            let text = escape::literal(&listed, namer);
+            let back = listed_text(&text).map(Cow::into_owned);
+            prop_assert_eq!(back.as_deref(), Some(listed.as_str()));
+        }
+        let own = AppPathBuf::from_listed_text(&listed, PathFlavor::Posix).expect("an app path");
+        prop_assert_eq!(&own, &AppPathBuf::from_literal_store(&listed, Namer::HOST).expect("an app path"));
+        let back = listed_text(own.as_str()).map(Cow::into_owned);
+        prop_assert_eq!(back.as_deref(), Some(listed.as_str()));
+    }
+
+    /// Fail-closed and collision-free: any app text `listed_text` answers for is one of the
+    /// two literal spellings of that answer, so two different listed names never collapse
+    /// into one server name, and the answer keeps every separator and NUL where it was (an
+    /// escape decodes to no ASCII).
+    #[test]
+    fn listed_text_answers_only_a_literal_spelling(names in prop::collection::vec(name(), 0..4)) {
+        let text = names.join("/");
+        if let Some(listed) = listed_text(&text) {
+            prop_assert!(
+                escape::literal(&listed, Namer::Bytes) == text || escape::literal(&listed, Namer::Units) == text,
+                "{:?} -> {:?}", text, listed
+            );
+            prop_assert_eq!(listed.matches('/').count(), text.matches('/').count());
+        }
+    }
+
     /// `to_native(canon(s)) == to_native(s)` and `from_native(to_native(s)) == canon(s)`, for
     /// arbitrary text through each alphabet it can be read in.
     #[test]

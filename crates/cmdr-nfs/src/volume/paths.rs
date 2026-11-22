@@ -44,8 +44,8 @@ impl NfsVolume {
     }
 
     /// [`display_path_for`](Self::display_path_for) for an app path, by the app
-    /// path's own arithmetic. A server name the app path can't hold yet is no
-    /// patch either.
+    /// path's own arithmetic. A server name no app path holds (a NUL) is no patch
+    /// either.
     pub(super) fn app_path_for(&self, path: &AppPath) -> Option<AppPathBuf> {
         self.root
             .to_remote(path)

@@ -3,7 +3,7 @@
 
 use std::path::Path;
 
-use cmdr_fs::testing::AppTestDir;
+use cmdr_fs::testing::{AppTestDir, TestDir};
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{MountClass, Volume};
 
@@ -32,10 +32,10 @@ fn a_volume_on_a_fixed_drive_has_the_drives_recycle_bin() {
 
 #[test]
 fn both_spellings_read_the_same_drive() {
-    let dir = AppTestDir::new("win_recycle_bin_spellings");
-    let forward = dir.native().to_str().expect("a Unicode temp path").replace('\\', "/");
+    let dir = TestDir::new("win_recycle_bin_spellings");
+    let forward = dir.to_str().expect("a Unicode temp path").replace('\\', "/");
 
-    assert_eq!(has_recycle_bin(Path::new(&forward)), has_recycle_bin(dir.native()));
+    assert_eq!(has_recycle_bin(Path::new(&forward)), has_recycle_bin(&dir));
 }
 
 /// The admin share reaches `C:` over SMB, which keeps no Recycle Bin: the Shell would delete

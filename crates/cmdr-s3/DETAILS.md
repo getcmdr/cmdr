@@ -29,14 +29,14 @@ switcher row each key on a place.
 - **Every body speaks typed app paths** (`cmdr_fs::app_path`, `crates/cmdr-fs/DETAILS.md` § "App paths"); the key layer
   stays text, and the two meet only in `paths.rs`: `resolve` (`RemoteRoot::to_remote`, then the beside-folder map) going
   down, `row_path` coming back. ❗ A row's `FileEntry.path` is `RemoteRoot::to_app_path`'s text
-  (`<prefix><normalized server path>`), ❌ never the typed `to_app`'s, as in SFTP, WebDAV, and NFS: a name the typed
-  path can't hold yet (an escape-range code point) keeps its row, and the text is byte for byte what it always was
-  (pinned as literal strings, `paths_test::a_rows_text_is_the_normalized_server_path_under_the_prefix`). Such a row gets
-  no listing patch after a write (`app_path_of`, the patcher's typed answer, has none for it). `Volume::root` answers
-  the typed root `paths::Place` builds once at connect, the same text as `RemoteRoot::app_root`; a bucket or key id
-  holding a NUL or an escape-range code point (U+10E800–U+10EFFF, U+10FE80–U+10FEFF) refuses the connect before the
-  probe (`NoSuchBucket` / `KeysRejected`, pinned by `paths_test::a_place_the_app_path_cant_hold_refuses_the_connect`):
-  no provider allows one.
+  (`<prefix><normalized server path>`), ❌ never the typed `to_app`'s, as in SFTP, WebDAV, and NFS: a key holding an
+  escape-range code point keeps its literal row text, byte for byte what it always was (pinned as literal strings,
+  `paths_test::a_rows_text_is_the_normalized_server_path_under_the_prefix`), and goes through the listed-text door both
+  ways (#1310, `crates/cmdr-fs/DETAILS.md` § "App paths"), so its patch and every request name it as listed
+  (`paths_test::a_listed_escape_range_key_is_reached_as_listed`). `Volume::root` answers the typed root `paths::Place`
+  builds once at connect, the same text as `RemoteRoot::app_root`; a bucket or key id holding a NUL or an escape-range
+  code point (U+10E800–U+10EFFF, U+10FE80–U+10FEFF) refuses the connect before the probe (`NoSuchBucket` /
+  `KeysRejected`, pinned by `paths_test::a_place_the_app_path_cant_hold_refuses_the_connect`): no provider allows one.
 - **Two places of one account each hold their own client.** Sharing one is an optimisation for later; nothing depends on
   it.
 - **The account root needs `ListBuckets`.** A bucket-scoped key (R2 non-admin tokens, B2 keys without

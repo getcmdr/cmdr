@@ -489,6 +489,11 @@ impl Volume for ArchiveVolume {
         cmdr_fs::volume::BackendKind::Archive
     }
 
+    /// The format's own: a 7z names entries in UTF-16, a zip or tar in bytes.
+    fn namer(&self) -> cmdr_fs::app_path::Namer {
+        self.format.namer()
+    }
+
     fn root(&self) -> &AppPath {
         &self.archive_path
     }

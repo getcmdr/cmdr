@@ -293,3 +293,53 @@ fn a_listed_name_spells_as_the_bridges_name_door_on_every_host() {
         assert_eq!(name.as_str(), door.as_str(), "{listed:?}");
     }
 }
+
+/// #1310's one door, pinned on every host: a backend's listed path text, the bridge's value of
+/// the same text, and the wire's (`from_literal_store` through the host's namer) are one
+/// value, and [`listed_text`] gives the listed text back from it, an escape-range code point
+/// of either alphabet included. So a name listed with one reaches its server as listed,
+/// whichever door the app's value came through.
+#[test]
+fn a_listed_path_spells_as_the_bridge_and_the_wire_and_reads_back_as_listed() {
+    for listed in [
+        "sftp://u@h:22/srv/x",
+        "sftp://u@h:22/srv/x\u{10FEFF}",
+        "sftp://u@h:22/srv/\u{10E800}a/caf\u{10FEC3}\u{10FEA9}",
+        "mtp://mtp-0-1/65537/DCIM/\u{10FE80}\u{10EFFF}",
+    ] {
+        let own = AppPathBuf::from_listed_text(listed, PathFlavor::Posix).expect("an app path");
+        let bridged = AppPath::legacy_unchecked(Path::new(listed)).into_owned();
+        let wire = AppPathBuf::from_literal_store(listed, Namer::HOST).expect("an app path");
+        assert_eq!(own.as_str(), bridged.as_str(), "{listed:?}: bridge");
+        assert_eq!(own, wire, "{listed:?}: wire");
+        assert_eq!(listed_text(own.as_str()).as_deref(), Some(listed), "{listed:?}: back");
+        // The operation log escapes a pre-live row through the VOLUME's namer, which may be
+        // the other alphabet: it reads back as listed too.
+        for namer in [Namer::Bytes, Namer::Units] {
+            let row = AppPathBuf::from_literal_store(listed, namer).expect("an app path");
+            assert_eq!(
+                listed_text(row.as_str()).as_deref(),
+                Some(listed),
+                "{listed:?} {namer:?}"
+            );
+        }
+    }
+}
+
+/// [`listed_text`] refuses what no listed name escapes to: a live escape, both alphabets in
+/// one text, and escapes that aren't the literal spelling of what they decode to (the bytes
+/// of `é`, a look-alike of `café`).
+#[test]
+fn listed_text_refuses_what_no_listed_name_escapes_to() {
+    assert_eq!(listed_text("plain").as_deref(), Some("plain"));
+    assert!(matches!(listed_text("plain"), Some(Cow::Borrowed(_))));
+    for refused in [
+        "caf\u{10FEE9}",
+        "x\u{10FEFF}",
+        "\u{10E800}",
+        "caf\u{10FEC3}\u{10FEA9}",
+        "\u{10FE80}\u{10E800}",
+    ] {
+        assert_eq!(listed_text(refused), None, "{refused:?}");
+    }
+}

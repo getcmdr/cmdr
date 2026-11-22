@@ -80,12 +80,14 @@ impl MtpVolume {
     }
 }
 
-/// `name` (a name the storage path already split off, so one plain name) beside the
-/// other items in the app folder `folder`, joined as that folder joins (`ListedFolder`).
-/// `None` only for a name a drive or UNC folder can't take, which no MTP path is.
+/// `name` (a name the storage path already split off, so one plain name, as the device
+/// spells it) beside the other items in the app folder `folder`, joined as that folder
+/// joins (`ListedFolder`) through the listed-name door, so a name holding an escape-range
+/// code point names what the app holds for it (#1310). `None` only for a name a drive or
+/// UNC folder can't take, which no MTP path is.
 pub(super) fn sibling(folder: &AppPath, name: &str) -> Option<AppPathBuf> {
     ListedFolder::new(folder)
-        .join(AppName::from_app_spelling(name).ok()?)
+        .join(&AppName::from_listed_text(name).ok()?)
         .ok()
 }
 

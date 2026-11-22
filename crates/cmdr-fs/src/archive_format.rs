@@ -96,6 +96,16 @@ impl ArchiveFormat {
             ArchiveFormat::SevenZ => true,
         }
     }
+
+    /// How this format stores entry names, which picks the escape alphabet a path inside
+    /// it takes: 7z writes UTF-16, zip and tar raw bytes (UTF-8 or a legacy code page).
+    /// What an archive volume answers for `Volume::namer`.
+    pub const fn namer(self) -> crate::app_path::Namer {
+        match self {
+            ArchiveFormat::Zip | ArchiveFormat::Ooxml | ArchiveFormat::Tar(_) => crate::app_path::Namer::Bytes,
+            ArchiveFormat::SevenZ => crate::app_path::Namer::Units,
+        }
+    }
 }
 
 /// The archive format a file NAME denotes, or `None` if it isn't a browsable
@@ -272,6 +282,19 @@ pub fn archive_name_text(name: &str) -> Option<Cow<'_, str>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_7z_names_in_utf16_and_a_zip_or_tar_in_bytes() {
+        use crate::app_path::Namer;
+        assert_eq!(ArchiveFormat::SevenZ.namer(), Namer::Units);
+        for format in [
+            ArchiveFormat::Zip,
+            ArchiveFormat::Ooxml,
+            ArchiveFormat::Tar(TarCodec::Gzip),
+        ] {
+            assert_eq!(format.namer(), Namer::Bytes, "{format:?}");
+        }
+    }
 
     #[test]
     fn the_typed_split_takes_the_first_archive_name_and_keeps_a_remote_root_spelled_exactly() {

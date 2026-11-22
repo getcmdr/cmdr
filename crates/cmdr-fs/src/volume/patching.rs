@@ -14,9 +14,7 @@
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 
-use crate::app_path::{
-    AppNameBuf, AppPath, AppPathBuf, ListedFolder, Namer, PathArithmetic, shown_name, unescape_bytes,
-};
+use crate::app_path::{AppNameBuf, AppPath, AppPathBuf, ListedFolder, Namer, PathArithmetic, listed_row_name};
 use crate::entry::FileEntry;
 use crate::volume::host::listings::ListingHost;
 use crate::volume::scan_walk::Walking;
@@ -174,17 +172,10 @@ pub async fn patch_renamed_at(source: &dyn PatchSource, from: &AppPath, to: &App
 /// either is missing, which is the "nothing to patch" answer.
 ///
 /// Split by the app path's own arithmetic, so a remote name holding `\` stays one name on
-/// Windows. The name comes back as the native name's lossy text, the spelling the
-/// backends' listings carry.
+/// Windows. The name comes back as the backends' listings spell it ([`listed_row_name`]).
 fn parent_and_name(source: &dyn PatchSource, path: &AppPath) -> Option<(AppPathBuf, String)> {
     let parent = source.patch_app_path(path.parent()?)?;
-    let name = path.file_name()?;
-    let name = match unescape_bytes(name) {
-        Ok(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
-        // A unit escape (an unpaired surrogate on Windows): what a person reads.
-        Err(_) => shown_name(name).into_owned(),
-    };
-    Some((parent, name))
+    Some((parent, listed_row_name(path.file_name()?).into_owned()))
 }
 
 /// `name` (a backend's listed name, so any escape-range code point in it is literal) in

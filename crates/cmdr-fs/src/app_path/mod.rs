@@ -44,8 +44,8 @@ use std::borrow::Cow;
 
 pub use bridge::{BridgedPath, ListedFolder};
 pub use escape::{
-    EscapeRefusal, Namer, canonical_name, escape_bytes, escape_units, is_escape, native_name_length, shown_name,
-    unescape_bytes, unescape_units,
+    EscapeRefusal, Namer, canonical_name, escape_bytes, escape_units, is_escape, listed_row_name, listed_text,
+    native_name_length, shown_name, unescape_bytes, unescape_units,
 };
 pub use native::{NativeRefusal, NotPlainSafe};
 pub use parse::NotAnAppPath;

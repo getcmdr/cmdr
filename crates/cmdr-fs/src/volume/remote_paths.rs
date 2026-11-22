@@ -38,7 +38,7 @@ use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
 use crate::app_path::{
-    AppPath, AppPathBuf, BridgedPath, ESCAPES_LIVE, NotAnAppPath, PathFlavor, is_escape, unescape_bytes,
+    AppPath, AppPathBuf, BridgedPath, ESCAPES_LIVE, NotAnAppPath, PathFlavor, is_escape, listed_text, unescape_bytes,
 };
 
 use super::{canonical_nfs_export, nfs_volume_id, sftp_volume_id, webdav_volume_id};
@@ -75,9 +75,8 @@ pub enum RemoteAppRefusal {
     /// The server path isn't under this volume's root (after `..`): a misbehaving server's
     /// `href` above the collection, or a `..` for a name. The caller drops that entry.
     OffRoot,
-    /// The server path's text is no app path as it stands: a NUL, or an escape-range code
-    /// point, which needs an escape until escapes go live (`app_path::ESCAPES_LIVE`). The
-    /// caller keeps today's spelling for it ([`RemoteRoot::to_app_path`]), ❌ never drops it.
+    /// The server path's text is no app path: a NUL. The caller keeps today's spelling for
+    /// it ([`RemoteRoot::to_app_path`]), ❌ never drops it.
     NotAppText(NotAnAppPath),
 }
 
@@ -142,16 +141,18 @@ impl RemoteRoot {
 
     /// [`Self::to_remote_path`] for an app path: the same aliases, matching, and refusals.
     ///
-    /// ❗ Until escapes go live ([`ESCAPES_LIVE`]), an escape-range code point is LITERAL
-    /// text (the spelling every listed row carries), so it goes to the server as its own
-    /// UTF-8 bytes, what the `std::path` door sends. Decoding it would address another name
-    /// (`caf\u{10FEC3}\u{10FEA9}` would reach `café`). Once escapes are live, each decodes
-    /// back to the byte the server names, and a unit escape (no POSIX server holds one) is
-    /// `None`; WebDAV and S3, which can't hold a non-UTF-8 name, then refuse an escaped one
-    /// before they get here (the plan's 10f).
+    /// ❗ Until escapes go live ([`ESCAPES_LIVE`]), an app path spells a listed escape-range
+    /// code point as its own units' escapes (the bridge, [`Self::to_app`], and the shared
+    /// walk all escape it, #1310), so it goes to the server as the text it stands for
+    /// ([`listed_text`]): a name listed as `x\u{10FEFF}` comes back as `x\u{10FEFF}`. Text no
+    /// listed name escapes to (a live escape, or a look-alike such as
+    /// `caf\u{10FEC3}\u{10FEA9}`, which would reach `café`) is `None`. Once escapes are live,
+    /// each decodes back to the byte the server names, and a unit escape (no POSIX server
+    /// holds one) is `None`; WebDAV and S3, which can't hold a non-UTF-8 name, then refuse an
+    /// escaped one before they get here (the plan's 10f).
     pub fn to_remote(&self, path: &AppPath) -> Option<String> {
         if !ESCAPES_LIVE {
-            return self.remote_of(path.as_str().as_bytes());
+            return self.remote_of(listed_text(path.as_str())?.as_bytes());
         }
         self.remote_of(&unescape_bytes(path.as_str()).ok()?)
     }
@@ -195,16 +196,18 @@ impl RemoteRoot {
     }
 
     /// [`Self::to_app_path`] as a typed app path: the same containment check, and the same
-    /// text, parsed.
+    /// text, through the listed-text door ([`AppPathBuf::from_listed_text`]), so a server
+    /// name holding an escape-range code point is the value the bridge makes of its row's
+    /// text, and [`Self::to_remote`] sends it back as listed (#1310).
     ///
     /// # Errors
     ///
     /// [`RemoteAppRefusal::OffRoot`] where [`Self::to_app_path`] answers `None`, and
-    /// [`RemoteAppRefusal::NotAppText`] for an answer whose text the app path can't hold
-    /// without an escape (that type's doc says what the caller does then).
+    /// [`RemoteAppRefusal::NotAppText`] for an answer whose text no app path holds (a NUL;
+    /// that type's doc says what the caller does then).
     pub fn to_app(&self, remote: &str) -> Result<AppPathBuf, RemoteAppRefusal> {
         let text = self.app_text_of(remote).ok_or(RemoteAppRefusal::OffRoot)?;
-        scheme_app_path(&text).map_err(RemoteAppRefusal::NotAppText)
+        AppPathBuf::from_listed_text(&text, PathFlavor::Posix).map_err(RemoteAppRefusal::NotAppText)
     }
 
     /// `<prefix><normalized server path>`, or `None` off the root.
