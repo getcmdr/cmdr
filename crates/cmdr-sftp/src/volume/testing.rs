@@ -376,8 +376,9 @@ pub fn app_at(volume: &dyn cmdr_fs::volume::Volume, text: &str) -> AppPathBuf {
         .expect("a plain tail joins under the root")
 }
 
-/// `name`, a listed `FileEntry.name`, in `folder`.
+/// `name`, a listed `FileEntry.name`, in `folder`, through the listed-name door (#1310), so
+/// a name holding an escape-range code point names the file the server listed.
 pub fn child(folder: &AppPath, name: &str) -> AppPathBuf {
-    let name = AppName::from_app_spelling(name).expect("a listed name is one plain name");
-    folder.join(name).expect("a listed name joins its folder")
+    let name = AppName::from_listed_text(name).expect("a listed name is one plain name");
+    folder.join(&name).expect("a listed name joins its folder")
 }

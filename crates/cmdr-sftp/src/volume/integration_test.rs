@@ -361,6 +361,46 @@ async fn a_name_that_is_not_utf8_takes_the_whole_session_down() {
     );
 }
 
+/// #1310 against a real server: a name holding a plane-16 escape-range code point, made
+/// through the app's spelling of it, lists under its literal text, and the row's path read
+/// back through the wire's door (what a command reads a row by) stats, reads, and deletes
+/// that same file, ❌ never a file literally named with the escape code points.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "needs the SFTP fixture stack: sftp-servers/start.sh (sftp-fixture)"]
+async fn a_name_holding_an_escape_range_code_point_round_trips_through_the_app() {
+    use cmdr_fs::app_path::{AppPathBuf, Namer, PathFlavor};
+    let params = fixture_params("OPENSSH", 12480);
+    let host = fixture_host(&params, Some(FIXTURE_PASSWORD));
+    let volume = connect_fixture(&host, params).await;
+    let dir = scratch_dir("escape-range-name");
+    clean_scratch(&volume, &dir).await;
+    let folder = app_at(&volume, &dir);
+    volume.create_directory(&folder).await.expect(FIXTURE);
+
+    let name = "x\u{10FEFF}\u{10E800}.txt";
+    let made =
+        AppPathBuf::from_listed_text(&format!("{}/{name}", folder.as_str()), PathFlavor::Posix).expect("an app path");
+    volume.create_file(&made, b"plane 16").await.expect(FIXTURE);
+
+    let rows = volume.list_directory(&folder, None).await.expect(FIXTURE);
+    assert_eq!(rows.len(), 1, "one file, under one name: {rows:?}");
+    assert_eq!(rows[0].name, name, "the server holds the literal text");
+    let sent = AppPathBuf::from_literal_store(&rows[0].path, Namer::HOST).expect("an app path");
+    assert_eq!(sent, made, "the row's path is the value the app made");
+    assert_eq!(volume.get_metadata(&sent).await.expect(FIXTURE).size, Some(8));
+    let mut stream = volume.open_read_stream(&sent).await.expect(FIXTURE);
+    let mut bytes = Vec::new();
+    while let Some(chunk) = stream.next_chunk().await {
+        bytes.extend_from_slice(&chunk.expect(FIXTURE));
+    }
+    assert_eq!(bytes, b"plane 16");
+
+    volume.delete(&sent).await.expect(FIXTURE);
+    let after = volume.list_directory(&folder, None).await.expect(FIXTURE);
+    assert!(after.is_empty(), "the delete reached the listed file: {after:?}");
+    clean_scratch(&volume, &dir).await;
+}
+
 // ── The quirk servers still connect and list ─────────────────────────
 
 #[tokio::test]

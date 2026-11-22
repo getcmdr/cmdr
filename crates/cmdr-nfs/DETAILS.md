@@ -36,8 +36,9 @@ with `/` under it, so the paths the volume speaks are export-relative. No accoun
   canonical app path (`RemoteRoot::app`, `to_app`) drops it; the frontend compares root text (`path === root`). Pinned
   by `the_export_root_keeps_its_trailing_slash_on_the_wire`. The typed `to_app` serves only where an `AppPathBuf` is
   needed and `Eq` is component-wise (`patch_app_path`).
-- A server name the app path can't hold yet (a NUL, an escape-range code point) keeps today's row text; the patcher
-  makes no patch for it.
+- A server name no app path holds (a NUL) keeps today's row text; the patcher makes no patch for it. One holding an
+  escape-range code point keeps its literal row text too, and goes through the listed-text door both ways (#1310,
+  `crates/cmdr-fs/DETAILS.md` § "App paths"), so its patch and every request name it as listed.
 
 ## Connecting
 

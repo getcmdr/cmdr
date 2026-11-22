@@ -70,7 +70,7 @@ impl AdbVolume {
     /// The path the APP addresses `path` by, for the listing-cache patcher. A
     /// refusal becomes "no patch to make": a listing-cache patch is a courtesy
     /// and ❌ must never fail a mutation that already landed. That includes a
-    /// device path whose text needs an escape (`NotAppText`): the pane re-lists.
+    /// device path no app path holds (`NotAppText`, a NUL): the pane re-lists.
     ///
     /// The device's `/` answers `root()` itself (the bare `adb://<serial>`), so
     /// the listing host hears the root folder by the spelling a pane holds.

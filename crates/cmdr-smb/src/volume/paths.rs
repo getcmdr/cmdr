@@ -9,7 +9,7 @@
 //! bytes on every host: a `\` or a `:` is part of a name, ❌ never a `std::path`
 //! separator or drive (on Windows `Path` would split `a\b` and read `C:` as a drive).
 
-use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic, shown_name, unescape_bytes};
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic, listed_row_name, listed_text};
 use cmdr_fs::volume::VolumeError;
 
 use super::SmbVolume;
@@ -38,17 +38,20 @@ impl SmbVolume {
     /// real request at a real, wrong place. Both, and what each caller does with
     /// the error: `backends/DETAILS.md` § "Per-backend decisions".
     ///
-    /// ❗ Until escapes go live (`cmdr_fs::app_path::ESCAPES_LIVE`), an escape-range
-    /// code point is literal text and goes to the server as its own UTF-8 bytes,
-    /// as `RemoteRoot::to_remote` sends it.
+    /// ❗ Until escapes go live (`cmdr_fs::app_path::ESCAPES_LIVE`), an app path spells a
+    /// listed escape-range code point as its own units' escapes, so it goes to the server as
+    /// the text it stands for (`listed_text`, as `RemoteRoot::to_remote` sends it, #1310):
+    /// a name listed as `x\u{10FEFF}` comes back as listed. Text no listed name escapes to
+    /// (a live escape) is `NotFound`.
     pub(super) fn to_smb_path(&self, path: &AppPath) -> Result<String, VolumeError> {
-        self.smb_path_of(path.as_str())
+        let listed = listed_text(path.as_str()).ok_or_else(|| VolumeError::NotFound(path.to_string()))?;
+        self.smb_path_of(&listed)
     }
 
-    /// [`Self::to_smb_path`] over an app path's text, which a transition-bridge value
-    /// spells as its caller did: relative, `.`, `//`, or with a trailing `/`. Read
-    /// the way POSIX `Path` reads it, so every spelling a caller sends today reaches
-    /// the server as it did.
+    /// [`Self::to_smb_path`] over LISTED text (a row's path, or an app path's text through
+    /// `listed_text`), which a transition-bridge value spells as its caller did: relative,
+    /// `.`, `//`, or with a trailing `/`. Read the way POSIX `Path` reads it, so every
+    /// spelling a caller sends today reaches the server as it did.
     pub(super) fn smb_path_of(&self, text: &str) -> Result<String, VolumeError> {
         // Empty, `.`, and `/` all mean the volume root, which is where this mount
         // is anchored inside the share.
@@ -95,15 +98,17 @@ impl SmbVolume {
 
     /// The typed app path for a share-relative SMB path: [`Self::to_display_path`]'s
     /// place, built by the app path's own join under the mount root, so a name
-    /// holding `\` or `:` stays one name on every host. Empty and `.` names drop, as
-    /// `Path`'s components drop them; `None` for a `..`.
+    /// holding `\` or `:` stays one name on every host. Each name goes through the
+    /// listed-name door (`AppName::from_listed_text`), so a server name holding an
+    /// escape-range code point is the value the app hands back for its row (#1310).
+    /// Empty and `.` names drop, as `Path`'s components drop them; `None` for a `..`.
     pub(super) fn app_path_of(&self, smb_path: &str) -> Option<AppPathBuf> {
         let mut path = self.mount_path.app().to_canonical().ok()?.into_owned();
         for name in self.below_share_root(smb_path).split('/') {
             if name.is_empty() || name == "." {
                 continue;
             }
-            path = path.join(AppName::from_app_spelling(name).ok()?).ok()?;
+            path = path.join(&AppName::from_listed_text(name).ok()?).ok()?;
         }
         Some(path)
     }
@@ -222,14 +227,10 @@ pub(super) fn parent_and_row_name(path: &AppPath) -> Option<(&AppPath, String)> 
     Some((path.parent()?, row_name(path.file_name()?)))
 }
 
-/// An app path's name as a listing row spells it: the native name's text, lossy
-/// for an escape (`patching`'s rule, so every backend's patches name rows alike).
+/// An app path's name as a listing row spells it (`listed_row_name`, `patching`'s
+/// rule, so every backend's patches name rows alike).
 pub(super) fn row_name(name: &str) -> String {
-    match unescape_bytes(name) {
-        Ok(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
-        // A unit escape (an unpaired surrogate on Windows): what a person reads.
-        Err(_) => shown_name(name).into_owned(),
-    }
+    listed_row_name(name).into_owned()
 }
 
 /// `smb_path` re-expressed relative to `share_root`, or `None` when it isn't

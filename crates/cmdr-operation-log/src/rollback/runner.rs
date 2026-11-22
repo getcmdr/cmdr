@@ -46,9 +46,10 @@ pub trait VolumeLookup: Send + Sync {
     /// live: its literal escape-range code points spell through it
     /// (`AppPathBuf::from_literal_store`). `None` for a volume the host can't name, which the
     /// planner reads as "can't tell" and never guesses; it asks only for a path holding such
-    /// a code point. Defaults to the registered volume's backend's namer.
+    /// a code point. Defaults to the registered volume's own (`Volume::namer`: its backend's,
+    /// or a 7z archive's UTF-16).
     fn namer(&self, volume_id: &str) -> Option<Namer> {
-        self.get(volume_id).map(|volume| volume.backend_kind().namer())
+        self.get(volume_id).map(|volume| volume.namer())
     }
 }
 

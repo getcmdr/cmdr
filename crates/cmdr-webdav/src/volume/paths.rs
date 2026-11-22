@@ -66,8 +66,8 @@ impl WebdavVolume {
     }
 
     /// [`Self::display_path_for`] for an app path: its canonical spelling on this volume,
-    /// the one a listing gave the pane. A server path the app path can't hold yet (a NUL, an
-    /// escape-range code point) is no patch, like any other refusal here.
+    /// the one a listing gave the pane. A server path no app path holds (a NUL) is no patch,
+    /// like any other refusal here.
     pub(super) fn app_path_for(&self, path: &AppPath) -> Option<AppPathBuf> {
         self.root
             .to_remote(path)

@@ -287,13 +287,31 @@ fn a_patch_path_is_the_typed_place_under_the_mount_root() {
     assert_eq!(typed("example.com/a/../b"), None);
 }
 
+/// #1310: a name the share lists with an escape-range code point reaches the server as
+/// listed, whichever door the app's value came through: the app's for a row's text (the
+/// listed-text door, which the wire and the bridge spell alike: `cmdr-fs`'s
+/// `bridge_test.rs` pins it), or the volume's own `app_path_of` (a patch), and a walk child
+/// of it too. Text no listed name escapes to (a live escape) is `NotFound`, ❌ never sent as
+/// its code points' own bytes.
 #[test]
-fn until_escapes_go_live_an_escape_range_name_reaches_the_server_as_its_literal_text() {
-    // `RemoteRoot::to_remote`'s rule: decoding `caf\u{10FEC3}\u{10FEA9}` would address `café`.
+fn a_listed_escape_range_name_reaches_the_server_as_listed_through_every_door() {
+    use cmdr_fs::app_path::{ListedFolder, PathFlavor};
     let vol = make_test_volume();
-    let literal = "caf\u{10FEC3}\u{10FEA9}";
-    assert_eq!(
-        vol.smb_path_of(&format!("/Volumes/TestShare/{literal}")).unwrap(),
-        literal
-    );
+    for name in ["caf\u{10FEC3}\u{10FEA9}", "x\u{10FEFF}", "\u{10E800}a"] {
+        let row = vol.to_display_path(name);
+        let sent = AppPathBuf::from_listed_text(&row, PathFlavor::Posix).expect("an app path");
+        assert_eq!(vol.to_smb_path(&sent).unwrap(), name, "{name:?}: wire");
+        let own = vol.app_path_of(name).expect("an app path");
+        assert_eq!(own, sent, "{name:?}: the volume's own spelling is the wire's");
+        let child = ListedFolder::new(&own)
+            .join(&AppName::from_listed_text(name).expect("a name"))
+            .expect("a child");
+        assert_eq!(
+            vol.to_smb_path(&child).unwrap(),
+            format!("{name}/{name}"),
+            "{name:?}: walk child"
+        );
+    }
+    let live = app_path!("/Volumes/TestShare/x\u{10FEFF}");
+    assert!(matches!(vol.to_smb_path(live), Err(VolumeError::NotFound(_))));
 }

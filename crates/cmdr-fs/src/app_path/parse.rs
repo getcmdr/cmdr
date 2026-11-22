@@ -270,6 +270,26 @@ impl AppPathBuf {
         Self::from_wire(&escape::literal(text, namer))
     }
 
+    /// A path a backend spelled from its own listing's text (a server path under its root, a
+    /// device's storage path under its URL), while escapes aren't live
+    /// ([`super::ESCAPES_LIVE`]): no listed name holds a live escape yet, so an escape-range
+    /// code point in it is LITERAL text, spelled through this host's units exactly as
+    /// [`AppPath::legacy_unchecked`] spells the same text and
+    /// [`AppName::from_listed_text`](super::AppName::from_listed_text) spells one name. So the
+    /// path a backend builds and the one the app hands back are one value, and
+    /// [`super::listed_text`] gives the listed text back. Once escapes are live this is
+    /// [`Self::parse`].
+    ///
+    /// # Errors
+    ///
+    /// As [`Self::parse`].
+    pub fn from_listed_text(text: &str, flavor: PathFlavor) -> Result<AppPathBuf, NotAnAppPath> {
+        if super::ESCAPES_LIVE {
+            return Self::parse(text, flavor);
+        }
+        Self::parse(&escape::literal(text, Namer::HOST), flavor)
+    }
+
     /// Path text from outside the app that a machine handed over (an MCP tool's argument, a
     /// deep link, a CLI argument), every name LITERAL: `.` names drop, on Windows `\` and `/`
     /// both separate, and every escape-range code point is literal text, escaped through

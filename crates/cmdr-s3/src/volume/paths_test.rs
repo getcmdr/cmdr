@@ -149,3 +149,17 @@ fn a_place_the_app_path_cant_hold_refuses_the_connect() {
     let account = place("AKIATEST", None).expect("the account root connects");
     assert_eq!(account.app.as_str(), "s3://AKIATEST@127.0.0.1:1/");
 }
+
+/// #1310: a key the bucket lists with an escape-range code point is reached as listed: the
+/// row's text through the app's door (the listed-text one, which the wire and the bridge
+/// spell alike), and what the listing patcher spells comes back the same value.
+#[test]
+fn a_listed_escape_range_key_is_reached_as_listed() {
+    use cmdr_fs::app_path::{AppPathBuf, PathFlavor};
+    let volume = make_test_volume(Some("photos"));
+    let listed = "/photos/x\u{10FEFF}/caf\u{10FEC3}\u{10FEA9}";
+    let row = volume.row_path(listed).expect("a row");
+    let sent = AppPathBuf::from_listed_text(&row, PathFlavor::Posix).expect("an app path");
+    assert_eq!(volume.to_remote_path(&sent).expect("on the place"), listed);
+    assert_eq!(volume.app_path_of(listed), Some(sent));
+}
