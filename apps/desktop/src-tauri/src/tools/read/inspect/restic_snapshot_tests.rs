@@ -27,7 +27,7 @@ fn inspect_extracting_to(path: &Path, extract_dir: &Path) -> FileRow {
         extract_if_routed_with(requested, volume_id, extract_dir, PREVIEW_CAP_BYTES)
     };
     inspect_path_with(
-        path.to_str().unwrap(),
+        crate::test_support::native_app_path(path).as_str(),
         &TextAsk::Window(WindowOpts::default()),
         &AtomicBool::new(false),
         &extract,

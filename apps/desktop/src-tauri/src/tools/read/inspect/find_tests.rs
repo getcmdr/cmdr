@@ -41,7 +41,11 @@ fn regex(query: &str) -> TextAsk {
 }
 
 fn find_in(path: &Path, ask: &TextAsk) -> TextContent {
-    match inspect_path(path.to_str().unwrap(), ask, &AtomicBool::new(false)) {
+    match inspect_path(
+        crate::test_support::native_app_path(path).as_str(),
+        ask,
+        &AtomicBool::new(false),
+    ) {
         FileRow::Ok(file) => match file.content {
             Content::Text(text) => text,
             other => panic!("expected a text row, got {other:?}"),
@@ -301,7 +305,11 @@ fn snippet_finds_the_match_by_its_utf16_column_on_a_line_full_of_emoji() {
 fn a_pre_set_cancel_flag_makes_the_scan_incomplete_and_says_where_it_stopped() {
     let dir = TestDir::new("find_cancelled");
     let small = write(&dir, "small.txt", "needle\n");
-    let text = match inspect_path(small.to_str().unwrap(), &literal("needle"), &AtomicBool::new(true)) {
+    let text = match inspect_path(
+        crate::test_support::native_app_path(small).as_str(),
+        &literal("needle"),
+        &AtomicBool::new(true),
+    ) {
         FileRow::Ok(file) => match file.content {
             Content::Text(text) => text,
             other => panic!("{other:?}"),
@@ -318,7 +326,11 @@ fn a_pre_set_cancel_flag_makes_the_scan_incomplete_and_says_where_it_stopped() {
 
     // Past the FullLoad threshold the streaming backend runs; the flag stops it just the same.
     let large = write_numbered(&dir, "large.txt", 50_000);
-    let text = match inspect_path(large.to_str().unwrap(), &literal("line 030000"), &AtomicBool::new(true)) {
+    let text = match inspect_path(
+        crate::test_support::native_app_path(large).as_str(),
+        &literal("line 030000"),
+        &AtomicBool::new(true),
+    ) {
         FileRow::Ok(file) => match file.content {
             Content::Text(text) => text,
             other => panic!("{other:?}"),

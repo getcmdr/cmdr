@@ -139,9 +139,10 @@ impl PeekFiles {
     }
 
     async fn look(&self, file: &std::path::Path) -> Option<Peek> {
-        let path = file.to_str().expect("a UTF-8 scratch path");
+        // As a card hands it over: the item's app path.
+        let path = crate::test_support::native_app_path(file);
         let (_contents, peek) = crate::about::verdict::peek::look(
-            path,
+            path.as_str(),
             crate::about::verdict::peek::inspect_reader(),
             std::time::Duration::from_secs(10),
         )

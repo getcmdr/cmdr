@@ -152,7 +152,11 @@ fn literal(query: &str) -> TextAsk {
 }
 
 fn inspect(path: &Path, ask: &TextAsk) -> FileRow {
-    inspect_path(path.to_str().unwrap(), ask, &AtomicBool::new(false))
+    inspect_path(
+        crate::test_support::native_app_path(path).as_str(),
+        ask,
+        &AtomicBool::new(false),
+    )
 }
 
 fn pdf_of(row: &FileRow) -> &PdfContent {
@@ -780,7 +784,7 @@ fn a_pdf_read_out_of_time_shows_no_unchecked_page() {
     let dir = TestDir::new("inspect_pdf_key_stopped");
     let path = write(&dir, "report.pdf", &two_page_pdf());
     let row = inspect_path(
-        path.to_str().unwrap(),
+        crate::test_support::native_app_path(path).as_str(),
         &TextAsk::Window(WindowOpts::default()),
         &AtomicBool::new(true),
     );

@@ -106,7 +106,7 @@ fn write_bytes(dir: &TestDir, name: &str, bytes: &[u8]) -> PathBuf {
 
 fn inspect(path: &Path) -> FileRow {
     inspect_path(
-        path.to_str().unwrap(),
+        crate::test_support::native_app_path(path).as_str(),
         &TextAsk::Window(WindowOpts::default()),
         &AtomicBool::new(false),
     )
@@ -290,7 +290,7 @@ fn an_image_inside_a_zip_carries_its_exif() {
         extract_if_routed_with(requested, volume_id, &extract_dir, PREVIEW_CAP_BYTES)
     };
     let row = inspect_path_with(
-        zip.join("shot.jpg").to_str().unwrap(),
+        crate::test_support::native_app_path(zip.join("shot.jpg")).as_str(),
         &TextAsk::Window(WindowOpts::default()),
         &AtomicBool::new(false),
         &extract,

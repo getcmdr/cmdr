@@ -84,7 +84,7 @@ fn use_unsupported_compression_method(bytes: &mut [u8]) {
 fn inspect(path: &Path) -> FileRow {
     ensure_root_volume();
     inspect_path(
-        path.to_str().unwrap(),
+        crate::test_support::native_app_path(path).as_str(),
         &TextAsk::Window(WindowOpts::default()),
         &AtomicBool::new(false),
     )
@@ -98,7 +98,7 @@ fn inspect_extracting_to(path: &Path, extract_dir: &Path, cap: u64) -> FileRow {
         extract_if_routed_with(requested, volume_id, extract_dir, cap)
     };
     inspect_path_with(
-        path.to_str().unwrap(),
+        crate::test_support::native_app_path(path).as_str(),
         &TextAsk::Window(WindowOpts::default()),
         &AtomicBool::new(false),
         &extract,

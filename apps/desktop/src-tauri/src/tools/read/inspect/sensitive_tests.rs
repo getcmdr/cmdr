@@ -61,7 +61,11 @@ fn literal(query: &str) -> TextAsk {
 }
 
 fn inspect(path: &Path, ask: &TextAsk) -> FileRow {
-    inspect_path(path.to_str().unwrap(), ask, &AtomicBool::new(false))
+    inspect_path(
+        crate::test_support::native_app_path(path).as_str(),
+        ask,
+        &AtomicBool::new(false),
+    )
 }
 
 #[track_caller]
@@ -155,7 +159,7 @@ fn an_archive_path_is_refused_before_it_materializes() {
     };
 
     let row = inspect_path_with(
-        inner.to_str().unwrap(),
+        crate::test_support::native_app_path(inner).as_str(),
         &window(1, 200),
         &AtomicBool::new(false),
         &extract,
@@ -260,7 +264,11 @@ fn a_find_whose_prescan_was_stopped_returns_no_hit_past_it() {
     let copy = write(&dir, "backup.txt", format!("some words\n{}", key(50)));
     let out_of_time = AtomicBool::new(true);
 
-    let row = inspect_path(copy.to_str().unwrap(), &literal(BODY_FRAGMENT), &out_of_time);
+    let row = inspect_path(
+        crate::test_support::native_app_path(copy).as_str(),
+        &literal(BODY_FRAGMENT),
+        &out_of_time,
+    );
 
     let FileRow::Ok(file) = row else {
         panic!("a stopped scan isn't a refusal: it found nothing yet, got {row:?}")
@@ -395,7 +403,11 @@ fn a_window_whose_prescan_was_stopped_shows_nothing_unchecked() {
     let copy = write(&dir, "backup.txt", format!("some words\n{}", key(50)));
     let out_of_time = AtomicBool::new(true);
 
-    let row = inspect_path(copy.to_str().unwrap(), &window(3, 5), &out_of_time);
+    let row = inspect_path(
+        crate::test_support::native_app_path(copy).as_str(),
+        &window(3, 5),
+        &out_of_time,
+    );
 
     let FileRow::Ok(file) = row else {
         panic!("a stopped scan isn't a refusal: it found nothing yet, got {row:?}")
