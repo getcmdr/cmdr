@@ -203,7 +203,13 @@ async fn a_folder_the_disk_cant_read_goes_back_to_what_it_showed_and_is_reported
         .insert(crate::listing_host::listings(), "count-unreadable");
     let (_events, sink) = collect();
     let plan = plan(listing.id(), false, None, |_| false).expect("cached");
-    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder("Disk", "/", crate::volume_host::host()));
+    // Rooted where the rows are: a POSIX `/` root names no folder on Windows, where every
+    // local volume has a drive or UNC root.
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
+        "Disk",
+        root.clone(),
+        crate::volume_host::host(),
+    ));
 
     let outcome = count_with(listing.id(), plan, local, &sink).await;
 
