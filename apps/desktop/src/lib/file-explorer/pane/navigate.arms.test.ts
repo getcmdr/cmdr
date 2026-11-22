@@ -332,6 +332,20 @@ describe('{ location } arm — self-routing by volume', () => {
     expect(h.lastUsedRecords).toContainEqual({ volumeId: 'root', path: '/Users/me/sub' })
   })
 
+  // #1385: an in-place listing of a path off the volume's root lands and is then dropped
+  // by `commitPathFromListing`, so the pane showed one folder and its tab held another.
+  // The switch arm commits the volume and the path together, so the two can't part.
+  it('a path on the pane volume but off its root commits through the switch arm', () => {
+    h = makeHarness({ left: { path: '/Volumes/Ext/docs', volumeId: 'ext' } })
+    const result = navigate(
+      { pane: 'left', to: { goTo: { volumeId: 'ext', path: '/Volumes/Ext-1/docs/sub' } }, source: 'user' },
+      h.deps,
+    )
+    expect(result.status).toBe('started')
+    expect(h.tab('left')).toMatchObject({ volumeId: 'ext', path: '/Volumes/Ext-1/docs/sub' })
+    expect(h.paneState.left.paneRef?.navigateToPath).not.toHaveBeenCalled()
+  })
+
   it('a pinned tab forks a new unpinned tab on the { location } cross-volume switch', () => {
     h = makeHarness({ left: { path: '/testshare/share', volumeId: 'testshare' } })
     getActiveTab(h.mgr('left')).pinned = true

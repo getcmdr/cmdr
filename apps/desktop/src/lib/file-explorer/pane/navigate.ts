@@ -138,6 +138,7 @@ import {
 import { isSnapshotPath } from '../navigation/real-folder-history'
 import { isPathOnVolume } from '#lib/path/canonical.js'
 import { tString } from '#lib/intl/messages.svelte.js'
+import { getAppLogger } from '#lib/logging/logger.js'
 import type { Location } from '#lib/tauri-commands/index.js'
 import {
   NETWORK_VOLUME_PATH,
@@ -159,6 +160,8 @@ import {
   type NavigateSource,
 } from './navigate-commit'
 import { commitAhead, returnToShown } from './navigate-return'
+
+const log = getAppLogger('fileExplorer')
 
 // The contract lives in `navigate-commit.ts` and the refusals in `navigate-refusals.ts`,
 // so the sibling modules share them without importing this one. Callers keep importing
@@ -494,6 +497,14 @@ function navigateInPlace(deps: NavigateDeps, intent: NavigateIntent, path: strin
     validateServerNavigation(deps, path, currentVolumeId, currentVolumeName)
   if (mtpRefusal) return { status: 'refused', reason: mtpRefusal }
 
+  // In place only while the path sits under the root the pane knows for its volume: a
+  // listing off that root lands and is then dropped by `commitPathFromListing`, which
+  // left the pane showing one folder while its tab (and the transfer dialog) held
+  // another (#1385). The switch arm commits the volume and the path together.
+  if (!onPaneRoot(deps, pane, path)) {
+    return switchVolumeArm(deps, { ...intent, exact: true }, currentVolumeId, path)
+  }
+
   const paneRef = deps.getPaneRef(pane)
   if (!paneRef) return { status: 'refused', reason: PANE_UNAVAILABLE_REFUSAL }
   // Only a navigation that actually starts claims the pane: a refusal above leaves a
@@ -631,6 +642,7 @@ export function commitPathFromListing(deps: NavigateDeps, pane: 'left' | 'right'
     const expectedPrefix = currentVolumeId === 'network' ? 'smb://' : 'search-results://'
     if (!path.startsWith(expectedPrefix)) return false
   } else if (!isPathOnVolume(path, currentVolumePath)) {
+    sendBackFromForeignLanding(deps, pane, path)
     return false
   }
 
@@ -639,6 +651,28 @@ export function commitPathFromListing(deps: NavigateDeps, pane: 'left' | 'right'
   commit(deps, { pane, path, history: 'push-path' })
   deps.persist({ kind: 'last-used-path', record: { volumeId: deps.getPaneVolumeId(pane), path } })
   return true
+}
+
+/** Whether `path` sits under the root the pane knows for its (real) volume. */
+function onPaneRoot(deps: NavigateDeps, pane: 'left' | 'right', path: string): boolean {
+  const volumeId = deps.getPaneVolumeId(pane)
+  if (volumeId === 'network' || volumeId === 'search-results') return true
+  return isPathOnVolume(path, deps.getPaneVolumePath(pane))
+}
+
+/**
+ * A dropped landing the pane is SHOWING (not a stale listing it has moved on from): the
+ * pane would display a folder its tab doesn't hold, and every operation reads the tab
+ * (#1385: F5 offered the old folder as the destination). Sends the pane back to the
+ * tab's folder, so what's on screen is what an operation targets. A FilePane-internal
+ * step (Enter on a row) below a root the pane's volume row doesn't name lands here.
+ */
+function sendBackFromForeignLanding(deps: NavigateDeps, pane: 'left' | 'right', path: string): void {
+  const paneRef = deps.getPaneRef(pane)
+  const held = deps.getPanePath(pane)
+  if (paneRef?.getCurrentPath() !== path || held === path) return
+  log.warn('A listing landed off its volume root; the pane goes back to {held}: {path}', { held, path })
+  void paneRef.navigateToPath(held)
 }
 
 /**

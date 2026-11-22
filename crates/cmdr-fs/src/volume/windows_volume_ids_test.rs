@@ -178,3 +178,51 @@ fn a_path_lands_on_the_longest_root_that_holds_it() {
     assert_eq!(root_of("F:/x"), None);
     assert_eq!(root_of("//testnas.local/other/x"), None);
 }
+
+fn mount<'a>(root: &'a str, guid_path: &'a str) -> VolumeMountPath<'a> {
+    VolumeMountPath { root, guid_path }
+}
+
+/// #1385: `D:` mounted a second time at a folder of `C:` is ONE volume at ONE root, its
+/// letter, the way Explorer's This PC lists it; the folder stays a folder of `C:`.
+#[test]
+fn a_volume_on_a_letter_and_a_folder_has_its_letter_as_its_one_root() {
+    let upper = D_GUID.to_uppercase();
+    let mounts = [
+        mount("C:/Users/test_user_1/dmount", &upper),
+        mount("C:/", C_GUID),
+        mount("D:/", D_GUID),
+    ];
+    assert!(
+        !is_volume_root(&mounts[0], &mounts),
+        "the folder is no second root of D:"
+    );
+    assert!(is_volume_root(&mounts[1], &mounts));
+    assert!(is_volume_root(&mounts[2], &mounts));
+}
+
+/// A volume mounted only in folders keeps one of them as its root: the shortest, then the
+/// first by name, whatever order the sweep listed them in.
+#[test]
+fn a_volume_mounted_only_in_folders_has_its_shortest_folder_as_its_root() {
+    let mounts = [
+        mount("C:/mnt/data/deeper", D_GUID),
+        mount("C:/mnt/b", D_GUID),
+        mount("C:/mnt/a", D_GUID),
+        mount("C:/", C_GUID),
+    ];
+    let roots: Vec<&str> = mounts
+        .iter()
+        .filter(|m| is_volume_root(m, &mounts))
+        .map(|m| m.root)
+        .collect();
+    assert_eq!(roots, ["C:/mnt/a", "C:/"]);
+}
+
+/// A folder mount of the system drive's own volume is a folder of `C:`, never a second
+/// volume beside `root`.
+#[test]
+fn a_folder_mount_of_the_system_volume_is_no_root_of_its_own() {
+    let mounts = [mount("C:/", C_GUID), mount("C:/loop", C_GUID)];
+    assert!(!is_volume_root(&mounts[1], &mounts));
+}

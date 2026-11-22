@@ -339,6 +339,28 @@ describe('commitPathFromListing — stale-listing drop policy (L6, token + forei
     expect(h.tab('left').path).toBe('search-results://sr-1')
   })
 
+  // #1385: a pane that SHOWS a folder its tab can't take (a volume reached by a second
+  // mount path its row doesn't name) used to keep it on screen while the tab, and so the
+  // transfer dialog, held the old folder. The pane goes back to what the tab holds.
+  it('sends a pane showing the dropped folder back to the folder its tab holds', () => {
+    h = makeHarness({ left: { path: '/Volumes/Ext/docs', volumeId: 'ext' } })
+    const pane = h.paneState.left.paneRef
+    if (!pane) throw new Error('the harness builds a pane')
+    ;(pane.ref as unknown as { getCurrentPath: () => string }).getCurrentPath = () => '/Volumes/Ext-1/docs/sub'
+    expect(commitPathFromListing(h.deps, 'left', '/Volumes/Ext-1/docs/sub')).toBe(false)
+    expect(h.tab('left').path).toBe('/Volumes/Ext/docs')
+    expect(pane.navigateToPath).toHaveBeenCalledWith('/Volumes/Ext/docs')
+  })
+
+  it('leaves a pane alone when the dropped listing is a stale one it no longer shows', () => {
+    h = makeHarness({ left: { path: '/Volumes/Ext/docs', volumeId: 'ext' } })
+    const pane = h.paneState.left.paneRef
+    if (!pane) throw new Error('the harness builds a pane')
+    ;(pane.ref as unknown as { getCurrentPath: () => string }).getCurrentPath = () => '/Volumes/Ext/docs'
+    expect(commitPathFromListing(h.deps, 'left', '/Users/me/deep')).toBe(false)
+    expect(pane.navigateToPath).not.toHaveBeenCalled()
+  })
+
   it('commits a non-stale path that IS on the current volume', () => {
     const depthBefore = h.tab('left').history.stack.length
     expect(commitPathFromListing(h.deps, 'left', '/Users/me/deep')).toBe(true)

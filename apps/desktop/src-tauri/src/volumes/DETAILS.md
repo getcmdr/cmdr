@@ -50,10 +50,22 @@ named so the native reading stays greppable until discovery carries `PathBuf`s f
 
 ## Windows: a volume per drive
 
-Every drive letter, folder mount, and mapped share is its own volume (plan D1), keyed by the disk's identity (plan D8,
-`docs/specs/windows-port-plan.md`): the system drive is `root`, a local drive or folder mount keys on its volume GUID,
-a mapped drive and its UNC spelling on `(server, 445, share)`, a `subst` drive on its path. The ladder and the drive
-table's pure rules (`covering_drive`, `display_name`) are `cmdr_fs::volume::windows_volume_ids`, tested on every OS.
+Every drive letter, folder-only mount, and mapped share is its own volume (plan D1), keyed by the disk's identity (plan
+D8, `docs/specs/windows-port-plan.md`): the system drive is `root`, a local drive or folder mount keys on its volume
+GUID, a mapped drive and its UNC spelling on `(server, 445, share)`, a `subst` drive on its path. The ladder and the
+drive table's pure rules (`covering_drive`, `display_name`, `is_volume_root`) are `cmdr_fs::volume::windows_volume_ids`,
+tested on every OS.
+
+- **One local volume, one root** (`is_volume_root`): its drive letter, else its shortest folder mount. A folder where a
+  lettered volume is mounted AGAIN (`mountvol C:\x\dmount` for `D:`'s GUID) is no row and no root: it's a folder of the
+  drive holding it, and a path below it resolves to that drive. **Decision/Why (#1385):** as a second root of `D:`'s
+  id, a path below the folder resolved to the `D:/`-rooted volume while its text sat on `C:`, so the pane dropped the
+  listing as foreign, kept the old folder in its tab, and the transfer dialog offered it; the switcher also showed a
+  second `D:` row with `D:`'s id. Explorer reads the same way: This PC lists `build (D:)` once, and the folder mount
+  shows as a folder (with a drive icon) of `C:`, its address bar staying `C:\…\dmount\…` below it. What still knows
+  it's a mount: the write engine's guards (`cmdr_local::mounts::list` keeps every folder mount), and a local move into or
+  out of it renames or copies by the volume GUIDs the two paths reach (`is_same_filesystem`), never by volume id. Space for a folder there is asked of the
+  path (`get_volume_space`), so it's the mounted volume's.
 
 - **The drive table** (`platform/windows/drives.rs::enumerate`): the letters and folder mounts from the mount table the
   write engine's guards read too (`cmdr_local::mounts::list`: `GetLogicalDriveStringsW` and the `FindFirstVolumeW`

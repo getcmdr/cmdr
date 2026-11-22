@@ -1378,6 +1378,16 @@ return-point bookkeeping. `navigate.ts` re-exports the names callers use, so the
   `correctionGen` (the old `volumeChangeGeneration`, shared by both panes) is the other half. The drop-foreign-listings
   policy (next note) is what drops a genuinely stale listing.
 
+**A path on the pane's volume but off the root the pane knows for it never takes the in-place arm.** One volume can be
+reached at a path its row doesn't name (a share mounted twice on macOS, `/Volumes/testshare-1`, collapses to the
+shortest root; a Linux bind mount). In place, that listing landed and `commitPathFromListing` then dropped it as
+foreign, so the pane showed the new folder while its tab, and every operation reading it (the transfer dialog's
+destination), held the old one (#1385, seen on Windows with a folder mount, whose backend half is `volumes/DETAILS.md` §
+"Windows: a volume per drive"). So `navigateInPlace` hands such a path to the switch arm, which commits the volume and
+the path together, and a drop of a landing the FilePane is SHOWING (`sendBackFromForeignLanding`: a FilePane-internal
+step, Enter on a row, below such a root) sends the pane back to its tab's folder: ❌ never a pane showing a folder its
+tab doesn't hold.
+
 **Don't add `cd`-style heuristics in `commitPathFromListing`.** Stale `onPathChange` from a slow listing is dropped by
 the drop-foreign-listings policy in `navigate.ts::commitPathFromListing` (`smb://` prefix for `network`,
 `search-results://` prefix for snapshots, `isPathOnVolume` for everything else). Adding a new virtual-volume namespace?

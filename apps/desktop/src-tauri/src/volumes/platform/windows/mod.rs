@@ -1,7 +1,9 @@
-//! Windows: every drive letter, folder mount, and mapped share is its own volume (plan D1),
+//! Windows: every drive letter, folder-only mount, and mapped share is its own volume (plan D1),
 //! keyed by the disk's identity (plan D8): a local volume by its GUID, a share by its server and
-//! share, the system drive by `root`. `drives.rs` holds the Win32 reads; the id ladder and the
-//! drive table's pure rules are `cmdr_fs::volume::windows_volume_ids`.
+//! share, the system drive by `root`. A local volume has ONE root (its letter, else its shortest
+//! folder mount); a folder it's mounted at again is a folder of the drive holding it
+//! (`volumes/DETAILS.md` § "Windows: a volume per drive"). `drives.rs` holds the Win32 reads; the
+//! id ladder and the drive table's pure rules are `cmdr_fs::volume::windows_volume_ids`.
 //!
 //! The drive table is read at startup, on every switcher refresh (`list_locations`), and again
 //! when a path names a root it doesn't hold; ❌ no arrival watcher yet (task 39), so a drive

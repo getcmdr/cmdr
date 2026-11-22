@@ -29,8 +29,8 @@
 use std::os::windows::ffi::OsStrExt;
 
 use cmdr_fs::volume::windows_volume_ids::{
-    WindowsDrive, WindowsDriveKind, WindowsVolumeIdentity, subst_target, unc_app_root, unc_server_share,
-    windows_volume_id,
+    VolumeMountPath, WindowsDrive, WindowsDriveKind, WindowsVolumeIdentity, is_volume_root, subst_target, unc_app_root,
+    unc_server_share, windows_volume_id,
 };
 use windows_sys::Win32::Foundation::{ERROR_MORE_DATA, NO_ERROR};
 use windows_sys::Win32::NetworkManagement::WNet::WNetGetConnectionW;
@@ -175,17 +175,35 @@ fn letter_drive(letter: char, system_root: &str) -> Option<WindowsDrive> {
     })
 }
 
-/// Every volume mounted in a folder rather than (or as well as) on a letter: the mount
-/// table's folder mounts (its letters are [`letter_drive`]'s), each keyed by the GUID path of
-/// the volume mounted there.
+/// Every volume mounted in folders only: the mount table's folder mounts (its letters are
+/// [`letter_drive`]'s), each keyed by the GUID path of the volume mounted there. A volume
+/// gets ONE root (`is_volume_root`): a folder where a volume that also has a letter (or a
+/// shorter folder) is mounted again is a plain folder of the drive holding it, as in
+/// Explorer, so its id never names two roots (#1385).
 fn folder_mounts(system_root: &str) -> Vec<WindowsDrive> {
+    // Every mount point with its volume's GUID path and app root (`D:/`, `C:/Mnt/Data`).
+    let located: Vec<(String, String, String)> = mount_points()
+        .into_iter()
+        .filter_map(|point| {
+            let guid_path = volume_guid_path(&wide(&point))?;
+            let root = match letter_of_root(&point) {
+                Some(letter) => format!("{letter}:/"),
+                None => uppercase_drive(point.replace('\\', "/").trim_end_matches('/')),
+            };
+            Some((point, root, guid_path))
+        })
+        .collect();
+    let mounts: Vec<VolumeMountPath<'_>> = located
+        .iter()
+        .map(|(_, root, guid_path)| VolumeMountPath { root, guid_path })
+        .collect();
     let mut out = Vec::new();
-    for path in mount_points() {
-        if letter_of_root(&path).is_some() {
+    for ((point, root, guid_path), mount) in located.iter().zip(&mounts) {
+        if letter_of_root(point).is_some() || !is_volume_root(mount, &mounts) {
             continue;
         }
-        let native_root = wide(&path);
-        let (Some(guid_path), Some(info)) = (volume_guid_path(&native_root), volume_information(&native_root)) else {
+        let native_root = wide(point);
+        let Some(info) = volume_information(&native_root) else {
             continue;
         };
         // SAFETY: `native_root` is NUL-terminated.
@@ -194,10 +212,12 @@ fn folder_mounts(system_root: &str) -> Vec<WindowsDrive> {
             DRIVE_CDROM => WindowsDriveKind::Optical,
             _ => WindowsDriveKind::Fixed,
         };
-        let root = uppercase_drive(path.replace('\\', "/").trim_end_matches('/'));
+        let identity = WindowsVolumeIdentity::Local {
+            guid_path: guid_path.clone(),
+        };
         out.push(WindowsDrive {
-            id: windows_volume_id(&root, &WindowsVolumeIdentity::Local { guid_path }, system_root),
-            root,
+            id: windows_volume_id(root, &identity, system_root),
+            root: root.clone(),
             kind,
             label: info.label,
             share_root: None,
