@@ -457,3 +457,19 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   `real-windows-check-2026-11-19.md` § "PR #1349 on the desktop". Gotcha: with the drive index on, the app held about
   550 threads while it walked `C:` and every 2 s volume read timed out (#1353), so the run set `indexing.enabled: false`
   in its own `CMDR_DATA_DIR`'s `settings.json`. `cmdr-m6` is back on `origin/main`, clean.
+- **2026-11-22, task 35's streams, copy scan, and node identity** (PR #1367; the warm pair, `CARGO_BUILD_JOBS=2`; a
+  debug app build 12m 44s warm): `LocalWindowsVolume` shares the POSIX volume's stream and copy-scan bodies
+  (`crates/cmdr-local/DETAILS.md` § "The Windows sibling") and answers `node_identity`, and the copy ledger's node falls
+  back to `FileId::at`. Suites on the builder: `cmdr-local` 100 of 100 (14 cells un-gated); `cmdr-operations` +
+  `cmdr-local` 2,186 tests, the about 115 un-gated cells green but eight, re-gated with what they showed (five undo
+  cells skip as `Failed` / `UnverifiablePrecondition`, two hit #1225's `\`). CI run 44990303757: 50 known failures pass
+  now (every task 35 entry, the `archive_edit::remote` cells, the ledger and reversal cells), the list down from 224 to
+  174; two named-leaf sweeps ran past the 8 s cap there (35 rigs each), so they get 30 s on Windows. On the desktop,
+  driven by Cmdr's MCP server (`CMDR_MCP_DIRECT_MODE=1`): a folder compressed to `D:` lands whole with no temp left; an
+  extract from a zip on `D:` to `C:` lands with its dates; cancelling a 3 GiB copy `C:` → `D:` and a 3 GiB compress onto
+  `D:` midway leaves no partial or temp. Copying a file INTO a zip fails before writing on either drive: it routes to
+  the local engine (`destination_not_a_folder`, #1369). Gotchas: `scp` doesn't work to the builder (upload a script as
+  base64 through PowerShell's `WriteAllBytes`); a job started with `Invoke-CimMethod` has no `HOME`, so
+  `routing::tests::a_local_destination_still_expands_the_home_shortcut` fails there and nowhere else. Fixtures under
+  `C:\Users\Admin\t35`, `C:\Users\Admin\t35z`, `D:\t35-dst`, and `D:\t35` are gone. `cmdr-m6` is back on `origin/main`,
+  clean.
