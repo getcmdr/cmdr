@@ -19,7 +19,6 @@
 //! (`smb_transfer_semantics_test.rs`) exists for the same reason and cost a
 //! 360 GB move once (ERR-XCP5Q).
 
-use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -143,7 +142,7 @@ async fn sftp_integration_a_link_in_a_folder_moved_off_the_server_leaves_its_tar
     assert!(
         matches!(
             remote
-                .entry_kind(&AppPath::legacy_unchecked(&dir.join("tree/ln")))
+                .entry_kind(&cmdr_operations::testing::app_path_of(&dir.join("tree/ln")))
                 .await,
             Ok(EntryKind::Symlink)
         ),
@@ -210,7 +209,7 @@ async fn sftp_integration_a_copy_onto_the_server_lands_links_as_links() {
     assert!(result.is_ok(), "{result:?}");
     assert_eq!(
         remote
-            .read_link_target(&AppPath::legacy_unchecked(&dir.join("tree/out")))
+            .read_link_target(&cmdr_operations::testing::app_path_of(&dir.join("tree/out")))
             .await
             .expect("a link")
             .as_deref(),
@@ -218,7 +217,7 @@ async fn sftp_integration_a_copy_onto_the_server_lands_links_as_links() {
     );
     assert_eq!(
         remote
-            .read_link_target(&AppPath::legacy_unchecked(&dir.join("alone")))
+            .read_link_target(&cmdr_operations::testing::app_path_of(&dir.join("alone")))
             .await
             .expect("a link")
             .as_deref(),
@@ -267,7 +266,9 @@ async fn sftp_integration_a_selected_link_moved_off_the_server_lands_its_target_
     );
     assert!(
         matches!(
-            remote.entry_kind(&AppPath::legacy_unchecked(&dir.join("ln"))).await,
+            remote
+                .entry_kind(&cmdr_operations::testing::app_path_of(&dir.join("ln")))
+                .await,
             Err(cmdr_fs::volume::VolumeError::NotFound(_))
         ),
         "the link left the server"
@@ -359,7 +360,7 @@ async fn sftp_integration_a_move_into_a_dialog_addressed_subfolder_lands_where_t
     let (remote, dir) = fixture("app-anchored-dest").await;
     let photos = dir.join("photos");
     remote
-        .create_directory(&AppPath::legacy_unchecked(&photos))
+        .create_directory(&cmdr_operations::testing::app_path_of(&photos))
         .await
         .expect("the destination subfolder");
 
@@ -402,7 +403,7 @@ async fn sftp_integration_a_move_into_a_dialog_addressed_subfolder_lands_where_t
 
     // On the server, under the subfolder the dialog named, and nowhere else.
     let landed = remote
-        .get_metadata(&AppPath::legacy_unchecked(&photos.join("clip.mp4")))
+        .get_metadata(&cmdr_operations::testing::app_path_of(&photos.join("clip.mp4")))
         .await
         .expect("the moved file is where the pane says it is");
     assert_eq!(landed.size, Some(7));
@@ -412,17 +413,19 @@ async fn sftp_integration_a_move_into_a_dialog_addressed_subfolder_lands_where_t
     );
     assert!(
         !remote
-            .exists(&AppPath::legacy_unchecked(&remote.root().as_std_legacy().join("srv")))
+            .exists(&cmdr_operations::testing::app_path_of(
+                &remote.root().as_std_legacy().join("srv")
+            ))
             .await,
         "❗ and nothing was created under a doubled root: a `srv/` inside the export is what a \
          doubled `/srv/data` leaves behind"
     );
 
     let _ = remote
-        .delete(&AppPath::legacy_unchecked(&photos.join("clip.mp4")))
+        .delete(&cmdr_operations::testing::app_path_of(&photos.join("clip.mp4")))
         .await;
-    let _ = remote.delete(&AppPath::legacy_unchecked(&photos)).await;
-    let _ = remote.delete(&AppPath::legacy_unchecked(&dir)).await;
+    let _ = remote.delete(&cmdr_operations::testing::app_path_of(&photos)).await;
+    let _ = remote.delete(&cmdr_operations::testing::app_path_of(&dir)).await;
 }
 
 /// ❗ **A BARE server path is refused, and the transfer stops before it writes.**
@@ -437,7 +440,7 @@ async fn sftp_integration_a_bare_server_path_destination_is_refused_before_anyth
     let (remote, dir) = fixture("app-bare-dest").await;
     let photos = dir.join("photos");
     remote
-        .create_directory(&AppPath::legacy_unchecked(&photos))
+        .create_directory(&cmdr_operations::testing::app_path_of(&photos))
         .await
         .expect("the destination subfolder");
 
@@ -473,7 +476,7 @@ async fn sftp_integration_a_bare_server_path_destination_is_refused_before_anyth
     );
     assert!(
         !remote
-            .exists(&AppPath::legacy_unchecked(&photos.join("clip.mp4")))
+            .exists(&cmdr_operations::testing::app_path_of(&photos.join("clip.mp4")))
             .await,
         "❗ and nothing was written on the way to refusing"
     );
@@ -482,6 +485,6 @@ async fn sftp_integration_a_bare_server_path_destination_is_refused_before_anyth
         "a refused move leaves the source where it was"
     );
 
-    let _ = remote.delete(&AppPath::legacy_unchecked(&photos)).await;
-    let _ = remote.delete(&AppPath::legacy_unchecked(&dir)).await;
+    let _ = remote.delete(&cmdr_operations::testing::app_path_of(&photos)).await;
+    let _ = remote.delete(&cmdr_operations::testing::app_path_of(&dir)).await;
 }

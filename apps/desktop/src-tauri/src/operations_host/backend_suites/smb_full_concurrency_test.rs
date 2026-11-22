@@ -24,7 +24,6 @@
 //! from `super::smb_test_support`.
 
 use super::smb_test_support::*;
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::StreamLength;
 use cmdr_smb::volume::*;
 use std::sync::atomic::AtomicBool;
@@ -231,7 +230,7 @@ fn spawn_staging_probe(vol: Arc<SmbVolume>, dir: String, seen: Arc<AtomicBool>) 
     tokio::spawn(async move {
         loop {
             if let Ok(entries) = vol
-                .list_directory(&AppPath::legacy_unchecked(Path::new(&dir)), None)
+                .list_directory(&cmdr_operations::testing::app_path_of(Path::new(&dir)), None)
                 .await
                 && entries.iter().any(|entry| entry.name.contains(".cmdr-tmp-"))
             {
@@ -295,7 +294,7 @@ async fn smb_integration_many_files_at_full_concurrency_land_intact() {
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
     smb_vol
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .create_directory(&cmdr_operations::testing::app_path_of(Path::new(&base)))
         .await
         .unwrap();
     let dest_vol: Arc<dyn Volume> = smb_vol.clone();
@@ -417,7 +416,7 @@ async fn smb_integration_many_files_at_full_concurrency_land_intact() {
     }
 
     let landed = smb_vol
-        .list_directory(&AppPath::legacy_unchecked(Path::new(&base)), None)
+        .list_directory(&cmdr_operations::testing::app_path_of(Path::new(&base)), None)
         .await
         .expect("list the destination");
     let leftovers: Vec<&str> = landed
@@ -504,7 +503,7 @@ async fn smb_integration_a_wedged_copy_is_caught_and_names_its_phase() {
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
     smb_vol
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .create_directory(&cmdr_operations::testing::app_path_of(Path::new(&base)))
         .await
         .unwrap();
     let dest_vol: Arc<dyn Volume> = smb_vol.clone();

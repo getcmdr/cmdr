@@ -14,7 +14,6 @@
 //! `MtpVolume`'s own `rename` / `delete`) runs against a device-shaped backend.
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -62,7 +61,7 @@ async fn connect_seeded_device(
 async fn prime_path_handles(volume: &Arc<dyn Volume>, dirs: &[&str]) {
     for dir in dirs {
         volume
-            .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
+            .list_directory(&cmdr_operations::testing::app_path_of(Path::new(dir)), None)
             .await
             .unwrap_or_else(|e| panic!("priming listing for {dir}: {e:?}"));
     }

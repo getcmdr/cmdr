@@ -14,7 +14,6 @@
 //! take an `S3Target`, so `s3_live_engine_test.rs` runs the same bodies against
 //! real accounts.
 
-use cmdr_fs::app_path::AppPath;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
@@ -116,7 +115,7 @@ pub(super) async fn a_folder_of_1005_objects_renames_through_the_engine(target: 
 
     let renamed = volume
         .list_directory(
-            &AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}renamed"))),
+            &cmdr_operations::testing::app_path_of(&at(&volume, &format!("{prefix}renamed"))),
             None,
         )
         .await
@@ -126,7 +125,7 @@ pub(super) async fn a_folder_of_1005_objects_renames_through_the_engine(target: 
         matches!(
             volume
                 .list_directory(
-                    &AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}folder"))),
+                    &cmdr_operations::testing::app_path_of(&at(&volume, &format!("{prefix}folder"))),
                     None
                 )
                 .await,
@@ -167,7 +166,9 @@ pub(super) async fn a_big_file_renames_by_multipart_copy_keeping_its_date(target
         "the source's date survives the rename"
     );
     assert!(
-        !volume.exists(&AppPath::legacy_unchecked(&at(&volume, &from_key))).await,
+        !volume
+            .exists(&cmdr_operations::testing::app_path_of(&at(&volume, &from_key)))
+            .await,
         "the old name is gone"
     );
     assert!(target.unfinished_uploads(target.bucket(), &prefix).await.is_empty());
@@ -209,7 +210,10 @@ pub(super) async fn a_paused_then_cancelled_rename_keeps_the_source_whole(target
     wait_for_the_ledger_to_settle(&volume, &prefix).await;
     assert!(target.unfinished_uploads(target.bucket(), &prefix).await.is_empty());
     if volume
-        .exists(&AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}gone.bin"))))
+        .exists(&cmdr_operations::testing::app_path_of(&at(
+            &volume,
+            &format!("{prefix}gone.bin"),
+        )))
         .await
     {
         // A cancel that landed after the copy published is a finished copy
@@ -243,7 +247,11 @@ pub(super) async fn a_paused_rename_resumes_and_lands(target: &S3Target) {
         sha256(&read_all(volume.as_ref(), &at(&volume, &format!("{prefix}b.bin"))).await),
         sha256(&bytes)
     );
-    assert!(!volume.exists(&AppPath::legacy_unchecked(&at(&volume, &from_key))).await);
+    assert!(
+        !volume
+            .exists(&cmdr_operations::testing::app_path_of(&at(&volume, &from_key)))
+            .await
+    );
 }
 
 /// A reviewed batch with a folder in it (Ask Cmdr's proposals and the bulk
@@ -285,7 +293,7 @@ pub(super) async fn a_batch_with_a_folder_renames_as_one_move(target: &S3Target)
 
     assert!(
         volume
-            .exists(&AppPath::legacy_unchecked(&at(
+            .exists(&cmdr_operations::testing::app_path_of(&at(
                 &volume,
                 &format!("{prefix}photos/a.jpg")
             )))
@@ -293,15 +301,22 @@ pub(super) async fn a_batch_with_a_folder_renames_as_one_move(target: &S3Target)
     );
     assert!(
         volume
-            .exists(&AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}memo.txt"))))
+            .exists(&cmdr_operations::testing::app_path_of(&at(
+                &volume,
+                &format!("{prefix}memo.txt")
+            )))
             .await
     );
     assert!(
         !volume
-            .exists(&AppPath::legacy_unchecked(&at(&volume, &folder_file)))
+            .exists(&cmdr_operations::testing::app_path_of(&at(&volume, &folder_file)))
             .await
     );
-    assert!(!volume.exists(&AppPath::legacy_unchecked(&at(&volume, &note))).await);
+    assert!(
+        !volume
+            .exists(&cmdr_operations::testing::app_path_of(&at(&volume, &note)))
+            .await
+    );
 }
 
 /// A copy between two buckets of one account runs on the server: the
@@ -327,7 +342,7 @@ pub(super) async fn a_copy_between_two_buckets_runs_on_the_server(target: &S3Tar
     let source_path = source.root().as_std_legacy().join(&key);
     let destination = Arc::new(destination);
     destination
-        .create_directory_all(&AppPath::legacy_unchecked(&dest_dir))
+        .create_directory_all(&cmdr_operations::testing::app_path_of(&dest_dir))
         .await
         .expect("making the destination folder");
     take_sent_requests(&destination).await;
@@ -364,7 +379,7 @@ pub(super) async fn a_bucket_bound_provider_streams_a_cross_bucket_copy(target: 
     let source_path = source.root().as_std_legacy().join(&key);
     let destination = Arc::new(destination);
     destination
-        .create_directory_all(&AppPath::legacy_unchecked(&dest_dir))
+        .create_directory_all(&cmdr_operations::testing::app_path_of(&dest_dir))
         .await
         .expect("making the destination folder");
     take_sent_requests(&destination).await;

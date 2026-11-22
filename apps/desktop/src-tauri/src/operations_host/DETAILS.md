@@ -204,7 +204,10 @@ room").
   taken as `(remote: Arc<dyn Volume>, dir: PathBuf)` (a live volume plus a scratch dir it owns and removes), so a claim
   proved against one backend is proved in the same words against the others and the suites can't drift. Each backend
   file connects its own fixture (`sftp_test_support::fixture`, `smb_test_support::fixture`, `webdav_test_support::fixture`, `nfs_test_support::fixture`) and
-  delegates. Six files, by what they prove:
+  delegates. A cell hands a start or a volume call its `PathBuf` through `cmdr_operations::testing::app_path_of`: a
+  native or app-text path reads typed, a volume-relative one (a share's `cmdr-test-…/a.txt`) goes on as a bridge
+  value, byte for byte. The shared helpers here still call the bridge directly, as their callers hand them both
+  shapes. Six files, by what they prove:
   - `network_transfer_test_support.rs`: the byte path (below).
   - `network_semantics_test_support.rs`: merges under Skip / Overwrite / Rename / OverwriteSmaller, a move-merge that
     spares what it skipped, whole-folder moves both ways, same-server move-merge, move, and copy, a missing nested

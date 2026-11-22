@@ -56,7 +56,7 @@ async fn connect_virtual_device_with_zip(zip_bytes: &[u8]) -> ConnectedDevice {
 async fn read_device_zip(vol: &MtpVolume, path: &Path) -> std::collections::HashMap<String, Vec<u8>> {
     use std::io::Read as _;
     let mut stream = vol
-        .open_read_stream(&AppPath::legacy_unchecked(path))
+        .open_read_stream(&cmdr_operations::testing::app_path_of(path))
         .await
         .expect("open device archive");
     let mut bytes = Vec::new();
@@ -85,7 +85,7 @@ async fn virtual_mtp_archive_browses_and_extracts_via_read_range() {
 
     async fn drain(archive: &ArchiveVolume, inner: &str) -> Vec<u8> {
         let mut stream = archive
-            .open_read_stream(&AppPath::legacy_unchecked(Path::new(inner)))
+            .open_read_stream(&cmdr_operations::testing::app_path_of(Path::new(inner)))
             .await
             .expect("open inner entry");
         let mut out = Vec::new();

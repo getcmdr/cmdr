@@ -574,6 +574,10 @@ mod write_ops_destination_test;
 mod tests {
     use super::*;
     use cmdr_fs::app_path;
+    /// [`reject_if_routed_over_a_parent`] for one native path, as a start's typed one.
+    pub(super) fn routed_refusal(path: &std::path::Path, side: ReadOnlySide) -> Result<(), WriteOperationError> {
+        reject_if_routed_over_a_parent(std::iter::once(&cmdr_operations::testing::app_path_of(path)), side)
+    }
 
     #[test]
     fn reject_if_routed_over_a_parent_flags_a_path_inside_a_zip() {
@@ -584,11 +588,7 @@ mod tests {
 
         // A path INSIDE the archive is refused with a typed read-only error...
         let inner = zip.join("inner.txt");
-        let err = reject_if_routed_over_a_parent(
-            std::iter::once(&cmdr_operations::testing::app_path_of(&inner)),
-            ReadOnlySide::Source,
-        )
-        .expect_err("archive-inner path must be refused");
+        let err = routed_refusal(&inner, ReadOnlySide::Source).expect_err("archive-inner path must be refused");
         assert!(
             matches!(err, WriteOperationError::ReadOnlyDevice { .. }),
             "expected ReadOnlyDevice, got {err:?}"
@@ -596,22 +596,12 @@ mod tests {
 
         // ...while a plain local sibling passes (proves the guard, not a blanket reject).
         let plain = dir.path().join("plain.txt");
-        assert!(
-            reject_if_routed_over_a_parent(
-                std::iter::once(&cmdr_operations::testing::app_path_of(&plain)),
-                ReadOnlySide::Source
-            )
-            .is_ok()
-        );
+        assert!(routed_refusal(&plain, ReadOnlySide::Source).is_ok());
 
         // ...AND the `.zip` FILE ITSELF passes: copying/moving/deleting/trashing a
         // zip file is a normal file op, not a write INSIDE the archive.
         assert!(
-            reject_if_routed_over_a_parent(
-                std::iter::once(&cmdr_operations::testing::app_path_of(&zip)),
-                ReadOnlySide::Source
-            )
-            .is_ok(),
+            routed_refusal(&zip, ReadOnlySide::Source).is_ok(),
             "the .zip file itself must not be refused"
         );
     }
@@ -630,32 +620,18 @@ mod tests {
         let snapshot = dir.join(".git/branches/main/README.md");
 
         git::wiring::set_virtual_portal_enabled(true);
-        let err = reject_if_routed_over_a_parent(
-            std::iter::once(&cmdr_operations::testing::app_path_of(&snapshot)),
-            ReadOnlySide::Source,
-        )
-        .expect_err("a snapshot path must be refused");
+        let err = routed_refusal(&snapshot, ReadOnlySide::Source).expect_err("a snapshot path must be refused");
         assert!(
             matches!(err, WriteOperationError::ReadOnlyDevice { .. }),
             "expected ReadOnlyDevice, got {err:?}"
         );
 
         // The real files under `.git/` are the parent volume's, always writable.
-        assert!(
-            reject_if_routed_over_a_parent(
-                std::iter::once(&cmdr_operations::testing::app_path_of(&dir.join(".git/config"))),
-                ReadOnlySide::Source
-            )
-            .is_ok()
-        );
+        assert!(routed_refusal(&dir.join(".git/config"), ReadOnlySide::Source).is_ok());
 
         git::wiring::set_virtual_portal_enabled(false);
         assert!(
-            reject_if_routed_over_a_parent(
-                std::iter::once(&cmdr_operations::testing::app_path_of(&snapshot)),
-                ReadOnlySide::Source
-            )
-            .is_ok(),
+            routed_refusal(&snapshot, ReadOnlySide::Source).is_ok(),
             "with the portal off there is no route to protect"
         );
         git::wiring::set_virtual_portal_enabled(true);

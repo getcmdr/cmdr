@@ -55,7 +55,7 @@ async fn sftp_integration_copying_off_a_server_lands_every_byte() {
     let content = self_describing_bytes(PAYLOAD_BYTES, "downloaded.bin");
     let remote_file = dir.join("downloaded.bin");
     remote
-        .create_file(&AppPath::legacy_unchecked(&remote_file), &content)
+        .create_file(&cmdr_operations::testing::app_path_of(&remote_file), &content)
         .await
         .expect("seed the file on the server");
 

@@ -15,7 +15,6 @@
 //! (`S3Target::clean_run`), and fails at the end if any pair failed. Not named
 //! for a lane prefix: these are by hand only.
 
-use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::panic::AssertUnwindSafe;
 use std::path::PathBuf;
@@ -374,7 +373,7 @@ async fn an_archived_object_refuses_reads_by_name(target: &S3Target) {
         let path = dir.join(format!("{class}.txt"));
 
         let listed = volume
-            .list_directory(&AppPath::legacy_unchecked(&dir), None)
+            .list_directory(&cmdr_operations::testing::app_path_of(&dir), None)
             .await
             .expect("the folder lists");
         let row = listed
@@ -383,7 +382,10 @@ async fn an_archived_object_refuses_reads_by_name(target: &S3Target) {
             .unwrap_or_else(|| panic!("{class}: the archived object lists"));
         assert!(row.in_cold_storage, "{class}: the listing marks it archived");
 
-        match volume.open_read_stream(&AppPath::legacy_unchecked(&path)).await {
+        match volume
+            .open_read_stream(&cmdr_operations::testing::app_path_of(&path))
+            .await
+        {
             Err(VolumeError::ColdStorage(_)) => {}
             Err(other) => panic!("{class}: a read answered {other:?}, not ColdStorage"),
             Ok(mut stream) => match stream.next_chunk().await {

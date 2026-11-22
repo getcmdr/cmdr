@@ -209,19 +209,19 @@ async fn copy_through_a_cut(conflict_resolution: ConflictResolution) {
     let base = test_dir_name();
     ensure_clean(&direct, &base).await;
     direct
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .create_directory(&cmdr_operations::testing::app_path_of(Path::new(&base)))
         .await
         .expect("the scratch dir");
     if conflict_resolution == ConflictResolution::Overwrite {
         let seeded = PathBuf::from(&base).join("batch");
         direct
-            .create_directory(&AppPath::legacy_unchecked(&seeded))
+            .create_directory(&cmdr_operations::testing::app_path_of(&seeded))
             .await
             .expect("the seeded folder");
         for index in 0..FILE_COUNT {
             direct
                 .create_file(
-                    &AppPath::legacy_unchecked(&seeded.join(format!("f-{index:02}.bin"))),
+                    &cmdr_operations::testing::app_path_of(&seeded.join(format!("f-{index:02}.bin"))),
                     &original(index),
                 )
                 .await
@@ -334,7 +334,10 @@ async fn copy_through_a_cut(conflict_resolution: ConflictResolution) {
         );
     }
     let leftovers: Vec<String> = direct
-        .list_directory(&AppPath::legacy_unchecked(&PathBuf::from(&base).join("batch")), None)
+        .list_directory(
+            &cmdr_operations::testing::app_path_of(&PathBuf::from(&base).join("batch")),
+            None,
+        )
         .await
         .expect("the destination folder")
         .into_iter()
@@ -375,7 +378,7 @@ async fn smb_integration_a_cancel_while_the_share_is_out_reports_at_once_and_rem
     let base = test_dir_name();
     ensure_clean(&direct, &base).await;
     direct
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .create_directory(&cmdr_operations::testing::app_path_of(Path::new(&base)))
         .await
         .expect("the scratch dir");
 
@@ -743,7 +746,10 @@ async fn smb_integration_an_overwrite_copy_rides_out_a_share_that_keeps_going_aw
         (batch.as_path(), "the seeded folder"),
     ] {
         in_an_up_half(&share, what, move || async move {
-            match direct.create_directory(&AppPath::legacy_unchecked(dir)).await {
+            match direct
+                .create_directory(&cmdr_operations::testing::app_path_of(dir))
+                .await
+            {
                 // A create whose answer the drop cut can have landed.
                 Err(VolumeError::AlreadyExists(_)) => Ok(()),
                 other => other,
@@ -754,11 +760,16 @@ async fn smb_integration_an_overwrite_copy_rides_out_a_share_that_keeps_going_aw
     for index in (0..SOAK_FILES).filter(|index| seeded(*index)) {
         let (path, bytes) = (&batch.join(format!("f-{index:02}.bin")), &original(index));
         in_an_up_half(&share, "an original on the share", move || async move {
-            match direct.create_file(&AppPath::legacy_unchecked(path), bytes).await {
+            match direct
+                .create_file(&cmdr_operations::testing::app_path_of(path), bytes)
+                .await
+            {
                 // A create the drop cut can have landed, or landed short.
                 Err(VolumeError::AlreadyExists(_)) => {
-                    direct.delete(&AppPath::legacy_unchecked(path)).await?;
-                    direct.create_file(&AppPath::legacy_unchecked(path), bytes).await
+                    direct.delete(&cmdr_operations::testing::app_path_of(path)).await?;
+                    direct
+                        .create_file(&cmdr_operations::testing::app_path_of(path), bytes)
+                        .await
                 }
                 other => other,
             }
@@ -909,7 +920,7 @@ async fn smb_integration_an_overwrite_copy_rides_out_a_share_that_keeps_going_aw
 /// Every soak file's hash in index order, and every name in the folder.
 async fn read_back(share: &SmbVolume, batch: &Path) -> Result<(Vec<[u8; 32]>, Vec<String>), VolumeError> {
     let names = share
-        .list_directory(&AppPath::legacy_unchecked(batch), None)
+        .list_directory(&cmdr_operations::testing::app_path_of(batch), None)
         .await?
         .into_iter()
         .map(|entry| entry.name)
@@ -917,7 +928,9 @@ async fn read_back(share: &SmbVolume, batch: &Path) -> Result<(Vec<[u8; 32]>, Ve
     let mut hashes = Vec::with_capacity(SOAK_FILES);
     for index in 0..SOAK_FILES {
         let mut stream = share
-            .open_read_stream(&AppPath::legacy_unchecked(&batch.join(format!("f-{index:02}.bin"))))
+            .open_read_stream(&cmdr_operations::testing::app_path_of(
+                &batch.join(format!("f-{index:02}.bin")),
+            ))
             .await?;
         let mut hasher = blake3::Hasher::new();
         while let Some(chunk) = stream.next_chunk().await {
@@ -931,7 +944,7 @@ async fn read_back(share: &SmbVolume, batch: &Path) -> Result<(Vec<[u8; 32]>, Ve
 /// The `.cmdr-tmp-*` names in `dir` on the share, read through `volume`.
 async fn temps_in(volume: &SmbVolume, dir: &str) -> Vec<String> {
     volume
-        .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
+        .list_directory(&cmdr_operations::testing::app_path_of(Path::new(dir)), None)
         .await
         .expect("the destination folder")
         .into_iter()
@@ -956,13 +969,13 @@ async fn smb_integration_a_download_carries_on_after_a_long_outage_instead_of_st
     let base = test_dir_name();
     ensure_clean(&direct, &base).await;
     direct
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .create_directory(&cmdr_operations::testing::app_path_of(Path::new(&base)))
         .await
         .expect("the scratch dir");
     let data = content(1).into_iter().cycle().take(DOWNLOAD_BYTES).collect::<Vec<u8>>();
     let remote = PathBuf::from(&base).join("big.bin");
     direct
-        .create_file(&AppPath::legacy_unchecked(&remote), &data)
+        .create_file(&cmdr_operations::testing::app_path_of(&remote), &data)
         .await
         .expect("the file on the share");
 
@@ -1068,7 +1081,7 @@ async fn smb_integration_an_upload_carries_on_after_a_long_outage_instead_of_sta
     let base = test_dir_name();
     ensure_clean(&direct, &base).await;
     direct
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .create_directory(&cmdr_operations::testing::app_path_of(Path::new(&base)))
         .await
         .expect("the scratch dir");
     let data = content(2).into_iter().cycle().take(UPLOAD_BYTES).collect::<Vec<u8>>();

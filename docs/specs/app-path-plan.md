@@ -1871,6 +1871,36 @@ included; the hidden couplings it found are why waves B and C differ from round 
   take `PathBuf`; typing the seam alone adds a crossing at each of its ~10 engine callers, so it goes with the starts.
   Then the backend suites, `suggested_ops/bridge/`, and the WebDAV/NFS `scratch_dir` twins (10d), and the `ListingHost`
   std-path seam that #1373 left (its oracle callers here hold `PathBuf`s).
+- **Sixth pass done** (2026-11-22, branch `worktree-agent-acb193f2529f392cf`): the starts and the seam, with 10d's first
+  item. One agent.
+  - **The starts take app paths**: `move_files_start`, `delete_files_start`, `trash_files_start`, `start_volume_copy`,
+    `start_volume_move`, `start_rename_by_move`, `start_volume_compress`, `rename_managed`, and `resolve_source_volume`.
+    Each asks its route gates with the typed values, then crosses once into the bodies through `wire_paths::engine_path`
+    (the bridge plus the trailing-`/` trim). A seam caller holding a value a body made (a ledger row, a create's parent,
+    an anchored destination) crosses back through `wire_paths::seam_path`, the module's other named helper: 14
+    production call sites (and three test cells), the crossings that turn typed as those bodies do.
+  - **`OperationVolumes` is typed** (`resolve`, `routes_over_its_parent`, `path_is_inside_archive`,
+    `path_crosses_archive_boundary`, `forget_archive_index`). Gone: the app's `engine_path`,
+    `ResolvedVolume::passthrough`, and the registry's `engine_archive_volume_id` (the engine names an edited zip as the
+    OS spells it, `archive_edit/engine.rs::archive_app_path`).
+  - **The app's edge**: `wire_path::start_path` / `start_paths` / `start_destination`; the suggested-ops decorator keys
+    by app path (`op_key`). `BulkRenameRow` stays `PathBuf` (the app and `cmdr-multi-rename` build it), so
+    `start_renames` crosses its rows through `seam_path`; as do the scan preview and the home-folder pre-check, which
+    keep `std::path` inputs.
+  - **Behavior changes** (input no pane or row sends): a write start's relative or empty path refuses at the edge as the
+    generic I/O failure; `//` and `/./` fold; `rename_file` refuses a `..` at the edge (a new name of `.` or `..` keeps
+    `NameNotAllowed { DotName }`); the same-`root` move's destination refuses a `..` left after its resolve; on Windows
+    a volume-relative POSIX source holding a literal escape-range code point refuses at the edge.
+  - **Suites**: the engine's and the app's cells hand the starts typed paths (`cmdr_operations::testing::app_path_of`,
+    native or app text; `app_path!` for literals). A volume-relative path (a share suite's `cmdr-test-…/a.txt`) has no
+    app path without its volume's root, so `app_path_of` passes it on as a bridge value through `seam_path`, its bytes
+    as held; cells pinning a shape no typed door makes (a trailing `/`, a `..`, a relative source) say so with a bridge
+    value. The backend suites' concrete cells moved to `app_path_of`; their shared `*_test_support.rs` helpers stay on
+    the bridge, as their callers hand them volume-relative paths too.
+- **Left after the sixth pass**: the suites' support helpers and the WebDAV/NFS `fixture()` (each hands out the
+  `scratch_dir` twin's `PathBuf` to every cell of its backend, so the twins go with typing those helpers); the
+  `ListingHost` seam (its `directory_changed` callers include `cmdr-local`'s watcher, another effort's crate this
+  round); `BulkRenameRow`.
 
 ### 10b. `cmdr-index`
 
@@ -2325,6 +2355,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
     Issue #1351's `/C:\…` journal rows weren't reproduced off Windows: the journal's `local_split` stores whatever the
     engine's `PathBuf` holds, and the reader (`escape_mark.rs::app_path_as`) already reads a drive row's `\`; the fix is
     the engine journaling typed ends, with the starts.
+- **Fourth step done** (2026-11-22, with 10a's sixth pass, same branch): `operations_host/volumes.rs::engine_path`, the
+  write commands' `PathBuf` sources, and `suggested_ops/bridge/`'s `PathBuf`-keyed op map are gone; the backend suites'
+  concrete cells are typed. What's left and why: 10a § "Left after the sixth pass".
 
 ### 10f. The escape lands
 

@@ -10,7 +10,6 @@
 //! `cargo nextest run smb_integration --run-ignored all`. macOS only: the
 //! local half needs `UF_HIDDEN` and `uchg`.
 
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::metadata::{CarriedMetadata, MetadataClasses, UserFlags};
 use cmdr_fs::testing::metadata_fixture::{HIDDEN_FLAG, LOCKED_FLAG, MetadataFixture, flags, set_flags};
 
@@ -30,17 +29,17 @@ const STREAMED_BYTES: usize = 10 * 1024 * 1024;
 /// copy's own read), a folder's off `folder_metadata`.
 async fn flags_on_share(remote: &dyn Volume, path: &Path) -> UserFlags {
     if remote
-        .is_directory(&AppPath::legacy_unchecked(path))
+        .is_directory(&cmdr_operations::testing::app_path_of(path))
         .await
         .unwrap_or(false)
     {
         return remote
-            .folder_metadata(&AppPath::legacy_unchecked(path), MetadataClasses::FLAGS)
+            .folder_metadata(&cmdr_operations::testing::app_path_of(path), MetadataClasses::FLAGS)
             .await
             .flags;
     }
     remote
-        .open_read_stream(&AppPath::legacy_unchecked(path))
+        .open_read_stream(&cmdr_operations::testing::app_path_of(path))
         .await
         .unwrap_or_else(|e| panic!("open {}: {e:?}", path.display()))
         .metadata(MetadataClasses::FLAGS)
@@ -52,8 +51,13 @@ async fn flags_on_share(remote: &dyn Volume, path: &Path) -> UserFlags {
 async fn unlock_and_clean(remote: &dyn Volume, dir: &Path) {
     let mut pending = vec![dir.to_path_buf()];
     while let Some(path) = pending.pop() {
-        let _ = remote.clear_blockers(&AppPath::legacy_unchecked(&path)).await;
-        if let Ok(entries) = remote.list_directory(&AppPath::legacy_unchecked(&path), None).await {
+        let _ = remote
+            .clear_blockers(&cmdr_operations::testing::app_path_of(&path))
+            .await;
+        if let Ok(entries) = remote
+            .list_directory(&cmdr_operations::testing::app_path_of(&path), None)
+            .await
+        {
             pending.extend(entries.into_iter().map(|entry| path.join(entry.name)));
         }
     }
@@ -127,30 +131,39 @@ async fn smb_integration_a_copy_onto_a_share_keeps_hidden_and_locked() {
 async fn smb_integration_a_copy_off_a_share_keeps_hidden_and_locked() {
     let (remote, dir) = fixture().await;
     remote
-        .create_file(&AppPath::legacy_unchecked(&dir.join("hidden.txt")), b"hidden")
-        .await
-        .unwrap();
-    remote
-        .create_file(&AppPath::legacy_unchecked(&dir.join("locked.txt")), b"locked")
+        .create_file(
+            &cmdr_operations::testing::app_path_of(&dir.join("hidden.txt")),
+            b"hidden",
+        )
         .await
         .unwrap();
     remote
         .create_file(
-            &AppPath::legacy_unchecked(&dir.join("big.bin")),
+            &cmdr_operations::testing::app_path_of(&dir.join("locked.txt")),
+            b"locked",
+        )
+        .await
+        .unwrap();
+    remote
+        .create_file(
+            &cmdr_operations::testing::app_path_of(&dir.join("big.bin")),
             &self_describing_bytes(STREAMED_BYTES, "big.bin"),
         )
         .await
         .unwrap();
     remote
-        .create_file(&AppPath::legacy_unchecked(&dir.join(".dotfile")), b"dot")
+        .create_file(&cmdr_operations::testing::app_path_of(&dir.join(".dotfile")), b"dot")
         .await
         .unwrap();
     remote
-        .create_directory(&AppPath::legacy_unchecked(&dir.join("album")))
+        .create_directory(&cmdr_operations::testing::app_path_of(&dir.join("album")))
         .await
         .unwrap();
     remote
-        .create_file(&AppPath::legacy_unchecked(&dir.join("album/inside.txt")), b"inside")
+        .create_file(
+            &cmdr_operations::testing::app_path_of(&dir.join("album/inside.txt")),
+            b"inside",
+        )
         .await
         .unwrap();
     let both = UserFlags::HIDDEN | UserFlags::LOCKED;
@@ -165,7 +178,7 @@ async fn smb_integration_a_copy_off_a_share_keeps_hidden_and_locked() {
             ..CarriedMetadata::default()
         };
         let report = remote
-            .apply_metadata(&AppPath::legacy_unchecked(&dir.join(name)), &carried, None)
+            .apply_metadata(&cmdr_operations::testing::app_path_of(&dir.join(name)), &carried, None)
             .await;
         assert_eq!(
             report.flags,
@@ -235,7 +248,9 @@ async fn smb_integration_a_rollback_removes_a_locked_copy_on_the_share() {
     .await;
     assert!(
         matches!(
-            remote.delete(&AppPath::legacy_unchecked(&dir.join("locked.txt"))).await,
+            remote
+                .delete(&cmdr_operations::testing::app_path_of(&dir.join("locked.txt")))
+                .await,
             Err(VolumeError::PermissionDenied { .. })
         ),
         "fixture precondition: the share refuses a plain delete of the Locked copy"
@@ -258,7 +273,7 @@ async fn smb_integration_a_rollback_removes_a_locked_copy_on_the_share() {
 
     assert_eq!(report.skipped, 0, "every item it copied is its to remove: {report:?}");
     let left: Vec<String> = remote
-        .list_directory(&AppPath::legacy_unchecked(&dir), None)
+        .list_directory(&cmdr_operations::testing::app_path_of(&dir), None)
         .await
         .unwrap()
         .into_iter()

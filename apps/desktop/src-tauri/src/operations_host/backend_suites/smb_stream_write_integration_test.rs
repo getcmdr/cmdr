@@ -30,7 +30,7 @@ async fn smb_integration_write_from_stream_local_source_large_file() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+    vol.create_directory(&cmdr_operations::testing::app_path_of(Path::new(&dir)))
         .await
         .unwrap();
 
@@ -55,7 +55,7 @@ async fn smb_integration_write_from_stream_local_source_large_file() {
 
     let bytes = vol
         .write_from_stream(
-            &AppPath::legacy_unchecked(Path::new(&smb_path)),
+            &cmdr_operations::testing::app_path_of(Path::new(&smb_path)),
             WriteMode::CreateOrReplace,
             StreamLength::Known(size as u64),
             stream,
@@ -105,7 +105,7 @@ async fn smb_integration_staged_write_of_a_name_at_the_byte_limit_lands() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+    vol.create_directory(&cmdr_operations::testing::app_path_of(Path::new(&dir)))
         .await
         .unwrap();
 
@@ -128,7 +128,7 @@ async fn smb_integration_staged_write_of_a_name_at_the_byte_limit_lands() {
             .await
             .unwrap();
         vol.write_from_stream(
-            &AppPath::legacy_unchecked(temp.path()),
+            &cmdr_operations::testing::app_path_of(temp.path()),
             WriteMode::CreateNew,
             StreamLength::Known(data.len() as u64),
             stream,
@@ -137,8 +137,8 @@ async fn smb_integration_staged_write_of_a_name_at_the_byte_limit_lands() {
         .await
         .unwrap_or_else(|e| panic!("the share refused the temp {}: {e:?}", temp.path().display()));
         vol.rename(
-            &AppPath::legacy_unchecked(temp.path()),
-            &AppPath::legacy_unchecked(Path::new(&final_path)),
+            &cmdr_operations::testing::app_path_of(temp.path()),
+            &cmdr_operations::testing::app_path_of(Path::new(&final_path)),
             false,
         )
         .await
@@ -151,7 +151,7 @@ async fn smb_integration_staged_write_of_a_name_at_the_byte_limit_lands() {
     }
 
     let names: Vec<String> = vol
-        .list_directory(&AppPath::legacy_unchecked(Path::new(&dir)), None)
+        .list_directory(&cmdr_operations::testing::app_path_of(Path::new(&dir)), None)
         .await
         .unwrap()
         .into_iter()
@@ -178,7 +178,7 @@ async fn smb_integration_staged_write_of_a_name_past_the_byte_limit_is_an_invali
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+    vol.create_directory(&cmdr_operations::testing::app_path_of(Path::new(&dir)))
         .await
         .unwrap();
 
@@ -197,7 +197,7 @@ async fn smb_integration_staged_write_of_a_name_past_the_byte_limit_is_an_invali
         .await
         .unwrap();
     vol.write_from_stream(
-        &AppPath::legacy_unchecked(temp.path()),
+        &cmdr_operations::testing::app_path_of(temp.path()),
         WriteMode::CreateNew,
         StreamLength::Known(data.len() as u64),
         stream,
@@ -208,14 +208,16 @@ async fn smb_integration_staged_write_of_a_name_past_the_byte_limit_is_an_invali
 
     let refused = vol
         .rename(
-            &AppPath::legacy_unchecked(temp.path()),
-            &AppPath::legacy_unchecked(Path::new(&final_path)),
+            &cmdr_operations::testing::app_path_of(temp.path()),
+            &cmdr_operations::testing::app_path_of(Path::new(&final_path)),
             false,
         )
         .await
         .expect_err("a 300-byte name can't land on a Linux share");
     assert!(matches!(refused, VolumeError::InvalidName(_)), "got {refused:?}");
 
-    vol.delete(&AppPath::legacy_unchecked(temp.path())).await.unwrap();
+    vol.delete(&cmdr_operations::testing::app_path_of(temp.path()))
+        .await
+        .unwrap();
     ensure_clean(&vol, &dir).await;
 }

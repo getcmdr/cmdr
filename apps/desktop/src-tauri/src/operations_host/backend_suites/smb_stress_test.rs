@@ -11,7 +11,6 @@
 
 use super::smb_test_support::*;
 use crate::operations_host::app_engine;
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::smb_volume_id;
 use cmdr_fs::volume::{StreamLength, WriteMode};
 use cmdr_operations::testing::new_operation_state;
@@ -69,7 +68,7 @@ async fn smb_integration_copy_100_unique_files_no_cross_contamination() {
     let src_dir = test_dir_name();
     ensure_clean(&smb_vol, &src_dir).await;
     smb_vol
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&src_dir)))
+        .create_directory(&cmdr_operations::testing::app_path_of(Path::new(&src_dir)))
         .await
         .unwrap();
     let vol: Arc<dyn Volume> = smb_vol.clone();
@@ -84,9 +83,12 @@ async fn smb_integration_copy_100_unique_files_no_cross_contamination() {
     for i in 0..FILE_COUNT {
         let name = format!("f_{:03}.bin", i);
         let smb_path = format!("{}/{}", src_dir, name);
-        vol.create_file(&AppPath::legacy_unchecked(Path::new(&smb_path)), &expected_content(i))
-            .await
-            .unwrap();
+        vol.create_file(
+            &cmdr_operations::testing::app_path_of(Path::new(&smb_path)),
+            &expected_content(i),
+        )
+        .await
+        .unwrap();
         source_paths.push(PathBuf::from(smb_path));
     }
     log::info!(
@@ -342,9 +344,9 @@ async fn run_concurrent_write_pass(
 
     let dest_dir_abs = mount_path.join(unique_prefix.trim_start_matches('/'));
     let _ = vol
-        .create_directory(&AppPath::legacy_unchecked(&mount_path.join("_test")))
+        .create_directory(&cmdr_operations::testing::app_path_of(&mount_path.join("_test")))
         .await;
-    vol.create_directory(&AppPath::legacy_unchecked(&dest_dir_abs))
+    vol.create_directory(&cmdr_operations::testing::app_path_of(&dest_dir_abs))
         .await
         .expect("create unique dest dir");
 
@@ -376,7 +378,7 @@ async fn run_concurrent_write_pass(
         let progress = |_| -> std::ops::ControlFlow<()> { std::ops::ControlFlow::Continue(()) };
         let bytes = vol
             .write_from_stream(
-                &AppPath::legacy_unchecked(&dest_abs),
+                &cmdr_operations::testing::app_path_of(&dest_abs),
                 WriteMode::CreateOrReplace,
                 StreamLength::Known(size),
                 stream,

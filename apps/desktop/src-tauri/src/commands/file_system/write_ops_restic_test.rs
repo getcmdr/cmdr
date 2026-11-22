@@ -3,7 +3,7 @@
 //! the row's name (or a real folder named like an archive) still takes an
 //! ordinary local copy.
 
-use super::{local_transfer_request, reject_if_routed_over_a_parent};
+use super::local_transfer_request;
 use cmdr_operations::{ReadOnlySide, WriteOperationError};
 
 #[test]
@@ -17,19 +17,11 @@ fn a_restic_view_is_refused_but_a_lookalike_folder_is_not() {
     let view_file = repo.join("Browse snapshots/latest/Users/me/a.txt");
 
     for side in [ReadOnlySide::Source, ReadOnlySide::Destination] {
-        let err = reject_if_routed_over_a_parent(
-            std::iter::once(&cmdr_operations::testing::app_path_of(&view_file)),
-            side,
-        )
-        .expect_err("a path in the view is refused");
+        let err = super::tests::routed_refusal(&view_file, side).expect_err("a path in the view is refused");
         assert!(matches!(err, WriteOperationError::ReadOnlyDevice { .. }), "{err:?}");
     }
     assert!(
-        reject_if_routed_over_a_parent(
-            std::iter::once(&cmdr_operations::testing::app_path_of(&repo.join("config"))),
-            ReadOnlySide::Source
-        )
-        .is_ok(),
+        super::tests::routed_refusal(&repo.join("config"), ReadOnlySide::Source).is_ok(),
         "the repo's real files are ordinary files"
     );
 
