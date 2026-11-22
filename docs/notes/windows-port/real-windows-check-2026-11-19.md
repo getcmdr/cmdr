@@ -215,3 +215,42 @@ run put in the Recycle Bin (nothing else was in it).
   `trash_refused` with the file kept; "Go to Recycle Bin" says there's none.
 - Not tested: a USB stick (none on the builder), a folder-mounted volume and a drive whose bin is turned off (both
   system changes).
+
+## PR #1374 and the day's PRs on the desktop (2026-11-22)
+
+A debug build of `01407cb5d7` in `D:\src\cmdr-m6` (13m 25s warm), driven the same way as task 35's above (Cmdr's MCP
+server, requests sent on the builder itself, `CMDR_MCP_DIRECT_MODE=1`), indexing on. `main` didn't build for the app
+(#1382), so the run allowed the two dead-code items locally, then reverted them. Developer Mode is off, OneDrive isn't
+signed in (no account, not running), no mapped drive exists. Fixtures under `C:\Users\Admin\r1374` and `D:\r1374`,
+removed after with the one item this run put in the Recycle Bin. An elevated Task Manager sat on top of the desktop, so
+Cmdr's window was moved beside it for screenshots.
+
+- Pass: a copy `C:` → `D:` lands `ro.txt` `ReadOnly`, `hid.txt` `Hidden`, and the folder `hiddir` `Hidden` (its file
+  plain). A `C:` → `D:` move of a read-only file asks "Move read-only items?", reading "1 item you're moving is
+  read-only. Cmdr can make it writable just for the move and read-only again where it lands."; Move anyway lands it
+  `ReadOnly` and removes the original.
+- Fail: a copy into `\\localhost\C$\Users\Admin\r1374\dst` (a share nobody mapped) is refused up front as "no
+  permission", though a normal-token write there succeeds. The dialog's picker reads `C:` and the copy's destination
+  collapses to `C:/` (#1384).
+- Pass: a folder whose DACL denies Admin writes (`icacls … /deny`) shows "You don't have permission to add files to this
+  folder." with Copy greyed. (A `(W)` deny also takes `SYNCHRONIZE`, so the pane couldn't list it either: a fixture
+  quirk.)
+- Pass, by the second branch: a relative folder symlink copied within `C:` refuses as `links_not_supported`, its target
+  folder landing (#1376's stub; its dialog's Windows words are stale, noted there).
+- Fail: a permanent delete of a junction, and of a folder symlink, refuses "Access is denied", the link kept (#1386). A
+  trash of the junction recycles the link; its target's file stays.
+- Pass: a folder of 20,000 small files on `D:` opens in 1,743 ms cold (read 1,253, sort 467) with the `C:` index walking
+  on both cores, 1,343 ms the second time.
+- Fail: a file another program appends to every second keeps its first-flush 9.8 KiB in the pane, refresh included,
+  while the disk passed 420,000 bytes; it updates once the writer closes it (#1387).
+- Skipped: OneDrive (not set up).
+- With `D:` mounted a second time at `C:\Users\Admin\r1374\dmount` (`mountvol`, David's one approved change,
+  14:23–14:26, removed): at the mount's root, a copy of a `D:\` file onto itself through the other path is seen as the
+  same folder and duplicated as `name (1).txt` (no overwrite offer, no `cantTellIfSameFile`), and a move from
+  `D:\r1374\mv` into it renamed (same file id). Below the root the pane goes wrong: navigation "doesn't land" while the
+  path bar and `cmdr://state` say it did, the tab keeps the old folder, and the transfer dialog offers that old folder
+  as the destination (#1385). The volume list showed the mount as a second `D:` row with `D:`'s id and root.
+- Pass: the regression sweep. Two items made outside Cmdr appear in the pane within 2 s; F8 sends to the Recycle Bin;
+  two files compress to a zip on `D:` and extract back to `C:` with their bytes; the volume list reads `C:`,
+  `build (D:)`, and Servers with `C:` indexing; a same-drive move's undo puts the file back. "Go to Recycle Bin" not
+  re-run (keys sent through `run-on-desktop.sh` went to Task Manager, which held the foreground).
