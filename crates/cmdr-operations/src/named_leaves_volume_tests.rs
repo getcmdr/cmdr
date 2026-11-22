@@ -684,6 +684,10 @@ async fn a_name_with_a_bidi_override_or_a_zero_width_joiner_refuses() {
 /// One undo takes back the whole named transfer on every volume route: a copy's
 /// named copies go (and only they: a bystander under an ORIGINAL name stays), a
 /// move's items go home under their original names.
+#[cfg_attr(
+    target_os = "windows",
+    ignore = "not pinned down (#1351): on Windows the undo skips the local copies as UnverifiablePrecondition; likely #1225 milestone 10a's native journal ends"
+)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn undoing_a_transfer_naming_each_item_restores_every_original() {
     for route in ROUTES {

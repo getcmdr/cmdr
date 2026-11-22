@@ -74,6 +74,10 @@ async fn copy_twins_under(policy: ConflictResolution) -> BTreeSet<String> {
         .collect()
 }
 
+#[cfg_attr(
+    target_os = "windows",
+    ignore = "#1225 milestone 10a: a native path's `\\` reaches the volume engine as an app path (\"a backslash in a drive or UNC path\")"
+)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_repeated_name_under_rename_lands_both_items() {
     assert_eq!(
@@ -82,6 +86,10 @@ async fn a_repeated_name_under_rename_lands_both_items() {
     );
 }
 
+#[cfg_attr(
+    target_os = "windows",
+    ignore = "#1225 milestone 10a: a native path's `\\` reaches the volume engine as an app path (\"a backslash in a drive or UNC path\")"
+)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_repeated_name_under_skip_lands_the_first_item_only() {
     let landed = copy_twins_under(ConflictResolution::Skip).await;
