@@ -134,7 +134,7 @@ fn set_read_only(path: &std::path::Path, read_only: bool) {
 /// read-only bit is Explorer's customization marker, so there's nothing to clear on one.
 #[tokio::test]
 async fn a_delete_refuses_a_read_only_file_until_its_blockers_are_cleared() {
-    let test_dir = TestDir::new("win_delete_read_only");
+    let test_dir = AppTestDir::new("win_delete_read_only");
     let volume = volume_at(&test_dir);
     volume
         .create_file(&at(&volume, "frozen.txt"), b"keep me")
@@ -144,9 +144,9 @@ async fn a_delete_refuses_a_read_only_file_until_its_blockers_are_cleared() {
         .create_directory(&at(&volume, "customized"))
         .await
         .expect("mkdir");
-    let frozen = test_dir.join("frozen.txt");
+    let frozen = test_dir.native().join("frozen.txt");
     set_read_only(&frozen, true);
-    set_read_only(&test_dir.join("customized"), true);
+    set_read_only(&test_dir.native().join("customized"), true);
 
     let refused = volume
         .delete(&at(&volume, "frozen.txt"))
@@ -172,7 +172,7 @@ async fn a_delete_refuses_a_read_only_file_until_its_blockers_are_cleared() {
         cmdr_fs::metadata::Unblock::NothingToClear,
         "a folder's marker isn't a lock"
     );
-    set_read_only(&test_dir.join("customized"), false);
+    set_read_only(&test_dir.native().join("customized"), false);
 }
 
 /// A tree whose paths pass `MAX_PATH` (260): creating, listing, stat'ing, renaming, and
