@@ -65,7 +65,7 @@ pub(crate) fn cmdr_operation_naming(
     if !history.db.exists() {
         return Fact::unknown(UnknownWhy::NoRecord);
     }
-    match read(history, Path::new(path), node) {
+    match read(history, &crate::app_text::as_std_path_text(path), node) {
         Ok(Some((landed_on, landed))) => fact_of(landed, &landed_on, volume_name),
         Ok(None) => Fact::unknown(UnknownWhy::NoRecord),
         Err(error) => {
@@ -174,8 +174,11 @@ fn landed_by(kind: OpKind, source_path: &str) -> Option<LandedBy> {
 }
 
 fn comes_out_of_an_archive(source_path: &str) -> bool {
-    cmdr_fs::archive_format::archive_boundary_candidate(Path::new(source_path))
-        .is_some_and(|(_archive, inner)| !inner.as_os_str().is_empty())
+    // A journal row is app text on whatever volume the source was on.
+    crate::app_text::parse_on_volume(source_path)
+        .ok()
+        .and_then(|source| cmdr_fs::archive_format::archive_boundary_candidate_at(&source))
+        .is_some_and(|(_archive, inner)| !inner.is_empty())
 }
 
 fn started_by(initiator: Initiator) -> StartedBy {

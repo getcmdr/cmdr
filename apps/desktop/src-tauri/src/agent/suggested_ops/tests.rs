@@ -608,15 +608,12 @@ fn build_index(path: &std::path::Path, rows: &[IndexRow]) {
         if let Some(&id) = dir_ids.get(dir) {
             return id;
         }
-        let parent = std::path::Path::new(dir)
-            .parent()
-            .map(|p| p.to_string_lossy().into_owned())
-            .unwrap_or_default();
+        use cmdr_fs::app_path::PathArithmetic;
+        // An index row's folder, as the index keys an app path.
+        let at = crate::app_text::parse_on_volume(dir).expect("an index row is an app path");
+        let parent = at.parent().map(|p| p.as_str().to_owned()).unwrap_or_default();
         let parent_id = ensure_dir(conn, &parent, dir_ids, next_id);
-        let name = std::path::Path::new(dir)
-            .file_name()
-            .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_default();
+        let name = at.file_name().map(str::to_owned).unwrap_or_default();
         let id = *next_id;
         *next_id += 1;
         IndexStore::insert_entry_v2_with_id(conn, id, parent_id, &name, true, false, None, None, None, None)

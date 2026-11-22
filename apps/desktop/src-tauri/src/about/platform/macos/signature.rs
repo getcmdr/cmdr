@@ -16,6 +16,7 @@
 //! `NotChecked(TimedOut)`, ❌ never a pass.
 
 use std::ffi::{c_int, c_void};
+use std::path::Path;
 use std::str::FromStr;
 use std::sync::mpsc;
 use std::time::Duration;
@@ -83,11 +84,11 @@ enum SignerKind {
     DeveloperId,
 }
 
-pub(crate) fn signature(path: &str, target: AboutTarget, extension: Option<&str>) -> Fact<Signature> {
+pub(crate) fn signature(path: &Path, target: AboutTarget, extension: Option<&str>) -> Fact<Signature> {
     objc2::rc::autoreleasepool(|_| read(path, target, extension))
 }
 
-fn read(path: &str, target: AboutTarget, extension: Option<&str>) -> Fact<Signature> {
+fn read(path: &Path, target: AboutTarget, extension: Option<&str>) -> Fact<Signature> {
     let is_bundle = matches!(target, AboutTarget::AppBundle | AboutTarget::Package);
     let is_disk_image = extension.is_some_and(|extension| extension.eq_ignore_ascii_case("dmg"));
     let ticket = stapled_ticket(path, is_bundle, is_disk_image);
@@ -118,7 +119,7 @@ fn read(path: &str, target: AboutTarget, extension: Option<&str>) -> Fact<Signat
     Fact::Known(Signature::read(signer, ticket, checked))
 }
 
-fn static_code(path: &str, is_directory: bool) -> Option<SecStaticCode> {
+fn static_code(path: &Path, is_directory: bool) -> Option<SecStaticCode> {
     let url = CFURL::from_path(path, is_directory)?;
     SecStaticCode::from_path(&url, Flags::NONE).ok()
 }
@@ -223,14 +224,14 @@ fn developer_org<'a>(summary: &'a str, team: &str) -> &'a str {
 /// 2026-11-13: `codesign -dvvv` says "Notarization Ticket=stapled" and the file
 /// is there). A bare executable can't carry one. A disk image keeps it inside its
 /// signature, which Cmdr doesn't read.
-fn stapled_ticket(path: &str, is_bundle: bool, is_disk_image: bool) -> StapledTicket {
+fn stapled_ticket(path: &Path, is_bundle: bool, is_disk_image: bool) -> StapledTicket {
     if is_disk_image {
         return StapledTicket::NotRead;
     }
     if !is_bundle {
         return StapledTicket::Absent;
     }
-    let ticket = std::path::Path::new(path).join("Contents/CodeResources");
+    let ticket = path.join("Contents/CodeResources");
     match std::fs::symlink_metadata(ticket) {
         Ok(metadata) if metadata.is_file() => StapledTicket::Present,
         _ => StapledTicket::Absent,
@@ -240,9 +241,9 @@ fn stapled_ticket(path: &str, is_bundle: bool, is_disk_image: bool) -> StapledTi
 /// Compares the main executable against its signature on its own pool job, and
 /// waits for it at most [`CHECK_BUDGET`]. A check still hashing then is left to
 /// finish on its thread, its answer dropped.
-fn check_executable(path: &str, is_bundle: bool) -> ExecutableCheck {
+fn check_executable(path: &Path, is_bundle: bool) -> ExecutableCheck {
     let (answer, waiting) = mpsc::sync_channel(1);
-    let path = path.to_string();
+    let path = path.to_path_buf();
     crate::about::pool::submit(Box::new(move || {
         crate::file_system::framework_pool::note_activity("SecStaticCodeCheckValidity", "signature");
         let outcome = objc2::rc::autoreleasepool(|_| executable_matches(&path, is_bundle));
@@ -254,7 +255,7 @@ fn check_executable(path: &str, is_bundle: bool) -> ExecutableCheck {
     }
 }
 
-fn executable_matches(path: &str, is_bundle: bool) -> ExecutableCheck {
+fn executable_matches(path: &Path, is_bundle: bool) -> ExecutableCheck {
     let Some(code) = static_code(path, is_bundle) else {
         return ExecutableCheck::NotChecked(NotCheckedWhy::CheckUnavailable);
     };
@@ -291,7 +292,7 @@ mod tests {
 
     #[test]
     fn a_system_tool_carries_apples_signature_and_its_executable_matches() {
-        let Fact::Known(signature) = signature("/bin/ls", AboutTarget::File, None) else {
+        let Fact::Known(signature) = signature(Path::new("/bin/ls"), AboutTarget::File, None) else {
             panic!("/bin/ls is signed");
         };
         assert_eq!(signature.signer, Signer::Apple);
@@ -306,7 +307,7 @@ mod tests {
     #[test]
     fn a_system_app_carries_apples_signature() {
         let Fact::Known(signature) = signature(
-            "/System/Applications/Calculator.app",
+            Path::new("/System/Applications/Calculator.app"),
             AboutTarget::AppBundle,
             Some("app"),
         ) else {
@@ -322,7 +323,7 @@ mod tests {
         let dir = crate::test_support::TestDir::new("about-signature");
         let file = dir.as_ref().join("notes.txt");
         std::fs::write(&file, "hello").expect("write the fixture");
-        let fact = signature(&file.to_string_lossy(), AboutTarget::File, Some("txt"));
+        let fact = signature(&file, AboutTarget::File, Some("txt"));
         assert!(
             matches!(
                 fact,
@@ -346,7 +347,7 @@ mod tests {
         let at = 0x4000 + 0x200;
         bytes[at] ^= 0xFF;
         std::fs::write(&copy, bytes).expect("write the copy");
-        let Fact::Known(signature) = signature(&copy.to_string_lossy(), AboutTarget::File, None) else {
+        let Fact::Known(signature) = signature(&copy, AboutTarget::File, None) else {
             panic!("the copy still carries its signature");
         };
         assert_eq!(signature.checked, ExecutableCheck::ExecutableDiffers);

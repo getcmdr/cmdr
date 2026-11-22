@@ -25,14 +25,18 @@ fn opts(start_line: usize, max_lines: usize) -> WindowOpts {
 
 fn inspect(path: &Path) -> FileRow {
     inspect_path(
-        path.to_str().unwrap(),
+        crate::test_support::native_app_path(path).as_str(),
         &TextAsk::Window(opts(1, 200)),
         &AtomicBool::new(false),
     )
 }
 
 fn inspect_with(path: &Path, window: WindowOpts, cancel: &AtomicBool) -> FileRow {
-    inspect_path(path.to_str().unwrap(), &TextAsk::Window(window), cancel)
+    inspect_path(
+        crate::test_support::native_app_path(path).as_str(),
+        &TextAsk::Window(window),
+        cancel,
+    )
 }
 
 fn file_of(row: &FileRow) -> &InspectedFile {
@@ -58,10 +62,14 @@ fn content_of(row: &FileRow) -> &Content {
     &file_of(row).content
 }
 
-/// The checked-in encoding fixtures the viewer's own tests use.
+/// The checked-in encoding fixtures the viewer's own tests use, spelled with no `..` as the
+/// dispatch's path door hands a tool its path (`tools/agent_path.rs`).
 fn fixture(name: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../test/fixtures/encodings")
+    let src_tauri = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    src_tauri
+        .parent()
+        .expect("src-tauri sits in the desktop app")
+        .join("test/fixtures/encodings")
         .join(name)
 }
 
@@ -507,9 +515,9 @@ async fn rows_come_back_in_request_order_with_a_typed_status_each() {
     let text = dir.join("a.txt");
     std::fs::write(&text, "hello\n").unwrap();
     let paths = vec![
-        dir.join("missing.txt").to_string_lossy().into_owned(),
-        text.to_string_lossy().into_owned(),
-        dir.to_string_lossy().into_owned(),
+        crate::test_support::native_app_path(dir.join("missing.txt")).into_string(),
+        crate::test_support::native_app_path(&text).into_string(),
+        crate::test_support::native_app_path(&dir).into_string(),
     ];
     let rows = run_paths(&paths, &RUNNER, real_inspect()).await;
     assert_eq!(rows.len(), 3);

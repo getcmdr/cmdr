@@ -515,7 +515,8 @@ pub(crate) fn inspect_path_with(path: &str, ask: &TextAsk, cancel: &AtomicBool, 
         return row;
     }
 
-    let p = Path::new(path);
+    // The viewer and archive seams below still key by `std::path` text.
+    let p: &Path = &crate::app_text::as_std_path_text(path);
     if let Some(row) = inspect_routed_path(&owned, p, &volume_id, ask, cancel, extract) {
         return row;
     }
@@ -525,7 +526,12 @@ pub(crate) fn inspect_path_with(path: &str, ask: &TextAsk, cancel: &AtomicBool, 
         Err(e) => return status_for(owned, ReadFailure::Viewer(e)),
     }
 
-    let meta = match std::fs::metadata(p) {
+    // The plain pipeline opens the file itself: the app path crosses to its native file here.
+    // Text with none (no app path, or a place the OS can't name) is a file that isn't there.
+    let Some(native) = crate::app_text::native(path) else {
+        return status_for(owned, ReadFailure::Io(ErrorKind::NotFound.into()));
+    };
+    let meta = match std::fs::metadata(&native) {
         Ok(m) => m,
         Err(e) => return status_for(owned, ReadFailure::Io(e)),
     };
@@ -533,7 +539,7 @@ pub(crate) fn inspect_path_with(path: &str, ask: &TextAsk, cancel: &AtomicBool, 
         return FileRow::Folder { path: owned };
     }
     let size = meta.len();
-    match read_content(p, size, ask, cancel) {
+    match read_content(&native, size, ask, cancel) {
         Ok(content) => ok_row(owned, p, Some(size), modified_secs(&meta), content),
         Err(failure) => status_for(owned, failure),
     }

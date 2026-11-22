@@ -211,18 +211,18 @@ mod tests {
 
     /// Bypass the TCC predicate filter for in-process tests by inserting
     /// directly. The predicate is unit-tested separately in `tcc_paths`.
-    fn force_insert(path: &str) {
+    fn force_insert(path: &Path) {
         let mut guard = state().write().unwrap();
-        guard.insert(PathBuf::from(path));
+        guard.insert(path.to_path_buf());
     }
 
     #[test]
     fn snapshot_is_sorted_and_dedup() {
         reset();
-        force_insert("/b");
-        force_insert("/a");
-        force_insert("/a"); // dup
-        force_insert("/c");
+        force_insert(Path::new("/b"));
+        force_insert(Path::new("/a"));
+        force_insert(Path::new("/a")); // dup
+        force_insert(Path::new("/c"));
         let s = snapshot();
         assert_eq!(s, vec!["/a", "/b", "/c"]);
     }
@@ -230,8 +230,8 @@ mod tests {
     #[test]
     fn clear_removes_only_named() {
         reset();
-        force_insert("/x");
-        force_insert("/y");
+        force_insert(Path::new("/x"));
+        force_insert(Path::new("/y"));
         clear_path("/x");
         let s = snapshot();
         assert_eq!(s, vec!["/y"]);
@@ -240,7 +240,7 @@ mod tests {
     #[test]
     fn clear_missing_is_noop() {
         reset();
-        force_insert("/x");
+        force_insert(Path::new("/x"));
         clear_path("/never-there");
         let s = snapshot();
         assert_eq!(s, vec!["/x"]);

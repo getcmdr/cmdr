@@ -7,7 +7,6 @@
 
 use std::cell::OnceCell;
 use std::collections::HashSet;
-use std::path::Path;
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
@@ -45,10 +44,7 @@ fn child_path(parent: &str, name: &str) -> String {
 /// Its two searches go to `sub_jobs`, so a card gone before a worker picks one up
 /// never scans.
 pub(crate) fn folder_digest_fact(place: &IndexPlace, now_secs: u64, sub_jobs: &SubJobs) -> Fact<FolderDigest> {
-    let name = Path::new(&place.path)
-        .file_name()
-        .map(|name| name.to_string_lossy().into_owned())
-        .unwrap_or_default();
+    let name = crate::app_text::last_name(&place.path).unwrap_or_default();
     let class = FolderClass::of(&name, &beside(&place.index_id, &place.path));
     let rows = match index().list_children(&place.index_id, &place.path) {
         Ok(Some(rows)) => Ok(rows),
@@ -224,11 +220,15 @@ fn beside<'a>(index_id: &'a str, path: &'a str) -> impl Fn(&str) -> bool + 'a {
     let siblings: OnceCell<HashSet<String>> = OnceCell::new();
     move |marker: &str| {
         let names = siblings.get_or_init(|| {
-            let Some(parent) = Path::new(path).parent() else {
+            use cmdr_fs::app_path::PathArithmetic;
+            let Some(parent) = crate::app_text::parse_on_volume(path)
+                .ok()
+                .and_then(|path| path.parent().map(|parent| parent.as_str().to_owned()))
+            else {
                 return HashSet::new();
             };
             index()
-                .list_children(index_id, &parent.to_string_lossy())
+                .list_children(index_id, &parent)
                 .ok()
                 .flatten()
                 .map(|rows| rows.into_iter().map(|row| row.name.to_ascii_lowercase()).collect())

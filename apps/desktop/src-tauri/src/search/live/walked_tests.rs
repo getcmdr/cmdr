@@ -3,7 +3,7 @@
 //! the same drive twice and getting two answers depending on whether it happened to
 //! be indexed.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use cmdr_index::CoveredEntry;
 
@@ -60,7 +60,7 @@ fn file(name: &str) -> Candidate<'_> {
 /// The walked shape of a file: what `Index::cover` emits for it.
 fn covered(path: &str, is_directory: bool, size: Option<u64>, modified_at: Option<u64>) -> CoveredEntry {
     CoveredEntry {
-        path: PathBuf::from(path),
+        path: crate::app_text::as_std_path_text(path),
         is_directory,
         is_symlink: false,
         logical_size: size,

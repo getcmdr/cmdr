@@ -56,8 +56,9 @@ fn photo_with_gps() -> Vec<u8> {
     bytes
 }
 
-fn path_of(path: &Path) -> &str {
-    path.to_str().expect("a UTF-8 test path")
+/// As a card hands it over: the item's app path (`C:/…` on Windows).
+fn path_of(path: &Path) -> String {
+    crate::test_support::native_app_path(path).into_string()
 }
 
 /// ❗ The core hands the GPS back (the agent's `inspect_file` gets it); the verdict's look
@@ -68,7 +69,7 @@ async fn a_photos_location_never_reaches_the_prompt() {
     let photo = dir.as_ref().join("IMG_0001.jpg");
     std::fs::write(&photo, photo_with_gps()).expect("write the photo");
 
-    let owned = path_of(&photo).to_string();
+    let owned = path_of(&photo);
     let core = tokio::task::spawn_blocking(move || {
         crate::tools::read::inspect::inspect_path(&owned, &ask(), &AtomicBool::new(false))
     })
@@ -77,7 +78,7 @@ async fn a_photos_location_never_reaches_the_prompt() {
     let core_json = serde_json::to_string(&core).expect("serializes");
     assert!(core_json.contains("gps"), "the core itself carries it: {core_json}");
 
-    let (contents, peek) = look(path_of(&photo), inspect_reader(), BUDGET).await;
+    let (contents, peek) = look(&path_of(&photo), inspect_reader(), BUDGET).await;
     assert_eq!(contents, VerdictContents::CameraDetails);
     let json = serde_json::to_string(&peek).expect("serializes");
     assert!(json.contains("Canon EOS R6"), "{json}");
@@ -95,7 +96,7 @@ async fn a_text_file_gives_a_small_first_window() {
     let lines: Vec<String> = (1..=500).map(|n| format!("line {n} {}", "x".repeat(60))).collect();
     std::fs::write(&notes, lines.join("\n")).expect("write the notes");
 
-    let (contents, peek) = look(path_of(&notes), inspect_reader(), BUDGET).await;
+    let (contents, peek) = look(&path_of(&notes), inspect_reader(), BUDGET).await;
     assert_eq!(contents, VerdictContents::FirstLines);
     let Some(Peek::FirstLines { text, more }) = peek else {
         panic!("first lines expected");
@@ -117,7 +118,7 @@ async fn a_protected_file_answers_protected_with_nothing_inside() {
     let key = ssh.join("id_ed25519");
     std::fs::write(&key, "-----BEGIN OPENSSH PRIVATE KEY-----\nAAAA\n").expect("write the key");
 
-    let (contents, peek) = look(path_of(&key), inspect_reader(), BUDGET).await;
+    let (contents, peek) = look(&path_of(&key), inspect_reader(), BUDGET).await;
     assert_eq!(contents, VerdictContents::Protected);
     assert_eq!(peek, None);
 }

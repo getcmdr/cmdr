@@ -134,7 +134,7 @@ fn text_file(name: &str, text: &str) -> Card {
     let dir = TestDir::new("about-verdict");
     let file = dir.as_ref().join(name);
     std::fs::write(&file, text).expect("write the fixture");
-    let path = file.to_string_lossy().into_owned();
+    let path = crate::test_support::native_app_path(&file).into_string();
     let probed = probe(&path, None).expect("the fixture is there");
     let gathered = local_gathered(
         &path,
@@ -599,7 +599,7 @@ async fn a_protected_item_goes_out_name_level_with_nothing_read() {
     std::fs::create_dir(&ssh).expect("make the folder");
     let key = ssh.join("id_ed25519");
     std::fs::write(&key, "-----BEGIN OPENSSH PRIVATE KEY-----\nAAAA\n").expect("write the key");
-    let path = key.to_string_lossy().into_owned();
+    let path = crate::test_support::native_app_path(&key).into_string();
     let probed = probe(&path, None).expect("there");
     let card = Card {
         gathered: local_gathered(
@@ -641,7 +641,7 @@ fn picture(shows: cmdr_about::payload::ImageContents) -> (Card, AboutFact) {
     let dir = TestDir::new("about-verdict-picture");
     let file = dir.as_ref().join("sign.png");
     std::fs::write(&file, b"\x89PNG\r\n\x1a\nnot really").expect("write the fixture");
-    let path = file.to_string_lossy().into_owned();
+    let path = crate::test_support::native_app_path(&file).into_string();
     let probed = probe(&path, None).expect("the fixture is there");
     let sources = Sources {
         image: Some(crate::about::image::ImagePlace::new(

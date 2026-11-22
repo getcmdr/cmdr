@@ -30,7 +30,7 @@ pub(crate) fn stat_extras(_metadata: &std::fs::Metadata) -> StatExtras {
     }
 }
 
-pub(crate) fn download(_path: &str) -> Fact<Download> {
+pub(crate) fn download(_path: &std::path::Path) -> Fact<Download> {
     Fact::unknown(UnknownWhy::NoRecord)
 }
 
@@ -38,15 +38,15 @@ pub(crate) fn download_record(_read: super::ReadXattr<'_>) -> Fact<Download> {
     Fact::unknown(UnknownWhy::NoRecord)
 }
 
-pub(crate) fn last_opened(_path: &str) -> Fact<Usage> {
+pub(crate) fn last_opened(_path: &std::path::Path) -> Fact<Usage> {
     Fact::unknown(UnknownWhy::NoRecord)
 }
 
-pub(crate) fn default_app(_path: &str) -> Fact<AppRef> {
+pub(crate) fn default_app(_path: &std::path::Path) -> Fact<AppRef> {
     Fact::unknown(UnknownWhy::NoRecord)
 }
 
-pub(crate) fn signature(_path: &str, _target: AboutTarget, _extension: Option<&str>) -> Fact<Signature> {
+pub(crate) fn signature(_path: &std::path::Path, _target: AboutTarget, _extension: Option<&str>) -> Fact<Signature> {
     Fact::NotApplicable(NotApplicableWhy::NoCodeSigningOnThisOs)
 }
 

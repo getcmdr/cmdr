@@ -3,7 +3,6 @@
 //! mounted filesystem itself. Free space is `cmdr_local::space::get_volume_space`.
 
 use cmdr_local::linux_mounts;
-use std::path::Path;
 
 /// Virtual filesystem types to filter out of mount listings.
 const VIRTUAL_FS_TYPES: &[&str] = &[
@@ -54,7 +53,7 @@ pub(super) fn is_virtual_fs(fstype: &str) -> bool {
 /// Answers `(mount_point, fs_type, source)`, the source being the mount's device.
 pub(crate) fn get_mount_point(path: &str) -> Option<(String, String, String)> {
     let mounts = linux_mounts::parse_proc_mounts()?;
-    let entry = linux_mounts::mount_entry_for_path_from_entries(Path::new(path), &mounts)?;
+    let entry = linux_mounts::mount_entry_for_path_from_entries(crate::volumes::os_mount_path(path), &mounts)?;
     let (fs_type, source) = (entry.fstype.clone(), entry.device.clone());
     let mount_point = mounts
         .iter()

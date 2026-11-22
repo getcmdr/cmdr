@@ -29,7 +29,7 @@ pub(crate) fn fetch_path_icons(paths: Vec<String>) -> PathIcons {
     paths
         .par_iter()
         .map(|path| {
-            let data_url = fetch_icon_for_path(Path::new(path));
+            let data_url = crate::app_text::native_plain(path).and_then(|native| fetch_icon_for_path(&native));
             (format!("path:{}", path), data_url)
         })
         .collect()

@@ -42,7 +42,7 @@ pub(super) fn read_cmdr_md() -> Option<String> {
 /// Empty is unset, matching `config::data_dir_from_env`.
 fn cmdr_md_path(data_dir_env: Option<&str>, home: Option<&Path>) -> Option<PathBuf> {
     match data_dir_env {
-        Some(dir) if !dir.is_empty() => Some(Path::new(dir).join("CMDR.md")),
+        Some(dir) if !dir.is_empty() => Some(crate::native_text::os_path(dir).join("CMDR.md")),
         _ => Some(home?.join(".cmdr").join("CMDR.md")),
     }
 }

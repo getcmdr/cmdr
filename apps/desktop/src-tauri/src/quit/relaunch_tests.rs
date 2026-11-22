@@ -11,7 +11,10 @@ fn plan(pid: u32, opener: PathBuf, args: &[&str]) -> WaiterPlan {
         interval: "0.05".to_string(),
         opener,
         bundle: PathBuf::from("/Applications/Cmdr.app"),
-        args: args.iter().map(OsString::from).collect(),
+        args: args
+            .iter()
+            .map(|arg| std::ffi::OsStr::new(arg).to_os_string())
+            .collect(),
     }
 }
 
@@ -31,7 +34,7 @@ fn the_waiter_runs_sh_with_the_bundle_and_our_args_as_positional_params() {
         "a b",
     ]
     .iter()
-    .map(OsString::from)
+    .map(|arg| std::ffi::OsStr::new(arg).to_os_string())
     .collect();
     assert_eq!(argv[2..], expected[..]);
 }

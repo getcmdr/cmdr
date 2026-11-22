@@ -10,7 +10,7 @@
 //! here, because a connect is three things happening in one order: dial, register
 //! (retiring any predecessor), and remember the server for next time.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 
 use cmdr_fs::volume::Volume;
@@ -267,7 +267,10 @@ pub async fn save_without_connecting(server: KnownSftpServer) -> SavedServerOutc
     sftp.set_auto_reconnect(server.auto_reconnect);
     sftp.set_redial_params(
         Path::new(&server.remote_root),
-        server.key_file.as_deref().map(PathBuf::from),
+        server
+            .key_file
+            .as_deref()
+            .map(|key| crate::native_text::os_path(key).to_path_buf()),
         server.use_agent,
     );
     sftp_known_servers::remember(server);

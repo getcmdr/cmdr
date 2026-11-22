@@ -6,7 +6,6 @@
 //! shape `mtp::volume_wiring` and `network::sftp_volume_wiring` take.
 
 use std::collections::BTreeMap;
-use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
@@ -53,7 +52,7 @@ pub fn set_adb_binary_path(configured: Option<String>) {
     let path = configured
         .map(|p| p.trim().to_string())
         .filter(|p| !p.is_empty())
-        .map(PathBuf::from);
+        .map(crate::native_text::os_path_buf);
     cmdr_adb::set_adb_binary_override(path);
 }
 

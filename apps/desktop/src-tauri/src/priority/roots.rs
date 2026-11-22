@@ -151,9 +151,13 @@ fn local_favorite_path(favorite: crate::favorites::store::Favorite) -> Option<Pa
 /// lookup, ❌ never a `statfs`: a probe of a wedged share can block for a minute or two,
 /// and this runs on the index's own thread.
 fn is_on_another_volume(path: &Path) -> bool {
-    crate::file_system::volume::manager::get_volume_manager()
-        .mount_id_for_path(&path.to_string_lossy())
-        .is_some()
+    // The walker's native folder as the app path a mount root is compared with; a name
+    // that isn't Unicode text stays on the boot volume's walk, as no app path names it.
+    cmdr_fs::app_path::AppPathBuf::from_native_unicode(path).is_ok_and(|app| {
+        crate::file_system::volume::manager::get_volume_manager()
+            .mount_id_for_path(app.as_str())
+            .is_some()
+    })
 }
 
 /// Where the panes were pointing last time, from the frontend's `app-status.json`.

@@ -270,8 +270,8 @@ mod tests {
 
     #[test]
     fn folders_with_equal_counts_come_back_in_a_stable_order() {
-        let ordered = |files: [&str; 2]| -> Vec<PathBuf> {
-            fold_into_folders(files.iter().map(PathBuf::from))
+        let ordered = |files: [&Path; 2]| -> Vec<PathBuf> {
+            fold_into_folders(files.iter().map(|file| file.to_path_buf()))
                 .into_iter()
                 .map(|folder| folder.path)
                 .collect()
@@ -279,8 +279,8 @@ mod tests {
         // Same two folders, opposite input order: the answer must not move, or a
         // caller that caches or compares the ranking sees phantom churn.
         assert_eq!(
-            ordered(["/b/one.txt", "/a/one.txt"]),
-            ordered(["/a/one.txt", "/b/one.txt"])
+            ordered([Path::new("/b/one.txt"), Path::new("/a/one.txt")]),
+            ordered([Path::new("/a/one.txt"), Path::new("/b/one.txt")])
         );
     }
 

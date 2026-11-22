@@ -129,6 +129,7 @@ mod mtp;
 mod multi_rename;
 #[cfg(target_os = "macos")]
 mod native_drag;
+mod native_text;
 mod net;
 mod network;
 mod notifications;

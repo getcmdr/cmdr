@@ -122,7 +122,7 @@ pub(crate) fn plan(
                 .filter(|entry| entry.is_directory && !entry.is_symlink)
                 .filter(|entry| match only {
                     Some(paths) => paths.contains(&entry.path),
-                    None => !is_a_view_row(&dir, Path::new(&entry.path)),
+                    None => !is_a_view_row(&dir, &crate::app_text::as_std_path_text(&entry.path)),
                 })
                 .filter(|entry| {
                     let exact = entry.recursive_size.is_some() && entry.recursive_size_complete == Some(true);

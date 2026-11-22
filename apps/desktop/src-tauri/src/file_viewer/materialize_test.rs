@@ -326,7 +326,7 @@ fn a_file_past_the_cap_on_a_volume_the_os_cant_open_is_refused_before_a_temp_exi
     let path = a_volume_the_os_cant_open("viewer-pull-cap-cell", &vec![b'x'; entry_len]);
 
     let outcome = materialize_for_viewer_with(
-        Path::new(&path),
+        &crate::app_text::as_std_path_text(&path),
         "viewer-pull-cap-cell",
         &extract,
         10,
@@ -495,7 +495,7 @@ fn an_inspection_cancel_stops_the_pull_and_removes_its_partial_temp() {
         let dir = extract.to_path_buf();
         std::thread::spawn(move || {
             materialize_for_inspect_with(
-                Path::new(&path),
+                &crate::app_text::as_std_path_text(&path),
                 "inspect-pull-cancel-cell",
                 &dir,
                 EXTRACT_CAP_FOR_TESTS,
@@ -597,7 +597,7 @@ fn a_pull_reports_its_progress_against_the_declared_size() {
         let dir = extract.to_path_buf();
         std::thread::spawn(move || {
             materialize_for_viewer_with(
-                Path::new(&path),
+                &crate::app_text::as_std_path_text(&path),
                 "viewer-pull-progress-cell",
                 &dir,
                 EXTRACT_CAP_FOR_TESTS,

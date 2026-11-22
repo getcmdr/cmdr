@@ -66,7 +66,7 @@ impl DetachedHolder {
         // the path we spawned would wait forever.
         let running = std::fs::canonicalize(&executable).expect("the copy resolves");
         crate::test_support::wait_until(Duration::from_secs(5), "the detached holder to start", || {
-            super::scan::executable_path(pid).is_some_and(|path| Path::new(&path) == running)
+            super::scan::executable_path(pid).is_some_and(|path| path == running)
         });
         Self {
             pid,

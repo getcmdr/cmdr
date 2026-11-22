@@ -21,7 +21,7 @@ use memory_cache::{PATH_KEY_PREFIX, cache_icon, get_cached_icon};
 use rayon::prelude::*;
 use std::collections::HashMap;
 use std::io::Cursor;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 // macOS asks NSWorkspace; Linux asks the XDG icon theme, because a GTK lookup wants the
 // main thread and fails silently from a rayon or tokio worker. Both in `platform/`.
@@ -111,7 +111,15 @@ pub(crate) fn rgba_to_png(rgba: &[u8], width: u32, height: u32) -> Option<Vec<u8
 /// Gets icon for a path as base64 data URL.
 /// Public API for use by volumes module.
 pub fn get_icon_for_path(path: &str) -> Option<String> {
-    fetch_icon_for_path(Path::new(path))
+    // The volumes module's mount rows: a mount point or a place the OS spelled. A favorite's
+    // folder is app text and comes through `get_icon_for_native`.
+    get_icon_for_native(crate::volumes::os_mount_path(path))
+}
+
+/// [`get_icon_for_path`] for a native path, one already crossed from app text included (a
+/// favorite's folder).
+pub(crate) fn get_icon_for_native(path: &std::path::Path) -> Option<String> {
+    fetch_icon_for_path(path)
 }
 
 /// Gets the sample file path to use for fetching an icon by ID.
@@ -222,7 +230,7 @@ pub fn custom_folder_icon_ids(directory_paths: Vec<String>) -> Vec<CustomFolderI
     directory_paths
         .into_iter()
         .filter_map(|path| {
-            let icon = per_path::custom_folder_icon(Path::new(&path))?;
+            let icon = per_path::custom_folder_icon(&crate::app_text::native_plain(&path)?)?;
             Some(CustomFolderIconId {
                 icon_id: format!("{PATH_KEY_PREFIX}{path}"),
                 follows_accent: icon.follows_accent(),

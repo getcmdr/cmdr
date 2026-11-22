@@ -141,7 +141,7 @@ fn read_mount(mount_path: &str) -> MountRead {
     }
     // No SMB mount there. Whether the root exists at all is what separates a share
     // that just went away from a volume that never was one.
-    if std::path::Path::new(mount_path).exists() {
+    if crate::volumes::os_mount_path(mount_path).exists() {
         MountRead::NotSmb
     } else {
         MountRead::Gone

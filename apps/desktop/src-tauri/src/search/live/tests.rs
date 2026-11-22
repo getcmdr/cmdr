@@ -6,7 +6,6 @@
 //! Real walks over real ground are `crates/cmdr-index/src/indexing/lifecycle/cover/`
 //! and the end-to-end test in `search/execute/tests.rs`.
 
-use std::path::PathBuf;
 use std::sync::mpsc::{SyncSender, sync_channel};
 use std::time::{Duration, Instant};
 
@@ -49,7 +48,7 @@ fn query(stem: &str) -> SearchQuery {
 
 fn covered_file(path: &str) -> CoveredEntry {
     CoveredEntry {
-        path: PathBuf::from(path),
+        path: crate::app_text::as_std_path_text(path),
         is_directory: false,
         is_symlink: false,
         logical_size: Some(10),

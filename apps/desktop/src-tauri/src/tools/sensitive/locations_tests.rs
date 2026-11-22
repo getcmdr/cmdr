@@ -766,7 +766,9 @@ fn a_backed_up_home_keeps_its_home_anchored_rules() {
 }
 
 fn moved(dirs: &[(Dir, &str)]) -> Vec<(Dir, PathBuf)> {
-    dirs.iter().map(|(dir, path)| (*dir, PathBuf::from(path))).collect()
+    dirs.iter()
+        .map(|(dir, path)| (*dir, crate::native_text::os_path(path).to_path_buf()))
+        .collect()
 }
 
 /// A per-user dir the environment moved has no telling component, so only the host's own

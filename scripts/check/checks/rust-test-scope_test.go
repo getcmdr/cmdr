@@ -515,6 +515,7 @@ var rustScopeHopFiles = map[string]string{
 	"apps/desktop/src-tauri/src/operations_host/backend_suites/copy_bench.rs": "climbs out of the repo to the sibling smb2 checkout's `.env`",
 	"crates/cmdr-git/src/bench.rs":                                            "locates `target/` for its generated fixture; reads nothing tracked",
 	"crates/cmdr-operations/src/golden_trace_tests.rs":                        "the `.parent()` creates the dir of an in-crate golden file",
+	"apps/desktop/src-tauri/src/tools/read/inspect/tests.rs":                  "the `.parent()` spells the encoding fixtures' path with no `..`; `rustTestScopeRules` classifies them",
 }
 
 // TestNoUnseenManifestDirHops covers the scan's blind spot: a path built by

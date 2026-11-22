@@ -108,7 +108,7 @@ pub(crate) fn resolve_cloud_drive_for_path(path: &str) -> Option<VolumeInfo> {
 /// Pure (no I/O, matches by path prefix only) so it's unit-testable and cheap
 /// to call on every navigation. The I/O wrapper is [`resolve_cloud_drive_for_path`].
 fn match_cloud_drive_root(home: &Path, path: &str) -> Option<(String, String, PathBuf)> {
-    let found = cmdr_fs::cloud_provider::locate(home, Path::new(path))?;
+    let found = cmdr_fs::cloud_provider::locate(home, crate::volumes::os_mount_path(path))?;
     Some((
         found.provider.volume_id(),
         found.provider.display_name().to_string(),

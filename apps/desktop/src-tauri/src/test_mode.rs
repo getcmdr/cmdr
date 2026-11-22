@@ -338,7 +338,8 @@ const ABOUT_FIXTURE_HOME_HONORED: bool = cfg!(any(debug_assertions, feature = "p
 
 /// Pure core of [`about_fixture_home`], so a test can read the release arm.
 fn about_fixture_home_from(honored: bool, value: Option<std::ffi::OsString>) -> Option<PathBuf> {
-    value.filter(|value| honored && !value.is_empty()).map(PathBuf::from)
+    let value = value.filter(|value| honored && !value.is_empty())?;
+    Some(crate::native_text::os_path_buf(value))
 }
 
 /// Whether the app may adopt network mounts that were already on the machine when
@@ -420,12 +421,12 @@ fn e2e_downloads_dir_from(is_e2e: bool, override_dir: Option<&str>, data_dir: Op
     }
     // A spec that needs to place its own files picks the dir explicitly.
     if let Some(dir) = override_dir.filter(|s| !s.is_empty()) {
-        return Some(PathBuf::from(dir));
+        return Some(crate::native_text::os_path(dir).to_path_buf());
     }
     // Otherwise nest it under the run's throwaway data dir, so it's created and
     // discarded with the run and can't collide with a concurrent one.
     if let Some(dir) = data_dir.filter(|s| !s.is_empty()) {
-        return Some(PathBuf::from(dir).join("downloads"));
+        return Some(crate::native_text::os_path(dir).join("downloads"));
     }
     // Unreachable while `guard_e2e_requires_data_dir` runs at startup, kept
     // because the safe answer here is a throwaway path, not the real Downloads.

@@ -189,8 +189,10 @@ mod tests {
     /// folder's item to a model with its recorded facts.
     #[test]
     fn a_path_the_gate_protects_leaves_name_level_facts_only() {
+        // A local path on this host (a drive on Windows), so the link-following gate can walk it.
+        let local = |rest: &str| format!("{}{rest}", if cfg!(windows) { "C:" } else { "" });
         for reach in [GateReach::FollowLocalLinks, GateReach::NamesOnly] {
-            let leaving = leaving("/Users/jane/.ssh/id_ed25519", reach);
+            let leaving = leaving(&local("/Users/jane/.ssh/id_ed25519"), reach);
             assert_eq!(leaving["contentsStayHome"], "credentials");
             assert_eq!(
                 leaving["realType"],
@@ -198,7 +200,7 @@ mod tests {
             );
             assert_eq!(leaving["identity"]["value"]["name"], "id_ed25519");
 
-            let open = self::leaving("/Users/jane/Documents/id_ed25519", reach);
+            let open = self::leaving(&local("/Users/jane/Documents/id_ed25519"), reach);
             assert!(open.get("contentsStayHome").is_none());
             assert_eq!(open["realType"], serde_json::json!({ "state": "pending" }));
         }
@@ -215,7 +217,7 @@ mod tests {
         std::fs::write(keys.join("id_ed25519"), "x").expect("write the key");
         let link = dir.as_ref().join("keys");
         std::os::unix::fs::symlink(&keys, &link).expect("link to it");
-        let through_link = link.join("id_ed25519").to_string_lossy().into_owned();
+        let through_link = crate::test_support::native_app_path(link.join("id_ed25519")).into_string();
 
         assert_eq!(
             gate(&through_link, GateReach::FollowLocalLinks).protected(),

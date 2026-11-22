@@ -4,7 +4,7 @@
 //! here, so those answers are never asked).
 
 use std::ffi::CString;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
 use std::time::{Duration, Instant};
 
@@ -62,7 +62,7 @@ impl XattrSyscalls for Linux {
     }
 }
 
-pub(crate) fn download(path: &str) -> Fact<Download> {
+pub(crate) fn download(path: &Path) -> Fact<Download> {
     download_with::<Linux>(path, MAX_XATTR_BYTES, download_record)
 }
 
@@ -72,15 +72,15 @@ pub(crate) fn download_record(read: super::ReadXattr<'_>) -> Fact<Download> {
     xdg_download_fact(origin.as_deref(), referrer.as_deref())
 }
 
-pub(crate) fn last_opened(_path: &str) -> Fact<Usage> {
+pub(crate) fn last_opened(_path: &Path) -> Fact<Usage> {
     Fact::unknown(UnknownWhy::NoRecord)
 }
 
-pub(crate) fn default_app(_path: &str) -> Fact<AppRef> {
+pub(crate) fn default_app(_path: &Path) -> Fact<AppRef> {
     Fact::unknown(UnknownWhy::NoRecord)
 }
 
-pub(crate) fn signature(_path: &str, _target: AboutTarget, _extension: Option<&str>) -> Fact<Signature> {
+pub(crate) fn signature(_path: &Path, _target: AboutTarget, _extension: Option<&str>) -> Fact<Signature> {
     Fact::NotApplicable(NotApplicableWhy::NoCodeSigningOnThisOs)
 }
 
@@ -100,13 +100,13 @@ static APPS: LazyLock<Mutex<AppScan>> = LazyLock::new(|| Mutex::new(None));
 /// flatpak's exports, and snapd's.
 fn desktop_entry_folders() -> Vec<PathBuf> {
     let mut folders: Vec<PathBuf> = [
-        "/usr/share/applications",
-        "/usr/local/share/applications",
-        "/var/lib/flatpak/exports/share/applications",
-        "/var/lib/snapd/desktop/applications",
+        Path::new("/usr/share/applications"),
+        Path::new("/usr/local/share/applications"),
+        Path::new("/var/lib/flatpak/exports/share/applications"),
+        Path::new("/var/lib/snapd/desktop/applications"),
     ]
     .into_iter()
-    .map(PathBuf::from)
+    .map(Path::to_path_buf)
     .collect();
     if let Some(home) = dirs::home_dir() {
         folders.push(home.join(".local/share/applications"));

@@ -108,6 +108,15 @@ pub(crate) fn get_icon_for_path(path: &str) -> Option<String> {
     crate::icons::get_icon_for_path(path)
 }
 
+/// [`get_icon_for_path`] for a favorite's folder: app text the caller crossed to its native file
+/// (`Favorite::native_path`), ❌ never through the mount-text door.
+pub(crate) fn get_icon_for_native(path: &std::path::Path) -> Option<String> {
+    if crate::fda_gate::is_fda_pending_runtime() {
+        return None;
+    }
+    crate::icons::get_icon_for_native(path)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -349,19 +349,14 @@ fn initial_name(candidate: &Candidate, path: &str) -> String {
 
 /// A path's last component, if it has one.
 fn leaf(path: &str) -> Option<String> {
-    Path::new(path)
-        .file_name()
-        .map(|name| name.to_string_lossy().into_owned())
-        .filter(|name| !name.is_empty())
+    crate::app_text::last_name(path)
 }
 
 /// The name of the folder holding `path`, if there is one above the root.
 fn parent_name(path: &str) -> Option<String> {
-    Path::new(path)
-        .parent()
-        .and_then(|parent| parent.file_name())
-        .map(|name| name.to_string_lossy().into_owned())
-        .filter(|name| !name.is_empty())
+    use cmdr_fs::app_path::PathArithmetic;
+    let path = crate::app_text::parse_on_volume(path).ok()?;
+    path.parent()?.file_name().map(str::to_owned)
 }
 
 /// Gives every row a label nothing else in the menu carries.

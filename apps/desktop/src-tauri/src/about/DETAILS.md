@@ -107,6 +107,13 @@ once and the note says it stopped. That bounds a dead share to two stranded pool
 
 ### A local item
 
+- **The card's place is read once, typed** (`route::gather_for`): `app_text::parse_on_volume` of the resolver's text,
+  else no card (`NotFound`). A volume's rows (`through.rs`) take that app path (`Through.path`; a branch's name is
+  found by stepping up from it, the portal asked in the path's own spelling), and a local card's `probe` crosses it to
+  its native file ONCE (`Probe.native`, `native_plain`), which every local job reads (the OS reads in `platform::*`
+  take a `&Path`). The stores keyed by app text keep it: the operation log (`as_std_path_text`, its lookup is by
+  `std::path` text), the owner rules, and the index. A test hands the card app text (`test_support::native_app_path`),
+  so a Windows scratch dir reads `C:/…`.
 - **`Local`**: `probe` on the about pool under `PROBE_BUDGET` (1.5 s; past it, `Unreachable`). The probe is one `lstat`,
   `place`'s walk (below), for a dotted folder one `NSURLIsPackageKey` lookup, and on a local disk the look for a repo
   around the item (`git::repo_around`, through the app's repo cache), so the plan knows whether it has a git row.

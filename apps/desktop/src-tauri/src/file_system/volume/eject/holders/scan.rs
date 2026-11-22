@@ -28,7 +28,7 @@ pub(super) use macos::{executable_path, scan_path};
 mod macos {
     use std::ffi::{CString, OsString, c_char, c_int, c_void};
     use std::os::unix::ffi::{OsStrExt, OsStringExt};
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
 
     use super::super::{HolderKind, PathScan, VolumeHolder, root_device, scan_path_with};
 
@@ -135,7 +135,7 @@ mod macos {
     /// named.
     fn name_of(pid: u32) -> Option<VolumeHolder> {
         let executable = executable_path(pid)?;
-        let name = Path::new(&executable).file_name()?.to_string_lossy().into_owned();
+        let name = executable.file_name()?.to_string_lossy().into_owned();
         Some(VolumeHolder {
             pid,
             name,
@@ -145,7 +145,7 @@ mod macos {
     }
 
     /// The executable behind `pid`, `None` when the process has gone or isn't visible.
-    pub(in crate::file_system::volume::eject::holders) fn executable_path(pid: u32) -> Option<OsString> {
+    pub(in crate::file_system::volume::eject::holders) fn executable_path(pid: u32) -> Option<PathBuf> {
         let pid = c_int::try_from(pid).ok()?;
         let mut buffer = vec![0u8; PID_PATH_MAX];
         let size = u32::try_from(buffer.len()).ok()?;
@@ -157,6 +157,6 @@ mod macos {
             return None;
         }
         buffer.truncate(usize::try_from(written).ok()?);
-        Some(OsString::from_vec(buffer))
+        Some(PathBuf::from(OsString::from_vec(buffer)))
     }
 }

@@ -11,12 +11,14 @@
 //! feature, so prod and dev binaries never link it, and it never touches the OS.
 //! Specs read it back through the `e2e_opened_paths` command.
 
-use std::path::PathBuf;
 use std::sync::{LazyLock, Mutex};
 
 use crate::ignore_poison::IgnorePoison;
 
-static OPENED: LazyLock<Mutex<Vec<PathBuf>>> = LazyLock::new(|| Mutex::new(Vec::new()));
+/// The text each action would hand the other app, as it handed it over: a pane's app path for
+/// `open_path` and a reveal, the native spelling for the editor and terminal. Never read as a
+/// path here, so no crossing.
+static OPENED: LazyLock<Mutex<Vec<String>>> = LazyLock::new(|| Mutex::new(Vec::new()));
 
 /// Records an open request without launching anything.
 pub fn record(path: String) {
@@ -25,11 +27,11 @@ pub fn record(path: String) {
         "[mock] external open recorded (not launched): {path}",
         path = cmdr_fs::log_private::LogPrivate::path(&path)
     );
-    OPENED.lock_ignore_poison().push(PathBuf::from(path));
+    OPENED.lock_ignore_poison().push(path);
 }
 
 /// Returns the paths opened so far, oldest first.
-pub fn snapshot() -> Vec<PathBuf> {
+pub fn snapshot() -> Vec<String> {
     OPENED.lock_ignore_poison().clone()
 }
 

@@ -438,10 +438,9 @@ pub(super) fn done_keys(generations: &[Generation]) -> HashSet<String> {
 
 /// The output folder: `CMDR_VERDICT_EVAL_OUT`, else one under the system temp folder.
 pub(super) fn out_dir() -> PathBuf {
-    let dir = std::env::var("CMDR_VERDICT_EVAL_OUT")
-        .map(PathBuf::from)
+    let dir = crate::native_text::env_path("CMDR_VERDICT_EVAL_OUT")
         // allowed-fixed-temp-dir: the results must outlive the test process (they're read, resumed, and rerun into)
-        .unwrap_or_else(|_| std::env::temp_dir().join("cmdr-about-verdict-eval"));
+        .unwrap_or_else(|| std::env::temp_dir().join("cmdr-about-verdict-eval"));
     std::fs::create_dir_all(&dir).expect("make the output folder");
     dir
 }

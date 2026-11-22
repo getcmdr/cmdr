@@ -123,7 +123,7 @@ pub(crate) fn walk(path: &Path, item: TheItem, mounts: &Mounts, fs: &dyn LocalFs
         };
     }
     let mut todo: VecDeque<OsString> = components(path).collect();
-    let mut current = PathBuf::from("/");
+    let mut current = root_of(path);
     let mut links = 0;
     let rest =
         |current: &Path, todo: &VecDeque<OsString>| todo.iter().fold(current.to_path_buf(), |at, part| at.join(part));
@@ -176,7 +176,7 @@ pub(crate) fn walk(path: &Path, item: TheItem, mounts: &Mounts, fs: &dyn LocalFs
             }
         };
         if target.is_absolute() {
-            current = PathBuf::from("/");
+            current = root_of(&target);
         }
         for part in components(&target).collect::<Vec<_>>().into_iter().rev() {
             todo.push_front(part);
@@ -186,6 +186,14 @@ pub(crate) fn walk(path: &Path, item: TheItem, mounts: &Mounts, fs: &dyn LocalFs
         path: current,
         end: End::LocalDisk,
     }
+}
+
+/// Where an absolute `path` starts: `/`, or on Windows its drive or share root (`C:\`), so the
+/// walk places each component under the mount the table names it by.
+fn root_of(path: &Path) -> PathBuf {
+    path.ancestors()
+        .last()
+        .map_or_else(|| PathBuf::from("/"), Path::to_path_buf)
 }
 
 /// `path`'s named components, `..` kept as a step back.

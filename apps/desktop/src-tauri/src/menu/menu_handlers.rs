@@ -565,19 +565,17 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, source: Pi
     // `MenuState.context.open_with_apps` and call the launch helper directly.
     #[cfg(target_os = "macos")]
     if let Some(bundle_id) = id.strip_prefix(super::open_with::OPEN_WITH_ID_PREFIX) {
-        use std::path::PathBuf;
-
         let menu_state = app.state::<MenuState<tauri::Wry>>();
         let ctx = menu_state.context.lock_ignore_poison();
         let app_path = ctx.open_with_apps.get(bundle_id).cloned();
-        let paths: Vec<PathBuf> = ctx.paths.iter().map(PathBuf::from).collect();
+        let rows = ctx.paths.clone();
         let listing_id = ctx.listing_id.clone();
         drop(ctx);
 
         if let Some(app_path) = app_path
-            && !paths.is_empty()
+            && !rows.is_empty()
         {
-            super::open_with::launch_with(app, paths, app_path, &listing_id);
+            super::open_with::launch_with(app, &rows, app_path, &listing_id);
         } else {
             log::warn!("Open with: missing app or paths for {bundle_id}");
         }
@@ -588,20 +586,19 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, source: Pi
     #[cfg(target_os = "macos")]
     if id == super::open_with::OPEN_WITH_OTHER_ID {
         use crate::file_system::open_with::pick_app_via_open_panel;
-        use std::path::PathBuf;
 
         let menu_state = app.state::<MenuState<tauri::Wry>>();
         let ctx = menu_state.context.lock_ignore_poison();
-        let paths: Vec<PathBuf> = ctx.paths.iter().map(PathBuf::from).collect();
+        let rows = ctx.paths.clone();
         let listing_id = ctx.listing_id.clone();
         drop(ctx);
 
         // NSOpenPanel must run on the main thread. on_menu_event is invoked on
         // the main thread by Tauri/muda, so this is safe.
         if let Some(app_path) = pick_app_via_open_panel()
-            && !paths.is_empty()
+            && !rows.is_empty()
         {
-            super::open_with::launch_with(app, paths, app_path, &listing_id);
+            super::open_with::launch_with(app, &rows, app_path, &listing_id);
         }
         return;
     }

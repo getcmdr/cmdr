@@ -86,7 +86,7 @@ impl XattrSyscalls for Darwin {
     }
 }
 
-pub(crate) fn download(path: &str) -> Fact<Download> {
+pub(crate) fn download(path: &Path) -> Fact<Download> {
     download_with::<Darwin>(path, MAX_XATTR_BYTES, download_record)
 }
 
@@ -96,7 +96,7 @@ pub(crate) fn download_record(read: super::ReadXattr<'_>) -> Fact<Download> {
     download_fact(where_froms.as_deref(), quarantine.as_deref())
 }
 
-pub(crate) fn default_app(path: &str) -> Fact<AppRef> {
+pub(crate) fn default_app(path: &Path) -> Fact<AppRef> {
     let Some(app) = default_app_path(path) else {
         // LaunchServices names no app for it.
         return Fact::unknown(UnknownWhy::NoRecord);
@@ -110,11 +110,11 @@ pub(crate) fn default_app(path: &str) -> Fact<AppRef> {
 }
 
 /// `URLForApplicationToOpenURL:` (macOS 10.6): the one app a double-click opens it with.
-fn default_app_path(path: &str) -> Option<PathBuf> {
+fn default_app_path(path: &Path) -> Option<PathBuf> {
     use objc2_app_kit::NSWorkspace;
     use objc2_foundation::{NSString, NSURL};
     objc2::rc::autoreleasepool(|_| {
-        let url = NSURL::fileURLWithPath(&NSString::from_str(path));
+        let url = NSURL::fileURLWithPath(&NSString::from_str(path.to_str()?));
         let app = NSWorkspace::sharedWorkspace().URLForApplicationToOpenURL(&url)?;
         app.path().map(|path| Path::new(&path.to_string()).to_path_buf())
     })
