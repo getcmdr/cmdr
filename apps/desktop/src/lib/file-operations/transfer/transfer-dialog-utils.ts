@@ -177,6 +177,15 @@ export function toBackendSelectionOrCursor(
 }
 
 /**
+ * On Windows a POSIX `/Users/x` is a drive's or share's own (`wire_path::anchored` reads it
+ * as `C:/Users/x` on `C:/`), already volume-relative: collapsed, it copied into the root.
+ */
+function isPosixOnADrive(fullPath: string, volumePath: string): boolean {
+  const rootKind = parsePath(volumePath)?.kind
+  return (rootKind === 'drive' || rootKind === 'unc') && fullPath.startsWith('/') && !fullPath.startsWith('//')
+}
+
+/**
  * Strips the volume prefix to get a volume-relative path: a `/`-prefixed string, which
  * is what the destination box's absolute-path check demands, a drive or share path off
  * the volume kept whole (the backend refuses it as another volume's), or `''` for a path
@@ -203,12 +212,7 @@ export function toVolumeRelativePath(fullPath: string, volumePath: string): stri
   // the boot drive's root, `C:/`).
   const kind = parsePath(fullPath)?.kind
   if (kind === 'drive' || kind === 'unc') return fullPath
-  // On Windows a POSIX `/Users/x` is the volume's own (`wire_path::anchored` reads it as
-  // `C:/Users/x` on `C:/`), already volume-relative: collapsed, it copied into the root.
-  const rootKind = parsePath(volumePath)?.kind
-  if ((rootKind === 'drive' || rootKind === 'unc') && fullPath.startsWith('/') && !fullPath.startsWith('//')) {
-    return fullPath
-  }
+  if (isPosixOnADrive(fullPath, volumePath)) return fullPath
   // A non-local volume whose caller already spelled the path volume-relative
   // ("/DCIM" against "mtp://device/storage"). Another volume's URL is not ours,
   // and echoing it into the box would just fail the absolute-path check.
