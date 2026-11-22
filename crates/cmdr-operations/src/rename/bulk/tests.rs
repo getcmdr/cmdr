@@ -234,7 +234,7 @@ async fn undo_of_an_untouched_batch_rename_restores_the_original_name() {
 
     let report = undo_loop.undo().await;
 
-    assert_eq!(report.reversed, 1, "an untouched rename reverses");
+    assert_eq!(report.reversed, 1, "an untouched rename reverses: {report:?}");
     assert_eq!(report.skipped, 0);
     assert_eq!(report.final_state, cmdr_operation_log::types::RollbackState::RolledBack);
     assert_eq!(fs::read_to_string(&source).expect("read restored source"), "reviewed");

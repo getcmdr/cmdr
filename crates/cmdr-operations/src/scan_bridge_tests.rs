@@ -680,6 +680,7 @@ async fn a_trash_frees_its_preview_instead_of_waiting_on_it() {
 /// and the planner's walk down the same tree at once. The copy-path tests all
 /// pass without the threading, so this is the one that catches it.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[cfg(unix)] // windows-port plan task 35: `LocalWindowsVolume` has no `write_from_stream` yet, so the fresh zip (direct or through its local spool) refuses `NotSupported`
 async fn a_compress_confirmed_mid_scan_awaits_its_preview() {
     use cmdr_fs::volume::Volume;
     use cmdr_local::LocalVolume;

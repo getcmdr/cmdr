@@ -229,7 +229,11 @@ fn important_folders_hands_over_the_live_share_and_list_dir_reads_it() {
         NOW,
     );
     let mount = lan_mount();
-    let lan_root = mount.to_string_lossy().into_owned();
+    // The share's root as a volume spells it (an app path: `C:/Users/…` on Windows), so the
+    // rows the facts hand over join under it the way the live read answers them.
+    let lan_root = cmdr_fs::app_path::AppPathBuf::from_native(&mount)
+        .expect("a scratch dir is an app path")
+        .into_string();
     let facts = conversation_179_with(&lan_root, ConnectionState::Direct);
 
     let ranked = important_folders_on(&data, &facts, &json!({}), NOW).expect("answers");

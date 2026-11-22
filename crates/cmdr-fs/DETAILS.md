@@ -317,7 +317,12 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   (`apps/desktop/src/lib/path/escape.test.ts`).
 - **Tests rooted in a scratch dir** take `testing::AppTestDir`: the dir plus its app path, 8.3 names expanded on Windows
   first (`GetLongPathNameW`), since a listing never shows a short name. The expansion is `app_path::expand_short_names`,
-  which production's inbound crossings ask too (the Windows local volume's root).
+  which production's inbound crossings ask too (the Windows local volume's root). Every scratch dir already sits under
+  `testing::scratch_root` (`TEMP` spelled long on Windows): `TestDir` creates there, and a load-time hook in
+  `testing/platform/windows.rs` (`ctor`) points `tempfile`'s default folder there too, so a bare `tempfile::tempdir()`
+  in any test binary linking `testing` reads long as well. Why: CI's `TEMP` is `C:\Users\RUNNER~1\…` while a Windows
+  volume answers long, so a fixture path built from `TEMP` failed on the spelling alone. `std::env::temp_dir()` keeps
+  the OS's spelling, so production code under test still meets a short `TEMP`.
 
 ## The browser build
 
