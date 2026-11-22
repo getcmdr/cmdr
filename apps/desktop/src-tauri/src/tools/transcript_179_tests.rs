@@ -9,8 +9,6 @@
 //! The model guessed `/Volumes/testshare/documents`, a dead mount point, and read
 //! `root`'s fresh, empty, "authoritative" answer three times.
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
-
 use std::path::Path;
 use std::sync::Arc;
 

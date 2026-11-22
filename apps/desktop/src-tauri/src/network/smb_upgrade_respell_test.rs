@@ -7,7 +7,7 @@
 //! fixture's Samba stores names as sent, the way David's QNAP does: without the
 //! respell the swap leaves a pane whose every accented entry opens nowhere.
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+#![cfg(any(target_os = "macos", target_os = "linux"))] // Builds on `backend_suites::smb_test_support`, which the Docker SMB fixtures keep to macOS and Linux
 
 use super::*;
 use crate::operations_host::backend_suites::smb_test_support::*;

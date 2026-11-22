@@ -6,7 +6,7 @@
 //! archive read through the view (they list and copy out), and nothing writes
 //! into it or moves out of it: a snapshot can't be rewritten.
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+#![cfg(unix)] // Builds on `restic::test_repo`, which is POSIX (modes, symlinks, a FIFO)
 
 use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};

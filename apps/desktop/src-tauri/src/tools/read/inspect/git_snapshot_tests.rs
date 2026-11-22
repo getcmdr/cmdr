@@ -6,8 +6,6 @@
 //! rows (the entry listing, the encrypted and corrupt verdicts); this one is the
 //! plain-file half every other route gets.
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
-
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;

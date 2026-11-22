@@ -535,7 +535,7 @@ async fn a_volume_copy_onto_a_local_disk_announces_its_destination_and_temp() {
 /// The volume engine's same-volume move on a local disk
 /// (`EngineHost::announce_on`).
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-#[cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
+#[cfg(unix)] // Windows: nothing lands under the rig, likely the `%TEMP%` short name the volume spells long, not yet pinned down (#1351)
 async fn a_same_volume_move_on_a_local_disk_announces_both_ends() {
     let rig = Rig::new("announce_volume_move");
     fs::write(rig.join("src/a.txt"), b"a").expect("source");

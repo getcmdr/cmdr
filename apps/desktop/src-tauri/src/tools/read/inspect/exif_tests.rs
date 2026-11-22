@@ -3,8 +3,6 @@
 //! and inside a zip). HEIF isn't authored here: `exif::experimental::Writer` writes TIFF
 //! blocks, not ISO-BMFF boxes, so the HEIC container rides `kamadak-exif`'s own tests.
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
-
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;

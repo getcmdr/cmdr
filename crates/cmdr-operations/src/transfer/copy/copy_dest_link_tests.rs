@@ -174,7 +174,6 @@ fn a_renaming_copy_lands_beside_a_deep_dest_link() {
 /// FOLDER landing on a non-folder, once, and the folder replaces the LINK. The
 /// target keeps every byte.
 #[test]
-#[cfg(unix)] // Windows: not yet pinned down (#1351)
 fn an_answered_overwrite_replaces_a_deep_dest_link_never_its_target() {
     let engine = TestOperations::new();
     let dir = temp("answered");
@@ -203,9 +202,11 @@ fn an_answered_overwrite_replaces_a_deep_dest_link_never_its_target() {
             prompts[0]
         );
         assert_eq!(prompts[0].source_path, album.join("link").display().to_string());
+        // Joined name by name: the prompt names the native path, and on Windows
+        // `join("album/link")` keeps the `/` in its text.
         assert_eq!(
             prompts[0].destination_path,
-            dst.join("album/link").display().to_string()
+            dst.join("album").join("link").display().to_string()
         );
     }
     assert_target_untouched(&target, "answered Overwrite");
