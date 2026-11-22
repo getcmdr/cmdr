@@ -64,6 +64,9 @@ mod hardlink_progress_tests;
 /// A volume delete removes a symbolic link and never walks into its target (#505).
 #[cfg(test)]
 mod link_delete_tests;
+/// The local walker removes a folder link as the link and never walks into it (#1386).
+#[cfg(test)]
+mod local_link_delete_tests;
 #[cfg(test)]
 mod preview_binding_tests;
 // The nested-mount pins (macOS, `#[ignore]`d, run by `pnpm check disk-images`). The
