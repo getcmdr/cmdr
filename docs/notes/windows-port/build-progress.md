@@ -442,6 +442,16 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   `real-windows-check-2026-11-19.md` § "Task 36's delete on the desktop". Gotchas: an SSH session's child processes die
   with it, so a build or a held-file fixture runs through `run-on-desktop.sh`; nextest output carries `\r`, so strip it
   before comparing names with the TSV. `cmdr-m6` is back on `origin/main`, clean.
+- **2026-11-21, task 35's listing watch** (#1330; the warm pair, `CARGO_BUILD_JOBS=2`; a debug app build 10–12 min
+  warm): `LocalWindowsVolume` arms the `ReadDirectoryChangesW` watch, and `vendor/notify` reports overflows and a
+  deleted root (#1128). Suites: `windows-test-failures.md` § "By milestone", task 35's listing watch. On the desktop,
+  driven by Cmdr's MCP server and PowerShell, the pane followed creates, renames (case-only too), deletes, a size
+  change, a 3,000-file burst, a 20,000-file delete that overflowed, and its own folder's deletion
+  (`apps/desktop/src-tauri/src/file_system/DETAILS.md` § "Windows listing watches"). Gotchas: `cmdr://state`'s rows lag
+  a same-count change (#1343), so check a rename by screenshot; the app's file log ignores `RUST_LOG`, so a third-party
+  crate's trace (`notify`) never reaches it, and a small standalone harness against `vendor/notify` was the quicker
+  probe; a `.cmd` job that runs `pnpm` needs `call`, or the job's last line never runs; a job started with
+  `Invoke-CimMethod Win32_Process Create` outlives the SSH session. `cmdr-m6` is back on `origin/main`, clean.
 - **2026-11-22, PR #1349's move of read-only files and "Go to Recycle Bin"** (the warm pair, `CARGO_BUILD_JOBS=2`,
   `pnpm tauri build --debug --no-bundle` 14m 31s warm through `run-on-desktop.sh`): on the desktop,
   `real-windows-check-2026-11-19.md` § "PR #1349 on the desktop". Gotcha: with the drive index on, the app held about

@@ -11,7 +11,7 @@ use cmdr_fs::entry::FileEntry;
 use super::super::{ListingDir, ListingTally, Pick, bulk};
 use super::OsFields;
 
-pub(crate) use super::unix::{located, lstat, mode_of, read_dir, stat, text_child};
+pub(crate) use super::unix::{app_spelling_of, located, lstat, mode_of, named_exactly, read_dir, stat, text_child};
 
 /// Whether a POSIX entry's `st_flags` carries `UF_HIDDEN`, what `chflags hidden` sets. Reads
 /// a field the `lstat` that produced `metadata` already fetched, so it costs no syscall.

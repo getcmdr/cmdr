@@ -167,8 +167,8 @@
       "outsideSeam": 3
     },
     "apps/desktop/src-tauri/src/file_system/watcher.rs": {
-      "negated": 3,
-      "outsideSeam": 7
+      "negated": 2,
+      "outsideSeam": 5
     },
     "apps/desktop/src-tauri/src/file_viewer/materialize.rs": {
       "outsideSeam": 2

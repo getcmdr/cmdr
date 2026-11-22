@@ -358,3 +358,92 @@ async fn a_relative_bridge_path_lands_under_the_root_and_a_dot_dot_is_refused() 
     assert!(refused.is_err(), "{refused:?}");
     assert!(!test_dir.join("three.txt").exists());
 }
+
+/// A case-only rename's old spelling reads as gone to the watcher's stat, though NTFS's own stat
+/// still answers for it, and the new one as the entry under its own name.
+#[test]
+fn a_case_only_rename_leaves_the_old_spelling_gone_for_the_watcher() {
+    use crate::reading::get_single_entry;
+
+    let test_dir = TestDir::new("win_case_rename");
+    let root = app_root(&test_dir);
+    std::fs::write(test_dir.join("a.txt"), b"x").expect("write");
+    std::fs::rename(test_dir.join("a.txt"), test_dir.join("A.txt")).expect("case-only rename");
+
+    let root = root.to_str().expect("unicode");
+    let old = std::path::PathBuf::from(format!("{root}/a.txt"));
+    let new = std::path::PathBuf::from(format!("{root}/A.txt"));
+    assert!(std::fs::metadata(&old).is_ok(), "NTFS answers case-insensitively");
+    let err = get_single_entry(&old).expect_err("the old spelling isn't on disk");
+    assert_eq!(err.kind(), std::io::ErrorKind::NotFound);
+    let entry = get_single_entry(&new).expect("the new spelling is");
+    assert_eq!(entry.name, "A.txt");
+    assert_eq!(
+        get_single_entry(&test_dir.join("gone.txt"))
+            .expect_err("nothing there")
+            .kind(),
+        std::io::ErrorKind::NotFound
+    );
+}
+
+/// A watch opens the folder's verbatim form, so a path past `MAX_PATH` arms, and its event
+/// paths come back in the app spelling the listing and its rows carry.
+#[test]
+fn a_watch_opens_the_verbatim_path_and_its_events_read_back_in_the_app_spelling() {
+    use crate::reading::{listing_spelling_of, watch_os_path};
+    use std::path::{Path, PathBuf};
+
+    assert_eq!(
+        watch_os_path(Path::new("C:/Users/test_user_1")).expect("an app path"),
+        PathBuf::from(r"\\?\C:\Users\test_user_1")
+    );
+    assert_eq!(
+        listing_spelling_of(Path::new(r"\\?\C:\Users\test_user_1\a.txt")),
+        PathBuf::from("C:/Users/test_user_1/a.txt")
+    );
+    assert_eq!(
+        listing_spelling_of(Path::new(r"\\?\UNC\testnas.local\share\x\a.txt")),
+        PathBuf::from("//testnas.local/share/x/a.txt")
+    );
+
+    let test_dir = TestDir::new("win_watch_long");
+    let mut long = app_root(&test_dir).to_str().expect("unicode").to_owned();
+    while long.len() < 300 {
+        long.push_str("/a-folder-name-of-forty-characters-123456");
+    }
+    let os = watch_os_path(Path::new(&long)).expect("a long app path");
+    std::fs::create_dir_all(&os).expect("the verbatim form makes a long path");
+    assert!(os.is_dir());
+    assert_eq!(
+        listing_spelling_of(&os.join("x.txt")),
+        PathBuf::from(format!("{long}/x.txt"))
+    );
+}
+
+/// A local drive carries a listing watch (#1330), and its coverage is the host's answer for the
+/// folder in the app spelling the listing cache keys on (`C:/…`, never `\\?\C:\…`): the
+/// watcher decided it at arm time from the drive kind.
+#[test]
+fn a_local_drive_watches_its_listings_and_asks_the_host_in_the_app_spelling() {
+    use cmdr_fs::volume::WatchCoverage;
+    use cmdr_fs::volume::host::VolumeHost;
+    use cmdr_fs::volume::host::listings::RecordingListings;
+    use std::sync::Arc;
+
+    let test_dir = TestDir::new("win_watch_coverage");
+    let shown = app_root(&test_dir.join("shown"));
+    let listings = RecordingListings::new().with_local_watch_coverage(shown, WatchCoverage::EveryWriter);
+    let host = VolumeHost::builder().listings(Arc::new(listings)).build();
+    let root = cmdr_fs::app_path::AppPathBuf::from_native_unicode(&test_dir).expect("the test folder is an app path");
+    let volume = crate::LocalWindowsVolume::local_folder_at("Test", root, host);
+
+    assert!(volume.can_watch_listings());
+    assert_eq!(
+        volume.listing_watch_coverage(&at(&volume, "shown")),
+        WatchCoverage::EveryWriter
+    );
+    assert_eq!(
+        volume.listing_watch_coverage(&at(&volume, "elsewhere")),
+        WatchCoverage::None
+    );
+}
