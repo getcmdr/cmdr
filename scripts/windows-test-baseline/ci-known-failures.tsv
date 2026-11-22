@@ -2,7 +2,6 @@
 # status: `fails` (fails on the hosted runner today; passing turns the job red until the entry goes), `flaky` (either outcome is fine; say why it flips), `builder` (left out of the hosted run; the Windows builder covers it, and the reason names what the runner lacks).
 # Tighten for free: `go -C scripts/windows-test-baseline run . ratchet -run <run-id> -write`. Loosen only with a reason: add `-add "<reason>"`.
 crate	test	status	reason
-cmdr	about::model::tests::a_path_the_gate_protects_leaves_name_level_facts_only	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	about::tests::a_cancel_mid_way_stops_queued_jobs_and_leaves_no_late_events	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	about::tests::a_container_is_never_looked_inside	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	about::tests::a_file_with_no_download_record_says_so_as_a_routine_absence	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
@@ -11,7 +10,6 @@ cmdr	about::tests::a_row_past_its_budget_lands_as_timed_out_and_its_late_answer_
 cmdr	about::tests::a_slow_card_cant_starve_the_next_cards_rows	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	about::tests::library_folders_answer_their_owner_through_the_card	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	about::through_tests::a_share_that_stopped_answering_gets_its_card_at_once_and_says_so_once	fails	timed out on the hosted runner, cause unread (windows-test-failures.md)
-cmdr	about::through_tests::an_archive_entry_names_its_archive_with_the_archives_own_record	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	about::verdict::tests::a_pictures_tags_and_text_ride_the_take_inside_the_fence	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	about::verdict::tests::a_reopen_on_the_same_node_reuses_the_verdict	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	about::verdict::tests::a_verdict_streams_after_the_plan_with_its_given_line_first	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
@@ -33,8 +31,6 @@ cmdr	data_wipe::plan::tests::a_production_mac_plans_every_folder_and_file_cmdr_k
 cmdr	data_wipe::plan::tests::an_e2e_run_nests_its_cache_and_logs_inside_the_data_dir	fails	a Windows-only expectation the test does not hold yet (windows-test-failures.md)
 cmdr	data_wipe::plan::tests::linux_plans_no_library_state	fails	a Windows-only expectation the test does not hold yet (windows-test-failures.md)
 cmdr	data_wipe::plan::tests::the_security_event_log_goes_with_the_wipe	fails	a Windows-only expectation the test does not hold yet (windows-test-failures.md)
-cmdr	favorites::target::tests::a_local_folder_is_stat_and_reads_yes_or_no	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
-cmdr	favorites::target::tests::a_protected_folder_is_taken_on_trust_without_a_stat	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	go_to_path::tests::typing_a_path_into_a_zip_enters_it_as_a_directory	fails	#1337: a typed path holding an 8.3 short name (the runner TEMP is RUNNER~1) answers in its short spelling, where listings and the expectation use the long one
 cmdr	instance_lock::tests::a_lock_held_on_any_one_of_the_three_dirs_refuses_a_second_claim	fails	a product gap on Windows (windows-test-failures.md)
 cmdr	instance_lock::tests::acquiring_stamps_our_pid_and_names_the_holder	fails	a product gap on Windows (windows-test-failures.md)
