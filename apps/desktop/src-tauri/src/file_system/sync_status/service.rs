@@ -276,6 +276,16 @@ impl Service {
             return Arc::clone(current);
         }
 
+        // ❗ The batch can finish between the caller's cache read and this lock: its answers
+        // are cached now, so waiting on it (instant) and reading again re-asks the provider
+        // nothing. Without this, a fresh fan-out probed paths the cache already held.
+        if let Some(current) = inflight.as_ref()
+            && current.covers(misses)
+            && misses.iter().all(|path| self.shared.cached(path).is_some())
+        {
+            return Arc::clone(current);
+        }
+
         if let Some(previous) = inflight.take() {
             if !previous.is_done() {
                 log::debug!(

@@ -34,6 +34,11 @@ The old shape was: `commands/sync_status.rs` wrapped a `std::thread::scope` fan-
 Each is addressed by one piece: (1) the deadline now bounds only the wait, and the batch carries a cancellation flag;
 (2) the pool; (3) the cache; (4) join-or-supersede.
 
+Gotcha (join-or-supersede): a batch can finish between a caller's cache read and `join_or_start`'s lock, so the paths
+it missed are cached by then. `join_or_start` re-reads them under the lock and returns that finished batch (waiting is
+instant) instead of starting a fan-out that re-probes them. Why: the two coalescing tests flaked on it once the cache
+read grew a typed parse (each row crosses to its native file, `app_text::native`).
+
 ## Decision: bound the leak, but replace lost workers
 
 **Why:** a fixed-size pool is the obvious answer and it's wrong on its own. An XPC call into a provider that stops
