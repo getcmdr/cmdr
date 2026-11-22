@@ -13,9 +13,8 @@
 //!
 //! A check has no time limit: it reports its count and stops when told ([`super::check`]).
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic};
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use cmdr_fs::deadline::BlockingBudget;
@@ -30,6 +29,7 @@ use super::store::{
 };
 use crate::agent::AgentDb;
 use crate::agent::store::proposals::AcceptanceOutcome;
+use crate::commands::wire_path::{as_sent_std_path, read_on_volume};
 use cmdr_operations::same_local_file;
 
 /// A row's user-action-time validation result. It deliberately contains no
@@ -219,14 +219,37 @@ async fn folder_name_rules(proposal: &RenameProposal) -> NameRules {
     };
     let engine = engine.clone();
     let volume_id = proposal.volume_id.clone();
-    let folder = Path::new(&row.source_path)
-        .parent()
-        .unwrap_or(Path::new(""))
-        .to_path_buf();
+    // The write engine's name rules still take the folder as `std::path` text (10d's starts).
+    let folder = as_sent_std_path(
+        row_source(row)
+            .as_deref()
+            .and_then(PathArithmetic::parent)
+            .map_or("", AppPath::as_str),
+    );
     cmdr_fs::deadline::blocking_with_timeout(NAME_RULES_TIMEOUT, NameRules::POSIX, move || {
         engine.name_rules_at(&volume_id, &folder)
     })
     .await
+}
+
+/// A stored row's source as the app path it names. Rows were plain app paths when the plan
+/// staged them (`rows.rs::is_plain_path`).
+fn row_source(row: &RenameProposalRow) -> Option<AppPathBuf> {
+    read_on_volume(&row.source_path).ok()
+}
+
+/// Where a row renames its file to: its new name in the source's folder, by the app path's
+/// own join (a `Path` join gave `C:/x\b.jpg` on Windows, so a cycle or a swap went unseen).
+/// `None` when the name can't be one name there.
+fn row_destination(row: &RenameProposalRow) -> Option<AppPathBuf> {
+    let source = row_source(row)?;
+    let name = AppName::from_app_spelling(&row.destination_name).ok()?;
+    source.parent()?.join(name).ok()
+}
+
+/// [`row_destination`]'s comparison key, the fold every rename check compares sources with.
+fn destination_key(row: &RenameProposalRow) -> Option<String> {
+    row_destination(row).map(|destination| cmdr_index::store::normalize_for_comparison(destination.as_str()))
 }
 
 /// Blocks each allowed row whose new name the folder refuses, and warns on one it takes but
@@ -240,6 +263,11 @@ fn mark_name_rules(
         let Some(status) = statuses.get_mut(&row.row_id) else {
             continue;
         };
+        // A name the folder can't hold as one name (a `\` under a drive folder) is one it refuses.
+        if row_destination(row).is_none() {
+            block(status, BulkRenameBlockReason::NameNotAllowed);
+            continue;
+        }
         match validate_filename(&row.destination_name, rules) {
             Err(_) => block(status, BulkRenameBlockReason::NameNotAllowed),
             Ok(Some(_)) => status.warnings.push(BulkRenameWarning::NotPortable),
@@ -363,17 +391,24 @@ pub(super) fn preflight_local(
         if status.status == BulkRenameRowStatus::Blocked {
             continue;
         }
-        let source = PathBuf::from(&row.source_path);
-        let source_meta = match std::fs::symlink_metadata(&source) {
+        // The local disk, so each typed path crosses to its native file here, after the split.
+        let (Some(source), Some(destination)) = (row_source(row), row_destination(row)) else {
+            block(status, BulkRenameBlockReason::SourceMissing);
+            continue;
+        };
+        let (Ok(native_source), Ok(native_destination)) = (source.to_native(), destination.to_native()) else {
+            block(status, BulkRenameBlockReason::SourceMissing);
+            continue;
+        };
+        let source_meta = match std::fs::symlink_metadata(&native_source) {
             Ok(metadata) if !metadata.file_type().is_dir() => metadata,
             _ => {
                 block(status, BulkRenameBlockReason::SourceMissing);
                 continue;
             }
         };
-        let destination = source.parent().unwrap_or(Path::new("")).join(&row.destination_name);
-        if !allowed_sources.contains(destination.to_string_lossy().as_ref()) {
-            match std::fs::symlink_metadata(&destination) {
+        if !allowed_sources.contains(destination.as_str()) {
+            match std::fs::symlink_metadata(&native_destination) {
                 Ok(destination_meta) if !same_local_file(&source_meta, &destination_meta) => {
                     block(status, BulkRenameBlockReason::TargetExists);
                     continue;
@@ -420,21 +455,18 @@ async fn preflight_remote(
         if status.status == BulkRenameRowStatus::Blocked {
             continue;
         }
-        let source = Path::new(&row.source_path);
-        let source_meta = match volume.get_metadata(&AppPath::legacy_unchecked(source)).await {
+        let (Some(source), Some(destination)) = (row_source(row), row_destination(row)) else {
+            block(status, BulkRenameBlockReason::SourceMissing);
+            continue;
+        };
+        let source_meta = match volume.get_metadata(&source).await {
             Ok(metadata) if !metadata.is_directory => metadata,
             _ => {
                 block(status, BulkRenameBlockReason::SourceMissing);
                 continue;
             }
         };
-        let destination = source.parent().unwrap_or(Path::new("")).join(&row.destination_name);
-        if !allowed_sources.contains(destination.to_string_lossy().as_ref())
-            && volume
-                .get_metadata(&AppPath::legacy_unchecked(&destination))
-                .await
-                .is_ok()
-        {
+        if !allowed_sources.contains(destination.as_str()) && volume.get_metadata(&destination).await.is_ok() {
             block(status, BulkRenameBlockReason::TargetExists);
             continue;
         }
@@ -477,9 +509,10 @@ pub(super) fn initial_rows(
 }
 
 pub(super) fn rename_warnings(source_path: &str, destination_name: &str) -> Vec<BulkRenameWarning> {
-    let source_name = Path::new(source_path)
-        .file_name()
-        .and_then(|name| name.to_str())
+    let source = read_on_volume(source_path).ok();
+    let source_name = source
+        .as_deref()
+        .and_then(PathArithmetic::file_name)
         .unwrap_or(source_path);
     if extensions_match(source_name, destination_name) {
         Vec::new()
@@ -528,17 +561,11 @@ pub(super) fn mark_duplicate_destinations(
     statuses: &mut HashMap<String, BulkRenamePreflightRow>,
 ) {
     let mut grouped: HashMap<String, Vec<&str>> = HashMap::new();
+    // A row with no destination is blocked already (`mark_name_rules`).
     for row in rows {
-        let destination = Path::new(&row.source_path)
-            .parent()
-            .unwrap_or(Path::new(""))
-            .join(&row.destination_name);
-        grouped
-            .entry(cmdr_index::store::normalize_for_comparison(
-                &destination.to_string_lossy(),
-            ))
-            .or_default()
-            .push(&row.row_id);
+        if let Some(destination) = destination_key(row) {
+            grouped.entry(destination).or_default().push(&row.row_id);
+        }
     }
     for row_ids in grouped.values().filter(|row_ids| row_ids.len() > 1) {
         for row_id in row_ids {
@@ -574,12 +601,8 @@ pub(super) fn mark_cycle_warnings(rows: &[&RenameProposalRow], statuses: &mut Ha
             .filter(|row| remaining.contains(row.row_id.as_str()))
             .filter(|row| {
                 let source = cmdr_index::store::normalize_for_comparison(&row.source_path);
-                let destination = Path::new(&row.source_path)
-                    .parent()
-                    .unwrap_or(Path::new(""))
-                    .join(&row.destination_name);
-                let destination = cmdr_index::store::normalize_for_comparison(&destination.to_string_lossy());
-                source == destination || !source_keys.contains(&destination)
+                destination_key(row)
+                    .is_none_or(|destination| source == destination || !source_keys.contains(&destination))
             })
             .map(|row| row.row_id.as_str())
             .collect();

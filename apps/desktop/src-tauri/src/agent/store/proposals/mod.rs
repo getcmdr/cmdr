@@ -130,7 +130,7 @@ impl WritableDestination {
             return Err(UnwritableDestination::EscapeRangeName);
         }
         let typed = typed_place(&location.path).ok_or(UnwritableDestination::NotAPath)?;
-        if crate::file_system::volume::manager::path_routes_over_its_parent(std::path::Path::new(&location.path)) {
+        if crate::file_system::volume::manager::app_path_routes_over_its_parent(&typed) {
             return Err(UnwritableDestination::Routed);
         }
         Ok(Self(Location {
@@ -364,14 +364,17 @@ pub(super) fn decode_token<T>(
 /// whenever a group's op list is (creation, amend), so the review names the folder from one
 /// column instead of streaming 60 000 paths on every refresh.
 pub(super) fn shared_parent<'a>(paths: impl IntoIterator<Item = &'a str>) -> Option<String> {
-    let mut shared: Option<&str> = None;
+    use cmdr_fs::app_path::PathArithmetic;
+    let mut shared: Option<AppPathBuf> = None;
     for path in paths {
-        let parent = std::path::Path::new(path).parent()?.to_str()?;
-        match shared {
-            None => shared = Some(parent),
-            Some(seen) if seen == parent => {}
+        // The app path's own parent: a `Path` parent split a name holding `\` on Windows.
+        let path = crate::commands::wire_path::read_on_volume(path).ok()?;
+        let parent = path.parent()?;
+        match &shared {
+            None => shared = Some(parent.to_owned()),
+            Some(seen) if **seen == *parent => {}
             Some(_) => return None,
         }
     }
-    shared.map(str::to_string)
+    shared.map(AppPathBuf::into_string)
 }

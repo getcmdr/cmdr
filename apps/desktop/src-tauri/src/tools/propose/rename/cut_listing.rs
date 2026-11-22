@@ -13,8 +13,8 @@
 //! ❌ Every property is a bucket or a categorical token. The folder path stays in memory
 //! here to match a plan to its listing and never reaches the event.
 
+use cmdr_fs::app_path::PathArithmetic;
 use std::collections::HashMap;
-use std::path::Path;
 use std::sync::Mutex;
 
 use serde::Deserialize;
@@ -24,6 +24,7 @@ use tauri::{AppHandle, Manager, Runtime};
 use super::store::RenameProposalSnapshot;
 use crate::agent::llm::types::AgentToolResult;
 use crate::analytics::item_count_bucket;
+use crate::commands::wire_path::read_on_volume;
 use crate::ignore_poison::IgnorePoison;
 use crate::tools::propose::evidence::EvidenceScope;
 
@@ -72,11 +73,11 @@ impl PaneListingCuts {
         if seen.returned >= seen.total {
             return None;
         }
-        let folder = Path::new(&seen.location.path);
+        let folder = read_on_volume(&seen.location.path).ok()?;
         let rows = plan
             .rows
             .iter()
-            .filter(|row| Path::new(&row.source_path).parent() == Some(folder))
+            .filter(|row| read_on_volume(&row.source_path).is_ok_and(|source| source.parent() == Some(&*folder)))
             .count();
         if rows == 0 {
             return None;

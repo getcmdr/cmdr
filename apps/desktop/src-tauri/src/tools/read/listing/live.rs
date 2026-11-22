@@ -250,8 +250,12 @@ pub(crate) fn gate_local(target: &LiveTarget, policy: &GatePolicy) -> Result<Str
             Ok(())
         }
     };
-    let root = physical_string(Path::new(&target.root), &check, policy)?;
-    let physical = physical_string(Path::new(&target.path), &check, policy)?;
+    // The resolver walks the text's components itself, a `..` included, the way the OS would
+    // (`app_text::native` refuses a `..`), so the text crosses as sent. It walks from `/`: POSIX
+    // only, as its cells are.
+    use crate::commands::wire_path::as_sent_std_path;
+    let root = physical_string(&as_sent_std_path(&target.root), &check, policy)?;
+    let physical = physical_string(&as_sent_std_path(&target.path), &check, policy)?;
     let ours = depth(&root);
     // A deeper live root holding the target is another volume's ground (a link
     // from the boot disk onto a share, or out of one share into another).
@@ -513,7 +517,8 @@ pub(crate) async fn read_live(
     if stop.is_cancelled() {
         return Err(LiveMiss::Cancelled);
     }
-    let path = PathBuf::from(path);
+    // The listing engine reads the folder as `std::path` text until its locations are typed.
+    let path = crate::commands::wire_path::as_sent_std_path(&path);
     let error = match cmdr_listing::entries_as_stored(volume.as_ref(), &path, Some(&stop)).await {
         Ok(entries) => return Ok(entries),
         Err(error) => error,

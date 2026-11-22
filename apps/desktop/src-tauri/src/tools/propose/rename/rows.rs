@@ -5,8 +5,8 @@
 //! answer rather than learning them one retry at a time. A plan-wide problem (no rows, a volume
 //! that isn't connected) stays a plain refusal: there's no row to name.
 
+use crate::commands::wire_path::as_sent_std_path;
 use std::collections::BTreeMap;
-use std::path::Path;
 
 use serde::Serialize;
 use serde_json::Value;
@@ -104,13 +104,13 @@ pub(super) fn own_problem(source_path: &str, volume_id: &str, destination_name: 
     // A repo's snapshots are read-only for the same reason: `.git/branches/…` has no file to
     // rename. Asked separately from the archive line above, which is a different question (a
     // portal path has no archive suffix to find).
-    if crate::file_system::git::wiring::portal_serves(Path::new(source_path)) {
+    if crate::file_system::git::wiring::portal_serves(&as_sent_std_path(source_path)) {
         return Some(RowProblem::InsideRepositoryHistory);
     }
     // And a restic backup's snapshots, for the same reason. Confirmed, ❌ not the bare name: a
     // real folder called `Browse snapshots` outside a repo holds real files a plan may rename.
     // From the hub's memo, no I/O.
-    if crate::file_system::restic::wiring::memo_says_in_a_restic_view(volume_id, Path::new(source_path)) {
+    if crate::file_system::restic::wiring::memo_says_in_a_restic_view(volume_id, &as_sent_std_path(source_path)) {
         return Some(RowProblem::InsideBackupSnapshots);
     }
     if super::plan::validate_destination_name(destination_name).is_err() {
@@ -172,7 +172,7 @@ pub(super) fn rows_rejected_reason(rejections: &[RowRejection], max_named: usize
 /// ever words a refusal the stat already earned (every row missing), so a real folder of that
 /// name outside a repo costs at most a more specific sentence, never a refused row.
 pub(super) fn looks_like_a_snapshot_view(path: &str) -> bool {
-    cmdr_fs::restic_view::restic_route(Path::new(path)).is_some()
+    cmdr_fs::restic_view::restic_route(&as_sent_std_path(path)).is_some()
 }
 
 fn by_problem(rejections: &[RowRejection]) -> BTreeMap<RowProblem, Vec<&str>> {

@@ -280,7 +280,8 @@ fn refresh_listing_tags(
     let volume_id = state.volume_id.as_deref().unwrap_or("root");
     let listings = crate::listing_host::listings();
     // The youngest listing showing the pane's folder, as the pane's own.
-    let showing = listings.listings_for_path_on_volume(volume_id, std::path::Path::new(&state.path));
+    let showing =
+        listings.listings_for_path_on_volume(volume_id, &crate::commands::wire_path::as_sent_std_path(&state.path));
     let listing = listings
         .summaries()
         .into_iter()

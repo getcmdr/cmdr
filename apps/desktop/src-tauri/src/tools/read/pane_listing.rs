@@ -2,7 +2,6 @@
 
 use cmdr_fs::entry::FileEntry;
 use std::collections::HashSet;
-use std::path::Path;
 
 use serde::Serialize;
 use serde_json::Value;
@@ -161,7 +160,7 @@ pub async fn execute_list_pane_files<R: Runtime>(app: &AppHandle<R>, _params: &V
         .as_deref()
         .ok_or_else(|| ToolError::internal("The focused pane's volume isn't available yet"))?;
     let entries = crate::listing_host::listings()
-        .cached_entries(volume_id, Path::new(&state.path))
+        .cached_entries(volume_id, &crate::commands::wire_path::as_sent_std_path(&state.path))
         .ok_or_else(|| ToolError::internal("The focused pane's listing isn't available yet"))?
         .into_iter()
         .map(PaneListingSource::from)

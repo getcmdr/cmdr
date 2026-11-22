@@ -5,6 +5,11 @@ use crate::agent::types::{ProposalStatus, ProposalVerb};
 
 const DIR: &str = "/trips/lisbon";
 
+/// [`DIR`] as the pane's typed folder.
+fn dir() -> &'static AppPath {
+    AppPath::from_normalized(DIR).expect("a canonical folder")
+}
+
 fn file(name: &str) -> FileEntry {
     FileEntry {
         size: Some(100),
@@ -148,7 +153,7 @@ fn a_dry_run_pages_the_preview_and_counts_every_row() {
     let batch: Vec<&str> = batch.iter().map(String::as_str).collect();
     let rows = preview_of(json!({ "nameMask": "trip_[C]" }), &folder, &batch);
 
-    let page = dry_run_page(Path::new(DIR), &rows, 1, 2, RowFilter::All);
+    let page = dry_run_page(dir(), &rows, 1, 2, RowFilter::All);
     assert_eq!(page.counts.ready, 5);
     assert_eq!((page.total, page.start, page.returned, page.truncated), (5, 1, 2, true));
     let names: Vec<_> = page
@@ -158,7 +163,7 @@ fn a_dry_run_pages_the_preview_and_counts_every_row() {
         .collect();
     assert_eq!(names, vec![("img2.jpg", "trip_2.jpg"), ("img3.jpg", "trip_3.jpg")]);
 
-    let last = dry_run_page(Path::new(DIR), &rows, 4, 2, RowFilter::All);
+    let last = dry_run_page(dir(), &rows, 4, 2, RowFilter::All);
     assert_eq!((last.returned, last.truncated), (1, false));
 }
 
@@ -168,7 +173,7 @@ fn the_problems_filter_keeps_only_flagged_rows() {
     let folder = vec![file("a.jpg"), file("b.jpg"), file("taken.jpg")];
     // `a` and `b` both become `taken.jpg`, which a file that stays already holds.
     let rows = preview_of(json!({ "nameMask": "taken" }), &folder, &["a.jpg", "b.jpg"]);
-    let page = dry_run_page(Path::new(DIR), &rows, 0, 50, RowFilter::Problems);
+    let page = dry_run_page(dir(), &rows, 0, 50, RowFilter::Problems);
     assert_eq!(page.counts.problems, 2);
     assert_eq!(page.total, 2);
     assert!(page.rows.iter().all(|r| r.status.is_problem()));
@@ -195,7 +200,7 @@ fn a_proposal_stages_the_ready_rows_as_one_pending_rename_group() {
     );
     assert_eq!(Counts::of(&rows).problems, 1, "gone.jpg is Missing");
 
-    let group = rename_group("root", Path::new(DIR), &rows, &folder, Some("Tag the trip".into())).expect("ready rows");
+    let group = rename_group("root", dir(), &rows, &folder, Some("Tag the trip".into())).expect("ready rows");
     let conn = migrated_conn();
     let sweep = NewSweep {
         conversation_id: None,
@@ -230,12 +235,39 @@ fn a_proposal_stages_the_ready_rows_as_one_pending_rename_group() {
     );
 }
 
+/// A drive folder's rows join by the app path's own `/`, on every OS: a `Path` join gave
+/// `C:/trips/lisbon\a.jpg` on Windows, a source the approval couldn't find. A listed name
+/// holding `\` (another OS's listing) can't be one name there, so the batch refuses typed.
+#[test]
+fn a_drive_folders_rows_join_with_the_app_paths_slash() {
+    let folder = AppPath::from_normalized_as("C:/trips/lisbon", cmdr_fs::app_path::PathFlavor::Windows)
+        .expect("a canonical drive folder");
+    let entries = vec![file("a.jpg")];
+    let rows = preview_of(json!({ "nameMask": "[N]_x" }), &entries, &["a.jpg"]);
+    let group = rename_group("root", folder, &rows, &entries, None).expect("a ready row");
+    let GroupIntent::Rename { parent, renames } = group.intent else {
+        panic!("a rename group");
+    };
+    assert_eq!(parent, "C:/trips/lisbon");
+    let sources: Vec<&str> = renames.iter().map(|r| r.source_path.as_str()).collect();
+    assert_eq!(sources, vec!["C:/trips/lisbon/a.jpg"]);
+
+    let entries = vec![file("a\\b.jpg")];
+    let rows = preview_of(json!({ "nameMask": "[N]_x" }), &entries, &["a\\b.jpg"]);
+    assert_eq!(
+        rename_group("root", folder, &rows, &entries, None).expect_err("not one name under a drive"),
+        ProposalRefusal::NameNotJoinable {
+            name: "a\\b.jpg".to_owned()
+        }
+    );
+}
+
 #[test]
 fn a_batch_with_nothing_ready_is_refused_rather_than_staged_empty() {
     let folder = vec![file("a.jpg")];
     let rows = preview_of(json!({}), &folder, &["a.jpg"]);
     assert_eq!(
-        rename_group("root", Path::new(DIR), &rows, &folder, None).expect_err("nothing ready"),
+        rename_group("root", dir(), &rows, &folder, None).expect_err("nothing ready"),
         ProposalRefusal::NothingReady
     );
 }
@@ -243,6 +275,7 @@ fn a_batch_with_nothing_ready_is_refused_rather_than_staged_empty() {
 // ── Media fields ──────────────────────────────────────────────────────────────
 
 mod media {
+    use std::path::PathBuf;
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::{Arc, Mutex};
     use std::time::Duration;
@@ -274,6 +307,11 @@ mod media {
             .entries(entries.clone())
             .insert(crate::listing_host::listings(), tag);
         (dir, entries, listing)
+    }
+
+    /// A scratch folder's native path as the app path a pane shows it at.
+    fn app(dir: &Path) -> AppPathBuf {
+        AppPathBuf::from_native_unicode(dir).expect("a scratch folder is plain text")
     }
 
     /// Which files a reader was handed.
@@ -361,7 +399,7 @@ mod media {
         let sheet = read_sheet(&listing, loader(&Calls::default(), facts)).await;
 
         let media = read_media(
-            &dir,
+            &app(&dir),
             &names(&entries),
             &entries,
             &[],
@@ -422,7 +460,7 @@ mod media {
 
         let calls = Calls::default();
         let media = read_media(
-            &dir,
+            &app(&dir),
             &names(&entries),
             &entries,
             &open,
@@ -458,7 +496,7 @@ mod media {
         let (dir, entries, _listing) = folder("mcp-rename-media-cap", &FILES);
         let calls = Calls::default();
 
-        let err = read_media(&dir, &names(&entries), &entries, &[], loader(&calls, facts), 3)
+        let err = read_media(&app(&dir), &names(&entries), &entries, &[], loader(&calls, facts), 3)
             .await
             .err()
             .expect("four media files, a cap of three");
@@ -485,7 +523,8 @@ mod media {
         });
         let names = vec!["slow.jpg".to_string()];
 
-        let call = read_media(&dir, &names, &entries, &[], slow, MAX_MEDIA_READS);
+        let folder = app(&dir);
+        let call = read_media(&folder, &names, &entries, &[], slow, MAX_MEDIA_READS);
         let timed_out = tokio::time::timeout(Duration::from_millis(200), call).await;
 
         assert!(timed_out.is_err(), "the read was still going");
@@ -510,7 +549,7 @@ mod media {
         let refused = RefusedReads::default();
 
         let media = read_media(
-            &dir,
+            &app(&dir),
             &names(&entries),
             &entries,
             &[],
@@ -548,7 +587,7 @@ mod media {
         let refused = RefusedReads::default();
 
         let media = read_media(
-            &dir,
+            &app(&dir),
             &names(&entries),
             &entries,
             &open,
@@ -606,7 +645,7 @@ mod media {
         let refused = RefusedReads::default();
 
         let media = read_media(
-            &folder,
+            &app(&folder),
             &names(&entries),
             &entries,
             &[],
@@ -647,7 +686,7 @@ mod media {
         let refused = RefusedReads::default();
 
         read_media(
-            &dir,
+            &app(&dir),
             &wanted,
             &entries,
             &[],
@@ -674,7 +713,7 @@ mod media {
         let refused = RefusedReads::default();
 
         let media = read_media(
-            &folder,
+            &app(&folder),
             &names(&entries),
             &entries,
             &open,
@@ -728,9 +767,16 @@ mod media {
             ..loader(&calls, facts)
         };
 
-        read_media(&dir, &wanted, &entries, &[], gated(serial, &refused), MAX_MEDIA_READS)
-            .await
-            .expect("the tool reads");
+        read_media(
+            &app(&dir),
+            &wanted,
+            &entries,
+            &[],
+            gated(serial, &refused),
+            MAX_MEDIA_READS,
+        )
+        .await
+        .expect("the tool reads");
 
         assert_eq!(refused.take().len(), 6);
         assert_eq!(*calls.0.lock_ignore_poison(), vec!["photo.jpg".to_string()]);

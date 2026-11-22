@@ -278,6 +278,13 @@ or a handler reads it. Handlers keep reading strings; the strings are the resolv
 - **A resource query passes it too**: `cmdr://importance`'s `path` and `under` go through `read_path` (the
   `Use::Read` door) in `resources/importance.rs::typed_query`, so a refusal is the same typed tool error, `field`
   naming the query key.
+- **Inside a handler, path arithmetic is the app path's** (`commands::wire_path::read_on_volume`, then `parent`,
+  `file_name`, `join`): a rename proposal's sources (`multi_rename`, `propose/rename`'s plan, preflight, and the spine's
+  `shared_parent`) join and split by `/` on every OS. A `Path` join gave `C:/x\a.jpg` on Windows, a source the approval
+  couldn't find and a swap preflight couldn't see. A name the folder can't hold as one name (a `\` under a drive folder)
+  refuses typed (`nameNotJoinable`, a preflight `NameNotAllowed`), ❌ never dropped. Where an engine still keys by
+  `std::path` text (the listing cache, the sheet's sessions, `name_rules_at`, the route gates' memos, `list_dir`'s
+  physical walk), the text crosses at `wire_path::as_sent_std_path`, one greppable door that goes as those engines type.
 
 ## The access classes
 

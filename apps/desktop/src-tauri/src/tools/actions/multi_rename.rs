@@ -18,7 +18,7 @@
 //!   check. Rows that aren't ready are left out and counted.
 
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -29,6 +29,7 @@ use tauri::{AppHandle, Manager, Runtime};
 use super::{ToolError, ToolResult, fit_to_result_budget, resolve_pane_target_paths, target_pane_state};
 use crate::agent::AgentDb;
 use crate::agent::store::proposals::{GroupIntent, NewGroup, NewRename, NewSweep, OpSnapshot};
+use crate::commands::wire_path::{as_sent_std_path, read_on_volume};
 use crate::ignore_poison::IgnorePoison;
 use crate::multi_rename::app_host::{app_multi_rename, volume_loader};
 use crate::multi_rename::media::{FileJob, Loader, MediaRead, SessionMedia};
@@ -37,6 +38,7 @@ use crate::security_log::ContentTool;
 use crate::tools::policy::{Caller, ToolCtx, Verdict, admit, note_content_read};
 use crate::tools::registry::Access;
 use crate::tools::sensitive::{GateStop, Protected, classify, note_refusal, path_gate_within, refuse_private_key_text};
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::validation::NameRules;
 use cmdr_media_meta::{MediaFacts, ReadError};
@@ -238,7 +240,7 @@ fn is_zero(count: &usize) -> bool {
     *count == 0
 }
 
-fn dry_run_page(folder: &Path, rows: &[PreviewRow], start: usize, limit: usize, filter: RowFilter) -> DryRun {
+fn dry_run_page(folder: &AppPath, rows: &[PreviewRow], start: usize, limit: usize, filter: RowFilter) -> DryRun {
     let kept: Vec<&PreviewRow> = rows
         .iter()
         .filter(|row| filter == RowFilter::All || row.status.is_problem())
@@ -261,7 +263,7 @@ fn dry_run_page(folder: &Path, rows: &[PreviewRow], start: usize, limit: usize, 
     let returned = fitted.items.len();
     DryRun {
         dry_run: true,
-        folder: folder.to_string_lossy().into_owned(),
+        folder: folder.shown().into_owned(),
         counts: Counts::of(rows),
         total,
         start,
@@ -276,14 +278,22 @@ fn dry_run_page(folder: &Path, rows: &[PreviewRow], start: usize, limit: usize, 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum ProposalRefusal {
     NothingReady,
-    TooMany { ready: usize },
+    TooMany {
+        ready: usize,
+    },
+    /// A ready row's listed name that `folder` can't hold as one name (a `\` under a drive
+    /// folder: a name from another OS's listing). Refused whole, ❌ never dropped from the batch.
+    NameNotJoinable {
+        name: String,
+    },
 }
 
 /// The rename group for the batch's ready rows: names under `folder`, each with what its file
-/// looked like in the listing, for the bridge's drift check at approval.
+/// looked like in the listing, for the bridge's drift check at approval. Each source is the
+/// app path's own join, so a drive folder's row reads `C:/x/a.jpg` on Windows too.
 fn rename_group(
     volume_id: &str,
-    folder: &Path,
+    folder: &AppPath,
     rows: &[PreviewRow],
     siblings: &[FileEntry],
     rationale: Option<String>,
@@ -292,22 +302,27 @@ fn rename_group(
     let renames: Vec<NewRename> = rows
         .iter()
         .filter(|row| row.status.is_ready())
-        .map(|row| NewRename {
-            source_path: folder.join(&row.old_name).to_string_lossy().into_owned(),
-            new_name: row.new_name.clone(),
-            snapshot: by_name.get(row.old_name.as_str()).map(|entry| OpSnapshot {
-                size: entry.size,
-                mtime: entry.modified_at.and_then(|t| i64::try_from(t).ok()),
-                inode: entry.inode,
-            }),
+        .map(|row| {
+            let source = joined(folder, &row.old_name).ok_or_else(|| ProposalRefusal::NameNotJoinable {
+                name: row.old_name.clone(),
+            })?;
+            Ok(NewRename {
+                source_path: source.into_string(),
+                new_name: row.new_name.clone(),
+                snapshot: by_name.get(row.old_name.as_str()).map(|entry| OpSnapshot {
+                    size: entry.size,
+                    mtime: entry.modified_at.and_then(|t| i64::try_from(t).ok()),
+                    inode: entry.inode,
+                }),
+            })
         })
-        .collect();
+        .collect::<Result<_, _>>()?;
     match renames.len() {
         0 => return Err(ProposalRefusal::NothingReady),
         ready if ready > MAX_PROPOSED_RENAMES => return Err(ProposalRefusal::TooMany { ready }),
         _ => {}
     }
-    let parent = folder.to_string_lossy().into_owned();
+    let parent = folder.as_str().to_owned();
     let display_name = crate::tools::propose::rename::rename_display_name(&parent, renames.len());
     Ok(NewGroup {
         intent: GroupIntent::Rename { parent, renames },
@@ -316,6 +331,12 @@ fn rename_group(
         rationale,
         selector: None,
     })
+}
+
+/// The listed `name` inside `folder`, by the app path's join. `None` for a name the folder
+/// can't hold as one name.
+fn joined(folder: &AppPath, name: &str) -> Option<AppPathBuf> {
+    folder.join(&AppName::from_listed_text(name).ok()?).ok()
 }
 
 fn spec_error(error: crate::multi_rename::plan::SpecError) -> ToolError {
@@ -426,8 +447,8 @@ fn holds_a_private_key(facts: &MediaFacts) -> bool {
 
 /// Whether the folder itself passes the gate, off the dispatch task. Anything but a clear yes
 /// is a no: this only decides whether another session's answers may be taken.
-async fn folder_passes_gate(folder: &Path) -> bool {
-    let folder = folder.to_string_lossy().into_owned();
+async fn folder_passes_gate(folder: &AppPath) -> bool {
+    let folder = folder.as_str().to_owned();
     matches!(
         tokio::task::spawn_blocking(move || path_gate_within(&folder, GATE_BUDGET)).await,
         Ok(Ok(()))
@@ -440,7 +461,7 @@ async fn folder_passes_gate(folder: &Path) -> bool {
 /// runs on, it takes what the `open` sheets over this folder already read, refuses past
 /// `max_reads` files left to read, and reads the rest before returning.
 async fn read_media(
-    folder: &Path,
+    folder: &AppPath,
     names: &[String],
     siblings: &[FileEntry],
     open: &[Arc<SessionMedia>],
@@ -449,7 +470,7 @@ async fn read_media(
 ) -> Result<Arc<SessionMedia>, ToolError> {
     let media = Arc::new(SessionMedia::seed(
         "mcp-multi-rename",
-        folder.to_path_buf(),
+        as_sent_std_path(folder.as_str()),
         names,
         siblings,
     ));
@@ -463,7 +484,7 @@ async fn read_media(
             .collect();
         let may_take = |name: &str, answer: &MediaRead| {
             !links.contains(name)
-                && classify(&folder.join(name).to_string_lossy()).is_none()
+                && joined(folder, name).is_some_and(|path| classify(path.as_str()).is_none())
                 && !matches!(answer, MediaRead::Read(facts) if holds_a_private_key(facts))
         };
         for sheet in open {
@@ -521,24 +542,28 @@ pub async fn execute_multi_rename<R: Runtime>(app: &AppHandle<R>, ctx: &ToolCtx,
         .clone()
         .ok_or_else(|| ToolError::internal("The pane's volume isn't available yet"))?;
     let paths = resolve_pane_target_paths(&state, request.names.as_deref())?;
-    let folder = PathBuf::from(&state.path);
+    let folder = read_on_volume(&state.path)
+        .map_err(|why| ToolError::internal(format!("The pane's folder isn't a place Cmdr can name: {why}")))?;
+    // The listing engine, the sheet's sessions, and the name rules still key a folder by its
+    // `std::path` text (`cmdr-listing`'s typed locations, the write engine's starts).
+    let std_folder = as_sent_std_path(folder.as_str());
     let names: Vec<String> = paths
         .iter()
         .map(|p| {
-            Path::new(p)
-                .file_name()
-                .map(|n| n.to_string_lossy().into_owned())
+            read_on_volume(p)
+                .ok()
+                .and_then(|path| path.file_name().map(str::to_owned))
                 .ok_or_else(|| ToolError::internal(format!("'{p}' has no filename")))
         })
         .collect::<Result<_, _>>()?;
     let siblings = crate::listing_host::listings()
-        .cached_entries(&volume_id, &folder)
+        .cached_entries(&volume_id, &std_folder)
         .ok_or_else(|| ToolError::internal("The pane's listing isn't available yet"))?;
     let compiled = compile(&request.spec)?;
     let refused = RefusedReads::default();
     let media = if compiled.uses_media() {
         media_fields_admitted(ctx.caller)?;
-        let open = app_multi_rename().media_over(&volume_id, &folder);
+        let open = app_multi_rename().media_over(&volume_id, &std_folder);
         // No one watches this read's progress: the call's answer is its end.
         let runtime = tokio::runtime::Handle::current();
         let loader = gated(volume_loader(volume_id.clone(), Arc::new(|_| {}), &runtime), &refused);
@@ -556,7 +581,7 @@ pub async fn execute_multi_rename<R: Runtime>(app: &AppHandle<R>, ctx: &ToolCtx,
     // The folder's filesystem judges each new name, as in the sheet's session.
     let rules = match crate::operations_host::operations() {
         Ok(engine) => {
-            let (engine, volume_id, folder) = (engine.clone(), volume_id.clone(), folder.clone());
+            let (engine, volume_id, folder) = (engine.clone(), volume_id.clone(), std_folder.clone());
             tokio::task::spawn_blocking(move || engine.name_rules_at(&volume_id, &folder))
                 .await
                 .unwrap_or(NameRules::POSIX)
@@ -565,7 +590,7 @@ pub async fn execute_multi_rename<R: Runtime>(app: &AppHandle<R>, ctx: &ToolCtx,
     };
     // A mask and a regex per row: off the async worker for a big folder.
     let (rows, siblings) = tokio::task::spawn_blocking({
-        let folder = folder.clone();
+        let folder = std_folder.clone();
         move || {
             let rows = preview(&compiled, &folder, rules, &names, &siblings, media.as_ref());
             (rows, siblings)
@@ -597,6 +622,12 @@ pub async fn execute_multi_rename<R: Runtime>(app: &AppHandle<R>, ctx: &ToolCtx,
                 crate::pluralize::pluralize(ready as u64, "ready row")
             ))
             .with_data(json!({ "reason": "tooMany", "ready": ready, "max": MAX_PROPOSED_RENAMES })));
+        }
+        Err(ProposalRefusal::NameNotJoinable { name }) => {
+            return Err(ToolError::invalid_params(format!(
+                "'{name}' can't be named inside this folder, so the batch can't be proposed. Leave it out of the names."
+            ))
+            .with_data(json!({ "reason": "nameNotJoinable", "name": name })));
         }
     };
     let op_count = group.intent.op_count();

@@ -9,7 +9,6 @@
 //! the user never sees a partial plan they'd read as complete.
 
 use std::collections::{BTreeMap, HashSet};
-use std::path::Path;
 use std::sync::Arc;
 
 use cmdr_fs::deadline::Deadline;
@@ -24,6 +23,7 @@ use super::rows::{
 use super::store::{RenameDraft, RenameDraftRow, RenameProposalSnapshot};
 use crate::agent::AgentDb;
 use crate::agent::llm::types::AgentToolResult;
+use crate::commands::wire_path::read_on_volume;
 use crate::file_system::volume::Volume;
 use crate::location::Location;
 use crate::location::miss::{LocationMissResult, volume_not_connected};
@@ -31,6 +31,7 @@ use crate::location::resolve::{LocationInput, VolumeFacts, resolve};
 use crate::tools::params::{ParamViolation, check_object, list_names};
 use crate::tools::propose::evidence::{EvidenceRejection, EvidenceScope, ImageFactsLedger};
 use crate::tools::{ToolError, ToolResult};
+use cmdr_fs::app_path::{AppName, PathArithmetic};
 use cmdr_fs::validation::{NameRules, validate_filename};
 
 pub(super) const MAX_RENAMES: usize = 200;
@@ -496,8 +497,12 @@ pub(super) fn plan_draft(
         // same share: the stored rows are what preflight and apply read, so they say where
         // the files really are now.
         for row in &mut rows {
-            let name = Path::new(&row.source_path).file_name().unwrap_or_default();
-            row.source_path = Path::new(&placed.path).join(name).to_string_lossy().into_owned();
+            row.source_path = moved_onto(&placed.path, &row.source_path).ok_or_else(|| {
+                ToolError::internal(format!(
+                    "'{}' can't be named inside '{}', where its folder is now.",
+                    row.source_path, placed.path
+                ))
+            })?;
         }
     }
     let draft = RenameDraft {
@@ -506,6 +511,16 @@ pub(super) fn plan_draft(
         rows,
     };
     Ok((draft, rejected))
+}
+
+/// `source`'s last name inside `folder`, by the app path's own arithmetic: a `Path` join
+/// gave `C:/x\a.jpg` on Windows. `None` when either isn't an app path, or the name can't be
+/// one name in `folder` (a `\` under a drive folder).
+fn moved_onto(folder: &str, source: &str) -> Option<String> {
+    let folder = read_on_volume(folder).ok()?;
+    let source = read_on_volume(source).ok()?;
+    let name = AppName::from_app_spelling(source.file_name()?).ok()?;
+    Some(folder.join(name).ok()?.into_string())
 }
 
 /// A plan's rows, sorted into the ones its own checks pass and the ones they reject.
@@ -534,9 +549,9 @@ fn plan_rows(renames: Vec<RenameInput>) -> PlannedRows {
     let parents: Vec<String> = renames
         .iter()
         .map(|rename| {
-            Path::new(&rename.source_path)
-                .parent()
-                .map(|parent| parent.to_string_lossy().into_owned())
+            read_on_volume(&rename.source_path)
+                .ok()
+                .and_then(|path| path.parent().map(|parent| parent.as_str().to_owned()))
                 .unwrap_or_default()
         })
         .collect();
@@ -558,9 +573,9 @@ fn plan_rows(renames: Vec<RenameInput>) -> PlannedRows {
     let mut destination_names = HashSet::new();
     let mut rows = Vec::with_capacity(renames.len());
     for (rename, row_parent) in renames.into_iter().zip(parents) {
-        let source_name = Path::new(&rename.source_path)
-            .file_name()
-            .map(|name| destination_key(&name.to_string_lossy()))
+        let source_name = read_on_volume(&rename.source_path)
+            .ok()
+            .and_then(|path| path.file_name().map(destination_key))
             .unwrap_or_default();
         let problem = own_problem(&rename.source_path, &rename.volume_id, &rename.destination_name)
             .or_else(|| (rename.volume_id != volume_id).then_some(RowProblem::OtherVolume))
@@ -660,8 +675,9 @@ pub(super) fn check_row_evidence(
 /// would refuse a bulk rename of every Office document in a folder, which is one
 /// of the things people most want bulk rename FOR.
 pub(super) fn is_archive_inner_path(source_path: &str) -> bool {
-    cmdr_fs::archive_format::archive_boundary_candidate(Path::new(source_path))
-        .is_some_and(|(_archive, inner)| !inner.as_os_str().is_empty())
+    read_on_volume(source_path).is_ok_and(|path| {
+        cmdr_fs::archive_format::archive_boundary_candidate_at(&path).is_some_and(|(_archive, inner)| !inner.is_empty())
+    })
 }
 
 /// The key two destination names share when a filesystem may consider them one: the same fold
