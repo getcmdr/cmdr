@@ -433,7 +433,7 @@ fn under_reads_only_that_subtree_through_the_snapshot() {
     paths.sort_unstable();
     assert_eq!(paths, vec!["/Users/test/Documents", "/Users/test/Documents/tax"]);
 
-    let text = build_importance_resource(dir.path(), Some("top=5&under=/Users/test/Documents"), now);
+    let text = build_importance_resource(dir.path(), &query("top=5&under=/Users/test/Documents"), now);
     assert!(!text.contains("/Users/test/projects"), "outside `under`: {text}");
     assert!(
         text.contains("under '/Users/test/Documents'"),
@@ -523,18 +523,28 @@ fn dispatch_routes_each_mode() {
     );
 
     // No query ⇒ overview.
-    assert!(build_importance_resource(dir.path(), None, now).contains("?path="));
+    assert!(build_importance_resource(dir.path(), &query(""), now).contains("?path="));
     // ?path= ⇒ path block.
-    let scored = build_importance_resource(dir.path(), Some("path=/Users/test/proj"), now);
+    let scored = build_importance_resource(dir.path(), &query("path=/Users/test/proj"), now);
     assert!(scored.contains("scored"), "path mode: {scored}");
     // ?top= ⇒ ranked.
-    assert!(build_importance_resource(dir.path(), Some("top=5"), now).contains("/Users/test/proj"));
+    assert!(build_importance_resource(dir.path(), &query("top=5"), now).contains("/Users/test/proj"));
     // A malformed number is a helpful message, not a panic.
-    assert!(build_importance_resource(dir.path(), Some("top=abc"), now).contains("top"));
+    assert!(build_importance_resource(dir.path(), &query("top=abc"), now).contains("top"));
 }
 
-#[test]
-fn tilde_in_a_path_expands_to_home() {
+/// A parsed query, as the door hands it to the builder when nothing in it moved.
+fn query(text: &str) -> Query {
+    super::super::parse_query(Some(text))
+}
+
+/// A host for paths with no `..`: none asks a volume, so none is held.
+fn no_volumes() -> AppHost {
+    AppHost::over(|_| None, std::time::Duration::from_secs(10))
+}
+
+#[tokio::test]
+async fn tilde_in_a_path_expands_to_home() {
     // Seeds the row from the REAL home rather than setting `HOME` to a fake one.
     // ❌ Don't reintroduce `env::set_var("HOME", ...)`: the environment is
     // process-wide, so under a plain `cargo test` (threads, one process) it
@@ -543,25 +553,45 @@ fn tilde_in_a_path_expands_to_home() {
     // the environment while other threads read it is UB besides. Reading the
     // real home costs nothing and tests the same expansion.
     let home = dirs::home_dir().expect("a home directory");
-    let downloads = home.join("Downloads");
+    // The store keys a row by its app path (`C:/Users/…` on Windows), as the door spells it.
+    let downloads = cmdr_fs::app_path::AppPathBuf::from_native(&home.join("Downloads")).expect("an absolute home");
     let now = 1_000_000;
     let dir = tempfile::tempdir().expect("temp dir");
     write_db(
         dir.path(),
         "root",
-        &[(
-            downloads.to_str().expect("home path is UTF-8"),
-            scored_signals(PathClass::UserContent, now),
-        )],
+        &[(downloads.as_str(), scored_signals(PathClass::UserContent, now))],
         now,
     );
 
-    let snapshot = snapshot_path(dir.path(), "~/Downloads", now);
+    let q = typed_query(Some("path=~/Downloads"), &no_volumes())
+        .await
+        .expect("the door reads it");
+    assert_eq!(q.get("path").map(String::as_str), Some(downloads.as_str()));
+    let snapshot = snapshot_path(dir.path(), downloads.as_str(), now);
     assert!(
         matches!(snapshot, PathImportance::Scored { .. }),
-        "~/Downloads resolves to the scored {}, got {snapshot:?}",
-        downloads.display()
+        "~/Downloads resolves to the scored {downloads}, got {snapshot:?}"
     );
+}
+
+/// `?path=` and `&under=` pass the same door as the tools' fields: a trailing separator goes,
+/// and a `..` above the root is the tools' typed `pathOffRoot`, naming the query key.
+#[tokio::test]
+async fn the_query_paths_pass_the_agent_path_door() {
+    let root = if cfg!(windows) { "C:/" } else { "/" };
+    let q = typed_query(Some(&format!("top=5&under={root}a/b/")), &no_volumes())
+        .await
+        .expect("a plain path");
+    assert_eq!(q.get("under").map(String::as_str), Some(format!("{root}a/b").as_str()));
+    assert_eq!(q.get("top").map(String::as_str), Some("5"), "the rest is as sent");
+
+    let refused = typed_query(Some(&format!("path={root}..")), &no_volumes())
+        .await
+        .expect_err("above the root");
+    let data = refused.data.expect("typed data");
+    assert_eq!(data["reason"], "pathOffRoot");
+    assert_eq!(data["field"], "path");
 }
 
 /// A folder that scores low but non-floored (neutral class, stale, monoculture-ish).

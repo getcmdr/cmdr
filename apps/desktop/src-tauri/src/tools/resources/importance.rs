@@ -5,7 +5,7 @@
 //! an unmounted drive (the importance subsystem's headline). Four query modes:
 //!
 //! - `?path=<abs-path>` — one folder's `WeightLookup`: Scored (score + the `explain`
-//!   signal breakdown), Floored (with the floor reason), or Unscored. `~` expands.
+//!   signal breakdown), Floored (with the floor reason), or Unscored.
 //! - `?top=<n>&volume=<id>` — the top-N folders by score (volume optional ⇒ all
 //!   scored volumes, merged).
 //! - `?threshold=<f>` — folders scoring at or above `f`, row count capped with a
@@ -32,6 +32,12 @@ use cmdr_index::importance::{
 };
 
 use super::indexing::format_number;
+use crate::go_to_path::AppHost;
+use crate::tools::ToolError;
+use crate::tools::agent_path::read_path;
+
+/// A parsed `cmdr://importance` query.
+pub(crate) type Query = std::collections::HashMap<String, String>;
 
 /// The most rows a `?threshold=` read returns before truncating, keeping a low
 /// threshold from dumping every scored folder. The build notes when it truncates.
@@ -142,29 +148,14 @@ fn kind_token(volume_id: &str) -> Option<&'static str> {
     })
 }
 
-/// Expand a leading `~` to `$HOME` (agents send `~/Downloads`). Only the tilde
-/// prefix — no `~user` form, which the importance paths never use.
-fn expand_tilde(path: &str, home: &str) -> String {
-    if path == "~" {
-        return home.to_string();
-    }
-    match path.strip_prefix("~/") {
-        Some(rest) => format!("{home}/{rest}"),
-        None => path.to_string(),
-    }
-}
-
 /// Look one folder up across every scored volume: the first volume with a stored
 /// row wins (absolute paths are volume-distinct, so at most one matches). With no
 /// stored row anywhere, the floored-vs-unscored classification is volume-independent
 /// (path + home), so it derives once against the root index (whose DB may be
 /// absent — the read guard handles that).
-pub(crate) fn snapshot_path(data_dir: &Path, raw_path: &str, now_secs: u64) -> PathImportance {
-    let home = std::env::var("HOME").unwrap_or_default();
-    let path = expand_tilde(raw_path, &home);
-
+pub(crate) fn snapshot_path(data_dir: &Path, path: &str, now_secs: u64) -> PathImportance {
     for volume_id in scored_volume_ids(data_dir) {
-        let found = snapshot_path_on(data_dir, &volume_id, &path, now_secs);
+        let found = snapshot_path_on(data_dir, &volume_id, path, now_secs);
         if matches!(found, PathImportance::Scored { .. }) {
             return found;
         }
@@ -172,7 +163,7 @@ pub(crate) fn snapshot_path(data_dir: &Path, raw_path: &str, now_secs: u64) -> P
 
     // No stored row on any volume: derive floored vs unscored from the path alone.
     let index = ImportanceIndex::open(data_dir, cmdr_index::ROOT_VOLUME_ID, SignalSet::all());
-    match index.lookup(&path) {
+    match index.lookup(path) {
         Ok(WeightLookup::Floored(reason)) => PathImportance::Floored { reason },
         _ => PathImportance::Unscored,
     }
@@ -255,11 +246,11 @@ fn read_folded(
     threshold: Option<f64>,
 ) -> Result<(Vec<RankedFolder>, bool), String> {
     let home = std::env::var("HOME").unwrap_or_default();
-    let under = scope.under.map(|u| expand_tilde(u, &home));
+    let under = scope.under;
     let mut fetch = (keep * COLLAPSE_OVERFETCH).clamp(1, MAX_FOLD_WINDOW);
     loop {
-        let (ranked, window_cut) = read_ranked(data_dir, scope, under.as_deref().unwrap_or(""), fetch, threshold)?;
-        let folders = collapse_descendants(ranked, under.as_deref(), &home);
+        let (ranked, window_cut) = read_ranked(data_dir, scope, under.unwrap_or(""), fetch, threshold)?;
+        let folders = collapse_descendants(ranked, under, &home);
         if folders.len() > keep || !window_cut || fetch == MAX_FOLD_WINDOW {
             return Ok((folders, window_cut));
         }
@@ -603,11 +594,29 @@ fn scope_label(scope: RankedScope<'_>) -> String {
     format!("{volume}{under}")
 }
 
-/// Parse `cmdr://importance`'s query and render the matching mode. `now_secs` is
-/// injected so the `?path=` recency breakdown is deterministic under test.
-pub(crate) fn build_importance_resource(data_dir: &Path, query: Option<&str>, now_secs: u64) -> String {
-    let q = super::parse_query(query);
+/// `cmdr://importance`'s query, parsed, with `path` and `under` read through the agent's path door
+/// (`tools/agent_path.rs`), as `folder_importance` and `important_folders` read theirs: `~`
+/// expands, a `..` is the volume's answer, and a refusal is the same typed tool error, naming
+/// the query key. A store row is keyed by its resolved place, so the raw text would read a
+/// wrong row.
+///
+/// # Errors
+///
+/// The door's refusal.
+pub(crate) async fn typed_query(query: Option<&str>, host: &AppHost) -> Result<Query, ToolError> {
+    let mut q = super::parse_query(query);
+    for key in ["path", "under"] {
+        if let Some(text) = q.get(key).filter(|text| !text.is_empty()).cloned() {
+            let typed = read_path(key, &text, host).await?;
+            q.insert(key.to_string(), typed);
+        }
+    }
+    Ok(q)
+}
 
+/// Render the mode `q` asks for ([`typed_query`]'s answer). `now_secs` is injected so the
+/// `?path=` recency breakdown is deterministic under test.
+pub(crate) fn build_importance_resource(data_dir: &Path, q: &Query, now_secs: u64) -> String {
     if let Some(path) = q.get("path") {
         let snapshot = snapshot_path(data_dir, path, now_secs);
         return build_path_text(path, &snapshot);

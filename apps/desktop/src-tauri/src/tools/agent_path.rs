@@ -316,6 +316,18 @@ fn looks_absolute(text: &str) -> bool {
         || (text.len() >= 2 && text.as_bytes()[1] == b':' && text.as_bytes()[0].is_ascii_alphabetic())
 }
 
+/// One path a VIEW reads (a `cmdr://` resource's query value, `key` naming it), through the
+/// same door as a tool's [`Use::Read`] field: the resolved text, or the typed tool error.
+///
+/// # Errors
+///
+/// [`Refusal`], as a tool error naming `key`.
+pub(crate) async fn read_path(key: &str, text: &str, host: &AppHost) -> Result<String, ToolError> {
+    agent_path(text, Use::Read, host)
+        .await
+        .map_err(|refusal| refusal.into_error(key, text))
+}
+
 /// One agent path, resolved: the app path's text the tool takes.
 ///
 /// # Errors

@@ -269,8 +269,9 @@ or a handler reads it. Handlers keep reading strings; the strings are the resolv
   `under`, `scope`, and `parent`, so a new one is declared or listed as no app path with why (the memory tools' jailed
   relative path, `eject`'s enum, `propose_server`'s remote root). Cells: `agent_path_tests.rs`, real links over
   `AppTestDir` on every OS.
-- **Not covered**: `read_resource`'s `cmdr://importance?path=` query (a resource URI, read by text against the
-  importance store).
+- **A resource query passes it too**: `cmdr://importance`'s `path` and `under` go through `read_path` (the
+  `Use::Read` door) in `resources/importance.rs::typed_query`, so a refusal is the same typed tool error, `field`
+  naming the query key.
 
 ## The access classes
 
