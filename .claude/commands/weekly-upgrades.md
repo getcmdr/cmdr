@@ -7,15 +7,30 @@ The pass also covers David's three sibling repos: `~/projects-git/vdavid/mtp-rs`
 stuck Renovate PRs, the Dependency Dashboard's pending approvals and majors, and crates held by a `renovate.json` rule
 (each rule's `description` says why and when to lift it).
 
+It also covers `~/projects-git/vdavid/infra`, which has no Renovate, so there the whole pass is by hand. Its release-age
+gate is about 14 days (its `AGENTS.md` → "Conventions"), not three. What runs in its `main` is what runs on the hosts,
+so the pass splits by whether a bump changes a live host:
+
+- **Bump, verify, and land**: tool pins in `.mise.toml`; each `go.mod` (`go get <module>@<version>`, then
+  `go build ./...` and `go test ./...` in that module); the OpenTofu providers (`tofu init -upgrade` per root after its
+  `source env.sh`, and only keep a bump whose `tofu plan` still says "No changes"); and the Ansible collections in each
+  `requirements.yml` (install, then `--check` the playbook). Never `tofu apply`, and never run a playbook for real.
+- **Report only, don't edit**: container images in the compose files, and anything else a deploy puts on a host. List
+  each image with a newer release past the gate (current → available, and anything in its release notes that needs
+  care). An image that floats (`latest`, a bare major like `redis:8-alpine`, or no digest) gets a line saying so, since
+  it can change under us on any recreate.
+
 Run unattended, start to finish, without asking David anything. He's reading the result, not supervising the run.
 
 1. **Worktree.** `~/.claude/scripts/new-worktree.sh weekly-upgrades`, then `EnterWorktree` with the path it prints. Wait
    for `.warming-worktree` to disappear before the first build.
-2. **Fan out.** Before the Cmdr work, spawn one background subagent per sibling repo. Each one reads that repo's
-   `AGENTS.md` and `renovate.json` (its auto-loaded instructions are Cmdr's), makes its own `weekly-upgrades` worktree
-   there, runs every command as `(cd <its worktree> && ...)` (a bare `cd` or `EnterWorktree` would move the whole
-   session), runs the repo's own checks, lands on that repo's `main` on green GitHub CI, and tears its worktree down. No
-   releases, no crates.io publishes. A repo with nothing to do reports that in one line.
+2. **Fan out.** Before the Cmdr work, spawn one background subagent per sibling repo, plus one for infra. Each one reads
+   that repo's `AGENTS.md` and `renovate.json` if it has one (its auto-loaded instructions are Cmdr's), makes its own
+   `weekly-upgrades` worktree there, runs every command as `(cd <its worktree> && ...)` (a bare `cd` or `EnterWorktree`
+   would move the whole session), runs the repo's own checks, lands on that repo's `main`, and tears its worktree down.
+   The siblings land on green GitHub CI. Infra has no land script and no CI gate, so its agent fast-forwards its `main`
+   per the global lifecycle and pushes. No releases, no crates.io publishes, no deploys. A repo with nothing to do
+   reports that in one line.
 3. **Do the Cmdr pass** per the guide: dashboard for the list, npm (`ncu -u`, `pnpm install`, `pnpm dedupe`), Cargo
    (`cargo outdated -w`, then per-crate `Cargo.toml` edit + `cargo update -p <crate> --precise <version>`, 3-day window
    enforced by hand against crates.io), fix the breakage, `pnpm check third-party-notices`, the checks per the guide,
@@ -30,7 +45,8 @@ Run unattended, start to finish, without asking David anything. He's reading the
 7. **Report** in about ten lines for Cmdr plus two or three per sibling repo: what moved (counts per ecosystem, and name
    anything interesting), what broke and how you fixed it, what you held back and why, one line per vendored crate
    (dropped, re-vendored, or what still blocks dropping it; guide step 3), and whether the slow lane (Cmdr) and GitHub
-   CI (siblings) went green.
+   CI (siblings) went green. For infra: what it bumped and landed, then the image list (available upgrades and floating
+   tags), which David decides on and deploys.
 
 **When it's a quiet week**, say so in two lines and stop. An empty dashboard is a fine outcome; don't manufacture work.
 
