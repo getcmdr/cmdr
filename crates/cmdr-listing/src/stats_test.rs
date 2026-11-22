@@ -198,6 +198,30 @@ fn test_stats_selection_with_out_of_bounds_index_is_ignored() {
     assert_eq!(stats.selected_size, Some(1_000));
 }
 
+/// An entry with no on-disk size (every file on Windows, a network share's files) counts its
+/// content size toward the physical sums, the same fallback each row shows. Summing nothing
+/// for it left a total's physical sum holding only the folders', and the status bar's "smart"
+/// size read "16 bytes of 7 bytes (229%) selected" for two selected files (seen on Windows,
+/// 2026-11-22).
+#[test]
+fn an_entry_without_an_on_disk_size_counts_its_content_size_toward_the_physical_sums() {
+    let entries = vec![
+        make_entry("folder", true, Some(7), Some(7)),
+        make_entry("a.txt", false, Some(7), None),
+        make_entry("b.txt", false, Some(9), None),
+    ];
+    let listing = insert_test_listing("stats-no-physical", entries);
+
+    let stats = listing
+        .engine()
+        .inner
+        .get_listing_stats(listing.id(), true, Some(&[1, 2]))
+        .unwrap();
+
+    assert_eq!(stats.total_physical_size, 7 + 7 + 9);
+    assert_eq!(stats.selected_physical_size, Some(7 + 9));
+}
+
 #[test]
 fn test_stats_entries_without_sizes() {
     // Entries where size is None (e.g., network volumes that don't report sizes)
