@@ -212,6 +212,10 @@
   "@suggestedOps.folderWillBeCreatedTooltip": {
     "sourceHash": "2d28b7c"
   },
+  "suggestedOps.destinationLandsOn": "Из-за ссылки файлы окажутся на другом диске: {path}",
+  "@suggestedOps.destinationLandsOn": {
+    "sourceHash": "d35d382"
+  },
   "suggestedOps.destinationUnknown": "Cmdr не удалось проверить целевую папку",
   "@suggestedOps.destinationUnknown": {
     "sourceHash": "dc78d1d"

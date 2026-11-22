@@ -11,9 +11,9 @@
 //! scan the transfer dialog uses, through `ScanBoundary`, which bumps the totals
 //! as it goes.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPathBuf, Namer, PathFlavor};
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
@@ -78,12 +78,29 @@ pub(super) fn start(
 ) -> tokio::task::JoinHandle<Result<Measured, MeasureError>> {
     match volume.local_path() {
         Some(root) => {
-            let path = cmdr_fs::volume::root_anchored(&root.as_std_legacy(), Path::new(&folder));
+            // The walk is `std::fs`'s, so the root crosses to the OS here, plain: the spelling a row's
+            // text (`C:/…`, not `\\?\C:\…`) anchors against.
+            let native_root = match root.to_native_plain() {
+                Ok(native_root) => native_root,
+                Err(why) => return tokio::spawn(async move { Err(MeasureError::Unreadable(why.to_string())) }),
+            };
+            let path = cmdr_fs::volume::root_anchored(&native_root, Path::new(&folder));
             // No async task retained waiting for an uninterruptible syscall.
             tokio::task::spawn_blocking(move || walk_local(&path, &job, &live))
         }
         None => tokio::spawn(async move { measure_through_volume(&volume, &folder, &job, &live).await }),
     }
+}
+
+/// A listed row's folder text as the app path its volume takes: this host's flavor, or a
+/// POSIX `/x` (a share's or a phone's path on Windows). Its escape-range code points stay
+/// literal while no producer makes a live one, so a row's path reaches the volume byte for
+/// byte. Text that names no folder is unreadable, as a folder the volume can't open is.
+pub(super) fn folder_on_volume(folder: &str) -> Result<AppPathBuf, MeasureError> {
+    AppPathBuf::from_literal_store(folder, Namer::HOST)
+        // The listed-text door, so a POSIX row's escape-range code point stays literal too.
+        .or_else(|_| AppPathBuf::from_listed_text(folder, PathFlavor::Posix))
+        .map_err(|why| MeasureError::Unreadable(why.to_string()))
 }
 
 async fn measure_through_volume(
@@ -97,13 +114,8 @@ async fn measure_through_volume(
     }
     let on_progress = |progress: ListingProgress| live.set(progress);
     let boundary = ScanBoundary::new(Some(&on_progress)).stopping_at(ScanStop::new(Arc::clone(job) as _));
-    match volume
-        .scan_for_copy_batch_with_boundary(
-            &[AppPath::legacy_unchecked(&PathBuf::from(folder)).into_owned()],
-            &boundary,
-        )
-        .await
-    {
+    let folder = folder_on_volume(folder)?;
+    match volume.scan_for_copy_batch_with_boundary(&[folder], &boundary).await {
         Ok(_) if job.is_cancelled() => Err(MeasureError::Stopped),
         Ok(scan) => Ok(Measured {
             progress: ListingProgress {

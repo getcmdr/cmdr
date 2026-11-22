@@ -61,6 +61,7 @@ interface FixtureGroup {
   reversible?: SuggestedGroupView['reversible']
   runsAs?: SuggestedGroupView['runsAs']
   destinationState?: SuggestedGroupView['destinationState']
+  destinationLandsOn?: string | null
   fromSelector?: boolean
   files: FixtureFile[]
   /** The group's real size when it's bigger than the files listed (the 60,000-op case). */
@@ -90,6 +91,7 @@ function view(group: FixtureGroup, sweepId: number): SuggestedGroupView {
     reversible: group.reversible ?? 'restoreMove',
     runsAs: group.runsAs ?? null,
     destinationState: group.destinationState ?? (group.destination ? 'exists' : 'notApplicable'),
+    destinationLandsOn: group.destinationLandsOn ?? null,
     liveOpCount: total - group.files.filter((file) => file.excluded).length,
     totalOpCount: total,
     fromSelector: group.fromSelector ?? false,

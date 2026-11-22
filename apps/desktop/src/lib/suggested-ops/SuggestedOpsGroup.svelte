@@ -9,7 +9,7 @@
     import Trans from '#lib/intl/Trans.svelte'
     import Icon from '#lib/ui/Icon.svelte'
     import SectionCard from '#lib/ui/SectionCard.svelte'
-    import { tString } from '#lib/intl/messages.svelte.js'
+    import { pathParam, tString } from '#lib/intl/messages.svelte.js'
     import { formatInteger } from '#lib/intl/number-format.js'
     import { tooltip } from '#lib/tooltip/tooltip.js'
     import type { SuggestedGroupView } from '#lib/tauri-commands/index.js'
@@ -130,6 +130,13 @@
                     <dd>
                         <VolumePill volumeId={group.destinationVolumeId} name={group.destinationVolumeName} />
                         <span class="path">{group.destination}</span>
+                        <!-- A link under it leads elsewhere: say where the files really go (#1354). -->
+                        {#if group.destinationLandsOn !== null}
+                            <span class="dest-note">
+                                <Icon name="link" size={14} aria-hidden="true" />
+                                {tString('suggestedOps.destinationLandsOn', { path: pathParam(group.destinationLandsOn) })}
+                            </span>
+                        {/if}
                         <!-- About the folder itself, so it sits beside it. -->
                         {#if group.destinationState === 'willBeCreated'}
                             <span class="dest-note" use:tooltip={tString('suggestedOps.folderWillBeCreatedTooltip')}>

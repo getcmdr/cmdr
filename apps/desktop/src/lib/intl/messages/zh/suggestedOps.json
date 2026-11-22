@@ -212,6 +212,10 @@
   "@suggestedOps.folderWillBeCreatedTooltip": {
     "sourceHash": "2d28b7c"
   },
+  "suggestedOps.destinationLandsOn": "有一个链接会把文件送到另一个驱动器：{path}",
+  "@suggestedOps.destinationLandsOn": {
+    "sourceHash": "d35d382"
+  },
   "suggestedOps.destinationUnknown": "Cmdr 无法检查目标文件夹",
   "@suggestedOps.destinationUnknown": {
     "sourceHash": "dc78d1d"

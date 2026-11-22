@@ -36,6 +36,11 @@ pub(super) enum GroupProblem {
     /// write to at all. Refused HERE, where it costs the model a retry, rather than at
     /// execution where it would refuse after the user had already approved.
     DestinationTakesNoWrites,
+    /// While escapes aren't live, a destination whose name holds an escape-range code point:
+    /// the write starts would read its text back as another folder (`typed_place`).
+    DestinationNameUnsupported,
+    /// A destination whose text names no app path.
+    DestinationNotAPath,
     /// A field the verb's executor doesn't bind (a destination on a trash group, a parent
     /// on a move).
     UnboundField {

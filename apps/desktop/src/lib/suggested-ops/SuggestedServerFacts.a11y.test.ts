@@ -156,6 +156,7 @@ describe('a refused card', () => {
           destination: null,
           destinationVolumeName: null,
           destinationState: 'notApplicable',
+          destinationLandsOn: null,
           sourceFolder: null,
           liveOpCount: 0,
           totalOpCount: 0,

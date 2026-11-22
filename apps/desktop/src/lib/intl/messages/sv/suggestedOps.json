@@ -212,6 +212,10 @@
   "@suggestedOps.folderWillBeCreatedTooltip": {
     "sourceHash": "2d28b7c"
   },
+  "suggestedOps.destinationLandsOn": "En länk skickar filerna till en annan enhet: {path}",
+  "@suggestedOps.destinationLandsOn": {
+    "sourceHash": "d35d382"
+  },
   "suggestedOps.destinationUnknown": "Cmdr kunde inte kontrollera målmappen",
   "@suggestedOps.destinationUnknown": {
     "sourceHash": "dc78d1d"

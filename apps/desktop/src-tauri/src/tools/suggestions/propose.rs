@@ -358,6 +358,16 @@ fn group_problem_content(problem: &GroupProblem) -> (&'static str, String) {
              compress with the archive itself as the target."
                 .into(),
         ),
+        GroupProblem::DestinationNameUnsupported => (
+            "destinationNameUnsupported",
+            "This destination's name holds a character Cmdr can't write to yet (a private-use code point). Pick \
+             another folder, or ask the user to rename this one."
+                .into(),
+        ),
+        GroupProblem::DestinationNotAPath => (
+            "destinationNotAPath",
+            "This destination names no folder. Send its absolute path, as a listing shows it.".into(),
+        ),
         GroupProblem::RenamesVerbMismatch => (
             "renamesVerbMismatch",
             "renames belongs to rename, move, and copy only, and a rename group needs them.".into(),

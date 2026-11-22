@@ -11,7 +11,7 @@ use crate::tools::sensitive::Protected;
 use crate::tools::{ToolError, ToolResult};
 
 /// Why a view didn't read. Typed, so nobody reads a sentence to find out.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum ResourceError {
     UnknownUri(String),
     /// `cmdr://logs`: what the log holds stays home.
@@ -20,6 +20,9 @@ pub enum ResourceError {
     WindowSilent,
     /// A store or file behind the view isn't there. The message says which.
     Unavailable(String),
+    /// A query's path the agent's path door refused (`tools/agent_path.rs`): the same typed
+    /// error a tool's path field gets.
+    Path(ToolError),
 }
 
 impl ResourceError {
@@ -41,6 +44,7 @@ impl ResourceError {
             )
             .with_data(json!({ "reason": "windowSilent" })),
             ResourceError::Unavailable(detail) => ToolError::invalid_params(detail),
+            ResourceError::Path(refused) => refused,
         }
     }
 }

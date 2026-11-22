@@ -260,6 +260,13 @@
     "description": "Tooltip explaining the folder-creation pill.",
     "screenshot": "suggested-ops-downloads-cleanup.png"
   },
+  "suggestedOps.destinationLandsOn": "A link sends the files to another drive: {path}",
+  "@suggestedOps.destinationLandsOn": {
+    "description": "Shown beside the target folder’s path when a shortcut-like link (a symbolic link) inside that path leads to a folder on a different drive or server, so approving puts the files there rather than where the path seems to say. It discloses the real place; it doesn’t block the approval. “Drive” covers a server too: say it the way a person names any other disk.",
+    "placeholders": {
+      "path": "the full path of the folder the files really go to, on the other drive"
+    }
+  },
   "suggestedOps.destinationUnknown": "Cmdr couldn’t check the target folder",
   "@suggestedOps.destinationUnknown": {
     "description": "Shown beside the target folder’s path when the destination drive or server didn’t answer in time, so whether the folder exists is genuinely unknown rather than assumed.",
