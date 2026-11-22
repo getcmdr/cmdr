@@ -703,6 +703,90 @@ async fn a_move_into_a_zip_of_a_folder_that_holds_a_mounted_drive_refuses_and_mo
     }
 }
 
+/// An undo of a move from the Mac onto a drive puts every item back. The journal
+/// keeps such a row on `root` (whose root holds both ends, as every shipped macOS
+/// row did), so the planner reads it as one volume's move and asks for a rename,
+/// which the kernel refuses across filesystems (`EXDEV`): the undo then moves the
+/// item back the way a cross-volume one goes. Before that fallback every file
+/// skipped as `Failed`, and the undo left only the folders' skeleton on the Mac
+/// (seen in the app on macOS 27.0, 2026-11-22, PR #1378's review).
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[ignore = "attaches a real disk image; run via `pnpm check disk-images`"]
+async fn undoing_a_move_onto_another_drive_puts_every_item_back() {
+    use crate::rollback::Reversal;
+    use crate::testing::TestOperationLog;
+    use crate::types::VolumeCopyConfig;
+    use cmdr_operation_log::rollback::{execute_rollback, rollback_operation};
+    use cmdr_operation_log::types::Initiator;
+
+    let session = DiskImageSession::acquire();
+    let image = DiskImage::attach(&session, ImageSpec::Apfs).expect("attach the image");
+    let drive = image.volumes()[0].mount_point.clone();
+    let log = TestOperationLog::new("cross-device-undo");
+    let engine = TestOperations::journaling_into(&log);
+    engine
+        .volumes()
+        .register("root", crate::host::testing::scratch_disk_root());
+    engine.volumes().register(
+        "vol-image",
+        Arc::new(LocalVolume::local_folder("Image", drive.clone(), pane_order_host())),
+    );
+
+    let (mac, report) = mac_source("cross_device_undo");
+    let folder = mac.join("photos");
+    std::fs::create_dir_all(folder.join("sub")).expect("a source folder");
+    std::fs::write(folder.join("sub/a.jpg"), b"a").expect("a file in it");
+    let dest = drive.join("dst");
+    std::fs::create_dir_all(&dest).expect("the destination folder");
+
+    let events = Arc::new(CollectorEventSink::new());
+    let started = engine
+        .start_volume_move(
+            Arc::clone(&events) as Arc<dyn crate::event_sinks::OperationEventSink>,
+            "root".to_string(),
+            vec![report.clone(), folder.clone()],
+            "vol-image".to_string(),
+            dest.display().to_string(),
+            VolumeCopyConfig::default(),
+            Initiator::User,
+            None,
+        )
+        .await
+        .expect("the move starts");
+    wait_until_async(Duration::from_secs(20), "the move to settle", || {
+        !events.settled.lock_ignore_poison().is_empty()
+    })
+    .await;
+    assert!(events.errors.lock_ignore_poison().is_empty(), "{:?}", events.errors);
+    assert!(
+        !report.exists() && dest.join("photos/sub/a.jpg").exists(),
+        "the move landed"
+    );
+
+    let vm = engine.volumes();
+    let op_id = started.operation_id.to_string();
+    let plan = rollback_operation(vm.as_ref(), log.writer(), &op_id, |_plan| Ok(())).expect("the gate passes");
+    let reversal = Reversal::on(&engine, "cross-device-undo");
+    let undone = execute_rollback(
+        vm.as_ref(),
+        log.writer(),
+        &plan.original,
+        &plan.inverse_op_id,
+        Initiator::User,
+        reversal.runner(),
+    )
+    .await;
+
+    assert_eq!(undone.skipped, 0, "nothing skipped: {undone:?}");
+    assert_eq!(std::fs::read(&report).expect("the file is back").len(), SOURCE_SIZE);
+    assert_eq!(
+        std::fs::read(folder.join("sub/a.jpg")).expect("the folder's file is back"),
+        b"a"
+    );
+    assert!(!dest.join("footage.mov").exists(), "nothing stays on the drive");
+    assert!(!dest.join("photos/sub/a.jpg").exists(), "nothing stays on the drive");
+}
+
 /// The many-small-file barrier cells (#1145), a child so the disk-image lane runs them.
 #[path = "real_image_small_files_tests.rs"]
 mod small_files;

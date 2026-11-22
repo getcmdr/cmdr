@@ -1156,7 +1156,11 @@ one delete per object, which needs a scan, byte progress, pause, cancel, conflic
   (`apply_bulk_rename`) hands the count to the thread's result line ("Skipped 2 renames that swap names…"), while an
   approval through the suggested-ops bridge only logs it. An all-one-call batch keeps the executor.
 - **A same-volume move** routes itself (`move_same.rs`), and so does the **operation log's undo**: a same-volume restore
-  whose rename copies goes back through the staged per-file move (`rollback.rs`).
+  whose rename copies goes back through the staged per-file move (`rollback.rs`). So does one the kernel refuses as
+  `EXDEV` (`OsErrorClass::CrossDevice`), unless forced: the local engine journals a move from a Mac's `/` onto a drive
+  under it with both ends on `root` (`OpScope::local_ids_for`, as every shipped macOS row has it), and a rename back
+  across filesystems can't run. Before that fallback every file of such an undo skipped as `Failed` (seen on macOS 27.0,
+  2026-11-22; pinned by `transfer::real_image::undoing_a_move_onto_another_drive_puts_every_item_back`).
 
 ## Look-alike names
 
