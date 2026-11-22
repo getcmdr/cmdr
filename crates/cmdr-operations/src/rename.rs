@@ -17,7 +17,7 @@
 //!   entry whose rename copies (`Volume::rename_work`) starts a background move
 //!   instead (`start_rename_as_move`).
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::path::{Path, PathBuf};
 
 use super::archive_edit::{self, ArchiveEditRequest};
@@ -57,15 +57,16 @@ impl super::Operations {
     /// by the command layer. `volume_id` is `"root"` for the local filesystem.
     pub async fn rename_managed(
         &self,
-        from: PathBuf,
-        to: PathBuf,
+        from: AppPathBuf,
+        to: AppPathBuf,
         force: bool,
         volume_id: String,
         initiator: Initiator,
     ) -> Result<(), MutationError> {
         // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
-        let from = super::wire_paths::owned_without_trailing_separators(from);
-        let to = super::wire_paths::owned_without_trailing_separators(to);
+        let typed = RenameEnds { from, to };
+        let from = super::wire_paths::engine_path(&typed.from);
+        let to = super::wire_paths::engine_path(&typed.to);
         // Kept for the refusal line below: `rename_managed_inner` consumes both, and a
         // refusal nobody can place is a refusal nobody can diagnose.
         let attempted = from.clone();
@@ -74,7 +75,7 @@ impl super::Operations {
         // The emit wraps the whole driver rather than sitting at its ends: the archive
         // route is an early return, so a per-branch emit would count the filesystem
         // renames and quietly miss every in-zip one.
-        let (result, target) = rename_managed_inner(self, from, to, force, volume_id, initiator).await;
+        let (result, target) = rename_managed_inner(self, typed, from, to, force, volume_id, initiator).await;
         if let Err(error) = &result {
             log_rename_refusal(RenameStage::Rename, &attempted, &attempted_volume, error);
         }
@@ -134,10 +135,17 @@ fn log_rename_refusal(stage: RenameStage, from: &Path, volume_id: &str, error: &
     }
 }
 
+/// A rename's two ends as typed, for the route gates beside the bodies' `std::path` ones.
+struct RenameEnds {
+    from: AppPathBuf,
+    to: AppPathBuf,
+}
+
 /// The rename itself. Returns where it landed alongside its result so the wrapper
 /// above can label the event without re-deriving the route.
 async fn rename_managed_inner(
     engine: &super::Operations,
+    typed: RenameEnds,
     from: PathBuf,
     to: PathBuf,
     force: bool,
@@ -157,7 +165,8 @@ async fn rename_managed_inner(
         return (Err(refusal), InstantTarget::Volume);
     }
     let manager = host.volumes();
-    if manager.path_is_inside_archive(&volume_id, &from).await || manager.path_is_inside_archive(&volume_id, &to).await
+    if manager.path_is_inside_archive(&volume_id, &typed.from).await
+        || manager.path_is_inside_archive(&volume_id, &typed.to).await
     {
         return (
             route_archive_rename(engine, &from, &to, &volume_id).await,
@@ -166,9 +175,9 @@ async fn rename_managed_inner(
     }
     // Inside a repo's `.git/<category>/` trees the portal serves the path read-only;
     // the drive underneath would rename a real entry in the repository's `.git`.
-    for path in [&from, &to] {
-        if route_serving(host, &volume_id, path).await.is_some() {
-            return (Err(routed_mutation_refusal(path)), InstantTarget::Volume);
+    for path in [typed.from, typed.to] {
+        if route_serving(host, &volume_id, &path).await.is_some() {
+            return (Err(routed_mutation_refusal(&path)), InstantTarget::Volume);
         }
     }
 
@@ -222,7 +231,7 @@ async fn rename_managed_inner(
             Ok(RenameWork::OneCall) => {}
             Ok(RenameWork::CopyThenDelete) => {
                 return (
-                    start_rename_as_move(engine, &from, &to, force, &volume_id, initiator).await,
+                    start_rename_as_move(engine, &from_app, &to, force, &volume_id, initiator).await,
                     InstantTarget::Volume,
                 );
             }
@@ -409,7 +418,7 @@ struct VolumeSnapshot {
 /// checked free just above.
 async fn start_rename_as_move(
     engine: &super::Operations,
-    from: &Path,
+    from: &AppPath,
     to: &Path,
     force: bool,
     volume_id: &str,
@@ -434,7 +443,7 @@ async fn start_rename_as_move(
         .start_rename_by_move(
             events,
             volume_id.to_string(),
-            vec![(from.to_path_buf(), name_of(to))],
+            vec![(from.to_owned(), name_of(to))],
             parent.display().to_string(),
             config,
             initiator,
@@ -445,7 +454,7 @@ async fn start_rename_as_move(
             log::info!(
                 target: "volume",
                 "rename of {} runs as move {} on '{volume_id}'",
-                LogPrivate::path(from),
+                LogPrivate::path(&*crate::transfer::volume::failed_native(from)),
                 started.operation_id
             );
         })

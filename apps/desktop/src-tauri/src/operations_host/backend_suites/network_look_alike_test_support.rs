@@ -357,8 +357,8 @@ pub(super) async fn a_rename_never_lands_on_a_taken_name(remote: Arc<dyn Volume>
     let registered = Registered::new(&remote, "rename");
     let rename = |from: &str, to: &str| {
         app_engine().rename_managed(
-            dir.join(from),
-            dir.join(to),
+            cmdr_operations::testing::app_path_of(&dir.join(from)),
+            cmdr_operations::testing::app_path_of(&dir.join(to)),
             false,
             registered.id.clone(),
             Initiator::User,

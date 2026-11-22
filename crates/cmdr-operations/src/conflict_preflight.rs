@@ -139,7 +139,7 @@ impl crate::Operations {
         // routes to its ArchiveVolume (consistent with the copy op's routing).
         let engine = self.clone();
         let resolve_id = volume_id.clone();
-        let resolve_path = dest_path.clone();
+        let resolve_path = crate::wire_paths::seam_path(&dest_path).into_owned();
         let volume = timeout_detached_within(
             &deadline,
             || VolumeScanError::TimedOut,
@@ -181,7 +181,9 @@ impl crate::Operations {
         // source through its ArchiveVolume.
         if let (Some(src_volume_id), Some(src_paths)) = (source_volume_id, source_paths) {
             let paths: Vec<PathBuf> = src_paths.iter().map(PathBuf::from).collect();
-            let first = paths.first().cloned();
+            let first = paths
+                .first()
+                .map(|path| crate::wire_paths::seam_path(path).into_owned());
             // The listing cache keys a pane by the caller's volume id, which the
             // resolve below moves; the stat leg asks the cache with it.
             let stat_volume_id = src_volume_id.clone();
@@ -191,7 +193,7 @@ impl crate::Operations {
                 || VolumeScanError::TimedOut,
                 |detail| VolumeScanError::Unexpected { detail },
                 async move {
-                    Ok::<_, VolumeScanError>(resolving.resolve_source_volume(&src_volume_id, first.as_ref()).await)
+                    Ok::<_, VolumeScanError>(resolving.resolve_source_volume(&src_volume_id, first.as_deref()).await)
                 },
             )
             .await;

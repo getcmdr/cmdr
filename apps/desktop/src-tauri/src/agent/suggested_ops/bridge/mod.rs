@@ -25,6 +25,8 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use cmdr_fs::app_path::AppPathBuf;
+
 use rusqlite::Connection;
 
 use decorator::ProposalReportingSink;
@@ -127,7 +129,20 @@ pub async fn approve_and_execute(
     // files as they were while the user was deciding. The claim that follows is the last gate
     // before the engine.
     let ops = live_ops(conn, group_id)?;
-    let op_ids: HashMap<PathBuf, i64> = ops.iter().map(|op| (PathBuf::from(&op.source_path), op.id)).collect();
+    let op_ids: HashMap<AppPathBuf, i64> = ops
+        .iter()
+        .filter_map(|op| Some((decorator::op_key(&op.source_path)?, op.id)))
+        .collect();
+    // The starts take app paths; the binding (`ExpectedSources`) keys the engine's own
+    // `std::path` spelling of each, the stored text as it always was.
+    let typed_sources = match crate::commands::wire_path::start_paths(ops.iter().map(|op| op.source_path.as_str())) {
+        Ok(typed) => typed,
+        Err(refused) => {
+            return Ok(ApprovalOutcome::Refused(ApprovalRefusal::SourceUnavailable(
+                refused.into(),
+            )));
+        }
+    };
     let sources: Vec<PathBuf> = ops.iter().map(|op| PathBuf::from(&op.source_path)).collect();
 
     let volume_id = source_volume_of(conn, group_id)?;
@@ -139,7 +154,10 @@ pub async fn approve_and_execute(
             return Ok(ApprovalOutcome::Refused(ApprovalRefusal::SourceUnavailable(refusal)));
         }
     };
-    let Some((source_volume, _)) = engine.resolve_source_volume(&volume_id, sources.first()).await else {
+    let Some((source_volume, _)) = engine
+        .resolve_source_volume(&volume_id, typed_sources.first().map(|path| &**path))
+        .await
+    else {
         let first = sources
             .first()
             .map(|path| path.display().to_string())
@@ -168,7 +186,7 @@ pub async fn approve_and_execute(
     // drive that gained a Trash since takes the trash the verb asked for, and one that lost it
     // under a review that offered a trash refuses each item, as a clicked trash there would.
     let runs = approved_runs_as(shown_runs_as, runs_as(claimed.group.verb, Some(source_volume.as_ref())));
-    match start_for(engine, &claimed.group, runs, sources, &ops, expected, sink).await {
+    match start_for(engine, &claimed.group, runs, typed_sources, &ops, expected, sink).await {
         Ok(operation) => {
             super::started(&claimed);
             // The thread says "running" now, and the decorator's settle rewrites that line.
@@ -209,9 +227,9 @@ pub(crate) async fn start_reviewed_renames(
 ) -> Result<RenamesStarted, RenameStartError> {
     let group_id = claimed.group.id;
     // Each row's id IS its op id: the review's rows come straight off the group's ops.
-    let op_ids: HashMap<PathBuf, i64> = rows
+    let op_ids: HashMap<AppPathBuf, i64> = rows
         .iter()
-        .filter_map(|row| row.row_id.parse().ok().map(|op_id| (row.source.clone(), op_id)))
+        .filter_map(|row| Some((decorator::op_key(row.source.to_str()?)?, row.row_id.parse().ok()?)))
         .collect();
     let sink: Arc<dyn OperationEventSink> = Arc::new(ProposalReportingSink::new(
         events,
@@ -315,7 +333,7 @@ async fn start_for(
     engine: &Operations,
     group: &ProposalGroup,
     runs: Option<RunsAs>,
-    sources: Vec<PathBuf>,
+    sources: Vec<AppPathBuf>,
     ops: &[ProposalOp],
     expected: ExpectedSources,
     events: Arc<dyn OperationEventSink>,

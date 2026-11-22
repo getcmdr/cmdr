@@ -47,9 +47,17 @@ async fn drive_with_routes(label: &str) -> (TestOperations, String, Arc<InMemory
         .volumes()
         .register(&volume_id, Arc::clone(&drive) as Arc<dyn Volume>);
     let portal: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("main"));
-    engine.volumes().route(BRANCHES, RoutedKind::GitPortal, portal);
+    engine.volumes().route(
+        AppPath::from_normalized(BRANCHES).expect("canonical"),
+        RoutedKind::GitPortal,
+        portal,
+    );
     let archive: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("bundle.zip"));
-    engine.volumes().route(ZIP, RoutedKind::Archive, archive);
+    engine.volumes().route(
+        AppPath::from_normalized(ZIP).expect("canonical"),
+        RoutedKind::Archive,
+        archive,
+    );
     (engine, volume_id, drive)
 }
 
@@ -111,7 +119,7 @@ async fn a_rename_as_move_out_of_dot_git_refuses() {
         .start_rename_by_move(
             Arc::new(CollectorEventSink::new()),
             volume_id,
-            vec![(from.clone(), "b.txt".to_string())],
+            vec![(crate::testing::app_path_of(&from), "b.txt".to_string())],
             "/repo/.git/branches/main".to_string(),
             VolumeCopyConfig::default(),
             Initiator::User,
@@ -135,7 +143,7 @@ async fn a_rename_as_move_into_an_archive_refuses() {
         .start_rename_by_move(
             Arc::new(CollectorEventSink::new()),
             volume_id,
-            vec![(PathBuf::from("/repo/top.txt"), "top.txt".to_string())],
+            vec![(app_path!("/repo/top.txt").to_owned(), "top.txt".to_string())],
             ZIP.to_string(),
             VolumeCopyConfig::default(),
             Initiator::User,
@@ -157,8 +165,8 @@ async fn an_instant_rename_under_dot_git_refuses() {
 
     let result = engine
         .rename_managed(
-            from.clone(),
-            PathBuf::from("/repo/.git/branches/main/b.txt"),
+            crate::testing::app_path_of(&from),
+            app_path!("/repo/.git/branches/main/b.txt").to_owned(),
             false,
             volume_id,
             Initiator::User,
@@ -275,7 +283,7 @@ async fn a_delete_under_dot_git_refuses() {
     let result = engine
         .delete_files_start(
             Arc::new(CollectorEventSink::new()),
-            vec![doomed.clone()],
+            vec![crate::testing::app_path_of(&doomed)],
             WriteOperationConfig::default(),
             Some(volume_id),
             Initiator::Agent,

@@ -171,7 +171,7 @@ async fn a_file_copied_onto_a_phone_lands_whole_through_a_staging_name() {
     let running = start_copy_by_id(
         "copy-onto-phone",
         local.volume_id.clone(),
-        vec![PathBuf::from("uploaded.bin")],
+        vec![local.dir.join("uploaded.bin")],
         phone.volume_id.clone(),
         phone.dir.to_string_lossy().into_owned(),
         VolumeCopyConfig::default(),
@@ -499,7 +499,7 @@ async fn a_copy_onto_a_phones_root_is_refused_as_not_writable_rather_than_as_out
     let running = start_copy_by_id(
         "copy-onto-phone-root",
         local.volume_id.clone(),
-        vec![PathBuf::from("photo.jpg")],
+        vec![local.dir.join("photo.jpg")],
         phone.volume_id.clone(),
         cmdr_fs::volume::adb_app_root(SERIAL),
         VolumeCopyConfig::default(),
@@ -573,7 +573,7 @@ async fn a_move_on_a_phone_renames_on_the_device_and_patches_both_panes() {
         .start_volume_move(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
             phone.volume_id.clone(),
-            vec![phone.sdcard.join("a.txt")],
+            vec![cmdr_operations::testing::app_path_of(&phone.sdcard.join("a.txt"))],
             phone.volume_id.clone(),
             album.to_string_lossy().into_owned(),
             VolumeCopyConfig::default(),
@@ -700,7 +700,7 @@ async fn a_copy_onto_a_phone_nobody_dialed_is_refused_as_not_connected() {
         .start_volume_copy(
             Arc::new(CollectorEventSink::new()),
             local.volume_id.clone(),
-            vec![PathBuf::from("photo.jpg")],
+            vec![cmdr_operations::testing::app_path_of(&local.dir.join("photo.jpg"))],
             phone.volume_id.clone(),
             phone.sdcard.to_string_lossy().into_owned(),
             VolumeCopyConfig::default(),
@@ -731,7 +731,7 @@ async fn a_move_off_a_phone_nobody_dialed_is_refused_as_not_connected() {
         .start_volume_move(
             Arc::new(CollectorEventSink::new()),
             phone.volume_id.clone(),
-            vec![phone.sdcard.join("a.txt")],
+            vec![cmdr_operations::testing::app_path_of(&phone.sdcard.join("a.txt"))],
             local.volume_id.clone(),
             local.dir.to_string_lossy().into_owned(),
             VolumeCopyConfig::default(),
@@ -761,7 +761,7 @@ async fn a_delete_on_a_phone_nobody_dialed_is_refused_as_not_connected() {
     app_engine()
         .delete_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![phone.sdcard.join("old.txt")],
+            vec![cmdr_operations::testing::app_path_of(&phone.sdcard.join("old.txt"))],
             WriteOperationConfig::default(),
             Some(phone.volume_id.clone()),
             Initiator::User,

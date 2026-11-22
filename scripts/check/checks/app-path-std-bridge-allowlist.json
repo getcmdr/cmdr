@@ -271,6 +271,7 @@
     "crates/cmdr-operations/src/transfer/volume/swap_outage_tests.rs": 10,
     "crates/cmdr-operations/src/transfer/volume/transfer_error.rs": 2,
     "crates/cmdr-operations/src/unblocked_removal.rs": 2,
+    "crates/cmdr-operations/src/wire_paths.rs": 2,
     "crates/cmdr-restic/src/hub.rs": 1,
     "crates/cmdr-restic/src/test_fixtures.rs": 1,
     "crates/cmdr-s3/src/volume/conformance_test.rs": 1,

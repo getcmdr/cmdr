@@ -282,7 +282,10 @@ async fn settle_legacy(host: &EngineHost, temp: &RecordedTemp) -> Outcome {
             // `resolve`, not `get`: the site is passing a path, and a read-only
             // routed volume (an archive, a git snapshot) is one this sweep must
             // never delete through.
-            let resolved = host.volumes().resolve(&temp.volume_id, &temp.path).await;
+            let resolved = host
+                .volumes()
+                .resolve(&temp.volume_id, &crate::wire_paths::seam_path(&temp.path))
+                .await;
             let is_routed = resolved.is_routed();
             let Some(volume) = resolved.volume.filter(|_| !is_routed) else {
                 return Outcome::Deferred;
@@ -396,7 +399,10 @@ async fn locate(host: &EngineHost, item: &TrackedItem) -> Located {
             }
         }
         ItemHome::VolumeSpace { volume_id } => {
-            let resolved = host.volumes().resolve(volume_id, &item.path).await;
+            let resolved = host
+                .volumes()
+                .resolve(volume_id, &crate::wire_paths::seam_path(&item.path))
+                .await;
             let is_routed = resolved.is_routed();
             let Some(volume) = resolved.volume.filter(|_| !is_routed) else {
                 return Located::Unreachable;

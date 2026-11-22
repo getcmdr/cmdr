@@ -5,6 +5,7 @@
 //! two different databases. This is the production shape.
 
 use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPathBuf;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -63,7 +64,10 @@ fn sink_over(
     reporting: Connection,
 ) -> (Arc<CollectorEventSink>, ProposalReportingSink) {
     let collector = Arc::new(CollectorEventSink::new());
-    let op_ids: HashMap<PathBuf, i64> = ops.iter().map(|op| (PathBuf::from(&op.source_path), op.id)).collect();
+    let op_ids: HashMap<AppPathBuf, i64> = ops
+        .iter()
+        .filter_map(|op| Some((super::decorator::op_key(&op.source_path)?, op.id)))
+        .collect();
     let sink = ProposalReportingSink::new(collector.clone(), group_id, op_ids, reporting, None);
     (collector, sink)
 }
@@ -230,7 +234,10 @@ fn what_the_agent_learns_from_an_approval_is_what_actually_ran() {
     std::fs::create_dir_all(&memory_root).expect("memory root");
     let memory = crate::agent::memory::MemoryStore::new(&memory_root);
     let collector = Arc::new(CollectorEventSink::new());
-    let op_ids: HashMap<PathBuf, i64> = ops.iter().map(|op| (PathBuf::from(&op.source_path), op.id)).collect();
+    let op_ids: HashMap<AppPathBuf, i64> = ops
+        .iter()
+        .filter_map(|op| Some((super::decorator::op_key(&op.source_path)?, op.id)))
+        .collect();
     let sink = ProposalReportingSink::new(collector, group_id, op_ids, reporting, Some(memory));
 
     sink.emit_source_item_done(done("/Users/someone/Downloads/one.dmg", SourceItemOutcome::Done));
@@ -350,7 +357,7 @@ fn vanished_rename_group(dir: &TestDir) -> (Connection, Connection, i64) {
     let set_id = create_sweep(&conn, &NewSweep::default(), 100).expect("sweep");
     // A stored place is an app path (`C:/Users/…` on Windows), as the tool that proposes it
     // writes one.
-    let parent = app_path::AppPathBuf::from_native(&dir.join("shots"))
+    let parent = AppPathBuf::from_native(&dir.join("shots"))
         .expect("a scratch dir is an app path")
         .into_string();
     let group_id = create_group(
@@ -859,7 +866,7 @@ async fn an_approved_named_move_lands_each_file_under_its_name() {
             intent: GroupIntent::Move {
                 destination: crate::agent::store::proposals::WritableDestination::new(crate::location::Location {
                     volume_id: "root".to_string(),
-                    path: app_path::AppPathBuf::from_native(&paid)
+                    path: AppPathBuf::from_native(&paid)
                         .expect("a scratch dir is an app path")
                         .into_string(),
                 })

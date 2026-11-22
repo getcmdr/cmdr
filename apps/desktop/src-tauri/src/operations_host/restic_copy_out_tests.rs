@@ -97,7 +97,10 @@ async fn a_copy_out_lands_a_file_and_a_folder_with_their_dates_and_modes() {
 
     let sources = vec![drive.backed_up.join("notes.txt"), drive.backed_up.join("docs")];
     let (source, route) = engine
-        .resolve_source_volume(&drive.volume_id, sources.first())
+        .resolve_source_volume(
+            &drive.volume_id,
+            Some(&cmdr_operations::testing::app_path_of(&sources[0])),
+        )
         .await
         .expect("the source volume");
     assert_eq!(route, Some(RoutedKind::Restic));
@@ -149,7 +152,9 @@ async fn a_move_out_is_refused_before_a_byte_is_written() {
         .start_volume_move(
             Arc::new(CollectorEventSink::new()),
             drive.volume_id.clone(),
-            vec![drive.backed_up.join("notes.txt")],
+            vec![cmdr_operations::testing::app_path_of(
+                &drive.backed_up.join("notes.txt"),
+            )],
             dest_id,
             dest_root.to_string_lossy().into_owned(),
             VolumeCopyConfig::default(),
@@ -188,7 +193,9 @@ async fn cancelling_the_pre_scan_of_a_whole_snapshot_ends_the_copy_with_nothing_
         .start_volume_copy(
             events.clone(),
             drive.volume_id.clone(),
-            vec![drive.repo.join("Browse snapshots/latest")],
+            vec![cmdr_operations::testing::app_path_of(
+                &drive.repo.join("Browse snapshots/latest"),
+            )],
             dest_id,
             dest_root.to_string_lossy().into_owned(),
             VolumeCopyConfig::default(),
@@ -231,7 +238,10 @@ async fn a_copy_out_with_no_password_asks_for_one_and_goes_through_after_the_unl
 
     let copy = || async {
         let (source, _route) = engine
-            .resolve_source_volume(&drive.volume_id, sources.first())
+            .resolve_source_volume(
+                &drive.volume_id,
+                Some(&cmdr_operations::testing::app_path_of(&sources[0])),
+            )
             .await
             .expect("the source volume");
         copy_volumes_with_progress(
@@ -275,7 +285,10 @@ async fn a_special_file_in_a_snapshot_is_skipped_and_its_siblings_land() {
 
     let sources = vec![drive.backed_up.join("docs")];
     let (source, _route) = engine
-        .resolve_source_volume(&drive.volume_id, sources.first())
+        .resolve_source_volume(
+            &drive.volume_id,
+            Some(&cmdr_operations::testing::app_path_of(&sources[0])),
+        )
         .await
         .expect("the source volume");
     let names: Vec<String> = source
@@ -333,7 +346,10 @@ async fn a_restore_lands_links_as_links_verbatim_nested_and_selected() {
     let (_dest_dir, dest_root, _dest_id, dest) = dest_drive("restic-restore-links-dest");
     let sources = vec![drive.backed_up.join("docs"), drive.backed_up.join("alone")];
     let (source, _route) = engine
-        .resolve_source_volume(&drive.volume_id, sources.first())
+        .resolve_source_volume(
+            &drive.volume_id,
+            Some(&cmdr_operations::testing::app_path_of(&sources[0])),
+        )
         .await
         .expect("the source volume");
     let events = Arc::new(CollectorEventSink::new());
@@ -389,7 +405,10 @@ async fn a_restore_onto_a_destination_with_no_links_counts_each_as_a_skip() {
     ] {
         let sources = vec![source_path];
         let (source, _route) = engine
-            .resolve_source_volume(&drive.volume_id, sources.first())
+            .resolve_source_volume(
+                &drive.volume_id,
+                Some(&cmdr_operations::testing::app_path_of(&sources[0])),
+            )
             .await
             .expect("the source volume");
         let events = Arc::new(CollectorEventSink::new());
@@ -426,7 +445,10 @@ async fn a_symlink_in_a_snapshot_doesnt_stop_its_folder_from_copying_out() {
 
     let sources = vec![drive.backed_up.join("docs")];
     let (source, _route) = engine
-        .resolve_source_volume(&drive.volume_id, sources.first())
+        .resolve_source_volume(
+            &drive.volume_id,
+            Some(&cmdr_operations::testing::app_path_of(&sources[0])),
+        )
         .await
         .expect("the source volume");
     let result = copy_volumes_with_progress(

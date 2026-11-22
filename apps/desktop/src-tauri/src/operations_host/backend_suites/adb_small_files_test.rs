@@ -100,7 +100,7 @@ async fn copy_small_files(serial: &'static str, what: &str, round_trip: Duration
     let running = start_copy_by_id(
         what,
         local.volume_id.clone(),
-        names.clone(),
+        names.iter().map(|name| local.dir.join(name)).collect(),
         phone.volume_id.clone(),
         phone.dir.to_string_lossy().into_owned(),
         VolumeCopyConfig::default(),

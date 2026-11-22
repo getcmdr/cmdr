@@ -94,7 +94,7 @@ async fn a_copy_out_of_a_snapshot_carries_a_file_and_a_folder_byte_for_byte() {
         dir.join(".git/branches/main/docs"),
     ];
     let (source, route) = engine
-        .resolve_source_volume("root", sources.first())
+        .resolve_source_volume("root", Some(&cmdr_operations::testing::app_path_of(&sources[0])))
         .await
         .expect("the source volume");
     assert_eq!(
@@ -160,7 +160,7 @@ async fn the_executable_bit_survives_a_copy_out_of_a_snapshot() {
         dir.join(".git/branches/main/scripts"),
     ];
     let (source, _route) = engine
-        .resolve_source_volume("root", sources.first())
+        .resolve_source_volume("root", Some(&cmdr_operations::testing::app_path_of(&sources[0])))
         .await
         .expect("the source volume");
     let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
@@ -231,7 +231,9 @@ async fn a_move_out_of_a_snapshot_is_refused_before_a_byte_is_written() {
         .start_volume_move(
             Arc::new(CollectorEventSink::new()),
             "root".to_string(),
-            vec![dir.join(".git/branches/main/readme.txt")],
+            vec![cmdr_operations::testing::app_path_of(
+                &dir.join(".git/branches/main/readme.txt"),
+            )],
             "dest".to_string(),
             dest_dir.to_string_lossy().into_owned(),
             VolumeCopyConfig::default(),
@@ -279,7 +281,7 @@ async fn a_copy_into_a_snapshot_is_refused_up_front() {
         .start_volume_copy(
             Arc::new(CollectorEventSink::new()),
             "root".to_string(),
-            vec![dir.join("dropped.txt")],
+            vec![cmdr_operations::testing::app_path_of(&dir.join("dropped.txt"))],
             "root".to_string(),
             dir.join(".git/branches/main/docs").to_string_lossy().into_owned(),
             VolumeCopyConfig::default(),
@@ -320,7 +322,10 @@ async fn a_copy_mixing_a_snapshot_with_real_git_files_refuses_whole() {
         .start_volume_copy(
             Arc::new(CollectorEventSink::new()),
             "root".to_string(),
-            vec![real, snapshot.clone()],
+            vec![
+                cmdr_operations::testing::app_path_of(&real),
+                cmdr_operations::testing::app_path_of(&snapshot),
+            ],
             dest_id,
             "/".to_string(),
             VolumeCopyConfig::default(),

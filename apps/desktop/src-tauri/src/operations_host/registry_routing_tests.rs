@@ -99,7 +99,7 @@ async fn resolve_source_treats_the_zip_file_itself_as_a_plain_file() {
     // volume, `is_inside = false` (NOT the ArchiveVolume, which would scan its
     // contents instead of copying the file).
     let (vol, route) = engine
-        .resolve_source_volume(&parent_id, Some(&zip))
+        .resolve_source_volume(&parent_id, Some(&cmdr_operations::testing::app_path_of(&zip)))
         .await
         .expect("source volume");
     assert_eq!(route, None, "the .zip file itself is not archive-inner");
@@ -108,7 +108,10 @@ async fn resolve_source_treats_the_zip_file_itself_as_a_plain_file() {
     // A path INSIDE the archive routes to the ArchiveVolume. This is what makes
     // an EXTRACT reachable as an ordinary copy.
     let (inner_vol, inner_route) = engine
-        .resolve_source_volume(&parent_id, Some(&zip.join("entry.txt")))
+        .resolve_source_volume(
+            &parent_id,
+            Some(&cmdr_operations::testing::app_path_of(&zip.join("entry.txt"))),
+        )
         .await
         .expect("inner volume");
     assert_eq!(inner_route, Some(RoutedKind::Archive), "an inner path is archive-inner");
@@ -149,7 +152,12 @@ async fn resolve_source_routes_a_snapshot_path_to_the_git_portal() {
     git::wiring::set_virtual_portal_enabled(true);
 
     let (volume, route) = engine
-        .resolve_source_volume(&parent_id, Some(&dir.join(".git/branches/main/README.md")))
+        .resolve_source_volume(
+            &parent_id,
+            Some(&cmdr_operations::testing::app_path_of(
+                &dir.join(".git/branches/main/README.md"),
+            )),
+        )
         .await
         .expect("source volume");
     assert_eq!(route, Some(RoutedKind::GitPortal));
@@ -163,7 +171,10 @@ async fn resolve_source_routes_a_snapshot_path_to_the_git_portal() {
     // `.git/` itself and the real files under it are the parent's, so editing
     // and deleting them keeps working.
     let (parent, real_route) = engine
-        .resolve_source_volume(&parent_id, Some(&dir.join(".git/config")))
+        .resolve_source_volume(
+            &parent_id,
+            Some(&cmdr_operations::testing::app_path_of(&dir.join(".git/config"))),
+        )
         .await
         .expect("source volume");
     assert_eq!(real_route, None);
@@ -194,7 +205,7 @@ async fn a_copy_onto_an_id_nothing_knows_still_reads_as_a_missing_volume() {
         .start_volume_copy(
             Arc::new(CollectorEventSink::new()),
             source_id.clone(),
-            vec![Path::new("/a.txt").to_path_buf()],
+            vec![app_path!("/a.txt").to_owned()],
             "no-provider-or-saved-server-knows-this".to_string(),
             "/photos".to_string(),
             VolumeCopyConfig::default(),
@@ -229,7 +240,7 @@ async fn a_copy_from_an_id_nothing_knows_reads_as_a_source_no_longer_connected()
         .start_volume_copy(
             Arc::new(CollectorEventSink::new()),
             "an-unplugged-phone-nothing-lists".to_string(),
-            vec![Path::new("/sdcard/DCIM/a.jpg").to_path_buf()],
+            vec![app_path!("/sdcard/DCIM/a.jpg").to_owned()],
             dest_id.clone(),
             "/".to_string(),
             VolumeCopyConfig::default(),
@@ -279,7 +290,13 @@ async fn rename_managed_routes_an_in_archive_rename_to_the_edit_driver() {
     let from = zip.join("old.txt");
     let to = zip.join("new.txt");
     let err = engine
-        .rename_managed(from, to, false, "root".to_string(), Initiator::User)
+        .rename_managed(
+            cmdr_operations::testing::app_path_of(&from),
+            cmdr_operations::testing::app_path_of(&to),
+            false,
+            "root".to_string(),
+            Initiator::User,
+        )
         .await
         .expect_err("routing needs an app handle the unit test doesn't wire");
     // The archive-specific variant is how we tell the routing fork fired from a
@@ -296,7 +313,13 @@ async fn rename_managed_routes_an_in_archive_rename_to_the_edit_driver() {
     // deterministic routing decision that needs no app handle.
     let outside = tmp.join("out.txt");
     let cross = engine
-        .rename_managed(zip.join("old.txt"), outside, false, "root".to_string(), Initiator::User)
+        .rename_managed(
+            cmdr_operations::testing::app_path_of(&zip.join("old.txt")),
+            cmdr_operations::testing::app_path_of(&outside),
+            false,
+            "root".to_string(),
+            Initiator::User,
+        )
         .await
         .expect_err("a cross-boundary rename is refused");
     assert!(

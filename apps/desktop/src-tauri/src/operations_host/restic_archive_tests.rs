@@ -71,7 +71,10 @@ async fn copy_out(
 ) {
     let engine = super::test_engine();
     let (source, resolved) = engine
-        .resolve_source_volume(&drive.volume_id, sources.first())
+        .resolve_source_volume(
+            &drive.volume_id,
+            Some(&cmdr_operations::testing::app_path_of(&sources[0])),
+        )
         .await
         .expect("the source volume");
     assert_eq!(resolved, Some(route));
@@ -226,7 +229,7 @@ async fn writes_into_the_zip_and_a_move_out_refuse_before_anything_moves() {
         .start_volume_copy(
             Arc::new(CollectorEventSink::new()),
             dest_id.clone(),
-            vec![dest_root.join("new.txt")],
+            vec![cmdr_operations::testing::app_path_of(&dest_root.join("new.txt"))],
             drive.volume_id.clone(),
             zip.join("docs").to_string_lossy().into_owned(),
             VolumeCopyConfig::default(),
@@ -240,7 +243,7 @@ async fn writes_into_the_zip_and_a_move_out_refuse_before_anything_moves() {
         .start_volume_move(
             Arc::new(CollectorEventSink::new()),
             drive.volume_id.clone(),
-            vec![zip.join("readme.txt")],
+            vec![cmdr_operations::testing::app_path_of(&zip.join("readme.txt"))],
             dest_id,
             dest_root.to_string_lossy().into_owned(),
             VolumeCopyConfig::default(),
@@ -254,7 +257,7 @@ async fn writes_into_the_zip_and_a_move_out_refuse_before_anything_moves() {
     let delete = engine
         .delete_files_start(
             Arc::new(CollectorEventSink::new()),
-            vec![zip.join("readme.txt")],
+            vec![cmdr_operations::testing::app_path_of(&zip.join("readme.txt"))],
             WriteOperationConfig::default(),
             Some(drive.volume_id.clone()),
             Initiator::User,
@@ -265,8 +268,8 @@ async fn writes_into_the_zip_and_a_move_out_refuse_before_anything_moves() {
 
     let renamed = engine
         .rename_managed(
-            zip.join("readme.txt"),
-            zip.join("renamed.txt"),
+            cmdr_operations::testing::app_path_of(&zip.join("readme.txt")),
+            cmdr_operations::testing::app_path_of(&zip.join("renamed.txt")),
             false,
             drive.volume_id.clone(),
             Initiator::User,

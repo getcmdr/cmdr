@@ -7,7 +7,6 @@
 //! planner, whose [`VolumeLookup`] is this trait's supertrait.
 
 use std::future::Future;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 
@@ -29,27 +28,27 @@ pub trait OperationVolumes: VolumeLookup {
     /// The volume that serves `path` on `volume_id`, routed through an archive
     /// or the git portal where the path crosses one. The path comes back
     /// unchanged.
-    fn resolve<'a>(&'a self, volume_id: &'a str, path: &'a Path) -> VolumeAnswer<'a, ResolvedVolume>;
+    fn resolve<'a>(&'a self, volume_id: &'a str, path: &'a AppPath) -> VolumeAnswer<'a, ResolvedVolume>;
 
     /// Whether `path` could be served by a route rather than by the volume that
     /// holds it. Pure string work, the cheap gate in front of an awaited
     /// [`resolve`](Self::resolve): ❌ never the answer itself.
-    fn routes_over_its_parent(&self, path: &Path) -> bool;
+    fn routes_over_its_parent(&self, path: &AppPath) -> bool;
 
     /// Whether `path` lies INSIDE a confirmed archive on `volume_id` (the `.zip`
     /// file itself doesn't), confirmed through the parent's own I/O.
-    fn path_is_inside_archive<'a>(&'a self, volume_id: &'a str, path: &'a Path) -> VolumeAnswer<'a, bool>;
+    fn path_is_inside_archive<'a>(&'a self, volume_id: &'a str, path: &'a AppPath) -> VolumeAnswer<'a, bool>;
 
     /// Whether `path` crosses into a confirmed archive on `volume_id`: the `.zip`
     /// file itself, or anything inside it.
-    fn path_crosses_archive_boundary<'a>(&'a self, volume_id: &'a str, path: &'a Path) -> VolumeAnswer<'a, bool>;
+    fn path_crosses_archive_boundary<'a>(&'a self, volume_id: &'a str, path: &'a AppPath) -> VolumeAnswer<'a, bool>;
 
     /// The registered volume one of whose mount roots is `root`, with its id.
     fn find_by_root(&self, root: &AppPath) -> Option<(String, Arc<dyn Volume>)>;
 
     /// Drops the parsed index of the archive at `archive_path`, so the next read
     /// sees an edit the engine just committed.
-    fn forget_archive_index(&self, archive_path: &Path);
+    fn forget_archive_index(&self, archive_path: &AppPath);
 
     /// Tells `listener`, by id, whenever a volume becomes available: it
     /// registers, or a registered volume reconnects in place (its session came
@@ -123,19 +122,19 @@ impl VolumeLookup for NoOperationVolumes {
 
 #[cfg(any(test, feature = "testing"))]
 impl OperationVolumes for NoOperationVolumes {
-    fn resolve<'a>(&'a self, _volume_id: &'a str, path: &'a Path) -> VolumeAnswer<'a, ResolvedVolume> {
-        Box::pin(async move { ResolvedVolume::passthrough(None, path) })
+    fn resolve<'a>(&'a self, _volume_id: &'a str, path: &'a AppPath) -> VolumeAnswer<'a, ResolvedVolume> {
+        Box::pin(async move { ResolvedVolume::passthrough_at(None, path) })
     }
 
-    fn routes_over_its_parent(&self, _path: &Path) -> bool {
+    fn routes_over_its_parent(&self, _path: &AppPath) -> bool {
         false
     }
 
-    fn path_is_inside_archive<'a>(&'a self, _volume_id: &'a str, _path: &'a Path) -> VolumeAnswer<'a, bool> {
+    fn path_is_inside_archive<'a>(&'a self, _volume_id: &'a str, _path: &'a AppPath) -> VolumeAnswer<'a, bool> {
         Box::pin(async { false })
     }
 
-    fn path_crosses_archive_boundary<'a>(&'a self, _volume_id: &'a str, _path: &'a Path) -> VolumeAnswer<'a, bool> {
+    fn path_crosses_archive_boundary<'a>(&'a self, _volume_id: &'a str, _path: &'a AppPath) -> VolumeAnswer<'a, bool> {
         Box::pin(async { false })
     }
 
@@ -143,7 +142,7 @@ impl OperationVolumes for NoOperationVolumes {
         None
     }
 
-    fn forget_archive_index(&self, _archive_path: &Path) {}
+    fn forget_archive_index(&self, _archive_path: &AppPath) {}
 
     fn on_volume_arrival(&self, _listener: Box<dyn Fn(&str) + Send + Sync>) {}
 

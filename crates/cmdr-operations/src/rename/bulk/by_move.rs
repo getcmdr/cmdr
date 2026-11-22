@@ -14,7 +14,7 @@
 //! - **The sources are bound** to the fingerprints preflight captured, the way
 //!   every other approved operation is (`source_binding.rs`).
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -77,11 +77,16 @@ impl crate::Operations {
         if let Some(error) = self.home_folder_guard(&volume_id, &sources, HomeFolderAction::Rename) {
             return Err(RenameStartError::Engine { error });
         }
-        let touched: Vec<&Path> = rows
+        let touched: Vec<std::borrow::Cow<'_, AppPath>> = rows
             .iter()
-            .flat_map(|row| [row.source.as_path(), row.destination.as_path()])
+            .flat_map(|row| {
+                [
+                    crate::wire_paths::seam_path(&row.source),
+                    crate::wire_paths::seam_path(&row.destination),
+                ]
+            })
             .collect();
-        if let Some((routed, _)) = first_routed(self.host(), &volume_id, touched).await {
+        if let Some((routed, _)) = first_routed(self.host(), &volume_id, &touched).await {
             return Err(RenameStartError::Engine {
                 error: routed_transfer_refusal(&routed, ReadOnlySide::Source),
             });
@@ -193,7 +198,7 @@ impl crate::Operations {
 
 /// What a batch moves, in order, as `(source, new name)`, and which rows a
 /// cycle kept out. No-op rows (a name that doesn't change) move nowhere.
-fn move_order(rows: &[BulkRenameRow]) -> (Vec<(PathBuf, String)>, Vec<usize>) {
+fn move_order(rows: &[BulkRenameRow]) -> (Vec<(AppPathBuf, String)>, Vec<usize>) {
     let active = vec![true; rows.len()];
     let mut moves = Vec::with_capacity(rows.len());
     let mut left_out = Vec::new();
@@ -205,7 +210,9 @@ fn move_order(rows: &[BulkRenameRow]) -> (Vec<(PathBuf, String)>, Vec<usize>) {
                     left_out.push(index);
                     continue;
                 };
-                moves.push((row.source.clone(), name.to_string_lossy().into_owned()));
+                // The move start's one crossing for a row, until `BulkRenameRow` is typed.
+                let source = crate::wire_paths::seam_path(&row.source).into_owned();
+                moves.push((source, name.to_string_lossy().into_owned()));
             }
             RenamePlanStep::Cycle(indices) => left_out.extend(indices),
         }
@@ -215,6 +222,8 @@ fn move_order(rows: &[BulkRenameRow]) -> (Vec<(PathBuf, String)>, Vec<usize>) {
 
 #[cfg(test)]
 mod tests {
+    use cmdr_fs::app_path;
+
     use super::*;
     use crate::source_binding::{RemoteContent, SourceFingerprint};
 
@@ -237,8 +246,8 @@ mod tests {
         assert_eq!(
             moves,
             vec![
-                (PathBuf::from("/d/b"), "c".to_string()),
-                (PathBuf::from("/d/a"), "b".to_string()),
+                (app_path!("/d/b").to_owned(), "c".to_string()),
+                (app_path!("/d/a").to_owned(), "b".to_string()),
             ]
         );
         assert!(left_out.is_empty());
@@ -254,7 +263,7 @@ mod tests {
             row("4", "/d/old", "/d/new"),
         ];
         let (moves, mut left_out) = move_order(&rows);
-        assert_eq!(moves, vec![(PathBuf::from("/d/old"), "new".to_string())]);
+        assert_eq!(moves, vec![(app_path!("/d/old").to_owned(), "new".to_string())]);
         left_out.sort_unstable();
         assert_eq!(left_out, vec![0, 1]);
     }

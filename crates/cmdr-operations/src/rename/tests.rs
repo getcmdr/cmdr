@@ -72,8 +72,8 @@ async fn an_instant_rename_journals_its_row_through_the_real_store() {
 
     engine
         .rename_managed(
-            tmp.join(&old_name),
-            tmp.join("new.txt"),
+            crate::testing::app_path_of(&tmp.join(&old_name)),
+            crate::testing::app_path_of(&tmp.join("new.txt")),
             false,
             "root".to_string(),
             Initiator::User,
@@ -106,7 +106,13 @@ async fn rename_managed_local_success() {
     let new = tmp.join("new.txt");
     fs::write(&old, "content").unwrap();
     let result = engine
-        .rename_managed(old.clone(), new.clone(), false, "root".to_string(), Initiator::User)
+        .rename_managed(
+            crate::testing::app_path_of(&old),
+            crate::testing::app_path_of(&new),
+            false,
+            "root".to_string(),
+            Initiator::User,
+        )
         .await;
     assert!(result.is_ok());
     assert!(!old.exists());
@@ -124,7 +130,13 @@ async fn rename_managed_renames_a_zip_file_itself() {
     let new = tmp.join("renamed.zip");
     fs::write(&old, b"PK\x03\x04rest").unwrap();
     let result = engine
-        .rename_managed(old.clone(), new.clone(), false, "root".to_string(), Initiator::User)
+        .rename_managed(
+            crate::testing::app_path_of(&old),
+            crate::testing::app_path_of(&new),
+            false,
+            "root".to_string(),
+            Initiator::User,
+        )
         .await;
     assert!(result.is_ok(), "renaming the .zip file itself must succeed: {result:?}");
     assert!(!old.exists());
@@ -141,7 +153,13 @@ async fn rename_managed_local_conflict_without_force_is_transparent() {
     fs::write(&old, "old").unwrap();
     fs::write(&new, "new").unwrap();
     let result = engine
-        .rename_managed(old.clone(), new.clone(), false, "root".to_string(), Initiator::User)
+        .rename_managed(
+            crate::testing::app_path_of(&old),
+            crate::testing::app_path_of(&new),
+            false,
+            "root".to_string(),
+            Initiator::User,
+        )
         .await;
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), MutationError::AlreadyExists { .. }));
@@ -158,7 +176,13 @@ async fn rename_managed_local_force_overwrites() {
     fs::write(&old, "new content").unwrap();
     fs::write(&new, "old content").unwrap();
     let result = engine
-        .rename_managed(old.clone(), new.clone(), true, "root".to_string(), Initiator::User)
+        .rename_managed(
+            crate::testing::app_path_of(&old),
+            crate::testing::app_path_of(&new),
+            true,
+            "root".to_string(),
+            Initiator::User,
+        )
         .await;
     assert!(result.is_ok());
     assert!(!old.exists());
@@ -244,8 +268,8 @@ async fn rename_managed_marks_nonroot_volume_busy_during_op() {
     let ops = Operations::clone(&engine);
     let handle = tokio::spawn(async move {
         ops.rename_managed(
-            PathBuf::from("/old"),
-            PathBuf::from("/new"),
+            app_path!("/old").to_owned(),
+            app_path!("/new").to_owned(),
             false,
             vid,
             Initiator::User,
@@ -362,8 +386,8 @@ async fn a_rename_that_copies_starts_a_move_instead_of_calling_rename() {
 
     let result = engine
         .rename_managed(
-            PathBuf::from("/a/foo"),
-            PathBuf::from("/a/bar"),
+            app_path!("/a/foo").to_owned(),
+            app_path!("/a/bar").to_owned(),
             false,
             volume_id,
             Initiator::User,
@@ -694,8 +718,9 @@ async fn the_rename_itself_applies_the_shares_rules() {
 
     let refused = engine
         .rename_managed(
-            PathBuf::from("/docs/notes.txt"),
-            PathBuf::from("/docs/.."),
+            app_path!("/docs/notes.txt").to_owned(),
+            // A bridge value: no typed door makes a `..`, and the rename still refuses one.
+            crate::wire_paths::seam_path(std::path::Path::new("/docs/..")).into_owned(),
             false,
             volume_id.clone(),
             Initiator::Agent,
@@ -714,8 +739,8 @@ async fn the_rename_itself_applies_the_shares_rules() {
 
     let taken = engine
         .rename_managed(
-            PathBuf::from("/docs/notes.txt"),
-            PathBuf::from("/docs/CON"),
+            app_path!("/docs/notes.txt").to_owned(),
+            app_path!("/docs/CON").to_owned(),
             false,
             volume_id,
             Initiator::Agent,

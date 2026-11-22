@@ -29,10 +29,10 @@ use super::leaf_validation::{LeafIdentity, refuse_per_source_leaves_here, valida
 use super::routed_writes::{first_routed, routed_transfer_refusal};
 use super::source_binding::ExpectedSources;
 use super::target_names::{NotAName, TargetNames};
-use super::transfer::volume::{PathRole, native_roots, on_local_root, unregistered_volume_error};
+use super::transfer::volume::{PathRole, failed_path_text, native_roots, on_local_root, unregistered_volume_error};
 use super::types::{HomeFolderAction, ReadOnlySide, VolumeCopyConfig, WriteOperationError, WriteOperationStartResult};
-use super::wire_paths::{named_as_given, owned_without_trailing_separators, text_without_trailing_separators};
-use cmdr_fs::app_path::AppPath;
+use super::wire_paths::{engine_path, engine_paths, text_without_trailing_separators};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use cmdr_fs::volume::RoutedKind;
 use cmdr_fs::volume::Volume;
 use cmdr_operation_log::types::Initiator;
@@ -149,14 +149,14 @@ impl crate::Operations {
     ///
     /// Cheap for an ordinary batch: a path the lexical gate passes is the
     /// drive's with no I/O, and one inside a route already met is that route's.
-    pub(crate) async fn source_on_another_volume(&self, volume_id: &str, paths: &[PathBuf]) -> Option<PathBuf> {
+    pub(crate) async fn source_on_another_volume(&self, volume_id: &str, paths: &[AppPathBuf]) -> Option<AppPathBuf> {
         let manager = self.host().volumes();
         let mut routes_met: Vec<Arc<dyn Volume>> = Vec::new();
         let mut first: Option<Option<Arc<dyn Volume>>> = None;
         for path in paths {
             let serving = if !manager.routes_over_its_parent(path) {
                 None
-            } else if let Some(route) = routes_met.iter().find(|route| path.starts_with(std_root(route.root()))) {
+            } else if let Some(route) = routes_met.iter().find(|route| path.starts_with(route.root())) {
                 Some(Arc::clone(route))
             } else {
                 let resolved = manager.resolve(volume_id, path).await;
@@ -201,7 +201,7 @@ impl crate::Operations {
     pub async fn resolve_source_volume(
         &self,
         volume_id: &str,
-        first_path: Option<&PathBuf>,
+        first_path: Option<&AppPath>,
     ) -> Option<(Arc<dyn Volume>, Option<RoutedKind>)> {
         let manager = self.host().volumes();
         let Some(path) = first_path else {
@@ -290,11 +290,11 @@ fn route_cannot_hold_a_binding(route: &str) -> WriteOperationError {
 async fn source_volume_missing(
     host: &host::EngineHost,
     volume_id: &str,
-    source_paths: &[PathBuf],
+    source_paths: &[AppPathBuf],
 ) -> WriteOperationError {
     let path = source_paths
         .first()
-        .map_or_else(|| volume_id.to_string(), |p| p.display().to_string());
+        .map_or_else(|| volume_id.to_string(), |p| failed_path_text(p));
     unregistered_volume_error(host, volume_id, &path, PathRole::Source).await
 }
 
@@ -320,7 +320,7 @@ impl crate::Operations {
         &self,
         events: Arc<dyn OperationEventSink>,
         source_volume_id: String,
-        source_paths: Vec<PathBuf>,
+        source_paths: Vec<AppPathBuf>,
         dest_volume_id: String,
         dest_path: String,
         config: VolumeCopyConfig,
@@ -333,15 +333,17 @@ impl crate::Operations {
         // through the cross-volume engine.
         if let Some(path) = self.source_on_another_volume(&source_volume_id, &source_paths).await {
             return Err(WriteOperationError::SourcesSpanVolumes {
-                path: path.display().to_string(),
+                path: failed_path_text(&path),
             });
         }
         let Some((source_volume, _source_route)) = self
-            .resolve_source_volume(&source_volume_id, source_paths.first())
+            .resolve_source_volume(&source_volume_id, source_paths.first().map(|p| &**p))
             .await
         else {
             return Err(source_volume_missing(self.host(), &source_volume_id, &source_paths).await);
         };
+        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
+        let source_paths = engine_paths(&source_paths);
 
         // A `.zip`-crossing dest routes the whole copy to the managed archive-edit
         // driver (one `{ add }` changeset).
@@ -413,13 +415,16 @@ impl crate::Operations {
         &self,
         events: Arc<dyn OperationEventSink>,
         source_volume_id: String,
-        source_paths: Vec<PathBuf>,
+        source_paths: Vec<AppPathBuf>,
         dest_volume_id: String,
         dest_path: String,
         config: VolumeCopyConfig,
         initiator: Initiator,
         expected_sources: Option<ExpectedSources>,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
+        let typed_sources = source_paths;
+        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
+        let source_paths = engine_paths(&typed_sources);
         // Never the person's own home folder, nor a folder holding it: a move onto
         // another volume is copy-then-delete (`home_folder.rs`).
         if let Some(refusal) = self.home_folder_guard(&source_volume_id, &source_paths, HomeFolderAction::Move) {
@@ -429,16 +434,16 @@ impl crate::Operations {
         // engine, then a batch `{ delete }` archive rewrite once the extract lands).
         // A snapshot source (git or restic) has no delete to pair with the copy,
         // so it's refused below rather than routed anywhere.
-        if let Some(path) = self.source_on_another_volume(&source_volume_id, &source_paths).await {
+        if let Some(path) = self.source_on_another_volume(&source_volume_id, &typed_sources).await {
             return Err(WriteOperationError::SourcesSpanVolumes {
-                path: path.display().to_string(),
+                path: failed_path_text(&path),
             });
         }
         let Some((source_volume, source_route)) = self
-            .resolve_source_volume(&source_volume_id, source_paths.first())
+            .resolve_source_volume(&source_volume_id, typed_sources.first().map(|p| &**p))
             .await
         else {
-            return Err(source_volume_missing(self.host(), &source_volume_id, &source_paths).await);
+            return Err(source_volume_missing(self.host(), &source_volume_id, &typed_sources).await);
         };
 
         // A snapshot can be copied out of, never moved out of: `.git/branches/…` has
@@ -541,15 +546,15 @@ impl crate::Operations {
         &self,
         events: Arc<dyn OperationEventSink>,
         source_volume_id: String,
-        source_paths: Vec<PathBuf>,
+        source_paths: Vec<AppPathBuf>,
         dest_volume_id: String,
         dest_path: String,
         config: VolumeCopyConfig,
         initiator: Initiator,
         expected_sources: Option<ExpectedSources>,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
-        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
-        let source_paths = named_as_given(source_paths);
+        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`): the route
+        // trims the sources as it hands them on.
         let dest_path = text_without_trailing_separators(dest_path);
         let recipe = retry::RetryRecipe {
             start: retry::RetryStart::Copy,
@@ -586,15 +591,15 @@ impl crate::Operations {
         &self,
         events: Arc<dyn OperationEventSink>,
         source_volume_id: String,
-        source_paths: Vec<PathBuf>,
+        source_paths: Vec<AppPathBuf>,
         dest_volume_id: String,
         dest_path: String,
         config: VolumeCopyConfig,
         initiator: Initiator,
         expected_sources: Option<ExpectedSources>,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
-        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
-        let source_paths = named_as_given(source_paths);
+        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`): the route
+        // trims the sources as it hands them on.
         let dest_path = text_without_trailing_separators(dest_path);
         let recipe = retry::RetryRecipe {
             start: retry::RetryStart::Move,
@@ -637,7 +642,7 @@ impl crate::Operations {
         &self,
         events: Arc<dyn OperationEventSink>,
         volume_id: String,
-        renames: Vec<(PathBuf, String)>,
+        renames: Vec<(AppPathBuf, String)>,
         dest_path: String,
         config: VolumeCopyConfig,
         initiator: Initiator,
@@ -645,9 +650,11 @@ impl crate::Operations {
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
         // `x/link/` names the link, ❌ never its target (`wire_paths.rs`). Before the
         // target names, which key on the source path.
-        let renames: Vec<(PathBuf, String)> = renames
-            .into_iter()
-            .map(|(source, name)| (owned_without_trailing_separators(source), name))
+        let (typed_sources, names): (Vec<AppPathBuf>, Vec<String>) = renames.into_iter().unzip();
+        let renames: Vec<(PathBuf, String)> = typed_sources
+            .iter()
+            .map(|source| engine_path(source))
+            .zip(names)
             .collect();
         let dest_path = text_without_trailing_separators(dest_path);
         let target_names =
@@ -662,16 +669,19 @@ impl crate::Operations {
         }
         // Plain `get`: the route gates below refuse an in-zip or `.git` source or target.
         let Some(volume) = self.host().volumes().get(&volume_id) else {
-            return Err(source_volume_missing(self.host(), &volume_id, &sources).await);
+            return Err(source_volume_missing(self.host(), &volume_id, &typed_sources).await);
         };
         let dest_path = resolve_dest_path(&volume, dest_path);
         // A rename runs on the drive itself, and a route (inside a `.zip`, or a repo's
         // `.git/<category>/` trees) serves these paths read-only (`routed_writes.rs`).
-        if let Some((routed, _)) = first_routed(self.host(), &volume_id, sources.iter().map(PathBuf::as_path)).await {
+        if let Some((routed, _)) = first_routed(self.host(), &volume_id, &typed_sources).await {
             return Err(routed_transfer_refusal(&routed, ReadOnlySide::Source));
         }
-        let targets: Vec<PathBuf> = names.iter().map(|name| dest_path.join(name)).collect();
-        if let Some((routed, _)) = first_routed(self.host(), &volume_id, targets.iter().map(PathBuf::as_path)).await {
+        let targets: Vec<AppPathBuf> = names
+            .iter()
+            .map(|name| crate::wire_paths::seam_path(&dest_path.join(name)).into_owned())
+            .collect();
+        if let Some((routed, _)) = first_routed(self.host(), &volume_id, &targets).await {
             return Err(routed_transfer_refusal(&routed, ReadOnlySide::Destination));
         }
         self.move_between_volumes(
@@ -707,23 +717,21 @@ impl crate::Operations {
         &self,
         events: Arc<dyn OperationEventSink>,
         source_volume_id: String,
-        source_paths: Vec<PathBuf>,
+        source_paths: Vec<AppPathBuf>,
         dest_volume_id: String,
         dest_zip_path: String,
         config: VolumeCopyConfig,
         initiator: Initiator,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
-        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
-        let source_paths = named_as_given(source_paths);
         // Route a routed source batch to its read-only volume, so compressing reads
         // through it: from inside a `.zip`, or from a repo's snapshots.
         if let Some(path) = self.source_on_another_volume(&source_volume_id, &source_paths).await {
             return Err(WriteOperationError::SourcesSpanVolumes {
-                path: path.display().to_string(),
+                path: failed_path_text(&path),
             });
         }
         let Some((source_volume, _source_route)) = self
-            .resolve_source_volume(&source_volume_id, source_paths.first())
+            .resolve_source_volume(&source_volume_id, source_paths.first().map(|p| &**p))
             .await
         else {
             return Err(source_volume_missing(self.host(), &source_volume_id, &source_paths).await);
@@ -734,7 +742,10 @@ impl crate::Operations {
         let Some(dest_volume) = self
             .host()
             .volumes()
-            .resolve(&dest_volume_id, Path::new(&dest_zip_path))
+            .resolve(
+                &dest_volume_id,
+                &crate::wire_paths::seam_path(Path::new(&dest_zip_path)),
+            )
             .await
             .volume
         else {
@@ -746,7 +757,8 @@ impl crate::Operations {
         self.compress_start_leaving_out(
             events,
             source_volume,
-            source_paths,
+            // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
+            engine_paths(&source_paths),
             dest_zip_path,
             dest_volume_id,
             config.conflict_resolution,

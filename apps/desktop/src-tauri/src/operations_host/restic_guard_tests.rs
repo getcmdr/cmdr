@@ -88,7 +88,7 @@ async fn a_delete_in_the_view_refuses_and_one_in_a_lookalike_folder_runs() {
     let refused = engine
         .delete_files_start(
             Arc::new(CollectorEventSink::new()),
-            vec![PathBuf::from(IN_VIEW_FILE)],
+            vec![ap(IN_VIEW_FILE)],
             WriteOperationConfig::default(),
             Some(id.clone()),
             Initiator::User,
@@ -101,7 +101,7 @@ async fn a_delete_in_the_view_refuses_and_one_in_a_lookalike_folder_runs() {
     let allowed = engine
         .delete_files_start(
             Arc::new(CollectorEventSink::new()),
-            vec![Path::new(LOOKALIKE).join("x.txt")],
+            vec![ap(&format!("{LOOKALIKE}/x.txt"))],
             WriteOperationConfig::default(),
             Some(id),
             Initiator::User,
@@ -118,12 +118,12 @@ async fn a_delete_in_the_view_refuses_and_one_in_a_lookalike_folder_runs() {
 async fn a_delete_that_selects_the_row_refuses_whole() {
     let engine = super::test_engine();
     let (id, drive) = drive("restic-guard-delete-row").await;
-    let row = Path::new(REPO).join("Browse snapshots");
+    let row = ap(&format!("{REPO}/Browse snapshots"));
 
     let refused = engine
         .delete_files_start(
             Arc::new(CollectorEventSink::new()),
-            vec![Path::new(REPO).join("config"), row],
+            vec![ap(&format!("{REPO}/config")), row],
             WriteOperationConfig::default(),
             Some(id),
             Initiator::User,
@@ -141,8 +141,8 @@ async fn renames_and_new_entries_in_the_view_refuse() {
 
     let renamed = engine
         .rename_managed(
-            PathBuf::from(IN_VIEW_FILE),
-            Path::new(IN_VIEW).join("b.txt"),
+            ap(IN_VIEW_FILE),
+            ap(&format!("{IN_VIEW}/b.txt")),
             false,
             id.clone(),
             Initiator::User,
@@ -228,7 +228,7 @@ async fn a_bulk_rename_and_a_rename_as_move_in_the_view_refuse() {
         .start_rename_by_move(
             Arc::new(CollectorEventSink::new()),
             id.clone(),
-            vec![(PathBuf::from(IN_VIEW_FILE), "b.txt".to_string())],
+            vec![(ap(IN_VIEW_FILE), "b.txt".to_string())],
             "/share".to_string(),
             VolumeCopyConfig::default(),
             Initiator::User,
@@ -241,7 +241,7 @@ async fn a_bulk_rename_and_a_rename_as_move_in_the_view_refuse() {
         .start_rename_by_move(
             Arc::new(CollectorEventSink::new()),
             id,
-            vec![(PathBuf::from("/share/top.txt"), "top.txt".to_string())],
+            vec![(app_path!("/share/top.txt").to_owned(), "top.txt".to_string())],
             IN_VIEW.to_string(),
             VolumeCopyConfig::default(),
             Initiator::User,
@@ -263,7 +263,7 @@ async fn a_copy_or_move_into_the_view_and_a_move_out_refuse() {
         .start_volume_copy(
             Arc::new(CollectorEventSink::new()),
             id.clone(),
-            vec![PathBuf::from("/share/top.txt")],
+            vec![app_path!("/share/top.txt").to_owned()],
             id.clone(),
             IN_VIEW.to_string(),
             VolumeCopyConfig::default(),
@@ -277,7 +277,7 @@ async fn a_copy_or_move_into_the_view_and_a_move_out_refuse() {
         .start_volume_move(
             Arc::new(CollectorEventSink::new()),
             id.clone(),
-            vec![PathBuf::from("/share/top.txt")],
+            vec![app_path!("/share/top.txt").to_owned()],
             id.clone(),
             IN_VIEW.to_string(),
             VolumeCopyConfig::default(),
@@ -291,7 +291,7 @@ async fn a_copy_or_move_into_the_view_and_a_move_out_refuse() {
         .start_volume_move(
             Arc::new(CollectorEventSink::new()),
             id.clone(),
-            vec![PathBuf::from(IN_VIEW_FILE)],
+            vec![ap(IN_VIEW_FILE)],
             id,
             "/share".to_string(),
             VolumeCopyConfig::default(),
@@ -330,7 +330,7 @@ async fn a_transfer_whose_sources_span_the_drive_and_the_view_refuses_whole() {
             .start_volume_copy(
                 Arc::new(CollectorEventSink::new()),
                 id.clone(),
-                sources.clone(),
+                cmdr_operations::testing::app_paths_of(sources.clone()),
                 dest_id.clone(),
                 "/share/out".to_string(),
                 VolumeCopyConfig::default(),
@@ -346,7 +346,7 @@ async fn a_transfer_whose_sources_span_the_drive_and_the_view_refuses_whole() {
             .start_volume_move(
                 Arc::new(CollectorEventSink::new()),
                 id.clone(),
-                sources,
+                cmdr_operations::testing::app_paths_of(sources),
                 dest_id.clone(),
                 "/share/out".to_string(),
                 VolumeCopyConfig::default(),
@@ -372,14 +372,14 @@ async fn a_copy_out_resolves_its_source_to_the_view() {
     let (id, _drive) = drive("restic-guard-copy-out").await;
 
     let (volume, route) = engine
-        .resolve_source_volume(&id, Some(&PathBuf::from(IN_VIEW_FILE)))
+        .resolve_source_volume(&id, Some(&ap(IN_VIEW_FILE)))
         .await
         .expect("a source volume");
     assert_eq!(route, Some(RoutedKind::Restic));
     assert_eq!(volume.root().as_str(), format!("{REPO}/Browse snapshots"));
 
     let (parent, real) = engine
-        .resolve_source_volume(&id, Some(&Path::new(REPO).join("config")))
+        .resolve_source_volume(&id, Some(&ap(&format!("{REPO}/config"))))
         .await
         .expect("a source volume");
     assert_eq!(real, None, "the repo's real files are the drive's");

@@ -41,6 +41,7 @@ impl super::Operations {
         // A route (inside a `.zip`, or a repo's `.git/<category>/` trees) serves `dir`
         // read-only; the drive underneath would take a real file there.
         let first_candidate = dir.join(numbered_name(stem, Some(ext), 0));
+        let first_candidate = crate::wire_paths::seam_path(&first_candidate);
         if route_serving(self.host(), &volume_id_str, &first_candidate)
             .await
             .is_some()

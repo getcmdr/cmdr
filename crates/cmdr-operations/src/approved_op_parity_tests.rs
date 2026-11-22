@@ -276,8 +276,8 @@ async fn an_approved_move_takes_the_source_exactly_as_a_user_started_one_does() 
         engine
             .move_files_start(
                 events,
-                sources,
-                destination.clone(),
+                crate::testing::app_paths_of(sources),
+                crate::testing::app_path_of(&destination),
                 WriteOperationConfig::default(),
                 vec![],
                 None,

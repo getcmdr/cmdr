@@ -1,10 +1,13 @@
 //! A source path that names a folder symlink with a trailing `/` (or `/.`) acts on
 //! the LINK, ❌ never on the folder it points at. POSIX resolves `x/link/` through
-//! the link, so before the engine dropped the trailing separators at its starts
-//! (`wire_paths.rs`), a raw IPC `delete_files` of `x/link/` emptied the target.
+//! the link, so before the trailing separators were dropped ahead of the engine, a
+//! raw IPC `delete_files` of `x/link/` emptied the target. The starts take app paths
+//! read at the caller's edge (`AppPathBuf::from_wire`, the app's `commands/wire_path.rs`),
+//! which drops them; the bodies behind the starts trim a bridge value too
+//! (`wire_paths.rs`, its own cells).
 #![cfg(unix)] // POSIX symlinks and their trailing-slash resolution.
 
-use std::path::PathBuf;
+use cmdr_fs::app_path::AppPathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -37,9 +40,15 @@ impl LinkTree {
         Self { dir }
     }
 
-    /// The wire spelling of `rel` under the tree, byte for byte.
-    fn wire(&self, rel: &str) -> PathBuf {
-        PathBuf::from(format!("{}/{rel}", self.dir.to_string_lossy()))
+    /// `rel` under the tree as the app's command edge reads its wire text (`from_wire`).
+    fn wire(&self, rel: &str) -> AppPathBuf {
+        AppPathBuf::from_wire(&self.wire_text(rel)).expect("a scratch dir's wire text")
+    }
+
+    /// The wire text of `rel` under the tree, byte for byte: a destination box's text,
+    /// or a path an entry point outside the typed starts takes as sent.
+    fn wire_text(&self, rel: &str) -> String {
+        format!("{}/{rel}", self.dir.to_string_lossy())
     }
 
     fn is_link(&self, rel: &str) -> bool {
@@ -145,7 +154,7 @@ async fn a_volume_move_of_a_folder_link_with_a_trailing_separator_moves_the_link
             id.clone(),
             vec![tree.wire("x/link/")],
             id,
-            tree.wire("elsewhere/").to_string_lossy().into_owned(),
+            tree.wire_text("elsewhere/"),
             super::types::VolumeCopyConfig::default(),
             Initiator::User,
             None,
@@ -216,7 +225,7 @@ fn a_single_trash_of_a_folder_link_with_a_trailing_separator_trashes_the_link() 
     let _cleanup = super::testing::TrashCleanup::of(&[tree.dir.join("x/link"), tree.dir.join("real/inner")]);
     let engine = TestOperations::new();
     engine
-        .trash_single_journaled(&tree.wire("x/link/"), Initiator::User)
+        .trash_single_journaled(std::path::Path::new(&tree.wire_text("x/link/")), Initiator::User)
         .expect("the trash lands");
     assert!(!tree.is_link("x/link"), "the link went to the Trash");
     assert!(tree.target_intact(), "the target stayed");

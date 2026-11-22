@@ -111,7 +111,11 @@ async fn a_volume_relative_destination_still_routes_into_its_zip() {
     let stick = crate::local_disk::folder_volume("Stick", tmp.to_path_buf(), crate::host::testing::pane_order_host());
     engine.volumes().register("stick", stick);
     let zip: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("box.zip"));
-    engine.volumes().route(tmp.join("box.zip"), RoutedKind::Archive, zip);
+    engine.volumes().route(
+        &crate::testing::app_path_of(&tmp.join("box.zip")),
+        RoutedKind::Archive,
+        zip,
+    );
 
     for moves in [false, true] {
         let config = VolumeCopyConfig {
@@ -125,7 +129,7 @@ async fn a_volume_relative_destination_still_routes_into_its_zip() {
                 .start_volume_move(
                     events,
                     from,
-                    vec![source.clone()],
+                    vec![crate::testing::app_path_of(&source)],
                     to,
                     dest,
                     config,
@@ -138,7 +142,7 @@ async fn a_volume_relative_destination_still_routes_into_its_zip() {
                 .start_volume_copy(
                     events,
                     from,
-                    vec![source.clone()],
+                    vec![crate::testing::app_path_of(&source)],
                     to,
                     dest,
                     config,

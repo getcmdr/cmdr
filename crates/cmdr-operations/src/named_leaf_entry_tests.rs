@@ -47,12 +47,30 @@ async fn start(
     match via {
         Start::RoutedCopy => {
             engine
-                .start_volume_copy(events, root.clone(), sources, root, dest, config, initiator, None)
+                .start_volume_copy(
+                    events,
+                    root.clone(),
+                    crate::testing::app_paths_of(sources),
+                    root,
+                    dest,
+                    config,
+                    initiator,
+                    None,
+                )
                 .await
         }
         Start::RoutedMove => {
             engine
-                .start_volume_move(events, root.clone(), sources, root, dest, config, initiator, None)
+                .start_volume_move(
+                    events,
+                    root.clone(),
+                    crate::testing::app_paths_of(sources),
+                    root,
+                    dest,
+                    config,
+                    initiator,
+                    None,
+                )
                 .await
         }
         Start::LocalMove => {
@@ -63,8 +81,8 @@ async fn start(
             engine
                 .move_files_start(
                     events,
-                    sources,
-                    destination.to_path_buf(),
+                    crate::testing::app_paths_of(sources),
+                    crate::testing::app_path_of(destination),
                     config,
                     vec![],
                     None,

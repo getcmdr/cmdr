@@ -37,7 +37,9 @@ impl crate::Operations {
             return Err(dest_volume_missing(self.host(), dest_volume_id, &dest_path).await);
         };
         let anchored = resolve_dest_path(&drive, dest_path.clone());
-        let resolved = volumes.resolve(dest_volume_id, &anchored).await;
+        let resolved = volumes
+            .resolve(dest_volume_id, &crate::wire_paths::seam_path(&anchored))
+            .await;
         let path = anchored.into_os_string().into_string().unwrap_or(dest_path);
         let Some(volume) = resolved.volume else {
             return Err(dest_volume_missing(self.host(), dest_volume_id, &path).await);

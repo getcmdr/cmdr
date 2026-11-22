@@ -104,8 +104,8 @@ async fn start_move(
     engine
         .move_files_start(
             events,
-            fx.sources.clone(),
-            fx.dst.to_path_buf(),
+            crate::testing::app_paths_of(fx.sources.clone()),
+            crate::testing::app_path_of(&fx.dst),
             WriteOperationConfig::default(),
             vec![],
             Some(vec![lane.clone()]),

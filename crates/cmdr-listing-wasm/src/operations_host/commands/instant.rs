@@ -58,22 +58,16 @@ impl DemoOperations {
             }
             "rename_file" => {
                 let a: RenameArgs = parse(command, args)?;
+                let (from, to) = match (self.wire_mutation_path(&a.from), self.wire_mutation_path(&a.to)) {
+                    (Ok(from), Ok(to)) => (from, to),
+                    (Err(refused), _) | (_, Err(refused)) => return answer(Err::<(), _>(refused)),
+                };
                 let engine = e.clone();
                 let volume_id = a.volume_id.unwrap_or_else(|| self.volume_id.clone());
                 answer(
                     reply_within(
                         MUTATION_REPLY_DEADLINE,
-                        async move {
-                            engine
-                                .rename_managed(
-                                    PathBuf::from(a.from),
-                                    PathBuf::from(a.to),
-                                    a.force,
-                                    volume_id,
-                                    a.initiator,
-                                )
-                                .await
-                        },
+                        async move { engine.rename_managed(from, to, a.force, volume_id, a.initiator).await },
                         self.on_settled(),
                     )
                     .await,

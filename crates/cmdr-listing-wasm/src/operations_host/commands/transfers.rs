@@ -47,11 +47,15 @@ impl DemoOperations {
         match command {
             "copy_between_volumes" => {
                 let a: TransferArgs = parse(command, args)?;
+                let sources = match self.wire_paths(&a.source_paths) {
+                    Ok(sources) => sources,
+                    Err(refused) => return answer(Err::<(), _>(refused)),
+                };
                 answer(
                     e.start_volume_copy(
                         self.op_sink(),
                         a.source_volume_id,
-                        a.source_paths.iter().map(PathBuf::from).collect(),
+                        sources,
                         a.dest_volume_id,
                         a.dest_path,
                         a.config.unwrap_or_default(),
@@ -63,11 +67,15 @@ impl DemoOperations {
             }
             "move_between_volumes" => {
                 let a: TransferArgs = parse(command, args)?;
+                let sources = match self.wire_paths(&a.source_paths) {
+                    Ok(sources) => sources,
+                    Err(refused) => return answer(Err::<(), _>(refused)),
+                };
                 answer(
                     e.start_volume_move(
                         self.op_sink(),
                         a.source_volume_id,
-                        a.source_paths.iter().map(PathBuf::from).collect(),
+                        sources,
                         a.dest_volume_id,
                         a.dest_path,
                         a.config.unwrap_or_default(),
@@ -81,11 +89,15 @@ impl DemoOperations {
             // as a volume move on `root`, carrying the dialog's `previewId` along.
             "move_files" => {
                 let a: MoveFilesArgs = parse(command, args)?;
+                let (sources, destination) = match (self.wire_paths(&a.sources), self.wire_path(&a.destination)) {
+                    (Ok(sources), Ok(destination)) => (sources, destination),
+                    (Err(refused), _) | (_, Err(refused)) => return answer(Err::<(), _>(refused)),
+                };
                 answer(
                     e.move_files_start(
                         self.op_sink(),
-                        a.sources.iter().map(PathBuf::from).collect(),
-                        PathBuf::from(a.destination),
+                        sources,
+                        destination,
                         a.config.unwrap_or_default(),
                         vec![],
                         None,
@@ -98,10 +110,14 @@ impl DemoOperations {
             }
             "delete_files" => {
                 let a: DeleteArgs = parse(command, args)?;
+                let sources = match self.wire_paths(&a.sources) {
+                    Ok(sources) => sources,
+                    Err(refused) => return answer(Err::<(), _>(refused)),
+                };
                 answer(
                     e.delete_files_start(
                         self.op_sink(),
-                        a.sources.iter().map(PathBuf::from).collect(),
+                        sources,
                         a.config.unwrap_or_default(),
                         a.volume_id,
                         a.initiator,
@@ -113,10 +129,14 @@ impl DemoOperations {
             // The engine refuses it typed: the OS trash needs the local disk.
             "trash_files" => {
                 let a: TrashArgs = parse(command, args)?;
+                let sources = match self.wire_paths(&a.sources) {
+                    Ok(sources) => sources,
+                    Err(refused) => return answer(Err::<(), _>(refused)),
+                };
                 answer(
                     e.trash_files_start(
                         self.op_sink(),
-                        a.sources.iter().map(PathBuf::from).collect(),
+                        sources,
                         a.item_sizes,
                         a.config.unwrap_or_default(),
                         a.initiator,

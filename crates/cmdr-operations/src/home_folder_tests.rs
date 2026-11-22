@@ -146,7 +146,7 @@ async fn a_delete_of_the_home_folder_refuses_before_starting() {
     let refused = engine
         .delete_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![home.clone()],
+            vec![crate::testing::app_path_of(&home)],
             WriteOperationConfig::default(),
             None,
             Initiator::User,
@@ -177,7 +177,7 @@ async fn a_trash_of_a_folder_holding_the_home_folder_refuses_before_starting() {
     let refused = engine
         .trash_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![users.clone()],
+            vec![crate::testing::app_path_of(&users)],
             None,
             WriteOperationConfig::default(),
             Initiator::User,
@@ -249,7 +249,7 @@ async fn another_users_home_folder_stays_deletable() {
     engine
         .delete_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![root.join("Users/other")],
+            vec![crate::testing::app_path_of(&root.join("Users/other"))],
             WriteOperationConfig::default(),
             None,
             Initiator::User,
@@ -311,8 +311,8 @@ async fn a_same_disk_move_of_the_home_folder_refuses_before_starting() {
     let refused = engine
         .move_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![home.clone()],
-            elsewhere,
+            vec![crate::testing::app_path_of(&home)],
+            crate::testing::app_path_of(&elsewhere),
             WriteOperationConfig::default(),
             vec![],
             None,
@@ -349,7 +349,7 @@ async fn a_move_onto_another_volume_of_a_folder_holding_the_home_refuses_before_
         .start_volume_move(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
             "root".into(),
-            vec![users.clone()],
+            vec![crate::testing::app_path_of(&users)],
             "usb-1".into(),
             "/backup".into(),
             VolumeCopyConfig::default(),
@@ -393,7 +393,13 @@ async fn a_rename_of_the_home_folder_refuses_at_the_preflight_and_the_rename() {
     );
 
     let refused = engine
-        .rename_managed(home.clone(), renamed.clone(), false, "root".into(), Initiator::User)
+        .rename_managed(
+            crate::testing::app_path_of(&home),
+            crate::testing::app_path_of(&renamed),
+            false,
+            "root".into(),
+            Initiator::User,
+        )
         .await;
     assert!(matches!(refused, Err(MutationError::HomeFolder { .. })), "{refused:?}");
     assert!(home.exists() && !renamed.exists(), "nothing renamed");
@@ -406,8 +412,8 @@ async fn a_rename_of_another_users_home_folder_goes_ahead() {
     let other = root.join("Users/other");
     engine
         .rename_managed(
-            other.clone(),
-            other.with_file_name("guest"),
+            crate::testing::app_path_of(&other),
+            crate::testing::app_path_of(&other.with_file_name("guest")),
             false,
             "root".into(),
             Initiator::User,
@@ -454,7 +460,7 @@ async fn a_batch_rename_or_a_rename_by_move_of_the_home_folder_refuses() {
         .start_rename_by_move(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
             "root".into(),
-            vec![(home.clone(), "renamed".into())],
+            vec![(crate::testing::app_path_of(&home), "renamed".into())],
             home.parent().expect("parent").display().to_string(),
             VolumeCopyConfig::default(),
             Initiator::User,

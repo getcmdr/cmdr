@@ -199,7 +199,7 @@ async fn a_copy_onto_a_saved_server_nobody_connected_is_refused_as_not_connected
         .start_volume_copy(
             std::sync::Arc::new(CollectorEventSink::new()),
             source_id.clone(),
-            vec![std::path::PathBuf::from("notes.txt")],
+            vec![cmdr_operations::testing::app_path_of(&dir.join("notes.txt"))],
             cmdr_fs::volume::sftp_volume_id(host, 2222, "test_user_1"),
             format!("sftp://test_user_1@{host}:2222/srv/data/photos"),
             VolumeCopyConfig::default(),

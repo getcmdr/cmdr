@@ -12,6 +12,8 @@
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
+
 /// `path` with its trailing `/` and `/.` runs dropped. Unchanged when nothing
 /// trails, or when dropping would leave a root: `/`, `mtp://`, or a scheme
 /// authority such as `sftp://host/`, which have no last name to name.
@@ -37,12 +39,6 @@ pub(crate) fn without_trailing_separators(path: &Path) -> Cow<'_, Path> {
     }
 }
 
-/// [`without_trailing_separators`] over a start's owned paths.
-#[must_use]
-pub(crate) fn named_as_given(paths: Vec<PathBuf>) -> Vec<PathBuf> {
-    paths.into_iter().map(owned_without_trailing_separators).collect()
-}
-
 /// [`without_trailing_separators`] for one owned path.
 #[must_use]
 pub(crate) fn owned_without_trailing_separators(path: PathBuf) -> PathBuf {
@@ -50,6 +46,34 @@ pub(crate) fn owned_without_trailing_separators(path: PathBuf) -> PathBuf {
         Cow::Borrowed(_) => path,
         Cow::Owned(trimmed) => trimmed,
     }
+}
+
+/// A start's typed path as the engine's `std::path` bodies take it: through the bridge,
+/// byte for byte, then trimmed as [`without_trailing_separators`] trims. The public starts
+/// take app paths (`AppPathBuf`, read at the caller's edge) and ask their route gates
+/// (`OperationVolumes`) with them; this is where each one hands its paths on to the bodies
+/// behind it, which still do `std::path` arithmetic. ❗ The bridge, ❌ never `to_native`:
+/// these paths are a remote volume's as often as the local disk's, and the split between
+/// the two comes after. Goes as those bodies take app paths (#1225).
+#[must_use]
+pub(crate) fn engine_path(path: &AppPath) -> PathBuf {
+    owned_without_trailing_separators(path.as_std_legacy().into_owned())
+}
+
+/// A `std::path` value the engine holds, as its host's route questions take it
+/// (`OperationVolumes::resolve` and friends): through the bridge, byte for byte. The way
+/// back from [`engine_path`] for the values a body made itself (a ledger row, a create's
+/// parent, a destination it anchored), so every such crossing is this one call. Goes with
+/// [`engine_path`] (#1225).
+#[must_use]
+pub(crate) fn seam_path(path: &Path) -> Cow<'_, AppPath> {
+    AppPath::legacy_unchecked(path)
+}
+
+/// [`engine_path`] over a start's sources.
+#[must_use]
+pub(crate) fn engine_paths(paths: &[AppPathBuf]) -> Vec<PathBuf> {
+    paths.iter().map(|path| engine_path(path)).collect()
 }
 
 /// [`without_trailing_separators`] for a destination the start takes as text.
@@ -115,6 +139,28 @@ mod tests {
         assert_eq!(trimmed("/x/link/.."), "/x/link/..");
         // A `/` after a `..` changes nothing: both resolve through the link.
         assert_eq!(trimmed("/x/link/../"), "/x/link/../");
+    }
+
+    /// A start's typed path reaches the body as the bytes its caller's text held: a trailing
+    /// `/` dropped, an NFD name in its form, and a literal escape-range code point (the
+    /// command edge reads one through `from_literal_store` while escapes aren't live) as
+    /// its own UTF-8, ❌ never an escape's.
+    #[test]
+    fn a_typed_start_path_crosses_byte_for_byte() {
+        use cmdr_fs::app_path::Namer;
+        for (text, body) in [
+            ("/x/link", "/x/link"),
+            ("/x/cafe\u{301}.txt", "/x/cafe\u{301}.txt"),
+            ("/x/caf\u{10FEE9}.txt", "/x/caf\u{10FEE9}.txt"),
+            ("smb://nas/share/a.txt", "smb://nas/share/a.txt"),
+        ] {
+            let typed = AppPathBuf::from_literal_store(text, Namer::HOST).expect("literal store text");
+            assert_eq!(
+                engine_path(&typed).as_os_str().as_encoded_bytes(),
+                body.as_bytes(),
+                "{text}"
+            );
+        }
     }
 
     #[test]

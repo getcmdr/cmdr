@@ -337,7 +337,7 @@ pub(super) async fn start_copy_by_id(
         .start_volume_copy(
             events,
             source_volume_id,
-            source_paths,
+            cmdr_operations::testing::app_paths_of(source_paths),
             dest_volume_id,
             dest_path,
             config,

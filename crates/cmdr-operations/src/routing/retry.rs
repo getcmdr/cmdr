@@ -33,7 +33,6 @@
 //! error, exactly as a new copy of that file would.
 
 use std::future::Future;
-use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 
@@ -41,6 +40,7 @@ use super::super::Operations;
 use super::super::event_sinks::OperationEventSink;
 use super::super::manager::StartAgain;
 use super::super::types::{VolumeCopyConfig, WriteOperationError, WriteOperationStartResult};
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_operation_log::types::Initiator;
 
 /// Which start a retry runs again.
@@ -57,7 +57,7 @@ pub(super) struct RetryRecipe {
     pub start: RetryStart,
     pub events: Arc<dyn OperationEventSink>,
     pub source_volume_id: String,
-    pub source_paths: Vec<PathBuf>,
+    pub source_paths: Vec<AppPathBuf>,
     pub dest_volume_id: String,
     pub dest_path: String,
     pub config: VolumeCopyConfig,
@@ -139,6 +139,10 @@ impl StartAgain for RetryRecipe {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
+    use cmdr_fs::app_path;
+
     use super::*;
     use crate::event_sinks::CollectorEventSink;
 
@@ -158,7 +162,7 @@ mod tests {
             start: RetryStart::Copy,
             events: Arc::new(CollectorEventSink::new()),
             source_volume_id: "root".into(),
-            source_paths: vec![PathBuf::from("/a.txt")],
+            source_paths: vec![app_path!("/a.txt").to_owned()],
             dest_volume_id: "smb-nas".into(),
             dest_path: "/share".into(),
             config: original,
@@ -184,9 +188,9 @@ mod tests {
             events: Arc::new(CollectorEventSink::new()),
             source_volume_id: "root".into(),
             source_paths: vec![
-                PathBuf::from("/a.pdf"),
-                PathBuf::from("/b.pdf"),
-                PathBuf::from("/c.pdf"),
+                app_path!("/a.pdf").to_owned(),
+                app_path!("/b.pdf").to_owned(),
+                app_path!("/c.pdf").to_owned(),
             ],
             dest_volume_id: "root".into(),
             dest_path: "/filed".into(),

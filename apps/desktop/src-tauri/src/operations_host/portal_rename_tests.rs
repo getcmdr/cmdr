@@ -59,8 +59,8 @@ async fn renaming_the_worktrees_row_refuses_and_leaves_gits_folder() {
 
     let result = super::test_engine()
         .rename_managed(
-            worktrees.clone(),
-            dir.join(".git/worktrees-old"),
+            cmdr_operations::testing::app_path_of(&worktrees),
+            cmdr_operations::testing::app_path_of(&dir.join(".git/worktrees-old")),
             false,
             "root".to_string(),
             Initiator::User,
@@ -82,8 +82,8 @@ async fn renaming_a_real_entry_onto_a_category_path_refuses() {
 
     let result = super::test_engine()
         .rename_managed(
-            staging.clone(),
-            dir.join(".git/worktrees"),
+            cmdr_operations::testing::app_path_of(&staging),
+            cmdr_operations::testing::app_path_of(&dir.join(".git/worktrees")),
             false,
             "root".to_string(),
             Initiator::User,
@@ -139,8 +139,8 @@ async fn a_real_entry_under_dot_git_still_renames() {
 
     let result = super::test_engine()
         .rename_managed(
-            from.clone(),
-            dir.join(".git/description.old"),
+            cmdr_operations::testing::app_path_of(&from),
+            cmdr_operations::testing::app_path_of(&dir.join(".git/description.old")),
             false,
             "root".to_string(),
             Initiator::User,

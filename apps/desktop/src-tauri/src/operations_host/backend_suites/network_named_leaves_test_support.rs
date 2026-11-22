@@ -78,12 +78,30 @@ impl Rig {
         let started = match verb {
             Verb::Copy => {
                 self.engine
-                    .start_volume_copy(events, from, sources, to, dest, config, Initiator::User, None)
+                    .start_volume_copy(
+                        events,
+                        from,
+                        cmdr_operations::testing::app_paths_of(sources),
+                        to,
+                        dest,
+                        config,
+                        Initiator::User,
+                        None,
+                    )
                     .await
             }
             Verb::Move => {
                 self.engine
-                    .start_volume_move(events, from, sources, to, dest, config, Initiator::User, None)
+                    .start_volume_move(
+                        events,
+                        from,
+                        cmdr_operations::testing::app_paths_of(sources),
+                        to,
+                        dest,
+                        config,
+                        Initiator::User,
+                        None,
+                    )
                     .await
             }
         };

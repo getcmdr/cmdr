@@ -67,7 +67,7 @@ async fn start(volume_id: &str, from: PathBuf, new_name: &str) -> (Arc<Collector
         .start_rename_by_move(
             events.clone(),
             volume_id.to_string(),
-            vec![(from, new_name.to_string())],
+            vec![(cmdr_operations::testing::app_path_of(&from), new_name.to_string())],
             parent,
             VolumeCopyConfig::default(),
             Initiator::User,

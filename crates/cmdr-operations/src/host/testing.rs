@@ -12,7 +12,7 @@
 //! - [`PaneListings`]: panes a test opens, over a listing engine of its own,
 //!   for the cells that seed the fresh-listing oracle.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use std::collections::HashMap;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -115,7 +115,7 @@ pub struct FakeVolumes {
 
 /// A path prefix [`FakeVolumes`] serves through a route rather than its drive.
 struct FakeRoute {
-    under: PathBuf,
+    under: AppPathBuf,
     kind: RoutedKind,
     volume: Arc<dyn Volume>,
 }
@@ -138,19 +138,19 @@ impl FakeVolumes {
     /// Serves every path strictly under `under` (on any volume id) through
     /// `volume` as a `kind` route, the way the app routes a `.zip`'s inside or a
     /// repo's `.git/<category>/` trees.
-    pub fn route(&self, under: impl Into<PathBuf>, kind: RoutedKind, volume: Arc<dyn Volume>) {
+    pub fn route(&self, under: &AppPath, kind: RoutedKind, volume: Arc<dyn Volume>) {
         self.routes.lock_ignore_poison().push(FakeRoute {
-            under: under.into(),
+            under: under.to_owned(),
             kind,
             volume,
         });
     }
 
-    fn route_for(&self, path: &Path) -> Option<(RoutedKind, Arc<dyn Volume>)> {
+    fn route_for(&self, path: &AppPath) -> Option<(RoutedKind, Arc<dyn Volume>)> {
         self.routes
             .lock_ignore_poison()
             .iter()
-            .find(|route| path != route.under && path.starts_with(&route.under))
+            .find(|route| *path != *route.under && path.starts_with(&route.under))
             .map(|route| (route.kind, Arc::clone(&route.volume)))
     }
 
@@ -189,25 +189,25 @@ impl VolumeLookup for FakeVolumes {
 }
 
 impl OperationVolumes for FakeVolumes {
-    fn resolve<'a>(&'a self, volume_id: &'a str, path: &'a Path) -> VolumeAnswer<'a, ResolvedVolume> {
+    fn resolve<'a>(&'a self, volume_id: &'a str, path: &'a AppPath) -> VolumeAnswer<'a, ResolvedVolume> {
         let resolved = match self.route_for(path) {
             Some((kind, volume)) => ResolvedVolume {
                 volume: Some(volume),
-                path: AppPath::legacy_unchecked(path).into_owned(),
+                path: path.to_owned(),
                 routed: Some(kind),
                 unconfirmed: None,
             },
-            None => ResolvedVolume::passthrough(self.get(volume_id), path),
+            None => ResolvedVolume::passthrough_at(self.get(volume_id), path),
         };
         Box::pin(async move { resolved })
     }
-    fn routes_over_its_parent(&self, path: &Path) -> bool {
+    fn routes_over_its_parent(&self, path: &AppPath) -> bool {
         self.route_for(path).is_some()
     }
-    fn path_is_inside_archive<'a>(&'a self, _volume_id: &'a str, _path: &'a Path) -> VolumeAnswer<'a, bool> {
+    fn path_is_inside_archive<'a>(&'a self, _volume_id: &'a str, _path: &'a AppPath) -> VolumeAnswer<'a, bool> {
         Box::pin(async { false })
     }
-    fn path_crosses_archive_boundary<'a>(&'a self, _volume_id: &'a str, _path: &'a Path) -> VolumeAnswer<'a, bool> {
+    fn path_crosses_archive_boundary<'a>(&'a self, _volume_id: &'a str, _path: &'a AppPath) -> VolumeAnswer<'a, bool> {
         Box::pin(async { false })
     }
     fn find_by_root(&self, root: &AppPath) -> Option<(String, Arc<dyn Volume>)> {
@@ -217,7 +217,7 @@ impl OperationVolumes for FakeVolumes {
             .find(|(_, volume)| volume.root() == root)
             .map(|(id, volume)| (id.clone(), Arc::clone(volume)))
     }
-    fn forget_archive_index(&self, _archive_path: &Path) {}
+    fn forget_archive_index(&self, _archive_path: &AppPath) {}
     fn on_volume_arrival(&self, listener: Box<dyn Fn(&str) + Send + Sync>) {
         self.arrival_listeners.lock_ignore_poison().push(Arc::from(listener));
     }

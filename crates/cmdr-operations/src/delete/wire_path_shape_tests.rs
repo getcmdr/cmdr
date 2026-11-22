@@ -1,14 +1,17 @@
 //! What a delete does TODAY with a source path shaped in ways a listing row never
 //! is: a trailing `/` on a symlink to a folder, and a `..` that crosses a symlink.
-//! The IPC `delete_files` hands the frontend's strings to `delete_files_start` as
-//! `PathBuf`s unchanged, so these are the wire's answers, through both engines
-//! (the local one for the boot disk, the volume one for any other volume id).
+//! The starts take app paths, and no typed door makes these shapes (the app's
+//! command edge reads wire text with `from_wire`, which drops a trailing `/` and
+//! refuses a `..`), so the cells hand each one over as a bridge value, its text as
+//! sent: what the engine does with such a value, through both engines (the local
+//! one for the boot disk, the volume one for any other volume id).
 //!
 //! The app-path type changes both on purpose (a trailing `/` gets dropped, so the
 //! path names the link; a `..` gets resolved by the volume, or refused at the
 //! wire), and these cells make that a visible flip of a pinned answer. #1225.
 #![cfg(unix)] // POSIX symlinks and the OS's own `..` resolution through one.
 
+use cmdr_fs::app_path::AppPathBuf;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
@@ -54,9 +57,10 @@ impl LinkTree {
         Self { dir }
     }
 
-    /// The wire spelling of `rel` under the tree, byte for byte.
-    fn wire(&self, rel: &str) -> PathBuf {
-        PathBuf::from(format!("{}/{rel}", self.dir.to_string_lossy()))
+    /// The wire spelling of `rel` under the tree, byte for byte, as a bridge value.
+    fn wire(&self, rel: &str) -> AppPathBuf {
+        let text = PathBuf::from(format!("{}/{rel}", self.dir.to_string_lossy()));
+        crate::wire_paths::seam_path(&text).into_owned()
     }
 
     fn left(&self, errors: usize) -> Left {

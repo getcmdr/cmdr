@@ -66,7 +66,7 @@ async fn a_local_delete_of_a_file_that_is_already_gone_completes() {
     engine
         .delete_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![gone.clone()],
+            vec![crate::testing::app_path_of(&gone)],
             WriteOperationConfig::default(),
             None,
             Initiator::User,
@@ -105,7 +105,11 @@ async fn a_local_delete_deletes_what_is_there_and_reports_what_was_already_gone(
     engine
         .delete_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![gone_a, present.clone(), gone_b],
+            vec![
+                crate::testing::app_path_of(&gone_a),
+                crate::testing::app_path_of(&present),
+                crate::testing::app_path_of(&gone_b),
+            ],
             WriteOperationConfig::default(),
             None,
             Initiator::User,
@@ -139,7 +143,7 @@ async fn a_delete_with_nothing_gone_carries_no_already_gone_note() {
     engine
         .delete_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![present],
+            vec![crate::testing::app_path_of(&present)],
             WriteOperationConfig::default(),
             None,
             Initiator::User,
@@ -164,7 +168,7 @@ async fn a_volume_delete_of_an_item_that_is_already_gone_completes() {
     engine
         .delete_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![PathBuf::from("/here.txt"), PathBuf::from("/gone.txt")],
+            vec![app_path!("/here.txt").to_owned(), app_path!("/gone.txt").to_owned()],
             WriteOperationConfig::default(),
             Some(volume_id),
             Initiator::User,
@@ -198,7 +202,7 @@ async fn a_trash_of_an_item_that_is_already_gone_completes_without_a_refusal() {
     engine
         .trash_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![gone],
+            vec![crate::testing::app_path_of(&gone)],
             None,
             WriteOperationConfig::default(),
             Initiator::User,
@@ -396,7 +400,7 @@ async fn a_volume_delete_probes_each_selected_item_once() {
     engine
         .delete_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![PathBuf::from("/file.txt"), PathBuf::from("/folder")],
+            vec![app_path!("/file.txt").to_owned(), app_path!("/folder").to_owned()],
             WriteOperationConfig::default(),
             Some(volume_id),
             Initiator::User,
@@ -483,7 +487,7 @@ async fn a_volume_delete_whose_preview_found_the_item_gone_completes() {
     engine
         .delete_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![gone.clone()],
+            vec![crate::testing::app_path_of(&gone)],
             WriteOperationConfig {
                 preview_id: Some(preview_id.clone()),
                 ..WriteOperationConfig::default()
@@ -521,7 +525,7 @@ async fn a_local_delete_whose_preview_found_the_item_gone_completes() {
     engine
         .delete_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![gone.clone()],
+            vec![crate::testing::app_path_of(&gone)],
             WriteOperationConfig {
                 preview_id: Some(preview_id.clone()),
                 ..WriteOperationConfig::default()
@@ -673,7 +677,7 @@ async fn delete_on(volume: &Arc<RacingVolume>, label: &str) -> Arc<CollectorEven
     engine
         .delete_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![PathBuf::from("/folder")],
+            vec![app_path!("/folder").to_owned()],
             WriteOperationConfig::default(),
             Some(volume_id),
             Initiator::User,

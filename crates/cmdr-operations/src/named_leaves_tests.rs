@@ -87,17 +87,44 @@ async fn start(
     match via {
         Start::RoutedCopy => {
             engine
-                .start_volume_copy(events, root.clone(), sources, root, dest, config, initiator, None)
+                .start_volume_copy(
+                    events,
+                    root.clone(),
+                    crate::testing::app_paths_of(sources),
+                    root,
+                    dest,
+                    config,
+                    initiator,
+                    None,
+                )
                 .await
         }
         Start::FacadeCopy => {
             engine
-                .start_volume_copy(events, root, sources, root2, dest, config, initiator, None)
+                .start_volume_copy(
+                    events,
+                    root,
+                    crate::testing::app_paths_of(sources),
+                    root2,
+                    dest,
+                    config,
+                    initiator,
+                    None,
+                )
                 .await
         }
         Start::FacadeMove => {
             engine
-                .start_volume_move(events, root, sources, root2, dest, config, initiator, None)
+                .start_volume_move(
+                    events,
+                    root,
+                    crate::testing::app_paths_of(sources),
+                    root2,
+                    dest,
+                    config,
+                    initiator,
+                    None,
+                )
                 .await
         }
         Start::LocalMove => {
@@ -108,8 +135,8 @@ async fn start(
             engine
                 .move_files_start(
                     events,
-                    sources,
-                    destination.to_path_buf(),
+                    crate::testing::app_paths_of(sources),
+                    crate::testing::app_path_of(destination),
                     config,
                     vec![],
                     None,
@@ -249,7 +276,8 @@ async fn a_name_taken_from_another_source_that_moves_on_lands_each_where_asked()
 /// A local volume rooted at a folder takes sources relative to its root, and
 /// the both-local facades re-root them before the native engines walk them.
 /// The names are keyed the way the sources were given, so the facade re-keys
-/// them in the same step, or every item would land under its old name.
+/// them in the same step, or every item would land under its old name. No typed
+/// door makes a relative path, so the sources go in as bridge values.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn volume_relative_sources_land_named_through_the_both_local_facades() {
     for moves in [false, true] {
@@ -271,7 +299,10 @@ async fn volume_relative_sources_land_named_through_the_both_local_facades() {
             leaves: names(&[(&invoice, "2026-09-27 invoice.pdf")]),
             ..VolumeCopyConfig::default()
         };
-        let sources = vec![invoice.clone(), PathBuf::from("downloads/keep.pdf")];
+        let sources: Vec<_> = [invoice.as_path(), Path::new("downloads/keep.pdf")]
+            .into_iter()
+            .map(|source| crate::wire_paths::seam_path(source).into_owned())
+            .collect();
         let dest = tmp.join("filed").display().to_string();
         let events = Arc::new(CollectorEventSink::new());
         let (work, root2) = ("work".to_string(), "root2".to_string());
@@ -342,8 +373,12 @@ async fn a_source_pruned_after_admission_leaves_the_rest_landing_named() {
     let started = engine
         .move_files_start(
             events.clone(),
-            vec![a.clone(), b.clone(), c.clone()],
-            dest.clone(),
+            vec![
+                crate::testing::app_path_of(&a),
+                crate::testing::app_path_of(&b),
+                crate::testing::app_path_of(&c),
+            ],
+            crate::testing::app_path_of(&dest),
             config,
             vec![],
             Some(vec![lane]),
@@ -616,9 +651,11 @@ async fn archive_routes_refuse_per_source_names() {
     zip.create_file(app_path!("/archive.zip/inner.txt"), b"z")
         .await
         .expect("a zip entry");
-    engine
-        .volumes()
-        .route("/archive.zip", RoutedKind::Archive, Arc::clone(&zip) as Arc<dyn Volume>);
+    engine.volumes().route(
+        app_path!("/archive.zip"),
+        RoutedKind::Archive,
+        Arc::clone(&zip) as Arc<dyn Volume>,
+    );
     let tmp = TestDir::new("named_leaves_routes");
     let local = write(&tmp.join("src/a.txt"), b"a");
     let local_dest = tmp.join("dst");
@@ -670,7 +707,7 @@ async fn archive_routes_refuse_per_source_names() {
                 .start_volume_move(
                     events,
                     from,
-                    vec![case.source.clone()],
+                    vec![crate::testing::app_path_of(&case.source)],
                     to,
                     case.dest,
                     config,
@@ -683,7 +720,7 @@ async fn archive_routes_refuse_per_source_names() {
                 .start_volume_copy(
                     events,
                     from,
-                    vec![case.source.clone()],
+                    vec![crate::testing::app_path_of(&case.source)],
                     to,
                     case.dest,
                     config,

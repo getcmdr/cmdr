@@ -406,7 +406,7 @@ pub(super) async fn a_folder_of_1005_objects_deletes(target: &S3Target) {
     app_engine()
         .delete_files_start(
             events.clone() as Arc<dyn OperationEventSink>,
-            vec![dir.join("folder")],
+            vec![cmdr_operations::testing::app_path_of(&dir.join("folder"))],
             WriteOperationConfig::default(),
             Some(volume_id),
             Initiator::User,
@@ -631,7 +631,7 @@ pub(super) async fn requests_sent_against_the_estimate(target: &S3Target) -> Vec
         .start_volume_move(
             events.clone() as Arc<dyn OperationEventSink>,
             volume_id.clone(),
-            vec![dir.join("copied/batch")],
+            vec![cmdr_operations::testing::app_path_of(&dir.join("copied/batch"))],
             volume_id.clone(),
             dir.join("moved").display().to_string(),
             VolumeCopyConfig::default(),
@@ -652,7 +652,10 @@ pub(super) async fn requests_sent_against_the_estimate(target: &S3Target) -> Vec
         .start_rename_by_move(
             events.clone() as Arc<dyn OperationEventSink>,
             volume_id.clone(),
-            vec![(dir.join("moved/batch"), "renamed".to_string())],
+            vec![(
+                cmdr_operations::testing::app_path_of(&dir.join("moved/batch")),
+                "renamed".to_string(),
+            )],
             dir.join("moved").display().to_string(),
             VolumeCopyConfig::default(),
             Initiator::User,
@@ -680,7 +683,7 @@ pub(super) async fn requests_sent_against_the_estimate(target: &S3Target) -> Vec
         .start_volume_move(
             events.clone() as Arc<dyn OperationEventSink>,
             volume_id.clone(),
-            vec![dir.join("moved/renamed")],
+            vec![cmdr_operations::testing::app_path_of(&dir.join("moved/renamed"))],
             off_id,
             off_dir.display().to_string(),
             VolumeCopyConfig::default(),
@@ -700,7 +703,7 @@ pub(super) async fn requests_sent_against_the_estimate(target: &S3Target) -> Vec
     app_engine()
         .delete_files_start(
             events.clone() as Arc<dyn OperationEventSink>,
-            vec![dir.join("batch")],
+            vec![cmdr_operations::testing::app_path_of(&dir.join("batch"))],
             WriteOperationConfig::default(),
             Some(volume_id.clone()),
             Initiator::User,
@@ -748,7 +751,10 @@ pub(super) async fn requests_sent_against_the_estimate(target: &S3Target) -> Vec
     app_engine()
         .delete_files_start(
             events.clone() as Arc<dyn OperationEventSink>,
-            vec![dir.join("files/t0.bin"), dir.join("files/t1.bin")],
+            vec![
+                cmdr_operations::testing::app_path_of(&dir.join("files/t0.bin")),
+                cmdr_operations::testing::app_path_of(&dir.join("files/t1.bin")),
+            ],
             WriteOperationConfig::default(),
             Some(volume_id),
             Initiator::User,

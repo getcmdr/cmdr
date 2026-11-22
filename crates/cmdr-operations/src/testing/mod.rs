@@ -40,6 +40,38 @@ pub use super::test_support::QueuedOperationFixture;
 pub use super::event_sinks::CollectorEventSink;
 pub use super::state::{IntentCell, OperationIntent, WriteOperationState};
 
+/// A test's path as the typed starts take it. A native path (a scratch directory, a file
+/// under one) crosses as the OS spells it, so `/tmp/x` on macOS and Linux and `C:/…/x` on
+/// Windows, the spelling the app's command edge sends; app text a test held in a `PathBuf`
+/// (a scheme path, a share's or phone's POSIX `/x`) reads as the wire reads it. A
+/// VOLUME-RELATIVE path (a suite's `cmdr-test-…/a.txt` on a share, which the volume anchors
+/// on its own root) has no app path without that root, so it goes on as a bridge value, its
+/// bytes as held: the one crossing a suite's relative spelling takes (#1225).
+#[track_caller]
+pub fn app_path_of(path: &std::path::Path) -> cmdr_fs::app_path::AppPathBuf {
+    use cmdr_fs::app_path::{AppPathBuf, PathFlavor};
+    if let Ok(native) = AppPathBuf::from_native_unicode(path) {
+        return native;
+    }
+    let text = path.to_str();
+    match text.map(|text| AppPathBuf::from_wire(text).or_else(|_| AppPathBuf::parse(text, PathFlavor::Posix))) {
+        Some(Ok(app)) => app,
+        _ => crate::wire_paths::seam_path(path).into_owned(),
+    }
+}
+
+/// [`app_path_of`] over a start's sources.
+#[track_caller]
+pub fn app_paths_of<P: AsRef<std::path::Path>>(
+    natives: impl IntoIterator<Item = P>,
+) -> Vec<cmdr_fs::app_path::AppPathBuf> {
+    let mut paths = Vec::new();
+    for native in natives {
+        paths.push(app_path_of(native.as_ref()));
+    }
+    paths
+}
+
 /// A fresh state on `engine`, unregistered: what a cell outside the engine drives
 /// a volume driver with directly (a backend suite, on `operations_host::app_engine()`).
 pub fn new_operation_state(engine: &Operations, progress_interval: Duration) -> WriteOperationState {

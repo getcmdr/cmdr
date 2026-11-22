@@ -150,7 +150,7 @@ async fn copy(volume_id: &str) -> Ran {
         .start_volume_copy(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
             id(volume_id).into(),
-            vec![base.join("a.txt")],
+            vec![crate::testing::app_path_of(&base.join("a.txt"))],
             id(volume_id).into(),
             base.join("out").display().to_string(),
             VolumeCopyConfig::default(),
@@ -171,7 +171,7 @@ async fn moved(volume_id: &str) -> Ran {
         .start_volume_move(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
             id(volume_id).into(),
-            vec![base.join("a.txt")],
+            vec![crate::testing::app_path_of(&base.join("a.txt"))],
             id(volume_id).into(),
             base.join("out").display().to_string(),
             VolumeCopyConfig::default(),
@@ -197,7 +197,7 @@ async fn delete(volume_id: &str) -> Ran {
     rig.engine
         .delete_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![base.join("a.txt")],
+            vec![crate::testing::app_path_of(&base.join("a.txt"))],
             WriteOperationConfig::default(),
             Some(id(volume_id).into()),
             Initiator::User,
@@ -220,8 +220,8 @@ async fn rename(volume_id: &str) -> Ran {
     let base = rig.base(volume_id);
     rig.engine
         .rename_managed(
-            base.join("a.txt"),
-            base.join("renamed.txt"),
+            crate::testing::app_path_of(&base.join("a.txt")),
+            crate::testing::app_path_of(&base.join("renamed.txt")),
             false,
             id(volume_id).into(),
             Initiator::User,
@@ -369,8 +369,8 @@ async fn local_move(volume_id: &str) -> Ran {
     rig.engine
         .move_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![base.join("a.txt")],
-            base.join("out"),
+            vec![crate::testing::app_path_of(&base.join("a.txt"))],
+            crate::testing::app_path_of(&base.join("out")),
             WriteOperationConfig::default(),
             Vec::new(),
             None,
@@ -396,7 +396,7 @@ async fn trash_with_no_local_disk_refuses_like_a_volume_without_one() {
         .engine
         .trash_files_start(
             sink() as Arc<dyn OperationEventSink>,
-            vec![file.clone()],
+            vec![crate::testing::app_path_of(&file)],
             None,
             WriteOperationConfig::default(),
             Initiator::User,
