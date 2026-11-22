@@ -65,7 +65,7 @@ impl Volume for MtpVolume {
             #[cfg(any(test, feature = "testing"))]
             super::testing::bump_list_directory_call_count();
 
-            let mtp_path = self.to_mtp_path(path);
+            let mtp_path = self.to_mtp_path(path)?;
 
             let bridge = MtpCancelBridge::open(self.manager.host(), cancel);
             let cancel_ref = bridge.as_ref().map(MtpCancelBridge::token);
@@ -120,7 +120,7 @@ impl Volume for MtpVolume {
         clock: &'a cmdr_fs::volume::ScanListingClock,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let mtp_path = self.to_mtp_path(path);
+            let mtp_path = self.to_mtp_path(path)?;
             let bridge = MtpCancelBridge::open(self.manager.host(), cancel);
 
             // The per-unit, foreground-yielding scan listing: never holds the USB
@@ -360,7 +360,7 @@ impl Volume for MtpVolume {
                 });
             };
 
-            let parent_mtp_path = self.to_mtp_path(parent);
+            let parent_mtp_path = self.to_mtp_path(parent)?;
             let folder_name = name.to_string();
 
             self.manager
@@ -389,7 +389,7 @@ impl Volume for MtpVolume {
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let mtp_path = self.to_mtp_path(path);
+            let mtp_path = self.to_mtp_path(path)?;
 
             let bridge = MtpCancelBridge::open(self.manager.host(), cancel);
             let cancel_ref = bridge.as_ref().map(MtpCancelBridge::token);
@@ -451,8 +451,8 @@ impl Volume for MtpVolume {
                 message: message.into(),
                 raw_os_error: None,
             };
-            let from_mtp = self.to_mtp_path(from);
-            let to_mtp = self.to_mtp_path(to);
+            let from_mtp = self.to_mtp_path(from)?;
+            let to_mtp = self.to_mtp_path(to)?;
             let from_storage = storage_path(&from_mtp).ok_or_else(|| invalid("Invalid source path"))?;
             let to_storage = storage_path(&to_mtp).ok_or_else(|| invalid("Invalid destination path"))?;
 
@@ -670,7 +670,7 @@ impl Volume for MtpVolume {
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let mtp_path = self.to_mtp_path(path);
+            let mtp_path = self.to_mtp_path(path)?;
 
             // The pacing (`mtp_read_pacing()`, small fixed windows in tests) and the
             // start `offset` (non-zero resumes a reopened read; see
@@ -701,7 +701,7 @@ impl Volume for MtpVolume {
             if len == 0 {
                 return Ok(Vec::new());
             }
-            let mtp_path = self.to_mtp_path(path);
+            let mtp_path = self.to_mtp_path(path)?;
             // ONE `GetPartialObject64` per call, straight to the device: no
             // session, no `GetStorageInfo`, no `GetObjectInfo`. A bounded read
             // discards everything those two round trips would produce, and the
@@ -793,7 +793,10 @@ impl Volume for MtpVolume {
             if mode.refuses_occupied() && self.exists(dest_app).await {
                 return Err(VolumeError::AlreadyExists(device_text(dest).into_owned()));
             }
-            let dest_folder = twins::folder_of(dest).map(|p| self.to_mtp_path(p)).unwrap_or_default();
+            let dest_folder = twins::folder_of(dest)
+                .map(|p| self.to_mtp_path(p))
+                .transpose()?
+                .unwrap_or_default();
             let filename = dest
                 .file_name()
                 .and_then(device_name)

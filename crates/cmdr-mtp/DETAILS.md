@@ -79,8 +79,11 @@ Every `Volume` body takes the trait's `&AppPath` with no bridge (`crates/cmdr-fs
 
 - **`to_mtp_path` reads the path's text** (`mtp_path_of_text`): the `mtp://{device}/{storage}` URL, the inner `/DCIM`
   spelling a row carries, and the relative or empty text a `std::path` caller still sends all reduce to the storage path
-  the session layer takes (`src/connection/DETAILS.md` § "Storage paths are app paths"). An escape in that text (a Linux
-  name joined onto a phone path) reads as its bytes' lossy text, the old answer (`device_spelling`).
+  the session layer takes (`src/connection/DETAILS.md` § "Storage paths are app paths"), through
+  `cmdr_fs::app_path::listed_text`. Text no device lists (a live escape: a Linux name joined onto a phone path) is
+  `NotFound`, ❌ never its bytes' lossy text: `caf\u{FFFD}.txt` is a name a phone can really hold, so a lossy delete,
+  overwrite, or listing reached that sibling. `device_spelling`'s lossy text only names a row in a listing patch and an
+  error. Pinned by `path_test::a_path_no_device_lists_addresses_nothing`.
 - **A name compared with a listing, or handed the device as a new name, is the device's spelling** (`device_name`,
   through `cmdr_fs::app_path::listed_text`): a literal escape-range code point the app escaped decodes back to itself,
   and a name whose bytes aren't text is refused, ❌ never its lossy look-alike. Pinned by

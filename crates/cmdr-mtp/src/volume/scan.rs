@@ -33,7 +33,7 @@ impl MtpVolume {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let mtp_path = self.to_mtp_path(path);
+            let mtp_path = self.to_mtp_path(path)?;
 
             debug!(
                 "MtpVolume::scan_for_copy: device={}, storage={}, path={}",
@@ -56,7 +56,7 @@ impl MtpVolume {
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let mtp_path = self.to_mtp_path(path);
+            let mtp_path = self.to_mtp_path(path)?;
             self.manager
                 .scan_for_copy_with_boundary(&self.device_id, self.storage_id, &mtp_path, path, boundary)
                 .await

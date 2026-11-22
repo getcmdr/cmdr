@@ -69,6 +69,7 @@ pub use streams::volume_read_stream_to_chunk_stream;
 use crate::connection::MtpConnectionManager;
 use crate::connection::storage_path::{storage_path, storage_url, url_of};
 use cmdr_fs::app_path::{AppPath, AppPathBuf, PathFlavor, listed_row_name, listed_text};
+use cmdr_fs::volume::VolumeError;
 use std::borrow::Cow;
 use std::sync::Arc;
 
@@ -123,14 +124,20 @@ impl MtpVolume {
     /// The MTP API expects paths relative to the storage root (for example,
     /// `DCIM/Camera`). Text work on the path's own spelling, split on `/` alone, so
     /// it answers the same on every OS.
-    pub(super) fn to_mtp_path(&self, path: &AppPath) -> String {
-        mtp_path_of_text(&device_text(path))
+    ///
+    /// The text as the device lists it ([`listed_text`], #1310), or `NotFound` for text no
+    /// device lists (a live escape, a Linux name that isn't text joined onto a phone path):
+    /// ❌ never its lossy spelling ([`device_spelling`]), which names a sibling the device
+    /// may really hold (`caf\u{FFFD}.txt`), so a delete or an overwrite would reach it.
+    pub(super) fn to_mtp_path(&self, path: &AppPath) -> Result<String, VolumeError> {
+        let text = listed_text(path.as_str()).ok_or_else(|| VolumeError::NotFound(device_text(path).into_owned()))?;
+        Ok(mtp_path_of_text(&text))
     }
 
     /// `path`'s storage path, the inner spelling (`/DCIM/Camera`, `/` for the root),
-    /// or `None` for one no object can sit at (a `..` name).
+    /// or `None` for one no object can sit at (a `..` name, or text no device lists).
     pub(super) fn storage_path_of(&self, path: &AppPath) -> Option<AppPathBuf> {
-        storage_path(&self.to_mtp_path(path))
+        storage_path(&self.to_mtp_path(path).ok()?)
     }
 
     /// Normalizes any caller-supplied path on this volume to the canonical
