@@ -295,6 +295,11 @@ describe('toVolumeRelativePath', () => {
     expect(toVolumeRelativePath('D:/backup', 'C:/')).toBe('D:/backup')
   })
 
+  it("keeps a POSIX path on a drive as that drive's own", () => {
+    onTestFinished(withPlatform('windows'))
+    expect(toVolumeRelativePath('/Users/test_user_1', 'C:/')).toBe('/Users/test_user_1')
+  })
+
   // A remote volume's root is `<prefix><server-side root>`, so one rooted at `/`
   // (the default for SFTP, WebDAV, and ADB) spells itself WITH a trailing slash.
   // Slicing that off by raw length ate the separator and handed the dialog

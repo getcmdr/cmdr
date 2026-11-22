@@ -70,6 +70,12 @@ describe('a Windows destination', () => {
   it('puts the item into a folder the path ends in a separator at', () => {
     expect(target('D:\\backup\\')).toMatchObject({ name: 'notes.txt', fullPath: 'D:/backup/notes.txt' })
   })
+
+  // A POSIX path is the picked drive's own, as `wire_path::anchored` reads it. Collapsed
+  // to `/`, a copy typed into `\Users\x\` landed in `C:\`.
+  it.each(['/Users/x/', '\\Users\\x\\'])('reads %s as a folder on the picked drive, never its root', (typed) => {
+    expect(target(typed)).toMatchObject({ volumeId: 'root', path: '/Users/x', fullPath: 'C:/Users/x/notes.txt' })
+  })
 })
 
 /**

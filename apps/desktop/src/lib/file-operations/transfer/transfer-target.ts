@@ -70,6 +70,9 @@ export function resolveTransferTarget(args: {
     volumeId = listedOsVolumeHolding(named.parent, volumes)?.id ?? fallbackVolume(named.parent, volumeId, volumes)
   const root = volumeRoot(volumes, volumeId)
   const path = parentForVolume(named.parent, root, localTarget)
+  // No place on the volume (`toVolumeRelativePath`): no target, so the box refuses to
+  // confirm. ❌ Never sent on: the backend anchors an empty path at the volume's root.
+  if (path === '') return null
   // A drive or share path off every listed root stays whole (`toVolumeRelativePath`).
   const keptWhole = !path.startsWith('/')
   const fullParent = root === '/' || keptWhole ? path : `${root.replace(/\/+$/, '')}${path === '/' ? '' : path}`

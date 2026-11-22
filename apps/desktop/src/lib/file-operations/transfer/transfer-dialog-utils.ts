@@ -203,6 +203,12 @@ export function toVolumeRelativePath(fullPath: string, volumePath: string): stri
   // the boot drive's root, `C:/`).
   const kind = parsePath(fullPath)?.kind
   if (kind === 'drive' || kind === 'unc') return fullPath
+  // On Windows a POSIX `/Users/x` is the volume's own (`wire_path::anchored` reads it as
+  // `C:/Users/x` on `C:/`), already volume-relative: collapsed, it copied into the root.
+  const rootKind = parsePath(volumePath)?.kind
+  if ((rootKind === 'drive' || rootKind === 'unc') && fullPath.startsWith('/') && !fullPath.startsWith('//')) {
+    return fullPath
+  }
   // A non-local volume whose caller already spelled the path volume-relative
   // ("/DCIM" against "mtp://device/storage"). Another volume's URL is not ours,
   // and echoing it into the box would just fail the absolute-path check.
