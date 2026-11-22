@@ -225,7 +225,7 @@ fn pin_mtime(path: &Path, unix_seconds: u64) {
 /// untouched batch must still restore. A snapshot recorded in the wrong unit
 /// would land here as drift, silently disabling undo.
 #[tokio::test]
-#[cfg(unix)] // Windows: the undo reverses nothing even with the fixture rooted at the drive, not yet pinned down (#1351)
+#[cfg(unix)] // #1225 milestone 10a: `record_hop` journals the rename's native `std::path` ends (`journal::local_split`), and the restore hands that `C:\…` text to the Windows volume, which refuses it (`SkipReason::Failed`), as the move journal's rows do (#1351)
 async fn undo_of_an_untouched_batch_rename_restores_the_original_name() {
     let undo_loop = UndoLoop::new("undo_restores");
     let source = undo_loop.dir.join("before.txt");
@@ -235,7 +235,7 @@ async fn undo_of_an_untouched_batch_rename_restores_the_original_name() {
 
     let report = undo_loop.undo().await;
 
-    assert_eq!(report.reversed, 1, "an untouched rename reverses");
+    assert_eq!(report.reversed, 1, "an untouched rename reverses: {report:?}");
     assert_eq!(report.skipped, 0);
     assert_eq!(report.final_state, cmdr_operation_log::types::RollbackState::RolledBack);
     assert_eq!(fs::read_to_string(&source).expect("read restored source"), "reviewed");

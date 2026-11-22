@@ -30,6 +30,29 @@ pub fn long_path(path: &Path) -> io::Result<std::path::PathBuf> {
     crate::app_path::expand_short_names(path)
 }
 
+/// See the re-export in `mod.rs`: `TEMP` spelled long, read once per process.
+pub fn scratch_root() -> std::path::PathBuf {
+    static ROOT: OnceLock<std::path::PathBuf> = OnceLock::new();
+    ROOT.get_or_init(|| {
+        let temp = std::env::temp_dir();
+        long_path(&temp).unwrap_or(temp)
+    })
+    .clone()
+}
+
+ctor::declarative::ctor! {
+    /// Points `tempfile`'s default folder at [`scratch_root`] before `main`, so every bare
+    /// `tempfile::tempdir()` in a test binary spells its folder long. `override_temp_dir`
+    /// sets it once per process, and nothing else calls it.
+    ///
+    /// SAFETY: runs before `main`, where it touches only `std::env`, one Win32 call
+    /// (`GetLongPathNameW`), and two `OnceLock`s, none of which needs `main`'s setup.
+    #[ctor(unsafe)]
+    fn spell_tempfile_scratch_long() {
+        let _already_set = tempfile::env::override_temp_dir(&scratch_root());
+    }
+}
+
 /// Probed once per process: one dangling file link in a fresh temp folder.
 pub fn can_create_symlinks() -> bool {
     static CAN: OnceLock<bool> = OnceLock::new();

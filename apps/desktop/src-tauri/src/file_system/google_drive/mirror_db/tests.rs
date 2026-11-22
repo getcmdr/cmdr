@@ -5,7 +5,7 @@
 //! while it exists there) over REAL files in a temp tree. Real files mean real inodes,
 //! which is the whole proof step — a fake inode would test nothing.
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+#![cfg(unix)] // Drive's mirror DB keys every row on a real inode (`MetadataExt::ino`), which `std` reads on POSIX only
 
 use super::*;
 use crate::test_support::TestDir;

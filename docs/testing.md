@@ -253,6 +253,9 @@ let volume = LocalPosixVolume::new("Test", &dir);
 - **Handing the directory to a volume, an index, or any API that takes an app path?** Use `AppTestDir` (same module,
   also re-exported by `crate::test_support`): `app_path()` is the app spelling (`C:/Users/…` on Windows, where the
   native `C:\Users\…` is refused), `native()` the path for the test's own `std::fs` setup.
+- **On Windows every scratch path is spelled long** (`cmdr_fs::testing::scratch_root`): `TestDir` creates under `TEMP`
+  with its 8.3 short names expanded, and a load-time hook points a bare `tempfile::tempdir()` there too, so a fixture
+  path matches what a Windows volume answers. A cell pinning how the product reads a short name types one on purpose.
 
 ❌ **Never build a fixture path from a compile-time constant** (`std::env::temp_dir().join("cmdr_list_test")`). That
 path is shared by every process on the machine, and it costs three ways:

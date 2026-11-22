@@ -7,7 +7,7 @@
 //!   (bookkeeping only, no OS stream: `file_system/DETAILS.md` § "Tests arm no OS
 //!   stream"), since the test binary's engine (`listing_host::test_listings`) carries
 //!   the watch observer. Tests lean on that
-//!   (`local_posix_host_test::test_listing_watch_coverage_flips_with_watcher_lifecycle`,
+//!   (`local_host_test::test_listing_watch_coverage_flips_with_watcher_lifecycle`,
 //!   `archive_watch_integration_test`), so an engine that armed only in the app
 //!   would leave them passing for the wrong reason.
 //!

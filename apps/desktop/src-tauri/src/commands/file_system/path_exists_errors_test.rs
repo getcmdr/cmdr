@@ -3,26 +3,44 @@
 //! ETIMEDOUT (pCloud's `pcloudfs`, cmdr-reports#4) otherwise reads as deleted, and
 //! the pane's walk-up leaves the drive for the boot disk's home folder.
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
-
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
 use std::future::Future;
-use std::io;
-use std::os::unix::fs::PermissionsExt;
 use std::pin::Pin;
 use std::sync::Arc;
 
 use crate::file_system::volume::manager::get_volume_manager;
 use crate::file_system::volume::{ListingProgress, Volume, VolumeError};
-use crate::test_support::TestDir;
 use cmdr_fs::entry::FileEntry;
-use cmdr_local::LocalPosixVolume;
 
-use super::{local_miss_is_definite, path_exists};
+use super::path_exists;
+
+/// The rule itself, by error kind, on every OS: only "not there" and "not a folder" are a
+/// miss. The errno twin below pins how POSIX's codes reach those kinds.
+#[test]
+fn only_the_not_found_kinds_are_a_definite_miss() {
+    use super::local_miss_is_definite;
+    use std::io::{Error, ErrorKind};
+
+    for kind in [ErrorKind::NotFound, ErrorKind::NotADirectory] {
+        assert!(local_miss_is_definite(&Error::from(kind)), "{kind:?}");
+    }
+    for kind in [
+        ErrorKind::PermissionDenied,
+        ErrorKind::TimedOut,
+        ErrorKind::NotConnected,
+        ErrorKind::Other,
+    ] {
+        assert!(!local_miss_is_definite(&Error::from(kind)), "{kind:?}");
+    }
+}
 
 #[test]
+#[cfg(unix)] // POSIX errnos (`libc`); Windows reads its own error codes
 fn only_not_found_and_not_a_folder_are_a_definite_miss() {
+    use super::local_miss_is_definite;
+    use std::io;
+
     for errno in [libc::ENOENT, libc::ENOTDIR] {
         assert!(
             local_miss_is_definite(&io::Error::from_raw_os_error(errno)),
@@ -47,7 +65,12 @@ fn only_not_found_and_not_a_folder_are_a_definite_miss() {
 /// A real non-NotFound error end to end: `stat` under a folder nobody may search
 /// answers EACCES, which says nothing about whether the child is there.
 #[tokio::test]
+#[cfg(unix)] // a folder's search bit (POSIX modes) is what refuses the `stat`
 async fn a_stat_the_os_refuses_is_couldnt_tell() {
+    use crate::test_support::TestDir;
+    use cmdr_local::LocalPosixVolume;
+    use std::os::unix::fs::PermissionsExt;
+
     // Root bypasses the search bit (CAP_DAC_OVERRIDE), so EACCES can't be produced
     // there, and the local Linux test lane runs in Docker as root.
     // SAFETY: geteuid takes no arguments, touches no memory, and cannot fail.

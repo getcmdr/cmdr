@@ -34,7 +34,9 @@ playwright-e2e = []
 #    which reads `hdiutil` and `diskutil` answers.
 # 6. Adds `testing::tcp_proxy` and the `tokio` networking it runs on, so a network
 #    backend's test can cut its own connection to a shared Docker fixture.
-testing = ["dep:tempfile", "dep:plist", "tokio/net", "tokio/io-util"]
+# 7. On Windows, adds `ctor`, which points `tempfile`'s default folder at the long
+#    spelling of `TEMP` before a test starts (`testing::scratch_root`).
+testing = ["dep:tempfile", "dep:plist", "dep:ctor", "tokio/net", "tokio/io-util"]
 # mimalloc as the process's global allocator on macOS too. Linux runs on it
 # without the feature, and macOS defaults to the system allocator; `build.rs`
 # folds that rule into the one `cmdr_mimalloc` cfg every allocator-specific line
@@ -151,6 +153,16 @@ exacl = "0.13"
 # (`metadata/platform/windows.rs`). Already in the graph through `tokio`, `mio`, and
 # friends, at this version.
 windows-sys = { version = "0.61", features = ["Win32_Storage_FileSystem", "Win32_System_Threading"] }
+# `testing` only: one load-time hook (`testing::scratch_root`) points `tempfile`'s
+# default folder at `TEMP` spelled long, so a test's `tempfile::tempdir()` names the
+# folder the way a Windows volume lists it. Already in the graph through
+# `tauri-utils`, at this version and with the same features off.
+ctor = { version = "1.0.13", default-features = false, optional = true }
+
+[target.'cfg(windows)'.dev-dependencies]
+# This crate's OWN tests compile `testing` with the feature off, so they need `ctor`
+# the way they need the `tempfile` dev-dependency below.
+ctor = { version = "1.0.13", default-features = false }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 # A browser's randomness source (`crypto.getRandomValues`) for the scratch-name

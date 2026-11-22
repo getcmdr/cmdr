@@ -518,8 +518,8 @@ app-path plan's review round 3).
   or an errno, injected through `read_entries_with`'s batch source): the result must equal the `read_dir` listing
   exactly.
 - **The cells that need the app's real host stay app-side**, in
-  `apps/desktop/src-tauri/src/listing_host/tests/local_posix_host_test.rs`: the watch-coverage answer following the real
-  FSEvents watcher, the panes' name order, and a mutation reaching the pane through the app's composer. They assert on
+  `apps/desktop/src-tauri/src/listing_host/tests/local_host_test.rs` (every OS): the watch-coverage answer following the
+  real OS watcher, the panes' name order, and a mutation reaching the pane through the app's composer. They assert on
   `listing_host::backends::AppListings`, so they live beside it.
 
 ## The public surface is capped
