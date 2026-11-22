@@ -840,9 +840,9 @@
   "@commands.fileGoToTrash.label": {
     "sourceHash": "687dada"
   },
-  "commands.fileGoToTrash.description": "{platform, select, windows {Ouvre la Corbeille du lecteur que vous parcourez} other {Ouvre la corbeille du disque que vous parcourez}}",
+  "commands.fileGoToTrash.description": "{platform, select, windows {Ouvre la Corbeille dans l’Explorateur de fichiers} other {Ouvre la corbeille du disque que vous parcourez}}",
   "@commands.fileGoToTrash.description": {
-    "sourceHash": "e4789d0"
+    "sourceHash": "c914053"
   },
   "commands.dialogConfirm.label": "Confirmer la boîte de dialogue affichée à l’écran",
   "@commands.dialogConfirm.label": {

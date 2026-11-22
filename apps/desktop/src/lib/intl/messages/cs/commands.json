@@ -840,9 +840,9 @@
   "@commands.fileGoToTrash.label": {
     "sourceHash": "687dada"
   },
-  "commands.fileGoToTrash.description": "{platform, select, windows {Otevře koš jednotky, kterou právě procházíte} other {Otevře koš na disku, který právě procházíte}}",
+  "commands.fileGoToTrash.description": "{platform, select, windows {Otevře koš v Průzkumníku souborů} other {Otevře koš na disku, který právě procházíte}}",
   "@commands.fileGoToTrash.description": {
-    "sourceHash": "e4789d0"
+    "sourceHash": "c914053"
   },
   "commands.dialogConfirm.label": "Potvrdit zobrazené dialogové okno",
   "@commands.dialogConfirm.label": {

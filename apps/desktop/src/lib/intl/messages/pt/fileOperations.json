@@ -877,13 +877,13 @@
   "@fileOperations.alreadyGone.neverShowAgain": {
     "sourceHash": "c9e19cb"
   },
-  "fileOperations.lockedSources.title": "Mover itens bloqueados?",
+  "fileOperations.lockedSources.title": "{platform, select, windows {Mover itens somente leitura?} other {Mover itens bloqueados?}}",
   "@fileOperations.lockedSources.title": {
-    "sourceHash": "69c0785"
+    "sourceHash": "28b2287"
   },
-  "fileOperations.lockedSources.message": "{count, plural, one {{countText} item que você está movendo está bloqueado. O Cmdr pode desbloqueá-lo só durante a movimentação e bloqueá-lo de novo no destino.} many {{countText} itens que você está movendo estão bloqueados. O Cmdr pode desbloqueá-los só durante a movimentação e bloqueá-los de novo no destino.} other {{countText} itens que você está movendo estão bloqueados. O Cmdr pode desbloqueá-los só durante a movimentação e bloqueá-los de novo no destino.}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, one {{countText} item que você está movendo é somente leitura. Movê-lo mesmo assim, ou ignorá-lo e mover o resto?} many {{countText} itens que você está movendo são somente leitura. Movê-los mesmo assim, ou ignorá-los e mover o resto?} other {{countText} itens que você está movendo são somente leitura. Movê-los mesmo assim, ou ignorá-los e mover o resto?}}} other {{count, plural, one {{countText} item que você está movendo está bloqueado. O Cmdr pode desbloqueá-lo só durante a movimentação e bloqueá-lo de novo no destino.} many {{countText} itens que você está movendo estão bloqueados. O Cmdr pode desbloqueá-los só durante a movimentação e bloqueá-los de novo no destino.} other {{countText} itens que você está movendo estão bloqueados. O Cmdr pode desbloqueá-los só durante a movimentação e bloqueá-los de novo no destino.}}}}",
   "@fileOperations.lockedSources.message": {
-    "sourceHash": "a82868b"
+    "sourceHash": "b2f056d"
   },
   "fileOperations.lockedSources.moreItems": "{count, plural, one {e mais {countText} item} many {e mais {countText} itens} other {e mais {countText} itens}}",
   "@fileOperations.lockedSources.moreItems": {
@@ -893,13 +893,13 @@
   "@fileOperations.lockedSources.moveAnyway": {
     "sourceHash": "c3d9351"
   },
-  "fileOperations.lockedSources.skip": "Ignorar itens bloqueados",
+  "fileOperations.lockedSources.skip": "{platform, select, windows {Ignorar itens somente leitura} other {Ignorar itens bloqueados}}",
   "@fileOperations.lockedSources.skip": {
-    "sourceHash": "e70b85a"
+    "sourceHash": "2fd312f"
   },
-  "fileOperations.lockedSources.heldToast": "Uma movimentação tem uma pergunta para você sobre itens bloqueados. Você vai vê-la assim que a caixa de diálogo aberta fechar.",
+  "fileOperations.lockedSources.heldToast": "{platform, select, windows {Uma movimentação tem uma pergunta para você sobre itens somente leitura. Você vai vê-la assim que a caixa de diálogo aberta fechar.} other {Uma movimentação tem uma pergunta para você sobre itens bloqueados. Você vai vê-la assim que a caixa de diálogo aberta fechar.}}",
   "@fileOperations.lockedSources.heldToast": {
-    "sourceHash": "c76d27a"
+    "sourceHash": "4764e05"
   },
   "fileOperations.transferProgress.progressBytes": "Bytes",
   "@fileOperations.transferProgress.progressBytes": {

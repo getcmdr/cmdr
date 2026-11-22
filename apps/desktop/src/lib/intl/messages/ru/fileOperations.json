@@ -876,13 +876,13 @@
   "@fileOperations.alreadyGone.neverShowAgain": {
     "sourceHash": "c9e19cb"
   },
-  "fileOperations.lockedSources.title": "Переместить защищенные объекты?",
+  "fileOperations.lockedSources.title": "{platform, select, windows {Переместить объекты только для чтения?} other {Переместить защищенные объекты?}}",
   "@fileOperations.lockedSources.title": {
-    "sourceHash": "69c0785"
+    "sourceHash": "28b2287"
   },
-  "fileOperations.lockedSources.message": "{count, plural, one {{countText} перемещаемый объект защищен. Cmdr может снять с него защиту только на время перемещения и снова защитить его на новом месте.} few {{countText} перемещаемых объекта защищены. Cmdr может снять с них защиту только на время перемещения и снова защитить их на новом месте.} many {{countText} перемещаемых объектов защищены. Cmdr может снять с них защиту только на время перемещения и снова защитить их на новом месте.} other {{countText} перемещаемого объекта защищены. Cmdr может снять с них защиту только на время перемещения и снова защитить их на новом месте.}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, one {{countText} перемещаемый объект доступен только для чтения. Все равно переместить его или пропустить и переместить остальные?} few {{countText} перемещаемых объекта доступны только для чтения. Все равно переместить их или пропустить и переместить остальные?} many {{countText} перемещаемых объектов доступны только для чтения. Все равно переместить их или пропустить и переместить остальные?} other {{countText} перемещаемого объекта доступны только для чтения. Все равно переместить их или пропустить и переместить остальные?}}} other {{count, plural, one {{countText} перемещаемый объект защищен. Cmdr может снять с него защиту только на время перемещения и снова защитить его на новом месте.} few {{countText} перемещаемых объекта защищены. Cmdr может снять с них защиту только на время перемещения и снова защитить их на новом месте.} many {{countText} перемещаемых объектов защищены. Cmdr может снять с них защиту только на время перемещения и снова защитить их на новом месте.} other {{countText} перемещаемого объекта защищены. Cmdr может снять с них защиту только на время перемещения и снова защитить их на новом месте.}}}}",
   "@fileOperations.lockedSources.message": {
-    "sourceHash": "a82868b"
+    "sourceHash": "b2f056d"
   },
   "fileOperations.lockedSources.moreItems": "{count, plural, one {и еще {countText} объект} few {и еще {countText} объекта} many {и еще {countText} объектов} other {и еще {countText} объекта}}",
   "@fileOperations.lockedSources.moreItems": {
@@ -892,13 +892,13 @@
   "@fileOperations.lockedSources.moveAnyway": {
     "sourceHash": "c3d9351"
   },
-  "fileOperations.lockedSources.skip": "Пропустить защищенные объекты",
+  "fileOperations.lockedSources.skip": "{platform, select, windows {Пропустить объекты только для чтения} other {Пропустить защищенные объекты}}",
   "@fileOperations.lockedSources.skip": {
-    "sourceHash": "e70b85a"
+    "sourceHash": "2fd312f"
   },
-  "fileOperations.lockedSources.heldToast": "У перемещения есть вопрос к вам о защищенных объектах. Вы увидите его, как только закроется открытое диалоговое окно.",
+  "fileOperations.lockedSources.heldToast": "{platform, select, windows {У перемещения есть вопрос к вам об объектах только для чтения. Вы увидите его, как только закроется открытое диалоговое окно.} other {У перемещения есть вопрос к вам о защищенных объектах. Вы увидите его, как только закроется открытое диалоговое окно.}}",
   "@fileOperations.lockedSources.heldToast": {
-    "sourceHash": "c76d27a"
+    "sourceHash": "4764e05"
   },
   "fileOperations.transferProgress.progressBytes": "Байты",
   "@fileOperations.transferProgress.progressBytes": {

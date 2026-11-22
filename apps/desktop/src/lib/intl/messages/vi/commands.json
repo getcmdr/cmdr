@@ -840,9 +840,9 @@
   "@commands.fileGoToTrash.label": {
     "sourceHash": "687dada"
   },
-  "commands.fileGoToTrash.description": "{platform, select, windows {Mở Thùng rác của ổ đĩa bạn đang duyệt} other {Mở thùng rác của ổ đĩa bạn đang duyệt}}",
+  "commands.fileGoToTrash.description": "{platform, select, windows {Mở Thùng rác trong File Explorer} other {Mở thùng rác của ổ đĩa bạn đang duyệt}}",
   "@commands.fileGoToTrash.description": {
-    "sourceHash": "e4789d0"
+    "sourceHash": "c914053"
   },
   "commands.dialogConfirm.label": "Xác nhận hộp thoại trên màn hình",
   "@commands.dialogConfirm.label": {

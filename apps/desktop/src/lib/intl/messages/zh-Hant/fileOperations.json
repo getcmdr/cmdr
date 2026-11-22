@@ -875,13 +875,13 @@
   "@fileOperations.alreadyGone.neverShowAgain": {
     "sourceHash": "c9e19cb"
   },
-  "fileOperations.lockedSources.title": "移動已鎖定的項目？",
+  "fileOperations.lockedSources.title": "{platform, select, windows {移動唯讀的項目？} other {移動已鎖定的項目？}}",
   "@fileOperations.lockedSources.title": {
-    "sourceHash": "69c0785"
+    "sourceHash": "28b2287"
   },
-  "fileOperations.lockedSources.message": "{count, plural, other {你要移動的項目中有 {countText} 個已鎖定。Cmdr 可以只在移動時解鎖，到了新位置再重新鎖定。}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, other {你要移動的項目中有 {countText} 個是唯讀的。仍要移動，還是略過並移動其餘項目？}}} other {{count, plural, other {你要移動的項目中有 {countText} 個已鎖定。Cmdr 可以只在移動時解鎖，到了新位置再重新鎖定。}}}}",
   "@fileOperations.lockedSources.message": {
-    "sourceHash": "a82868b"
+    "sourceHash": "b2f056d"
   },
   "fileOperations.lockedSources.moreItems": "{count, plural, other {另外還有 {countText} 個項目}}",
   "@fileOperations.lockedSources.moreItems": {
@@ -891,13 +891,13 @@
   "@fileOperations.lockedSources.moveAnyway": {
     "sourceHash": "c3d9351"
   },
-  "fileOperations.lockedSources.skip": "略過已鎖定的項目",
+  "fileOperations.lockedSources.skip": "{platform, select, windows {略過唯讀的項目} other {略過已鎖定的項目}}",
   "@fileOperations.lockedSources.skip": {
-    "sourceHash": "e70b85a"
+    "sourceHash": "2fd312f"
   },
-  "fileOperations.lockedSources.heldToast": "一項移動操作有個關於已鎖定項目的問題要問你。目前開啟的對話方塊一關閉，你就會看到。",
+  "fileOperations.lockedSources.heldToast": "{platform, select, windows {一項移動操作有個關於唯讀項目的問題要問你。目前開啟的對話方塊一關閉，你就會看到。} other {一項移動操作有個關於已鎖定項目的問題要問你。目前開啟的對話方塊一關閉，你就會看到。}}",
   "@fileOperations.lockedSources.heldToast": {
-    "sourceHash": "c76d27a"
+    "sourceHash": "4764e05"
   },
   "fileOperations.transferProgress.progressBytes": "位元組",
   "@fileOperations.transferProgress.progressBytes": {

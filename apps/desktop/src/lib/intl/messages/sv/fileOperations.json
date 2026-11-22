@@ -877,13 +877,13 @@
   "@fileOperations.alreadyGone.neverShowAgain": {
     "sourceHash": "c9e19cb"
   },
-  "fileOperations.lockedSources.title": "Flytta låsta objekt?",
+  "fileOperations.lockedSources.title": "{platform, select, windows {Flytta skrivskyddade objekt?} other {Flytta låsta objekt?}}",
   "@fileOperations.lockedSources.title": {
-    "sourceHash": "69c0785"
+    "sourceHash": "28b2287"
   },
-  "fileOperations.lockedSources.message": "{count, plural, one {{countText} objekt som du flyttar är låst. Cmdr kan låsa upp det bara under flytten och låsa det igen där det hamnar.} other {{countText} objekt som du flyttar är låsta. Cmdr kan låsa upp dem bara under flytten och låsa dem igen där de hamnar.}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, one {{countText} objekt som du flyttar är skrivskyddat. Vill du flytta det ändå, eller hoppa över det och flytta resten?} other {{countText} objekt som du flyttar är skrivskyddade. Vill du flytta dem ändå, eller hoppa över dem och flytta resten?}}} other {{count, plural, one {{countText} objekt som du flyttar är låst. Cmdr kan låsa upp det bara under flytten och låsa det igen där det hamnar.} other {{countText} objekt som du flyttar är låsta. Cmdr kan låsa upp dem bara under flytten och låsa dem igen där de hamnar.}}}}",
   "@fileOperations.lockedSources.message": {
-    "sourceHash": "a82868b"
+    "sourceHash": "b2f056d"
   },
   "fileOperations.lockedSources.moreItems": "{count, plural, one {och ytterligare {countText} objekt} other {och ytterligare {countText} objekt}}",
   "@fileOperations.lockedSources.moreItems": {
@@ -893,13 +893,13 @@
   "@fileOperations.lockedSources.moveAnyway": {
     "sourceHash": "c3d9351"
   },
-  "fileOperations.lockedSources.skip": "Hoppa över låsta objekt",
+  "fileOperations.lockedSources.skip": "{platform, select, windows {Hoppa över skrivskyddade objekt} other {Hoppa över låsta objekt}}",
   "@fileOperations.lockedSources.skip": {
-    "sourceHash": "e70b85a"
+    "sourceHash": "2fd312f"
   },
-  "fileOperations.lockedSources.heldToast": "En flytt har en fråga till dig om låsta objekt. Du ser den så fort den öppna dialogen stängs.",
+  "fileOperations.lockedSources.heldToast": "{platform, select, windows {En flytt har en fråga till dig om skrivskyddade objekt. Du ser den så fort den öppna dialogen stängs.} other {En flytt har en fråga till dig om låsta objekt. Du ser den så fort den öppna dialogen stängs.}}",
   "@fileOperations.lockedSources.heldToast": {
-    "sourceHash": "c76d27a"
+    "sourceHash": "4764e05"
   },
   "fileOperations.transferProgress.progressBytes": "Byte",
   "@fileOperations.transferProgress.progressBytes": {

@@ -875,13 +875,13 @@
   "@fileOperations.alreadyGone.neverShowAgain": {
     "sourceHash": "c9e19cb"
   },
-  "fileOperations.lockedSources.title": "移动已锁定的项目？",
+  "fileOperations.lockedSources.title": "{platform, select, windows {移动只读的项目？} other {移动已锁定的项目？}}",
   "@fileOperations.lockedSources.title": {
-    "sourceHash": "69c0785"
+    "sourceHash": "28b2287"
   },
-  "fileOperations.lockedSources.message": "{count, plural, other {你要移动的项目中有 {countText} 个已锁定。Cmdr 可以只在移动时解锁，到了新位置再重新锁定。}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, other {你要移动的项目中有 {countText} 个是只读的。仍要移动，还是跳过并移动其余项目？}}} other {{count, plural, other {你要移动的项目中有 {countText} 个已锁定。Cmdr 可以只在移动时解锁，到了新位置再重新锁定。}}}}",
   "@fileOperations.lockedSources.message": {
-    "sourceHash": "a82868b"
+    "sourceHash": "b2f056d"
   },
   "fileOperations.lockedSources.moreItems": "{count, plural, other {另有 {countText} 个项目}}",
   "@fileOperations.lockedSources.moreItems": {
@@ -891,13 +891,13 @@
   "@fileOperations.lockedSources.moveAnyway": {
     "sourceHash": "c3d9351"
   },
-  "fileOperations.lockedSources.skip": "跳过已锁定的项目",
+  "fileOperations.lockedSources.skip": "{platform, select, windows {跳过只读的项目} other {跳过已锁定的项目}}",
   "@fileOperations.lockedSources.skip": {
-    "sourceHash": "e70b85a"
+    "sourceHash": "2fd312f"
   },
-  "fileOperations.lockedSources.heldToast": "一项移动操作有个关于已锁定项目的问题要问你。当前打开的对话框一关闭，你就会看到。",
+  "fileOperations.lockedSources.heldToast": "{platform, select, windows {一项移动操作有个关于只读项目的问题要问你。当前打开的对话框一关闭，你就会看到。} other {一项移动操作有个关于已锁定项目的问题要问你。当前打开的对话框一关闭，你就会看到。}}",
   "@fileOperations.lockedSources.heldToast": {
-    "sourceHash": "c76d27a"
+    "sourceHash": "4764e05"
   },
   "fileOperations.transferProgress.progressBytes": "字节",
   "@fileOperations.transferProgress.progressBytes": {

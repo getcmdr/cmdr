@@ -840,9 +840,9 @@
   "@commands.fileGoToTrash.label": {
     "sourceHash": "687dada"
   },
-  "commands.fileGoToTrash.description": "{platform, select, windows {Öffnet den Papierkorb des Laufwerks, auf dem du gerade bist} other {Öffnet den Papierkorb des Laufwerks, auf dem du gerade bist}}",
+  "commands.fileGoToTrash.description": "{platform, select, windows {Öffnet den Papierkorb im Datei-Explorer} other {Öffnet den Papierkorb des Laufwerks, auf dem du gerade bist}}",
   "@commands.fileGoToTrash.description": {
-    "sourceHash": "e4789d0"
+    "sourceHash": "c914053"
   },
   "commands.dialogConfirm.label": "Dialog auf dem Bildschirm bestätigen",
   "@commands.dialogConfirm.label": {

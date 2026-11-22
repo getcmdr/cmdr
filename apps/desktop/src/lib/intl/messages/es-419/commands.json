@@ -55,9 +55,9 @@
   "@commands.fileGoToTrash.label": {
     "sourceHash": "a4bd867"
   },
-  "commands.fileGoToTrash.description": "{platform, select, windows {Abre la Papelera de reciclaje de la unidad que estás explorando} other {Abre el basurero de la unidad que estás explorando}}",
+  "commands.fileGoToTrash.description": "{platform, select, windows {Abre la Papelera de reciclaje en el Explorador de archivos} other {Abre el basurero de la unidad que estás explorando}}",
   "@commands.fileGoToTrash.description": {
-    "sourceHash": "bcc9610"
+    "sourceHash": "3cbe0d0"
   },
   "commands.fileShowInFileManager.label": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Mostrar en Archivos} linuxKde {Mostrar en Dolphin} other {Mostrar en el administrador de archivos}}",
   "@commands.fileShowInFileManager.label": {

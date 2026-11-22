@@ -878,13 +878,13 @@
   "@fileOperations.alreadyGone.neverShowAgain": {
     "sourceHash": "c9e19cb"
   },
-  "fileOperations.lockedSources.title": "Déplacer les éléments verrouillés ?",
+  "fileOperations.lockedSources.title": "{platform, select, windows {Déplacer les éléments en lecture seule ?} other {Déplacer les éléments verrouillés ?}}",
   "@fileOperations.lockedSources.title": {
-    "sourceHash": "69c0785"
+    "sourceHash": "28b2287"
   },
-  "fileOperations.lockedSources.message": "{count, plural, one {{countText} élément que vous déplacez est verrouillé. Cmdr peut le déverrouiller juste le temps du déplacement, puis le verrouiller à nouveau à son arrivée.} many {{countText} éléments que vous déplacez sont verrouillés. Cmdr peut les déverrouiller juste le temps du déplacement, puis les verrouiller à nouveau à leur arrivée.} other {{countText} éléments que vous déplacez sont verrouillés. Cmdr peut les déverrouiller juste le temps du déplacement, puis les verrouiller à nouveau à leur arrivée.}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, one {{countText} élément que vous déplacez est en lecture seule. Le déplacer quand même, ou l’ignorer et déplacer le reste ?} many {{countText} éléments que vous déplacez sont en lecture seule. Les déplacer quand même, ou les ignorer et déplacer le reste ?} other {{countText} éléments que vous déplacez sont en lecture seule. Les déplacer quand même, ou les ignorer et déplacer le reste ?}}} other {{count, plural, one {{countText} élément que vous déplacez est verrouillé. Cmdr peut le déverrouiller juste le temps du déplacement, puis le verrouiller à nouveau à son arrivée.} many {{countText} éléments que vous déplacez sont verrouillés. Cmdr peut les déverrouiller juste le temps du déplacement, puis les verrouiller à nouveau à leur arrivée.} other {{countText} éléments que vous déplacez sont verrouillés. Cmdr peut les déverrouiller juste le temps du déplacement, puis les verrouiller à nouveau à leur arrivée.}}}}",
   "@fileOperations.lockedSources.message": {
-    "sourceHash": "a82868b"
+    "sourceHash": "b2f056d"
   },
   "fileOperations.lockedSources.moreItems": "{count, plural, one {et {countText} élément de plus} many {et {countText} éléments de plus} other {et {countText} éléments de plus}}",
   "@fileOperations.lockedSources.moreItems": {
@@ -894,13 +894,13 @@
   "@fileOperations.lockedSources.moveAnyway": {
     "sourceHash": "c3d9351"
   },
-  "fileOperations.lockedSources.skip": "Ignorer les éléments verrouillés",
+  "fileOperations.lockedSources.skip": "{platform, select, windows {Ignorer les éléments en lecture seule} other {Ignorer les éléments verrouillés}}",
   "@fileOperations.lockedSources.skip": {
-    "sourceHash": "e70b85a"
+    "sourceHash": "2fd312f"
   },
-  "fileOperations.lockedSources.heldToast": "Un déplacement a une question pour vous au sujet d’éléments verrouillés. Vous la verrez dès que la boîte de dialogue ouverte sera fermée.",
+  "fileOperations.lockedSources.heldToast": "{platform, select, windows {Un déplacement a une question pour vous au sujet d’éléments en lecture seule. Vous la verrez dès que la boîte de dialogue ouverte sera fermée.} other {Un déplacement a une question pour vous au sujet d’éléments verrouillés. Vous la verrez dès que la boîte de dialogue ouverte sera fermée.}}",
   "@fileOperations.lockedSources.heldToast": {
-    "sourceHash": "c76d27a"
+    "sourceHash": "4764e05"
   },
   "fileOperations.transferProgress.progressBytes": "Octets",
   "@fileOperations.transferProgress.progressBytes": {

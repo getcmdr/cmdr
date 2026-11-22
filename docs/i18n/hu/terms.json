@@ -3107,7 +3107,12 @@
   "read-only": {
     "chosen": "csak olvasható",
     "confidence": "high",
-    "sources": "macOS; ms"
+    "sources": "macOS; ms",
+    "windows": {
+      "chosen": "írásvédett",
+      "accept": ["írásvéd"],
+      "note": "Hungarian Windows names the File Explorer Properties attribute checkbox Írásvédett (MS TBX read-only → írásvédett, beside csak olvasható); `errors.write.fileLocked.suggestion` already quotes „Írásvédett”. Only the windows branch."
+    }
   },
   "recent": {
     "chosen": "legutóbbi",

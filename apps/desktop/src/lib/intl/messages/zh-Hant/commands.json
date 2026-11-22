@@ -840,9 +840,9 @@
   "@commands.fileGoToTrash.label": {
     "sourceHash": "687dada"
   },
-  "commands.fileGoToTrash.description": "{platform, select, windows {開啟你正在瀏覽的磁碟機上的資源回收筒} other {開啟你正在瀏覽的磁碟機上的垃圾桶}}",
+  "commands.fileGoToTrash.description": "{platform, select, windows {在檔案總管中開啟資源回收筒} other {開啟你正在瀏覽的磁碟機上的垃圾桶}}",
   "@commands.fileGoToTrash.description": {
-    "sourceHash": "e4789d0"
+    "sourceHash": "c914053"
   },
   "commands.dialogConfirm.label": "確認畫面上的對話方塊",
   "@commands.dialogConfirm.label": {

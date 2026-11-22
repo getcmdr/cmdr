@@ -840,9 +840,9 @@
   "@commands.fileGoToTrash.label": {
     "sourceHash": "687dada"
   },
-  "commands.fileGoToTrash.description": "{platform, select, windows {Abre la Papelera de reciclaje de la unidad que estás explorando} other {Abre la papelera de la unidad que estás explorando}}",
+  "commands.fileGoToTrash.description": "{platform, select, windows {Abre la Papelera de reciclaje en el Explorador de archivos} other {Abre la papelera de la unidad que estás explorando}}",
   "@commands.fileGoToTrash.description": {
-    "sourceHash": "e4789d0"
+    "sourceHash": "c914053"
   },
   "commands.dialogConfirm.label": "Confirmar el diálogo en pantalla",
   "@commands.dialogConfirm.label": {
