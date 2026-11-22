@@ -113,12 +113,11 @@ fn favorite_location(
 ) -> LocationInfo {
     use crate::favorites::target::{FavoriteTarget, Probe, on_disk};
 
-    let path = Path::new(&favorite.path);
-    // ❗ Only an OS path has a containing mount: the table lookup matches `/` for anything.
-    let mount = path
-        .is_absolute()
-        .then(|| linux_mounts::mount_entry_for_path_from_entries(path, mounts))
-        .flatten();
+    // ❗ Only an OS path has a containing mount (the table lookup matches `/` for anything), and a
+    // scheme path has no native form.
+    let mount = favorite
+        .native_path()
+        .and_then(|path| linux_mounts::mount_entry_for_path_from_entries(&path, mounts));
     let fs_type = mount.map(|mount| mount.fstype.clone());
     let probe = match fs_type.as_deref().is_some_and(linux_mounts::is_network_fs_type) {
         true => Probe::NetworkMount,
@@ -191,7 +190,7 @@ pub fn resolve_path_volume_fast(path: &str) -> Option<VolumeInfo> {
     // A GVFS share never reaches the mount table (one FUSE mount serves them all), so the
     // walk below would answer that FUSE root: the share's own row, as discovery lists it.
     if let Some(root) = smb::gvfs_share_root(path) {
-        let dirname = Path::new(root).file_name()?.to_str()?;
+        let dirname = crate::volumes::os_mount_path(root).file_name()?.to_str()?;
         let gvfs = parse_gvfs_smb_dirname(dirname)?;
         return Some(network_mounts::gvfs_share_location(root.to_string(), gvfs.share));
     }
@@ -245,7 +244,7 @@ pub(crate) fn network_mount_under(path: &Path) -> Option<crate::volumes::Network
 /// resolves to the share").
 fn network_mount_in(mounts: &[MountEntry], path: &Path) -> Option<crate::volumes::NetworkMount> {
     if let Some(root) = path.to_str().and_then(smb::gvfs_share_root) {
-        let dirname = Path::new(root).file_name()?.to_str()?;
+        let dirname = crate::volumes::os_mount_path(root).file_name()?.to_str()?;
         return Some(crate::volumes::NetworkMount {
             mount_point: root.to_string(),
             name: parse_gvfs_smb_dirname(dirname)?.share,
@@ -282,7 +281,7 @@ mod tests {
             proc_mount("//nas/media", "/mnt/media", "cifs"),
             proc_mount("/dev/sdb1", "/mnt/media-1", "ext4"),
         ];
-        let network = |path: &str| network_mount_in(&mounts, Path::new(path));
+        let network = |path: &str| network_mount_in(&mounts, crate::volumes::os_mount_path(path));
         assert_eq!(
             network("/mnt/media/films"),
             Some(crate::volumes::NetworkMount {

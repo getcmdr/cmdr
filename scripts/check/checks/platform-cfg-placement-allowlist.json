@@ -100,7 +100,7 @@
     },
     "apps/desktop/src-tauri/src/file_system/cloud_actions.rs": {
       "negated": 2,
-      "outsideSeam": 7
+      "outsideSeam": 5
     },
     "apps/desktop/src-tauri/src/file_system/default_app.rs": {
       "negated": 1,

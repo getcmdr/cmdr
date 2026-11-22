@@ -230,7 +230,7 @@ async fn escape_during_a_watched_save_stops_it_and_leaves_no_temp() {
         1,
         RangeEnd::Row { row: 0, offset: 0 },
         RangeEnd::Eof,
-        dest.to_string_lossy().into_owned(),
+        dest.clone(),
         Duration::from_secs(30),
     )
     .await;
@@ -270,7 +270,7 @@ async fn a_save_that_keeps_writing_runs_past_the_limit() {
         1,
         RangeEnd::Row { row: 0, offset: 0 },
         RangeEnd::Eof,
-        dest.to_string_lossy().into_owned(),
+        dest.clone(),
         Duration::from_secs(1),
     )
     .await;
@@ -315,7 +315,7 @@ async fn a_save_that_goes_quiet_gives_up_and_leaves_no_temp() {
         1,
         RangeEnd::Row { row: 0, offset: 0 },
         RangeEnd::Eof,
-        dest.to_string_lossy().into_owned(),
+        dest.clone(),
         Duration::from_millis(500),
     )
     .await;
@@ -350,7 +350,7 @@ async fn write_range_rejects_a_destination_inside_an_archive() {
         0,
         RangeEnd::Eof,
         RangeEnd::Eof,
-        dest.to_string_lossy().into_owned(),
+        crate::test_support::native_app_path(&dest).into_string(),
     )
     .await
     .expect_err("archive-inner destination must be refused");
@@ -367,7 +367,7 @@ async fn write_range_rejects_a_destination_inside_an_archive() {
         0,
         RangeEnd::Eof,
         RangeEnd::Eof,
-        plain.to_string_lossy().into_owned(),
+        crate::test_support::native_app_path(&plain).into_string(),
     )
     .await
     .expect_err("bogus session should fail past the guard");
@@ -396,7 +396,7 @@ async fn saving_into_a_repos_history_is_refused_the_way_saving_into_a_zip_is() {
         0,
         RangeEnd::Eof,
         RangeEnd::Eof,
-        snapshot.to_string_lossy().into_owned(),
+        crate::test_support::native_app_path(&snapshot).into_string(),
     )
     .await
     .expect_err("a snapshot destination must be refused");
@@ -413,7 +413,7 @@ async fn saving_into_a_repos_history_is_refused_the_way_saving_into_a_zip_is() {
         0,
         RangeEnd::Eof,
         RangeEnd::Eof,
-        real.to_string_lossy().into_owned(),
+        crate::test_support::native_app_path(&real).into_string(),
     )
     .await
     .expect_err("bogus session should fail past the guard");

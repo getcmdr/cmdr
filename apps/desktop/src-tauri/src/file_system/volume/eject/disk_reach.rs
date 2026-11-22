@@ -82,14 +82,13 @@ pub(crate) fn disk_at(mount_path: &str) -> Option<u64> {
 mod tests {
     use super::*;
     use crate::volumes::{LocationCategory, LocationInfo};
-    use std::path::PathBuf;
 
     fn mounted(path: &str) -> MountedVolume {
         MountedVolume {
             bsd_name: "disk7s1".to_string(),
             whole_unit: 7,
             volume_uuid: None,
-            path: PathBuf::from(path),
+            path: crate::volumes::os_mount_path(path).to_path_buf(),
         }
     }
 

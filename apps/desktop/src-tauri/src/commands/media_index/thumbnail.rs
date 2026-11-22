@@ -40,7 +40,9 @@ fn mint_image_thumbnail_token(path: &str) -> Option<String> {
     use crate::file_viewer::media::MediaEntry;
     let tokens = crate::file_viewer::app_viewer().tokens();
 
-    let p = std::path::Path::new(path);
+    // A path with no native form is no local file: nothing to classify.
+    let native = crate::commands::wire_path::native(path).ok()?;
+    let p = native.as_path();
     let head = read_head_bytes(p, CLASSIFY_HEAD_LEN);
     let ext = p.extension().and_then(|e| e.to_str());
     let kind = classify_viewer_content(&head, ext);

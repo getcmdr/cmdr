@@ -51,6 +51,8 @@ pub mod agent;
 mod ai;
 mod analytics;
 mod app_lifecycle;
+/// App-path text (a row, a stored path) read typed and crossed to its native file.
+mod app_text;
 // Core Foundation property lists as `plist::Value`, shared by every CFPreferences reader.
 /// Test-only: invariants over the `capabilities/` manifests, which no other
 /// code references (Tauri reads them at build time).

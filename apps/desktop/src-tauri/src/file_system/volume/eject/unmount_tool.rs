@@ -238,7 +238,7 @@ pub(super) fn settle(outcome: &ToolOutcome, verb: UnmountVerb, still_mounted: im
 /// mount itself. A table that can't be read answers "still mounted": reading it
 /// as gone would turn a real refusal into a silent success.
 pub(in crate::file_system::volume) fn is_still_mounted(mount_path: &str) -> bool {
-    cmdr_local::mounts::is_mount_point(std::path::Path::new(mount_path)).unwrap_or(true)
+    cmdr_local::mounts::is_mount_point(crate::volumes::os_mount_path(mount_path)).unwrap_or(true)
 }
 
 /// The pause before each retry of a refused unmount: at most three more runs,

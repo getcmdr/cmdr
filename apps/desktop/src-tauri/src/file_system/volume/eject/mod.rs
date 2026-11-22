@@ -406,7 +406,7 @@ async fn run_teardown(volume_id: &str, teardown: Teardown<'_>) -> Result<(), Eje
             name_the_holders(
                 volume_id,
                 settled,
-                &[PathBuf::from(mount_path)],
+                &[crate::volumes::os_mount_path(mount_path).to_path_buf()],
                 deadlines::HOLDER_BUDGET,
             )
             .await

@@ -39,6 +39,15 @@ drive (verified by running the macOS test against the pre-merge Linux module in 
 shared so the contract is explicit: a stat-based fast path added later would otherwise silently start answering `None`
 for archive-inner paths.
 
+### Mount text is native
+
+The mount table, NSWorkspace's notifications, GVFS's folder, and the `LocationInfo` rows built from them carry a mount
+point as a `String` in the OS's own spelling. `mount_text::os_mount_path` is its one crossing to a `Path` (the
+registry's OS-event entry points, `mount_registration`, the eject chain, the startup sweep in `file_system/mod.rs`):
+named so the native reading stays greppable until discovery carries `PathBuf`s from where it reads them
+(`docs/specs/app-path-plan.md` § "10c. The app, part one: file system and listings", its text exits). ❌ Never app text: a stored favorite crosses through
+`Favorite::native_path` (`from_literal_store`, then `to_native`), wire text at `commands::wire_path::native`.
+
 ## Windows: a volume per drive
 
 Every drive letter, folder mount, and mapped share is its own volume (plan D1), keyed by the disk's identity (plan D8,

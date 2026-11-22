@@ -41,7 +41,7 @@ fn mount_is_private_to_another_user(mount: &MountEntry) -> bool {
 /// read. With mounts stacked on one path, the last one listed is the one a lookup
 /// reaches.
 pub(crate) fn mount_identity_at(path: &str) -> Option<u64> {
-    let path = Path::new(path);
+    let path = crate::volumes::os_mount_path(path);
     enumerate_mounts()?
         .into_iter()
         .rev()
@@ -155,7 +155,7 @@ pub(crate) fn is_private_to_another_user(path: &str) -> bool {
 /// [`is_private_to_another_user`] over a table already read. With mounts stacked on one path,
 /// the last one listed is the one a lookup reaches.
 fn private_to_another_user_at(mounts: &[MountEntry], path: &str) -> bool {
-    let path = Path::new(path);
+    let path = crate::volumes::os_mount_path(path);
     mounts
         .iter()
         .rev()

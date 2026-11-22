@@ -79,7 +79,7 @@ pub async fn stat_paths_kinds(paths: Vec<String>) -> TimedOut<Vec<Option<bool>>>
             if kind.is_some() || crate::commands::wire_path::has_dot_dot_name(path) {
                 continue;
             }
-            if !crate::file_system::volume::manager::path_routes_over_its_parent(Path::new(path)) {
+            if !crate::commands::wire_path::routes_over_its_parent(path) {
                 continue;
             }
             // Text that's no app path has no route to ask (its `symlink_metadata` answered).

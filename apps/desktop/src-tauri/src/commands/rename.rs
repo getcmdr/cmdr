@@ -67,8 +67,7 @@ pub async fn move_to_trash(path: String, initiator: cmdr_operation_log::types::I
 #[tauri::command]
 #[specta::specta]
 pub async fn get_trash_dir(path: String) -> Result<Option<String>, MutationError> {
-    let expanded = expand_tilde(&path);
-    let path_buf = PathBuf::from(&expanded);
+    let path_buf = crate::commands::wire_path::checked(&expand_tilde(&path))?;
 
     match tokio::time::timeout(
         Duration::from_secs(2),
@@ -96,11 +95,12 @@ pub async fn check_rename_permission(path: String, volume_id: Option<String>) ->
     let engine = operations().map_err(refuse_instant_not_installed)?;
     let volume_id_str = volume_id.unwrap_or_else(|| crate::volumes::local_volume_id_for_path(&path));
 
-    // Non-local volume paths are volume-relative; never tilde-expand them.
+    // Non-local volume paths are volume-relative; never tilde-expand them. Read at the edge
+    // like every engine start's source: a `..` refuses, the rest goes on as sent.
     let path_buf = if volume_id_str == "root" {
-        PathBuf::from(expand_tilde(&path))
+        crate::commands::wire_path::checked(&expand_tilde(&path))?
     } else {
-        PathBuf::from(&path)
+        crate::commands::wire_path::checked(&path)?
     };
 
     timeout_detached_typed(

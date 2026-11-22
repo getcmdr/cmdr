@@ -762,7 +762,8 @@ async fn holding_contents_back_keeps_the_look_and_the_pictures_text_home() {
 #[tokio::test]
 async fn a_folder_is_never_read() {
     let dir = TestDir::new("about-verdict-folder");
-    let path = dir.as_ref().to_string_lossy().into_owned();
+    // The row's app path, as a pane hands it (`C:/…` on Windows).
+    let path = crate::test_support::native_app_path(&dir).into_string();
     let probed = probe(&path, None).expect("there");
     let card = Card {
         gathered: local_gathered(

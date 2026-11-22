@@ -65,8 +65,8 @@ pub async fn get_name_rules(volume_id: Option<String>, dir: String) -> NameRules
     // dialog's `/Users/x` is `C:/Users/x` there.
     let dir = match get_volume_manager().get(&volume_id) {
         Some(volume) if volume.local_path().is_some() => cmdr_operations::resolve_dest_path(&volume, dir),
-        _ if volume_id == "root" => PathBuf::from(expand_tilde(&dir)),
-        _ => PathBuf::from(dir),
+        _ if volume_id == "root" => crate::commands::wire_path::as_sent_std_path(&expand_tilde(&dir)),
+        _ => crate::commands::wire_path::as_sent_std_path(&dir),
     };
     let engine = engine.clone();
     blocking_with_timeout(NAME_RULES_TIMEOUT, NameRules::POSIX, move || {
@@ -188,9 +188,11 @@ async fn exists_on_volume(volume_id: Option<String>, path: String, spelling: Spe
                     crate::commands::wire_path::probed_destination(&volume_id, volume, &expanded_path)
                         .await
                         .map_err(|_| ())?;
+                // The look-alike check below is the write engine's, over a VOLUME path in
+                // `std::path` (10d types it); the local `lstat` crosses to the native file.
                 let path_for_check = target.as_std_legacy().into_owned();
                 let exists = if volume.local_path().is_some() {
-                    local_exists(path_for_check.clone()).await?
+                    local_exists(target.to_native().map_err(|_| ())?).await?
                 } else {
                     // `presence`, ❌ never `exists`: a refusal (a share folder this
                     // account may not read) is "couldn't tell", and `exists` folds
@@ -243,8 +245,14 @@ async fn exists_on_volume(volume_id: Option<String>, path: String, spelling: Spe
             timed_out: true,
         }
     } else {
-        // Fallback for unknown volumes (shouldn't happen in practice)
-        let path_buf = PathBuf::from(expanded_path);
+        // Fallback for unknown volumes (shouldn't happen in practice): a path with no
+        // native form isn't on this machine's disk, so it's not there.
+        let Ok(path_buf) = crate::commands::wire_path::native(&expanded_path) else {
+            return TimedOut {
+                data: false,
+                timed_out: false,
+            };
+        };
         let result = tokio::time::timeout(
             PATH_EXISTS_TIMEOUT,
             tokio::task::spawn_blocking(move || path_buf.exists()),

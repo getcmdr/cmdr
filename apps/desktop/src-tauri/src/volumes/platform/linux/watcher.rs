@@ -281,8 +281,8 @@ fn real_mounts(entries: Vec<MountEntry>) -> HashMap<String, String> {
 fn start_gvfs_watcher() {
     // SAFETY: `getuid` reads the process's real UID; always safe, no args or pointers.
     let uid = unsafe { libc::getuid() };
-    let gvfs_dir = format!("/run/user/{}/gvfs", uid);
-    let gvfs_path = Path::new(&gvfs_dir);
+    let gvfs_dir = format!("/run/user/{uid}/gvfs");
+    let gvfs_path = crate::volumes::os_mount_path(&gvfs_dir);
 
     if !gvfs_path.is_dir() {
         debug!(
@@ -434,7 +434,10 @@ fn register_volume_with_manager(volume_path: &str) {
     let volume_id = super::volume_id_for_mount(volume_path);
 
     // For GVFS SMB shares, extract the share name instead of the raw dirname
-    let name = if let Some(dirname) = Path::new(volume_path).file_name().and_then(|n| n.to_str()) {
+    let name = if let Some(dirname) = crate::volumes::os_mount_path(volume_path)
+        .file_name()
+        .and_then(|n| n.to_str())
+    {
         if let Some(gvfs) = super::parse_gvfs_smb_dirname(dirname) {
             gvfs.share
         } else {
@@ -444,8 +447,8 @@ fn register_volume_with_manager(volume_path: &str) {
         "Unknown".to_string()
     };
 
-    let mount = crate::file_system::index_provider::mount_class_at(Path::new(volume_path));
-    let volume = crate::network::smb_mount_gate::mount_volume(&name, Path::new(volume_path), mount);
+    let mount = crate::file_system::index_provider::mount_class_at(crate::volumes::os_mount_path(volume_path));
+    let volume = crate::network::smb_mount_gate::mount_volume(&name, crate::volumes::os_mount_path(volume_path), mount);
     get_volume_manager().register(&volume_id, volume);
     debug!(
         "Registered mounted volume: {} -> {}",
@@ -465,7 +468,7 @@ fn unregister_volume_from_manager(volume_path: &str) {
     use crate::file_system::volume::manager::{RootRemoval, get_volume_manager};
 
     let manager = get_volume_manager();
-    match manager.remove_root(Path::new(volume_path)) {
+    match manager.remove_root(crate::volumes::os_mount_path(volume_path)) {
         RootRemoval::Unregistered { id, volume } => {
             volume.on_unmount();
             // The frontend retires a slow-connection notice about this share now, so

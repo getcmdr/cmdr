@@ -67,18 +67,18 @@ pub(super) async fn eject_on_disk(
         let with_rows = crate::volumes::mount_points_with_rows();
         // A table that wouldn't answer counts every mount, which leaves the disk up: the cautious
         // side, since the person can still eject what's left.
-        let reach = disk_reach::reach_of(scope, Path::new(mount_path), &mounted, |path| {
+        let reach = disk_reach::reach_of(scope, crate::volumes::os_mount_path(mount_path), &mounted, |path| {
             with_rows.as_ref().is_none_or(|rows| rows.iter().any(|row| row == path))
         });
         let siblings = match reach {
-            DiskReach::WholeDisk => capture(volume_id, Path::new(mount_path), &mounted, |path| {
+            DiskReach::WholeDisk => capture(volume_id, crate::volumes::os_mount_path(mount_path), &mounted, |path| {
                 let (id, volume) = crate::file_system::volume::manager::get_volume_manager().find_by_root(path)?;
                 (&*volume.root().as_std_legacy() == path).then_some(id)
             }),
             // Only the volume asked about lets go: its siblings stay mounted and keep working.
             DiskReach::ThisVolume => vec![Sibling {
                 volume_id: volume_id.to_string(),
-                path: PathBuf::from(mount_path),
+                path: crate::volumes::os_mount_path(mount_path).to_path_buf(),
             }],
         };
         let ids: Vec<String> = siblings.iter().map(|sibling| sibling.volume_id.clone()).collect();
@@ -221,7 +221,7 @@ async fn eject_stopped_disk(
         }
         // ❗ Done means this one mount left: the disk is meant to stay, so ❌ no fresh look at it.
         DiskReach::ThisVolume => (
-            DiskTeardown::new(vec![PathBuf::from(mount_path)], || false),
+            DiskTeardown::new(vec![crate::volumes::os_mount_path(mount_path).to_path_buf()], || false),
             UnmountVerb::Unmount,
         ),
     };

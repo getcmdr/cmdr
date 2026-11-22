@@ -141,9 +141,10 @@ fn collect_inputs() -> Option<RootInputs> {
 fn local_favorite_path(favorite: crate::favorites::store::Favorite) -> Option<PathBuf> {
     let on_an_os_path = match &favorite.volume {
         Some(volume) => cmdr_fs::volume::VolumeScheme::of(&volume.id).is_mount_rooted(),
-        None => Path::new(&favorite.path).is_absolute(),
+        None => true,
     };
-    on_an_os_path.then(|| PathBuf::from(favorite.path))
+    // A scheme path has no native form, so an unclaimed one on a server or phone is out too.
+    on_an_os_path.then(|| favorite.native_path()).flatten()
 }
 
 /// Whether some mount other than the boot volume covers `path`. An in-memory registry

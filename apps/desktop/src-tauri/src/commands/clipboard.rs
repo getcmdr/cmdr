@@ -19,6 +19,17 @@ pub struct ClipboardReadResult {
     is_directory: Vec<Option<bool>>,
 }
 
+/// The rows as file URLs name them, each crossed to its native path at the edge. A row with no
+/// native form (a phone, a server path, a `..`) refuses the WHOLE set, as the frontend's own gate
+/// does (`clipboard-operations.ts`): a partial copy would put a subset on the clipboard under a
+/// toast saying the copy happened. Empty when any row has none, which the callers refuse.
+fn native_rows(rows: &[String]) -> Vec<PathBuf> {
+    rows.iter()
+        .map(|row| crate::commands::wire_path::native(row))
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap_or_default()
+}
+
 /// Writes the given paths to the system clipboard and clears any cut state.
 ///
 /// Paths by value, never row numbers: the frontend resolves a pane's selection
@@ -27,7 +38,7 @@ pub struct ClipboardReadResult {
 #[tauri::command]
 #[specta::specta]
 pub async fn copy_paths_to_clipboard(app: tauri::AppHandle, paths: Vec<String>) -> Result<usize, String> {
-    let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
+    let paths = native_rows(&paths);
 
     if paths.is_empty() {
         return Err("No files to copy".to_string());
@@ -46,7 +57,7 @@ pub async fn copy_paths_to_clipboard(app: tauri::AppHandle, paths: Vec<String>) 
 #[tauri::command]
 #[specta::specta]
 pub async fn cut_paths_to_clipboard(app: tauri::AppHandle, paths: Vec<String>) -> Result<usize, String> {
-    let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
+    let paths = native_rows(&paths);
 
     if paths.is_empty() {
         return Err("No files to cut".to_string());
@@ -146,4 +157,23 @@ pub async fn paste_clipboard_as_file(
 #[specta::specta]
 pub fn clear_clipboard_cut_state() {
     clipboard::clear_cut_state();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::native_rows;
+
+    /// Every row crosses, in order; one row with no native file (a server's, a `..`) refuses the
+    /// whole set, ❌ never a quiet subset under a "copied" toast.
+    #[test]
+    fn the_rows_cross_together_or_not_at_all() {
+        let dir = crate::test_support::AppTestDir::new("clipboard_rows");
+        let a = format!("{}/a.txt", dir.app_path().as_str());
+        let b = format!("{}/b.txt", dir.app_path().as_str());
+        let crossed = native_rows(&[a.clone(), b.clone()]);
+        assert_eq!(crossed.len(), 2);
+        assert!(crossed[0].ends_with("a.txt") && crossed[1].ends_with("b.txt"));
+        assert!(native_rows(&[a.clone(), "sftp://testnas.local:22/x".to_string()]).is_empty());
+        assert!(native_rows(&[a, format!("{b}/../c.txt")]).is_empty());
+    }
 }

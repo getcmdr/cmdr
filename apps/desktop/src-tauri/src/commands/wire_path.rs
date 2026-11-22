@@ -28,7 +28,7 @@ use std::borrow::Cow;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cmdr_fs::app_path::{AppPath, AppPathBuf, ESCAPES_LIVE, Namer, NotAnAppPath, PathFlavor, is_escape, is_scheme_url};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, ESCAPES_LIVE, NotAnAppPath, PathFlavor, is_escape, is_scheme_url};
 use cmdr_fs::error_detail::ErrorDetail;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::typed_path::{TypedBy, TypedPathRefusal};
@@ -96,11 +96,70 @@ pub(crate) fn app_path(text: &str) -> Result<Option<AppPathBuf>, WirePathRefused
     }
 }
 
+/// Why wire text has no path this OS's files and frameworks open ([`native`]). Every caller
+/// answers all three alike (nothing to open), so they carry nothing but their name for the log.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum NoNativePath {
+    /// A `..` name, logged as the sender bug it is.
+    Refused,
+    /// Text that's no app path: relative, or empty.
+    NotAnAppPath,
+    /// An app path this OS's files don't hold: a scheme path, or the other OS's shape.
+    NotLocal,
+}
+
+/// Wire text an OS integration acts on (Finder, the shell, a framework, a `std::fs` read),
+/// read at the edge as [`app_path`] reads it and crossed down once through `to_native`. A
+/// trailing `/` goes, so `x/link/` names the link.
+///
+/// # Errors
+///
+/// [`NoNativePath`]: a `..` name, text that's no app path, or an app path with no native
+/// form here.
+pub(crate) fn native(text: &str) -> Result<PathBuf, NoNativePath> {
+    let path = app_path(text)
+        .map_err(|_| NoNativePath::Refused)?
+        .ok_or(NoNativePath::NotAnAppPath)?;
+    path.to_native().map_err(|_| NoNativePath::NotLocal)
+}
+
+/// Whether a ROUTE serves the wire path `text` (inside an archive, a repo's `.git` trees, a
+/// snapshot), asked of its app path. Text that's no app path, or holds a `..`, routes nowhere:
+/// no route serves a place no app path names.
+pub(crate) fn routes_over_its_parent(text: &str) -> bool {
+    matches!(app_path(text), Ok(Some(path)) if crate::file_system::volume::manager::app_path_routes_over_its_parent(&path))
+}
+
 /// An engine start's source, checked: refused for a `..`, else the text as sent (the start
 /// drops a trailing `/` itself, byte for byte, so a row's path reaches it unchanged).
 pub(crate) fn checked(text: &str) -> Result<PathBuf, WirePathRefused> {
     app_path(text)?;
     Ok(PathBuf::from(text))
+}
+
+/// Text a `std::path` API reads LEXICALLY, handed on as sent with no `..` check: the write
+/// engine's pre-checks and the transfer box's text (which [`destination`] answers where a
+/// `..` matters), the listing engine's stored-spelling lookup, `root_echo`, and the git chip's
+/// `repo_root` (native text `RepoInfo` reported, handed back). Those APIs
+/// still speak `std::path`, so this is their one crossing from the command edge, byte for
+/// byte; it goes as each engine's entry points take app paths (`cmdr-listing`'s with its typed
+/// listing locations, the write engine's in milestone 10d). ❌ Not for a path the OS opens: that's [`native`].
+pub(crate) fn as_sent_std_path(text: &str) -> PathBuf {
+    PathBuf::from(text)
+}
+
+/// A write pre-check's rows (the home-folder guard, the scan preview) as its engine call takes
+/// them: [`as_sent_std_path`], `~` expanded on the local volume only (a phone's or a share's
+/// path is volume-relative, `commands/CLAUDE.md`).
+pub(crate) fn pre_check_rows(rows: &[String], is_local: bool) -> Vec<PathBuf> {
+    let as_sent = |row: &String| {
+        if is_local {
+            as_sent_std_path(&cmdr_fs::tilde::expand_tilde(row))
+        } else {
+            as_sent_std_path(row)
+        }
+    };
+    rows.iter().map(as_sent).collect()
 }
 
 /// [`checked`] over a start's sources, refusing the whole set on the first `..`.
@@ -310,14 +369,9 @@ fn first_dot_dot(text: &str) -> usize {
     text.len()
 }
 
-/// `text` parsed with this host's flavor; its escape-range code points literal while no
-/// producer makes a live one.
+/// `text` parsed with this host's flavor ([`crate::app_text::parse`]).
 fn parsed(text: &str) -> Result<AppPathBuf, NotAnAppPath> {
-    if ESCAPES_LIVE {
-        AppPathBuf::from_wire(text)
-    } else {
-        AppPathBuf::from_literal_store(text, Namer::HOST)
-    }
+    crate::app_text::parse(text)
 }
 
 /// [`parsed`] for the POSIX flavor, whatever the host: a volume-relative `/x` on Windows.
