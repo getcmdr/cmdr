@@ -44,7 +44,7 @@ event loop that turns its stream into index writes.
 - **`AfterWalk::Forget` means "the loop already answers for this ground", ❌ never "no watcher is up"**: a failed or
   vetoed watcher still leaves ground covered. Collapse only via `collapse_to` — ❌ `branches::clear` + begin/finish
   mints a set the loop isn't reading, and fails silently.
-- **`notify` watches the BRANCHES, FSEvents the volume root.** ❌ Don't unify them: inotify costs a watch per directory.
+- **inotify watches the BRANCHES (on ONE draining task), FSEvents and Windows the volume root.** ❌ Don't unify them.
   `DETAILS.md` § "Platform split".
 - **Background verification is post-replay and boot-disk only.** Cost-bounding (`verify_guard.rs`) is canonical in
   `../reconcile/DETAILS.md`.

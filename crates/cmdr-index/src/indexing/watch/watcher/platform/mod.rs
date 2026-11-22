@@ -25,8 +25,8 @@ const _: bool = SUPPORTS_EVENT_REPLAY;
 pub(super) use imp::start;
 
 /// Starts a watcher for a branch-watched volume: the OS decides whether that's one watch over
-/// `volume_root` (FSEvents, free per directory) or one per branch (`notify`, a watch per
-/// directory against the OS's budget).
+/// `volume_root` (FSEvents and `ReadDirectoryChangesW`, free per directory) or one per branch
+/// (inotify, a watch per directory against the OS's budget).
 pub(super) use imp::start_branches;
 
 /// Whether this OS's watcher keeps a journal of event IDs a restart replays from.
