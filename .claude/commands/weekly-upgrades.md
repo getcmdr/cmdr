@@ -7,9 +7,9 @@ The pass also covers David's three sibling repos: `~/projects-git/vdavid/mtp-rs`
 stuck Renovate PRs, the Dependency Dashboard's pending approvals and majors, and crates held by a `renovate.json` rule
 (each rule's `description` says why and when to lift it).
 
-It also covers `~/projects-git/vdavid/infra`, which has no Renovate, so there the whole pass is by hand. Its release-age
-gate is about 14 days (its `AGENTS.md` → "Conventions"), not three. What runs in its `main` is what runs on the hosts,
-so the pass splits by whether a bump changes a live host:
+It also covers `~/projects-git/vdavid/infra`, which has no Renovate, so there the whole pass is by hand, with the same
+3-day release-age gate, enforced by hand. What runs in its `main` is what runs on the hosts, so the pass splits by
+whether a bump changes a live host:
 
 - **Bump, verify, and land**: tool pins in `.mise.toml`; each `go.mod` (`go get <module>@<version>`, then
   `go build ./...` and `go test ./...` in that module); the OpenTofu providers (`tofu init -upgrade` per root after its
