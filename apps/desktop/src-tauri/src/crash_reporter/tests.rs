@@ -253,7 +253,7 @@ fn parse_backtrace_frames_extracts_function_names() {
     assert_eq!(frames[2], "std::panicking::rust_panic_with_hook");
 }
 
-#[cfg(unix)]
+#[cfg(unix)] // POSIX signals: `signal_handler` exists on unix only
 mod signal_tests {
     use super::super::signal_handler;
     use std::io::Write as _;

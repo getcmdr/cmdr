@@ -1,6 +1,6 @@
 //! The symlink seam, and how the copy scan counts a link.
 
-#![cfg(unix)]
+#![cfg(unix)] // POSIX symlinks and the kernel's `..` through one
 
 use super::*;
 use cmdr_fs::app_path;

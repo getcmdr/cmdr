@@ -92,13 +92,6 @@ pub(super) enum Routed {
     Row(FileRow),
 }
 
-/// The agent's path text as the routing seam reads it, crossed through the bridge
-/// byte for byte, as `inspect_file`'s other reads take it. Goes when 10d's tools
-/// read their path inputs through `resolve_typed`.
-fn agent_text_as_app_path(path: &Path) -> cmdr_fs::app_path::AppPathBuf {
-    cmdr_fs::app_path::AppPath::legacy_unchecked(path).into_owned()
-}
-
 /// Route `path` through the volume manager. A pure string check gates everything: a path
 /// with no archive-named component costs no I/O here.
 pub(super) fn route_archive_path(
@@ -114,7 +107,12 @@ pub(super) fn route_archive_path(
     let Some((archive_path, inner)) = archive_boundary_candidate(p) else {
         return Routed::Plain;
     };
-    let resolved = tauri::async_runtime::block_on(get_volume_manager().resolve(volume_id, &agent_text_as_app_path(p)));
+    // The dispatch's path door already answered every `..` (`tools/agent_path.rs`), so the
+    // text reads as the app path it is; text that isn't one has no archive to route through.
+    let Ok(Some(app_path)) = crate::commands::wire_path::app_path(path) else {
+        return Routed::Plain;
+    };
+    let resolved = tauri::async_runtime::block_on(get_volume_manager().resolve(volume_id, &app_path));
     if !resolved.routed.is_some_and(RoutedKind::is_archive) {
         return Routed::Plain;
     }

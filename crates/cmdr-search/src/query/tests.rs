@@ -562,6 +562,14 @@ mod scope_proptests {
             prop_assert_eq!(segments.join(","), input);
         }
 
+        /// An escaped value reads back as exactly one segment holding it, whatever it
+        /// holds: the MCP path door re-spells a scope's parts through this.
+        #[test]
+        fn an_escaped_value_reads_back_as_itself(value in ".*") {
+            let segments = split_scope_segments(&escape_scope_value(&value));
+            prop_assert_eq!(segments, vec![value]);
+        }
+
         /// `parse_scope` never panics, and the count of resolved
         /// include/exclude entries is bounded by the segment count.
         #[test]

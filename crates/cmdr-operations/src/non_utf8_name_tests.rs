@@ -13,7 +13,7 @@
 //!   `caf\u{FFFD}.txt`. Pinned so the lossless-name change flips each on purpose,
 //!   in its own commit, rather than by accident.
 
-#![cfg(target_os = "linux")]
+#![cfg(target_os = "linux")] // Only Linux makes a non-UTF-8 name (APFS refuses it, NTFS names are UTF-16)
 
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;

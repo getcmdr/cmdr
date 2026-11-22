@@ -4,11 +4,9 @@
 //!
 //! The source lies through `InMemoryVolume::set_reported_name` (listed under
 //! the hostile name, still readable at its real path, as an MTP object is), and
-//! the destination is a real `LocalPosixVolume` over a tempdir, so an escape is
+//! the destination is a real `LocalVolume` over a tempdir, so an escape is
 //! a file on disk the cell can see. The guard sits in the engine, under every
 //! backend, so a backend-blind source stands in for all of them.
-
-#![cfg(unix)]
 
 use super::copy::copy_volumes_with_progress;
 use super::faulty_volume::forward_volume_methods;
@@ -21,7 +19,7 @@ use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{InMemoryVolume, ListingProgress, Volume, VolumeError};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -85,7 +83,7 @@ async fn a_copy_refuses_a_listed_name_that_isnt_one_plain_component() {
 
         let dest_dir = TempDir::new().unwrap();
         std::fs::create_dir(dest_dir.path().join("inbox")).unwrap();
-        let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+        let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
             "Dest",
             dest_dir.path().to_path_buf(),
             crate::host::testing::pane_order_host(),
@@ -133,7 +131,7 @@ async fn a_copy_refuses_a_folder_listed_under_a_parent_name() {
 
     let dest_dir = TempDir::new().unwrap();
     std::fs::create_dir(dest_dir.path().join("inbox")).unwrap();
-    let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Dest",
         dest_dir.path().to_path_buf(),
         crate::host::testing::pane_order_host(),
@@ -185,7 +183,7 @@ async fn a_copy_never_merges_through_a_destination_link() {
         std::fs::create_dir_all(&outside).unwrap();
         std::fs::create_dir_all(dest_dir.path().join("inbox/album")).unwrap();
         cmdr_fs::testing::symlink(&outside, dest_dir.path().join("inbox/album/a")).unwrap();
-        let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+        let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
             "Dest",
             dest_dir.path().to_path_buf(),
             crate::host::testing::pane_order_host(),
@@ -238,7 +236,7 @@ async fn a_copy_with_a_file_and_folder_listed_under_one_name_stays_inside() {
 
         let dest_dir = TempDir::new().unwrap();
         std::fs::create_dir(dest_dir.path().join("inbox")).unwrap();
-        let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+        let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
             "Dest",
             dest_dir.path().to_path_buf(),
             crate::host::testing::pane_order_host(),
@@ -269,10 +267,10 @@ async fn a_copy_with_a_file_and_folder_listed_under_one_name_stays_inside() {
     }
 }
 
-/// A `LocalPosixVolume` whose listings report `reported` for the entry really
+/// A `LocalVolume` whose listings report `reported` for the entry really
 /// named `real`, the same-volume twin of `set_reported_name`.
 struct RenamingListings {
-    inner: LocalPosixVolume,
+    inner: LocalVolume,
     real: String,
     reported: String,
 }
@@ -310,7 +308,7 @@ async fn a_rename_merge_refuses_a_listed_name_that_isnt_one_plain_component() {
         write_file(root, "src/album/evil.txt", b"EVIL");
         write_file(root, "dst/album/keep.txt", b"KEEP");
         let volume: Arc<dyn Volume> = Arc::new(RenamingListings {
-            inner: LocalPosixVolume::local_folder("V", root.to_path_buf(), crate::host::testing::pane_order_host()),
+            inner: LocalVolume::local_folder("V", root.to_path_buf(), crate::host::testing::pane_order_host()),
             real: "evil.txt".to_string(),
             reported: name.to_string(),
         });

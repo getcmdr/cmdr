@@ -198,7 +198,7 @@ Resolving the id instead would answer with the SUCCESSOR after a swap and mark a
 ## Where the shared conformance assertions live
 
 `cmdr_fs::volume::conformance` holds the promises no backend may quietly opt out of, and each backend runs the ones it
-can: `crates/cmdr-local/src/local_posix_conformance_test.rs`, and every other crate backend's own
+can: `crates/cmdr-local/src/local_conformance_test.rs`, and every other crate backend's own
 `volume/conformance_test.rs`. MTP's
 `volume/delete_test.rs` stays separate from its conformance file because the non-recursion contract is the one MTP has
 to IMPLEMENT rather than inherit (`MtpDeleteScope`), with enough scaffolding to earn its own file. The roster and what

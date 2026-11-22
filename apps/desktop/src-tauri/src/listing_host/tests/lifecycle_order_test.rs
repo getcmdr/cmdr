@@ -16,8 +16,6 @@
 //! arm that lands after its listing ended dropping its watch is
 //! `watcher_test::a_detached_arm_that_lost_the_race_leaves_no_watch_behind`.
 
-#![cfg(target_os = "macos")]
-
 use std::path::Path;
 use std::sync::Arc;
 

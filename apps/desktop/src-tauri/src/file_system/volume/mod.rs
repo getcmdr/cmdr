@@ -83,14 +83,14 @@ pub fn io_budget_for_volume(volume_id: &str, local: std::time::Duration) -> std:
 
 #[cfg(test)]
 mod inmemory_test;
-#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
+#[cfg(test)]
 mod mtp_scan_oracle_tests;
-#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
+#[cfg(test)]
 mod smb_index_scan_test;
 // The media index's byte fetcher over a real `cmdr-smb` session, next to the
 // index-scan cell above: both prove the app's own backend works with the index
 // crate, which is a question only this side can build both halves of.
 #[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
 mod smb_media_fetch_integration_test;
-#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
+#[cfg(test)]
 mod smb_scan_oracle_tests;

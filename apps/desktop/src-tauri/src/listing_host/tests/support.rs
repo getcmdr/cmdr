@@ -71,13 +71,11 @@ impl ListingObserver for LifecycleProbe {
 }
 
 /// Makes the lifecycle probe listen for `listing_id`.
-#[cfg(target_os = "macos")]
 pub(crate) fn record_lifecycle_of(listing_id: &str) {
     WATCHED.lock_ignore_poison().insert(listing_id.to_string());
 }
 
 /// What the lifecycle probe heard for `listing_id`, in order.
-#[cfg(target_os = "macos")]
 pub(crate) fn heard(listing_id: &str) -> Vec<Heard> {
     HEARD.lock_ignore_poison().get(listing_id).cloned().unwrap_or_default()
 }
@@ -87,7 +85,6 @@ pub(crate) fn heard(listing_id: &str) -> Vec<Heard> {
 static DISARMS: LazyLock<Mutex<HashMap<String, Vec<bool>>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// Makes the disarm probe record `listing_id`'s watch disarms.
-#[cfg(target_os = "macos")]
 pub(crate) fn record_disarms_of(listing_id: &str) {
     DISARMS.lock_ignore_poison().insert(listing_id.to_string(), Vec::new());
 }
@@ -105,7 +102,6 @@ pub(crate) fn note_disarm(listing_id: &str) {
 }
 
 /// Per disarm of `listing_id`'s watch, whether the engine still held the listing.
-#[cfg(target_os = "macos")]
 pub(crate) fn disarms_of(listing_id: &str) -> Vec<bool> {
     DISARMS
         .lock_ignore_poison()

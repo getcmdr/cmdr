@@ -3,7 +3,7 @@
 //! and a local source reads on from an offset on the file it first read
 //! (`Volume::resume_read_stream`).
 
-#![cfg(unix)]
+#![cfg(unix)] // a resume's source version is the POSIX inode and change time
 
 use super::*;
 use crate::test_support::at;

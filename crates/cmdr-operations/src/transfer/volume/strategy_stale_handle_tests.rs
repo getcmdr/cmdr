@@ -6,7 +6,8 @@
 //! rather than surfacing the stale-handle rejection to the user. The
 //! `FailOnceStaleDest` double rejects the first `write_from_stream` and accepts
 //! the second, pinning that the engine calls `write_from_stream` exactly twice.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
+
+#![cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
 
 use super::test_support::FailOnceStaleDest;
 use super::*;

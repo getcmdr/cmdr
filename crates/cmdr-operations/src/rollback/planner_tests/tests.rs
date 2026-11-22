@@ -10,7 +10,6 @@
 //! guards exist for (`crates/cmdr-operation-log/DETAILS.md` § "The two data-safety guards").
 //!
 //! The rig and its seeding helpers live in `test_support`, shared with `undo_tests`.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::path::Path;
 use std::sync::Arc;
@@ -754,6 +753,7 @@ async fn a_canceled_original_op_rolls_back_exactly_its_completed_items() {
 }
 
 #[tokio::test]
+#[cfg(unix)] // Windows: #1225 milestone 10a, a POSIX fixture path read in the host flavor (`DriveRelative`)
 async fn a_restore_recreates_the_folder_the_move_emptied() {
     // A move of a FOLDER empties the source tree and removes it, so putting one of
     // its files back means putting the folder back first. Without that the rename

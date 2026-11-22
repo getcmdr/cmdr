@@ -251,6 +251,7 @@ pub(crate) fn before_flush<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
     }
 }
 
+// The detached `/usr/bin/open` waiter, macOS's relaunch arm
 #[cfg(all(test, target_os = "macos"))]
 #[path = "relaunch_tests.rs"]
 mod tests;

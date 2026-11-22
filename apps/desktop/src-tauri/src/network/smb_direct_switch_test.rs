@@ -1,8 +1,6 @@
 //! Tests for `smb_direct_switch.rs`: the switch as the volume switcher reaches it,
 //! by volume id. The hand-back itself is `smb_upgrade_test.rs`'s.
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
-
 use super::*;
 use crate::test_support::TestDir;
 use cmdr_local::LocalVolume;

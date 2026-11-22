@@ -105,7 +105,7 @@ fn group(id: i64, set_id: i64, verb: ProposalVerb) -> GroupSummary {
             verb,
             status: ProposalStatus::Pending,
             source_volume_id: "root".into(),
-            destination: Some("/Users/someone/Documents/Invoices".into()),
+            destination: crate::agent::store::proposals::typed_place("/Users/someone/Documents/Invoices"),
             destination_volume_id: None,
             reversible: Reversibility::RestoreMove,
             display_name: "five invoices".into(),
@@ -292,7 +292,10 @@ fn a_re_addressed_destination_is_named_as_the_volume_written_to() {
         Some("testshare on 192.168.1.5")
     );
     assert_eq!(destination_volume_id_of(&group), Some("smb-testshare"));
-    assert_eq!(group.destination.as_deref(), Some("/Volumes/testshare-1/documents"));
+    assert_eq!(
+        group.destination.as_ref().map(|p| p.as_str()),
+        Some("/Volumes/testshare-1/documents")
+    );
 }
 
 fn sweep(id: i64) -> ProposalSweep {
@@ -406,7 +409,7 @@ fn only_the_verbs_that_can_create_a_folder_answer_the_destination_question() {
 
 fn move_to(destination_volume_id: &str, destination: &str) -> ProposalGroup {
     let mut summary = group(1, 1, ProposalVerb::Move);
-    summary.group.destination = Some(destination.into());
+    summary.group.destination = crate::agent::store::proposals::typed_place(destination);
     summary.group.destination_volume_id = Some(destination_volume_id.into());
     summary.group
 }

@@ -1,6 +1,6 @@
 //! Tests for "Open with" on a file only a route serves (`open_with_extract`).
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+#![cfg(unix)] // Windows: #1225 milestone 10c, an archive entry path is joined natively (`x.zip\entry`)
 
 use std::io::Write as _;
 use std::path::{Path, PathBuf};

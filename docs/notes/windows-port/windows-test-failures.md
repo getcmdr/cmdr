@@ -136,14 +136,14 @@ The 794, by the milestone that converts their crate (`docs/specs/app-path-plan.m
 - **9, `cmdr-local`**: none of its own; it's the native crossing 10a–10d wait on. Done (2026-11-19, in `D:\src\cmdr-m9`,
   `cargo nextest run -p cmdr-local`): 30 of 30 before on `main` (`a4449b5cb7`), 40 of 40 after on the branch
   (`d0490c0c11`), 8 skipped both times (the `#[ignore]`d task-35 conformance cells). The 10 new cells are the NTFS names
-  (`local_windows_names_test.rs`: `dup`/`dup.`, device names and a trailing space, `a:b` with no stream, unpaired
-  surrogates, native entry points), the relative bridge input, and the anchoring table. Its `&Path` entry points now
-  take a native `C:\…` path (`list_directory_core`, `get_single_entry`, `rename_local_exclusive`), which is what the N
-  cells through `list_directory_core` and the F cells (the finalize handing `rename_local_exclusive` a native path)
-  failed on, so part of 10a's clusters turned green before their crate converts: `cmdr-operations` on the branch ran
-  1,763 tests, 190 failed, against this note's 299 (115 of those now pass). The six failures not in the TSV are `main`'s
-  own (all six fail on `a4449b5cb7` too, run alone): the three `refused_class_tests::*_native_join_refuses` cells and
-  the two `link_landing_tests` overwrite cells (both added after this note's run), and
+  (`local_names_test.rs`'s `win32_tests`: `dup`/`dup.`, device names and a trailing space, `a:b` with no stream,
+  unpaired surrogates, native entry points), the relative bridge input, and the anchoring table. Its `&Path` entry
+  points now take a native `C:\…` path (`list_directory_core`, `get_single_entry`, `rename_local_exclusive`), which is
+  what the N cells through `list_directory_core` and the F cells (the finalize handing `rename_local_exclusive` a native
+  path) failed on, so part of 10a's clusters turned green before their crate converts: `cmdr-operations` on the branch
+  ran 1,763 tests, 190 failed, against this note's 299 (115 of those now pass). The six failures not in the TSV are
+  `main`'s own (all six fail on `a4449b5cb7` too, run alone): the three `refused_class_tests::*_native_join_refuses`
+  cells and the two `link_landing_tests` overwrite cells (both added after this note's run), and
   `source_binding::tests::a_source_replaced_by_a_different_file_of_the_same_size_is_dropped` (node identity, task 35).
   What each needs (by reading, in the PR #1287 review, 2026-11-19; not rerun on the builder):
   - The three `refused_class_tests::*_native_join_refuses` cells (serial copy, concurrent copy, cross-volume move): they

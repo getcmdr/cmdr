@@ -232,7 +232,7 @@ owns its real body. Remove a line when its body lands.
   off it, no export), no copy scan, no `create_symlink` / `read_link_target` (`can_hold_links` false), no ADS-backed
   xattrs, no `apply_metadata` or metadata caps, no `write_access_at`, and no `FindFirstFileExW` lister. Each keeps the
   trait's conservative default, and each conformance cell it can't pass yet is `#[ignore]`d with its piece
-  (`local_windows_conformance_test.rs`).
+  (`local_conformance_test.rs`).
 - `cmdr_local::reading` Windows arm (`reading/platform/windows.rs`), task 35: no allocation size, mode `0`, no owner or
   group; only `FILE_ATTRIBUTE_HIDDEN` is real.
 - `cmdr_operations::local_disk` Windows arm (`local_disk/platform/windows.rs`), tasks 35 and 36: `set_mode` and
@@ -576,9 +576,9 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     resume, durability via `FlushFileBuffers`), metadata (dates, attributes, caps, `apply_metadata`), symlink creation
     (file vs dir) and reparse tags, ADS-backed xattrs, the write-access probe, the copy scan, the mount table and
     filesystem type, the `FindFirstFileExW` lister, and registering a volume per drive (with 34). The ignored
-    conformance cells in `local_windows_conformance_test.rs` are the checklist. App paths in and out of both local
-    volumes (one crossing per OS through `AppPath::to_native`): `docs/specs/app-path-plan.md`. File identity is real by
-    PATH (2026-11-21, #1291, PR #1304): `cmdr_fs::file_identity::FileId::at` / `same_node_at` open a handle and read
+    conformance cells in `local_conformance_test.rs` are the checklist. App paths in and out of both local volumes (one
+    crossing per OS through `AppPath::to_native`): `docs/specs/app-path-plan.md`. File identity is real by PATH
+    (2026-11-21, #1291, PR #1304): `cmdr_fs::file_identity::FileId::at` / `same_node_at` open a handle and read
     `FileIdInfo` (`file_identity/platform/windows.rs`), which the copy's same-file guards and the source binding ask;
     the `Metadata` readers (`device_of`, `link_count`, walk dedup, the journal's `NodeIdentity`) still answer `None` and
     move over as each consumer needs it. The mount table is real (2026-11-21, `cmdr_local::mounts`' Windows arm): drive

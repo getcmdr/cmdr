@@ -10,7 +10,7 @@
 //! The source lies through `InMemoryVolume::set_reported_name`: `b.jpg` lists
 //! as `a.jpg` and still reads as itself, the way a device's object does.
 
-#![cfg(unix)]
+#![cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
 
 use super::copy::copy_volumes_with_progress;
 use super::rename_merge_test_support::make_state;

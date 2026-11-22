@@ -4,7 +4,6 @@
 //! pointed at a `TestDir`, so each rule is pinned at the level it's decided
 //! rather than through a launch. The ledger's own behavior (what replays, what
 //! defers, what a producer records) lives in `in_flight_temps_tests.rs`.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::*;
 use crate::host::testing::{FakeVolumes, RecordingEngineEvents};
@@ -354,11 +353,14 @@ fn returned_drive(name: &str, volume_id: &str, staged: Option<&[u8]>) -> Returne
         &root,
         crate::host::testing::pane_order_host(),
     )) as Arc<dyn Volume>;
+    // The mount table is asked about the root the VOLUME reports, which on Windows spells a
+    // `%TEMP%` short name (`RUNNER~1`) long, so the hook knows the drive by its last two names.
+    let drive_root = Path::new("Volumes").join("Testkamera");
     let sweep = sweep_host();
     sweep.volumes.register(volume_id, volume);
     ReturnedDrive {
         sweep,
-        _hook: test_hook::answer_each(vec![(root, Some(true))]),
+        _hook: test_hook::answer(move |asked| asked.ends_with(&drive_root).then_some(Some(true))),
         volume_id: volume_id.to_string(),
         staging_name,
         staging,

@@ -10,7 +10,8 @@
 //!
 //! The same-volume (`Volume::rename`) half of the merge-move story lives in
 //! `volume/rename_merge_tests.rs`, next to that path's rig.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
+
+#![cfg(unix)] // Windows: the journal rows and their reversal miss the final paths, #1225 milestone 10a
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;

@@ -5,7 +5,8 @@
 //! The mount table is answered by `transfer_sides::test_hook`, which is
 //! thread-local, so these run on a current-thread runtime: every question the
 //! sweeps ask then comes from the test's own thread.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
+
+#![cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
 
 use cmdr_fs::app_path;
 use std::cell::Cell;

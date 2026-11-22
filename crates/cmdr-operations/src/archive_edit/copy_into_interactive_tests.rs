@@ -2,7 +2,6 @@
 //! emits a `write-conflict` and blocks on the user's answer, the `ApplyToAll`
 //! latch suppresses repeats, a cancel mid-prompt leaves the archive intact, and
 //! dir-vs-dir merges without prompting.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::test_support::*;
 use cmdr_operation_log::types::OperationId;

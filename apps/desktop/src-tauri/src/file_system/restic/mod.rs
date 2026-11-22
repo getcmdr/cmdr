@@ -19,9 +19,8 @@ pub mod wiring;
 mod overlay_tests;
 #[cfg(test)]
 mod snapshot_watch_tests;
-#[cfg(test)]
+// POSIX fixture: `LocalPosixVolume`, source modes, symlinks, and a `mkfifo` (`libc`).
 #[cfg(all(test, unix))]
-// POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 pub(crate) mod test_repo;
 #[cfg(test)]
 mod walker_exposure_tests;

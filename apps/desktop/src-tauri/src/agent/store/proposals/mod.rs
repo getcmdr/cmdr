@@ -57,8 +57,28 @@ pub use write::{
     repropose_group,
 };
 
+use cmdr_fs::app_path::{AppPathBuf, ESCAPES_LIVE, PathFlavor, is_escape};
+
 use crate::agent::types::{ProposalStatus, ProposalVerb, Reversibility};
 use crate::location::Location;
+
+/// The app path a stored destination's text names, as [`WritableDestination::new`] writes it
+/// and [`ProposalGroup::destination`] reads it back: this host's flavor, or a POSIX `/x` (a
+/// share's or a phone's path on Windows). `None` for a `..` (the MCP path door answers those
+/// before a group is built) and for text that's no app path.
+///
+/// Also `None`, while escapes aren't live (`ESCAPES_LIVE`), for text holding an escape-range
+/// code point: its typed spelling escapes it, and the write starts still read the text back
+/// as a `PathBuf`, which would name a different folder. Refused at creation, never a write to
+/// the wrong place; 10f lifts it with the escape gate.
+pub(crate) fn typed_place(text: &str) -> Option<AppPathBuf> {
+    if !ESCAPES_LIVE && text.chars().any(is_escape) {
+        return None;
+    }
+    AppPathBuf::from_wire(text)
+        .or_else(|_| AppPathBuf::parse(text, PathFlavor::Posix))
+        .ok()
+}
 
 /// A place a group may write into: a [`Location`] proven not to be inside an archive.
 ///
@@ -86,10 +106,19 @@ impl WritableDestination {
     /// archive FILE itself is a perfectly good compress target and an ordinary file
     /// to copy, so only a path continuing INSIDE one is refused.
     /// `path_routes_over_its_parent` draws that line already.
+    ///
+    /// Also `None` for a path no app path is made of ([`typed_place`]), so every stored
+    /// destination reads back typed; the path it keeps is that app path's own text.
     pub fn new(location: Location) -> Option<Self> {
+        let typed = typed_place(&location.path)?;
         let routed =
             crate::file_system::volume::manager::path_routes_over_its_parent(std::path::Path::new(&location.path));
-        (!routed).then_some(Self(location))
+        (!routed).then(|| {
+            Self(Location {
+                volume_id: location.volume_id,
+                path: typed.into_string(),
+            })
+        })
     }
 
     /// The location it wraps.
@@ -279,8 +308,10 @@ pub struct ProposalGroup {
     pub verb: ProposalVerb,
     pub status: ProposalStatus,
     pub source_volume_id: String,
-    /// The shared destination dir, rename parent, or archive path; `None` for trash/delete.
-    pub destination: Option<String>,
+    /// The shared destination dir, rename parent, or archive path, typed ([`typed_place`]);
+    /// `None` for trash/delete, and for a row an older build stored untyped (its approval
+    /// refuses as `TargetMissing`).
+    pub destination: Option<AppPathBuf>,
     /// Which volume `destination` lives on. `None` for a rename (the source volume's) and for
     /// the verbs that bind no target at all.
     pub destination_volume_id: Option<String>,

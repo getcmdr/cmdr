@@ -380,24 +380,6 @@ pub(crate) async fn go_to_in_pane<R: Runtime>(
     Ok(())
 }
 
-/// Refuses a `nav_to_path` target holding a `..` name, typed (`data.refusal: "dotDotName"`).
-///
-/// The pane would list what the OS makes of it (`x/link/..` is the link TARGET's parent),
-/// and every row under that pane would carry the `..`, which a delete, trash, or move
-/// refuses at the command edge (`commands/wire_path.rs`). Until 10d routes an agent's `..`
-/// through `AppHost::registry().resolve_typed(…, TypedBy::Agent)`
-/// (`docs/specs/app-path-plan.md` § "Typed and pasted `..`"), the agent sends the folder's
-/// own path.
-fn refuse_dot_dot_name(path: &str) -> Result<(), ToolError> {
-    if !crate::commands::wire_path::has_dot_dot_name(path) {
-        return Ok(());
-    }
-    Err(ToolError::invalid_params(
-        "The path holds a '..', which can name a different folder across a symlink. Send the folder's own path, as cmdr://state or a listing shows it.",
-    )
-    .with_data(json!({ "refusal": "dotDotName" })))
-}
-
 /// Execute a navigation command without parameters.
 /// These emit keyboard-equivalent events to the frontend.
 ///
@@ -562,7 +544,9 @@ pub async fn execute_nav_command_with_params<R: Runtime>(app: &AppHandle<R>, nam
             if !["left", "right"].contains(&pane) {
                 return Err(ToolError::invalid_params("pane must be 'left' or 'right'"));
             }
-            refuse_dot_dot_name(&path)?;
+            // No `..` reaches here: the dispatch's path door (`tools/agent_path.rs`) answered
+            // it as the volume does, so the pane never stands on a path holding one (rows
+            // under it would refuse every delete as a sender bug, `commands/wire_path.rs`).
 
             // Virtual paths (mtp://, smb://) skip the local check; local paths are
             // probed on the blocking pool under a timeout.
@@ -721,34 +705,5 @@ mod open_gate_tests {
         assert_eq!(parse(r#"{"requestId":"r","ok":true}"#), Some(Ok(OpenAck::Opened)));
         assert!(matches!(parse(r#"{"requestId":"r"}"#), Some(Err(_))));
         assert_eq!(parse(r#"{"requestId":"other","ok":true}"#), None);
-    }
-}
-
-#[cfg(test)]
-mod dot_dot_tests {
-    use super::refuse_dot_dot_name;
-
-    /// A pane standing on `x/link/../y` lists what the OS resolves, and every row under it
-    /// then holds a `..` that a delete, trash, or move refuses at the command edge
-    /// (`commands/wire_path.rs`), so the agent's `..` is refused before a pane takes it.
-    #[test]
-    fn a_dot_dot_name_is_refused_and_a_dotted_name_is_not() {
-        for path in ["/x/link/../y", "/x/..", "/a/../b", "mtp://dev/65537/DCIM/../x"] {
-            let refusal = refuse_dot_dot_name(path).expect_err(path);
-            assert_eq!(
-                refusal.data,
-                Some(serde_json::json!({ "refusal": "dotDotName" })),
-                "{path}"
-            );
-        }
-        for path in [
-            "/x/..hidden",
-            "/x/y..",
-            "/x/./y",
-            "/x/link/",
-            "/Users/test_user_1/Downloads",
-        ] {
-            assert!(refuse_dot_dot_name(path).is_ok(), "{path}");
-        }
     }
 }

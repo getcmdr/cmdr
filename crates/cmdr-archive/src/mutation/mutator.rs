@@ -611,6 +611,7 @@ impl Drop for TempGuard {
 #[path = "mutator_test.rs"]
 mod mutator_test;
 
+// Real Finder xattrs on the sources, and `ditto` reading the result back
 #[cfg(all(test, target_os = "macos"))]
 #[path = "mutator_apple_double_test.rs"]
 mod mutator_apple_double_test;

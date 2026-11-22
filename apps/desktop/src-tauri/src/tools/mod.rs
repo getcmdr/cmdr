@@ -16,6 +16,7 @@
 //! See `CLAUDE.md` for the must-knows and `DETAILS.md` for the tool catalog.
 
 mod actions;
+pub(crate) mod agent_path;
 pub mod ask;
 mod ask_plans;
 pub mod connect;

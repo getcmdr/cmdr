@@ -3,8 +3,6 @@
 //! and inside a zip). HEIF isn't authored here: `exif::experimental::Writer` writes TIFF
 //! blocks, not ISO-BMFF boxes, so the HEIC container rides `kamadak-exif`'s own tests.
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
-
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
@@ -275,6 +273,7 @@ fn a_broken_or_truncated_exif_block_is_an_image_row_with_no_exif_key() {
 }
 
 #[test]
+#[cfg(unix)] // Windows: #1225 milestone 10c, a native `C:\…\photos.zip\shot.jpg` path doesn't route into the archive
 fn an_image_inside_a_zip_carries_its_exif() {
     get_volume_manager().register_if_absent(
         "root",

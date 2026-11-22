@@ -10,6 +10,7 @@
 //!
 //! Unix only: on Windows `std::path` compares by Windows rules, the bug #1225 removes.
 
+// Pins `std::path`'s POSIX rules (Windows' reads `//a` as a UNC prefix); `app_path/tests.rs` pins the typed path everywhere.
 #![cfg(unix)]
 
 use std::collections::{BTreeSet, HashSet};

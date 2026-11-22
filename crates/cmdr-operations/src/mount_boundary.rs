@@ -205,6 +205,7 @@ pub(crate) fn refused_at(mount_point: &Path, action: MountedVolumeAction) -> Wri
     }
 }
 
+// A real mount inside a folder needs `testing::disk_images`, which is `hdiutil` (macOS)
 #[cfg(all(test, target_os = "macos"))]
 #[path = "mount_boundary_test_support.rs"]
 pub(crate) mod test_support;

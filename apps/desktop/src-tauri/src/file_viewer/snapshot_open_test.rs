@@ -1,7 +1,7 @@
 //! Opening files out of a repo's `.git` snapshot and a restic backup: the app's routes and
 //! materializer under the viewer, end to end through the app's viewer.
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+#![cfg(unix)] // Builds on `restic::test_repo`, which is POSIX (modes, symlinks, a FIFO)
 
 use super::app_viewer as viewer;
 use super::{ViewerContentKind, ViewerError};

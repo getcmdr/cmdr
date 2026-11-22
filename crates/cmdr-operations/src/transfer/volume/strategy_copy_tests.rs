@@ -2,7 +2,6 @@
 //! cancellation, and the cross-volume streaming-copy path (single file,
 //! multi-chunk with progress, mid-file cancel, empty file, missing source,
 //! streaming-route selection, and recursive directory copy).
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::test_support::{SLOW_CHUNK_COUNT, SlowSource, make_state};
 use super::*;
@@ -21,6 +20,7 @@ use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeError};
 use cmdr_local::LocalVolume;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
 async fn test_copy_single_path_local_to_local() {
     use std::fs;
 

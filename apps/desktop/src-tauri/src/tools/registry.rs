@@ -426,6 +426,10 @@ macro_rules! mcp_tools {
                 return Err(refusal.into_error(name));
             }
             validate_params(name, params)?;
+            // Every path input as the volume answers it (`agent_path.rs`), before a person is
+            // asked about it or a handler reads it: no handler sees an agent's raw path text.
+            let typed = super::agent_path::typed_params(name, params).await?;
+            let params: &Value = &typed;
             // Ahead of the handler and after the schema, so a malformed call never reaches a person.
             let asked = if verdict == super::policy::Verdict::Ask {
                 match name {

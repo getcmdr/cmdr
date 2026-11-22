@@ -8,11 +8,9 @@
 //! that takes a listed folder at its word merges through a link: it renames
 //! the target's files out of their folder, or lands incoming files in it.
 //!
-//! The rig is a real `LocalPosixVolume` over a tempdir (real links, real
+//! The rig is a real `LocalVolume` over a tempdir (real links, real
 //! `rename`), reporting `BackendKind::Smb` and stripping `is_symlink` from
 //! every listing.
-
-#![cfg(unix)]
 
 use super::copy::copy_volumes_with_progress;
 use super::move_cross::move_volumes_with_progress;
@@ -28,16 +26,16 @@ use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{
     BackendKind, BatchScanResult, EntryKind, InMemoryVolume, ListingProgress, ScanBoundary, Volume, VolumeError,
 };
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
 use tempfile::TempDir;
 
-/// A `LocalPosixVolume` that lists the way a Samba share does.
+/// A `LocalVolume` that lists the way a Samba share does.
 struct HiddenLinkVolume {
-    inner: LocalPosixVolume,
+    inner: LocalVolume,
 }
 
 impl Volume for HiddenLinkVolume {
@@ -98,7 +96,7 @@ impl Volume for HiddenLinkVolume {
 fn samba_volume() -> (Arc<dyn Volume>, TempDir) {
     let dir = TempDir::new().unwrap();
     let volume: Arc<dyn Volume> = Arc::new(HiddenLinkVolume {
-        inner: LocalPosixVolume::local_folder("V", dir.path().to_path_buf(), crate::host::testing::pane_order_host()),
+        inner: LocalVolume::local_folder("V", dir.path().to_path_buf(), crate::host::testing::pane_order_host()),
     });
     (volume, dir)
 }
@@ -227,6 +225,7 @@ async fn a_moved_hidden_link_never_merges_into_a_real_folder() {
 /// A copy ONTO the share: the destination level's listing calls a link a
 /// folder, and merging into it lands the incoming files in its target.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
 async fn a_copy_never_merges_into_a_hidden_destination_link() {
     let engine = TestOperations::new();
     let (dest, dir) = samba_volume();
@@ -277,6 +276,7 @@ async fn a_copy_never_merges_into_a_hidden_destination_link() {
 /// transfer materializes one), and the source sweep, which asks `entry_kind` of
 /// every folder, removes the link and spares its target.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
 async fn a_cross_volume_move_of_a_folder_holding_a_hidden_link_spares_the_target() {
     let engine = TestOperations::new();
     let (source, dir) = samba_volume();

@@ -209,7 +209,7 @@ fn a_proposal_stages_the_ready_rows_as_one_pending_rename_group() {
     let stored = get_group(&conn, group_id).expect("read").expect("group exists");
     assert_eq!(stored.verb, ProposalVerb::Rename);
     assert_eq!(stored.status, ProposalStatus::Pending);
-    assert_eq!(stored.destination.as_deref(), Some(DIR));
+    assert_eq!(stored.destination.as_ref().map(|p| p.as_str()), Some(DIR));
     assert_eq!(stored.display_name, "Rename two files in lisbon");
 
     let ops = page_ops(&conn, group_id, 100, 0).expect("ops");

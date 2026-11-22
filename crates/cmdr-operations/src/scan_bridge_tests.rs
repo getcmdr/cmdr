@@ -6,7 +6,6 @@
 //! because the whole point of this seam is what the manager, the preview map,
 //! and the operation task agree on. The manager is a process-global singleton,
 //! so ids and lane keys are unique per test.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use crate::testing::TestOperations;
 use std::path::PathBuf;
@@ -681,6 +680,7 @@ async fn a_trash_frees_its_preview_instead_of_waiting_on_it() {
 /// and the planner's walk down the same tree at once. The copy-path tests all
 /// pass without the threading, so this is the one that catches it.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[cfg(unix)] // Windows: a fresh compress stalls (task 35 streams or #1225 milestone 10a, not yet pinned down: #1351)
 async fn a_compress_confirmed_mid_scan_awaits_its_preview() {
     use cmdr_fs::volume::Volume;
     use cmdr_local::LocalVolume;

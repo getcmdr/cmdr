@@ -2230,6 +2230,33 @@ included; the hidden couplings it found are why waves B and C differ from round 
   `caf\u{FFFD}.txt` with both files present refuses as `AmbiguousName`.
 - **DONE**: the app's bridge count is zero, and the backend crates' `testing::scratch_dir` `std::path` twins (WebDAV,
   NFS) are gone with their last callers, the app's backend suites.
+- **First step done** (2026-11-22, branch `worktree-agent-a2853e627913731e2`): the MCP tools take typed paths, loud rule
+  1's second exception for the agent surface. Durable design: `apps/desktop/src-tauri/src/tools/DETAILS.md` § "An
+  agent's path".
+  - **One door in the dispatch**: `tools/agent_path.rs::typed_params`, right after the schema gate in `execute_tool`
+    (and in `agent/tool_gate.rs`'s `propose_rename_plan` branch, which skips it), rewrites every declared path field
+    through `AppHost::registry().resolve_typed(…, TypedBy::Agent)` before a person is asked or a handler reads it.
+    Refusals are typed tool errors, `data: { reason, field, path }`: `pathRelative`, `pathOffRoot`, `pathUnanswered`,
+    `pathNotAPath`, `pathLeadsOffVolume`. `fields(tool)` lists the fields (JSON pointers with `*`, scope strings,
+    `await`'s `value` under `condition: "path"`); `every_path_shaped_schema_property_is_a_declared_field` walks every
+    schema. `nav_to_path`'s `dotDotName` refusal is gone (pin flipped: `x/link/../y` lands where `ls` says).
+  - **The allowed-roots rule judges the resolved place**: the location resolver's named-volume check sees the resolved
+    path (`a/link/..` with the link on `b` is `pathOutsideVolume` for volume `a`), and a WRITE's place (a proposal's
+    destination, rename parent, selector root, sources) has its physical place (a compare-only `canonicalize` of the
+    longest existing prefix; a source's own last name not followed) checked against the registered volume its text
+    names: another one is `pathLeadsOffVolume` with `resolved`. Reads follow links as the OS does. Cells:
+    `tools/agent_path_tests.rs`, real links over `AppTestDir`, every OS (`skip_without_symlinks`).
+  - **Stored `suggested_ops` destinations are typed**: `WritableDestination::new` types its path
+    (`agent/store/proposals/mod.rs::typed_place`), `ProposalGroup.destination` is `Option<AppPathBuf>`, the destination
+    check reads it as is (its `read_on_volume` step gone), and a legacy row holding a `..` reads as no destination (its
+    approval refuses `TargetMissing`). While `ESCAPES_LIVE` is false a destination holding an escape-range code point is
+    refused at creation (the starts read it back as a `PathBuf`); 10f lifts it.
+  - Bridge: `inspect/archive.rs::agent_text_as_app_path` gone (the route reads the resolved text as an app path).
+  - **Not done, still 10d's**: `operations_host/`'s engine seams (`engine_path`, `wire_path::checked_as_app_path`: the
+    write engine's host trait and starts still take `PathBuf`s), `multi_rename/app_host.rs::rename_dir_as_app_path`,
+    `listing_index_sizes/count/`, `search/`, `services_menu/`, the Windows `multi_rename/` cells, and `read_resource`'s
+    `cmdr://importance?path=` query (a resource URI the door doesn't parse). The Linux non-UTF-8 `unaddressable` /
+    `AmbiguousName` cells wait for 10f's producers.
 
 ### 10f. The escape lands
 

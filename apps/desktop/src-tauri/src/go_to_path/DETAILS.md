@@ -23,7 +23,7 @@ Depth and rationale. `CLAUDE.md` holds the must-knows; the decision rationale an
     reaches its nearest existing ancestor. `metadata()` still follows links for the file-vs-dir classification, so a
     symlinked dir navigates into the link path and the listing follows it, correct and intended.
   - A `..` above a root clamps there for a person (go-to, the CLI) and is refused for an agent (`OffRoot`, the MCP
-    tools' rule for anything ambiguous; 10d wires them).
+    tools' rule for anything ambiguous: `apps/desktop/src-tauri/src/tools/agent_path.rs` turns it into the typed `pathOffRoot` tool error).
 - **Every answer is an app path** (`cmdr_fs::typed_path` builds it with `AppPath` arithmetic, never `std::path`: a
   scheme-rooted pane's `sftp://h:22/srv` kept its `//`, #1314 item 1). On Windows a typed `C:\Users\test_user_1`,
   `~\Documents`, or `\\server\share` comes back as `C:/Users/test_user_1/…` or `//server/share/`, and a person's names
