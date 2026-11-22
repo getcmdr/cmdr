@@ -32,7 +32,7 @@ use crate::indexing::read::pending_sizes;
 use crate::indexing::reconcile::reconciler::EventReconciler;
 use crate::indexing::writer::{IndexWriter, WriteMessage};
 use cmdr_fs::log_private::LogPrivate;
-use cmdr_fs::pluralize::pluralize;
+use cmdr_fs::pluralize::{pluralize, pluralize_with};
 
 /// How many consecutive silent 5 s beats a quiet loop absorbs before it says
 /// "still alive, still idle" anyway. Twelve is a minute, which keeps the
@@ -126,7 +126,10 @@ pub(in crate::indexing) fn drain_promoted(
             if promoted.relist.is_empty() {
                 String::new()
             } else {
-                format!(", and re-listing {}", pluralize(promoted.relist.len() as u64, "branch"))
+                format!(
+                    ", and re-listing {}",
+                    pluralize_with(promoted.relist.len() as u64, "branch", "branches")
+                )
             },
         );
     }
