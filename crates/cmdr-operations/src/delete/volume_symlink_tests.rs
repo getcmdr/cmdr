@@ -149,7 +149,9 @@ impl Tree {
         std::fs::create_dir_all(root.join("outside")).expect("outside");
         std::fs::write(root.join("dir/plain.txt"), b"PLAIN").expect("plain");
         std::fs::write(root.join("outside/keep.txt"), b"KEEP").expect("keep");
-        cmdr_fs::testing::symlink("../outside", root.join("dir/link")).expect("link");
+        // Joined, so the target holds this OS's separator: a Windows link whose relative
+        // target reads `../outside` fails every open through it (`ERROR_INVALID_NAME`, 123).
+        cmdr_fs::testing::symlink(Path::new("..").join("outside"), root.join("dir/link")).expect("link");
         Self { dir }
     }
 
