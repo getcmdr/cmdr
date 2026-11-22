@@ -829,10 +829,10 @@ The check runner and E2E testing docs live colocated with their code:
 
 [Renovate](https://docs.renovatebot.com/) (`renovate.json` in repo root) tracks every dependency (npm, Cargo, Go) and
 auto-merges four lanes unattended: website, Cloudflare apps, linters and formatters, and security advisories. The
-desktop and major lanes are dashboard-only (no PR) and land through the weekly `/weekly-upgrades` pass instead, because
-a lockfile touch always leaves the generated third-party notices stale and minor Rust bumps break compilation for real;
-`guides/update-dependencies.md` has the procedure and the full rationale. For adding deps by hand, see
-[add an npm dependency](guides/add-npm-dependency.md), [add a Rust crate](guides/add-rust-dependency.md), and
+desktop and major lanes are dashboard-only (no PR) and land through the weekly, user-level `/weekly-upgrades` pass
+instead, because a lockfile touch always leaves the generated third-party notices stale and minor Rust bumps break
+compilation for real; `guides/update-dependencies.md` has the procedure and the full rationale. For adding deps by hand,
+see [add an npm dependency](guides/add-npm-dependency.md), [add a Rust crate](guides/add-rust-dependency.md), and
 [update dependencies](guides/update-dependencies.md).
 
 ### External services

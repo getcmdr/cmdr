@@ -25,7 +25,8 @@ Two lanes are hand-driven, because a bot can't finish them:
 - **`all major updates`**
 
 Both carry `dependencyDashboardApproval`, so Renovate lists them on the Dependency Dashboard (issue #11) and opens no
-PR. The weekly `/weekly-upgrades` pass does them.
+PR. The weekly `/weekly-upgrades` pass does them (a user-level command in `~/.claude/commands/`, since it also covers
+the sibling repos, infra, and the Mac itself).
 
 **Why they can't automerge**, so nobody re-litigates this:
 
