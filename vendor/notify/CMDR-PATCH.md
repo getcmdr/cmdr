@@ -30,6 +30,13 @@ so inotify and FSEvents builds are the release's code.
   stopping, so a pane learns its folder is gone.
 - **A fatal read error reaches the handler**: any other completion error (a pulled drive, a dropped share) is emitted
   as an `Err` before the watch stops, where 8.2.2 only logged it.
+- **A 64 KiB read buffer on the heap**: 8.2.2 read into a 16 KiB `[u8; N]` field of the request, which is neither big
+  enough for one recursive watch over a whole drive (the index's, #1353) nor guaranteed the DWORD alignment
+  `ReadDirectoryChangesW` requires. 9.0 reads 64 KiB into a `Box<[u32]>` (`read_buffer`); so does this copy. 64 KiB is
+  also the most a network share accepts, so the listing watch on a share keeps working. Measured on the builder
+  (Windows 10 22H2, NTFS, 2026-11-22, two `FileSystemWatcher`s on `C:\` with the same notify filter side by side):
+  idle `C:` carried 0.2 events/s with no overflow at either size; copying and deleting 3,827 files (about 23,000
+  events in 6 s) overflowed 16 KiB once and 64 KiB never, and so did a 2,671-file burst.
 
 Verified on Windows 10 22H2 (NTFS, the builder, 2026-11-21) with a standalone program that arms a
 `notify-debouncer-full` watch the way the app does: a flood of 20,000 files from four threads reported `Rescan` twice
