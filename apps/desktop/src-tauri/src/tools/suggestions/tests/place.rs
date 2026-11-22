@@ -125,7 +125,10 @@ fn a_destination_on_a_live_volume_stages_where_it_was_named() {
     let group = get_group(&conn, report.groups[0].group_id)
         .expect("read")
         .expect("exists");
-    assert_eq!(group.destination.as_deref(), Some("/Volumes/testshare-1/documents"));
+    assert_eq!(
+        group.destination.as_ref().map(|p| p.as_str()),
+        Some("/Volumes/testshare-1/documents")
+    );
     assert_eq!(group.destination_volume_id.as_deref(), Some("lan"));
 
     // `volumeId` is optional: a bare path lands on the live volume holding it.
@@ -273,7 +276,10 @@ fn a_dead_volume_with_a_signed_in_sibling_is_stored_on_the_sibling() {
     let group = get_group(&conn, report.groups[0].group_id)
         .expect("read")
         .expect("exists");
-    assert_eq!(group.destination.as_deref(), Some("/Volumes/testshare-1/documents"));
+    assert_eq!(
+        group.destination.as_ref().map(|p| p.as_str()),
+        Some("/Volumes/testshare-1/documents")
+    );
     assert_eq!(group.destination_volume_id.as_deref(), Some("lan"));
 }
 
@@ -568,7 +574,7 @@ fn conversation_179_files_onto_the_live_lan_share_or_refuses_whole() {
         .expect("exists");
     assert_eq!(group.destination_volume_id.as_deref(), Some(LAN));
     assert_eq!(
-        group.destination.as_deref(),
+        group.destination.as_ref().map(|p| p.as_str()),
         Some(format!("/Volumes/testshare-1/{INVOICES}").as_str())
     );
 

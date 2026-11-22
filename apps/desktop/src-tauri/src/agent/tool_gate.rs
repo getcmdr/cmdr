@@ -214,8 +214,23 @@ async fn route_call<R: Runtime>(
         };
     }
     if call.tool == ToolId::ProposeRenamePlan {
+        // `execute_tool` runs the path door for every other tool; this branch skips it, so it
+        // runs here: a plan's source paths reach the plan as their volume answers them.
+        let arguments = match crate::tools::agent_path::typed_params(call.tool.as_wire_name(), &call.arguments).await {
+            Ok(arguments) => arguments,
+            Err(err) => {
+                return DispatchOutcome {
+                    result: AgentToolResult {
+                        call_id: call.call_id.clone(),
+                        content: error_content(&err),
+                        elided: false,
+                    },
+                    proposal: None,
+                };
+            }
+        };
         let RenameDispatchOutcome { result, proposal } =
-            crate::tools::propose::rename::dispatch(app, scope, &call.call_id, &call.arguments).await;
+            crate::tools::propose::rename::dispatch(app, scope, &call.call_id, &arguments).await;
         return DispatchOutcome { result, proposal };
     }
     // What a handler may want to know about this turn: which thread a proposal records, the origin

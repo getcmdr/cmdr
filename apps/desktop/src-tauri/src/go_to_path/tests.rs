@@ -222,7 +222,7 @@ async fn a_hung_mount_with_no_dot_dot_is_nothing_to_go_to_never_the_root() {
     assert!(matches!(answer, GoToPathResolution::Invalid { .. }), "got {answer:?}");
 }
 
-/// What 10d's MCP tools call: an agent's `..` above the root is refused, typed.
+/// What the MCP tools' path door calls: an agent's `..` above the root is refused, typed.
 #[tokio::test]
 async fn an_agent_above_the_root_is_refused_off_root() {
     let answer = disk().resolve_typed("sftp://h:22/../x", None, TypedBy::Agent).await;

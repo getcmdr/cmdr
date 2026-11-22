@@ -91,7 +91,6 @@
     "apps/desktop/src-tauri/src/server_volumes.rs": 1,
     "apps/desktop/src-tauri/src/tools/connect.rs": 1,
     "apps/desktop/src-tauri/src/tools/propose/rename/preflight.rs": 2,
-    "apps/desktop/src-tauri/src/tools/read/inspect/archive.rs": 1,
     "apps/desktop/src-tauri/src/tools/read/inspect/archive_tests.rs": 2,
     "apps/desktop/src-tauri/src/tools/tests/about_item_tests.rs": 3,
     "apps/desktop/src-tauri/src/volumes/platform/macos/lifecycle.rs": 1,

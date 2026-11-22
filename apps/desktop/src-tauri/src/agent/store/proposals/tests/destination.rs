@@ -71,3 +71,34 @@ fn a_path_inside_a_repos_history_cannot_be_a_destination() {
     assert!(WritableDestination::new(at("/Users/someone/code/cmdr/.git")).is_some());
     assert!(WritableDestination::new(at("/Users/someone/code/cmdr/.git/hooks")).is_some());
 }
+
+/// A stored destination is its app path's own text, and reads back typed: a trailing `/`
+/// goes, so the folder a review names is the one the write lands in.
+#[test]
+fn a_destination_is_stored_as_its_app_path() {
+    let destination = WritableDestination::new(at("/Users/someone/Documents/Invoices/")).expect("writable");
+    assert_eq!(destination.location().path, "/Users/someone/Documents/Invoices");
+    assert!(
+        WritableDestination::new(at("Documents/Invoices")).is_none(),
+        "a relative path names no place"
+    );
+    assert!(
+        WritableDestination::new(at("/Users/someone/x/../Invoices")).is_none(),
+        "a `..` is the MCP path door's to answer, before a group is built"
+    );
+}
+
+/// A row an older build stored with a `..` names no place without its volume's answer: it
+/// reads as no destination, so its approval refuses (`TargetMissing`), never a lexical guess.
+#[test]
+fn a_legacy_destination_holding_a_dot_dot_reads_as_none() {
+    let conn = super::migrated_conn();
+    let group_id = super::group_with_ops(&conn, 1);
+    conn.execute(
+        "UPDATE proposals SET destination = '/Users/someone/x/../Invoices' WHERE id = ?1",
+        [group_id],
+    )
+    .expect("an older build's row");
+    let group = get_group(&conn, group_id).expect("read").expect("exists");
+    assert_eq!(group.destination, None);
+}

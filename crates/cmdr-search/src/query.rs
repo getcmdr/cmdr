@@ -286,8 +286,23 @@ pub fn parse_scope(input: &str, home: Option<&str>) -> super::types::ParsedScope
     }
 }
 
-/// Split a scope string on commas, respecting quoting and backslash escapes.
-pub(crate) fn split_scope_segments(input: &str) -> Vec<String> {
+/// `value` spelled so [`split_scope_segments`] reads it back as one segment, unchanged: every
+/// `\`, `,`, `"`, and `'` backslash-escaped. For a host that rewrites a scope's parts (the MCP
+/// path door resolves each absolute one) and must hand back a scope this parser reads the same.
+pub fn escape_scope_value(value: &str) -> String {
+    let mut out = String::with_capacity(value.len());
+    for c in value.chars() {
+        if matches!(c, '\\' | ',' | '"' | '\'') {
+            out.push('\\');
+        }
+        out.push(c);
+    }
+    out
+}
+
+/// Split a scope string on commas, respecting quoting and backslash escapes. Each segment comes
+/// back decoded (quotes and escapes gone) and untrimmed.
+pub fn split_scope_segments(input: &str) -> Vec<String> {
     let mut segments = Vec::new();
     let mut current = String::new();
     let mut chars = input.chars().peekable();

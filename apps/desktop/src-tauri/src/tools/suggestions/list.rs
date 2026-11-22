@@ -256,7 +256,7 @@ pub(super) fn to_group_summary(summary: GroupSummary) -> GroupSummaryOut {
         display_name: group.display_name,
         rationale: group.rationale,
         source_volume_id: group.source_volume_id,
-        destination: group.destination,
+        destination: group.destination.map(cmdr_fs::app_path::AppPathBuf::into_string),
         runs_as,
         reversible: group.reversible,
         op_count: live_op_count,

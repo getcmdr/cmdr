@@ -232,6 +232,46 @@ before the ask, so a stray argument on a `Sensitive` tool refuses before it reac
 can't reach checks itself: `inspect_file`'s `parse_find` runs `gate` on `find`, since a guessed `regexp: true` would
 otherwise search literally and report a zero.
 
+## An agent's path (`agent_path.rs`)
+
+Right after the schema gate, at both dispatch entries (`execute_tool`, and `agent/tool_gate.rs` for
+`propose_rename_plan`), `typed_params` rewrites every declared path field of the call before a person is asked about it
+or a handler reads it. Handlers keep reading strings; the strings are the resolved app paths.
+
+- **Each path through `AppHost::registry().resolve_typed(text, None, TypedBy::Agent)`** (`go_to_path/mod.rs`,
+  `docs/specs/app-path-plan.md` § "Typed and pasted `..`"): `~` expands, names are literal, `.` names and a trailing
+  `/` drop (so `x/link/` names the link), and each `..` after a name asks the volume holding it, so `x/link/../y` is
+  the link target's sibling on POSIX and `x/y` on Windows, where `ls` and Explorer put it. A path with no `..` asks no
+  volume. Refusals are typed tool errors with `data: { reason, field, path }`: `pathRelative` (no pane to read it
+  from), `pathOffRoot` (a `..` above a root), `pathUnanswered` (the volume didn't answer within the 2 s deadline, a
+  hung mount), `pathNotAPath`, and `pathLeadsOffVolume` (below). ❌ Never a silent re-anchor, ❌ never a lexical guess.
+- **Two textual exceptions while `ESCAPES_LIVE` is false**: text holding an escape-range code point stays as sent (the
+  typed spelling would escape it, and handlers read text), refusing only beside a `..`; on Windows a POSIX `/x` is a
+  volume-relative path (a share, a phone), read with POSIX rules, a `..` there refused.
+- **The allowed-roots rule judges the resolved place.** `OffRoot` is a TEXT check and says nothing about where an
+  answer lands, so the rules that keep a call inside a volume run on what the door hands on: the location resolver's
+  named-volume check (`pathOutsideVolume`) sees the RESOLVED path, so naming volume `a` and stepping out through
+  `a/link/..` is outside `a` when the link leads to `b`. For a WRITE's place (`Use::WriteTarget`: a proposal's
+  destination, rename parent, selector root; `Use::WriteSource`: its sources, last name not followed, since a trash or
+  a move acts on a link itself), the door also reads the physical place (`canonicalize` of the longest existing
+  prefix, compared only, ❌ never echoed) and refuses `pathLeadsOffVolume` with `resolved` when that sits on another
+  registered volume than the text: the review would otherwise show one disk while the write lands on another. Reads
+  follow links as the OS does; the content gate realpaths on its own (§ The sensitive-content gate). Local paths only:
+  a scheme path's links are its server's, and SFTP's `..` refuses a target off its root already. The comparison
+  is by volume: the same registry root holds both places, or the physical place sits under the text volume's OWN
+  physical root with no other registered root nested between (a root registered behind a link, `/tmp/x` on macOS, a
+  `subst` drive or a mapped share on Windows, still holds its own folders). A non-Unicode physical name compares by
+  its nearest Unicode ancestor, and a walk that can't finish refuses `pathUnanswered`.
+- **Which fields** is `fields(tool)`: JSON pointers with `*` over arrays, plus a scope string (split and re-spelled by the search parser's own rules,
+  `cmdr_search::query::split_scope_segments` and `escape_scope_value`, so a quoted or `\,`-escaped part can't hide a
+  `..`; `!` excludes; only absolute parts resolved, a `~name` staying a pattern) and `await`'s `value` under `condition: "path"`.
+  `every_path_shaped_schema_property_is_a_declared_field` walks every schema for `path`, `paths`, `sourcePath`,
+  `under`, `scope`, and `parent`, so a new one is declared or listed as no app path with why (the memory tools' jailed
+  relative path, `eject`'s enum, `propose_server`'s remote root). Cells: `agent_path_tests.rs`, real links over
+  `AppTestDir` on every OS.
+- **Not covered**: `read_resource`'s `cmdr://importance?path=` query (a resource URI, read by text against the
+  importance store).
+
 ## The access classes
 
 `access` says what the tool does, whoever calls it (decision D49: **one registry, no parallel table**):
