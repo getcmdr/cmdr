@@ -32,12 +32,13 @@ use super::platform;
 use super::probe::{Probe, probe};
 use super::session::{Gathered, ItemReach, PROBE_BUDGET, SubJobs, Watch};
 use super::through::{self, ArchiveRecord, Asked, DownloadFrom, STUCK, SnapshotPath, Through};
-use crate::file_system::volume::manager::{get_volume_manager, path_routes_over_its_parent};
+use crate::file_system::volume::manager::get_volume_manager;
 use crate::location::Location;
 use crate::location::miss::{LocationMissResult, MissToken, volume_not_connected};
 use crate::location::resolve::{LocationInput, LocationMiss, ResolvedLocation, VolumeFacts, resolve};
 use crate::location::store_path::to_store_path;
 use crate::tools::resources::volumes::VolumeKind;
+use cmdr_fs::app_path::PathArithmetic;
 
 /// The id a search-results pane gives its rows' volume. Its rows are real files on
 /// whatever drive holds them, so the card places the bare path instead (the
@@ -271,7 +272,7 @@ pub(crate) async fn gather_for(request: &AboutRequest, started: Started) -> Resu
 
     // A path into an archive or git's history is a route's view, whatever drive
     // holds it. The lexical gate costs nothing; the route confirms on the pool.
-    if path_routes_over_its_parent(Path::new(&path)) {
+    if crate::app_text::routes_over_its_parent(&path) {
         match routed_on_pool(&asked_drive, &path).await {
             Routed::View {
                 routed,
@@ -487,8 +488,7 @@ async fn routed_on_pool(drive: &Asked, path: &str) -> Routed {
             (Some(routed), Some(volume)) => Routed::View {
                 routed,
                 volume,
-                archive_on_local_disk: cmdr_fs::archive_format::archive_boundary_candidate(Path::new(&path))
-                    .is_some_and(|(archive, _)| super::place::sits_on_a_local_disk(&archive.to_string_lossy())),
+                archive_on_local_disk: super::place::its_archive_sits_on_a_local_disk(&path),
             },
             _ => Routed::Passthrough,
         };
@@ -640,9 +640,10 @@ pub(crate) fn through_gathered(
     drive: Option<Drive<'_>>,
 ) -> Gathered {
     let path = resolved.location.path.clone();
-    let name = Path::new(&path)
-        .file_name()
-        .map_or_else(|| path.clone(), |name| name.to_string_lossy().into_owned());
+    let name = crate::app_text::parse(&path)
+        .ok()
+        .and_then(|p| p.file_name().map(str::to_owned));
+    let name = name.unwrap_or_else(|| path.clone());
     let index_covers = resolved.index.live && matches!(way, Way::OsMountedShare | Way::Server);
     // The image index covers a local disk and an SMB share the person opted in
     // (`media_index`); a share's picture reads its database, never the share.

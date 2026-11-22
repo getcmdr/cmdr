@@ -526,6 +526,9 @@ A path the frontend sends is read as an app path at the command edge, `wire_path
   a clipboard without that row. ❌ Never a `Path::new` of wire text: on Windows it isn't the native spelling.
 - **The route gate reads the app path too** (`routes_over_its_parent`, over `app_path_routes_over_its_parent`): no
   route serves text that's no app path.
+- **One reading of app text for every layer**: `apps/desktop/src-tauri/src/app_text.rs` (`parse`, `native`, `routes_over_its_parent`) is what
+  `wire_path` reads through, and what the subsystems that get rows as `String`s use below the command edge (the sync
+  badges' cache, a favorite's folder, the About card's local walk and route gate), ❌ never a `Path::new` of a row.
 - **A `std::path` API that reads the text lexically gets it as sent** (`as_sent_std_path`, `pre_check_rows`): the
   write pre-checks, `get_name_rules`, the stored-spelling lookup, and `root_echo`. Byte for byte; it goes as each
   engine's entry points take app paths.

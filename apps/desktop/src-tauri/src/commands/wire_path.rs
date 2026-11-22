@@ -28,7 +28,7 @@ use std::borrow::Cow;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cmdr_fs::app_path::{AppPath, AppPathBuf, ESCAPES_LIVE, Namer, NotAnAppPath, PathFlavor, is_escape, is_scheme_url};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, ESCAPES_LIVE, NotAnAppPath, PathFlavor, is_escape, is_scheme_url};
 use cmdr_fs::error_detail::ErrorDetail;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::typed_path::{TypedBy, TypedPathRefusal};
@@ -375,14 +375,9 @@ fn first_dot_dot(text: &str) -> usize {
     text.len()
 }
 
-/// `text` parsed with this host's flavor; its escape-range code points literal while no
-/// producer makes a live one.
+/// `text` parsed with this host's flavor ([`crate::app_text::parse`]).
 fn parsed(text: &str) -> Result<AppPathBuf, NotAnAppPath> {
-    if ESCAPES_LIVE {
-        AppPathBuf::from_wire(text)
-    } else {
-        AppPathBuf::from_literal_store(text, Namer::HOST)
-    }
+    crate::app_text::parse(text)
 }
 
 /// [`parsed`] for the POSIX flavor, whatever the host: a volume-relative `/x` on Windows.
