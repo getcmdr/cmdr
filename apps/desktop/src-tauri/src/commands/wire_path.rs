@@ -146,7 +146,8 @@ pub(crate) fn checked_as_app_path(source: &std::path::Path) -> AppPathBuf {
 
 /// Text a `std::path` API reads LEXICALLY, handed on as sent with no `..` check: the write
 /// engine's pre-checks and the transfer box's text (which [`destination`] answers where a
-/// `..` matters), the listing engine's stored-spelling lookup, and `root_echo`. Those APIs
+/// `..` matters), the listing engine's stored-spelling lookup, `root_echo`, and the git chip's
+/// `repo_root` (native text `RepoInfo` reported, handed back). Those APIs
 /// still speak `std::path`, so this is their one crossing from the command edge, byte for
 /// byte; it goes as each engine's entry points take app paths (`cmdr-listing`'s with its typed
 /// listing locations, the write engine's in milestone 10d). ❌ Not for a path the OS opens: that's [`native`].

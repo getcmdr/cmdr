@@ -67,10 +67,12 @@ pub struct Favorite {
 impl Favorite {
     /// The folder as this OS names it, for a mount lookup, a stat, or the local walker: the
     /// stored path read as an app path (its escape-range code points literal while escapes
-    /// aren't live, a trailing `/` dropped) and crossed once through `to_native`. `None` for a
-    /// favorite on a server or a phone (a scheme path) and for text that's no app path here.
+    /// aren't live, a trailing `/` dropped) and crossed once in the plain form
+    /// (`app_text::native_plain`): the priority walker dedupes it against the plain home and tab
+    /// spellings, which a verbatim `\\?\` path never `starts_with`. `None` for a favorite on a
+    /// server or a phone (a scheme path) and for text that's no app path here.
     pub(crate) fn native_path(&self) -> Option<PathBuf> {
-        crate::app_text::native(&self.path)
+        crate::app_text::native_plain(&self.path)
     }
 }
 

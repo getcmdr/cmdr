@@ -484,16 +484,15 @@ pub async fn viewer_write_range_to_file(
     // `std::fs` errno the user can make nothing of. Saving over the `.zip` file
     // itself is a normal overwrite (allowed); only a path INSIDE one is refused.
     // Typed error, the same gate the write-path guards use.
-    // The Save panel hands an app path, crossed to the native file once here.
-    let dest =
-        crate::commands::wire_path::native(&crate::commands::file_system::expand_tilde(&dest_path)).map_err(|why| {
-            ViewerError::Io {
-                message: format!("the destination has no native path: {why:?}").into(),
-            }
-        })?;
-    if crate::file_system::volume::manager::path_routes_over_its_parent(&dest) {
+    // The Save panel hands an app path: the route gate reads it as one (❌ not the verbatim
+    // `\\?\` form Windows' native path takes), then it crosses to the native file once.
+    let dest_path = crate::commands::file_system::expand_tilde(&dest_path);
+    if crate::commands::wire_path::routes_over_its_parent(&dest_path) {
         return Err(ViewerError::DestinationIsReadOnly);
     }
+    let dest = crate::commands::wire_path::native(&dest_path).map_err(|why| ViewerError::Io {
+        message: format!("the destination has no native path: {why:?}").into(),
+    })?;
     write_range_watched(session_id, read_id, anchor, focus, dest, SAVE_STALL_LIMIT).await
 }
 

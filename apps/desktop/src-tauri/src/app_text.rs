@@ -43,3 +43,12 @@ pub(crate) fn last_name(text: &str) -> Option<String> {
 pub(crate) fn native(text: &str) -> Option<PathBuf> {
     parse(text).ok()?.to_native().ok()
 }
+
+/// [`native`] in the PLAIN form (no `\\?\` on Windows), for code that compares the path with
+/// spellings the OS hands out plain (the home folder, a pane's tab, a registered mount) or hands
+/// it to a crate that can't take a verbatim path; the verbatim form only where no plain one names
+/// the same file. Byte for byte [`native`] on macOS and Linux.
+pub(crate) fn native_plain(text: &str) -> Option<PathBuf> {
+    let path = parse(text).ok()?;
+    path.to_native_plain().or_else(|_| path.to_native()).ok()
+}

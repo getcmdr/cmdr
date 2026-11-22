@@ -25,6 +25,14 @@ const GIT_STATUS_TIMEOUT: Duration = Duration::from_secs(5);
 /// could block the watcher registration without a timeout.
 const GIT_SUBSCRIBE_TIMEOUT: Duration = Duration::from_secs(2);
 
+/// A `repo_root` the frontend hands back: the NATIVE text [`RepoInfo::repo_root`] reported (gix's
+/// canonical work dir, `\\?\C:\…` on Windows), ❌ never app text, so it goes back as sent. Read
+/// through `wire_path::native`, a Windows root would be no app path and the chip's live channel
+/// and status column would go dark. It types with `RepoInfo` (milestone 10f's text exits).
+fn reported_root(text: &str) -> std::path::PathBuf {
+    crate::commands::wire_path::as_sent_std_path(text)
+}
+
 /// Returns the repo info for any path inside a worktree, or `None` if there's
 /// no repo above it.
 ///
@@ -57,11 +65,8 @@ pub async fn subscribe_git_state(repo_root: String) -> Result<RepoInfo, GitSubsc
         || GitSubscribeError::TimedOut,
         |detail| GitSubscribeError::Unexpected { detail },
         move || {
-            let root = crate::commands::wire_path::native(&repo_root).map_err(|why| GitSubscribeError::Unexpected {
-                detail: format!("the repo root has no native path: {why:?}"),
-            })?;
             portal()
-                .subscribe_state(&root)
+                .subscribe_state(&reported_root(&repo_root))
                 .map_err(|error| GitSubscribeError::Git { error })
         },
     )
@@ -98,10 +103,7 @@ pub enum GitSubscribeError {
 #[specta::specta]
 pub async fn unsubscribe_git_state(repo_root: String) {
     let _ = tokio::task::spawn_blocking(move || {
-        // A root with no native path was never subscribed.
-        if let Ok(root) = crate::commands::wire_path::native(&repo_root) {
-            portal().unsubscribe_state(&root);
-        }
+        portal().unsubscribe_state(&reported_root(&repo_root));
     })
     .await;
 }
@@ -114,13 +116,10 @@ pub async fn unsubscribe_git_state(repo_root: String) {
 #[specta::specta]
 pub async fn get_git_status_for_paths(repo_root: String, dir: String) -> TimedOut<Vec<EntryStatus>> {
     blocking_with_timeout_flag(GIT_STATUS_TIMEOUT, Vec::new(), move || {
-        let (Ok(root), Ok(scope)) = (
-            crate::commands::wire_path::native(&repo_root),
-            crate::commands::wire_path::native(&dir),
-        ) else {
+        let Ok(scope) = crate::commands::wire_path::native(&dir) else {
             return Vec::new();
         };
-        let (handle, _root) = match portal().discover(&root) {
+        let (handle, _root) = match portal().discover(&reported_root(&repo_root)) {
             Ok(v) => v,
             Err(_) => return Vec::new(),
         };
@@ -147,3 +146,7 @@ pub async fn fill_git_commit_counts(listing_id: String, paths: Vec<String>) {
 pub async fn count_all_git_commits(listing_id: String) -> CommitCountPass {
     commit_counts::count_all(ListingId::new(listing_id))
 }
+
+#[cfg(test)]
+#[path = "git_test.rs"]
+mod git_test;

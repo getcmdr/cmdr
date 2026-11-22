@@ -747,3 +747,31 @@ async fn a_stored_favorite_with_a_trailing_slash_lists_like_the_plain_path() {
     assert_eq!(opened, list(plain.clone()).await);
     assert_eq!(opened, [format!("{plain}/file.txt"), format!("{plain}/sub")]);
 }
+
+/// A local favorite reaches the OS in the PLAIN form, so the priority walker dedupes it against
+/// the plain home and tab spellings: on Windows a verbatim `\\?\C:\…` never `starts_with` `C:\…`.
+/// A trailing `/` goes, and a server's favorite has no native folder.
+#[test]
+fn a_local_favorite_crosses_to_its_plain_native_folder() {
+    let dir = crate::test_support::AppTestDir::new("favorite_native_plain");
+    let plain = dir
+        .app_path()
+        .to_native_plain()
+        .expect("a scratch folder has a plain form");
+    let favorite = |path: String| Favorite {
+        id: "abc".to_string(),
+        path,
+        name: "fav".to_string(),
+        shortcut: None,
+        volume: None,
+    };
+    assert_eq!(
+        favorite(dir.app_path().as_str().to_owned()).native_path(),
+        Some(plain.clone())
+    );
+    assert_eq!(
+        favorite(format!("{}/", dir.app_path().as_str())).native_path(),
+        Some(plain)
+    );
+    assert_eq!(favorite("sftp://testnas.local:22/docs".to_string()).native_path(), None);
+}
