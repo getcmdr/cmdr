@@ -5,7 +5,7 @@
 //! The git twin is `copy_snapshot_out_tests.rs`. The refusals that need no
 //! repo (a delete, a rename, a copy in) are `restic_guard_tests.rs`.
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+#![cfg(unix)] // Builds on `restic::test_repo`, which is POSIX (modes, symlinks, a FIFO)
 
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;

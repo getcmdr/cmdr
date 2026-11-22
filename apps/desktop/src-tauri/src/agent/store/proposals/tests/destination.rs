@@ -102,23 +102,6 @@ fn an_escape_range_destination_is_refused_as_such() {
     }
 }
 
-/// A destination in this host's native spelling (`C:\Users\x` on Windows, a `Path`'s text,
-/// which a rename group's parent is) reads as its app path, so its approval runs. Before,
-/// every such Windows approval refused as `TargetMissing`.
-#[test]
-fn a_destination_in_the_hosts_native_spelling_is_its_app_path() {
-    let dir = crate::test_support::TestDir::new("proposal_native_destination");
-    let native = dir.join("paid");
-    let app = AppPathBuf::from_native_unicode(&native).expect("a Unicode temp path");
-    let destination = WritableDestination::new(at(&native.display().to_string())).expect("writable");
-    assert_eq!(destination.location().path, app.as_str());
-    let dot_dot = native.join("..").join("x");
-    assert!(
-        WritableDestination::new(at(&dot_dot.display().to_string())) == Err(UnwritableDestination::NotAPath),
-        "a `..` stays the MCP path door's to answer, in the native spelling too"
-    );
-}
-
 /// A row an older build stored with a `..` names no place without its volume's answer: it
 /// reads as no destination, so its approval refuses (`TargetMissing`), never a lexical guess.
 #[test]

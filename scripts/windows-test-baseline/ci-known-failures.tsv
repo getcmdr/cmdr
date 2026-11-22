@@ -36,7 +36,6 @@ cmdr	data_wipe::plan::tests::linux_plans_no_library_state	fails	a Windows-only e
 cmdr	data_wipe::plan::tests::the_security_event_log_goes_with_the_wipe	fails	a Windows-only expectation the test does not hold yet (windows-test-failures.md)
 cmdr	favorites::target::tests::a_local_folder_is_stat_and_reads_yes_or_no	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	favorites::target::tests::a_protected_folder_is_taken_on_trust_without_a_stat	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
-cmdr	file_system::volume::manager::archive_routing::tests::mount_id_for_path_skips_a_registered_archive_and_names_its_parent_mount	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	go_to_path::tests::deep_nonexistent_path_falls_back_to_nearest_ancestor	fails	#1337: a typed path holding an 8.3 short name (the runner TEMP is RUNNER~1) answers in its short spelling, where listings and the expectation use the long one
 cmdr	go_to_path::tests::dotdot_past_a_nonexistent_middle_segment_is_no_link	fails	#1337: a typed path holding an 8.3 short name (the runner TEMP is RUNNER~1) answers in its short spelling, where listings and the expectation use the long one
 cmdr	go_to_path::tests::existing_dir_resolves_to_directory	fails	#1337: a typed path holding an 8.3 short name (the runner TEMP is RUNNER~1) answers in its short spelling, where listings and the expectation use the long one
@@ -72,7 +71,6 @@ cmdr	tools::suggestions::tests::propose::an_unreadable_index_refuses_differently
 cmdr-adb	errors::errors_test::an_unlisted_device_errno_arrives_as_its_linux_class	fails	a Linux errno read on Windows (windows-test-failures.md)
 cmdr-adb	volume::conformance_test::create_directory_all_goes_through_a_link_to_a_folder	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr-adb	volume::conformance_test::create_directory_all_refuses_a_file_in_the_way	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
-cmdr-archive	volume::volume_test::get_space_info_delegates_to_the_parent	fails	cause unread (windows-test-failures.md)
 cmdr-fs	app_path::bridge_test::a_listed_folder_joins_typed_where_it_can_and_as_the_path_form_where_it_cannot	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr-fs	app_path::bridge_test::a_twin_row_under_a_bridge_folder_unpicks_as_the_path_form_does	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr-fs	volume::patching::patching_test::a_parent_with_no_canonical_twin_still_patches_its_child	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)

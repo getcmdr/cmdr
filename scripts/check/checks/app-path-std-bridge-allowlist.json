@@ -25,7 +25,6 @@
     "apps/desktop/src-tauri/src/file_system/volume/smb_media_fetch_integration_test.rs": 4,
     "apps/desktop/src-tauri/src/file_viewer/materialize.rs": 1,
     "apps/desktop/src-tauri/src/file_viewer/smb_open_test.rs": 2,
-    "apps/desktop/src-tauri/src/listing_host/tests/local_posix_host_test.rs": 1,
     "apps/desktop/src-tauri/src/listing_host/volumes.rs": 1,
     "apps/desktop/src-tauri/src/listing_index_sizes/count/mod.rs": 1,
     "apps/desktop/src-tauri/src/location/facts.rs": 2,

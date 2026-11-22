@@ -738,9 +738,10 @@ later PR happened to fix it.
   `cmdr-operations` `scan_pause_tests::an_operations_own_scan_parks_too` pass on a retry (run 44944918371).
 - **Gotcha, the runner's TEMP is an 8.3 short path** (`C:\Users\RUNNER~1\AppData\Local\Temp`; the builder's `Admin` has
   no short form): a cell that types a path it built from `TEMP` and compares the answer with `AppTestDir::app_path`
-  (long names) can fail here alone. It found a product gap: typed text holding a short name opens under its short
-  spelling (#1337; the five `go_to_path::tests` entries point there). Any user whose name passes eight characters has
-  that TEMP.
+  (long names) can fail here alone. So test scratch space is spelled long (`cmdr_fs::testing::scratch_root`, which
+  `TestDir` and a bare `tempfile::tempdir()` use); `std::env::temp_dir()` keeps the short form. It found a product gap:
+  typed text holding a short name opens under its short spelling (#1337; the five `go_to_path::tests` entries type the
+  TEMP spelling on purpose and point there). Any user whose name passes eight characters has that TEMP.
 - **What stays the builder's**: anything a hosted runner can't hold (a real second drive, folder mounts, a desktop
   session for the GUI, `run-on-desktop.sh`), a `builder` entry once one exists, and every run on Windows 10 22H2 (hosted
   is Windows Server 2025).

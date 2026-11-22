@@ -11,8 +11,6 @@
 //! (`operations_host::test_engine`): the portal's routing lives in the app's
 //! volume registry, which a test's fake registry doesn't route through.
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
-
 use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -25,7 +23,7 @@ use cmdr_operations::testing::{CollectorEventSink, copy_volumes_with_progress, n
 
 use cmdr_fs::volume::{InMemoryVolume, Volume};
 use cmdr_git::test_fixtures::{EntryKind, Fixture, cleanup, temp_dir};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 /// A repo whose `main` snapshot holds a top-level file, a two-file folder, and
 /// an executable script (both alone at the top level and inside a folder),
@@ -48,7 +46,7 @@ fn repo_registered_as_the_local_drive(name: &str) -> PathBuf {
     // (nextest isolates the process-global manager per test.)
     get_volume_manager().register(
         "root",
-        Arc::new(LocalPosixVolume::local_folder(
+        Arc::new(LocalVolume::local_folder(
             "Root",
             dir.to_str().unwrap(),
             crate::volume_host::host(),
@@ -59,6 +57,7 @@ fn repo_registered_as_the_local_drive(name: &str) -> PathBuf {
 }
 
 /// The permission bits `path` wears right now.
+#[cfg(unix)] // POSIX modes
 fn mode_of(path: &Path) -> u32 {
     use std::os::unix::fs::PermissionsExt;
     std::fs::metadata(path)
@@ -148,6 +147,7 @@ async fn a_copy_out_of_a_snapshot_carries_a_file_and_a_folder_byte_for_byte() {
 /// hand and asks the source), the one inside a folder through the merge walker
 /// (which has the entry already).
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[cfg(unix)] // the executable bit is a POSIX mode
 async fn the_executable_bit_survives_a_copy_out_of_a_snapshot() {
     let engine = super::test_engine();
     let dir = repo_registered_as_the_local_drive("executable_bit");
@@ -162,7 +162,7 @@ async fn the_executable_bit_survives_a_copy_out_of_a_snapshot() {
         .resolve_source_volume("root", sources.first())
         .await
         .expect("the source volume");
-    let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Dest",
         dest_dir.to_str().unwrap(),
         crate::volume_host::host(),
@@ -219,7 +219,7 @@ async fn a_move_out_of_a_snapshot_is_refused_before_a_byte_is_written() {
     std::fs::create_dir_all(&dest_dir).expect("dest dir");
     get_volume_manager().register(
         "dest",
-        Arc::new(LocalPosixVolume::local_folder(
+        Arc::new(LocalVolume::local_folder(
             "Dest",
             dest_dir.to_str().unwrap(),
             crate::volume_host::host(),
