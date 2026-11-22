@@ -7,9 +7,8 @@ use crate::file_system::text_editor::{EditorOpenReport, OpenInEditorError};
 
 /// Opens the parent folder in the default file manager.
 pub(crate) fn reveal_in_file_manager(path: String) -> Result<(), String> {
-    let parent = std::path::Path::new(&path)
-        .parent()
-        .unwrap_or(std::path::Path::new("/"));
+    let native = crate::commands::wire_path::native(&path).map_err(|why| format!("no folder to reveal: {why:?}"))?;
+    let parent = native.parent().unwrap_or(std::path::Path::new("/"));
     Command::new("xdg-open")
         .arg(parent)
         .spawn()

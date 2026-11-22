@@ -7,12 +7,14 @@
 //! seam (`docs/guides/platform-seams.md`).
 
 mod model;
+mod mount_text;
 mod platform;
 
 pub use model::{DEFAULT_VOLUME_ID, LocationCategory, LocationInfo, SmbMountInfo, VolumeInfo};
 pub(crate) use model::{
     DEVICE_STORAGE_CASE_SENSITIVE, NetworkMount, SERVER_PLACE_CASE_SENSITIVE, SMB_SHARE_CASE_SENSITIVE,
 };
+pub(crate) use mount_text::os_mount_path;
 
 /// Free and total space for the filesystem at `path`, `None` when it can't be read. The local
 /// backend's reading, the same one on every OS (`crates/cmdr-local/DETAILS.md` § "Local volume

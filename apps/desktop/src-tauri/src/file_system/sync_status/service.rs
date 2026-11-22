@@ -158,7 +158,7 @@ impl Service {
         let mut resolved = HashMap::with_capacity(requested);
         let mut misses = Vec::new();
         for path in paths {
-            match self.shared.cache.get(Path::new(&path)) {
+            match self.shared.cached(&path) {
                 Some(knowledge) => {
                     resolved.insert(path, knowledge.status());
                 }
@@ -188,7 +188,7 @@ impl Service {
         let ran_out_of_time = tokio::time::timeout(deadline, batch.wait()).await.is_err();
 
         for path in misses {
-            if let Some(knowledge) = self.shared.cache.get(Path::new(&path)) {
+            if let Some(knowledge) = self.shared.cached(&path) {
                 resolved.insert(path, knowledge.status());
             }
         }
@@ -221,7 +221,7 @@ impl Service {
     /// Bounded by `deadline` the same way, and the answer still populates the cache
     /// even when the wait expires first.
     pub(super) fn status_within_blocking(&self, path: &str, deadline: Duration) -> SyncStatus {
-        if let Some(knowledge) = self.shared.cache.get(Path::new(path)) {
+        if let Some(knowledge) = self.shared.cached(path) {
             return knowledge.status();
         }
         let (answer_tx, answer_rx) = std::sync::mpsc::channel();
@@ -273,6 +273,16 @@ impl Service {
                 "joining the batch already in flight for {} of these paths",
                 misses.len()
             );
+            return Arc::clone(current);
+        }
+
+        // ❗ The batch can finish between the caller's cache read and this lock: its answers
+        // are cached now, so waiting on it (instant) and reading again re-asks the provider
+        // nothing. Without this, a fresh fan-out probed paths the cache already held.
+        if let Some(current) = inflight.as_ref()
+            && current.covers(misses)
+            && misses.iter().all(|path| self.shared.cached(path).is_some())
+        {
             return Arc::clone(current);
         }
 
@@ -360,9 +370,18 @@ fn wedge_report(stuck: &WedgedWorker, home: Option<&Path>) -> String {
 impl Shared {
     /// Probes one path and caches the answer.
     fn probe_and_cache(&self, path: &str) -> SyncKnowledge {
-        let knowledge = (self.probe)(Path::new(path));
-        self.cache.put(Path::new(path), knowledge);
+        // A row with no native file (a phone, a server) is no provider's: nothing to ask.
+        let Some(native) = crate::app_text::native(path) else {
+            return SyncKnowledge::NotCloudManaged;
+        };
+        let knowledge = (self.probe)(&native);
+        self.cache.put(&native, knowledge);
         knowledge
+    }
+
+    /// The cached answer for the row `path`, read off its native file.
+    fn cached(&self, path: &str) -> Option<SyncKnowledge> {
+        self.cache.get(&crate::app_text::native(path)?)
     }
 }
 

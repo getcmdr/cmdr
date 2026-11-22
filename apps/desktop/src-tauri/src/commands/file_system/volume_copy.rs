@@ -13,7 +13,6 @@ use cmdr_operations::{
     CONFLICT_CHECK_BUDGET, OperationEventSink, Operations, SourceItemInput, VolumeCopyConfig, VolumeScanError,
     WriteOperationError, WriteOperationStartResult,
 };
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::time::Duration;
 
@@ -64,7 +63,8 @@ async fn copy_between_volumes_on(
 ) -> Result<WriteOperationStartResult, WriteOperationError> {
     // Before `install` there is no engine to start on: refuse, never write.
     let engine = engine.map_err(refuse_not_installed)?;
-    let sources: Vec<PathBuf> = source_paths.iter().map(PathBuf::from).collect();
+    // Read at the edge like every start's rows: a `..` refuses, the rest goes on as sent.
+    let sources = wire_path::checked_all(source_paths.iter().map(String::as_str))?;
     // A typed `..` resolves here, where the probes resolve it, so the engine gets none.
     let dest_path = wire_path::transfer_destination(&dest_volume_id, dest_path).await?;
     let started = engine
@@ -103,7 +103,8 @@ pub async fn move_between_volumes(
     // Before `install` there is no engine to start on: refuse, never write.
     let engine = operations().map_err(refuse_not_installed)?;
     let events: Arc<dyn OperationEventSink> = Arc::new(TauriEventSink::new(app));
-    let sources: Vec<PathBuf> = source_paths.iter().map(PathBuf::from).collect();
+    // Read at the edge like every start's rows: a `..` refuses, the rest goes on as sent.
+    let sources = wire_path::checked_all(source_paths.iter().map(String::as_str))?;
     let dest_path = wire_path::transfer_destination(&dest_volume_id, dest_path).await?;
     let started = engine
         .start_volume_move(
@@ -145,7 +146,7 @@ pub async fn rename_by_move(
         .start_rename_by_move(
             events,
             volume_id,
-            vec![(PathBuf::from(source_path), new_name)],
+            vec![(wire_path::checked(&source_path)?, new_name)],
             dest_path,
             config.unwrap_or_default(),
             initiator,
@@ -172,7 +173,8 @@ pub async fn compress_files(
     // Before `install` there is no engine to start on: refuse, never write.
     let engine = operations().map_err(refuse_not_installed)?;
     let events: Arc<dyn OperationEventSink> = Arc::new(TauriEventSink::new(app));
-    let sources: Vec<PathBuf> = source_paths.iter().map(PathBuf::from).collect();
+    // Read at the edge like every start's rows: a `..` refuses, the rest goes on as sent.
+    let sources = wire_path::checked_all(source_paths.iter().map(String::as_str))?;
     let dest_zip_path = wire_path::transfer_destination(&dest_volume_id, dest_zip_path).await?;
     let started = engine
         .start_volume_compress(
@@ -253,7 +255,7 @@ pub struct DestinationRootEcho {
 #[specta::specta]
 pub async fn destination_root_echo(dest_volume_id: String, dest_path: String) -> Option<DestinationRootEcho> {
     let dest_volume = super::path_checks::box_volume(&dest_volume_id, &dest_path).await?;
-    let echo = cmdr_fs::volume::root_echo(&dest_volume.root().as_std_legacy(), Path::new(&dest_path))?;
+    let echo = cmdr_fs::volume::root_echo_at(dest_volume.root(), &wire_path::as_sent_std_path(&dest_path))?;
     Some(DestinationRootEcho {
         root_folder: echo.root_folder.as_std_legacy().to_string_lossy().into_owned(),
         resolved: echo.resolved.as_std_legacy().to_string_lossy().into_owned(),

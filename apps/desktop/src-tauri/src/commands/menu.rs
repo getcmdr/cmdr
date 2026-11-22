@@ -167,21 +167,30 @@ pub fn show_file_context_menu<R: Runtime>(
     let target_count = context_paths.len();
 
     // What a macOS service, or a share service, would act on: the same rows, as paths,
-    // taken before `context_paths` moves into `MenuState`.
+    // taken before `context_paths` moves into `MenuState`. A row with no native form (a phone,
+    // an archive member) is nothing the OS can act on.
     #[cfg(target_os = "macos")]
-    let services_paths: Vec<std::path::PathBuf> = context_paths.iter().map(std::path::PathBuf::from).collect();
-
+    let services_paths: Vec<std::path::PathBuf> = context_paths
+        .iter()
+        .filter_map(|row| crate::commands::wire_path::native(row).ok())
+        .collect();
     // ❗ Nothing on this thread asks the disk, a provider, or LaunchServices: this is a sync
     // command, so it runs on the MAIN thread, and on a network share every such question is
     // a round trip the whole app waits behind. The slow facts start first, on their own pool,
     // and the cheap work below runs while they answer. `menu/context_menu_facts.rs`.
     #[cfg(target_os = "macos")]
     let started = std::time::Instant::now();
+    // The primary row as the OS names it: empty when it has none, which no provider or Drive
+    // item holds, so neither fact finds anything.
     #[cfg(target_os = "macos")]
-    let is_icloud_drive = crate::file_system::cloud_actions::is_in_icloud_drive(std::path::Path::new(&path));
+    let (primary, is_icloud_drive) = {
+        let primary = crate::commands::wire_path::native(&path).unwrap_or_default();
+        let is_icloud_drive = crate::file_system::cloud_actions::is_in_icloud_drive(&primary);
+        (primary, is_icloud_drive)
+    };
     #[cfg(target_os = "macos")]
     let gathering = context_menu_facts::start(context_menu_facts::FactsRequest {
-        primary: std::path::PathBuf::from(&path),
+        primary,
         paths: services_paths.clone(),
         is_directory,
         is_icloud_drive,

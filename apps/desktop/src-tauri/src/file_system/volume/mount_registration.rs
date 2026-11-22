@@ -85,9 +85,10 @@ pub(crate) fn register_mount_root(root: &str) {
 /// change binds the path to a DIFFERENT volume than the one adoption approved.
 /// ❌ Never call this with an ID from anywhere but `volume_id_for_mount(root)`.
 fn register_mount_root_as(volume_id: &str, root: &str) {
-    let mount = crate::file_system::index_provider::mount_class_at(Path::new(root));
+    let native = crate::volumes::os_mount_path(root);
+    let mount = crate::file_system::index_provider::mount_class_at(native);
     // An SMB share behind the encryption gate while "Always require SMB encryption" is on.
-    let volume = crate::network::smb_mount_gate::mount_volume(&name_for_root(Path::new(root)), Path::new(root), mount);
+    let volume = crate::network::smb_mount_gate::mount_volume(&name_for_root(native), native, mount);
     if get_volume_manager().register_if_absent(volume_id, volume) {
         log::debug!(
             target: "volume",
@@ -148,7 +149,7 @@ fn live_mount_under(path: &Path) -> Option<MountIdentity> {
     let (root, _fs_type, _source) = get_mount_point(&path.to_string_lossy())?;
     let volume_id = volume_id_for_mount(&root);
     Some(MountIdentity {
-        root: PathBuf::from(root),
+        root: crate::volumes::os_mount_path(&root).to_path_buf(),
         volume_id,
     })
 }
@@ -183,7 +184,8 @@ mod tests {
 
     fn identity(root: &str, volume_id: &str) -> MountIdentity {
         MountIdentity {
-            root: PathBuf::from(root),
+            // The probe stands in for the mount table, whose text is the native spelling.
+            root: crate::volumes::os_mount_path(root).to_path_buf(),
             volume_id: volume_id.to_string(),
         }
     }
@@ -194,7 +196,7 @@ mod tests {
     fn a_mount_whose_id_matches_is_adopted() {
         let volume_id = unique_test_id("vol-adopt-match");
         let root = format!("/Users/someone/{}", unique_test_id("pCloud Drive"));
-        let path = PathBuf::from(&root).join("Documents/report.pdf");
+        let path = crate::volumes::os_mount_path(&root).join("Documents/report.pdf");
         assert!(
             get_volume_manager().get(&volume_id).is_none(),
             "precondition: nothing serves this ID yet"

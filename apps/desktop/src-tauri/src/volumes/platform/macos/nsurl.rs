@@ -4,7 +4,6 @@
 //! volume-space query are the local backend's (`cmdr_local::{nsurl, space}`).
 
 use cmdr_local::nsurl::{get_bool_resource, get_string_resource};
-use std::path::Path;
 
 /// Display name derived purely from a mount path: the last path component, or
 /// "Macintosh HD" for the boot volume. The non-blocking fallback used for network
@@ -13,7 +12,7 @@ pub(crate) fn volume_name_from_path(path: &str) -> String {
     if path == "/" {
         return "Macintosh HD".to_string();
     }
-    Path::new(path)
+    crate::volumes::os_mount_path(path)
         .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("Unknown")

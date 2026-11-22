@@ -156,10 +156,10 @@ fn register_discovered_volumes() {
         let attached = crate::volumes::get_attached_volumes();
         log::debug!("Registering {} attached volume(s)", attached.len());
         for location in attached {
-            let mount = index_provider::mount_class_at(std::path::Path::new(&location.path));
+            let mount = index_provider::mount_class_at(crate::volumes::os_mount_path(&location.path));
             let volume = crate::network::smb_mount_gate::mount_volume(
                 &location.name,
-                std::path::Path::new(&location.path),
+                crate::volumes::os_mount_path(&location.path),
                 mount,
             );
             get_volume_manager().register(&location.id, volume);
@@ -175,7 +175,7 @@ fn register_discovered_volumes() {
         for location in cloud {
             let volume = crate::volumes::local_volume_on_mount(
                 &location.name,
-                std::path::Path::new(&location.path),
+                crate::volumes::os_mount_path(&location.path),
                 cmdr_fs::volume::MountClass::LocalDisk,
             );
             get_volume_manager().register(&location.id, volume);
@@ -199,10 +199,10 @@ fn register_discovered_volumes() {
             .collect();
         log::debug!("Registering {} volume(s)", non_fav.len());
         for location in non_fav {
-            let mount = index_provider::mount_class_at(std::path::Path::new(&location.path));
+            let mount = index_provider::mount_class_at(crate::volumes::os_mount_path(&location.path));
             let volume = crate::network::smb_mount_gate::mount_volume(
                 &location.name,
-                std::path::Path::new(&location.path),
+                crate::volumes::os_mount_path(&location.path),
                 mount,
             );
             get_volume_manager().register(&location.id, volume);

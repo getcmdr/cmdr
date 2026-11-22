@@ -166,14 +166,15 @@ async fn favorite_volume_for_with<R: Future<Output = PathVolumeResolution>>(
     network_mount_under: impl FnOnce(&Path) -> Option<NetworkMount>,
     resolve: impl FnOnce(String) -> R,
 ) -> Result<FavoriteVolume, AddFavoriteError> {
-    if crate::file_system::volume::manager::path_routes_over_its_parent(Path::new(path)) {
+    if crate::commands::wire_path::routes_over_its_parent(path) {
         return Err(AddFavoriteError::NotAPlace);
     }
     let manager = crate::file_system::volume::manager::get_volume_manager();
     let on_a_connected_share = path
         .starts_with('/')
-        .then(|| network_mount_under(Path::new(path)))
+        .then(|| crate::commands::wire_path::native(path).ok())
         .flatten()
+        .and_then(|native| network_mount_under(&native))
         .and_then(|mount| {
             favorite_volume_on_network_mount(path, mount, |root| {
                 manager

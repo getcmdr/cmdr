@@ -71,6 +71,13 @@ enum Boundary {
     Archive,
 }
 
+/// [`path_routes_over_its_parent`] for an app path, read off the same `std::path`
+/// spelling the route candidates read ([`lexical_spelling`]), so its answer is the
+/// `std::path` gate's on the same text, byte for byte.
+pub fn app_path_routes_over_its_parent(path: &AppPath) -> bool {
+    path_routes_over_its_parent(&lexical_spelling(path))
+}
+
 /// `path` as the `std::path` value the git and restic route candidates read
 /// (`cmdr_git::portal_route`, `cmdr_fs::restic_view`), which still speak
 /// `std::path`: the one crossing on the routing seam. The roots those candidates

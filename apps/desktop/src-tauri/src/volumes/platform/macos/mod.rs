@@ -93,7 +93,7 @@ pub(crate) fn is_cloud_provider_mount(mount_root: &str, fs_type: &str) -> bool {
 /// that provider is cloud storage; `mounts::is_user_facing_mount` asks only
 /// whether there's one at all.
 pub(crate) fn mount_provider(mount_root: &str, fs_type: &str) -> Option<cmdr_fs::volume::friendly_error::Provider> {
-    cmdr_fs::volume::friendly_error::provider_for_mount(Path::new(mount_root), fs_type)
+    cmdr_fs::volume::friendly_error::provider_for_mount(crate::volumes::os_mount_path(mount_root), fs_type)
 }
 
 /// Volume ID for the iCloud Drive cloud drive entry. Hardcoded here so callers
@@ -236,12 +236,17 @@ fn favorite_location(
 ) -> LocationInfo {
     use crate::favorites::target::{FavoriteTarget, OnDisk, Probe, on_disk};
 
-    let path = Path::new(&favorite.path);
-    let mount = path.is_absolute().then(|| mounts::mount_under(mounts, path)).flatten();
+    // ❗ Only an OS path has a containing mount: a scheme path has no native form.
+    let native = favorite.native_path();
+    let mount = native.as_deref().and_then(|path| mounts::mount_under(mounts, path));
     let fs_type = mount.map(|mount| mount.fs_type.clone());
     let probe = if is_network_fs_type(fs_type.as_deref()) {
         Probe::NetworkMount
-    } else if fda_pending && crate::restricted_paths::tcc_paths::is_potentially_tcc_restricted(path) {
+    } else if fda_pending
+        && native
+            .as_deref()
+            .is_some_and(crate::restricted_paths::tcc_paths::is_potentially_tcc_restricted)
+    {
         Probe::TakenOnTrust
     } else {
         Probe::Stat

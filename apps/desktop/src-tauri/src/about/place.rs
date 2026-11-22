@@ -205,7 +205,17 @@ pub(crate) fn sits_on_a_local_disk(path: &str) -> bool {
     let Some(mounts) = Mounts::of_the_os() else {
         return false;
     };
-    on_a_local_disk(Path::new(path), &mounts, &Os)
+    // Text with no native file (a server's, a phone's) is on no local disk.
+    crate::app_text::native(path).is_some_and(|native| on_a_local_disk(&native, &mounts, &Os))
+}
+
+/// Whether the archive holding the archive-inner `path` [`sits_on_a_local_disk`]: no
+/// archive, no.
+pub(crate) fn its_archive_sits_on_a_local_disk(path: &str) -> bool {
+    crate::app_text::parse(path)
+        .ok()
+        .and_then(|path| cmdr_fs::archive_format::archive_boundary_candidate_at(&path))
+        .is_some_and(|(archive, _)| sits_on_a_local_disk(archive.as_str()))
 }
 
 /// [`sits_on_a_local_disk`] over a given table and filesystem.
@@ -226,7 +236,8 @@ pub(crate) fn reaches_a_share(path: &str) -> bool {
     let Some(mounts) = Mounts::of_the_os() else {
         return true;
     };
-    reaches_off_the_disk(Path::new(path), &mounts, &Os)
+    // Text with no native file proves nothing local: it fails closed.
+    crate::app_text::native(path).is_none_or(|native| reaches_off_the_disk(&native, &mounts, &Os))
 }
 
 /// [`reaches_a_share`] over a given table and filesystem.
@@ -243,7 +254,7 @@ pub(crate) fn reaches_off_the_disk(path: &Path, mounts: &Mounts, fs: &dyn LocalF
 /// mount table): the gate fails closed then.
 pub(crate) fn resolved_on_local_disks(path: &str) -> Option<PathBuf> {
     let mounts = Mounts::of_the_os()?;
-    resolved_within(Path::new(path), &mounts, &Os)
+    resolved_within(&crate::app_text::native(path)?, &mounts, &Os)
 }
 
 /// [`resolved_on_local_disks`] over a given table and filesystem.

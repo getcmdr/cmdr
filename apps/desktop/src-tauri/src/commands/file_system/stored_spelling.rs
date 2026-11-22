@@ -8,8 +8,6 @@
 //! the transfer, and the journal it writes all carry the stored spelling.
 //! `crates/cmdr-listing/DETAILS.md` § "A pane path the volume stores another way".
 
-use std::path::PathBuf;
-
 use tokio::time::Duration;
 
 use cmdr_fs::deadline::TimedOut;
@@ -32,7 +30,10 @@ pub async fn stored_spellings(volume_id: String, paths: Vec<String>) -> TimedOut
             timed_out: false,
         };
     };
-    let paths = paths.into_iter().map(PathBuf::from).collect();
+    let paths = paths
+        .iter()
+        .map(|path| crate::commands::wire_path::as_sent_std_path(path))
+        .collect();
     let resolve = cmdr_listing::stored_spellings(volume.as_ref(), paths);
     match tokio::time::timeout(STORED_SPELLINGS_TIMEOUT, resolve).await {
         Ok(stored) => TimedOut {

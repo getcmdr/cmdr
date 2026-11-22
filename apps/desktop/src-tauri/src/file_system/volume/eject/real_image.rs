@@ -70,7 +70,7 @@ async fn eject_through_the_production_retries(image: &DiskImage, mount_point: &P
     name_the_holders(
         "real-image-pin",
         settled,
-        &[PathBuf::from(&mount_path)],
+        &[crate::volumes::os_mount_path(&mount_path).to_path_buf()],
         LANE_HOLDER_BUDGET,
     )
     .await

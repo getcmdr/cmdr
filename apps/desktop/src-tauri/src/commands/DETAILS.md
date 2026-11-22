@@ -518,6 +518,24 @@ A path the frontend sends is read as an app path at the command edge, `wire_path
   the probes pick their volume through `path_checks::box_volume` (`resolve` on the text's `read_on_volume` reading,
   else the volume by id); `stat_paths_kinds` routes a route-served path through `app_path`. The scan preview's route
   reads its first source through `app_path` too (text that is no app path scans through the parent).
+- **An OS integration takes the native file** (`native`: `app_path`, then `to_native`): Finder's Get Info, the
+  editor and terminal launches, iCloud's download and eviction, Google Drive links, the clipboard's file URLs, the
+  context menu's services and facts, the git chip, the viewer's Save as, the media thumbnail, a favorite's mount
+  lookup. Text with no native file (a `..`, relative text, a scheme path) is refused typed (`NoNativePath`), and each
+  command answers it as "nothing to open there" in its own vocabulary: the terminal's `NotALocalPath`, an empty link,
+  a clipboard copy refused whole (a partial copy would toast a success). ❌ Never a `Path::new` of wire text: on
+  Windows it isn't the native spelling. `native` is the verbatim `\\?\` form on Windows; code that compares with plain
+  OS spellings (home, tabs, mounts) or feeds the shell takes `app_text::native_plain`.
+- **The route gate reads the app path too** (`routes_over_its_parent`, over `app_path_routes_over_its_parent`): no
+  route serves text that's no app path.
+- **One reading of app text for every layer**: `apps/desktop/src-tauri/src/app_text.rs` (`parse`, `native`, `routes_over_its_parent`) is what
+  `wire_path` reads through, and what the subsystems that get rows as `String`s use below the command edge (the sync
+  badges' cache, a favorite's folder, the About card's local walk and route gate), ❌ never a `Path::new` of a row.
+- **A `std::path` API that reads the text lexically gets it as sent** (`as_sent_std_path`, `pre_check_rows`): the
+  write pre-checks, `get_name_rules`, the stored-spelling lookup, `root_echo`, and the git chip's `repo_root` (Gotcha:
+  that's NATIVE text `RepoInfo` reported, `\\?\C:\…` on Windows, so `native` refused it and the chip went dark; Why:
+  the frontend hands back the root it was given). Byte for byte; it goes as each
+  engine's entry points take app paths.
 - **While escapes aren't live, an escape-range code point is literal** (`from_literal_store`), so a path crosses byte
   for byte.
 - **The transfer dialog's destination box is person-typed and VOLUME-RELATIVE.** Its probes (`path_exists` /
