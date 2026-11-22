@@ -881,9 +881,9 @@
   "@fileOperations.lockedSources.title": {
     "sourceHash": "28b2287"
   },
-  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, one {{countText} onderdeel dat je verplaatst, is alleen-lezen. Toch verplaatsen, of overslaan en de rest verplaatsen?} other {{countText} onderdelen die je verplaatst, zijn alleen-lezen. Toch verplaatsen, of overslaan en de rest verplaatsen?}}} other {{count, plural, one {{countText} onderdeel dat je verplaatst, is beveiligd. Cmdr kan de beveiliging alleen voor het verplaatsen opheffen en het onderdeel op de nieuwe plek weer beveiligen.} other {{countText} onderdelen die je verplaatst, zijn beveiligd. Cmdr kan de beveiliging alleen voor het verplaatsen opheffen en de onderdelen op de nieuwe plek weer beveiligen.}}}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, one {{countText} onderdeel dat je verplaatst, is alleen-lezen. Cmdr kan het onderdeel alleen voor het verplaatsen schrijfbaar maken en het op de nieuwe plek weer alleen-lezen maken.} other {{countText} onderdelen die je verplaatst, zijn alleen-lezen. Cmdr kan de onderdelen alleen voor het verplaatsen schrijfbaar maken en ze op de nieuwe plek weer alleen-lezen maken.}}} other {{count, plural, one {{countText} onderdeel dat je verplaatst, is beveiligd. Cmdr kan de beveiliging alleen voor het verplaatsen opheffen en het onderdeel op de nieuwe plek weer beveiligen.} other {{countText} onderdelen die je verplaatst, zijn beveiligd. Cmdr kan de beveiliging alleen voor het verplaatsen opheffen en de onderdelen op de nieuwe plek weer beveiligen.}}}}",
   "@fileOperations.lockedSources.message": {
-    "sourceHash": "b2f056d"
+    "sourceHash": "ee469fc"
   },
   "fileOperations.lockedSources.moreItems": "{count, plural, one {en nog {countText} onderdeel} other {en nog {countText} onderdelen}}",
   "@fileOperations.lockedSources.moreItems": {

@@ -881,9 +881,9 @@
   "@fileOperations.lockedSources.title": {
     "sourceHash": "28b2287"
   },
-  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, one {{countText} elem, amelyet áthelyezel, írásvédett. Mindenképp áthelyezed, vagy átugrod, és áthelyezed a többit?} other {{countText} elem, amelyet áthelyezel, írásvédett. Mindenképp áthelyezed őket, vagy átugrod őket, és áthelyezed a többit?}}} other {{count, plural, one {{countText} elem, amelyet áthelyezel, zárolva van. A Cmdr feloldhatja a zárolását, de csak az áthelyezés idejére: az új helyén újra zárolja.} other {{countText} elem, amelyet áthelyezel, zárolva van. A Cmdr feloldhatja a zárolásukat, de csak az áthelyezés idejére: az új helyükön újra zárolja őket.}}}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, one {{countText} elem, amelyet áthelyezel, írásvédett. A Cmdr feloldhatja az írásvédelmét, de csak az áthelyezés idejére: az új helyén újra írásvédetté teszi.} other {{countText} elem, amelyet áthelyezel, írásvédett. A Cmdr feloldhatja az írásvédelmüket, de csak az áthelyezés idejére: az új helyükön újra írásvédetté teszi őket.}}} other {{count, plural, one {{countText} elem, amelyet áthelyezel, zárolva van. A Cmdr feloldhatja a zárolását, de csak az áthelyezés idejére: az új helyén újra zárolja.} other {{countText} elem, amelyet áthelyezel, zárolva van. A Cmdr feloldhatja a zárolásukat, de csak az áthelyezés idejére: az új helyükön újra zárolja őket.}}}}",
   "@fileOperations.lockedSources.message": {
-    "sourceHash": "b2f056d"
+    "sourceHash": "ee469fc"
   },
   "fileOperations.lockedSources.moreItems": "{count, plural, one {és {countText} további elem} other {és {countText} további elem}}",
   "@fileOperations.lockedSources.moreItems": {

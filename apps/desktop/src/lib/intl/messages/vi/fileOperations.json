@@ -880,9 +880,9 @@
   "@fileOperations.lockedSources.title": {
     "sourceHash": "28b2287"
   },
-  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, other {{countText} mục bạn đang di chuyển ở chế độ chỉ đọc. Vẫn di chuyển, hay bỏ qua và di chuyển các mục còn lại?}}} other {{count, plural, other {{countText} mục bạn đang di chuyển bị khóa. Cmdr có thể mở khóa chỉ trong lúc di chuyển, rồi khóa lại ở nơi mới.}}}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, other {{countText} mục bạn đang di chuyển ở chế độ chỉ đọc. Cmdr có thể cho phép ghi chỉ trong lúc di chuyển, rồi đặt lại chế độ chỉ đọc ở nơi mới.}}} other {{count, plural, other {{countText} mục bạn đang di chuyển bị khóa. Cmdr có thể mở khóa chỉ trong lúc di chuyển, rồi khóa lại ở nơi mới.}}}}",
   "@fileOperations.lockedSources.message": {
-    "sourceHash": "b2f056d"
+    "sourceHash": "ee469fc"
   },
   "fileOperations.lockedSources.moreItems": "{count, plural, other {và thêm {countText} mục nữa}}",
   "@fileOperations.lockedSources.moreItems": {

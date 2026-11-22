@@ -881,9 +881,9 @@
   "@fileOperations.lockedSources.title": {
     "sourceHash": "28b2287"
   },
-  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, one {{countText} objekt som du flyttar är skrivskyddat. Vill du flytta det ändå, eller hoppa över det och flytta resten?} other {{countText} objekt som du flyttar är skrivskyddade. Vill du flytta dem ändå, eller hoppa över dem och flytta resten?}}} other {{count, plural, one {{countText} objekt som du flyttar är låst. Cmdr kan låsa upp det bara under flytten och låsa det igen där det hamnar.} other {{countText} objekt som du flyttar är låsta. Cmdr kan låsa upp dem bara under flytten och låsa dem igen där de hamnar.}}}}",
+  "fileOperations.lockedSources.message": "{platform, select, windows {{count, plural, one {{countText} objekt som du flyttar är skrivskyddat. Cmdr kan ta bort skrivskyddet bara under flytten och skrivskydda det igen där det hamnar.} other {{countText} objekt som du flyttar är skrivskyddade. Cmdr kan ta bort skrivskyddet bara under flytten och skrivskydda dem igen där de hamnar.}}} other {{count, plural, one {{countText} objekt som du flyttar är låst. Cmdr kan låsa upp det bara under flytten och låsa det igen där det hamnar.} other {{countText} objekt som du flyttar är låsta. Cmdr kan låsa upp dem bara under flytten och låsa dem igen där de hamnar.}}}}",
   "@fileOperations.lockedSources.message": {
-    "sourceHash": "b2f056d"
+    "sourceHash": "ee469fc"
   },
   "fileOperations.lockedSources.moreItems": "{count, plural, one {och ytterligare {countText} objekt} other {och ytterligare {countText} objekt}}",
   "@fileOperations.lockedSources.moreItems": {
