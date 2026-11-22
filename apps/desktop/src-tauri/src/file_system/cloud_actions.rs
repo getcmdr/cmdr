@@ -135,6 +135,7 @@ pub fn request_download(_path: &Path) -> Result<(), String> {
     Err("Cloud actions are only available on macOS".to_string())
 }
 
+// iCloud Drive's home-relative folder, which only macOS has
 #[cfg(all(test, target_os = "macos"))]
 mod tests {
     use super::*;

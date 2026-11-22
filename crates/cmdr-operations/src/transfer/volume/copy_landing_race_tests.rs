@@ -17,7 +17,6 @@
 //! The other race at the landing is with OUR OWN file: a rename the server
 //! performed whose reply is a late error from a session someone else already
 //! replaced. That file is ours and must count as landed once, never as a clash.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use cmdr_fs::app_path;
 use std::path::{Path, PathBuf};
@@ -440,6 +439,7 @@ async fn assert_their_save_and_our_bytes_both_stay(dest: &Path, outcome: &Result
 
 /// One source, so the SERIAL driver runs it.
 #[tokio::test]
+#[cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
 async fn serial_a_save_at_a_claimed_name_the_landing_cleared_survives_the_failed_copy() {
     let engine = TestOperations::new();
     let (dest, outcome) = copy_onto_a_claimed_name_someone_saves_over(&engine, &["photo.jpg"]).await;
@@ -448,6 +448,7 @@ async fn serial_a_save_at_a_claimed_name_the_landing_cleared_survives_the_failed
 
 /// Three sources, so the CONCURRENT driver runs them.
 #[tokio::test]
+#[cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
 async fn concurrent_a_save_at_a_claimed_name_the_landing_cleared_survives_the_failed_copy() {
     let engine = TestOperations::new();
     let (dest, outcome) = copy_onto_a_claimed_name_someone_saves_over(&engine, &["a.jpg", "photo.jpg", "z.jpg"]).await;
@@ -646,6 +647,7 @@ impl Volume for WrittenIntoOurPlaceholder {
 /// placeholder), the landing clears only that empty file: one someone wrote
 /// into is theirs.
 #[tokio::test]
+#[cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
 async fn a_rename_placeholder_someone_wrote_into_is_never_cleared() {
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("Source"));

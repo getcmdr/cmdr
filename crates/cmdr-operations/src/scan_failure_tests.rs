@@ -6,7 +6,6 @@
 //! preview flattened that into a bare string, and the operation rebuilt an
 //! `IoError` with an empty path around it. These drive the real preview workers
 //! into the real scan-wait, so the whole hand-off is what's under test.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use crate::Operations;
 use crate::testing::TestOperations;

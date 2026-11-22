@@ -8,7 +8,8 @@
 //! and the read stream, which follows the link, refused: "Cannot stream a
 //! directory". These cells run the REAL local walk, publish it the way the
 //! dialog does, and copy through it.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
+
+#![cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
 
 use crate::testing::TestOperations;
 use cmdr_fs::app_path::AppPath;
@@ -26,7 +27,7 @@ use crate::types::{VolumeCopyConfig, WriteOperationPhase, WriteProgressEvent};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -82,7 +83,7 @@ fn publish_local_preview(engine: &TestOperations, preview_id: &str, sources: &[P
 /// The boot volume as production registers it: rooted at `/`, so the
 /// preview's absolute paths are the volume's own paths.
 fn boot_volume() -> Arc<dyn Volume> {
-    Arc::new(LocalPosixVolume::local_folder(
+    Arc::new(LocalVolume::local_folder(
         "Macintosh HD",
         PathBuf::from("/"),
         crate::host::testing::pane_order_host(),

@@ -16,7 +16,8 @@
 //! named constants, ~400 ms / 4 MiB). Two regression guards pin that a source
 //! that does NOT opt into foreground-yield never yields, and that a yield-capable
 //! source with nothing pending never self-yields.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
+
+#![cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
 
 use super::super::transfer_error::PathedVolumeError;
 use super::test_support::{

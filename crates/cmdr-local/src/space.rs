@@ -97,7 +97,8 @@ thread_local! {
     static NSURL_SPACE_QUERIES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
 }
 
-#[cfg(all(test, any(target_os = "linux", target_os = "windows")))]
+/// What every OS answers for a space query (a macOS test build through `statvfs`, #357).
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -130,8 +131,8 @@ mod tests {
     }
 }
 
-#[cfg(all(test, target_os = "macos"))]
-mod tests {
+#[cfg(all(test, target_os = "macos"))] // NSURL's important-usage figure is macOS-only
+mod nsurl_tests {
     use super::*;
 
     // Regression anchor for #357: the first NSURL call in a test process `readdir`s the test

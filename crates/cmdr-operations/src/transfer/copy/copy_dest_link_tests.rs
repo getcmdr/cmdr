@@ -11,8 +11,6 @@
 //! The destination ITSELF, and anything above it, may be a link: the person
 //! navigated there, so that is the folder they picked.
 
-#![cfg(unix)]
-
 use super::super::conflict_responder_test_support::ConflictResponderSink;
 use super::*;
 use crate::event_sinks::CollectorEventSink;
@@ -204,9 +202,11 @@ fn an_answered_overwrite_replaces_a_deep_dest_link_never_its_target() {
             prompts[0]
         );
         assert_eq!(prompts[0].source_path, album.join("link").display().to_string());
+        // Joined name by name: the prompt names the native path, and on Windows
+        // `join("album/link")` keeps the `/` in its text.
         assert_eq!(
             prompts[0].destination_path,
-            dst.join("album/link").display().to_string()
+            dst.join("album").join("link").display().to_string()
         );
     }
     assert_target_untouched(&target, "answered Overwrite");

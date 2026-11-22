@@ -114,6 +114,7 @@ fn remove(path: &Path) {
     };
 }
 
+// The real macOS Trash (`trashItemAtURL`, `~/.Trash`), which this guard cleans
 #[cfg(all(test, target_os = "macos"))]
 mod tests {
     use super::*;

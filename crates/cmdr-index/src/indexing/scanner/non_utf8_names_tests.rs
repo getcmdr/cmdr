@@ -1,7 +1,7 @@
 //! What the drive index stores TODAY for a file whose name isn't UTF-8, on
 //! Linux (APFS and HFS+ refuse such a name, so macOS can't make one).
 
-#![cfg(target_os = "linux")]
+#![cfg(target_os = "linux")] // Only Linux makes a non-UTF-8 name (APFS refuses it, NTFS names are UTF-16)
 
 use std::fs;
 use std::os::unix::ffi::OsStrExt;

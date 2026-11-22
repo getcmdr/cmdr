@@ -160,9 +160,8 @@ pub(crate) use faulty_volume::forward_volume_methods;
 #[cfg(test)]
 mod self_collision_tests;
 
-/// Fixtures every same-volume rename-merge suite starts from. POSIX-only: they
-/// drive `LocalPosixVolume`.
-#[cfg(all(test, unix))]
+/// Fixtures every same-volume rename-merge suite starts from, over `LocalVolume`.
+#[cfg(test)]
 mod rename_merge_test_support;
 
 /// What a safe-replace's swap does when the original won't go, or the new bytes

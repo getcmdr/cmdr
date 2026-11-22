@@ -21,7 +21,6 @@
 //!
 //! Shared fixtures `make_state` / `make_volumes` live in `volume/copy_tests/`
 //! (`super::tests`) so they aren't duplicated.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::super::super::conflict_responder_test_support::await_prompted_clash;
 use super::tests::{make_state, make_volumes};
@@ -564,6 +563,7 @@ async fn test_pre_known_conflicts_ignored_outside_skip_mode() {
 /// exercised here is the one in `copy.rs::copy_files_with_progress` — covering
 /// task 3 (local↔local copy fix) at the same time.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[cfg(unix)] // Windows: task 35, `LocalWindowsVolume` has no read or write streams yet
 async fn test_pre_known_conflicts_bulk_skip_on_real_local_volumes() {
     use std::fs;
 

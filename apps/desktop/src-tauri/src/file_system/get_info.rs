@@ -184,6 +184,7 @@ mod ae_permission {
     }
 }
 
+// Finder's Get Info over Apple Events, macOS only
 #[cfg(all(test, target_os = "macos"))]
 mod tests {
     use super::*;

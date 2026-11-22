@@ -1,7 +1,7 @@
 //! A Markdown file through the viewer's public open path: it opens as a Markdown
 //! session, renders, and serves its images from wherever the document lives.
 
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+#![cfg(unix)] // Windows: #1225 milestone 10c, an archive entry path is joined natively (`docs.zip\docs/README.md`)
 
 use cmdr_fs::app_path::AppPath;
 use std::io::Write as _;

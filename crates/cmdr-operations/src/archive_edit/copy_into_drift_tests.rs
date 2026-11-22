@@ -10,7 +10,6 @@
 //! The window is reproduced by a sink that edits the source on the archive
 //! rewrite's first progress tick: the sources were read before it, and the
 //! originals go after it.
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use cmdr_fs::app_path;
 use std::sync::Mutex;
@@ -120,6 +119,7 @@ async fn move_into(
 /// file that appeared while the move ran exist only in the source, so both stay;
 /// an untouched original still goes.
 #[tokio::test]
+#[cfg(unix)] // Windows: not yet pinned down (#1351)
 async fn a_remote_source_keeps_what_changed_or_appeared_during_a_move_into_a_zip() {
     let engine = TestOperations::new();
     let tmp = tempfile::tempdir().expect("tempdir");

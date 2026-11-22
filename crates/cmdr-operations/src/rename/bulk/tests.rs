@@ -1,5 +1,3 @@
-#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
-
 use super::*;
 use crate::scope::OpScope;
 use crate::state::IntentCell;
@@ -129,14 +127,20 @@ impl UndoLoop {
         let log = TestOperationLog::new(&format!("bulk_rename_test_{name}_journal"));
         let engine = TestOperations::journaling_into(&log);
 
+        let dir = create_test_dir(name);
         let vm = crate::host::testing::FakeVolumes::default();
-        // Rooted at `/` so the fixture's absolute paths resolve, matching how the
-        // real `root` volume is registered.
+        // Rooted at the scratch folder's filesystem root (`/`, or its drive on Windows) so the
+        // fixture's absolute paths resolve, matching how the real `root` volume is registered.
+        let fs_root = dir
+            .ancestors()
+            .last()
+            .expect("an absolute path has a root")
+            .to_path_buf();
         vm.register(
             "root",
             Arc::new(LocalVolume::local_folder(
                 "Test root",
-                "/",
+                &fs_root,
                 crate::host::testing::pane_order_host(),
             )) as Arc<dyn Volume>,
         );
@@ -144,7 +148,7 @@ impl UndoLoop {
             engine,
             log,
             vm,
-            dir: create_test_dir(name),
+            dir,
             op_id: format!("op-{name}"),
         }
     }
@@ -221,6 +225,7 @@ fn pin_mtime(path: &Path, unix_seconds: u64) {
 /// untouched batch must still restore. A snapshot recorded in the wrong unit
 /// would land here as drift, silently disabling undo.
 #[tokio::test]
+#[cfg(unix)] // Windows: the undo reverses nothing even with the fixture rooted at the drive, not yet pinned down (#1351)
 async fn undo_of_an_untouched_batch_rename_restores_the_original_name() {
     let undo_loop = UndoLoop::new("undo_restores");
     let source = undo_loop.dir.join("before.txt");

@@ -8,6 +8,7 @@ mod imp;
 #[cfg(unix)]
 mod unix;
 
+// Windows has no CPU census reader yet (`windows.rs`, windows-port plan task 13): nothing to read live.
 #[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
 mod live_tests;
 

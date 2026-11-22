@@ -138,6 +138,7 @@ mod macos {
     }
 }
 
+// `UNUserNotificationCenter`'s statuses, macOS only
 #[cfg(all(test, target_os = "macos"))]
 mod tests {
     use objc2_user_notifications::UNAuthorizationStatus;

@@ -414,6 +414,7 @@ pub use vm_regions::{MALLOC_TAGS, MIMALLOC_ARENA_TAG, RegionSizeGroup, TagUsage,
 #[cfg(target_os = "macos")]
 pub(crate) use vm_regions::{VmRegionSubmapInfo64, mach_vm_region_recurse};
 
+// Mach `task_info` and malloc-zone readers, which only macOS has.
 #[cfg(all(test, target_os = "macos"))]
 mod tests {
     use super::*;

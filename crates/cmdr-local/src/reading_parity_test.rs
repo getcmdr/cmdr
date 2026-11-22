@@ -11,7 +11,7 @@
 //! Every cell runs once per [`Lister`], so a second lister is proven by adding it
 //! to [`LISTERS`], with no cell edited.
 
-#![cfg(unix)]
+#![cfg(unix)] // POSIX `lstat` fields: modes, inodes, owners, symlinks, `utimensat`
 
 use cmdr_fs::testing::symlink;
 use std::collections::HashSet;

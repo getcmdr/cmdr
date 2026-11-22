@@ -8,8 +8,8 @@
 //! reach a pane through `crates/cmdr-listing/src/host/overlays.rs` and every other reader lists
 //! through `Volume`, which doesn't hold them.
 
+// #1225: `legacy_unchecked` bridge paths, and the overlay seam (`decorate`) matches `std::path`; un-gates with app-path plan milestone 10c.
 #![cfg(unix)]
-// POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 #![cfg(test)]
 
 use cmdr_fs::app_path::{AppPath, AppPathBuf};
