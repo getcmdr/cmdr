@@ -64,7 +64,10 @@ pub(crate) fn start_drag(
 ) -> Result<(), String> {
     // Rows as sent: `native_drag` still keys a session by `std::path` text (file URLs for a local
     // one, the volume's own reads for a promise), byte for byte the pane's rows.
-    let path_bufs: Vec<PathBuf> = paths.iter().map(|row| crate::commands::wire_path::as_sent_std_path(row)).collect();
+    let path_bufs: Vec<PathBuf> = paths
+        .iter()
+        .map(|row| crate::commands::wire_path::as_sent_std_path(row))
+        .collect();
     if path_bufs.is_empty() {
         return Err("No valid files to drag".to_string());
     }

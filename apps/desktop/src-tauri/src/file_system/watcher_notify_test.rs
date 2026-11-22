@@ -16,7 +16,10 @@ fn event(kind: EventKind, paths: &[&str]) -> DebouncedEvent {
     DebouncedEvent::new(
         Event {
             kind,
-            paths: paths.iter().map(|path| crate::native_text::os_path(path).to_path_buf()).collect(),
+            paths: paths
+                .iter()
+                .map(|path| crate::native_text::os_path(path).to_path_buf())
+                .collect(),
             attrs: Default::default(),
         },
         Instant::now(),

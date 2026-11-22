@@ -11,7 +11,10 @@ fn plan(pid: u32, opener: PathBuf, args: &[&str]) -> WaiterPlan {
         interval: "0.05".to_string(),
         opener,
         bundle: PathBuf::from("/Applications/Cmdr.app"),
-        args: args.iter().map(|arg| std::ffi::OsStr::new(arg).to_os_string()).collect(),
+        args: args
+            .iter()
+            .map(|arg| std::ffi::OsStr::new(arg).to_os_string())
+            .collect(),
     }
 }
 

@@ -1,7 +1,10 @@
 use super::*;
 
 fn dirs(paths: &[&str]) -> impl Fn(&Path) -> bool + use<> {
-    let dirs: Vec<PathBuf> = paths.iter().map(|path| crate::native_text::os_path(path).to_path_buf()).collect();
+    let dirs: Vec<PathBuf> = paths
+        .iter()
+        .map(|path| crate::native_text::os_path(path).to_path_buf())
+        .collect();
     move |path: &Path| dirs.iter().any(|d| d == path)
 }
 
@@ -11,7 +14,10 @@ fn p(path: &str) -> PathBuf {
 
 fn finder(paths: &[&str]) -> RevealRequest {
     RevealRequest {
-        paths: paths.iter().map(|path| crate::native_text::os_path(path).to_path_buf()).collect(),
+        paths: paths
+            .iter()
+            .map(|path| crate::native_text::os_path(path).to_path_buf())
+            .collect(),
         target: GoToTarget::FOCUSED,
         origin: RevealOrigin::Finder,
     }
@@ -19,7 +25,10 @@ fn finder(paths: &[&str]) -> RevealRequest {
 
 fn terminal(paths: &[&str], pane: PaneChoice) -> RevealRequest {
     RevealRequest {
-        paths: paths.iter().map(|path| crate::native_text::os_path(path).to_path_buf()).collect(),
+        paths: paths
+            .iter()
+            .map(|path| crate::native_text::os_path(path).to_path_buf())
+            .collect(),
         target: GoToTarget { pane, new_tab: false },
         origin: RevealOrigin::Terminal,
     }
@@ -69,7 +78,10 @@ fn a_folder_first_ignores_the_rest() {
 
 fn request(paths: &[&str], origin: RevealOrigin) -> RevealRequest {
     RevealRequest {
-        paths: paths.iter().map(|path| crate::native_text::os_path(path).to_path_buf()).collect(),
+        paths: paths
+            .iter()
+            .map(|path| crate::native_text::os_path(path).to_path_buf())
+            .collect(),
         target: GoToTarget::FOCUSED,
         origin,
     }

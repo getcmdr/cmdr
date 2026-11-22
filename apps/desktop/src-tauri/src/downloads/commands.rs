@@ -7,7 +7,6 @@
 //! Settings pane's mount-time belt-and-braces re-check has a typed entry
 //! point.
 
-
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 

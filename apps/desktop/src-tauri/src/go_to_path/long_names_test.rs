@@ -37,10 +37,18 @@ fn an_existing_short_folder_is_spelled_long() {
 
 #[test]
 fn a_missing_tail_keeps_its_typed_spelling_under_the_long_prefix() {
-    let typed = Path::new("/c/Users/RUNNER~1").join("AppData").join("gone~1").join("deeper");
+    let typed = Path::new("/c/Users/RUNNER~1")
+        .join("AppData")
+        .join("gone~1")
+        .join("deeper");
     assert_eq!(
         long_spelling(&typed, expand),
-        Some(Path::new("/c/Users/runneradmin").join("AppData").join("gone~1").join("deeper"))
+        Some(
+            Path::new("/c/Users/runneradmin")
+                .join("AppData")
+                .join("gone~1")
+                .join("deeper")
+        )
     );
 }
 
@@ -53,7 +61,11 @@ fn a_path_with_no_tilde_is_never_asked() {
 #[test]
 fn a_tilde_that_names_no_short_folder_changes_nothing() {
     let typed = Path::new("/c/Users").join("a~b");
-    assert_eq!(long_spelling(&typed, expand), None, "the long spelling is the same text");
+    assert_eq!(
+        long_spelling(&typed, expand),
+        None,
+        "the long spelling is the same text"
+    );
 }
 
 #[test]

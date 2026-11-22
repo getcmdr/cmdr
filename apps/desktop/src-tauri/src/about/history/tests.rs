@@ -1,7 +1,6 @@
 //! What the card says of the log's answer: the operation's kind and starter in
 //! the card's words, where the item came from, and every way of not knowing.
 
-
 use cmdr_about::fact::{Fact, UnknownWhy};
 use cmdr_about::provenance::{CmdrOperation, LandedBy, StartedBy};
 use cmdr_about::text::ItemText;

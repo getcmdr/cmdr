@@ -25,9 +25,9 @@ use super::event::AboutUpdate;
 use cmdr_about::actions::{ActionCaps, RemoveBy};
 
 use super::route::{Way, action_caps, caps_for, hinted_target, through_plan};
-use super::through::snapshot_of;
 use super::session::{Timing, Watch};
 use super::tests::{LONG, assert_well_formed, gather};
+use super::through::snapshot_of;
 use super::through::{ArchiveRecord, Asked, DownloadFrom, MAX_STUCK_PER_VOLUME, STUCK, Through, category_segment};
 use crate::test_support::{TestDir, wait_until};
 

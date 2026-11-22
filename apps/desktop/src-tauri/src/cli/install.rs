@@ -382,7 +382,9 @@ mod tests {
         }
 
         fn with_file(self, path: &str) -> Self {
-            self.entries.borrow_mut().insert(crate::native_text::os_path(path).to_path_buf(), PathEntry::Other);
+            self.entries
+                .borrow_mut()
+                .insert(crate::native_text::os_path(path).to_path_buf(), PathEntry::Other);
             self
         }
 

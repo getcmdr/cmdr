@@ -261,12 +261,7 @@ fn job(kind: FactKind, through: Through, sub_jobs: SubJobs) -> Option<Job<AboutF
     let job: Job<AboutFact> = match kind {
         FactKind::Identity => Box::new(move || {
             note_activity("the volume's metadata", "identity");
-            let answer = through.asked.ask(
-                through
-                    .asked
-                    .volume
-                    .get_metadata(&through.path),
-            );
+            let answer = through.asked.ask(through.asked.volume.get_metadata(&through.path));
             AboutFact::Identity(identity_answer(answer))
         }),
         FactKind::Download => {
@@ -290,12 +285,7 @@ fn job(kind: FactKind, through: Through, sub_jobs: SubJobs) -> Option<Job<AboutF
             let snapshot = through.snapshot.clone()?;
             Box::new(move || {
                 note_activity("the portal's metadata", "gitSnapshot");
-                let entry = through.asked.ask(
-                    through
-                        .asked
-                        .volume
-                        .get_metadata(&through.path),
-                );
+                let entry = through.asked.ask(through.asked.volume.get_metadata(&through.path));
                 AboutFact::GitSnapshot(match entry {
                     Err(error) => Fact::unknown(why_of(&error)),
                     Ok(entry) => match snapshot.ref_name(&through.asked, &through.path) {

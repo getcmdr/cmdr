@@ -138,7 +138,8 @@ fn legacy_fan_out(paths: &[String], threads_spawned: &Arc<AtomicUsize>) -> HashM
                             .into_iter()
                             .map(|path| {
                                 // A row read off its native file, as the service reads one.
-                                let status = crate::app_text::native(&path).map(|native| probe::sync_status_for(&native));
+                                let status =
+                                    crate::app_text::native(&path).map(|native| probe::sync_status_for(&native));
                                 (path, status)
                             })
                             .collect::<Vec<_>>()

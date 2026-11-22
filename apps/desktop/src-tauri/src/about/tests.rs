@@ -289,7 +289,8 @@ fn a_symlink_is_about_the_link_and_reads_nothing_through_it() {
     std::os::unix::fs::symlink("/nowhere/at/all", &link).expect("make the link");
     #[cfg(unix)]
     {
-        let probed = probe(crate::test_support::native_app_path(&link).as_str(), None).expect("a dangling link is still there");
+        let probed =
+            probe(crate::test_support::native_app_path(&link).as_str(), None).expect("a dangling link is still there");
         assert_eq!(probed.target, AboutTarget::Symlink);
         let Fact::Known(identity) = &probed.identity else {
             panic!("identity is known");
@@ -329,7 +330,9 @@ fn a_link_into_a_mount_that_isnt_a_local_disk_is_described_as_a_link() {
         super::place::reaches_a_share(&path),
         "reading through it reaches the other mount"
     );
-    assert!(!super::place::reaches_a_share(crate::test_support::native_app_path(dir.as_ref()).as_str()));
+    assert!(!super::place::reaches_a_share(
+        crate::test_support::native_app_path(dir.as_ref()).as_str()
+    ));
 }
 
 /// ❗ A read that failed says why: a file gone mid-gather is `NotFound` and an

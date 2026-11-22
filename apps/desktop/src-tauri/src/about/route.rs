@@ -8,7 +8,6 @@
 //! before the volume is asked anything, so a dead share still gets its card at
 //! once.
 
-
 use cmdr_fs::app_path::{AppPath, PathArithmetic};
 use std::sync::Arc;
 use std::time::Duration;
@@ -231,7 +230,7 @@ pub(crate) async fn gather_for(request: &AboutRequest, started: Started) -> Resu
     let Ok(item) = crate::app_text::parse_on_volume(&path) else {
         return Err(NoCard::on(&location, AboutUnavailable::NotFound));
     };
-    let drive =get_volume_manager().get(&location.volume_id);
+    let drive = get_volume_manager().get(&location.volume_id);
     let os_visible = drive.as_ref().is_some_and(|volume| volume.paths_are_os_visible());
     let drive_way = reach(resolved.kind, resolved.live && drive.is_some(), os_visible);
     let Some(drive) = drive.filter(|_| drive_way != Way::Offline) else {

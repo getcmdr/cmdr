@@ -338,7 +338,9 @@ const ABOUT_FIXTURE_HOME_HONORED: bool = cfg!(any(debug_assertions, feature = "p
 
 /// Pure core of [`about_fixture_home`], so a test can read the release arm.
 fn about_fixture_home_from(honored: bool, value: Option<std::ffi::OsString>) -> Option<PathBuf> {
-    value.filter(|value| honored && !value.is_empty()).map(crate::native_text::os_path_buf)
+    value
+        .filter(|value| honored && !value.is_empty())
+        .map(crate::native_text::os_path_buf)
 }
 
 /// Whether the app may adopt network mounts that were already on the machine when

@@ -21,7 +21,11 @@ pub(super) fn long_spelling(native: &Path, expand: impl Fn(&Path) -> io::Result<
         .find_map(|prefix| expand(prefix).ok().map(|long| (prefix, long)));
     let (prefix, long) = prefix?;
     let tail = native.strip_prefix(prefix).ok()?;
-    let spelled = if tail.as_os_str().is_empty() { long } else { long.join(tail) };
+    let spelled = if tail.as_os_str().is_empty() {
+        long
+    } else {
+        long.join(tail)
+    };
     (spelled != native).then_some(spelled)
 }
 

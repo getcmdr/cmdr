@@ -150,7 +150,10 @@ mod tests {
     fn a_folder_visited_once_isnt_worth_a_walk_root() {
         let kept = worth_walking_early(
             Path::new("/Users/x"),
-            vec![folder(Path::new("/Users/x/work"), 2), folder(Path::new("/Users/x/stray"), 1)],
+            vec![
+                folder(Path::new("/Users/x/work"), 2),
+                folder(Path::new("/Users/x/stray"), 1),
+            ],
         );
         assert_eq!(kept, vec![PathBuf::from("/Users/x/work")]);
     }
@@ -164,7 +167,10 @@ mod tests {
             vec![
                 folder(Path::new("/Users/x/Library/Application Support/SomeApp"), 90),
                 folder(Path::new("/Users/x/Library/CloudStorage/Dropbox/notes"), 30),
-                folder(Path::new("/Users/x/Library/Mobile Documents/com~apple~CloudDocs/documents"), 20),
+                folder(
+                    Path::new("/Users/x/Library/Mobile Documents/com~apple~CloudDocs/documents"),
+                    20,
+                ),
                 folder(Path::new("/Users/x/code"), 10),
             ],
         );
@@ -182,7 +188,9 @@ mod tests {
     fn the_signal_cant_crowd_out_every_other_one() {
         // `MAX_ROOTS` is 24 for the whole ranking and recency outranks the standard
         // home folders, so an uncapped tail would push `~/Downloads` off the end.
-        let many: Vec<RecentFolder> = (0..40).map(|i| folder(&PathBuf::from(format!("/Users/x/p{i:02}")), 40 - i)).collect();
+        let many: Vec<RecentFolder> = (0..40)
+            .map(|i| folder(&PathBuf::from(format!("/Users/x/p{i:02}")), 40 - i))
+            .collect();
         assert_eq!(worth_walking_early(Path::new("/Users/x"), many).len(), MAX_RECENT_ROOTS);
     }
 

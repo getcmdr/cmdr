@@ -111,7 +111,8 @@ pub(crate) fn sealed(path: &str, home: &str) -> bool {
 }
 
 fn extension_of(path: &Path) -> Option<String> {
-    path.extension().map(|extension| extension.to_string_lossy().into_owned())
+    path.extension()
+        .map(|extension| extension.to_string_lossy().into_owned())
 }
 
 fn unavailable(error: &std::io::Error) -> AboutUnavailable {

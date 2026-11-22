@@ -570,7 +570,11 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, source: Pi
         let menu_state = app.state::<MenuState<tauri::Wry>>();
         let ctx = menu_state.context.lock_ignore_poison();
         let app_path = ctx.open_with_apps.get(bundle_id).cloned();
-        let paths: Vec<PathBuf> = ctx.paths.iter().map(|row| crate::app_text::as_std_path_text(row)).collect();
+        let paths: Vec<PathBuf> = ctx
+            .paths
+            .iter()
+            .map(|row| crate::app_text::as_std_path_text(row))
+            .collect();
         let listing_id = ctx.listing_id.clone();
         drop(ctx);
 
@@ -592,7 +596,11 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, source: Pi
 
         let menu_state = app.state::<MenuState<tauri::Wry>>();
         let ctx = menu_state.context.lock_ignore_poison();
-        let paths: Vec<PathBuf> = ctx.paths.iter().map(|row| crate::app_text::as_std_path_text(row)).collect();
+        let paths: Vec<PathBuf> = ctx
+            .paths
+            .iter()
+            .map(|row| crate::app_text::as_std_path_text(row))
+            .collect();
         let listing_id = ctx.listing_id.clone();
         drop(ctx);
 

@@ -112,7 +112,11 @@ pub(super) fn plan_count_all(entries: &[FileEntry]) -> CountAllPlan {
 
 /// Counts the rows at `paths` (the ones a pane shows) and patches them into `id`.
 pub async fn fill(id: ListingId, paths: Vec<String>) {
-    let paths: Vec<PathBuf> = paths.iter().take(MAX_FILL_ROWS).map(|row| crate::app_text::as_std_path_text(row)).collect();
+    let paths: Vec<PathBuf> = paths
+        .iter()
+        .take(MAX_FILL_ROWS)
+        .map(|row| crate::app_text::as_std_path_text(row))
+        .collect();
     let _ = count_and_patch(&id, paths).await;
 }
 

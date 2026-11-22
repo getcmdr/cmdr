@@ -29,5 +29,7 @@ pub(crate) fn os_path_buf(value: impl Into<OsString>) -> PathBuf {
     allow(dead_code, reason = "the overrides it reads are dev, test, and E2E only")
 )]
 pub(crate) fn env_path(name: &str) -> Option<PathBuf> {
-    std::env::var_os(name).filter(|value| !value.is_empty()).map(os_path_buf)
+    std::env::var_os(name)
+        .filter(|value| !value.is_empty())
+        .map(os_path_buf)
 }

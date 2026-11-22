@@ -13,7 +13,6 @@
 //! only repeats the server's own address is cleared on load
 //! ([`spells_own_address`]).
 
-
 use cmdr_fs::volume::remote_paths::normalize_remote_text;
 use serde::{Deserialize, Serialize};
 

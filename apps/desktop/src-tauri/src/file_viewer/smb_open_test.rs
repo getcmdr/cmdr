@@ -50,8 +50,10 @@ fn smb_integration_viewer_jumps_in_a_big_file_on_a_share() {
     let size = 40 * 1024 * 1024;
     let bytes: Vec<u8> = (0..size).map(synthetic_byte).collect();
     let relative = format!("{dir}/big.log");
-    tauri::async_runtime::block_on(volume.create_file(&cmdr_smb::volume::testing::app_at(volume.root(), &relative), &bytes))
-        .unwrap();
+    tauri::async_runtime::block_on(
+        volume.create_file(&cmdr_smb::volume::testing::app_at(volume.root(), &relative), &bytes),
+    )
+    .unwrap();
     let volume = Arc::new(volume);
     let id = format!("viewer-vsrc-smb-{dir}");
     get_volume_manager().register(&id, Arc::clone(&volume) as Arc<dyn Volume>);
