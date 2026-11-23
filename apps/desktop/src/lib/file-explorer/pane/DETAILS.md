@@ -565,9 +565,12 @@ volume-id string. The record has two halves, and which half answers is the whole
     (`SESSION_IO_TIMEOUT`), then "couldn't tell", which resets the miss counter; a refusal or a dropped session is
     "couldn't tell" too, so a slow or flaky NAS can't cause a bounce. The kernel `stat` it replaces went over the wire
     as well, through smbfs.
-  - **The poll doesn't pause when the window is hidden or the app isn't frontmost**: a plain `setInterval`, only stopped
-    on pane destroy. Not polling direct SMB panes at all would lose "deleted by another client" detection, since the
-    share's `CHANGE_NOTIFY` reports that removal only to the PARENT's listing.
+  - **It skips its tick while the main window is hidden** (`isMainWindowVisible` in
+    `routes/(main)/main-window-visibility.ts`: minimized, app hidden, another Space, fully covered) and checks once the
+    moment the window shows again (`onMainWindowShown`), so a hidden Cmdr spends no round trips. ❗ Visible but not
+    frontmost keeps polling: that's exactly when Finder or another client deletes the folder. Not polling direct SMB
+    panes at all would lose "deleted by another client" detection, since the share's `CHANGE_NOTIFY` reports that
+    removal only to the PARENT's listing.
 - **`rowIsOsVisible(volumeId, rowPath)`** answers ONE row's "is there a real file behind this", the gate behind the
   context menu's `Share` (see § "Sharing a row" below). ❌ It is NOT `capabilitiesForPane`: that one uses the WIDE
   archive check, so it would call a `.zip` FILE unshareable, and sharing a freshly-made archive is the point.

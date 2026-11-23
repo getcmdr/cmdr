@@ -18,12 +18,18 @@
  * disk's `stat` there goes through smbfs, which can't see every name the direct
  * session lists (an NFD name, a negative-cache miss), and read as "deleted" it
  * bounced the pane to the parent (#1338). Cost and rationale: `DETAILS.md`.
+ *
+ * It skips its tick while the main window is hidden (minimized, app hidden,
+ * another Space, fully covered) and checks once the moment the window shows
+ * again, so nobody waits on a stale folder. Visible but not frontmost keeps
+ * polling: that's when Finder or another client deletes the folder.
  */
 
 import { pathExistsChecked } from '#lib/tauri-commands/index.js'
 import { resolveValidPath } from '../navigation/path-resolution'
 import { getAppLogger } from '#lib/logging/logger.js'
 import type { ConnectionState } from '../types'
+import { isMainWindowVisible, onMainWindowShown } from '../../../routes/(main)/main-window-visibility'
 
 const log = getAppLogger('fileExplorer')
 
@@ -57,6 +63,7 @@ export interface DeletedDirPoll {
 
 export function createDeletedDirPoll(deps: DeletedDirPollDeps): DeletedDirPoll {
   let interval: ReturnType<typeof setInterval> | undefined
+  let stopWatchingWindow: (() => void) | undefined
   let notExistsCount = 0
 
   function walkUp(currentPath: string, volumePath: string, volumeId: string): void {
@@ -73,6 +80,7 @@ export function createDeletedDirPoll(deps: DeletedDirPollDeps): DeletedDirPoll {
   }
 
   function poll(): void {
+    if (!isMainWindowVisible()) return
     if (!deps.getListingId() || deps.getLoading() || !deps.getFolderIsPolled()) return
     const currentPath = deps.getCurrentPath()
     const volumeId = deps.getVolumeId()
@@ -132,10 +140,13 @@ export function createDeletedDirPoll(deps: DeletedDirPollDeps): DeletedDirPoll {
   return {
     start: () => {
       interval = setInterval(poll, POLL_INTERVAL_MS)
+      stopWatchingWindow = onMainWindowShown(poll)
     },
     stop: () => {
       clearInterval(interval)
       interval = undefined
+      stopWatchingWindow?.()
+      stopWatchingWindow = undefined
     },
   }
 }

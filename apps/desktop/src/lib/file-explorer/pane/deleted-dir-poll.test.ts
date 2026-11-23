@@ -8,7 +8,10 @@
  *   folder isn't polled (which kinds are: `volume-capabilities.test.ts`),
  * - on an external volume, a gone volume root hands off to the unmount handler
  *   rather than walking up inside a volume that isn't there,
- * - `stop()` ends the poll.
+ * - `stop()` ends the poll,
+ * - a hidden main window skips the check, and showing it again checks at once.
+ *   Visible but not frontmost keeps polling (`visibilityState` stays `visible`),
+ *   which the other tests run under.
  */
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest'
 
@@ -24,6 +27,11 @@ vi.mock('#lib/tauri-commands/index.js', () => ({ pathExistsChecked: ipc.pathExis
 vi.mock('../navigation/path-resolution', () => ({ resolveValidPath: resolution.resolveValidPath }))
 
 import { createDeletedDirPoll, type DeletedDirPollDeps } from './deleted-dir-poll'
+
+function setVisibility(state: DocumentVisibilityState): void {
+  Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state })
+  document.dispatchEvent(new Event('visibilitychange'))
+}
 
 /** One `exists` answer per path, defaulting to "there". */
 function existsMap(map: Record<string, { data: boolean; timedOut?: boolean }>) {
@@ -46,6 +54,7 @@ describe('createDeletedDirPoll', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.clearAllMocks()
+    setVisibility('visible')
     resolution.resolveValidPath.mockImplementation((p: string) => Promise.resolve(p.replace(/\/[^/]+$/, '') || '/'))
     existsMap({})
     navigateToFallback = vi.fn()
@@ -264,5 +273,40 @@ describe('createDeletedDirPoll', () => {
     poll.stop()
     await tick(3)
     expect(ipc.pathExistsChecked).not.toHaveBeenCalled()
+  })
+
+  describe('while the main window is hidden', () => {
+    it('skips the check', async () => {
+      existsMap({ '/dir/sub': { data: false } })
+      setVisibility('hidden')
+      const poll = createDeletedDirPoll(deps)
+      poll.start()
+      await tick(5)
+      expect(ipc.pathExistsChecked).not.toHaveBeenCalled()
+      expect(navigateToFallback).not.toHaveBeenCalled()
+      poll.stop()
+    })
+
+    it('checks at once when the window shows again', async () => {
+      setVisibility('hidden')
+      const poll = createDeletedDirPoll(deps)
+      poll.start()
+      await tick(2)
+      setVisibility('visible')
+      await vi.advanceTimersByTimeAsync(0)
+      expect(ipc.pathExistsChecked).toHaveBeenCalledTimes(1)
+      expect(ipc.pathExistsChecked).toHaveBeenCalledWith('/dir/sub', 'root')
+      poll.stop()
+    })
+
+    it('stops listening for the window on stop()', async () => {
+      const poll = createDeletedDirPoll(deps)
+      poll.start()
+      poll.stop()
+      setVisibility('hidden')
+      setVisibility('visible')
+      await vi.advanceTimersByTimeAsync(0)
+      expect(ipc.pathExistsChecked).not.toHaveBeenCalled()
+    })
   })
 })
