@@ -356,7 +356,9 @@ lookup, 567 of 1,743 keys (32.5 %) pointed at an image without their English (OC
   its key segment or its description: `isNeverVisible`), is trusted as before, since no picture shows those words and
   the control's surface is the right context. A key no image shows goes to a representative rule if one reaches it, else
   to the first surface that looked it up with `NOT_SHOWN_NOTE`, so a translator knows the picture shows the
-  surroundings, not the string. The coverage report counts those as **Not shown**.
+  surroundings, not the string. The coverage report counts those as **Not shown**. After the paged recapture
+  (2026-11-23), 1,789 keys couple to an image that shows them and 194 carry the note; the Go prototype re-run over the
+  result finds no direct mismatch, so what's left is the matcher's own 5–10 % error.
 - **Paged surfaces lean on it**: every page of a paged surface (§ How a surface is framed) carries all the surface's
   keys, and the OCR is what puts each key on the page that shows it.
 

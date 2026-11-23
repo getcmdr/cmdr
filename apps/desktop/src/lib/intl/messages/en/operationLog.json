@@ -559,7 +559,8 @@
   "operationLog.status.failed": "Didn’t finish",
   "@operationLog.status.failed": {
     "description": "Lifecycle status of an operation that stopped before completing. Avoids the words error and failed. The apostrophe is a curly typographic apostrophe (U+2019).",
-    "screenshot": "operation-log-more-pages.png"
+    "screenshot": "operation-log-more-pages.png",
+    "screenshotNote": "The operation log dialog, pictured here with entries in it. Your string belongs to one of its other states (loading, empty, or a load error), which render in this same dialog in place of the list."
   },
   "operationLog.status.canceled": "Canceled",
   "@operationLog.status.canceled": {

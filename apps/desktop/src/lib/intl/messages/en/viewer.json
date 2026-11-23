@@ -11,7 +11,8 @@
     "placeholders": {
       "fileName": "name of the file being viewed (e.g. report.log)"
     },
-    "screenshot": "viewer-search.png"
+    "screenshot": "viewer-search.png",
+    "screenshotNote": "The file viewer window, pictured here with its find bar open. Your string is part of its chrome (title, toolbar, status bar), one of the file-kind or media labels it shows there, or one of the messages it shows in place of content when a file can’t be loaded."
   },
   "viewer.srHeading": "File viewer",
   "@viewer.srHeading": {
@@ -258,7 +259,8 @@
   "viewer.search.close": "Close search",
   "@viewer.search.close": {
     "description": "Accessibility label for the button that closes the search bar. The button's visible content is an X glyph.",
-    "screenshot": "viewer-search.png"
+    "screenshot": "viewer-search.png",
+    "screenshotNote": "The file viewer window, pictured here with its find bar open. Your string is part of its chrome (title, toolbar, status bar), one of the file-kind or media labels it shows there, or one of the messages it shows in place of content when a file can’t be loaded."
   },
   "viewer.search.closeTooltip": "Close",
   "@viewer.search.closeTooltip": {
@@ -278,12 +280,12 @@
   "viewer.toolbar.viewMode.binary": "Binary",
   "@viewer.toolbar.viewMode.binary": {
     "description": "Viewer mode that shows original file bytes as fixed-width character rows, without treating newlines as line breaks. Shortcut 2 is appended in the dropdown.",
-    "screenshot": "viewer-search.png"
+    "screenshot": "viewer-view-mode.png"
   },
   "viewer.toolbar.viewMode.hex": "Hex",
   "@viewer.toolbar.viewMode.hex": {
     "description": "Viewer mode that shows original file bytes as hexadecimal pairs alongside their character representation. Shortcut 3 is appended in the dropdown.",
-    "screenshot": "viewer-search.png"
+    "screenshot": "viewer-view-mode.png"
   },
   "viewer.toolbar.viewMode.viewAsText": "View as text",
   "@viewer.toolbar.viewMode.viewAsText": {
@@ -401,7 +403,8 @@
   "viewer.toolbar.encoding.placeholder": "Encoding",
   "@viewer.toolbar.encoding.placeholder": {
     "description": "Placeholder and accessibility label for the toolbar dropdown that picks the file's text encoding (e.g. UTF-8). Shown when no encoding is selected yet. \"Encoding\" means character encoding.",
-    "screenshot": "viewer-search.png"
+    "screenshot": "viewer-search.png",
+    "screenshotNote": "The file viewer window, pictured here with its find bar open. Your string is part of its chrome (title, toolbar, status bar), one of the file-kind or media labels it shows there, or one of the messages it shows in place of content when a file can’t be loaded."
   },
   "viewer.toolbar.encoding.group.unicode": "Unicode",
   "@viewer.toolbar.encoding.group.unicode": {

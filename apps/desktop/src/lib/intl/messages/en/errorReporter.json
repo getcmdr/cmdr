@@ -146,22 +146,26 @@
   "errorReporter.amend.description": "Cmdr already sent this report. Write a note, or attach your email, and it’ll join what the team already has.",
   "@errorReporter.amend.description": {
     "description": "Main explanation in the add-a-note dialog: the report is already with the team, and whatever the user writes here is attached to that same report (no second report is sent). It also tells them why the button stays disabled until they write a note or attach an email. Reassuring. \"Cmdr\" is the product name (do not translate).",
-    "screenshot": "error-report-amend.png"
+    "screenshot": "error-report-amend.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "errorReporter.amend.noteLabel": "Your note",
   "@errorReporter.amend.noteLabel": {
     "description": "Label above the free-text box in the add-a-note dialog. Unlike the send dialog’s label, this one is not marked optional: a note or an email address is needed before the button works.",
-    "screenshot": "error-report-amend.png"
+    "screenshot": "error-report-amend.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "errorReporter.amend.detailsToggle": "What was sent",
   "@errorReporter.amend.detailsToggle": {
     "description": "Toggle that expands a panel showing exactly what was already uploaded (manifest and sample log lines). Past tense: it describes the report that has already gone. Preceded by a disclosure triangle; followed by the bundle size in parentheses.",
-    "screenshot": "error-report-amend.png"
+    "screenshot": "error-report-amend.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "errorReporter.amend.submit": "Add to report",
   "@errorReporter.amend.submit": {
     "description": "Primary button that attaches the user’s note to the report that was already sent. Keep it short (a tight button).",
-    "screenshot": "error-report-amend.png"
+    "screenshot": "error-report-amend.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "errorReporter.amend.submitting": "Adding…",
   "@errorReporter.amend.submitting": {

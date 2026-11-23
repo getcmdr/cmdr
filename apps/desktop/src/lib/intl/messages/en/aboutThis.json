@@ -56,12 +56,13 @@
   "aboutThis.action.trash": "{platform, select, windows {Move to the Recycle Bin…} other {Move to trash…}}",
   "@aboutThis.action.trash": {
     "description": "Button in the footer of the \"Tell me about this\" card. Closes the card and opens Cmdr's usual delete dialog for this one item, which asks before anything moves. The ellipsis says a question follows. Use the same words as fileOperations.delete.trashSwitch, plus the ellipsis. Short control label.",
-    "screenshot": "tell-me-about-this-downloaded.png"
+    "screenshot": "tell-me-about-this-plain-document.png"
   },
   "aboutThis.action.delete": "Delete…",
   "@aboutThis.action.delete": {
     "description": "Button in the footer of the \"Tell me about this\" card, on a drive with no trash (a phone, a server). Closes the card and opens Cmdr's usual delete dialog for this one item, which asks before anything is deleted. The ellipsis says a question follows. Short control label.",
-    "screenshot": "tell-me-about-this-remote.png"
+    "screenshot": "tell-me-about-this-remote.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "aboutThis.action.more": "More",
   "@aboutThis.action.more": {
@@ -95,7 +96,7 @@
   "aboutThis.section.context": "Where it sits",
   "@aboutThis.section.context": {
     "description": "Section heading on the \"Tell me about this\" card: what the item belongs to (the app that owns it, the git repository around it). Sentence case.",
-    "screenshot": "tell-me-about-this-folder.png"
+    "screenshot": "tell-me-about-this-standard-folder.png"
   },
   "aboutThis.section.contents": "What’s inside",
   "@aboutThis.section.contents": {
@@ -223,7 +224,7 @@
   "aboutThis.label.importance": "Importance",
   "@aboutThis.label.importance": {
     "description": "Row label on the \"Tell me about this\" card for a folder, left of how important Cmdr's drive index scores the folder (high, medium, low).",
-    "screenshot": "tell-me-about-this-folder.png"
+    "screenshot": "tell-me-about-this-notable-a.png"
   },
   "aboutThis.label.owner": "Belongs to",
   "@aboutThis.label.owner": {
@@ -267,7 +268,8 @@
   "aboutThis.unknown.notInStatus": "No changes Cmdr can see",
   "@aboutThis.unknown.notInStatus": {
     "description": "Muted one-line answer on the Git row of the \"Tell me about this\" card when git's list of changes doesn't name the item: it may be committed with no changes, or ignored. Ordinary, not a warning. No closing period.",
-    "screenshot": "tell-me-about-this-node-modules.png"
+    "screenshot": "tell-me-about-this-node-modules.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "aboutThis.unknown.noInstalledAppMatches": "No app Cmdr knows of",
   "@aboutThis.unknown.noInstalledAppMatches": {
@@ -345,7 +347,8 @@
   "aboutThis.download.noRecord": "No download record",
   "@aboutThis.download.noRecord": {
     "description": "Muted one-line answer on the \"Downloaded\" row of the \"Tell me about this\" card when the system recorded no download for the item (most files a person made themselves). Ordinary, not a warning. No closing period.",
-    "screenshot": "tell-me-about-this-still-filling.png"
+    "screenshot": "tell-me-about-this-still-filling.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "aboutThis.download.fromSite": "{platform, select, macos {macOS recorded this as downloaded from {host}{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}.} other {Your browser recorded this as downloaded from {host}{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}.}}",
   "@aboutThis.download.fromSite": {
@@ -809,7 +812,8 @@
   "@aboutThis.importance.band": {
     "description": "Answer on the \"Importance\" row of the \"Tell me about this\" card: how important Cmdr's drive index scores the folder. \"Not ranked\" is for folders the ranking leaves out on purpose (caches, build output, hidden, system, and temporary folders, app data in the Library); it never says the contents don't matter.",
     "placeholders": { "band": { "description": "high, medium, low, or floored (left out of the ranking)." } },
-    "screenshot": "tell-me-about-this-folder.png"
+    "screenshot": "tell-me-about-this-folder.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "aboutThis.importance.because": "Because of {reasons}",
   "@aboutThis.importance.because": {
@@ -819,22 +823,26 @@
         "description": "A list joined with commas and \"and\", for example \"recent changes and your visits\"."
       }
     },
-    "screenshot": "tell-me-about-this-folder.png"
+    "screenshot": "tell-me-about-this-folder.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "aboutThis.importance.reason.projectMarker": "a project file in it",
   "@aboutThis.importance.reason.projectMarker": {
     "description": "One reason in the \"Because of …\" list on the Importance row: the folder holds a project file (a package.json, a Cargo.toml). Lowercase, joins a list.",
-    "screenshot": "tell-me-about-this-folder.png"
+    "screenshot": "tell-me-about-this-folder.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "aboutThis.importance.reason.mtimeRecency": "recent changes",
   "@aboutThis.importance.reason.mtimeRecency": {
     "description": "One reason in the \"Because of …\" list on the Importance row: files in it changed recently. Lowercase, joins a list.",
-    "screenshot": "tell-me-about-this-folder.png"
+    "screenshot": "tell-me-about-this-folder.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "aboutThis.importance.reason.visitActivity": "your visits in Cmdr",
   "@aboutThis.importance.reason.visitActivity": {
     "description": "One reason in the \"Because of …\" list on the Importance row: the user often opens this folder in Cmdr. Lowercase, joins a list.",
-    "screenshot": "tell-me-about-this-folder.png"
+    "screenshot": "tell-me-about-this-folder.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "aboutThis.importance.reason.lastUsed": "recent use",
   "@aboutThis.importance.reason.lastUsed": {
@@ -855,7 +863,8 @@
   "aboutThis.importance.floor.nameDenylisted": "Cmdr doesn’t rank folders whose name marks generated files",
   "@aboutThis.importance.floor.nameDenylisted": {
     "description": "Muted line on the \"Importance\" row of the \"Tell me about this\" card, under \"Not ranked\": Cmdr's folder ranking leaves this folder out because its name (like \"node_modules\" or \"cache\") marks files a tool generates. It describes Cmdr's ranking, never whether the folder's contents matter. No closing period.",
-    "screenshot": "tell-me-about-this-node-modules.png"
+    "screenshot": "tell-me-about-this-node-modules.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "aboutThis.importance.floor.hiddenOrSystem": "Cmdr doesn’t rank hidden, system, or temporary folders",
   "@aboutThis.importance.floor.hiddenOrSystem": {
@@ -880,7 +889,8 @@
       "count": { "description": "How many times, as a number." },
       "countText": { "description": "The same number, already formatted." }
     },
-    "screenshot": "tell-me-about-this-folder.png"
+    "screenshot": "tell-me-about-this-folder.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "aboutThis.importance.stale": "Scored before the latest changes",
   "@aboutThis.importance.stale": {
@@ -1419,7 +1429,7 @@
   "aboutThis.removal.cantTell": "Cmdr can’t tell what depends on this.",
   "@aboutThis.removal.cantTell": {
     "description": "One line under \"What removing it means\" when Cmdr doesn't know enough to say. An honest answer, never a warning or advice.",
-    "screenshot": "tell-me-about-this-still-filling.png"
+    "screenshot": "tell-me-about-this-notable-a.png"
   },
   "aboutThis.removal.more": "{count, plural, one {One more} other {{countText} more}}",
   "@aboutThis.removal.more": {
@@ -1673,7 +1683,7 @@
   "aboutThis.action.continueInAskCmdr": "Continue in Ask Cmdr",
   "@aboutThis.action.continueInAskCmdr": {
     "description": "Button (or a row behind \"More\") in the footer of the \"Tell me about this\" card, shown while Ask Cmdr is on. Closes the card and opens Ask Cmdr, the app's AI chat panel, on a new chat with this item attached and a short question typed in but not sent. \"Ask Cmdr\" is the feature's name and stays verbatim. Short control label.",
-    "screenshot": "tell-me-about-this-verdict-waiting.png"
+    "screenshot": "tell-me-about-this-verdict-long.png"
   },
   "aboutThis.action.continueInAskCmdrTooltip": "Opens a new Ask Cmdr chat about this item. Nothing is sent until you send it.",
   "@aboutThis.action.continueInAskCmdrTooltip": {

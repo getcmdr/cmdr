@@ -66,7 +66,8 @@
   "licensing.acknowledgements.loading": "Loading the list…",
   "@licensing.acknowledgements.loading": {
     "description": "Shown with a spinner for the moment it takes to load the dependency list after the Acknowledgements dialog opens.",
-    "screenshot": "acknowledgements.png"
+    "screenshot": "acknowledgements.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "licensing.about.srTitle": "About Cmdr",
   "@licensing.about.srTitle": {
@@ -228,7 +229,8 @@
   "licensing.dialog.loading": "Loading…",
   "@licensing.dialog.loading": {
     "description": "Title of the license dialog while it loads the current license info. A trailing-ellipsis loading state.",
-    "screenshot": "license-key-dialog.png"
+    "screenshot": "license-key-dialog.png",
+    "screenshotNote": "The license dialog. This shows its key-entry state; your string belongs to one of its other states (the details view for a committed license, the verification banners, or an error message), which render in this same dialog."
   },
   "licensing.dialog.detailsTitle": "License details",
   "@licensing.dialog.detailsTitle": {

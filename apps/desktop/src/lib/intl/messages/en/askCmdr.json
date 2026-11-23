@@ -12,7 +12,8 @@
   "askCmdr.newChat": "New chat",
   "@askCmdr.newChat": {
     "description": "Label for the button that starts a fresh Ask Cmdr conversation. Sentence case.",
-    "screenshot": "ask-cmdr-empty.png"
+    "screenshot": "ask-cmdr-empty.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "askCmdr.empty.title": "Ask about your files",
   "@askCmdr.empty.title": {
@@ -37,7 +38,8 @@
   "askCmdr.composer.stop": "Stop",
   "@askCmdr.composer.stop": {
     "description": "Label for the button that stops the assistant while it is answering. Sentence case.",
-    "screenshot": "ask-cmdr-chat.png"
+    "screenshot": "ask-cmdr-chat.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "askCmdr.thinking": "Thinking…",
   "@askCmdr.thinking": {
@@ -67,12 +69,12 @@
   "askCmdr.softCap.message": "This chat is getting long. A fresh one keeps replies fast and focused.",
   "@askCmdr.softCap.message": {
     "description": "A gentle nudge shown once an Ask Cmdr conversation fills most of what the AI model can keep in view (about 70%), or once older parts had to be set aside. Friendly, not a hard limit.",
-    "screenshot": "ask-cmdr-tools.png"
+    "screenshot": "ask-cmdr-every-tool-page-2.png"
   },
   "askCmdr.softCap.action": "Start a fresh chat",
   "@askCmdr.softCap.action": {
     "description": "Button that starts a new Ask Cmdr conversation, shown alongside the getting-long nudge. Sentence case.",
-    "screenshot": "ask-cmdr-tools.png"
+    "screenshot": "ask-cmdr-every-tool-page-2.png"
   },
   "askCmdr.softCap.dismiss": "Dismiss",
   "@askCmdr.softCap.dismiss": {
@@ -82,7 +84,8 @@
   "askCmdr.tool.appState.doing": "Checking what you’re looking at",
   "@askCmdr.tool.appState.doing": {
     "description": "Present-tense status for the assistant reading the user's current view (open folders, cursor, selection). Shown while the tool runs. The apostrophe is U+2019.",
-    "screenshot": "ask-cmdr-tools.png"
+    "screenshot": "ask-cmdr-tools.png",
+    "screenshotNote": "An Ask Cmdr tool line, one of the rows pictured here: what the assistant is doing or did, the note after it saying how that went, or the preview it opens. This shows other tools, so yours has its own words in the same place."
   },
   "askCmdr.tool.appState.done": "Looked at what you’re looking at",
   "@askCmdr.tool.appState.done": {
@@ -92,7 +95,7 @@
   "askCmdr.tool.listDir.doing": "Listing a folder",
   "@askCmdr.tool.listDir.doing": {
     "description": "Present-tense status for the assistant listing a folder's contents and size. Shown while the tool runs.",
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.listDir.done": "Listed a folder",
   "@askCmdr.tool.listDir.done": {
@@ -103,7 +106,7 @@
   "askCmdr.tool.importantFolders.doing": "Finding your important folders",
   "@askCmdr.tool.importantFolders.doing": {
     "description": "Present-tense status for the assistant finding the user's most important folders.",
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.importantFolders.done": "Found your important folders",
   "@askCmdr.tool.importantFolders.done": {
@@ -113,7 +116,8 @@
   "askCmdr.tool.folderImportance.doing": "Checking a folder’s importance",
   "@askCmdr.tool.folderImportance.doing": {
     "description": "Present-tense status for the assistant scoring how important one folder is. The apostrophe is U+2019.",
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-tools.png",
+    "screenshotNote": "An Ask Cmdr tool line, one of the rows pictured here: what the assistant is doing or did, the note after it saying how that went, or the preview it opens. This shows other tools, so yours has its own words in the same place."
   },
   "askCmdr.tool.folderImportance.done": "Checked a folder’s importance",
   "@askCmdr.tool.folderImportance.done": {
@@ -154,7 +158,8 @@
   "askCmdr.tool.listVolumes.doing": "Checking your drives",
   "@askCmdr.tool.listVolumes.doing": {
     "description": "Present-tense status for the assistant listing the user's drives and their index freshness.",
-    "screenshot": "ask-cmdr-tools.png"
+    "screenshot": "ask-cmdr-tools.png",
+    "screenshotNote": "An Ask Cmdr tool line, one of the rows pictured here: what the assistant is doing or did, the note after it saying how that went, or the preview it opens. This shows other tools, so yours has its own words in the same place."
   },
   "askCmdr.tool.listVolumes.done": "Checked your drives",
   "@askCmdr.tool.listVolumes.done": {
@@ -164,7 +169,7 @@
   "askCmdr.tool.operationsList.doing": "Searching your file history",
   "@askCmdr.tool.operationsList.doing": {
     "description": "Present-tense status for the assistant searching the operation log (past copies, moves, deletes, renames).",
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.operationsList.done": "Searched your file history",
   "@askCmdr.tool.operationsList.done": {
@@ -174,7 +179,7 @@
   "askCmdr.tool.operationsGet.doing": "Looking up an operation",
   "@askCmdr.tool.operationsGet.doing": {
     "description": "Present-tense status for the assistant reading one logged file operation's detail.",
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.operationsGet.done": "Looked up an operation",
   "@askCmdr.tool.operationsGet.done": {
@@ -184,7 +189,7 @@
   "askCmdr.tool.search.doing": "Searching your files",
   "@askCmdr.tool.search.doing": {
     "description": "Present-tense status on a tool line in the Ask Cmdr chat rail, shown while the assistant looks for files and folders on one drive by name, size, date, or type. It searches names and details, never what is inside a file, so avoid a word that implies reading the contents. Keep it short: it sits on one line beside a spinner. Pairs with askCmdr.tool.search.done.",
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.search.done": "Searched your files",
   "@askCmdr.tool.search.done": {
@@ -195,7 +200,7 @@
   "askCmdr.tool.searchPhotos.doing": "Searching your photos",
   "@askCmdr.tool.searchPhotos.doing": {
     "description": "Present-tense status on a tool line in the Ask Cmdr chat rail, shown while the assistant searches the user's photos by description, by text recognized inside them, or by tag. Keep it short: it sits on one line beside a spinner.",
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.searchPhotos.done": "Searched your photos",
   "@askCmdr.tool.searchPhotos.done": {
@@ -206,7 +211,7 @@
   "askCmdr.tool.inspectFile.doing": "Looking inside files",
   "@askCmdr.tool.inspectFile.doing": {
     "description": "Present-tense label on a tool line while the assistant reads the details and a bounded part of the contents of one or more files (inspect_file; one call covers up to 200 files, so the label is plural-neutral). Pairs with askCmdr.tool.inspectFile.done.",
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.inspectFile.done": "Looked inside files",
   "@askCmdr.tool.inspectFile.done": {
@@ -217,7 +222,8 @@
   "askCmdr.tool.imageFacts.doing": "Reading what’s in your photos",
   "@askCmdr.tool.imageFacts.doing": {
     "description": "Present-tense status on a tool line in the Ask Cmdr chat rail, shown while the assistant reads the text and tags Cmdr recognized inside specific photos the user is looking at (not a search: it already knows which files). This line is a transparency surface, so the wording should make clear that image content is being read. The apostrophe is U+2019.",
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-tools.png",
+    "screenshotNote": "An Ask Cmdr tool line, one of the rows pictured here: what the assistant is doing or did, the note after it saying how that went, or the preview it opens. This shows other tools, so yours has its own words in the same place."
   },
   "askCmdr.tool.imageFacts.done": "Read what’s in your photos",
   "@askCmdr.tool.imageFacts.done": {
@@ -228,7 +234,8 @@
   "askCmdr.tool.proposeRenamePlan.doing": "Preparing a rename plan",
   "@askCmdr.tool.proposeRenamePlan.doing": {
     "description": "Present-tense label in the Ask Cmdr chat tool line while it prepares a file rename proposal for the user to review. The tool does not rename anything.",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "ask-cmdr-tools.png",
+    "screenshotNote": "An Ask Cmdr tool line, one of the rows pictured here: what the assistant is doing or did, the note after it saying how that went, or the preview it opens. This shows other tools, so yours has its own words in the same place."
   },
   "askCmdr.tool.proposeRenamePlan.done": "Prepared a rename plan",
   "@askCmdr.tool.proposeRenamePlan.done": {
@@ -239,7 +246,7 @@
   "askCmdr.tool.listSuggestions.doing": "Checking suggestions",
   "@askCmdr.tool.listSuggestions.doing": {
     "description": "Present-tense label on a tool line in the Ask Cmdr chat rail, shown while the assistant looks up the file operations it has already suggested and that are still waiting for the user to approve or reject them. It reads a list, it changes nothing. Pairs with askCmdr.tool.listSuggestions.done.",
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.listSuggestions.done": "Checked suggestions",
   "@askCmdr.tool.listSuggestions.done": {
@@ -249,7 +256,7 @@
   "askCmdr.tool.getSuggestionGroup.doing": "Looking at a suggestion",
   "@askCmdr.tool.getSuggestionGroup.doing": {
     "description": "Present-tense label on a tool line in the Ask Cmdr chat rail, shown while the assistant opens ONE of its suggested groups of file operations to see which files it covers. Reading only. Pairs with askCmdr.tool.getSuggestionGroup.done.",
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.getSuggestionGroup.done": "Looked at a suggestion",
   "@askCmdr.tool.getSuggestionGroup.done": {
@@ -295,7 +302,8 @@
   "askCmdr.tool.memoryWrite.doing": "Saving a note about you",
   "@askCmdr.tool.memoryWrite.doing": {
     "description": "Present-tense label on a tool line in the Ask Cmdr chat rail, shown while the assistant saves something it learned about this person into its own small notes folder, so it doesn’t have to ask again next time. Notes are facts and preferences about the person, and they stay on this computer until a message is sent. Nothing about the person’s files changes. Pairs with askCmdr.tool.memoryWrite.done.",
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-tools.png",
+    "screenshotNote": "An Ask Cmdr tool line, one of the rows pictured here: what the assistant is doing or did, the note after it saying how that went, or the preview it opens. This shows other tools, so yours has its own words in the same place."
   },
   "askCmdr.tool.memoryWrite.done": "Saved a note about you",
   "@askCmdr.tool.memoryWrite.done": {
@@ -306,7 +314,8 @@
   "askCmdr.tool.memoryEdit.doing": "Updating its notes",
   "@askCmdr.tool.memoryEdit.doing": {
     "description": "Present-tense label on a tool line in the Ask Cmdr chat rail, shown while the assistant changes or removes one part of the notes it keeps about this person, usually to drop something that has gone out of date. “Its” refers to the assistant, so use whatever form your language uses for a thing’s own possessions. Pairs with askCmdr.tool.memoryEdit.done.",
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-tools.png",
+    "screenshotNote": "An Ask Cmdr tool line, one of the rows pictured here: what the assistant is doing or did, the note after it saying how that went, or the preview it opens. This shows other tools, so yours has its own words in the same place."
   },
   "askCmdr.tool.memoryEdit.done": "Updated its notes",
   "@askCmdr.tool.memoryEdit.done": {
@@ -317,7 +326,7 @@
   "askCmdr.tool.connectVolume.doing": "Connecting to your server",
   "@askCmdr.tool.connectVolume.doing": {
     "description": "Present-tense label on a tool line in the Ask Cmdr chat rail, shown while the assistant connects a server or network share the person saved earlier (a NAS, for example), using the password already stored for it. Pairs with askCmdr.tool.connectVolume.done.",
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.connectVolume.done": "Connected to your server",
   "@askCmdr.tool.connectVolume.done": {
@@ -328,12 +337,13 @@
   "askCmdr.tool.connectVolume.tried": "Tried connecting to your server",
   "@askCmdr.tool.connectVolume.tried": {
     "description": "Label on the same tool line when the connect attempt did NOT connect (a short reason follows it on the line, like “needs you to sign in”). It must not claim the server is connected.",
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-page-2.png"
   },
   "askCmdr.tool.unknown.doing": "Working",
   "@askCmdr.tool.unknown.doing": {
     "description": "Present-tense fallback status for a tool the rail doesn't have a specific label for.",
-    "screenshot": "ask-cmdr-tools.png"
+    "screenshot": "ask-cmdr-tools.png",
+    "screenshotNote": "An Ask Cmdr tool line, one of the rows pictured here: what the assistant is doing or did, the note after it saying how that went, or the preview it opens. This shows other tools, so yours has its own words in the same place."
   },
   "askCmdr.tool.unknown.done": "Used a tool",
   "@askCmdr.tool.unknown.done": {
@@ -347,7 +357,7 @@
     "placeholders": {
       "name": "The folder’s name, for example Downloads."
     },
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.listDir.folder.done": "Listed <place>{name}</place>",
   "@askCmdr.tool.listDir.folder.done": {
@@ -381,7 +391,7 @@
     "placeholders": {
       "name": "The folder’s name, for example Projects."
     },
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.folderImportance.folder.done": "Checked how important <place>{name}</place> is",
   "@askCmdr.tool.folderImportance.folder.done": {
@@ -399,7 +409,7 @@
       "othersText": "How many more files, as a formatted number.",
       "others": "The same count as a number, to pick the plural form."
     },
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.inspectFile.files.done": "{others, plural, =0 {Looked inside <place>{name}</place>} one {Looked inside <place>{name}</place> and {othersText} more} other {Looked inside <place>{name}</place> and {othersText} more}}",
   "@askCmdr.tool.inspectFile.files.done": {
@@ -419,7 +429,7 @@
       "othersText": "How many more photos, as a formatted number.",
       "others": "The same count as a number, to pick the plural form."
     },
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.imageFacts.files.done": "{others, plural, =0 {Read what’s in <place>{name}</place>} one {Read what’s in <place>{name}</place> and {othersText} more} other {Read what’s in <place>{name}</place> and {othersText} more}}",
   "@askCmdr.tool.imageFacts.files.done": {
@@ -439,7 +449,7 @@
       "placesText": "The folders searched in, already joined, for example Documents and Desktop.",
       "folders": "How many folders {placesText} lists, to pick the plural form."
     },
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.search.queryInFolders.done": "{folders, plural, one {Searched for “{query}” in <places>{placesText}</places>} other {Searched for “{query}” in <places>{placesText}</places>}}",
   "@askCmdr.tool.search.queryInFolders.done": {
@@ -495,7 +505,7 @@
     "placeholders": {
       "query": "What it searched for, for example beach at sunset."
     },
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.searchPhotos.query.done": "Searched your photos for “{query}”",
   "@askCmdr.tool.searchPhotos.query.done": {
@@ -512,7 +522,8 @@
       "countText": "How many files, as a formatted number.",
       "count": "The same count as a number, to pick the plural form."
     },
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "ask-cmdr-tools.png",
+    "screenshotNote": "An Ask Cmdr tool line, one of the rows pictured here: what the assistant is doing or did, the note after it saying how that went, or the preview it opens. This shows other tools, so yours has its own words in the same place."
   },
   "askCmdr.tool.proposeRenamePlan.count.done": "{count, plural, one {Prepared a plan to rename {countText} file} other {Prepared a plan to rename {countText} files}}",
   "@askCmdr.tool.proposeRenamePlan.count.done": {
@@ -549,7 +560,7 @@
     "placeholders": {
       "name": "The note file’s path inside the notes folder, for example preferences.md."
     },
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.memoryWrite.file.done": "Saved a note to <place>{name}</place>",
   "@askCmdr.tool.memoryWrite.file.done": {
@@ -580,7 +591,8 @@
     "placeholders": {
       "name": "The note file’s path inside the notes folder, for example preferences.md."
     },
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-tools.png",
+    "screenshotNote": "An Ask Cmdr tool line, one of the rows pictured here: what the assistant is doing or did, the note after it saying how that went, or the preview it opens. This shows other tools, so yours has its own words in the same place."
   },
   "askCmdr.tool.memoryEdit.file.done": "Updated <place>{name}</place>",
   "@askCmdr.tool.memoryEdit.file.done": {
@@ -611,7 +623,8 @@
     "placeholders": {
       "name": "The tool name the assistant asked for, for example format_drive."
     },
-    "screenshot": "ask-cmdr-tools.png"
+    "screenshot": "ask-cmdr-tools.png",
+    "screenshotNote": "An Ask Cmdr tool line, one of the rows pictured here: what the assistant is doing or did, the note after it saying how that went, or the preview it opens. This shows other tools, so yours has its own words in the same place."
   },
   "askCmdr.tool.unknown.named.done": "Asked for “{name}”",
   "@askCmdr.tool.unknown.named.done": {
@@ -627,7 +640,7 @@
     "placeholders": {
       "path": "The full path, for example /Users/sam/Downloads."
     },
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.tool.repeat": "Same as above",
   "@askCmdr.tool.repeat": {
@@ -852,7 +865,7 @@
   "askCmdr.tool.outcome.connection.notSaved": "not a saved server",
   "@askCmdr.tool.outcome.connection.notSaved": {
     "description": "What came back, after the “Tried connecting to your server” label: the assistant asked for a server the person never saved in Cmdr, and it may only connect saved ones. Lowercase where your language allows.",
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-page-2.png"
   },
   "askCmdr.tool.outcome.connection.cancelled": "stopped while connecting",
   "@askCmdr.tool.outcome.connection.cancelled": {
@@ -1082,7 +1095,7 @@
     "placeholders": {
       "parts": "Counts already joined into a list, for example “6 folders, 2 searches”."
     },
-    "screenshot": "ask-cmdr-tools.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.toolGroup.folders": "{count, plural, one {{countText} folder} other {{countText} folders}}",
   "@askCmdr.toolGroup.folders": {
@@ -1091,7 +1104,7 @@
       "countText": "How many, as a formatted number.",
       "count": "The same count as a number, to pick the plural form."
     },
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.toolGroup.files": "{count, plural, one {{countText} file} other {{countText} files}}",
   "@askCmdr.toolGroup.files": {
@@ -1100,7 +1113,7 @@
       "countText": "How many, as a formatted number.",
       "count": "The same count as a number, to pick the plural form."
     },
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.toolGroup.searches": "{count, plural, one {{countText} search} other {{countText} searches}}",
   "@askCmdr.toolGroup.searches": {
@@ -1109,7 +1122,7 @@
       "countText": "How many, as a formatted number.",
       "count": "The same count as a number, to pick the plural form."
     },
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.toolGroup.checks": "{count, plural, one {{countText} check} other {{countText} checks}}",
   "@askCmdr.toolGroup.checks": {
@@ -1137,7 +1150,7 @@
       "countText": "How many, as a formatted number.",
       "count": "The same count as a number, to pick the plural form."
     },
-    "screenshot": "ask-cmdr-every-tool.png"
+    "screenshot": "ask-cmdr-every-tool-running.png"
   },
   "askCmdr.toolGroup.other": "{count, plural, one {{countText} other step} other {{countText} other steps}}",
   "@askCmdr.toolGroup.other": {
@@ -1158,7 +1171,7 @@
       "tokensText": "How many tokens, already formatted: exact below 2,000 (like 1,234), compact above (like 194.8k or 1.3M).",
       "tokens": "The same count as a number, to pick the plural form."
     },
-    "screenshot": "ask-cmdr-tools.png"
+    "screenshot": "ask-cmdr-every-tool-page-2.png"
   },
   "askCmdr.turnStats.summaryNoDuration": "{calls, plural, one {{callsText} tool call} other {{callsText} tool calls}} · {tokens, plural, one {{tokensText} token} other {{tokensText} tokens}}",
   "@askCmdr.turnStats.summaryNoDuration": {
@@ -1187,7 +1200,8 @@
     "identicalBranches": {
       "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
     },
-    "screenshot": "ask-cmdr-errors.png"
+    "screenshot": "ask-cmdr-chat.png",
+    "screenshotNote": "A line in the Ask Cmdr thread, under a message like the one pictured here, saying why the assistant couldn’t answer. This screenshot doesn’t show that line."
   },
   "askCmdr.error.notConfigured": "{platform, select, windows {Chatting needs an AI provider. Turn one on in settings.} linuxGnome {Chatting needs an AI provider. Turn one on in preferences.} linuxKde {Chatting needs an AI provider. Turn one on in Configure Cmdr.} other {Chatting needs an AI provider. Turn one on in settings.}}",
   "@askCmdr.error.notConfigured": {
@@ -1567,12 +1581,13 @@
       "otherCountText": "how many other folders had changes, formatted for the language",
       "otherCount": "the same number as a raw integer, only for choosing the plural form; 0 means only the one folder"
     },
-    "screenshot": "ask-cmdr-wake-digest.png"
+    "screenshot": "ask-cmdr-sessions-rename.png"
   },
   "askCmdr.composer.attach": "Ask about selection",
   "@askCmdr.composer.attach": {
     "description": "Button in the composer that attaches the file or folder selected in the active pane, so the user can ask about it. Sentence case.",
-    "screenshot": "ask-cmdr-empty.png"
+    "screenshot": "ask-cmdr-empty.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "askCmdr.composer.selectionCapped": "Attached the first {attachedText} of {totalText} selected {total, plural, one {item} other {items}}.",
   "@askCmdr.composer.selectionCapped": {
@@ -1686,7 +1701,7 @@
   "askCmdr.forget.confirm": "Forget everything",
   "@askCmdr.forget.confirm": {
     "description": "Destructive confirm button in the \"Forget everything\" dialog, and the label of the button in Settings > Ask Cmdr that opens it. Starts with a verb, sentence case.",
-    "screenshot": "settings-ai-ask-cmdr.png"
+    "screenshot": "settings-ai-ask-cmdr-page-2.png"
   },
   "askCmdr.forget.cancel": "Cancel",
   "@askCmdr.forget.cancel": {
@@ -1746,27 +1761,27 @@
   "askCmdr.renameReview.title": "Review file renames",
   "@askCmdr.renameReview.title": {
     "description": "Title of the modal where the user reviews an Ask Cmdr rename proposal before files change.",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "bulk-rename-review-all-allowed.png"
   },
   "askCmdr.renameReview.description": "Cmdr will rename only the files you allow.",
   "@askCmdr.renameReview.description": {
     "description": "Short explanation under the bulk rename review title. Reassures the user that denied rows will not change.",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "bulk-rename-review-all-allowed.png"
   },
   "askCmdr.renameReview.originalName": "Current name",
   "@askCmdr.renameReview.originalName": {
     "description": "Column heading for the original filename in the bulk rename review table.",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "bulk-rename-review-all-allowed.png"
   },
   "askCmdr.renameReview.newName": "New name",
   "@askCmdr.renameReview.newName": {
     "description": "Column heading for the proposed filename in the bulk rename review table.",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "bulk-rename-review-all-allowed.png"
   },
   "askCmdr.renameReview.whyThisName": "Why this name",
   "@askCmdr.renameReview.whyThisName": {
     "description": "Column heading for the rightmost bulk rename review column, which shows what each proposed name is based on.",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "bulk-rename-review-all-allowed.png"
   },
   "askCmdr.renameReview.preview": "Preview",
   "@askCmdr.renameReview.preview": {
@@ -1812,7 +1827,7 @@
   "askCmdr.renameReview.evidence.filename": "The old name",
   "@askCmdr.renameReview.evidence.filename": {
     "description": "Label shown when a proposed name comes from the file's existing name, with nothing read from inside the file.",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "bulk-rename-review-some-blocked.png"
   },
   "askCmdr.renameReview.evidence.metadata": "File details, not contents",
   "@askCmdr.renameReview.evidence.metadata": {
@@ -1848,27 +1863,27 @@
   "askCmdr.renameReview.allow": "Allow",
   "@askCmdr.renameReview.allow": {
     "description": "Button that lets one proposed file rename proceed.",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "bulk-rename-review-all-allowed.png"
   },
   "askCmdr.renameReview.deny": "Deny",
   "@askCmdr.renameReview.deny": {
     "description": "Button that prevents one proposed file rename from proceeding.",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "bulk-rename-review-all-allowed.png"
   },
   "askCmdr.renameReview.allowAll": "Allow all",
   "@askCmdr.renameReview.allowAll": {
     "description": "Button that allows every currently reviewable rename in the proposal.",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "bulk-rename-review-all-allowed.png"
   },
   "askCmdr.renameReview.denyAll": "Deny all",
   "@askCmdr.renameReview.denyAll": {
     "description": "Button that denies every rename in the proposal.",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "bulk-rename-review-all-allowed.png"
   },
   "askCmdr.renameReview.cancel": "Cancel",
   "@askCmdr.renameReview.cancel": {
     "description": "Button that closes the bulk rename review and discards its proposal without renaming files.",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "bulk-rename-review-all-allowed.png"
   },
   "askCmdr.renameReview.rename": "Rename {count, plural, one {# file} other {# files}}",
   "@askCmdr.renameReview.rename": {
@@ -1950,7 +1965,7 @@
   "askCmdr.renameReview.nothingReadBadge": "(nothing read)",
   "@askCmdr.renameReview.nothingReadBadge": {
     "description": "Compact badge beside a proposed filename in the bulk rename review when Cmdr read nothing inside the file, so the name rests on the old name, the file details, or the user’s instruction. Keep the parentheses.",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "bulk-rename-review-all-allowed.png"
   },
   "askCmdr.renameReview.nothingReadTooltip": "Cmdr read nothing inside this file. This name comes from the old name, the file’s details, or what you asked for.",
   "@askCmdr.renameReview.nothingReadTooltip": {
@@ -2099,7 +2114,8 @@
   "askCmdr.renameUndo.undoing": "Putting the old names back…",
   "@askCmdr.renameUndo.undoing": {
     "description": "Replaces the Undo button while the undo is running. Renaming files back can take a moment on a network drive, so this is a progress state, not a result. Sentence case; the character at the end is an ellipsis (U+2026).",
-    "screenshot": "ask-cmdr-rename-undo-partial.png"
+    "screenshot": "ask-cmdr-chat.png",
+    "screenshotNote": "A line in the Ask Cmdr thread, under a reply like the one pictured here, saying how a rename went and offering to undo it. This screenshot doesn’t show that line."
   },
   "askCmdr.renameUndo.undone": "Put the old {count, plural, one {name} other {names}} back on {countText} {count, plural, one {file} other {files}}.",
   "@askCmdr.renameUndo.undone": {
@@ -2428,7 +2444,7 @@
   "askCmdr.decision.running": "Running…",
   "@askCmdr.decision.running": {
     "description": "A line in the Ask Cmdr chat rail recording what the person answered when the agent suggested doing something to a batch of their files. This second line follows an approved suggestion (askCmdr.decision.approved) whose operation has started and hasn't finished yet, which for a big copy can take minutes. When it finishes, this line is replaced in place by what the run actually did (askCmdr.decision.result). Short status, sentence case, ends with an ellipsis character (…), not three dots.",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "ask-cmdr-decisions.png"
   },
   "askCmdr.decision.interrupted": "{platform, select, windows {Cmdr closed before this finished} other {Cmdr quit before this finished}}",
   "@askCmdr.decision.interrupted": {

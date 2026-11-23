@@ -275,7 +275,8 @@
   "queue.failureToast.action": "Show in operation queue",
   "@queue.failureToast.action": {
     "description": "Button on the failure notice that opens the operation queue window, where the operation’s row carries the full reason and what to do about it. \"Operation queue\" is the window’s name; keep it identical to the window title.",
-    "screenshot": "operation-failure.png"
+    "screenshot": "operation-failure.png",
+    "screenshotNote": "The notice the main window raises when a backgrounded operation stops early, pictured here with one failure. Your string is the summary that replaces these when several stop at once, in the same place, with a count instead of a name."
   },
   "queue.handoffToast.action": "Show in operation queue",
   "@queue.handoffToast.action": {

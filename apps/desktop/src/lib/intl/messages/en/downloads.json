@@ -28,7 +28,8 @@
   "@downloads.toast.inAppHint": {
     "description": "Tip in the download toast teaching the in-app shortcut to jump to the latest download. The empty <chip></chip> tag is where the shortcut shows, as a styled key cap (for example ⌘J, or the person's own binding); keep the empty tag where the key belongs in your sentence. 'In-app' means while Cmdr is the active app.",
     "placeholders": {},
-    "screenshot": "toast-download.png"
+    "screenshot": "toast-download.png",
+    "screenshotNote": "The toast Cmdr shows when a download lands, pictured here. Your string is another form of it: the summary when several downloads land at once, the note that one landed in a subfolder, or the tooltip on its expand button."
   },
 
   "downloads.toast.globalHint": "In <em>any</em> app (global shortcut), press <chip>{key}</chip>",
@@ -169,13 +170,13 @@
   "downloads.shortcutRow.scopeTitle": "Global",
   "@downloads.shortcutRow.scopeTitle": {
     "description": "Card title in the Keyboard shortcuts settings for system-wide (global) shortcuts, above the go-to-latest-download row. A short section title. 'global' = works from any app.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-26.png"
   },
 
   "downloads.shortcutRow.commandName": "Go to latest download <marker>(global)</marker>",
   "@downloads.shortcutRow.commandName": {
     "description": "Name of the editable system-wide shortcut row in Keyboard shortcuts settings. <marker> wraps the '(global)' tag (shown dimmed) that signals this hotkey fires from any app. Keep the parentheses around 'global'.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-26.png"
   },
 
   "downloads.shortcutRow.modifiedTooltip": "Modified from default",

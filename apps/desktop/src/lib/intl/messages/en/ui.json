@@ -194,7 +194,8 @@
   "ui.loadingIcon.loading": "Loading…",
   "@ui.loadingIcon.loading": {
     "description": "Generic loading message shown centered in a pane while content is being fetched.",
-    "screenshot": "listing-stalled.png"
+    "screenshot": "listing-stalled.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "ui.loadingIcon.cancelHint": "Press <key></key> to cancel and go back",
   "@ui.loadingIcon.cancelHint": {
@@ -202,7 +203,8 @@
     "placeholders": {
       "key": "position of the inline Esc key pill (a styled chip the app fills in); keep the empty wrapper tag"
     },
-    "screenshot": "listing-stalled.png"
+    "screenshot": "listing-stalled.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "ui.numberInput.decrease": "Decrease {label}",
   "@ui.numberInput.decrease": {
@@ -237,7 +239,7 @@
   "ui.startedElsewhere.keysWait": "The keyboard waits until you stop typing.",
   "@ui.startedElsewhere.keysWait": {
     "description": "Shown alone, or after the \"started this\" line, while a dialog that opened by itself ignores the keyboard, so that someone typing elsewhere can't confirm it by accident. It goes away about a second after the last key. Escape and clicks still work during this time, so don't word it as the dialog being locked.",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "network-sign-in-sheet.png"
   },
   "ui.toolAsk.allow": "Allow",
   "@ui.toolAsk.allow": {

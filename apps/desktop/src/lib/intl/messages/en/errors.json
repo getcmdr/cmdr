@@ -2699,7 +2699,8 @@
   },
   "@errors.write.permissionDenied.message.sourceMove": {
     "description": "Body of the move error dialog when the SOURCE refused (the original couldn't be read or removed from its folder), as opposed to the destination refusing the write. Plain text. Uses a contraction (\"don't\"). Raw errors.* string (no ICU).",
-    "screenshot": "transfer-error-source_not_removed.png"
+    "screenshot": "error-message-example.png",
+    "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
   },
   "@errors.write.permissionDenied.suggestion.sourceRead": {
     "description": "Recovery suggestion when the SOURCE of a copy refused to be read. Plain text. Uses a contraction (\"it's\"). Raw errors.* string (no ICU).",
@@ -3032,7 +3033,8 @@
         "description": "The full path of the folder the user tried to delete, for example /Users, inserted verbatim. Do not translate or reformat it."
       }
     },
-    "screenshot": "transfer-error-home_folder-holds.png"
+    "screenshot": "error-message-example.png",
+    "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
   },
   "errors.write.homeFolder.suggestion.isHome": "If you want to get rid of all your files, go in there, select all, and delete. Although, it still sounds like a very bad idea.",
   "errors.write.homeFolder.suggestion.holdsHome": "If you want to free up space, be a bit more specific. If you want to get rid of everything on this machine, do an OS reset.",
@@ -3062,7 +3064,8 @@
         "description": "The full path of the folder the user tried to move, for example /Users, inserted verbatim. Do not translate or reformat it."
       }
     },
-    "screenshot": "transfer-error-home_folder-move-holds.png"
+    "screenshot": "error-message-example.png",
+    "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
   },
   "errors.write.homeFolderMove.suggestion.isHome": "{platform, select, macos {If you want your files somewhere else, go in there, pick what you need, and move that. Your Mac will thank you.} windows {If you want your files somewhere else, go in there, pick what you need, and move that. Your PC will thank you.} other {If you want your files somewhere else, go in there, pick what you need, and move that. Your computer will thank you.}}",
   "@errors.write.homeFolderMove.suggestion.isHome": {
@@ -3088,7 +3091,8 @@
         "description": "The full path of the folder the user tried to rename, for example /Users, inserted verbatim. Do not translate or reformat it."
       }
     },
-    "screenshot": "transfer-error-home_folder-rename-holds.png"
+    "screenshot": "error-message-example.png",
+    "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
   },
   "errors.write.homeFolderRename.suggestion.isHomeWithKey": "{platform, select, macos {If you really need a new name, macOS has a careful way to do it in Users & Groups. It’s not a quick {renameKey}, though.} windows {Windows has no safe built-in way to rename it, so it’s best left as it is.} other {If you really need a new name, an administrator can do it carefully with usermod, signed in as another user. It’s not a quick {renameKey}, though.}}",
   "@errors.write.homeFolderRename.suggestion.isHomeWithKey": {

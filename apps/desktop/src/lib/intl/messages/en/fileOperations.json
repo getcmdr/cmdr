@@ -290,7 +290,8 @@
   "fileOperations.mkdir.aiSuggestionsHeader": "AI suggestions:",
   "@fileOperations.mkdir.aiSuggestionsHeader": {
     "description": "Heading shown above the AI-generated folder-name suggestion chips in the new-folder dialog. 'AI' is the common abbreviation.",
-    "screenshot": "mkdir-confirmation-empty.png"
+    "screenshot": "mkdir-confirmation-empty.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "fileOperations.shared.conflictExistsFolder": "There is already a folder by this name in this folder.",
   "@fileOperations.shared.conflictExistsFolder": {
@@ -305,7 +306,8 @@
   "fileOperations.shared.byteRate": "<size></size>/s",
   "@fileOperations.shared.byteRate": {
     "description": "Data-transfer speed shown next to a scan or copy/move bar, e.g. '1.2 MB/s'. <size> renders the formatted size (a widget, no inner text); '/s' means per second. Keep the per-second marker adjacent to the size. Its sibling fileOperations.shared.fileRate does the same job for the files-per-second rate; keep the two reading alike.",
-    "screenshot": "toast-transfer-complete.png"
+    "screenshot": "toast-transfer-complete.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "fileOperations.shared.fileRate": "{count, plural, one {{rateText} file/s} other {{rateText} files/s}}",
   "@fileOperations.shared.fileRate": {
@@ -313,7 +315,8 @@
     "placeholders": {
       "rateText": "the files-per-second rate, already formatted for display (e.g. 0.4 or 1,500)",
       "count": "the same rate as a number (drives the singular/plural form of the noun)"
-    }
+    },
+    "screenshot": "queue.png"
   },
   "fileOperations.shared.andJoin": "{a} and {b}",
   "@fileOperations.shared.andJoin": {
@@ -342,17 +345,17 @@
   "fileOperations.transferDialog.toggleCompress": "Compress",
   "@fileOperations.transferDialog.toggleCompress": {
     "description": "Label of the segmented-control option that sets the operation to compress (pack the selected files into a new zip). Short control label, sits next to Copy and Move.",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "transfer-dialog.png"
   },
   "fileOperations.transferDialog.sourceGroupTitle": "From",
   "@fileOperations.transferDialog.sourceGroupTitle": {
     "description": "Heading over the group showing where the items come from: the full path of their current folder. Pairs with fileOperations.transferDialog.targetGroupTitle (\"To\").",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "transfer-dialog.png"
   },
   "fileOperations.transferDialog.targetGroupTitle": "To",
   "@fileOperations.transferDialog.targetGroupTitle": {
     "description": "Heading over the group that picks where the items go: the destination volume dropdown plus the destination path box. Pairs with fileOperations.transferDialog.sourceGroupTitle (\"From\").",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "transfer-dialog.png"
   },
   "fileOperations.transferDialog.operationAria": "Action",
   "@fileOperations.transferDialog.operationAria": {
@@ -376,7 +379,7 @@
       "free": "available space, already formatted (e.g. 12 GB)",
       "total": "total volume size, already formatted (e.g. 500 GB)"
     },
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "transfer-dialog.png"
   },
   "fileOperations.transferDialog.spaceInfoUnbounded": "{used} used, no size limit",
   "@fileOperations.transferDialog.spaceInfoUnbounded": {
@@ -544,7 +547,8 @@
       "countText": "how many clashing files, formatted for display (e.g. 1,234)",
       "count": "the same number (drives the singular/plural verb phrase)"
     },
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "conflict-dialog.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "fileOperations.transferDialog.policySkip": "{count, plural, one {Skip} other {Skip all}}",
   "@fileOperations.transferDialog.policySkip": {
@@ -584,7 +588,8 @@
     "placeholders": {
       "count": "number of clashing files (selects the single vs. 'each' wording)"
     },
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "conflict-dialog.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "fileOperations.transferDialog.policyAskEach": "Ask for each",
   "@fileOperations.transferDialog.policyAskEach": {
@@ -607,13 +612,11 @@
   },
   "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Skip Mac hidden files (.DS_Store, ._*)} windows {Skip Windows thumbnail files (Thumbs.db, ehthumbs*.db)} other {Skip Linux leftover files (.nfs*, .fuse_hidden*)}}",
   "@fileOperations.transferDialog.osJunkFiles.toggle": {
-    "description": "Checkbox label in the 'To' group of the copy, move, and compress dialog. When checked, this one operation leaves out the junk files the user's own operating system drops beside their files, which other systems show as clutter. Each OS branch names its own set: macOS skips Finder’s .DS_Store and the ._ files beside items; Windows skips the Thumbs.db, ehthumbs.db, and ehthumbs_vista.db thumbnail caches; Linux (the other branch) skips the .nfs… and .fuse_hidden… files Linux keeps for deleted files that are still open. Keep the filenames (.DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs*, .fuse_hidden*) exactly as written. Same wording as the setting (settings.fileOperations.osJunkFiles.label), plus the filenames.",
-    "screenshot": "conflict-dialog.png"
+    "description": "Checkbox label in the 'To' group of the copy, move, and compress dialog. When checked, this one operation leaves out the junk files the user's own operating system drops beside their files, which other systems show as clutter. Each OS branch names its own set: macOS skips Finder’s .DS_Store and the ._ files beside items; Windows skips the Thumbs.db, ehthumbs.db, and ehthumbs_vista.db thumbnail caches; Linux (the other branch) skips the .nfs… and .fuse_hidden… files Linux keeps for deleted files that are still open. Keep the filenames (.DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs*, .fuse_hidden*) exactly as written. Same wording as the setting (settings.fileOperations.osJunkFiles.label), plus the filenames."
   },
   "fileOperations.transferDialog.osJunkFiles.dontAskAgain": "Don’t ask again",
   "@fileOperations.transferDialog.osJunkFiles.dontAskAgain": {
-    "description": "Link right after the “Skip … files” checkbox in the copy, move, and compress dialog (fileOperations.transferDialog.osJunkFiles.toggle), shown while the setting says to ask each time. Opens Settings at that setting, where the user can pick a default (include or skip) so the dialog stops asking. A short phrase (no question mark), styled as a link.",
-    "screenshot": "conflict-dialog.png"
+    "description": "Link right after the “Skip … files” checkbox in the copy, move, and compress dialog (fileOperations.transferDialog.osJunkFiles.toggle), shown while the setting says to ask each time. Opens Settings at that setting, where the user can pick a default (include or skip) so the dialog stops asking. A short phrase (no question mark), styled as a link."
   },
   "fileOperations.transferDialog.osJunkFiles.includingByDefault": "Including by default",
   "@fileOperations.transferDialog.osJunkFiles.includingByDefault": {
@@ -712,7 +715,8 @@
   "fileOperations.scanPhase.fromLabel": "From:",
   "@fileOperations.scanPhase.fromLabel": {
     "description": "Label before the source path shown during the scan phase of a transfer, e.g. 'From: /Users/...'. Keep the trailing colon.",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "conflict-dialog.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "fileOperations.scanPhase.scanFile": "{count, plural, one {file} other {files}}",
   "@fileOperations.scanPhase.scanFile": {
@@ -733,7 +737,8 @@
   "fileOperations.transferProgress.scanTitleCopy": "Verifying before copy…",
   "@fileOperations.transferProgress.scanTitleCopy": {
     "description": "Progress-dialog title while counting files before a copy, so the user knows why the app is walking the folder tree. Keep the trailing ellipsis.",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "transfer-dialog.png",
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
   },
   "fileOperations.transferProgress.scanTitleMove": "Verifying before move…",
   "@fileOperations.transferProgress.scanTitleMove": {
@@ -972,7 +977,8 @@
     "placeholders": {
       "policy": "the chosen policy's name, from the fileOperations.transferProgress.policyName.* keys (like “Skip”, “Overwrite if older”, “Ask for each”)"
     },
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "transfer-dialog.png",
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
   },
   "fileOperations.transferProgress.policyName.skip": "Skip",
   "@fileOperations.transferProgress.policyName.skip": {
@@ -1001,7 +1007,8 @@
   "fileOperations.transferProgress.policyName.askEach": "Ask for each",
   "@fileOperations.transferProgress.policyName.askEach": {
     "description": "The “ask” policy's NAME after the colon in fileOperations.transferProgress.conflictPolicyCaption: Cmdr asks about each clashing file as it comes. A noun phrase or a state, NOT a command (see fileOperations.transferProgress.policyName.skip). The same English ships as commands in the copy dialog’s radios and settings.fileOperations.defaultConflictPolicy.opt.*; if yours are imperatives, the name form here legitimately differs: record the split in apps/desktop/scripts/i18n-term-consistency-allowlist.json with that reason (a caption names a policy; the radio and the setting option are commands). Short.",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "transfer-dialog.png",
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
   },
   "fileOperations.transferProgress.policyName.rename": "Rename",
   "@fileOperations.transferProgress.policyName.rename": {
@@ -1075,7 +1082,8 @@
   "fileOperations.transferProgress.titleFlushing": "Writing the last piece…",
   "@fileOperations.transferProgress.titleFlushing": {
     "description": "Progress-dialog title during the final flush to disk after the bytes are copied (a real pause on slow media). Reassures the user it isn't stuck. Keep the trailing ellipsis.",
-    "screenshot": "toast-transfer-complete.png"
+    "screenshot": "transfer-dialog.png",
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
   },
   "fileOperations.transferProgress.titleRemovingOriginals": "Removing the originals…",
   "@fileOperations.transferProgress.titleRemovingOriginals": {
@@ -1089,12 +1097,14 @@
     "placeholders": {
       "gerund": "the operation: copy, move, delete, or trash"
     },
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "transfer-dialog.png",
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
   },
   "fileOperations.transferProgress.stageScanning": "Scanning",
   "@fileOperations.transferProgress.stageScanning": {
     "description": "Label of the first step chip in the progress dialog's two-step indicator: counting files. Short status label.",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "transfer-dialog.png",
+    "screenshotNote": "The copy/move progress dialog, pictured here on a plain copy. Your string is the line above its progress bar during a compress: Compressing, then Finishing compression, then Transferring the archive, then Finishing the transfer, each with \"Step 1 of 2\" or \"Step 2 of 2\" in front when the archive goes to a remote place."
   },
   "fileOperations.transferProgress.stageCompressing": "Compressing",
   "@fileOperations.transferProgress.stageCompressing": {
@@ -1486,7 +1496,7 @@
     "placeholders": {
       "countText": "the number of files left, already formatted for display (e.g. 1,312)"
     },
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "queue.png"
   },
   "fileOperations.transferProgress.itemsLeft": "{count, plural, one {{countText} item left} other {{countText} items left}}",
   "@fileOperations.transferProgress.itemsLeft": {
@@ -1529,7 +1539,8 @@
   "fileOperations.transferProgress.pause": "Pause",
   "@fileOperations.transferProgress.pause": {
     "description": "Button on the progress dialog that pauses this transfer in place. It can be resumed later. Toggles to \"Resume\". Short control label.",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "transfer-dialog.png",
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
   },
   "fileOperations.transferProgress.resume": "Resume",
   "@fileOperations.transferProgress.resume": {
@@ -1551,7 +1562,8 @@
   "fileOperations.transferProgress.background": "Background",
   "@fileOperations.transferProgress.background": {
     "description": "The same button as fileOperations.transferProgress.queue, worded for an EMPTY operation queue: with nothing else running there is nothing to queue behind, so the button describes what it does instead (keep the transfer running out of sight while the user carries on). The word is a verb here, the thing you do to the transfer, not the noun for a background. Short control label; must fit the same button as \"Queue\".",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "transfer-dialog.png",
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
   },
   "fileOperations.transferProgress.queue": "Queue",
   "@fileOperations.transferProgress.queue": {
@@ -2232,7 +2244,8 @@
   "fileOperations.transferTree.preparing": "Listing the files…",
   "@fileOperations.transferTree.preparing": {
     "description": "Quiet placeholder where the live file tree of a copy/move/compress will appear, shown while Cmdr is still scanning the selection and has no list to show yet. Ends in an ellipsis (U+2026) because it’s still in progress.",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "conflict-dialog.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "fileOperations.transferTree.empty": "No files to show",
   "@fileOperations.transferTree.empty": {

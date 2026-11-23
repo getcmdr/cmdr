@@ -7,7 +7,7 @@
   "settings.appearance.language.opt.system": "System default",
   "@settings.appearance.language.opt.system": {
     "description": "Language-picker option: follow the system language instead of forcing a specific one. The other options in this picker are each language's own name (auto-generated, not translated here). This is the only translatable option label. Shown when following the system lands on English or when the system has no answer; otherwise the settings.appearance.language.opt.systemWithLanguage variant below is shown instead, so keep the two openings identical.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-appearance-page-2.png"
   },
   "settings.appearance.language.opt.systemWithLanguage": "System default ({language})",
   "@settings.appearance.language.opt.systemWithLanguage": {
@@ -77,7 +77,8 @@
   "settings.appearance.sizeColors.description": "Color file sizes in the file list by tier. Rainbow uses green, yellow, orange, red, and purple. App uses shades of the app color.",
   "@settings.appearance.sizeColors.description": {
     "description": "Help text for the size-colors setting. Explains that file sizes in the file list are tinted by size tier, and what the Rainbow and App options do. \"Rainbow\" and \"App\" are this setting's own option names (see its opt.* keys); keep them consistent with those translations.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-appearance.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.appearance.sizeColors.opt.none": "None",
   "@settings.appearance.sizeColors.opt.none": {
@@ -106,7 +107,8 @@
   "settings.appearance.dateColors.description": "Color modified dates in the file list by age. App fades older dates toward the default text color. Wilting goes green for fresh files, yellow for aging, and brown for old.",
   "@settings.appearance.dateColors.description": {
     "description": "Help text for the date-colors setting. Explains that modified dates in the file list are tinted by file age, and what the App and Wilting options do. \"App\" and \"Wilting\" are this setting's own option names (see its opt.* keys); keep them consistent with those translations.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-appearance.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.appearance.dateColors.opt.none": "None",
   "@settings.appearance.dateColors.opt.none": {
@@ -130,7 +132,7 @@
   "settings.appearance.dateTimeFormat.label": "Date and time format",
   "@settings.appearance.dateTimeFormat.label": {
     "description": "Label for the date/time display-format picker in Settings > Appearance > Colors and formats.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-appearance-page-2.png"
   },
   "settings.appearance.dateTimeFormat.opt.system": "System default",
   "@settings.appearance.dateTimeFormat.opt.system": {
@@ -194,7 +196,8 @@
   "settings.listing.stripedRows.description": "Alternate row shading for easier line tracking. Applies to both Full view and Brief view.",
   "@settings.listing.stripedRows.description": {
     "description": "Help text for the striped-rows toggle. “Full view” and “Brief view” are the file list's two layouts, named as in the View menu (menu.view.fullView, menu.view.briefView); use the same words.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-appearance.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.listing.stripedRows.keywords": "stripe, zebra, alternate, row, shading, accessibility",
   "@settings.listing.stripedRows.keywords": {
@@ -203,7 +206,7 @@
   "settings.appearance.tintLocal.label": "Tint local-volume panes",
   "@settings.appearance.tintLocal.label": {
     "description": "Label for the color-tint picker applied to panes showing a local drive. \"pane\" is one of Cmdr's two side-by-side file lists. Sits in Settings > Appearance > Colors and formats under the \"Tint volume types\" group.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-appearance-page-2.png"
   },
   "settings.appearance.tintLocal.keywords": "tint, pane, color, volume, local, background, highlight",
   "@settings.appearance.tintLocal.keywords": {
@@ -212,7 +215,7 @@
   "settings.appearance.tintSmb.label": "Tint server panes (SMB, SFTP, WebDAV, S3)",
   "@settings.appearance.tintSmb.label": {
     "description": "Label for the color-tint picker applied to panes showing a server: an SMB share, an SFTP server, a WebDAV server, or S3 storage. \"SMB\", \"SFTP\", \"WebDAV\", and \"S3\" are protocol names; keep all four as-is.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-appearance-page-2.png"
   },
   "settings.appearance.tintSmb.keywords": "tint, pane, color, volume, server, network, background, highlight",
   "@settings.appearance.tintSmb.keywords": {
@@ -221,12 +224,13 @@
   "settings.appearance.tintMtp.label": "Tint device panes (MTP, ADB)",
   "@settings.appearance.tintMtp.label": {
     "description": "Label for the color-tint picker applied to panes showing a USB-connected device: a phone, Kindle, or camera. \"MTP\" and \"ADB\" are the two connection protocol names (MTP for phones, Kindles, and cameras; ADB for Android phones in developer mode); keep both as-is. Mirrors the server tint label's \"(SMB, SFTP, …)\" shape.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-appearance-page-2.png"
   },
   "settings.appearance.tintMtp.description": "Background tint applied to panes showing a phone, Kindle, or camera, whether it’s connected over MTP or ADB.",
   "@settings.appearance.tintMtp.description": {
     "description": "Help text for the device tint. \"Kindle\" is a product name; keep it. \"MTP\" and \"ADB\" are protocol names; keep them. These are USB-connected devices shown in a pane, and one tint covers both connection kinds.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-appearance.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.appearance.tintMtp.keywords": "tint, pane, color, volume, phone, device, camera, background, highlight",
   "@settings.appearance.tintMtp.keywords": {
@@ -240,7 +244,8 @@
   "settings.appearance.textSize.description": "{platform, select, macos {Scales text and UI throughout the app. Compounds with the macOS Accessibility text size, where 100% means “exactly the system size”.} other {Scales text and UI throughout the app.}}",
   "@settings.appearance.textSize.description": {
     "description": "Help text for the text-size slider. The macOS branch notes it multiplies with the macOS Accessibility text-size setting, so 100% equals the current system size; the other branch (Windows and Linux) is the first sentence alone. \"100%\" is a literal value; keep the percent sign. The screenshot shows the macOS wording.",
-    "screenshot": "settings-appearance-zoom.png"
+    "screenshot": "settings-appearance-zoom.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.appearance.textSize.keywords": "text, size, font, larger, smaller, accessibility, zoom, scale",
   "@settings.appearance.textSize.keywords": {
@@ -278,7 +283,8 @@
   "settings.listing.sizeDisplay.description": "Smart shows the smaller of content and on-disk size. This helps with disk images and compressed files where the two differ.",
   "@settings.listing.sizeDisplay.description": {
     "description": "Help text for the size-display setting. \"Smart\" is this setting's own option name (see opt.smart); keep it consistent. \"content\" and \"on-disk\" refer to the Content and On disk options below it.",
-    "screenshot": "settings-appearance-sizes.png"
+    "screenshot": "settings-appearance-sizes.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.listing.sizeDisplay.opt.smart": "Smart",
   "@settings.listing.sizeDisplay.opt.smart": {
@@ -307,7 +313,8 @@
   "settings.listing.sizeUnit.description": "Dynamic picks the friendliest unit per file. Fixed units make sizes apples-to-apples across the list. Bytes shows the exact count for precise comparison.",
   "@settings.listing.sizeUnit.description": {
     "description": "Help text for the size-unit setting. \"Dynamic\" and \"Bytes\" are this setting's own option names; keep consistent. \"apples-to-apples\" is an idiom meaning a fair like-for-like comparison; render the meaning, not the literal fruit.",
-    "screenshot": "settings-appearance-sizes.png"
+    "screenshot": "settings-appearance-sizes.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.listing.sizeUnit.opt.dynamic": "Dynamic",
   "@settings.listing.sizeUnit.opt.dynamic": {
@@ -331,7 +338,8 @@
   "settings.appearance.fileSizeFormat.description": "How to show sizes everywhere: binary (KiB, MiB, where 1 KiB = 1,024 bytes) or SI decimal (kB, MB, where 1 kB = 1,000 bytes).",
   "@settings.appearance.fileSizeFormat.description": {
     "description": "Help text for the file-size-format setting. KiB and MiB are the binary (base 1024, IEC) symbols; kB and MB are the decimal (base 1000, SI) symbols. Write each one exactly as your translations of common.sizeUnit.kibibyte, common.sizeUnit.mebibyte, common.sizeUnit.kilobyte, and common.sizeUnit.megabyte do, so this text names what the app then shows. Localize everything else: translate \"bytes\" to the local term, and write the numbers 1024 and 1000 with your language's own convention (thousands separator, or none) rather than the English \"1,024\"/\"1,000\".",
-    "screenshot": "settings-appearance-sizes.png"
+    "screenshot": "settings-appearance-sizes.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.appearance.fileSizeFormat.opt.binary": "Binary (KiB, MiB, GiB)",
   "@settings.appearance.fileSizeFormat.opt.binary": {
@@ -355,7 +363,8 @@
   "settings.listing.sizeMismatchWarning.description": "Shows a warning icon on folders where content and on-disk sizes differ by more than 50% and 200 MB.",
   "@settings.listing.sizeMismatchWarning.description": {
     "description": "Help text for the size-mismatch-warning toggle. \"50%\" and \"200 MB\" are literal thresholds; keep the percent sign. \"MB\" is the decimal (base 1000) megabyte: write it as your translation of common.sizeUnit.megabyte.",
-    "screenshot": "settings-appearance-sizes.png"
+    "screenshot": "settings-appearance-sizes.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.listing.sizeMismatchWarning.keywords": "size, mismatch, warning, alert, disk, content, difference",
   "@settings.listing.sizeMismatchWarning.keywords": {
@@ -369,7 +378,8 @@
   "settings.appearance.useAppIconsForDocuments.description": "Show the app’s icon for documents instead of generic file type icons. More colorful but slightly slower.",
   "@settings.appearance.useAppIconsForDocuments.description": {
     "description": "Help text for the app-icons-for-documents toggle. \"app\" here means the application that opens a given document.",
-    "screenshot": "settings-appearance-listing.png"
+    "screenshot": "settings-appearance-listing.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.appearance.useAppIconsForDocuments.keywords": "icon, document, file, app, colorful",
   "@settings.appearance.useAppIconsForDocuments.keywords": {
@@ -383,7 +393,8 @@
   "settings.appearance.showFunctionKeyBar.description": "Show the row of F-key command buttons (Rename, View, Copy, and so on) at the bottom of the window.",
   "@settings.appearance.showFunctionKeyBar.description": {
     "description": "Help text for the function-key-bar toggle. \"F-key\" means a keyboard function key (F1-F12). \"Rename\", \"View\", and \"Copy\" are Cmdr command names; translate them consistently with those commands elsewhere.",
-    "screenshot": "settings-appearance-zoom.png"
+    "screenshot": "settings-appearance-zoom.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.appearance.showFunctionKeyBar.keywords": "function, key, bar, shortcut, buttons, bottom, toolbar",
   "@settings.appearance.showFunctionKeyBar.keywords": {
@@ -421,7 +432,8 @@
   "settings.listing.showHiddenFiles.description": "{platform, select, macos {Show dotfiles (like .zshrc) and items the system marks as hidden. Applies to both panes.} windows {Show dotfiles (like .zshrc) and items the system marks as hidden. Applies to both panes.} other {Show dotfiles (like .bashrc) and items the system marks as hidden. Applies to both panes.}}",
   "@settings.listing.showHiddenFiles.description": {
     "description": "Help text for the show-hidden-files toggle. \".zshrc\" is a literal example filename; keep it. \"panes\" are Cmdr's two side-by-side file lists; translate consistently with the pane wording elsewhere. The screenshot shows the macOS wording.",
-    "screenshot": "settings-appearance-listing.png"
+    "screenshot": "settings-appearance-listing.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.listing.showHiddenFiles.keywords": "hidden, dotfile, dotfiles, invisible, system, show",
   "@settings.listing.showHiddenFiles.keywords": {
@@ -435,7 +447,8 @@
   "settings.listing.showExtensionInName.description": "Show the full filename (like launch.json) in the Name column and hide the separate Ext column. Affects Full view only.",
   "@settings.listing.showExtensionInName.description": {
     "description": "Help text for the show-extension-in-name toggle. \"launch.json\" is a literal example filename; keep it. \"Name\" and \"Ext\" are Cmdr column names; “Full view” is the file-list layout named in the View menu; use the same words as there.",
-    "screenshot": "settings-appearance-listing.png"
+    "screenshot": "settings-appearance-listing.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.listing.showExtensionInName.keywords": "extension, ext, filename, name, column, full, split, suffix",
   "@settings.listing.showExtensionInName.keywords": {
@@ -449,7 +462,8 @@
   "settings.listing.showTags.description": "Show colored dots next to names for files and folders that carry macOS Finder tags.",
   "@settings.listing.showTags.description": {
     "description": "Help text for the show-tags toggle. \"Finder tags\" are macOS's colored file labels; keep \"Finder\" as the macOS app name.",
-    "screenshot": "settings-appearance-listing.png"
+    "screenshot": "settings-appearance-listing.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.listing.showTags.keywords": "tag, tags, label, labels, color, colour, dot, dots",
   "@settings.listing.showTags.keywords": {
@@ -472,7 +486,8 @@
   "settings.listing.spaceCalculatesFolderSize.description": "When Space selects a folder whose size isn’t known yet, Cmdr adds up its contents and shows the total. Esc stops the calculation.",
   "@settings.listing.spaceCalculatesFolderSize.description": {
     "description": "Help text for the Space-calculates-folder-size switch. Esc is the key name.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.listing.spaceCalculatesFolderSize.keywords": "space, size, folder, folders, directory, calculate, count, select",
   "@settings.listing.spaceCalculatesFolderSize.keywords": {
@@ -509,7 +524,8 @@
   "settings.listing.briefColumnWidthMode.description": "Limits how wide Brief mode columns can grow to fit long filenames. Columns are always capped at the pane width regardless; the chosen limit only kicks in when it would be smaller than the pane.",
   "@settings.listing.briefColumnWidthMode.description": {
     "description": "Help text for the Brief-column-width-mode setting. \"Brief\" is a view-mode name; a pane is one of the two file lists. \"kicks in\" is an idiom meaning takes effect; render the meaning.",
-    "screenshot": "settings-appearance-listing.png"
+    "screenshot": "settings-appearance-listing.png",
+    "screenshotNote": "Settings > Appearance > Listing, pictured here. Your string is one of the choices for how wide columns in the Brief view may grow."
   },
   "settings.listing.briefColumnWidthMode.opt.paneWidth": "Pane width (no limit)",
   "@settings.listing.briefColumnWidthMode.opt.paneWidth": {
@@ -577,7 +593,8 @@
     "placeholders": {
       "combo": "the user’s own paste key, as key glyphs or key names (⌘V on a Mac, Ctrl+V on Windows and Linux); never a word"
     },
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileOperations.pasteClipboardAsFile.descriptionWithoutKey": "What pasting does in a folder when the clipboard holds text, an image, or a PDF instead of copied files.",
   "@settings.fileOperations.pasteClipboardAsFile.descriptionWithoutKey": {
@@ -604,28 +621,23 @@
   },
   "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Skip Mac hidden files} windows {Skip Windows thumbnail files} other {Skip Linux leftover files}}",
   "@settings.fileOperations.osJunkFiles.label": {
-    "description": "Settings label for a three-way choice: whether copying, moving, and compressing leaves out the junk files the user's own operating system drops beside their files. Each OS branch names its own set: macOS skips Finder’s .DS_Store and the ._ files beside items; Windows skips the Thumbs.db, ehthumbs.db, and ehthumbs_vista.db thumbnail caches; Linux (the other branch) skips the .nfs… and .fuse_hidden… files Linux keeps for deleted files that are still open. “Mac hidden files” means files that mean something only on a Mac; “leftover” means files Linux leaves behind on its own, not files the user made. Same wording as the copy dialog’s toggle (fileOperations.transferDialog.osJunkFiles.toggle), minus the filenames.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "description": "Settings label for a three-way choice: whether copying, moving, and compressing leaves out the junk files the user's own operating system drops beside their files. Each OS branch names its own set: macOS skips Finder’s .DS_Store and the ._ files beside items; Windows skips the Thumbs.db, ehthumbs.db, and ehthumbs_vista.db thumbnail caches; Linux (the other branch) skips the .nfs… and .fuse_hidden… files Linux keeps for deleted files that are still open. “Mac hidden files” means files that mean something only on a Mac; “leftover” means files Linux leaves behind on its own, not files the user made. Same wording as the copy dialog’s toggle (fileOperations.transferDialog.osJunkFiles.toggle), minus the filenames."
   },
   "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Skips .DS_Store and ._* files when copying, moving, or compressing.} windows {Skips Thumbs.db and ehthumbs*.db files when copying, moving, or compressing. Windows rebuilds them when it needs them.} other {Skips .nfs* and .fuse_hidden* files when copying, moving, or compressing. Linux keeps them for deleted files that are still open.}}",
   "@settings.fileOperations.osJunkFiles.description": {
-    "description": "Help text under the junk-files setting (settings.fileOperations.osJunkFiles.label). macOS skips Finder’s .DS_Store and the ._ files beside items; Windows skips the Thumbs.db, ehthumbs.db, and ehthumbs_vista.db thumbnail caches; Linux (the other branch) skips the .nfs… and .fuse_hidden… files Linux keeps for deleted files that are still open. Keep the filenames (.DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs*, .fuse_hidden*) exactly as written. The three operations (copy, move, compress) are alternatives: the setting applies to each.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "description": "Help text under the junk-files setting (settings.fileOperations.osJunkFiles.label). macOS skips Finder’s .DS_Store and the ._ files beside items; Windows skips the Thumbs.db, ehthumbs.db, and ehthumbs_vista.db thumbnail caches; Linux (the other branch) skips the .nfs… and .fuse_hidden… files Linux keeps for deleted files that are still open. Keep the filenames (.DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs*, .fuse_hidden*) exactly as written. The three operations (copy, move, compress) are alternatives: the setting applies to each."
   },
   "settings.fileOperations.osJunkFiles.opt.include": "Include",
   "@settings.fileOperations.osJunkFiles.opt.include": {
-    "description": "Option of the junk-files setting (settings.fileOperations.osJunkFiles.label): copy these files like any other file. Segmented-control label, keep it short.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "description": "Option of the junk-files setting (settings.fileOperations.osJunkFiles.label): copy these files like any other file. Segmented-control label, keep it short."
   },
   "settings.fileOperations.osJunkFiles.opt.skip": "Skip",
   "@settings.fileOperations.osJunkFiles.opt.skip": {
-    "description": "Option of the junk-files setting (settings.fileOperations.osJunkFiles.label): leave these files out. Segmented-control label, keep it short.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "description": "Option of the junk-files setting (settings.fileOperations.osJunkFiles.label): leave these files out. Segmented-control label, keep it short."
   },
   "settings.fileOperations.osJunkFiles.opt.ask": "Always ask",
   "@settings.fileOperations.osJunkFiles.opt.ask": {
-    "description": "Option of the junk-files setting (settings.fileOperations.osJunkFiles.label), and the default: the copy, move, and compress dialog shows the choice, unticked, each time. Segmented-control label, keep it short. Same meaning as settings.fileOperations.allowFileExtensionChanges.opt.ask.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "description": "Option of the junk-files setting (settings.fileOperations.osJunkFiles.label), and the default: the copy, move, and compress dialog shows the choice, unticked, each time. Segmented-control label, keep it short. Same meaning as settings.fileOperations.allowFileExtensionChanges.opt.ask."
   },
   "settings.fileOperations.osJunkFiles.keywords": "hidden, metadata, clutter, junk, leftover, thumbnails, cache, resource fork, archive, compress, copy, move, other systems",
   "@settings.fileOperations.osJunkFiles.keywords": {
@@ -639,12 +651,13 @@
   "settings.fileOperations.skipConfirmation.explanation": "{platform, select, windows {Copy and Move go into the other pane right away, and Delete moves to the Recycle Bin without asking.} other {Copy and Move go into the other pane right away, and Delete moves to the trash without asking.}}",
   "@settings.fileOperations.skipConfirmation.explanation": {
     "description": "The longer text behind the ⓘ after the skip-confirmation switch’s label. \"Copy\", \"Move\", and \"Delete\" are Cmdr’s commands by the names its command palette shows (commands.fileCopy.label, commands.fileMove.label, commands.fileDelete.label); use the same names. It names commands, not keys, because the user can rebind each. \"the other pane\" = the second file list of the two-pane window. The Windows branch names the Recycle Bin (use your language’s Windows name for it); the other branch (macOS and Linux) says \"the trash\" (use that OS’s localized name).",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileOperations.skipConfirmation.summary": "A bit risky: one keypress acts at once. Deleting permanently still asks.",
   "@settings.fileOperations.skipConfirmation.summary": {
     "description": "Short line under the skip-confirmation switch. \"A bit risky\" is a gentle, friendly caution, not an alarm: keep the tone light. Says that one keypress copies, moves, or deletes right away, but deleting permanently (skipping the trash) still asks first.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-2.png"
   },
   "settings.fileOperations.skipConfirmation.keywords": "{platform, select, windows {confirm, confirmation, dialog, ask, copy, move, recycle bin, delete, skip, clicks} other {confirm, confirmation, dialog, ask, copy, move, trash, delete, skip, clicks}}",
   "@settings.fileOperations.skipConfirmation.keywords": {
@@ -653,12 +666,12 @@
   "settings.fileOperations.defaultConflictPolicy.label": "When files already exist",
   "@settings.fileOperations.defaultConflictPolicy.label": {
     "description": "Label for the picker choosing which option the copy and move dialog starts on when files with the same names are already at the destination. In Settings > Behavior > Navigation & file ops > File operations.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-2.png"
   },
   "settings.fileOperations.defaultConflictPolicy.description": "The choice the copy and move dialog starts on. Check “Remember this choice” there to change it.",
   "@settings.fileOperations.defaultConflictPolicy.description": {
     "description": "Help text for the 'When files already exist' setting. Explains that the copy/move (F5/F6) dialog opens on this choice, and that the dialog's 'Remember this choice' checkbox (fileOperations.transferDialog.rememberChoice) also sets it. Quote that checkbox label exactly as translated.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-2.png"
   },
   "settings.fileOperations.defaultConflictPolicy.keywords": "conflict, clash, exists, duplicate, same name, replace, overwrite, skip, ask, copy, move, remember, default",
   "@settings.fileOperations.defaultConflictPolicy.keywords": {
@@ -667,12 +680,13 @@
   "settings.fileOperations.keepProgressOpenWhenDone.label": "Keep the progress window open when a file operation finishes",
   "@settings.fileOperations.keepProgressOpenWhenDone.label": {
     "description": "Settings switch label in Settings > Behavior > Navigation & file ops > File operations. When on, the progress window of a copy, move, delete, or move to trash stays on screen after the operation finishes, showing what it did, until the person closes it. \"Progress window\" is the dialog with the progress bars.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-2.png"
   },
   "settings.fileOperations.keepProgressOpenWhenDone.description": "It shows what the operation did until you close it: how much, how long it took, and anything it skipped.",
   "@settings.fileOperations.keepProgressOpenWhenDone.description": {
     "description": "Help text under the switch that keeps the progress window open after a copy, move, delete, or move to trash finishes. \"It\" is the progress window; \"the operation\" is the copy, move, delete, or move to trash that just finished.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileOperations.keepProgressOpenWhenDone.keywords": "{platform, select, windows {progress, done, finished, complete, summary, result, report, stay, keep, close, window, dialog, copy, move, delete, recycle bin} other {progress, done, finished, complete, summary, result, report, stay, keep, close, window, dialog, copy, move, delete, trash}}",
   "@settings.fileOperations.keepProgressOpenWhenDone.keywords": {
@@ -686,22 +700,25 @@
   "settings.fileOperations.defaultConflictPolicy.opt.overwrite": "Overwrite",
   "@settings.fileOperations.defaultConflictPolicy.opt.overwrite": {
     "description": "Option of the 'When files already exist' setting: replace every clashing file at the destination. Must match the copy dialog's radio for a single clash, 'Overwrite' (fileOperations.transferDialog.policyOverwrite, its one-clash form).",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileOperations.defaultConflictPolicy.opt.overwriteSmaller": "Overwrite if smaller",
   "@settings.fileOperations.defaultConflictPolicy.opt.overwriteSmaller": {
     "description": "Option of the 'When files already exist' setting: replace a clashing file only when the one already at the destination is smaller. Must match the copy dialog's radio for a single clash, 'Overwrite if smaller' (fileOperations.transferDialog.policyOverwriteSmaller, its one-clash form).",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileOperations.defaultConflictPolicy.opt.overwriteOlder": "Overwrite if older",
   "@settings.fileOperations.defaultConflictPolicy.opt.overwriteOlder": {
     "description": "Option of the 'When files already exist' setting: replace a clashing file only when the one already at the destination is older. Must match the copy dialog's radio for a single clash, 'Overwrite if older' (fileOperations.transferDialog.policyOverwriteOlder, its one-clash form).",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileOperations.defaultConflictPolicy.opt.stop": "Ask later",
   "@settings.fileOperations.defaultConflictPolicy.opt.stop": {
     "description": "Option of the 'When files already exist' setting: decide per clashing file during the copy or move. This is the default. Must match the copy dialog's radio for a single clash, 'Ask later' (fileOperations.transferDialog.policyStop, its one-clash form).",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-2.png"
   },
   "settings.archives.card.archives": "Archives",
   "@settings.archives.card.archives": {
@@ -782,7 +799,8 @@
   "settings.archives.compressionLevel.description": "How hard to compress when Cmdr makes a zip. Higher levels make a smaller file but take longer to pack. This applies to the Compress command and to copying or moving files into a zip.",
   "@settings.archives.compressionLevel.description": {
     "description": "Help text under the compression-level slider in Settings > Behavior > Archives. \"Cmdr\" is the product name; do not translate it. \"zip\" is a file format; do not translate it.",
-    "screenshot": "settings-behavior-archives.png"
+    "screenshot": "settings-behavior-archives.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.archives.compressionLevel.faster": "Faster",
   "@settings.archives.compressionLevel.faster": {
@@ -907,7 +925,8 @@
   "settings.mediaIndex.enabled.description": "Covers local drives for now.",
   "@settings.mediaIndex.enabled.description": {
     "description": "The longer text behind the ⓘ after the “Index image contents” label. Scopes the feature to local drives: network drives come later.",
-    "screenshot": "settings-indexing-image-indexing.png"
+    "screenshot": "settings-indexing-image-indexing.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.mediaIndex.enabled.summary": "{platform, select, macos {Makes the text in your images searchable. It never leaves your Mac.} windows {Makes the text in your images searchable. It never leaves your PC.} other {Makes the text in your images searchable. It never leaves your computer.}}",
   "@settings.mediaIndex.enabled.summary": {
@@ -1202,7 +1221,8 @@
   "settings.indexing.askForEachDrive.description": "When you first open a network share or device, ask whether to index it.",
   "@settings.indexing.askForEachDrive.description": {
     "description": "Help text for the \"Ask for each drive\" toggle. Indexing of external drives is off by default; this asks per drive the first time you open it.",
-    "screenshot": "settings-indexing-drive-indexing.png"
+    "screenshot": "settings-indexing-drive-indexing.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.indexing.askForEachDrive.keywords": "drive, index, ask, prompt, notification, connect, network",
   "@settings.indexing.askForEachDrive.keywords": {
@@ -1216,7 +1236,8 @@
   "settings.indexing.staleNotify.description": "You’ll still see the yellow status if you turn this off.",
   "@settings.indexing.staleNotify.description": {
     "description": "Help text under the stale-notification toggle, reassuring that the yellow drive-index status dot stays visible even with the notification turned off.",
-    "screenshot": "settings-indexing-drive-indexing.png"
+    "screenshot": "settings-indexing-drive-indexing.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.indexing.staleNotify.keywords": "drive, index, stale, outdated, notify, notification, disconnect, network",
   "@settings.indexing.staleNotify.keywords": {
@@ -1273,12 +1294,13 @@
   "settings.indexing.firstStaleDialogShown.label": "Suppress the out-of-date index explainer",
   "@settings.indexing.firstStaleDialogShown.label": {
     "description": "Advanced-section label (in the Hints and warnings card) for the switch that silences the one-time dialog explaining that an external drive’s index may be out of date (indexing.staleDialog.title). On means the hint was already shown and won’t show again; the app turns it on by itself the moment the hint appears, and turning it off makes the hint show once more.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-4.png"
   },
   "settings.indexing.firstStaleDialogShown.description": "The first time an external drive’s index may be out of date, Cmdr explains what that means. Turn this off to see the explanation once more. It still shows only while “Notify me if any external drive index goes stale” is on.",
   "@settings.indexing.firstStaleDialogShown.description": {
     "description": "Help text for the “Suppress the out-of-date index explainer” switch (settings.indexing.firstStaleDialogShown.label). The quoted text must match settings.indexing.staleNotify.label; translate it the same way.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.indexing.firstStaleDialogShown.keywords": "index, stale, outdated, drive, external, dialog, explain",
   "@settings.indexing.firstStaleDialogShown.keywords": {
@@ -1292,7 +1314,8 @@
   "settings.behavior.fileSystemWatching.downloadsNotifications.description": "How to surface new files arriving in your Downloads folder.",
   "@settings.behavior.fileSystemWatching.downloadsNotifications.description": {
     "description": "Help text for the downloads-notifications setting. \"Downloads\" is the macOS folder name; use the OS's localized folder name. \"surface\" here means show/announce.",
-    "screenshot": "settings-behavior-notifications.png"
+    "screenshot": "settings-behavior-notifications.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.behavior.fileSystemWatching.downloadsNotifications.opt.inApp": "In-app",
   "@settings.behavior.fileSystemWatching.downloadsNotifications.opt.inApp": {
@@ -1346,12 +1369,13 @@
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.acknowledged.label": "Don’t ask about the latest-download shortcut again",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.acknowledged.label": {
     "description": "Advanced-section label (in the Hints and warnings card) for the switch that silences the one-time warning toast on the first press of the global shortcut that jumps to the latest download (downloads.warnToast.message), which asks whether to keep the shortcut on. On means the hint was already shown and won’t show again; the app turns it on by itself the moment the hint appears, and turning it off makes the hint show once more.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-4.png"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.acknowledged.description": "The first time you press the shortcut that jumps to your latest download from any app, Cmdr asks whether to keep it on. Changing the shortcut turns this off, so a new combo gets asked about too. Turn this off to see the question once more.",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.acknowledged.description": {
     "description": "Help text for the “Suppress the latest-download shortcut question” switch (settings.behavior.fileSystemWatching.globalGoToLatestShortcut.acknowledged.label). “Shortcut” is a keyboard shortcut; “combo” is the key combination.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.acknowledged.keywords": "download, shortcut, hotkey, global, warning, keep, toast",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.acknowledged.keywords": {
@@ -1411,7 +1435,8 @@
   "settings.behavior.fileSystemWatching.lowDiskSpaceThresholdPercent.description": "{platform, select, macos {Warn when free space drops below this percent of your startup disk.} windows {Warn when free space drops below this percent of your system drive.} other {Warn when free space drops below this percent of your system disk.}}",
   "@settings.behavior.fileSystemWatching.lowDiskSpaceThresholdPercent.description": {
     "description": "Help text for the low-disk-space threshold. Each branch names the boot drive in its own OS's term: \"startup disk\" on macOS, \"system drive\" on Windows, \"system disk\" on Linux; use that OS's localized term. The screenshot shows the macOS wording.",
-    "screenshot": "settings-behavior-notifications.png"
+    "screenshot": "settings-behavior-notifications.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.behavior.fileSystemWatching.lowDiskSpaceThresholdPercent.keywords": "disk, space, threshold, percent, low, free, warning",
   "@settings.behavior.fileSystemWatching.lowDiskSpaceThresholdPercent.keywords": {
@@ -1425,7 +1450,8 @@
   "settings.search.autoApply.description": "{platform, select, windows {Searches start 1 second after you stop typing. AI searches wait because they cost money. When this is off, press Enter or select the run button.} other {Searches start 1 second after you stop typing. AI searches wait because they cost money. When this is off, press Enter or click the run button.}}",
   "@settings.search.autoApply.description": {
     "description": "The longer text behind the ⓘ after the auto-apply-searches switch’s label. \"1 second\" is a literal delay. \"AI\" = artificial intelligence. \"Enter\" is the keyboard key name; use the locale’s key name. The Windows branch says “select” where the other says “click”, following each OS’s own wording.",
-    "screenshot": "settings-behavior-search.png"
+    "screenshot": "settings-behavior-search.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.search.autoApply.summary": "Runs name and regex searches as you type. AI searches wait for Enter.",
   "@settings.search.autoApply.summary": {
@@ -1555,7 +1581,8 @@
   "settings.network.enabled.description": "{platform, select, macos {When this is off, Cmdr won’t ask macOS for Local Network access.} windows {When this is off, Windows won’t ask to let Cmdr through the firewall.} other {}}",
   "@settings.network.enabled.description": {
     "description": "The longer text behind the ⓘ after the enable-networking switch’s label. \"Cmdr\" is the product name; \"macOS\" and \"Windows\" are brand names (keep them). The macOS branch’s \"Local Network\" is the macOS permission name: use your language’s macOS name for it. The Windows branch is about the Windows firewall prompt instead. The Linux branch is empty on purpose: there is no prompt to mention there, so keep it empty.",
-    "screenshot": "settings-file-systems-smb.png"
+    "screenshot": "settings-file-systems-smb.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.network.enabled.summary": "Finds SMB servers on your network. Mounted shares work either way.",
   "@settings.network.enabled.summary": {
@@ -1586,7 +1613,8 @@
   "settings.network.directSmbConnection.description": "{platform, select, macos {When this is on, Cmdr connects to SMB shares directly for faster file operations. The system mount stays for Finder and other apps.} windows {When this is on, Cmdr connects to SMB shares directly for faster file operations. The system connection stays for File Explorer and other apps.} other {When this is on, Cmdr connects to SMB shares directly for faster file operations. The system mount stays for your file manager and other apps.}}",
   "@settings.network.directSmbConnection.description": {
     "description": "Help text for the direct-SMB toggle. \"Cmdr\" is the product name and \"SMB\" a protocol name (keep both); Each branch names its OS's file manager: \"Finder\" on macOS (as your language's macOS shows it), \"File Explorer\" on Windows (Windows' name in your language), and \"your file manager\" on Linux. \"mount\" = the system-attached network share. The screenshot shows the macOS wording.",
-    "screenshot": "settings-file-systems-smb.png"
+    "screenshot": "settings-file-systems-smb.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.network.directSmbConnection.keywords": "direct, fast, connection, network, performance",
   "@settings.network.directSmbConnection.keywords": {
@@ -1600,7 +1628,8 @@
   "settings.network.requireSmbEncryption.description": "{platform, select, macos {Cmdr encrypts its SMB connections even when the server doesn’t ask for it, including shares your Mac connected to without encryption. Connections Cmdr already has open stay as they are until they reconnect.} windows {Cmdr encrypts its SMB connections even when the server doesn’t ask for it, including shares your PC connected to without encryption. Connections Cmdr already has open stay as they are until they reconnect.} other {Cmdr encrypts its SMB connections even when the server doesn’t ask for it, including shares your computer connected to without encryption. Connections Cmdr already has open stay as they are until they reconnect.}}",
   "@settings.network.requireSmbEncryption.description": {
     "description": "The longer text behind the ⓘ after the “Always require SMB encryption” label. “its SMB connections” means the direct connections Cmdr makes. “shares your Mac connected to without encryption” (your PC on Windows, your computer on Linux) are shares the system itself mounted (for example from its file manager) over an unencrypted connection. The last sentence: a direct connection Cmdr already has open keeps going until it next reconnects. \"Cmdr\" is the product name and \"SMB\" a protocol name; keep both.",
-    "screenshot": "settings-file-systems-smb.png"
+    "screenshot": "settings-file-systems-smb.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.network.requireSmbEncryption.summary": "Shares that can’t encrypt won’t open, and guests need to sign in.",
   "@settings.network.requireSmbEncryption.summary": {
@@ -1613,11 +1642,13 @@
   },
   "settings.network.showShareParentRow.label": "Show “..” in each share’s top folder",
   "@settings.network.showShareParentRow.label": {
-    "description": "Label for the switch (on by default) that puts a “..” row in the top folder of every SMB network share; opening it shows the other shares on the same server. Keep “..” exactly as written: it’s the parent-folder row the file list shows. A “share” is a shared folder on a network server. In Settings > File systems > SMB/Network shares, Behavior card."
+    "description": "Label for the switch (on by default) that puts a “..” row in the top folder of every SMB network share; opening it shows the other shares on the same server. Keep “..” exactly as written: it’s the parent-folder row the file list shows. A “share” is a shared folder on a network server. In Settings > File systems > SMB/Network shares, Behavior card.",
+    "screenshot": "settings-file-systems-smb-page-2.png"
   },
   "settings.network.showShareParentRow.description": "“..” takes you to the server’s list of shares. Change it per share from its menu in the volume switcher.",
   "@settings.network.showShareParentRow.description": {
-    "description": "Help text under the “Show “..” in each share’s top folder” switch (settings.network.showShareParentRow.label). “..” is the parent-folder row; keep it as written. “Its menu in the volume switcher” is the → submenu of the share’s row in the drive list that opens from the pane’s header chip."
+    "description": "Help text under the “Show “..” in each share’s top folder” switch (settings.network.showShareParentRow.label). “..” is the parent-folder row; keep it as written. “Its menu in the volume switcher” is the → submenu of the share’s row in the drive list that opens from the pane’s header chip.",
+    "screenshot": "settings-file-systems-smb-page-2.png"
   },
   "settings.network.showShareParentRow.keywords": "parent, up, back, other shares, top folder, root, server, sibling, double dot",
   "@settings.network.showShareParentRow.keywords": {
@@ -1626,37 +1657,42 @@
   "settings.network.shareCacheDuration.label": "Share cache duration",
   "@settings.network.shareCacheDuration.label": {
     "description": "Label for the picker controlling how long the list of a server's shares is cached. In Settings > File systems > SMB/Network shares.",
-    "screenshot": "settings-file-systems-smb.png"
+    "screenshot": "settings-file-systems-smb-page-2.png"
   },
   "settings.network.shareCacheDuration.description": "How long to cache the list of available shares on a server before refreshing.",
   "@settings.network.shareCacheDuration.description": {
     "description": "Help text for the share-cache-duration setting. \"shares\" = the folders a network server exposes.",
-    "screenshot": "settings-file-systems-smb.png"
+    "screenshot": "settings-file-systems-smb.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.network.shareCacheDuration.opt.s30": "30 seconds",
   "@settings.network.shareCacheDuration.opt.s30": {
     "description": "Share-cache-duration option: 30 seconds. \"30\" is literal.",
-    "screenshot": "settings-file-systems-smb.png"
+    "screenshot": "settings-file-systems-smb-page-2.png"
   },
   "settings.network.shareCacheDuration.opt.min5": "5 minutes",
   "@settings.network.shareCacheDuration.opt.min5": {
     "description": "Share-cache-duration option: 5 minutes. \"5\" is literal.",
-    "screenshot": "settings-file-systems-smb.png"
+    "screenshot": "settings-file-systems-smb.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.network.shareCacheDuration.opt.hour1": "1 hour",
   "@settings.network.shareCacheDuration.opt.hour1": {
     "description": "Share-cache-duration option: 1 hour. \"1\" is literal.",
-    "screenshot": "settings-file-systems-smb.png"
+    "screenshot": "settings-file-systems-smb.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.network.shareCacheDuration.opt.day1": "1 day",
   "@settings.network.shareCacheDuration.opt.day1": {
     "description": "Share-cache-duration option: 1 day. \"1\" is literal.",
-    "screenshot": "settings-file-systems-smb.png"
+    "screenshot": "settings-file-systems-smb.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.network.shareCacheDuration.opt.days30": "30 days",
   "@settings.network.shareCacheDuration.opt.days30": {
     "description": "Share-cache-duration option: 30 days. \"30\" is literal.",
-    "screenshot": "settings-file-systems-smb.png"
+    "screenshot": "settings-file-systems-smb.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.network.shareCacheDuration.keywords": "cache, share, network, refresh",
   "@settings.network.shareCacheDuration.keywords": {
@@ -1665,12 +1701,13 @@
   "settings.network.timeout.label": "Network timeout",
   "@settings.network.timeout.label": {
     "description": "Label for a number field, in seconds: how long Cmdr waits for a network share to answer before giving up. In Settings > File systems > SMB/Network shares, card “Performance and timeouts”.",
-    "screenshot": "settings-file-systems-smb.png"
+    "screenshot": "settings-file-systems-smb-page-2.png"
   },
   "settings.network.timeout.description": "How long Cmdr waits for a network share before giving up. 15 seconds suits typical local networks; try 45 for VPNs or high-latency connections.",
   "@settings.network.timeout.description": {
     "description": "Help text behind the ⓘ next to the “Network timeout” field. The two numbers are recommended values in seconds; keep them as they are. “VPN” = virtual private network (keep the abbreviation or use your language’s standard form). “Cmdr” is the product name; keep it.",
-    "screenshot": "settings-file-systems-smb.png"
+    "screenshot": "settings-file-systems-smb.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.network.timeout.keywords": "timeout, wait, slow, seconds, connection, latency, vpn",
   "@settings.network.timeout.keywords": {
@@ -1679,12 +1716,13 @@
   "settings.network.smbConcurrency.label": "Concurrent operations per SMB connection",
   "@settings.network.smbConcurrency.label": {
     "description": "Label for the number input setting how many transfers run in parallel on one SMB connection. \"SMB\" is a protocol name; keep it. Also appears in the Advanced section.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-7.png"
   },
   "settings.network.smbConcurrency.description": "How many file transfers Cmdr runs in parallel on a single SMB connection. Higher values speed up batch copies of many files (especially many small files) but use more server resources. Default 10 is safe for most home NAS hardware. Changes apply on the next batch copy.",
   "@settings.network.smbConcurrency.description": {
     "description": "Help text for the SMB-concurrency setting. \"Cmdr\" is the product name and \"SMB\" a protocol name (keep both). \"NAS\" = network-attached storage; keep the abbreviation. \"10\" is a literal default value.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.network.smbConcurrency.keywords": "concurrency, parallel, copy, batch, performance, transfer, speed",
   "@settings.network.smbConcurrency.keywords": {
@@ -1698,7 +1736,8 @@
   "settings.fileOperations.mtpEnabled.description": "Cmdr detects Android phones, Kindles, and cameras on a USB cable so you can browse and transfer files. On Android, look somewhere like Settings > USB Preferences; “Android Auto” works too. It varies by device.",
   "@settings.fileOperations.mtpEnabled.description": {
     "description": "The longer text behind the ⓘ after the MTP switch’s label; the summary line under the label gives the phone setup step. \"Android\", \"Kindle\", and “Android Auto” are product names; keep them. \"Settings > USB Preferences\" is an on-phone Android menu path quoted as an example; translate it the way Android shows it in your language, since it varies by device. \"USB\" is a connector name; keep it.",
-    "screenshot": "settings-file-systems-mtp.png"
+    "screenshot": "settings-file-systems-mtp.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileOperations.mtpEnabled.summary": "On your phone, set the USB connection to “File transfer” or similar.",
   "@settings.fileOperations.mtpEnabled.summary": {
@@ -1749,7 +1788,8 @@
   "settings.fileOperations.mtpConnectionWarning.description": "Show a notification when an Android or camera device connects over USB.",
   "@settings.fileOperations.mtpConnectionWarning.description": {
     "description": "Help text for the device-connect-warning toggle. \"Android\" is a product name (keep it); \"USB\" is a connector name (keep it).",
-    "screenshot": "settings-file-systems-mtp.png"
+    "screenshot": "settings-file-systems-mtp.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileOperations.mtpConnectionWarning.keywords": "warning, notification, connect, toast",
   "@settings.fileOperations.mtpConnectionWarning.keywords": {
@@ -1763,7 +1803,8 @@
   "settings.fileExplorer.git.showRepoChip.description": "Display the current branch, ahead/behind, and dirty state above the file list when inside a git repository.",
   "@settings.fileExplorer.git.showRepoChip.description": {
     "description": "Help text for the repo-chip toggle. \"git\", \"branch\", \"ahead/behind\", and \"dirty state\" are git version-control terms; use the locale's standard git terminology. \"dirty\" means having uncommitted changes.",
-    "screenshot": "settings-file-systems-git.png"
+    "screenshot": "settings-file-systems-git.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileExplorer.git.showRepoChip.keywords": "chip, branch, breadcrumb, repo, status, ahead, behind, dirty",
   "@settings.fileExplorer.git.showRepoChip.keywords": {
@@ -1777,7 +1818,8 @@
   "settings.fileExplorer.git.showStatusColumn.description": "Add a column showing each file’s git status (like modified or untracked) in Full view.",
   "@settings.fileExplorer.git.showStatusColumn.description": {
     "description": "Help text for the git-status-column toggle. \"git\", \"modified\", and \"untracked\" are git terms; use standard git terminology. “Full view” is the file-list layout named in the View menu; use the same words as there.",
-    "screenshot": "settings-file-systems-git.png"
+    "screenshot": "settings-file-systems-git.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileExplorer.git.showStatusColumn.keywords": "status, column, modified, untracked, ignored, added, deleted",
   "@settings.fileExplorer.git.showStatusColumn.keywords": {
@@ -1791,7 +1833,8 @@
   "settings.fileExplorer.git.showVirtualGitPortal.description": "When you open .git, show branches, tags, commits, and worktrees as folders you can browse. Turn this off to see the raw .git contents.",
   "@settings.fileExplorer.git.showVirtualGitPortal.description": {
     "description": "Help text for the virtual-git-portal toggle. \".git\" is a literal folder name; keep it exactly, with no quotes or backticks around it. \"branches\", \"tags\", \"commits\", and \"worktrees\" are git terms; use standard git terminology.",
-    "screenshot": "settings-file-systems-git.png"
+    "screenshot": "settings-file-systems-git.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileExplorer.git.showVirtualGitPortal.keywords": "portal, virtual, branches, tags, commits, worktrees, history",
   "@settings.fileExplorer.git.showVirtualGitPortal.keywords": {
@@ -1814,7 +1857,8 @@
   "settings.viewer.showTextCursor.description": "Show a blinking cursor in the file viewer, marking where a keyboard selection grows from.",
   "@settings.viewer.showTextCursor.description": {
     "description": "Help text for the viewer text-cursor toggle. The cursor sits at the moving end of the selection, so pressing Shift with an arrow key extends the selection from there. \"Keyboard selection\" = selecting text with Shift plus the arrow keys, as opposed to dragging with the mouse.",
-    "screenshot": "settings-viewer.png"
+    "screenshot": "settings-viewer.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.viewer.showTextCursor.keywords": "viewer, cursor, caret, text, insertion, point, blink, selection",
   "@settings.viewer.showTextCursor.keywords": {
@@ -1828,7 +1872,8 @@
   "settings.developer.mcpEnabled.description": "Start a Model Context Protocol server for AI assistant integration.",
   "@settings.developer.mcpEnabled.description": {
     "description": "Help text for the MCP-server toggle. \"Model Context Protocol\" is a standard name; keep it (it is what MCP abbreviates). \"AI\" = artificial intelligence.",
-    "screenshot": "settings-ai-mcp-server.png"
+    "screenshot": "settings-ai-mcp-server.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.developer.mcpEnabled.keywords": "server, ai, assistant, protocol, model",
   "@settings.developer.mcpEnabled.keywords": {
@@ -1842,7 +1887,8 @@
   "settings.developer.mcpPort.description": "The port in use shows below while the server runs. Pin a specific port if another tool needs to know it in advance.",
   "@settings.developer.mcpPort.description": {
     "description": "The longer text behind the ⓘ after the MCP server’s Port label. \"MCP\" = Model Context Protocol (keep it). “below” = the status line under this field that shows the actual port while the server is running. “Pin” = type a fixed port number here instead of 0.",
-    "screenshot": "settings-ai-mcp-server.png"
+    "screenshot": "settings-ai-mcp-server.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.developer.mcpPort.summary": "{platform, select, macos {Leave at 0 to let your Mac pick a free port.} windows {Leave at 0 to let your PC pick a free port.} other {Leave at 0 to let your computer pick a free port.}}",
   "@settings.developer.mcpPort.summary": {
@@ -1861,7 +1907,8 @@
   "settings.developer.verboseLogging.description": "Bumps the dev terminal and browser devtools console to debug level. The on-disk log file always captures debug detail regardless, so error reports are unaffected by this toggle. RUST_LOG always wins for the terminal.",
   "@settings.developer.verboseLogging.description": {
     "description": "Help text for the verbose-logging toggle, aimed at developers. \"RUST_LOG\" is a literal environment-variable name; keep it exactly. \"devtools\", \"debug level\", and \"terminal\" are developer terms. \"wins\" here means takes precedence over this toggle.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.developer.verboseLogging.keywords": "log, debug, verbose, troubleshoot, performance, console",
   "@settings.developer.verboseLogging.keywords": {
@@ -1884,7 +1931,8 @@
   "settings.whatsNew.showOnUpdate.description": "After Cmdr updates itself, show a quick summary of what changed.",
   "@settings.whatsNew.showOnUpdate.description": {
     "description": "Help text for the what's-new toggle. \"Cmdr\" is the product name; keep it.",
-    "screenshot": "settings-updates.png"
+    "screenshot": "settings-updates.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.whatsNew.showOnUpdate.keywords": "changelog, release notes, whats new, update notes",
   "@settings.whatsNew.showOnUpdate.keywords": {
@@ -1937,7 +1985,8 @@
   "settings.updates.crashReports.description": "{platform, select, macos {Cmdr sends a report when it crashes or runs into a problem in the background. It includes the app version, macOS version, and where in the code the problem happened.} windows {Cmdr sends a report when it crashes or runs into a problem in the background. It includes the app version, Windows version, and where in the code the problem happened.} other {Cmdr sends a report when it crashes or runs into a problem in the background. It includes the app version, Linux distribution and version, and where in the code the problem happened.}}",
   "@settings.updates.crashReports.description": {
     "description": "The longer text behind the ⓘ after the crash-reports switch’s label. The setting covers BOTH cases that send a report: Cmdr going down with a crash, and a problem in a background task the app kept running through. So the first sentence must not scope it to the app quitting, the same split as crashReporter.dialog.body.ended vs .keptRunning. \"a report\" rather than \"a crash report\" for the same reason. \"Cmdr\" is the product name, and \"macOS\" and \"Windows\" are brand names; keep them. The Linux branch names the distribution and its version.",
-    "screenshot": "settings-updates.png"
+    "screenshot": "settings-updates.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.updates.crashReports.summary": "Never includes filenames or personal data.",
   "@settings.updates.crashReports.summary": {
@@ -1951,17 +2000,18 @@
   "settings.updates.errorReports.label": "Send error reports automatically",
   "@settings.updates.errorReports.label": {
     "description": "Label for the automatic-error-report opt-in toggle. In Settings > Updates & privacy.",
-    "screenshot": "settings-updates.png"
+    "screenshot": "settings-updates-page-2.png"
   },
   "settings.updates.errorReports.description": "Off by default. You can always send a report by hand from the Help menu.",
   "@settings.updates.errorReports.description": {
     "description": "The longer text behind the ⓘ after the error-reports switch’s label. \"Help menu\" is the menu bar’s Help menu; use your language’s standard name for it. “by hand” = a report the user sends themselves.",
-    "screenshot": "settings-updates.png"
+    "screenshot": "settings-updates.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.updates.errorReports.summary": "Sends us a small log snippet when something goes wrong, so we can fix bugs faster.",
   "@settings.updates.errorReports.summary": {
     "description": "Short line under the error-reports switch. \"us\" / \"we\" = the Cmdr team. \"log snippet\" = a short excerpt of the diagnostic log.",
-    "screenshot": "settings-updates.png"
+    "screenshot": "settings-updates-page-2.png"
   },
   "settings.updates.errorReports.keywords": "error, report, auto, send, privacy, telemetry, bug, log, snippet, diagnostics",
   "@settings.updates.errorReports.keywords": {
@@ -1975,7 +2025,8 @@
   "settings.updates.attachEmailToReports.description": "When you send a crash or error report, include your beta contact email so we can reply. You can change this per report.",
   "@settings.updates.attachEmailToReports.description": {
     "description": "Help text for the attach-email-to-reports toggle. \"beta contact email\" ties to the analytics.email setting; keep the wording aligned with that label's translation.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.updates.attachEmailToReports.keywords": "email, report, crash, error, contact, attach, reply, beta",
   "@settings.updates.attachEmailToReports.keywords": {
@@ -1984,12 +2035,13 @@
   "settings.advanced.prefetchBufferSize.label": "Prefetch buffer size",
   "@settings.advanced.prefetchBufferSize.label": {
     "description": "Advanced-section label for the prefetch buffer size number input. \"Prefetch\" = loading items ahead of time for smooth scrolling.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-2.png"
   },
   "settings.advanced.prefetchBufferSize.description": "Number of items to prefetch around the visible range for smoother scrolling.",
   "@settings.advanced.prefetchBufferSize.description": {
     "description": "Help text for the prefetch-buffer-size setting (advanced/performance). \"prefetch\" = load ahead of time.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.advanced.prefetchBufferSize.keywords": "prefetch, buffer, scroll, performance",
   "@settings.advanced.prefetchBufferSize.keywords": {
@@ -1998,12 +2050,13 @@
   "settings.advanced.virtualizationBufferRows.label": "Virtualization buffer (rows)",
   "@settings.advanced.virtualizationBufferRows.label": {
     "description": "Advanced-section label for the row-virtualization buffer number input. \"Virtualization\" = rendering only visible rows for performance; \"(rows)\" specifies the unit.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-2.png"
   },
   "settings.advanced.virtualizationBufferRows.description": "Extra rows to render above and below the visible area.",
   "@settings.advanced.virtualizationBufferRows.description": {
     "description": "Help text for the row-virtualization-buffer setting (advanced/performance).",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.advanced.virtualizationBufferRows.keywords": "virtualization, buffer, row, render",
   "@settings.advanced.virtualizationBufferRows.keywords": {
@@ -2012,12 +2065,13 @@
   "settings.advanced.virtualizationBufferColumns.label": "Virtualization buffer (columns)",
   "@settings.advanced.virtualizationBufferColumns.label": {
     "description": "Advanced-section label for the column-virtualization buffer number input. \"(columns)\" specifies the unit; applies to Brief view's columns.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-2.png"
   },
   "settings.advanced.virtualizationBufferColumns.description": "Extra columns to render in Brief view.",
   "@settings.advanced.virtualizationBufferColumns.description": {
     "description": "Help text for the column-virtualization-buffer setting (advanced/performance). “Brief view” is the file-list layout named in the View menu; use the same words as there.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.advanced.virtualizationBufferColumns.keywords": "virtualization, buffer, column, brief",
   "@settings.advanced.virtualizationBufferColumns.keywords": {
@@ -2026,12 +2080,13 @@
   "settings.advanced.fileWatcherDebounce.label": "File watcher debounce",
   "@settings.advanced.fileWatcherDebounce.label": {
     "description": "Advanced-section label for the file-watcher debounce-delay control. \"debounce\" = waiting briefly to batch rapid changes; keep or use the locale's standard term.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-2.png"
   },
   "settings.advanced.fileWatcherDebounce.description": "Delay after file system changes before refreshing.",
   "@settings.advanced.fileWatcherDebounce.description": {
     "description": "Help text for the file-watcher-debounce setting (advanced/performance).",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.advanced.fileWatcherDebounce.keywords": "watcher, debounce, refresh, delay",
   "@settings.advanced.fileWatcherDebounce.keywords": {
@@ -2040,12 +2095,13 @@
   "settings.advanced.diskSpaceChangeThreshold.label": "Disk space change threshold (MB)",
   "@settings.advanced.diskSpaceChangeThreshold.label": {
     "description": "Advanced-section label for the disk-space change threshold number input. \"(MB)\" is the decimal (base 1000) megabyte symbol: write it as your translation of common.sizeUnit.megabyte.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-2.png"
   },
   "settings.advanced.diskSpaceChangeThreshold.description": "Minimum change in available disk space before updating the status bar. The status bar polls disk space every few seconds; small changes below this threshold are ignored to reduce visual noise.",
   "@settings.advanced.diskSpaceChangeThreshold.description": {
     "description": "Help text for the disk-space-change-threshold setting (advanced/performance). \"status bar\" is the strip at the window bottom showing disk info.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.advanced.diskSpaceChangeThreshold.keywords": "disk, space, threshold, poll, refresh, status, bar",
   "@settings.advanced.diskSpaceChangeThreshold.keywords": {
@@ -2054,17 +2110,18 @@
   "settings.advanced.indexPauseFreeSpacePercent.label": "Pause indexing when free space is below (%)",
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "description": "Advanced-section label for the number input that sets the free-space percentage of the startup disk below which drive indexing pauses. \"(%)\" marks the value as a percent; keep the locale's percent sign.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-2.png"
   },
   "settings.advanced.indexPauseFreeSpacePercent.description": "Indexing pauses only while less than 10 GB is free, too, so a big disk keeps indexing. It picks up where it left off once free space climbs one point above this or past 11 GB. This works whether the “Low disk space warning” is on or off.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
     "description": "The longer text behind the ⓘ after the index pause threshold label (Settings > Advanced). Indexing pauses only when free space is below BOTH the percentage the user set and 10 GB, so a large disk with plenty of room left never pauses. \"one point\" means one percentage point (5% → 6%) above the threshold the user set. \"10 GB\" and \"11 GB\" are fixed amounts of free space (decimal gigabytes); write them with your language’s number and unit conventions. “Low disk space warning” quotes the label of the separate setting under Behavior > Notifications (settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.label); use that label’s translation exactly, in your language’s quote marks.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Keeps the index from taking the room your own files need.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {
     "description": "Short line under the “Pause indexing when free space is below (%)” label (Settings > Advanced). Says why indexing pauses: so the drive index doesn’t use up the free space the user’s own files need.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-2.png"
   },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "disk, space, full, free, index, indexing, pause, storage, threshold, percent, low",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
@@ -2073,12 +2130,13 @@
   "settings.fileViewer.suppressBinaryWarning.label": "Suppress the raw-view warning for binary files",
   "@settings.fileViewer.suppressBinaryWarning.label": {
     "description": "Advanced-section label for the toggle that hides the binary-file warning banner in the viewer. \"binary files\" = non-text files (images, PDFs, archives).",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-3.png"
   },
   "settings.fileViewer.suppressBinaryWarning.explanation": "{platform, select, macos {Cmdr’s file viewer shows a file’s raw content. When you open an image, PDF, archive, or other binary file, the viewer shows a red banner explaining that Quick Look or opening it in the associated app is probably what you wanted. Turn this on (or click “Never show this warning again” in the banner) to suppress the warning for good.} windows {Cmdr’s file viewer shows a file’s raw content. When you open an image, PDF, archive, or other binary file, the viewer shows a red banner explaining that opening it in the associated app is probably what you wanted. Turn this on (or select “Never show this warning again” in the banner) to suppress the warning for good.} other {Cmdr’s file viewer shows a file’s raw content. When you open an image, PDF, archive, or other binary file, the viewer shows a red banner explaining that opening it in the associated app is probably what you wanted. Turn this on (or click “Never show this warning again” in the banner) to suppress the warning for good.}}",
   "@settings.fileViewer.suppressBinaryWarning.explanation": {
     "description": "Help text for the suppress-binary-warning toggle. It names what the banner suggests, not keys, because the user can rebind each. \"Cmdr\" is the product name (keep it); \"Quick Look\" is the macOS preview feature name, in the macOS branch only (use your language's macOS name for it). \"PDF\" is a standard name; keep it. The quoted “Never show this warning again” must match the file viewer's actual banner button copy; translate it consistently with that button. The screenshot shows the macOS wording.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileViewer.suppressBinaryWarning.keywords": "viewer, binary, image, raw, warning, banner, quick look",
   "@settings.fileViewer.suppressBinaryWarning.keywords": {
@@ -2087,7 +2145,7 @@
   "settings.fileExplorer.suppressQuickLookHint.label": "Suppress the Space-key Quick Look hint",
   "@settings.fileExplorer.suppressQuickLookHint.label": {
     "description": "Advanced-section label for the toggle that hides the Space-vs-Quick-Look reminder. \"Space-key\" is the keyboard spacebar; \"Quick Look\" is the macOS preview feature (use the OS's localized name).",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-3.png"
   },
   "settings.fileExplorer.suppressQuickLookHint.descriptionWithKey": "Cmdr uses Space to toggle file selection and {combo} for Quick Look (Finder uses plain Space for Quick Look). Each time you press Space in the file list, Cmdr shows a one-paragraph reminder of this difference. Turn this on (or click “Don’t show again” in the toast) to suppress the reminder for good.",
   "@settings.fileExplorer.suppressQuickLookHint.descriptionWithKey": {
@@ -2095,7 +2153,8 @@
     "placeholders": {
       "combo": "the user’s own Quick Look key, as macOS key glyphs (⇧Space by default); never a word"
     },
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileExplorer.suppressQuickLookHint.descriptionWithoutKey": "Cmdr uses Space to toggle file selection, where Finder uses it for Quick Look. Each time you press Space in the file list, Cmdr shows a one-paragraph reminder of this difference. Turn this on (or click “Don’t show again” in the toast) to suppress the reminder for good.",
   "@settings.fileExplorer.suppressQuickLookHint.descriptionWithoutKey": {
@@ -2108,12 +2167,13 @@
   "settings.fileExplorer.quickFilterTypingHintSeen.label": "Suppress the quick filter typing hint",
   "@settings.fileExplorer.quickFilterTypingHintSeen.label": {
     "description": "Advanced-section label for a toggle. On means a one-time tip won't show (again). The tip explains why a key like Space or * did its usual job instead of typing into the quick filter (the feature where typing narrows the file list).",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-3.png"
   },
   "settings.fileExplorer.quickFilterTypingHintSeen.description": "While a quick filter is on, keys like Space, -, and * type into it only while you keep typing. After a pause they do their usual job again, like Space selecting a file. The first time that happens, Cmdr explains it once. Turn this off to see that explanation again.",
   "@settings.fileExplorer.quickFilterTypingHintSeen.description": {
     "description": "Help text for the toggle above. \"quick filter\" = the feature where typing narrows the file list. Space, -, and * are keyboard keys; keep the symbols, use the language's name for Space. \"Cmdr\" is the product name; keep it.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileExplorer.quickFilterTypingHintSeen.keywords": "tip, hint, toast, filter, space, typing, wildcard",
   "@settings.fileExplorer.quickFilterTypingHintSeen.keywords": {
@@ -2122,12 +2182,13 @@
   "settings.suggestedOps.suppressApprovalNotice.label": "Suppress the approval note in AI suggestions",
   "@settings.suggestedOps.suppressApprovalNotice.label": {
     "description": "Advanced-section label for the toggle that hides the note at the top of the AI suggestions dialog (suggestedOps.description). \"AI suggestions\" is that dialog's title (suggestedOps.title); keep the two matching.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-3.png"
   },
   "settings.suggestedOps.suppressApprovalNotice.description": "The AI suggestions dialog opens with a note saying the AI suggested what’s in it and that nothing runs until you approve it. Turn this on (or close the note with its ×) to stop showing it.",
   "@settings.suggestedOps.suppressApprovalNotice.description": {
     "description": "Help text for the toggle that hides the note at the top of the AI suggestions dialog. \"AI suggestions\" is the dialog's title (suggestedOps.title); the × is the note's close button.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.suggestedOps.suppressApprovalNotice.keywords": "suggestion, approve, note, warning, ai, banner",
   "@settings.suggestedOps.suppressApprovalNotice.keywords": {
@@ -2136,12 +2197,13 @@
   "settings.fileOperations.showAlreadyGoneToast.label": "Show a notice when a deleted item was already gone",
   "@settings.fileOperations.showAlreadyGoneToast.label": {
     "description": "Advanced-section label for the switch that turns on or off a short toast. The toast appears when the user deletes or moves to trash something that another app had already moved or deleted (fileOperations.alreadyGone.one / .many). On by default; its “Never show this again” button (fileOperations.alreadyGone.neverShowAgain) turns it off.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-3.png"
   },
   "settings.fileOperations.showAlreadyGoneToast.description": "{platform, select, windows {When you delete something another app already moved or deleted, Cmdr treats it as done and shows a short notice saying so. Turn this off (or select “Never show this again” in the notice) to stop these notices.} other {When you delete something another app already moved or deleted, Cmdr treats it as done and shows a short notice saying so. Turn this off (or click “Never show this again” in the notice) to stop these notices.}}",
   "@settings.fileOperations.showAlreadyGoneToast.description": {
     "description": "Help text for the already-gone notice switch. The quoted “Never show this again” must match the toast button (fileOperations.alreadyGone.neverShowAgain); translate it the same way. “Notice” is the small toast that appears for a few seconds. The screenshot shows the macOS wording.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileOperations.showAlreadyGoneToast.keywords": "missing, vanished, moved, deleted, gone, toast, notification",
   "@settings.fileOperations.showAlreadyGoneToast.keywords": {
@@ -2150,7 +2212,7 @@
   "settings.fileExplorer.tabs.closedTabHistorySize.label": "Number of closed tabs to remember per pane",
   "@settings.fileExplorer.tabs.closedTabHistorySize.label": {
     "description": "Advanced-section label for the number input setting how many recently closed tabs to keep per pane. \"pane\" is one of the two file lists.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-5.png"
   },
   "settings.fileExplorer.tabs.closedTabHistorySize.descriptionWithKey": "How many recently closed tabs to keep per pane for “Reopen closed tab” ({combo}). Higher values let you reopen further back in history; lower values free up memory sooner. Only applies to tabs closed in the current session.",
   "@settings.fileExplorer.tabs.closedTabHistorySize.descriptionWithKey": {
@@ -2158,7 +2220,8 @@
     "placeholders": {
       "combo": "the user’s own key for reopening a closed tab, as key glyphs or key names (⌘⇧T on a Mac, Ctrl+Shift+T on Windows and Linux); never a word"
     },
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileExplorer.tabs.closedTabHistorySize.descriptionWithoutKey": "How many recently closed tabs to keep per pane for “Reopen closed tab”. Higher values let you reopen further back in history; lower values free up memory sooner. Only applies to tabs closed in the current session.",
   "@settings.fileExplorer.tabs.closedTabHistorySize.descriptionWithoutKey": {
@@ -2171,12 +2234,13 @@
   "settings.advanced.dragThreshold.label": "Drag threshold",
   "@settings.advanced.dragThreshold.label": {
     "description": "Advanced-section label for the drag-distance threshold number input (how far the pointer must move before a drag starts).",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-5.png"
   },
   "settings.advanced.dragThreshold.description": "Minimum distance in pixels before a drag operation starts.",
   "@settings.advanced.dragThreshold.description": {
     "description": "Help text for the drag-threshold setting (advanced). \"pixels\" is the unit.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.advanced.dragThreshold.keywords": "drag, threshold, pixel, distance",
   "@settings.advanced.dragThreshold.keywords": {
@@ -2185,12 +2249,13 @@
   "settings.advanced.exitFullScreenOnEscape.label": "Exit full screen on Escape",
   "@settings.advanced.exitFullScreenOnEscape.label": {
     "description": "Advanced-section label for a switch: when on, pressing the Escape key in the main window (with no dialog or menu open) takes the window out of macOS full screen. \"Escape\" is the keyboard key; \"full screen\" is macOS's full-screen window mode (the window gets its own Space).",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-5.png"
   },
   "settings.advanced.exitFullScreenOnEscape.description": "When the main window is in full screen, Escape takes it out. Escape in a dialog or menu only closes that.",
   "@settings.advanced.exitFullScreenOnEscape.description": {
     "description": "Help text for the \"Exit full screen on Escape\" switch (advanced). Explains that the switch never affects closing dialogs or menus with Escape.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.advanced.exitFullScreenOnEscape.keywords": "escape, full screen, fullscreen, maximize, window, restore, exit",
   "@settings.advanced.exitFullScreenOnEscape.keywords": {
@@ -2199,12 +2264,13 @@
   "settings.advanced.exitFullScreenOnEscapeHintShown.label": "Suppress the Escape full-screen hint",
   "@settings.advanced.exitFullScreenOnEscapeHintShown.label": {
     "description": "Advanced-section label (in the Hints and warnings card) for the switch that silences the one-time toast saying Escape took Cmdr out of full screen (main.escapeFullScreenHint.message). “Escape” is the keyboard key; use the locale’s key name. On means the hint was already shown and won’t show again; the app turns it on by itself the moment the hint appears, and turning it off makes the hint show once more.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-3.png"
   },
   "settings.advanced.exitFullScreenOnEscapeHintShown.description": "The first time Escape takes Cmdr out of full screen, Cmdr says so and offers the switch that turns this off. Turn this off to see the hint once more.",
   "@settings.advanced.exitFullScreenOnEscapeHintShown.description": {
     "description": "Help text for the “Suppress the Escape full-screen hint” switch (settings.advanced.exitFullScreenOnEscapeHintShown.label). “Escape” is the keyboard key; use the locale’s key name. The first “turns this off” refers to the Exit full screen on Escape switch (settings.advanced.exitFullScreenOnEscape.label).",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.advanced.exitFullScreenOnEscapeHintShown.keywords": "escape, full screen, fullscreen, exit, hint, toast",
   "@settings.advanced.exitFullScreenOnEscapeHintShown.keywords": {
@@ -2213,22 +2279,24 @@
   "settings.fileExplorer.typeToJump.resetDelay.label": "Type-to-jump reset delay",
   "@settings.fileExplorer.typeToJump.resetDelay.label": {
     "description": "Advanced-section label for the type-to-jump reset-delay control. \"type-to-jump\" = the feature where typing letters jumps to a matching file. \"reset delay\" = how long the typed buffer survives between keystrokes.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-6.png"
   },
   "settings.fileExplorer.typeToJump.resetDelay.description": "How long the type-to-jump buffer stays alive after the last keystroke. Lower values reset faster between searches; higher values are more forgiving for slow typists.",
   "@settings.fileExplorer.typeToJump.resetDelay.description": {
     "description": "Help text for the type-to-jump-reset-delay setting (advanced). \"type-to-jump\" is the feature name; \"buffer\" = the accumulated typed characters.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileExplorer.quickFilter.typingWindow.label": "Quick filter typing window",
   "@settings.fileExplorer.quickFilter.typingWindow.label": {
     "description": "Advanced-section label for a number in milliseconds. \"quick filter\" = the feature where typing narrows the file list. \"typing window\" = how long a pause between keys still counts as typing.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-6.png"
   },
   "settings.fileExplorer.quickFilter.typingWindow.description": "How soon after the previous key Space, -, *, and other keys with an action still type into the quick filter, in milliseconds. After a longer pause they do their usual job again, like Space selecting a file. Moving the cursor ends the typing right away.",
   "@settings.fileExplorer.quickFilter.typingWindow.description": {
     "description": "Help text for the setting above. Space, -, and * are keyboard keys; keep the symbols, use the language's name for Space. \"milliseconds\": the unit of the number the person enters.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileExplorer.quickFilter.typingWindow.keywords": "filter, typing, pause, delay, space, wildcard, timeout",
   "@settings.fileExplorer.quickFilter.typingWindow.keywords": {
@@ -2265,12 +2333,13 @@
   "settings.fileOperations.maxConflictsToShow.label": "Maximum conflicts to show",
   "@settings.fileOperations.maxConflictsToShow.label": {
     "description": "Label for the picker limiting how many file conflicts are previewed before an operation. In Settings > Behavior > File operations (also in Advanced). \"conflicts\" = name clashes at the destination.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-6.png"
   },
   "settings.fileOperations.maxConflictsToShow.description": "Maximum number of file conflicts to display in the preview before an operation.",
   "@settings.fileOperations.maxConflictsToShow.description": {
     "description": "Help text for the max-conflicts-to-show setting. \"conflicts\" = files that would clash with existing names at the destination.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileOperations.maxConflictsToShow.keywords": "conflict, max, limit, preview, operation",
   "@settings.fileOperations.maxConflictsToShow.keywords": {
@@ -2279,12 +2348,13 @@
   "settings.fileOperations.progressUpdateInterval.label": "Progress update interval",
   "@settings.fileOperations.progressUpdateInterval.label": {
     "description": "Label for the slider setting how often the progress display refreshes during file operations. In Settings > Behavior > File operations (also in Advanced).",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-6.png"
   },
   "settings.fileOperations.progressUpdateInterval.description": "How often to refresh progress during file operations. Lower values feel more responsive but use more CPU.",
   "@settings.fileOperations.progressUpdateInterval.description": {
     "description": "Help text for the progress-update-interval setting. \"CPU\" = the processor; keep the abbreviation.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileOperations.progressUpdateInterval.keywords": "progress, update, interval, refresh, performance",
   "@settings.fileOperations.progressUpdateInterval.keywords": {
@@ -2307,7 +2377,7 @@
   "settings.advanced.mountTimeout.label": "Mount timeout",
   "@settings.advanced.mountTimeout.label": {
     "description": "Advanced-section label for the network-share mount-timeout control. \"mount\" = attaching a network share to the system.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-6.png"
   },
   "settings.advanced.mountTimeout.keywords": "mount, timeout, network, share",
   "@settings.advanced.mountTimeout.keywords": {
@@ -2316,12 +2386,13 @@
   "settings.advanced.showSafeSaveFiles.label": "Show other apps’ temporary files",
   "@settings.advanced.showSafeSaveFiles.label": {
     "description": "Advanced-section label for the toggle that shows macOS safe-save scratch files other apps leave while saving.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-6.png"
   },
   "settings.advanced.showSafeSaveFiles.description": "When apps like TextEdit and Preview save a file, macOS writes the new version alongside it under a temporary name (ending in “.sb-”) and swaps it in. Turn this off to keep those out of the file list.",
   "@settings.advanced.showSafeSaveFiles.description": {
     "description": "Help text for the show-safe-save-files toggle (advanced). \"macOS\" is a brand name (keep it), and \".sb-\" is a literal filename fragment (keep it exactly). \"TextEdit\" and \"Preview\" are Apple’s apps, and macOS localizes their names (for example fr \"Aperçu\", zh \"文本编辑\" and \"预览\"): use the names your language’s macOS shows (check the reference pile or the app bundle).",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.advanced.showSafeSaveFiles.keywords": "safe-save, temp, temporary, preview, autosave",
   "@settings.advanced.showSafeSaveFiles.keywords": {
@@ -2330,12 +2401,13 @@
   "settings.advanced.showStagingTempFiles.label": "Show Cmdr’s temporary files",
   "@settings.advanced.showStagingTempFiles.label": {
     "description": "Advanced-section label for the toggle that shows the temporary files Cmdr writes while copying. \"Cmdr\" is the app name; keep it.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-6.png"
   },
   "settings.advanced.showStagingTempFiles.description": "While copying, Cmdr writes each file under a temporary name and renames it once the file is complete, so a crash can’t leave a half-written file under a real name. Leftovers from an interrupted copy are always shown.",
   "@settings.advanced.showStagingTempFiles.description": {
     "description": "Help text for the show-temporary-files toggle (advanced). Explains why the temporary names exist, and that leftovers stay visible regardless of this setting. \"Cmdr\" is the app name; keep it.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.advanced.showStagingTempFiles.keywords": "temp, temporary, staging, copy, transfer, partial",
   "@settings.advanced.showStagingTempFiles.keywords": {
@@ -2349,7 +2421,8 @@
   "settings.advanced.logLlmCalls.description": "{platform, select, macos {Cmdr writes them to the llm-logs folder for debugging. These files stay on your Mac.} windows {Cmdr writes them to the llm-logs folder for debugging. These files stay on your PC.} other {Cmdr writes them to the llm-logs folder for debugging. These files stay on your computer.}}",
   "@settings.advanced.logLlmCalls.description": {
     "description": "The longer text behind the ⓘ after the “Log AI model calls” label (advanced); the summary line under the label already says what gets saved. “them” = the saved AI requests and responses. \"llm-logs\" is a literal folder name, keep it exactly. \"Cmdr\" is the app name, keep it. Each branch names the machine in its OS’s word: Mac on macOS, PC on Windows, computer on Linux. The point is that logging is local-only and never transmitted.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.advanced.logLlmCalls.summary": "Saves every AI request and response locally, file paths included.",
   "@settings.advanced.logLlmCalls.summary": {
@@ -2363,12 +2436,13 @@
   "settings.advanced.serviceResolveTimeout.label": "Service resolve timeout",
   "@settings.advanced.serviceResolveTimeout.label": {
     "description": "Advanced-section label for the Bonjour service-resolve timeout control. \"resolve\" = looking up a discovered network service's address.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-7.png"
   },
   "settings.advanced.serviceResolveTimeout.description": "{platform, select, macos {Timeout for resolving network services via Bonjour.} other {Timeout for resolving network services found on your local network (mDNS).}}",
   "@settings.advanced.serviceResolveTimeout.description": {
     "description": "Help text for the service-resolve-timeout setting (advanced). The macOS branch names \"Bonjour\", Apple's network service-discovery technology name; keep it. The other branch names \"mDNS\", the standard behind it; keep that too. \"resolving\" = looking up the address of a discovered service. The screenshot shows the macOS wording.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.advanced.serviceResolveTimeout.keywords": "resolve, timeout, service discovery, network discovery, lookup, local network, wait",
   "@settings.advanced.serviceResolveTimeout.keywords": {
@@ -2377,12 +2451,13 @@
   "settings.search.recentSearches.maxCount.label": "Recent searches to remember",
   "@settings.search.recentSearches.maxCount.label": {
     "description": "Advanced-section label for the number input capping stored recent searches.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-5.png"
   },
   "settings.search.recentSearches.maxCount.description": "How many recent searches to keep for the in-dialog footer and history popover. Older entries roll off as new ones land. 0 disables history (the footer and popover hide and no new entries are recorded).",
   "@settings.search.recentSearches.maxCount.description": {
     "description": "Help text for the recent-searches-max-count setting (advanced). \"0\" is a literal value meaning disable. \"footer\" and \"popover\" are UI element terms; \"roll off\" means the oldest are dropped.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.search.recentSearches.maxCount.keywords": "search, recent, history, cap, limit, max, count",
   "@settings.search.recentSearches.maxCount.keywords": {
@@ -2391,12 +2466,13 @@
   "settings.selection.recentSelections.maxCount.label": "Recent selections to remember",
   "@settings.selection.recentSelections.maxCount.label": {
     "description": "Advanced-section label for the number input capping stored recent selections. \"selections\" here are saved file-select patterns from the Select/Deselect dialog.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-5.png"
   },
   "settings.selection.recentSelections.maxCount.description": "How many recent selections to keep for the Select / Deselect files dialog footer and history popover. Older entries roll off as new ones land. 0 disables history (the footer and popover hide and no new entries are recorded).",
   "@settings.selection.recentSelections.maxCount.description": {
     "description": "Help text for the recent-selections-max-count setting (advanced). \"Select / Deselect files\" is a Cmdr dialog name; translate consistently with that dialog. \"0\" is a literal value meaning disable. \"roll off\" means the oldest are dropped.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.selection.recentSelections.maxCount.keywords": "selection, select, recent, history, cap, limit, max, count",
   "@settings.selection.recentSelections.maxCount.keywords": {
@@ -2447,7 +2523,7 @@
   "settings.advanced.updateCheckInterval.label": "Update check interval",
   "@settings.advanced.updateCheckInterval.label": {
     "description": "Advanced-section label for the control setting how often background update checks run.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-7.png"
   },
   "settings.advanced.updateCheckInterval.keywords": "update, interval, background, check",
   "@settings.advanced.updateCheckInterval.keywords": {
@@ -2566,32 +2642,32 @@
   "settings.navigationAndFileOps.card.textEditor": "Text editor",
   "@settings.navigationAndFileOps.card.textEditor": {
     "description": "Heading of the Text editor card in Settings > Behavior > Navigation & file ops, directly above the Terminal card. It holds the setting for which app F4 (edit) opens files in. Generic here: a text editor app in general, NOT Apple's app called TextEdit. macOS only.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-2.png"
   },
   "settings.navigationAndFileOps.card.terminal": "Terminal",
   "@settings.navigationAndFileOps.card.terminal": {
     "description": "Heading of the Terminal card in Settings > Behavior > Navigation & file ops. It holds the setting for which terminal app the \"Open terminal here\" action launches. Generic here: a terminal (command-line) app in general, NOT Apple's app called Terminal.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-2.png"
   },
   "settings.navigationAndFileOps.card.showInFinder": "Show in Finder",
   "@settings.navigationAndFileOps.card.showInFinder": {
     "description": "Heading of the card in Settings > Behavior > Navigation & file ops that holds one switch: whether another app's \"Show in Finder\" command lands in a Cmdr pane. \"Show in Finder\" is the macOS command name that apps like Chrome and Slack put on their downloads; use the wording your locale's macOS and its apps use for it. macOS only, so the card is absent on other platforms.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-2.png"
   },
   "settings.finderExtension.card": "Open in Cmdr",
   "@settings.finderExtension.card": {
     "description": "The name of a menu item in Finder's right-click menu, which opens the chosen files or folders in Cmdr. It appears there exactly as written here, and also as the heading of a settings card about that item. A short verb phrase, the way your locale's macOS names an \"Open in…\" menu item. \"Cmdr\" is the product name and stays verbatim.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-3.png"
   },
   "settings.finderExtension.label": "Show at the top of Finder’s right-click menu",
   "@settings.finderExtension.label": {
     "description": "Label of an on/off switch in that card. Turning it on puts “Open in Cmdr” directly in Finder's right-click menu, where without it the item sits in a submenu. \"Finder\" is Apple's file manager; use Apple's name for it in your language.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-3.png"
   },
   "settings.finderExtension.description": "“Open in Cmdr” is always in the menu’s Services section. This moves it up to the top level, on your startup disk. It adds a small process that runs alongside Finder.",
   "@settings.finderExtension.description": {
     "description": "Explains that switch and its one cost. \"Services\" is the macOS submenu of that name; use the word your locale's macOS uses. \"startup disk\" is Apple's term for the Mac's main drive: on other drives the item stays in Services. \"a small process\" is a little program that keeps running in the background.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-3.png"
   },
   "settings.finderExtension.notInApplications": "Move Cmdr to your Applications folder to switch this on.",
   "@settings.finderExtension.notInApplications": {
@@ -2604,7 +2680,7 @@
   "settings.revealHandler.label": "Let other apps show files in Cmdr",
   "@settings.revealHandler.label": {
     "description": "Label of the switch that hands the macOS \"Show in Finder\" command to Cmdr, in Settings > Behavior > Navigation & file ops. \"Cmdr\" is the product name; keep it. Addressed to the user, describing what turning the switch on allows.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-2.png"
   },
   "settings.behavior.finderExtension.keywords": "context menu, right-click, open in cmdr, finder extension",
   "@settings.behavior.finderExtension.keywords": {
@@ -2617,7 +2693,7 @@
   "settings.revealHandler.description": "When another app runs “Show in Finder”, Cmdr opens that folder with the file under the cursor. Finder stays your default file manager everywhere else.",
   "@settings.revealHandler.description": {
     "description": "Help text under the \"Let other apps show files in Cmdr\" switch in Settings > Behavior > Navigation & file ops. Two sentences: what the switch does, then the honest limit (this does NOT make Cmdr replace Finder; double-clicking a folder still opens Finder). “Show in Finder” is the macOS command name and \"Finder\" the macOS file manager; use your locale's macOS wording for both. \"Cmdr\" is the product name; keep it. \"cursor\" = the highlighted row in a Cmdr file pane.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-2.png"
   },
   "settings.revealHandler.heldByOtherApp": "Currently: {app}. Turning this on hands “Show in Finder” to Cmdr.",
   "@settings.revealHandler.heldByOtherApp": {
@@ -2627,7 +2703,7 @@
         "description": "Name of the app that currently receives \"Show in Finder\", for example \"Path Finder\". Falls back to that app's raw bundle identifier (like com.cocoatech.PathFinder) when the app isn't installed any more. Never translated."
       }
     },
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-3.png"
   },
   "settings.revealHandler.uninstallWarning": "<lead>Before you uninstall Cmdr, switch this off.</lead> macOS keeps sending “Show in Finder” here, and with Cmdr gone those clicks quietly do nothing.",
   "@settings.revealHandler.uninstallWarning": {
@@ -2645,12 +2721,13 @@
   "settings.behavior.textEditorApp.label": "Edit files in",
   "@settings.behavior.textEditorApp.label": {
     "description": "Label of the dropdown that picks which app F4 (edit) opens files in, in the Text editor card of Settings > Behavior > Navigation & file ops. The sentence continues in the dropdown beside it, which names an app: \"Edit files in [Sublime Text]\" or \"Edit files in [System default (TextEdit)]\". If your language can't continue a label into an app name, a noun label like \"Editor app\" is fine.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-2.png"
   },
   "settings.behavior.textEditorApp.description": "Cmdr lists the text editors macOS knows about on this Mac. To use a different app, pick “Choose an app…”.",
   "@settings.behavior.textEditorApp.description": {
     "description": "Helper text under the \"Edit files in\" dropdown in Settings > Behavior > Navigation & file ops. Says two things: the list is what macOS itself reports as text editors on this Mac, and there's a way to pick any other app. “Choose an app…” is the last row of that same dropdown and matches the terminal row below it, so translate it identically to the settings.behavior.openTerminalHereApp.chooseApp key. \"Cmdr\" is the product name and \"macOS\" the system name; keep both.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.behavior.textEditorApp.systemDefault": "System default ({app})",
   "@settings.behavior.textEditorApp.systemDefault": {
@@ -2658,7 +2735,7 @@
     "placeholders": {
       "app": "the name of that default app as Finder shows it, like \"TextEdit\" or \"Xcode\". Any installed app's own name, never translated; the parentheses keep it out of the phrase's grammar"
     },
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-2.png"
   },
   "settings.behavior.textEditorApp.systemDefaultUnnamed": "System default",
   "@settings.behavior.textEditorApp.systemDefaultUnnamed": {
@@ -2667,7 +2744,8 @@
   "settings.behavior.textEditorApp.chooseApp": "Choose an app…",
   "@settings.behavior.textEditorApp.chooseApp": {
     "description": "Last row of the \"Edit files in\" dropdown in Settings > Behavior > Navigation & file ops. Picking it opens the macOS file picker so the user can point at any app on their Mac. The trailing … (U+2026) means \"this opens a dialog\"; keep it. Same row as on the terminal dropdown below it, so translate it identically to the settings.behavior.openTerminalHereApp.chooseApp key.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.behavior.textEditorApp.chooseAppTitle": "Choose a text editor",
   "@settings.behavior.textEditorApp.chooseAppTitle": {
@@ -2676,7 +2754,8 @@
   "settings.behavior.textEditorApp.checking": "Checking your apps…",
   "@settings.behavior.textEditorApp.checking": {
     "description": "Placeholder shown in the \"Edit files in\" dropdown for the moment before Cmdr has finished asking macOS which text editors are on this Mac. The dropdown is disabled while it reads this. \"your apps\" = the apps on this Mac. Usually gone within a few milliseconds. Same wording as the terminal dropdown's settings.behavior.openTerminalHereApp.checking key; translate it identically.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.behavior.textEditorApp.keywords": "editor, text editor, edit",
   "@settings.behavior.textEditorApp.keywords": {
@@ -2685,7 +2764,7 @@
   "settings.behavior.textEditorHintSeen.label": "Suppress the text editor hint",
   "@settings.behavior.textEditorHintSeen.label": {
     "description": "Advanced-section label (in the Hints and warnings card) for the switch that silences the one-time toast after F4 (edit) mentioning that the user can pick a different text editor. On means the hint was already shown and won’t show again; the app turns it on by itself the moment the hint appears, and turning it off makes the hint show once more.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-4.png"
   },
   "settings.behavior.textEditorHintSeen.descriptionWithKey": "The first time {combo} opens a file in the default editor while another editor is installed, Cmdr mentions that you can pick a different one. Turn this off to see the hint once more.",
   "@settings.behavior.textEditorHintSeen.descriptionWithKey": {
@@ -2693,7 +2772,8 @@
     "placeholders": {
       "combo": "the user’s own key for opening a file in the editor, as a key name (F4 by default); never a word"
     },
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.behavior.textEditorHintSeen.descriptionWithoutKey": "The first time Cmdr opens a file in the default editor while another editor is installed, it mentions that you can pick a different one. Turn this off to see the hint once more.",
   "@settings.behavior.textEditorHintSeen.descriptionWithoutKey": {
@@ -2706,17 +2786,19 @@
   "settings.behavior.openTerminalHereApp.label": "Open terminal here uses",
   "@settings.behavior.openTerminalHereApp.label": {
     "description": "Label of the dropdown that picks which terminal app the \"Open terminal here\" action launches, in Settings > Behavior > Navigation & file ops. \"Open terminal here\" is Cmdr's own command name (it opens a terminal at the folder you're looking at), so translate it the same way as the command of that name. The sentence continues in the dropdown beside it, which names an app: \"Open terminal here uses [Ghostty]\". If your language can’t continue a label into an app name (a case language would have to inflect the dropdown value), a noun label like \"Terminal app\" is fine.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-2.png"
   },
   "settings.behavior.openTerminalHereApp.description": "Cmdr lists the terminal apps it finds on this Mac. To use one it doesn’t know, pick “Choose an app…”.",
   "@settings.behavior.openTerminalHereApp.description": {
     "description": "Helper text under the \"Open terminal here uses\" dropdown in Settings > Behavior > Navigation & file ops. Says two things: the list is built from what's installed right now, and there's a way out for an app Cmdr doesn't carry a recipe for. “Choose an app…” is the last row of that same dropdown, so translate it identically to the settings.behavior.openTerminalHereApp.chooseApp key.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.behavior.openTerminalHereApp.chooseApp": "Choose an app…",
   "@settings.behavior.openTerminalHereApp.chooseApp": {
     "description": "Last row of the \"Open terminal here uses\" dropdown in Settings > Behavior > Navigation & file ops. Picking it opens the macOS file picker so the user can point at any app on their Mac. The trailing … (U+2026) means \"this opens a dialog\"; keep it. macOS Finder's own \"Open with > Other…\" row is the closest counterpart.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.behavior.openTerminalHereApp.chooseAppTitle": "Choose a terminal app",
   "@settings.behavior.openTerminalHereApp.chooseAppTitle": {
@@ -2733,12 +2815,13 @@
   "settings.fileExplorer.git.portalIntroSeen.label": "Suppress the git folder intro",
   "@settings.fileExplorer.git.portalIntroSeen.label": {
     "description": "Advanced-section label (in the Hints and warnings card) for the switch that silences the one-time toast introducing the browsable .git folder (fileExplorer.git.portalIntro.title). “git” is the version-control tool; keep it. On means the hint was already shown and won’t show again; the app turns it on by itself the moment the hint appears, and turning it off makes the hint show once more.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-4.png"
   },
   "settings.fileExplorer.git.portalIntroSeen.description": "The first time a pane opens the top folder of a git repository, Cmdr introduces the .git folder, where you can browse branches, tags, and old commits like regular folders. Turn this off to see the intro once more.",
   "@settings.fileExplorer.git.portalIntroSeen.description": {
     "description": "Help text for the “Suppress the git folder intro” switch (settings.fileExplorer.git.portalIntroSeen.label). “git” and “.git” stay as they are.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileExplorer.git.portalIntroSeen.keywords": "repository, repo, branch, commit, intro, toast",
   "@settings.fileExplorer.git.portalIntroSeen.keywords": {
@@ -2747,12 +2830,13 @@
   "settings.behavior.openTerminalHereToastSeen.label": "Suppress the Open terminal here hint",
   "@settings.behavior.openTerminalHereToastSeen.label": {
     "description": "Advanced-section label (in the Hints and warnings card) for the switch that silences the one-time toast after the first “Open terminal here” saying which app opened and where to pick another (commands.handler.openTerminalHere.hint). “Open terminal here” is a command name; translate it the same way as that command. On means the hint was already shown and won’t show again; the app turns it on by itself the moment the hint appears, and turning it off makes the hint show once more.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-4.png"
   },
   "settings.behavior.openTerminalHereToastSeen.description": "The first time you open a folder in a terminal, Cmdr says which app it used and where to pick a different one. Turn this off to see the hint once more.",
   "@settings.behavior.openTerminalHereToastSeen.description": {
     "description": "Help text for the “Suppress the Open terminal here hint” switch (settings.behavior.openTerminalHereToastSeen.label).",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.behavior.openTerminalHereToastSeen.keywords": "terminal, shell, console, command line, app, hint, toast",
   "@settings.behavior.openTerminalHereToastSeen.keywords": {
@@ -2771,7 +2855,8 @@
   "settings.behavior.doubleClickPaneNavigatesToParent.description": "That’s the empty space around the file list, not a file row.",
   "@settings.behavior.doubleClickPaneNavigatesToParent.description": {
     "description": "Helper text under the double-click-to-parent switch in Settings > Behavior > Navigation & file ops. Clarifies what \"pane background\" (named in the switch label just above) means: the blank area around the file list, as opposed to a row representing a file. \"That’s\" refers back to \"the pane background\" in the label.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.behavior.doubleClickPaneNavigatesToParent.keywords": "double-click, doubleclick, double click, pane, background, empty, parent, folder, up, navigate, navigation",
   "@settings.behavior.doubleClickPaneNavigatesToParent.keywords": {
@@ -2780,12 +2865,13 @@
   "settings.behavior.doubleClickOnPaneNotificationSeen.label": "Suppress the double-click-to-go-up hint",
   "@settings.behavior.doubleClickOnPaneNotificationSeen.label": {
     "description": "Advanced-section label (in the Hints and warnings card) for the switch that silences the one-time toast explaining that double-clicking the empty pane background went up to the parent folder (fileExplorer.doubleClickHint.title). On means the hint was already shown and won’t show again; the app turns it on by itself the moment the hint appears, and turning it off makes the hint show once more.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-3.png"
   },
   "settings.behavior.doubleClickOnPaneNotificationSeen.description": "The first time you double-click the empty space in a pane, Cmdr goes up a folder and says why. Turn this off to see the hint once more.",
   "@settings.behavior.doubleClickOnPaneNotificationSeen.description": {
     "description": "Help text for the “Suppress the double-click-to-go-up hint” switch (settings.behavior.doubleClickOnPaneNotificationSeen.label).",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.behavior.doubleClickOnPaneNotificationSeen.keywords": "double-click, parent, up, background, hint, toast, tip",
   "@settings.behavior.doubleClickOnPaneNotificationSeen.keywords": {
@@ -2794,20 +2880,24 @@
   "settings.behavior.serversPinHintSeen.label": "Suppress the long Network group hint",
   "@settings.behavior.serversPinHintSeen.label": {
     "description": "Advanced-section label (in the Hints and warnings card) for the switch that silences the one-time toast shown once five or more servers are pinned to the volume switcher’s Network group (servers.pinHint.title). On means the hint was already shown and won’t show again; the app turns it on by itself the moment the hint appears, and turning it off makes the hint show once more.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-4.png"
   },
   "settings.behavior.serversPinHintSeen.description": "Once five or more servers are pinned to the volume switcher, Cmdr shows how to unpin some to keep its Network group short. Turn this off to see the hint once more.",
   "@settings.behavior.serversPinHintSeen.description": {
     "description": "Help text for the “Suppress the long Network group hint” switch (settings.behavior.serversPinHintSeen.label). “Network group” is the Network section of the volume switcher (the drive list).",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.behavior.shareParentRowHintSeen.label": "Suppress the “..” in share top folders hint",
   "@settings.behavior.shareParentRowHintSeen.label": {
-    "description": "Advanced-section label (in the Hints and warnings card) for the switch that silences the one-time toast explaining that “..” in a network share’s top folder took the person to the server’s other shares (fileExplorer.shareParentRow.hint). On means the hint was already shown and won’t show again; the app turns it on by itself the moment the hint appears, and turning it off makes the hint show once more. Keep “..” as written."
+    "description": "Advanced-section label (in the Hints and warnings card) for the switch that silences the one-time toast explaining that “..” in a network share’s top folder took the person to the server’s other shares (fileExplorer.shareParentRow.hint). On means the hint was already shown and won’t show again; the app turns it on by itself the moment the hint appears, and turning it off makes the hint show once more. Keep “..” as written.",
+    "screenshot": "settings-advanced-page-4.png"
   },
   "settings.behavior.shareParentRowHintSeen.description": "The first time “..” takes you from a share’s top folder to the server’s shares, Cmdr explains it. Turn this off to see the explanation once more.",
   "@settings.behavior.shareParentRowHintSeen.description": {
-    "description": "Help text for the “Suppress the “..” in share top folders hint” switch (settings.behavior.shareParentRowHintSeen.label). “..” is the parent-folder row; keep it as written. A “share” is a shared folder on a network server."
+    "description": "Help text for the “Suppress the “..” in share top folders hint” switch (settings.behavior.shareParentRowHintSeen.label). “..” is the parent-folder row; keep it as written. A “share” is a shared folder on a network server.",
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.behavior.shareParentRowHintSeen.keywords": "share, server, parent, top folder, hint, toast",
   "@settings.behavior.shareParentRowHintSeen.keywords": {
@@ -2852,12 +2942,13 @@
   "settings.behavior.revealActivationNoticeSeen.label": "Suppress the “Show in Finder” notice",
   "@settings.behavior.revealActivationNoticeSeen.label": {
     "description": "Advanced-section label (in the Hints and warnings card) for the switch that silences the one-time toast shown the first time another app’s “Show in Finder” opens in Cmdr instead (main.revealActivation.title). “Finder” is the macOS app; use the OS’s localized name for “Show in Finder”. On means the hint was already shown and won’t show again; the app turns it on by itself the moment the hint appears, and turning it off makes the hint show once more.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-5.png"
   },
   "settings.behavior.revealActivationNoticeSeen.description": "When Cmdr is set to catch “Show in Finder”, the first one that lands here comes with a note saying why a pane opened instead of Finder. Turn this off to see the note once more.",
   "@settings.behavior.revealActivationNoticeSeen.description": {
     "description": "Help text for the “Suppress the “Show in Finder” notice” switch (settings.behavior.revealActivationNoticeSeen.label). Use the OS’s localized name for “Show in Finder”, matching main.revealActivation.title.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.behavior.revealActivationNoticeSeen.keywords": "reveal, show in folder, open, notice, toast",
   "@settings.behavior.revealActivationNoticeSeen.keywords": {
@@ -2866,12 +2957,13 @@
   "settings.behavior.adbHintDismissed.label": "Suppress the USB debugging hint",
   "@settings.behavior.adbHintDismissed.label": {
     "description": "Advanced-section label (in the Hints and warnings card) for the switch that silences the line at the top of an Android phone’s pane suggesting USB debugging (adb.hint.text). Unlike a toast, it stays until closed with its ×. On means the user closed the line and it won’t show again; turning it off makes the line show again.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-4.png"
   },
   "settings.behavior.adbHintDismissed.description": "A phone connected without USB debugging shows a line at the top of its pane suggesting you turn it on, so Cmdr can reach the whole phone. Closing the line with its × turns this on. Turn this off to see the line again.",
   "@settings.behavior.adbHintDismissed.description": {
     "description": "Help text for the “Suppress the USB debugging hint” switch (settings.behavior.adbHintDismissed.label). “USB debugging” is Android’s developer option; use the name Android uses in the locale.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.behavior.adbHintDismissed.keywords": "phone, mobile, debugging, developer, hint, tip",
   "@settings.behavior.adbHintDismissed.keywords": {
@@ -2880,12 +2972,13 @@
   "settings.aboutThis.aiHintDismissed.label": "Suppress the AI hint on “Tell me about this”",
   "@settings.aboutThis.aiHintDismissed.label": {
     "description": "Advanced-section label (in the Hints and warnings card) for the switch that silences the small line under the buttons of the “Tell me about this” card saying that turning on AI adds a deeper read of each item (aboutThis.verdict.aiOffHint). It stays until closed with its ×. On means the user closed the line and it won’t show again; turning it off makes the line show again. Use the same name for “Tell me about this” as the command does in this language.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-4.png"
   },
   "settings.aboutThis.aiHintDismissed.description": "With AI off, or not set up yet, the “Tell me about this” card shows a line under its buttons saying AI adds a deeper read. Closing the line with its × turns this on. Turn this off to see the line again.",
   "@settings.aboutThis.aiHintDismissed.description": {
     "description": "Help text for the “Suppress the AI hint on “Tell me about this”” switch (settings.aboutThis.aiHintDismissed.label). The “deeper read” is a short take an AI writes about the file or folder on that card.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.aboutThis.aiHintDismissed.keywords": "tip, hint, file info, card, deeper read, explain",
   "@settings.aboutThis.aiHintDismissed.keywords": {
@@ -2944,7 +3037,8 @@
   "settings.askCmdr.enabled.description": "Chat with Cmdr about your files in a side panel.",
   "@settings.askCmdr.enabled.description": {
     "description": "Description under the Turn on Ask Cmdr switch (settings.askCmdr.enabled.label). \"Cmdr\" is the product name.",
-    "screenshot": "settings-ai-ask-cmdr.png"
+    "screenshot": "settings-ai-ask-cmdr.png",
+    "screenshotNote": "Settings > AI > Ask Cmdr, pictured here. Your string belongs to a state this screenshot doesn’t show (off, or asking you to review changed wording), a confirmation or empty state in one of its panels, or a note under one of its controls."
   },
   "settings.askCmdr.enabled.keywords": "ai, chat, assistant, enable, disable, turn on, turn off",
   "@settings.askCmdr.enabled.keywords": {
@@ -2991,7 +3085,8 @@
   "settings.askCmdr.interactiveModel.description": "The model the chat uses. “Same as Cmdr’s AI” follows the model you picked in AI › Provider.",
   "@settings.askCmdr.interactiveModel.description": {
     "description": "Help text for the Ask Cmdr model dropdown. “Same as Cmdr’s AI” quotes the dropdown’s first option (settings.askCmdr.interactiveModel.placeholder): match it exactly. The › is a right-pointing angle separating the settings path. The apostrophe is U+2019.",
-    "screenshot": "settings-ai-ask-cmdr.png"
+    "screenshot": "settings-ai-ask-cmdr.png",
+    "screenshotNote": "Settings > AI > Ask Cmdr, pictured here. Your string belongs to a state this screenshot doesn’t show (off, or asking you to review changed wording), a confirmation or empty state in one of its panels, or a note under one of its controls."
   },
   "settings.askCmdr.interactiveModel.placeholder": "Same as Cmdr’s AI",
   "@settings.askCmdr.interactiveModel.placeholder": {
@@ -3027,7 +3122,8 @@
   "settings.askCmdr.chatMemorySize.description": "How much of the conversation Cmdr sends to the model. Automatic uses your model’s whole context window; a size caps it lower to spend less.",
   "@settings.askCmdr.chatMemorySize.description": {
     "description": "Help text under the chat memory size picker. Explains what the setting does, that the Automatic option uses all of the context window Cmdr knows the chosen model to have, and that picking a size sets a lower limit, which costs less per message. \"Automatic\" here refers to the first option in the same picker, so use the same wording as that option. The apostrophe is U+2019.",
-    "screenshot": "settings-ai-ask-cmdr.png"
+    "screenshot": "settings-ai-ask-cmdr.png",
+    "screenshotNote": "Settings > AI > Ask Cmdr, pictured here. Your string belongs to a state this screenshot doesn’t show (off, or asking you to review changed wording), a confirmation or empty state in one of its panels, or a note under one of its controls."
   },
   "settings.askCmdr.chatMemorySize.opt.auto": "Automatic (recommended)",
   "@settings.askCmdr.chatMemorySize.opt.auto": {
@@ -3048,7 +3144,8 @@
   "settings.askCmdr.spendPause.description": "One answer can run many lookups. Past this estimated cost, Cmdr pauses it and asks before it spends more. Estimates use list prices, so caching usually makes the real cost lower.",
   "@settings.askCmdr.spendPause.description": {
     "description": "Help text under the picker that sets when a running Ask Cmdr answer pauses over its cost. Explains that a single answer may look things up many times, that once its estimated cost passes the chosen amount the assistant stops and asks the user whether to continue, and that the estimate uses the AI provider's published prices, while the provider's prompt caching (reusing parts of the chat it already read) usually makes the actual bill smaller. \"Lookup\" is the word the chat already uses for a tool call.",
-    "screenshot": "settings-ai-ask-cmdr.png"
+    "screenshot": "settings-ai-ask-cmdr.png",
+    "screenshotNote": "Settings > AI > Ask Cmdr, pictured here. Your string belongs to a state this screenshot doesn’t show (off, or asking you to review changed wording), a confirmation or empty state in one of its panels, or a note under one of its controls."
   },
   "settings.askCmdr.spendPause.opt.never": "Never",
   "@settings.askCmdr.spendPause.opt.never": {
@@ -3080,7 +3177,8 @@
   "settings.askCmdr.proactive.description": "It watches the folders you work in to find something worth suggesting.",
   "@settings.askCmdr.proactive.description": {
     "description": "The longer text behind the ⓘ after the label of the switch that lets Ask Cmdr start conversations. “It” = Cmdr. Says what Cmdr watches to come up with a suggestion: the folders the user works in.",
-    "screenshot": "settings-ai-ask-cmdr.png"
+    "screenshot": "settings-ai-ask-cmdr.png",
+    "screenshotNote": "Settings > AI > Ask Cmdr, pictured here. Your string belongs to a state this screenshot doesn’t show (off, or asking you to review changed wording), a confirmation or empty state in one of its panels, or a note under one of its controls."
   },
   "settings.askCmdr.proactive.summary": "Cmdr starts a chat with a suggestion. Nothing runs until you approve.",
   "@settings.askCmdr.proactive.summary": {
@@ -3127,7 +3225,8 @@
   "settings.askCmdr.wakeToast.description": "A small message in the corner when Cmdr stages something for you to review.",
   "@settings.askCmdr.wakeToast.description": {
     "description": "Help text under the suggestion-notice switch, describing the corner message (a toast).",
-    "screenshot": "settings-ai-ask-cmdr.png"
+    "screenshot": "settings-ai-ask-cmdr.png",
+    "screenshotNote": "Settings > AI > Ask Cmdr, pictured here. Your string belongs to a state this screenshot doesn’t show (off, or asking you to review changed wording), a confirmation or empty state in one of its panels, or a note under one of its controls."
   },
   "settings.askCmdr.wakeToast.keywords": "toast, notice, notification, suggestion, proactive, alert",
   "@settings.askCmdr.wakeToast.keywords": {
@@ -3138,17 +3237,17 @@
   "settings.askCmdr.memory.title": "What Cmdr remembers",
   "@settings.askCmdr.memory.title": {
     "description": "Heading of the memory group in Ask Cmdr settings, over the two controls that open the notes folder and delete everything in it. Sentence case.",
-    "screenshot": "settings-ai-ask-cmdr.png"
+    "screenshot": "settings-ai-ask-cmdr-page-2.png"
   },
   "settings.askCmdr.memory.description": "Cmdr keeps a small folder of notes about you, and sends it with every message. Have a look, or start it over.",
   "@settings.askCmdr.memory.description": {
     "description": "Paragraph under the \"What Cmdr remembers\" heading in Ask Cmdr settings, introducing the two buttons below it.",
-    "screenshot": "settings-ai-ask-cmdr.png"
+    "screenshot": "settings-ai-ask-cmdr-page-2.png"
   },
   "settings.askCmdr.memory.open": "Open memory folder",
   "@settings.askCmdr.memory.open": {
     "description": "Button in Ask Cmdr settings that shows the assistant's notes folder in Cmdr's own file pane. Starts with a verb. Sentence case.",
-    "screenshot": "settings-ai-ask-cmdr.png"
+    "screenshot": "settings-ai-ask-cmdr-page-2.png"
   },
   "settings.askCmdr.openMemoryFolder.keywords": "memory, folder, notes, remember, open",
   "@settings.askCmdr.openMemoryFolder.keywords": {
@@ -3171,7 +3270,7 @@
   "settings.askCmdr.spend.title": "Spending",
   "@settings.askCmdr.spend.title": {
     "description": "Heading of the spend/usage group in Ask Cmdr settings (per-day token use and estimated cost). Sentence case.",
-    "screenshot": "settings-ai-ask-cmdr.png"
+    "screenshot": "settings-ai-ask-cmdr-page-2.png"
   },
   "settings.askCmdr.spend.empty": "No usage yet. Your token use and estimated cost will show up here.",
   "@settings.askCmdr.spend.empty": {
@@ -3182,7 +3281,7 @@
   "settings.askCmdr.spend.disclaimer": "These are estimates. Your provider bills you directly, so check your provider’s dashboard for the exact amount.",
   "@settings.askCmdr.spend.disclaimer": {
     "description": "Small print under the Ask Cmdr spend list: the costs shown are estimates, not the provider's actual bill. The apostrophe is U+2019.",
-    "screenshot": "settings-ai-ask-cmdr.png"
+    "screenshot": "settings-ai-ask-cmdr-page-2.png"
   },
   "settings.section.fileSystems": "File systems",
   "@settings.section.fileSystems": {
@@ -3197,52 +3296,53 @@
   "settings.section.servers": "Servers (SFTP, WebDAV)",
   "@settings.section.servers": {
     "description": "Settings subsection title under File systems: the page listing the SSH host keys this computer trusts. \"SFTP\" and \"WebDAV\" are protocol names; keep both as-is, parentheses included. Sidebar and page heading.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-summary-file-systems.png"
   },
   "settings.section.adb": "Android (ADB)",
   "@settings.section.adb": {
     "description": "Settings subsection title under File systems: browsing an Android phone over the Android Debug Bridge. \"Android\" is a product name and \"ADB\" its debug-bridge abbreviation; keep both as-is, parentheses included. Sidebar and page heading.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-summary-file-systems.png"
   },
   "settings.section.mtp": "MTP (Android/Kindle/cameras)",
   "@settings.section.mtp": {
     "description": "Settings subsection title under File systems: MTP support for USB devices. \"MTP\" is a protocol abbreviation; \"Android\" and \"Kindle\" are product names; keep all three as-is. Sidebar and page heading.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-file-systems-mtp.png"
   },
   "settings.section.git": "Git",
   "@settings.section.git": {
     "description": "Settings subsection title under File systems: Git. \"Git\" is the version-control tool name; keep it. Sidebar and page heading.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-file-systems-git.png"
   },
   "settings.section.viewer": "Viewer",
   "@settings.section.viewer": {
     "description": "Top-level Settings section title: Viewer (the built-in file viewer). Sidebar and page heading.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-viewer.png"
   },
   "settings.navigationAndFileOps.card.operationLog": "Operation log",
   "@settings.navigationAndFileOps.card.operationLog": {
     "description": "Heading of the Operation log card (file-operation history and undo retention limits) in Settings > Behavior > Navigation & file ops.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-3.png"
   },
   "settings.operationLog.intro": "Cmdr logs your file operations so you can review your history and undo actions. Choose whether to record them, how long to keep the log, and how much disk space it can use.",
   "@settings.operationLog.intro": {
     "description": "Intro paragraph at the top of the Operation log card in Settings > Behavior > Navigation & file ops. Explains what the log is; the settings below turn recording on or off and control retention. \"Cmdr\" is the product name; do not translate it.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-3.png"
   },
   "settings.operationLog.enabled.label": "Record file operations",
   "@settings.operationLog.enabled.label": {
     "description": "Label of the switch that turns the operation log on or off, in the Operation log card of Settings › Behavior › Navigation & file ops. When on, Cmdr records every copy, move, rename, and delete so they can be reviewed and undone. Sentence case.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-3.png"
   },
   "settings.operationLog.enabled.description": "This covers new copies, moves, renames, and deletes. Your existing history stays, and you can still undo what’s in it.",
   "@settings.operationLog.enabled.description": {
     "description": "The longer text behind the ⓘ after the operation log switch’s label (settings.operationLog.enabled.label). Says which changes stop being recorded while the switch is off, and that the history already recorded is kept and can still be undone.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.operationLog.enabled.summary": "While this is off, Cmdr doesn’t record new changes, so you can’t undo them.",
   "@settings.operationLog.enabled.summary": {
     "description": "Short line under the switch that turns the operation log on or off (settings.operationLog.enabled.label). It must say plainly that undo stops working for new file changes while the switch is off. \"Cmdr\" is the app name, keep it.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-3.png"
   },
   "settings.operationLog.enabled.keywords": "operation, log, history, record, recording, undo, journal, privacy, turn off",
   "@settings.operationLog.enabled.keywords": {
@@ -3251,27 +3351,30 @@
   "settings.operationLog.maxAge.label": "Keep history for",
   "@settings.operationLog.maxAge.label": {
     "description": "Label for the picker that sets how long operation-log history is kept, in Settings > Operation log.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-3.png"
   },
   "settings.operationLog.maxAge.opt.forever": "Forever",
   "@settings.operationLog.maxAge.opt.forever": {
     "description": "Age-limit option: never remove entries by age (only the size limit applies).",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-3.png"
   },
   "settings.operationLog.maxAge.opt.days30": "30 days",
   "@settings.operationLog.maxAge.opt.days30": {
     "description": "Retention-age option: 30 days. The numeral is literal.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.operationLog.maxAge.opt.days90": "90 days",
   "@settings.operationLog.maxAge.opt.days90": {
     "description": "Retention-age option: 90 days. The numeral is literal.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.operationLog.maxAge.opt.year1": "1 year",
   "@settings.operationLog.maxAge.opt.year1": {
     "description": "Retention-age option: 1 year. The numeral is literal.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.operationLog.maxAge.keywords": "operation, log, history, retention, age, keep, prune, forever, days, undo",
   "@settings.operationLog.maxAge.keywords": {
@@ -3280,12 +3383,13 @@
   "settings.operationLog.maxSize.label": "Maximum size",
   "@settings.operationLog.maxSize.label": {
     "description": "Label for the picker that sets the operation log's maximum size on disk, in Settings > Operation log.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops-page-3.png"
   },
   "settings.operationLog.maxSize.description": "The most disk space the operation log can use. When it fills up, Cmdr removes the oldest operations first.",
   "@settings.operationLog.maxSize.description": {
     "description": "Help text under the size-limit picker (settings.operationLog.maxSize.label).",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.operationLog.maxSize.keywords": "operation, log, history, retention, size, disk, space, limit, megabytes, gigabytes",
   "@settings.operationLog.maxSize.keywords": {
@@ -3299,22 +3403,22 @@
   "settings.section.updatesAndPrivacy": "Updates & privacy",
   "@settings.section.updatesAndPrivacy": {
     "description": "Top-level Settings section title: Updates & privacy. The \"&\" is an ampersand joining the two topics; the locale may use its own word for \"and\". Sidebar and page heading.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-updates.png"
   },
   "settings.section.advanced": "Advanced",
   "@settings.section.advanced": {
     "description": "Top-level Settings section title: Advanced (power-user settings). Sidebar and page heading.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-advanced.png"
   },
   "settings.section.keyboardShortcuts": "Keyboard shortcuts",
   "@settings.section.keyboardShortcuts": {
     "description": "Top-level Settings section title: Keyboard shortcuts. Sidebar and page heading.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-behavior-notifications.png"
   },
   "settings.section.license": "License",
   "@settings.section.license": {
     "description": "Top-level Settings section title: License (the app license / activation). Sidebar and page heading.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-keyboard-shortcuts.png"
   },
   "settings.summary.colorsAndFormats": "Theme, app color, date and size coloring, and date/time format.",
   "@settings.summary.colorsAndFormats": {
@@ -3443,7 +3547,8 @@
   "settings.control.customOption": "Custom…",
   "@settings.control.customOption": {
     "description": "Dropdown option that lets the user enter a custom value. The trailing ellipsis signals further input follows; keep an ellipsis.",
-    "screenshot": "settings-behavior-navigation-and-file-ops.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.control.customPrefix": "Custom: {value}",
   "@settings.control.customPrefix": {
@@ -3467,7 +3572,7 @@
   "settings.control.unitItems": "items",
   "@settings.control.unitItems": {
     "description": "Unit word shown right after a number input in Settings > Advanced, for the list buffer sizes (how many file-list items or rows to prepare ahead, like '200 items'). The number is whatever the person typed and changes as they edit, so use a form that reads right after any number (the general plural). Keep it short, lowercase unless your language capitalizes nouns.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-2.png"
   },
   "settings.managed.rowNote": "Your organization manages this setting.",
   "@settings.managed.rowNote": {
@@ -3640,7 +3745,7 @@
   "settings.appearance.datePreviewLabel": "Preview:",
   "@settings.appearance.datePreviewLabel": {
     "description": "Label preceding a live preview of the chosen date/time format. Followed by the formatted example date. Keep the trailing colon.",
-    "screenshot": "settings-appearance-date-format.png"
+    "screenshot": "settings-appearance-date-format-page-2.png"
   },
   "settings.appearance.dateInvalidFormat": "Invalid format",
   "@settings.appearance.dateInvalidFormat": {
@@ -3649,7 +3754,7 @@
   "settings.appearance.hideFormatHelp": "Hide format help",
   "@settings.appearance.hideFormatHelp": {
     "description": "Toggle-button text that collapses the date-format placeholder help. Pairs with \"Show format help\".",
-    "screenshot": "settings-appearance-date-format.png"
+    "screenshot": "settings-appearance-date-format-page-2.png"
   },
   "settings.appearance.showFormatHelp": "Show format help",
   "@settings.appearance.showFormatHelp": {
@@ -3658,42 +3763,42 @@
   "settings.appearance.formatPlaceholdersTitle": "Format placeholders",
   "@settings.appearance.formatPlaceholdersTitle": {
     "description": "Heading above the list of date-format tokens (YYYY, MM, etc.) and their meanings.",
-    "screenshot": "settings-appearance-date-format.png"
+    "screenshot": "settings-appearance-date-format-page-2.png"
   },
   "settings.appearance.formatHelpYear": "4-digit year (2025)",
   "@settings.appearance.formatHelpYear": {
     "description": "Meaning of the YYYY date token, shown next to it in the format help. \"2025\" is a literal example; \"4-digit\" is the digit count.",
-    "screenshot": "settings-appearance-date-format.png"
+    "screenshot": "settings-appearance-date-format-page-2.png"
   },
   "settings.appearance.formatHelpMonth": "2-digit month (01–12)",
   "@settings.appearance.formatHelpMonth": {
     "description": "Meaning of the MM date token. \"01–12\" is a literal example range with an en dash; keep the numerals. \"2-digit\" is the digit count.",
-    "screenshot": "settings-appearance-date-format.png"
+    "screenshot": "settings-appearance-date-format-page-2.png"
   },
   "settings.appearance.formatHelpDay": "2-digit day (01–31)",
   "@settings.appearance.formatHelpDay": {
     "description": "Meaning of the DD date token. \"01–31\" is a literal example range with an en dash; keep the numerals. \"2-digit\" is the digit count.",
-    "screenshot": "settings-appearance-date-format.png"
+    "screenshot": "settings-appearance-date-format-page-2.png"
   },
   "settings.appearance.formatHelpHour": "2-digit hour (00–23)",
   "@settings.appearance.formatHelpHour": {
     "description": "Meaning of the HH date token (24-hour clock). \"00–23\" is a literal example range with an en dash; keep the numerals. \"2-digit\" is the digit count.",
-    "screenshot": "settings-appearance-date-format.png"
+    "screenshot": "settings-appearance-date-format-page-2.png"
   },
   "settings.appearance.formatHelpMinute": "2-digit minute (00–59)",
   "@settings.appearance.formatHelpMinute": {
     "description": "Meaning of the mm date token. \"00–59\" is a literal example range with an en dash; keep the numerals. \"2-digit\" is the digit count.",
-    "screenshot": "settings-appearance-date-format.png"
+    "screenshot": "settings-appearance-date-format-page-2.png"
   },
   "settings.appearance.formatHelpSecond": "2-digit second (00–59)",
   "@settings.appearance.formatHelpSecond": {
     "description": "Meaning of the ss date token. \"00–59\" is a literal example range with an en dash; keep the numerals. \"2-digit\" is the digit count.",
-    "screenshot": "settings-appearance-date-format.png"
+    "screenshot": "settings-appearance-date-format-page-2.png"
   },
   "settings.appearance.tintGroupDescription": "Adds a faint background tint to panes so you can tell volume types apart at a glance.",
   "@settings.appearance.tintGroupDescription": {
     "description": "Help text under the \"Pane tints\" card heading in Settings > Appearance > Colors and formats. \"pane\" is one of the two file lists; \"at a glance\" is an idiom meaning instantly/without effort.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-appearance-page-2.png"
   },
   "settings.appearance.tintSwatchAria": "Choose a tint color for {label}",
   "@settings.appearance.tintSwatchAria": {
@@ -3725,7 +3830,8 @@
   "settings.ai.loading": "Loading…",
   "@settings.ai.loading": {
     "description": "Shown while the AI section's state is loading. The trailing ellipsis signals an in-progress action; keep it.",
-    "screenshot": "settings-ai-provider-managed.png"
+    "screenshot": "settings-ai-provider-managed.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.ai.tooltipOff": "AI features are turned off. Cmdr works fully without AI: suggestions and smart features are simply hidden.",
   "@settings.ai.tooltipOff": {
@@ -3807,12 +3913,12 @@
   "settings.appearance.card.dateAndTime": "Date and time",
   "@settings.appearance.card.dateAndTime": {
     "description": "Heading of the date-and-time card (date/time format + custom format) in Settings > Appearance > Colors and formats.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-appearance-page-2.png"
   },
   "settings.appearance.card.paneTints": "Pane tints",
   "@settings.appearance.card.paneTints": {
     "description": "Heading of the pane-tints card (local, SMB, and MTP volume tints) in Settings > Appearance > Colors and formats.",
-    "screenshot": "settings-appearance.png"
+    "screenshot": "settings-appearance-page-2.png"
   },
   "settings.appearance.card.namesAndIcons": "Names and icons",
   "@settings.appearance.card.namesAndIcons": {
@@ -3836,12 +3942,13 @@
   },
   "settings.network.card.behavior": "Behavior",
   "@settings.network.card.behavior": {
-    "description": "Heading of the behavior card (whether “..” in a share’s top folder opens the server’s other shares) in Settings > File systems > SMB/Network shares. It sits between the Connection and Performance and timeouts cards."
+    "description": "Heading of the behavior card (whether “..” in a share’s top folder opens the server’s other shares) in Settings > File systems > SMB/Network shares. It sits between the Connection and Performance and timeouts cards.",
+    "screenshot": "settings-file-systems-smb.png"
   },
   "settings.network.card.performanceAndTimeouts": "Performance and timeouts",
   "@settings.network.card.performanceAndTimeouts": {
     "description": "Heading of the performance-and-timeouts card (share cache duration, network timeout mode, custom timeout, SMB concurrency) in Settings > File systems > SMB/Network shares.",
-    "screenshot": "settings-file-systems-smb.png"
+    "screenshot": "settings-file-systems-smb-page-2.png"
   },
   "settings.advanced.card.performance": "Performance",
   "@settings.advanced.card.performance": {
@@ -3886,22 +3993,23 @@
   "settings.askCmdr.toolGroupsOnAnswer.label": "Tool groups when the answer arrives",
   "@settings.askCmdr.toolGroupsOnAnswer.label": {
     "description": "Label for a choice in Settings > Advanced > Ask Cmdr. In the Ask Cmdr chat, the assistant’s requests to look at files show as a group of short lines that opens while it works; this picks what that group does once the answer is in.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-7.png"
   },
   "settings.askCmdr.toolGroupsOnAnswer.description": "Ask Cmdr shows what the AI looks at while it works. Pick whether those lines fold away once the answer arrives.",
   "@settings.askCmdr.toolGroupsOnAnswer.description": {
     "description": "Help text under the tool-groups choice in Settings > Advanced > Ask Cmdr. “Ask Cmdr” is the product name of the chat panel; keep it untranslated. It names only the panel: the AI is the one that looks at files and answers. “Those lines” are the short lines in the chat naming each folder, file, or search the AI checked.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-ai-ask-cmdr.png",
+    "screenshotNote": "Settings > AI > Ask Cmdr, pictured here. Your string belongs to a state this screenshot doesn’t show (off, or asking you to review changed wording), a confirmation or empty state in one of its panels, or a note under one of its controls."
   },
   "settings.askCmdr.toolGroupsOnAnswer.opt.collapse": "Fold them away",
   "@settings.askCmdr.toolGroupsOnAnswer.opt.collapse": {
     "description": "Radio-button option for the tool-groups choice in Settings > Advanced > Ask Cmdr: when the answer arrives, every group of tool lines closes to a one-line summary.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-7.png"
   },
   "settings.askCmdr.toolGroupsOnAnswer.opt.keep": "Leave them as I had them",
   "@settings.askCmdr.toolGroupsOnAnswer.opt.keep": {
     "description": "Radio-button option for the tool-groups choice in Settings > Advanced > Ask Cmdr: when the answer arrives, each group of tool lines stays open or closed, whichever the person left it.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-7.png"
   },
   "settings.askCmdr.toolGroupsOnAnswer.keywords": "assistant, chat, collapse, expand, fold, tools, steps, answer",
   "@settings.askCmdr.toolGroupsOnAnswer.keywords": {
@@ -3922,22 +4030,23 @@
   "settings.updates.card.securityEvents": "Security events",
   "@settings.updates.card.securityEvents": {
     "description": "Heading of the security events card (the switch for the local security event log and its button that shows the log file in the file manager, 'Show in Finder' on macOS) in Settings > Updates & privacy. Sentence case.",
-    "screenshot": "settings-updates.png"
+    "screenshot": "settings-updates-page-2.png"
   },
   "settings.securityLog.enabled.label": "Record security events",
   "@settings.securityLog.enabled.label": {
     "description": "Label for the switch that turns the local security event log on or off. The log is a small file on the person's computer listing security-relevant changes and refusals. In Settings > Updates & privacy.",
-    "screenshot": "settings-updates.png"
+    "screenshot": "settings-updates-page-2.png"
   },
   "settings.securityLog.enabled.description": "It notes security-relevant changes and refusals, like cloud AI consent, an installed update, or an app turned away from the MCP server. It holds no filenames, contents, or passwords.",
   "@settings.securityLog.enabled.description": {
     "description": "The longer text behind the ⓘ after the “Record security events” label. “It” = the local security record. \"MCP server\" is a technical feature name (Model Context Protocol): keep it untranslated. \"turned away\" = refused access. Reassures that the record holds nothing private.",
-    "screenshot": "settings-updates.png"
+    "screenshot": "settings-updates.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.securityLog.enabled.summary": "{platform, select, macos {A small local record of security events. It never leaves your Mac.} windows {A small local record of security events. It never leaves your PC.} other {A small local record of security events. It never leaves your computer.}}",
   "@settings.securityLog.enabled.summary": {
     "description": "Short line under the “Record security events” switch. Reassures that the record is a small file that stays on this machine. Each branch names the machine in its OS’s word: Mac on macOS, PC on Windows, computer on Linux.",
-    "screenshot": "settings-updates.png"
+    "screenshot": "settings-updates-page-2.png"
   },
   "settings.securityLog.enabled.keywords": "security, log, audit, record, events, access, privacy",
   "@settings.securityLog.enabled.keywords": {
@@ -3946,7 +4055,7 @@
   "settings.securityLog.showInFinder": "{platform, select, macos {Show in Finder} windows {Show in File Explorer} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Show in file manager}}",
   "@settings.securityLog.showInFinder": {
     "description": "Button under the 'Record security events' switch that opens the file manager at the security event log file (or its folder when there's no file yet). Each branch names its OS's file manager: 'Finder' on macOS (the name your language's macOS shows), 'File Explorer' on Windows (Windows' name in your language), and a generic file manager on Linux. The screenshot shows the macOS wording. The `linuxGnome` branch names GNOME’s file manager, Files, and the `linuxKde` branch KDE’s, Dolphin: use the names those desktops give them in your language (GNOME translates “Files”, KDE keeps “Dolphin”).",
-    "screenshot": "settings-updates.png"
+    "screenshot": "settings-updates-page-2.png"
   },
   "settings.updates.showSecurityLog.keywords": "security, log, audit, events, file, open, reveal, show, folder, location",
   "@settings.updates.showSecurityLog.keywords": {
@@ -4337,12 +4446,13 @@
   "settings.fileExplorer.quickFilterIntroSeen.label": "Suppress the quick filter explainer",
   "@settings.fileExplorer.quickFilterIntroSeen.label": {
     "description": "Advanced-section label (in the Hints and warnings card) for the switch that silences the one-time toast explaining that typing in a pane filtered its list (fileExplorer.quickFilter.intro.title). On means the hint was already shown and won’t show again; the app turns it on by itself the moment the hint appears, and turning it off makes the hint show once more.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced-page-3.png"
   },
   "settings.fileExplorer.quickFilterIntroSeen.description": "The first time your typing filters a pane, Cmdr explains what happened and that Esc brings every file back. Turn this off to see the explanation once more.",
   "@settings.fileExplorer.quickFilterIntroSeen.description": {
     "description": "Help text for the “Suppress the quick filter explainer” switch (settings.fileExplorer.quickFilterIntroSeen.label). “Esc” is the Escape key; use the locale’s key name.",
-    "screenshot": "settings-advanced.png"
+    "screenshot": "settings-advanced.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "settings.fileExplorer.quickFilterIntroSeen.keywords": "filter, typing, type, explain, intro, toast, tip",
   "@settings.fileExplorer.quickFilterIntroSeen.keywords": {
@@ -4351,17 +4461,17 @@
   "settings.dataWipe.card": "{platform, select, macos {Your data on this Mac} windows {Your data on this PC} other {Your data on this computer}}",
   "@settings.dataWipe.card": {
     "description": "Heading of a card in Settings > Updates & privacy that holds the button deleting everything Cmdr has stored on this computer. Sentence case. The screenshot shows the macOS wording.",
-    "screenshot": "settings-updates.png"
+    "screenshot": "settings-updates-page-2.png"
   },
   "settings.dataWipe.description": "{platform, select, macos {Delete everything Cmdr keeps on this Mac: settings, saved passwords, histories, indexes, and downloaded models. Cmdr quits afterwards.} windows {Delete everything Cmdr keeps on this PC: settings, saved passwords, histories, indexes, and downloaded models. Cmdr closes afterwards.} other {Delete everything Cmdr keeps on this computer: settings, saved passwords, histories, indexes, and downloaded models. Cmdr quits afterwards.}}",
   "@settings.dataWipe.description": {
     "description": "Explanation under that heading, beside the delete button. It describes what the button does; it isn’t an instruction to the user, so a descriptive form (“Deletes everything…”) is fine. \"Cmdr\" is the app's name; don't translate it. The screenshot shows the macOS wording.",
-    "screenshot": "settings-updates.png"
+    "screenshot": "settings-updates-page-2.png"
   },
   "settings.dataWipe.button": "Delete all Cmdr data",
   "@settings.dataWipe.button": {
     "description": "Button in Settings > Updates & privacy that opens a confirmation dialog about deleting all of the app's data on this computer. VERB phrase, sentence case. \"Cmdr\" is the app's name.",
-    "screenshot": "settings-updates.png"
+    "screenshot": "settings-updates-page-2.png"
   },
   "settings.updates.deleteAllData.keywords": "delete, erase, remove, wipe, reset, uninstall, privacy, data, forget, gdpr",
   "@settings.updates.deleteAllData.keywords": {

@@ -28,47 +28,47 @@
   "shortcuts.scope.mainWindow": "Main window",
   "@shortcuts.scope.mainWindow": {
     "description": "Group heading in the Keyboard shortcuts list for commands scoped to the main window. A short section title.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-3.png"
   },
 
   "shortcuts.scope.fileList": "File list",
   "@shortcuts.scope.fileList": {
     "description": "Group heading in the Keyboard shortcuts list for commands that act on the file list (the list of files in a pane). A short section title.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-8.png"
   },
 
   "shortcuts.scope.briefMode": "Brief mode",
   "@shortcuts.scope.briefMode": {
     "description": "Group heading in the Keyboard shortcuts list for commands specific to Brief view (a compact, multi-column file layout). \"Brief\" matches the view's name elsewhere in the app.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-14.png"
   },
 
   "shortcuts.scope.fullMode": "Full mode",
   "@shortcuts.scope.fullMode": {
     "description": "Group heading in the Keyboard shortcuts list for commands specific to Full view (a detailed single-column file layout). \"Full\" matches the view's name elsewhere in the app.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-15.png"
   },
 
   "shortcuts.scope.volumeChooser": "Volume switcher",
   "@shortcuts.scope.volumeChooser": {
     "description": "Group heading in the Keyboard shortcuts list for commands in the volume switcher (the picker for disks and mounted locations). A short section title.",
-    "screenshot": "pane-volume-chooser.png"
+    "screenshot": "settings-keyboard-shortcuts-page-5.png"
   },
 
   "shortcuts.scope.multiRename": "Multi-rename",
   "@shortcuts.scope.multiRename": {
     "description": "Group heading in the Keyboard shortcuts list for keys that work inside the Multi-rename tool (Ctrl+M, the sheet that renames many files at once). A short section title; match multiRename.title.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-10.png"
   },
   "shortcuts.scope.operationLog": "Operation log",
   "@shortcuts.scope.operationLog": {
     "description": "Group heading in the Keyboard shortcuts list for keys that work inside the Operation log dialog (View > Operation log: recent file operations and the items they touched, which can be rolled back). A short section title; match operationLog.dialog.title.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-2.png"
   },
   "shortcuts.scope.tellMeAbout": "Tell me about this",
   "@shortcuts.scope.tellMeAbout": {
     "description": "Group heading in the Keyboard shortcuts list for keys that work inside the \"Tell me about this\" card (the dialog that lists what Cmdr knows about one file or folder, with a short AI take beside it). A short section title; match commands.fileTellMeAbout.label.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-12.png"
   },
   "shortcuts.scope.askCmdr": "Ask Cmdr",
   "@shortcuts.scope.askCmdr": {
@@ -78,31 +78,31 @@
   "shortcuts.scope.searchDialog": "Search and Select files",
   "@shortcuts.scope.searchDialog": {
     "description": "Group heading in the Keyboard shortcuts list for keys that work inside the two query dialogs: Search (finds files on the drive) and Select files (selects files in a pane by a pattern). A short section title, at most about 40 characters. Reuse the words of those dialogs' titles (search.dialog.title, selection.dialog.title.add) where they join naturally. Where they don't (for example one title is a noun and the other a verb phrase), a short noun heading that names both is fine, such as \"Search and file selection\".",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-21.png"
   },
 
   "shortcuts.scope.favoritesMenu": "Favorites menu",
   "@shortcuts.scope.favoritesMenu": {
     "description": "Group heading in the Keyboard shortcuts list for keys that work inside the favorites menu (the list of bookmarked folders that opens over a pane). A short section title.",
-    "screenshot": "favorites-menu.png"
+    "screenshot": "settings-keyboard-shortcuts-page-16.png"
   },
 
   "shortcuts.scope.servers": "Servers",
   "@shortcuts.scope.servers": {
     "description": "Group heading in the Keyboard shortcuts list for keys that work in the servers hub: the list of every server the user saved plus the ones Cmdr found nearby. A short section title.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-7.png"
   },
 
   "shortcuts.scope.errorScreen": "Unreadable folder",
   "@shortcuts.scope.errorScreen": {
     "description": "Group heading in the Keyboard shortcuts list for commands on the screen that replaces the file list when a folder can’t be opened. Names that situation (a folder Cmdr can’t read), not an error. A short section title.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-17.png"
   },
 
   "shortcuts.scope.places": "Places",
   "@shortcuts.scope.places": {
     "description": "Group heading in the Keyboard shortcuts list for keys that work in the list of places under one server: the shared folders on an SMB host today, a storage account’s buckets later. A short section title.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-17.png"
   },
 
   "shortcuts.scope.commandPalette": "Command palette",
@@ -114,19 +114,19 @@
   "shortcuts.scope.queueWindow": "Operation queue",
   "@shortcuts.scope.queueWindow": {
     "description": "Group heading in the Keyboard shortcuts list for the keys that work in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes). Use the same name as the window title, queue.windowTitle. A short section title.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-2.png"
   },
 
   "shortcuts.scope.viewerWindow": "File viewer",
   "@shortcuts.scope.viewerWindow": {
     "description": "Group heading in the Keyboard shortcuts list for the single keys that work in the file viewer window (the separate window that shows a file's text, bytes, or image when you press F3): word wrap, tail mode, view modes, and image zoom. A short section title.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-24.png"
   },
 
   "shortcuts.scope.aboutWindow": "About window",
   "@shortcuts.scope.aboutWindow": {
     "description": "Group heading in the Keyboard shortcuts list for commands in the About window. A short section title.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-25.png"
   },
 
   "shortcuts.scope.onboarding": "Onboarding",
@@ -379,7 +379,8 @@
   "shortcuts.section.pressEscToClear": "Press ESC to clear",
   "@shortcuts.section.pressEscToClear": {
     "description": "Hint below the key-filter input telling the user how to clear it. \"ESC\" is the Escape key; keep it as the key name.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts.png",
+    "screenshotNote": "Keyboard-shortcut UI. This shows the Settings > Keyboard shortcuts list, which uses the same row/scope/conflict layout as the standalone Shortcuts window. macOS modifier glyphs (⌘ ⌥ ⌃ ⇧) and key names are not translated."
   },
 
   "shortcuts.section.filterAll": "All",
@@ -480,7 +481,7 @@
   "shortcuts.section.fixedBadge": "Fixed",
   "@shortcuts.section.fixedBadge": {
     "description": "Badge on a read-only shortcut row meaning the key is hardcoded in the app and can't be rebound. A short tag.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-9.png"
   },
 
   "shortcuts.section.pressKeys": "Press keys…",
@@ -557,6 +558,7 @@
     "identicalBranches": {
       "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
     },
-    "screenshot": "shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts.png",
+    "screenshotNote": "Keyboard-shortcut UI. This shows the Settings > Keyboard shortcuts list, which uses the same row/scope/conflict layout as the standalone Shortcuts window. macOS modifier glyphs (⌘ ⌥ ⌃ ⇧) and key names are not translated."
   }
 }
