@@ -90,7 +90,7 @@ pub(super) async fn start(
     preview_id: Option<String>,
     net_new: bool,
     initiator: Initiator,
-    mac_only: cmdr_fs::mac_only_files::MacOnlyFiles,
+    os_junk: cmdr_fs::os_junk_files::OsJunkFiles,
 ) -> Result<WriteOperationStartResult, WriteOperationError> {
     // Plain `get`: a new `.zip` lands as a plain file on its parent drive.
     let (dest_volume, dest_lane) = match engine.host().volumes().get(&parent_volume_id) {
@@ -135,7 +135,7 @@ pub(super) async fn start(
         engine
             .new_operation_state(Duration::from_millis(progress_interval_ms))
             .with_journal_volumes(source_volume_id.clone(), parent_volume_id.clone())
-            .leaving_out(mac_only),
+            .leaving_out(os_junk),
     );
     let mut lanes = vec![source_volume.lane_key(), dest_lane];
     lanes.dedup();

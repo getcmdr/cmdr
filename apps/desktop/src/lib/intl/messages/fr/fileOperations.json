@@ -406,20 +406,20 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.macOnlyFiles.toggle": "Ignorer les fichiers cachés propres au Mac (.DS_Store, ._*)",
-  "@fileOperations.transferDialog.macOnlyFiles.toggle": {
+  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Ignorer les fichiers cachés propres au Mac (.DS_Store, ._*)} windows {Skip Windows thumbnail caches (Thumbs.db, ehthumbs.db)} other {Skip Linux leftover files (.nfs*, .fuse_hidden*)}}",
+  "@fileOperations.transferDialog.osJunkFiles.toggle": {
     "sourceHash": "0f28753"
   },
-  "fileOperations.transferDialog.macOnlyFiles.dontAskAgain": "Ne plus demander",
-  "@fileOperations.transferDialog.macOnlyFiles.dontAskAgain": {
+  "fileOperations.transferDialog.osJunkFiles.dontAskAgain": "Ne plus demander",
+  "@fileOperations.transferDialog.osJunkFiles.dontAskAgain": {
     "sourceHash": "3f6e4da"
   },
-  "fileOperations.transferDialog.macOnlyFiles.includingByDefault": "Inclus par défaut",
-  "@fileOperations.transferDialog.macOnlyFiles.includingByDefault": {
+  "fileOperations.transferDialog.osJunkFiles.includingByDefault": "Inclus par défaut",
+  "@fileOperations.transferDialog.osJunkFiles.includingByDefault": {
     "sourceHash": "23a2743"
   },
-  "fileOperations.transferDialog.macOnlyFiles.skippingByDefault": "Ignorés par défaut",
-  "@fileOperations.transferDialog.macOnlyFiles.skippingByDefault": {
+  "fileOperations.transferDialog.osJunkFiles.skippingByDefault": "Ignorés par défaut",
+  "@fileOperations.transferDialog.osJunkFiles.skippingByDefault": {
     "sourceHash": "1837ebb"
   },
   "fileOperations.transferDialog.rememberChoice": "Mémoriser ce choix",

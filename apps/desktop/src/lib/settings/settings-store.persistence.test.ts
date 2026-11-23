@@ -682,6 +682,51 @@ describe('migration 10: the network timeout mode folds into one timeout', () => 
 })
 
 /**
+ * Migration 11 (#1305): the Mac-only hidden files setting became "skip this OS's junk files"
+ * under a new key. A Mac keeps the choice it made, since the Mac set is the same files.
+ */
+describe('migration 11: the Mac-only files choice moves to the OS junk files key', () => {
+  function seedLegacy(value: unknown): void {
+    disk.set('fileOperations.macOnlyFiles', value)
+    disk.set('_schemaVersion', 10)
+  }
+
+  it('carries a stored choice across and drops the old key', async () => {
+    seedLegacy('skip')
+
+    const store = await loadStore()
+    await store.initializeSettings()
+
+    expect(disk.get('fileOperations.osJunkFiles')).toBe('skip')
+    expect(store.getSetting('fileOperations.osJunkFiles')).toBe('skip')
+    expect(disk.has('fileOperations.macOnlyFiles')).toBe(false)
+    expect(disk.get('_schemaVersion')).toBe(SCHEMA_VERSION)
+  })
+
+  it('drops a value the setting never had, leaving the default', async () => {
+    seedLegacy('sometimes')
+
+    const store = await loadStore()
+    await store.initializeSettings()
+
+    expect(disk.has('fileOperations.osJunkFiles')).toBe(false)
+    expect(disk.has('fileOperations.macOnlyFiles')).toBe(false)
+    expect(store.getSetting('fileOperations.osJunkFiles')).toBe('ask')
+  })
+
+  it('never overwrites a choice already under the new key', async () => {
+    seedLegacy('skip')
+    disk.set('fileOperations.osJunkFiles', 'include')
+
+    const store = await loadStore()
+    await store.initializeSettings()
+
+    expect(disk.get('fileOperations.osJunkFiles')).toBe('include')
+    expect(disk.has('fileOperations.macOnlyFiles')).toBe(false)
+  })
+})
+
+/**
  * Two windows over one backing store (`tauri-plugin-store` shares one in-memory store per
  * path across windows). Settings saves 500 ms after a change, and a window opened inside
  * that half second loads the store without the new value and starts listening only after

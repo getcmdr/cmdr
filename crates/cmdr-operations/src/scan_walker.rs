@@ -18,7 +18,7 @@ use std::time::Duration;
 
 use cmdr_fs::apple_double::SidecarRule;
 use cmdr_fs::log_private::LogPrivate;
-use cmdr_fs::mac_only_files::MacOnlyFiles;
+use cmdr_fs::os_junk_files::OsJunkFiles;
 
 use super::state::FileInfo;
 use super::validation::is_symlink_loop;
@@ -103,10 +103,10 @@ pub(super) struct WalkContext<'a, E> {
     /// a selected source, so a `._` file the person picked still goes. Tests
     /// inject the volume probe to play a FAT volume on APFS.
     pub(super) sidecars: &'a SidecarRule,
-    /// Leaves out the Mac-only files (`.DS_Store`, `._*`) a transfer that
+    /// Leaves out the OS junk files (`cmdr_fs::os_junk_files`) a transfer that
     /// skips them won't write (#314). Like `sidecars`, asked of every LISTED
     /// entry and never of a selected source.
-    pub(super) mac_only: MacOnlyFiles,
+    pub(super) os_junk: OsJunkFiles,
     /// The fresh-listing oracle: a directory an open pane keeps watcher-fresh
     /// is walked from its listing instead of the disk. Asked only for a walk
     /// that names its volume.
@@ -471,8 +471,8 @@ fn walk_cached_entries<E>(
     Ok(())
 }
 
-/// Whether the walk leaves out `name`, listed in `dir`: a Mac-only file the
-/// transfer skips ([`WalkContext::mac_only`]), or an AppleDouble sidecar the
+/// Whether the walk leaves out `name`, listed in `dir`: an OS junk file the
+/// transfer skips ([`WalkContext::os_junk`]), or an AppleDouble sidecar the
 /// kernel already serves as its sibling's xattrs ([`WalkContext::sidecars`]).
 fn is_left_out<E>(
     ctx: &WalkContext<'_, E>,
@@ -481,7 +481,7 @@ fn is_left_out<E>(
     name: &OsStr,
     is_directory: bool,
 ) -> bool {
-    if ctx.mac_only.leaves_out(name, is_directory) {
+    if ctx.os_junk.leaves_out(name, is_directory) {
         return true;
     }
     let sidecar = ctx.sidecars.is_sidecar(dir, dir_device, name);

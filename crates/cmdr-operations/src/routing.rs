@@ -772,7 +772,7 @@ impl crate::Operations {
             config.compression_level,
             config.preview_id.clone(),
             initiator,
-            config.mac_only_files,
+            config.os_junk_files,
         )
         .await
     }

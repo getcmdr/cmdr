@@ -6,7 +6,7 @@
 //! it, is one subject rather than one more `Volume` method.
 
 use cmdr_fs::app_path::{AppPath, AppPathBuf};
-use cmdr_fs::mac_only_files::MacOnlyFiles;
+use cmdr_fs::os_junk_files::OsJunkFiles;
 use cmdr_fs::volume::scan_walk::fold_batch_at;
 use cmdr_fs::volume::{BatchScanResult, CopyScanResult, ScanBoundary, ScanRecorder, VolumeError};
 
@@ -18,7 +18,7 @@ impl ArchiveVolume {
     pub(super) async fn scan_subtree(
         &self,
         path: &AppPath,
-        mac_only: MacOnlyFiles,
+        os_junk: OsJunkFiles,
     ) -> Result<CopyScanResult, VolumeError> {
         let inner = self.inner_path(path);
         let index = self.index().await?;
@@ -49,7 +49,7 @@ impl ArchiveVolume {
         while let Some(dir) = pending.pop() {
             let Some(children) = index.list(&dir) else { continue };
             for child in children {
-                if mac_only.leaves_out_str(&child.name, child.is_dir) {
+                if os_junk.leaves_out_str(&child.name, child.is_dir) {
                     continue;
                 }
                 if child.is_dir {
@@ -83,10 +83,9 @@ impl ArchiveVolume {
         let mut per_path = Vec::with_capacity(paths.len());
         for path in paths {
             boundary.check().await?;
-            let scan = self.scan_subtree(path, boundary.mac_only()).await?;
+            let scan = self.scan_subtree(path, boundary.os_junk()).await?;
             if let Some(recorder) = boundary.recorder() {
-                self.record_subtree(path, recorder.as_ref(), boundary.mac_only())
-                    .await?;
+                self.record_subtree(path, recorder.as_ref(), boundary.os_junk()).await?;
             }
             boundary.counted(&scan).await?;
             per_path.push((path.clone(), scan));
@@ -110,7 +109,7 @@ impl ArchiveVolume {
         &self,
         path: &AppPath,
         recorder: &dyn ScanRecorder,
-        mac_only: MacOnlyFiles,
+        os_junk: OsJunkFiles,
     ) -> Result<(), VolumeError> {
         let index = self.index().await?;
         let inner = self.inner_path(path);
@@ -128,7 +127,7 @@ impl ArchiveVolume {
         while let Some((dir, as_called)) = pending.pop() {
             let Some(children) = index.list(&dir) else { continue };
             for child in children {
-                if mac_only.leaves_out_str(&child.name, child.is_dir) {
+                if os_junk.leaves_out_str(&child.name, child.is_dir) {
                     continue;
                 }
                 let child_as_called = as_called.join(&child.name);

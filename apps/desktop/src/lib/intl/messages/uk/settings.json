@@ -502,28 +502,28 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.macOnlyFiles.label": "Пропускати приховані файли, потрібні лише на Mac",
-  "@settings.fileOperations.macOnlyFiles.label": {
+  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Пропускати приховані файли, потрібні лише на Mac} windows {Skip Windows thumbnail caches} other {Skip Linux leftover files}}",
+  "@settings.fileOperations.osJunkFiles.label": {
     "sourceHash": "be693c6"
   },
-  "settings.fileOperations.macOnlyFiles.description": "Пропускає файли .DS_Store і ._* під час копіювання, переміщення чи архівування.",
-  "@settings.fileOperations.macOnlyFiles.description": {
+  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Пропускає файли .DS_Store і ._* під час копіювання, переміщення чи архівування.} windows {Skips Thumbs.db, ehthumbs.db, and ehthumbs_vista.db files when copying, moving, or compressing. Windows rebuilds them when it needs them.} other {Skips the .nfs* and .fuse_hidden* files Linux keeps for deleted files that are still open, when copying, moving, or compressing.}}",
+  "@settings.fileOperations.osJunkFiles.description": {
     "sourceHash": "02578a7"
   },
-  "settings.fileOperations.macOnlyFiles.opt.include": "Включити",
-  "@settings.fileOperations.macOnlyFiles.opt.include": {
+  "settings.fileOperations.osJunkFiles.opt.include": "Включити",
+  "@settings.fileOperations.osJunkFiles.opt.include": {
     "sourceHash": "7285576"
   },
-  "settings.fileOperations.macOnlyFiles.opt.skip": "Пропустити",
-  "@settings.fileOperations.macOnlyFiles.opt.skip": {
+  "settings.fileOperations.osJunkFiles.opt.skip": "Пропустити",
+  "@settings.fileOperations.osJunkFiles.opt.skip": {
     "sourceHash": "28d0359"
   },
-  "settings.fileOperations.macOnlyFiles.opt.ask": "Завжди питати",
-  "@settings.fileOperations.macOnlyFiles.opt.ask": {
+  "settings.fileOperations.osJunkFiles.opt.ask": "Завжди питати",
+  "@settings.fileOperations.osJunkFiles.opt.ask": {
     "sourceHash": "3c42771"
   },
-  "settings.fileOperations.macOnlyFiles.keywords": "службові файли, метадані, сміття, мотлох, зайві файли, ресурсна гілка, архів, стиснути, копіювати, переміщати, інші системи",
-  "@settings.fileOperations.macOnlyFiles.keywords": {
+  "settings.fileOperations.osJunkFiles.keywords": "службові файли, метадані, сміття, мотлох, зайві файли, ресурсна гілка, архів, стиснути, копіювати, переміщати, інші системи",
+  "@settings.fileOperations.osJunkFiles.keywords": {
     "sourceHash": "b668774"
   },
   "settings.fileOperations.skipConfirmation.label": "{platform, select, windows {Пропускати підтвердження копіювання, переміщення й видалення} other {Пропускати підтвердження копіювання, переміщення й переміщення в Смітник}}",

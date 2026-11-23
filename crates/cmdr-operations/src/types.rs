@@ -623,10 +623,10 @@ pub struct WriteOperationConfig {
     /// See [`ItemKinds`].
     #[serde(default)]
     pub source_kinds: Option<ItemKinds>,
-    /// Whether the transfer leaves Mac-only hidden files (`.DS_Store`, `._*`)
-    /// out of its destination. See `cmdr_fs::mac_only_files`.
+    /// Whether the transfer leaves OS junk files (`cmdr_fs::os_junk_files`)
+    /// out of its destination. See `cmdr_fs::os_junk_files`.
     #[serde(default)]
-    pub mac_only_files: cmdr_fs::mac_only_files::MacOnlyFiles,
+    pub os_junk_files: cmdr_fs::os_junk_files::OsJunkFiles,
 }
 
 impl Default for WriteOperationConfig {
@@ -641,7 +641,7 @@ impl Default for WriteOperationConfig {
             leaves: TransferLeaves::default(),
             space_shortfall: SpaceShortfall::Refuse,
             source_kinds: None,
-            mac_only_files: cmdr_fs::mac_only_files::MacOnlyFiles::Include,
+            os_junk_files: cmdr_fs::os_junk_files::OsJunkFiles::Include,
         }
     }
 }
@@ -824,10 +824,10 @@ pub struct VolumeCopyConfig {
     /// See [`ItemKinds`].
     #[serde(default)]
     pub source_kinds: Option<ItemKinds>,
-    /// Whether the transfer leaves Mac-only hidden files (`.DS_Store`, `._*`)
-    /// out of its destination. See `cmdr_fs::mac_only_files`.
+    /// Whether the transfer leaves OS junk files (`cmdr_fs::os_junk_files`)
+    /// out of its destination. See `cmdr_fs::os_junk_files`.
     #[serde(default)]
-    pub mac_only_files: cmdr_fs::mac_only_files::MacOnlyFiles,
+    pub os_junk_files: cmdr_fs::os_junk_files::OsJunkFiles,
 }
 
 impl Default for VolumeCopyConfig {
@@ -842,7 +842,7 @@ impl Default for VolumeCopyConfig {
             compression_level: None,
             space_shortfall: SpaceShortfall::Refuse,
             source_kinds: None,
-            mac_only_files: cmdr_fs::mac_only_files::MacOnlyFiles::Include,
+            os_junk_files: cmdr_fs::os_junk_files::OsJunkFiles::Include,
         }
     }
 }
@@ -861,7 +861,7 @@ impl From<&WriteOperationConfig> for VolumeCopyConfig {
             compression_level: None,
             space_shortfall: config.space_shortfall,
             source_kinds: config.source_kinds,
-            mac_only_files: config.mac_only_files,
+            os_junk_files: config.os_junk_files,
         }
     }
 }

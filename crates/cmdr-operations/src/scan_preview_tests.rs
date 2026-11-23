@@ -97,7 +97,7 @@ async fn a_transfer_scan_counts_the_names_windows_cant_use() {
             "root".into(),
             50,
             ScanPreviewPurpose::Transfer,
-            cmdr_fs::mac_only_files::MacOnlyFiles::Include,
+            cmdr_fs::os_junk_files::OsJunkFiles::Include,
         )
         .expect("the scan starts");
     wait_until_async(Duration::from_secs(10), "the scan's complete event", || {

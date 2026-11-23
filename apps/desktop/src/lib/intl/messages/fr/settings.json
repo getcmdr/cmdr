@@ -505,28 +505,28 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.macOnlyFiles.label": "Ignorer les fichiers cachés propres au Mac",
-  "@settings.fileOperations.macOnlyFiles.label": {
+  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Ignorer les fichiers cachés propres au Mac} windows {Skip Windows thumbnail caches} other {Skip Linux leftover files}}",
+  "@settings.fileOperations.osJunkFiles.label": {
     "sourceHash": "be693c6"
   },
-  "settings.fileOperations.macOnlyFiles.description": "Ignore les fichiers .DS_Store et ._* lors de la copie, du déplacement ou de la compression.",
-  "@settings.fileOperations.macOnlyFiles.description": {
+  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Ignore les fichiers .DS_Store et ._* lors de la copie, du déplacement ou de la compression.} windows {Skips Thumbs.db, ehthumbs.db, and ehthumbs_vista.db files when copying, moving, or compressing. Windows rebuilds them when it needs them.} other {Skips the .nfs* and .fuse_hidden* files Linux keeps for deleted files that are still open, when copying, moving, or compressing.}}",
+  "@settings.fileOperations.osJunkFiles.description": {
     "sourceHash": "02578a7"
   },
-  "settings.fileOperations.macOnlyFiles.opt.include": "Inclure",
-  "@settings.fileOperations.macOnlyFiles.opt.include": {
+  "settings.fileOperations.osJunkFiles.opt.include": "Inclure",
+  "@settings.fileOperations.osJunkFiles.opt.include": {
     "sourceHash": "7285576"
   },
-  "settings.fileOperations.macOnlyFiles.opt.skip": "Ignorer",
-  "@settings.fileOperations.macOnlyFiles.opt.skip": {
+  "settings.fileOperations.osJunkFiles.opt.skip": "Ignorer",
+  "@settings.fileOperations.osJunkFiles.opt.skip": {
     "sourceHash": "28d0359"
   },
-  "settings.fileOperations.macOnlyFiles.opt.ask": "Toujours demander",
-  "@settings.fileOperations.macOnlyFiles.opt.ask": {
+  "settings.fileOperations.osJunkFiles.opt.ask": "Toujours demander",
+  "@settings.fileOperations.osJunkFiles.opt.ask": {
     "sourceHash": "3c42771"
   },
-  "settings.fileOperations.macOnlyFiles.keywords": "masqués, invisibles, fichiers point, métadonnées, fichiers inutiles, encombrement, fourche de ressources, resource fork, archive, compresser, copier, déplacer, autres systèmes, partage",
-  "@settings.fileOperations.macOnlyFiles.keywords": {
+  "settings.fileOperations.osJunkFiles.keywords": "masqués, invisibles, fichiers point, métadonnées, fichiers inutiles, encombrement, fourche de ressources, resource fork, archive, compresser, copier, déplacer, autres systèmes, partage",
+  "@settings.fileOperations.osJunkFiles.keywords": {
     "sourceHash": "b668774"
   },
   "settings.fileOperations.skipConfirmation.label": "{platform, select, windows {Ignorer la confirmation pour copier, déplacer et supprimer} other {Ignorer la confirmation pour copier, déplacer et placer dans la corbeille}}",

@@ -602,34 +602,34 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "description": "Search keywords for the “Paste clipboard content as a file” setting (settings.fileOperations.pasteClipboardAsFile.label) in Settings > Behavior > Navigation & file ops. What it does: decides what ⌘V does in a folder when the clipboard holds text, an image, or a PDF: nothing, or save it as a new file. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
   },
-  "settings.fileOperations.macOnlyFiles.label": "Skip Mac-only hidden files",
-  "@settings.fileOperations.macOnlyFiles.label": {
-    "description": "Settings label for a three-way choice: whether copying, moving, and compressing leaves out the hidden files only macOS uses (Finder’s .DS_Store and the ._ files beside items). \"Mac-only\" means files that mean something only on a Mac; other systems show them as clutter. Same wording as the copy dialog’s toggle (fileOperations.transferDialog.macOnlyFiles.toggle).",
+  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Skip Mac-only hidden files} windows {Skip Windows thumbnail caches} other {Skip Linux leftover files}}",
+  "@settings.fileOperations.osJunkFiles.label": {
+    "description": "Settings label for a three-way choice: whether copying, moving, and compressing leaves out the junk files the user's own operating system drops beside their files. Each OS branch names its own set: macOS skips Finder’s .DS_Store and the ._ files beside items; Windows skips the Thumbs.db, ehthumbs.db, and ehthumbs_vista.db thumbnail caches; Linux (the other branch) skips the .nfs… and .fuse_hidden… files Linux keeps for deleted files that are still open. “Mac-only” means files that mean something only on a Mac; “leftover” means files Linux leaves behind on its own, not files the user made. Same wording as the copy dialog’s toggle (fileOperations.transferDialog.osJunkFiles.toggle), minus the filenames.",
     "screenshot": "settings-behavior-navigation-and-file-ops.png"
   },
-  "settings.fileOperations.macOnlyFiles.description": "Skips .DS_Store and ._* files when copying, moving, or compressing.",
-  "@settings.fileOperations.macOnlyFiles.description": {
-    "description": "Help text under the 'Skip Mac-only hidden files' setting. Keep \".DS_Store\" and \"._*\" exactly as written: they are filenames. The three operations (copy, move, compress) are alternatives: the setting applies to each.",
+  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Skips .DS_Store and ._* files when copying, moving, or compressing.} windows {Skips Thumbs.db, ehthumbs.db, and ehthumbs_vista.db files when copying, moving, or compressing. Windows rebuilds them when it needs them.} other {Skips the .nfs* and .fuse_hidden* files Linux keeps for deleted files that are still open, when copying, moving, or compressing.}}",
+  "@settings.fileOperations.osJunkFiles.description": {
+    "description": "Help text under the junk-files setting (settings.fileOperations.osJunkFiles.label). macOS skips Finder’s .DS_Store and the ._ files beside items; Windows skips the Thumbs.db, ehthumbs.db, and ehthumbs_vista.db thumbnail caches; Linux (the other branch) skips the .nfs… and .fuse_hidden… files Linux keeps for deleted files that are still open. Keep the filenames (.DS_Store, ._*, Thumbs.db, ehthumbs.db, ehthumbs_vista.db, .nfs*, .fuse_hidden*) exactly as written. The three operations (copy, move, compress) are alternatives: the setting applies to each.",
     "screenshot": "settings-behavior-navigation-and-file-ops.png"
   },
-  "settings.fileOperations.macOnlyFiles.opt.include": "Include",
-  "@settings.fileOperations.macOnlyFiles.opt.include": {
-    "description": "Option of the 'Skip Mac-only hidden files' setting: copy these files like any other file. Segmented-control label, keep it short.",
+  "settings.fileOperations.osJunkFiles.opt.include": "Include",
+  "@settings.fileOperations.osJunkFiles.opt.include": {
+    "description": "Option of the junk-files setting (settings.fileOperations.osJunkFiles.label): copy these files like any other file. Segmented-control label, keep it short.",
     "screenshot": "settings-behavior-navigation-and-file-ops.png"
   },
-  "settings.fileOperations.macOnlyFiles.opt.skip": "Skip",
-  "@settings.fileOperations.macOnlyFiles.opt.skip": {
-    "description": "Option of the 'Skip Mac-only hidden files' setting: leave these files out. Segmented-control label, keep it short.",
+  "settings.fileOperations.osJunkFiles.opt.skip": "Skip",
+  "@settings.fileOperations.osJunkFiles.opt.skip": {
+    "description": "Option of the junk-files setting (settings.fileOperations.osJunkFiles.label): leave these files out. Segmented-control label, keep it short.",
     "screenshot": "settings-behavior-navigation-and-file-ops.png"
   },
-  "settings.fileOperations.macOnlyFiles.opt.ask": "Always ask",
-  "@settings.fileOperations.macOnlyFiles.opt.ask": {
-    "description": "Option of the 'Skip Mac-only hidden files' setting, and the default: the copy, move, and compress dialog shows the choice, unticked, each time. Segmented-control label, keep it short. Same meaning as settings.fileOperations.allowFileExtensionChanges.opt.ask.",
+  "settings.fileOperations.osJunkFiles.opt.ask": "Always ask",
+  "@settings.fileOperations.osJunkFiles.opt.ask": {
+    "description": "Option of the junk-files setting (settings.fileOperations.osJunkFiles.label), and the default: the copy, move, and compress dialog shows the choice, unticked, each time. Segmented-control label, keep it short. Same meaning as settings.fileOperations.allowFileExtensionChanges.opt.ask.",
     "screenshot": "settings-behavior-navigation-and-file-ops.png"
   },
-  "settings.fileOperations.macOnlyFiles.keywords": "hidden, metadata, clutter, junk, resource fork, archive, compress, copy, move, other systems",
-  "@settings.fileOperations.macOnlyFiles.keywords": {
-    "description": "Search keywords for the “Skip Mac-only hidden files” setting (settings.fileOperations.macOnlyFiles.label) in Settings > Behavior > Navigation & file ops. What it does: decides whether copying, moving, and compressing leaves out the hidden files only macOS uses (.DS_Store, ._ files), or asks each time. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
+  "settings.fileOperations.osJunkFiles.keywords": "hidden, metadata, clutter, junk, leftover, thumbnails, cache, resource fork, archive, compress, copy, move, other systems",
+  "@settings.fileOperations.osJunkFiles.keywords": {
+    "description": "Search keywords for the junk-files setting (settings.fileOperations.osJunkFiles.label) in Settings > Behavior > Navigation & file ops. What it does: decides whether copying, moving, and compressing leaves out the junk files the user's operating system drops beside their files (macOS skips Finder’s .DS_Store and the ._ files beside items; Windows skips the Thumbs.db, ehthumbs.db, and ehthumbs_vista.db thumbnail caches; Linux (the other branch) skips the .nfs… and .fuse_hidden… files Linux keeps for deleted files that are still open.), or asks each time. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
   },
   "settings.fileOperations.skipConfirmation.label": "{platform, select, windows {Skip confirmation for copy, move, and delete} other {Skip confirmation for copy, move, and trash}}",
   "@settings.fileOperations.skipConfirmation.label": {

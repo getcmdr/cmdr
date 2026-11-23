@@ -11,7 +11,7 @@
 use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::apple_double::SidecarRule;
 use cmdr_fs::file_identity::{device_of, first_sighting};
-use cmdr_fs::mac_only_files::MacOnlyFiles;
+use cmdr_fs::os_junk_files::OsJunkFiles;
 use cmdr_fs::volume::{BatchScanResult, CopyScanResult, ScanBoundary, ScanRecorder, ScanStop, VolumeError};
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -58,13 +58,13 @@ pub(crate) struct Subtree {
 /// Handed in directly because the walk can't await the boundary from in here (see
 /// `ScanBoundary::counted`).
 ///
-/// `mac_only` leaves out the Mac-only files a transfer won't write (#314),
+/// `os_junk` leaves out the OS junk files a transfer won't write (#314, #1305),
 /// below the selection only, like the sidecars.
 pub(crate) fn scan_subtree<'a>(
     subtree: Subtree,
     stop: ScanStop,
     recorder: Option<Arc<dyn ScanRecorder>>,
-    mac_only: MacOnlyFiles,
+    os_junk: OsJunkFiles,
 ) -> Boxed<'a, CopyScanResult> {
     let Subtree {
         os: abs_path,
@@ -99,7 +99,7 @@ pub(crate) fn scan_subtree<'a>(
             let walk = WalkDir::new(&abs_path).min_depth(0).into_iter().filter_entry(|entry| {
                 entry.depth() == 0
                     || !(is_walked_sidecar(&sidecars, entry)
-                        || mac_only.leaves_out(entry.file_name(), entry.file_type().is_dir()))
+                        || os_junk.leaves_out(entry.file_name(), entry.file_type().is_dir()))
             });
             for entry in walk {
                 if stop.should_stop_blocking() {
@@ -193,7 +193,7 @@ pub(crate) fn scan_batch<'a>(
                 subtree(path)?,
                 boundary.stop(),
                 boundary.recorder().cloned(),
-                boundary.mac_only(),
+                boundary.os_junk(),
             )
             .await?;
             boundary.counted(&scan).await?;

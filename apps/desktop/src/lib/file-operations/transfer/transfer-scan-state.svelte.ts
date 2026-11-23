@@ -40,7 +40,7 @@ import {
   type CompressedSizeEstimate,
   type ScanPreviewPurpose,
   type ScanPreviewRefusal,
-  type MacOnlyFiles,
+  type OsJunkFiles,
 } from '#lib/tauri-commands/index.js'
 import type { NamePortabilityTally } from '#lib/ipc/bindings.js'
 import { getSetting } from '#lib/settings/index.js'
@@ -70,9 +70,9 @@ export interface TransferScanStateDeps {
   /**
    * What the transfer will leave out (#314), read at scan start so the walk leaves the same
    * files out and the tallies match what the operation writes. Reactive: a flip restarts the
-   * preview (the mac-only `$effect` below).
+   * preview (the OS-junk `$effect` below).
    */
-  getMacOnlyFiles: () => MacOnlyFiles
+  getOsJunkFiles: () => OsJunkFiles
 }
 
 export function createTransferScanState(deps: TransferScanStateDeps) {
@@ -160,7 +160,7 @@ export function createTransferScanState(deps: TransferScanStateDeps) {
     const sourcePaths = deps.getSourcePaths()
     const sourceVolumeId = deps.getSourceVolumeId()
     const purpose = deps.getScanPurpose()
-    const macOnlyFiles = deps.getMacOnlyFiles()
+    const osJunkFiles = deps.getOsJunkFiles()
     // Subscribe to events BEFORE starting scan (avoid missing fast completions)
     keepListener(
       await onScanPreviewProgress((event) => {
@@ -207,7 +207,7 @@ export function createTransferScanState(deps: TransferScanStateDeps) {
     scanFailure = null
     sourceRefusal = null
     const progressIntervalMs = getSetting('fileOperations.progressUpdateInterval')
-    const result = await startScanPreview(sourcePaths, purpose, progressIntervalMs, sourceVolumeId, macOnlyFiles)
+    const result = await startScanPreview(sourcePaths, purpose, progressIntervalMs, sourceVolumeId, osJunkFiles)
     if ('refusal' in result) {
       // Nothing started, so there's nothing to free and no event to wait for.
       if (!isOvertaken()) {
@@ -326,15 +326,15 @@ export function createTransferScanState(deps: TransferScanStateDeps) {
     }
   })
 
-  // The "Skip Mac-only hidden files" toggle: the walk leaves out what the transfer will, so a
+  // The "skip this OS's junk files" toggle: the walk leaves out what the transfer will, so a
   // flip walks again with the new choice (the old preview is freed, its tallies reset). Like
   // the toggle effect above, created in the factory body (L3) and skipping its first run,
   // which `start()` owns. A same-volume move has no preview to redo.
-  let macOnlyEffectInitialized = false
+  let osJunkEffectInitialized = false
   $effect(() => {
-    deps.getMacOnlyFiles()
-    if (!macOnlyEffectInitialized) {
-      macOnlyEffectInitialized = true
+    deps.getOsJunkFiles()
+    if (!osJunkEffectInitialized) {
+      osJunkEffectInitialized = true
       return
     }
     // Untracked: only the toggle reruns this. The same-volume flip is the effect above's.

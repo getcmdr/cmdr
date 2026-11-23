@@ -11,7 +11,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use cmdr_fs::log_private::LogPrivate;
-use cmdr_fs::mac_only_files::MacOnlyFiles;
+use cmdr_fs::os_junk_files::OsJunkFiles;
 use cmdr_fs::volume::LaneKey;
 use cmdr_operation_log::types::{Initiator, OperationId};
 
@@ -71,8 +71,8 @@ impl Operations {
         // as the snapshot reports it (`conflict_policy_cell.rs`). `None` for an
         // operation with no destination to clash at.
         conflict_policy: Option<ConflictResolution>,
-        // What a copy or move does with Mac-only files (`WriteOperationState::mac_only`).
-        mac_only: MacOnlyFiles,
+        // What a copy or move does with OS junk files (`WriteOperationState::os_junk`).
+        os_junk: OsJunkFiles,
         handler: F,
     ) -> Result<WriteOperationStartResult, WriteOperationError>
     where
@@ -84,7 +84,7 @@ impl Operations {
         let mut state = self
             .new_operation_state(Duration::from_millis(progress_interval_ms))
             .with_sides(sides)
-            .leaving_out(mac_only);
+            .leaving_out(os_junk);
         if let Some(policy) = conflict_policy {
             state = state.with_conflict_policy(policy);
         }
@@ -284,7 +284,7 @@ impl Operations {
             sources.len() as u64,
             sides,
             Some(config.conflict_resolution),
-            config.mac_only_files,
+            config.os_junk_files,
             move |events, op_id, state| {
                 let Some(sources) = retain_bound_sources(
                     &*events,
@@ -355,7 +355,7 @@ impl Operations {
             sources.len() as u64,
             sides,
             Some(config.conflict_resolution),
-            config.mac_only_files,
+            config.os_junk_files,
             move |events, op_id, state| {
                 let Some(sources) = retain_bound_sources(
                     &*events,
@@ -409,7 +409,7 @@ impl Operations {
                 // One side only: a delete has no destination volume.
                 None,
                 None,
-                MacOnlyFiles::Include,
+                OsJunkFiles::Include,
                 move |events, op_id, state| {
                     // An item that's already gone is done (`delete/already_gone.rs`).
                     let split = already_gone::split_local(&*events, &op_id, &sources);
@@ -465,7 +465,7 @@ impl Operations {
             // One side only: trash always lands in the local macOS Trash.
             None,
             None,
-            MacOnlyFiles::Include,
+            OsJunkFiles::Include,
             move |events, op_id, state| {
                 // An item that's already gone is done (`delete/already_gone.rs`).
                 let split = already_gone::split_local(&*events, &op_id, &sources);

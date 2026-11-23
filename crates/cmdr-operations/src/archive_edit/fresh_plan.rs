@@ -38,8 +38,8 @@ pub(super) struct FreshPlan {
     pub(super) source_bytes: u64,
     pub(super) skipped: usize,
     /// Whether a local entry's xattrs ride an AppleDouble sidecar
-    /// (`__MACOSX/._name`). `false` when the person asked to leave Mac-only
-    /// files out: those sidecars are the same `._` clutter on another system.
+    /// (`__MACOSX/._name`). `false` when the person asked a Mac to leave its
+    /// junk files out (`OsJunkFiles::leaves_out_apple_double_sidecars`): those sidecars are the same `._` clutter on another system.
     pub(super) sidecars: bool,
 }
 
@@ -247,11 +247,11 @@ async fn plan_sources_with_context(
                     .await?;
                 dirs += 1;
                 report(on_progress, files, dirs, source_bytes, &path_std);
-                // A Mac-only file the person asked to leave out never enters
+                // An OS junk file the person asked to leave out never enters
                 // the plan, so it's neither packed nor counted (#314).
                 children.retain(|child| {
                     !state
-                        .mac_only
+                        .os_junk
                         .leaves_out_str(&child.name, child.is_directory && !child.is_symlink)
                 });
                 order.sort(&mut children, |child| {
@@ -300,7 +300,7 @@ async fn plan_sources_with_context(
         entries,
         source_bytes,
         skipped,
-        sidecars: state.mac_only == cmdr_fs::mac_only_files::MacOnlyFiles::Include,
+        sidecars: !state.os_junk.leaves_out_apple_double_sidecars(),
     })
 }
 

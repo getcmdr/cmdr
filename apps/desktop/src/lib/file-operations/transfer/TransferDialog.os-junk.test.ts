@@ -1,19 +1,20 @@
 /**
- * `TransferDialog`'s "Skip Mac-only hidden files" toggle (#314), through the component: it
- * starts from `fileOperations.macOnlyFiles`, its link names that default (or offers to stop
+ * `TransferDialog`'s "skip this OS's junk files" toggle (#314), through the component: it
+ * starts from `fileOperations.osJunkFiles`, its link names that default (or offers to stop
  * asking) and opens the setting row, a flip is a one-off that the confirm carries and the
  * preview walks again for, and rename mode shows none. The policy mapping itself is
- * unit-tested in `mac-only-files.test.ts`; which names match is the backend's.
+ * unit-tested in `os-junk-files.test.ts`; which names match is the backend's.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
 import { mount, tick } from 'svelte'
 import TransferDialog from './TransferDialog.svelte'
+import { withPlatform } from '#lib/platform/test-platform.js'
 import type { TransferConfirmPayload } from '#lib/file-explorer/pane/dialog-props.js'
 import * as commands from '#lib/tauri-commands/index.js'
 import type { openSettingsWindow } from '#lib/settings/settings-window.js'
 
-const settingsState: { macOnly: unknown } = { macOnly: 'ask' }
+const settingsState: { osJunk: unknown } = { osJunk: 'ask' }
 const setSettingMock = vi.fn<(id: string, value: unknown) => void>()
 const openSettingsWindowMock = vi.fn<(...args: Parameters<typeof openSettingsWindow>) => Promise<void>>(() =>
   Promise.resolve(),
@@ -44,7 +45,7 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
 }))
 
 vi.mock('#lib/settings/index.js', () => ({
-  getSetting: (id: string) => (id === 'fileOperations.macOnlyFiles' ? settingsState.macOnly : 500),
+  getSetting: (id: string) => (id === 'fileOperations.osJunkFiles' ? settingsState.osJunk : 500),
   setSetting: (id: string, value: unknown) => {
     setSettingMock(id, value)
   },
@@ -100,11 +101,11 @@ async function flushMicrotasks(rounds = 8): Promise<void> {
 }
 
 function toggle(target: HTMLElement): HTMLInputElement | null {
-  return target.querySelector<HTMLInputElement>('.mac-only-row input[type="checkbox"]')
+  return target.querySelector<HTMLInputElement>('.os-junk-row input[type="checkbox"]')
 }
 
 function link(target: HTMLElement): HTMLButtonElement | null {
-  return target.querySelector<HTMLButtonElement>('.mac-only-row button')
+  return target.querySelector<HTMLButtonElement>('.os-junk-row button')
 }
 
 function confirmButton(target: HTMLElement): HTMLButtonElement {
@@ -113,13 +114,13 @@ function confirmButton(target: HTMLElement): HTMLButtonElement {
   return btn
 }
 
-/** The `macOnlyFiles` argument of every `startScanPreview` call so far. */
+/** The `osJunkFiles` argument of every `startScanPreview` call so far. */
 function walkedWith(): unknown[] {
   return startScanPreviewMock.mock.calls.map((call) => call[4])
 }
 
 beforeEach(() => {
-  settingsState.macOnly = 'ask'
+  settingsState.osJunk = 'ask'
   setSettingMock.mockReset()
   openSettingsWindowMock.mockClear()
   startScanPreviewMock.mockClear()
@@ -132,7 +133,7 @@ describe('the toggle starts from the setting', () => {
     ['include', false, 'Including by default'],
     ['skip', true, 'Skipping by default'],
   ] as const)('on %s it starts %s, and the link reads “%s”', async (policy, ticked, linkText) => {
-    settingsState.macOnly = policy
+    settingsState.osJunk = policy
     const target = mountDialog()
     await flushMicrotasks()
     expect(toggle(target)?.checked).toBe(ticked)
@@ -141,9 +142,22 @@ describe('the toggle starts from the setting', () => {
   })
 })
 
+describe('each OS names its own junk', () => {
+  it.each([
+    ['macos', 'Skip Mac-only hidden files (.DS_Store, ._*)'],
+    ['windows', 'Skip Windows thumbnail caches (Thumbs.db, ehthumbs.db)'],
+    ['linux', 'Skip Linux leftover files (.nfs*, .fuse_hidden*)'],
+  ] as const)('on %s the toggle reads “%s”', async (platform, label) => {
+    onTestFinished(withPlatform(platform))
+    const target = mountDialog()
+    await flushMicrotasks()
+    expect(target.querySelector('.os-junk-row label')?.textContent.trim()).toBe(label)
+  })
+})
+
 describe('the toggle is a one-off override', () => {
   it('carries a flip to the confirm and walks the preview again for it, never touching the setting', async () => {
-    settingsState.macOnly = 'include'
+    settingsState.osJunk = 'include'
     let sent: TransferConfirmPayload | null = null
     const target = mountDialog({
       onConfirm: (payload) => {
@@ -157,13 +171,13 @@ describe('the toggle is a one-off override', () => {
 
     confirmButton(target).click()
     await flushMicrotasks()
-    expect(sent).toMatchObject({ macOnlyFiles: 'skip' })
+    expect(sent).toMatchObject({ osJunkFiles: 'skip' })
     expect(setSettingMock).not.toHaveBeenCalled()
   })
 })
 
 describe('the link', () => {
-  it('opens Settings at the “Skip Mac-only hidden files” row', async () => {
+  it('opens Settings at the “skip this OS’s junk files” row', async () => {
     const target = mountDialog()
     await flushMicrotasks()
     link(target)?.click()
@@ -171,14 +185,14 @@ describe('the link', () => {
     expect(openSettingsWindowMock).toHaveBeenCalledWith(
       'transfer-dialog',
       ['Behavior', 'Navigation & file ops'],
-      'setting-fileOperations.macOnlyFiles',
+      'setting-fileOperations.osJunkFiles',
     )
   })
 })
 
 describe('rename mode', () => {
   it('shows no toggle and leaves nothing out, whatever the default', async () => {
-    settingsState.macOnly = 'skip'
+    settingsState.osJunk = 'skip'
     let sent: TransferConfirmPayload | null = null
     const target = mountDialog({
       newName: 'renamed',
@@ -190,6 +204,6 @@ describe('rename mode', () => {
     expect(toggle(target)).toBeNull()
     confirmButton(target).click()
     await flushMicrotasks()
-    expect(sent).toMatchObject({ macOnlyFiles: 'include' })
+    expect(sent).toMatchObject({ osJunkFiles: 'include' })
   })
 })

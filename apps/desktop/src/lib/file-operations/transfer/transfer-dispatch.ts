@@ -27,11 +27,11 @@ import { emit } from '@tauri-apps/api/event'
 import type { ConflictResolution, TransferOperationType, WriteOperationError } from '#lib/file-explorer/types.js'
 import { getSetting } from '#lib/settings/index.js'
 import { pathCrossesArchiveBoundary, pathInsideArchive } from '#lib/file-explorer/pane/archive-paths.js'
-import type { ItemKinds, MacOnlyFiles, SpaceShortfall } from '#lib/ipc/bindings.js'
+import type { ItemKinds, OsJunkFiles, SpaceShortfall } from '#lib/ipc/bindings.js'
 import { getAppLogger } from '#lib/logging/logger.js'
 import { pluralize } from '#lib/utils/pluralize.js'
 import { logLevelFor } from './transfer-error-log-level'
-import { MAC_ONLY_FILES_SETTING, defaultMacOnlyFiles } from './mac-only-files'
+import { OS_JUNK_FILES_SETTING, defaultOsJunkFiles } from './os-junk-files'
 
 const log = getAppLogger('transferProgress')
 
@@ -54,10 +54,10 @@ export interface TransferDispatchConfig {
   conflictResolution?: ConflictResolution
   /** Source filenames known to conflict at dest (forwarded so the BE bulk-skips them under `Skip all`). */
   preKnownConflicts?: string[]
-  /** Copy, move, compress: whether to leave Mac-only hidden files out, as the dialog's toggle
-   *  said. Absent (nobody saw the toggle), the `fileOperations.macOnlyFiles` default
-   *  decides (`mac-only-files.ts`). */
-  macOnlyFiles?: MacOnlyFiles
+  /** Copy, move, compress: whether to leave OS junk files out, as the dialog's toggle
+   *  said. Absent (nobody saw the toggle), the `fileOperations.osJunkFiles` default
+   *  decides (`os-junk-files.ts`). */
+  osJunkFiles?: OsJunkFiles
   /** Copy only: `proceed` when the person chose "Copy anyway" after a space shortfall. */
   spaceShortfall?: SpaceShortfall
   /** Per-item sizes for trash progress (from scan or drive index). */
@@ -193,9 +193,9 @@ export async function startTransferOperation(config: TransferStartConfig): Promi
 
 /** The toggle's answer, or for a confirm nobody saw, the setting's default. A rename leaves
  *  nothing out, whatever the default: it's the same items under a new name. */
-function resolveMacOnlyFiles(config: TransferDispatchConfig): MacOnlyFiles {
+function resolveOsJunkFiles(config: TransferDispatchConfig): OsJunkFiles {
   if (config.newName !== undefined) return 'include'
-  return config.macOnlyFiles ?? defaultMacOnlyFiles(getSetting(MAC_ONLY_FILES_SETTING))
+  return config.osJunkFiles ?? defaultOsJunkFiles(getSetting(OS_JUNK_FILES_SETTING))
 }
 
 /** Starts the operation and resolves with the id the backend gave it. Rejects
@@ -207,7 +207,7 @@ export function dispatchTransferOperation(config: TransferDispatchConfig): Promi
   // archive); the backend clamps it to 1..=9 and ignores it for non-archive
   // copies.
   const compressionLevel = getSetting('behavior.archiveCompressionLevel')
-  const macOnlyFiles = resolveMacOnlyFiles(config)
+  const osJunkFiles = resolveOsJunkFiles(config)
   const sourceKinds = sourceKindsOf(config)
 
   if (config.operationType === 'trash') {
@@ -236,7 +236,7 @@ export function dispatchTransferOperation(config: TransferDispatchConfig): Promi
       preKnownConflicts: config.preKnownConflicts ?? [],
       compressionLevel,
       sourceKinds,
-      macOnlyFiles,
+      osJunkFiles,
     }
     // A rename that copies, confirmed in the Move dialog: one source, one volume.
     if (config.newName !== undefined) {
@@ -272,15 +272,15 @@ export function dispatchTransferOperation(config: TransferDispatchConfig): Promi
         preKnownConflicts: config.preKnownConflicts ?? [],
         destinationName: config.destinationName,
         sourceKinds,
-        macOnlyFiles,
+        osJunkFiles,
       },
       config.initiator,
     )
   }
   if (config.operationType === 'compress') {
-    return dispatchCompress(config, progressIntervalMs, maxConflictsToShow, compressionLevel, macOnlyFiles)
+    return dispatchCompress(config, progressIntervalMs, maxConflictsToShow, compressionLevel, osJunkFiles)
   }
-  return dispatchCopy(config, progressIntervalMs, maxConflictsToShow, compressionLevel, sourceKinds, macOnlyFiles)
+  return dispatchCopy(config, progressIntervalMs, maxConflictsToShow, compressionLevel, sourceKinds, osJunkFiles)
 }
 
 /** Copy: always via `copyBetweenVolumes`; the backend optimizes local-to-local. */
@@ -290,7 +290,7 @@ function dispatchCopy(
   maxConflictsToShow: number,
   compressionLevel: number,
   sourceKinds: ItemKinds | undefined,
-  macOnlyFiles: MacOnlyFiles,
+  osJunkFiles: OsJunkFiles,
 ): Promise<{ operationId: string }> {
   return copyBetweenVolumes(
     config.sourceVolumeId,
@@ -307,7 +307,7 @@ function dispatchCopy(
       destinationName: config.destinationName,
       spaceShortfall: config.spaceShortfall ?? 'refuse',
       sourceKinds,
-      macOnlyFiles,
+      osJunkFiles,
     },
     config.initiator,
   )
@@ -325,7 +325,7 @@ function dispatchCompress(
   progressIntervalMs: number,
   maxConflictsToShow: number,
   compressionLevel: number,
-  macOnlyFiles: MacOnlyFiles,
+  osJunkFiles: OsJunkFiles,
 ): Promise<{ operationId: string }> {
   return compressFiles(
     config.sourceVolumeId,
@@ -338,7 +338,7 @@ function dispatchCompress(
       maxConflictsToShow,
       previewId: config.previewId,
       compressionLevel,
-      macOnlyFiles,
+      osJunkFiles,
     },
     config.initiator,
   )

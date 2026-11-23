@@ -190,48 +190,47 @@ async fn the_walk_records_every_entry_under_the_callers_paths() {
     );
 }
 
-/// A transfer that skips Mac-only files counts and records none of them, at any
-/// depth, while a FOLDER of such a name and a selected one still count (#314).
+/// A transfer that skips the running OS's junk files counts and records none of
+/// them, at any depth, while a FOLDER of such a name and a selected one still
+/// count (#314, #1305).
 #[tokio::test]
-async fn a_walk_leaving_out_mac_only_files_neither_counts_nor_records_them() {
-    use crate::mac_only_files::MacOnlyFiles;
+async fn a_walk_leaving_out_os_junk_files_neither_counts_nor_records_them() {
+    use crate::os_junk_files::{JunkOs, OsJunkFiles};
     use crate::testing::scan_recording::{Recorded, ScanRecording};
 
+    let [junk, other_junk] = JunkOs::current().sample_junk_names();
+    let junk_folder = format!("/top/{other_junk}");
+    let picked = format!("/picked/{junk}");
     let tree = FakeTree::new()
         .with_dir(
             "/top",
-            &[(".DS_Store", false, 6_148), ("a.txt", false, 10), ("._folder", true, 0)],
+            &[(junk, false, 6_148), ("a.txt", false, 10), (other_junk, true, 0)],
         )
-        .with_dir("/top/._folder", &[("._a.txt", false, 4_096), ("b.txt", false, 5)])
-        .with_dir("/picked", &[(".DS_Store", false, 3)]);
+        .with_dir(&junk_folder, &[(junk, false, 4_096), ("b.txt", false, 5)])
+        .with_dir("/picked", &[(junk, false, 3)]);
     let recording = Arc::new(ScanRecording::default());
     let boundary = ScanBoundary::silent()
         .recording_to(Arc::clone(&recording) as Arc<dyn crate::volume::ScanRecorder>)
-        .leaving_out(MacOnlyFiles::Skip);
+        .leaving_out(OsJunkFiles::Skip);
 
-    let batch = scan_trees(
-        &tree,
-        &[PathBuf::from("/top"), PathBuf::from("/picked/.DS_Store")],
-        &boundary,
-    )
-    .await
-    .expect("the batch");
+    let batch = scan_trees(&tree, &[PathBuf::from("/top"), PathBuf::from(&picked)], &boundary)
+        .await
+        .expect("the batch");
 
     assert_eq!(
         batch.aggregate.file_count, 3,
-        "a.txt, b.txt, and the selected .DS_Store"
+        "a.txt, b.txt, and the selected junk file"
     );
     assert_eq!(batch.aggregate.total_bytes, 18);
-    assert_eq!(
-        recording.sorted(),
-        vec![
-            Recorded::Dir("/top".into()),
-            Recorded::Dir("/top/._folder".into()),
-            Recorded::File("/picked/.DS_Store".into(), 3),
-            Recorded::File("/top/._folder/b.txt".into(), 5),
-            Recorded::File("/top/a.txt".into(), 10),
-        ]
-    );
+    let mut want = vec![
+        Recorded::Dir("/top".into()),
+        Recorded::Dir(junk_folder.clone().into()),
+        Recorded::File(picked.into(), 3),
+        Recorded::File(format!("{junk_folder}/b.txt").into(), 5),
+        Recorded::File("/top/a.txt".into(), 10),
+    ];
+    want.sort();
+    assert_eq!(recording.sorted(), want);
 }
 
 #[tokio::test]

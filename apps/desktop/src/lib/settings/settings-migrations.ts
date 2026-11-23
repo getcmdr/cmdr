@@ -28,6 +28,7 @@ const MIGRATIONS: { to: number; run: (store: Store) => Promise<boolean> }[] = [
   { to: 8, run: dropLeftoverOpenaiApiKey },
   { to: 9, run: turnOffImageIndexingWithoutAnEngine },
   { to: 10, run: foldNetworkTimeoutModeIntoOneTimeout },
+  { to: 11, run: moveMacOnlyFilesToOsJunkFiles },
 ]
 
 /** The schema version `settings.json` is at once every migration has run. */
@@ -146,6 +147,31 @@ async function foldNetworkTimeoutModeIntoOneTimeout(store: Store): Promise<boole
   await store.delete(LEGACY_NETWORK_TIMEOUT_MODE_KEY)
   await store.delete(LEGACY_NETWORK_CUSTOM_TIMEOUT_KEY)
   log.info('Migration 10: folded the network timeout mode into one {seconds}-second timeout', { seconds })
+  return true
+}
+
+/**
+ * Migration 11 (#1305): "Skip Mac-only hidden files" (`fileOperations.macOnlyFiles`) became
+ * "skip this OS's junk files" (`fileOperations.osJunkFiles`), each OS skipping its own set. A
+ * settings file belongs to one machine, and the Mac set is the same `.DS_Store` and `._*` it
+ * skipped before, so a Mac keeps the choice it made. A value the setting never had drops to the
+ * default, and a value already under the new key wins.
+ *
+ * Idempotent: it only acts while the legacy key is present, and deletes it, which the sparse
+ * save can't do on its own (the key is no longer in the registry).
+ */
+const LEGACY_MAC_ONLY_FILES_KEY = 'fileOperations.macOnlyFiles'
+const OS_JUNK_FILES_POLICIES: readonly unknown[] = ['include', 'skip', 'ask']
+
+async function moveMacOnlyFilesToOsJunkFiles(store: Store): Promise<boolean> {
+  const legacy = await store.get<unknown>(LEGACY_MAC_ONLY_FILES_KEY)
+  if (legacy === undefined) return false
+  const isPolicy = OS_JUNK_FILES_POLICIES.includes(legacy)
+  if (isPolicy && (await store.get<unknown>('fileOperations.osJunkFiles')) === undefined) {
+    await store.set('fileOperations.osJunkFiles', legacy)
+  }
+  await store.delete(LEGACY_MAC_ONLY_FILES_KEY)
+  log.info('Migration 11: moved the Mac-only files choice to the OS junk files key', { carried: isPolicy })
   return true
 }
 

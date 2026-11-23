@@ -41,7 +41,7 @@ fn register_in_flight(engine: &TestOperations, preview_id: &str) {
         Arc::new(ScanPreviewState {
             cancelled: std::sync::atomic::AtomicBool::new(false),
             progress_interval: Duration::from_millis(50),
-            mac_only: cmdr_fs::mac_only_files::MacOnlyFiles::Include,
+            os_junk: cmdr_fs::os_junk_files::OsJunkFiles::Include,
         }),
     );
 }

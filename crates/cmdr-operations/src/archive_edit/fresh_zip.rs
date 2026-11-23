@@ -30,7 +30,7 @@ pub(super) enum FreshZipSource {
     /// made from, read only for the AppleDouble sidecar its xattrs ride in.
     Local(PathBuf),
     /// A local file streamed WITHOUT its AppleDouble sidecar: a compress that
-    /// leaves Mac-only files out writes no `__MACOSX/._name` either (#314).
+    /// leaves a Mac's junk files out writes no `__MACOSX/._name` either (#314).
     LocalWithoutSidecar(PathBuf),
     Bytes(Vec<u8>),
     Remote(RemoteZipSource),

@@ -605,23 +605,23 @@
       "reach": "which files the saved option overwrites: 'smaller' (only files at the destination that are smaller), 'older' (only older ones), or anything else for every clashing file"
     }
   },
-  "fileOperations.transferDialog.macOnlyFiles.toggle": "Skip Mac-only hidden files (.DS_Store, ._*)",
-  "@fileOperations.transferDialog.macOnlyFiles.toggle": {
-    "description": "Checkbox label in the 'To' group of the copy, move, and compress dialog. When checked, this one operation leaves out the hidden files only macOS uses (Finder’s .DS_Store and the ._ files beside items), which other systems show as clutter. Keep \".DS_Store\" and \"._*\" exactly as written: they are filenames. Same wording as the setting (settings.fileOperations.macOnlyFiles.label).",
+  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Skip Mac-only hidden files (.DS_Store, ._*)} windows {Skip Windows thumbnail caches (Thumbs.db, ehthumbs.db)} other {Skip Linux leftover files (.nfs*, .fuse_hidden*)}}",
+  "@fileOperations.transferDialog.osJunkFiles.toggle": {
+    "description": "Checkbox label in the 'To' group of the copy, move, and compress dialog. When checked, this one operation leaves out the junk files the user's own operating system drops beside their files, which other systems show as clutter. Each OS branch names its own set: macOS skips Finder’s .DS_Store and the ._ files beside items; Windows skips the Thumbs.db, ehthumbs.db, and ehthumbs_vista.db thumbnail caches; Linux (the other branch) skips the .nfs… and .fuse_hidden… files Linux keeps for deleted files that are still open. Keep the filenames (.DS_Store, ._*, Thumbs.db, ehthumbs.db, .nfs*, .fuse_hidden*) exactly as written. Same wording as the setting (settings.fileOperations.osJunkFiles.label), plus the filenames.",
     "screenshot": "conflict-dialog.png"
   },
-  "fileOperations.transferDialog.macOnlyFiles.dontAskAgain": "Don’t ask again",
-  "@fileOperations.transferDialog.macOnlyFiles.dontAskAgain": {
-    "description": "Link right after the 'Skip Mac-only hidden files' checkbox in the copy, move, and compress dialog, shown while the setting says to ask each time. Opens Settings at that setting, where the user can pick a default (include or skip) so the dialog stops asking. A short phrase (no question mark), styled as a link.",
+  "fileOperations.transferDialog.osJunkFiles.dontAskAgain": "Don’t ask again",
+  "@fileOperations.transferDialog.osJunkFiles.dontAskAgain": {
+    "description": "Link right after the “Skip … files” checkbox in the copy, move, and compress dialog (fileOperations.transferDialog.osJunkFiles.toggle), shown while the setting says to ask each time. Opens Settings at that setting, where the user can pick a default (include or skip) so the dialog stops asking. A short phrase (no question mark), styled as a link.",
     "screenshot": "conflict-dialog.png"
   },
-  "fileOperations.transferDialog.macOnlyFiles.includingByDefault": "Including by default",
-  "@fileOperations.transferDialog.macOnlyFiles.includingByDefault": {
-    "description": "Link right after the 'Skip Mac-only hidden files' checkbox in the copy, move, and compress dialog, shown while the setting's default is to include these files (the checkbox starts unchecked and only changes this one operation). Opens Settings at that setting. Short, styled as a link."
+  "fileOperations.transferDialog.osJunkFiles.includingByDefault": "Including by default",
+  "@fileOperations.transferDialog.osJunkFiles.includingByDefault": {
+    "description": "Link right after the “Skip … files” checkbox in the copy, move, and compress dialog (fileOperations.transferDialog.osJunkFiles.toggle), shown while the setting’s default is to include these files (the checkbox starts unchecked and only changes this one operation). Opens Settings at that setting. Short, styled as a link."
   },
-  "fileOperations.transferDialog.macOnlyFiles.skippingByDefault": "Skipping by default",
-  "@fileOperations.transferDialog.macOnlyFiles.skippingByDefault": {
-    "description": "Link right after the 'Skip Mac-only hidden files' checkbox in the copy, move, and compress dialog, shown while the setting's default is to skip these files (the checkbox starts checked and only changes this one operation). Opens Settings at that setting. Short, styled as a link."
+  "fileOperations.transferDialog.osJunkFiles.skippingByDefault": "Skipping by default",
+  "@fileOperations.transferDialog.osJunkFiles.skippingByDefault": {
+    "description": "Link right after the “Skip … files” checkbox in the copy, move, and compress dialog (fileOperations.transferDialog.osJunkFiles.toggle), shown while the setting’s default is to skip these files (the checkbox starts checked and only changes this one operation). Opens Settings at that setting. Short, styled as a link."
   },
   "fileOperations.transferDialog.rememberChoice": "Remember this choice",
   "@fileOperations.transferDialog.rememberChoice": {

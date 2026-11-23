@@ -45,7 +45,7 @@ fn plain_walk_context<'a>() -> WalkContext<'a, String> {
         on_file: None,
         online_only: None,
         sidecars: &NO_SIDECARS,
-        mac_only: cmdr_fs::mac_only_files::MacOnlyFiles::Include,
+        os_junk: cmdr_fs::os_junk_files::OsJunkFiles::Include,
     }
 }
 
@@ -241,7 +241,7 @@ fn run_walker_with_sources(sources: &[PathBuf]) -> WalkOutcome {
         on_file: None,
         online_only: None,
         sidecars: &NO_SIDECARS,
-        mac_only: cmdr_fs::mac_only_files::MacOnlyFiles::Include,
+        os_junk: cmdr_fs::os_junk_files::OsJunkFiles::Include,
     };
     for source in sources {
         let source_root = source.parent().unwrap_or(source);

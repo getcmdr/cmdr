@@ -293,22 +293,23 @@ async fn a_selected_macosx_folder_is_skipped_and_a_local_folder_is_its_own_sourc
     assert!(matches!(&plan.entries[0].source, PlannedSource::Local(path) if path.ends_with("docs")));
 }
 
-/// A compress that leaves Mac-only files out (#314) packs none below the
-/// selection, and bridges every local entry without its `__MACOSX` sidecar,
-/// the same `._` clutter on another system. A folder's only use as a local
-/// source is its sidecar, so it becomes an empty entry.
+/// A compress that leaves the running OS's junk files out (#314, #1305) packs
+/// none below the selection. On a Mac it also bridges every local entry without
+/// its `__MACOSX` sidecar, the same `._` clutter on another system; a folder's
+/// only use as a local source is its sidecar, so it becomes an empty entry.
 #[tokio::test]
-async fn a_compress_skipping_mac_only_files_packs_neither_them_nor_sidecars() {
+async fn a_compress_skipping_os_junk_files_packs_neither_them_nor_sidecars() {
     use super::super::fresh_zip::FreshZipSource;
-    use cmdr_fs::mac_only_files::MacOnlyFiles;
+    use cmdr_fs::os_junk_files::{JunkOs, OsJunkFiles};
 
+    let [junk, other_junk] = JunkOs::current().sample_junk_names();
     let engine = TestOperations::new();
     let temp = tempfile::tempdir().expect("tempdir");
     std::fs::create_dir_all(temp.path().join("docs/sub")).expect("mkdir");
-    std::fs::write(temp.path().join("docs/.DS_Store"), b"finder").expect("write");
-    std::fs::write(temp.path().join("docs/._a.txt"), b"xattrs").expect("write");
+    std::fs::write(temp.path().join("docs").join(junk), b"junk").expect("write");
+    std::fs::write(temp.path().join("docs").join(other_junk), b"junk").expect("write");
     std::fs::write(temp.path().join("docs/a.txt"), b"a").expect("write");
-    std::fs::write(temp.path().join("docs/sub/.DS_Store"), b"finder").expect("write");
+    std::fs::write(temp.path().join("docs/sub").join(junk), b"junk").expect("write");
     let source: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
         "source",
         temp.path().to_path_buf(),
@@ -317,7 +318,7 @@ async fn a_compress_skipping_mac_only_files_packs_neither_them_nor_sidecars() {
     let state = Arc::new(
         engine
             .new_operation_state(Duration::ZERO)
-            .leaving_out(MacOnlyFiles::Skip),
+            .leaving_out(OsJunkFiles::Skip),
     );
 
     let plan = plan_sources_with_context(
@@ -335,9 +336,10 @@ async fn a_compress_skipping_mac_only_files_packs_neither_them_nor_sidecars() {
     names.sort_unstable();
     assert_eq!(names, vec!["docs/", "docs/a.txt", "docs/sub/"]);
     assert_eq!(plan.source_bytes, 1, "the totals leave them out too");
-    assert!(!plan.sidecars);
+    let on_a_mac = JunkOs::current() == JunkOs::MacOs;
+    assert_eq!(plan.sidecars, !on_a_mac, "only the Mac set drops sidecars");
     let (entries, _feeds) = plan.bridged();
-    for entry in &entries {
+    for entry in entries.iter().filter(|_| on_a_mac) {
         assert!(
             !matches!(entry.source, FreshZipSource::Local(_)),
             "{} would carry a sidecar",

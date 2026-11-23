@@ -245,12 +245,12 @@ pub struct WriteOperationState {
     /// reports it: the confirmed one, until a "… all" answer latches another.
     /// Empty for an operation with no policy. [`super::conflict_policy_cell`].
     pub(crate) conflict_policy: super::conflict_policy_cell::ConflictPolicyCell,
-    /// Whether this transfer leaves Mac-only hidden files (`.DS_Store`, `._*`)
+    /// Whether this transfer leaves OS junk files (`cmdr_fs::os_junk_files`)
     /// out of its destination (#314). Every walk the operation makes asks it of
     /// each LISTED child, and a move's sweep removes the ones a folder that
     /// moved still holds. `Include` for everything but a copy, move, or
     /// compress the person asked to skip them.
-    pub(crate) mac_only: cmdr_fs::mac_only_files::MacOnlyFiles,
+    pub(crate) os_junk: cmdr_fs::os_junk_files::OsJunkFiles,
     /// Destination `.cmdr-tmp-*` paths this operation is CURRENTLY streaming
     /// bytes into, so an abandoned transfer's litter can be found and removed.
     ///
@@ -365,7 +365,7 @@ impl WriteOperationState {
             sides: None,
             target_names: super::target_names::TargetNames::default(),
             conflict_policy: super::conflict_policy_cell::ConflictPolicyCell::default(),
-            mac_only: cmdr_fs::mac_only_files::MacOnlyFiles::Include,
+            os_junk: cmdr_fs::os_junk_files::OsJunkFiles::Include,
             in_flight_temps: std::sync::Mutex::new(Vec::new()),
             kept_landings: std::sync::Mutex::new(Vec::new()),
             rescued_landings: std::sync::Mutex::new(Vec::new()),
@@ -536,10 +536,10 @@ impl WriteOperationState {
         self
     }
 
-    /// Set what this transfer does with Mac-only files (see
-    /// [`mac_only`](Self::mac_only)). Chained before wrapping the state in an `Arc`.
-    pub(crate) fn leaving_out(mut self, mac_only: cmdr_fs::mac_only_files::MacOnlyFiles) -> Self {
-        self.mac_only = mac_only;
+    /// Set what this transfer does with OS junk files (see
+    /// [`os_junk`](Self::os_junk)). Chained before wrapping the state in an `Arc`.
+    pub(crate) fn leaving_out(mut self, os_junk: cmdr_fs::os_junk_files::OsJunkFiles) -> Self {
+        self.os_junk = os_junk;
         self
     }
 

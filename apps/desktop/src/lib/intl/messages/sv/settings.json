@@ -506,28 +506,28 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.macOnlyFiles.label": "Hoppa över Mac-specifika dolda filer",
-  "@settings.fileOperations.macOnlyFiles.label": {
+  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Hoppa över Mac-specifika dolda filer} windows {Skip Windows thumbnail caches} other {Skip Linux leftover files}}",
+  "@settings.fileOperations.osJunkFiles.label": {
     "sourceHash": "be693c6"
   },
-  "settings.fileOperations.macOnlyFiles.description": "Hoppar över filerna .DS_Store och ._* när du kopierar, flyttar eller komprimerar.",
-  "@settings.fileOperations.macOnlyFiles.description": {
+  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Hoppar över filerna .DS_Store och ._* när du kopierar, flyttar eller komprimerar.} windows {Skips Thumbs.db, ehthumbs.db, and ehthumbs_vista.db files when copying, moving, or compressing. Windows rebuilds them when it needs them.} other {Skips the .nfs* and .fuse_hidden* files Linux keeps for deleted files that are still open, when copying, moving, or compressing.}}",
+  "@settings.fileOperations.osJunkFiles.description": {
     "sourceHash": "02578a7"
   },
-  "settings.fileOperations.macOnlyFiles.opt.include": "Ta med",
-  "@settings.fileOperations.macOnlyFiles.opt.include": {
+  "settings.fileOperations.osJunkFiles.opt.include": "Ta med",
+  "@settings.fileOperations.osJunkFiles.opt.include": {
     "sourceHash": "7285576"
   },
-  "settings.fileOperations.macOnlyFiles.opt.skip": "Hoppa över",
-  "@settings.fileOperations.macOnlyFiles.opt.skip": {
+  "settings.fileOperations.osJunkFiles.opt.skip": "Hoppa över",
+  "@settings.fileOperations.osJunkFiles.opt.skip": {
     "sourceHash": "28d0359"
   },
-  "settings.fileOperations.macOnlyFiles.opt.ask": "Fråga alltid",
-  "@settings.fileOperations.macOnlyFiles.opt.ask": {
+  "settings.fileOperations.osJunkFiles.opt.ask": "Fråga alltid",
+  "@settings.fileOperations.osJunkFiles.opt.ask": {
     "sourceHash": "3c42771"
   },
-  "settings.fileOperations.macOnlyFiles.keywords": "metadata, skräp, bråte, onödiga filer, punktfiler, resursgren, resource fork, arkiv, komprimera, kopiera, flytta, andra system, bara Mac",
-  "@settings.fileOperations.macOnlyFiles.keywords": {
+  "settings.fileOperations.osJunkFiles.keywords": "metadata, skräp, bråte, onödiga filer, punktfiler, resursgren, resource fork, arkiv, komprimera, kopiera, flytta, andra system, bara Mac",
+  "@settings.fileOperations.osJunkFiles.keywords": {
     "sourceHash": "b668774"
   },
   "settings.fileOperations.skipConfirmation.label": "{platform, select, windows {Hoppa över bekräftelse vid kopiering, flytt och radering} other {Hoppa över bekräftelse vid kopiering, flytt och flytt till papperskorgen}}",

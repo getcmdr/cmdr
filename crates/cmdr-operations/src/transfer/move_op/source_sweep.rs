@@ -22,7 +22,7 @@ use std::collections::HashSet;
 use std::fs;
 
 use cmdr_fs::apple_double::SidecarRule;
-use cmdr_fs::mac_only_files::MacOnlyFiles;
+use cmdr_fs::os_junk_files::OsJunkFiles;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -348,7 +348,7 @@ pub(super) fn delete_sources_after_move(
             return Err(stop(error, originals_removed, sources_total));
         }
         if source_present {
-            let changed = match remove_landed(&sweep.per_source[index], &drive, locked, state.mac_only) {
+            let changed = match remove_landed(&sweep.per_source[index], &drive, locked, state.os_junk) {
                 Ok(changed) => changed,
                 Err(error) => return Err(stop(error, originals_removed, sources_total)),
             };
@@ -365,7 +365,7 @@ pub(super) fn delete_sources_after_move(
             }
             if !source_removed {
                 let appeared =
-                    count_unscanned_entries(source, &sweep.scanned_paths, &SidecarRule::new(), state.mac_only);
+                    count_unscanned_entries(source, &sweep.scanned_paths, &SidecarRule::new(), state.os_junk);
                 leftovers.note(source, is_real_directory(source), appeared, changed);
             }
             events.emit_source_item_done(WriteSourceItemDoneEvent {
@@ -410,7 +410,7 @@ fn remove_landed(
     swept: &SweptSource,
     drive: &SourceDrive<'_>,
     locked: &LockedPlan,
-    mac_only: MacOnlyFiles,
+    os_junk: OsJunkFiles,
 ) -> Result<u32, WriteOperationError> {
     let opened: Vec<_> = swept
         .scanned_dirs
@@ -429,7 +429,7 @@ fn remove_landed(
         unlocked.gone();
     }
     for dir in &swept.scanned_dirs {
-        remove_swept_dir(dir, drive, mac_only)?;
+        remove_swept_dir(dir, drive, os_junk)?;
     }
     for (dir, unlocked) in opened {
         if fs::symlink_metadata(dir).is_err() {
@@ -485,7 +485,7 @@ fn remove_landed_file(path: &Path, drive: &SourceDrive<'_>) -> Result<(), WriteO
 /// Removes one swept directory, and only if it is empty. A directory still
 /// holding something is the sweep working as intended, not a failure: the
 /// something was never copied to the destination, so it stays where it is.
-fn remove_swept_dir(dir: &Path, drive: &SourceDrive<'_>, mac_only: MacOnlyFiles) -> Result<(), WriteOperationError> {
+fn remove_swept_dir(dir: &Path, drive: &SourceDrive<'_>, os_junk: OsJunkFiles) -> Result<(), WriteOperationError> {
     let Ok(metadata) = fs::symlink_metadata(dir) else {
         // Already gone — or the whole mount is, which is not the same thing.
         return match drive.left(dir) {
@@ -503,7 +503,7 @@ fn remove_swept_dir(dir: &Path, drive: &SourceDrive<'_>, mac_only: MacOnlyFiles)
         // Still holding something the move never carried: the sweep working as
         // intended, and nothing to do with a drive.
         Err(e) if e.kind() == std::io::ErrorKind::DirectoryNotEmpty => {
-            remove_husk(dir, mac_only).with_path(dir)?;
+            remove_husk(dir, os_junk).with_path(dir)?;
             Ok(())
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => match drive.left(dir) {
@@ -515,22 +515,22 @@ fn remove_swept_dir(dir: &Path, drive: &SourceDrive<'_>, mac_only: MacOnlyFiles)
 }
 
 /// Finishes a folder the move carried that `remove_dir` found not empty: when
-/// all it still holds is Mac-only files the move left out (#314), they were
-/// that folder's own metadata (Finder's `.DS_Store`, AppleDouble `._*`), so they
+/// all it still holds is OS junk files the move left out (#314, #1305), they were
+/// that folder's own droppings (`.DS_Store`, `Thumbs.db`, …), so they
 /// go with it, and so does the folder. ❌ Never a husk folder in the source.
 ///
-/// Anything else in there (a newcomer, a Skip) keeps the folder AND its Mac-only
+/// Anything else in there (a newcomer, a Skip) keeps the folder AND its OS junk
 /// files: the folder stays, and its metadata still describes it. Under `Include`
 /// the scan carried those files, so this never runs on one it left behind.
-fn remove_husk(dir: &Path, mac_only: MacOnlyFiles) -> std::io::Result<()> {
-    if mac_only == MacOnlyFiles::Include {
+fn remove_husk(dir: &Path, os_junk: OsJunkFiles) -> std::io::Result<()> {
+    if os_junk == OsJunkFiles::Include {
         return Ok(());
     }
     let mut husk = Vec::new();
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
         let is_directory = entry.file_type().is_ok_and(|kind| kind.is_dir());
-        if !mac_only.leaves_out(&entry.file_name(), is_directory) {
+        if !os_junk.leaves_out(&entry.file_name(), is_directory) {
             return Ok(());
         }
         husk.push(entry.path());
@@ -559,7 +559,7 @@ fn count_unscanned_entries(
     dir: &Path,
     scanned_paths: &HashSet<PathBuf>,
     sidecars: &SidecarRule,
-    mac_only: MacOnlyFiles,
+    os_junk: OsJunkFiles,
 ) -> u32 {
     let (Ok(dir_meta), Ok(entries)) = (fs::symlink_metadata(dir), fs::read_dir(dir)) else {
         return 0;
@@ -571,12 +571,12 @@ fn count_unscanned_entries(
         if !scanned_paths.contains(&path) {
             let is_directory = entry.file_type().is_ok_and(|kind| kind.is_dir());
             if !sidecars.is_sidecar(dir, device, &entry.file_name())
-                && !mac_only.leaves_out(&entry.file_name(), is_directory)
+                && !os_junk.leaves_out(&entry.file_name(), is_directory)
             {
                 count += 1;
             }
         } else if fs::symlink_metadata(&path).is_ok_and(|m| m.is_dir()) {
-            count += count_unscanned_entries(&path, scanned_paths, sidecars, mac_only);
+            count += count_unscanned_entries(&path, scanned_paths, sidecars, os_junk);
         }
     }
     count

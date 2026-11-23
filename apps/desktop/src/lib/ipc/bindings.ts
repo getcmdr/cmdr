@@ -817,10 +817,10 @@ export const commands = {
        */
       sourceKinds?: ItemKinds | null
       /**
-       *  Whether the transfer leaves Mac-only hidden files (`.DS_Store`, `._*`)
-       *  out of its destination. See `cmdr_fs::mac_only_files`.
+       *  Whether the transfer leaves OS junk files (`cmdr_fs::os_junk_files`)
+       *  out of its destination. See `cmdr_fs::os_junk_files`.
        */
-      macOnlyFiles?: MacOnlyFiles
+      osJunkFiles?: OsJunkFiles
     } | null,
     initiator: Initiator,
   ) =>
@@ -862,10 +862,10 @@ export const commands = {
        */
       sourceKinds?: ItemKinds | null
       /**
-       *  Whether the transfer leaves Mac-only hidden files (`.DS_Store`, `._*`)
-       *  out of its destination. See `cmdr_fs::mac_only_files`.
+       *  Whether the transfer leaves OS junk files (`cmdr_fs::os_junk_files`)
+       *  out of its destination. See `cmdr_fs::os_junk_files`.
        */
-      macOnlyFiles?: MacOnlyFiles
+      osJunkFiles?: OsJunkFiles
     } | null,
     initiator: Initiator,
   ) =>
@@ -904,10 +904,10 @@ export const commands = {
        */
       sourceKinds?: ItemKinds | null
       /**
-       *  Whether the transfer leaves Mac-only hidden files (`.DS_Store`, `._*`)
-       *  out of its destination. See `cmdr_fs::mac_only_files`.
+       *  Whether the transfer leaves OS junk files (`cmdr_fs::os_junk_files`)
+       *  out of its destination. See `cmdr_fs::os_junk_files`.
        */
-      macOnlyFiles?: MacOnlyFiles
+      osJunkFiles?: OsJunkFiles
     } | null,
     initiator: Initiator,
   ) =>
@@ -1494,18 +1494,18 @@ export const commands = {
     sourceVolumeId: string | null,
     progressIntervalMs: number | null,
     purpose: ScanPreviewPurpose,
-    macOnlyFiles:
+    osJunkFiles:
       /**
        *  Copy them like any other file. The default: leaving a file out is
        *  something a person asks for.
        */
       | 'include'
-      // Leave every listed `.DS_Store` and `._*` file out of the destination.
+      // Leave every listed junk file of the running OS out of the destination.
       | 'skip'
       | null,
   ) =>
     typedError<ScanPreviewStartResult, ScanPreviewRefusal>(
-      __TAURI_INVOKE('start_scan_preview', { sources, sourceVolumeId, progressIntervalMs, purpose, macOnlyFiles }),
+      __TAURI_INVOKE('start_scan_preview', { sources, sourceVolumeId, progressIntervalMs, purpose, osJunkFiles }),
     ),
   cancelScanPreview: (previewId: string) => __TAURI_INVOKE<void>('cancel_scan_preview', { previewId }),
   /**
@@ -1732,10 +1732,10 @@ export const commands = {
        */
       sourceKinds?: ItemKinds | null
       /**
-       *  Whether the transfer leaves Mac-only hidden files (`.DS_Store`, `._*`)
-       *  out of its destination. See `cmdr_fs::mac_only_files`.
+       *  Whether the transfer leaves OS junk files (`cmdr_fs::os_junk_files`)
+       *  out of its destination. See `cmdr_fs::os_junk_files`.
        */
-      macOnlyFiles?: MacOnlyFiles
+      osJunkFiles?: OsJunkFiles
     } | null,
     initiator: Initiator,
   ) =>
@@ -1796,10 +1796,10 @@ export const commands = {
        */
       sourceKinds?: ItemKinds | null
       /**
-       *  Whether the transfer leaves Mac-only hidden files (`.DS_Store`, `._*`)
-       *  out of its destination. See `cmdr_fs::mac_only_files`.
+       *  Whether the transfer leaves OS junk files (`cmdr_fs::os_junk_files`)
+       *  out of its destination. See `cmdr_fs::os_junk_files`.
        */
-      macOnlyFiles?: MacOnlyFiles
+      osJunkFiles?: OsJunkFiles
     } | null,
     initiator: Initiator,
   ) =>
@@ -1861,10 +1861,10 @@ export const commands = {
        */
       sourceKinds?: ItemKinds | null
       /**
-       *  Whether the transfer leaves Mac-only hidden files (`.DS_Store`, `._*`)
-       *  out of its destination. See `cmdr_fs::mac_only_files`.
+       *  Whether the transfer leaves OS junk files (`cmdr_fs::os_junk_files`)
+       *  out of its destination. See `cmdr_fs::os_junk_files`.
        */
-      macOnlyFiles?: MacOnlyFiles
+      osJunkFiles?: OsJunkFiles
     } | null,
     initiator: Initiator,
   ) =>
@@ -1918,10 +1918,10 @@ export const commands = {
        */
       sourceKinds?: ItemKinds | null
       /**
-       *  Whether the transfer leaves Mac-only hidden files (`.DS_Store`, `._*`)
-       *  out of its destination. See `cmdr_fs::mac_only_files`.
+       *  Whether the transfer leaves OS junk files (`cmdr_fs::os_junk_files`)
+       *  out of its destination. See `cmdr_fs::os_junk_files`.
        */
-      macOnlyFiles?: MacOnlyFiles
+      osJunkFiles?: OsJunkFiles
     } | null,
     initiator: Initiator,
   ) =>
@@ -14432,16 +14432,6 @@ export type LowDiskSpacePayload = {
   isLow: boolean
 }
 
-// Whether a transfer writes Mac-only hidden files to its destination.
-export type MacOnlyFiles =
-  /**
-   *  Copy them like any other file. The default: leaving a file out is
-   *  something a person asks for.
-   */
-  | 'include'
-  // Leave every listed `.DS_Store` and `._*` file out of the destination.
-  | 'skip'
-
 // Why the policy refused an AI request. Produced only by [`super::ManagedPolicy::ai_destination`].
 export type ManagedAiRefusal =
   // `DisableAI`: no AI at all, local included.
@@ -16994,6 +16984,16 @@ export type OriginalsStillInPlace = {
    */
   count: number
 }
+
+// Whether a transfer writes the running OS's junk files to its destination.
+export type OsJunkFiles =
+  /**
+   *  Copy them like any other file. The default: leaving a file out is
+   *  something a person asks for.
+   */
+  | 'include'
+  // Leave every listed junk file of the running OS out of the destination.
+  | 'skip'
 
 /**
  *  Everything the OS has to say about locale, in the two halves the app keeps
@@ -25077,10 +25077,10 @@ export type VolumeCopyConfig = {
    */
   sourceKinds?: ItemKinds | null
   /**
-   *  Whether the transfer leaves Mac-only hidden files (`.DS_Store`, `._*`)
-   *  out of its destination. See `cmdr_fs::mac_only_files`.
+   *  Whether the transfer leaves OS junk files (`cmdr_fs::os_junk_files`)
+   *  out of its destination. See `cmdr_fs::os_junk_files`.
    */
-  macOnlyFiles?: MacOnlyFiles
+  osJunkFiles?: OsJunkFiles
 }
 
 /**
@@ -26235,10 +26235,10 @@ export type WriteOperationConfig = {
    */
   sourceKinds?: ItemKinds | null
   /**
-   *  Whether the transfer leaves Mac-only hidden files (`.DS_Store`, `._*`)
-   *  out of its destination. See `cmdr_fs::mac_only_files`.
+   *  Whether the transfer leaves OS junk files (`cmdr_fs::os_junk_files`)
+   *  out of its destination. See `cmdr_fs::os_junk_files`.
    */
-  macOnlyFiles?: MacOnlyFiles
+  osJunkFiles?: OsJunkFiles
 }
 
 // Errors that can occur during write operations.

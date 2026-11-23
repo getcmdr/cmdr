@@ -42,12 +42,12 @@
     import LinkButton from '#lib/ui/LinkButton.svelte'
     import { getSetting, onSpecificSettingChange } from '#lib/settings/index.js'
     import {
-        MAC_ONLY_FILES_SETTING,
-        macOnlyFilesFor,
-        macOnlyLinkKey,
-        macOnlyToggleStartsOn,
-        openMacOnlyFilesSetting,
-    } from './mac-only-files'
+        OS_JUNK_FILES_SETTING,
+        osJunkFilesFor,
+        osJunkLinkKey,
+        osJunkToggleStartsOn,
+        openOsJunkFilesSetting,
+    } from './os-junk-files'
     import {
         confirmLabelKey,
         generateTitle,
@@ -216,16 +216,16 @@
     // "Remember this choice": ticked when a choice is saved; a confirm saves by it.
     let rememberConflictChoice = $state(rememberStartsTicked(savedConflictPolicy))
 
-    // "Skip Mac-only hidden files" (#314): starts from the setting, and is always a one-off
+    // "skip this OS's junk files" (#314): starts from the setting, and is always a one-off
     // override for this operation (flipping it never writes the setting; the link opens it).
     // Until the person touches it, it follows a default they change through that link.
-    let macOnlyPolicy = $state(getSetting(MAC_ONLY_FILES_SETTING))
-    let skipMacOnlyFiles = $state(macOnlyToggleStartsOn(getSetting(MAC_ONLY_FILES_SETTING)))
-    let macOnlyToggleTouched = false
+    let osJunkPolicy = $state(getSetting(OS_JUNK_FILES_SETTING))
+    let skipOsJunkFiles = $state(osJunkToggleStartsOn(getSetting(OS_JUNK_FILES_SETTING)))
+    let osJunkToggleTouched = false
     onMount(() =>
-        onSpecificSettingChange(MAC_ONLY_FILES_SETTING, (policy) => {
-            macOnlyPolicy = policy
-            if (!macOnlyToggleTouched) skipMacOnlyFiles = macOnlyToggleStartsOn(policy)
+        onSpecificSettingChange(OS_JUNK_FILES_SETTING, (policy) => {
+            osJunkPolicy = policy
+            if (!osJunkToggleTouched) skipOsJunkFiles = osJunkToggleStartsOn(policy)
         }),
     )
 
@@ -307,7 +307,7 @@
         getConfirmed: () => confirmed,
         getDestroyed: () => destroyed,
         getScanPurpose: () => (activeOperationType === 'compress' ? 'compress' : 'transfer'),
-        getMacOnlyFiles: () => (isRenameMode ? 'include' : macOnlyFilesFor(skipMacOnlyFiles)),
+        getOsJunkFiles: () => (isRenameMode ? 'include' : osJunkFilesFor(skipOsJunkFiles)),
     })
 
     // Cheap top-level conflict check (one dest listing). Runs in parallel with the
@@ -724,7 +724,7 @@
             operationType: activeOperationType,
             preKnownConflicts: conflicts.conflictNames,
             // Rename mode shows no toggle: a rename leaves nothing out, whatever the default.
-            macOnlyFiles: isRenameMode ? 'include' : macOnlyFilesFor(skipMacOnlyFiles),
+            osJunkFiles: isRenameMode ? 'include' : osJunkFilesFor(skipOsJunkFiles),
             ...(isRenameMode ? { newName: renameTarget.leaf } : {}),
             ...(activeOperationType === 'move' &&
             isRenameInPlace({ target: namedTarget, sourcePath: sourcePaths[0], sourceVolumeId })
@@ -928,18 +928,18 @@
                      the toggle started from; flipping the toggle never changes it. A
                      rename leaves nothing out, so rename mode has no toggle. -->
                 {#if !isRenameMode}
-                    <div class="mac-only-row">
+                    <div class="os-junk-row">
                         <Checkbox
-                            checked={skipMacOnlyFiles}
+                            checked={skipOsJunkFiles}
                             onCheckedChange={(checked: boolean) => {
-                                skipMacOnlyFiles = checked
-                                macOnlyToggleTouched = true
+                                skipOsJunkFiles = checked
+                                osJunkToggleTouched = true
                             }}
                         >
-                            {tString('fileOperations.transferDialog.macOnlyFiles.toggle')}
+                            {tString('fileOperations.transferDialog.osJunkFiles.toggle')}
                         </Checkbox>
-                        <LinkButton onclick={() => void openMacOnlyFilesSetting()}>
-                            {tString(macOnlyLinkKey(macOnlyPolicy))}
+                        <LinkButton onclick={() => void openOsJunkFilesSetting()}>
+                            {tString(osJunkLinkKey(osJunkPolicy))}
                         </LinkButton>
                     </div>
                 {/if}
@@ -1170,7 +1170,7 @@
     }
 
     /* The toggle, then its link on the same line, wrapping under it when the dialog is narrow. */
-    .mac-only-row {
+    .os-junk-row {
         display: flex;
         flex-wrap: wrap;
         align-items: center;

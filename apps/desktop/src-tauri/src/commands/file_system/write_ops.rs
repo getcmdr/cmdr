@@ -465,8 +465,8 @@ pub async fn start_scan_preview(
     // a compress's samples a compressed-size estimate (local sources only).
     purpose: ScanPreviewPurpose,
     // What the transfer will leave out, so the totals match what it writes
-    // (`cmdr_fs::mac_only_files`). `None` (a delete) is `Include`.
-    mac_only_files: Option<cmdr_fs::mac_only_files::MacOnlyFiles>,
+    // (`cmdr_fs::os_junk_files`). `None` (a delete) is `Include`.
+    os_junk_files: Option<cmdr_fs::os_junk_files::OsJunkFiles>,
 ) -> Result<ScanPreviewStartResult, ScanPreviewRefusal> {
     let volume_id = source_volume_id.unwrap_or_else(|| "root".to_string());
     let is_local = volume_id == "root";
@@ -487,7 +487,7 @@ pub async fn start_scan_preview(
         volume_id,
         progress_interval,
         purpose,
-        mac_only_files.unwrap_or_default(),
+        os_junk_files.unwrap_or_default(),
     )
 }
 

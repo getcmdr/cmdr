@@ -62,21 +62,21 @@ fn cache_hit_when_the_operation_asks_for_exactly_the_previewed_sources() {
     assert!(hit.is_some(), "the same selection must be a cache hit");
 }
 
-/// A preview that left out Mac-only files sized a different transfer from one
+/// A preview that left out OS junk files sized a different transfer from one
 /// that writes them (#314), so the person flipping the toggle at the last
 /// second costs a rescan, never totals that lie.
 #[test]
 fn a_preview_that_left_out_something_else_is_no_hit() {
-    use cmdr_fs::mac_only_files::MacOnlyFiles;
+    use cmdr_fs::os_junk_files::OsJunkFiles;
 
     let engine = TestOperations::new();
     let previews = engine.stores().previews();
     for (walked, wanted, hit) in [
-        (MacOnlyFiles::Skip, MacOnlyFiles::Skip, true),
-        (MacOnlyFiles::Skip, MacOnlyFiles::Include, false),
-        (MacOnlyFiles::Include, MacOnlyFiles::Skip, false),
+        (OsJunkFiles::Skip, OsJunkFiles::Skip, true),
+        (OsJunkFiles::Skip, OsJunkFiles::Include, false),
+        (OsJunkFiles::Include, OsJunkFiles::Skip, false),
     ] {
-        let preview_id = unique_preview("mac-only");
+        let preview_id = unique_preview("os-junk");
         previews.insert_scan_result(preview_id.clone(), cached_for(&["/a"]).leaving_out(walked));
         assert_eq!(
             previews

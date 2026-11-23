@@ -9,8 +9,8 @@
      *      whether Space works out a folder's size as it selects it
      *      (`listing.spaceCalculatesFolderSize`).
      *   2. **File operations** — the file-extension-change confirmation radio, what
-     *      ⌘V does with non-file clipboard content, whether to skip Mac-only hidden
-     *      files (`fileOperations.macOnlyFiles`, what the copy, move, and compress
+     *      ⌘V does with non-file clipboard content, whether to skip the OS's junk
+     *      files (`fileOperations.osJunkFiles`, what the copy, move, and compress
      *      dialog's toggle starts from), the switch that skips the
      *      copy/move/trash confirmations, and the copy/move dialog's starting "files
      *      already exist" choice (`fileOperations.defaultConflictPolicy`, which the
@@ -69,7 +69,7 @@
     const spaceSizeDef = getSettingDefinition('listing.spaceCalculatesFolderSize') ?? defaultDef
     const extensionChangesDef = getSettingDefinition('fileOperations.allowFileExtensionChanges') ?? defaultDef
     const pasteAsFileDef = getSettingDefinition('fileOperations.pasteClipboardAsFile') ?? defaultDef
-    const macOnlyFilesDef = getSettingDefinition('fileOperations.macOnlyFiles') ?? defaultDef
+    const osJunkFilesDef = getSettingDefinition('fileOperations.osJunkFiles') ?? defaultDef
     const skipConfirmationDef = getSettingDefinition('fileOperations.skipConfirmation') ?? defaultDef
     const conflictPolicyDef = getSettingDefinition('fileOperations.defaultConflictPolicy') ?? defaultDef
     const keepProgressOpenDef = getSettingDefinition('fileOperations.keepProgressOpenWhenDone') ?? defaultDef
@@ -120,7 +120,7 @@
         shouldShow,
         'fileOperations.allowFileExtensionChanges',
         'fileOperations.pasteClipboardAsFile',
-        'fileOperations.macOnlyFiles',
+        'fileOperations.osJunkFiles',
         'fileOperations.skipConfirmation',
         'fileOperations.defaultConflictPolicy',
         'fileOperations.keepProgressOpenWhenDone',
@@ -146,14 +146,14 @@
                     <SettingToggleGroup id="fileOperations.pasteClipboardAsFile" />
                 </SettingRow>
             {/if}
-            {#if shouldShow('fileOperations.macOnlyFiles')}
+            {#if shouldShow('fileOperations.osJunkFiles')}
                 <SettingRow
-                    id="fileOperations.macOnlyFiles"
-                    label={macOnlyFilesDef.label}
-                    description={macOnlyFilesDef.description}
+                    id="fileOperations.osJunkFiles"
+                    label={osJunkFilesDef.label}
+                    description={osJunkFilesDef.description}
                     {searchQuery}
                 >
-                    <SettingToggleGroup id="fileOperations.macOnlyFiles" />
+                    <SettingToggleGroup id="fileOperations.osJunkFiles" />
                 </SettingRow>
             {/if}
             {#if shouldShow('fileOperations.skipConfirmation')}

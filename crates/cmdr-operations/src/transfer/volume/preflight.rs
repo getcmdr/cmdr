@@ -242,7 +242,7 @@ pub(super) async fn scan_volume_sources(
     if let Some(mut cached) = config
         .preview_id
         .as_deref()
-        .and_then(|preview_id| previews.take_cached_transfer_scan(preview_id, source_paths, config.mac_only_files))
+        .and_then(|preview_id| previews.take_cached_transfer_scan(preview_id, source_paths, config.os_junk_files))
         .filter(|cached| {
             let describes_another_transfer = links.disagrees_with_preview(cached, source_paths);
             if describes_another_transfer {
@@ -366,7 +366,7 @@ pub(super) async fn scan_volume_sources(
         .stopping_at(stop)
         .recording_to(Arc::clone(&recorder) as Arc<dyn ScanRecorder>)
         .waiting_out(&outages)
-        .leaving_out(state.mac_only);
+        .leaving_out(state.os_junk);
     // A carried link is one leaf with no bytes: nothing to walk, and walking what
     // it points at would count (and reserve room for) a tree this copy never writes.
     let to_walk: Vec<PathBuf> = source_paths
@@ -534,7 +534,7 @@ pub(super) async fn top_level_move_hints(
     if let Some(cached) = config
         .preview_id
         .as_deref()
-        .and_then(|preview_id| previews.take_cached_transfer_scan(preview_id, source_paths, config.mac_only_files))
+        .and_then(|preview_id| previews.take_cached_transfer_scan(preview_id, source_paths, config.os_junk_files))
     {
         for (path, scan) in cached.per_path {
             if !scan.top_level_is_directory {

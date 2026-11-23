@@ -119,7 +119,7 @@ impl crate::Operations {
                 // Keyed by the re-rooted paths, in the same step as the sources.
                 leaves: config.leaves.rebased(|p| super::on_local_root(&src_root, p)),
                 source_kinds: config.source_kinds,
-                mac_only_files: config.mac_only_files,
+                os_junk_files: config.os_junk_files,
                 ..Default::default()
             };
 
@@ -176,7 +176,7 @@ impl crate::Operations {
             self.new_operation_state(Duration::from_millis(config.progress_interval_ms))
                 .with_journal_volumes(source_volume_id.clone(), dest_volume_id.clone())
                 .with_conflict_policy(config.conflict_resolution)
-                .leaving_out(config.mac_only_files),
+                .leaving_out(config.os_junk_files),
         );
         let journal_source_volume_id = source_volume_id.clone();
         let journal_dest_volume_id = dest_volume_id.clone();

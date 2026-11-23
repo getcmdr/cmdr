@@ -95,7 +95,7 @@ describe('createTransferScanState', () => {
         getConfirmed: () => false,
         getDestroyed: () => destroyed,
         getScanPurpose: () => 'transfer',
-        getMacOnlyFiles: () => 'include',
+        getOsJunkFiles: () => 'include',
       })
     })
     // The toggle effect's first run is the one it skips; get it out of the way.
