@@ -94,7 +94,7 @@
   "queryUi.empty.tryLine": "Try…",
   "@queryUi.empty.tryLine": {
     "description": "Small heading above the example-query chips in the search dialog's empty state, before the user has searched. Invites the user to try one of the example queries below it. Ends with an ellipsis.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "select-dialog.png"
   },
   "queryUi.empty.aiBadge": "AI",
   "@queryUi.empty.aiBadge": {
@@ -105,7 +105,7 @@
   "queryUi.empty.keysTip": "Tip: <newChip></newChip> starts fresh, <historyChip></historyChip> shows recent searches.",
   "@queryUi.empty.keysTip": {
     "description": "Keyboard tip at the bottom of the search dialog's empty state (the Search and Select files dialogs). The empty <newChip></newChip> and <historyChip></historyChip> tags are where the two keys show, as key caps: the key that clears the dialog for a new search (⌘N on a Mac, Ctrl+N on Windows and Linux) and the key that shows the recent searches (⌘Y on a Mac, Ctrl+H on Windows and Linux). Keep each empty tag where its key belongs and keep the sentence reading naturally around them. \"Starts fresh\" means it clears the query, filters, and results for a new search.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "select-dialog.png"
   },
   "queryUi.ai.cloudOff.body": "{platform, select, windows {Cloud AI is off. Allow it in Settings > AI to use this.} linuxGnome {Cloud AI is off. Allow it in Preferences > AI to use this.} linuxKde {Cloud AI is off. Allow it in Configure Cmdr > AI to use this.} other {Cloud AI is off. Allow it in Settings > AI to use this.}}",
   "@queryUi.ai.cloudOff.body": {
@@ -129,7 +129,7 @@
       "countText": "the number of indexed entries, already formatted for display (for example 1,234,567)",
       "count": "the same number of entries (drives the singular/plural form of the noun)"
     },
-    "screenshot": "search-dialog.png"
+    "screenshot": "filter-popover.png"
   },
   "queryUi.ai.lead": "Here’s what the agent did:",
   "@queryUi.ai.lead": {
@@ -274,7 +274,7 @@
       "count": "the exact number of entries (drives the singular/plural form of the noun)",
       "countText": "the number of indexed entries, in a compact form (for example 12.3K or 1.2M)"
     },
-    "screenshot": "search-dialog.png"
+    "screenshot": "filter-popover.png"
   },
   "queryUi.results.resultCount": "{shownText} of {totalText} {total, plural, one {result} other {results}}",
   "@queryUi.results.resultCount": {
@@ -505,12 +505,14 @@
   "queryUi.recent.filterPlaceholder": "Filter recent searches",
   "@queryUi.recent.filterPlaceholder": {
     "description": "Placeholder and accessibility label for the filter input at the top of the recent-searches popover, which fuzzy-filters the search history as the user types.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
   },
   "queryUi.recent.emptyMessage": "No recent searches match that filter.",
   "@queryUi.recent.emptyMessage": {
     "description": "Shown in the recent-searches popover when the filter text matches none of the history entries.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
   },
   "queryUi.recent.popoverAria": "All recent searches",
   "@queryUi.recent.popoverAria": {
@@ -885,17 +887,20 @@
   "queryUi.size.aria.comparator": "Comparator",
   "@queryUi.size.aria.comparator": {
     "description": "Accessibility label for the comparator column (any / ≥ / ≤ / = / between) in the Size popover. A comparator is the kind of size comparison being made.",
-    "screenshot": "filter-popover.png"
+    "screenshot": "search-dialog.png",
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
   },
   "queryUi.size.aria.minValue": "Minimum size value",
   "@queryUi.size.aria.minValue": {
     "description": "Accessibility label for the lower-bound value column in the Size popover.",
-    "screenshot": "filter-popover.png"
+    "screenshot": "search-dialog.png",
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
   },
   "queryUi.size.aria.minUnit": "Minimum size unit",
   "@queryUi.size.aria.minUnit": {
     "description": "Accessibility label for the lower-bound unit column in the Size popover.",
-    "screenshot": "filter-popover.png"
+    "screenshot": "search-dialog.png",
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
   },
   "queryUi.size.aria.maxValue": "Maximum size value",
   "@queryUi.size.aria.maxValue": {

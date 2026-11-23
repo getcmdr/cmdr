@@ -678,7 +678,7 @@
     "placeholders": {
       "name": "the disk's own name as the system reports it, uncontrolled and possibly long (e.g. \"Backup Drive\", \"NO NAME\")"
     },
-    "screenshot": "main-window.png"
+    "screenshot": "tool-ask-eject.png"
   },
   "menu.volume.ejectBusy": "Eject ({name}) (busy)",
   "@menu.volume.ejectBusy": {
@@ -693,7 +693,7 @@
     "placeholders": {
       "name": "the share's name as the system reports it, uncontrolled and possibly long (e.g. \"media\", \"Family photos\")"
     },
-    "screenshot": "main-window.png"
+    "screenshot": "tool-ask-eject.png"
   },
   "menu.volume.detachShareBusy": "{platform, select, macos {Eject ({name}) (busy)} windows {Disconnect ({name}) (busy)} other {Unmount ({name}) (busy)}}",
   "@menu.volume.detachShareBusy": {
@@ -718,12 +718,13 @@
   "menu.volume.editFavoriteShortcut": "Set shortcut key…",
   "@menu.volume.editFavoriteShortcut": {
     "description": "VERB phrase. An item in the right-click menu on a favorite, in the Favorites menu and the volume switcher's favorites section: capture one A–Z key for opening that favorite while the Favorites menu is open. The user may also press Delete to clear an existing key. “Shortcut key” is one key, never a key combination; fileExplorer.navigation.favoriteShortcutAriaLabel and .favoriteShortcutSaveFailed use the same words. The ellipsis means the key is chosen after this item is picked.",
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "menu.volume.removeFavorite": "Remove",
   "@menu.volume.removeFavorite": {
     "description": "VERB (imperative). Right-click item on a favorite in the volume dropdown: takes it off the favorites list. Nothing on disk is deleted, so avoid a word that sounds like deleting files. Very short label in a narrow dropdown.",
-    "screenshot": "main-window.png"
+    "screenshot": "multi-rename.png"
   },
   "menu.network.open": "Open",
   "@menu.network.open": {

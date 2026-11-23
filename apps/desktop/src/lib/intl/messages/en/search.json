@@ -7,7 +7,8 @@
   "search.runHint": "Press Enter to search",
   "@search.runHint": {
     "description": "Subtle hint in the right side of the search input, shown when auto-apply is off and the typed query hasn't run yet. Tells the user the search runs on Enter.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear."
   },
   "search.action.showAll.label": "Show all in main window",
   "@search.action.showAll.label": {

@@ -32,7 +32,8 @@
   "whatsNew.dialog.showMore": "Show more",
   "@whatsNew.dialog.showMore": {
     "description": "Button in the What's new dialog that expands one release's detailed change lists (Added, Changed, Fixed), which are collapsed by default.",
-    "screenshot": "whats-new.png"
+    "screenshot": "whats-new.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "whatsNew.dialog.showLess": "Show less",
   "@whatsNew.dialog.showLess": {

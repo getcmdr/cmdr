@@ -109,7 +109,7 @@
   "commands.helpSendErrorReport.label": "Send error report…",
   "@commands.helpSendErrorReport.label": {
     "description": "Command name that sends app logs to the team to help fix a problem. The trailing ellipsis (…) signals it opens a flow; keep it. \"Error report\" names the bundle of logs sent.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-2.png"
   },
   "commands.helpSendErrorReport.description": "Sends Cmdr logs to the team to help fix something that went wrong",
   "@commands.helpSendErrorReport.description": {
@@ -118,7 +118,7 @@
   "commands.queueShow.label": "Operation queue",
   "@commands.queueShow.label": {
     "description": "Command name that opens the operation queue window, which lists every running and waiting copy, move, delete, trash, rename, and folder- or file-creation operation. Appears in the command palette and in the View menu, where it reads exactly the same: keep this identical to the queue window’s own title (queue.windowTitle).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-2.png"
   },
   "commands.queueShow.description": "Opens a window listing every running and waiting operation, where you can pause, resume, or cancel them",
   "@commands.queueShow.description": {
@@ -127,7 +127,7 @@
   "commands.helpWhatsNew.label": "What’s new",
   "@commands.helpWhatsNew.label": {
     "description": "Command name that shows what changed in recent releases. Appears in the command palette and the Help menu.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-2.png"
   },
   "commands.helpWhatsNew.description": "Shows what changed in the latest releases of Cmdr",
   "@commands.helpWhatsNew.description": {
@@ -136,7 +136,7 @@
   "commands.logOperationLog.label": "Operation log",
   "@commands.logOperationLog.label": {
     "description": "Command name that opens the Operation log dialog, a history of file operations. Appears in the command palette and the View menu.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-2.png"
   },
   "commands.logOperationLog.description": "Shows a history of your file operations, and lets you roll them back",
   "@commands.logOperationLog.description": {
@@ -154,7 +154,7 @@
   "commands.askCmdrNewChat.label": "New Ask Cmdr chat",
   "@commands.askCmdrNewChat.label": {
     "description": "Command name that starts a fresh conversation in Ask Cmdr, the chat rail where the user chats with an AI about their files. Opens the rail first if it's closed. Appears in the command palette and the keyboard shortcuts settings. \"Ask Cmdr\" is the product name; keep it as-is.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-7.png"
   },
   "commands.askCmdrNewChat.description": "Starts a fresh chat with Ask Cmdr, opening it if it’s closed",
   "@commands.askCmdrNewChat.description": {
@@ -163,22 +163,22 @@
   "commands.askCmdrFind.label": "Find in chat",
   "@commands.askCmdrFind.label": {
     "description": "Command name, listed in the keyboard shortcuts settings and help: with focus in Ask Cmdr (the chat rail where the user chats with an AI about their files), opens a find bar that searches the open conversation. \"Ask Cmdr\" is the product name.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-21.png"
   },
   "commands.askCmdrFindNext.label": "Next match in chat",
   "@commands.askCmdrFindNext.label": {
     "description": "Command name, listed in the keyboard shortcuts settings and help: moves to the next match of the find bar in the Ask Cmdr chat rail.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-21.png"
   },
   "commands.askCmdrFindPrevious.label": "Previous match in chat",
   "@commands.askCmdrFindPrevious.label": {
     "description": "Command name, listed in the keyboard shortcuts settings and help: moves to the previous match of the find bar in the Ask Cmdr chat rail.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-21.png"
   },
   "commands.feedbackSend.label": "Send feedback",
   "@commands.feedbackSend.label": {
     "description": "Command name that opens a form to send feedback to the app's maker. Appears in the command palette and the Help menu.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-2.png"
   },
   "commands.feedbackSend.description": "Lets you tell the maker of Cmdr what you think: ideas, wishes, anything",
   "@commands.feedbackSend.description": {
@@ -187,12 +187,12 @@
   "commands.searchOpen.label": "Search files",
   "@commands.searchOpen.label": {
     "description": "Command name that opens the file search. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-3.png"
   },
   "commands.navGoToPath.label": "Go to folder…",
   "@commands.navGoToPath.label": {
     "description": "Command name that opens a dialog to jump to a typed path. Matches Finder's Go > Go to Folder… on purpose; word it exactly like the menu item menu.go.goToPath, in your language's standard phrasing for that item. The trailing ellipsis (…) signals it opens a dialog; keep it.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-3.png"
   },
   "commands.navGoToPath.description": "Jumps the focused pane to a typed, pasted, or recent path.",
   "@commands.navGoToPath.description": {
@@ -201,7 +201,7 @@
   "commands.favoritesAdd.label": "Add to favorites",
   "@commands.favoritesAdd.label": {
     "description": "Command name that adds the current folder to the Favorites list. Appears in the command palette. \"Favorites\" is the named list of bookmarked folders; match the heading the favorites menu uses (fileExplorer.navigation.groupFavorites).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-3.png"
   },
   "commands.favoritesAdd.description": "Adds the focused pane’s current folder to your favorites, so the favorites menu can take you back to it.",
   "@commands.favoritesAdd.description": {
@@ -210,7 +210,7 @@
   "commands.favoritesOpen.label": "Show favorites",
   "@commands.favoritesOpen.label": {
     "description": "Command name that opens the favorites menu over the focused pane. Appears in the command palette and in the Go menu. \"Favorites\" is the named list of bookmarked folders; match the heading the favorites menu uses (fileExplorer.navigation.groupFavorites).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-3.png"
   },
   "commands.favoritesOpen.description": "Opens the favorites menu on the focused pane, where a number key jumps to that favorite.",
   "@commands.favoritesOpen.description": {
@@ -219,12 +219,12 @@
   "commands.favoritesOpenByNumber.label": "Open the favorite with that number",
   "@commands.favoritesOpenByNumber.label": {
     "description": "Row in the Keyboard shortcuts list, describing what the number keys 1-9 do while the favorites menu is open: each one jumps straight to the favorite shown beside it. Read-only (the keys can't be rebound), so this is a description of the behavior rather than a command name.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-16.png"
   },
   "commands.downloadsGoToLatest.label": "Go to latest download",
   "@commands.downloadsGoToLatest.label": {
     "description": "Command name that opens the Downloads folder with the newest file selected. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-3.png"
   },
   "commands.downloadsGoToLatest.description": "{platform, select, windows {Opens your Downloads folder and selects the most recent file.} other {Opens ~/Downloads and selects the most recent file.}}",
   "@commands.downloadsGoToLatest.description": {
@@ -233,12 +233,12 @@
   "commands.viewShowHidden.label": "Toggle hidden files",
   "@commands.viewShowHidden.label": {
     "description": "Command name that shows or hides hidden files (those normally not displayed, like dotfiles). Appears in the command palette and the View menu.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-3.png"
   },
   "commands.viewCalculateFolderSizes.label": "Calculate folder sizes",
   "@commands.viewCalculateFolderSizes.label": {
     "description": "Command name (Alt+Shift+Enter, like Total Commander) in the command palette and View menu: shows the total size of every folder in the focused file list.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-3.png"
   },
   "commands.viewCalculateFolderSizes.description": "Shows the size of every folder in this pane that doesn’t have one yet. Esc stops the calculation.",
   "@commands.viewCalculateFolderSizes.description": {
@@ -247,52 +247,52 @@
   "commands.viewBriefMode.label": "Switch to Brief view",
   "@commands.viewBriefMode.label": {
     "description": "Command name that switches the file list to Brief view (a compact, multi-column layout). \"Brief\" is the view's proper name; match the term used in the View menu.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-3.png"
   },
   "commands.viewFullMode.label": "Switch to Full view",
   "@commands.viewFullMode.label": {
     "description": "Command name that switches the file list to Full view (a detailed single-column layout with columns). \"Full\" is the view's proper name; match the term used in the View menu.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-3.png"
   },
   "commands.viewSetMode.label": "Set pane view mode",
   "@commands.viewSetMode.label": {
     "description": "Internal command name for setting a specific pane's view mode, shown only in the keyboard-shortcuts list (not the palette). \"Pane\" is one of the two side-by-side file lists.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-3.png"
   },
   "commands.viewZoomSet75.label": "Zoom to 75%",
   "@commands.viewZoomSet75.label": {
     "description": "Command name that sets the UI text size to 75%. Appears in the command palette. Keep \"75%\" as-is.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-4.png"
   },
   "commands.viewZoomSet100.label": "Zoom to 100%",
   "@commands.viewZoomSet100.label": {
     "description": "Command name that sets the UI text size to 100% (the default). Appears in the command palette. Keep \"100%\" as-is.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-4.png"
   },
   "commands.viewZoomSet125.label": "Zoom to 125%",
   "@commands.viewZoomSet125.label": {
     "description": "Command name that sets the UI text size to 125%. Appears in the command palette. Keep \"125%\" as-is.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-4.png"
   },
   "commands.viewZoomSet150.label": "Zoom to 150%",
   "@commands.viewZoomSet150.label": {
     "description": "Command name that sets the UI text size to 150%. Appears in the command palette. Keep \"150%\" as-is.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-4.png"
   },
   "commands.viewZoomIn.label": "Zoom in",
   "@commands.viewZoomIn.label": {
     "description": "Command name that increases the UI text size by one step. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-4.png"
   },
   "commands.viewZoomOut.label": "Zoom out",
   "@commands.viewZoomOut.label": {
     "description": "Command name that decreases the UI text size by one step. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-4.png"
   },
   "commands.viewToggleFullScreen.label": "{platform, select, macos {Toggle full screen} windows {Toggle full screen} other {Toggle full screen mode}}",
   "@commands.viewToggleFullScreen.label": {
     "description": "Command name that puts the main window into full screen (filling the whole display, no title bar or taskbar), or takes it back out. Appears in the command palette and the keyboard-shortcuts list. Each OS has its own branch, so use that OS's own term for full screen in your language: the macOS branch takes macOS's (its View menu's \"Enter Full Screen\"), the windows branch Windows' and the browsers' (Edge and Chrome: \"Full screen\", the same term as menu.view.fullScreen), and the other branch (Linux) the term the Linux desktops use (KDE's \"Full Screen Mode\", GNOME's \"Fullscreen\"), which in many languages matches Windows'. \"Toggle\" matches the other on/off commands such as commands.viewShowHidden.label.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-4.png"
   },
   "commands.viewToggleMenuBar.label": "Toggle menu bar",
   "@commands.viewToggleMenuBar.label": {
@@ -301,67 +301,67 @@
   "commands.sortByName.label": "Sort by name",
   "@commands.sortByName.label": {
     "description": "Command name that sorts the file list by filename. Appears in the command palette.",
-    "screenshot": "main-window.png"
+    "screenshot": "settings-keyboard-shortcuts-page-4.png"
   },
   "commands.sortByExtension.label": "Sort by extension",
   "@commands.sortByExtension.label": {
     "description": "Command name that sorts the file list by file extension (the part after the last dot, like .txt). Appears in the command palette.",
-    "screenshot": "main-window.png"
+    "screenshot": "settings-keyboard-shortcuts-page-4.png"
   },
   "commands.sortByModified.label": "Sort by date modified",
   "@commands.sortByModified.label": {
     "description": "Command name that sorts the file list by last-modified date. Appears in the command palette.",
-    "screenshot": "main-window.png"
+    "screenshot": "settings-keyboard-shortcuts-page-4.png"
   },
   "commands.sortBySize.label": "Sort by size",
   "@commands.sortBySize.label": {
     "description": "Command name that sorts the file list by file size. Appears in the command palette.",
-    "screenshot": "main-window.png"
+    "screenshot": "settings-keyboard-shortcuts-page-4.png"
   },
   "commands.sortByCreated.label": "Sort by date created",
   "@commands.sortByCreated.label": {
     "description": "Command name that sorts the file list by creation date. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-4.png"
   },
   "commands.sortByAdded.label": "Sort by date added",
   "@commands.sortByAdded.label": {
     "description": "Command name that sorts the file list by when each item was put in its folder (downloaded, copied, or moved there), the date Finder calls \"Date Added\". Appears in the command palette and the keyboard shortcuts settings. Keep it parallel with commands.sortByCreated.label.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-5.png"
   },
   "commands.sortAscending.label": "Sort ascending",
   "@commands.sortAscending.label": {
     "description": "Command name that sets the sort order to ascending (A to Z, smallest first). Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-5.png"
   },
   "commands.sortDescending.label": "Sort descending",
   "@commands.sortDescending.label": {
     "description": "Command name that sets the sort order to descending (Z to A, largest first). Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-5.png"
   },
   "commands.sortToggleOrder.label": "Toggle sort order",
   "@commands.sortToggleOrder.label": {
     "description": "Command name that flips between ascending and descending sort. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-5.png"
   },
   "commands.sortSet.label": "Set pane sort",
   "@commands.sortSet.label": {
     "description": "Internal command name for setting a specific pane's sort, shown only in the keyboard-shortcuts list (not the palette). \"Pane\" is one of the two side-by-side file lists.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-5.png"
   },
   "commands.paneSwitch.label": "Switch pane",
   "@commands.paneSwitch.label": {
     "description": "Command name that moves focus to the other pane. \"Pane\" is one of the two side-by-side file lists. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-5.png"
   },
   "commands.paneSwap.label": "Swap panes",
   "@commands.paneSwap.label": {
     "description": "Command name that swaps the contents of the left and right panes. \"Panes\" are the two side-by-side file lists. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-5.png"
   },
   "commands.paneClone.label": "Clone pane",
   "@commands.paneClone.label": {
     "description": "Command name that opens the focused pane's folder in the other pane too, so both panes show the same folder. \"Pane\" is one of the two side-by-side file lists. Appears in the command palette and the View menu. Total Commander calls this \"Target = Source\"; Finder has no equivalent. Not the Copy command (F5): nothing is copied, only the folder shown changes.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-5.png"
   },
   "commands.paneClone.description": "Opens this pane’s folder in the other pane too.",
   "@commands.paneClone.description": {
@@ -388,7 +388,7 @@
   "commands.editUndoTrash.label": "{platform, select, windows {Undo delete} other {Undo move to trash}}",
   "@commands.editUndoTrash.label": {
     "description": "Command name that puts back the files the user most recently moved to the trash in Cmdr, the same thing the Undo button on the \"Moved 3 files to trash\" notification does. Appears in the command palette, the keyboard shortcuts settings, and the Edit menu. In the macOS and Linux branch, \"Move to trash\" is the action's name, as in macOS's own \"Move to Trash\"; the Windows branch says Delete, the action's name in File Explorer. The screenshot shows the macOS wording.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-11.png"
   },
   "commands.editUndoTrash.one": "{platform, select, windows {Undo delete of “{name}”} other {Undo move to trash of “{name}”}}",
   "@commands.editUndoTrash.one": {
@@ -412,17 +412,17 @@
   "commands.paneLeftVolumeChooser.label": "Open left volume switcher",
   "@commands.paneLeftVolumeChooser.label": {
     "description": "Command name that opens the volume/location switcher for the LEFT pane. \"Volume\" is a disk or mounted location. Appears in the command palette. The key says “chooser” only because it mirrors a stored command id; the UI calls this the volume switcher.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-5.png"
   },
   "commands.paneRightVolumeChooser.label": "Open right volume switcher",
   "@commands.paneRightVolumeChooser.label": {
     "description": "Command name that opens the volume/location switcher for the RIGHT pane. \"Volume\" is a disk or mounted location. Appears in the command palette. The key says “chooser” only because it mirrors a stored command id; the UI calls this the volume switcher.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-6.png"
   },
   "commands.paneCopyPathLeftToRight.label": "Copy path from left to right pane",
   "@commands.paneCopyPathLeftToRight.label": {
     "description": "Command name that opens the left pane's location in the right pane. \"Path\" is the folder location; \"pane\" is one of the two file lists. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-6.png"
   },
   "commands.paneCopyPathLeftToRight.description": "Opens the left pane’s location on the right. When the left pane is focused and the cursor is on a folder, that folder opens on the right instead.",
   "@commands.paneCopyPathLeftToRight.description": {
@@ -431,7 +431,7 @@
   "commands.paneCopyPathRightToLeft.label": "Copy path from right to left pane",
   "@commands.paneCopyPathRightToLeft.label": {
     "description": "Command name that opens the right pane's location in the left pane. \"Path\" is the folder location; \"pane\" is one of the two file lists. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-6.png"
   },
   "commands.paneCopyPathRightToLeft.description": "Opens the right pane’s location on the left. When the right pane is focused and the cursor is on a folder, that folder opens on the left instead.",
   "@commands.paneCopyPathRightToLeft.description": {
@@ -440,187 +440,187 @@
   "commands.paneRefresh.label": "Refresh pane",
   "@commands.paneRefresh.label": {
     "description": "Command name for re-reading the focused pane, so the file list shows what is on disk right now. In the network browser it re-scans for hosts instead. Appears in the command palette and the keyboard-shortcuts list. \"Pane\" is one of the two side-by-side file lists.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-6.png"
   },
   "commands.paneMoveDividerLeft.label": "Move pane divider left",
   "@commands.paneMoveDividerLeft.label": {
     "description": "Command name that moves the vertical line between the two side-by-side file lists (\"panes\") to the left, so the left pane gets narrower and the right one wider. Appears in the command palette and the keyboard-shortcuts list. \"Divider\" is that line, the same one the user can drag with the mouse.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-6.png"
   },
   "commands.paneMoveDividerRight.label": "Move pane divider right",
   "@commands.paneMoveDividerRight.label": {
     "description": "Command name that moves the vertical line between the two side-by-side file lists (\"panes\") to the right, so the left pane gets wider and the right one narrower. Appears in the command palette and the keyboard-shortcuts list. \"Divider\" is that line, the same one the user can drag with the mouse.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-6.png"
   },
   "commands.paneResetDivider.label": "Reset pane divider",
   "@commands.paneResetDivider.label": {
     "description": "Command name that puts the vertical line between the two side-by-side file lists (\"panes\") back in the middle, so both panes are equally wide. Same as double-clicking the line. Appears in the command palette and the keyboard-shortcuts list. \"Reset\" is a verb here: put back to the even split.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-6.png"
   },
   "commands.tabNew.label": "New tab",
   "@commands.tabNew.label": {
     "description": "Command name that opens a new tab in the focused pane. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-6.png"
   },
   "commands.tabClose.label": "Close tab",
   "@commands.tabClose.label": {
     "description": "Command name that closes the current tab. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-6.png"
   },
   "commands.tabReopen.label": "Reopen closed tab",
   "@commands.tabReopen.label": {
     "description": "Command name that reopens the most recently closed tab. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-6.png"
   },
   "commands.tabNext.label": "Next tab",
   "@commands.tabNext.label": {
     "description": "Command name that moves to the next tab. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-6.png"
   },
   "commands.tabPrev.label": "Previous tab",
   "@commands.tabPrev.label": {
     "description": "Command name that moves to the previous tab. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-6.png"
   },
   "commands.tabTogglePin.label": "Toggle pin tab",
   "@commands.tabTogglePin.label": {
     "description": "Command name that pins or unpins the current tab (a pinned tab stays open). Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-7.png"
   },
   "commands.tabCloseOthers.label": "Close other tabs",
   "@commands.tabCloseOthers.label": {
     "description": "Command name that closes every tab except the current one. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-7.png"
   },
   "commands.tabMoveLeft.label": "Move tab left",
   "@commands.tabMoveLeft.label": {
     "description": "Command name that moves the current tab one place to the left in its pane's tab bar. The keyboard alternative to dragging a tab. Appears in the command palette and the keyboard shortcuts list.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-7.png"
   },
   "commands.tabMoveRight.label": "Move tab right",
   "@commands.tabMoveRight.label": {
     "description": "Command name that moves the current tab one place to the right in its pane's tab bar. The keyboard alternative to dragging a tab. Appears in the command palette and the keyboard shortcuts list.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-7.png"
   },
   "commands.tabMoveToOtherPane.label": "Move tab to other pane",
   "@commands.tabMoveToOtherPane.label": {
     "description": "Command name that moves the current tab out of its pane and onto the end of the other pane's tab bar (Cmdr shows two side-by-side panes, each with its own tabs). The keyboard alternative to dragging a tab across. Appears in the command palette and the keyboard shortcuts list.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-7.png"
   },
   "commands.tabMcpAction.label": "Pane tab action",
   "@commands.tabMcpAction.label": {
     "description": "Internal command name for a tab action driven by the automation interface, shown only in the keyboard-shortcuts list (not the palette). \"Pane\" is one of the two side-by-side file lists.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-8.png"
   },
   "commands.navUp.label": "Move cursor to previous item",
   "@commands.navUp.label": {
     "description": "Command name for moving the cursor up one row in the file list. Shown only in the keyboard-shortcuts list (not the palette).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-9.png"
   },
   "commands.navDown.label": "Move cursor to next item",
   "@commands.navDown.label": {
     "description": "Command name for moving the cursor down one row in the file list. Shown only in the keyboard-shortcuts list (not the palette).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-9.png"
   },
   "commands.navOpen.label": "Open file or folder",
   "@commands.navOpen.label": {
     "description": "Command name that opens the file or folder under the cursor. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-9.png"
   },
   "commands.navParent.label": "Go to parent folder",
   "@commands.navParent.label": {
     "description": "Command name that navigates up to the parent folder. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-9.png"
   },
   "commands.navHome.label": "Go to first file",
   "@commands.navHome.label": {
     "description": "Command name that moves the cursor to the first item in the file list. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-9.png"
   },
   "commands.navEnd.label": "Go to last file",
   "@commands.navEnd.label": {
     "description": "Command name that moves the cursor to the last item in the file list. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-9.png"
   },
   "commands.navPageUp.label": "Page up",
   "@commands.navPageUp.label": {
     "description": "Command name that scrolls the file list up by one page. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-9.png"
   },
   "commands.navPageDown.label": "Page down",
   "@commands.navPageDown.label": {
     "description": "Command name that scrolls the file list down by one page. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-9.png"
   },
   "commands.navBack.label": "Go back",
   "@commands.navBack.label": {
     "description": "Command name that navigates back to the previous location in history. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-9.png"
   },
   "commands.navForward.label": "Go forward",
   "@commands.navForward.label": {
     "description": "Command name that navigates forward in history. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-9.png"
   },
   "commands.navGoToRoot.label": "Go to root folder",
   "@commands.navGoToRoot.label": {
     "description": "Command name that opens the topmost folder of what the active pane shows: \"/\" on the Mac's main disk, the top of a USB drive, server, or phone, or the top of an archive when the pane is inside one (⌘/). \"Root\" is the top of a folder tree, nothing to do with plants or admin rights. Use this language's ruling for the \"root folder\" term, as in the Go menu's \"Root folder\" item.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-9.png"
   },
   "commands.navGoHome.label": "{platform, select, windows {Go to user folder} other {Go to home folder}}",
   "@commands.navGoHome.label": {
     "description": "Command name that opens the home folder in the active pane. Appears in the command palette, the Go menu, and on the button that gets users out of an error screen. \"Home folder\" means the per-user folder the operating system gives each account (~), not a website home page; the Windows branch calls it the user folder, the name Windows gives it. Distinct from \"Go to first file\", which only moves the cursor within the current folder. The screenshot shows the macOS wording.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-10.png"
   },
   "commands.errorPaneToggleTechnicalDetails.label": "Show technical details",
   "@commands.errorPaneToggleTechnicalDetails.label": {
     "description": "Command name for opening and closing the \"Technical details\" section on the error screen shown in place of a file list when a folder cannot be opened. Shown only in the keyboard-shortcuts list (not the palette), where it is marked as a fixed shortcut that cannot be changed.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-17.png"
   },
   "commands.navOpenUnderCursor.label": "Open item under cursor",
   "@commands.navOpenUnderCursor.label": {
     "description": "Internal command name for opening the item under the cursor, driven by the automation interface; shown only in the keyboard-shortcuts list (not the palette).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-8.png"
   },
   "commands.cursorMoveTo.label": "Move pane cursor",
   "@commands.cursorMoveTo.label": {
     "description": "Internal command name for moving the cursor to a position, driven by the automation interface; shown only in the keyboard-shortcuts list (not the palette). \"Pane\" is one of the two file lists.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-8.png"
   },
   "commands.cursorScrollTo.label": "Scroll pane to index",
   "@commands.cursorScrollTo.label": {
     "description": "Internal command name for scrolling a pane to a given row, driven by the automation interface; shown only in the keyboard-shortcuts list (not the palette). \"Pane\" is one of the two file lists.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-8.png"
   },
   "commands.navLeft.label": "Move to left column",
   "@commands.navLeft.label": {
     "description": "Command name for moving the cursor to the column on the left in Brief view (the multi-column layout). Shown only in the keyboard-shortcuts list (not the palette).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-15.png"
   },
   "commands.navRight.label": "Move to right column",
   "@commands.navRight.label": {
     "description": "Command name for moving the cursor to the column on the right in Brief view (the multi-column layout). Shown only in the keyboard-shortcuts list (not the palette).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-15.png"
   },
   "commands.navFirstInFull.label": "Jump to first file",
   "@commands.navFirstInFull.label": {
     "description": "Command name for jumping to the first item in Full view (the detailed single-column layout). Shown only in the keyboard-shortcuts list (not the palette).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-15.png"
   },
   "commands.navLastInFull.label": "Jump to last file",
   "@commands.navLastInFull.label": {
     "description": "Command name for jumping to the last item in Full view (the detailed single-column layout). Shown only in the keyboard-shortcuts list (not the palette).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-15.png"
   },
   "commands.fileRename.label": "Rename",
   "@commands.fileRename.label": {
     "description": "Command name that renames the selected file or folder. Appears in the command palette. A terse control label.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-10.png"
   },
   "commands.paneQuickFilter.label": "Quick filter",
   "@commands.paneQuickFilter.label": {
     "description": "Command name (Ctrl+S, like Total Commander) in the command palette and the keyboard-shortcuts list: opens the small badge in the pane that holds the typed text which narrows the file list, or, pressed again, switches that badge between filtering and jumping. Use the noun your language uses for the feature (“Quick filter”); it needn't match the mode words fileExplorer.quickFilter.prefix (Filter) and fileExplorer.typeToJump.prefix (Jump), which may be verbs.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-10.png"
   },
   "commands.paneQuickFilter.description": "Opens the badge with what you’ve typed so far. Press again to switch between Filter and Jump",
   "@commands.paneQuickFilter.description": {
@@ -629,7 +629,7 @@
   "commands.fileMultiRename.label": "Multi-rename",
   "@commands.fileMultiRename.label": {
     "description": "Command name (Ctrl+M, like Total Commander) in the command palette and File menu: opens the tool that renames many files at once with a name mask.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-10.png"
   },
   "commands.fileMultiRename.description": "Renames the selected files (or the file under the cursor) with a name mask, counter, and search & replace",
   "@commands.fileMultiRename.description": {
@@ -638,322 +638,322 @@
   "commands.queueCursorUp.label": "Previous operation",
   "@commands.queueCursorUp.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It moves the row cursor to the operation above.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-22.png"
   },
   "commands.queueCursorDown.label": "Next operation",
   "@commands.queueCursorDown.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It moves the row cursor to the operation below.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-22.png"
   },
   "commands.queueCursorFirst.label": "First operation",
   "@commands.queueCursorFirst.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It moves the row cursor to the top row.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-22.png"
   },
   "commands.queueCursorLast.label": "Last operation",
   "@commands.queueCursorLast.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It moves the row cursor to the bottom row.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-22.png"
   },
   "commands.queueExtendUp.label": "Extend the selection up",
   "@commands.queueExtendUp.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It moves the row cursor up and adds the rows it passes to the selection that “Cancel selected” acts on, or takes them back out when moving back toward where the selection started.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-23.png"
   },
   "commands.queueExtendDown.label": "Extend the selection down",
   "@commands.queueExtendDown.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It moves the row cursor down and adds the rows it passes to the selection that “Cancel selected” acts on, or takes them back out when moving back toward where the selection started.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-23.png"
   },
   "commands.queueToggleSelected.label": "Add the operation to the selection, or remove it",
   "@commands.queueToggleSelected.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It checks or unchecks the row under the cursor for “Cancel selected”. An operation that couldn’t finish can’t be selected.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-23.png"
   },
   "commands.queueSelectAll.label": "Select every operation",
   "@commands.queueSelectAll.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It checks every row that can still be canceled, for “Cancel selected”.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-23.png"
   },
   "commands.queueShowInMainWindow.label": "Show the operation in the main window",
   "@commands.queueShowInMainWindow.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It brings the operation under the cursor back into the main window’s progress dialog, like the row’s Show button. Only running and paused operations can be shown.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-23.png"
   },
   "commands.queuePauseOrResume.label": "Pause or resume the operation",
   "@commands.queuePauseOrResume.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It does what the row’s own Pause or Resume button does to the operation under the cursor: pauses a running one in place, or resumes a paused one.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-23.png"
   },
   "commands.queueCancel.label": "Cancel the operation",
   "@commands.queueCancel.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It does what the row’s own Cancel button does to the operation under the cursor: stops it, keeping the files already copied, with no confirmation.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-23.png"
   },
   "commands.queueRollback.label": "Roll back the operation",
   "@commands.queueRollback.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It does what the row’s own Rollback button does to the operation under the cursor: asks for confirmation first, then stops the operation and undoes what it already did (deletes the copies, or moves the files back). Word it the way the Rollback button or its confirmation names the action.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-23.png"
   },
   "commands.queueCancelOrDismiss.label": "Cancel the operation, or dismiss one that couldn’t finish",
   "@commands.queueCancelOrDismiss.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It does what the row’s own button does: it cancels a running, paused, or waiting operation (files already copied are kept, and there’s no confirmation, same as the Cancel button), or removes a row for an operation that couldn’t finish, like Dismiss.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-23.png"
   },
   "commands.queueMoveEarlier.label": "Move the waiting operation up in line",
   "@commands.queueMoveEarlier.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It moves a waiting operation one place nearer the front of the line, so it starts sooner. Running and paused operations keep their place.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-23.png"
   },
   "commands.queueMoveLater.label": "Move the waiting operation down in line",
   "@commands.queueMoveLater.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It moves a waiting operation one place further back in the line, so it starts later. Running and paused operations keep their place.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-23.png"
   },
   "commands.queueNextControl.label": "Next button in the row",
   "@commands.queueNextControl.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It moves keyboard focus from the row to its buttons (Pause, Cancel, and so on), one at a time, left to right.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-24.png"
   },
   "commands.queuePreviousControl.label": "Previous button in the row",
   "@commands.queuePreviousControl.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It moves keyboard focus to the previous button in the row, and back to the row itself from the first one.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-24.png"
   },
   "commands.queueClose.label": "Close the operation queue",
   "@commands.queueClose.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the operation queue window (the separate window listing running, waiting, and stopped copies, moves, and deletes, one operation per row). Read-only (the key can’t be rebound). It closes the operation queue window. Operations keep running.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-24.png"
   },
   "commands.viewerToggleWordWrap.label": "Turn word wrap on or off",
   "@commands.viewerToggleWordWrap.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the file viewer window (the separate window that shows a file's contents). It switches between wrapping long lines to the window width and letting them run off to the right. The user can rebind or remove this key.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-24.png"
   },
   "commands.viewerToggleTail.label": "Turn tail mode on or off",
   "@commands.viewerToggleTail.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the file viewer window. Tail mode keeps the view at the end of the file and follows new lines as they're written, like a growing log. Use the same word for \"tail\" as the viewer toolbar's Tail button (viewer.toolbar.tail.label). The user can rebind or remove this key.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-24.png"
   },
   "commands.viewerViewAsMedia.label": "View as image or PDF",
   "@commands.viewerViewAsMedia.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the file viewer window. For an image or PDF file, it shows the rendered picture or document instead of its raw bytes; on an image that's already showing, it fits the image back to the window. \"PDF\" is a format name; don't translate it.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-24.png"
   },
   "commands.viewerViewAsText.label": "View as text",
   "@commands.viewerViewAsText.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the file viewer window. It shows the file decoded as text. Same wording as the viewer's view-mode menu (viewer.toolbar.viewMode.viewAsText).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-24.png"
   },
   "commands.viewerViewAsBinary.label": "View as binary",
   "@commands.viewerViewAsBinary.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the file viewer window. It shows the file's original bytes as fixed-width character rows, without treating line breaks as breaks. \"Binary\" matches the view-mode menu's Binary option (viewer.toolbar.viewMode.binary).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-24.png"
   },
   "commands.viewerViewAsHex.label": "View as hex",
   "@commands.viewerViewAsHex.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the file viewer window. It shows the file's bytes as hexadecimal pairs beside their characters. \"Hex\" matches the view-mode menu's Hex option (viewer.toolbar.viewMode.hex).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-25.png"
   },
   "commands.viewerZoomIn.label": "Zoom in on the image",
   "@commands.viewerZoomIn.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the file viewer window while it shows an image. It enlarges the image a step.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-25.png"
   },
   "commands.viewerZoomOut.label": "Zoom out of the image",
   "@commands.viewerZoomOut.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the file viewer window while it shows an image. It shrinks the image a step.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-25.png"
   },
   "commands.viewerToggleImageZoom.label": "Switch the image between fit and actual size",
   "@commands.viewerToggleImageZoom.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the file viewer window while it shows an image. It flips between fitting the whole image in the window and showing it at 100% (one image pixel per screen pixel), the same as clicking the image.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-25.png"
   },
   "commands.viewerGoBack.label": "Go back to the previous document",
   "@commands.viewerGoBack.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the file viewer window. After the user follows a link in a formatted Markdown document to another file, which opens in the same window, this returns to the document they came from, like a web browser's Back button. The user can rebind or remove this key.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-25.png"
   },
   "commands.viewerGoForward.label": "Go forward to the next document",
   "@commands.viewerGoForward.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the file viewer window. After going back from a document reached by a link (commands.viewerGoBack.label), this returns to it again, like a web browser's Forward button. The user can rebind or remove this key.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-25.png"
   },
   "commands.viewerSearch.label": "Search in the file",
   "@commands.viewerSearch.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does in the file viewer window. It opens the viewer's find bar, which searches the text of the open file. Read-only (the key can’t be rebound).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-25.png"
   },
   "commands.viewerToggleSearchRegex.label": "Turn regex search on or off",
   "@commands.viewerToggleSearchRegex.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the file viewer's find bar is open. It switches the search between plain text and a regular expression (a text pattern). Read-only (the key can’t be rebound). \"Regex\" is the usual short word for regular expression.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-25.png"
   },
   "commands.viewerToggleSearchCase.label": "Turn case-sensitive search on or off",
   "@commands.viewerToggleSearchCase.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the file viewer's find bar is open. It switches whether the search tells capital and small letters apart. Read-only (the key can’t be rebound).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-25.png"
   },
   "commands.searchNewQuery.label": "Start a new search",
   "@commands.searchNewQuery.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Search or Select files dialog is open. It clears the query, the filters, and the results, so the user can start over. Read-only (the key can’t be rebound).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-21.png"
   },
   "commands.searchToggleRecent.label": "Show or hide recent searches",
   "@commands.searchToggleRecent.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Search or Select files dialog is open. It opens or closes the dropdown of recently run queries. Read-only (the key can’t be rebound).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-21.png"
   },
   "commands.searchModeByNumber.label": "Switch to the search mode with that number",
   "@commands.searchModeByNumber.label": {
     "description": "Row in the Keyboard shortcuts list, describing what the number keys do while the Search or Select files dialog is open: each one switches to the search mode in that position (AI, Filename, Regex) and puts the cursor back in the query field. Read-only (the keys can't be rebound), so this is a description of the behavior rather than a command name. It sits in a one-line row beside command names: keep it a short verb phrase, at most about 50 characters, with no final period.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-21.png"
   },
   "commands.multiRenameOpenPresets.label": "Open the presets menu",
   "@commands.multiRenameOpenPresets.label": {
     "description": "Row in the Keyboard shortcuts list: what F2 does while the Multi-rename tool is open. It opens the menu of saved rename settings (presets), as in Total Commander. Read-only (the key can't be rebound).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-18.png"
   },
   "commands.multiRenameSavePreset.label": "Save the current settings as a preset",
   "@commands.multiRenameSavePreset.label": {
     "description": "Row in the Keyboard shortcuts list: what Cmd+S does while the Multi-rename tool is open. It asks for a name and saves the tool's current fields as a preset to load later. Read-only (the key can't be rebound).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-18.png"
   },
   "commands.multiRenameLetterCase.label": "Open the letter case menu",
   "@commands.multiRenameLetterCase.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Multi-rename tool (renames many files at once) is open. Read-only (the key can’t be rebound). It opens the menu that changes the new names to lowercase, UPPERCASE, and so on.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-18.png"
   },
   "commands.multiRenameRemoveDiacritics.label": "Turn Remove diacritics on or off",
   "@commands.multiRenameRemoveDiacritics.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Multi-rename tool (renames many files at once) is open. Read-only (the key can’t be rebound). It switches on or off the option that turns accented letters into plain ones (á becomes a). Use the same words as that option’s checkbox, \"Remove diacritics\".",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-18.png"
   },
   "commands.multiRenameGreekToLatin.label": "Turn Greek to Latin on or off",
   "@commands.multiRenameGreekToLatin.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Multi-rename tool (renames many files at once) is open. Read-only (the key can’t be rebound). It switches on or off the option that writes Greek letters in Latin ones (Αθήνα becomes Athina). Use the same words as that option’s checkbox, \"Greek to Latin\".",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-18.png"
   },
   "commands.multiRenameNormalizeUnicode.label": "Turn Normalize Unicode on or off",
   "@commands.multiRenameNormalizeUnicode.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Multi-rename tool (renames many files at once) is open. Read-only (the key can’t be rebound). It switches on or off the option that stores accented letters in the single-character form Windows, Linux, and websites expect. Use the same words as that option’s checkbox, \"Normalize Unicode\".",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-18.png"
   },
   "commands.multiRenameMatchCase.label": "Turn Match case on or off",
   "@commands.multiRenameMatchCase.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Multi-rename tool (renames many files at once) is open. Read-only (the key can’t be rebound). It switches on or off the search & replace option that only matches the same uppercase and lowercase letters. Use the same words as that option’s checkbox, \"Match case\".",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-18.png"
   },
   "commands.multiRenameFirstMatchOnly.label": "Turn First match only on or off",
   "@commands.multiRenameFirstMatchOnly.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Multi-rename tool (renames many files at once) is open. Read-only (the key can’t be rebound). It switches on or off the search & replace option that replaces only the first match in each name. Use the same words as that option’s checkbox, \"First match only\".",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-18.png"
   },
   "commands.multiRenameIncludeExtension.label": "Turn Include extension on or off",
   "@commands.multiRenameIncludeExtension.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Multi-rename tool (renames many files at once) is open. Read-only (the key can’t be rebound). It switches on or off the search & replace option that also searches the file extension. Use the same words as that option’s checkbox, \"Include extension\".",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-18.png"
   },
   "commands.multiRenameRegex.label": "Turn Regular expression on or off",
   "@commands.multiRenameRegex.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Multi-rename tool (renames many files at once) is open. Read-only (the key can’t be rebound). It switches on or off the search & replace option that reads the search as a regular expression. Use the same words as that option’s checkbox, \"Regular expression\".",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-19.png"
   },
   "commands.multiRenameReplaceWholeName.label": "Turn Replace whole name on or off",
   "@commands.multiRenameReplaceWholeName.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Multi-rename tool (renames many files at once) is open. Read-only (the key can’t be rebound). It switches on or off the search & replace option where a match replaces the whole name. Use the same words as that option’s checkbox, \"Replace whole name\".",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-19.png"
   },
   "commands.multiRenameInsertField.label": "Insert a photo, video, or music field",
   "@commands.multiRenameInsertField.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Multi-rename tool (renames many files at once) is open. Read-only (the key can’t be rebound). It opens the field picker, a list of information stored inside photo, video, and music files (date taken, camera, artist, title, …) to put into the new name.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-19.png"
   },
   "commands.multiRenameUndoRename.label": "Undo the last multi-rename",
   "@commands.multiRenameUndoRename.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Multi-rename tool (renames many files at once) is open. Read-only (the key can’t be rebound). It renames every file of the last multi-rename back to its old name, in one go.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-19.png"
   },
   "commands.multiRenameResults.label": "Edit the new names in your text editor",
   "@commands.multiRenameResults.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Multi-rename tool (renames many files at once) is open. Read-only (the key can’t be rebound). It opens the list of new names in the user's text editor, where they can change any of them by hand.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-19.png"
   },
   "commands.multiRenameFieldHistory.label": "Show the field’s earlier values",
   "@commands.multiRenameFieldHistory.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Multi-rename tool (renames many files at once) is open. Read-only (the key can’t be rebound). In one of the tool's text fields, it lists what that field held in earlier renames, to pick one.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-19.png"
   },
   "commands.multiRenameMoveRowUp.label": "Move the file up in the rename order",
   "@commands.multiRenameMoveRowUp.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Multi-rename tool (renames many files at once) is open. Read-only (the key can’t be rebound). In the tool's preview list, it moves the file under the cursor one place earlier in the order the files are renamed in, which is the order the counter numbers them.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-19.png"
   },
   "commands.multiRenameMoveRowDown.label": "Move the file down in the rename order",
   "@commands.multiRenameMoveRowDown.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Multi-rename tool (renames many files at once) is open. Read-only (the key can’t be rebound). In the tool's preview list, it moves the file under the cursor one place later in the order the files are renamed in, which is the order the counter numbers them.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-19.png"
   },
   "commands.multiRenameRename.label": "Rename the files",
   "@commands.multiRenameRename.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Multi-rename tool (renames many files at once) is open. Read-only (the key can’t be rebound). It renames every file the preview shows as ready, as the tool’s main Rename button does.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-19.png"
   },
   "commands.operationLogGoToItems.label": "Go to the operation’s items",
   "@commands.operationLogGoToItems.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Operation log dialog (View > Operation log: the list of recent file operations, each with the items it touched, which can be rolled back) is open. Read-only (the key can’t be rebound). In the list of operations on the left, it moves the keyboard focus to the item tree on the right, which shows the files and folders of the operation picked in the list.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-20.png"
   },
   "commands.operationLogToggleItem.label": "Select or deselect the item",
   "@commands.operationLogToggleItem.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Operation log dialog (View > Operation log: the list of recent file operations, each with the items it touched, which can be rolled back) is open. Read-only (the key can’t be rebound). In the item tree, it selects or deselects the item under the cursor (its checkbox), which decides whether rolling back includes it. On a folder, everything inside follows.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-20.png"
   },
   "commands.operationLogToggleItemAndDown.label": "Select or deselect the item, then move down",
   "@commands.operationLogToggleItemAndDown.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Operation log dialog (View > Operation log: the list of recent file operations, each with the items it touched, which can be rolled back) is open. Read-only (the key can’t be rebound). In the item tree, it selects or deselects the item under the cursor (its checkbox), then moves the cursor to the next item, as the same key does in the file panes.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-20.png"
   },
   "commands.operationLogSelectAll.label": "Select every item",
   "@commands.operationLogSelectAll.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Operation log dialog (View > Operation log: the list of recent file operations, each with the items it touched, which can be rolled back) is open. Read-only (the key can’t be rebound). In the item tree, it selects (checks the box of) every item that can still be rolled back, so rolling back takes the whole operation.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-20.png"
   },
   "commands.operationLogDeselectAll.label": "Deselect every item",
   "@commands.operationLogDeselectAll.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Operation log dialog (View > Operation log: the list of recent file operations, each with the items it touched, which can be rolled back) is open. Read-only (the key can’t be rebound). In the item tree, it deselects (unchecks the box of) every item, so the person can select only the few they want to roll back.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-20.png"
   },
   "commands.operationLogRollBack.label": "Roll back the selected items",
   "@commands.operationLogRollBack.label": {
     "description": "Row in the Keyboard shortcuts list: what the key does while the Operation log dialog (View > Operation log: the list of recent file operations, each with the items it touched, which can be rolled back) is open. Read-only (the key can’t be rebound). It does what the dialog’s main button does: asks to roll back the selected (checked) items of the picked operation. Nothing is rolled back until the person confirms.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-20.png"
   },
   "commands.fileView.label": "View",
   "@commands.fileView.label": {
     "description": "Command name that opens the built-in viewer for the selected file. Appears in the command palette. A terse control label.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-2.png"
   },
   "commands.fileEdit.label": "Edit in default editor",
   "@commands.fileEdit.label": {
     "description": "Command name that opens the selected file in the user's default editor app. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-10.png"
   },
   "commands.fileCopy.label": "Copy",
   "@commands.fileCopy.label": {
     "description": "Command name for the F5 copy-to-other-pane operation. Appears in the command palette. A terse control label. Distinct from \"Copy to clipboard\".",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-6.png"
   },
   "commands.fileMove.label": "Move",
   "@commands.fileMove.label": {
     "description": "Command name for the F6 move-to-other-pane operation. Appears in the command palette. A terse control label. Distinct from \"Cut to clipboard\".",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-5.png"
   },
   "commands.fileDuplicate.label": "Duplicate",
   "@commands.fileDuplicate.label": {
     "description": "Command name for the Duplicate operation, which copies each selected file or folder into the folder it already lives in. Appears in the command palette, the right-click menu, and the File menu. A terse control label.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-10.png"
   },
   "commands.fileDuplicate.description": "Makes a copy of the selected files in the same folder",
   "@commands.fileDuplicate.description": {
@@ -962,12 +962,12 @@
   "commands.fileCompress.label": "Compress",
   "@commands.fileCompress.label": {
     "description": "Command name for the ⌥F5 compress operation that packs the cursor item or selection into a new zip archive in the other pane. Appears in the command palette. A terse control label.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-10.png"
   },
   "commands.editCopy.label": "Copy to clipboard",
   "@commands.editCopy.label": {
     "description": "Command name that copies the selected files to the system clipboard (for pasting). Appears in the command palette. Distinct from the F5 \"Copy\" operation.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-10.png"
   },
   "commands.editCopy.description": "Copies selected files to the clipboard for pasting",
   "@commands.editCopy.description": {
@@ -976,7 +976,7 @@
   "commands.editCut.label": "Cut to clipboard",
   "@commands.editCut.label": {
     "description": "Command name that cuts the selected files to the system clipboard (pasting will move them). Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-10.png"
   },
   "commands.editCut.description": "Cuts selected files (pasting moves them)",
   "@commands.editCut.description": {
@@ -985,7 +985,7 @@
   "commands.editPaste.label": "Paste",
   "@commands.editPaste.label": {
     "description": "Command name that pastes clipboard files into the current folder. Appears in the command palette. A terse control label.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-11.png"
   },
   "commands.editPaste.description": "Pastes files from the clipboard into the current folder",
   "@commands.editPaste.description": {
@@ -994,7 +994,7 @@
   "commands.editPasteAsMove.label": "Move here",
   "@commands.editPasteAsMove.label": {
     "description": "Command name that pastes clipboard files as a move (rather than a copy). Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-11.png"
   },
   "commands.editPasteAsMove.description": "Pastes files from the clipboard as a move",
   "@commands.editPasteAsMove.description": {
@@ -1003,27 +1003,27 @@
   "commands.fileNewFolder.label": "New folder",
   "@commands.fileNewFolder.label": {
     "description": "Command name that creates a new folder. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-11.png"
   },
   "commands.fileNewFile.label": "Create new file",
   "@commands.fileNewFile.label": {
     "description": "Command name that creates a new empty file. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-11.png"
   },
   "commands.fileDelete.label": "Delete",
   "@commands.fileDelete.label": {
     "description": "Command name that deletes the selected files (to the system trash). Appears in the command palette. A terse control label.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-11.png"
   },
   "commands.fileDeletePermanently.label": "Delete permanently",
   "@commands.fileDeletePermanently.label": {
     "description": "Command name that deletes the selected files permanently, bypassing the trash. Appears in the command palette. The word \"permanently\" carries the warning that this can't be undone.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-11.png"
   },
   "commands.fileGoToTrash.label": "{platform, select, windows {Go to Recycle Bin} other {Go to trash}}",
   "@commands.fileGoToTrash.label": {
     "description": "Command name that opens the trash, so the user can look at what they have thrown away: the trash folder in the file pane on macOS and Linux, the Recycle Bin in File Explorer on Windows. Appears in the command palette. Each branch names its own OS's trash: the Trash on macOS and Linux, the Recycle Bin on Windows (in the name Windows gives it in your language). VERB phrase. The screenshot shows the macOS wording.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-11.png"
   },
   "commands.fileGoToTrash.description": "{platform, select, windows {Opens the Recycle Bin in File Explorer} other {Opens the trash of the drive you’re browsing}}",
   "@commands.fileGoToTrash.description": {
@@ -1032,17 +1032,17 @@
   "commands.dialogConfirm.label": "Confirm the dialog on screen",
   "@commands.dialogConfirm.label": {
     "description": "Internal command name: presses the confirm button of whichever dialog is currently showing (for example the copy or delete dialog). Driven by the automation interface; shown only in the keyboard-shortcuts list (not the palette). \"Dialog\" means a dialog window that is visible right now, NOT a file-open dialog or the Open command.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-8.png"
   },
   "commands.fileShowInFileManager.label": "{platform, select, macos {Show in Finder} windows {Show in File Explorer} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Show in file manager}}",
   "@commands.fileShowInFileManager.label": {
     "description": "Command name that reveals the selected file in the OS's file manager. Each branch names its own: \"Finder\" is the macOS app name and stays verbatim in the macOS branch; the Windows branch names File Explorer, in the name Microsoft gives it in your language; the Linux branch says file manager, generically. Appears in the command palette. The screenshot shows the macOS wording. The `linuxGnome` branch names GNOME’s file manager, Files, and the `linuxKde` branch KDE’s, Dolphin: use the names those desktops give them in your language (GNOME translates “Files”, KDE keeps “Dolphin”).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-11.png"
   },
   "commands.fileOpenTerminalHere.label": "Open terminal here",
   "@commands.fileOpenTerminalHere.label": {
     "description": "Command name in the command palette and the keyboard-shortcuts list. Launches the user's terminal app already sitting in the folder the pane shows, or the folder under the cursor. \"here\" means that folder. Same words as the File menu item (menu.file.openTerminalHere) and the settings row that picks the app (settings.behavior.openTerminalHereApp.label), so keep all three identical. \"terminal\" is the generic kind of app, not Apple's Terminal.app.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-11.png"
   },
   "commands.fileOpenTerminalHere.description": "Opens your terminal app in the folder you’re looking at",
   "@commands.fileOpenTerminalHere.description": {
@@ -1053,27 +1053,27 @@
   "commands.fileCopyPath.label": "Copy path to clipboard",
   "@commands.fileCopyPath.label": {
     "description": "Command name that copies the selected file's full path to the clipboard. \"Path\" is the file's filesystem location. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-11.png"
   },
   "commands.fileCopyCurrentDirectoryPath.label": "Copy current folder path",
   "@commands.fileCopyCurrentDirectoryPath.label": {
     "description": "Command name that copies the current folder's full path to the clipboard. \"Folder\" and \"path\" are filesystem terms. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-12.png"
   },
   "commands.fileCopyFilename.label": "Copy filename",
   "@commands.fileCopyFilename.label": {
     "description": "Command name that copies the selected file's name (without the folder path) to the clipboard. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-12.png"
   },
   "commands.fileGetInfo.label": "{platform, select, macos {Get info} windows {Properties} other {File properties}}",
   "@commands.fileGetInfo.label": {
     "description": "Command name (macOS) that opens the file's info panel. The macOS branch \"Get info\" matches the macOS Finder term; reuse the localized macOS wording for that menu item. The Windows branch names Windows' own Properties dialog, and the Linux branch the file's properties, generically. Appears in the command palette. The screenshot shows the macOS wording.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-12.png"
   },
   "commands.fileTellMeAbout.label": "Tell me about this",
   "@commands.fileTellMeAbout.label": {
     "description": "Command name that opens Cmdr's own card about the file or folder under the cursor: where it came from, what it really is, what it belongs to, how it's used, and what removing it would mean. A friendly, conversational request, as if asking a person. Appears in the command palette, the File menu, and the right-click menu, right below Get info.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-12.png"
   },
   "commands.fileTellMeAbout.description": "Shows where the item came from, what it is, and what removing it would mean",
   "@commands.fileTellMeAbout.description": {
@@ -1082,17 +1082,17 @@
   "commands.aboutThisStopVerdict.label": "Stop the AI take",
   "@commands.aboutThisStopVerdict.label": {
     "description": "Name of the key that stops the AI take on the \"Tell me about this\" card while the AI is still writing it (the same as the card's Stop button). The \"AI take\" is the two or three sentences an AI writes about the file or folder beside Cmdr's own facts. Shown in the Keyboard shortcuts list. An imperative, like the other command names.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-20.png"
   },
   "commands.fileQuickLook.label": "{platform, select, macos {Quick look} other {Preview}}",
   "@commands.fileQuickLook.label": {
     "description": "Command name (macOS) that previews the selected file with Quick Look. In the macOS branch, \"Quick Look\" is the macOS feature name; reuse the localized macOS wording. The other branch (Windows and Linux) is a generic preview. Appears in the command palette. The screenshot shows the macOS wording.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-12.png"
   },
   "commands.fileContextMenu.label": "Open context menu",
   "@commands.fileContextMenu.label": {
     "description": "Command name that opens the right-click context menu for the file under the cursor. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-12.png"
   },
   "commands.fileContextMenu.description": "Opens the context menu for the file under the cursor",
   "@commands.fileContextMenu.description": {
@@ -1101,7 +1101,7 @@
   "commands.cloudMakeOffline.label": "Make available offline",
   "@commands.cloudMakeOffline.label": {
     "description": "Command name that downloads a cloud-stored file so it stays available without internet. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-12.png"
   },
   "commands.cloudMakeOffline.description": "Downloads a cloud-stored file so it stays available without an internet connection",
   "@commands.cloudMakeOffline.description": {
@@ -1110,7 +1110,7 @@
   "commands.cloudRemoveDownload.label": "Remove download",
   "@commands.cloudRemoveDownload.label": {
     "description": "Command name that removes the local copy of a cloud file, leaving it online-only. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-12.png"
   },
   "commands.cloudRemoveDownload.description": "Removes the local copy of a cloud file, leaving it available online only",
   "@commands.cloudRemoveDownload.description": {
@@ -1119,7 +1119,7 @@
   "commands.cloudOpenInGoogleDrive.label": "Open in Google Drive",
   "@commands.cloudOpenInGoogleDrive.label": {
     "description": "Command name that opens the selected Google Drive file or folder on the Google Drive website in the default browser. \"Google Drive\" is a product name and stays in English. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-12.png"
   },
   "commands.cloudOpenInGoogleDrive.description": "Opens the selected item on the Google Drive website, where sharing lives",
   "@commands.cloudOpenInGoogleDrive.description": {
@@ -1128,7 +1128,7 @@
   "commands.cloudCopyGoogleDriveLink.label": "Copy Google Drive link",
   "@commands.cloudCopyGoogleDriveLink.label": {
     "description": "Command name that copies the web address of the selected Google Drive item to the clipboard. It copies a link, not the file. \"Google Drive\" is a product name and stays in English. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-13.png"
   },
   "commands.cloudCopyGoogleDriveLink.description": "Copies the web address of the selected item, ready to paste into a message",
   "@commands.cloudCopyGoogleDriveLink.description": {
@@ -1137,7 +1137,7 @@
   "commands.cloudAskGemini.label": "Ask Gemini",
   "@commands.cloudAskGemini.label": {
     "description": "Command name that opens Google Drive's Gemini AI assistant in the browser with the selected Drive file as its subject, so the user can ask questions about it. \"Gemini\" is a product name and stays in English; only the verb around it moves. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-13.png"
   },
   "commands.cloudAskGemini.description": "Opens Google Drive’s Gemini assistant with the selected file as its subject",
   "@commands.cloudAskGemini.description": {
@@ -1146,7 +1146,7 @@
   "commands.resticForgetPassword.label": "Forget backup password",
   "@commands.resticForgetPassword.label": {
     "description": "Command name that removes a restic backup’s saved password from the system’s password store (the Keychain on macOS, Credential Manager on Windows, the keyring on Linux) and locks the backup again, so opening it asks for the password. Acts on the backup the user is browsing, or whose snapshots folder is under the cursor. \"backup\" = a restic backup repository, a folder of encrypted backups. VERB phrase, imperative. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-13.png"
   },
   "commands.resticForgetPassword.description": "{platform, select, macos {Removes the saved password of the restic backup you’re in from Keychain, and locks the backup again} windows {Removes the saved password of the restic backup you’re in from Credential Manager, and locks the backup again} linuxKde {Removes the saved password of the restic backup you’re in from KDE Wallet, and locks the backup again} other {Removes the saved password of the restic backup you’re in from your keyring, and locks the backup again}}",
   "@commands.resticForgetPassword.description": {
@@ -1155,7 +1155,7 @@
   "commands.fileCopyShareLink.label": "Copy share link (seven days)",
   "@commands.fileCopyShareLink.label": {
     "description": "Command name that copies a share link to the selected file in an S3 bucket (cloud storage), valid for seven days. A share link is a web address anyone can open to download that one file, without signing in, until it expires. It copies a link, not the file. Appears in the command palette, only while the focused pane is on a bucket.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-12.png"
   },
   "commands.fileCopyShareLink.description": "Copies a link anyone can open to download the file for seven days",
   "@commands.fileCopyShareLink.description": {
@@ -1164,7 +1164,7 @@
   "commands.fileCopyShareLinkOneDay.label": "Copy share link (one day)",
   "@commands.fileCopyShareLinkOneDay.label": {
     "description": "Command name that copies a share link to the selected file in an S3 bucket (cloud storage), valid for one day. A share link is a web address anyone can open to download that one file, without signing in, until it expires. It copies a link, not the file. Appears in the command palette, only while the focused pane is on a bucket.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-12.png"
   },
   "commands.fileCopyShareLinkOneDay.description": "Copies a link anyone can open to download the file for one day",
   "@commands.fileCopyShareLinkOneDay.description": {
@@ -1173,7 +1173,7 @@
   "commands.fileCopyShareLinkOneHour.label": "Copy share link (one hour)",
   "@commands.fileCopyShareLinkOneHour.label": {
     "description": "Command name that copies a share link to the selected file in an S3 bucket (cloud storage), valid for one hour. A share link is a web address anyone can open to download that one file, without signing in, until it expires. It copies a link, not the file. Appears in the command palette, only while the focused pane is on a bucket.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-12.png"
   },
   "commands.fileCopyShareLinkOneHour.description": "Copies a link anyone can open to download the file for one hour",
   "@commands.fileCopyShareLinkOneHour.description": {
@@ -1182,7 +1182,7 @@
   "commands.tagsToggleGrey.label": "Toggle gray tag",
   "@commands.tagsToggleGrey.label": {
     "description": "Command name that adds or removes the gray macOS Finder color tag on the selected files. \"Gray\" is the macOS system color-tag name; keep it matching what Finder calls this color in the user’s language. Appears in the command palette and the keyboard-shortcuts settings.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-13.png"
   },
   "commands.tagsToggleGrey.description": "Adds or removes the gray Finder tag on the selected files",
   "@commands.tagsToggleGrey.description": {
@@ -1191,7 +1191,7 @@
   "commands.tagsToggleGreen.label": "Toggle green tag",
   "@commands.tagsToggleGreen.label": {
     "description": "Command name that adds or removes the green macOS Finder color tag on the selected files. \"Green\" is the macOS system color-tag name; keep it matching what Finder calls this color in the user’s language. Appears in the command palette and the keyboard-shortcuts settings.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-13.png"
   },
   "commands.tagsToggleGreen.description": "Adds or removes the green Finder tag on the selected files",
   "@commands.tagsToggleGreen.description": {
@@ -1200,7 +1200,7 @@
   "commands.tagsTogglePurple.label": "Toggle purple tag",
   "@commands.tagsTogglePurple.label": {
     "description": "Command name that adds or removes the purple macOS Finder color tag on the selected files. \"Purple\" is the macOS system color-tag name; keep it matching what Finder calls this color in the user’s language. Appears in the command palette and the keyboard-shortcuts settings.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-13.png"
   },
   "commands.tagsTogglePurple.description": "Adds or removes the purple Finder tag on the selected files",
   "@commands.tagsTogglePurple.description": {
@@ -1209,7 +1209,7 @@
   "commands.tagsToggleBlue.label": "Toggle blue tag",
   "@commands.tagsToggleBlue.label": {
     "description": "Command name that adds or removes the blue macOS Finder color tag on the selected files. \"Blue\" is the macOS system color-tag name; keep it matching what Finder calls this color in the user’s language. Appears in the command palette and the keyboard-shortcuts settings.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-13.png"
   },
   "commands.tagsToggleBlue.description": "Adds or removes the blue Finder tag on the selected files",
   "@commands.tagsToggleBlue.description": {
@@ -1218,7 +1218,7 @@
   "commands.tagsToggleYellow.label": "Toggle yellow tag",
   "@commands.tagsToggleYellow.label": {
     "description": "Command name that adds or removes the yellow macOS Finder color tag on the selected files. \"Yellow\" is the macOS system color-tag name; keep it matching what Finder calls this color in the user’s language. Appears in the command palette and the keyboard-shortcuts settings.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-13.png"
   },
   "commands.tagsToggleYellow.description": "Adds or removes the yellow Finder tag on the selected files",
   "@commands.tagsToggleYellow.description": {
@@ -1227,7 +1227,7 @@
   "commands.tagsToggleRed.label": "Toggle red tag",
   "@commands.tagsToggleRed.label": {
     "description": "Command name that adds or removes the red macOS Finder color tag on the selected files. \"Red\" is the macOS system color-tag name; keep it matching what Finder calls this color in the user’s language. Appears in the command palette and the keyboard-shortcuts settings.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-13.png"
   },
   "commands.tagsToggleRed.description": "Adds or removes the red Finder tag on the selected files",
   "@commands.tagsToggleRed.description": {
@@ -1236,7 +1236,7 @@
   "commands.tagsToggleOrange.label": "Toggle orange tag",
   "@commands.tagsToggleOrange.label": {
     "description": "Command name that adds or removes the orange macOS Finder color tag on the selected files. \"Orange\" is the macOS system color-tag name; keep it matching what Finder calls this color in the user’s language. Appears in the command palette and the keyboard-shortcuts settings.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-13.png"
   },
   "commands.tagsToggleOrange.description": "Adds or removes the orange Finder tag on the selected files",
   "@commands.tagsToggleOrange.description": {
@@ -1245,12 +1245,12 @@
   "commands.selectionToggle.label": "Toggle selection",
   "@commands.selectionToggle.label": {
     "description": "Command name that selects or deselects the file under the cursor. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-13.png"
   },
   "commands.selectionToggleAndDown.label": "Toggle selection and move down",
   "@commands.selectionToggleAndDown.label": {
     "description": "Command name that selects/deselects the file under the cursor, then moves down one row. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-13.png"
   },
   "commands.selectionToggleAndDown.description": "Selects or deselects the file under the cursor, then moves down (Total Commander style)",
   "@commands.selectionToggleAndDown.description": {
@@ -1259,17 +1259,17 @@
   "commands.selectionSelectAll.label": "Select all",
   "@commands.selectionSelectAll.label": {
     "description": "Command name that selects every file in the list. Appears in the command palette. A terse control label.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-14.png"
   },
   "commands.selectionDeselectAll.label": "Deselect all",
   "@commands.selectionDeselectAll.label": {
     "description": "Command name that clears the selection. Appears in the command palette. A terse control label.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-14.png"
   },
   "commands.selectionInvert.label": "Invert selection",
   "@commands.selectionInvert.label": {
     "description": "Command name that flips the selection: every selected file becomes unselected and every unselected file becomes selected. Appears in the command palette, the Select menu, and the keyboard-shortcuts settings. A terse control label; Total Commander calls it \"Invert selection\".",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-14.png"
   },
   "commands.selectionInvert.description": "Selects every unselected file and deselects every selected one",
   "@commands.selectionInvert.description": {
@@ -1278,7 +1278,7 @@
   "commands.selectionSelectSameKind.label": "Select all of the same kind",
   "@commands.selectionSelectSameKind.label": {
     "description": "Command name that adds every entry of the same kind as the one under the cursor to the selection: every folder, every file with the same extension, or every file with no extension. This static name appears in the keyboard-shortcuts settings and the help window; the command palette shows one of the three live variants below instead.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-14.png"
   },
   "commands.selectionSelectSameKind.description": "Adds every entry like the one under the cursor to the selection, without clearing it",
   "@commands.selectionSelectSameKind.description": {
@@ -1287,7 +1287,7 @@
   "commands.selectionCompareDirectories.label": "Compare folders",
   "@commands.selectionCompareDirectories.label": {
     "description": "Command name in the command palette and Select menu. Compares the folders shown in the two side-by-side panes and selects the files that differ, like Total Commander's Compare directories (Shift+F2).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-14.png"
   },
   "commands.selectionCompareDirectories.description": "Selects, in each pane, the files the other pane lacks and the newer copies of the rest",
   "@commands.selectionCompareDirectories.description": {
@@ -1296,7 +1296,7 @@
   "commands.selectionCompareDirectoriesMissing.label": "Compare folders: missing files only",
   "@commands.selectionCompareDirectoriesMissing.label": {
     "description": "Command name in the command palette and Select menu. Compares the folders shown in the two side-by-side panes and selects the files that differ, like Total Commander's Compare directories (Shift+F2).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-14.png"
   },
   "commands.selectionCompareDirectoriesMissing.description": "Selects, in each pane, only the files the other pane lacks",
   "@commands.selectionCompareDirectoriesMissing.description": {
@@ -1305,7 +1305,7 @@
   "commands.selectionCompareDirectoriesSize.label": "Compare folders: different size",
   "@commands.selectionCompareDirectoriesSize.label": {
     "description": "Command name in the command palette and Select menu. Compares the folders shown in the two side-by-side panes and selects the files that differ, like Total Commander's Compare directories (Shift+F2).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-14.png"
   },
   "commands.selectionCompareDirectoriesSize.description": "Selects, in each pane, the files the other pane lacks and both copies of files whose size differs",
   "@commands.selectionCompareDirectoriesSize.description": {
@@ -1321,7 +1321,8 @@
     "placeholders": {
       "extension": "the extension with no leading dot, lowercased, e.g. \"pdf\" or \"gz\""
     },
-    "screenshot": "command-palette.png"
+    "screenshot": "command-palette.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "commands.selectionSelectSameKind.noExtension": "Select all files with no extension",
   "@commands.selectionSelectSameKind.noExtension": {
@@ -1330,7 +1331,7 @@
   "commands.selectionSelectFiles.label": "Select files…",
   "@commands.selectionSelectFiles.label": {
     "description": "Command name that opens a dialog to select files matching a pattern. The trailing ellipsis (…) signals it opens a dialog; keep it. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-8.png"
   },
   "commands.selectionSelectFiles.description": "Opens the Select files dialog to add matching files to the selection",
   "@commands.selectionSelectFiles.description": {
@@ -1339,7 +1340,7 @@
   "commands.selectionDeselectFiles.label": "Deselect files…",
   "@commands.selectionDeselectFiles.label": {
     "description": "Command name that opens a dialog to deselect files matching a pattern. The trailing ellipsis (…) signals it opens a dialog; keep it. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-14.png"
   },
   "commands.selectionDeselectFiles.description": "Opens the Deselect files dialog to remove matching files from the selection",
   "@commands.selectionDeselectFiles.description": {
@@ -1348,116 +1349,117 @@
   "commands.selectionMcpSelect.label": "Select range in pane",
   "@commands.selectionMcpSelect.label": {
     "description": "Internal command name for selecting a range of files, driven by the automation interface; shown only in the keyboard-shortcuts list (not the palette). \"Pane\" is one of the two file lists.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-8.png"
   },
   "commands.selectionMcpSelectByNames.label": "Select files by name in pane",
   "@commands.selectionMcpSelectByNames.label": {
     "description": "Internal command name for selecting files by name, driven by the automation interface; shown only in the keyboard-shortcuts list (not the palette). \"Pane\" is one of the two file lists.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-8.png"
   },
   "commands.networkSelectHost.label": "Select network host",
   "@commands.networkSelectHost.label": {
     "description": "Command name that opens the selected network host (server) in the network browser. \"Host\" is a server on the network. Shown only in the keyboard-shortcuts list (not the palette).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-17.png"
   },
   "commands.serversShow.label": "Show servers",
   "@commands.serversShow.label": {
     "description": "Command name that takes the focused pane to the servers hub, the list of every saved and nearby server. VERB phrase, imperative. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-7.png"
   },
   "commands.serversTogglePin.label": "Pin / unpin server",
   "@commands.serversTogglePin.label": {
     "description": "Command name that adds the server under the cursor to the volume switcher, or takes it out again. One command for both directions, so the slash stays. VERB phrase, imperative. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-7.png"
   },
   "commands.serversToggleShareParentRow.label": "Show or hide “..” in this share’s top folder",
   "@commands.serversToggleShareParentRow.label": {
-    "description": "Command name that turns the “..” row in the top folder of the network share the focused pane is on on or off; “..” there leads to the other shares on the same server. One command for both directions. VERB phrase, imperative. Keep “..” exactly as written. Appears in the command palette, only while the focused pane is on a network share."
+    "description": "Command name that turns the “..” row in the top folder of the network share the focused pane is on on or off; “..” there leads to the other shares on the same server. One command for both directions. VERB phrase, imperative. Keep “..” exactly as written. Appears in the command palette, only while the focused pane is on a network share.",
+    "screenshot": "settings-keyboard-shortcuts-page-7.png"
   },
   "commands.serversDisconnect.label": "Disconnect server",
   "@commands.serversDisconnect.label": {
     "description": "Command name that drops the connection to the server under the cursor, leaving it saved. VERB phrase, imperative. ❗ Not \"eject\": a server has nothing to unplug. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-7.png"
   },
   "commands.serversForgetSecret.label": "Forget saved password",
   "@commands.serversForgetSecret.label": {
     "description": "Command name that removes the server’s remembered password from the system’s password store (the Keychain on macOS, Credential Manager on Windows, the keyring on Linux), keeping the server itself saved. VERB phrase, imperative. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-7.png"
   },
   "commands.serversEdit.label": "Edit server…",
   "@commands.serversEdit.label": {
     "description": "Command name that opens the form for changing a saved server’s address, account, or options. VERB phrase, imperative. The ellipsis is the single character … (U+2026) and means \"this opens something\"; keep it. Appears in the command palette and in Settings under Keyboard shortcuts.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-17.png"
   },
   "commands.serversConnect.label": "Connect to server…",
   "@commands.serversConnect.label": {
     "description": "Command-palette entry and shortcut label for opening the form that adds a server. VERB phrase, imperative. The ellipsis is the single character … (U+2026) and means “this opens something”; keep it.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-8.png"
   },
   "commands.networkRefresh.label": "Refresh network hosts",
   "@commands.networkRefresh.label": {
     "description": "Command name that re-scans the network for hosts (servers). Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-17.png"
   },
   "commands.shareBack.label": "Back to host list",
   "@commands.shareBack.label": {
     "description": "Command name that goes back from a server's shares to the list of network hosts (servers). Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-17.png"
   },
   "commands.shareSelectShare.label": "Connect to share",
   "@commands.shareSelectShare.label": {
     "description": "Command name that connects to the selected network share (a shared folder on a server). Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-17.png"
   },
   "commands.volumeSelect.label": "Select volume",
   "@commands.volumeSelect.label": {
     "description": "Command name that opens the selected volume (disk or mounted location) in the volume switcher. Shown only in the keyboard-shortcuts list (not the palette).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-15.png"
   },
   "commands.volumeClose.label": "Close volume switcher",
   "@commands.volumeClose.label": {
     "description": "Command name that closes the volume switcher. Shown only in the keyboard-shortcuts list (not the palette).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-16.png"
   },
   "commands.volumeSelectByName.label": "Select pane volume by name",
   "@commands.volumeSelectByName.label": {
     "description": "Internal command name for selecting a pane's volume by name, driven by the automation interface; shown only in the keyboard-shortcuts list (not the palette). \"Pane\" is one of the two file lists; \"volume\" is a disk or mounted location.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-8.png"
   },
   "commands.aboutOpenWebsite.label": "Open website",
   "@commands.aboutOpenWebsite.label": {
     "description": "Command name (in the About window) that opens the app's website in a browser. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-26.png"
   },
   "commands.aboutOpenUpgrade.label": "Open upgrade page",
   "@commands.aboutOpenUpgrade.label": {
     "description": "Command name (in the About window) that opens the upgrade/purchase page in a browser. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-26.png"
   },
   "commands.aboutClose.label": "Close About window",
   "@commands.aboutClose.label": {
     "description": "Command name that closes the About window. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-26.png"
   },
   "commands.paletteUp.label": "Previous result",
   "@commands.paletteUp.label": {
     "description": "Command name for moving up one row in the command palette's result list. Shown only in the keyboard-shortcuts list (not the palette itself).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-22.png"
   },
   "commands.paletteDown.label": "Next result",
   "@commands.paletteDown.label": {
     "description": "Command name for moving down one row in the command palette's result list. Shown only in the keyboard-shortcuts list (not the palette itself).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-22.png"
   },
   "commands.paletteExecute.label": "Execute command",
   "@commands.paletteExecute.label": {
     "description": "Command name for running the highlighted command in the command palette. Shown only in the keyboard-shortcuts list (not the palette itself).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-22.png"
   },
   "commands.paletteClose.label": "Close palette",
   "@commands.paletteClose.label": {
     "description": "Command name for closing the command palette. Shown only in the keyboard-shortcuts list (not the palette itself).",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-22.png"
   },
   "commands.handler.favoriteAdded": "Added “{name}” to favorites",
   "@commands.handler.favoriteAdded": {
@@ -1653,7 +1655,7 @@
   "commands.suggestedOpsShow.label": "AI suggestions",
   "@commands.suggestedOpsShow.label": {
     "description": "Command name that opens the AI suggestions dialog, where the user reviews file actions Ask Cmdr has suggested. Matches the dialog title (suggestedOps.title). Appears in the command palette and the View menu.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-2.png"
   },
   "commands.suggestedOpsShow.description": "Shows the file operations the AI suggested, so you can decide what runs",
   "@commands.suggestedOpsShow.description": {
@@ -1662,7 +1664,7 @@
   "commands.helpViewDebugLog.label": "View debug log",
   "@commands.helpViewDebugLog.label": {
     "description": "Verb phrase (imperative). Command palette action that opens the running app’s own current debug log file in the internal read-only file viewer. Use the same wording as menu.help.viewDebugLog. No ellipsis; there is no input to collect.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-2.png"
   },
   "commands.helpViewDebugLog.description": "Shows Cmdr’s debug log live in the file viewer",
   "@commands.helpViewDebugLog.description": {

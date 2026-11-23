@@ -46,27 +46,32 @@
   "multiRename.caseSensitive": "Match case",
   "@multiRename.caseSensitive": {
     "description": "Search & replace option: only match the same uppercase/lowercase letters.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "multiRename.firstOnly": "First match only",
   "@multiRename.firstOnly": {
     "description": "Search & replace option: replace only the first match in each name, not all of them.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "multiRename.includeExtension": "Include extension",
   "@multiRename.includeExtension": {
     "description": "Search & replace option: also search and replace in the file extension.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "multiRename.regex": "Regular expression",
   "@multiRename.regex": {
     "description": "Search & replace option: the search is a regular expression; $1, $2 in the replacement insert its groups.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "multiRename.substitute": "Replace whole name",
   "@multiRename.substitute": {
     "description": "Search & replace option: when the search matches, the whole name becomes the replacement (Total Commander's \"Subst.\").",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "multiRename.searchOptions": "Search options",
   "@multiRename.searchOptions": {
@@ -106,22 +111,22 @@
   "multiRename.case.lower": "lowercase",
   "@multiRename.case.lower": {
     "description": "Letter-case menu option: all letters lowercase. Written in lowercase on purpose, to show the result. Show-the-result labels like this one are exempt from sentence case: write them in the case they produce. In a script without letter case (Chinese, Japanese, Korean), describe the transform instead.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename-letter-case.png"
   },
   "multiRename.case.upper": "UPPERCASE",
   "@multiRename.case.upper": {
     "description": "Letter-case menu option: all letters uppercase. Written in uppercase on purpose, to show the result. Show-the-result labels like this one are exempt from sentence case: write them in the case they produce. In a script without letter case (Chinese, Japanese, Korean), describe the transform instead.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename-letter-case.png"
   },
   "multiRename.case.firstUpper": "First letter uppercase",
   "@multiRename.case.firstUpper": {
     "description": "Letter-case menu option: the first letter of the name uppercase, the rest lowercase.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename-letter-case.png"
   },
   "multiRename.case.words": "Every Word Capitalized",
   "@multiRename.case.words": {
     "description": "Letter-case menu option: the first letter of every word uppercase, the rest lowercase. Written that way on purpose, to show the result. Show-the-result labels like this one are exempt from sentence case: write them in the case they produce. In a script without letter case (Chinese, Japanese, Korean), describe the transform instead.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename-letter-case.png"
   },
   "multiRename.removeDiacritics": "Remove diacritics",
   "@multiRename.removeDiacritics": {
@@ -155,17 +160,17 @@
   "multiRename.presets.saved": "Your presets",
   "@multiRename.presets.saved": {
     "description": "Heading of the preset list at the top of the Presets menu: the user's presets, numbered 1–9 by position, including the ones Cmdr started the list with.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename-presets.png"
   },
   "multiRename.presets.reset": "Reset all fields",
   "@multiRename.presets.reset": {
     "description": "Presets menu item that sets every field back to its starting value, so all names stay as they are (Total Commander's <Default>).",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename-presets.png"
   },
   "multiRename.presets.saveAs": "Save as preset…",
   "@multiRename.presets.saveAs": {
     "description": "Presets menu item that asks for a name and saves the tool's current settings as a new preset. The ellipsis means it asks for more before acting.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename-presets.png"
   },
   "multiRename.presets.rename": "Rename…",
   "@multiRename.presets.rename": {
@@ -175,17 +180,17 @@
   "multiRename.presets.update": "Update with current settings",
   "@multiRename.presets.update": {
     "description": "Item in a saved preset's submenu that overwrites that preset with the tool's current settings (every field). \"settings\" is the same noun as in commands.multiRenameSavePreset.label. Greyed out when the preset already matches them.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename-preset-submenu.png"
   },
   "multiRename.presets.moveUp": "Move up",
   "@multiRename.presets.moveUp": {
     "description": "Item in a preset's submenu that moves that preset one place up the Presets list, so it swaps numbers (the 1–9 keys) with the one above. Greyed out on the top preset.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename-preset-submenu.png"
   },
   "multiRename.presets.moveDown": "Move down",
   "@multiRename.presets.moveDown": {
     "description": "Item in a preset's submenu that moves that preset one place down the Presets list, so it swaps numbers (the 1–9 keys) with the one below. Greyed out on the bottom preset.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename-preset-submenu.png"
   },
   "multiRename.presets.delete": "Delete",
   "@multiRename.presets.delete": {
@@ -225,7 +230,8 @@
   "multiRename.preset.dateAndTime": "Date and time",
   "@multiRename.preset.dateAndTime": {
     "description": "Name of a preset Cmdr starts the Presets list with, saved in this language the first time the list loads; the user can rename or delete it like their own. It names each file after its last-modified date and time, like 2026-07-14 09.05.30.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "multiRename.preset.removeDiacritics": "Remove diacritics",
   "@multiRename.preset.removeDiacritics": {
@@ -278,7 +284,8 @@
   "multiRename.status.unchanged": "No change",
   "@multiRename.status.unchanged": {
     "description": "Preview note: the new name is the same as the old one, so the file is left alone.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "multiRename.status.duplicate": "Same name as another item",
   "@multiRename.status.duplicate": {

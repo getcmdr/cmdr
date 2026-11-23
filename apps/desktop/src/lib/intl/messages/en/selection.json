@@ -12,7 +12,8 @@
   "selection.runHint": "Press Enter to filter",
   "@selection.runHint": {
     "description": "Subtle hint at the right edge of the Select / Deselect dialog's query field, shown while the typed pattern hasn't run yet. Tells the user the list of matches is filtered when they press Enter. \"Enter\" is the name of the Return/Enter key: use whatever your language calls that key on a keyboard. Sits in a narrow strip beside the field, so keep it short.",
-    "screenshot": "select-dialog.png"
+    "screenshot": "select-dialog.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "selection.action.select.label": "Select these files",
   "@selection.action.select.label": {
@@ -57,7 +58,8 @@
   "selection.recent.emptyMessage": "No matching recent selections",
   "@selection.recent.emptyMessage": {
     "description": "Shown inside the recent-selections popover when the user's filter text matches none of their past queries.",
-    "screenshot": "select-dialog.png"
+    "screenshot": "select-dialog.png",
+    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },
   "selection.recent.popoverAria": "Recent selections",
   "@selection.recent.popoverAria": {
