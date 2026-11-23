@@ -12,6 +12,21 @@ installed `node_modules/`. If cargo fails with `error[E0460]` or `E0463`, the cl
 `cargo clean --profile dev` and build again. Work here; don't create another worktree, and don't touch anything outside
 it. `gh` and git over HTTPS are signed in as the Cmdr agents GitHub App.
 
+## 0. Your claim
+
+The launcher claimed #{{ISSUE}} for you: its board card is in Implementing, with a comment saying the fixer is on it.
+Someone else (David, or another agent) may still take it over while you work. When they do, a file appears at
+`{{STAND_DOWN}}` with the reason.
+
+- Before every step that changes something outside your worktree (a rerun, a push, `pnpm land`, a PR, an issue edit),
+  and whenever you start a new step, run `{{CLAIM_CHECK}}`. Exit 0 means it's still yours. Exit 1, or a `{{STAND_DOWN}}`
+  file, means someone else took it: stop at once. Don't rerun, push, or land anything after that, and don't touch the
+  card. Append one line to the issue body saying you stood down and what you had found, then exit. Exit 2 means the
+  check itself couldn't reach GitHub: wait a minute and check again; never treat it as yours.
+- Before you exit, write ONE word to `{{OUTCOME}}`: `landed` (a fix landed), `rerun` (you reran the failed jobs),
+  `pr-waiting` (a sensitive-path PR waits for David), `needs-david` (a write-up, nothing in flight), or `stood-down`.
+  The launcher keeps the card in Implementing for the first three and moves it back to Todo otherwise.
+
 ## 1. Diagnose
 
 - The failing jobs' logs are in `{{FAILED_LOG}}`. Search it; don't dump it whole.

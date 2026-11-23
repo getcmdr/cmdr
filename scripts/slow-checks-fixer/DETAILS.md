@@ -18,13 +18,39 @@ the agent makes that call, fixes or reruns, and David hears about it only when a
    newest `github-actions[bot]` comment that says "went red". This lookup is anonymous REST through curl (the repo is
    public; `gh` won't call the API signed out), so an idle hour mints no token. Only then does it mint an App token (§
    Credentials).
-3. It appends the run id to `handled-runs`, then readies the run under `~/slow-checks-fixer/` (§ Paths): it syncs its
-   own clone to `origin/main`, adds a worktree on `fixer/run-<id>`, writes the failing jobs' logs to a file, clones the
-   warm `target/`, runs `pnpm install`, and times one warm-up `pnpm check clippy`.
-4. It starts `claude -p` in the worktree with `prompt.md`, Opus, and `--permission-mode bypassPermissions`, under a
-   three-hour `alarm`. The agent fixes, lands or opens a PR, and writes its notes into the issue body.
-5. On exit (a trap, so a crash too), it removes the worktree, its target clone, the local branch, and the token. The
-   pushed branch stays: a fix waiting for David lives on in its PR. A run killed outright is swept at the next run.
+3. It asks `claim.sh free` whether someone else is on the issue (§ The claim). If so, it marks the run handled and
+   exits; if the lookup fails, it exits and retries next hour.
+4. It appends the run id to `handled-runs`, claims the issue (`claim.sh take`), then readies the run under
+   `~/slow-checks-fixer/` (§ Paths): it syncs its own clone to `origin/main`, adds a worktree on `fixer/run-<id>`,
+   writes the failing jobs' logs to a file, clones the warm `target/`, runs `pnpm install`, and times one warm-up
+   `pnpm check clippy`.
+5. It starts `claude -p` in the worktree with `prompt.md`, Opus, and `--permission-mode bypassPermissions`, under a
+   three-hour `alarm`, plus the claim watcher. The agent fixes, lands or opens a PR, writes its notes into the issue
+   body, and writes its outcome word to `runs/<id>/outcome`.
+6. On exit (a trap, so a crash too), it hands the card back to Todo unless a fix is in flight or it stood down, then
+   removes the worktree, its target clone, the local branch, and the token. The pushed branch stays: a fix waiting for
+   David lives on in its PR. A run killed outright is swept at the next run.
+
+## The claim
+
+**Decision**: the fixer works only on an issue nobody else has taken, and it says so when it takes one. **Why**: on
+2026-11-23 it and an interactive session fixed #1410 at the same time, with the same one-line change (#1417 and #1414),
+because nothing it did was visible to other agents and it looked at nothing they did. The board's Implementing column is
+how every agent marks started work (`docs/tooling/backlog-board.md`), so the fixer uses the same signal.
+
+- **Taken** means the issue's card is in Implementing, or a maintainer (author association `OWNER`, `MEMBER`, or
+  `COLLABORATOR`, but neither bot) commented after the workflow reported the run (`claim.sh free`), or, once claimed,
+  after the claim (`claim.sh held`). David's interactive agents comment as `vdavid`, so their comments count. A
+  stranger's comment can't hold the fixer off, and no comment's text is read: only its author association and time.
+- **Claiming** (`claim.sh take`) moves the card to Implementing (adding the issue to the board if it isn't there) and
+  posts one comment that says so and how to take it over.
+- **While it runs**, a watcher in `run.sh` runs `claim.sh held` every two minutes. When someone takes over, it writes
+  `runs/<id>/stand-down` with the reason; the agent checks before every step that changes something (`prompt.md` § 0)
+  and stops, and the watcher stops an agent still running 15 minutes later. A failed lookup never counts as a takeover.
+- **Fail closed**: a lookup that fails starts nothing. That's also what happens while the App lacks the Projects
+  permission (§ Credentials).
+- **Handing back**: `landed`, `rerun`, and `pr-waiting` keep the card in Implementing until the green run closes the
+  issue; any other end (a write-up for David, a crash) moves it back to Todo, so it doesn't block the next look.
 
 ## Paths
 
@@ -50,11 +76,12 @@ The Rule of Two: the agent takes untrusted input and can change Cmdr, so it hold
 - **Secrets**: `secret NAME` reads the `agents` store, which holds only what this job needs: `CLAUDE_CODE_OAUTH_TOKEN`,
   and `gh-app-token`'s `CMDR_AGENTS_APP_ID` and `CMDR_AGENTS_APP_PRIVATE_KEY`.
 - **GitHub**: the Cmdr agents GitHub App, installed on `getcmdr/cmdr` only, with Contents, Pull requests, Issues, and
-  Actions read-write and Metadata read. No Workflows, no Administration. `gh-app-token` prints a one-hour installation
-  token. `run.sh` keeps it in a private temp dir as `hosts.yml` (`GH_CONFIG_DIR`, which `gh` rereads on every call;
-  verified on gh 2.103.3, 2026-11-10) and as the source of a git credential helper set through `GIT_CONFIG_*`, so the
-  token never lands in argv, a URL, a log, or a git config file. A background loop re-mints it every 30 minutes, since a
-  run can outlast one token. `GH_TOKEN` is unset: it would override the file and wouldn't refresh.
+  Actions read-write and Metadata read, plus Organization > Projects read-write for the board claim (§ The claim). No
+  Workflows, no Administration. `gh-app-token` prints a one-hour installation token. `run.sh` keeps it in a private temp
+  dir as `hosts.yml` (`GH_CONFIG_DIR`, which `gh` rereads on every call; verified on gh 2.103.3, 2026-11-10) and as the
+  source of a git credential helper set through `GIT_CONFIG_*`, so the token never lands in argv, a URL, a log, or a git
+  config file. A background loop re-mints it every 30 minutes, since a run can outlast one token. `GH_TOKEN` is unset:
+  it would override the file and wouldn't refresh.
 - **Commits**: signed with the box's agent signing key, which the infra side gives `agents`; `main` takes only signed
   commits.
 - **Landing**: `pnpm land` pushes the green SHA to `main` or merges the PR through REST, as the App. The App is a bypass
@@ -101,7 +128,8 @@ no path restriction; `scripts/land/DETAILS.md` § The rulesets), so CI holds it:
 - **Logs in a file, comments never.** The issue's comments are public input, so `run.sh` reads them only through an
   author filter for run ids, and the agent gets the run id, the issue number, and the logs file. It still edits the
   issue body, which only the workflow and maintainers can write.
-- **Body notes, comment only for David.** A body edit sends no notification; a comment emails every watcher. The
+- **Body notes, comments only for the claim and for David.** A body edit sends no notification; a comment emails every
+  watcher. The claim comment is the one exception David asked for, so other agents see the issue is taken. The
   workflow's own close step follows the same rule (`.github/workflows/slow-checks.yml` § Red-run issue).
 - **Full permissions.** Fixing means editing code, running checks, and landing, which the report triager's sandbox rules
   out by design. The trade is acceptable because the run holds no sensitive access (§ Credentials).
@@ -114,10 +142,11 @@ no path restriction; `scripts/land/DETAILS.md` § The rulesets), so CI holds it:
 
 ## Install
 
-Installed on the M1 by the infra repo's Ansible role `slow_checks_fixer`, which copies `run.sh` and `prompt.md` from a
-cmdr checkout (`-e slow_checks_fixer_src=<dir>/`) into `/Users/agents/.local/share/slow-checks-fixer/` and loads the
-launchd daemon: `cd m1mbp/ansible && mise exec -- ansible-playbook site.yml --tags slow_checks_fixer`. Re-run that after
-editing either file.
+Installed on the M1 by the infra repo's Ansible role `slow_checks_fixer`, which copies `run.sh`, `claim.sh`, and
+`prompt.md` from a cmdr checkout (`-e slow_checks_fixer_src=<dir>/`) into
+`/Users/agents/.local/share/slow-checks-fixer/` and loads the launchd daemon:
+`cd m1mbp/ansible && mise exec -- ansible-playbook site.yml --tags slow_checks_fixer`. Re-run that after editing either
+file.
 
 A manual run: start the daemon itself, in its own environment, with
 `ssh -t m1mbp sudo launchctl kickstart system/com.vdavid.agents.slow-checks-fixer`, then read
