@@ -1892,27 +1892,27 @@
   "@fileExplorer.navigation.useDirectConnection": {
     "sourceHash": "68ff111"
   },
-  "fileExplorer.navigation.showShareParentRow": "Show “..” in the top folder",
+  "fileExplorer.navigation.showShareParentRow": "Mostrar “..” en la carpeta raíz",
   "@fileExplorer.navigation.showShareParentRow": {
     "sourceHash": "fe7ac1b"
   },
-  "fileExplorer.navigation.showShareParentRowTooltip": "In this share’s top folder, “..” takes you to {server}’s other shares.",
+  "fileExplorer.navigation.showShareParentRowTooltip": "En la carpeta raíz de este recurso compartido, “..” te lleva a los demás recursos compartidos de {server}.",
   "@fileExplorer.navigation.showShareParentRowTooltip": {
     "sourceHash": "2282b68"
   },
-  "fileExplorer.shareParentRow.hint": "“..” took you to {server}’s shares. If you’d rather the share’s top folder look like a top folder, turn it off here. You can change it any time in the share’s menu in the volume switcher.",
+  "fileExplorer.shareParentRow.hint": "“..” te ha llevado a los recursos compartidos de {server}. Si prefieres que la carpeta raíz del recurso compartido se comporte como una carpeta raíz, desactívalo aquí. Puedes cambiarlo cuando quieras en el menú del recurso compartido, en el selector de volúmenes.",
   "@fileExplorer.shareParentRow.hint": {
     "sourceHash": "bdafe17"
   },
-  "fileExplorer.shareParentRow.turnOffForShare": "Turn off for this share",
+  "fileExplorer.shareParentRow.turnOffForShare": "Desactivar en este recurso compartido",
   "@fileExplorer.shareParentRow.turnOffForShare": {
     "sourceHash": "1616e09"
   },
-  "fileExplorer.shareParentRow.turnOffForAll": "Turn off for all shares",
+  "fileExplorer.shareParentRow.turnOffForAll": "Desactivar en todos los recursos compartidos",
   "@fileExplorer.shareParentRow.turnOffForAll": {
     "sourceHash": "b9133dc"
   },
-  "fileExplorer.shareParentRow.gotIt": "Got it",
+  "fileExplorer.shareParentRow.gotIt": "Entendido",
   "@fileExplorer.shareParentRow.gotIt": {
     "sourceHash": "5ad3dbd"
   },

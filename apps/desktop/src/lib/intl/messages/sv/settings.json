@@ -1365,15 +1365,15 @@
   "@settings.network.requireSmbEncryption.keywords": {
     "sourceHash": "1fc0e27"
   },
-  "settings.network.showShareParentRow.label": "Show “..” in each share’s top folder",
+  "settings.network.showShareParentRow.label": "Visa ”..” i varje delad mapps rotmapp",
   "@settings.network.showShareParentRow.label": {
     "sourceHash": "4f3f7b4"
   },
-  "settings.network.showShareParentRow.description": "“..” takes you to the server’s list of shares. Change it per share from its menu in the volume switcher.",
+  "settings.network.showShareParentRow.description": "”..” tar dig till serverns lista med delade mappar. Ändra det för en delad mapp i taget från dess meny i volymväljaren.",
   "@settings.network.showShareParentRow.description": {
     "sourceHash": "0cb9461"
   },
-  "settings.network.showShareParentRow.keywords": "parent, up, back, other shares, top folder, root, server, sibling, double dot",
+  "settings.network.showShareParentRow.keywords": "överordnad mapp, föräldermapp, upp, tillbaka, andra delade mappar, översta mappen, rot, servrar, syskon, två punkter, punkt punkt, nätverksresurs",
   "@settings.network.showShareParentRow.keywords": {
     "sourceHash": "3d7f35d"
   },
@@ -2383,15 +2383,15 @@
   "@settings.behavior.serversPinHintSeen.description": {
     "sourceHash": "5527df2"
   },
-  "settings.behavior.shareParentRowHintSeen.label": "Suppress the “..” in share top folders hint",
+  "settings.behavior.shareParentRowHintSeen.label": "Dölj tipset om ”..” i delade mappars rotmappar",
   "@settings.behavior.shareParentRowHintSeen.label": {
     "sourceHash": "15d8995"
   },
-  "settings.behavior.shareParentRowHintSeen.description": "The first time “..” takes you from a share’s top folder to the server’s shares, Cmdr explains it. Turn this off to see the explanation once more.",
+  "settings.behavior.shareParentRowHintSeen.description": "Första gången ”..” tar dig från en delad mapps rotmapp till serverns delade mappar förklarar Cmdr det. Stäng av det här för att se förklaringen en gång till.",
   "@settings.behavior.shareParentRowHintSeen.description": {
     "sourceHash": "8a4fb17"
   },
-  "settings.behavior.shareParentRowHintSeen.keywords": "share, server, parent, top folder, hint, toast",
+  "settings.behavior.shareParentRowHintSeen.keywords": "nätverksresurs, servrar, överordnad mapp, upp, två punkter, notis, avisering, meddelande, visa igen",
   "@settings.behavior.shareParentRowHintSeen.keywords": {
     "sourceHash": "6b1ec34"
   },
@@ -3178,7 +3178,7 @@
   "@settings.network.card.connection": {
     "sourceHash": "639a40e"
   },
-  "settings.network.card.behavior": "Behavior",
+  "settings.network.card.behavior": "Beteende",
   "@settings.network.card.behavior": {
     "sourceHash": "edf8d3f"
   },

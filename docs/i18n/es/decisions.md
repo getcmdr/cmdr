@@ -330,13 +330,14 @@ Choose an app… → `Seleccionar app…`.
   subject; `Trust and connect` names what (`la clave`, `el certificado`). Owner → `quien posee el servidor`; "something
   between you and it" → `hay algo entre tú y él`, no MITM jargon.
 - **Forget**: confirmations name the type first (`¿Olvidar el recurso compartido {name}?`) so `lo` / `montado` agree;
-  the toasts say `olvidar` too (`Cmdr ha olvidado {hostName}`). `No había ninguna contraseña guardada de {name}.`
-  (imperfect, matter-of-fact). Busy tooltips copy `ejectBusyTooltip`.
+  the toasts say `olvidar` too (`Cmdr ha olvidado {hostName}`). `No había ninguna contraseña guardada de {name}.` Busy
+  tooltips copy `ejectBusyTooltip`.
 - **Account**: `como {username}` / `como invitado`; `Entrar como invitado`; `Iniciar sesión como…`.
   `Sin conexión con {name}`: no participle on `{name}`. `needsStoredSecret` is impersonal (`e inicia sesión`).
-- **Sheet**: titles infinitive (`Añadir servidor` / `Iniciar sesión en {name}` / `Editar {name}`). `i18n-terms` forces
-  many values: search the catalog first. Locked identity → `son los que identifican este servidor` (the sheet has its
-  own `Nombre` field), naming actions as their buttons (`olvidar`, `añadir`).
+  `hub.status.notConnected` → `No conectado` (❌ `Sin conexión`: a lost link).
+- **Sheet**: titles infinitive (`Añadir servidor` / `Iniciar sesión en {name}` / `Editar {name}`). Locked identity →
+  `son los que identifican este servidor` (the sheet has its own `Nombre` field), naming actions as their buttons
+  (`olvidar`, `añadir`).
 - **Folders**: start folder → `Carpeta inicial` (❌ `carpeta de inicio`, home). `Dónde se abre el servidor.`: naming
   `la carpeta` makes `Déjalo vacío` read "empty the folder". `usará la cuenta y el host como nombre` (❌
   `por su cuenta`).

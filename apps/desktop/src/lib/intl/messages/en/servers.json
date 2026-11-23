@@ -66,7 +66,7 @@
   },
   "servers.hub.status.notConnected": "Not connected",
   "@servers.hub.status.notConnected": {
-    "description": "Status of a shared folder on a saved file server that the user hasn’t opened in Cmdr yet. The row is dimmed; opening it connects to that shared folder. ❗ NOT a failure or an error: nothing went wrong. Short, ADJECTIVE phrase."
+    "description": "Status of a shared folder on a saved file server that the user hasn’t opened in Cmdr yet. The row is dimmed; opening it connects to that shared folder. ❗ NOT a failure or an error: nothing went wrong. Short, ADJECTIVE phrase. It sits in the same column as servers.hub.status.notConnectedYet (a whole server never contacted since it was added); keep the two distinguishable where your language can."
   },
   "servers.hub.status.notConnectedYet": "Not connected yet",
   "@servers.hub.status.notConnectedYet": {

@@ -39,7 +39,7 @@
   "@servers.hub.addServer": {
     "sourceHash": "9574f8e"
   },
-  "servers.hub.moreShares": "More shares on {server}…",
+  "servers.hub.moreShares": "{server} 上的更多共享…",
   "@servers.hub.moreShares": {
     "sourceHash": "db4e1ab"
   },
@@ -51,7 +51,7 @@
   "@servers.hub.status.saved": {
     "sourceHash": "b5c120b"
   },
-  "servers.hub.status.notConnected": "Not connected",
+  "servers.hub.status.notConnected": "未连接",
   "@servers.hub.status.notConnected": {
     "sourceHash": "0303e18"
   },

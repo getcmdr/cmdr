@@ -1367,15 +1367,15 @@
   "@settings.network.requireSmbEncryption.keywords": {
     "sourceHash": "1fc0e27"
   },
-  "settings.network.showShareParentRow.label": "Show “..” in each share’s top folder",
+  "settings.network.showShareParentRow.label": "Afficher « .. » dans le dossier racine de chaque partage",
   "@settings.network.showShareParentRow.label": {
     "sourceHash": "4f3f7b4"
   },
-  "settings.network.showShareParentRow.description": "“..” takes you to the server’s list of shares. Change it per share from its menu in the volume switcher.",
+  "settings.network.showShareParentRow.description": "« .. » mène à la liste des partages du serveur. Modifiez ce choix partage par partage depuis le menu du partage dans le sélecteur de volume.",
   "@settings.network.showShareParentRow.description": {
     "sourceHash": "0cb9461"
   },
-  "settings.network.showShareParentRow.keywords": "parent, up, back, other shares, top folder, root, server, sibling, double dot",
+  "settings.network.showShareParentRow.keywords": "dossier parent, remonter, retour, autres partages, racine, serveur, voisins, deux points, point point, niveau supérieur",
   "@settings.network.showShareParentRow.keywords": {
     "sourceHash": "3d7f35d"
   },
@@ -2387,15 +2387,15 @@
   "@settings.behavior.serversPinHintSeen.description": {
     "sourceHash": "5527df2"
   },
-  "settings.behavior.shareParentRowHintSeen.label": "Suppress the “..” in share top folders hint",
+  "settings.behavior.shareParentRowHintSeen.label": "Masquer l’astuce sur « .. » dans le dossier racine des partages",
   "@settings.behavior.shareParentRowHintSeen.label": {
     "sourceHash": "15d8995"
   },
-  "settings.behavior.shareParentRowHintSeen.description": "The first time “..” takes you from a share’s top folder to the server’s shares, Cmdr explains it. Turn this off to see the explanation once more.",
+  "settings.behavior.shareParentRowHintSeen.description": "La première fois que « .. » vous mène du dossier racine d’un partage aux partages du serveur, Cmdr l’explique. Désactivez cette option pour revoir l’explication.",
   "@settings.behavior.shareParentRowHintSeen.description": {
     "sourceHash": "8a4fb17"
   },
-  "settings.behavior.shareParentRowHintSeen.keywords": "share, server, parent, top folder, hint, toast",
+  "settings.behavior.shareParentRowHintSeen.keywords": "partage, serveur, dossier parent, remonter, racine, astuce, notification, deux points",
   "@settings.behavior.shareParentRowHintSeen.keywords": {
     "sourceHash": "6b1ec34"
   },
@@ -3181,7 +3181,7 @@
   "@settings.network.card.connection": {
     "sourceHash": "639a40e"
   },
-  "settings.network.card.behavior": "Behavior",
+  "settings.network.card.behavior": "Comportement",
   "@settings.network.card.behavior": {
     "sourceHash": "edf8d3f"
   },

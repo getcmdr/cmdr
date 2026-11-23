@@ -1885,27 +1885,27 @@
   "@fileExplorer.navigation.useDirectConnection": {
     "sourceHash": "68ff111"
   },
-  "fileExplorer.navigation.showShareParentRow": "Show “..” in the top folder",
+  "fileExplorer.navigation.showShareParentRow": "在最上層資料夾顯示「..」",
   "@fileExplorer.navigation.showShareParentRow": {
     "sourceHash": "fe7ac1b"
   },
-  "fileExplorer.navigation.showShareParentRowTooltip": "In this share’s top folder, “..” takes you to {server}’s other shares.",
+  "fileExplorer.navigation.showShareParentRowTooltip": "在這個共享資料夾的最上層資料夾裡，「..」會帶你到 {server} 的其他共享資料夾。",
   "@fileExplorer.navigation.showShareParentRowTooltip": {
     "sourceHash": "2282b68"
   },
-  "fileExplorer.shareParentRow.hint": "“..” took you to {server}’s shares. If you’d rather the share’s top folder look like a top folder, turn it off here. You can change it any time in the share’s menu in the volume switcher.",
+  "fileExplorer.shareParentRow.hint": "「..」帶你來到了 {server} 的共享資料夾。如果你希望共享資料夾的最上層資料夾就停在最上層，可以在這裡關閉這個功能。之後也隨時可以從卷宗切換器裡這個共享資料夾的選單更改。",
   "@fileExplorer.shareParentRow.hint": {
     "sourceHash": "bdafe17"
   },
-  "fileExplorer.shareParentRow.turnOffForShare": "Turn off for this share",
+  "fileExplorer.shareParentRow.turnOffForShare": "為這個共享資料夾關閉",
   "@fileExplorer.shareParentRow.turnOffForShare": {
     "sourceHash": "1616e09"
   },
-  "fileExplorer.shareParentRow.turnOffForAll": "Turn off for all shares",
+  "fileExplorer.shareParentRow.turnOffForAll": "為所有共享資料夾關閉",
   "@fileExplorer.shareParentRow.turnOffForAll": {
     "sourceHash": "b9133dc"
   },
-  "fileExplorer.shareParentRow.gotIt": "Got it",
+  "fileExplorer.shareParentRow.gotIt": "知道了",
   "@fileExplorer.shareParentRow.gotIt": {
     "sourceHash": "5ad3dbd"
   },

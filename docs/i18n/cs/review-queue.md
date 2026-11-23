@@ -56,3 +56,6 @@ Awaiting a native read, from the keymap batch:
 - AI take is `komentář AI` (`aboutThis.verdict.*`), and `it-team` is `IT oddělení`; both tentative.
 - `fileExplorer.list.rowKind.package` still says `balík` while the new `macos-package` ruling is Finder's `balíček`;
   align it (it's macOS text, so the fix is a plain translation edit with its reason in the commit) once confirmed.
+- `*.shareParentRow*`, `commands.serversToggleShareParentRow.label`: share’s top folder is
+  `kořenová složka (této) sdílené složky`, the ruled names stacked; `kořen sdílené složky` would read lighter if a
+  reviewer accepts `kořen` in labels.

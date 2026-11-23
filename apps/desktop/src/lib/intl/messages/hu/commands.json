@@ -1136,7 +1136,7 @@
   "@commands.serversTogglePin.label": {
     "sourceHash": "7d800c8"
   },
-  "commands.serversToggleShareParentRow.label": "Show or hide “..” in this share’s top folder",
+  "commands.serversToggleShareParentRow.label": "„..” megjelenítése vagy elrejtése ennek a megosztásnak a legfelső mappájában",
   "@commands.serversToggleShareParentRow.label": {
     "sourceHash": "91b0b2e"
   },

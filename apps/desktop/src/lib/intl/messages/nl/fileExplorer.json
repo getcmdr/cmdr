@@ -1902,27 +1902,27 @@
   "@fileExplorer.navigation.useDirectConnection": {
     "sourceHash": "68ff111"
   },
-  "fileExplorer.navigation.showShareParentRow": "Show “..” in the top folder",
+  "fileExplorer.navigation.showShareParentRow": "Toon ‘..’ in de hoofdmap",
   "@fileExplorer.navigation.showShareParentRow": {
     "sourceHash": "fe7ac1b"
   },
-  "fileExplorer.navigation.showShareParentRowTooltip": "In this share’s top folder, “..” takes you to {server}’s other shares.",
+  "fileExplorer.navigation.showShareParentRowTooltip": "In de hoofdmap van deze gedeelde map brengt ‘..’ je naar de andere gedeelde mappen op {server}.",
   "@fileExplorer.navigation.showShareParentRowTooltip": {
     "sourceHash": "2282b68"
   },
-  "fileExplorer.shareParentRow.hint": "“..” took you to {server}’s shares. If you’d rather the share’s top folder look like a top folder, turn it off here. You can change it any time in the share’s menu in the volume switcher.",
+  "fileExplorer.shareParentRow.hint": "‘..’ bracht je naar de gedeelde mappen op {server}. Wil je liever dat de hoofdmap van de gedeelde map er als een gewone hoofdmap uitziet, zet ‘..’ dan hier uit. Je kunt dit altijd wijzigen in het menu van de gedeelde map in de volumekiezer.",
   "@fileExplorer.shareParentRow.hint": {
     "sourceHash": "bdafe17"
   },
-  "fileExplorer.shareParentRow.turnOffForShare": "Turn off for this share",
+  "fileExplorer.shareParentRow.turnOffForShare": "Zet voor deze gedeelde map uit",
   "@fileExplorer.shareParentRow.turnOffForShare": {
     "sourceHash": "1616e09"
   },
-  "fileExplorer.shareParentRow.turnOffForAll": "Turn off for all shares",
+  "fileExplorer.shareParentRow.turnOffForAll": "Zet voor alle gedeelde mappen uit",
   "@fileExplorer.shareParentRow.turnOffForAll": {
     "sourceHash": "b9133dc"
   },
-  "fileExplorer.shareParentRow.gotIt": "Got it",
+  "fileExplorer.shareParentRow.gotIt": "Begrepen",
   "@fileExplorer.shareParentRow.gotIt": {
     "sourceHash": "5ad3dbd"
   },

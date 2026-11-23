@@ -1363,15 +1363,15 @@
   "@settings.network.requireSmbEncryption.keywords": {
     "sourceHash": "1fc0e27"
   },
-  "settings.network.showShareParentRow.label": "Show “..” in each share’s top folder",
+  "settings.network.showShareParentRow.label": "在每个共享的顶层文件夹中显示“..”",
   "@settings.network.showShareParentRow.label": {
     "sourceHash": "4f3f7b4"
   },
-  "settings.network.showShareParentRow.description": "“..” takes you to the server’s list of shares. Change it per share from its menu in the volume switcher.",
+  "settings.network.showShareParentRow.description": "“..”会带你前往服务器的共享列表。你可以在宗卷选择器里通过每个共享的菜单单独更改。",
   "@settings.network.showShareParentRow.description": {
     "sourceHash": "0cb9461"
   },
-  "settings.network.showShareParentRow.keywords": "parent, up, back, other shares, top folder, root, server, sibling, double dot",
+  "settings.network.showShareParentRow.keywords": "上层、上一级、向上、返回、后退、其他共享、根目录、根、同级、两个点、点点",
   "@settings.network.showShareParentRow.keywords": {
     "sourceHash": "3d7f35d"
   },
@@ -2375,15 +2375,15 @@
   "@settings.behavior.serversPinHintSeen.description": {
     "sourceHash": "5527df2"
   },
-  "settings.behavior.shareParentRowHintSeen.label": "Suppress the “..” in share top folders hint",
+  "settings.behavior.shareParentRowHintSeen.label": "不显示共享顶层文件夹中“..”的提示",
   "@settings.behavior.shareParentRowHintSeen.label": {
     "sourceHash": "15d8995"
   },
-  "settings.behavior.shareParentRowHintSeen.description": "The first time “..” takes you from a share’s top folder to the server’s shares, Cmdr explains it. Turn this off to see the explanation once more.",
+  "settings.behavior.shareParentRowHintSeen.description": "“..”第一次把你从共享的顶层文件夹带到服务器的共享列表时，Cmdr 会解释一下。关闭这一项，就能再看一次这个说明。",
   "@settings.behavior.shareParentRowHintSeen.description": {
     "sourceHash": "8a4fb17"
   },
-  "settings.behavior.shareParentRowHintSeen.keywords": "share, server, parent, top folder, hint, toast",
+  "settings.behavior.shareParentRowHintSeen.keywords": "共享、服务器、上层、上一级、顶层、通知、说明、两个点",
   "@settings.behavior.shareParentRowHintSeen.keywords": {
     "sourceHash": "6b1ec34"
   },
@@ -3169,7 +3169,7 @@
   "@settings.network.card.connection": {
     "sourceHash": "639a40e"
   },
-  "settings.network.card.behavior": "Behavior",
+  "settings.network.card.behavior": "行为",
   "@settings.network.card.behavior": {
     "sourceHash": "edf8d3f"
   },

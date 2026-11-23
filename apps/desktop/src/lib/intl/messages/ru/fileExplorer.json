@@ -1888,27 +1888,27 @@
   "@fileExplorer.navigation.useDirectConnection": {
     "sourceHash": "68ff111"
   },
-  "fileExplorer.navigation.showShareParentRow": "Show “..” in the top folder",
+  "fileExplorer.navigation.showShareParentRow": "Показывать «..» в корневой папке",
   "@fileExplorer.navigation.showShareParentRow": {
     "sourceHash": "fe7ac1b"
   },
-  "fileExplorer.navigation.showShareParentRowTooltip": "In this share’s top folder, “..” takes you to {server}’s other shares.",
+  "fileExplorer.navigation.showShareParentRowTooltip": "В корневой папке этой общей папки «..» ведет к другим общим папкам на сервере {server}.",
   "@fileExplorer.navigation.showShareParentRowTooltip": {
     "sourceHash": "2282b68"
   },
-  "fileExplorer.shareParentRow.hint": "“..” took you to {server}’s shares. If you’d rather the share’s top folder look like a top folder, turn it off here. You can change it any time in the share’s menu in the volume switcher.",
+  "fileExplorer.shareParentRow.hint": "Через «..» вы попали к общим папкам на сервере {server}. Если хотите, чтобы корневая папка общей папки выглядела как корневая, выключите «..» здесь. Изменить это можно в любой момент в меню общей папки в переключателе томов.",
   "@fileExplorer.shareParentRow.hint": {
     "sourceHash": "bdafe17"
   },
-  "fileExplorer.shareParentRow.turnOffForShare": "Turn off for this share",
+  "fileExplorer.shareParentRow.turnOffForShare": "Выключить для этой общей папки",
   "@fileExplorer.shareParentRow.turnOffForShare": {
     "sourceHash": "1616e09"
   },
-  "fileExplorer.shareParentRow.turnOffForAll": "Turn off for all shares",
+  "fileExplorer.shareParentRow.turnOffForAll": "Выключить для всех общих папок",
   "@fileExplorer.shareParentRow.turnOffForAll": {
     "sourceHash": "b9133dc"
   },
-  "fileExplorer.shareParentRow.gotIt": "Got it",
+  "fileExplorer.shareParentRow.gotIt": "Понятно",
   "@fileExplorer.shareParentRow.gotIt": {
     "sourceHash": "5ad3dbd"
   },

@@ -246,6 +246,12 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
 - `suggestedOps.destinationLandsOn` says "A link" for a symlink, so it hits the `link` concept (web/DFS sense) and not
   `symlink`; every locale used its short link word (as `aboutThis.what.symlink` does). Its "sends" also hit `send`
   (reports to the developer), now kept out by a key-scoped `notMatch`. Consider a short-form `symlink` match. (all)
+- `fileExplorer.shareParentRow.hint`: "look like a top folder" leaves the reader to infer it means "has no “..” row";
+  say so ("show no “..”, like any top folder"). Also, "share’s top folder" doubles the folder noun wherever a share is
+  itself a "shared folder" (cs `kořenová složka sdílené složky`). (cs, zh-Hant: `共享資料夾的最上層資料夾`)
+- `servers.hub.moreShares`'s note says "the single character … (U+2026); keep it", which contradicts each locale's
+  `mechanics.json` ellipsis (zh-Hant `⋯`). It's a house phrasing on 12 keys (`servers.json`, `commands.json`,
+  `menu.json`); reword them together: "keep a trailing ellipsis, in your locale's glyph". (zh-Hant)
 
 ## Process feedback
 
@@ -461,3 +467,7 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   and a `W=…` path variable before `i18n:check-locale` were refused, so 13 Write calls and full literal paths; a
   five-locale check chain outran 120 s into the background. The brief's "No concept yet" listed `make` and `land`,
   everyday verbs with nothing to mine; only `writable` was worth a pile lookup. No script written. (all)
+- Parallel per-language translators (one per locale, scoped to their own files) can't log here, since this file is
+  shared, so cs and zh-Hant logged and nl, sv, hu, zh reported to the lead instead. `decisions.md` budgets again blocked
+  short entries (nl, sv, hu reverted theirs; es trimmed two phrases to fit, 7 bytes left). Let a scoped translator
+  append here, or collect feedback from reports by design. No scripts written. (all, SMB share `..` + hub batch)

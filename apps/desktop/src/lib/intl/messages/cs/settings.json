@@ -1361,15 +1361,15 @@
   "@settings.network.requireSmbEncryption.keywords": {
     "sourceHash": "1fc0e27"
   },
-  "settings.network.showShareParentRow.label": "Show “..” in each share’s top folder",
+  "settings.network.showShareParentRow.label": "Zobrazit „..“ v kořenové složce každé sdílené složky",
   "@settings.network.showShareParentRow.label": {
     "sourceHash": "4f3f7b4"
   },
-  "settings.network.showShareParentRow.description": "“..” takes you to the server’s list of shares. Change it per share from its menu in the volume switcher.",
+  "settings.network.showShareParentRow.description": "Položka „..“ vás zavede na seznam sdílených složek serveru. Zvlášť pro každou sdílenou složku to změňte v její nabídce v přepínači svazků.",
   "@settings.network.showShareParentRow.description": {
     "sourceHash": "0cb9461"
   },
-  "settings.network.showShareParentRow.keywords": "parent, up, back, other shares, top folder, root, server, sibling, double dot",
+  "settings.network.showShareParentRow.keywords": "nadřazená složka, nahoru, zpět, o úroveň výš, ostatní sdílené složky, kořen, sousední, dvě tečky, síťový disk",
   "@settings.network.showShareParentRow.keywords": {
     "sourceHash": "3d7f35d"
   },
@@ -2374,15 +2374,15 @@
   "@settings.behavior.serversPinHintSeen.description": {
     "sourceHash": "5527df2"
   },
-  "settings.behavior.shareParentRowHintSeen.label": "Suppress the “..” in share top folders hint",
+  "settings.behavior.shareParentRowHintSeen.label": "Potlačit tip k „..“ v kořenových složkách sdílených složek",
   "@settings.behavior.shareParentRowHintSeen.label": {
     "sourceHash": "15d8995"
   },
-  "settings.behavior.shareParentRowHintSeen.description": "The first time “..” takes you from a share’s top folder to the server’s shares, Cmdr explains it. Turn this off to see the explanation once more.",
+  "settings.behavior.shareParentRowHintSeen.description": "Když vás „..“ poprvé zavede z kořenové složky sdílené složky ke sdíleným složkám serveru, Cmdr to vysvětlí. Vypněte tuto volbu a vysvětlení se zobrazí ještě jednou.",
   "@settings.behavior.shareParentRowHintSeen.description": {
     "sourceHash": "8a4fb17"
   },
-  "settings.behavior.shareParentRowHintSeen.keywords": "share, server, parent, top folder, hint, toast",
+  "settings.behavior.shareParentRowHintSeen.keywords": "sdílená složka, nadřazená složka, kořen, nápověda, oznámení, upozornění, dvě tečky",
   "@settings.behavior.shareParentRowHintSeen.keywords": {
     "sourceHash": "6b1ec34"
   },
@@ -3169,7 +3169,7 @@
   "@settings.network.card.connection": {
     "sourceHash": "639a40e"
   },
-  "settings.network.card.behavior": "Behavior",
+  "settings.network.card.behavior": "Chování",
   "@settings.network.card.behavior": {
     "sourceHash": "edf8d3f"
   },

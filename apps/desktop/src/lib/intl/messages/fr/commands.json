@@ -1136,7 +1136,7 @@
   "@commands.serversTogglePin.label": {
     "sourceHash": "7d800c8"
   },
-  "commands.serversToggleShareParentRow.label": "Show or hide “..” in this share’s top folder",
+  "commands.serversToggleShareParentRow.label": "Afficher ou masquer « .. » dans le dossier racine de ce partage",
   "@commands.serversToggleShareParentRow.label": {
     "sourceHash": "91b0b2e"
   },

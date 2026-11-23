@@ -1897,27 +1897,27 @@
   "@fileExplorer.navigation.useDirectConnection": {
     "sourceHash": "68ff111"
   },
-  "fileExplorer.navigation.showShareParentRow": "Show “..” in the top folder",
+  "fileExplorer.navigation.showShareParentRow": "Afficher « .. » dans le dossier racine",
   "@fileExplorer.navigation.showShareParentRow": {
     "sourceHash": "fe7ac1b"
   },
-  "fileExplorer.navigation.showShareParentRowTooltip": "In this share’s top folder, “..” takes you to {server}’s other shares.",
+  "fileExplorer.navigation.showShareParentRowTooltip": "Dans le dossier racine de ce partage, « .. » mène aux autres partages du serveur {server}.",
   "@fileExplorer.navigation.showShareParentRowTooltip": {
     "sourceHash": "2282b68"
   },
-  "fileExplorer.shareParentRow.hint": "“..” took you to {server}’s shares. If you’d rather the share’s top folder look like a top folder, turn it off here. You can change it any time in the share’s menu in the volume switcher.",
+  "fileExplorer.shareParentRow.hint": "« .. » a ouvert la liste des partages du serveur {server}. Si vous préférez que le dossier racine du partage se comporte comme un dossier racine, désactivez « .. » ici. Vous pouvez changer ce choix à tout moment dans le menu du partage, dans le sélecteur de volume.",
   "@fileExplorer.shareParentRow.hint": {
     "sourceHash": "bdafe17"
   },
-  "fileExplorer.shareParentRow.turnOffForShare": "Turn off for this share",
+  "fileExplorer.shareParentRow.turnOffForShare": "Désactiver pour ce partage",
   "@fileExplorer.shareParentRow.turnOffForShare": {
     "sourceHash": "1616e09"
   },
-  "fileExplorer.shareParentRow.turnOffForAll": "Turn off for all shares",
+  "fileExplorer.shareParentRow.turnOffForAll": "Désactiver pour tous les partages",
   "@fileExplorer.shareParentRow.turnOffForAll": {
     "sourceHash": "b9133dc"
   },
-  "fileExplorer.shareParentRow.gotIt": "Got it",
+  "fileExplorer.shareParentRow.gotIt": "D’accord",
   "@fileExplorer.shareParentRow.gotIt": {
     "sourceHash": "5ad3dbd"
   },
