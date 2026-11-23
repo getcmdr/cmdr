@@ -683,11 +683,17 @@ function homedOnItsRow(deps: NavigateDeps, location: Location): Location {
   return { ...location, volumeId: holder }
 }
 
-/** Whether `path` sits under the root the pane knows for its (real) volume. */
+/**
+ * Whether `path` sits under the root the pane knows for its volume. Only an OS-path root
+ * can tell: a phone keeps two spellings of one folder (the storage URL and the inner path
+ * Enter lands on, `/Documents` under `mtp://…/65537`), and the server and phone refusals
+ * answer a mismatched pair there (`validateServerNavigation`).
+ */
 function onPaneRoot(deps: NavigateDeps, pane: 'left' | 'right', path: string): boolean {
   const volumeId = deps.getPaneVolumeId(pane)
   if (volumeId === 'network' || volumeId === 'search-results') return true
-  return isPathOnVolume(path, deps.getPaneVolumePath(pane))
+  const root = deps.getPaneVolumePath(pane)
+  return !isLocalPath(root) || isPathOnVolume(path, root)
 }
 
 /**
@@ -701,6 +707,9 @@ function sendBackFromForeignLanding(deps: NavigateDeps, pane: 'left' | 'right', 
   const paneRef = deps.getPaneRef(pane)
   const held = deps.getPanePath(pane)
   if (paneRef?.getCurrentPath() !== path || held === path) return
+  // A phone's inner path (`/Documents`) is foreign to its `mtp://` root by spelling only:
+  // sending it back undid every Enter on a phone folder (`mtp-rename.spec.ts`).
+  if (onPaneRoot(deps, pane, path)) return
   // A FilePane that hasn't taken a just-committed volume switch yet shows the OLD volume's
   // folder: the switch's own load brings it to the tab, and a send-back from here would
   // list the new volume's path against the old volume.

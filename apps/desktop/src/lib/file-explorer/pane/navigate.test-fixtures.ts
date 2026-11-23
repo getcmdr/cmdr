@@ -22,6 +22,7 @@ const VOLUMES = new Map<string, { id: string; name: string; path: string }>([
   ['root', { id: 'root', name: 'Macintosh HD', path: '/' }],
   ['ext', { id: 'ext', name: 'Ext', path: '/Volumes/Ext' }],
   ['network', { id: 'network', name: 'Network', path: 'smb://' }],
+  ['mtp-dev:65537', { id: 'mtp-dev:65537', name: 'Phone', path: 'mtp://dev/65537' }],
   [
     'sftp-nas-local-22-test_user_1',
     { id: 'sftp-nas-local-22-test_user_1', name: 'Testnas', path: 'sftp://test_user_1@testnas.local:22/srv/data' },

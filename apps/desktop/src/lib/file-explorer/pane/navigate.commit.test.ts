@@ -370,6 +370,18 @@ describe('commitPathFromListing — stale-listing drop policy (L6, token + forei
     expect(pane.navigateToPath).not.toHaveBeenCalled()
   })
 
+  // A phone's folder entered with Enter lands on the row's inner path (`/Documents`), a
+  // spelling its `mtp://` root can't prefix. The send-back is for OS-path volumes only:
+  // here it yanked the pane back to the storage root (mtp-rename.spec.ts, PR #1389).
+  it('leaves a phone pane on the inner path Enter landed it on', () => {
+    h = makeHarness({ left: { path: 'mtp://dev/65537', volumeId: 'mtp-dev:65537' } })
+    const pane = h.paneState.left.paneRef
+    if (!pane) throw new Error('the harness builds a pane')
+    shows(pane.ref, 'mtp-dev:65537', '/Documents')
+    commitPathFromListing(h.deps, 'left', '/Documents')
+    expect(pane.navigateToPath).not.toHaveBeenCalled()
+  })
+
   it('leaves a pane alone when the dropped listing is a stale one it no longer shows', () => {
     h = makeHarness({ left: { path: '/Volumes/Ext/docs', volumeId: 'ext' } })
     const pane = h.paneState.left.paneRef

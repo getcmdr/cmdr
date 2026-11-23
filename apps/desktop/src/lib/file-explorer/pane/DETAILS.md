@@ -1390,7 +1390,10 @@ asked only when its volume has no row (a share nobody mapped) or no listed root 
 mismatched pair is left to the refusals. Two backstops stay: the in-place arm hands an off-root path to the switch arm
 (a no-row volume), and a dropped landing the FilePane is SHOWING on the tab's own volume (`sendBackFromForeignLanding`)
 sends the pane back to its tab's folder. ❌ Never a send-back while the FilePane still shows another volume: in the
-stale-listing-after-volume-switch race its props haven't caught up, and the switch's own load brings it to the tab.
+stale-listing-after-volume-switch race its props haven't caught up, and the switch's own load brings it to the tab. ❌
+Both backstops act on an OS-path root only (`onPaneRoot`): a phone keeps two spellings of one folder, and Enter on a
+folder row lands on its inner path (`/Documents` under `mtp://…/65537`), which `isPathOnVolume` calls foreign. A
+send-back there undid every Enter on a phone (`mtp-rename.spec.ts`, Linux E2E on PR #1389).
 
 **Don't add `cd`-style heuristics in `commitPathFromListing`.** Stale `onPathChange` from a slow listing is dropped by
 the drop-foreign-listings policy in `navigate.ts::commitPathFromListing` (`smb://` prefix for `network`,
