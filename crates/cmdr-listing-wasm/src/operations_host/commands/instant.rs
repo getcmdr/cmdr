@@ -58,7 +58,10 @@ impl DemoOperations {
             }
             "rename_file" => {
                 let a: RenameArgs = parse(command, args)?;
-                let (from, to) = match (self.wire_mutation_path(&a.from), self.wire_mutation_path(&a.to)) {
+                // The target through `RenameTarget::read`, as the desktop's: a new name of `.`
+                // or `..` refuses before `demo_path` could fold `/docs/.` into `/docs` (#1229).
+                let to = cmdr_operations::RenameTarget::read(&a.to, |text| self.wire_mutation_path(text));
+                let (from, to) = match (self.wire_mutation_path(&a.from), to) {
                     (Ok(from), Ok(to)) => (from, to),
                     (Err(refused), _) | (_, Err(refused)) => return answer(Err::<(), _>(refused)),
                 };

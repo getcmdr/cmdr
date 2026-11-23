@@ -73,7 +73,7 @@ async fn an_instant_rename_journals_its_row_through_the_real_store() {
     engine
         .rename_managed(
             crate::testing::app_path_of(&tmp.join(&old_name)),
-            crate::testing::app_path_of(&tmp.join("new.txt")),
+            crate::testing::rename_target(&crate::testing::app_path_of(&tmp.join("new.txt"))),
             false,
             "root".to_string(),
             Initiator::User,
@@ -108,7 +108,7 @@ async fn rename_managed_local_success() {
     let result = engine
         .rename_managed(
             crate::testing::app_path_of(&old),
-            crate::testing::app_path_of(&new),
+            crate::testing::rename_target(&crate::testing::app_path_of(&new)),
             false,
             "root".to_string(),
             Initiator::User,
@@ -132,7 +132,7 @@ async fn rename_managed_renames_a_zip_file_itself() {
     let result = engine
         .rename_managed(
             crate::testing::app_path_of(&old),
-            crate::testing::app_path_of(&new),
+            crate::testing::rename_target(&crate::testing::app_path_of(&new)),
             false,
             "root".to_string(),
             Initiator::User,
@@ -155,7 +155,7 @@ async fn rename_managed_local_conflict_without_force_is_transparent() {
     let result = engine
         .rename_managed(
             crate::testing::app_path_of(&old),
-            crate::testing::app_path_of(&new),
+            crate::testing::rename_target(&crate::testing::app_path_of(&new)),
             false,
             "root".to_string(),
             Initiator::User,
@@ -178,7 +178,7 @@ async fn rename_managed_local_force_overwrites() {
     let result = engine
         .rename_managed(
             crate::testing::app_path_of(&old),
-            crate::testing::app_path_of(&new),
+            crate::testing::rename_target(&crate::testing::app_path_of(&new)),
             true,
             "root".to_string(),
             Initiator::User,
@@ -269,7 +269,7 @@ async fn rename_managed_marks_nonroot_volume_busy_during_op() {
     let handle = tokio::spawn(async move {
         ops.rename_managed(
             app_path!("/old").to_owned(),
-            app_path!("/new").to_owned(),
+            crate::testing::rename_target(app_path!("/new")),
             false,
             vid,
             Initiator::User,
@@ -387,7 +387,7 @@ async fn a_rename_that_copies_starts_a_move_instead_of_calling_rename() {
     let result = engine
         .rename_managed(
             app_path!("/a/foo").to_owned(),
-            app_path!("/a/bar").to_owned(),
+            crate::testing::rename_target(app_path!("/a/bar")),
             false,
             volume_id,
             Initiator::User,
@@ -716,31 +716,28 @@ async fn the_rename_itself_applies_the_shares_rules() {
         .volumes()
         .register(&volume_id, Arc::clone(&volume) as Arc<dyn Volume>);
 
-    let refused = engine
-        .rename_managed(
-            app_path!("/docs/notes.txt").to_owned(),
-            // A bridge value: no typed door makes a `..`, and the rename still refuses one.
-            crate::wire_paths::seam_path(std::path::Path::new("/docs/..")).into_owned(),
-            false,
-            volume_id.clone(),
-            Initiator::Agent,
-        )
-        .await;
-    assert!(
-        matches!(
-            refused,
-            Err(MutationError::NameNotAllowed {
-                reason: ValidationError::DotName
-            })
-        ),
-        "{refused:?}"
-    );
+    // A `.` or `..` new name has no rename target at all: the one door refuses its text
+    // before a typed reading could fold `/docs/.` into `/docs` (#1229).
+    for text in ["/docs/..", "/docs/."] {
+        let refused = RenameTarget::read(text, |t| {
+            AppPathBuf::parse(t, app_path::PathFlavor::Posix).map_err(|_| MutationError::NameEmpty)
+        });
+        assert!(
+            matches!(
+                refused,
+                Err(MutationError::NameNotAllowed {
+                    reason: ValidationError::DotName
+                })
+            ),
+            "{text}: {refused:?}"
+        );
+    }
     assert!(volume.exists(app_path!("/docs/notes.txt")).await, "the file stayed put");
 
     let taken = engine
         .rename_managed(
             app_path!("/docs/notes.txt").to_owned(),
-            app_path!("/docs/CON").to_owned(),
+            crate::testing::rename_target(app_path!("/docs/CON")),
             false,
             volume_id,
             Initiator::Agent,

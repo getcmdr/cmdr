@@ -332,6 +332,11 @@ async fn delete(world: &impl World) -> Value {
     trace(world, vec![answer(&started)], &[&sink])
 }
 
+/// A typed path as a rename target, through its one door.
+fn target(path: &AppPath) -> crate::RenameTarget {
+    crate::RenameTarget::read(path.as_str(), |_| Ok(path.to_owned())).expect("a real new name")
+}
+
 async fn rename_and_mkdir(world: &impl World) -> Value {
     world.seed(false).await;
     let volume_id = world.within().from_volume;
@@ -339,7 +344,7 @@ async fn rename_and_mkdir(world: &impl World) -> Value {
     let renamed = engine
         .rename_managed(
             world.source("a.txt"),
-            world.source("renamed.txt"),
+            target(&world.source("renamed.txt")),
             false,
             volume_id.clone(),
             Initiator::User,
@@ -349,7 +354,7 @@ async fn rename_and_mkdir(world: &impl World) -> Value {
     let refused = engine
         .rename_managed(
             world.source("b.txt"),
-            world.source("c.txt"),
+            target(&world.source("c.txt")),
             false,
             volume_id.clone(),
             Initiator::User,

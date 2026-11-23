@@ -203,11 +203,6 @@ pub async fn rename_file(
     .await
 }
 
-/// Whether `text`'s last name is `.` or `..` (a trailing `/` ignored, as the OS reads it).
-fn ends_in_dot_name(text: &str) -> bool {
-    matches!(text.trim_end_matches('/').rsplit('/').next(), Some("." | ".."))
-}
-
 /// [`rename_file`] with the settle delivery passed in.
 pub(crate) async fn rename_file_replying(
     from: String,
@@ -226,16 +221,11 @@ pub(crate) async fn rename_file_replying(
     } else {
         (expand_tilde(&from), expand_tilde(&to))
     };
-    // A new name of `.` or `..` is the name the rules refuse, as the rename itself
-    // words it, ❌ never a path the edge can't read.
-    if ends_in_dot_name(&to) {
-        return Err(MutationError::NameNotAllowed {
-            reason: cmdr_fs::validation::ValidationError::DotName,
-        });
-    }
-    // Read at the edge as app paths, like every start's: a `..` refuses.
+    // Read at the edge as app paths, like every start's: a `..` refuses. The target goes
+    // through `RenameTarget::read`, which refuses a new name of `.` or `..` in the rules'
+    // own words before the reading could fold it away (#1229).
     let from_path = crate::commands::wire_path::start_path(&from)?;
-    let to_path = crate::commands::wire_path::start_path(&to)?;
+    let to_path = cmdr_operations::RenameTarget::read(&to, |text| Ok(crate::commands::wire_path::start_path(text)?))?;
 
     // Detached: the deadline bounds the FE's wait, not the rename. On MTP the
     // rename is a PTP `SetObjectPropValue`, and dropping it mid-transaction

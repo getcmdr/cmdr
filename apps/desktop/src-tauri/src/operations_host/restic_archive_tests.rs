@@ -269,7 +269,7 @@ async fn writes_into_the_zip_and_a_move_out_refuse_before_anything_moves() {
     let renamed = engine
         .rename_managed(
             cmdr_operations::testing::app_path_of(&zip.join("readme.txt")),
-            cmdr_operations::testing::app_path_of(&zip.join("renamed.txt")),
+            cmdr_operations::testing::rename_target(&cmdr_operations::testing::app_path_of(&zip.join("renamed.txt"))),
             false,
             drive.volume_id.clone(),
             Initiator::User,

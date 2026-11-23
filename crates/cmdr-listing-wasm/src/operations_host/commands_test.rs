@@ -427,6 +427,32 @@ async fn a_rename_undoes() {
     );
 }
 
+/// A forced rename "to" `/Users/you/.` or `..` is refused as the dot name it is, never read
+/// as a rename onto the folder holding the file (#1229): `demo_path` folds `/x/.` into `/x`,
+/// so the refusal reads the text first, through `RenameTarget::read`.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_forced_rename_to_a_dot_name_refuses_and_moves_nothing() {
+    let (demo, events) = demo();
+    open(&demo, &events, "home", "/Users/you").await;
+    for to in ["/Users/you/.", "/Users/you/..", "/Users/you/./"] {
+        let refused = demo
+            .invoke(
+                "rename_file",
+                json!({
+                    "from": "/Users/you/a.txt", "to": to,
+                    "force": true, "volumeId": "root", "initiator": "user",
+                }),
+            )
+            .await
+            .expect_err("a dot name is no new name");
+        assert_eq!(refused["type"], "nameNotAllowed", "{to}: {refused}");
+    }
+    assert!(
+        names(&demo, "home").await.contains(&"a.txt".to_string()),
+        "a.txt stayed put"
+    );
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn the_trash_refuses_typed_as_on_a_volume_without_one() {
     let (demo, events) = demo();

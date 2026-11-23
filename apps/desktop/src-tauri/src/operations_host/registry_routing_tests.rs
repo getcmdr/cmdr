@@ -292,7 +292,7 @@ async fn rename_managed_routes_an_in_archive_rename_to_the_edit_driver() {
     let err = engine
         .rename_managed(
             cmdr_operations::testing::app_path_of(&from),
-            cmdr_operations::testing::app_path_of(&to),
+            cmdr_operations::testing::rename_target(&cmdr_operations::testing::app_path_of(&to)),
             false,
             "root".to_string(),
             Initiator::User,
@@ -315,7 +315,7 @@ async fn rename_managed_routes_an_in_archive_rename_to_the_edit_driver() {
     let cross = engine
         .rename_managed(
             cmdr_operations::testing::app_path_of(&zip.join("old.txt")),
-            cmdr_operations::testing::app_path_of(&outside),
+            cmdr_operations::testing::rename_target(&cmdr_operations::testing::app_path_of(&outside)),
             false,
             "root".to_string(),
             Initiator::User,

@@ -188,3 +188,33 @@ fn only_an_app_path_a_route_serves_routes_over_its_parent() {
     assert!(!routes_over_its_parent(zip.as_str()));
     assert!(!routes_over_its_parent("relative/a.zip/inner.txt"));
 }
+
+/// The production door whole, on this host's flavor: a write start's text through
+/// `start_path`, then the engine's crossing into its bodies (`engine_path`). While escapes
+/// aren't live, a literal escape-range code point the text holds reaches the body as its own
+/// UTF-8, byte for byte, ❌ never the byte `E9` an escape of the same code point names. A
+/// trailing `/` goes, so `x/link/` names the link.
+#[test]
+fn a_start_paths_literal_escape_range_code_point_reaches_the_engine_byte_for_byte() {
+    if ESCAPES_LIVE {
+        return;
+    }
+    let root = if cfg!(windows) { "C:/" } else { "/" };
+    for (sent, body) in [
+        (
+            format!("{root}x/caf\u{10FEE9}.txt"),
+            format!("{root}x/caf\u{10FEE9}.txt"),
+        ),
+        (format!("{root}x/cafe\u{301}/"), format!("{root}x/cafe\u{301}")),
+        (format!("{root}x/link/"), format!("{root}x/link")),
+    ] {
+        let typed = start_path(&sent).expect("a start's path");
+        assert_eq!(
+            cmdr_operations::testing::engine_path_of(&typed)
+                .as_os_str()
+                .as_encoded_bytes(),
+            body.as_bytes(),
+            "{sent}"
+        );
+    }
+}

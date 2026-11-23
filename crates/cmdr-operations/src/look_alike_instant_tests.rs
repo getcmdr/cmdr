@@ -97,7 +97,7 @@ async fn a_rename_target_goes_out_composed() {
     engine
         .rename_managed(
             app_path!("/dir/a.txt").to_owned(),
-            canonical(&format!("/dir/{CAFE_NFD}")),
+            crate::testing::rename_target(&canonical(&format!("/dir/{CAFE_NFD}"))),
             false,
             id,
             Initiator::User,
@@ -118,7 +118,7 @@ async fn a_rename_onto_a_look_alike_is_refused_unless_forced_and_then_replaces_i
     let refused = engine
         .rename_managed(
             app_path!("/dir/a.txt").to_owned(),
-            canonical(&format!("/dir/{CAFE_NFC}")),
+            crate::testing::rename_target(&canonical(&format!("/dir/{CAFE_NFC}"))),
             false,
             id.clone(),
             Initiator::User,
@@ -135,7 +135,7 @@ async fn a_rename_onto_a_look_alike_is_refused_unless_forced_and_then_replaces_i
     engine
         .rename_managed(
             app_path!("/dir/a.txt").to_owned(),
-            canonical(&format!("/dir/{CAFE_NFC}")),
+            crate::testing::rename_target(&canonical(&format!("/dir/{CAFE_NFC}"))),
             true,
             id,
             Initiator::User,
@@ -166,7 +166,7 @@ async fn respelling_a_name_is_not_a_clash_with_itself() {
     engine
         .rename_managed(
             canonical(&format!("/dir/{CAFE_NFD}")),
-            canonical(&format!("/dir/{CAFE_NFC}")),
+            crate::testing::rename_target(&canonical(&format!("/dir/{CAFE_NFC}"))),
             false,
             id,
             Initiator::User,

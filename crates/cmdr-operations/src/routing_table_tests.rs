@@ -221,7 +221,7 @@ async fn rename(volume_id: &str) -> Ran {
     rig.engine
         .rename_managed(
             crate::testing::app_path_of(&base.join("a.txt")),
-            crate::testing::app_path_of(&base.join("renamed.txt")),
+            crate::testing::rename_target(&crate::testing::app_path_of(&base.join("renamed.txt"))),
             false,
             id(volume_id).into(),
             Initiator::User,

@@ -395,7 +395,7 @@ async fn a_rename_of_the_home_folder_refuses_at_the_preflight_and_the_rename() {
     let refused = engine
         .rename_managed(
             crate::testing::app_path_of(&home),
-            crate::testing::app_path_of(&renamed),
+            crate::testing::rename_target(&crate::testing::app_path_of(&renamed)),
             false,
             "root".into(),
             Initiator::User,
@@ -413,7 +413,7 @@ async fn a_rename_of_another_users_home_folder_goes_ahead() {
     engine
         .rename_managed(
             crate::testing::app_path_of(&other),
-            crate::testing::app_path_of(&other.with_file_name("guest")),
+            crate::testing::rename_target(&crate::testing::app_path_of(&other.with_file_name("guest"))),
             false,
             "root".into(),
             Initiator::User,

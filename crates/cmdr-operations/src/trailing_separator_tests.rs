@@ -176,7 +176,7 @@ async fn a_rename_of_a_folder_link_with_a_trailing_separator_renames_the_link() 
     engine
         .rename_managed(
             tree.wire("x/link/"),
-            tree.wire("x/renamed/"),
+            crate::testing::rename_target(&tree.wire("x/renamed/")),
             false,
             "root".into(),
             Initiator::User,

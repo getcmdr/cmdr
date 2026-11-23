@@ -34,9 +34,11 @@ use cmdr_fs::volume::{RenameWork, Volume};
 use cmdr_operation_log::types::{Initiator, OpKind, OperationId};
 
 mod bulk;
+mod target;
 mod validity;
 
 pub use bulk::{BulkRenameRow, RenameStartError, RenamesStarted};
+pub use target::RenameTarget;
 #[cfg(test)]
 pub(crate) use validity::RenameByMove;
 pub use validity::{RenameValidityResult, same_local_file};
@@ -58,13 +60,16 @@ impl super::Operations {
     pub async fn rename_managed(
         &self,
         from: AppPathBuf,
-        to: AppPathBuf,
+        to: RenameTarget,
         force: bool,
         volume_id: String,
         initiator: Initiator,
     ) -> Result<(), MutationError> {
         // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
-        let typed = RenameEnds { from, to };
+        let typed = RenameEnds {
+            from,
+            to: to.into_app_path(),
+        };
         let from = super::wire_paths::engine_path(&typed.from);
         let to = super::wire_paths::engine_path(&typed.to);
         // Kept for the refusal line below: `rename_managed_inner` consumes both, and a
@@ -182,17 +187,8 @@ async fn rename_managed_inner(
     }
 
     // A name the destination doesn't take is refused here too, not only by the
-    // editor's validity check: an agent's rename never asked that check.
-    // ❗ `Path::file_name` reads `/docs/..` as no name and `/docs/.` as `docs`,
-    // so a dot name is caught on the raw path first (#1229).
-    if crate::name_rules::ends_in_dot_name(&to) {
-        return (
-            Err(MutationError::NameNotAllowed {
-                reason: cmdr_fs::validation::ValidationError::DotName,
-            }),
-            InstantTarget::Volume,
-        );
-    }
+    // editor's validity check: an agent's rename never asked that check. A `.` or
+    // `..` new name never gets here: `RenameTarget::read` refused its text (#1229).
     if let (Some(dir), Some(name)) = (to.parent(), to.file_name()) {
         let name = name.to_string_lossy();
         if let Err(refusal) = crate::name_rules::check_new_name(host, &volume_id, dir, &name).await {

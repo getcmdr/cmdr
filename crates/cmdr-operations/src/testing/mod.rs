@@ -60,6 +60,20 @@ pub fn app_path_of(path: &std::path::Path) -> cmdr_fs::app_path::AppPathBuf {
     }
 }
 
+/// The `std::path` value a start hands its bodies for `path` (`wire_paths::engine_path`, the
+/// production crossing), for a cell that pins a host's whole door: its edge reading, then this.
+pub fn engine_path_of(path: &cmdr_fs::app_path::AppPath) -> PathBuf {
+    crate::wire_paths::engine_path(path)
+}
+
+/// A typed path as a rename's destination, through the one door that builds one
+/// (`RenameTarget::read`), so a cell meets the dot-name refusal as every caller does.
+/// Panics if the door refuses (a cell pinning a refusal calls `RenameTarget::read` itself).
+#[track_caller]
+pub fn rename_target(path: &cmdr_fs::app_path::AppPath) -> crate::RenameTarget {
+    crate::RenameTarget::read(path.as_str(), |_| Ok(path.to_owned())).expect("a typed path's last name is a real name")
+}
+
 /// [`app_path_of`] over a start's sources.
 #[track_caller]
 pub fn app_paths_of<P: AsRef<std::path::Path>>(

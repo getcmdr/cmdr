@@ -142,7 +142,7 @@ async fn renames_and_new_entries_in_the_view_refuse() {
     let renamed = engine
         .rename_managed(
             ap(IN_VIEW_FILE),
-            ap(&format!("{IN_VIEW}/b.txt")),
+            cmdr_operations::testing::rename_target(&ap(&format!("{IN_VIEW}/b.txt"))),
             false,
             id.clone(),
             Initiator::User,

@@ -339,7 +339,7 @@ async fn a_rename_announces_both_ends_before_the_syscall() {
     rig.engine
         .rename_managed(
             crate::testing::app_path_of(&rig.join("src/a.txt")),
-            crate::testing::app_path_of(&rig.join("src/b.txt")),
+            crate::testing::rename_target(&crate::testing::app_path_of(&rig.join("src/b.txt"))),
             false,
             "root".to_string(),
             Initiator::User,

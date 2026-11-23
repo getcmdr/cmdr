@@ -1084,9 +1084,12 @@ format, with the host's path API limit and, on Windows, never weaker than Win32'
   `create_file_core_on`, `rename_managed`, and Ask Cmdr's bulk rename (`rename/bulk.rs::refused_rows`, one lookup per
   batch, a refused row `Failed` in place), before any I/O, refusing with `MutationError::NameNotAllowed { reason }` (or
   `NameEmpty`). A name it TAKES with a `PortabilityWarning` goes ahead: the editors showed the warning before the
-  commit. ❗ `rename_managed` and the bulk run catch a `.` / `..` target on the raw path (`ends_in_dot_name`):
-  `Path::file_name` reads `/docs/..` as no name and `/docs/.` as `docs`, so the check would otherwise run on the
-  parent's name (#1229).
+  commit. ❗ A `.` / `..` new name is caught on the sender's TEXT, before any reading normalizes it: a typed app path
+  drops a `.` name (`/docs/.` reads as `/docs`), so a check on the typed target never fires, and a forced rename "to"
+  `/docs/.` became a rename onto its own parent. `rename_managed` takes a `RenameTarget` (`src/rename/target.rs`), whose
+  only constructor, `RenameTarget::read(text, host_reading)`, refuses the dot name first, so the desktop's command, the
+  demo, and a cell (`testing::rename_target`) all meet it. The bulk run's `PathBuf` rows keep their raw-path check
+  (`name_rules::ends_in_dot_name`) (#1229).
 - **One resolver for every hint.** `Operations::name_rules_at` (blocking) is the host's door: the `get_name_rules` IPC
   command for the rename editor's, New folder's, and the transfer dialog's checks, Multi-Rename's session at open, Ask
   Cmdr's rename review (its preflight blocks `nameNotAllowed` and warns `notPortable`), and the MCP `multi_rename` tool.
@@ -1350,12 +1353,12 @@ the optional seams), what each seam's contract is, and where Cmdr answers it: `s
 
 ## The public surface is capped
 
-`index-crate-isolation` holds this crate to 90 root promises, 60 `Operations` methods, one public module (`host`), and
+`index-crate-isolation` holds this crate to 91 root promises, 60 `Operations` methods, one public module (`host`), and
 25 public items inside it (`scripts/check/checks/index-crate-isolation-ceilings.go`). The numbers are exactly what the
 crate exposes, measured with no headroom, so an addition has to be argued for. Everything counted exists for a named
 caller.
 
-Root promises (90), by who needs them:
+Root promises (91), by who needs them:
 
 - **The handle** (3): `Operations`, `OperationsBuilder` (from `Operations::builder`), and `AlreadyClaimed` (a second
   `claim_ledger`'s refusal).
@@ -1366,11 +1369,12 @@ Root promises (90), by who needs them:
   `QueueMoveOutcome`, the queue controls' typed answers the IPC commands and the MCP `queue` tool return.
 - **The transfer tree's window** (6): `TransferTreeView`, `TransferTreeViewRequest`, `TransferTreeRow`, `TreeRowKind`,
   `TreeRowState`, and `TransferTreeViewError`, for `get_transfer_tree_view` and `cmdr://state`.
-- **Instant mutations** (11): `MutationError` (the typed refusal every instant command returns), the
+- **Instant mutations** (12): `MutationError` (the typed refusal every instant command returns), the
   reply-within-a-deadline contract the IPC commands answer through (`reply_within`, `reply_or_hand_off`,
   `MUTATION_REPLY_DEADLINE`, `Replied`, `MutationReply`, `MutationSettled`), and rename's batch and validity vocabulary
   (`BulkRenameRow`, `RenameStartError`, `RenameValidityResult`, `RenamesStarted`), which `commands/rename.rs`,
-  `multi_rename`, and the agent's suggested renames speak.
+  `multi_rename`, and the agent's suggested renames speak, and `RenameTarget`, `rename_managed`'s destination, whose
+  only constructor refuses a `.` or `..` new name on the sender's text (#1229).
 - **Pre-flight and undo** (9): `SourceItemInput`, `VolumeScanError`, and `CONFLICT_CHECK_BUDGET` (the transfer dialog's
   conflict check), `ScanCostFacts` (the S3 estimate prices a preview's counts), the source binding a reviewed batch
   supplies (`ExpectedSources`, `LocalContent`, `RemoteContent`, `SourceFingerprint`, for the agent's approved ops), and

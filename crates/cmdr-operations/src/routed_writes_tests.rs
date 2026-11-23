@@ -166,7 +166,7 @@ async fn an_instant_rename_under_dot_git_refuses() {
     let result = engine
         .rename_managed(
             crate::testing::app_path_of(&from),
-            app_path!("/repo/.git/branches/main/b.txt").to_owned(),
+            crate::testing::rename_target(app_path!("/repo/.git/branches/main/b.txt")),
             false,
             volume_id,
             Initiator::User,
