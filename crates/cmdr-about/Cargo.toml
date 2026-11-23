@@ -29,7 +29,7 @@ specta = { version = "=2.0.0-rc.24", features = ["derive"] }
 # a buffer the host read, and `std` adds file helpers plus the `cfb` reader.
 infer = { version = "0.22.0", default-features = false }
 # `kMDItemWhereFroms` is a binary property list.
-plist = { version = "1.10.3", default-features = false }
+plist = { version = "1.10.4", default-features = false }
 # A download source's host, the one part of it that may leave the machine: the
 # WHATWG parser lowercases it, answers an IDN as punycode, and tells an IP
 # literal from a name.
@@ -38,7 +38,7 @@ url = "2"
 # its registrable domain only (`dl.dropboxusercontent.com` → `dropboxusercontent.com`),
 # since a subdomain can carry a token or a private name. Released daily from the
 # list; Renovate's weekly group takes the updates. `helpers` gives `domain_str`.
-psl = { version = "2.1.254", default-features = false, features = ["helpers"] }
+psl = { version = "2.1.259", default-features = false, features = ["helpers"] }
 
 [dev-dependencies]
 cmdr-about = { path = ".", features = ["fuzzing"] }

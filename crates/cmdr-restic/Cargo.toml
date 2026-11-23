@@ -27,7 +27,7 @@ cmdr-fs = { path = "../cmdr-fs" }
 # stays: no CLI parsing, no WebDAV server. ❌ Never add `rustic_backend`: it brings
 # rustic's own storage drivers (OpenDAL, SFTP, rest-server) when this crate reads
 # the repo through Cmdr's own volumes instead.
-rustic_core = { version = "0.13.0", default-features = false }
+rustic_core = { version = "0.14.0", default-features = false }
 # The byte buffer type rustic's backend traits exchange. Already in the graph.
 bytes = "1"
 # The runtime `Handle` the storage adapter `block_on`s the parent's async reads
@@ -47,7 +47,7 @@ serde_json = "1"
 rayon = "1.11.0"
 # Wipes every copy of a password the crate holds (the hub's slots, the blocking
 # open task's), on drop.
-zeroize = "1.9.0"
+zeroize = "1.9.2"
 
 [dev-dependencies]
 # Depending on ourselves turns the `testing` feature on for every DEV target and

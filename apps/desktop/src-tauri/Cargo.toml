@@ -217,7 +217,7 @@ mime_guess = "2"
 base64 = "0.23.0"
 rayon = "1.11.0"
 regex = "1"
-uuid = { version = "1.29.2", features = ["v4", "v7"] }
+uuid = { version = "1.29.3", features = ["v4", "v7"] }
 tauri-plugin-clipboard-manager = "2"
 notify-debouncer-full = "0.7.0"
 bincode2 = "2"
@@ -240,7 +240,7 @@ reqwest = { version = "0.13", features = ["cookies", "json", "rustls", "stream",
 # The one door every HTTP client is built through: proxy routing the way macOS decides it.
 cmdr-http = { path = "../../../crates/cmdr-http" }
 # MCP server. `rmcp` is the official Rust SDK; ❌ never its `local` feature (its handlers would stop being `Send`).
-rmcp = { version = "=3.10.0", default-features = false, features = ["server", "transport-streamable-http-server"] }
+rmcp = { version = "=3.11.0", default-features = false, features = ["server", "transport-streamable-http-server"] }
 axum = "0.8"
 tokio = { version = "1", features = ["rt-multi-thread", "net", "time", "sync", "macros", "process"] }
 futures-util = "0.3"
@@ -260,8 +260,8 @@ memchr = "2"
 walkdir = "2"
 # Drive indexing: SQLite store and macOS FSEvents watcher (the parallel directory
 # walker is now the in-tree `indexing::scanner::walker`, not a dependency)
-rusqlite = { version = "0.42", features = ["bundled", "collation", "fallible_uint"] }
-sysinfo = { version = "0.40.3", default-features = false, features = ["system"] }
+rusqlite = { version = "0.43", features = ["bundled", "collation", "fallible_uint"] }
+sysinfo = { version = "0.40.4", default-features = false, features = ["system"] }
 time = { version = "0.3", features = ["parsing", "macros", "formatting"] }
 # Playwright E2E testing plugin: socket bridge for direct webview injection (optional, feature-gated, dev-only).
 # Provides multi-window command targeting and label-aware macOS native screenshots (so E2E can capture
@@ -272,7 +272,7 @@ tauri-plugin-playwright = { version = "0.4.1", optional = true }
 # use of this crate (the write side, and the decrypt path rc-zip can't serve) lives in
 # `cmdr-archive`; `aes-crypto` is declared there and unifies here, so the feature set is a
 # superset of both. `aes 0.9.1` (stable) unifies with `smb2`'s SMB3 AEAD stack.
-zip = { version = "9.5.1", default-features = false, features = ["deflate", "aes-crypto", "unreserved"] }
+zip = { version = "9.8.0", default-features = false, features = ["deflate", "aes-crypto", "unreserved"] }
 # Error reporter: short-ID generation (`ERR-XXXXX`) using rejection sampling.
 rand = "0.10"
 # Multi-provider LLM client. Normalizes OpenAI / OpenAI Responses / Anthropic / Gemini /
@@ -288,7 +288,7 @@ rand = "0.10"
 # reasoning items, Gemini per-part thought signatures, Mistral `thinking` chunks, and OpenRouter's
 # streamed `reasoning_details` round-trip (`src/agent/llm/DETAILS.md` § Reasoning round-trip).
 # Solo maintainer; MIT/Apache-2.0; ~25k LOC if we ever need to fork.
-genai = "=0.7.4"
+genai = "=0.7.5"
 # Type-safe IPC: typed Rust↔TS bindings for tauri commands and events.
 # Generated `bindings.ts` lands in `apps/desktop/src/lib/ipc/`; the frontend
 # imports `commands.commandName(args)` instead of `invoke('command_name', ...)`.
@@ -306,7 +306,7 @@ url = "2"
 semver = "1"
 # Property lists: macOS bundle and Dock plists, and the managed-policy values (`managed_policy/`),
 # which the test-build plist-file override also reads on Linux.
-plist = "1.10.3"
+plist = "1.10.4"
 # CommonMark rendering for the What's-new popup, so a lead renders the way GitHub and the website
 # render the same changelog, and for the viewer's rendered Markdown view. `html` only: the default
 # `getopts` feature is the crate's own CLI.
@@ -314,7 +314,7 @@ pulldown-cmark = { version = "0.13.6", default-features = false, features = ["ht
 # mDNS discovery for network host browsing (pure Rust, cross-platform).
 # 0.21.5 is the floor: older releases retry a failed multicast join every 5 s forever
 # on Macs with VM or container bridges. See `src/network/DETAILS.md`.
-mdns-sd = { version = "0.21.7", features = ["logging"] }
+mdns-sd = { version = "0.22.0", features = ["logging"] }
 # SMB2/3 protocol client for share enumeration (pure Rust, pipelined I/O).
 # When bumping: also re-vendor the test containers per
 # apps/desktop/test/smb-servers/.compose/VENDORED.md
@@ -350,12 +350,12 @@ freedesktop-icons = "0.4"
 # Already linked through `tauri-plugin-clipboard-manager` (same version and features), so it adds
 # no crate; direct because its typed `ContentNotAvailable` tells "no text" from a failure, which
 # the plugin flattens into a string.
-arboard = { version = "3.6", default-features = false, features = ["wayland-data-control"] }
+arboard = { version = "3.7", default-features = false, features = ["wayland-data-control"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 # The clipboard's plain text (`clipboard/platform/arboard_text.rs`), as on Linux. Task 42's files
 # (`CF_HDROP`, `Preferred DropEffect`) go through `windows-sys` beside it.
-arboard = { version = "3.6", default-features = false }
+arboard = { version = "3.7", default-features = false }
 # Win32 calls behind the app's `platform/` seams: the registry (device id, OS names, managed
 # policy and its change watch), `RtlGetVersion`, the memory counters, the instance lock's
 # message box, the drive table (volume GUIDs, drive types, mapped shares), the system look's

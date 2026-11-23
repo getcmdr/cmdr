@@ -84,13 +84,13 @@ shuttle = { version = "0.9.10", optional = true }
 # `CancellationToken`, one per operation, which every backend call hears.
 tokio-util = { version = "0.7.18", features = ["rt"] }
 # Operation and preview ids.
-uuid = { version = "1.29.2", features = ["v4", "v7"] }
+uuid = { version = "1.29.3", features = ["v4", "v7"] }
 # Walking a local tree for the compress estimate and a copy into a zip (the archive
 # edits compile in the browser build too, where they refuse before any walk).
 walkdir = "2"
 # Fresh compression's writer. The features match the app's copy, so the graph
 # links one `zip`.
-zip = { version = "9.4.1", default-features = false, features = ["deflate", "aes-crypto", "unreserved"] }
+zip = { version = "9.8.0", default-features = false, features = ["deflate", "aes-crypto", "unreserved"] }
 
 # Everything that needs the host's own disk, which the browser build (the demo's
 # `wasm32-unknown-unknown` engine) doesn't have. The local-engine modules that use
@@ -111,7 +111,7 @@ libc = "0.2"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # Moving to the freedesktop trash.
-trash = "5.3"
+trash = "5.4"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # Moving to the Trash through `NSFileManager`, and asking it which trash a volume
@@ -161,7 +161,7 @@ jiff = "0.2.43"
 # The hot-path bench (`benches/transfer_benchmarks.rs`).
 criterion = { version = "0.8.1", features = ["html_reports"] }
 # Reading a journal's rows back.
-rusqlite = { version = "0.42", features = ["bundled", "collation", "fallible_uint"] }
+rusqlite = { version = "0.43", features = ["bundled", "collation", "fallible_uint"] }
 # Tarball fixtures for the read-only archive cells.
 tar = "0.4"
 # Scratch directories.

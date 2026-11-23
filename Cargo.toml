@@ -36,7 +36,7 @@ members = [
   "crates/index-query",
   "crates/operation-log-dump",
 ]
-exclude = ["benchmarks/smb", "vendor/notify", "vendor/rc-zip", "vendor/rustic_core", "vendor/tauri-plugin-store"]
+exclude = ["benchmarks/smb", "vendor/notify", "vendor/rc-zip", "vendor/tauri-plugin-store"]
 resolver = "2"
 
 # Third-party crates we patch, each identical to its crates.io release apart from the fix, which
@@ -44,9 +44,8 @@ resolver = "2"
 # past the vendored version makes cargo resolve crates.io again.
 [patch.crates-io]
 # Built on `zstd` 0.14, clearing the 0.13 line's RustSec advisories (RUSTSEC-2026-0391,
-# 0395–0406), which no rc-zip or rustic_core release has moved off yet.
+# 0395–0406), which no rc-zip release has moved off yet.
 rc-zip = { path = "vendor/rc-zip" }
-rustic_core = { path = "vendor/rustic_core" }
 # `Store::save` writes a synced temp file and renames it over the store, so a crash mid-save
 # can't leave `settings.json`, `shortcuts.json`, or `license.json` truncated (#461), and it
 # refuses to save over a store file that didn't load (#506).

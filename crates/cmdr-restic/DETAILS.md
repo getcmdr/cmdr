@@ -4,8 +4,8 @@ The spec and the research behind it: GitHub issue #422. This crate holds the sto
 detection, and the read-only view (`ResticVolume` over the shared `ResticRepos` hub). The host route, the listing
 overlay, the unlock UI, and copy-out live in the app.
 
-Written against `rustic_core` 0.13.0 (default features off). The issue was researched on 0.12.0; what that source says
-and what moved is in § "rustic_core 0.13.0 facts". The guardrails the whole feature keeps, app side included: §
+Written against `rustic_core` 0.14.0 (default features off). The issue was researched on 0.12.0; what that source says
+and what moved is in § "rustic_core 0.14.0 facts". The guardrails the whole feature keeps, app side included: §
 "Invariants". An adversarial review against them, and each finding's fix: `docs/notes/restic/conformance-review.md`.
 
 ## Decisions
@@ -469,12 +469,11 @@ unlocked view.
   watch, the index) never read a snapshot as a local disk. `VIRTUAL_ENTRY_NAME` and `restic_route` are defined in
   `cmdr_fs::restic_view` (the listing engine asks them without linking rustic) and re-exported here.
 
-## rustic_core 0.13.0 facts
+## rustic_core 0.14.0 facts
 
-`rustic_core` is vendored (`vendor/rustic_core/CMDR-PATCH.md`) only to sit on `zstd` 0.14; its code is the release's.
-
-Read from `~/.cargo/registry/src/*/rustic_core-0.13.0/src/` (2026-10-20). Each one shaped a design above; re-check them
-on a bump.
+Read from `~/.cargo/registry/src/*/rustic_core-0.13.0/src/` (2026-10-20) and re-checked against 0.14.0's (2026-11-23):
+every fact below still holds, and the crate built and passed its tests with no code change. Each one shaped a design
+above; re-check them on a bump. 0.14.0 is the first release on `zstd` 0.14, which ended the vendored copy.
 
 What differs from the issue's 0.12.0 research:
 

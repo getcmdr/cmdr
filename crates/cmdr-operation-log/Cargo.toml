@@ -28,7 +28,7 @@ cmdr-fs = { path = "../cmdr-fs" }
 log = "0.4"
 # The journal's store. The features match every other copy in the workspace
 # (`bundled` most of all), so the graph links one SQLite.
-rusqlite = { version = "0.42", features = ["bundled", "collation", "fallible_uint"] }
+rusqlite = { version = "0.43", features = ["bundled", "collation", "fallible_uint"] }
 # The read API's rows and the typed tokens derive the IPC wire form; the host
 # decides what crosses to a UI.
 serde = { version = "1", features = ["derive"] }
@@ -40,7 +40,7 @@ specta = { version = "=2.0.0-rc.24", features = ["derive"] }
 # `fold_name`: the NFC half of the case-folded name column search matches on.
 unicode-normalization = "0.1"
 # Operation ids. UUIDv7, never v4 (`new_operation_id` says why).
-uuid = { version = "1.29.2", features = ["v7"] }
+uuid = { version = "1.29.3", features = ["v7"] }
 
 [dev-dependencies]
 # Depending on ourselves turns the `testing` feature on for every DEV target and
@@ -53,4 +53,4 @@ tempfile = "3"
 # `hooks` (an empty feature, no extra crates) for `Connection::progress_handler`, which
 # is how the item tree's structural gate COUNTS SQLite's VM steps per read
 # (`src/tree/scale_tests.rs`). Dev-only, so no shipped build carries the hook machinery.
-rusqlite = { version = "0.42", features = ["hooks"] }
+rusqlite = { version = "0.43", features = ["hooks"] }

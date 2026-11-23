@@ -27,6 +27,6 @@ core-foundation = "0.10.1"
 flate2 = "1"
 tar = "0.4"
 # Reads the bundle's `Info.plist` version.
-plist = "1.10.3"
+plist = "1.10.4"
 # Where the gate unpacks an archive it vets.
 tempfile = "3"

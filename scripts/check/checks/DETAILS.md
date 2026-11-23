@@ -3342,12 +3342,12 @@ passes while the real thing fails.
 **Decision**: the rustdoc lanes (host and Linux) run `cargo doc --message-format=json` and drop every diagnostic whose
 package sits in a root `[patch.crates-io]` path (`rustdocOwnOutput`), then render the rest back to the text above.
 **Why**: cargo caps a registry crate's lints, but a vendored copy is a path dependency, so its own `[lints]` table
-applies uncapped: `rustic_core` 0.13.0's named `no_mangle_generic_items`, which Rust 1.99 removed, and its "removed
-lint" warning failed the lane in CI. We don't rewrite vendored code to please a lint, and a vendored crate's warnings
-aren't ours to own. The one exception is a manifest setting that only makes noise in every dev build: that's why our
-`rustic_core` copy drops the setting (`vendor/rustic_core/CMDR-PATCH.md`), and this filter still covers every other
-diagnostic. JSON names each diagnostic's package; attributing text output by cargo's "`x` generated N warnings"
-summaries would break when parallel units interleave.
+applies uncapped: the vendored `rustic_core` 0.13.0 named `no_mangle_generic_items`, which Rust 1.99 removed, and its
+"removed lint" warning failed the lane in CI. We don't rewrite vendored code to please a lint, and a vendored crate's
+warnings aren't ours to own; the one exception is a manifest setting that only makes noise in every dev build, which a
+vendored copy may drop (its `CMDR-PATCH.md` says so). This filter covers every other diagnostic. JSON names each
+diagnostic's package; attributing text output by cargo's "`x` generated N warnings" summaries would break when parallel
+units interleave.
 
 **Gotcha**: a module documented TWICE (an outer `///` on the `mod x;` declaration plus the file's own `//!` header)
 makes rustdoc resolve BOTH fragments in the PARENT's scope, so every link the module writes about its own items breaks

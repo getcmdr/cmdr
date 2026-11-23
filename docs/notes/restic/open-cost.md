@@ -87,7 +87,7 @@ Two findings for the volume milestones:
   to 8, least recently used let go first); § "Held pack readers" has the before and after. Copy-out should still read
   several blobs ahead in parallel.
 - **The index load blocks all 16 rayon workers** for 2–5 s on SMB, as rustic's source predicted
-  (`crates/cmdr-restic/DETAILS.md` § "rustic_core 0.13.0 facts"). Search and icons share that pool. The load now runs
+  (`crates/cmdr-restic/DETAILS.md` § "rustic_core 0.14.0 facts"). Search and icons share that pool. The load now runs
   rustic on a pool of its own; § "Streaming the index load".
 
 ## Held pack readers

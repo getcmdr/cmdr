@@ -54,7 +54,7 @@ mimalloc = ["dep:mimalloc", "dep:libmimalloc-sys"]
 # every consumer's or Cargo unification silently drops one. In the browser build
 # rusqlite swaps in `sqlite-wasm-rs` by itself, which compiles `sqlite3.c` with the
 # pinned LLVM clang (`scripts/build-listing-wasm/toolchain.go`).
-rusqlite = { version = "0.42", features = ["bundled", "collation", "fallible_uint"] }
+rusqlite = { version = "0.43", features = ["bundled", "collation", "fallible_uint"] }
 # The digest half of every volume ID (`volume::ids`). Cryptographic on purpose:
 # an ID is identity, and a volume name is user-controlled, so a *chosen*
 # collision (name a USB stick so it steals another volume's index and saved
@@ -82,7 +82,7 @@ dirs = "7"
 # The unique suffix every staged scratch name ends in (`staging`). A caller can
 # also supply one, so the type is part of the mint API rather than an internal
 # detail: a safe-overwrite gives its temp and its aside the same UUID.
-uuid = { version = "1.29.2", features = ["v4"] }
+uuid = { version = "1.29.3", features = ["v4"] }
 # `staging::names`: a scratch name too long for the destination keeps only the
 # whole grapheme clusters of the original name that fit, so a cut never strands a
 # combining accent or splits an emoji. Already in the graph through the app.
@@ -157,17 +157,17 @@ windows-sys = { version = "0.61", features = ["Win32_Storage_FileSystem", "Win32
 # default folder at `TEMP` spelled long, so a test's `tempfile::tempdir()` names the
 # folder the way a Windows volume lists it. Already in the graph through
 # `tauri-utils`, at this version and with the same features off.
-ctor = { version = "1.0.13", default-features = false, optional = true }
+ctor = { version = "1.0.14", default-features = false, optional = true }
 
 [target.'cfg(windows)'.dev-dependencies]
 # This crate's OWN tests compile `testing` with the feature off, so they need `ctor`
 # the way they need the `tempfile` dev-dependency below.
-ctor = { version = "1.0.13", default-features = false }
+ctor = { version = "1.0.14", default-features = false }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 # A browser's randomness source (`crypto.getRandomValues`) for the scratch-name
 # UUIDs; without it `uuid` refuses to compile for `wasm32-unknown-unknown`.
-uuid = { version = "1.29.2", features = ["js"] }
+uuid = { version = "1.29.3", features = ["js"] }
 # The browser build's executor and clock (`src/rt/wasm.rs`): `performance.now()`
 # behind `std`-shaped `Instant` / `SystemTime` (`std`'s panic on
 # `wasm32-unknown-unknown`), `spawn_local` for tasks, and `setTimeout` for sleeps.
@@ -195,12 +195,12 @@ libmimalloc-sys = { version = "0.1.49", features = ["extended"], optional = true
 # `testing` only: the disk-image harness (`testing::disk_images`) reads
 # `hdiutil ... -plist` and `diskutil info -plist` answers as typed fields rather
 # than scraping their text. Same crate and major version the app already pins.
-plist = { version = "1.10.3", optional = true }
+plist = { version = "1.10.4", optional = true }
 
 [target.'cfg(target_os = "macos")'.dev-dependencies]
 # This crate's OWN tests compile the harness with the `testing` feature off, so
 # they need `plist` the way they need the `tempfile` dev-dependency below.
-plist = "1.10.3"
+plist = "1.10.4"
 
 [dev-dependencies]
 # The app path's property tests (`src/app_path/properties_test.rs`): the escape's round
