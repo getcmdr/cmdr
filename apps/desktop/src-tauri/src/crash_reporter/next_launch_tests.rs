@@ -52,6 +52,13 @@ fn crash_file_stamps_keep_their_bytes_and_read_back() {
         assert_eq!(to_iso8601(time), expected);
         assert_eq!(parse_timestamp(expected), Some(time), "{expected}");
     }
+    // Every nanosecond, where `SystemTime` keeps them (Windows rounds to 100 ns).
+    #[cfg(unix)]
+    {
+        let (time, expected) = (at(1_777_072_708, 123_456_789), "2026-04-24T23:18:28.123456789+00:00");
+        assert_eq!(to_iso8601(time), expected);
+        assert_eq!(parse_timestamp(expected), Some(time), "{expected}");
+    }
     for same in [
         "2026-03-22T10:00:00+00:00",
         "2026-03-22T10:00:00Z",
