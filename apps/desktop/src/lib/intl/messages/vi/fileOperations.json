@@ -404,9 +404,9 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Bỏ qua tệp ẩn chỉ dành cho Mac (.DS_Store, ._*)} windows {Skip Windows thumbnail files (Thumbs.db, ehthumbs*.db)} other {Skip Linux leftover files (.nfs*, .fuse_hidden*)}}",
+  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Bỏ qua tệp ẩn chỉ dành cho Mac (.DS_Store, ._*)} windows {Bỏ qua tệp hình thu nhỏ của Windows (Thumbs.db, ehthumbs*.db)} other {Bỏ qua tệp sót lại của Linux (.nfs*, .fuse_hidden*)}}",
   "@fileOperations.transferDialog.osJunkFiles.toggle": {
-    "sourceHash": "0f28753"
+    "sourceHash": "2dbf7cc"
   },
   "fileOperations.transferDialog.osJunkFiles.dontAskAgain": "Đừng hỏi lại",
   "@fileOperations.transferDialog.osJunkFiles.dontAskAgain": {

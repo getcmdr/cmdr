@@ -405,9 +405,9 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Mac-specifikus rejtett fájlok átugrása (.DS_Store, ._*)} windows {Skip Windows thumbnail files (Thumbs.db, ehthumbs*.db)} other {Skip Linux leftover files (.nfs*, .fuse_hidden*)}}",
+  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Mac-specifikus rejtett fájlok átugrása (.DS_Store, ._*)} windows {Windows-miniatűrfájlok átugrása (Thumbs.db, ehthumbs*.db)} other {Linux által hátrahagyott fájlok átugrása (.nfs*, .fuse_hidden*)}}",
   "@fileOperations.transferDialog.osJunkFiles.toggle": {
-    "sourceHash": "0f28753"
+    "sourceHash": "2dbf7cc"
   },
   "fileOperations.transferDialog.osJunkFiles.dontAskAgain": "Ne kérdezd újra",
   "@fileOperations.transferDialog.osJunkFiles.dontAskAgain": {

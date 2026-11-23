@@ -505,13 +505,13 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Ignorer les fichiers cachés propres au Mac} windows {Skip Windows thumbnail files} other {Skip Linux leftover files}}",
+  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Ignorer les fichiers cachés propres au Mac} windows {Ignorer les fichiers de miniatures de Windows} other {Ignorer les fichiers résiduels de Linux}}",
   "@settings.fileOperations.osJunkFiles.label": {
-    "sourceHash": "be693c6"
+    "sourceHash": "28cccff"
   },
-  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Ignore les fichiers .DS_Store et ._* lors de la copie, du déplacement ou de la compression.} windows {Skips Thumbs.db and ehthumbs*.db files when copying, moving, or compressing. Windows rebuilds them when it needs them.} other {Skips .nfs* and .fuse_hidden* files when copying, moving, or compressing. Linux keeps them for deleted files that are still open.}}",
+  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Ignore les fichiers .DS_Store et ._* lors de la copie, du déplacement ou de la compression.} windows {Ignore les fichiers Thumbs.db et ehthumbs*.db lors de la copie, du déplacement ou de la compression. Windows les recrée quand il en a besoin.} other {Ignore les fichiers .nfs* et .fuse_hidden* lors de la copie, du déplacement ou de la compression. Linux les conserve pour les fichiers supprimés encore ouverts.}}",
   "@settings.fileOperations.osJunkFiles.description": {
-    "sourceHash": "02578a7"
+    "sourceHash": "d429ec1"
   },
   "settings.fileOperations.osJunkFiles.opt.include": "Inclure",
   "@settings.fileOperations.osJunkFiles.opt.include": {
@@ -525,9 +525,9 @@
   "@settings.fileOperations.osJunkFiles.opt.ask": {
     "sourceHash": "3c42771"
   },
-  "settings.fileOperations.osJunkFiles.keywords": "masqués, invisibles, fichiers point, métadonnées, fichiers inutiles, encombrement, fourche de ressources, resource fork, archive, compresser, copier, déplacer, autres systèmes, partage",
+  "settings.fileOperations.osJunkFiles.keywords": "masqués, invisibles, fichiers point, métadonnées, fichiers inutiles, encombrement, résidus, restes, vignettes, miniatures, cache, fourche de ressources, resource fork, archive, compresser, copier, déplacer, autres systèmes, partage",
   "@settings.fileOperations.osJunkFiles.keywords": {
-    "sourceHash": "b668774"
+    "sourceHash": "952738c"
   },
   "settings.fileOperations.skipConfirmation.label": "{platform, select, windows {Ignorer la confirmation pour copier, déplacer et supprimer} other {Ignorer la confirmation pour copier, déplacer et placer dans la corbeille}}",
   "@settings.fileOperations.skipConfirmation.label": {

@@ -506,13 +506,13 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Hoppa över Mac-specifika dolda filer} windows {Skip Windows thumbnail files} other {Skip Linux leftover files}}",
+  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Hoppa över Mac-specifika dolda filer} windows {Hoppa över Windows-miniatyrfiler} other {Hoppa över kvarlämnade Linux-filer}}",
   "@settings.fileOperations.osJunkFiles.label": {
-    "sourceHash": "be693c6"
+    "sourceHash": "28cccff"
   },
-  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Hoppar över filerna .DS_Store och ._* när du kopierar, flyttar eller komprimerar.} windows {Skips Thumbs.db and ehthumbs*.db files when copying, moving, or compressing. Windows rebuilds them when it needs them.} other {Skips .nfs* and .fuse_hidden* files when copying, moving, or compressing. Linux keeps them for deleted files that are still open.}}",
+  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Hoppar över filerna .DS_Store och ._* när du kopierar, flyttar eller komprimerar.} windows {Hoppar över filerna Thumbs.db och ehthumbs*.db när du kopierar, flyttar eller komprimerar. Windows skapar dem igen när det behöver dem.} other {Hoppar över filerna .nfs* och .fuse_hidden* när du kopierar, flyttar eller komprimerar. Linux behåller dem för raderade filer som fortfarande är öppna.}}",
   "@settings.fileOperations.osJunkFiles.description": {
-    "sourceHash": "02578a7"
+    "sourceHash": "d429ec1"
   },
   "settings.fileOperations.osJunkFiles.opt.include": "Ta med",
   "@settings.fileOperations.osJunkFiles.opt.include": {
@@ -526,9 +526,9 @@
   "@settings.fileOperations.osJunkFiles.opt.ask": {
     "sourceHash": "3c42771"
   },
-  "settings.fileOperations.osJunkFiles.keywords": "metadata, skräp, bråte, onödiga filer, punktfiler, resursgren, resource fork, arkiv, komprimera, kopiera, flytta, andra system, bara Mac",
+  "settings.fileOperations.osJunkFiles.keywords": "metadata, skräp, bråte, onödiga filer, rester, kvarlämnade, punktfiler, miniatyrer, cache, resursgren, resource fork, arkiv, komprimera, kopiera, flytta, andra system",
   "@settings.fileOperations.osJunkFiles.keywords": {
-    "sourceHash": "b668774"
+    "sourceHash": "952738c"
   },
   "settings.fileOperations.skipConfirmation.label": "{platform, select, windows {Hoppa över bekräftelse vid kopiering, flytt och radering} other {Hoppa över bekräftelse vid kopiering, flytt och flytt till papperskorgen}}",
   "@settings.fileOperations.skipConfirmation.label": {

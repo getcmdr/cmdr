@@ -404,9 +404,9 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Пропускати приховані файли, потрібні лише на Mac (.DS_Store, ._*)} windows {Skip Windows thumbnail files (Thumbs.db, ehthumbs*.db)} other {Skip Linux leftover files (.nfs*, .fuse_hidden*)}}",
+  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Пропускати приховані файли, потрібні лише на Mac (.DS_Store, ._*)} windows {Пропускати файли ескізів Windows (Thumbs.db, ehthumbs*.db)} other {Пропускати залишкові файли Linux (.nfs*, .fuse_hidden*)}}",
   "@fileOperations.transferDialog.osJunkFiles.toggle": {
-    "sourceHash": "0f28753"
+    "sourceHash": "2dbf7cc"
   },
   "fileOperations.transferDialog.osJunkFiles.dontAskAgain": "Більше не питати",
   "@fileOperations.transferDialog.osJunkFiles.dontAskAgain": {

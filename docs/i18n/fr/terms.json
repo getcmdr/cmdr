@@ -3624,7 +3624,12 @@
     "chosen": "vignette",
     "confidence": "high",
     "decision": "IA dans le cloud et lecture des fichiers",
-    "sources": "macOS AppKit (Taille de vignette :); Total Commander; Double Commander"
+    "sources": "macOS AppKit (Taille de vignette :); Total Commander; Double Commander",
+    "windows": {
+      "chosen": "miniature",
+      "accept": ["miniature"],
+      "note": "Windows branch: Microsoft's word (FRENCH.tbx thumbnail → miniature), as in settings.fileOperations.osJunkFiles.label."
+    }
   },
   "time-ago": {
     "chosen": "il y a",

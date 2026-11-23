@@ -504,13 +504,13 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {跳过 Mac 专用的隐藏文件} windows {Skip Windows thumbnail files} other {Skip Linux leftover files}}",
+  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {跳过 Mac 专用的隐藏文件} windows {跳过 Windows 缩略图文件} other {跳过 Linux 遗留文件}}",
   "@settings.fileOperations.osJunkFiles.label": {
-    "sourceHash": "be693c6"
+    "sourceHash": "28cccff"
   },
-  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {拷贝、移动或压缩时跳过 .DS_Store 和 ._* 文件。} windows {Skips Thumbs.db and ehthumbs*.db files when copying, moving, or compressing. Windows rebuilds them when it needs them.} other {Skips .nfs* and .fuse_hidden* files when copying, moving, or compressing. Linux keeps them for deleted files that are still open.}}",
+  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {拷贝、移动或压缩时跳过 .DS_Store 和 ._* 文件。} windows {拷贝、移动或压缩时跳过 Thumbs.db 和 ehthumbs*.db 文件。Windows 需要时会重新生成它们。} other {拷贝、移动或压缩时跳过 .nfs* 和 .fuse_hidden* 文件。Linux 会为已删除但仍处于打开状态的文件保留它们。}}",
   "@settings.fileOperations.osJunkFiles.description": {
-    "sourceHash": "02578a7"
+    "sourceHash": "d429ec1"
   },
   "settings.fileOperations.osJunkFiles.opt.include": "包含",
   "@settings.fileOperations.osJunkFiles.opt.include": {
@@ -524,9 +524,9 @@
   "@settings.fileOperations.osJunkFiles.opt.ask": {
     "sourceHash": "3c42771"
   },
-  "settings.fileOperations.osJunkFiles.keywords": "元数据、垃圾文件、垃圾、杂乱、清理、资源分支、压缩、拷贝、复制、移动、其他系统、苹果",
+  "settings.fileOperations.osJunkFiles.keywords": "元数据、垃圾文件、垃圾、杂乱、清理、残留、遗留、缩略图、缓存、资源分支、压缩、拷贝、复制、移动、其他系统",
   "@settings.fileOperations.osJunkFiles.keywords": {
-    "sourceHash": "b668774"
+    "sourceHash": "952738c"
   },
   "settings.fileOperations.skipConfirmation.label": "{platform, select, windows {拷贝、移动和删除前跳过确认} other {拷贝、移动和移到废纸篓前跳过确认}}",
   "@settings.fileOperations.skipConfirmation.label": {

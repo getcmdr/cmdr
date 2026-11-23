@@ -4557,7 +4557,12 @@
         "form": "ескіз",
         "why": "MS and TC wording; macOS says мініатюра"
       }
-    ]
+    ],
+    "windows": {
+      "chosen": "ескіз",
+      "accept": ["ескіз"],
+      "note": "Windows branch: Microsoft's word (UKRAINIAN.tbx thumbnail → ескіз), as in settings.fileOperations.osJunkFiles.label."
+    }
   },
   "time-ago": {
     "chosen": "тому",

@@ -502,13 +502,13 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Bỏ qua tệp ẩn chỉ dành cho Mac} windows {Skip Windows thumbnail files} other {Skip Linux leftover files}}",
+  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Bỏ qua tệp ẩn chỉ dành cho Mac} windows {Bỏ qua tệp hình thu nhỏ của Windows} other {Bỏ qua tệp sót lại của Linux}}",
   "@settings.fileOperations.osJunkFiles.label": {
-    "sourceHash": "be693c6"
+    "sourceHash": "28cccff"
   },
-  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Bỏ qua các tệp .DS_Store và ._* khi sao chép, di chuyển hoặc nén.} windows {Skips Thumbs.db and ehthumbs*.db files when copying, moving, or compressing. Windows rebuilds them when it needs them.} other {Skips .nfs* and .fuse_hidden* files when copying, moving, or compressing. Linux keeps them for deleted files that are still open.}}",
+  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Bỏ qua các tệp .DS_Store và ._* khi sao chép, di chuyển hoặc nén.} windows {Bỏ qua các tệp Thumbs.db và ehthumbs*.db khi sao chép, di chuyển hoặc nén. Windows sẽ tạo lại chúng khi cần.} other {Bỏ qua các tệp .nfs* và .fuse_hidden* khi sao chép, di chuyển hoặc nén. Linux giữ chúng lại cho các tệp đã xóa nhưng vẫn đang mở.}}",
   "@settings.fileOperations.osJunkFiles.description": {
-    "sourceHash": "02578a7"
+    "sourceHash": "d429ec1"
   },
   "settings.fileOperations.osJunkFiles.opt.include": "Bao gồm",
   "@settings.fileOperations.osJunkFiles.opt.include": {
@@ -522,9 +522,9 @@
   "@settings.fileOperations.osJunkFiles.opt.ask": {
     "sourceHash": "3c42771"
   },
-  "settings.fileOperations.osJunkFiles.keywords": "siêu dữ liệu, tệp rác, rác, lộn xộn, dọn dẹp, nhánh tài nguyên, tệp nén, nén, sao chép, di chuyển, hệ điều hành khác",
+  "settings.fileOperations.osJunkFiles.keywords": "siêu dữ liệu, tệp rác, rác, lộn xộn, dọn dẹp, sót lại, hình thu nhỏ, bộ đệm, nhánh tài nguyên, tệp nén, nén, sao chép, di chuyển, hệ điều hành khác",
   "@settings.fileOperations.osJunkFiles.keywords": {
-    "sourceHash": "b668774"
+    "sourceHash": "952738c"
   },
   "settings.fileOperations.skipConfirmation.label": "{platform, select, windows {Bỏ qua xác nhận khi sao chép, di chuyển và xóa} other {Bỏ qua xác nhận khi sao chép, di chuyển và chuyển vào thùng rác}}",
   "@settings.fileOperations.skipConfirmation.label": {

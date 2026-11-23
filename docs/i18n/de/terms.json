@@ -3643,7 +3643,12 @@
     ],
     "chosen": "Miniatur",
     "confidence": "high",
-    "sources": "Preview (Thumbnails → Miniaturen); Photos (Miniaturen einblenden)"
+    "sources": "Preview (Thumbnails → Miniaturen); Photos (Miniaturen einblenden)",
+    "windows": {
+      "chosen": "Miniaturansicht",
+      "accept": ["Miniaturansicht", "Miniatur"],
+      "note": "Windows branch: Microsoft's word (GERMAN.tbx thumbnail → Miniaturansicht), as in settings.fileOperations.osJunkFiles.label."
+    }
   },
   "time-ago": {
     "accept": ["gerade eben"],

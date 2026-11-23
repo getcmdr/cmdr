@@ -504,13 +504,13 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Mac-specifikus rejtett fájlok átugrása} windows {Skip Windows thumbnail files} other {Skip Linux leftover files}}",
+  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Mac-specifikus rejtett fájlok átugrása} windows {Windows-miniatűrfájlok átugrása} other {Linux által hátrahagyott fájlok átugrása}}",
   "@settings.fileOperations.osJunkFiles.label": {
-    "sourceHash": "be693c6"
+    "sourceHash": "28cccff"
   },
-  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Másoláskor, áthelyezéskor vagy tömörítéskor kihagyja ezeket a fájlokat: .DS_Store, ._*.} windows {Skips Thumbs.db and ehthumbs*.db files when copying, moving, or compressing. Windows rebuilds them when it needs them.} other {Skips .nfs* and .fuse_hidden* files when copying, moving, or compressing. Linux keeps them for deleted files that are still open.}}",
+  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Másoláskor, áthelyezéskor vagy tömörítéskor kihagyja ezeket a fájlokat: .DS_Store, ._*.} windows {Másoláskor, áthelyezéskor vagy tömörítéskor kihagyja ezeket a fájlokat: Thumbs.db, ehthumbs*.db. A Windows szükség esetén újra létrehozza őket.} other {Másoláskor, áthelyezéskor vagy tömörítéskor kihagyja ezeket a fájlokat: .nfs*, .fuse_hidden*. A Linux a törölt, de még megnyitott fájlok miatt tartja meg őket.}}",
   "@settings.fileOperations.osJunkFiles.description": {
-    "sourceHash": "02578a7"
+    "sourceHash": "d429ec1"
   },
   "settings.fileOperations.osJunkFiles.opt.include": "Belefoglalás",
   "@settings.fileOperations.osJunkFiles.opt.include": {
@@ -524,9 +524,9 @@
   "@settings.fileOperations.osJunkFiles.opt.ask": {
     "sourceHash": "3c42771"
   },
-  "settings.fileOperations.osJunkFiles.keywords": "metaadat, szemét, kacat, felesleges fájlok, pontfájlok, erőforrás-elágazás, resource fork, archívum, tömörítés, másolás, áthelyezés, más rendszerek, csak Mac",
+  "settings.fileOperations.osJunkFiles.keywords": "metaadat, szemét, kacat, felesleges fájlok, maradék, maradványok, pontfájlok, bélyegképek, miniatűrök, gyorsítótár, cache, erőforrás-elágazás, resource fork, archívum, tömörítés, másolás, áthelyezés, más rendszerek",
   "@settings.fileOperations.osJunkFiles.keywords": {
-    "sourceHash": "b668774"
+    "sourceHash": "952738c"
   },
   "settings.fileOperations.skipConfirmation.label": "{platform, select, windows {Megerősítés kihagyása másoláskor, áthelyezéskor és törléskor} other {Megerősítés kihagyása másoláskor, áthelyezéskor és Kukába helyezéskor}}",
   "@settings.fileOperations.skipConfirmation.label": {

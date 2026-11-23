@@ -502,13 +502,13 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Пропускать скрытые файлы только для Mac} windows {Skip Windows thumbnail files} other {Skip Linux leftover files}}",
+  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Пропускать скрытые файлы только для Mac} windows {Пропускать файлы эскизов Windows} other {Пропускать остаточные файлы Linux}}",
   "@settings.fileOperations.osJunkFiles.label": {
-    "sourceHash": "be693c6"
+    "sourceHash": "28cccff"
   },
-  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Пропускает файлы .DS_Store и ._* при копировании, перемещении или сжатии.} windows {Skips Thumbs.db and ehthumbs*.db files when copying, moving, or compressing. Windows rebuilds them when it needs them.} other {Skips .nfs* and .fuse_hidden* files when copying, moving, or compressing. Linux keeps them for deleted files that are still open.}}",
+  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Пропускает файлы .DS_Store и ._* при копировании, перемещении или сжатии.} windows {Пропускает файлы Thumbs.db и ehthumbs*.db при копировании, перемещении или сжатии. Windows создает их заново, когда они нужны.} other {Пропускает файлы .nfs* и .fuse_hidden* при копировании, перемещении или сжатии. Linux хранит их для удаленных файлов, которые еще открыты.}}",
   "@settings.fileOperations.osJunkFiles.description": {
-    "sourceHash": "02578a7"
+    "sourceHash": "d429ec1"
   },
   "settings.fileOperations.osJunkFiles.opt.include": "Включить",
   "@settings.fileOperations.osJunkFiles.opt.include": {
@@ -522,9 +522,9 @@
   "@settings.fileOperations.osJunkFiles.opt.ask": {
     "sourceHash": "3c42771"
   },
-  "settings.fileOperations.osJunkFiles.keywords": "метаданные, мусор, хлам, лишние файлы, служебные файлы, точечные файлы, resource fork, ресурсная вилка, архив, сжатие, копирование, перемещение, другие системы, только Mac",
+  "settings.fileOperations.osJunkFiles.keywords": "метаданные, мусор, хлам, лишние файлы, служебные файлы, остатки, точечные файлы, миниатюры, эскизы, кэш, resource fork, ресурсная вилка, архив, сжатие, копирование, перемещение, другие системы",
   "@settings.fileOperations.osJunkFiles.keywords": {
-    "sourceHash": "b668774"
+    "sourceHash": "952738c"
   },
   "settings.fileOperations.skipConfirmation.label": "{platform, select, windows {Копировать, перемещать и удалять без подтверждения} other {Копировать и перемещать без подтверждения, в том числе в Корзину}}",
   "@settings.fileOperations.skipConfirmation.label": {

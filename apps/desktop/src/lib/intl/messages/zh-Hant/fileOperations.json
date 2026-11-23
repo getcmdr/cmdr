@@ -403,9 +403,9 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {略過 Mac 專用的隱藏檔案（.DS_Store、._*）} windows {Skip Windows thumbnail files (Thumbs.db, ehthumbs*.db)} other {Skip Linux leftover files (.nfs*, .fuse_hidden*)}}",
+  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {略過 Mac 專用的隱藏檔案（.DS_Store、._*）} windows {略過 Windows 縮圖檔案（Thumbs.db、ehthumbs*.db）} other {略過 Linux 殘留檔案（.nfs*、.fuse_hidden*）}}",
   "@fileOperations.transferDialog.osJunkFiles.toggle": {
-    "sourceHash": "0f28753"
+    "sourceHash": "2dbf7cc"
   },
   "fileOperations.transferDialog.osJunkFiles.dontAskAgain": "別再詢問",
   "@fileOperations.transferDialog.osJunkFiles.dontAskAgain": {

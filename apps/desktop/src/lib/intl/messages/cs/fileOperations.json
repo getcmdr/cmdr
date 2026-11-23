@@ -405,9 +405,9 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Přeskočit skryté soubory jen pro Mac (.DS_Store, ._*)} windows {Skip Windows thumbnail files (Thumbs.db, ehthumbs*.db)} other {Skip Linux leftover files (.nfs*, .fuse_hidden*)}}",
+  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Přeskočit skryté soubory jen pro Mac (.DS_Store, ._*)} windows {Přeskočit soubory miniatur Windows (Thumbs.db, ehthumbs*.db)} other {Přeskočit zbytkové soubory Linuxu (.nfs*, .fuse_hidden*)}}",
   "@fileOperations.transferDialog.osJunkFiles.toggle": {
-    "sourceHash": "0f28753"
+    "sourceHash": "2dbf7cc"
   },
   "fileOperations.transferDialog.osJunkFiles.dontAskAgain": "Už se neptat",
   "@fileOperations.transferDialog.osJunkFiles.dontAskAgain": {

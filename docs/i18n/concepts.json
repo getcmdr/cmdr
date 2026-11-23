@@ -1819,7 +1819,8 @@
       {
         "key": "settings.appearance.menuBar.description",
         "why": "\"Hidden\" is the menu bar kept out of view (the hide sense), not a hidden file"
-      }
+      },
+      "fuse_hidden"
     ],
     "sense": "A file or folder macOS doesn't show by default (dotfiles, the hidden flag)."
   },
