@@ -288,6 +288,28 @@ fn a_missing_path_is_unavailable_not_a_card_of_unknowns() {
     );
 }
 
+/// Regression (#1430): a link's target crosses into app text through the one door, so an
+/// absolute target reads as the app path it names, and a relative one stays as written.
+#[test]
+fn a_link_target_reads_as_app_text() {
+    let absolute = std::env::temp_dir();
+    let shown = super::probe::link_target_text(&absolute);
+    assert_eq!(Some(shown.clone()), crate::app_text::of_native(&absolute));
+    assert!(!shown.starts_with(r"\\?\"), "{shown}");
+    assert_eq!(super::probe::link_target_text(std::path::Path::new("../x")), "../x");
+}
+
+/// Windows' own shape: `read_link` of a junction answers the verbatim form.
+#[cfg(windows)]
+#[test]
+fn a_junctions_verbatim_target_reads_as_its_drive_path() {
+    let target = std::path::Path::new(r"\\?\C:\Users\test_user_1\junction-target");
+    assert_eq!(
+        super::probe::link_target_text(target),
+        "C:/Users/test_user_1/junction-target"
+    );
+}
+
 #[cfg(unix)] // A dangling link to a POSIX target text, made with `std::os::unix::fs::symlink`.
 #[test]
 fn a_symlink_is_about_the_link_and_reads_nothing_through_it() {
