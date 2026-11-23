@@ -144,17 +144,21 @@ mod tests {
     /// A start's typed path reaches the body as the bytes its caller's text held: a trailing
     /// `/` dropped, an NFD name in its form, and a literal escape-range code point (the
     /// command edge reads one through `from_literal_store` while escapes aren't live) as
-    /// its own UTF-8, ❌ never an escape's.
+    /// its own UTF-8, ❌ never an escape's. The `/x` cases are a POSIX volume's paths (a
+    /// share's, the in-memory volume's), so they read POSIX on every host: `from_literal_store`
+    /// reads only this host's flavor and refuses them on Windows. `from_external_text` in POSIX
+    /// flavor spells them the same way (every escape-range code point literal).
     #[test]
     fn a_typed_start_path_crosses_byte_for_byte() {
-        use cmdr_fs::app_path::Namer;
+        use cmdr_fs::app_path::{Namer, PathFlavor};
         for (text, body) in [
             ("/x/link", "/x/link"),
             ("/x/cafe\u{301}.txt", "/x/cafe\u{301}.txt"),
             ("/x/caf\u{10FEE9}.txt", "/x/caf\u{10FEE9}.txt"),
             ("smb://nas/share/a.txt", "smb://nas/share/a.txt"),
         ] {
-            let typed = AppPathBuf::from_literal_store(text, Namer::HOST).expect("literal store text");
+            let typed =
+                AppPathBuf::from_external_text(text, PathFlavor::Posix, Namer::HOST).expect("literal store text");
             assert_eq!(
                 engine_path(&typed).as_os_str().as_encoded_bytes(),
                 body.as_bytes(),

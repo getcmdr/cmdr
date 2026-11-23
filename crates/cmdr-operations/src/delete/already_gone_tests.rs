@@ -87,7 +87,13 @@ async fn a_local_delete_of_a_file_that_is_already_gone_completes() {
     assert_eq!(complete.files_processed, 0);
     assert_eq!(
         skipped_gone(&events),
-        vec![(gone.display().to_string(), SourceItemOutcome::Skipped, true)],
+        // The source as the start took it (app text, `C:/…` on Windows), so the pane that
+        // sent it matches its own row: ❌ never the OS's `C:\…` spelling.
+        vec![(
+            crate::testing::app_path_of(&gone).into_string(),
+            SourceItemOutcome::Skipped,
+            true
+        )],
         "the gone source is reported removed, so search snapshots drop it"
     );
 }

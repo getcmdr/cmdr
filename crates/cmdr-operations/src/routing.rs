@@ -680,10 +680,23 @@ impl crate::Operations {
         if let Some((routed, _)) = first_routed(self.host(), &volume_id, &typed_sources).await {
             return Err(routed_transfer_refusal(&routed, ReadOnlySide::Source));
         }
+        // Each target by the TYPED join under the destination, ❌ never `Path::join`: on
+        // Windows that joins a POSIX volume's `/repo/a.zip` and `x` as `/repo/a.zip\x`, one
+        // name the route gate below can't see inside the zip, so the move went in unrefused.
+        let dest_app = crate::wire_paths::seam_path(&dest_path);
+        let under = cmdr_fs::app_path::ListedFolder::new(&dest_app);
         let targets: Vec<AppPathBuf> = names
             .iter()
-            .map(|name| crate::wire_paths::seam_path(&dest_path.join(name)).into_owned())
-            .collect();
+            .map(|name| {
+                cmdr_fs::app_path::AppName::from_listed_text(name)
+                    .ok()
+                    .and_then(|app_name| under.join(&app_name).ok())
+                    .ok_or_else(|| WriteOperationError::InvalidName {
+                        path: name.clone(),
+                        message: "a new name is one name, not a path".into(),
+                    })
+            })
+            .collect::<Result<_, _>>()?;
         if let Some((routed, _)) = first_routed(self.host(), &volume_id, &targets).await {
             return Err(routed_transfer_refusal(&routed, ReadOnlySide::Destination));
         }

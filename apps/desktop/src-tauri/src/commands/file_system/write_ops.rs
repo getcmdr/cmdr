@@ -89,37 +89,36 @@ async fn scan_preview_source_volume(
 
 /// Rejects a local write op that touches a path a ROUTE serves (an archive, a
 /// repo's virtual `.git` trees, a restic repo's `Browse snapshots`), with the
-/// typed read-only refusal: there's no file for `std::fs` to act on.
+/// typed read-only refusal: there's no file for `std::fs` to act on. Every question
+/// confirms (❌ never the permissive `path_routes_over_its_parent`): a stat and magic
+/// sniff, the portal switch, a read of the repo folder. So a real `foo.zip/`,
+/// `.git/branches/`, or non-repo `Browse snapshots` takes writes.
 ///
-/// Every question confirms (❌ never the permissive `path_routes_over_its_parent`):
-/// a stat and magic sniff, the portal switch, a read of the repo folder. So a
-/// real `foo.zip/`, `.git/branches/`, or non-repo `Browse snapshots` takes writes.
-///
-/// `side` says which half of the transfer these paths are, because the two are
-/// different sentences: a move OFF a snapshot is refused by its SOURCE, and
-/// telling that user to choose a different destination names the half that was
-/// fine. Callers that check both halves ask twice, once per side.
-///
-/// A backend safety net behind the frontend's read-only capability gating. The
-/// transfers that legitimately cross a route (extract-out, copy out of a
-/// snapshot, writing into a zip) run through `copy_between_volumes`, which routes
-/// to the read-only volume, ❌ never this fast path.
-/// Boot disk only, so each path crosses to the OS's spelling (none: no file to serve).
+/// `side` says which half of the transfer these paths are: a move OFF a snapshot is
+/// refused by its SOURCE, and telling that user to choose a different destination names
+/// the half that was fine. Callers that check both halves ask twice, once per side. A
+/// backend safety net behind the frontend's read-only capability gating: the transfers
+/// that legitimately cross a route (extract-out, copy out of a snapshot, writing into a
+/// zip) run through `copy_between_volumes`, ❌ never this fast path. Boot disk only: ❗ a
+/// path with NO native spelling (a scheme path, a POSIX `/x` on Windows, a name Win32
+/// can't store) is REFUSED, fail closed, as no route question can be asked of it.
 fn reject_if_routed_over_a_parent<'a>(
     paths: impl IntoIterator<Item = &'a AppPathBuf>,
     side: ReadOnlySide,
 ) -> Result<(), WriteOperationError> {
     for app in paths {
-        let Ok(path) = app.to_native() else { continue };
-        // Only a path INSIDE an archive is read-only. The `.zip` file itself is a
-        // regular file — copying/moving/deleting/trashing it must work.
+        let text = || app.as_str().to_owned();
+        let path = app.to_native().map_err(|why| WriteOperationError::IoError {
+            message: cmdr_fs::error_detail::ErrorDetail::path_then(text(), format!(": {why}, no local file")),
+            path: text(),
+        })?;
+        // Only a path INSIDE an archive is read-only; the `.zip` file itself is a regular file.
         if cmdr_archive::path_is_inside_archive(&path)
             || crate::file_system::git::wiring::portal_serves(&path)
             || crate::file_system::restic::wiring::local_path_is_in_a_restic_view(&path)
         {
             return Err(WriteOperationError::ReadOnlyDevice {
-                // The text the pane sent, as it always named the refusal.
-                path: app.as_str().to_owned(),
+                path: text(), // The text the pane sent, as it always named the refusal.
                 device_name: None,
                 side,
             });

@@ -26,6 +26,15 @@ use cmdr_operations::{
     OperationEventSink, SourceItemOutcome, WriteOperationType, WriteSettledEvent, WriteSourceItemDoneEvent,
 };
 
+/// A scratch path as the proposal store holds it: app text (`C:/…` on Windows), as the
+/// drive index hands the agent a path, ❌ never the native `C:\…` spelling, which the
+/// approval's command edge refuses.
+fn stored_text(path: &std::path::Path) -> String {
+    AppPathBuf::from_native(path)
+        .expect("a scratch path is an app path")
+        .into_string()
+}
+
 /// A trash group over two sources on a real file DB, plus a second connection for the
 /// decorator to own.
 fn fixture(dir: &TestDir) -> (Connection, Connection, i64, Vec<ProposalOp>) {
@@ -586,7 +595,7 @@ async fn an_approved_delete_group_on_the_local_disk_records_its_op_done() {
         &NewGroup {
             intent: GroupIntent::Delete {
                 sources: vec![NewOp {
-                    source_path: file.display().to_string(),
+                    source_path: stored_text(&file),
                     snapshot: None,
                 }],
             },
@@ -714,7 +723,7 @@ async fn a_rename_the_review_started_settles_its_group_and_its_thread_line() {
         ..NewSweep::default()
     };
     let set_id = create_sweep(&conn, &sweep, 100).expect("sweep");
-    let parent = dir.join("shots").display().to_string();
+    let parent = stored_text(&dir.join("shots"));
     std::fs::create_dir_all(dir.join("shots")).expect("parent");
     std::fs::write(dir.join("shots").join("old.png"), b"pixels").expect("seed");
     let group_id = create_group(
@@ -855,7 +864,7 @@ async fn an_approved_named_move_lands_each_file_under_its_name() {
     let conn = open_write_connection(&db_path).expect("open");
     let set_id = create_sweep(&conn, &NewSweep::default(), 100).expect("sweep");
     let transfer = |file: &str, name: Option<&str>| crate::agent::store::proposals::TransferOp {
-        source_path: inbox.join(file).display().to_string(),
+        source_path: stored_text(&inbox.join(file)),
         new_name: name.map(str::to_string),
         snapshot: None,
     };

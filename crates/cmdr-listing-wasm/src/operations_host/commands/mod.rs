@@ -23,12 +23,13 @@ use super::DemoOperations;
 impl DemoOperations {
     /// Wire text as the app path a write start takes, read as the desktop's command edge
     /// reads it: `~` and `~/rest` name the visitor's home folder (`expand_tilde`), then
-    /// `AppPathBuf::from_wire` (a trailing `/` goes, a `..` is refused). Text the page can't
-    /// have sent (relative, empty, a `..`) is refused as the desktop refuses it: the generic
-    /// I/O failure, its details naming the path (`commands/wire_path.rs`).
+    /// `invoke::demo_path`: POSIX on every host, as the demo's volume is (`from_wire` reads only
+    /// drives on a Windows test host); a trailing `/` goes, a `..` is refused. Text the page
+    /// can't have sent (relative, empty, a `..`) is refused as the desktop refuses it: the
+    /// generic I/O failure, its details naming the path (`commands/wire_path.rs`).
     fn wire_path(&self, text: &str) -> Result<AppPathBuf, cmdr_operations::WriteOperationError> {
         let expanded = self.expand_home(text);
-        AppPathBuf::from_wire(&expanded).map_err(|why| cmdr_operations::WriteOperationError::IoError {
+        crate::invoke::demo_path(&expanded).map_err(|why| cmdr_operations::WriteOperationError::IoError {
             message: refused_detail(text, &why),
             path: text.to_string(),
         })
@@ -43,7 +44,7 @@ impl DemoOperations {
     /// wrong" fallback, details as above.
     fn wire_mutation_path(&self, text: &str) -> Result<AppPathBuf, cmdr_operations::MutationError> {
         let expanded = self.expand_home(text);
-        AppPathBuf::from_wire(&expanded).map_err(|why| cmdr_operations::MutationError::Unexpected {
+        crate::invoke::demo_path(&expanded).map_err(|why| cmdr_operations::MutationError::Unexpected {
             detail: refused_detail(text, &why),
         })
     }

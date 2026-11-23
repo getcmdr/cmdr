@@ -513,6 +513,10 @@ A path the frontend sends is read as an app path at the command edge, `wire_path
   rename, rename-by-move, and compress, plus the suggested-ops approval's sources. Text that names no place (relative,
   empty) is refused with the `..`, as no row or pane sends it. The same-`root` move's destination anchors on the boot
   volume through the typed `anchor_at_root` (`start_destination`, after `transfer_destination` resolved a `..`).
+  The local fast path's route guard (`write_ops.rs::reject_if_routed_over_a_parent`) then crosses each path at
+  `to_native` and ❗ REFUSES one with no native spelling (a scheme path, a POSIX `/x` on Windows, a name Win32 can't
+  store), fail closed: skipping it let a Windows box's native `C:\…\a.zip/x`, anchored as one name under `C:/`, past
+  every route check (`write_ops_destination_test.rs`).
   The engine entry points that still take `std::path` (the single trash, the trash-folder lookup, the rename
   pre-flight, the home-folder pre-check, the scan preview) get the text as sent (`checked`, `pre_check_rows`), and
   each drops a trailing `/` itself (`crates/cmdr-operations/src/wire_paths.rs`).

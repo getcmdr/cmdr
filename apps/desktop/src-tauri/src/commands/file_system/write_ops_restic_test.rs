@@ -30,8 +30,10 @@ fn a_restic_view_is_refused_but_a_lookalike_folder_is_not() {
     let zip_named = dir.path().join("photos.zip");
     std::fs::create_dir_all(&zip_named).expect("a real folder named like an archive");
     for destination in [&lookalike, &zip_named] {
+        // The box's text as the app sends it: app spelling (`C:/…` on Windows).
+        let sent = cmdr_operations::testing::app_path_of(destination).into_string();
         assert!(
-            local_transfer_request(&[], &destination.to_string_lossy(), None).is_ok(),
+            local_transfer_request(&[], &sent, None).is_ok(),
             "a copy into {} stays on the fast path",
             destination.display()
         );
