@@ -122,8 +122,13 @@ fn both_answers(rules: NameRules) -> (BTreeMap<String, Value>, BTreeMap<String, 
 #[test]
 fn memory_holds_the_same_arena_the_index_loads() {
     let dir = tempfile::tempdir().expect("a temp dir for the golden index");
-    for (rows, prefix) in [(root_corpus(), None), (share_corpus(), Some(SHARE_ROOT))] {
-        let loaded = load(dir.path(), "index-golden.db", &rows, prefix);
+    // A file per corpus: the loaded arena's pool may still hold the last one open, which
+    // Windows won't let a delete through.
+    for (file, rows, prefix) in [
+        ("index-golden-root.db", root_corpus(), None),
+        ("index-golden-share.db", share_corpus(), Some(SHARE_ROOT)),
+    ] {
+        let loaded = load(dir.path(), file, &rows, prefix);
         let (memory, _) = in_memory(&rows, prefix.unwrap_or(""), NameRules::host());
         let row_of = |arena: &SearchIndex, i: usize| {
             (
@@ -139,7 +144,6 @@ fn memory_holds_the_same_arena_the_index_loads() {
         let index_rows: Vec<_> = (0..index.len()).map(|i| row_of(index, i)).collect();
         let memory_rows: Vec<_> = (0..held.len()).map(|i| row_of(held, i)).collect();
         assert_eq!(index_rows, memory_rows);
-        std::fs::remove_file(dir.path().join("index-golden.db")).expect("clear the index for the next corpus");
     }
 }
 
