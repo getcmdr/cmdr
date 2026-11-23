@@ -172,7 +172,7 @@ pub(crate) async fn run_volume_scan_preview(
             Some(&pause),
             &on_progress,
             names.as_ref().map(|names| Arc::clone(names) as Arc<dyn ScanRecorder>),
-            state.mac_only,
+            state.os_junk,
         )
         .await
         // The backend's typed error, kept typed: a `NotFound` names its own
@@ -251,7 +251,7 @@ pub(crate) async fn run_volume_scan_preview(
                     .keeping_files(batch.files)
                     .with_tree(tree)
                     .with_name_portability(name_portability.clone())
-                    .leaving_out(state.mac_only),
+                    .leaving_out(state.os_junk),
                 ),
             );
 
@@ -294,7 +294,7 @@ pub(crate) async fn run_oracle_aware_batch_scan(
     pause: Option<&Arc<ScanPause>>,
     on_progress: &(dyn Fn(cmdr_fs::volume::ListingProgress) + Sync),
     recorder: Option<Arc<dyn ScanRecorder>>,
-    mac_only: cmdr_fs::mac_only_files::MacOnlyFiles,
+    os_junk: cmdr_fs::os_junk_files::OsJunkFiles,
 ) -> Result<BatchScanResult, cmdr_fs::volume::VolumeError> {
     use cmdr_fs::entry::FileEntry;
     use cmdr_fs::volume::ListingProgress;
@@ -442,7 +442,7 @@ pub(crate) async fn run_oracle_aware_batch_scan(
                         Some(&shifted),
                         recorder.as_deref(),
                         &mut seen_inodes,
-                        mac_only,
+                        os_junk,
                     )
                     .await?;
                     aggregate.file_count += subtree.file_count;
@@ -541,7 +541,7 @@ pub(crate) async fn run_oracle_aware_batch_scan(
             if let Some(recorder) = &recorder {
                 group_boundary = group_boundary.recording_to(Arc::clone(recorder));
             }
-            group_boundary = group_boundary.leaving_out(mac_only);
+            group_boundary = group_boundary.leaving_out(os_junk);
             let group_result = volume
                 .scan_for_copy_batch_with_boundary(
                     &paths_in_group

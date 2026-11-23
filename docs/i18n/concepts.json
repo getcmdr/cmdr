@@ -1819,7 +1819,8 @@
       {
         "key": "settings.appearance.menuBar.description",
         "why": "\"Hidden\" is the menu bar kept out of view (the hide sense), not a hidden file"
-      }
+      },
+      "fuse_hidden"
     ],
     "sense": "A file or folder macOS doesn't show by default (dotfiles, the hidden flag)."
   },
@@ -1941,7 +1942,7 @@
     "match": ["=include", "include all files"],
     "notMatch": [
       {
-        "key": "settings.fileOperations.macOnlyFiles.opt.include",
+        "key": "settings.fileOperations.osJunkFiles.opt.include",
         "why": "The Mac-only hidden files setting's option to copy those files along, not an AI suggestion's tick box."
       }
     ],

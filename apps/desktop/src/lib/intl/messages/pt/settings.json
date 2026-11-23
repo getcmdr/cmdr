@@ -505,29 +505,29 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.macOnlyFiles.label": "Ignorar arquivos ocultos exclusivos do Mac",
-  "@settings.fileOperations.macOnlyFiles.label": {
-    "sourceHash": "be693c6"
+  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Ignorar arquivos ocultos exclusivos do Mac} windows {Ignorar arquivos de miniaturas do Windows} other {Ignorar arquivos residuais do Linux}}",
+  "@settings.fileOperations.osJunkFiles.label": {
+    "sourceHash": "28cccff"
   },
-  "settings.fileOperations.macOnlyFiles.description": "Ignora os arquivos .DS_Store e ._* ao copiar, mover ou comprimir.",
-  "@settings.fileOperations.macOnlyFiles.description": {
-    "sourceHash": "02578a7"
+  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Ignora os arquivos .DS_Store e ._* ao copiar, mover ou comprimir.} windows {Ignora os arquivos Thumbs.db e ehthumbs*.db ao copiar, mover ou comprimir. O Windows os recria quando precisa deles.} other {Ignora os arquivos .nfs* e .fuse_hidden* ao copiar, mover ou comprimir. O Linux os mantém para arquivos apagados que continuam abertos.}}",
+  "@settings.fileOperations.osJunkFiles.description": {
+    "sourceHash": "d429ec1"
   },
-  "settings.fileOperations.macOnlyFiles.opt.include": "Incluir",
-  "@settings.fileOperations.macOnlyFiles.opt.include": {
+  "settings.fileOperations.osJunkFiles.opt.include": "Incluir",
+  "@settings.fileOperations.osJunkFiles.opt.include": {
     "sourceHash": "7285576"
   },
-  "settings.fileOperations.macOnlyFiles.opt.skip": "Ignorar",
-  "@settings.fileOperations.macOnlyFiles.opt.skip": {
+  "settings.fileOperations.osJunkFiles.opt.skip": "Ignorar",
+  "@settings.fileOperations.osJunkFiles.opt.skip": {
     "sourceHash": "28d0359"
   },
-  "settings.fileOperations.macOnlyFiles.opt.ask": "Sempre perguntar",
-  "@settings.fileOperations.macOnlyFiles.opt.ask": {
+  "settings.fileOperations.osJunkFiles.opt.ask": "Sempre perguntar",
+  "@settings.fileOperations.osJunkFiles.opt.ask": {
     "sourceHash": "3c42771"
   },
-  "settings.fileOperations.macOnlyFiles.keywords": "metadados, bagunça, tralha, sujeira, desnecessários, resource fork, bifurcação de recursos, compactar, arquivo compactado, copiar, mover, outros sistemas, só Mac",
-  "@settings.fileOperations.macOnlyFiles.keywords": {
-    "sourceHash": "b668774"
+  "settings.fileOperations.osJunkFiles.keywords": "metadados, bagunça, tralha, sujeira, desnecessários, restos, sobras, miniaturas, cache, resource fork, bifurcação de recursos, compactar, arquivo compactado, copiar, mover, outros sistemas",
+  "@settings.fileOperations.osJunkFiles.keywords": {
+    "sourceHash": "952738c"
   },
   "settings.fileOperations.skipConfirmation.label": "{platform, select, windows {Copiar, mover e apagar sem pedir confirmação} other {Copiar, mover e mandar para o Lixo sem pedir confirmação}}",
   "@settings.fileOperations.skipConfirmation.label": {

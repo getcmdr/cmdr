@@ -26,7 +26,7 @@ pub(super) const TRIAGE_SETTING_KEYS: &[&str] = &[
     "fileExplorer.typeToJump.mode",
     "behavior.archiveEnter.zip",
     "fileOperations.allowFileExtensionChanges",
-    "fileOperations.macOnlyFiles",
+    "fileOperations.osJunkFiles",
     "fileOperations.skipConfirmation",
     "fileOperations.defaultConflictPolicy",
     "fileOperations.mtpEnabled",

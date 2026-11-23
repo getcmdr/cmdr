@@ -502,29 +502,29 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.macOnlyFiles.label": "Přeskočit skryté soubory jen pro Mac",
-  "@settings.fileOperations.macOnlyFiles.label": {
-    "sourceHash": "be693c6"
+  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Přeskočit skryté soubory jen pro Mac} windows {Přeskočit soubory miniatur Windows} other {Přeskočit zbytkové soubory Linuxu}}",
+  "@settings.fileOperations.osJunkFiles.label": {
+    "sourceHash": "28cccff"
   },
-  "settings.fileOperations.macOnlyFiles.description": "Při kopírování, přesouvání nebo komprimování přeskočí soubory .DS_Store a ._*.",
-  "@settings.fileOperations.macOnlyFiles.description": {
-    "sourceHash": "02578a7"
+  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Při kopírování, přesouvání nebo komprimování přeskočí soubory .DS_Store a ._*.} windows {Při kopírování, přesouvání nebo komprimování přeskočí soubory Thumbs.db a ehthumbs*.db. Windows si je v případě potřeby vytvoří znovu.} other {Při kopírování, přesouvání nebo komprimování přeskočí soubory .nfs* a .fuse_hidden*. Linux je uchovává pro smazané soubory, které jsou stále otevřené.}}",
+  "@settings.fileOperations.osJunkFiles.description": {
+    "sourceHash": "d429ec1"
   },
-  "settings.fileOperations.macOnlyFiles.opt.include": "Zahrnout",
-  "@settings.fileOperations.macOnlyFiles.opt.include": {
+  "settings.fileOperations.osJunkFiles.opt.include": "Zahrnout",
+  "@settings.fileOperations.osJunkFiles.opt.include": {
     "sourceHash": "7285576"
   },
-  "settings.fileOperations.macOnlyFiles.opt.skip": "Přeskočit",
-  "@settings.fileOperations.macOnlyFiles.opt.skip": {
+  "settings.fileOperations.osJunkFiles.opt.skip": "Přeskočit",
+  "@settings.fileOperations.osJunkFiles.opt.skip": {
     "sourceHash": "28d0359"
   },
-  "settings.fileOperations.macOnlyFiles.opt.ask": "Vždy se zeptat",
-  "@settings.fileOperations.macOnlyFiles.opt.ask": {
+  "settings.fileOperations.osJunkFiles.opt.ask": "Vždy se zeptat",
+  "@settings.fileOperations.osJunkFiles.opt.ask": {
     "sourceHash": "3c42771"
   },
-  "settings.fileOperations.macOnlyFiles.keywords": "tečkové soubory, metadata, nepořádek, smetí, nepotřebné soubory, resource fork, archiv, komprese, kopírování, přesun, jiné systémy, sdílení",
-  "@settings.fileOperations.macOnlyFiles.keywords": {
-    "sourceHash": "b668774"
+  "settings.fileOperations.osJunkFiles.keywords": "tečkové soubory, metadata, nepořádek, smetí, nepotřebné soubory, zbytky, pozůstatky, náhledy, miniatury, mezipaměť, cache, resource fork, archiv, komprese, kopírování, přesun, jiné systémy, sdílení",
+  "@settings.fileOperations.osJunkFiles.keywords": {
+    "sourceHash": "952738c"
   },
   "settings.fileOperations.skipConfirmation.label": "{platform, select, windows {Přeskočit potvrzení u kopírování, přesunu a mazání} other {Přeskočit potvrzení u kopírování, přesunu a koše}}",
   "@settings.fileOperations.skipConfirmation.label": {

@@ -439,7 +439,7 @@ pub async fn move_volumes_with_progress(
                     // the operation-log capture harvests it below for the per-leaf
                     // journal rows. It also keeps the SOURCE ledger the sweep
                     // below removes from.
-                    let created = super::merge_ctx::CreatedPaths::recording_sources(state.mac_only);
+                    let created = super::merge_ctx::CreatedPaths::recording_sources(state.os_junk);
                     // This source's row in the in-flight table, and the number
                     // every leaf row below it hangs off. Sources run one at a
                     // time here, so the counter labels the source rows in order.
@@ -822,10 +822,10 @@ mod merge_tests;
 // Both drivers' in-flight tables, pinned side by side: a folder fans out the
 // same way whether it is moved or copied, so the table it renders is one
 // subject rather than two.
-/// A copy and a move that leave Mac-only files out (#314).
+/// A copy and a move that leave OS junk files out (#314, #1305).
 #[cfg(test)]
-#[path = "move_mac_only_tests.rs"]
-mod mac_only_tests;
+#[path = "move_os_junk_tests.rs"]
+mod os_junk_tests;
 /// A source share that drops during the source sweep is waited for, then swept
 /// again from what it shows.
 #[cfg(test)]

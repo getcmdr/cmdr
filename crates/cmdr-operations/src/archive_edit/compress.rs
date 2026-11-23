@@ -9,7 +9,7 @@ use super::super::OperationEventSink;
 use super::super::look_alike::{LookAlike, look_alike_in, spelled_new_path};
 use super::super::transfer::volume::{PathRole, map_volume_error};
 use super::super::types::{ConflictResolution, ReadOnlySide, WriteOperationError, WriteOperationStartResult};
-use cmdr_fs::mac_only_files::MacOnlyFiles;
+use cmdr_fs::os_junk_files::OsJunkFiles;
 use cmdr_fs::volume::Volume;
 
 /// Picks the concrete remote spelling that the overwrite warning referred to.
@@ -41,7 +41,7 @@ async fn archive_landing(
 }
 
 impl crate::Operations {
-    /// Starts one managed fresh compression that keeps Mac-only files, for the
+    /// Starts one managed fresh compression that keeps OS junk files, for the
     /// tests. The app starts through [`Self::compress_start_leaving_out`].
     #[cfg(any(test, feature = "testing"))]
     #[allow(
@@ -72,7 +72,7 @@ impl crate::Operations {
             compression_level,
             preview_id,
             initiator,
-            MacOnlyFiles::Include,
+            OsJunkFiles::Include,
         )
         .await
     }
@@ -80,9 +80,10 @@ impl crate::Operations {
     /// Starts one managed fresh compression. Nothing at the destination changes
     /// until the producer has closed, byte counts agree, and the staged ZIP parses.
     ///
-    /// `mac_only` says whether to leave out the Mac-only files below the
-    /// selection, and with them every `__MACOSX` sidecar the zip would otherwise
-    /// carry, which a person on another system sees as the same clutter (#314).
+    /// `os_junk` says whether to leave out the running OS's junk files below the
+    /// selection; on a Mac, with them every `__MACOSX` sidecar the zip would
+    /// otherwise carry, which a person on another system sees as the same clutter
+    /// (#314, #1305, `OsJunkFiles::leaves_out_apple_double_sidecars`).
     #[allow(
         clippy::too_many_arguments,
         reason = "command seam carries both endpoints, operation settings, preview ownership, and provenance"
@@ -99,7 +100,7 @@ impl crate::Operations {
         compression_level: Option<i64>,
         preview_id: Option<String>,
         initiator: cmdr_operation_log::types::Initiator,
-        mac_only: MacOnlyFiles,
+        os_junk: OsJunkFiles,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
         super::routing::ensure_zip_writable(&dest_zip_full_path, ReadOnlySide::Destination)?;
         // The `.zip` as its parent drive is asked about it.
@@ -140,7 +141,7 @@ impl crate::Operations {
             preview_id,
             !existed,
             initiator,
-            mac_only,
+            os_junk,
         )
         .await
     }

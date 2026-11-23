@@ -404,20 +404,20 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.macOnlyFiles.toggle": "Пропускати приховані файли, потрібні лише на Mac (.DS_Store, ._*)",
-  "@fileOperations.transferDialog.macOnlyFiles.toggle": {
-    "sourceHash": "0f28753"
+  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Пропускати приховані файли, потрібні лише на Mac (.DS_Store, ._*)} windows {Пропускати файли ескізів Windows (Thumbs.db, ehthumbs*.db)} other {Пропускати залишкові файли Linux (.nfs*, .fuse_hidden*)}}",
+  "@fileOperations.transferDialog.osJunkFiles.toggle": {
+    "sourceHash": "2dbf7cc"
   },
-  "fileOperations.transferDialog.macOnlyFiles.dontAskAgain": "Більше не питати",
-  "@fileOperations.transferDialog.macOnlyFiles.dontAskAgain": {
+  "fileOperations.transferDialog.osJunkFiles.dontAskAgain": "Більше не питати",
+  "@fileOperations.transferDialog.osJunkFiles.dontAskAgain": {
     "sourceHash": "3f6e4da"
   },
-  "fileOperations.transferDialog.macOnlyFiles.includingByDefault": "Типово включаються",
-  "@fileOperations.transferDialog.macOnlyFiles.includingByDefault": {
+  "fileOperations.transferDialog.osJunkFiles.includingByDefault": "Типово включаються",
+  "@fileOperations.transferDialog.osJunkFiles.includingByDefault": {
     "sourceHash": "23a2743"
   },
-  "fileOperations.transferDialog.macOnlyFiles.skippingByDefault": "Типово пропускаються",
-  "@fileOperations.transferDialog.macOnlyFiles.skippingByDefault": {
+  "fileOperations.transferDialog.osJunkFiles.skippingByDefault": "Типово пропускаються",
+  "@fileOperations.transferDialog.osJunkFiles.skippingByDefault": {
     "sourceHash": "1837ebb"
   },
   "fileOperations.transferDialog.rememberChoice": "Запамʼятати цей вибір",

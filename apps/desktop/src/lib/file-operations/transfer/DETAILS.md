@@ -719,22 +719,26 @@ came from (`ConflictPolicySource`: `remembered`, `picked`, `preset`, or `explici
 E2E specs share one app per shard, so a saved policy would leak into the next spec; the conflict-family specs reset it
 through `resetRememberedConflictPolicy` (`test/e2e-playwright/conflict-helpers.ts`).
 
-### "Skip Mac-only hidden files" (#314)
+### "Skip this OS's junk files" (#314, #1305)
 
-The "To" card ends with a checkbox and a link. The rules live in `mac-only-files.ts`; which names match, and what a
-transfer then does with them (the walks, the totals, a move's husk folders, a zip's `__MACOSX` sidecars), is the
-backend's: `crates/cmdr-operations/src/transfer/DETAILS.md` § "Mac-only files a transfer leaves out".
+The "To" card ends with a checkbox and a link. Its label is one `{platform, select, …}` message, so each OS names its
+own set ("Skip Mac hidden files", "Skip Windows thumbnail files", "Skip Linux leftover files"); the backend skips the
+RUNNING OS's set, and the label reads the same platform, so the two agree (the browser demo is the exception: its engine
+answers Linux whatever the visitor's OS). The rules live in `os-junk-files.ts`; which names match, and what a transfer
+then does with them (the walks, the totals, a move's husk folders, a zip's `__MACOSX` sidecars), is the backend's:
+`crates/cmdr-operations/src/transfer/DETAILS.md` § "OS junk files a transfer leaves out".
 
-- **It starts from `fileOperations.macOnlyFiles`** (`include` / `skip` / `ask`, default `ask`): ticked only on `skip`.
-  The link names that default ("Including by default", "Skipping by default"), or on `ask` offers "Don't ask again", and
-  opens Settings at the row either way.
+- **It starts from `fileOperations.osJunkFiles`** (`include` / `skip` / `ask`, default `ask`): ticked only on `skip`. It
+  was `fileOperations.macOnlyFiles` until #1305; settings migration 11 carries a stored choice across. The link names
+  that default ("Including by default", "Skipping by default"), or on `ask` offers "Don't ask again", and opens Settings
+  at the row either way.
 - **The checkbox is always a one-off override**: ❌ it never writes the setting. Until the person touches it, it follows
   a default they change through the link while the dialog is open.
 - **The preview walks with the same choice**, so the tallies match what the operation writes, and a flip walks again
-  (`transfer-scan-state.svelte.ts`'s mac-only `$effect`; the backend treats a preview that left out something else as a
+  (`transfer-scan-state.svelte.ts`'s OS-junk `$effect`; the backend treats a preview that left out something else as a
   miss, so a flip racing the confirm costs a rescan, never wrong totals).
 - **A confirm nobody saw** (skipped confirmation, a start with no dialog) sends the setting's starting state, so `ask`
-  includes them (`transfer-dispatch.ts`, `defaultMacOnlyFiles`). **A rename never leaves anything out**: rename mode
+  includes them (`transfer-dispatch.ts`, `defaultOsJunkFiles`). **A rename never leaves anything out**: rename mode
   shows no checkbox, and the dispatch sends `include` for any `newName`.
 
 ### The confirm dispatches without waiting for the conflict check

@@ -2512,7 +2512,7 @@
     "forms": "the Include column → Включить; Include {name} → Включить «{name}»; a settings option meaning keep these files in → Включить (same English, same value); its default as a link → По умолчанию не пропускаются",
     "confidence": "tentative",
     "sources": "macOS ru Finder (RV_SYSTEM_FILES_SLICE_DESCRIPTION Включать системные файлы…); catalog (suggestedOps.columnInclude, suggestedOps.includeFile)",
-    "note": "Under a switch-like label Включить can read as turn on; settings.fileOperations.macOnlyFiles.opt.include keeps it only for term consistency (review-queue.md)."
+    "note": "Under a switch-like label Включить can read as turn on; settings.fileOperations.osJunkFiles.opt.include keeps it only for term consistency (review-queue.md)."
   },
   "incoming-connections": {
     "chosen": "входящие подключения",
@@ -5618,7 +5618,12 @@
       }
     ],
     "confidence": "high",
-    "sources": "Live macOS Photos IPXMain: thumbnails → миниатюры; frameworks: Thumbnail → Миниатюра; MS: thumbnail → эскиз; DC, Thunar: Thumbnails → Эскизы; TC menu: Просмотр эскизов"
+    "sources": "Live macOS Photos IPXMain: thumbnails → миниатюры; frameworks: Thumbnail → Миниатюра; MS: thumbnail → эскиз; DC, Thunar: Thumbnails → Эскизы; TC menu: Просмотр эскизов",
+    "windows": {
+      "chosen": "эскиз",
+      "accept": ["эскиз"],
+      "note": "Windows branch: Microsoft's word (RUSSIAN.tbx thumbnail → эскиз), as in settings.fileOperations.osJunkFiles.label."
+    }
   },
   "time-ago": {
     "chosen": "назад",

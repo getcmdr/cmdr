@@ -506,29 +506,29 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.macOnlyFiles.label": "Mac-specifieke verborgen bestanden overslaan",
-  "@settings.fileOperations.macOnlyFiles.label": {
-    "sourceHash": "be693c6"
+  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Mac-specifieke verborgen bestanden overslaan} windows {Windows-miniatuurbestanden overslaan} other {Achtergebleven Linux-bestanden overslaan}}",
+  "@settings.fileOperations.osJunkFiles.label": {
+    "sourceHash": "28cccff"
   },
-  "settings.fileOperations.macOnlyFiles.description": "Slaat bij kopiëren, verplaatsen of comprimeren de bestanden .DS_Store en ._* over.",
-  "@settings.fileOperations.macOnlyFiles.description": {
-    "sourceHash": "02578a7"
+  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Slaat bij kopiëren, verplaatsen of comprimeren de bestanden .DS_Store en ._* over.} windows {Slaat bij kopiëren, verplaatsen of comprimeren de bestanden Thumbs.db en ehthumbs*.db over. Windows maakt ze opnieuw aan als het ze nodig heeft.} other {Slaat bij kopiëren, verplaatsen of comprimeren de bestanden .nfs* en .fuse_hidden* over. Linux bewaart ze voor verwijderde bestanden die nog open zijn.}}",
+  "@settings.fileOperations.osJunkFiles.description": {
+    "sourceHash": "d429ec1"
   },
-  "settings.fileOperations.macOnlyFiles.opt.include": "Meenemen",
-  "@settings.fileOperations.macOnlyFiles.opt.include": {
+  "settings.fileOperations.osJunkFiles.opt.include": "Meenemen",
+  "@settings.fileOperations.osJunkFiles.opt.include": {
     "sourceHash": "7285576"
   },
-  "settings.fileOperations.macOnlyFiles.opt.skip": "Sla over",
-  "@settings.fileOperations.macOnlyFiles.opt.skip": {
+  "settings.fileOperations.osJunkFiles.opt.skip": "Sla over",
+  "@settings.fileOperations.osJunkFiles.opt.skip": {
     "sourceHash": "28d0359"
   },
-  "settings.fileOperations.macOnlyFiles.opt.ask": "Altijd vragen",
-  "@settings.fileOperations.macOnlyFiles.opt.ask": {
+  "settings.fileOperations.osJunkFiles.opt.ask": "Altijd vragen",
+  "@settings.fileOperations.osJunkFiles.opt.ask": {
     "sourceHash": "3c42771"
   },
-  "settings.fileOperations.macOnlyFiles.keywords": "metadata, rommel, troep, overbodig, puntbestanden, resource fork, bronvork, archief, inpakken, kopiëren, verplaatsen, andere systemen, alleen Mac",
-  "@settings.fileOperations.macOnlyFiles.keywords": {
-    "sourceHash": "b668774"
+  "settings.fileOperations.osJunkFiles.keywords": "metadata, rommel, troep, overbodig, restanten, overblijfsels, miniaturen, cache, puntbestanden, resource fork, bronvork, archief, inpakken, kopiëren, verplaatsen, andere systemen",
+  "@settings.fileOperations.osJunkFiles.keywords": {
+    "sourceHash": "952738c"
   },
   "settings.fileOperations.skipConfirmation.label": "{platform, select, windows {Bevestiging overslaan bij kopiëren, verplaatsen en verwijderen} other {Bevestiging overslaan bij kopiëren, verplaatsen en naar prullenmand}}",
   "@settings.fileOperations.skipConfirmation.label": {

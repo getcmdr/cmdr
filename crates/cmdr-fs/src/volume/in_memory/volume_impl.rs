@@ -692,7 +692,7 @@ impl Volume for InMemoryVolume {
             let path: &Path = &path_std;
             // A device breathes at every call (`with_yielding`; a no-op otherwise).
             self.breathe().await;
-            self.scan_subtree(path, crate::mac_only_files::MacOnlyFiles::Include)
+            self.scan_subtree(path, crate::os_junk_files::OsJunkFiles::Include)
         })
     }
 
@@ -712,9 +712,9 @@ impl Volume for InMemoryVolume {
             let mut per_path = Vec::with_capacity(paths.len());
             for path in paths {
                 boundary.check().await?;
-                let scan = self.scan_subtree(&path.as_std_legacy(), boundary.mac_only())?;
+                let scan = self.scan_subtree(&path.as_std_legacy(), boundary.os_junk())?;
                 if let Some(recorder) = boundary.recorder() {
-                    self.record_subtree(&path.as_std_legacy(), recorder.as_ref(), boundary.mac_only());
+                    self.record_subtree(&path.as_std_legacy(), recorder.as_ref(), boundary.os_junk());
                 }
                 boundary.counted(&scan).await?;
                 per_path.push((path.as_std_legacy().into_owned(), scan));

@@ -154,7 +154,7 @@ pub(crate) fn run_scan_preview(
         let refuse_mounted_volume = |path: &Path| refused_at(path, MountedVolumeAction::Delete);
         let ctx = WalkContext {
             sidecars: &sidecars,
-            mac_only: state.mac_only,
+            os_junk: state.os_junk,
             progress_interval: state.progress_interval,
             // The owner's cancel as well as the preview's own flag; see `told_to_stop`.
             is_cancelled: &|| pause.told_to_stop(),
@@ -309,7 +309,7 @@ pub(crate) fn run_scan_preview(
                     )
                     .with_tree(tree)
                     .with_name_portability(name_portability.clone())
-                    .leaving_out(state.mac_only),
+                    .leaving_out(state.os_junk),
                 ),
             );
 

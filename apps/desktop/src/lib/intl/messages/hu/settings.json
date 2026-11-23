@@ -504,29 +504,29 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.macOnlyFiles.label": "Mac-specifikus rejtett fájlok átugrása",
-  "@settings.fileOperations.macOnlyFiles.label": {
-    "sourceHash": "be693c6"
+  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Mac-specifikus rejtett fájlok átugrása} windows {Windows-miniatűrfájlok átugrása} other {Linux által hátrahagyott fájlok átugrása}}",
+  "@settings.fileOperations.osJunkFiles.label": {
+    "sourceHash": "28cccff"
   },
-  "settings.fileOperations.macOnlyFiles.description": "Másoláskor, áthelyezéskor vagy tömörítéskor kihagyja ezeket a fájlokat: .DS_Store, ._*.",
-  "@settings.fileOperations.macOnlyFiles.description": {
-    "sourceHash": "02578a7"
+  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Másoláskor, áthelyezéskor vagy tömörítéskor kihagyja ezeket a fájlokat: .DS_Store, ._*.} windows {Másoláskor, áthelyezéskor vagy tömörítéskor kihagyja ezeket a fájlokat: Thumbs.db, ehthumbs*.db. A Windows szükség esetén újra létrehozza őket.} other {Másoláskor, áthelyezéskor vagy tömörítéskor kihagyja ezeket a fájlokat: .nfs*, .fuse_hidden*. A Linux a törölt, de még megnyitott fájlok miatt tartja meg őket.}}",
+  "@settings.fileOperations.osJunkFiles.description": {
+    "sourceHash": "d429ec1"
   },
-  "settings.fileOperations.macOnlyFiles.opt.include": "Belefoglalás",
-  "@settings.fileOperations.macOnlyFiles.opt.include": {
+  "settings.fileOperations.osJunkFiles.opt.include": "Belefoglalás",
+  "@settings.fileOperations.osJunkFiles.opt.include": {
     "sourceHash": "7285576"
   },
-  "settings.fileOperations.macOnlyFiles.opt.skip": "Átugrás",
-  "@settings.fileOperations.macOnlyFiles.opt.skip": {
+  "settings.fileOperations.osJunkFiles.opt.skip": "Átugrás",
+  "@settings.fileOperations.osJunkFiles.opt.skip": {
     "sourceHash": "28d0359"
   },
-  "settings.fileOperations.macOnlyFiles.opt.ask": "Mindig kérdezzen",
-  "@settings.fileOperations.macOnlyFiles.opt.ask": {
+  "settings.fileOperations.osJunkFiles.opt.ask": "Mindig kérdezzen",
+  "@settings.fileOperations.osJunkFiles.opt.ask": {
     "sourceHash": "3c42771"
   },
-  "settings.fileOperations.macOnlyFiles.keywords": "metaadat, szemét, kacat, felesleges fájlok, pontfájlok, erőforrás-elágazás, resource fork, archívum, tömörítés, másolás, áthelyezés, más rendszerek, csak Mac",
-  "@settings.fileOperations.macOnlyFiles.keywords": {
-    "sourceHash": "b668774"
+  "settings.fileOperations.osJunkFiles.keywords": "metaadat, szemét, kacat, felesleges fájlok, maradék, maradványok, pontfájlok, bélyegképek, miniatűrök, gyorsítótár, cache, erőforrás-elágazás, resource fork, archívum, tömörítés, másolás, áthelyezés, más rendszerek",
+  "@settings.fileOperations.osJunkFiles.keywords": {
+    "sourceHash": "952738c"
   },
   "settings.fileOperations.skipConfirmation.label": "{platform, select, windows {Megerősítés kihagyása másoláskor, áthelyezéskor és törléskor} other {Megerősítés kihagyása másoláskor, áthelyezéskor és Kukába helyezéskor}}",
   "@settings.fileOperations.skipConfirmation.label": {

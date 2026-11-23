@@ -854,12 +854,12 @@ impl InMemoryVolume {
     /// Hands `recorder` the entry at `path` and every one below it, each named
     /// under `path` as the caller spelled it. Counted the way `scan_for_copy`
     /// counts: a directory flag makes a folder, anything else a file.
-    /// `scan_for_copy`'s count of `path`, leaving out what `mac_only` says to
+    /// `scan_for_copy`'s count of `path`, leaving out what `os_junk` says to
     /// below it (never `path` itself: a selected file goes).
     fn scan_subtree(
         &self,
         path: &Path,
-        mac_only: crate::mac_only_files::MacOnlyFiles,
+        os_junk: crate::os_junk_files::OsJunkFiles,
     ) -> Result<super::CopyScanResult, VolumeError> {
         let normalized = self.normalize(path);
         let entries = self.entries.read().map_err(|_| VolumeError::IoError {
@@ -893,7 +893,7 @@ impl InMemoryVolume {
             if entry_path == &normalized || !entry_path.starts_with(&normalized) {
                 continue;
             }
-            if Self::left_out(entry_path, entry, mac_only) {
+            if Self::left_out(entry_path, entry, os_junk) {
                 continue;
             }
             if entry.metadata.is_directory {
@@ -922,17 +922,17 @@ impl InMemoryVolume {
         })
     }
 
-    /// Whether a scan under `mac_only` leaves out the descendant at `path`.
-    fn left_out(path: &Path, entry: &InMemoryEntry, mac_only: crate::mac_only_files::MacOnlyFiles) -> bool {
+    /// Whether a scan under `os_junk` leaves out the descendant at `path`.
+    fn left_out(path: &Path, entry: &InMemoryEntry, os_junk: crate::os_junk_files::OsJunkFiles) -> bool {
         path.file_name()
-            .is_some_and(|name| mac_only.leaves_out(name, entry.metadata.is_directory))
+            .is_some_and(|name| os_junk.leaves_out(name, entry.metadata.is_directory))
     }
 
     fn record_subtree(
         &self,
         path: &Path,
         recorder: &dyn super::ScanRecorder,
-        mac_only: crate::mac_only_files::MacOnlyFiles,
+        os_junk: crate::os_junk_files::OsJunkFiles,
     ) {
         let normalized = self.normalize(path);
         let entries = self.entries.read_ignore_poison();
@@ -947,7 +947,7 @@ impl InMemoryVolume {
             let Ok(relative) = entry_path.strip_prefix(&normalized) else {
                 continue;
             };
-            if relative.as_os_str().is_empty() || Self::left_out(entry_path, entry, mac_only) {
+            if relative.as_os_str().is_empty() || Self::left_out(entry_path, entry, os_junk) {
                 continue;
             }
             let as_called = path.join(relative);

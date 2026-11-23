@@ -183,7 +183,7 @@ impl MtpConnectionManager {
             // Per entry, and so BEFORE the subdirectory listing below: that
             // listing is the round trip, and asking after it is a Cancel the
             // person waits out.
-            // A Mac-only file the transfer leaves out is no part of it (#314).
+            // An OS junk file the transfer leaves out is no part of it (#314, #1305).
             if boundary.leaves_out(&entry.name, entry.is_directory) {
                 continue;
             }

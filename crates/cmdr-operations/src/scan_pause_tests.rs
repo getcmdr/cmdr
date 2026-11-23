@@ -150,7 +150,7 @@ async fn start_copy_with_a_real_scan(engine: &TestOperations, label: &str) -> Ru
         // the counts it reports are the walk's real progress rather than a
         // 200 ms sample of it.
         progress_interval: Duration::ZERO,
-        mac_only: cmdr_fs::mac_only_files::MacOnlyFiles::Include,
+        os_junk: cmdr_fs::os_junk_files::OsJunkFiles::Include,
     });
     engine
         .stores()

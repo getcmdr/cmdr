@@ -504,29 +504,29 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.macOnlyFiles.label": "略過 Mac 專用的隱藏檔案",
-  "@settings.fileOperations.macOnlyFiles.label": {
-    "sourceHash": "be693c6"
+  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {略過 Mac 專用的隱藏檔案} windows {略過 Windows 縮圖檔案} other {略過 Linux 殘留檔案}}",
+  "@settings.fileOperations.osJunkFiles.label": {
+    "sourceHash": "28cccff"
   },
-  "settings.fileOperations.macOnlyFiles.description": "複製、移動或壓縮時略過 .DS_Store 和 ._* 檔案。",
-  "@settings.fileOperations.macOnlyFiles.description": {
-    "sourceHash": "02578a7"
+  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {複製、移動或壓縮時略過 .DS_Store 和 ._* 檔案。} windows {複製、移動或壓縮時略過 Thumbs.db 和 ehthumbs*.db 檔案。Windows 需要時會重新建立它們。} other {複製、移動或壓縮時略過 .nfs* 和 .fuse_hidden* 檔案。Linux 會替已刪除但仍開著的檔案保留它們。}}",
+  "@settings.fileOperations.osJunkFiles.description": {
+    "sourceHash": "d429ec1"
   },
-  "settings.fileOperations.macOnlyFiles.opt.include": "包含",
-  "@settings.fileOperations.macOnlyFiles.opt.include": {
+  "settings.fileOperations.osJunkFiles.opt.include": "包含",
+  "@settings.fileOperations.osJunkFiles.opt.include": {
     "sourceHash": "7285576"
   },
-  "settings.fileOperations.macOnlyFiles.opt.skip": "略過",
-  "@settings.fileOperations.macOnlyFiles.opt.skip": {
+  "settings.fileOperations.osJunkFiles.opt.skip": "略過",
+  "@settings.fileOperations.osJunkFiles.opt.skip": {
     "sourceHash": "28d0359"
   },
-  "settings.fileOperations.macOnlyFiles.opt.ask": "每次詢問",
-  "@settings.fileOperations.macOnlyFiles.opt.ask": {
+  "settings.fileOperations.osJunkFiles.opt.ask": "每次詢問",
+  "@settings.fileOperations.osJunkFiles.opt.ask": {
     "sourceHash": "3c42771"
   },
-  "settings.fileOperations.macOnlyFiles.keywords": "後設資料, 中繼資料, 垃圾檔案, 垃圾, 雜亂, 清理, 資源分支, 壓縮, 拷貝, 移動, 其他系統, 蘋果",
-  "@settings.fileOperations.macOnlyFiles.keywords": {
-    "sourceHash": "b668774"
+  "settings.fileOperations.osJunkFiles.keywords": "後設資料, 中繼資料, 垃圾檔案, 垃圾, 雜亂, 清理, 殘留, 縮圖, 快取, 資源分支, 壓縮, 拷貝, 移動, 其他系統",
+  "@settings.fileOperations.osJunkFiles.keywords": {
+    "sourceHash": "952738c"
   },
   "settings.fileOperations.skipConfirmation.label": "{platform, select, windows {複製、移動和刪除時略過確認} other {複製、移動和移到垃圾桶時略過確認}}",
   "@settings.fileOperations.skipConfirmation.label": {

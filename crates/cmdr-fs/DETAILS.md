@@ -84,45 +84,46 @@ the next section.
 - `staging.rs`: `StagingTemp`, the ONLY way to name a scratch file. `src/staging/names.rs` is the one name builder
   behind it (and behind `temp_sibling_name` / `_path` / `_prefix` for the backends that name their own upload temps).
 - Leaves: `apple_double.rs` (whether a listed `._name` is the AppleDouble sidecar the kernel serves as `name`'s xattrs
-  on a volume with none of its own, so a copy walk leaves it out), `mac_only_files.rs` (`MacOnlyFiles`: whether a
-  transfer leaves `.DS_Store` and `._*` FILES out, the person's per-operation choice; every copy-scan walk asks it of
-  each listed child through `ScanBoundary::leaves_out`, `crates/cmdr-operations/src/transfer/DETAILS.md` § "Mac-only
-  files a transfer leaves out"), `archive_format.rs` (sole source of truth for archive detection, and the extension-only
-  split of a path at its archive component), `file_extension.rs` (what counts as a name's extension, product-wide: §
-  "What counts as an extension"), `file_identity/` (which node, which device, how many links: § "File identity"),
-  `os_error/` (`OsErrorClass`: what an OS error code means, per OS, so nothing above it compares an errno: § "OS error
-  classes"), `restic_view.rs` (the `Browse snapshots` name and the lexical split of a path at it, here so the listing
-  engine and the write guards ask it without linking `rustic_core`; `cmdr-restic` confirms), `benchmark.rs` (the
-  env-gated `[TIMELINE]` stderr events, `docs/guides/benchmarking-file-loading.md`), `cloud_provider.rs` (macOS: which
-  cloud provider owns a path, and what it can do; pure path rules, its module docs say why it's a type), `validation.rs`
-  (`NameRules`, which names a destination's filesystem takes and which it warns about, § "Name rules", with
-  `validation/platform/` for how this host's drivers write a Windows-format disk; the name and path-length limits in
-  each filesystem's unit; `ValidationError`, the typed refusal a rename's validity check carries over IPC, and
-  `PortabilityWarning`, the typed warning; and `validate_plain_leaf`, the stricter check for a name somebody else chose
-  for the user: no edge whitespace, control character, or invisible bidi, zero-width, or format character, so the name a
-  review shows is the name that lands; a transfer's per-source names go through it), `firmlinks.rs` (`normalize_path`;
-  the index and the app's watchers have to agree on it), `file_provider.rs` (the cloud-domain marker),
-  `filesystem_kind.rs`, `path_locations.rs` (how many PLACES a set of directories amounts to), `path_hash.rs` (the fixed
-  64-bit folder-path hash two resident maps key on instead of the path: search's importance weights and the media
-  coverage score cache), `git_meta` (what a git portal row's Size cell states), `restic_meta` (a restic snapshot row's
-  host, tags, and paths), `name_fold.rs` (the ONE "same name, spelled another way" key: NFC + lowercase, shared by share
-  IDs, transfer conflict buckets, the SMB spelling resolve, and cursor placement; beside it `normalize_for_comparison`,
-  the local filesystem's own key, which the drive index stores and the write engine matches sources under, per OS: NFD +
-  lowercase on macOS, lowercase on Windows, the name itself on Linux), `log_rollup`, `log_private` + `log_detail`
-  (`LogPrivate`, the wrapper a log site marks a user-derived value with, over the ONE marker table and lexer the app's
-  span pass reads too; `LogDetail` for external OS/server/CLI text as one Debug-quoted, 1 KiB-capped field, and
-  `LoggedText` for our own; `log_error`, the `LogError` a path-carrying error logs through, `error_detail`, the message
-  field that keeps its cause typed for it, and `log_json`, a value's JSON with its fields marked; § "Marked log
-  values"), `tcc_paths`, `ignore_poison`, `pluralize`, `typed_path` (`resolve_typed_with`: text a person or an agent
-  typed, turned into an app path with each `..` answered by the volume through `TypedPathHost`; a relative input's
-  leading `..`s go up by text; docs/specs/app-path-plan.md § "Typed and pasted `..`"), `go_to_path` (the "Go to path"
-  dialog's classification over a `GoToHost`'s stat, shared by the desktop and the browser demo's engine),
-  `volume::dot_dot` (`Volume::parent_for_dot_dot`'s lexical default and `parent_across_links`, the link-following body
-  the local POSIX disk and SFTP override it with), `tilde` (`expand_tilde`, for a path a person typed on THIS machine;
-  on Windows it answers an app path through the path grammar and takes `~\` too, `expand_tilde_with` tests each flavor
-  everywhere), `twin_path` (a same-named twin's row path: `folder_of` past its pick, and `shown`, the one rule that
-  takes a pick out of anything a person reads; `crates/cmdr-mtp/src/connection/DETAILS.md` § "Same-named siblings"),
-  `byte_size` (`format_size`, the IEC byte count log lines and model-facing answers read), `thread_qos/` (macOS's
+  on a volume with none of its own, so a copy walk leaves it out), `os_junk_files.rs` (`OsJunkFiles`: whether a transfer
+  leaves the running OS's junk FILES out, the person's per-operation choice; every copy-scan walk asks it of each listed
+  child through `ScanBoundary::leaves_out`; the sets: § "OS junk files"; what a transfer does with them:
+  `crates/cmdr-operations/src/transfer/DETAILS.md` § "OS junk files a transfer leaves out"), `archive_format.rs` (sole
+  source of truth for archive detection, and the extension-only split of a path at its archive component),
+  `file_extension.rs` (what counts as a name's extension, product-wide: § "What counts as an extension"),
+  `file_identity/` (which node, which device, how many links: § "File identity"), `os_error/` (`OsErrorClass`: what an
+  OS error code means, per OS, so nothing above it compares an errno: § "OS error classes"), `restic_view.rs` (the
+  `Browse snapshots` name and the lexical split of a path at it, here so the listing engine and the write guards ask it
+  without linking `rustic_core`; `cmdr-restic` confirms), `benchmark.rs` (the env-gated `[TIMELINE]` stderr events,
+  `docs/guides/benchmarking-file-loading.md`), `cloud_provider.rs` (macOS: which cloud provider owns a path, and what it
+  can do; pure path rules, its module docs say why it's a type), `validation.rs` (`NameRules`, which names a
+  destination's filesystem takes and which it warns about, § "Name rules", with `validation/platform/` for how this
+  host's drivers write a Windows-format disk; the name and path-length limits in each filesystem's unit;
+  `ValidationError`, the typed refusal a rename's validity check carries over IPC, and `PortabilityWarning`, the typed
+  warning; and `validate_plain_leaf`, the stricter check for a name somebody else chose for the user: no edge
+  whitespace, control character, or invisible bidi, zero-width, or format character, so the name a review shows is the
+  name that lands; a transfer's per-source names go through it), `firmlinks.rs` (`normalize_path`; the index and the
+  app's watchers have to agree on it), `file_provider.rs` (the cloud-domain marker), `filesystem_kind.rs`,
+  `path_locations.rs` (how many PLACES a set of directories amounts to), `path_hash.rs` (the fixed 64-bit folder-path
+  hash two resident maps key on instead of the path: search's importance weights and the media coverage score cache),
+  `git_meta` (what a git portal row's Size cell states), `restic_meta` (a restic snapshot row's host, tags, and paths),
+  `name_fold.rs` (the ONE "same name, spelled another way" key: NFC + lowercase, shared by share IDs, transfer conflict
+  buckets, the SMB spelling resolve, and cursor placement; beside it `normalize_for_comparison`, the local filesystem's
+  own key, which the drive index stores and the write engine matches sources under, per OS: NFD + lowercase on macOS,
+  lowercase on Windows, the name itself on Linux), `log_rollup`, `log_private` + `log_detail` (`LogPrivate`, the wrapper
+  a log site marks a user-derived value with, over the ONE marker table and lexer the app's span pass reads too;
+  `LogDetail` for external OS/server/CLI text as one Debug-quoted, 1 KiB-capped field, and `LoggedText` for our own;
+  `log_error`, the `LogError` a path-carrying error logs through, `error_detail`, the message field that keeps its cause
+  typed for it, and `log_json`, a value's JSON with its fields marked; § "Marked log values"), `tcc_paths`,
+  `ignore_poison`, `pluralize`, `typed_path` (`resolve_typed_with`: text a person or an agent typed, turned into an app
+  path with each `..` answered by the volume through `TypedPathHost`; a relative input's leading `..`s go up by text;
+  docs/specs/app-path-plan.md § "Typed and pasted `..`"), `go_to_path` (the "Go to path" dialog's classification over a
+  `GoToHost`'s stat, shared by the desktop and the browser demo's engine), `volume::dot_dot`
+  (`Volume::parent_for_dot_dot`'s lexical default and `parent_across_links`, the link-following body the local POSIX
+  disk and SFTP override it with), `tilde` (`expand_tilde`, for a path a person typed on THIS machine; on Windows it
+  answers an app path through the path grammar and takes `~\` too, `expand_tilde_with` tests each flavor everywhere),
+  `twin_path` (a same-named twin's row path: `folder_of` past its pick, and `shown`, the one rule that takes a pick out
+  of anything a person reads; `crates/cmdr-mtp/src/connection/DETAILS.md` § "Same-named siblings"), `byte_size`
+  (`format_size`, the IEC byte count log lines and model-facing answers read), `thread_qos/` (macOS's
   `QOS_CLASS_UTILITY`, Windows' below-normal priority under EcoQoS, nothing on Linux; why each, and the rule that no
   thread a UI-facing thread waits on is lowered (Windows has no priority inheritance for user-mode locks), in its module
   docs), `thread_cpu/`, `process_cpu/`, `process_memory`, `utility_pool.rs` (`UtilityPool`, a keep-alive pool of
@@ -534,6 +535,42 @@ drift: a new case goes in the JSON and both sides answer it. The frontend reads 
 **Out of scope on purpose: OS type lookups.** Icon UTIs (`derive_icon_id`, `fileIconId`), "Open with" defaults, the
 archive Enter policy, and the viewer's content sniffing keep `Path::extension` semantics: there, what macOS calls the
 extension is the truth, and a bogus one only finds no match.
+
+## OS junk files
+
+`os_junk_files::OsJunkFiles::Skip` leaves out the RUNNING OS's junk set (`JunkOs::current()`, from
+`std::env::consts::OS`, no `cfg`; the wasm demo answers Linux). The matcher takes the OS as a value
+(`is_os_junk_file_name(os, name)`, `leaves_out_on`), so `os_junk_files_test.rs` pins all three sets on every CI OS, and
+the transfer tests write `JunkOs::sample_junk_names()` so each OS's walks skip its own. Only FILES match.
+
+The rule for a set: a regenerated cache or an OS dropping, ❌ never the person's data, a folder setting, or a folder.
+
+- **macOS**: `.DS_Store` (byte-exact) and `._` + at least one byte (AppleDouble). Finder metadata and xattr carriers,
+  meaningful only to a Mac. Skipping them on a Mac also drops a zip's `__MACOSX` sidecars
+  (`leaves_out_apple_double_sidecars`); the other sets keep them.
+- **Windows**: `Thumbs.db`, `ehthumbs.db`, `ehthumbs_vista.db`, ASCII-case-insensitive (Windows file systems ignore
+  case). Explorer's and Windows Media Center's thumbnail caches; Explorer recreates `Thumbs.db` on demand, and a Group
+  Policy turns it off outright (verified against learn.microsoft.com "Policy CSP - ADMX_Thumbnails",
+  `DisableThumbsDBOnNetworkFolders`, and GitHub's `github/gitignore` `Global/Windows.gitignore` "Windows thumbnail cache
+  files", 2026-11-23).
+- **Linux**: `.nfs` + exactly 24 lowercase hex digits, and `.fuse_hidden` + exactly 16. The kernel NFS client renames a
+  file deleted while open to `.nfs<16-hex fileid><8-hex counter>` (`fs/nfs/unlink.c`, `SILLYNAME_PREFIX "%0*llx%0*x"`),
+  libfuse to `.fuse_hidden%08x%08x` (`lib/fuse.c`); both vanish when the last handle closes. The exact shape keeps a
+  person's `.nfsconfig` theirs (verified against torvalds/linux `master` and libfuse `master`, 2026-11-23; both are in
+  `github/gitignore` `Global/Linux.gitignore`).
+
+Left out on purpose:
+
+- **`desktop.ini`** (Windows): a folder's own settings, its custom icon (`IconResource`) and localized display name
+  (`LocalizedResourceName`); dropping it loses a customization the person or Windows made (learn.microsoft.com "How to
+  Customize Folders with Desktop.ini", 2026-11-23).
+- **`.directory`** (KDE): Dolphin's per-folder view properties and a custom folder icon, the same kind of folder
+  setting. Plasma 6's Dolphin keeps view properties in an xattr (`user.kde.fm.viewproperties#1`) instead, but custom
+  icons still live in `.directory` (dev.to "Dolphin switches from .directory to extended attributes", 2025-10;
+  discuss.kde.org, 2026-11-23).
+- **`.Trash-<uid>`** (XDG trash on a removable volume), **`$RECYCLE.BIN`**, **`System Volume Information`**, and
+  **`lost+found`**: all folders, which the matcher never skips; the trashes hold the person's deleted files, the other
+  two belong to the file system.
 
 ## Name rules
 

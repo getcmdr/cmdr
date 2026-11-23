@@ -199,11 +199,11 @@ pub(super) struct CreatedPaths {
 
 impl CreatedPaths {
     /// A ledger that also keeps the [`SourceLedger`] a move's source sweep reads.
-    /// `mac_only` is what the walk leaves out, which the sweep then removes with
+    /// `os_junk` is what the walk leaves out, which the sweep then removes with
     /// a folder that holds nothing else.
-    pub(super) fn recording_sources(mac_only: cmdr_fs::mac_only_files::MacOnlyFiles) -> Self {
+    pub(super) fn recording_sources(os_junk: cmdr_fs::os_junk_files::OsJunkFiles) -> Self {
         Self {
-            source_ledger: Some(Mutex::new(SourceLedger::leaving_out(mac_only))),
+            source_ledger: Some(Mutex::new(SourceLedger::leaving_out(os_junk))),
             ..Self::default()
         }
     }

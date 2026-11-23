@@ -5,7 +5,7 @@ import {
   commands,
   events,
   type HomeFolderAction,
-  type MacOnlyFiles,
+  type OsJunkFiles,
   type ScanPreviewPurpose,
 } from '#lib/ipc/bindings.js'
 import { throwIpcError } from './ipc-types'
@@ -93,21 +93,21 @@ export type {
  * compress's local walk samples a compressed-size estimate.
  * A non-local id no volume answers for (an unplugged phone) comes back as a typed `refusal`
  * instead: nothing was walked and no preview exists.
- * `macOnlyFiles` is what the transfer will leave out, so the totals match what it writes; a
+ * `osJunkFiles` is what the transfer will leave out, so the totals match what it writes; a
  * delete passes nothing. */
 export async function startScanPreview(
   sources: string[],
   purpose: ScanPreviewPurpose,
   progressIntervalMs?: number,
   sourceVolumeId?: string,
-  macOnlyFiles?: MacOnlyFiles,
+  osJunkFiles?: OsJunkFiles,
 ): Promise<ScanPreviewStart> {
   const res = await commands.startScanPreview(
     sources,
     sourceVolumeId ?? null,
     progressIntervalMs ?? null,
     purpose,
-    macOnlyFiles ?? null,
+    osJunkFiles ?? null,
   )
   return res.status === 'ok' ? res.data : { refusal: res.error }
 }

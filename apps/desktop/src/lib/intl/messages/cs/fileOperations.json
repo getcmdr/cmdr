@@ -405,20 +405,20 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.macOnlyFiles.toggle": "Přeskočit skryté soubory jen pro Mac (.DS_Store, ._*)",
-  "@fileOperations.transferDialog.macOnlyFiles.toggle": {
-    "sourceHash": "0f28753"
+  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Přeskočit skryté soubory jen pro Mac (.DS_Store, ._*)} windows {Přeskočit soubory miniatur Windows (Thumbs.db, ehthumbs*.db)} other {Přeskočit zbytkové soubory Linuxu (.nfs*, .fuse_hidden*)}}",
+  "@fileOperations.transferDialog.osJunkFiles.toggle": {
+    "sourceHash": "2dbf7cc"
   },
-  "fileOperations.transferDialog.macOnlyFiles.dontAskAgain": "Už se neptat",
-  "@fileOperations.transferDialog.macOnlyFiles.dontAskAgain": {
+  "fileOperations.transferDialog.osJunkFiles.dontAskAgain": "Už se neptat",
+  "@fileOperations.transferDialog.osJunkFiles.dontAskAgain": {
     "sourceHash": "3f6e4da"
   },
-  "fileOperations.transferDialog.macOnlyFiles.includingByDefault": "Ve výchozím nastavení se zahrnují",
-  "@fileOperations.transferDialog.macOnlyFiles.includingByDefault": {
+  "fileOperations.transferDialog.osJunkFiles.includingByDefault": "Ve výchozím nastavení se zahrnují",
+  "@fileOperations.transferDialog.osJunkFiles.includingByDefault": {
     "sourceHash": "23a2743"
   },
-  "fileOperations.transferDialog.macOnlyFiles.skippingByDefault": "Ve výchozím nastavení se přeskakují",
-  "@fileOperations.transferDialog.macOnlyFiles.skippingByDefault": {
+  "fileOperations.transferDialog.osJunkFiles.skippingByDefault": "Ve výchozím nastavení se přeskakují",
+  "@fileOperations.transferDialog.osJunkFiles.skippingByDefault": {
     "sourceHash": "1837ebb"
   },
   "fileOperations.transferDialog.rememberChoice": "Zapamatovat si tuto volbu",

@@ -481,3 +481,8 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   calls refused and needed 13 `sync-locale-keys.ts <tag>` runs first; the brief could run the sync, or say so up front.
   The `for` loop, a `W=…` variable, and a Monitor `until` loop were all refused by the worktree guard, and the chained
   checks spilled into the background again. No script written. (all, `pausedForSpaceNote` batch)
+- Same multi-locale pattern again (`osJunkFiles.*`, three per-OS keys plus keywords): one inline Python heredoc wrote
+  the 13 `values.json` working files (never a catalog), then 13 chained `i18n:apply` calls. A `--lang all` mode for
+  `i18n:apply` reading one values file keyed by locale would remove the script. The `hidden` concept matched the
+  filename `.fuse_hidden*` in the Linux branch (the matcher treats `_` as a word boundary), so `fuse_hidden` went into
+  its `notMatch`; a filename-shaped token (`.foo_bar*`) could be stripped like dotted names are. (all)

@@ -405,20 +405,20 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.macOnlyFiles.toggle": "Mac-specifikus rejtett fájlok átugrása (.DS_Store, ._*)",
-  "@fileOperations.transferDialog.macOnlyFiles.toggle": {
-    "sourceHash": "0f28753"
+  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Mac-specifikus rejtett fájlok átugrása (.DS_Store, ._*)} windows {Windows-miniatűrfájlok átugrása (Thumbs.db, ehthumbs*.db)} other {Linux által hátrahagyott fájlok átugrása (.nfs*, .fuse_hidden*)}}",
+  "@fileOperations.transferDialog.osJunkFiles.toggle": {
+    "sourceHash": "2dbf7cc"
   },
-  "fileOperations.transferDialog.macOnlyFiles.dontAskAgain": "Ne kérdezd újra",
-  "@fileOperations.transferDialog.macOnlyFiles.dontAskAgain": {
+  "fileOperations.transferDialog.osJunkFiles.dontAskAgain": "Ne kérdezd újra",
+  "@fileOperations.transferDialog.osJunkFiles.dontAskAgain": {
     "sourceHash": "3f6e4da"
   },
-  "fileOperations.transferDialog.macOnlyFiles.includingByDefault": "Alapból nem ugorja át",
-  "@fileOperations.transferDialog.macOnlyFiles.includingByDefault": {
+  "fileOperations.transferDialog.osJunkFiles.includingByDefault": "Alapból nem ugorja át",
+  "@fileOperations.transferDialog.osJunkFiles.includingByDefault": {
     "sourceHash": "23a2743"
   },
-  "fileOperations.transferDialog.macOnlyFiles.skippingByDefault": "Alapból átugorja",
-  "@fileOperations.transferDialog.macOnlyFiles.skippingByDefault": {
+  "fileOperations.transferDialog.osJunkFiles.skippingByDefault": "Alapból átugorja",
+  "@fileOperations.transferDialog.osJunkFiles.skippingByDefault": {
     "sourceHash": "1837ebb"
   },
   "fileOperations.transferDialog.rememberChoice": "Választás megjegyzése",

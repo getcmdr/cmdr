@@ -198,9 +198,6 @@ const MAC_ONLY_PLAIN_VALUES: Readonly<Record<string, string>> = {
   'viewer.binaryWarning.bodyWithQuickLookKey': '`quickLook`: picked only while `file.quickLook` has a key',
   'menu.file.quickLook': '`quickLook`: a macOS-only row in the bar and the right-click menu',
   'settings.fileViewer.suppressBinaryWarning.keywords': 'search keywords, never shown; “Quick Look” only adds a match',
-  'fileOperations.transferDialog.macOnlyFiles.toggle':
-    'names the files Macs leave behind (.DS_Store, ._*), true on every OS',
-  'settings.fileOperations.macOnlyFiles.label': 'names the files Macs leave behind (.DS_Store, ._*), true on every OS',
   'main.dockPinNudge.': '`dockPin`: macOS only',
   'settings.behavior.dockPinNudgeOfferedAt.': '`dockPin`: the hidden setting needs the capability',
   'main.revealNudge.': '`revealHandler`: macOS only',

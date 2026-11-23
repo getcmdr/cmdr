@@ -1513,8 +1513,8 @@ pub trait Volume: Send + Sync {
     ///
     /// ❗ **Ask `boundary.leaves_out(name, is_directory)` of every LISTED child
     /// first**, and skip one it answers `true` for: neither counted, recorded, nor
-    /// walked. That's how a transfer that skips Mac-only files (`.DS_Store`, `._*`,
-    /// `crate::mac_only_files`) gets totals that match what it writes. A selected
+    /// walked. That's how a transfer that skips OS junk files (`.DS_Store`, `Thumbs.db`,
+    /// `crate::os_junk_files`) gets totals that match what it writes. A selected
     /// top-level path is never asked. The per-path default below can't honor it
     /// (it sees only totals), so a backend with directories overrides this.
     ///

@@ -86,10 +86,10 @@ pub(super) struct CachedScanResult {
     /// walk and handed to the operation that consumes this preview, the way
     /// `per_path` is. `None` for a delete's or a compress's preview.
     tree: Option<TreeModel>,
-    /// What the walk left out (`ScanPreviewState::mac_only`). An operation that
+    /// What the walk left out (`ScanPreviewState::os_junk`). An operation that
     /// leaves out something else isn't a hit: its totals and file list would
     /// name files it won't write, or miss ones it will.
-    mac_only: cmdr_fs::mac_only_files::MacOnlyFiles,
+    os_junk: cmdr_fs::os_junk_files::OsJunkFiles,
     /// A transfer's names Windows can't use as they are, for the recovery path
     /// (`get_scan_preview_totals`). `None` for a delete's or a compress's walk.
     name_portability: Option<super::types::NamePortabilityTally>,
@@ -110,8 +110,8 @@ impl CachedScanResult {
     }
 
     /// Records what the walk left out.
-    pub(super) fn leaving_out(self, mac_only: cmdr_fs::mac_only_files::MacOnlyFiles) -> Self {
-        Self { mac_only, ..self }
+    pub(super) fn leaving_out(self, os_junk: cmdr_fs::os_junk_files::OsJunkFiles) -> Self {
+        Self { os_junk, ..self }
     }
 
     /// Carries a volume scan's kept files along, for `cached_cost_facts`.
@@ -164,7 +164,7 @@ impl CachedScanResult {
             estimated_compressed_bytes,
             scanned_files: None,
             tree: None,
-            mac_only: cmdr_fs::mac_only_files::MacOnlyFiles::Include,
+            os_junk: cmdr_fs::os_junk_files::OsJunkFiles::Include,
             name_portability: None,
         }
     }
@@ -193,7 +193,7 @@ impl CachedScanResult {
             estimated_compressed_bytes: None,
             scanned_files: None,
             tree: None,
-            mac_only: cmdr_fs::mac_only_files::MacOnlyFiles::Include,
+            os_junk: cmdr_fs::os_junk_files::OsJunkFiles::Include,
             name_portability: None,
         }
     }

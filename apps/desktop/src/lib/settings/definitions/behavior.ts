@@ -183,25 +183,25 @@ export const behaviorSettings: SettingDefinitionSource[] = [
     },
   },
   {
-    // FE-owned: the copy, move, and compress dialog's "Skip Mac-only hidden files"
+    // FE-owned: the copy, move, and compress dialog's "skip this OS's junk files"
     // toggle starts from it, and a confirm the dialog never showed dispatches it
-    // (`file-operations/transfer/mac-only-files.ts`). The backend matches the names.
-    id: 'fileOperations.macOnlyFiles',
+    // (`file-operations/transfer/os-junk-files.ts`). The backend matches the names.
+    id: 'fileOperations.osJunkFiles',
     section: ['Behavior', 'Navigation & file ops'],
     cardKey: 'settings.navigationAndFileOps.card.fileOperations',
-    labelKey: 'settings.fileOperations.macOnlyFiles.label',
-    descriptionKey: 'settings.fileOperations.macOnlyFiles.description',
+    labelKey: 'settings.fileOperations.osJunkFiles.label',
+    descriptionKey: 'settings.fileOperations.osJunkFiles.description',
     descriptionInTip: true,
-    keywordsKey: 'settings.fileOperations.macOnlyFiles.keywords',
-    terms: ['DS_Store', 'AppleDouble', 'Finder', 'macOS', 'NAS', 'zip'],
+    keywordsKey: 'settings.fileOperations.osJunkFiles.keywords',
+    terms: ['DS_Store', 'AppleDouble', 'Finder', 'macOS', 'Thumbs.db', 'ehthumbs', 'NFS', 'FUSE', 'NAS', 'zip'],
     type: 'enum',
     default: 'ask',
     component: 'toggle-group',
     constraints: {
       options: [
-        { value: 'include', labelKey: 'settings.fileOperations.macOnlyFiles.opt.include' },
-        { value: 'skip', labelKey: 'settings.fileOperations.macOnlyFiles.opt.skip' },
-        { value: 'ask', labelKey: 'settings.fileOperations.macOnlyFiles.opt.ask' },
+        { value: 'include', labelKey: 'settings.fileOperations.osJunkFiles.opt.include' },
+        { value: 'skip', labelKey: 'settings.fileOperations.osJunkFiles.opt.skip' },
+        { value: 'ask', labelKey: 'settings.fileOperations.osJunkFiles.opt.ask' },
       ],
     },
   },

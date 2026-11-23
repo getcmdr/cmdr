@@ -103,7 +103,7 @@ export type SettingsSurface =
   | 'quick-look-toast'
   /** The report dialogs' "Attach my email" label, deep-linking to the contact-email row. */
   | 'attach-email'
-  /** The copy, move, and compress dialog's "Skip Mac-only hidden files" link, deep-linking to that row. */
+  /** The copy, move, and compress dialog's "skip this OS's junk files" link, deep-linking to that row. */
   | 'transfer-dialog'
   /** The function-key-bar-hidden toast, deep-linking to the "Show function key bar" row. */
   | 'function-key-bar-toast'

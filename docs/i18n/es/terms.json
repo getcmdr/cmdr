@@ -3135,7 +3135,7 @@
     "confidence": "high",
     "sources": "Nautilus (_Omitir)",
     "exceptions": {
-      "fileOperations.transferDialog.macOnlyFiles.skippingByDefault": "Se omiten por omisión stutters, so the status says no se incluyen, the negative of its includingByDefault sibling"
+      "fileOperations.transferDialog.osJunkFiles.skippingByDefault": "Se omiten por omisión stutters, so the status says no se incluyen, the negative of its includingByDefault sibling"
     }
   },
   "slow": {

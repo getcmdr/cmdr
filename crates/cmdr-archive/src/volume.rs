@@ -636,7 +636,7 @@ impl Volume for ArchiveVolume {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            self.scan_subtree(path, cmdr_fs::mac_only_files::MacOnlyFiles::Include)
+            self.scan_subtree(path, cmdr_fs::os_junk_files::OsJunkFiles::Include)
                 .await
         })
     }

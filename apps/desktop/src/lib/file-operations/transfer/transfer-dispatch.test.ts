@@ -31,7 +31,7 @@ vi.mock('#lib/settings/index.js', () => ({
   // Key-aware so the archive compression level is distinguishable from the
   // progress-interval / max-conflicts settings (all others resolve to 200).
   getSetting: vi.fn((key: string) =>
-    key === 'behavior.archiveCompressionLevel' ? 6 : key === 'fileOperations.macOnlyFiles' ? 'ask' : 200,
+    key === 'behavior.archiveCompressionLevel' ? 6 : key === 'fileOperations.osJunkFiles' ? 'ask' : 200,
   ),
 }))
 
@@ -93,7 +93,7 @@ describe('dispatchTransferOperation: routing', () => {
         previewId: 'preview-9',
         preKnownConflicts: [],
         compressionLevel: 6,
-        macOnlyFiles: 'include',
+        osJunkFiles: 'include',
       },
       'user',
     )
@@ -361,25 +361,25 @@ it('forwards a Move target name to the volume engine', async () => {
   )
 })
 
-describe('dispatchTransferOperation: Mac-only hidden files (#314)', () => {
-  /** The `macOnlyFiles` the one command this dispatch reached carried. */
-  function sentMacOnly(command: (...args: never[]) => unknown, configIndex: number): unknown {
+describe('dispatchTransferOperation: OS junk files (#314)', () => {
+  /** The `osJunkFiles` the one command this dispatch reached carried. */
+  function sentOsJunk(command: (...args: never[]) => unknown, configIndex: number): unknown {
     const call = vi.mocked(command).mock.calls[0] as unknown[]
-    return (call[configIndex] as { macOnlyFiles?: unknown }).macOnlyFiles
+    return (call[configIndex] as { osJunkFiles?: unknown }).osJunkFiles
   }
 
   it('carries the dialog’s answer to a copy, a move, and a compress', async () => {
-    await dispatchTransferOperation(makeConfig({ macOnlyFiles: 'skip' }))
-    expect(sentMacOnly(copyBetweenVolumes, 4)).toBe('skip')
-    await dispatchTransferOperation(makeConfig({ operationType: 'move', macOnlyFiles: 'skip' }))
-    expect(sentMacOnly(moveFiles, 2)).toBe('skip')
-    await dispatchTransferOperation(makeConfig({ operationType: 'compress', macOnlyFiles: 'skip' }))
-    expect(sentMacOnly(compressFiles, 4)).toBe('skip')
+    await dispatchTransferOperation(makeConfig({ osJunkFiles: 'skip' }))
+    expect(sentOsJunk(copyBetweenVolumes, 4)).toBe('skip')
+    await dispatchTransferOperation(makeConfig({ operationType: 'move', osJunkFiles: 'skip' }))
+    expect(sentOsJunk(moveFiles, 2)).toBe('skip')
+    await dispatchTransferOperation(makeConfig({ operationType: 'compress', osJunkFiles: 'skip' }))
+    expect(sentOsJunk(compressFiles, 4)).toBe('skip')
   })
 
   it('falls back to the setting when nobody saw the toggle, where “Always ask” includes them', async () => {
     await dispatchTransferOperation(makeConfig())
-    expect(sentMacOnly(copyBetweenVolumes, 4)).toBe('include')
+    expect(sentOsJunk(copyBetweenVolumes, 4)).toBe('include')
   })
 
   it('never leaves anything out of a rename', async () => {
@@ -391,10 +391,10 @@ describe('dispatchTransferOperation: Mac-only hidden files (#314)', () => {
         sourcePaths: ['/bucket/photos'],
         destinationPath: '/bucket',
         newName: 'pictures',
-        macOnlyFiles: 'skip',
+        osJunkFiles: 'skip',
       }),
     )
-    expect(sentMacOnly(renameByMove, 4)).toBe('include')
+    expect(sentOsJunk(renameByMove, 4)).toBe('include')
   })
 })
 

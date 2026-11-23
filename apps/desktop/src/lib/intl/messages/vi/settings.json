@@ -502,29 +502,29 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.macOnlyFiles.label": "Bỏ qua tệp ẩn chỉ dành cho Mac",
-  "@settings.fileOperations.macOnlyFiles.label": {
-    "sourceHash": "be693c6"
+  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Bỏ qua tệp ẩn chỉ dành cho Mac} windows {Bỏ qua tệp hình thu nhỏ của Windows} other {Bỏ qua tệp sót lại của Linux}}",
+  "@settings.fileOperations.osJunkFiles.label": {
+    "sourceHash": "28cccff"
   },
-  "settings.fileOperations.macOnlyFiles.description": "Bỏ qua các tệp .DS_Store và ._* khi sao chép, di chuyển hoặc nén.",
-  "@settings.fileOperations.macOnlyFiles.description": {
-    "sourceHash": "02578a7"
+  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Bỏ qua các tệp .DS_Store và ._* khi sao chép, di chuyển hoặc nén.} windows {Bỏ qua các tệp Thumbs.db và ehthumbs*.db khi sao chép, di chuyển hoặc nén. Windows sẽ tạo lại chúng khi cần.} other {Bỏ qua các tệp .nfs* và .fuse_hidden* khi sao chép, di chuyển hoặc nén. Linux giữ chúng lại cho các tệp đã xóa nhưng vẫn đang mở.}}",
+  "@settings.fileOperations.osJunkFiles.description": {
+    "sourceHash": "d429ec1"
   },
-  "settings.fileOperations.macOnlyFiles.opt.include": "Bao gồm",
-  "@settings.fileOperations.macOnlyFiles.opt.include": {
+  "settings.fileOperations.osJunkFiles.opt.include": "Bao gồm",
+  "@settings.fileOperations.osJunkFiles.opt.include": {
     "sourceHash": "7285576"
   },
-  "settings.fileOperations.macOnlyFiles.opt.skip": "Bỏ qua",
-  "@settings.fileOperations.macOnlyFiles.opt.skip": {
+  "settings.fileOperations.osJunkFiles.opt.skip": "Bỏ qua",
+  "@settings.fileOperations.osJunkFiles.opt.skip": {
     "sourceHash": "28d0359"
   },
-  "settings.fileOperations.macOnlyFiles.opt.ask": "Luôn hỏi",
-  "@settings.fileOperations.macOnlyFiles.opt.ask": {
+  "settings.fileOperations.osJunkFiles.opt.ask": "Luôn hỏi",
+  "@settings.fileOperations.osJunkFiles.opt.ask": {
     "sourceHash": "3c42771"
   },
-  "settings.fileOperations.macOnlyFiles.keywords": "siêu dữ liệu, tệp rác, rác, lộn xộn, dọn dẹp, nhánh tài nguyên, tệp nén, nén, sao chép, di chuyển, hệ điều hành khác",
-  "@settings.fileOperations.macOnlyFiles.keywords": {
-    "sourceHash": "b668774"
+  "settings.fileOperations.osJunkFiles.keywords": "siêu dữ liệu, tệp rác, rác, lộn xộn, dọn dẹp, sót lại, hình thu nhỏ, bộ đệm, nhánh tài nguyên, tệp nén, nén, sao chép, di chuyển, hệ điều hành khác",
+  "@settings.fileOperations.osJunkFiles.keywords": {
+    "sourceHash": "952738c"
   },
   "settings.fileOperations.skipConfirmation.label": "{platform, select, windows {Bỏ qua xác nhận khi sao chép, di chuyển và xóa} other {Bỏ qua xác nhận khi sao chép, di chuyển và chuyển vào thùng rác}}",
   "@settings.fileOperations.skipConfirmation.label": {

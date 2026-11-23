@@ -31,12 +31,13 @@ use std::sync::Arc;
 
 use super::super::super::locked_sources::{LockedPlan, Unlocked};
 use super::super::super::state::WriteOperationState;
+use super::super::left_in_source::junk_volume_delete_refused;
 use super::super::volume_outage::through_outages;
 use super::transfer_error::{AtPath, PathedVolumeError, failed_native};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
-use cmdr_fs::mac_only_files::MacOnlyFiles;
+use cmdr_fs::os_junk_files::OsJunkFiles;
 use cmdr_fs::volume::{EntryKind, Volume, VolumeError};
 
 /// What a source entry looked like to the move: its size, its mtime, and its
@@ -75,16 +76,16 @@ impl SourceStamp {
 pub(crate) struct SourceLedger {
     files: HashMap<PathBuf, SourceStamp>,
     walked_dirs: HashSet<PathBuf>,
-    /// What the walk left out (`WriteOperationState::mac_only`): a folder that
+    /// What the walk left out (`WriteOperationState::os_junk`): a folder that
     /// holds nothing else once its carried files are gone goes WITH them.
-    mac_only: MacOnlyFiles,
+    os_junk: OsJunkFiles,
 }
 
 impl SourceLedger {
-    /// An empty ledger for a walk that leaves out `mac_only`.
-    pub(crate) fn leaving_out(mac_only: MacOnlyFiles) -> Self {
+    /// An empty ledger for a walk that leaves out `os_junk`.
+    pub(crate) fn leaving_out(os_junk: OsJunkFiles) -> Self {
         Self {
-            mac_only,
+            os_junk,
             ..Self::default()
         }
     }
@@ -179,7 +180,7 @@ async fn sweep_level(
     // Each beside its volume spelling (`doomed_app`, `husk_app`), which the batch
     // delete takes as one slice.
     let (mut doomed, mut doomed_app): (Vec<PathBuf>, Vec<AppPathBuf>) = (Vec::new(), Vec::new());
-    // Mac-only files the move left out: removed only once everything else here
+    // OS junk files the move left out: removed only once everything else here
     // went, so a folder that stays keeps the metadata describing it.
     let (mut husk, mut husk_app): (Vec<PathBuf>, Vec<AppPathBuf>) = (Vec::new(), Vec::new());
     for entry in &entries {
@@ -206,9 +207,9 @@ async fn sweep_level(
                     Ok(true)
                 }
                 Ok(EntryKind::File) => match ledger.files.get(&path) {
-                    // A Mac-only file the move left out (#314): this folder's
+                    // An OS junk file the move left out (#314, #1305): this folder's
                     // own metadata, so it goes if the folder does.
-                    None if ledger.mac_only.leaves_out_str(&entry.name, false) => {
+                    None if ledger.os_junk.leaves_out_str(&entry.name, false) => {
                         husk_app.push(path_app.into_owned());
                         husk.push(path);
                         Ok(false)
@@ -247,14 +248,28 @@ async fn sweep_level(
         };
     }
     // Everything the move carried is gone, so the folder goes too, and the
-    // Mac-only files it held with it: ❌ never a husk folder in the source.
+    // OS junk files it held with it: ❌ never a husk folder in the source.
+    // A junk file the source won't let go of (`junk_volume_delete_refused`:
+    // Explorer holding `Thumbs.db`, an open `.nfs*`, a share's sharing
+    // violation) stays, and so does its folder, with no error (#1305).
     if !husk.is_empty() {
+        let mut held = false;
         for (path, result) in husk.iter().zip(volume.delete_files(&husk_app).await) {
             match result {
                 Ok(()) => {}
                 Err(VolumeError::NotFound(_)) => left.read_gone = true,
+                Err(e) if junk_volume_delete_refused(&e) => {
+                    log::info!(
+                        "move sweep: the source kept a skipped junk file, so its folder stays ({error})",
+                        error = LogError(&e)
+                    );
+                    held = true;
+                }
                 Err(e) => return Err(e).at_source(path),
             }
+        }
+        if held {
+            return Ok(true);
         }
     }
     // ❗ As a folder, never `delete`: once such a folder's last file goes, a

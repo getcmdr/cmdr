@@ -315,12 +315,12 @@
   "@fileOperations.transferDialog.presetOverwriteNote": {
     "sourceHash": "6d30a11"
   },
-  "fileOperations.transferDialog.macOnlyFiles.includingByDefault": "Se incluyen de forma predeterminada",
-  "@fileOperations.transferDialog.macOnlyFiles.includingByDefault": {
+  "fileOperations.transferDialog.osJunkFiles.includingByDefault": "Se incluyen de forma predeterminada",
+  "@fileOperations.transferDialog.osJunkFiles.includingByDefault": {
     "sourceHash": "254bcf2"
   },
-  "fileOperations.transferDialog.macOnlyFiles.skippingByDefault": "Se omiten de forma predeterminada",
-  "@fileOperations.transferDialog.macOnlyFiles.skippingByDefault": {
+  "fileOperations.transferDialog.osJunkFiles.skippingByDefault": "Se omiten de forma predeterminada",
+  "@fileOperations.transferDialog.osJunkFiles.skippingByDefault": {
     "sourceHash": "501cb9f"
   },
   "fileOperations.rollbackConfirm.bodyUndoByDeletingSelected": "Esto elimina los archivos y carpetas seleccionados que creó la operación. Cmdr omite todo aquello de lo que no está seguro, así que puede que quede alguno.",

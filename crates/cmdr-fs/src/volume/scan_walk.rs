@@ -426,7 +426,7 @@ fn walk_directory<'a>(
             .through_outages(&native, || unless_stopped(source, boundary, source.scan_list(dir)))
             .await?
         {
-            // A Mac-only file the transfer leaves out is no part of it (#314).
+            // An OS junk file the transfer leaves out is no part of it (#314, #1305).
             if boundary.leaves_out(&entry.name, entry.is_directory && !entry.is_symlink) {
                 continue;
             }

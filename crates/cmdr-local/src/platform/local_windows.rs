@@ -621,7 +621,7 @@ impl Volume for LocalWindowsVolume {
                 subtree,
                 cmdr_fs::volume::ScanStop::none(),
                 None,
-                cmdr_fs::mac_only_files::MacOnlyFiles::Include,
+                cmdr_fs::os_junk_files::OsJunkFiles::Include,
             ),
             Err(e) => Box::pin(async move { Err(e) }),
         }

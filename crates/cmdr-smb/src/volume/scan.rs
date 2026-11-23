@@ -125,7 +125,7 @@ impl SmbVolume {
             let folder = ListedFolder::new(caller_path);
 
             for entry in &entries {
-                // A Mac-only file the transfer leaves out is no part of it (#314).
+                // An OS junk file the transfer leaves out is no part of it (#314, #1305).
                 if boundary.leaves_out(&entry.name, entry.is_directory) {
                     continue;
                 }
