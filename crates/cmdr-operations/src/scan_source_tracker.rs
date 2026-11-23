@@ -35,14 +35,18 @@ pub(super) fn build_source_file_counts(files: &[FileInfo]) -> std::collections::
 /// returns `/home/user/docs/mydir`.
 /// For a single file `/home/user/docs/file.txt` with `source_root = /home/user/docs`,
 /// returns `/home/user/docs/file.txt`.
+///
+/// ❗ The source is the ANCESTOR of the file's path directly under `source_root`, a slice of
+/// that path, so it keeps the spelling the start handed in, ❌ never a re-`join`: on Windows
+/// `C:/x/dir` joined with `old.iso` is `C:/x/dir\old.iso`, which no caller's key for the source
+/// (`C:/x/dir/old.iso`, as sent) matches, so a suggested-ops delete never marked its op done.
 pub(super) fn top_level_source_path(file_info: &FileInfo) -> PathBuf {
-    if let Ok(relative) = file_info.path.strip_prefix(&file_info.source_root)
-        && let Some(first_component) = relative.components().next()
-    {
-        return file_info.source_root.join(first_component);
-    }
-    // Fallback: use the path itself (shouldn't happen with well-formed FileInfo)
-    file_info.path.clone()
+    file_info
+        .path
+        .ancestors()
+        .find(|ancestor| ancestor.parent() == Some(file_info.source_root.as_path()))
+        // Fallback: the path itself (shouldn't happen with a well-formed FileInfo).
+        .map_or_else(|| file_info.path.clone(), std::path::Path::to_path_buf)
 }
 
 /// What an engine did with ONE file it processed.

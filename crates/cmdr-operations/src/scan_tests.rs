@@ -148,6 +148,25 @@ fn test_top_level_source_path_nested() {
     assert_eq!(top_level_source_path(&fi), PathBuf::from("/home/user/docs/mydir"));
 }
 
+/// The source comes back byte for byte as the start spelled it, ❌ never re-joined. A walk
+/// joins a folder's children with `Path::join`, which writes `\` on Windows, so a re-join
+/// of `source_root` and the first name turned a start's `C:/x/dir/old.iso` into
+/// `C:/x/dir\old.iso`, and a caller keyed on the sent path (the suggested-ops decorator)
+/// never heard the source finish. Runs on every OS; the Windows lane is where a join differs.
+#[test]
+fn the_top_level_source_keeps_the_spelling_the_start_gave_it() {
+    let file = make_file_info("C:/x/dir/old.iso", "C:/x/dir");
+    assert_eq!(
+        top_level_source_path(&file).as_os_str().as_encoded_bytes(),
+        b"C:/x/dir/old.iso"
+    );
+    let walked = FileInfo {
+        path: Path::new("/x/dir").join("sub").join("f.txt"),
+        ..make_file_info("", "/x")
+    };
+    assert_eq!(top_level_source_path(&walked).as_os_str().as_encoded_bytes(), b"/x/dir");
+}
+
 #[test]
 fn test_build_source_file_counts_mixed() {
     let files = vec![
