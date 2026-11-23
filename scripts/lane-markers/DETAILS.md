@@ -18,7 +18,9 @@ passed, the rerun can't tell us anything new.
    bytes and mode match. It reads only the commit's tree (`git ls-tree`, `git cat-file`), never the working tree.
 2. **Plan** (`changes` job, `lane-markers plan`): computes every lane's hash, lists the `lane-green-*` cache entries in
    the scopes this run trusts, and writes `lanes=<json>`: per lane `{hash, key, verified, ref}`. A failed listing warns
-   and verifies nothing, so every uncertainty means "run".
+   and verifies nothing, so every uncertainty means "run". It also writes `verified-keys=<json array>`, which the next
+   step (`.github/actions/touch-lane-markers`) restores lookup-only, one fixed slot per key (§ Keeping a trusted marker
+   alive mid-run).
 3. **Skip**: a lane's `if:` adds `&& !fromJSON(needs.changes.outputs.lanes)['<id>'].verified` to its filter clause.
 4. **Save**: a lane's last step saves an Actions cache entry keyed `lane-green-<lane>-<hash>` (the plan's `.key`). It's
    the last step, so it runs only when every step before it passed; a failed, cancelled, or skipped lane saves nothing.
@@ -67,10 +69,30 @@ The claim a verified skip makes: "this lane passed, in a run we trust, on exactl
   rule out.
 - **An external store** (KV, D1): needs a secret that fork runs don't get and that every PR run would then hold.
 
-Caveats of the choice: markers are never restored (only listed), so under size pressure LRU evicts them first (they read
-as least recently used); that costs reruns, never correctness. `prune-superseded-caches` prunes only the families its
-`case` names (`v0-rust-*`, `*-docker-e2e-*`, `light-*`, `pnpm-store-*`), so it leaves `lane-green-*` alone; keep it that
-way (every marker key is its own family's only member, so pruning would delete live markers).
+Caveats of the choice: a marker nobody restores reads as least recently used, so under size pressure LRU evicts it
+first; that costs reruns (or a red `verify`), never correctness. § Keeping a trusted marker alive mid-run covers the one
+place that hurt. Upkeep's prune (`lane-markers prune`, `prune.go`) supersedes only within the families `cacheFamily`
+names, so it leaves `main`'s `lane-green-*` alone; keep it that way (every marker key is its own family's only member,
+so a family rule would delete live markers). It does delete a closed PR's markers with the rest of its caches: no later
+run reads that scope.
+
+## Keeping a trusted marker alive mid-run
+
+A run can't keep what it trusted: the plan lists a marker at t=0 and `verify` looks it up again ~25 min later, and LRU
+eviction may take it in between. On PR #1365 (run 44987549442, 2026-11-22) the website lane skipped as verified, the
+repo reached 9.71 GB of 10 during the run, the marker went, and `verify` failed the run with every lane green (#1368).
+`verify` failing closed there is right; the fix is keeping the marker from being the eviction victim:
+
+- **Touch**: the `changes` job restores each trusted key lookup-only (`.github/actions/touch-lane-markers`). Listing
+  (the REST API) doesn't bump `last_accessed_at`; a restore does, and a lookup-only one sends the identical
+  `GetCacheEntryDownloadURL` request (actions/toolkit `restoreCacheV2`, read 2026-11-23, skips only the blob download).
+  The marker is then newer than every entry not used since the run started. A step can't loop, so the action has
+  `touchSlots` fixed slots; `TestTouchActionHasOneSlotPerPossibleLane` holds the count, and `plan` refuses more lanes.
+- **Less pressure**: upkeep prunes a family's old generation minutes after the new one's save (`docs/tooling/ci.md` §
+  Build caching), so a key rotation no longer parks the repo past its budget for the length of the upkeep run.
+- **Residual**: a bot PR trusts only `main`'s scope, but a restore searches the PR's own scope first, so if its own
+  scope held the same key, the touch would land there and leave `main`'s copy untouched. Only a byte-identical tree
+  saved under both makes that, and the cost is the old symptom (a red `verify` that a rerun clears).
 
 ## The one risk: a filter missing an input
 

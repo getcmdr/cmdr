@@ -836,6 +836,13 @@ jobs:
           ./scripts/lane-markers/lane-markers plan -event "$EVENT" -ref "$REF" -repo "$REPO" -head-repo "$HEAD_REPO"
           -run-all="$RUN_ALL" -author-type "$AUTHOR_TYPE" -author "$AUTHOR"
 
+      # Marks each marker the plan trusted as used, so LRU eviction takes it last before `CI OK`
+      # looks it up again (#1368; the action says why).
+      - name: Touch the trusted lane markers
+        uses: ./.github/actions/touch-lane-markers
+        with:
+          keys: ${{ steps.lanes.outputs.verified-keys }}
+
       # The Website job runs inside this image. Its visual baselines
       # (`apps/website/e2e/visual.spec.ts`) are pixel comparisons, so the renderer that verifies
       # them has to be the renderer that shot them, and

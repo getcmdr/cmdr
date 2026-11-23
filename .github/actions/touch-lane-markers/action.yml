@@ -1,0 +1,90 @@
+name: Touch lane markers
+description: >-
+  Restores (lookup only) each lane marker the lane plan trusted, so each reads as freshly used and LRU eviction takes it
+  last while this run's lanes go. `CI OK`'s `verify` looks each one up again and still fails closed when one is gone.
+
+# Why (#1368): listing a cache entry doesn't count as using it, so a marker the plan only listed was among the least
+# recently used entries in the repo, and saves that pushed the repo past its 10 GB budget evicted it mid-run: red with
+# every lane green. A lookup-only restore sends the same `GetCacheEntryDownloadURL` request a full restore does
+# (actions/toolkit `restoreCacheV2` skips only the download), and that request is what marks the entry used. `path` must
+# be the one `.github/actions/lane-marker` saves, since an entry's version hashes it.
+#
+# One step per slot, since a step can't loop: `touchSlots` in `scripts/lane-markers/main.go` is the count, its tests
+# hold the two together, and `plan` refuses more lanes than slots. A slot past the array's end reads as null and skips.
+inputs:
+  keys:
+    description: The plan's `verified-keys` output, a JSON array of marker keys
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Touch marker 0
+      if: fromJSON(inputs.keys)[0] != null
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/lane-green
+        key: ${{ fromJSON(inputs.keys)[0] }}
+        lookup-only: true
+    - name: Touch marker 1
+      if: fromJSON(inputs.keys)[1] != null
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/lane-green
+        key: ${{ fromJSON(inputs.keys)[1] }}
+        lookup-only: true
+    - name: Touch marker 2
+      if: fromJSON(inputs.keys)[2] != null
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/lane-green
+        key: ${{ fromJSON(inputs.keys)[2] }}
+        lookup-only: true
+    - name: Touch marker 3
+      if: fromJSON(inputs.keys)[3] != null
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/lane-green
+        key: ${{ fromJSON(inputs.keys)[3] }}
+        lookup-only: true
+    - name: Touch marker 4
+      if: fromJSON(inputs.keys)[4] != null
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/lane-green
+        key: ${{ fromJSON(inputs.keys)[4] }}
+        lookup-only: true
+    - name: Touch marker 5
+      if: fromJSON(inputs.keys)[5] != null
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/lane-green
+        key: ${{ fromJSON(inputs.keys)[5] }}
+        lookup-only: true
+    - name: Touch marker 6
+      if: fromJSON(inputs.keys)[6] != null
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/lane-green
+        key: ${{ fromJSON(inputs.keys)[6] }}
+        lookup-only: true
+    - name: Touch marker 7
+      if: fromJSON(inputs.keys)[7] != null
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/lane-green
+        key: ${{ fromJSON(inputs.keys)[7] }}
+        lookup-only: true
+    - name: Touch marker 8
+      if: fromJSON(inputs.keys)[8] != null
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/lane-green
+        key: ${{ fromJSON(inputs.keys)[8] }}
+        lookup-only: true
+    - name: Touch marker 9
+      if: fromJSON(inputs.keys)[9] != null
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/lane-green
+        key: ${{ fromJSON(inputs.keys)[9] }}
+        lookup-only: true

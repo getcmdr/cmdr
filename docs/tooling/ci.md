@@ -83,13 +83,14 @@ and the per-lane wiring: `scripts/lane-markers/DETAILS.md`.
 
 The seven path-filtered lanes are wired (`desktop-rust`, `desktop-rust-fixtures`, `desktop-rust-macos`,
 `desktop-rust-windows`, `desktop-svelte`, `desktop-e2e-linux`, `website`); the light lane isn't, since it gates on no
-filter. In `ci.yml`: `changes` plans (`lanes` output), each lane's `if:` adds
-`!fromJSON(needs.changes.outputs.lanes)['<id>'].verified` and passes its `.key` as `marker-key`, `e2e-base-image`
-follows the E2E lane's verdict, and `CI OK` runs `lane-markers verify` after its jq gate. In each lane file, the
-`lane-marker` action saves the key in a `marker` job that `needs` every other job of the lane, so one green job can't
-vouch for another. macOS's `finder-extension` and the website lane's `demo-suite` run only on demand, so their `marker`
-takes a skip only when the job wasn't asked for. The Rust lane's `wasm` always runs and skips only its own build steps
-(§ Browser engines for wasm).
+filter. In `ci.yml`: `changes` plans (`lanes` output) and touches each marker it trusted
+(`.github/actions/touch-lane-markers`, so LRU eviction doesn't take it before `CI OK` looks again, #1368), each lane's
+`if:` adds `!fromJSON(needs.changes.outputs.lanes)['<id>'].verified` and passes its `.key` as `marker-key`,
+`e2e-base-image` follows the E2E lane's verdict, and `CI OK` runs `lane-markers verify` after its jq gate. In each lane
+file, the `lane-marker` action saves the key in a `marker` job that `needs` every other job of the lane, so one green
+job can't vouch for another. macOS's `finder-extension` and the website lane's `demo-suite` run only on demand, so their
+`marker` takes a skip only when the job wasn't asked for. The Rust lane's `wasm` always runs and skips only its own
+build steps (§ Browser engines for wasm).
 
 A PR run hashes `refs/pull/N/merge`, the PR merged with the current `main`. So a follow-up push skips a lane only while
 `main` hasn't moved any of that lane's inputs since the run that passed; a land that touched them makes a new tree and
@@ -272,8 +273,8 @@ deploys, and `slow-checks` restore pnpm's store before `pnpm install`, at the pa
 keeps it under `$XDG_DATA_HOME`; every job used to cache `~/.pnpm-store`, which didn't exist, so they cached nothing).
 Exact keys only, saved from `main` only, and only by a whole-workspace install (the Svelte lane's `checks`, the
 website's `site`, and `warm-light-cache`, which fills the host entry with `pnpm fetch`); the website's `site` job runs
-in a container with another `HOME`, so it has an entry of its own (`-container-` in the key). `prune-superseded-caches`
-keeps one per family.
+in a container with another `HOME`, so it has an entry of its own (`-container-` in the key). Upkeep's cache prune keeps
+one generation per family.
 
 ## Build caching
 
@@ -388,23 +389,28 @@ silent** (a warning, not a red job):
   runner image (`ImageOS`) and the config hash, plus an `install_args` hash for the Go-only install in
   `lane-markers-tool`, so one run touches up to four entries of ~0.1–0.3 GB each; a container job (the website lane's)
   has no `ImageOS`, so mise files it under `self-hosted`. When PRs saved their own, PR #982 alone held 0.4 GB of mise
-  (2026-11-05). `prune-superseded-caches` keeps one `main` entry per variant.
+  (2026-11-05). Upkeep's cache prune keeps one `main` generation per variant.
 
 rust-cache keys per-job, so these are independent caches and each prunes itself. The shared risk is GitHub's **10 GB
-per-repo ceiling**, and lane markers are the first LRU victims, since nothing ever restores one (#981). On 2026-11-05
-the repo sat at ~9.5 GB (`gh api repos/getcmdr/cmdr/actions/caches`): `desktop-rust-macos` 3.6, `desktop-rust` 2.7,
-`light-go` 1.6, `docker-e2e` ~1.2, four mise entries ~0.9 between `main` and one PR, `light-*` `node_modules` 0.27, and
-the pnpm store 0.2. The fixes above put `desktop-rust` at ~1.1, `light-go` at ~0.23, and `light-node-modules` at ~0.19,
+per-repo ceiling**, and LRU eviction takes the least recently used entry first (#981). A lane marker a run trusts is
+touched (a lookup-only restore) as the plan verifies it, so it isn't that entry mid-run (#1368). On 2026-11-05 the repo
+sat at ~9.5 GB (`gh api repos/getcmdr/cmdr/actions/caches`): `desktop-rust-macos` 3.6, `desktop-rust` 2.7, `light-go`
+1.6, `docker-e2e` ~1.2, four mise entries ~0.9 between `main` and one PR, `light-*` `node_modules` 0.27, and the pnpm
+store 0.2. The fixes above put `desktop-rust` at ~1.1, `light-go` at ~0.23, and `light-node-modules` at ~0.19,
 `desktop-rust-macos` at ~1.3 (estimated; § The M1 runner), and PRs no longer add mise. Every PR saves only its markers
 and the lane-markers tool (~2 MB). Before the Rust caches went main-only, every PR also saved ~1.7 GB of Rust and ~1.2
 GB of E2E target, the repo sat at ~12 GB, and LRU evicted entries within minutes.
 
-**Load-bearing companion: the `prune-superseded-caches` job.** A new `Cargo.lock` gives each big entry a new key, and
-the old one lingers until 7 unused days pass, so two generations put the repo at ~11.5 GB (2026-10-22). Post-land on
-`main` (`ci-upkeep.yml`), after every job that saves one, it keeps the most recently used `main` entry per family
-(`v0-rust-*`, `*-docker-e2e-*`, the light lane's `light-*`, and `pnpm-store-*`, the key minus its trailing hash parts;
-for `mise-v1-*`, minus only the last one, since an `install_args` hash before it names a variant) and deletes the rest.
-Protect the per-push `desktop-rust` cache first; the udeps cache is the one to drop under pressure.
+**Load-bearing companion: upkeep's cache prune** (`lane-markers prune`, the `prune-after-*` jobs). A new `Cargo.lock`
+gives each big entry a new key, and the old one lingers until 7 unused days pass, so two generations put the repo past
+10 GB (~11.5 GB on 2026-10-22; 9.71 GB and an evicted lane marker on 2026-11-22, #1368), from a resting ~8 GB. Post-land
+on `main` (`ci-upkeep.yml`), a prune job follows EACH warm job, so a family's old generation goes minutes after its new
+one is saved. In `main`'s scope it keeps each family's most recently used and newest entries and deletes the rest
+(`v0-rust-*`, `*-docker-e2e-*`, `light-*`, `pnpm-store-*`, and `wasm-toolchain-*`, the key minus its trailing hash
+parts; for `mise-v1-*`, minus only the last one, since an `install_args` hash before it names a variant); it also
+deletes every closed PR's caches. Lane markers on `main` stay. Rules and their why: `planPrune` in
+`scripts/lane-markers/prune.go`. Protect the per-push `desktop-rust` cache first; the udeps cache is the one to drop
+under pressure.
 
 **Critical path.** A land run's wall clock is its longest chain of jobs, since every lane gates only on `changes` and
 starts at t=0 (don't re-add a `needs: desktop-svelte` to the E2E lane: it added ~4 min of latency for a compute-saving
@@ -448,18 +454,20 @@ light runs (say, through a job-level `concurrency` group) that leaves land runs 
 ## CI upkeep
 
 `ci-upkeep.yml` holds the post-land cache jobs: `warm-e2e-linux-cache`, `warm-rust-cache`, `warm-rust-macos-cache`,
-`warm-light-cache`, and `prune-superseded-caches` (§ Build caching and § The light lane say what each keeps). They used
-to be `ci.yml` jobs outside `CI OK`'s `needs`, but a job's result still sets the run's conclusion: on 2026-11-05 GitHub
-had no macOS runner for `warm-rust-macos-cache`, cancelled it after 15 min ("The job was not acquired by Runner of type
-hosted"), and `main` runs 42071578000 and 42072334820 read failed though every check passed. `continue-on-error: true`
-doesn't help: a job cancelled by its timeout still concluded the run `cancelled` (probed 2026-11-05). In a workflow of
-its own, an upkeep failure is its own red run, and `main`'s CI verdict is about the code alone.
+`warm-rust-windows-tests-cache`, `warm-light-cache`, and a `prune-after-*` job after each warm job (§ Build caching and
+§ The light lane say what each keeps). They used to be `ci.yml` jobs outside `CI OK`'s `needs`, but a job's result still
+sets the run's conclusion: on 2026-11-05 GitHub had no macOS runner for `warm-rust-macos-cache`, cancelled it after 15
+min ("The job was not acquired by Runner of type hosted"), and `main` runs 42071578000 and 42072334820 read failed
+though every check passed. `continue-on-error: true` doesn't help: a job cancelled by its timeout still concluded the
+run `cancelled` (probed 2026-11-05). In a workflow of its own, an upkeep failure is its own red run, and `main`'s CI
+verdict is about the code alone.
 
 - **Trigger**: `workflow_run` on `CI`, `completed`, branch `main`, and each job's `if:` keeps only a `push` from this
   repo. The nightly schedule, dispatches, and PR runs don't trigger it (no upkeep job ran there before either). It runs
   whatever CI concluded, as the jobs did inside CI: a red lane doesn't say the caches are fresh.
-- **Ordering**: it starts after CI's whole run, so every lane that restores or saves an entry is done before the prune
-  picks the most recently used one; inside it, the prune `needs` the four warm jobs (`always()`).
+- **Ordering**: it starts after CI's whole run, so every lane that restores or saves an entry is done before a prune
+  looks. Each `prune-after-*` job `needs` one warm job (`always()`), since rust-cache and actions/cache save in a post
+  step that only a later job sees; prunes are idempotent, so their overlap is harmless.
 - **No `needs.changes`**: the Linux and E2E warm jobs used to skip when their lane ran on the push. Now they run anyway:
   the lane saved the same key, so they hit it and stop (~1 min).
 - **Same caches**: Actions caches are shared across workflows by branch, and a `workflow_run` run's ref is `main`. The
@@ -467,7 +475,8 @@ its own, an upkeep failure is its own red run, and `main`'s CI verdict is about 
   before each rust-cache step. `save-if: true` replaces `SAVE_RUST_CACHE`, since it only ever runs for `main`.
 - **Cache writes need an opt-in**: GitHub gives `workflow_run` a read-only cache token in the default branch's scope
   (changelog 2026-06-26, against cache poisoning from fork-triggered runs; the save then only warns). The warm jobs set
-  `cache-mode: write`; the prune touches no entry, only deletes through the API (`actions: write`).
+  `cache-mode: write`; the prunes write no entry, only delete through the API (`actions: write`, plus
+  `pull-requests: read` to tell closed PRs from open ones).
 - **Trust**: the file runs from `main` with the repo's secrets, and CI also completes for fork PRs. Two independent
   guards keep it to `main`'s code: every job's `if:` requires `workflow_run.event == 'push'`, `head_branch == 'main'`,
   and the head repo being this one (`workflows-hardening` fails a `workflow_run` job without them), and the
