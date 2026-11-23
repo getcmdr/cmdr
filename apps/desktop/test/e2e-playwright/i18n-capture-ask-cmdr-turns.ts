@@ -4,7 +4,8 @@
  *
  * The fake LLM's scripts carry most of them (`rail_fake_turn` in `chat/e2e_fake.rs`):
  *
- *  - `ask-cmdr-every-tool`: `[every-tool]`, one turn calling every other read tool.
+ *  - `ask-cmdr-every-tool-running` and `ask-cmdr-every-tool`: `[every-tool]`, one turn calling every
+ *    other read tool, photographed held mid-round (`hold_tool_calls`) and then finished.
  *  - `ask-cmdr-rename-undo` and `-undo-partial`: `[rename]` stages a plan on the fixture tree, the
  *    real review applies it, and the thread shows its Undo, then an undo that couldn't restore
  *    everything because a file moved on since.
@@ -99,19 +100,50 @@ async function openToolGroups(main: TauriPage): Promise<void> {
     .toBe(0)
 }
 
-/** One turn through every read tool, so each line's words render with its subject. */
+/** How many calls `every_tool_round` makes, so the running shot waits for every line. */
+const EVERY_TOOL_CALLS = 15
+
+/** Holds or releases Ask Cmdr's tool calls before they run (`hold_tool_calls`, E2E builds only). */
+async function holdToolCalls(main: TauriPage, held: boolean): Promise<void> {
+  await main.evaluate(`window.__TAURI_INTERNALS__.invoke('hold_tool_calls', { held: ${JSON.stringify(held)} })`)
+}
+
+/**
+ * One turn through every read tool, so each line's words render with its subject: first held
+ * mid-round, so every line shows its RUNNING words (a real call finishes faster than a shutter),
+ * then finished. Both frame the rail, so a thread longer than the window is paged.
+ */
 export async function captureAskCmdrEveryTool(
   main: TauriPage,
   report: Record<string, SurfaceEntry>,
   failed: string[],
 ): Promise<void> {
   await openChat(main)
+  const message = `[every-tool] ${getFixtureRoot()}/left`
+  try {
+    await captureSurface('ask-cmdr-every-tool-running', report, failed, async () => {
+      await holdToolCalls(main, true)
+      await onFreshThread(main, 'ask-cmdr-every-tool-running')
+      await sendToRail(main, message)
+      await expect
+        .poll(() => main.evaluate<number>(`document.querySelectorAll('${RAIL} .tool-line .spinner').length`), {
+          timeout: waitBudget(15000),
+        })
+        .toBeGreaterThanOrEqual(EVERY_TOOL_CALLS)
+      return { page: main, readySelector: `${RAIL} .tool-line .spinner`, fitSelector: RAIL }
+    })
+  } finally {
+    // ❗ Always released: a held call would stall this thread and every later surface's turn.
+    await holdToolCalls(main, false).catch(() => {})
+  }
+  // The released turn runs to its end before the next thread starts.
+  await main.waitForSelector(`${RAIL} .msg .turn-stats`, waitBudget(15000)).catch(() => {})
   await captureSurface('ask-cmdr-every-tool', report, failed, async () => {
     await onFreshThread(main, 'ask-cmdr-every-tool')
-    await sendToRail(main, `[every-tool] ${getFixtureRoot()}/left`)
+    await sendToRail(main, message)
     await main.waitForSelector(`${RAIL} .msg .turn-stats`, waitBudget(15000))
     await openToolGroups(main)
-    return { page: main, readySelector: `${RAIL} .msg .turn-stats` }
+    return { page: main, readySelector: `${RAIL} .msg .turn-stats`, fitSelector: RAIL }
   })
   await captureCall(main, 'disable').catch(() => {})
   await closeRail(main).catch(() => {})

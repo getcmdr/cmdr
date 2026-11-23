@@ -181,6 +181,16 @@ pub fn hold_about_verdict(held: bool) {
     crate::test_mode::set_about_verdict_held(held);
 }
 
+/// Holds (`true`) or releases (`false`) Ask Cmdr's tool calls before they run, so the i18n
+/// capture can photograph a round's lines in their running words (`i18n-capture-ask-cmdr-turns.ts`).
+/// A capture that holds them releases them in a `finally`.
+#[cfg(feature = "playwright-e2e")]
+#[tauri::command]
+#[specta::specta]
+pub fn hold_tool_calls(held: bool) {
+    crate::agent::chat::runtime::e2e_hold::set_held(held);
+}
+
 /// Stages one folder's activity for the proactive agent WITHOUT waking it.
 ///
 /// What the indexer's tap does all run long, on demand. A spec uses it to put something in the

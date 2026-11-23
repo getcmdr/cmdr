@@ -504,7 +504,8 @@ the test and this section together.
 Eleven files plus `ChatRuntime` in `mod.rs`: `types.rs` (what a turn IS as data), `events.rs`
 (the `AgentChatEvent` seam and the typed `AgentErrorKind`), `dispatch.rs` (the
 `ToolDispatcher` seam and `AppHandleDispatcher`; every call carries a `CallContext`, the turn's origin and its Stop,
-and runs under `dispatch_until_stopped`, § Stop reaches every tool call), `turn.rs` (`run_turn` and everything it
+and runs under `dispatch_until_stopped`, § Stop reaches every tool call; E2E builds add `e2e_hold`, which parks
+every call before it runs so the i18n capture can photograph a round's lines running), `turn.rs` (`run_turn` and everything it
 drives), `retry.rs` (one model call: opened, read, and sent again while the provider is overloaded, § A busy
 provider), `consume.rs` (reading one stream, Stop and the stall check included), `limits.rs` (the loop guard and what
 each wrap-up records), `repeats.rs` (the turn's memory of calls that already failed), `cost.rs` (metering one

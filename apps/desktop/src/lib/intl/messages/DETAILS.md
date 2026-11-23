@@ -300,6 +300,16 @@ Two things happen between "the surface is ready" and "the PNG is on disk", both 
   limit, and a surface captured below 100 % records `uiZoom` in the report so the coverage report can say so. ❗ Opt-in,
   not automatic: some surfaces scroll BY DESIGN (the command palette lists every command), and growing a window until
   such a list fits produces a screen-tall window showing nothing useful.
+- **Paging** (automatic once fitting runs out): a fitted surface still taller than the display, at 100 % after the zoom
+  ladder failed, is photographed page by page. `startScrollPaging` (`i18n-capture-frame.ts`) picks the frame's tallest
+  scroller and scrolls it to the top for the first shot, then each later page scrolls one visible height less a 48 px
+  overlap and lands as `<surface>-page-<n>.png`, its own report entry carrying the surface's keys. **Why:** one shot of
+  a settings section, the shortcut list, or a long Ask Cmdr thread showed its top while claiming every key below it (the
+  shortcuts shot named 212 command labels it showed about 12 of).
+- **States a shot must be in**: a key that only shows in a transient state gets a surface held in that state. Ask Cmdr's
+  tool lines are photographed running (`ask-cmdr-every-tool-running`) through the E2E-only `hold_tool_calls` command,
+  which parks every call before it dispatches, and a closed dropdown gets a surface with it open
+  (`multi-rename-letter-case`).
 - **Cropping** (`ShotOptions.cropSelector`): the registry-driven soft dialogs, toasts, and the `indexing-tile-*` review
   images are cropped to their own element; everything else keeps its window ON PURPOSE, because the window is the
   context. The plugin's `screenshot()` takes only a path, so the crop happens on our bytes (`cropPng`). The rect is
